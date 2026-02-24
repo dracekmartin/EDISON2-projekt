@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <BaseOutputPath>C:\Edison</BaseOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="cube_molecule.png" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3351.48" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="EDISONAPI">
+      <HintPath>C:\Edison\EDISONAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="EDISONMAIN2API">
+      <HintPath>C:\Edison\EDISONMAIN2API.dll</HintPath>
+    </Reference>
+    <Reference Include="MLRest">
+      <HintPath>C:\Edison\MLRest.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Icons\cube_molecule.png" />
+  </ItemGroup>
+
+</Project>

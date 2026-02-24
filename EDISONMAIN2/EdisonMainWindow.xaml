@@ -1,0 +1,82 @@
+﻿<Window x:Class="EDISONMAIN2.EdisonMainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:local="clr-namespace:EDISONMAIN2"
+        mc:Ignorable="d"
+        Title="M-line EDISON" Height="800" Width="1200" Loaded="Window_Loaded" Closed="Window_Closed" Icon="/Icons/cube_molecule.png" WindowStartupLocation="CenterScreen" WindowState="Maximized">
+    <Window.DataContext>
+        <local:MainViewModel />
+    </Window.DataContext>
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="20"/>
+            <ColumnDefinition Width="2" />
+            <ColumnDefinition Width="*" MinWidth="20"/>
+            <ColumnDefinition Width="2" />
+            <ColumnDefinition Width="*" MinWidth="20"/>
+            <ColumnDefinition Width="2" />
+            <ColumnDefinition Width="*" MinWidth="20"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="24" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="24" />
+        </Grid.RowDefinitions>
+        <ToolBar Grid.Row="0" Grid.ColumnSpan="100">
+            <ComboBox ItemsSource="{Binding VisibleIdfas}" SelectedItem="{Binding SelectedCompany}" >
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Id}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
+        </ToolBar>
+        <TreeView Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TopLevelModules}" MouseDoubleClick="tvApps_MouseDoubleClick" Grid.ColumnSpan="2">
+            <TreeView.Resources>
+                <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type local:ModuleFamily}">
+                    <TextBlock Text="{Binding DisplayedName}" />
+                </HierarchicalDataTemplate>
+                <DataTemplate DataType="{x:Type local:ExecutableModule}">
+                    <TextBlock Text="{Binding DisplayedName}" />
+                </DataTemplate>
+                <Style TargetType="{x:Type TreeViewItem}">
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded}"/>
+                </Style>
+            </TreeView.Resources>
+        </TreeView>
+        <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <Grid Grid.Column="2" Grid.Row="1" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="0" Text="Widgety"/>
+            <Button Grid.Row="1" Content="MLRestTestButton" HorizontalAlignment="Left" VerticalAlignment="Top" Click="mlrestTestButton_Click"/>
+        </Grid>
+        <GridSplitter Grid.Column="3" Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <Grid Grid.Column="4" Grid.Row="1" >
+            <wv2:WebView2 Source="https://www.m-line.cz/Nastenka1.html" />
+        </Grid>
+        <GridSplitter Grid.Column="5" Grid.Row="1" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <Grid Grid.Column="6" Grid.Row="1" >
+            <TextBlock Text="Přehled"/>
+        </Grid>
+
+        <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
+            <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>
+            <TextBlock Text="{Binding RestPort, StringFormat='RestPort: {0}'}"/>
+            <TextBlock Text="{Binding Namespace, StringFormat='Namespace: {0}'}"/>
+            <TextBlock Text="{Binding Idfa, StringFormat='Idfa: {0}'}"/>
+            <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
+            <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
+            <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
+        </StatusBar>
+        
+    </Grid>
+    
+</Window>
