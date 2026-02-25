@@ -1,0 +1,6 @@
+@ServiceGtfsRt_HostAddress = http://localhost:5110
+
+GET {{ServiceGtfsRt_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
