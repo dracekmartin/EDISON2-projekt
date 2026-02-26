@@ -1,0 +1,1 @@
+Je potřeba mít zbuilděnej hlavní repo (alespoň verze od commitu bd37054 16:35 24.2.2026) do C:\Edison\, protože se přistupuje k EDISONAPI, EDISONMAIN2API a MLRest. Zatim funguje v tom levym stromu proklik jen do Plánu dopravy, u ostatních jsem ještě nezkopíroval z branche do masteru to použítí EDISONMAIN2API do Program.cs/vb.
