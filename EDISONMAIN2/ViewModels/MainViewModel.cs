@@ -12,6 +12,8 @@ using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2
 {
+    record CompanyItem(string Id, string Database);
+
     class MainViewModel : INotifyPropertyChanged
     {
         private readonly IEdisonMainDataService _dataService;
@@ -30,7 +32,7 @@ namespace EDISONMAIN2
 
             var companies = _dataService.GetCompanies();
 
-            VisibleIdfas = [.. companies];
+            VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
 
             var tree = _dataService.GetModuleTree(Namespace, Idfa);
@@ -42,7 +44,7 @@ namespace EDISONMAIN2
 
         public ObservableCollection<IModule> TopLevelModules { get; }
 
-        public ObservableCollection<CompanyStruct> VisibleIdfas { get; }
+        public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 
         private int _selectedCompanyIndex;
         public int SelectedCompanyIndex
@@ -57,7 +59,7 @@ namespace EDISONMAIN2
             }
         }
 
-        public CompanyStruct SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
+        public CompanyItem SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
 
         public ConnectionParams ConnParams { get; init; }
 
