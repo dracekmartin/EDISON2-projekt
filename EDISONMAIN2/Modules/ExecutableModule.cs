@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EDISONMAIN2
+namespace EDISONMAIN2.Modules
 {
     public class ExecutableModule : IModule
     {

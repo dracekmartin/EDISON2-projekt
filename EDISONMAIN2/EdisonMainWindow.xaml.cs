@@ -1,4 +1,6 @@
-﻿using System;
+﻿using EDISONMAIN2.Modules;
+using EDISONMAIN2.ViewModels;
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -19,10 +21,10 @@ namespace EDISONMAIN2
         {
         }
 
-        private void tvApps_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
             DependencyObject? clickedItem = e.OriginalSource as DependencyObject;
-            while (clickedItem != null && !(clickedItem is TreeViewItem))
+            while (clickedItem != null && clickedItem is not TreeViewItem)
                 clickedItem = VisualTreeHelper.GetParent(clickedItem);
 
             if (clickedItem is TreeViewItem item && item.DataContext is IModule module)
@@ -37,15 +39,6 @@ namespace EDISONMAIN2
         {
             if (DataContext is MainViewModel vm)
                 vm.CloseAllProcesses();
-        }
-
-        private void mlrestTestButton_Click(object sender, RoutedEventArgs e)
-        {
-            /*
-            CVar cvar = mlRest.Query("ALVA.MHD2.PlanDopravy.Forms.formMHD2PlanDopravyMain", "Test", new CVar());
-            mlRest.RestStatus.ThrowIfError();
-            MessageBox.Show($"testkey: {cvar["testkey"]}", "", MessageBoxButton.OK, MessageBoxImage.Information);
-            */
         }
     }
 }

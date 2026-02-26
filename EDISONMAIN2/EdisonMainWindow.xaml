@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        xmlns:local="clr-namespace:EDISONMAIN2" d:DataContext="{d:DesignInstance Type=local:MainViewModel}"
+        xmlns:local="clr-namespace:EDISONMAIN2" xmlns:viewmodels="clr-namespace:EDISONMAIN2.ViewModels" xmlns:modules="clr-namespace:EDISONMAIN2.Modules" d:DataContext="{d:DesignInstance Type=viewmodels:MainViewModel}"
         mc:Ignorable="d"
         Title="M-line EDISON" Height="800" Width="1200" Loaded="Window_Loaded" Closed="Window_Closed" Icon="/Icons/cube_molecule.png" WindowStartupLocation="CenterScreen" WindowState="Maximized">
     <Grid>
@@ -31,12 +31,12 @@
                 </ComboBox.ItemTemplate>
             </ComboBox>
         </ToolBar>
-        <TreeView Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TopLevelModules}" MouseDoubleClick="tvApps_MouseDoubleClick" Grid.ColumnSpan="2">
+        <TreeView Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TopLevelModules}" MouseDoubleClick="Tree_MouseDoubleClick" Grid.ColumnSpan="2">
             <TreeView.Resources>
-                <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type local:ModuleFamily}">
+                <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
                     <TextBlock Text="{Binding DisplayedName}" />
                 </HierarchicalDataTemplate>
-                <DataTemplate DataType="{x:Type local:ExecutableModule}">
+                <DataTemplate DataType="{x:Type modules:ExecutableModule}">
                     <TextBlock Text="{Binding DisplayedName}" />
                 </DataTemplate>
                 <Style TargetType="{x:Type TreeViewItem}">
@@ -52,8 +52,6 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <TextBlock Grid.Row="0" Text="Widgety"/>
-            <Button Grid.Row="1" Content="MLRestTestButton" HorizontalAlignment="Left" VerticalAlignment="Top" Click="mlrestTestButton_Click"/>
         </Grid>
         <GridSplitter Grid.Column="3" Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <Grid Grid.Column="4" Grid.Row="1" >

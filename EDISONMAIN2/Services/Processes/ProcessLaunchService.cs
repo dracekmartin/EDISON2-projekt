@@ -1,3 +1,4 @@
+using EDISONMAIN2.Modules;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -5,15 +6,10 @@ using System.IO;
 
 namespace EDISONMAIN2.Services.Processes
 {
-    public class ProcessLaunchService : IProcessLaunchService
+    public class ProcessLaunchService(ConnectionParams connParams) : IProcessLaunchService
     {
-        private readonly List<Process> _processes = new List<Process>();
-        private readonly ConnectionParams _connParams;
-
-        public ProcessLaunchService(ConnectionParams connParams)
-        {
-            _connParams = connParams;
-        }
+        private readonly List<Process> _processes = [];
+        private readonly ConnectionParams _connParams = connParams;
 
         public void Launch(ExecutableModule module, string Namespace, string Idfa)
         {

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using ALVA.EDISONAPI;
 using ALWA.SYS;
+using EDISONMAIN2.Modules;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Services.Data
@@ -18,7 +19,7 @@ namespace EDISONMAIN2.Services.Data
         private MLRest? _customerSpecificMLRest;
 
         private MLRest CreateMLRest(string database, string idfa) =>
-            new MLRest(_connParams.Server, _connParams.RestPort, database, idfa)
+            new(_connParams.Server, _connParams.RestPort, database, idfa)
             {
                 LoginName = _connParams.UserName,
                 FullName = _connParams.FullName,
@@ -54,7 +55,7 @@ namespace EDISONMAIN2.Services.Data
             return ParseTree(treeData, mlRest.Delimiter);
         }
 
-        private static IReadOnlyList<IModule> ParseTree(object[] treeData, char delimiter)
+        private static ObservableCollection<IModule> ParseTree(object[] treeData, char delimiter)
         {
             var result = new ObservableCollection<IModule>();
             var familyStack = new Stack<ObservableCollection<IModule>>();

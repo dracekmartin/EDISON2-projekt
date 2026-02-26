@@ -5,12 +5,13 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ALVA.EDISONAPI;
 using EDISONMAIN2.Commands;
+using EDISONMAIN2.Modules;
 using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Processes;
 using static ALVA.EDISONAPI.Database;
 
-namespace EDISONMAIN2
+namespace EDISONMAIN2.ViewModels
 {
     record CompanyItem(string Id, string Database);
 
@@ -28,7 +29,7 @@ namespace EDISONMAIN2
 
             OpenModuleCommand = new RelayCommand<IModule>(OpenModule);
 
-            TopLevelModules = new ObservableCollection<IModule>();
+            TopLevelModules = [];
 
             var companies = _dataService.GetCompanies();
 

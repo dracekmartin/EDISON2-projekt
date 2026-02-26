@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EDISONMAIN2
+namespace EDISONMAIN2.Modules
 {
     class ModuleFamily : IModule
     {
@@ -13,6 +13,6 @@ namespace EDISONMAIN2
 
         public bool IsExpanded { get; set; } = false;
 
-        public ObservableCollection<IModule> NestedModules { get; set; } = new ObservableCollection<IModule>();
+        public ObservableCollection<IModule> NestedModules { get; set; } = [];
     }
 }

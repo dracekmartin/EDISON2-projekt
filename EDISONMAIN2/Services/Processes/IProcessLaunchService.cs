@@ -1,3 +1,5 @@
+using EDISONMAIN2.Modules;
+
 namespace EDISONMAIN2.Services.Processes
 {
     public interface IProcessLaunchService
