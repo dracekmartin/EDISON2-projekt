@@ -33,4 +33,8 @@
     <Resource Include="Icons\cube_molecule.png" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\EDControls\EDControls.csproj" />
+  </ItemGroup>
+
 </Project>

@@ -33,6 +33,8 @@
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
+            <Separator/>
+            <Button Content="Test FormInput" Click="TestFormInput_Click"/>
         </ToolBar>
         <TreeView Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TopLevelModules}" MouseDoubleClick="Tree_MouseDoubleClick" Grid.ColumnSpan="2">
             <TreeView.Resources>
