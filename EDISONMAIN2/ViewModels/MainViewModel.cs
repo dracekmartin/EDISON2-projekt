@@ -2,20 +2,27 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Input;
 using ALVA.EDISONAPI;
 using ALWA.SYS;
+using EDISONMAIN2.Commands;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2
 {
     class MainViewModel : INotifyPropertyChanged
     {
+        private readonly List<Process> _processes = new List<Process>();
+
+        public ICommand OpenModuleCommand { get; }
         public MLRest CreateMLRest()
         {
             return new MLRest(Server, RestPort, Namespace, Idfa)
@@ -28,6 +35,8 @@ namespace EDISONMAIN2
 
         public MainViewModel()
         {
+            OpenModuleCommand = new RelayCommand<IModule>(OpenModule);
+
             TopLevelModules = new ObservableCollection<IModule>();
 
             var mlRest = CreateMLRest();
@@ -136,6 +145,35 @@ namespace EDISONMAIN2
             {
                 _mlp = value;
                 NotifyPropertyChanged();
+            }
+        }
+
+        private void OpenModule(IModule module)
+        {
+            if (module is ExecutableModule executableModule && !string.IsNullOrEmpty(executableModule.ExecutablePath))
+            {
+                var prc = Process.Start(new ProcessStartInfo()
+                {
+                    UseShellExecute = true,
+                    FileName = Path.Combine("C:\\EDISON", executableModule.ExecutablePath),
+                    Arguments = $"EDISONMAIN2 \"{Server}\" \"{RestPort}\" \"{Namespace}\" \"{Idfa}\" \"{UserName}\" \"{FullName}\" \"{Mlp}\" \"{executableModule.FormName}\"",
+                });
+                if (prc != null) _processes.Add(prc);
+            }
+        }
+
+        public void CloseAllProcesses()
+        {
+            foreach (var process in _processes)
+            {
+                try
+                {
+                    if (!process.HasExited) process.Kill();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error closing process: {ex.Message}");
+                }
             }
         }
 
