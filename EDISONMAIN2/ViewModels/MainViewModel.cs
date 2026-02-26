@@ -49,49 +49,6 @@ namespace EDISONMAIN2
                             ExecutablePath = "MHD2Linky.exe",
                             FormName = "ALVA.MHD2.Linky.formMHD2LinkyHlavniOkno"
                         },
-                        new ModuleFamily
-                        {
-                            DisplayedName = "Nastavení a číselníky",
-                            IsExpanded = true,
-                            NestedModules = new ObservableCollection<IModule>
-                            {
-                                new ExecutableModule
-                                {
-                                    DisplayedName = "Návrhář sestav JŘ",
-                                    ExecutablePath = "TISKJR.exe",
-                                    FormName = "ALVA.TISKJR.formTISKJRSeznamSestav"
-                                },
-                            }
-                        }
-                    }
-                }
-            );
-            TopLevelModules.Add(
-                new ModuleFamily
-                {
-                    DisplayedName = "Sklady",
-                    IsExpanded = false,
-                    NestedModules = new ObservableCollection<IModule>
-                    {
-                        new ExecutableModule
-                        {
-                            DisplayedName = "Doklady",
-                            ExecutablePath = "MTZ.exe",
-                            FormName = "ALVA.MTZ.formMTZDoklady"
-                        },
-                        new ModuleFamily
-                        {
-                            DisplayedName = "Nastavení a číselníky",
-                            NestedModules = new ObservableCollection<IModule>
-                            {
-                                new ExecutableModule
-                                {
-                                    DisplayedName = "Materiály",
-                                    ExecutablePath = "MTZ.exe",
-                                    FormName = "ALVA.MTZ.formMTZMaterialy"
-                                },
-                            }
-                        },
                     }
                 }
             );
