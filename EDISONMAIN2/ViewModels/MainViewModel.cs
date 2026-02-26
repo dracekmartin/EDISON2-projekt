@@ -30,30 +30,6 @@ namespace EDISONMAIN2
         {
             TopLevelModules = new ObservableCollection<IModule>();
 
-            TopLevelModules.Add(
-                new ModuleFamily
-                {
-                    DisplayedName = "MHD",
-                    IsExpanded = true,
-                    NestedModules = new ObservableCollection<IModule>
-                    {
-                        new ExecutableModule
-                        {
-                            DisplayedName = "Plán dopravy",
-                            ExecutablePath = "MHD2PlanDopravy.exe",
-                            FormName = "ALVA.MHD2.PlanDopravy.formMHD2PlanDopravyMain"
-                        },
-                        new ExecutableModule
-                        {
-                            DisplayedName = "Linky a oběhy",
-                            ExecutablePath = "MHD2Linky.exe",
-                            FormName = "ALVA.MHD2.Linky.formMHD2LinkyHlavniOkno"
-                        },
-                    }
-                }
-            );
-
-
             var mlRest = CreateMLRest();
 
             string errState = "";
@@ -63,6 +39,33 @@ namespace EDISONMAIN2
 
             VisibleIdfas = [.. companyList];
             SelectedCompany = VisibleIdfas.First(x => x.Id == "CB_DP");
+
+            mlRest = CreateMLRest();
+            object[] treeData = mlRest.Query("ALVA.EDISONMAIN2.API.Tree", "GetTree", Array.Empty<object>());
+            mlRest.RestStatus.ThrowIfError();
+
+            var familyStack = new Stack<ObservableCollection<IModule>>();
+            ObservableCollection<IModule> currentList = TopLevelModules;
+
+            for (int i = 1; i < treeData.Length; i++)
+            {
+                string[] parts = treeData[i]?.ToString()?.Split(mlRest.Delimiter) ?? [];
+                switch (parts[0])
+                {
+                    case "FAMILY":
+                        var family = new ModuleFamily { DisplayedName = parts[1], IsExpanded = parts[2] == "1" };
+                        currentList.Add(family);
+                        familyStack.Push(currentList);
+                        currentList = family.NestedModules;
+                        break;
+                    case "EXE":
+                        currentList.Add(new ExecutableModule { DisplayedName = parts[1], ExecutablePath = parts[2], FormName = parts[3] });
+                        break;
+                    case "FAMILY_END":
+                        if (familyStack.Count > 0) currentList = familyStack.Pop();
+                        break;
+                }
+            }
         }
 
         public ObservableCollection<IModule> TopLevelModules { get; set; }
