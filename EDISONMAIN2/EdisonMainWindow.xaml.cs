@@ -21,7 +21,7 @@ namespace EDISONMAIN2
 
         private void tvApps_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            DependencyObject clickedItem = e.OriginalSource as DependencyObject;
+            DependencyObject? clickedItem = e.OriginalSource as DependencyObject;
             while (clickedItem != null && !(clickedItem is TreeViewItem))
                 clickedItem = VisualTreeHelper.GetParent(clickedItem);
 

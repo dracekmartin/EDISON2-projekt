@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EDISONMAIN2
 {
-    class ExecutableModule : IModule
+    public class ExecutableModule : IModule
     {
         public string DisplayedName { get; set; } = "";
 

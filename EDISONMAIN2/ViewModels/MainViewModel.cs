@@ -1,188 +1,83 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Input;
 using ALVA.EDISONAPI;
-using ALWA.SYS;
 using EDISONMAIN2.Commands;
+using EDISONMAIN2.Services;
+using EDISONMAIN2.Services.Data;
+using EDISONMAIN2.Services.Processes;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2
 {
     class MainViewModel : INotifyPropertyChanged
     {
-        private readonly List<Process> _processes = new List<Process>();
+        private readonly IEdisonMainDataService _dataService;
+        private readonly IProcessLaunchService _processService;
 
         public ICommand OpenModuleCommand { get; }
-        public MLRest CreateMLRest()
-        {
-            return new MLRest(Server, RestPort, Namespace, Idfa)
-            {
-                LoginName = UserName,
-                FullName = FullName,
-                Mlp = Mlp.ToString()
-            };
-        }
 
-        public MainViewModel()
+        public MainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
         {
+            _dataService = dataService;
+            _processService = processService;
+
             OpenModuleCommand = new RelayCommand<IModule>(OpenModule);
 
             TopLevelModules = new ObservableCollection<IModule>();
 
-            var mlRest = CreateMLRest();
+            var companies = _dataService.GetCompanies();
 
-            string errState = "";
-            var companyList = ALVA.EDISONAPI.Database.GetCompanyList(ref errState, mlRest, false);
+            VisibleIdfas = [.. companies];
+            _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
 
-            if (!string.IsNullOrEmpty(errState)) MessageBox.Show(errState);
+            var tree = _dataService.GetModuleTree(Namespace, Idfa);
+            foreach (var module in tree)
+                TopLevelModules.Add(module);
 
-            VisibleIdfas = [.. companyList];
-            SelectedCompany = VisibleIdfas.First(x => x.Id == "CB_DP");
-
-            mlRest = CreateMLRest();
-            object[] treeData = mlRest.Query("ALVA.EDISONMAIN2.API.Tree", "GetTree", Array.Empty<object>());
-            mlRest.RestStatus.ThrowIfError();
-
-            var familyStack = new Stack<ObservableCollection<IModule>>();
-            ObservableCollection<IModule> currentList = TopLevelModules;
-
-            for (int i = 1; i < treeData.Length; i++)
-            {
-                string[] parts = treeData[i]?.ToString()?.Split(mlRest.Delimiter) ?? [];
-                switch (parts[0])
-                {
-                    case "FAMILY":
-                        var family = new ModuleFamily { DisplayedName = parts[1], IsExpanded = parts[2] == "1" };
-                        currentList.Add(family);
-                        familyStack.Push(currentList);
-                        currentList = family.NestedModules;
-                        break;
-                    case "EXE":
-                        currentList.Add(new ExecutableModule { DisplayedName = parts[1], ExecutablePath = parts[2], FormName = parts[3] });
-                        break;
-                    case "FAMILY_END":
-                        if (familyStack.Count > 0) currentList = familyStack.Pop();
-                        break;
-                }
-            }
+            ConnParams = connParams;
         }
 
-        public ObservableCollection<IModule> TopLevelModules { get; set; }
+        public ObservableCollection<IModule> TopLevelModules { get; }
 
-        public ObservableCollection<CompanyStruct> VisibleIdfas { get; set; }
+        public ObservableCollection<CompanyStruct> VisibleIdfas { get; }
 
-        string _server = "192.168.16.1";
-        public string Server
+        private int _selectedCompanyIndex;
+        public int SelectedCompanyIndex
         {
-            get => _server;
+            get => _selectedCompanyIndex;
             set
             {
-                _server = value;
+                _selectedCompanyIndex = value;
                 NotifyPropertyChanged();
+                NotifyPropertyChanged(nameof(Namespace));
+                NotifyPropertyChanged(nameof(Idfa));
             }
         }
 
-        int _restPort = 57770;
-        public int RestPort
-        {
-            get => _restPort;
-            set
-            {
-                _restPort = value;
-                NotifyPropertyChanged();
-            }
-        }
+        public CompanyStruct SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
 
-        public CompanyStruct SelectedCompany { get; set; }
+        public ConnectionParams ConnParams { get; init; }
 
-        public string Namespace
-        {
-            get => SelectedCompany.Database;
-        }
+        public string Namespace => SelectedCompany.Database;
 
-        public string Idfa
-        {
-            get => SelectedCompany.Id;
-        }
+        public string Idfa => SelectedCompany.Id;
 
-        string _userName = "martin.hubata";
-        public string UserName
-        {
-            get => _userName;
-            set
-            {
-                _userName = value;
-                NotifyPropertyChanged();
-            }
-        }
-
-        string _fullName = "martin.hubata";
-        public string FullName
-        {
-            get => _fullName;
-            set
-            {
-                _fullName = value;
-                NotifyPropertyChanged();
-            }
-        }
-
-        int _mlp = 167;
-        public int Mlp
-        {
-            get => _mlp;
-            set
-            {
-                _mlp = value;
-                NotifyPropertyChanged();
-            }
-        }
+        public void CloseAllProcesses() => _processService.CloseAll();
 
         private void OpenModule(IModule module)
         {
-            if (module is ExecutableModule executableModule && !string.IsNullOrEmpty(executableModule.ExecutablePath))
-            {
-                var prc = Process.Start(new ProcessStartInfo()
-                {
-                    UseShellExecute = true,
-                    FileName = Path.Combine("C:\\EDISON", executableModule.ExecutablePath),
-                    Arguments = $"EDISONMAIN2 \"{Server}\" \"{RestPort}\" \"{Namespace}\" \"{Idfa}\" \"{UserName}\" \"{FullName}\" \"{Mlp}\" \"{executableModule.FormName}\"",
-                });
-                if (prc != null) _processes.Add(prc);
-            }
+            if (module is ExecutableModule executableModule)
+                _processService.Launch(executableModule, Namespace, Idfa);
         }
 
-        public void CloseAllProcesses()
-        {
-            foreach (var process in _processes)
-            {
-                try
-                {
-                    if (!process.HasExited) process.Kill();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error closing process: {ex.Message}");
-                }
-            }
-        }
-
-        void NotifyPropertyChanged([CallerMemberName] string property = null)
+        void NotifyPropertyChanged([CallerMemberName] string? property = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
-
 }

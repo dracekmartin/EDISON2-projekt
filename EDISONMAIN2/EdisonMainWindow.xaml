@@ -4,12 +4,9 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
-        xmlns:local="clr-namespace:EDISONMAIN2"
+        xmlns:local="clr-namespace:EDISONMAIN2" d:DataContext="{d:DesignInstance Type=local:MainViewModel}"
         mc:Ignorable="d"
         Title="M-line EDISON" Height="800" Width="1200" Loaded="Window_Loaded" Closed="Window_Closed" Icon="/Icons/cube_molecule.png" WindowStartupLocation="CenterScreen" WindowState="Maximized">
-    <Window.DataContext>
-        <local:MainViewModel />
-    </Window.DataContext>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="20"/>
@@ -26,7 +23,7 @@
             <RowDefinition Height="24" />
         </Grid.RowDefinitions>
         <ToolBar Grid.Row="0" Grid.ColumnSpan="100">
-            <ComboBox ItemsSource="{Binding VisibleIdfas}" SelectedItem="{Binding SelectedCompany}" >
+            <ComboBox ItemsSource="{Binding VisibleIdfas}" SelectedIndex="{Binding SelectedCompanyIndex}" >
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding Id}" />
@@ -68,13 +65,13 @@
         </Grid>
 
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
-            <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>
-            <TextBlock Text="{Binding RestPort, StringFormat='RestPort: {0}'}"/>
+            <TextBlock Text="{Binding ConnParams.Server, StringFormat='Server: {0}'}"/>
+            <TextBlock Text="{Binding ConnParams.RestPort, StringFormat='RestPort: {0}'}"/>
             <TextBlock Text="{Binding Namespace, StringFormat='Namespace: {0}'}"/>
             <TextBlock Text="{Binding Idfa, StringFormat='Idfa: {0}'}"/>
-            <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
-            <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
-            <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
+            <TextBlock Text="{Binding ConnParams.UserName, StringFormat='UserName: {0}'}"/>
+            <TextBlock Text="{Binding ConnParams.FullName, StringFormat='FullName: {0}'}"/>
+            <TextBlock Text="{Binding ConnParams.Mlp, StringFormat='Mlp: {0}'}"/>
         </StatusBar>
         
     </Grid>
