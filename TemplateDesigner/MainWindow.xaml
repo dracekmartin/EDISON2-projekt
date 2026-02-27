@@ -37,6 +37,11 @@
                 <MenuItem x:Name="MenuRedo"   Header="Vpřed"  InputGestureText="Ctrl+Y" Click="MenuRedo_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuDelete" Header="Smazat" InputGestureText="Del"    Click="MenuDelete_Click"/>
+                <Separator/>
+                <MenuItem x:Name="MenuZForward"  Header="Přenést dopředu"       InputGestureText="Ctrl+PgUp"       Click="BtnZForward_Click"/>
+                <MenuItem x:Name="MenuZBackward" Header="Odeslat dozadu"        InputGestureText="Ctrl+PgDn"       Click="BtnZBackward_Click"/>
+                <MenuItem x:Name="MenuZFront"    Header="Přenést zcela dopředu" InputGestureText="Ctrl+Shift+PgUp" Click="BtnZFront_Click"/>
+                <MenuItem x:Name="MenuZBack"     Header="Odeslat zcela dozadu"  InputGestureText="Ctrl+Shift+PgDn" Click="BtnZBack_Click"/>
             </MenuItem>
             <MenuItem Header="Zobrazit">
                 <MenuItem x:Name="MenuGrid" Header="Mřížka" IsCheckable="True"
@@ -74,6 +79,11 @@
                 <ToggleButton x:Name="BtnSnap" Content="Snap" Padding="6,3"
                               Checked="BtnSnap_Changed" Unchecked="BtnSnap_Changed"
                               ToolTip="Přichytit na mřížku"/>
+                <Separator Style="{StaticResource ToolbarSep}"/>
+                <Button x:Name="BtnZForward"  Content="↑Z" ToolTip="Přenést dopředu (Ctrl+PgUp)"         Click="BtnZForward_Click"  Padding="6,3"/>
+                <Button x:Name="BtnZBackward" Content="↓Z" ToolTip="Odeslat dozadu (Ctrl+PgDn)"           Click="BtnZBackward_Click" Padding="6,3"/>
+                <Button x:Name="BtnZFront"    Content="⤒Z" ToolTip="Přenést zcela dopředu (Ctrl+Shift+PgUp)" Click="BtnZFront_Click"    Padding="6,3"/>
+                <Button x:Name="BtnZBack"     Content="⤓Z" ToolTip="Odeslat zcela dozadu (Ctrl+Shift+PgDn)"  Click="BtnZBack_Click"     Padding="6,3"/>
                 <Separator Style="{StaticResource ToolbarSep}"/>
                 <Button x:Name="BtnSave" Content="Uložit" Click="MenuSave_Click" Padding="6,3" FontWeight="SemiBold"/>
                 <Button x:Name="BtnOpen" Content="Otevřít" Click="MenuOpen_Click" Padding="6,3"/>

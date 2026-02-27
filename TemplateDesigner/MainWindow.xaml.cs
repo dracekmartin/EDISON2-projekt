@@ -405,6 +405,95 @@ public partial class MainWindow : Window
 
     private void MenuDelete_Click(object sender, RoutedEventArgs e) => DeleteSelected();
 
+    // ─────────────────────────────────────────────────────────────────────
+    // ZIndex — pořadí vykreslování
+
+    private void BtnZForward_Click(object sender, RoutedEventArgs e)  => ChangeZIndex(+1, toExtreme: false);
+    private void BtnZBackward_Click(object sender, RoutedEventArgs e) => ChangeZIndex(-1, toExtreme: false);
+    private void BtnZFront_Click(object sender, RoutedEventArgs e)    => ChangeZIndex(+1, toExtreme: true);
+    private void BtnZBack_Click(object sender, RoutedEventArgs e)     => ChangeZIndex(-1, toExtreme: true);
+
+    /// <summary>
+    /// Změní ZIndex vybraných elementů.
+    /// <paramref name="sign"/> +1 = dopředu, -1 = dozadu.
+    /// <paramref name="toExtreme"/> true = zcela dopředu/dozadu, false = o jeden krok.
+    /// </summary>
+    private void ChangeZIndex(int sign, bool toExtreme)
+    {
+        if (_state.SelectedElements.Count == 0 || _state.ActiveSection is null) return;
+
+        var section  = _state.ActiveSection;
+        var selected = _state.SelectedElements
+            .Where(el => section.Elements.Contains(el))
+            .ToList();
+        if (selected.Count == 0) return;
+
+        var commands = new List<IDesignerCommand>();
+
+        if (toExtreme && sign > 0)
+        {
+            // Přenést zcela dopředu: každý vybraný dostane ZIndex = max+1, max+2 …
+            int baseZ = section.Elements
+                .Where(el => !selected.Contains(el))
+                .Select(el => el.ZIndex)
+                .DefaultIfEmpty(-1)
+                .Max() + 1;
+            foreach (var el in selected.OrderBy(e => e.ZIndex))
+            {
+                int oldZ = el.ZIndex;
+                int newZ = baseZ++;
+                if (oldZ == newZ) continue;
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+            }
+        }
+        else if (toExtreme && sign < 0)
+        {
+            // Odeslat zcela dozadu: vybrané dostanou ZIndex 0, 1 … ostatní se posunou nahoru
+            int shift = selected.Count;
+            // Ostatní elementy posunou ZIndex o shift nahoru
+            foreach (var el in section.Elements.Where(e => !selected.Contains(e)))
+            {
+                int oldZ = el.ZIndex;
+                int newZ = oldZ + shift;
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+            }
+            // Vybrané dostanou 0, 1, 2 …
+            int z = 0;
+            foreach (var el in selected.OrderBy(e => e.ZIndex))
+            {
+                int oldZ = el.ZIndex;
+                int newZ = z++;
+                if (oldZ == newZ) continue;
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+            }
+        }
+        else
+        {
+            // Posun o 1 krok (dopředu nebo dozadu)
+            foreach (var el in selected)
+            {
+                int oldZ = el.ZIndex;
+                int newZ = Math.Max(0, oldZ + sign);
+                if (oldZ == newZ) continue;
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+            }
+        }
+
+        if (commands.Count == 0) return;
+
+        string desc = (sign > 0, toExtreme) switch
+        {
+            (true,  true)  => "Přenést zcela dopředu",
+            (true,  false) => "Přenést dopředu",
+            (false, true)  => "Odeslat zcela dozadu",
+            _              => "Odeslat dozadu"
+        };
+
+        _state.Execute(commands.Count == 1 ? commands[0] : new CompositeCommand(desc, commands));
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
+    }
+
     private void DeleteSelected()
     {
         if (_state.SelectedElements.Count == 0) return;
@@ -917,6 +1006,18 @@ public partial class MainWindow : Window
         else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             MenuPageProps_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (e.Key == Key.PageUp && ctrl)
+        {
+            // Ctrl+PgUp / Ctrl+Shift+PgUp — ZIndex dopředu
+            ChangeZIndex(+1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+        }
+        else if (e.Key == Key.PageDown && ctrl)
+        {
+            // Ctrl+PgDn / Ctrl+Shift+PgDn — ZIndex dozadu
+            ChangeZIndex(-1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
             e.Handled = true;
         }
         else if (e.Key == Key.A && ctrl && _state.ActiveSection is not null)

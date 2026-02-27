@@ -152,6 +152,16 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - **Snap** — přichytávání elementů na mřížku při pohybu a resize
 - Velikost mřížky: 5 mm (výchozí)
 
+### ZIndex — pořadí překrývání
+- **Ctrl+PgUp** — přenést dopředu (ZIndex +1)
+- **Ctrl+PgDn** — odeslat dozadu (ZIndex −1, min 0)
+- **Ctrl+Shift+PgUp** — přenést zcela dopředu (nad všechny ostatní v sekci)
+- **Ctrl+Shift+PgDn** — odeslat zcela dozadu (pod všechny ostatní)
+- Stejné operace v menu **Upravit** a tlačítka ↑Z ↓Z ⤒Z ⤓Z v toolbaru
+- Funguje i pro multi-select (všechny vybrané elementy se posunou najednou)
+- Efekt je viditelný jen když se elementy **překrývají** (např. obdélník jako pozadí za textem)
+- Vše undo-able
+
 ### Undo / Redo
 - **Ctrl+Z** — vrátit poslední akci
 - **Ctrl+Y** — zopakovat vrácenou akci
@@ -188,6 +198,10 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 | **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |
 | **Ctrl+scroll** | Zoom in / out |
 | **Ctrl+Shift+P** | Vlastnosti stránky (rozměry, okraje) |
+| **Ctrl+PgUp** | Přenést dopředu (ZIndex +1) |
+| **Ctrl+PgDn** | Odeslat dozadu (ZIndex −1) |
+| **Ctrl+Shift+PgUp** | Přenést zcela dopředu |
+| **Ctrl+Shift+PgDn** | Odeslat zcela dozadu |
 
 ---
 
@@ -205,7 +219,7 @@ V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu
 ## Co bude přidáno (plánované funkce)
 
 - **Editor sloupců tabulky** — přidat/odebrat/přesunout sloupec, nastavit šířku a záhlaví
-- **ZIndex ovládání** — Přenést dopředu / Odeslat dozadu (Ctrl+] / Ctrl+[)
+- ~~ZIndex ovládání~~ — hotovo
 - **Zarovnání elementů** — zarovnat vlevo/vpravo/na střed/nahoru/dolů, distribuovat rovnoměrně (pro multi-select)
 - **Zamčení elementu** — toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)
 - **Live preview s mock daty** — pravý panel s náhledem výstupu
