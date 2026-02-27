@@ -28,7 +28,28 @@ public class TextElement : TemplateElement
 
     public override void Render(RenderContext ctx)
     {
-        // TODO: implementovat renderování textu
+        if (Width <= 0) return;
+        var resolvedText = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
+        if (string.IsNullOrEmpty(resolvedText)) return;
+
+        var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+
+        var typeface = SKTypeface.FromFamilyName(
+            FontFamily,
+            FontWeight == TextFontWeight.Bold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal,
+            SKFontStyleWidth.Normal,
+            FontStyle == TextFontStyle.Italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright)
+            ?? SKTypeface.Default;
+
+        // FontSize je v bodech (pt): 1pt = 0.3528mm → mm → px
+        float fontSizePx = ctx.Px(FontSize * 0.3528f);
+        using var font = new SKFont(typeface, fontSizePx);
+        using var paint = new SKPaint { Color = SkTextColor, IsAntialias = true };
+
+        ctx.Canvas.Save();
+        ctx.Canvas.ClipRect(rect);
+        ctx.Canvas.DrawText(resolvedText, rect.Left + 1f, rect.Top + fontSizePx, font, paint);
+        ctx.Canvas.Restore();
     }
 
     public override TemplateElement Clone() => new TextElement

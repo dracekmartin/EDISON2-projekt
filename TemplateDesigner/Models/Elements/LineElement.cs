@@ -20,7 +20,31 @@ public class LineElement : TemplateElement
 
     public override void Render(RenderContext ctx)
     {
-        // TODO: implementovat renderování čáry
+        using var paint = new SKPaint
+        {
+            Color = SkColor,
+            StrokeWidth = Math.Max(0.5f, ctx.Px(StrokeWidth)),
+            IsAntialias = true
+        };
+
+        if (Style != LineStyle.Solid)
+        {
+            float dash = ctx.Px(Style == LineStyle.Dashed ? 3f : 1f);
+            float gap  = ctx.Px(Style == LineStyle.Dashed ? 2f : 1.5f);
+            paint.PathEffect = SKPathEffect.CreateDash([dash, gap], 0);
+        }
+
+        if (Orientation == LineOrientation.Horizontal)
+        {
+            float midY = Y + (Height ?? 0) / 2f;
+            ctx.Canvas.DrawLine(ctx.ToCanvas(X, midY), ctx.ToCanvas(X + Width, midY), paint);
+        }
+        else
+        {
+            float lineH = Height ?? Width;
+            float midX = X + Width / 2f;
+            ctx.Canvas.DrawLine(ctx.ToCanvas(midX, Y), ctx.ToCanvas(midX, Y + lineH), paint);
+        }
     }
 
     public override TemplateElement Clone() => new LineElement

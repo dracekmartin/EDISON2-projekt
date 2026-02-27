@@ -32,6 +32,9 @@ Systém se skládá ze dvou částí:
   ```
 - Parametr eventu se přijímá jako `object` a přetypovává přes `dynamic` kvůli omezení kompilátoru
 - NU1701 warningy jsou očekávané a neškodné — balíčky fungují správně za běhu
+- `using SkiaSharp;` **není** v implicitních using WPF projektu — přidej explicitně do každého souboru, kde se používají SK typy (`SKCanvas`, `SKPaint`, `SKColor`, `SKFont`…)
+- `using System.IO;` taktéž není implicitní — přidej do souborů pracujících se soubory
+- `SKFilterQuality` v SkiaSharp 3.x **neexistuje** — byl odebrán; pro kvalitu renderování nastav `SKSamplingOptions` nebo nech výchozí hodnotu
 
 ---
 

@@ -25,7 +25,23 @@ public class RectangleElement : TemplateElement
 
     public override void Render(RenderContext ctx)
     {
-        // TODO: implementovat renderování obdélníku
+        if (Width <= 0) return;
+        var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+        float rx = ctx.Px(CornerRadius), ry = rx;
+
+        if (SkFillColor.Alpha > 0)
+        {
+            using var fill = new SKPaint { Color = SkFillColor, IsAntialias = CornerRadius > 0 };
+            if (CornerRadius > 0) ctx.Canvas.DrawRoundRect(rect, rx, ry, fill);
+            else ctx.Canvas.DrawRect(rect, fill);
+        }
+
+        if (StrokeWidth > 0 && SkStrokeColor.Alpha > 0)
+        {
+            using var stroke = new SKPaint { Color = SkStrokeColor, IsStroke = true, StrokeWidth = Math.Max(0.5f, ctx.Px(StrokeWidth)), IsAntialias = true };
+            if (CornerRadius > 0) ctx.Canvas.DrawRoundRect(rect, rx, ry, stroke);
+            else ctx.Canvas.DrawRect(rect, stroke);
+        }
     }
 
     public override TemplateElement Clone() => new RectangleElement

@@ -1,3 +1,4 @@
+using SkiaSharp;
 using System.Text.Json.Serialization;
 
 namespace TemplateDesigner.Models.Elements;
@@ -32,7 +33,59 @@ public class TableElement : TemplateElement
 
     public override void Render(RenderContext ctx)
     {
-        // TODO: implementovat renderování tabulky
+        if (Width <= 0 || Columns.Count == 0) return;
+        var tableRect = ctx.ToCanvasRect(X, Y, Width, EffectiveDesignerHeight);
+
+        using var bgPaint     = new SKPaint { Color = SKColors.White };
+        using var borderPaint = new SKPaint { Color = new SKColor(0xFF999999), IsStroke = true, StrokeWidth = 0.5f };
+        using var sepPaint    = new SKPaint { Color = new SKColor(0xFFDDDDDD), StrokeWidth = 0.5f };
+
+        ctx.Canvas.DrawRect(tableRect, bgPaint);
+
+        float currentY = tableRect.Top;
+
+        // Záhlavní řádek
+        if (ShowHeader)
+        {
+            float headerPx = ctx.Px(HeaderHeight);
+            using var hBg   = new SKPaint { Color = new SKColor(0xFFE8E8E8) };
+            using var hFont = new SKFont(SKTypeface.Default, headerPx * 0.55f);
+            using var hText = new SKPaint { Color = new SKColor(0xFF333333), IsAntialias = true };
+            ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + headerPx), hBg);
+
+            float colX = tableRect.Left;
+            foreach (var col in Columns)
+            {
+                float colW = ctx.Px(col.Width);
+                ctx.Canvas.DrawText(col.Header, colX + 4, currentY + headerPx * 0.72f, hFont, hText);
+                ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + headerPx, sepPaint);
+                colX += colW;
+            }
+            ctx.Canvas.DrawLine(tableRect.Left, currentY + headerPx, tableRect.Right, currentY + headerPx, borderPaint);
+            currentY += headerPx;
+        }
+
+        // Vzorové datové řádky
+        float rowPx = ctx.Px(RowHeight);
+        using var rFont = new SKFont(SKTypeface.Default, rowPx * 0.55f);
+        using var rText = new SKPaint { Color = new SKColor(0xFF888888), IsAntialias = true };
+
+        for (int i = 0; i < DesignerPreviewRows && currentY + rowPx <= tableRect.Bottom; i++)
+        {
+            float colX = tableRect.Left;
+            foreach (var col in Columns)
+            {
+                float colW = ctx.Px(col.Width);
+                string sample = ctx.Data?.GetString(col.Field) ?? $"({col.Field})";
+                ctx.Canvas.DrawText(sample, colX + 4, currentY + rowPx * 0.72f, rFont, rText);
+                ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + rowPx, sepPaint);
+                colX += colW;
+            }
+            ctx.Canvas.DrawLine(tableRect.Left, currentY + rowPx, tableRect.Right, currentY + rowPx, sepPaint);
+            currentY += rowPx;
+        }
+
+        ctx.Canvas.DrawRect(tableRect, borderPaint);
     }
 
     public override TemplateElement Clone() => new TableElement

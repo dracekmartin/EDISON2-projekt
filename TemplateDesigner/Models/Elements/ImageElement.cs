@@ -1,3 +1,5 @@
+using SkiaSharp;
+
 namespace TemplateDesigner.Models.Elements;
 
 public class ImageElement : TemplateElement
@@ -18,7 +20,37 @@ public class ImageElement : TemplateElement
 
     public override void Render(RenderContext ctx)
     {
-        // TODO: implementovat renderování obrázku
+        if (Width <= 0) return;
+        var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+
+        // Pokus o dekódování obrázku
+        SKBitmap? bitmap = null;
+        if (!string.IsNullOrEmpty(ImageBase64))
+        {
+            try { bitmap = SKBitmap.Decode(Convert.FromBase64String(ImageBase64)); }
+            catch { /* neplatná data */ }
+        }
+
+        if (bitmap != null)
+        {
+            using (bitmap)
+            using (var paint = new SKPaint { IsAntialias = true })
+                ctx.Canvas.DrawBitmap(bitmap, rect, paint);
+        }
+        else
+        {
+            // Placeholder: rámeček s křížem
+            using var border = new SKPaint { Color = new SKColor(0xFFAAAAAA), IsStroke = true, StrokeWidth = 1f };
+            using var cross  = new SKPaint { Color = new SKColor(0xFFCCCCCC), StrokeWidth = 1f };
+            ctx.Canvas.DrawRect(rect, border);
+            ctx.Canvas.DrawLine(rect.Left, rect.Top, rect.Right, rect.Bottom, cross);
+            ctx.Canvas.DrawLine(rect.Right, rect.Top, rect.Left, rect.Bottom, cross);
+
+            string label = DataField is not null ? $"[{DataField}]" : "IMG";
+            using var font  = new SKFont(SKTypeface.Default, Math.Min(rect.Height * 0.3f, 12f));
+            using var paint = new SKPaint { Color = new SKColor(0xFF999999), IsAntialias = true };
+            ctx.Canvas.DrawText(label, rect.MidX - (label.Length * 3f), rect.MidY + font.Size / 3f, font, paint);
+        }
     }
 
     public override TemplateElement Clone() => new ImageElement
