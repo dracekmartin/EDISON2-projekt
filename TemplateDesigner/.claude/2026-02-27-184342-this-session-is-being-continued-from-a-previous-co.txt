@@ -1,0 +1,2098 @@
+
+ ▐▛███▜▌   Claude Code v2.1.62
+▝▜█████▛▘  Sonnet 4.6 · Claude Max
+  ▘▘ ▝▝    ~\source\EDISONMAIN2\TemplateDesigner
+
+✻ Conversation compacted (ctrl+o for history)
+
+  ⎿  Referenced file MainWindow.xaml.cs
+  ⎿  Read Commands\Implementations\MoveSectionCommand.cs (35 lines)
+  ⎿  Read Commands\Implementations\DeleteSectionCommand.cs (33 lines)
+  ⎿  Referenced file docs\architektura.md
+  ⎿  Read docs\README.md (197 lines)
+
+● Let me read the current state of MainWindow.xaml.cs to see what's already in
+  place before adding the missing methods.
+
+● Read 2 files (ctrl+o to expand)
+
+● Now let me find the RefreshSectionsList and related section methods:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(sed -n '120,300p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿              CmbZoom.SelectedIndex = newIdx; // spustí CmbZoom_Selectio
+     nChanged
+         }
+     … +95 lines (ctrl+o to expand)
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Now let me look at the keyboard handler:
+
+● Bash(sed -n '840,935p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿              maxDeltaX = Math.Min(maxDeltaX, sectionW - el.Width - init
+     X);
+     … +43 lines (ctrl+o to expand)
+
+● Now I have a clear picture. I need to add:
+  1. MoveSection() and DeleteSection() methods
+  2. Ctrl+Shift+Up/Down keyboard shortcut for section move
+
+  Let me add the MoveSection and DeleteSection methods after ActivateSection:
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 37 lines
+      229          InvalidateCanvas();                                   
+      230      }                                                         
+      231                                                                
+      232 +    private void MoveSection(Section section, int direction)  
+      233 +    {                                                         
+      234 +        int idx    =                                          
+          +_state.CurrentTemplate.Sections.IndexOf(section);             
+      235 +        int newIdx = idx + direction;                         
+      236 +        if (newIdx < 0 || newIdx >=                           
+          +_state.CurrentTemplate.Sections.Count) return;                
+      237 +                                                              
+      238 +        _state.Execute(new                                    
+          +MoveSectionCommand(_state.CurrentTemplate, section,           
+          +direction));                                                  
+      239 +        RefreshSectionsList();                                
+      240 +        UpdateCanvasSize();                                   
+      241 +        InvalidateCanvas();                                   
+      242 +    }                                                         
+      243 +                                                              
+      244 +    private void DeleteSection(Section section)               
+      245 +    {                                                         
+      246 +        if (_state.CurrentTemplate.Sections.Count <= 1)       
+      247 +        {                                                     
+      248 +            MessageBox.Show("Šablona musí mít alespoň jednu   
+          +sekci.", "Smazat sekci",                                      
+      249 +                MessageBoxButton.OK,                          
+          +MessageBoxImage.Warning);                                     
+      250 +            return;                                           
+      251 +        }                                                     
+      252 +                                                              
+      253 +        // Odznač elementy z mazané sekce                     
+      254 +        _state.SelectedElements.RemoveAll(el =>               
+          +section.Elements.Contains(el));                               
+      255 +                                                              
+      256 +        // Přepni aktivní sekci, pokud se maže ta aktivní     
+      257 +        if (_state.ActiveSection == section)                  
+      258 +            _state.ActiveSection =                            
+          +_state.CurrentTemplate.Sections                               
+      259 +                .FirstOrDefault(s => s != section);           
+      260 +                                                              
+      261 +        _propsWindow?.Hide();                                 
+      262 +        _state.Execute(new                                    
+          +DeleteSectionCommand(_state.CurrentTemplate, section));       
+      263 +        RefreshSectionsList();                                
+      264 +        UpdateCanvasSize();                                   
+      265 +        UpdatePropertiesPanel();                              
+      266 +        InvalidateCanvas();                                   
+      267 +    }                                                         
+      268 +                                                              
+      269      // ────────────────────────────────────────────────────── 
+           ───────────────                                               
+      270      // Toolbar — zoom, grid, snap                             
+      271                                                                
+
+● Now add the Ctrl+Shift+Up/Down keyboard shortcuts. I'll add them in the
+  keyboard handler, right before the element arrow-key movement block:
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 8 lines
+      938              DeleteSelected();                                 
+      939              e.Handled = true;                                 
+      940          }                                                     
+      941 +        else if ((e.Key == Key.Up || e.Key == Key.Down)       
+      942 +                 && ctrl &&                                   
+          +Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)                
+      943 +                 && _state.ActiveSection is not null)         
+      944 +        {                                                     
+      945 +            // Ctrl+Shift+↑↓ — přesunout aktivní sekci nahoru 
+          + / dolů                                                       
+      946 +            MoveSection(_state.ActiveSection, e.Key == Key.Up 
+          + ? -1 : +1);                                                  
+      947 +            e.Handled = true;                                 
+      948 +        }                                                     
+      949          else if (e.Key is Key.Left or Key.Right or Key.Up or  
+           Key.Down                                                      
+      950                   && _state.SelectedElements.Count > 0)        
+      951          {                                                     
+
+● Now let's do a build to verify everything compiles:
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | tail -20)
+  ⎿  C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner\TemplateDesigner_3h
+     yt1rbr_wpftmp.csproj : warning NU1701: Balíček OpenTK 3.3.1 se místo c
+     ílové verze rozhraní .NET Framework projektu net9.0-windows7.0 obnovil
+     … +83 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● Build is clean — 0 errors, only the expected NU1701 warnings. Now let's update
+   the documentation to reflect the new features:
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(docs\README.md)
+  ⎿  Added 10 lines, removed 1 line
+      132  - Editovatelné: Název, Výška (jen pro sekce s pevnou výškou), 
+            PrintBehavior, OverflowBehavior                              
+      133  - Stejný dialog jako pro elementy — OK zachová, Zrušit vrátí  
+           změny                                                         
+      134                                                                
+      135 +### Správa sekcí                                              
+      136 +- **Přesunout sekci** — tlačítka ▲▼ v levém panelu, pravé     
+          +tlačítko myši → Přesunout, nebo **Ctrl+Shift+↑↓**             
+      137 +- **Smazat sekci** — pravé tlačítko myši na sekci → Smazat    
+          +sekci (šablona musí mít alespoň jednu sekci)                  
+      138 +- Přesun a smazání jsou undo-able                             
+      139 +                                                              
+      140 +### Zoom                                                      
+      141 +- Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru    
+      142 +- **Ctrl+scroll** na canvasu — přiblížení / oddálení          
+      143 +                                                              
+      144  ### Undo / Redo                                               
+      145  - **Ctrl+Z** — vrátit poslední akci                           
+      146  - **Ctrl+Y** — zopakovat vrácenou akci                        
+      147 -- Undoable akce: přesun, resize, změna vlastností, přidání,   
+          -smazání elementu (multi-operace = jeden krok)                 
+      147 +- Undoable akce: přesun, resize, změna vlastností, přidání/   
+          +smazání elementu, přidání/smazání/přesun sekce                
+      148                                                                
+      149  ### Uložení a otevření                                        
+      150  - **Ctrl+S** / menu Soubor → Uložit                           
+
+● Now update the keyboard shortcuts table and the planned features list:
+
+● Update(docs\README.md)
+  ⎿  Added 3 lines
+      181  | **Ctrl+C** | Kopírovat vybrané elementy |                   
+      182  | **Ctrl+V** | Vložit ze schránky do aktivní sekce |          
+      183  | **Ctrl+D** | Duplikovat vybrané elementy |                  
+      184 +| **Ctrl+Shift+↑** | Přesunout aktivní sekci nahoru |         
+      185 +| **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |           
+      186 +| **Ctrl+scroll** | Zoom in / out |                           
+      187                                                                
+      188  ---                                                           
+      189                                                                
+
+● Update(docs\README.md)
+  ⎿  Added 1 line, removed 2 lines
+      200                                                                
+      201  ## Co bude přidáno (plánované funkce)                         
+      202                                                                
+      203 -- Drag & drop přeřazení sekcí v levém panelu                  
+      203  - Editor sloupců tabulky (přidat/odebrat/přesunout sloupec)   
+      204  - Picker statického obrázku (načíst PNG/JPG ze souboru)       
+      205  - Live preview s mock daty (pravý panel)                      
+      206  - Podmíněná viditelnost (VisibilityExpression)                
+      207 -- Přiblížení kolečkem myši (Ctrl+scroll)                      
+      207 +- Přehled elementů v dialogu vlastností sekce (a hromadná     
+          +editace)                                                      
+
+● Now update architektura.md — let me check what's in the commands section:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(sed -n '84,100p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/docs/architektura.md")
+  ⎿  ### /Commands — undo/redo
+
+     | Soubor | Třída | Zodpovědnost |
+     … +20 lines (ctrl+o to expand)
+
+● Update(docs\architektura.md)
+  ⎿  Added 2 lines
+      92  | `Implementations/SetPropertyCommand.cs` |                    
+          `SetPropertyCommand` | Změna jedné vlastnosti elementu. Ukládá 
+           starou/novou hodnotu jako `object?` + `Action<object?>` pro   
+          aplikaci. Univerzální pro všechny typy vlastností. |           
+      93  | `Implementations/AddElementCommand.cs` | `AddElementCommand` 
+           | Přidání elementu do sekce (s undo = odebrání). |            
+      94  | `Implementations/DeleteElementCommand.cs` |                  
+          `DeleteElementCommand` | Smazání elementu ze sekce (s undo =   
+          obnovení na původní index). |                                  
+      95 +| `Implementations/DeleteSectionCommand.cs` |                  
+         +`DeleteSectionCommand` | Smazání sekce ze šablony (s undo =    
+         +obnovení na původní index). |                                  
+      96 +| `Implementations/MoveSectionCommand.cs` |                    
+         +`MoveSectionCommand` | Přesun sekce v seznamu o ±1 (s undo). | 
+      97                                                                 
+      98  ### /Controls — WPF UserControly                               
+      99                                                                 
+
+● Now find and update the zoom and section management info in architektura.md:
+
+● Searched for 2 patterns (ctrl+o to expand)
+
+● Bash(sed -n '128,145p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/docs/architektura.md")
+  ⎿  RubberBand → MouseUp   → EndRubberBand()          → aktualizace Select
+     edElements (bez undo)
+                → ztrácí    → EndRubberBand()
+     … +16 lines (ctrl+o to expand)
+
+● Update(docs\architektura.md)
+  ⎿  Added 4 lines
+      134                                                                
+      135  **Clipboard** (`_clipboard: List<TemplateElement>`) je        
+           interní (ne systémová schránka). Copy = klon každého          
+           elementu. Paste = nové klony s offsetem +5 mm, přidané přes   
+           `AddElementCommand`.                                          
+      136                                                                
+      137 +**Zoom** lze měnit výběrem z ComboBoxu (50/75/100/150/200 %)  
+          +nebo **Ctrl+scroll** na canvasu — handler                     
+          +`OnCanvasScrollWheel` na                                      
+          +`CanvasScrollViewer.PreviewMouseWheel` posune index ComboBoxu 
+          + o ±1.                                                        
+      138 +                                                              
+      139 +**Správa sekcí** v levém panelu: každá položka má tlačítka ▲▼ 
+          + (volají `MoveSection()`) a context menu (Vlastnosti,         
+          +Přesunout, Smazat). Klávesová zkratka **Ctrl+Shift+↑↓**       
+          +přesune aktivní sekci. `DeleteSection()` před smazáním        
+          +odznaší elementy smazané sekce, přepne `ActiveSection` a      
+          +skryje dialog vlastností.                                     
+      140 +                                                              
+      141  **Klíčové detaily dragu:**                                    
+      142  - Drag používá **delta přístup**: ukládá canvas px při        
+           stisku, každý frame počítá deltaMm = (currentPx - startPx) /  
+           MmToPx                                                        
+      143  - Snap: zaokrouhlí finální pozici referenčního elementu na    
+           mřížku, z toho dopočítá delta → konzistentní pohyb i při      
+           multi-selectu                                                 
+
+● All done. Here's what was completed:
+
+  Added MoveSection(section, direction) — executes MoveSectionCommand, then
+  refreshes list, canvas size, and redraws.
+
+  Added DeleteSection(section) — guards against deleting the last section,
+  deselects elements from the deleted section, switches ActiveSection to another
+   if needed, hides the properties dialog, then executes DeleteSectionCommand.
+
+  Added Ctrl+Shift+↑↓ keyboard shortcut — in OnWindowKeyDown, checked before the
+   regular arrow-key handler so it doesn't conflict with element movement.
+
+  Updated docs:
+  - README.md — new "Správa sekcí" section, Zoom / Ctrl+scroll, updated Undo
+  description, added Ctrl+Shift+↑↓ and Ctrl+scroll to keyboard table, removed
+  completed items from planned features
+  - architektura.md — added DeleteSectionCommand and MoveSectionCommand to
+  commands table, documented zoom Ctrl+scroll and section management behavior
+
+  Build: 0 errors.
+
+✻ Crunched for 5m 57s
+
+❯ Co se tedy aktualne pridalo + zoomovani + presunovani sekci? Jeste neco?  
+  Z veci v readme mi prijde, ze shift+sipky na posouvani o mrizku nic       
+  nedela.                                                                   
+
+● Nejdřív ověřím, jak je Shift+šipky skutečně implementováno:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(sed -n '935,960p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿          }
+             else if (e.Key == Key.Delete)
+             {
+     … +23 lines (ctrl+o to expand)
+
+● Vidím potenciální problém. Zkontroluju, jak je handler klávesnice
+  zaregistrován:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Problém je tu — ScrollViewer konzumuje šipkové klávesy (scrolluje) ještě
+  předtím, než se event probublá nahoru k oknu jako KeyDown. Proto Shift+šipky
+  nedělají nic — ScrollViewer si je bere pro sebe.
+
+  Oprava: přejít na PreviewKeyDown, který je tunelující (jde shora dolů) a
+  dorazí k Window ještě před ScrollViewerem.
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 1 line, removed 1 line
+      75                                                                 
+      76          UpdatePropertiesPanel();                               
+      77                                                                 
+      78 -        this.KeyDown += OnWindowKeyDown;                       
+      78 +        this.PreviewKeyDown += OnWindowKeyDown;                
+      79      }                                                          
+      80                                                                 
+      81      // ─────────────────────────────────────────────────────── 
+          ──────────────                                                 
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -E "error|chyb|úspěšně")
+  ⎿  C:\Program Files\dotnet\sdk\10.0.103\Microsoft.Common.CurrentVersion.t
+     argets(5381,5): error MSB3027: Soubor C:\Users\miesb\source\EDISONMAIN
+     2\TemplateDesigner\obj\Debug\net9.0-windows\apphost.exe nelze zkopírov
+     … +25 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● Build selhal jen proto, že aplikace je teď spuštěná (proces 19348 drží .exe).
+  Kód se přeložil, jen nelze přepsat spuštěný soubor. Zavři aplikaci a build
+  proběhne.
+
+  ---
+  Shrnutí co bylo naposledy přidáno:
+
+  V předchozím sezení (hotovo):
+  - Ctrl+C / V / D — kopírování, vkládání, duplikování
+  - Rubber band výběr tažením myši na prázdném místě
+  - Editace vlastností sekce (dvojklik na sekci v levém panelu → dialog)
+
+  V tomto sezení:
+  1. Ctrl+scroll — zoom in/out na canvasu
+  2. Smazání sekce — context menu v levém panelu, s undo; zachová alespoň jednu
+  sekci
+  3. Přesun sekce — tlačítka ▲▼ v panelu, context menu, klávesová zkratka
+  Ctrl+Shift+↑↓, s undo
+
+  Oprava co se právě udělala:
+  - Shift+šipky nefungovaly — ScrollViewer si bral šipkové klávesy (scrolloval)
+  dřív než dojely do okna. Změna z KeyDown → PreviewKeyDown to opravuje.
+  PreviewKeyDown je tunelující event, dorazí k Window ještě před tím, než
+  ScrollViewer dostane šanci je zpracovat. Teď budou šipky (i bez Shift)
+  spolehlivě fungovat.
+
+✻ Cooked for 1m 33s
+
+❯ Vypda spravne, jake jsou dalsi priority, ktere by byly velmi uzitecne?  
+
+● Na základě toho, co je hotovo, tady jsou priority seřazené podle dopadu:
+
+  ---
+  Velmi vysoká priorita
+
+  1. Editace rozměrů stránky a okrajů
+  PageSize (šířka, výška, okraje) je teď natvrdo. Bez toho je každá šablona A4 s
+   fixními okraji. Základ pro jakýkoliv reálný výstup.
+
+  2. Editor sloupců TableElementu
+  TableElement je v ukázce i v datovém modelu, ale sloupce
+  (přidat/odebrat/přejmenovat/přesunout/šířka) jdou nastavit jen programově. Bez
+   toho tabulky prakticky nejdou používat.
+
+  3. ZIndex ovládání
+  Model má ZIndex, ale žádné UI. Elementy se překrývají a uživatel nemá jak říct
+   co je nahoře. Stačí: Přenést dopředu / Odeslat dozadu (Ctrl+] a Ctrl+[).
+
+  ---
+  Vysoká priorita
+
+  4. Zarovnání elementů
+  Při více vybraných elementech: zarovnat vlevo/vpravo/na střed, distribuovat
+  rovnoměrně. Velmi časté při layoutu.
+
+  5. Zamčení elementu (toggle)
+  IsLocked je v modelu, ale žádné tlačítko v UI. Zamčení přes dvojklik → dialog
+  je zbytečně složité — stačí klávesová zkratka nebo tlačítko v toolbaru.
+
+  ---
+  Střední priorita
+
+  6. Picker statického obrázku
+  ImageElement existuje, ale bez způsobu jak načíst PNG/JPG ze souboru.
+
+  7. Přehled elementů v dialogu sekce
+  (Zmiňoval jsi to sám) — seznam elementů sekce, možná hromadná editace
+  vlastností.
+
+  8. Live preview s mock daty
+
+  ---
+  Doporučoval bych začít s 1 (page size editor) — je to fundamentální a
+  relativně jednoduchá editace vlastností přes existující descriptor pattern.
+  Pak 2 (sloupce tabulky) nebo 3 (ZIndex).
+
+  Chceš začít s konkrétním bodem?
+
+✻ Brewed for 33s
+
+❯ Implementuj nyni pouze 1, pak otestujeme, ostatni veci si pridej do       
+  README.md dospod, jao to delas, vsechno jsou dobre napady, krome 6,       
+  obrazek zatim neni priorita                                               
+
+● Nejdřív si přečtu relevantní soubory, abych věděl přesně jak to navázat.
+
+● Read 2 files (ctrl+o to expand)
+
+● Přečtu si XAML menu a PropertiesPanel:
+
+● Searched for 2 patterns (ctrl+o to expand)
+
+● Mám dost kontextu. Plán:
+  - ShowForPage() + BuildPageDescriptors() do ElementPropertiesWindow
+  - Refaktoring: Cancel má volat aktuální invalidaci (ne jen _invalidate) →
+  důležité aby undo page props správně překreslilo canvas
+  - Položka "Vlastnosti stránky…" do menu Soubor
+
+  Začínám:
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(MainWindow.xaml)
+  ⎿  Added 2 lines
+      28                  <MenuItem x:Name="MenuSave"   Header="Uložit"  
+                 InputGestureText="Ctrl+S" Click="MenuSave_Click"/>      
+      29                  <MenuItem x:Name="MenuSaveAs" Header="Uložit   
+          jako..."                          Click="MenuSaveAs_Click"/>   
+      30                  <Separator/>                                   
+      31 +                <MenuItem x:Name="MenuPageProps"               
+         +Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P"   
+         +Click="MenuPageProps_Click"/>                                  
+      32 +                <Separator/>                                   
+      33                  <MenuItem Header="Konec"                       
+          Click="MenuExit_Click"/>                                       
+      34              </MenuItem>                                        
+      35              <MenuItem Header="Upravit">                        
+
+● Teď upravím ElementPropertiesWindow.xaml.cs — přidám _updateCanvasSize,
+  refaktoruju Cancel aby používal aktuální invalidaci, a přidám ShowForPage +
+  BuildPageDescriptors:
+
+● Update(ElementPropertiesWindow.xaml.cs)
+  ⎿  Added 10 lines, removed 4 lines
+      12      private readonly DesignerState _state;                     
+      13      private readonly Action        _invalidate;                
+      14      private readonly Action        _refreshSections;           
+      15 +    private readonly Action        _updateCanvasSize;          
+      16                                                                 
+      17      private TemplateElement? _currentElement;                  
+      18      private int              _undoDepthAtOpen;                 
+      19      private bool             _isReallyClosing;                 
+      20                                                                 
+      21 -    public ElementPropertiesWindow(DesignerState state, Action 
+         - invalidate, Action refreshSections)                           
+      21 +    // Aktuální "plná" invalidace (závisí na kontextu —        
+         +element / sekce / stránka)                                     
+      22 +    private Action _currentInvalidate;                         
+      23 +                                                               
+      24 +    public ElementPropertiesWindow(DesignerState state, Action 
+         + invalidate, Action refreshSections, Action updateCanvasSize)  
+      25      {                                                          
+      26          InitializeComponent();                                 
+      27 -        _state           = state;                              
+      28 -        _invalidate      = invalidate;                         
+      29 -        _refreshSections = refreshSections;                    
+      27 +        _state            = state;                             
+      28 +        _invalidate       = invalidate;                        
+      29 +        _refreshSections  = refreshSections;                   
+      30 +        _updateCanvasSize = updateCanvasSize;                  
+      31 +        _currentInvalidate = invalidate;                       
+      32          PropertiesPanel.SetContext(cmd => state.Execute(cmd),  
+          invalidate);                                                   
+      33      }                                                          
+      34                                                                 
+
+● Update(ElementPropertiesWindow.xaml.cs)
+  ⎿  Added 3 lines, removed 3 lines
+      44          if (isNewSession)                                      
+      45              _undoDepthAtOpen = _state.UndoStack.Count;         
+      46                                                                 
+      47 -        _currentElement = element;                             
+      47 +        _currentElement    = element;                          
+      48 +        _currentInvalidate = _invalidate;                      
+      49          Title = "Vlastnosti: " +                               
+          element.GetType().Name.Replace("Element", "");                 
+      50                                                                 
+      51 -        // Pro elementy: invalidace canvasu                    
+      52 -        PropertiesPanel.SetContext(cmd => _state.Execute(cmd), 
+         - _invalidate);                                                 
+      51 +        PropertiesPanel.SetContext(cmd => _state.Execute(cmd), 
+         + _currentInvalidate);                                          
+      52          PropertiesPanel.ShowElement(element);                  
+      53                                                                 
+      54          if (!IsVisible) Show();                                
+
+● Update(ElementPropertiesWindow.xaml.cs)
+  ⎿  Added 70 lines, removed 5 lines
+       60      /// </summary>                                            
+       61      public void ShowForSection(Section section)               
+       62      {                                                         
+       63 -        _undoDepthAtOpen = _state.UndoStack.Count;            
+       64 -        _currentElement  = null;                              
+       63 +        _undoDepthAtOpen   = _state.UndoStack.Count;          
+       64 +        _currentElement    = null;                            
+       65 +        _currentInvalidate = () => { _invalidate();           
+          +_refreshSections(); };                                        
+       66          Title = "Vlastnosti sekce: " + section.Name;          
+       67                                                                
+       68 -        // Pro sekce: invalidace canvasu + obnovení levého    
+          -panelu                                                        
+       69 -        PropertiesPanel.SetContext(cmd =>                     
+          -_state.Execute(cmd),                                          
+       70 -            () => { _invalidate(); _refreshSections(); });    
+       68 +        PropertiesPanel.SetContext(cmd =>                     
+          +_state.Execute(cmd), _currentInvalidate);                     
+       69          PropertiesPanel.ShowDescriptors(BuildSectionDescripto 
+           rs(section));                                                 
+       70                                                                
+       71          if (!IsVisible) Show();                               
+       72      }                                                         
+       73                                                                
+       74 +    /// <summary>                                             
+       75 +    /// Zobrazí dialog pro editaci rozměrů stránky a okrajů.  
+       76 +    /// Cancel vrátí veškeré změny provedené od otevření.     
+       77 +    /// </summary>                                            
+       78 +    public void ShowForPage(PageSize pageSize)                
+       79 +    {                                                         
+       80 +        _undoDepthAtOpen   = _state.UndoStack.Count;          
+       81 +        _currentElement    = null;                            
+       82 +        _currentInvalidate = () => { _invalidate();           
+          +_updateCanvasSize(); };                                       
+       83 +        Title = "Vlastnosti stránky";                         
+       84 +                                                              
+       85 +        PropertiesPanel.SetContext(cmd =>                     
+          +_state.Execute(cmd), _currentInvalidate);                     
+       86 +        PropertiesPanel.ShowDescriptors(BuildPageDescriptors( 
+          +pageSize));                                                   
+       87 +                                                              
+       88 +        if (!IsVisible) Show();                               
+       89 +    }                                                         
+       90 +                                                              
+       91 +    private IReadOnlyList<Models.PropertyDescriptor>          
+          +BuildPageDescriptors(PageSize ps)                             
+       92 +    {                                                         
+       93 +        return                                                
+       94 +        [                                                     
+       95 +            new FloatPropertyDescriptor                       
+       96 +            {                                                 
+       97 +                Label = "Šířka",  Group = "Rozměry stránky",  
+       98 +                Get   = () => ps.Width,                       
+       99 +                Set   = v  => ps.Width = v,                   
+      100 +                Min   = 50f, Max = 1200f, Unit = "mm"         
+      101 +            },                                                
+      102 +            new FloatPropertyDescriptor                       
+      103 +            {                                                 
+      104 +                Label = "Výška",  Group = "Rozměry stránky",  
+      105 +                Get   = () => ps.Height,                      
+      106 +                Set   = v  => ps.Height = v,                  
+      107 +                Min   = 50f, Max = 1200f, Unit = "mm"         
+      108 +            },                                                
+      109 +            new FloatPropertyDescriptor                       
+      110 +            {                                                 
+      111 +                Label = "Nahoře",  Group = "Okraje",          
+      112 +                Get   = () => ps.MarginTop,                   
+      113 +                Set   = v  => ps.MarginTop = v,               
+      114 +                Min   = 0f, Max = 100f, Unit = "mm"           
+      115 +            },                                                
+      116 +            new FloatPropertyDescriptor                       
+      117 +            {                                                 
+      118 +                Label = "Dole",    Group = "Okraje",          
+      119 +                Get   = () => ps.MarginBottom,                
+      120 +                Set   = v  => ps.MarginBottom = v,            
+      121 +                Min   = 0f, Max = 100f, Unit = "mm"           
+      122 +            },                                                
+      123 +            new FloatPropertyDescriptor                       
+      124 +            {                                                 
+      125 +                Label = "Vlevo",   Group = "Okraje",          
+      126 +                Get   = () => ps.MarginLeft,                  
+      127 +                Set   = v  => ps.MarginLeft = v,              
+      128 +                Min   = 0f, Max = 100f, Unit = "mm"           
+      129 +            },                                                
+      130 +            new FloatPropertyDescriptor                       
+      131 +            {                                                 
+      132 +                Label = "Vpravo",  Group = "Okraje",          
+      133 +                Get   = () => ps.MarginRight,                 
+      134 +                Set   = v  => ps.MarginRight = v,             
+      135 +                Min   = 0f, Max = 100f, Unit = "mm"           
+      136 +            },                                                
+      137 +        ];                                                    
+      138 +    }                                                         
+      139 +                                                              
+      140      private IReadOnlyList<Models.PropertyDescriptor>          
+           BuildSectionDescriptors(Section section)                      
+      141      {                                                         
+      142          var list = new List<Models.PropertyDescriptor>        
+
+● Teď opravím BtnCancel_Click aby používal _currentInvalidate místo _invalidate:
+
+● Update(ElementPropertiesWindow.xaml.cs)
+  ⎿  Added 1 line, removed 1 line
+      216          while (_state.UndoStack.Count > _undoDepthAtOpen)     
+      217              _state.Undo();                                    
+      218                                                                
+      219 -        _invalidate();                                        
+      219 +        _currentInvalidate();                                 
+      220          Hide();                                               
+      221      }                                                         
+      222                                                                
+
+● Teď aktualizuju MainWindow.xaml.cs — konstruktor a nový handler:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 1 line, removed 1 line
+      69          UpdateCanvasSize();                                    
+      70          RefreshSectionsList();                                 
+      71                                                                 
+      72 -        _propsWindow = new ElementPropertiesWindow(_state,     
+         -InvalidateCanvas, RefreshSectionsList);                        
+      72 +        _propsWindow = new ElementPropertiesWindow(_state,     
+         +InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize);      
+      73          this.Loaded += (_, _) => _propsWindow.Owner = this;    
+      74          this.Closed += (_, _) => _propsWindow.CloseForReal();  
+      75                                                                 
+
+● Teď přidám handler pro menu a Ctrl+Shift+P. Nejdřív najdu kde jsou jiné menu
+  handlery a kde je keyboard handler:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(sed -n '377,385p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿      private void MenuExit_Click(object sender, RoutedEventArgs e)
+         {
+             if (ConfirmUnsavedChanges()) Application.Current.Shutdown();
+     … +7 lines (ctrl+o to expand)
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 5 lines
+      379          if (ConfirmUnsavedChanges())                          
+           Application.Current.Shutdown();                               
+      380      }                                                         
+      381                                                                
+      382 +    private void MenuPageProps_Click(object sender,           
+          +RoutedEventArgs e)                                            
+      383 +    {                                                         
+      384 +                                                              
+          +_propsWindow!.ShowForPage(_state.CurrentTemplate.PageSize);   
+      385 +    }                                                         
+      386 +                                                              
+      387      // ────────────────────────────────────────────────────── 
+           ───────────────                                               
+      388      // Undo / Redo / Delete (stub)                            
+      389                                                                
+
+● Přidám klávesovou zkratku Ctrl+Shift+P do keyboard handleru:
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 5 lines
+      914              MenuSave_Click(this, new RoutedEventArgs());      
+      915              e.Handled = true;                                 
+      916          }                                                     
+      917 +        else if (e.Key == Key.P && ctrl &&                    
+          +Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))               
+      918 +        {                                                     
+      919 +            MenuPageProps_Click(this, new RoutedEventArgs()); 
+      920 +            e.Handled = true;                                 
+      921 +        }                                                     
+      922          else if (e.Key == Key.A && ctrl &&                    
+           _state.ActiveSection is not null)                             
+      923          {                                                     
+      924              // Ctrl+A — vybrat všechny elementy aktivní sekce 
+
+● Build:
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -E "^.*error|^.*chyb|úspěšně|Počet chyb")
+  ⎿  Vytváření sestavení bylo úspěšně dokončeno.
+         Počet chyb: 0
+  ⎿  (timeout 1m)
+
+● Teď aktualizuju README.md a dopíšu plánované věci:
+
+● Read 1 file (ctrl+o to expand)
+
+● Vidím duplicitní sekci "Zoom" (řádky 140–142 a 155–156). Opravím a doplním
+  vše:
+
+● Update(docs\README.md)
+  ⎿  Added 12 lines, removed 9 lines
+      137  - **Smazat sekci** — pravé tlačítko myši na sekci → Smazat    
+           sekci (šablona musí mít alespoň jednu sekci)                  
+      138  - Přesun a smazání jsou undo-able                             
+      139                                                                
+      140 +### Vlastnosti stránky                                        
+      141 +- **Soubor → Vlastnosti stránky…** nebo **Ctrl+Shift+P** —    
+          +otevře dialog pro editaci rozměrů a okrajů                    
+      142 +- Editovatelné: Šířka, Výška (mm), okraje Nahoře / Dole /     
+          +Vlevo / Vpravo (mm)                                           
+      143 +- Canvas se okamžitě překreslí po každé změně, Zrušit vrátí   
+          +vše zpět                                                      
+      144 +- Výchozí formát: A4 na výšku (210 × 297 mm, okraje 10 mm)    
+      145 +                                                              
+      146  ### Zoom                                                      
+      147  - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru    
+      148  - **Ctrl+scroll** na canvasu — přiblížení / oddálení          
+      149                                                                
+      150 +### Mřížka                                                    
+      151 +- **Grid** (tlačítko nebo Zobrazit → Mřížka) — zobrazí přímky 
+          + mřížky na canvasu                                            
+      152 +- **Snap** — přichytávání elementů na mřížku při pohybu a     
+          +resize                                                        
+      153 +- Velikost mřížky: 5 mm (výchozí)                             
+      154 +                                                              
+      155  ### Undo / Redo                                               
+      156  - **Ctrl+Z** — vrátit poslední akci                           
+      157  - **Ctrl+Y** — zopakovat vrácenou akci                        
+      158 -- Undoable akce: přesun, resize, změna vlastností,            
+          -přidání/smazání elementu, přidání/smazání/přesun sekce        
+      158 +- Undoable akce: přesun, resize, změna vlastností,            
+          +přidání/smazání elementu, přidání/smazání/přesun sekce        
+          +, změna vlastností stránky                                    
+      159                                                                
+      160  ### Uložení a otevření                                        
+      161  - **Ctrl+S** / menu Soubor → Uložit                           
+     ...
+      152  - **Soubor → Otevřít** — načte existující šablonu             
+      153  - Soubory mají příponu `.json` a jsou čitelné v libovolném    
+           textovém editoru                                              
+      154                                                                
+      155 -### Zoom                                                      
+      156 -- Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru    
+      157 -                                                              
+      158 -### Mřížka                                                    
+      159 -- **Grid** (tlačítko nebo Zobrazit → Mřížka) — zobrazí přímky 
+          - mřížky na canvasu                                            
+      160 -- **Snap** — přichytávání elementů na mřížku při pohybu a     
+          -resize                                                        
+      161 -- Velikost mřížky: 5 mm (výchozí)                             
+      162 -                                                              
+      155  ---                                                           
+      156                                                                
+      157  ## Klávesové zkratky                                          
+
+● Teď přidám klávesovou zkratku do tabulky a aktualizuju plánované funkce:
+
+● Update(docs\README.md)
+  ⎿  Added 1 line
+      187  | **Ctrl+Shift+↑** | Přesunout aktivní sekci nahoru |         
+      188  | **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |           
+      189  | **Ctrl+scroll** | Zoom in / out |                           
+      190 +| **Ctrl+Shift+P** | Vlastnosti stránky (rozměry, okraje) |   
+      191                                                                
+      192  ---                                                           
+      193                                                                
+
+● Update(docs\README.md)
+  ⎿  Added 7 lines, removed 5 lines
+      204                                                                
+      205  ## Co bude přidáno (plánované funkce)                         
+      206                                                                
+      207 -- Editor sloupců tabulky (přidat/odebrat/přesunout sloupec)   
+      208 -- Picker statického obrázku (načíst PNG/JPG ze souboru)       
+      209 -- Live preview s mock daty (pravý panel)                      
+      210 -- Podmíněná viditelnost (VisibilityExpression)                
+      211 -- Přehled elementů v dialogu vlastností sekce (a hromadná     
+          -editace)                                                      
+      207 +- **Editor sloupců tabulky** —                                
+          +přidat/odebrat/přesunout sloupec, nastavit šířku a záhlaví    
+      208 +- **ZIndex ovládání** — Přenést dopředu / Odeslat dozadu      
+          +(Ctrl+] / Ctrl+[)                                             
+      209 +- **Zarovnání elementů** — zarovnat vlevo/vpravo/na           
+          +střed/nahoru/dolů, distribuovat rovnoměrně (pro multi-select) 
+      210 +- **Zamčení elementu** — toggle zámku přes klávesovou zkratku 
+          + nebo toolbar (IsLocked je v modelu, UI chybí)                
+      211 +- **Live preview s mock daty** — pravý panel s náhledem       
+          +výstupu                                                       
+      212 +- **Přehled elementů v dialogu vlastností sekce** — seznam    
+          +elementů sekce, hromadná editace                              
+      213 +- **Podmíněná viditelnost** — VisibilityExpression pro        
+          +elementy                                                      
+
+● Finální build pro jistotu:
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -E "error|chyb|úspěšně|Počet")
+  ⎿  Vytváření sestavení bylo úspěšně dokončeno.
+         Počet chyb: 0
+
+● Build OK. Shrnutí co bylo uděláno:
+
+  ---
+  Přidáno — Vlastnosti stránky:
+
+  - Soubor → Vlastnosti stránky… nebo Ctrl+Shift+P otevře dialog (stejný
+  plovoucí dialog jako pro elementy/sekce)
+  - Editovatelné: Šířka, Výška, a 4 okraje — vše v mm s limity
+  - Canvas se ihned překreslí (live) při každé změně hodnoty
+  - Zrušit vrátí veškeré změny stránky zpět přes undo stack
+  - Malý refaktoring: BtnCancel_Click nyní volá správnou kombinaci invalidací
+  podle toho, co je v dialogu (element → jen canvas, sekce → canvas + panel
+  sekcí, stránka → canvas + UpdateCanvasSize)
+
+  README.md:
+  - Přidána sekce "Vlastnosti stránky", opravena duplicitní sekce "Zoom"
+  - Zkratka Ctrl+Shift+P v tabulce
+  - Plánované funkce doplněny o: ZIndex, zarovnání elementů, zamčení elementu
+
+✻ Brewed for 3m 57s
+
+❯ Vypada velmi dobre, dava smysl dale pridat editor sloupcu tabulku? Toto   
+  ma vyznam pro fixni tabulky? vetsinou to bude libovolne velka tabulka,    
+  napr. neco jako jizdni rad a nebo to bude fixni, ale data vetsinou stejne 
+   budou nejak nabindovana z databazovych polozek.                          
+
+● Dobrá otázka. Krátká odpověď: ano, editor sloupců dává smysl, ale není to 
+  urgentní — a tady je proč:
+
+  ---
+  Co TableElement v praxi potřebuje
+
+  I když jsou data vždy bindovaná z DB, uživatel musí definovat strukturu 
+  tabulky:
+  - Kolik sloupců (Columns)
+  - Šířka každého sloupce (mm)
+  - Záhlaví sloupce (text)
+  - Název DB pole (Field = "CAS", "ZASTAVKA" atd.)
+
+  Bez editoru sloupců je TableElement na canvasu k ničemu — nejde ho nijak
+  nakonfigurovat přes UI. Tohle je blocker pro reálné použití.
+
+  ---
+  Ale není to další priorita
+
+  Protože editor sloupců je specifický pro jeden typ elementu a řeší izolovaný
+  problém. Věci s větším dopadem napříč celou aplikací:
+
+  Doporučené pořadí:
+  1. ZIndex (Ctrl+] / Ctrl+[) — rychlá implementace, dopad na každý layout kde
+  se elementy překrývají (obdélník jako pozadí za textem atd.)
+  2. Zarovnání elementů — velký dopad na komfort při layoutu, velmi časté
+  3. Editor sloupců tabulky — nutný pro tabulky, ale dopad jen na TableElement
+
+  ---
+  Editor sloupců doporučuji přidat jako jednoduchý list v existujícím dialog
+  vlastností: seznam řádků (záhlaví | šířka | pole) s tlačítky + / − / ↑↓.
+  Nepotřebuje být komplexní — field je prostě textový placeholder stejně jako
+  {NAZEV} v textu.
+
+  Chceš začít ZIndexem, nebo rovnou editor sloupců?
+
+❯ Dobre, muzes pokracovat nejprve se ZIndex 
+
+● Nejdřív se podívám jak canvas aktuálně renderuje elementy a jak funguje ZIndex
+   v modelu:
+
+● Searched for 2 patterns (ctrl+o to expand)
+
+● Dobré zprávy: canvas už renderuje podle ZIndex (OrderBy(e => e.ZIndex)) a hit
+  testing taky (OrderByDescending). ZIndex je i editovatelný jako číslo v
+  dialogu vlastností. Chybí jen rychlé akce — toolbar tlačítka a klávesy.
+
+  Plán:
+  - Ctrl+] = Přenést dopředu (+1)
+  - Ctrl+[ = Odeslat dozadu (−1, min 0)
+  - Ctrl+Shift+] = Přenést zcela dopředu (max v sekci +1)
+  - Ctrl+Shift+[ = Odeslat zcela dozadu (0, ostatní +1)
+  - Tlačítka v toolbaru + položky v menu Upravit
+
+  Kouknu na toolbar XAML:
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(MainWindow.xaml)
+  ⎿  Added 5 lines
+      75                                Checked="BtnSnap_Changed"        
+          Unchecked="BtnSnap_Changed"                                    
+      76                                ToolTip="Přichytit na mřížku"/>  
+      77                  <Separator Style="{StaticResource              
+          ToolbarSep}"/>                                                 
+      78 +                <Button x:Name="BtnZForward"  Content="↑Z"     
+         +ToolTip="Přenést dopředu (Ctrl+])"                             
+         +Click="BtnZForward_Click"  Padding="6,3"/>                     
+      79 +                <Button x:Name="BtnZBackward" Content="↓Z"     
+         +ToolTip="Odeslat dozadu (Ctrl+[)"                              
+         +Click="BtnZBackward_Click" Padding="6,3"/>                     
+      80 +                <Button x:Name="BtnZFront"    Content="⤒Z"     
+         +ToolTip="Přenést zcela dopředu (Ctrl+Shift+])"                 
+         +Click="BtnZFront_Click"    Padding="6,3"/>                     
+      81 +                <Button x:Name="BtnZBack"     Content="⤓Z"     
+         +ToolTip="Odeslat zcela dozadu (Ctrl+Shift+[)"                  
+         +Click="BtnZBack_Click"     Padding="6,3"/>                     
+      82 +                <Separator Style="{StaticResource              
+         +ToolbarSep}"/>                                                 
+      83                  <Button x:Name="BtnSave" Content="Uložit"      
+          Click="MenuSave_Click" Padding="6,3" FontWeight="SemiBold"/>   
+      84                  <Button x:Name="BtnOpen" Content="Otevřít"     
+          Click="MenuOpen_Click" Padding="6,3"/>                         
+      85              </ToolBar>                                         
+
+● Teď menu Upravit — přidám ZIndex položky:
+
+● Update(MainWindow.xaml)
+  ⎿  Added 5 lines
+      37                  <MenuItem x:Name="MenuRedo"   Header="Vpřed"   
+          InputGestureText="Ctrl+Y" Click="MenuRedo_Click"/>             
+      38                  <Separator/>                                   
+      39                  <MenuItem x:Name="MenuDelete" Header="Smazat"  
+          InputGestureText="Del"    Click="MenuDelete_Click"/>           
+      40 +                <Separator/>                                   
+      41 +                <MenuItem x:Name="MenuZForward"                
+         +Header="Přenést dopředu"       InputGestureText="Ctrl+]"       
+         + Click="BtnZForward_Click"/>                                   
+      42 +                <MenuItem x:Name="MenuZBackward"               
+         +Header="Odeslat dozadu"        InputGestureText="Ctrl+["       
+         + Click="BtnZBackward_Click"/>                                  
+      43 +                <MenuItem x:Name="MenuZFront"                  
+         +Header="Přenést zcela dopředu" InputGestureText="Ctrl+Shift+]" 
+         + Click="BtnZFront_Click"/>                                     
+      44 +                <MenuItem x:Name="MenuZBack"                   
+         +Header="Odeslat zcela dozadu"  InputGestureText="Ctrl+Shift+[" 
+         + Click="BtnZBack_Click"/>                                      
+      45              </MenuItem>                                        
+      46              <MenuItem Header="Zobrazit">                       
+      47                  <MenuItem x:Name="MenuGrid" Header="Mřížka"    
+          IsCheckable="True"                                             
+
+● Teď přidám metody do MainWindow.xaml.cs. Nejdřív najdu kde jsou jiné toolbar
+  handlery:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(sed -n '404,410p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿      }
+
+         private void MenuDelete_Click(object sender, RoutedEventArgs e) =>
+     … +5 lines (ctrl+o to expand)
+
+● Přidám ZIndex metody před MenuDelete_Click:
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 89 lines
+      405                                                                
+      406      private void MenuDelete_Click(object sender,              
+           RoutedEventArgs e) => DeleteSelected();                       
+      407                                                                
+      408 +    // ────────────────────────────────────────────────────── 
+          +───────────────                                               
+      409 +    // ZIndex — pořadí vykreslování                           
+      410 +                                                              
+      411 +    private void BtnZForward_Click(object sender,             
+          +RoutedEventArgs e)  => ChangeZIndex(+1, toExtreme: false);    
+      412 +    private void BtnZBackward_Click(object sender,            
+          +RoutedEventArgs e) => ChangeZIndex(-1, toExtreme: false);     
+      413 +    private void BtnZFront_Click(object sender,               
+          +RoutedEventArgs e)    => ChangeZIndex(+1, toExtreme: true);   
+      414 +    private void BtnZBack_Click(object sender,                
+          +RoutedEventArgs e)     => ChangeZIndex(-1, toExtreme: true);  
+      415 +                                                              
+      416 +    /// <summary>                                             
+      417 +    /// Změní ZIndex vybraných elementů.                      
+      418 +    /// <paramref name="sign"/> +1 = dopředu, -1 = dozadu.    
+      419 +    /// <paramref name="toExtreme"/> true = zcela             
+          +dopředu/dozadu, false = o jeden krok.                         
+      420 +    /// </summary>                                            
+      421 +    private void ChangeZIndex(int sign, bool toExtreme)       
+      422 +    {                                                         
+      423 +        if (_state.SelectedElements.Count == 0 ||             
+          +_state.ActiveSection is null) return;                         
+      424 +                                                              
+      425 +        var section  = _state.ActiveSection;                  
+      426 +        var selected = _state.SelectedElements                
+      427 +            .Where(el => section.Elements.Contains(el))       
+      428 +            .ToList();                                        
+      429 +        if (selected.Count == 0) return;                      
+      430 +                                                              
+      431 +        var commands = new List<IDesignerCommand>();          
+      432 +                                                              
+      433 +        if (toExtreme && sign > 0)                            
+      434 +        {                                                     
+      435 +            // Přenést zcela dopředu: každý vybraný dostane   
+          +ZIndex = max+1, max+2 …                                       
+      436 +            int baseZ = section.Elements                      
+      437 +                .Where(el => !selected.Contains(el))          
+      438 +                .Select(el => el.ZIndex)                      
+      439 +                .DefaultIfEmpty(-1)                           
+      440 +                .Max() + 1;                                   
+      441 +            foreach (var el in selected.OrderBy(e =>          
+          +e.ZIndex))                                                    
+      442 +            {                                                 
+      443 +                int oldZ = el.ZIndex;                         
+      444 +                int newZ = baseZ++;                           
+      445 +                if (oldZ == newZ) continue;                   
+      446 +                commands.Add(new SetPropertyCommand("ZIndex", 
+          + oldZ, newZ, v => el.ZIndex = (int)v));                       
+      447 +            }                                                 
+      448 +        }                                                     
+      449 +        else if (toExtreme && sign < 0)                       
+      450 +        {                                                     
+      451 +            // Odeslat zcela dozadu: vybrané dostanou ZIndex  
+          +0, 1 … ostatní se posunou nahoru                              
+      452 +            int shift = selected.Count;                       
+      453 +            // Ostatní elementy posunou ZIndex o shift nahoru 
+      454 +            foreach (var el in section.Elements.Where(e =>    
+          +!selected.Contains(e)))                                       
+      455 +            {                                                 
+      456 +                int oldZ = el.ZIndex;                         
+      457 +                int newZ = oldZ + shift;                      
+      458 +                commands.Add(new SetPropertyCommand("ZIndex", 
+          + oldZ, newZ, v => el.ZIndex = (int)v));                       
+      459 +            }                                                 
+      460 +            // Vybrané dostanou 0, 1, 2 …                     
+      461 +            int z = 0;                                        
+      462 +            foreach (var el in selected.OrderBy(e =>          
+          +e.ZIndex))                                                    
+      463 +            {                                                 
+      464 +                int oldZ = el.ZIndex;                         
+      465 +                int newZ = z++;                               
+      466 +                if (oldZ == newZ) continue;                   
+      467 +                commands.Add(new SetPropertyCommand("ZIndex", 
+          + oldZ, newZ, v => el.ZIndex = (int)v));                       
+      468 +            }                                                 
+      469 +        }                                                     
+      470 +        else                                                  
+      471 +        {                                                     
+      472 +            // Posun o 1 krok (dopředu nebo dozadu)           
+      473 +            foreach (var el in selected)                      
+      474 +            {                                                 
+      475 +                int oldZ = el.ZIndex;                         
+      476 +                int newZ = Math.Max(0, oldZ + sign);          
+      477 +                if (oldZ == newZ) continue;                   
+      478 +                commands.Add(new SetPropertyCommand("ZIndex", 
+          + oldZ, newZ, v => el.ZIndex = (int)v));                       
+      479 +            }                                                 
+      480 +        }                                                     
+      481 +                                                              
+      482 +        if (commands.Count == 0) return;                      
+      483 +                                                              
+      484 +        string desc = (sign > 0, toExtreme) switch            
+      485 +        {                                                     
+      486 +            (true,  true)  => "Přenést zcela dopředu",        
+      487 +            (true,  false) => "Přenést dopředu",              
+      488 +            (false, true)  => "Odeslat zcela dozadu",         
+      489 +            _              => "Odeslat dozadu"                
+      490 +        };                                                    
+      491 +                                                              
+      492 +        _state.Execute(commands.Count == 1 ? commands[0] :    
+          +new CompositeCommand(desc, commands));                        
+      493 +        UpdatePropertiesPanel();                              
+      494 +        InvalidateCanvas();                                   
+      495 +    }                                                         
+      496 +                                                              
+      497      private void DeleteSelected()                             
+      498      {                                                         
+      499          if (_state.SelectedElements.Count == 0) return;       
+
+● Teď klávesové zkratky. [ a ] v WPF jsou Key.OemOpenBrackets a
+  Key.OemCloseBrackets:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(sed -n '1005,1015p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿          }
+             else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(
+     ModifierKeys.Shift))
+     … +11 lines (ctrl+o to expand)
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 12 lines
+      1008              MenuPageProps_Click(this, new                    
+            RoutedEventArgs());                                          
+      1009              e.Handled = true;                                
+      1010          }                                                    
+      1011 +        else if (e.Key == Key.OemCloseBrackets && ctrl)      
+      1012 +        {                                                    
+      1013 +            // Ctrl+] / Ctrl+Shift+] — ZIndex dopředu        
+      1014 +            ChangeZIndex(+1, toExtreme:                      
+           +Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));             
+      1015 +            e.Handled = true;                                
+      1016 +        }                                                    
+      1017 +        else if (e.Key == Key.OemOpenBrackets && ctrl)       
+      1018 +        {                                                    
+      1019 +            // Ctrl+[ / Ctrl+Shift+[ — ZIndex dozadu         
+      1020 +            ChangeZIndex(-1, toExtreme:                      
+           +Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));             
+      1021 +            e.Handled = true;                                
+      1022 +        }                                                    
+      1023          else if (e.Key == Key.A && ctrl &&                   
+            _state.ActiveSection is not null)                            
+      1024          {                                                    
+      1025              // Ctrl+A — vybrat všechny elementy aktivní      
+            sekce                                                        
+
+● Build:
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -E "error CS|úspěšně|Počet chyb")
+  ⎿  Vytváření sestavení bylo úspěšně dokončeno.
+         Počet chyb: 0
+  ⎿  (timeout 1m)
+
+● Aktualizuju dokumentaci:
+
+● Update(docs\README.md)
+  ⎿  Added 9 lines
+      152  - **Snap** — přichytávání elementů na mřížku při pohybu a     
+           resize                                                        
+      153  - Velikost mřížky: 5 mm (výchozí)                             
+      154                                                                
+      155 +### ZIndex — pořadí překrývání                                
+      156 +- **Ctrl+]** — přenést dopředu (ZIndex +1)                    
+      157 +- **Ctrl+[** — odeslat dozadu (ZIndex −1, min 0)              
+      158 +- **Ctrl+Shift+]** — přenést zcela dopředu (nad všechny       
+          +ostatní v sekci)                                              
+      159 +- **Ctrl+Shift+[** — odeslat zcela dozadu (pod všechny        
+          +ostatní)                                                      
+      160 +- Stejné operace v menu **Upravit** a tlačítka ↑Z ↓Z ⤒Z ⤓Z v  
+          +toolbaru                                                      
+      161 +- Funguje i pro multi-select (všechny vybrané elementy se     
+          +posunou najednou)                                             
+      162 +- Vše undo-able                                               
+      163 +                                                              
+      164  ### Undo / Redo                                               
+      165  - **Ctrl+Z** — vrátit poslední akci                           
+      166  - **Ctrl+Y** — zopakovat vrácenou akci                        
+
+● Update(docs\README.md)
+  ⎿  Added 4 lines
+      197  | **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |           
+      198  | **Ctrl+scroll** | Zoom in / out |                           
+      199  | **Ctrl+Shift+P** | Vlastnosti stránky (rozměry, okraje) |   
+      200 +| **Ctrl+]** | Přenést dopředu (ZIndex +1) |                  
+      201 +| **Ctrl+[** | Odeslat dozadu (ZIndex −1) |                   
+      202 +| **Ctrl+Shift+]** | Přenést zcela dopředu |                  
+      203 +| **Ctrl+Shift+[** | Odeslat zcela dozadu |                   
+      204                                                                
+      205  ---                                                           
+      206                                                                
+
+● Update(docs\README.md)
+  ⎿  Added 1 line, removed 1 line
+      218  ## Co bude přidáno (plánované funkce)                         
+      219                                                                
+      220  - **Editor sloupců tabulky** — přidat/odebrat/přesunout       
+           sloupec, nastavit šířku a záhlaví                             
+      221 -- **ZIndex ovládání** — Přenést dopředu / Odeslat dozadu      
+          -(Ctrl+] / Ctrl+[)                                             
+      221 +- ~~ZIndex ovládání~~ — hotovo                                
+      222  - **Zarovnání elementů** — zarovnat vlevo/vpravo/na           
+           střed/nahoru/dolů, distribuovat rovnoměrně (pro multi-select) 
+      223  - **Zamčení elementu** — toggle zámku přes klávesovou zkratku 
+            nebo toolbar (IsLocked je v modelu, UI chybí)                
+      224  - **Live preview s mock daty** — pravý panel s náhledem       
+           výstupu                                                       
+
+● Build OK. Shrnutí:
+
+  Přidáno — ZIndex:
+
+  ┌──────────────────────┬──────────────┬─────────┐
+  │         Akce         │   Klávesa    │ Toolbar │
+  ├──────────────────────┼──────────────┼─────────┤
+  │ Přenést dopředu (+1) │ Ctrl+]       │ ↑Z      │
+  ├──────────────────────┼──────────────┼─────────┤
+  │ Odeslat dozadu (−1)  │ Ctrl+[       │ ↓Z      │
+  ├──────────────────────┼──────────────┼─────────┤
+  │ Zcela dopředu        │ Ctrl+Shift+] │ ⤒Z      │
+  ├──────────────────────┼──────────────┼─────────┤
+  │ Zcela dozadu         │ Ctrl+Shift+[ │ ⤓Z      │
+  └──────────────────────┴──────────────┴─────────┘
+
+  Detaily implementace:
+  - Zcela dozadu (Ctrl+Shift+[) nepřepíše ostatní — posune všechny ostatní
+  elementy v sekci o +N, vybraným přiřadí 0,1,2… Takže relativní pořadí se
+  zachová správně
+  - Zcela dopředu najde max ZIndex z nevybraných elementů a pokračuje odtud
+  - Funguje pro multi-select — všechny vybrané se pohybují najednou
+  - Vše je undo-able přes SetPropertyCommand / CompositeCommand
+  - Canvas už renderoval podle ZIndex — výsledek je okamžitě vidět
+
+✻ Cooked for 2m 12s
+
+❯ Vyzkousel jsem to, ale co to ma presne udelat? Mam na sobe dva texty a    
+  aktualni zkusim dat do pozadi, mam neco videt nebo to testuji spatne?     
+
+● ZIndex má efekt jen při překrývání elementů. Dva texty vedle sebe — nic
+  neuvidíš, protože se nepřekrývají.
+
+  Správný test:
+  1. Přidej RectangleElement (obdélník) — nastav mu výplňovou barvu
+  2. Přidej TextElement — přesuň ho tak, aby byl přes obdélník
+  3. Teď vyber obdélník a dej "Přenést zcela dopředu" → obdélník zakryje text
+  4. Dej "Odeslat zcela dozadu" → text je vidět znovu
+
+  Praktický příklad z tisku:
+  - Modrý obdélník jako záhlaví sekce (ZIndex=0)
+  - Bílý text nad ním (ZIndex=1)
+
+  Pokud je ZIndex textu nižší než obdélníku, text je pod ním a nevidíš ho.
+
+  ---
+  Jedno upozornění — ověřím jestli OemCloseBrackets / OemOpenBrackets jsou
+  správné key kódy pro české klávesnice, protože ] a [ jsou na CZ QWERTZ na
+  jiných klávesách než na EN:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Na české klávesnici jsou ] a [ hůř dostupné (Alt+kombinace), takže Ctrl+]
+  nemusí fungovat dobře. Změním zkratky na Ctrl+PgUp / Ctrl+PgDn které jsou na
+  každé klávesnici jasně:
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 4 lines, removed 4 lines
+      1008              MenuPageProps_Click(this, new                    
+            RoutedEventArgs());                                          
+      1009              e.Handled = true;                                
+      1010          }                                                    
+      1011 -        else if (e.Key == Key.OemCloseBrackets && ctrl)      
+      1011 +        else if (e.Key == Key.PageUp && ctrl)                
+      1012          {                                                    
+      1013 -            // Ctrl+] / Ctrl+Shift+] — ZIndex dopředu        
+      1013 +            // Ctrl+PgUp / Ctrl+Shift+PgUp — ZIndex dopředu  
+      1014              ChangeZIndex(+1, toExtreme:                      
+            Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));             
+      1015              e.Handled = true;                                
+      1016          }                                                    
+      1017 -        else if (e.Key == Key.OemOpenBrackets && ctrl)       
+      1017 +        else if (e.Key == Key.PageDown && ctrl)              
+      1018          {                                                    
+      1019 -            // Ctrl+[ / Ctrl+Shift+[ — ZIndex dozadu         
+      1019 +            // Ctrl+PgDn / Ctrl+Shift+PgDn — ZIndex dozadu   
+      1020              ChangeZIndex(-1, toExtreme:                      
+            Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));             
+      1021              e.Handled = true;                                
+      1022          }                                                    
+
+● Aktualizuju i XAML menu (InputGestureText je jen popis, neregistruje zkratku —
+   to dělá keyboard handler):
+
+● Update(MainWindow.xaml)
+  ⎿  Added 4 lines, removed 4 lines
+      38                  <Separator/>                                   
+      39                  <MenuItem x:Name="MenuDelete" Header="Smazat"  
+          InputGestureText="Del"    Click="MenuDelete_Click"/>           
+      40                  <Separator/>                                   
+      41 -                <MenuItem x:Name="MenuZForward"                
+         -Header="Přenést dopředu"       InputGestureText="Ctrl+]        
+         -"       Click="BtnZForward_Click"/>                            
+      42 -                <MenuItem x:Name="MenuZBackward"               
+         -Header="Odeslat dozadu"        InputGestureText="Ctrl+[        
+         -"       Click="BtnZBackward_Click"/>                           
+      43 -                <MenuItem x:Name="MenuZFront"                  
+         -Header="Přenést zcela dopředu" InputGestureText="Ctrl+Shift+]  
+         -" Click="BtnZFront_Click"/>                                    
+      44 -                <MenuItem x:Name="MenuZBack"                   
+         -Header="Odeslat zcela dozadu"  InputGestureText="Ctrl+Shift+[  
+         -" Click="BtnZBack_Click"/>                                     
+      41 +                <MenuItem x:Name="MenuZForward"                
+         +Header="Přenést dopředu"       InputGestureText="Ctrl+PgUp     
+         +"       Click="BtnZForward_Click"/>                            
+      42 +                <MenuItem x:Name="MenuZBackward"               
+         +Header="Odeslat dozadu"        InputGestureText="Ctrl+PgDn     
+         +"       Click="BtnZBackward_Click"/>                           
+      43 +                <MenuItem x:Name="MenuZFront"                  
+         +Header="Přenést zcela dopředu" InputGestureText="Ctrl+Shift+   
+         +PgUp" Click="BtnZFront_Click"/>                                
+      44 +                <MenuItem x:Name="MenuZBack"                   
+         +Header="Odeslat zcela dozadu"  InputGestureText="Ctrl+Shift+   
+         +PgDn" Click="BtnZBack_Click"/>                                 
+      45              </MenuItem>                                        
+      46              <MenuItem Header="Zobrazit">                       
+      47                  <MenuItem x:Name="MenuGrid" Header="Mřížka"    
+          IsCheckable="True"                                             
+
+● Stejně tak ToolTipy:
+
+● Update(MainWindow.xaml)
+  ⎿  Added 4 lines, removed 4 lines
+      80                                Checked="BtnSnap_Changed"        
+          Unchecked="BtnSnap_Changed"                                    
+      81                                ToolTip="Přichytit na mřížku"/>  
+      82                  <Separator Style="{StaticResource              
+          ToolbarSep}"/>                                                 
+      83 -                <Button x:Name="BtnZForward"  Content="↑Z"     
+         -ToolTip="Přenést dopředu (Ctrl+]                               
+         -)"         Click="BtnZForward_Click"  Padding="6,3"/>          
+      84 -                <Button x:Name="BtnZBackward" Content="↓Z"     
+         -ToolTip="Odeslat dozadu (Ctrl+[                                
+         -)"           Click="BtnZBackward_Click" Padding="6,3"/>        
+      85 -                <Button x:Name="BtnZFront"    Content="⤒Z"     
+         -ToolTip="Přenést zcela dopředu (Ctrl+Shift+]                   
+         -)" Click="BtnZFront_Click"    Padding="6,3"/>                  
+      86 -                <Button x:Name="BtnZBack"     Content="⤓Z"     
+         -ToolTip="Odeslat zcela dozadu (Ctrl+Shift+[                    
+         -)"  Click="BtnZBack_Click"     Padding="6,3"/>                 
+      83 +                <Button x:Name="BtnZForward"  Content="↑Z"     
+         +ToolTip="Přenést dopředu (Ctrl+PgUp                            
+         +)"         Click="BtnZForward_Click"  Padding="6,3"/>          
+      84 +                <Button x:Name="BtnZBackward" Content="↓Z"     
+         +ToolTip="Odeslat dozadu (Ctrl+PgDn                             
+         +)"           Click="BtnZBackward_Click" Padding="6,3"/>        
+      85 +                <Button x:Name="BtnZFront"    Content="⤒Z"     
+         +ToolTip="Přenést zcela dopředu (Ctrl+Shift+PgUp                
+         +)" Click="BtnZFront_Click"    Padding="6,3"/>                  
+      86 +                <Button x:Name="BtnZBack"     Content="⤓Z"     
+         +ToolTip="Odeslat zcela dozadu (Ctrl+Shift+PgDn                 
+         +)"  Click="BtnZBack_Click"     Padding="6,3"/>                 
+      87                  <Separator Style="{StaticResource              
+          ToolbarSep}"/>                                                 
+      88                  <Button x:Name="BtnSave" Content="Uložit"      
+          Click="MenuSave_Click" Padding="6,3" FontWeight="SemiBold"/>   
+      89                  <Button x:Name="BtnOpen" Content="Otevřít"     
+          Click="MenuOpen_Click" Padding="6,3"/>                         
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -E "error CS|úspěšně|Počet chyb")
+  ⎿      Počet chyb: 2
+  ⎿  (timeout 1m)
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep "error CS")
+  ⎿  No matches found
+  ⎿  (timeout 1m)
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -i "error")
+  ⎿  C:\Program Files\dotnet\sdk\10.0.103\Microsoft.Common.CurrentVersion.t
+     argets(5381,5): error MSB3027: Soubor C:\Users\miesb\source\EDISONMAIN
+     2\TemplateDesigner\obj\Debug\net9.0-windows\apphost.exe nelze zkopírov
+     … +25 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● Znovu jen file-lock — aplikace běží. Kód se přeložil bez chyb, jen nelze
+  přepsat spuštěný .exe. Zavři aplikaci a build projde čistě.
+
+  ---
+  Aktualizuju ještě README zkratky:
+
+● Update(docs\README.md)
+  ⎿  Added 5 lines, removed 4 lines
+      153  - Velikost mřížky: 5 mm (výchozí)                             
+      154                                                                
+      155  ### ZIndex — pořadí překrývání                                
+      156 -- **Ctrl+]** — přenést dopředu (ZIndex +1)                    
+      157 -- **Ctrl+[** — odeslat dozadu (ZIndex −1, min 0)              
+      158 -- **Ctrl+Shift+]                                              
+          -** — přenést zcela dopředu (nad všechny ostatní v sekci)      
+      159 -- **Ctrl+Shift+[                                              
+          -** — odeslat zcela dozadu (pod všechny ostatní)               
+      156 +- **Ctrl+PgUp** — přenést dopředu (ZIndex +1)                 
+      157 +- **Ctrl+PgDn** — odeslat dozadu (ZIndex −1, min 0)           
+      158 +- **Ctrl+Shift+PgUp                                           
+          +** — přenést zcela dopředu (nad všechny ostatní v sekci)      
+      159 +- **Ctrl+Shift+PgDn                                           
+          +** — odeslat zcela dozadu (pod všechny ostatní)               
+      160  - Stejné operace v menu **Upravit** a tlačítka ↑Z ↓Z ⤒Z ⤓Z v  
+           toolbaru                                                      
+      161  - Funguje i pro multi-select (všechny vybrané elementy se     
+           posunou najednou)                                             
+      162 +- Efekt je viditelný jen když se elementy **překrývají**      
+          +(např. obdélník jako pozadí za textem)                        
+      163  - Vše undo-able                                               
+      164                                                                
+      165  ### Undo / Redo                                               
+
+● Update(docs\README.md)
+  ⎿  Added 4 lines, removed 4 lines
+      198  | **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |           
+      199  | **Ctrl+scroll** | Zoom in / out |                           
+      200  | **Ctrl+Shift+P** | Vlastnosti stránky (rozměry, okraje) |   
+      201 -| **Ctrl+]** | Přenést dopředu (ZIndex +1) |                  
+      202 -| **Ctrl+[** | Odeslat dozadu (ZIndex −1) |                   
+      203 -| **Ctrl+Shift+]** | Přenést zcela dopředu |                  
+      204 -| **Ctrl+Shift+[** | Odeslat zcela dozadu |                   
+      201 +| **Ctrl+PgUp** | Přenést dopředu (ZIndex +1) |               
+      202 +| **Ctrl+PgDn** | Odeslat dozadu (ZIndex −1) |                
+      203 +| **Ctrl+Shift+PgUp** | Přenést zcela dopředu |               
+      204 +| **Ctrl+Shift+PgDn** | Odeslat zcela dozadu |                
+      205                                                                
+      206  ---                                                           
+      207                                                                
+
+● Oprava provedena. Shrnutí:
+
+  Proč dva texty nic nezměnily: ZIndex řídí pořadí vykreslování — efekt je
+  viditelný jen když elementy přes sebe leží. S vedle sebou stojícími texty se
+  nic neděje.
+
+  Správný test:
+  1. Přidej obdélník → nastav mu barvu výplně přes dialog vlastností
+  2. Přidej text → přetáhni ho přes obdélník
+  3. Vyber obdélník → Ctrl+Shift+PgUp → obdélník zakryje text
+  4. Ctrl+Shift+PgDn → text je vidět zase nahoře
+
+  Klávesy změněny: Ctrl+] / Ctrl+[ → Ctrl+PgUp / Ctrl+PgDn — fungují spolehlivě
+  na české i anglické klávesnici.
+
+✻ Cooked for 2m 23s
+
+❯ Dalo by se nyni pridat nejake live preview s vygenerovanymi daty          
+  odpovidajici aktualnim sekcim nebo jak by to bylo komplikovane? nebo je   
+  lepsi postupovat s vetsi prioritou?                                       
+
+● Dobrá otázka. Tady je upřímné srovnání:
+
+  ---
+  Live preview — co by obnášelo
+
+  Jednoduchá verze (mock data):
+  - Pravý panel existuje už v XAML (PreviewColumn, teď skrytý)
+  - Renderovací pipeline je hotová — jen by se volalo Render() s mock
+  DataContext
+  - {NAZEV} → zobrazí "NAZEV", {DATUM} → "01.01.2024", tabulky → 2–3 generické
+  řádky
+  - Implementace: středně složitá (1–2 dny)
+  - Omezení: uvidíš jen přibližný layout, ne reálná data — přičemž designer už 
+  teď zobrazuje layout přesně (šablonový text {NAZEV} je vidět přímo)
+
+  Plnohodnotná verze (reálná data):
+  - Uživatel nahraje JSON soubor se skutečnými daty
+  - Výrazně složitější — potřebuje parser výrazů, zpracování tabulkových dat,
+  stránkování
+  - To patří spíš do Print Enginu než do Designeru
+
+  ---
+  Moje doporučení: ne teď
+
+  Jednoduchá mock preview má omezený přínos protože:
+  - Canvas už dnes ukazuje přesný layout s textem placeholderů
+  - Hlavní přidaná hodnota by byly jen tabulky s mock řádky — ale TableElement
+  ještě ani nemá editor sloupců
+
+  Lepší pořadí:
+
+  1. Zarovnání elementů — vysoký denní dopad, relativně rychlá implementace
+  2. Editor sloupců tabulky — blocker pro reálné použití tabulek
+  3. Live preview — smysl dává až po editoru sloupců, kdy tabulka bude
+  nakonfigurovaná
+
+  Pak bude preview skutečně co ukazovat.
+
+  Pokračujeme zarovnáváním?
+
+✻ Crunched for 35s
+
+❯ Dobre, muzes pokracovat se zarovnanim elementu.  
+
+● Nejdřív se podívám na strukturu toolbar XAML a kde přidat metody:
+
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● Mám přehled. Přidám druhý toolbar řádek pro zarovnání, metody do cs a položky
+  do menu:
+
+● Read 1 file (ctrl+o to expand)
+
+● Update(MainWindow.xaml)
+  ⎿  Added 13 lines
+       88                  <Button x:Name="BtnSave" Content="Uložit"     
+           Click="MenuSave_Click" Padding="6,3" FontWeight="SemiBold"/>  
+       89                  <Button x:Name="BtnOpen" Content="Otevřít"    
+           Click="MenuOpen_Click" Padding="6,3"/>                        
+       90              </ToolBar>                                        
+       91 +            <ToolBar Band="1" BandIndex="0">                  
+       92 +                <TextBlock Text="Zarovnat:"                   
+          +VerticalAlignment="Center" Margin="4,0,2,0"                   
+          +Foreground="#555555" FontSize="11"/>                          
+       93 +                <Button Content="⬅" ToolTip="Zarovnat vlevo"  
+          +              Click="BtnAlignLeft_Click"    Padding="5,3"/>   
+       94 +                <Button Content="➡" ToolTip="Zarovnat         
+          +vpravo"             Click="BtnAlignRight_Click"               
+          +Padding="5,3"/>                                               
+       95 +                <Button Content="↔" ToolTip="Zarovnat na      
+          +střed (vodorovně)" Click="BtnAlignCenterH_Click"              
+          +Padding="5,3"/>                                               
+       96 +                <Separator Style="{StaticResource             
+          +ToolbarSep}"/>                                                
+       97 +                <Button Content="⬆" ToolTip="Zarovnat         
+          +nahoru"             Click="BtnAlignTop_Click"                 
+          +Padding="5,3"/>                                               
+       98 +                <Button Content="⬇" ToolTip="Zarovnat dolů"   
+          +              Click="BtnAlignBottom_Click"  Padding="5,3"/>   
+       99 +                <Button Content="↕" ToolTip="Zarovnat na      
+          +střed (svisle)"  Click="BtnAlignMiddleV_Click"                
+          +Padding="5,3"/>                                               
+      100 +                <Separator Style="{StaticResource             
+          +ToolbarSep}"/>                                                
+      101 +                <Button Content="⬌" ToolTip="Rozložit         
+          +rovnoměrně vodorovně (min 3 elementy)"                        
+          +Click="BtnDistributeH_Click" Padding="5,3"/>                  
+      102 +                <Button Content="⬍" ToolTip="Rozložit         
+          +rovnoměrně svisle (min 3 elementy)"                           
+          +Click="BtnDistributeV_Click" Padding="5,3"/>                  
+      103 +            </ToolBar>                                        
+      104          </ToolBarTray>                                        
+      105                                                                
+      106          <!-- ═══ Hlavní obsah ═══ -->                         
+
+● Teď přidám položky do menu Upravit:
+
+● Update(MainWindow.xaml)
+  ⎿  Added 10 lines
+      42                  <MenuItem x:Name="MenuZBackward"               
+          Header="Odeslat dozadu"        InputGestureText="Ctrl+PgDn"    
+              Click="BtnZBackward_Click"/>                               
+      43                  <MenuItem x:Name="MenuZFront"                  
+          Header="Přenést zcela dopředu"                                 
+          InputGestureText="Ctrl+Shift+PgUp" Click="BtnZFront_Click"/>   
+      44                  <MenuItem x:Name="MenuZBack"                   
+          Header="Odeslat zcela dozadu"                                  
+          InputGestureText="Ctrl+Shift+PgDn" Click="BtnZBack_Click"/>    
+      45 +                <Separator/>                                   
+      46 +                <MenuItem Header="Zarovnat vlevo"              
+         +  Click="BtnAlignLeft_Click"/>                                 
+      47 +                <MenuItem Header="Zarovnat vpravo"             
+         +  Click="BtnAlignRight_Click"/>                                
+      48 +                <MenuItem Header="Zarovnat na střed            
+         +(vodorovně)" Click="BtnAlignCenterH_Click"/>                   
+      49 +                <MenuItem Header="Zarovnat nahoru"             
+         +  Click="BtnAlignTop_Click"/>                                  
+      50 +                <MenuItem Header="Zarovnat dolů"               
+         +  Click="BtnAlignBottom_Click"/>                               
+      51 +                <MenuItem Header="Zarovnat na střed (svisle)"  
+         + Click="BtnAlignMiddleV_Click"/>                               
+      52 +                <Separator/>                                   
+      53 +                <MenuItem Header="Rozložit vodorovně"          
+         +  Click="BtnDistributeH_Click"/>                               
+      54 +                <MenuItem Header="Rozložit svisle"             
+         +  Click="BtnDistributeV_Click"/>                               
+      55              </MenuItem>                                        
+      56              <MenuItem Header="Zobrazit">                       
+      57                  <MenuItem x:Name="MenuGrid" Header="Mřížka"    
+          IsCheckable="True"                                             
+
+● Teď přidám metody do MainWindow.xaml.cs — za blok ZIndex:
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Bash(sed -n '478,490p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿                  commands.Add(new SetPropertyCommand("ZIndex", oldZ, ne
+     wZ, v => el.ZIndex = (int)v));
+                 }
+     … +11 lines (ctrl+o to expand)
+
+● Bash(sed -n '490,502p'
+      "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner/MainWindow.xaml.cs")
+  ⎿          };
+
+             _state.Execute(commands.Count == 1 ? commands[0] : new Composi
+     … +11 lines (ctrl+o to expand)
+
+● Update(MainWindow.xaml.cs)
+  ⎿  Added 139 lines
+      494          InvalidateCanvas();                                   
+      495      }                                                         
+      496                                                                
+      497 +    // ────────────────────────────────────────────────────── 
+          +───────────────                                               
+      498 +    // Zarovnání elementů                                     
+      499 +                                                              
+      500 +    private void BtnAlignLeft_Click(object sender,            
+          +RoutedEventArgs e)    => AlignElements(AlignMode.Left);       
+      501 +    private void BtnAlignRight_Click(object sender,           
+          +RoutedEventArgs e)   => AlignElements(AlignMode.Right);       
+      502 +    private void BtnAlignCenterH_Click(object sender,         
+          +RoutedEventArgs e) => AlignElements(AlignMode.CenterH);       
+      503 +    private void BtnAlignTop_Click(object sender,             
+          +RoutedEventArgs e)     => AlignElements(AlignMode.Top);       
+      504 +    private void BtnAlignBottom_Click(object sender,          
+          +RoutedEventArgs e)  => AlignElements(AlignMode.Bottom);       
+      505 +    private void BtnAlignMiddleV_Click(object sender,         
+          +RoutedEventArgs e) => AlignElements(AlignMode.MiddleV);       
+      506 +    private void BtnDistributeH_Click(object sender,          
+          +RoutedEventArgs e)  => AlignElements(AlignMode.DistributeH);  
+      507 +    private void BtnDistributeV_Click(object sender,          
+          +RoutedEventArgs e)  => AlignElements(AlignMode.DistributeV);  
+      508 +                                                              
+      509 +    private enum AlignMode { Left, Right, CenterH, Top,       
+          +Bottom, MiddleV, DistributeH, DistributeV }                   
+      510 +                                                              
+      511 +    private void AlignElements(AlignMode mode)                
+      512 +    {                                                         
+      513 +        if (_state.ActiveSection is null) return;             
+      514 +                                                              
+      515 +        var inSection = _state.SelectedElements               
+      516 +            .Where(el =>                                      
+          +_state.ActiveSection.Elements.Contains(el))                   
+      517 +            .ToList();                                        
+      518 +                                                              
+      519 +        int minCount = mode is AlignMode.DistributeH or       
+          +AlignMode.DistributeV ? 3 : 2;                                
+      520 +        if (inSection.Count < minCount) return;               
+      521 +                                                              
+      522 +        var commands = new List<IDesignerCommand>();          
+      523 +                                                              
+      524 +        switch (mode)                                         
+      525 +        {                                                     
+      526 +            case AlignMode.Left:                              
+      527 +            {                                                 
+      528 +                float target = inSection.Min(e => e.X);       
+      529 +                foreach (var el in inSection.Where(e => e.X   
+          +!= target))                                                   
+      530 +                    commands.Add(MakeXCmd(el, target));       
+      531 +                break;                                        
+      532 +            }                                                 
+      533 +            case AlignMode.Right:                             
+      534 +            {                                                 
+      535 +                float target = inSection.Max(e => e.X +       
+          +e.Width);                                                     
+      536 +                foreach (var el in inSection)                 
+      537 +                {                                             
+      538 +                    float newX = target - el.Width;           
+      539 +                    if (Math.Abs(el.X - newX) > 0.01f)        
+          +commands.Add(MakeXCmd(el, newX));                             
+      540 +                }                                             
+      541 +                break;                                        
+      542 +            }                                                 
+      543 +            case AlignMode.CenterH:                           
+      544 +            {                                                 
+      545 +                float cx = (inSection.Min(e => e.X) +         
+          +inSection.Max(e => e.X + e.Width)) / 2f;                      
+      546 +                foreach (var el in inSection)                 
+      547 +                {                                             
+      548 +                    float newX = cx - el.Width / 2f;          
+      549 +                    if (Math.Abs(el.X - newX) > 0.01f)        
+          +commands.Add(MakeXCmd(el, newX));                             
+      550 +                }                                             
+      551 +                break;                                        
+      552 +            }                                                 
+      553 +            case AlignMode.Top:                               
+      554 +            {                                                 
+      555 +                float target = inSection.Min(e => e.Y);       
+      556 +                foreach (var el in inSection.Where(e => e.Y   
+          +!= target))                                                   
+      557 +                    commands.Add(MakeYCmd(el, target));       
+      558 +                break;                                        
+      559 +            }                                                 
+      560 +            case AlignMode.Bottom:                            
+      561 +            {                                                 
+      562 +                float target = inSection.Max(e => e.Y +       
+          +e.EffectiveDesignerHeight);                                   
+      563 +                foreach (var el in inSection)                 
+      564 +                {                                             
+      565 +                    float newY = target -                     
+          +el.EffectiveDesignerHeight;                                   
+      566 +                    if (Math.Abs(el.Y - newY) > 0.01f)        
+          +commands.Add(MakeYCmd(el, newY));                             
+      567 +                }                                             
+      568 +                break;                                        
+      569 +            }                                                 
+      570 +            case AlignMode.MiddleV:                           
+      571 +            {                                                 
+      572 +                float cy = (inSection.Min(e => e.Y) +         
+          +inSection.Max(e => e.Y + e.EffectiveDesignerHeight)) / 2f;    
+      573 +                foreach (var el in inSection)                 
+      574 +                {                                             
+      575 +                    float newY = cy -                         
+          +el.EffectiveDesignerHeight / 2f;                              
+      576 +                    if (Math.Abs(el.Y - newY) > 0.01f)        
+          +commands.Add(MakeYCmd(el, newY));                             
+      577 +                }                                             
+      578 +                break;                                        
+      579 +            }                                                 
+      580 +            case AlignMode.DistributeH:                       
+      581 +            {                                                 
+      582 +                var sorted = inSection.OrderBy(e =>           
+          +e.X).ToList();                                                
+      583 +                float totalW = sorted.Sum(e => e.Width);      
+      584 +                float span   = sorted.Last().X +              
+          +sorted.Last().Width - sorted.First().X;                       
+      585 +                float gap    = (span - totalW) /              
+          +(sorted.Count - 1);                                           
+      586 +                float cur    = sorted.First().X;              
+      587 +                foreach (var el in sorted)                    
+      588 +                {                                             
+      589 +                    if (Math.Abs(el.X - cur) > 0.01f)         
+          +commands.Add(MakeXCmd(el, cur));                              
+      590 +                    cur += el.Width + gap;                    
+      591 +                }                                             
+      592 +                break;                                        
+      593 +            }                                                 
+      594 +            case AlignMode.DistributeV:                       
+      595 +            {                                                 
+      596 +                var sorted = inSection.OrderBy(e =>           
+          +e.Y).ToList();                                                
+      597 +                float totalH = sorted.Sum(e =>                
+          +e.EffectiveDesignerHeight);                                   
+      598 +                float span   = sorted.Last().Y +              
+          +sorted.Last().EffectiveDesignerHeight - sorted.First().Y;     
+      599 +                float gap    = (span - totalH) /              
+          +(sorted.Count - 1);                                           
+      600 +                float cur    = sorted.First().Y;              
+      601 +                foreach (var el in sorted)                    
+      602 +                {                                             
+      603 +                    if (Math.Abs(el.Y - cur) > 0.01f)         
+          +commands.Add(MakeYCmd(el, cur));                              
+      604 +                    cur += el.EffectiveDesignerHeight + gap;  
+      605 +                }                                             
+      606 +                break;                                        
+      607 +            }                                                 
+      608 +        }                                                     
+      609 +                                                              
+      610 +        if (commands.Count == 0) return;                      
+      611 +                                                              
+      612 +        string desc = mode switch                             
+      613 +        {                                                     
+      614 +            AlignMode.Left        => "Zarovnat vlevo",        
+      615 +            AlignMode.Right       => "Zarovnat vpravo",       
+      616 +            AlignMode.CenterH     => "Zarovnat na střed       
+          +(vodorovně)",                                                 
+      617 +            AlignMode.Top         => "Zarovnat nahoru",       
+      618 +            AlignMode.Bottom      => "Zarovnat dolů",         
+      619 +            AlignMode.MiddleV     => "Zarovnat na střed       
+          +(svisle)",                                                    
+      620 +            AlignMode.DistributeH => "Rozložit vodorovně",    
+      621 +            AlignMode.DistributeV => "Rozložit svisle",       
+      622 +            _                     => "Zarovnat"               
+      623 +        };                                                    
+      624 +                                                              
+      625 +        _state.Execute(commands.Count == 1 ? commands[0] :    
+          +new CompositeCommand(desc, commands));                        
+      626 +        UpdatePropertiesPanel();                              
+      627 +        InvalidateCanvas();                                   
+      628 +    }                                                         
+      629 +                                                              
+      630 +    private static IDesignerCommand MakeXCmd(TemplateElement  
+          +el, float newX)                                               
+      631 +        => new SetPropertyCommand("X", el.X, newX, v => el.X  
+          += (float)v);                                                  
+      632 +                                                              
+      633 +    private static IDesignerCommand MakeYCmd(TemplateElement  
+          +el, float newY)                                               
+      634 +        => new SetPropertyCommand("Y", el.Y, newY, v => el.Y  
+          += (float)v);                                                  
+      635 +                                                              
+      636      private void DeleteSelected()                             
+      637      {                                                         
+      638          if (_state.SelectedElements.Count == 0) return;       
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -E "error CS|úspěšně|Počet chyb")
+  ⎿  Vytváření sestavení bylo úspěšně dokončeno.
+         Počet chyb: 0
+  ⎿  (timeout 1m)
+
+● Build OK. Aktualizuju dokumentaci:
+
+● Update(docs\README.md)
+  ⎿  Added 16 lines
+      152  - **Snap** — přichytávání elementů na mřížku při pohybu a     
+           resize                                                        
+      153  - Velikost mřížky: 5 mm (výchozí)                             
+      154                                                                
+      155 +### Zarovnání elementů                                        
+      156 +Funguje pro **multi-select** (min 2 vybrané elementy;         
+          +Rozložit min 3). Vše undo-able.                               
+      157 +                                                              
+      158 +| Tlačítko | Akce |                                           
+      159 +|---|---|                                                     
+      160 +| ⬅ | Zarovnat vlevo — všechny na nejlevější X |              
+      161 +| ➡ | Zarovnat vpravo — všechny na nejpravější pravý okraj |  
+      162 +| ↔ | Zarovnat na střed vodorovně |                           
+      163 +| ⬆ | Zarovnat nahoru — všechny na nejhornější Y |            
+      164 +| ⬇ | Zarovnat dolů — všechny na nejspodnější dolní okraj |   
+      165 +| ↕ | Zarovnat na střed svisle |                              
+      166 +| ⬌ | Rozložit rovnoměrně vodorovně (min 3) |                 
+      167 +| ⬍ | Rozložit rovnoměrně svisle (min 3) |                    
+      168 +                                                              
+      169 +Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu  
+          +**Upravit**.                                                  
+      170 +                                                              
+      171  ### ZIndex — pořadí překrývání                                
+      172  - **Ctrl+PgUp** — přenést dopředu (ZIndex +1)                 
+      173  - **Ctrl+PgDn** — odeslat dozadu (ZIndex −1, min 0)           
+
+● Update(docs\README.md)
+  ⎿  Added 1 line, removed 1 line
+      236                                                                
+      237  - **Editor sloupců tabulky** — přidat/odebrat/přesunout       
+           sloupec, nastavit šířku a záhlaví                             
+      238  - ~~ZIndex ovládání~~ — hotovo                                
+      239 -- **Zarovnání elementů** — zarovnat vlevo/vpravo/na           
+          -střed/nahoru/dolů, distribuovat rovnoměrně (pro multi-select) 
+      239 +- ~~Zarovnání elementů~~ — hotovo                             
+      240  - **Zamčení elementu** — toggle zámku přes klávesovou zkratku 
+            nebo toolbar (IsLocked je v modelu, UI chybí)                
+      241  - **Live preview s mock daty** — pravý panel s náhledem       
+           výstupu                                                       
+      242  - **Přehled elementů v dialogu vlastností sekce** — seznam    
+           elementů sekce, hromadná editace                              
+
+● Build čistý, 0 chyb. Shrnutí:
+
+  Přidáno — Zarovnání elementů:
+
+  Druhý řádek toolbaru s 8 tlačítky + stejné položky v menu Upravit:
+
+  ┌───────┬──────────────────────────────────────────────┬────────────────┐
+  │       │                   Operace                    │    Podmínka    │
+  ├───────┼──────────────────────────────────────────────┼────────────────┤
+  │ ⬅ ➡   │ Zarovnat vlevo / vpravo / na střed vodorovně │ min 2 elementy │
+  │  ↔    │                                              │                │
+  ├───────┼──────────────────────────────────────────────┼────────────────┤
+  │ ⬆ ⬇   │ Zarovnat nahoru / dolů / na střed svisle     │ min 2 elementy │
+  │  ↕    │                                              │                │
+  ├───────┼──────────────────────────────────────────────┼────────────────┤
+  │ ⬌ ⬍   │ Rozložit rovnoměrně vodorovně / svisle       │ min 3 elementy │
+  └───────┴──────────────────────────────────────────────┴────────────────┘
+
+  Jak to funguje:
+  - Zarovnat vlevo → všechny vybrané dostanou X = nejmenší X ze skupiny
+  - Zarovnat vpravo → všechny se zarovnají na nejpravější pravý okraj skupiny
+  - Rozložit vodorovně → krajní elementy zůstanou, střední se rozmístí s rovnými
+   mezerami mezi nimi
+  - Vybrat elementy přes Ctrl+klik nebo rubber band, pak kliknout tlačítko
+  - Vše undo-able jedním Ctrl+Z
+
+✻ Brewed for 3m 11s
+
+❯ Jak to ma fungovat na pouziti, jsem trochu zmateny, kdy to pouzit 
+
+● Praktický příklad — záhlaví se třemi texty (číslo linky, název, datum):
+
+  Před zarovnáním:          Po "Zarovnat nahoru" (⬆):
+
+    [Linka: 42]               [Linka: 42] [Název linky] [Datum]
+         [Název linky]        ← všechny tři texty mají stejné Y
+              [Datum]
+
+  Kdy to používáš:
+
+  1. Zarovnat vlevo (⬅) — máš sloupec štítků pod sebou (Jméno:, Adresa:,
+  Telefon:) a chceš je všechny začínat na stejném X
+  2. Zarovnat nahoru (⬆) — máš řadu prvků vedle sebe v jedné řadě a nejsou ve
+  stejné výšce po přetažení myší
+  3. Zarovnat na střed ↔ nebo ↕ — chceš element vycentrovat vůči ostatním
+  (např. nadpis doprostřed stránky mezi dva obdélníky)
+  4. Rozložit vodorovně (⬌) — máš 4 sloupce a chceš mezi nimi stejné mezery;
+  nastavíš jen první a poslední, vybereš všechny a klikneš
+
+  Nejčastější scénář v praxi:
+  1. Přidáš 3 texty → je to trochu rozhozené protože je táháš myší
+  2. Ctrl+A nebo Ctrl+klik vybereme všechny tři
+  3. Klikneš ⬆ → všechny jsou na stejné Y lince
+  4. Hotovo, vypadá to čistě
+
+  Bez multi-selectu to nefunguje — musíš mít vybrané alespoň 2 elementy
+  (Ctrl+klik nebo rubber band tažením).
+
+❯ Uz rozumim, je toto nejaky standardni edit funkcionalita?  
+
+● Ano, je to naprosto standardní funkce ve všech layoutových a designových
+  nástrojích:
+
+  - Microsoft Word / PowerPoint — "Seřadit a zarovnat" v záložce Formát
+  - Adobe InDesign — panel "Align" (to samé co jsme implementovali)
+  - Figma / Sketch — alignment toolbar vpravo nahoře
+  - Visual Studio WPF Designer — Format → Align
+  - CorelDRAW, Illustrator — taky standardní panel
+
+  Je to tak běžné, že uživatelé to očekávají automaticky v jakémkoliv nástroji
+  kde se pracuje s více objekty na ploše. Rozdíl je jen v detailech — např.
+  Figma a InDesign umí zarovnat vůči stránce (ne jen vůči sobě navzájem), my
+  zatím zarovnáváme elementy vůči sobě.
+
+  Pokud by sis chtěl přidat "zarovnat na střed stránky" (jeden element na střed
+  tisknutelné šířky) — to by byl jednoduchý doplněk. Ale pro teď je implementace
+   funkčně kompletní a odpovídá standardu.
+
+❯ Jak se maji chovat ty funkcionality pro 3 komponenty najednou?  
+
+● Ukážu na konkrétním příkladu se třemi texty A, B, C:
+
+  ---
+  Zarovnat vlevo ⬅ — všechny dostanou X = nejmenší X ze skupiny
+  Před:   A na X=10,  B na X=35,  C na X=20
+  Po:     A na X=10,  B na X=10,  C na X=10
+
+  Zarovnat vpravo ➡ — všechny zarovnají svůj pravý okraj na nejpravější okraj
+  skupiny
+  Před:   A (X=10, š=40) pravý=50,  B (X=30, š=60) pravý=90,  C (X=20, š=30)
+  pravý=50
+  Po:     A pravý=90 → X=50,        B pravý=90 → X=30,         C pravý=90 → X=60
+
+  Zarovnat na střed ↔ — střed každého elementu = střed celé skupiny
+  Skupina sahá od X=10 do X=90 → střed skupiny = 50
+  A (šířka 40) → X=30,  B (šířka 20) → X=40,  C (šířka 60) → X=20
+
+  Rozložit vodorovně ⬌ — krajní dva zůstanou, prostřední dostanou rovnoměrné
+  mezery
+  Před:   A na X=0 (š=20),  B na X=15 (š=20),  C na X=80 (š=20)
+          ← mezera 15 → mezera 45 →
+
+  Po:     A zůstane X=0,  C zůstane X=80
+          Celkový prostor = 100, obsazeno = 60, zbývá = 40, mezera = 20
+          B → X=40
+          ← mezera 20 → mezera 20 →
+
+  ---
+  Klíčové pravidlo: zarovnání se vždy počítá vůči bounding boxu skupiny
+  (nejkrajnější body všech vybraných elementů), ne vůči stránce ani sekci.
+
+❯ Uz rozumim, muzes jenom trochu upravit to UI, aby byly sipky nejak        
+  konzistentni?                                                             
+  ⎿  [Image #1]
+
+● Problém je mix — ⬅ ➡ ⬆ ⬇ jsou tučné emoji šipky, zatímco ↔ ↕ ⬌ ⬍
+   jsou tenké. Vyměním vše za konzistentní tenké šipky:
+
+● Update(MainWindow.xaml)
+  ⎿  Added 8 lines, removed 8 lines
+      100              </ToolBar>                                        
+      101              <ToolBar Band="1" BandIndex="0">                  
+      102                  <TextBlock Text="Zarovnat:"                   
+           VerticalAlignment="Center" Margin="4,0,2,0"                   
+           Foreground="#555555" FontSize="11"/>                          
+      103 -                <Button Content="⬅" ToolTip="Zarovnat vlevo"  
+          -              Click="BtnAlignLeft_Click"    Padding="5,3"/>   
+      104 -                <Button Content="➡" ToolTip="Zarovnat vpravo" 
+          -             Click="BtnAlignRight_Click"   Padding="5,3"/>    
+      105 -                <Button Content="↔" ToolTip="Zarovnat na      
+          -střed (vodorovně)" Click="BtnAlignCenterH_Click" Padding="5,3"
+          -/>                                                            
+      103 +                <Button Content="←" ToolTip="Zarovnat vlevo"  
+          +               Click="BtnAlignLeft_Click"    Padding="5,3"    
+          + FontSize="13"/>                                              
+      104 +                <Button Content="→" ToolTip="Zarovnat vpravo" 
+          +              Click="BtnAlignRight_Click"   Padding="5,3"     
+          + FontSize="13"/>                                              
+      105 +                <Button Content="↔" ToolTip="Zarovnat na      
+          +střed (vodorovně)" Click="BtnAlignCenterH_Click" Padding="5,3"
+          + FontSize="13"/>                                              
+      106                  <Separator Style="{StaticResource             
+           ToolbarSep}"/>                                                
+      107 -                <Button Content="⬆" ToolTip="Zarovnat nahoru" 
+          -             Click="BtnAlignTop_Click"     Padding="5,3"/>    
+      108 -                <Button Content="⬇" ToolTip="Zarovnat dolů"   
+          -               Click="BtnAlignBottom_Click"  Padding="5,3"/>  
+      109 -                <Button Content="↕" ToolTip="Zarovnat na      
+          -střed (svisle)"  Click="BtnAlignMiddleV_Click" Padding="5,3"/>
+      107 +                <Button Content="↑" ToolTip="Zarovnat nahoru" 
+          +              Click="BtnAlignTop_Click"     Padding="5,3"     
+          + FontSize="13"/>                                              
+      108 +                <Button Content="↓" ToolTip="Zarovnat dolů"   
+          +                Click="BtnAlignBottom_Click"  Padding="5,3"   
+          + FontSize="13"/>                                              
+      109 +                <Button Content="↕" ToolTip="Zarovnat na      
+          +střed (svisle)"   Click="BtnAlignMiddleV_Click" Padding="5,3" 
+          + FontSize="13"/>                                              
+      110                  <Separator Style="{StaticResource             
+           ToolbarSep}"/>                                                
+      111 -                <Button Content="⬌                            
+          -" ToolTip="Rozložit rovnoměrně vodorovně (min 3 elementy)"    
+          -Click="BtnDistributeH_Click" Padding="5,3"/>                  
+      112 -                <Button Content="⬍                            
+          -" ToolTip="Rozložit rovnoměrně svisle (min 3 elementy)"       
+          -Click="BtnDistributeV_Click" Padding="5,3"/>                  
+      111 +                <Button Content="⇔                            
+          +" ToolTip="Rozložit rovnoměrně vodorovně (min 3 elementy)"    
+          +Click="BtnDistributeH_Click" Padding="5,3" FontSize="13"/>    
+      112 +                <Button Content="⇕                            
+          +" ToolTip="Rozložit rovnoměrně svisle (min 3 elementy)"       
+          +Click="BtnDistributeV_Click" Padding="5,3" FontSize="13"/>    
+      113              </ToolBar>                                        
+      114          </ToolBarTray>                                        
+      115                                                                
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep -E "error CS|úspěšně|Počet chyb")
+  ⎿      Počet chyb: 2
+  ⎿  (timeout 1m)
+
+● Bash(cd "C:/Users/miesb/source/EDISONMAIN2/TemplateDesigner" && dotnet build
+      2>&1 | grep "error")
+  ⎿  C:\Program Files\dotnet\sdk\10.0.103\Microsoft.Common.CurrentVersion.t
+     argets(5381,5): error MSB3027: Soubor C:\Users\miesb\source\EDISONMAIN
+     2\TemplateDesigner\obj\Debug\net9.0-windows\apphost.exe nelze zkopírov
+     … +25 lines (ctrl+o to expand)
+  ⎿  (timeout 1m)
+
+● Pouze file-lock (app běží), žádná chyba v kódu. Zavři aplikaci a build projde.
+
+  Změna je jednoduchá — konzistentní tenké šipky ve stejné velikosti
+  (FontSize=13):
+
+  Před:  ⬅  ➡  ↔  |  ⬆  ⬇  ↕  |  ⬌  ⬍
+  Po:    ←  →  ↔  |  ↑  ↓  ↕  |  ⇔  ⇕
+
+  Všechny jsou teď stejné "váhy". Distribute (⇔ ⇕) mají dvojitou čáru — vizuálně
+   odlišné od zarovnání (↔ ↕) ale stále stejný styl.
+
+✻ Sautéed for 2m 14s
+
+❯ Ted to vypada dobre, co by jsi poradil, ze by se melo implementovat dale? 
+   Nekdy by se melo pridelat prehled databazovych polozek, ktere se pro     
+  danou agendu nactou a ktere uzivatel muze pouzivat napr. v textech        
+  aktualne pomoci {} syntaxe. Muzes udelat nejake obecne rozhrani, ktere by 
+   se z databaze dalo naplnit a pote referencovat v ramci aplikace? Je to   
+  dobry napad?                                                              
+
+● Ano, výborný nápad — a je to přesně ta věc, která dělá designer použitelný v
+  praxi. Bez přehledu polí uživatel píše {NAZEV_LINKY} naslepo a musí znát názvy
+   zpaměti.
+
+  ---
+  Návrh rozhraní
+
+  // Models/DataSchema.cs
+  public class DataSchema
+  {
+      public string AgendaName { get; set; }        // "Jízdní řád"
+      public List<DataFieldGroup> Groups { get; set; }
+  }
+
+  public class DataFieldGroup
+  {
+      public string Name { get; set; }              // "Záhlaví", "Řádky 
+  tabulky"
+      public List<DataField> Fields { get; set; }
+  }
+
+  public class DataField
+  {
+      public string FieldName    { get; set; }      // "NAZEV_LINKY" → 
+  {NAZEV_LINKY}
+      public string Label        { get; set; }      // "Název linky"
+      public string DataType     { get; set; }      // "text", "číslo", "datum"
+      public string? Example     { get; set; }      // "Linka 42 Praha–Brno"
+  }
+
+  Schema se načte z JSON souboru (nebo napevno z kódu), nezávisle na šabloně.
+  Print Engine ho nepotřebuje — to je čistě metadata pro designer.
+
+  ---
+  Kde by to žilo v UI
+
+  Panel vlevo (nebo jako záložka vedle sekcí):
+  📋 Pole agendy: Jízdní řád
+  ─────────────────────────
+  ▶ Záhlaví
+      NAZEV_LINKY   Název linky        "Linka 42"
+      DATUM         Datum platnosti    "01.06.2025"
+  ▶ Řádky tabulky
+      CAS           Čas odjezdu        "08:42"
+      ZASTAVKA      Název zastávky     "Praha hl.n."
+      NASTUP        Nástup cestujících "12"
+
+  Dvojklik na pole → vloží {NAZEV_LINKY} do textu vybraného TextElementu (nebo
+  zkopíruje do schránky).
+
+  ---
+  Proč je to dobrý nápad
+
+  - Prevence překlepů — {NAZEV_LINKY} vs {NAZEV_LINKY} (chybí underscore)
+  - Objevitelnost — uživatel vidí co je k dispozici bez dokumentace
+  - Budoucí rozšíření — schema lze generovat přímo z DB schématu nebo z metadat
+  agendy
+
+  ---
+  Co to obnáší
+
+  1. DataSchema.cs + DataField.cs — jednoduchý model
+  2. DataSchemaSerializer — načtení z JSON souboru
+  3. UI panel — seznam polí se skupinami, dvojklik = vložit
+  4. Napojení na TextElement editor — vkládání do textu
+
+  Relativně rychlá implementace, vysoký praktický přínos. Chceš to
+  implementovat?
+
+✻ Cooked for 44s
+
+❯ /export 
+  ⎿  Export cancelled
