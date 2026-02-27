@@ -41,9 +41,11 @@ Systém se skládá ze dvou částí:
 /Models
   Template.cs               — kořenový objekt šablony
   PageSize.cs               — rozměry stránky v mm
-  Section.cs                — abstraktní základ sekce
-  /Sections                 — konkrétní typy sekcí
+  Section.cs                — abstraktní základ sekce + enums (SectionPrintBehavior, SectionOverflowBehavior)
   TemplateElement.cs        — abstraktní základ elementu
+  DataContext.cs            — data pro renderování (print engine / preview)
+  RenderContext.cs          — kontext renderování (canvas + MmToPx + DataContext + origin sekce)
+  /Sections                 — konkrétní typy sekcí
   /Elements                 — konkrétní typy elementů
 
 /Serialization
@@ -200,6 +202,48 @@ Dragging → MouseUp          → Idle (zapsat MoveCommand do undo stacku)
 Resizing → MouseUp          → Idle (zapsat ResizeCommand)
 RubberBandSelecting → MouseUp → Idle (aktualizovat výběr)
 ```
+
+---
+
+## Klíčové implementační vzory
+
+### Polymorfní JSON serializace
+`Section` a `TemplateElement` jsou abstraktní — serializace používá `JsonPolymorphic` + `JsonDerivedType`:
+```csharp
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
+[JsonDerivedType(typeof(TextElement), "TextElement")]
+public abstract class TemplateElement { ... }
+```
+Při přidání nového typu elementu/sekce: přidat `[JsonDerivedType]` atribut na bázovou třídu.
+
+### Barvy
+Barvy jsou uloženy jako string `"#AARRGGBB"` (SkiaSharp formát, **ne** WPF `#AARRGGBB`):
+```csharp
+public string TextColor { get; set; } = "#FF000000";  // černá
+[JsonIgnore] public SKColor SkTextColor => SKColor.Parse(TextColor);
+```
+Průhledná = `"#00FFFFFF"`. SkiaSharp `SKColor.Parse()` tuto syntaxi zvládá přímo.
+
+### RenderContext
+Elementy dostávají `RenderContext` místo holého `SKCanvas`. Kontext obsahuje:
+- `Canvas` — SkiaSharp canvas
+- `MmToPx` — koeficient pro převod mm → pixely
+- `Data` — DataContext (null v designeru, mock v preview, reálná data v print enginu)
+- `SectionOriginX/Y` — absolutní pozice sekce na canvasu v px
+
+Elementy volají `ctx.ToCanvasRect(X, Y, Width, height)` pro přepočet souřadnic.
+
+### DataContext — resolvování placeholderů
+```csharp
+ctx.Data?.ResolvePlaceholders("Řidič: {JMENO}") ?? "Řidič: {JMENO}"
+```
+
+### Copy/paste — Clone()
+Každý element implementuje `Clone()` vracející hlubokou kopii s novým `Guid.NewGuid()` Id.
+
+### Extensibility bag
+`TemplateElement` a `Section` mají `Dictionary<string, string>? CustomProperties` —
+pro budoucí vlastnosti bez změny modelu a bez nutnosti verzovat JSON schéma.
 
 ---
 

@@ -19,6 +19,78 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 
 ---
 
+## Mapa codebase
+
+Aktuální stav projektu — soubory, třídy a jejich zodpovědnosti.
+
+### Kořen projektu
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `MainWindow.xaml / .cs` | `MainWindow` | Hlavní okno aplikace. WPF layout (toolbar, panely, canvas). Registrace PaintSurface handleru. |
+| `App.xaml / .cs` | `App` | Vstupní bod WPF aplikace. |
+
+### /Models — datový model šablony
+
+Čistá C# vrstva bez závislostí na WPF. Sdílená s budoucím print enginem.
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `Template.cs` | `Template` | Kořenový objekt šablony. Obsahuje `PageSize`, seznam `Section`, verzi JSON formátu, metadata. |
+| `PageSize.cs` | `PageSize` | Rozměry stránky a okraje v mm. Computed `PrintableWidth/Height`. Statické presety A4/A3. |
+| `Section.cs` | `Section` (abstract) | Základní třída pro všechny sekce. Definuje `Elements`, `DesignerHeight`, `PrintBehavior`, `OverflowBehavior`, `CustomProperties`. Nese `JsonPolymorphic` atributy. |
+| `Section.cs` | `SectionPrintBehavior` (enum) | Kdy se sekce tiskne: `Once`, `OnEveryPage`, `OnFirstPageOnly`, `OnLastPageOnly`, `OnEveryPageExceptFirst`. |
+| `Section.cs` | `SectionOverflowBehavior` (enum) | Co se stane při přetečení: `KeepTogether`, `SplitAcrossPages`, `AllowSplit`. |
+| `TemplateElement.cs` | `TemplateElement` (abstract) | Základní třída pro všechny elementy. Pozice/rozměry v mm, `ZIndex`, `IsLocked`, `VisibilityExpression`, `CustomProperties`. Nese `JsonPolymorphic` atributy. Definuje `Render(RenderContext)` a `Clone()`. |
+| `DataContext.cs` | `DataContext` | Přenáší data do elementů při renderování. `GetString`, `GetRows` (pro tabulky), `ResolvePlaceholders("{POLE}")`. V designeru null. |
+| `RenderContext.cs` | `RenderContext` | Kontext předávaný do `Render()`. Obsahuje `SKCanvas`, `MmToPx`, `DataContext`, origin sekce v px. Helper metody `ToCanvasRect`, `WithSectionOrigin`. |
+
+#### /Models/Elements
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `TextElement.cs` | `TextElement` | Statický nebo datově vázaný text (`{PLACEHOLDER}`). Font, velikost, styl, zarovnání, barva, word wrap. |
+| `TextElement.cs` | `TextFontStyle`, `TextFontWeight`, `TextHorizontalAlignment`, `TextVerticalAlignment` (enums) | Typografické volby — záměrně nezávislé na WPF typech. |
+| `RectangleElement.cs` | `RectangleElement` | Obdélník / pozadí. Barva výplně, barva okraje, tloušťka okraje, zaoblení rohů. |
+| `LineElement.cs` | `LineElement` | Horizontální nebo vertikální čára. Barva, tloušťka, styl (Solid/Dashed/Dotted). |
+| `ImageElement.cs` | `ImageElement` | Obrázek — statický (Base64) nebo z datového pole (`DataField`). Módy škálování (Fill/Fit/Stretch/None). |
+| `TableElement.cs` | `TableElement` | Tabulka s dynamickými řádky z dat. `DataSource`, `RowHeight`, seznam `TableColumn`. Výška vždy `null` — dynamická. |
+| `TableElement.cs` | `TableColumn` | Definice jednoho sloupce: záhlaví, šířka (mm), datové pole, zarovnání. |
+
+#### /Models/Sections
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `SectionHeader.cs` | `SectionHeader` | Záhlaví. Výchozí: `OnEveryPage`, `KeepTogether`, výška 25 mm. |
+| `SectionFixedHeight.cs` | `SectionFixedHeight` | Nejběžnější typ — pevná výška, statický obsah. Výchozí výška 30 mm. |
+| `SectionTable.cs` | `SectionTable` | Tabulka s řádky z dat (`DataSource`). Dynamická výška, `SplitAcrossPages`. |
+| `SectionTableDesigned.cs` | `SectionTableDesigned` | Tabulka kde uživatel navrhne layout jednoho řádku. Elements = šablona jednoho řádku, opakuje se pro každý záznam. |
+| `SectionInfiniteText.cs` | `SectionInfiniteText` | Textová sekce roztahující se podle obsahu. `AllowSplit`. |
+| `SectionSeparator.cs` | `SectionSeparator` | Tenký oddělovač (mezera nebo čára). Pevná výška (`Height` property). |
+| `SectionFooter.cs` | `SectionFooter` | Zápatí. Výchozí: `OnEveryPage`, `KeepTogether`, výška 15 mm. |
+
+### /Serialization — ukládání a načítání *(připraveno, zatím nevytvořeno)*
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `TemplateSerializer.cs` | `TemplateSerializer` | JSON serializace/deserializace `Template`. Polymorfismus přes `JsonPolymorphic`. Verzování formátu. |
+
+### /Commands — undo/redo *(připraveno, zatím nevytvořeno)*
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `IDesignerCommand.cs` | `IDesignerCommand` | Rozhraní: `Execute()`, `Undo()`. |
+| `Implementations/` | `MoveCommand`, `ResizeCommand`, `AddElementCommand`, `DeleteElementCommand`, ... | Konkrétní příkazy pro každou uživatelskou akci. |
+
+### /Designer — interakce a stav *(připraveno, zatím nevytvořeno)*
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `DesignerState.cs` | `DesignerState` | Aktuální stav editoru: vybrané elementy, zoom, snap, undo/redo stacky. |
+| `DesignerCanvas.cs` | `DesignerCanvas` | Renderovací pipeline (volá `element.Render()`), hit testing, myš/klávesnice, rubber band selection, resize handles. |
+
+---
+
 ## Konceptuální model šablony
 
 ### Stránka
@@ -194,6 +266,57 @@ Výchozí obsah sekcí je konfigurovatelný a slouží jako rychlý start — u�
 - Zarovnávací nástroje (align left, center atd.) — připravit ale neimplementovat
 - Náhled s reálnými daty
 - Tisk přímo z designeru
+
+---
+
+## Renderovací abstrakce
+
+### RenderContext
+Elementy dostávají `RenderContext` (ne holý `SKCanvas`). Obsahuje vše potřebné pro vykreslení:
+
+```csharp
+public class RenderContext {
+    SKCanvas Canvas       // SkiaSharp canvas
+    float MmToPx          // koeficient mm → px (liší se dle DPI a zoomu designeru)
+    DataContext? Data      // null v designeru, mock v preview, reálná data v print enginu
+    float SectionOriginX  // absolutní X pozice sekce na canvasu (px)
+    float SectionOriginY  // absolutní Y pozice sekce na canvasu (px)
+
+    // Pomocné metody:
+    float Px(float mm)
+    SKPoint ToCanvas(float xMm, float yMm)
+    SKRect ToCanvasRect(float xMm, float yMm, float wMm, float hMm)
+    RenderContext WithSectionOrigin(float xPx, float yPx)
+}
+```
+
+DesignerCanvas volá `ctx.WithSectionOrigin(x, y)` pro každou sekci — elementy nepotřebují znát absolutní pozici sekce.
+
+### DataContext
+Přenáší data z print enginu (nebo mock data z preview) do elementů:
+
+```csharp
+public class DataContext {
+    string GetString(string key, string fallback = "")
+    object? GetValue(string key)
+    IReadOnlyList<DataContext> GetRows(string dataSource)  // pro TableElement
+    string ResolvePlaceholders(string template)            // "{JMENO}" → "Jan Novák"
+}
+```
+
+V designeru je `DataContext` vždy `null` — elementy renderují samy sebe se statickým obsahem.
+
+### Jak přidat nový typ elementu
+1. Vytvořit třídu dědící z `TemplateElement` v `/Models/Elements/`
+2. Implementovat `Render(RenderContext ctx)` a `Clone()`
+3. Přidat `[JsonDerivedType(typeof(NovyElement), "NovyElement")]` na `TemplateElement`
+4. Přidat do UI (toolbar, properties panel)
+
+### Konvence pro barvy
+Barvy se ukládají jako string `"#AARRGGBB"` (SkiaSharp formát):
+- Černá: `"#FF000000"`, Bílá: `"#FFFFFFFF"`, Průhledná: `"#00FFFFFF"`
+- `SKColor.Parse(colorString)` — přímá konverze bez pomocné logiky
+- `[JsonIgnore] public SKColor SkXxxColor => SKColor.Parse(XxxColor);`
 
 ---
 
