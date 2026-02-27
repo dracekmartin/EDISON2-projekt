@@ -1,190 +1,86 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
+using System.Windows.Input;
 using ALVA.EDISONAPI;
-using ALWA.SYS;
+using EDISONMAIN2.Commands;
+using EDISONMAIN2.Modules;
+using EDISONMAIN2.Services;
+using EDISONMAIN2.Services.Data;
+using EDISONMAIN2.Services.Processes;
 using static ALVA.EDISONAPI.Database;
 
-namespace EDISONMAIN2
+namespace EDISONMAIN2.ViewModels
 {
+    record CompanyItem(string Id, string Database);
+
     class MainViewModel : INotifyPropertyChanged
     {
-        public MLRest CreateMLRest()
+        private readonly IEdisonMainDataService _dataService;
+        private readonly IProcessLaunchService _processService;
+
+        public ICommand OpenModuleCommand { get; }
+
+        public MainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
         {
-            return new MLRest(Server, RestPort, Namespace, Idfa)
-            {
-                LoginName = UserName,
-                FullName = FullName,
-                Mlp = Mlp.ToString()
-            };
+            _dataService = dataService;
+            _processService = processService;
+
+            OpenModuleCommand = new RelayCommand<IModule>(OpenModule);
+
+            TopLevelModules = [];
+
+            var companies = _dataService.GetCompanies();
+
+            VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
+            _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
+
+            var tree = _dataService.GetModuleTree(Namespace, Idfa);
+            foreach (var module in tree)
+                TopLevelModules.Add(module);
+
+            ConnParams = connParams;
         }
 
-        public MainViewModel()
+        public ObservableCollection<IModule> TopLevelModules { get; }
+
+        public ObservableCollection<CompanyItem> VisibleIdfas { get; }
+
+        private int _selectedCompanyIndex;
+        public int SelectedCompanyIndex
         {
-            TopLevelModules = new ObservableCollection<IModule>();
-
-            TopLevelModules.Add(
-                new ModuleFamily
-                {
-                    DisplayedName = "MHD",
-                    IsExpanded = true,
-                    NestedModules = new ObservableCollection<IModule>
-                    {
-                        new ExecutableModule
-                        {
-                            DisplayedName = "Plán dopravy",
-                            ExecutablePath = "MHD2PlanDopravy.exe",
-                            FormName = "ALVA.MHD2.PlanDopravy.formMHD2PlanDopravyMain"
-                        },
-                        new ExecutableModule
-                        {
-                            DisplayedName = "Linky a oběhy",
-                            ExecutablePath = "MHD2Linky.exe",
-                            FormName = "ALVA.MHD2.Linky.formMHD2LinkyHlavniOkno"
-                        },
-                        new ModuleFamily
-                        {
-                            DisplayedName = "Nastavení a číselníky",
-                            IsExpanded = true,
-                            NestedModules = new ObservableCollection<IModule>
-                            {
-                                new ExecutableModule
-                                {
-                                    DisplayedName = "Návrhář sestav JŘ",
-                                    ExecutablePath = "TISKJR.exe",
-                                    FormName = "ALVA.TISKJR.formTISKJRSeznamSestav"
-                                },
-                            }
-                        }
-                    }
-                }
-            );
-            TopLevelModules.Add(
-                new ModuleFamily
-                {
-                    DisplayedName = "Sklady",
-                    IsExpanded = false,
-                    NestedModules = new ObservableCollection<IModule>
-                    {
-                        new ExecutableModule
-                        {
-                            DisplayedName = "Doklady",
-                            ExecutablePath = "MTZ.exe",
-                            FormName = "ALVA.MTZ.formMTZDoklady"
-                        },
-                        new ModuleFamily
-                        {
-                            DisplayedName = "Nastavení a číselníky",
-                            NestedModules = new ObservableCollection<IModule>
-                            {
-                                new ExecutableModule
-                                {
-                                    DisplayedName = "Materiály",
-                                    ExecutablePath = "MTZ.exe",
-                                    FormName = "ALVA.MTZ.formMTZMaterialy"
-                                },
-                            }
-                        },
-                    }
-                }
-            );
-
-
-            var mlRest = CreateMLRest();
-
-            string errState = "";
-            var companyList = ALVA.EDISONAPI.Database.GetCompanyList(ref errState, mlRest, false);
-
-            if (!string.IsNullOrEmpty(errState)) MessageBox.Show(errState);
-
-            VisibleIdfas = [.. companyList];
-            SelectedCompany = VisibleIdfas.First(x => x.Id == "CB_DP");
-        }
-
-        public ObservableCollection<IModule> TopLevelModules { get; set; }
-
-        public ObservableCollection<CompanyStruct> VisibleIdfas { get; set; }
-
-        string _server = "192.168.16.1";
-        public string Server
-        {
-            get => _server;
+            get => _selectedCompanyIndex;
             set
             {
-                _server = value;
+                _selectedCompanyIndex = value;
                 NotifyPropertyChanged();
+                NotifyPropertyChanged(nameof(Namespace));
+                NotifyPropertyChanged(nameof(Idfa));
             }
         }
 
-        int _restPort = 57770;
-        public int RestPort
+        public CompanyItem SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
+
+        public ConnectionParams ConnParams { get; init; }
+
+        public string Namespace => SelectedCompany.Database;
+
+        public string Idfa => SelectedCompany.Id;
+
+        public void CloseAllProcesses() => _processService.CloseAll();
+
+        private void OpenModule(IModule module)
         {
-            get => _restPort;
-            set
-            {
-                _restPort = value;
-                NotifyPropertyChanged();
-            }
+            if (module is ExecutableModule executableModule)
+                _processService.Launch(executableModule, Namespace, Idfa);
         }
 
-        public CompanyStruct SelectedCompany { get; set; }
-
-        public string Namespace
-        {
-            get => SelectedCompany.Database;
-        }
-
-        public string Idfa
-        {
-            get => SelectedCompany.Id;
-        }
-
-        string _userName = "martin.hubata";
-        public string UserName
-        {
-            get => _userName;
-            set
-            {
-                _userName = value;
-                NotifyPropertyChanged();
-            }
-        }
-
-        string _fullName = "martin.hubata";
-        public string FullName
-        {
-            get => _fullName;
-            set
-            {
-                _fullName = value;
-                NotifyPropertyChanged();
-            }
-        }
-
-        int _mlp = 167;
-        public int Mlp
-        {
-            get => _mlp;
-            set
-            {
-                _mlp = value;
-                NotifyPropertyChanged();
-            }
-        }
-
-        void NotifyPropertyChanged([CallerMemberName] string property = null)
+        void NotifyPropertyChanged([CallerMemberName] string? property = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
-
 }

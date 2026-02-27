@@ -1,22 +1,12 @@
-﻿using ALWA.SYS;
+﻿using EDControls;
+using EDISONMAIN2.Modules;
+using EDISONMAIN2.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.DirectoryServices.ActiveDirectory;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Xml.Linq;
-
 namespace EDISONMAIN2
 {
     /// <summary>
@@ -24,8 +14,6 @@ namespace EDISONMAIN2
     /// </summary>
     public partial class EdisonMainWindow : Window
     {
-        private List<Process> _processes = new List<Process>();
-
         public EdisonMainWindow()
         {
             InitializeComponent();
@@ -33,89 +21,58 @@ namespace EDISONMAIN2
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            
         }
 
-        
-
-        private void tvApps_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        private void Tree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            MainViewModel mainViewModel = this.DataContext as MainViewModel;
-
-            DependencyObject clickedItem = e.OriginalSource as DependencyObject;
-
-            while (clickedItem != null && !(clickedItem is TreeViewItem))
-            {
+            DependencyObject? clickedItem = e.OriginalSource as DependencyObject;
+            while (clickedItem != null && clickedItem is not TreeViewItem)
                 clickedItem = VisualTreeHelper.GetParent(clickedItem);
-            }
 
-            if (clickedItem is TreeViewItem item)
+            if (clickedItem is TreeViewItem item && item.DataContext is IModule module)
             {
                 item.IsSelected = true;
-
-                if (item.DataContext is ModuleFamily moduleFamily)
-                {
-                    string name = moduleFamily.DisplayedName;
-
-                    MessageBox.Show($"You double-clicked {item.DataContext.GetType().Name}: {name}");
-                }
-                else if (item.DataContext is ExecutableModule executableModule)
-                {
-                    if (!string.IsNullOrEmpty(executableModule.ExecutablePath))
-                    {
-
-                        Process? prc = Process.Start(new ProcessStartInfo()
-                        {
-                            UseShellExecute = true,
-                            FileName = Path.Combine("C:\\EDISON", executableModule.ExecutablePath),
-                            Arguments = $"EDISONMAIN2 \"{mainViewModel.Server}\" \"{mainViewModel.RestPort}\" \"{mainViewModel.Namespace}\" \"{mainViewModel.Idfa}\" \"{mainViewModel.UserName}\" \"{mainViewModel.FullName}\" \"{mainViewModel.Mlp}\" \"{executableModule.FormName}\"",
-
-                        });
-                        if (prc != null) _processes.Add(prc);
-                    }
-                }
+                if (DataContext is MainViewModel vm)
+                    vm.OpenModuleCommand.Execute(module);
             }
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            foreach (var process in _processes)
-            {
-                try
-                {
-                    if (!process.HasExited)
-                    {
-                        process.Kill();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error closing process: {ex.Message}");
-                }
-            }
+            if (DataContext is MainViewModel vm)
+                vm.CloseAllProcesses();
         }
 
-        
-
-        private void mlrestTestButton_Click(object sender, RoutedEventArgs e)
+        private void TestFormInput_Click(object sender, RoutedEventArgs e)
         {
-            try
+            var formInput = new FormInput
             {
-                MainViewModel mainViewModel = this.DataContext as MainViewModel;
+                Items = new List<FormItem>
+                {
+                    new FormGroup { GroupName = "Osobní údaje" },
+                    new FormField { Label = "Jméno",       FieldType = FieldType.Text },
+                    new FormField { Label = "Příjmení",    FieldType = FieldType.Text },
+                    new FormField { Label = "Věk",         FieldType = FieldType.Number },
+                    new FormGroup { GroupName = "Adresa" },
+                    new FormField { Label = "Ulice",       FieldType = FieldType.Text },
+                    new FormField { Label = "Město",       FieldType = FieldType.Text },
+                    new FormField { Label = "PSČ",         FieldType = FieldType.Number },
+                    new FormGroup { GroupName = "Kontakt" },
+                    new FormField { Label = "E-mail",      FieldType = FieldType.Text },
+                    new FormField { Label = "Telefon",     FieldType = FieldType.Number },
+                }
+            };
 
-                
-
-                /*
-                CVar cvar = mlRest.Query("ALVA.MHD2.PlanDopravy.Forms.formMHD2PlanDopravyMain", "Test", new CVar());
-                mlRest.RestStatus.ThrowIfError();
-
-                MessageBox.Show($"testkey: {cvar["testkey"]}", "", MessageBoxButton.OK, MessageBoxImage.Information);
-                */
-            }
-            catch (Exception ex)
+            var win = new Window
             {
-                MessageBox.Show($"MLRest error: {ex.Message}", "Connection Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+                Title = "Test FormInput",
+                Width = 450,
+                Height = 400,
+                WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                Owner = this,
+                Content = formInput
+            };
+            win.Show();
         }
     }
 }

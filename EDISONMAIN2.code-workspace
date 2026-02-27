@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+        {
+            "name": "cloud3:MLINE (read-only)",
+            "uri": "isfs-readonly://cloud3:mline/"
+        }
+    ],
+    "settings": {
+        "objectscript.conn": {
+            "server": "cloud3",
+            "ns": "MLINE",
+            "active": true
+        },
+        "objectscript.syncLocalChanges": "vscodeOnly",
+    }
+}
