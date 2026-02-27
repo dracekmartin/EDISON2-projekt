@@ -494,6 +494,145 @@ public partial class MainWindow : Window
         InvalidateCanvas();
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+    // Zarovnání elementů
+
+    private void BtnAlignLeft_Click(object sender, RoutedEventArgs e)    => AlignElements(AlignMode.Left);
+    private void BtnAlignRight_Click(object sender, RoutedEventArgs e)   => AlignElements(AlignMode.Right);
+    private void BtnAlignCenterH_Click(object sender, RoutedEventArgs e) => AlignElements(AlignMode.CenterH);
+    private void BtnAlignTop_Click(object sender, RoutedEventArgs e)     => AlignElements(AlignMode.Top);
+    private void BtnAlignBottom_Click(object sender, RoutedEventArgs e)  => AlignElements(AlignMode.Bottom);
+    private void BtnAlignMiddleV_Click(object sender, RoutedEventArgs e) => AlignElements(AlignMode.MiddleV);
+    private void BtnDistributeH_Click(object sender, RoutedEventArgs e)  => AlignElements(AlignMode.DistributeH);
+    private void BtnDistributeV_Click(object sender, RoutedEventArgs e)  => AlignElements(AlignMode.DistributeV);
+
+    private enum AlignMode { Left, Right, CenterH, Top, Bottom, MiddleV, DistributeH, DistributeV }
+
+    private void AlignElements(AlignMode mode)
+    {
+        if (_state.ActiveSection is null) return;
+
+        var inSection = _state.SelectedElements
+            .Where(el => _state.ActiveSection.Elements.Contains(el))
+            .ToList();
+
+        int minCount = mode is AlignMode.DistributeH or AlignMode.DistributeV ? 3 : 2;
+        if (inSection.Count < minCount) return;
+
+        var commands = new List<IDesignerCommand>();
+
+        switch (mode)
+        {
+            case AlignMode.Left:
+            {
+                float target = inSection.Min(e => e.X);
+                foreach (var el in inSection.Where(e => e.X != target))
+                    commands.Add(MakeXCmd(el, target));
+                break;
+            }
+            case AlignMode.Right:
+            {
+                float target = inSection.Max(e => e.X + e.Width);
+                foreach (var el in inSection)
+                {
+                    float newX = target - el.Width;
+                    if (Math.Abs(el.X - newX) > 0.01f) commands.Add(MakeXCmd(el, newX));
+                }
+                break;
+            }
+            case AlignMode.CenterH:
+            {
+                float cx = (inSection.Min(e => e.X) + inSection.Max(e => e.X + e.Width)) / 2f;
+                foreach (var el in inSection)
+                {
+                    float newX = cx - el.Width / 2f;
+                    if (Math.Abs(el.X - newX) > 0.01f) commands.Add(MakeXCmd(el, newX));
+                }
+                break;
+            }
+            case AlignMode.Top:
+            {
+                float target = inSection.Min(e => e.Y);
+                foreach (var el in inSection.Where(e => e.Y != target))
+                    commands.Add(MakeYCmd(el, target));
+                break;
+            }
+            case AlignMode.Bottom:
+            {
+                float target = inSection.Max(e => e.Y + e.EffectiveDesignerHeight);
+                foreach (var el in inSection)
+                {
+                    float newY = target - el.EffectiveDesignerHeight;
+                    if (Math.Abs(el.Y - newY) > 0.01f) commands.Add(MakeYCmd(el, newY));
+                }
+                break;
+            }
+            case AlignMode.MiddleV:
+            {
+                float cy = (inSection.Min(e => e.Y) + inSection.Max(e => e.Y + e.EffectiveDesignerHeight)) / 2f;
+                foreach (var el in inSection)
+                {
+                    float newY = cy - el.EffectiveDesignerHeight / 2f;
+                    if (Math.Abs(el.Y - newY) > 0.01f) commands.Add(MakeYCmd(el, newY));
+                }
+                break;
+            }
+            case AlignMode.DistributeH:
+            {
+                var sorted = inSection.OrderBy(e => e.X).ToList();
+                float totalW = sorted.Sum(e => e.Width);
+                float span   = sorted.Last().X + sorted.Last().Width - sorted.First().X;
+                float gap    = (span - totalW) / (sorted.Count - 1);
+                float cur    = sorted.First().X;
+                foreach (var el in sorted)
+                {
+                    if (Math.Abs(el.X - cur) > 0.01f) commands.Add(MakeXCmd(el, cur));
+                    cur += el.Width + gap;
+                }
+                break;
+            }
+            case AlignMode.DistributeV:
+            {
+                var sorted = inSection.OrderBy(e => e.Y).ToList();
+                float totalH = sorted.Sum(e => e.EffectiveDesignerHeight);
+                float span   = sorted.Last().Y + sorted.Last().EffectiveDesignerHeight - sorted.First().Y;
+                float gap    = (span - totalH) / (sorted.Count - 1);
+                float cur    = sorted.First().Y;
+                foreach (var el in sorted)
+                {
+                    if (Math.Abs(el.Y - cur) > 0.01f) commands.Add(MakeYCmd(el, cur));
+                    cur += el.EffectiveDesignerHeight + gap;
+                }
+                break;
+            }
+        }
+
+        if (commands.Count == 0) return;
+
+        string desc = mode switch
+        {
+            AlignMode.Left        => "Zarovnat vlevo",
+            AlignMode.Right       => "Zarovnat vpravo",
+            AlignMode.CenterH     => "Zarovnat na střed (vodorovně)",
+            AlignMode.Top         => "Zarovnat nahoru",
+            AlignMode.Bottom      => "Zarovnat dolů",
+            AlignMode.MiddleV     => "Zarovnat na střed (svisle)",
+            AlignMode.DistributeH => "Rozložit vodorovně",
+            AlignMode.DistributeV => "Rozložit svisle",
+            _                     => "Zarovnat"
+        };
+
+        _state.Execute(commands.Count == 1 ? commands[0] : new CompositeCommand(desc, commands));
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
+    }
+
+    private static IDesignerCommand MakeXCmd(TemplateElement el, float newX)
+        => new SetPropertyCommand("X", el.X, newX, v => el.X = (float)v);
+
+    private static IDesignerCommand MakeYCmd(TemplateElement el, float newY)
+        => new SetPropertyCommand("Y", el.Y, newY, v => el.Y = (float)v);
+
     private void DeleteSelected()
     {
         if (_state.SelectedElements.Count == 0) return;

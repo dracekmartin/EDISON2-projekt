@@ -42,6 +42,16 @@
                 <MenuItem x:Name="MenuZBackward" Header="Odeslat dozadu"        InputGestureText="Ctrl+PgDn"       Click="BtnZBackward_Click"/>
                 <MenuItem x:Name="MenuZFront"    Header="Přenést zcela dopředu" InputGestureText="Ctrl+Shift+PgUp" Click="BtnZFront_Click"/>
                 <MenuItem x:Name="MenuZBack"     Header="Odeslat zcela dozadu"  InputGestureText="Ctrl+Shift+PgDn" Click="BtnZBack_Click"/>
+                <Separator/>
+                <MenuItem Header="Zarovnat vlevo"               Click="BtnAlignLeft_Click"/>
+                <MenuItem Header="Zarovnat vpravo"              Click="BtnAlignRight_Click"/>
+                <MenuItem Header="Zarovnat na střed (vodorovně)" Click="BtnAlignCenterH_Click"/>
+                <MenuItem Header="Zarovnat nahoru"              Click="BtnAlignTop_Click"/>
+                <MenuItem Header="Zarovnat dolů"                Click="BtnAlignBottom_Click"/>
+                <MenuItem Header="Zarovnat na střed (svisle)"  Click="BtnAlignMiddleV_Click"/>
+                <Separator/>
+                <MenuItem Header="Rozložit vodorovně"           Click="BtnDistributeH_Click"/>
+                <MenuItem Header="Rozložit svisle"              Click="BtnDistributeV_Click"/>
             </MenuItem>
             <MenuItem Header="Zobrazit">
                 <MenuItem x:Name="MenuGrid" Header="Mřížka" IsCheckable="True"
@@ -87,6 +97,19 @@
                 <Separator Style="{StaticResource ToolbarSep}"/>
                 <Button x:Name="BtnSave" Content="Uložit" Click="MenuSave_Click" Padding="6,3" FontWeight="SemiBold"/>
                 <Button x:Name="BtnOpen" Content="Otevřít" Click="MenuOpen_Click" Padding="6,3"/>
+            </ToolBar>
+            <ToolBar Band="1" BandIndex="0">
+                <TextBlock Text="Zarovnat:" VerticalAlignment="Center" Margin="4,0,2,0" Foreground="#555555" FontSize="11"/>
+                <Button Content="←" ToolTip="Zarovnat vlevo"               Click="BtnAlignLeft_Click"    Padding="5,3" FontSize="13"/>
+                <Button Content="→" ToolTip="Zarovnat vpravo"              Click="BtnAlignRight_Click"   Padding="5,3" FontSize="13"/>
+                <Button Content="↔" ToolTip="Zarovnat na střed (vodorovně)" Click="BtnAlignCenterH_Click" Padding="5,3" FontSize="13"/>
+                <Separator Style="{StaticResource ToolbarSep}"/>
+                <Button Content="↑" ToolTip="Zarovnat nahoru"              Click="BtnAlignTop_Click"     Padding="5,3" FontSize="13"/>
+                <Button Content="↓" ToolTip="Zarovnat dolů"                Click="BtnAlignBottom_Click"  Padding="5,3" FontSize="13"/>
+                <Button Content="↕" ToolTip="Zarovnat na střed (svisle)"   Click="BtnAlignMiddleV_Click" Padding="5,3" FontSize="13"/>
+                <Separator Style="{StaticResource ToolbarSep}"/>
+                <Button Content="⇔" ToolTip="Rozložit rovnoměrně vodorovně (min 3 elementy)" Click="BtnDistributeH_Click" Padding="5,3" FontSize="13"/>
+                <Button Content="⇕" ToolTip="Rozložit rovnoměrně svisle (min 3 elementy)"   Click="BtnDistributeV_Click" Padding="5,3" FontSize="13"/>
             </ToolBar>
         </ToolBarTray>
 

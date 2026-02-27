@@ -152,6 +152,22 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - **Snap** — přichytávání elementů na mřížku při pohybu a resize
 - Velikost mřížky: 5 mm (výchozí)
 
+### Zarovnání elementů
+Funguje pro **multi-select** (min 2 vybrané elementy; Rozložit min 3). Vše undo-able.
+
+| Tlačítko | Akce |
+|---|---|
+| ⬅ | Zarovnat vlevo — všechny na nejlevější X |
+| ➡ | Zarovnat vpravo — všechny na nejpravější pravý okraj |
+| ↔ | Zarovnat na střed vodorovně |
+| ⬆ | Zarovnat nahoru — všechny na nejhornější Y |
+| ⬇ | Zarovnat dolů — všechny na nejspodnější dolní okraj |
+| ↕ | Zarovnat na střed svisle |
+| ⬌ | Rozložit rovnoměrně vodorovně (min 3) |
+| ⬍ | Rozložit rovnoměrně svisle (min 3) |
+
+Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
+
 ### ZIndex — pořadí překrývání
 - **Ctrl+PgUp** — přenést dopředu (ZIndex +1)
 - **Ctrl+PgDn** — odeslat dozadu (ZIndex −1, min 0)
@@ -220,7 +236,7 @@ V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu
 
 - **Editor sloupců tabulky** — přidat/odebrat/přesunout sloupec, nastavit šířku a záhlaví
 - ~~ZIndex ovládání~~ — hotovo
-- **Zarovnání elementů** — zarovnat vlevo/vpravo/na střed/nahoru/dolů, distribuovat rovnoměrně (pro multi-select)
+- ~~Zarovnání elementů~~ — hotovo
 - **Zamčení elementu** — toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)
 - **Live preview s mock daty** — pravý panel s náhledem výstupu
 - **Přehled elementů v dialogu vlastností sekce** — seznam elementů sekce, hromadná editace
