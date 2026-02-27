@@ -29,7 +29,9 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 
 | Soubor | Třída | Zodpovědnost |
 |---|---|---|
-| `MainWindow.xaml / .cs` | `MainWindow` | Hlavní okno aplikace. WPF layout (toolbar, panely, canvas). Registrace PaintSurface handleru. Mouse state machine. |
+| `MainWindow.xaml / .cs` | `MainWindow` | Hlavní okno aplikace. WPF layout (toolbar, panely, canvas, status bar). Registrace PaintSurface handleru. Mouse state machine. |
+| `ElementPropertiesWindow.xaml / .cs` | `ElementPropertiesWindow` | Plovoucí dialog vlastností elementu. Otevírá se dvojklikem/Enterem. OK zachová změny, Zrušit vrátí undo stack na hloubku při otevření. |
+| `GlobalUsings.cs` | — | Globální using aliasy řešící konflikty názvů mezi WPF a WinForms (`UseWPF` + `UseWindowsForms`). |
 | `App.xaml / .cs` | `App` | Vstupní bod WPF aplikace. `DispatcherUnhandledException` handler pro zobrazení chyb. |
 
 ### /Models — datový model šablony
@@ -43,7 +45,8 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 | `Section.cs` | `Section` (abstract) | Základní třída pro všechny sekce. Definuje `Elements`, `DesignerHeight`, `PrintBehavior`, `OverflowBehavior`, `CustomProperties`. Nese `JsonPolymorphic` atributy. |
 | `Section.cs` | `SectionPrintBehavior` (enum) | Kdy se sekce tiskne: `Once`, `OnEveryPage`, `OnFirstPageOnly`, `OnLastPageOnly`, `OnEveryPageExceptFirst`. |
 | `Section.cs` | `SectionOverflowBehavior` (enum) | Co se stane při přetečení: `KeepTogether`, `SplitAcrossPages`, `AllowSplit`. |
-| `TemplateElement.cs` | `TemplateElement` (abstract) | Základní třída pro všechny elementy. Pozice/rozměry v mm, `ZIndex`, `IsLocked`, `VisibilityExpression`, `CustomProperties`. Nese `JsonPolymorphic` atributy. Definuje `Render(RenderContext)` a `Clone()`. |
+| `TemplateElement.cs` | `TemplateElement` (abstract) | Základní třída pro všechny elementy. Pozice/rozměry v mm, `ZIndex`, `IsLocked`, `VisibilityExpression`, `CustomProperties`. Nese `JsonPolymorphic` atributy. Definuje `Render(RenderContext)`, `Clone()` a `GetPropertyDescriptors()`. |
+| `PropertyDescriptor.cs` | `PropertyDescriptor` (abstract) a potomci | Deskriptory editovatelných vlastností. Typy: `StringPropertyDescriptor`, `FloatPropertyDescriptor`, `BoolPropertyDescriptor`, `ColorPropertyDescriptor`, `EnumPropertyDescriptor`. Panel generuje UI automaticky — žádná ruční registrace. |
 | `DataContext.cs` | `DataContext` | Přenáší data do elementů při renderování. `GetString`, `GetRows` (pro tabulky), `ResolvePlaceholders("{POLE}")`. V designeru null. |
 | `RenderContext.cs` | `RenderContext` | Kontext předávaný do `Render()`. Obsahuje `SKCanvas`, `MmToPx`, `DataContext`, origin sekce v px. Helper metody `ToCanvasRect`, `WithSectionOrigin`. |
 
@@ -86,6 +89,15 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 | `Implementations/MoveElementCommand.cs` | `MoveElementCommand` | Přesun elementu. Ukládá původní a novou pozici (X, Y v mm). |
 | `Implementations/ResizeElementCommand.cs` | `ResizeElementCommand` | Změna velikosti elementu. Ukládá původní a nové X, Y, Width, Height (Height může být null). |
 | `Implementations/CompositeCommand.cs` | `CompositeCommand` | Složený příkaz — agreguje více příkazů do jednoho undo/redo kroku. Undo probíhá v opačném pořadí. |
+| `Implementations/SetPropertyCommand.cs` | `SetPropertyCommand` | Změna jedné vlastnosti elementu. Ukládá starou/novou hodnotu jako `object?` + `Action<object?>` pro aplikaci. Univerzální pro všechny typy vlastností. |
+| `Implementations/AddElementCommand.cs` | `AddElementCommand` | Přidání elementu do sekce (s undo = odebrání). |
+| `Implementations/DeleteElementCommand.cs` | `DeleteElementCommand` | Smazání elementu ze sekce (s undo = obnovení na původní index). |
+
+### /Controls — WPF UserControly
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `Controls/PropertiesPanel.xaml / .cs` | `PropertiesPanel` | UserControl zobrazující editovatelné vlastnosti elementu. Generuje UI řádky dynamicky z `PropertyDescriptor` seznamu. `SetContext()` napojí callbacks pro undo a invalidaci canvasu. `ShowElement()` / `ShowMessage()` přepínají obsah. |
 
 ### /Designer — interakce a stav
 
@@ -101,6 +113,7 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 
 ```
 Idle
+  → dvojklik na element                       → ShowForElement() (dialog vlastností)
   → klik na resize handle (single selection)  → Resizing
   → klik na element                           → Dragging
   → klik na prázdné místo                     → clear výběru / aktivace sekce
@@ -160,8 +173,30 @@ V designeru je `DataContext` vždy `null` — elementy renderují statický obsa
 
 1. Vytvořit třídu dědící z `TemplateElement` v `/Models/Elements/`
 2. Implementovat `Render(RenderContext ctx)` a `Clone()`
-3. Přidat `[JsonDerivedType(typeof(NovyElement), "NovyElement")]` na `TemplateElement`
-4. Přidat do UI (toolbar menu, properties panel)
+3. Implementovat `GetPropertyDescriptors()` — vrací seznam deskriptorů pro dialog vlastností; panel se aktualizuje automaticky
+4. Přidat `[JsonDerivedType(typeof(NovyElement), "NovyElement")]` na `TemplateElement`
+5. Přidat do toolbar menu v `BtnAddElement_Click`
+
+### Jak přidat vlastnost k existujícímu elementu
+
+```csharp
+// 1. Přidat C# property do třídy elementu
+public float Opacity { get; set; } = 1.0f;
+
+// 2. Přidat deskriptor do GetPropertyDescriptors()
+new FloatPropertyDescriptor {
+    Label = "Průhlednost", Group = "Vzhled",
+    Get = () => Opacity, Set = v => Opacity = v,
+    Min = 0f, Max = 1f, Format = "0.##"
+},
+
+// 3. Přidat do Clone()
+Opacity = Opacity,
+
+// 4. Použít v Render() — žádná změna v panelu ani dialogu není potřeba
+```
+
+Typy deskriptorů: `StringPropertyDescriptor`, `FloatPropertyDescriptor`, `BoolPropertyDescriptor`, `ColorPropertyDescriptor`, `EnumPropertyDescriptor`.
 
 ## Jak přidat nový typ sekce
 
