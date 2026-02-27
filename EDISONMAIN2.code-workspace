@@ -15,5 +15,8 @@
             "active": true
         },
         "objectscript.syncLocalChanges": "vscodeOnly",
+        "files.watcherExclude": {
+            "**/.vs/**": true
+        }
     }
 }
