@@ -47,6 +47,18 @@ public class LineElement : TemplateElement
         }
     }
 
+    public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
+    [
+        new EnumPropertyDescriptor  { Label = "Orientace", Group = "Čára", Get = () => Orientation, Set = v => Orientation = (LineOrientation)v,
+            Options = [("Vodorovná", (object)LineOrientation.Horizontal), ("Svislá", (object)LineOrientation.Vertical)] },
+        new ColorPropertyDescriptor { Label = "Barva",     Group = "Čára", Get = () => Color,       Set = v => Color = v },
+        new FloatPropertyDescriptor { Label = "Tloušťka",  Group = "Čára", Get = () => StrokeWidth, Set = v => StrokeWidth = v, Min = 0.1f, Max = 10, Unit = "mm" },
+        new EnumPropertyDescriptor  { Label = "Styl",      Group = "Čára", Get = () => Style,       Set = v => Style = (LineStyle)v,
+            Options = [("Plná", (object)LineStyle.Solid), ("Čárkovaná", (object)LineStyle.Dashed), ("Tečkovaná", (object)LineStyle.Dotted)] },
+
+        .. GetPositionDescriptors()
+    ];
+
     public override TemplateElement Clone() => new LineElement
     {
         Id = Guid.NewGuid(),

@@ -44,6 +44,16 @@ public class RectangleElement : TemplateElement
         }
     }
 
+    public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
+    [
+        new ColorPropertyDescriptor { Label = "Výplň",       Group = "Vzhled", Get = () => FillColor,    Set = v => FillColor = v },
+        new ColorPropertyDescriptor { Label = "Barva okraje", Group = "Vzhled", Get = () => StrokeColor,  Set = v => StrokeColor = v },
+        new FloatPropertyDescriptor { Label = "Tl. okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Zaoblení",    Group = "Vzhled", Get = () => CornerRadius, Set = v => CornerRadius = v, Min = 0, Max = 50, Unit = "mm" },
+
+        .. GetPositionDescriptors()
+    ];
+
     public override TemplateElement Clone() => new RectangleElement
     {
         Id = Guid.NewGuid(),

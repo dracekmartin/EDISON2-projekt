@@ -53,6 +53,18 @@ public class ImageElement : TemplateElement
         }
     }
 
+    public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
+    [
+        new StringPropertyDescriptor { Label = "Datové pole", Group = "Obrázek",
+            Get = () => DataField ?? "",
+            Set = v => DataField = string.IsNullOrWhiteSpace(v) ? null : v },
+        new EnumPropertyDescriptor   { Label = "Škálování",   Group = "Obrázek", Get = () => ScaleMode, Set = v => ScaleMode = (ImageScaleMode)v,
+            Options = [("Fit", (object)ImageScaleMode.Fit), ("Fill", (object)ImageScaleMode.Fill),
+                       ("Stretch", (object)ImageScaleMode.Stretch), ("None", (object)ImageScaleMode.None)] },
+
+        .. GetPositionDescriptors()
+    ];
+
     public override TemplateElement Clone() => new ImageElement
     {
         Id = Guid.NewGuid(),

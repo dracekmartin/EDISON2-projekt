@@ -49,6 +49,29 @@ public abstract class TemplateElement
     /// </summary>
     public abstract TemplateElement Clone();
 
+    /// <summary>
+    /// Vrátí seznam deskriptorů vlastností pro panel vlastností.
+    /// Panel generuje UI řádky automaticky — přidání nové vlastnosti = přidat deskriptor sem.
+    /// </summary>
+    public abstract IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors();
+
+    /// <summary>
+    /// Helper — vrátí deskriptory společných vlastností pozice a ZIndex.
+    /// Volej na konci GetPropertyDescriptors() pomocí spread operátoru: [.. GetPositionDescriptors()]
+    /// </summary>
+    protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
+    [
+        new FloatPropertyDescriptor { Label = "X",       Group = "Pozice", Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Y",       Group = "Pozice", Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Šířka",   Group = "Pozice", Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Výška",   Group = "Pozice",
+            Get = () => Height ?? EffectiveDesignerHeight,
+            Set = v => Height = v,
+            Min = 1, Max = 9999, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
+        new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
+    ];
+
     // ---------------------------------------------------------------------------
 
     [JsonIgnore]

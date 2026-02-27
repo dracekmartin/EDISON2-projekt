@@ -17,8 +17,9 @@ namespace TemplateDesigner;
 
 public partial class MainWindow : Window
 {
-    private readonly DesignerState  _state;
-    private readonly DesignerCanvas _canvas;
+    private readonly DesignerState          _state;
+    private readonly DesignerCanvas         _canvas;
+    private          ElementPropertiesWindow? _propsWindow;
     private string? _currentFilePath;
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
@@ -58,6 +59,12 @@ public partial class MainWindow : Window
         UpdateTitle();
         UpdateCanvasSize();
         RefreshSectionsList();
+
+        _propsWindow = new ElementPropertiesWindow(_state, InvalidateCanvas);
+        this.Loaded += (_, _) => _propsWindow.Owner = this;
+        this.Closed += (_, _) => _propsWindow.CloseForReal();
+
+        UpdatePropertiesPanel();
 
         this.KeyDown += OnWindowKeyDown;
     }
@@ -187,14 +194,6 @@ public partial class MainWindow : Window
             : new GridLength(0);
     }
 
-    private void MenuPanelProps_Changed(object sender, RoutedEventArgs e)
-    {
-        if (PropertiesRow is null) return;
-        PropertiesRow.Height = MenuPropertiesPanel.IsChecked
-            ? new GridLength(180, GridUnitType.Pixel)
-            : new GridLength(0);
-    }
-
     // ─────────────────────────────────────────────────────────────────────
     // Soubor
 
@@ -261,6 +260,7 @@ public partial class MainWindow : Window
         _state.Undo();
         InvalidateCanvas();
         RefreshSectionsList();
+        UpdatePropertiesPanel();
     }
 
     private void MenuRedo_Click(object sender, RoutedEventArgs e)
@@ -268,6 +268,7 @@ public partial class MainWindow : Window
         _state.Redo();
         InvalidateCanvas();
         RefreshSectionsList();
+        UpdatePropertiesPanel();
     }
 
     private void MenuDelete_Click(object sender, RoutedEventArgs e)
@@ -343,6 +344,25 @@ public partial class MainWindow : Window
     {
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
+
+        // 0. Dvojklik na element → otevřít dialog vlastností
+        if (e.ClickCount == 2)
+        {
+            var dblHit = _canvas.HitTestElement(cx, cy, cw);
+            if (dblHit is not null)
+            {
+                var (dblSection, dblElement) = dblHit.Value;
+                if (!_state.SelectedElements.Contains(dblElement))
+                {
+                    _state.SelectedElements.Clear();
+                    _state.SelectedElements.Add(dblElement);
+                    ActivateSection(dblSection);
+                }
+                _propsWindow!.ShowForElement(dblElement);
+                e.Handled = true;
+                return;
+            }
+        }
 
         // 1. Klik na resize handle vybraného elementu?
         var handleHit = _canvas.HitTestHandle(cx, cy, cw);
@@ -449,7 +469,6 @@ public partial class MainWindow : Window
                 kvp.Key.Y = kvp.Value.Y + clampedY;
             }
 
-            UpdatePropertiesPanel();
             InvalidateCanvas();
             return;
         }
@@ -476,7 +495,6 @@ public partial class MainWindow : Window
             _resizeElement.Width  = newW;
             _resizeElement.Height = newH;
 
-            UpdatePropertiesPanel();
             InvalidateCanvas();
             return;
         }
@@ -529,6 +547,7 @@ public partial class MainWindow : Window
         skCanvas.ReleaseMouseCapture();
         skCanvas.Cursor = Cursors.Arrow;
         InvalidateCanvas();
+        UpdatePropertiesPanel();
     }
 
     private void EndResize(bool commit)
@@ -561,6 +580,7 @@ public partial class MainWindow : Window
         skCanvas.ReleaseMouseCapture();
         skCanvas.Cursor = Cursors.Arrow;
         InvalidateCanvas();
+        UpdatePropertiesPanel();
     }
 
     private (float newX, float newY, float newW, float? newH) ComputeResize(float mouseMmX, float mouseMmY)
@@ -675,12 +695,12 @@ public partial class MainWindow : Window
 
         if (e.Key == Key.Z && ctrl)
         {
-            _state.Undo(); InvalidateCanvas(); RefreshSectionsList();
+            _state.Undo(); InvalidateCanvas(); RefreshSectionsList(); UpdatePropertiesPanel();
             e.Handled = true;
         }
         else if (e.Key == Key.Y && ctrl)
         {
-            _state.Redo(); InvalidateCanvas(); RefreshSectionsList();
+            _state.Redo(); InvalidateCanvas(); RefreshSectionsList(); UpdatePropertiesPanel();
             e.Handled = true;
         }
         else if (e.Key == Key.S && ctrl)
@@ -697,12 +717,25 @@ public partial class MainWindow : Window
             InvalidateCanvas();
             e.Handled = true;
         }
+        else if (e.Key == Key.Enter && _state.SelectedElements.Count == 1)
+        {
+            // Enter — otevřít dialog vlastností pro vybraný element
+            _propsWindow!.ShowForElement(_state.SelectedElements[0]);
+            e.Handled = true;
+        }
         else if (e.Key == Key.Escape)
         {
-            // Escape — zrušit výběr
-            _state.SelectedElements.Clear();
-            UpdatePropertiesPanel();
-            InvalidateCanvas();
+            // Escape — zrušit výběr (nebo zavřít dialog)
+            if (_propsWindow?.IsVisible == true)
+            {
+                _propsWindow.Hide();
+            }
+            else
+            {
+                _state.SelectedElements.Clear();
+                UpdatePropertiesPanel();
+                InvalidateCanvas();
+            }
             e.Handled = true;
         }
     }
@@ -712,37 +745,29 @@ public partial class MainWindow : Window
 
     private void UpdatePropertiesPanel()
     {
-        if (_state.SelectedElements.Count == 0)
+        if (_state.SelectedElements.Count == 1)
         {
-            PropertiesContent.Text = _state.ActiveSection is null
-                ? "Vyberte element nebo sekci pro zobrazení vlastností."
-                : $"Sekce: {_state.ActiveSection.Name}  |  Výška: {_state.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  Elementy: {_state.ActiveSection.Elements.Count}";
+            var el = _state.SelectedElements[0];
+            string type = el.GetType().Name.Replace("Element", "");
+            StatusText.Text = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
+                              (el.IsLocked ? "  [ZAMČENO]" : "") +
+                              "  |  2× klik nebo Enter = vlastnosti";
+
+            // Pokud je dialog již viditelný, aktualizuj ho pro aktuálně vybraný element
+            if (_propsWindow!.IsVisible)
+                _propsWindow.ShowForElement(el);
             return;
         }
 
-        if (_state.SelectedElements.Count > 1)
-        {
-            PropertiesContent.Text = $"Vybráno {_state.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru";
-            return;
-        }
+        _propsWindow?.Hide();
 
-        var el = _state.SelectedElements[0];
-        string hStr = el.Height.HasValue ? $"{el.Height:0.#} mm" : "dynamická";
-        string type = el.GetType().Name.Replace("Element", "");
-        string extra = el switch
-        {
-            TextElement      t => $"  |  Text: \"{(t.Text.Length > 30 ? t.Text[..30] + "…" : t.Text)}\"",
-            RectangleElement r => $"  |  Výplň: {r.FillColor}",
-            LineElement      l => $"  |  Styl: {l.Style}  {l.Orientation}",
-            ImageElement     i => $"  |  Zdroj: {(i.DataField ?? (i.ImageBase64 is null ? "prázdný" : "base64"))}",
-            TableElement     t => $"  |  Sloupce: {t.Columns.Count}  Zdroj: {t.DataSource}",
-            _                  => ""
-        };
-
-        PropertiesContent.Text =
-            $"{type}  |  X: {el.X:0.#} mm  Y: {el.Y:0.#} mm  |  Šířka: {el.Width:0.#} mm  Výška: {hStr}  |  ZIndex: {el.ZIndex}" +
-            (el.IsLocked ? "  [ZAMČENO]" : "") +
-            extra;
+        StatusText.Text = _state.SelectedElements.Count > 1
+            ? $"Vybráno {_state.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru"
+            : _state.ActiveSection is not null
+                ? $"Sekce: {_state.ActiveSection.Name}  |  " +
+                  $"Výška: {_state.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
+                  $"Elementy: {_state.ActiveSection.Elements.Count}"
+                : "Vyberte element nebo sekci.";
     }
 
     private void UpdateTitle()

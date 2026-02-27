@@ -52,6 +52,29 @@ public class TextElement : TemplateElement
         ctx.Canvas.Restore();
     }
 
+    public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
+    [
+        new StringPropertyDescriptor { Label = "Text",         Group = "Obsah",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },
+
+        new StringPropertyDescriptor { Label = "Rodina písma", Group = "Font",      Get = () => FontFamily,          Set = v => FontFamily = v },
+        new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => FontSize,            Set = v => FontSize = v,                               Min = 4, Max = 200, Unit = "pt" },
+        new EnumPropertyDescriptor   { Label = "Tučnost",       Group = "Font",      Get = () => FontWeight,          Set = v => FontWeight = (TextFontWeight)v,
+            Options = [("Normální", (object)TextFontWeight.Normal), ("Tučné", (object)TextFontWeight.Bold)] },
+        new EnumPropertyDescriptor   { Label = "Styl",          Group = "Font",      Get = () => FontStyle,           Set = v => FontStyle = (TextFontStyle)v,
+            Options = [("Normální", (object)TextFontStyle.Normal), ("Kurzíva", (object)TextFontStyle.Italic)] },
+        new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,            Set = v => WordWrap = v },
+
+        new EnumPropertyDescriptor   { Label = "Vodorovně",     Group = "Zarovnání", Get = () => HorizontalAlignment, Set = v => HorizontalAlignment = (TextHorizontalAlignment)v,
+            Options = [("Vlevo", (object)TextHorizontalAlignment.Left), ("Na střed", (object)TextHorizontalAlignment.Center),
+                       ("Vpravo", (object)TextHorizontalAlignment.Right), ("Do bloku", (object)TextHorizontalAlignment.Justify)] },
+        new EnumPropertyDescriptor   { Label = "Svisle",        Group = "Zarovnání", Get = () => VerticalAlignment,   Set = v => VerticalAlignment = (TextVerticalAlignment)v,
+            Options = [("Nahoře", (object)TextVerticalAlignment.Top), ("Na střed", (object)TextVerticalAlignment.Middle), ("Dole", (object)TextVerticalAlignment.Bottom)] },
+
+        new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Vzhled",    Get = () => TextColor,           Set = v => TextColor = v },
+
+        .. GetPositionDescriptors()
+    ];
+
     public override TemplateElement Clone() => new TextElement
     {
         Id = Guid.NewGuid(),

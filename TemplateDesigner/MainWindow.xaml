@@ -42,10 +42,8 @@
                 <MenuItem x:Name="MenuSnap" Header="Přichytit na mřížku" IsCheckable="True"
                           Checked="MenuSnap_Changed" Unchecked="MenuSnap_Changed"/>
                 <Separator/>
-                <MenuItem x:Name="MenuSectionsPanel"   Header="Panel sekcí"      IsCheckable="True" IsChecked="True"
+                <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
-                <MenuItem x:Name="MenuPropertiesPanel" Header="Panel vlastností" IsCheckable="True" IsChecked="True"
-                          Checked="MenuPanelProps_Changed" Unchecked="MenuPanelProps_Changed"/>
             </MenuItem>
         </Menu>
 
@@ -95,9 +93,8 @@
             <Grid.RowDefinitions>
                 <!-- Hlavní plocha -->
                 <RowDefinition Height="*" MinHeight="100"/>
-                <RowDefinition Height="4"/>
-                <!-- Panel vlastností -->
-                <RowDefinition x:Name="PropertiesRow" Height="180" MinHeight="80"/>
+                <!-- Status bar -->
+                <RowDefinition Height="26"/>
             </Grid.RowDefinitions>
 
             <!-- ── Panel sekcí ── -->
@@ -122,7 +119,7 @@
             </Border>
 
             <!-- ── GridSplitter levý ── -->
-            <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3"
+            <GridSplitter Grid.Column="1" Grid.Row="0"
                           HorizontalAlignment="Stretch" Background="#DDDDDD" Cursor="SizeWE"/>
 
             <!-- ── Canvas ── -->
@@ -135,7 +132,7 @@
             </ScrollViewer>
 
             <!-- ── GridSplitter pravý ── -->
-            <GridSplitter Grid.Column="3" Grid.Row="0" Grid.RowSpan="3"
+            <GridSplitter Grid.Column="3" Grid.Row="0"
                           HorizontalAlignment="Stretch" Background="#DDDDDD" Cursor="SizeWE"/>
 
             <!-- ── Live Preview (výchozí: skrytý) ── -->
@@ -146,24 +143,12 @@
                            VerticalAlignment="Center" Foreground="#AAAAAA"/>
             </Border>
 
-            <!-- ── GridSplitter spodní ── -->
-            <GridSplitter Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="5"
-                          VerticalAlignment="Stretch" HorizontalAlignment="Stretch"
-                          Background="#DDDDDD" Cursor="SizeNS"/>
-
-            <!-- ── Panel vlastností ── -->
-            <Border Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="5"
-                    BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
-                <DockPanel>
-                    <Border DockPanel.Dock="Top"
-                            BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
-                            Background="#F0F0F0">
-                        <TextBlock Style="{StaticResource PanelHeader}" Text="Vlastnosti"/>
-                    </Border>
-                    <TextBlock x:Name="PropertiesContent"
-                               Text="Vyberte element nebo sekci pro zobrazení vlastností."
-                               Padding="12,8" Foreground="#999999" VerticalAlignment="Center"/>
-                </DockPanel>
+            <!-- ── Status bar ── -->
+            <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="5"
+                    Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+                <TextBlock x:Name="StatusText"
+                           VerticalAlignment="Center" Margin="10,0"
+                           FontSize="11" Foreground="#555555"/>
             </Border>
 
         </Grid>
