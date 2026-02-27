@@ -69,11 +69,12 @@ Aktuální stav projektu — soubory, třídy a jejich zodpovědnosti.
 | `SectionSeparator.cs` | `SectionSeparator` | Tenký oddělovač (mezera nebo čára). Pevná výška (`Height` property). |
 | `SectionFooter.cs` | `SectionFooter` | Zápatí. Výchozí: `OnEveryPage`, `KeepTogether`, výška 15 mm. |
 
-### /Serialization — ukládání a načítání *(připraveno, zatím nevytvořeno)*
+### /Serialization — ukládání a načítání
 
 | Soubor | Třída | Zodpovědnost |
 |---|---|---|
-| `TemplateSerializer.cs` | `TemplateSerializer` | JSON serializace/deserializace `Template`. Polymorfismus přes `JsonPolymorphic`. Verzování formátu. |
+| `TemplateSerializer.cs` | `TemplateSerializer` | JSON serializace/deserializace `Template`. `SaveAsync` / `LoadAsync` / `Serialize` / `Deserialize`. Chyby hlásí přes `TemplateDeserializationException`. |
+| `TemplateSerializer.cs` | `TemplateDeserializationException` | Výjimka pro chyby při načítání šablony (neplatný JSON, chybějící pole, I/O chyba). |
 
 ### /Commands — undo/redo *(připraveno, zatím nevytvořeno)*
 
@@ -317,6 +318,20 @@ Barvy se ukládají jako string `"#AARRGGBB"` (SkiaSharp formát):
 - Černá: `"#FF000000"`, Bílá: `"#FFFFFFFF"`, Průhledná: `"#00FFFFFF"`
 - `SKColor.Parse(colorString)` — přímá konverze bez pomocné logiky
 - `[JsonIgnore] public SKColor SkXxxColor => SKColor.Parse(XxxColor);`
+
+---
+
+## Nastavení JSON serializeru
+
+```csharp
+WriteIndented = true                          // odsazený výstup, čitelný člověkem
+PropertyNamingPolicy = CamelCase              // "printBehavior" místo "PrintBehavior"
+DefaultIgnoreCondition = WhenWritingNull      // null hodnoty se do JSON nevypisují
+JsonStringEnumConverter()                     // "OnEveryPage" místo 1
+RoundedFloatConverter (4 des. místa)          // 0.5000001 → 0.5
+```
+
+Přípona souboru šablony: `.json` (žádná vlastní přípona — JSON je obecný a čitelný v libovolném editoru).
 
 ---
 
