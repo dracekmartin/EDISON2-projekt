@@ -271,9 +271,34 @@ public partial class MainWindow : Window
         UpdatePropertiesPanel();
     }
 
-    private void MenuDelete_Click(object sender, RoutedEventArgs e)
+    private void MenuDelete_Click(object sender, RoutedEventArgs e) => DeleteSelected();
+
+    private void DeleteSelected()
     {
-        // TODO: smazat vybrané elementy
+        if (_state.SelectedElements.Count == 0) return;
+
+        // Najdi sekce pro každý element
+        var commands = new List<IDesignerCommand>();
+        foreach (var el in _state.SelectedElements.ToList())
+        {
+            var section = _state.CurrentTemplate.Sections
+                              .FirstOrDefault(s => s.Elements.Contains(el));
+            if (section is null || el.IsLocked) continue;
+            commands.Add(new DeleteElementCommand(section, el));
+        }
+
+        if (commands.Count == 0) return;
+
+        _propsWindow?.Hide();
+        _state.SelectedElements.Clear();
+
+        if (commands.Count == 1)
+            _state.Execute(commands[0]);
+        else
+            _state.Execute(new CompositeCommand("Smazat elementy", commands));
+
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -322,7 +347,11 @@ public partial class MainWindow : Window
             var item = new MenuItem { Header = label };
             item.Click += (_, _) =>
             {
-                _state.ActiveSection.Elements.Add(factory());
+                var element = factory();
+                _state.Execute(new AddElementCommand(_state.ActiveSection, element));
+                _state.SelectedElements.Clear();
+                _state.SelectedElements.Add(element);
+                UpdatePropertiesPanel();
                 InvalidateCanvas();
             };
             menu.Items.Add(item);
@@ -717,6 +746,17 @@ public partial class MainWindow : Window
             InvalidateCanvas();
             e.Handled = true;
         }
+        else if (e.Key == Key.Delete)
+        {
+            DeleteSelected();
+            e.Handled = true;
+        }
+        else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
+                 && _state.SelectedElements.Count > 0)
+        {
+            MoveByKey(e.Key, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+        }
         else if (e.Key == Key.Enter && _state.SelectedElements.Count == 1)
         {
             // Enter — otevřít dialog vlastností pro vybraný element
@@ -742,6 +782,61 @@ public partial class MainWindow : Window
 
     // ─────────────────────────────────────────────────────────────────────
     // Pomocné metody
+
+    /// <summary>
+    /// Posune vybrané elementy o krok šipkou.
+    /// Shift = krok o velikost mřížky, bez Shift = 1 mm.
+    /// </summary>
+    private void MoveByKey(Key key, bool largeStep)
+    {
+        float step = largeStep ? _state.GridSize : 1f;
+        float dx = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
+        float dy = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
+
+        // Ulož počáteční pozice
+        var initPositions = _state.SelectedElements
+            .ToDictionary(el => el, el => (el.X, el.Y));
+
+        // Clamp delta stejnou logikou jako u dragu myší
+        float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth;
+        float clampedDx = dx, clampedDy = dy;
+
+        foreach (var kvp in initPositions)
+        {
+            var el    = kvp.Key;
+            float elH = el.EffectiveDesignerHeight;
+            var section = _state.CurrentTemplate.Sections
+                              .FirstOrDefault(s => s.Elements.Contains(el));
+            float sectionH = section?.EffectiveDesignerHeight ?? float.MaxValue;
+
+            clampedDx = Math.Clamp(clampedDx, -kvp.Value.X, sectionW - el.Width - kvp.Value.X);
+            clampedDy = Math.Clamp(clampedDy, -kvp.Value.Y, sectionH - elH - kvp.Value.Y);
+        }
+
+        if (clampedDx == 0f && clampedDy == 0f) return;
+
+        // Aplikuj posun
+        foreach (var kvp in initPositions)
+        {
+            kvp.Key.X = kvp.Value.X + clampedDx;
+            kvp.Key.Y = kvp.Value.Y + clampedDy;
+        }
+
+        // Zapiš do undo stacku
+        var moves = initPositions
+            .Where(kvp => kvp.Key.X != kvp.Value.X || kvp.Key.Y != kvp.Value.Y)
+            .Select(kvp => (IDesignerCommand)new MoveElementCommand(
+                kvp.Key, kvp.Value.X, kvp.Value.Y, kvp.Key.X, kvp.Key.Y))
+            .ToList();
+
+        if (moves.Count == 1)
+            _state.Execute(moves[0]);
+        else if (moves.Count > 1)
+            _state.Execute(new CompositeCommand("Přesun šipkou", moves));
+
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
+    }
 
     private void UpdatePropertiesPanel()
     {
