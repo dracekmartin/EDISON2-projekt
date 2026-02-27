@@ -69,7 +69,7 @@ public partial class MainWindow : Window
         UpdateCanvasSize();
         RefreshSectionsList();
 
-        _propsWindow = new ElementPropertiesWindow(_state, InvalidateCanvas, RefreshSectionsList);
+        _propsWindow = new ElementPropertiesWindow(_state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize);
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
@@ -377,6 +377,11 @@ public partial class MainWindow : Window
     private void MenuExit_Click(object sender, RoutedEventArgs e)
     {
         if (ConfirmUnsavedChanges()) Application.Current.Shutdown();
+    }
+
+    private void MenuPageProps_Click(object sender, RoutedEventArgs e)
+    {
+        _propsWindow!.ShowForPage(_state.CurrentTemplate.PageSize);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -907,6 +912,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.S && ctrl)
         {
             MenuSave_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            MenuPageProps_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
         else if (e.Key == Key.A && ctrl && _state.ActiveSection is not null)

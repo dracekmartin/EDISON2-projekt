@@ -28,6 +28,8 @@
                 <MenuItem x:Name="MenuSave"   Header="Uložit"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
                 <MenuItem x:Name="MenuSaveAs" Header="Uložit jako..."                          Click="MenuSaveAs_Click"/>
                 <Separator/>
+                <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P" Click="MenuPageProps_Click"/>
+                <Separator/>
                 <MenuItem Header="Konec" Click="MenuExit_Click"/>
             </MenuItem>
             <MenuItem Header="Upravit">

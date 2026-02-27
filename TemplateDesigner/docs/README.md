@@ -137,28 +137,31 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - **Smazat sekci** — pravé tlačítko myši na sekci → Smazat sekci (šablona musí mít alespoň jednu sekci)
 - Přesun a smazání jsou undo-able
 
+### Vlastnosti stránky
+- **Soubor → Vlastnosti stránky…** nebo **Ctrl+Shift+P** — otevře dialog pro editaci rozměrů a okrajů
+- Editovatelné: Šířka, Výška (mm), okraje Nahoře / Dole / Vlevo / Vpravo (mm)
+- Canvas se okamžitě překreslí po každé změně, Zrušit vrátí vše zpět
+- Výchozí formát: A4 na výšku (210 × 297 mm, okraje 10 mm)
+
 ### Zoom
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
 - **Ctrl+scroll** na canvasu — přiblížení / oddálení
 
+### Mřížka
+- **Grid** (tlačítko nebo Zobrazit → Mřížka) — zobrazí přímky mřížky na canvasu
+- **Snap** — přichytávání elementů na mřížku při pohybu a resize
+- Velikost mřížky: 5 mm (výchozí)
+
 ### Undo / Redo
 - **Ctrl+Z** — vrátit poslední akci
 - **Ctrl+Y** — zopakovat vrácenou akci
-- Undoable akce: přesun, resize, změna vlastností, přidání/smazání elementu, přidání/smazání/přesun sekce
+- Undoable akce: přesun, resize, změna vlastností, přidání/smazání elementu, přidání/smazání/přesun sekce, změna vlastností stránky
 
 ### Uložení a otevření
 - **Ctrl+S** / menu Soubor → Uložit
 - **Soubor → Uložit jako** — zvolí umístění
 - **Soubor → Otevřít** — načte existující šablonu
 - Soubory mají příponu `.json` a jsou čitelné v libovolném textovém editoru
-
-### Zoom
-- Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
-
-### Mřížka
-- **Grid** (tlačítko nebo Zobrazit → Mřížka) — zobrazí přímky mřížky na canvasu
-- **Snap** — přichytávání elementů na mřížku při pohybu a resize
-- Velikost mřížky: 5 mm (výchozí)
 
 ---
 
@@ -184,6 +187,7 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 | **Ctrl+Shift+↑** | Přesunout aktivní sekci nahoru |
 | **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |
 | **Ctrl+scroll** | Zoom in / out |
+| **Ctrl+Shift+P** | Vlastnosti stránky (rozměry, okraje) |
 
 ---
 
@@ -200,8 +204,10 @@ V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu
 
 ## Co bude přidáno (plánované funkce)
 
-- Editor sloupců tabulky (přidat/odebrat/přesunout sloupec)
-- Picker statického obrázku (načíst PNG/JPG ze souboru)
-- Live preview s mock daty (pravý panel)
-- Podmíněná viditelnost (VisibilityExpression)
-- Přehled elementů v dialogu vlastností sekce (a hromadná editace)
+- **Editor sloupců tabulky** — přidat/odebrat/přesunout sloupec, nastavit šířku a záhlaví
+- **ZIndex ovládání** — Přenést dopředu / Odeslat dozadu (Ctrl+] / Ctrl+[)
+- **Zarovnání elementů** — zarovnat vlevo/vpravo/na střed/nahoru/dolů, distribuovat rovnoměrně (pro multi-select)
+- **Zamčení elementu** — toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)
+- **Live preview s mock daty** — pravý panel s náhledem výstupu
+- **Přehled elementů v dialogu vlastností sekce** — seznam elementů sekce, hromadná editace
+- **Podmíněná viditelnost** — VisibilityExpression pro elementy
