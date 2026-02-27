@@ -25,13 +25,20 @@ public partial class MainWindow : Window
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
     // ── Mouse state machine ──
-    private enum MouseMode { Idle, Dragging, Resizing }
+    private enum MouseMode { Idle, Dragging, Resizing, RubberBand }
     private MouseMode      _mouseMode    = MouseMode.Idle;
 
     // Drag state
     private TemplateElement? _dragElement; // element, na který bylo kliknuto (referenční pro snap)
     private float _dragMouseStartCanvasX, _dragMouseStartCanvasY; // canvas px při zahájení dragu
     private readonly Dictionary<TemplateElement, (float X, float Y)> _dragInitPositions = new();
+
+    // Rubber band state
+    private SKPoint _rubberBandStart;
+    private SKRect? _rubberBandRect;
+
+    // Clipboard
+    private List<TemplateElement> _clipboard = [];
 
     // Resize state
     private TemplateElement? _resizeElement;
@@ -60,7 +67,7 @@ public partial class MainWindow : Window
         UpdateCanvasSize();
         RefreshSectionsList();
 
-        _propsWindow = new ElementPropertiesWindow(_state, InvalidateCanvas);
+        _propsWindow = new ElementPropertiesWindow(_state, InvalidateCanvas, RefreshSectionsList);
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
@@ -77,6 +84,16 @@ public partial class MainWindow : Window
         var args    = (dynamic)e;
         SKSurface surface = args.Surface;
         _canvas.Render(surface.Canvas, (float)skCanvas.ActualWidth, (float)skCanvas.ActualHeight);
+
+        // Rubber band selection overlay
+        if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
+        {
+            var r = _rubberBandRect.Value;
+            using var fill   = new SKPaint { Color = new SKColor(0x220066CC) };
+            using var border = new SKPaint { Color = new SKColor(0xFF0066CC), IsStroke = true, StrokeWidth = 1f };
+            surface.Canvas.DrawRect(r, fill);
+            surface.Canvas.DrawRect(r, border);
+        }
     }
 
     private void UpdateCanvasSize()
@@ -127,7 +144,13 @@ public partial class MainWindow : Window
                 Child           = label
             };
 
-            item.MouseLeftButtonDown += (_, _) => ActivateSection(section);
+            item.MouseLeftButtonDown += (_, e2) =>
+            {
+                if (e2.ClickCount == 2)
+                    _propsWindow!.ShowForSection(section);
+                else
+                    ActivateSection(section);
+            };
             SectionsList.Children.Add(item);
         }
     }
@@ -458,11 +481,17 @@ public partial class MainWindow : Window
             return;
         }
 
-        // 2. Klik na sekci (ale ne na element)?
+        // 3. Klik na prázdné místo → rubber band selection
         var section2 = _canvas.HitTestSection(cx, cy, cw);
-        _state.SelectedElements.Clear();
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+            _state.SelectedElements.Clear();
         ActivateSection(section2);
         UpdatePropertiesPanel();
+
+        _rubberBandStart = new SKPoint(cx, cy);
+        _rubberBandRect  = null;
+        _mouseMode       = MouseMode.RubberBand;
+        skCanvas.CaptureMouse();
     }
 
     private void OnCanvasMouseMove(object sender, MouseEventArgs e)
@@ -528,6 +557,17 @@ public partial class MainWindow : Window
             return;
         }
 
+        // ── RubberBand ──
+        if (_mouseMode == MouseMode.RubberBand)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) { EndRubberBand(); return; }
+            _rubberBandRect = new SKRect(
+                Math.Min(_rubberBandStart.X, cx), Math.Min(_rubberBandStart.Y, cy),
+                Math.Max(_rubberBandStart.X, cx), Math.Max(_rubberBandStart.Y, cy));
+            InvalidateCanvas();
+            return;
+        }
+
         // ── Idle — aktualizuj kurzor ──
         var handleHit = _canvas.HitTestHandle(cx, cy, cw);
         if (handleHit.HasValue)
@@ -544,6 +584,34 @@ public partial class MainWindow : Window
             EndDrag(commit: true);
         else if (_mouseMode == MouseMode.Resizing)
             EndResize(commit: true);
+        else if (_mouseMode == MouseMode.RubberBand)
+            EndRubberBand();
+    }
+
+    private void EndRubberBand()
+    {
+        if (_rubberBandRect.HasValue)
+        {
+            float cw       = (float)skCanvas.ActualWidth;
+            var   elements = _canvas.HitTestRect(_rubberBandRect.Value, cw);
+
+            // Omez výběr na aktivní sekci
+            if (_state.ActiveSection is not null)
+                elements = elements.Where(e => _state.ActiveSection.Elements.Contains(e)).ToList();
+
+            if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
+                _state.SelectedElements.Clear();
+
+            foreach (var el in elements)
+                if (!_state.SelectedElements.Contains(el))
+                    _state.SelectedElements.Add(el);
+        }
+
+        _rubberBandRect = null;
+        _mouseMode      = MouseMode.Idle;
+        skCanvas.ReleaseMouseCapture();
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
     }
 
     private void EndDrag(bool commit)
@@ -746,6 +814,21 @@ public partial class MainWindow : Window
             InvalidateCanvas();
             e.Handled = true;
         }
+        else if (e.Key == Key.C && ctrl)
+        {
+            CopySelected();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.V && ctrl)
+        {
+            PasteClipboard();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.D && ctrl)
+        {
+            DuplicateSelected();
+            e.Handled = true;
+        }
         else if (e.Key == Key.Delete)
         {
             DeleteSelected();
@@ -782,6 +865,50 @@ public partial class MainWindow : Window
 
     // ─────────────────────────────────────────────────────────────────────
     // Pomocné metody
+
+    private void CopySelected()
+    {
+        if (_state.SelectedElements.Count == 0) return;
+        _clipboard = _state.SelectedElements.Select(el => el.Clone()).ToList();
+    }
+
+    private void PasteClipboard()
+    {
+        if (_clipboard.Count == 0) return;
+        if (_state.ActiveSection is null)
+        {
+            MessageBox.Show("Nejprve vyberte sekci.", "Vložit", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var newElements = _clipboard.Select(el =>
+        {
+            var clone = el.Clone();
+            clone.X = Math.Min(clone.X + 5f,
+                _state.CurrentTemplate.PageSize.PrintableWidth - clone.Width);
+            clone.Y = Math.Min(clone.Y + 5f,
+                _state.ActiveSection.EffectiveDesignerHeight - clone.EffectiveDesignerHeight);
+            return clone;
+        }).ToList();
+
+        var commands = newElements
+            .Select(el => (IDesignerCommand)new AddElementCommand(_state.ActiveSection, el))
+            .ToList();
+
+        if (commands.Count == 1) _state.Execute(commands[0]);
+        else _state.Execute(new CompositeCommand("Vložit elementy", commands));
+
+        _state.SelectedElements.Clear();
+        _state.SelectedElements.AddRange(newElements);
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
+    }
+
+    private void DuplicateSelected()
+    {
+        CopySelected();
+        PasteClipboard();
+    }
 
     /// <summary>
     /// Posune vybrané elementy o krok šipkou.

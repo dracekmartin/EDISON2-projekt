@@ -32,12 +32,20 @@ public partial class PropertiesPanel : UserControl
 
     public void ShowElement(TemplateElement element)
     {
+        _currentElement = element;
+        ShowDescriptors(element.GetPropertyDescriptors());
+    }
+
+    /// <summary>
+    /// Zobrazí libovolný seznam deskriptorů — umožňuje editaci i objektů,
+    /// které nejsou TemplateElement (sekce, stránka apod.).
+    /// </summary>
+    public void ShowDescriptors(IReadOnlyList<PropertyDescriptor> descriptors)
+    {
         _suppressChanges = true;
-        _currentElement  = element;
         ContentPanel.Children.Clear();
         _suppressChanges = false;
 
-        var descriptors = element.GetPropertyDescriptors();
         if (descriptors.Count == 0) return;
 
         string? currentGroup = null;

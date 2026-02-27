@@ -165,6 +165,31 @@ public class DesignerCanvas
         return null;
     }
 
+    /// <summary>
+    /// Vrátí všechny elementy jejichž obdélník se překrývá s daným canvas rect.
+    /// Používá se pro rubber band selection.
+    /// </summary>
+    public List<TemplateElement> HitTestRect(SKRect canvasRect, float canvasWidth)
+    {
+        var result = new List<TemplateElement>();
+        foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
+        {
+            foreach (var el in section.Elements)
+            {
+                float ex = ox + el.X * MmToPx;
+                float ey = oy + el.Y * MmToPx;
+                float ew = el.Width * MmToPx;
+                float eh = (el.Height ?? el.EffectiveDesignerHeight) * MmToPx;
+                var elRect = new SKRect(ex, ey, ex + ew, ey + eh);
+
+                if (canvasRect.Left < elRect.Right  && canvasRect.Right  > elRect.Left &&
+                    canvasRect.Top  < elRect.Bottom && canvasRect.Bottom > elRect.Top)
+                    result.Add(el);
+            }
+        }
+        return result;
+    }
+
     /// <summary>Vrátí origin (levý horní roh obsahu) každé sekce na canvasu.</summary>
     public IEnumerable<(Section Section, float OriginX, float OriginY)> GetSectionOrigins(float canvasWidth)
     {

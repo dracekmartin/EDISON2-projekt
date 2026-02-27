@@ -30,7 +30,7 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 | Soubor | Třída | Zodpovědnost |
 |---|---|---|
 | `MainWindow.xaml / .cs` | `MainWindow` | Hlavní okno aplikace. WPF layout (toolbar, panely, canvas, status bar). Registrace PaintSurface handleru. Mouse state machine. |
-| `ElementPropertiesWindow.xaml / .cs` | `ElementPropertiesWindow` | Plovoucí dialog vlastností elementu. Otevírá se dvojklikem/Enterem. OK zachová změny, Zrušit vrátí undo stack na hloubku při otevření. |
+| `ElementPropertiesWindow.xaml / .cs` | `ElementPropertiesWindow` | Plovoucí dialog vlastností. `ShowForElement()` pro elementy, `ShowForSection()` pro sekce. OK zachová změny, Zrušit vrátí undo stack na hloubku při otevření. Při editaci sekce volá `refreshSections` callback pro aktualizaci levého panelu. |
 | `GlobalUsings.cs` | — | Globální using aliasy řešící konflikty názvů mezi WPF a WinForms (`UseWPF` + `UseWindowsForms`). |
 | `App.xaml / .cs` | `App` | Vstupní bod WPF aplikace. `DispatcherUnhandledException` handler pro zobrazení chyb. |
 
@@ -97,7 +97,7 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 
 | Soubor | Třída | Zodpovědnost |
 |---|---|---|
-| `Controls/PropertiesPanel.xaml / .cs` | `PropertiesPanel` | UserControl zobrazující editovatelné vlastnosti elementu. Generuje UI řádky dynamicky z `PropertyDescriptor` seznamu. `SetContext()` napojí callbacks pro undo a invalidaci canvasu. `ShowElement()` / `ShowMessage()` přepínají obsah. |
+| `Controls/PropertiesPanel.xaml / .cs` | `PropertiesPanel` | UserControl zobrazující editovatelné vlastnosti. Generuje UI řádky dynamicky z `PropertyDescriptor` seznamu. `SetContext()` napojí callbacks. `ShowElement()` / `ShowDescriptors()` / `ShowMessage()` přepínají obsah. `ShowDescriptors()` umožňuje zobrazit vlastnosti libovolného objektu (sekce, stránka…). |
 
 ### /Designer — interakce a stav
 
@@ -116,14 +116,21 @@ Idle
   → dvojklik na element                       → ShowForElement() (dialog vlastností)
   → klik na resize handle (single selection)  → Resizing
   → klik na element                           → Dragging
-  → klik na prázdné místo                     → clear výběru / aktivace sekce
+  → klik na prázdné místo                     → RubberBand
 
-Dragging → MouseUp   → EndDrag(commit: true)  → MoveElementCommand nebo CompositeCommand
-         → ztrácí    → EndDrag(commit: false) → obnova původních pozic
+Dragging   → MouseUp   → EndDrag(commit: true)    → MoveElementCommand nebo CompositeCommand
+           → ztrácí    → EndDrag(commit: false)   → obnova původních pozic
 
-Resizing → MouseUp   → EndResize(commit: true) → ResizeElementCommand
-         → ztrácí    → EndResize(commit: false) → obnova původní velikosti
+Resizing   → MouseUp   → EndResize(commit: true)  → ResizeElementCommand
+           → ztrácí    → EndResize(commit: false) → obnova původní velikosti
+
+RubberBand → MouseUp   → EndRubberBand()          → aktualizace SelectedElements (bez undo)
+           → ztrácí    → EndRubberBand()
 ```
+
+**Rubber band overlay** se kreslí přímo v `OnPaintSurface` po `_canvas.Render()` — modrý průhledný obdélník (SKPaint s Alpha).
+
+**Clipboard** (`_clipboard: List<TemplateElement>`) je interní (ne systémová schránka). Copy = klon každého elementu. Paste = nové klony s offsetem +5 mm, přidané přes `AddElementCommand`.
 
 **Klíčové detaily dragu:**
 - Drag používá **delta přístup**: ukládá canvas px při stisku, každý frame počítá deltaMm = (currentPx - startPx) / MmToPx

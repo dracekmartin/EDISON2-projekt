@@ -115,10 +115,27 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - Kurzor se mění podle směru resize (↔ ↕ ↗ ↘)
 - Minimální rozměry: 3 mm šířka, 2 mm výška
 
+### Výběr obdélníkem (rubber band)
+- **Tažení myší na prázdném místě** — kreslí modrý výběrový obdélník
+- Po uvolnění myši se vyberou všechny elementy, jejichž plocha se obdélníkem překrývá
+- Výběr je omezen na aktivní sekci
+- Ctrl+tažení přidá výběr k již vybraným elementům
+
+### Kopírování / vkládání
+- **Ctrl+C** — zkopíruje vybrané elementy do schránky
+- **Ctrl+V** — vloží zkopírované elementy do aktivní sekce (s offsetem +5 mm)
+- **Ctrl+D** — duplikuje vybrané elementy (Copy + Paste v jednom kroku)
+- Vložené elementy jsou ihned vybrány; operace je undo-able
+
+### Editace vlastností sekce
+- **Dvojklik na sekci** v levém panelu — otevře dialog vlastností sekce
+- Editovatelné: Název, Výška (jen pro sekce s pevnou výškou), PrintBehavior, OverflowBehavior
+- Stejný dialog jako pro elementy — OK zachová, Zrušit vrátí změny
+
 ### Undo / Redo
 - **Ctrl+Z** — vrátit poslední akci
 - **Ctrl+Y** — zopakovat vrácenou akci
-- Undoable akce: přesun, změna velikosti, změna vlastností (multi-přesun = jeden krok)
+- Undoable akce: přesun, resize, změna vlastností, přidání, smazání elementu (multi-operace = jeden krok)
 
 ### Uložení a otevření
 - **Ctrl+S** / menu Soubor → Uložit
@@ -145,12 +162,16 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 | Ctrl+A | Vybrat vše v aktivní sekci |
 | Ctrl+S | Uložit |
 | **Enter** | Otevřít dialog vlastností pro vybraný element |
-| **Dvojklik** | Otevřít dialog vlastností |
+| **Dvojklik** na element | Otevřít dialog vlastností elementu |
+| **Dvojklik** na sekci | Otevřít dialog vlastností sekce |
 | Escape | Zavřít dialog vlastností / zrušit výběr |
 | Ctrl+klik | Přidat/odebrat element z výběru |
 | **Del** | Smazat vybrané elementy |
 | **↑ ↓ ← →** | Posunout vybrané elementy o 1 mm |
 | **Shift+šipky** | Posunout vybrané elementy o velikost mřížky (5 mm) |
+| **Ctrl+C** | Kopírovat vybrané elementy |
+| **Ctrl+V** | Vložit ze schránky do aktivní sekce |
+| **Ctrl+D** | Duplikovat vybrané elementy |
 
 ---
 
@@ -167,10 +188,7 @@ V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu
 
 ## Co bude přidáno (plánované funkce)
 
-- Kopírování / vkládání elementů (Ctrl+C / Ctrl+V)
-- Editace vlastností sekce (přejmenování, výška, PrintBehavior)
 - Drag & drop přeřazení sekcí v levém panelu
-- Rubber band selection (výběr obdélníkem tažením na prázdném místě)
 - Editor sloupců tabulky (přidat/odebrat/přesunout sloupec)
 - Picker statického obrázku (načíst PNG/JPG ze souboru)
 - Live preview s mock daty (pravý panel)
