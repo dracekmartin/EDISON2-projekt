@@ -92,6 +92,8 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 | `Implementations/SetPropertyCommand.cs` | `SetPropertyCommand` | Změna jedné vlastnosti elementu. Ukládá starou/novou hodnotu jako `object?` + `Action<object?>` pro aplikaci. Univerzální pro všechny typy vlastností. |
 | `Implementations/AddElementCommand.cs` | `AddElementCommand` | Přidání elementu do sekce (s undo = odebrání). |
 | `Implementations/DeleteElementCommand.cs` | `DeleteElementCommand` | Smazání elementu ze sekce (s undo = obnovení na původní index). |
+| `Implementations/DeleteSectionCommand.cs` | `DeleteSectionCommand` | Smazání sekce ze šablony (s undo = obnovení na původní index). |
+| `Implementations/MoveSectionCommand.cs` | `MoveSectionCommand` | Přesun sekce v seznamu o ±1 (s undo). |
 
 ### /Controls — WPF UserControly
 
@@ -131,6 +133,10 @@ RubberBand → MouseUp   → EndRubberBand()          → aktualizace SelectedEl
 **Rubber band overlay** se kreslí přímo v `OnPaintSurface` po `_canvas.Render()` — modrý průhledný obdélník (SKPaint s Alpha).
 
 **Clipboard** (`_clipboard: List<TemplateElement>`) je interní (ne systémová schránka). Copy = klon každého elementu. Paste = nové klony s offsetem +5 mm, přidané přes `AddElementCommand`.
+
+**Zoom** lze měnit výběrem z ComboBoxu (50/75/100/150/200 %) nebo **Ctrl+scroll** na canvasu — handler `OnCanvasScrollWheel` na `CanvasScrollViewer.PreviewMouseWheel` posune index ComboBoxu o ±1.
+
+**Správa sekcí** v levém panelu: každá položka má tlačítka ▲▼ (volají `MoveSection()`) a context menu (Vlastnosti, Přesunout, Smazat). Klávesová zkratka **Ctrl+Shift+↑↓** přesune aktivní sekci. `DeleteSection()` před smazáním odznaší elementy smazané sekce, přepne `ActiveSection` a skryje dialog vlastností.
 
 **Klíčové detaily dragu:**
 - Drag používá **delta přístup**: ukládá canvas px při stisku, každý frame počítá deltaMm = (currentPx - startPx) / MmToPx

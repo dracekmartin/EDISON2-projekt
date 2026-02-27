@@ -132,10 +132,19 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - Editovatelné: Název, Výška (jen pro sekce s pevnou výškou), PrintBehavior, OverflowBehavior
 - Stejný dialog jako pro elementy — OK zachová, Zrušit vrátí změny
 
+### Správa sekcí
+- **Přesunout sekci** — tlačítka ▲▼ v levém panelu, pravé tlačítko myši → Přesunout, nebo **Ctrl+Shift+↑↓**
+- **Smazat sekci** — pravé tlačítko myši na sekci → Smazat sekci (šablona musí mít alespoň jednu sekci)
+- Přesun a smazání jsou undo-able
+
+### Zoom
+- Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
+- **Ctrl+scroll** na canvasu — přiblížení / oddálení
+
 ### Undo / Redo
 - **Ctrl+Z** — vrátit poslední akci
 - **Ctrl+Y** — zopakovat vrácenou akci
-- Undoable akce: přesun, resize, změna vlastností, přidání, smazání elementu (multi-operace = jeden krok)
+- Undoable akce: přesun, resize, změna vlastností, přidání/smazání elementu, přidání/smazání/přesun sekce
 
 ### Uložení a otevření
 - **Ctrl+S** / menu Soubor → Uložit
@@ -172,6 +181,9 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 | **Ctrl+C** | Kopírovat vybrané elementy |
 | **Ctrl+V** | Vložit ze schránky do aktivní sekce |
 | **Ctrl+D** | Duplikovat vybrané elementy |
+| **Ctrl+Shift+↑** | Přesunout aktivní sekci nahoru |
+| **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |
+| **Ctrl+scroll** | Zoom in / out |
 
 ---
 
@@ -188,9 +200,8 @@ V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu
 
 ## Co bude přidáno (plánované funkce)
 
-- Drag & drop přeřazení sekcí v levém panelu
 - Editor sloupců tabulky (přidat/odebrat/přesunout sloupec)
 - Picker statického obrázku (načíst PNG/JPG ze souboru)
 - Live preview s mock daty (pravý panel)
 - Podmíněná viditelnost (VisibilityExpression)
-- Přiblížení kolečkem myši (Ctrl+scroll)
+- Přehled elementů v dialogu vlastností sekce (a hromadná editace)

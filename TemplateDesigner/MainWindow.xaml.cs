@@ -61,6 +61,8 @@ public partial class MainWindow : Window
         skCanvas.MouseMove           += OnCanvasMouseMove;
         skCanvas.MouseLeftButtonUp   += OnCanvasMouseUp;
 
+        CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
+
         _state.CurrentTemplate = CreateSampleTemplate();
 
         UpdateTitle();
@@ -73,7 +75,7 @@ public partial class MainWindow : Window
 
         UpdatePropertiesPanel();
 
-        this.KeyDown += OnWindowKeyDown;
+        this.PreviewKeyDown += OnWindowKeyDown;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -108,29 +110,92 @@ public partial class MainWindow : Window
 
     private void InvalidateCanvas() => skCanvas.InvalidateVisual();
 
+    private void OnCanvasScrollWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
+        e.Handled = true; // zabraňuje scrollování ScrollVieweru
+
+        int newIdx = Math.Clamp(CmbZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
+        if (newIdx != CmbZoom.SelectedIndex)
+            CmbZoom.SelectedIndex = newIdx; // spustí CmbZoom_SelectionChanged
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Sekce — seznam vlevo
 
     private void RefreshSectionsList()
     {
         SectionsList.Children.Clear();
-        foreach (var section in _state.CurrentTemplate.Sections)
+        var sections = _state.CurrentTemplate.Sections;
+
+        for (int i = 0; i < sections.Count; i++)
         {
+            var section   = sections[i];
             bool isDynamic = section.DesignerHeight is null;
             bool isActive  = section == _state.ActiveSection;
+            int  idx       = i; // closure capture
 
             var label = new TextBlock
             {
-                Text     = section.Name,
-                FontSize = 12,
-                ToolTip  = section.GetType().Name,
-                FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal
+                Text       = section.Name,
+                FontSize   = 12,
+                ToolTip    = section.GetType().Name,
+                FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal,
+                VerticalAlignment = VerticalAlignment.Center,
+                TextTrimming = TextTrimming.CharacterEllipsis
             };
+
+            // ▲▼ tlačítka vpravo
+            var btnUp = new Button
+            {
+                Content   = "▲", Width = 18, Height = 16, FontSize = 8,
+                Padding   = new Thickness(0), Margin = new Thickness(2, 0, 0, 0),
+                ToolTip   = "Přesunout nahoru (Ctrl+Shift+↑)",
+                IsEnabled = idx > 0,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var btnDown = new Button
+            {
+                Content   = "▼", Width = 18, Height = 16, FontSize = 8,
+                Padding   = new Thickness(0), Margin = new Thickness(2, 0, 0, 0),
+                ToolTip   = "Přesunout dolů (Ctrl+Shift+↓)",
+                IsEnabled = idx < sections.Count - 1,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            btnUp.Click   += (_, e2) => { e2.Handled = true; MoveSection(section, -1); };
+            btnDown.Click += (_, e2) => { e2.Handled = true; MoveSection(section, +1); };
+
+            var rowPanel = new DockPanel { LastChildFill = true };
+            DockPanel.SetDock(btnDown, Dock.Right);
+            DockPanel.SetDock(btnUp,   Dock.Right);
+            rowPanel.Children.Add(btnDown);
+            rowPanel.Children.Add(btnUp);
+            rowPanel.Children.Add(label);
+
+            // Context menu
+            var ctx        = new ContextMenu();
+            var miProps    = new MenuItem { Header = "Vlastnosti sekce…" };
+            var miMoveUp   = new MenuItem { Header = "Přesunout nahoru", IsEnabled = idx > 0 };
+            var miMoveDown = new MenuItem { Header = "Přesunout dolů",   IsEnabled = idx < sections.Count - 1 };
+            var miSep      = new Separator();
+            var miDelete   = new MenuItem { Header = "Smazat sekci",     Foreground = System.Windows.Media.Brushes.DarkRed };
+
+            miProps.Click    += (_, _) => _propsWindow!.ShowForSection(section);
+            miMoveUp.Click   += (_, _) => MoveSection(section, -1);
+            miMoveDown.Click += (_, _) => MoveSection(section, +1);
+            miDelete.Click   += (_, _) => DeleteSection(section);
+
+            ctx.Items.Add(miProps);
+            ctx.Items.Add(miMoveUp);
+            ctx.Items.Add(miMoveDown);
+            ctx.Items.Add(miSep);
+            ctx.Items.Add(miDelete);
 
             var item = new Border
             {
                 Margin          = new Thickness(0, 2, 0, 0),
-                Padding         = new Thickness(8, 5, 8, 5),
+                Padding         = new Thickness(8, 5, 4, 5),
                 Background      = new SolidColorBrush(isActive
                     ? Color.FromRgb(210, 230, 255)
                     : isDynamic ? Color.FromRgb(234, 243, 255) : Color.FromRgb(245, 245, 245)),
@@ -141,7 +206,8 @@ public partial class MainWindow : Window
                 CornerRadius    = new CornerRadius(3),
                 Cursor          = Cursors.Hand,
                 Tag             = section,
-                Child           = label
+                Child           = rowPanel,
+                ContextMenu     = ctx
             };
 
             item.MouseLeftButtonDown += (_, e2) =>
@@ -151,6 +217,7 @@ public partial class MainWindow : Window
                 else
                     ActivateSection(section);
             };
+
             SectionsList.Children.Add(item);
         }
     }
@@ -159,6 +226,43 @@ public partial class MainWindow : Window
     {
         _state.ActiveSection = section;
         RefreshSectionsList();
+        InvalidateCanvas();
+    }
+
+    private void MoveSection(Section section, int direction)
+    {
+        int idx    = _state.CurrentTemplate.Sections.IndexOf(section);
+        int newIdx = idx + direction;
+        if (newIdx < 0 || newIdx >= _state.CurrentTemplate.Sections.Count) return;
+
+        _state.Execute(new MoveSectionCommand(_state.CurrentTemplate, section, direction));
+        RefreshSectionsList();
+        UpdateCanvasSize();
+        InvalidateCanvas();
+    }
+
+    private void DeleteSection(Section section)
+    {
+        if (_state.CurrentTemplate.Sections.Count <= 1)
+        {
+            MessageBox.Show("Šablona musí mít alespoň jednu sekci.", "Smazat sekci",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Odznač elementy z mazané sekce
+        _state.SelectedElements.RemoveAll(el => section.Elements.Contains(el));
+
+        // Přepni aktivní sekci, pokud se maže ta aktivní
+        if (_state.ActiveSection == section)
+            _state.ActiveSection = _state.CurrentTemplate.Sections
+                .FirstOrDefault(s => s != section);
+
+        _propsWindow?.Hide();
+        _state.Execute(new DeleteSectionCommand(_state.CurrentTemplate, section));
+        RefreshSectionsList();
+        UpdateCanvasSize();
+        UpdatePropertiesPanel();
         InvalidateCanvas();
     }
 
@@ -832,6 +936,14 @@ public partial class MainWindow : Window
         else if (e.Key == Key.Delete)
         {
             DeleteSelected();
+            e.Handled = true;
+        }
+        else if ((e.Key == Key.Up || e.Key == Key.Down)
+                 && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+                 && _state.ActiveSection is not null)
+        {
+            // Ctrl+Shift+↑↓ — přesunout aktivní sekci nahoru / dolů
+            MoveSection(_state.ActiveSection, e.Key == Key.Up ? -1 : +1);
             e.Handled = true;
         }
         else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
