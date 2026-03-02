@@ -61,6 +61,8 @@
                 <Separator/>
                 <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
+                <MenuItem x:Name="MenuPreview" Header="Live náhled" IsCheckable="True"
+                          Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
         </Menu>
 
@@ -97,6 +99,10 @@
                 <Separator Style="{StaticResource ToolbarSep}"/>
                 <Button x:Name="BtnSave" Content="Uložit" Click="MenuSave_Click" Padding="6,3" FontWeight="SemiBold"/>
                 <Button x:Name="BtnOpen" Content="Otevřít" Click="MenuOpen_Click" Padding="6,3"/>
+                <Separator Style="{StaticResource ToolbarSep}"/>
+                <ToggleButton x:Name="BtnPreview" Content="👁 Náhled" Padding="6,3"
+                              Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed"
+                              ToolTip="Zobrazit/skrýt live náhled (vzorová data ze schématu)"/>
             </ToolBar>
             <ToolBar Band="1" BandIndex="0">
                 <TextBlock Text="Zarovnat:" VerticalAlignment="Center" Margin="4,0,2,0" Foreground="#555555" FontSize="11"/>
@@ -229,12 +235,25 @@
             <GridSplitter Grid.Column="3" Grid.Row="0"
                           HorizontalAlignment="Stretch" Background="#DDDDDD" Cursor="SizeWE"/>
 
-            <!-- ── Live Preview (výchozí: skrytý) ── -->
+            <!-- ── Live Preview (výchozí: skrytý, panel se zobrazí togglem) ── -->
             <Border Grid.Column="4" Grid.Row="0"
-                    BorderBrush="#DDDDDD" BorderThickness="1,0,0,0"
-                    Background="#F8F8F8">
-                <TextBlock Text="Live Preview" HorizontalAlignment="Center"
-                           VerticalAlignment="Center" Foreground="#AAAAAA"/>
+                    BorderBrush="#DDDDDD" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <!-- Záhlaví preview panelu -->
+                    <Border DockPanel.Dock="Top"
+                            Background="#F0F0F0"
+                            BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
+                            Padding="8,5">
+                        <TextBlock Text="Náhled  ·  vzorová data ze schématu"
+                                   FontSize="11" Foreground="#666666"/>
+                    </Border>
+                    <!-- Scrollovatelný canvas náhledu — šířka se přizpůsobí panelu -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Background="#E8E8E8">
+                        <skia:SKElement x:Name="skPreview" HorizontalAlignment="Stretch" Height="800"/>
+                    </ScrollViewer>
+                </DockPanel>
             </Border>
 
             <!-- ── Status bar ── -->

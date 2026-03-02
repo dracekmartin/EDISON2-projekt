@@ -21,6 +21,7 @@ public partial class MainWindow : Window
 {
     private readonly DesignerState          _state;
     private readonly DesignerCanvas         _canvas;
+    private readonly PreviewCanvas          _previewCanvas;
     private          ElementPropertiesWindow? _propsWindow;
     private string? _currentFilePath;
 
@@ -56,8 +57,9 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        _state  = new DesignerState();
-        _canvas = new DesignerCanvas(_state);
+        _state         = new DesignerState();
+        _canvas        = new DesignerCanvas(_state);
+        _previewCanvas = new PreviewCanvas(_state);
 
         // Schema provider — Caché (primární) + JSON soubory (záloha)
         string schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
@@ -72,6 +74,8 @@ public partial class MainWindow : Window
 
         // PaintSurface se registruje výhradně v code-behind (SkiaSharp.Views.WPF + net9)
         skCanvas.PaintSurface        += OnPaintSurface;
+        skPreview.PaintSurface       += OnPreviewPaintSurface;
+        skPreview.SizeChanged        += (_, _) => InvalidatePreview();
         skCanvas.MouseLeftButtonDown += OnCanvasMouseDown;
         skCanvas.MouseMove           += OnCanvasMouseMove;
         skCanvas.MouseLeftButtonUp   += OnCanvasMouseUp;
@@ -124,9 +128,14 @@ public partial class MainWindow : Window
         skCanvas.Width  = pageW + padding;
         skCanvas.Height = pageH + padding;
         skCanvas.InvalidateVisual();
+        UpdatePreviewSize();
     }
 
-    private void InvalidateCanvas() => skCanvas.InvalidateVisual();
+    private void InvalidateCanvas()
+    {
+        skCanvas.InvalidateVisual();
+        InvalidatePreview();
+    }
 
     private void OnCanvasScrollWheel(object sender, MouseWheelEventArgs e)
     {
@@ -337,6 +346,59 @@ public partial class MainWindow : Window
         SectionsColumn.Width = MenuSectionsPanel.IsChecked
             ? new GridLength(200, GridUnitType.Pixel)
             : new GridLength(0);
+    }
+
+    private void BtnPreview_Changed(object sender, RoutedEventArgs e)
+    {
+        bool show = BtnPreview.IsChecked == true;
+        PreviewColumn.Width = show ? new GridLength(400, GridUnitType.Pixel) : new GridLength(0);
+        MenuPreview.IsChecked = show;
+        if (show) InvalidatePreview();
+    }
+
+    private void MenuPreview_Changed(object sender, RoutedEventArgs e)
+    {
+        BtnPreview.IsChecked = MenuPreview.IsChecked;
+        BtnPreview_Changed(sender, e);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Live preview
+
+    private void UpdatePreviewSize()
+    {
+        if (BtnPreview?.IsChecked != true) return;
+        float width = (float)(skPreview.ActualWidth > 0 ? skPreview.ActualWidth : 320);
+        float zoom  = _previewCanvas.ComputeFitZoom(width);
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(zoom) + 40f;
+    }
+
+    private void InvalidatePreview()
+    {
+        if (BtnPreview?.IsChecked != true) return;
+        UpdatePreviewSize();
+        skPreview.InvalidateVisual();
+    }
+
+    private void OnPreviewPaintSurface(object? sender, object e)
+    {
+        var args    = (dynamic)e;
+        SKSurface surface = args.Surface;
+        float w = (float)args.Info.Width;
+        float h = (float)args.Info.Height;
+
+        // Sestavit mock DataContext ze schématu: {POLE} → label pole
+        var schema = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode);
+        DataContext? mockData = null;
+        if (schema is not null)
+        {
+            var values = schema.Fields
+                .DistinctBy(f => f.FieldName)
+                .ToDictionary(f => f.FieldName, f => (object?)f.Label);
+            mockData = new DataContext(values);
+        }
+
+        _previewCanvas.Render(surface.Canvas, w, h, mockData);
     }
 
     // ─────────────────────────────────────────────────────────────────────
