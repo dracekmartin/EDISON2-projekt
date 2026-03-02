@@ -443,6 +443,26 @@ pro budoucí vlastnosti bez změny modelu a bez nutnosti verzovat JSON schéma.
 
 ---
 
+## Známé problémy a TODO
+
+### ColorPicker minimalizace Properties window
+**Problém:** Po použití WinForms ColorDialog v Properties panelu a kliknutí OK se celé hlavní okno aplikace minimalizuje.
+
+**Příčina:** Interakce mezi WinForms ColorDialog a WPF ToolWindow (`ElementPropertiesWindow`). Po zavření WinForms dialogu se Windows snaží vrátit focus, ale kvůli ToolWindow stylu to způsobí nechtěné chování.
+
+**Aktuální stav:** Neblokující — uživatel může Properties panel znovu otevřít. BackgroundColor se ukládá správně do JSON.
+
+**Možná řešení:**
+- Implementovat vlastní WPF ColorPicker control místo WinForms dialogu
+- Změnit `WindowStyle` Properties dialogu z `ToolWindow` na `None` (ale ztratíme UI benefit)
+- Použít WPF Extended Toolkit ColorPicker
+
+**Lokace kódu:** `Controls/PropertiesPanel.xaml.cs` (řádek ~416, TODO komentář)
+
+**Priorita:** Nízká (workaround: uživatel znovu otevře Properties panel)
+
+---
+
 ## Nápady pro budoucí rozšíření (neplánováno, ale žádoucí)
 
 ### Fragmenty / kompozice elementů

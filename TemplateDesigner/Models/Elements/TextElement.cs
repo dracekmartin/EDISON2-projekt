@@ -21,10 +21,16 @@ public class TextElement : TemplateElement
     /// <summary>Barva textu ve formátu #AARRGGBB, např. "#FF000000" = černá.</summary>
     public string TextColor { get; set; } = "#FF000000";
 
+    /// <summary>Barva pozadí ve formátu #AARRGGBB, např. "#00FFFFFF" = průhledná, "#FFFFFF00" = žlutá.</summary>
+    public string BackgroundColor { get; set; } = "#00FFFFFF";
+
     public bool WordWrap { get; set; } = true;
 
     [JsonIgnore]
     public SKColor SkTextColor => SKColor.Parse(TextColor);
+
+    [JsonIgnore]
+    public SKColor SkBackgroundColor => SKColor.Parse(BackgroundColor);
 
     public override void Render(RenderContext ctx)
     {
@@ -33,6 +39,13 @@ public class TextElement : TemplateElement
         if (string.IsNullOrEmpty(resolvedText)) return;
 
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+
+        // Pozadí (pokud není průhledné)
+        if (SkBackgroundColor.Alpha > 0)
+        {
+            using var bgPaint = new SKPaint { Color = SkBackgroundColor, Style = SKPaintStyle.Fill };
+            ctx.Canvas.DrawRect(rect, bgPaint);
+        }
 
         var typeface = SKTypeface.FromFamilyName(
             FontFamily,
@@ -71,6 +84,7 @@ public class TextElement : TemplateElement
             Options = [("Nahoře", (object)TextVerticalAlignment.Top), ("Na střed", (object)TextVerticalAlignment.Middle), ("Dole", (object)TextVerticalAlignment.Bottom)] },
 
         new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Vzhled",    Get = () => TextColor,           Set = v => TextColor = v },
+        new ColorPropertyDescriptor  { Label = "Barva pozadí", Group = "Vzhled",    Get = () => BackgroundColor,     Set = v => BackgroundColor = v },
 
         .. GetPositionDescriptors()
     ];
@@ -90,6 +104,7 @@ public class TextElement : TemplateElement
         HorizontalAlignment = HorizontalAlignment,
         VerticalAlignment = VerticalAlignment,
         TextColor = TextColor,
+        BackgroundColor = BackgroundColor,
         WordWrap = WordWrap
     };
 }
