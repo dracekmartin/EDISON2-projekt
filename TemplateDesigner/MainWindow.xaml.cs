@@ -11,7 +11,6 @@ using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
-using TemplateDesigner.Models.Sections;
 using TemplateDesigner.Config;
 using TemplateDesigner.Serialization;
 
@@ -175,8 +174,8 @@ public partial class MainWindow : Window
                     _ => null
                 };
             }
-            if (section is Models.Sections.SectionTableDesigned std && !string.IsNullOrEmpty(std.DataSource))
-                subtitle = (subtitle is null ? "" : subtitle + " · ") + std.DataSource;
+            if (section.PrintBehavior == SectionPrintBehavior.PerDataRow && !string.IsNullOrEmpty(section.DataSource))
+                subtitle = (subtitle is null ? "" : subtitle + " · ") + section.DataSource;
 
             var nameText = new TextBlock
             {
@@ -851,18 +850,59 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
 
-        Add("Záhlaví",                  () => new SectionHeader());
-        Add("Pevná výška",              () => new SectionFixedHeight { Name = $"Sekce {_state.CurrentTemplate.Sections.Count + 1}" });
+        Add("Záhlaví",                  () => new Section
+        {
+            Name = "Záhlaví",
+            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 25f
+        });
+        Add("Pevná výška",              () => new Section
+        {
+            Name = $"Sekce {_state.CurrentTemplate.Sections.Count + 1}",
+            PrintBehavior = SectionPrintBehavior.Once,
+            DesignerHeight = 30f
+        });
         Add("Tabulka",                  () =>
         {
-            var s = new SectionTable();
+            var s = new Section
+            {
+                Name = "Tabulka",
+                PrintBehavior = SectionPrintBehavior.Once,
+                OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+                DesignerHeight = null  // dynamická
+            };
             s.Elements.Add(new TableElement { X = 0, Y = 0, Width = _state.CurrentTemplate.PageSize.PrintableWidth });
             return s;
         });
-        Add("Tabulka (vlastní design)", () => new SectionTableDesigned());
-        Add("Nekonečný text",           () => new SectionInfiniteText());
-        Add("Oddělovač",                () => new SectionSeparator());
-        Add("Zápatí",                   () => new SectionFooter());
+        Add("Tabulka (vlastní design)", () => new Section
+        {
+            Name = "Tabulka (vlastní design)",
+            PrintBehavior = SectionPrintBehavior.PerDataRow,
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+            DesignerHeight = null,  // dynamická
+            RowHeight = 8f
+        });
+        Add("Nekonečný text",           () => new Section
+        {
+            Name = "Nekonečný text",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.AllowSplit,
+            DesignerHeight = null  // dynamická
+        });
+        Add("Oddělovač",                () => new Section
+        {
+            Name = "Oddělovač",
+            PrintBehavior = SectionPrintBehavior.Once,
+            DesignerHeight = 5f
+        });
+        Add("Zápatí",                   () => new Section
+        {
+            Name = "Zápatí",
+            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 15f
+        });
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
@@ -1554,20 +1594,37 @@ public partial class MainWindow : Window
     {
         var t = new Template { Name = "Ukázková šablona — Jízdní řád", AgendaCode = "JR" };
 
-        var header = new SectionHeader();
+        var header = new Section
+        {
+            Name = "Záhlaví",
+            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 25f
+        };
         header.Elements.Add(new RectangleElement { X = 0, Y = 0, Width = 190, Height = 20, FillColor = "#FF1A5276" });
         header.Elements.Add(new TextElement      { X = 5, Y = 4, Width = 180, Height = 12,
             Text = "Jízdní řád — {NAZEV}", FontSize = 14,
             FontWeight = TextFontWeight.Bold, TextColor = "#FFFFFFFF", ZIndex = 1 });
         t.Sections.Add(header);
 
-        var info = new SectionFixedHeight { Name = "Info o lince", DesignerHeight = 18 };
+        var info = new Section
+        {
+            Name = "Info o lince",
+            PrintBehavior = SectionPrintBehavior.Once,
+            DesignerHeight = 18f
+        };
         info.Elements.Add(new TextElement { X = 0,  Y = 3, Width = 90,  Height = 9, Text = "Linka: {LINKA}",  FontSize = 10 });
         info.Elements.Add(new TextElement { X = 95, Y = 3, Width = 95,  Height = 9, Text = "Datum: {DATUM}",  FontSize = 10 });
         info.Elements.Add(new LineElement { X = 0, Y = 16, Width = 190, Height = 1, StrokeWidth = 0.3f });
         t.Sections.Add(info);
 
-        var table = new SectionTable { Name = "Jízdní řád" };
+        var table = new Section
+        {
+            Name = "Jízdní řád",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+            DesignerHeight = null  // dynamická
+        };
         table.Elements.Add(new TableElement
         {
             X = 0, Y = 0, Width = 190,
@@ -1583,10 +1640,21 @@ public partial class MainWindow : Window
         });
         t.Sections.Add(table);
 
-        var separator = new SectionSeparator();
+        var separator = new Section
+        {
+            Name = "Oddělovač",
+            PrintBehavior = SectionPrintBehavior.Once,
+            DesignerHeight = 5f
+        };
         t.Sections.Add(separator);
 
-        var footer = new SectionFooter();
+        var footer = new Section
+        {
+            Name = "Zápatí",
+            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 15f
+        };
         footer.Elements.Add(new TextElement
         {
             X = 0, Y = 3, Width = 190, Height = 8,

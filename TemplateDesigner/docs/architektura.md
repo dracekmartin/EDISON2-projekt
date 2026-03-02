@@ -42,8 +42,8 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 |---|---|---|
 | `Template.cs` | `Template` | Kořenový objekt šablony. Obsahuje `PageSize`, seznam `Section`, verzi JSON formátu, metadata. |
 | `PageSize.cs` | `PageSize` | Rozměry stránky a okraje v mm. Computed `PrintableWidth/Height`. Statické presety A4/A3. |
-| `Section.cs` | `Section` (abstract) | Základní třída pro všechny sekce. Definuje `Elements`, `DesignerHeight`, `PrintBehavior`, `OverflowBehavior`, `CustomProperties`. Nese `JsonPolymorphic` atributy. |
-| `Section.cs` | `SectionPrintBehavior` (enum) | Kdy se sekce tiskne: `Once`, `OnEveryPage`, `OnFirstPageOnly`, `OnLastPageOnly`, `OnEveryPageExceptFirst`. |
+| `Section.cs` | `Section` | **Univerzální třída sekce** (refactoring 2026-03). Chování sekce určují properties (`PrintBehavior`, `OverflowBehavior`), ne typ třídy. Obsahuje `Elements`, `DesignerHeight`, `VisibilityExpression`, `DataSource`, `RowHeight`, `CustomProperties`. Nese `JsonPolymorphic` atributy pro zpětnou kompatibilitu. |
+| `Section.cs` | `SectionPrintBehavior` (enum) | Kdy se sekce tiskne: `Once`, `OnEveryPage`, `OnFirstPageOnly`, `OnLastPageOnly`, `OnEveryPageExceptFirst`, `PerDataRow`. |
 | `Section.cs` | `SectionOverflowBehavior` (enum) | Co se stane při přetečení: `KeepTogether`, `SplitAcrossPages`, `AllowSplit`. |
 | `TemplateElement.cs` | `TemplateElement` (abstract) | Základní třída pro všechny elementy. Pozice/rozměry v mm, `ZIndex`, `IsLocked`, `VisibilityExpression`, `CustomProperties`. Nese `JsonPolymorphic` atributy. Definuje `Render(RenderContext)`, `Clone()` a `GetPropertyDescriptors()`. |
 | `PropertyDescriptor.cs` | `PropertyDescriptor` (abstract) a potomci | Deskriptory editovatelných vlastností. Typy: `StringPropertyDescriptor`, `FloatPropertyDescriptor`, `BoolPropertyDescriptor`, `ColorPropertyDescriptor`, `EnumPropertyDescriptor`. Panel generuje UI automaticky — žádná ruční registrace. |

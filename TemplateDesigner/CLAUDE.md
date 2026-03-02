@@ -105,44 +105,80 @@ class PageSize {
 }
 ```
 
-### Section (abstraktní)
+### Section (univerzální)
 ```csharp
-abstract class Section {
+class Section {
     Guid Id
     string Name
-    float? DesignerHeight          // výška sekce v mm pro designer — null u dynamických sekcí
-    SectionPrintBehavior PrintBehavior
-    SectionOverflowBehavior OverflowBehavior
+
+    // Chování tisku
+    SectionPrintBehavior PrintBehavior      // určuje KDY a JAK ČASTO se sekce tiskne
+    SectionOverflowBehavior OverflowBehavior // určuje chování při přetečení stránky
+
+    // Rozměry
+    float? DesignerHeight                   // výška v mm pro designer — null u dynamických sekcí
+
+    // Pokročilé
+    string? VisibilityExpression            // podmínka viditelnosti, např. "{PAGE} > 1"
+
+    // Speciální properties (pro některé případy použití)
+    string? DataSource                      // klíč dat pro PrintBehavior=PerDataRow
+    float? RowHeight                        // výška řádku pro PrintBehavior=PerDataRow
+
+    // Obsah
     List<TemplateElement> Elements
+    Dictionary<string, string>? CustomProperties
 }
 
 enum SectionPrintBehavior {
-    Once,                         // výchozí
-    OnEveryPage,                  // záhlaví/zápatí
-    OnFirstPageOnly,
-    OnLastPageOnly,
-    OnEveryPageExceptFirst
+    Once,                         // vytiskne se jednou
+    OnEveryPage,                  // každá stránka (záhlaví/zápatí)
+    OnFirstPageOnly,              // jen první stránka
+    OnLastPageOnly,               // jen poslední stránka
+    OnEveryPageExceptFirst,       // všechny kromě první
+    PerDataRow                    // opakuje se per řádek dat (tabulky)
 }
 
 enum SectionOverflowBehavior {
-    KeepTogether,                 // nepřerušovat, přesunout na další stránku
-    SplitAcrossPages,             // tabulky, jízdní řády
-    AllowSplit
+    KeepTogether,                 // nepřerušovat, přesunout celou na další stránku
+    SplitAcrossPages,             // rozdělí se přes stránky (tabulky, dlouhý text)
+    AllowSplit                    // rozdělení povoleno ale ne preferováno
 }
 ```
 
-`DesignerHeight` je pouze vizuální pomůcka — udává jak vysoká sekce vypadá na canvasu. U dynamických sekcí (SectionTable, SectionInfiniteText) je `null` a designer zobrazí placeholder výšku. Print engine výšku sekce ignoruje a počítá ji za běhu z obsahu.
+**DŮLEŽITÁ ZMĚNA (refactoring 2026-03):**
+- Section je nyní **univerzální třída** (ne abstract)
+- Chování sekce určují **properties** (PrintBehavior, OverflowBehavior), **ne typ třídy**
+- Podtřídy (SectionHeader, SectionFooter, ...) existují pouze pro **zpětnou kompatibilitu JSON** a jako **factory konstruktory** s výchozími hodnotami
+- Nové šablony by měly používat přímo `Section` s nastavenými properties
+- `DesignerHeight = null` znamená dynamickou sekce — designer zobrazí placeholder výšku
+- Print engine ignoruje DesignerHeight a počítá výšku za běhu z obsahu
 
-### Typy sekcí
-| Typ | Popis |
+### Běžné případy použití sekcí
+
+| Požadavek | Nastavení |
 |---|---|
-| `SectionHeader` | Záhlaví — jednou nahoře |
-| `SectionFixedHeight` | Pevná výška |
-| `SectionTable` | Opakující se řádky tabulky |
-| `SectionTableDesigned` | Tabulka s vlastním designem řádku |
-| `SectionInfiniteText` | Roztahuje se podle obsahu |
-| `SectionSeparator` | Oddělovač |
-| `SectionFooter` | Zápatí |
+| **Záhlaví stránky** | PrintBehavior=OnEveryPage, OverflowBehavior=KeepTogether |
+| **Zápatí stránky** | PrintBehavior=OnEveryPage, OverflowBehavior=KeepTogether |
+| **Titulní stránka** | PrintBehavior=OnFirstPageOnly |
+| **Závěrečná stránka** | PrintBehavior=OnLastPageOnly |
+| **Pevný obsah** | PrintBehavior=Once, DesignerHeight=30mm |
+| **Tabulka s vlastním designem řádku** | PrintBehavior=PerDataRow, OverflowBehavior=SplitAcrossPages, DataSource="POLOZKY" |
+| **Oddělovač** | PrintBehavior=Once, DesignerHeight=5mm |
+
+### Deprecated typy sekcí (zpětná kompatibilita)
+
+Tyto třídy existují pouze pro načítání starých JSON šablon. Nový kód by měl používat přímo `Section`.
+
+| Starý typ | Ekvivalentní nastavení Section |
+|---|---|
+| `SectionHeader` | PrintBehavior=OnEveryPage, DesignerHeight=25mm |
+| `SectionFooter` | PrintBehavior=OnEveryPage, DesignerHeight=15mm |
+| `SectionFixedHeight` | PrintBehavior=Once, DesignerHeight=30mm |
+| `SectionTableDesigned` | PrintBehavior=PerDataRow, OverflowBehavior=SplitAcrossPages, RowHeight=8mm |
+| `SectionSeparator` | PrintBehavior=Once, DesignerHeight=5mm |
+| `SectionTable` | ❌ Deprecated — tabulka je element (TableElement), ne sekce |
+| `SectionInfiniteText` | ❌ Deprecated — použijte Section + InfiniteTextElement |
 
 ### TemplateElement (abstraktní)
 ```csharp

@@ -5,7 +5,6 @@ using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
-using TemplateDesigner.Models.Sections;
 
 namespace TemplateDesigner;
 
@@ -254,20 +253,22 @@ public partial class ElementPropertiesWindow : Window
             ]
         });
 
-        // Vlastnosti specifické pro typ sekce
-        if (section is SectionTableDesigned sectionTableDesigned)
+        // Vlastnosti specifické pro typ sekce (nebo PrintBehavior)
+        // DEPRECATED: Properties DataSource a RowHeight jsou nyní přímo v base třídě Section
+        // Zobrazují se, pokud PrintBehavior = PerDataRow
+        if (section.PrintBehavior == SectionPrintBehavior.PerDataRow)
         {
             list.Add(new StringPropertyDescriptor
             {
                 Label = "Datový zdroj", Group = "Tabulka",
-                Get   = () => sectionTableDesigned.DataSource,
-                Set   = v  => sectionTableDesigned.DataSource = v
+                Get   = () => section.DataSource ?? "",
+                Set   = v  => section.DataSource = v
             });
             list.Add(new FloatPropertyDescriptor
             {
                 Label = "Výška řádku", Group = "Tabulka",
-                Get   = () => sectionTableDesigned.RowHeight,
-                Set   = v  => sectionTableDesigned.RowHeight = v,
+                Get   = () => section.RowHeight ?? 8f,
+                Set   = v  => section.RowHeight = v,
                 Min   = 3f, Max = 100f, Unit = "mm"
             });
         }
