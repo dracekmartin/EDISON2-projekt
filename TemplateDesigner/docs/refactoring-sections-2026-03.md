@@ -369,6 +369,59 @@ Po (přímá serializace):
 
 ---
 
+## Krok 3 — Custom šablony sekcí (2026-03-02)
+
+**Cíl:** Umožnit uživateli ukládat často používané sekce jako šablony.
+
+**Implementace:**
+
+### Backend:
+- `SectionTemplateManager` — správa custom šablon
+- File-based V1: ukládá do `section-templates/*.json` vedle .exe
+- Připraveno na DB backend V2 (swap FileSectionTemplateProvider → CacheSectionTemplateProvider)
+- `TemplateSerializer` rozšířen o `SerializeSection()` / `DeserializeSection()`
+- `Section.Clone()` — deep copy včetně elementů s novými Guid
+
+### UI — Uložení:
+- Pravý klik na sekci v levém panelu → **"💾 Uložit jako šablonu..."**
+- Dialog pro zadání názvu
+- Uložení do `section-templates/{sanitized-název}.json`
+
+### UI — Načtení:
+- Menu `[+ Přidat sekci ▾]` automaticky načte všechny `*.json` šablony
+- Zobrazí se s ikonou 💾 před názvem
+- Deep clone s novými Guid při vložení
+
+### Formát JSON:
+```json
+{
+  "name": "Jízdní řád",
+  "printBehavior": "Once",
+  "overflowBehavior": "SplitAcrossPages",
+  "elements": [
+    {
+      "type": "TableElement",
+      "dataSource": "JIZDNI_RAD",
+      "columns": [ ... ]
+    }
+  ]
+}
+```
+
+→ **Přesně stejný formát jako sekce v Template JSON**
+
+### Výhody:
+- ✅ Okamžitě použitelné (file-based)
+- ✅ Portable (zkopíruješ složku = máš šablony)
+- ✅ Připraveno na DB upgrade (stejné rozhraní)
+- ✅ Sdílení mezi kolegy (přes sdílený disk)
+
+### Budoucnost:
+- V2: DB backend přes Caché (`CacheSectionTemplateProvider`)
+- V3: Hybrid (lokální WIP šablony + firemní sdílené z DB)
+
+---
+
 **Datum:** 2026-03-02
 **Autor:** Claude Sonnet 4.5 + User
-**Status:** ✅ Kroky 1 a 2 dokončeny (model + cleanup + UI)
+**Status:** ✅ Kroky 1, 2 a 3 dokončeny (model + cleanup + UI + custom šablony)

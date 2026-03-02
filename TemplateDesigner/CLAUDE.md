@@ -44,18 +44,18 @@ Systém se skládá ze dvou částí:
 /Models
   Template.cs               — kořenový objekt šablony
   PageSize.cs               — rozměry stránky v mm
-  Section.cs                — abstraktní základ sekce + enums (SectionPrintBehavior, SectionOverflowBehavior)
+  Section.cs                — univerzální sekce + enums (SectionPrintBehavior, SectionOverflowBehavior)
   TemplateElement.cs        — abstraktní základ elementu
   DataContext.cs            — data pro renderování (print engine / preview)
   RenderContext.cs          — kontext renderování (canvas + MmToPx + DataContext + origin sekce)
-  /Sections                 — konkrétní typy sekcí
   /Elements                 — konkrétní typy elementů
   /Schema                   — schéma dostupných DB polí (design time only)
     DataSchema.cs           — DataSchema, DataField, DataFieldGroup, enums
     IDataSchemaProvider.cs  — rozhraní pro načítání schémat
 
 /Serialization
-  TemplateSerializer.cs             — JSON ukládání a načítání šablony
+  TemplateSerializer.cs             — JSON ukládání a načítání šablony + sekcí
+  SectionTemplateManager.cs         — správa custom šablon sekcí (file-based V1, připraveno na DB V2)
   JsonFileDataSchemaProvider.cs     — načítání *.schema.json ze složky schemas/
   CacheDataSchemaProvider.cs        — načítání z Caché přes MLRest (delegate pattern)
   CompositeDataSchemaProvider.cs    — Caché primary + JSON fallback
@@ -75,6 +75,9 @@ Systém se skládá ze dvou částí:
 
 /schemas
   *.schema.json             — schémata agend (offline fallback); kopírováno do output dir
+
+/section-templates (runtime)
+  *.json                    — custom šablony sekcí (uložené uživatelem); vedle .exe
 
 appsettings.json            — konfigurace Caché připojení + seznam agend (CopyToOutput)
 MainWindow.xaml / .cs       — hlavní okno s toolbarem a panely
@@ -167,9 +170,35 @@ enum SectionOverflowBehavior {
 | **Oddělovač** | PrintBehavior=Once, DesignerHeight=5mm |
 | **Tabulka** | PrintBehavior=Once + TableElement s DataSource a Columns (logika opakování je v elementu!) |
 
+### Custom šablony sekcí (uživatelské)
+
+Uživatel si může uložit často používané sekce jako šablony a znovu je používat.
+
+**Ukládání:**
+- Pravý klik na sekci v levém panelu → "💾 Uložit jako šablonu..."
+- Zadá název → uloží se do `section-templates/{název}.json`
+- Formát: přesně stejný jako sekce v Template JSON (s elementy)
+
+**Načítání:**
+- Menu `[+ Přidat sekci ▾]` automaticky načte všechny `*.json` z `section-templates/`
+- Deep clone s novými Guid při vložení
+- Funguje offline (file-based)
+
+**V1 implementace (nyní):**
+- `SectionTemplateManager` — file-based provider
+- Ukládá do složky vedle .exe: `bin/Debug/net9.0-windows/section-templates/`
+- Portable (lze zkopírovat složku jinam)
+
+**V2 plán (budoucnost):**
+- DB backend přes `CacheSectionTemplateProvider`
+- Sdílené šablony mezi uživateli
+- Možnost hybrid (lokální + DB šablony)
+
 ### Deprecated typy sekcí (zpětná kompatibilita)
 
-Tyto třídy existují pouze pro načítání starých JSON šablon. Nový kód by měl používat přímo `Section`.
+**VŠECHNY podtřídy sekcí byly odstraněny.** Nový kód používá přímo `Section`.
+
+Původní typy a jejich ekvivalent:
 
 | Starý typ | Ekvivalentní nastavení Section |
 |---|---|

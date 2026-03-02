@@ -25,6 +25,7 @@ public partial class MainWindow : Window
     private string? _currentFilePath;
 
     private readonly IDataSchemaProvider _schemaProvider;
+    private readonly SectionTemplateManager _sectionTemplates;
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
@@ -70,6 +71,9 @@ public partial class MainWindow : Window
                 primary:  cacheProvider,
                 fallback: new JsonFileDataSchemaProvider(schemasDir))
             : new JsonFileDataSchemaProvider(schemasDir);
+
+        // Section template manager — správa custom šablon sekcí
+        _sectionTemplates = new SectionTemplateManager();
 
         // PaintSurface se registruje výhradně v code-behind (SkiaSharp.Views.WPF + net9)
         skCanvas.PaintSurface        += OnPaintSurface;
@@ -229,21 +233,24 @@ public partial class MainWindow : Window
             rowPanel.Children.Add(labelStack);
 
             // Context menu
-            var ctx        = new ContextMenu();
-            var miProps    = new MenuItem { Header = "Vlastnosti sekce…" };
-            var miMoveUp   = new MenuItem { Header = "Přesunout nahoru", IsEnabled = idx > 0 };
-            var miMoveDown = new MenuItem { Header = "Přesunout dolů",   IsEnabled = idx < sections.Count - 1 };
-            var miSep      = new Separator();
-            var miDelete   = new MenuItem { Header = "Smazat sekci",     Foreground = System.Windows.Media.Brushes.DarkRed };
+            var ctx           = new ContextMenu();
+            var miProps       = new MenuItem { Header = "Vlastnosti sekce…" };
+            var miMoveUp      = new MenuItem { Header = "Přesunout nahoru", IsEnabled = idx > 0 };
+            var miMoveDown    = new MenuItem { Header = "Přesunout dolů",   IsEnabled = idx < sections.Count - 1 };
+            var miSaveTemplate = new MenuItem { Header = "💾 Uložit jako šablonu…" };
+            var miSep         = new Separator();
+            var miDelete      = new MenuItem { Header = "Smazat sekci",     Foreground = System.Windows.Media.Brushes.DarkRed };
 
-            miProps.Click    += (_, _) => _propsWindow!.ShowForSection(section);
-            miMoveUp.Click   += (_, _) => MoveSection(section, -1);
-            miMoveDown.Click += (_, _) => MoveSection(section, +1);
-            miDelete.Click   += (_, _) => DeleteSection(section);
+            miProps.Click        += (_, _) => _propsWindow!.ShowForSection(section);
+            miMoveUp.Click       += (_, _) => MoveSection(section, -1);
+            miMoveDown.Click     += (_, _) => MoveSection(section, +1);
+            miSaveTemplate.Click += (_, _) => SaveSectionAsTemplate(section);
+            miDelete.Click       += (_, _) => DeleteSection(section);
 
             ctx.Items.Add(miProps);
             ctx.Items.Add(miMoveUp);
             ctx.Items.Add(miMoveDown);
+            ctx.Items.Add(miSaveTemplate);
             ctx.Items.Add(miSep);
             ctx.Items.Add(miDelete);
 
@@ -319,6 +326,93 @@ public partial class MainWindow : Window
         UpdateCanvasSize();
         UpdatePropertiesPanel();
         InvalidateCanvas();
+    }
+
+    private void SaveSectionAsTemplate(Section section)
+    {
+        // Dialog pro zadání názvu šablony
+        var dialog = new Window
+        {
+            Title = "Uložit sekci jako šablonu",
+            Width = 400,
+            Height = 160,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            ResizeMode = ResizeMode.NoResize
+        };
+
+        var stack = new StackPanel { Margin = new Thickness(15) };
+        stack.Children.Add(new TextBlock { Text = "Název šablony:", Margin = new Thickness(0, 0, 0, 5) });
+
+        var nameBox = new TextBox
+        {
+            Text = section.Name,
+            Margin = new Thickness(0, 0, 0, 15)
+        };
+        stack.Children.Add(nameBox);
+
+        var buttonsPanel = new StackPanel
+        {
+            Orientation = System.Windows.Controls.Orientation.Horizontal,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
+        };
+
+        var btnCancel = new Button
+        {
+            Content = "Zrušit",
+            Width = 80,
+            Height = 25,
+            Margin = new Thickness(0, 0, 10, 0),
+            IsCancel = true
+        };
+
+        var btnSave = new Button
+        {
+            Content = "💾 Uložit",
+            Width = 80,
+            Height = 25,
+            IsDefault = true
+        };
+
+        bool? dialogResult = null;
+        btnSave.Click += (_, _) =>
+        {
+            if (string.IsNullOrWhiteSpace(nameBox.Text))
+            {
+                MessageBox.Show("Zadejte název šablony.", "Uložit šablonu",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+            dialogResult = true;
+            dialog.Close();
+        };
+
+        btnCancel.Click += (_, _) => { dialogResult = false; dialog.Close(); };
+
+        buttonsPanel.Children.Add(btnCancel);
+        buttonsPanel.Children.Add(btnSave);
+        stack.Children.Add(buttonsPanel);
+
+        dialog.Content = stack;
+        nameBox.Focus();
+        nameBox.SelectAll();
+
+        dialog.ShowDialog();
+
+        if (dialogResult == true)
+        {
+            try
+            {
+                _sectionTemplates.Save(section, nameBox.Text.Trim());
+                MessageBox.Show($"Šablona '{nameBox.Text.Trim()}' byla uložena.",
+                    "Uložit šablonu", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Chyba při ukládání šablony: {ex.Message}",
+                    "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -908,6 +1002,29 @@ public partial class MainWindow : Window
         });
 
         AddSeparator();
+
+        // Custom šablony (pokud existují)
+        var customTemplates = _sectionTemplates.GetAvailableTemplates();
+        if (customTemplates.Count > 0)
+        {
+            foreach (var templateName in customTemplates)
+            {
+                var name = templateName; // closure capture
+                Add($"💾 {templateName}", () =>
+                {
+                    var template = _sectionTemplates.Load(name);
+                    if (template is null)
+                    {
+                        MessageBox.Show($"Šablonu '{name}' se nepodařilo načíst.",
+                            "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return new Section { Name = "Chyba" };
+                    }
+                    // Deep clone s novými Guid
+                    return template.Clone();
+                });
+            }
+            AddSeparator();
+        }
 
         // Obecná sekce
         Add("⚙ Prázdná sekce", () => new Section

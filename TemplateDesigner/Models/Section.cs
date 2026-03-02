@@ -62,6 +62,30 @@ public class Section
     /// <summary>Výchozí placeholder výška pro dynamické sekce (null DesignerHeight).</summary>
     [JsonIgnore]
     public virtual float DefaultPlaceholderHeight => 30f;
+
+    /// <summary>
+    /// Vytvoří hlubokou kopii sekce s novým Id a novými Id všech elementů.
+    /// Používá se při duplicitě a načítání custom šablon.
+    /// </summary>
+    public Section Clone()
+    {
+        var clone = new Section
+        {
+            Id = Guid.NewGuid(),
+            Name = Name,
+            PrintBehavior = PrintBehavior,
+            OverflowBehavior = OverflowBehavior,
+            DesignerHeight = DesignerHeight,
+            VisibilityExpression = VisibilityExpression,
+            DataSource = DataSource,
+            RowHeight = RowHeight,
+            Elements = Elements.Select(e => e.Clone()).ToList(),
+            CustomProperties = CustomProperties is not null
+                ? new Dictionary<string, string>(CustomProperties)
+                : null
+        };
+        return clone;
+    }
 }
 
 // ---------------------------------------------------------------------------

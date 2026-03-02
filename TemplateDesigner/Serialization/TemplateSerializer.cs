@@ -16,12 +16,33 @@ public static class TemplateSerializer
 
     private static readonly JsonSerializerOptions Options = BuildOptions();
 
-    // --- Serializace ---
+    // --- Serializace Template ---
 
     public static string Serialize(Template template)
     {
         template.ModifiedAt = DateTime.UtcNow;
         return JsonSerializer.Serialize(template, Options);
+    }
+
+    // --- Serializace Section (pro custom šablony) ---
+
+    /// <summary>Serializuje sekci do JSON (pro uložení jako custom šablona).</summary>
+    public static string SerializeSection(Section section)
+    {
+        return JsonSerializer.Serialize(section, Options);
+    }
+
+    /// <summary>Deserializuje sekci z JSON.</summary>
+    public static Section? DeserializeSection(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<Section>(json, Options);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     public static async Task SaveAsync(Template template, string filePath, CancellationToken ct = default)
