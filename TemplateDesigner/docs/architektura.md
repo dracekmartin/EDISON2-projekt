@@ -80,6 +80,21 @@ Oddělení těchto dvou částí je záměrné — designer neví nic o datech, 
 |---|---|---|
 | `TemplateSerializer.cs` | `TemplateSerializer` | JSON serializace/deserializace `Template`. `SaveAsync` / `LoadAsync` / `Serialize` / `Deserialize`. Chyby hlásí přes `TemplateDeserializationException`. |
 | `TemplateSerializer.cs` | `TemplateDeserializationException` | Výjimka pro chyby při načítání šablony (neplatný JSON, chybějící pole, I/O chyba). |
+| `JsonFileDataSchemaProvider.cs` | `JsonFileDataSchemaProvider` | Načítá `*.schema.json` soubory ze složky `schemas/` (relativní k spuštěné aplikaci). Implementuje `IDataSchemaProvider`. Cachuje výsledky v paměti. |
+
+### /Models/Schema — schéma dostupných DB polí
+
+Metadata o dostupných databázových polích pro danou agendu. Slouží **pouze designeru** — pro zobrazení browseru polí a vkládání `{POLE}` do textů. Print engine tuto vrstvu nepotřebuje. Schema je uložena odděleně od šablony.
+
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `Models/Schema/DataSchema.cs` | `DataSchema` | Schéma agendy. `AgendaCode`, `AgendaName`, flat `Fields` (V1 — primární), volitelné `Groups` (V2+). |
+| `Models/Schema/DataSchema.cs` | `DataField` | Jedno dostupné pole: `FieldName` (klíč pro `{}`), `Label` (UI text), `DataType`, `Example`, `Description`. |
+| `Models/Schema/DataSchema.cs` | `DataFieldGroup` | Volitelná skupina pro V2+. `Name`, `Scope` (Scalar/Table), `CollectionKey` (klíč pro `DataContext.GetRows()`), `Fields`. |
+| `Models/Schema/DataSchema.cs` | `FieldDataType` (enum) | Text, Number, Date, Time, DateTime, Boolean — pouze metadata pro UI. Placeholder `{POLE}` je vždy string. |
+| `Models/Schema/DataSchema.cs` | `FieldScope` (enum) | Scalar (jednorázová hodnota) \| Table (kolekce řádků). Pouze hint pro UI browser. |
+| `Models/Schema/IDataSchemaProvider.cs` | `IDataSchemaProvider` | Rozhraní: `GetAvailableAgendas()` → `IReadOnlyList<AgendaInfo>`, `GetSchema(code)` → `DataSchema?`. Umožňuje přepnout zdroj (JSON soubory → DB) bez změny zbytku kódu. |
+| `Models/Schema/IDataSchemaProvider.cs` | `AgendaInfo` | Record: `Code` + `Name` — pro výběr agendy v UI. |
 
 ### /Commands — undo/redo
 
@@ -249,6 +264,69 @@ RoundedFloatConverter (4 des. místa)          // 0.5000001 → 0.5
 ```
 
 Přípona souboru šablony: `.json`.
+
+---
+
+## Dva typy JSON souborů
+
+Systém pracuje se dvěma zcela oddělenými JSON formáty:
+
+| Typ | Přípona | Obsah | Kdo to čte |
+|---|---|---|---|
+| Šablona | `*.json` | Layout stránky — sekce, elementy, pozice, formátování | Designer + Print Engine |
+| Schéma agendy | `*.schema.json` | Dostupná DB pole pro danou agendu | Pouze Designer |
+
+Schema soubory jsou uloženy ve složce `schemas/` vedle spustitelného souboru aplikace. Šablona odkazuje na schéma jen přes `agendaCode` (string) — celé schéma se načítá zvlášť přes `IDataSchemaProvider`.
+
+---
+
+## Formát schématu agendy (*.schema.json)
+
+```json
+{
+  "agendaCode": "JR",
+  "agendaName": "Jízdní řád",
+  "fields": [
+    { "name": "CISLO_LINKY",            "label": "Číslo linky",            "type": "number", "example": "42" },
+    { "name": "LOKALNI_OZNACENI_LINKY", "label": "Lokální označení linky", "type": "text",   "example": "A42" },
+    { "name": "TITULEK",                "label": "Titulek sestavy",         "type": "text",   "example": "Jízdní řád linky 42" },
+    { "name": "POPIS_PLATNOSTI",        "label": "Platnost",                "type": "text",   "example": "Platí od 01.06.2025" },
+    { "name": "CISLO_ZASTAVKA",         "label": "Číslo zastávky",          "type": "number", "example": "1" },
+    { "name": "POPIS_ZASTAVKA",         "label": "Název zastávky",          "type": "text",   "example": "Praha hl.n." },
+    { "name": "CAS_ODJEZDU",            "label": "Čas odjezdu",             "type": "time",   "example": "08:42" }
+  ]
+}
+```
+
+Pole `groups` je volitelné rozšíření pro V2+. Pokud je definováno, UI browser zobrazí stromovou strukturu místo flat listu:
+
+```json
+{
+  "agendaCode": "JR",
+  "agendaName": "Jízdní řád",
+  "fields": [],
+  "groups": [
+    {
+      "name": "Záhlaví sestavy",
+      "scope": "scalar",
+      "fields": [
+        { "name": "CISLO_LINKY", "label": "Číslo linky", "type": "number", "example": "42" }
+      ]
+    },
+    {
+      "name": "Zastávky",
+      "scope": "table",
+      "collectionKey": "ZASTAVKY",
+      "fields": [
+        { "name": "POPIS_ZASTAVKA", "label": "Název zastávky", "type": "text", "example": "Praha hl.n." }
+      ]
+    }
+  ]
+}
+```
+
+Platné hodnoty pro `type`: `text`, `number`, `date`, `time`, `dateTime`, `boolean`.
+Platné hodnoty pro `scope`: `scalar`, `table`.
 
 ---
 

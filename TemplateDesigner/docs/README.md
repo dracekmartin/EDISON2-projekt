@@ -230,10 +230,36 @@ Text elementů může obsahovat datové zástupné symboly ve formátu `{NAZEV_P
 
 V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu nahradí `{POLE}` skutečnými daty.
 
+### Pole agendy — dostupná databázová pole
+
+Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda definuje, která databázová pole jsou k dispozici pro použití v `{POLE}` placeholderech. Tato pole jsou uložena v souboru `schemas/JR.schema.json` a zobrazují se v panelu vlevo záložka **Pole agendy**:
+
+```
+┌─────────────────────────────┐
+│ ▣ Sekce  │ ⊞ Pole agendy   │
+├─────────────────────────────┤
+│ Agenda: Jízdní řád          │
+├─────────────────────────────┤
+│ CISLO_LINKY     Číslo linky │
+│ TITULEK         Titulek      │
+│ POPIS_PLATNOSTI Platnost     │
+│ CISLO_ZASTAVKA  Č. zastávky │
+│ POPIS_ZASTAVKA  Zastávka    │
+│ CAS_ODJEZDU     Čas odjezdu │
+├─────────────────────────────┤
+│ 💡 Dvojklik = vložit {POLE} │
+└─────────────────────────────┘
+```
+
+- Dvojklik na pole → vloží `{NAZEV_POLE}` do textu vybraného TextElementu
+- Pokud není vybrán TextElement → zkopíruje `{NAZEV_POLE}` do schránky
+- Pole lze použít v **libovolném** TextElementu — designer neomezuje kde
+
 ---
 
 ## Co bude přidáno (plánované funkce)
 
+- **Pole agendy — browser databázových polí** — záložka v levém panelu; flat list dostupných `{POLE}` pro danou agendu; dvojklik vloží placeholder do textu; schema načítána z `schemas/*.schema.json`
 - **Editor sloupců tabulky** — přidat/odebrat/přesunout sloupec, nastavit šířku a záhlaví
 - ~~ZIndex ovládání~~ — hotovo
 - ~~Zarovnání elementů~~ — hotovo

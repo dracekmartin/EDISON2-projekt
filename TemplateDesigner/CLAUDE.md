@@ -50,9 +50,13 @@ Systém se skládá ze dvou částí:
   RenderContext.cs          — kontext renderování (canvas + MmToPx + DataContext + origin sekce)
   /Sections                 — konkrétní typy sekcí
   /Elements                 — konkrétní typy elementů
+  /Schema                   — schéma dostupných DB polí (design time only)
+    DataSchema.cs           — DataSchema, DataField, DataFieldGroup, enums
+    IDataSchemaProvider.cs  — rozhraní pro načítání schémat
 
 /Serialization
-  TemplateSerializer.cs     — JSON ukládání a načítání
+  TemplateSerializer.cs     — JSON ukládání a načítání šablony
+  JsonFileDataSchemaProvider.cs — načítání *.schema.json ze složky schemas/
 
 /Commands
   IDesignerCommand.cs       — rozhraní pro undo/redo
@@ -75,6 +79,7 @@ class Template {
     Guid Id
     string Name
     string Description
+    string? AgendaCode        // kód agendy pro databázová pole: "JR", "FAKTURY" — null = obecná šablona
     PageSize PageSize
     List<Section> Sections
 }
@@ -159,6 +164,52 @@ abstract class TemplateElement {
 | `TableElement` | Speciální tabulka/jízdní řád s vlastní logikou |
 
 Systém musí být **rozšiřitelný** — nové typy elementů i sekcí přidáváme podtřídami.
+
+### DataSchema (schéma dostupných DB polí — pouze design time)
+```csharp
+class DataSchema {
+    string AgendaCode             // "JR", "FAKTURY" — odpovídá Template.AgendaCode
+    string AgendaName             // "Jízdní řád" — pro UI
+    List<DataField> Fields        // flat list — primární formát V1, přímá náhrada starého Caché flat-listu
+    List<DataFieldGroup> Groups   // volitelné skupiny — rozšíření pro V2+ (není nutné v V1)
+}
+
+class DataField {
+    string FieldName              // "CISLO_LINKY" → uživatel píše {CISLO_LINKY}
+    string Label                  // "Číslo linky" — zobrazuje se v UI browseru
+    FieldDataType DataType        // Text | Number | Date | Time | DateTime | Boolean (metadata pro UI)
+    string? Example               // "42" — ukázka hodnoty v browseru
+    string? Description           // volitelný delší popis pro uživatele
+}
+
+class DataFieldGroup {           // volitelné — organizační metadata pro V2+
+    string Name                   // "Záhlaví sestavy", "Zastávky"
+    FieldScope Scope              // Scalar (jedna hodnota) | Table (kolekce řádků)
+    string? CollectionKey         // klíč pro DataContext.GetRows() — pouze pro Scope = Table
+    List<DataField> Fields
+}
+```
+
+**Klíčová pravidla:**
+- DataSchema je **pouze metadata pro designer** — print engine ji nepotřebuje a nepoužívá
+- `{FIELD_NAME}` placeholder lze použít v libovolném TextElementu kdekoliv v šabloně — schema neeviduje omezení
+- Grouping (Scalar/Table scope) je **organizační hint pro UI**, nikoliv tvrdé omezení na použití placeholderu
+- Schema je **oddělená od šablony** — Template ukládá jen `AgendaCode` (string reference), schema samotná je v `schemas/JR.schema.json`
+- Flat `Fields` (V1) a hierarchické `Groups` (V2) mohou koexistovat v jednom souboru; UI zobrazí skupiny pokud jsou definované, jinak flat list
+
+**Dva typy JSON souborů v systému:**
+- `*.json` — šablona (Template) — definuje layout stránky, sekce, elementy
+- `*.schema.json` — schéma agendy (DataSchema) — definuje dostupná DB pole, uloženo ve složce `schemas/`
+
+**IDataSchemaProvider** — rozhraní pro načítání schémat:
+```csharp
+interface IDataSchemaProvider {
+    IReadOnlyList<AgendaInfo> GetAvailableAgendas()   // seznam dostupných agend
+    DataSchema? GetSchema(string agendaCode)           // načte schéma pro danou agendu
+}
+// V1: JsonFileDataSchemaProvider — načítá schemas/*.schema.json ze složky aplikace
+// Budoucí: DatabaseDataSchemaProvider — načítá z DB přes API (stejné rozhraní, bez změny zbytku)
+```
 
 ---
 
