@@ -71,6 +71,7 @@ Systém se skládá ze dvou částí:
 /Designer
   DesignerState.cs          — stav designeru (výběr, zoom, undo stack)
   DesignerCanvas.cs         — myš, klávesnice, hit testing, render
+  PreviewCanvas.cs          — render šablony bez chrome (live preview); fit-to-width zoom; mock DataContext
 
 /schemas
   *.schema.json             — schémata agend (offline fallback); kopírováno do output dir
@@ -373,3 +374,24 @@ pro budoucí vlastnosti bez změny modelu a bez nutnosti verzovat JSON schéma.
 - Není to free-form canvas bez struktury (sekce jsou povinné)
 - Print engine (krok 2) je **samostatný projekt** — designer pouze ukládá šablony jako JSON
 - V1 nepodporuje import starých šablon z InterSystems Globals
+
+---
+
+## Nápady pro budoucí rozšíření (neplánováno, ale žádoucí)
+
+### Fragmenty / kompozice elementů
+Pojmenované skupiny elementů, které si uživatel může uložit a znovu vkládat.
+
+```
+Fragment = název + List<TemplateElement> (relativní souřadnice vůči levému hornímu rohu skupiny)
+```
+
+- **Uložení:** vyber elementy → „Uložit jako fragment" → soubory v `fragments/*.fragment.json`
+- **Vložení:** třetí záložka v levém panelu „📦 Fragmenty" → double-click → deep-clone s novými Guid do aktivní sekce
+- **Architektura:** `Models/Fragment.cs` + `Serialization/FragmentSerializer.cs`; žádný zásah do modelu šablony — fragmenty se při vložení rozloží na běžné elementy
+
+### Editor sloupců TableElement
+TableElement zatím nemá UI pro definici sloupců — výšky, šířky, formáty hodnot, záhlaví.
+
+### V2 VisibilityExpression
+Checkbox „Tisknout" je V1 (pouze true/false). V2 by podporoval výrazy jako `{POCET} > 0` — vyhodnocuje print engine, designer je zobrazí jako podmíněný badge bez evaluace.
