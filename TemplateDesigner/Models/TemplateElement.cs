@@ -70,6 +70,15 @@ public abstract class TemplateElement
             Min = 1, Max = 9999, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
+
+        new BoolPropertyDescriptor
+        {
+            Label = "Tisknout", Group = "Podmínky",
+            // null / prázdný výraz = tisknout; "false" = skrýt
+            // Ostatní výrazy (budoucí V2 syntax) se považují za "tisknout"
+            Get   = () => !string.Equals(VisibilityExpression, "false", StringComparison.OrdinalIgnoreCase),
+            Set   = v  => VisibilityExpression = v ? null : "false"
+        },
     ];
 
     // ---------------------------------------------------------------------------

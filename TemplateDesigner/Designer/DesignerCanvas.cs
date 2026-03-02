@@ -34,6 +34,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrSectionActive      = new(0xFF2196F3);
     private static readonly SKColor ClrSelection          = new(0xFF2196F3);
     private static readonly SKColor ClrLocked             = new(0xFFFF8C00); // jantarová pro zamčené elementy
+    private static readonly SKColor ClrCondition         = new(0xFF7B1FA2); // fialová pro podmíněné elementy
 
     private readonly DesignerState _state;
 
@@ -297,6 +298,16 @@ public class DesignerCanvas
             var ctx = new RenderContext(canvas, MmToPx) { SectionOriginX = ox, SectionOriginY = oy };
             foreach (var el in section.Elements.OrderBy(e => e.ZIndex))
                 el.Render(ctx);
+
+            // Indikátory podmíněné viditelnosti — vždy viditelné, nezávisle na výběru
+            foreach (var el in section.Elements.Where(e => !string.IsNullOrWhiteSpace(e.VisibilityExpression)))
+            {
+                float ex = ox + el.X * MmToPx;
+                float ey = oy + el.Y * MmToPx;
+                float ew = el.Width * MmToPx;
+                float eh = (el.Height ?? el.EffectiveDesignerHeight) * MmToPx;
+                DrawConditionBadge(canvas, new SKRect(ex, ey, ex + ew, ey + eh));
+            }
             canvas.Restore();
 
             // Rámeček sekce
@@ -389,5 +400,26 @@ public class DesignerCanvas
         using var font = new SKFont(SKTypeface.Default, 9f);
         using var tp   = new SKPaint { Color = SKColors.White, IsAntialias = true };
         canvas.DrawText("L", bx + 4f, by + sz - 3.5f, font, tp);
+    }
+
+    /// <summary>
+    /// Kreslí malý fialový badge "?" v levém horním rohu elementu.
+    /// Zobrazuje se vždy pro elementy s nastavenou podmínkou tisku (VisibilityExpression).
+    /// V designeru se podmínka nevyhodnocuje — element je vždy viditelný.
+    /// </summary>
+    private static void DrawConditionBadge(SKCanvas canvas, SKRect elementRect)
+    {
+        const float sz = 14f;
+        float bx = elementRect.Left + 2f;
+        float by = elementRect.Top + 2f;
+
+        if (elementRect.Width < sz + 6 || elementRect.Height < sz + 6) return;
+
+        using var bg = new SKPaint { Color = ClrCondition, IsAntialias = true };
+        canvas.DrawRoundRect(bx, by, sz, sz, 2f, 2f, bg);
+
+        using var font = new SKFont(SKTypeface.Default, 9f);
+        using var tp   = new SKPaint { Color = SKColors.White, IsAntialias = true };
+        canvas.DrawText("?", bx + 4f, by + sz - 3.5f, font, tp);
     }
 }
