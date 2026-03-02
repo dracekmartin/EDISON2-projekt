@@ -162,15 +162,44 @@ public partial class MainWindow : Window
             bool isActive  = section == _state.ActiveSection;
             int  idx       = i; // closure capture
 
-            var label = new TextBlock
+            // Podnázev — PrintBehavior (pokud není výchozí "Once") + DataSource tabulky
+            string? subtitle = null;
+            if (section.PrintBehavior != SectionPrintBehavior.Once)
             {
-                Text       = section.Name,
-                FontSize   = 12,
-                ToolTip    = section.GetType().Name,
-                FontWeight = isActive ? FontWeights.SemiBold : FontWeights.Normal,
-                VerticalAlignment = VerticalAlignment.Center,
+                subtitle = section.PrintBehavior switch
+                {
+                    SectionPrintBehavior.OnEveryPage           => "každá stránka",
+                    SectionPrintBehavior.OnFirstPageOnly       => "jen 1. stránka",
+                    SectionPrintBehavior.OnLastPageOnly        => "jen posl. stránka",
+                    SectionPrintBehavior.OnEveryPageExceptFirst => "kromě 1. stránky",
+                    _ => null
+                };
+            }
+            if (section is Models.Sections.SectionTableDesigned std && !string.IsNullOrEmpty(std.DataSource))
+                subtitle = (subtitle is null ? "" : subtitle + " · ") + std.DataSource;
+
+            var nameText = new TextBlock
+            {
+                Text         = section.Name,
+                FontSize     = 12,
+                FontWeight   = isActive ? FontWeights.SemiBold : FontWeights.Normal,
                 TextTrimming = TextTrimming.CharacterEllipsis
             };
+            var labelStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            labelStack.Children.Add(nameText);
+            if (subtitle is not null)
+            {
+                labelStack.Children.Add(new TextBlock
+                {
+                    Text       = subtitle,
+                    FontSize   = 10,
+                    Foreground = System.Windows.Media.Brushes.Gray,
+                    TextTrimming = TextTrimming.CharacterEllipsis
+                });
+            }
+
+            // ToolTip s typem sekce
+            labelStack.ToolTip = section.GetType().Name;
 
             // ▲▼ tlačítka vpravo
             var btnUp = new Button
@@ -198,7 +227,7 @@ public partial class MainWindow : Window
             DockPanel.SetDock(btnUp,   Dock.Right);
             rowPanel.Children.Add(btnDown);
             rowPanel.Children.Add(btnUp);
-            rowPanel.Children.Add(label);
+            rowPanel.Children.Add(labelStack);
 
             // Context menu
             var ctx        = new ContextMenu();
@@ -824,7 +853,12 @@ public partial class MainWindow : Window
 
         Add("Záhlaví",                  () => new SectionHeader());
         Add("Pevná výška",              () => new SectionFixedHeight { Name = $"Sekce {_state.CurrentTemplate.Sections.Count + 1}" });
-        Add("Tabulka",                  () => new SectionTable());
+        Add("Tabulka",                  () =>
+        {
+            var s = new SectionTable();
+            s.Elements.Add(new TableElement { X = 0, Y = 0, Width = _state.CurrentTemplate.PageSize.PrintableWidth });
+            return s;
+        });
         Add("Tabulka (vlastní design)", () => new SectionTableDesigned());
         Add("Nekonečný text",           () => new SectionInfiniteText());
         Add("Oddělovač",                () => new SectionSeparator());
@@ -1533,7 +1567,7 @@ public partial class MainWindow : Window
         info.Elements.Add(new LineElement { X = 0, Y = 16, Width = 190, Height = 1, StrokeWidth = 0.3f });
         t.Sections.Add(info);
 
-        var table = new SectionTable { Name = "Jízdní řád", DataSource = "JIZDNI_RAD" };
+        var table = new SectionTable { Name = "Jízdní řád" };
         table.Elements.Add(new TableElement
         {
             X = 0, Y = 0, Width = 190,

@@ -119,7 +119,7 @@ public partial class ElementPropertiesWindow : Window
     {
         _undoDepthAtOpen   = _state.UndoStack.Count;
         _currentElement    = null;
-        _currentInvalidate = () => { _invalidate(); _refreshSections(); };
+        _currentInvalidate = () => { _updateCanvasSize(); _invalidate(); _refreshSections(); };
         Title = "Vlastnosti sekce: " + section.Name;
 
         PropertiesPanel.SetContext(cmd => _state.Execute(cmd), _currentInvalidate);
@@ -253,6 +253,24 @@ public partial class ElementPropertiesWindow : Window
                 ("Povolit split", (object)SectionOverflowBehavior.AllowSplit),
             ]
         });
+
+        // Vlastnosti specifické pro typ sekce
+        if (section is SectionTableDesigned sectionTableDesigned)
+        {
+            list.Add(new StringPropertyDescriptor
+            {
+                Label = "Datový zdroj", Group = "Tabulka",
+                Get   = () => sectionTableDesigned.DataSource,
+                Set   = v  => sectionTableDesigned.DataSource = v
+            });
+            list.Add(new FloatPropertyDescriptor
+            {
+                Label = "Výška řádku", Group = "Tabulka",
+                Get   = () => sectionTableDesigned.RowHeight,
+                Set   = v  => sectionTableDesigned.RowHeight = v,
+                Min   = 3f, Max = 100f, Unit = "mm"
+            });
+        }
 
         return list;
     }

@@ -7,9 +7,6 @@ namespace TemplateDesigner.Models.Sections;
 /// </summary>
 public class SectionTable : Section
 {
-    /// <summary>Klíč datového zdroje pro řádky, např. "JIZDNI_RAD".</summary>
-    public string DataSource { get; set; } = "";
-
     public SectionTable()
     {
         Name = "Tabulka";
