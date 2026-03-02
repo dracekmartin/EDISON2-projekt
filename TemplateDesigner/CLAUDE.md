@@ -131,12 +131,12 @@ class Section {
 }
 
 enum SectionPrintBehavior {
-    Once,                         // vytiskne se jednou
-    OnEveryPage,                  // každá stránka (záhlaví/zápatí)
+    Once,                         // vytiskne se jednou (výchozí)
+    OnEveryPage,                  // každá stránka (hlavička/patička)
     OnFirstPageOnly,              // jen první stránka
     OnLastPageOnly,               // jen poslední stránka
     OnEveryPageExceptFirst,       // všechny kromě první
-    PerDataRow                    // opakuje se per řádek dat (tabulky)
+    PerDataRow                    // LEGACY — logika opakování patří do elementů (TableElement), ne sekcí
 }
 
 enum SectionOverflowBehavior {
@@ -158,13 +158,14 @@ enum SectionOverflowBehavior {
 
 | Požadavek | Nastavení |
 |---|---|
-| **Záhlaví stránky** | PrintBehavior=OnEveryPage, OverflowBehavior=KeepTogether |
-| **Zápatí stránky** | PrintBehavior=OnEveryPage, OverflowBehavior=KeepTogether |
-| **Titulní stránka** | PrintBehavior=OnFirstPageOnly |
-| **Závěrečná stránka** | PrintBehavior=OnLastPageOnly |
+| **Hlavička stránky** | PrintBehavior=OnEveryPage, OverflowBehavior=KeepTogether, DesignerHeight=25mm |
+| **Patička stránky** | PrintBehavior=OnEveryPage, OverflowBehavior=KeepTogether, DesignerHeight=15mm |
+| **Titulní stránka** | PrintBehavior=OnFirstPageOnly, DesignerHeight=30mm |
+| **Závěrečná stránka** | PrintBehavior=OnLastPageOnly, DesignerHeight=20mm |
+| **Hlavička kromě první** | PrintBehavior=OnEveryPageExceptFirst, DesignerHeight=25mm |
 | **Pevný obsah** | PrintBehavior=Once, DesignerHeight=30mm |
-| **Tabulka s vlastním designem řádku** | PrintBehavior=PerDataRow, OverflowBehavior=SplitAcrossPages, DataSource="POLOZKY" |
 | **Oddělovač** | PrintBehavior=Once, DesignerHeight=5mm |
+| **Tabulka** | PrintBehavior=Once + TableElement s DataSource a Columns (logika opakování je v elementu!) |
 
 ### Deprecated typy sekcí (zpětná kompatibilita)
 

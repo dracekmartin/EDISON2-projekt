@@ -837,6 +837,7 @@ public partial class MainWindow : Window
     private void BtnAddSection_Click(object sender, RoutedEventArgs e)
     {
         var menu = new ContextMenu();
+
         void Add(string label, Func<Section> factory)
         {
             var item = new MenuItem { Header = label };
@@ -850,58 +851,71 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
 
-        Add("Záhlaví",                  () => new Section
+        void AddSeparator()
         {
-            Name = "Záhlaví",
+            menu.Items.Add(new Separator());
+        }
+
+        // Běžné sekce
+        Add("Hlavička stránky", () => new Section
+        {
+            Name = "Hlavička stránky",
             PrintBehavior = SectionPrintBehavior.OnEveryPage,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether,
             DesignerHeight = 25f
         });
-        Add("Pevná výška",              () => new Section
+
+        Add("Patička stránky", () => new Section
         {
-            Name = $"Sekce {_state.CurrentTemplate.Sections.Count + 1}",
-            PrintBehavior = SectionPrintBehavior.Once,
-            DesignerHeight = 30f
+            Name = "Patička stránky",
+            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 15f
         });
-        Add("Tabulka",                  () =>
-        {
-            var s = new Section
-            {
-                Name = "Tabulka",
-                PrintBehavior = SectionPrintBehavior.Once,
-                OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-                DesignerHeight = null  // dynamická
-            };
-            s.Elements.Add(new TableElement { X = 0, Y = 0, Width = _state.CurrentTemplate.PageSize.PrintableWidth });
-            return s;
-        });
-        Add("Tabulka (vlastní design)", () => new Section
-        {
-            Name = "Tabulka (vlastní design)",
-            PrintBehavior = SectionPrintBehavior.PerDataRow,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-            DesignerHeight = null,  // dynamická
-            RowHeight = 8f
-        });
-        Add("Nekonečný text",           () => new Section
-        {
-            Name = "Nekonečný text",
-            PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.AllowSplit,
-            DesignerHeight = null  // dynamická
-        });
-        Add("Oddělovač",                () => new Section
+
+        Add("Oddělovač", () => new Section
         {
             Name = "Oddělovač",
             PrintBehavior = SectionPrintBehavior.Once,
             DesignerHeight = 5f
         });
-        Add("Zápatí",                   () => new Section
+
+        AddSeparator();
+
+        // Pokročilé sekce
+        Add("Hlavička sestavy (jen 1. str.)", () => new Section
         {
-            Name = "Zápatí",
-            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Name = "Hlavička sestavy",
+            PrintBehavior = SectionPrintBehavior.OnFirstPageOnly,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 15f
+            DesignerHeight = 30f
+        });
+
+        Add("Patička sestavy (jen posl. str.)", () => new Section
+        {
+            Name = "Patička sestavy",
+            PrintBehavior = SectionPrintBehavior.OnLastPageOnly,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 20f
+        });
+
+        Add("Hlavička kromě 1. str.", () => new Section
+        {
+            Name = "Hlavička kromě 1. str.",
+            PrintBehavior = SectionPrintBehavior.OnEveryPageExceptFirst,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 25f
+        });
+
+        AddSeparator();
+
+        // Obecná sekce
+        Add("⚙ Prázdná sekce", () => new Section
+        {
+            Name = $"Sekce {_state.CurrentTemplate.Sections.Count + 1}",
+            PrintBehavior = SectionPrintBehavior.Once,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+            DesignerHeight = 30f
         });
 
         menu.PlacementTarget = (UIElement)sender;
@@ -1650,7 +1664,7 @@ public partial class MainWindow : Window
 
         var footer = new Section
         {
-            Name = "Zápatí",
+            Name = "Patička",
             PrintBehavior = SectionPrintBehavior.OnEveryPage,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether,
             DesignerHeight = 15f

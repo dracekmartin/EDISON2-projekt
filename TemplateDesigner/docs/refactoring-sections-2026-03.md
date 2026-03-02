@@ -304,6 +304,71 @@ Po (přímá serializace):
 
 ---
 
+## Krok 2 — UI přepracování menu (2026-03-02)
+
+**Cíl:** Zjednodušit menu "Přidat sekci" na logické presety.
+
+**Změny:**
+
+### Před refactoringem:
+```
+[+ Přidat sekci ▾]
+  → Záhlaví
+  → Pevná výška
+  → Tabulka
+  → Tabulka (vlastní design)
+  → Nekonečný text
+  → Oddělovač
+  → Zápatí
+```
+
+### Po refactoringu (finální):
+```
+[+ Přidat sekci ▾]
+
+  Běžné:
+  → Hlavička stránky
+  → Patička stránky
+  → Oddělovač
+  ─────────────────────
+  Pokročilé:
+  → Hlavička sestavy (jen 1. str.)
+  → Patička sestavy (jen posl. str.)
+  → Hlavička kromě 1. str.
+  ─────────────────────
+  Ad-hoc:
+  → ⚙ Prázdná sekce
+```
+
+**Proč tyto změny:**
+
+| Staré | Nové | Důvod |
+|---|---|---|
+| "Záhlaví" / "Zápatí" | "Hlavička stránky" / "Patička stránky" | Běžnější české výrazy, jasnější význam |
+| "Tabulka (vlastní design)" | ❌ Odstraněno | **Chybný koncept** — logika opakování patří do TableElement, ne sekce! |
+| "Pevná výška" | "⚙ Prázdná sekce" | Méně matoucí — uživatel nastaví vše ručně |
+| "Tabulka" | ❌ Odstraněno | Tabulka je element, ne sekce! |
+| "Nekonečný text" | ❌ Odstraněno | Příliš specifické, lze vytvořit přes "Prázdná sekce" |
+
+**Nové položky:**
+- **Hlavička sestavy (jen 1. str.)** — `PrintBehavior=OnFirstPageOnly` — pro titulní stránku
+- **Patička sestavy (jen posl. str.)** — `PrintBehavior=OnLastPageOnly` — pro závěrečné info
+- **Hlavička kromě 1. str.** — `PrintBehavior=OnEveryPageExceptFirst` — alternativní záhlaví
+- **⚙ Prázdná sekce** — obecná sekce s výchozími hodnotami, uživatel nastaví vše v properties
+
+**Důležité architektonické rozhodnutí:**
+- ❌ **`PrintBehavior.PerDataRow` je LEGACY** — ponechán v enum pro edge cases, ale NENÍ v UI menu
+- ✅ **Tabulky jsou elementy (TableElement)**, ne sekce — logika opakování řádků patří do elementu
+- ✅ Sekce jsou jen **kontejnery** s metadata "kdy tisknout", **ne datová logika**
+
+**Výsledek:**
+- ✅ Jednodušší výběr pro běžné případy (3 položky)
+- ✅ Pokročilé možnosti jsou dostupné (3 položky)
+- ✅ Flexibilita přes "Prázdná sekce"
+- ✅ Čistší separace concerns (sekce = layout, elementy = data)
+
+---
+
 **Datum:** 2026-03-02
 **Autor:** Claude Sonnet 4.5 + User
-**Status:** Krok 1 dokončen (model + cleanup), krok 2 UI pending
+**Status:** ✅ Kroky 1 a 2 dokončeny (model + cleanup + UI)
