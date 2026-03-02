@@ -33,6 +33,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrSectionBorder      = new(0xFFCCCCCC);
     private static readonly SKColor ClrSectionActive      = new(0xFF2196F3);
     private static readonly SKColor ClrSelection          = new(0xFF2196F3);
+    private static readonly SKColor ClrLocked             = new(0xFFFF8C00); // jantarová pro zamčené elementy
 
     private readonly DesignerState _state;
 
@@ -113,11 +114,13 @@ public class DesignerCanvas
     /// <summary>
     /// Vrátí resize handle a element pod px pozicí na canvasu, nebo null.
     /// Testuje pouze vybrané elementy (handles jsou viditelné jen pro ně).
+    /// Zamčené elementy resize handles nemají.
     /// </summary>
     public (TemplateElement Element, ResizeHandle Handle)? HitTestHandle(float canvasX, float canvasY, float canvasWidth)
     {
-        // Handles jsou viditelné jen při výběru jednoho elementu
+        // Handles jsou viditelné jen při výběru jednoho odemčeného elementu
         if (_state.SelectedElements.Count != 1) return null;
+        if (_state.SelectedElements[0].IsLocked) return null;
 
         float hs = HandleSizePx / 2f;
 
@@ -317,29 +320,38 @@ public class DesignerCanvas
     {
         if (_state.SelectedElements.Count == 0) return;
 
-        using var selBorder = new SKPaint
-        {
-            Color       = ClrSelection,
-            IsStroke    = true,
-            StrokeWidth = 1.5f,
-            PathEffect  = SKPathEffect.CreateDash([5f, 3f], 0)
-        };
-
-        // Ohraničení každého vybraného elementu
+        // Ohraničení každého vybraného elementu — jantarová pro zamčené, modrá pro odemčené
         foreach (var el in _state.SelectedElements)
         {
             var rect = GetElementCanvasRect(el, canvasWidth);
-            if (rect is not null)
-                canvas.DrawRect(rect.Value, selBorder);
+            if (rect is null) continue;
+
+            using var selBorder = new SKPaint
+            {
+                Color       = el.IsLocked ? ClrLocked : ClrSelection,
+                IsStroke    = true,
+                StrokeWidth = 1.5f,
+                PathEffect  = SKPathEffect.CreateDash([5f, 3f], 0)
+            };
+            canvas.DrawRect(rect.Value, selBorder);
         }
 
-        // Resize handles — pouze při výběru jednoho elementu
-        if (_state.SelectedElements.Count == 1)
-        {
-            var rect = GetElementCanvasRect(_state.SelectedElements[0], canvasWidth);
-            if (rect is null) return;
-            var r = rect.Value;
+        // Resize handles nebo lock badge — pouze při výběru jednoho elementu
+        if (_state.SelectedElements.Count != 1) return;
 
+        var singleEl   = _state.SelectedElements[0];
+        var singleRect = GetElementCanvasRect(singleEl, canvasWidth);
+        if (singleRect is null) return;
+        var r = singleRect.Value;
+
+        if (singleEl.IsLocked)
+        {
+            // Zamčený element: zobraz lock badge místo resize handles
+            DrawLockBadge(canvas, r);
+        }
+        else
+        {
+            // Odemčený element: klasické resize handles
             using var handleFill   = new SKPaint { Color = SKColors.White };
             using var handleBorder = new SKPaint { Color = ClrSelection, IsStroke = true, StrokeWidth = 1.5f };
 
@@ -357,5 +369,25 @@ public class DesignerCanvas
                 canvas.DrawRect(hr, handleBorder);
             }
         }
+    }
+
+    /// <summary>
+    /// Kreslí malý jantarový badge se symbolem zámku v pravém horním rohu elementu.
+    /// </summary>
+    private static void DrawLockBadge(SKCanvas canvas, SKRect elementRect)
+    {
+        const float sz = 14f;
+        float bx = elementRect.Right - sz - 2f;
+        float by = elementRect.Top + 2f;
+
+        // Příliš malý element — badge by překryl obsah
+        if (elementRect.Width < sz + 6 || elementRect.Height < sz + 6) return;
+
+        using var bg = new SKPaint { Color = ClrLocked, IsAntialias = true };
+        canvas.DrawRoundRect(bx, by, sz, sz, 2f, 2f, bg);
+
+        using var font = new SKFont(SKTypeface.Default, 9f);
+        using var tp   = new SKPaint { Color = SKColors.White, IsAntialias = true };
+        canvas.DrawText("L", bx + 4f, by + sz - 3.5f, font, tp);
     }
 }

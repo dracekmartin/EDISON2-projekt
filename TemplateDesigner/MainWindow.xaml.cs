@@ -886,7 +886,7 @@ public partial class MainWindow : Window
             _dragMouseStartCanvasX = cx;
             _dragMouseStartCanvasY = cy;
             _dragInitPositions.Clear();
-            foreach (var el in _state.SelectedElements)
+            foreach (var el in _state.SelectedElements.Where(e => !e.IsLocked))
                 _dragInitPositions[el] = (el.X, el.Y);
 
             _mouseMode = MouseMode.Dragging;
@@ -989,10 +989,14 @@ public partial class MainWindow : Window
         var handleHit = _canvas.HitTestHandle(cx, cy, cw);
         if (handleHit.HasValue)
             skCanvas.Cursor = GetResizeCursor(handleHit.Value.Handle);
-        else if (_canvas.HitTestElement(cx, cy, cw).HasValue)
-            skCanvas.Cursor = Cursors.SizeAll;
         else
-            skCanvas.Cursor = Cursors.Arrow;
+        {
+            var elHit = _canvas.HitTestElement(cx, cy, cw);
+            // Zamčené elementy nelze táhnout — nezobrazuj SizeAll kurzor
+            skCanvas.Cursor = (elHit.HasValue && !elHit.Value.Element.IsLocked)
+                ? Cursors.SizeAll
+                : Cursors.Arrow;
+        }
     }
 
     private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
