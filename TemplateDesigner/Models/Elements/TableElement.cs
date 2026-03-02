@@ -92,8 +92,9 @@ public class TableElement : TemplateElement
     [
         new StringPropertyDescriptor { Label = "Datový zdroj",  Group = "Tabulka", Get = () => DataSource,   Set = v => DataSource = v },
         new FloatPropertyDescriptor  { Label = "Výška řádku",   Group = "Tabulka", Get = () => RowHeight,    Set = v => RowHeight = v,    Min = 2, Max = 50, Unit = "mm" },
-        new BoolPropertyDescriptor   { Label = "Záhlaví",       Group = "Tabulka", Get = () => ShowHeader,   Set = v => ShowHeader = v },
-        new FloatPropertyDescriptor  { Label = "Výška záhlaví", Group = "Tabulka", Get = () => HeaderHeight, Set = v => HeaderHeight = v, Min = 2, Max = 50, Unit = "mm" },
+        new BoolPropertyDescriptor   { Label = "Záhlaví",        Group = "Tabulka", Get = () => ShowHeader,                        Set = v => ShowHeader = v },
+        new FloatPropertyDescriptor  { Label = "Výška záhlaví", Group = "Tabulka", Get = () => HeaderHeight,                        Set = v => HeaderHeight = v, Min = 2, Max = 50, Unit = "mm" },
+        new BoolPropertyDescriptor   { Label = "Tučné záhlaví", Group = "Tabulka", Get = () => HeaderFontWeight == "Bold",           Set = v => HeaderFontWeight = v ? "Bold" : "Normal" },
 
         .. GetPositionDescriptors()
     ];

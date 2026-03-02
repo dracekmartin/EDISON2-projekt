@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(dotnet build:*)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(find C:\\\\Users\\\\miesb\\\\source\\\\EDISONMAIN2\\\\TemplateDesigner\\\\Models\\\\Sections:*)",
+      "Bash(find .:*)"
     ]
   }
 }
