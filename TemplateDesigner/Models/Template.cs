@@ -13,6 +13,13 @@ public class Template
     public List<Section> Sections { get; set; } = [];
 
     /// <summary>
+    /// Kód agendy pro tuto šablonu, např. "JR", "FAKTURY".
+    /// Null = obecná šablona bez vazby na konkrétní agendu.
+    /// Používá se pro načtení schématu databázových polí v designeru.
+    /// </summary>
+    public string? AgendaCode { get; set; }
+
+    /// <summary>
     /// Vzorová data pro preview uložená spolu se šablonou.
     /// Klíč = název pole, hodnota = ukázková hodnota jako string.
     /// </summary>

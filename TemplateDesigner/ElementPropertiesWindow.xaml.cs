@@ -3,6 +3,8 @@ using System.Windows;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Models.Sections;
 
 namespace TemplateDesigner;
@@ -13,6 +15,13 @@ public partial class ElementPropertiesWindow : Window
     private readonly Action        _invalidate;
     private readonly Action        _refreshSections;
     private readonly Action        _updateCanvasSize;
+    private readonly Action        _refreshFields;
+
+    /// <summary>
+    /// Vrátí aktuálně dostupná pole schématu (podle AgendaCode šablony).
+    /// Null = schéma není k dispozici, picker se nezobrazí.
+    /// </summary>
+    private readonly Func<IReadOnlyList<DataField>?>? _getAvailableFields;
 
     private TemplateElement? _currentElement;
     private int              _undoDepthAtOpen;
@@ -21,14 +30,22 @@ public partial class ElementPropertiesWindow : Window
     // Aktuální "plná" invalidace (závisí na kontextu — element / sekce / stránka)
     private Action _currentInvalidate;
 
-    public ElementPropertiesWindow(DesignerState state, Action invalidate, Action refreshSections, Action updateCanvasSize)
+    public ElementPropertiesWindow(
+        DesignerState state,
+        Action invalidate,
+        Action refreshSections,
+        Action updateCanvasSize,
+        Action refreshFields,
+        Func<IReadOnlyList<DataField>?>? getAvailableFields = null)
     {
         InitializeComponent();
-        _state            = state;
-        _invalidate       = invalidate;
-        _refreshSections  = refreshSections;
-        _updateCanvasSize = updateCanvasSize;
-        _currentInvalidate = invalidate;
+        _state               = state;
+        _invalidate          = invalidate;
+        _refreshSections     = refreshSections;
+        _updateCanvasSize    = updateCanvasSize;
+        _refreshFields       = refreshFields;
+        _getAvailableFields  = getAvailableFields;
+        _currentInvalidate   = invalidate;
         PropertiesPanel.SetContext(cmd => state.Execute(cmd), invalidate);
     }
 
@@ -49,9 +66,49 @@ public partial class ElementPropertiesWindow : Window
         Title = "Vlastnosti: " + element.GetType().Name.Replace("Element", "");
 
         PropertiesPanel.SetContext(cmd => _state.Execute(cmd), _currentInvalidate);
-        PropertiesPanel.ShowElement(element);
+
+        // Pro TextElement: nahraď Text descriptor variantou s picker tlačítkem a validací
+        var descriptors = element.GetPropertyDescriptors();
+        if (element is TextElement)
+        {
+            var fields = _getAvailableFields?.Invoke();
+            if (fields is { Count: > 0 })
+                descriptors = EnhanceWithFieldPicker(descriptors, fields);
+        }
+        PropertiesPanel.ShowDescriptors(descriptors);
 
         if (!IsVisible) Show();
+    }
+
+    /// <summary>
+    /// Nahradí StringPropertyDescriptor s Label=="Text" a MultiLine==true
+    /// variantou TextWithPickerPropertyDescriptor s dostupnými poli schématu.
+    /// </summary>
+    private static IReadOnlyList<Models.PropertyDescriptor> EnhanceWithFieldPicker(
+        IReadOnlyList<Models.PropertyDescriptor> descriptors,
+        IReadOnlyList<DataField> fields)
+    {
+        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
+        foreach (var d in descriptors)
+        {
+            if (d is StringPropertyDescriptor sd && sd.Label == "Text" && sd.MultiLine)
+            {
+                list.Add(new TextWithPickerPropertyDescriptor
+                {
+                    Label           = sd.Label,
+                    Group           = sd.Group,
+                    Get             = sd.Get,
+                    Set             = sd.Set,
+                    MultiLine       = sd.MultiLine,
+                    AvailableFields = fields
+                });
+            }
+            else
+            {
+                list.Add(d);
+            }
+        }
+        return list;
     }
 
     /// <summary>
@@ -75,23 +132,31 @@ public partial class ElementPropertiesWindow : Window
     /// Zobrazí dialog pro editaci rozměrů stránky a okrajů.
     /// Cancel vrátí veškeré změny provedené od otevření.
     /// </summary>
-    public void ShowForPage(PageSize pageSize)
+    public void ShowForPage(Template template)
     {
         _undoDepthAtOpen   = _state.UndoStack.Count;
         _currentElement    = null;
-        _currentInvalidate = () => { _invalidate(); _updateCanvasSize(); };
+        // Při každé změně: překresli canvas, přepočítej velikost, obnov seznam polí agendy
+        _currentInvalidate = () => { _invalidate(); _updateCanvasSize(); _refreshFields(); };
         Title = "Vlastnosti stránky";
 
         PropertiesPanel.SetContext(cmd => _state.Execute(cmd), _currentInvalidate);
-        PropertiesPanel.ShowDescriptors(BuildPageDescriptors(pageSize));
+        PropertiesPanel.ShowDescriptors(BuildPageDescriptors(template));
 
         if (!IsVisible) Show();
     }
 
-    private IReadOnlyList<Models.PropertyDescriptor> BuildPageDescriptors(PageSize ps)
+    private IReadOnlyList<Models.PropertyDescriptor> BuildPageDescriptors(Template template)
     {
+        var ps = template.PageSize;
         return
         [
+            new StringPropertyDescriptor
+            {
+                Label = "Kód agendy", Group = "Šablona",
+                Get   = () => template.AgendaCode ?? "",
+                Set   = v  => template.AgendaCode = string.IsNullOrWhiteSpace(v) ? null : v.Trim().ToUpperInvariant()
+            },
             new FloatPropertyDescriptor
             {
                 Label = "Šířka",  Group = "Rozměry stránky",

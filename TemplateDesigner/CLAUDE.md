@@ -55,8 +55,14 @@ Systém se skládá ze dvou částí:
     IDataSchemaProvider.cs  — rozhraní pro načítání schémat
 
 /Serialization
-  TemplateSerializer.cs     — JSON ukládání a načítání šablony
-  JsonFileDataSchemaProvider.cs — načítání *.schema.json ze složky schemas/
+  TemplateSerializer.cs             — JSON ukládání a načítání šablony
+  JsonFileDataSchemaProvider.cs     — načítání *.schema.json ze složky schemas/
+  CacheDataSchemaProvider.cs        — načítání z Caché přes MLRest (delegate pattern)
+  CompositeDataSchemaProvider.cs    — Caché primary + JSON fallback
+
+/Config
+  AppSettings.cs            — POCO konfigurace + static Load() z appsettings.json
+  CacheSchemaWiring.cs      — vytváří CacheDataSchemaProvider z AppSettings + MLRest
 
 /Commands
   IDesignerCommand.cs       — rozhraní pro undo/redo
@@ -66,6 +72,10 @@ Systém se skládá ze dvou částí:
   DesignerState.cs          — stav designeru (výběr, zoom, undo stack)
   DesignerCanvas.cs         — myš, klávesnice, hit testing, render
 
+/schemas
+  *.schema.json             — schémata agend (offline fallback); kopírováno do output dir
+
+appsettings.json            — konfigurace Caché připojení + seznam agend (CopyToOutput)
 MainWindow.xaml / .cs       — hlavní okno s toolbarem a panely
 ```
 
@@ -207,9 +217,14 @@ interface IDataSchemaProvider {
     IReadOnlyList<AgendaInfo> GetAvailableAgendas()   // seznam dostupných agend
     DataSchema? GetSchema(string agendaCode)           // načte schéma pro danou agendu
 }
-// V1: JsonFileDataSchemaProvider — načítá schemas/*.schema.json ze složky aplikace
-// Budoucí: DatabaseDataSchemaProvider — načítá z DB přes API (stejné rozhraní, bez změny zbytku)
 ```
+
+Implementace (V1):
+- `JsonFileDataSchemaProvider` — načítá `schemas/*.schema.json` ze složky aplikace (offline fallback)
+- `CacheDataSchemaProvider` — delegate pattern (`Func<string, IReadOnlyList<string>?>`) pro volání MLRest;
+  parser `ParseField()` zvládá formáty: `"FIELD|Label"`, `"DBFieldId~FIELD"`, `"DBFieldId~FIELD|Label"`
+- `CompositeDataSchemaProvider` — Caché primary + JSON fallback; vrátí výsledek prvního úspěšného
+- Wiring: `Config/CacheSchemaWiring.TryCreate(AppSettings)` → vrátí null pokud Caché není nakonfigurováno
 
 ---
 
@@ -326,14 +341,15 @@ pro budoucí vlastnosti bez změny modelu a bez nutnosti verzovat JSON schéma.
 │  Toolbar: [+ Sekce ▾] [+ Element ▾] | [Zpět] [Vpřed] | [Zoom ▾]    │
 │           [Grid ☐] [Snap ☐] | [Uložit] [Otevřít]                    │
 ├────────────────┬─────────────────────────────┬───────────────────────┤
-│ Panel sekcí    │                             │                       │
+│ TabControl     │                             │                       │
 │ (~200px)       │   Canvas (SKElement)        │  Live preview         │
-│                │   — hlavní editační plocha  │  (~300px, skryt.)     │
-│ Seznam sekcí   │                             │                       │
-│ s ikonkou typu │                             │                       │
-│ D&D reorder    │                             │                       │
-│                │                             │                       │
-│ [+ Přidat]     │                             │                       │
+│ ┌─Sekce──Pole─┐│   — hlavní editační plocha  │  (~300px, skryt.)     │
+│ │ Seznam sekcí││                             │                       │
+│ │ s ikonkou   ││                             │                       │
+│ │ D&D reorder ││                             │                       │
+│ │             ││                             │                       │
+│ │ [+ Přidat]  ││                             │                       │
+│ └─────────────┘│                             │                       │
 ├────────────────┴─────────────────────────────┴───────────────────────┤
 │  Panel vlastností (~200px, kontextový podle výběru)                  │
 └──────────────────────────────────────────────────────────────────────┘
@@ -341,8 +357,11 @@ pro budoucí vlastnosti bez změny modelu a bez nutnosti verzovat JSON schéma.
 
 **Implementační poznámky:**
 - Layout je WPF `Grid` se třemi sloupci a `GridSplitter` mezi nimi
+- Levý panel je `TabControl` se dvěma záložkami:
+  - **"▣ Sekce"** — seznam sekcí s D&D reorder, tlačítko Přidat
+  - **"⊞ Pole agendy"** — browser DB polí; dvojklik → vloží `{FIELD_NAME}` do TextElement nebo schránky
 - Panel sekcí, live preview i panel vlastností jsou skryvatelné
-- Výchozí šířky: panel sekcí 200px, canvas zbytek, live preview 300px (skrytý)
+- Výchozí šířky: levý panel 200px, canvas zbytek, live preview 300px (skrytý)
 - Panel vlastností dole má výchozí výšku ~200px, skryvatelný
 - Změna layoutu je triviální — jen úprava `Grid` definice v XAML
 

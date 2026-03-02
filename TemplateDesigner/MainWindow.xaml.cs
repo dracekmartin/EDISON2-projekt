@@ -10,7 +10,9 @@ using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Models.Sections;
+using TemplateDesigner.Config;
 using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner;
@@ -21,6 +23,8 @@ public partial class MainWindow : Window
     private readonly DesignerCanvas         _canvas;
     private          ElementPropertiesWindow? _propsWindow;
     private string? _currentFilePath;
+
+    private readonly IDataSchemaProvider _schemaProvider;
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
@@ -55,6 +59,17 @@ public partial class MainWindow : Window
         _state  = new DesignerState();
         _canvas = new DesignerCanvas(_state);
 
+        // Schema provider — Caché (primární) + JSON soubory (záloha)
+        string schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
+        var settings      = AppSettings.Load();
+        var cacheProvider = CacheSchemaWiring.TryCreate(settings);
+
+        _schemaProvider = cacheProvider is not null
+            ? new CompositeDataSchemaProvider(
+                primary:  cacheProvider,
+                fallback: new JsonFileDataSchemaProvider(schemasDir))
+            : new JsonFileDataSchemaProvider(schemasDir);
+
         // PaintSurface se registruje výhradně v code-behind (SkiaSharp.Views.WPF + net9)
         skCanvas.PaintSurface        += OnPaintSurface;
         skCanvas.MouseLeftButtonDown += OnCanvasMouseDown;
@@ -68,8 +83,11 @@ public partial class MainWindow : Window
         UpdateTitle();
         UpdateCanvasSize();
         RefreshSectionsList();
+        RefreshFieldsList();
 
-        _propsWindow = new ElementPropertiesWindow(_state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize);
+        _propsWindow = new ElementPropertiesWindow(
+            _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
+            getAvailableFields: () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields);
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
@@ -332,6 +350,7 @@ public partial class MainWindow : Window
         UpdateTitle();
         UpdateCanvasSize();
         RefreshSectionsList();
+        RefreshFieldsList();
     }
 
     private async void MenuOpen_Click(object sender, RoutedEventArgs e)
@@ -346,6 +365,7 @@ public partial class MainWindow : Window
             UpdateTitle();
             UpdateCanvasSize();
             RefreshSectionsList();
+            RefreshFieldsList();
         }
         catch (TemplateDeserializationException ex)
         {
@@ -381,7 +401,7 @@ public partial class MainWindow : Window
 
     private void MenuPageProps_Click(object sender, RoutedEventArgs e)
     {
-        _propsWindow!.ShowForPage(_state.CurrentTemplate.PageSize);
+        _propsWindow!.ShowForPage(_state.CurrentTemplate);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -659,6 +679,66 @@ public partial class MainWindow : Window
 
         UpdatePropertiesPanel();
         InvalidateCanvas();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Pole agendy — browser databázových polí
+
+    private void RefreshFieldsList()
+    {
+        var agendaCode = _state.CurrentTemplate.AgendaCode;
+
+        if (string.IsNullOrWhiteSpace(agendaCode))
+        {
+            AgendaNameText.Text  = "Agenda: — (šablona bez agendy)";
+            FieldsList.ItemsSource = null;
+            return;
+        }
+
+        var schema = _schemaProvider.GetSchema(agendaCode);
+
+        if (schema is null)
+        {
+            AgendaNameText.Text  = $"Agenda: {agendaCode} (schéma nenalezeno)";
+            FieldsList.ItemsSource = null;
+            return;
+        }
+
+        AgendaNameText.Text    = $"Agenda: {schema.AgendaName}";
+        FieldsList.ItemsSource = schema.Fields;
+    }
+
+    private void LeftTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Při přepnutí na záložku Pole agendy aktualizuj seznam
+        if (TabFields?.IsSelected == true)
+            RefreshFieldsList();
+    }
+
+    private void FieldsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (FieldsList.SelectedItem is not DataField field) return;
+
+        string placeholder = $"{{{field.FieldName}}}";
+
+        // Pokud je vybrán TextElement → vlož placeholder do textu (undo-able)
+        if (_state.SelectedElements.Count == 1 && _state.SelectedElements[0] is TextElement textEl)
+        {
+            string oldText = textEl.Text;
+            string newText = oldText + placeholder;
+            _state.Execute(new SetPropertyCommand(
+                $"Vložit {placeholder}",
+                oldText, newText,
+                v => textEl.Text = (string)v));
+            InvalidateCanvas();
+            UpdatePropertiesPanel();
+        }
+        else
+        {
+            // Není vybrán TextElement → zkopíruj do schránky
+            System.Windows.Clipboard.SetText(placeholder);
+            StatusText.Text = $"Zkopírováno do schránky: {placeholder}";
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -1372,7 +1452,7 @@ public partial class MainWindow : Window
 
     private static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Ukázková šablona — Jízdní řád" };
+        var t = new Template { Name = "Ukázková šablona — Jízdní řád", AgendaCode = "JR" };
 
         var header = new SectionHeader();
         header.Elements.Add(new RectangleElement { X = 0, Y = 0, Width = 190, Height = 20, FillColor = "#FF1A5276" });

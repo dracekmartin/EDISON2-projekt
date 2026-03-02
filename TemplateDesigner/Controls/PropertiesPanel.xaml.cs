@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -6,6 +7,7 @@ using SkiaSharp;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Schema;
 
 namespace TemplateDesigner.Controls;
 
@@ -95,6 +97,8 @@ public partial class PropertiesPanel : UserControl
     {
         switch (d)
         {
+            // TextWithPickerPropertyDescriptor musí být před StringPropertyDescriptor (je podtřídou)
+            case TextWithPickerPropertyDescriptor tpd: AddTextWithPickerRow(tpd); break;
             case StringPropertyDescriptor sd: AddStringRow(sd);  break;
             case FloatPropertyDescriptor  fd: AddFloatRow(fd);   break;
             case BoolPropertyDescriptor   bd: AddBoolRow(bd);    break;
@@ -139,6 +143,126 @@ public partial class PropertiesPanel : UserControl
 
         panel.Children.Add(box);
         ContentPanel.Children.Add(panel);
+    }
+
+    // ── Text s picker tlačítkem + validace placeholderů ──────────────────
+
+    private static readonly Regex PlaceholderRegex =
+        new(@"\{(\w+)\}", RegexOptions.Compiled);
+
+    private void AddTextWithPickerRow(TextWithPickerPropertyDescriptor tpd)
+    {
+        var panel = MakeRow();
+
+        var label = MakeLabel(tpd.Label);
+        DockPanel.SetDock(label, Dock.Left);
+        panel.Children.Add(label);
+
+        var box = new TextBox
+        {
+            Text        = tpd.Get(),
+            AcceptsReturn   = tpd.MultiLine,
+            TextWrapping    = tpd.MultiLine ? TextWrapping.Wrap : TextWrapping.NoWrap,
+            Height          = tpd.MultiLine ? 54 : double.NaN,
+            VerticalScrollBarVisibility = tpd.MultiLine
+                ? ScrollBarVisibility.Auto : ScrollBarVisibility.Disabled,
+            FontSize  = 11,
+            Padding   = new Thickness(3, 2, 3, 2),
+            MaxLength = 2000
+        };
+
+        // Validační řádek — zobrazí se jen při neznámých polích
+        var warnBlock = new TextBlock
+        {
+            Visibility   = Visibility.Collapsed,
+            Foreground   = new SolidColorBrush(Color.FromRgb(0xC6, 0x60, 0x00)),
+            FontSize     = 10,
+            Margin       = new Thickness(90, 0, 0, 3),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        // Picker tlačítko — pouze pokud máme schéma
+        if (tpd.AvailableFields is { Count: > 0 } fields)
+        {
+            var btn = new Button
+            {
+                Content  = "⊞",
+                Width    = 24,
+                FontSize = 12,
+                Padding  = new Thickness(0),
+                Margin   = new Thickness(2, 0, 0, 0),
+                ToolTip  = "Vložit databázové pole"
+            };
+            DockPanel.SetDock(btn, Dock.Right);
+            panel.Children.Add(btn);
+
+            btn.Click += (_, _) =>
+            {
+                var menu = new ContextMenu();
+                foreach (var field in fields)
+                {
+                    var item = new MenuItem { Header = $"{field.FieldName}  —  {field.Label}" };
+                    item.Click += (_, _) =>
+                    {
+                        string oldText = tpd.Get();
+                        string newText = oldText + $"{{{field.FieldName}}}";
+                        Commit(tpd.Label, oldText, newText, v =>
+                        {
+                            tpd.Set((string)v!);
+                            box.Text = (string)v!;
+                            _invalidate?.Invoke();
+                            UpdateFieldValidation(box.Text, fields, warnBlock);
+                        });
+                    };
+                    menu.Items.Add(item);
+                }
+                menu.PlacementTarget = btn;
+                menu.IsOpen = true;
+            };
+        }
+
+        string oldVal = tpd.Get();
+        box.LostFocus += (_, _) =>
+        {
+            if (_suppressChanges) return;
+            string newVal = box.Text;
+            if (newVal == tpd.Get()) return;
+            string captured = oldVal;
+            Commit(tpd.Label, captured, newVal, v => { tpd.Set((string)v!); _invalidate?.Invoke(); });
+            oldVal = newVal;
+        };
+
+        box.TextChanged += (_, _) =>
+        {
+            if (_suppressChanges || tpd.AvailableFields is null) return;
+            UpdateFieldValidation(box.Text, tpd.AvailableFields, warnBlock);
+        };
+
+        panel.Children.Add(box);
+        ContentPanel.Children.Add(panel);
+        ContentPanel.Children.Add(warnBlock);
+
+        // Validace při prvním zobrazení
+        if (tpd.AvailableFields is not null)
+            UpdateFieldValidation(tpd.Get(), tpd.AvailableFields, warnBlock);
+    }
+
+    private static void UpdateFieldValidation(string text, IReadOnlyList<DataField> fields, TextBlock warn)
+    {
+        var known = fields.Select(f => f.FieldName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var unknown = PlaceholderRegex.Matches(text)
+            .Select(m => m.Groups[1].Value)
+            .Where(n => !known.Contains(n))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (unknown.Count == 0)
+            warn.Visibility = Visibility.Collapsed;
+        else
+        {
+            warn.Text = "⚠ Neznámá pole: " + string.Join(", ", unknown.Select(n => $"{{{n}}}"));
+            warn.Visibility = Visibility.Visible;
+        }
     }
 
     // ── Float ────────────────────────────────────────────────────────────

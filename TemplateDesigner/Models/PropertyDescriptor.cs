@@ -1,3 +1,5 @@
+using TemplateDesigner.Models.Schema;
+
 namespace TemplateDesigner.Models;
 
 // ─── Základ ────────────────────────────────────────────────────────────────────
@@ -62,4 +64,18 @@ public class EnumPropertyDescriptor : PropertyDescriptor
 
     /// <summary>Možnosti zobranzené v ComboBoxu: (zobrazený popisek, hodnota enum).</summary>
     public required (string Label, object Value)[] Options { get; init; }
+}
+
+/// <summary>
+/// Rozšíření StringPropertyDescriptor pro texty s placeholdery {FIELD}.
+/// Panel navíc zobrazí tlačítko pro výběr pole ze schématu a validační upozornění
+/// na neznámé reference.
+/// </summary>
+public class TextWithPickerPropertyDescriptor : StringPropertyDescriptor
+{
+    /// <summary>
+    /// Dostupná pole agendy — zobrazí picker tlačítko "⊞" a validaci placeholderů.
+    /// Null nebo prázdný seznam = chová se stejně jako StringPropertyDescriptor.
+    /// </summary>
+    public IReadOnlyList<DataField>? AvailableFields { get; init; }
 }

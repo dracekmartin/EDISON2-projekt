@@ -15,4 +15,24 @@
     <PackageReference Include="System.Text.Json" Version="10.0.3" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="EDISONAPI">
+        <HintPath>C:\Edison\EDISONAPI.dll</HintPath>
+    </Reference>
+    <Reference Include="MLRest">
+        <HintPath>C:\Edison\MLRest.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+
+  <!-- Kopírovat schema soubory a konfiguraci do výstupní složky -->
+  <ItemGroup>
+    <Content Include="schemas\*.schema.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
