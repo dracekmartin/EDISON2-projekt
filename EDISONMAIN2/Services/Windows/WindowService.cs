@@ -16,5 +16,16 @@ namespace EDISONMAIN2.Services.Windows
             };
             new EDInputFormTestWindow(mlRest) { Owner = Application.Current.MainWindow }.Show();
         }
+
+        public void ShowEDListTest(ConnectionParams connParams, string ns, string idfa)
+        {
+            var mlRest = new MLRest(connParams.Server, connParams.RestPort, ns, idfa)
+            {
+                LoginName = connParams.UserName,
+                FullName  = connParams.FullName,
+                Mlp       = connParams.Mlp.ToString()
+            };
+            new EDListTestWindow(mlRest) { Owner = Application.Current.MainWindow }.Show();
+        }
     }
 }

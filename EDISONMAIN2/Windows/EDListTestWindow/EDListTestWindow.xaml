@@ -1,0 +1,21 @@
+<Window x:Class="EDISONMAIN2.EDListTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
+        mc:Ignorable="d"
+        Title="Test EDList" Height="480" Width="700"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel>
+        <ToolBar DockPanel.Dock="Top">
+            <Button Content="InitializeList" Click="InitializeList_Click" ToolTip="Načíst definici sloupců z Caché"/>
+            <Separator/>
+            <Button Content="LoadList"       Click="LoadList_Click"       ToolTip="Načíst data z Caché"/>
+        </ToolBar>
+        <StatusBar DockPanel.Dock="Bottom">
+            <TextBlock x:Name="StatusText"/>
+        </StatusBar>
+        <el:EDList x:Name="TheList" Margin="4"/>
+    </DockPanel>
+</Window>
