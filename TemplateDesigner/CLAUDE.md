@@ -20,7 +20,7 @@ Systém se skládá ze dvou částí:
 
 > **📝 POZNÁMKA PRO AI AGENTA:** Tuto sekci **průběžně aktualizuj** během práce na projektu. Když dokončíš úkol, přesuň ho do "✅ Implementováno". Když objevíš nový problém, přidej ho do "🐛 Známé problémy". Když přidáš novou feature, doplň ji do seznamu. **Tato sekce má být vždy aktuální**, aby při startu nové session byl kontext dostupný bez vysvětlování.
 
-**Datum poslední aktualizace:** 2026-03-02 (rozšířeno o aktuální focus a nice to have)
+**Datum poslední aktualizace:** 2026-03-03
 
 ### 🎯 Aktuální focus
 
@@ -92,10 +92,11 @@ Systém se skládá ze dvou částí:
 ### 📋 TODO Seznam (prioritizováno)
 
 **MEDIUM priority:**
-2. **Vytvořit UI editor sloupců pro TableElement**
-   - Dialog nebo panel pro definici sloupců tabulky
-   - Properties: název sloupce, šířka, datové pole, formát, zarovnání
-   - Záhlaví tabulky (label, font, barva)
+2. **Rozšířit a implementovat TableElement (Fixed/Dynamic mód)**
+   - Viz navržený model níže v sekci "Návrh TableElement"
+   - Přidat `TableMode`, `TableRow`, `TableCell`, `BorderStyle`, `AlternatingRows`, `ColumnWidthMode`
+   - Šířky sloupců jsou vždy věcí designera (uloženy v šabloně v mm nebo %)
+   - UI editor sloupců — až bude EDDataGrid v EDControls hotový (Caché-driven)
    - Aktuálně se sloupce definují pouze ručně v JSON
 
 **LOW priority:**
@@ -114,6 +115,11 @@ Systém se skládá ze dvou částí:
   - Properties: BarcodeType, Content (placeholder support), ForeColor, BackColor
   - V designeru zobrazuje placeholder (šedý rámeček) pro prázdný obsah
   - Přidán do toolbar menu (+Element → QR kód / Čárový kód)
+- ✅ Restrukturalizace složek — zdrojový kód přesunut do `dotnet/`, vytvořena `CACHE/` struktura
+  - `EDISON2.sln` aktualizován na novou cestu
+  - `.vscode/tasks.json` přidán (Ctrl+Shift+B = build, F5 přes C# Dev Kit)
+  - `.gitignore` aktualizován (bin/, obj/, .claude/, .vscode/launch.json ignorovány)
+- 📐 Navržen rozšířený model TableElement (Fixed/Dynamic mód) — zatím nerealizováno
 
 **2026-03-02:**
 - ✅ Přidán BackgroundColor na TextElement (barva pozadí textu)
@@ -150,6 +156,55 @@ Současný `PropertiesPanel` + `PropertyDescriptor` systém je dočasné řešen
 Do té doby `PropertyDescriptor` systém funguje a neblokuje.
 
 **Reference:** Viz `EDControls/EDInputForm/` — existující implementace + Caché třídy `ALVA.EDControls.EDInputForm.*`
+
+---
+
+### 📐 Návrh TableElement — Fixed/Dynamic mód (navrženo, zatím nerealizováno)
+
+**Dva módy v jednom elementu:**
+- `TableMode.Fixed` — řádky definované v šabloně, počet pevný, buňky mohou mít `{POLE}` nebo statický text
+- `TableMode.Dynamic` — řádky generované za běhu z `DataSource` (klíč kolekce v DataContext), počet = počet záznamů
+
+**Rozšířený model:**
+```csharp
+enum TableMode { Fixed, Dynamic }
+enum TableBorderStyle { None, Outer, All, RowsOnly, ColumnsOnly }
+enum ColumnWidthMode { Mm, Percent }   // procenta = flexibilnější při změně šířky tabulky
+
+class TableColumn {
+    string Header; float Width; ColumnWidthMode WidthMode;
+    string Field; string? Format;       // "dd.MM.yyyy", "N2", ...
+    TextHorizontalAlignment Alignment;
+    string? HeaderBackgroundColor; string? HeaderTextColor;
+}
+
+// Pouze pro Fixed mód:
+class TableRow {
+    List<TableCell> Cells;
+    string? BackgroundColor;
+    string? VisibilityExpression;       // podmíněná viditelnost řádku
+}
+class TableCell {
+    string Content;                     // statický text nebo "{POLE}"
+    string? Format; TextHorizontalAlignment? Alignment;
+    string? FontWeight; string? TextColor; string? BackgroundColor;
+}
+```
+
+**Šířky sloupců = vždy věc designera** (uloženy v šabloně, print engine je jen použije).
+Print engine pro `Percent` mode spočítá `tableWidth * width / 100`.
+
+**DataContext — jak data tečou:**
+```
+DataContext._values["CISLO_LINKY"] = "42"           → GetString() → TextElement, Fixed buňky
+DataContext._rows["ZASTAVKY"] = [DataContext, ...]  → GetRows() → Dynamic TableElement
+```
+`TableElement.DataSource` = klíč do `_rows`, odpovídá `DataFieldGroup.CollectionKey` ve schématu.
+
+**JR rozšíření (budoucnost, nad tímto základem):**
+- Podmíněné řádky (`VisibilityExpression` vyhodnocovaný per-row v print enginu)
+- Grouping (Group Header/Footer řádky mezi dynamickými daty)
+- Presety sloupců z Caché (`ITablePresetProvider`)
 
 ---
 
@@ -204,6 +259,22 @@ Do té doby `PropertyDescriptor` systém funguje a neblokuje.
 
 ## Architektura projektu
 
+**Struktura složek repozitáře:**
+```
+TemplateDesigner/
+├── CACHE/                    — Caché ObjectScript kód (API třídy, budoucnost)
+│   ├── .project              — "ALVA_TEMPLATE_DESIGNER"
+│   └── ALVA/TemplateDesigner/API/
+├── dotnet/                   — veškerý .NET/WPF zdrojový kód + .csproj
+│   ├── TemplateDesigner.csproj
+│   ├── ... (zdrojové soubory)
+│   └── bin/, obj/            — generované buildem, v .gitignore
+├── .vscode/tasks.json        — build task (Ctrl+Shift+B), debug přes C# Dev Kit (F5)
+├── CLAUDE.md
+└── README.md
+```
+
+**Zdrojový kód v `dotnet/`:**
 ```
 /Models
   Template.cs               — kořenový objekt šablony
