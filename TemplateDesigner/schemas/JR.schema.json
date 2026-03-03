@@ -1,0 +1,19 @@
+{
+  "agendaCode": "JR",
+  "agendaName": "Jízdní řád",
+  "fields": [
+    { "name": "CISLO_LINKY",            "label": "Číslo linky",              "type": "number" },
+    { "name": "LOKALNI_OZNACENI_LINKY", "label": "Lokální označení linky",   "type": "text"   },
+    { "name": "TITULEK",                "label": "Titulek sestavy",           "type": "text"   },
+    { "name": "POPIS_LINKY",            "label": "Popis linky",               "type": "text"   },
+    { "name": "POPIS_DOPRAVCE",         "label": "Dopravce",                  "type": "text"   },
+    { "name": "POPIS_PLATNOSTI",        "label": "Platnost",                  "type": "text"   },
+    { "name": "CISLO_ZASTAVKA",         "label": "Číslo zastávky",            "type": "number" },
+    { "name": "POPIS_ZASTAVKA",         "label": "Název zastávky",            "type": "text"   },
+    { "name": "POPIS_ZASTAVKA_CIS",     "label": "Zastávka (číselník)",       "type": "text"   },
+    { "name": "POPIS_SMER",             "label": "Směr",                      "type": "text"   },
+    { "name": "POPIS_SMER_CIS",         "label": "Směr (číselník)",           "type": "text"   },
+    { "name": "DATUM_PLATNOSTI_OD",     "label": "Platnost od",               "type": "date"   },
+    { "name": "DATUM_PLATNOSTI_DO",     "label": "Platnost do",               "type": "date"   }
+  ]
+}
