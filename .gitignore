@@ -244,5 +244,11 @@ ModelManifest.xml
 /EDISON.sln.startup.json
 /EDISON.slnLaunch.user
 
-# VSCode settings
-settings.json
+# VSCode - osobní nastavení a vygenerované launch konfigurace
+.vscode/settings.json
+.vscode/launch.json
+**/.vscode/settings.json
+**/.vscode/launch.json
+
+# Claude Code - lokální nastavení
+**/.claude/
