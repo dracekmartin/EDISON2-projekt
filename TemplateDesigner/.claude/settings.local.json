@@ -8,7 +8,8 @@
       "Bash(Select-String -Pattern \"error|warning\")",
       "Bash(Select-Object -First 20)",
       "Bash(cat:*)",
-      "Bash(dotnet add:*)"
+      "Bash(dotnet add:*)",
+      "Bash(mv:*)"
     ]
   }
 }
