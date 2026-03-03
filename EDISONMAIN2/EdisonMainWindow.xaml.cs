@@ -1,8 +1,7 @@
-﻿using EDControls;
+﻿using ALWA.SYS;
 using EDISONMAIN2.Modules;
 using EDISONMAIN2.ViewModels;
 using System;
-using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -43,36 +42,18 @@ namespace EDISONMAIN2
                 vm.CloseAllProcesses();
         }
 
-        private void TestFormInput_Click(object sender, RoutedEventArgs e)
+        private void TestInputForm_Click(object sender, RoutedEventArgs e)
         {
-            var formInput = new FormInput
+            if (DataContext is not MainViewModel vm) return;
+
+            var mlRest = new MLRest(vm.ConnParams.Server, vm.ConnParams.RestPort, vm.Namespace, vm.Idfa)
             {
-                Items = new List<FormItem>
-                {
-                    new FormGroup { GroupName = "Osobní údaje" },
-                    new FormField { Label = "Jméno",       FieldType = FieldType.Text },
-                    new FormField { Label = "Příjmení",    FieldType = FieldType.Text },
-                    new FormField { Label = "Věk",         FieldType = FieldType.Number },
-                    new FormGroup { GroupName = "Adresa" },
-                    new FormField { Label = "Ulice",       FieldType = FieldType.Text },
-                    new FormField { Label = "Město",       FieldType = FieldType.Text },
-                    new FormField { Label = "PSČ",         FieldType = FieldType.Number },
-                    new FormGroup { GroupName = "Kontakt" },
-                    new FormField { Label = "E-mail",      FieldType = FieldType.Text },
-                    new FormField { Label = "Telefon",     FieldType = FieldType.Number },
-                }
+                LoginName = vm.ConnParams.UserName,
+                FullName  = vm.ConnParams.FullName,
+                Mlp       = vm.ConnParams.Mlp.ToString()
             };
 
-            var win = new Window
-            {
-                Title = "Test FormInput",
-                Width = 450,
-                Height = 400,
-                WindowStartupLocation = WindowStartupLocation.CenterOwner,
-                Owner = this,
-                Content = formInput
-            };
-            win.Show();
+            new InputFormTestWindow(mlRest) { Owner = this }.Show();
         }
     }
 }

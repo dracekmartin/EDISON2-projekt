@@ -1,6 +1,6 @@
-namespace EDControls
+namespace EDControls.EDInputForm
 {
-    public class FormGroup : FormItem
+    public class Group : Item
     {
         public string GroupName { get; set; } = "";
     }

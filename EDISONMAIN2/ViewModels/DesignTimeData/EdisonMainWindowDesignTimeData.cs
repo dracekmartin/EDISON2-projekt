@@ -2,9 +2,9 @@ using System.Collections.ObjectModel;
 using EDISONMAIN2.Modules;
 using EDISONMAIN2.Services;
 
-namespace EDISONMAIN2.ViewModels.DesignTimeMocks
+namespace EDISONMAIN2.ViewModels.DesignTimeData
 {
-    class MockMainViewModel
+    class EdisonMainWindowDesignTimeData
     {
         public ObservableCollection<IModule> TopLevelModules { get; } =
         [
