@@ -7,4 +7,10 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Reference Include="MLRest">
+      <HintPath>C:\Edison\MLRest.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>
