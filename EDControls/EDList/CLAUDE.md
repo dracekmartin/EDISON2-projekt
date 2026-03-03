@@ -1,6 +1,21 @@
 # EDList — poznámky pro vývojáře
 
-## Stav: VE VÝVOJI — zatím neimplementováno
+## Stav: FUNKČNÍ — MVP implementováno ✅
+
+**Co funguje:**
+- ✅ Kompletní backend (Column.cls, List.cls, MockList.cls)
+- ✅ Plně funkční EDList.xaml/.xaml.cs UserControl
+- ✅ Parsování a formátování všech základních typů (TEXT, NUMBER, DATE, DATETIME, BOOL, HHMM, COLOR)
+- ✅ Eventy: SelectionChanged, RowDoubleClicked
+- ✅ Testovací okno EDListTestWindow s mock daty
+- ✅ JSON komunikace přes MLRest
+
+**Co chybí:**
+- ⚠️ IMAGE typ (není implementován DataGridTemplateColumn s Image)
+- ⚠️ isLink sloupce (event definován, ale chybí klikatelný UI)
+- ⚠️ CODEBOOK typ
+- ⚠️ Filtrování v LoadList
+- ⚠️ ColumnLayout pro ukládání uživatelského nastavení
 
 ## Účel
 
@@ -26,22 +41,30 @@ ListVozidla.SelectionChanged += (_, id) => ListSpoje.LoadList();
 
 ## Mapa souborů
 
-### C# / WPF  (`EDControls/dotnet/EDList/`)
+### C# / WPF  (`EDControls/EDList/`)
 
-| Soubor | Role |
-| --- | --- |
-| `EDList.xaml / .xaml.cs` | UserControl. Host pro DataGrid, generování sloupců, napojení eventů. |
-| `ListColumn.cs` | Definice sloupce: `Key`, `Label`, `Type`, `Format`, `Width`, `Align`, `Sortable`, `Visible`, `IsLink`. |
-| `EListColumnType.cs` | Enum datových typů sloupce — viz sekce níže. |
-| `EListColumnAlign.cs` | Enum: `Auto`, `Left`, `Center`, `Right`. |
-| `ColumnLayout.cs` | Record pro ukládání uživatelského nastavení sloupců (pořadí + šířka). Připraveno pro budoucí implementaci. |
+| Soubor | Stav | Role |
+| --- | --- | --- |
+| `EDList.xaml / .xaml.cs` | ✅ | UserControl. Host pro DataGrid, generování sloupců, napojení eventů. |
+| `ListColumn.cs` | ✅ | Definice sloupce: `Key`, `Label`, `Type`, `Format`, `Width`, `Align`, `Sortable`, `Visible`, `IsLink`. |
+| `EListColumnType.cs` | ✅ | Enum datových typů sloupce — viz sekce níže. |
+| `EListColumnAlign.cs` | ✅ | Enum: `Auto`, `Left`, `Center`, `Right`. |
+| `ColumnLayout.cs` | ❌ | Record pro ukládání uživatelského nastavení sloupců (pořadí + šířka). Zatím neimplementováno. |
 
-### Caché ObjectScript  (`EDControls/CACHE/ALVA/EDControls/EDList/`)
+### Caché ObjectScript  (`CACHE/ALVA/EDControls/EDList/`)
 
-| Soubor | Role |
-| --- | --- |
-| `Column.cls` | `%RegisteredObject` + `%JSON.Adaptor`. Model definice sloupce. |
-| `List.cls` | `%RegisteredObject`. Builder: `AddColumn`, `AddRow`, `WriteColumnsToOut`, `WriteRowsToOut`. |
+| Soubor | Stav | Role |
+| --- | --- | --- |
+| `Column.cls` | ✅ | `%RegisteredObject`. Model definice sloupce. |
+| `List.cls` | ✅ | `%RegisteredObject`. Builder: `AddColumn`, `AddRow`, `WriteColumnsToOut`, `WriteRowsToOut`. |
+| `MockList.cls` | ✅ | Testovací třída s hardcoded daty pro ověření EDList bez reálné databáze. |
+
+### Testovací okno  (`EDISONMAIN2/Windows/EDListTestWindow/`)
+
+| Soubor | Stav | Role |
+| --- | --- | --- |
+| `EDListTestWindow.xaml` | ✅ | Layout testovacího okna s toolbar, status bar a EDList komponentou. |
+| `EDListTestWindow.xaml.cs` | ✅ | Code-behind s napojením na MockList, event handlery. |
 
 ---
 
@@ -166,57 +189,381 @@ OUT[1] = {"id":"42","nazev":"Linka 1","pocet":"15","aktivni":"1","barva":"255;12
 OUT[2] = {"id":"43","nazev":"Linka 2","pocet":"8","aktivni":"0","barva":"0;128;255"}
 ```
 
+### Příklad skutečné komunikace z MockList
+
+**InitializeList — OUT globály:**
+```
+^||ML("OUT") = 1
+^||ML("OUT",1) = [{"key":"rz","label":"RZ","type":"TEXT","width":110,"align":"","sortable":false,"visible":true,"isLink":false},{"key":"typ","label":"Typ","type":"TEXT","width":130,"align":"","sortable":false,"visible":true,"isLink":false},{"key":"aktivni","label":"Aktivní","type":"BOOL","width":70,"align":"","sortable":false,"visible":true,"isLink":false},{"key":"odjezd","label":"Odjezd","type":"HHMM","width":75,"align":"RIGHT","sortable":false,"visible":true,"isLink":false},{"key":"pocet","label":"Počet km","type":"NUMBER","format":"N1","width":90,"align":"RIGHT","sortable":true,"visible":true,"isLink":false},{"key":"datum","label":"Datum","type":"DATE","width":100,"align":"","sortable":false,"visible":true,"isLink":false}]
+```
+
+**LoadList — OUT globály:**
+```
+^||ML("OUT") = 3
+^||ML("OUT",1) = {"id":"1","rz":"1B2 3456","typ":"Kloubový","aktivni":"1","odjezd":"830","pocet":"142.5","datum":"2024-03-15"}
+^||ML("OUT",2) = {"id":"2","rz":"2C3 7890","typ":"Standardní","aktivni":"0","odjezd":"1245","pocet":"98","datum":"2024-03-16"}
+^||ML("OUT",3) = {"id":"3","rz":"3D4 1122","typ":"Kloubový","aktivni":"1","odjezd":"600","pocet":"210.75","datum":"2024-03-17"}
+```
+
+**C# parsování:**
+- `InitializeList()` → parsuje `OUT[1]` jako JSON pole → vytvoří `List<ListColumn>`
+- `LoadList()` → parsuje `OUT[1..n]` jako JSON objekty → vytvoří `ObservableCollection<Dictionary<string, string?>>`
+- DataGrid má `ItemsSource = _rows`, sloupce bindují na `[{key}]`
+
+---
+
+## Caché ObjectScript — syntaxe a konstrukce
+
+Tato sekce vysvětluje syntaxi Caché ObjectScript používanou v EDList třídách.
+
+### Základní příkazy
+
+| Příkaz | Význam | Příklad |
+|--------|--------|---------|
+| `s` | **Set** — přiřazení hodnoty do proměnné | `s list = ##class(List).%New()` |
+| `d` | **Do** — volání metody bez použití návratové hodnoty | `d list.AddColumn("key", "Label")` |
+| `q` | **Quit** — návrat z metody/funkce | `q 1` (vrátí status true) |
+| `ret` | **Return** — alternativa k quit | `ret ret` (vrátí status) |
+
+### Třídy a objekty
+
+| Konstrukce | Význam | Příklad |
+|------------|--------|---------|
+| `##class(...)` | Reference na třídu (pro volání ClassMethod nebo %New) | `##class(ALVA.EDControls.EDList.List)` |
+| `.%New()` | Vytvoření nové instance objektu (konstruktor) | `s list = ##class(List).%New()` |
+| `.Insert(obj)` | Vložení objektu do `list Of ...` kolekce | `d ..columns.Insert(col)` |
+| `.%Push(obj)` | Přidání prvku do `%DynamicArray` | `d ..rows.%Push(row)` |
+| `..property` | Přístup k property aktuální instance (`this.property`) | `s ..rows = ##class(%DynamicArray).%New()` |
+
+### Funkce a operátory
+
+| Funkce | Význam | Příklad |
+|--------|--------|---------|
+| `$i(var)` | **Increment** — zvýší hodnotu proměnné o 1 a vrátí novou hodnotu | `s ^||ML("OUT", $i(^||ML("OUT"))) = json` |
+| `$g(var)` | **Get** — vrátí hodnotu proměnné, pokud neexistuje vrátí "" | `s filter = $g(^||ML("IN","filter"))` |
+| `$g(var, default)` | Get s výchozí hodnotou | `s limit = $g(^||ML("IN","limit"), 100)` |
+
+### Globály (persistentní úložiště)
+
+| Konstrukce | Význam | Příklad |
+|------------|--------|---------|
+| `^||ML(...)` | **Process-private global** — globální pole viditelné jen v aktuálním procesu | `s ^||ML("OUT", 1) = "data"` |
+| `^ML(...)` | Běžný global — sdílený napříč procesy | `s ^ML("config", "version") = "1.0"` |
+
+Globály jsou vícedimenzionální pole s klíči typu string:
+```objectscript
+s ^||ML("OUT")         = 0           // počítadlo výstupních řádků
+s ^||ML("OUT", 1)      = "první řádek"
+s ^||ML("OUT", 2)      = "druhý řádek"
+s ^||ML("IN", "id")    = "42"
+s ^||ML("IN", "filter") = "Praha"
+```
+
+### Smyčky
+
+```objectscript
+// FOR smyčka: for var=start:increment:end
+f i=1:1:..columns.Count() {
+    s col = ..columns.GetAt(i)
+    // ...
+}
+
+// FOR přes %DynamicArray (index začína 0)
+f i=0:1:..rows.%Size()-1 {
+    s row = ..rows.%Get(i)
+    // ...
+}
+
+// Nekonečná smyčka s podmínkou uvnitř
+f {
+    // ... kód ...
+    q:podmínka  // quit if podmínka
+}
+```
+
+### Error handling
+
+```objectscript
+try {
+    // kód, který může vyhodit chybu
+    s result = ..SomeMethod()
+}
+catch (ex) {
+    // ex je %Exception.AbstractException
+    s error = ex.DisplayString()
+    // logování nebo propagace
+}
+```
+
+### Property definice
+
+```objectscript
+// Jednoduchá property
+Property key As %String;
+
+// Property s výchozí hodnotou
+Property type As %String [ InitialExpression = "TEXT" ];
+Property width As %Integer [ InitialExpression = 0 ];
+
+// Property s collection typem
+Property columns As list Of ALVA.EDControls.EDList.Column;
+
+// Property s dynamic objektem a inicializací
+Property rows As %DynamicArray [ InitialExpression = {##class(%DynamicArray).%New()} ];
+```
+
+Modifikátory v `[ ]`:
+- `InitialExpression` — výchozí hodnota (vyhodnotí se při `%New()`)
+- `Private`, `Internal` — viditelnost
+- `Calculated` — vypočítaná property (má Get/Set metody)
+
+### JSON serializace
+
+```objectscript
+// %DynamicObject — mutable JSON objekt
+s row = ##class(%DynamicObject).%New()
+s row.id = "42"
+s row.nazev = "Praha"
+s json = row.%ToJSON()  // vrátí: {"id":"42","nazev":"Praha"}
+
+// %DynamicArray — mutable JSON pole
+s arr = ##class(%DynamicArray).%New()
+d arr.%Push("prvni")
+d arr.%Push("druhy")
+s json = arr.%ToJSON()  // vrátí: ["prvni","druhy"]
+
+// Přístup k prvkům
+s value = obj.%Get("key")     // nebo: s value = obj.key
+s item  = arr.%Get(0)         // index od 0
+s size  = arr.%Size()
+```
+
+### Praktický příklad z MockList.cls
+
+```objectscript
+ClassMethod LoadList(ByRef sys As %String) As %Status
+{
+    // Vytvoř builder objekt
+    s list = ##class(ALVA.EDControls.EDList.List).%New()
+
+    // Přidej první řádek — AddRow vrátí %DynamicObject
+    s row = list.AddRow("1")
+    s row.rz      = "1B2 3456"      // nastaví property přímo
+    s row.typ     = "Kloubový"
+    s row.aktivni = "1"
+    s row.odjezd  = "830"           // HHMM jako int
+    s row.pocet   = "142.5"         // NUMBER jako string s tečkou
+    s row.datum   = "2024-03-15"    // DATE jako ISO 8601
+
+    // Přidej další řádky...
+    s row = list.AddRow("2")
+    // ...
+
+    // Zapiš všechny řádky jako JSON do ^||ML("OUT", 1..n)
+    d list.WriteRowsToOut()
+
+    // Vrať success status
+    q 1
+}
+```
+
+### Konvence pojmenování
+
+- **ClassMethod** — statická metoda (jako C# `static method`)
+- **Method** — instanční metoda (jako C# běžná `method`)
+- **Property** — property třídy (jako C# `property`)
+- `%` prefix — systémové třídy (např. `%String`, `%Integer`, `%DynamicObject`)
+- `..` prefix — aktuální instance (jako C# `this.`)
+
 ---
 
 ## Caché model
 
 ### Column.cls
 
+Jednoduchý data model bez logiky — jen properties.
+
 ```objectscript
-Class ALVA.EDControls.EDList.Column Extends (%RegisteredObject, %JSON.Adaptor)
+Class ALVA.EDControls.EDList.Column Extends %RegisteredObject
 {
-    Property key      As %String;
-    Property label    As %String;
-    Property type     As %String [ InitialExpression = "TEXT" ];
-    // TEXT|NUMBER|DATE|DATETIME|BOOL|IMAGE|COLOR|HHMM|CODEBOOK
+    /// Identifikátor sloupce — používá se jako klíč v datech řádku.
+    Property key As %String;
 
-    Property format   As %String;
-    // NUMBER: "N0","N2",...  DATE/DATETIME: "dd.MM.yyyy",...  ostatní: prázdné
+    /// Zobrazovaný nadpis sloupce.
+    Property label As %String;
 
-    Property width    As %Integer [ InitialExpression = 0 ];  // 0 = auto
-    Property align    As %String [ InitialExpression = "" ];  // ""|LEFT|CENTER|RIGHT
+    /// Datový typ: TEXT | NUMBER | DATE | DATETIME | BOOL | IMAGE | COLOR | HHMM | CODEBOOK
+    Property type As %String [ InitialExpression = "TEXT" ];
+
+    /// Formátovací řetězec.
+    /// NUMBER: "N0", "N2" apod.  DATE/DATETIME: "dd.MM.yyyy" apod.  Ostatní: prázdný.
+    Property format As %String;
+
+    /// Šířka sloupce v pixelech. 0 = automaticky podle obsahu.
+    Property width As %Integer [ InitialExpression = 0 ];
+
+    /// Zarovnání buněk: prázdný = auto (dle typu), LEFT, CENTER, RIGHT.
+    Property align As %String;
+
     Property sortable As %Boolean [ InitialExpression = 0 ];
-    Property visible  As %Boolean [ InitialExpression = 1 ];
-    Property isLink   As %Boolean [ InitialExpression = 0 ];
+
+    Property visible As %Boolean [ InitialExpression = 1 ];
+
+    /// Pokud true, buňka se zobrazí jako odkaz a vyvolá event CellLinkClicked.
+    Property isLink As %Boolean [ InitialExpression = 0 ];
 }
 ```
 
+**Poznámka:** Třída nepoužívá `%JSON.Adaptor` — serializaci do JSON obstarává `List.cls::WriteColumnsToOut()` ručně přes `%DynamicObject`.
+
 ### List.cls
+
+Builder třída pro sestavení sloupců a řádků. **Klíčová třída** pro práci s EDList.
 
 ```objectscript
 Class ALVA.EDControls.EDList.List Extends %RegisteredObject
 {
     Property columns As list Of ALVA.EDControls.EDList.Column;
-    Property rows    As %DynamicArray [ InitialExpression = {##class(%DynamicArray).%New()} ];
+    Property rows As %DynamicArray;
 
-    /// Přidá sloupec a vrátí ho pro případné další nastavení.
+    // ─── Inicializace ─────────────────────────────────────────────────────
+    Method %OnNew() As %Status
+    {
+        s ..rows = ##class(%DynamicArray).%New()
+        q 1
+    }
+
+    // ─── Builder — sloupce ────────────────────────────────────────────────
+    /// Přidá sloupec a vrátí ho pro případné další nastavení (isLink, format apod.).
     Method AddColumn(key As %String, label As %String, type As %String = "TEXT",
                      width As %Integer = 0, align As %String = "",
-                     sortable As %Boolean = 0) As Column
+                     sortable As %Boolean = 0) As ALVA.EDControls.EDList.Column
+    {
+        s col = ##class(ALVA.EDControls.EDList.Column).%New()
+        s col.key      = key
+        s col.label    = label
+        s col.type     = type
+        s col.width    = width
+        s col.align    = align
+        s col.sortable = sortable
+        d ..columns.Insert(col)
+        q col
+    }
 
+    // ─── Builder — řádky ──────────────────────────────────────────────────
     /// Vytvoří nový řádek s daným id, přidá ho do interní %DynamicArray a vrátí ho.
-    /// Volající nastaví pole přímo: s row.nazev = "Linka 1"
+    /// Volající nastaví pole přímo:  s row.nazev = "Praha"
     Method AddRow(id As %String) As %DynamicObject
+    {
+        s row    = ##class(%DynamicObject).%New()
+        s row.id = id
+        d ..rows.%Push(row)
+        q row
+    }
 
-    /// Zapíše OUT[1] = JSON pole definic sloupců.
+    // ─── Výstup ───────────────────────────────────────────────────────────
+    /// Zapíše OUT[n] = JSON pole definic sloupců (jedno volání = jeden OUT záznam).
     Method WriteColumnsToOut()
+    {
+        s arr = ##class(%DynamicArray).%New()
+        f i=1:1:..columns.Count() {
+            s col = ..columns.GetAt(i)
+            s obj = ##class(%DynamicObject).%New()
+            s obj.key      = col.key
+            s obj.label    = col.label
+            s obj.type     = col.type
+            s obj.format   = col.format
+            s obj.width    = col.width
+            s obj.align    = col.align
+            s obj.sortable = col.sortable
+            s obj.visible  = col.visible
+            s obj.isLink   = col.isLink
+            d arr.%Push(obj)
+        }
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    }
 
-    /// Zapíše OUT[1..n] = jeden JSON objekt na řádek.
+    /// Zapíše OUT[n], OUT[n+1], ... = jeden JSON objekt na řádek.
     Method WriteRowsToOut()
+    {
+        f i=0:1:..rows.%Size()-1 {
+            s ^||ML("OUT", $i(^||ML("OUT"))) = ..rows.%Get(i).%ToJSON()
+        }
+    }
 }
 ```
 
-### Vzor BL třídy (app-specifická)
+**Klíčové body:**
+- `AddColumn()` vrací `Column` objekt → umožňuje fluent API: `s col = list.AddColumn(...) s col.format = "N2"`
+- `AddRow()` vrací `%DynamicObject` → volající nastavuje properties přímo: `s row.nazev = "Praha"`
+- `columns` je `list Of Column` (indexováno od 1, `.GetAt(i)`, `.Insert(obj)`)
+- `rows` je `%DynamicArray` (indexováno od 0, `.%Get(i)`, `.%Push(obj)`)
+- `WriteColumnsToOut()` vytvoří jedno JSON pole s definicemi všech sloupců
+- `WriteRowsToOut()` zapíše každý řádek jako samostatný JSON objekt
+
+### Vzor BL třídy — MockList.cls (testovací implementace)
+
+Kompletní funkční příklad z `CACHE/ALVA/EDControls/EDList/MockList.cls`:
+
+```objectscript
+/// Testovací třída s hardcoded daty pro ověření EDList bez reálné databáze.
+Class ALVA.EDControls.EDList.MockList Extends %RegisteredObject
+{
+    ClassMethod InitializeList(ByRef sys As %String) As %Status
+    {
+        s list = ##class(ALVA.EDControls.EDList.List).%New()
+        d list.AddColumn("rz",      "RZ",          "TEXT",   110)
+        d list.AddColumn("typ",     "Typ",         "TEXT",   130)
+        d list.AddColumn("aktivni", "Aktivní",     "BOOL",    70)
+        d list.AddColumn("odjezd",  "Odjezd",      "HHMM",    75, "RIGHT")
+
+        // AddColumn vrací Column objekt → můžeme nastavit další vlastnosti
+        s col = list.AddColumn("pocet", "Počet km", "NUMBER",  90, "RIGHT", 1)
+        s col.format = "N1"  // formát s 1 desetinným místem
+
+        d list.AddColumn("datum",   "Datum",       "DATE",   100)
+        d list.WriteColumnsToOut()
+        q 1
+    }
+
+    ClassMethod LoadList(ByRef sys As %String) As %Status
+    {
+        s list = ##class(ALVA.EDControls.EDList.List).%New()
+
+        // Řádek 1
+        s row = list.AddRow("1")
+        s row.rz      = "1B2 3456"
+        s row.typ     = "Kloubový"
+        s row.aktivni = "1"             // BOOL: "1" = Ano, "0" = Ne
+        s row.odjezd  = "830"           // HHMM: 830 = 08:30
+        s row.pocet   = "142.5"         // NUMBER: vždy s tečkou, ne čárkou
+        s row.datum   = "2024-03-15"    // DATE: ISO 8601 formát
+
+        // Řádek 2
+        s row = list.AddRow("2")
+        s row.rz      = "2C3 7890"
+        s row.typ     = "Standardní"
+        s row.aktivni = "0"
+        s row.odjezd  = "1245"          // 12:45
+        s row.pocet   = "98"
+        s row.datum   = "2024-03-16"
+
+        // Řádek 3
+        s row = list.AddRow("3")
+        s row.rz      = "3D4 1122"
+        s row.typ     = "Kloubový"
+        s row.aktivni = "1"
+        s row.odjezd  = "600"           // 06:00
+        s row.pocet   = "210.75"
+        s row.datum   = "2024-03-17"
+
+        d list.WriteRowsToOut()
+        q 1
+    }
+}
+```
+
+### Vzor BL třídy — reálná aplikace (s databází)
 
 ```objectscript
 Class APP.VozidlaList Extends %RegisteredObject
@@ -227,10 +574,11 @@ Class APP.VozidlaList Extends %RegisteredObject
         try {
             $$$FillParams
             s list = ##class(ALVA.EDControls.EDList.List).%New()
-            d list.AddColumn("rz",      "RZ",       "TEXT",   100)
-            d list.AddColumn("typ",     "Typ",      "TEXT",   150)
-            d list.AddColumn("aktivni", "Aktivní",  "BOOL",    60)
-            d list.AddColumn("odjezd",  "Odjezd",   "HHMM",    70)
+            d list.AddColumn("rz",        "RZ",           "TEXT",   100)
+            d list.AddColumn("typ",       "Typ",          "TEXT",   150)
+            d list.AddColumn("aktivni",   "Aktivní",      "BOOL",    60)
+            d list.AddColumn("odjezd",    "Odjezd",       "HHMM",    70)
+            d list.AddColumn("kilometraz","Kilometráž",   "NUMBER",  90, "RIGHT")
             d list.WriteColumnsToOut()
         }
         catch (ex) { $$$CatchErrRest }
@@ -244,14 +592,30 @@ Class APP.VozidlaList Extends %RegisteredObject
             $$$FillParams
             // Budoucí filtr:
             // s filterText = $g(^||ML("IN","filter"))
+            // s datumOd    = $g(^||ML("IN","od"))
 
             s list = ##class(ALVA.EDControls.EDList.List).%New()
-            // ... SQL / global procházení ...
-            s row = list.AddRow(id)
-            s row.rz      = rz
-            s row.typ     = typ
-            s row.aktivni = aktivni   // "1" nebo "0"
-            s row.odjezd  = odjezd   // int, např. "830"
+
+            // SQL dotaz nebo procházení globálů
+            &sql(DECLARE C1 CURSOR FOR
+                 SELECT ID, RZ, Typ, Aktivni, Odjezd, Kilometraz
+                 FROM Vozidla
+                 WHERE Aktivni = 1
+                 ORDER BY RZ)
+            &sql(OPEN C1)
+            f {
+                &sql(FETCH C1 INTO :id, :rz, :typ, :aktivni, :odjezd, :km)
+                q:SQLCODE'=0
+
+                s row = list.AddRow(id)
+                s row.rz        = rz
+                s row.typ       = typ
+                s row.aktivni   = aktivni         // "1" nebo "0"
+                s row.odjezd    = odjezd          // int, např. "830"
+                s row.kilometraz = km             // decimal jako string s tečkou
+            }
+            &sql(CLOSE C1)
+
             d list.WriteRowsToOut()
         }
         catch (ex) { $$$CatchErrRest }
@@ -264,27 +628,55 @@ Class APP.VozidlaList Extends %RegisteredObject
 
 ## C# veřejné API
 
+### Aktuální implementace
+
 ```csharp
-// Konfigurace (nastavit před prvním voláním)
-MLRest  MLRest     { get; set; }
-string  CacheClass { get; set; }
+namespace EDControls.EDList
+{
+    public partial class EDList : UserControl
+    {
+        // ─── Konfigurace (nastavit před prvním voláním) ───────────────────
+        public MLRest? MLRest { get; set; }
+        public string CacheClass { get; set; } = "";
 
-// Volání
-void InitializeList()   // naplní Columns, přegeneruje sloupce DataGridu
-void LoadList()         // naplní Rows; budoucí přetížení přijme CVar/JSON filtr
+        // ─── Volání ───────────────────────────────────────────────────────
+        /// Načte definici sloupců z Caché, parsuje JSON, generuje DataGrid sloupce
+        public void InitializeList()
 
-// Stav
-IReadOnlyList<ListColumn>?   Columns       { get; }
-string?                      SelectedRowId { get; }
+        /// Načte data z Caché, parsuje JSON řádky, naplní ObservableCollection
+        public void LoadList()
 
-// Eventy
-event EventHandler<string>?                        RowDoubleClicked   // arg = rowId
-event EventHandler<string?>?                       SelectionChanged   // arg = rowId nebo null
-event EventHandler<(string RowId, string ColKey)>? CellLinkClicked    // pro isLink sloupce
+        // ─── Stav ─────────────────────────────────────────────────────────
+        /// Read-only kolekce definic sloupců (dostupné po InitializeList)
+        public IReadOnlyList<ListColumn>? Columns { get; }
 
-// Do budoucna: ukládání uživatelského nastavení sloupců
-ColumnLayout[] GetCurrentLayout()
-void           ApplyLayout(ColumnLayout[] layout)
+        /// ID aktuálně vybraného řádku, nebo null pokud není žádný výběr
+        public string? SelectedRowId { get; }
+
+        // ─── Eventy ───────────────────────────────────────────────────────
+        /// Vyvolá se při dvojkliku na řádek. Parametr: rowId
+        public event EventHandler<string>? RowDoubleClicked;
+
+        /// Vyvolá se při změně výběru. Parametr: rowId nebo null
+        public event EventHandler<string?>? SelectionChanged;
+
+        /// Vyvolá se při kliknutí na buňku s isLink=true
+        /// ZATÍM NEIMPLEMENTOVÁNO — event definován, ale chybí UI
+        public event EventHandler<(string RowId, string ColKey)>? CellLinkClicked;
+    }
+}
+```
+
+### Budoucí rozšíření (připraveno)
+
+```csharp
+// Ukládání uživatelského nastavení sloupců (pořadí + šířka)
+public ColumnLayout[] GetCurrentLayout();
+public void ApplyLayout(ColumnLayout[] layout);
+
+// Filtrování s parametry
+public void LoadList(object filter);  // přijme CVar nebo anonymous object
+public void ReloadData();             // znovu načte s posledním filtrem
 ```
 
 ---
@@ -309,34 +701,164 @@ Generování sloupců po `InitializeList`:
 
 ---
 
+## Praktické použití
+
+### V XAML okně
+
+```xaml
+<Window xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls">
+    <Grid>
+        <el:EDList x:Name="VozidlaList" />
+    </Grid>
+</Window>
+```
+
+### V code-behind
+
+```csharp
+public partial class VozidlaWindow : Window
+{
+    public VozidlaWindow(MLRest mlRest)
+    {
+        InitializeComponent();
+
+        // Konfigurace
+        VozidlaList.MLRest     = mlRest;
+        VozidlaList.CacheClass = "APP.VozidlaList";
+
+        // Načtení
+        VozidlaList.InitializeList();
+        VozidlaList.LoadList();
+
+        // Eventy
+        VozidlaList.SelectionChanged += OnVozidloSelected;
+        VozidlaList.RowDoubleClicked += OnVozidloDoubleClick;
+    }
+
+    private void OnVozidloSelected(object sender, string? rowId)
+    {
+        if (rowId is null)
+        {
+            // Žádný výběr
+            return;
+        }
+
+        // Načti detail vozidla...
+        DetailPanel.LoadDetail(rowId);
+    }
+
+    private void OnVozidloDoubleClick(object sender, string rowId)
+    {
+        // Otevři editaci...
+        var editWindow = new VozidloEditWindow(rowId);
+        editWindow.ShowDialog();
+    }
+}
+```
+
+### Master-detail scénář
+
+```csharp
+// Dvě instance EDList v jednom okně
+public partial class DispecinkWindow : Window
+{
+    public DispecinkWindow(MLRest mlRest)
+    {
+        InitializeComponent();
+
+        // Master list — vozidla
+        ListVozidla.MLRest     = mlRest;
+        ListVozidla.CacheClass = "APP.VozidlaList";
+        ListVozidla.InitializeList();
+        ListVozidla.LoadList();
+
+        // Detail list — spoje vybraného vozidla
+        ListSpoje.MLRest     = mlRest;
+        ListSpoje.CacheClass = "APP.SpojeList";
+        ListSpoje.InitializeList();
+
+        // Při změně výběru vozidla načti jeho spoje
+        ListVozidla.SelectionChanged += (_, vozidloId) =>
+        {
+            if (vozidloId is not null)
+            {
+                // Budoucí: předání filtru do LoadList
+                // ListSpoje.LoadList(new { vozidloId });
+                ListSpoje.LoadList();
+            }
+        };
+    }
+}
+```
+
+---
+
+## Testovací okno — EDListTestWindow
+
+Testovací okno je v projektu EDISONMAIN2 ve složce `Windows/EDListTestWindow/`.
+
+### Soubory
+
+- **EDListTestWindow.xaml** — layout s toolbar (InitializeList, LoadList), status bar a EDList komponentou
+- **EDListTestWindow.xaml.cs** — code-behind s napojením na MockList
+
+### Použití
+
+```csharp
+var window = new EDListTestWindow(mlRest);
+window.ShowDialog();
+```
+
+### Funkce
+
+- **Toolbar:**
+  - `InitializeList` — načte definici sloupců z `ALVA.EDControls.EDList.MockList::InitializeList`
+  - `LoadList` — načte testovací data z `ALVA.EDControls.EDList.MockList::LoadList`
+
+- **Status bar:**
+  - Zobrazuje aktuální výběr řádku
+  - Zobrazuje ID řádku při dvojkliku
+
+- **Mock data:**
+  - 6 sloupců: RZ, Typ, Aktivní (BOOL), Odjezd (HHMM), Počet km (NUMBER), Datum (DATE)
+  - 3 testovací řádky vozidel
+
+---
+
 ## Roadmapa
 
-### MVP — ověření s mock daty
-
-Cíl: funkční EDList zapojený v testovacím okně, data z Caché mock třídy.
+### ✅ MVP — ověření s mock daty (HOTOVO)
 
 **Caché:**
-- [ ] `Column.cls` — model sloupce
-- [ ] `List.cls` — builder (AddColumn, AddRow, WriteColumnsToOut, WriteRowsToOut)
-- [ ] `MockList.cls` — testovací třída s hardcoded daty (InitializeList + LoadList)
+- ✅ `Column.cls` — model sloupce
+- ✅ `List.cls` — builder (AddColumn, AddRow, WriteColumnsToOut, WriteRowsToOut)
+- ✅ `MockList.cls` — testovací třída s hardcoded daty (InitializeList + LoadList)
 
 **C#:**
-- [ ] `ListColumn.cs`, `EListColumnType.cs`, `EListColumnAlign.cs` — datové modely
-- [ ] `EDList.xaml / .xaml.cs` — UserControl
-  - `InitializeList()` — volá Caché, parsuje JSON sloupce, generuje `DataGrid.Columns`
-  - `LoadList()` — volá Caché, parsuje JSON řádky, naplní `ItemsSource`
-  - `SelectedRowId` property
-  - `RowDoubleClicked` a `SelectionChanged` eventy
-- [ ] Testovací okno v EDISONMAIN2 — zapojí EDList s `MockList` třídou
+- ✅ `ListColumn.cs`, `EListColumnType.cs`, `EListColumnAlign.cs` — datové modely
+- ✅ `EDList.xaml / .xaml.cs` — UserControl
+  - ✅ `InitializeList()` — volá Caché, parsuje JSON sloupce, generuje `DataGrid.Columns`
+  - ✅ `LoadList()` — volá Caché, parsuje JSON řádky, naplní `ItemsSource`
+  - ✅ `SelectedRowId` property
+  - ✅ `RowDoubleClicked` a `SelectionChanged` eventy
+  - ✅ Formátování hodnot (BOOL → "Ano"/"Ne", HHMM → "08:30", DATE, NUMBER)
+  - ✅ COLOR typ s barevným pozadím (RgbStringToBrushConverter)
+  - ✅ Zarovnání sloupců (auto dle typu nebo explicitní)
+- ✅ Testovací okno v EDISONMAIN2 — zapojí EDList s `MockList` třídou
 
-### Po MVP
+### 🚧 Dokončení základních funkcí
 
-- [ ] Filtrování — `LoadList` přijme `CVar` nebo JSON s pojmenovanými klíči
-- [ ] `ReloadData()` — refresh se zapamatovaným posledním filtrem
-- [ ] `CellLinkClicked` event pro `isLink` sloupce
-- [ ] `CODEBOOK` typ — options inline v definici sloupce
-- [ ] `ColumnLayout` — ukládání pořadí a šířky sloupců per uživatel
-- [ ] Design-time mock data v C# (analogie `DesignTimeData` z EDInputForm)
+- [ ] **IMAGE typ** — DataGridTemplateColumn s Image elementem + resource lookup
+- [ ] **isLink sloupce** — DataGridHyperlinkColumn nebo klikatelný TextBlock + event CellLinkClicked
+- [ ] **CODEBOOK typ** — mapování kódů na labely z inline options
+
+### 📋 Pokročilé funkce
+
+- [ ] **Filtrování** — `LoadList` přijme `CVar` nebo JSON s pojmenovanými klíči
+- [ ] **ReloadData()** — refresh se zapamatovaným posledním filtrem
+- [ ] **ColumnLayout** — ukládání pořadí a šířky sloupců per uživatel
+- [ ] **Design-time mock data** v C# (analogie `DesignTimeData` z EDInputForm)
+- [ ] **Kontextové menu** — event pro zobrazení custom menu na řádku
 
 ---
 
