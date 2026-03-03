@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EDControls", "EDControls\ED
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceGtfsRt", "ServiceGtfsRt\ServiceGtfsRt.csproj", "{6067BD5C-150D-4AA7-A90F-066CE6681D73}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TemplateDesigner", "TemplateDesigner\TemplateDesigner.csproj", "{65F55BBE-3711-46ED-B55C-EEEC49DA5247}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TemplateDesigner", "TemplateDesigner\dotnet\TemplateDesigner.csproj", "{65F55BBE-3711-46ED-B55C-EEEC49DA5247}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
