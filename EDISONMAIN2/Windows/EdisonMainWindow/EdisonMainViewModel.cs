@@ -5,10 +5,11 @@ using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ALVA.EDISONAPI;
 using EDISONMAIN2.Commands;
-using EDISONMAIN2.Modules;
 using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
+using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
+using EDISONMAIN2.Services.Windows;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -19,15 +20,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         private readonly IEdisonMainDataService _dataService;
         private readonly IProcessLaunchService _processService;
+        private readonly IWindowService _windowService;
 
         public ICommand OpenModuleCommand { get; }
+        public ICommand OpenInputFormTestCommand { get; }
+        public ICommand CloseAllCommand { get; }
 
-        public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
+        public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, IWindowService windowService, ConnectionParams connParams)
         {
             _dataService = dataService;
             _processService = processService;
+            _windowService = windowService;
 
             OpenModuleCommand = new RelayCommand<IModule>(OpenModule);
+            OpenInputFormTestCommand = new RelayCommand(() => _windowService.ShowInputFormTest(ConnParams, Namespace, Idfa));
+            CloseAllCommand = new RelayCommand(_processService.CloseAll);
 
             TopLevelModules = [];
 
@@ -67,8 +74,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string Namespace => SelectedCompany.Database;
 
         public string Idfa => SelectedCompany.Id;
-
-        public void CloseAllProcesses() => _processService.CloseAll();
 
         private void OpenModule(IModule module)
         {

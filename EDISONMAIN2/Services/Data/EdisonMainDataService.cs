@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using ALVA.EDISONAPI;
 using ALWA.SYS;
-using EDISONMAIN2.Modules;
+using EDISONMAIN2.Services.Modules;
+using EDISONMAIN2.Services;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Services.Data
