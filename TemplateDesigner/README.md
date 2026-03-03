@@ -137,6 +137,39 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - **Smazat sekci** — pravé tlačítko myši na sekci → Smazat sekci (šablona musí mít alespoň jednu sekci)
 - Přesun a smazání jsou undo-able
 
+### Custom šablony sekcí
+
+Custom šablona sekce je **uložená konfigurace sekce včetně všech elementů**, kterou si vytvoříte a pojmenujete pro opakované použití.
+
+**Příklad:** Vytvoříte sekci "Záhlaví DPO" s logem, názvem firmy a čárou → uložíte jako šablonu → příště jedno kliknutí a máte hotovo.
+
+**Uložení sekce jako šablony:**
+1. Pravý klik na sekci v levém panelu
+2. Vyberte **💾 Uložit jako šablonu...**
+3. Zadejte název (např. "Záhlaví DPO") → **Uložit**
+
+→ Šablona se uloží do `section-templates/<název>.json` vedle aplikace.
+
+**Načtení uložené šablony:**
+1. Klikněte **[+ Přidat sekci ▾]**
+2. V menu se zobrazí všechny uložené šablony (položky s ikonou 💾)
+3. Klikněte na šablonu → vytvoří se kopie sekce se všemi elementy
+
+**Kde se šablony ukládají:**
+```
+<složka-aplikace>/section-templates/
+```
+Soubory jsou čitelné v textovém editoru a lze je **ručně upravit**.
+
+**Sdílení šablon s kolegy:**
+- Kopírování složky `section-templates/` z jednoho PC na druhý
+- Nebo uložit šablony na sdílený síťový disk — pak mají přístup všichni uživatelé
+
+**Tipy:**
+- Používejte popisné názvy: "Záhlaví DPO officiální" místo "Template1"
+- Smazat šablonu: smažte příslušný `*.json` soubor ze složky `section-templates/`
+- Složku `section-templates/` zálohujte spolu s ostatními daty aplikace
+
 ### Vlastnosti stránky
 - **Soubor → Vlastnosti stránky…** nebo **Ctrl+Shift+P** — otevře dialog pro editaci rozměrů a okrajů
 - Editovatelné: Šířka, Výška (mm), okraje Nahoře / Dole / Vlevo / Vpravo (mm)
