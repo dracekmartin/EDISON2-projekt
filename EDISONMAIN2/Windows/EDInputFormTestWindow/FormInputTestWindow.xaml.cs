@@ -5,9 +5,9 @@ using EDControls.EDInputForm;
 
 namespace EDISONMAIN2
 {
-    public partial class InputFormTestWindow : Window
+    public partial class EDInputFormTestWindow : Window
     {
-        public InputFormTestWindow(MLRest mlRest)
+        public EDInputFormTestWindow(MLRest mlRest)
         {
             InitializeComponent();
             TheInputForm.MLRest      = mlRest;

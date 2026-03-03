@@ -11,18 +11,18 @@ using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Processes;
 using static ALVA.EDISONAPI.Database;
 
-namespace EDISONMAIN2.ViewModels
+namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
     record CompanyItem(string Id, string Database);
 
-    class MainViewModel : INotifyPropertyChanged
+    class EdisonMainViewModel : INotifyPropertyChanged
     {
         private readonly IEdisonMainDataService _dataService;
         private readonly IProcessLaunchService _processService;
 
         public ICommand OpenModuleCommand { get; }
 
-        public MainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
+        public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
         {
             _dataService = dataService;
             _processService = processService;

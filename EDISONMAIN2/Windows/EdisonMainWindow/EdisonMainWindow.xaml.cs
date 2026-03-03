@@ -1,6 +1,6 @@
 ﻿using ALWA.SYS;
 using EDISONMAIN2.Modules;
-using EDISONMAIN2.ViewModels;
+using EDISONMAIN2.Windows.EdisonMainWindow;
 using System;
 using System.Windows;
 using System.Windows.Controls;
@@ -31,20 +31,20 @@ namespace EDISONMAIN2
             if (clickedItem is TreeViewItem item && item.DataContext is IModule module)
             {
                 item.IsSelected = true;
-                if (DataContext is MainViewModel vm)
+                if (DataContext is EdisonMainViewModel vm)
                     vm.OpenModuleCommand.Execute(module);
             }
         }
 
         private void Window_Closed(object sender, EventArgs e)
         {
-            if (DataContext is MainViewModel vm)
+            if (DataContext is EdisonMainViewModel vm)
                 vm.CloseAllProcesses();
         }
 
         private void TestInputForm_Click(object sender, RoutedEventArgs e)
         {
-            if (DataContext is not MainViewModel vm) return;
+            if (DataContext is not EdisonMainViewModel vm) return;
 
             var mlRest = new MLRest(vm.ConnParams.Server, vm.ConnParams.RestPort, vm.Namespace, vm.Idfa)
             {
@@ -53,7 +53,7 @@ namespace EDISONMAIN2
                 Mlp       = vm.ConnParams.Mlp.ToString()
             };
 
-            new InputFormTestWindow(mlRest) { Owner = this }.Show();
+            new EDInputFormTestWindow(mlRest) { Owner = this }.Show();
         }
     }
 }
