@@ -9,6 +9,7 @@ namespace TemplateDesigner.Models;
 [JsonDerivedType(typeof(LineElement),      "LineElement")]
 [JsonDerivedType(typeof(ImageElement),     "ImageElement")]
 [JsonDerivedType(typeof(TableElement),     "TableElement")]
+[JsonDerivedType(typeof(BarcodeElement),  "BarcodeElement")]
 public abstract class TemplateElement
 {
     public Guid Id { get; set; } = Guid.NewGuid();

@@ -1071,6 +1071,8 @@ public partial class MainWindow : Window
         Add("Tabulka",    () => new TableElement     { X = 0, Y = 0, Width = 190,
             Columns = [ new TableColumn { Header = "Sloupec 1", Width = 95, Field = "POLE1" },
                         new TableColumn { Header = "Sloupec 2", Width = 95, Field = "POLE2" } ] });
+        Add("QR kód",    () => new BarcodeElement  { X = 5, Y = 5, Width = 30, Height = 30, BarcodeType = BarcodeElementType.QR });
+        Add("Čárový kód", () => new BarcodeElement { X = 5, Y = 5, Width = 80, Height = 15, BarcodeType = BarcodeElementType.Code128 });
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;

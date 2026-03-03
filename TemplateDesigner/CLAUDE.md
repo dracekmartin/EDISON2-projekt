@@ -33,7 +33,7 @@ Systém se skládá ze dvou částí:
 - ✅ Table (základ implementován, chybí UI editor sloupců)
 
 **Co chybí (klasické komponenty):**
-- ❌ Barcode/QR kód (HIGH priority — viz TODO)
+- ✅ BarcodeElement (QR kód + Code128, ZXing.Net 0.16.9)
 - ❌ Chart/Graph (budoucnost)
 - ❌ Subreport/Vnořená šablona (budoucnost)
 - ❌ InfiniteText (textový blok roztahující se podle obsahu)
@@ -91,13 +91,6 @@ Systém se skládá ze dvou částí:
 
 ### 📋 TODO Seznam (prioritizováno)
 
-**HIGH priority:**
-1. **Implementovat BarcodeElement** — QR kód + Code128
-   - Třída `BarcodeElement : TemplateElement`
-   - Properties: `BarcodeType` (enum: QR, Code128), `Content`, `Width`, `Height`
-   - Render pomocí knihovny (např. ZXing.Net nebo SkiaSharp.QrCode)
-   - PropertyDescriptors pro obsah a typ
-
 **MEDIUM priority:**
 2. **Vytvořit UI editor sloupců pro TableElement**
    - Dialog nebo panel pro definici sloupců tabulky
@@ -115,6 +108,12 @@ Systém se skládá ze dvou částí:
    - Alternativa k levému panelu pro rychlejší přístup
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-03:**
+- ✅ BarcodeElement implementován (QR kód + Code128, ZXing.Net 0.16.9)
+  - Properties: BarcodeType, Content (placeholder support), ForeColor, BackColor
+  - V designeru zobrazuje placeholder (šedý rámeček) pro prázdný obsah
+  - Přidán do toolbar menu (+Element → QR kód / Čárový kód)
 
 **2026-03-02:**
 - ✅ Přidán BackgroundColor na TextElement (barva pozadí textu)
