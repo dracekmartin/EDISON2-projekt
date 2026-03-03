@@ -23,6 +23,8 @@
 
 ## 3. Struktura projektu
 
+### Verze 1 (Legacy)
+
 /MyProject
 ├── /dotnet
 │   ├── /Windows
@@ -40,6 +42,35 @@
 │           │   ├── /InputForm       # Všechny InputForm okna (= BIG)
 │           │   └── /DataGrid        # Všechna DataGrid okna (= Seznam)
 │           └── /API
+│
+├── CLAUDE.md (Programátorský + AI manuál)
+└── README.md (Uživatelský manuál)
+
+
+### Verze 2
+
+/MyProject
+├── /dotnet
+│   ├── /Windows
+         - EDISONMAIN/
+           - DesignTimeData/ (Optional)
+           - EDISONMAINWindow.xaml
+           - EDISONMAINWindow.xaml.cs
+           - EDISONMAINViewModel.cs
+│   ├── /Controls/ (Optional)
+│   ├── /Models/ (Optional)
+│   └── ...
+│
+├── /cache
+│   ├── .project
+│   └── /ALVA
+│       └── /NAZEV_CACHE_PROJEKTU/
+│           ├── /Windows/
+│           │    - EDISONMAIN/
+                   - EDISONMAINInputForm1.cls
+                   - EDISONMAINDataGrid1.cls
+                   - ...
+│           └── /API/
 │
 ├── CLAUDE.md (Programátorský + AI manuál)
 └── README.md (Uživatelský manuál)
