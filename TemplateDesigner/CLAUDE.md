@@ -126,6 +126,33 @@ Systém se skládá ze dvou částí:
 - ✅ Odstranění deprecated section subtypes (SectionHeader, SectionFooter, atd.)
 - ✅ Cleanup JSON polymorphismu (přímá serializace bez type discriminatoru)
 
+### 🏗️ Plánované architektonické změny (nutné, ne volitelné)
+
+**Caché-driven formuláře a komponenty (střední/dlouhodobý horizont)**
+
+Současný `PropertiesPanel` + `PropertyDescriptor` systém je dočasné řešení. Do budoucna bude veškerá business logika (definice vlastností elementů, formuláře, tabulky) řízena z Caché přes standardní EDControls komponenty.
+
+**Cílová architektura:**
+- `ElementPropertiesWindow` — místo vlastního `PropertiesPanel` použít `EDInputForm` (z EDControls)
+- Formulář pro každý element bude definovaný v Caché třídě `ALVA.TemplateDesigner.Elements.<Typ>.Init/Validate/Save`
+- Editor sloupců `TableElement` — použít `EDDataGrid` (z EDControls, až bude hotový)
+- Presety elementů a tabulek (např. JR tabulka se sloupci) — načítat z Caché místo hardkódování v C#
+
+**Co se NEZMĚNÍ:**
+- C# třídy elementů (renderování, Clone, model, JSON serializace)
+- Drag & drop, resize, canvas logika
+
+**Překladová vrstva .NET ↔ Caché (nutná pro undo/redo):**
+- `Init`: .NET serializuje aktuální hodnoty elementu → Caché postaví formulář s hodnotami
+- `Save`: Caché vrátí změněné hodnoty → .NET updatuje element přes `SetPropertyCommand` (zachová undo/redo)
+
+**Kdy řešit:** Až bude `EDDataGrid` hotový a/nebo bude potřeba první Caché-driven formulář.
+Do té doby `PropertyDescriptor` systém funguje a neblokuje.
+
+**Reference:** Viz `EDControls/EDInputForm/` — existující implementace + Caché třídy `ALVA.EDControls.EDInputForm.*`
+
+---
+
 ### 🔮 Budoucí rozšíření (neplánováno, vize)
 
 **Nice to have:**
