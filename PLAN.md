@@ -20,3 +20,26 @@
    1. Prázné EDWindow - MH
    2. EDInputForm - MH
    3. EDDataGrid - JM
+
+## 3. Struktura projektu
+
+/MyProject
+├── /dotnet
+│   ├── /Windows
+│   ├── /Controls
+│   ├── /ViewModels
+│   ├── /Models
+│   └── ...
+│
+├── /cache
+│   ├── .project
+│   └── /ALVA
+│       └── /NAZEV_CACHE_PROJEKTU
+│           ├── /Windows
+│           │   ├── /Window          # Základní třída okna
+│           │   ├── /InputForm       # Všechny InputForm okna (= BIG)
+│           │   └── /DataGrid        # Všechna DataGrid okna (= Seznam)
+│           └── /API
+│
+├── CLAUDE.md (Programátorský + AI manuál)
+└── README.md (Uživatelský manuál)
