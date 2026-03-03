@@ -2,7 +2,8 @@
 using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Processes;
-using EDISONMAIN2.ViewModels;
+using EDISONMAIN2.Services.Windows;
+using EDISONMAIN2.Windows.EdisonMainWindow;
 
 namespace EDISONMAIN2
 {
@@ -17,7 +18,8 @@ namespace EDISONMAIN2
             var connParams = new ConnectionParams("192.168.16.1", 57770, "martin.hubata", "martin.hubata", 167);
             var dataService = new EdisonMainDataService(connParams);
             var processService = new ProcessLaunchService(connParams);
-            var viewModel = new MainViewModel(dataService, processService, connParams);
+            var windowService = new WindowService();
+            var viewModel = new EdisonMainViewModel(dataService, processService, windowService, connParams);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();
