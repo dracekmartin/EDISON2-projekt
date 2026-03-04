@@ -69,6 +69,21 @@ public class DesignerCanvas
     // ─────────────────────────────────────────────────────────────────────
     // Veřejné pomocné metody pro MainWindow (hit testing, layout)
 
+    /// <summary>Vrátí sekci pokud klik dopadl do záhlaví sekce (pruh nad sekcí), nebo null.</summary>
+    public Section? HitTestSectionHeader(float canvasX, float canvasY, float canvasWidth)
+    {
+        foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
+        {
+            float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
+            float headerY  = oy - SectionHeaderPx;
+
+            if (canvasX >= ox && canvasX <= ox + sectionW &&
+                canvasY >= headerY && canvasY < oy)
+                return section;
+        }
+        return null;
+    }
+
     /// <summary>Vrátí sekci pod px pozicí na canvasu, nebo null.</summary>
     public Section? HitTestSection(float canvasX, float canvasY, float canvasWidth)
     {

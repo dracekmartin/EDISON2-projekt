@@ -104,7 +104,24 @@ public partial class PropertiesPanel : UserControl
             case BoolPropertyDescriptor   bd: AddBoolRow(bd);    break;
             case ColorPropertyDescriptor  cd: AddColorRow(cd);   break;
             case EnumPropertyDescriptor   ed: AddEnumRow(ed);    break;
+            case ButtonPropertyDescriptor bd: AddButtonRow(bd);  break;
         }
+    }
+
+    // ── Button ───────────────────────────────────────────────────────────
+
+    private void AddButtonRow(ButtonPropertyDescriptor bd)
+    {
+        var btn = new Button
+        {
+            Content             = bd.ButtonLabel,
+            Margin              = new Thickness(0, 3, 0, 3),
+            Padding             = new Thickness(8, 4, 8, 4),
+            FontSize            = 11,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Stretch
+        };
+        btn.Click += (_, _) => bd.OnClick?.Invoke();
+        ContentPanel.Children.Add(btn);
     }
 
     // ── String ───────────────────────────────────────────────────────────

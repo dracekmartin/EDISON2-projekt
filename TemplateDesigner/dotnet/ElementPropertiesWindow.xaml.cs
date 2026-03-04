@@ -20,7 +20,8 @@ public partial class ElementPropertiesWindow : Window
     /// Vrátí aktuálně dostupná pole schématu (podle AgendaCode šablony).
     /// Null = schéma není k dispozici, picker se nezobrazí.
     /// </summary>
-    private readonly Func<IReadOnlyList<DataField>?>? _getAvailableFields;
+    private readonly Func<IReadOnlyList<DataField>?>?        _getAvailableFields;
+    private readonly Func<string?, IReadOnlyList<DataField>?>? _getGroupFields;
 
     private TemplateElement? _currentElement;
     private int              _undoDepthAtOpen;
@@ -35,7 +36,8 @@ public partial class ElementPropertiesWindow : Window
         Action refreshSections,
         Action updateCanvasSize,
         Action refreshFields,
-        Func<IReadOnlyList<DataField>?>? getAvailableFields = null)
+        Func<IReadOnlyList<DataField>?>? getAvailableFields = null,
+        Func<string?, IReadOnlyList<DataField>?>? getGroupFields = null)
     {
         InitializeComponent();
         _state               = state;
@@ -44,6 +46,7 @@ public partial class ElementPropertiesWindow : Window
         _updateCanvasSize    = updateCanvasSize;
         _refreshFields       = refreshFields;
         _getAvailableFields  = getAvailableFields;
+        _getGroupFields      = getGroupFields;
         _currentInvalidate   = invalidate;
         PropertiesPanel.SetContext(cmd => state.Execute(cmd), invalidate);
     }
@@ -74,9 +77,73 @@ public partial class ElementPropertiesWindow : Window
             if (fields is { Count: > 0 })
                 descriptors = EnhanceWithFieldPicker(descriptors, fields);
         }
+
+        // Pro TableElement: napoj tlačítko "Upravit sloupce / řádky..." na TableEditorDialog
+        if (element is TableElement tableElement)
+            descriptors = EnhanceTableEditor(descriptors, tableElement);
+
         PropertiesPanel.ShowDescriptors(descriptors);
 
         if (!IsVisible) Show();
+    }
+
+    /// <summary>
+    /// Nahradí ButtonPropertyDescriptor "Editor" na TableElement funkčním OnClick
+    /// otevírajícím TableEditorDialog. Změny se ukládají jako undoable příkaz.
+    /// </summary>
+    private IReadOnlyList<Models.PropertyDescriptor> EnhanceTableEditor(
+        IReadOnlyList<Models.PropertyDescriptor> descriptors,
+        TableElement element)
+    {
+        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
+        foreach (var d in descriptors)
+        {
+            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Editor")
+            {
+                list.Add(new Models.ButtonPropertyDescriptor
+                {
+                    Label       = btn.Label,
+                    Group       = btn.Group,
+                    ButtonLabel = btn.ButtonLabel,
+                    OnClick     = () =>
+                    {
+                        var groupFields = _getGroupFields?.Invoke(element.DataSource);
+                        var dlg = new TableEditorDialog(element, groupFields) { Owner = this };
+                        if (dlg.ShowDialog() != true) return;
+
+                        var cmds = new List<Commands.IDesignerCommand>();
+
+                        var oldCols = element.Columns;
+                        var newCols = dlg.ResultColumns;
+                        cmds.Add(new Commands.Implementations.SetPropertyCommand(
+                            "Sloupce tabulky", oldCols, newCols,
+                            v => element.Columns = (List<Models.Elements.TableColumn>)v!));
+
+                        if (element.Mode == Models.Elements.TableMode.Fixed)
+                        {
+                            var oldRows = element.Rows;
+                            var newRows = dlg.ResultRows;
+                            cmds.Add(new Commands.Implementations.SetPropertyCommand(
+                                "Řádky tabulky", oldRows, newRows,
+                                v => element.Rows = (List<Models.Elements.TableRow>?)v));
+                        }
+
+                        _state.Execute(new Commands.Implementations.CompositeCommand(
+                            "Upravit tabulku", cmds));
+                        _currentInvalidate();
+
+                        // Obnoví panel vlastností (výška se mohla změnit)
+                        PropertiesPanel.ShowDescriptors(
+                            EnhanceTableEditor(element.GetPropertyDescriptors(), element));
+                    }
+                });
+            }
+            else
+            {
+                list.Add(d);
+            }
+        }
+        return list;
     }
 
     /// <summary>

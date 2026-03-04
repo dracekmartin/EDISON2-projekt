@@ -94,7 +94,13 @@ public partial class MainWindow : Window
 
         _propsWindow = new ElementPropertiesWindow(
             _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
-            getAvailableFields: () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields);
+            getAvailableFields: () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields,
+            getGroupFields: collectionKey =>
+            {
+                if (collectionKey is null) return null;
+                return _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)
+                    ?.Groups?.FirstOrDefault(g => g.CollectionKey == collectionKey)?.Fields;
+            });
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
@@ -473,7 +479,7 @@ public partial class MainWindow : Window
     private void BtnPreview_Changed(object sender, RoutedEventArgs e)
     {
         bool show = BtnPreview.IsChecked == true;
-        PreviewColumn.Width = show ? new GridLength(400, GridUnitType.Pixel) : new GridLength(0);
+        PreviewColumn.Width = show ? new GridLength(660, GridUnitType.Pixel) : new GridLength(0);
         MenuPreview.IsChecked = show;
         if (show) InvalidatePreview();
     }
@@ -487,12 +493,14 @@ public partial class MainWindow : Window
     // ─────────────────────────────────────────────────────────────────────
     // Live preview
 
+    // Pevný zoom preview — 1:1 jako designer při 100 %, nezávisle na šířce panelu.
+    private const float PreviewFixedZoom = 1.0f;
+
     private void UpdatePreviewSize()
     {
         if (BtnPreview?.IsChecked != true) return;
-        float width = (float)(skPreview.ActualWidth > 0 ? skPreview.ActualWidth : 320);
-        float zoom  = _previewCanvas.ComputeFitZoom(width);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(zoom) + 40f;
+        skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom) + 40f;
     }
 
     private void InvalidatePreview()
@@ -502,6 +510,29 @@ public partial class MainWindow : Window
         skPreview.InvalidateVisual();
     }
 
+    /// <summary>
+    /// Generuje mírně odlišné mock hodnoty pro každý řádek preview tabulky.
+    /// Číselné hodnoty se zvyšují o (rowIndex-1), časy se posouvají o 10 minut,
+    /// textové hodnoty dostanou suffix " #rowIndex" od druhého řádku.
+    /// </summary>
+    private static string MakeMockValue(string baseValue, FieldDataType type, int rowIndex)
+    {
+        if (rowIndex <= 1) return baseValue;
+        return type switch
+        {
+            FieldDataType.Number => int.TryParse(baseValue, out var n)
+                ? (n + rowIndex - 1).ToString()
+                : baseValue,
+            FieldDataType.Time => TimeSpan.TryParse(baseValue, out var t)
+                ? (t + TimeSpan.FromMinutes(10 * (rowIndex - 1))).ToString(@"hh\:mm")
+                : baseValue,
+            FieldDataType.Date => DateTime.TryParse(baseValue, out var d)
+                ? d.AddDays(rowIndex - 1).ToString("dd.MM.yyyy")
+                : baseValue,
+            _ => string.IsNullOrEmpty(baseValue) ? baseValue : $"{baseValue} #{rowIndex}"
+        };
+    }
+
     private void OnPreviewPaintSurface(object? sender, object e)
     {
         var args    = (dynamic)e;
@@ -509,15 +540,34 @@ public partial class MainWindow : Window
         float w = (float)args.Info.Width;
         float h = (float)args.Info.Height;
 
-        // Sestavit mock DataContext ze schématu: {POLE} → label pole
+        // Sestavit mock DataContext ze schématu: skalární pole + mock řádky pro tabulkové skupiny
         var schema = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode);
         DataContext? mockData = null;
         if (schema is not null)
         {
             var values = schema.Fields
+                .Concat(schema.Groups?.SelectMany(g => g.Fields) ?? [])
                 .DistinctBy(f => f.FieldName)
-                .ToDictionary(f => f.FieldName, f => (object?)f.Label);
-            mockData = new DataContext(values);
+                .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
+
+            // Mock řádky pro dynamické tabulky (Groups se Scope=Table) — 3 různé řádky
+            var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
+            foreach (var group in schema.Groups ?? [])
+            {
+                if (group.Scope == FieldScope.Table && group.CollectionKey is not null)
+                {
+                    var mockRows = Enumerable.Range(1, 3).Select(i =>
+                    {
+                        var rowData = group.Fields.ToDictionary(
+                            f => f.FieldName,
+                            f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
+                        return new DataContext(rowData);
+                    }).ToList();
+                    rowsDict[group.CollectionKey] = mockRows;
+                }
+            }
+
+            mockData = new DataContext(values, rowsDict);
         }
 
         _previewCanvas.Render(surface.Canvas, w, h, mockData);
@@ -1083,7 +1133,7 @@ public partial class MainWindow : Window
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
 
-        // 0. Dvojklik na element → otevřít dialog vlastností
+        // 0. Dvojklik → otevřít dialog vlastností (element / sekce / stránka)
         if (e.ClickCount == 2)
         {
             var dblHit = _canvas.HitTestElement(cx, cy, cw);
@@ -1100,6 +1150,20 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
+
+            // Dvojklik na záhlaví sekce → vlastnosti sekce
+            var dblSection2 = _canvas.HitTestSectionHeader(cx, cy, cw);
+            if (dblSection2 is not null)
+            {
+                _propsWindow!.ShowForSection(dblSection2);
+                e.Handled = true;
+                return;
+            }
+
+            // Dvojklik na prázdný canvas → vlastnosti stránky
+            _propsWindow!.ShowForPage(_state.CurrentTemplate);
+            e.Handled = true;
+            return;
         }
 
         // 1. Klik na resize handle vybraného elementu?
@@ -1107,12 +1171,22 @@ public partial class MainWindow : Window
         if (handleHit.HasValue)
         {
             var (el, handle) = handleHit.Value;
+
+            // Pokud element nemá explicitní výšku (Height=null), materializuj ji před
+            // resize startem — zabrání přepočtu layoutu canvasu během tažení, který
+            // způsobuje zdánlivé "zrychlení" pohybu.
+            // Originální hodnotu (null) zachováváme pro ResizeElementCommand.Undo(),
+            // aby undo správně obnovilo dynamickou výšku.
+            float? originalH = el.Height;
+            if (el.Height is null)
+                el.Height = el.EffectiveDesignerHeight;
+
             _resizeElement     = el;
             _resizeHandle      = handle;
             _resizeInitX       = el.X;
             _resizeInitY       = el.Y;
             _resizeInitW       = el.Width;
-            _resizeInitH       = el.Height;
+            _resizeInitH       = originalH;
             var origin         = _canvas.GetSectionOrigins(cw)
                                         .FirstOrDefault(t => t.Section.Elements.Contains(el));
             _resizeOriginX     = origin.OriginX;
