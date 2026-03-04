@@ -15,8 +15,9 @@ Method %OnNew() As %Status
 
 // ─── Builder — sloupce ────────────────────────────────────────────────────────
 
-/// Přidá sloupec a vrátí ho pro případné další nastavení (isLink, format apod.).
-Method AddColumn(key As %String, label As %String, type As %String = "TEXT", width As %Integer = 0, align As %String = "", sortable As %Boolean = 0) As ALVA.EDControls.EDList.Column
+/// Přidá sloupec a vrátí ho pro případné další nastavení (isLink apod.).
+/// format: NUMBER → "N0"/"N2", DATE/DATETIME → "dd.MM.yyyy", ostatní prázdný.
+Method AddColumn(key As %String, label As %String, type As %String = "TEXT", width As %Integer = 0, align As %String = "", sortable As %Boolean = 0, format As %String = "") As ALVA.EDControls.EDList.Column
 {
     s col = ##class(ALVA.EDControls.EDList.Column).%New()
     s col.key      = key
@@ -25,6 +26,7 @@ Method AddColumn(key As %String, label As %String, type As %String = "TEXT", wid
     s col.width    = width
     s col.align    = align
     s col.sortable = sortable
+    s col.format   = format
     d ..columns.Insert(col)
     q col
 }

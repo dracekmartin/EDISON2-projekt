@@ -9,8 +9,7 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     d list.AddColumn("typ",     "Typ",          "TEXT",   130)
     d list.AddColumn("aktivni", "Aktivní",      "BOOL",    70)
     d list.AddColumn("odjezd",  "Odjezd",       "HHMM",    75, "RIGHT")
-    s col = list.AddColumn("pocet", "Počet km", "NUMBER",  90, "RIGHT", 1)
-    s col.format = "N1"
+    s col = list.AddColumn("pocet", "Počet km", "NUMBER",  90, "RIGHT", 1, "N1")
     d list.AddColumn("datum",   "Datum",        "DATE",   100)
     d list.WriteColumnsToOut()
     q 1

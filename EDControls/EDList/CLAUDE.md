@@ -434,10 +434,11 @@ Class ALVA.EDControls.EDList.List Extends %RegisteredObject
     }
 
     // ─── Builder — sloupce ────────────────────────────────────────────────
-    /// Přidá sloupec a vrátí ho pro případné další nastavení (isLink, format apod.).
+    /// Přidá sloupec a vrátí ho pro případné další nastavení (isLink apod.).
+    /// format: NUMBER → "N0"/"N2", DATE/DATETIME → "dd.MM.yyyy", ostatní prázdný.
     Method AddColumn(key As %String, label As %String, type As %String = "TEXT",
                      width As %Integer = 0, align As %String = "",
-                     sortable As %Boolean = 0) As ALVA.EDControls.EDList.Column
+                     sortable As %Boolean = 0, format As %String = "") As ALVA.EDControls.EDList.Column
     {
         s col = ##class(ALVA.EDControls.EDList.Column).%New()
         s col.key      = key
@@ -446,6 +447,7 @@ Class ALVA.EDControls.EDList.List Extends %RegisteredObject
         s col.width    = width
         s col.align    = align
         s col.sortable = sortable
+        s col.format   = format
         d ..columns.Insert(col)
         q col
     }
@@ -517,9 +519,7 @@ Class ALVA.EDControls.EDList.MockList Extends %RegisteredObject
         d list.AddColumn("aktivni", "Aktivní",     "BOOL",    70)
         d list.AddColumn("odjezd",  "Odjezd",      "HHMM",    75, "RIGHT")
 
-        // AddColumn vrací Column objekt → můžeme nastavit další vlastnosti
-        s col = list.AddColumn("pocet", "Počet km", "NUMBER",  90, "RIGHT", 1)
-        s col.format = "N1"  // formát s 1 desetinným místem
+        d list.AddColumn("pocet", "Počet km", "NUMBER",  90, "RIGHT", 1, "N1")
 
         d list.AddColumn("datum",   "Datum",       "DATE",   100)
         d list.WriteColumnsToOut()
