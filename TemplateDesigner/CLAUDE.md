@@ -20,49 +20,48 @@ Systém se skládá ze dvou částí:
 
 > **📝 POZNÁMKA PRO AI AGENTA:** Tuto sekci **průběžně aktualizuj** během práce na projektu. Když dokončíš úkol, přesuň ho do "✅ Implementováno". Když objevíš nový problém, přidej ho do "🐛 Známé problémy". Když přidáš novou feature, doplň ji do seznamu. **Tato sekce má být vždy aktuální**, aby při startu nové session byl kontext dostupný bez vysvětlování.
 
-**Datum poslední aktualizace:** 2026-03-03
+**Datum poslední aktualizace:** 2026-03-04
 
 ### 🎯 Aktuální focus
 
-**Procházíme a kompletujeme elementy** — cílem je mít všechny klasické standardní komponenty známé z template generátorů (Crystal Reports, Jasper, FastReport).
-
-**Priorita:** Tabulky a speciální komponenty pro jízdní řády (tabulkové sestavy s opakováním řádků, QR kódy pro cestující).
+**Testování s živým Caché připojením** — CacheAgendaProvider a AgendaAPI.cls jsou připraveny, dosud testováno jen s JSON schématy. Dalším krokem je ověřit GetSchema + GetTableTemplates přes MLRest.
 
 **Co už máme:**
 - ✅ Text, Image, Rectangle, Line (základní elementy)
-- ✅ Table (základ implementován, chybí UI editor sloupců)
+- ✅ BarcodeElement (QR kód + Code128)
+- ✅ TableElement — plný Fixed/Dynamic mód, UI editor sloupců a řádků, barvy, orámování
 
 **Co chybí (klasické komponenty):**
-- ✅ BarcodeElement (QR kód + Code128, ZXing.Net 0.16.9)
 - ❌ Chart/Graph (budoucnost)
 - ❌ Subreport/Vnořená šablona (budoucnost)
 - ❌ InfiniteText (textový blok roztahující se podle obsahu)
 - ⚠️ Page numbers/Date — lze přes TextElement + placeholders `{PAGE}`, `{DATE}`, ale není explicitní element
 
 **Speciální požadavky pro jízdní řády:**
-- TableElement s opakováním řádků (implementováno)
-- QR kódy pro cestující (TODO — BarcodeElement)
-- Podmíněné řádky tabulky (např. "pouze zastávky kde je přestup")
-- Grouping v tabulkách (např. per linka)
+- ✅ TableElement Dynamic mód s opakováním řádků z DataSource
+- ✅ QR kódy pro cestující (BarcodeElement)
+- ❌ Podmíněné řádky tabulky (VisibilityExpression — budoucnost)
+- ❌ Grouping v tabulkách (budoucnost)
 
 ### ✅ Implementováno a funkční
 
 **Core features:**
 - ✅ Drag & drop, resize, rubber band selection elementů
 - ✅ Undo/redo systém (9 command typů: Move, Resize, Add, Delete, SetProperty, Composite, MoveSection, DeleteSection)
-- ✅ PropertyDescriptor systém s 5 typy (String, Float, Bool, Color, Enum)
-- ✅ Live preview panel (mock DataContext, fit-to-width zoom)
+- ✅ PropertyDescriptor systém se 7 typy (String, Float, Bool, Color, Enum, TextWithPicker, Button)
+- ✅ Live preview panel (mock DataContext, zoom 1:1 / fit-to-width)
 - ✅ Zoom (50/75/100/150/200 %) + Ctrl+scroll
 - ✅ Grid & snap to grid
 - ✅ Clipboard (interní, copy/paste s offsetem)
 - ✅ Section management (D&D reorder, context menu, Ctrl+Shift+↑↓)
 
 **Elements:**
-- ✅ TextElement (s BackgroundColor, FontFamily, FontSize, FontStyle, FontWeight, TextColor, HorizontalAlignment, VerticalAlignment, WordWrap)
+- ✅ TextElement (BackgroundColor, FontFamily, FontSize, FontStyle, FontWeight, TextColor, HorizontalAlignment, VerticalAlignment, WordWrap)
 - ✅ ImageElement
 - ✅ RectangleElement
 - ✅ LineElement
-- ✅ TableElement (základ, bez UI editoru sloupců)
+- ✅ BarcodeElement (QR kód + Code128, ZXing.Net 0.16.9)
+- ✅ TableElement — Fixed/Dynamic mód, UI editor sloupců + řádků, barvy, orámování, střídání barev
 
 **Sections:**
 - ✅ Section refactoring (2026-03) — univerzální třída místo 7 podtříd
@@ -71,9 +70,13 @@ Systém se skládá ze dvou částí:
 
 **Data schema:**
 - ✅ DataSchema loading (JSON fallback `schemas/*.schema.json`)
-- ✅ CacheDataSchemaProvider (delegate pattern, MLRest integration)
+- ✅ CacheAgendaProvider — implementuje `IDataSchemaProvider` + `ITableTemplateProvider`; volá Caché AgendaAPI přes MLRest
 - ✅ CompositeDataSchemaProvider (Caché primary + JSON fallback)
 - ✅ Fields browser v levém panelu (záložka "Pole agendy")
+
+**Caché strana:**
+- ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData)
+- ✅ `ALVA.JR.TiskAPI` (nebo `TemplateDesignerMHD`) — referenční implementace pro JR agendu
 
 **Serialization:**
 - ✅ Template JSON serialization (camelCase, enums as strings, null omitted)
@@ -91,24 +94,42 @@ Systém se skládá ze dvou částí:
 
 ### 📋 TODO Seznam (prioritizováno)
 
-**MEDIUM priority:**
-2. **Rozšířit a implementovat TableElement (Fixed/Dynamic mód)**
-   - Viz navržený model níže v sekci "Návrh TableElement"
-   - Přidat `TableMode`, `TableRow`, `TableCell`, `BorderStyle`, `AlternatingRows`, `ColumnWidthMode`
-   - Šířky sloupců jsou vždy věcí designera (uloženy v šabloně v mm nebo %)
-   - UI editor sloupců — až bude EDDataGrid v EDControls hotový (Caché-driven)
-   - Aktuálně se sloupce definují pouze ručně v JSON
-
 **LOW priority:**
-3. **Opravit ColorPicker minimalizaci** — viz Známé problémy výše
+1. **Opravit ColorPicker minimalizaci** — viz Známé problémy výše
 
 **OPTIONAL:**
-4. **Přidat context menu na záhlaví sekce v designeru**
+2. **Přidat context menu na záhlaví sekce v designeru**
    - Pravý klik na záhlaví sekce (ne v levém panelu, ale přímo na canvasu)
    - Volby: Vlastnosti, Duplikovat, Smazat, Přesunout nahoru/dolů
    - Alternativa k levému panelu pro rychlejší přístup
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-04:**
+- ✅ TableElement — kompletní implementace Fixed/Dynamic módu
+  - Fixed mód: uživatel definuje sloupce a řádky v UI editoru; buňky podporují statický text i `{PLACEHOLDER}`
+  - Dynamic mód: sloupce z designeru, řádky za běhu z `DataContext._rows[dataSource]`; v designeru zobrazuje 3 placeholder řádky
+  - `TableMode`, `TableBorderStyle`, `ColumnWidthMode`, `TableRow`, `TableCell` — plný model
+  - `AlternatingRowColor`, `HeaderBackgroundColor`, `HeaderTextColor`, `BorderStyle`
+  - Šířky sloupců v mm nebo procentech, viditelnost sloupce (`Visible`)
+- ✅ `TableEditorDialog` — WPF dialog pro editaci sloupců (záložka Sloupce) i statických řádků (záložka Řádky, jen Fixed mód)
+  - Přidat/odebrat/přesunout sloupec nahoru/dolů
+  - Přidat/odebrat/přesunout řádek; editace buněk přímo v DataGridu
+  - Validace Field názvů proti DataSchema (červené pozadí pro neplatné pole)
+- ✅ `CacheAgendaProvider` — nová třída nahrazující `CacheDataSchemaProvider`
+  - Implementuje `IDataSchemaProvider` + `ITableTemplateProvider`
+  - Cache na GetSchema, GetTableTemplates, GetTableTemplate (Dictionary per agendaCode)
+  - Bug fix: `_templatesCache` byl `List?` → nyní `Dictionary<string, List>` keyed by agendaCode
+- ✅ `ITableTemplateProvider` — nové rozhraní pro načítání Fixed šablon tabulek
+- ✅ `AgendaAPI.cls` (Caché) — abstraktní základ s metodami GetSchema, GetTableTemplates, GetTableTemplate, GetData
+- ✅ Referenční implementace `TemplateDesignerMHD.cls` pro JR agendu
+- ✅ Bug fixes:
+  - `TimeSpan.TryParse` místo `TryParseExact` — opravuje mock hodnoty pro jednociferné hodiny (8:15)
+  - Resize undo: ukládá `null` height pro dynamické elementy (ne materializovanou hodnotu)
+  - `IsFieldValid` odmítá `"{}"` jako prázdné (ne platné)
+  - `_validFieldNames` HashSet s `StringComparer.OrdinalIgnoreCase`
+  - Šířky sloupců tabulky se předpočítávají jednou v `Render()`, ne per buňka
+  - `AlternatingRowColor` se parsuje jednou před smyčkou, ne per řádek
 
 **2026-03-03:**
 - ✅ BarcodeElement implementován (QR kód + Code128, ZXing.Net 0.16.9)
@@ -159,52 +180,228 @@ Do té doby `PropertyDescriptor` systém funguje a neblokuje.
 
 ---
 
-### 📐 Návrh TableElement — Fixed/Dynamic mód (navrženo, zatím nerealizováno)
+### 📐 TableElement — architektura (implementováno 2026-03-04)
 
-**Dva módy v jednom elementu:**
-- `TableMode.Fixed` — řádky definované v šabloně, počet pevný, buňky mohou mít `{POLE}` nebo statický text
-- `TableMode.Dynamic` — řádky generované za běhu z `DataSource` (klíč kolekce v DataContext), počet = počet záznamů
+#### Dva módy
 
-**Rozšířený model:**
-```csharp
-enum TableMode { Fixed, Dynamic }
-enum TableBorderStyle { None, Outer, All, RowsOnly, ColumnsOnly }
-enum ColumnWidthMode { Mm, Percent }   // procenta = flexibilnější při změně šířky tabulky
+| Mód | Kdo definuje strukturu | Kdo dodá řádky při tisku |
+|---|---|---|
+| **Fixed** | Uživatel v `TableEditorDialog` (sloupce + řádky) | Print engine resolvuje `{PLACEHOLDER}` ze skalárů DataContext |
+| **Dynamic** | Uživatel definuje sloupce; řádky z dat | Print engine iteruje `DataContext._rows[dataSource]` |
 
-class TableColumn {
-    string Header; float Width; ColumnWidthMode WidthMode;
-    string Field; string? Format;       // "dd.MM.yyyy", "N2", ...
-    TextHorizontalAlignment Alignment;
-    string? HeaderBackgroundColor; string? HeaderTextColor;
-}
+V JSON šabloně Fixed ukládá `columns[]` + `rows[]`, Dynamic ukládá jen `columns[]`.
 
-// Pouze pro Fixed mód:
-class TableRow {
-    List<TableCell> Cells;
-    string? BackgroundColor;
-    string? VisibilityExpression;       // podmíněná viditelnost řádku
-}
-class TableCell {
-    string Content;                     // statický text nebo "{POLE}"
-    string? Format; TextHorizontalAlignment? Alignment;
-    string? FontWeight; string? TextColor; string? BackgroundColor;
-}
+#### DataContext — jak data tečou
+
+```
+DataContext._values["CISLO_LINKY"] = "42"           → Fixed buňky s "{CISLO_LINKY}"
+DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (DataSource="ZASTAVKY")
 ```
 
-**Šířky sloupců = vždy věc designera** (uloženy v šabloně, print engine je jen použije).
-Print engine pro `Percent` mode spočítá `tableWidth * width / 100`.
-
-**DataContext — jak data tečou:**
-```
-DataContext._values["CISLO_LINKY"] = "42"           → GetString() → TextElement, Fixed buňky
-DataContext._rows["ZASTAVKY"] = [DataContext, ...]  → GetRows() → Dynamic TableElement
-```
 `TableElement.DataSource` = klíč do `_rows`, odpovídá `DataFieldGroup.CollectionKey` ve schématu.
 
-**JR rozšíření (budoucnost, nad tímto základem):**
-- Podmíněné řádky (`VisibilityExpression` vyhodnocovaný per-row v print enginu)
-- Grouping (Group Header/Footer řádky mezi dynamickými daty)
-- Presety sloupců z Caché (`ITablePresetProvider`)
+#### Budoucí rozšíření nad TableElement
+
+- `VisibilityExpression` na `TableRow` — podmíněné řádky (vyhodnocuje print engine)
+- Grouping — Group Header/Footer řádky mezi dynamickými daty
+- Filtrování v Dynamic tabulce (předání filtru do DataContext)
+
+---
+
+## Caché AgendaAPI architektura (implementováno)
+
+Každá agenda (JR, FAKTURY, ...) má jednu Caché třídu dědící z abstraktního základu.
+Třída slouží jako **kompletní API rozhraní** pro TemplateDesigner — design-time i print-time.
+
+### Abstraktní základ — vynucuje kontrakt
+
+```objectscript
+Class ALVA.TemplateDesigner.AgendaAPI Extends %RegisteredObject [ Abstract ]
+{
+    /// Vrátí DataSchema: skalární pole + skupiny tabulek (scope=table)
+    ClassMethod GetSchema(ByRef sys As %String) As %Status [ Abstract ] {}
+
+    /// Vrátí seznam dostupných Fixed šablon tabulek pro tuto agendu
+    ClassMethod GetTableTemplates(ByRef sys As %String) As %Status [ Abstract ] {}
+
+    /// Vrátí definici konkrétní šablony (sloupce + řádky)
+    /// IN: key = klíč šablony (např. "JR_ZAHLAVI")
+    ClassMethod GetTableTemplate(ByRef sys As %String) As %Status [ Abstract ] {}
+
+    /// Vrátí data pro tisk: skaláry + kolekce řádků
+    /// IN: parametry tisku (závisí na agendě)
+    ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ] {}
+}
+```
+
+Každá nová agenda **musí** implementovat všechny čtyři metody — Caché kompilátor to ohlídá.
+
+---
+
+### Implementace per agenda
+
+```objectscript
+Class ALVA.JR.TiskAPI Extends ALVA.TemplateDesigner.AgendaAPI
+{
+    ClassMethod GetSchema(ByRef sys As %String) As %Status
+    {
+        s def = ##class(%DynamicObject).%New()
+
+        // Skalární pole
+        s fields = ##class(%DynamicArray).%New()
+        s f = ##class(%DynamicObject).%New()
+        s f.name = "CISLO_LINKY"  s f.label = "Číslo linky"  s f.type = "number"
+        d fields.%Push(f)
+        // ... další pole ...
+        s def.fields = fields
+
+        // Skupiny tabulek (scope=table)
+        s groups = ##class(%DynamicArray).%New()
+        s g = ##class(%DynamicObject).%New()
+        s g.name = "Zastávky"  s g.scope = "table"  s g.collectionKey = "ZASTAVKY"
+        s gFields = ##class(%DynamicArray).%New()
+        s gf = ##class(%DynamicObject).%New()
+        s gf.name = "POPIS"  s gf.label = "Název zastávky"  s gf.type = "text"
+        d gFields.%Push(gf)
+        s g.fields = gFields
+        d groups.%Push(g)
+        s def.groups = groups
+
+        s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+        q 1
+    }
+
+    ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
+    {
+        s arr = ##class(%DynamicArray).%New()
+        s t = ##class(%DynamicObject).%New()
+        s t.key = "JR_ZAHLAVI"  s t.label = "Záhlaví JR"
+        d arr.%Push(t)
+        s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+        q 1
+    }
+
+    ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
+    {
+        s key = $g(^||ML("IN", "key"))
+        if key = "JR_ZAHLAVI" {
+            // Sestaví a vrátí { "columns": [...], "rows": [...] }
+            // viz wire formát níže
+        }
+        q 1
+    }
+
+    ClassMethod GetData(ByRef sys As %String) As %Status
+    {
+        // Načte parametry z IN, vrátí skaláry + kolekce
+        // viz wire formát níže
+        q 1
+    }
+}
+```
+
+---
+
+### Wire formáty
+
+#### GetSchema — OUT[1]
+```json
+{
+  "fields": [
+    { "name": "CISLO_LINKY", "label": "Číslo linky",  "type": "number" },
+    { "name": "NAZEV",       "label": "Název linky",   "type": "text"   }
+  ],
+  "groups": [
+    {
+      "name": "Zastávky", "scope": "table", "collectionKey": "ZASTAVKY",
+      "fields": [
+        { "name": "POPIS",   "label": "Název zastávky", "type": "text" },
+        { "name": "CAS_ODJ", "label": "Čas odjezdu",   "type": "time" }
+      ]
+    }
+  ]
+}
+```
+
+#### GetTableTemplates — OUT[1]
+```json
+[
+  { "key": "JR_ZAHLAVI", "label": "Záhlaví JR" },
+  { "key": "JR_SOUHRN",  "label": "Souhrn linky" }
+]
+```
+
+#### GetTableTemplate — IN + OUT[1]
+```
+IN: key = "JR_ZAHLAVI"
+```
+```json
+{
+  "columns": [
+    { "header": "Položka", "width": 80, "widthMode": "Mm", "alignment": "Left" },
+    { "header": "Hodnota", "width": 60, "widthMode": "Mm", "alignment": "Right" }
+  ],
+  "rows": [
+    { "cells": [{ "content": "Linka" },       { "content": "{CISLO_LINKY}" }] },
+    { "cells": [{ "content": "Platnost od" }, { "content": "{DATUM_OD}", "format": "dd.MM.yyyy" }] }
+  ]
+}
+```
+
+#### GetData — IN + OUT (print-time)
+```
+IN: parametry závislé na agendě (číslo linky, datum, ...)
+OUT[1] = {"CISLO_LINKY":"42","NAZEV":"Linka 42"}          ← skalární hodnoty (JSON objekt)
+OUT[2] = {"collection":"ZASTAVKY","POPIS":"Praha hl.n.","CAS_ODJ":"800"}
+OUT[3] = {"collection":"ZASTAVKY","POPIS":"Smíchovské n.","CAS_ODJ":"812"}
+```
+
+Řádky kolekce jsou identifikovatelné přítomností klíče `"collection"`. Skalární objekt je vždy OUT[1].
+
+---
+
+### C# strana — konfigurace a provider
+
+**appsettings.json:**
+```json
+{
+  "agendas": [
+    { "code": "JR",      "label": "Jízdní řád", "cacheClass": "ALVA.JR.TiskAPI" },
+    { "code": "FAKTURY", "label": "Faktury",     "cacheClass": "ALVA.Faktury.TiskAPI" }
+  ]
+}
+```
+
+**CacheAgendaProvider** — jeden provider pokrývá obě rozhraní:
+```csharp
+// Implementuje IDataSchemaProvider + ITableTemplateProvider
+class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
+{
+    string _cacheClass;   // "ALVA.JR.TiskAPI"
+    MLRest _mlRest;
+
+    // IDataSchemaProvider
+    DataSchema? GetSchema(string agendaCode)     // volá GetSchema
+    IReadOnlyList<AgendaInfo> GetAvailableAgendas()
+
+    // ITableTemplateProvider
+    IReadOnlyList<TableTemplateInfo> GetAvailableTemplates()    // volá GetTableTemplates
+    TableTemplateDefinition GetTemplate(string key)             // volá GetTableTemplate
+}
+```
+
+**Wiring** (`Config/CacheSchemaWiring.cs`):
+- Přečte `appsettings.json` → pro každou agendu vytvoří `CacheAgendaProvider(cacheClass, mlRest)`
+- Fallback: `CompositeDataSchemaProvider` (Caché primary + JSON fallback ze `schemas/*.schema.json`)
+
+---
+
+### Přidání nové agendy — checklist
+
+1. Vytvořit Caché třídu `ALVA.<Agenda>.TiskAPI Extends ALVA.TemplateDesigner.AgendaAPI`
+2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`
+3. Přidat záznam do `appsettings.json` → `agendas[]`
+4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
 
 ---
 
@@ -262,7 +459,7 @@ DataContext._rows["ZASTAVKY"] = [DataContext, ...]  → GetRows() → Dynamic Ta
 **Struktura složek repozitáře:**
 ```
 TemplateDesigner/
-├── CACHE/                    — Caché ObjectScript kód (API třídy, budoucnost)
+├── CACHE/                    — Caché ObjectScript kód (AgendaAPI, TemplateDesignerMHD)
 │   ├── .project              — "ALVA_TEMPLATE_DESIGNER"
 │   └── ALVA/TemplateDesigner/API/
 ├── dotnet/                   — veškerý .NET/WPF zdrojový kód + .csproj
@@ -292,12 +489,12 @@ TemplateDesigner/
   TemplateSerializer.cs             — JSON ukládání a načítání šablony + sekcí
   SectionTemplateManager.cs         — správa custom šablon sekcí (file-based V1, připraveno na DB V2)
   JsonFileDataSchemaProvider.cs     — načítání *.schema.json ze složky schemas/
-  CacheDataSchemaProvider.cs        — načítání z Caché přes MLRest (delegate pattern)
+  CacheAgendaProvider.cs            — IDataSchemaProvider + ITableTemplateProvider přes MLRest/AgendaAPI
   CompositeDataSchemaProvider.cs    — Caché primary + JSON fallback
 
 /Config
   AppSettings.cs            — POCO konfigurace + static Load() z appsettings.json
-  CacheSchemaWiring.cs      — vytváří CacheDataSchemaProvider z AppSettings + MLRest
+  CacheSchemaWiring.cs      — vytváří CacheAgendaProvider z AppSettings + MLRest
 
 /Commands
   IDesignerCommand.cs       — rozhraní pro undo/redo

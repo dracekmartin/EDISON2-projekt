@@ -2,7 +2,7 @@
 
 **Template Designer** je vizuální nástroj pro tvorbu šablon tiskových sestav. Šablona popisuje rozvržení stránky — sekce, elementy, formátování. Výstupem je JSON soubor, který Print Engine (samostatný projekt) spojí s daty a vygeneruje PDF.
 
-Pro vývojářskou dokumentaci viz [architektura.md](architektura.md).
+Pro vývojářskou dokumentaci viz [CLAUDE.md](CLAUDE.md).
 
 ---
 
@@ -45,30 +45,33 @@ Panel sekcí lze skrýt přes menu **Zobrazit**.
 Šablona = definice stránky. Obsahuje rozměry stránky, okraje a seznam sekcí.
 
 ### Sekce
-Stránka je tvořena vertikálním sledem sekcí — každá sekce je vodorovný pruh stránky. Sekce nelze umístit volně; přidávají se vždy za ostatní. Typy sekcí:
+Stránka je tvořena vertikálním sledem sekcí — každá sekce je vodorovný pruh stránky. Sekce nelze umístit volně; přidávají se vždy za ostatní.
 
-| Typ | Popis |
+Přidáváte je přes **[+ Přidat sekci ▾]** s presety:
+
+| Preset | Chování tisku |
 |---|---|
-| Záhlaví | Opakuje se na každé stránce |
-| Pevná výška | Statický obsah, fixní výška |
-| Tabulka | Opakující se řádky z dat |
-| Tabulka (vlastní design) | Tabulka s uživatelem navrženým řádkem |
-| Nekonečný text | Roztahuje se podle obsahu |
-| Oddělovač | Mezera nebo čára |
-| Zápatí | Opakuje se na každé stránce |
+| Záhlaví stránky | Opakuje se na každé stránce |
+| Zápatí stránky | Opakuje se na každé stránce |
+| Záhlaví sestavy | Jednou na začátku |
+| Patička sestavy | Jednou na konci |
+| Záhlaví kromě 1. str. | Na každé stránce kromě první |
+| Oddělovač | Statický obsah, malá výška |
+| Prázdná sekce | Statický obsah, vlastní výška |
 
-Sekce s dynamickou výškou (Tabulka, Nekonečný text) jsou v designeru zobrazeny s fixní placeholder výškou a označeny symbolem **∞** v pravém rohu záhlaví sekce.
+Uložené šablony sekcí se zobrazí v tomtéž menu (viz sekce o Custom šablonách sekcí).
 
 ### Element
 Uvnitř sekce lze volně umísťovat elementy — text, obdélník, čáru, obrázek nebo tabulku. Pozice elementů jsou absolutní v rámci sekce (v mm).
 
 | Typ | Editovatelné vlastnosti |
 |---|---|
-| Text | Text, font, velikost, styl, zarovnání, barva, zalamování |
+| Text | Text, font, velikost, styl, zarovnání, barva textu/pozadí, zalamování |
 | Obdélník | Barva výplně, barva okraje, tloušťka okraje, zaoblení rohů |
 | Čára | Orientace, barva, tloušťka, styl (plná/čárkovaná/tečkovaná) |
 | Obrázek | Datové pole, škálování |
-| Tabulka | Datový zdroj, výška řádku, záhlaví, výška záhlaví |
+| QR kód / Čárový kód | Typ (QR / Code128), obsah (text nebo `{POLE}`), barvy |
+| Tabulka | Mód (pevná/dynamická), sloupce, řádky, orámování, záhlaví, barvy |
 
 Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, výška, ZIndex, zamčeno.
 
@@ -101,6 +104,31 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - **Zrušit** — vrátí veškeré změny provedené od otevření dialogu
 - Tlačítko **X** — schová dialog, změny zůstanou (jako OK)
 - Pokud je dialog otevřený a klikneš na jiný element, dialog se aktualizuje
+
+### Editor tabulky (TableElement)
+
+Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma záložkami:
+
+**Záložka Sloupce:**
+- Přidat / odebrat / přesunout sloupec nahoru nebo dolů
+- Pro každý sloupec: záhlaví, šířka (mm nebo %), zarovnání, datové pole, formát, viditelnost
+- Pole "Datové pole" se validuje proti schématu agendy — neplatné pole je zvýrazněno červeně
+
+**Záložka Řádky** (jen pro pevný mód):
+- Přidat / odebrat / přesunout řádek
+- Editace obsahu buněk přímo v tabulce — statický text nebo `{POLE}`
+
+**Dva módy tabulky:**
+- **Pevná (Fixed)** — počet řádků je pevný, definovaný v šabloně; buňky obsahují statický text nebo placeholdery
+- **Dynamická (Dynamic)** — sloupce jsou z designeru, řádky se generují za běhu z dat (DataSource = klíč kolekce)
+
+### QR kódy a čárové kódy (BarcodeElement)
+
+Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
+- **Obsah**: statický text nebo `{POLE}` placeholder
+- **Typ**: QR kód (čtvercový) nebo Code128 (lineární čárový kód)
+- Barvy popředí a pozadí
+- V designeru se zobrazuje reálný kód — ne jen placeholder
 
 ### Přesun elementů
 - **Tažení myší** — přesune vybraný element
@@ -175,6 +203,15 @@ Soubory jsou čitelné v textovém editoru a lze je **ručně upravit**.
 - Editovatelné: Šířka, Výška (mm), okraje Nahoře / Dole / Vlevo / Vpravo (mm)
 - Canvas se okamžitě překreslí po každé změně, Zrušit vrátí vše zpět
 - Výchozí formát: A4 na výšku (210 × 297 mm, okraje 10 mm)
+
+### Live preview
+
+Pravý panel zobrazuje **náhled šablony s mock daty** — takto bude šablona vypadat při tisku.
+
+- Otevřít / zavřít přes menu **Zobrazit → Live preview** nebo tlačítko v toolbaru
+- Automaticky se aktualizuje při každé změně šablony
+- Mock data se generují z DataSchema (ukázkové hodnoty ze schématu nebo generické zástupce)
+- Tabulky v Dynamic módu zobrazují 3 mock řádky s generovanými hodnotami
 
 ### Zoom
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
@@ -292,11 +329,7 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 
 ## Co bude přidáno (plánované funkce)
 
-- **Pole agendy — browser databázových polí** — záložka v levém panelu; flat list dostupných `{POLE}` pro danou agendu; dvojklik vloží placeholder do textu; schema načítána z `schemas/*.schema.json`
-- **Editor sloupců tabulky** — přidat/odebrat/přesunout sloupec, nastavit šířku a záhlaví
-- ~~ZIndex ovládání~~ — hotovo
-- ~~Zarovnání elementů~~ — hotovo
 - **Zamčení elementu** — toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)
-- **Live preview s mock daty** — pravý panel s náhledem výstupu
-- **Přehled elementů v dialogu vlastností sekce** — seznam elementů sekce, hromadná editace
-- **Podmíněná viditelnost** — VisibilityExpression pro elementy
+- **Podmíněná viditelnost** — VisibilityExpression (výrazy jako `{POCET} > 0`) pro elementy a řádky tabulky
+- **Podmíněné řádky tabulky** — VisibilityExpression per řádek v Fixed tabulce
+- **Grouping v Dynamic tabulkách** — Group Header/Footer řádky mezi daty
