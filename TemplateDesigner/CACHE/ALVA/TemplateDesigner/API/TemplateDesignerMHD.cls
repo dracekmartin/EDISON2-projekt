@@ -119,20 +119,82 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
     // TODO: implementovat reálné načtení dat z databáze
-    // Vzor:
-    //   s id = $g(^||ML("IN","id"))
-    //   s scalars = ##class(%DynamicObject).%New()
-    //   s scalars.CISLO_LINKY = ..GetCisloLinky(id)
-    //   // ... ostatní skalární pole
-    //   s ^||ML("OUT", $i(^||ML("OUT"))) = scalars.%ToJSON()
-    //
-    //   // Kolekce zastávek
-    //   // for každou zastávku:
-    //   //   s row = ##class(%DynamicObject).%New()
-    //   //   s row.collection = "ZASTAVKY"
-    //   //   s row.POPIS_ZASTAVKA = ...
-    //   //   s ^||ML("OUT", $i(^||ML("OUT"))) = row.%ToJSON()
     q 1
+}
+
+/// Vrátí ukázková data pro live preview v designeru.
+ClassMethod GetMockData(ByRef sys As %String) As %Status
+{
+    s out = ##class(%DynamicObject).%New()
+
+    // ── Skalární hodnoty ──────────────────────────────────────────────
+    s vals = ##class(%DynamicObject).%New()
+    d vals.%Set("CISLO_LINKY",            "42")
+    d vals.%Set("LOKALNI_OZNACENI_LINKY", "JR-42")
+    d vals.%Set("TITULEK",                "Jízdní řád linky 42 — Praha–Brno")
+    d vals.%Set("POPIS_LINKY",            "Praha, Florenc — Brno, ÚAN Zvonařka")
+    d vals.%Set("POPIS_DOPRAVCE",         "RegioJet a.s.")
+    d vals.%Set("POPIS_PLATNOSTI",        "Platí od 15.12.2024 do 13.12.2025")
+    d vals.%Set("DATUM_PLATNOSTI_OD",     "15.12.2024")
+    d vals.%Set("DATUM_PLATNOSTI_DO",     "13.12.2025")
+    d vals.%Set("POPIS_SMER",             "Praha → Brno")
+    d vals.%Set("POPIS_SMER_CIS",         "Praha hl.n. → Brno ÚAN")
+    d vals.%Set("TYP_JR",                 "Dálkový")
+    d vals.%Set("POZNAMKA_POD_DOPRAVCE",  "Jízdenky na www.regiojet.cz")
+    d vals.%Set("INFORMACE",              "Vlak jede bez přestupu")
+    d vals.%Set("NEJEDOU_SPOJE",          "24.12., 25.12., 1.1.")
+    d vals.%Set("TEST_POLOZKA",           "Testovací hodnota")
+    s out.values = vals
+
+    // ── Tabulkové kolekce ─────────────────────────────────────────────
+    s rows = ##class(%DynamicObject).%New()
+
+    // Zastávky
+    s zastavky = ##class(%DynamicArray).%New()
+    d zastavky.%Push(..MakeZastavka("Praha, Florenc",      "",      "06:00", 0))
+    d zastavky.%Push(..MakeZastavka("Praha, Černý Most",   "06:08", "06:10", 0))
+    d zastavky.%Push(..MakeZastavka("Průhonice",           "06:25", "06:26", 0))
+    d zastavky.%Push(..MakeZastavka("Říčany",              "06:35", "06:36", 0))
+    d zastavky.%Push(..MakeZastavka("Benešov u Prahy",     "07:05", "07:07", 1))
+    d zastavky.%Push(..MakeZastavka("Humpolec",            "07:50", "07:52", 0))
+    d zastavky.%Push(..MakeZastavka("Jihlava, aut. nádr.", "08:20", "08:25", 1))
+    d zastavky.%Push(..MakeZastavka("Brno, ÚAN Zvonařka", "09:15", "",      0))
+    s rows.ZASTAVKY = zastavky
+
+    // Spoje
+    s spoje = ##class(%DynamicArray).%New()
+    d spoje.%Push(..MakeSpoj("101", "Po-Pa", ""))
+    d spoje.%Push(..MakeSpoj("103", "Po-Pa", "Pouze do 30.6."))
+    d spoje.%Push(..MakeSpoj("105", "So-Ne", ""))
+    d spoje.%Push(..MakeSpoj("107", "So-Ne", "Jen So"))
+    s rows.SPOJE = spoje
+
+    s out.rows = rows
+
+    s ^||ML("OUT", $i(^||ML("OUT"))) = out.%ToJSON()
+    q 1
+}
+
+ClassMethod MakeZastavka(popis As %String, prijezd As %String, odjezd As %String, prestup As %Boolean) As %DynamicObject
+{
+    s z = ##class(%DynamicObject).%New()
+    d z.%Set("POPIS_ZASTAVKA",     popis)
+    d z.%Set("POPIS_ZASTAVKA_CIS", popis)
+    d z.%Set("CISLO_ZASTAVKA",     "")
+    d z.%Set("CAS_PRIJEZDU",       prijezd)
+    d z.%Set("CAS_ODJEZDU",        odjezd)
+    d z.%Set("PRESTUP",            $s(prestup:"Ano", 1:""))
+    d z.%Set("POZNAMKA",           "")
+    q z
+}
+
+ClassMethod MakeSpoj(cislo As %String, typDne As %String, poznamka As %String) As %DynamicObject
+{
+    s sp = ##class(%DynamicObject).%New()
+    d sp.%Set("CISLO_SPOJE", cislo)
+    d sp.%Set("TYP_DNE",     typDne)
+    d sp.%Set("POZNAMKA",    poznamka)
+    q sp
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

@@ -20,8 +20,8 @@ public partial class ElementPropertiesWindow : Window
     /// Vrátí aktuálně dostupná pole schématu (podle AgendaCode šablony).
     /// Null = schéma není k dispozici, picker se nezobrazí.
     /// </summary>
-    private readonly Func<IReadOnlyList<DataField>?>?        _getAvailableFields;
-    private readonly Func<string?, IReadOnlyList<DataField>?>? _getGroupFields;
+    private readonly Func<IReadOnlyList<DataField>?>?           _getAvailableFields;
+    private readonly Func<IReadOnlyList<DataFieldGroup>?>?      _getAvailableGroups;
 
     private TemplateElement? _currentElement;
     private int              _undoDepthAtOpen;
@@ -37,7 +37,7 @@ public partial class ElementPropertiesWindow : Window
         Action updateCanvasSize,
         Action refreshFields,
         Func<IReadOnlyList<DataField>?>? getAvailableFields = null,
-        Func<string?, IReadOnlyList<DataField>?>? getGroupFields = null)
+        Func<IReadOnlyList<DataFieldGroup>?>? getAvailableGroups = null)
     {
         InitializeComponent();
         _state               = state;
@@ -46,7 +46,7 @@ public partial class ElementPropertiesWindow : Window
         _updateCanvasSize    = updateCanvasSize;
         _refreshFields       = refreshFields;
         _getAvailableFields  = getAvailableFields;
-        _getGroupFields      = getGroupFields;
+        _getAvailableGroups  = getAvailableGroups;
         _currentInvalidate   = invalidate;
         PropertiesPanel.SetContext(cmd => state.Execute(cmd), invalidate);
     }
@@ -95,10 +95,26 @@ public partial class ElementPropertiesWindow : Window
         IReadOnlyList<Models.PropertyDescriptor> descriptors,
         TableElement element)
     {
+        var groups = _getAvailableGroups?.Invoke() ?? [];
+
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Editor")
+            if (d is Models.StringPropertyDescriptor strD && strD.Label == "Zdroj dat" && groups.Count > 0)
+            {
+                // Nahradit ručním textovým polem filtrovatelným dropdownem skupin (kolekcí)
+                list.Add(new Models.SuggestStringPropertyDescriptor
+                {
+                    Label          = strD.Label,
+                    Group          = strD.Group,
+                    Get            = strD.Get,
+                    Set            = strD.Set,
+                    GetSuggestions = () => groups
+                        .Where(g => g.CollectionKey is not null)
+                        .Select(g => (g.CollectionKey!, g.Name))
+                });
+            }
+            else if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Editor")
             {
                 list.Add(new Models.ButtonPropertyDescriptor
                 {
@@ -107,7 +123,12 @@ public partial class ElementPropertiesWindow : Window
                     ButtonLabel = btn.ButtonLabel,
                     OnClick     = () =>
                     {
-                        var groupFields = _getGroupFields?.Invoke(element.DataSource);
+                        var availableGroups = _getAvailableGroups?.Invoke();
+                        // Pole z konkrétní skupiny (DataSource), fallback = pole ze všech skupin
+                        var groupFields = availableGroups
+                            ?.FirstOrDefault(g => g.CollectionKey == element.DataSource)?.Fields
+                            as IReadOnlyList<DataField>
+                            ?? availableGroups?.SelectMany(g => g.Fields).ToList();
                         var dlg = new TableEditorDialog(element, groupFields) { Owner = this };
                         if (dlg.ShowDialog() != true) return;
 

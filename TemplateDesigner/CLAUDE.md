@@ -24,11 +24,12 @@ Systém se skládá ze dvou částí:
 
 ### 🎯 Aktuální focus
 
-**Propojení Dynamic TableElement s Caché daty** — CacheAgendaProvider je připraven, dalším krokem je:
-1. Otestovat GetSchema přes MLRest živě
-2. UI: při přidání Dynamic tabulky nabídnout picker DataSource ze schématu (groups scope=table)
-3. UI: při editaci sloupců nabídnout pole z vybrané skupiny (ne jen manuální zadání)
-4. "Ze šablony..." picker — načíst GetTableTemplates a umožnit výběr Fixed šablony z Caché
+**Dynamic TableElement + Caché data — hotovo.** Live preview ukazuje reálná mock data z Caché (`GetMockData`), DataSource se vybírá z filtrovatelného ComboBoxu, pole sloupců z odpovídající skupiny schématu.
+
+**Další kroky:**
+1. "Ze šablony..." picker — načíst `GetTableTemplates` a umožnit výběr Fixed šablony z Caché
+2. Podmíněné řádky tabulky (VisibilityExpression per řádek)
+3. Grouping v Dynamic tabulkách
 
 **Co už máme:**
 - ✅ Text, Image, Rectangle, Line (základní elementy)
@@ -52,8 +53,8 @@ Systém se skládá ze dvou částí:
 **Core features:**
 - ✅ Drag & drop, resize, rubber band selection elementů
 - ✅ Undo/redo systém (9 command typů: Move, Resize, Add, Delete, SetProperty, Composite, MoveSection, DeleteSection)
-- ✅ PropertyDescriptor systém se 7 typy (String, Float, Bool, Color, Enum, TextWithPicker, Button)
-- ✅ Live preview panel (mock DataContext, zoom 1:1 / fit-to-width)
+- ✅ PropertyDescriptor systém s 8 typy (String, Float, Bool, Color, Enum, TextWithPicker, Button, **SuggestString**)
+- ✅ Live preview panel — primárně Caché `GetMockData`, fallback schema examples, zoom 1:1 / fit-to-width
 - ✅ Zoom (50/75/100/150/200 %) + Ctrl+scroll
 - ✅ Grid & snap to grid
 - ✅ Clipboard (interní, copy/paste s offsetem)
@@ -79,8 +80,8 @@ Systém se skládá ze dvou částí:
 - ✅ Fields browser v levém panelu (záložka "Pole agendy")
 
 **Caché strana:**
-- ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData)
-- ✅ `ALVA.JR.TiskAPI` (nebo `TemplateDesignerMHD`) — referenční implementace pro JR agendu
+- ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData, **GetMockData**)
+- ✅ `ALVA.JR.TiskAPI` (nebo `TemplateDesignerMHD`) — referenční implementace pro JR agendu; GetMockData vrací 8 zastávek + 4 spoje
 
 **Serialization:**
 - ✅ Template JSON serialization (camelCase, enums as strings, null omitted)
@@ -108,6 +109,19 @@ Systém se skládá ze dvou částí:
    - Alternativa k levému panelu pro rychlejší přístup
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-04 (pokračování — Caché mock data + DataSource picker):**
+- ✅ `GetMockData` — nová metoda v `AgendaAPI.cls` + `TemplateDesignerMHD.cls`
+  - Vrací JSON `{ "values": {...}, "rows": { "ZASTAVKY": [...], "SPOJE": [...] } }`
+  - `CacheAgendaProvider.GetMockData()` + `ParseMockData()` — volá Caché a mapuje na `DataContext`
+  - Live preview nyní prioritně používá Caché mock data; fallback = schema examples
+- ✅ `SuggestStringPropertyDescriptor` — nový typ property descriptoru
+  - Filtrovatelný editovatelný ComboBox; `GetSuggestions()` vrací `(Value, Label)` páry
+  - Použit pro `DataSource` property v `TableElement` (nabízí groups ze schématu scope=table)
+- ✅ DataSource picker — výběr datového zdroje Dynamic tabulky přímo ze schématu agendy
+- ✅ Field picker v `TableEditorDialog` — kolonce "Datové pole" nabízí pouze pole z vybrané skupiny (DataSource)
+- ✅ Bug fix: null AgendaCode (`GetSchema(null)`) house `ArgumentNullException` — opraveno v `CacheAgendaProvider` i `CompositeDataSchemaProvider`
+- ✅ ObjectScript: NIKDY nepoužívat `_` v dot-notation (`obj.KEY_NAME = v`); `_` je v COS operátor konkatenace řetězců! Pro property s podtržítkem použij `obj.%Set("KEY_NAME", v)`
 
 **2026-03-04:**
 - ✅ TableElement — kompletní implementace Fixed/Dynamic módu
@@ -884,6 +898,41 @@ Elementy dostávají `RenderContext` místo holého `SKCanvas`. Kontext obsahuje
 - `SectionOriginX/Y` — absolutní pozice sekce na canvasu v px
 
 Elementy volají `ctx.ToCanvasRect(X, Y, Width, height)` pro přepočet souřadnic.
+
+### WPF editable ComboBox — event ordering gotcha
+
+**Problém:** Při použití `IsEditable=true` ComboBox s live filtrováním (`TextChanged` → `Items.Clear()` + rebuild) WPF spouští eventy **synchronně** v tomto pořadí při výběru položky:
+1. `SelectionChanged` — WPF nastaví `SelectedItem`
+2. `combo.Text = item.Content` — WPF nastaví text na display string (e.g. "SPOJE  —  Spoje")
+3. `TextChanged` — náš handler spustí `Refilter()` → `Items.Clear()` → **`SelectedItem` se stane null**
+4. `DropDownClosed` — `SelectedItem` je null → handler nic nedělá → text zůstane jako display string
+
+**Fix:** Používáme `PreviewKeyDown`/`PreviewKeyUp` k detekci uživatelského psaní. `TextChanged` zavolá `Refilter()` pouze pokud `userIsTyping == true`. WPF interní změna textu při výběru nemá asociovaný klávesový event → Refilter se přeskočí → `SelectedItem` zůstane živý → `DropDownClosed` může přečíst `item.Tag` (skutečnou hodnotu, ne display string).
+
+```csharp
+bool userIsTyping = false;
+combo.PreviewKeyDown += (_, _) => userIsTyping = true;
+combo.PreviewKeyUp   += (_, _) => userIsTyping = false;
+
+combo.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) =>
+{
+    if (_suppressChanges || !userIsTyping) return;  // přeskočit WPF interní změny
+    Refilter(combo.Text);
+    if (combo.Items.Count > 0) combo.IsDropDownOpen = true;
+}));
+
+combo.DropDownClosed += (_, _) =>
+{
+    if (combo.SelectedItem is not ComboBoxItem item) return;  // SelectedItem je zachován!
+    var val = (string)item.Tag!;   // skutečná hodnota (např. "SPOJE")
+    _suppressChanges = true;
+    combo.SelectedItem = null;
+    combo.Text = val;              // přepíše display string "SPOJE  —  Spoje"
+    _suppressChanges = false;
+};
+```
+
+**Kde je použito:** `PropertiesPanel.xaml.cs` `AddSuggestRow()`.
 
 ### DataContext — resolvování placeholderů
 ```csharp
