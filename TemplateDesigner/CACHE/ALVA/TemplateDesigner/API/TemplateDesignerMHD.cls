@@ -29,6 +29,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",    "Poznámka pod dopravce",    "text")
     d ..AddField(fields, "INFORMACE",                "Informace",                "text")
     d ..AddField(fields, "NEJEDOU_SPOJE",            "Nejedou spoje",            "text")
+    d ..AddField(fields, "TEST_POLOZKA",            "Test polozka",            "text")
 
     s def.fields = fields
 
