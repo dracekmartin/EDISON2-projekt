@@ -6,5 +6,6 @@ namespace EDISONMAIN2.Services.Windows
     {
         void ShowInputFormTest(ConnectionParams connParams, string ns, string idfa);
         void ShowEDListTest(ConnectionParams connParams, string ns, string idfa);
+        void ShowEDWindowTest(ConnectionParams connParams, string ns, string idfa);
     }
 }

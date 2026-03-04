@@ -1,10 +1,8 @@
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ALVA.EDISONAPI;
-using EDISONMAIN2.Commands;
+using EDControls.EDViewModel;
 using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Modules;
@@ -16,7 +14,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
     record CompanyItem(string Id, string Database);
 
-    class EdisonMainViewModel : INotifyPropertyChanged
+    class EdisonMainViewModel : EDViewModel
     {
         private readonly IEdisonMainDataService _dataService;
         private readonly IProcessLaunchService _processService;
@@ -25,6 +23,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
         public ICommand OpenEDListTestCommand { get; }
+        public ICommand OpenEDWindowTestCommand { get; }
         public ICommand CloseAllCommand { get; }
 
         public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, IWindowService windowService, ConnectionParams connParams)
@@ -33,10 +32,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _processService = processService;
             _windowService = windowService;
 
-            OpenModuleCommand = new RelayCommand<IModule>(OpenModule);
+            OpenModuleCommand        = new RelayCommand<IModule>(OpenModule);
             OpenInputFormTestCommand = new RelayCommand(() => _windowService.ShowInputFormTest(ConnParams, Namespace, Idfa));
             OpenEDListTestCommand    = new RelayCommand(() => _windowService.ShowEDListTest(ConnParams, Namespace, Idfa));
-            CloseAllCommand = new RelayCommand(_processService.CloseAll);
+            OpenEDWindowTestCommand  = new RelayCommand(() => _windowService.ShowEDWindowTest(ConnParams, Namespace, Idfa));
+            CloseAllCommand          = new RelayCommand(_processService.CloseAll);
 
             TopLevelModules = [];
 
@@ -62,10 +62,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             get => _selectedCompanyIndex;
             set
             {
-                _selectedCompanyIndex = value;
-                NotifyPropertyChanged();
-                NotifyPropertyChanged(nameof(Namespace));
-                NotifyPropertyChanged(nameof(Idfa));
+                if (Set(ref _selectedCompanyIndex, value))
+                {
+                    OnPropertyChanged(nameof(Namespace));
+                    OnPropertyChanged(nameof(Idfa));
+                }
             }
         }
 
@@ -82,12 +83,5 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (module is ExecutableModule executableModule)
                 _processService.Launch(executableModule, Namespace, Idfa);
         }
-
-        void NotifyPropertyChanged([CallerMemberName] string? property = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
-        }
-
-        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

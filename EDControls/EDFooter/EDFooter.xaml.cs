@@ -1,0 +1,99 @@
+using System.Windows;
+using System.Windows.Controls;
+using EDVm = EDControls.EDViewModel.EDViewModel;
+
+namespace EDControls.EDFooter;
+
+public partial class EDFooter : UserControl
+{
+    public static readonly DependencyProperty FooterModeProperty =
+        DependencyProperty.Register(nameof(FooterMode), typeof(EFooterMode), typeof(EDFooter),
+            new PropertyMetadata(EFooterMode.Close, OnFooterModeChanged));
+
+    public static readonly DependencyProperty LeftContentProperty =
+        DependencyProperty.Register(nameof(LeftContent), typeof(UIElement), typeof(EDFooter),
+            new PropertyMetadata(null, OnLeftContentChanged));
+
+    public EFooterMode FooterMode
+    {
+        get => (EFooterMode)GetValue(FooterModeProperty);
+        set => SetValue(FooterModeProperty, value);
+    }
+
+    /// <summary>Optional UIElement placed on the left side of the footer.</summary>
+    public UIElement? LeftContent
+    {
+        get => (UIElement?)GetValue(LeftContentProperty);
+        set => SetValue(LeftContentProperty, value);
+    }
+
+    private EDVm? _vm;
+
+    public EDFooter()
+    {
+        InitializeComponent();
+        Loaded += OnLoaded;
+    }
+
+    private static void OnFooterModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        var footer = (EDFooter)d;
+        bool okCancel = (EFooterMode)e.NewValue == EFooterMode.OkCancel;
+        footer.OkBtn.Visibility     = okCancel ? Visibility.Visible   : Visibility.Collapsed;
+        footer.StornoBtn.Visibility = okCancel ? Visibility.Visible   : Visibility.Collapsed;
+        footer.CloseBtn.Visibility  = okCancel ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private static void OnLeftContentChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+        ((EDFooter)d).LeftContentPresenter.Content = e.NewValue;
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        var window = Window.GetWindow(this);
+        if (window == null) return;     // design time
+
+        window.DataContextChanged += OnWindowDataContextChanged;
+        SubscribeToViewModel(window.DataContext as EDVm);
+    }
+
+    private void OnWindowDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+    {
+        if (_vm != null) _vm.RequestClose -= OnRequestClose;
+        SubscribeToViewModel(e.NewValue as EDVm);
+    }
+
+    private void SubscribeToViewModel(EDVm? vm)
+    {
+        _vm = vm;
+        if (_vm != null) _vm.RequestClose += OnRequestClose;
+    }
+
+    private void OnRequestClose(bool? dialogResult) => CloseWindow(dialogResult);
+
+    private void OkBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm != null)
+            _vm.OkCommand.Execute(null);    // VM fires RequestClose when ready
+        else
+            CloseWindow(true);
+    }
+
+    private void CancelBtn_Click(object sender, RoutedEventArgs e) => CloseWindow(false);
+
+    private void CloseWindow(bool? dialogResult)
+    {
+        var window = Window.GetWindow(this);
+        if (window == null) return;
+
+        if (dialogResult.HasValue)
+        {
+            try
+            {
+                window.DialogResult = dialogResult;
+                return;     // also closes the window
+            }
+            catch (InvalidOperationException) { }   // not a ShowDialog() window
+        }
+        window.Close();
+    }
+}
