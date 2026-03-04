@@ -25,6 +25,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
         public ICommand OpenEDListTestCommand { get; }
+        public ICommand OpenEDWindowTestCommand { get; }
         public ICommand CloseAllCommand { get; }
 
         public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, IWindowService windowService, ConnectionParams connParams)
@@ -36,6 +37,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenModuleCommand = new RelayCommand<IModule>(OpenModule);
             OpenInputFormTestCommand = new RelayCommand(() => _windowService.ShowInputFormTest(ConnParams, Namespace, Idfa));
             OpenEDListTestCommand    = new RelayCommand(() => _windowService.ShowEDListTest(ConnParams, Namespace, Idfa));
+            OpenEDWindowTestCommand  = new RelayCommand(() => _windowService.ShowEDWindowTest(ConnParams, Namespace, Idfa));
             CloseAllCommand = new RelayCommand(_processService.CloseAll);
 
             TopLevelModules = [];
