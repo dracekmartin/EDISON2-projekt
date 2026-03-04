@@ -79,3 +79,17 @@ public class TextWithPickerPropertyDescriptor : StringPropertyDescriptor
     /// </summary>
     public IReadOnlyList<DataField>? AvailableFields { get; init; }
 }
+
+/// <summary>
+/// Tlačítko v panelu vlastností — kliknutím spustí akci (např. otevření editoru).
+/// Panel zobrazí celou šířku tlačítko v příslušné skupině.
+/// </summary>
+public class ButtonPropertyDescriptor : PropertyDescriptor
+{
+    public required string ButtonLabel { get; init; }
+
+    /// <summary>
+    /// Akce volaná při kliknutí. Null = tlačítko je zobrazeno ale nedělá nic.
+    /// </summary>
+    public Action? OnClick { get; init; }
+}

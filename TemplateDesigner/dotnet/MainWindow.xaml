@@ -247,11 +247,11 @@
                         <TextBlock Text="Náhled  ·  vzorová data ze schématu"
                                    FontSize="11" Foreground="#666666"/>
                     </Border>
-                    <!-- Scrollovatelný canvas náhledu — šířka se přizpůsobí panelu -->
-                    <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                    <!-- Scrollovatelný canvas náhledu — pevná šířka (75 % zoom), panel lze tahat -->
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
                                   Background="#E8E8E8">
-                        <skia:SKElement x:Name="skPreview" HorizontalAlignment="Stretch" Height="800"/>
+                        <skia:SKElement x:Name="skPreview" HorizontalAlignment="Left" Height="800"/>
                     </ScrollViewer>
                 </DockPanel>
             </Border>

@@ -24,7 +24,8 @@ public partial class MainWindow : Window
     private          ElementPropertiesWindow? _propsWindow;
     private string? _currentFilePath;
 
-    private readonly IDataSchemaProvider _schemaProvider;
+    private readonly IDataSchemaProvider  _schemaProvider;
+    private readonly CacheAgendaProvider? _cacheProvider;   // null = Caché není nakonfigurováno
     private readonly SectionTemplateManager _sectionTemplates;
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
@@ -64,11 +65,11 @@ public partial class MainWindow : Window
         // Schema provider — Caché (primární) + JSON soubory (záloha)
         string schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
         var settings      = AppSettings.Load();
-        var cacheProvider = CacheSchemaWiring.TryCreate(settings);
+        _cacheProvider    = CacheSchemaWiring.TryCreate(settings);
 
-        _schemaProvider = cacheProvider is not null
+        _schemaProvider = _cacheProvider is not null
             ? new CompositeDataSchemaProvider(
-                primary:  cacheProvider,
+                primary:  _cacheProvider,
                 fallback: new JsonFileDataSchemaProvider(schemasDir))
             : new JsonFileDataSchemaProvider(schemasDir);
 
@@ -94,7 +95,13 @@ public partial class MainWindow : Window
 
         _propsWindow = new ElementPropertiesWindow(
             _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
-            getAvailableFields: () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields);
+            getAvailableFields: () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields,
+            getGroupFields: collectionKey =>
+            {
+                if (collectionKey is null) return null;
+                return _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)
+                    ?.Groups?.FirstOrDefault(g => g.CollectionKey == collectionKey)?.Fields;
+            });
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
@@ -473,7 +480,7 @@ public partial class MainWindow : Window
     private void BtnPreview_Changed(object sender, RoutedEventArgs e)
     {
         bool show = BtnPreview.IsChecked == true;
-        PreviewColumn.Width = show ? new GridLength(400, GridUnitType.Pixel) : new GridLength(0);
+        PreviewColumn.Width = show ? new GridLength(660, GridUnitType.Pixel) : new GridLength(0);
         MenuPreview.IsChecked = show;
         if (show) InvalidatePreview();
     }
@@ -487,12 +494,14 @@ public partial class MainWindow : Window
     // ─────────────────────────────────────────────────────────────────────
     // Live preview
 
+    // Pevný zoom preview — 1:1 jako designer při 100 %, nezávisle na šířce panelu.
+    private const float PreviewFixedZoom = 1.0f;
+
     private void UpdatePreviewSize()
     {
         if (BtnPreview?.IsChecked != true) return;
-        float width = (float)(skPreview.ActualWidth > 0 ? skPreview.ActualWidth : 320);
-        float zoom  = _previewCanvas.ComputeFitZoom(width);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(zoom) + 40f;
+        skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom) + 40f;
     }
 
     private void InvalidatePreview()
@@ -502,6 +511,29 @@ public partial class MainWindow : Window
         skPreview.InvalidateVisual();
     }
 
+    /// <summary>
+    /// Generuje mírně odlišné mock hodnoty pro každý řádek preview tabulky.
+    /// Číselné hodnoty se zvyšují o (rowIndex-1), časy se posouvají o 10 minut,
+    /// textové hodnoty dostanou suffix " #rowIndex" od druhého řádku.
+    /// </summary>
+    private static string MakeMockValue(string baseValue, FieldDataType type, int rowIndex)
+    {
+        if (rowIndex <= 1) return baseValue;
+        return type switch
+        {
+            FieldDataType.Number => int.TryParse(baseValue, out var n)
+                ? (n + rowIndex - 1).ToString()
+                : baseValue,
+            FieldDataType.Time => TimeSpan.TryParse(baseValue, out var t)
+                ? (t + TimeSpan.FromMinutes(10 * (rowIndex - 1))).ToString(@"hh\:mm")
+                : baseValue,
+            FieldDataType.Date => DateTime.TryParse(baseValue, out var d)
+                ? d.AddDays(rowIndex - 1).ToString("dd.MM.yyyy")
+                : baseValue,
+            _ => string.IsNullOrEmpty(baseValue) ? baseValue : $"{baseValue} #{rowIndex}"
+        };
+    }
+
     private void OnPreviewPaintSurface(object? sender, object e)
     {
         var args    = (dynamic)e;
@@ -509,15 +541,34 @@ public partial class MainWindow : Window
         float w = (float)args.Info.Width;
         float h = (float)args.Info.Height;
 
-        // Sestavit mock DataContext ze schématu: {POLE} → label pole
+        // Sestavit mock DataContext ze schématu: skalární pole + mock řádky pro tabulkové skupiny
         var schema = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode);
         DataContext? mockData = null;
         if (schema is not null)
         {
             var values = schema.Fields
+                .Concat(schema.Groups?.SelectMany(g => g.Fields) ?? [])
                 .DistinctBy(f => f.FieldName)
-                .ToDictionary(f => f.FieldName, f => (object?)f.Label);
-            mockData = new DataContext(values);
+                .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
+
+            // Mock řádky pro dynamické tabulky (Groups se Scope=Table) — 3 různé řádky
+            var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
+            foreach (var group in schema.Groups ?? [])
+            {
+                if (group.Scope == FieldScope.Table && group.CollectionKey is not null)
+                {
+                    var mockRows = Enumerable.Range(1, 3).Select(i =>
+                    {
+                        var rowData = group.Fields.ToDictionary(
+                            f => f.FieldName,
+                            f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
+                        return new DataContext(rowData);
+                    }).ToList();
+                    rowsDict[group.CollectionKey] = mockRows;
+                }
+            }
+
+            mockData = new DataContext(values, rowsDict);
         }
 
         _previewCanvas.Render(surface.Canvas, w, h, mockData);
@@ -874,8 +925,9 @@ public partial class MainWindow : Window
 
         if (string.IsNullOrWhiteSpace(agendaCode))
         {
-            AgendaNameText.Text  = "Agenda: — (šablona bez agendy)";
+            AgendaNameText.Text    = "Agenda: — (šablona bez agendy)";
             FieldsList.ItemsSource = null;
+            UpdateCacheStatus(agendaCode: null, cacheSchema: null);
             return;
         }
 
@@ -883,13 +935,40 @@ public partial class MainWindow : Window
 
         if (schema is null)
         {
-            AgendaNameText.Text  = $"Agenda: {agendaCode} (schéma nenalezeno)";
+            AgendaNameText.Text    = $"Agenda: {agendaCode} (schéma nenalezeno)";
             FieldsList.ItemsSource = null;
+            UpdateCacheStatus(agendaCode, cacheSchema: null);
             return;
         }
 
         AgendaNameText.Text    = $"Agenda: {schema.AgendaName}";
         FieldsList.ItemsSource = schema.Fields;
+
+        // Zjistit zdroj: zkusit přímo Caché provider (má vlastní cache → bez extra MLRest volání)
+        var cacheSchema = _cacheProvider?.GetSchema(agendaCode);
+        UpdateCacheStatus(agendaCode, cacheSchema);
+    }
+
+    /// <summary>
+    /// Aktualizuje indikátor stavu Caché připojení ve status baru.
+    /// </summary>
+    private void UpdateCacheStatus(string? agendaCode, DataSchema? cacheSchema)
+    {
+        if (_cacheProvider is null)
+        {
+            StatusText.Text = "Caché: není nakonfigurováno — pole načtena z JSON";
+            return;
+        }
+
+        if (agendaCode is null)
+        {
+            StatusText.Text = "Caché: nakonfigurováno";
+            return;
+        }
+
+        StatusText.Text = cacheSchema is not null
+            ? $"● Caché: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.Groups?.Count ?? 0} skupin)"
+            : $"○ Caché: nedostupné — záloha JSON ({agendaCode})";
     }
 
     private void LeftTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1083,7 +1162,7 @@ public partial class MainWindow : Window
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
 
-        // 0. Dvojklik na element → otevřít dialog vlastností
+        // 0. Dvojklik → otevřít dialog vlastností (element / sekce / stránka)
         if (e.ClickCount == 2)
         {
             var dblHit = _canvas.HitTestElement(cx, cy, cw);
@@ -1100,6 +1179,20 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
+
+            // Dvojklik na záhlaví sekce → vlastnosti sekce
+            var dblSection2 = _canvas.HitTestSectionHeader(cx, cy, cw);
+            if (dblSection2 is not null)
+            {
+                _propsWindow!.ShowForSection(dblSection2);
+                e.Handled = true;
+                return;
+            }
+
+            // Dvojklik na prázdný canvas → vlastnosti stránky
+            _propsWindow!.ShowForPage(_state.CurrentTemplate);
+            e.Handled = true;
+            return;
         }
 
         // 1. Klik na resize handle vybraného elementu?
@@ -1107,12 +1200,22 @@ public partial class MainWindow : Window
         if (handleHit.HasValue)
         {
             var (el, handle) = handleHit.Value;
+
+            // Pokud element nemá explicitní výšku (Height=null), materializuj ji před
+            // resize startem — zabrání přepočtu layoutu canvasu během tažení, který
+            // způsobuje zdánlivé "zrychlení" pohybu.
+            // Originální hodnotu (null) zachováváme pro ResizeElementCommand.Undo(),
+            // aby undo správně obnovilo dynamickou výšku.
+            float? originalH = el.Height;
+            if (el.Height is null)
+                el.Height = el.EffectiveDesignerHeight;
+
             _resizeElement     = el;
             _resizeHandle      = handle;
             _resizeInitX       = el.X;
             _resizeInitY       = el.Y;
             _resizeInitW       = el.Width;
-            _resizeInitH       = el.Height;
+            _resizeInitH       = originalH;
             var origin         = _canvas.GetSectionOrigins(cw)
                                         .FirstOrDefault(t => t.Section.Elements.Contains(el));
             _resizeOriginX     = origin.OriginX;
@@ -1725,77 +1828,31 @@ public partial class MainWindow : Window
 
     private static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Ukázková šablona — Jízdní řád", AgendaCode = "JR" };
+        var t = new Template { Name = "Nová šablona" };
 
-        var header = new Section
+        t.Sections.Add(new Section
         {
-            Name = "Záhlaví",
-            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Name             = "Záhlaví",
+            PrintBehavior    = SectionPrintBehavior.OnEveryPage,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 25f
-        };
-        header.Elements.Add(new RectangleElement { X = 0, Y = 0, Width = 190, Height = 20, FillColor = "#FF1A5276" });
-        header.Elements.Add(new TextElement      { X = 5, Y = 4, Width = 180, Height = 12,
-            Text = "Jízdní řád — {NAZEV}", FontSize = 14,
-            FontWeight = TextFontWeight.Bold, TextColor = "#FFFFFFFF", ZIndex = 1 });
-        t.Sections.Add(header);
+            DesignerHeight   = 25f
+        });
 
-        var info = new Section
+        t.Sections.Add(new Section
         {
-            Name = "Info o lince",
-            PrintBehavior = SectionPrintBehavior.Once,
-            DesignerHeight = 18f
-        };
-        info.Elements.Add(new TextElement { X = 0,  Y = 3, Width = 90,  Height = 9, Text = "Linka: {LINKA}",  FontSize = 10 });
-        info.Elements.Add(new TextElement { X = 95, Y = 3, Width = 95,  Height = 9, Text = "Datum: {DATUM}",  FontSize = 10 });
-        info.Elements.Add(new LineElement { X = 0, Y = 16, Width = 190, Height = 1, StrokeWidth = 0.3f });
-        t.Sections.Add(info);
-
-        var table = new Section
-        {
-            Name = "Jízdní řád",
-            PrintBehavior = SectionPrintBehavior.Once,
+            Name             = "Obsah",
+            PrintBehavior    = SectionPrintBehavior.Once,
             OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-            DesignerHeight = null  // dynamická
-        };
-        table.Elements.Add(new TableElement
-        {
-            X = 0, Y = 0, Width = 190,
-            DataSource = "JIZDNI_RAD",
-            RowHeight  = 6,
-            Columns    =
-            [
-                new TableColumn { Header = "Čas",       Width = 30,  Field = "CAS" },
-                new TableColumn { Header = "Zastávka",  Width = 100, Field = "ZASTAVKA" },
-                new TableColumn { Header = "Nástup",    Width = 30,  Field = "NASTUP" },
-                new TableColumn { Header = "Výstup",    Width = 30,  Field = "VYSTUP" }
-            ]
+            DesignerHeight   = 60f
         });
-        t.Sections.Add(table);
 
-        var separator = new Section
+        t.Sections.Add(new Section
         {
-            Name = "Oddělovač",
-            PrintBehavior = SectionPrintBehavior.Once,
-            DesignerHeight = 5f
-        };
-        t.Sections.Add(separator);
-
-        var footer = new Section
-        {
-            Name = "Patička",
-            PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Name             = "Patička",
+            PrintBehavior    = SectionPrintBehavior.OnEveryPage,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 15f
-        };
-        footer.Elements.Add(new TextElement
-        {
-            X = 0, Y = 3, Width = 190, Height = 8,
-            Text = "Strana {STRANA} / {STRAN}",
-            FontSize = 9, HorizontalAlignment = TextHorizontalAlignment.Right,
-            TextColor = "#FF666666"
+            DesignerHeight   = 15f
         });
-        t.Sections.Add(footer);
 
         return t;
     }

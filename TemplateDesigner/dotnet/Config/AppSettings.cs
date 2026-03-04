@@ -71,18 +71,22 @@ public class CacheConnectionSettings
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Server) && Port > 0;
 }
 
-/// <summary>Definice jedné agendy načítané z Caché.</summary>
+/// <summary>
+/// Definice jedné agendy načítané z Caché.
+/// Caché třída musí dědit z ALVA.TemplateDesigner.API.AgendaAPI
+/// a implementovat GetSchema, GetTableTemplates, GetTableTemplate, GetData.
+/// </summary>
 public class SchemaAgendaSettings
 {
     /// <summary>Kód agendy — musí odpovídat Template.AgendaCode, např. "JR".</summary>
-    public string Code        { get; set; } = "";
+    public string Code       { get; set; } = "";
 
     /// <summary>Čitelný název agendy pro UI.</summary>
-    public string Name        { get; set; } = "";
+    public string Name       { get; set; } = "";
 
-    /// <summary>Caché třída obsahující metodu pro načtení polí, např. "ALWA.MHD2.Tisk.Designer".</summary>
-    public string CacheClass  { get; set; } = "";
-
-    /// <summary>Název Caché metody vracející seznam polí, např. "GetDatabazovePolozky".</summary>
-    public string CacheMethod { get; set; } = "";
+    /// <summary>
+    /// Caché třída implementující AgendaAPI,
+    /// např. "ALVA.TemplateDesigner.API.TemplateDesignerMHD".
+    /// </summary>
+    public string CacheClass { get; set; } = "";
 }

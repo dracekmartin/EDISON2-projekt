@@ -35,6 +35,13 @@ public class PreviewCanvas
         return Math.Clamp(fitZoom, 0.2f, 3.0f);
     }
 
+    /// <summary>Šířka SKElementu v px pro daný zoom — zahrnuje PagePadding na obou stranách.</summary>
+    public float ComputePageWidthPx(float zoom)
+    {
+        float pageW = _state.CurrentTemplate.PageSize.Width;
+        return 2 * PagePaddingPx + pageW * BaseMmToPx * zoom;
+    }
+
     /// <summary>Výška stránky v px při daném zoomu — pro nastavení výšky SKElement.</summary>
     public float CalculatePageHeightPx(float zoom)
     {
