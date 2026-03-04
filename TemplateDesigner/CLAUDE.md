@@ -24,7 +24,11 @@ Systém se skládá ze dvou částí:
 
 ### 🎯 Aktuální focus
 
-**Testování s živým Caché připojením** — CacheAgendaProvider a AgendaAPI.cls jsou připraveny, dosud testováno jen s JSON schématy. Dalším krokem je ověřit GetSchema + GetTableTemplates přes MLRest.
+**Propojení Dynamic TableElement s Caché daty** — CacheAgendaProvider je připraven, dalším krokem je:
+1. Otestovat GetSchema přes MLRest živě
+2. UI: při přidání Dynamic tabulky nabídnout picker DataSource ze schématu (groups scope=table)
+3. UI: při editaci sloupců nabídnout pole z vybrané skupiny (ne jen manuální zadání)
+4. "Ze šablony..." picker — načíst GetTableTemplates a umožnit výběr Fixed šablony z Caché
 
 **Co už máme:**
 - ✅ Text, Image, Rectangle, Line (základní elementy)
@@ -405,30 +409,44 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 ---
 
-### 🔮 Budoucí rozšíření (neplánováno, vize)
+### 🗺️ Plánované features (dohodnuto, zatím neimplementováno)
 
-**Nice to have:**
-- **Drag & drop ze toolboxu** — táhnout elementy/sekce z levého panelu přímo na canvas (místo "Přidat" + umístit)
-- **Drag & drop sekcí** — přeuspořádání sekcí táhnutím přímo na canvasu (místo tlačítek ▲▼)
-- **Drag & drop elementů mezi sekcemi** — přesun elementu z jedné sekce do druhé táhnutím
-- **AI asistent pro generování/úpravu šablon** — chat rozhraní kde uživatel popíše požadavek a AI:
-  - Generuje šablonu z popisu ("vytvoř šablonu pro fakturu s logem a tabulkou položek")
-  - Upravuje existující šablonu ("přidej QR kód do zápatí", "změň font záhlaví na tučný")
-  - Radí s layoutem a best practices
-  - Automaticky vytváří sekce, elementy a nastavuje properties podle kontextu
-  - Integrováno přímo v designeru (panel nebo modal dialog)
+**JR Tabulka:**
+- `JRTableElement` — specializovaný element pro JR jízdní řády
+  - Matice zastávky × spoje; aktuální `TableElement` Fixed/Dynamic nestačí (tam jsou sloupce fixní)
+  - Properties: levé sloupce (Zóna/Km/Zastávka/MHD — checkboxy), šířka sloupce spoje, barvy, záhlaví skupin dní, šipky směru
+  - Data přijdou z Caché GetData — šablona je přenositelná přes linky
+  - Renderer: print engine dostane spoje[] + zastávky[] → vygeneruje layout sám
+
+**Template parametry:**
+- Parametry definované v JSON šabloně s labelem, typem (bool/enum/string) a defaultem
+- Print dialog dynamicky generovaný ze šablony — bez změny kódu aplikace
+- Nahrazuje hardcodované pre-print checkboxy; každá šablona má svoje parametry
+- Umožní: "Tisknout šipky: ano/ne", "Formát času: H:mm / HH:mm", atd.
+- Předpoklad pro implementaci: VisibilityExpression systém
+
+**VisibilityExpression:**
+- Výrazy pro podmíněnou viditelnost elementů, sekcí, řádků tabulky
+- Syntax: `{POCET} > 0`, `{SIPKY}`, `{TYP} == "PD"`
+- Vyhodnocuje print engine; designer zobrazí badge "podmíněný"
+
+**Formátovací jazyk — rozšíření Format property:**
+- String operace: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
+- Konzistentní se stávajícím `dd.MM.yyyy` / `N2` — vše za `:` je instrukce
+- Platí pro TextElement, TableCell, BarcodeElement
+
+### 🔮 Vzdálená vize (neplánováno)
 
 **Komponenty:**
-- **Fragmenty / kompozice elementů** — uložené skupiny elementů pro opakované použití
+- **Fragmenty** — uložené skupiny elementů pro opakované použití
 - **InfiniteTextElement** — textový blok roztahující se podle obsahu
-- **ChartElement** — grafy (sloupcové, koláčové, čárové)
-- **SubreportElement** — vnořená šablona (šablona v šabloně)
+- **ChartElement** — grafy
 
 **Pokročilé features:**
-- **V2 VisibilityExpression** — výrazy místo checkbox (např. `{POCET} > 0`)
-- **Conditional formatting** — barva/font podle dat (např. červeně pokud zpoždění > 5 min)
-- **Grouping v tabulkách** — Group Header/Footer (např. per linka v jízdním řádu)
+- **Conditional formatting** — barva/font podle hodnoty dat
+- **Grouping v Dynamic tabulkách** — Group Header/Footer řádky
 - **DB backend pro custom šablony** — `CacheSectionTemplateProvider` místo file-based
+- **AI asistent** — generování šablon z přirozeného jazyka
 
 ---
 

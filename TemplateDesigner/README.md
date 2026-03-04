@@ -329,7 +329,33 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 
 ## Co bude přidáno (plánované funkce)
 
-- **Zamčení elementu** — toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)
-- **Podmíněná viditelnost** — VisibilityExpression (výrazy jako `{POCET} > 0`) pro elementy a řádky tabulky
+### Tabulky a JR
+
+- **JR Tabulka (JRTableElement)** — specializovaný element pro jízdní řády
+  - Matice zastávky × spoje (dynamické sloupce i řádky — aktuální TableElement toto nezvládne)
+  - Uživatel konfiguruje zobrazení: které levé sloupce (Zóna, Km, Zastávka, MHD), šířky, barvy, záhlaví
+  - Šipky směru jízdy, víceúrovňové záhlaví (Pracovní dny / Víkendy), střídání barev
+  - Data (spoje, časy) přijdou z Caché — šablona funguje pro libovolnou linku
 - **Podmíněné řádky tabulky** — VisibilityExpression per řádek v Fixed tabulce
 - **Grouping v Dynamic tabulkách** — Group Header/Footer řádky mezi daty
+
+### Podmíněnost a parametry
+
+- **Template parametry** — parametry definované přímo v šabloně (bool, enum, string) s výchozími hodnotami
+  - Každá šablona deklaruje svoje parametry (např. "Tisknout šipky směru: ano/ne")
+  - Print dialog je dynamicky generovaný ze šablony — bez změny kódu aplikace
+  - Nahrazuje hardcodované checkboxy před tiskem; šablona je sebeobsažná a přenositelná
+  - Předpoklad: VisibilityExpression systém
+- **Podmíněná viditelnost (VisibilityExpression)** — výrazy jako `{POCET} > 0` nebo `{SIPKY}` pro elementy, sekce, řádky tabulky
+
+### Formátování
+
+- **Formátovací jazyk pro řetězce** — rozšíření stávajícího `Format` property
+  - `{POLE:LEFT(4)}` — první 4 znaky
+  - `{POLE:UPPER}` / `{POLE:LOWER}` — velikost písmen
+  - `{POLE:PADLEFT(3,'0')}` — doplnění na délku
+  - Konzistentní se stávajícím `{DATUM:dd.MM.yyyy}` a `{CASTKA:N2}`
+
+### Ostatní
+
+- **Zamčení elementu** — toggle zámku přes klávesovou zkratku nebo toolbar (IsLocked je v modelu, UI chybí)
