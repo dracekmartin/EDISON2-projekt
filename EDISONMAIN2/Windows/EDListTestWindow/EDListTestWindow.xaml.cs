@@ -13,6 +13,7 @@ namespace EDISONMAIN2
 
             TheList.SelectionChanged  += (_, id)  => StatusText.Text = $"Výběr: {id ?? "(žádný)"}";
             TheList.RowDoubleClicked  += (_, id)  => StatusText.Text = $"Dvojklik: {id}";
+            TheList.CellLinkClicked   += (_, e)   => LinkText.Text = $"Link: {e.ColKey} = {e.RowId}";
         }
 
         private void InitializeList_Click(object sender, RoutedEventArgs e)

@@ -177,11 +177,40 @@ namespace EDControls.EDList
                 dataGrid.Columns.Add(BuildDataGridColumn(col));
         }
 
-        private static DataGridColumn BuildDataGridColumn(ListColumn col)
+        private DataGridColumn BuildDataGridColumn(ListColumn col)
         {
             var width = col.Width > 0
                 ? new DataGridLength(col.Width)
                 : new DataGridLength(1, DataGridLengthUnitType.Auto);
+
+            var align = col.Align == EListColumnAlign.Auto ? DefaultAlign(col.Type) : col.Align;
+
+            if (col.IsLink)
+            {
+                var tb = new FrameworkElementFactory(typeof(TextBlock));
+                tb.SetBinding(TextBlock.TextProperty, new Binding($"[{col.Key}]"));
+                tb.SetValue(TextBlock.TextDecorationsProperty, TextDecorations.Underline);
+                tb.SetValue(TextBlock.CursorProperty, Cursors.Hand);
+                tb.SetValue(TextBlock.ForegroundProperty, SystemColors.HotTrackBrush);
+                if (align == EListColumnAlign.Right)
+                    tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
+                else if (align == EListColumnAlign.Center)
+                    tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+                tb.AddHandler(TextBlock.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler((sender, _) =>
+                {
+                    if (sender is TextBlock el &&
+                        el.DataContext is Dictionary<string, string?> row &&
+                        row.TryGetValue("id", out var rowId) && rowId is not null)
+                        CellLinkClicked?.Invoke(this, (rowId, col.Key));
+                }));
+                return new DataGridTemplateColumn
+                {
+                    Header = col.Label,
+                    Width = width,
+                    CellTemplate = new DataTemplate { VisualTree = tb },
+                    CanUserSort = col.Sortable,
+                };
+            }
 
             if (col.Type == EListColumnType.Color)
             {
@@ -190,12 +219,11 @@ namespace EDControls.EDList
                 rect.SetValue(Rectangle.WidthProperty, 30.0);
                 rect.SetBinding(Rectangle.FillProperty,
                     new Binding($"[{col.Key}]") { Converter = new RgbStringToBrushConverter() });
-                var tpl = new DataTemplate { VisualTree = rect };
                 return new DataGridTemplateColumn
                 {
                     Header = col.Label,
                     Width = width,
-                    CellTemplate = tpl,
+                    CellTemplate = new DataTemplate { VisualTree = rect },
                     CanUserSort = col.Sortable,
                 };
             }
@@ -208,7 +236,6 @@ namespace EDControls.EDList
                 CanUserSort = col.Sortable,
             };
 
-            var align = col.Align == EListColumnAlign.Auto ? DefaultAlign(col.Type) : col.Align;
             if (align != EListColumnAlign.Left)
             {
                 var ha = align == EListColumnAlign.Right

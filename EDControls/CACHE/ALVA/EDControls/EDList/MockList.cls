@@ -5,11 +5,12 @@ Class ALVA.EDControls.EDList.MockList Extends %RegisteredObject
 ClassMethod InitializeList(ByRef sys As %String) As %Status
 {
     s list = ##class(ALVA.EDControls.EDList.List).%New()
-    d list.AddColumn("rz",      "RZ",          "TEXT",   110)
+    s col = list.AddColumn("rz", "RZ",          "TEXT",   110)
+    s col.isLink = 1
     d list.AddColumn("typ",     "Typ",          "TEXT",   130)
     d list.AddColumn("aktivni", "Aktivní",      "BOOL",    70)
     d list.AddColumn("odjezd",  "Odjezd",       "HHMM",    75, "RIGHT")
-    s col = list.AddColumn("pocet", "Počet km", "NUMBER",  90, "RIGHT", 1, "N1")
+    d list.AddColumn("pocet", "Počet km", "NUMBER",  90, "RIGHT", 1, "N1")
     d list.AddColumn("datum",   "Datum",        "DATE",   100)
     d list.WriteColumnsToOut()
     q 1
