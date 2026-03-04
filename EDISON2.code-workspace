@@ -16,7 +16,9 @@
         },
         "objectscript.syncLocalChanges": "vscodeOnly",
         "files.watcherExclude": {
-            "**/.vs/**": true
+            "**/.vs/**": true,
+            "**/obj/**": true,
+            "**/bin/**": true
         }
     }
 }
