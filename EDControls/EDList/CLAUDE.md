@@ -859,6 +859,7 @@ window.ShowDialog();
 - [ ] **ColumnLayout** — ukládání pořadí a šířky sloupců per uživatel
 - [ ] **Design-time mock data** v C# (analogie `DesignTimeData` z EDInputForm)
 - [ ] **Kontextové menu** — event pro zobrazení custom menu na řádku
+- [ ] **Sdílené styly** — přidat `Themes/Base.xaml` do EDControls (barvy, fonty, styl DataGridu); EDISONMAIN2 merguje přes `App.xaml`. Aktuálně isLink používá `SystemColors.HotTrackBrush` — po zavedení témat nahradit za `{StaticResource LinkBrush}`
 
 ---
 
