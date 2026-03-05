@@ -69,4 +69,98 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status [ Abstract ]
 {
 }
 
+// ── Helper metody pro agendy ─────────────────────────────────────────────────
+
+/// Přidá jedno pole do JSON array polí.
+/// arr     = %DynamicArray kam se přidává
+/// name    = název pole (např. "CISLO_FAKTURY")
+/// label   = popisek (např. "Číslo faktury")
+/// type    = typ pole: "text", "number", "date", "time", "dateTime", "boolean"
+/// example = (volitelné) příklad hodnoty
+ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, type As %String, example As %String = "")
+{
+    s f = ##class(%DynamicObject).%New()
+    s f.name  = name
+    s f.label = label
+    s f.type  = type
+    if example '= "" {
+        s f.example = example
+    }
+    d arr.%Push(f)
+}
+
+/// Přidá bool parametr do pole parametrů.
+/// arr        = %DynamicArray kam se přidává
+/// name       = název parametru (např. "TISK_POZNAMKY")
+/// label      = popisek (např. "Tisknout poznámku")
+/// defaultVal = výchozí hodnota (0/1 nebo true/false)
+ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean)
+{
+    s p = ##class(%DynamicObject).%New()
+    s p.name  = name
+    s p.label = label
+    s p.type  = "bool"
+    s p.defaultValue = $s(defaultVal:"true", 1:"false")
+    d arr.%Push(p)
+}
+
+/// Přidá mock hodnotu do objektu skalárních hodnot.
+/// vals = %DynamicObject kam se přidává
+/// name = název pole (např. "CISLO_FAKTURY")
+/// val  = hodnota (string nebo number)
+ClassMethod AddMockValue(vals As %DynamicObject, name As %String, val As %String)
+{
+    d vals.%Set(name, val)
+}
+
+/// Zapíše šablonu se dvěma sloupci (Položka | Hodnota) do OUT.
+/// rows = COS array ve formátu:
+///   [["Label 1", "{FIELD1}", "format"], ["Label 2", "{FIELD2}", "format"], ...]
+/// Třetí parametr (format) je volitelný.
+ClassMethod WriteTemplate2Col(rows As %List)
+{
+    s def = ##class(%DynamicObject).%New()
+
+    // Sloupce
+    s cols = ##class(%DynamicArray).%New()
+    s c1 = ##class(%DynamicObject).%New()
+    s c1.header    = "Položka"
+    s c1.width     = 70
+    s c1.widthMode = "Mm"
+    s c1.alignment = "Left"
+    d cols.%Push(c1)
+    s c2 = ##class(%DynamicObject).%New()
+    s c2.header    = "Hodnota"
+    s c2.width     = 80
+    s c2.widthMode = "Mm"
+    s c2.alignment = "Left"
+    d cols.%Push(c2)
+    s def.columns = cols
+
+    // Řádky
+    s defRows = ##class(%DynamicArray).%New()
+    f i=1:1:$ll(rows) {
+        s pair = $lg(rows, i)
+        s row = ##class(%DynamicObject).%New()
+        s cells = ##class(%DynamicArray).%New()
+
+        s cell1 = ##class(%DynamicObject).%New()
+        d cell1.%Set("content", $lg(pair, 1))
+        d cells.%Push(cell1)
+
+        s cell2 = ##class(%DynamicObject).%New()
+        d cell2.%Set("content", $lg(pair, 2))
+        if $ll(pair) > 2 && ($lg(pair, 3) '= "") {
+            d cell2.%Set("format", $lg(pair, 3))
+        }
+        d cells.%Push(cell2)
+
+        s row.cells = cells
+        d defRows.%Push(row)
+    }
+    s def.rows = defRows
+
+    s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
+}
+
 }

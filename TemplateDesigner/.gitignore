@@ -1,6 +1,9 @@
 # Claude Code local settings
 .claude/settings.local.json
 
+# Local configuration with secrets (API keys, etc.)
+dotnet/appsettings.local.json
+
 # Build output
 dotnet/bin/
 dotnet/obj/

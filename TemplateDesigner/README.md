@@ -183,6 +183,100 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 - **Smazat sekci** — pravé tlačítko myši na sekci → Smazat sekci (šablona musí mít alespoň jednu sekci)
 - Přesun a smazání jsou undo-able
 
+### AI Assistant — generování šablon z popisu
+
+AI Assistant automaticky vygeneruje kompletní šablonu podle textového popisu. Stačí popsat, co chcete vytisknout, a AI vytvoří sekce, elementy, formátování a datové vazby.
+
+**Spuštění:**
+- Menu **Nástroje → AI Assistant pro generování šablon**
+- Otevře se dialog s textovým polem pro popis
+
+**Jak to funguje:**
+1. Zadáte popis šablony v češtině, např.:
+   ```
+   Vytvoř fakturu s hlavičkou obsahující logo a název firmy,
+   tabulkou položek (popis, množství, cena) a zápatím s celkovou částkou.
+   ```
+2. Vyberte agendu (volitelné) — pokud vyberete "Jízdní řád" nebo "Faktury", AI použije skutečná pole z Caché
+3. Klikněte **Vygenerovat**
+4. AI vrátí hotovou šablonu — ta se okamžitě otevře v designeru
+
+**Schema injection — AI zná vaše databázová pole:**
+
+Pokud vyberete agendu, AI dostane seznam dostupných polí ze schématu:
+- **Skalární pole** — např. `CISLO_FAKTURY`, `DATUM_VYSTAVENI`, `NAZEV_DODAVATELE`
+- **Kolekce** — např. `POLOZKY` (pro Dynamic tabulky s poli `POPIS`, `MNOZSTVI`, `CENA`)
+- **Parametry** — např. `TISK_POZNAMKY`, `FORMAT_CASTKY`
+
+AI používá **pouze skutečná pole** z vašeho systému, nevymýšlí si názvy. Tabulky mají správné `dataSource`, placeholdery odpovídají skutečným DB sloupcům.
+
+**Konfigurace API klíče:**
+
+AI Assistant vyžaduje **Anthropic API klíč** (Claude). Nastavit lze dvěma způsoby:
+
+1. **Lokální config soubor** (doporučeno) — neverzuje se do gitu:
+   ```json
+   // dotnet/appsettings.local.json
+   {
+     "aiAssistant": {
+       "anthropicApiKey": "sk-ant-api03-..."
+     }
+   }
+   ```
+
+2. **Dialog při spuštění** — pokud není klíč nakonfigurovaný, můžete ho zadat ručně do pole "Anthropic API klíč"
+
+**Získání API klíče:**
+- Registrace na https://console.anthropic.com/
+- Vytvoření API klíče v sekci API Keys
+- Zkopírování klíče do `appsettings.local.json` nebo do dialogu
+
+**Zapnutí/vypnutí funkce:**
+
+V `appsettings.json`:
+```json
+"aiAssistant": {
+  "enabled": true   // false = skryje menu položku
+}
+```
+
+**Model a náklady:**
+
+- Výchozí model: **Claude Haiku 4.5** (rychlý a levný, ~0.8¢ za 1000 tokenů)
+- Typická šablona: 2000-5000 tokenů (~$0.02-0.05 za generování)
+- Pro změnu modelu viz konfigurace v `AnthropicApiClient.cs`
+
+**Tipy pro použití:**
+
+- Buďte specifičtí: "tabulka s 3 sloupci (název, cena, množství)" → AI vytvoří přesně to
+- Zmíňte agendu v popisu: "Vytvoř šablonu pro jízdní řád s tabulkou zastávek" → AI použije pole z JR schématu
+- AI respektuje typografii: "velký tučný titulek" → FontSize 18, FontWeight Bold
+- Kontrolujte výsledek: AI je chytré, ale může udělat chybu — vždy zkontrolujte generovanou šablonu
+
+**Příklad — faktura s FAKTURY agendou:**
+
+```
+Popis:
+Vytvoř šablonu faktury s hlavičkou (číslo, datum), tabulkou položek
+(popis, množství, cena) a zápatím se souhrnem (základ, DPH, celkem).
+
+Agenda: FAKTURY
+
+→ AI vygeneruje:
+- Hlavička s {CISLO_FAKTURY}, {DATUM_VYSTAVENI}
+- Dynamic tabulka s dataSource="POLOZKY", sloupce POPIS, MNOZSTVI, CENA
+- Zápatí s Fixed tabulkou: {ZAKLAD_DANE}, {DPH}, {CELKOVA_CASTKA}
+```
+
+**Debug a řešení problémů:**
+
+Pokud AI vrátí chybu nebo prázdný výsledek:
+- Zkontrolujte API klíč (platnost, kredit na účtu)
+- Zkrátete popis (max ~500 slov)
+- Kompletní JSON odpověď se ukládá do `ai_generated_template_debug.json` vedle aplikace
+
+---
+
 ### Custom šablony sekcí
 
 Custom šablona sekce je **uložená konfigurace sekce včetně všech elementů**, kterou si vytvoříte a pojmenujete pro opakované použití.

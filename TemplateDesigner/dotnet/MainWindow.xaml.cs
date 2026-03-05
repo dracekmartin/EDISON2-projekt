@@ -135,6 +135,10 @@ public partial class MainWindow : Window
 
         UpdatePropertiesPanel();
 
+        // Skrýt AI asistenta pokud je vypnutý v nastavení
+        if (AppSettings.Current?.AiAssistant.Enabled == false)
+            MenuAiAssistant.Visibility = Visibility.Collapsed;
+
         this.PreviewKeyDown += OnWindowKeyDown;
     }
 
@@ -745,6 +749,35 @@ public partial class MainWindow : Window
     {
         var helpDialog = new HelpDialog { Owner = this };
         helpDialog.ShowDialog();
+    }
+
+    private void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
+    {
+        var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
+        var dialog = new AiTemplateAssistantDialog(apiKey, _schemaProvider) { Owner = this };
+
+        if (dialog.ShowDialog() == true && dialog.GeneratedTemplate is not null)
+        {
+            // Otevřít vygenerovanou šablonu v designeru
+            if (!ConfirmUnsavedChanges()) return;
+
+            _state.CurrentTemplate = dialog.GeneratedTemplate;
+            _state.SelectedElements.Clear();
+            _state.ActiveSection = _state.CurrentTemplate.Sections.FirstOrDefault();
+            _currentFilePath = null;
+
+            RefreshSectionsList();
+            InvalidateCanvas();
+            InvalidatePreview();
+            UpdatePropertiesPanel();
+            UpdateTitle();
+
+            // Znovu načíst parametry a schéma pro novou šablonu
+            var agendaCode = _state.CurrentTemplate.AgendaCode;
+            LoadAgendaParameters(agendaCode);
+            var schema = _schemaProvider.GetSchema(agendaCode);
+            BuildSchemaTree(schema);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────

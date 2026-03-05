@@ -12,6 +12,10 @@ public class AppSettings
 {
     public CacheConnectionSettings Cache     { get; set; } = new();
     public List<SchemaAgendaSettings> Agendas { get; set; } = [];
+    public AiAssistantSettings AiAssistant   { get; set; } = new();
+
+    /// <summary>Singleton instance načtená při startu aplikace.</summary>
+    public static AppSettings? Current { get; private set; }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -22,23 +26,54 @@ public class AppSettings
 
     /// <summary>
     /// Načte appsettings.json ze složky vedle exe.
+    /// Pokud existuje appsettings.local.json, přepíše hodnoty z něj (pro lokální konfiguraci).
     /// Pokud soubor neexistuje nebo je poškozený, vrátí výchozí instanci (bez Caché).
     /// </summary>
     public static AppSettings Load()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-        if (!File.Exists(path))
-            return new AppSettings();
+        var baseDir = AppContext.BaseDirectory;
+        var path = Path.Combine(baseDir, "appsettings.json");
+        var localPath = Path.Combine(baseDir, "appsettings.local.json");
 
-        try
+        // Načíst hlavní config
+        AppSettings? settings = null;
+        if (File.Exists(path))
         {
-            var json = File.ReadAllText(path, System.Text.Encoding.UTF8);
-            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions) ?? new AppSettings();
+            try
+            {
+                var json = File.ReadAllText(path, System.Text.Encoding.UTF8);
+                settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+            }
+            catch { /* ignore */ }
         }
-        catch
+
+        settings ??= new AppSettings();
+
+        // Merge s lokálním configem (přepíše hodnoty z appsettings.json)
+        if (File.Exists(localPath))
         {
-            return new AppSettings();
+            try
+            {
+                var localJson = File.ReadAllText(localPath, System.Text.Encoding.UTF8);
+                var local = JsonSerializer.Deserialize<AppSettings>(localJson, JsonOptions);
+                if (local is not null)
+                {
+                    // Merge: lokální hodnoty přepíšou hlavní
+                    if (!string.IsNullOrEmpty(local.Cache.Server))
+                        settings.Cache = local.Cache;
+                    if (local.Agendas.Count > 0)
+                        settings.Agendas = local.Agendas;
+                    if (!string.IsNullOrEmpty(local.AiAssistant.AnthropicApiKey))
+                        settings.AiAssistant.AnthropicApiKey = local.AiAssistant.AnthropicApiKey;
+                    if (local.AiAssistant.Enabled != settings.AiAssistant.Enabled)
+                        settings.AiAssistant.Enabled = local.AiAssistant.Enabled;
+                }
+            }
+            catch { /* ignore */ }
         }
+
+        Current = settings;
+        return Current;
     }
 }
 
@@ -89,4 +124,18 @@ public class SchemaAgendaSettings
     /// např. "ALVA.TemplateDesigner.API.TemplateDesignerMHD".
     /// </summary>
     public string CacheClass { get; set; } = "";
+}
+
+/// <summary>Nastavení AI asistenta pro generování šablon.</summary>
+public class AiAssistantSettings
+{
+    /// <summary>Povolení AI asistenta (false = skryje menu položku).</summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Anthropic API klíč pro volání Claude API.
+    /// Pokud není nastaven, dialog nabídne zadat klíč ručně.
+    /// Získat na https://console.anthropic.com/
+    /// </summary>
+    public string AnthropicApiKey { get; set; } = "";
 }
