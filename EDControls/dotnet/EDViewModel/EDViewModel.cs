@@ -1,11 +1,24 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using ALWA.SYS;
 
 namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
+    private static IWindowNavigator? _navigator;
+
+    public static void SetNavigator(IWindowNavigator navigator) =>
+        _navigator = navigator;
+
+    protected static IWindowNavigator Navigator =>
+        _navigator ?? throw new InvalidOperationException(
+            "IWindowNavigator not set. Call EDViewModel.SetNavigator() in App startup.");
+
+
+    public MLRest? MLRest { get; protected set; }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
@@ -24,6 +37,11 @@ public class EDViewModel : INotifyPropertyChanged
     public EDViewModel()
     {
         OkCommand = new RelayCommand(OnOk);
+    }
+
+    public EDViewModel(MLRest mlRest) : this()
+    {
+        MLRest = mlRest;
     }
 
     /// <summary>
