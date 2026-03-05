@@ -364,6 +364,13 @@ public partial class ElementPropertiesWindow : Window
             ]
         });
 
+        list.Add(new StringPropertyDescriptor
+        {
+            Label = "Viditelnost", Group = "Podmínky",
+            Get   = () => section.VisibilityExpression ?? "",
+            Set   = v  => section.VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim()
+        });
+
         // Vlastnosti specifické pro typ sekce (nebo PrintBehavior)
         // DEPRECATED: Properties DataSource a RowHeight jsou nyní přímo v base třídě Section
         // Zobrazují se, pokud PrintBehavior = PerDataRow

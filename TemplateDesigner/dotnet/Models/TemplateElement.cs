@@ -72,13 +72,13 @@ public abstract class TemplateElement
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
 
-        new BoolPropertyDescriptor
+        new StringPropertyDescriptor
         {
-            Label = "Tisknout", Group = "Podmínky",
-            // null / prázdný výraz = tisknout; "false" = skrýt
-            // Ostatní výrazy (budoucí V2 syntax) se považují za "tisknout"
-            Get   = () => !string.Equals(VisibilityExpression, "false", StringComparison.OrdinalIgnoreCase),
-            Set   = v  => VisibilityExpression = v ? null : "false"
+            Label = "Viditelnost", Group = "Podmínky",
+            // null / prázdný = vždy viditelný
+            // Výrazy: "{TISK_SIPKY}", "{POCET} > 0", "{TYP} == \"JR\" && !{TISK_TARIFU}"
+            Get = () => VisibilityExpression ?? "",
+            Set = v  => VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim()
         },
     ];
 

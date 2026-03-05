@@ -186,35 +186,11 @@
                                            FontSize="10" Foreground="#888888"
                                            TextWrapping="Wrap"/>
                             </Border>
-                            <!-- Seznam polí -->
-                            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                                <ListBox x:Name="FieldsList"
-                                         BorderThickness="0"
-                                         Background="Transparent"
-                                         MouseDoubleClick="FieldsList_MouseDoubleClick">
-                                    <ListBox.ItemTemplate>
-                                        <DataTemplate>
-                                            <Grid Margin="2,1">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="Auto"/>
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Grid.Column="0"
-                                                           Text="{Binding FieldName}"
-                                                           FontFamily="Consolas" FontSize="11"
-                                                           Foreground="#1A5276"
-                                                           ToolTip="{Binding Description}"/>
-                                                <TextBlock Grid.Column="1"
-                                                           Text="{Binding Label}"
-                                                           FontSize="10" Foreground="#666666"
-                                                           Margin="6,0,0,0"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           MaxWidth="80"/>
-                                            </Grid>
-                                        </DataTemplate>
-                                    </ListBox.ItemTemplate>
-                                </ListBox>
-                            </ScrollViewer>
+                            <!-- Strom polí: skalární pole / kolekce / parametry -->
+                            <TreeView x:Name="SchemaTree"
+                                      BorderThickness="0"
+                                      Background="Transparent"
+                                      MouseDoubleClick="SchemaTree_MouseDoubleClick"/>
                         </DockPanel>
                     </TabItem>
                 </TabControl>

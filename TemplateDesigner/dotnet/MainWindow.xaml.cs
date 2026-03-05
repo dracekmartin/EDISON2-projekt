@@ -36,6 +36,21 @@ public partial class MainWindow : Window
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
+    // Sdílené zdroje pro BuildSchemaTree — vytvořeny jednou, nikoliv per položka
+    private static readonly System.Windows.Media.FontFamily _monoFont =
+        new("Consolas");
+    private static readonly System.Windows.Media.SolidColorBrush _brushGroupHeader =
+        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x44, 0x44, 0x44)));
+    private static readonly System.Windows.Media.SolidColorBrush _brushFieldName =
+        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1A, 0x52, 0x76)));
+    private static readonly System.Windows.Media.SolidColorBrush _brushFieldLabel =
+        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x66, 0x66, 0x66)));
+    private static readonly System.Windows.Media.SolidColorBrush _brushMuted =
+        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x88, 0x88, 0x88)));
+
+    private static T Freeze<T>(T freezable) where T : System.Windows.Freezable
+        { freezable.Freeze(); return freezable; }
+
     // ── Mouse state machine ──
     private enum MouseMode { Idle, Dragging, Resizing, RubberBand }
     private MouseMode      _mouseMode    = MouseMode.Idle;
@@ -989,10 +1004,10 @@ public partial class MainWindow : Window
 
         if (string.IsNullOrWhiteSpace(agendaCode))
         {
-            AgendaNameText.Text    = "Agenda: — (šablona bez agendy)";
-            FieldsList.ItemsSource = null;
+            AgendaNameText.Text = "Agenda: — (šablona bez agendy)";
             UpdateCacheStatus(agendaCode: null, cacheSchema: null);
             LoadAgendaParameters(agendaCode);
+            BuildSchemaTree(schema: null);
             return;
         }
 
@@ -1000,20 +1015,118 @@ public partial class MainWindow : Window
 
         if (schema is null)
         {
-            AgendaNameText.Text    = $"Agenda: {agendaCode} (schéma nenalezeno)";
-            FieldsList.ItemsSource = null;
+            AgendaNameText.Text = $"Agenda: {agendaCode} (schéma nenalezeno)";
             UpdateCacheStatus(agendaCode, cacheSchema: null);
             LoadAgendaParameters(agendaCode);
+            BuildSchemaTree(schema: null);
             return;
         }
 
-        AgendaNameText.Text    = $"Agenda: {schema.AgendaName}";
-        FieldsList.ItemsSource = schema.Fields;
+        AgendaNameText.Text = $"Agenda: {schema.AgendaName}";
 
         // Zjistit zdroj: zkusit přímo Caché provider (má vlastní cache → bez extra MLRest volání)
         var cacheSchema = _cacheProvider?.GetSchema(agendaCode);
         UpdateCacheStatus(agendaCode, cacheSchema);
         LoadAgendaParameters(agendaCode);
+
+        // Strom se staví až po LoadAgendaParameters (potřebujeme _agendaParameters)
+        BuildSchemaTree(schema);
+    }
+
+    /// <summary>
+    /// Sestaví TreeView se třemi skupinami: Skalární pole / Kolekce / Parametry.
+    /// </summary>
+    private void BuildSchemaTree(DataSchema? schema)
+    {
+        SchemaTree.Items.Clear();
+
+        TreeViewItem MakeGroup(string header) => new()
+        {
+            Header     = header,
+            FontWeight = FontWeights.SemiBold,
+            FontSize   = 11,
+            Foreground = _brushGroupHeader,
+            IsExpanded = true,
+            Focusable  = false
+        };
+
+        TreeViewItem MakeField(string fieldName, string label, string? tooltip = null)
+        {
+            var panel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+            panel.Children.Add(new TextBlock
+            {
+                Text       = fieldName,
+                FontFamily = _monoFont,
+                FontSize   = 11,
+                Foreground = _brushFieldName
+            });
+            if (!string.IsNullOrEmpty(label))
+            {
+                panel.Children.Add(new TextBlock
+                {
+                    Text       = "  " + label,
+                    FontSize   = 10,
+                    Foreground = _brushFieldLabel
+                });
+            }
+
+            return new TreeViewItem
+            {
+                Header  = panel,
+                Tag     = $"{{{fieldName}}}",
+                FontSize = 11,
+                ToolTip  = tooltip
+            };
+        }
+
+        // ── Skalární pole ────────────────────────────────────────────────────
+        var fields = schema?.Fields ?? [];
+        if (fields.Count > 0)
+        {
+            var grpFields = MakeGroup($"📋 Skalární pole ({fields.Count})");
+            foreach (var f in fields)
+                grpFields.Items.Add(MakeField(f.FieldName, f.Label, f.Description ?? f.Example));
+            SchemaTree.Items.Add(grpFields);
+        }
+
+        // ── Kolekce (tabulkové zdroje) ───────────────────────────────────────
+        var collections = schema?.FieldCollections ?? [];
+        if (collections.Count > 0)
+        {
+            var grpColls = MakeGroup($"📊 Kolekce ({collections.Count})");
+            foreach (var coll in collections)
+            {
+                var collItem = new TreeViewItem
+                {
+                    Header     = $"{coll.Name}  [{coll.CollectionKey}]",
+                    IsExpanded = true
+                };
+                foreach (var f in coll.Fields)
+                    collItem.Items.Add(MakeField(f.FieldName, f.Label, f.Description ?? f.Example));
+                grpColls.Items.Add(collItem);
+            }
+            SchemaTree.Items.Add(grpColls);
+        }
+
+        // ── Parametry ────────────────────────────────────────────────────────
+        if (_agendaParameters.Count > 0)
+        {
+            var grpParams = MakeGroup($"⚙ Parametry ({_agendaParameters.Count})");
+            foreach (var p in _agendaParameters)
+                grpParams.Items.Add(MakeField(p.Name, p.Label + " (parametr)"));
+            SchemaTree.Items.Add(grpParams);
+        }
+
+        if (SchemaTree.Items.Count == 0)
+        {
+            SchemaTree.Items.Add(new TreeViewItem
+            {
+                Header     = "Žádná pole",
+                FontSize   = 11,
+                Foreground = _brushMuted,
+                Focusable  = false
+            });
+        }
     }
 
     /// <summary>
@@ -1147,11 +1260,10 @@ public partial class MainWindow : Window
             RefreshFieldsList();
     }
 
-    private void FieldsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    private void SchemaTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (FieldsList.SelectedItem is not DataField field) return;
-
-        string placeholder = $"{{{field.FieldName}}}";
+        // Tag je nastaven jen na listových položkách (pole/parametry), ne na skupinách
+        if (SchemaTree.SelectedItem is not TreeViewItem { Tag: string placeholder }) return;
 
         // Pokud je vybrán TextElement → vlož placeholder do textu (undo-able)
         if (_state.SelectedElements.Count == 1 && _state.SelectedElements[0] is TextElement textEl)
