@@ -24,9 +24,15 @@ public partial class MainWindow : Window
     private          ElementPropertiesWindow? _propsWindow;
     private string? _currentFilePath;
 
-    private readonly IDataSchemaProvider  _schemaProvider;
-    private readonly CacheAgendaProvider? _cacheProvider;   // null = Caché není nakonfigurováno
+    private readonly IDataSchemaProvider    _schemaProvider;
+    private readonly CacheAgendaProvider?   _cacheProvider;   // null = Caché není nakonfigurováno
     private readonly SectionTemplateManager _sectionTemplates;
+
+    // Parametry sestavy — načtené z Caché pro aktuální agendu
+    private List<TemplateParameter>                    _agendaParameters    = [];
+    private Dictionary<string, object?>               _previewParams       = new();
+    private Dictionary<string, object?>?              _cachedParamValues;  // null = neplatná cache
+    private string?                                   _lastParamsAgendaCode;
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
@@ -96,7 +102,17 @@ public partial class MainWindow : Window
 
         _propsWindow = new ElementPropertiesWindow(
             _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
-            getAvailableFields:    () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields,
+            getAvailableFields:    () =>
+            {
+                var schemaFields = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields ?? [];
+                var paramFields  = _agendaParameters.Select(p => new DataField
+                {
+                    FieldName = p.Name,
+                    Label     = p.Label + " (parametr)",
+                    DataType  = FieldDataType.Text
+                });
+                return [.. schemaFields, .. paramFields];
+            },
             getAvailableGroups:    () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.FieldCollections,
             tableTemplateProvider: _cacheProvider);
         this.Loaded += (_, _) => _propsWindow.Owner = this;
@@ -581,6 +597,19 @@ public partial class MainWindow : Window
             }
         }
 
+        // Přidej hodnoty parametrů do DataContext — přepíší případné kolize s mock daty
+        if (_previewParams.Count > 0)
+        {
+            _cachedParamValues ??= _previewParams.ToDictionary(
+                kv => kv.Key,
+                kv => (object?)kv.Value?.ToString(),
+                StringComparer.OrdinalIgnoreCase);
+
+            mockData = mockData is not null
+                ? mockData.WithExtraValues(_cachedParamValues)
+                : new DataContext(_cachedParamValues);
+        }
+
         return mockData;
     }
 
@@ -963,6 +992,7 @@ public partial class MainWindow : Window
             AgendaNameText.Text    = "Agenda: — (šablona bez agendy)";
             FieldsList.ItemsSource = null;
             UpdateCacheStatus(agendaCode: null, cacheSchema: null);
+            LoadAgendaParameters(agendaCode);
             return;
         }
 
@@ -973,6 +1003,7 @@ public partial class MainWindow : Window
             AgendaNameText.Text    = $"Agenda: {agendaCode} (schéma nenalezeno)";
             FieldsList.ItemsSource = null;
             UpdateCacheStatus(agendaCode, cacheSchema: null);
+            LoadAgendaParameters(agendaCode);
             return;
         }
 
@@ -982,6 +1013,109 @@ public partial class MainWindow : Window
         // Zjistit zdroj: zkusit přímo Caché provider (má vlastní cache → bez extra MLRest volání)
         var cacheSchema = _cacheProvider?.GetSchema(agendaCode);
         UpdateCacheStatus(agendaCode, cacheSchema);
+        LoadAgendaParameters(agendaCode);
+    }
+
+    /// <summary>
+    /// Načte parametry sestavy z Caché pro danou agendu a inicializuje _previewParams na defaulty.
+    /// Přeskočí reload pokud se agenda nezměnila (zachová uživatelské hodnoty).
+    /// </summary>
+    private void LoadAgendaParameters(string? agendaCode)
+    {
+        // Normalizuj: null i "" znamenají "šablona bez agendy"
+        var code = string.IsNullOrEmpty(agendaCode) ? null : agendaCode;
+        if (code == _lastParamsAgendaCode) return;
+        _lastParamsAgendaCode = code;
+
+        _agendaParameters = code is not null && _cacheProvider is not null
+            ? [.. _cacheProvider.GetParameters(code)]
+            : [];
+
+        // Inicializuj hodnoty na defaulty
+        _previewParams.Clear();
+        _cachedParamValues = null;
+        foreach (var p in _agendaParameters)
+            _previewParams[p.Name] = p.GetDefaultTyped();
+
+        RefreshParametersPanel();
+        InvalidatePreview();
+    }
+
+    /// <summary>
+    /// Vygeneruje WPF kontrolky pro parametry sestavy v preview panelu.
+    /// </summary>
+    private void RefreshParametersPanel()
+    {
+        PreviewParamsPanel.Children.Clear();
+
+        if (_agendaParameters.Count == 0)
+        {
+            PreviewParamsBorder.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        PreviewParamsBorder.Visibility = Visibility.Visible;
+
+        TextBlock MakeLabel(string text) => new TextBlock
+        {
+            Text = text + ":",
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin   = new Thickness(0, 0, 4, 0),
+            FontSize = 11
+        };
+
+        foreach (var param in _agendaParameters)
+        {
+            var current = _previewParams.TryGetValue(param.Name, out var v) ? v : param.GetDefaultTyped();
+
+            var container = new StackPanel
+            {
+                Orientation = System.Windows.Controls.Orientation.Horizontal,
+                Margin      = new Thickness(0, 0, 16, 0),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            if (param.Type == "bool")
+            {
+                var cb = new CheckBox
+                {
+                    Content           = param.Label,
+                    IsChecked         = current is bool b && b,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    FontSize          = 11
+                };
+                cb.Checked   += (_, _) => { _previewParams[param.Name] = true;  _cachedParamValues = null; InvalidatePreview(); };
+                cb.Unchecked += (_, _) => { _previewParams[param.Name] = false; _cachedParamValues = null; InvalidatePreview(); };
+                container.Children.Add(cb);
+            }
+            else if (param.Type == "enum" && param.Options is { Count: > 0 })
+            {
+                container.Children.Add(MakeLabel(param.Label));
+                var combo = new ComboBox { Width = 90, FontSize = 11 };
+                foreach (var opt in param.Options) combo.Items.Add(opt);
+                combo.SelectedItem = current?.ToString() ?? param.Options[0];
+                combo.SelectionChanged += (_, _) =>
+                {
+                    if (combo.SelectedItem is string sel)
+                    { _previewParams[param.Name] = sel; _cachedParamValues = null; InvalidatePreview(); }
+                };
+                container.Children.Add(combo);
+            }
+            else
+            {
+                container.Children.Add(MakeLabel(param.Label));
+                var tb = new TextBox
+                {
+                    Width = 80, FontSize = 11,
+                    Text  = current?.ToString() ?? "",
+                    VerticalAlignment = VerticalAlignment.Center
+                };
+                tb.TextChanged += (_, _) => { _previewParams[param.Name] = tb.Text; _cachedParamValues = null; InvalidatePreview(); };
+                container.Children.Add(tb);
+            }
+
+            PreviewParamsPanel.Children.Add(container);
+        }
     }
 
     /// <summary>

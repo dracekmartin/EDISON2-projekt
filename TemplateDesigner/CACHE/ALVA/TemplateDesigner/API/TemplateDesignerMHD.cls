@@ -112,6 +112,30 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
     q 1
 }
 
+/// Vrátí parametry sestavy pro MHD/JR agendu.
+ClassMethod GetParameters(ByRef sys As %String) As %Status
+{
+    s arr = ##class(%DynamicArray).%New()
+
+    d ..AddBoolParam(arr, "TISK_SIPKY",  "Tisknout šipky směru", "true")
+    d ..AddBoolParam(arr, "TISK_TARIFU", "Tarifní zóna",         "false")
+
+    // Formát času — enum
+    s p = ##class(%DynamicObject).%New()
+    s p.name         = "FORMAT_CASU"
+    s p.label        = "Formát času"
+    s p.type         = "enum"
+    s p.defaultValue = "H:mm"
+    s opts = ##class(%DynamicArray).%New()
+    d opts.%Push("H:mm")
+    d opts.%Push("HH:mm")
+    s p.options = opts
+    d arr.%Push(p)
+
+    s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
+    q 1
+}
+
 /// Vrátí data pro tisk (runtime — implementuje reálné DB volání).
 /// Tato metoda je zodpovědností konkrétní agendy a závisí na databázové struktuře.
 ClassMethod GetData(ByRef sys As %String) As %Status
@@ -196,6 +220,17 @@ ClassMethod MakeSpoj(cislo As %String, typDne As %String, poznamka As %String) A
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+/// Přidá bool parametr do pole parametrů.
+ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %String)
+{
+    s p = ##class(%DynamicObject).%New()
+    s p.name         = name
+    s p.label        = label
+    s p.type         = "bool"
+    s p.defaultValue = defaultVal
+    d arr.%Push(p)
+}
 
 /// Přidá jedno pole do JSON array polí.
 ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, type As %String)

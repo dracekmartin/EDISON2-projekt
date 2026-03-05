@@ -255,6 +255,15 @@
                                        VerticalAlignment="Center"/>
                         </DockPanel>
                     </Border>
+                    <!-- Parametry sestavy (skrytý pokud agenda nemá parametry) -->
+                    <Border x:Name="PreviewParamsBorder" DockPanel.Dock="Top"
+                            Visibility="Collapsed"
+                            Background="#FAFAFA"
+                            BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
+                            Padding="8,6">
+                        <WrapPanel x:Name="PreviewParamsPanel" Orientation="Horizontal"/>
+                    </Border>
+
                     <!-- Scrollovatelný canvas náhledu — pevná šířka (75 % zoom), panel lze tahat -->
                     <ScrollViewer HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"

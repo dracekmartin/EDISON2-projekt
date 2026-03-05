@@ -25,6 +25,14 @@ public class Template
     /// </summary>
     public Dictionary<string, string>? SampleData { get; set; }
 
+    /// <summary>
+    /// Parametry sestavy — renderovací rozhodnutí vystavená uživateli před tiskem.
+    /// Null / prázdný seznam = šablona nemá parametry.
+    /// Připraveno pro budoucí offline podporu (bez Caché) a pro přepsání Caché defaultů per šablona.
+    /// Aktuálně se parametry načítají pouze z Caché AgendaAPI.GetParameters().
+    /// </summary>
+    public List<TemplateParameter>? Parameters { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 }

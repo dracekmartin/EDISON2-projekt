@@ -24,16 +24,17 @@ Systém se skládá ze dvou částí:
 
 ### 🎯 Aktuální focus
 
-**PDF export live preview — hotovo.** `PreviewCanvas.RenderToPdf()` + menu položka + tlačítko v preview panelu. Stejná mock data jako live preview (Caché GetMockData → schema fallback).
+**Parametry sestavy (Part 1) — hotovo.** Parametry definované v Caché `GetParameters` jsou zobrazeny jako interaktivní kontrolky v preview panelu (CheckBox/ComboBox/TextBox). Hodnoty jsou injektovány do DataContextu jako `{PARAM_NAME}` placeholdery dostupné v preview i PDF exportu. Parametry jsou také zobrazeny v pickeru polí (s příznakem "(parametr)").
 
-**Další kroky:**
-1. Podmíněné řádky tabulky (VisibilityExpression per řádek)
+**Další kroky (Roadmap bod 2):**
+1. VisibilityExpression evaluator — `{TISK_SIPKY}` na `VisibilityExpression` elementu jej skryje/zobrazí
 2. Grouping v Dynamic tabulkách
 
 **Co už máme:**
 - ✅ Text, Image, Rectangle, Line (základní elementy)
 - ✅ BarcodeElement (QR kód + Code128)
 - ✅ TableElement — plný Fixed/Dynamic mód, UI editor sloupců a řádků, barvy, orámování
+- ✅ Parametry sestavy (Part 1) — preview panel s interaktivními kontrolkami, hodnoty v DataContext
 
 **Co chybí (klasické komponenty):**
 - ❌ Chart/Graph (budoucnost)
@@ -44,8 +45,9 @@ Systém se skládá ze dvou částí:
 **Speciální požadavky pro jízdní řády:**
 - ✅ TableElement Dynamic mód s opakováním řádků z DataSource
 - ✅ QR kódy pro cestující (BarcodeElement)
-- ❌ Podmíněné řádky tabulky (VisibilityExpression — budoucnost)
-- ❌ Grouping v tabulkách (budoucnost)
+- ❌ Podmíněné řádky tabulky (VisibilityExpression) → viz Roadmap bod 2
+- ❌ Grouping v tabulkách → viz Roadmap bod 3
+- ❌ JRTableElement (matice zastávky × spoje) → Vzdálená vize
 
 ### ✅ Implementováno a funkční
 
@@ -80,8 +82,17 @@ Systém se skládá ze dvou částí:
 - ✅ Fields browser v levém panelu (záložka "Pole agendy")
 
 **Caché strana:**
-- ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData, **GetMockData**)
-- ✅ `ALVA.JR.TiskAPI` (nebo `TemplateDesignerMHD`) — referenční implementace pro JR agendu; GetMockData vrací 8 zastávek + 4 spoje
+- ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData, GetMockData, **GetParameters**)
+- ✅ `ALVA.TemplateDesigner.API.TemplateDesignerMHD` — referenční implementace pro JR agendu; GetMockData vrací 8 zastávek + 4 spoje; GetParameters vrací TISK_SIPKY/TISK_TARIFU/FORMAT_CASU
+
+**Parametry sestavy:**
+- ✅ `TemplateParameter` model (Name, Label, Type, DefaultValue, Options, `GetDefaultTyped()`)
+- ✅ `Template.Parameters` — nullable list; připraveno pro budoucí offline fallback
+- ✅ `DataContext.WithExtraValues()` — immutabilní merge parametrů do DataContextu
+- ✅ `CacheAgendaProvider.GetParameters()` + `ParseParameters()` — volá Caché, cachuje výsledek
+- ✅ Preview panel — `PreviewParamsBorder/Panel`: CheckBox (bool), ComboBox (enum), TextBox (string/other); interaktivní refresh náhledu
+- ✅ `getAvailableFields` lambda — parametry zobrazeny v pickeru polí s příznakem "(parametr)"
+- ✅ `_cachedParamValues` — kešuje konverzi parametrů do DataContext; invaliduje se jen při změně hodnoty
 
 **Serialization:**
 - ✅ Template JSON serialization (camelCase, enums as strings, null omitted)
@@ -92,15 +103,115 @@ Systém se skládá ze dvou částí:
 
 *(žádné aktivní problémy)*
 
-### 📋 TODO Seznam (prioritizováno)
+### 📋 Roadmap (obecný tiskový engine)
 
-**OPTIONAL:**
-1. **Přidat context menu na záhlaví sekce v designeru**
-   - Pravý klik na záhlaví sekce (ne v levém panelu, ale přímo na canvasu)
-   - Volby: Vlastnosti, Duplikovat, Smazat, Přesunout nahoru/dolů
-   - Alternativa k levému panelu pro rychlejší přístup
+Cíl: systém schopný pokrýt libovolnou tiskovou sestavu, nezávisle na JR agendě.
+Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
+
+---
+
+#### 🔴 Kritické — bez toho narazíme při prvním reálném požadavku
+
+**1. Parametry sestavy** ✅ Part 1 hotovo — zbývá Part 2 (print dialog)
+Uživatel zadá hodnoty před tiskem (datum, filtr, přepínač). Bez toho každá sestava s filtrem vyžaduje změnu kódu.
+- ✅ Definice parametrů v Caché `GetParameters` (název, typ `bool/enum/string/date`, label, default)
+- ✅ Live preview panel s interaktivními kontrolkami — hodnoty injektovány do DataContextu jako `{PARAM_NAME}`
+- ✅ Parametry zobrazeny v pickeru polí s příznakem "(parametr)"
+- ❌ Print dialog dynamicky generovaný ze šablony — bez změny kódu aplikace (Part 2 — závisí na VisibilityExpression)
+- ❌ Ukládání parametrů do JSON šablony + offline fallback (bez Caché)
+- *Předpoklad pro bod 2 (VisibilityExpression)*
+
+**2. Výrazový jazyk**
+Základní výpočty a podmínky prostupující celým systémem — nejen viditelnost, ale i hodnoty buněk, barvy, výšky.
+- Podmínky: `{POCET} > 0`, `{TYP} == "PD"` → základ pro **VisibilityExpression** (elementy, sekce, řádky tabulky)
+- Agregační funkce v TableElement: `SUM({CENA})`, `COUNT()`, `AVG({CAS})`
+- Summary řádek tabulky (zápatí s agregacemi za celou tabulku)
+- Formátovací rozšíření: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
+  (konzistentní se stávajícím `dd.MM.yyyy` / `N2` — vše za `:` je instrukce)
+
+**3. Grouping v TableElement**
+Seskupení řádků dynamické tabulky podle hodnoty pole.
+- `TableRowType` enum: `GroupHeader`, `Data`, `GroupFooter`, `Summary`
+- `GroupByField` property na TableElement
+- Print engine sleduje změnu hodnoty groupovacího pole a vkládá Header/Footer řádky
+- GroupFooter může obsahovat agregace ze skupiny (SUM/COUNT)
+
+---
+
+#### 🟡 Důležité — omezení flexibility bez toho
+
+**4. Flow layout sekcí (InfiniteTextElement)**
+Absolutní pozicování se rozbije jakmile element přeteče svou výšku.
+- `InfiniteTextElement` — textový blok roztahující se podle obsahu (výška null)
+- Sekce s `OverflowBehavior=SplitAcrossPages` musí posouvat elementy pod přetečeným
+- Print engine počítá výšku sekce z obsahu, ne z `DesignerHeight`
+
+**5. Vnořené datasource**
+Flat `_values + _rows` nestačí pro hierarchická data.
+- `_rows` uvnitř `_rows` — kolekce uvnitř kolekce (faktura → položky → daně)
+- TableElement může mít vnořený DataSource odkazující na child kolekci
+- DataContext API rozšířit o `GetChildRows(collectionKey, parentIndex)`
+
+**6. Locale / CultureInfo v RenderContext**
+Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
+- `CultureInfo` jako součást `RenderContext`
+- Konfigurovatelné per šablona nebo per agenda
+- Konzistentní chování designer ↔ print engine
+
+---
+
+#### 🟢 Technický dluh — nevybuchne hned, ale časem ano
+
+**7. Migrace verzí šablon**
+Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace.
+- Explicitní migrace při načítání starších JSON šablon
+- Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
+- Minimálně: logovat varování při načtení šablony se starší verzí
+
+**8. Computed fields**
+Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
+- Definice v agendě (nebo přímo v šabloně)
+- Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
+- Alternativa k výrazovému jazyku pro komplexnější logiku
+
+**9. Metadata a správa šablon**
+Důležité jakmile šablon bude víc než 10.
+- Autor, datum změny, kategorie, popis
+- Thumbnail preview (PNG generovaný při uložení)
+- Verzování šablon (kdo kdy co změnil)
+
+---
+
+#### ✅ Záměrně jinak — neřešit
+
+- **Caché jako source of truth pro tabulkové šablony** — dává smysl pro doménovou logiku
+- **Univerzální Section třída** — jednodušší než pevná hierarchie (Crystal Reports)
+- **Absolutní pozicování jako default** — správné pro tiskové sestavy s pevným layoutem
+
+---
+
+#### 🔧 UI drobnosti (low priority)
+
+- **Context menu na záhlaví sekce v designeru** — pravý klik přímo na canvasu (Vlastnosti, Duplikovat, Smazat, Přesunout); alternativa k levému panelu
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-05 — Parametry sestavy (Part 1):**
+- ✅ `TemplateParameter` model — Name, Label, Type (`"bool"/"enum"/"string"/"number"/"date"`), DefaultValue, Options, `GetDefaultTyped()`
+- ✅ `Template.Parameters` — nullable list; přítomno v JSON šabloně; připraveno pro budoucí offline fallback (bez Caché)
+- ✅ `DataContext.WithExtraValues(IReadOnlyDictionary)` — immutabilní merge; vrací nový DataContext
+- ✅ `CacheAgendaProvider.GetParameters(agendaCode)` — volá Caché `AgendaAPI.GetParameters`, parsuje JSON pole, cachuje per agendaCode
+- ✅ `AgendaAPI.cls` — přidána neabstraktní `GetParameters` s výchozí implementací `"[]"` (zachovává zpětnou kompatibilitu s existujícími Caché třídami)
+- ✅ `TemplateDesignerMHD.cls` — `GetParameters` pro JR: TISK_SIPKY (bool/true), TISK_TARIFU (bool/false), FORMAT_CASU (enum/H:mm); helper `AddBoolParam`
+- ✅ `MainWindow` — `LoadAgendaParameters()`, `RefreshParametersPanel()`, `_previewParams`, `_cachedParamValues`
+  - Preview panel: `PreviewParamsBorder/Panel` (WrapPanel) — CheckBox pro bool, ComboBox pro enum, TextBox pro ostatní
+  - Panel se zobrazí jen pokud agenda má parametry; schovaný pokud `_agendaParameters.Count == 0`
+  - Změna kontrolky → invalidace `_cachedParamValues` + `InvalidatePreview()`
+  - `_lastParamsAgendaCode` guard s normalizací null/empty → parametry se nenačítají opakovaně při přepínání tabů
+- ✅ `getAvailableFields` lambda — merguje schema fields + parametry jako `DataField` s příznakem "(parametr)"; `{TISK_SIPKY}` není označen červeně v Properties panelu
+- ✅ `BuildPreviewMockData()` — injektuje `_cachedParamValues` do DataContextu; parametry přepíší případné kolize s mock daty
+- ✅ Simplify: `_cachedParamValues` kešuje `ToDictionary` — alokuje se jen při změně, ne každý frame
+- ✅ Simplify: `MakeLabel()` lokální funkce — extrahuje duplikovaný `TextBlock` label v `RefreshParametersPanel`
 
 **2026-03-05 — PDF export live preview:**
 - ✅ `PreviewCanvas.RenderToPdf(filePath, data)` — SkiaSharp `SKDocument.CreatePdf`, 72pt/mm, bílé pozadí, respektuje okraje šablony
@@ -475,43 +586,21 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 ---
 
-### 🗺️ Plánované features (dohodnuto, zatím neimplementováno)
+### 🔮 Vzdálená vize (mimo aktuální scope)
 
-**JR Tabulka:**
-- `JRTableElement` — specializovaný element pro JR jízdní řády
-  - Matice zastávky × spoje; aktuální `TableElement` Fixed/Dynamic nestačí (tam jsou sloupce fixní)
-  - Properties: levé sloupce (Zóna/Km/Zastávka/MHD — checkboxy), šířka sloupce spoje, barvy, záhlaví skupin dní, šipky směru
-  - Data přijdou z Caché GetData — šablona je přenositelná přes linky
-  - Renderer: print engine dostane spoje[] + zastávky[] → vygeneruje layout sám
-
-**Template parametry:**
-- Parametry definované v JSON šabloně s labelem, typem (bool/enum/string) a defaultem
-- Print dialog dynamicky generovaný ze šablony — bez změny kódu aplikace
-- Nahrazuje hardcodované pre-print checkboxy; každá šablona má svoje parametry
-- Umožní: "Tisknout šipky: ano/ne", "Formát času: H:mm / HH:mm", atd.
-- Předpoklad pro implementaci: VisibilityExpression systém
-
-**VisibilityExpression:**
-- Výrazy pro podmíněnou viditelnost elementů, sekcí, řádků tabulky
-- Syntax: `{POCET} > 0`, `{SIPKY}`, `{TYP} == "PD"`
-- Vyhodnocuje print engine; designer zobrazí badge "podmíněný"
-
-**Formátovací jazyk — rozšíření Format property:**
-- String operace: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
-- Konzistentní se stávajícím `dd.MM.yyyy` / `N2` — vše za `:` je instrukce
-- Platí pro TextElement, TableCell, BarcodeElement
-
-### 🔮 Vzdálená vize (neplánováno)
+**JR specifika:**
+- `JRTableElement` — specializovaný element pro jízdní řády (matice zastávky × spoje)
+  - Aktuální `TableElement` Fixed/Dynamic nestačí — sloupce jsou dynamické i v ose X
+  - Properties: levé sloupce (Zóna/Km/Zastávka/MHD), šířka sloupce spoje, záhlaví skupin dní, šipky
+  - Data z Caché GetData; šablona přenositelná přes linky
 
 **Komponenty:**
-- **Fragmenty** — uložené skupiny elementů pro opakované použití
-- **InfiniteTextElement** — textový blok roztahující se podle obsahu
+- **Fragmenty** — uložené skupiny elementů pro opakované použití (jako custom section templates, ale na úrovni elementů)
 - **ChartElement** — grafy
 
 **Pokročilé features:**
-- **Conditional formatting** — barva/font podle hodnoty dat
-- **Grouping v Dynamic tabulkách** — Group Header/Footer řádky
-- **DB backend pro custom šablony** — `CacheSectionTemplateProvider` místo file-based
+- **Conditional formatting** — barva/font buňky nebo elementu podle hodnoty dat
+- **DB backend pro custom šablony** — `CacheSectionTemplateProvider` místo file-based V1
 - **AI asistent** — generování šablon z přirozeného jazyka
 
 ---

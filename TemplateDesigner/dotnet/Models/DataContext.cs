@@ -41,5 +41,17 @@ public class DataContext
         return Regex.Replace(template, @"\{(\w+)\}", m => GetString(m.Groups[1].Value, m.Value));
     }
 
+    /// <summary>
+    /// Vrátí nový DataContext s hodnotami z tohoto plus extra hodnoty.
+    /// Extra hodnoty přepíší existující klíče.
+    /// </summary>
+    public DataContext WithExtraValues(IReadOnlyDictionary<string, object?> extra)
+    {
+        var merged = new Dictionary<string, object?>(_values, StringComparer.OrdinalIgnoreCase);
+        foreach (var (k, v) in extra)
+            merged[k] = v;
+        return new DataContext(merged, _rows);
+    }
+
     public static DataContext Empty { get; } = new();
 }
