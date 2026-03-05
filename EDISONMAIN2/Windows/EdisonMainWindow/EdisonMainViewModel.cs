@@ -2,12 +2,13 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
 using ALVA.EDISONAPI;
+using ALWA.SYS;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
-using EDISONMAIN2.Services.Windows;
+using System.Windows;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -18,7 +19,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         private readonly IEdisonMainDataService _dataService;
         private readonly IProcessLaunchService _processService;
-        private readonly IWindowService _windowService;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -26,30 +26,34 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenEDWindowTestCommand { get; }
         public ICommand CloseAllCommand { get; }
 
-        public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, IWindowService windowService, ConnectionParams connParams)
+        public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
         {
+            ConnParams = connParams;
             _dataService = dataService;
             _processService = processService;
-            _windowService = windowService;
 
             OpenModuleCommand        = new RelayCommand<IModule>(OpenModule);
-            OpenInputFormTestCommand = new RelayCommand(() => _windowService.ShowInputFormTest(ConnParams, Namespace, Idfa));
-            OpenEDListTestCommand    = new RelayCommand(() => _windowService.ShowEDListTest(ConnParams, Namespace, Idfa));
-            OpenEDWindowTestCommand  = new RelayCommand(() => _windowService.ShowEDWindowTest(ConnParams, Namespace, Idfa));
+            OpenInputFormTestCommand = new RelayCommand(() => Navigator.Show("EDInputFormTestWindow", MLRest!));
+            OpenEDListTestCommand    = new RelayCommand(() => Navigator.Show("EDListTestWindow",        MLRest!));
+            OpenEDWindowTestCommand  = new RelayCommand(() => Navigator.ShowDialog("EDWindowTestWindow", MLRest!));
             CloseAllCommand          = new RelayCommand(_processService.CloseAll);
 
             TopLevelModules = [];
 
             var companies = _dataService.GetCompanies();
-
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
+
+            MLRest = new MLRest(ConnParams.Server, ConnParams.RestPort, Namespace, Idfa)
+            {
+                LoginName = ConnParams.UserName,
+                FullName  = ConnParams.FullName,
+                Mlp       = ConnParams.Mlp.ToString()
+            };
 
             var tree = _dataService.GetModuleTree(Namespace, Idfa);
             foreach (var module in tree)
                 TopLevelModules.Add(module);
-
-            ConnParams = connParams;
         }
 
         public ObservableCollection<IModule> TopLevelModules { get; }
@@ -62,10 +66,22 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             get => _selectedCompanyIndex;
             set
             {
-                if (Set(ref _selectedCompanyIndex, value))
+                if (_selectedCompanyIndex != value)
                 {
+                    var result = MessageBox.Show(
+                        "Změna společnosti zavře všechna otevřená okna. Pokračovat?",
+                        "Upozornění",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Warning);
+
+                    if (result != MessageBoxResult.Yes) return;
+
+                    Set(ref _selectedCompanyIndex, value);
                     OnPropertyChanged(nameof(Namespace));
                     OnPropertyChanged(nameof(Idfa));
+                    _processService.CloseAll();
+                    MLRest!.DataNamespace = Namespace;
+                    MLRest!.Idfa = Idfa;
                 }
             }
         }
