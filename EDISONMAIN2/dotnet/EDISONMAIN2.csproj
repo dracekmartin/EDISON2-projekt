@@ -35,7 +35,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\EDControls\EDControls.csproj" />
+    <ProjectReference Include="..\..\EDControls\dotnet\EDControls.csproj" />
   </ItemGroup>
 
 </Project>
