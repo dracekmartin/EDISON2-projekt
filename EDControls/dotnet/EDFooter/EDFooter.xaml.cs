@@ -1,6 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
-using EDVm = EDControls.EDViewModel.EDViewModel;
+using EDControls.EDViewModel;
 
 namespace EDControls.EDFooter;
 
@@ -27,7 +27,7 @@ public partial class EDFooter : UserControl
         set => SetValue(LeftContentProperty, value);
     }
 
-    private EDVm? _vm;
+    private EDControls.EDViewModel.EDViewModel? _vm;
 
     public EDFooter()
     {
@@ -53,16 +53,16 @@ public partial class EDFooter : UserControl
         if (window == null) return;     // design time
 
         window.DataContextChanged += OnWindowDataContextChanged;
-        SubscribeToViewModel(window.DataContext as EDVm);
+        SubscribeToViewModel(window.DataContext as EDControls.EDViewModel.EDViewModel);
     }
 
     private void OnWindowDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (_vm != null) _vm.RequestClose -= OnRequestClose;
-        SubscribeToViewModel(e.NewValue as EDVm);
+        SubscribeToViewModel(e.NewValue as EDControls.EDViewModel.EDViewModel);
     }
 
-    private void SubscribeToViewModel(EDVm? vm)
+    private void SubscribeToViewModel(EDControls.EDViewModel.EDViewModel? vm)
     {
         _vm = vm;
         if (_vm != null) _vm.RequestClose += OnRequestClose;
