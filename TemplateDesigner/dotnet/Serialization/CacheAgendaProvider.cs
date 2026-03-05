@@ -75,7 +75,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 return null;
             }
 
-            // OUT[1] = JSON objekt se "fields" a "groups"
+            // OUT[1] = JSON objekt se "fields" a "fieldCollections"
             string? json = result["1"]?.Value?.ToString();
             if (string.IsNullOrEmpty(json)) return null;
 
@@ -257,48 +257,53 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
             var schema = new DataSchema
             {
-                AgendaCode = agendaCode,
-                AgendaName = agendaName,
-                Fields     = [],
-                Groups     = []
+                AgendaCode       = agendaCode,
+                AgendaName       = agendaName,
+                Fields           = [],
+                FieldCollections = []
             };
 
             // Skalární pole
             var fields = node["fields"]?.AsArray();
             if (fields is not null)
-            {
                 foreach (var f in fields)
                 {
                     var field = ParseField(f);
                     if (field is not null) schema.Fields.Add(field);
                 }
-            }
 
-            // Skupiny tabulek
-            var groups = node["groups"]?.AsArray();
-            if (groups is not null)
+            // Tabulkové kolekce — "fieldCollections" je aktuální formát; "groups" je starší název
+            // pro zpětnou kompatibilitu se staršími Caché třídami, které ještě nebyly aktualizovány
+            var collections = node["fieldCollections"]?.AsArray();
+            if (collections is null && node["groups"] is not null)
             {
-                foreach (var g in groups)
+                collections = node["groups"]?.AsArray();
+                Debug.WriteLine($"[AgendaProvider] DEPRECATED: agenda '{agendaCode}' vrátila 'groups' místo 'fieldCollections'. Aktualizuj Caché třídu.");
+            }
+            if (collections is not null)
+            {
+                foreach (var c in collections)
                 {
-                    if (g is null) continue;
-                    var group = new DataFieldGroup
+                    if (c is null) continue;
+                    var key = c["collectionKey"]?.GetValue<string>() ?? "";
+                    if (string.IsNullOrEmpty(key)) continue;  // kolekce bez klíče nelze použít
+
+                    var collection = new DataFieldCollection
                     {
-                        Name          = g["name"]?.GetValue<string>() ?? "",
-                        Scope         = g["scope"]?.GetValue<string>()?.ToLower() == "table"
-                                            ? FieldScope.Table : FieldScope.Scalar,
-                        CollectionKey = g["collectionKey"]?.GetValue<string>(),
+                        Name          = c["name"]?.GetValue<string>() ?? "",
+                        CollectionKey = key,
                         Fields        = []
                     };
 
-                    var gFields = g["fields"]?.AsArray();
-                    if (gFields is not null)
-                        foreach (var f in gFields)
+                    var cFields = c["fields"]?.AsArray();
+                    if (cFields is not null)
+                        foreach (var f in cFields)
                         {
                             var field = ParseField(f);
-                            if (field is not null) group.Fields.Add(field);
+                            if (field is not null) collection.Fields.Add(field);
                         }
 
-                    schema.Groups.Add(group);
+                    schema.FieldCollections.Add(collection);
                 }
             }
 

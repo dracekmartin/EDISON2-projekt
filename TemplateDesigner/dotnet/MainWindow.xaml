@@ -28,6 +28,8 @@
                 <MenuItem x:Name="MenuSave"   Header="Uložit"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
                 <MenuItem x:Name="MenuSaveAs" Header="Uložit jako..."                          Click="MenuSaveAs_Click"/>
                 <Separator/>
+                <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF..." Click="MenuExportPdf_Click"/>
+                <Separator/>
                 <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P" Click="MenuPageProps_Click"/>
                 <Separator/>
                 <MenuItem Header="Konec" Click="MenuExit_Click"/>
@@ -243,9 +245,15 @@
                     <Border DockPanel.Dock="Top"
                             Background="#F0F0F0"
                             BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
-                            Padding="8,5">
-                        <TextBlock Text="Náhled  ·  vzorová data ze schématu"
-                                   FontSize="11" Foreground="#666666"/>
+                            Padding="8,4">
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="PDF"
+                                    Click="MenuExportPdf_Click" Padding="8,2"
+                                    ToolTip="Exportovat náhled jako PDF..."/>
+                            <TextBlock Text="Náhled  ·  vzorová data ze schématu"
+                                       FontSize="11" Foreground="#666666"
+                                       VerticalAlignment="Center"/>
+                        </DockPanel>
                     </Border>
                     <!-- Scrollovatelný canvas náhledu — pevná šířka (75 % zoom), panel lze tahat -->
                     <ScrollViewer HorizontalScrollBarVisibility="Auto"

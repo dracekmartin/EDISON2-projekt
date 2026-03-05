@@ -120,9 +120,24 @@ Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma zál
 
 **Dva módy tabulky:**
 - **Pevná (Fixed)** — počet řádků je pevný, definovaný v šabloně; buňky obsahují statický text nebo placeholdery
+  - Tlačítko **Ze šablony...** — načte předdefinované rozvržení tabulky z Caché (sloupce + řádky předvyplněny) jedním klikem
 - **Dynamická (Dynamic)** — sloupce jsou z designeru, řádky se generují za běhu z dat
-  - **Datový zdroj** — filtrovatelný ComboBox nabízí skupiny ze schématu agendy (např. "ZASTAVKY", "SPOJE")
-  - **Datové pole sloupce** — ComboBox nabízí pole dostupná v dané skupině; lze i ručně zadat
+  - **Datový zdroj** — filtrovatelný ComboBox nabízí datové kolekce ze schématu agendy (např. "ZASTAVKY", "SPOJE")
+  - **Datové pole sloupce** — ComboBox nabízí pole dostupná v dané kolekci; lze i ručně zadat
+  - Při prvním otevření editoru bez sloupců se sloupce automaticky předvyplní z vybrané datové kolekce
+
+**Ze šablony... (Fixed mód):**
+
+Tlačítko "Ze šablony..." v záložce Sloupce umožňuje načíst celé rozvržení tabulky z předdefinovaných šablon uložených v Caché:
+
+1. Nastavte mód tabulky na **Pevná**
+2. Otevřete editor tabulky (dvojklik → tlačítko **Upravit sloupce / řádky...**)
+3. Klikněte na **Ze šablony...**
+4. Vyberte šablonu ze seznamu (např. "Záhlaví linky", "Platnost a dopravce") → **Použít**
+
+Šablona nahradí aktuální sloupce i řádky. Obsah buněk může obsahovat placeholdery (`{CISLO_LINKY}`, `{DATUM_OD}` apod.) — Print Engine je za běhu nahradí skutečnými daty.
+
+> Dostupné šablony jsou definovány v Caché metodou `GetTableTemplates` příslušné agendy. Tlačítko se zobrazí jen pokud je Caché připojeno.
 
 ### QR kódy a čárové kódy (BarcodeElement)
 
@@ -216,6 +231,18 @@ Pravý panel zobrazuje **náhled šablony s mock daty** — takto bude šablona 
 - Fallback: hodnoty ze schématu agendy (pole `example`) nebo generické zástupce
 - Dynamic tabulky zobrazují všechny mock řádky vrácené z `GetMockData`
 
+### Export náhledu do PDF
+
+Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými mock daty, která jsou vidět v náhledu.
+
+- **Soubor → Exportovat náhled jako PDF...** — otevře dialog pro uložení souboru
+- **Tlačítko PDF** v záhlaví live preview panelu — stejná funkce, rychlejší přístup
+- Výstup je jednostránkový PDF odpovídající rozměrům šablony (šířka × výška v mm)
+- Okraje šablony jsou zachovány; stránka má bílé pozadí
+- Data v PDF jsou identická s preview (Caché mock nebo schema fallback)
+
+> PDF export slouží jako rychlá kontrola rozvržení před ostrým tiskem. Nenahrazuje Print Engine — ten zpracuje reálná data a zvládne vícestr. výstup.
+
 ### Zoom
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
 - **Ctrl+scroll** na canvasu — přiblížení / oddálení
@@ -260,7 +287,8 @@ Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
 - **Ctrl+S** / menu Soubor → Uložit
 - **Soubor → Uložit jako** — zvolí umístění
 - **Soubor → Otevřít** — načte existující šablonu
-- Soubory mají příponu `.json` a jsou čitelné v libovolném textovém editoru
+- **Soubor → Exportovat náhled jako PDF...** — uloží aktuální náhled jako PDF
+- Soubory šablon mají příponu `.json` a jsou čitelné v libovolném textovém editoru
 
 ---
 
