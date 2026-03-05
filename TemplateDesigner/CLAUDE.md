@@ -24,10 +24,12 @@ Systém se skládá ze dvou částí:
 
 ### 🎯 Aktuální focus
 
-**Parametry sestavy (Part 1) — hotovo.** Parametry definované v Caché `GetParameters` jsou zobrazeny jako interaktivní kontrolky v preview panelu (CheckBox/ComboBox/TextBox). Hodnoty jsou injektovány do DataContextu jako `{PARAM_NAME}` placeholdery dostupné v preview i PDF exportu. Parametry jsou také zobrazeny v pickeru polí (s příznakem "(parametr)").
+**VisibilityExpression evaluator + Schema TreeView — hotovo.**
+- Podmíněná viditelnost elementů a sekcí pomocí výrazů (`{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "JR" && !{TISK_TARIFU}`)
+- Levý panel "Pole agendy" nahrazen stromem se třemi skupinami: Skalární pole / Kolekce / Parametry
 
-**Další kroky (Roadmap bod 2):**
-1. VisibilityExpression evaluator — `{TISK_SIPKY}` na `VisibilityExpression` elementu jej skryje/zobrazí
+**Další kroky (Roadmap bod 2 — zbývá):**
+1. Výrazový jazyk Part 2 — agregační funkce v TableElement (`SUM`, `COUNT`, `AVG`), formátovací rozšíření
 2. Grouping v Dynamic tabulkách
 
 **Co už máme:**
@@ -35,6 +37,7 @@ Systém se skládá ze dvou částí:
 - ✅ BarcodeElement (QR kód + Code128)
 - ✅ TableElement — plný Fixed/Dynamic mód, UI editor sloupců a řádků, barvy, orámování
 - ✅ Parametry sestavy (Part 1) — preview panel s interaktivními kontrolkami, hodnoty v DataContext
+- ✅ VisibilityExpression evaluator — výrazový jazyk pro podmíněnou viditelnost elementů a sekcí
 
 **Co chybí (klasické komponenty):**
 - ❌ Chart/Graph (budoucnost)
@@ -45,7 +48,8 @@ Systém se skládá ze dvou částí:
 **Speciální požadavky pro jízdní řády:**
 - ✅ TableElement Dynamic mód s opakováním řádků z DataSource
 - ✅ QR kódy pro cestující (BarcodeElement)
-- ❌ Podmíněné řádky tabulky (VisibilityExpression) → viz Roadmap bod 2
+- ✅ VisibilityExpression na elementech a sekcích (`{TISK_SIPKY}`, `{POCET} > 0`)
+- ❌ Podmíněné řádky tabulky (VisibilityExpression per řádek) → viz Roadmap bod 2
 - ❌ Grouping v tabulkách → viz Roadmap bod 3
 - ❌ JRTableElement (matice zastávky × spoje) → Vzdálená vize
 
@@ -79,7 +83,15 @@ Systém se skládá ze dvou částí:
 - ✅ DataSchema loading (JSON fallback `schemas/*.schema.json`)
 - ✅ CacheAgendaProvider — implementuje `IDataSchemaProvider` + `ITableTemplateProvider`; volá Caché AgendaAPI přes MLRest
 - ✅ CompositeDataSchemaProvider (Caché primary + JSON fallback)
-- ✅ Fields browser v levém panelu (záložka "Pole agendy")
+- ✅ Schema TreeView v levém panelu — tři skupiny: **📋 Skalární pole**, **📊 Kolekce**, **⚙ Parametry**; dvojklik = vložit `{POLE}`
+
+**VisibilityExpression systém:**
+- ✅ `ExpressionNode` — AST základ: `LiteralNode`, `VariableNode`, `UnaryNode`, `BinaryNode` (C# records, soubor `Models/Expressions/ExpressionNode.cs`)
+- ✅ `ExpressionParser` — recursive descent parser; gramatika: `||` → `&&` → `!` → porovnání → primární; interní třída
+- ✅ `ExpressionEvaluator` — veřejná statická třída; `IsVisible(string?, DataContext?)` + `Validate(string?)`; AST cache (`ConcurrentDictionary`)
+- ✅ `PreviewCanvas` — sekce a elementy filtrovány přes `ExpressionEvaluator.IsVisible()`
+- ✅ `TemplateElement.GetPositionDescriptors()` — property "Viditelnost" (StringPropertyDescriptor) nahrazuje starý bool "Tisknout"
+- ✅ `ElementPropertiesWindow.BuildSectionDescriptors()` — property "Viditelnost" pro sekce
 
 **Caché strana:**
 - ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData, GetMockData, **GetParameters**)
@@ -121,12 +133,10 @@ Uživatel zadá hodnoty před tiskem (datum, filtr, přepínač). Bez toho každ
 - ❌ Ukládání parametrů do JSON šablony + offline fallback (bez Caché)
 - *Předpoklad pro bod 2 (VisibilityExpression)*
 
-**2. Výrazový jazyk**
-Základní výpočty a podmínky prostupující celým systémem — nejen viditelnost, ale i hodnoty buněk, barvy, výšky.
-- Podmínky: `{POCET} > 0`, `{TYP} == "PD"` → základ pro **VisibilityExpression** (elementy, sekce, řádky tabulky)
-- Agregační funkce v TableElement: `SUM({CENA})`, `COUNT()`, `AVG({CAS})`
-- Summary řádek tabulky (zápatí s agregacemi za celou tabulku)
-- Formátovací rozšíření: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
+**2. Výrazový jazyk** ✅ Part 1 hotovo — zbývá Part 2
+- ✅ **Part 1 — podmínky a logické operátory:** `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
+- ❌ **Part 2 — agregace a formátování:** `SUM({CENA})`, `COUNT()`, `AVG({CAS})` v TableElement; Summary řádek (zápatí s agregacemi)
+- ❌ Formátovací rozšíření: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
   (konzistentní se stávajícím `dd.MM.yyyy` / `N2` — vše za `:` je instrukce)
 
 **3. Grouping v TableElement**
@@ -195,6 +205,22 @@ Důležité jakmile šablon bude víc než 10.
 - **Context menu na záhlaví sekce v designeru** — pravý klik přímo na canvasu (Vlastnosti, Duplikovat, Smazat, Přesunout); alternativa k levému panelu
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-05 — VisibilityExpression evaluator + Schema TreeView:**
+- ✅ `ExpressionNode.cs` — AST uzel; `LiteralNode(object?)`, `VariableNode(string)`, `UnaryNode(string, node)`, `BinaryNode(string, node, node)` jako C# records
+- ✅ `ExpressionParser.cs` — recursive descent parser; tokenizer zvládá `{IDENT}`, string literály, čísla, `true/false`, `==!=><>=<=`, `&&||!`, závorky; interní `sealed` třída
+- ✅ `ExpressionEvaluator.cs` — `IsVisible(string?, DataContext?) → bool` (fail-open na chybu), `Validate(string?) → string?` (vrátí chybovou zprávu); AST cache (`ConcurrentDictionary<string, ExpressionNode?>`)
+  - Typová koerce: `""` → false, `"false"/"0"` → false, neprázdný string → true, číslo != 0 → true
+  - Short-circuit `&&` a `||`
+- ✅ `PreviewCanvas.DrawContent()` — sekce se přeskočí celé pokud `IsVisible` vrátí false; elementy filtrovány přes `IsVisible(e.VisibilityExpression, data)`
+- ✅ `TemplateElement.GetPositionDescriptors()` — nahrazena `BoolPropertyDescriptor` "Tisknout" za `StringPropertyDescriptor` "Viditelnost"; zpětně kompatibilní (starý `"false"` v JSON stále funguje)
+- ✅ `ElementPropertiesWindow.BuildSectionDescriptors()` — přidán `StringPropertyDescriptor` "Viditelnost" pro sekce
+- ✅ `MainWindow` — levý panel "Pole agendy": `ListBox` nahrazen `TreeView x:Name="SchemaTree"` se třemi expandovatelnými skupinami:
+  - **📋 Skalární pole (N)** — skalární `DataField` ze schématu
+  - **📊 Kolekce (N)** — `DataFieldCollection` se svými poli jako potomci
+  - **⚙ Parametry (N)** — `_agendaParameters` s příznakem "(parametr)"
+  - Dvojklik na listový uzel → vloží `{FIELDNAME}` (Tag); skupinové uzly jsou ignorovány (tag je null)
+- ✅ `BuildSchemaTree()` — volá se až po `LoadAgendaParameters()` (parametry musí být načteny); sdílené `static readonly` frozen brushy + `FontFamily` (jednou za běh, ne per položka)
 
 **2026-03-05 — Parametry sestavy (Part 1):**
 - ✅ `TemplateParameter` model — Name, Label, Type (`"bool"/"enum"/"string"/"number"/"date"`), DefaultValue, Options, `GetDefaultTyped()`

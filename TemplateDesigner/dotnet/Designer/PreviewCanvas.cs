@@ -1,6 +1,7 @@
 using System.IO;
 using SkiaSharp;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Expressions;
 
 namespace TemplateDesigner.Designer;
 
@@ -135,6 +136,9 @@ public class PreviewCanvas
 
         foreach (var section in _state.CurrentTemplate.Sections)
         {
+            // Sekce s nesplněnou podmínkou se přeskočí celá
+            if (!ExpressionEvaluator.IsVisible(section.VisibilityExpression, data)) continue;
+
             float sectionH = section.EffectiveDesignerHeight * mmToPx;
             var clipRect   = new SKRect(ox, currentY, ox + contentW, currentY + sectionH);
 
@@ -147,9 +151,9 @@ public class PreviewCanvas
                 SectionOriginY = currentY
             };
 
-            // Elementy s podmínkou "false" se v preview nezobrazí
+            // Elementy s nesplněnou podmínkou se v preview nezobrazí
             foreach (var el in section.Elements
-                .Where(e => !string.Equals(e.VisibilityExpression, "false", StringComparison.OrdinalIgnoreCase))
+                .Where(e => ExpressionEvaluator.IsVisible(e.VisibilityExpression, data))
                 .OrderBy(e => e.ZIndex))
             {
                 el.Render(ctx);

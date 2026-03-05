@@ -252,6 +252,36 @@ Hodnoty parametrů jsou dostupné jako `{NAZEV_PARAMETRU}` v libovolném TextEle
 
 > Parametry definuje programátor agendy v Caché metodou `GetParameters`. Uživatel nastavuje jejich hodnoty v preview panelu; při ostrém tisku je Print Engine dostane standardní cestou (print dialog — budoucí funkce).
 
+### Podmíněná viditelnost elementů a sekcí
+
+Každý element a každá sekce má vlastnost **Viditelnost** (v dialogu vlastností, skupina "Podmínky"). Výraz určuje, zda se element/sekce v preview a při tisku zobrazí.
+
+**Syntaxe výrazů:**
+
+```
+{TISK_SIPKY}                   → parametr nebo pole (truthy/falsy hodnota)
+{POCET} > 0                    → porovnání s číslem
+{TYP} == "JR"                  → porovnání se stringem
+!{TISK_TARIFU}                 → negace
+{TISK_SIPKY} && {POCET} > 0    → logické AND
+{A} || {B}                     → logické OR
+({A} || {B}) && {C}            → závorky pro prioritu
+```
+
+- Prázdné pole = vždy viditelný (výchozí stav)
+- Výrazy se vyhodnocují v preview i při tisku (Print Engine)
+- Chyba syntaxe → element zůstane viditelný (fail-open, překlep nic nerozbije)
+- Hodnoty parametrů i datových polí jsou dostupné jako `{NAZEV}` v libovolném výrazu
+
+**Typová koerce proměnných:**
+
+| Hodnota | Vyhodnocení |
+|---|---|
+| `""` (prázdný string) | false |
+| `"false"` / `"0"` | false |
+| `"true"` / `"1"` nebo jiný neprázdný string | true |
+| číslo != 0 | true |
+
 ### Export náhledu do PDF
 
 Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými mock daty, která jsou vidět v náhledu.
@@ -354,27 +384,40 @@ V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu
 
 ### Pole agendy — dostupná databázová pole
 
-Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda definuje, která databázová pole jsou k dispozici pro použití v `{POLE}` placeholderech. Tato pole jsou uložena v souboru `schemas/JR.schema.json` a zobrazují se v panelu vlevo záložka **Pole agendy**:
+Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda definuje, která databázová pole jsou k dispozici pro použití v `{POLE}` placeholderech. Pole, kolekce a parametry se zobrazují v panelu vlevo záložka **Pole agendy** jako strom se třemi skupinami:
 
 ```
-┌─────────────────────────────┐
-│ ▣ Sekce  │ ⊞ Pole agendy   │
-├─────────────────────────────┤
-│ Agenda: Jízdní řád          │
-├─────────────────────────────┤
-│ CISLO_LINKY     Číslo linky │
-│ TITULEK         Titulek      │
-│ POPIS_PLATNOSTI Platnost     │
-│ CISLO_ZASTAVKA  Č. zastávky │
-│ POPIS_ZASTAVKA  Zastávka    │
-│ CAS_ODJEZDU     Čas odjezdu │
-├─────────────────────────────┤
-│ 💡 Dvojklik = vložit {POLE} │
-└─────────────────────────────┘
+┌──────────────────────────────────┐
+│ ▣ Sekce  │ ⊞ Pole agendy        │
+├──────────────────────────────────┤
+│ Agenda: Jízdní řád               │
+├──────────────────────────────────┤
+│ ▼ 📋 Skalární pole (4)           │
+│     CISLO_LINKY  Číslo linky     │
+│     TITULEK      Titulek         │
+│     NAZEV        Název linky     │
+│     DATUM_OD     Platnost od     │
+│ ▼ 📊 Kolekce (2)                 │
+│   ▼ Zastávky  [ZASTAVKY]         │
+│       POPIS    Název zastávky    │
+│       CAS_ODJ  Čas odjezdu       │
+│   ▼ Spoje  [SPOJE]               │
+│       CISLO_SPOJE  Číslo spoje   │
+│ ▼ ⚙ Parametry (3)               │
+│     TISK_SIPKY  Tisknout šipky…  │
+│     TISK_TARIFU Tisknout tarif…  │
+│     FORMAT_CASU Formát času…     │
+├──────────────────────────────────┤
+│ 💡 Dvojklik = vložit {POLE}      │
+└──────────────────────────────────┘
 ```
 
-- Dvojklik na pole → vloží `{NAZEV_POLE}` do textu vybraného TextElementu
+- **Skalární pole** — jednorázové hodnoty pro celou sestavu (číslo linky, datum, …)
+- **Kolekce** — tabulkové zdroje dat pro Dynamic TableElement; pole uvnitř kolekce jsou dostupná v řádcích tabulky
+- **Parametry** — interaktivní přepínače viditelné v preview panelu; jsou označeny příznakem "(parametr)"
+- Dvojklik na **pole nebo parametr** → vloží `{NAZEV_POLE}` do textu vybraného TextElementu
 - Pokud není vybrán TextElement → zkopíruje `{NAZEV_POLE}` do schránky
+- Skupinové uzly (📋 / 📊 / ⚙) a záhlaví kolekcí dvojklikem nic nedělají
 - Pole lze použít v **libovolném** TextElementu — designer neomezuje kde
 
 ---
@@ -396,8 +439,8 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 - **Print dialog parametrů** — dynamicky generovaný ze šablony před tiskem (Part 2 parametrů)
   - Part 1 je hotový: parametry definované v Caché jsou viditelné a interaktivní v live preview
   - Chybí: ostrý print dialog, ukládání hodnot do JSON šablony, offline fallback bez Caché
-  - Předpoklad: VisibilityExpression systém
-- **Podmíněná viditelnost (VisibilityExpression)** — výrazy jako `{POCET} > 0` nebo `{TISK_SIPKY}` pro elementy, sekce, řádky tabulky
+- **Podmíněná viditelnost pro řádky tabulky** — VisibilityExpression per řádek v Fixed tabulce
+  - Podmíněná viditelnost elementů a sekcí je hotová; zbývá rozšíření na úroveň řádků tabulky
 
 ### Formátování
 
