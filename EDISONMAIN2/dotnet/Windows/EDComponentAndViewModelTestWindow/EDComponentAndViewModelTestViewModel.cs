@@ -17,13 +17,6 @@ class EDComponentAndViewModelTestViewModel(MLRest mlRest, Func<bool> save) : EDV
         set => Set(ref _status, value);
     }
 
-    private bool _isActionInProgress;
-    public bool IsActionInProgress
-    {
-        get => _isActionInProgress;
-        set => Set(ref _isActionInProgress, value);
-    }
-
     protected override void OnOk()
     {
         if (!save())

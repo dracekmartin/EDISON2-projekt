@@ -34,7 +34,7 @@
 
         </DockPanel>
 
-        <edaip:EDActionInProgress IsActive="{Binding IsActionInProgress}"/>
+        <edaip:EDActionInProgress/>
 
     </Grid>
 
