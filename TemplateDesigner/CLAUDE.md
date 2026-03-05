@@ -24,11 +24,12 @@ Systém se skládá ze dvou částí:
 
 ### 🎯 Aktuální focus
 
-**Propojení Dynamic TableElement s Caché daty** — CacheAgendaProvider je připraven, dalším krokem je:
-1. Otestovat GetSchema přes MLRest živě
-2. UI: při přidání Dynamic tabulky nabídnout picker DataSource ze schématu (groups scope=table)
-3. UI: při editaci sloupců nabídnout pole z vybrané skupiny (ne jen manuální zadání)
-4. "Ze šablony..." picker — načíst GetTableTemplates a umožnit výběr Fixed šablony z Caché
+**Dynamic TableElement + Caché data — hotovo.** Live preview ukazuje reálná mock data z Caché (`GetMockData`), DataSource se vybírá z filtrovatelného ComboBoxu, pole sloupců z odpovídající skupiny schématu.
+
+**Další kroky:**
+1. "Ze šablony..." picker — načíst `GetTableTemplates` a umožnit výběr Fixed šablony z Caché
+2. Podmíněné řádky tabulky (VisibilityExpression per řádek)
+3. Grouping v Dynamic tabulkách
 
 **Co už máme:**
 - ✅ Text, Image, Rectangle, Line (základní elementy)
@@ -52,8 +53,8 @@ Systém se skládá ze dvou částí:
 **Core features:**
 - ✅ Drag & drop, resize, rubber band selection elementů
 - ✅ Undo/redo systém (9 command typů: Move, Resize, Add, Delete, SetProperty, Composite, MoveSection, DeleteSection)
-- ✅ PropertyDescriptor systém se 7 typy (String, Float, Bool, Color, Enum, TextWithPicker, Button)
-- ✅ Live preview panel (mock DataContext, zoom 1:1 / fit-to-width)
+- ✅ PropertyDescriptor systém s 8 typy (String, Float, Bool, Color, Enum, TextWithPicker, Button, **SuggestString**)
+- ✅ Live preview panel — primárně Caché `GetMockData`, fallback schema examples, zoom 1:1 / fit-to-width
 - ✅ Zoom (50/75/100/150/200 %) + Ctrl+scroll
 - ✅ Grid & snap to grid
 - ✅ Clipboard (interní, copy/paste s offsetem)
@@ -79,8 +80,8 @@ Systém se skládá ze dvou částí:
 - ✅ Fields browser v levém panelu (záložka "Pole agendy")
 
 **Caché strana:**
-- ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData)
-- ✅ `ALVA.JR.TiskAPI` (nebo `TemplateDesignerMHD`) — referenční implementace pro JR agendu
+- ✅ `ALVA.TemplateDesigner.API.AgendaAPI` — abstraktní třída (GetSchema, GetTableTemplates, GetTableTemplate, GetData, **GetMockData**)
+- ✅ `ALVA.JR.TiskAPI` (nebo `TemplateDesignerMHD`) — referenční implementace pro JR agendu; GetMockData vrací 8 zastávek + 4 spoje
 
 **Serialization:**
 - ✅ Template JSON serialization (camelCase, enums as strings, null omitted)
@@ -109,6 +110,19 @@ Systém se skládá ze dvou částí:
 
 ### 📜 Nedávné změny (changelog)
 
+**2026-03-04 (pokračování — Caché mock data + DataSource picker):**
+- ✅ `GetMockData` — nová metoda v `AgendaAPI.cls` + `TemplateDesignerMHD.cls`
+  - Vrací JSON `{ "values": {...}, "rows": { "ZASTAVKY": [...], "SPOJE": [...] } }`
+  - `CacheAgendaProvider.GetMockData()` + `ParseMockData()` — volá Caché a mapuje na `DataContext`
+  - Live preview nyní prioritně používá Caché mock data; fallback = schema examples
+- ✅ `SuggestStringPropertyDescriptor` — nový typ property descriptoru
+  - Filtrovatelný editovatelný ComboBox; `GetSuggestions()` vrací `(Value, Label)` páry
+  - Použit pro `DataSource` property v `TableElement` (nabízí groups ze schématu scope=table)
+- ✅ DataSource picker — výběr datového zdroje Dynamic tabulky přímo ze schématu agendy
+- ✅ Field picker v `TableEditorDialog` — kolonce "Datové pole" nabízí pouze pole z vybrané skupiny (DataSource)
+- ✅ Bug fix: null AgendaCode (`GetSchema(null)`) house `ArgumentNullException` — opraveno v `CacheAgendaProvider` i `CompositeDataSchemaProvider`
+- ✅ ObjectScript: NIKDY nepoužívat `_` v dot-notation (`obj.KEY_NAME = v`); `_` je v COS operátor konkatenace řetězců! Pro property s podtržítkem použij `obj.%Set("KEY_NAME", v)`
+
 **2026-03-04:**
 - ✅ TableElement — kompletní implementace Fixed/Dynamic módu
   - Fixed mód: uživatel definuje sloupce a řádky v UI editoru; buňky podporují statický text i `{PLACEHOLDER}`
@@ -136,26 +150,12 @@ Systém se skládá ze dvou částí:
   - `AlternatingRowColor` se parsuje jednou před smyčkou, ne per řádek
 
 **2026-03-03:**
-- ✅ BarcodeElement implementován (QR kód + Code128, ZXing.Net 0.16.9)
-  - Properties: BarcodeType, Content (placeholder support), ForeColor, BackColor
-  - V designeru zobrazuje placeholder (šedý rámeček) pro prázdný obsah
-  - Přidán do toolbar menu (+Element → QR kód / Čárový kód)
-- ✅ Restrukturalizace složek — zdrojový kód přesunut do `dotnet/`, vytvořena `CACHE/` struktura
-  - `EDISON2.sln` aktualizován na novou cestu
-  - `.vscode/tasks.json` přidán (Ctrl+Shift+B = build, F5 přes C# Dev Kit)
-  - `.gitignore` aktualizován (bin/, obj/, .claude/, .vscode/launch.json ignorovány)
-- 📐 Navržen rozšířený model TableElement (Fixed/Dynamic mód) — zatím nerealizováno
+- ✅ BarcodeElement (QR kód + Code128, ZXing.Net 0.16.9)
+- ✅ Restrukturalizace složek — kód do `dotnet/`, Caché do `CACHE/`, `.vscode/tasks.json`
 
 **2026-03-02:**
-- ✅ Přidán BackgroundColor na TextElement (barva pozadí textu)
-- ✅ Custom section templates implementovány (file-based V1, `SectionTemplateManager`)
-- ✅ Documentation consolidation (architektura.md merged → CLAUDE.md, smazány obsolete soubory)
-
-**2026-03-02 (dříve):**
-- ✅ Section refactoring — sloučení 7 podtříd do univerzální `Section` třídy
-- ✅ UI menu presety pro přidání sekcí (zjednodušení menu)
-- ✅ Odstranění deprecated section subtypes (SectionHeader, SectionFooter, atd.)
-- ✅ Cleanup JSON polymorphismu (přímá serializace bez type discriminatoru)
+- ✅ Section refactoring — 7 podtříd → univerzální `Section` s PrintBehavior/OverflowBehavior
+- ✅ BackgroundColor na TextElement, custom section templates (`SectionTemplateManager`)
 
 ### 🏗️ Plánované architektonické změny (nutné, ne volitelné)
 
@@ -235,10 +235,14 @@ Class ALVA.TemplateDesigner.AgendaAPI Extends %RegisteredObject [ Abstract ]
     /// Vrátí data pro tisk: skaláry + kolekce řádků
     /// IN: parametry tisku (závisí na agendě)
     ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ] {}
+
+    /// Vrátí vzorová data pro live preview v designeru
+    /// OUT[1] = { "values": {...}, "rows": { "ZASTAVKY": [...] } }
+    ClassMethod GetMockData(ByRef sys As %String) As %Status [ Abstract ] {}
 }
 ```
 
-Každá nová agenda **musí** implementovat všechny čtyři metody — Caché kompilátor to ohlídá.
+Každá nová agenda **musí** implementovat všech pět metod — Caché kompilátor to ohlídá.
 
 ---
 
@@ -352,6 +356,25 @@ IN: key = "JR_ZAHLAVI"
 }
 ```
 
+#### GetMockData — OUT[1] (design-time preview)
+```json
+{
+  "values": {
+    "CISLO_LINKY": "42",
+    "NAZEV": "Linka Praha–Brno"
+  },
+  "rows": {
+    "ZASTAVKY": [
+      { "POPIS": "Praha hl.n.", "CAS_ODJ": "8:00" },
+      { "POPIS": "Pardubice",   "CAS_ODJ": "9:15" }
+    ],
+    "SPOJE": [
+      { "CISLO_SPOJE": "1001", "CAS": "8:00" }
+    ]
+  }
+}
+```
+
 #### GetData — IN + OUT (print-time)
 ```
 IN: parametry závislé na agendě (číslo linky, datum, ...)
@@ -403,9 +426,10 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 ### Přidání nové agendy — checklist
 
 1. Vytvořit Caché třídu `ALVA.<Agenda>.TiskAPI Extends ALVA.TemplateDesigner.AgendaAPI`
-2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`
+2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`, `GetMockData`
 3. Přidat záznam do `appsettings.json` → `agendas[]`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
+   - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`
 
 ---
 
@@ -549,7 +573,8 @@ ElementPropertiesWindow.xaml / .cs — dialog vlastností elementu/sekce
 | `ImageElement.cs` | `ImageElement` | Statický obrázek (Base64) nebo z datasource |
 | `RectangleElement.cs` | `RectangleElement` | Obdélník — pozadí, rámeček, fill |
 | `LineElement.cs` | `LineElement` | Čára/oddělovač — horizontální nebo vertikální |
-| `TableElement.cs` | `TableElement` | Tabulka s opakováním řádků, sloupce, záhlaví |
+| `BarcodeElement.cs` | `BarcodeElement` | QR kód nebo Code128, ZXing.Net, placeholder support |
+| `TableElement.cs` | `TableElement` | Tabulka Fixed/Dynamic, UI editor sloupců + řádků |
 
 #### /Commands/Implementations
 | Soubor | Třída | Zodpovědnost |
@@ -643,13 +668,9 @@ enum SectionOverflowBehavior {
 }
 ```
 
-**DŮLEŽITÁ ZMĚNA (refactoring 2026-03):**
-- Section je nyní **univerzální třída** (ne abstract)
-- Chování sekce určují **properties** (PrintBehavior, OverflowBehavior), **ne typ třídy**
-- Podtřídy (SectionHeader, SectionFooter, ...) existují pouze pro **zpětnou kompatibilitu JSON** a jako **factory konstruktory** s výchozími hodnotami
-- Nové šablony by měly používat přímo `Section` s nastavenými properties
-- `DesignerHeight = null` znamená dynamickou sekce — designer zobrazí placeholder výšku
-- Print engine ignoruje DesignerHeight a počítá výšku za běhu z obsahu
+**Poznámky:**
+- Section je **univerzální třída** — chování určují properties (PrintBehavior, OverflowBehavior), ne typ třídy
+- `DesignerHeight = null` → dynamická sekce — designer zobrazí placeholder výšku, print engine ji počítá z obsahu
 
 ### Běžné případy použití sekcí
 
@@ -688,22 +709,6 @@ Uživatel si může uložit často používané sekce jako šablony a znovu je p
 - Sdílené šablony mezi uživateli
 - Možnost hybrid (lokální + DB šablony)
 
-### Deprecated typy sekcí (zpětná kompatibilita)
-
-**VŠECHNY podtřídy sekcí byly odstraněny.** Nový kód používá přímo `Section`.
-
-Původní typy a jejich ekvivalent:
-
-| Starý typ | Ekvivalentní nastavení Section |
-|---|---|
-| `SectionHeader` | PrintBehavior=OnEveryPage, DesignerHeight=25mm |
-| `SectionFooter` | PrintBehavior=OnEveryPage, DesignerHeight=15mm |
-| `SectionFixedHeight` | PrintBehavior=Once, DesignerHeight=30mm |
-| `SectionTableDesigned` | PrintBehavior=PerDataRow, OverflowBehavior=SplitAcrossPages, RowHeight=8mm |
-| `SectionSeparator` | PrintBehavior=Once, DesignerHeight=5mm |
-| `SectionTable` | ❌ Deprecated — tabulka je element (TableElement), ne sekce |
-| `SectionInfiniteText` | ❌ Deprecated — použijte Section + InfiniteTextElement |
-
 ### TemplateElement (abstraktní)
 ```csharp
 abstract class TemplateElement {
@@ -728,11 +733,12 @@ abstract class TemplateElement {
 ### Typy elementů
 | Typ | Popis |
 |---|---|
-| `TextElement` | Statický nebo datově vázaný text |
+| `TextElement` | Statický nebo datově vázaný text s placeholder podporou |
 | `ImageElement` | Obrázek (statický nebo z dat) |
 | `RectangleElement` | Obdélník / pozadí |
 | `LineElement` | Čára / oddělovač |
-| `TableElement` | Speciální tabulka/jízdní řád s vlastní logikou |
+| `BarcodeElement` | QR kód nebo Code128 čárový kód (ZXing.Net) |
+| `TableElement` | Tabulka Fixed/Dynamic — sloupce + UI editor, DataSource z Caché |
 
 Systém musí být **rozšiřitelný** — nové typy elementů i sekcí přidáváme podtřídami.
 
@@ -780,10 +786,9 @@ interface IDataSchemaProvider {
 }
 ```
 
-Implementace (V1):
+Implementace:
 - `JsonFileDataSchemaProvider` — načítá `schemas/*.schema.json` ze složky aplikace (offline fallback)
-- `CacheDataSchemaProvider` — delegate pattern (`Func<string, IReadOnlyList<string>?>`) pro volání MLRest;
-  parser `ParseField()` zvládá formáty: `"FIELD|Label"`, `"DBFieldId~FIELD"`, `"DBFieldId~FIELD|Label"`
+- `CacheAgendaProvider` — volá Caché `AgendaAPI.GetSchema()` přes MLRest; implementuje i `ITableTemplateProvider`
 - `CompositeDataSchemaProvider` — Caché primary + JSON fallback; vrátí výsledek prvního úspěšného
 - Wiring: `Config/CacheSchemaWiring.TryCreate(AppSettings)` → vrátí null pokud Caché není nakonfigurováno
 
@@ -884,6 +889,41 @@ Elementy dostávají `RenderContext` místo holého `SKCanvas`. Kontext obsahuje
 - `SectionOriginX/Y` — absolutní pozice sekce na canvasu v px
 
 Elementy volají `ctx.ToCanvasRect(X, Y, Width, height)` pro přepočet souřadnic.
+
+### WPF editable ComboBox — event ordering gotcha
+
+**Problém:** Při použití `IsEditable=true` ComboBox s live filtrováním (`TextChanged` → `Items.Clear()` + rebuild) WPF spouští eventy **synchronně** v tomto pořadí při výběru položky:
+1. `SelectionChanged` — WPF nastaví `SelectedItem`
+2. `combo.Text = item.Content` — WPF nastaví text na display string (e.g. "SPOJE  —  Spoje")
+3. `TextChanged` — náš handler spustí `Refilter()` → `Items.Clear()` → **`SelectedItem` se stane null**
+4. `DropDownClosed` — `SelectedItem` je null → handler nic nedělá → text zůstane jako display string
+
+**Fix:** Používáme `PreviewKeyDown`/`PreviewKeyUp` k detekci uživatelského psaní. `TextChanged` zavolá `Refilter()` pouze pokud `userIsTyping == true`. WPF interní změna textu při výběru nemá asociovaný klávesový event → Refilter se přeskočí → `SelectedItem` zůstane živý → `DropDownClosed` může přečíst `item.Tag` (skutečnou hodnotu, ne display string).
+
+```csharp
+bool userIsTyping = false;
+combo.PreviewKeyDown += (_, _) => userIsTyping = true;
+combo.PreviewKeyUp   += (_, _) => userIsTyping = false;
+
+combo.AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) =>
+{
+    if (_suppressChanges || !userIsTyping) return;  // přeskočit WPF interní změny
+    Refilter(combo.Text);
+    if (combo.Items.Count > 0) combo.IsDropDownOpen = true;
+}));
+
+combo.DropDownClosed += (_, _) =>
+{
+    if (combo.SelectedItem is not ComboBoxItem item) return;  // SelectedItem je zachován!
+    var val = (string)item.Tag!;   // skutečná hodnota (např. "SPOJE")
+    _suppressChanges = true;
+    combo.SelectedItem = null;
+    combo.Text = val;              // přepíše display string "SPOJE  —  Spoje"
+    _suppressChanges = false;
+};
+```
+
+**Kde je použito:** `PropertiesPanel.xaml.cs` `AddSuggestRow()`.
 
 ### DataContext — resolvování placeholderů
 ```csharp
@@ -1132,43 +1172,3 @@ RoundedFloatConverter (4 des. místa)          // 0.5000001 → 0.5
 - Print engine (krok 2) je **samostatný projekt** — designer pouze ukládá šablony jako JSON
 - V1 nepodporuje import starých šablon z InterSystems Globals
 
----
-
-## Známé problémy a TODO
-
-### ColorPicker minimalizace Properties window
-**Problém:** Po použití WinForms ColorDialog v Properties panelu a kliknutí OK se celé hlavní okno aplikace minimalizuje.
-
-**Příčina:** Interakce mezi WinForms ColorDialog a WPF ToolWindow (`ElementPropertiesWindow`). Po zavření WinForms dialogu se Windows snaží vrátit focus, ale kvůli ToolWindow stylu to způsobí nechtěné chování.
-
-**Aktuální stav:** Neblokující — uživatel může Properties panel znovu otevřít. BackgroundColor se ukládá správně do JSON.
-
-**Možná řešení:**
-- Implementovat vlastní WPF ColorPicker control místo WinForms dialogu
-- Změnit `WindowStyle` Properties dialogu z `ToolWindow` na `None` (ale ztratíme UI benefit)
-- Použít WPF Extended Toolkit ColorPicker
-
-**Lokace kódu:** `Controls/PropertiesPanel.xaml.cs` (řádek ~416, TODO komentář)
-
-**Priorita:** Nízká (workaround: uživatel znovu otevře Properties panel)
-
----
-
-## Nápady pro budoucí rozšíření (neplánováno, ale žádoucí)
-
-### Fragmenty / kompozice elementů
-Pojmenované skupiny elementů, které si uživatel může uložit a znovu vkládat.
-
-```
-Fragment = název + List<TemplateElement> (relativní souřadnice vůči levému hornímu rohu skupiny)
-```
-
-- **Uložení:** vyber elementy → „Uložit jako fragment" → soubory v `fragments/*.fragment.json`
-- **Vložení:** třetí záložka v levém panelu „📦 Fragmenty" → double-click → deep-clone s novými Guid do aktivní sekce
-- **Architektura:** `Models/Fragment.cs` + `Serialization/FragmentSerializer.cs`; žádný zásah do modelu šablony — fragmenty se při vložení rozloží na běžné elementy
-
-### Editor sloupců TableElement
-TableElement zatím nemá UI pro definici sloupců — výšky, šířky, formáty hodnot, záhlaví.
-
-### V2 VisibilityExpression
-Checkbox „Tisknout" je V1 (pouze true/false). V2 by podporoval výrazy jako `{POCET} > 0` — vyhodnocuje print engine, designer je zobrazí jako podmíněný badge bez evaluace.

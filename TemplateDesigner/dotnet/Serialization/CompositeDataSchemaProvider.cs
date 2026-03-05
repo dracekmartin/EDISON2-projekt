@@ -31,6 +31,9 @@ public class CompositeDataSchemaProvider : IDataSchemaProvider
         return result;
     }
 
-    public DataSchema? GetSchema(string agendaCode) =>
-        _primary.GetSchema(agendaCode) ?? _fallback.GetSchema(agendaCode);
+    public DataSchema? GetSchema(string agendaCode)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return null;
+        return _primary.GetSchema(agendaCode) ?? _fallback.GetSchema(agendaCode);
+    }
 }

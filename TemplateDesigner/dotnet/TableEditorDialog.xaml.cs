@@ -154,11 +154,17 @@ public partial class TableEditorDialog : Window
     /// <summary>Výsledné řádky po kliknutí OK (null pro Dynamic mód).</summary>
     public List<TableRow>? ResultRows { get; private set; }
 
-    /// <param name="groupFields">Dostupná pole v dané skupině (pro validaci). Null = validace vypnuta.</param>
+    /// <summary>Dostupná pole skupiny pro ComboBox v editoru sloupců.</summary>
+    public string[] FieldNameOptions { get; }
+
+    /// <param name="groupFields">Dostupná pole v dané skupině (pro validaci + picker). Null = validace vypnuta.</param>
     public TableEditorDialog(TableElement element, IReadOnlyList<DataField>? groupFields = null)
     {
         _element = element;
-        _validFieldNames = groupFields?.Select(f => f.FieldName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        FieldNameOptions = groupFields?.Select(f => f.FieldName).OrderBy(n => n).ToArray() ?? [];
+        _validFieldNames = FieldNameOptions.Length > 0
+            ? new HashSet<string>(FieldNameOptions, StringComparer.OrdinalIgnoreCase)
+            : null;
         InitializeComponent();
         DataContext = this;
 

@@ -38,4 +38,17 @@ ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ]
 {
 }
 
+/// Vrátí ukázková (mock) data pro live preview v designeru.
+/// OUT[1] = JSON objekt:
+///   {
+///     "values": { "FIELD": "value", ... },
+///     "rows": {
+///       "COLLECTION_KEY": [ { "FIELD": "value", ... }, ... ],
+///       ...
+///     }
+///   }
+ClassMethod GetMockData(ByRef sys As %String) As %Status [ Abstract ]
+{
+}
+
 }

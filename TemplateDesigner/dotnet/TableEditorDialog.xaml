@@ -70,7 +70,13 @@
                                 </DataGridTemplateColumn.CellTemplate>
                                 <DataGridTemplateColumn.CellEditingTemplate>
                                     <DataTemplate>
-                                        <TextBox Text="{Binding Field, UpdateSourceTrigger=PropertyChanged}" BorderThickness="0"/>
+                                        <ComboBox IsEditable="True"
+                                                  IsTextSearchEnabled="True"
+                                                  StaysOpenOnEdit="True"
+                                                  Text="{Binding Field, UpdateSourceTrigger=PropertyChanged}"
+                                                  ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FieldNameOptions}"
+                                                  BorderThickness="0"
+                                                  FontSize="12"/>
                                     </DataTemplate>
                                 </DataGridTemplateColumn.CellEditingTemplate>
                             </DataGridTemplateColumn>

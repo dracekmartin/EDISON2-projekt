@@ -97,8 +97,9 @@ public partial class PropertiesPanel : UserControl
     {
         switch (d)
         {
-            // TextWithPickerPropertyDescriptor musí být před StringPropertyDescriptor (je podtřídou)
-            case TextWithPickerPropertyDescriptor tpd: AddTextWithPickerRow(tpd); break;
+            // TextWithPickerPropertyDescriptor a SuggestStringPropertyDescriptor musí být před StringPropertyDescriptor (jsou podtřídami / dřívější match)
+            case TextWithPickerPropertyDescriptor tpd:  AddTextWithPickerRow(tpd); break;
+            case SuggestStringPropertyDescriptor  ssd:  AddSuggestRow(ssd);        break;
             case StringPropertyDescriptor sd: AddStringRow(sd);  break;
             case FloatPropertyDescriptor  fd: AddFloatRow(fd);   break;
             case BoolPropertyDescriptor   bd: AddBoolRow(bd);    break;
@@ -159,6 +160,86 @@ public partial class PropertiesPanel : UserControl
         };
 
         panel.Children.Add(box);
+        ContentPanel.Children.Add(panel);
+    }
+
+    // ── Suggest (editovatelný ComboBox s filtrováním) ─────────────────────
+
+    private void AddSuggestRow(SuggestStringPropertyDescriptor sd)
+    {
+        var panel = MakeRow();
+
+        var label = MakeLabel(sd.Label);
+        DockPanel.SetDock(label, Dock.Left);
+        panel.Children.Add(label);
+
+        var allItems = sd.GetSuggestions().ToList();
+
+        var combo = new ComboBox
+        {
+            IsEditable          = true,
+            IsTextSearchEnabled = false,
+            StaysOpenOnEdit     = true,
+            Text                = sd.Get(),
+            FontSize            = 11,
+            Padding             = new Thickness(1, 1, 1, 1),
+        };
+
+        void Refilter(string text)
+        {
+            combo.Items.Clear();
+            foreach (var (val, lbl) in allItems)
+            {
+                bool match = string.IsNullOrEmpty(text)
+                    || val.Contains(text, StringComparison.OrdinalIgnoreCase)
+                    || lbl.Contains(text, StringComparison.OrdinalIgnoreCase);
+                if (!match) continue;
+                var display = string.IsNullOrEmpty(lbl) || lbl == val ? val : $"{val}  —  {lbl}";
+                combo.Items.Add(new ComboBoxItem { Content = display, Tag = val });
+            }
+        }
+
+        Refilter("");
+
+        // Refiltrujeme jen při stisku klávesy (ne při interní změně WPF způsobené výběrem položky).
+        // Pokud bychom filtrovali i při SelectionChanged→TextChanged, Refilter() smaže Items
+        // a SelectedItem se stane null — DropDownClosed pak nemá co číst.
+        bool userIsTyping = false;
+        combo.PreviewKeyDown += (_, _) => userIsTyping = true;
+        combo.PreviewKeyUp   += (_, _) => userIsTyping = false;
+
+        combo.AddHandler(System.Windows.Controls.Primitives.TextBoxBase.TextChangedEvent,
+            new TextChangedEventHandler((_, _) =>
+            {
+                if (_suppressChanges || !userIsTyping) return;
+                Refilter(combo.Text);
+                if (combo.Items.Count > 0) combo.IsDropDownOpen = true;
+            }));
+
+        // DropDownClosed: WPF nastavil Text na Content (display string) — přepíšeme na Tag (hodnotu).
+        // SelectedItem je zachován, protože Refilter() se při výběru nespustil.
+        combo.DropDownClosed += (_, _) =>
+        {
+            if (combo.SelectedItem is not ComboBoxItem item) return;
+            var val = (string)item.Tag!;
+            _suppressChanges = true;
+            combo.SelectedItem = null;
+            combo.Text = val;
+            _suppressChanges = false;
+        };
+
+        string oldVal = sd.Get();
+        combo.LostFocus += (_, _) =>
+        {
+            if (_suppressChanges) return;
+            string newVal = combo.Text;
+            if (newVal == sd.Get()) return;
+            string captured = oldVal;
+            Commit(sd.Label, captured, newVal, v => { sd.Set((string)v!); _invalidate?.Invoke(); });
+            oldVal = newVal;
+        };
+
+        panel.Children.Add(combo);
         ContentPanel.Children.Add(panel);
     }
 

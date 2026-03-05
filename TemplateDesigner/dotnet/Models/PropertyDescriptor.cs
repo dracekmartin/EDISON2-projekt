@@ -81,6 +81,20 @@ public class TextWithPickerPropertyDescriptor : StringPropertyDescriptor
 }
 
 /// <summary>
+/// String pole s filtrovatelným dropdownem — uživatel může psát nebo vybrat z nabídky.
+/// Hodnoty se filtrují podle vepsaného textu (substring match).
+/// Dědí Get/Set/Label/Group ze StringPropertyDescriptor.
+/// </summary>
+public class SuggestStringPropertyDescriptor : StringPropertyDescriptor
+{
+    /// <summary>
+    /// Dostupné možnosti — (Value, Label). Value se ukládá, Label se zobrazuje v dropdownu.
+    /// Pokud je Label stejný jako Value nebo prázdný, zobrazí se jen Value.
+    /// </summary>
+    public required Func<IEnumerable<(string Value, string Label)>> GetSuggestions { get; init; }
+}
+
+/// <summary>
 /// Tlačítko v panelu vlastností — kliknutím spustí akci (např. otevření editoru).
 /// Panel zobrazí celou šířku tlačítko v příslušné skupině.
 /// </summary>

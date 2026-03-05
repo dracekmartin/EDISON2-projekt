@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using ALWA.SYS;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 
@@ -28,6 +29,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     private readonly Dictionary<string, TableTemplateDefinition?> _templateCache   = new(StringComparer.OrdinalIgnoreCase);
     // Klíč: agendaCode nebo "" pro "všechny agendy" (null argument)
     private readonly Dictionary<string, List<TableTemplateInfo>>  _templatesCache  = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DataContext?>             _mockDataCache   = new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -51,6 +53,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
     public DataSchema? GetSchema(string agendaCode)
     {
+        if (string.IsNullOrEmpty(agendaCode)) return null;
+
         if (_schemaCache.TryGetValue(agendaCode, out var cached))
             return cached;
 
@@ -167,6 +171,79 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
         _templateCache[key] = null;
         return null;
+    }
+
+    // ─── Mock data pro preview ────────────────────────────────────────────────
+
+    /// <summary>
+    /// Volá GetMockData na Caché třídě a vrátí DataContext pro live preview.
+    /// Null = metoda není dostupná nebo selžala.
+    /// </summary>
+    public DataContext? GetMockData(string agendaCode)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return null;
+        if (_mockDataCache.TryGetValue(agendaCode, out var cached)) return cached;
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
+
+        try
+        {
+            CVar result = _mlRest.Query(cacheClass, "GetMockData", new CVar());
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error) return null;
+
+            string? json = result["1"]?.Value?.ToString();
+            if (string.IsNullOrEmpty(json)) return null;
+
+            var data = ParseMockData(json);
+            _mockDataCache[agendaCode] = data;
+            return data;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AgendaProvider] GetMockData exception: {ex.Message}");
+            return null;
+        }
+    }
+
+    private static DataContext? ParseMockData(string json)
+    {
+        try
+        {
+            var node = JsonNode.Parse(json);
+            if (node is null) return null;
+
+            // Skalární hodnoty
+            var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+            if (node["values"]?.AsObject() is { } valObj)
+                foreach (var kv in valObj)
+                    values[kv.Key] = kv.Value?.GetValue<string>();
+
+            // Tabulkové kolekce
+            var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);
+            if (node["rows"]?.AsObject() is { } rowsObj)
+            {
+                foreach (var (collKey, rowsArr) in rowsObj)
+                {
+                    if (rowsArr is not JsonArray arr) continue;
+                    var rows = new List<DataContext>();
+                    foreach (var rowNode in arr)
+                    {
+                        if (rowNode is not JsonObject rowObj) continue;
+                        var rowValues = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var kv in rowObj)
+                            rowValues[kv.Key] = kv.Value?.GetValue<string>();
+                        rows.Add(new DataContext(rowValues));
+                    }
+                    rowsDict[collKey] = rows;
+                }
+            }
+
+            return new DataContext(values, rowsDict);
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AgendaProvider] ParseMockData exception: {ex.Message}");
+            return null;
+        }
     }
 
     // ─── JSON parsing ─────────────────────────────────────────────────────────

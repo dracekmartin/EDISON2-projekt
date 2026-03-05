@@ -120,7 +120,9 @@ Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma zál
 
 **Dva módy tabulky:**
 - **Pevná (Fixed)** — počet řádků je pevný, definovaný v šabloně; buňky obsahují statický text nebo placeholdery
-- **Dynamická (Dynamic)** — sloupce jsou z designeru, řádky se generují za běhu z dat (DataSource = klíč kolekce)
+- **Dynamická (Dynamic)** — sloupce jsou z designeru, řádky se generují za běhu z dat
+  - **Datový zdroj** — filtrovatelný ComboBox nabízí skupiny ze schématu agendy (např. "ZASTAVKY", "SPOJE")
+  - **Datové pole sloupce** — ComboBox nabízí pole dostupná v dané skupině; lze i ručně zadat
 
 ### QR kódy a čárové kódy (BarcodeElement)
 
@@ -210,8 +212,9 @@ Pravý panel zobrazuje **náhled šablony s mock daty** — takto bude šablona 
 
 - Otevřít / zavřít přes menu **Zobrazit → Live preview** nebo tlačítko v toolbaru
 - Automaticky se aktualizuje při každé změně šablony
-- Mock data se generují z DataSchema (ukázkové hodnoty ze schématu nebo generické zástupce)
-- Tabulky v Dynamic módu zobrazují 3 mock řádky s generovanými hodnotami
+- **Mock data ze systému** — pokud agenda implementuje `GetMockData` v Caché, preview zobrazuje reálná ukázková data (skutečné hodnoty polí, reálné řádky tabulek)
+- Fallback: hodnoty ze schématu agendy (pole `example`) nebo generické zástupce
+- Dynamic tabulky zobrazují všechny mock řádky vrácené z `GetMockData`
 
 ### Zoom
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru

@@ -96,12 +96,8 @@ public partial class MainWindow : Window
         _propsWindow = new ElementPropertiesWindow(
             _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
             getAvailableFields: () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields,
-            getGroupFields: collectionKey =>
-            {
-                if (collectionKey is null) return null;
-                return _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)
-                    ?.Groups?.FirstOrDefault(g => g.CollectionKey == collectionKey)?.Fields;
-            });
+            getAvailableGroups: () =>
+                _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Groups);
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
@@ -541,34 +537,43 @@ public partial class MainWindow : Window
         float w = (float)args.Info.Width;
         float h = (float)args.Info.Height;
 
-        // Sestavit mock DataContext ze schématu: skalární pole + mock řádky pro tabulkové skupiny
-        var schema = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode);
+        // Mock DataContext pro preview:
+        //   1. Primárně: GetMockData z Caché (reálná ukázková data definovaná v agendě)
+        //   2. Fallback:  mock ze schématu (Example hodnoty polí)
+        var agendaCode = _state.CurrentTemplate.AgendaCode;
         DataContext? mockData = null;
-        if (schema is not null)
+
+        if (agendaCode is not null && _cacheProvider is not null)
+            mockData = _cacheProvider.GetMockData(agendaCode);
+
+        if (mockData is null)
         {
-            var values = schema.Fields
-                .Concat(schema.Groups?.SelectMany(g => g.Fields) ?? [])
-                .DistinctBy(f => f.FieldName)
-                .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
-
-            // Mock řádky pro dynamické tabulky (Groups se Scope=Table) — 3 různé řádky
-            var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
-            foreach (var group in schema.Groups ?? [])
+            var schema = _schemaProvider.GetSchema(agendaCode);
+            if (schema is not null)
             {
-                if (group.Scope == FieldScope.Table && group.CollectionKey is not null)
-                {
-                    var mockRows = Enumerable.Range(1, 3).Select(i =>
-                    {
-                        var rowData = group.Fields.ToDictionary(
-                            f => f.FieldName,
-                            f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
-                        return new DataContext(rowData);
-                    }).ToList();
-                    rowsDict[group.CollectionKey] = mockRows;
-                }
-            }
+                var values = schema.Fields
+                    .Concat(schema.Groups?.SelectMany(g => g.Fields) ?? [])
+                    .DistinctBy(f => f.FieldName)
+                    .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
 
-            mockData = new DataContext(values, rowsDict);
+                var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
+                foreach (var group in schema.Groups ?? [])
+                {
+                    if (group.Scope == FieldScope.Table && group.CollectionKey is not null)
+                    {
+                        var mockRows = Enumerable.Range(1, 3).Select(i =>
+                        {
+                            var rowData = group.Fields.ToDictionary(
+                                f => f.FieldName,
+                                f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
+                            return new DataContext(rowData);
+                        }).ToList();
+                        rowsDict[group.CollectionKey] = mockRows;
+                    }
+                }
+
+                mockData = new DataContext(values, rowsDict);
+            }
         }
 
         _previewCanvas.Render(surface.Canvas, w, h, mockData);
@@ -1828,7 +1833,7 @@ public partial class MainWindow : Window
 
     private static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "JR" };
 
         t.Sections.Add(new Section
         {
