@@ -7,23 +7,25 @@
 Class ALVA.TemplateDesigner.API.AgendaAPI Extends %RegisteredObject [ Abstract ]
 {
 
-/// Vrátí DataSchema pro agendu: skalární pole (fields) + skupiny tabulek (groups).
+/// Vrátí DataSchema pro agendu: skalární pole (fields) + tabulkové kolekce (fieldCollections).
 /// OUT[1] = JSON objekt:
-///   { "fields": [...], "groups": [...] }
-/// Viz formát DataField a DataFieldGroup v dokumentaci.
+///   { "fields": [...], "fieldCollections": [...] }
+/// fields       = skalární pole; každá hodnota existuje jednou na celou sestavu
+/// fieldCollections = kolekce sad polí; každá kolekce tvoří zdroj řádků pro Dynamic tabulku
 ClassMethod GetSchema(ByRef sys As %String) As %Status [ Abstract ]
 {
 }
 
 /// Vrátí seznam dostupných Fixed šablon tabulek pro tuto agendu.
 /// OUT[1] = JSON pole objektů:
-///   [ { "key": "JR_ZAHLAVI", "label": "Záhlaví JR" }, ... ]
+///   [ { "key": "ZAHLAVI_LINKY", "label": "Záhlaví linky" }, ... ]
+/// key = interní identifikátor; česky, velkými písmeny, podtržítko jako oddělovač
 ClassMethod GetTableTemplates(ByRef sys As %String) As %Status [ Abstract ]
 {
 }
 
 /// Vrátí kompletní definici Fixed šablony (sloupce + řádky).
-/// IN:  key = klíč šablony (např. "JR_ZAHLAVI")
+/// IN:  key = klíč šablony (např. "ZAHLAVI_LINKY")
 /// OUT[1] = JSON objekt:
 ///   { "columns": [...], "rows": [...] }
 ClassMethod GetTableTemplate(ByRef sys As %String) As %Status [ Abstract ]

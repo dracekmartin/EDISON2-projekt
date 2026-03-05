@@ -108,20 +108,21 @@ public class JsonFileDataSchemaProvider : IDataSchemaProvider
             schema.Fields = raw.Fields.Select(MapField).ToList();
         }
 
-        // Groups (V2+)
-        if (raw.Groups is { Count: > 0 })
+        // FieldCollections (V2+)
+        if (raw.FieldCollections is { Count: > 0 })
         {
-            schema.Groups = raw.Groups.Select(g => new DataFieldGroup
-            {
-                Name          = g.Name ?? "",
-                Scope         = g.Scope,
-                CollectionKey = g.CollectionKey,
-                Fields        = g.Fields?.Select(MapField).ToList() ?? []
-            }).ToList();
+            schema.FieldCollections = raw.FieldCollections
+                .Where(c => !string.IsNullOrEmpty(c.CollectionKey))
+                .Select(c => new DataFieldCollection
+                {
+                    Name          = c.Name ?? "",
+                    CollectionKey = c.CollectionKey!,
+                    Fields        = c.Fields?.Select(MapField).ToList() ?? []
+                }).ToList();
 
-            // Pokud nejsou flat fields, slouč všechny skupiny do flat listu
+            // Pokud nejsou flat fields, slouč pole ze všech kolekcí do flat listu
             if (schema.Fields.Count == 0)
-                schema.Fields = schema.Groups.SelectMany(g => g.Fields).ToList();
+                schema.Fields = schema.FieldCollections.SelectMany(c => c.Fields).ToList();
         }
 
         return schema;
@@ -144,8 +145,8 @@ public class JsonFileDataSchemaProvider : IDataSchemaProvider
         public string? AgendaCode { get; set; }
         public string? AgendaName { get; set; }
         public string? Version    { get; set; }
-        public List<RawField>?  Fields { get; set; }
-        public List<RawGroup>?  Groups { get; set; }
+        public List<RawField>?           Fields           { get; set; }
+        public List<RawFieldCollection>? FieldCollections { get; set; }
     }
 
     private class RawField
@@ -157,11 +158,10 @@ public class JsonFileDataSchemaProvider : IDataSchemaProvider
         public string?       Description { get; set; }
     }
 
-    private class RawGroup
+    private class RawFieldCollection
     {
-        public string?           Name          { get; set; }
-        public FieldScope        Scope         { get; set; } = FieldScope.Scalar;
-        public string?           CollectionKey { get; set; }
-        public List<RawField>?   Fields        { get; set; }
+        public string?         Name          { get; set; }
+        public string?         CollectionKey { get; set; }
+        public List<RawField>? Fields        { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
+using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner;
 
@@ -20,8 +21,9 @@ public partial class ElementPropertiesWindow : Window
     /// Vrátí aktuálně dostupná pole schématu (podle AgendaCode šablony).
     /// Null = schéma není k dispozici, picker se nezobrazí.
     /// </summary>
-    private readonly Func<IReadOnlyList<DataField>?>?           _getAvailableFields;
-    private readonly Func<IReadOnlyList<DataFieldGroup>?>?      _getAvailableGroups;
+    private readonly Func<IReadOnlyList<DataField>?>?                _getAvailableFields;
+    private readonly Func<IReadOnlyList<DataFieldCollection>?>?      _getAvailableGroups;
+    private readonly ITableTemplateProvider?                         _tableTemplateProvider;
 
     private TemplateElement? _currentElement;
     private int              _undoDepthAtOpen;
@@ -37,17 +39,19 @@ public partial class ElementPropertiesWindow : Window
         Action updateCanvasSize,
         Action refreshFields,
         Func<IReadOnlyList<DataField>?>? getAvailableFields = null,
-        Func<IReadOnlyList<DataFieldGroup>?>? getAvailableGroups = null)
+        Func<IReadOnlyList<DataFieldCollection>?>? getAvailableGroups = null,
+        ITableTemplateProvider? tableTemplateProvider = null)
     {
         InitializeComponent();
-        _state               = state;
-        _invalidate          = invalidate;
-        _refreshSections     = refreshSections;
-        _updateCanvasSize    = updateCanvasSize;
-        _refreshFields       = refreshFields;
-        _getAvailableFields  = getAvailableFields;
-        _getAvailableGroups  = getAvailableGroups;
-        _currentInvalidate   = invalidate;
+        _state                 = state;
+        _invalidate            = invalidate;
+        _refreshSections       = refreshSections;
+        _updateCanvasSize      = updateCanvasSize;
+        _refreshFields         = refreshFields;
+        _getAvailableFields    = getAvailableFields;
+        _getAvailableGroups    = getAvailableGroups;
+        _tableTemplateProvider = tableTemplateProvider;
+        _currentInvalidate     = invalidate;
         PropertiesPanel.SetContext(cmd => state.Execute(cmd), invalidate);
     }
 
@@ -95,23 +99,38 @@ public partial class ElementPropertiesWindow : Window
         IReadOnlyList<Models.PropertyDescriptor> descriptors,
         TableElement element)
     {
-        var groups = _getAvailableGroups?.Invoke() ?? [];
+        var collections = _getAvailableGroups?.Invoke() ?? [];
 
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is Models.StringPropertyDescriptor strD && strD.Label == "Zdroj dat" && groups.Count > 0)
+            if (d is Models.EnumPropertyDescriptor enumD && enumD.Label == "Režim")
             {
-                // Nahradit ručním textovým polem filtrovatelným dropdownem skupin (kolekcí)
+                // Obalit Set — po změně módu obnovit panel (Zdroj dat se zobrazí/skryje)
+                list.Add(new Models.EnumPropertyDescriptor
+                {
+                    Label   = enumD.Label,
+                    Group   = enumD.Group,
+                    Get     = enumD.Get,
+                    Set     = v =>
+                    {
+                        enumD.Set(v);
+                        PropertiesPanel.ShowDescriptors(
+                            EnhanceTableEditor(element.GetPropertyDescriptors(), element));
+                    },
+                    Options = enumD.Options
+                });
+            }
+            else if (d is Models.StringPropertyDescriptor strD && strD.Label == "Zdroj dat" && collections.Count > 0)
+            {
+                // Nahradit ručním textovým polem filtrovatelným dropdownem kolekcí
                 list.Add(new Models.SuggestStringPropertyDescriptor
                 {
                     Label          = strD.Label,
                     Group          = strD.Group,
                     Get            = strD.Get,
                     Set            = strD.Set,
-                    GetSuggestions = () => groups
-                        .Where(g => g.CollectionKey is not null)
-                        .Select(g => (g.CollectionKey!, g.Name))
+                    GetSuggestions = () => collections.Select(c => (c.CollectionKey, c.Name))
                 });
             }
             else if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Editor")
@@ -123,13 +142,17 @@ public partial class ElementPropertiesWindow : Window
                     ButtonLabel = btn.ButtonLabel,
                     OnClick     = () =>
                     {
-                        var availableGroups = _getAvailableGroups?.Invoke();
-                        // Pole z konkrétní skupiny (DataSource), fallback = pole ze všech skupin
-                        var groupFields = availableGroups
-                            ?.FirstOrDefault(g => g.CollectionKey == element.DataSource)?.Fields
-                            as IReadOnlyList<DataField>
-                            ?? availableGroups?.SelectMany(g => g.Fields).ToList();
-                        var dlg = new TableEditorDialog(element, groupFields) { Owner = this };
+                        // Pole z konkrétní kolekce (DataSource), fallback = pole ze všech kolekcí
+                        // collections je zachyceno z vnějšího scopu — stejná instance jako pro SuggestString
+                        var collectionFields = collections.Count > 0
+                            ? (collections.FirstOrDefault(c => c.CollectionKey == element.DataSource)?.Fields
+                                   as IReadOnlyList<DataField>
+                               ?? collections.SelectMany(c => c.Fields).ToList())
+                            : null;
+                        // Owner = hlavní okno (ne ToolWindow) — jinak WPF po zavření dialogu
+                        // aktivuje ToolWindow a způsobuje minimalizaci hlavního okna.
+                        var dlg = new TableEditorDialog(element, collectionFields, _tableTemplateProvider)
+                            { Owner = Application.Current.MainWindow };
                         if (dlg.ShowDialog() != true) return;
 
                         var cmds = new List<Commands.IDesignerCommand>();
@@ -369,6 +392,10 @@ public partial class ElementPropertiesWindow : Window
     {
         _currentElement = null;
         base.Hide();
+        // Po skrytí ToolWindow WPF nekonzistentně přesměruje focus a může minimalizovat
+        // MainWindow. Explicitní Activate() na owneru to opraví.
+        if (Owner?.IsLoaded == true)
+            Owner.Activate();
     }
 
     /// <summary>Skutečně zavře okno — volat pouze při ukončení aplikace.</summary>

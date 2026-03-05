@@ -29,17 +29,16 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",    "Poznámka pod dopravce",    "text")
     d ..AddField(fields, "INFORMACE",                "Informace",                "text")
     d ..AddField(fields, "NEJEDOU_SPOJE",            "Nejedou spoje",            "text")
-    d ..AddField(fields, "TEST_POLOZKA",            "Test polozka",            "text")
+    d ..AddField(fields, "TEST_POLOZKA",             "Test polozka",             "text")
 
     s def.fields = fields
 
-    // ── Skupiny tabulek (scope = table) ──────────────────────────────
-    s groups = ##class(%DynamicArray).%New()
+    // ── Tabulkové kolekce (fieldCollections) ─────────────────────────
+    s collections = ##class(%DynamicArray).%New()
 
     // Zastávky linky
     s gZast = ##class(%DynamicObject).%New()
     s gZast.name          = "Zastávky"
-    s gZast.scope         = "table"
     s gZast.collectionKey = "ZASTAVKY"
     s gZastFields = ##class(%DynamicArray).%New()
     d ..AddField(gZastFields, "CISLO_ZASTAVKA",     "Číslo zastávky",     "number")
@@ -50,21 +49,20 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(gZastFields, "PRESTUP",            "Přestup",            "boolean")
     d ..AddField(gZastFields, "POZNAMKA",           "Poznámka",           "text")
     s gZast.fields = gZastFields
-    d groups.%Push(gZast)
+    d collections.%Push(gZast)
 
     // Spoje (pro tabulkové jízdní řády)
     s gSpoje = ##class(%DynamicObject).%New()
     s gSpoje.name          = "Spoje"
-    s gSpoje.scope         = "table"
     s gSpoje.collectionKey = "SPOJE"
     s gSpojeFields = ##class(%DynamicArray).%New()
     d ..AddField(gSpojeFields, "CISLO_SPOJE",  "Číslo spoje",  "number")
     d ..AddField(gSpojeFields, "TYP_DNE",      "Typ dne",      "text")
     d ..AddField(gSpojeFields, "POZNAMKA",     "Poznámka",     "text")
     s gSpoje.fields = gSpojeFields
-    d groups.%Push(gSpoje)
+    d collections.%Push(gSpoje)
 
-    s def.groups = groups
+    s def.fieldCollections = collections
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
     q 1
@@ -76,12 +74,12 @@ ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
     s arr = ##class(%DynamicArray).%New()
 
     s t1 = ##class(%DynamicObject).%New()
-    s t1.key   = "MHD_ZAHLAVI"
-    s t1.label = "Záhlaví JR (2 sloupce)"
+    s t1.key   = "ZAHLAVI_LINKY"
+    s t1.label = "Záhlaví linky"
     d arr.%Push(t1)
 
     s t2 = ##class(%DynamicObject).%New()
-    s t2.key   = "MHD_PLATNOST"
+    s t2.key   = "PLATNOST_DOPRAVCE"
     s t2.label = "Platnost a dopravce"
     d arr.%Push(t2)
 
@@ -94,7 +92,7 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
 {
     s key = $g(^||ML("IN", "key"))
 
-    if key = "MHD_ZAHLAVI" {
+    if key = "ZAHLAVI_LINKY" {
         d ..WriteTemplate2Col([
             ["Linka",         "{CISLO_LINKY}"],
             ["Označení",      "{LOKALNI_OZNACENI_LINKY}"],
@@ -103,7 +101,7 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
             ["Platnost do",   "{DATUM_PLATNOSTI_DO}"]
         ])
     }
-    elseif key = "MHD_PLATNOST" {
+    elseif key = "PLATNOST_DOPRAVCE" {
         d ..WriteTemplate2Col([
             ["Platnost",      "{POPIS_PLATNOSTI}"],
             ["Dopravce",      "{POPIS_DOPRAVCE}"],

@@ -50,7 +50,8 @@ public partial class MainWindow : Window
     private TemplateElement? _resizeElement;
     private ResizeHandle     _resizeHandle;
     private float  _resizeInitX, _resizeInitY, _resizeInitW;
-    private float? _resizeInitH;
+    private float? _resizeInitH;          // null = element byl dynamický; pro undo
+    private float  _resizeInitHComputed;  // vždy numerická výška v mm; pro ComputeResize
     private float  _resizeMouseStartX, _resizeMouseStartY; // mm relativně k sekci
     private float  _resizeOriginX, _resizeOriginY;         // canvas px origin sekce
 
@@ -95,9 +96,9 @@ public partial class MainWindow : Window
 
         _propsWindow = new ElementPropertiesWindow(
             _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
-            getAvailableFields: () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields,
-            getAvailableGroups: () =>
-                _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Groups);
+            getAvailableFields:    () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields,
+            getAvailableGroups:    () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.FieldCollections,
+            tableTemplateProvider: _cacheProvider);
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
@@ -552,24 +553,21 @@ public partial class MainWindow : Window
             if (schema is not null)
             {
                 var values = schema.Fields
-                    .Concat(schema.Groups?.SelectMany(g => g.Fields) ?? [])
+                    .Concat(schema.FieldCollections?.SelectMany(c => c.Fields) ?? [])
                     .DistinctBy(f => f.FieldName)
                     .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
 
                 var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
-                foreach (var group in schema.Groups ?? [])
+                foreach (var collection in schema.FieldCollections ?? [])
                 {
-                    if (group.Scope == FieldScope.Table && group.CollectionKey is not null)
+                    var mockRows = Enumerable.Range(1, 3).Select(i =>
                     {
-                        var mockRows = Enumerable.Range(1, 3).Select(i =>
-                        {
-                            var rowData = group.Fields.ToDictionary(
-                                f => f.FieldName,
-                                f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
-                            return new DataContext(rowData);
-                        }).ToList();
-                        rowsDict[group.CollectionKey] = mockRows;
-                    }
+                        var rowData = collection.Fields.ToDictionary(
+                            f => f.FieldName,
+                            f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
+                        return new DataContext(rowData);
+                    }).ToList();
+                    rowsDict[collection.CollectionKey] = mockRows;
                 }
 
                 mockData = new DataContext(values, rowsDict);
@@ -972,7 +970,7 @@ public partial class MainWindow : Window
         }
 
         StatusText.Text = cacheSchema is not null
-            ? $"● Caché: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.Groups?.Count ?? 0} skupin)"
+            ? $"● Caché: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
             : $"○ Caché: nedostupné — záloha JSON ({agendaCode})";
     }
 
@@ -1152,9 +1150,7 @@ public partial class MainWindow : Window
         Add("Obdélník",   () => new RectangleElement { X = 5, Y = 5, Width = 60, Height = 20, StrokeWidth = 0.5f });
         Add("Čára",       () => new LineElement      { X = 0, Y = 10, Width = 190, Height = 1 });
         Add("Obrázek",    () => new ImageElement     { X = 5, Y = 5, Width = 40, Height = 30 });
-        Add("Tabulka",    () => new TableElement     { X = 0, Y = 0, Width = 190,
-            Columns = [ new TableColumn { Header = "Sloupec 1", Width = 95, Field = "POLE1" },
-                        new TableColumn { Header = "Sloupec 2", Width = 95, Field = "POLE2" } ] });
+        Add("Tabulka",    () => new TableElement     { X = 0, Y = 0, Width = 190 });
         Add("QR kód",    () => new BarcodeElement  { X = 5, Y = 5, Width = 30, Height = 30, BarcodeType = BarcodeElementType.QR });
         Add("Čárový kód", () => new BarcodeElement { X = 5, Y = 5, Width = 80, Height = 15, BarcodeType = BarcodeElementType.Code128 });
 
@@ -1217,10 +1213,11 @@ public partial class MainWindow : Window
 
             _resizeElement     = el;
             _resizeHandle      = handle;
-            _resizeInitX       = el.X;
-            _resizeInitY       = el.Y;
-            _resizeInitW       = el.Width;
-            _resizeInitH       = originalH;
+            _resizeInitX        = el.X;
+            _resizeInitY        = el.Y;
+            _resizeInitW        = el.Width;
+            _resizeInitH        = originalH;
+            _resizeInitHComputed = el.Height!.Value; // vždy číslo — Height byl právě materializován
             var origin         = _canvas.GetSectionOrigins(cw)
                                         .FirstOrDefault(t => t.Section.Elements.Contains(el));
             _resizeOriginX     = origin.OriginX;
@@ -1484,7 +1481,7 @@ public partial class MainWindow : Window
         float dy = mouseMmY - _resizeMouseStartY;
 
         const float minW = 3f, minH = 2f;
-        float initH  = _resizeInitH ?? _resizeElement!.EffectiveDesignerHeight;
+        float initH  = _resizeInitHComputed;
         float right  = _resizeInitX + _resizeInitW;
         float bottom = _resizeInitY + initH;
 

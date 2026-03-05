@@ -110,7 +110,7 @@ public class TableElement : TemplateElement
     public TableMode Mode { get; set; } = TableMode.Dynamic;
 
     /// <summary>
-    /// Dynamic mód: klíč datové kolekce v DataContext._rows (= DataFieldGroup.CollectionKey).
+    /// Dynamic mód: klíč datové kolekce v DataContext._rows (= DataFieldCollection.CollectionKey).
     /// Fixed mód: null (nepoužívá se).
     /// </summary>
     public string? DataSource { get; set; }
@@ -376,13 +376,15 @@ public class TableElement : TemplateElement
             Options = [("Dynamická (z dat)", (object)TableMode.Dynamic),
                        ("Pevná (definované řádky)", (object)TableMode.Fixed)]
         },
-        new StringPropertyDescriptor
-        {
-            Label = "Zdroj dat",
-            Group = "Tabulka",
-            Get   = () => DataSource ?? "",
-            Set   = v => DataSource = string.IsNullOrWhiteSpace(v) ? null : v
-        },
+        .. Mode == TableMode.Dynamic
+            ? (PropertyDescriptor[])[new StringPropertyDescriptor
+            {
+                Label = "Zdroj dat",
+                Group = "Tabulka",
+                Get   = () => DataSource ?? "",
+                Set   = v => DataSource = string.IsNullOrWhiteSpace(v) ? null : v
+            }]
+            : [],
         new FloatPropertyDescriptor
         {
             Label = "Výška řádku",

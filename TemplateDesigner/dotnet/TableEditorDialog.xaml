@@ -120,6 +120,7 @@
                             <Button Content="↑" Width="28" Click="MoveColumnUp_Click"/>
                             <Button Content="↓" Width="28" Click="MoveColumnDown_Click"/>
                             <Button Content="Odebrat" Click="RemoveColumn_Click"/>
+                            <Button x:Name="BtnLoadTemplate" Content="Ze šablony..." Click="LoadTemplate_Click" Margin="16,0,0,0"/>
                         </StackPanel>
                         <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="#888888"
                                    Text="Pole: název ze schématu bez závorek (nebo s závorkami — {ZASTAVKA} i ZASTAVKA je přijato)."/>

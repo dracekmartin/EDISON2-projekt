@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
+using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner;
 
@@ -138,8 +139,9 @@ public class CellVM : INotifyPropertyChanged
 
 public partial class TableEditorDialog : Window
 {
-    private readonly TableElement          _element;
-    private readonly IReadOnlySet<string>? _validFieldNames;
+    private readonly TableElement           _element;
+    private readonly IReadOnlySet<string>?  _validFieldNames;
+    private readonly ITableTemplateProvider? _templateProvider;
 
     public ObservableCollection<ColumnVM>  ColumnVMs { get; } = [];
     public ObservableCollection<RowVM>     RowVMs    { get; } = [];
@@ -157,19 +159,32 @@ public partial class TableEditorDialog : Window
     /// <summary>Dostupná pole skupiny pro ComboBox v editoru sloupců.</summary>
     public string[] FieldNameOptions { get; }
 
-    /// <param name="groupFields">Dostupná pole v dané skupině (pro validaci + picker). Null = validace vypnuta.</param>
-    public TableEditorDialog(TableElement element, IReadOnlyList<DataField>? groupFields = null)
+    /// <param name="collectionFields">Dostupná pole kolekce (pro validaci + picker). Null = validace vypnuta.</param>
+    /// <param name="templateProvider">Provider šablon tabulek. Null = tlačítko "Ze šablony..." se skryje.</param>
+    public TableEditorDialog(TableElement element, IReadOnlyList<DataField>? collectionFields = null,
+        ITableTemplateProvider? templateProvider = null)
     {
-        _element = element;
-        FieldNameOptions = groupFields?.Select(f => f.FieldName).OrderBy(n => n).ToArray() ?? [];
+        _element          = element;
+        _templateProvider = templateProvider;
+        FieldNameOptions  = collectionFields?.Select(f => f.FieldName).OrderBy(n => n).ToArray() ?? [];
         _validFieldNames = FieldNameOptions.Length > 0
             ? new HashSet<string>(FieldNameOptions, StringComparer.OrdinalIgnoreCase)
             : null;
         InitializeComponent();
         DataContext = this;
 
-        // Naplnění sloupců
-        foreach (var col in element.Columns)
+        // Tlačítko "Ze šablony..." pouze pokud je provider dostupný a mód je Fixed
+        BtnLoadTemplate.Visibility = (_templateProvider is not null && element.Mode == TableMode.Fixed)
+            ? Visibility.Visible : Visibility.Collapsed;
+
+        // Naplnění sloupců — pro Dynamic tabulku bez sloupců předvyplnit ze schématu
+        var sourceCols = element.Columns.Count == 0 && element.Mode == TableMode.Dynamic && collectionFields is { Count: > 0 }
+            ? collectionFields.Select(f => new TableColumn
+                { Header = f.Label, Field = f.FieldName,
+                  Width = MathF.Round(element.Width / collectionFields.Count, 1) })
+            : element.Columns.AsEnumerable();
+
+        foreach (var col in sourceCols)
         {
             var vm = ColumnVM.FromModel(col);
             vm.ValidFieldNames = _validFieldNames;
@@ -302,6 +317,107 @@ public partial class TableEditorDialog : Window
             ResultRows = RowVMs.Select(rvm => rvm.ToModel()).ToList();
 
         DialogResult = true;
+    }
+
+    // ─── Ze šablony ──────────────────────────────────────────────────
+
+    private const string DlgTitleLoadTemplate = "Načíst šablonu";
+
+    private void LoadTemplate_Click(object sender, RoutedEventArgs e)
+    {
+        if (_templateProvider is null) return;
+
+        var templates = _templateProvider.GetAvailableTemplates();
+        if (templates.Count == 0)
+        {
+            MessageBox.Show("Nejsou dostupné žádné šablony tabulek.", DlgTitleLoadTemplate,
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // Picker — jednoduchý dialog s ListBoxem
+        var picker = new Window
+        {
+            Title                 = "Vyberte šablonu tabulky",
+            Width                 = 340,
+            Height                = 260,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner                 = this,
+            ResizeMode            = ResizeMode.NoResize,
+            ShowInTaskbar         = false
+        };
+
+        var list = new System.Windows.Controls.ListBox
+        {
+            Margin            = new Thickness(10, 10, 10, 0),
+            VerticalAlignment = VerticalAlignment.Stretch
+        };
+        foreach (var t in templates)
+            list.Items.Add(new ListBoxItem { Content = t.Label, Tag = t.Key });
+        list.SelectedIndex = 0;
+
+        var btnOk = new Button
+        {
+            Content             = "Použít",
+            Width               = 80,
+            IsDefault           = true,
+            Margin              = new Thickness(0, 8, 8, 10),
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
+        };
+        var btnCancel = new Button
+        {
+            Content             = "Storno",
+            Width               = 80,
+            IsCancel            = true,
+            Margin              = new Thickness(0, 8, 0, 10),
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
+        };
+
+        btnOk.Click     += (_, _) => picker.DialogResult = true;
+        btnCancel.Click += (_, _) => picker.DialogResult = false;
+
+        var btnPanel = new StackPanel
+        {
+            Orientation         = System.Windows.Controls.Orientation.Horizontal,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+            Margin              = new Thickness(10, 0, 10, 0)
+        };
+        btnPanel.Children.Add(btnOk);
+        btnPanel.Children.Add(btnCancel);
+
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Grid.SetRow(list,     0);
+        Grid.SetRow(btnPanel, 1);
+        root.Children.Add(list);
+        root.Children.Add(btnPanel);
+        picker.Content = root;
+
+        if (picker.ShowDialog() != true) return;
+        if (list.SelectedItem is not ListBoxItem selected) return;
+
+        var key = (string)selected.Tag!;
+        var def = _templateProvider.GetTemplate(key);
+        if (def is null)
+        {
+            MessageBox.Show("Šablonu se nepodařilo načíst.", DlgTitleLoadTemplate,
+                MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Aplikovat šablonu — nahradit sloupce a řádky
+        ColumnVMs.Clear();
+        foreach (var col in def.Columns)
+        {
+            var vm = ColumnVM.FromModel(col);
+            vm.ValidFieldNames = _validFieldNames;
+            ColumnVMs.Add(vm);
+        }
+
+        RowVMs.Clear();
+        foreach (var row in def.Rows)
+            RowVMs.Add(RowVM.FromModel(row, def.Columns));
     }
 
     // ─── Klávesnicová navigace v DataGridu ───────────────────────────

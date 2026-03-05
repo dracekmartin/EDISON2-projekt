@@ -20,16 +20,15 @@ Systém se skládá ze dvou částí:
 
 > **📝 POZNÁMKA PRO AI AGENTA:** Tuto sekci **průběžně aktualizuj** během práce na projektu. Když dokončíš úkol, přesuň ho do "✅ Implementováno". Když objevíš nový problém, přidej ho do "🐛 Známé problémy". Když přidáš novou feature, doplň ji do seznamu. **Tato sekce má být vždy aktuální**, aby při startu nové session byl kontext dostupný bez vysvětlování.
 
-**Datum poslední aktualizace:** 2026-03-04
+**Datum poslední aktualizace:** 2026-03-05
 
 ### 🎯 Aktuální focus
 
-**Dynamic TableElement + Caché data — hotovo.** Live preview ukazuje reálná mock data z Caché (`GetMockData`), DataSource se vybírá z filtrovatelného ComboBoxu, pole sloupců z odpovídající skupiny schématu.
+**"Ze šablony..." picker + refaktoring DataFieldCollection — hotovo.** TableEditorDialog umožňuje načíst Fixed šablonu z Caché jedním klikem. DataFieldGroup přejmenováno na DataFieldCollection, odstraněn FieldScope enum.
 
 **Další kroky:**
-1. "Ze šablony..." picker — načíst `GetTableTemplates` a umožnit výběr Fixed šablony z Caché
-2. Podmíněné řádky tabulky (VisibilityExpression per řádek)
-3. Grouping v Dynamic tabulkách
+1. Podmíněné řádky tabulky (VisibilityExpression per řádek)
+2. Grouping v Dynamic tabulkách
 
 **Co už máme:**
 - ✅ Text, Image, Rectangle, Line (základní elementy)
@@ -66,7 +65,7 @@ Systém se skládá ze dvou částí:
 - ✅ RectangleElement
 - ✅ LineElement
 - ✅ BarcodeElement (QR kód + Code128, ZXing.Net 0.16.9)
-- ✅ TableElement — Fixed/Dynamic mód, UI editor sloupců + řádků, barvy, orámování, střídání barev
+- ✅ TableElement — Fixed/Dynamic mód, UI editor sloupců + řádků, barvy, orámování, střídání barev, **"Ze šablony..."** picker
 
 **Sections:**
 - ✅ Section refactoring (2026-03) — univerzální třída místo 7 podtříd
@@ -90,25 +89,36 @@ Systém se skládá ze dvou částí:
 
 ### 🐛 Známé problémy
 
-1. **ColorPicker minimalizace Properties window** — NEBLOKUJÍCÍ
-   - **Popis:** Po zavření WinForms ColorDialog se minimalizuje ElementPropertiesWindow (kvůli ToolWindow style)
-   - **Workaround:** Uživatel znovu otevře Properties panel
-   - **Lokace:** `Controls/PropertiesPanel.xaml.cs:416` (TODO komentář)
-   - **Priorita:** LOW
-   - **Možná řešení:** WPF ColorPicker control, změna WindowStyle, nebo Extended Toolkit
+*(žádné aktivní problémy)*
 
 ### 📋 TODO Seznam (prioritizováno)
 
-**LOW priority:**
-1. **Opravit ColorPicker minimalizaci** — viz Známé problémy výše
-
 **OPTIONAL:**
-2. **Přidat context menu na záhlaví sekce v designeru**
+1. **Přidat context menu na záhlaví sekce v designeru**
    - Pravý klik na záhlaví sekce (ne v levém panelu, ale přímo na canvasu)
    - Volby: Vlastnosti, Duplikovat, Smazat, Přesunout nahoru/dolů
    - Alternativa k levému panelu pro rychlejší přístup
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-05 — "Ze šablony..." picker + DataFieldCollection refaktoring + bug fixy:**
+- ✅ `TableEditorDialog` — tlačítko "Ze šablony..." v záložce Sloupce (jen Fixed mód)
+  - Načte seznam šablon přes `ITableTemplateProvider.GetAvailableTemplates()`
+  - Picker dialog zobrazí šablony z Caché; výběrem nahradí sloupce i řádky
+  - Tlačítko skryté pokud není dostupný provider nebo mód je Dynamic
+  - Auto-prefill sloupců při otevření Dynamic tabulky bez sloupců (rovnoměrné šířky z `element.Width / count`)
+- ✅ `DataFieldGroup` → `DataFieldCollection`, odstraněn `FieldScope` enum
+  - Všechny kolekce jsou implicitně tabulkové (Scalar skupiny se nikdy nepoužívaly)
+  - `CollectionKey` je nyní `string` (non-nullable); kolekce bez klíče se přeskočí
+  - Caché wire formát: `groups` → `fieldCollections`; C# parser má fallback na `groups` pro zpětnou kompatibilitu se staršími Caché třídami (loguje DEBUG warning)
+- ✅ Bug fix: Resize "zrychlení" u nových elementů s `Height=null`
+  - Příčina: `ComputeResize` četl `EffectiveDesignerHeight` z elementu každý frame — měnila se
+  - Fix: nový field `_resizeInitHComputed` zachytí výšku jednou při MouseDown; `_resizeInitH` zůstává null pro undo
+- ✅ Bug fix: Minimalizace MainWindow po zavření dialogů (obecný ToolWindow problém)
+  - `TableEditorDialog.Owner = Application.Current.MainWindow` (ne ToolWindow)
+  - `ElementPropertiesWindow.Hide()` explicitně volá `Owner.Activate()` (s guard `IsLoaded`)
+- ✅ `TableElement.GetPropertyDescriptors()` — "Zdroj dat" descriptor se zobrazuje jen v Dynamic módu
+- ✅ `EnhanceTableEditor` — změna Režimu obnovuje panel (Zdroj dat se zobrazí/skryje)
 
 **2026-03-04 (pokračování — Caché mock data + DataSource picker):**
 - ✅ `GetMockData` — nová metoda v `AgendaAPI.cls` + `TemplateDesignerMHD.cls`
@@ -319,9 +329,9 @@ Class ALVA.JR.TiskAPI Extends ALVA.TemplateDesigner.AgendaAPI
     { "name": "CISLO_LINKY", "label": "Číslo linky",  "type": "number" },
     { "name": "NAZEV",       "label": "Název linky",   "type": "text"   }
   ],
-  "groups": [
+  "fieldCollections": [
     {
-      "name": "Zastávky", "scope": "table", "collectionKey": "ZASTAVKY",
+      "name": "Zastávky", "collectionKey": "ZASTAVKY",
       "fields": [
         { "name": "POPIS",   "label": "Název zastávky", "type": "text" },
         { "name": "CAS_ODJ", "label": "Čas odjezdu",   "type": "time" }
@@ -334,14 +344,14 @@ Class ALVA.JR.TiskAPI Extends ALVA.TemplateDesigner.AgendaAPI
 #### GetTableTemplates — OUT[1]
 ```json
 [
-  { "key": "JR_ZAHLAVI", "label": "Záhlaví JR" },
-  { "key": "JR_SOUHRN",  "label": "Souhrn linky" }
+  { "key": "ZAHLAVI_LINKY",    "label": "Záhlaví linky" },
+  { "key": "PLATNOST_DOPRAVCE","label": "Platnost a dopravce" }
 ]
 ```
 
 #### GetTableTemplate — IN + OUT[1]
 ```
-IN: key = "JR_ZAHLAVI"
+IN: key = "ZAHLAVI_LINKY"
 ```
 ```json
 {
@@ -384,6 +394,28 @@ OUT[3] = {"collection":"ZASTAVKY","POPIS":"Smíchovské n.","CAS_ODJ":"812"}
 ```
 
 Řádky kolekce jsou identifikovatelné přítomností klíče `"collection"`. Skalární objekt je vždy OUT[1].
+
+---
+
+### Názvosloví — přehled pojmů API agendy
+
+Tabulka zachycuje pojmy které se v Caché API opakují a jejichž anglický název nemusí být na první pohled zřejmý. Triviální překlady (width, height, label…) zde nejsou.
+
+| Anglický název v kódu | Český ekvivalent | Business význam | Příklad |
+|---|---|---|---|
+| `GetSchema` | GetSchema | Vrátí **definici dostupných dat** agendy — co existuje jako pole, ne konkrétní hodnoty | `{ fields: [{name:"CISLO_LINKY",...}], groups: [...] }` |
+| `GetTableTemplates` | GetTableTemplates | Vrátí **seznam předdefinovaných layoutů** Fixed tabulek uložených v Caché | `[{key:"ZAHLAVI_LINKY", label:"Záhlaví linky"}]` |
+| `GetTableTemplate` | GetTableTemplate | Vrátí **konkrétní předdefinovaný layout** — sloupce + předvyplněné řádky | `{ columns:[...], rows:[{cells:[{content:"{CISLO_LINKY}"}]}] }` |
+| `GetData` | GetData | Vrátí **reálná data z DB** pro tisk; volaná print enginem za běhu | `{ CISLO_LINKY:"42", NAZEV:"Praha–Brno" }` + kolekce řádků |
+| `GetMockData` | GetMockData | Vrátí **vzorová data** pro live preview v designeru; volaná design-time | stejná struktura jako GetData, ale s pevnými testovacími hodnotami |
+| `fields` | skalární pole | Pole agendy kde každá hodnota existuje **právě jednou** na celou sestavu | `CISLO_LINKY`, `POPIS_DOPRAVCE`, `DATUM_PLATNOSTI_OD` |
+| `fieldCollections` | tabulkové kolekce | Kolekce sad polí kde každá kolekce tvoří **seznam řádků** — zdroj dat pro Dynamic tabulku | kolekce `Zastávky` obsahuje pole `POPIS_ZASTAVKA`, `CAS_ODJEZDU`… |
+| `collectionKey` | klíč kolekce | Identifikátor kolekce řádků v `fieldCollections`; designer ho zobrazuje jako volbu DataSource Dynamic tabulky | `"ZASTAVKY"`, `"SPOJE"` |
+| `key` (v GetTableTemplates) | klíč šablony | Interní identifikátor Fixed šablony; předává se jako parametr do `GetTableTemplate` | `"ZAHLAVI_LINKY"`, `"PLATNOST_DOPRAVCE"` |
+
+**Konvence klíčů šablon tabulek:** česky, velkými písmeny, podtržítko jako oddělovač, bez prefixu třídy/agendy. Příklady: `ZAHLAVI_LINKY`, `PLATNOST_DOPRAVCE`.
+
+**Konvence collectionKey:** česky, velkými písmeny, množné číslo, podtržítko jako oddělovač. Příklady: `ZASTAVKY`, `SPOJE`, `POLOZKY_FAKTURY`.
 
 ---
 
@@ -745,10 +777,10 @@ Systém musí být **rozšiřitelný** — nové typy elementů i sekcí přidá
 ### DataSchema (schéma dostupných DB polí — pouze design time)
 ```csharp
 class DataSchema {
-    string AgendaCode             // "JR", "FAKTURY" — odpovídá Template.AgendaCode
-    string AgendaName             // "Jízdní řád" — pro UI
-    List<DataField> Fields        // flat list — primární formát V1, přímá náhrada starého Caché flat-listu
-    List<DataFieldGroup> Groups   // volitelné skupiny — rozšíření pro V2+ (není nutné v V1)
+    string AgendaCode                      // "JR", "FAKTURY" — odpovídá Template.AgendaCode
+    string AgendaName                      // "Jízdní řád" — pro UI
+    List<DataField> Fields                 // skalární pole — každá hodnota existuje jednou na sestavu
+    List<DataFieldCollection> FieldCollections  // tabulkové kolekce — zdroje řádků pro Dynamic tabulky; volitelné V2+
 }
 
 class DataField {
@@ -759,11 +791,10 @@ class DataField {
     string? Description           // volitelný delší popis pro uživatele
 }
 
-class DataFieldGroup {           // volitelné — organizační metadata pro V2+
-    string Name                   // "Záhlaví sestavy", "Zastávky"
-    FieldScope Scope              // Scalar (jedna hodnota) | Table (kolekce řádků)
-    string? CollectionKey         // klíč pro DataContext.GetRows() — pouze pro Scope = Table
-    List<DataField> Fields
+class DataFieldCollection {      // volitelné — tabulkový datový zdroj pro V2+
+    string Name                   // "Zastávky" — zobrazovací název
+    string CollectionKey          // klíč kolekce (odpovídá collectionKey v JSON a DataSource na TableElement)
+    List<DataField> Fields        // pole dostupná v každém řádku kolekce
 }
 ```
 
@@ -1040,23 +1071,15 @@ var section = new Section {
 }
 ```
 
-Pole `groups` je volitelné rozšíření pro V2+:
+Pole `fieldCollections` je volitelné rozšíření pro V2+:
 ```json
 {
   "agendaCode": "JR",
   "agendaName": "Jízdní řád",
   "fields": [],
-  "groups": [
-    {
-      "name": "Záhlaví sestavy",
-      "scope": "scalar",
-      "fields": [
-        { "name": "CISLO_LINKY", "label": "Číslo linky", "type": "number", "example": "42" }
-      ]
-    },
+  "fieldCollections": [
     {
       "name": "Zastávky",
-      "scope": "table",
       "collectionKey": "ZASTAVKY",
       "fields": [
         { "name": "POPIS_ZASTAVKA", "label": "Název zastávky", "type": "text", "example": "Praha hl.n." }
@@ -1067,7 +1090,6 @@ Pole `groups` je volitelné rozšíření pro V2+:
 ```
 
 Platné hodnoty pro `type`: `text`, `number`, `date`, `time`, `dateTime`, `boolean`.
-Platné hodnoty pro `scope`: `scalar`, `table`.
 
 ### Formát šablony (*.json)
 

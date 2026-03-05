@@ -23,10 +23,10 @@ public class DataSchema
     public List<DataField> Fields { get; set; } = [];
 
     /// <summary>
-    /// Volitelné skupiny pro V2+. Pokud není null ani prázdný,
-    /// UI browser zobrazí stromovou strukturu místo flat listu.
+    /// Tabulkové kolekce — zdroje řádků pro Dynamic tabulky (V2+).
+    /// Každá kolekce odpovídá jednomu collectionKey v Caché.
     /// </summary>
-    public List<DataFieldGroup>? Groups { get; set; }
+    public List<DataFieldCollection>? FieldCollections { get; set; }
 }
 
 /// <summary>Jedno dostupné databázové pole.</summary>
@@ -52,23 +52,18 @@ public class DataField
 }
 
 /// <summary>
-/// Skupina polí pro V2+ (stromový browser).
-/// Každá skupina má scope: Scalar (jednorázové hodnoty) nebo Table (kolekce řádků).
+/// Tabulková kolekce polí — definuje dostupná pole pro jeden datový zdroj Dynamic tabulky.
+/// collectionKey odpovídá klíči v DataContext._rows a hodnotě DataSource na TableElement.
 /// </summary>
-public class DataFieldGroup
+public class DataFieldCollection
 {
-    /// <summary>Název skupiny zobrazovaný v browseru.</summary>
+    /// <summary>Název kolekce zobrazovaný v browseru, např. "Zastávky".</summary>
     public string Name { get; set; } = "";
 
-    /// <summary>Scalar = jednorázové hodnoty, Table = kolekce řádků.</summary>
-    public FieldScope Scope { get; set; } = FieldScope.Scalar;
+    /// <summary>Klíč kolekce — musí odpovídat collectionKey v Caché a DataSource na TableElement.</summary>
+    public string CollectionKey { get; set; } = "";
 
-    /// <summary>
-    /// Pro Table scope: klíč pro DataContext.GetRows(collectionKey).
-    /// Null pro Scalar scope.
-    /// </summary>
-    public string? CollectionKey { get; set; }
-
+    /// <summary>Pole dostupná v každém řádku kolekce.</summary>
     public List<DataField> Fields { get; set; } = [];
 }
 
@@ -81,15 +76,6 @@ public enum FieldDataType
     Time,
     DateTime,
     Boolean
-}
-
-/// <summary>Scope skupiny polí — hint pro UI browser.</summary>
-public enum FieldScope
-{
-    /// <summary>Jednorázová hodnota (záhlaví sestavy, metadata).</summary>
-    Scalar,
-    /// <summary>Kolekce řádků (tabulka zastávek, položky faktury).</summary>
-    Table
 }
 
 /// <summary>Základní info o dostupné agendě — pro výběr v UI.</summary>
