@@ -78,6 +78,7 @@ public partial class MyWindow : Window
 }
 ```
 
-6. Register in `IWindowService` / `WindowService` and add a command + toolbar button in
-   `EdisonMainViewModel` / `EdisonMainWindow.xaml` — follow the existing `ShowEDWindowTest`
-   pattern.
+6. Register the window class in `ReflectionWindowNavigator` (handled automatically — the
+   navigator resolves windows by class name). Add a command + toolbar button in
+   `EdisonMainViewModel` / `EdisonMainWindow.xaml` — follow the
+   `OpenEDComponentAndViewModelTestCommand` / `EDComponentAndViewModelTestWindow` pattern.

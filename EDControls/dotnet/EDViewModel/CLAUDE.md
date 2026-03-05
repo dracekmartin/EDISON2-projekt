@@ -32,6 +32,8 @@ Use `EDDataViewModel` for windows that query Caché.
 | `protected void CloseDialog(bool? result)` | Fires `RequestClose`. Usable from any method, not only `OnOk`. |
 | `protected bool Set<T>(ref T field, T value)` | Sets the backing field and fires `PropertyChanged` if the value changed. Returns `true` if it changed. |
 | `protected void OnPropertyChanged(string? name)` | Manually fire `PropertyChanged` — used for computed properties that depend on another. |
+| `bool IsActionInProgress` | Read-only from outside. Set only via `ActionInProgress()`. Drives `EDActionInProgress` overlay visibility automatically. |
+| `IDisposable ActionInProgress()` | Sets `IsActionInProgress = true` and returns a scope that resets it on disposal. Use with `using`. |
 
 ## EDDataViewModel API
 
@@ -123,6 +125,21 @@ public int SelectedIndex
 public CompanyItem SelectedItem => Items[_selectedIndex];
 public bool HasSelection => _selectedIndex >= 0;
 ```
+
+### Progress overlay
+
+```csharp
+// Synchronous
+using var _ = ActionInProgress();
+DoHeavyWork();
+
+// Async — disposal fires when the using block exits, even on exception
+using var _ = ActionInProgress();
+await LoadDataAsync();
+```
+
+`IsActionInProgress` has a `private set` — `ActionInProgress()` is the only way to activate it.
+If `EDActionInProgress` is present in the window, the overlay appears and disappears automatically.
 
 ## Design notes
 

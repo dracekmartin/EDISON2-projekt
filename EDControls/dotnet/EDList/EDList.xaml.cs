@@ -51,8 +51,7 @@ namespace EDControls.EDList
         public void InitializeList()
         {
             EnsureConfigured();
-            var output = MLRest!.Query(CacheClass, "InitializeList", Array.Empty<object>());
-            MLRest.RestStatus.ThrowIfError();
+            var output = MLRest!.QueryOrThrow(CacheClass, "InitializeList", Array.Empty<object>());
             _columns = ParseColumns(output);
             RebuildColumns();
         }
@@ -60,8 +59,7 @@ namespace EDControls.EDList
         public void LoadList()
         {
             EnsureConfigured();
-            var output = MLRest!.Query(CacheClass, "LoadList", Array.Empty<object>());
-            MLRest.RestStatus.ThrowIfError();
+            var output = MLRest!.QueryOrThrow(CacheClass, "LoadList", Array.Empty<object>());
             _rows.Clear();
             foreach (var row in ParseRows(output))
                 _rows.Add(row);

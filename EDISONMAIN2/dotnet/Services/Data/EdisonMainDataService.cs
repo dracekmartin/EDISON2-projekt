@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using ALVA.EDISONAPI;
 using ALWA.SYS;
+using EDControls;
 using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services;
 using static ALVA.EDISONAPI.Database;
@@ -51,8 +52,7 @@ namespace EDISONMAIN2.Services.Data
         public IReadOnlyList<IModule> GetModuleTree(string database, string idfa)
         {
             var mlRest = GetTreeRest(database, idfa);
-            object[] treeData = mlRest.Query("ALVA.EDISONMAIN2.API.Tree", "GetTree", Array.Empty<object>());
-            mlRest.RestStatus.ThrowIfError();
+            object[] treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", Array.Empty<object>());
             return ParseTree(treeData, mlRest.Delimiter);
         }
 

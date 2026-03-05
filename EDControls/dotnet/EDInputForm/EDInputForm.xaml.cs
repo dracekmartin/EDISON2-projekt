@@ -49,8 +49,7 @@ namespace EDControls.EDInputForm
         public void Init()
         {
             EnsureConfigured();
-            object[] output = MLRest!.Query(CacheClass, "Init", Array.Empty<object>());
-            MLRest.RestStatus.ThrowIfError();
+            object[] output = MLRest!.QueryOrThrow(CacheClass, "Init", Array.Empty<object>());
             Items = ParseItems(output, MLRest.Delimiter);
             ExecuteValidate(EValidationTrigger.Init);
         }
@@ -69,8 +68,7 @@ namespace EDControls.EDInputForm
         {
             if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
 
-            object[] output = MLRest!.Query(CacheClass, "Save", SerializeItems(Items, MLRest.Delimiter));
-            MLRest.RestStatus.ThrowIfError();
+            object[] output = MLRest!.QueryOrThrow(CacheClass, "Save", SerializeItems(Items, MLRest.Delimiter));
             Items = ParseItems(output, MLRest.Delimiter);
             return true;
         }
@@ -127,8 +125,7 @@ namespace EDControls.EDInputForm
                 .Concat(SerializeItems(Items, MLRest!.Delimiter))
                 .ToArray();
 
-            object[] output = MLRest.Query(CacheClass, "Validate", input);
-            MLRest.RestStatus.ThrowIfError();
+            object[] output = MLRest.QueryOrThrow(CacheClass, "Validate", input);
 
             Items = ParseItems(output, MLRest.Delimiter);
             return Items.OfType<Field>().All(f => !f.HasError);
