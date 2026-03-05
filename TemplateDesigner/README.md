@@ -117,6 +117,7 @@ Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma zál
 **Záložka Řádky** (jen pro pevný mód):
 - Přidat / odebrat / přesunout řádek
 - Editace obsahu buněk přímo v tabulce — statický text nebo `{POLE}`
+- **Viditelnost řádku** — pole pro výraz podmíněné viditelnosti (např. `{TISK_SIPKY}`, `{POCET} > 0`); řádky s nesplněnou podmínkou se při tisku přeskočí; prázdné = vždy viditelný; ⚑ příznak v seznamu signalizuje, že má řádek nastavenou podmínku
 
 **Dva módy tabulky:**
 - **Pevná (Fixed)** — počet řádků je pevný, definovaný v šabloně; buňky obsahují statický text nebo placeholdery
@@ -431,7 +432,6 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
   - Uživatel konfiguruje zobrazení: které levé sloupce (Zóna, Km, Zastávka, MHD), šířky, barvy, záhlaví
   - Šipky směru jízdy, víceúrovňové záhlaví (Pracovní dny / Víkendy), střídání barev
   - Data (spoje, časy) přijdou z Caché — šablona funguje pro libovolnou linku
-- **Podmíněné řádky tabulky** — VisibilityExpression per řádek v Fixed tabulce
 - **Grouping v Dynamic tabulkách** — Group Header/Footer řádky mezi daty
 
 ### Podmíněnost a parametry
@@ -439,8 +439,6 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 - **Print dialog parametrů** — dynamicky generovaný ze šablony před tiskem (Part 2 parametrů)
   - Part 1 je hotový: parametry definované v Caché jsou viditelné a interaktivní v live preview
   - Chybí: ostrý print dialog, ukládání hodnot do JSON šablony, offline fallback bez Caché
-- **Podmíněná viditelnost pro řádky tabulky** — VisibilityExpression per řádek v Fixed tabulce
-  - Podmíněná viditelnost elementů a sekcí je hotová; zbývá rozšíření na úroveň řádků tabulky
 
 ### Formátování
 

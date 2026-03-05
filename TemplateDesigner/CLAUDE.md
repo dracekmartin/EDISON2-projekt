@@ -24,11 +24,12 @@ Systém se skládá ze dvou částí:
 
 ### 🎯 Aktuální focus
 
-**VisibilityExpression evaluator + Schema TreeView — hotovo.**
-- Podmíněná viditelnost elementů a sekcí pomocí výrazů (`{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "JR" && !{TISK_TARIFU}`)
-- Levý panel "Pole agendy" nahrazen stromem se třemi skupinami: Skalární pole / Kolekce / Parametry
+**Podmíněné řádky Fixed tabulky — hotovo.**
+- `VisibilityExpression` per řádek — výraz se zadá v záložce Řádky editoru tabulky; ⚑ příznak v seznamu
+- `RenderFixedRows` filtruje řádky přes `ExpressionEvaluator.IsVisible()`; střídání barev sleduje viditelné řádky (`visibleIdx`)
+- Oprava crashe WPF DataGridu (`SelectionUnit="Cell"` odebráno z obou DataGridů)
 
-**Další kroky (Roadmap bod 2 — zbývá):**
+**Další kroky:**
 1. Výrazový jazyk Part 2 — agregační funkce v TableElement (`SUM`, `COUNT`, `AVG`), formátovací rozšíření
 2. Grouping v Dynamic tabulkách
 
@@ -49,7 +50,7 @@ Systém se skládá ze dvou částí:
 - ✅ TableElement Dynamic mód s opakováním řádků z DataSource
 - ✅ QR kódy pro cestující (BarcodeElement)
 - ✅ VisibilityExpression na elementech a sekcích (`{TISK_SIPKY}`, `{POCET} > 0`)
-- ❌ Podmíněné řádky tabulky (VisibilityExpression per řádek) → viz Roadmap bod 2
+- ✅ Podmíněné řádky tabulky (VisibilityExpression per řádek — Fixed mód)
 - ❌ Grouping v tabulkách → viz Roadmap bod 3
 - ❌ JRTableElement (matice zastávky × spoje) → Vzdálená vize
 
@@ -72,7 +73,7 @@ Systém se skládá ze dvou částí:
 - ✅ RectangleElement
 - ✅ LineElement
 - ✅ BarcodeElement (QR kód + Code128, ZXing.Net 0.16.9)
-- ✅ TableElement — Fixed/Dynamic mód, UI editor sloupců + řádků, barvy, orámování, střídání barev, **"Ze šablony..."** picker
+- ✅ TableElement — Fixed/Dynamic mód, UI editor sloupců + řádků, barvy, orámování, střídání barev, **"Ze šablony..."** picker, **podmíněné řádky (VisibilityExpression)**
 
 **Sections:**
 - ✅ Section refactoring (2026-03) — univerzální třída místo 7 podtříd
@@ -205,6 +206,14 @@ Důležité jakmile šablon bude víc než 10.
 - **Context menu na záhlaví sekce v designeru** — pravý klik přímo na canvasu (Vlastnosti, Duplikovat, Smazat, Přesunout); alternativa k levému panelu
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-05 — Podmíněné řádky Fixed tabulky + oprava WPF DataGrid crashe:**
+- ✅ `RowVM.VisibilityExpression` — nová property s `OnChanged()` + `⚑` příznak v `RowSummary`
+- ✅ `TableEditorDialog` záložka Řádky — přidáno pole "Viditelnost řádku:" (TextBox s Consolas); přímé property management (`_suppressVisibilityChange` flag, bez DataContext bindingu)
+- ✅ `RowVM.ToModel()` / `FromModel()` — serializuje `VisibilityExpression` (null pokud prázdné)
+- ✅ `TableElement.RenderFixedRows()` — filtruje řádky přes `ExpressionEvaluator.IsVisible(row.VisibilityExpression, ctx.Data)`; `visibleIdx` counter pro správné střídání barev přes skryté řádky
+- ✅ Bug fix: `SelectionUnit="Cell"` odebráno z `ColumnsGrid` i `CellsGrid` — opravuje `InvalidOperationException` při přidávání řádků (WPF interní logika výběru řádku selhávala)
+- ✅ Simplify: `NotifySummary()` tělo deleguje na `OnChanged(nameof(RowSummary))`; suppress flag přesunut mimo if/else větve v `RowsList_SelectionChanged`
 
 **2026-03-05 — VisibilityExpression evaluator + Schema TreeView:**
 - ✅ `ExpressionNode.cs` — AST uzel; `LiteralNode(object?)`, `VariableNode(string)`, `UnaryNode(string, node)`, `BinaryNode(string, node, node)` jako C# records

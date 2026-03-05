@@ -36,7 +36,6 @@
                               CanUserAddRows="False"
                               CanUserDeleteRows="False"
                               SelectionMode="Single"
-                              SelectionUnit="Cell"
                               HeadersVisibility="Column"
                               GridLinesVisibility="Horizontal"
                               RowHeaderWidth="0"
@@ -165,17 +164,29 @@
                     <Grid Grid.Column="1" Margin="8,0,0,0">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
 
-                        <TextBlock Text="Buňky vybraného řádku:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                        <!-- Podmínka viditelnosti řádku -->
+                        <StackPanel Margin="0,0,0,8">
+                            <TextBlock Text="Viditelnost řádku:" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                            <TextBox x:Name="RowVisibilityBox"
+                                     FontFamily="Consolas" FontSize="12"
+                                     IsEnabled="False"
+                                     TextChanged="RowVisibilityBox_TextChanged"
+                                     ToolTip="Výraz podmíněné viditelnosti. Prázdné = vždy viditelný."/>
+                            <TextBlock Text="Výraz — prázdné = vždy viditelný  |  dostupné: {POLE}, &gt;, &lt;, ==, !=, &amp;&amp;, ||, !"
+                                       FontSize="10" Foreground="#888888" Margin="0,2,0,0"/>
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="1" Text="Buňky vybraného řádku:" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
                         <DataGrid x:Name="CellsGrid"
-                                  Grid.Row="1"
+                                  Grid.Row="2"
                                   AutoGenerateColumns="False"
                                   CanUserAddRows="False"
                                   CanUserDeleteRows="False"
-                                  SelectionUnit="Cell"
                                   HeadersVisibility="Column"
                                   GridLinesVisibility="Horizontal"
                                   RowHeaderWidth="0"

@@ -93,24 +93,43 @@ public class ColumnVM : INotifyPropertyChanged
 
 public class RowVM : INotifyPropertyChanged
 {
+    private string? _visibilityExpression;
+
     public ObservableCollection<CellVM> Cells { get; } = [];
 
-    public string RowSummary => Cells.Count > 0
-        ? string.Join(" | ", Cells.Take(3).Select(c => c.Content))
-        : "(prázdný řádek)";
+    public string? VisibilityExpression
+    {
+        get => _visibilityExpression;
+        set { _visibilityExpression = value; OnChanged(); OnChanged(nameof(RowSummary)); }
+    }
+
+    /// <summary>⚑ příznak pokud má řádek podmínku viditelnosti.</summary>
+    public string RowSummary
+    {
+        get
+        {
+            var content = Cells.Count > 0
+                ? string.Join(" | ", Cells.Take(3).Select(c => c.Content))
+                : "(prázdný řádek)";
+            return string.IsNullOrWhiteSpace(VisibilityExpression) ? content : content + "  ⚑";
+        }
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
-    public void NotifySummary() =>
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(RowSummary)));
+    private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
+        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+
+    public void NotifySummary() => OnChanged(nameof(RowSummary));
 
     public TableRow ToModel() => new()
     {
-        Cells = Cells.Select(c => new TableCell { Content = c.Content }).ToList()
+        Cells                = Cells.Select(c => new TableCell { Content = c.Content }).ToList(),
+        VisibilityExpression = string.IsNullOrWhiteSpace(VisibilityExpression) ? null : VisibilityExpression.Trim()
     };
 
     public static RowVM FromModel(TableRow row, IList<TableColumn> columns)
     {
-        var vm = new RowVM();
+        var vm = new RowVM { VisibilityExpression = row.VisibilityExpression };
         for (int i = 0; i < columns.Count; i++)
         {
             vm.Cells.Add(new CellVM
@@ -291,16 +310,33 @@ public partial class TableEditorDialog : Window
         RowsList.SelectedItem = vm;
     }
 
+    private bool _suppressVisibilityChange;
+
     private void RowsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        _suppressVisibilityChange = true;
         if (RowsList.SelectedItem is RowVM row)
         {
-            CellsGrid.ItemsSource = row.Cells;
+            CellsGrid.ItemsSource      = row.Cells;
+            RowVisibilityBox.Text      = row.VisibilityExpression ?? "";
+            RowVisibilityBox.IsEnabled = true;
         }
         else
         {
-            CellsGrid.ItemsSource = null;
+            CellsGrid.ItemsSource      = null;
+            RowVisibilityBox.Text      = "";
+            RowVisibilityBox.IsEnabled = false;
         }
+        _suppressVisibilityChange = false;
+    }
+
+    private void RowVisibilityBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_suppressVisibilityChange) return;
+        if (RowsList.SelectedItem is RowVM row)
+            row.VisibilityExpression = string.IsNullOrWhiteSpace(RowVisibilityBox.Text)
+                ? null
+                : RowVisibilityBox.Text;
     }
 
     // ─── OK / Storno ─────────────────────────────────────────────────

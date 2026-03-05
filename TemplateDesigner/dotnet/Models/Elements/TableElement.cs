@@ -1,5 +1,6 @@
 using SkiaSharp;
 using System.Text.Json.Serialization;
+using TemplateDesigner.Models.Expressions;
 
 namespace TemplateDesigner.Models.Elements;
 
@@ -248,12 +249,16 @@ public class TableElement : TemplateElement
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
         float currentY = startY;
+        int   visibleIdx = 0;   // index viditelných řádků — pro střídání barev
         for (int rowIdx = 0; rowIdx < Rows.Count; rowIdx++)
         {
             var row = Rows[rowIdx];
 
-            // Střídání barev
-            if (altBgPaint is not null && rowIdx % 2 == 1)
+            // Podmíněná viditelnost — řádky s nesplněnou podmínkou se přeskočí
+            if (!ExpressionEvaluator.IsVisible(row.VisibilityExpression, ctx.Data)) continue;
+
+            // Střídání barev — podle pořadí viditelných řádků, ne původního indexu
+            if (altBgPaint is not null && visibleIdx % 2 == 1)
                 ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + rowPx), altBgPaint);
 
             // Vlastní pozadí řádku
@@ -302,6 +307,7 @@ public class TableElement : TemplateElement
                 ctx.Canvas.DrawLine(tableRect.Left, currentY + rowPx, tableRect.Right, currentY + rowPx, sepPaint);
 
             currentY += rowPx;
+            visibleIdx++;
         }
     }
 
