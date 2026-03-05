@@ -66,6 +66,9 @@
                 <MenuItem x:Name="MenuPreview" Header="Live náhled" IsCheckable="True"
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
+            <MenuItem Header="Nápověda">
+                <MenuItem x:Name="MenuHelp" Header="Klávesové zkratky a ovládání" InputGestureText="F1" Click="MenuHelp_Click"/>
+            </MenuItem>
         </Menu>
 
         <!-- ═══ Toolbar ═══ -->

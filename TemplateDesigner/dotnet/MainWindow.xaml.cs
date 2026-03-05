@@ -739,6 +739,14 @@ public partial class MainWindow : Window
 
     private void MenuDelete_Click(object sender, RoutedEventArgs e) => DeleteSelected();
 
+    private void MenuHelp_Click(object sender, RoutedEventArgs e) => ShowHelp();
+
+    private void ShowHelp()
+    {
+        var helpDialog = new HelpDialog { Owner = this };
+        helpDialog.ShowDialog();
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // ZIndex — pořadí vykreslování
 
@@ -1942,6 +1950,12 @@ public partial class MainWindow : Window
         {
             // Enter — otevřít dialog vlastností pro vybraný element
             _propsWindow!.ShowForElement(_state.SelectedElements[0]);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F1)
+        {
+            // F1 — zobrazit nápovědu
+            ShowHelp();
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
