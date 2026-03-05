@@ -231,6 +231,27 @@ Pravý panel zobrazuje **náhled šablony s mock daty** — takto bude šablona 
 - Fallback: hodnoty ze schématu agendy (pole `example`) nebo generické zástupce
 - Dynamic tabulky zobrazují všechny mock řádky vrácené z `GetMockData`
 
+### Parametry sestavy v preview
+
+Pokud agenda definuje parametry (přes Caché `GetParameters`), zobrazí se v záhlaví preview panelu interaktivní pruh s kontrolkami:
+
+```
+┌────────────────────────────────────────────────────────────────────┐
+│ Náhled • vzorová data z Caché          [PDF]                       │
+├────────────────────────────────────────────────────────────────────┤
+│ ☑ Tisknout šipky směru   ☐ Tarifní zóna   Formát času: H:mm ▾    │
+├────────────────────────────────────────────────────────────────────┤
+│  [stránka náhledu]                                                 │
+```
+
+- **CheckBox** pro parametry typu `bool` — zaškrtnutí/odškrtnutí okamžitě aktualizuje preview
+- **ComboBox** pro parametry typu `enum` — výběr z předdefinovaných možností
+- **TextBox** pro ostatní typy — ručně zadaná hodnota
+
+Hodnoty parametrů jsou dostupné jako `{NAZEV_PARAMETRU}` v libovolném TextElementu nebo buňce tabulky (stejná syntaxe jako datová pole). Parametry jsou rovněž zobrazeny v **Pickeru polí** s příznakem "(parametr)" pro snadné vložení do textu.
+
+> Parametry definuje programátor agendy v Caché metodou `GetParameters`. Uživatel nastavuje jejich hodnoty v preview panelu; při ostrém tisku je Print Engine dostane standardní cestou (print dialog — budoucí funkce).
+
 ### Export náhledu do PDF
 
 Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými mock daty, která jsou vidět v náhledu.
@@ -372,12 +393,11 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 
 ### Podmíněnost a parametry
 
-- **Template parametry** — parametry definované přímo v šabloně (bool, enum, string) s výchozími hodnotami
-  - Každá šablona deklaruje svoje parametry (např. "Tisknout šipky směru: ano/ne")
-  - Print dialog je dynamicky generovaný ze šablony — bez změny kódu aplikace
-  - Nahrazuje hardcodované checkboxy před tiskem; šablona je sebeobsažná a přenositelná
+- **Print dialog parametrů** — dynamicky generovaný ze šablony před tiskem (Part 2 parametrů)
+  - Part 1 je hotový: parametry definované v Caché jsou viditelné a interaktivní v live preview
+  - Chybí: ostrý print dialog, ukládání hodnot do JSON šablony, offline fallback bez Caché
   - Předpoklad: VisibilityExpression systém
-- **Podmíněná viditelnost (VisibilityExpression)** — výrazy jako `{POCET} > 0` nebo `{SIPKY}` pro elementy, sekce, řádky tabulky
+- **Podmíněná viditelnost (VisibilityExpression)** — výrazy jako `{POCET} > 0` nebo `{TISK_SIPKY}` pro elementy, sekce, řádky tabulky
 
 ### Formátování
 

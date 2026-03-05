@@ -40,6 +40,22 @@ ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ]
 {
 }
 
+/// Vrátí parametry sestavy dostupné pro tuto agendu.
+/// Výchozí implementace vrátí prázdný seznam — přepsat v konkrétní agendě.
+/// OUT[1] = JSON pole:
+///   [
+///     { "name": "TISK_SIPKY",  "label": "Tisknout šipky",  "type": "bool",   "defaultValue": "true" },
+///     { "name": "FORMAT_CASU", "label": "Formát času",      "type": "enum",   "defaultValue": "H:mm",
+///       "options": ["H:mm", "HH:mm"] }
+///   ]
+/// Typy: "bool", "enum", "string", "number", "date"
+/// defaultValue je vždy string — C# strana konvertuje dle type.
+ClassMethod GetParameters(ByRef sys As %String) As %Status
+{
+    s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
+    q 1
+}
+
 /// Vrátí ukázková (mock) data pro live preview v designeru.
 /// OUT[1] = JSON objekt:
 ///   {

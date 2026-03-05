@@ -25,11 +25,12 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     private readonly List<AgendaInfo> _agendas;
 
     // Cache pro opakované volání
-    private readonly Dictionary<string, DataSchema>               _schemaCache     = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, TableTemplateDefinition?> _templateCache   = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DataSchema>                  _schemaCache     = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, TableTemplateDefinition?>    _templateCache   = new(StringComparer.OrdinalIgnoreCase);
     // Klíč: agendaCode nebo "" pro "všechny agendy" (null argument)
-    private readonly Dictionary<string, List<TableTemplateInfo>>  _templatesCache  = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, DataContext?>             _mockDataCache   = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<TableTemplateInfo>>     _templatesCache  = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DataContext?>                _mockDataCache   = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, List<TemplateParameter>>     _parametersCache = new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -171,6 +172,86 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
         _templateCache[key] = null;
         return null;
+    }
+
+    // ─── Parametry sestavy ───────────────────────────────────────────────────
+
+    /// <summary>
+    /// Volá GetParameters na Caché třídě a vrátí seznam parametrů sestavy.
+    /// Prázdný seznam = agenda nemá parametry nebo metoda není implementována.
+    /// </summary>
+    public IReadOnlyList<TemplateParameter> GetParameters(string agendaCode)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return [];
+        if (_parametersCache.TryGetValue(agendaCode, out var cached)) return cached;
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
+
+        try
+        {
+            CVar result = _mlRest.Query(cacheClass, "GetParameters", new CVar());
+
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+            {
+                Debug.WriteLine($"[AgendaProvider] GetParameters error: {_mlRest.RestStatus.Message}");
+                _parametersCache[agendaCode] = []; // záměrně cachujeme chybu — konzistentní s GetSchema/GetMockData; restart app = retry
+                return [];
+            }
+
+            string? json = result["1"]?.Value?.ToString();
+            if (string.IsNullOrEmpty(json))
+            {
+                _parametersCache[agendaCode] = [];
+                return [];
+            }
+
+            var parameters = ParseParameters(json);
+            _parametersCache[agendaCode] = parameters;
+            return parameters;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AgendaProvider] GetParameters exception: {ex.Message}");
+            _parametersCache[agendaCode] = [];
+            return [];
+        }
+    }
+
+    private static List<TemplateParameter> ParseParameters(string json)
+    {
+        try
+        {
+            var node = JsonNode.Parse(json);
+            if (node is not JsonArray arr) return [];
+
+            var result = new List<TemplateParameter>();
+            foreach (var item in arr)
+            {
+                if (item is null) continue;
+                var name = item["name"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(name)) continue;
+
+                var p = new TemplateParameter
+                {
+                    Name         = name,
+                    Label        = item["label"]?.GetValue<string>() ?? name,
+                    Type         = item["type"]?.GetValue<string>() ?? "string",
+                    DefaultValue = item["defaultValue"]?.GetValue<string>()
+                };
+
+                if (item["options"] is JsonArray opts)
+                    p.Options = opts.Select(o => o?.GetValue<string>() ?? "")
+                                    .Where(s => s.Length > 0)
+                                    .ToList();
+
+                result.Add(p);
+            }
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AgendaProvider] ParseParameters exception: {ex.Message}");
+            return [];
+        }
     }
 
     // ─── Mock data pro preview ────────────────────────────────────────────────
