@@ -19,6 +19,28 @@ public class EDViewModel : INotifyPropertyChanged
 
     public MLRest? MLRest { get; protected set; }
 
+    private bool _isActionInProgress;
+    public bool IsActionInProgress
+    {
+        get => _isActionInProgress;
+        private set => Set(ref _isActionInProgress, value);
+    }
+
+    /// <summary>
+    /// Sets IsActionInProgress = true and returns a scope that resets it on disposal.
+    /// Usage: using var _ = ActionInProgress();
+    /// </summary>
+    public IDisposable ActionInProgress()
+    {
+        IsActionInProgress = true;
+        return new ActionScope(this);
+    }
+
+    private sealed class ActionScope(EDViewModel vm) : IDisposable
+    {
+        public void Dispose() => vm.IsActionInProgress = false;
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>

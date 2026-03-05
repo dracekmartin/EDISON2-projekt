@@ -3,21 +3,21 @@ using EDControls.EDInputForm;
 using System.Linq;
 using System.Windows;
 
-namespace EDISONMAIN2.Windows.EDWindowTestWindow;
+namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
 
-public partial class EDWindowTestWindow : Window
+public partial class EDComponentAndViewModelTestWindow : Window
 {
-    private readonly EDWindowTestViewModel? _vm;
+    private readonly EDComponentAndViewModelTestViewModel? _vm;
 
     // Parameterless constructor for the WPF designer.
-    public EDWindowTestWindow()
+    public EDComponentAndViewModelTestWindow()
     {
         InitializeComponent();
     }
 
-    public EDWindowTestWindow(MLRest mlRest)
+    public EDComponentAndViewModelTestWindow(MLRest mlRest)
     {
-        DataContext = _vm = new EDWindowTestViewModel(mlRest, () => TheInputForm.Save());
+        DataContext = _vm = new EDComponentAndViewModelTestViewModel(mlRest, () => TheInputForm.Save());
         InitializeComponent();
 
         TheInputForm.MLRest = mlRest;

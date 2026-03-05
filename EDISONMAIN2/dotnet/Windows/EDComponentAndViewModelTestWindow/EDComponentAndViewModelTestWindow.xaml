@@ -1,0 +1,41 @@
+<Window x:Class="EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
+        xmlns:edif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
+        xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
+        mc:Ignorable="d"
+        Title="Test EDComponent + ViewModel" Height="480" Width="460"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid>
+
+        <DockPanel>
+
+            <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel">
+                <ef:EDFooter.LeftContent>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Init" Click="Init_Click" Padding="8,4"
+                                ToolTip="Načíst definici formuláře z Caché"/>
+                        <CheckBox Content="Akce probíhá" Margin="8,0,0,0" VerticalAlignment="Center"
+                                  IsChecked="{Binding IsActionInProgress}"/>
+                    </StackPanel>
+                </ef:EDFooter.LeftContent>
+            </ef:EDFooter>
+
+            <DockPanel>
+                <StatusBar DockPanel.Dock="Bottom">
+                    <TextBlock Text="{Binding Status}"/>
+                </StatusBar>
+                <edif:EDInputForm x:Name="TheInputForm" Margin="4"/>
+            </DockPanel>
+
+        </DockPanel>
+
+        <edaip:EDActionInProgress/>
+
+    </Grid>
+
+</Window>

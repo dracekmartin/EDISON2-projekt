@@ -44,7 +44,7 @@
             <Separator/>
             <Button Content="Test EDList"    Command="{Binding OpenEDListTestCommand}"/>
             <Separator/>
-            <Button Content="Test EDWindow"  Command="{Binding OpenEDWindowTestCommand}"/>
+            <Button Content="Test EDWindow"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
         </ToolBar>
         <TreeView x:Name="ModuleTree" Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TopLevelModules}" Grid.ColumnSpan="2">
             <b:Interaction.Triggers>
