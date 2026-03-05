@@ -3,9 +3,9 @@ Class ALVA.EDControls.EDInputForm.Group Extends ALVA.EDControls.EDInputForm.Item
 
 Property groupName As %String;
 
-Method Serialize(del As %String) As %String
+Method Serialize() As %List
 {
-	q "GROUP"_del_..groupName
+	q $lb("GROUP",..groupName)
 }
 
 }

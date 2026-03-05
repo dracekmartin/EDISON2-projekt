@@ -49,8 +49,8 @@ namespace EDControls.EDInputForm
         public void Init()
         {
             EnsureConfigured();
-            object[] output = MLRest!.QueryOrThrow(CacheClass, "Init", Array.Empty<object>());
-            Items = ParseItems(output, MLRest.Delimiter);
+            CVar output = MLRest!.QueryOrThrow(CacheClass, "Init", new CVar());
+            Items = ParseItems(output);
             ExecuteValidate(EValidationTrigger.Init);
         }
 
@@ -68,48 +68,73 @@ namespace EDControls.EDInputForm
         {
             if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
 
-            object[] output = MLRest!.QueryOrThrow(CacheClass, "Save", SerializeItems(Items, MLRest.Delimiter));
-            Items = ParseItems(output, MLRest.Delimiter);
+            CVar output = MLRest!.QueryOrThrow(CacheClass, "Save", SerializeItemsCVar(Items));
+            Items = ParseItems(output);
             return true;
         }
 
         // ─── Serialization helpers ────────────────────────────────────────────────
 
-        private static object[] SerializeItems(IEnumerable<Item>? items, char delimiter)
+        /// <summary>
+        /// Serializes form items to a CVar for sending to Caché.
+        /// Each item becomes a CList at key "1", "2", etc.:
+        ///   GROUP → $lb("GROUP", groupName)
+        ///   FIELD → $lb("FIELD", key, label, type, value, validateOnChange, required)
+        /// Caché reads ^||ML("IN","1"), ^||ML("IN","2"), ...
+        /// </summary>
+        private static CVar SerializeItemsCVar(IEnumerable<Item>? items)
         {
-            var d = delimiter;
-            return [.. (items ?? [])
-                .Select<Item, object>(item => item switch
+            var cVar = new CVar();
+            int i = 1;
+            foreach (var item in items ?? [])
+            {
+                CList entry = item switch
                 {
-                    Group g => $"GROUP{d}{g.GroupName}",
-                    Field f => $"FIELD{d}{f.Key}{d}{f.Label}{d}{(f.FieldType == EFieldType.Number ? "NUMBER" : "TEXT")}{d}{f.Value ?? ""}{d}{(f.ValidateOnChange ? "1" : "0")}{d}{(f.Required ? "1" : "0")}",
-                    _           => ""
-                })];
+                    Group g => new CList("GROUP", g.GroupName),
+                    Field f => new CList(
+                        "FIELD", f.Key, f.Label,
+                        f.FieldType == EFieldType.Number ? "NUMBER" : "TEXT",
+                        f.Value ?? "",
+                        f.ValidateOnChange ? "1" : "0",
+                        f.Required ? "1" : "0"),
+                    _ => new CList()
+                };
+                cVar[i.ToString()] = entry;
+                i++;
+            }
+            return cVar;
         }
 
-        private static List<Item> ParseItems(object[] output, char delimiter)
+        /// <summary>
+        /// Parses Caché output CVar to a list of form items.
+        /// Caché writes ^||ML("OUT","1"), ^||ML("OUT","2"), ...
+        /// Each value is a CList:
+        ///   GROUP → $lb("GROUP", groupName)
+        ///   FIELD → $lb("FIELD", key, label, type, value, validateOnChange, required [, validationError])
+        /// </summary>
+        private static List<Item> ParseItems(CVar output)
         {
             var items = new List<Item>();
-            for (int i = 1; i < output.Length; i++)
+            foreach (KeyValuePair<string, CVar> kvp in output)
             {
-                string[] parts = output[i]?.ToString()?.Split(delimiter) ?? [];
-                if (parts.Length == 0) continue;
-
-                if (parts[0] == "GROUP" && parts.Length >= 2)
+                if (kvp.Key == "ERR") continue;
+                CList row = kvp.Value;
+                string type = row.GetString(1);
+                if (type == "GROUP")
                 {
-                    items.Add(new Group { GroupName = parts[1] });
+                    items.Add(new Group { GroupName = row.GetString(2) });
                 }
-                else if (parts[0] == "FIELD" && parts.Length >= 4)
+                else if (type == "FIELD")
                 {
                     items.Add(new Field
                     {
-                        Key              = parts[1],
-                        Label            = parts[2],
-                        FieldType        = parts[3] == "NUMBER" ? EFieldType.Number : EFieldType.Text,
-                        Value            = parts.Length > 4 ? parts[4] : null,
-                        ValidateOnChange = parts.Length > 5 && parts[5] == "1",
-                        Required         = parts.Length > 6 && parts[6] == "1",
-                        ValidationError  = parts.Length > 7 && parts[7] != "" ? parts[7] : null
+                        Key              = row.GetString(2),
+                        Label            = row.GetString(3),
+                        FieldType        = row.GetString(4) == "NUMBER" ? EFieldType.Number : EFieldType.Text,
+                        Value            = row.GetString(5) == "" ? null : row.GetString(5),
+                        ValidateOnChange = row.GetString(6) == "1",
+                        Required         = row.GetString(7) == "1",
+                        ValidationError  = row.Length >= 8 && row.GetString(8) != "" ? row.GetString(8) : null
                     });
                 }
             }
@@ -121,13 +146,11 @@ namespace EDControls.EDInputForm
         private bool ExecuteValidate(EValidationTrigger trigger)
         {
             EnsureConfigured();
-            var input = new object[] { trigger.ToString() }
-                .Concat(SerializeItems(Items, MLRest!.Delimiter))
-                .ToArray();
+            var input = SerializeItemsCVar(Items);
+            input["trigger"] = new CVar(trigger.ToString());
 
-            object[] output = MLRest.QueryOrThrow(CacheClass, "Validate", input);
-
-            Items = ParseItems(output, MLRest.Delimiter);
+            CVar output = MLRest!.QueryOrThrow(CacheClass, "Validate", input);
+            Items = ParseItems(output);
             return Items.OfType<Field>().All(f => !f.HasError);
         }
 
@@ -170,4 +193,6 @@ namespace EDControls.EDInputForm
             }));
         }
     }
+
+
 }
