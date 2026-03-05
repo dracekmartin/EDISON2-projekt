@@ -34,37 +34,74 @@ var mlRest = new MLRest(server, restPort, dataNamespace, idfa)
 `MLRest` is constructed once per session in `EdisonMainViewModel` and passed down into
 every window and control that needs Caché access.
 
-### Calling a Caché method
+### Calling a Caché method — use CVar (strongly preferred)
+
+`CVar` is the idiomatic Caché structured type. **Always use `CVar` unless you have a specific
+reason not to.** Avoid `object[]` — it uses a flat numeric-subscript wire format that is
+harder to extend and less expressive than CVar.
 
 ```csharp
 using EDControls;   // for QueryOrThrow
 
-object[] output = mlRest.QueryOrThrow("ALVA.MY.ClassName", "MyMethod", [input1, input2]);
-string result = (string)output[1];  // output[0] is reserved; data starts at [1]
+// Empty input
+CVar output = mlRest.QueryOrThrow("ALVA.MY.ClassName", "MyMethod", new CVar());
+
+// Structured input
+var input = new CVar();
+input["key"] = new CVar("value");
+input["count"] = new CVar(42);
+CVar output = mlRest.QueryOrThrow("ALVA.MY.ClassName", "MyMethod", input);
+
+// CList input (for ordered tuples — maps to $lb() in Caché)
+input["item"] = new CList("TYPE", "field1", "field2");
 ```
 
-`QueryOrThrow` is an extension method in `EDControls` that calls `Query` and immediately
-calls `RestStatus.ThrowIfError()` — use it everywhere you want to throw on Caché error.
-Only call `Query` + `RestStatus` separately when you need to handle errors gracefully
-(e.g. `continue` in a loop or `return null`).
-
-### Delimiter
-
-Fields within a single output slot are separated by `MLRest.Delimiter` (a `char`, typically
-`\x1C`). Split with:
+Reading output:
 
 ```csharp
-string[] parts = output[1].ToString()!.Split(mlRest.Delimiter);
+// Single named value
+string val = output["key"].Value?.ToString() ?? "";
+
+// Single named CList
+CList row = output["key"];
+
+// Iterate indexed rows ("1", "2", ...)
+// Skip "ERR" — it's MLRest metadata, not application data.
+foreach (KeyValuePair<string, CVar> kvp in output)
+{
+    if (kvp.Key == "ERR") continue;
+    CList row = kvp.Value;            // implicit CVar→CList
+    string type = row.GetString(1);   // 1-based indexing
+    string name = row.GetString(2);
+}
 ```
 
-### Error handling
+`QueryOrThrow` (extension in `EDControls`) calls `Query` + `RestStatus.ThrowIfError()`
+atomically. Only call them separately when you need graceful degradation (`continue` in a
+loop, `return null`).
 
-```csharp
-mlRest.RestStatus.ThrowIfError();
+### Caché wire format for CVar
+
+CVar maps to string-subscripted process-private globals:
+
+```
+.NET cVar["key"]          → ^||ML("IN","key")
+.NET cVar["1"]            → ^||ML("IN","1")    ← string "1", NOT numeric 1
+.NET CList("A","B","C")   → $lb("A","B","C")  in Caché
 ```
 
-Always call immediately after `Query`. Throws `InvalidOperationException` with the Caché
-error message if `ret` was non-zero. Never skip this call.
+Caché side reads with `$li(^||ML("IN","i"), n)` and writes:
+
+```objectscript
+s ^||ML("OUT","1") = $lb("TYPE","value1","value2")
+s ^||ML("OUT","2") = $lb("OTHER","value3")
+```
+
+### When object[] is acceptable
+
+Use `object[]` only in legacy code or when integrating with existing Caché methods that
+already use numeric subscripts (`^||ML("IN",1)`, `^||ML("OUT",1)`). Document the reason.
+Do **not** use `object[]` in new code.
 
 ### Binary data
 
@@ -79,7 +116,7 @@ Stored in `$$$SYSBinary(GUID)` on the Caché side; cleaned up automatically.
 
 | Property | Description |
 |---|---|
-| `Delimiter` | Field separator (`char`). Use everywhere you parse delimited output. |
+| `Delimiter` | Field separator (`char`). Only needed when working with legacy delimiter-based protocols; not required with CVar/CList. |
 | `Idfa` | Current company identifier (e.g. `"CB_DP"`). Changes when the user switches company. |
 | `Mlp` | User ID string. Passed in `sys("U","MLP")` on the Caché side. |
 | `DataNamespace` | Active data namespace. Updated on company switch. |
@@ -89,7 +126,7 @@ Stored in `$$$SYSBinary(GUID)` on the Caché side; cleaned up automatically.
 
 ## Caché method skeleton
 
-See `MLRest.md §2.2` for the full reference. Minimal skeleton:
+See `MLRest.md §2.2` for the full reference. Minimal skeleton using CVar format:
 
 ```objectscript
 Include GENERAL
@@ -99,12 +136,39 @@ ClassMethod MyMethod(ByRef sys As %String) As %Status
     $$$Init
     try {
         $$$FillParams
-        s vstup = ^||ML("IN",1)
-        // ... business logic ...
-        s ^||ML("OUT",1) = "result"
+
+        // Read named input values
+        s name = ^||ML("IN","name")
+        s count = ^||ML("IN","count")
+
+        // Write named output values (string key → readable on .NET as output["result"])
+        s ^||ML("OUT","result") = "ok"
+        s ^||ML("OUT","info") = $lb("TypeA","value1","value2")
+
+        // Write indexed output rows (iterated on .NET with foreach)
+        s i = 0
+        s ^||ML("OUT",$i(i)) = $lb("ROW","a","b")
+        s ^||ML("OUT",$i(i)) = $lb("ROW","c","d")
     }
     catch (ex) { $$$CatchErrRest }
     ret ret
+}
+```
+
+Corresponding .NET read:
+
+```csharp
+CVar output = mlRest.QueryOrThrow("ALVA.MY.Class", "MyMethod", input);
+
+string result = output["result"].Value?.ToString() ?? "";  // named string value
+CList info   = output["info"];                             // named CList
+
+foreach (KeyValuePair<string, CVar> kvp in output)
+{
+    if (kvp.Key == "ERR") continue;
+    if (kvp.Key == "result" || kvp.Key == "info") continue; // skip named keys if mixed
+    CList row = kvp.Value;
+    // row.GetString(1) == "ROW", row.GetString(2) == "a", etc.
 }
 ```
 

@@ -52,29 +52,44 @@ namespace EDISONMAIN2.Services.Data
         public IReadOnlyList<IModule> GetModuleTree(string database, string idfa)
         {
             var mlRest = GetTreeRest(database, idfa);
-            object[] treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", Array.Empty<object>());
-            return ParseTree(treeData, mlRest.Delimiter);
+            CVar treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", new CVar());
+            return ParseTree(treeData);
         }
 
-        private static ObservableCollection<IModule> ParseTree(object[] treeData, char delimiter)
+        /// <summary>
+        /// Parses the module tree from Caché output.
+        /// Caché writes ^||ML("OUT","i") = $lb(type, ...) where type is:
+        ///   "FAMILY"     → $lb("FAMILY", displayName, isExpanded)
+        ///   "EXE"        → $lb("EXE", displayName, executablePath, formName)
+        ///   "FAMILY_END" → $lb("FAMILY_END")
+        /// </summary>
+        private static ObservableCollection<IModule> ParseTree(CVar treeData)
         {
             var result = new ObservableCollection<IModule>();
             var familyStack = new Stack<ObservableCollection<IModule>>();
             ObservableCollection<IModule> currentList = result;
 
-            for (int i = 1; i < treeData.Length; i++)
+            foreach (KeyValuePair<string, CVar> kvp in treeData)
             {
-                string[] parts = treeData[i]?.ToString()?.Split(delimiter) ?? [];
-                switch (parts[0])
+                if (kvp.Key == "ERR") continue;
+                CList row = kvp.Value;
+                switch (row.GetString(1))
                 {
                     case "FAMILY":
-                        var family = new ModuleFamily { DisplayedName = parts[1], IsExpanded = parts[2] == "1" };
+                        var family = new ModuleFamily {
+                            DisplayedName = row.GetString(2),
+                            IsExpanded    = row.GetString(3) == "1"
+                        };
                         currentList.Add(family);
                         familyStack.Push(currentList);
                         currentList = family.NestedModules;
                         break;
                     case "EXE":
-                        currentList.Add(new ExecutableModule { DisplayedName = parts[1], ExecutablePath = parts[2], FormName = parts[3] });
+                        currentList.Add(new ExecutableModule {
+                            DisplayedName  = row.GetString(2),
+                            ExecutablePath = row.GetString(3),
+                            FormName       = row.GetString(4)
+                        });
                         break;
                     case "FAMILY_END":
                         if (familyStack.Count > 0) currentList = familyStack.Pop();

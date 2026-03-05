@@ -27,7 +27,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		d form.AddField("email",   "E-mail",  "TEXT",   0, 0)
 		d form.AddField("telefon", "Telefon", "NUMBER", 0, 0)
 
-		d form.WriteToOut(del)
+		d form.WriteToOut()
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret ret
@@ -41,7 +41,7 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 	{
 		$$$FillParams
 
-		s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn(del)
+		s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
 
 		// Format / business rules — run on Change and BeforeSave, skip on Init
 		i 'form.IsInitValidation() {
@@ -62,7 +62,7 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 		s f = form.GetField("prijmeni")
 		i f.value="" s f.validationError = "Příjmení je povinné"
 		
-		d form.WriteToOut(del)
+		d form.WriteToOut()
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret ret
@@ -77,7 +77,7 @@ ClassMethod Save(ByRef sys As %String) As %Status
 	{
 		$$$FillParams
 
-		s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn(del)
+		s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
 
 		k ^EDISONMAIN2Test(userID)
 		s cnt = form.items.Count()
@@ -88,7 +88,7 @@ ClassMethod Save(ByRef sys As %String) As %Status
 			}
 		}
 
-		d form.WriteToOut(del)
+		d form.WriteToOut()
 	}
 	catch (ex) { $$$CatchErrRest }
 	ret ret

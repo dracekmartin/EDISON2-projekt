@@ -77,34 +77,42 @@ Method IsWholeFormValidation() As %Boolean
 
 // ─── Serialization ────────────────────────────────────────────────────────────
 
-/// Writes all items to ^||ML("OUT",...) using $i(i) indexing.
-Method WriteToOut(del As %String)
+/// Writes all items to ^||ML("OUT",...) as CList ($lb) values.
+/// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
+/// Format per item:
+///   GROUP → $lb("GROUP", groupName)
+///   FIELD → $lb("FIELD", key, label, type, value, validateOnChange, required [, validationError])
+Method WriteToOut()
 {
 	s i = 0
 	s cnt = ..items.Count()
 	f idx=1:1:cnt {
-		s ^||ML("OUT",$i(i)) = ..items.GetAt(idx).Serialize(del)
+		s ^||ML("OUT",$i(i)) = ..items.GetAt(idx).Serialize()
 	}
 }
 
 /// Reads ^||ML("IN",...) and returns a populated Form.
-/// IN[1] is the validation trigger; IN[2..] are GROUP/FIELD entries.
-ClassMethod ReadFromIn(del As %String) As ALVA.EDControls.EDInputForm.Form
+/// Trigger is at string subscript "trigger".
+/// Items are at subscripts 1, 2, ... as CList ($lb) values:
+///   $lb("GROUP", groupName)
+///   $lb("FIELD", key, label, type, value, validateOnChange, required)
+ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
-	s form.trigger = $g(^||ML("IN",1))
+	s form.trigger = $g(^||ML("IN","trigger"))
 	s idx = ""
 	f {
 		s idx = $o(^||ML("IN",idx))
 		q:idx=""
-		s line = ^||ML("IN",idx)
-		s type = $p(line,del,1)
+		i idx="trigger" continue
+		s listVal = ^||ML("IN",idx)
+		s type = $li(listVal,1)
 		i type="GROUP" {
-			d form.AddGroup($p(line,del,2))
+			d form.AddGroup($li(listVal,2))
 		}
 		i type="FIELD" {
-			s f = form.AddField($p(line,del,2),$p(line,del,3),$p(line,del,4),$p(line,del,6),$p(line,del,7))
-			s f.value = $p(line,del,5)
+			s f = form.AddField($li(listVal,2),$li(listVal,3),$li(listVal,4),$li(listVal,6),$li(listVal,7))
+			s f.value = $li(listVal,5)
 		}
 	}
 	q form
