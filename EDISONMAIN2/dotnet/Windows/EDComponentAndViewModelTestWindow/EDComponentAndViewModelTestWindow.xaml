@@ -19,8 +19,8 @@
                     <StackPanel Orientation="Horizontal">
                         <Button Content="Init" Click="Init_Click" Padding="8,4"
                                 ToolTip="Načíst definici formuláře z Caché"/>
-                        <CheckBox Content="Akce probíhá" Margin="8,0,0,0" VerticalAlignment="Center"
-                                  IsChecked="{Binding IsActionInProgress}"/>
+                        <Button Content="Akce 3s" Margin="8,0,0,0" Padding="8,4"
+                                Command="{Binding SimulateActionCommand}"/>
                     </StackPanel>
                 </ef:EDFooter.LeftContent>
             </ef:EDFooter>
