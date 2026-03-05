@@ -173,19 +173,45 @@ Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
 
 #### 🟢 Technický dluh — nevybuchne hned, ale časem ano
 
-**7. Migrace verzí šablon**
+**7. Nápověda klávesových zkratek (Help overlay)**
+Nový uživatel nemá jak zjistit, co aplikace umí — zkratky jsou skryté.
+- Tlačítko "?" nebo "Klávesové zkratky" v toolbaru (nebo menu Nápověda)
+- Overlay / dialog se stručnou tabulkou: akce → zkratka (Ctrl+Z, Ctrl+C/V, Ctrl+Shift+↑↓, Del, Ctrl+scroll, F2/Enter pro editaci…)
+- Ideálně kontextový — jiná sekce pro canvas, jiná pro editor tabulky
+- Implementačně nejjednodušší: statický XAML dialog se `ScrollViewer` + `DataGrid` nebo `StackPanel` s řádky; bez databindingu, jen statický obsah
+- Klávesová zkratka pro otevření: F1 nebo Ctrl+?
+
+**8. Chytré duplikování a zarovnání elementů**
+Aktuální Ctrl+C / Ctrl+V vloží kopii s offsetem +5 mm — uživatel pak element přesouvá ručně.
+- **Duplikovat dolů / vpravo** — Ctrl+D vloží kopii přesně pod (nebo vpravo od) originálu; žádný offset, spodní hrana originálu = horní hrana kopie
+- **Duplikovat s mezerou** — Shift+Ctrl+D nabídne mezerník (0 / 2 / 5 mm) před vložením
+- Implementace: nový příkaz `DuplicateElementCommand(direction, gap)` volaný z `MainWindow` klávesového handleru; pozice kopie = `original.X, original.Y + original.Height + gap`
+
+**9. Přichytávání elementů k sobě (smart snap)**
+Snap to grid zarovná na mřížku, ale ne na jiné elementy. Ve Winforms designeru elementy "přiskočí" k sousedům.
+- Při dragu zobrazit vodítka (snaplines) — tenké modré čáry když hrana taženého elementu lícuje s hranou jiného elementu ve stejné sekci
+- Přichytit na: levou/pravou/horní/dolní hranu, střed (horizontální i vertikální) jiného elementu
+- Malá konzistentní mezera (2 mm) jako alternativní snap — "přiskočí" na souseda + 2 mm vzduchová mezera
+- Implementace:
+  - `DesignerCanvas.CalculateSnapLines(draggedElements, allElements)` — vrátí seznam `SnapLine(orientation, position, fromElement)`
+  - Kreslit snaplines v `OnPaintSurface` nad elementy (tenká modrá čára přes celou sekci)
+  - Threshold: pokud vzdálenost < 3 px při aktuálním zoomu, snap se aktivuje
+  - Snap má přednost před grid-snapem (nebo kombinovat: snap na element pokud blízko, jinak na grid)
+  - Priorita: snaplines jsou UX vylepšení — implementovat až po výrazovém jazyku Part 2
+
+**10. Migrace verzí šablon**
 Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace.
 - Explicitní migrace při načítání starších JSON šablon
 - Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
 - Minimálně: logovat varování při načtení šablony se starší verzí
 
-**8. Computed fields**
+**11. Computed fields**
 Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 - Definice v agendě (nebo přímo v šabloně)
 - Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
 - Alternativa k výrazovému jazyku pro komplexnější logiku
 
-**9. Metadata a správa šablon**
+**12. Metadata a správa šablon**
 Důležité jakmile šablon bude víc než 10.
 - Autor, datum změny, kategorie, popis
 - Thumbnail preview (PNG generovaný při uložení)
