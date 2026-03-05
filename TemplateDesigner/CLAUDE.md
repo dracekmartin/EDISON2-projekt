@@ -24,7 +24,7 @@ Systém se skládá ze dvou částí:
 
 ### 🎯 Aktuální focus
 
-**"Ze šablony..." picker + refaktoring DataFieldCollection — hotovo.** TableEditorDialog umožňuje načíst Fixed šablonu z Caché jedním klikem. DataFieldGroup přejmenováno na DataFieldCollection, odstraněn FieldScope enum.
+**PDF export live preview — hotovo.** `PreviewCanvas.RenderToPdf()` + menu položka + tlačítko v preview panelu. Stejná mock data jako live preview (Caché GetMockData → schema fallback).
 
 **Další kroky:**
 1. Podmíněné řádky tabulky (VisibilityExpression per řádek)
@@ -54,6 +54,7 @@ Systém se skládá ze dvou částí:
 - ✅ Undo/redo systém (9 command typů: Move, Resize, Add, Delete, SetProperty, Composite, MoveSection, DeleteSection)
 - ✅ PropertyDescriptor systém s 8 typy (String, Float, Bool, Color, Enum, TextWithPicker, Button, **SuggestString**)
 - ✅ Live preview panel — primárně Caché `GetMockData`, fallback schema examples, zoom 1:1 / fit-to-width
+- ✅ **PDF export** — `PreviewCanvas.RenderToPdf()`, Soubor → Exportovat náhled jako PDF / tlačítko PDF v preview panelu
 - ✅ Zoom (50/75/100/150/200 %) + Ctrl+scroll
 - ✅ Grid & snap to grid
 - ✅ Clipboard (interní, copy/paste s offsetem)
@@ -100,6 +101,15 @@ Systém se skládá ze dvou částí:
    - Alternativa k levému panelu pro rychlejší přístup
 
 ### 📜 Nedávné změny (changelog)
+
+**2026-03-05 — PDF export live preview:**
+- ✅ `PreviewCanvas.RenderToPdf(filePath, data)` — SkiaSharp `SKDocument.CreatePdf`, 72pt/mm, bílé pozadí, respektuje okraje šablony
+- ✅ Menu: Soubor → Exportovat náhled jako PDF... (SaveFileDialog, default název z názvu šablony/souboru)
+- ✅ Tlačítko PDF v záhlaví live preview panelu (rychlý přístup bez nutnosti otevřít menu)
+- ✅ `BuildPreviewMockData()` extrahována ze `OnPreviewPaintSurface` — sdílena s PDF exportem
+- ✅ Simplify fix: `schema.FieldCollections ?? []` cachováno do local var (bylo vyhodnocováno dvakrát)
+- ✅ Simplify fix: `doc.Close()` odstraněno — `using var doc` zavolá Dispose, který Close volá interně
+- ✅ Simplify fix: fallback název souboru „sablona.pdf" místo „.pdf" pro šablony bez názvu
 
 **2026-03-05 — "Ze šablony..." picker + DataFieldCollection refaktoring + bug fixy:**
 - ✅ `TableEditorDialog` — tlačítko "Ze šablony..." v záložce Sloupce (jen Fixed mód)

@@ -538,9 +538,15 @@ public partial class MainWindow : Window
         float w = (float)args.Info.Width;
         float h = (float)args.Info.Height;
 
-        // Mock DataContext pro preview:
-        //   1. Primárně: GetMockData z Caché (reálná ukázková data definovaná v agendě)
-        //   2. Fallback:  mock ze schématu (Example hodnoty polí)
+        _previewCanvas.Render(surface.Canvas, w, h, BuildPreviewMockData());
+    }
+
+    /// <summary>
+    /// Sestaví DataContext pro live preview / PDF export.
+    /// Priorita: GetMockData z Caché → fallback ze schématu (Example hodnoty polí).
+    /// </summary>
+    private DataContext? BuildPreviewMockData()
+    {
         var agendaCode = _state.CurrentTemplate.AgendaCode;
         DataContext? mockData = null;
 
@@ -552,13 +558,14 @@ public partial class MainWindow : Window
             var schema = _schemaProvider.GetSchema(agendaCode);
             if (schema is not null)
             {
+                var collections = schema.FieldCollections ?? [];
                 var values = schema.Fields
-                    .Concat(schema.FieldCollections?.SelectMany(c => c.Fields) ?? [])
+                    .Concat(collections.SelectMany(c => c.Fields))
                     .DistinctBy(f => f.FieldName)
                     .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
 
                 var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
-                foreach (var collection in schema.FieldCollections ?? [])
+                foreach (var collection in collections)
                 {
                     var mockRows = Enumerable.Range(1, 3).Select(i =>
                     {
@@ -574,7 +581,7 @@ public partial class MainWindow : Window
             }
         }
 
-        _previewCanvas.Render(surface.Canvas, w, h, mockData);
+        return mockData;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -630,6 +637,31 @@ public partial class MainWindow : Window
         _currentFilePath = dlg.FileName;
         await TemplateSerializer.SaveAsync(_state.CurrentTemplate, _currentFilePath);
         UpdateTitle();
+    }
+
+    private void MenuExportPdf_Click(object sender, RoutedEventArgs e)
+    {
+        var dlg = new SaveFileDialog
+        {
+            Title            = "Exportovat náhled jako PDF",
+            Filter           = "PDF soubory (*.pdf)|*.pdf",
+            DefaultExt       = "pdf",
+            FileName         = (Path.GetFileNameWithoutExtension(_currentFilePath)
+                               ?? (string.IsNullOrWhiteSpace(_state.CurrentTemplate.Name) ? "sablona" : _state.CurrentTemplate.Name))
+                               + ".pdf"
+        };
+        if (dlg.ShowDialog() != true) return;
+
+        try
+        {
+            _previewCanvas.RenderToPdf(dlg.FileName, BuildPreviewMockData());
+            StatusText.Text = $"PDF uloženo: {Path.GetFileName(dlg.FileName)}";
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Chyba při exportu PDF:\n{ex.Message}", "Export PDF",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void MenuExit_Click(object sender, RoutedEventArgs e)

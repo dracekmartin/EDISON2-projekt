@@ -1,3 +1,4 @@
+using System.IO;
 using SkiaSharp;
 using TemplateDesigner.Models;
 
@@ -52,6 +53,32 @@ public class PreviewCanvas
             px += s.EffectiveDesignerHeight * mmToPx;
         px += ps.MarginBottom * mmToPx;
         return Math.Max(ps.Height * mmToPx, px);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // PDF export
+
+    /// <summary>
+    /// Exportuje šablonu s dodanými daty do PDF souboru.
+    /// Jedna strana = jeden layout šablony (bez stránkování).
+    /// </summary>
+    public void RenderToPdf(string filePath, DataContext? data)
+    {
+        const float pointsPerMm = 72f / 25.4f;
+        var   ps    = _state.CurrentTemplate.PageSize;
+        float pageW = ps.Width  * pointsPerMm;
+        float pageH = ps.Height * pointsPerMm;
+
+        using var stream = new FileStream(filePath, FileMode.Create);
+        using var doc    = SKDocument.CreatePdf(stream);
+        var canvas = doc.BeginPage(pageW, pageH);
+
+        using (var bg = new SKPaint { Color = SKColors.White })
+            canvas.DrawRect(0, 0, pageW, pageH, bg);
+
+        DrawContent(canvas, ps, pointsPerMm, 0, 0, data);
+
+        doc.EndPage();
     }
 
     // ─────────────────────────────────────────────────────────────────────

@@ -231,6 +231,18 @@ Pravý panel zobrazuje **náhled šablony s mock daty** — takto bude šablona 
 - Fallback: hodnoty ze schématu agendy (pole `example`) nebo generické zástupce
 - Dynamic tabulky zobrazují všechny mock řádky vrácené z `GetMockData`
 
+### Export náhledu do PDF
+
+Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými mock daty, která jsou vidět v náhledu.
+
+- **Soubor → Exportovat náhled jako PDF...** — otevře dialog pro uložení souboru
+- **Tlačítko PDF** v záhlaví live preview panelu — stejná funkce, rychlejší přístup
+- Výstup je jednostránkový PDF odpovídající rozměrům šablony (šířka × výška v mm)
+- Okraje šablony jsou zachovány; stránka má bílé pozadí
+- Data v PDF jsou identická s preview (Caché mock nebo schema fallback)
+
+> PDF export slouží jako rychlá kontrola rozvržení před ostrým tiskem. Nenahrazuje Print Engine — ten zpracuje reálná data a zvládne vícestr. výstup.
+
 ### Zoom
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
 - **Ctrl+scroll** na canvasu — přiblížení / oddálení
@@ -275,7 +287,8 @@ Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
 - **Ctrl+S** / menu Soubor → Uložit
 - **Soubor → Uložit jako** — zvolí umístění
 - **Soubor → Otevřít** — načte existující šablonu
-- Soubory mají příponu `.json` a jsou čitelné v libovolném textovém editoru
+- **Soubor → Exportovat náhled jako PDF...** — uloží aktuální náhled jako PDF
+- Soubory šablon mají příponu `.json` a jsou čitelné v libovolném textovém editoru
 
 ---
 
