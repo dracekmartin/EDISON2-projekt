@@ -3,7 +3,7 @@
 2. Standardizace - MH
    1. Hlášky
    3. Názvosloví akcí (lokalizace)
-   4. Ikony
+   4. Ikony (zkusit Microsoft Fluent UI System Icons)
 3. Architektura projektu - JM
    1. Složky v .NET a v Cache
       1. V Caché ve Windows složka pro celé Windows, v ní soubory InputForm.cls, DataGrid.cls, Window.cls
