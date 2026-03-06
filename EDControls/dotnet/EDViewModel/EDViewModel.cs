@@ -19,11 +19,13 @@ public class EDViewModel : INotifyPropertyChanged
 
     public MLRest? MLRest { get; protected set; }
 
+    private static readonly IPopupDisplayer _popupDisplayer = new PopupDisplayer();
+
     /// <summary>
     /// Service for showing popups. Always targets the currently active window as owner.
     /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
     /// </summary>
-    public PopupDisplayer PopupDisplayer { get; } = new PopupDisplayer();
+    public IPopupDisplayer PopupDisplayer => _popupDisplayer;
 
     /// <summary>
     /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.
