@@ -119,7 +119,7 @@ public partial class MainWindow : Window
             _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
             getAvailableFields:    () =>
             {
-                var schemaFields = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.Fields ?? [];
+                var schemaFields = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode ?? "")?.Fields ?? [];
                 var paramFields  = _agendaParameters.Select(p => new DataField
                 {
                     FieldName = p.Name,
@@ -128,7 +128,7 @@ public partial class MainWindow : Window
                 });
                 return [.. schemaFields, .. paramFields];
             },
-            getAvailableGroups:    () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode)?.FieldCollections,
+            getAvailableGroups:    () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode ?? "")?.FieldCollections,
             tableTemplateProvider: _cacheProvider);
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
@@ -590,7 +590,7 @@ public partial class MainWindow : Window
 
         if (mockData is null)
         {
-            var schema = _schemaProvider.GetSchema(agendaCode);
+            var schema = _schemaProvider.GetSchema(agendaCode ?? "");
             if (schema is not null)
             {
                 var collections = schema.FieldCollections ?? [];
@@ -775,7 +775,7 @@ public partial class MainWindow : Window
             // Znovu načíst parametry a schéma pro novou šablonu
             var agendaCode = _state.CurrentTemplate.AgendaCode;
             LoadAgendaParameters(agendaCode);
-            var schema = _schemaProvider.GetSchema(agendaCode);
+            var schema = _schemaProvider.GetSchema(agendaCode ?? "");
             BuildSchemaTree(schema);
         }
     }
@@ -818,7 +818,7 @@ public partial class MainWindow : Window
                 int oldZ = el.ZIndex;
                 int newZ = baseZ++;
                 if (oldZ == newZ) continue;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
         else if (toExtreme && sign < 0)
@@ -830,7 +830,7 @@ public partial class MainWindow : Window
             {
                 int oldZ = el.ZIndex;
                 int newZ = oldZ + shift;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
             // Vybrané dostanou 0, 1, 2 …
             int z = 0;
@@ -839,7 +839,7 @@ public partial class MainWindow : Window
                 int oldZ = el.ZIndex;
                 int newZ = z++;
                 if (oldZ == newZ) continue;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
         else
@@ -850,7 +850,7 @@ public partial class MainWindow : Window
                 int oldZ = el.ZIndex;
                 int newZ = Math.Max(0, oldZ + sign);
                 if (oldZ == newZ) continue;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v));
+                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
             }
         }
 
@@ -1003,10 +1003,10 @@ public partial class MainWindow : Window
     }
 
     private static IDesignerCommand MakeXCmd(TemplateElement el, float newX)
-        => new SetPropertyCommand("X", el.X, newX, v => el.X = (float)v);
+        => new SetPropertyCommand("X", el.X, newX, v => el.X = (float)v!);
 
     private static IDesignerCommand MakeYCmd(TemplateElement el, float newY)
-        => new SetPropertyCommand("Y", el.Y, newY, v => el.Y = (float)v);
+        => new SetPropertyCommand("Y", el.Y, newY, v => el.Y = (float)v!);
 
     private void DeleteSelected()
     {
@@ -1314,7 +1314,7 @@ public partial class MainWindow : Window
             _state.Execute(new SetPropertyCommand(
                 $"Vložit {placeholder}",
                 oldText, newText,
-                v => textEl.Text = (string)v));
+                v => textEl.Text = (string)v!));
             InvalidateCanvas();
             UpdatePropertiesPanel();
         }

@@ -5,6 +5,9 @@
 global using Application    = System.Windows.Application;
 global using Button         = System.Windows.Controls.Button;
 global using CheckBox       = System.Windows.Controls.CheckBox;
+global using ContextMenu    = System.Windows.Controls.ContextMenu;
+global using DataGrid       = System.Windows.Controls.DataGrid;
+global using MenuItem       = System.Windows.Controls.MenuItem;
 global using Color          = System.Windows.Media.Color;
 global using Colors         = System.Windows.Media.Colors;
 global using ComboBox       = System.Windows.Controls.ComboBox;
