@@ -10,148 +10,134 @@ using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
-using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Config;
 using TemplateDesigner.Serialization;
+using ALWA.SYS;
 
 namespace TemplateDesigner;
 
 public partial class MainWindow : Window
 {
-    private readonly DesignerState          _state;
-    private readonly DesignerCanvas         _canvas;
-    private readonly PreviewCanvas          _previewCanvas;
-    private          ElementPropertiesWindow? _propsWindow;
-    private string? _currentFilePath;
+    // ── ViewModel ─────────────────────────────────────────────────────────────
+    private TemplateDesignerViewModel? _vm;
 
-    private readonly IDataSchemaProvider    _schemaProvider;
-    private readonly CacheAgendaProvider?   _cacheProvider;   // null = Caché není nakonfigurováno
-    private readonly SectionTemplateManager _sectionTemplates;
-
-    // Parametry sestavy — načtené z Caché pro aktuální agendu
-    private List<TemplateParameter>                    _agendaParameters    = [];
-    private Dictionary<string, object?>               _previewParams       = new();
-    private Dictionary<string, object?>?              _cachedParamValues;  // null = neplatná cache
-    private string?                                   _lastParamsAgendaCode;
+    // ── Canvas / preview ──────────────────────────────────────────────────────
+    private DesignerCanvas?         _canvas;
+    private PreviewCanvas?          _previewCanvas;
+    private ElementPropertiesWindow? _propsWindow;
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
-    // Sdílené zdroje pro BuildSchemaTree — vytvořeny jednou, nikoliv per položka
-    private static readonly System.Windows.Media.FontFamily _monoFont =
-        new("Consolas");
-    private static readonly System.Windows.Media.SolidColorBrush _brushGroupHeader =
-        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x44, 0x44, 0x44)));
-    private static readonly System.Windows.Media.SolidColorBrush _brushFieldName =
-        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x1A, 0x52, 0x76)));
-    private static readonly System.Windows.Media.SolidColorBrush _brushFieldLabel =
-        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x66, 0x66, 0x66)));
-    private static readonly System.Windows.Media.SolidColorBrush _brushMuted =
-        Freeze(new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x88, 0x88, 0x88)));
-
-    private static T Freeze<T>(T freezable) where T : System.Windows.Freezable
-        { freezable.Freeze(); return freezable; }
-
-    // ── Mouse state machine ──
+    // ── Mouse state machine ───────────────────────────────────────────────────
     private enum MouseMode { Idle, Dragging, Resizing, RubberBand }
-    private MouseMode      _mouseMode    = MouseMode.Idle;
+    private MouseMode _mouseMode = MouseMode.Idle;
 
-    // Drag state
-    private TemplateElement? _dragElement; // element, na který bylo kliknuto (referenční pro snap)
-    private float _dragMouseStartCanvasX, _dragMouseStartCanvasY; // canvas px při zahájení dragu
+    private TemplateElement? _dragElement;
+    private float _dragMouseStartCanvasX, _dragMouseStartCanvasY;
     private readonly Dictionary<TemplateElement, (float X, float Y)> _dragInitPositions = new();
 
-    // Rubber band state
     private SKPoint _rubberBandStart;
     private SKRect? _rubberBandRect;
 
-    // Clipboard
-    private List<TemplateElement> _clipboard = [];
-
-    // Resize state
     private TemplateElement? _resizeElement;
     private ResizeHandle     _resizeHandle;
     private float  _resizeInitX, _resizeInitY, _resizeInitW;
-    private float? _resizeInitH;          // null = element byl dynamický; pro undo
-    private float  _resizeInitHComputed;  // vždy numerická výška v mm; pro ComputeResize
-    private float  _resizeMouseStartX, _resizeMouseStartY; // mm relativně k sekci
-    private float  _resizeOriginX, _resizeOriginY;         // canvas px origin sekce
+    private float? _resizeInitH;
+    private float  _resizeInitHComputed;
+    private float  _resizeMouseStartX, _resizeMouseStartY;
+    private float  _resizeOriginX, _resizeOriginY;
 
-    public MainWindow()
+    // ── Section list selection helper ─────────────────────────────────────────
+    private bool _suppressSectionSelection;
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Constructors
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /// <summary>WPF designer constructor — do not use at runtime.</summary>
+    public MainWindow() { InitializeComponent(); }
+
+    /// <summary>Runtime constructor. mlRest = null for standalone mode.</summary>
+    public MainWindow(MLRest? mlRest)
     {
+        _vm         = new TemplateDesignerViewModel(mlRest);
+        DataContext = _vm;
         InitializeComponent();
 
-        _state         = new DesignerState();
-        _canvas        = new DesignerCanvas(_state);
-        _previewCanvas = new PreviewCanvas(_state);
+        _canvas        = new DesignerCanvas(_vm.State);
+        _previewCanvas = new PreviewCanvas(_vm.State);
 
-        // Schema provider — Caché (primární) + JSON soubory (záloha)
-        string schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
-        var settings      = AppSettings.Load();
-        _cacheProvider    = CacheSchemaWiring.TryCreate(settings);
-
-        _schemaProvider = _cacheProvider is not null
-            ? new CompositeDataSchemaProvider(
-                primary:  _cacheProvider,
-                fallback: new JsonFileDataSchemaProvider(schemasDir))
-            : new JsonFileDataSchemaProvider(schemasDir);
-
-        // Section template manager — správa custom šablon sekcí
-        _sectionTemplates = new SectionTemplateManager();
-
-        // PaintSurface se registruje výhradně v code-behind (SkiaSharp.Views.WPF + net9)
+        // Wire SkiaSharp (must be code-behind — not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;
         skPreview.PaintSurface       += OnPreviewPaintSurface;
         skPreview.SizeChanged        += (_, _) => InvalidatePreview();
         skCanvas.MouseLeftButtonDown += OnCanvasMouseDown;
         skCanvas.MouseMove           += OnCanvasMouseMove;
         skCanvas.MouseLeftButtonUp   += OnCanvasMouseUp;
-
         CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
 
-        _state.CurrentTemplate = CreateSampleTemplate();
-
-        UpdateTitle();
-        UpdateCanvasSize();
-        RefreshSectionsList();
-        RefreshFieldsList();
-
-        _propsWindow = new ElementPropertiesWindow(
-            _state, InvalidateCanvas, RefreshSectionsList, UpdateCanvasSize, RefreshFieldsList,
-            getAvailableFields:    () =>
+        // Wire VM callbacks
+        _vm.RequestCanvasRefresh         = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
+        _vm.RequestPreviewRefresh        = InvalidatePreview;
+        _vm.RequestTitleUpdate           = UpdateTitle;
+        _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); };
+        _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
+        _vm.RequestExportPdf             = filePath =>
+        {
+            try
             {
-                var schemaFields = _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode ?? "")?.Fields ?? [];
-                var paramFields  = _agendaParameters.Select(p => new DataField
-                {
-                    FieldName = p.Name,
-                    Label     = p.Label + " (parametr)",
-                    DataType  = FieldDataType.Text
-                });
-                return [.. schemaFields, .. paramFields];
-            },
-            getAvailableGroups:    () => _schemaProvider.GetSchema(_state.CurrentTemplate.AgendaCode ?? "")?.FieldCollections,
-            tableTemplateProvider: _cacheProvider);
+                _previewCanvas!.RenderToPdf(filePath, _vm.BuildPreviewMockData());
+                _vm.StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Chyba při exportu PDF:\n{ex.Message}", "Export PDF",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        };
+
+        // Wire section events
+        _vm.SectionsRebuilt += RestoreSectionSelection;
+        SectionVM.ShowPropertiesGlobal = s => _propsWindow?.ShowForSection(s);
+        SectionVM.SaveTemplateGlobal   = s => SaveSectionAsTemplate(s);
+
+        // Properties window
+        _propsWindow = new ElementPropertiesWindow(
+            _vm.State,
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
+            _vm.RebuildSections,
+            UpdateCanvasSize,
+            _vm.RefreshFieldsList,
+            getAvailableFields:    _vm.GetAvailableFields,
+            getAvailableGroups:    _vm.GetAvailableGroups,
+            tableTemplateProvider: _vm.TableTemplateProvider);
+
         this.Loaded += (_, _) => _propsWindow.Owner = this;
         this.Closed += (_, _) => _propsWindow.CloseForReal();
 
+        // Initial state
+        _vm.RefreshFieldsList();
+        UpdateTitle();
+        UpdateCanvasSize();
         UpdatePropertiesPanel();
 
-        // Skrýt AI asistenta pokud je vypnutý v nastavení
         if (AppSettings.Current?.AiAssistant.Enabled == false)
             MenuAiAssistant.Visibility = Visibility.Collapsed;
 
         this.PreviewKeyDown += OnWindowKeyDown;
     }
 
-    // ─────────────────────────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────────────────
     // Render
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void OnPaintSurface(object? sender, object e)
     {
+        if (_canvas is null) return;
         var args    = (dynamic)e;
         SKSurface surface = args.Surface;
         _canvas.Render(surface.Canvas, (float)skCanvas.ActualWidth, (float)skCanvas.ActualHeight);
 
-        // Rubber band selection overlay
         if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
         {
             var r = _rubberBandRect.Value;
@@ -164,9 +150,10 @@ public partial class MainWindow : Window
 
     private void UpdateCanvasSize()
     {
+        if (_canvas is null || _vm is null) return;
         float padding = 80f;
-        float pageW   = _state.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
-        float pageH   = _canvas.CalculatePageHeightPx(_state.CurrentTemplate);
+        float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
+        float pageH   = _canvas.CalculatePageHeightPx(_vm.State.CurrentTemplate);
         skCanvas.Width  = pageW + padding;
         skCanvas.Height = pageH + padding;
         skCanvas.InvalidateVisual();
@@ -182,324 +169,84 @@ public partial class MainWindow : Window
     private void OnCanvasScrollWheel(object sender, MouseWheelEventArgs e)
     {
         if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
-        e.Handled = true; // zabraňuje scrollování ScrollVieweru
-
+        e.Handled = true;
         int newIdx = Math.Clamp(CmbZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
         if (newIdx != CmbZoom.SelectedIndex)
-            CmbZoom.SelectedIndex = newIdx; // spustí CmbZoom_SelectionChanged
+            CmbZoom.SelectedIndex = newIdx;
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Sekce — seznam vlevo
+    // ── Preview ───────────────────────────────────────────────────────────────
 
-    private void RefreshSectionsList()
+    private const float PreviewFixedZoom = 1.0f;
+
+    private void UpdatePreviewSize()
     {
-        SectionsList.Children.Clear();
-        var sections = _state.CurrentTemplate.Sections;
+        if (BtnPreview?.IsChecked != true || _previewCanvas is null) return;
+        skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom) + 40f;
+    }
 
-        for (int i = 0; i < sections.Count; i++)
+    private void InvalidatePreview()
+    {
+        if (BtnPreview?.IsChecked != true) return;
+        UpdatePreviewSize();
+        skPreview.InvalidateVisual();
+    }
+
+    private void OnPreviewPaintSurface(object? sender, object e)
+    {
+        if (_previewCanvas is null || _vm is null) return;
+        var args    = (dynamic)e;
+        SKSurface surface = args.Surface;
+        float w = (float)args.Info.Width;
+        float h = (float)args.Info.Height;
+        _previewCanvas.Render(surface.Canvas, w, h, _vm.BuildPreviewMockData());
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Section list — selection helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void RestoreSectionSelection()
+    {
+        _suppressSectionSelection = true;
+        try { SectionsList.SelectedItem = _vm?.Sections.FirstOrDefault(s => s.Section == _vm?.State.ActiveSection); }
+        finally { _suppressSectionSelection = false; }
+    }
+
+    private void SectionsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_suppressSectionSelection || _vm is null) return;
+        if (SectionsList.SelectedItem is SectionVM svm)
         {
-            var section   = sections[i];
-            bool isDynamic = section.DesignerHeight is null;
-            bool isActive  = section == _state.ActiveSection;
-            int  idx       = i; // closure capture
-
-            // Podnázev — PrintBehavior (pokud není výchozí "Once") + DataSource tabulky
-            string? subtitle = null;
-            if (section.PrintBehavior != SectionPrintBehavior.Once)
-            {
-                subtitle = section.PrintBehavior switch
-                {
-                    SectionPrintBehavior.OnEveryPage           => "každá stránka",
-                    SectionPrintBehavior.OnFirstPageOnly       => "jen 1. stránka",
-                    SectionPrintBehavior.OnLastPageOnly        => "jen posl. stránka",
-                    SectionPrintBehavior.OnEveryPageExceptFirst => "kromě 1. stránky",
-                    _ => null
-                };
-            }
-            if (section.PrintBehavior == SectionPrintBehavior.PerDataRow && !string.IsNullOrEmpty(section.DataSource))
-                subtitle = (subtitle is null ? "" : subtitle + " · ") + section.DataSource;
-
-            var nameText = new TextBlock
-            {
-                Text         = section.Name,
-                FontSize     = 12,
-                FontWeight   = isActive ? FontWeights.SemiBold : FontWeights.Normal,
-                TextTrimming = TextTrimming.CharacterEllipsis
-            };
-            var labelStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-            labelStack.Children.Add(nameText);
-            if (subtitle is not null)
-            {
-                labelStack.Children.Add(new TextBlock
-                {
-                    Text       = subtitle,
-                    FontSize   = 10,
-                    Foreground = System.Windows.Media.Brushes.Gray,
-                    TextTrimming = TextTrimming.CharacterEllipsis
-                });
-            }
-
-            // ToolTip s typem sekce
-            labelStack.ToolTip = section.GetType().Name;
-
-            // ▲▼ tlačítka vpravo
-            var btnUp = new Button
-            {
-                Content   = "▲", Width = 18, Height = 16, FontSize = 8,
-                Padding   = new Thickness(0), Margin = new Thickness(2, 0, 0, 0),
-                ToolTip   = "Přesunout nahoru (Ctrl+Shift+↑)",
-                IsEnabled = idx > 0,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            var btnDown = new Button
-            {
-                Content   = "▼", Width = 18, Height = 16, FontSize = 8,
-                Padding   = new Thickness(0), Margin = new Thickness(2, 0, 0, 0),
-                ToolTip   = "Přesunout dolů (Ctrl+Shift+↓)",
-                IsEnabled = idx < sections.Count - 1,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            btnUp.Click   += (_, e2) => { e2.Handled = true; MoveSection(section, -1); };
-            btnDown.Click += (_, e2) => { e2.Handled = true; MoveSection(section, +1); };
-
-            var rowPanel = new DockPanel { LastChildFill = true };
-            DockPanel.SetDock(btnDown, Dock.Right);
-            DockPanel.SetDock(btnUp,   Dock.Right);
-            rowPanel.Children.Add(btnDown);
-            rowPanel.Children.Add(btnUp);
-            rowPanel.Children.Add(labelStack);
-
-            // Context menu
-            var ctx           = new ContextMenu();
-            var miProps       = new MenuItem { Header = "Vlastnosti sekce…" };
-            var miMoveUp      = new MenuItem { Header = "Přesunout nahoru", IsEnabled = idx > 0 };
-            var miMoveDown    = new MenuItem { Header = "Přesunout dolů",   IsEnabled = idx < sections.Count - 1 };
-            var miSaveTemplate = new MenuItem { Header = "💾 Uložit jako šablonu…" };
-            var miSep         = new Separator();
-            var miDelete      = new MenuItem { Header = "Smazat sekci",     Foreground = System.Windows.Media.Brushes.DarkRed };
-
-            miProps.Click        += (_, _) => _propsWindow!.ShowForSection(section);
-            miMoveUp.Click       += (_, _) => MoveSection(section, -1);
-            miMoveDown.Click     += (_, _) => MoveSection(section, +1);
-            miSaveTemplate.Click += (_, _) => SaveSectionAsTemplate(section);
-            miDelete.Click       += (_, _) => DeleteSection(section);
-
-            ctx.Items.Add(miProps);
-            ctx.Items.Add(miMoveUp);
-            ctx.Items.Add(miMoveDown);
-            ctx.Items.Add(miSaveTemplate);
-            ctx.Items.Add(miSep);
-            ctx.Items.Add(miDelete);
-
-            var item = new Border
-            {
-                Margin          = new Thickness(0, 2, 0, 0),
-                Padding         = new Thickness(8, 5, 4, 5),
-                Background      = new SolidColorBrush(isActive
-                    ? Color.FromRgb(210, 230, 255)
-                    : isDynamic ? Color.FromRgb(234, 243, 255) : Color.FromRgb(245, 245, 245)),
-                BorderBrush     = new SolidColorBrush(isActive
-                    ? Color.FromRgb(33, 150, 243)
-                    : isDynamic ? Color.FromRgb(180, 210, 245) : Color.FromRgb(210, 210, 210)),
-                BorderThickness = new Thickness(isActive ? 2 : 1),
-                CornerRadius    = new CornerRadius(3),
-                Cursor          = Cursors.Hand,
-                Tag             = section,
-                Child           = rowPanel,
-                ContextMenu     = ctx
-            };
-
-            item.MouseLeftButtonDown += (_, e2) =>
-            {
-                if (e2.ClickCount == 2)
-                    _propsWindow!.ShowForSection(section);
-                else
-                    ActivateSection(section);
-            };
-
-            SectionsList.Children.Add(item);
+            _suppressSectionSelection = true;
+            try { _vm.ActivateSection(svm.Section); }
+            finally { _suppressSectionSelection = false; }
         }
     }
 
-    private void ActivateSection(Section? section)
+    private void SectionsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        _state.ActiveSection = section;
-        RefreshSectionsList();
-        InvalidateCanvas();
+        if (SectionsList.SelectedItem is SectionVM svm)
+            _propsWindow?.ShowForSection(svm.Section);
     }
 
-    private void MoveSection(Section section, int direction)
-    {
-        int idx    = _state.CurrentTemplate.Sections.IndexOf(section);
-        int newIdx = idx + direction;
-        if (newIdx < 0 || newIdx >= _state.CurrentTemplate.Sections.Count) return;
-
-        _state.Execute(new MoveSectionCommand(_state.CurrentTemplate, section, direction));
-        RefreshSectionsList();
-        UpdateCanvasSize();
-        InvalidateCanvas();
-    }
-
-    private void DeleteSection(Section section)
-    {
-        if (_state.CurrentTemplate.Sections.Count <= 1)
-        {
-            MessageBox.Show("Šablona musí mít alespoň jednu sekci.", "Smazat sekci",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        // Odznač elementy z mazané sekce
-        _state.SelectedElements.RemoveAll(el => section.Elements.Contains(el));
-
-        // Přepni aktivní sekci, pokud se maže ta aktivní
-        if (_state.ActiveSection == section)
-            _state.ActiveSection = _state.CurrentTemplate.Sections
-                .FirstOrDefault(s => s != section);
-
-        _propsWindow?.Hide();
-        _state.Execute(new DeleteSectionCommand(_state.CurrentTemplate, section));
-        RefreshSectionsList();
-        UpdateCanvasSize();
-        UpdatePropertiesPanel();
-        InvalidateCanvas();
-    }
-
-    private void SaveSectionAsTemplate(Section section)
-    {
-        // Dialog pro zadání názvu šablony
-        var dialog = new Window
-        {
-            Title = "Uložit sekci jako šablonu",
-            Width = 400,
-            Height = 160,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Owner = this,
-            ResizeMode = ResizeMode.NoResize
-        };
-
-        var stack = new StackPanel { Margin = new Thickness(15) };
-        stack.Children.Add(new TextBlock { Text = "Název šablony:", Margin = new Thickness(0, 0, 0, 5) });
-
-        var nameBox = new TextBox
-        {
-            Text = section.Name,
-            Margin = new Thickness(0, 0, 0, 15)
-        };
-        stack.Children.Add(nameBox);
-
-        var buttonsPanel = new StackPanel
-        {
-            Orientation = System.Windows.Controls.Orientation.Horizontal,
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-        };
-
-        var btnCancel = new Button
-        {
-            Content = "Zrušit",
-            Width = 80,
-            Height = 25,
-            Margin = new Thickness(0, 0, 10, 0),
-            IsCancel = true
-        };
-
-        var btnSave = new Button
-        {
-            Content = "💾 Uložit",
-            Width = 80,
-            Height = 25,
-            IsDefault = true
-        };
-
-        bool? dialogResult = null;
-        btnSave.Click += (_, _) =>
-        {
-            if (string.IsNullOrWhiteSpace(nameBox.Text))
-            {
-                MessageBox.Show("Zadejte název šablony.", "Uložit šablonu",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-            dialogResult = true;
-            dialog.Close();
-        };
-
-        btnCancel.Click += (_, _) => { dialogResult = false; dialog.Close(); };
-
-        buttonsPanel.Children.Add(btnCancel);
-        buttonsPanel.Children.Add(btnSave);
-        stack.Children.Add(buttonsPanel);
-
-        dialog.Content = stack;
-        nameBox.Focus();
-        nameBox.SelectAll();
-
-        dialog.ShowDialog();
-
-        if (dialogResult == true)
-        {
-            try
-            {
-                _sectionTemplates.Save(section, nameBox.Text.Trim());
-                MessageBox.Show($"Šablona '{nameBox.Text.Trim()}' byla uložena.",
-                    "Uložit šablonu", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Chyba při ukládání šablony: {ex.Message}",
-                    "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Toolbar — zoom, grid, snap
+    // ─────────────────────────────────────────────────────────────────────────
+    // Toolbar handlers
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void CmbZoom_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_state is null) return;
+        if (_vm is null) return;
         int idx = CmbZoom.SelectedIndex;
         if (idx >= 0 && idx < ZoomLevels.Length)
         {
-            _state.Zoom = ZoomLevels[idx];
+            _vm.State.Zoom = ZoomLevels[idx];
             UpdateCanvasSize();
         }
     }
 
-    private void BtnGrid_Changed(object sender, RoutedEventArgs e)
-    {
-        if (_state is null) return;
-        _state.ShowGrid = BtnGrid.IsChecked == true;
-        MenuGrid.IsChecked = _state.ShowGrid;
-        InvalidateCanvas();
-    }
-
-    private void BtnSnap_Changed(object sender, RoutedEventArgs e)
-    {
-        if (_state is null) return;
-        _state.SnapToGrid = BtnSnap.IsChecked == true;
-        MenuSnap.IsChecked = _state.SnapToGrid;
-    }
-
-    private void MenuGrid_Changed(object sender, RoutedEventArgs e)
-    {
-        if (_state is null) return;
-        _state.ShowGrid    = MenuGrid.IsChecked;
-        BtnGrid.IsChecked  = _state.ShowGrid;
-        InvalidateCanvas();
-    }
-
-    private void MenuSnap_Changed(object sender, RoutedEventArgs e)
-    {
-        if (_state is null) return;
-        _state.SnapToGrid = MenuSnap.IsChecked;
-        BtnSnap.IsChecked = _state.SnapToGrid;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Panel viditelnost
+    // ── Panel visibility ──────────────────────────────────────────────────────
 
     private void MenuPanelSection_Changed(object sender, RoutedEventArgs e)
     {
@@ -523,917 +270,134 @@ public partial class MainWindow : Window
         BtnPreview_Changed(sender, e);
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Live preview
+    // ─────────────────────────────────────────────────────────────────────────
+    // Menu / button click handlers (thin — delegate to ViewModel)
+    // ─────────────────────────────────────────────────────────────────────────
 
-    // Pevný zoom preview — 1:1 jako designer při 100 %, nezávisle na šířce panelu.
-    private const float PreviewFixedZoom = 1.0f;
-
-    private void UpdatePreviewSize()
-    {
-        if (BtnPreview?.IsChecked != true) return;
-        skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom) + 40f;
-    }
-
-    private void InvalidatePreview()
-    {
-        if (BtnPreview?.IsChecked != true) return;
-        UpdatePreviewSize();
-        skPreview.InvalidateVisual();
-    }
-
-    /// <summary>
-    /// Generuje mírně odlišné mock hodnoty pro každý řádek preview tabulky.
-    /// Číselné hodnoty se zvyšují o (rowIndex-1), časy se posouvají o 10 minut,
-    /// textové hodnoty dostanou suffix " #rowIndex" od druhého řádku.
-    /// </summary>
-    private static string MakeMockValue(string baseValue, FieldDataType type, int rowIndex)
-    {
-        if (rowIndex <= 1) return baseValue;
-        return type switch
-        {
-            FieldDataType.Number => int.TryParse(baseValue, out var n)
-                ? (n + rowIndex - 1).ToString()
-                : baseValue,
-            FieldDataType.Time => TimeSpan.TryParse(baseValue, out var t)
-                ? (t + TimeSpan.FromMinutes(10 * (rowIndex - 1))).ToString(@"hh\:mm")
-                : baseValue,
-            FieldDataType.Date => DateTime.TryParse(baseValue, out var d)
-                ? d.AddDays(rowIndex - 1).ToString("dd.MM.yyyy")
-                : baseValue,
-            _ => string.IsNullOrEmpty(baseValue) ? baseValue : $"{baseValue} #{rowIndex}"
-        };
-    }
-
-    private void OnPreviewPaintSurface(object? sender, object e)
-    {
-        var args    = (dynamic)e;
-        SKSurface surface = args.Surface;
-        float w = (float)args.Info.Width;
-        float h = (float)args.Info.Height;
-
-        _previewCanvas.Render(surface.Canvas, w, h, BuildPreviewMockData());
-    }
-
-    /// <summary>
-    /// Sestaví DataContext pro live preview / PDF export.
-    /// Priorita: GetMockData z Caché → fallback ze schématu (Example hodnoty polí).
-    /// </summary>
-    private DataContext? BuildPreviewMockData()
-    {
-        var agendaCode = _state.CurrentTemplate.AgendaCode;
-        DataContext? mockData = null;
-
-        if (agendaCode is not null && _cacheProvider is not null)
-            mockData = _cacheProvider.GetMockData(agendaCode);
-
-        if (mockData is null)
-        {
-            var schema = _schemaProvider.GetSchema(agendaCode ?? "");
-            if (schema is not null)
-            {
-                var collections = schema.FieldCollections ?? [];
-                var values = schema.Fields
-                    .Concat(collections.SelectMany(c => c.Fields))
-                    .DistinctBy(f => f.FieldName)
-                    .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
-
-                var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
-                foreach (var collection in collections)
-                {
-                    var mockRows = Enumerable.Range(1, 3).Select(i =>
-                    {
-                        var rowData = collection.Fields.ToDictionary(
-                            f => f.FieldName,
-                            f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
-                        return new DataContext(rowData);
-                    }).ToList();
-                    rowsDict[collection.CollectionKey] = mockRows;
-                }
-
-                mockData = new DataContext(values, rowsDict);
-            }
-        }
-
-        // Přidej hodnoty parametrů do DataContext — přepíší případné kolize s mock daty
-        if (_previewParams.Count > 0)
-        {
-            _cachedParamValues ??= _previewParams.ToDictionary(
-                kv => kv.Key,
-                kv => (object?)kv.Value?.ToString(),
-                StringComparer.OrdinalIgnoreCase);
-
-            mockData = mockData is not null
-                ? mockData.WithExtraValues(_cachedParamValues)
-                : new DataContext(_cachedParamValues);
-        }
-
-        return mockData;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Soubor
-
-    private void MenuNew_Click(object sender, RoutedEventArgs e)
-    {
-        if (!ConfirmUnsavedChanges()) return;
-        _state.CurrentTemplate = new Template();
-        _currentFilePath = null;
-        UpdateTitle();
-        UpdateCanvasSize();
-        RefreshSectionsList();
-        RefreshFieldsList();
-    }
-
-    private async void MenuOpen_Click(object sender, RoutedEventArgs e)
-    {
-        if (!ConfirmUnsavedChanges()) return;
-        var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Otevřít šablonu" };
-        if (dlg.ShowDialog() != true) return;
-        try
-        {
-            _state.CurrentTemplate = await TemplateSerializer.LoadAsync(dlg.FileName);
-            _currentFilePath = dlg.FileName;
-            UpdateTitle();
-            UpdateCanvasSize();
-            RefreshSectionsList();
-            RefreshFieldsList();
-        }
-        catch (TemplateDeserializationException ex)
-        {
-            MessageBox.Show(ex.Message, "Chyba při načítání", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
-
-    private async void MenuSave_Click(object sender, RoutedEventArgs e)
-    {
-        if (_currentFilePath is null) { MenuSaveAs_Click(sender, e); return; }
-        await TemplateSerializer.SaveAsync(_state.CurrentTemplate, _currentFilePath);
-        UpdateTitle();
-    }
-
-    private async void MenuSaveAs_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new SaveFileDialog
-        {
-            Filter   = TemplateSerializer.FileFilter,
-            Title    = "Uložit šablonu",
-            FileName = _state.CurrentTemplate.Name
-        };
-        if (dlg.ShowDialog() != true) return;
-        _currentFilePath = dlg.FileName;
-        await TemplateSerializer.SaveAsync(_state.CurrentTemplate, _currentFilePath);
-        UpdateTitle();
-    }
-
-    private void MenuExportPdf_Click(object sender, RoutedEventArgs e)
-    {
-        var dlg = new SaveFileDialog
-        {
-            Title            = "Exportovat náhled jako PDF",
-            Filter           = "PDF soubory (*.pdf)|*.pdf",
-            DefaultExt       = "pdf",
-            FileName         = (Path.GetFileNameWithoutExtension(_currentFilePath)
-                               ?? (string.IsNullOrWhiteSpace(_state.CurrentTemplate.Name) ? "sablona" : _state.CurrentTemplate.Name))
-                               + ".pdf"
-        };
-        if (dlg.ShowDialog() != true) return;
-
-        try
-        {
-            _previewCanvas.RenderToPdf(dlg.FileName, BuildPreviewMockData());
-            StatusText.Text = $"PDF uloženo: {Path.GetFileName(dlg.FileName)}";
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Chyba při exportu PDF:\n{ex.Message}", "Export PDF",
-                MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
+    private void MenuNew_Click(object sender, RoutedEventArgs e)       => _vm!.NewCommand.Execute(null);
+    private void MenuOpen_Click(object sender, RoutedEventArgs e)      => _vm!.OpenCommand.Execute(null);
+    private void MenuSave_Click(object sender, RoutedEventArgs e)      => _vm!.SaveCommand.Execute(null);
+    private void MenuSaveAs_Click(object sender, RoutedEventArgs e)    => _vm!.SaveAsCommand.Execute(null);
+    private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
 
     private void MenuExit_Click(object sender, RoutedEventArgs e)
     {
-        if (ConfirmUnsavedChanges()) Application.Current.Shutdown();
+        if (_vm!.ConfirmUnsavedChanges()) Application.Current.Shutdown();
     }
 
     private void MenuPageProps_Click(object sender, RoutedEventArgs e)
     {
-        _propsWindow!.ShowForPage(_state.CurrentTemplate);
+        if (_vm is not null) _propsWindow!.ShowForPage(_vm.State.CurrentTemplate);
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Undo / Redo / Delete (stub)
-
-    private void MenuUndo_Click(object sender, RoutedEventArgs e)
-    {
-        _state.Undo();
-        InvalidateCanvas();
-        RefreshSectionsList();
-        UpdatePropertiesPanel();
-    }
-
-    private void MenuRedo_Click(object sender, RoutedEventArgs e)
-    {
-        _state.Redo();
-        InvalidateCanvas();
-        RefreshSectionsList();
-        UpdatePropertiesPanel();
-    }
-
-    private void MenuDelete_Click(object sender, RoutedEventArgs e) => DeleteSelected();
-
-    private void MenuHelp_Click(object sender, RoutedEventArgs e) => ShowHelp();
-
-    private void ShowHelp()
-    {
-        var helpDialog = new HelpDialog { Owner = this };
-        helpDialog.ShowDialog();
-    }
+    private void MenuUndo_Click(object sender, RoutedEventArgs e)  => _vm!.UndoCommand.Execute(null);
+    private void MenuRedo_Click(object sender, RoutedEventArgs e)  => _vm!.RedoCommand.Execute(null);
+    private void MenuDelete_Click(object sender, RoutedEventArgs e) => _vm!.DeleteCommand.Execute(null);
+    private void MenuHelp_Click(object sender, RoutedEventArgs e)  => ShowHelp();
 
     private void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
+        if (_vm is null) return;
         var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
-        var dialog = new AiTemplateAssistantDialog(apiKey, _schemaProvider) { Owner = this };
+        var dialog = new AiTemplateAssistantDialog(apiKey, _vm.SchemaProvider) { Owner = this };
 
         if (dialog.ShowDialog() == true && dialog.GeneratedTemplate is not null)
         {
-            // Otevřít vygenerovanou šablonu v designeru
-            if (!ConfirmUnsavedChanges()) return;
-
-            _state.CurrentTemplate = dialog.GeneratedTemplate;
-            _state.SelectedElements.Clear();
-            _state.ActiveSection = _state.CurrentTemplate.Sections.FirstOrDefault();
-            _currentFilePath = null;
-
-            RefreshSectionsList();
-            InvalidateCanvas();
-            InvalidatePreview();
-            UpdatePropertiesPanel();
-            UpdateTitle();
-
-            // Znovu načíst parametry a schéma pro novou šablonu
-            var agendaCode = _state.CurrentTemplate.AgendaCode;
-            LoadAgendaParameters(agendaCode);
-            var schema = _schemaProvider.GetSchema(agendaCode ?? "");
-            BuildSchemaTree(schema);
+            if (!_vm.ConfirmUnsavedChanges()) return;
+            _vm.LoadGeneratedTemplate(dialog.GeneratedTemplate);
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // ZIndex — pořadí vykreslování
+    private void BtnZForward_Click(object sender, RoutedEventArgs e)  => _vm!.ChangeZIndex(+1, false);
+    private void BtnZBackward_Click(object sender, RoutedEventArgs e) => _vm!.ChangeZIndex(-1, false);
+    private void BtnZFront_Click(object sender, RoutedEventArgs e)    => _vm!.ChangeZIndex(+1, true);
+    private void BtnZBack_Click(object sender, RoutedEventArgs e)     => _vm!.ChangeZIndex(-1, true);
 
-    private void BtnZForward_Click(object sender, RoutedEventArgs e)  => ChangeZIndex(+1, toExtreme: false);
-    private void BtnZBackward_Click(object sender, RoutedEventArgs e) => ChangeZIndex(-1, toExtreme: false);
-    private void BtnZFront_Click(object sender, RoutedEventArgs e)    => ChangeZIndex(+1, toExtreme: true);
-    private void BtnZBack_Click(object sender, RoutedEventArgs e)     => ChangeZIndex(-1, toExtreme: true);
+    private void BtnAlignLeft_Click(object sender, RoutedEventArgs e)    => _vm!.AlignElements(AlignMode.Left);
+    private void BtnAlignRight_Click(object sender, RoutedEventArgs e)   => _vm!.AlignElements(AlignMode.Right);
+    private void BtnAlignCenterH_Click(object sender, RoutedEventArgs e) => _vm!.AlignElements(AlignMode.CenterH);
+    private void BtnAlignTop_Click(object sender, RoutedEventArgs e)     => _vm!.AlignElements(AlignMode.Top);
+    private void BtnAlignBottom_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.Bottom);
+    private void BtnAlignMiddleV_Click(object sender, RoutedEventArgs e) => _vm!.AlignElements(AlignMode.MiddleV);
+    private void BtnDistributeH_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeH);
+    private void BtnDistributeV_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeV);
 
-    /// <summary>
-    /// Změní ZIndex vybraných elementů.
-    /// <paramref name="sign"/> +1 = dopředu, -1 = dozadu.
-    /// <paramref name="toExtreme"/> true = zcela dopředu/dozadu, false = o jeden krok.
-    /// </summary>
-    private void ChangeZIndex(int sign, bool toExtreme)
-    {
-        if (_state.SelectedElements.Count == 0 || _state.ActiveSection is null) return;
-
-        var section  = _state.ActiveSection;
-        var selected = _state.SelectedElements
-            .Where(el => section.Elements.Contains(el))
-            .ToList();
-        if (selected.Count == 0) return;
-
-        var commands = new List<IDesignerCommand>();
-
-        if (toExtreme && sign > 0)
-        {
-            // Přenést zcela dopředu: každý vybraný dostane ZIndex = max+1, max+2 …
-            int baseZ = section.Elements
-                .Where(el => !selected.Contains(el))
-                .Select(el => el.ZIndex)
-                .DefaultIfEmpty(-1)
-                .Max() + 1;
-            foreach (var el in selected.OrderBy(e => e.ZIndex))
-            {
-                int oldZ = el.ZIndex;
-                int newZ = baseZ++;
-                if (oldZ == newZ) continue;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
-            }
-        }
-        else if (toExtreme && sign < 0)
-        {
-            // Odeslat zcela dozadu: vybrané dostanou ZIndex 0, 1 … ostatní se posunou nahoru
-            int shift = selected.Count;
-            // Ostatní elementy posunou ZIndex o shift nahoru
-            foreach (var el in section.Elements.Where(e => !selected.Contains(e)))
-            {
-                int oldZ = el.ZIndex;
-                int newZ = oldZ + shift;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
-            }
-            // Vybrané dostanou 0, 1, 2 …
-            int z = 0;
-            foreach (var el in selected.OrderBy(e => e.ZIndex))
-            {
-                int oldZ = el.ZIndex;
-                int newZ = z++;
-                if (oldZ == newZ) continue;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
-            }
-        }
-        else
-        {
-            // Posun o 1 krok (dopředu nebo dozadu)
-            foreach (var el in selected)
-            {
-                int oldZ = el.ZIndex;
-                int newZ = Math.Max(0, oldZ + sign);
-                if (oldZ == newZ) continue;
-                commands.Add(new SetPropertyCommand("ZIndex", oldZ, newZ, v => el.ZIndex = (int)v!));
-            }
-        }
-
-        if (commands.Count == 0) return;
-
-        string desc = (sign > 0, toExtreme) switch
-        {
-            (true,  true)  => "Přenést zcela dopředu",
-            (true,  false) => "Přenést dopředu",
-            (false, true)  => "Odeslat zcela dozadu",
-            _              => "Odeslat dozadu"
-        };
-
-        _state.Execute(commands.Count == 1 ? commands[0] : new CompositeCommand(desc, commands));
-        UpdatePropertiesPanel();
-        InvalidateCanvas();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Zarovnání elementů
-
-    private void BtnAlignLeft_Click(object sender, RoutedEventArgs e)    => AlignElements(AlignMode.Left);
-    private void BtnAlignRight_Click(object sender, RoutedEventArgs e)   => AlignElements(AlignMode.Right);
-    private void BtnAlignCenterH_Click(object sender, RoutedEventArgs e) => AlignElements(AlignMode.CenterH);
-    private void BtnAlignTop_Click(object sender, RoutedEventArgs e)     => AlignElements(AlignMode.Top);
-    private void BtnAlignBottom_Click(object sender, RoutedEventArgs e)  => AlignElements(AlignMode.Bottom);
-    private void BtnAlignMiddleV_Click(object sender, RoutedEventArgs e) => AlignElements(AlignMode.MiddleV);
-    private void BtnDistributeH_Click(object sender, RoutedEventArgs e)  => AlignElements(AlignMode.DistributeH);
-    private void BtnDistributeV_Click(object sender, RoutedEventArgs e)  => AlignElements(AlignMode.DistributeV);
-
-    private enum AlignMode { Left, Right, CenterH, Top, Bottom, MiddleV, DistributeH, DistributeV }
-
-    private void AlignElements(AlignMode mode)
-    {
-        if (_state.ActiveSection is null) return;
-
-        var inSection = _state.SelectedElements
-            .Where(el => _state.ActiveSection.Elements.Contains(el))
-            .ToList();
-
-        int minCount = mode is AlignMode.DistributeH or AlignMode.DistributeV ? 3 : 2;
-        if (inSection.Count < minCount) return;
-
-        var commands = new List<IDesignerCommand>();
-
-        switch (mode)
-        {
-            case AlignMode.Left:
-            {
-                float target = inSection.Min(e => e.X);
-                foreach (var el in inSection.Where(e => e.X != target))
-                    commands.Add(MakeXCmd(el, target));
-                break;
-            }
-            case AlignMode.Right:
-            {
-                float target = inSection.Max(e => e.X + e.Width);
-                foreach (var el in inSection)
-                {
-                    float newX = target - el.Width;
-                    if (Math.Abs(el.X - newX) > 0.01f) commands.Add(MakeXCmd(el, newX));
-                }
-                break;
-            }
-            case AlignMode.CenterH:
-            {
-                float cx = (inSection.Min(e => e.X) + inSection.Max(e => e.X + e.Width)) / 2f;
-                foreach (var el in inSection)
-                {
-                    float newX = cx - el.Width / 2f;
-                    if (Math.Abs(el.X - newX) > 0.01f) commands.Add(MakeXCmd(el, newX));
-                }
-                break;
-            }
-            case AlignMode.Top:
-            {
-                float target = inSection.Min(e => e.Y);
-                foreach (var el in inSection.Where(e => e.Y != target))
-                    commands.Add(MakeYCmd(el, target));
-                break;
-            }
-            case AlignMode.Bottom:
-            {
-                float target = inSection.Max(e => e.Y + e.EffectiveDesignerHeight);
-                foreach (var el in inSection)
-                {
-                    float newY = target - el.EffectiveDesignerHeight;
-                    if (Math.Abs(el.Y - newY) > 0.01f) commands.Add(MakeYCmd(el, newY));
-                }
-                break;
-            }
-            case AlignMode.MiddleV:
-            {
-                float cy = (inSection.Min(e => e.Y) + inSection.Max(e => e.Y + e.EffectiveDesignerHeight)) / 2f;
-                foreach (var el in inSection)
-                {
-                    float newY = cy - el.EffectiveDesignerHeight / 2f;
-                    if (Math.Abs(el.Y - newY) > 0.01f) commands.Add(MakeYCmd(el, newY));
-                }
-                break;
-            }
-            case AlignMode.DistributeH:
-            {
-                var sorted = inSection.OrderBy(e => e.X).ToList();
-                float totalW = sorted.Sum(e => e.Width);
-                float span   = sorted.Last().X + sorted.Last().Width - sorted.First().X;
-                float gap    = (span - totalW) / (sorted.Count - 1);
-                float cur    = sorted.First().X;
-                foreach (var el in sorted)
-                {
-                    if (Math.Abs(el.X - cur) > 0.01f) commands.Add(MakeXCmd(el, cur));
-                    cur += el.Width + gap;
-                }
-                break;
-            }
-            case AlignMode.DistributeV:
-            {
-                var sorted = inSection.OrderBy(e => e.Y).ToList();
-                float totalH = sorted.Sum(e => e.EffectiveDesignerHeight);
-                float span   = sorted.Last().Y + sorted.Last().EffectiveDesignerHeight - sorted.First().Y;
-                float gap    = (span - totalH) / (sorted.Count - 1);
-                float cur    = sorted.First().Y;
-                foreach (var el in sorted)
-                {
-                    if (Math.Abs(el.Y - cur) > 0.01f) commands.Add(MakeYCmd(el, cur));
-                    cur += el.EffectiveDesignerHeight + gap;
-                }
-                break;
-            }
-        }
-
-        if (commands.Count == 0) return;
-
-        string desc = mode switch
-        {
-            AlignMode.Left        => "Zarovnat vlevo",
-            AlignMode.Right       => "Zarovnat vpravo",
-            AlignMode.CenterH     => "Zarovnat na střed (vodorovně)",
-            AlignMode.Top         => "Zarovnat nahoru",
-            AlignMode.Bottom      => "Zarovnat dolů",
-            AlignMode.MiddleV     => "Zarovnat na střed (svisle)",
-            AlignMode.DistributeH => "Rozložit vodorovně",
-            AlignMode.DistributeV => "Rozložit svisle",
-            _                     => "Zarovnat"
-        };
-
-        _state.Execute(commands.Count == 1 ? commands[0] : new CompositeCommand(desc, commands));
-        UpdatePropertiesPanel();
-        InvalidateCanvas();
-    }
-
-    private static IDesignerCommand MakeXCmd(TemplateElement el, float newX)
-        => new SetPropertyCommand("X", el.X, newX, v => el.X = (float)v!);
-
-    private static IDesignerCommand MakeYCmd(TemplateElement el, float newY)
-        => new SetPropertyCommand("Y", el.Y, newY, v => el.Y = (float)v!);
-
-    private void DeleteSelected()
-    {
-        if (_state.SelectedElements.Count == 0) return;
-
-        // Najdi sekce pro každý element
-        var commands = new List<IDesignerCommand>();
-        foreach (var el in _state.SelectedElements.ToList())
-        {
-            var section = _state.CurrentTemplate.Sections
-                              .FirstOrDefault(s => s.Elements.Contains(el));
-            if (section is null || el.IsLocked) continue;
-            commands.Add(new DeleteElementCommand(section, el));
-        }
-
-        if (commands.Count == 0) return;
-
-        _propsWindow?.Hide();
-        _state.SelectedElements.Clear();
-
-        if (commands.Count == 1)
-            _state.Execute(commands[0]);
-        else
-            _state.Execute(new CompositeCommand("Smazat elementy", commands));
-
-        UpdatePropertiesPanel();
-        InvalidateCanvas();
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Pole agendy — browser databázových polí
-
-    private void RefreshFieldsList()
-    {
-        var agendaCode = _state.CurrentTemplate.AgendaCode;
-
-        if (string.IsNullOrWhiteSpace(agendaCode))
-        {
-            AgendaNameText.Text = "Agenda: — (šablona bez agendy)";
-            UpdateCacheStatus(agendaCode: null, cacheSchema: null);
-            LoadAgendaParameters(agendaCode);
-            BuildSchemaTree(schema: null);
-            return;
-        }
-
-        var schema = _schemaProvider.GetSchema(agendaCode);
-
-        if (schema is null)
-        {
-            AgendaNameText.Text = $"Agenda: {agendaCode} (schéma nenalezeno)";
-            UpdateCacheStatus(agendaCode, cacheSchema: null);
-            LoadAgendaParameters(agendaCode);
-            BuildSchemaTree(schema: null);
-            return;
-        }
-
-        AgendaNameText.Text = $"Agenda: {schema.AgendaName}";
-
-        // Zjistit zdroj: zkusit přímo Caché provider (má vlastní cache → bez extra MLRest volání)
-        var cacheSchema = _cacheProvider?.GetSchema(agendaCode);
-        UpdateCacheStatus(agendaCode, cacheSchema);
-        LoadAgendaParameters(agendaCode);
-
-        // Strom se staví až po LoadAgendaParameters (potřebujeme _agendaParameters)
-        BuildSchemaTree(schema);
-    }
-
-    /// <summary>
-    /// Sestaví TreeView se třemi skupinami: Skalární pole / Kolekce / Parametry.
-    /// </summary>
-    private void BuildSchemaTree(DataSchema? schema)
-    {
-        SchemaTree.Items.Clear();
-
-        TreeViewItem MakeGroup(string header) => new()
-        {
-            Header     = header,
-            FontWeight = FontWeights.SemiBold,
-            FontSize   = 11,
-            Foreground = _brushGroupHeader,
-            IsExpanded = true,
-            Focusable  = false
-        };
-
-        TreeViewItem MakeField(string fieldName, string label, string? tooltip = null)
-        {
-            var panel = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
-            panel.Children.Add(new TextBlock
-            {
-                Text       = fieldName,
-                FontFamily = _monoFont,
-                FontSize   = 11,
-                Foreground = _brushFieldName
-            });
-            if (!string.IsNullOrEmpty(label))
-            {
-                panel.Children.Add(new TextBlock
-                {
-                    Text       = "  " + label,
-                    FontSize   = 10,
-                    Foreground = _brushFieldLabel
-                });
-            }
-
-            return new TreeViewItem
-            {
-                Header  = panel,
-                Tag     = $"{{{fieldName}}}",
-                FontSize = 11,
-                ToolTip  = tooltip
-            };
-        }
-
-        // ── Skalární pole ────────────────────────────────────────────────────
-        var fields = schema?.Fields ?? [];
-        if (fields.Count > 0)
-        {
-            var grpFields = MakeGroup($"📋 Skalární pole ({fields.Count})");
-            foreach (var f in fields)
-                grpFields.Items.Add(MakeField(f.FieldName, f.Label, f.Description ?? f.Example));
-            SchemaTree.Items.Add(grpFields);
-        }
-
-        // ── Kolekce (tabulkové zdroje) ───────────────────────────────────────
-        var collections = schema?.FieldCollections ?? [];
-        if (collections.Count > 0)
-        {
-            var grpColls = MakeGroup($"📊 Kolekce ({collections.Count})");
-            foreach (var coll in collections)
-            {
-                var collItem = new TreeViewItem
-                {
-                    Header     = $"{coll.Name}  [{coll.CollectionKey}]",
-                    IsExpanded = true
-                };
-                foreach (var f in coll.Fields)
-                    collItem.Items.Add(MakeField(f.FieldName, f.Label, f.Description ?? f.Example));
-                grpColls.Items.Add(collItem);
-            }
-            SchemaTree.Items.Add(grpColls);
-        }
-
-        // ── Parametry ────────────────────────────────────────────────────────
-        if (_agendaParameters.Count > 0)
-        {
-            var grpParams = MakeGroup($"⚙ Parametry ({_agendaParameters.Count})");
-            foreach (var p in _agendaParameters)
-                grpParams.Items.Add(MakeField(p.Name, p.Label + " (parametr)"));
-            SchemaTree.Items.Add(grpParams);
-        }
-
-        if (SchemaTree.Items.Count == 0)
-        {
-            SchemaTree.Items.Add(new TreeViewItem
-            {
-                Header     = "Žádná pole",
-                FontSize   = 11,
-                Foreground = _brushMuted,
-                Focusable  = false
-            });
-        }
-    }
-
-    /// <summary>
-    /// Načte parametry sestavy z Caché pro danou agendu a inicializuje _previewParams na defaulty.
-    /// Přeskočí reload pokud se agenda nezměnila (zachová uživatelské hodnoty).
-    /// </summary>
-    private void LoadAgendaParameters(string? agendaCode)
-    {
-        // Normalizuj: null i "" znamenají "šablona bez agendy"
-        var code = string.IsNullOrEmpty(agendaCode) ? null : agendaCode;
-        if (code == _lastParamsAgendaCode) return;
-        _lastParamsAgendaCode = code;
-
-        _agendaParameters = code is not null && _cacheProvider is not null
-            ? [.. _cacheProvider.GetParameters(code)]
-            : [];
-
-        // Inicializuj hodnoty na defaulty
-        _previewParams.Clear();
-        _cachedParamValues = null;
-        foreach (var p in _agendaParameters)
-            _previewParams[p.Name] = p.GetDefaultTyped();
-
-        RefreshParametersPanel();
-        InvalidatePreview();
-    }
-
-    /// <summary>
-    /// Vygeneruje WPF kontrolky pro parametry sestavy v preview panelu.
-    /// </summary>
-    private void RefreshParametersPanel()
-    {
-        PreviewParamsPanel.Children.Clear();
-
-        if (_agendaParameters.Count == 0)
-        {
-            PreviewParamsBorder.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        PreviewParamsBorder.Visibility = Visibility.Visible;
-
-        TextBlock MakeLabel(string text) => new TextBlock
-        {
-            Text = text + ":",
-            VerticalAlignment = VerticalAlignment.Center,
-            Margin   = new Thickness(0, 0, 4, 0),
-            FontSize = 11
-        };
-
-        foreach (var param in _agendaParameters)
-        {
-            var current = _previewParams.TryGetValue(param.Name, out var v) ? v : param.GetDefaultTyped();
-
-            var container = new StackPanel
-            {
-                Orientation = System.Windows.Controls.Orientation.Horizontal,
-                Margin      = new Thickness(0, 0, 16, 0),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            if (param.Type == "bool")
-            {
-                var cb = new CheckBox
-                {
-                    Content           = param.Label,
-                    IsChecked         = current is bool b && b,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    FontSize          = 11
-                };
-                cb.Checked   += (_, _) => { _previewParams[param.Name] = true;  _cachedParamValues = null; InvalidatePreview(); };
-                cb.Unchecked += (_, _) => { _previewParams[param.Name] = false; _cachedParamValues = null; InvalidatePreview(); };
-                container.Children.Add(cb);
-            }
-            else if (param.Type == "enum" && param.Options is { Count: > 0 })
-            {
-                container.Children.Add(MakeLabel(param.Label));
-                var combo = new ComboBox { Width = 90, FontSize = 11 };
-                foreach (var opt in param.Options) combo.Items.Add(opt);
-                combo.SelectedItem = current?.ToString() ?? param.Options[0];
-                combo.SelectionChanged += (_, _) =>
-                {
-                    if (combo.SelectedItem is string sel)
-                    { _previewParams[param.Name] = sel; _cachedParamValues = null; InvalidatePreview(); }
-                };
-                container.Children.Add(combo);
-            }
-            else
-            {
-                container.Children.Add(MakeLabel(param.Label));
-                var tb = new TextBox
-                {
-                    Width = 80, FontSize = 11,
-                    Text  = current?.ToString() ?? "",
-                    VerticalAlignment = VerticalAlignment.Center
-                };
-                tb.TextChanged += (_, _) => { _previewParams[param.Name] = tb.Text; _cachedParamValues = null; InvalidatePreview(); };
-                container.Children.Add(tb);
-            }
-
-            PreviewParamsPanel.Children.Add(container);
-        }
-    }
-
-    /// <summary>
-    /// Aktualizuje indikátor stavu Caché připojení ve status baru.
-    /// </summary>
-    private void UpdateCacheStatus(string? agendaCode, DataSchema? cacheSchema)
-    {
-        if (_cacheProvider is null)
-        {
-            StatusText.Text = "Caché: není nakonfigurováno — pole načtena z JSON";
-            return;
-        }
-
-        if (agendaCode is null)
-        {
-            StatusText.Text = "Caché: nakonfigurováno";
-            return;
-        }
-
-        StatusText.Text = cacheSchema is not null
-            ? $"● Caché: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
-            : $"○ Caché: nedostupné — záloha JSON ({agendaCode})";
-    }
-
-    private void LeftTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        // Při přepnutí na záložku Pole agendy aktualizuj seznam
-        if (TabFields?.IsSelected == true)
-            RefreshFieldsList();
-    }
-
-    private void SchemaTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        // Tag je nastaven jen na listových položkách (pole/parametry), ne na skupinách
-        if (SchemaTree.SelectedItem is not TreeViewItem { Tag: string placeholder }) return;
-
-        // Pokud je vybrán TextElement → vlož placeholder do textu (undo-able)
-        if (_state.SelectedElements.Count == 1 && _state.SelectedElements[0] is TextElement textEl)
-        {
-            string oldText = textEl.Text;
-            string newText = oldText + placeholder;
-            _state.Execute(new SetPropertyCommand(
-                $"Vložit {placeholder}",
-                oldText, newText,
-                v => textEl.Text = (string)v!));
-            InvalidateCanvas();
-            UpdatePropertiesPanel();
-        }
-        else
-        {
-            // Není vybrán TextElement → zkopíruj do schránky
-            System.Windows.Clipboard.SetText(placeholder);
-            StatusText.Text = $"Zkopírováno do schránky: {placeholder}";
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Přidat sekci / element (stub)
+    // ─────────────────────────────────────────────────────────────────────────
+    // Add section / element menus
+    // ─────────────────────────────────────────────────────────────────────────
 
     private void BtnAddSection_Click(object sender, RoutedEventArgs e)
     {
+        if (_vm is null) return;
         var menu = new ContextMenu();
 
         void Add(string label, Func<Section> factory)
         {
             var item = new MenuItem { Header = label };
-            item.Click += (_, _) =>
-            {
-                var s = factory();
-                _state.CurrentTemplate.Sections.Add(s);
-                ActivateSection(s);
-                UpdateCanvasSize();
-            };
+            item.Click += (_, _) => _vm.AddSection(factory());
             menu.Items.Add(item);
         }
 
-        void AddSeparator()
-        {
-            menu.Items.Add(new Separator());
-        }
+        void Sep() => menu.Items.Add(new Separator());
 
-        // Běžné sekce
         Add("Hlavička stránky", () => new Section
         {
-            Name = "Hlavička stránky",
-            PrintBehavior = SectionPrintBehavior.OnEveryPage,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 25f
+            Name = "Hlavička stránky", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 25f
         });
-
         Add("Patička stránky", () => new Section
         {
-            Name = "Patička stránky",
-            PrintBehavior = SectionPrintBehavior.OnEveryPage,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 15f
+            Name = "Patička stránky", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 15f
         });
-
         Add("Oddělovač", () => new Section
         {
-            Name = "Oddělovač",
-            PrintBehavior = SectionPrintBehavior.Once,
-            DesignerHeight = 5f
+            Name = "Oddělovač", PrintBehavior = SectionPrintBehavior.Once, DesignerHeight = 5f
         });
-
-        AddSeparator();
-
-        // Pokročilé sekce
+        Sep();
         Add("Hlavička sestavy (jen 1. str.)", () => new Section
         {
-            Name = "Hlavička sestavy",
-            PrintBehavior = SectionPrintBehavior.OnFirstPageOnly,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 30f
+            Name = "Hlavička sestavy", PrintBehavior = SectionPrintBehavior.OnFirstPageOnly,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 30f
         });
-
         Add("Patička sestavy (jen posl. str.)", () => new Section
         {
-            Name = "Patička sestavy",
-            PrintBehavior = SectionPrintBehavior.OnLastPageOnly,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 20f
+            Name = "Patička sestavy", PrintBehavior = SectionPrintBehavior.OnLastPageOnly,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 20f
         });
-
         Add("Hlavička kromě 1. str.", () => new Section
         {
-            Name = "Hlavička kromě 1. str.",
-            PrintBehavior = SectionPrintBehavior.OnEveryPageExceptFirst,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 25f
+            Name = "Hlavička kromě 1. str.", PrintBehavior = SectionPrintBehavior.OnEveryPageExceptFirst,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 25f
         });
+        Sep();
 
-        AddSeparator();
-
-        // Custom šablony (pokud existují)
-        var customTemplates = _sectionTemplates.GetAvailableTemplates();
+        var customTemplates = _vm.GetCustomSectionTemplateNames();
         if (customTemplates.Count > 0)
         {
             foreach (var templateName in customTemplates)
             {
-                var name = templateName; // closure capture
+                var name = templateName;
                 Add($"💾 {templateName}", () =>
                 {
-                    var template = _sectionTemplates.Load(name);
-                    if (template is null)
+                    var t = _vm.LoadCustomSectionTemplate(name);
+                    if (t is null)
                     {
                         MessageBox.Show($"Šablonu '{name}' se nepodařilo načíst.",
                             "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
                         return new Section { Name = "Chyba" };
                     }
-                    // Deep clone s novými Guid
-                    return template.Clone();
+                    return t;
                 });
             }
-            AddSeparator();
+            Sep();
         }
 
-        // Obecná sekce
         Add("⚙ Prázdná sekce", () => new Section
         {
-            Name = $"Sekce {_state.CurrentTemplate.Sections.Count + 1}",
+            Name = $"Sekce {_vm.State.CurrentTemplate.Sections.Count + 1}",
             PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight = 30f
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 30f
         });
 
         menu.PlacementTarget = (UIElement)sender;
@@ -1442,10 +406,11 @@ public partial class MainWindow : Window
 
     private void BtnAddElement_Click(object sender, RoutedEventArgs e)
     {
-        if (_state.ActiveSection is null)
+        if (_vm is null) return;
+        if (_vm.State.ActiveSection is null)
         {
             MessageBox.Show("Nejprve vyberte sekci kliknutím v levém panelu nebo na canvasu.",
-                            "Žádná aktivní sekce", MessageBoxButton.OK, MessageBoxImage.Information);
+                "Žádná aktivní sekce", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
@@ -1456,9 +421,9 @@ public partial class MainWindow : Window
             item.Click += (_, _) =>
             {
                 var element = factory();
-                _state.Execute(new AddElementCommand(_state.ActiveSection, element));
-                _state.SelectedElements.Clear();
-                _state.SelectedElements.Add(element);
+                _vm.Execute(new AddElementCommand(_vm.State.ActiveSection!, element));
+                _vm.State.SelectedElements.Clear();
+                _vm.State.SelectedElements.Add(element);
                 UpdatePropertiesPanel();
                 InvalidateCanvas();
             };
@@ -1477,30 +442,222 @@ public partial class MainWindow : Window
         menu.IsOpen = true;
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Schema tree double-click
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void LeftTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (TabFields?.IsSelected == true)
+            _vm?.RefreshFieldsList();
+    }
+
+    private void SchemaTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm is null) return;
+        if (SchemaTree.SelectedItem is not SchemaFieldVM field) return;
+
+        if (_vm.State.SelectedElements.Count == 1 && _vm.State.SelectedElements[0] is TextElement textEl)
+        {
+            string oldText = textEl.Text;
+            string newText = oldText + field.Placeholder;
+            _vm.Execute(new SetPropertyCommand(
+                $"Vložit {field.Placeholder}",
+                oldText, newText,
+                v => textEl.Text = (string)v!));
+            InvalidateCanvas();
+            UpdatePropertiesPanel();
+        }
+        else
+        {
+            System.Windows.Clipboard.SetText(field.Placeholder);
+            _vm.StatusText = $"Zkopírováno do schránky: {field.Placeholder}";
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Save section as template (UI dialog — stays in code-behind)
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void SaveSectionAsTemplate(Section section)
+        => _vm?.SaveSectionAsTemplate(section, owner: this);
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void UpdatePropertiesPanel()
+    {
+        if (_vm is null) return;
+
+        if (_vm.State.SelectedElements.Count == 1)
+        {
+            var el   = _vm.State.SelectedElements[0];
+            string type = el.GetType().Name.Replace("Element", "");
+            _vm.StatusText = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
+                              (el.IsLocked ? "  [ZAMČENO]" : "") +
+                              "  |  2× klik nebo Enter = vlastnosti";
+
+            if (_propsWindow!.IsVisible)
+                _propsWindow.ShowForElement(el);
+            return;
+        }
+
+        _propsWindow?.Hide();
+
+        _vm.StatusText = _vm.State.SelectedElements.Count > 1
+            ? $"Vybráno {_vm.State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru"
+            : _vm.State.ActiveSection is not null
+                ? $"Sekce: {_vm.State.ActiveSection.Name}  |  " +
+                  $"Výška: {_vm.State.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
+                  $"Elementy: {_vm.State.ActiveSection.Elements.Count}"
+                : "Vyberte element nebo sekci.";
+    }
+
+    private void UpdateTitle()
+    {
+        if (_vm is null) return;
+        string name = _vm.State.CurrentTemplate.Name;
+        string file = _vm.CurrentFilePath is not null ? $" — {Path.GetFileName(_vm.CurrentFilePath)}" : "";
+        Title = $"{name}{file} — Template Designer";
+    }
+
+    private void ShowHelp()
+    {
+        var helpDialog = new HelpDialog { Owner = this };
+        helpDialog.ShowDialog();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Keyboard handler
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void OnWindowKeyDown(object sender, KeyEventArgs e)
+    {
+        if (_vm is null) return;
+        bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+
+        if (e.Key == Key.Z && ctrl)
+        {
+            _vm.UndoCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Y && ctrl)
+        {
+            _vm.RedoCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.S && ctrl)
+        {
+            _vm.SaveCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _propsWindow!.ShowForPage(_vm.State.CurrentTemplate);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.PageUp && ctrl)
+        {
+            _vm.ChangeZIndex(+1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+        }
+        else if (e.Key == Key.PageDown && ctrl)
+        {
+            _vm.ChangeZIndex(-1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+        }
+        else if (e.Key == Key.A && ctrl && _vm.State.ActiveSection is not null)
+        {
+            _vm.State.SelectedElements.Clear();
+            _vm.State.SelectedElements.AddRange(_vm.State.ActiveSection.Elements);
+            UpdatePropertiesPanel();
+            InvalidateCanvas();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.C && ctrl)
+        {
+            _vm.CopySelected();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.V && ctrl)
+        {
+            _vm.PasteClipboard();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.D && ctrl)
+        {
+            _vm.DuplicateSelected();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Delete)
+        {
+            _vm.DeleteSelected();
+            e.Handled = true;
+        }
+        else if ((e.Key == Key.Up || e.Key == Key.Down)
+                 && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
+                 && _vm.State.ActiveSection is not null)
+        {
+            _vm.MoveSection(_vm.State.ActiveSection, e.Key == Key.Up ? -1 : +1);
+            e.Handled = true;
+        }
+        else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
+                 && _vm.State.SelectedElements.Count > 0)
+        {
+            _vm.MoveByKey(e.Key, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)
+        {
+            _propsWindow!.ShowForElement(_vm.State.SelectedElements[0]);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F1)
+        {
+            ShowHelp();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Escape)
+        {
+            if (_propsWindow?.IsVisible == true)
+                _propsWindow.Hide();
+            else
+            {
+                _vm.State.SelectedElements.Clear();
+                UpdatePropertiesPanel();
+                InvalidateCanvas();
+            }
+            e.Handled = true;
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Mouse state machine
+    // ─────────────────────────────────────────────────────────────────────────
+
     private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
     {
+        if (_vm is null || _canvas is null) return;
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
 
-        // 0. Dvojklik → otevřít dialog vlastností (element / sekce / stránka)
         if (e.ClickCount == 2)
         {
             var dblHit = _canvas.HitTestElement(cx, cy, cw);
             if (dblHit is not null)
             {
                 var (dblSection, dblElement) = dblHit.Value;
-                if (!_state.SelectedElements.Contains(dblElement))
+                if (!_vm.State.SelectedElements.Contains(dblElement))
                 {
-                    _state.SelectedElements.Clear();
-                    _state.SelectedElements.Add(dblElement);
-                    ActivateSection(dblSection);
+                    _vm.State.SelectedElements.Clear();
+                    _vm.State.SelectedElements.Add(dblElement);
+                    _vm.ActivateSection(dblSection);
                 }
                 _propsWindow!.ShowForElement(dblElement);
                 e.Handled = true;
                 return;
             }
-
-            // Dvojklik na záhlaví sekce → vlastnosti sekce
             var dblSection2 = _canvas.HitTestSectionHeader(cx, cy, cw);
             if (dblSection2 is not null)
             {
@@ -1508,37 +665,27 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
-
-            // Dvojklik na prázdný canvas → vlastnosti stránky
-            _propsWindow!.ShowForPage(_state.CurrentTemplate);
+            _propsWindow!.ShowForPage(_vm.State.CurrentTemplate);
             e.Handled = true;
             return;
         }
 
-        // 1. Klik na resize handle vybraného elementu?
         var handleHit = _canvas.HitTestHandle(cx, cy, cw);
         if (handleHit.HasValue)
         {
             var (el, handle) = handleHit.Value;
-
-            // Pokud element nemá explicitní výšku (Height=null), materializuj ji před
-            // resize startem — zabrání přepočtu layoutu canvasu během tažení, který
-            // způsobuje zdánlivé "zrychlení" pohybu.
-            // Originální hodnotu (null) zachováváme pro ResizeElementCommand.Undo(),
-            // aby undo správně obnovilo dynamickou výšku.
             float? originalH = el.Height;
-            if (el.Height is null)
-                el.Height = el.EffectiveDesignerHeight;
+            if (el.Height is null) el.Height = el.EffectiveDesignerHeight;
 
-            _resizeElement     = el;
-            _resizeHandle      = handle;
-            _resizeInitX        = el.X;
-            _resizeInitY        = el.Y;
-            _resizeInitW        = el.Width;
-            _resizeInitH        = originalH;
-            _resizeInitHComputed = el.Height!.Value; // vždy číslo — Height byl právě materializován
-            var origin         = _canvas.GetSectionOrigins(cw)
-                                        .FirstOrDefault(t => t.Section.Elements.Contains(el));
+            _resizeElement       = el;
+            _resizeHandle        = handle;
+            _resizeInitX         = el.X;
+            _resizeInitY         = el.Y;
+            _resizeInitW         = el.Width;
+            _resizeInitH         = originalH;
+            _resizeInitHComputed = el.Height!.Value;
+            var origin = _canvas.GetSectionOrigins(cw)
+                                .FirstOrDefault(t => t.Section.Elements.Contains(el));
             _resizeOriginX     = origin.OriginX;
             _resizeOriginY     = origin.OriginY;
             _resizeMouseStartX = (cx - _resizeOriginX) / _canvas.MmToPx;
@@ -1550,7 +697,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // 2. Klik na element?
         var hit = _canvas.HitTestElement(cx, cy, cw);
         if (hit is not null)
         {
@@ -1558,44 +704,38 @@ public partial class MainWindow : Window
 
             if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
             {
-                // Ctrl+klik: přidá / odebere z výběru
-                if (_state.SelectedElements.Contains(element))
-                    _state.SelectedElements.Remove(element);
+                if (_vm.State.SelectedElements.Contains(element))
+                    _vm.State.SelectedElements.Remove(element);
                 else
-                    _state.SelectedElements.Add(element);
+                    _vm.State.SelectedElements.Add(element);
             }
-            else if (!_state.SelectedElements.Contains(element))
+            else if (!_vm.State.SelectedElements.Contains(element))
             {
-                // Klik na dosud nevybraný element: vybrat jen tento
-                _state.SelectedElements.Clear();
-                _state.SelectedElements.Add(element);
+                _vm.State.SelectedElements.Clear();
+                _vm.State.SelectedElements.Add(element);
             }
-            // Klik na již vybraný element bez Ctrl → zachovat celý výběr (drag všech)
 
-            ActivateSection(section);
+            _vm.ActivateSection(section);
 
-            // Připrav drag pro všechny vybrané elementy
             _dragElement           = element;
             _dragMouseStartCanvasX = cx;
             _dragMouseStartCanvasY = cy;
             _dragInitPositions.Clear();
-            foreach (var el in _state.SelectedElements.Where(e => !e.IsLocked))
+            foreach (var el in _vm.State.SelectedElements.Where(el2 => !el2.IsLocked))
                 _dragInitPositions[el] = (el.X, el.Y);
 
             _mouseMode = MouseMode.Dragging;
             skCanvas.CaptureMouse();
-
             UpdatePropertiesPanel();
             InvalidateCanvas();
             e.Handled = true;
             return;
         }
 
-        // 3. Klik na prázdné místo → rubber band selection
         var section2 = _canvas.HitTestSection(cx, cy, cw);
         if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-            _state.SelectedElements.Clear();
-        ActivateSection(section2);
+            _vm.State.SelectedElements.Clear();
+        _vm.ActivateSection(section2);
         UpdatePropertiesPanel();
 
         _rubberBandStart = new SKPoint(cx, cy);
@@ -1606,68 +746,56 @@ public partial class MainWindow : Window
 
     private void OnCanvasMouseMove(object sender, MouseEventArgs e)
     {
+        if (_vm is null || _canvas is null) return;
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
 
-        // ── Dragging ──
         if (_mouseMode == MouseMode.Dragging)
         {
-            if (e.LeftButton != MouseButtonState.Pressed) { EndDrag(commit: false); return; }
+            if (e.LeftButton != MouseButtonState.Pressed) { EndDrag(false); return; }
             if (_dragElement is null || _dragInitPositions.Count == 0) return;
 
             float deltaMmX = (cx - _dragMouseStartCanvasX) / _canvas.MmToPx;
             float deltaMmY = (cy - _dragMouseStartCanvasY) / _canvas.MmToPx;
 
-            // Snap — zaokrouhlíme finální pozici referenčního elementu, z toho dopočítáme delta
-            if (_state.SnapToGrid && _dragInitPositions.TryGetValue(_dragElement, out var refInit))
+            if (_vm.State.SnapToGrid && _dragInitPositions.TryGetValue(_dragElement, out var refInit))
             {
-                float g = _state.GridSize;
+                float g = _vm.State.GridSize;
                 float snappedX = MathF.Round((refInit.X + deltaMmX) / g) * g;
                 float snappedY = MathF.Round((refInit.Y + deltaMmY) / g) * g;
                 deltaMmX = snappedX - refInit.X;
                 deltaMmY = snappedY - refInit.Y;
             }
 
-            // Group clamping — celá skupina se zastaví, jakmile první element narazí na okraj sekce
             var (clampedX, clampedY) = ClampDragDelta(deltaMmX, deltaMmY);
-
             foreach (var kvp in _dragInitPositions)
-            {
-                kvp.Key.X = kvp.Value.X + clampedX;
-                kvp.Key.Y = kvp.Value.Y + clampedY;
-            }
-
+            { kvp.Key.X = kvp.Value.X + clampedX; kvp.Key.Y = kvp.Value.Y + clampedY; }
             InvalidateCanvas();
             return;
         }
 
-        // ── Resizing ──
         if (_mouseMode == MouseMode.Resizing)
         {
-            if (e.LeftButton != MouseButtonState.Pressed) { EndResize(commit: false); return; }
+            if (e.LeftButton != MouseButtonState.Pressed) { EndResize(false); return; }
             if (_resizeElement is null) return;
 
             float mouseMmX = (cx - _resizeOriginX) / _canvas.MmToPx;
             float mouseMmY = (cy - _resizeOriginY) / _canvas.MmToPx;
 
-            if (_state.SnapToGrid)
+            if (_vm.State.SnapToGrid)
             {
-                float g = _state.GridSize;
+                float g = _vm.State.GridSize;
                 mouseMmX = MathF.Round(mouseMmX / g) * g;
                 mouseMmY = MathF.Round(mouseMmY / g) * g;
             }
 
             var (newX, newY, newW, newH) = ComputeResize(mouseMmX, mouseMmY);
-            _resizeElement.X      = newX;
-            _resizeElement.Y      = newY;
-            _resizeElement.Width  = newW;
-            _resizeElement.Height = newH;
-
+            _resizeElement.X = newX; _resizeElement.Y = newY;
+            _resizeElement.Width = newW; _resizeElement.Height = newH;
             InvalidateCanvas();
             return;
         }
 
-        // ── RubberBand ──
         if (_mouseMode == MouseMode.RubberBand)
         {
             if (e.LeftButton != MouseButtonState.Pressed) { EndRubberBand(); return; }
@@ -1678,49 +806,38 @@ public partial class MainWindow : Window
             return;
         }
 
-        // ── Idle — aktualizuj kurzor ──
-        var handleHit = _canvas.HitTestHandle(cx, cy, cw);
-        if (handleHit.HasValue)
-            skCanvas.Cursor = GetResizeCursor(handleHit.Value.Handle);
+        var handleHit2 = _canvas.HitTestHandle(cx, cy, cw);
+        if (handleHit2.HasValue)
+            skCanvas.Cursor = GetResizeCursor(handleHit2.Value.Handle);
         else
         {
             var elHit = _canvas.HitTestElement(cx, cy, cw);
-            // Zamčené elementy nelze táhnout — nezobrazuj SizeAll kurzor
             skCanvas.Cursor = (elHit.HasValue && !elHit.Value.Element.IsLocked)
-                ? Cursors.SizeAll
-                : Cursors.Arrow;
+                ? Cursors.SizeAll : Cursors.Arrow;
         }
     }
 
     private void OnCanvasMouseUp(object sender, MouseButtonEventArgs e)
     {
-        if (_mouseMode == MouseMode.Dragging)
-            EndDrag(commit: true);
-        else if (_mouseMode == MouseMode.Resizing)
-            EndResize(commit: true);
-        else if (_mouseMode == MouseMode.RubberBand)
-            EndRubberBand();
+        if (_mouseMode == MouseMode.Dragging)       EndDrag(true);
+        else if (_mouseMode == MouseMode.Resizing)  EndResize(true);
+        else if (_mouseMode == MouseMode.RubberBand) EndRubberBand();
     }
 
     private void EndRubberBand()
     {
-        if (_rubberBandRect.HasValue)
+        if (_rubberBandRect.HasValue && _vm is not null && _canvas is not null)
         {
-            float cw       = (float)skCanvas.ActualWidth;
-            var   elements = _canvas.HitTestRect(_rubberBandRect.Value, cw);
-
-            // Omez výběr na aktivní sekci
-            if (_state.ActiveSection is not null)
-                elements = elements.Where(e => _state.ActiveSection.Elements.Contains(e)).ToList();
-
+            float cw = (float)skCanvas.ActualWidth;
+            var elements = _canvas.HitTestRect(_rubberBandRect.Value, cw);
+            if (_vm.State.ActiveSection is not null)
+                elements = elements.Where(el => _vm.State.ActiveSection.Elements.Contains(el)).ToList();
             if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-                _state.SelectedElements.Clear();
-
+                _vm.State.SelectedElements.Clear();
             foreach (var el in elements)
-                if (!_state.SelectedElements.Contains(el))
-                    _state.SelectedElements.Add(el);
+                if (!_vm.State.SelectedElements.Contains(el))
+                    _vm.State.SelectedElements.Add(el);
         }
-
         _rubberBandRect = null;
         _mouseMode      = MouseMode.Idle;
         skCanvas.ReleaseMouseCapture();
@@ -1730,27 +847,19 @@ public partial class MainWindow : Window
 
     private void EndDrag(bool commit)
     {
-        if (commit)
+        if (commit && _vm is not null)
         {
             var moves = new List<IDesignerCommand>();
             foreach (var kvp in _dragInitPositions)
-            {
                 if (kvp.Key.X != kvp.Value.X || kvp.Key.Y != kvp.Value.Y)
                     moves.Add(new MoveElementCommand(kvp.Key, kvp.Value.X, kvp.Value.Y, kvp.Key.X, kvp.Key.Y));
-            }
-            if (moves.Count == 1)
-                _state.Execute(moves[0]);
-            else if (moves.Count > 1)
-                _state.Execute(new CompositeCommand("Přesun elementů", moves));
+            if (moves.Count == 1) _vm.Execute(moves[0]);
+            else if (moves.Count > 1) _vm.Execute(new CompositeCommand("Přesun elementů", moves));
         }
         else
         {
-            // Zrušení dragu — obnov původní pozice
             foreach (var kvp in _dragInitPositions)
-            {
-                kvp.Key.X = kvp.Value.X;
-                kvp.Key.Y = kvp.Value.Y;
-            }
+            { kvp.Key.X = kvp.Value.X; kvp.Key.Y = kvp.Value.Y; }
         }
         _dragInitPositions.Clear();
         _mouseMode   = MouseMode.Idle;
@@ -1763,15 +872,15 @@ public partial class MainWindow : Window
 
     private void EndResize(bool commit)
     {
-        if (_resizeElement is not null)
+        if (_resizeElement is not null && _vm is not null)
         {
             if (commit)
             {
                 float? finalH = _resizeElement.Height;
-                if (_resizeElement.X     != _resizeInitX || _resizeElement.Y    != _resizeInitY ||
-                    _resizeElement.Width != _resizeInitW  || finalH             != _resizeInitH)
+                if (_resizeElement.X != _resizeInitX || _resizeElement.Y != _resizeInitY ||
+                    _resizeElement.Width != _resizeInitW || finalH != _resizeInitH)
                 {
-                    _state.Execute(new ResizeElementCommand(
+                    _vm.Execute(new ResizeElementCommand(
                         _resizeElement,
                         _resizeInitX, _resizeInitY, _resizeInitW, _resizeInitH,
                         _resizeElement.X, _resizeElement.Y, _resizeElement.Width, finalH));
@@ -1779,11 +888,8 @@ public partial class MainWindow : Window
             }
             else
             {
-                // Zrušení resize — obnov původní hodnoty
-                _resizeElement.X      = _resizeInitX;
-                _resizeElement.Y      = _resizeInitY;
-                _resizeElement.Width  = _resizeInitW;
-                _resizeElement.Height = _resizeInitH;
+                _resizeElement.X = _resizeInitX; _resizeElement.Y = _resizeInitY;
+                _resizeElement.Width = _resizeInitW; _resizeElement.Height = _resizeInitH;
             }
         }
         _mouseMode     = MouseMode.Idle;
@@ -1813,41 +919,31 @@ public partial class MainWindow : Window
             case ResizeHandle.TopLeft:
                 newX = Math.Min(_resizeInitX + dx, right - minW);
                 newY = Math.Min(_resizeInitY + dy, bottom - minH);
-                newW = right - newX; newH = bottom - newY; setsH = true;
-                break;
+                newW = right - newX; newH = bottom - newY; setsH = true; break;
             case ResizeHandle.TopCenter:
                 newY = Math.Min(_resizeInitY + dy, bottom - minH);
-                newH = bottom - newY; setsH = true;
-                break;
+                newH = bottom - newY; setsH = true; break;
             case ResizeHandle.TopRight:
                 newW = Math.Max(minW, _resizeInitW + dx);
                 newY = Math.Min(_resizeInitY + dy, bottom - minH);
-                newH = bottom - newY; setsH = true;
-                break;
+                newH = bottom - newY; setsH = true; break;
             case ResizeHandle.MiddleLeft:
                 newX = Math.Min(_resizeInitX + dx, right - minW);
-                newW = right - newX;
-                break;
+                newW = right - newX; break;
             case ResizeHandle.MiddleRight:
-                newW = Math.Max(minW, _resizeInitW + dx);
-                break;
+                newW = Math.Max(minW, _resizeInitW + dx); break;
             case ResizeHandle.BottomLeft:
                 newX = Math.Min(_resizeInitX + dx, right - minW);
                 newW = right - newX;
-                newH = Math.Max(minH, initH + dy); setsH = true;
-                break;
+                newH = Math.Max(minH, initH + dy); setsH = true; break;
             case ResizeHandle.BottomCenter:
-                newH = Math.Max(minH, initH + dy); setsH = true;
-                break;
+                newH = Math.Max(minH, initH + dy); setsH = true; break;
             case ResizeHandle.BottomRight:
                 newW = Math.Max(minW, _resizeInitW + dx);
-                newH = Math.Max(minH, initH + dy); setsH = true;
-                break;
+                newH = Math.Max(minH, initH + dy); setsH = true; break;
         }
 
-        // Handle nemění výšku → zachovat původní (null = dynamická)
         if (!setsH) newH = _resizeInitH;
-
         return (newX, newY, newW, newH);
     }
 
@@ -1860,327 +956,30 @@ public partial class MainWindow : Window
         _ => Cursors.Arrow
     };
 
-    /// <summary>
-    /// Omezí drag delta tak, aby žádný z přesouvaných elementů nevyjel mimo svou sekci.
-    /// Celá skupina se zastaví, jakmile první element narazí na okraj — zachovají se
-    /// relativní vzdálenosti mezi elementy.
-    /// </summary>
     private (float deltaX, float deltaY) ClampDragDelta(float rawDeltaX, float rawDeltaY)
     {
-        float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth;
+        if (_vm is null) return (rawDeltaX, rawDeltaY);
+        float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
 
         float minDeltaX = float.MinValue, maxDeltaX = float.MaxValue;
         float minDeltaY = float.MinValue, maxDeltaY = float.MaxValue;
 
         foreach (var kvp in _dragInitPositions)
         {
-            var el    = kvp.Key;
-            float initX = kvp.Value.X;
-            float initY = kvp.Value.Y;
+            var el      = kvp.Key;
+            float initX = kvp.Value.X, initY = kvp.Value.Y;
             float elH   = el.EffectiveDesignerHeight;
-
-            var section  = _state.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(el));
+            var section = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(el));
             float sectionH = section?.EffectiveDesignerHeight ?? float.MaxValue;
 
-            // Levý / pravý okraj
             minDeltaX = Math.Max(minDeltaX, -initX);
             maxDeltaX = Math.Min(maxDeltaX, sectionW - el.Width - initX);
-
-            // Horní / dolní okraj
             minDeltaY = Math.Max(minDeltaY, -initY);
             maxDeltaY = Math.Min(maxDeltaY, sectionH - elH - initY);
         }
 
         float clampedX = minDeltaX <= maxDeltaX ? Math.Clamp(rawDeltaX, minDeltaX, maxDeltaX) : 0f;
         float clampedY = minDeltaY <= maxDeltaY ? Math.Clamp(rawDeltaY, minDeltaY, maxDeltaY) : 0f;
-
         return (clampedX, clampedY);
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Klávesnice
-
-    private void OnWindowKeyDown(object sender, KeyEventArgs e)
-    {
-        bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
-
-        if (e.Key == Key.Z && ctrl)
-        {
-            _state.Undo(); InvalidateCanvas(); RefreshSectionsList(); UpdatePropertiesPanel();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Y && ctrl)
-        {
-            _state.Redo(); InvalidateCanvas(); RefreshSectionsList(); UpdatePropertiesPanel();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.S && ctrl)
-        {
-            MenuSave_Click(this, new RoutedEventArgs());
-            e.Handled = true;
-        }
-        else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
-        {
-            MenuPageProps_Click(this, new RoutedEventArgs());
-            e.Handled = true;
-        }
-        else if (e.Key == Key.PageUp && ctrl)
-        {
-            // Ctrl+PgUp / Ctrl+Shift+PgUp — ZIndex dopředu
-            ChangeZIndex(+1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
-            e.Handled = true;
-        }
-        else if (e.Key == Key.PageDown && ctrl)
-        {
-            // Ctrl+PgDn / Ctrl+Shift+PgDn — ZIndex dozadu
-            ChangeZIndex(-1, toExtreme: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
-            e.Handled = true;
-        }
-        else if (e.Key == Key.A && ctrl && _state.ActiveSection is not null)
-        {
-            // Ctrl+A — vybrat všechny elementy aktivní sekce
-            _state.SelectedElements.Clear();
-            _state.SelectedElements.AddRange(_state.ActiveSection.Elements);
-            UpdatePropertiesPanel();
-            InvalidateCanvas();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.C && ctrl)
-        {
-            CopySelected();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.V && ctrl)
-        {
-            PasteClipboard();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.D && ctrl)
-        {
-            DuplicateSelected();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Delete)
-        {
-            DeleteSelected();
-            e.Handled = true;
-        }
-        else if ((e.Key == Key.Up || e.Key == Key.Down)
-                 && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift)
-                 && _state.ActiveSection is not null)
-        {
-            // Ctrl+Shift+↑↓ — přesunout aktivní sekci nahoru / dolů
-            MoveSection(_state.ActiveSection, e.Key == Key.Up ? -1 : +1);
-            e.Handled = true;
-        }
-        else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
-                 && _state.SelectedElements.Count > 0)
-        {
-            MoveByKey(e.Key, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Enter && _state.SelectedElements.Count == 1)
-        {
-            // Enter — otevřít dialog vlastností pro vybraný element
-            _propsWindow!.ShowForElement(_state.SelectedElements[0]);
-            e.Handled = true;
-        }
-        else if (e.Key == Key.F1)
-        {
-            // F1 — zobrazit nápovědu
-            ShowHelp();
-            e.Handled = true;
-        }
-        else if (e.Key == Key.Escape)
-        {
-            // Escape — zrušit výběr (nebo zavřít dialog)
-            if (_propsWindow?.IsVisible == true)
-            {
-                _propsWindow.Hide();
-            }
-            else
-            {
-                _state.SelectedElements.Clear();
-                UpdatePropertiesPanel();
-                InvalidateCanvas();
-            }
-            e.Handled = true;
-        }
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Pomocné metody
-
-    private void CopySelected()
-    {
-        if (_state.SelectedElements.Count == 0) return;
-        _clipboard = _state.SelectedElements.Select(el => el.Clone()).ToList();
-    }
-
-    private void PasteClipboard()
-    {
-        if (_clipboard.Count == 0) return;
-        if (_state.ActiveSection is null)
-        {
-            MessageBox.Show("Nejprve vyberte sekci.", "Vložit", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-
-        var newElements = _clipboard.Select(el =>
-        {
-            var clone = el.Clone();
-            clone.X = Math.Min(clone.X + 5f,
-                _state.CurrentTemplate.PageSize.PrintableWidth - clone.Width);
-            clone.Y = Math.Min(clone.Y + 5f,
-                _state.ActiveSection.EffectiveDesignerHeight - clone.EffectiveDesignerHeight);
-            return clone;
-        }).ToList();
-
-        var commands = newElements
-            .Select(el => (IDesignerCommand)new AddElementCommand(_state.ActiveSection, el))
-            .ToList();
-
-        if (commands.Count == 1) _state.Execute(commands[0]);
-        else _state.Execute(new CompositeCommand("Vložit elementy", commands));
-
-        _state.SelectedElements.Clear();
-        _state.SelectedElements.AddRange(newElements);
-        UpdatePropertiesPanel();
-        InvalidateCanvas();
-    }
-
-    private void DuplicateSelected()
-    {
-        CopySelected();
-        PasteClipboard();
-    }
-
-    /// <summary>
-    /// Posune vybrané elementy o krok šipkou.
-    /// Shift = krok o velikost mřížky, bez Shift = 1 mm.
-    /// </summary>
-    private void MoveByKey(Key key, bool largeStep)
-    {
-        float step = largeStep ? _state.GridSize : 1f;
-        float dx = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
-        float dy = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
-
-        // Ulož počáteční pozice
-        var initPositions = _state.SelectedElements
-            .ToDictionary(el => el, el => (el.X, el.Y));
-
-        // Clamp delta stejnou logikou jako u dragu myší
-        float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth;
-        float clampedDx = dx, clampedDy = dy;
-
-        foreach (var kvp in initPositions)
-        {
-            var el    = kvp.Key;
-            float elH = el.EffectiveDesignerHeight;
-            var section = _state.CurrentTemplate.Sections
-                              .FirstOrDefault(s => s.Elements.Contains(el));
-            float sectionH = section?.EffectiveDesignerHeight ?? float.MaxValue;
-
-            clampedDx = Math.Clamp(clampedDx, -kvp.Value.X, sectionW - el.Width - kvp.Value.X);
-            clampedDy = Math.Clamp(clampedDy, -kvp.Value.Y, sectionH - elH - kvp.Value.Y);
-        }
-
-        if (clampedDx == 0f && clampedDy == 0f) return;
-
-        // Aplikuj posun
-        foreach (var kvp in initPositions)
-        {
-            kvp.Key.X = kvp.Value.X + clampedDx;
-            kvp.Key.Y = kvp.Value.Y + clampedDy;
-        }
-
-        // Zapiš do undo stacku
-        var moves = initPositions
-            .Where(kvp => kvp.Key.X != kvp.Value.X || kvp.Key.Y != kvp.Value.Y)
-            .Select(kvp => (IDesignerCommand)new MoveElementCommand(
-                kvp.Key, kvp.Value.X, kvp.Value.Y, kvp.Key.X, kvp.Key.Y))
-            .ToList();
-
-        if (moves.Count == 1)
-            _state.Execute(moves[0]);
-        else if (moves.Count > 1)
-            _state.Execute(new CompositeCommand("Přesun šipkou", moves));
-
-        UpdatePropertiesPanel();
-        InvalidateCanvas();
-    }
-
-    private void UpdatePropertiesPanel()
-    {
-        if (_state.SelectedElements.Count == 1)
-        {
-            var el = _state.SelectedElements[0];
-            string type = el.GetType().Name.Replace("Element", "");
-            StatusText.Text = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
-                              (el.IsLocked ? "  [ZAMČENO]" : "") +
-                              "  |  2× klik nebo Enter = vlastnosti";
-
-            // Pokud je dialog již viditelný, aktualizuj ho pro aktuálně vybraný element
-            if (_propsWindow!.IsVisible)
-                _propsWindow.ShowForElement(el);
-            return;
-        }
-
-        _propsWindow?.Hide();
-
-        StatusText.Text = _state.SelectedElements.Count > 1
-            ? $"Vybráno {_state.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru"
-            : _state.ActiveSection is not null
-                ? $"Sekce: {_state.ActiveSection.Name}  |  " +
-                  $"Výška: {_state.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
-                  $"Elementy: {_state.ActiveSection.Elements.Count}"
-                : "Vyberte element nebo sekci.";
-    }
-
-    private void UpdateTitle()
-    {
-        string name = _state.CurrentTemplate.Name;
-        string file = _currentFilePath is not null ? $" — {Path.GetFileName(_currentFilePath)}" : "";
-        Title = $"{name}{file} — Template Designer";
-    }
-
-    private bool ConfirmUnsavedChanges()
-    {
-        // TODO: sledovat dirty flag — prozatím vždy povolíme
-        return true;
-    }
-
-    // ─────────────────────────────────────────────────────────────────────
-    // Ukázková šablona pro první spuštění
-
-    private static Template CreateSampleTemplate()
-    {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "JR" };
-
-        t.Sections.Add(new Section
-        {
-            Name             = "Záhlaví",
-            PrintBehavior    = SectionPrintBehavior.OnEveryPage,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight   = 25f
-        });
-
-        t.Sections.Add(new Section
-        {
-            Name             = "Obsah",
-            PrintBehavior    = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-            DesignerHeight   = 60f
-        });
-
-        t.Sections.Add(new Section
-        {
-            Name             = "Patička",
-            PrintBehavior    = SectionPrintBehavior.OnEveryPage,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether,
-            DesignerHeight   = 15f
-        });
-
-        return t;
     }
 }

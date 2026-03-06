@@ -20,21 +20,21 @@ Systém se skládá ze dvou částí:
 
 > **📝 POZNÁMKA PRO AI AGENTA:** Tuto sekci **průběžně aktualizuj** během práce na projektu. Když dokončíš úkol, přesuň ho do "✅ Implementováno". Když objevíš nový problém, přidej ho do "🐛 Známé problémy". Když přidáš novou feature, doplň ji do seznamu. **Tato sekce má být vždy aktuální**, aby při startu nové session byl kontext dostupný bez vysvětlování.
 
-**Datum poslední aktualizace:** 2026-03-05
+**Datum poslední aktualizace:** 2026-03-06
 
 ### 🎯 Aktuální focus
 
-**AI Asistent šablon (V1 proof of concept) — hotovo.**
-- Generování šablon z textového popisu pomocí Anthropic Claude API
-- Kompletní system prompt s JSON schémou (200+ řádků dokumentace všech elementů a pravidel)
-- Dialog s výběrem agendy, popisem a volitelným API klíčem
-- Toggleable přes `appsettings.json` (enabled flag)
-- Přímá integrace — generovaná šablona se otevře v designeru
+**MVVM refaktoring — TemplateDesignerViewModel : EDViewModel — hotovo (2026-03-06).**
+- `MainWindowViewModel.cs` (~500 ř.) — veškerá business logika přesunuta z `MainWindow.xaml.cs`
+- `MainWindow.xaml.cs` (~500 ř., bylo 2186) — jen mouse state machine, canvas rendering, klávesnice
+- XAML bindingy — sekce, schema tree, parametry, undo/redo, grid/snap, status
+- Duální startup: standalone (MLRest z AppSettings) + EDISON (`new MainWindow(existingMlRest)`)
+- `ProjectReference` na `EDControls.csproj` — `EDViewModel`, `RelayCommand`
+- Build: **0 chyb, 0 warningů**
 
 **Další kroky:**
 1. Výrazový jazyk Part 2 — agregační funkce v TableElement (`SUM`, `COUNT`, `AVG`), formátovací rozšíření
 2. Grouping v Dynamic tabulkách
-3. AI asistent V2 — podpora obrázků jako vstup (print/scan fyzické tiskové šablony)
 
 **Co už máme:**
 - ✅ Text, Image, Rectangle, Line (základní elementy)
@@ -69,7 +69,6 @@ Systém se skládá ze dvou částí:
 - ✅ Grid & snap to grid
 - ✅ Clipboard (interní, copy/paste s offsetem)
 - ✅ Section management (D&D reorder, context menu, Ctrl+Shift+↑↓)
-- ✅ **Nápověda klávesových zkratek** — F1 / menu Nápověda → HelpDialog.xaml; **při přidání nových zkratek aktualizovat `HelpDialog.xaml`**
 
 **Elements:**
 - ✅ TextElement (BackgroundColor, FontFamily, FontSize, FontStyle, FontWeight, TextColor, HorizontalAlignment, VerticalAlignment, WordWrap)
@@ -115,14 +114,6 @@ Systém se skládá ze dvou částí:
 - ✅ Template JSON serialization (camelCase, enums as strings, null omitted)
 - ✅ Section JSON serialization (pro custom templates)
 - ✅ Polymorfní deserializace (JsonPolymorphic + JsonDerivedType)
-
-**AI Asistent (V1 proof of concept):**
-- ✅ `AiTemplateAssistantDialog.xaml` — UI dialog s popisem, výběrem agendy, volitelným API klíčem
-- ✅ `Services/AnthropicApiClient.cs` — přímá REST API integrace s Anthropic Claude API
-- ✅ System prompt (200+ řádků) — kompletní JSON schema, element types, pravidla a best practices
-- ✅ Menu "Nástroje → 🤖 AI Asistent šablon..." — volitelně skryvatelné přes `appsettings.json`
-- ✅ `AppSettings.AiAssistant` — konfigurace (enabled flag + API key)
-- ✅ Přímá integrace — generovaná šablona se otevře v designeru s načtenými parametry a schématem
 
 ### 🐛 Známé problémy
 
@@ -185,13 +176,21 @@ Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
 
 #### 🟢 Technický dluh — nevybuchne hned, ale časem ano
 
-**7. Chytré duplikování a zarovnání elementů**
+**7. Nápověda klávesových zkratek (Help overlay)**
+Nový uživatel nemá jak zjistit, co aplikace umí — zkratky jsou skryté.
+- Tlačítko "?" nebo "Klávesové zkratky" v toolbaru (nebo menu Nápověda)
+- Overlay / dialog se stručnou tabulkou: akce → zkratka (Ctrl+Z, Ctrl+C/V, Ctrl+Shift+↑↓, Del, Ctrl+scroll, F2/Enter pro editaci…)
+- Ideálně kontextový — jiná sekce pro canvas, jiná pro editor tabulky
+- Implementačně nejjednodušší: statický XAML dialog se `ScrollViewer` + `DataGrid` nebo `StackPanel` s řádky; bez databindingu, jen statický obsah
+- Klávesová zkratka pro otevření: F1 nebo Ctrl+?
+
+**8. Chytré duplikování a zarovnání elementů**
 Aktuální Ctrl+C / Ctrl+V vloží kopii s offsetem +5 mm — uživatel pak element přesouvá ručně.
 - **Duplikovat dolů / vpravo** — Ctrl+D vloží kopii přesně pod (nebo vpravo od) originálu; žádný offset, spodní hrana originálu = horní hrana kopie
 - **Duplikovat s mezerou** — Shift+Ctrl+D nabídne mezerník (0 / 2 / 5 mm) před vložením
 - Implementace: nový příkaz `DuplicateElementCommand(direction, gap)` volaný z `MainWindow` klávesového handleru; pozice kopie = `original.X, original.Y + original.Height + gap`
 
-**8. Přichytávání elementů k sobě (smart snap)**
+**9. Přichytávání elementů k sobě (smart snap)**
 Snap to grid zarovná na mřížku, ale ne na jiné elementy. Ve Winforms designeru elementy "přiskočí" k sousedům.
 - Při dragu zobrazit vodítka (snaplines) — tenké modré čáry když hrana taženého elementu lícuje s hranou jiného elementu ve stejné sekci
 - Přichytit na: levou/pravou/horní/dolní hranu, střed (horizontální i vertikální) jiného elementu
@@ -203,19 +202,19 @@ Snap to grid zarovná na mřížku, ale ne na jiné elementy. Ve Winforms design
   - Snap má přednost před grid-snapem (nebo kombinovat: snap na element pokud blízko, jinak na grid)
   - Priorita: snaplines jsou UX vylepšení — implementovat až po výrazovém jazyku Part 2
 
-**9. Migrace verzí šablon**
+**10. Migrace verzí šablon**
 Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace.
 - Explicitní migrace při načítání starších JSON šablon
 - Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
 - Minimálně: logovat varování při načtení šablony se starší verzí
 
-**10. Computed fields**
+**11. Computed fields**
 Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 - Definice v agendě (nebo přímo v šabloně)
 - Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
 - Alternativa k výrazovému jazyku pro komplexnější logiku
 
-**11. Metadata a správa šablon**
+**12. Metadata a správa šablon**
 Důležité jakmile šablon bude víc než 10.
 - Autor, datum změny, kategorie, popis
 - Thumbnail preview (PNG generovaný při uložení)
@@ -237,30 +236,27 @@ Důležité jakmile šablon bude víc než 10.
 
 ### 📜 Nedávné změny (changelog)
 
-**2026-03-05 — AI Asistent šablon (V1 proof of concept):**
-- ✅ `AiTemplateAssistantDialog.xaml/.cs` — WPF dialog s textovým popisem (multiline 200px), výběrem agendy (Obecná/JR/FAKTURY), volitelným API klíčem, progress barem
-- ✅ `Services/AnthropicApiClient.cs` — HTTP client volající Anthropic REST API (`https://api.anthropic.com/v1/messages`)
-  - Model: `claude-3-5-sonnet-20241022`, max_tokens: 4096, temperature: 0.7
-  - System prompt (200+ řádků): kompletní JSON schema (PageSize, Sections, Elements), všechny typy elementů (Text, Rectangle, Line, Image, Barcode, Table Fixed/Dynamic), pravidla pozicování (mm, barvy #AARRGGBB, placeholdery), typografie, layout best practices
-  - Markdown code block stripping (`\`\`\`json` → čistý JSON)
-  - Error handling s exception wrapping
-- ✅ Menu "Nástroje → 🤖 AI Asistent šablon..." — handler `MenuAiAssistant_Click` v `MainWindow.xaml.cs`
-  - Po úspěšné generaci načte šablonu přes `TemplateSerializer.Deserialize`, přepne `CurrentTemplate`, vyčistí výběr
-  - Invaliduje canvas + preview, aktualizuje properties panel, resetuje `_currentFilePath`, zavolá `LoadAgendaParameters` + `BuildSchemaTree` pro správné načtení dat agendy
-- ✅ `AppSettings.cs` — přidána `AiAssistantSettings` třída (Enabled bool, AnthropicApiKey string)
-  - `AppSettings.Current` singleton property — nastavena v `Load()` pro globální přístup
-- ✅ `appsettings.json` — nová sekce `"aiAssistant": { "enabled": true, "anthropicApiKey": "" }`
-- ✅ Toggleable UI — `MenuAiAssistant.Visibility = Collapsed` pokud `AppSettings.Current?.AiAssistant.Enabled == false`
-- ✅ Build fix: Přímá HTTP API integrace místo Anthropic.SDK (verze 1.0.0 změnila API → nahrazeno `HttpClient` voláním REST endpointu)
-
-**2026-03-05 — Nápověda klávesových zkratek:**
-- ✅ `HelpDialog.xaml` — nový WPF dialog s kompletním přehledem klávesových zkratek a ovládání
-  - Sekce: Základní ovládání, Soubory a šablony, Editace, Sekce, Zobrazení, Elementy, Tipy a triky
-  - Popis rubber band selection, multi-select, změny zoomu, podmíněné viditelnosti, parametrů sestavy
-  - Scrollovatelný obsah, barevně rozlišené zkratky (modrá Consolas)
-- ✅ Menu "Nápověda" → "Klávesové zkratky a ovládání (F1)"
-- ✅ Klávesová zkratka **F1** v `OnWindowKeyDown` → volá `ShowHelp()`
-- ✅ **DŮLEŽITÉ:** Při přidání nových zkratek nebo features aktualizovat `HelpDialog.xaml`
+**2026-03-06 — MVVM refaktoring: TemplateDesignerViewModel : EDViewModel:**
+- ✅ `TemplateDesigner.csproj` — přidán `<ProjectReference>` na `EDControls.csproj`
+- ✅ `Config/CacheSchemaWiring.cs` — přidána přetížení `TryCreateMlRest(AppSettings)` a `TryCreate(MLRest, AppSettings)`; refaktorováno původní `TryCreate(AppSettings)` na volání obou nových metod
+- ✅ `MainWindowViewModel.cs` (nový, ~500 ř.) — `TemplateDesignerViewModel : EDViewModel`
+  - Bindovatelné properties: `CanUndo`, `CanRedo`, `StatusText`, `AgendaNameText`, `HasParameters`, `ShowGrid`, `SnapToGrid`
+  - Commands: `UndoCommand`, `RedoCommand`, `SaveCommand`, `SaveAsCommand`, `NewCommand`, `OpenCommand`, `ExportPdfCommand`, `DeleteCommand`, `CopyCommand`, `PasteCommand`
+  - `ObservableCollection<SectionVM> Sections` + `RebuildSections()` + `event SectionsRebuilt`
+  - `ObservableCollection<SchemaGroupVM> SchemaGroups` + `RebuildSchemaTree()`
+  - `ObservableCollection<ParameterControlVM> PreviewParameters` + `RebuildParametersPanel()`
+  - Callback properties pro UI: `RequestCanvasRefresh`, `RequestTitleUpdate`, `RequestCanvasSizeUpdate`, `RequestPropertiesPanelUpdate`, `RequestPreviewRefresh`, `RequestExportPdf`
+  - Helper VMs ve stejném souboru: `SectionVM`, `SchemaGroupVM`, `SchemaFieldVM`, `ParameterControlVM`, `ParameterTemplateSelector`
+  - `public enum AlignMode` přesunut na namespace level
+  - Všechny business metody přesunuty z `MainWindow.xaml.cs`
+- ✅ `App.xaml` — odebráno `StartupUri="MainWindow.xaml"`
+- ✅ `App.xaml.cs` — přidán `OnStartup` (MLRest z AppSettings → předán do `MainWindow`)
+- ✅ `MainWindow.xaml` — kompletní přepis s data-bindingem
+  - XAML bindingy: sekce ListBox `ItemsSource="{Binding Sections}"`, schema TreeView s `HierarchicalDataTemplate`, parametry `ItemsControl` s `DataTemplateSelector`
+  - Grid/Snap: `IsChecked="{Binding ShowGrid/SnapToGrid, Mode=TwoWay}"` (bez code-behind handlerů)
+  - Undo/Redo: `Command="{Binding UndoCommand/RedoCommand}"`
+- ✅ `MainWindow.xaml.cs` — přepis (~500 ř., bylo 2186): zachováno jen mouse state machine, canvas rendering, klávesnice; veškerá business logika deleguje na `_vm`
+- ✅ Build: **0 chyb, 0 varování**
 
 **2026-03-05 — Podmíněné řádky Fixed tabulky + oprava WPF DataGrid crashe:**
 - ✅ `RowVM.VisibilityExpression` — nová property s `OnChanged()` + `⚑` příznak v `RowSummary`
@@ -691,169 +687,7 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 **Pokročilé features:**
 - **Conditional formatting** — barva/font buňky nebo elementu podle hodnoty dat
 - **DB backend pro custom šablony** — `CacheSectionTemplateProvider` místo file-based V1
-- ✅ **AI asistent V1** — generování šablon z textového popisu (implementováno 2026-03-05)
-- **AI asistent V2** — podpora obrázků jako vstup (scan/print fyzické tiskové šablony, mockupy)
-
----
-
-## AI Asistent — architektura (implementováno 2026-03-05)
-
-**TemplateDesigner** obsahuje integrovaného AI asistenta pro generování šablon z přirozeného jazyka pomocí Anthropic Claude API.
-
-### Komponenty
-
-**1. Dialog (`AiTemplateAssistantDialog.xaml/.cs`)**
-- Modal window volaný z menu "Nástroje → 🤖 AI Asistent šablon..."
-- Vstupy:
-  - **Popis šablony** — multiline TextBox (200px výška), placeholder text s příklady
-  - **Agenda** — ComboBox (Obecná, JR, FAKTURY) — nastavuje `agendaCode` v generované šabloně
-  - **API klíč** — volitelný TextBox; použije se pokud není v `appsettings.json`
-- Progress bar během volání API
-- Vrací `Template?` přes `DialogResult` + property `GeneratedTemplate`
-
-**2. API Client (`Services/AnthropicApiClient.cs`)**
-```csharp
-class AnthropicApiClient
-{
-    Task<Template?> GenerateTemplateAsync(string description, string? agendaCode, string apiKey)
-}
-```
-
-**Implementační detaily:**
-- **Přímá HTTP REST API** — `HttpClient` volající `https://api.anthropic.com/v1/messages`
-- **Headers:** `x-api-key`, `anthropic-version: 2023-06-01`
-- **Model:** `claude-3-5-sonnet-20241022` (Sonnet 3.5, říjen 2024)
-- **Parametry:** `max_tokens: 4096`, `temperature: 0.7`
-- **System prompt:** 200+ řádků česky psané dokumentace (viz níže)
-- **User prompt:** `BuildUserPrompt(description, agendaCode)` — kombinuje popis + agendu + hint na typická pole agendy
-- **Response parsing:**
-  - Extrahuje `content[0].text` z Anthropic response JSON
-  - Stripuje markdown code bloky (`\`\`\`json` / `\`\`\``) — Claude někdy obalí JSON do markdown
-  - Deserializuje přes `TemplateSerializer.Deserialize`
-
-### System Prompt — struktura
-
-Prompt je v češtině (claude-3.5-sonnet zvládá češtinu excelentně) a obsahuje:
-
-**1. Úvod a role**
-> "Jsi expert na tvorbu tiskových šablon. Tvým úkolem je vygenerovat JSON šablonu podle popisu uživatele."
-
-**2. Kompletní JSON struktura šablony**
-- Root objekt: `version`, `name`, `description`, `agendaCode`, `pageSize`, `sections`
-- `PageSize`: `width`, `height`, `marginTop/Bottom/Left/Right` v mm
-- `Sections`: pole objektů s `name`, `printBehavior`, `overflowBehavior`, `designerHeight`, `elements`
-
-**3. Výčet všech typů elementů s úplnými příklady**
-- **TextElement** — text, fontSize, fontWeight, textColor, backgroundColor, horizontalAlignment, verticalAlignment
-- **RectangleElement** — fillColor, strokeColor, strokeWidth
-- **LineElement** — orientation (Horizontal/Vertical)
-- **ImageElement** — imageSource, scaleMode
-- **BarcodeElement** — barcodeType (QRCode, Code128), content
-- **TableElement** — tableMode (Fixed/Dynamic), columns, rows (Fixed), dataSource (Dynamic), headerBackgroundColor, alternatingRowColor, borderStyle
-
-**4. Enums a možné hodnoty**
-- `PrintBehavior`: Once, OnEveryPage, OnFirstPageOnly, OnLastPageOnly, OnEveryPageExceptFirst
-- `OverflowBehavior`: KeepTogether, SplitAcrossPages, AllowSplit
-- `FontWeight`: Normal, Bold, SemiBold, Light
-- `HorizontalAlignment`: Left, Center, Right, Justify
-- `VerticalAlignment`: Top, Middle, Bottom
-- `BorderStyle`: None, Horizontal, Vertical, All, Outer
-- `WidthMode`: Mm, Percent
-- atd.
-
-**5. Pravidla a best practices**
-- **Pozice a rozměry:** vše v mm, (0,0) = levý horní roh sekce, printable šířka A4 = 190 mm
-- **Barvy:** formát `#AARRGGBB` (Alpha + RGB, FF = neprůhledná, 00 = průhledná)
-- **Běžné sekce:** záhlaví OnEveryPage 20-30 mm, obsah Once, patička OnEveryPage 15-20 mm
-- **Placeholdery:** `{CISLO}`, `{NAZEV}`, `{DATUM}`, speciální `{PAGE}`, `{DATE}`
-- **Typografie:** nadpisy 14-18pt Bold, běžný text 10-12pt Normal, drobný text 8-9pt
-- **Layout:** mezery mezi elementy 2-3 mm, zarovnání vlevo = dokumenty, na střed = tituly
-
-**6. Výstupní instrukce**
-> "Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu nebo vysvětlení. Šablona musí být kompletní a připravená k načtení do designeru."
-
-> "Pokud uživatel zmíní konkrétní agendu (např. 'faktura', 'jízdní řád'), přizpůsob názvy polí a strukturu podle obvyklých konvencí té agendy."
-
-### Integrace v MainWindow
-
-```csharp
-private void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
-{
-    var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
-    var dialog = new AiTemplateAssistantDialog(apiKey) { Owner = this };
-
-    if (dialog.ShowDialog() == true && dialog.GeneratedTemplate is not null)
-    {
-        if (!ConfirmUnsavedChanges()) return;
-
-        _state.CurrentTemplate = dialog.GeneratedTemplate;
-        _state.SelectedElements.Clear();
-        _state.ActiveSection = _state.CurrentTemplate.Sections.FirstOrDefault();
-        _currentFilePath = null;
-
-        RefreshSectionsList();
-        InvalidateCanvas();
-        InvalidatePreview();
-        UpdatePropertiesPanel();
-        UpdateTitle();
-
-        var agendaCode = _state.CurrentTemplate.AgendaCode;
-        LoadAgendaParameters(agendaCode);
-        var schema = _schemaProvider.GetSchema(agendaCode);
-        BuildSchemaTree(schema);
-    }
-}
-```
-
-**Klíčové kroky po načtení šablony:**
-1. Potvrzení uložení změn (`ConfirmUnsavedChanges`)
-2. Přepnutí `CurrentTemplate` + reset výběru + aktivní sekce
-3. Invalidace canvasu, preview, properties panel, title
-4. **Načtení parametrů a schématu agendy** — pokud má šablona `AgendaCode`, načte parametry a schéma, aby live preview fungoval správně
-
-### Konfigurace
-
-**appsettings.json:**
-```json
-{
-  "aiAssistant": {
-    "enabled": true,
-    "anthropicApiKey": ""
-  }
-}
-```
-
-**AppSettings.cs:**
-```csharp
-class AiAssistantSettings
-{
-    public bool Enabled { get; set; } = true;
-    public string AnthropicApiKey { get; set; } = "";
-}
-```
-
-**Toggleable UI:**
-```csharp
-// MainWindow.xaml.cs constructor
-if (AppSettings.Current?.AiAssistant.Enabled == false)
-    MenuAiAssistant.Visibility = Visibility.Collapsed;
-```
-
-### Budoucí rozšíření (V2+)
-
-**Podpora obrázků jako vstup:**
-- Claude API podporuje multimodální input — obrázek + text prompt
-- Use case: naskenovat fyzickou tiskovou šablonu (faktura, jízdní řád) → AI vygeneruje JSON
-- Use case: screenshot/mockup/wireframe → AI převede do šablony
-
-**Iterativní vylepšování:**
-- Dialog s historií prompts + generovaných šablon
-- "Uprav tuto šablonu: změň font záhlaví na 16pt Bold"
-- Context-aware assistant — vidí aktuální šablonu, navrhuje úpravy
-
-**Template library + učení:**
-- Ukládat úspěšně vygenerované šablony jako příklady pro few-shot learning
-- Claude dostane 2-3 vzorové šablony v system promptu → kvalitnější výstupy
+- **AI asistent** — generování šablon z přirozeného jazyka
 
 ---
 
@@ -917,11 +751,8 @@ TemplateDesigner/
   CacheAgendaProvider.cs            — IDataSchemaProvider + ITableTemplateProvider přes MLRest/AgendaAPI
   CompositeDataSchemaProvider.cs    — Caché primary + JSON fallback
 
-/Services
-  AnthropicApiClient.cs     — AI asistent pro generování šablon (Anthropic Claude API přes HTTP)
-
 /Config
-  AppSettings.cs            — POCO konfigurace + static Load() z appsettings.json; AiAssistantSettings
+  AppSettings.cs            — POCO konfigurace + static Load() z appsettings.json
   CacheSchemaWiring.cs      — vytváří CacheAgendaProvider z AppSettings + MLRest
 
 /Commands
@@ -951,12 +782,6 @@ ElementPropertiesWindow.xaml / .cs — dialog vlastností elementu/sekce
 |---|---|---|
 | `MainWindow.xaml/.cs` | `MainWindow` | Hlavní okno, toolbar, mouse state machine, menu handlers |
 | `ElementPropertiesWindow.xaml/.cs` | `ElementPropertiesWindow` | Modal dialog pro vlastnosti (wrapper nad PropertiesPanel) |
-| `AiTemplateAssistantDialog.xaml/.cs` | `AiTemplateAssistantDialog` | Modal dialog pro AI asistenta (popis, agenda, API klíč) |
-
-#### /Services
-| Soubor | Třída | Zodpovědnost |
-|---|---|---|
-| `AnthropicApiClient.cs` | `AnthropicApiClient` | Volání Anthropic Claude API pro generování šablon. System prompt s kompletní JSON schema, HTTP client, markdown stripping |
 
 #### /Models/Elements
 | Soubor | Třída | Zodpovědnost |

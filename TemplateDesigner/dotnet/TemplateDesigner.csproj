@@ -25,6 +25,10 @@
     </Reference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\EDControls\dotnet\EDControls.csproj" />
+  </ItemGroup>
+
 
   <!-- Kopírovat schema soubory a konfiguraci do výstupní složky -->
   <ItemGroup>
