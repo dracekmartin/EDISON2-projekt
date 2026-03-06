@@ -82,7 +82,7 @@ public partial class EDFooter : UserControl
     {
         if (_vm is { ConfirmOnCancel: true })
         {
-            if (!ConfirmCloseDialog.ConfirmCloseWindow.Show(Window.GetWindow(this)))
+            if (!EDConfirmCloseWindow.Show(Window.GetWindow(this)))
                 return;
         }
         CloseWindow(false);
