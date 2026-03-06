@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using EDControls.EDViewModel;
 
@@ -82,7 +82,7 @@ public partial class EDFooter : UserControl
     {
         if (_vm is { ConfirmOnCancel: true })
         {
-            if (!EDConfirmCloseWindow.Show(Window.GetWindow(this)))
+            if (!_vm.PopupDisplayer.ConfirmClose())
                 return;
         }
         CloseWindow(false);

@@ -1,4 +1,4 @@
-<Window x:Class="EDControls.EDViewModel.EDConfirmCloseWindow"
+<Window x:Class="EDControls.EDViewModel.EDPopup"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="" SizeToContent="WidthAndHeight"
@@ -8,18 +8,20 @@
     <Border Padding="20,16,20,14"
             Background="White">
         <StackPanel>
-            <TextBlock Text="Opravdu chcete zavřít okno bez uložení?"
+            <TextBlock x:Name="MessageText"
                        Margin="0,0,0,16"
                        TextWrapping="Wrap"
                        MaxWidth="340"/>
 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="Ano" Width="80" IsDefault="True"
+                <Button x:Name="PositiveBtn"
+                        Width="80" IsDefault="True"
                         Padding="0,4" Margin="0,0,6,0"
-                        Click="OkBtn_Click"/>
-                <Button Content="Ne" Width="80" IsCancel="True"
+                        Click="PositiveBtn_Click"/>
+                <Button x:Name="NegativeBtn"
+                        Width="80" IsCancel="True"
                         Padding="0,4"
-                        Click="StornoBtn_Click"/>
+                        Click="NegativeBtn_Click"/>
             </StackPanel>
         </StackPanel>
     </Border>

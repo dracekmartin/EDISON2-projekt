@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ALWA.SYS;
@@ -18,6 +18,12 @@ public class EDViewModel : INotifyPropertyChanged
 
 
     public MLRest? MLRest { get; protected set; }
+
+    /// <summary>
+    /// Service for showing popups. Always targets the currently active window as owner.
+    /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
+    /// </summary>
+    public PopupDisplayer PopupDisplayer { get; } = new PopupDisplayer();
 
     /// <summary>
     /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.
