@@ -1,5 +1,6 @@
 using ALWA.SYS;
 using EDControls.EDInputForm;
+using EDControls.EDViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -14,8 +15,7 @@ namespace EDControls.EDInputForm
     {
         // ─── Configuration ────────────────────────────────────────────────────────
 
-        /// <summary>MLRest instance used for all Caché calls.</summary>
-        public MLRest? MLRest { get; set; }
+        private MLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
 
         /// <summary>Caché class that implements Init / Validate / Save.</summary>
         public string CacheClass { get; set; } = "";
@@ -75,13 +75,6 @@ namespace EDControls.EDInputForm
 
         // ─── Serialization helpers ────────────────────────────────────────────────
 
-        /// <summary>
-        /// Serializes form items to a CVar for sending to Caché.
-        /// Each item becomes a CList at key "1", "2", etc.:
-        ///   GROUP → $lb("GROUP", groupName)
-        ///   FIELD → $lb("FIELD", key, label, type, value, validateOnChange, required)
-        /// Caché reads ^||ML("IN","1"), ^||ML("IN","2"), ...
-        /// </summary>
         private static CVar SerializeItemsCVar(IEnumerable<Item>? items)
         {
             var cVar = new CVar();
@@ -105,13 +98,6 @@ namespace EDControls.EDInputForm
             return cVar;
         }
 
-        /// <summary>
-        /// Parses Caché output CVar to a list of form items.
-        /// Caché writes ^||ML("OUT","1"), ^||ML("OUT","2"), ...
-        /// Each value is a CList:
-        ///   GROUP → $lb("GROUP", groupName)
-        ///   FIELD → $lb("FIELD", key, label, type, value, validateOnChange, required [, validationError])
-        /// </summary>
         private static List<Item> ParseItems(CVar output)
         {
             var items = new List<Item>();
@@ -157,7 +143,7 @@ namespace EDControls.EDInputForm
         private void EnsureConfigured()
         {
             if (MLRest == null || string.IsNullOrEmpty(CacheClass))
-                throw new InvalidOperationException("EDInputForm: MLRest and CacheClass must be set before use.");
+                throw new InvalidOperationException("EDInputForm: CacheClass must be set before use.");
         }
 
         private static void OnItemsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -185,7 +171,6 @@ namespace EDControls.EDInputForm
 
             if (!field.ValidateOnChange) return;
 
-            // Defer outside the WPF binding-update pipeline so the call stack is clean.
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 Debug.WriteLine("[EDInputForm] Auto-validating on Change");
@@ -193,6 +178,4 @@ namespace EDControls.EDInputForm
             }));
         }
     }
-
-
 }

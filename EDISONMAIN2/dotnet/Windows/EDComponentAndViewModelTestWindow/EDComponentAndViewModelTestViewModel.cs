@@ -1,4 +1,3 @@
-using ALWA.SYS;
 using EDControls.EDViewModel;
 using System.Threading.Tasks;
 
@@ -9,7 +8,7 @@ namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
 /// and uses the Set() helper for property change notification.
 /// The save delegate is injected from the code-behind so the ViewModel stays View-agnostic.
 /// </summary>
-class EDComponentAndViewModelTestViewModel(MLRest mlRest, Func<bool> save) : EDViewModel(mlRest)
+class EDComponentAndViewModelTestViewModel(Func<bool> save) : EDViewModel
 {
     public RelayCommand SimulateActionCommand => _simulateActionCommand
         ??= new RelayCommand(SimulateAction);

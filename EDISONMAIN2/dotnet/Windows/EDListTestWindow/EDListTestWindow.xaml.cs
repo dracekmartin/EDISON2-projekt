@@ -1,14 +1,13 @@
-using ALWA.SYS;
 using System.Windows;
 
 namespace EDISONMAIN2
 {
     public partial class EDListTestWindow : Window
     {
-        public EDListTestWindow(MLRest mlRest)
+        public EDListTestWindow()
         {
+            DataContext = new EDControls.EDViewModel.EDViewModel();
             InitializeComponent();
-            TheList.MLRest     = mlRest;
             TheList.CacheClass = "ALVA.EDControls.EDList.MockList";
 
             TheList.SelectionChanged  += (_, id)  => StatusText.Text = $"Výběr: {id ?? "(žádný)"}";

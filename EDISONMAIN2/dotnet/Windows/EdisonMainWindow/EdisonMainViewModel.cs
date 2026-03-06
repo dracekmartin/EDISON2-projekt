@@ -33,9 +33,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _processService = processService;
 
             OpenModuleCommand        = new RelayCommand<IModule>(OpenModule);
-            OpenInputFormTestCommand = new RelayCommand(() => WindowNavigator.Show("EDInputFormTestWindow", MLRest!));
-            OpenEDListTestCommand    = new RelayCommand(() => WindowNavigator.Show("EDListTestWindow",        MLRest!));
-            OpenEDComponentAndViewModelTestCommand = new RelayCommand(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow", MLRest!));
+            OpenInputFormTestCommand = new RelayCommand(() => WindowNavigator.Show("EDInputFormTestWindow"));
+            OpenEDListTestCommand    = new RelayCommand(() => WindowNavigator.Show("EDListTestWindow"));
+            OpenEDComponentAndViewModelTestCommand = new RelayCommand(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
             CloseAllCommand          = new RelayCommand(_processService.CloseAll);
 
             TopLevelModules = [];

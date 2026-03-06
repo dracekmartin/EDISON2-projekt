@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Reflection;
 using System.Windows;
 
@@ -6,32 +6,34 @@ namespace EDControls.EDViewModel;
 
 public class ReflectionWindowNavigator : IWindowNavigator
 {
-    public void Show(string typeName, params object[] args) =>
-        Show(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, args);
+    public void Show(string typeName, EDWindowInput? input = null) =>
+        Show(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, input);
 
-    public void Show(string typeName, string assemblyName, params object[] args)
+    public void Show(string typeName, string assemblyName, EDWindowInput? input = null)
     {
-        var window = CreateWindow(typeName, assemblyName, args);
+        var window = CreateWindow(typeName, assemblyName, input);
         window.Owner = Application.Current.MainWindow;
         window.Show();
     }
 
-    public bool? ShowDialog(string typeName, params object[] args) =>
-        ShowDialog(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, args);
+    public bool? ShowDialog(string typeName, EDWindowInput? input = null) =>
+        ShowDialog(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, input);
 
-    public bool? ShowDialog(string typeName, string assemblyName, params object[] args)
+    public bool? ShowDialog(string typeName, string assemblyName, EDWindowInput? input = null)
     {
-        var window = CreateWindow(typeName, assemblyName, args);
+        var window = CreateWindow(typeName, assemblyName, input);
         window.Owner = Application.Current.MainWindow;
         return window.ShowDialog();
     }
 
-    private static Window CreateWindow(string typeName, string assemblyName, object[] args)
+    private static Window CreateWindow(string typeName, string assemblyName, EDWindowInput? input)
     {
         var type = FindTypeInAssembly(typeName, assemblyName)
             ?? throw new InvalidOperationException(
                 $"Window type '{typeName}' not found in assembly '{assemblyName}'.");
-        return (Window)Activator.CreateInstance(type, args)!;
+        return input is null
+            ? (Window)Activator.CreateInstance(type)!
+            : (Window)Activator.CreateInstance(type, input)!;
     }
 
     private static Type? FindTypeInAssembly(string typeName, string assemblyName)

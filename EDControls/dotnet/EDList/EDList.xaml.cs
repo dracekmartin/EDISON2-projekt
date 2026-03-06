@@ -1,4 +1,5 @@
 using ALWA.SYS;
+using EDControls.EDViewModel;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -18,7 +19,7 @@ namespace EDControls.EDList
     {
         // ─── Konfigurace ──────────────────────────────────────────────────────────
 
-        public MLRest? MLRest { get; set; }
+        private MLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
         public string CacheClass { get; set; } = "";
 
         // ─── Stav ─────────────────────────────────────────────────────────────────
