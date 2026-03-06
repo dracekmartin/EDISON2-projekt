@@ -9,12 +9,12 @@ public class EDViewModel : INotifyPropertyChanged
 {
     private static IWindowNavigator? _windowNavigator;
 
-    public static void SetNavigator(IWindowNavigator navigator) =>
-        _windowNavigator = navigator;
+    public static void SetWindowNavigator(IWindowNavigator windowNavigator) =>
+        _windowNavigator = windowNavigator;
 
     protected static IWindowNavigator WindowNavigator =>
         _windowNavigator ?? throw new InvalidOperationException(
-            "IWindowNavigator not set. Call EDViewModel.SetNavigator() in App startup.");
+            "IWindowNavigator not set. Call EDViewModel.SetWindowNavigator() in App startup.");
 
 
     public MLRest? MLRest { get; protected set; }
