@@ -102,6 +102,7 @@ public partial class EDFooter : UserControl
             }
             catch (InvalidOperationException) { }   // not a ShowDialog() window
         }
+        window.Owner?.Activate();   // ensure owner gets focus before this window closes
         window.Close();
     }
 }
