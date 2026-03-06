@@ -1,4 +1,4 @@
-﻿﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ALWA.SYS;
@@ -7,7 +7,8 @@ namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
-    public MLRest? MLRest { get; protected set; }
+    private static MLRest? _mlRest;
+    public MLRest? MLRest { get => _mlRest; protected set => _mlRest = value; }
 
     /// <summary>
     /// Navigator for opening other windows. Use WindowNavigator.Show(...) or ShowDialog(...)
@@ -69,11 +70,6 @@ public class EDViewModel : INotifyPropertyChanged
     public EDViewModel()
     {
         OkCommand = new RelayCommand(OnOk);
-    }
-
-    public EDViewModel(MLRest mlRest) : this()
-    {
-        MLRest = mlRest;
     }
 
     /// <summary>

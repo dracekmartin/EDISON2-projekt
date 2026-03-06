@@ -1,4 +1,3 @@
-using ALWA.SYS;
 using System.Linq;
 using System.Windows;
 using EDControls.EDInputForm;
@@ -9,13 +8,10 @@ namespace EDISONMAIN2
     {
         private FormInputTestWindowViewModel? _vm;
 
-        public EDInputFormTestWindow() => InitializeComponent();   // designer
-
-        public EDInputFormTestWindow(MLRest mlRest)
+        public EDInputFormTestWindow()
         {
-            DataContext = _vm = new FormInputTestWindowViewModel(mlRest);
+            DataContext = _vm = new FormInputTestWindowViewModel();
             InitializeComponent();
-            TheInputForm.MLRest     = mlRest;
             TheInputForm.CacheClass = "ALVA.EDISONMAIN2.test";
         }
 
