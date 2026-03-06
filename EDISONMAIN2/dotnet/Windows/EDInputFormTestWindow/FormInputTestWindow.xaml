@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:ed="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
+        xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
         mc:Ignorable="d"
         Title="Test InputForm" Height="480" Width="460"
         WindowStartupLocation="CenterOwner">
@@ -14,9 +15,11 @@
             <Button Content="Validate" Click="Validate_Click" ToolTip="Ověřit zadané hodnoty v Caché"/>
             <Button Content="Save"     Click="Save_Click"     ToolTip="Uložit hodnoty do Caché"/>
         </ToolBar>
-        <StatusBar DockPanel.Dock="Bottom">
-            <TextBlock x:Name="StatusText"/>
-        </StatusBar>
+        <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel">
+            <ef:EDFooter.LeftContent>
+                <TextBlock Text="{Binding Status}" VerticalAlignment="Center"/>
+            </ef:EDFooter.LeftContent>
+        </ef:EDFooter>
         <ed:EDInputForm x:Name="TheInputForm" Margin="4"/>
     </DockPanel>
 </Window>

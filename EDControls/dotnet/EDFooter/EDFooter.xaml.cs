@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using EDControls.EDViewModel;
 
@@ -78,7 +78,15 @@ public partial class EDFooter : UserControl
             CloseWindow(true);
     }
 
-    private void CancelBtn_Click(object sender, RoutedEventArgs e) => CloseWindow(false);
+    private void CancelBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is { ConfirmOnCancel: true })
+        {
+            if (!_vm.PopupDisplayer.ConfirmClose())
+                return;
+        }
+        CloseWindow(false);
+    }
 
     private void CloseWindow(bool? dialogResult)
     {
@@ -94,6 +102,7 @@ public partial class EDFooter : UserControl
             }
             catch (InvalidOperationException) { }   // not a ShowDialog() window
         }
+        window.Owner?.Activate();   // ensure owner gets focus before this window closes
         window.Close();
     }
 }

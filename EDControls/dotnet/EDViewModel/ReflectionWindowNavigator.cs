@@ -1,10 +1,10 @@
-using System.IO;
+﻿using System.IO;
 using System.Reflection;
 using System.Windows;
 
 namespace EDControls.EDViewModel;
 
-public class ReflectionWindowNavigator(string assemblyDirectory) : IWindowNavigator
+public class ReflectionWindowNavigator : IWindowNavigator
 {
     public void Show(string typeName, params object[] args) =>
         Show(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, args);
@@ -26,7 +26,7 @@ public class ReflectionWindowNavigator(string assemblyDirectory) : IWindowNaviga
         return window.ShowDialog();
     }
 
-    private Window CreateWindow(string typeName, string assemblyName, object[] args)
+    private static Window CreateWindow(string typeName, string assemblyName, object[] args)
     {
         var type = FindTypeInAssembly(typeName, assemblyName)
             ?? throw new InvalidOperationException(
@@ -34,7 +34,7 @@ public class ReflectionWindowNavigator(string assemblyDirectory) : IWindowNaviga
         return (Window)Activator.CreateInstance(type, args)!;
     }
 
-    private Type? FindTypeInAssembly(string typeName, string assemblyName)
+    private static Type? FindTypeInAssembly(string typeName, string assemblyName)
     {
         var loaded = AppDomain.CurrentDomain.GetAssemblies()
             .FirstOrDefault(a => a.GetName().Name == assemblyName ||
@@ -43,10 +43,10 @@ public class ReflectionWindowNavigator(string assemblyDirectory) : IWindowNaviga
             return loaded.GetTypes().FirstOrDefault(t => t.Name == typeName || t.FullName == typeName);
 
         var fileName = Path.HasExtension(assemblyName) ? assemblyName : assemblyName + ".dll";
-        var fullPath = Path.Combine(assemblyDirectory, fileName);
+        var fullPath = Path.Combine(AppContext.BaseDirectory, fileName);
         if (!File.Exists(fullPath))
             throw new InvalidOperationException(
-                $"Assembly '{assemblyName}' not found in '{assemblyDirectory}'.");
+                $"Assembly '{assemblyName}' not found in '{AppContext.BaseDirectory}'.");
 
         var asm = Assembly.LoadFrom(fullPath);
         return asm.GetTypes().FirstOrDefault(t => t.Name == typeName || t.FullName == typeName);

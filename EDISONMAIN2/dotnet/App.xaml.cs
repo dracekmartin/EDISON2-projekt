@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
@@ -18,7 +18,6 @@ namespace EDISONMAIN2
             var connParams = new ConnectionParams("192.168.16.1", 57770, "martin.hubata", "martin.hubata", 167);
             var dataService = new EdisonMainDataService(connParams);
             var processService = new ProcessLaunchService(connParams);
-            EDViewModel.SetNavigator(new ReflectionWindowNavigator(AppContext.BaseDirectory));
             var viewModel = new EdisonMainViewModel(dataService, processService, connParams);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };

@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ALWA.SYS;
@@ -7,17 +7,27 @@ namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
-    private static IWindowNavigator? _navigator;
-
-    public static void SetNavigator(IWindowNavigator navigator) =>
-        _navigator = navigator;
-
-    protected static IWindowNavigator Navigator =>
-        _navigator ?? throw new InvalidOperationException(
-            "IWindowNavigator not set. Call EDViewModel.SetNavigator() in App startup.");
-
-
     public MLRest? MLRest { get; protected set; }
+
+    /// <summary>
+    /// Navigator for opening other windows. Use WindowNavigator.Show(...) or ShowDialog(...)
+    /// from ViewModel subclasses.
+    /// </summary>
+    private static readonly IWindowNavigator _windowNavigator = new ReflectionWindowNavigator();
+    protected static IWindowNavigator WindowNavigator => _windowNavigator;
+
+    /// <summary>
+    /// Service for showing popups. Always targets the currently active window as owner.
+    /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
+    /// </summary>
+    private static readonly IPopupDisplayer _popupDisplayer = new PopupDisplayer();
+    public IPopupDisplayer PopupDisplayer => _popupDisplayer;
+
+    /// <summary>
+    /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.
+    /// Set to true in the ViewModel constructor for windows with unsaved-data risk.
+    /// </summary>
+    public bool ConfirmOnCancel { get; protected set; }
 
     private bool _isActionInProgress;
     public bool IsActionInProgress
