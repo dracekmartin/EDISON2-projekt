@@ -1321,6 +1321,135 @@ RoundedFloatConverter (4 des. místa)          // 0.5000001 → 0.5
 
 ---
 
+## Architekturální rozhodnutí (MVVM hranice)
+
+### Proč SkiaSharp nelze bindovat — vždy imperativní
+
+`SKElement` (SkiaSharp WPF kontrolka) nemá žádné bindovatelné `DependencyProperty` pro obsah.
+Jediný způsob jak dostat obraz na canvas je `PaintSurface` event + imperativní volání SkiaSharp API:
+
+```csharp
+// NEJDE — SKElement nemá Content property
+skCanvas.Content = "{Binding Template}"  // ❌
+
+// MUSÍ BÝT — event + přímé kreslení
+skCanvas.PaintSurface += OnPaintSurface;  // ✅ vždy v code-behind
+private void OnPaintSurface(object? sender, object e)
+{
+    var args = (dynamic)e;
+    _canvas.Render(args.Surface.Canvas, ...);  // imperativní SKCanvas API
+}
+```
+
+Navíc `PaintSurface` nesmí být registrován v XAML (bug `SkiaSharp.Views.WPF` s .NET 9+) — pouze code-behind.
+
+**Důsledek:** vše co ovlivňuje vizuální výstup canvasu (zoom, výběr, poloha elementů) se projeví
+až při příštím překreslení vyvolaném `skCanvas.InvalidateVisual()`. Překreslení nevolá ViewModel
+přímo — volá callback `RequestCanvasRefresh`.
+
+---
+
+### Co patří do ViewModelu vs. code-behind
+
+**Do `TemplateDesignerViewModel` (business logika, testovatelné):**
+- File operace (NewTemplate, OpenTemplate, SaveTemplate, ExportPreviewPdf)
+- Clipboard (CopySelected, PasteClipboard, DuplicateSelected)
+- Editace (DeleteSelected, ChangeZIndex, AlignElements, MoveByKey)
+- Section management (AddSection, MoveSection, DeleteSection, ActivateSection)
+- Undo/Redo wrapping + Commands (UndoCommand, RedoCommand, ...)
+- Schema / parametry (RefreshFieldsList, LoadAgendaParameters, BuildPreviewMockData)
+- ObservableCollections pro binding (Sections, SchemaGroups, PreviewParameters)
+- Bindovatelné properties (ShowGrid, SnapToGrid, CanUndo, CanRedo, StatusText, ...)
+
+**V `MainWindow.xaml.cs` (musí zůstat — neodstranitelná vazba na WPF/SkiaSharp):**
+- `PaintSurface` eventy (SkiaSharp constraint)
+- Mouse state machine (`_mouseMode`, drag, resize, rubber band)
+- `UpdateCanvasSize()` — čte `skCanvas.ActualWidth/Height`
+- `BtnAddSection_Click` / `BtnAddElement_Click` — runtime `ContextMenu` objekty
+- Cursor management (`skCanvas.Cursor = ...`)
+- `CaptureMouse()` / `ReleaseMouseCapture()`
+- `_propsWindow` lifecycle (Show/Hide plovoucího panelu)
+
+---
+
+### Callback pattern: ViewModel → View
+
+ViewModel nemůže volat `skCanvas.InvalidateVisual()` přímo (nezná SKElement).
+Místo toho vystavuje `Action?` properties, které code-behind v konstruktoru napojí:
+
+```csharp
+// MainWindow konstruktor:
+_vm.RequestCanvasRefresh      = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
+_vm.RequestPreviewRefresh     = InvalidatePreview;
+_vm.RequestTitleUpdate        = UpdateTitle;
+_vm.RequestCanvasSizeUpdate   = () => { UpdateCanvasSize(); UpdateTitle(); };
+_vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
+_vm.RequestExportPdf          = filePath => _previewCanvas.RenderToPdf(filePath, ...);
+```
+
+`Action?` místo `event` — záměrně: jeden subscriber (code-behind), jednodušší wiring.
+
+---
+
+### Sdílený DesignerState
+
+`DesignerState` je prostá POCO třída (bez INotifyPropertyChanged), sdílená mezi:
+- `DesignerCanvas` — čte stav při každém `Render()`
+- `PreviewCanvas` — čte šablonu a zoom
+- `TemplateDesignerViewModel` — mění stav (výběr, zoom, undo/redo)
+- `MainWindow.xaml.cs` — čte při mouse state machine
+
+Záměrně bez INotifyPropertyChanged — změny se projeví při příštím `InvalidateVisual()`,
+ne automaticky. Undo/Redo a všechny commands jdou přes `DesignerState.Execute(cmd)`.
+
+---
+
+### Tok dat: kliknutí → překreslení
+
+```
+MouseDown → HitTestElement(px) → State.SelectedElements.Add(el)
+MouseMove → el.X = initX + deltaMm  ← přímá mutace modelu (live drag)
+          → skCanvas.InvalidateVisual()
+          → PaintSurface → _canvas.Render() → el.Render(RenderContext)
+MouseUp   → new MoveElementCommand(el, initX, finalX)
+          → _vm.Execute(cmd) → State.UndoStack.Push(cmd)
+          → NotifyUndoRedo() → CanUndo changed → UndoCommand.CanExecute() → tlačítko IsEnabled
+```
+
+**Klíčový detail:** elementy se mutují přímo za dragu (okamžitá vizuální odezva),
+`MoveElementCommand` vznikne až při `MouseUp` s `(originalPos → finalPos)`.
+
+---
+
+### Souřadnicový systém
+
+| Vrstva | Jednotka | Konverze |
+|---|---|---|
+| Model (Template, Section, TemplateElement) | **mm** | — |
+| DesignerCanvas / PreviewCanvas | **px** | `mm × MmToPx` kde `MmToPx = (96/25.4) × Zoom` |
+| PDF export (PreviewCanvas.RenderToPdf) | **pt** | `mm × (72/25.4)` |
+
+Souřadnice elementů jsou **relativní k sekci** (ne ke stránce ani ke canvasu).
+`GetSectionOrigins(canvasWidth)` vrátí absolutní px origin každé sekce — sdíleno renderem i hit testingem.
+
+---
+
+### DesignerCanvas vs PreviewCanvas
+
+| | DesignerCanvas | PreviewCanvas |
+|---|---|---|
+| Účel | Editace | Náhled výsledku |
+| Záhlaví sekcí | ✅ modrý pruh s názvem | ❌ |
+| Resize handles | ✅ | ❌ |
+| Selection overlay | ✅ | ❌ |
+| Mřížka / vodítka | ✅ | ❌ |
+| VisibilityExpression | ❌ vždy zobrazí | ✅ filtruje |
+| DataContext | ❌ žádná data | ✅ mock data z agendy |
+| Zoom | fixní z `State.Zoom` | fit-to-width automaticky |
+| PDF export | ❌ | ✅ `RenderToPdf()` |
+
+---
+
 ## Pravidla pro psaní kódu
 
 - Jazyk kódu: **anglicky** (názvy tříd, metod, proměnných)
