@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+﻿﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using ALWA.SYS;
@@ -7,24 +7,20 @@ namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
-    private static IWindowNavigator? _windowNavigator;
-
-    public static void SetWindowNavigator(IWindowNavigator windowNavigator) =>
-        _windowNavigator = windowNavigator;
-
-    protected static IWindowNavigator WindowNavigator =>
-        _windowNavigator ?? throw new InvalidOperationException(
-            "IWindowNavigator not set. Call EDViewModel.SetWindowNavigator() in App startup.");
-
-
     public MLRest? MLRest { get; protected set; }
 
-    private static readonly IPopupDisplayer _popupDisplayer = new PopupDisplayer();
+    /// <summary>
+    /// Navigator for opening other windows. Use WindowNavigator.Show(...) or ShowDialog(...)
+    /// from ViewModel subclasses.
+    /// </summary>
+    private static readonly IWindowNavigator _windowNavigator = new ReflectionWindowNavigator();
+    protected static IWindowNavigator WindowNavigator => _windowNavigator;
 
     /// <summary>
     /// Service for showing popups. Always targets the currently active window as owner.
     /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
     /// </summary>
+    private static readonly IPopupDisplayer _popupDisplayer = new PopupDisplayer();
     public IPopupDisplayer PopupDisplayer => _popupDisplayer;
 
     /// <summary>
