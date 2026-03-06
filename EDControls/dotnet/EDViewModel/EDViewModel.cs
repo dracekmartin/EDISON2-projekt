@@ -7,13 +7,13 @@ namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
-    private static IWindowNavigator? _navigator;
+    private static IWindowNavigator? _windowNavigator;
 
     public static void SetNavigator(IWindowNavigator navigator) =>
-        _navigator = navigator;
+        _windowNavigator = navigator;
 
-    protected static IWindowNavigator Navigator =>
-        _navigator ?? throw new InvalidOperationException(
+    protected static IWindowNavigator WindowNavigator =>
+        _windowNavigator ?? throw new InvalidOperationException(
             "IWindowNavigator not set. Call EDViewModel.SetNavigator() in App startup.");
 
 
