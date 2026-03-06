@@ -19,6 +19,12 @@ public class EDViewModel : INotifyPropertyChanged
 
     public MLRest? MLRest { get; protected set; }
 
+    /// <summary>
+    /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.
+    /// Set to true in the ViewModel constructor for windows with unsaved-data risk.
+    /// </summary>
+    public bool ConfirmOnCancel { get; protected set; }
+
     private bool _isActionInProgress;
     public bool IsActionInProgress
     {

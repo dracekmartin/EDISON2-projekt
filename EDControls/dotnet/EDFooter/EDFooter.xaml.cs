@@ -78,7 +78,15 @@ public partial class EDFooter : UserControl
             CloseWindow(true);
     }
 
-    private void CancelBtn_Click(object sender, RoutedEventArgs e) => CloseWindow(false);
+    private void CancelBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is { ConfirmOnCancel: true })
+        {
+            if (!ConfirmCloseDialog.ConfirmCloseWindow.Show(Window.GetWindow(this)))
+                return;
+        }
+        CloseWindow(false);
+    }
 
     private void CloseWindow(bool? dialogResult)
     {
