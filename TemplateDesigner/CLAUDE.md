@@ -1368,7 +1368,85 @@ přímo — volá callback `RequestCanvasRefresh`.
 - `BtnAddSection_Click` / `BtnAddElement_Click` — runtime `ContextMenu` objekty
 - Cursor management (`skCanvas.Cursor = ...`)
 - `CaptureMouse()` / `ReleaseMouseCapture()`
-- `_propsWindow` lifecycle (Show/Hide plovoucího panelu)
+
+---
+
+### Vzor pro každé okno / dialog (závazný standard)
+
+Každé okno v projektu se řídí stejným vzorem. Struktura souborů:
+
+```
+Windows/
+└── MůjDialog/
+    ├── MůjDialog.xaml              — pouze XAML, žádná logika
+    ├── MůjDialog.xaml.cs           — jen WPF-specifický kód (viz níže)
+    └── MůjDialogViewModel.cs       — veškerá logika + properties + commands
+```
+
+**ViewModel** dědí z `EDViewModel`:
+```csharp
+public class MůjDialogViewModel : EDViewModel
+{
+    // Bindovatelné properties přes Set()
+    public string Foo { get => _foo; set => Set(ref _foo, value); }
+
+    // Commands — RelayCommand pro akce tlačítek
+    public RelayCommand DoSomethingCommand { get; }
+
+    // Callbacks pro View-only operace (ViewModel nezná konkrétní WPF kontrolky)
+    public Action<SomeType>? RequestSomeViewOperation { get; set; }
+
+    public MůjDialogViewModel(...) { ... }
+
+    // OK zavře dialog s true — override pokud potřebuješ validaci
+    protected override void OnOk() { ... CloseDialog(true); }
+}
+```
+
+**Code-behind** — pouze wiring, bez logiky:
+```csharp
+public partial class MůjDialog : Window
+{
+    public MůjDialog(MůjDialogViewModel vm)
+    {
+        DataContext = vm;
+        InitializeComponent();
+
+        // Napojení callbacků (jen pokud je potřeba přímý přístup ke kontrolce)
+        vm.RequestSomeViewOperation = x => SomeControl.DoSomething(x);
+
+        // Standardní zavření — vždy
+        vm.RequestClose += result => { DialogResult = result; Close(); };
+    }
+
+    // Pouze WPF-specifické eventy bez alternativy:
+    // - DataGrid.BeginEdit() / CommitEdit()
+    // - Hyperlink.RequestNavigate
+    // - SkiaSharp PaintSurface
+}
+```
+
+**XAML** — kompletní binding, žádné Click handlery:
+```xml
+<Button Command="{Binding DoSomethingCommand}"/>
+<Button Content="OK"     IsDefault="True" Command="{Binding OkCommand}"/>
+<Button Content="Storno" IsCancel="True"/>   <!-- IsCancel zavře bez kódu -->
+```
+
+**Otevření dialogu** vždy takto — VM se vytvoří vně, owner se nastaví:
+```csharp
+var vm = new MůjDialogViewModel(závislosti);
+var dlg = new MůjDialog(vm) { Owner = this };
+if (dlg.ShowDialog() == true)
+    // použij vm.ResultXxx
+```
+
+**Pravidla:**
+- ViewModel **neví** o existenci View (nezná `Window`, `DataGrid`, ani žádnou WPF kontrolku)
+- Pokud VM potřebuje spustit View operaci, použije `Action?` callback — View ho napojí v konstruktoru
+- `Click="..."` handlery v XAML **nejsou** — vždy `Command="{Binding ...}"`
+- `IsCancel="True"` na tlačítku Storno zavírá dialog automaticky (DialogResult=false) — nepotřebuje handler
+- `ColumnVM`/`RowVM` a podobné pomocné ViewModely patří do souboru `*ViewModel.cs`, **ne** do code-behind
 
 ---
 
