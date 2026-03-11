@@ -18,8 +18,7 @@ var mlRest = new MLRest(
     config["Idfa"]!)
 {
     LoginName = config["LoginName"]!,
-    FullName = config["FullName"]!,
-    Mlp = config["Mlp"]!
+    FullName = config["FullName"]!
 };
 
 // --- Debug endpointy pro vraceni vysledku v JSON formatu ---
