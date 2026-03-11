@@ -1,5 +1,6 @@
-using System.ComponentModel;
 using System.Windows;
+using EDControls.EDViewModel;
+using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
@@ -9,7 +10,7 @@ using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner;
 
-public partial class ElementPropertiesWindow : Window
+public class ElementPropertiesWindowViewModel : EDViewModel
 {
     private readonly DesignerState _state;
     private readonly Action        _invalidate;
@@ -17,22 +18,43 @@ public partial class ElementPropertiesWindow : Window
     private readonly Action        _updateCanvasSize;
     private readonly Action        _refreshFields;
 
-    /// <summary>
-    /// Vrátí aktuálně dostupná pole schématu (podle AgendaCode šablony).
-    /// Null = schéma není k dispozici, picker se nezobrazí.
-    /// </summary>
-    private readonly Func<IReadOnlyList<DataField>?>?                _getAvailableFields;
-    private readonly Func<IReadOnlyList<DataFieldCollection>?>?      _getAvailableGroups;
-    private readonly ITableTemplateProvider?                         _tableTemplateProvider;
+    private readonly Func<IReadOnlyList<DataField>?>?           _getAvailableFields;
+    private readonly Func<IReadOnlyList<DataFieldCollection>?>? _getAvailableGroups;
+    private readonly ITableTemplateProvider?                    _tableTemplateProvider;
 
-    private TemplateElement? _currentElement;
-    private int              _undoDepthAtOpen;
-    private bool             _isReallyClosing;
-
-    // Aktuální "plná" invalidace (závisí na kontextu — element / sekce / stránka)
+    private int    _undoDepthAtOpen;
     private Action _currentInvalidate;
 
-    public ElementPropertiesWindow(
+    // ── Exponováno do code-behind ─────────────────────────────────────────
+
+    /// <summary>Aktuálně zobrazovaný element — pro detekci nové session v ShowForElement.</summary>
+    public TemplateElement? CurrentElement { get; private set; }
+
+    /// <summary>Invalidace odpovídající aktuálnímu kontextu (element / sekce / stránka).</summary>
+    public Action CurrentInvalidate => _currentInvalidate;
+
+    /// <summary>Předávané do PropertiesPanel.SetContext jako execute akce.</summary>
+    public Action<IDesignerCommand> ExecuteCommand => cmd => _state.Execute(cmd);
+
+    /// <summary>Bindovatelný titulek okna.</summary>
+    private string _windowTitle = "Vlastnosti";
+    public string WindowTitle { get => _windowTitle; set => Set(ref _windowTitle, value); }
+
+    /// <summary>
+    /// Callback: VM říká View "zobraz tyto deskriptory" — stejný pattern jako RequestCanvasRefresh
+    /// v MainWindow. Používá se uvnitř EnhanceTableEditor při interní změně panelu.
+    /// </summary>
+    public Action<IReadOnlyList<Models.PropertyDescriptor>>? RequestShowDescriptors { get; set; }
+
+    /// <summary>Deskriptory připravené posledním voláním PrepareFor* — Window je přečte v konstruktoru.</summary>
+    public IReadOnlyList<Models.PropertyDescriptor>? CurrentDescriptors { get; private set; }
+
+    /// <summary>Zruší změny a zavře dialog (DialogResult = false).</summary>
+    public RelayCommand CancelCommand { get; }
+
+    // ── Konstruktor ───────────────────────────────────────────────────────
+
+    public ElementPropertiesWindowViewModel(
         DesignerState state,
         Action invalidate,
         Action refreshSections,
@@ -42,7 +64,6 @@ public partial class ElementPropertiesWindow : Window
         Func<IReadOnlyList<DataFieldCollection>?>? getAvailableGroups = null,
         ITableTemplateProvider? tableTemplateProvider = null)
     {
-        InitializeComponent();
         _state                 = state;
         _invalidate            = invalidate;
         _refreshSections       = refreshSections;
@@ -52,29 +73,28 @@ public partial class ElementPropertiesWindow : Window
         _getAvailableGroups    = getAvailableGroups;
         _tableTemplateProvider = tableTemplateProvider;
         _currentInvalidate     = invalidate;
-        PropertiesPanel.SetContext(cmd => state.Execute(cmd), invalidate);
+
+        // OkCommand je zděděn z EDViewModel — base.OnOk() volá CloseDialog(true), což je správně
+        CancelCommand = new RelayCommand(() => { CancelChanges(); CloseDialog(false); });
     }
 
+    // ── Příprava deskriptorů ──────────────────────────────────────────────
+
     /// <summary>
-    /// Zobrazí dialog s vlastnostmi daného elementu.
-    /// Pokud je dialog již viditelný a zobrazuje stejný element, pouze obnoví hodnoty.
-    /// Pokud se element změnil nebo dialog byl skrytý, resetuje se hloubka undo zásobníku
-    /// (Cancel pak vrátí pouze změny provedené od tohoto otevření).
+    /// Připraví deskriptory pro daný element, nastaví titulek a undo hloubku.
+    /// isNewSession=true při prvním zobrazení nebo přepnutí na jiný element.
     /// </summary>
-    public void ShowForElement(TemplateElement element)
+    public IReadOnlyList<Models.PropertyDescriptor> PrepareForElement(TemplateElement element, bool isNewSession)
     {
-        bool isNewSession = !IsVisible || !ReferenceEquals(_currentElement, element);
         if (isNewSession)
             _undoDepthAtOpen = _state.UndoStack.Count;
 
-        _currentElement    = element;
+        CurrentElement     = element;
         _currentInvalidate = _invalidate;
-        Title = "Vlastnosti: " + element.GetType().Name.Replace("Element", "");
+        WindowTitle        = "Vlastnosti: " + element.GetType().Name.Replace("Element", "");
 
-        PropertiesPanel.SetContext(cmd => _state.Execute(cmd), _currentInvalidate);
-
-        // Pro TextElement: nahraď Text descriptor variantou s picker tlačítkem a validací
         var descriptors = element.GetPropertyDescriptors();
+
         if (element is TextElement)
         {
             var fields = _getAvailableFields?.Invoke();
@@ -82,19 +102,45 @@ public partial class ElementPropertiesWindow : Window
                 descriptors = EnhanceWithFieldPicker(descriptors, fields);
         }
 
-        // Pro TableElement: napoj tlačítko "Upravit sloupce / řádky..." na TableEditorDialog
         if (element is TableElement tableElement)
             descriptors = EnhanceTableEditor(descriptors, tableElement);
 
-        PropertiesPanel.ShowDescriptors(descriptors);
-
-        if (!IsVisible) Show();
+        CurrentDescriptors = descriptors;
+        return descriptors;
     }
 
-    /// <summary>
-    /// Nahradí ButtonPropertyDescriptor "Editor" na TableElement funkčním OnClick
-    /// otevírajícím TableEditorDialog. Změny se ukládají jako undoable příkaz.
-    /// </summary>
+    /// <summary>Připraví deskriptory pro sekci, nastaví titulek a undo hloubku.</summary>
+    public IReadOnlyList<Models.PropertyDescriptor> PrepareForSection(Section section)
+    {
+        _undoDepthAtOpen   = _state.UndoStack.Count;
+        CurrentElement     = null;
+        _currentInvalidate = () => { _updateCanvasSize(); _invalidate(); _refreshSections(); };
+        WindowTitle        = "Vlastnosti sekce: " + section.Name;
+
+        return CurrentDescriptors = BuildSectionDescriptors(section);
+    }
+
+    /// <summary>Připraví deskriptory pro stránku, nastaví titulek a undo hloubku.</summary>
+    public IReadOnlyList<Models.PropertyDescriptor> PrepareForPage(Template template)
+    {
+        _undoDepthAtOpen   = _state.UndoStack.Count;
+        CurrentElement     = null;
+        _currentInvalidate = () => { _invalidate(); _updateCanvasSize(); _refreshFields(); };
+        WindowTitle        = "Vlastnosti stránky";
+
+        return CurrentDescriptors = BuildPageDescriptors(template);
+    }
+
+    /// <summary>Vrátí veškeré změny provedené od posledního otevření a překreslí.</summary>
+    public void CancelChanges()
+    {
+        while (_state.UndoStack.Count > _undoDepthAtOpen)
+            _state.Undo();
+        _currentInvalidate();
+    }
+
+    // ── Privátní buildery ─────────────────────────────────────────────────
+
     private IReadOnlyList<Models.PropertyDescriptor> EnhanceTableEditor(
         IReadOnlyList<Models.PropertyDescriptor> descriptors,
         TableElement element)
@@ -115,7 +161,7 @@ public partial class ElementPropertiesWindow : Window
                     Set     = v =>
                     {
                         enumD.Set(v);
-                        PropertiesPanel.ShowDescriptors(
+                        RequestShowDescriptors?.Invoke(
                             EnhanceTableEditor(element.GetPropertyDescriptors(), element));
                     },
                     Options = enumD.Options
@@ -123,7 +169,6 @@ public partial class ElementPropertiesWindow : Window
             }
             else if (d is Models.StringPropertyDescriptor strD && strD.Label == "Zdroj dat" && collections.Count > 0)
             {
-                // Nahradit ručním textovým polem filtrovatelným dropdownem kolekcí
                 list.Add(new Models.SuggestStringPropertyDescriptor
                 {
                     Label          = strD.Label,
@@ -142,42 +187,33 @@ public partial class ElementPropertiesWindow : Window
                     ButtonLabel = btn.ButtonLabel,
                     OnClick     = () =>
                     {
-                        // Pole z konkrétní kolekce (DataSource), fallback = pole ze všech kolekcí
-                        // collections je zachyceno z vnějšího scopu — stejná instance jako pro SuggestString
                         var collectionFields = collections.Count > 0
                             ? (collections.FirstOrDefault(c => c.CollectionKey == element.DataSource)?.Fields
                                    as IReadOnlyList<DataField>
                                ?? collections.SelectMany(c => c.Fields).ToList())
                             : null;
-                        // Owner = hlavní okno (ne ToolWindow) — jinak WPF po zavření dialogu
-                        // aktivuje ToolWindow a způsobuje minimalizaci hlavního okna.
+
                         var dlg = new TableEditorDialog(element, collectionFields, _tableTemplateProvider)
                             { Owner = Application.Current.MainWindow };
                         if (dlg.ShowDialog() != true) return;
 
-                        var cmds = new List<Commands.IDesignerCommand>();
+                        var cmds = new List<IDesignerCommand>();
 
-                        var oldCols = element.Columns;
-                        var newCols = dlg.ResultColumns;
-                        cmds.Add(new Commands.Implementations.SetPropertyCommand(
-                            "Sloupce tabulky", oldCols, newCols,
-                            v => element.Columns = (List<Models.Elements.TableColumn>)v!));
+                        cmds.Add(new SetPropertyCommand(
+                            "Sloupce tabulky", element.Columns, dlg.ResultColumns,
+                            v => element.Columns = (List<TableColumn>)v!));
 
-                        if (element.Mode == Models.Elements.TableMode.Fixed)
+                        if (element.Mode == TableMode.Fixed)
                         {
-                            var oldRows = element.Rows;
-                            var newRows = dlg.ResultRows;
-                            cmds.Add(new Commands.Implementations.SetPropertyCommand(
-                                "Řádky tabulky", oldRows, newRows,
-                                v => element.Rows = (List<Models.Elements.TableRow>?)v));
+                            cmds.Add(new SetPropertyCommand(
+                                "Řádky tabulky", element.Rows, dlg.ResultRows,
+                                v => element.Rows = (List<TableRow>?)v));
                         }
 
-                        _state.Execute(new Commands.Implementations.CompositeCommand(
-                            "Upravit tabulku", cmds));
+                        _state.Execute(new CompositeCommand("Upravit tabulku", cmds));
                         _currentInvalidate();
 
-                        // Obnoví panel vlastností (výška se mohla změnit)
-                        PropertiesPanel.ShowDescriptors(
+                        RequestShowDescriptors?.Invoke(
                             EnhanceTableEditor(element.GetPropertyDescriptors(), element));
                     }
                 });
@@ -190,10 +226,6 @@ public partial class ElementPropertiesWindow : Window
         return list;
     }
 
-    /// <summary>
-    /// Nahradí StringPropertyDescriptor s Label=="Text" a MultiLine==true
-    /// variantou TextWithPickerPropertyDescriptor s dostupnými poli schématu.
-    /// </summary>
     private static IReadOnlyList<Models.PropertyDescriptor> EnhanceWithFieldPicker(
         IReadOnlyList<Models.PropertyDescriptor> descriptors,
         IReadOnlyList<DataField> fields)
@@ -219,41 +251,6 @@ public partial class ElementPropertiesWindow : Window
             }
         }
         return list;
-    }
-
-    /// <summary>
-    /// Zobrazí dialog s vlastnostmi dané sekce.
-    /// Cancel vrátí změny sekce provedené od otevření.
-    /// </summary>
-    public void ShowForSection(Section section)
-    {
-        _undoDepthAtOpen   = _state.UndoStack.Count;
-        _currentElement    = null;
-        _currentInvalidate = () => { _updateCanvasSize(); _invalidate(); _refreshSections(); };
-        Title = "Vlastnosti sekce: " + section.Name;
-
-        PropertiesPanel.SetContext(cmd => _state.Execute(cmd), _currentInvalidate);
-        PropertiesPanel.ShowDescriptors(BuildSectionDescriptors(section));
-
-        if (!IsVisible) Show();
-    }
-
-    /// <summary>
-    /// Zobrazí dialog pro editaci rozměrů stránky a okrajů.
-    /// Cancel vrátí veškeré změny provedené od otevření.
-    /// </summary>
-    public void ShowForPage(Template template)
-    {
-        _undoDepthAtOpen   = _state.UndoStack.Count;
-        _currentElement    = null;
-        // Při každé změně: překresli canvas, přepočítej velikost, obnov seznam polí agendy
-        _currentInvalidate = () => { _invalidate(); _updateCanvasSize(); _refreshFields(); };
-        Title = "Vlastnosti stránky";
-
-        PropertiesPanel.SetContext(cmd => _state.Execute(cmd), _currentInvalidate);
-        PropertiesPanel.ShowDescriptors(BuildPageDescriptors(template));
-
-        if (!IsVisible) Show();
     }
 
     private IReadOnlyList<Models.PropertyDescriptor> BuildPageDescriptors(Template template)
@@ -324,7 +321,6 @@ public partial class ElementPropertiesWindow : Window
             }
         };
 
-        // Výška — jen pro sekce s pevnou výškou (dynamické mají null)
         if (section.DesignerHeight.HasValue)
         {
             list.Add(new FloatPropertyDescriptor
@@ -332,7 +328,7 @@ public partial class ElementPropertiesWindow : Window
                 Label = "Výška", Group = "Sekce",
                 Get   = () => section.DesignerHeight ?? 30f,
                 Set   = v  => section.DesignerHeight = v,
-                Min = 5f, Max = 500f, Unit = "mm"
+                Min   = 5f, Max = 500f, Unit = "mm"
             });
         }
 
@@ -371,9 +367,6 @@ public partial class ElementPropertiesWindow : Window
             Set   = v  => section.VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim()
         });
 
-        // Vlastnosti specifické pro typ sekce (nebo PrintBehavior)
-        // DEPRECATED: Properties DataSource a RowHeight jsou nyní přímo v base třídě Section
-        // Zobrazují se, pokud PrintBehavior = PerDataRow
         if (section.PrintBehavior == SectionPrintBehavior.PerDataRow)
         {
             list.Add(new StringPropertyDescriptor
@@ -392,50 +385,5 @@ public partial class ElementPropertiesWindow : Window
         }
 
         return list;
-    }
-
-    /// <summary>Schová dialog bez rušení změn.</summary>
-    public new void Hide()
-    {
-        _currentElement = null;
-        base.Hide();
-        // Po skrytí ToolWindow WPF nekonzistentně přesměruje focus a může minimalizovat
-        // MainWindow. Explicitní Activate() na owneru to opraví.
-        if (Owner?.IsLoaded == true)
-            Owner.Activate();
-    }
-
-    /// <summary>Skutečně zavře okno — volat pouze při ukončení aplikace.</summary>
-    public void CloseForReal()
-    {
-        _isReallyClosing = true;
-        Close();
-    }
-
-    // ── Tlačítka ─────────────────────────────────────────────────────────
-
-    private void BtnOK_Click(object sender, RoutedEventArgs e) => Hide();
-
-    private void BtnCancel_Click(object sender, RoutedEventArgs e)
-    {
-        // Vrátit veškeré změny provedené od otevření tohoto dialogu
-        while (_state.UndoStack.Count > _undoDepthAtOpen)
-            _state.Undo();
-
-        _currentInvalidate();
-        Hide();
-    }
-
-    // ── Zavírání ──────────────────────────────────────────────────────────
-
-    protected override void OnClosing(CancelEventArgs e)
-    {
-        if (!_isReallyClosing)
-        {
-            // Tlačítko X = schovat okno (ne zavřít), změny se zachovají
-            e.Cancel = true;
-            Hide();
-        }
-        base.OnClosing(e);
     }
 }

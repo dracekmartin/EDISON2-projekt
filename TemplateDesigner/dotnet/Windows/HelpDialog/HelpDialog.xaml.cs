@@ -9,8 +9,4 @@ public partial class HelpDialog : Window
         InitializeComponent();
     }
 
-    private void BtnClose_Click(object sender, RoutedEventArgs e)
-    {
-        Close();
-    }
 }

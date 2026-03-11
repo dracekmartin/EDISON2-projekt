@@ -2,7 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Input;
+using EDControls.EDViewModel;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
@@ -154,89 +154,127 @@ public class CellVM : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 }
 
-// ─── Dialog ──────────────────────────────────────────────────────────────────
+// ─── Dialog ViewModel ────────────────────────────────────────────────────────
 
-public partial class TableEditorDialog : Window
+class TableEditorDialogViewModel : EDViewModel
 {
-    private readonly TableElement           _element;
-    private readonly IReadOnlySet<string>?  _validFieldNames;
+    private readonly TableElement            _element;
+    private readonly IReadOnlySet<string>?   _validFieldNames;
     private readonly ITableTemplateProvider? _templateProvider;
 
-    public ObservableCollection<ColumnVM>  ColumnVMs { get; } = [];
-    public ObservableCollection<RowVM>     RowVMs    { get; } = [];
+    public ObservableCollection<ColumnVM> ColumnVMs { get; } = [];
+    public ObservableCollection<RowVM>    RowVMs    { get; } = [];
 
-    // Možnosti pro ComboBox sloupce
     public string[] WidthModeOptions  { get; } = ["mm", "%"];
     public string[] AlignmentOptions  { get; } = ["Vlevo", "Střed", "Vpravo"];
+    public string[] FieldNameOptions  { get; }
 
-    /// <summary>Výsledné sloupce po kliknutí OK.</summary>
+    /// <summary>Výsledné sloupce po OK — čteny volajícím.</summary>
     public List<TableColumn> ResultColumns { get; private set; } = [];
 
-    /// <summary>Výsledné řádky po kliknutí OK (null pro Dynamic mód).</summary>
+    /// <summary>Výsledné řádky po OK — null pro Dynamic mód.</summary>
     public List<TableRow>? ResultRows { get; private set; }
 
-    /// <summary>Dostupná pole skupiny pro ComboBox v editoru sloupců.</summary>
-    public string[] FieldNameOptions { get; }
+    // ── Výběr ────────────────────────────────────────────────────────────────
 
-    /// <param name="collectionFields">Dostupná pole kolekce (pro validaci + picker). Null = validace vypnuta.</param>
-    /// <param name="templateProvider">Provider šablon tabulek. Null = tlačítko "Ze šablony..." se skryje.</param>
-    public TableEditorDialog(TableElement element, IReadOnlyList<DataField>? collectionFields = null,
+    private ColumnVM? _selectedColumnVM;
+    public ColumnVM? SelectedColumnVM
+    {
+        get => _selectedColumnVM;
+        set => Set(ref _selectedColumnVM, value);
+    }
+
+    private RowVM? _selectedRowVM;
+    public RowVM? SelectedRowVM
+    {
+        get => _selectedRowVM;
+        set => Set(ref _selectedRowVM, value);
+    }
+
+    public bool IsRowSelected => SelectedRowVM is not null;
+
+    // ── Viditelnost záložky a tlačítka ───────────────────────────────────────
+
+    public bool ShowRowsTab      => _element.Mode == TableMode.Fixed;
+    public bool ShowLoadTemplate => _templateProvider is not null && _element.Mode == TableMode.Fixed;
+
+    // ── Callbacks pro View-only operace ──────────────────────────────────────
+
+    /// <summary>Callback: po přidání sloupce scrolluj do view. Wired v code-behind.</summary>
+    public Action<ColumnVM>? RequestScrollColumnIntoView { get; set; }
+
+    /// <summary>Callback: před potvrzením commitni editaci DataGridů. Wired v code-behind.</summary>
+    public Action? RequestCommitEdits { get; set; }
+
+    // ── Commands ──────────────────────────────────────────────────────────────
+
+    public RelayCommand AddColumnCommand      { get; }
+    public RelayCommand RemoveColumnCommand   { get; }
+    public RelayCommand MoveColumnUpCommand   { get; }
+    public RelayCommand MoveColumnDownCommand { get; }
+
+    public RelayCommand AddRowCommand         { get; }
+    public RelayCommand RemoveRowCommand      { get; }
+    public RelayCommand MoveRowUpCommand      { get; }
+    public RelayCommand MoveRowDownCommand    { get; }
+
+    public RelayCommand LoadTemplateCommand   { get; }
+
+    // ── Konstruktor ───────────────────────────────────────────────────────────
+
+    public TableEditorDialogViewModel(TableElement element,
+        IReadOnlyList<DataField>? collectionFields = null,
         ITableTemplateProvider? templateProvider = null)
     {
         _element          = element;
         _templateProvider = templateProvider;
-        FieldNameOptions  = collectionFields?.Select(f => f.FieldName).OrderBy(n => n).ToArray() ?? [];
-        _validFieldNames = FieldNameOptions.Length > 0
+
+        FieldNameOptions = collectionFields?.Select(f => f.FieldName).OrderBy(n => n).ToArray() ?? [];
+        _validFieldNames  = FieldNameOptions.Length > 0
             ? new HashSet<string>(FieldNameOptions, StringComparer.OrdinalIgnoreCase)
             : null;
-        InitializeComponent();
-        DataContext = this;
-
-        // Tlačítko "Ze šablony..." pouze pokud je provider dostupný a mód je Fixed
-        BtnLoadTemplate.Visibility = (_templateProvider is not null && element.Mode == TableMode.Fixed)
-            ? Visibility.Visible : Visibility.Collapsed;
 
         // Naplnění sloupců — pro Dynamic tabulku bez sloupců předvyplnit ze schématu
-        var sourceCols = element.Columns.Count == 0 && element.Mode == TableMode.Dynamic && collectionFields is { Count: > 0 }
+        var sourceCols = element.Columns.Count == 0
+                         && element.Mode == TableMode.Dynamic
+                         && collectionFields is { Count: > 0 }
             ? collectionFields.Select(f => new TableColumn
                 { Header = f.Label, Field = f.FieldName,
-                  Width = MathF.Round(element.Width / collectionFields.Count, 1) })
+                  Width  = MathF.Round(element.Width / collectionFields.Count, 1) })
             : element.Columns.AsEnumerable();
 
         foreach (var col in sourceCols)
-        {
-            var vm = ColumnVM.FromModel(col);
-            vm.ValidFieldNames = _validFieldNames;
-            ColumnVMs.Add(vm);
-        }
-
-        ColumnsGrid.ItemsSource = ColumnVMs;
-
-        // Záložka Řádky pouze pro Fixed mód
-        TabRows.Visibility = element.Mode == TableMode.Fixed
-            ? Visibility.Visible : Visibility.Collapsed;
+            ColumnVMs.Add(WithValidation(ColumnVM.FromModel(col)));
 
         if (element.Mode == TableMode.Fixed)
         {
             var cols = element.Columns;
             foreach (var row in element.Rows ?? [])
                 RowVMs.Add(RowVM.FromModel(row, cols));
-
-            RowsList.ItemsSource = RowVMs;
         }
+
+        AddColumnCommand      = new RelayCommand(AddColumn);
+        RemoveColumnCommand   = new RelayCommand(RemoveColumn);
+        MoveColumnUpCommand   = new RelayCommand(MoveColumnUp);
+        MoveColumnDownCommand = new RelayCommand(MoveColumnDown);
+
+        AddRowCommand         = new RelayCommand(AddRow);
+        RemoveRowCommand      = new RelayCommand(RemoveRow);
+        MoveRowUpCommand      = new RelayCommand(MoveRowUp);
+        MoveRowDownCommand    = new RelayCommand(MoveRowDown);
+
+        LoadTemplateCommand   = new RelayCommand(LoadTemplate);
     }
 
-    // ─── Sloupce ─────────────────────────────────────────────────────
+    // ── Sloupce ───────────────────────────────────────────────────────────────
 
-    private void AddColumn_Click(object sender, RoutedEventArgs e)
+    private void AddColumn()
     {
-        var vm = new ColumnVM { Header = $"Sloupec {ColumnVMs.Count + 1}", Width = 30f };
-        vm.ValidFieldNames = _validFieldNames;
+        var vm = WithValidation(new ColumnVM { Header = $"Sloupec {ColumnVMs.Count + 1}", Width = 30f });
         ColumnVMs.Add(vm);
-        ColumnsGrid.SelectedItem = vm;
-        ColumnsGrid.ScrollIntoView(vm);
+        SelectedColumnVM = vm;
+        RequestScrollColumnIntoView?.Invoke(vm);
 
-        // Pro Fixed mód: přidej buňku do každého existujícího řádku
         if (_element.Mode == TableMode.Fixed)
             foreach (var row in RowVMs)
             {
@@ -245,9 +283,9 @@ public partial class TableEditorDialog : Window
             }
     }
 
-    private void RemoveColumn_Click(object sender, RoutedEventArgs e)
+    private void RemoveColumn()
     {
-        if (ColumnsGrid.SelectedItem is not ColumnVM vm) return;
+        if (SelectedColumnVM is not ColumnVM vm) return;
         int idx = ColumnVMs.IndexOf(vm);
         ColumnVMs.Remove(vm);
 
@@ -259,164 +297,96 @@ public partial class TableEditorDialog : Window
             }
     }
 
-    private void MoveColumnUp_Click(object sender, RoutedEventArgs e)
+    private void MoveColumnUp()
     {
-        if (ColumnsGrid.SelectedItem is not ColumnVM vm) return;
-        int idx = ColumnVMs.IndexOf(vm);
-        if (idx <= 0) return;
-        ColumnVMs.Move(idx, idx - 1);
+        if (SelectedColumnVM is null) return;
+        int idx = ColumnVMs.IndexOf(SelectedColumnVM);
+        if (idx > 0) ColumnVMs.Move(idx, idx - 1);
     }
 
-    private void MoveColumnDown_Click(object sender, RoutedEventArgs e)
+    private void MoveColumnDown()
     {
-        if (ColumnsGrid.SelectedItem is not ColumnVM vm) return;
-        int idx = ColumnVMs.IndexOf(vm);
-        if (idx < 0 || idx >= ColumnVMs.Count - 1) return;
-        ColumnVMs.Move(idx, idx + 1);
+        if (SelectedColumnVM is null) return;
+        int idx = ColumnVMs.IndexOf(SelectedColumnVM);
+        if (idx >= 0 && idx < ColumnVMs.Count - 1) ColumnVMs.Move(idx, idx + 1);
     }
 
-    // ─── Řádky ───────────────────────────────────────────────────────
+    // ── Řádky ─────────────────────────────────────────────────────────────────
 
-    private void AddRow_Click(object sender, RoutedEventArgs e)
+    private void AddRow()
     {
         var vm = new RowVM();
         foreach (var col in ColumnVMs)
             vm.Cells.Add(new CellVM { ColumnHeader = col.Header, Content = "" });
         RowVMs.Add(vm);
-        RowsList.SelectedItem = vm;
+        SelectedRowVM = vm;
     }
 
-    private void RemoveRow_Click(object sender, RoutedEventArgs e)
+    private void RemoveRow()
     {
-        if (RowsList.SelectedItem is RowVM vm)
-            RowVMs.Remove(vm);
+        if (SelectedRowVM is RowVM vm) RowVMs.Remove(vm);
     }
 
-    private void MoveRowUp_Click(object sender, RoutedEventArgs e)
+    private void MoveRowUp()
     {
-        if (RowsList.SelectedItem is not RowVM vm) return;
-        int idx = RowVMs.IndexOf(vm);
-        if (idx <= 0) return;
-        RowVMs.Move(idx, idx - 1);
-        RowsList.SelectedItem = vm;
+        if (SelectedRowVM is null) return;
+        int idx = RowVMs.IndexOf(SelectedRowVM);
+        if (idx > 0) { RowVMs.Move(idx, idx - 1); }
     }
 
-    private void MoveRowDown_Click(object sender, RoutedEventArgs e)
+    private void MoveRowDown()
     {
-        if (RowsList.SelectedItem is not RowVM vm) return;
-        int idx = RowVMs.IndexOf(vm);
-        if (idx < 0 || idx >= RowVMs.Count - 1) return;
-        RowVMs.Move(idx, idx + 1);
-        RowsList.SelectedItem = vm;
+        if (SelectedRowVM is null) return;
+        int idx = RowVMs.IndexOf(SelectedRowVM);
+        if (idx >= 0 && idx < RowVMs.Count - 1) { RowVMs.Move(idx, idx + 1); }
     }
 
-    private bool _suppressVisibilityChange;
+    // ── Ze šablony ────────────────────────────────────────────────────────────
 
-    private void RowsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        _suppressVisibilityChange = true;
-        if (RowsList.SelectedItem is RowVM row)
-        {
-            CellsGrid.ItemsSource      = row.Cells;
-            RowVisibilityBox.Text      = row.VisibilityExpression ?? "";
-            RowVisibilityBox.IsEnabled = true;
-        }
-        else
-        {
-            CellsGrid.ItemsSource      = null;
-            RowVisibilityBox.Text      = "";
-            RowVisibilityBox.IsEnabled = false;
-        }
-        _suppressVisibilityChange = false;
-    }
-
-    private void RowVisibilityBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (_suppressVisibilityChange) return;
-        if (RowsList.SelectedItem is RowVM row)
-            row.VisibilityExpression = string.IsNullOrWhiteSpace(RowVisibilityBox.Text)
-                ? null
-                : RowVisibilityBox.Text;
-    }
-
-    // ─── OK / Storno ─────────────────────────────────────────────────
-
-    private void OkButton_Click(object sender, RoutedEventArgs e)
-    {
-        // Ukončení editace aktivní buňky v DataGridu
-        ColumnsGrid.CommitEdit(DataGridEditingUnit.Row, true);
-        CellsGrid.CommitEdit(DataGridEditingUnit.Row, true);
-
-        ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
-
-        if (_element.Mode == TableMode.Fixed)
-            ResultRows = RowVMs.Select(rvm => rvm.ToModel()).ToList();
-
-        DialogResult = true;
-    }
-
-    // ─── Ze šablony ──────────────────────────────────────────────────
-
-    private const string DlgTitleLoadTemplate = "Načíst šablonu";
-
-    private void LoadTemplate_Click(object sender, RoutedEventArgs e)
+    private void LoadTemplate()
     {
         if (_templateProvider is null) return;
 
         var templates = _templateProvider.GetAvailableTemplates();
         if (templates.Count == 0)
         {
-            MessageBox.Show("Nejsou dostupné žádné šablony tabulek.", DlgTitleLoadTemplate,
+            MessageBox.Show("Nejsou dostupné žádné šablony tabulek.", "Načíst šablonu",
                 MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        // Picker — jednoduchý dialog s ListBoxem
+        // Picker — jednoduchý inline dialog s ListBoxem
         var picker = new Window
         {
             Title                 = "Vyberte šablonu tabulky",
             Width                 = 340,
             Height                = 260,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Owner                 = this,
+            Owner                 = Application.Current.MainWindow,
             ResizeMode            = ResizeMode.NoResize,
             ShowInTaskbar         = false
         };
 
-        var list = new System.Windows.Controls.ListBox
-        {
-            Margin            = new Thickness(10, 10, 10, 0),
-            VerticalAlignment = VerticalAlignment.Stretch
-        };
+        var list = new System.Windows.Controls.ListBox { Margin = new Thickness(10, 10, 10, 0) };
         foreach (var t in templates)
-            list.Items.Add(new ListBoxItem { Content = t.Label, Tag = t.Key });
+            list.Items.Add(new System.Windows.Controls.ListBoxItem { Content = t.Label, Tag = t.Key });
         list.SelectedIndex = 0;
 
-        var btnOk = new Button
-        {
-            Content             = "Použít",
-            Width               = 80,
-            IsDefault           = true,
-            Margin              = new Thickness(0, 8, 8, 10),
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-        };
-        var btnCancel = new Button
-        {
-            Content             = "Storno",
-            Width               = 80,
-            IsCancel            = true,
-            Margin              = new Thickness(0, 8, 0, 10),
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-        };
+        var btnOk     = new Button { Content = "Použít", Width = 80, IsDefault = true,
+                                     Margin = new Thickness(0, 8, 8, 10),
+                                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right};
+        var btnCancel = new Button { Content = "Storno", Width = 80, IsCancel = true,
+                                     Margin = new Thickness(0, 8, 0, 10),
+                                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right};
 
         btnOk.Click     += (_, _) => picker.DialogResult = true;
         btnCancel.Click += (_, _) => picker.DialogResult = false;
 
-        var btnPanel = new StackPanel
+        var btnPanel = new System.Windows.Controls.StackPanel
         {
-            Orientation         = System.Windows.Controls.Orientation.Horizontal,
+            Orientation = System.Windows.Controls.Orientation.Horizontal,
             HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
-            Margin              = new Thickness(10, 0, 10, 0)
+            Margin = new Thickness(10, 0, 10, 0)
         };
         btnPanel.Children.Add(btnOk);
         btnPanel.Children.Add(btnCancel);
@@ -431,52 +401,45 @@ public partial class TableEditorDialog : Window
         picker.Content = root;
 
         if (picker.ShowDialog() != true) return;
-        if (list.SelectedItem is not ListBoxItem selected) return;
+        if (list.SelectedItem is not System.Windows.Controls.ListBoxItem selected) return;
 
         var key = (string)selected.Tag!;
         var def = _templateProvider.GetTemplate(key);
         if (def is null)
         {
-            MessageBox.Show("Šablonu se nepodařilo načíst.", DlgTitleLoadTemplate,
+            MessageBox.Show("Šablonu se nepodařilo načíst.", "Načíst šablonu",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        // Aplikovat šablonu — nahradit sloupce a řádky
         ColumnVMs.Clear();
         foreach (var col in def.Columns)
-        {
-            var vm = ColumnVM.FromModel(col);
-            vm.ValidFieldNames = _validFieldNames;
-            ColumnVMs.Add(vm);
-        }
+            ColumnVMs.Add(WithValidation(ColumnVM.FromModel(col)));
 
         RowVMs.Clear();
         foreach (var row in def.Rows)
             RowVMs.Add(RowVM.FromModel(row, def.Columns));
     }
 
-    // ─── Klávesnicová navigace v DataGridu ───────────────────────────
-    // Enter = začít editaci; Tab = přejít do další buňky (zajistí SelectionUnit=Cell)
+    // ── OK / Storno ───────────────────────────────────────────────────────────
 
-    private void Grid_PreviewKeyDown(object sender, KeyEventArgs e)
+    /// <summary>Commitne editaci (volá View callback), sestaví výsledky a zavře dialog.</summary>
+    protected override void OnOk()
     {
-        if (sender is not DataGrid dg) return;
+        RequestCommitEdits?.Invoke();
 
-        if (e.Key == Key.Enter)
-        {
-            // Enter mimo editaci → začni editovat aktuální buňku
-            if (dg.CurrentCell.Item != null)
-            {
-                dg.BeginEdit();
-                e.Handled = true;
-            }
-        }
-        else if (e.Key == Key.Tab)
-        {
-            // Tab v editaci → potvrď a přejdi na další buňku
-            dg.CommitEdit(DataGridEditingUnit.Cell, true);
-            // Výchozí Tab navigace DataGridu zajistí přesun buňky
-        }
+        ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
+        if (_element.Mode == TableMode.Fixed)
+            ResultRows = RowVMs.Select(rvm => rvm.ToModel()).ToList();
+
+        CloseDialog(true);
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private ColumnVM WithValidation(ColumnVM vm)
+    {
+        vm.ValidFieldNames = _validFieldNames;
+        return vm;
     }
 }

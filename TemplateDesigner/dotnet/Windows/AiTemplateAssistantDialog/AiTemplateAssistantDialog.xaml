@@ -40,25 +40,32 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <ProgressBar x:Name="ProgressBar"
-                             Grid.Column="0"
+                <ProgressBar Grid.Column="0"
                              Height="24"
                              Margin="0,0,12,0"
-                             Visibility="Collapsed"
-                             IsIndeterminate="True"/>
+                             IsIndeterminate="True">
+                    <ProgressBar.Style>
+                        <Style TargetType="ProgressBar">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ProgressBar.Style>
+                </ProgressBar>
 
-                <Button x:Name="BtnGenerate"
-                        Grid.Column="1"
+                <Button Grid.Column="1"
                         Content="Vygenerovat šablonu"
-                        Click="BtnGenerate_Click"
+                        Command="{Binding GenerateCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
                         Padding="16,6"
                         Margin="0,0,8,0"
                         IsDefault="True"/>
 
-                <Button x:Name="BtnCancel"
-                        Grid.Column="2"
+                <Button Grid.Column="2"
                         Content="Zavřít"
-                        Click="BtnCancel_Click"
                         Padding="16,6"
                         IsCancel="True"/>
             </Grid>
@@ -69,7 +76,8 @@
             <StackPanel>
                 <!-- Volba agendy -->
                 <TextBlock Text="Agenda (volitelné)" Style="{StaticResource SectionHeader}"/>
-                <ComboBox x:Name="AgendaComboBox"
+                <ComboBox SelectedValue="{Binding SelectedAgenda}"
+                          SelectedValuePath="Tag"
                           SelectedIndex="0"
                           Margin="0,0,0,0">
                     <ComboBoxItem Content="Obecná šablona" Tag=""/>
@@ -84,7 +92,8 @@
 
                 <!-- Popis šablony -->
                 <TextBlock Text="Popis šablony *" Style="{StaticResource SectionHeader}"/>
-                <TextBox x:Name="DescriptionTextBox"
+                <TextBox Text="{Binding Description, UpdateSourceTrigger=PropertyChanged}"
+                         x:Name="DescriptionTextBox"
                          Height="200"
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
@@ -102,7 +111,8 @@
 
                 <!-- API Key (volitelné) -->
                 <TextBlock Text="Anthropic API Key (volitelné)" Style="{StaticResource SectionHeader}"/>
-                <TextBox x:Name="ApiKeyTextBox"
+                <TextBox Text="{Binding ApiKey, UpdateSourceTrigger=PropertyChanged}"
+                         x:Name="ApiKeyTextBox"
                          FontFamily="Consolas"
                          Padding="8"/>
                 <TextBlock FontSize="10"

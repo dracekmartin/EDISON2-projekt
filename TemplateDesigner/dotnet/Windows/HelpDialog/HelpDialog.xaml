@@ -81,7 +81,6 @@
             <Button Content="Zavřít"
                     IsDefault="True"
                     IsCancel="True"
-                    Click="BtnClose_Click"
                     Padding="20,6"
                     HorizontalAlignment="Right"/>
         </Border>

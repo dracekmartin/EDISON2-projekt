@@ -13,6 +13,7 @@
             <Setter Property="Padding" Value="10,3"/>
             <Setter Property="Margin" Value="0,0,6,0"/>
         </Style>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Window.Resources>
 
     <Grid Margin="10">
@@ -41,6 +42,8 @@
                               RowHeaderWidth="0"
                               BorderThickness="1"
                               BorderBrush="#CCCCCC"
+                              ItemsSource="{Binding ColumnVMs}"
+                              SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
                               PreviewKeyDown="Grid_PreviewKeyDown">
                         <DataGrid.Columns>
                             <DataGridTextColumn   Header="Záhlaví"   Binding="{Binding Header,  UpdateSourceTrigger=PropertyChanged}" Width="140"/>
@@ -73,7 +76,7 @@
                                                   IsTextSearchEnabled="True"
                                                   StaysOpenOnEdit="True"
                                                   Text="{Binding Field, UpdateSourceTrigger=PropertyChanged}"
-                                                  ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=FieldNameOptions}"
+                                                  ItemsSource="{Binding DataContext.FieldNameOptions, RelativeSource={RelativeSource AncestorType=Window}}"
                                                   BorderThickness="0"
                                                   FontSize="12"/>
                                     </DataTemplate>
@@ -85,12 +88,12 @@
                                                    Width="70">
                                 <DataGridComboBoxColumn.ElementStyle>
                                     <Style TargetType="ComboBox">
-                                        <Setter Property="ItemsSource" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WidthModeOptions}"/>
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.WidthModeOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </Style>
                                 </DataGridComboBoxColumn.ElementStyle>
                                 <DataGridComboBoxColumn.EditingElementStyle>
                                     <Style TargetType="ComboBox">
-                                        <Setter Property="ItemsSource" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=WidthModeOptions}"/>
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.WidthModeOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </Style>
                                 </DataGridComboBoxColumn.EditingElementStyle>
                             </DataGridComboBoxColumn>
@@ -99,12 +102,12 @@
                                                    Width="90">
                                 <DataGridComboBoxColumn.ElementStyle>
                                     <Style TargetType="ComboBox">
-                                        <Setter Property="ItemsSource" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=AlignmentOptions}"/>
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.AlignmentOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </Style>
                                 </DataGridComboBoxColumn.ElementStyle>
                                 <DataGridComboBoxColumn.EditingElementStyle>
                                     <Style TargetType="ComboBox">
-                                        <Setter Property="ItemsSource" Value="{Binding RelativeSource={RelativeSource AncestorType=Window}, Path=AlignmentOptions}"/>
+                                        <Setter Property="ItemsSource" Value="{Binding DataContext.AlignmentOptions, RelativeSource={RelativeSource AncestorType=Window}}"/>
                                     </Style>
                                 </DataGridComboBoxColumn.EditingElementStyle>
                             </DataGridComboBoxColumn>
@@ -115,11 +118,13 @@
 
                     <StackPanel Grid.Row="1" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="+ Přidat" Click="AddColumn_Click"/>
-                            <Button Content="↑" Width="28" Click="MoveColumnUp_Click"/>
-                            <Button Content="↓" Width="28" Click="MoveColumnDown_Click"/>
-                            <Button Content="Odebrat" Click="RemoveColumn_Click"/>
-                            <Button x:Name="BtnLoadTemplate" Content="Ze šablony..." Click="LoadTemplate_Click" Margin="16,0,0,0"/>
+                            <Button Content="+ Přidat"  Command="{Binding AddColumnCommand}"/>
+                            <Button Content="↑" Width="28" Command="{Binding MoveColumnUpCommand}"/>
+                            <Button Content="↓" Width="28" Command="{Binding MoveColumnDownCommand}"/>
+                            <Button Content="Odebrat"   Command="{Binding RemoveColumnCommand}"/>
+                            <Button Content="Ze šablony..." Command="{Binding LoadTemplateCommand}"
+                                    Margin="16,0,0,0"
+                                    Visibility="{Binding ShowLoadTemplate, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
                         <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="#888888"
                                    Text="Pole: název ze schématu bez závorek (nebo s závorkami — {ZASTAVKA} i ZASTAVKA je přijato)."/>
@@ -128,7 +133,8 @@
             </TabItem>
 
             <!-- ── Řádky (Fixed mód) ───────────────────────────────── -->
-            <TabItem Header="Řádky" x:Name="TabRows">
+            <TabItem Header="Řádky"
+                     Visibility="{Binding ShowRowsTab, Converter={StaticResource BoolToVis}}">
                 <Grid Margin="6">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="180"/>
@@ -143,7 +149,8 @@
                         </Grid.RowDefinitions>
 
                         <ListBox x:Name="RowsList"
-                                 SelectionChanged="RowsList_SelectionChanged"
+                                 ItemsSource="{Binding RowVMs}"
+                                 SelectedItem="{Binding SelectedRowVM, Mode=TwoWay}"
                                  BorderThickness="1" BorderBrush="#CCCCCC">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
@@ -153,10 +160,10 @@
                         </ListBox>
 
                         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,6,0">
-                            <Button Content="+" Width="28" Click="AddRow_Click"/>
-                            <Button Content="↑" Width="28" Click="MoveRowUp_Click"/>
-                            <Button Content="↓" Width="28" Click="MoveRowDown_Click"/>
-                            <Button Content="✕" Width="28" Click="RemoveRow_Click"/>
+                            <Button Content="+" Width="28" Command="{Binding AddRowCommand}"/>
+                            <Button Content="↑" Width="28" Command="{Binding MoveRowUpCommand}"/>
+                            <Button Content="↓" Width="28" Command="{Binding MoveRowDownCommand}"/>
+                            <Button Content="✕" Width="28" Command="{Binding RemoveRowCommand}"/>
                         </StackPanel>
                     </Grid>
 
@@ -171,10 +178,9 @@
                         <!-- Podmínka viditelnosti řádku -->
                         <StackPanel Margin="0,0,0,8">
                             <TextBlock Text="Viditelnost řádku:" FontWeight="SemiBold" Margin="0,0,0,2"/>
-                            <TextBox x:Name="RowVisibilityBox"
-                                     FontFamily="Consolas" FontSize="12"
-                                     IsEnabled="False"
-                                     TextChanged="RowVisibilityBox_TextChanged"
+                            <TextBox FontFamily="Consolas" FontSize="12"
+                                     IsEnabled="{Binding IsRowSelected}"
+                                     Text="{Binding SelectedRowVM.VisibilityExpression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="Výraz podmíněné viditelnosti. Prázdné = vždy viditelný."/>
                             <TextBlock Text="Výraz — prázdné = vždy viditelný  |  dostupné: {POLE}, &gt;, &lt;, ==, !=, &amp;&amp;, ||, !"
                                        FontSize="10" Foreground="#888888" Margin="0,2,0,0"/>
@@ -192,6 +198,7 @@
                                   RowHeaderWidth="0"
                                   BorderThickness="1"
                                   BorderBrush="#CCCCCC"
+                                  ItemsSource="{Binding SelectedRowVM.Cells}"
                                   PreviewKeyDown="Grid_PreviewKeyDown">
                             <DataGrid.Columns>
                                 <DataGridTextColumn Header="Záhlaví sloupce" Binding="{Binding ColumnHeader}" IsReadOnly="True" Width="130"/>
@@ -207,7 +214,7 @@
         <!-- Tlačítka OK / Storno -->
         <StackPanel Grid.Row="1" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="OK"     Width="80" IsDefault="True" Click="OkButton_Click"/>
+            <Button Content="OK"     Width="80" IsDefault="True" Command="{Binding OkCommand}"/>
             <Button Content="Storno" Width="80" IsCancel="True"  Margin="0"/>
         </StackPanel>
     </Grid>
