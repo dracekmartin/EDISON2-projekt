@@ -5,7 +5,7 @@ Two-tier WPF application: .NET UI ↔ Caché (InterSystems) back-end via HTTP (M
 ## Repository layout
 
 | Folder | Role |
-|---|---|
+| --- | --- |
 | `EDISONMAIN2/dotnet/` | Main WPF application (entry point, windows, services). |
 | `EDControls/dotnet/` | Shared WPF control library (EDFooter, EDInputForm, EDList, EDViewModel, EDActionInProgress). |
 | `MLRest.md` | Full Caché-side architecture reference (namespaces, macros, wire protocol). |
@@ -84,7 +84,7 @@ loop, `return null`).
 
 CVar maps to string-subscripted process-private globals:
 
-```
+```text
 .NET cVar["key"]          → ^||ML("IN","key")
 .NET cVar["1"]            → ^||ML("IN","1")    ← string "1", NOT numeric 1
 .NET CList("A","B","C")   → $lb("A","B","C")  in Caché
@@ -115,7 +115,7 @@ Stored in `$$$SYSBinary(GUID)` on the Caché side; cleaned up automatically.
 ### Key properties
 
 | Property | Description |
-|---|---|
+| --- | --- |
 | `Delimiter` | Field separator (`char`). Only needed when working with legacy delimiter-based protocols; not required with CVar/CList. |
 | `Idfa` | Current company identifier (e.g. `"CB_DP"`). Changes when the user switches company. |
 | `Mlp` | User ID string. Passed in `sys("U","MLP")` on the Caché side. |
@@ -191,3 +191,70 @@ foreach (KeyValuePair<string, CVar> kvp in output)
 
 See `EDFooter/CLAUDE.md` for the full window + footer template.
 See `EDComponentAndViewModelTestWindow` for a working reference implementation.
+
+---
+
+## EDIcons — shared icon library
+
+Icons live in `EDControls/dotnet/EDIcons/`. Only icons actually used by the application are
+copied there from the source set. The `EDIcons.xaml` resource dictionary maps each file to
+a semantic key.
+
+### Adding a new icon
+
+1. Copy the PNG from the icon set into `EDControls/dotnet/EDIcons/png/`.
+2. Register it in `EDControls/dotnet/EDControls.csproj`:
+
+   ```xml
+   <Resource Include="EDIcons\png\myicon.png"/>
+   ```
+
+   Only PNG files need explicit registration. The SDK auto-includes all `.xaml` files as
+   `Page` items — adding a `<Page>` entry manually causes a duplicate build error.
+
+3. Add a `BitmapImage` entry in `EDControls/dotnet/EDIcons/EDIcons.xaml`:
+
+   ```xml
+   <BitmapImage x:Key="EDIcons.MyName"
+                UriSource="pack://application:,,,/EDControls;component/EDIcons/png/myicon.png"/>
+   ```
+
+   Use a **semantic key** (`EDIcons.MyName`, not `EDIcons.Myicon`) so swapping the PNG only
+   touches `EDIcons.xaml`.
+
+### App.xaml — required merge
+
+Every application that uses icons must merge `EDIcons.xaml` once in its `App.xaml`.
+Without this, `{StaticResource EDIcons.X}` will throw at runtime.
+
+```xml
+<Application.Resources>
+    <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDIcons/EDIcons.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+</Application.Resources>
+```
+
+Already done in `EDISONMAIN2/dotnet/App.xaml` and `TemplateDesigner/dotnet/App.xaml`.
+Any new application project must add the same merge.
+
+### Using an icon in XAML
+
+With the merge in place, `{StaticResource EDIcons.X}` is available in every window across
+every project:
+
+```xml
+<Button ToolTip="Přidat">
+    <Image Source="{StaticResource EDIcons.Add}" Width="16" Height="16"/>
+</Button>
+```
+
+### Current icons
+
+| Key              | File          | Meaning        |
+|------------------|---------------|----------------|
+| `EDIcons.Add`    | `add2.png`    | Add a new item |
+| `EDIcons.Edit`   | `edit.png`    | Edit an item   |
+| `EDIcons.Delete` | `delete2.png` | Delete an item |

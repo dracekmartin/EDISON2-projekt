@@ -45,6 +45,16 @@
             <Button Content="Test EDList"    Command="{Binding OpenEDListTestCommand}"/>
             <Separator/>
             <Button Content="Test EDWindow"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
+            <Separator/>
+            <Button ToolTip="Přidat">
+                <Image Source="{StaticResource EDIcons.Add}" Width="16" Height="16"/>
+            </Button>
+            <Button ToolTip="Upravit">
+                <Image Source="{StaticResource EDIcons.Edit}" Width="16" Height="16"/>
+            </Button>
+            <Button ToolTip="Smazat">
+                <Image Source="{StaticResource EDIcons.Delete}" Width="16" Height="16"/>
+            </Button>
         </ToolBar>
         <TreeView x:Name="ModuleTree" Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TopLevelModules}" Grid.ColumnSpan="2">
             <b:Interaction.Triggers>
