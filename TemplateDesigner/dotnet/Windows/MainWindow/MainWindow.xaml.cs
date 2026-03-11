@@ -24,7 +24,7 @@ public partial class MainWindow : Window
     // ── Canvas / preview ──────────────────────────────────────────────────────
     private DesignerCanvas?         _canvas;
     private PreviewCanvas?          _previewCanvas;
-    private ElementPropertiesWindow? _propsWindow;
+    private ElementPropertiesWindowViewModel? _propsVm;
 
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
@@ -98,11 +98,11 @@ public partial class MainWindow : Window
 
         // Wire section events
         _vm.SectionsRebuilt += RestoreSectionSelection;
-        SectionVM.ShowPropertiesGlobal = s => _propsWindow?.ShowForSection(s);
+        SectionVM.ShowPropertiesGlobal = s => OpenPropertiesForSection(s);
         SectionVM.SaveTemplateGlobal   = s => SaveSectionAsTemplate(s);
 
-        // Properties window
-        _propsWindow = new ElementPropertiesWindow(
+        // Properties VM — sdílená instance, dialog se vytvoří pokaždé nový při otevření
+        _propsVm = new ElementPropertiesWindowViewModel(
             _vm.State,
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
             _vm.RebuildSections,
@@ -111,9 +111,6 @@ public partial class MainWindow : Window
             getAvailableFields:    _vm.GetAvailableFields,
             getAvailableGroups:    _vm.GetAvailableGroups,
             tableTemplateProvider: _vm.TableTemplateProvider);
-
-        this.Loaded += (_, _) => _propsWindow.Owner = this;
-        this.Closed += (_, _) => _propsWindow.CloseForReal();
 
         // Initial state
         _vm.RefreshFieldsList();
@@ -228,7 +225,7 @@ public partial class MainWindow : Window
     private void SectionsList_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
         if (SectionsList.SelectedItem is SectionVM svm)
-            _propsWindow?.ShowForSection(svm.Section);
+            OpenPropertiesForSection(svm.Section);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -287,7 +284,7 @@ public partial class MainWindow : Window
 
     private void MenuPageProps_Click(object sender, RoutedEventArgs e)
     {
-        if (_vm is not null) _propsWindow!.ShowForPage(_vm.State.CurrentTemplate);
+        if (_vm is not null) OpenPropertiesForPage(_vm.State.CurrentTemplate);
     }
 
     private void MenuUndo_Click(object sender, RoutedEventArgs e)  => _vm!.UndoCommand.Execute(null);
@@ -299,12 +296,13 @@ public partial class MainWindow : Window
     {
         if (_vm is null) return;
         var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
-        var dialog = new AiTemplateAssistantDialog(apiKey, _vm.SchemaProvider) { Owner = this };
+        var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider);
+        var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
 
-        if (dialog.ShowDialog() == true && dialog.GeneratedTemplate is not null)
+        if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
         {
             if (!_vm.ConfirmUnsavedChanges()) return;
-            _vm.LoadGeneratedTemplate(dialog.GeneratedTemplate);
+            _vm.LoadGeneratedTemplate(aiVm.GeneratedTemplate);
         }
     }
 
@@ -486,6 +484,34 @@ public partial class MainWindow : Window
     // Helpers
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ── Properties dialog helpers ────────────────────────────────────────────
+
+    private void OpenPropertiesForElement(TemplateElement element)
+    {
+        _propsVm!.PrepareForElement(element, isNewSession: true);
+        new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
+        InvalidateCanvas();
+        InvalidatePreview();
+    }
+
+    private void OpenPropertiesForSection(Section section)
+    {
+        _propsVm!.PrepareForSection(section);
+        new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
+        InvalidateCanvas();
+        InvalidatePreview();
+        _vm!.RebuildSections();
+    }
+
+    private void OpenPropertiesForPage(Template template)
+    {
+        _propsVm!.PrepareForPage(template);
+        new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
+        UpdateCanvasSize();
+        InvalidateCanvas();
+        InvalidatePreview();
+    }
+
     private void UpdatePropertiesPanel()
     {
         if (_vm is null) return;
@@ -498,12 +524,8 @@ public partial class MainWindow : Window
                               (el.IsLocked ? "  [ZAMČENO]" : "") +
                               "  |  2× klik nebo Enter = vlastnosti";
 
-            if (_propsWindow!.IsVisible)
-                _propsWindow.ShowForElement(el);
             return;
         }
-
-        _propsWindow?.Hide();
 
         _vm.StatusText = _vm.State.SelectedElements.Count > 1
             ? $"Vybráno {_vm.State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru"
@@ -554,7 +576,7 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
-            _propsWindow!.ShowForPage(_vm.State.CurrentTemplate);
+            OpenPropertiesForPage(_vm.State.CurrentTemplate);
             e.Handled = true;
         }
         else if (e.Key == Key.PageUp && ctrl)
@@ -610,7 +632,7 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)
         {
-            _propsWindow!.ShowForElement(_vm.State.SelectedElements[0]);
+            OpenPropertiesForElement(_vm.State.SelectedElements[0]);
             e.Handled = true;
         }
         else if (e.Key == Key.F1)
@@ -620,14 +642,9 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.Escape)
         {
-            if (_propsWindow?.IsVisible == true)
-                _propsWindow.Hide();
-            else
-            {
-                _vm.State.SelectedElements.Clear();
-                UpdatePropertiesPanel();
-                InvalidateCanvas();
-            }
+            _vm.State.SelectedElements.Clear();
+            UpdatePropertiesPanel();
+            InvalidateCanvas();
             e.Handled = true;
         }
     }
@@ -654,18 +671,18 @@ public partial class MainWindow : Window
                     _vm.State.SelectedElements.Add(dblElement);
                     _vm.ActivateSection(dblSection);
                 }
-                _propsWindow!.ShowForElement(dblElement);
+                OpenPropertiesForElement(dblElement);
                 e.Handled = true;
                 return;
             }
             var dblSection2 = _canvas.HitTestSectionHeader(cx, cy, cw);
             if (dblSection2 is not null)
             {
-                _propsWindow!.ShowForSection(dblSection2);
+                OpenPropertiesForSection(dblSection2);
                 e.Handled = true;
                 return;
             }
-            _propsWindow!.ShowForPage(_vm.State.CurrentTemplate);
+            OpenPropertiesForPage(_vm.State.CurrentTemplate);
             e.Handled = true;
             return;
         }
