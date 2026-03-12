@@ -33,6 +33,12 @@ public class Template
     /// </summary>
     public List<TemplateParameter>? Parameters { get; set; }
 
+    /// <summary>
+    /// Kód kultury pro formátování čísel a datumů, např. "cs-CZ", "en-US".
+    /// Null = výchozí "cs-CZ".
+    /// </summary>
+    public string? CultureCode { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 }

@@ -18,7 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-1. Drag element mezi sekcemi (zbývající část drag & drop roadmap položky)
+*(žádný konkrétní — drag & drop dokončen, viz roadmap pro další možnosti)*
 
 ### ✅ Co máme
 

@@ -1216,7 +1216,7 @@ public partial class MainWindow : Window
 
         if (_mouseMode == MouseMode.AddingElement)
         {
-            if (e.LeftButton != MouseButtonState.Pressed) { CancelAddingElement(); return; }
+            if (e.LeftButton != MouseButtonState.Pressed) { EndAddingElement(); return; }
             _addingGhostPos = new SKPoint(cx, cy);
             _addingTargetSection = _canvas.HitTestSection(cx, cy, cw);
 

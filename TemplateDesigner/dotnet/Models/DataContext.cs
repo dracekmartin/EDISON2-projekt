@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using TemplateDesigner.Models.Expressions;
 
@@ -12,12 +13,16 @@ public class DataContext
     private readonly IReadOnlyDictionary<string, object?> _values;
     private readonly IReadOnlyDictionary<string, IReadOnlyList<DataContext>> _rows;
 
+    public CultureInfo Culture { get; }
+
     public DataContext(
         IReadOnlyDictionary<string, object?>? values = null,
-        IReadOnlyDictionary<string, IReadOnlyList<DataContext>>? rows = null)
+        IReadOnlyDictionary<string, IReadOnlyList<DataContext>>? rows = null,
+        CultureInfo? culture = null)
     {
         _values = values ?? new Dictionary<string, object?>();
         _rows = rows ?? new Dictionary<string, IReadOnlyList<DataContext>>();
+        Culture = culture ?? CultureInfo.CurrentCulture;
     }
 
     /// <summary>Vrátí hodnotu pole, nebo null pokud neexistuje.</summary>
@@ -46,7 +51,7 @@ public class DataContext
             var value = GetString(field, m.Value);
             if (value == m.Value) return value; // pole nenalezeno — vrátit placeholder
             var format = m.Groups[2].Success ? m.Groups[2].Value : null;
-            return PlaceholderFormatter.Format(value, format);
+            return PlaceholderFormatter.Format(value, format, Culture);
         });
     }
 
@@ -54,8 +59,8 @@ public class DataContext
     /// Naformátuje hodnotu podle formátovací instrukce.
     /// Pokud format je null/prázdný, vrátí hodnotu beze změny.
     /// </summary>
-    public static string FormatValue(string value, string? format) =>
-        PlaceholderFormatter.Format(value, format);
+    public static string FormatValue(string value, string? format, CultureInfo? culture = null) =>
+        PlaceholderFormatter.Format(value, format, culture);
 
     /// <summary>
     /// Vrátí nový DataContext s hodnotami z tohoto plus extra hodnoty.
@@ -66,7 +71,21 @@ public class DataContext
         var merged = new Dictionary<string, object?>(_values, StringComparer.OrdinalIgnoreCase);
         foreach (var (k, v) in extra)
             merged[k] = v;
-        return new DataContext(merged, _rows);
+        return new DataContext(merged, _rows, Culture);
+    }
+
+    /// <summary>
+    /// Vrátí nový DataContext se stejnými daty, ale jinou kulturou.
+    /// Kultura se propaguje rekurzivně do všech řádkových DataContextů.
+    /// </summary>
+    public DataContext WithCulture(CultureInfo culture)
+    {
+        if (_rows.Count == 0) return new(_values, _rows, culture);
+        var newRows = _rows.ToDictionary(
+            kvp => kvp.Key,
+            kvp => (IReadOnlyList<DataContext>)kvp.Value.Select(r => r.WithCulture(culture)).ToList(),
+            StringComparer.OrdinalIgnoreCase);
+        return new DataContext(_values, newRows, culture);
     }
 
     public static DataContext Empty { get; } = new();

@@ -268,6 +268,19 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                 Get   = () => template.AgendaCode ?? "",
                 Set   = v  => template.AgendaCode = string.IsNullOrWhiteSpace(v) ? null : v.Trim().ToUpperInvariant()
             },
+            new EnumPropertyDescriptor
+            {
+                Label = "Formát čísel a datumů", Group = "Šablona",
+                Get   = () => (object)(template.CultureCode ?? "cs-CZ"),
+                Set   = v  => template.CultureCode = (string)v switch { "cs-CZ" => null, var s => s },
+                Options =
+                [
+                    ("Čeština (cs-CZ)",     (object)"cs-CZ"),
+                    ("Slovenština (sk-SK)", (object)"sk-SK"),
+                    ("Angličtina (en-US)",  (object)"en-US"),
+                    ("Němčina (de-DE)",     (object)"de-DE"),
+                ]
+            },
             new FloatPropertyDescriptor
             {
                 Label = "Šířka",  Group = "Rozměry stránky",

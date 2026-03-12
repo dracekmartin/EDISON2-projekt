@@ -17,7 +17,7 @@ public static class PlaceholderFormatter
     /// Naformátuje hodnotu podle instrukce. Pokud instrukce je null/prázdná, vrátí hodnotu beze změny.
     /// Při chybě vrátí původní hodnotu (fail-safe).
     /// </summary>
-    public static string Format(string? value, string? formatSpec)
+    public static string Format(string? value, string? formatSpec, CultureInfo? culture = null)
     {
         if (string.IsNullOrEmpty(formatSpec) || value is null) return value ?? "";
 
@@ -26,7 +26,7 @@ public static class PlaceholderFormatter
         if (result is not null) return result;
 
         // Zkusit .NET formátovací řetězec (datum, číslo)
-        var formatted = TryDotNetFormat(value, formatSpec);
+        var formatted = TryDotNetFormat(value, formatSpec, culture);
         return formatted is not null ? NormalizeWhitespace(formatted) : value;
     }
 
@@ -84,19 +84,21 @@ public static class PlaceholderFormatter
         s.Replace('\u00A0', ' ')   // non-breaking space (český formát tisíců)
          .Replace('\u202F', ' ');  // narrow non-breaking space
 
-    private static string? TryDotNetFormat(string value, string formatSpec)
+    private static string? TryDotNetFormat(string value, string formatSpec, CultureInfo? culture = null)
     {
+        var fmt = culture ?? CultureInfo.CurrentCulture;
+
         // Zkusit parsovat jako číslo
         if (double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
         {
-            try { return num.ToString(formatSpec, CultureInfo.CurrentCulture); }
+            try { return num.ToString(formatSpec, fmt); }
             catch (FormatException) { }
         }
 
         // Zkusit parsovat jako datum/čas
         if (DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt))
         {
-            try { return dt.ToString(formatSpec, CultureInfo.CurrentCulture); }
+            try { return dt.ToString(formatSpec, fmt); }
             catch (FormatException) { }
         }
 
@@ -106,7 +108,7 @@ public static class PlaceholderFormatter
             try
             {
                 var asDateTime = DateTime.Today.Add(ts);
-                return asDateTime.ToString(formatSpec, CultureInfo.CurrentCulture);
+                return asDateTime.ToString(formatSpec, fmt);
             }
             catch (FormatException) { }
         }

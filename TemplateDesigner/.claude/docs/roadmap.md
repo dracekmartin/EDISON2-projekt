@@ -9,54 +9,49 @@ Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
 
 ### 🔴 Kritické
 
-**1. Drag & drop při přidávání elementů a sekcí**
-- ✅ **Drag element z toolbaru/palety na canvas** — hotovo (2026-03-12)
-- ✅ **Drag pole z panelu "Pole agendy" na canvas** — hotovo (2026-03-12)
-- ✅ **Drag & drop sekcí v levém panelu** — hotovo (2026-03-12)
-- ✅ **Vizuální zpětná vazba** — ghost preview, drop target highlight — hotovo (2026-03-12)
-- **Drag element mezi sekcemi** — přesun elementu z jedné sekce do druhé tažením přes hranici sekce na canvasu
+*(žádné aktivní)*
 
 ---
 
 ### 🟡 Důležité — omezení flexibility bez toho
 
-**6. Flow layout sekcí (InfiniteTextElement)**
+**1. Flow layout sekcí (InfiniteTextElement)**
 Absolutní pozicování se rozbije jakmile element přeteče svou výšku.
 - `InfiniteTextElement` — textový blok roztahující se podle obsahu (výška null)
 - Sekce s `OverflowBehavior=SplitAcrossPages` musí posouvat elementy pod přetečeným
 - Print engine počítá výšku sekce z obsahu, ne z `DesignerHeight`
 
-**7. Vnořené datasource**
-Flat `_values + _rows` nestačí pro hierarchická data.
-- `_rows` uvnitř `_rows` — kolekce uvnitř kolekce (faktura → položky → daně)
-- TableElement může mít vnořený DataSource odkazující na child kolekci
-- DataContext API rozšířit o `GetChildRows(collectionKey, parentIndex)`
-
-**8. Locale / CultureInfo v RenderContext**
+**2. Locale / CultureInfo v RenderContext**
 Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
 - `CultureInfo` jako součást `RenderContext`
 - Konfigurovatelné per šablona nebo per agenda
 - Konzistentní chování designer ↔ print engine
 
-**9. Import PDF → šablona**
+**3. Import PDF → šablona**
 Strojová analýza existujícího PDF a převod na TemplateDesigner šablonu.
 - **Režim 1 — "1:1 import" (deterministický):** PdfPig extrahuje text (s pozicí, fontem, barvou), čáry, obdélníky, obrázky → mapování na TextElement, LineElement, RectangleElement, ImageElement, TableElement (Fixed). Detekce tabulek z mřížky čar. Převod pt → mm. Výsledek = vizuálně identická šablona se statickými texty.
 - **Režim 2 — "Zchytři to" (AI post-processing):** Vezme výsledek režimu 1 + schéma agendy → AI navrhne nahrazení statických textů za `{PLACEHOLDER}`, identifikuje opakující se záhlaví/patičku (→ sekce OnEveryPage), rozpozná kandidáty na Dynamic tabulku. Uživatel potvrdí/upraví návrhy.
 - Knihovna: **PdfPig** (open source, .NET, per-word bounding boxy, vestavěné algoritmy pro seskupování textu)
 - Režim 1 je užitečný sám o sobě; režim 2 je nadstavba
 
+**4. Vnořené datasource**
+Flat `_values + _rows` nestačí pro hierarchická data.
+- `_rows` uvnitř `_rows` — kolekce uvnitř kolekce (faktura → položky → daně)
+- TableElement může mít vnořený DataSource odkazující na child kolekci
+- DataContext API rozšířit o `GetChildRows(collectionKey, parentIndex)`
+
 ---
 
 ### 🟢 Menší priorita
 
-**10. Grouping v TableElement**
+**5. Grouping v TableElement**
 Seskupení řádků dynamické tabulky podle hodnoty pole.
 - `TableRowType` enum: `GroupHeader`, `Data`, `GroupFooter`, `Summary`
 - `GroupByField` property na TableElement
 - Print engine sleduje změnu hodnoty groupovacího pole a vkládá Header/Footer řádky
 - GroupFooter může obsahovat agregace ze skupiny (SUM/COUNT)
 
-**11. Computed fields**
+**6. Computed fields**
 Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 - Definice v agendě (nebo přímo v šabloně)
 - Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
@@ -66,13 +61,13 @@ Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 
 ### 🔵 Před produkcí (odloženo — řešit až půjde do produkce)
 
-**12. Migrace verzí šablon**
+**7. Migrace verzí šablon**
 Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace. Během vývoje se model mění často a šablony se neverzují — migrace má smysl až při nasazení, kdy existující soubory nesmí přestat fungovat.
 - Explicitní migrace při načítání starších JSON šablon (JsonNode pipeline před deserializací)
 - Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
 - Minimálně: logovat varování při načtení šablony se starší verzí
 
-**13. Metadata a správa šablon**
+**8. Metadata a správa šablon**
 Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit až při nasazení.
 - Autor, datum změny, kategorie, popis
 - Thumbnail preview (PNG generovaný při uložení)
@@ -81,6 +76,12 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 ---
 
 ### ✅ Implementováno
+
+**Drag & drop při přidávání elementů a sekcí** ✅ hotovo (2026-03-12)
+- Drag element z toolbaru/palety na canvas — ghost preview, drop target highlight, clamp + snap
+- Drag pole z panelu "Pole agendy" na canvas — vytvoří TextElement nebo append k existujícímu
+- Drag & drop sekcí v levém panelu — přeřazení tažením, vizuální indikátor, `ReorderSectionCommand`
+- Drag element mezi sekcemi — záměrně odloženo (nízká priorita, aktuální UX postačuje)
 
 **Chytré duplikování elementů** ✅ hotovo (2026-03-12)
 - Ctrl+D → šipka = směrové duplikování (kopie vedle originálu s 4mm mezerou)

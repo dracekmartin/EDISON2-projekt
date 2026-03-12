@@ -304,7 +304,7 @@ public class TableElement : TemplateElement
                     // Aplikovat formát buňky (má přednost) nebo sloupce
                     var cellFormat = cell.Format ?? col.Format;
                     if (cellFormat is not null)
-                        content = DataContext.FormatValue(content, cellFormat);
+                        content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
                     // Vlastní barva buňky
                     if (cell.BackgroundColor is not null)
@@ -374,7 +374,7 @@ public class TableElement : TemplateElement
                 {
                     sample = rows[i].GetString(col.Field ?? "");
                     if (col.Format is not null)
-                        sample = DataContext.FormatValue(sample, col.Format);
+                        sample = DataContext.FormatValue(sample, col.Format, ctx.Data?.Culture);
                 }
                 else
                 {
@@ -440,7 +440,7 @@ public class TableElement : TemplateElement
                     // 3. Aplikovat formát
                     var cellFormat = cell.Format ?? col.Format;
                     if (cellFormat is not null)
-                        content = DataContext.FormatValue(content, cellFormat);
+                        content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
                     // Barva textu buňky
                     sText.Color = cell.TextColor is not null

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
@@ -875,14 +876,21 @@ public class TemplateDesignerViewModel : EDViewModel
             : $"○ Caché: nedostupné — záloha JSON ({agendaCode})";
     }
 
+    public CultureInfo GetTemplateCulture()
+    {
+        try { return CultureInfo.GetCultureInfo(State.CurrentTemplate.CultureCode ?? "cs-CZ"); }
+        catch (CultureNotFoundException) { return CultureInfo.GetCultureInfo("cs-CZ"); }
+    }
+
     // ── Preview mock data (called by code-behind preview renderer) ────────────
     public DataContext? BuildPreviewMockData()
     {
         var agendaCode = State.CurrentTemplate.AgendaCode;
+        var culture = GetTemplateCulture();
         DataContext? mockData = null;
 
         if (agendaCode is not null && CacheProvider is not null)
-            mockData = CacheProvider.GetMockData(agendaCode);
+            mockData = CacheProvider.GetMockData(agendaCode)?.WithCulture(culture);
 
         if (mockData is null)
         {
@@ -903,12 +911,12 @@ public class TemplateDesignerViewModel : EDViewModel
                         var rowData = collection.Fields.ToDictionary(
                             f => f.FieldName,
                             f => (object?)MakeMockValue(f.Example ?? MockDefault(f), f.DataType, i));
-                        return new DataContext(rowData);
+                        return new DataContext(rowData, culture: culture);
                     }).ToList();
                     rowsDict[collection.CollectionKey] = mockRows;
                 }
 
-                mockData = new DataContext(values, rowsDict);
+                mockData = new DataContext(values, rowsDict, culture);
             }
         }
 
@@ -921,7 +929,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
             mockData = mockData is not null
                 ? mockData.WithExtraValues(_cachedParamValues)
-                : new DataContext(_cachedParamValues);
+                : new DataContext(_cachedParamValues, culture: culture);
         }
 
         return mockData;
