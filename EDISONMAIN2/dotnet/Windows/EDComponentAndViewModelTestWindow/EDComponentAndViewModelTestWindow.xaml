@@ -21,6 +21,8 @@
                                 ToolTip="Načíst definici formuláře z Caché"/>
                         <Button Content="Akce 3s" Margin="8,0,0,0" Padding="8,4"
                                 Command="{Binding SimulateActionCommand}"/>
+                        <Button Content="Vyvolat výjimku" Margin="8,0,0,0" Padding="8,4"
+                                Command="{Binding ThrowCommand}"/>
                     </StackPanel>
                 </ef:EDFooter.LeftContent>
             </ef:EDFooter>

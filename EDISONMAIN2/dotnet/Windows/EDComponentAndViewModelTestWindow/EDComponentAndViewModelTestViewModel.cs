@@ -14,6 +14,10 @@ class EDComponentAndViewModelTestViewModel(Func<bool> save) : EDViewModel
         ??= new RelayCommand(SimulateAction);
     private RelayCommand? _simulateActionCommand;
 
+    public RelayCommand ThrowCommand => _throwCommand
+        ??= new RelayCommand(() => throw new InvalidOperationException("Testovací výjimka z RelayCommand."));
+    private RelayCommand? _throwCommand;
+
     private async void SimulateAction()
     {
         using var _ = ActionInProgress();

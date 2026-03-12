@@ -10,4 +10,7 @@ public interface IPopupDisplayer
 
     /// <summary>Standard "close without saving" confirmation. Returns true if user confirmed (Ano).</summary>
     bool ConfirmClose();
+
+    /// <summary>Shows a scrollable error dialog with the full exception text.</summary>
+    void Error(Exception ex);
 }
