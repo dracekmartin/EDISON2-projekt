@@ -18,18 +18,21 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-1. Drag & drop při přidávání elementů a sekcí
+1. Drag element mezi sekcemi (zbývající část drag & drop roadmap položky)
 
 ### ✅ Co máme
 
 - Text, Image, Rectangle, Line, BarcodeElement (QR + Code128), TableElement (Fixed/Dynamic)
 - Parametry sestavy (Part 1 + serializace do JSON), VisibilityExpression evaluator
 - Výrazový jazyk kompletní: podmínky (`&&`, `||`, `!`), formátování (`{POLE:N2}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}`), agregace (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`) v souhrnných řádcích tabulky
-- Live preview, PDF export, DataSchema tree, section management, undo/redo (9 cmd typů)
+- Live preview, PDF export, DataSchema tree, section management, undo/redo (10 cmd typů)
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
 - Custom section templates (file-based), CompositeDataSchemaProvider (Caché + JSON fallback)
 - Smart snap — přichytávání elementů k sobě (edge↔edge, center↔center, gap snap 4mm), zvýraznění cílových elementů, gap indikátor
 - Chytré duplikování — Ctrl+D+šipka umístí kopii vedle originálu s 4mm mezerou; Ctrl+D bez šipky = plain duplikát (+5mm offset); neovlivňuje clipboard
+- Drag & drop elementů z palety na canvas — ghost preview, zvýraznění cílové sekce, clamp + snap na mřížku
+- Drag & drop databázových polí z panelu "Pole agendy" na canvas — vytvoří TextElement s `{POLE}`, nebo připojí placeholder k existujícímu TextElementu
+- Drag & drop řazení sekcí v levém panelu — přetažením místo tlačítek ▲▼, vizuální indikátor pozice
 
 ### 🐛 Známé problémy
 

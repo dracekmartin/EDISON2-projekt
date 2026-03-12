@@ -10,12 +10,11 @@ Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
 ### 🔴 Kritické
 
 **1. Drag & drop při přidávání elementů a sekcí**
-Aktuálně se elementy přidávají přes toolbar menu na pevnou pozici (5×5 mm). Sekce se přidávají na konec seznamu.
-- **Drag element z toolbaru/palety na canvas** — uživatel táhne typ elementu přímo na místo v sekci, kde ho chce umístit; element se vytvoří na pozici puštění myši
-- **Drag pole z panelu "Pole agendy" na canvas** — přetažení pole vytvoří TextElement s `{POLE}` na cílové pozici
-- **Drag & drop sekcí v levém panelu** — přeřazení pořadí sekcí tažením místo tlačítek ▲▼
+- ✅ **Drag element z toolbaru/palety na canvas** — hotovo (2026-03-12)
+- ✅ **Drag pole z panelu "Pole agendy" na canvas** — hotovo (2026-03-12)
+- ✅ **Drag & drop sekcí v levém panelu** — hotovo (2026-03-12)
+- ✅ **Vizuální zpětná vazba** — ghost preview, drop target highlight — hotovo (2026-03-12)
 - **Drag element mezi sekcemi** — přesun elementu z jedné sekce do druhé tažením přes hranici sekce na canvasu
-- Vizuální zpětná vazba: drop target highlight, ghost preview při tažení
 
 ---
 

@@ -85,8 +85,9 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - Sekce se zobrazí se záhlavím (modrý pruh s názvem)
 
 ### Elementy
-- Přidat element do aktivní sekce (**+ Element** v toolbaru)
-- Nový element se umístí na pozici 5×5 mm v sekci
+- **Přidat element tažením z palety** — v druhém řádku toolbaru jsou ikony typů elementů (Text, Obdélník, Čára, Obrázek, Tabulka, QR, Code128); stiskněte ikonu a táhněte na canvas → element se vytvoří na pozici puštění myši v cílové sekci; při tažení se zobrazí ghost preview (čárkovaný obrys) a zvýrazní se cílová sekce
+- **Přidat element přes menu** — tlačítko **+ Element** v toolbaru → klik na typ → element na pozici 5×5 mm (fallback)
+- **Přetáhnout pole agendy na canvas** — z panelu "Pole agendy" táhněte pole přímo na canvas → vytvoří TextElement s `{POLE}` na pozici kurzoru; pokud pole pustíte na existující TextElement, `{POLE}` se připojí k jeho textu
 
 ### Výběr elementů
 - **Klik** — vybere element (modré dashed ohraničení + 8 resize handles)
@@ -197,6 +198,7 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 - Stejný dialog jako pro elementy — OK zachová, Zrušit vrátí změny
 
 ### Správa sekcí
+- **Přeřadit sekci tažením** — v levém panelu stiskněte sekci a táhněte na novou pozici; vizuální indikátor ukazuje kam se sekce vloží; plný undo/redo
 - **Přesunout sekci** — tlačítka ▲▼ v levém panelu, pravé tlačítko myši → Přesunout, nebo **Ctrl+Shift+↑↓**
 - **Smazat sekci** — pravé tlačítko myši na sekci → Smazat sekci (šablona musí mít alespoň jednu sekci)
 - Přesun a smazání jsou undo-able
