@@ -45,6 +45,9 @@ Pravidla:
 - Pokud commit částečně implementuje položku (Part 1 z 2), to označ jako `✅ Part 1 hotovo`
 - Neměň položky které commit neovlivnil
 
+### 4. ./README.md
+- Pokud jde o uživatelskou změnu, přidej do obecného popisu pro koncového uživatele
+
 ## Důležité
 
 - Nepiš žádný výstup uživateli — jen proveď změny v souborech
