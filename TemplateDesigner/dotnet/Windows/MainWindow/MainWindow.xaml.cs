@@ -146,9 +146,11 @@ public partial class MainWindow : Window
 
         this.PreviewKeyDown += OnWindowKeyDown;
 
-        // Field drag from schema tree
+        // Field drag from schema tree — Window-level events for cross-panel drag
         SchemaTree.PreviewMouseLeftButtonDown += SchemaTree_PreviewMouseDown;
         SchemaTree.PreviewMouseMove           += SchemaTree_PreviewMouseMove;
+        this.PreviewMouseMove                 += OnWindowPreviewMouseMove;
+        this.PreviewMouseLeftButtonUp         += OnWindowPreviewMouseUp;
 
         // Section drag reorder in left panel
         SectionsList.PreviewMouseLeftButtonDown += SectionsList_PreviewMouseDown;
@@ -715,16 +717,27 @@ public partial class MainWindow : Window
     private void SchemaTree_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
         _fieldDragCandidate = null;
-        // Zjistit položku přímo z visual tree — SelectedItem se aktualizuje až po MouseDown
         if (e.OriginalSource is DependencyObject source)
         {
-            var item = ItemsControl.ContainerFromElement(SchemaTree, source) as TreeViewItem;
+            // FindVisualParent místo ContainerFromElement — ten vrací rodičovskou skupinu u vnořených TreeView položek
+            var item = FindVisualParent<TreeViewItem>(source);
             if (item?.DataContext is SchemaFieldVM field)
             {
                 _fieldDragStartPoint = e.GetPosition(SchemaTree);
                 _fieldDragCandidate = field;
             }
         }
+    }
+
+    private static T? FindVisualParent<T>(DependencyObject child) where T : DependencyObject
+    {
+        var current = System.Windows.Media.VisualTreeHelper.GetParent(child);
+        while (current is not null)
+        {
+            if (current is T result) return result;
+            current = System.Windows.Media.VisualTreeHelper.GetParent(current);
+        }
+        return null;
     }
 
     private void SchemaTree_PreviewMouseMove(object sender, MouseEventArgs e)
@@ -743,9 +756,40 @@ public partial class MainWindow : Window
         _addingGhostPos = default;
         _fieldDragCandidate = null;
         _mouseMode = MouseMode.AddingElement;
-        skCanvas.CaptureMouse();
         skCanvas.Cursor = Cursors.Cross;
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Window-level PreviewMouseMove — field drag přes celé okno.
+    /// TreeView přebíjí CaptureMouse na skCanvas, proto nelze spoléhat na canvas-level events.
+    /// </summary>
+    private void OnWindowPreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_mouseMode != MouseMode.AddingElement || _addingFieldName is null) return;
+        if (e.LeftButton != MouseButtonState.Pressed) { EndAddingElement(); return; }
+
+        var pos = e.GetPosition(skCanvas);
+        float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
+
+        _addingGhostPos = new SKPoint(cx, cy);
+        _addingTargetSection = _canvas!.HitTestSection(cx, cy, cw);
+
+        _addingTargetElement = null;
+        var hit = _canvas.HitTestElement(cx, cy, cw);
+        if (hit?.Element is TextElement)
+            _addingTargetElement = hit.Value.Element;
+
+        InvalidateCanvas();
+    }
+
+    /// <summary>
+    /// Window-level PreviewMouseLeftButtonUp — dokončí field drag.
+    /// </summary>
+    private void OnWindowPreviewMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_mouseMode != MouseMode.AddingElement || _addingFieldName is null) return;
+        EndAddingElement();
     }
 
     private void ResetAddingElementState()
@@ -1216,7 +1260,7 @@ public partial class MainWindow : Window
 
         if (_mouseMode == MouseMode.AddingElement)
         {
-            if (e.LeftButton != MouseButtonState.Pressed) { EndAddingElement(); return; }
+            if (e.LeftButton != MouseButtonState.Pressed) { CancelAddingElement(); return; }
             _addingGhostPos = new SKPoint(cx, cy);
             _addingTargetSection = _canvas.HitTestSection(cx, cy, cw);
 
