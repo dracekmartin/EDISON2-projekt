@@ -22,6 +22,9 @@ namespace EDControls.EDInputForm.DesignTimeData
             new Field { Key = "mesto", Label = "Město", FieldType = EFieldType.Text,   Required = false, Value = "Praha" },
             new Field { Key = "psc",   Label = "PSČ",   FieldType = EFieldType.Number, Required = false, Value = "10000", ValidateOnChange = true, ValidationError = "PSČ musí mít 5 číslic" },
 
+            new Group { GroupName = "Skrytá sekce", IsVisible = false },
+            new Field { Key = "skryte", Label = "Skryté pole", FieldType = EFieldType.Text, Value = "never shown" },
+
             new Group { GroupName = "Kontakt" },
             new Field { Key = "email",   Label = "E-mail",  FieldType = EFieldType.Text,   Required = false, Value = "jan.novak@example.com" },
             new Field { Key = "telefon", Label = "Telefon", FieldType = EFieldType.Number, Required = false, Value = "" },

@@ -51,7 +51,9 @@ namespace EDControls.EDInputForm
         {
             EnsureConfigured();
             CVar output = MLRest!.QueryOrThrow(CacheClass, "Init", new CVar());
-            Items = ParseItems(output);
+            var newItems = ParseItems(output);
+            PreserveExpansionState(Items, newItems);
+            Items = newItems;
             ExecuteValidate(EValidationTrigger.Init);
         }
 
@@ -76,6 +78,15 @@ namespace EDControls.EDInputForm
 
         // ─── Serialization helpers ────────────────────────────────────────────────
 
+        private static void PreserveExpansionState(IEnumerable<Item>? oldItems, List<Item> newItems)
+        {
+            if (oldItems == null) return;
+            var expanded = oldItems.OfType<Group>().ToDictionary(g => g.GroupName, g => g.IsExpanded);
+            foreach (var g in newItems.OfType<Group>())
+                if (expanded.TryGetValue(g.GroupName, out bool was))
+                    g.IsExpanded = was;
+        }
+
         private static CVar SerializeItemsCVar(IEnumerable<Item>? items)
         {
             var cVar = new CVar();
@@ -84,7 +95,7 @@ namespace EDControls.EDInputForm
             {
                 CList entry = item switch
                 {
-                    Group g => new CList("GROUP", g.GroupName),
+                    Group g => new CList("GROUP", g.GroupName, g.IsVisible ? "1" : "0"),
                     Field f => new CList(
                         "FIELD", f.Key, f.Label,
                         f.FieldType == EFieldType.Number ? "NUMBER" : "TEXT",
@@ -102,6 +113,7 @@ namespace EDControls.EDInputForm
         private static List<Item> ParseItems(CVar output)
         {
             var items = new List<Item>();
+            Group? currentGroup = null;
             foreach (KeyValuePair<string, CVar> kvp in output)
             {
                 if (kvp.Key == "ERR") continue;
@@ -109,7 +121,12 @@ namespace EDControls.EDInputForm
                 string type = row.GetString(1);
                 if (type == "GROUP")
                 {
-                    items.Add(new Group { GroupName = row.GetString(2) });
+                    currentGroup = new Group
+                    {
+                        GroupName = row.GetString(2),
+                        IsVisible = row.Length < 3 || row.GetString(3) != "0",
+                    };
+                    items.Add(currentGroup);
                 }
                 else if (type == "FIELD")
                 {
@@ -121,7 +138,8 @@ namespace EDControls.EDInputForm
                         Value            = row.GetString(5) == "" ? null : row.GetString(5),
                         ValidateOnChange = row.GetString(6) == "1",
                         Required         = row.GetString(7) == "1",
-                        ValidationError  = row.Length >= 8 && row.GetString(8) != "" ? row.GetString(8) : null
+                        ValidationError  = row.Length >= 8 && row.GetString(8) != "" ? row.GetString(8) : null,
+                        ParentGroup      = currentGroup,
                     });
                 }
             }
@@ -137,7 +155,9 @@ namespace EDControls.EDInputForm
             input["trigger"] = new CVar(trigger.ToString());
 
             CVar output = MLRest!.QueryOrThrow(CacheClass, "Validate", input);
-            Items = ParseItems(output);
+            var newItems = ParseItems(output);
+            PreserveExpansionState(Items, newItems);
+            Items = newItems;
             return Items.OfType<Field>().All(f => !f.HasError);
         }
 
