@@ -276,7 +276,7 @@ Každý nový aplikační projekt musí stejný merge přidat.
 Po přidání merge je `{StaticResource EDIcons.X}` dostupný v každém okně napříč všemi projekty:
 
 ```xml
-<Button ToolTip="Přidat">
+<Button ToolTip="{StaticResource EDStrings.Add}">
     <Image Source="{StaticResource EDIcons.Add}" Width="16" Height="16"/>
 </Button>
 ```
@@ -289,3 +289,51 @@ Po přidání merge je `{StaticResource EDIcons.X}` dostupný v každém okně n
 | `EDIcons.Add`      | `add2.png`          | Přidat položku                    |
 | `EDIcons.Edit`     | `edit.png`          | Upravit položku                   |
 | `EDIcons.Delete`   | `delete2.png`       | Smazat položku                    |
+
+---
+
+## EDStrings — sdílené texty tlačítek
+
+Texty běžných akčních tlačítek jsou centralizovány v `EDControls/dotnet/EDStrings/EDStrings.xaml`.
+Díky tomu stačí změnit text na jednom místě a projeví se všude.
+
+### Přidání nového textu
+
+Přidej `sys:String` záznam do `EDControls/dotnet/EDStrings/EDStrings.xaml`:
+
+```xml
+<sys:String x:Key="EDStrings.MyLabel">Můj text</sys:String>
+```
+
+Žádná změna v `.csproj` není potřebná — SDK zahrnuje `.xaml` soubory automaticky.
+
+### Merge v App.xaml
+
+Každá aplikace, která používá texty, musí jednou v `App.xaml` mergovat `EDStrings.xaml`
+(vedle `EDIcons.xaml`):
+
+```xml
+<ResourceDictionary Source="pack://application:,,,/EDControls;component/EDStrings/EDStrings.xaml"/>
+```
+
+Již hotovo v `EDISONMAIN2/dotnet/App.xaml` a `TemplateDesigner/dotnet/App.xaml`.
+
+### Použití v XAML
+
+```xml
+<Button Content="{StaticResource EDStrings.Ok}"/>
+<Button Content="{StaticResource EDStrings.Cancel}"/>
+<Button ToolTip="{StaticResource EDStrings.Add}"/>
+```
+
+### Aktuální texty
+
+| Klíč                  | Hodnota   | Použití                        |
+|-----------------------|-----------|--------------------------------|
+| `EDStrings.Add`       | Přidat    | Tooltip tlačítka Přidat        |
+| `EDStrings.Edit`      | Upravit   | Tooltip tlačítka Upravit       |
+| `EDStrings.Delete`    | Smazat    | Tooltip tlačítka Smazat        |
+| `EDStrings.Close`     | Zavřít    | EDFooter Close mode, dialogy   |
+| `EDStrings.Ok`        | OK        | EDFooter OkCancel mode, dialogy|
+| `EDStrings.Cancel`    | Storno    | EDFooter OkCancel mode, dialogy|
+| `EDStrings.Save`      | Uložit    | Tlačítka uložení               |
