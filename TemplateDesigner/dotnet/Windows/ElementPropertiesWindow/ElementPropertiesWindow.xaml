@@ -20,9 +20,9 @@
                 BorderThickness="0,1,0,0"
                 Background="#F8F8F8">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="OK"     Width="72" IsDefault="True" Command="{Binding OkCommand}"
+                <Button Content="{StaticResource EDStrings.Ok}"     Width="72" IsDefault="True" Command="{Binding OkCommand}"
                         Margin="0,0,6,0" Padding="0,4"/>
-                <Button Content="Zrušit" Width="72" Command="{Binding CancelCommand}" IsCancel="True"
+                <Button Content="{StaticResource EDStrings.Cancel}" Width="72" Command="{Binding CancelCommand}" IsCancel="True"
                         Padding="0,4"/>
             </StackPanel>
         </Border>

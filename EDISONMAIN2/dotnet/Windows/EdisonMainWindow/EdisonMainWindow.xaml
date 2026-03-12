@@ -46,13 +46,13 @@
             <Separator/>
             <Button Content="Test EDWindow"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
             <Separator/>
-            <Button ToolTip="Přidat">
+            <Button ToolTip="{StaticResource EDStrings.Add}">
                 <Image Source="{StaticResource EDIcons.Add}" Width="16" Height="16"/>
             </Button>
-            <Button ToolTip="Upravit">
+            <Button ToolTip="{StaticResource EDStrings.Edit}">
                 <Image Source="{StaticResource EDIcons.Edit}" Width="16" Height="16"/>
             </Button>
-            <Button ToolTip="Smazat">
+            <Button ToolTip="{StaticResource EDStrings.Delete}">
                 <Image Source="{StaticResource EDIcons.Delete}" Width="16" Height="16"/>
             </Button>
         </ToolBar>

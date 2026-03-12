@@ -78,7 +78,7 @@
 
         <!-- Footer s tlačítkem Zavřít -->
         <Border DockPanel.Dock="Bottom" Background="#F8F8F8" Padding="12" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
-            <Button Content="Zavřít"
+            <Button Content="{StaticResource EDStrings.Close}"
                     IsDefault="True"
                     IsCancel="True"
                     Padding="20,6"

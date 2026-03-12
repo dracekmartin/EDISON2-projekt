@@ -65,7 +65,7 @@
                         IsDefault="True"/>
 
                 <Button Grid.Column="2"
-                        Content="Zavřít"
+                        Content="{StaticResource EDStrings.Close}"
                         Padding="16,6"
                         IsCancel="True"/>
             </Grid>
