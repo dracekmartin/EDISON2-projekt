@@ -356,6 +356,7 @@ public class TemplateDesignerViewModel : EDViewModel
     private async void SaveTemplate()
     {
         if (CurrentFilePath is null) { SaveAsTemplate(); return; }
+        SyncParametersToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         RequestTitleUpdate?.Invoke();
     }
@@ -370,8 +371,14 @@ public class TemplateDesignerViewModel : EDViewModel
         };
         if (dlg.ShowDialog() != true) return;
         CurrentFilePath = dlg.FileName;
+        SyncParametersToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         RequestTitleUpdate?.Invoke();
+    }
+
+    private void SyncParametersToTemplate()
+    {
+        State.CurrentTemplate.Parameters = _agendaParameters.Count > 0 ? [.. _agendaParameters] : null;
     }
 
     private void ExportPreviewPdf()
@@ -734,7 +741,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         _agendaParameters = code is not null && CacheProvider is not null
             ? [.. CacheProvider.GetParameters(code)]
-            : [];
+            : [.. State.CurrentTemplate.Parameters ?? []];
 
         _previewParams.Clear();
         _cachedParamValues = null;
