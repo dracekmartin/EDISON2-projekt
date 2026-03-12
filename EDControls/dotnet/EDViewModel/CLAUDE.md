@@ -10,6 +10,7 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 | `EDViewModel.cs` | Base class. `INotifyPropertyChanged`, `Set<T>()`, `OkCommand`, `RequestClose`, `Actions`, `MLRest`. |
 | `RelayCommand.cs` | `RelayCommand` (no parameter) and `RelayCommand<T>`. |
 | `EDAction.cs` | Model for a single toolbar/menu/shortcut action (label, icon, key, command). |
+| `EDStandardActions.cs` | Factory methods for standard Add/Edit/Delete actions. |
 
 ## EDViewModel API
 
@@ -17,8 +18,10 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 | --- | --- |
 | `event Action<bool?>? RequestClose` | Fired to close the window. `true` = confirmed, `false` = cancelled, `null` = just close. `EDFooter` subscribes automatically on `Loaded`. |
 | `ICommand OkCommand` | Calls `OnOk()`. Bound to the Ok button by `EDFooter`. |
+| `ICommand AddCommand / EditCommand / DeleteCommand` | Call `OnAdd/OnEdit/OnDelete()`. Pass to `EDStandardActions.Add/Edit/Delete(this)`. |
 | `IReadOnlyList<EDAction>? Actions` | Actions for this window. Set in the subclass constructor. `EDToolbar` reads this on `Loaded`; `EDFooter` binds to it via DataContext. Key bindings are registered automatically by `EDViewModel` itself (see below). |
 | `protected virtual void OnOk()` | Override for validation. Call `base.OnOk()` or `CloseDialog(true)` to proceed. Return without calling base to keep the window open. |
+| `protected virtual void OnAdd/OnEdit/OnDelete()` | Override to handle the standard CRUD actions. No-op by default. |
 | `protected void CloseDialog(bool? result)` | Fires `RequestClose`. Usable from any method, not only `OnOk`. |
 | `protected bool Set<T>(ref T field, T value)` | Sets the backing field and fires `PropertyChanged` if the value changed. Returns `true` if it changed. |
 | `protected void OnPropertyChanged(string? name)` | Manually fire `PropertyChanged` — used for computed properties that depend on another. |
@@ -29,6 +32,25 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 ### Key binding auto-registration
 
 `EDViewModel` schedules `RegisterKeyBindings()` via `Dispatcher.BeginInvoke` at `DispatcherPriority.Loaded`. At that point the full constructor chain has completed and the window is in `Application.Current.Windows`. The method finds the window whose `DataContext == this` and adds a `KeyBinding` for every action. **No work is needed in any view** — actions declared in the ViewModel are keyboard-accessible automatically, even if the window has no `EDToolbar` or `EDFooter`.
+
+## EDStandardActions — standard action factory
+
+```csharp
+// Simplest — override OnAdd/OnEdit/OnDelete in the ViewModel:
+Actions = [EDStandardActions.Add(this), EDStandardActions.Edit(this), EDStandardActions.Delete(this)];
+
+protected override void OnAdd() { /* ... */ }
+protected override void OnEdit() { /* ... */ }
+protected override void OnDelete() { /* ... */ }
+
+// With explicit command (e.g. for CanExecute):
+Actions = [EDStandardActions.Add(new RelayCommand(OnAdd, CanAdd)), ...];
+```
+
+`EDStandardActions.Add/Edit/Delete` pre-fill label (`EDStrings`), icon (`EDIcons`), and keyboard
+shortcut (`Ctrl+N` / `Ctrl+E` / `Ctrl+D`). The `(this)` overload binds to `EDViewModel.AddCommand/EditCommand/DeleteCommand`,
+which call the corresponding `OnAdd/OnEdit/OnDelete` virtual methods. Use `new EDAction(...)` directly
+only for non-standard actions.
 
 ## EDAction
 
