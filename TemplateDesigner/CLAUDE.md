@@ -19,13 +19,12 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 ### 🎯 Aktuální focus
 
 1. Grouping v Dynamic tabulkách
-2. Formátovací rozšíření Part 2 — `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
 
 ### ✅ Co máme
 
 - Text, Image, Rectangle, Line, BarcodeElement (QR + Code128), TableElement (Fixed/Dynamic)
 - Parametry sestavy (Part 1 + serializace do JSON), VisibilityExpression evaluator
-- Výrazový jazyk Part 2: formátování placeholderů (`{POLE:N2}`, `{POLE:dd.MM.yyyy}`), agregační funkce (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`) v souhrnných řádcích tabulky
+- Výrazový jazyk kompletní: podmínky (`&&`, `||`, `!`), formátování (`{POLE:N2}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}`), agregace (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`) v souhrnných řádcích tabulky
 - Live preview, PDF export, DataSchema tree, section management, undo/redo (9 cmd typů)
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
 - Custom section templates (file-based), CompositeDataSchemaProvider (Caché + JSON fallback)
