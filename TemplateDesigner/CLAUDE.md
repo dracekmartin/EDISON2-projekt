@@ -18,9 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-1. Migrace verzí šablon
-2. Metadata a správa šablon
-3. Drag & drop při přidávání elementů a sekcí
+1. Drag & drop při přidávání elementů a sekcí
 
 ### ✅ Co máme
 

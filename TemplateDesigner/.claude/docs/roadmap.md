@@ -9,19 +9,7 @@ Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
 
 ### 🔴 Kritické
 
-**1. Migrace verzí šablon**
-Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace.
-- Explicitní migrace při načítání starších JSON šablon
-- Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
-- Minimálně: logovat varování při načtení šablony se starší verzí
-
-**2. Metadata a správa šablon**
-Důležité jakmile šablon bude víc než 10.
-- Autor, datum změny, kategorie, popis
-- Thumbnail preview (PNG generovaný při uložení)
-- Verzování šablon (kdo kdy co změnil)
-
-**3. Drag & drop při přidávání elementů a sekcí**
+**1. Drag & drop při přidávání elementů a sekcí**
 Aktuálně se elementy přidávají přes toolbar menu na pevnou pozici (5×5 mm). Sekce se přidávají na konec seznamu.
 - **Drag element z toolbaru/palety na canvas** — uživatel táhne typ elementu přímo na místo v sekci, kde ho chce umístit; element se vytvoří na pozici puštění myši
 - **Drag pole z panelu "Pole agendy" na canvas** — přetažení pole vytvoří TextElement s `{POLE}` na cílové pozici
@@ -74,6 +62,22 @@ Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 - Definice v agendě (nebo přímo v šabloně)
 - Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
 - Alternativa k výrazovému jazyku pro komplexnější logiku
+
+---
+
+### 🔵 Před produkcí (odloženo — řešit až půjde do produkce)
+
+**12. Migrace verzí šablon**
+Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace. Během vývoje se model mění často a šablony se neverzují — migrace má smysl až při nasazení, kdy existující soubory nesmí přestat fungovat.
+- Explicitní migrace při načítání starších JSON šablon (JsonNode pipeline před deserializací)
+- Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
+- Minimálně: logovat varování při načtení šablony se starší verzí
+
+**13. Metadata a správa šablon**
+Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit až při nasazení.
+- Autor, datum změny, kategorie, popis
+- Thumbnail preview (PNG generovaný při uložení)
+- Verzování šablon (kdo kdy co změnil)
 
 ---
 
