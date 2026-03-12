@@ -10,7 +10,7 @@
         xmlns:modules="clr-namespace:EDISONMAIN2.Services.Modules"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
-        Title="M-line EDISON" Height="800" Width="1200" Icon="/Icons/cube_molecule.png" WindowStartupLocation="CenterScreen" WindowState="Maximized">
+        Title="M-line EDISON" Height="800" Width="1200" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
     <b:Interaction.Triggers>
         <b:EventTrigger EventName="Closed">
             <b:InvokeCommandAction Command="{Binding CloseAllCommand}"/>

@@ -256,8 +256,9 @@ Po přidání merge je `{StaticResource EDIcons.X}` dostupný v každém okně n
 
 ### Aktuální ikony
 
-| Klíč             | Soubor        | Význam          |
-|------------------|---------------|-----------------|
-| `EDIcons.Add`    | `add2.png`    | Přidat položku  |
-| `EDIcons.Edit`   | `edit.png`    | Upravit položku |
-| `EDIcons.Delete` | `delete2.png` | Smazat položku  |
+| Klíč               | Soubor              | Význam                            |
+|--------------------|---------------------|-----------------------------------|
+| `EDIcons.Molecule` | `cube_molecule.png` | Ikona aplikace (EdisonMainWindow) |
+| `EDIcons.Add`      | `add2.png`          | Přidat položku                    |
+| `EDIcons.Edit`     | `edit.png`          | Upravit položku                   |
+| `EDIcons.Delete`   | `delete2.png`       | Smazat položku                    |
