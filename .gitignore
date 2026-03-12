@@ -250,5 +250,5 @@ ModelManifest.xml
 **/.vscode/settings.json
 **/.vscode/launch.json
 
-# Claude Code - lokální nastavení
-**/.claude/
+# Claude Code - osobní nastavení (rules/docs/commands jsou verzované)
+**/.claude/settings.local.json
