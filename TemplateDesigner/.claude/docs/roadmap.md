@@ -7,18 +7,9 @@ Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
 
 ---
 
-### 🔴 Kritické — bez toho narazíme při prvním reálném požadavku
+### 🔴 Kritické
 
-**1. Parametry sestavy** ✅ Part 1 hotovo — zbývá Part 2 (print dialog)
-Uživatel zadá hodnoty před tiskem (datum, filtr, přepínač). Bez toho každá sestava s filtrem vyžaduje změnu kódu.
-- ✅ Definice parametrů v Caché `GetParameters` (název, typ `bool/enum/string/date`, label, default)
-- ✅ Live preview panel s interaktivními kontrolkami — hodnoty injektovány do DataContextu jako `{PARAM_NAME}`
-- ✅ Parametry zobrazeny v pickeru polí s příznakem "(parametr)"
-- ❌ Print dialog dynamicky generovaný ze šablony — bez změny kódu aplikace (Part 2 — závisí na VisibilityExpression)
-- ❌ Ukládání parametrů do JSON šablony + offline fallback (bez Caché)
-- *Předpoklad pro bod 2 (VisibilityExpression)*
-
-**2. Výrazový jazyk** ✅ Part 1 hotovo — zbývá Part 2
+**1. Výrazový jazyk** ✅ Part 1 hotovo — zbývá Part 2
 - ✅ **Part 1 — podmínky a logické operátory:** `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
 - ❌ **Part 2 — agregace a formátování:** `SUM({CENA})`, `COUNT()`, `AVG({CAS})` v TableElement; Summary řádek (zápatí s agregacemi)
 - ❌ Formátovací rozšíření: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
@@ -55,15 +46,7 @@ Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
 
 ---
 
-### 🟢 Technický dluh — nevybuchne hned, ale časem ano
-
-**7. Nápověda klávesových zkratek (Help overlay)**
-Nový uživatel nemá jak zjistit, co aplikace umí — zkratky jsou skryté.
-- Tlačítko "?" nebo "Klávesové zkratky" v toolbaru (nebo menu Nápověda)
-- Overlay / dialog se stručnou tabulkou: akce → zkratka (Ctrl+Z, Ctrl+C/V, Ctrl+Shift+↑↓, Del, Ctrl+scroll, F2/Enter pro editaci…)
-- Ideálně kontextový — jiná sekce pro canvas, jiná pro editor tabulky
-- Implementačně nejjednodušší: statický XAML dialog se `ScrollViewer` + `DataGrid` nebo `StackPanel` s řádky; bez databindingu, jen statický obsah
-- Klávesová zkratka pro otevření: F1 nebo Ctrl+?
+### 🟢 Menší priorita
 
 **8. Chytré duplikování a zarovnání elementů**
 Aktuální Ctrl+C / Ctrl+V vloží kopii s offsetem +5 mm — uživatel pak element přesouvá ručně.
@@ -114,6 +97,17 @@ Důležité jakmile šablon bude víc než 10.
 ### 🔧 UI drobnosti (low priority)
 
 - **Context menu na záhlaví sekce v designeru** — pravý klik přímo na canvasu (Vlastnosti, Duplikovat, Smazat, Přesunout); alternativa k levému panelu
+
+---
+
+## 🖨️ Print Engine (fáze 2) — samostatný projekt
+
+Věci které patří do print enginu, nikoliv do designeru.
+
+- **Print dialog** — dynamicky generovaný ze šablony (`Template.Parameters`); stejný UI pattern jako live preview panel v designeru (CheckBox/ComboBox/TextBox); hodnoty předány enginu před tiskem
+- **Renderování šablony** — načtení JSON šablony + DataContext z Caché → PDF výstup
+- **Flow layout** — sekce s `OverflowBehavior=SplitAcrossPages`, dynamické výšky elementů
+- **VisibilityExpression vyhodnocení** — filtrování sekcí a elementů za běhu dle dat
 
 ---
 

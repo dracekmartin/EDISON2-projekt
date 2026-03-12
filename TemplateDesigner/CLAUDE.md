@@ -17,14 +17,13 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-**MVVM refaktoring — hotovo (2026-03-06).** Další kroky:
 1. Výrazový jazyk Part 2 — agregační funkce v TableElement (`SUM`, `COUNT`, `AVG`), formátovací rozšíření
 2. Grouping v Dynamic tabulkách
 
 ### ✅ Co máme
 
 - Text, Image, Rectangle, Line, BarcodeElement (QR + Code128), TableElement (Fixed/Dynamic)
-- Parametry sestavy (Part 1), VisibilityExpression evaluator
+- Parametry sestavy (Part 1 + serializace do JSON), VisibilityExpression evaluator
 - Live preview, PDF export, DataSchema tree, section management, undo/redo (9 cmd typů)
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
 - Custom section templates (file-based), CompositeDataSchemaProvider (Caché + JSON fallback)
