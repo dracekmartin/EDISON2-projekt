@@ -1,4 +1,6 @@
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Media;
 using EDControls.EDViewModel;
 
 namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
@@ -12,12 +14,18 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
 {
     public EDComponentAndViewModelTestViewModel()
     {
-        Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];
+        Actions =
+        [
+            StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete(),
+            new EDAction("Auto", new RelayCommand(OnCar),
+                (ImageSource)Application.Current.FindResource("EDIcons.Car")),
+        ];
     }
 
     protected override void OnAdd() => Status = "Přidat [Ctrl+N]";
     protected override void OnEdit() => Status = "Upravit [Ctrl+E]";
     protected override void OnDelete() => Status = "Smazat [Ctrl+D]";
+    private void OnCar() => Status = "Auto";
 
     public RelayCommand SimulateActionCommand => _simulateActionCommand
         ??= new RelayCommand(SimulateAction);
@@ -33,7 +41,7 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
         await Task.Delay(3000);
     }
 
-    private string _status = "Stiskněte Init pro načtení formuláře.";
+    private string _status = "Připraveno.";
     public string Status
     {
         get => _status;
