@@ -12,7 +12,7 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
 {
     public EDComponentAndViewModelTestViewModel()
     {
-        Actions = [EDStandardActions.Add(this), EDStandardActions.Edit(this), EDStandardActions.Delete(this)];
+        Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];
     }
 
     protected override void OnAdd() => Status = "Přidat [Ctrl+N]";
