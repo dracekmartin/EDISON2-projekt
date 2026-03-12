@@ -280,6 +280,10 @@ public class TableElement : TemplateElement
                 {
                     var cell = row.Cells[colIdx];
                     content = ctx.Data?.ResolvePlaceholders(cell.Content) ?? cell.Content;
+                    // Aplikovat formát buňky (má přednost) nebo sloupce
+                    var cellFormat = cell.Format ?? col.Format;
+                    if (cellFormat is not null)
+                        content = DataContext.FormatValue(content, cellFormat);
 
                     // Vlastní barva buňky
                     if (cell.BackgroundColor is not null)
@@ -344,9 +348,17 @@ public class TableElement : TemplateElement
                 var   col  = cols[ci];
                 float colW = colWidths[ci];
 
-                string sample = hasRows
-                    ? rows[i].GetString(col.Field ?? "")
-                    : $"{{{col.Field ?? col.Header}}}";
+                string sample;
+                if (hasRows)
+                {
+                    sample = rows[i].GetString(col.Field ?? "");
+                    if (col.Format is not null)
+                        sample = DataContext.FormatValue(sample, col.Format);
+                }
+                else
+                {
+                    sample = $"{{{col.Field ?? col.Header}}}";
+                }
                 ctx.Canvas.DrawText(sample, colX + 4, currentY + rowPx * 0.72f, rFont, rText);
 
                 if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
