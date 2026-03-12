@@ -254,6 +254,33 @@
                               ToolTip="Zobrazit/skrýt live náhled (vzorová data ze schématu)"/>
             </ToolBar>
             <ToolBar Band="1" BandIndex="0">
+                <TextBlock Text="Elementy:" VerticalAlignment="Center" Margin="4,0,2,0" Foreground="#555555" FontSize="11"/>
+                <Button ToolTip="Text — táhni na canvas" Tag="TextElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="12" FontWeight="Bold" Content="T"/>
+                <Button ToolTip="Obdélník — táhni na canvas" Tag="RectangleElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3">
+                    <Rectangle Width="14" Height="10" Stroke="Black" StrokeThickness="1"/>
+                </Button>
+                <Button ToolTip="Čára — táhni na canvas" Tag="LineElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3">
+                    <Line X1="0" Y1="5" X2="16" Y2="5" Stroke="Black" StrokeThickness="1"/>
+                </Button>
+                <Button ToolTip="Obrázek — táhni na canvas" Tag="ImageElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="12" Content="🖼"/>
+                <Button ToolTip="Tabulka — táhni na canvas" Tag="TableElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="12" Content="▦"/>
+                <Button ToolTip="QR kód — táhni na canvas" Tag="BarcodeQR"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="10" Content="QR"/>
+                <Button ToolTip="Čárový kód — táhni na canvas" Tag="BarcodeCode128"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="10" Content="|||"/>
+                <Separator Style="{StaticResource ToolbarSep}"/>
                 <TextBlock Text="Zarovnat:" VerticalAlignment="Center" Margin="4,0,2,0" Foreground="#555555" FontSize="11"/>
                 <Button Content="←" ToolTip="Zarovnat vlevo"               Click="BtnAlignLeft_Click"    Padding="5,3" FontSize="13"/>
                 <Button Content="→" ToolTip="Zarovnat vpravo"              Click="BtnAlignRight_Click"   Padding="5,3" FontSize="13"/>

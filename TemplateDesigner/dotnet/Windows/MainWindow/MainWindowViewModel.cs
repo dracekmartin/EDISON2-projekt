@@ -209,6 +209,18 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
     }
 
+    public void ReorderSection(Section section, int fromIndex, int toIndex)
+    {
+        if (fromIndex == toIndex) return;
+        if (fromIndex < 0 || toIndex < 0) return;
+        if (toIndex >= State.CurrentTemplate.Sections.Count) return;
+
+        Execute(new ReorderSectionCommand(State.CurrentTemplate, section, fromIndex, toIndex));
+        RebuildSections();
+        RequestCanvasSizeUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
     public void DeleteSection(Section section)
     {
         if (State.CurrentTemplate.Sections.Count <= 1)
@@ -498,6 +510,38 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();
     }
+
+    // ── Element factory (shared by palette drag + toolbar menu) ────────────────
+
+    public static (float Width, float Height) GetDefaultElementSize(string type) => type switch
+    {
+        "TextElement"      => (80f, 8f),
+        "RectangleElement" => (60f, 20f),
+        "LineElement"      => (190f, 1f),
+        "ImageElement"     => (40f, 30f),
+        "TableElement"     => (190f, 30f),
+        "BarcodeQR"        => (30f, 30f),
+        "BarcodeCode128"   => (80f, 15f),
+        _                  => (80f, 8f)
+    };
+
+    public static TemplateElement CreateElementByType(string type, float x, float y)
+    {
+        var (w, h) = GetDefaultElementSize(type);
+        return type switch
+        {
+            "TextElement"      => new TextElement      { X = x, Y = y, Width = w, Height = h, Text = "Text" },
+            "RectangleElement" => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
+            "LineElement"      => new LineElement      { X = x, Y = y, Width = w, Height = h },
+            "ImageElement"     => new ImageElement     { X = x, Y = y, Width = w, Height = h },
+            "TableElement"     => new TableElement     { X = x, Y = y, Width = w },
+            "BarcodeQR"        => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.QR },
+            "BarcodeCode128"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.Code128 },
+            _                  => new TextElement      { X = x, Y = y, Width = w, Height = h, Text = type }
+        };
+    }
+
+    // ── Delete ──────────────────────────────────────────────────────────────────
 
     public void DeleteSelected()
     {

@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
 
     // ── Mouse state machine ───────────────────────────────────────────────────
-    private enum MouseMode { Idle, Dragging, Resizing, RubberBand }
+    private enum MouseMode { Idle, Dragging, Resizing, RubberBand, AddingElement }
     private MouseMode _mouseMode = MouseMode.Idle;
 
     private TemplateElement? _dragElement;
@@ -49,11 +49,29 @@ public partial class MainWindow : Window
     private float  _resizeMouseStartX, _resizeMouseStartY;
     private float  _resizeOriginX, _resizeOriginY;
 
+    // ── Adding element (drag from palette / field drag) ────────────────────────
+    private string? _addingElementType;
+    private string? _addingFieldName;       // e.g. "CISLO_LINKY" — mutually exclusive with _addingElementType
+    private SKPoint _addingGhostPos;
+    private Section? _addingTargetSection;
+    private TemplateElement? _addingTargetElement; // TextElement under cursor (field drag append)
+
+    // ── Field drag initiation from TreeView ─────────────────────────────────────
+    private System.Windows.Point _fieldDragStartPoint;
+    private SchemaFieldVM? _fieldDragCandidate;
+
     // ── Duplicate pending flag (Ctrl+D chord) ─────────────────────────────────
     private bool _duplicatePending;
 
     // ── Section list selection helper ─────────────────────────────────────────
     private bool _suppressSectionSelection;
+
+    // ── Section drag reorder ────────────────────────────────────────────────────
+    private SectionVM? _sectionDragCandidate;
+    private System.Windows.Point _sectionDragStartPoint;
+    private bool _sectionDragActive;
+    private int _sectionDropIndex = -1;
+    private int _sectionDropIndicatorAt = -1; // index itemu s upraveným Margin
 
     // ─────────────────────────────────────────────────────────────────────────
     // Constructors
@@ -127,6 +145,16 @@ public partial class MainWindow : Window
             MenuAiAssistant.Visibility = Visibility.Collapsed;
 
         this.PreviewKeyDown += OnWindowKeyDown;
+
+        // Field drag from schema tree
+        SchemaTree.PreviewMouseLeftButtonDown += SchemaTree_PreviewMouseDown;
+        SchemaTree.PreviewMouseMove           += SchemaTree_PreviewMouseMove;
+
+        // Section drag reorder in left panel
+        SectionsList.PreviewMouseLeftButtonDown += SectionsList_PreviewMouseDown;
+        SectionsList.PreviewMouseMove           += SectionsList_PreviewMouseMove;
+        SectionsList.PreviewMouseLeftButtonUp   += SectionsList_PreviewMouseUp;
+        SectionsList.MouseLeave                 += SectionsList_DragCancel;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -147,6 +175,61 @@ public partial class MainWindow : Window
             using var border = new SKPaint { Color = new SKColor(0xFF0066CC), IsStroke = true, StrokeWidth = 1f };
             surface.Canvas.DrawRect(r, fill);
             surface.Canvas.DrawRect(r, border);
+        }
+
+        if (_mouseMode == MouseMode.AddingElement
+            && (_addingElementType is not null || _addingFieldName is not null)
+            && _vm is not null
+            && _addingGhostPos != default)
+        {
+            float cw = (float)skCanvas.ActualWidth;
+
+            // Field drag na TextElement → zvýraznit cílový element
+            if (_addingFieldName is not null && _addingTargetElement is not null)
+            {
+                var elRect = _canvas.GetElementCanvasRect(_addingTargetElement, cw);
+                if (elRect is not null)
+                {
+                    using var highlight = new SKPaint { Color = new SKColor(0x302196F3) };
+                    using var border = new SKPaint
+                    {
+                        Color = new SKColor(0xFF2196F3), IsStroke = true,
+                        StrokeWidth = 2f
+                    };
+                    surface.Canvas.DrawRect(elRect.Value, highlight);
+                    surface.Canvas.DrawRect(elRect.Value, border);
+                }
+            }
+            // Zvýrazni cílovou sekci + ghost element
+            else if (_addingTargetSection is not null)
+            {
+                var origin = _canvas.GetSectionOrigins(cw)
+                    .FirstOrDefault(s => s.Section == _addingTargetSection);
+                if (origin.Section is not null)
+                {
+                    float sW = _vm.State.CurrentTemplate.PageSize.PrintableWidth * _canvas.MmToPx;
+                    float sH = _addingTargetSection.EffectiveDesignerHeight * _canvas.MmToPx;
+                    var sRect = new SKRect(origin.OriginX, origin.OriginY, origin.OriginX + sW, origin.OriginY + sH);
+                    using var sectionHighlight = new SKPaint { Color = new SKColor(0x182196F3) };
+                    surface.Canvas.DrawRect(sRect, sectionHighlight);
+
+                    // Ghost element — čárkovaný obdélník
+                    var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? "TextElement");
+                    float gx = _addingGhostPos.X - (defW * _canvas.MmToPx / 2f);
+                    float gy = _addingGhostPos.Y - (defH * _canvas.MmToPx / 2f);
+                    var ghostRect = new SKRect(gx, gy, gx + defW * _canvas.MmToPx, gy + defH * _canvas.MmToPx);
+                    using var ghostFill = new SKPaint { Color = new SKColor(0x152196F3) };
+                    using var ghostBorder = new SKPaint
+                    {
+                        Color = new SKColor(0xFF2196F3),
+                        IsStroke = true,
+                        StrokeWidth = 1.5f,
+                        PathEffect = SKPathEffect.CreateDash([6f, 4f], 0)
+                    };
+                    surface.Canvas.DrawRect(ghostRect, ghostFill);
+                    surface.Canvas.DrawRect(ghostRect, ghostBorder);
+                }
+            }
         }
     }
 
@@ -231,6 +314,172 @@ public partial class MainWindow : Window
     {
         if (SectionsList.SelectedItem is SectionVM svm)
             OpenPropertiesForSection(svm.Section);
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Section drag reorder
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void SectionsList_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _sectionDragCandidate = null;
+        _sectionDragActive = false;
+        if (GetSectionVMFromEvent(e) is { } svm)
+        {
+            _sectionDragStartPoint = e.GetPosition(SectionsList);
+            _sectionDragCandidate = svm;
+        }
+    }
+
+    private void SectionsList_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (e.LeftButton != MouseButtonState.Pressed)
+        {
+            if (_sectionDragActive) SectionsList_DragFinish();
+            return;
+        }
+
+        if (_sectionDragCandidate is not null && !_sectionDragActive)
+        {
+            var pos = e.GetPosition(SectionsList);
+            if (Math.Abs(pos.X - _sectionDragStartPoint.X) < 5 && Math.Abs(pos.Y - _sectionDragStartPoint.Y) < 5)
+                return;
+
+            _sectionDragActive = true;
+            SectionsList.CaptureMouse();
+            SectionsList.Cursor = Cursors.Hand;
+        }
+
+        if (_sectionDragActive)
+        {
+            var pos = e.GetPosition(SectionsList);
+            _sectionDropIndex = GetSectionDropIndex(pos);
+            UpdateSectionDropIndicator();
+        }
+    }
+
+    private void SectionsList_PreviewMouseUp(object sender, MouseButtonEventArgs e)
+    {
+        if (_sectionDragActive)
+        {
+            SectionsList_DragFinish();
+            e.Handled = true;
+        }
+        else
+        {
+            _sectionDragCandidate = null;
+        }
+    }
+
+    private void SectionsList_DragCancel(object sender, MouseEventArgs e)
+    {
+        if (!_sectionDragActive) { _sectionDragCandidate = null; return; }
+        _sectionDragCandidate = null;
+        _sectionDragActive = false;
+        _sectionDropIndex = -1;
+        SectionsList.ReleaseMouseCapture();
+        SectionsList.ClearValue(CursorProperty);
+        ClearSectionDropIndicator();
+    }
+
+    private void SectionsList_DragFinish()
+    {
+        if (_sectionDragCandidate is not null && _sectionDropIndex >= 0 && _vm is not null)
+        {
+            int fromIndex = _vm.State.CurrentTemplate.Sections.IndexOf(_sectionDragCandidate.Section);
+            int toIndex = _sectionDropIndex;
+            // Adjust: pokud drop je za dragged item, odečti 1 (protože se item nejdřív odebere)
+            if (toIndex > fromIndex) toIndex--;
+            if (fromIndex >= 0 && toIndex >= 0 && fromIndex != toIndex)
+            {
+                _vm.ReorderSection(_sectionDragCandidate.Section, fromIndex, toIndex);
+                // ActivateSection nevoláme — ReorderSection už volá RebuildSections
+                _vm.State.ActiveSection = _sectionDragCandidate.Section;
+            }
+        }
+
+        _sectionDragCandidate = null;
+        _sectionDragActive = false;
+        _sectionDropIndex = -1;
+        SectionsList.ReleaseMouseCapture();
+        SectionsList.ClearValue(CursorProperty);
+        ClearSectionDropIndicator();
+    }
+
+    /// <summary>Vrátí index kam se má sekce vložit (0 = před první, Count = za poslední).</summary>
+    private int GetSectionDropIndex(System.Windows.Point posInListBox)
+    {
+        if (_vm is null) return -1;
+        int count = _vm.Sections.Count;
+
+        for (int i = 0; i < count; i++)
+        {
+            if (SectionsList.ItemContainerGenerator.ContainerFromIndex(i) is not ListBoxItem container)
+                continue;
+            var itemPos = container.TranslatePoint(new System.Windows.Point(0, 0), SectionsList);
+            float midY = (float)(itemPos.Y + container.ActualHeight / 2);
+            if (posInListBox.Y < midY)
+                return i;
+        }
+        return count;
+    }
+
+    private void UpdateSectionDropIndicator()
+    {
+        ClearSectionDropIndicator();
+        if (_sectionDropIndex < 0 || _vm is null) return;
+
+        int count = _vm.Sections.Count;
+        int indicatorAt = _sectionDropIndex < count ? _sectionDropIndex : count - 1;
+        bool atBottom = _sectionDropIndex >= count;
+
+        var border = GetSectionItemBorder(indicatorAt);
+        if (border is null) return;
+
+        // Zvětšený Margin na vrchu/spodu funguje jako vizuální indikátor pozice dropu
+        border.Margin = atBottom
+            ? new Thickness(0, 2, 0, 4)
+            : new Thickness(0, 6, 0, 0);
+        _sectionDropIndicatorAt = indicatorAt;
+    }
+
+    private void ClearSectionDropIndicator()
+    {
+        if (_sectionDropIndicatorAt >= 0)
+        {
+            var border = GetSectionItemBorder(_sectionDropIndicatorAt);
+            if (border is not null)
+                border.Margin = new Thickness(0, 2, 0, 0); // obnovit výchozí
+            _sectionDropIndicatorAt = -1;
+        }
+    }
+
+    /// <summary>Najde vnitřní Border element ze SectionItemTemplate pro daný index.</summary>
+    private Border? GetSectionItemBorder(int index)
+    {
+        if (SectionsList.ItemContainerGenerator.ContainerFromIndex(index) is not ListBoxItem container)
+            return null;
+        // ListBoxItem template = ContentPresenter → Border (z DataTemplate)
+        container.ApplyTemplate();
+        if (VisualTreeHelper.GetChildrenCount(container) == 0) return null;
+        var presenter = VisualTreeHelper.GetChild(container, 0);
+        if (VisualTreeHelper.GetChildrenCount(presenter) == 0) return null;
+        return VisualTreeHelper.GetChild(presenter, 0) as Border;
+    }
+
+    private static SectionVM? GetSectionVMFromEvent(MouseButtonEventArgs e)
+    {
+        if (e.OriginalSource is DependencyObject source)
+        {
+            var current = source;
+            while (current is not null)
+            {
+                if (current is FrameworkElement { DataContext: SectionVM svm })
+                    return svm;
+                current = VisualTreeHelper.GetParent(current);
+            }
+        }
+        return null;
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -433,16 +682,88 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
 
-        Add("Text",       () => new TextElement      { X = 5, Y = 5, Width = 80, Height = 8, Text = "Text" });
-        Add("Obdélník",   () => new RectangleElement { X = 5, Y = 5, Width = 60, Height = 20, StrokeWidth = 0.5f });
-        Add("Čára",       () => new LineElement      { X = 0, Y = 10, Width = 190, Height = 1 });
-        Add("Obrázek",    () => new ImageElement     { X = 5, Y = 5, Width = 40, Height = 30 });
-        Add("Tabulka",    () => new TableElement     { X = 0, Y = 0, Width = 190 });
-        Add("QR kód",    () => new BarcodeElement  { X = 5, Y = 5, Width = 30, Height = 30, BarcodeType = BarcodeElementType.QR });
-        Add("Čárový kód", () => new BarcodeElement { X = 5, Y = 5, Width = 80, Height = 15, BarcodeType = BarcodeElementType.Code128 });
+        Add("Text",        () => TemplateDesignerViewModel.CreateElementByType("TextElement", 5, 5));
+        Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType("RectangleElement", 5, 5));
+        Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType("LineElement", 0, 10));
+        Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType("ImageElement", 5, 5));
+        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType("TableElement", 0, 0));
+        Add("QR kód",    () => TemplateDesignerViewModel.CreateElementByType("BarcodeQR", 5, 5));
+        Add("Čárový kód", () => TemplateDesignerViewModel.CreateElementByType("BarcodeCode128", 5, 5));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // Element palette drag
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private void ElementPalette_MouseDown(object sender, MouseButtonEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is string type)
+        {
+            _addingElementType = type;
+            _addingTargetSection = null;
+            _addingGhostPos = default;
+            _mouseMode = MouseMode.AddingElement;
+            skCanvas.CaptureMouse();
+            skCanvas.Cursor = Cursors.Cross;
+            e.Handled = true;
+        }
+    }
+
+    private void SchemaTree_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        _fieldDragCandidate = null;
+        // Zjistit položku přímo z visual tree — SelectedItem se aktualizuje až po MouseDown
+        if (e.OriginalSource is DependencyObject source)
+        {
+            var item = ItemsControl.ContainerFromElement(SchemaTree, source) as TreeViewItem;
+            if (item?.DataContext is SchemaFieldVM field)
+            {
+                _fieldDragStartPoint = e.GetPosition(SchemaTree);
+                _fieldDragCandidate = field;
+            }
+        }
+    }
+
+    private void SchemaTree_PreviewMouseMove(object sender, MouseEventArgs e)
+    {
+        if (_fieldDragCandidate is null || e.LeftButton != MouseButtonState.Pressed) return;
+
+        var pos = e.GetPosition(SchemaTree);
+        if (Math.Abs(pos.X - _fieldDragStartPoint.X) < 5 && Math.Abs(pos.Y - _fieldDragStartPoint.Y) < 5)
+            return;
+
+        // Threshold překročen — zahájit drag
+        _addingFieldName = _fieldDragCandidate.FieldName;
+        _addingElementType = null;
+        _addingTargetSection = null;
+        _addingTargetElement = null;
+        _addingGhostPos = default;
+        _fieldDragCandidate = null;
+        _mouseMode = MouseMode.AddingElement;
+        skCanvas.CaptureMouse();
+        skCanvas.Cursor = Cursors.Cross;
+        e.Handled = true;
+    }
+
+    private void ResetAddingElementState()
+    {
+        _mouseMode = MouseMode.Idle;
+        _addingElementType = null;
+        _addingFieldName = null;
+        _addingTargetSection = null;
+        _addingTargetElement = null;
+        _fieldDragCandidate = null;
+        skCanvas.ReleaseMouseCapture();
+        skCanvas.Cursor = Cursors.Arrow;
+    }
+
+    private void CancelAddingElement()
+    {
+        ResetAddingElementState();
+        InvalidateCanvas();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -661,9 +982,16 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.Escape)
         {
-            _vm.State.SelectedElements.Clear();
-            UpdatePropertiesPanel();
-            InvalidateCanvas();
+            if (_mouseMode == MouseMode.AddingElement)
+            {
+                CancelAddingElement();
+            }
+            else
+            {
+                _vm.State.SelectedElements.Clear();
+                UpdatePropertiesPanel();
+                InvalidateCanvas();
+            }
             e.Handled = true;
         }
 
@@ -886,6 +1214,25 @@ public partial class MainWindow : Window
             return;
         }
 
+        if (_mouseMode == MouseMode.AddingElement)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed) { CancelAddingElement(); return; }
+            _addingGhostPos = new SKPoint(cx, cy);
+            _addingTargetSection = _canvas.HitTestSection(cx, cy, cw);
+
+            // Pro field drag: detekce TextElementu pod kurzorem (pro append)
+            _addingTargetElement = null;
+            if (_addingFieldName is not null)
+            {
+                var hit = _canvas.HitTestElement(cx, cy, cw);
+                if (hit?.Element is TextElement)
+                    _addingTargetElement = hit.Value.Element;
+            }
+
+            InvalidateCanvas();
+            return;
+        }
+
         var handleHit2 = _canvas.HitTestHandle(cx, cy, cw);
         if (handleHit2.HasValue)
             skCanvas.Cursor = GetResizeCursor(handleHit2.Value.Handle);
@@ -902,6 +1249,96 @@ public partial class MainWindow : Window
         if (_mouseMode == MouseMode.Dragging)       EndDrag(true);
         else if (_mouseMode == MouseMode.Resizing)  EndResize(true);
         else if (_mouseMode == MouseMode.RubberBand) EndRubberBand();
+        else if (_mouseMode == MouseMode.AddingElement) EndAddingElement();
+    }
+
+    private void EndAddingElement()
+    {
+        if (_vm is null || _canvas is null)
+        {
+            CancelAddingElement();
+            return;
+        }
+
+        // ── Field drag: append do existujícího TextElementu ──────────────────
+        if (_addingFieldName is not null && _addingTargetElement is TextElement textEl)
+        {
+            string placeholder = $"{{{_addingFieldName}}}";
+            string oldText = textEl.Text;
+            string newText = oldText + placeholder;
+            _vm.Execute(new SetPropertyCommand(
+                $"Vložit {placeholder}",
+                oldText, newText,
+                v => textEl.Text = (string)v!));
+
+            var section = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(textEl));
+            if (section is not null) _vm.ActivateSection(section);
+            _vm.State.SelectedElements.Clear();
+            _vm.State.SelectedElements.Add(textEl);
+            FinishAddingElement();
+            return;
+        }
+
+        // ── Potřebujeme sekci (pro vytvoření nového elementu) ────────────────
+        if (_addingTargetSection is null || (_addingElementType is null && _addingFieldName is null))
+        {
+            CancelAddingElement();
+            return;
+        }
+
+        float cw = (float)skCanvas.ActualWidth;
+        var origin = _canvas.GetSectionOrigins(cw)
+            .FirstOrDefault(s => s.Section == _addingTargetSection);
+        if (origin.Section is null) { CancelAddingElement(); return; }
+
+        // Přepočet px → mm relativně k sekci
+        float mmX = (_addingGhostPos.X - origin.OriginX) / _canvas.MmToPx;
+        float mmY = (_addingGhostPos.Y - origin.OriginY) / _canvas.MmToPx;
+
+        // Centrovat element na pozici kurzoru
+        var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? "TextElement");
+        mmX -= defW / 2f;
+        mmY -= defH / 2f;
+
+        // Clamp do hranic sekce
+        float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+        float sectionH = _addingTargetSection.EffectiveDesignerHeight;
+        mmX = Math.Clamp(mmX, 0, Math.Max(0, sectionW - defW));
+        mmY = Math.Clamp(mmY, 0, Math.Max(0, sectionH - defH));
+
+        // Snap na mřížku
+        if (_vm.State.SnapToGrid)
+        {
+            float g = _vm.State.GridSize;
+            mmX = MathF.Round(mmX / g) * g;
+            mmY = MathF.Round(mmY / g) * g;
+        }
+
+        // Vytvoření elementu — palette nebo field
+        TemplateElement element;
+        if (_addingFieldName is not null)
+        {
+            string placeholder = $"{{{_addingFieldName}}}";
+            element = new TextElement { X = mmX, Y = mmY, Width = defW, Height = defH, Text = placeholder };
+        }
+        else
+        {
+            element = TemplateDesignerViewModel.CreateElementByType(_addingElementType!, mmX, mmY);
+        }
+
+        _vm.Execute(new AddElementCommand(_addingTargetSection, element));
+        _vm.ActivateSection(_addingTargetSection);
+        _vm.State.SelectedElements.Clear();
+        _vm.State.SelectedElements.Add(element);
+        FinishAddingElement();
+    }
+
+    /// <summary>Společný cleanup po úspěšném dropu (palette i field).</summary>
+    private void FinishAddingElement()
+    {
+        ResetAddingElementState();
+        UpdatePropertiesPanel();
+        InvalidateCanvas();
     }
 
     private void EndRubberBand()
