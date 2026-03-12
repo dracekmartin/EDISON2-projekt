@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-12
+**Datum poslední aktualizace:** 2026-03-13
 
 ### 🎯 Aktuální focus
 
@@ -35,6 +35,10 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Drag & drop řazení sekcí v levém panelu — přetažením místo tlačítek ▲▼, vizuální indikátor pozice
 - Locale / CultureInfo v šabloně — `Template.CultureCode` (cs-CZ, sk-SK, en-US, de-DE); formátování čísel a datumů nezávislé na systémovém nastavení Windows
 - ElementGroup — seskupování elementů (`GroupId` property); klik vybere celou skupinu, Alt+klik jen jeden; Ctrl+G/Ctrl+Shift+G; vizuální badge + bounding box; hierarchický strom; PDF import auto-groups
+- PDF import — `PdfImportDialog` s PdfPig extrakcí; 3 merge módy grafiky (None/LinesOnly/All); detekce okrajů; auto-grouping; texty seskupené do bloků; async konverze
+- Strom šablony — záložka "Strom" v hlavním okně; hierarchický přehled celé šablony (sekce → skupiny → elementy)
+- LineElement — custom dash/gap pro čárkované a tečkované čáry
+- ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
 
 ### 🐛 Známé problémy
 
@@ -52,6 +56,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 | System.Text.Json | Serializace šablon |
 | EDControls (ProjectReference) | EDViewModel, RelayCommand |
 | ZXing.Net 0.16.9 | BarcodeElement |
+| PdfPig 0.1.9 | PDF import (extrakce textu, čar, obrázků) |
 
 ---
 

@@ -297,6 +297,83 @@ Pokud AI vrátí chybu nebo prázdný výsledek:
 
 ---
 
+### Import PDF → šablona
+
+Existující PDF soubor lze automaticky převést na editovatelnou šablonu. Importují se texty (s fonty a barvami), čáry, obdélníky a obrázky.
+
+**Spuštění:**
+- Menu **Nástroje → Importovat PDF…**
+- Otevře se dialog s nastavením importu
+
+**Nastavení importu:**
+
+1. **Vyberte PDF soubor** — tlačítko "Procházet..." nebo zadejte cestu ručně
+2. **Stránky** — import všech stránek nebo zadaný rozsah (např. "1-3")
+3. **Režim sloučení grafiky** — jak naložit s čarami a obdélníky:
+
+| Režim | Popis |
+|---|---|
+| Žádné sloučení | Čáry a obdélníky se importují jako samostatné elementy (Line, Rectangle) |
+| Pouze čáry | Čáry se vykreslí do pozadí jako obrázek; obdélníky zůstanou jako elementy |
+| Sloučit vše | Veškerá grafika (čáry, obdélníky, obrázky) se sloučí do jednoho pozadí |
+
+4. Klikněte **Importovat** → šablona se vygeneruje a otevře v designeru
+
+**Co se importuje:**
+- **Texty** — pozice, font, velikost, barva, zarovnání; blízká slova se automaticky seskupí do bloků
+- **Čáry** — horizontální i vertikální; styl (plná, čárkovaná, tečkovaná), tloušťka, barva
+- **Obdélníky** — výplň, okraj, zaoblení
+- **Obrázky** — vložené bitmapy z PDF
+
+**Automatické skupiny:**
+Importované grafické elementy se automaticky seskupí (viz Seskupování elementů) — lze s nimi pohybovat jako s celkem. Texty zůstávají bez skupiny pro snadnou editaci.
+
+**Tipy:**
+- Začněte s režimem "Pouze čáry" — nejlepší poměr editovatelnosti a věrnosti
+- Po importu nahraďte statické texty za `{POLE}` placeholdery pro dynamická data
+- Importovaná šablona je plně editovatelná — lze přidávat/mazat/přesouvat elementy
+
+---
+
+### Seskupování elementů
+
+Elementy lze seskupit do logických celků — kliknutí na člen skupiny vybere celou skupinu, drag přesune všechny členy najednou.
+
+- **Ctrl+G** — seskupí vybrané elementy (min 2)
+- **Ctrl+Shift+G** — rozeskupí vybrané elementy
+- **Alt+klik** na člen skupiny — vybere jen ten jeden element (vstup "dovnitř" skupiny)
+- Skupiny jsou vizuálně označeny barevným badge v rohu elementu a tečkovaným bounding boxem při výběru
+- Ve stromu šablony se skupiny zobrazují jako sbalitelné uzly
+- Copy/Paste/Duplicate zachovává skupiny (klony dostanou nový GroupId)
+
+---
+
+### Strom šablony
+
+Záložka **Strom** v hlavním okně zobrazuje hierarchický přehled celé šablony:
+
+```
+Template: Moje šablona
+├─ PageSize: 210×297 mm
+├─ Sections (3)
+│  ├─ [OnEveryPage] Záhlaví
+│  │  └─ Elements (2)
+│  │     ├─ [Z0] TextElement  "Jízdní řád {NAZEV}"  Segoe UI 14pt
+│  │     └─ [Z1] ImageElement  Image
+│  ├─ [Once] Obsah
+│  │  └─ Elements (5)
+│  │     ├─ [G] Grafika (3 elementů)
+│  │     │  ├─ [Z0] RectangleElement  Fill=#FFE0E0E0
+│  │     │  └─ ...
+│  │     ├─ [Z10] TextElement  "Linka: {CISLO}"
+│  │     └─ ...
+```
+
+- Skupiny se zobrazují jako sbalitelné uzly `[G]`
+- Klik na skupinový uzel vybere všechny její členy na canvasu
+
+---
+
 ### Custom šablony sekcí
 
 Custom šablona sekce je **uložená konfigurace sekce včetně všech elementů**, kterou si vytvoříte a pojmenujete pro opakované použití.
@@ -487,6 +564,9 @@ Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
 | **Ctrl+PgDn** | Odeslat dozadu (ZIndex −1) |
 | **Ctrl+Shift+PgUp** | Přenést zcela dopředu |
 | **Ctrl+Shift+PgDn** | Odeslat zcela dozadu |
+| **Ctrl+G** | Seskupit vybrané elementy |
+| **Ctrl+Shift+G** | Rozeskupit vybrané elementy |
+| **Alt+klik** | Vybrat jen jeden element ze skupiny |
 
 ---
 

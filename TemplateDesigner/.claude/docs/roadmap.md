@@ -27,10 +27,11 @@ Absolutní pozicování se rozbije jakmile element přeteče svou výšku.
 Strojová analýza existujícího PDF a převod na TemplateDesigner šablonu.
 - Knihovna: **PdfPig** (open source, .NET, per-word bounding boxy, vestavěné algoritmy pro seskupování textu)
 
-**Aktuální stav (režim 1 — deterministický 1:1 import):** ✅ základ hotovo
+**Aktuální stav (režim 1 — deterministický 1:1 import):** ✅ hotovo (2026-03-13)
 - PdfPig extrahuje text (pozice, font, barva), čáry, obdélníky, obrázky
 - 3 merge módy grafiky (None / LinesOnly / All); detekce okrajů; auto-grouping elementů
 - Texty se seskupují do bloků, pozice a fonty se zachovávají
+- PdfImportDialog s async konverzí, výběrem stránek, debug logem
 
 **3a. Detekce tabulek z mřížky čar**
 PDF neobsahuje "tabulku" jako objekt — je to jen mřížka čar + text uvnitř.
