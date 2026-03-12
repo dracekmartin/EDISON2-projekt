@@ -18,6 +18,7 @@
     <Resource Include="EDIcons\png\add2.png"/>
     <Resource Include="EDIcons\png\edit.png"/>
     <Resource Include="EDIcons\png\delete2.png"/>
+    <Resource Include="EDIcons\png\car.png"/>
   </ItemGroup>
 
 </Project>

@@ -10,5 +10,7 @@
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/edit.png"/>
     <BitmapImage x:Key="EDIcons.Delete"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/delete2.png"/>
+    <BitmapImage x:Key="EDIcons.Car"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/car.png"/>
 
 </ResourceDictionary>

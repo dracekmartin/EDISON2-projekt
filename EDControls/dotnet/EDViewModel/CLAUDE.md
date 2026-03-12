@@ -7,10 +7,9 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 
 | File | Role |
 | --- | --- |
-| `EDViewModel.cs` | Base class. `INotifyPropertyChanged`, `Set<T>()`, `OkCommand`, `RequestClose`, `Actions`, `MLRest`. |
+| `EDViewModel.cs` | Base class. `INotifyPropertyChanged`, `Set<T>()`, `OkCommand`, `RequestClose`, `Actions`, `MLRest`, `StandardActionsAccessor`. |
 | `RelayCommand.cs` | `RelayCommand` (no parameter) and `RelayCommand<T>`. |
 | `EDAction.cs` | Model for a single toolbar/menu/shortcut action (label, icon, key, command). |
-| `EDStandardActions.cs` | Factory methods for standard Add/Edit/Delete actions. |
 
 ## EDViewModel API
 
@@ -18,7 +17,7 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 | --- | --- |
 | `event Action<bool?>? RequestClose` | Fired to close the window. `true` = confirmed, `false` = cancelled, `null` = just close. `EDFooter` subscribes automatically on `Loaded`. |
 | `ICommand OkCommand` | Calls `OnOk()`. Bound to the Ok button by `EDFooter`. |
-| `ICommand AddCommand / EditCommand / DeleteCommand` | Call `OnAdd/OnEdit/OnDelete()`. Pass to `EDStandardActions.Add/Edit/Delete(this)`. |
+| `ICommand AddCommand / EditCommand / DeleteCommand` | Call `OnAdd/OnEdit/OnDelete()`. Used automatically by `StandardActions.Add/Edit/Delete()`. |
 | `IReadOnlyList<EDAction>? Actions` | Actions for this window. Set in the subclass constructor. `EDToolbar` reads this on `Loaded`; `EDFooter` binds to it via DataContext. Key bindings are registered automatically by `EDViewModel` itself (see below). |
 | `protected virtual void OnOk()` | Override for validation. Call `base.OnOk()` or `CloseDialog(true)` to proceed. Return without calling base to keep the window open. |
 | `protected virtual void OnAdd/OnEdit/OnDelete()` | Override to handle the standard CRUD actions. No-op by default. |
@@ -33,24 +32,32 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 
 `EDViewModel` schedules `RegisterKeyBindings()` via `Dispatcher.BeginInvoke` at `DispatcherPriority.Loaded`. At that point the full constructor chain has completed and the window is in `Application.Current.Windows`. The method finds the window whose `DataContext == this` and adds a `KeyBinding` for every action. **No work is needed in any view** — actions declared in the ViewModel are keyboard-accessible automatically, even if the window has no `EDToolbar` or `EDFooter`.
 
-## EDStandardActions — standard action factory
+## StandardActions — standard action factory
+
+`StandardActions` is a protected property on `EDViewModel` returning a `StandardActionsAccessor`.
+It pre-fills label (`EDStrings`), icon (`EDIcons`), and keyboard shortcut for the three standard CRUD actions.
 
 ```csharp
 // Simplest — override OnAdd/OnEdit/OnDelete in the ViewModel:
-Actions = [EDStandardActions.Add(this), EDStandardActions.Edit(this), EDStandardActions.Delete(this)];
+Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];
 
 protected override void OnAdd() { /* ... */ }
 protected override void OnEdit() { /* ... */ }
 protected override void OnDelete() { /* ... */ }
 
 // With explicit command (e.g. for CanExecute):
-Actions = [EDStandardActions.Add(new RelayCommand(OnAdd, CanAdd)), ...];
+Actions = [StandardActions.Add(new RelayCommand(OnAdd, CanAdd)), StandardActions.Edit(), StandardActions.Delete()];
 ```
 
-`EDStandardActions.Add/Edit/Delete` pre-fill label (`EDStrings`), icon (`EDIcons`), and keyboard
-shortcut (`Ctrl+N` / `Ctrl+E` / `Ctrl+D`). The `(this)` overload binds to `EDViewModel.AddCommand/EditCommand/DeleteCommand`,
-which call the corresponding `OnAdd/OnEdit/OnDelete` virtual methods. Use `new EDAction(...)` directly
-only for non-standard actions.
+The no-arg overloads bind automatically to `EDViewModel.AddCommand/EditCommand/DeleteCommand`,
+which call the corresponding virtual methods. The `ICommand` overloads are for when you need a
+custom `CanExecute`. Use `new EDAction(...)` directly only for non-standard actions.
+
+| Method | Shortcut | EDStrings key | EDIcons key |
+| --- | --- | --- | --- |
+| `Add()` / `Add(ICommand)` | Ctrl+N | `EDStrings.Add` | `EDIcons.Add` |
+| `Edit()` / `Edit(ICommand)` | Ctrl+E | `EDStrings.Edit` | `EDIcons.Edit` |
+| `Delete()` / `Delete(ICommand)` | Ctrl+D | `EDStrings.Delete` | `EDIcons.Delete` |
 
 ## EDAction
 

@@ -17,11 +17,12 @@ Property items As list Of ALVA.EDControls.EDInputForm.Item;
 
 // ─── Builder ─────────────────────────────────────────────────────────────────
 
-/// Appends a group separator.
-Method AddGroup(groupName As %String)
+/// Appends a group separator. Pass isVisible=0 to hide the group on the .NET side.
+Method AddGroup(groupName As %String, isVisible As %Boolean = 1)
 {
 	s g = ##class(ALVA.EDControls.EDInputForm.Group).%New()
 	s g.groupName = groupName
+	s g.isVisible = isVisible
 	d ..items.Insert(g)
 }
 
@@ -80,7 +81,7 @@ Method IsWholeFormValidation() As %Boolean
 /// Writes all items to ^||ML("OUT",...) as CList ($lb) values.
 /// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
 /// Format per item:
-///   GROUP → $lb("GROUP", groupName)
+///   GROUP → $lb("GROUP", groupName, isVisible)   ; isVisible: "1"=visible, "0"=hidden
 ///   FIELD → $lb("FIELD", key, label, type, value, validateOnChange, required [, validationError])
 Method WriteToOut()
 {
@@ -94,7 +95,7 @@ Method WriteToOut()
 /// Reads ^||ML("IN",...) and returns a populated Form.
 /// Trigger is at string subscript "trigger".
 /// Items are at subscripts 1, 2, ... as CList ($lb) values:
-///   $lb("GROUP", groupName)
+///   $lb("GROUP", groupName, isVisible)   ; isVisible optional, absent = 1
 ///   $lb("FIELD", key, label, type, value, validateOnChange, required)
 ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
@@ -108,7 +109,8 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 		s listVal = ^||ML("IN",idx)
 		s type = $li(listVal,1)
 		i type="GROUP" {
-			d form.AddGroup($li(listVal,2))
+			s isVisible = $s($ll(listVal)>=3:$li(listVal,3)'="0",1:1)
+			d form.AddGroup($li(listVal,2),isVisible)
 		}
 		i type="FIELD" {
 			s f = form.AddField($li(listVal,2),$li(listVal,3),$li(listVal,4),$li(listVal,6),$li(listVal,7))

@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
 using System.Windows.Threading;
 using ALWA.SYS;
 
@@ -111,6 +112,37 @@ public class EDViewModel : INotifyPropertyChanged
     protected virtual void OnAdd() { }
     protected virtual void OnEdit() { }
     protected virtual void OnDelete() { }
+
+    /// <summary>
+    /// Entry point for standard action factory methods.
+    /// Usage: Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];
+    /// </summary>
+    protected StandardActionsAccessor StandardActions => new(this);
+
+    public readonly struct StandardActionsAccessor(EDViewModel vm)
+    {
+        public EDAction Add()    => Add(vm.AddCommand);
+        public EDAction Edit()   => Edit(vm.EditCommand);
+        public EDAction Delete() => Delete(vm.DeleteCommand);
+
+        public EDAction Add(ICommand command) =>
+            new((string)Application.Current.FindResource("EDStrings.Add"),
+                command,
+                (ImageSource)Application.Current.FindResource("EDIcons.Add"),
+                Key.N, ModifierKeys.Control);
+
+        public EDAction Edit(ICommand command) =>
+            new((string)Application.Current.FindResource("EDStrings.Edit"),
+                command,
+                (ImageSource)Application.Current.FindResource("EDIcons.Edit"),
+                Key.E, ModifierKeys.Control);
+
+        public EDAction Delete(ICommand command) =>
+            new((string)Application.Current.FindResource("EDStrings.Delete"),
+                command,
+                (ImageSource)Application.Current.FindResource("EDIcons.Delete"),
+                Key.D, ModifierKeys.Control);
+    }
 
     /// <summary>
     /// Requests the window to close with the given dialog result.
