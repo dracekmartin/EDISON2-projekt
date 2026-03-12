@@ -26,7 +26,8 @@ namespace EDISONMAIN2
 
         private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            MessageBox.Show("An unhandled exception has happened: " + e.Exception.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            new PopupDisplayer().Error(e.Exception);
+            e.Handled = true;
         }
     }
 

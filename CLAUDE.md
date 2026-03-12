@@ -226,6 +226,33 @@ aplikace skutečně používá. Resource dictionary `EDIcons.xaml` mapuje každ�
    Používej **sémantický klíč** (`EDIcons.MyName`, ne `EDIcons.Myicon`) — výměna PNG souboru
    pak vyžaduje změnu pouze v `EDIcons.xaml`.
 
+---
+
+## Obsluha výjimek — povinné nastavení pro každý nový projekt
+
+`RelayCommand.Execute` zachytí výjimky automaticky a zobrazí `EDErrorPopup` přes `PopupDisplayer`.
+Výjimky mimo příkazy (např. auto-validace v `EDInputForm`, `async void`) se zachytí globálně.
+
+Každý nový aplikační projekt musí v `App.xaml.cs` přidat handler:
+
+```csharp
+private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+{
+    new PopupDisplayer().Error(e.Exception);
+    e.Handled = true;
+}
+```
+
+A navázat ho v `App.xaml`:
+
+```xml
+<Application ...
+             DispatcherUnhandledException="Application_DispatcherUnhandledException">
+```
+
+Bez `e.Handled = true` aplikace po výjimce spadne. Bez handleru vůbec výjimky mimo příkazy
+aplikaci ukončí bez zprávy uživateli.
+
 ### App.xaml — povinné přidání
 
 Každá aplikace, která používá ikony, musí jednou v `App.xaml` mergovat `EDIcons.xaml`.
