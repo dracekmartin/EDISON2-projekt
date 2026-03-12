@@ -210,6 +210,10 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                                 v => element.Rows = (List<TableRow>?)v));
                         }
 
+                        cmds.Add(new SetPropertyCommand(
+                            "Souhrnné řádky", element.SummaryRows, dlg.ResultSummaryRows,
+                            v => element.SummaryRows = (List<TableRow>?)v));
+
                         _state.Execute(new CompositeCommand("Upravit tabulku", cmds));
                         _currentInvalidate();
 

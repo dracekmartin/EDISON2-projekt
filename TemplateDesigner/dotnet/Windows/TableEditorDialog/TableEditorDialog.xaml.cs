@@ -17,6 +17,9 @@ public partial class TableEditorDialog : Window
     /// <summary>Výsledné řádky po OK — pass-through z VM.</summary>
     public List<TableRow>? ResultRows => _vm.ResultRows;
 
+    /// <summary>Výsledné souhrnné řádky po OK — pass-through z VM.</summary>
+    public List<TableRow>? ResultSummaryRows => _vm.ResultSummaryRows;
+
     public TableEditorDialog(TableElement element, IReadOnlyList<DataField>? collectionFields = null,
         ITableTemplateProvider? templateProvider = null)
     {
@@ -29,6 +32,7 @@ public partial class TableEditorDialog : Window
         {
             ColumnsGrid.CommitEdit(DataGridEditingUnit.Row, true);
             CellsGrid.CommitEdit(DataGridEditingUnit.Row, true);
+            SummaryCellsGrid.CommitEdit(DataGridEditingUnit.Row, true);
         };
 
         _vm.RequestClose += result => { DialogResult = result; Close(); };

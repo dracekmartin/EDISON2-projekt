@@ -119,6 +119,13 @@ Dvojklikem na tabulkový element se otevře **TableEditorDialog** se dvěma zál
 - Editace obsahu buněk přímo v tabulce — statický text nebo `{POLE}`
 - **Viditelnost řádku** — pole pro výraz podmíněné viditelnosti (např. `{TISK_SIPKY}`, `{POCET} > 0`); řádky s nesplněnou podmínkou se při tisku přeskočí; prázdné = vždy viditelný; ⚑ příznak v seznamu signalizuje, že má řádek nastavenou podmínku
 
+**Záložka Souhrn** (zápatí tabulky s agregacemi):
+- Přidání souhrnných řádků zobrazených pod datovými řádky
+- Buňky mohou obsahovat **agregační funkce**: `SUM({POLE})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})`
+- Agregace se vyhodnocují nad řádky dynamické tabulky (v preview i při tisku)
+- Příklad: buňka s textem `Celkem: SUM({CENA})` zobrazí `Celkem: 60000`
+- Souhrnné řádky mají šedé pozadí a tučné písmo
+
 **Dva módy tabulky:**
 - **Pevná (Fixed)** — počet řádků je pevný, definovaný v šabloně; buňky obsahují statický text nebo placeholdery
   - Tlačítko **Ze šablony...** — načte předdefinované rozvržení tabulky z Caché (sloupce + řádky předvyplněny) jedním klikem
@@ -477,6 +484,23 @@ Text elementů může obsahovat datové zástupné symboly ve formátu `{NAZEV_P
 
 V designeru se zobrazuje text doslova (včetně závorek). Print Engine za běhu nahradí `{POLE}` skutečnými daty.
 
+### Formátování placeholderů
+
+Placeholdery podporují formátovací instrukce za dvojtečkou: `{POLE:formát}`.
+
+**Číselné a datumové formáty (.NET):**
+- `{CENA:N2}` → `12 000,00` (číslo se 2 desetinnými místy)
+- `{DATUM:dd.MM.yyyy}` → `01.01.2024`
+- `{CAS:HH:mm}` → `08:00`
+
+**Řetězcové funkce:**
+- `{POLE:UPPER}` / `{POLE:LOWER}` — velikost písmen
+- `{POLE:LEFT(4)}` / `{POLE:RIGHT(4)}` — první/poslední N znaků
+- `{POLE:PADLEFT(3,'0')}` — doplnění na délku (např. `42` → `042`)
+- `{POLE:TRIM}` — oříznutí mezer
+
+Formátování funguje v TextElementech, buňkách tabulky i v souhrnných řádcích.
+
 ### Pole agendy — dostupná databázová pole
 
 Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda definuje, která databázová pole jsou k dispozici pro použití v `{POLE}` placeholderech. Pole, kolekce a parametry se zobrazují v panelu vlevo záložka **Pole agendy** jako strom se třemi skupinami:
@@ -536,11 +560,8 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 
 ### Formátování
 
-- **Formátovací jazyk pro řetězce** — rozšíření stávajícího `Format` property
-  - `{POLE:LEFT(4)}` — první 4 znaky
-  - `{POLE:UPPER}` / `{POLE:LOWER}` — velikost písmen
-  - `{POLE:PADLEFT(3,'0')}` — doplnění na délku
-  - Konzistentní se stávajícím `{DATUM:dd.MM.yyyy}` a `{CASTKA:N2}`
+- ✅ **Základní formátování placeholderů** — `{POLE:N2}`, `{POLE:dd.MM.yyyy}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}` (implementováno)
+- **Rozšíření:** další řetězcové funkce, podmíněné formátování dle hodnoty
 
 ### Ostatní
 

@@ -162,8 +162,9 @@ class TableEditorDialogViewModel : EDViewModel
     private readonly IReadOnlySet<string>?   _validFieldNames;
     private readonly ITableTemplateProvider? _templateProvider;
 
-    public ObservableCollection<ColumnVM> ColumnVMs { get; } = [];
-    public ObservableCollection<RowVM>    RowVMs    { get; } = [];
+    public ObservableCollection<ColumnVM> ColumnVMs   { get; } = [];
+    public ObservableCollection<RowVM>    RowVMs      { get; } = [];
+    public ObservableCollection<RowVM>    SummaryVMs  { get; } = [];
 
     public string[] WidthModeOptions  { get; } = ["mm", "%"];
     public string[] AlignmentOptions  { get; } = ["Vlevo", "Střed", "Vpravo"];
@@ -174,6 +175,9 @@ class TableEditorDialogViewModel : EDViewModel
 
     /// <summary>Výsledné řádky po OK — null pro Dynamic mód.</summary>
     public List<TableRow>? ResultRows { get; private set; }
+
+    /// <summary>Výsledné souhrnné řádky po OK — null pokud žádné.</summary>
+    public List<TableRow>? ResultSummaryRows { get; private set; }
 
     // ── Výběr ────────────────────────────────────────────────────────────────
 
@@ -189,6 +193,13 @@ class TableEditorDialogViewModel : EDViewModel
     {
         get => _selectedRowVM;
         set => Set(ref _selectedRowVM, value);
+    }
+
+    private RowVM? _selectedSummaryVM;
+    public RowVM? SelectedSummaryVM
+    {
+        get => _selectedSummaryVM;
+        set => Set(ref _selectedSummaryVM, value);
     }
 
     public bool IsRowSelected => SelectedRowVM is not null;
@@ -217,6 +228,9 @@ class TableEditorDialogViewModel : EDViewModel
     public RelayCommand RemoveRowCommand      { get; }
     public RelayCommand MoveRowUpCommand      { get; }
     public RelayCommand MoveRowDownCommand    { get; }
+
+    public RelayCommand AddSummaryCommand     { get; }
+    public RelayCommand RemoveSummaryCommand  { get; }
 
     public RelayCommand LoadTemplateCommand   { get; }
 
@@ -253,6 +267,10 @@ class TableEditorDialogViewModel : EDViewModel
                 RowVMs.Add(RowVM.FromModel(row, cols));
         }
 
+        // Souhrnné řádky — načíst existující
+        foreach (var row in element.SummaryRows ?? [])
+            SummaryVMs.Add(RowVM.FromModel(row, element.Columns));
+
         AddColumnCommand      = new RelayCommand(AddColumn);
         RemoveColumnCommand   = new RelayCommand(RemoveColumn);
         MoveColumnUpCommand   = new RelayCommand(MoveColumnUp);
@@ -262,6 +280,9 @@ class TableEditorDialogViewModel : EDViewModel
         RemoveRowCommand      = new RelayCommand(RemoveRow);
         MoveRowUpCommand      = new RelayCommand(MoveRowUp);
         MoveRowDownCommand    = new RelayCommand(MoveRowDown);
+
+        AddSummaryCommand     = new RelayCommand(AddSummary);
+        RemoveSummaryCommand  = new RelayCommand(RemoveSummary);
 
         LoadTemplateCommand   = new RelayCommand(LoadTemplate);
     }
@@ -281,6 +302,12 @@ class TableEditorDialogViewModel : EDViewModel
                 row.Cells.Add(new CellVM { ColumnHeader = vm.Header, Content = "" });
                 row.NotifySummary();
             }
+
+        foreach (var row in SummaryVMs)
+        {
+            row.Cells.Add(new CellVM { ColumnHeader = vm.Header, Content = "" });
+            row.NotifySummary();
+        }
     }
 
     private void RemoveColumn()
@@ -291,6 +318,13 @@ class TableEditorDialogViewModel : EDViewModel
 
         if (_element.Mode == TableMode.Fixed && idx >= 0)
             foreach (var row in RowVMs)
+            {
+                if (idx < row.Cells.Count) row.Cells.RemoveAt(idx);
+                row.NotifySummary();
+            }
+
+        if (idx >= 0)
+            foreach (var row in SummaryVMs)
             {
                 if (idx < row.Cells.Count) row.Cells.RemoveAt(idx);
                 row.NotifySummary();
@@ -339,6 +373,22 @@ class TableEditorDialogViewModel : EDViewModel
         if (SelectedRowVM is null) return;
         int idx = RowVMs.IndexOf(SelectedRowVM);
         if (idx >= 0 && idx < RowVMs.Count - 1) { RowVMs.Move(idx, idx + 1); }
+    }
+
+    // ── Souhrnné řádky ────────────────────────────────────────────────────────
+
+    private void AddSummary()
+    {
+        var vm = new RowVM();
+        foreach (var col in ColumnVMs)
+            vm.Cells.Add(new CellVM { ColumnHeader = col.Header, Content = "" });
+        SummaryVMs.Add(vm);
+        SelectedSummaryVM = vm;
+    }
+
+    private void RemoveSummary()
+    {
+        if (SelectedSummaryVM is RowVM vm) SummaryVMs.Remove(vm);
     }
 
     // ── Ze šablony ────────────────────────────────────────────────────────────
@@ -431,6 +481,10 @@ class TableEditorDialogViewModel : EDViewModel
         ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
         if (_element.Mode == TableMode.Fixed)
             ResultRows = RowVMs.Select(rvm => rvm.ToModel()).ToList();
+
+        ResultSummaryRows = SummaryVMs.Count > 0
+            ? SummaryVMs.Select(rvm => rvm.ToModel()).ToList()
+            : null;
 
         CloseDialog(true);
     }

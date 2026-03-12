@@ -24,6 +24,9 @@ public partial class ElementPropertiesWindow : Window
         };
 
         // Standardní EDViewModel dialog pattern — VM zavírá dialog přes CloseDialog()
-        vm.RequestClose += result => { DialogResult = result; Close(); };
+        // Handler musí být odhlášen při zavření, protože VM je sdílený napříč dialogy
+        void OnRequestClose(bool? result) { DialogResult = result; Close(); }
+        vm.RequestClose += OnRequestClose;
+        Closed += (_, _) => vm.RequestClose -= OnRequestClose;
     }
 }

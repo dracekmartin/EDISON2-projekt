@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using TemplateDesigner.Models.Expressions;
 
 namespace TemplateDesigner.Models;
 
@@ -32,14 +33,29 @@ public class DataContext
         _rows.TryGetValue(dataSource, out var rows) ? rows : [];
 
     /// <summary>
-    /// Nahradí placeholdery ve tvaru {NAZEV_POLE} hodnotami z kontextu.
+    /// Nahradí placeholdery ve tvaru {NAZEV_POLE} nebo {NAZEV_POLE:format} hodnotami z kontextu.
     /// Příklad: "Řidič: {JMENO}" → "Řidič: Jan Novák"
+    /// Příklad: "Cena: {CENA:N2}" → "Cena: 1 234,50"
     /// </summary>
     public string ResolvePlaceholders(string template)
     {
         if (string.IsNullOrEmpty(template)) return template;
-        return Regex.Replace(template, @"\{(\w+)\}", m => GetString(m.Groups[1].Value, m.Value));
+        return Regex.Replace(template, @"\{(\w+)(?::([^}]+))?\}", m =>
+        {
+            var field = m.Groups[1].Value;
+            var value = GetString(field, m.Value);
+            if (value == m.Value) return value; // pole nenalezeno — vrátit placeholder
+            var format = m.Groups[2].Success ? m.Groups[2].Value : null;
+            return PlaceholderFormatter.Format(value, format);
+        });
     }
+
+    /// <summary>
+    /// Naformátuje hodnotu podle formátovací instrukce.
+    /// Pokud format je null/prázdný, vrátí hodnotu beze změny.
+    /// </summary>
+    public static string FormatValue(string value, string? format) =>
+        PlaceholderFormatter.Format(value, format);
 
     /// <summary>
     /// Vrátí nový DataContext s hodnotami z tohoto plus extra hodnoty.

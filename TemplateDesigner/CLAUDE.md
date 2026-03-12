@@ -18,13 +18,17 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-1. Výrazový jazyk Part 2 — agregační funkce v TableElement (`SUM`, `COUNT`, `AVG`), formátovací rozšíření
-2. Grouping v Dynamic tabulkách
+1. Chytré duplikování a zarovnání elementů
+2. Přichytávání elementů k sobě (smart snap)
+3. Migrace verzí šablon
+4. Metadata a správa šablon
+5. Drag & drop při přidávání elementů a sekcí
 
 ### ✅ Co máme
 
 - Text, Image, Rectangle, Line, BarcodeElement (QR + Code128), TableElement (Fixed/Dynamic)
 - Parametry sestavy (Part 1 + serializace do JSON), VisibilityExpression evaluator
+- Výrazový jazyk kompletní: podmínky (`&&`, `||`, `!`), formátování (`{POLE:N2}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}`), agregace (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`) v souhrnných řádcích tabulky
 - Live preview, PDF export, DataSchema tree, section management, undo/redo (9 cmd typů)
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
 - Custom section templates (file-based), CompositeDataSchemaProvider (Caché + JSON fallback)
