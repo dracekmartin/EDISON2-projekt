@@ -18,10 +18,9 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-1. Chytré duplikování a zarovnání elementů
-2. Migrace verzí šablon
-3. Metadata a správa šablon
-4. Drag & drop při přidávání elementů a sekcí
+1. Migrace verzí šablon
+2. Metadata a správa šablon
+3. Drag & drop při přidávání elementů a sekcí
 
 ### ✅ Co máme
 
@@ -32,6 +31,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
 - Custom section templates (file-based), CompositeDataSchemaProvider (Caché + JSON fallback)
 - Smart snap — přichytávání elementů k sobě (edge↔edge, center↔center, gap snap 4mm), zvýraznění cílových elementů, gap indikátor
+- Chytré duplikování — Ctrl+D+šipka umístí kopii vedle originálu s 4mm mezerou; Ctrl+D bez šipky = plain duplikát (+5mm offset); neovlivňuje clipboard
 
 ### 🐛 Známé problémy
 

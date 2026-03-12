@@ -187,7 +187,8 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 ### Kopírování / vkládání
 - **Ctrl+C** — zkopíruje vybrané elementy do schránky
 - **Ctrl+V** — vloží zkopírované elementy do aktivní sekce (s offsetem +5 mm)
-- **Ctrl+D** — duplikuje vybrané elementy (Copy + Paste v jednom kroku)
+- **Ctrl+D** — duplikuje vybrané elementy (+5 mm offset); neovlivňuje clipboard
+- **Ctrl+D, šipka** — směrové duplikování: kopie se umístí přesně vedle originálu s 4 mm mezerou (↓ pod, ↑ nad, → vpravo, ← vlevo)
 - Vložené elementy jsou ihned vybrány; operace je undo-able
 
 ### Editace vlastností sekce
@@ -474,7 +475,8 @@ Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
 | **Shift+šipky** | Posunout vybrané elementy o velikost mřížky (5 mm) |
 | **Ctrl+C** | Kopírovat vybrané elementy |
 | **Ctrl+V** | Vložit ze schránky do aktivní sekce |
-| **Ctrl+D** | Duplikovat vybrané elementy |
+| **Ctrl+D** | Duplikovat vybrané elementy (+5 mm offset) |
+| **Ctrl+D, šipka** | Směrové duplikování (kopie vedle originálu s 4 mm mezerou) |
 | **Ctrl+Shift+↑** | Přesunout aktivní sekci nahoru |
 | **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |
 | **Ctrl+scroll** | Zoom in / out |
