@@ -38,6 +38,7 @@ namespace EDControls.EDInputForm
         public EDInputForm()
         {
             InitializeComponent();
+            Loaded += (_, _) => { if (!string.IsNullOrEmpty(CacheClass)) Init(); };
         }
 
         // ─── Public API ───────────────────────────────────────────────────────────
