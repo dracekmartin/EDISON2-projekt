@@ -55,15 +55,7 @@ Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
 
 ---
 
-### 🟢 Technický dluh — nevybuchne hned, ale časem ano
-
-**7. Nápověda klávesových zkratek (Help overlay)**
-Nový uživatel nemá jak zjistit, co aplikace umí — zkratky jsou skryté.
-- Tlačítko "?" nebo "Klávesové zkratky" v toolbaru (nebo menu Nápověda)
-- Overlay / dialog se stručnou tabulkou: akce → zkratka (Ctrl+Z, Ctrl+C/V, Ctrl+Shift+↑↓, Del, Ctrl+scroll, F2/Enter pro editaci…)
-- Ideálně kontextový — jiná sekce pro canvas, jiná pro editor tabulky
-- Implementačně nejjednodušší: statický XAML dialog se `ScrollViewer` + `DataGrid` nebo `StackPanel` s řádky; bez databindingu, jen statický obsah
-- Klávesová zkratka pro otevření: F1 nebo Ctrl+?
+### 🟢 Menší priorita
 
 **8. Chytré duplikování a zarovnání elementů**
 Aktuální Ctrl+C / Ctrl+V vloží kopii s offsetem +5 mm — uživatel pak element přesouvá ručně.

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-03-12 — HelpDialog (nápověda klávesových zkratek)
+
+- ✅ `HelpDialog.xaml/.cs` — statický scrollovatelný dialog se 6 kategoriemi: Základní ovládání, Soubory a šablony, Editace, Sekce, Zobrazení, Elementy + Tipy a triky
+- ✅ Klávesová zkratka F1 pro otevření, tlačítko v menu Nápověda
+- ✅ Pokrývá všechny klávesové zkratky aplikace (Ctrl+Z/Y/C/V/D/A/N/O/S, Del, šipky, Ctrl+scroll, Ctrl+Shift+↑↓, PgUp/PgDn, ...)
+
+---
+
 ## 2026-03-06 — MVVM refaktoring: TemplateDesignerViewModel : EDViewModel
 
 - ✅ `TemplateDesigner.csproj` — přidán `<ProjectReference>` na `EDControls.csproj`
