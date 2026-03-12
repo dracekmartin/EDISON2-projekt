@@ -8,7 +8,8 @@
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="420">
     <ScrollViewer VerticalScrollBarVisibility="Auto" Background="White">
-        <ItemsControl ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"
+        <ItemsControl x:Name="TheItemsControl"
+                      ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"
                       d:ItemsSource="{Binding Items, Source={d:DesignInstance designTime:EDInputFormDesignTimeData, IsDesignTimeCreatable=True}}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
@@ -24,6 +25,11 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <DockPanel Grid.Column="0" VerticalAlignment="Top">
+                            <!-- Item number for keyboard navigation (Ctrl+number) -->
+                            <TextBlock DockPanel.Dock="Left"
+                                       Text="{Binding Number, StringFormat='{}{0}.'}"
+                                       Foreground="Gray" FontSize="10"
+                                       VerticalAlignment="Top" Margin="2,3,3,0"/>
                             <!-- Debug-only dot: visible only in DEBUG builds when ValidateOnChange=true -->
                             <Ellipse DockPanel.Dock="Left" Width="6" Height="6" Fill="CornflowerBlue"
                                      Margin="4,4,3,0"
@@ -63,6 +69,7 @@
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
                         <!-- Collapse/expand toggle -->
@@ -82,12 +89,17 @@
                                 </Style>
                             </ToggleButton.Style>
                         </ToggleButton>
+                        <!-- Item number for keyboard navigation (Ctrl+number) -->
                         <TextBlock Grid.Column="1"
+                                   Text="{Binding Number, StringFormat='{}{0}.'}"
+                                   Foreground="Gray" FontSize="10"
+                                   VerticalAlignment="Bottom" Margin="2,0,4,1"/>
+                        <TextBlock Grid.Column="2"
                                    Text="{Binding GroupName}"
                                    FontWeight="SemiBold"
                                    VerticalAlignment="Bottom"
                                    Margin="2,0,8,0"/>
-                        <Separator Grid.Column="2" VerticalAlignment="Center"/>
+                        <Separator Grid.Column="3" VerticalAlignment="Center"/>
                     </Grid>
                 </DataTemplate>
             </ItemsControl.Resources>

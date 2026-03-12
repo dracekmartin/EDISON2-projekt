@@ -8,7 +8,7 @@ Property isVisible As %Boolean [ InitialExpression = 1 ];
 
 Method Serialize() As %List
 {
-	q $lb("GROUP",..groupName,$s(..isVisible:"1",1:"0"))
+	q $lb("GROUP",..number,..groupName,$s(..isVisible:"1",1:"0"))
 }
 
 }

@@ -8,6 +8,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace EDControls.EDInputForm
 {
@@ -95,9 +97,9 @@ namespace EDControls.EDInputForm
             {
                 CList entry = item switch
                 {
-                    Group g => new CList("GROUP", g.GroupName, g.IsVisible ? "1" : "0"),
+                    Group g => new CList("GROUP", g.Number, g.GroupName, g.IsVisible ? "1" : "0"),
                     Field f => new CList(
-                        "FIELD", f.Key, f.Label,
+                        "FIELD", f.Number, f.Key, f.Label,
                         f.FieldType == EFieldType.Number ? "NUMBER" : "TEXT",
                         f.Value ?? "",
                         f.ValidateOnChange ? "1" : "0",
@@ -123,8 +125,9 @@ namespace EDControls.EDInputForm
                 {
                     currentGroup = new Group
                     {
-                        GroupName = row.GetString(2),
-                        IsVisible = row.Length < 3 || row.GetString(3) != "0",
+                        Number    = int.TryParse(row.GetString(2), out int gn) ? gn : 0,
+                        GroupName = row.GetString(3),
+                        IsVisible = row.Length < 4 || row.GetString(4) != "0",
                     };
                     items.Add(currentGroup);
                 }
@@ -132,18 +135,91 @@ namespace EDControls.EDInputForm
                 {
                     items.Add(new Field
                     {
-                        Key              = row.GetString(2),
-                        Label            = row.GetString(3),
-                        FieldType        = row.GetString(4) == "NUMBER" ? EFieldType.Number : EFieldType.Text,
-                        Value            = row.GetString(5) == "" ? null : row.GetString(5),
-                        ValidateOnChange = row.GetString(6) == "1",
-                        Required         = row.GetString(7) == "1",
-                        ValidationError  = row.Length >= 8 && row.GetString(8) != "" ? row.GetString(8) : null,
+                        Number           = int.TryParse(row.GetString(2), out int fn) ? fn : 0,
+                        Key              = row.GetString(3),
+                        Label            = row.GetString(4),
+                        FieldType        = row.GetString(5) == "NUMBER" ? EFieldType.Number : EFieldType.Text,
+                        Value            = row.GetString(6) == "" ? null : row.GetString(6),
+                        ValidateOnChange = row.GetString(7) == "1",
+                        Required         = row.GetString(8) == "1",
+                        ValidationError  = row.Length >= 9 && row.GetString(9) != "" ? row.GetString(9) : null,
                         ParentGroup      = currentGroup,
                     });
                 }
             }
             return items;
+        }
+
+        // ─── Keyboard navigation ──────────────────────────────────────────────────
+        // Ctrl+digits: buffer digits for 600 ms, then navigate to the item whose
+        // Number equals the accumulated value.  Ctrl+1,2 → item 12, etc.
+
+        private string _navBuffer = "";
+        private System.Windows.Threading.DispatcherTimer? _navTimer;
+
+        protected override void OnPreviewKeyDown(KeyEventArgs e)
+        {
+            base.OnPreviewKeyDown(e);
+            if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
+
+            var key = e.Key == Key.System ? e.SystemKey : e.Key;
+            int digit = key switch
+            {
+                Key.D0 or Key.NumPad0 => 0,
+                Key.D1 or Key.NumPad1 => 1,
+                Key.D2 or Key.NumPad2 => 2,
+                Key.D3 or Key.NumPad3 => 3,
+                Key.D4 or Key.NumPad4 => 4,
+                Key.D5 or Key.NumPad5 => 5,
+                Key.D6 or Key.NumPad6 => 6,
+                Key.D7 or Key.NumPad7 => 7,
+                Key.D8 or Key.NumPad8 => 8,
+                Key.D9 or Key.NumPad9 => 9,
+                _ => -1
+            };
+
+            if (digit == -1) return;
+
+            _navBuffer += digit.ToString();
+            e.Handled = true;
+
+            _navTimer?.Stop();
+            _navTimer = new System.Windows.Threading.DispatcherTimer
+                { Interval = TimeSpan.FromMilliseconds(200) };
+            _navTimer.Tick += (_, _) =>
+            {
+                _navTimer.Stop();
+                if (int.TryParse(_navBuffer, out int number))
+                    NavigateToNumber(number);
+                _navBuffer = "";
+            };
+            _navTimer.Start();
+        }
+
+        private void NavigateToNumber(int number)
+        {
+            var item = Items?.FirstOrDefault(i => i.Number == number);
+            if (item == null) return;
+
+            var container = TheItemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
+            if (container == null) return;
+
+            if (item is Field)
+                FindVisualChild<TextBox>(container)?.Focus();
+            else if (item is Group g)
+                g.IsExpanded = !g.IsExpanded;
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T t) return t;
+                var result = FindVisualChild<T>(child);
+                if (result != null) return result;
+            }
+            return null;
         }
 
         // ─── Internal ─────────────────────────────────────────────────────────────

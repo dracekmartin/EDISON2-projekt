@@ -19,7 +19,7 @@ Property validationError As %String;
 
 Method Serialize() As %List
 {
-	q $lb("FIELD",..key,..label,..type,..value,..validateOnChange,..required,..validationError)
+	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError)
 }
 
 }
