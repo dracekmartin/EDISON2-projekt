@@ -1,5 +1,9 @@
-using EDControls.EDViewModel;
 using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media;
+using EDControls;
+using EDControls.EDViewModel;
 
 namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
 
@@ -8,8 +12,18 @@ namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
 /// and uses the Set() helper for property change notification.
 /// The save delegate is injected from the code-behind so the ViewModel stays View-agnostic.
 /// </summary>
-class EDComponentAndViewModelTestViewModel(Func<bool> save) : EDViewModel
+class EDComponentAndViewModelTestViewModel : EDViewModel
 {
+    public EDComponentAndViewModelTestViewModel()
+    {
+        Actions =
+        [
+            new EDAction("Přidat",  (ImageSource)Application.Current.FindResource("EDIcons.Add"),    Key.Insert, ModifierKeys.None, new RelayCommand(() => Status = "Přidat (Ins)")),
+            new EDAction("Upravit", (ImageSource)Application.Current.FindResource("EDIcons.Edit"),   Key.F2,     ModifierKeys.None, new RelayCommand(() => Status = "Upravit (F2)")),
+            new EDAction("Smazat",  (ImageSource)Application.Current.FindResource("EDIcons.Delete"), Key.Delete, ModifierKeys.None, new RelayCommand(() => Status = "Smazat (Del)")),
+        ];
+    }
+
     public RelayCommand SimulateActionCommand => _simulateActionCommand
         ??= new RelayCommand(SimulateAction);
     private RelayCommand? _simulateActionCommand;
@@ -29,15 +43,5 @@ class EDComponentAndViewModelTestViewModel(Func<bool> save) : EDViewModel
     {
         get => _status;
         set => Set(ref _status, value);
-    }
-
-    protected override void OnOk()
-    {
-        if (!save())
-        {
-            Status = "Uložení selhalo — opravte chyby ve formuláři.";
-            return;   // window stays open
-        }
-        base.OnOk();  // fires RequestClose(true) → EDWindow closes with DialogResult = true
     }
 }

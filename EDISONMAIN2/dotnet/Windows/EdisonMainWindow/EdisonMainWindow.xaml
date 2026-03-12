@@ -44,7 +44,7 @@
             <Separator/>
             <Button Content="Test EDList"    Command="{Binding OpenEDListTestCommand}"/>
             <Separator/>
-            <Button Content="Test EDWindow"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
+            <Button Content="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
             <Separator/>
             <Button ToolTip="{StaticResource EDStrings.Add}">
                 <Image Source="{StaticResource EDIcons.Add}" Width="16" Height="16"/>

@@ -7,7 +7,7 @@ Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP 
 | Složka | Role |
 | --- | --- |
 | `EDISONMAIN2/dotnet/` | Hlavní WPF aplikace (vstupní bod, okna, služby). |
-| `EDControls/dotnet/` | Sdílená WPF knihovna — ovládací prvky (EDFooter, EDInputForm, EDList, EDActionInProgress) a základní třída pro ViewModely (EDViewModel). |
+| `EDControls/dotnet/` | Sdílená WPF knihovna — ovládací prvky (EDFooter, EDToolbar, EDInputForm, EDList, EDActionInProgress) a základní třída pro ViewModely (EDViewModel). |
 | `MLRest.md` | Kompletní referenční dokumentace Caché architektury (namespace, makra, komunikační protokol). |
 
 ---

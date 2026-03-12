@@ -18,6 +18,16 @@ visible in the WPF designer.
 | `FooterMode` | `EFooterMode` | `Close` | Switches between Zavřít / Ok+Storno. |
 | `LeftContent` | `UIElement?` | `null` | Optional element in the left column of the footer grid. Set via `LeftContent` property (not a binding — assigned directly to `LeftContentPresenter.Content`). |
 
+## Actions menu (automatic)
+
+When the window's `EDViewModel` exposes a non-empty `Actions` list, `EDFooter` automatically shows an **"Akce" dropdown menu** in the bottom-left corner — no XAML attribute needed. The menu is driven entirely by DataContext inheritance:
+
+- `ActionsMenuItem` binds `ItemsSource="{Binding Actions}"`.
+- `Menu` visibility binds to `ActionsMenuItem.HasItems` via `BooleanToVisibilityConverter` — the menu appears and disappears as the collection changes.
+- Each item's `Header`, `Command`, `InputGestureText`, and `Icon` are set through `ItemContainerStyle` bindings on `EDAction` properties.
+
+The `LeftContent` slot (custom buttons) sits to the right of the "Akce" menu in the same `StackPanel`.
+
 ## ViewModel integration (automatic)
 
 On `Loaded`, `EDFooter` walks up to the parent `Window` and:

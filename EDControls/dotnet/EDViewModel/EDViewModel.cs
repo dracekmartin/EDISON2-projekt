@@ -1,6 +1,8 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 using ALWA.SYS;
 
 namespace EDControls.EDViewModel;
@@ -29,6 +31,12 @@ public class EDViewModel : INotifyPropertyChanged
     /// Set to true in the ViewModel constructor for windows with unsaved-data risk.
     /// </summary>
     public bool ConfirmOnCancel { get; protected set; }
+
+    /// <summary>
+    /// Actions available in this window (Přidat, Upravit, Smazat, …).
+    /// EDToolbar and EDFooter read this automatically. Set in the subclass constructor.
+    /// </summary>
+    public IReadOnlyList<EDAction>? Actions { get; protected set; }
 
     private bool _isActionInProgress;
     public bool IsActionInProgress
@@ -70,6 +78,17 @@ public class EDViewModel : INotifyPropertyChanged
     public EDViewModel()
     {
         OkCommand = new RelayCommand(OnOk);
+        Application.Current?.Dispatcher.BeginInvoke(RegisterKeyBindings, DispatcherPriority.Loaded);
+    }
+
+    private void RegisterKeyBindings()
+    {
+        if (Actions == null) return;
+        var window = Application.Current.Windows.OfType<Window>()
+            .FirstOrDefault(w => w.DataContext == this);
+        if (window == null) return;
+        foreach (var action in Actions)
+            window.InputBindings.Add(new KeyBinding(action.Command, action.Key, action.Modifiers));
     }
 
     /// <summary>
