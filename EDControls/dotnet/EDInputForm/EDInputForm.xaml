@@ -12,30 +12,31 @@
                       d:ItemsSource="{Binding Items, Source={d:DesignInstance designTime:EDInputFormDesignTimeData, IsDesignTimeCreatable=True}}">
             <ItemsControl.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <StackPanel Grid.IsSharedSizeScope="True"/>
+                    <StackPanel/>
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.Resources>
-                <!-- Field row: label in column 0, input control in column 1 -->
+                <!-- Field row: fixed 130px label column, input fills the rest -->
                 <DataTemplate DataType="{x:Type local:Field}">
                     <Grid Margin="2,1" Visibility="{Binding EffectiveVisibility}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="LabelColumn"/>
+                            <ColumnDefinition Width="130"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                        <DockPanel Grid.Column="0" VerticalAlignment="Top">
                             <!-- Debug-only dot: visible only in DEBUG builds when ValidateOnChange=true -->
-                            <Ellipse Width="6" Height="6" Fill="CornflowerBlue" Margin="4,0,3,0"
+                            <Ellipse DockPanel.Dock="Left" Width="6" Height="6" Fill="CornflowerBlue"
+                                     Margin="4,4,3,0"
                                      Visibility="{Binding ValidateIndicatorVisibility}"
                                      ToolTip="Automatická validace"/>
-                            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" Margin="0,2,2,2"/>
-                            <!-- Required asterisk: always visible when Required=true -->
-                            <TextBlock Text="*" Foreground="Red" VerticalAlignment="Center"
+                            <!-- Required asterisk -->
+                            <TextBlock DockPanel.Dock="Right" Text="*" Foreground="Red"
                                        Visibility="{Binding RequiredIndicatorVisibility}"
                                        ToolTip="Povinné pole" Margin="0,2,6,2"/>
-                            <!-- Spacer so non-required labels align with the asterisk gap -->
-                        </StackPanel>
-                        <TextBox Grid.Column="1"
+                            <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
+                                       VerticalAlignment="Top" Margin="0,2,2,2"/>
+                        </DockPanel>
+                        <TextBox Grid.Column="1" VerticalAlignment="Top"
                                  Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
                                  ToolTip="{Binding ValidationError}"
                                  Margin="2,1">
@@ -72,10 +73,10 @@
                                       Focusable="False" Cursor="Hand">
                             <ToggleButton.Style>
                                 <Style TargetType="ToggleButton">
-                                    <Setter Property="Content" Value="▼"/>
+                                    <Setter Property="Content" Value="&#x25BC;"/>
                                     <Style.Triggers>
                                         <Trigger Property="IsChecked" Value="False">
-                                            <Setter Property="Content" Value="▶"/>
+                                            <Setter Property="Content" Value="&#x25BA;"/>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
