@@ -68,18 +68,25 @@ Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
 - Konfigurovatelné per šablona nebo per agenda
 - Konzistentní chování designer ↔ print engine
 
+**9. Import PDF → šablona**
+Strojová analýza existujícího PDF a převod na TemplateDesigner šablonu.
+- **Režim 1 — "1:1 import" (deterministický):** PdfPig extrahuje text (s pozicí, fontem, barvou), čáry, obdélníky, obrázky → mapování na TextElement, LineElement, RectangleElement, ImageElement, TableElement (Fixed). Detekce tabulek z mřížky čar. Převod pt → mm. Výsledek = vizuálně identická šablona se statickými texty.
+- **Režim 2 — "Zchytři to" (AI post-processing):** Vezme výsledek režimu 1 + schéma agendy → AI navrhne nahrazení statických textů za `{PLACEHOLDER}`, identifikuje opakující se záhlaví/patičku (→ sekce OnEveryPage), rozpozná kandidáty na Dynamic tabulku. Uživatel potvrdí/upraví návrhy.
+- Knihovna: **PdfPig** (open source, .NET, per-word bounding boxy, vestavěné algoritmy pro seskupování textu)
+- Režim 1 je užitečný sám o sobě; režim 2 je nadstavba
+
 ---
 
 ### 🟢 Menší priorita
 
-**9. Grouping v TableElement**
+**10. Grouping v TableElement**
 Seskupení řádků dynamické tabulky podle hodnoty pole.
 - `TableRowType` enum: `GroupHeader`, `Data`, `GroupFooter`, `Summary`
 - `GroupByField` property na TableElement
 - Print engine sleduje změnu hodnoty groupovacího pole a vkládá Header/Footer řádky
 - GroupFooter může obsahovat agregace ze skupiny (SUM/COUNT)
 
-**10. Computed fields**
+**11. Computed fields**
 Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 - Definice v agendě (nebo přímo v šabloně)
 - Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
