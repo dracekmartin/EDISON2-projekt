@@ -142,15 +142,28 @@ public class TableElement : TemplateElement
     public string? HeaderBackgroundColor { get; set; }
     public string? HeaderTextColor       { get; set; }
 
+    /// <summary>
+    /// Souhrnné řádky zobrazené pod datovými řádky (zápatí tabulky).
+    /// Buňky mohou obsahovat agregační funkce: SUM({POLE}), COUNT(), AVG({POLE}), MIN({POLE}), MAX({POLE}).
+    /// Null = žádné souhrnné řádky.
+    /// </summary>
+    public List<TableRow>? SummaryRows { get; set; }
+
     // ─── Designer helpers ────────────────────────────────────────────
 
     /// <summary>Počet ukázkových řádků zobrazených v designeru pro Dynamic mód.</summary>
     private int DesignerPreviewRows => 3;
 
-    protected override float DesignerPlaceholderHeight =>
-        Mode == TableMode.Fixed && Rows is { Count: > 0 }
-            ? (ShowHeader ? HeaderHeight : 0f) + Rows.Count * RowHeight
-            : 40f;
+    protected override float DesignerPlaceholderHeight
+    {
+        get
+        {
+            float summaryH = SummaryRows is { Count: > 0 } ? SummaryRows.Count * RowHeight : 0f;
+            if (Mode == TableMode.Fixed && Rows is { Count: > 0 })
+                return (ShowHeader ? HeaderHeight : 0f) + Rows.Count * RowHeight + summaryH;
+            return 40f + summaryH;
+        }
+    }
 
     // ─── Render ──────────────────────────────────────────────────────
 
@@ -180,10 +193,18 @@ public class TableElement : TemplateElement
             currentY = RenderHeader(ctx, visibleColumns, colWidths, tableRect, currentY, borderPaint, sepPaint);
 
         // Datové řádky
+        IReadOnlyList<DataContext> dataRows = [];
         if (Mode == TableMode.Fixed)
-            RenderFixedRows(ctx, visibleColumns, colWidths, tableRect, currentY, borderPaint, sepPaint);
+            currentY = RenderFixedRows(ctx, visibleColumns, colWidths, tableRect, currentY, borderPaint, sepPaint);
         else
-            RenderDynamicPlaceholder(ctx, visibleColumns, colWidths, tableRect, currentY, sepPaint);
+        {
+            dataRows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
+            currentY = RenderDynamicRows(ctx, visibleColumns, colWidths, tableRect, currentY, sepPaint, dataRows);
+        }
+
+        // Souhrnné řádky (zápatí s agregacemi)
+        if (SummaryRows is { Count: > 0 })
+            RenderSummaryRows(ctx, visibleColumns, colWidths, tableRect, currentY, borderPaint, sepPaint, dataRows);
 
         // Vnější rámeček
         if (BorderStyle != TableBorderStyle.None)
@@ -234,11 +255,11 @@ public class TableElement : TemplateElement
         return currentY + headerPx;
     }
 
-    private void RenderFixedRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+    private float RenderFixedRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
         SKRect tableRect, float startY,
         SKPaint borderPaint, SKPaint sepPaint)
     {
-        if (Rows is null || Rows.Count == 0) return;
+        if (Rows is null || Rows.Count == 0) return startY;
 
         float rowPx = ctx.Px(RowHeight);
         using var rFont = new SKFont(SKTypeface.Default, rowPx * 0.55f);
@@ -313,13 +334,13 @@ public class TableElement : TemplateElement
             currentY += rowPx;
             visibleIdx++;
         }
+        return currentY;
     }
 
-    private void RenderDynamicPlaceholder(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        SKRect tableRect, float startY, SKPaint sepPaint)
+    private float RenderDynamicRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        SKRect tableRect, float startY,
+        SKPaint sepPaint, IReadOnlyList<DataContext> rows)
     {
-        // Při preview (mock data) použij reálné řádky, jinak zobraz placeholdery
-        var rows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
         bool hasRows = rows.Count > 0;
         int renderCount = hasRows ? rows.Count : DesignerPreviewRows;
 
@@ -360,6 +381,74 @@ public class TableElement : TemplateElement
                     sample = $"{{{col.Field ?? col.Header}}}";
                 }
                 ctx.Canvas.DrawText(sample, colX + 4, currentY + rowPx * 0.72f, rFont, rText);
+
+                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
+                    ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + rowPx, sepPaint);
+
+                colX += colW;
+            }
+
+            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
+                ctx.Canvas.DrawLine(tableRect.Left, currentY + rowPx, tableRect.Right, currentY + rowPx, sepPaint);
+
+            currentY += rowPx;
+        }
+        return currentY;
+    }
+
+    private void RenderSummaryRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        SKRect tableRect, float startY,
+        SKPaint borderPaint, SKPaint sepPaint,
+        IReadOnlyList<DataContext> dataRows)
+    {
+        if (SummaryRows is null || SummaryRows.Count == 0) return;
+
+        // Oddělovací čára nad souhrnem
+        ctx.Canvas.DrawLine(tableRect.Left, startY, tableRect.Right, startY, borderPaint);
+
+        float rowPx = ctx.Px(RowHeight);
+        using var sFont = new SKFont(SKTypeface.FromFamilyName(null, SKFontStyle.Bold), rowPx * 0.55f);
+        using var sText = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
+        using var sBg   = new SKPaint { Color = new SKColor(0xFFF0F0F0) };
+
+        float currentY = startY;
+        for (int rowIdx = 0; rowIdx < SummaryRows.Count; rowIdx++)
+        {
+            var row = SummaryRows[rowIdx];
+
+            // Pozadí souhrnného řádku
+            var bgColor = row.BackgroundColor is not null
+                ? SKColor.Parse(row.BackgroundColor)
+                : new SKColor(0xFFF0F0F0);
+            sBg.Color = bgColor;
+            ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + rowPx), sBg);
+
+            float colX = tableRect.Left;
+            for (int colIdx = 0; colIdx < cols.Count; colIdx++)
+            {
+                var   col  = cols[colIdx];
+                float colW = colWidths[colIdx];
+
+                string content = "";
+                if (colIdx < row.Cells.Count)
+                {
+                    var cell = row.Cells[colIdx];
+                    // 1. Vyhodnotit agregace
+                    content = AggregationResolver.Resolve(cell.Content, dataRows);
+                    // 2. Vyhodnotit zbývající placeholdery
+                    content = ctx.Data?.ResolvePlaceholders(content) ?? content;
+                    // 3. Aplikovat formát
+                    var cellFormat = cell.Format ?? col.Format;
+                    if (cellFormat is not null)
+                        content = DataContext.FormatValue(content, cellFormat);
+
+                    // Barva textu buňky
+                    sText.Color = cell.TextColor is not null
+                        ? SKColor.Parse(cell.TextColor)
+                        : new SKColor(0xFF222222);
+                }
+
+                ctx.Canvas.DrawText(content, colX + 4, currentY + rowPx * 0.72f, sFont, sText);
 
                 if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
                     ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + rowPx, sepPaint);
@@ -476,6 +565,7 @@ public class TableElement : TemplateElement
         DataSource           = DataSource,
         Columns              = Columns.Select(c => c.Clone()).ToList(),
         Rows                 = Rows?.Select(r => r.Clone()).ToList(),
+        SummaryRows          = SummaryRows?.Select(r => r.Clone()).ToList(),
         RowHeight            = RowHeight,
         ShowHeader           = ShowHeader,
         HeaderHeight         = HeaderHeight,

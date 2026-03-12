@@ -209,6 +209,73 @@
                 </Grid>
             </TabItem>
 
+            <!-- ── Souhrn (zápatí s agregacemi) ────────────────────── -->
+            <TabItem Header="Souhrn">
+                <Grid Margin="6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Seznam souhrnných řádků -->
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <ListBox x:Name="SummaryList"
+                                 ItemsSource="{Binding SummaryVMs}"
+                                 SelectedItem="{Binding SelectedSummaryVM, Mode=TwoWay}"
+                                 BorderThickness="1" BorderBrush="#CCCCCC">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding RowSummary}" Margin="4,2"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,6,0">
+                            <Button Content="+" Width="28" Command="{Binding AddSummaryCommand}"/>
+                            <Button Content="✕" Width="28" Command="{Binding RemoveSummaryCommand}"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Editor buněk vybraného souhrnného řádku -->
+                    <Grid Grid.Column="1" Margin="8,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Text="Buňky souhrnného řádku:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+
+                        <DataGrid x:Name="SummaryCellsGrid"
+                                  Grid.Row="1"
+                                  AutoGenerateColumns="False"
+                                  CanUserAddRows="False"
+                                  CanUserDeleteRows="False"
+                                  HeadersVisibility="Column"
+                                  GridLinesVisibility="Horizontal"
+                                  RowHeaderWidth="0"
+                                  BorderThickness="1"
+                                  BorderBrush="#CCCCCC"
+                                  ItemsSource="{Binding SelectedSummaryVM.Cells}"
+                                  PreviewKeyDown="Grid_PreviewKeyDown">
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Header="Sloupec" Binding="{Binding ColumnHeader}" IsReadOnly="True" Width="130"/>
+                                <DataGridTextColumn Header="Obsah"   Binding="{Binding Content, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                            </DataGrid.Columns>
+                        </DataGrid>
+
+                        <TextBlock Grid.Row="2" Margin="0,4,0,0"
+                                   FontSize="11" Foreground="#888888"
+                                   Text="Agregace: SUM({POLE}), COUNT(), AVG({POLE}), MIN({POLE}), MAX({POLE})"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
         </TabControl>
 
         <!-- Tlačítka OK / Storno -->

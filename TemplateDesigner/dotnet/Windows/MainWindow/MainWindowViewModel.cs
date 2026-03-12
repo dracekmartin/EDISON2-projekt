@@ -797,7 +797,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 var values = schema.Fields
                     .Concat(collections.SelectMany(c => c.Fields))
                     .DistinctBy(f => f.FieldName)
-                    .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? f.Label));
+                    .ToDictionary(f => f.FieldName, f => (object?)(f.Example ?? MockDefault(f)));
 
                 var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>();
                 foreach (var collection in collections)
@@ -806,7 +806,7 @@ public class TemplateDesignerViewModel : EDViewModel
                     {
                         var rowData = collection.Fields.ToDictionary(
                             f => f.FieldName,
-                            f => (object?)MakeMockValue(f.Example ?? f.Label, f.DataType, i));
+                            f => (object?)MakeMockValue(f.Example ?? MockDefault(f), f.DataType, i));
                         return new DataContext(rowData);
                     }).ToList();
                     rowsDict[collection.CollectionKey] = mockRows;
@@ -830,6 +830,17 @@ public class TemplateDesignerViewModel : EDViewModel
 
         return mockData;
     }
+
+    /// <summary>Výchozí mock hodnota podle typu pole — použije se když Example chybí.</summary>
+    private static string MockDefault(DataField f) => f.DataType switch
+    {
+        FieldDataType.Number   => "100",
+        FieldDataType.Date     => "01.01.2024",
+        FieldDataType.Time     => "08:00",
+        FieldDataType.DateTime => "01.01.2024 08:00",
+        FieldDataType.Boolean  => "true",
+        _                      => f.Label  // text — fallback na label
+    };
 
     private static string MakeMockValue(string baseValue, FieldDataType type, int rowIndex)
     {
