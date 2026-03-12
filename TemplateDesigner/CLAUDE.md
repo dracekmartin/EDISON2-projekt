@@ -4,6 +4,7 @@
 
 **TemplateDesigner** je WPF desktopová aplikace pro tvorbu šablon tiskových sestav.
 Náhrada staršího nástroje postaveného v InterSystems Caché/Globals.
+Při navrhování nových featur, bez v potaz, že v budoucnu by mohl být nástroj, alespoň částečně, ovládán pomocí AI.Dobre
 
 Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. Print Engine** (budoucí) — šablona + data = PDF.
 
