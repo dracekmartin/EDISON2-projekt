@@ -1,44 +1,32 @@
-# EDISON2 — developer notes
+# EDISON2 — poznámky pro vývojáře
 
-Two-tier WPF application: .NET UI ↔ Caché (InterSystems) back-end via HTTP (MLRest).
+Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP (MLRest).
 
-## Repository layout
+## Struktura repozitáře
 
-| Folder | Role |
-|---|---|
-| `EDISONMAIN2/dotnet/` | Main WPF application (entry point, windows, services). |
-| `EDControls/dotnet/` | Shared WPF control library (EDFooter, EDInputForm, EDList, EDViewModel, EDActionInProgress). |
-| `MLRest.md` | Full Caché-side architecture reference (namespaces, macros, wire protocol). |
+| Složka | Role |
+| --- | --- |
+| `EDISONMAIN2/dotnet/` | Hlavní WPF aplikace (vstupní bod, okna, služby). |
+| `EDControls/dotnet/` | Sdílená WPF knihovna — ovládací prvky (EDFooter, EDInputForm, EDList, EDActionInProgress) a základní třída pro ViewModely (EDViewModel). |
+| `MLRest.md` | Kompletní referenční dokumentace Caché architektury (namespace, makra, komunikační protokol). |
 
 ---
 
-## MLRest — .NET usage
+## MLRest — použití v .NET
 
-`MLRest` is an HTTP client that serialises .NET values into Caché process-private globals
-(`^||ML("IN",...)`) and deserialises the response (`^||ML("OUT",...)`) back to .NET.
+`MLRest` je HTTP klient, který serializuje .NET hodnoty do Caché process-private globals
+(`^||ML("IN",...)`) a deserializuje odpověď (`^||ML("OUT",...)`) zpět do .NET.
 
-The DLL is referenced directly: `C:\Edison\MLRest.dll`.
+DLL je odkazována přímo: `C:\Edison\MLRest.dll`.
 
-### Construction
+Instance `MLRest` se nikdy nevytváří přímo ve windows nebo ovládacích prvcích — bere se
+z `EDViewModel.MLRest` (statická vlastnost dostupná všem potomkům).
 
-```csharp
-// Typical: server + port + data namespace + IdFa (company identifier)
-var mlRest = new MLRest(server, restPort, dataNamespace, idfa)
-{
-    LoginName = connParams.UserName,
-    FullName  = connParams.FullName,
-    Mlp       = connParams.Mlp.ToString()
-};
-```
+### Volání Caché metody — používej CVar (silně doporučeno)
 
-`MLRest` is constructed once per session in `EdisonMainViewModel` and passed down into
-every window and control that needs Caché access.
-
-### Calling a Caché method — use CVar (strongly preferred)
-
-`CVar` is the idiomatic Caché structured type. **Always use `CVar` unless you have a specific
-reason not to.** Avoid `object[]` — it uses a flat numeric-subscript wire format that is
-harder to extend and less expressive than CVar.
+`CVar` je idiomatický Caché strukturovaný typ. **Vždy používej `CVar`, pokud nemáš konkrétní
+důvod nepoužívat ho.** Vyhni se `object[]` — používá plochý numerický formát subscriptů, který
+je hůře rozšiřitelný a méně výrazový než CVar.
 
 ```csharp
 using EDControls;   // for QueryOrThrow
@@ -56,7 +44,7 @@ CVar output = mlRest.QueryOrThrow("ALVA.MY.ClassName", "MyMethod", input);
 input["item"] = new CList("TYPE", "field1", "field2");
 ```
 
-Reading output:
+Čtení výstupu:
 
 ```csharp
 // Single named value
@@ -76,57 +64,57 @@ foreach (KeyValuePair<string, CVar> kvp in output)
 }
 ```
 
-`QueryOrThrow` (extension in `EDControls`) calls `Query` + `RestStatus.ThrowIfError()`
-atomically. Only call them separately when you need graceful degradation (`continue` in a
-loop, `return null`).
+`QueryOrThrow` (extension v `EDControls`) volá `Query` + `RestStatus.ThrowIfError()`
+atomicky. Volej je zvlášť pouze tehdy, kdy potřebuješ graceful degradation (`continue` ve smyčce,
+`return null`).
 
-### Caché wire format for CVar
+### Caché wire format pro CVar
 
-CVar maps to string-subscripted process-private globals:
+CVar se mapuje na string-subscriptované process-private globals:
 
-```
+```text
 .NET cVar["key"]          → ^||ML("IN","key")
 .NET cVar["1"]            → ^||ML("IN","1")    ← string "1", NOT numeric 1
 .NET CList("A","B","C")   → $lb("A","B","C")  in Caché
 ```
 
-Caché side reads with `$li(^||ML("IN","i"), n)` and writes:
+Caché strana čte přes `$li(^||ML("IN","i"), n)` a zapisuje:
 
 ```objectscript
 s ^||ML("OUT","1") = $lb("TYPE","value1","value2")
 s ^||ML("OUT","2") = $lb("OTHER","value3")
 ```
 
-### When object[] is acceptable
+### Kdy je object[] přijatelný
 
-Use `object[]` only in legacy code or when integrating with existing Caché methods that
-already use numeric subscripts (`^||ML("IN",1)`, `^||ML("OUT",1)`). Document the reason.
-Do **not** use `object[]` in new code.
+Používej `object[]` pouze v legacy kódu nebo při integraci s existujícími Caché metodami,
+které již používají numerické subscripty (`^||ML("IN",1)`, `^||ML("OUT",1)`). Důvod zdokumentuj.
+V novém kódu `object[]` **nepoužívej**.
 
-### Binary data
+### Binární data
 
 ```csharp
 string guid = mlRest.BinarySave(bytes);    // upload byte[] → GUID
 byte[] data = mlRest.BinaryLoad(guid);     // download GUID → byte[]
 ```
 
-Stored in `$$$SYSBinary(GUID)` on the Caché side; cleaned up automatically.
+Na Caché straně uloženo v `$$$SYSBinary(GUID)`; automaticky se uvolní.
 
-### Key properties
+### Klíčové vlastnosti
 
-| Property | Description |
-|---|---|
-| `Delimiter` | Field separator (`char`). Only needed when working with legacy delimiter-based protocols; not required with CVar/CList. |
-| `Idfa` | Current company identifier (e.g. `"CB_DP"`). Changes when the user switches company. |
-| `Mlp` | User ID string. Passed in `sys("U","MLP")` on the Caché side. |
-| `DataNamespace` | Active data namespace. Updated on company switch. |
-| `RestStatus` | Only needed when NOT using `QueryOrThrow` (graceful-degradation pattern). |
+| Vlastnost | Popis |
+| --- | --- |
+| `Delimiter` | Oddělovač polí (`char`). Potřebný pouze při práci s legacy protokoly; s CVar/CList není třeba. |
+| `Idfa` | Identifikátor aktuální firmy (např. `"CB_DP"`). Mění se při přepnutí firmy uživatelem. |
+| `Mlp` | Řetězec ID uživatele. Na Caché straně předáván přes `sys("U","MLP")`. |
+| `DataNamespace` | Aktivní datový namespace. Aktualizuje se při přepnutí firmy. |
+| `RestStatus` | Potřebný pouze tehdy, kdy se NEPOUŽÍVÁ `QueryOrThrow` (vzor graceful degradation). |
 
 ---
 
-## Caché method skeleton
+## Kostra Caché metody
 
-See `MLRest.md §2.2` for the full reference. Minimal skeleton using CVar format:
+Viz `MLRest.md §2.2` pro kompletní referenci. Minimální kostra ve formátu CVar:
 
 ```objectscript
 Include GENERAL
@@ -155,7 +143,7 @@ ClassMethod MyMethod(ByRef sys As %String) As %Status
 }
 ```
 
-Corresponding .NET read:
+Odpovídající čtení v .NET:
 
 ```csharp
 CVar output = mlRest.QueryOrThrow("ALVA.MY.Class", "MyMethod", input);
@@ -172,22 +160,105 @@ foreach (KeyValuePair<string, CVar> kvp in output)
 }
 ```
 
-- `$$$Init` — sets `ret=0`, `err=""`
-- `$$$FillParams` — populates `IdFa`, `del`, `dataDB`, `userID`, `GUID`, etc.
-- `$$$CatchErrRest` — sets `ret="1~message"`, which `ThrowIfError()` surfaces in .NET
+- `$$$Init` — nastaví `ret=0`, `err=""`
+- `$$$FillParams` — naplní `IdFa`, `del`, `dataDB`, `userID`, `GUID`, atd.
+- `$$$CatchErrRest` — nastaví `ret="1~message"`, což `ThrowIfError()` vyhodí jako výjimku v .NET
 
 ---
 
-## Adding a new window
+## Přidání nového okna
 
-1. Create a folder under `EDISONMAIN2/dotnet/Windows/MyWindow/`.
-2. Add `MyWindow.xaml` (Window), `MyWindow.xaml.cs`, `MyWindowViewModel.cs`.
-3. ViewModel inherits `EDViewModel` (no Caché) or passes `MLRest` directly.
-4. Set `DataContext` before `InitializeComponent()` in the runtime constructor.
-5. Add a parameterless constructor for the WPF designer.
-6. Register a `RelayCommand` in `EdisonMainViewModel` using `Navigator.Show` /
-   `Navigator.ShowDialog` with the window's class name as a string key.
-7. Add a toolbar button in `EdisonMainWindow.xaml` bound to the command.
+1. Vytvoř složku pod `EDISONMAIN2/dotnet/Windows/MyWindow/`.
+2. Přidej `MyWindow.xaml` (Window), `MyWindow.xaml.cs`, `MyWindowViewModel.cs`.
+3. ViewModel dědí `EDViewModel`. Caché volání jdou přes statickou `EDViewModel.MLRest` —
+   v okně ani ViewModelu se `MLRest` nevytváří ani nepředává.
+4. V code-behind nastav `DataContext` **před** `InitializeComponent()`:
 
-See `EDFooter/CLAUDE.md` for the full window + footer template.
-See `EDComponentAndViewModelTestWindow` for a working reference implementation.
+   ```csharp
+   public MyWindow()
+   {
+       DataContext = _vm = new MyWindowViewModel();
+       InitializeComponent();
+   }
+   ```
+
+5. Zaregistruj `RelayCommand` v `EdisonMainViewModel` přes `WindowNavigator.Show` (modeless)
+   nebo `WindowNavigator.ShowDialog` (modální) s názvem třídy okna jako string:
+
+   ```csharp
+   OpenMyWindowCommand = new RelayCommand(() => WindowNavigator.Show("MyWindow"));
+   ```
+
+   Pokud okno potřebuje vstupní data, předej `EDWindowInput` a přidej konstruktor
+   `public MyWindow(EDWindowInput input)`.
+
+6. Přidej tlačítko na toolbar v `EdisonMainWindow.xaml` navázané na příkaz.
+
+Viz `EDFooter/CLAUDE.md` pro kompletní šablonu okna s footerem.
+Viz `EDComponentAndViewModelTestWindow` pro funkční referenční implementaci.
+
+---
+
+## EDIcons — sdílená knihovna ikon
+
+Ikony jsou uloženy v `EDControls/dotnet/EDIcons/`. Do složky se kopírují pouze ikony, které
+aplikace skutečně používá. Resource dictionary `EDIcons.xaml` mapuje každý soubor na sémantický klíč.
+
+### Přidání nové ikony
+
+1. Zkopíruj PNG ze sady ikon do `EDControls/dotnet/EDIcons/png/`.
+2. Zaregistruj ho v `EDControls/dotnet/EDControls.csproj`:
+
+   ```xml
+   <Resource Include="EDIcons\png\myicon.png"/>
+   ```
+
+   Explicitní registrace je potřebná pouze pro PNG soubory. SDK automaticky zahrnuje všechny
+   `.xaml` soubory jako `Page` položky — ruční přidání `<Page>` záznamu způsobí chybu duplikátu.
+
+3. Přidej `BitmapImage` záznam do `EDControls/dotnet/EDIcons/EDIcons.xaml`:
+
+   ```xml
+   <BitmapImage x:Key="EDIcons.MyName"
+                UriSource="pack://application:,,,/EDControls;component/EDIcons/png/myicon.png"/>
+   ```
+
+   Používej **sémantický klíč** (`EDIcons.MyName`, ne `EDIcons.Myicon`) — výměna PNG souboru
+   pak vyžaduje změnu pouze v `EDIcons.xaml`.
+
+### App.xaml — povinné přidání
+
+Každá aplikace, která používá ikony, musí jednou v `App.xaml` mergovat `EDIcons.xaml`.
+Bez toho `{StaticResource EDIcons.X}` za běhu hodí výjimku.
+
+```xml
+<Application.Resources>
+    <ResourceDictionary>
+        <ResourceDictionary.MergedDictionaries>
+            <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDIcons/EDIcons.xaml"/>
+        </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+</Application.Resources>
+```
+
+Již hotovo v `EDISONMAIN2/dotnet/App.xaml` a `TemplateDesigner/dotnet/App.xaml`.
+Každý nový aplikační projekt musí stejný merge přidat.
+
+### Použití ikony v XAML
+
+Po přidání merge je `{StaticResource EDIcons.X}` dostupný v každém okně napříč všemi projekty:
+
+```xml
+<Button ToolTip="Přidat">
+    <Image Source="{StaticResource EDIcons.Add}" Width="16" Height="16"/>
+</Button>
+```
+
+### Aktuální ikony
+
+| Klíč               | Soubor              | Význam                            |
+|--------------------|---------------------|-----------------------------------|
+| `EDIcons.Molecule` | `cube_molecule.png` | Ikona aplikace (EdisonMainWindow) |
+| `EDIcons.Add`      | `add2.png`          | Přidat položku                    |
+| `EDIcons.Edit`     | `edit.png`          | Upravit položku                   |
+| `EDIcons.Delete`   | `delete2.png`       | Smazat položku                    |
