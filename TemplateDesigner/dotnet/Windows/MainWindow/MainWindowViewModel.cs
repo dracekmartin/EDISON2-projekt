@@ -20,6 +20,7 @@ namespace TemplateDesigner;
 
 // ── Align mode enum (public so code-behind can reference it) ─────────────────
 public enum AlignMode { Left, Right, CenterH, Top, Bottom, MiddleV, DistributeH, DistributeV }
+public enum DuplicateDirection { Up, Down, Left, Right }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Main ViewModel
@@ -447,10 +448,55 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
     }
 
-    public void DuplicateSelected()
+    public void DuplicateSelected() => DuplicateSelected(direction: null);
+
+    public void DuplicateSelected(DuplicateDirection? direction)
     {
-        CopySelected();
-        PasteClipboard();
+        if (State.SelectedElements.Count == 0 || State.ActiveSection is null) return;
+
+        float sectionW = State.CurrentTemplate.PageSize.PrintableWidth;
+        float sectionH = State.ActiveSection.EffectiveDesignerHeight;
+        float gap = SnapEngine.DefaultGapMm;
+
+        var newElements = new List<TemplateElement>();
+        var commands = new List<IDesignerCommand>();
+
+        foreach (var orig in State.SelectedElements)
+        {
+            var clone = orig.Clone();
+            float origH = orig.Height ?? orig.EffectiveDesignerHeight;
+            float cloneH = clone.Height ?? clone.EffectiveDesignerHeight;
+
+            if (direction is null)
+            {
+                clone.X = Math.Clamp(orig.X + 5f, 0f, sectionW - clone.Width);
+                clone.Y = Math.Clamp(orig.Y + 5f, 0f, sectionH - cloneH);
+            }
+            else
+            {
+                (clone.X, clone.Y) = direction.Value switch
+                {
+                    DuplicateDirection.Down  => (orig.X, orig.Y + origH + gap),
+                    DuplicateDirection.Up    => (orig.X, orig.Y - cloneH - gap),
+                    DuplicateDirection.Right => (orig.X + orig.Width + gap, orig.Y),
+                    DuplicateDirection.Left  => (orig.X - clone.Width - gap, orig.Y),
+                    _ => (orig.X + 5f, orig.Y + 5f)
+                };
+                clone.X = Math.Clamp(clone.X, 0f, sectionW - clone.Width);
+                clone.Y = Math.Clamp(clone.Y, 0f, sectionH - cloneH);
+            }
+
+            newElements.Add(clone);
+            commands.Add(new AddElementCommand(State.ActiveSection, clone));
+        }
+
+        if (commands.Count == 1) Execute(commands[0]);
+        else Execute(new CompositeCommand("Duplikovat elementy", commands));
+
+        State.SelectedElements.Clear();
+        State.SelectedElements.AddRange(newElements);
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
     }
 
     public void DeleteSelected()

@@ -49,6 +49,9 @@ public partial class MainWindow : Window
     private float  _resizeMouseStartX, _resizeMouseStartY;
     private float  _resizeOriginX, _resizeOriginY;
 
+    // ── Duplicate pending flag (Ctrl+D chord) ─────────────────────────────────
+    private bool _duplicatePending;
+
     // ── Section list selection helper ─────────────────────────────────────────
     private bool _suppressSectionSelection;
 
@@ -611,7 +614,7 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.D && ctrl)
         {
-            _vm.DuplicateSelected();
+            _duplicatePending = true;
             e.Handled = true;
         }
         else if (e.Key == Key.Delete)
@@ -624,6 +627,20 @@ public partial class MainWindow : Window
                  && _vm.State.ActiveSection is not null)
         {
             _vm.MoveSection(_vm.State.ActiveSection, e.Key == Key.Up ? -1 : +1);
+            e.Handled = true;
+        }
+        else if (_duplicatePending && e.Key is Key.Left or Key.Right or Key.Up or Key.Down)
+        {
+            _duplicatePending = false;
+            var dir = e.Key switch
+            {
+                Key.Up    => DuplicateDirection.Up,
+                Key.Down  => DuplicateDirection.Down,
+                Key.Left  => DuplicateDirection.Left,
+                Key.Right => DuplicateDirection.Right,
+                _ => throw new InvalidOperationException()
+            };
+            _vm.DuplicateSelected(dir);
             e.Handled = true;
         }
         else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
@@ -649,6 +666,13 @@ public partial class MainWindow : Window
             InvalidateCanvas();
             e.Handled = true;
         }
+
+        // Fallback: any key (except D itself) while duplicate is pending → clear flag + plain duplicate
+        if (_duplicatePending && e.Key != Key.D)
+        {
+            _duplicatePending = false;
+            if (!e.Handled) _vm.DuplicateSelected();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -658,6 +682,13 @@ public partial class MainWindow : Window
     private void OnCanvasMouseDown(object sender, MouseButtonEventArgs e)
     {
         if (_vm is null || _canvas is null) return;
+
+        if (_duplicatePending)
+        {
+            _duplicatePending = false;
+            _vm.DuplicateSelected();
+        }
+
         var pos = e.GetPosition(skCanvas);
         float cx = (float)pos.X, cy = (float)pos.Y, cw = (float)skCanvas.ActualWidth;
 

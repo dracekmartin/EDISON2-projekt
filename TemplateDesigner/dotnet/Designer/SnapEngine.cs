@@ -29,8 +29,11 @@ public record struct SnapResult(AxisSnap X, AxisSnap Y);
 /// </summary>
 public class SnapEngine
 {
+    /// <summary>Výchozí mezera pro gap snap a směrové duplikování v mm.</summary>
+    public const float DefaultGapMm = 4f;
+
     /// <summary>Mezera pro gap snap v mm.</summary>
-    public float GapMm { get; set; } = 4f;
+    public float GapMm { get; set; } = DefaultGapMm;
 
     public SnapResult Calculate(
         TemplateElement refElement,
