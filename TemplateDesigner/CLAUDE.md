@@ -19,10 +19,9 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 ### 🎯 Aktuální focus
 
 1. Chytré duplikování a zarovnání elementů
-2. Přichytávání elementů k sobě (smart snap)
-3. Migrace verzí šablon
-4. Metadata a správa šablon
-5. Drag & drop při přidávání elementů a sekcí
+2. Migrace verzí šablon
+3. Metadata a správa šablon
+4. Drag & drop při přidávání elementů a sekcí
 
 ### ✅ Co máme
 
@@ -32,6 +31,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Live preview, PDF export, DataSchema tree, section management, undo/redo (9 cmd typů)
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
 - Custom section templates (file-based), CompositeDataSchemaProvider (Caché + JSON fallback)
+- Smart snap — přichytávání elementů k sobě (edge↔edge, center↔center, gap snap 4mm), zvýraznění cílových elementů, gap indikátor
 
 ### 🐛 Známé problémy
 

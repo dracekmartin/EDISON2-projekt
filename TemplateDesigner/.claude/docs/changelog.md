@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-03-12 — Automatické snapování elementů
+
+- ✅ `SnapEngine` — nový engine pro přichytávání elementů k sobě při dragu (edge↔edge 4 kombinace, center↔center, gap snap s konfigurovatelnou mezerou 4mm)
+- ✅ Bez kategorické priority — vyhraje nejbližší match napříč všemi typy snapu
+- ✅ Zvýraznění cílových elementů — jemný šedý dashed rámeček kolem elementu ke kterému se snapuje
+- ✅ Gap indikátor — černá čárka v mezeře mezi dvěma elementy při gap snapu, pozice stabilní (odvozena z cílového elementu, ne z kurzoru myši)
+- ✅ Element snap má přednost před grid snapem; na každé ose (X, Y) se rozhoduje nezávisle
+- ✅ Toolbar toggle "Snap elem." + menu položka "Přichytit k elementům" (výchozí zapnuto)
+- ✅ `DesignerState` rozšířen o `SnapToElements`, `ActiveGapIndicators`, `SnapTargetElements`
+
+---
+
 ## 2026-03-12 — Agregační funkce v tabulkách
 
 - ✅ `AggregationResolver` — nová třída vyhodnocující `SUM({POLE})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})` nad kolekcí řádků

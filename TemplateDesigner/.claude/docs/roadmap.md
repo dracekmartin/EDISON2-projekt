@@ -15,30 +15,19 @@ Aktuální Ctrl+C / Ctrl+V vloží kopii s offsetem +5 mm — uživatel pak elem
 - **Duplikovat s mezerou** — Shift+Ctrl+D nabídne mezerník (0 / 2 / 5 mm) před vložením
 - Implementace: nový příkaz `DuplicateElementCommand(direction, gap)` volaný z `MainWindow` klávesového handleru; pozice kopie = `original.X, original.Y + original.Height + gap`
 
-**2. Přichytávání elementů k sobě (smart snap)**
-Snap to grid zarovná na mřížku, ale ne na jiné elementy. Ve Winforms designeru elementy "přiskočí" k sousedům.
-- Při dragu zobrazit vodítka (snaplines) — tenké modré čáry když hrana taženého elementu lícuje s hranou jiného elementu ve stejné sekci
-- Přichytit na: levou/pravou/horní/dolní hranu, střed (horizontální i vertikální) jiného elementu
-- Malá konzistentní mezera (2 mm) jako alternativní snap — "přiskočí" na souseda + 2 mm vzduchová mezera
-- Implementace:
-  - `DesignerCanvas.CalculateSnapLines(draggedElements, allElements)` — vrátí seznam `SnapLine(orientation, position, fromElement)`
-  - Kreslit snaplines v `OnPaintSurface` nad elementy (tenká modrá čára přes celou sekci)
-  - Threshold: pokud vzdálenost < 3 px při aktuálním zoomu, snap se aktivuje
-  - Snap má přednost před grid-snapem (nebo kombinovat: snap na element pokud blízko, jinak na grid)
-
-**3. Migrace verzí šablon**
+**2. Migrace verzí šablon**
 Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace.
 - Explicitní migrace při načítání starších JSON šablon
 - Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
 - Minimálně: logovat varování při načtení šablony se starší verzí
 
-**4. Metadata a správa šablon**
+**3. Metadata a správa šablon**
 Důležité jakmile šablon bude víc než 10.
 - Autor, datum změny, kategorie, popis
 - Thumbnail preview (PNG generovaný při uložení)
 - Verzování šablon (kdo kdy co změnil)
 
-**5. Drag & drop při přidávání elementů a sekcí**
+**4. Drag & drop při přidávání elementů a sekcí**
 Aktuálně se elementy přidávají přes toolbar menu na pevnou pozici (5×5 mm). Sekce se přidávají na konec seznamu.
 - **Drag element z toolbaru/palety na canvas** — uživatel táhne typ elementu přímo na místo v sekci, kde ho chce umístit; element se vytvoří na pozici puštění myši
 - **Drag pole z panelu "Pole agendy" na canvas** — přetažení pole vytvoří TextElement s `{POLE}` na cílové pozici
@@ -95,6 +84,12 @@ Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 ---
 
 ### ✅ Implementováno
+
+**Přichytávání elementů k sobě (smart snap)** ✅ hotovo (2026-03-12)
+- Edge↔Edge (4 kombinace), Center↔Center, Gap snap (4mm mezera) — bez kategorické priority, vyhraje nejbližší match
+- Zvýraznění cílových elementů (šedý dashed rámeček), gap indikátor (černá čárka v mezeře)
+- Element snap má přednost před grid snapem; osy X/Y nezávisle
+- Toggle v toolbaru + menu; výchozí zapnuto
 
 **Výrazový jazyk** ✅ hotovo (2026-03-12)
 - Part 1 — podmínky a logické operátory: `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes

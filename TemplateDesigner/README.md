@@ -161,6 +161,16 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 - Elementy nelze přetáhnout mimo hranici sekce — skupina se zastaví, jakmile první element narazí na okraj
 - Se zapnutým Snap se elementy zarovnávají na mřížku
 
+### Přichytávání k elementům (Smart Snap)
+- **Snap elem.** (tlačítko v toolbaru nebo Zobrazit → Přichytit k elementům) — zapne přichytávání k ostatním elementům v sekci
+- Při tažení element automaticky přiskočí k hranám, středům nebo mezerám jiných elementů
+- **Edge↔Edge** — levá/pravá/horní/dolní hrana se zarovná k odpovídající hraně souseda
+- **Center↔Center** — střed elementu se zarovná na střed jiného elementu
+- **Gap snap** — element se zastaví ve vzdálenosti 4 mm od souseda; v mezeře se zobrazí krátká černá čárka
+- Cílový element je zvýrazněn jemným šedým dashed rámečkem
+- Přichytávání k elementům má přednost před mřížkou; na každé ose (X, Y) se rozhoduje nezávisle
+- Výchozí: zapnuto
+
 ### Změna velikosti
 - Dostupná pro **jeden vybraný element** (8 bílých čtverečků na okrajích)
 - Tažení za rohový handle → změna šířky i výšky
@@ -400,9 +410,10 @@ Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými m
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru
 - **Ctrl+scroll** na canvasu — přiblížení / oddálení
 
-### Mřížka
+### Mřížka a přichytávání
 - **Grid** (tlačítko nebo Zobrazit → Mřížka) — zobrazí přímky mřížky na canvasu
 - **Snap** — přichytávání elementů na mřížku při pohybu a resize
+- **Snap elem.** — přichytávání k ostatním elementům (viz sekce Přichytávání k elementům)
 - Velikost mřížky: 5 mm (výchozí)
 
 ### Zarovnání elementů
