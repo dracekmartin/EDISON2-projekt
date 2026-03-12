@@ -21,7 +21,12 @@ public class DesignerState
 
     public bool ShowGrid { get; set; } = false;
     public bool SnapToGrid { get; set; } = false;
+    public bool SnapToElements { get; set; } = true;
     public float GridSize { get; set; } = 5f; // mm
+    public List<GapIndicator> ActiveGapIndicators { get; } = [];
+
+    /// <summary>Elementy jejichž boundary se zvýrazní během snapu (cílové elementy).</summary>
+    public List<TemplateElement> SnapTargetElements { get; } = [];
 
     public Stack<IDesignerCommand> UndoStack { get; } = new();
     public Stack<IDesignerCommand> RedoStack { get; } = new();

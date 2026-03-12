@@ -194,6 +194,8 @@
                           IsChecked="{Binding ShowGrid, Mode=TwoWay}"/>
                 <MenuItem x:Name="MenuSnap" Header="Přichytit na mřížku" IsCheckable="True"
                           IsChecked="{Binding SnapToGrid, Mode=TwoWay}"/>
+                <MenuItem x:Name="MenuSnapElements" Header="Přichytit k elementům" IsCheckable="True"
+                          IsChecked="{Binding SnapToElements, Mode=TwoWay}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
@@ -235,6 +237,9 @@
                 <ToggleButton x:Name="BtnSnap" Content="Snap" Padding="6,3"
                               IsChecked="{Binding SnapToGrid, Mode=TwoWay}"
                               ToolTip="Přichytit na mřížku"/>
+                <ToggleButton x:Name="BtnSnapElements" Content="Snap elem." Padding="6,3"
+                              IsChecked="{Binding SnapToElements, Mode=TwoWay}"
+                              ToolTip="Přichytávat k ostatním elementům"/>
                 <Separator Style="{StaticResource ToolbarSep}"/>
                 <Button x:Name="BtnZForward"  Content="↑Z" ToolTip="Přenést dopředu (Ctrl+PgUp)"         Click="BtnZForward_Click"  Padding="6,3"/>
                 <Button x:Name="BtnZBackward" Content="↓Z" ToolTip="Odeslat dozadu (Ctrl+PgDn)"           Click="BtnZBackward_Click" Padding="6,3"/>

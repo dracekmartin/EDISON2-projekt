@@ -36,6 +36,8 @@ public partial class MainWindow : Window
     private float _dragMouseStartCanvasX, _dragMouseStartCanvasY;
     private readonly Dictionary<TemplateElement, (float X, float Y)> _dragInitPositions = new();
 
+    private readonly SnapEngine _snapEngine = new();
+
     private SKPoint _rubberBandStart;
     private SKRect? _rubberBandRect;
 
@@ -775,13 +777,43 @@ public partial class MainWindow : Window
             float deltaMmX = (cx - _dragMouseStartCanvasX) / _canvas.MmToPx;
             float deltaMmY = (cy - _dragMouseStartCanvasY) / _canvas.MmToPx;
 
-            if (_vm.State.SnapToGrid && _dragInitPositions.TryGetValue(_dragElement, out var refInit))
+            _vm.State.ActiveGapIndicators.Clear();
+            _vm.State.SnapTargetElements.Clear();
+            bool snappedX = false, snappedY = false;
+            if (_dragInitPositions.TryGetValue(_dragElement!, out var refInit))
             {
-                float g = _vm.State.GridSize;
-                float snappedX = MathF.Round((refInit.X + deltaMmX) / g) * g;
-                float snappedY = MathF.Round((refInit.Y + deltaMmY) / g) * g;
-                deltaMmX = snappedX - refInit.X;
-                deltaMmY = snappedY - refInit.Y;
+                if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } section)
+                {
+                    var others = section.Elements.Where(el2 => !_dragInitPositions.ContainsKey(el2));
+                    float threshold = 8f / _canvas.MmToPx; // ~8px
+                    var snap = _snapEngine.Calculate(
+                        _dragElement!, (refInit.X, refInit.Y),
+                        deltaMmX, deltaMmY, others, threshold);
+
+                    if (snap.X.HasSnap) { deltaMmX = snap.X.AdjustedDelta; snappedX = true; }
+                    if (snap.Y.HasSnap) { deltaMmY = snap.Y.AdjustedDelta; snappedY = true; }
+                    if (snap.X.Gap is { } gx) _vm.State.ActiveGapIndicators.Add(gx);
+                    if (snap.Y.Gap is { } gy) _vm.State.ActiveGapIndicators.Add(gy);
+
+                    // Zvýrazni cílové elementy
+                    var targets = (snap.X.MatchedElements ?? []).Concat(snap.Y.MatchedElements ?? []).Distinct();
+                    _vm.State.SnapTargetElements.AddRange(targets);
+                }
+
+                if (_vm.State.SnapToGrid)
+                {
+                    float g = _vm.State.GridSize;
+                    if (!snappedX)
+                    {
+                        float sx = MathF.Round((refInit.X + deltaMmX) / g) * g;
+                        deltaMmX = sx - refInit.X;
+                    }
+                    if (!snappedY)
+                    {
+                        float sy = MathF.Round((refInit.Y + deltaMmY) / g) * g;
+                        deltaMmY = sy - refInit.Y;
+                    }
+                }
             }
 
             var (clampedX, clampedY) = ClampDragDelta(deltaMmX, deltaMmY);
@@ -879,6 +911,8 @@ public partial class MainWindow : Window
             { kvp.Key.X = kvp.Value.X; kvp.Key.Y = kvp.Value.Y; }
         }
         _dragInitPositions.Clear();
+        _vm?.State.ActiveGapIndicators.Clear();
+        _vm?.State.SnapTargetElements.Clear();
         _mouseMode   = MouseMode.Idle;
         _dragElement = null;
         skCanvas.ReleaseMouseCapture();
@@ -909,6 +943,8 @@ public partial class MainWindow : Window
                 _resizeElement.Width = _resizeInitW; _resizeElement.Height = _resizeInitH;
             }
         }
+        _vm?.State.ActiveGapIndicators.Clear();
+        _vm?.State.SnapTargetElements.Clear();
         _mouseMode     = MouseMode.Idle;
         _resizeElement = null;
         skCanvas.ReleaseMouseCapture();

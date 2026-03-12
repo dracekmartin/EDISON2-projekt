@@ -90,6 +90,12 @@ public class TemplateDesignerViewModel : EDViewModel
         set { State.SnapToGrid = value; OnPropertyChanged(); }
     }
 
+    public bool SnapToElements
+    {
+        get => State.SnapToElements;
+        set { State.SnapToElements = value; OnPropertyChanged(); }
+    }
+
     // ── Callbacks wired by code-behind ────────────────────────────────────────
     public Action? RequestCanvasRefresh      { get; set; }
     public Action? RequestTitleUpdate        { get; set; }

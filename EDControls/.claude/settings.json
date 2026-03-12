@@ -1,0 +1,23 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "command": "powershell -Command \"..toast notification..\""
+      },
+      {
+        "command": "git add -A && git commit -m 'agent-session: $(date +%H:%M)' --allow-empty"
+      },
+      {
+        "command": "echo '\\n=== Files changed ===' && git diff HEAD~1 --stat"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "command": "echo \"$(date '+%H:%M:%S') | $TOOL_NAME | $TOOL_INPUT\" >> .claude/agent.log"
+      },
+      {
+        "command": "for f in appsettings.Production.json secrets.json; do if [[ \"$TOOL_INPUT\" == *\"$f\"* ]]; then echo \"BLOCKED: $f\" && exit 1; fi; done"
+      }
+    ]
+  }
+}

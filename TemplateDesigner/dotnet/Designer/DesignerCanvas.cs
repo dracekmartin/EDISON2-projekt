@@ -36,6 +36,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrLocked             = new(0xFFFF8C00); // jantarová pro zamčené elementy
     private static readonly SKColor ClrCondition         = new(0xFF7B1FA2); // fialová pro podmíněné elementy
 
+
     private readonly DesignerState _state;
 
     public DesignerCanvas(DesignerState state) => _state = state;
@@ -63,7 +64,9 @@ public class DesignerCanvas
         DrawPageBorder(canvas, pageX, pageY, pageW, pageH);
 
         // Selection handles kreslíme naposled — vždy nad elementy
+        DrawSnapTargetHighlights(canvas, canvasWidth);
         DrawSelectionOverlay(canvas, canvasWidth);
+        DrawSnapLines(canvas, canvasWidth);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -415,6 +418,66 @@ public class DesignerCanvas
         using var font = new SKFont(SKTypeface.Default, 9f);
         using var tp   = new SKPaint { Color = SKColors.White, IsAntialias = true };
         canvas.DrawText("L", bx + 4f, by + sz - 3.5f, font, tp);
+    }
+
+    private void DrawSnapTargetHighlights(SKCanvas canvas, float canvasWidth)
+    {
+        if (_state.SnapTargetElements.Count == 0) return;
+
+        using var paint = new SKPaint
+        {
+            Color = new SKColor(0x30000000), // jemně šedý poloprůhledný
+            IsStroke = true,
+            StrokeWidth = 1f,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([3f, 2f], 0)
+        };
+
+        foreach (var el in _state.SnapTargetElements)
+        {
+            var rect = GetElementCanvasRect(el, canvasWidth);
+            if (rect is null) continue;
+            canvas.DrawRect(rect.Value, paint);
+        }
+    }
+
+    private void DrawSnapLines(SKCanvas canvas, float canvasWidth)
+    {
+        if (_state.ActiveGapIndicators.Count == 0) return;
+        var section = _state.ActiveSection;
+        if (section is null) return;
+
+        var origin = GetSectionOrigins(canvasWidth)
+            .FirstOrDefault(s => s.Section == section);
+        if (origin.Section is null) return;
+
+        float ox = origin.OriginX, oy = origin.OriginY;
+
+        using var paint = new SKPaint
+        {
+            Color = SKColors.Black,
+            StrokeWidth = 1f,
+            IsStroke = true,
+            IsAntialias = true
+        };
+
+        foreach (var gap in _state.ActiveGapIndicators)
+        {
+            if (gap.IsHorizontalGap)
+            {
+                float x1 = ox + gap.GapStartMm * MmToPx;
+                float x2 = ox + gap.GapEndMm * MmToPx;
+                float cy = oy + gap.CrossMidMm * MmToPx;
+                canvas.DrawLine(x1, cy, x2, cy, paint);
+            }
+            else
+            {
+                float y1 = oy + gap.GapStartMm * MmToPx;
+                float y2 = oy + gap.GapEndMm * MmToPx;
+                float cx = ox + gap.CrossMidMm * MmToPx;
+                canvas.DrawLine(cx, y1, cx, y2, paint);
+            }
+        }
     }
 
     /// <summary>
