@@ -9,11 +9,12 @@ Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
 
 ### 🔴 Kritické
 
-**1. Výrazový jazyk** ✅ Part 1 hotovo — zbývá Part 2
+**1. Výrazový jazyk** ✅ Part 1 hotovo, ✅ Part 2 částečně hotovo
 - ✅ **Part 1 — podmínky a logické operátory:** `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
-- ❌ **Part 2 — agregace a formátování:** `SUM({CENA})`, `COUNT()`, `AVG({CAS})` v TableElement; Summary řádek (zápatí s agregacemi)
-- ❌ Formátovací rozšíření: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
-  (konzistentní se stávajícím `dd.MM.yyyy` / `N2` — vše za `:` je instrukce)
+- ✅ **Part 2a — agregace:** `SUM({CENA})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})` v TableElement; SummaryRows (zápatí s agregacemi); AggregationResolver; záložka Souhrn v TableEditorDialog (2026-03-12)
+- ✅ **Part 2b — formátování placeholderů:** `{POLE:N2}`, `{POLE:dd.MM.yyyy}` (.NET formáty); PlaceholderFormatter + DataContext rozšíření (2026-03-12)
+- ❌ **Part 2c — řetězcové funkce v placeholderech:** `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`
+  (implementace v PlaceholderFormatter existuje, ale chybí end-to-end testy a UI dokumentace)
 
 **3. Grouping v TableElement**
 Seskupení řádků dynamické tabulky podle hodnoty pole.
