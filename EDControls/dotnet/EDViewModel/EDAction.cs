@@ -2,12 +2,12 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace EDControls;
+namespace EDControls.EDViewModel;
 
-public class EDAction
+public class EDAction(string label, ImageSource? icon, Key key, ModifierKeys modifiers, ICommand command)
 {
-    public string Label { get; }
-    public ImageSource? Icon { get; }
+    public string Label { get; } = label;
+    public ImageSource? Icon { get; } = icon;
     /// <summary>
     /// Returns a fresh <see cref="Image"/> element on every access.
     /// <para>
@@ -24,21 +24,11 @@ public class EDAction
     /// </para>
     /// </summary>
     public Image? IconElement => Icon != null ? new Image { Source = Icon, Width = 16, Height = 16 } : null;
-    public Key Key { get; }
-    public ModifierKeys Modifiers { get; }
-    public ICommand Command { get; }
-    public string ShortcutText { get; }
+    public Key Key { get; } = key;
+    public ModifierKeys Modifiers { get; } = modifiers;
+    public ICommand Command { get; } = command;
+    public string ShortcutText { get; } = BuildShortcutText(key, modifiers);
     public string ToolTipText => $"{Label} [{ShortcutText}]";
-
-    public EDAction(string label, ImageSource? icon, Key key, ModifierKeys modifiers, ICommand command)
-    {
-        Label = label;
-        Icon = icon;
-        Key = key;
-        Modifiers = modifiers;
-        Command = command;
-        ShortcutText = BuildShortcutText(key, modifiers);
-    }
 
     private static string BuildShortcutText(Key key, ModifierKeys modifiers)
     {
