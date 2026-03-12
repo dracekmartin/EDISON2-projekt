@@ -34,6 +34,13 @@ public abstract class TemplateElement
     /// </summary>
     public string? VisibilityExpression { get; set; }
 
+    /// <summary>
+    /// Id skupiny. Elementy se stejným GroupId se chovají jako celek —
+    /// kliknutí vybere celou skupinu, drag přesune všechny členy.
+    /// Null = element nepatří do žádné skupiny.
+    /// </summary>
+    public string? GroupId { get; set; }
+
     /// <summary>Bag pro budoucí vlastnosti bez zásahu do modelu.</summary>
     public Dictionary<string, string>? CustomProperties { get; set; }
 
@@ -80,6 +87,16 @@ public abstract class TemplateElement
             Get = () => VisibilityExpression ?? "",
             Set = v  => VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim()
         },
+
+        // GroupId — zobrazit jen pokud element patří do skupiny (readonly informace)
+        .. (GroupId is not null
+            ? [new StringPropertyDescriptor
+            {
+                Label = "Skupina", Group = "Skupina",
+                Get = () => GroupId ?? "",
+                Set = _ => { }  // readonly — skupiny se mění přes Ctrl+G / Ctrl+Shift+G
+            }]
+            : Array.Empty<PropertyDescriptor>()),
     ];
 
     // ---------------------------------------------------------------------------
@@ -92,4 +109,27 @@ public abstract class TemplateElement
     public float EffectiveDesignerHeight => Height ?? DesignerPlaceholderHeight;
 
     protected virtual float DesignerPlaceholderHeight => 20f;
+
+    // ---------------------------------------------------------------------------
+    // Sdílené utility pro zobrazení v UI (strom, debug)
+
+    /// <summary>Zkrácený popis elementu pro strom šablony a debug výpisy.</summary>
+    public static string GetSummary(TemplateElement el) => el switch
+    {
+        TextElement t      => $"\"{TruncateText(t.Text, 50)}\"  {t.FontFamily} {t.FontSize}pt",
+        LineElement l      => $"{l.Orientation} {l.StrokeWidth}mm {l.Color}",
+        RectangleElement r => $"Fill={r.FillColor} Stroke={r.StrokeColor}",
+        ImageElement       => "Image",
+        BarcodeElement b   => $"{b.BarcodeType}",
+        TableElement t     => $"{t.Mode} cols={t.Columns.Count}",
+        _                  => $"({el.X:0.#}, {el.Y:0.#}) {el.Width:0.#}x{(el.Height?.ToString("0.#") ?? "auto")}"
+    };
+
+    /// <summary>Zkrátí text na maxLen znaků, nahradí odřádkování mezerou.</summary>
+    public static string TruncateText(string? text, int maxLen)
+    {
+        if (string.IsNullOrEmpty(text)) return "";
+        var oneLine = text.Replace("\n", " ").Replace("\r", "");
+        return oneLine.Length <= maxLen ? oneLine : oneLine[..(maxLen - 3)] + "...";
+    }
 }

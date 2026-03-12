@@ -13,6 +13,7 @@
   <ItemGroup>
 <PackageReference Include="SkiaSharp" Version="3.119.2" />
     <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.2" />
+<PackageReference Include="PdfPig" Version="0.1.13" />
 <PackageReference Include="ZXing.Net" Version="0.16.9" />
   </ItemGroup>
 

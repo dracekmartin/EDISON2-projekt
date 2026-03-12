@@ -34,8 +34,13 @@ public class ImageElement : TemplateElement
         if (bitmap != null)
         {
             using (bitmap)
+            using (var image = SKImage.FromBitmap(bitmap))
             using (var paint = new SKPaint { IsAntialias = true })
-                ctx.Canvas.DrawBitmap(bitmap, rect, paint);
+            {
+                // Lineární filtr + mipmapy pro kvalitní škálování (nahoru i dolů)
+                var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
+                ctx.Canvas.DrawImage(image, rect, sampling, paint);
+            }
         }
         else
         {
@@ -72,6 +77,7 @@ public class ImageElement : TemplateElement
         ZIndex = ZIndex, IsLocked = IsLocked,
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
+        GroupId = GroupId,
         ImageBase64 = ImageBase64,
         DataField = DataField,
         ScaleMode = ScaleMode

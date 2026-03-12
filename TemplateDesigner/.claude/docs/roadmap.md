@@ -25,10 +25,38 @@ Absolutní pozicování se rozbije jakmile element přeteče svou výšku.
 
 **3. Import PDF → šablona**
 Strojová analýza existujícího PDF a převod na TemplateDesigner šablonu.
-- **Režim 1 — "1:1 import" (deterministický):** PdfPig extrahuje text (s pozicí, fontem, barvou), čáry, obdélníky, obrázky → mapování na TextElement, LineElement, RectangleElement, ImageElement, TableElement (Fixed). Detekce tabulek z mřížky čar. Převod pt → mm. Výsledek = vizuálně identická šablona se statickými texty.
-- **Režim 2 — "Zchytři to" (AI post-processing):** Vezme výsledek režimu 1 + schéma agendy → AI navrhne nahrazení statických textů za `{PLACEHOLDER}`, identifikuje opakující se záhlaví/patičku (→ sekce OnEveryPage), rozpozná kandidáty na Dynamic tabulku. Uživatel potvrdí/upraví návrhy.
 - Knihovna: **PdfPig** (open source, .NET, per-word bounding boxy, vestavěné algoritmy pro seskupování textu)
-- Režim 1 je užitečný sám o sobě; režim 2 je nadstavba
+
+**Aktuální stav (režim 1 — deterministický 1:1 import):** ✅ základ hotovo
+- PdfPig extrahuje text (pozice, font, barva), čáry, obdélníky, obrázky
+- 3 merge módy grafiky (None / LinesOnly / All); detekce okrajů; auto-grouping elementů
+- Texty se seskupují do bloků, pozice a fonty se zachovávají
+
+**3a. Detekce tabulek z mřížky čar**
+PDF neobsahuje "tabulku" jako objekt — je to jen mřížka čar + text uvnitř.
+- Detekovat pravidelnou mřížku horizontálních a vertikálních čar → bounding box tabulky
+- Identifikovat sloupce (svislé čáry) a řádky (vodorovné čáry) → `TableElement` (Fixed)
+- Přiřadit texty do buněk podle pozice (text overlaps cell rect)
+- Záhlaví = první řádek (volitelně tučný/odlišená barva pozadí)
+- Výsledek: místo 50 čar + 20 textů → jeden `TableElement` s definovanými sloupci a řádky
+- Komplikace: merged cells, nested tabulky, tabulky bez viditelných čar (jen zarovnané texty)
+
+**3b. Křivky a zaoblené čáry (BezierElement / PathElement)**
+PDF obsahuje Bézierovy křivky (oblouky, zaoblené rohy, dekorativní prvky). Aktuálně se importují jako artefakty — zaoblené části generují obdélníkové aproximace.
+- Nový typ elementu: `PathElement` nebo `BezierElement` — SVG-like path s body a křivkami
+- PdfPig extrahuje `BezierCurve` a `Subpath` z PDF content streamu
+- Import: převod PDF path → zjednodušený path model (move, line, curve, close)
+- Renderování: `SKPath` s `MoveTo`, `LineTo`, `CubicTo` (SkiaSharp nativně podporuje Bézier)
+- Alternativa (jednodušší): zaoblené rohy rasterizovat do bitmapy jako součást background merge
+
+**3c. AI post-processing (režim 2 — "Zchytři to")**
+Nadstavba nad režimem 1 — vezme hotový deterministický import + schéma agendy a navrhne vylepšení.
+- AI navrhne nahrazení statických textů za `{PLACEHOLDER}` na základě schématu agendy
+- Identifikace opakujícího se záhlaví/patičky (→ sekce OnEveryPage)
+- Rozpoznání kandidátů na Dynamic tabulku (opakující se struktura řádků)
+- Návrh seskupení elementů do logických skupin
+- UI: uživatel vidí návrhy a potvrdí/upraví/odmítne jednotlivé změny
+- Režim 1 je užitečný sám o sobě; režim 2 je volitelná nadstavba
 
 **4. Vnořené datasource**
 Flat `_values + _rows` nestačí pro hierarchická data.
@@ -72,6 +100,15 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 ---
 
 ### ✅ Implementováno
+
+**ElementGroup — seskupování elementů** ✅ základ hotovo (2026-03-12)
+- `GroupId` property na `TemplateElement` — lehká logická vazba bez nested souřadnic
+- Kliknutí na člen skupiny vybere celou skupinu; Alt+klik = jen ten jeden element
+- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit (plný undo/redo)
+- Vizuální indikace: barevný badge v rohu, bounding box skupiny při výběru
+- Strom šablony zobrazuje skupiny jako sbalitelné uzly
+- Copy/Paste/Duplicate přemapují GroupId (klony nedědí skupinu originálu)
+- PDF import automaticky seskupí grafiku podle typu a merge mode
 
 **Locale / CultureInfo v šabloně** ✅ hotovo (2026-03-12)
 - `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)

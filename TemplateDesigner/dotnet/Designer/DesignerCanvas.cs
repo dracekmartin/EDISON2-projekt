@@ -1,5 +1,6 @@
 using SkiaSharp;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Designer;
 
@@ -317,14 +318,21 @@ public class DesignerCanvas
             foreach (var el in section.Elements.OrderBy(e => e.ZIndex))
                 el.Render(ctx);
 
-            // Indikátory podmíněné viditelnosti — vždy viditelné, nezávisle na výběru
-            foreach (var el in section.Elements.Where(e => !string.IsNullOrWhiteSpace(e.VisibilityExpression)))
+            // Indikátory podmíněné viditelnosti a skupin — jeden průchod
+            foreach (var el in section.Elements)
             {
+                bool hasCondition = !string.IsNullOrWhiteSpace(el.VisibilityExpression);
+                bool hasGroup = el.GroupId is not null;
+                if (!hasCondition && !hasGroup) continue;
+
                 float ex = ox + el.X * MmToPx;
                 float ey = oy + el.Y * MmToPx;
                 float ew = el.Width * MmToPx;
                 float eh = (el.Height ?? el.EffectiveDesignerHeight) * MmToPx;
-                DrawConditionBadge(canvas, new SKRect(ex, ey, ex + ew, ey + eh));
+                var rect = new SKRect(ex, ey, ex + ew, ey + eh);
+
+                if (hasCondition) DrawConditionBadge(canvas, rect);
+                if (hasGroup) DrawGroupBadge(canvas, rect, el.GroupId!);
             }
             canvas.Restore();
 
@@ -348,6 +356,41 @@ public class DesignerCanvas
     private void DrawSelectionOverlay(SKCanvas canvas, float canvasWidth)
     {
         if (_state.SelectedElements.Count == 0) return;
+
+        // Bounding box skupiny — tečkovaný barevný rámeček kolem celé skupiny
+        var groupIds = _state.SelectedElements
+            .Where(e => e.GroupId is not null)
+            .Select(e => e.GroupId!)
+            .Distinct();
+        foreach (var gid in groupIds)
+        {
+            var members = _state.SelectedElements.Where(e => e.GroupId == gid).ToList();
+            if (members.Count < 2) continue;
+
+            float minX = float.MaxValue, minY = float.MaxValue;
+            float maxX = float.MinValue, maxY = float.MinValue;
+            foreach (var m in members)
+            {
+                var mr = GetElementCanvasRect(m, canvasWidth);
+                if (mr is null) continue;
+                minX = Math.Min(minX, mr.Value.Left);
+                minY = Math.Min(minY, mr.Value.Top);
+                maxX = Math.Max(maxX, mr.Value.Right);
+                maxY = Math.Max(maxY, mr.Value.Bottom);
+            }
+            if (minX < maxX)
+            {
+                var groupColor = ElementGroupHelper.GetGroupColor(gid);
+                using var gBorder = new SKPaint
+                {
+                    Color = groupColor.WithAlpha(120),
+                    IsStroke = true,
+                    StrokeWidth = 1.5f,
+                    PathEffect = SKPathEffect.CreateDash([4f, 4f], 0)
+                };
+                canvas.DrawRect(new SKRect(minX - 2, minY - 2, maxX + 2, maxY + 2), gBorder);
+            }
+        }
 
         // Ohraničení každého vybraného elementu — jantarová pro zamčené, modrá pro odemčené
         foreach (var el in _state.SelectedElements)
@@ -478,6 +521,23 @@ public class DesignerCanvas
                 canvas.DrawLine(cx, y1, cx, y2, paint);
             }
         }
+    }
+
+    /// <summary>
+    /// Kreslí malý barevný čtvereček v pravém dolním rohu elementu.
+    /// Barva je deterministická z GroupId — stejná skupina = stejná barva.
+    /// </summary>
+    private static void DrawGroupBadge(SKCanvas canvas, SKRect elementRect, string groupId)
+    {
+        const float sz = 8f;
+        float bx = elementRect.Right - sz - 2f;
+        float by = elementRect.Bottom - sz - 2f;
+
+        if (elementRect.Width < sz + 6 || elementRect.Height < sz + 6) return;
+
+        var color = ElementGroupHelper.GetGroupColor(groupId);
+        using var bg = new SKPaint { Color = color, IsAntialias = true };
+        canvas.DrawRoundRect(bx, by, sz, sz, 2f, 2f, bg);
     }
 
     /// <summary>

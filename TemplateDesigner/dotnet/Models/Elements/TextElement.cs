@@ -96,6 +96,7 @@ public class TextElement : TemplateElement
         ZIndex = ZIndex, IsLocked = IsLocked,
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
+        GroupId = GroupId,
         Text = Text,
         FontFamily = FontFamily,
         FontSize = FontSize,

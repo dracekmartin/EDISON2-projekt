@@ -142,6 +142,7 @@ public class BarcodeElement : TemplateElement
         ZIndex = ZIndex, IsLocked = IsLocked,
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
+        GroupId = GroupId,
         Content = Content,
         BarcodeType = BarcodeType,
         ForeColor = ForeColor,

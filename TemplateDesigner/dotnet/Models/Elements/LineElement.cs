@@ -15,8 +15,30 @@ public class LineElement : TemplateElement
 
     public LineStyle Style { get; set; } = LineStyle.Solid;
 
+    /// <summary>Délka čárky/tečky v mm. Null = výchozí (Dashed=3, Dotted=1).</summary>
+    public float? CustomDashMm { get; set; }
+
+    /// <summary>Délka mezery v mm. Null = výchozí (Dashed=2, Dotted=1.5).</summary>
+    public float? CustomGapMm { get; set; }
+
     [JsonIgnore]
     public SKColor SkColor => SKColor.Parse(Color);
+
+    /// <summary>Výchozí vzor čárky/mezery podle stylu.</summary>
+    public static (float dash, float gap) GetDefaultDashPattern(LineStyle style) => style switch
+    {
+        LineStyle.Dashed => (3f, 2f),
+        LineStyle.Dotted => (1f, 1.5f),
+        _ => (0f, 0f)
+    };
+
+    private (float dash, float gap) DefaultDashPattern => GetDefaultDashPattern(Style);
+
+    /// <summary>Efektivní délka čárky v mm (custom nebo výchozí).</summary>
+    [JsonIgnore] public float EffectiveDashMm => CustomDashMm ?? DefaultDashPattern.dash;
+
+    /// <summary>Efektivní délka mezery v mm (custom nebo výchozí).</summary>
+    [JsonIgnore] public float EffectiveGapMm => CustomGapMm ?? DefaultDashPattern.gap;
 
     public override void Render(RenderContext ctx)
     {
@@ -29,9 +51,7 @@ public class LineElement : TemplateElement
 
         if (Style != LineStyle.Solid)
         {
-            float dash = ctx.Px(Style == LineStyle.Dashed ? 3f : 1f);
-            float gap  = ctx.Px(Style == LineStyle.Dashed ? 2f : 1.5f);
-            paint.PathEffect = SKPathEffect.CreateDash([dash, gap], 0);
+            paint.PathEffect = SKPathEffect.CreateDash([ctx.Px(EffectiveDashMm), ctx.Px(EffectiveGapMm)], 0);
         }
 
         if (Orientation == LineOrientation.Horizontal)
@@ -55,6 +75,8 @@ public class LineElement : TemplateElement
         new FloatPropertyDescriptor { Label = "Tloušťka",  Group = "Čára", Get = () => StrokeWidth, Set = v => StrokeWidth = v, Min = 0.1f, Max = 10, Unit = "mm" },
         new EnumPropertyDescriptor  { Label = "Styl",      Group = "Čára", Get = () => Style,       Set = v => Style = (LineStyle)v,
             Options = [("Plná", (object)LineStyle.Solid), ("Čárkovaná", (object)LineStyle.Dashed), ("Tečkovaná", (object)LineStyle.Dotted)] },
+        new FloatPropertyDescriptor { Label = "Délka čárky", Group = "Čára", Get = () => EffectiveDashMm, Set = v => CustomDashMm = v, Min = 0.1f, Max = 20, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Délka mezery", Group = "Čára", Get = () => EffectiveGapMm, Set = v => CustomGapMm = v, Min = 0.1f, Max = 20, Unit = "mm" },
 
         .. GetPositionDescriptors()
     ];
@@ -66,10 +88,13 @@ public class LineElement : TemplateElement
         ZIndex = ZIndex, IsLocked = IsLocked,
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
+        GroupId = GroupId,
         Orientation = Orientation,
         Color = Color,
         StrokeWidth = StrokeWidth,
-        Style = Style
+        Style = Style,
+        CustomDashMm = CustomDashMm,
+        CustomGapMm = CustomGapMm
     };
 }
 

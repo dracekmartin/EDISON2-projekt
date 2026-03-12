@@ -438,6 +438,8 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
+        // Mapování starý GroupId → nový GroupId (klony nedědí skupinu originálu)
+        var groupIdMap = new Dictionary<string, string>();
         var newElements = _clipboard.Select(el =>
         {
             var clone = el.Clone();
@@ -445,6 +447,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 State.CurrentTemplate.PageSize.PrintableWidth - clone.Width);
             clone.Y = Math.Min(clone.Y + 5f,
                 State.ActiveSection.EffectiveDesignerHeight - clone.EffectiveDesignerHeight);
+            RemapGroupId(clone, groupIdMap);
             return clone;
         }).ToList();
 
@@ -473,6 +476,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var newElements = new List<TemplateElement>();
         var commands = new List<IDesignerCommand>();
+        var groupIdMap = new Dictionary<string, string>();
 
         foreach (var orig in State.SelectedElements)
         {
@@ -482,8 +486,8 @@ public class TemplateDesignerViewModel : EDViewModel
 
             if (direction is null)
             {
-                clone.X = Math.Clamp(orig.X + 5f, 0f, sectionW - clone.Width);
-                clone.Y = Math.Clamp(orig.Y + 5f, 0f, sectionH - cloneH);
+                clone.X = Math.Clamp(orig.X + 5f, 0f, Math.Max(0f, sectionW - clone.Width));
+                clone.Y = Math.Clamp(orig.Y + 5f, 0f, Math.Max(0f, sectionH - cloneH));
             }
             else
             {
@@ -495,9 +499,12 @@ public class TemplateDesignerViewModel : EDViewModel
                     DuplicateDirection.Left  => (orig.X - clone.Width - gap, orig.Y),
                     _ => (orig.X + 5f, orig.Y + 5f)
                 };
-                clone.X = Math.Clamp(clone.X, 0f, sectionW - clone.Width);
-                clone.Y = Math.Clamp(clone.Y, 0f, sectionH - cloneH);
+                clone.X = Math.Clamp(clone.X, 0f, Math.Max(0f, sectionW - clone.Width));
+                clone.Y = Math.Clamp(clone.Y, 0f, Math.Max(0f, sectionH - cloneH));
             }
+
+            // Přemapovat GroupId — klony dostanou nový společný GroupId
+            RemapGroupId(clone, groupIdMap);
 
             newElements.Add(clone);
             commands.Add(new AddElementCommand(State.ActiveSection, clone));
@@ -565,6 +572,35 @@ public class TemplateDesignerViewModel : EDViewModel
 
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();
+    }
+
+    // ── Group / Ungroup ──────────────────────────────────────────────────────
+
+    /// <summary>Přemapuje GroupId klonu na nový sdílený GroupId (pro paste/duplicate).</summary>
+    private static void RemapGroupId(TemplateElement clone, Dictionary<string, string> groupIdMap)
+    {
+        if (clone.GroupId is null) return;
+        if (!groupIdMap.TryGetValue(clone.GroupId, out var newGid))
+            groupIdMap[clone.GroupId] = newGid = ElementGroupHelper.NewGroupId();
+        clone.GroupId = newGid;
+    }
+
+    public void GroupSelected()
+    {
+        if (State.SelectedElements.Count < 2) return;
+        var groupId = ElementGroupHelper.NewGroupId();
+        Execute(new GroupCommand(State.SelectedElements, groupId));
+        RequestCanvasRefresh?.Invoke();
+        RequestPropertiesPanelUpdate?.Invoke();
+    }
+
+    public void UngroupSelected()
+    {
+        var grouped = State.SelectedElements.Where(e => e.GroupId is not null).ToList();
+        if (grouped.Count == 0) return;
+        Execute(new UngroupCommand(grouped));
+        RequestCanvasRefresh?.Invoke();
+        RequestPropertiesPanelUpdate?.Invoke();
     }
 
     // ── ZIndex ────────────────────────────────────────────────────────────────
@@ -755,8 +791,13 @@ public class TemplateDesignerViewModel : EDViewModel
             float elH   = el.EffectiveDesignerHeight;
             var section = State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(el));
             float sectionH = section?.EffectiveDesignerHeight ?? float.MaxValue;
-            clampedDx = Math.Clamp(clampedDx, -kvp.Value.X, sectionW - el.Width - kvp.Value.X);
-            clampedDy = Math.Clamp(clampedDy, -kvp.Value.Y, sectionH - elH    - kvp.Value.Y);
+            float maxDx = sectionW - el.Width - kvp.Value.X;
+            float maxDy = sectionH - elH    - kvp.Value.Y;
+            // Element může být širší/vyšší než sekce (např. background image) — přeskočit clamp
+            if (maxDx >= -kvp.Value.X)
+                clampedDx = Math.Clamp(clampedDx, -kvp.Value.X, maxDx);
+            if (maxDy >= -kvp.Value.Y)
+                clampedDy = Math.Clamp(clampedDy, -kvp.Value.Y, maxDy);
         }
 
         if (clampedDx == 0f && clampedDy == 0f) return;
