@@ -332,7 +332,7 @@ Soubory jsou čitelné v textovém editoru a lze je **ručně upravit**.
 
 ### Vlastnosti stránky
 - **Soubor → Vlastnosti stránky…** nebo **Ctrl+Shift+P** — otevře dialog pro editaci rozměrů a okrajů
-- Editovatelné: Šířka, Výška (mm), okraje Nahoře / Dole / Vlevo / Vpravo (mm)
+- Editovatelné: Šířka, Výška (mm), okraje Nahoře / Dole / Vlevo / Vpravo (mm), kód agendy, formát čísel a datumů
 - Canvas se okamžitě překreslí po každé změně, Zrušit vrátí vše zpět
 - Výchozí formát: A4 na výšku (210 × 297 mm, okraje 10 mm)
 
@@ -507,6 +507,8 @@ Placeholdery podporují formátovací instrukce za dvojtečkou: `{POLE:formát}`
 - `{CENA:N2}` → `12 000,00` (číslo se 2 desetinnými místy)
 - `{DATUM:dd.MM.yyyy}` → `01.01.2024`
 - `{CAS:HH:mm}` → `08:00`
+
+Formát čísel a datumů závisí na **kultuře šablony** — nastavitelné ve vlastnostech stránky (výchozí cs-CZ). Například `{CENA:N2}` zobrazí `12 000,00` v češtině, ale `12,000.00` v angličtině.
 
 **Řetězcové funkce:**
 - `{POLE:UPPER}` / `{POLE:LOWER}` — velikost písmen

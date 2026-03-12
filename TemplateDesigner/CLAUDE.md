@@ -18,7 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-*(žádný konkrétní — drag & drop dokončen, viz roadmap pro další možnosti)*
+*(žádný konkrétní — CultureInfo v šabloně dokončen, viz roadmap pro další možnosti)*
 
 ### ✅ Co máme
 
@@ -33,6 +33,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Drag & drop elementů z palety na canvas — ghost preview, zvýraznění cílové sekce, clamp + snap na mřížku
 - Drag & drop databázových polí z panelu "Pole agendy" na canvas — vytvoří TextElement s `{POLE}`, nebo připojí placeholder k existujícímu TextElementu
 - Drag & drop řazení sekcí v levém panelu — přetažením místo tlačítek ▲▼, vizuální indikátor pozice
+- Locale / CultureInfo v šabloně — `Template.CultureCode` (cs-CZ, sk-SK, en-US, de-DE); formátování čísel a datumů nezávislé na systémovém nastavení Windows
 
 ### 🐛 Známé problémy
 

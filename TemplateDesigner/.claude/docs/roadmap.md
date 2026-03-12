@@ -21,11 +21,7 @@ Absolutní pozicování se rozbije jakmile element přeteče svou výšku.
 - Sekce s `OverflowBehavior=SplitAcrossPages` musí posouvat elementy pod přetečeným
 - Print engine počítá výšku sekce z obsahu, ne z `DesignerHeight`
 
-**2. Locale / CultureInfo v RenderContext**
-Kdo rozhodne o desetinné čárce, formátu čísel a datumů?
-- `CultureInfo` jako součást `RenderContext`
-- Konfigurovatelné per šablona nebo per agenda
-- Konzistentní chování designer ↔ print engine
+**~~2. Locale / CultureInfo v šabloně~~** ✅ hotovo (2026-03-12)
 
 **3. Import PDF → šablona**
 Strojová analýza existujícího PDF a převod na TemplateDesigner šablonu.
@@ -76,6 +72,11 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 ---
 
 ### ✅ Implementováno
+
+**Locale / CultureInfo v šabloně** ✅ hotovo (2026-03-12)
+- `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)
+- Protéká celým pipeline: Template → DataContext.Culture → PlaceholderFormatter → TableElement
+- Dropdown ve vlastnostech stránky; null = cs-CZ (výchozí); parsování vstupů zůstává InvariantCulture
 
 **Drag & drop při přidávání elementů a sekcí** ✅ hotovo (2026-03-12)
 - Drag element z toolbaru/palety na canvas — ghost preview, drop target highlight, clamp + snap
