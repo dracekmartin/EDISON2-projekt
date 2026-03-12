@@ -10,7 +10,7 @@ public partial class EDComponentAndViewModelTestWindow : Window
 
     public EDComponentAndViewModelTestWindow()
     {
-        DataContext = _vm = new EDComponentAndViewModelTestViewModel(() => TheInputForm.Save());
+        DataContext = _vm = new EDComponentAndViewModelTestViewModel();
         InitializeComponent();
         TheInputForm.CacheClass = "ALVA.EDISONMAIN2.test";
     }
