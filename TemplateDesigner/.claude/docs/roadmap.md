@@ -15,7 +15,7 @@ Uživatel zadá hodnoty před tiskem (datum, filtr, přepínač). Bez toho každ
 - ✅ Live preview panel s interaktivními kontrolkami — hodnoty injektovány do DataContextu jako `{PARAM_NAME}`
 - ✅ Parametry zobrazeny v pickeru polí s příznakem "(parametr)"
 - ❌ Print dialog dynamicky generovaný ze šablony — bez změny kódu aplikace (Part 2 — závisí na VisibilityExpression)
-- ❌ Ukládání parametrů do JSON šablony + offline fallback (bez Caché)
+- ✅ Ukládání parametrů do JSON šablony + offline fallback (bez Caché) — hotovo 2026-03-12
 - *Předpoklad pro bod 2 (VisibilityExpression)*
 
 **2. Výrazový jazyk** ✅ Part 1 hotovo — zbývá Part 2
