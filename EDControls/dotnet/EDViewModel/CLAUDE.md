@@ -6,7 +6,7 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 ## File map
 
 | File | Role |
-|---|---|
+| --- | --- |
 | `EDViewModel.cs` | Base class. `INotifyPropertyChanged`, `Set<T>()`, `OkCommand`, `RequestClose`, `Actions`, `MLRest`. |
 | `RelayCommand.cs` | `RelayCommand` (no parameter) and `RelayCommand<T>`. |
 | `EDAction.cs` | Model for a single toolbar/menu/shortcut action (label, icon, key, command). |
@@ -14,7 +14,7 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 ## EDViewModel API
 
 | Member | Description |
-|---|---|
+| --- | --- |
 | `event Action<bool?>? RequestClose` | Fired to close the window. `true` = confirmed, `false` = cancelled, `null` = just close. `EDFooter` subscribes automatically on `Loaded`. |
 | `ICommand OkCommand` | Calls `OnOk()`. Bound to the Ok button by `EDFooter`. |
 | `IReadOnlyList<EDAction>? Actions` | Actions for this window. Set in the subclass constructor. `EDToolbar` reads this on `Loaded`; `EDFooter` binds to it via DataContext. Key bindings are registered automatically by `EDViewModel` itself (see below). |
@@ -33,18 +33,32 @@ Base ViewModel classes for all EDISONMAIN2 windows. Provides `INotifyPropertyCha
 ## EDAction
 
 ```csharp
-new EDAction(label, icon, key, modifiers, command)
+// Full — label from EDStrings, icon from EDIcons, keyboard shortcut:
+new EDAction(
+    (string)Application.Current.FindResource("EDStrings.Add"),
+    new RelayCommand(OnAdd),
+    (ImageSource)Application.Current.FindResource("EDIcons.Add"),
+    Key.Insert)
+
+// With shortcut, no icon:
+new EDAction((string)Application.Current.FindResource("EDStrings.Add"), new RelayCommand(OnAdd), key: Key.Insert)
+
+// Label + command only:
+new EDAction((string)Application.Current.FindResource("EDStrings.Add"), new RelayCommand(OnAdd))
 ```
+
+`icon`, `key`, and `modifiers` are all optional (`null` / `Key.None` / `ModifierKeys.None`).
+Use `EDStrings` keys for labels and `EDIcons` keys for icons so text and graphics are consistent across windows.
 
 | Property | Type | Description |
 | --- | --- | --- |
 | `Label` | `string` | Display name (menu header, tooltip prefix). |
-| `Icon` | `ImageSource?` | Shared image source from resource dictionary. |
-| `IconElement` | `Image?` | Returns a **new** `Image` wrapping `Icon` on every access — required for `MenuItem.Icon` binding via `ItemContainerStyle` (see source comment). |
-| `Key` / `Modifiers` | `Key` / `ModifierKeys` | Keyboard shortcut registered by `EDViewModel`. |
 | `Command` | `ICommand` | The command to execute. |
-| `ShortcutText` | `string` | Human-readable shortcut, e.g. `"Ctrl+Shift+S"`, `"Ins"`, `"F2"`. Auto-generated from `Key`/`Modifiers`. |
-| `ToolTipText` | `string` | `"{Label} [{ShortcutText}]"` — used directly as `ToolTip` on toolbar buttons. |
+| `Icon` | `ImageSource?` | Shared image source from resource dictionary. Optional. |
+| `IconElement` | `Image?` | Returns a **new** `Image` wrapping `Icon` on every access — required for `MenuItem.Icon` binding via `ItemContainerStyle` (see source comment). |
+| `Key` / `Modifiers` | `Key` / `ModifierKeys` | Keyboard shortcut. Optional — omit or pass `Key.None` for no binding. |
+| `ShortcutText` | `string` | Human-readable shortcut, e.g. `"Ctrl+Shift+S"`, `"F2"`. Empty string when no shortcut. |
+| `ToolTipText` | `string` | `"{Label} [{ShortcutText}]"` when shortcut present, otherwise just `"{Label}"`. |
 
 ## RelayCommand
 

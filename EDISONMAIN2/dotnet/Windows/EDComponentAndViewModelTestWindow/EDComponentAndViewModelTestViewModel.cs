@@ -18,9 +18,9 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
     {
         Actions =
         [
-            new EDAction("Přidat",  (ImageSource)Application.Current.FindResource("EDIcons.Add"),    Key.Insert, ModifierKeys.None, new RelayCommand(() => Status = "Přidat (Ins)")),
-            new EDAction("Upravit", (ImageSource)Application.Current.FindResource("EDIcons.Edit"),   Key.F2,     ModifierKeys.None, new RelayCommand(() => Status = "Upravit (F2)")),
-            new EDAction("Smazat",  (ImageSource)Application.Current.FindResource("EDIcons.Delete"), Key.Delete, ModifierKeys.None, new RelayCommand(() => Status = "Smazat (Del)")),
+            new EDAction((string)Application.Current.FindResource("EDStrings.Add"),    new RelayCommand(() => Status = "Přidat (Ins)"),  (ImageSource)Application.Current.FindResource("EDIcons.Add"),    Key.Insert),
+            new EDAction((string)Application.Current.FindResource("EDStrings.Edit"),   new RelayCommand(() => Status = "Upravit (F2)"),  (ImageSource)Application.Current.FindResource("EDIcons.Edit"),   Key.F2),
+            new EDAction((string)Application.Current.FindResource("EDStrings.Delete"), new RelayCommand(() => Status = "Smazat (Del)"),  (ImageSource)Application.Current.FindResource("EDIcons.Delete"), Key.Delete),
         ];
     }
 

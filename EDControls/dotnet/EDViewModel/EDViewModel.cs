@@ -87,7 +87,7 @@ public class EDViewModel : INotifyPropertyChanged
         var window = Application.Current.Windows.OfType<Window>()
             .FirstOrDefault(w => w.DataContext == this);
         if (window == null) return;
-        foreach (var action in Actions)
+        foreach (var action in Actions.Where(a => a.Key != Key.None))
             window.InputBindings.Add(new KeyBinding(action.Command, action.Key, action.Modifiers));
     }
 

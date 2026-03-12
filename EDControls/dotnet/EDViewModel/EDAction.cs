@@ -4,9 +4,10 @@ using System.Windows.Media;
 
 namespace EDControls.EDViewModel;
 
-public class EDAction(string label, ImageSource? icon, Key key, ModifierKeys modifiers, ICommand command)
+public class EDAction(string label, ICommand command, ImageSource? icon = null, Key key = Key.None, ModifierKeys modifiers = ModifierKeys.None)
 {
     public string Label { get; } = label;
+    public ICommand Command { get; } = command;
     public ImageSource? Icon { get; } = icon;
     /// <summary>
     /// Returns a fresh <see cref="Image"/> element on every access.
@@ -26,9 +27,8 @@ public class EDAction(string label, ImageSource? icon, Key key, ModifierKeys mod
     public Image? IconElement => Icon != null ? new Image { Source = Icon, Width = 16, Height = 16 } : null;
     public Key Key { get; } = key;
     public ModifierKeys Modifiers { get; } = modifiers;
-    public ICommand Command { get; } = command;
-    public string ShortcutText { get; } = BuildShortcutText(key, modifiers);
-    public string ToolTipText => $"{Label} [{ShortcutText}]";
+    public string ShortcutText { get; } = key != Key.None ? BuildShortcutText(key, modifiers) : "";
+    public string ToolTipText => ShortcutText.Length > 0 ? $"{Label} [{ShortcutText}]" : Label;
 
     private static string BuildShortcutText(Key key, ModifierKeys modifiers)
     {
