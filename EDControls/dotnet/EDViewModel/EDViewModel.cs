@@ -75,9 +75,20 @@ public class EDViewModel : INotifyPropertyChanged
     /// </summary>
     public ICommand OkCommand { get; }
 
+    /// <summary>
+    /// Standard CRUD commands. Override OnAdd/OnEdit/OnDelete in the subclass.
+    /// Wire to actions via EDStandardActions.Add(this) / Edit(this) / Delete(this).
+    /// </summary>
+    public ICommand AddCommand { get; }
+    public ICommand EditCommand { get; }
+    public ICommand DeleteCommand { get; }
+
     public EDViewModel()
     {
-        OkCommand = new RelayCommand(OnOk);
+        OkCommand     = new RelayCommand(OnOk);
+        AddCommand    = new RelayCommand(OnAdd);
+        EditCommand   = new RelayCommand(OnEdit);
+        DeleteCommand = new RelayCommand(OnDelete);
         Application.Current?.Dispatcher.BeginInvoke(RegisterKeyBindings, DispatcherPriority.Loaded);
     }
 
@@ -87,7 +98,7 @@ public class EDViewModel : INotifyPropertyChanged
         var window = Application.Current.Windows.OfType<Window>()
             .FirstOrDefault(w => w.DataContext == this);
         if (window == null) return;
-        foreach (var action in Actions)
+        foreach (var action in Actions.Where(a => a.Key != Key.None))
             window.InputBindings.Add(new KeyBinding(action.Command, action.Key, action.Modifiers));
     }
 
@@ -96,6 +107,10 @@ public class EDViewModel : INotifyPropertyChanged
     /// Call base.OnOk() (or CloseDialog(true)) to confirm and close.
     /// </summary>
     protected virtual void OnOk() => CloseDialog(true);
+
+    protected virtual void OnAdd() { }
+    protected virtual void OnEdit() { }
+    protected virtual void OnDelete() { }
 
     /// <summary>
     /// Requests the window to close with the given dialog result.

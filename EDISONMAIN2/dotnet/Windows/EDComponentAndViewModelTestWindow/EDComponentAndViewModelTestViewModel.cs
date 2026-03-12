@@ -1,8 +1,4 @@
 using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
-using EDControls;
 using EDControls.EDViewModel;
 
 namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
@@ -16,13 +12,12 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
 {
     public EDComponentAndViewModelTestViewModel()
     {
-        Actions =
-        [
-            new EDAction("Přidat",  (ImageSource)Application.Current.FindResource("EDIcons.Add"),    Key.Insert, ModifierKeys.None, new RelayCommand(() => Status = "Přidat (Ins)")),
-            new EDAction("Upravit", (ImageSource)Application.Current.FindResource("EDIcons.Edit"),   Key.F2,     ModifierKeys.None, new RelayCommand(() => Status = "Upravit (F2)")),
-            new EDAction("Smazat",  (ImageSource)Application.Current.FindResource("EDIcons.Delete"), Key.Delete, ModifierKeys.None, new RelayCommand(() => Status = "Smazat (Del)")),
-        ];
+        Actions = [EDStandardActions.Add(this), EDStandardActions.Edit(this), EDStandardActions.Delete(this)];
     }
+
+    protected override void OnAdd() => Status = "Přidat [Ctrl+N]";
+    protected override void OnEdit() => Status = "Upravit [Ctrl+E]";
+    protected override void OnDelete() => Status = "Smazat [Ctrl+D]";
 
     public RelayCommand SimulateActionCommand => _simulateActionCommand
         ??= new RelayCommand(SimulateAction);
