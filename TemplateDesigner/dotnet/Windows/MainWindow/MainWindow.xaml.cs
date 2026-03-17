@@ -268,9 +268,9 @@ public partial class MainWindow : Window
 
     private void UpdatePreviewSize()
     {
-        if (BtnPreview?.IsChecked != true || _previewCanvas is null) return;
+        if (BtnPreview?.IsChecked != true || _previewCanvas is null || _vm is null) return;
         skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom) + 40f;
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom, _vm.BuildPreviewMockData()) + 40f;
     }
 
     private void InvalidatePreview()
@@ -532,6 +532,20 @@ public partial class MainWindow : Window
     private void MenuSave_Click(object sender, RoutedEventArgs e)      => _vm!.SaveCommand.Execute(null);
     private void MenuSaveAs_Click(object sender, RoutedEventArgs e)    => _vm!.SaveAsCommand.Execute(null);
     private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
+
+    private void MenuPrint_Click(object sender, RoutedEventArgs e)
+    {
+        var vm = new PrintDialogViewModel(
+            _vm!.State.CurrentTemplate,
+            _vm.AgendaParameters,
+            paramValues => _vm.BuildPreviewMockData(paramValues));
+
+        vm.RequestRenderPdf = (filePath, data) =>
+            _previewCanvas!.RenderToPdf(filePath, data);
+
+        var dlg = new PrintDialog(vm) { Owner = this };
+        dlg.ShowDialog();
+    }
 
     private void MenuExit_Click(object sender, RoutedEventArgs e)
     {
@@ -1165,6 +1179,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             OpenPropertiesForPage(_vm.State.CurrentTemplate);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.P && ctrl)
+        {
+            MenuPrint_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
         else if (e.Key == Key.PageUp && ctrl)

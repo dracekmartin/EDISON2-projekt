@@ -1,25 +1,33 @@
 # Roadmap
 
-## 📋 Roadmap (obecný tiskový engine)
-
-Cíl: systém schopný pokrýt libovolnou tiskovou sestavu, nezávisle na JR agendě.
-Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
+## 📋 Roadmap
 
 ---
 
-### 🔴 Kritické
+### 🔴 Kritické — Specializované JŘ elementy
 
-*(žádné aktivní)*
+> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
+
+**Primární architektonická změna** — přidání specializovaných elementů pro tisk jízdních řádů. Nový princip: Caché vrací čistá data + business logiku (JSON), specializované C# elementy (`ScheduleElementBase` → `StopScheduleElement`, `DepartureGridElement`, `BookScheduleElement`, `VehicleScheduleElement`) mají vlastní nastavení a komplexní renderovací logiku. PageLayoutEngine zůstává generický beze změn.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) | |
+| 2 | `StopScheduleElement` — zastávkový JŘ, mód "FullTime" (meziměsto) | |
+| 3 | Caché `GetData`/`GetMockData` — nový wire formát (ZASTAVKY, SPOJE, ODJEZDY, POZNAMKY) | |
+| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů | |
+| 5 | `StopScheduleElement` — mód "MinutesOnly" (MHD) | |
+| 6 | `DepartureGridElement` (pokud MHD potřebuje samostatný element) | |
+| 7 | `BookScheduleElement` — knižní JŘ (layout TBD) | |
+| 8 | `VehicleScheduleElement` — vozový JŘ (layout TBD) | |
 
 ---
 
 ### 🟡 Důležité — omezení flexibility bez toho
 
-**1. Flow layout sekcí (InfiniteTextElement)**
-Absolutní pozicování se rozbije jakmile element přeteče svou výšku.
-- `InfiniteTextElement` — textový blok roztahující se podle obsahu (výška null)
-- Sekce s `OverflowBehavior=SplitAcrossPages` musí posouvat elementy pod přetečeným
-- Print engine počítá výšku sekce z obsahu, ne z `DesignerHeight`
+**~~1. Flow layout sekcí~~** ✅ kompletně hotovo (2026-03-17)
+TextElement s `WordWrap=true` + `Height=null` → dynamická výška dopočítaná z textu. PageLayoutEngine: flow layout uvnitř sekcí (dynamické elementy posouvají obsah pod sebou), stránkování sekcí s `SplitAcrossPages`, výpočet výšky sekce z obsahu.
+- ~~`InfiniteTextElement`~~ → zamítnuto; flow řízeno properties na TextElementu
 
 **~~2. Locale / CultureInfo v šabloně~~** ✅ hotovo (2026-03-12)
 
@@ -102,6 +110,18 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 
 ### ✅ Implementováno
 
+**PageLayoutEngine + multi-page** ✅ hotovo (2026-03-17)
+- Template + DataContext → `List<Page>` s PlacedSections; čistá logika (vrstva 3), žádný SkiaSharp/WPF
+- Klasifikace sekcí (headers/footers/body), stránkování (KeepTogether/SplitAcrossPages), dvouprůchodový layout pro OnLastPageOnly
+- Flow layout uvnitř sekcí, PerDataRow expanze, PAGE/TOTAL_PAGES injekce
+- Multi-page preview (stránky pod sebou) + multi-page PDF export
+- IElementHeightCalculator: SkiaHeightCalculator měří TextElement (word wrap) a TableElement
+
+**Flow text v designeru (Word wrap + dynamická výška)** ✅ hotovo (2026-03-17)
+- TextElement: `WordWrap=true` + `Height=null` → text se zalamuje, výška se dopočítá z obsahu
+- `LineSpacing` property, vertikální zarovnání víceřádkového textu, fix `\r\n`
+- InfiniteTextElement jako samostatný typ zamítnut — jedno chování řízené properties
+
 **ElementGroup — seskupování elementů** ✅ základ hotovo (2026-03-12)
 - `GroupId` property na `TemplateElement` — lehká logická vazba bez nested souřadnic
 - Kliknutí na člen skupiny vybere celou skupinu; Alt+klik = jen ten jeden element
@@ -155,14 +175,136 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 
 ---
 
-## 🖨️ Print Engine (fáze 2) — samostatný projekt
+## 🖨️ PageLayoutEngine + stránkovaný preview (fáze 2) ✅ hotovo (2026-03-17)
 
-Věci které patří do print enginu, nikoliv do designeru.
+Preview v designeru = plný engine. "Tisk" = ten samý engine s reálnými daty → PDF.
+Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v TemplateDesigneru, ne samostatný projekt. Oddělení do samostatných .csproj se udělá až bude druhý konzument.
 
-- **Print dialog** — dynamicky generovaný ze šablony (`Template.Parameters`); stejný UI pattern jako live preview panel v designeru (CheckBox/ComboBox/TextBox); hodnoty předány enginu před tiskem
-- **Renderování šablony** — načtení JSON šablony + DataContext z Caché → PDF výstup
-- **Flow layout** — sekce s `OverflowBehavior=SplitAcrossPages`, dynamické výšky elementů
-- **VisibilityExpression vyhodnocení** — filtrování sekcí a elementů za běhu dle dat
+### Vrstvy systému
+
+```
+5. Aplikace         WPF Designer, EDISON tisk, Server API, CLI batch
+4. Renderer         element.Render(ctx) → SKCanvas / PDF (SkiaSharp, žádné WPF)
+3. PageLayoutEngine Template + DataContext → List<Page> (žádný SkiaSharp, žádné UI)
+2. Expressions      ExpressionEvaluator, PlaceholderFormatter, AggregationResolver
+1. Models           Template, Section, TemplateElement, DataContext, DataSchema
+```
+
+### PageLayoutEngine — vstup/výstup ✅
+
+```csharp
+class PageLayoutEngine {
+    LayoutResult Layout(Template template, DataContext? data);
+}
+class LayoutResult { List<Page> Pages; int TotalPages; }
+class Page { int PageNumber; List<PlacedSection> Sections; }
+class PlacedSection {
+    Section Source;        // odkaz na originální sekci
+    float Y, Height;      // absolutní pozice na stránce (mm)
+    float? ClipTop, ClipBottom;  // ořez pro SplitAcrossPages
+    DataContext? Data;     // obohacená o PAGE/TOTAL_PAGES
+}
+```
+
+### Implementační kroky ✅ vše hotovo
+
+| Krok | Co | Stav |
+|---|---|---|
+| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | ✅ |
+| 2 | Stránkovaný preview — multi-page pod sebou se stíny a rámečky | ✅ |
+| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | ✅ |
+| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky (ClipTop/ClipBottom) | ✅ |
+| 5 | PerDataRow expanze — sekce se opakuje pro každý řádek dat | ✅ |
+| 6 | PAGE/TOTAL_PAGES injekce + VisibilityExpression per stránku | ✅ |
+| 7 | Multi-page PDF export — každá stránka = jedna PDF stránka | ✅ |
+
+### Zbývající kroky (budoucí)
+
+| Krok | Co | Náročnost |
+|---|---|---|
+| 8 | Napojení reálných dat z Caché (`GetData`) do preview | nízká |
+| 9 | Print dialog — parametry před tiskem (rozšíření stávajícího preview panelu) | střední |
+
+### Budoucí modularizace (až bude potřeba)
+
+```
+TemplateDesigner.Core.csproj      ← vrstvy 1+2+3 (žádný SkiaSharp, žádné WPF)
+TemplateDesigner.Rendering.csproj ← vrstva 4 (SkiaSharp, žádné WPF)
+TemplateDesigner.csproj           ← vrstva 5 WPF Designer
+Edison.PrintService.csproj        ← vrstva 5 headless tisk z EDISONu
+```
+
+### Use cases díky oddělitelnosti
+
+| Use case | Vrstvy | Popis |
+|---|---|---|
+| WPF Designer + preview | 1–5 | Aktuální aplikace |
+| Tisk z EDISONu | 1–4 | Print dialog → GetData → engine → PDF |
+| Batch tisk | 1–4 | Noční job: 200 faktur → 200 PDF |
+| PDF jako služba | 1–4 | EDISON interně: dej PDF pro fakturu #123 |
+| REST API | 1–4 | HTTP POST šablona + data → PDF response |
+| Web preview | 1–4 | ASP.NET endpoint → PNG/PDF → iframe |
+| Email příloha | 1–4 | Auto-generování PDF a připojení k emailu |
+
+---
+
+## 🤖 AI integrace — vize a plán
+
+Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď není potřeba.** JSON šablona + DataSchema jsou dostatečné rozhraní pro AI. Rozšíření se dá přidat kdykoliv později bez breaking changes.
+
+**Princip:** AI = copilot, ne autopilot. Vždy navrhne → uživatel potvrdí/upraví.
+
+### Aktuální stav
+- ✅ AI Assistant — generování celé šablony z textového popisu (Claude API, prompt-based)
+- ✅ Schema injection — AI dostane seznam polí/kolekcí/parametrů agendy
+
+### Fáze 1 — prompt-based (stačí teď)
+
+Pro většinu use cases stačí dát AI kontext přes systémový prompt (JSON šablona + schema):
+
+| Use case | Přístup |
+|---|---|
+| Generování šablony z popisu | ✅ hotovo |
+| Vysvětlení šablony ("co dělá tato sekce?") | prompt + aktuální JSON |
+| Nápověda k výrazům ("jak skrýt řádek?") | prompt + docs |
+| Template linting / validace | prompt + JSON + schema |
+| PDF import režim 2 ("zchytři to") | prompt + importovaný JSON + schema |
+
+### Fáze 2 — MCP server (až budou reální uživatelé s potřebou AI asistence)
+
+Pro operace měnící stav aplikace (úpravy šablony hlasem/textem, smart suggestions) by TemplateDesigner vystavil MCP server:
+
+```
+MCP Tools:
+├── get_template()                  → aktuální JSON šablona
+├── get_schema(agendaCode)          → DataSchema dané agendy
+├── get_available_agendas()         → seznam agend
+├── get_mock_data(agendaCode)       → vzorová data
+├── apply_template(json)            → nahradí šablonu (s undo)
+├── add_element(sectionId, element) → přidá element (s undo)
+├── modify_element(elementId, props)→ změní properties (s undo)
+├── add_section(preset, index)      → přidá sekci
+├── validate_template()             → vrátí seznam problémů
+└── get_help(topic)                 → dokumentace k funkci
+```
+
+MCP je tenká vrstva nad ViewModelem — každý tool volá existující metody (`_vm.Execute(command)`).
+Standardní protokol (stdio, lokální) — funguje s Claude i jinými AI, žádný vlastní server.
+
+### Fáze 3 — pokročilé use cases (dlouhodobě)
+
+| Use case | Kategorie | Popis |
+|---|---|---|
+| Onboarding průvodce | Noví uživatelé | AI popíše co nástroj umí, navede uživatele krok za krokem |
+| "Přidej patičku s číslem stránky" | Zkušení uživatelé | AI modifikuje existující šablonu (ne generuje od nuly) |
+| Smart suggestions | Zkušení uživatelé | Přidáš TableElement → AI navrhne sloupce z DataSchema |
+| Migrace starých Caché sestav | Automatizace | AI analyzuje starý kód → navrhne TemplateDesigner šablonu |
+| Template linting v CI/CD | Automatizace | AI zkontroluje šablony před deployem |
+| Batch generování šablon | Automatizace | Nová agenda → AI vygeneruje základní šablony |
+
+### Proč to neblokuje
+
+JSON šablona je stabilní kontrakt mezi designerem a AI. Dokud AI umí číst a psát JSON v definovaném formátu, integrace funguje bez ohledu na to, jestli je to prompt, MCP, nebo REST API. Rozšíření se dá přidat kdykoliv bez refactoringu.
 
 ---
 

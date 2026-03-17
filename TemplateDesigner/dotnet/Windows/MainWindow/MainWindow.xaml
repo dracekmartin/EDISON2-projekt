@@ -161,6 +161,7 @@
                 <MenuItem x:Name="MenuSaveAs" Header="Uložit jako..."                          Click="MenuSaveAs_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF..." Click="MenuExportPdf_Click"/>
+                <MenuItem x:Name="MenuPrint" Header="Tisk..." InputGestureText="Ctrl+P" Click="MenuPrint_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P" Click="MenuPageProps_Click"/>
                 <Separator/>

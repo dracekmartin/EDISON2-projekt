@@ -66,7 +66,7 @@ Uvnitř sekce lze volně umísťovat elementy — text, obdélník, čáru, obr�
 
 | Typ | Editovatelné vlastnosti |
 |---|---|
-| Text | Text, font, velikost, styl, zarovnání, barva textu/pozadí, zalamování |
+| Text | Text, font, velikost, styl, zarovnání, barva textu/pozadí, zalamování, řádkování; dynamická výška (Height=null + WordWrap) |
 | Obdélník | Barva výplně, barva okraje, tloušťka okraje, zaoblení rohů |
 | Čára | Orientace, barva, tloušťka, styl (plná/čárkovaná/tečkovaná) |
 | Obrázek | Datové pole, škálování |
@@ -419,6 +419,8 @@ Pravý panel zobrazuje **náhled šablony s mock daty** — takto bude šablona 
 
 - Otevřít / zavřít přes menu **Zobrazit → Live preview** nebo tlačítko v toolbaru
 - Automaticky se aktualizuje při každé změně šablony
+- **Multi-page preview** — pokud se obsah nevejde na jednu stránku, zobrazí se všechny stránky pod sebou se stíny a rámečky; hlavičky/patičky se opakují podle nastavení sekce
+- **{PAGE} a {TOTAL_PAGES}** — čísla stránek se automaticky doplňují do placeholderů
 - **Mock data ze systému** — pokud agenda implementuje `GetMockData` v Caché, preview zobrazuje reálná ukázková data (skutečné hodnoty polí, reálné řádky tabulek)
 - Fallback: hodnoty ze schématu agendy (pole `example`) nebo generické zástupce
 - Dynamic tabulky zobrazují všechny mock řádky vrácené z `GetMockData`
@@ -480,11 +482,12 @@ Aktuální live preview lze exportovat přímo do PDF souboru — se stejnými m
 
 - **Soubor → Exportovat náhled jako PDF...** — otevře dialog pro uložení souboru
 - **Tlačítko PDF** v záhlaví live preview panelu — stejná funkce, rychlejší přístup
-- Výstup je jednostránkový PDF odpovídající rozměrům šablony (šířka × výška v mm)
+- Výstup je **multi-page PDF** — každá stránka layoutu = jedna stránka PDF; rozměry odpovídají šabloně (šířka × výška v mm)
+- Hlavičky a patičky se automaticky opakují na každé stránce podle nastavení `PrintBehavior`
 - Okraje šablony jsou zachovány; stránka má bílé pozadí
 - Data v PDF jsou identická s preview (Caché mock nebo schema fallback)
 
-> PDF export slouží jako rychlá kontrola rozvržení před ostrým tiskem. Nenahrazuje Print Engine — ten zpracuje reálná data a zvládne vícestr. výstup.
+> PDF export slouží jako rychlá kontrola rozvržení před ostrým tiskem. Engine (`PageLayoutEngine`) zpracovává stránkování, hlavičky/patičky, flow layout a čísla stránek automaticky.
 
 ### Zoom
 - Výběr z hodnot 50% / 75% / 100% / 150% / 200% v toolbaru

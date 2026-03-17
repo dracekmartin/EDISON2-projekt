@@ -2,6 +2,7 @@ using System.IO;
 using SkiaSharp;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Expressions;
+using TemplateDesigner.Models.Layout;
 
 namespace TemplateDesigner.Designer;
 
@@ -9,10 +10,13 @@ namespace TemplateDesigner.Designer;
 /// Renderuje šablonu pro live preview — bez designerového chrome (záhlaví sekcí,
 /// handles, badgů, mřížky). Elementy s visibilityExpression="false" se nezobrazí.
 /// Zoom se počítá automaticky podle šířky dostupného canvasu (fit-to-width).
+///
+/// Používá PageLayoutEngine pro rozložení sekcí na stránky.
 /// </summary>
 public class PreviewCanvas
 {
     private const float PagePaddingPx = 20f;
+    private const float PageGapPx     = 16f;
     private const float BaseMmToPx   = 96f / 25.4f;   // px na mm při 96 DPI, zoom 1:1
 
     private static readonly SKColor ClrBackground = new(0xFFE8E8E8);
@@ -21,8 +25,15 @@ public class PreviewCanvas
     private static readonly SKColor ClrSectionSep = new(0xFFDDDDDD);
 
     private readonly DesignerState _state;
+    private readonly PageLayoutEngine _engine;
+    private readonly IElementHeightCalculator _heightCalc;
 
-    public PreviewCanvas(DesignerState state) => _state = state;
+    public PreviewCanvas(DesignerState state)
+    {
+        _state = state;
+        _heightCalc = new SkiaHeightCalculator();
+        _engine = new PageLayoutEngine(_heightCalc);
+    }
 
     // ─────────────────────────────────────────────────────────────────────
     // Veřejné pomocné metody (volá MainWindow pro určení velikosti SKElement)
@@ -44,8 +55,17 @@ public class PreviewCanvas
         return 2 * PagePaddingPx + pageW * BaseMmToPx * zoom;
     }
 
-    /// <summary>Výška stránky v px při daném zoomu — pro nastavení výšky SKElement.</summary>
-    public float CalculatePageHeightPx(float zoom)
+    /// <summary>Výška všech stránek v px při daném zoomu — pro nastavení výšky SKElement.</summary>
+    public float CalculatePageHeightPx(float zoom, DataContext? data = null)
+    {
+        var layout = _engine.Layout(_state.CurrentTemplate, data);
+        int pageCount = Math.Max(1, layout.TotalPages);
+        float pageH = _state.CurrentTemplate.PageSize.Height * BaseMmToPx * zoom;
+        return PagePaddingPx + pageCount * pageH + (pageCount - 1) * PageGapPx + PagePaddingPx;
+    }
+
+    /// <summary>Výška stránek — zpětná kompatibilita (bez dat = jedna stránka).</summary>
+    public float CalculatePageHeightPxLegacy(float zoom)
     {
         float mmToPx = BaseMmToPx * zoom;
         var   ps     = _state.CurrentTemplate.PageSize;
@@ -61,7 +81,7 @@ public class PreviewCanvas
 
     /// <summary>
     /// Exportuje šablonu s dodanými daty do PDF souboru.
-    /// Jedna strana = jeden layout šablony (bez stránkování).
+    /// Multi-page: každá stránka LayoutResult = jedna stránka PDF.
     /// </summary>
     public void RenderToPdf(string filePath, DataContext? data)
     {
@@ -70,16 +90,23 @@ public class PreviewCanvas
         float pageW = ps.Width  * pointsPerMm;
         float pageH = ps.Height * pointsPerMm;
 
+        var layout = _engine.Layout(_state.CurrentTemplate, data);
+        if (layout.TotalPages == 0) return;
+
         using var stream = new FileStream(filePath, FileMode.Create);
         using var doc    = SKDocument.CreatePdf(stream);
-        var canvas = doc.BeginPage(pageW, pageH);
 
-        using (var bg = new SKPaint { Color = SKColors.White })
-            canvas.DrawRect(0, 0, pageW, pageH, bg);
+        foreach (var page in layout.Pages)
+        {
+            var canvas = doc.BeginPage(pageW, pageH);
 
-        DrawContent(canvas, ps, pointsPerMm, 0, 0, data);
+            using (var bg = new SKPaint { Color = SKColors.White })
+                canvas.DrawRect(0, 0, pageW, pageH, bg);
 
-        doc.EndPage();
+            RenderPage(canvas, ps, pointsPerMm, 0, 0, page);
+
+            doc.EndPage();
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -93,14 +120,23 @@ public class PreviewCanvas
         float mmToPx = BaseMmToPx * zoom;
         var   ps     = _state.CurrentTemplate.PageSize;
         float pageW  = ps.Width * mmToPx;
-        float pageH  = CalculatePageHeightPx(zoom);
+        float pageH  = ps.Height * mmToPx;
         float pageX  = Math.Max(PagePaddingPx, (canvasWidth - pageW) / 2f);
-        float pageY  = PagePaddingPx;
 
-        DrawShadow(canvas, pageX, pageY, pageW, pageH);
-        DrawPageBackground(canvas, pageX, pageY, pageW, pageH);
-        DrawContent(canvas, ps, mmToPx, pageX, pageY, data);
-        DrawPageBorder(canvas, pageX, pageY, pageW, pageH);
+        var layout = _engine.Layout(_state.CurrentTemplate, data);
+        if (layout.TotalPages == 0) return;
+
+        float currentPageY = PagePaddingPx;
+
+        foreach (var page in layout.Pages)
+        {
+            DrawShadow(canvas, pageX, currentPageY, pageW, pageH);
+            DrawPageBackground(canvas, pageX, currentPageY, pageW, pageH);
+            RenderPage(canvas, ps, mmToPx, pageX, currentPageY, page);
+            DrawPageBorder(canvas, pageX, currentPageY, pageW, pageH);
+
+            currentPageY += pageH + PageGapPx;
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -128,43 +164,55 @@ public class PreviewCanvas
         canvas.DrawRect(new SKRect(x, y, x + w, y + h), p);
     }
 
-    private void DrawContent(SKCanvas canvas, PageSize ps, float mmToPx, float pageX, float pageY, DataContext? data)
+    /// <summary>Renderuje jednu stránku LayoutResult.</summary>
+    private static void RenderPage(SKCanvas canvas, PageSize ps, float mmToPx,
+        float pageX, float pageY, Page page)
     {
-        float ox       = pageX + ps.MarginLeft * mmToPx;
-        float currentY = pageY + ps.MarginTop  * mmToPx;
+        float ox = pageX + ps.MarginLeft * mmToPx;
         float contentW = ps.PrintableWidth * mmToPx;
+        float marginTopPx = ps.MarginTop * mmToPx;
 
-        foreach (var section in _state.CurrentTemplate.Sections)
+        // Seřadit placed sections podle Y
+        var sortedSections = page.Sections.OrderBy(s => s.Y).ToList();
+
+        for (int i = 0; i < sortedSections.Count; i++)
         {
-            // Sekce s nesplněnou podmínkou se přeskočí celá
-            if (!ExpressionEvaluator.IsVisible(section.VisibilityExpression, data)) continue;
+            var placed = sortedSections[i];
+            float sectionTopPx = pageY + marginTopPx + placed.Y * mmToPx;
+            float sectionHeightPx = placed.Height * mmToPx;
 
-            float sectionH = section.EffectiveDesignerHeight * mmToPx;
-            var clipRect   = new SKRect(ox, currentY, ox + contentW, currentY + sectionH);
+            // Clip oblast sekce
+            var clipRect = new SKRect(ox, sectionTopPx, ox + contentW, sectionTopPx + sectionHeightPx);
 
             canvas.Save();
             canvas.ClipRect(clipRect);
 
-            var ctx = new RenderContext(canvas, mmToPx, data)
+            // Pro split sekce: posunout origin nahoru o ClipTop
+            float originYOffset = placed.ClipTop.HasValue ? -placed.ClipTop.Value * mmToPx : 0f;
+
+            var ctx = new RenderContext(canvas, mmToPx, placed.Data)
             {
                 SectionOriginX = ox,
-                SectionOriginY = currentY
+                SectionOriginY = sectionTopPx + originYOffset
             };
 
-            // Elementy s nesplněnou podmínkou se v preview nezobrazí
-            foreach (var el in section.Elements
-                .Where(e => ExpressionEvaluator.IsVisible(e.VisibilityExpression, data))
+            // Renderovat viditelné elementy seřazené podle ZIndex
+            foreach (var el in placed.Source.Elements
+                .Where(e => ExpressionEvaluator.IsVisible(e.VisibilityExpression, placed.Data))
                 .OrderBy(e => e.ZIndex))
             {
                 el.Render(ctx);
             }
 
             canvas.Restore();
-            currentY += sectionH;
 
             // Jemná čára mezi sekcemi (orientační pomůcka)
-            using var sep = new SKPaint { Color = ClrSectionSep, StrokeWidth = 0.5f };
-            canvas.DrawLine(ox, currentY, ox + contentW, currentY, sep);
+            if (i < sortedSections.Count - 1)
+            {
+                using var sep = new SKPaint { Color = ClrSectionSep, StrokeWidth = 0.5f };
+                float sepY = sectionTopPx + sectionHeightPx;
+                canvas.DrawLine(ox, sepY, ox + contentW, sepY, sep);
+            }
         }
     }
 }

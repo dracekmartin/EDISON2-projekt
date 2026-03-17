@@ -49,7 +49,13 @@ TemplateDesigner/
 /Designer
   DesignerState.cs          — stav designeru (výběr, zoom, undo stack)
   DesignerCanvas.cs         — myš, klávesnice, hit testing, render
-  PreviewCanvas.cs          — render šablony bez chrome (live preview); fit-to-width zoom; mock DataContext
+  PreviewCanvas.cs          — render šablony bez chrome (live preview); používá PageLayoutEngine pro multi-page layout
+
+/Models/Layout
+  LayoutResult.cs           — výstupní struktury: LayoutResult, Page, PlacedSection
+  IElementHeightCalculator.cs — interface pro měření výšky dynamických elementů (decoupling od SkiaSharp)
+  PageLayoutEngine.cs       — hlavní layout algoritmus: Template + DataContext → List<Page>
+  SkiaHeightCalculator.cs   — implementace IElementHeightCalculator pomocí SkiaSharp
 
 /schemas
   *.schema.json             — schémata agend (offline fallback); kopírováno do output dir
@@ -106,7 +112,15 @@ ElementPropertiesWindow.xaml / .cs — dialog vlastností elementu/sekce
 | `DesignerState.cs` | `DesignerState` | Stav editoru: výběr, zoom, snap, grid, undo/redo stacky. `Execute(cmd)` volá command |
 | `DesignerCanvas.cs` | `DesignerCanvas` | Renderovací pipeline, hit testing (elementy, sekce, resize handles), výpočet souřadnic sekcí |
 | `DesignerCanvas.cs` | `ResizeHandle` (enum) | 8 resize handles: TopLeft, TopCenter, TopRight, MiddleLeft, MiddleRight, BottomLeft, BottomCenter, BottomRight |
-| `PreviewCanvas.cs` | `PreviewCanvas` | Live preview bez designer chrome, fit-to-width zoom, mock DataContext |
+| `PreviewCanvas.cs` | `PreviewCanvas` | Live preview bez designer chrome, používá PageLayoutEngine, multi-page rendering |
+
+### /Models/Layout
+| Soubor | Třída | Zodpovědnost |
+|---|---|---|
+| `LayoutResult.cs` | `LayoutResult`, `Page`, `PlacedSection` | Výstupní datové struktury layout enginu — co kam nakreslit |
+| `IElementHeightCalculator.cs` | `IElementHeightCalculator` | Interface pro měření výšky dynamických elementů (decoupling od SkiaSharp) |
+| `PageLayoutEngine.cs` | `PageLayoutEngine` | Hlavní algoritmus: klasifikace sekcí, výpočet výšek, stránkování, hlavičky/patičky, split, flow layout, PAGE/TOTAL_PAGES |
+| `SkiaHeightCalculator.cs` | `SkiaHeightCalculator` | Měření výšky TextElement (word wrap) a TableElement pomocí SkiaSharp |
 
 ---
 
@@ -313,4 +327,6 @@ Souřadnice elementů jsou **relativní k sekci** (ne ke stránce ani ke canvasu
 | VisibilityExpression | ❌ vždy zobrazí | ✅ filtruje |
 | DataContext | ❌ žádná data | ✅ mock data z agendy |
 | Zoom | fixní z `State.Zoom` | fit-to-width automaticky |
-| PDF export | ❌ | ✅ `RenderToPdf()` |
+| PDF export | ❌ | ✅ `RenderToPdf()` (multi-page) |
+| Layout engine | ❌ vlastní jednoprůchodový | ✅ `PageLayoutEngine` → `LayoutResult` |
+| Multi-page | ❌ | ✅ stránky pod sebou s mezerami |
