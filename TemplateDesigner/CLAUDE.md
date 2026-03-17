@@ -117,3 +117,4 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 Ruční reference:
 - `.claude/docs/changelog.md` — kompletní changelog
 - `.claude/docs/roadmap.md` — plná roadmapa s detaily
+- `.claude/docs/schedule-elements-architecture.md` — architektura specializovaných JŘ elementů (Caché wire formát, hierarchie elementů, matice zodpovědností)

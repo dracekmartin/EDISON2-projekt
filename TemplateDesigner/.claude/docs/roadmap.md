@@ -1,15 +1,29 @@
 # Roadmap
 
-## 📋 Roadmap (obecný tiskový engine)
-
-Cíl: systém schopný pokrýt libovolnou tiskovou sestavu, nezávisle na JR agendě.
-Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
+## 📋 Roadmap
 
 ---
 
-### 🔴 Kritické
+### 🔴 Kritické — Specializované JŘ elementy
 
-*(žádné aktivní)*
+> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
+
+**Primární architektonická změna** — přidání specializovaných elementů pro tisk jízdních řádů. Nový princip: Caché vrací čistá data + business logiku (JSON), specializované C# elementy (`ScheduleElementBase` → `StopScheduleElement`, `DepartureGridElement`, `BookScheduleElement`, `VehicleScheduleElement`) mají vlastní nastavení a komplexní renderovací logiku. PageLayoutEngine zůstává generický beze změn.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) | |
+| 2 | `StopScheduleElement` — zastávkový JŘ, mód "FullTime" (meziměsto) | |
+| 3 | Caché `GetData`/`GetMockData` — nový wire formát (ZASTAVKY, SPOJE, ODJEZDY, POZNAMKY) | |
+| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů | |
+| 5 | `StopScheduleElement` — mód "MinutesOnly" (MHD) | |
+| 6 | `DepartureGridElement` (pokud MHD potřebuje samostatný element) | |
+| 7 | `BookScheduleElement` — knižní JŘ (layout TBD) | |
+| 8 | `VehicleScheduleElement` — vozový JŘ (layout TBD) | |
+
+---
+
+### 🟡 Důležité — omezení flexibility bez toho
 
 ---
 
