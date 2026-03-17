@@ -26,11 +26,21 @@ public class TextElement : TemplateElement
 
     public bool WordWrap { get; set; } = true;
 
+    /// <summary>Řádkování jako násobek velikosti fontu (1.2 = 20% navíc). Použije se při WordWrap = true.</summary>
+    public float LineSpacing { get; set; } = 1.2f;
+
     [JsonIgnore]
     public SKColor SkTextColor => SKColor.Parse(TextColor);
 
     [JsonIgnore]
     public SKColor SkBackgroundColor => SKColor.Parse(BackgroundColor);
+
+    /// <summary>
+    /// Když Height = null a WordWrap = true, výška se dopočítá z textu.
+    /// Print engine spočítá z reálných dat; designer z raw textu (s placeholdery).
+    /// </summary>
+    protected override float DesignerPlaceholderHeight =>
+        WordWrap ? CalculateTextHeight(Text) : 8f;
 
     public override void Render(RenderContext ctx)
     {
@@ -38,7 +48,9 @@ public class TextElement : TemplateElement
         var resolvedText = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
         if (string.IsNullOrEmpty(resolvedText)) return;
 
-        var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+        // Dynamická výška: Height ?? dopočítaná z textu (pokud WordWrap)
+        float heightMm = Height ?? (WordWrap ? CalculateTextHeight(resolvedText) : EffectiveDesignerHeight);
+        var rect = ctx.ToCanvasRect(X, Y, Width, heightMm);
 
         // Pozadí (pokud není průhledné)
         if (SkBackgroundColor.Alpha > 0)
@@ -61,7 +73,41 @@ public class TextElement : TemplateElement
 
         ctx.Canvas.Save();
         ctx.Canvas.ClipRect(rect);
-        ctx.Canvas.DrawText(resolvedText, rect.Left + 1f, rect.Top + fontSizePx, font, paint);
+
+        if (WordWrap)
+        {
+            float widthPx = ctx.Px(Width);
+            var lines = WrapText(resolvedText, font, widthPx);
+            float lineHeightPx = fontSizePx * LineSpacing;
+
+            // Vertikální zarovnání bloku řádků
+            float totalTextHeight = lines.Count * lineHeightPx;
+            float yStart = VerticalAlignment switch
+            {
+                TextVerticalAlignment.Middle => rect.Top + (rect.Height - totalTextHeight) / 2 + fontSizePx,
+                TextVerticalAlignment.Bottom => rect.Bottom - totalTextHeight + fontSizePx,
+                _ => rect.Top + fontSizePx
+            };
+
+            float yPx = yStart;
+            foreach (var line in lines)
+            {
+                float xPx = HorizontalAlignment switch
+                {
+                    TextHorizontalAlignment.Center => rect.Left + (widthPx - font.MeasureText(line)) / 2,
+                    TextHorizontalAlignment.Right => rect.Right - font.MeasureText(line),
+                    _ => rect.Left + 1f
+                };
+                ctx.Canvas.DrawText(line, xPx, yPx, font, paint);
+                yPx += lineHeightPx;
+            }
+        }
+        else
+        {
+            // Jednořádkový režim — původní chování
+            ctx.Canvas.DrawText(resolvedText, rect.Left + 1f, rect.Top + fontSizePx, font, paint);
+        }
+
         ctx.Canvas.Restore();
     }
 
@@ -76,6 +122,7 @@ public class TextElement : TemplateElement
         new EnumPropertyDescriptor   { Label = "Styl",          Group = "Font",      Get = () => FontStyle,           Set = v => FontStyle = (TextFontStyle)v,
             Options = [("Normální", (object)TextFontStyle.Normal), ("Kurzíva", (object)TextFontStyle.Italic)] },
         new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,            Set = v => WordWrap = v },
+        new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => LineSpacing,         Set = v => LineSpacing = v,                            Min = 0.8f, Max = 3f, Format = "0.0#" },
 
         new EnumPropertyDescriptor   { Label = "Vodorovně",     Group = "Zarovnání", Get = () => HorizontalAlignment, Set = v => HorizontalAlignment = (TextHorizontalAlignment)v,
             Options = [("Vlevo", (object)TextHorizontalAlignment.Left), ("Na střed", (object)TextHorizontalAlignment.Center),
@@ -105,8 +152,78 @@ public class TextElement : TemplateElement
         VerticalAlignment = VerticalAlignment,
         TextColor = TextColor,
         BackgroundColor = BackgroundColor,
-        WordWrap = WordWrap
+        WordWrap = WordWrap,
+        LineSpacing = LineSpacing
     };
+
+    // ── Word wrap helpers ────────────────────────────────────────────────────
+
+    /// <summary>Vypočítá výšku textu v mm při zalamování do dané šířky.</summary>
+    private float CalculateTextHeight(string text)
+    {
+        if (string.IsNullOrEmpty(text) || Width <= 0) return 8f;
+
+        var typeface = SKTypeface.FromFamilyName(
+            FontFamily,
+            FontWeight == TextFontWeight.Bold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal,
+            SKFontStyleWidth.Normal,
+            FontStyle == TextFontStyle.Italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright)
+            ?? SKTypeface.Default;
+
+        float fontSizeMm = FontSize * 0.3528f;
+        float refMmToPx = 96f / 25.4f;
+        float fontSizePx = fontSizeMm * refMmToPx;
+        float widthPx = Width * refMmToPx;
+
+        using var font = new SKFont(typeface, fontSizePx);
+        var lines = WrapText(text, font, widthPx);
+        float lineHeightMm = fontSizeMm * LineSpacing;
+
+        return Math.Max(lineHeightMm * lines.Count + fontSizeMm * 0.3f, fontSizeMm);
+    }
+
+    /// <summary>Rozdělí text na řádky podle šířky v px. Respektuje \r\n i \n.</summary>
+    private static List<string> WrapText(string text, SKFont font, float maxWidthPx)
+    {
+        var result = new List<string>();
+
+        // Normalizace řádkových zlomů — WPF TextBox posílá \r\n
+        var paragraphs = text.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
+        foreach (var paragraph in paragraphs)
+        {
+            if (string.IsNullOrEmpty(paragraph))
+            {
+                result.Add("");
+                continue;
+            }
+
+            var words = paragraph.Split(' ');
+            var currentLine = "";
+
+            foreach (var word in words)
+            {
+                var testLine = currentLine.Length == 0 ? word : currentLine + " " + word;
+
+                if (font.MeasureText(testLine) > maxWidthPx && currentLine.Length > 0)
+                {
+                    result.Add(currentLine);
+                    currentLine = word;
+                }
+                else
+                {
+                    currentLine = testLine;
+                }
+            }
+
+            if (currentLine.Length > 0)
+                result.Add(currentLine);
+        }
+
+        if (result.Count == 0)
+            result.Add("");
+
+        return result;
+    }
 }
 
 public enum TextFontStyle { Normal, Italic }
