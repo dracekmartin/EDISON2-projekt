@@ -14,11 +14,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-12
+**Datum poslední aktualizace:** 2026-03-17
 
 ### 🎯 Aktuální focus
 
-*(žádný konkrétní — CultureInfo v šabloně dokončen, viz roadmap pro další možnosti)*
+*(žádný konkrétní — flow text v designeru dokončen, viz roadmap pro další možnosti)*
 
 ### ✅ Co máme
 
@@ -34,6 +34,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Drag & drop databázových polí z panelu "Pole agendy" na canvas — vytvoří TextElement s `{POLE}`, nebo připojí placeholder k existujícímu TextElementu
 - Drag & drop řazení sekcí v levém panelu — přetažením místo tlačítek ▲▼, vizuální indikátor pozice
 - Locale / CultureInfo v šabloně — `Template.CultureCode` (cs-CZ, sk-SK, en-US, de-DE); formátování čísel a datumů nezávislé na systémovém nastavení Windows
+- Word wrap + dynamická výška TextElementu — `WordWrap=true` + `Height=null` → text se zalamuje a výška se dopočítá z obsahu; `LineSpacing` property; designer-side předpoklad pro flow layout v Print Enginu
 
 ### 🐛 Známé problémy
 

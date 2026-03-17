@@ -15,11 +15,10 @@ Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
 
 ### 🟡 Důležité — omezení flexibility bez toho
 
-**1. Flow layout sekcí (InfiniteTextElement)**
-Absolutní pozicování se rozbije jakmile element přeteče svou výšku.
-- `InfiniteTextElement` — textový blok roztahující se podle obsahu (výška null)
-- Sekce s `OverflowBehavior=SplitAcrossPages` musí posouvat elementy pod přetečeným
-- Print engine počítá výšku sekce z obsahu, ne z `DesignerHeight`
+**~~1. Flow layout sekcí~~** ✅ designer-side hotovo (2026-03-17)
+TextElement s `WordWrap=true` + `Height=null` → dynamická výška dopočítaná z textu. Designer zobrazuje aproximaci.
+- ~~`InfiniteTextElement`~~ → zamítnuto; flow řízeno properties na TextElementu
+- Zbývá **Print Engine**: posouvání elementů pod dynamickým, stránkování sekcí s `OverflowBehavior=SplitAcrossPages`, výpočet výšky sekce z obsahu
 
 **~~2. Locale / CultureInfo v šabloně~~** ✅ hotovo (2026-03-12)
 
@@ -72,6 +71,12 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 ---
 
 ### ✅ Implementováno
+
+**Flow text v designeru (Word wrap + dynamická výška)** ✅ hotovo (2026-03-17)
+- TextElement: `WordWrap=true` + `Height=null` → text se zalamuje, výška se dopočítá z obsahu
+- `LineSpacing` property, vertikální zarovnání víceřádkového textu, fix `\r\n`
+- InfiniteTextElement jako samostatný typ zamítnut — jedno chování řízené properties
+- Zbývá engine-side: posouvání elementů pod dynamickým, stránkování
 
 **Locale / CultureInfo v šabloně** ✅ hotovo (2026-03-12)
 - `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)

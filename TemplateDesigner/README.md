@@ -66,7 +66,7 @@ Uvnitř sekce lze volně umísťovat elementy — text, obdélník, čáru, obr�
 
 | Typ | Editovatelné vlastnosti |
 |---|---|
-| Text | Text, font, velikost, styl, zarovnání, barva textu/pozadí, zalamování |
+| Text | Text, font, velikost, styl, zarovnání, barva textu/pozadí, zalamování, řádkování; dynamická výška (Height=null + WordWrap) |
 | Obdélník | Barva výplně, barva okraje, tloušťka okraje, zaoblení rohů |
 | Čára | Orientace, barva, tloušťka, styl (plná/čárkovaná/tečkovaná) |
 | Obrázek | Datové pole, škálování |

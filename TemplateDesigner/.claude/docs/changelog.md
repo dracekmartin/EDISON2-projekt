@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-03-17 — Word wrap + dynamická výška TextElementu
+
+- ✅ **Word wrap v rendereru** — TextElement s `WordWrap=true` nyní skutečně zalamuje text do řádků podle šířky elementu (dříve jen ořezával na jednu řádku)
+- ✅ **Dynamická výška** — `Height=null` + `WordWrap=true` → výška se dopočítá z textu; designer zobrazí aproximaci, print engine spočítá z reálných dat
+- ✅ **LineSpacing** — nová property (výchozí 1.2×), editovatelná v panelu vlastností
+- ✅ **Vertikální zarovnání** pro víceřádkový text (Top/Middle/Bottom)
+- ✅ **Fix `\r\n`** — normalizace řádkových zlomů z WPF TextBoxu (dříve zobrazoval čtverečky)
+- ✅ Rozhodnutí: InfiniteTextElement jako samostatný typ zamítnut — flow chování řízeno properties na existujícím TextElementu (`WordWrap` + `Height=null`)
+
+---
+
 ## 2026-03-12 — Locale / CultureInfo v šabloně + fix drag & drop polí
 
 - ✅ **CultureInfo v šabloně** — nová property `Template.CultureCode` (cs-CZ, sk-SK, en-US, de-DE); formátování čísel a datumů v preview i tisku je nezávislé na systémovém nastavení Windows
