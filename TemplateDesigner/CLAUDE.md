@@ -6,7 +6,7 @@
 Náhrada staršího nástroje postaveného v InterSystems Caché/Globals.
 Při navrhování nových featur, bez v potaz, že v budoucnu by mohl být nástroj, alespoň částečně, ovládán pomocí AI.Dobre
 
-Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. Print Engine** (budoucí) — šablona + data = PDF.
+Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. Print Engine** (integrovaný) — šablona + data = PDF.
 
 ---
 
@@ -18,7 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-*(žádný konkrétní — flow text v designeru dokončen, viz roadmap pro další možnosti)*
+*(žádný konkrétní — PageLayoutEngine dokončen, viz roadmap pro další možnosti)*
 
 ### ✅ Co máme
 
@@ -34,7 +34,10 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Drag & drop databázových polí z panelu "Pole agendy" na canvas — vytvoří TextElement s `{POLE}`, nebo připojí placeholder k existujícímu TextElementu
 - Drag & drop řazení sekcí v levém panelu — přetažením místo tlačítek ▲▼, vizuální indikátor pozice
 - Locale / CultureInfo v šabloně — `Template.CultureCode` (cs-CZ, sk-SK, en-US, de-DE); formátování čísel a datumů nezávislé na systémovém nastavení Windows
-- Word wrap + dynamická výška TextElementu — `WordWrap=true` + `Height=null` → text se zalamuje a výška se dopočítá z obsahu; `LineSpacing` property; designer-side předpoklad pro flow layout v Print Enginu
+- Word wrap + dynamická výška TextElementu — `WordWrap=true` + `Height=null` → text se zalamuje a výška se dopočítá z obsahu; `LineSpacing` property
+- **PageLayoutEngine** — čistý logický engine (vrstva 3): Template + DataContext → `List<Page>` s PlacedSections; multi-page stránkování, hlavičky/patičky (OnEveryPage, OnFirstPageOnly, OnLastPageOnly, OnEveryPageExceptFirst), SplitAcrossPages, PerDataRow expanze, flow layout uvnitř sekcí, PAGE/TOTAL_PAGES injekce, dvouprůchodový layout pro OnLastPageOnly
+- Multi-page preview — PreviewCanvas zobrazuje všechny stránky pod sebou se stíny a rámečky
+- Multi-page PDF export — každá stránka LayoutResult = jedna stránka PDF
 
 ### 🐛 Známé problémy
 
@@ -70,11 +73,31 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ---
 
+## Architektura — vrstvy systému
+
+```
+5. Aplikace         WPF Designer, EDISON tisk, Server API, CLI batch
+4. Renderer         SkiaSharp → WPF canvas / PDF soubor
+3. PageLayoutEngine Section repeating, flow layout, page breaking (žádné UI/SkiaSharp)
+2. Expressions      ExpressionEvaluator, PlaceholderFormatter, AggregationResolver
+1. Models           Template, Section, TemplateElement, DataContext, DataSchema
+```
+
+**Klíčové hranice:** `PageLayoutEngine` (vrstva 3) nezná SkiaSharp — vstup: `Template + DataContext`, výstup: `List<Page>`.
+`PageRenderer` (vrstva 4) nezná WPF — kreslí na `SKCanvas`. Díky tomu jde systém rozdělit:
+
+- **TemplateDesigner** = vrstvy 1–5 (vše pohromadě, jeden .csproj)
+- **EDISON tisk** = vrstvy 1–4 (bez WPF designeru, headless PDF)
+- **Server/API** = vrstvy 1–4 (HTTP endpoint: šablona + data → PDF)
+
+Preview v designeru = plný engine s mock daty. "Tisk" = tentýž engine s reálnými daty → PDF.
+
+---
+
 ## Co projekt není
 
 - Není to WYSIWYG Word/Excel editor
 - Sekce jsou povinné — ne free-form canvas bez struktury
-- Print engine (krok 2) je **samostatný projekt** — designer pouze ukládá JSON šablony
 - V1 nepodporuje import starých šablon z InterSystems Globals
 
 ---

@@ -268,9 +268,9 @@ public partial class MainWindow : Window
 
     private void UpdatePreviewSize()
     {
-        if (BtnPreview?.IsChecked != true || _previewCanvas is null) return;
+        if (BtnPreview?.IsChecked != true || _previewCanvas is null || _vm is null) return;
         skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom) + 40f;
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom, _vm.BuildPreviewMockData()) + 40f;
     }
 
     private void InvalidatePreview()

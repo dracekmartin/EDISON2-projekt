@@ -122,14 +122,131 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 
 ---
 
-## 🖨️ Print Engine (fáze 2) — samostatný projekt
+## 🖨️ PageLayoutEngine + stránkovaný preview (fáze 2)
 
-Věci které patří do print enginu, nikoliv do designeru.
+Preview v designeru = plný engine. "Tisk" = ten samý engine s reálnými daty → PDF.
+Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v TemplateDesigneru, ne samostatný projekt. Oddělení do samostatných .csproj se udělá až bude druhý konzument.
 
-- **Print dialog** — dynamicky generovaný ze šablony (`Template.Parameters`); stejný UI pattern jako live preview panel v designeru (CheckBox/ComboBox/TextBox); hodnoty předány enginu před tiskem
-- **Renderování šablony** — načtení JSON šablony + DataContext z Caché → PDF výstup
-- **Flow layout** — sekce s `OverflowBehavior=SplitAcrossPages`, dynamické výšky elementů
-- **VisibilityExpression vyhodnocení** — filtrování sekcí a elementů za běhu dle dat
+### Vrstvy systému
+
+```
+5. Aplikace         WPF Designer, EDISON tisk, Server API, CLI batch
+4. Renderer         element.Render(ctx) → SKCanvas / PDF (SkiaSharp, žádné WPF)
+3. PageLayoutEngine Template + DataContext → List<Page> (žádný SkiaSharp, žádné UI)
+2. Expressions      ExpressionEvaluator, PlaceholderFormatter, AggregationResolver
+1. Models           Template, Section, TemplateElement, DataContext, DataSchema
+```
+
+### PageLayoutEngine — vstup/výstup
+
+```csharp
+class PageLayoutEngine {
+    List<Page> Layout(Template template, DataContext data);
+}
+class Page {
+    int PageNumber, TotalPages;
+    List<PageElement> Elements;  // absolutní pozice na stránce (mm)
+}
+class PageElement {
+    TemplateElement Element;
+    float X, Y, Width, Height;  // finální rozměry (Height dopočítaná)
+    DataContext? RowData;         // pro Dynamic tabulky: konkrétní řádek
+}
+```
+
+### Implementační kroky
+
+| Krok | Co | Náročnost |
+|---|---|---|
+| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | střední |
+| 2 | Stránkovaný preview — navigace stran (← strana 1/3 →), page break vizualizace | střední |
+| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | vyšší |
+| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky | vyšší |
+| 5 | Napojení reálných dat z Caché (`GetData`) do preview | nízká |
+| 6 | Print dialog — parametry před tiskem (rozšíření stávajícího preview panelu) | střední |
+
+Kroky 1–2 jsou užitečné i bez flow layoutu — uživatel uvidí jak se sekce opakují na stránkách.
+
+### Budoucí modularizace (až bude potřeba)
+
+```
+TemplateDesigner.Core.csproj      ← vrstvy 1+2+3 (žádný SkiaSharp, žádné WPF)
+TemplateDesigner.Rendering.csproj ← vrstva 4 (SkiaSharp, žádné WPF)
+TemplateDesigner.csproj           ← vrstva 5 WPF Designer
+Edison.PrintService.csproj        ← vrstva 5 headless tisk z EDISONu
+```
+
+### Use cases díky oddělitelnosti
+
+| Use case | Vrstvy | Popis |
+|---|---|---|
+| WPF Designer + preview | 1–5 | Aktuální aplikace |
+| Tisk z EDISONu | 1–4 | Print dialog → GetData → engine → PDF |
+| Batch tisk | 1–4 | Noční job: 200 faktur → 200 PDF |
+| PDF jako služba | 1–4 | EDISON interně: dej PDF pro fakturu #123 |
+| REST API | 1–4 | HTTP POST šablona + data → PDF response |
+| Web preview | 1–4 | ASP.NET endpoint → PNG/PDF → iframe |
+| Email příloha | 1–4 | Auto-generování PDF a připojení k emailu |
+
+---
+
+## 🤖 AI integrace — vize a plán
+
+Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď není potřeba.** JSON šablona + DataSchema jsou dostatečné rozhraní pro AI. Rozšíření se dá přidat kdykoliv později bez breaking changes.
+
+**Princip:** AI = copilot, ne autopilot. Vždy navrhne → uživatel potvrdí/upraví.
+
+### Aktuální stav
+- ✅ AI Assistant — generování celé šablony z textového popisu (Claude API, prompt-based)
+- ✅ Schema injection — AI dostane seznam polí/kolekcí/parametrů agendy
+
+### Fáze 1 — prompt-based (stačí teď)
+
+Pro většinu use cases stačí dát AI kontext přes systémový prompt (JSON šablona + schema):
+
+| Use case | Přístup |
+|---|---|
+| Generování šablony z popisu | ✅ hotovo |
+| Vysvětlení šablony ("co dělá tato sekce?") | prompt + aktuální JSON |
+| Nápověda k výrazům ("jak skrýt řádek?") | prompt + docs |
+| Template linting / validace | prompt + JSON + schema |
+| PDF import režim 2 ("zchytři to") | prompt + importovaný JSON + schema |
+
+### Fáze 2 — MCP server (až budou reální uživatelé s potřebou AI asistence)
+
+Pro operace měnící stav aplikace (úpravy šablony hlasem/textem, smart suggestions) by TemplateDesigner vystavil MCP server:
+
+```
+MCP Tools:
+├── get_template()                  → aktuální JSON šablona
+├── get_schema(agendaCode)          → DataSchema dané agendy
+├── get_available_agendas()         → seznam agend
+├── get_mock_data(agendaCode)       → vzorová data
+├── apply_template(json)            → nahradí šablonu (s undo)
+├── add_element(sectionId, element) → přidá element (s undo)
+├── modify_element(elementId, props)→ změní properties (s undo)
+├── add_section(preset, index)      → přidá sekci
+├── validate_template()             → vrátí seznam problémů
+└── get_help(topic)                 → dokumentace k funkci
+```
+
+MCP je tenká vrstva nad ViewModelem — každý tool volá existující metody (`_vm.Execute(command)`).
+Standardní protokol (stdio, lokální) — funguje s Claude i jinými AI, žádný vlastní server.
+
+### Fáze 3 — pokročilé use cases (dlouhodobě)
+
+| Use case | Kategorie | Popis |
+|---|---|---|
+| Onboarding průvodce | Noví uživatelé | AI popíše co nástroj umí, navede uživatele krok za krokem |
+| "Přidej patičku s číslem stránky" | Zkušení uživatelé | AI modifikuje existující šablonu (ne generuje od nuly) |
+| Smart suggestions | Zkušení uživatelé | Přidáš TableElement → AI navrhne sloupce z DataSchema |
+| Migrace starých Caché sestav | Automatizace | AI analyzuje starý kód → navrhne TemplateDesigner šablonu |
+| Template linting v CI/CD | Automatizace | AI zkontroluje šablony před deployem |
+| Batch generování šablon | Automatizace | Nová agenda → AI vygeneruje základní šablony |
+
+### Proč to neblokuje
+
+JSON šablona je stabilní kontrakt mezi designerem a AI. Dokud AI umí číst a psát JSON v definovaném formátu, integrace funguje bez ohledu na to, jestli je to prompt, MCP, nebo REST API. Rozšíření se dá přidat kdykoliv bez refactoringu.
 
 ---
 
