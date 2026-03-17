@@ -533,6 +533,20 @@ public partial class MainWindow : Window
     private void MenuSaveAs_Click(object sender, RoutedEventArgs e)    => _vm!.SaveAsCommand.Execute(null);
     private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
 
+    private void MenuPrint_Click(object sender, RoutedEventArgs e)
+    {
+        var vm = new PrintDialogViewModel(
+            _vm!.State.CurrentTemplate,
+            _vm.AgendaParameters,
+            paramValues => _vm.BuildPreviewMockData(paramValues));
+
+        vm.RequestRenderPdf = (filePath, data) =>
+            _previewCanvas!.RenderToPdf(filePath, data);
+
+        var dlg = new PrintDialog(vm) { Owner = this };
+        dlg.ShowDialog();
+    }
+
     private void MenuExit_Click(object sender, RoutedEventArgs e)
     {
         if (_vm!.ConfirmUnsavedChanges()) Application.Current.Shutdown();
@@ -947,6 +961,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             OpenPropertiesForPage(_vm.State.CurrentTemplate);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.P && ctrl)
+        {
+            MenuPrint_Click(this, new RoutedEventArgs());
             e.Handled = true;
         }
         else if (e.Key == Key.PageUp && ctrl)

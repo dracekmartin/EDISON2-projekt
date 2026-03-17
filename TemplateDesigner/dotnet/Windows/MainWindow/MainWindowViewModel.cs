@@ -47,6 +47,9 @@ public class TemplateDesignerViewModel : EDViewModel
     private Dictionary<string,object?>?         _cachedParamValues;
     private string?                             _lastParamsAgendaCode;
 
+    /// <summary>Parametry agendy pro PrintDialog.</summary>
+    public IReadOnlyList<TemplateParameter> AgendaParameters => _agendaParameters;
+
     // ── Clipboard ─────────────────────────────────────────────────────────────
     private List<TemplateElement> _clipboard = [];
 
@@ -883,7 +886,12 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Preview mock data (called by code-behind preview renderer) ────────────
-    public DataContext? BuildPreviewMockData()
+
+    /// <summary>
+    /// Sestaví mock DataContext pro preview. Volitelný parametr overrideParams
+    /// nahrazuje interní _previewParams (pro PrintDialog).
+    /// </summary>
+    public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
     {
         var agendaCode = State.CurrentTemplate.AgendaCode;
         var culture = GetTemplateCulture();
@@ -920,16 +928,27 @@ public class TemplateDesignerViewModel : EDViewModel
             }
         }
 
-        if (_previewParams.Count > 0)
+        // Použij overrideParams (z PrintDialogu) nebo interní _previewParams
+        var paramValues = overrideParams;
+        if (paramValues is null && _previewParams.Count > 0)
         {
             _cachedParamValues ??= _previewParams.ToDictionary(
                 kv => kv.Key,
                 kv => (object?)kv.Value?.ToString(),
                 StringComparer.OrdinalIgnoreCase);
+            paramValues = _cachedParamValues;
+        }
+
+        if (paramValues is { Count: > 0 })
+        {
+            var stringParams = paramValues.ToDictionary(
+                kv => kv.Key,
+                kv => (object?)kv.Value?.ToString(),
+                StringComparer.OrdinalIgnoreCase);
 
             mockData = mockData is not null
-                ? mockData.WithExtraValues(_cachedParamValues)
-                : new DataContext(_cachedParamValues, culture: culture);
+                ? mockData.WithExtraValues(stringParams)
+                : new DataContext(stringParams, culture: culture);
         }
 
         return mockData;

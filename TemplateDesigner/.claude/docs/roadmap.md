@@ -15,10 +15,9 @@ Specifické JR elementy (JRTableElement apod.) jsou mimo scope tohoto dokumentu.
 
 ### 🟡 Důležité — omezení flexibility bez toho
 
-**~~1. Flow layout sekcí~~** ✅ designer-side hotovo (2026-03-17)
-TextElement s `WordWrap=true` + `Height=null` → dynamická výška dopočítaná z textu. Designer zobrazuje aproximaci.
+**~~1. Flow layout sekcí~~** ✅ kompletně hotovo (2026-03-17)
+TextElement s `WordWrap=true` + `Height=null` → dynamická výška dopočítaná z textu. PageLayoutEngine: flow layout uvnitř sekcí (dynamické elementy posouvají obsah pod sebou), stránkování sekcí s `SplitAcrossPages`, výpočet výšky sekce z obsahu.
 - ~~`InfiniteTextElement`~~ → zamítnuto; flow řízeno properties na TextElementu
-- Zbývá **Print Engine**: posouvání elementů pod dynamickým, stránkování sekcí s `OverflowBehavior=SplitAcrossPages`, výpočet výšky sekce z obsahu
 
 **~~2. Locale / CultureInfo v šabloně~~** ✅ hotovo (2026-03-12)
 
@@ -72,11 +71,17 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 
 ### ✅ Implementováno
 
+**PageLayoutEngine + multi-page** ✅ hotovo (2026-03-17)
+- Template + DataContext → `List<Page>` s PlacedSections; čistá logika (vrstva 3), žádný SkiaSharp/WPF
+- Klasifikace sekcí (headers/footers/body), stránkování (KeepTogether/SplitAcrossPages), dvouprůchodový layout pro OnLastPageOnly
+- Flow layout uvnitř sekcí, PerDataRow expanze, PAGE/TOTAL_PAGES injekce
+- Multi-page preview (stránky pod sebou) + multi-page PDF export
+- IElementHeightCalculator: SkiaHeightCalculator měří TextElement (word wrap) a TableElement
+
 **Flow text v designeru (Word wrap + dynamická výška)** ✅ hotovo (2026-03-17)
 - TextElement: `WordWrap=true` + `Height=null` → text se zalamuje, výška se dopočítá z obsahu
 - `LineSpacing` property, vertikální zarovnání víceřádkového textu, fix `\r\n`
 - InfiniteTextElement jako samostatný typ zamítnut — jedno chování řízené properties
-- Zbývá engine-side: posouvání elementů pod dynamickým, stránkování
 
 **Locale / CultureInfo v šabloně** ✅ hotovo (2026-03-12)
 - `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)
@@ -122,7 +127,7 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 
 ---
 
-## 🖨️ PageLayoutEngine + stránkovaný preview (fáze 2)
+## 🖨️ PageLayoutEngine + stránkovaný preview (fáze 2) ✅ hotovo (2026-03-17)
 
 Preview v designeru = plný engine. "Tisk" = ten samý engine s reálnými daty → PDF.
 Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v TemplateDesigneru, ne samostatný projekt. Oddělení do samostatných .csproj se udělá až bude druhý konzument.
@@ -137,35 +142,40 @@ Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v Template
 1. Models           Template, Section, TemplateElement, DataContext, DataSchema
 ```
 
-### PageLayoutEngine — vstup/výstup
+### PageLayoutEngine — vstup/výstup ✅
 
 ```csharp
 class PageLayoutEngine {
-    List<Page> Layout(Template template, DataContext data);
+    LayoutResult Layout(Template template, DataContext? data);
 }
-class Page {
-    int PageNumber, TotalPages;
-    List<PageElement> Elements;  // absolutní pozice na stránce (mm)
-}
-class PageElement {
-    TemplateElement Element;
-    float X, Y, Width, Height;  // finální rozměry (Height dopočítaná)
-    DataContext? RowData;         // pro Dynamic tabulky: konkrétní řádek
+class LayoutResult { List<Page> Pages; int TotalPages; }
+class Page { int PageNumber; List<PlacedSection> Sections; }
+class PlacedSection {
+    Section Source;        // odkaz na originální sekci
+    float Y, Height;      // absolutní pozice na stránce (mm)
+    float? ClipTop, ClipBottom;  // ořez pro SplitAcrossPages
+    DataContext? Data;     // obohacená o PAGE/TOTAL_PAGES
 }
 ```
 
-### Implementační kroky
+### Implementační kroky ✅ vše hotovo
+
+| Krok | Co | Stav |
+|---|---|---|
+| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | ✅ |
+| 2 | Stránkovaný preview — multi-page pod sebou se stíny a rámečky | ✅ |
+| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | ✅ |
+| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky (ClipTop/ClipBottom) | ✅ |
+| 5 | PerDataRow expanze — sekce se opakuje pro každý řádek dat | ✅ |
+| 6 | PAGE/TOTAL_PAGES injekce + VisibilityExpression per stránku | ✅ |
+| 7 | Multi-page PDF export — každá stránka = jedna PDF stránka | ✅ |
+
+### Zbývající kroky (budoucí)
 
 | Krok | Co | Náročnost |
 |---|---|---|
-| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | střední |
-| 2 | Stránkovaný preview — navigace stran (← strana 1/3 →), page break vizualizace | střední |
-| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | vyšší |
-| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky | vyšší |
-| 5 | Napojení reálných dat z Caché (`GetData`) do preview | nízká |
-| 6 | Print dialog — parametry před tiskem (rozšíření stávajícího preview panelu) | střední |
-
-Kroky 1–2 jsou užitečné i bez flow layoutu — uživatel uvidí jak se sekce opakují na stránkách.
+| 8 | Napojení reálných dat z Caché (`GetData`) do preview | nízká |
+| 9 | Print dialog — parametry před tiskem (rozšíření stávajícího preview panelu) | střední |
 
 ### Budoucí modularizace (až bude potřeba)
 
