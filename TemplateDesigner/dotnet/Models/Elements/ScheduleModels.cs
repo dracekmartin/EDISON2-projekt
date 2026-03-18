@@ -85,6 +85,25 @@ public class PoznamkaData
     public string Text { get; set; } = "";
 }
 
+/// <summary>Konfigurovatelný sloupec tabulky zastávek (StopListElement).</summary>
+public class StopColumn
+{
+    public string Key { get; set; } = "";
+    public string Header { get; set; } = "";
+    public float Width { get; set; } = 10f;
+    public bool Visible { get; set; } = true;
+    public TextHorizontalAlignment Alignment { get; set; } = TextHorizontalAlignment.Left;
+
+    public StopColumn Clone() => new()
+    {
+        Key = Key,
+        Header = Header,
+        Width = Width,
+        Visible = Visible,
+        Alignment = Alignment
+    };
+}
+
 /// <summary>Barevné pravidlo vyhodnocované přes ExpressionEvaluator.</summary>
 public class ColorRule
 {

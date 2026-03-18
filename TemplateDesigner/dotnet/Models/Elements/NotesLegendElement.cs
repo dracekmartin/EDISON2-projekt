@@ -13,6 +13,8 @@ public class NotesLegendElement : ScheduleElementBase
     // ═══════════════════════════════════════════
     // Vizuální vlastnosti
     // ═══════════════════════════════════════════
+    public string HeaderText { get; set; } = "Poznámky";
+    public string NoteSeparator { get; set; } = " — ";
     public float NoteFontSize { get; set; } = 7f;
     public float NoteLineHeight { get; set; } = 4f;
 
@@ -55,8 +57,8 @@ public class NotesLegendElement : ScheduleElementBase
         using var boldFont = new SKFont(
             SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), noteFontPx);
 
-        // Záhlaví "Poznámky"
-        float currentY = RenderSectionHeader(ctx, "Poznámky",
+        // Záhlaví
+        float currentY = RenderSectionHeader(ctx, HeaderText,
             X, Y, Width, headerH, headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
 
         if (!hasData)
@@ -92,7 +94,7 @@ public class NotesLegendElement : ScheduleElementBase
 
                     default:
                         var pt = ctx.ToCanvas(lineX, currentY + NoteLineHeight * 0.75f);
-                        string displayText = pozn.Znak.Length > 0 ? $"{pozn.Znak} — {pozn.Text}" : pozn.Text;
+                        string displayText = pozn.Znak.Length > 0 ? $"{pozn.Znak}{NoteSeparator}{pozn.Text}" : pozn.Text;
                         ctx.Canvas.DrawText(displayText, pt.X, pt.Y, noteFont, paints.Text);
                         break;
                 }
@@ -156,8 +158,10 @@ public class NotesLegendElement : ScheduleElementBase
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new FloatPropertyDescriptor { Label = "Velikost písma pozn.", Group = "Poznámky", Get = () => NoteFontSize,     Set = v => NoteFontSize = v,     Min = 4, Max = 20, Unit = "pt" },
-        new FloatPropertyDescriptor { Label = "Výška řádku",         Group = "Poznámky", Get = () => NoteLineHeight,   Set = v => NoteLineHeight = v,   Min = 2, Max = 15, Unit = "mm" },
+        new StringPropertyDescriptor { Label = "Nadpis",               Group = "Poznámky", Get = () => HeaderText,       Set = v => HeaderText = v },
+        new StringPropertyDescriptor { Label = "Oddělovač",           Group = "Poznámky", Get = () => NoteSeparator,    Set = v => NoteSeparator = v },
+        new FloatPropertyDescriptor  { Label = "Velikost písma pozn.", Group = "Poznámky", Get = () => NoteFontSize,     Set = v => NoteFontSize = v,     Min = 4, Max = 20, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Poznámky", Get = () => NoteLineHeight,   Set = v => NoteLineHeight = v,   Min = 2, Max = 15, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Poznámky", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
         new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Poznámky", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
@@ -183,6 +187,8 @@ public class NotesLegendElement : ScheduleElementBase
             CustomProperties = CustomProperties is null ? null : new(CustomProperties),
             GroupId = GroupId,
 
+            HeaderText               = HeaderText,
+            NoteSeparator            = NoteSeparator,
             NoteFontSize             = NoteFontSize,
             NoteLineHeight           = NoteLineHeight,
             NegativniZnackaBackColor = NegativniZnackaBackColor,

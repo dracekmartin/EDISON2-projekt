@@ -11,26 +11,26 @@ namespace TemplateDesigner.Models.Elements;
 public class StopListElement : ScheduleElementBase
 {
     // ═══════════════════════════════════════════
-    // Sloupce
+    // Sloupce — konfigurovatelné pořadí, šířky, záhlaví
     // ═══════════════════════════════════════════
-    public bool ShowStopNameColumn { get; set; } = true;
-    public float StopNameColumnWidth { get; set; } = 50f;
-    public bool ShowStopIndentation { get; set; } = true;
-    public bool ShowTravelTimeColumn { get; set; } = true;
-    public float TravelTimeColumnWidth { get; set; } = 8f;
-    public bool ShowTcColumn { get; set; }
-    public float TcColumnWidth { get; set; } = 8f;
-    public bool ShowZoneColumn { get; set; }
-    public float ZoneColumnWidth { get; set; } = 12f;
-    public bool ShowRouteLettersColumn { get; set; }
-    public float RouteLettersColumnWidth { get; set; } = 8f;
-    public bool ShowBaseRouteColumn { get; set; }
-    public float BaseRouteColumnWidth { get; set; } = 6f;
-    public bool ShowSignalStopIndicator { get; set; } = true;
+    public List<StopColumn> Columns { get; set; } = GetDefaultColumns();
+
+    public static List<StopColumn> GetDefaultColumns() =>
+    [
+        new() { Key = "Tc",           Header = "TČ",       Width = 8f,  Visible = false },
+        new() { Key = "StopName",     Header = "Zastávka",  Width = 50f, Visible = true },
+        new() { Key = "TravelTime",   Header = "Čas",       Width = 8f,  Visible = true },
+        new() { Key = "Zone",         Header = "Zóna",      Width = 12f, Visible = false },
+        new() { Key = "RouteLetters", Header = "Trasa",     Width = 8f,  Visible = false },
+        new() { Key = "BaseRoute",    Header = "ZT",        Width = 6f,  Visible = false },
+    ];
 
     // ═══════════════════════════════════════════
-    // Atributy a poznámky u zastávek
+    // Zobrazení zastávek (nesouvisí se sloupci)
     // ═══════════════════════════════════════════
+    public bool ShowStopIndentation { get; set; } = true;
+    public bool ShowSignalStopIndicator { get; set; } = true;
+    public string SignalStopSymbol { get; set; } = "×";
     public bool ShowStopAttributes { get; set; } = true;
     public bool ShowStopNotes { get; set; } = true;
 
@@ -104,10 +104,11 @@ public class StopListElement : ScheduleElementBase
                     : new SKColor(0xFF222222);
                 paints.Text.Color = rowColor;
 
-                foreach (var (label, width) in columns)
+                foreach (var col in columns)
                 {
-                    string cellText = GetCellText(z, label);
-                    var pt = ctx.ToCanvas(colX + 1f, currentY + rowH * TextBaselineFactor);
+                    string cellText = GetCellText(z, col.Key);
+                    float textX = AlignTextX(col, colX, cellText, rowFont, ctx.MmToPx);
+                    var pt = ctx.ToCanvas(textX, currentY + rowH * TextBaselineFactor);
                     ctx.Canvas.DrawText(cellText, pt.X, pt.Y, rowFont, paints.Text);
 
                     if (isCurrent && CurrentStopUnderline && cellText.Length > 0)
@@ -117,7 +118,7 @@ public class StopListElement : ScheduleElementBase
                         ctx.Canvas.DrawLine(pt.X, pt.Y + 1, pt.X + textW, pt.Y + 1, ulPaint);
                     }
 
-                    colX += width;
+                    colX += col.Width;
                 }
 
                 var rowLineStart = ctx.ToCanvas(X, currentY + rowH);
@@ -137,18 +138,19 @@ public class StopListElement : ScheduleElementBase
 
     /// <summary>Vykreslí záhlaví sloupců tabulky zastávek.</summary>
     private float RenderColumnHeaders(
-        RenderContext ctx, List<(string Label, float Width)> columns,
+        RenderContext ctx, List<StopColumn> columns,
         float headerH, SKFont headerFont, SchedulePaints paints)
     {
         var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
         float colX = X;
-        foreach (var (label, width) in columns)
+        foreach (var col in columns)
         {
-            var pt = ctx.ToCanvas(colX + 1f, Y + headerH * HeaderBaselineFactor);
-            ctx.Canvas.DrawText(label, pt.X, pt.Y, headerFont, paints.HeaderText);
-            colX += width;
+            float textX = AlignTextX(col, colX, col.Header, headerFont, ctx.MmToPx);
+            var pt = ctx.ToCanvas(textX, Y + headerH * HeaderBaselineFactor);
+            ctx.Canvas.DrawText(col.Header, pt.X, pt.Y, headerFont, paints.HeaderText);
+            colX += col.Width;
         }
 
         var lineStart = ctx.ToCanvas(X, Y + headerH);
@@ -178,27 +180,30 @@ public class StopListElement : ScheduleElementBase
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
-    private List<(string Label, float Width)> GetVisibleColumns()
+    private List<StopColumn> GetVisibleColumns() => Columns.Where(c => c.Visible).ToList();
+
+    /// <summary>Vypočítá X pozici textu v mm podle zarovnání sloupce.</summary>
+    private static float AlignTextX(StopColumn col, float colX, string text, SKFont font, float mmToPx)
     {
-        var cols = new List<(string, float)>();
-        if (ShowTcColumn)             cols.Add(("TČ", TcColumnWidth));
-        if (ShowStopNameColumn)       cols.Add(("Zastávka", StopNameColumnWidth));
-        if (ShowTravelTimeColumn)     cols.Add(("Čas", TravelTimeColumnWidth));
-        if (ShowZoneColumn)           cols.Add(("Zóna", ZoneColumnWidth));
-        if (ShowRouteLettersColumn)   cols.Add(("Trasa", RouteLettersColumnWidth));
-        if (ShowBaseRouteColumn)      cols.Add(("ZT", BaseRouteColumnWidth));
-        return cols;
+        if (col.Alignment == TextHorizontalAlignment.Left)
+            return colX + 1f;
+
+        float textWMm = font.MeasureText(text) / mmToPx;
+        float x = col.Alignment == TextHorizontalAlignment.Right
+            ? colX + col.Width - textWMm - 0.5f
+            : colX + (col.Width - textWMm) / 2f;
+        return Math.Max(x, colX + 0.5f);
     }
 
-    private string GetCellText(ZastavkaData z, string columnLabel) => columnLabel switch
+    private string GetCellText(ZastavkaData z, string columnKey) => columnKey switch
     {
-        "TČ"       => z.TarifniCislo,
-        "Zastávka" => BuildStopDisplayText(z),
-        "Čas"      => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
-        "Zóna"     => string.Join("/", z.Zony),
-        "Trasa"    => string.Join("", z.Prubehy),
-        "ZT"       => z.ZakladniTrasa ? "1" : "",
-        _          => ""
+        "Tc"           => z.TarifniCislo,
+        "StopName"     => BuildStopDisplayText(z),
+        "TravelTime"   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
+        "Zone"         => string.Join("/", z.Zony),
+        "RouteLetters" => string.Join("", z.Prubehy),
+        "BaseRoute"    => z.ZakladniTrasa ? "1" : "",
+        _              => ""
     };
 
     /// <summary>Cached excluded set — vytvořen jednou per render pass.</summary>
@@ -228,7 +233,7 @@ public class StopListElement : ScheduleElementBase
             text = new string(' ', z.Odsazeni) + text;
 
         if (ShowSignalStopIndicator && z.NaZnameni)
-            text += " ×";
+            text += " " + SignalStopSymbol;
 
         if (ShowStopAttributes && z.Atributy.Count > 0)
         {
@@ -255,14 +260,11 @@ public class StopListElement : ScheduleElementBase
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new BoolPropertyDescriptor  { Label = "Název zastávky",    Group = "Zastávky", Get = () => ShowStopNameColumn,     Set = v => ShowStopNameColumn = v },
-        new FloatPropertyDescriptor { Label = "Šířka zastávky",    Group = "Zastávky", Get = () => StopNameColumnWidth,    Set = v => StopNameColumnWidth = v,    Min = 10, Max = 200, Unit = "mm" },
+        new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce..." },
+
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
-        new BoolPropertyDescriptor  { Label = "Čas jízdy",         Group = "Zastávky", Get = () => ShowTravelTimeColumn,   Set = v => ShowTravelTimeColumn = v },
-        new BoolPropertyDescriptor  { Label = "Tarifní číslo",     Group = "Zastávky", Get = () => ShowTcColumn,           Set = v => ShowTcColumn = v },
-        new BoolPropertyDescriptor  { Label = "Zóna",              Group = "Zastávky", Get = () => ShowZoneColumn,         Set = v => ShowZoneColumn = v },
-        new BoolPropertyDescriptor  { Label = "Průběhy",           Group = "Zastávky", Get = () => ShowRouteLettersColumn, Set = v => ShowRouteLettersColumn = v },
-        new BoolPropertyDescriptor  { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
+        new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
+        new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
         new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
 
@@ -288,20 +290,10 @@ public class StopListElement : ScheduleElementBase
             CustomProperties = CustomProperties is null ? null : new(CustomProperties),
             GroupId = GroupId,
 
-            ShowStopNameColumn      = ShowStopNameColumn,
-            StopNameColumnWidth     = StopNameColumnWidth,
+            Columns                 = Columns.Select(c => c.Clone()).ToList(),
             ShowStopIndentation     = ShowStopIndentation,
-            ShowTravelTimeColumn    = ShowTravelTimeColumn,
-            TravelTimeColumnWidth   = TravelTimeColumnWidth,
-            ShowTcColumn            = ShowTcColumn,
-            TcColumnWidth           = TcColumnWidth,
-            ShowZoneColumn          = ShowZoneColumn,
-            ZoneColumnWidth         = ZoneColumnWidth,
-            ShowRouteLettersColumn  = ShowRouteLettersColumn,
-            RouteLettersColumnWidth = RouteLettersColumnWidth,
-            ShowBaseRouteColumn     = ShowBaseRouteColumn,
-            BaseRouteColumnWidth    = BaseRouteColumnWidth,
             ShowSignalStopIndicator = ShowSignalStopIndicator,
+            SignalStopSymbol        = SignalStopSymbol,
             ShowStopAttributes      = ShowStopAttributes,
             ShowStopNotes           = ShowStopNotes,
             HighlightCurrentStop    = HighlightCurrentStop,

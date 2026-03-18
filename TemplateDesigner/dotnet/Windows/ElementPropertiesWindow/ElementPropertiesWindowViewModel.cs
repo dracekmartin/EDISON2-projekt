@@ -105,6 +105,9 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         if (element is TableElement tableElement)
             descriptors = EnhanceTableEditor(descriptors, tableElement);
 
+        if (element is StopListElement stopListElement)
+            descriptors = EnhanceStopListEditor(descriptors, stopListElement);
+
         CurrentDescriptors = descriptors;
         return descriptors;
     }
@@ -219,6 +222,44 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
                         RequestShowDescriptors?.Invoke(
                             EnhanceTableEditor(element.GetPropertyDescriptors(), element));
+                    }
+                });
+            }
+            else
+            {
+                list.Add(d);
+            }
+        }
+        return list;
+    }
+
+    private IReadOnlyList<Models.PropertyDescriptor> EnhanceStopListEditor(
+        IReadOnlyList<Models.PropertyDescriptor> descriptors,
+        StopListElement element)
+    {
+        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
+        foreach (var d in descriptors)
+        {
+            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Sloupce")
+            {
+                list.Add(new Models.ButtonPropertyDescriptor
+                {
+                    Label       = btn.Label,
+                    Group       = btn.Group,
+                    ButtonLabel = btn.ButtonLabel,
+                    OnClick     = () =>
+                    {
+                        var dlg = new StopColumnsEditorDialog(element.Columns)
+                            { Owner = Application.Current.MainWindow };
+                        if (dlg.ShowDialog() != true) return;
+
+                        _state.Execute(new Commands.Implementations.SetPropertyCommand(
+                            "Sloupce zastávek", element.Columns, dlg.ResultColumns,
+                            v => element.Columns = (List<StopColumn>)v!));
+                        _currentInvalidate();
+
+                        RequestShowDescriptors?.Invoke(
+                            EnhanceStopListEditor(element.GetPropertyDescriptors(), element));
                     }
                 });
             }
