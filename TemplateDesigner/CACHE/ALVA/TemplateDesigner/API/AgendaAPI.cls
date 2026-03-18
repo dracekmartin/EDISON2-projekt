@@ -79,14 +79,14 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status [ Abstract ]
 /// example = (volitelné) příklad hodnoty
 ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, type As %String, example As %String = "")
 {
-    s f = ##class(%DynamicObject).%New()
-    s f.name  = name
-    s f.label = label
-    s f.type  = type
+    s field = ##class(%DynamicObject).%New()
+    s field.name  = name
+    s field.label = label
+    s field.type  = type
     if example '= "" {
-        s f.example = example
+        s field.example = example
     }
-    d arr.%Push(f)
+    d arr.%Push(field)
 }
 
 /// Přidá bool parametr do pole parametrů.
@@ -96,23 +96,23 @@ ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, ty
 /// defaultVal = výchozí hodnota (0/1 nebo true/false)
 ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean)
 {
-    s p = ##class(%DynamicObject).%New()
-    s p.name  = name
-    s p.label = label
-    s p.type  = "bool"
-    s p.defaultValue = $s(defaultVal:"true", 1:"false")
-    d arr.%Push(p)
+    s param = ##class(%DynamicObject).%New()
+    s param.name  = name
+    s param.label = label
+    s param.type  = "bool"
+    s param.defaultValue = $s(defaultVal:"true", 1:"false")
+    d arr.%Push(param)
 }
 
 /// Přidá number parametr do pole parametrů.
 ClassMethod AddNumberParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %String)
 {
-    s p = ##class(%DynamicObject).%New()
-    s p.name  = name
-    s p.label = label
-    s p.type  = "number"
-    s p.defaultValue = defaultVal
-    d arr.%Push(p)
+    s param = ##class(%DynamicObject).%New()
+    s param.name  = name
+    s param.label = label
+    s param.type  = "number"
+    s param.defaultValue = defaultVal
+    d arr.%Push(param)
 }
 
 /// Přidá mock hodnotu do objektu skalárních hodnot.

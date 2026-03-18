@@ -16,22 +16,22 @@ Class ALVA.TemplateDesigner.API.AgendaJRAPI Extends ALVA.TemplateDesigner.API.Ag
 /// ZONY, PRUBEHY, ATRIBUTY, POZNAMKY_ZASTAVKY se inicializují jako prázdné pole.
 ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %Integer = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
 {
-    s z = ##class(%DynamicObject).%New()
-    d z.%Set("ID", id)
-    d z.%Set("POPIS", popis)
-    d z.%Set("TC", tc)
-    d z.%Set("CAS_JIZDY", casJizdy)
-    d z.%Set("PORADI", poradi)
-    d z.%Set("JE_AKTUALNI", $s(jeAktualni:"true", 1:"false"))
-    d z.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
-    d z.%Set("ODSAZENI", odsazeni)
-    d z.%Set("ZAKLADNI_TRASA", "true")
+    s zastavka = ##class(%DynamicObject).%New()
+    d zastavka.%Set("ID", id)
+    d zastavka.%Set("POPIS", popis)
+    d zastavka.%Set("TC", tc)
+    d zastavka.%Set("CAS_JIZDY", casJizdy)
+    d zastavka.%Set("PORADI", poradi)
+    d zastavka.%Set("JE_AKTUALNI", $s(jeAktualni:"true", 1:"false"))
+    d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
+    d zastavka.%Set("ODSAZENI", odsazeni)
+    d zastavka.%Set("ZAKLADNI_TRASA", "true")
     // Vnořená pole — inicializace jako prázdné arraye
-    d z.%Set("ZONY", ##class(%DynamicArray).%New())
-    d z.%Set("PRUBEHY", ##class(%DynamicArray).%New())
-    d z.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
-    d z.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
-    q z
+    d zastavka.%Set("ZONY", ##class(%DynamicArray).%New())
+    d zastavka.%Set("PRUBEHY", ##class(%DynamicArray).%New())
+    d zastavka.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
+    d zastavka.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
+    q zastavka
 }
 
 /// Přidá zónu do zastávky.
@@ -49,21 +49,21 @@ ClassMethod AddPrubeh(zastavka As %DynamicObject, prubeh As %String)
 /// Přidá atribut (ikonu/symbol) k zastávce.
 ClassMethod AddAtribut(zastavka As %DynamicObject, znak As %String, popis As %String = "")
 {
-    s a = ##class(%DynamicObject).%New()
-    d a.%Set("ZNAK", znak)
-    d a.%Set("POPIS", popis)
-    d zastavka.%Get("ATRIBUTY").%Push(a)
+    s atribut = ##class(%DynamicObject).%New()
+    d atribut.%Set("ZNAK", znak)
+    d atribut.%Set("POPIS", popis)
+    d zastavka.%Get("ATRIBUTY").%Push(atribut)
 }
 
 /// Přidá poznámku vázanou k zastávce.
 /// typ: "text", "nz", "specialni"
 ClassMethod AddPoznamkaZastavky(zastavka As %DynamicObject, znak As %String, typ As %String = "text", text As %String = "")
 {
-    s p = ##class(%DynamicObject).%New()
-    d p.%Set("ZNAK", znak)
-    d p.%Set("TYP", typ)
-    d p.%Set("TEXT", text)
-    d zastavka.%Get("POZNAMKY_ZASTAVKY").%Push(p)
+    s poznamka = ##class(%DynamicObject).%New()
+    d poznamka.%Set("ZNAK", znak)
+    d poznamka.%Set("TYP", typ)
+    d poznamka.%Set("TEXT", text)
+    d zastavka.%Get("POZNAMKY_ZASTAVKY").%Push(poznamka)
 }
 
 // ── Stavba skupin dnů ──────────────────────────────────────────────────────
@@ -71,12 +71,12 @@ ClassMethod AddPoznamkaZastavky(zastavka As %DynamicObject, znak As %String, typ
 /// Vytvoří %DynamicObject skupiny dnů.
 ClassMethod BuildSkupinaDnu(id As %String, nadpis As %String, nadpis2 As %String = "", poradi As %Integer = 1) As %DynamicObject
 {
-    s s = ##class(%DynamicObject).%New()
-    d s.%Set("ID", id)
-    d s.%Set("NADPIS", nadpis)
-    d s.%Set("NADPIS2", nadpis2)
-    d s.%Set("PORADI", poradi)
-    q s
+    s skupina = ##class(%DynamicObject).%New()
+    d skupina.%Set("ID", id)
+    d skupina.%Set("NADPIS", nadpis)
+    d skupina.%Set("NADPIS2", nadpis2)
+    d skupina.%Set("PORADI", poradi)
+    q skupina
 }
 
 // ── Stavba odjezdů ──────────────────────────────────────────────────────────
@@ -84,26 +84,26 @@ ClassMethod BuildSkupinaDnu(id As %String, nadpis As %String, nadpis2 As %String
 /// Vytvoří %DynamicObject odjezdu s inicializovaným prázdným polem ANOTACE.
 ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina As %Integer, minuta As %Integer, zkrOznLinky As %String = "") As %DynamicObject
 {
-    s o = ##class(%DynamicObject).%New()
-    d o.%Set("ZASTAVKA_ID", zastavkaId)
-    d o.%Set("SKUPINA_DNU_ID", skupinaDnuId)
-    d o.%Set("HODINA", hodina)
-    d o.%Set("MINUTA", minuta)
-    d o.%Set("ZKRACENE_OZNACENI_LINKY", zkrOznLinky)
-    d o.%Set("FORE_COLOR", "")
-    d o.%Set("BACK_COLOR", "")
-    d o.%Set("ANOTACE", ##class(%DynamicArray).%New())
-    q o
+    s odjezd = ##class(%DynamicObject).%New()
+    d odjezd.%Set("ZASTAVKA_ID", zastavkaId)
+    d odjezd.%Set("SKUPINA_DNU_ID", skupinaDnuId)
+    d odjezd.%Set("HODINA", hodina)
+    d odjezd.%Set("MINUTA", minuta)
+    d odjezd.%Set("ZKRACENE_OZNACENI_LINKY", zkrOznLinky)
+    d odjezd.%Set("FORE_COLOR", "")
+    d odjezd.%Set("BACK_COLOR", "")
+    d odjezd.%Set("ANOTACE", ##class(%DynamicArray).%New())
+    q odjezd
 }
 
 /// Přidá anotaci k odjezdu.
 /// typ: "text", "nz", "specialni"
 ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String)
 {
-    s a = ##class(%DynamicObject).%New()
-    d a.%Set("TYP", typ)
-    d a.%Set("ZNAK", znak)
-    d odjezd.%Get("ANOTACE").%Push(a)
+    s anotace = ##class(%DynamicObject).%New()
+    d anotace.%Set("TYP", typ)
+    d anotace.%Set("ZNAK", znak)
+    d odjezd.%Get("ANOTACE").%Push(anotace)
 }
 
 /// Nastaví barvy odjezdu (data-driven).
@@ -120,11 +120,11 @@ ClassMethod SetOdjezdColors(odjezd As %DynamicObject, foreColor As %String = "",
 /// typ: "text", "nz", "specialni"
 ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String) As %DynamicObject
 {
-    s p = ##class(%DynamicObject).%New()
-    d p.%Set("TYP", typ)
-    d p.%Set("ZNAK", znak)
-    d p.%Set("TEXT", text)
-    q p
+    s poznamka = ##class(%DynamicObject).%New()
+    d poznamka.%Set("TYP", typ)
+    d poznamka.%Set("ZNAK", znak)
+    d poznamka.%Set("TEXT", text)
+    q poznamka
 }
 
 // ── Konverze speciálních znaků ──────────────────────────────────────────────
@@ -172,51 +172,51 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
 ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 {
     // ZASTAVKY
-    s gZast = ##class(%DynamicObject).%New()
-    s gZast.name          = "Zastávky"
-    s gZast.collectionKey = "ZASTAVKY"
-    s gZastFields = ##class(%DynamicArray).%New()
-    d ..AddField(gZastFields, "ID",                "ID zastávky",         "text")
-    d ..AddField(gZastFields, "POPIS",             "Název zastávky",      "text")
-    d ..AddField(gZastFields, "TC",                "Tarifní číslo",       "text")
-    d ..AddField(gZastFields, "CAS_JIZDY",         "Čas jízdy",           "number")
-    d ..AddField(gZastFields, "NA_ZNAMENI",        "Na znamení",          "boolean")
-    s gZast.fields = gZastFields
-    d collections.%Push(gZast)
+    s colZastavky = ##class(%DynamicObject).%New()
+    s colZastavky.name          = "Zastávky"
+    s colZastavky.collectionKey = "ZASTAVKY"
+    s colZastavkyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colZastavkyFields, "ID",                "ID zastávky",         "text")
+    d ..AddField(colZastavkyFields, "POPIS",             "Název zastávky",      "text")
+    d ..AddField(colZastavkyFields, "TC",                "Tarifní číslo",       "text")
+    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",           "number")
+    d ..AddField(colZastavkyFields, "NA_ZNAMENI",        "Na znamení",          "boolean")
+    s colZastavky.fields = colZastavkyFields
+    d collections.%Push(colZastavky)
 
     // SKUPINY_DNU
-    s gSk = ##class(%DynamicObject).%New()
-    s gSk.name          = "Skupiny dnů"
-    s gSk.collectionKey = "SKUPINY_DNU"
-    s gSkFields = ##class(%DynamicArray).%New()
-    d ..AddField(gSkFields, "ID",      "ID skupiny",     "text")
-    d ..AddField(gSkFields, "NADPIS",  "Nadpis skupiny", "text")
-    d ..AddField(gSkFields, "NADPIS2", "Nadpis 2",       "text")
-    s gSk.fields = gSkFields
-    d collections.%Push(gSk)
+    s colSkupiny = ##class(%DynamicObject).%New()
+    s colSkupiny.name          = "Skupiny dnů"
+    s colSkupiny.collectionKey = "SKUPINY_DNU"
+    s colSkupinyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colSkupinyFields, "ID",      "ID skupiny",     "text")
+    d ..AddField(colSkupinyFields, "NADPIS",  "Nadpis skupiny", "text")
+    d ..AddField(colSkupinyFields, "NADPIS2", "Nadpis 2",       "text")
+    s colSkupiny.fields = colSkupinyFields
+    d collections.%Push(colSkupiny)
 
     // ODJEZDY
-    s gOdj = ##class(%DynamicObject).%New()
-    s gOdj.name          = "Odjezdy"
-    s gOdj.collectionKey = "ODJEZDY"
-    s gOdjFields = ##class(%DynamicArray).%New()
-    d ..AddField(gOdjFields, "ZASTAVKA_ID",     "ID zastávky",       "text")
-    d ..AddField(gOdjFields, "SKUPINA_DNU_ID",  "ID skupiny dnů",    "text")
-    d ..AddField(gOdjFields, "HODINA",          "Hodina",            "number")
-    d ..AddField(gOdjFields, "MINUTA",          "Minuta",            "number")
-    s gOdj.fields = gOdjFields
-    d collections.%Push(gOdj)
+    s colOdjezdy = ##class(%DynamicObject).%New()
+    s colOdjezdy.name          = "Odjezdy"
+    s colOdjezdy.collectionKey = "ODJEZDY"
+    s colOdjezdyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colOdjezdyFields, "ZASTAVKA_ID",     "ID zastávky",       "text")
+    d ..AddField(colOdjezdyFields, "SKUPINA_DNU_ID",  "ID skupiny dnů",    "text")
+    d ..AddField(colOdjezdyFields, "HODINA",          "Hodina",            "number")
+    d ..AddField(colOdjezdyFields, "MINUTA",          "Minuta",            "number")
+    s colOdjezdy.fields = colOdjezdyFields
+    d collections.%Push(colOdjezdy)
 
     // POZNAMKY
-    s gPoz = ##class(%DynamicObject).%New()
-    s gPoz.name          = "Poznámky"
-    s gPoz.collectionKey = "POZNAMKY"
-    s gPozFields = ##class(%DynamicArray).%New()
-    d ..AddField(gPozFields, "TYP",  "Typ poznámky", "text")
-    d ..AddField(gPozFields, "ZNAK", "Znak",          "text")
-    d ..AddField(gPozFields, "TEXT", "Text poznámky",  "text")
-    s gPoz.fields = gPozFields
-    d collections.%Push(gPoz)
+    s colPoznamky = ##class(%DynamicObject).%New()
+    s colPoznamky.name          = "Poznámky"
+    s colPoznamky.collectionKey = "POZNAMKY"
+    s colPoznamkyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky", "text")
+    d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
+    d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky",  "text")
+    s colPoznamky.fields = colPoznamkyFields
+    d collections.%Push(colPoznamky)
 }
 
 /// Přidá standardní JŘ parametry do pole parametrů.
@@ -227,17 +227,17 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
 
     // Časová osa
-    s p = ##class(%DynamicObject).%New()
-    s p.name         = "CASOVA_OSA"
-    s p.label        = "Časová osa odjezdů"
-    s p.type         = "enum"
-    s p.defaultValue = "compact"
+    s param = ##class(%DynamicObject).%New()
+    s param.name         = "CASOVA_OSA"
+    s param.label        = "Časová osa odjezdů"
+    s param.type         = "enum"
+    s param.defaultValue = "compact"
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("compact")
     d opts.%Push("full")
     d opts.%Push("range")
-    s p.options = opts
-    d arr.%Push(p)
+    s param.options = opts
+    d arr.%Push(param)
 
     // Hodiny od/do — relevantní jen pro CASOVA_OSA = range
     d ..AddNumberParam(arr, "HODINY_OD", "Hodiny od", "4")
