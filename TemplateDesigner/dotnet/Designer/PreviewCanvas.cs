@@ -215,6 +215,19 @@ public class PreviewCanvas
                 el.Render(ctx);
             }
 
+            // Rámeček sekce (volitelný — ShowBorder property)
+            if (placed.Source.ShowBorder)
+            {
+                using var borderPaint = new SKPaint
+                {
+                    Color = SKColor.Parse(placed.Source.BorderColor),
+                    IsStroke = true,
+                    StrokeWidth = placed.Source.BorderWidth * mmToPx,
+                    IsAntialias = true
+                };
+                canvas.DrawRect(clipRect, borderPaint);
+            }
+
             canvas.Restore();
 
             // Jemná čára mezi sekcemi (orientační pomůcka)

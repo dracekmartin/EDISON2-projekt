@@ -39,6 +39,17 @@ public class Section
     /// </summary>
     public string? VisibilityExpression { get; set; }
 
+    // --- Rámeček sekce v tisku/preview ---
+
+    /// <summary>Zobrazit rámeček kolem sekce v preview a PDF.</summary>
+    public bool ShowBorder { get; set; } = false;
+
+    /// <summary>Barva rámečku sekce (#AARRGGBB). Výchozí: černá.</summary>
+    public string BorderColor { get; set; } = "#FF000000";
+
+    /// <summary>Tloušťka rámečku sekce v mm.</summary>
+    public float BorderWidth { get; set; } = 0.3f;
+
     // --- Speciální properties pro některé typy sekcí ---
 
     /// <summary>
@@ -84,6 +95,9 @@ public class Section
             PrintBehavior = PrintBehavior,
             OverflowBehavior = OverflowBehavior,
             Role = Role,
+            ShowBorder = ShowBorder,
+            BorderColor = BorderColor,
+            BorderWidth = BorderWidth,
             DesignerHeight = DesignerHeight,
             VisibilityExpression = VisibilityExpression,
             DataSource = DataSource,

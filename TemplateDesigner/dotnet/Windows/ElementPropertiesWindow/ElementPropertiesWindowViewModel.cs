@@ -526,6 +526,28 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             ]
         });
 
+        list.Add(new BoolPropertyDescriptor
+        {
+            Label = "Rámeček", Group = "Vzhled",
+            Get   = () => section.ShowBorder,
+            Set   = v  => section.ShowBorder = v
+        });
+
+        list.Add(new ColorPropertyDescriptor
+        {
+            Label = "Barva rámečku", Group = "Vzhled",
+            Get   = () => section.BorderColor,
+            Set   = v  => section.BorderColor = v
+        });
+
+        list.Add(new FloatPropertyDescriptor
+        {
+            Label = "Tloušťka rámečku", Group = "Vzhled",
+            Get   = () => section.BorderWidth,
+            Set   = v  => section.BorderWidth = v,
+            Min   = 0.1f, Max = 5f, Unit = "mm"
+        });
+
         list.Add(new StringPropertyDescriptor
         {
             Label = "Viditelnost", Group = "Podmínky",

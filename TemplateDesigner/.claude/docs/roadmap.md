@@ -104,11 +104,7 @@ Flat `_values + _rows` nestačí pro hierarchická data.
 **UX polish:**
 | # | Položka | Náročnost | Popis |
 |---|---------|-----------|-------|
-| a | Tooltip na záhlaví sekce | Malá | "Záhlaví sekce — viditelné pouze v editoru, netiskne se" (kolega se ptal jestli to nebude matoucí) |
-| b | Odebrat ▲▼ tlačítka sekcí | Malá | Drag + Ctrl+Shift+šipky stačí, tlačítka jsou redundantní |
-| c | Zoom persistence | Malá | Uložit zoom do user preferences |
-| d | Výraznější snap lines | Malá | Silnější čáry, jasnější barva |
-| e | Toggle hranice sekce v tisku | Malá | Property na sekci: zobrazit/skrýt border při tisku/preview |
+| c | Zoom persistence | Malá | Uložit zoom do Caché user preferences; řešit až při nasazení |
 | f | Side panel vlastností místo modálního dialogu | Velká | Největší UX zlepšení, ale architektonická změna (PropertiesPanel + layout) |
 | g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu |
 | h | Ikonový toolbar | Střední | Nahradit textové "T", "▭", "Zast" ikonami |
