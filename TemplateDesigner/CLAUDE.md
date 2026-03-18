@@ -14,11 +14,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-17
+**Datum poslední aktualizace:** 2026-03-18
 
 ### 🎯 Aktuální focus
 
-*(žádný konkrétní — PageLayoutEngine dokončen, viz roadmap pro další možnosti)*
+Specializované JŘ elementy — ScheduleElementBase + StopScheduleElement (MinutesOnly + FullTime)
 
 ### ✅ Co máme
 
@@ -39,6 +39,9 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Strom šablony — záložka "Strom" v hlavním okně; hierarchický přehled celé šablony (sekce → skupiny → elementy)
 - LineElement — custom dash/gap pro čárkované a tečkované čáry
 - ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
+- **StopScheduleElement** — zastávkový JŘ (MHD MinutesOnly + meziměstský FullTime); ~30 properties; tabulka zastávek, mřížka minut per skupina dnů, legenda poznámek; ScheduleElementBase abstraktní základ; SkiaHeightCalculator integrace
+- **Caché AgendaJRAPI** — abstraktní mezistupeň pro JŘ agendy (helpery: BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka + AddAnotace/AddAtribut/AddPoznamkaZastavky); ALVA.MHD.TiskAPI konkrétní implementace
+- **DataContext vnořená pole** — ParseMockData rozlišuje JsonArray/JsonObject vs skalární hodnoty; ScheduleElementBase parsuje vnořená pole (ZONY[], ATRIBUTY[], ANOTACE[], POZNAMKY_ZASTAVKY[])
 - Word wrap + dynamická výška TextElementu — `WordWrap=true` + `Height=null` → text se zalamuje a výška se dopočítá z obsahu; `LineSpacing` property
 - **PageLayoutEngine** — čistý logický engine (vrstva 3): Template + DataContext → `List<Page>` s PlacedSections; multi-page stránkování, hlavičky/patičky (OnEveryPage, OnFirstPageOnly, OnLastPageOnly, OnEveryPageExceptFirst), SplitAcrossPages, PerDataRow expanze, flow layout uvnitř sekcí, PAGE/TOTAL_PAGES injekce, dvouprůchodový layout pro OnLastPageOnly
 - Multi-page preview — PreviewCanvas zobrazuje všechny stránky pod sebou se stíny a rámečky

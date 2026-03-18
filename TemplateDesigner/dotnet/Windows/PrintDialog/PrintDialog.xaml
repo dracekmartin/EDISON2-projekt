@@ -61,6 +61,10 @@
                        Foreground="#FF666666" TextTrimming="CharacterEllipsis"/>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Tisk s daty" Padding="16,6"
+                        Command="{Binding ExportRealDataPdfCommand}"
+                        Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
+                        Margin="0,0,8,0"/>
                 <Button Content="Exportovat PDF" Padding="16,6"
                         Command="{Binding ExportPdfCommand}" Margin="0,0,8,0"/>
                 <Button Content="Zavřít" Padding="16,6" IsCancel="True"/>

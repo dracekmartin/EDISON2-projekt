@@ -87,6 +87,9 @@ ElementPropertiesWindow.xaml / .cs — dialog vlastností elementu/sekce
 | `LineElement.cs` | `LineElement` | Čára/oddělovač — horizontální nebo vertikální |
 | `BarcodeElement.cs` | `BarcodeElement` | QR kód nebo Code128 čárový kód (ZXing.Net) |
 | `TableElement.cs` | `TableElement` | Tabulka Fixed/Dynamic, UI editor sloupců + řádků |
+| `ScheduleModels.cs` | `ZastavkaData`, `OdjezdData`, ... | Runtime POCO modely pro JŘ elementy (neserializují se) |
+| `ScheduleElementBase.cs` | `ScheduleElementBase` | Abstraktní základ JŘ elementů: DataSource klíče, Build helpery, společné properties |
+| `StopScheduleElement.cs` | `StopScheduleElement` | Zastávkový JŘ: MinutesOnly (MHD) + FullTime (meziměsto), ~30 properties |
 
 ### /Commands/Implementations
 | Soubor | Třída | Zodpovědnost |

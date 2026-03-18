@@ -151,19 +151,7 @@ public class DesignerCanvas
             var r = rect.Value;
             float mx = r.MidX, my = r.MidY;
 
-            (float hx, float hy, ResizeHandle handle)[] handles =
-            [
-                (r.Left,  r.Top,    ResizeHandle.TopLeft),
-                (mx,      r.Top,    ResizeHandle.TopCenter),
-                (r.Right, r.Top,    ResizeHandle.TopRight),
-                (r.Left,  my,       ResizeHandle.MiddleLeft),
-                (r.Right, my,       ResizeHandle.MiddleRight),
-                (r.Left,  r.Bottom, ResizeHandle.BottomLeft),
-                (mx,      r.Bottom, ResizeHandle.BottomCenter),
-                (r.Right, r.Bottom, ResizeHandle.BottomRight),
-            ];
-
-            foreach (var (hx, hy, handle) in handles)
+            foreach (var (hx, hy, handle) in GetHandlesForElement(el, r))
             {
                 if (canvasX >= hx - hs && canvasX <= hx + hs &&
                     canvasY >= hy - hs && canvasY <= hy + hs)
@@ -171,6 +159,36 @@ public class DesignerCanvas
             }
         }
         return null;
+    }
+
+    /// <summary>
+    /// Vrátí resize handles pro element. Dynamické elementy (Height==null) nemají
+    /// spodní ani horní vertikální handles — výšku počítá engine z dat.
+    /// Zůstávají jen MiddleLeft a MiddleRight pro změnu šířky.
+    /// </summary>
+    private static IEnumerable<(float hx, float hy, ResizeHandle handle)> GetHandlesForElement(
+        TemplateElement el, SKRect r)
+    {
+        float mx = r.MidX, my = r.MidY;
+
+        if (el.IsDynamic)
+        {
+            // Dynamická výška — jen horizontální handles pro změnu šířky
+            yield return (r.Left,  my, ResizeHandle.MiddleLeft);
+            yield return (r.Right, my, ResizeHandle.MiddleRight);
+        }
+        else
+        {
+            // Fixní výška — všech 8 handles
+            yield return (r.Left,  r.Top,    ResizeHandle.TopLeft);
+            yield return (mx,      r.Top,    ResizeHandle.TopCenter);
+            yield return (r.Right, r.Top,    ResizeHandle.TopRight);
+            yield return (r.Left,  my,       ResizeHandle.MiddleLeft);
+            yield return (r.Right, my,       ResizeHandle.MiddleRight);
+            yield return (r.Left,  r.Bottom, ResizeHandle.BottomLeft);
+            yield return (mx,      r.Bottom, ResizeHandle.BottomCenter);
+            yield return (r.Right, r.Bottom, ResizeHandle.BottomRight);
+        }
     }
 
     /// <summary>Vrátí absolutní canvas rect elementu v px, nebo null pokud element není na canvasu.</summary>
@@ -428,13 +446,7 @@ public class DesignerCanvas
             using var handleBorder = new SKPaint { Color = ClrSelection, IsStroke = true, StrokeWidth = 1.5f };
 
             float hs = HandleSizePx / 2f;
-            float mx = r.MidX, my = r.MidY;
-            foreach (var (hx, hy) in new[]
-            {
-                (r.Left, r.Top),    (mx, r.Top),    (r.Right, r.Top),
-                (r.Left, my),                       (r.Right, my),
-                (r.Left, r.Bottom), (mx, r.Bottom), (r.Right, r.Bottom)
-            })
+            foreach (var (hx, hy, _) in GetHandlesForElement(singleEl, r))
             {
                 var hr = new SKRect(hx - hs, hy - hs, hx + hs, hy + hs);
                 canvas.DrawRect(hr, handleFill);

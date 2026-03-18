@@ -511,6 +511,7 @@ public partial class MainWindow : Window
 
     private void BtnPreview_Changed(object sender, RoutedEventArgs e)
     {
+        if (PreviewColumn is null) return; // Event fires during InitializeComponent before controls are ready
         bool show = BtnPreview.IsChecked == true;
         PreviewColumn.Width = show ? new GridLength(660, GridUnitType.Pixel) : new GridLength(0);
         MenuPreview.IsChecked = show;
@@ -519,6 +520,7 @@ public partial class MainWindow : Window
 
     private void MenuPreview_Changed(object sender, RoutedEventArgs e)
     {
+        if (BtnPreview is null) return; // Event fires during InitializeComponent
         BtnPreview.IsChecked = MenuPreview.IsChecked;
         BtnPreview_Changed(sender, e);
     }
@@ -535,13 +537,26 @@ public partial class MainWindow : Window
 
     private void MenuPrint_Click(object sender, RoutedEventArgs e)
     {
+        // Callback pro reálná data — pouze pokud je CacheProvider k dispozici
+        Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null;
+        if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
+        {
+            var provider = _vm.CacheProvider;
+            var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
+            buildRealData = paramValues => provider.GetData(agendaCode, paramValues);
+        }
+
         var vm = new PrintDialogViewModel(
-            _vm!.State.CurrentTemplate,
+            _vm.State.CurrentTemplate,
             _vm.AgendaParameters,
-            paramValues => _vm.BuildPreviewMockData(paramValues));
+            paramValues => _vm.BuildPreviewMockData(paramValues),
+            buildRealData);
 
         vm.RequestRenderPdf = (filePath, data) =>
             _previewCanvas!.RenderToPdf(filePath, data);
+
+        vm.RequestRenderMultiPdf = (filePath, dataPages) =>
+            _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages);
 
         var dlg = new PrintDialog(vm) { Owner = this };
         dlg.ShowDialog();
@@ -918,6 +933,10 @@ public partial class MainWindow : Window
         Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType("TableElement", 0, 0));
         Add("QR kód",    () => TemplateDesignerViewModel.CreateElementByType("BarcodeQR", 5, 5));
         Add("Čárový kód", () => TemplateDesignerViewModel.CreateElementByType("BarcodeCode128", 5, 5));
+        menu.Items.Add(new Separator());
+        Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType("StopListElement", 0, 0));
+        Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType("DepartureGridElement", 0, 0));
+        Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType("NotesLegendElement", 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;

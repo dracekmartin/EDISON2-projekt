@@ -83,30 +83,41 @@ public class PreviewCanvas
     /// Exportuje šablonu s dodanými daty do PDF souboru.
     /// Multi-page: každá stránka LayoutResult = jedna stránka PDF.
     /// </summary>
-    public void RenderToPdf(string filePath, DataContext? data)
+    public void RenderToPdf(string filePath, DataContext? data) =>
+        RenderMultiDataToPdf(filePath, [data!]);
+
+    /// <summary>
+    /// Exportuje šablonu s více sadami dat do PDF — každý DataContext = kompletní průchod šablonou.
+    /// Pro JŘ: každý DataContext = jedna zastávka/směr → 1+ PDF stránek.
+    /// </summary>
+    public void RenderMultiDataToPdf(string filePath, IReadOnlyList<DataContext> dataPages)
     {
         const float pointsPerMm = 72f / 25.4f;
         var   ps    = _state.CurrentTemplate.PageSize;
         float pageW = ps.Width  * pointsPerMm;
         float pageH = ps.Height * pointsPerMm;
 
-        var layout = _engine.Layout(_state.CurrentTemplate, data);
-        if (layout.TotalPages == 0) return;
-
         using var stream = new FileStream(filePath, FileMode.Create);
         using var doc    = SKDocument.CreatePdf(stream);
 
-        foreach (var page in layout.Pages)
+        foreach (var data in dataPages)
         {
-            var canvas = doc.BeginPage(pageW, pageH);
+            var layout = _engine.Layout(_state.CurrentTemplate, data);
 
-            using (var bg = new SKPaint { Color = SKColors.White })
-                canvas.DrawRect(0, 0, pageW, pageH, bg);
+            foreach (var page in layout.Pages)
+            {
+                var canvas = doc.BeginPage(pageW, pageH);
 
-            RenderPage(canvas, ps, pointsPerMm, 0, 0, page);
+                using (var bg = new SKPaint { Color = SKColors.White })
+                    canvas.DrawRect(0, 0, pageW, pageH, bg);
 
-            doc.EndPage();
+                RenderPage(canvas, ps, pointsPerMm, 0, 0, page);
+
+                doc.EndPage();
+            }
         }
+
+        doc.Close();
     }
 
     // ─────────────────────────────────────────────────────────────────────

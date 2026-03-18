@@ -4,7 +4,7 @@
 /// 
 /// appsettings.json:
 ///   { "code": "JR", "name": "Jízdní řád", "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerMHD" }
-Class ALVA.TemplateDesigner.API.TemplateDesignerMHD Extends ALVA.TemplateDesigner.API.AgendaAPI
+Class ALVA.TemplateDesigner.API.TemplateDesignerMHD Extends ALVA.TemplateDesigner.API.AgendaJRAPI
 {
 
 /// Vrátí schéma polí MHD agendy: skalární pole + skupiny tabulek.

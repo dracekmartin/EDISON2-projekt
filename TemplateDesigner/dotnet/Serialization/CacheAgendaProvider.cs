@@ -254,6 +254,97 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
     }
 
+    // ─── Reálná data pro tisk ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Volá GetData na Caché třídě s parametry a vrátí seznam DataContextů — jeden per "stránka" dat.
+    /// Pro JŘ: vstup = LinkaID → výstup = pole stránek (1 per zastávka × směr).
+    /// Null = metoda selhala.
+    /// </summary>
+    public List<DataContext>? GetData(string agendaCode, Dictionary<string, object?> parameters)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return null;
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
+
+        try
+        {
+            var inVar = new CVar();
+            foreach (var (key, value) in parameters)
+                inVar[key] = new CVar(value?.ToString() ?? "");
+
+            CVar result = _mlRest.Query(cacheClass, "GetData", inVar);
+
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+                return null;
+
+            // Každý OUT node = jedna stránka (JSON objekt { "values": {...}, "rows": {...} })
+            var pages = new List<DataContext>();
+            foreach (var kvp in result)
+            {
+                if (kvp.Key == "ERR") continue;
+                string? json = kvp.Value?.Value?.ToString();
+                if (string.IsNullOrEmpty(json)) continue;
+
+                try
+                {
+                    var node = JsonNode.Parse(json);
+                    if (node is null) continue;
+                    var dc = ParseSinglePageData(node);
+                    if (dc is not null) pages.Add(dc);
+                }
+                catch
+                {
+                    // Přeskočit nevalidní stránku
+                }
+            }
+            return pages.Count > 0 ? pages : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Parsuje jeden objekt stránky { "values": {...}, "rows": {...} } do DataContext.
+    /// Sdílená logika pro GetData i GetMockData.
+    /// </summary>
+    private static DataContext? ParseSinglePageData(JsonNode node)
+    {
+        // Skalární hodnoty
+        var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+        if (node["values"]?.AsObject() is { } valObj)
+            foreach (var kv in valObj)
+                values[kv.Key] = GetScalarAsString(kv.Value);
+
+        // Tabulkové kolekce
+        var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);
+        if (node["rows"]?.AsObject() is { } rowsObj)
+        {
+            foreach (var (collKey, rowsArr) in rowsObj)
+            {
+                if (rowsArr is not JsonArray arr) continue;
+                var rows = new List<DataContext>();
+                foreach (var rowNode in arr)
+                {
+                    if (rowNode is not JsonObject rowObj) continue;
+                    var rowValues = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var kv in rowObj)
+                    {
+                        if (kv.Value is JsonArray or JsonObject)
+                            rowValues[kv.Key] = kv.Value;  // vnořená pole/objekty — uložit jako JsonNode
+                        else
+                            rowValues[kv.Key] = GetScalarAsString(kv.Value);
+                    }
+                    rows.Add(new DataContext(rowValues));
+                }
+                rowsDict[collKey] = rows;
+            }
+        }
+
+        return new DataContext(values, rowsDict);
+    }
+
     // ─── Mock data pro preview ────────────────────────────────────────────────
 
     /// <summary>
@@ -275,7 +366,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             if (string.IsNullOrEmpty(json)) return null;
 
             var data = ParseMockData(json);
-            _mockDataCache[agendaCode] = data;
+            if (data is not null)
+                _mockDataCache[agendaCode] = data;  // necachovat null — příští pokus zkusí znovu
             return data;
         }
         catch (Exception ex)
@@ -291,40 +383,31 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         {
             var node = JsonNode.Parse(json);
             if (node is null) return null;
-
-            // Skalární hodnoty
-            var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-            if (node["values"]?.AsObject() is { } valObj)
-                foreach (var kv in valObj)
-                    values[kv.Key] = kv.Value?.GetValue<string>();
-
-            // Tabulkové kolekce
-            var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);
-            if (node["rows"]?.AsObject() is { } rowsObj)
-            {
-                foreach (var (collKey, rowsArr) in rowsObj)
-                {
-                    if (rowsArr is not JsonArray arr) continue;
-                    var rows = new List<DataContext>();
-                    foreach (var rowNode in arr)
-                    {
-                        if (rowNode is not JsonObject rowObj) continue;
-                        var rowValues = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
-                        foreach (var kv in rowObj)
-                            rowValues[kv.Key] = kv.Value?.GetValue<string>();
-                        rows.Add(new DataContext(rowValues));
-                    }
-                    rowsDict[collKey] = rows;
-                }
-            }
-
-            return new DataContext(values, rowsDict);
+            return ParseSinglePageData(node);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"[AgendaProvider] ParseMockData exception: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>
+    /// Bezpečně extrahuje skalární hodnotu z JsonNode jako string.
+    /// Caché %DynamicObject zapisuje čísla jako JSON numbers a booly jako JSON booleans,
+    /// ale GetValue&lt;string&gt;() na ne-stringovém JsonValue vyhodí výjimku.
+    /// </summary>
+    private static string? GetScalarAsString(JsonNode? node)
+    {
+        if (node is not JsonValue jv) return null;
+        // String — nejčastější případ
+        if (jv.TryGetValue<string>(out var s)) return s;
+        // Čísla (int, long, double) a bool — konverze na string
+        if (jv.TryGetValue<long>(out var l)) return l.ToString();
+        if (jv.TryGetValue<double>(out var d)) return d.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (jv.TryGetValue<bool>(out var b)) return b ? "true" : "false";
+        // Fallback — JSON representace bez uvozovek
+        return jv.ToJsonString().Trim('"');
     }
 
     // ─── JSON parsing ─────────────────────────────────────────────────────────

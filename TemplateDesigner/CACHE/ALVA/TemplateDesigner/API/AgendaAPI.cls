@@ -104,6 +104,17 @@ ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String
     d arr.%Push(p)
 }
 
+/// Přidá number parametr do pole parametrů.
+ClassMethod AddNumberParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %String)
+{
+    s p = ##class(%DynamicObject).%New()
+    s p.name  = name
+    s p.label = label
+    s p.type  = "number"
+    s p.defaultValue = defaultVal
+    d arr.%Push(p)
+}
+
 /// Přidá mock hodnotu do objektu skalárních hodnot.
 /// vals = %DynamicObject kam se přidává
 /// name = název pole (např. "CISLO_FAKTURY")

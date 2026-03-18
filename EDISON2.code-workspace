@@ -1,11 +1,15 @@
 {
 	"folders": [
-		{
-			"path": "."
-		},
+        {
+            "path": "."
+        },
         {
             "name": "cloud3:MLINE (read-only)",
             "uri": "isfs-readonly://cloud3:mline/"
+        },
+        {
+            "name": "ALVA_TISKMHD - cloud3:MLINE",
+            "uri": "isfs-readonly://cloud3:mline/?project=ALVA_TISKMHD"
         }
     ],
     "settings": {

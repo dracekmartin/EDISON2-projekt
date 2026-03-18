@@ -200,7 +200,7 @@
                 <Separator/>
                 <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
-                <MenuItem x:Name="MenuPreview" Header="Live náhled" IsCheckable="True"
+                <MenuItem x:Name="MenuPreview" Header="Live náhled" IsCheckable="True" IsChecked="True"
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
@@ -252,6 +252,7 @@
                 <Button x:Name="BtnOpen" Content="Otevřít" Click="MenuOpen_Click" Padding="6,3"/>
                 <Separator Style="{StaticResource ToolbarSep}"/>
                 <ToggleButton x:Name="BtnPreview" Content="👁 Náhled" Padding="6,3"
+                              IsChecked="True"
                               Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed"
                               ToolTip="Zobrazit/skrýt live náhled (vzorová data ze schématu)"/>
             </ToolBar>
@@ -282,6 +283,15 @@
                 <Button ToolTip="Čárový kód — táhni na canvas" Tag="BarcodeCode128"
                         PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
                         Padding="5,3" FontSize="10" Content="|||"/>
+                <Button ToolTip="Seznam zastávek — táhni na canvas" Tag="StopListElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="10" Content="Zast"/>
+                <Button ToolTip="Mřížka odjezdů — táhni na canvas" Tag="DepartureGridElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="10" Content="Odj"/>
+                <Button ToolTip="Legenda poznámek — táhni na canvas" Tag="NotesLegendElement"
+                        PreviewMouseLeftButtonDown="ElementPalette_MouseDown"
+                        Padding="5,3" FontSize="10" Content="Pozn"/>
                 <Separator Style="{StaticResource ToolbarSep}"/>
                 <TextBlock Text="Zarovnat:" VerticalAlignment="Center" Margin="4,0,2,0" Foreground="#555555" FontSize="11"/>
                 <Button Content="←" ToolTip="Zarovnat vlevo"               Click="BtnAlignLeft_Click"    Padding="5,3" FontSize="13"/>
@@ -306,8 +316,8 @@
                 <!-- Canvas -->
                 <ColumnDefinition Width="*" MinWidth="300"/>
                 <ColumnDefinition Width="4"/>
-                <!-- Live preview (skrytý) -->
-                <ColumnDefinition x:Name="PreviewColumn" Width="0" MinWidth="0"/>
+                <!-- Live preview -->
+                <ColumnDefinition x:Name="PreviewColumn" Width="660" MinWidth="0"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
                 <!-- Hlavní plocha -->

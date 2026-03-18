@@ -533,6 +533,9 @@ public class TemplateDesignerViewModel : EDViewModel
         "TableElement"     => (190f, 30f),
         "BarcodeQR"        => (30f, 30f),
         "BarcodeCode128"   => (80f, 15f),
+        "StopListElement"      => (60f, 60f),
+        "DepartureGridElement" => (120f, 60f),
+        "NotesLegendElement"   => (190f, 25f),
         _                  => (80f, 8f)
     };
 
@@ -548,6 +551,9 @@ public class TemplateDesignerViewModel : EDViewModel
             "TableElement"     => new TableElement     { X = x, Y = y, Width = w },
             "BarcodeQR"        => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.QR },
             "BarcodeCode128"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.Code128 },
+            "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w },
+            "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w },
+            "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w },
             _                  => new TextElement      { X = x, Y = y, Width = w, Height = h, Text = type }
         };
     }
@@ -1036,7 +1042,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Sample template ───────────────────────────────────────────────────────
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "JR" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "MHD" };
         t.Sections.Add(new Section
         {
             Name = "Záhlaví", PrintBehavior = SectionPrintBehavior.OnEveryPage,
@@ -1045,7 +1051,7 @@ public class TemplateDesignerViewModel : EDViewModel
         t.Sections.Add(new Section
         {
             Name = "Obsah", PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = 60f
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = 237f
         });
         t.Sections.Add(new Section
         {
