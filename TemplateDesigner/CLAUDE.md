@@ -18,7 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-Specializované JŘ elementy — ScheduleElementBase + StopScheduleElement (MinutesOnly + FullTime)
+Vozové jízdní řády — VehicleScheduleElement (nový typ JŘ elementu); dotažení FullTime módu zastávkového JŘ
 
 ### ✅ Co máme
 
@@ -39,9 +39,10 @@ Specializované JŘ elementy — ScheduleElementBase + StopScheduleElement (Minu
 - Strom šablony — záložka "Strom" v hlavním okně; hierarchický přehled celé šablony (sekce → skupiny → elementy)
 - LineElement — custom dash/gap pro čárkované a tečkované čáry
 - ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
-- **StopScheduleElement** — zastávkový JŘ (MHD MinutesOnly + meziměstský FullTime); ~30 properties; tabulka zastávek, mřížka minut per skupina dnů, legenda poznámek; ScheduleElementBase abstraktní základ; SkiaHeightCalculator integrace
-- **Caché AgendaJRAPI** — abstraktní mezistupeň pro JŘ agendy (helpery: BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka + AddAnotace/AddAtribut/AddPoznamkaZastavky); ALVA.MHD.TiskAPI konkrétní implementace
+- **Zastávkový JŘ (MinutesOnly)** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery a cache; ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace
+- **Caché AgendaJRAPI + TiskMHD** — abstraktní mezistupeň `AgendaJRAPI` pro JŘ agendy (helpery: BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka + AddAnotace/AddAtribut/AddPoznamkaZastavky); `ALVA.MHD.TiskAPI` konkrétní implementace s `GetData`/`GetMockData` pro MHD zastávkový JŘ (~1200 řádků business logiky)
 - **DataContext vnořená pole** — ParseMockData rozlišuje JsonArray/JsonObject vs skalární hodnoty; ScheduleElementBase parsuje vnořená pole (ZONY[], ATRIBUTY[], ANOTACE[], POZNAMKY_ZASTAVKY[])
+- **Multi-data PDF export + PrintDialog** — `RenderMultiDataToPdf` zpracovává více DataContextů (1 zastávka/směr = 1+ PDF stránek); PrintDialog s parametry a exportem reálných dat z Caché (`GetData`); tisk i mock preview v jednom dialogu
 - Word wrap + dynamická výška TextElementu — `WordWrap=true` + `Height=null` → text se zalamuje a výška se dopočítá z obsahu; `LineSpacing` property
 - **PageLayoutEngine** — čistý logický engine (vrstva 3): Template + DataContext → `List<Page>` s PlacedSections; multi-page stránkování, hlavičky/patičky (OnEveryPage, OnFirstPageOnly, OnLastPageOnly, OnEveryPageExceptFirst), SplitAcrossPages, PerDataRow expanze, flow layout uvnitř sekcí, PAGE/TOTAL_PAGES injekce, dvouprůchodový layout pro OnLastPageOnly
 - Multi-page preview — PreviewCanvas zobrazuje všechny stránky pod sebou se stíny a rámečky

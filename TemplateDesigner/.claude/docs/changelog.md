@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-03-18 — Zastávkové jízdní řády a integrace do Caché
+
+- ✅ **ScheduleElementBase** — abstraktní základ JŘ elementů: DataSource klíče (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY), Build helpery s cache (SetCacheRef atomicky čistí cache při změně DataContext reference), společné vizuální properties (FontFamily, FontSize, GridColor, HeaderBackgroundColor)
+- ✅ **ScheduleModels** — runtime POCO modely: ZastavkaData, SkupinaDnuData, OdjezdData, PoznamkaData, AnotaceData, AtributData, PoznamkaZastavkyData + enumy TypPoznamky, TypAnotace
+- ✅ **StopListElement** — tabulka zastávek s ~15 properties: sloupce (zastávka, čas jízdy, tarifní číslo, zóna, průběhy, základní trasa, na znamení), zvýraznění aktuální zastávky, šedé projeté zastávky, atributy a poznámky zastávky, odsazení
+- ✅ **DepartureGridElement** — mřížka minut odjezdů per skupina dnů: nadpis skupiny, sloupec hodin + mřížka minut, anotace jako horní index, data-driven barvy (ForeColor/BackColor), negativní značky invertované; layout cache (`_cachedLayout`) zabraňuje dvojímu ComputeLayout
+- ✅ **NotesLegendElement** — legenda poznámek pod odjezdy: 3 typy (Text, NegativníZnačka, SpeciálníZnak), invertované barvy u NZ, Unicode symboly
+- ✅ **AgendaJRAPI** — abstraktní Caché třída (mezistupeň v hierarchii AgendaAPI → AgendaJRAPI → TiskMHD): helpery BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka + AddAnotace/AddAtribut/AddPoznamkaZastavky; ConvertSpecialniZnak; AddStandardJRFields/Collections/Parameters
+- ✅ **TiskMHD** — kompletní Caché implementace pro MHD zastávkový JŘ (~1200 řádků): GetSchema, GetTableTemplates, GetTableTemplate, GetData (reálná data z DB: trasy, spoje, poznámky, NZ, atributy), GetMockData, GetParameters; refaktor legacy business logiky z `ALVA.MHD.LinkyPrintFormatMHD`
+- ✅ **CacheAgendaProvider rozšíření** — `ParseMockData` rozlišuje JsonArray/JsonObject vs skalární hodnoty; `GetData` nová metoda pro načítání reálných dat s parametry; `BuildRealData` delegát pro PrintDialog
+- ✅ **PrintDialog rozšíření** — parametry sestavy (CheckBox/ComboBox/TextBox), export mock PDF i reálných dat z Caché; `RenderMultiDataToPdf` pro multi-zastávkový export; `ShowSaveDialog` extrahováno
+- ✅ **DesignerCanvas** — dynamické elementy (Height=null) zobrazují resize handle jen na bocích (ne na horních/dolních hranách); schedule elementy mají speciální placeholder text a šedé pozadí
+- ✅ **SkiaHeightCalculator** — case pro ScheduleElementBase podtřídy (deleguje na element.CalculateHeight)
+- ✅ **TemplateDesignerMHD** — přepnut na `Extends AgendaJRAPI` (místo AgendaAPI)
+
+---
+
 ## 2026-03-17 — PageLayoutEngine — multi-page stránkování, hlavičky/patičky, PDF export
 
 - ✅ **PageLayoutEngine** — nový čistý logický engine (vrstva 3): `Template + DataContext → List<Page>` s `PlacedSection` strukturami; žádný SkiaSharp/WPF

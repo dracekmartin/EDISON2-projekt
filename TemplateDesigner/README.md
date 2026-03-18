@@ -641,22 +641,49 @@ Každá šablona patří k **agendě** (např. Jízdní řád, Faktury). Agenda 
 
 ---
 
+### Jízdní řády (zastávkový JŘ)
+
+Specializované elementy pro tisk zastávkových jízdních řádů MHD. Tři elementy se skládají do šablony:
+
+**Seznam zastávek (StopListElement):**
+- Tabulka zastávek s konfigurovatelými sloupci: název zastávky, čas jízdy, tarifní číslo, zóna, průběhy, základní trasa, na znamení
+- Zvýraznění aktuální zastávky (tučně, podtržení), projeté zastávky šedě
+- Atributy a poznámky zastávek zobrazeny za názvem
+
+**Mřížka odjezdů (DepartureGridElement):**
+- Minuty odjezdů seskupené per skupina dnů (Pracovní dny, Víkendy, Svátky…)
+- Záhlaví skupiny dnů, sloupec hodin vlevo, minuty v mřížce vpravo
+- Anotace jako horní index u minuty (poznámky, výjimky)
+- Data-driven barvy odjezdů (ForeColor, BackColor), negativní značky invertované
+- Konfigurovatelná šířka sloupce hodin, velikost fontu minut
+
+**Legenda poznámek (NotesLegendElement):**
+- Legenda pod odjezdy — vysvětlivky k symbolům a anotacím
+- Tři typy poznámek: textové, negativní značky (invertované barvy), speciální znaky (Unicode)
+
+**Přidání do šablony:** [+ Element ▾] → Zastávky JŘ / Odjezdy JŘ / Poznámky JŘ
+
+**Tisk reálných dat:**
+- V PrintDialogu tlačítko **Export reálných dat** → načte data z Caché pro vybranou linku, směr a období
+- Každá zastávka/směr = kompletní průchod šablonou → multi-page PDF
+
+> Elementy jsou součástí agendy MHD. Pro fungování s reálnými daty je potřeba připojení k Caché.
+
+---
+
 ## Co bude přidáno (plánované funkce)
 
 ### Tabulky a JR
 
-- **JR Tabulka (JRTableElement)** — specializovaný element pro jízdní řády
-  - Matice zastávky × spoje (dynamické sloupce i řádky — aktuální TableElement toto nezvládne)
-  - Uživatel konfiguruje zobrazení: které levé sloupce (Zóna, Km, Zastávka, MHD), šířky, barvy, záhlaví
-  - Šipky směru jízdy, víceúrovňové záhlaví (Pracovní dny / Víkendy), střídání barev
-  - Data (spoje, časy) přijdou z Caché — šablona funguje pro libovolnou linku
+- **Zastávkový JŘ — FullTime mód** — meziměstský formát: matice zastávky × spoje (aktuálně implementován pouze MinutesOnly mód pro MHD)
+- **Vozový JŘ (VehicleScheduleElement)** — denní plán jednoho vozidla: sekvence spojů, přestávky, výjezd/příjezd do depa
+- **Knižní JŘ (BookScheduleElement)** — kompletní jízdní řád celé linky (oba směry, všechny zastávky × spoje)
 - **Grouping v Dynamic tabulkách** — Group Header/Footer řádky mezi daty
 
 ### Podmíněnost a parametry
 
-- **Print dialog parametrů** — dynamicky generovaný ze šablony před tiskem (Part 2 parametrů)
-  - Part 1 je hotový: parametry definované v Caché jsou viditelné a interaktivní v live preview
-  - Chybí: ostrý print dialog, ukládání hodnot do JSON šablony, offline fallback bez Caché
+- ✅ **Print dialog s parametry** — hotovo: parametry, export mock i reálných dat z Caché
+- Chybí: ukládání hodnot parametrů do JSON šablony, offline fallback bez Caché
 
 ### Formátování
 

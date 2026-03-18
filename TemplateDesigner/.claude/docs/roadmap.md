@@ -12,14 +12,26 @@
 
 | Krok | Co | Stav |
 |---|---|---|
-| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) | |
-| 2 | `StopScheduleElement` — zastávkový JŘ, mód "FullTime" (meziměsto) | |
-| 3 | Caché `GetData`/`GetMockData` — nový wire formát (ZASTAVKY, SPOJE, ODJEZDY, POZNAMKY) | |
-| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů | |
-| 5 | `StopScheduleElement` — mód "MinutesOnly" (MHD) | |
-| 6 | `DepartureGridElement` (pokud MHD potřebuje samostatný element) | |
-| 7 | `BookScheduleElement` — knižní JŘ (layout TBD) | |
-| 8 | `VehicleScheduleElement` — vozový JŘ (layout TBD) | |
+| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) | ✅ hotovo (2026-03-18) |
+| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ, MinutesOnly (MHD) | ✅ hotovo (2026-03-18) |
+| 3 | Caché `AgendaJRAPI` + `TiskMHD` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) | ✅ hotovo (2026-03-18) |
+| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů | ✅ hotovo (2026-03-18) |
+| 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF | ✅ hotovo (2026-03-18) |
+| 6 | `CacheAgendaProvider` — ParseMockData vnořená pole, GetData, BuildRealData | ✅ hotovo (2026-03-18) |
+| 7 | Zastávkový JŘ — mód "FullTime" (meziměsto): matice zastávky × spoje | |
+| 8 | `BookScheduleElement` — knižní JŘ (layout TBD) | |
+| 9 | `VehicleScheduleElement` — vozový JŘ (layout TBD) | |
+
+**Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy:**
+
+| Téma | Popis | Dopad na vozové JŘ |
+|---|---|---|
+| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy (`StopListElement`, `DepartureGridElement`, `NotesLegendElement`) — lépe odpovídá designerové filozofii (uživatel skládá ze stavebních bloků). | Vozový JŘ bude pravděpodobně taky víc elementů (hlavička oběhu, tabulka spojů, poznámky). Počítat s tím od začátku. |
+| **FullTime mód odložen** | MinutesOnly mód (MHD) je hotový, ale FullTime (meziměstský — matice zastávky × spoje) je odložen. Je to zásadně jiný layout (pivot tabulka). | Definovat layout vozového JŘ před implementací — aby se neopakovala situace kde se plán změní v průběhu. |
+| **Synchronní GetData v PrintDialogu** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké (100+ spojů) může zamrznout UI. | Vozový JŘ bude mít víc dat (celý denní oběh). Async loading s progress barem bude nutný. |
+| **SKTypeface/SKPaint alokace** | Schedule elementy alokují SKTypeface a SKPaint per render frame. Funguje, ale není optimální. | Cachovat fonty a painty — buď lazy static, nebo pool na elementu. |
+| **Caché business logika je rozsáhlá** | TiskMHD má ~1200 řádků — refaktor z legacy kódu zabral víc času než se čekalo. Hlavně: slučování zastávek, auto-poznámkování, NZ generování z bitmap. | Vozový JŘ bude mít jinou, ale podobně komplexní business logiku (oběhy, přestávky, výjezd/příjezd). Počítat s tím v odhadu. |
+| **Testování s reálnými daty** | Mock data v designeru fungují, ale reálná data z Caché odhalí edge cases (prázdné pole, null hodnoty, speciální znaky). | Připravit testovací scénáře s reálnými daty co nejdřív. |
 
 ---
 
@@ -109,6 +121,13 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 ---
 
 ### ✅ Implementováno
+
+**Zastávkový JŘ (MinutesOnly) + Caché integrace** ✅ hotovo (2026-03-18)
+- ScheduleElementBase + 3 elementy (StopListElement, DepartureGridElement, NotesLegendElement)
+- AgendaJRAPI + TiskMHD (~1200 řádků business logiky z legacy refaktoru)
+- CacheAgendaProvider: ParseMockData vnořená pole, GetData, BuildRealData
+- PrintDialog: parametry + export reálných dat + multi-data PDF
+- SkiaHeightCalculator: schedule element height calculation
 
 **PageLayoutEngine + multi-page** ✅ hotovo (2026-03-17)
 - Template + DataContext → `List<Page>` s PlacedSections; čistá logika (vrstva 3), žádný SkiaSharp/WPF
@@ -222,8 +241,8 @@ class PlacedSection {
 
 | Krok | Co | Náročnost |
 |---|---|---|
-| 8 | Napojení reálných dat z Caché (`GetData`) do preview | nízká |
-| 9 | Print dialog — parametry před tiskem (rozšíření stávajícího preview panelu) | střední |
+| ~~8~~ | ~~Napojení reálných dat z Caché (`GetData`) do preview~~ | ✅ hotovo (2026-03-18) — PrintDialog |
+| ~~9~~ | ~~Print dialog — parametry před tiskem~~ | ✅ hotovo (2026-03-18) — PrintDialog s parametry |
 
 ### Budoucí modularizace (až bude potřeba)
 
