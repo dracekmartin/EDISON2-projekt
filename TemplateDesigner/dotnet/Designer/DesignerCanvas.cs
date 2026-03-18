@@ -116,7 +116,7 @@ public class DesignerCanvas
             if (canvasY < oy || canvasY > oy + sectionH) continue;
 
             // Procházíme od nejvyššího ZIndex (klikne se na element "nahoře")
-            foreach (var el in section.Elements.OrderByDescending(e => e.ZIndex))
+            foreach (var el in _state.GetElementsByZIndexDesc(section))
             {
                 float ex = ox + el.X * MmToPx;
                 float ey = oy + el.Y * MmToPx;
@@ -333,7 +333,7 @@ public class DesignerCanvas
             canvas.Save();
             canvas.ClipRect(contentRect);
             var ctx = new RenderContext(canvas, MmToPx) { SectionOriginX = ox, SectionOriginY = oy };
-            foreach (var el in section.Elements.OrderBy(e => e.ZIndex))
+            foreach (var el in _state.GetElementsByZIndexAsc(section))
                 el.Render(ctx);
 
             // Indikátory podmíněné viditelnosti a skupin — jeden průchod

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -562,9 +563,15 @@ public partial class MainWindow : Window
         dlg.ShowDialog();
     }
 
+    private void Window_Closing(object sender, CancelEventArgs e)
+    {
+        if (_vm is not null && !_vm.ConfirmUnsavedChanges())
+            e.Cancel = true;
+    }
+
     private void MenuExit_Click(object sender, RoutedEventArgs e)
     {
-        if (_vm!.ConfirmUnsavedChanges()) Application.Current.Shutdown();
+        Close();
     }
 
     private void MenuPageProps_Click(object sender, RoutedEventArgs e)
@@ -728,42 +735,8 @@ public partial class MainWindow : Window
         if (_suppressTreeSelection || _vm is null) return;
         if (e.NewValue is not TreeViewItem item) return;
 
-        if (item.Tag is TemplateElement element)
-        {
-            // Najít sekci, které element patří
-            var section = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(element));
-            if (section is not null)
-            {
-                _vm.ActivateSection(section);
-                _vm.State.SelectedElements.Clear();
-                _vm.State.SelectedElements.Add(element);
-                RestoreSectionSelection();
-                UpdatePropertiesPanel();
-                InvalidateCanvas();
-            }
-        }
-        else if (item.Tag is string groupId)
-        {
-            // Klik na uzel skupiny → vyber všechny členy
-            var section = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Any(el2 => el2.GroupId == groupId));
-            if (section is not null)
-            {
-                _vm.ActivateSection(section);
-                _vm.State.SelectedElements.Clear();
-                _vm.State.SelectedElements.AddRange(section.Elements.Where(el2 => el2.GroupId == groupId));
-                RestoreSectionSelection();
-                UpdatePropertiesPanel();
-                InvalidateCanvas();
-            }
-        }
-        else if (item.Tag is Section section)
-        {
-            _vm.ActivateSection(section);
-            _vm.State.SelectedElements.Clear();
-            RestoreSectionSelection();
-            UpdatePropertiesPanel();
-            InvalidateCanvas();
-        }
+        _vm.SelectFromTree(item.Tag);
+        RestoreSectionSelection();
     }
 
     private void TemplateTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -1073,22 +1046,7 @@ public partial class MainWindow : Window
         if (_vm is null) return;
         if (SchemaTree.SelectedItem is not SchemaFieldVM field) return;
 
-        if (_vm.State.SelectedElements.Count == 1 && _vm.State.SelectedElements[0] is TextElement textEl)
-        {
-            string oldText = textEl.Text;
-            string newText = oldText + field.Placeholder;
-            _vm.Execute(new SetPropertyCommand(
-                $"Vložit {field.Placeholder}",
-                oldText, newText,
-                v => textEl.Text = (string)v!));
-            InvalidateCanvas();
-            UpdatePropertiesPanel();
-        }
-        else
-        {
-            System.Windows.Clipboard.SetText(field.Placeholder);
-            _vm.StatusText = $"Zkopírováno do schránky: {field.Placeholder}";
-        }
+        _vm.InsertOrCopyPlaceholder(field.Placeholder);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1134,27 +1092,8 @@ public partial class MainWindow : Window
     {
         if (_vm is null) return;
 
-        // Aktualizovat strom pokud je viditelný
         RefreshTreeIfVisible();
-
-        if (_vm.State.SelectedElements.Count == 1)
-        {
-            var el   = _vm.State.SelectedElements[0];
-            string type = el.GetType().Name.Replace("Element", "");
-            _vm.StatusText = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
-                              (el.IsLocked ? "  [ZAMČENO]" : "") +
-                              "  |  2× klik nebo Enter = vlastnosti";
-
-            return;
-        }
-
-        _vm.StatusText = _vm.State.SelectedElements.Count > 1
-            ? $"Vybráno {_vm.State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru"
-            : _vm.State.ActiveSection is not null
-                ? $"Sekce: {_vm.State.ActiveSection.Name}  |  " +
-                  $"Výška: {_vm.State.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
-                  $"Elementy: {_vm.State.ActiveSection.Elements.Count}"
-                : "Vyberte element nebo sekci.";
+        _vm.UpdateStatusForSelection();
     }
 
     private void UpdateTitle()
@@ -1162,7 +1101,8 @@ public partial class MainWindow : Window
         if (_vm is null) return;
         string name = _vm.State.CurrentTemplate.Name;
         string file = _vm.CurrentFilePath is not null ? $" — {Path.GetFileName(_vm.CurrentFilePath)}" : "";
-        Title = $"{name}{file} — Template Designer";
+        string dirty = _vm.IsDirty ? " *" : "";
+        Title = $"{name}{file}{dirty} — Template Designer";
     }
 
     private void ShowHelp()
@@ -1391,43 +1331,10 @@ public partial class MainWindow : Window
         if (hit is not null)
         {
             var (section, element) = hit.Value;
+            bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            bool alt  = Keyboard.Modifiers.HasFlag(ModifierKeys.Alt);
 
-            if (Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-            {
-                // Ctrl+klik: toggle element (nebo celou skupinu)
-                if (element.GroupId is not null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
-                {
-                    var groupMembers = section.Elements.Where(e2 => e2.GroupId == element.GroupId).ToList();
-                    if (_vm.State.SelectedElements.Contains(element))
-                        foreach (var m in groupMembers) _vm.State.SelectedElements.Remove(m);
-                    else
-                        foreach (var m in groupMembers.Where(m2 => !_vm.State.SelectedElements.Contains(m2)))
-                            _vm.State.SelectedElements.Add(m);
-                }
-                else
-                {
-                    if (_vm.State.SelectedElements.Contains(element))
-                        _vm.State.SelectedElements.Remove(element);
-                    else
-                        _vm.State.SelectedElements.Add(element);
-                }
-            }
-            else if (!_vm.State.SelectedElements.Contains(element))
-            {
-                _vm.State.SelectedElements.Clear();
-                // Klik na člen skupiny → vyber celou skupinu (Alt = jen jeden element)
-                if (element.GroupId is not null && !Keyboard.Modifiers.HasFlag(ModifierKeys.Alt))
-                {
-                    var groupMembers = section.Elements.Where(e2 => e2.GroupId == element.GroupId).ToList();
-                    _vm.State.SelectedElements.AddRange(groupMembers);
-                }
-                else
-                {
-                    _vm.State.SelectedElements.Add(element);
-                }
-            }
-
-            _vm.ActivateSection(section);
+            _vm.HandleElementHit(section, element, ctrl, alt);
 
             _dragElement           = element;
             _dragMouseStartCanvasX = cx;
@@ -1445,10 +1352,7 @@ public partial class MainWindow : Window
         }
 
         var section2 = _canvas.HitTestSection(cx, cy, cw);
-        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control))
-            _vm.State.SelectedElements.Clear();
-        _vm.ActivateSection(section2);
-        UpdatePropertiesPanel();
+        _vm.HandleEmptyAreaHit(section2, Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
 
         _rubberBandStart = new SKPoint(cx, cy);
         _rubberBandRect  = null;
@@ -1597,18 +1501,7 @@ public partial class MainWindow : Window
         // ── Field drag: append do existujícího TextElementu ──────────────────
         if (_addingFieldName is not null && _addingTargetElement is TextElement textEl)
         {
-            string placeholder = $"{{{_addingFieldName}}}";
-            string oldText = textEl.Text;
-            string newText = oldText + placeholder;
-            _vm.Execute(new SetPropertyCommand(
-                $"Vložit {placeholder}",
-                oldText, newText,
-                v => textEl.Text = (string)v!));
-
-            var section = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(textEl));
-            if (section is not null) _vm.ActivateSection(section);
-            _vm.State.SelectedElements.Clear();
-            _vm.State.SelectedElements.Add(textEl);
+            _vm.AppendPlaceholderToElement(textEl, _addingFieldName);
             FinishAddingElement();
             return;
         }
@@ -1629,41 +1522,7 @@ public partial class MainWindow : Window
         float mmX = (_addingGhostPos.X - origin.OriginX) / _canvas.MmToPx;
         float mmY = (_addingGhostPos.Y - origin.OriginY) / _canvas.MmToPx;
 
-        // Centrovat element na pozici kurzoru
-        var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? "TextElement");
-        mmX -= defW / 2f;
-        mmY -= defH / 2f;
-
-        // Clamp do hranic sekce
-        float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
-        float sectionH = _addingTargetSection.EffectiveDesignerHeight;
-        mmX = Math.Clamp(mmX, 0, Math.Max(0, sectionW - defW));
-        mmY = Math.Clamp(mmY, 0, Math.Max(0, sectionH - defH));
-
-        // Snap na mřížku
-        if (_vm.State.SnapToGrid)
-        {
-            float g = _vm.State.GridSize;
-            mmX = MathF.Round(mmX / g) * g;
-            mmY = MathF.Round(mmY / g) * g;
-        }
-
-        // Vytvoření elementu — palette nebo field
-        TemplateElement element;
-        if (_addingFieldName is not null)
-        {
-            string placeholder = $"{{{_addingFieldName}}}";
-            element = new TextElement { X = mmX, Y = mmY, Width = defW, Height = defH, Text = placeholder };
-        }
-        else
-        {
-            element = TemplateDesignerViewModel.CreateElementByType(_addingElementType!, mmX, mmY);
-        }
-
-        _vm.Execute(new AddElementCommand(_addingTargetSection, element));
-        _vm.ActivateSection(_addingTargetSection);
-        _vm.State.SelectedElements.Clear();
-        _vm.State.SelectedElements.Add(element);
+        _vm.AddElementAtPosition(_addingTargetSection, mmX, mmY, _addingElementType, _addingFieldName);
         FinishAddingElement();
     }
 

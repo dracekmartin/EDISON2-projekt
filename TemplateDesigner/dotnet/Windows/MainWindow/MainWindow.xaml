@@ -4,7 +4,8 @@
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         xmlns:local="clr-namespace:TemplateDesigner"
         Title="Template Designer" Height="768" Width="1280"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        Closing="Window_Closing">
     <Window.Resources>
         <Style x:Key="PanelHeader" TargetType="TextBlock">
             <Setter Property="Background"   Value="#F0F0F0"/>

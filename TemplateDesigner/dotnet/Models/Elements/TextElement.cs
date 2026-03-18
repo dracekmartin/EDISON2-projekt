@@ -77,7 +77,7 @@ public class TextElement : TemplateElement
         if (WordWrap)
         {
             float widthPx = ctx.Px(Width);
-            var lines = WrapText(resolvedText, font, widthPx);
+            var lines = TextWrapHelper.WrapText(resolvedText, font, widthPx);
             float lineHeightPx = fontSizePx * LineSpacing;
 
             // Vertikální zarovnání bloku řádků
@@ -160,7 +160,7 @@ public class TextElement : TemplateElement
     // ── Word wrap helpers ────────────────────────────────────────────────────
 
     /// <summary>Vypočítá výšku textu v mm při zalamování do dané šířky.</summary>
-    private float CalculateTextHeight(string text)
+    internal float CalculateTextHeight(string text)
     {
         if (string.IsNullOrEmpty(text) || Width <= 0) return 8f;
 
@@ -177,53 +177,10 @@ public class TextElement : TemplateElement
         float widthPx = Width * refMmToPx;
 
         using var font = new SKFont(typeface, fontSizePx);
-        var lines = WrapText(text, font, widthPx);
+        var lines = TextWrapHelper.WrapText(text, font, widthPx);
         float lineHeightMm = fontSizeMm * LineSpacing;
 
         return Math.Max(lineHeightMm * lines.Count + fontSizeMm * 0.3f, fontSizeMm);
-    }
-
-    /// <summary>Rozdělí text na řádky podle šířky v px. Respektuje \r\n i \n.</summary>
-    private static List<string> WrapText(string text, SKFont font, float maxWidthPx)
-    {
-        var result = new List<string>();
-
-        // Normalizace řádkových zlomů — WPF TextBox posílá \r\n
-        var paragraphs = text.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
-        foreach (var paragraph in paragraphs)
-        {
-            if (string.IsNullOrEmpty(paragraph))
-            {
-                result.Add("");
-                continue;
-            }
-
-            var words = paragraph.Split(' ');
-            var currentLine = "";
-
-            foreach (var word in words)
-            {
-                var testLine = currentLine.Length == 0 ? word : currentLine + " " + word;
-
-                if (font.MeasureText(testLine) > maxWidthPx && currentLine.Length > 0)
-                {
-                    result.Add(currentLine);
-                    currentLine = word;
-                }
-                else
-                {
-                    currentLine = testLine;
-                }
-            }
-
-            if (currentLine.Length > 0)
-                result.Add(currentLine);
-        }
-
-        if (result.Count == 0)
-            result.Add("");
-
-        return result;
     }
 }
 

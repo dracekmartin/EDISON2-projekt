@@ -32,26 +32,7 @@ public class SkiaHeightCalculator : IElementHeightCalculator
             return te.EffectiveDesignerHeight;
 
         var resolvedText = data?.ResolvePlaceholders(te.Text) ?? te.Text;
-        if (string.IsNullOrEmpty(resolvedText))
-            return 8f;
-
-        var typeface = SKTypeface.FromFamilyName(
-            te.FontFamily,
-            te.FontWeight == TextFontWeight.Bold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal,
-            SKFontStyleWidth.Normal,
-            te.FontStyle == TextFontStyle.Italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright)
-            ?? SKTypeface.Default;
-
-        float fontSizeMm = te.FontSize * 0.3528f;
-        const float refMmToPx = 96f / 25.4f;
-        float fontSizePx = fontSizeMm * refMmToPx;
-        float widthPx = te.Width * refMmToPx;
-
-        using var font = new SKFont(typeface, fontSizePx);
-        var lines = WrapText(resolvedText, font, widthPx);
-        float lineHeightMm = fontSizeMm * te.LineSpacing;
-
-        return Math.Max(lineHeightMm * lines.Count + fontSizeMm * 0.3f, fontSizeMm);
+        return te.CalculateTextHeight(resolvedText);
     }
 
     private static float CalculateTableElementHeight(TableElement table, DataContext? data)
@@ -74,43 +55,4 @@ public class SkiaHeightCalculator : IElementHeightCalculator
         }
     }
 
-    /// <summary>Rozdělí text na řádky podle šířky v px. Respektuje \r\n i \n.</summary>
-    private static List<string> WrapText(string text, SKFont font, float maxWidthPx)
-    {
-        var result = new List<string>();
-        var paragraphs = text.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
-        foreach (var paragraph in paragraphs)
-        {
-            if (string.IsNullOrEmpty(paragraph))
-            {
-                result.Add("");
-                continue;
-            }
-
-            var words = paragraph.Split(' ');
-            var currentLine = "";
-
-            foreach (var word in words)
-            {
-                var testLine = currentLine.Length == 0 ? word : currentLine + " " + word;
-                if (font.MeasureText(testLine) > maxWidthPx && currentLine.Length > 0)
-                {
-                    result.Add(currentLine);
-                    currentLine = word;
-                }
-                else
-                {
-                    currentLine = testLine;
-                }
-            }
-
-            if (currentLine.Length > 0)
-                result.Add(currentLine);
-        }
-
-        if (result.Count == 0)
-            result.Add("");
-
-        return result;
-    }
 }

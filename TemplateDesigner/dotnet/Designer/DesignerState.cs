@@ -34,11 +34,43 @@ public class DesignerState
     public bool CanUndo => UndoStack.Count > 0;
     public bool CanRedo => RedoStack.Count > 0;
 
+    // ── Cache seřazených elementů per sekce ─────────────────────────────────
+    private readonly Dictionary<Guid, List<TemplateElement>> _sortedByZIndexDesc = new();
+    private readonly Dictionary<Guid, List<TemplateElement>> _sortedByZIndexAsc = new();
+
+    /// <summary>Vrátí elementy sekce seřazené sestupně podle ZIndex (pro hit testing).</summary>
+    public List<TemplateElement> GetElementsByZIndexDesc(Section section)
+    {
+        if (_sortedByZIndexDesc.TryGetValue(section.Id, out var cached))
+            return cached;
+        var sorted = section.Elements.OrderByDescending(e => e.ZIndex).ToList();
+        _sortedByZIndexDesc[section.Id] = sorted;
+        return sorted;
+    }
+
+    /// <summary>Vrátí elementy sekce seřazené vzestupně podle ZIndex (pro rendering).</summary>
+    public List<TemplateElement> GetElementsByZIndexAsc(Section section)
+    {
+        if (_sortedByZIndexAsc.TryGetValue(section.Id, out var cached))
+            return cached;
+        var sorted = section.Elements.OrderBy(e => e.ZIndex).ToList();
+        _sortedByZIndexAsc[section.Id] = sorted;
+        return sorted;
+    }
+
+    /// <summary>Invaliduje cache seřazených elementů — volat po každé změně.</summary>
+    public void InvalidateElementCache()
+    {
+        _sortedByZIndexDesc.Clear();
+        _sortedByZIndexAsc.Clear();
+    }
+
     public void Execute(IDesignerCommand command)
     {
         command.Execute();
         UndoStack.Push(command);
         RedoStack.Clear();
+        InvalidateElementCache();
     }
 
     public void Undo()
@@ -47,6 +79,7 @@ public class DesignerState
         var cmd = UndoStack.Pop();
         cmd.Undo();
         RedoStack.Push(cmd);
+        InvalidateElementCache();
     }
 
     public void Redo()
@@ -55,5 +88,6 @@ public class DesignerState
         var cmd = RedoStack.Pop();
         cmd.Execute();
         UndoStack.Push(cmd);
+        InvalidateElementCache();
     }
 }

@@ -35,6 +35,14 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── File & path ───────────────────────────────────────────────────────────
     public string? CurrentFilePath { get; private set; }
 
+    // ── Dirty tracking ──────────────────────────────────────────────────────
+    private bool _isDirty;
+    public bool IsDirty
+    {
+        get => _isDirty;
+        private set { if (_isDirty != value) { _isDirty = value; RequestTitleUpdate?.Invoke(); } }
+    }
+
     // ── Providers ─────────────────────────────────────────────────────────────
     public  IDataSchemaProvider    SchemaProvider        { get; }
     public  CacheAgendaProvider?   CacheProvider         { get; }
@@ -151,12 +159,14 @@ public class TemplateDesignerViewModel : EDViewModel
     public void Execute(IDesignerCommand cmd)
     {
         State.Execute(cmd);
+        IsDirty = true;
         NotifyUndoRedo();
     }
 
     private void Undo()
     {
         State.Undo();
+        IsDirty = true;
         NotifyUndoRedo();
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
@@ -166,6 +176,7 @@ public class TemplateDesignerViewModel : EDViewModel
     private void Redo()
     {
         State.Redo();
+        IsDirty = true;
         NotifyUndoRedo();
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
@@ -322,7 +333,11 @@ public class TemplateDesignerViewModel : EDViewModel
         if (!ConfirmUnsavedChanges()) return;
         State.CurrentTemplate = new Template();
         CurrentFilePath = null;
+        IsDirty = false;
         State.SelectedElements.Clear();
+        State.UndoStack.Clear();
+        State.RedoStack.Clear();
+        NotifyUndoRedo();
         State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
         RebuildSections();
         RefreshFieldsList();
@@ -340,7 +355,11 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             State.CurrentTemplate = await TemplateSerializer.LoadAsync(dlg.FileName);
             CurrentFilePath = dlg.FileName;
+            IsDirty = false;
             State.SelectedElements.Clear();
+            State.UndoStack.Clear();
+            State.RedoStack.Clear();
+            NotifyUndoRedo();
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
             RebuildSections();
             RefreshFieldsList();
@@ -359,8 +378,12 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         State.CurrentTemplate = template;
         State.SelectedElements.Clear();
+        State.UndoStack.Clear();
+        State.RedoStack.Clear();
+        NotifyUndoRedo();
         State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
         CurrentFilePath = null;
+        IsDirty = true;
 
         RebuildSections();
         InvalidateAll();
@@ -381,6 +404,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (CurrentFilePath is null) { SaveAsTemplate(); return; }
         SyncParametersToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
+        IsDirty = false;
         RequestTitleUpdate?.Invoke();
     }
 
@@ -396,6 +420,7 @@ public class TemplateDesignerViewModel : EDViewModel
         CurrentFilePath = dlg.FileName;
         SyncParametersToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
+        IsDirty = false;
         RequestTitleUpdate?.Invoke();
     }
 
@@ -422,7 +447,42 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Code-behind wires this to actually call PreviewCanvas.RenderToPdf.</summary>
     public Action<string>? RequestExportPdf { get; set; }
 
-    public bool ConfirmUnsavedChanges() => true; // TODO: dirty flag
+    public bool ConfirmUnsavedChanges()
+    {
+        if (!IsDirty) return true;
+
+        var result = MessageBox.Show(
+            "Šablona obsahuje neuložené změny. Chcete je uložit?",
+            "Neuložené změny",
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Warning);
+
+        return result switch
+        {
+            MessageBoxResult.Yes => SaveAndContinue(),
+            MessageBoxResult.No => true,
+            _ => false // Cancel
+        };
+    }
+
+    private bool SaveAndContinue()
+    {
+        if (CurrentFilePath is null)
+        {
+            var dlg = new SaveFileDialog
+            {
+                Filter   = TemplateSerializer.FileFilter,
+                Title    = "Uložit šablonu",
+                FileName = State.CurrentTemplate.Name
+            };
+            if (dlg.ShowDialog() != true) return false;
+            CurrentFilePath = dlg.FileName;
+        }
+        SyncParametersToTemplate();
+        TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath).GetAwaiter().GetResult();
+        IsDirty = false;
+        return true;
+    }
 
     // ── Clipboard ─────────────────────────────────────────────────────────────
     public void CopySelected()
@@ -1038,6 +1098,213 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public IReadOnlyList<DataFieldCollection>? GetAvailableGroups()
         => SchemaProvider.GetSchema(State.CurrentTemplate.AgendaCode ?? "")?.FieldCollections;
+
+    // ── Status text for selection ──────────────────────────────────────────────
+
+    /// <summary>Aktualizuje StatusText podle aktuálního výběru (dříve v code-behind UpdatePropertiesPanel).</summary>
+    public void UpdateStatusForSelection()
+    {
+        if (State.SelectedElements.Count == 1)
+        {
+            var el = State.SelectedElements[0];
+            string type = el.GetType().Name.Replace("Element", "");
+            StatusText = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
+                         (el.IsLocked ? "  [ZAMČENO]" : "") +
+                         "  |  2× klik nebo Enter = vlastnosti";
+        }
+        else if (State.SelectedElements.Count > 1)
+        {
+            StatusText = $"Vybráno {State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru";
+        }
+        else if (State.ActiveSection is not null)
+        {
+            StatusText = $"Sekce: {State.ActiveSection.Name}  |  " +
+                         $"Výška: {State.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
+                         $"Elementy: {State.ActiveSection.Elements.Count}";
+        }
+        else
+        {
+            StatusText = "Vyberte element nebo sekci.";
+        }
+    }
+
+    // ── Tree selection ──────────────────────────────────────────────────────────
+
+    /// <summary>Zpracuje výběr z template tree — element, skupina nebo sekce (dříve v code-behind).</summary>
+    public void SelectFromTree(object? tag)
+    {
+        if (tag is TemplateElement element)
+        {
+            var section = State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(element));
+            if (section is not null)
+            {
+                ActivateSection(section);
+                State.SelectedElements.Clear();
+                State.SelectedElements.Add(element);
+            }
+        }
+        else if (tag is string groupId)
+        {
+            var section = State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Any(el => el.GroupId == groupId));
+            if (section is not null)
+            {
+                ActivateSection(section);
+                State.SelectedElements.Clear();
+                State.SelectedElements.AddRange(section.Elements.Where(el => el.GroupId == groupId));
+            }
+        }
+        else if (tag is Section section)
+        {
+            ActivateSection(section);
+            State.SelectedElements.Clear();
+        }
+        else return;
+
+        UpdateStatusForSelection();
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    // ── Schema field insert ─────────────────────────────────────────────────────
+
+    /// <summary>Vloží placeholder do vybraného TextElementu nebo zkopíruje do schránky (dříve v code-behind).</summary>
+    public void InsertOrCopyPlaceholder(string placeholder)
+    {
+        if (State.SelectedElements.Count == 1 && State.SelectedElements[0] is TextElement textEl)
+        {
+            string oldText = textEl.Text;
+            string newText = oldText + placeholder;
+            Execute(new SetPropertyCommand(
+                $"Vložit {placeholder}",
+                oldText, newText,
+                v => textEl.Text = (string)v!));
+            RequestCanvasRefresh?.Invoke();
+            RequestPropertiesPanelUpdate?.Invoke();
+        }
+        else
+        {
+            System.Windows.Clipboard.SetText(placeholder);
+            StatusText = $"Zkopírováno do schránky: {placeholder}";
+        }
+    }
+
+    // ── Element drop (adding) ───────────────────────────────────────────────────
+
+    /// <summary>Připojí placeholder k existujícímu TextElementu (field drag na element).</summary>
+    public void AppendPlaceholderToElement(TextElement textEl, string fieldName)
+    {
+        string placeholder = $"{{{fieldName}}}";
+        string oldText = textEl.Text;
+        string newText = oldText + placeholder;
+        Execute(new SetPropertyCommand(
+            $"Vložit {placeholder}",
+            oldText, newText,
+            v => textEl.Text = (string)v!));
+
+        var section = State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(textEl));
+        if (section is not null) ActivateSection(section);
+        State.SelectedElements.Clear();
+        State.SelectedElements.Add(textEl);
+        UpdateStatusForSelection();
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    /// <summary>Vytvoří a umístí nový element na danou pozici v sekci (dříve v EndAddingElement code-behind).</summary>
+    public void AddElementAtPosition(Section targetSection, float mmX, float mmY, string? elementType, string? fieldName)
+    {
+        var (defW, defH) = GetDefaultElementSize(elementType ?? "TextElement");
+
+        // Centrovat element na pozici kurzoru
+        mmX -= defW / 2f;
+        mmY -= defH / 2f;
+
+        // Clamp do hranic sekce
+        float sectionW = State.CurrentTemplate.PageSize.PrintableWidth;
+        float sectionH = targetSection.EffectiveDesignerHeight;
+        mmX = Math.Clamp(mmX, 0, Math.Max(0, sectionW - defW));
+        mmY = Math.Clamp(mmY, 0, Math.Max(0, sectionH - defH));
+
+        // Snap na mřížku
+        if (State.SnapToGrid)
+        {
+            float g = State.GridSize;
+            mmX = MathF.Round(mmX / g) * g;
+            mmY = MathF.Round(mmY / g) * g;
+        }
+
+        // Vytvoření elementu
+        TemplateElement element;
+        if (fieldName is not null)
+        {
+            string placeholder = $"{{{fieldName}}}";
+            element = new TextElement { X = mmX, Y = mmY, Width = defW, Height = defH, Text = placeholder };
+        }
+        else
+        {
+            element = CreateElementByType(elementType!, mmX, mmY);
+        }
+
+        Execute(new AddElementCommand(targetSection, element));
+        ActivateSection(targetSection);
+        State.SelectedElements.Clear();
+        State.SelectedElements.Add(element);
+        UpdateStatusForSelection();
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    // ── Hit handling (element selection logic from mouse down) ────────────────
+
+    /// <summary>Zpracuje klik na element — výběr/toggle s Ctrl/Alt/Group logikou (dříve v OnCanvasMouseDown).</summary>
+    public void HandleElementHit(Section section, TemplateElement element, bool ctrl, bool alt)
+    {
+        if (ctrl)
+        {
+            // Ctrl+klik: toggle element (nebo celou skupinu)
+            if (element.GroupId is not null && !alt)
+            {
+                var groupMembers = section.Elements.Where(e => e.GroupId == element.GroupId).ToList();
+                if (State.SelectedElements.Contains(element))
+                    foreach (var m in groupMembers) State.SelectedElements.Remove(m);
+                else
+                    foreach (var m in groupMembers.Where(m2 => !State.SelectedElements.Contains(m2)))
+                        State.SelectedElements.Add(m);
+            }
+            else
+            {
+                if (State.SelectedElements.Contains(element))
+                    State.SelectedElements.Remove(element);
+                else
+                    State.SelectedElements.Add(element);
+            }
+        }
+        else if (!State.SelectedElements.Contains(element))
+        {
+            State.SelectedElements.Clear();
+            // Klik na člen skupiny → vyber celou skupinu (Alt = jen jeden element)
+            if (element.GroupId is not null && !alt)
+            {
+                var groupMembers = section.Elements.Where(e => e.GroupId == element.GroupId).ToList();
+                State.SelectedElements.AddRange(groupMembers);
+            }
+            else
+            {
+                State.SelectedElements.Add(element);
+            }
+        }
+
+        ActivateSection(section);
+    }
+
+    /// <summary>Zpracuje klik do prázdné oblasti — zruší výběr (pokud ne Ctrl), aktivuje sekci.</summary>
+    public void HandleEmptyAreaHit(Section? section, bool ctrl)
+    {
+        if (!ctrl)
+            State.SelectedElements.Clear();
+        ActivateSection(section);
+        UpdateStatusForSelection();
+    }
 
     // ── Sample template ───────────────────────────────────────────────────────
     public static Template CreateSampleTemplate()
