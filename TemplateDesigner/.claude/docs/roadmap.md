@@ -37,12 +37,6 @@
 
 ### 🟡 Důležité — omezení flexibility bez toho
 
-**~~1. Flow layout sekcí~~** ✅ kompletně hotovo (2026-03-17)
-TextElement s `WordWrap=true` + `Height=null` → dynamická výška dopočítaná z textu. PageLayoutEngine: flow layout uvnitř sekcí (dynamické elementy posouvají obsah pod sebou), stránkování sekcí s `SplitAcrossPages`, výpočet výšky sekce z obsahu.
-- ~~`InfiniteTextElement`~~ → zamítnuto; flow řízeno properties na TextElementu
-
-**~~2. Locale / CultureInfo v šabloně~~** ✅ hotovo (2026-03-12)
-
 **3. Import PDF → šablona**
 Strojová analýza existujícího PDF a převod na TemplateDesigner šablonu.
 - Knihovna: **PdfPig** (open source, .NET, per-word bounding boxy, vestavěné algoritmy pro seskupování textu)
@@ -79,7 +73,25 @@ Nadstavba nad režimem 1 — vezme hotový deterministický import + schéma age
 - UI: uživatel vidí návrhy a potvrdí/upraví/odmítne jednotlivé změny
 - Režim 1 je užitečný sám o sobě; režim 2 je volitelná nadstavba
 
-**4. Vnořené datasource**
+**4. Min/max počet řádků dynamic tabulky**
+Nové properties na `TableElement`: `MinRows`, `MaxRows`. Print engine ořízne přebývající řádky nebo doplní prázdné řádky do minima. Užitečné pro tabulky s proměnlivým počtem dat (faktury, JŘ).
+
+**5. Hranice mezi buňkami tabulky (cell borders)**
+`TableElement` property pro vnitřní cell borders (horizontální/vertikální čáry mezi buňkami, šířka, barva). Aktuálně má tabulka jen vnější rámeček — vnitřní oddělení buněk chybí.
+
+**6. Zarovnávání napříč sekcemi**
+Aktuálně alignment funguje jen v rámci jedné sekce. Umožnit zarovnat elementy z různých sekcí — referenční bod = stránka, ne sekce. Vyžaduje přepočet souřadnic (element.X/Y jsou relativní k sekci).
+
+**7. Fonty pro speciální znaky (JŘ poznámky)**
+Symboly anotací v JŘ (①②③, ikonky poznámek) aktuálně řešené jako obrázky → nahradit fontem (např. Segoe UI Symbol nebo vlastní icon font). Vyžaduje font fallback mechanismus v rendereru (primary font → fallback font pro symboly mimo rozsah).
+
+**8. MRU seznam nedávno otevřených šablon**
+Menu Soubor → posledních 5–10 šablon. Uložit cesty do user settings souboru vedle .exe. Klik otevře šablonu přímo.
+
+**9. Rulers na canvasu**
+Pravítka podél horního a levého okraje canvasu s mm značkami. Reagují na zoom. Ukazatel aktuální pozice myši na pravítku.
+
+**10. Vnořené datasource (hierarchická data)**
 Flat `_values + _rows` nestačí pro hierarchická data.
 - `_rows` uvnitř `_rows` — kolekce uvnitř kolekce (faktura → položky → daně)
 - TableElement může mít vnořený DataSource odkazující na child kolekci
@@ -89,14 +101,26 @@ Flat `_values + _rows` nestačí pro hierarchická data.
 
 ### 🟢 Menší priorita
 
-**5. Grouping v TableElement**
+**UX polish:**
+| # | Položka | Náročnost | Popis |
+|---|---------|-----------|-------|
+| a | Tooltip na záhlaví sekce | Malá | "Záhlaví sekce — viditelné pouze v editoru, netiskne se" (kolega se ptal jestli to nebude matoucí) |
+| b | Odebrat ▲▼ tlačítka sekcí | Malá | Drag + Ctrl+Shift+šipky stačí, tlačítka jsou redundantní |
+| c | Zoom persistence | Malá | Uložit zoom do user preferences |
+| d | Výraznější snap lines | Malá | Silnější čáry, jasnější barva |
+| e | Toggle hranice sekce v tisku | Malá | Property na sekci: zobrazit/skrýt border při tisku/preview |
+| f | Side panel vlastností místo modálního dialogu | Velká | Největší UX zlepšení, ale architektonická změna (PropertiesPanel + layout) |
+| g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu |
+| h | Ikonový toolbar | Střední | Nahradit textové "T", "▭", "Zast" ikonami |
+
+**11. Grouping v TableElement**
 Seskupení řádků dynamické tabulky podle hodnoty pole.
 - `TableRowType` enum: `GroupHeader`, `Data`, `GroupFooter`, `Summary`
 - `GroupByField` property na TableElement
 - Print engine sleduje změnu hodnoty groupovacího pole a vkládá Header/Footer řádky
 - GroupFooter může obsahovat agregace ze skupiny (SUM/COUNT)
 
-**6. Computed fields**
+**12. Computed fields**
 Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 - Definice v agendě (nebo přímo v šabloně)
 - Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
@@ -121,6 +145,13 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 ---
 
 ### ✅ Implementováno
+
+**UX audit — bezpečnost + frustrace + polish** ✅ hotovo (2026-03-18)
+- Sanitizace VisibilityExpression (whitelist tokenizer + live validace v UI)
+- Canvas fixed height + section clamping (sekce nepřesáhnou stránku)
+- SectionRole (Header/Body/Footer) — patičky od spodu stránky
+- Ctrl+X, Ctrl+0, context menu na canvasu, bound resize, potvrzení mazání sekce
+- Nahrávání obrázků s auto-downscale (max 5 MB), SelectAll
 
 **Zastávkový JŘ (MinutesOnly) + Caché integrace** ✅ hotovo (2026-03-18)
 - ScheduleElementBase + 3 elementy (StopListElement, DepartureGridElement, NotesLegendElement)
@@ -188,12 +219,6 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 
 ---
 
-### 🔧 UI drobnosti (low priority)
-
-- **Context menu na záhlaví sekce v designeru** — pravý klik přímo na canvasu (Vlastnosti, Duplikovat, Smazat, Přesunout); alternativa k levému panelu
-
----
-
 ## 🖨️ PageLayoutEngine + stránkovaný preview (fáze 2) ✅ hotovo (2026-03-17)
 
 Preview v designeru = plný engine. "Tisk" = ten samý engine s reálnými daty → PDF.
@@ -236,13 +261,6 @@ class PlacedSection {
 | 5 | PerDataRow expanze — sekce se opakuje pro každý řádek dat | ✅ |
 | 6 | PAGE/TOTAL_PAGES injekce + VisibilityExpression per stránku | ✅ |
 | 7 | Multi-page PDF export — každá stránka = jedna PDF stránka | ✅ |
-
-### Zbývající kroky (budoucí)
-
-| Krok | Co | Náročnost |
-|---|---|---|
-| ~~8~~ | ~~Napojení reálných dat z Caché (`GetData`) do preview~~ | ✅ hotovo (2026-03-18) — PrintDialog |
-| ~~9~~ | ~~Print dialog — parametry před tiskem~~ | ✅ hotovo (2026-03-18) — PrintDialog s parametry |
 
 ### Budoucí modularizace (až bude potřeba)
 

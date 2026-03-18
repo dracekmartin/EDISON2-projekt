@@ -4,6 +4,8 @@ namespace TemplateDesigner.Models.Elements;
 
 public class ImageElement : TemplateElement
 {
+    /// <summary>Max velikost Base64 dat v bytech (~5 MB).</summary>
+    public const int MaxImageBytes = 5 * 1024 * 1024;
     /// <summary>
     /// Statický obrázek jako Base64 string (PNG/JPG).
     /// Null pokud je obrázek data-bound přes DataField.
@@ -58,8 +60,36 @@ public class ImageElement : TemplateElement
         }
     }
 
+    /// <summary>Nastaví obrázek z byte[] s automatickým downscale pokud přesáhne limit.</summary>
+    public static string? EncodeAndResize(byte[] data)
+    {
+        if (data.Length <= MaxImageBytes)
+            return Convert.ToBase64String(data);
+
+        // Downscale: zmenšit rozlišení dokud se vejde do limitu
+        using var original = SKBitmap.Decode(data);
+        if (original is null) return null;
+
+        float scale = 1f;
+        for (int i = 0; i < 5; i++)
+        {
+            scale *= 0.7f;
+            int w = Math.Max(1, (int)(original.Width * scale));
+            int h = Math.Max(1, (int)(original.Height * scale));
+            using var resized = original.Resize(new SKImageInfo(w, h), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
+            if (resized is null) continue;
+            using var image = SKImage.FromBitmap(resized);
+            using var encoded = image.Encode(SKEncodedImageFormat.Png, 90);
+            var bytes = encoded.ToArray();
+            if (bytes.Length <= MaxImageBytes)
+                return Convert.ToBase64String(bytes);
+        }
+        return null; // nedá se zmenšit dost
+    }
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
+        new ButtonPropertyDescriptor { Label = "Obrázek", Group = "Obrázek", ButtonLabel = "Nahrát obrázek..." },
         new StringPropertyDescriptor { Label = "Datové pole", Group = "Obrázek",
             Get = () => DataField ?? "",
             Set = v => DataField = string.IsNullOrWhiteSpace(v) ? null : v },

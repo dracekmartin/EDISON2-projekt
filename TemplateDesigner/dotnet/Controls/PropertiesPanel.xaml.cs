@@ -148,6 +148,20 @@ public partial class PropertiesPanel : UserControl
             MaxLength = 2000
         };
 
+        // Validační label (zobrazí se pod polem pokud je chyba)
+        TextBlock? validationLabel = null;
+        if (sd.Validate is not null)
+        {
+            validationLabel = new TextBlock
+            {
+                Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC6, 0x60, 0x00)),
+                FontSize = 10,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(94, 0, 0, 2),
+                Visibility = Visibility.Collapsed
+            };
+        }
+
         string oldVal = sd.Get();
         box.LostFocus += (_, _) =>
         {
@@ -159,8 +173,29 @@ public partial class PropertiesPanel : UserControl
             oldVal = newVal;
         };
 
+        // Live validace při psaní
+        if (sd.Validate is not null && validationLabel is not null)
+        {
+            box.TextChanged += (_, _) =>
+            {
+                var error = sd.Validate(box.Text);
+                if (error is not null)
+                {
+                    validationLabel.Text = $"⚠ {error}";
+                    validationLabel.Visibility = Visibility.Visible;
+                }
+                else
+                {
+                    validationLabel.Visibility = Visibility.Collapsed;
+                }
+            };
+        }
+
         panel.Children.Add(box);
         ContentPanel.Children.Add(panel);
+
+        if (validationLabel is not null)
+            ContentPanel.Children.Add(validationLabel);
     }
 
     // ── Suggest (editovatelný ComboBox s filtrováním) ─────────────────────

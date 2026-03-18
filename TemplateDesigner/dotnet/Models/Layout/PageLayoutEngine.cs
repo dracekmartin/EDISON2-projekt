@@ -74,21 +74,19 @@ public class PageLayoutEngine
     {
         foreach (var section in all)
         {
-            switch (section.PrintBehavior)
+            // Once / PerDataRow → vždy body
+            if (section.PrintBehavior is SectionPrintBehavior.Once
+                                     or SectionPrintBehavior.PerDataRow)
             {
-                case SectionPrintBehavior.OnEveryPage:
-                case SectionPrintBehavior.OnFirstPageOnly:
-                case SectionPrintBehavior.OnEveryPageExceptFirst:
-                    headers.Add(section);
-                    break;
-                case SectionPrintBehavior.OnLastPageOnly:
-                    footers.Add(section);
-                    break;
-                case SectionPrintBehavior.Once:
-                case SectionPrintBehavior.PerDataRow:
-                    body.Add(section);
-                    break;
+                body.Add(section);
+                continue;
             }
+
+            // Opakující se sekce: Role určuje umístění (Header nahoře, Footer dole)
+            if (section.Role == SectionRole.Footer)
+                footers.Add(section);
+            else
+                headers.Add(section); // Header i Body role → umístí se nahoře
         }
     }
 
@@ -180,6 +178,8 @@ public class PageLayoutEngine
         s.PrintBehavior switch
         {
             SectionPrintBehavior.OnEveryPage => true,
+            SectionPrintBehavior.OnFirstPageOnly => pageNum == 1,
+            SectionPrintBehavior.OnEveryPageExceptFirst => pageNum > 1,
             SectionPrintBehavior.OnLastPageOnly => pageNum == totalPages,
             _ => false
         };

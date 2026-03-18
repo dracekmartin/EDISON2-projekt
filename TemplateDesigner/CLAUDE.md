@@ -18,7 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-Vozové jízdní řády — VehicleScheduleElement (nový typ JŘ elementu); dotažení FullTime módu zastávkového JŘ
+VehicleScheduleElement; FullTime mód zastávkového JŘ; konfigurovatelné pořadí sloupců StopListElement
 
 ### ✅ Co máme
 
@@ -47,6 +47,12 @@ Vozové jízdní řády — VehicleScheduleElement (nový typ JŘ elementu); dot
 - **PageLayoutEngine** — čistý logický engine (vrstva 3): Template + DataContext → `List<Page>` s PlacedSections; multi-page stránkování, hlavičky/patičky (OnEveryPage, OnFirstPageOnly, OnLastPageOnly, OnEveryPageExceptFirst), SplitAcrossPages, PerDataRow expanze, flow layout uvnitř sekcí, PAGE/TOTAL_PAGES injekce, dvouprůchodový layout pro OnLastPageOnly
 - Multi-page preview — PreviewCanvas zobrazuje všechny stránky pod sebou se stíny a rámečky
 - Multi-page PDF export — každá stránka LayoutResult = jedna stránka PDF
+- **MVVM refaktor** — code-behind → ViewModel: `UpdateStatusForSelection`, `SelectFromTree`, `InsertOrCopyPlaceholder`, `AddElementAtPosition`, `HandleElementHit`, `HandleEmptyAreaHit`, `CutSelected`, `FitToPage`; `TextWrapHelper` extrakce; `DesignerState` ZIndex cache; dirty flag + `ConfirmUnsavedChanges`
+- **UX vylepšení** — Ctrl+X (Cut), Ctrl+0 (Fit-to-Page), potvrzení mazání sekce, validace VisibilityExpression v UI (live chybové hlášky), nahrávání obrázků s auto-downscale (max 5 MB)
+- **SectionRole (Header/Body/Footer)** — oddělení "kdy tisknout" (PrintBehavior) od "kam umístit" (Role); patičky se umisťují od spodu stránky v designeru i v PageLayoutEngine
+- **Canvas fixed height** — stránka má pevnou výšku, sekce se clampují aby nepřesáhly stránku; footer sekce kotveny ke spodnímu okraji
+- **Context menu na canvasu** — pravý klik: element items (Cut/Copy/Paste/Delete/Z-order/Vlastnosti) + section items (Vlastnosti sekce/Přesunout/Smazat) sloučeny do jednoho menu
+- **Bound resize** — element při resize nepřesáhne hranice sekce (clamp na PrintableWidth × EffectiveDesignerHeight)
 
 ### 🐛 Známé problémy
 

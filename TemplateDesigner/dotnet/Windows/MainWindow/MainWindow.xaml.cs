@@ -49,6 +49,7 @@ public partial class MainWindow : Window
     private float  _resizeInitHComputed;
     private float  _resizeMouseStartX, _resizeMouseStartY;
     private float  _resizeOriginX, _resizeOriginY;
+    private float  _resizeSectionW, _resizeSectionH; // hranice sekce pro clamp
 
     // ── Adding element (drag from palette / field drag) ────────────────────────
     private string? _addingElementType;
@@ -95,9 +96,10 @@ public partial class MainWindow : Window
         skCanvas.PaintSurface        += OnPaintSurface;
         skPreview.PaintSurface       += OnPreviewPaintSurface;
         skPreview.SizeChanged        += (_, _) => InvalidatePreview();
-        skCanvas.MouseLeftButtonDown += OnCanvasMouseDown;
-        skCanvas.MouseMove           += OnCanvasMouseMove;
-        skCanvas.MouseLeftButtonUp   += OnCanvasMouseUp;
+        skCanvas.MouseLeftButtonDown  += OnCanvasMouseDown;
+        skCanvas.MouseMove            += OnCanvasMouseMove;
+        skCanvas.MouseLeftButtonUp    += OnCanvasMouseUp;
+        skCanvas.MouseRightButtonUp   += OnCanvasRightClick;
         CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
 
         // Wire VM callbacks
@@ -261,6 +263,23 @@ public partial class MainWindow : Window
         int newIdx = Math.Clamp(CmbZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
         if (newIdx != CmbZoom.SelectedIndex)
             CmbZoom.SelectedIndex = newIdx;
+    }
+
+    private void FitToPage()
+    {
+        if (_vm is null || _canvas is null) return;
+        float viewportW = (float)CanvasScrollViewer.ActualWidth - 20f; // margin pro scrollbar
+        float pageW     = _vm.State.CurrentTemplate.PageSize.Width * (96f / 25.4f); // mm → px at zoom=1
+        if (pageW <= 0 || viewportW <= 0) return;
+
+        float idealZoom = viewportW / pageW;
+        // Najdi nejbližší úroveň zoomu (zaokrouhleno dolů)
+        int bestIdx = 0;
+        for (int i = ZoomLevels.Length - 1; i >= 0; i--)
+        {
+            if (ZoomLevels[i] <= idealZoom + 0.01f) { bestIdx = i; break; }
+        }
+        CmbZoom.SelectedIndex = bestIdx;
     }
 
     // ── Preview ───────────────────────────────────────────────────────────────
@@ -812,11 +831,13 @@ public partial class MainWindow : Window
         Add("Hlavička stránky", () => new Section
         {
             Name = "Hlavička stránky", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Role = SectionRole.Header,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 25f
         });
         Add("Patička stránky", () => new Section
         {
             Name = "Patička stránky", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Role = SectionRole.Footer,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 15f
         });
         Add("Oddělovač", () => new Section
@@ -827,16 +848,19 @@ public partial class MainWindow : Window
         Add("Hlavička sestavy (jen 1. str.)", () => new Section
         {
             Name = "Hlavička sestavy", PrintBehavior = SectionPrintBehavior.OnFirstPageOnly,
+            Role = SectionRole.Header,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 30f
         });
         Add("Patička sestavy (jen posl. str.)", () => new Section
         {
             Name = "Patička sestavy", PrintBehavior = SectionPrintBehavior.OnLastPageOnly,
+            Role = SectionRole.Footer,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 20f
         });
         Add("Hlavička kromě 1. str.", () => new Section
         {
             Name = "Hlavička kromě 1. str.", PrintBehavior = SectionPrintBehavior.OnEveryPageExceptFirst,
+            Role = SectionRole.Header,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 25f
         });
         Sep();
@@ -1180,6 +1204,12 @@ public partial class MainWindow : Window
             _vm.CopySelected();
             e.Handled = true;
         }
+        else if (e.Key == Key.X && ctrl)
+        {
+            _vm.CutSelected();
+            InvalidateCanvas();
+            e.Handled = true;
+        }
         else if (e.Key == Key.V && ctrl)
         {
             _vm.PasteClipboard();
@@ -1230,6 +1260,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.F1)
         {
             ShowHelp();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.D0 && ctrl)
+        {
+            FitToPage();
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
@@ -1318,6 +1353,8 @@ public partial class MainWindow : Window
                                 .FirstOrDefault(t => t.Section.Elements.Contains(el));
             _resizeOriginX     = origin.OriginX;
             _resizeOriginY     = origin.OriginY;
+            _resizeSectionW    = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+            _resizeSectionH    = origin.Section.EffectiveDesignerHeight;
             _resizeMouseStartX = (cx - _resizeOriginX) / _canvas.MmToPx;
             _resizeMouseStartY = (cy - _resizeOriginY) / _canvas.MmToPx;
             _mouseMode         = MouseMode.Resizing;
@@ -1490,6 +1527,108 @@ public partial class MainWindow : Window
         else if (_mouseMode == MouseMode.AddingElement) EndAddingElement();
     }
 
+    private void OnCanvasRightClick(object sender, MouseButtonEventArgs e)
+    {
+        if (_vm is null || _canvas is null) return;
+        var pos  = e.GetPosition(skCanvas);
+        float cx = (float)pos.X, cy = (float)pos.Y;
+        float cw = (float)skCanvas.ActualWidth;
+
+        var hit = _canvas.HitTestElement(cx, cy, cw);
+        var menu = new ContextMenu();
+
+        if (hit.HasValue)
+        {
+            var el = hit.Value.Element;
+            if (!_vm.State.SelectedElements.Contains(el))
+            {
+                _vm.State.SelectedElements.Clear();
+                _vm.State.SelectedElements.Add(el);
+                InvalidateCanvas();
+            }
+
+            menu.Items.Add(new MenuItem { Header = "Vyjmout (Ctrl+X)", Command = _vm.CutCommand });
+            menu.Items.Add(new MenuItem { Header = "Kopírovat (Ctrl+C)", Command = _vm.CopyCommand });
+            menu.Items.Add(new MenuItem { Header = "Vložit (Ctrl+V)", Command = _vm.PasteCommand });
+            menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem { Header = "Smazat (Del)", Command = _vm.DeleteCommand });
+            menu.Items.Add(new Separator());
+
+            var zMenu = new MenuItem { Header = "Z-pořadí" };
+            zMenu.Items.Add(new MenuItem { Header = "Dopředu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, false); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = "Dozadu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, false); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = "Úplně dopředu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(1, true); InvalidateCanvas(); }) });
+            zMenu.Items.Add(new MenuItem { Header = "Úplně dozadu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, true); InvalidateCanvas(); }) });
+            menu.Items.Add(zMenu);
+
+            menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Vlastnosti elementu...",
+                Command = new EDControls.EDViewModel.RelayCommand(() =>
+                {
+                    _vm.State.SelectedElements.Clear();
+                    _vm.State.SelectedElements.Add(el);
+                    UpdatePropertiesPanel();
+                    InvalidateCanvas();
+                })
+            });
+        }
+        else
+        {
+            // Obecné menu — vložit, vybrat vše
+            menu.Items.Add(new MenuItem { Header = "Vložit (Ctrl+V)", Command = _vm.PasteCommand });
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Vybrat vše (Ctrl+A)",
+                Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SelectAll(); InvalidateCanvas(); })
+            });
+        }
+
+        // Sekční položky — pokud klik je na záhlaví nebo pozadí sekce
+        var section = _canvas.HitTestSectionHeader(cx, cy, cw)
+                   ?? _canvas.HitTestSection(cx, cy, cw);
+        if (section is not null)
+        {
+            _vm.State.ActiveSection = section;
+            if (menu.Items.Count > 0) menu.Items.Add(new Separator());
+
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Vlastnosti sekce...",
+                Command = new EDControls.EDViewModel.RelayCommand(() =>
+                {
+                    var sectionVm = _vm.Sections.FirstOrDefault(s => s.Section == section);
+                    sectionVm?.ShowPropertiesCommand.Execute(null);
+                })
+            });
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Přesunout nahoru",
+                Command = new EDControls.EDViewModel.RelayCommand(
+                    () => _vm.MoveSection(section, -1),
+                    () => _vm.State.CurrentTemplate.Sections.IndexOf(section) > 0)
+            });
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Přesunout dolů",
+                Command = new EDControls.EDViewModel.RelayCommand(
+                    () => _vm.MoveSection(section, +1),
+                    () => _vm.State.CurrentTemplate.Sections.IndexOf(section) < _vm.State.CurrentTemplate.Sections.Count - 1)
+            });
+            menu.Items.Add(new Separator());
+            menu.Items.Add(new MenuItem
+            {
+                Header = "Smazat sekci",
+                Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x8B, 0, 0)),
+                Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.DeleteSection(section); InvalidateCanvas(); })
+            });
+            InvalidateCanvas();
+        }
+
+        menu.IsOpen = true;
+    }
+
     private void EndAddingElement()
     {
         if (_vm is null || _canvas is null)
@@ -1658,6 +1797,17 @@ public partial class MainWindow : Window
         }
 
         if (!setsH) newH = _resizeInitH;
+
+        // Clamp na hranice sekce
+        newX = Math.Max(0f, newX);
+        newY = Math.Max(0f, newY);
+        newW = Math.Min(newW, _resizeSectionW - newX);
+        if (newH.HasValue)
+            newH = Math.Min(newH.Value, _resizeSectionH - newY);
+        newW = Math.Max(minW, newW);
+        if (newH.HasValue)
+            newH = Math.Max(minH, newH.Value);
+
         return (newX, newY, newW, newH);
     }
 

@@ -27,6 +27,9 @@ public class StringPropertyDescriptor : PropertyDescriptor
 
     /// <summary>True = víceřádkový TextBox (pro delší texty).</summary>
     public bool MultiLine { get; init; }
+
+    /// <summary>Volitelná validace — vrátí chybovou zprávu nebo null pokud je vstup OK.</summary>
+    public Func<string, string?>? Validate { get; init; }
 }
 
 public class FloatPropertyDescriptor : PropertyDescriptor

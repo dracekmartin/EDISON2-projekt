@@ -53,7 +53,7 @@ public class DesignerCanvas
 
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;
-        float pageH  = CalculatePageHeightPx(template);
+        float pageH  = template.PageSize.Height * MmToPx;
         float pageX  = Math.Max(PagePaddingPx, (canvasWidth - pageW) / 2f);
         float pageY  = PagePaddingPx;
 
@@ -91,9 +91,10 @@ public class DesignerCanvas
     /// <summary>Vrátí sekci pod px pozicí na canvasu, nebo null.</summary>
     public Section? HitTestSection(float canvasX, float canvasY, float canvasWidth)
     {
+        float bottomY = GetPageBottomY(canvasWidth);
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
-            float sectionH = section.EffectiveDesignerHeight * MmToPx;
+            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
             float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
             float headerY  = oy - SectionHeaderPx;
 
@@ -107,10 +108,11 @@ public class DesignerCanvas
     /// <summary>Vrátí element a jeho sekci pod px pozicí na canvasu, nebo null.</summary>
     public (Section Section, TemplateElement Element)? HitTestElement(float canvasX, float canvasY, float canvasWidth)
     {
+        float bottomY = GetPageBottomY(canvasWidth);
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
             float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
-            float sectionH = section.EffectiveDesignerHeight * MmToPx;
+            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
 
             if (canvasX < ox || canvasX > ox + sectionW) continue;
             if (canvasY < oy || canvasY > oy + sectionH) continue;
@@ -240,24 +242,62 @@ public class DesignerCanvas
         float pageY = PagePaddingPx;
 
         float ox       = pageX + ps.MarginLeft * MmToPx;
-        float currentY = pageY + ps.MarginTop  * MmToPx;
+        float topY     = pageY + ps.MarginTop  * MmToPx;
+        float bottomY  = pageY + ps.Height * MmToPx - ps.MarginBottom * MmToPx;
 
-        foreach (var section in _state.CurrentTemplate.Sections)
+        var sections = _state.CurrentTemplate.Sections;
+
+        // Spočítat celkovou výšku footer sekcí (umisťují se od spodu)
+        float totalFooterH = 0f;
+        foreach (var s in sections)
         {
+            if (s.Role == SectionRole.Footer)
+                totalFooterH += SectionHeaderPx + s.EffectiveDesignerHeight * MmToPx;
+        }
+
+        // Body limit = bottomY mínus footery
+        float bodyBottomY = bottomY - totalFooterH;
+
+        // Header + Body sekce shora dolů
+        float currentY = topY;
+        foreach (var section in sections)
+        {
+            if (section.Role == SectionRole.Footer) continue;
             float contentY = currentY + SectionHeaderPx;
+            if (contentY >= bodyBottomY) break;
             yield return (section, ox, contentY);
-            currentY = contentY + section.EffectiveDesignerHeight * MmToPx;
+            currentY = contentY + GetClampedSectionHeightPx(section, contentY, bodyBottomY);
+        }
+
+        // Footer sekce od spodu nahoru
+        float footerY = bottomY - totalFooterH;
+        foreach (var section in sections)
+        {
+            if (section.Role != SectionRole.Footer) continue;
+            float contentY = footerY + SectionHeaderPx;
+            yield return (section, ox, contentY);
+            footerY = contentY + section.EffectiveDesignerHeight * MmToPx;
         }
     }
 
-    public float CalculatePageHeightPx(Template template)
+    /// <summary>Spodní okraj tisknutelné oblasti stránky v px.</summary>
+    private float GetPageBottomY(float canvasWidth)
     {
-        float px = template.PageSize.MarginTop * MmToPx;
-        foreach (var s in template.Sections)
-            px += SectionHeaderPx + s.EffectiveDesignerHeight * MmToPx;
-        px += template.PageSize.MarginBottom * MmToPx;
-        return Math.Max(template.PageSize.Height * MmToPx, px);
+        _ = canvasWidth; // parametr zachován pro konzistenci API
+        var ps = _state.CurrentTemplate.PageSize;
+        return PagePaddingPx + (ps.Height - ps.MarginBottom) * MmToPx;
     }
+
+    /// <summary>Výška sekce v px omezená tak, aby nepřesáhla spodní okraj stránky.</summary>
+    public float GetClampedSectionHeightPx(Section section, float sectionContentY, float bottomY)
+    {
+        float rawH = section.EffectiveDesignerHeight * MmToPx;
+        float available = bottomY - sectionContentY;
+        return Math.Max(0f, Math.Min(rawH, available));
+    }
+
+    public float CalculatePageHeightPx(Template template) =>
+        template.PageSize.Height * MmToPx;
 
     // ─────────────────────────────────────────────────────────────────────
     // Interní renderovací metody
@@ -307,10 +347,11 @@ public class DesignerCanvas
     private void DrawSections(SKCanvas canvas, Template template, float pageX, float pageY, float canvasWidth)
     {
         float contentW = template.PageSize.PrintableWidth * MmToPx;
+        float bottomY  = pageY + template.PageSize.Height * MmToPx - template.PageSize.MarginBottom * MmToPx;
 
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
-            float sectionH = section.EffectiveDesignerHeight * MmToPx;
+            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
             bool  dynamic  = section.DesignerHeight is null;
             bool  isActive = section == _state.ActiveSection;
             float headerY  = oy - SectionHeaderPx;

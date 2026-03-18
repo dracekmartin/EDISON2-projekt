@@ -49,15 +49,15 @@ Stránka je tvořena vertikálním sledem sekcí — každá sekce je vodorovný
 
 Přidáváte je přes **[+ Přidat sekci ▾]** s presety:
 
-| Preset | Chování tisku |
-|---|---|
-| Záhlaví stránky | Opakuje se na každé stránce |
-| Zápatí stránky | Opakuje se na každé stránce |
-| Záhlaví sestavy | Jednou na začátku |
-| Patička sestavy | Jednou na konci |
-| Záhlaví kromě 1. str. | Na každé stránce kromě první |
-| Oddělovač | Statický obsah, malá výška |
-| Prázdná sekce | Statický obsah, vlastní výška |
+| Preset | Chování tisku | Umístění |
+|---|---|---|
+| Záhlaví stránky | Opakuje se na každé stránce | Nahoře |
+| Zápatí stránky | Opakuje se na každé stránce | Dole |
+| Záhlaví sestavy | Jednou na začátku | Nahoře |
+| Patička sestavy | Jednou na konci | Dole |
+| Záhlaví kromě 1. str. | Na každé stránce kromě první | Nahoře |
+| Oddělovač | Statický obsah, malá výška | Obsah |
+| Prázdná sekce | Statický obsah, vlastní výška | Obsah |
 
 Uložené šablony sekcí se zobrazí v tomtéž menu (viz sekce o Custom šablonách sekcí).
 
@@ -69,7 +69,7 @@ Uvnitř sekce lze volně umísťovat elementy — text, obdélník, čáru, obr�
 | Text | Text, font, velikost, styl, zarovnání, barva textu/pozadí, zalamování, řádkování; dynamická výška (Height=null + WordWrap) |
 | Obdélník | Barva výplně, barva okraje, tloušťka okraje, zaoblení rohů |
 | Čára | Orientace, barva, tloušťka, styl (plná/čárkovaná/tečkovaná) |
-| Obrázek | Datové pole, škálování |
+| Obrázek | Nahrávání z disku (max 5 MB, auto-downscale), datové pole, škálování |
 | QR kód / Čárový kód | Typ (QR / Code128), obsah (text nebo `{POLE}`), barvy |
 | Tabulka | Mód (pevná/dynamická), sloupce, řádky, orámování, záhlaví, barvy |
 
@@ -95,6 +95,11 @@ Všechny elementy sdílejí skupinu vlastností **Pozice**: X, Y, šířka, vý�
 - **Ctrl+A** — vybere všechny elementy aktivní sekce
 - **Escape** — zavře dialog vlastností (pokud je otevřený), jinak zruší výběr
 - Klik na prázdné místo — zruší výběr
+
+### Context menu (pravý klik na canvasu)
+- **Klik na element** — Vyjmout, Kopírovat, Vložit, Smazat, Z-pořadí, Vlastnosti elementu
+- **Klik na prázdné místo** — Vložit, Vybrat vše
+- Pokud klik padne do sekce, menu vždy obsahuje i **Vlastnosti sekce, Přesunout, Smazat sekci**
 
 ### Editace vlastností elementu
 - **Dvojklik** na element — otevře plovoucí dialog vlastností
@@ -176,6 +181,7 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 - Dostupná pro **jeden vybraný element** (8 bílých čtverečků na okrajích)
 - Tažení za rohový handle → změna šířky i výšky
 - Tažení za boční handle → změna jen jednoho rozměru
+- Element nepřesáhne hranice sekce — resize se automaticky omezí
 - Kurzor se mění podle směru resize (↔ ↕ ↗ ↘)
 - Minimální rozměry: 3 mm šířka, 2 mm výška
 
@@ -187,6 +193,7 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 
 ### Kopírování / vkládání
 - **Ctrl+C** — zkopíruje vybrané elementy do schránky
+- **Ctrl+X** — vyjme vybrané elementy (kopie + smazání)
 - **Ctrl+V** — vloží zkopírované elementy do aktivní sekce (s offsetem +5 mm)
 - **Ctrl+D** — duplikuje vybrané elementy (+5 mm offset); neovlivňuje clipboard
 - **Ctrl+D, šipka** — směrové duplikování: kopie se umístí přesně vedle originálu s 4 mm mezerou (↓ pod, ↑ nad, → vpravo, ← vlevo)
@@ -194,7 +201,7 @@ Přidat přes **[+ Element] → QR kód** nebo **Čárový kód (Code128)**:
 
 ### Editace vlastností sekce
 - **Dvojklik na sekci** v levém panelu — otevře dialog vlastností sekce
-- Editovatelné: Název, Výška (jen pro sekce s pevnou výškou), PrintBehavior, OverflowBehavior
+- Editovatelné: Název, Výška (jen pro sekce s pevnou výškou), Umístění (Obsah/Hlavička/Patička), PrintBehavior, OverflowBehavior
 - Stejný dialog jako pro elementy — OK zachová, Zrušit vrátí změny
 
 ### Správa sekcí
@@ -556,11 +563,13 @@ Tlačítka jsou v druhém řádku toolbaru. Stejné operace v menu **Upravit**.
 | **↑ ↓ ← →** | Posunout vybrané elementy o 1 mm |
 | **Shift+šipky** | Posunout vybrané elementy o velikost mřížky (5 mm) |
 | **Ctrl+C** | Kopírovat vybrané elementy |
+| **Ctrl+X** | Vyjmout vybrané elementy (kopie + smazání) |
 | **Ctrl+V** | Vložit ze schránky do aktivní sekce |
 | **Ctrl+D** | Duplikovat vybrané elementy (+5 mm offset) |
 | **Ctrl+D, šipka** | Směrové duplikování (kopie vedle originálu s 4 mm mezerou) |
 | **Ctrl+Shift+↑** | Přesunout aktivní sekci nahoru |
 | **Ctrl+Shift+↓** | Přesunout aktivní sekci dolů |
+| **Ctrl+0** | Fit-to-Page (zoom na šířku stránky) |
 | **Ctrl+scroll** | Zoom in / out |
 | **Ctrl+Shift+P** | Vlastnosti stránky (rozměry, okraje) |
 | **Ctrl+PgUp** | Přenést dopředu (ZIndex +1) |

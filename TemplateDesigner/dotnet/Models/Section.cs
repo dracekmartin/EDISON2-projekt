@@ -25,6 +25,14 @@ public class Section
     public SectionOverflowBehavior OverflowBehavior { get; set; } = SectionOverflowBehavior.KeepTogether;
 
     /// <summary>
+    /// Role sekce na stránce — Header (nahoře), Body (střed), Footer (dole).
+    /// Relevantní pro opakující se sekce (OnEveryPage, OnFirstPageOnly, ...):
+    /// Header i Footer se opakují, ale Header je umístěn nahoře a Footer dole na stránce.
+    /// Pro PrintBehavior=Once nemá vliv na umístění (sekce je tam kde je v pořadí).
+    /// </summary>
+    public SectionRole Role { get; set; } = SectionRole.Body;
+
+    /// <summary>
     /// Podmínka viditelnosti (volitelné). Null = vždy viditelné.
     /// Příklady: "{PAGE} > 1" (kromě první stránky), "{POCET} > 0" (pokud jsou data).
     /// Vyhodnocuje print engine, designer zobrazuje vždy.
@@ -75,6 +83,7 @@ public class Section
             Name = Name,
             PrintBehavior = PrintBehavior,
             OverflowBehavior = OverflowBehavior,
+            Role = Role,
             DesignerHeight = DesignerHeight,
             VisibilityExpression = VisibilityExpression,
             DataSource = DataSource,
@@ -104,6 +113,16 @@ public enum SectionPrintBehavior
     OnEveryPageExceptFirst,
     /// <summary>Opakuje se per řádek dat (tabulky s designem vlastních řádků).</summary>
     PerDataRow
+}
+
+public enum SectionRole
+{
+    /// <summary>Běžný obsah stránky (výchozí).</summary>
+    Body,
+    /// <summary>Hlavička — umístěna nahoře na stránce.</summary>
+    Header,
+    /// <summary>Patička — umístěna dole na stránce.</summary>
+    Footer
 }
 
 public enum SectionOverflowBehavior

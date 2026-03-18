@@ -108,6 +108,9 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         if (element is StopListElement stopListElement)
             descriptors = EnhanceStopListEditor(descriptors, stopListElement);
 
+        if (element is ImageElement imageElement)
+            descriptors = EnhanceImageEditor(descriptors, imageElement);
+
         CurrentDescriptors = descriptors;
         return descriptors;
     }
@@ -271,6 +274,73 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         return list;
     }
 
+    private IReadOnlyList<Models.PropertyDescriptor> EnhanceImageEditor(
+        IReadOnlyList<Models.PropertyDescriptor> descriptors,
+        ImageElement element)
+    {
+        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
+        foreach (var d in descriptors)
+        {
+            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Obrázek")
+            {
+                list.Add(new Models.ButtonPropertyDescriptor
+                {
+                    Label       = btn.Label,
+                    Group       = btn.Group,
+                    ButtonLabel = btn.ButtonLabel,
+                    OnClick     = () =>
+                    {
+                        var dlg = new OpenFileDialog
+                        {
+                            Filter = "Obrázky|*.png;*.jpg;*.jpeg;*.bmp;*.gif|Všechny soubory|*.*",
+                            Title  = "Nahrát obrázek"
+                        };
+                        if (dlg.ShowDialog() != true) return;
+
+                        byte[] data;
+                        try { data = System.IO.File.ReadAllBytes(dlg.FileName); }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show($"Nelze načíst soubor: {ex.Message}", "Chyba",
+                                MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
+
+                        string? base64;
+                        if (data.Length > ImageElement.MaxImageBytes)
+                        {
+                            var result = MessageBox.Show(
+                                $"Obrázek má {data.Length / 1024 / 1024} MB (limit {ImageElement.MaxImageBytes / 1024 / 1024} MB). Zmenšit automaticky?",
+                                "Velký obrázek", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                            if (result != MessageBoxResult.Yes) return;
+                            base64 = ImageElement.EncodeAndResize(data);
+                            if (base64 is null)
+                            {
+                                MessageBox.Show("Obrázek se nepodařilo dostatečně zmenšit.", "Chyba",
+                                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            base64 = Convert.ToBase64String(data);
+                        }
+
+                        _state.Execute(new Commands.Implementations.SetPropertyCommand(
+                            "Obrázek", element.ImageBase64, base64,
+                            v => element.ImageBase64 = (string?)v));
+                        _currentInvalidate();
+                    }
+                });
+            }
+            else
+            {
+                list.Add(d);
+            }
+        }
+        return list;
+    }
+
     private static IReadOnlyList<Models.PropertyDescriptor> EnhanceWithFieldPicker(
         IReadOnlyList<Models.PropertyDescriptor> descriptors,
         IReadOnlyList<DataField> fields)
@@ -367,6 +437,26 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         ];
     }
 
+    /// <summary>Maximální výška sekce v mm tak, aby nepřekryla ostatní sekce na stránce.</summary>
+    private float CalculateMaxSectionHeight(Section section)
+    {
+        var template = _state.CurrentTemplate;
+        float printableH = template.PageSize.PrintableHeight;
+
+        // Odečíst výšku všech ostatních sekcí (+ prostor pro záhlaví sekce v designeru ~5mm per sekce)
+        const float sectionHeaderMm = 5f; // přibližný ekvivalent 20px záhlaví v mm
+        float usedByOthers = 0f;
+        foreach (var s in template.Sections)
+        {
+            if (s == section) continue;
+            usedByOthers += sectionHeaderMm + s.EffectiveDesignerHeight;
+        }
+        // Záhlaví této sekce
+        usedByOthers += sectionHeaderMm;
+
+        return Math.Max(5f, printableH - usedByOthers);
+    }
+
     private IReadOnlyList<Models.PropertyDescriptor> BuildSectionDescriptors(Section section)
     {
         var list = new List<Models.PropertyDescriptor>
@@ -385,8 +475,13 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             {
                 Label = "Výška", Group = "Sekce",
                 Get   = () => section.DesignerHeight ?? 30f,
-                Set   = v  => section.DesignerHeight = v,
-                Min   = 5f, Max = 500f, Unit = "mm"
+                Set   = v  =>
+                {
+                    // Clamp: výška nesmí překrýt ostatní sekce
+                    float maxH = CalculateMaxSectionHeight(section);
+                    section.DesignerHeight = Math.Min(v, maxH);
+                },
+                Min   = 5f, Max = 9999f, Unit = "mm"
             });
         }
 
@@ -407,6 +502,19 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         list.Add(new EnumPropertyDescriptor
         {
+            Label   = "Umístění", Group = "Sekce",
+            Get     = () => section.Role,
+            Set     = v  => section.Role = (SectionRole)v,
+            Options =
+            [
+                ("Obsah",   (object)SectionRole.Body),
+                ("Hlavička", (object)SectionRole.Header),
+                ("Patička",  (object)SectionRole.Footer),
+            ]
+        });
+
+        list.Add(new EnumPropertyDescriptor
+        {
             Label   = "Přetečení", Group = "Sekce",
             Get     = () => section.OverflowBehavior,
             Set     = v  => section.OverflowBehavior = (SectionOverflowBehavior)v,
@@ -422,7 +530,8 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         {
             Label = "Viditelnost", Group = "Podmínky",
             Get   = () => section.VisibilityExpression ?? "",
-            Set   = v  => section.VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim()
+            Set   = v  => section.VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = Models.Expressions.ExpressionEvaluator.Validate
         });
 
         if (section.PrintBehavior == SectionPrintBehavior.PerDataRow)

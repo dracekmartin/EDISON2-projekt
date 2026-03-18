@@ -121,7 +121,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste;
+    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste, _cut;
 
     public RelayCommand UndoCommand     => _undo      ??= new(Undo,          () => CanUndo);
     public RelayCommand RedoCommand     => _redo      ??= new(Redo,          () => CanRedo);
@@ -132,6 +132,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand ExportPdfCommand=> _exportPdf ??= new(ExportPreviewPdf);
     public RelayCommand DeleteCommand   => _delete    ??= new(DeleteSelected);
     public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
+    public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
     public RelayCommand PasteCommand    => _paste     ??= new(PasteClipboard);
 
     // ── Constructor ───────────────────────────────────────────────────────────
@@ -243,6 +244,15 @@ public class TemplateDesignerViewModel : EDViewModel
             MessageBox.Show("Šablona musí mít alespoň jednu sekci.", "Smazat sekci",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
+        }
+
+        int elementCount = section.Elements.Count;
+        if (elementCount > 0)
+        {
+            var result = MessageBox.Show(
+                $"Opravdu smazat sekci \"{section.Name}\" s {elementCount} elementy?",
+                "Smazat sekci", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result != MessageBoxResult.Yes) return;
         }
 
         State.SelectedElements.RemoveAll(el => section.Elements.Contains(el));
@@ -489,6 +499,20 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (State.SelectedElements.Count == 0) return;
         _clipboard = State.SelectedElements.Select(el => el.Clone()).ToList();
+    }
+
+    public void CutSelected()
+    {
+        if (State.SelectedElements.Count == 0) return;
+        CopySelected();
+        DeleteSelected();
+    }
+
+    public void SelectAll()
+    {
+        if (State.ActiveSection is null) return;
+        State.SelectedElements.Clear();
+        State.SelectedElements.AddRange(State.ActiveSection.Elements);
     }
 
     public void PasteClipboard()
@@ -1313,6 +1337,7 @@ public class TemplateDesignerViewModel : EDViewModel
         t.Sections.Add(new Section
         {
             Name = "Záhlaví", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Role = SectionRole.Header,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 25f
         });
         t.Sections.Add(new Section
@@ -1323,6 +1348,7 @@ public class TemplateDesignerViewModel : EDViewModel
         t.Sections.Add(new Section
         {
             Name = "Patička", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Role = SectionRole.Footer,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 15f
         });
         return t;

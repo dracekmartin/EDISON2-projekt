@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-18 — MVVM refaktor + UX vylepšení
+
+- ✅ **Code-behind → ViewModel refaktor** — přesun 7 metod z `MainWindow.xaml.cs` do `MainWindowViewModel`: `UpdateStatusForSelection`, `SelectFromTree`, `InsertOrCopyPlaceholder`, `AppendPlaceholderToElement`, `AddElementAtPosition`, `HandleElementHit`, `HandleEmptyAreaHit`
+- ✅ **TextWrapHelper** — extrakce word wrap logiky z TextElement do sdíleného helperu (používá i SkiaHeightCalculator)
+- ✅ **DesignerState ZIndex cache** — `GetElementsByZIndexAsc/Desc` per sekce místo opakovaného `OrderBy` při každém renderu a hit testu
+- ✅ **Dirty flag + ConfirmUnsavedChanges** — `Window_Closing` handler chrání neuložené změny
+- ✅ **Ctrl+X (Cut)** — Copy + Delete v jednom kroku
+- ✅ **Ctrl+0 (Fit-to-Page)** — zoom na šířku stránky
+- ✅ **Potvrzení mazání sekce** — MessageBox před smazáním sekce s elementy
+- ✅ **Validace VisibilityExpression v UI** — live chybové hlášky v PropertiesPanel; `StringPropertyDescriptor.Validate` callback
+- ✅ **SectionRole (Header/Body/Footer)** — nový enum oddělující "kdy tisknout" od "kam umístit"; patičky umístěny od spodu stránky v designeru i PageLayoutEngine; `IsFooterVisibleOnPage` rozšířen o OnFirstPageOnly a OnEveryPageExceptFirst
+- ✅ **Canvas fixed height + section clamping** — stránka má pevnou výšku, sekce se clampují aby nepřesáhly stránku; `GetClampedSectionHeightPx`; footery kotveny ke spodnímu okraji; `CalculateMaxSectionHeight` brání překrývání v editoru
+- ✅ **Context menu na canvasu** — pravý klik: element items (Cut/Copy/Paste/Delete/Z-order/Vlastnosti) + section items (Vlastnosti/Přesunout/Smazat) sloučeny; tři vrstvy: element → obecné → sekce
+- ✅ **Bound resize** — element při resize nepřesáhne hranice sekce (clamp na PrintableWidth × EffectiveDesignerHeight)
+- ✅ **Nahrávání obrázků** — nové tlačítko "Nahrát obrázek..." v properties; max 5 MB, iterativní auto-downscale (0.7× per krok, max 5 iterací) s potvrzením
+- ✅ **SelectAll** — `Ctrl+A` vybere všechny elementy aktivní sekce
+
+---
+
 ## 2026-03-18 — Zastávkové jízdní řády a integrace do Caché
 
 - ✅ **ScheduleElementBase** — abstraktní základ JŘ elementů: DataSource klíče (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY), Build helpery s cache (SetCacheRef atomicky čistí cache při změně DataContext reference), společné vizuální properties (FontFamily, FontSize, GridColor, HeaderBackgroundColor)

@@ -90,7 +90,8 @@ public abstract class TemplateElement
             // null / prázdný = vždy viditelný
             // Výrazy: "{TISK_SIPKY}", "{POCET} > 0", "{TYP} == \"JR\" && !{TISK_TARIFU}"
             Get = () => VisibilityExpression ?? "",
-            Set = v  => VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim()
+            Set = v  => VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = Expressions.ExpressionEvaluator.Validate
         },
 
         // GroupId — zobrazit jen pokud element patří do skupiny (readonly informace)
