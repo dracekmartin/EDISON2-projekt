@@ -128,9 +128,9 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand PasteCommand    => _paste     ??= new(PasteClipboard);
 
     // ── Constructor ───────────────────────────────────────────────────────────
-    public TemplateDesignerViewModel(MLRest? mlRest = null) : base()
+    public TemplateDesignerViewModel(MLRest? mlRest = null)
     {
-        if (mlRest is not null) MLRest = new MLRestAdapter(mlRest);
+        if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
 
         var settings   = AppSettings.Load();
         var schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");

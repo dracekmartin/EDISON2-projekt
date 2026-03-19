@@ -14,6 +14,9 @@ namespace EDISONMAIN2
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            var services = new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer());
+            EDServices.Initialize(services);
+
             // TODO (Priority 5): load these from config rather than hardcoding defaults
             var connParams = new ConnectionParams("192.168.16.1", 57770, "martin.hubata", "martin.hubata", 167);
             var dataService = new EdisonMainDataService(connParams);

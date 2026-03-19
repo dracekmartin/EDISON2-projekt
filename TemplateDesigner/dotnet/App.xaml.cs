@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
+using EDControls.EDViewModel;
 using TemplateDesigner.Config;
 
 namespace TemplateDesigner;
@@ -14,6 +15,7 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        EDServices.Initialize(new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer()));
         var settings = AppSettings.Load();
         var mlRest   = CacheSchemaWiring.TryCreateMlRest(settings);
         new MainWindow(mlRest).Show();

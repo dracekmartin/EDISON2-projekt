@@ -9,35 +9,26 @@ namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
-    private static IMLRest? _mlRest;
-    public IMLRest? MLRest { get => _mlRest; protected set => _mlRest = value; }
+    protected readonly EDServices _services;
+
+    /// <summary>
+    /// Shared MLRest instance. Reads from the shared <see cref="EDServices"/>;
+    /// only composition-root ViewModels (EdisonMainViewModel, TemplateDesignerViewModel)
+    /// write to <c>services.MLRest</c> directly.
+    /// </summary>
+    public IMLRest? MLRest => _services.MLRest;
 
     /// <summary>
     /// Navigator for opening other windows. Use WindowNavigator.Show(...) or ShowDialog(...)
     /// from ViewModel subclasses.
     /// </summary>
-    private static IWindowNavigator _windowNavigator = new ReflectionWindowNavigator();
-    protected static IWindowNavigator WindowNavigator => _windowNavigator;
+    protected IWindowNavigator WindowNavigator => _services.WindowNavigator;
 
     /// <summary>
     /// Service for showing popups. Always targets the currently active window as owner.
     /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
     /// </summary>
-    private static IPopupDisplayer _popupDisplayer = new PopupDisplayer();
-    public IPopupDisplayer PopupDisplayer => _popupDisplayer;
-
-    /// <summary>
-    /// Replaces the static singletons with test doubles. Call from test setup.
-    /// Pass null for any parameter to keep the current instance.
-    /// </summary>
-    internal static void ConfigureForTesting(
-        IWindowNavigator? windowNavigator = null,
-        IPopupDisplayer? popupDisplayer = null)
-    {
-        if (windowNavigator != null) _windowNavigator = windowNavigator;
-        if (popupDisplayer != null) _popupDisplayer = popupDisplayer;
-        _mlRest = null;
-    }
+    public IPopupDisplayer PopupDisplayer => _services.PopupDisplayer;
 
     /// <summary>
     /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.
@@ -96,8 +87,19 @@ public class EDViewModel : INotifyPropertyChanged
     public ICommand EditCommand { get; }
     public ICommand DeleteCommand { get; }
 
-    public EDViewModel()
+    /// <summary>
+    /// Parameterless constructor — reads from <see cref="EDServices.Current"/>.
+    /// Used by windows created via ReflectionWindowNavigator (Activator.CreateInstance).
+    /// </summary>
+    public EDViewModel() : this(EDServices.Current) { }
+
+    /// <summary>
+    /// Explicit constructor for dependency injection. Tests pass mocks here;
+    /// composition-root ViewModels forward the EDServices they received.
+    /// </summary>
+    public EDViewModel(EDServices services)
     {
+        _services = services;
         OkCommand     = new RelayCommand(OnOk);
         AddCommand    = new RelayCommand(OnAdd);
         EditCommand   = new RelayCommand(OnEdit);

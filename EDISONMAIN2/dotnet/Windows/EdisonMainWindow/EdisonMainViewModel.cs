@@ -45,7 +45,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
 
-            MLRest = new MLRestAdapter(new MLRest(ConnParams.Server, ConnParams.RestPort, Namespace, Idfa)
+            _services.MLRest = new MLRestAdapter(new MLRest(ConnParams.Server, ConnParams.RestPort, Namespace, Idfa)
             {
                 LoginName = ConnParams.UserName,
                 FullName  = ConnParams.FullName,
