@@ -5,6 +5,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
+using EDControls;
 using EDControls.EDViewModel;
 using Microsoft.Win32;
 using TemplateDesigner.Commands;
@@ -129,7 +130,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Constructor ───────────────────────────────────────────────────────────
     public TemplateDesignerViewModel(MLRest? mlRest = null) : base()
     {
-        if (mlRest is not null) MLRest = mlRest;
+        if (mlRest is not null) MLRest = new MLRestAdapter(mlRest);
 
         var settings   = AppSettings.Load();
         var schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");

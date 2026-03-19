@@ -4,28 +4,40 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using ALWA.SYS;
 
 namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
-    private static MLRest? _mlRest;
-    public MLRest? MLRest { get => _mlRest; protected set => _mlRest = value; }
+    private static IMLRest? _mlRest;
+    public IMLRest? MLRest { get => _mlRest; protected set => _mlRest = value; }
 
     /// <summary>
     /// Navigator for opening other windows. Use WindowNavigator.Show(...) or ShowDialog(...)
     /// from ViewModel subclasses.
     /// </summary>
-    private static readonly IWindowNavigator _windowNavigator = new ReflectionWindowNavigator();
+    private static IWindowNavigator _windowNavigator = new ReflectionWindowNavigator();
     protected static IWindowNavigator WindowNavigator => _windowNavigator;
 
     /// <summary>
     /// Service for showing popups. Always targets the currently active window as owner.
     /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
     /// </summary>
-    private static readonly IPopupDisplayer _popupDisplayer = new PopupDisplayer();
+    private static IPopupDisplayer _popupDisplayer = new PopupDisplayer();
     public IPopupDisplayer PopupDisplayer => _popupDisplayer;
+
+    /// <summary>
+    /// Replaces the static singletons with test doubles. Call from test setup.
+    /// Pass null for any parameter to keep the current instance.
+    /// </summary>
+    internal static void ConfigureForTesting(
+        IWindowNavigator? windowNavigator = null,
+        IPopupDisplayer? popupDisplayer = null)
+    {
+        if (windowNavigator != null) _windowNavigator = windowNavigator;
+        if (popupDisplayer != null) _popupDisplayer = popupDisplayer;
+        _mlRest = null;
+    }
 
     /// <summary>
     /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.

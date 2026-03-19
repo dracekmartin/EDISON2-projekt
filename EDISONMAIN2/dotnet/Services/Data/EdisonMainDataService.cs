@@ -63,7 +63,7 @@ namespace EDISONMAIN2.Services.Data
         ///   "EXE"        → $lb("EXE", displayName, executablePath, formName)
         ///   "FAMILY_END" → $lb("FAMILY_END")
         /// </summary>
-        private static ObservableCollection<IModule> ParseTree(CVar treeData)
+        internal static ObservableCollection<IModule> ParseTree(CVar treeData)
         {
             var result = new ObservableCollection<IModule>();
             var familyStack = new Stack<ObservableCollection<IModule>>();

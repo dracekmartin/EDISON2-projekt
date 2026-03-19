@@ -3,6 +3,7 @@ using System.Linq;
 using System.Windows.Input;
 using ALVA.EDISONAPI;
 using ALWA.SYS;
+using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
@@ -44,12 +45,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
 
-            MLRest = new MLRest(ConnParams.Server, ConnParams.RestPort, Namespace, Idfa)
+            MLRest = new MLRestAdapter(new MLRest(ConnParams.Server, ConnParams.RestPort, Namespace, Idfa)
             {
                 LoginName = ConnParams.UserName,
                 FullName  = ConnParams.FullName,
                 Mlp       = ConnParams.Mlp.ToString()
-            };
+            });
 
             var tree = _dataService.GetModuleTree(Namespace, Idfa);
             foreach (var module in tree)

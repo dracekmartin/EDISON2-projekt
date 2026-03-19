@@ -17,7 +17,7 @@ namespace EDControls.EDInputForm
     {
         // ─── Configuration ────────────────────────────────────────────────────────
 
-        private MLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
+        private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
 
         /// <summary>Caché class that implements Init / Validate / Save.</summary>
         public string CacheClass { get; set; } = "";
@@ -89,7 +89,7 @@ namespace EDControls.EDInputForm
                     g.IsExpanded = was;
         }
 
-        private static CVar SerializeItemsCVar(IEnumerable<Item>? items)
+        internal static CVar SerializeItemsCVar(IEnumerable<Item>? items)
         {
             var cVar = new CVar();
             int i = 1;
@@ -112,7 +112,7 @@ namespace EDControls.EDInputForm
             return cVar;
         }
 
-        private static List<Item> ParseItems(CVar output)
+        internal static List<Item> ParseItems(CVar output)
         {
             var items = new List<Item>();
             Group? currentGroup = null;
