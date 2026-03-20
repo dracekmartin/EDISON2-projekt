@@ -27,7 +27,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     /// Runs a Change-trigger validation pass and returns true when there are
     /// no validation errors.
     /// </summary>
-    public bool Validate() => ExecuteValidate(EValidationTrigger.Change);
+    public bool Validate(string? changedKey = null) => ExecuteValidate(EValidationTrigger.Change, changedKey);
 
     /// <summary>
     /// Validates with BeforeSave trigger and, if there are no errors, calls
@@ -42,10 +42,12 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
         return true;
     }
 
-    private bool ExecuteValidate(EValidationTrigger trigger)
+    private bool ExecuteValidate(EValidationTrigger trigger, string? changedKey = null)
     {
         var input = EDInputForm.SerializeItemsCVar(Items);
         input["trigger"] = new CVar(trigger.ToString());
+        if (!string.IsNullOrEmpty(changedKey))
+            input["changedKey"] = new CVar(changedKey);
 
         CVar output = mlRest.QueryOrThrow(cacheClass, "Validate", input);
         var newItems = EDInputForm.ParseItems(output);

@@ -14,6 +14,10 @@ Parameter TriggerBeforeSave = "BeforeSave";
 /// Trigger received with this form; set automatically by ReadFromIn.
 Property trigger As %String;
 
+/// Key of the field that triggered validation. Set by ReadFromIn.
+/// Non-empty only when trigger is "Change" and the validation was auto-triggered.
+Property changedKey As %String;
+
 /// Ordered list of Group and Field items that make up the form.
 Property items As list Of ALVA.EDControls.EDInputForm.Item;
 
@@ -140,6 +144,22 @@ Method IsWholeFormValidation() As %Boolean
 	q (..trigger=..#TriggerInit)||(..trigger=..#TriggerBeforeSave)
 }
 
+// ─── Changed field helpers ────────────────────────────────────────────────
+
+/// True when a specific field triggered this Change validation.
+Method HasChangedField() As %Boolean
+{
+	q ..changedKey'=""
+}
+
+/// Returns the Field that triggered validation, or "" if not applicable
+/// (Init, BeforeSave, or manual Change with no specific field).
+Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
+{
+	i ..changedKey="" q ""
+	q ..GetField(..changedKey)
+}
+
 // ─── Serialization ────────────────────────────────────────────────────────────
 
 /// Writes all items to ^||ML("OUT",...) as CList ($lb) values.
@@ -165,11 +185,13 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 	s form.trigger = $g(^||ML("IN","trigger"))
+	s form.changedKey = $g(^||ML("IN","changedKey"))
 	s idx = ""
 	f {
 		s idx = $o(^||ML("IN",idx))
 		q:idx=""
 		i idx="trigger" continue
+		i idx="changedKey" continue
 		s listVal = ^||ML("IN",idx)
 		s type = $li(listVal,1)
 		i type="GROUP" {
@@ -179,6 +201,7 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 		i type="FIELD" {
 			s f = form.AddFieldToLastGroup($li(listVal,3),$li(listVal,4),$li(listVal,5),$li(listVal,7),$li(listVal,8))
 			s f.value = $li(listVal,6)
+			i $ll(listVal)>=10 s f.editable = $li(listVal,10)
 		}
 	}
 	q form

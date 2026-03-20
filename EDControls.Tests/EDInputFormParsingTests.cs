@@ -172,6 +172,184 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
+    public void ParseItems_ParsesDateField()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "narozen", "Narozen", "DATE", "2024-05-15", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.Date, f.FieldType);
+        Assert.Equal("2024-05-15", f.Value);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesDecimalField()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "plat", "Plat", "DECIMAL", "45000.50", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.Decimal, f.FieldType);
+        Assert.Equal("45000.50", f.Value);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesBoolField()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "aktivni", "Aktivní", "BOOL", "1", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.Bool, f.FieldType);
+        Assert.Equal("1", f.Value);
+        Assert.True(f.BoolValue);
+    }
+
+    [Fact]
+    public void BoolValue_SetTrue_SetsValueTo1()
+    {
+        var field = new Field { FieldType = EFieldType.Bool, Value = "0" };
+
+        field.BoolValue = true;
+
+        Assert.Equal("1", field.Value);
+        Assert.True(field.BoolValue);
+    }
+
+    [Fact]
+    public void BoolValue_SetFalse_SetsValueTo0()
+    {
+        var field = new Field { FieldType = EFieldType.Bool, Value = "1" };
+
+        field.BoolValue = false;
+
+        Assert.Equal("0", field.Value);
+        Assert.False(field.BoolValue);
+    }
+
+    [Theory]
+    [InlineData("DATE", EFieldType.Date)]
+    [InlineData("DECIMAL", EFieldType.Decimal)]
+    [InlineData("BOOL", EFieldType.Bool)]
+    [InlineData("TEXT", EFieldType.Text)]
+    [InlineData("NUMBER", EFieldType.Number)]
+    [InlineData("UNKNOWN", EFieldType.Text)]
+    public void EFieldTypeWire_RoundTrips(string wire, EFieldType expected)
+    {
+        Assert.Equal(expected, EFieldTypeWire.FromWire(wire));
+        if (wire != "UNKNOWN")
+            Assert.Equal(wire, expected.ToWire());
+    }
+
+    [Fact]
+    public void DateValue_Get_ParsesYyyyMmDd()
+    {
+        var field = new Field { FieldType = EFieldType.Date, Value = "2024-05-15" };
+        Assert.Equal(new System.DateTime(2024, 5, 15), field.DateValue);
+    }
+
+    [Fact]
+    public void DateValue_Get_InvalidReturnsNull()
+    {
+        var field = new Field { FieldType = EFieldType.Date, Value = "not-a-date" };
+        Assert.Null(field.DateValue);
+    }
+
+    [Fact]
+    public void DateValue_Set_FormatsToWire()
+    {
+        var field = new Field { FieldType = EFieldType.Date };
+        field.DateValue = new System.DateTime(2024, 12, 31);
+        Assert.Equal("2024-12-31", field.Value);
+    }
+
+    [Fact]
+    public void DateValue_SetNull_ClearsValue()
+    {
+        var field = new Field { FieldType = EFieldType.Date, Value = "2024-05-15" };
+        field.DateValue = null;
+        Assert.Equal("", field.Value);
+    }
+
+    [Theory]
+    [InlineData(EFieldType.Number, "42", null)]
+    [InlineData(EFieldType.Number, "-5", null)]
+    [InlineData(EFieldType.Number, "3.14", "Musí být celé číslo")]
+    [InlineData(EFieldType.Number, "abc", "Musí být celé číslo")]
+    [InlineData(EFieldType.Decimal, "42", null)]
+    [InlineData(EFieldType.Decimal, "3.14", null)]
+    [InlineData(EFieldType.Decimal, "-1.5", null)]
+    [InlineData(EFieldType.Decimal, "abc", "Musí být číslo")]
+    [InlineData(EFieldType.Date, "2024-05-15", null)]
+    [InlineData(EFieldType.Date, "not-a-date", "Neplatné datum")]
+    [InlineData(EFieldType.Bool, "1", null)]
+    [InlineData(EFieldType.Bool, "0", null)]
+    [InlineData(EFieldType.Bool, "yes", "Musí být 0 nebo 1")]
+    [InlineData(EFieldType.Text, "anything", null)]
+    public void GetTypeError_ValidatesValueByFieldType(EFieldType type, string value, string? expected)
+    {
+        var field = new Field { FieldType = type, Value = value };
+        Assert.Equal(expected, field.GetTypeError());
+    }
+
+    [Theory]
+    [InlineData(EFieldType.Number, null)]
+    [InlineData(EFieldType.Decimal, null)]
+    [InlineData(EFieldType.Date, null)]
+    [InlineData(EFieldType.Bool, null)]
+    public void GetTypeError_EmptyValue_ReturnsNull(EFieldType type, string? value)
+    {
+        var field = new Field { FieldType = type, Value = value };
+        Assert.Null(field.GetTypeError());
+    }
+
+    [Fact]
+    public void ParseItems_ParsesNonEditableField()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0", "", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.False(f.Editable);
+    }
+
+    [Fact]
+    public void ParseItems_FieldWithoutEditableDefaultsToTrue()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.True(f.Editable);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsEditableField()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Value = "v", Editable = false
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.False(f.Editable);
+    }
+
+    [Fact]
     public void SerializeItemsCVar_NullItems_ReturnsEmptyCVar()
     {
         CVar result = EDInputForm.EDInputForm.SerializeItemsCVar(null);
