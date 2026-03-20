@@ -114,7 +114,7 @@ public class EDInputFormControllerTests
     }
 
     [Fact]
-    public void Init_PreservesExpansionState()
+    public void Init_BuildsFromScratch_DoesNotPreserveState()
     {
         var data = new CVar();
         data["1"] = new CList("GROUP", "1", "sekce", "Sekce");
@@ -123,14 +123,13 @@ public class EDInputFormControllerTests
         var controller = new EDInputFormController(mlRest, CacheClass);
 
         controller.Init();
-        // Collapse the group (default is expanded=true for visible groups)
         var group = controller.Items.OfType<Group>().Single();
-        group.IsExpanded = false;
+        group.IsExpanded = false; // sets Visibility = Collapsed
 
-        // Re-init — should preserve collapsed state
+        // Re-init builds from scratch — server sends Visible, so group is expanded again
         controller.Init();
         var groupAfter = controller.Items.OfType<Group>().Single();
-        Assert.False(groupAfter.IsExpanded);
+        Assert.True(groupAfter.IsExpanded);
     }
 
     [Fact]
@@ -194,5 +193,23 @@ public class EDInputFormControllerTests
             Arg.Is<CVar>(c =>
                 c["trigger"].Value != null && c["trigger"].Value.ToString() == "Init" &&
                 (c["changedKey"].Value == null || c["changedKey"].Value.ToString() == "")));
+    }
+
+    [Fact]
+    public void Validate_ServerVisibilityIsAuthoritative()
+    {
+        var visibleData = new CVar();
+        visibleData["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0");
+        var hiddenData = new CVar();
+        hiddenData["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "3");
+        var mlRest = MockMLRest(visibleData, validateReturn: hiddenData);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+
+        controller.Init();
+
+        // Validate — server returns ProgrammerHidden
+        controller.Validate();
+        var fieldAfter = controller.Items.OfType<Field>().Single();
+        Assert.Equal(EItemVisibility.ProgrammerHidden, fieldAfter.Visibility);
     }
 }

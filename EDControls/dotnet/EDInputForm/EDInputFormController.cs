@@ -17,9 +17,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     public void Init()
     {
         CVar output = mlRest.QueryOrThrow(cacheClass, "Init", new CVar());
-        var newItems = EDInputForm.ParseItems(output);
-        PreserveExpansionState(newItems);
-        Items = newItems;
+        Items = EDInputForm.ParseItems(output);
         ExecuteValidate(EValidationTrigger.Init);
     }
 
@@ -50,17 +48,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
             input["changedKey"] = new CVar(changedKey);
 
         CVar output = mlRest.QueryOrThrow(cacheClass, "Validate", input);
-        var newItems = EDInputForm.ParseItems(output);
-        PreserveExpansionState(newItems);
-        Items = newItems;
+        Items = EDInputForm.ParseItems(output);
         return Items.OfType<Field>().All(f => !f.HasError);
-    }
-
-    private void PreserveExpansionState(List<Item> newItems)
-    {
-        var expanded = Items.OfType<Group>().ToDictionary(g => g.Key, g => g.IsExpanded);
-        foreach (var g in newItems.OfType<Group>())
-            if (expanded.TryGetValue(g.Key, out bool was))
-                g.IsExpanded = was;
     }
 }

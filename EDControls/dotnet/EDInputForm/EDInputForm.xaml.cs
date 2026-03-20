@@ -95,7 +95,7 @@ namespace EDControls.EDInputForm
             {
                 CList entry = item switch
                 {
-                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.IsVisible ? "1" : "0"),
+                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.Visibility.ToWire()),
                     Field f => new CList(
                         "FIELD", f.Number, f.Key, f.Label,
                         f.FieldType.ToWire(),
@@ -103,7 +103,8 @@ namespace EDControls.EDInputForm
                         f.ValidateOnChange ? "1" : "0",
                         f.Required ? "1" : "0",
                         f.ValidationError ?? "",
-                        f.Editable ? "1" : "0"),
+                        f.Editable ? "1" : "0",
+                        f.Visibility.ToWire()),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -125,10 +126,10 @@ namespace EDControls.EDInputForm
                 {
                     currentGroup = new Group
                     {
-                        Number    = int.TryParse(row.GetString(2), out int gn) ? gn : 0,
-                        Key       = row.GetString(3),
-                        GroupName = row.GetString(4),
-                        IsVisible = row.Length < 5 || row.GetString(5) != "0",
+                        Number     = int.TryParse(row.GetString(2), out int gn) ? gn : 0,
+                        Key        = row.GetString(3),
+                        GroupName  = row.GetString(4),
+                        Visibility = row.Length >= 5 ? EItemVisibilityWire.FromWire(row.GetString(5)) : EItemVisibility.Visible,
                     };
                     items.Add(currentGroup);
                 }
@@ -145,6 +146,7 @@ namespace EDControls.EDInputForm
                         Required         = row.GetString(8) == "1",
                         ValidationError  = row.Length >= 9 && row.GetString(9) != "" ? row.GetString(9) : null,
                         Editable         = row.Length < 10 || row.GetString(10) != "0",
+                        Visibility       = row.Length >= 11 ? EItemVisibilityWire.FromWire(row.GetString(11)) : EItemVisibility.Visible,
                         ParentGroup      = currentGroup,
                     });
                 }
