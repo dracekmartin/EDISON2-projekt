@@ -7,7 +7,7 @@ namespace TemplateDesigner.Models.Elements;
 /// <summary>
 /// Abstraktní základ pro všechny JŘ elementy. Společné DataSource klíče,
 /// vizuální properties a helpery pro stavbu runtime dat z DataContext.
-/// Height je vždy null (dynamický element).
+/// Height může být null (dynamický) nebo pevné (auto-scale fontu při přetečení).
 /// </summary>
 public abstract class ScheduleElementBase : TemplateElement
 {
@@ -44,11 +44,17 @@ public abstract class ScheduleElementBase : TemplateElement
     public string HeaderBackgroundColor { get; set; } = "#FFE0E0E0";
     public string HeaderForeColor { get; set; } = "#FF000000";
 
-    // ─── Konstruktor — vynucuje Height = null ───────────────────────────────
+    // ─── Auto-scale ──────────────────────────────────────────────────────────
 
-    protected ScheduleElementBase()
+    /// <summary>
+    /// Pokud element má pevnou Height a přirozený obsah ji přesahuje,
+    /// vrátí scale faktor &lt; 1 pro zmenšení fontu. Jinak vrátí 1.
+    /// </summary>
+    protected float ComputeFontScale(float naturalHeightMm)
     {
-        Height = null;
+        if (!Height.HasValue || naturalHeightMm <= 0) return 1f;
+        float ratio = Height.Value / naturalHeightMm;
+        return ratio >= 1f ? 1f : ratio;
     }
 
     // ─── Cache ─────────────────────────────────────────────────────────────

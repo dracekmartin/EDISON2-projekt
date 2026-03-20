@@ -158,6 +158,7 @@ public class TemplateDesignerViewModel : EDViewModel
     private void Undo()
     {
         State.Undo();
+        CleanupSelection();
         NotifyUndoRedo();
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
@@ -167,10 +168,21 @@ public class TemplateDesignerViewModel : EDViewModel
     private void Redo()
     {
         State.Redo();
+        CleanupSelection();
         NotifyUndoRedo();
         RebuildSections();
         RequestCanvasRefresh?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
+    }
+
+    /// <summary>
+    /// Odebere z výběru elementy, které už nejsou v žádné sekci šablony
+    /// (např. po undo AddElement nebo undo Split).
+    /// </summary>
+    private void CleanupSelection()
+    {
+        var allElements = State.CurrentTemplate.Sections.SelectMany(s => s.Elements).ToHashSet();
+        State.SelectedElements.RemoveAll(e => !allElements.Contains(e));
     }
 
     private void NotifyUndoRedo()
@@ -523,6 +535,61 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
     }
 
+    // ── Split element ─────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Rozdělí vybrané elementy na poloviny. Horizontal = nad/pod, Vertical = vedle sebe.
+    /// Originál se zmenší na polovinu, klon se umístí do druhé poloviny.
+    /// </summary>
+    public void SplitSelected(bool horizontal)
+    {
+        if (State.SelectedElements.Count == 0 || State.ActiveSection is null) return;
+
+        var commands = new List<IDesignerCommand>();
+        var newSelection = new List<TemplateElement>();
+
+        foreach (var orig in State.SelectedElements.ToList())
+        {
+            float origH = orig.Height ?? orig.EffectiveDesignerHeight;
+            var clone = orig.Clone();
+
+            if (horizontal)
+            {
+                // Rozdělit výšku na dvě poloviny
+                float halfH = MathF.Round(origH / 2f, 2);
+                commands.Add(new ResizeElementCommand(orig,
+                    orig.X, orig.Y, orig.Width, orig.Height,
+                    orig.X, orig.Y, orig.Width, halfH));
+                clone.Y = orig.Y + halfH;
+                clone.Height = MathF.Round(origH - halfH, 2);
+            }
+            else
+            {
+                // Rozdělit šířku na dvě poloviny
+                float halfW = MathF.Round(orig.Width / 2f, 2);
+                commands.Add(new ResizeElementCommand(orig,
+                    orig.X, orig.Y, orig.Width, orig.Height,
+                    orig.X, orig.Y, halfW, orig.Height));
+                clone.X = orig.X + halfW;
+                clone.Width = MathF.Round(orig.Width - halfW, 2);
+            }
+
+            commands.Add(new AddElementCommand(State.ActiveSection, clone));
+            newSelection.Add(orig);
+            newSelection.Add(clone);
+        }
+
+        if (commands.Count > 0)
+        {
+            Execute(new CompositeCommand(
+                horizontal ? "Rozdělit horizontálně" : "Rozdělit vertikálně", commands));
+            State.SelectedElements.Clear();
+            State.SelectedElements.AddRange(newSelection);
+            RequestPropertiesPanelUpdate?.Invoke();
+            RequestCanvasRefresh?.Invoke();
+        }
+    }
+
     // ── Element factory (shared by palette drag + toolbar menu) ────────────────
 
     public static (float Width, float Height) GetDefaultElementSize(string type) => type switch
@@ -552,9 +619,9 @@ public class TemplateDesignerViewModel : EDViewModel
             "TableElement"     => new TableElement     { X = x, Y = y, Width = w },
             "BarcodeQR"        => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.QR },
             "BarcodeCode128"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.Code128 },
-            "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w },
-            "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w },
-            "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w },
+            "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
+            "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
+            "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
             _                  => new TextElement      { X = x, Y = y, Width = w, Height = h, Text = type }
         };
     }

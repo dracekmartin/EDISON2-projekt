@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using SkiaSharp;
 using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Models;
@@ -47,6 +48,51 @@ public abstract class TemplateElement
     /// <summary>Bag pro budoucí vlastnosti bez zásahu do modelu.</summary>
     public Dictionary<string, string>? CustomProperties { get; set; }
 
+    // ── Rámeček (společný pro všechny elementy) ──────────────────────────────
+
+    /// <summary>Barva rámečku ve formátu #AARRGGBB. "#00FFFFFF" = žádný rámeček.</summary>
+    public string BorderColor { get; set; } = "#00FFFFFF";
+
+    /// <summary>Šířka rámečku v mm. 0 = žádný rámeček.</summary>
+    public float BorderWidth { get; set; } = 0f;
+
+    [JsonIgnore]
+    public SKColor SkBorderColor => SKColor.Parse(BorderColor);
+
+    /// <summary>
+    /// Vykreslí rámeček elementu. Volá se ve DRUHÉM průchodu renderování (po obsahu
+    /// všech elementů), takže žádný fill ho nemůže překrýt. Stroke je centrovaný
+    /// na hraně — sousední elementy sdílejí stejný pixel a rámeček vypadá jednoduše.
+    /// </summary>
+    protected void RenderBorder(RenderContext ctx, SKRect rect)
+    {
+        if (BorderWidth <= 0 || SkBorderColor.Alpha == 0) return;
+        float strokePx = MathF.Max(1f, MathF.Round(BorderWidth * ctx.MmToPx));
+
+        // Snap hrany na celé pixely — sousední elementy pak sdílejí stejný pixel
+        var snappedRect = new SKRect(
+            MathF.Round(rect.Left),
+            MathF.Round(rect.Top),
+            MathF.Round(rect.Right),
+            MathF.Round(rect.Bottom));
+
+        using var borderPaint = new SKPaint
+        {
+            Color = SkBorderColor, Style = SKPaintStyle.Stroke,
+            StrokeWidth = strokePx, IsAntialias = false
+        };
+        ctx.Canvas.DrawRect(snappedRect, borderPaint);
+    }
+
+    /// <summary>
+    /// Veřejná metoda pro druhý průchod renderování — vykreslí rámeček elementu.
+    /// Canvas volá tuto metodu po tom, co se vykreslí obsah všech elementů.
+    /// </summary>
+    public virtual void RenderBorderPass(RenderContext ctx)
+    {
+        RenderBorder(ctx, ctx.ToCanvasRect(X, Y, Width, EffectiveDesignerHeight));
+    }
+
     // ---------------------------------------------------------------------------
 
     /// <summary>
@@ -83,6 +129,9 @@ public abstract class TemplateElement
                 Min = 1, Max = 9999, Unit = "mm" } }),
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
+
+        new ColorPropertyDescriptor { Label = "Barva rámečku", Group = "Rámeček", Get = () => BorderColor, Set = v => BorderColor = v },
+        new FloatPropertyDescriptor { Label = "Šířka rámečku", Group = "Rámeček", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
 
         new StringPropertyDescriptor
         {

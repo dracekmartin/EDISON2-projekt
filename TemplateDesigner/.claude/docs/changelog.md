@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-03-20 — Rámeček elementů, auto-scale font, multi-element editing
+
+*(nescommitované změny)*
+
+---
+
+## 2026-03-20 — Smart snap resize, sdílená hranice, split elementu, designer font cap
+
+- ✅ **SnapEngine.CalculateResize** — snap hran při změně velikosti elementu (edge + gap 4mm)
+- ✅ **Sdílená hranice** — tah za hranu mění i sousední element (CompositeCommand undo)
+- ✅ **Split element** — Ctrl+Shift+H (horizontální) / Ctrl+Shift+J (vertikální): rozdělení elementu na dvě poloviny (undoable)
+- ✅ **CleanupSelection po undo/redo** — odstranění osiřelých elementů z výběru
+- ✅ **Designer font cap** — omezení fontu na 10pt v designeru pro čitelnost placeholderů
+- ✅ Aktualizace nápovědy (F1) o nové zkratky a funkce
+
+## 2026-03-20 — Velikosti a orientace stránky
+
+- ✅ **PageSize editor** v ElementPropertiesWindow — editace rozměrů stránky (šířka, výška, okraje), orientace (na šířku/na výšku), předdefinované formáty
+
+## 2026-03-20 — Clamp elementu + StopColumnsEditorDialog + JŘ vylepšení
+
+- ✅ **Clamp elementu na hranici sekce** — elementy se nepřesunou mimo bounds sekce
+- ✅ **StopColumnsEditorDialog** — nový dialog pro editaci sloupců StopListElement (pořadí, šířky, záhlaví, viditelnost, zarovnání)
+- ✅ **StopListElement vylepšení** — přehazování řádků u zastávek, nastavení elementů
+- ✅ **Caché refaktor** — AgendaAPI/AgendaJRAPI/TiskMHD úpravy a vylepšení
+
+- ✅ **Border systém v base class** (`TemplateElement`) — `BorderColor` (#AARRGGBB, default průhledný) + `BorderWidth` (mm, default 0) + `SkBorderColor` computed property; property descriptory v „Rámeček" skupině; `Clone()` kopíruje border properties ve všech 9 typech elementů
+- ✅ **Dvouprůchodové renderování** — DesignerCanvas + PreviewCanvas: 1. průchod = obsah elementů (uvnitř clip sekce), 2. průchod = rámečky MIMO clip sekce; rámečky nad všemi filly → žádný fill je nepřekryje; na sdílené hraně dvou elementů se strokes překryjí na stejném pixelu → jeden rámeček; viditelné i na hranici sekce
+- ✅ **Pixel-snap** — `RenderBorder` zaokrouhluje hrany rect na celé pixely (`MathF.Round`) + strokeWidth min 1px; konzistentní zobrazení nezávisle na zoomu
+- ✅ **`RenderBorderPass()`** — veřejná virtuální metoda na `TemplateElement` pro druhý průchod; výchozí implementace = `RenderBorder(ctx, ToCanvasRect(X, Y, Width, EffectiveDesignerHeight))`
+- ✅ **Auto-scale font** (`ScheduleElementBase`) — `ComputeFontScale(naturalHeightMm)`: pokud element má pevnou Height a přirozená výška obsahu ji přesáhne, vrátí `Height/naturalHeight` (< 1) → proporcionální zmenšení fontů, výšek řádků i šířek sloupců; implementováno v StopListElement, DepartureGridElement, NotesLegendElement
+- ✅ **Pevná Height pro schedule elementy** — `CreateElement()` nyní vytváří JŘ elementy s `Height = h` (ne null); umožňuje vertikální resize všemi 8 handles; výchozí výšky: StopList 60mm, DepartureGrid 60mm, NotesLegend 25mm
+- ✅ **Multi-element editing** — Enter při multi-selectu → dialog společných vlastností (BorderColor, BorderWidth, ZIndex, IsLocked); `PrepareForMultipleElements()` + `BuildMultiElementDescriptors()` v `ElementPropertiesWindowViewModel`; setter aplikuje změnu na všechny elementy najednou
+- ✅ **Status text** — multi-select zobrazuje „Enter = společné vlastnosti"
+
 ## 2026-03-18 — Zastávkové jízdní řády a integrace do Caché
 
 - ✅ **ScheduleElementBase** — abstraktní základ JŘ elementů: DataSource klíče (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY), Build helpery s cache (SetCacheRef atomicky čistí cache při změně DataContext reference), společné vizuální properties (FontFamily, FontSize, GridColor, HeaderBackgroundColor)

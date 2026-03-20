@@ -89,6 +89,7 @@ public class LineElement : TemplateElement
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
         GroupId = GroupId,
+        BorderColor = BorderColor, BorderWidth = BorderWidth,
         Orientation = Orientation,
         Color = Color,
         StrokeWidth = StrokeWidth,

@@ -197,6 +197,11 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Zpět (undo)" Style="{StaticResource ActionText}"/>
@@ -214,41 +219,56 @@
                     <TextBlock Grid.Row="4" Grid.Column="0" Text="Vložit" Style="{StaticResource ActionText}"/>
                     <TextBlock Grid.Row="4" Grid.Column="1" Text="Ctrl+V" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Duplikovat vybrané elementy" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Duplikovat" Style="{StaticResource ActionText}"/>
                     <TextBlock Grid.Row="5" Grid.Column="1" Text="Ctrl+D" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Smazat element" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="6" Grid.Column="1" Text="Del" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Duplikovat směrem" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="6" Grid.Column="1" Text="Ctrl+D, pak šipka" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Posunout element o 1 mm" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="7" Grid.Column="1" Text="↑↓←→ šipky" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Rozdělit horizontálně (nad/pod)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="7" Grid.Column="1" Text="Ctrl+Shift+H" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Posunout element o velikost mřížky" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="8" Grid.Column="1" Text="Shift + šipky" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Rozdělit vertikálně (vedle sebe)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="8" Grid.Column="1" Text="Ctrl+Shift+J" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Zrušit výběr" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="9" Grid.Column="1" Text="Esc" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Seskupit vybrané" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="9" Grid.Column="1" Text="Ctrl+G" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Přenést dopředu (Z-order)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1" Text="Ctrl+PgUp" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Zrušit skupinu" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="10" Grid.Column="1" Text="Ctrl+Shift+G" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Odeslat dozadu (Z-order)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="11" Grid.Column="1" Text="Ctrl+PgDn" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Smazat element" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="11" Grid.Column="1" Text="Del" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Přenést zcela dopředu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="12" Grid.Column="1" Text="Ctrl+Shift+PgUp" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Posunout element o 1 mm" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="12" Grid.Column="1" Text="↑↓←→ šipky" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="13" Grid.Column="0" Text="Odeslat zcela dozadu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="13" Grid.Column="1" Text="Ctrl+Shift+PgDn" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="13" Grid.Column="0" Text="Posunout element o velikost mřížky" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="13" Grid.Column="1" Text="Shift + šipky" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="14" Grid.Column="0" Text="Zarovnání elementů" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="14" Grid.Column="1" Text="Menu Upravit" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="14" Grid.Column="0" Text="Zrušit výběr" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="14" Grid.Column="1" Text="Esc" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Rozložení elementů" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="15" Grid.Column="1" Text="Menu Upravit" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Přenést dopředu (Z-order)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="15" Grid.Column="1" Text="Ctrl+PgUp" Style="{StaticResource ShortcutText}"/>
+
+                    <TextBlock Grid.Row="16" Grid.Column="0" Text="Odeslat dozadu (Z-order)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="16" Grid.Column="1" Text="Ctrl+PgDn" Style="{StaticResource ShortcutText}"/>
+
+                    <TextBlock Grid.Row="17" Grid.Column="0" Text="Přenést zcela dopředu" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="17" Grid.Column="1" Text="Ctrl+Shift+PgUp" Style="{StaticResource ShortcutText}"/>
+
+                    <TextBlock Grid.Row="18" Grid.Column="0" Text="Odeslat zcela dozadu" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="18" Grid.Column="1" Text="Ctrl+Shift+PgDn" Style="{StaticResource ShortcutText}"/>
+
+                    <TextBlock Grid.Row="19" Grid.Column="0" Text="Zarovnání elementů" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="19" Grid.Column="1" Text="Menu Upravit" Style="{StaticResource ShortcutText}"/>
+
+                    <TextBlock Grid.Row="20" Grid.Column="0" Text="Rozložení elementů" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="20" Grid.Column="1" Text="Menu Upravit" Style="{StaticResource ShortcutText}"/>
                 </Grid>
 
-                <TextBlock Text="💡 Ctrl+C/V vytvoří kopii o 5 mm dál. Ctrl+D duplikuje bez offsetu. Šipky přesouvají element přesně (1 mm nebo velikost mřížky se Shift)."
+                <TextBlock Text="💡 Ctrl+D+šipka: umístí kopii vedle originálu s mezerou 4 mm. Ctrl+Shift+H/J: rozdělí element na dvě poloviny (undoable)."
                            Style="{StaticResource DescriptionText}"/>
 
                 <!-- ═══ SEKCE ═══ -->
@@ -342,6 +362,18 @@
                     <Run Text="• Tabulka" FontWeight="SemiBold"/>
                     <Run Text="— Fixed (pevný layout) nebo Dynamic (data z datasource)" Foreground="#666666"/>
                 </TextBlock>
+                <TextBlock Margin="16,4,0,4">
+                    <Run Text="• Zastávky JŘ" FontWeight="SemiBold"/>
+                    <Run Text="— tabulka zastávek s TČ, názvem, časem jízdy, zónami, atributy" Foreground="#666666"/>
+                </TextBlock>
+                <TextBlock Margin="16,4,0,4">
+                    <Run Text="• Mřížka odjezdů JŘ" FontWeight="SemiBold"/>
+                    <Run Text="— minutová mřížka odjezdů per skupina dnů (MinutesOnly / FullTime)" Foreground="#666666"/>
+                </TextBlock>
+                <TextBlock Margin="16,4,0,4">
+                    <Run Text="• Legenda poznámek JŘ" FontWeight="SemiBold"/>
+                    <Run Text="— vysvětlivky: negativní značky, speciální znaky, textové poznámky" Foreground="#666666"/>
+                </TextBlock>
 
                 <TextBlock Text="💡 Datová pole: Dvojklik na pole v záložce 'Pole agendy' vloží placeholder {NAZEV_POLE} do schránky."
                            Style="{StaticResource DescriptionText}"/>
@@ -381,9 +413,25 @@
                     <Run Text="• Uzamčení elementů:" FontWeight="SemiBold"/>
                     <Run Text=" Vlastnost 'Zamčeno' chrání element před náhodným posunem nebo změnou velikosti" Foreground="#666666"/>
                 </TextBlock>
-                <TextBlock Margin="0,4,0,16">
+                <TextBlock Margin="0,4,0,4">
                     <Run Text="• Podmíněné řádky tabulky:" FontWeight="SemiBold"/>
                     <Run Text=" V editoru Fixed tabulky (záložka Řádky) lze zadat VisibilityExpression pro každý řádek" Foreground="#666666"/>
+                </TextBlock>
+                <TextBlock Margin="0,4,0,4">
+                    <Run Text="• Smart snap při resize:" FontWeight="SemiBold"/>
+                    <Run Text=" Při změně velikosti elementu se hrany přichytí k hranám sousedních elementů (edge, gap 4 mm) — stejně jako při přesouvání" Foreground="#666666"/>
+                </TextBlock>
+                <TextBlock Margin="0,4,0,4">
+                    <Run Text="• Sdílená hranice:" FontWeight="SemiBold"/>
+                    <Run Text=" Dva elementy těsně u sebe — při tahu za hranici jednoho se druhý automaticky zmenšuje/zvětšuje (undoable)" Foreground="#666666"/>
+                </TextBlock>
+                <TextBlock Margin="0,4,0,4">
+                    <Run Text="• Resize neopustí sekci:" FontWeight="SemiBold"/>
+                    <Run Text=" Změna velikosti je omezena hranicemi sekce — element nemůže přesáhnout okraj stránky ani sekce" Foreground="#666666"/>
+                </TextBlock>
+                <TextBlock Margin="0,4,0,16">
+                    <Run Text="• Formát stránky:" FontWeight="SemiBold"/>
+                    <Run Text=" Ve vlastnostech stránky (Ctrl+Shift+P) lze vybrat předdefinovaný formát (A2–A5) a orientaci; obsahové sekce se automaticky přeškálují" Foreground="#666666"/>
                 </TextBlock>
 
             </StackPanel>

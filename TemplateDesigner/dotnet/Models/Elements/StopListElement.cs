@@ -5,7 +5,7 @@ namespace TemplateDesigner.Models.Elements;
 /// <summary>
 /// Tabulka zastávek (levý sloupec zastávkového JŘ).
 /// Zobrazuje: TČ, název zastávky, čas jízdy, zóna, průběhy, atributy, poznámky.
-/// Height je vždy null (dynamický — výšku počítá engine z počtu zastávek).
+/// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// Uživatel umístí na canvas vedle DepartureGridElement(ů).
 /// </summary>
 public class StopListElement : ScheduleElementBase
@@ -64,13 +64,18 @@ public class StopListElement : ScheduleElementBase
         var zastavky = BuildZastavky(ctx.Data);
         bool hasData = zastavky.Count > 0;
 
-        float rowH = ComputeRowH(FontSize);
-        float headerH = ComputeHeaderH(HeaderFontSize);
+        // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
+        float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
+        float effectiveFontSize = FontSize * scale;
+        float effectiveHeaderFontSize = HeaderFontSize * scale;
+
+        float rowH = ComputeRowH(effectiveFontSize);
+        float headerH = ComputeHeaderH(effectiveHeaderFontSize);
 
         using var paints = CreateStandardPaints();
 
-        float fontPx = FontSize * PtToMm * ctx.MmToPx;
-        float headerFontPx = HeaderFontSize * PtToMm * ctx.MmToPx;
+        float fontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
+        float headerFontPx = effectiveHeaderFontSize * PtToMm * ctx.MmToPx;
 
         using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
         using var headerFont = new SKFont(
@@ -289,6 +294,7 @@ public class StopListElement : ScheduleElementBase
             VisibilityExpression = VisibilityExpression,
             CustomProperties = CustomProperties is null ? null : new(CustomProperties),
             GroupId = GroupId,
+            BorderColor = BorderColor, BorderWidth = BorderWidth,
 
             Columns                 = Columns.Select(c => c.Clone()).ToList(),
             ShowStopIndentation     = ShowStopIndentation,
