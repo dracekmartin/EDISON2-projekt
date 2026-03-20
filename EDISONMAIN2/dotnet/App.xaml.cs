@@ -24,9 +24,9 @@ namespace EDISONMAIN2
             var services = new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer());
             EDServices.Initialize(services);
 
-            // TODO (Priority 5): load server/port from config rather than hardcoding
-            string server = "192.168.16.1";
-            int port = 57770;
+            var config = SettingsLoader.Load();
+            string server = config.Server.Host;
+            int port = config.Server.Port;
 
             var loginRest = new MLRest(server, port, "", "");
 
