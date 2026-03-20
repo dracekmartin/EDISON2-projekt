@@ -7,7 +7,6 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
-using System.Windows;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -64,13 +63,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             {
                 if (_selectedCompanyIndex != value)
                 {
-                    var result = MessageBox.Show(
-                        "Změna společnosti zavře všechna otevřená okna. Pokračovat?",
-                        "Upozornění",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Warning);
-
-                    if (result != MessageBoxResult.Yes) return;
+                    if (!PopupDisplayer.Confirm("Změna společnosti zavře všechna otevřená okna. Pokračovat?"))
+                        return;
 
                     Set(ref _selectedCompanyIndex, value);
                     OnPropertyChanged(nameof(Namespace));
