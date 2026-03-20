@@ -95,7 +95,7 @@ namespace EDControls.EDInputForm
             {
                 CList entry = item switch
                 {
-                    Group g => new CList("GROUP", g.Number, g.GroupName, g.IsVisible ? "1" : "0"),
+                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.IsVisible ? "1" : "0"),
                     Field f => new CList(
                         "FIELD", f.Number, f.Key, f.Label,
                         f.FieldType == EFieldType.Number ? "NUMBER" : "TEXT",
@@ -124,8 +124,9 @@ namespace EDControls.EDInputForm
                     currentGroup = new Group
                     {
                         Number    = int.TryParse(row.GetString(2), out int gn) ? gn : 0,
-                        GroupName = row.GetString(3),
-                        IsVisible = row.Length < 4 || row.GetString(4) != "0",
+                        Key       = row.GetString(3),
+                        GroupName = row.GetString(4),
+                        IsVisible = row.Length < 5 || row.GetString(5) != "0",
                     };
                     items.Add(currentGroup);
                 }

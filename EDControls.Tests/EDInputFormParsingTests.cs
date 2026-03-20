@@ -28,12 +28,13 @@ public class EDInputFormParsingTests
     public void ParseItems_ParsesGroup()
     {
         var data = new CVar();
-        data["1"] = new CList("GROUP", "1", "Osobní údaje");
+        data["1"] = new CList("GROUP", "1", "osobni", "Osobní údaje");
 
         var items = EDInputForm.EDInputForm.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal(1, g.Number);
+        Assert.Equal("osobni", g.Key);
         Assert.Equal("Osobní údaje", g.GroupName);
         Assert.True(g.IsVisible);
     }
@@ -42,7 +43,7 @@ public class EDInputFormParsingTests
     public void ParseItems_ParsesHiddenGroup()
     {
         var data = new CVar();
-        data["1"] = new CList("GROUP", "5", "Skrytá", "0");
+        data["1"] = new CList("GROUP", "5", "skryta", "Skrytá", "0");
 
         var items = EDInputForm.EDInputForm.ParseItems(data);
 
@@ -114,7 +115,7 @@ public class EDInputFormParsingTests
     public void ParseItems_FieldsAfterGroupGetParentGroup()
     {
         var data = new CVar();
-        data["1"] = new CList("GROUP", "1", "Sekce A");
+        data["1"] = new CList("GROUP", "1", "sekcea", "Sekce A");
         data["2"] = new CList("FIELD", "2", "a1", "Pole A1", "TEXT", "", "0", "0");
         data["3"] = new CList("FIELD", "3", "a2", "Pole A2", "TEXT", "", "0", "0");
 
@@ -142,7 +143,7 @@ public class EDInputFormParsingTests
     [Fact]
     public void SerializeItemsCVar_RoundTripsGroupAndField()
     {
-        var group = new Group { Number = 1, GroupName = "Sekce", IsVisible = true };
+        var group = new Group { Number = 1, Key = "sekce", GroupName = "Sekce", IsVisible = true };
         var field = new Field
         {
             Number = 2, Key = "k", Label = "Lbl", FieldType = EFieldType.Text,
@@ -156,6 +157,7 @@ public class EDInputFormParsingTests
 
         var g = Assert.IsType<Group>(parsed[0]);
         Assert.Equal(1, g.Number);
+        Assert.Equal("sekce", g.Key);
         Assert.Equal("Sekce", g.GroupName);
         Assert.True(g.IsVisible);
 

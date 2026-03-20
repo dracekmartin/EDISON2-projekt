@@ -117,7 +117,7 @@ public class EDInputFormControllerTests
     public void Init_PreservesExpansionState()
     {
         var data = new CVar();
-        data["1"] = new CList("GROUP", "1", "Sekce");
+        data["1"] = new CList("GROUP", "1", "sekce", "Sekce");
         data["2"] = new CList("FIELD", "2", "k", "L", "TEXT", "", "0", "0");
         var mlRest = MockMLRest(data);
         var controller = new EDInputFormController(mlRest, CacheClass);

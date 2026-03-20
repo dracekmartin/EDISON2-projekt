@@ -56,9 +56,9 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     private void PreserveExpansionState(List<Item> newItems)
     {
-        var expanded = Items.OfType<Group>().ToDictionary(g => g.GroupName, g => g.IsExpanded);
+        var expanded = Items.OfType<Group>().ToDictionary(g => g.Key, g => g.IsExpanded);
         foreach (var g in newItems.OfType<Group>())
-            if (expanded.TryGetValue(g.GroupName, out bool was))
+            if (expanded.TryGetValue(g.Key, out bool was))
                 g.IsExpanded = was;
     }
 }

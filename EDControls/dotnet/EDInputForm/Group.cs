@@ -6,6 +6,7 @@ namespace EDControls.EDInputForm
 {
     public class Group : Item, INotifyPropertyChanged
     {
+        public string Key { get; set; } = "";
         public string GroupName { get; set; } = "";
 
         private bool _isVisible = true;

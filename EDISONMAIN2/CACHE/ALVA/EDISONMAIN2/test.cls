@@ -13,21 +13,21 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-		d form.AddField("poznamka", "Poznámka", "TEXT", 0, 0)
+		d form.AddFieldToLastGroup("poznamka", "Poznámka", "TEXT", 0, 0)
 
-		d form.AddGroup("Osobní údaje")
-		d form.AddField("jmeno",    "Jméno",    "TEXT",   1, 1)
-		d form.AddField("prijmeni", "Příjmení", "TEXT",   1, 1)
-		d form.AddField("vek",      "Věk",      "NUMBER", 1, 0)
+		d form.AddGroup("osobni", "Osobní údaje")
+		d form.AddFieldToLastGroup("jmeno",    "Jméno",    "TEXT",   1, 1)
+		d form.AddFieldToLastGroup("prijmeni", "Příjmení", "TEXT",   1, 1)
+		d form.AddFieldToLastGroup("vek",      "Věk",      "NUMBER", 1, 0)
 
-		d form.AddGroup("Adresa")
-		d form.AddField("ulice", "Ulice", "TEXT",   0, 0)
-		d form.AddField("mesto", "Město", "TEXT",   0, 0)
-		d form.AddField("psc",   "PSČ",   "NUMBER", 1, 0)
+		d form.AddGroup("adresa", "Adresa")
+		d form.AddFieldToLastGroup("ulice", "Ulice", "TEXT",   0, 0)
+		d form.AddFieldToLastGroup("mesto", "Město", "TEXT",   0, 0)
+		d form.AddFieldToLastGroup("psc",   "PSČ",   "NUMBER", 1, 0)
 
-		d form.AddGroup("Kontakt")
-		d form.AddField("email",   "E-mail",  "TEXT",   0, 0)
-		d form.AddField("telefon", "Telefon", "NUMBER", 0, 0)
+		d form.AddGroup("kontakt", "Kontakt")
+		d form.AddFieldToLastGroup("email",   "E-mail",  "TEXT",   0, 0)
+		d form.AddFieldToLastGroup("telefon", "Telefon", "NUMBER", 0, 0)
 
 		d form.WriteToOut()
 	}
