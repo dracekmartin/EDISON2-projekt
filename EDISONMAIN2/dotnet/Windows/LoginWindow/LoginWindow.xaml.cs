@@ -21,7 +21,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
             try
             {
                 ErrorText.Visibility = Visibility.Collapsed;
-                Result = LoginService.Login(_mlRest, UsernameBox.Text, PasswordBox.Password);
+                Result = UserAuthenticator.Login(_mlRest, UsernameBox.Text, PasswordBox.Password);
                 DialogResult = true;
             }
             catch (LoginException ex)

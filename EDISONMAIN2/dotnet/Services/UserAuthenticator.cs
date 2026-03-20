@@ -15,7 +15,7 @@ namespace EDISONMAIN2.Services
 
     public class LoginException(string message) : Exception(message);
 
-    public static class LoginService
+    public static class UserAuthenticator
     {
         /// <summary>
         /// Calls ALVA.SYS.Login.Login on Caché and returns user info on success.
