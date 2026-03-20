@@ -22,6 +22,13 @@ namespace EDControls.EDInputForm
         /// <summary>Caché class that implements Init / Validate / Save.</summary>
         public string CacheClass { get; set; } = "";
 
+        private EDInputFormController? _controller;
+
+        private EDInputFormController Controller =>
+            _controller ??= new EDInputFormController(
+                MLRest ?? throw new InvalidOperationException("EDInputForm: MLRest not available."),
+                CacheClass);
+
         // ─── Items dependency property ────────────────────────────────────────────
 
         public static readonly DependencyProperty ItemsProperty =
@@ -52,18 +59,21 @@ namespace EDControls.EDInputForm
         public void Init()
         {
             EnsureConfigured();
-            CVar output = MLRest!.QueryOrThrow(CacheClass, "Init", new CVar());
-            var newItems = ParseItems(output);
-            PreserveExpansionState(Items, newItems);
-            Items = newItems;
-            ExecuteValidate(EValidationTrigger.Init);
+            Controller.Init();
+            Items = Controller.Items;
         }
 
         /// <summary>
         /// Runs a Change-trigger validation pass and returns true when there are
         /// no validation errors.
         /// </summary>
-        public bool Validate() => ExecuteValidate(EValidationTrigger.Change);
+        public bool Validate()
+        {
+            EnsureConfigured();
+            bool result = Controller.Validate();
+            Items = Controller.Items;
+            return result;
+        }
 
         /// <summary>
         /// Validates with BeforeSave trigger and, if there are no errors, calls
@@ -71,22 +81,10 @@ namespace EDControls.EDInputForm
         /// </summary>
         public bool Save()
         {
-            if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
-
-            CVar output = MLRest!.QueryOrThrow(CacheClass, "Save", SerializeItemsCVar(Items));
-            Items = ParseItems(output);
-            return true;
-        }
-
-        // ─── Serialization helpers ────────────────────────────────────────────────
-
-        private static void PreserveExpansionState(IEnumerable<Item>? oldItems, List<Item> newItems)
-        {
-            if (oldItems == null) return;
-            var expanded = oldItems.OfType<Group>().ToDictionary(g => g.GroupName, g => g.IsExpanded);
-            foreach (var g in newItems.OfType<Group>())
-                if (expanded.TryGetValue(g.GroupName, out bool was))
-                    g.IsExpanded = was;
+            EnsureConfigured();
+            bool result = Controller.Save();
+            Items = Controller.Items;
+            return result;
         }
 
         internal static CVar SerializeItemsCVar(IEnumerable<Item>? items)
@@ -224,19 +222,6 @@ namespace EDControls.EDInputForm
 
         // ─── Internal ─────────────────────────────────────────────────────────────
 
-        private bool ExecuteValidate(EValidationTrigger trigger)
-        {
-            EnsureConfigured();
-            var input = SerializeItemsCVar(Items);
-            input["trigger"] = new CVar(trigger.ToString());
-
-            CVar output = MLRest!.QueryOrThrow(CacheClass, "Validate", input);
-            var newItems = ParseItems(output);
-            PreserveExpansionState(Items, newItems);
-            Items = newItems;
-            return Items.OfType<Field>().All(f => !f.HasError);
-        }
-
         private void EnsureConfigured()
         {
             if (MLRest == null || string.IsNullOrEmpty(CacheClass))
@@ -271,7 +256,8 @@ namespace EDControls.EDInputForm
             Dispatcher.BeginInvoke(new Action(() =>
             {
                 Debug.WriteLine("[EDInputForm] Auto-validating on Change");
-                ExecuteValidate(EValidationTrigger.Change);
+                Controller.Validate();
+                Items = Controller.Items;
             }));
         }
     }
