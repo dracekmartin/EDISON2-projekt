@@ -48,6 +48,7 @@ public partial class MainWindow : Window
     private float  _resizeInitHComputed;
     private float  _resizeMouseStartX, _resizeMouseStartY;
     private float  _resizeOriginX, _resizeOriginY;
+    private float  _resizeSectionW, _resizeSectionH;
 
     // ── Adding element (drag from palette / field drag) ────────────────────────
     private string? _addingElementType;
@@ -1378,6 +1379,8 @@ public partial class MainWindow : Window
                                 .FirstOrDefault(t => t.Section.Elements.Contains(el));
             _resizeOriginX     = origin.OriginX;
             _resizeOriginY     = origin.OriginY;
+            _resizeSectionW    = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+            _resizeSectionH    = origin.Section.EffectiveDesignerHeight;
             _resizeMouseStartX = (cx - _resizeOriginX) / _canvas.MmToPx;
             _resizeMouseStartY = (cy - _resizeOriginY) / _canvas.MmToPx;
             _mouseMode         = MouseMode.Resizing;
@@ -1799,6 +1802,18 @@ public partial class MainWindow : Window
         }
 
         if (!setsH) newH = _resizeInitH;
+
+        // Clamp na hranice sekce — resize nesmí vyjet mimo
+        newX = Math.Max(0, newX);
+        newY = Math.Max(0, newY);
+        if (newX + newW > _resizeSectionW)
+            newW = _resizeSectionW - newX;
+        if (newH is float h && newY + h > _resizeSectionH)
+            newH = _resizeSectionH - newY;
+
+        newW = Math.Max(minW, newW);
+        if (newH is float h2) newH = Math.Max(minH, h2);
+
         return (newX, newY, newW, newH);
     }
 
