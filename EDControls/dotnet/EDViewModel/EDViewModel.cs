@@ -151,22 +151,28 @@ public class EDViewModel : INotifyPropertyChanged
         public EDAction Delete() => Delete(vm.DeleteCommand);
 
         public EDAction Add(ICommand command) =>
-            new((string)Application.Current.FindResource("EDStrings.Add"),
+            new(FindString("EDStrings.Add") ?? "Přidat",
                 command,
-                (ImageSource)Application.Current.FindResource("EDIcons.Add"),
+                FindImage("EDIcons.Add"),
                 Key.N, ModifierKeys.Control);
 
         public EDAction Edit(ICommand command) =>
-            new((string)Application.Current.FindResource("EDStrings.Edit"),
+            new(FindString("EDStrings.Edit") ?? "Upravit",
                 command,
-                (ImageSource)Application.Current.FindResource("EDIcons.Edit"),
+                FindImage("EDIcons.Edit"),
                 Key.E, ModifierKeys.Control);
 
         public EDAction Delete(ICommand command) =>
-            new((string)Application.Current.FindResource("EDStrings.Delete"),
+            new(FindString("EDStrings.Delete") ?? "Smazat",
                 command,
-                (ImageSource)Application.Current.FindResource("EDIcons.Delete"),
+                FindImage("EDIcons.Delete"),
                 Key.D, ModifierKeys.Control);
+
+        private static string? FindString(string key) =>
+            Application.Current?.TryFindResource(key) as string;
+
+        private static ImageSource? FindImage(string key) =>
+            Application.Current?.TryFindResource(key) as ImageSource;
     }
 
     /// <summary>
