@@ -30,6 +30,12 @@ namespace EDControls.EDInputForm.DesignTimeData
             new Group { Number = 12, Key = "kontakt", GroupName = "Kontakt" },
             new Field { Number = 13, Key = "email",   Label = "E-mail",  FieldType = EFieldType.Text,   Required = false, Value = "jan.novak@example.com" },
             new Field { Number = 14, Key = "telefon", Label = "Telefon", FieldType = EFieldType.Number, Required = false, Value = "" },
+
+            new Group { Number = 15, Key = "dalsi", GroupName = "Další údaje" },
+            new Field { Number = 16, Key = "narozen",  Label = "Narozen",       FieldType = EFieldType.Date,    Value = "1984-05-15" },
+            new Field { Number = 17, Key = "plat",     Label = "Plat",          FieldType = EFieldType.Decimal, Value = "45000.50" },
+            new Field { Number = 18, Key = "aktivni",  Label = "Aktivní",       FieldType = EFieldType.Bool,    Value = "1" },
+            new Field { Number = 19, Key = "smazano",  Label = "Smazáno",       FieldType = EFieldType.Bool,    Value = "0" },
         ];
     }
 }

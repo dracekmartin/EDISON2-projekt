@@ -12,8 +12,6 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		$$$FillParams
 
 		s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
-		#define Text   form.#TypeText
-		#define Number form.#TypeNumber
 
 		d form.AddFieldToLastGroup("poznamka", "Poznámka", $$$FieldTypeText, 0, 0)
 
@@ -30,6 +28,14 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		d form.AddGroup("kontakt", "Kontakt")
 		d form.AddFieldToLastGroup("email",   "E-mail",  $$$FieldTypeText,   0, 0)
 		d form.AddFieldToLastGroup("telefon", "Telefon", $$$FieldTypeNumber, 0, 0)
+
+		d form.AddGroup("dalsi", "Další údaje")
+		s f = form.AddFieldToLastGroup("narozen", "Narozen",  $$$FieldTypeDate,    0, 0)
+		s f.value = "2024-05-15"
+		s f = form.AddFieldToLastGroup("plat",    "Plat",     $$$FieldTypeDecimal, 0, 0)
+		s f.value = "45000.50"
+		d form.AddFieldToLastGroup("aktivni",  "Aktivní",  $$$FieldTypeBool, 0, 0)
+		d form.AddFieldToLastGroup("smazano",  "Smazáno",  $$$FieldTypeBool, 0, 0)
 
 		d form.WriteToOut()
 	}
