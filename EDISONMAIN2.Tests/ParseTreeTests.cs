@@ -1,5 +1,6 @@
 using ALWA.SYS;
 using EDControls;
+using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Modules;
 using NSubstitute;
@@ -131,5 +132,26 @@ public class ParseTreeTests
         Assert.IsType<ExecutableModule>(tree[0]);
         var fam = Assert.IsType<ModuleFamily>(tree[1]);
         Assert.Single(fam.NestedModules);
+    }
+
+    [Fact]
+    public void GetModuleTree_EndToEnd_CallsMockAndParsesResult()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FAMILY", "Doprava", "1");
+        data["2"] = new CList("EXE", "Linky", "linky.exe", "LinkyForm");
+        data["3"] = new CList("FAMILY_END");
+        var mockMLRest = MockTreeCall(data);
+
+        var connParams = new ConnectionParams("localhost", 0, "", "", 0);
+        var service = new EdisonMainDataService(connParams);
+        var tree = service.GetModuleTree(mockMLRest);
+
+        var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
+        Assert.Equal("Doprava", fam.DisplayedName);
+        var exe = Assert.IsType<ExecutableModule>(Assert.Single(fam.NestedModules));
+        Assert.Equal("Linky", exe.DisplayedName);
+        mockMLRest.Received(1).QueryOrThrow(
+            "ALVA.EDISONMAIN2.API.Tree", "GetTree", Arg.Any<CVar>());
     }
 }

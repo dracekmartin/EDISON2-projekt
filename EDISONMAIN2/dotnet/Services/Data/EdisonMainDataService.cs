@@ -12,33 +12,17 @@ namespace EDISONMAIN2.Services.Data
 {
     public class EdisonMainDataService(ConnectionParams connParams) : IEdisonMainDataService
     {
-        private readonly ConnectionParams _connParams = connParams;
-
-        // MLRest instances are created once and reused. Two are needed because
-        // GetCompanies uses an empty namespace context while GetModuleTree needs
-        // the specific company namespace — MLRest binds these at construction time.
+        // GetCompanies needs a concrete MLRest with empty namespace — the legacy
+        // GetCompanyList API requires it. Created lazily and reused.
         private MLRest? _emptyMLRest;
-        private MLRest? _customerSpecificMLRest;
-
-        private MLRest CreateMLRest(string database, string idfa) =>
-            new(_connParams.Server, _connParams.RestPort, database, idfa)
-            {
-                LoginName = _connParams.UserName,
-                FullName = _connParams.FullName,
-                Mlp = _connParams.Mlp.ToString()
-            };
 
         private MLRest EmptyRest =>
-            _emptyMLRest ??= CreateMLRest(database: "", idfa: "");
-
-        private MLRest GetTreeRest(string database, string idfa)
-        {
-            if (_customerSpecificMLRest == null || _customerSpecificMLRest.DataNamespace != database || _customerSpecificMLRest.Idfa != idfa)
+            _emptyMLRest ??= new(connParams.Server, connParams.RestPort, "", "")
             {
-                _customerSpecificMLRest = CreateMLRest(database, idfa);
-            }
-            return _customerSpecificMLRest;
-        }
+                LoginName = connParams.UserName,
+                FullName  = connParams.FullName,
+                Mlp       = connParams.Mlp.ToString()
+            };
 
         public IReadOnlyList<CompanyStruct> GetCompanies()
         {
@@ -49,9 +33,8 @@ namespace EDISONMAIN2.Services.Data
             return companies;
         }
 
-        public IReadOnlyList<IModule> GetModuleTree(string database, string idfa)
+        public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest)
         {
-            var mlRest = GetTreeRest(database, idfa);
             CVar treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", new CVar());
             return ParseTree(treeData);
         }

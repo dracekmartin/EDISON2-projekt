@@ -52,7 +52,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 Mlp       = ConnParams.Mlp.ToString()
             });
 
-            var tree = _dataService.GetModuleTree(Namespace, Idfa);
+            var tree = _dataService.GetModuleTree(MLRest!);
             foreach (var module in tree)
                 TopLevelModules.Add(module);
         }
