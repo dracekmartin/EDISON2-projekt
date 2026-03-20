@@ -48,6 +48,26 @@ public class TemplateDesignerViewModel : EDViewModel
     private Dictionary<string,object?>?         _cachedParamValues;
     private string?                             _lastParamsAgendaCode;
 
+    // ── Real preview data ────────────────────────────────────────────────────
+    private List<DataContext>?                  _realPreviewData;
+    private int                                _realPreviewIndex;
+
+    /// <summary>Počet dostupných stránek reálných dat (0 = mock mód).</summary>
+    public int RealPreviewPageCount => _realPreviewData?.Count ?? 0;
+
+    /// <summary>Index aktuálně zobrazené stránky reálných dat (0-based).</summary>
+    public int RealPreviewIndex
+    {
+        get => _realPreviewIndex;
+        set
+        {
+            if (_realPreviewData is null || _realPreviewData.Count == 0) return;
+            var clamped = Math.Clamp(value, 0, _realPreviewData.Count - 1);
+            if (Set(ref _realPreviewIndex, clamped))
+                RequestPreviewRefresh?.Invoke();
+        }
+    }
+
     /// <summary>Parametry agendy pro PrintDialog.</summary>
     public IReadOnlyList<TemplateParameter> AgendaParameters => _agendaParameters;
 
@@ -964,7 +984,47 @@ public class TemplateDesignerViewModel : EDViewModel
             _previewParams[p.Name] = p.GetDefaultTyped();
 
         RebuildParametersPanel();
+        LoadRealPreviewData();
         RequestPreviewRefresh?.Invoke();
+    }
+
+    /// <summary>
+    /// Načte reálná data z Caché pro live preview. Pokud GetData selže nebo vrátí
+    /// prázdný výsledek, _realPreviewData zůstane null → fallback na mock data.
+    /// </summary>
+    /// <summary>ID linky pro načítání reálných dat do preview. Zatím hardcoded, v budoucnu z UI.</summary>
+    public string PreviewLinkaId { get; set; } = "7372";
+
+    public void LoadRealPreviewData()
+    {
+        _realPreviewData = null;
+        _realPreviewIndex = 0;
+
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode) || CacheProvider is null) return;
+
+        try
+        {
+            // Sestavit parametry z výchozích hodnot + LINKA_ID
+            var defaultParams = _previewParams.ToDictionary(
+                kv => kv.Key,
+                kv => (object?)kv.Value?.ToString(),
+                StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrEmpty(PreviewLinkaId))
+                defaultParams["LINKA_ID"] = PreviewLinkaId;
+
+            var data = CacheProvider.GetData(agendaCode, defaultParams);
+            if (data is { Count: > 0 })
+            {
+                _realPreviewData = data;
+                StatusText = $"Načteno {data.Count} stránek reálných dat (linka {PreviewLinkaId})";
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[Preview] LoadRealPreviewData failed: {ex.Message}");
+        }
     }
 
     public void RebuildParametersPanel()
@@ -1003,8 +1063,11 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Preview mock data (called by code-behind preview renderer) ────────────
 
     /// <summary>
-    /// Sestaví mock DataContext pro preview. Volitelný parametr overrideParams
-    /// nahrazuje interní _previewParams (pro PrintDialog).
+    /// Sestaví DataContext pro preview. Priorita:
+    /// 1. Reálná data z Caché (pokud LoadRealPreviewData uspělo)
+    /// 2. Mock data z Caché GetMockData
+    /// 3. Syntetická mock data ze schématu
+    /// Volitelný parametr overrideParams nahrazuje interní _previewParams (pro PrintDialog).
     /// </summary>
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
     {
@@ -1012,9 +1075,18 @@ public class TemplateDesignerViewModel : EDViewModel
         var culture = GetTemplateCulture();
         DataContext? mockData = null;
 
-        if (agendaCode is not null && CacheProvider is not null)
+        // Priorita 1: reálná data (pokud jsou k dispozici)
+        if (_realPreviewData is { Count: > 0 })
+        {
+            var idx = Math.Clamp(_realPreviewIndex, 0, _realPreviewData.Count - 1);
+            mockData = _realPreviewData[idx]?.WithCulture(culture);
+        }
+
+        // Priorita 2: mock data z Caché
+        if (mockData is null && agendaCode is not null && CacheProvider is not null)
             mockData = CacheProvider.GetMockData(agendaCode)?.WithCulture(culture);
 
+        // Priorita 3: syntetická mock data ze schématu
         if (mockData is null)
         {
             var schema = SchemaProvider.GetSchema(agendaCode ?? "");

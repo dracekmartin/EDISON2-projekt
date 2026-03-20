@@ -1,8 +1,11 @@
 # Changelog
 
-## 2026-03-20 — Rámeček elementů, auto-scale font, multi-element editing
+## 2026-03-20 — Rámeček elementů, auto-scale font, multi-element editing, DepartureGrid vylepšení
 
-*(nescommitované změny)*
+- ✅ **DepartureGridElement — redistribuce šířek sloupců** — sloupce skupin dnů se proporcionálně roztáhnou na celou šířku elementu (místo prázdného místa napravo)
+- ✅ **DepartureGridElement — word-wrap záhlaví** — text skupiny se nejprve zkusí na jeden řádek, zalamuje až když se nevejde; `WrapHeaderText` helper
+- ✅ **DepartureGridElement — sloučené záhlaví** — „Hod" a názvy skupin dnů v jednom řádku místo dvou; výška = `max(groupHeaderH, headerH)`
+- ✅ Odebrán `TotalWidth` z `GridLayout` recordu (redundantní po redistribuci)
 
 ---
 
