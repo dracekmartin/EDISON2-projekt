@@ -17,10 +17,17 @@ namespace EDControls.EDInputForm
     {
         // ─── Configuration ────────────────────────────────────────────────────────
 
-        private MLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
+        private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
 
         /// <summary>Caché class that implements Init / Validate / Save.</summary>
         public string CacheClass { get; set; } = "";
+
+        private EDInputFormController? _controller;
+
+        private EDInputFormController Controller =>
+            _controller ??= new EDInputFormController(
+                MLRest ?? throw new InvalidOperationException("EDInputForm: MLRest not available."),
+                CacheClass);
 
         // ─── Items dependency property ────────────────────────────────────────────
 
@@ -52,18 +59,21 @@ namespace EDControls.EDInputForm
         public void Init()
         {
             EnsureConfigured();
-            CVar output = MLRest!.QueryOrThrow(CacheClass, "Init", new CVar());
-            var newItems = ParseItems(output);
-            PreserveExpansionState(Items, newItems);
-            Items = newItems;
-            ExecuteValidate(EValidationTrigger.Init);
+            Controller.Init();
+            Items = Controller.Items;
         }
 
         /// <summary>
         /// Runs a Change-trigger validation pass and returns true when there are
         /// no validation errors.
         /// </summary>
-        public bool Validate() => ExecuteValidate(EValidationTrigger.Change);
+        public bool Validate()
+        {
+            EnsureConfigured();
+            bool result = Controller.Validate();
+            Items = Controller.Items;
+            return result;
+        }
 
         /// <summary>
         /// Validates with BeforeSave trigger and, if there are no errors, calls
@@ -71,25 +81,13 @@ namespace EDControls.EDInputForm
         /// </summary>
         public bool Save()
         {
-            if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
-
-            CVar output = MLRest!.QueryOrThrow(CacheClass, "Save", SerializeItemsCVar(Items));
-            Items = ParseItems(output);
-            return true;
+            EnsureConfigured();
+            bool result = Controller.Save();
+            Items = Controller.Items;
+            return result;
         }
 
-        // ─── Serialization helpers ────────────────────────────────────────────────
-
-        private static void PreserveExpansionState(IEnumerable<Item>? oldItems, List<Item> newItems)
-        {
-            if (oldItems == null) return;
-            var expanded = oldItems.OfType<Group>().ToDictionary(g => g.GroupName, g => g.IsExpanded);
-            foreach (var g in newItems.OfType<Group>())
-                if (expanded.TryGetValue(g.GroupName, out bool was))
-                    g.IsExpanded = was;
-        }
-
-        private static CVar SerializeItemsCVar(IEnumerable<Item>? items)
+        internal static CVar SerializeItemsCVar(IEnumerable<Item>? items)
         {
             var cVar = new CVar();
             int i = 1;
@@ -97,13 +95,16 @@ namespace EDControls.EDInputForm
             {
                 CList entry = item switch
                 {
-                    Group g => new CList("GROUP", g.Number, g.GroupName, g.IsVisible ? "1" : "0"),
+                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.Visibility.ToWire()),
                     Field f => new CList(
                         "FIELD", f.Number, f.Key, f.Label,
-                        f.FieldType == EFieldType.Number ? "NUMBER" : "TEXT",
+                        f.FieldType.ToWire(),
                         f.Value ?? "",
                         f.ValidateOnChange ? "1" : "0",
-                        f.Required ? "1" : "0"),
+                        f.Required ? "1" : "0",
+                        f.ValidationError ?? "",
+                        f.Editable ? "1" : "0",
+                        f.Visibility.ToWire()),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -112,7 +113,7 @@ namespace EDControls.EDInputForm
             return cVar;
         }
 
-        private static List<Item> ParseItems(CVar output)
+        internal static List<Item> ParseItems(CVar output)
         {
             var items = new List<Item>();
             Group? currentGroup = null;
@@ -125,9 +126,10 @@ namespace EDControls.EDInputForm
                 {
                     currentGroup = new Group
                     {
-                        Number    = int.TryParse(row.GetString(2), out int gn) ? gn : 0,
-                        GroupName = row.GetString(3),
-                        IsVisible = row.Length < 4 || row.GetString(4) != "0",
+                        Number     = int.TryParse(row.GetString(2), out int gn) ? gn : 0,
+                        Key        = row.GetString(3),
+                        GroupName  = row.GetString(4),
+                        Visibility = row.Length >= 5 ? EItemVisibilityWire.FromWire(row.GetString(5)) : EItemVisibility.Visible,
                     };
                     items.Add(currentGroup);
                 }
@@ -138,11 +140,13 @@ namespace EDControls.EDInputForm
                         Number           = int.TryParse(row.GetString(2), out int fn) ? fn : 0,
                         Key              = row.GetString(3),
                         Label            = row.GetString(4),
-                        FieldType        = row.GetString(5) == "NUMBER" ? EFieldType.Number : EFieldType.Text,
+                        FieldType        = EFieldTypeWire.FromWire(row.GetString(5)),
                         Value            = row.GetString(6) == "" ? null : row.GetString(6),
                         ValidateOnChange = row.GetString(7) == "1",
                         Required         = row.GetString(8) == "1",
                         ValidationError  = row.Length >= 9 && row.GetString(9) != "" ? row.GetString(9) : null,
+                        Editable         = row.Length < 10 || row.GetString(10) != "0",
+                        Visibility       = row.Length >= 11 ? EItemVisibilityWire.FromWire(row.GetString(11)) : EItemVisibility.Visible,
                         ParentGroup      = currentGroup,
                     });
                 }
@@ -224,19 +228,6 @@ namespace EDControls.EDInputForm
 
         // ─── Internal ─────────────────────────────────────────────────────────────
 
-        private bool ExecuteValidate(EValidationTrigger trigger)
-        {
-            EnsureConfigured();
-            var input = SerializeItemsCVar(Items);
-            input["trigger"] = new CVar(trigger.ToString());
-
-            CVar output = MLRest!.QueryOrThrow(CacheClass, "Validate", input);
-            var newItems = ParseItems(output);
-            PreserveExpansionState(Items, newItems);
-            Items = newItems;
-            return Items.OfType<Field>().All(f => !f.HasError);
-        }
-
         private void EnsureConfigured()
         {
             if (MLRest == null || string.IsNullOrEmpty(CacheClass))
@@ -270,8 +261,9 @@ namespace EDControls.EDInputForm
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                Debug.WriteLine("[EDInputForm] Auto-validating on Change");
-                ExecuteValidate(EValidationTrigger.Change);
+                Debug.WriteLine($"[EDInputForm] Auto-validating on Change (changedKey={field.Key})");
+                Controller.Validate(field.Key);
+                Items = Controller.Items;
             }));
         }
     }

@@ -5,7 +5,7 @@ namespace TemplateDesigner.Models.Elements;
 /// <summary>
 /// Legenda poznámek pod mřížkou odjezdů.
 /// Zobrazuje: negativní značky (invertované barvy), speciální znaky, textové poznámky.
-/// Height je vždy null (dynamický — výšku počítá engine z počtu poznámek).
+/// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// Uživatel umístí na canvas pod StopListElement/DepartureGridElement.
 /// </summary>
 public class NotesLegendElement : ScheduleElementBase
@@ -45,9 +45,13 @@ public class NotesLegendElement : ScheduleElementBase
         var filtered = FilterPoznamky(poznamky);
         bool hasData = filtered.Count > 0;
 
-        float noteFontPx = NoteFontSize * PtToMm * ctx.MmToPx;
-        float headerFontPx = HeaderFontSize * PtToMm * ctx.MmToPx;
-        float headerH = ComputeHeaderH(HeaderFontSize);
+        // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
+        float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
+
+        float noteFontPx = NoteFontSize * scale * PtToMm * ctx.MmToPx;
+        float headerFontPx = HeaderFontSize * scale * PtToMm * ctx.MmToPx;
+        float headerH = ComputeHeaderH(HeaderFontSize * scale);
+        float scaledNoteLineH = NoteLineHeight * scale;
 
         using var paints = CreateStandardPaints();
 
@@ -81,25 +85,25 @@ public class NotesLegendElement : ScheduleElementBase
                 switch (pozn.Typ)
                 {
                     case TypPoznamky.NegativniZnacka:
-                        RenderNegativniZnacka(ctx, pozn, ref lineX, currentY, noteFont, boldFont, paints.Text);
+                        RenderNegativniZnacka(ctx, pozn, ref lineX, currentY, scaledNoteLineH, noteFont, boldFont, paints.Text);
                         break;
 
                     case TypPoznamky.SpecialniZnak:
-                        var znakPt = ctx.ToCanvas(lineX, currentY + NoteLineHeight * 0.75f);
+                        var znakPt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
                         ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, boldFont, paints.Text);
                         lineX += boldFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
-                        var textPt = ctx.ToCanvas(lineX, currentY + NoteLineHeight * 0.75f);
+                        var textPt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
                         ctx.Canvas.DrawText(pozn.Text, textPt.X, textPt.Y, noteFont, paints.Text);
                         break;
 
                     default:
-                        var pt = ctx.ToCanvas(lineX, currentY + NoteLineHeight * 0.75f);
+                        var pt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
                         string displayText = pozn.Znak.Length > 0 ? $"{pozn.Znak}{NoteSeparator}{pozn.Text}" : pozn.Text;
                         ctx.Canvas.DrawText(displayText, pt.X, pt.Y, noteFont, paints.Text);
                         break;
                 }
 
-                currentY += NoteLineHeight;
+                currentY += scaledNoteLineH;
             }
         }
 
@@ -107,28 +111,28 @@ public class NotesLegendElement : ScheduleElementBase
     }
 
     private void RenderNegativniZnacka(RenderContext ctx, PoznamkaData pozn,
-        ref float lineX, float currentY, SKFont noteFont, SKFont boldFont, SKPaint textPaint)
+        ref float lineX, float currentY, float lineH, SKFont noteFont, SKFont boldFont, SKPaint textPaint)
     {
         var nzBgColor = SKColor.Parse(NegativniZnackaBackColor);
         var nzFgColor = SKColor.Parse(NegativniZnackaForeColor);
 
         // Invertovaný obdélník se znakem
         float znakW = boldFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
-        float boxH = NoteLineHeight * 0.85f;
-        float boxY = currentY + (NoteLineHeight - boxH) / 2f;
+        float boxH = lineH * 0.85f;
+        float boxY = currentY + (lineH - boxH) / 2f;
 
         using var nzBgPaint = new SKPaint { Color = nzBgColor };
         var boxRect = ctx.ToCanvasRect(lineX, boxY, znakW, boxH);
         ctx.Canvas.DrawRect(boxRect, nzBgPaint);
 
         using var nzFgPaint = new SKPaint { Color = nzFgColor, IsAntialias = true };
-        var znakPt = ctx.ToCanvas(lineX + 0.75f, currentY + NoteLineHeight * 0.75f);
+        var znakPt = ctx.ToCanvas(lineX + 0.75f, currentY + lineH * 0.75f);
         ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, boldFont, nzFgPaint);
 
         lineX += znakW + 1f;
 
         // Text za značkou
-        var textPt = ctx.ToCanvas(lineX, currentY + NoteLineHeight * 0.75f);
+        var textPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
         ctx.Canvas.DrawText(pozn.Text, textPt.X, textPt.Y, noteFont, textPaint);
     }
 
@@ -186,6 +190,7 @@ public class NotesLegendElement : ScheduleElementBase
             VisibilityExpression = VisibilityExpression,
             CustomProperties = CustomProperties is null ? null : new(CustomProperties),
             GroupId = GroupId,
+            BorderColor = BorderColor, BorderWidth = BorderWidth,
 
             HeaderText               = HeaderText,
             NoteSeparator            = NoteSeparator,

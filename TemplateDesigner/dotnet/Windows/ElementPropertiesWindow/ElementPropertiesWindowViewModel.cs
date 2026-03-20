@@ -75,7 +75,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         _currentInvalidate     = invalidate;
 
         // OkCommand je zděděn z EDViewModel — base.OnOk() volá CloseDialog(true), což je správně
-        CancelCommand = new RelayCommand(() => { CancelChanges(); CloseDialog(false); });
+        CancelCommand = Command(() => { CancelChanges(); CloseDialog(false); });
     }
 
     // ── Příprava deskriptorů ──────────────────────────────────────────────
@@ -111,6 +111,9 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         if (element is ImageElement imageElement)
             descriptors = EnhanceImageEditor(descriptors, imageElement);
 
+        if (element is DepartureGridElement departureGridElement)
+            descriptors = EnhanceDepartureGroupEditor(descriptors, departureGridElement);
+
         CurrentDescriptors = descriptors;
         return descriptors;
     }
@@ -135,6 +138,22 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         WindowTitle        = "Vlastnosti stránky";
 
         return CurrentDescriptors = BuildPageDescriptors(template);
+    }
+
+    /// <summary>
+    /// Připraví deskriptory společných vlastností pro více vybraných elementů.
+    /// Změna hodnoty se aplikuje na všechny elementy najednou (CompositeCommand).
+    /// </summary>
+    public IReadOnlyList<Models.PropertyDescriptor> PrepareForMultipleElements(List<TemplateElement> elements)
+    {
+        if (elements.Count == 0) return CurrentDescriptors = [];
+
+        _undoDepthAtOpen   = _state.UndoStack.Count;
+        CurrentElement     = null;
+        _currentInvalidate = _invalidate;
+        WindowTitle        = $"Společné vlastnosti ({elements.Count} elementů)";
+
+        return CurrentDescriptors = BuildMultiElementDescriptors(elements);
     }
 
     /// <summary>Vrátí veškeré změny provedené od posledního otevření a překreslí.</summary>
@@ -341,6 +360,55 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         return list;
     }
 
+    private IReadOnlyList<Models.PropertyDescriptor> EnhanceDepartureGroupEditor(
+        IReadOnlyList<Models.PropertyDescriptor> descriptors,
+        DepartureGridElement element)
+    {
+        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
+        foreach (var d in descriptors)
+        {
+            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Skupiny dnů")
+            {
+                list.Add(new Models.ButtonPropertyDescriptor
+                {
+                    Label       = btn.Label,
+                    Group       = btn.Group,
+                    ButtonLabel = btn.ButtonLabel,
+                    OnClick     = () =>
+                    {
+                        // Načíst dostupné skupiny z preview dat (cached v elementu)
+                        var previewData = _state.CurrentPreviewData;
+                        var availableGroups = element.GetAvailableSkupinyDnu(previewData);
+                        if (availableGroups.Count == 0)
+                        {
+                            System.Windows.MessageBox.Show(
+                                "Nejsou dostupná žádná data pro skupiny dnů.\nZapněte live preview se šablonou obsahující JŘ data.",
+                                "Skupiny dnů", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                            return;
+                        }
+
+                        var dlg = new DepartureGroupEditorDialog(availableGroups, element.GroupColumns)
+                            { Owner = Application.Current.MainWindow };
+                        if (dlg.ShowDialog() != true) return;
+
+                        _state.Execute(new Commands.Implementations.SetPropertyCommand(
+                            "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
+                            v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
+                        _currentInvalidate();
+
+                        RequestShowDescriptors?.Invoke(
+                            EnhanceDepartureGroupEditor(element.GetPropertyDescriptors(), element));
+                    }
+                });
+            }
+            else
+            {
+                list.Add(d);
+            }
+        }
+        return list;
+    }
+
     private static IReadOnlyList<Models.PropertyDescriptor> EnhanceWithFieldPicker(
         IReadOnlyList<Models.PropertyDescriptor> descriptors,
         IReadOnlyList<DataField> fields)
@@ -368,6 +436,68 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         return list;
     }
 
+    // Předdefinované formáty stránek (kratší strana × delší strana)
+    private static readonly (string Label, float Short, float Long)[] PageFormats =
+    [
+        ("A2 (420 × 594 mm)", 420f, 594f),
+        ("A3 (297 × 420 mm)", 297f, 420f),
+        ("A4 (210 × 297 mm)", 210f, 297f),
+        ("A5 (148 × 210 mm)", 148f, 210f),
+    ];
+
+    private static string DetectPageFormat(float w, float h)
+    {
+        float shorter = Math.Min(w, h);
+        float longer  = Math.Max(w, h);
+        foreach (var (label, s, l) in PageFormats)
+            if (Math.Abs(shorter - s) < 0.5f && Math.Abs(longer - l) < 0.5f)
+                return label;
+        return "Vlastní";
+    }
+
+    private static string DetectOrientation(float w, float h) =>
+        w <= h ? "Na výšku" : "Na šířku";
+
+    /// <summary>
+    /// Při změně rozměrů stránky proporcionálně upraví DesignerHeight
+    /// obsahových sekcí (PrintBehavior = Once), aby se vešly na novou stránku.
+    /// Hlavičky, patičky a ostatní speciální sekce zůstávají beze změny.
+    /// </summary>
+    private static void ScaleBodySections(Template template, float oldPrintableHeight)
+    {
+        float newPrintableHeight = template.PageSize.PrintableHeight;
+        if (newPrintableHeight <= 0 || oldPrintableHeight <= 0) return;
+        if (Math.Abs(newPrintableHeight - oldPrintableHeight) < 0.1f) return;
+
+        // Spočítat kolik zabírají fixní sekce (hlavičky, patičky, ...)
+        float fixedHeight = 0f;
+        float bodyHeight = 0f;
+        foreach (var s in template.Sections)
+        {
+            if (s.DesignerHeight is null) continue; // dynamické sekce nešálujeme
+            if (s.PrintBehavior == SectionPrintBehavior.Once)
+                bodyHeight += s.DesignerHeight.Value;
+            else
+                fixedHeight += s.DesignerHeight.Value;
+        }
+
+        if (bodyHeight <= 0) return;
+
+        float availableForBody = newPrintableHeight - fixedHeight;
+        if (availableForBody <= 0) return;
+
+        float scale = availableForBody / bodyHeight;
+        // Nezvětšovat nad rozumnou mez (max 2×), jen zmenšovat nebo mírně zvětšovat
+        scale = Math.Clamp(scale, 0.1f, 2f);
+
+        foreach (var s in template.Sections)
+        {
+            if (s.DesignerHeight is null) continue;
+            if (s.PrintBehavior != SectionPrintBehavior.Once) continue;
+            s.DesignerHeight = MathF.Round(s.DesignerHeight.Value * scale, 1);
+        }
+    }
+
     private IReadOnlyList<Models.PropertyDescriptor> BuildPageDescriptors(Template template)
     {
         var ps = template.PageSize;
@@ -390,6 +520,56 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                     ("Slovenština (sk-SK)", (object)"sk-SK"),
                     ("Angličtina (en-US)",  (object)"en-US"),
                     ("Němčina (de-DE)",     (object)"de-DE"),
+                ]
+            },
+            new EnumPropertyDescriptor
+            {
+                Label = "Formát stránky", Group = "Rozměry stránky",
+                Get   = () => (object)DetectPageFormat(ps.Width, ps.Height),
+                Set   = v  =>
+                {
+                    var label = (string)v;
+                    if (label == "Vlastní") return;
+                    float oldPH = ps.PrintableHeight;
+                    foreach (var (fl, s, l) in PageFormats)
+                    {
+                        if (fl != label) continue;
+                        bool landscape = ps.Width > ps.Height;
+                        ps.Width  = landscape ? l : s;
+                        ps.Height = landscape ? s : l;
+                        break;
+                    }
+                    ScaleBodySections(template, oldPH);
+                },
+                Options =
+                [
+                    ("A2 (420 × 594 mm)", (object)"A2 (420 × 594 mm)"),
+                    ("A3 (297 × 420 mm)", (object)"A3 (297 × 420 mm)"),
+                    ("A4 (210 × 297 mm)", (object)"A4 (210 × 297 mm)"),
+                    ("A5 (148 × 210 mm)", (object)"A5 (148 × 210 mm)"),
+                    ("Vlastní",           (object)"Vlastní"),
+                ]
+            },
+            new EnumPropertyDescriptor
+            {
+                Label = "Orientace", Group = "Rozměry stránky",
+                Get   = () => (object)DetectOrientation(ps.Width, ps.Height),
+                Set   = v  =>
+                {
+                    var orient = (string)v;
+                    bool wantLandscape = orient == "Na šířku";
+                    bool isLandscape   = ps.Width > ps.Height;
+                    if (wantLandscape != isLandscape)
+                    {
+                        float oldPH = ps.PrintableHeight;
+                        (ps.Width, ps.Height) = (ps.Height, ps.Width);
+                        ScaleBodySections(template, oldPH);
+                    }
+                },
+                Options =
+                [
+                    ("Na výšku",  (object)"Na výšku"),
+                    ("Na šířku",  (object)"Na šířku"),
                 ]
             },
             new FloatPropertyDescriptor
@@ -574,5 +754,44 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         }
 
         return list;
+    }
+
+    // ── Multi-element společné vlastnosti ───────────────────────────────
+
+    private IReadOnlyList<Models.PropertyDescriptor> BuildMultiElementDescriptors(List<TemplateElement> elements)
+    {
+        var first = elements[0];
+
+        // Helper: vytvoří setter, který změní property na všech elementech
+        // Čte aktuální hodnotu z prvního elementu, nastaví na všechny
+        return
+        [
+            new ColorPropertyDescriptor
+            {
+                Label = "Barva rámečku", Group = "Rámeček",
+                Get = () => first.BorderColor,
+                Set = v => { foreach (var el in elements) el.BorderColor = v; }
+            },
+            new FloatPropertyDescriptor
+            {
+                Label = "Šířka rámečku", Group = "Rámeček",
+                Get = () => first.BorderWidth,
+                Set = v => { foreach (var el in elements) el.BorderWidth = v; },
+                Min = 0, Max = 5, Unit = "mm", Format = "0.0#"
+            },
+            new FloatPropertyDescriptor
+            {
+                Label = "ZIndex", Group = "Pozice",
+                Get = () => first.ZIndex,
+                Set = v => { foreach (var el in elements) el.ZIndex = (int)Math.Round(v); },
+                Min = 0, Max = 100, Format = "0"
+            },
+            new BoolPropertyDescriptor
+            {
+                Label = "Zamčeno", Group = "Pozice",
+                Get = () => first.IsLocked,
+                Set = v => { foreach (var el in elements) el.IsLocked = v; }
+            },
+        ];
     }
 }

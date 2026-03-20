@@ -1,4 +1,4 @@
-Include GENERAL
+Include (GENERAL, EDInputForm)
 
 Class ALVA.EDISONMAIN2.test Extends %RegisteredObject
 {
@@ -13,19 +13,36 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-		d form.AddGroup("Osobní údaje")
-		d form.AddField("jmeno",    "Jméno",    "TEXT",   1, 1)
-		d form.AddField("prijmeni", "Příjmení", "TEXT",   1, 1)
-		d form.AddField("vek",      "Věk",      "NUMBER", 1, 0)
+		d form.AddFieldToLastGroup("poznamka", "Poznámka", $$$FieldTypeText, 0, 0)
 
-		d form.AddGroup("Adresa")
-		d form.AddField("ulice", "Ulice", "TEXT",   0, 0)
-		d form.AddField("mesto", "Město", "TEXT",   0, 0)
-		d form.AddField("psc",   "PSČ",   "NUMBER", 1, 0)
+		d form.AddGroup("osobni", "Osobní údaje")
+		d form.AddFieldToLastGroup("jmeno",    "Jméno",    $$$FieldTypeText,   1, 1)
+		d form.AddFieldToLastGroup("prijmeni", "Příjmení", $$$FieldTypeText,   1, 1)
+		d form.AddFieldToLastGroup("vek",      "Věk",      $$$FieldTypeNumber, 1, 0)
 
-		d form.AddGroup("Kontakt")
-		d form.AddField("email",   "E-mail",  "TEXT",   0, 0)
-		d form.AddField("telefon", "Telefon", "NUMBER", 0, 0)
+		d form.AddGroup("adresa", "Adresa")
+		d form.AddFieldToLastGroup("ulice", "Ulice", $$$FieldTypeText,   0, 0)
+		d form.AddFieldToLastGroup("mesto", "Město", $$$FieldTypeText,   0, 0)
+		d form.AddFieldToLastGroup("psc",   "PSČ",   $$$FieldTypeNumber, 1, 0)
+
+		d form.AddGroup("kontakt", "Kontakt")
+		d form.AddFieldToLastGroup("email",   "E-mail",  $$$FieldTypeText,   0, 0)
+		d form.AddFieldToLastGroup("telefon", "Telefon", $$$FieldTypeNumber, 0, 0)
+
+		d form.AddGroup("dalsi", "Další údaje")
+		s f = form.AddFieldToLastGroup("narozen", "Narozen",  $$$FieldTypeDate,    0, 0)
+		s f.value = "2024-05-15"
+		s f = form.AddFieldToLastGroup("plat",    "Plat",     $$$FieldTypeDecimal, 0, 0)
+		s f.value = "45000.50"
+		d form.AddFieldToLastGroup("aktivni",  "Aktivní",  $$$FieldTypeBool, 0, 0)
+		d form.AddFieldToLastGroup("smazano",  "Smazáno",  $$$FieldTypeBool, 0, 0)
+
+		d form.AddGroup("nemoc", "Nemoc")
+		d form.AddFieldToLastGroup("nemocny", "Nemocný", $$$FieldTypeBool, 1, 0)
+		s f = form.AddFieldToLastGroup("od", "Od", $$$FieldTypeDate, 0, 0)
+		s f.editable = 0
+		s f = form.AddFieldToLastGroup("do", "Do", $$$FieldTypeDate, 0, 0)
+		s f.editable = 0
 
 		d form.WriteToOut()
 	}
@@ -61,7 +78,21 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 
 		s f = form.GetField("prijmeni")
 		i f.value="" s f.validationError = "Příjmení je povinné"
-		
+
+		// Nemocný checkbox controls editability of Od/Do date fields
+		s nemocny = form.GetField("nemocny")
+		s fOd = form.GetField("od")
+		s fDo = form.GetField("do")
+		i nemocny.value="1" {
+			s fOd.editable = 1
+			s fDo.editable = 1
+		} else {
+			s fOd.editable = 0
+			s fDo.editable = 0
+			s fOd.value = ""
+			s fDo.value = ""
+		}
+
 		d form.WriteToOut()
 	}
 	catch (ex) { $$$CatchErrRest }

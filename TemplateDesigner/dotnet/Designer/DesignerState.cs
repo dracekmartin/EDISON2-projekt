@@ -28,6 +28,9 @@ public class DesignerState
     /// <summary>Elementy jejichž boundary se zvýrazní během snapu (cílové elementy).</summary>
     public List<TemplateElement> SnapTargetElements { get; } = [];
 
+    /// <summary>Aktuální preview DataContext (nastavuje se při renderování preview).</summary>
+    public DataContext? CurrentPreviewData { get; set; }
+
     public Stack<IDesignerCommand> UndoStack { get; } = new();
     public Stack<IDesignerCommand> RedoStack { get; } = new();
 

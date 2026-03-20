@@ -38,7 +38,7 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
         _schemaProvider = schemaProvider;
         ApiKey          = defaultApiKey ?? "";
 
-        GenerateCommand = new RelayCommand(async () => await GenerateAsync());
+        GenerateCommand = Command(async () => await GenerateAsync());
     }
 
     private async Task GenerateAsync()

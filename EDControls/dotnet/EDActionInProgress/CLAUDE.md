@@ -1,72 +1,73 @@
-# EDActionInProgress — developer notes
+# EDActionInProgress — poznámky pro vývojáře
 
-Full-screen overlay shown while a long operation is running. Contains a pixel-art capybara
-with an orange on its back that slides back and forth, plus a "Akce probíhá" label.
+Celoobrazovkový overlay zobrazovaný během dlouhé operace. Obsahuje pixel-art kapybaru
+s pomerančem na zádech, která se pohybuje tam a zpět, plus nápis „Akce probíhá".
 
-## File map
+## Mapa souborů
 
-| File | Role |
-|---|---|
-| `EDActionInProgress.xaml` | Dark semi-transparent overlay, white card, sliding pixel-art capybara, "Akce probíhá" text. |
-| `EDActionInProgress.xaml.cs` | `IsActive` DependencyProperty; auto-binds to `EDViewModel.IsActionInProgress` on `Loaded`. |
+| Soubor | Role |
+| --- | --- |
+| `EDActionInProgress.xaml` | Tmavý poloprůhledný overlay, bílá karta, posuvná pixel-art kapybara, text „Akce probíhá". |
+| `EDActionInProgress.xaml.cs` | `IsActive` DependencyProperty; automaticky se naváže na `EDViewModel.IsActionInProgress` při `Loaded`. |
 
 ## Dependency properties
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `IsActive` | `bool` | `false` | Shows (`Visible`) or hides (`Collapsed`) the overlay. |
+| Vlastnost | Typ | Výchozí | Popis |
+| --- | --- | --- | --- |
+| `IsActive` | `bool` | `false` | Zobrazí (`Visible`) nebo schová (`Collapsed`) overlay. |
 
-## Auto-binding (no explicit XAML binding needed)
+## Automatické navázání (žádný explicitní XAML binding není potřeba)
 
-On `Loaded`, `EDActionInProgress` walks up to the parent `Window` and:
-1. Subscribes to `Window.DataContextChanged`.
-2. If DataContext is an `EDViewModel`, binds `IsActive` → `EDViewModel.IsActionInProgress`.
-3. If the DataContext is not an `EDViewModel`, clears the binding.
+Při `Loaded` se `EDActionInProgress` vyšplhá k rodičovskému `Window` a:
 
-This means you **do not** write `IsActive="{Binding IsActionInProgress}"` in XAML.
-Just drop the control in and it wires itself up.
+1. Přihlásí se k `Window.DataContextChanged`.
+2. Pokud je DataContext `EDViewModel`, naváže `IsActive` → `EDViewModel.IsActionInProgress`.
+3. Pokud DataContext není `EDViewModel`, odstraní binding.
 
-## Usage in XAML
+To znamená, že **nepíšeš** `IsActive="{Binding IsActionInProgress}"` v XAML.
+Stačí vložit control a sám se napojí.
 
-The overlay must be a sibling of the window content (not inside a `DockPanel`) so it can
-cover the whole window. Use a `Grid` as the window root:
+## Použití v XAML
+
+Overlay musí být sourozenec obsahu okna (ne uvnitř `DockPanel`), aby mohl pokrýt celé okno.
+Jako kořen okna použij `Grid`:
 
 ```xaml
 <Window xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls">
     <Grid>
-        <!-- normal window content -->
+        <!-- normální obsah okna -->
         <DockPanel>
             ...
         </DockPanel>
 
-        <!-- overlay — placed last so it renders on top -->
+        <!-- overlay — umístěn poslední, aby se vykreslil navrchu -->
         <edaip:EDActionInProgress/>
     </Grid>
 </Window>
 ```
 
-## Triggering the overlay from the ViewModel
+## Spuštění overlaye z ViewModelu
 
-Use `ActionInProgress()` from `EDViewModel` — it returns an `IDisposable` that
-automatically resets the flag on disposal:
+Použij `ActionInProgress()` z `EDViewModel` — vrací `IDisposable`, který automaticky
+resetuje flag při disposal:
 
 ```csharp
-// Synchronous
+// Synchronní
 using var _ = ActionInProgress();
 DoHeavyWork();
 
-// Async
+// Asynchronní
 using var _ = ActionInProgress();
 await LoadDataAsync();
 ```
 
-See `EDViewModel/CLAUDE.md` for full details on `ActionInProgress()`.
+Viz `EDViewModel/CLAUDE.md` pro kompletní popis `ActionInProgress()`.
 
-## Pixel art internals
+## Pixel art — interní detaily
 
-- 10 cols × 8 rows, each pixel = 6×6 WPF units → 60×48 canvas
-- Slides inside a 160×48 clipping `Border` (`ClipToBounds="True"`)
-- `TransformGroup`: `ScaleTransform` (flip) + `TranslateTransform` (slide)
+- 10 sloupců × 8 řádků, každý pixel = 6×6 WPF jednotek → 60×48 canvas
+- Posouvá se uvnitř 160×48 clipping `Border` (`ClipToBounds="True"`)
+- `TransformGroup`: `ScaleTransform` (otočení) + `TranslateTransform` (posun)
 - `DoubleAnimation`: `From="-60" To="160"`, 2.5 s, `AutoReverse=True`, `RepeatBehavior=Forever`
-- `DoubleAnimationUsingKeyFrames`: `ScaleX` snaps 1→−1 at t=2.5 s (facing left on return)
-- `RenderOptions.EdgeMode="Aliased"` + `SnapsToDevicePixels="True"` prevent sub-pixel gaps
+- `DoubleAnimationUsingKeyFrames`: `ScaleX` přepne 1→−1 v t=2.5 s (čelem doleva při návratu)
+- `RenderOptions.EdgeMode="Aliased"` + `SnapsToDevicePixels="True"` zabraňují sub-pixelovým mezerám

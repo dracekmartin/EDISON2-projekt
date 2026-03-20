@@ -58,6 +58,7 @@ public class ImageElement : TemplateElement
             using var paint = new SKPaint { Color = new SKColor(0xFF999999), IsAntialias = true };
             ctx.Canvas.DrawText(label, rect.MidX - (label.Length * 3f), rect.MidY + font.Size / 3f, font, paint);
         }
+
     }
 
     /// <summary>Nastaví obrázek z byte[] s automatickým downscale pokud přesáhne limit.</summary>
@@ -108,6 +109,7 @@ public class ImageElement : TemplateElement
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
         GroupId = GroupId,
+        BorderColor = BorderColor, BorderWidth = BorderWidth,
         ImageBase64 = ImageBase64,
         DataField = DataField,
         ScaleMode = ScaleMode

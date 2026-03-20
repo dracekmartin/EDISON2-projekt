@@ -208,12 +208,13 @@ public class PreviewCanvas
             };
 
             // Renderovat viditelné elementy seřazené podle ZIndex
-            foreach (var el in placed.Source.Elements
+            var visibleElements = placed.Source.Elements
                 .Where(e => ExpressionEvaluator.IsVisible(e.VisibilityExpression, placed.Data))
-                .OrderBy(e => e.ZIndex))
-            {
+                .OrderBy(e => e.ZIndex)
+                .ToList();
+
+            foreach (var el in visibleElements)
                 el.Render(ctx);
-            }
 
             // Rámeček sekce (volitelný — ShowBorder property)
             if (placed.Source.ShowBorder)
@@ -229,6 +230,10 @@ public class PreviewCanvas
             }
 
             canvas.Restore();
+
+            // Druhý průchod — rámečky MIMO clip, aby byly vidět i na hranici sekce
+            foreach (var el in visibleElements)
+                el.RenderBorderPass(ctx);
 
             // Jemná čára mezi sekcemi (orientační pomůcka)
             if (i < sortedSections.Count - 1)

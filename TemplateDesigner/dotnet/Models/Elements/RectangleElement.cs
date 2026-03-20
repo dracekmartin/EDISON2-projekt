@@ -42,6 +42,7 @@ public class RectangleElement : TemplateElement
             if (CornerRadius > 0) ctx.Canvas.DrawRoundRect(rect, rx, ry, stroke);
             else ctx.Canvas.DrawRect(rect, stroke);
         }
+
     }
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
@@ -62,6 +63,7 @@ public class RectangleElement : TemplateElement
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
         GroupId = GroupId,
+        BorderColor = BorderColor, BorderWidth = BorderWidth,
         FillColor = FillColor,
         StrokeColor = StrokeColor,
         StrokeWidth = StrokeWidth,

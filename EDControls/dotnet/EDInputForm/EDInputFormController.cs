@@ -1,0 +1,54 @@
+using ALWA.SYS;
+
+namespace EDControls.EDInputForm;
+
+/// <summary>
+/// Testable orchestration for EDInputForm: Init, Validate, Save.
+/// No WPF dependency — takes IMLRest and CacheClass as constructor parameters.
+/// </summary>
+public class EDInputFormController(IMLRest mlRest, string cacheClass)
+{
+    public List<Item> Items { get; private set; } = [];
+
+    /// <summary>
+    /// Calls Caché Init to load the form definition, then immediately runs
+    /// an Init-trigger validation pass to populate any default errors.
+    /// </summary>
+    public void Init()
+    {
+        CVar output = mlRest.QueryOrThrow(cacheClass, "Init", new CVar());
+        Items = EDInputForm.ParseItems(output);
+        ExecuteValidate(EValidationTrigger.Init);
+    }
+
+    /// <summary>
+    /// Runs a Change-trigger validation pass and returns true when there are
+    /// no validation errors.
+    /// </summary>
+    public bool Validate(string? changedKey = null) => ExecuteValidate(EValidationTrigger.Change, changedKey);
+
+    /// <summary>
+    /// Validates with BeforeSave trigger and, if there are no errors, calls
+    /// Caché Save. Returns true on success.
+    /// </summary>
+    public bool Save()
+    {
+        if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
+
+        CVar output = mlRest.QueryOrThrow(cacheClass, "Save", EDInputForm.SerializeItemsCVar(Items));
+        Items = EDInputForm.ParseItems(output);
+        return true;
+    }
+
+    private bool ExecuteValidate(EValidationTrigger trigger, string? changedKey = null)
+    {
+        var input = EDInputForm.SerializeItemsCVar(Items);
+        input["trigger"] = new CVar(trigger.ToString());
+        if (!string.IsNullOrEmpty(changedKey))
+            input["changedKey"] = new CVar(changedKey);
+
+        CVar output = mlRest.QueryOrThrow(cacheClass, "Validate", input);
+        Items = EDInputForm.ParseItems(output);
+        return Items.OfType<Field>().All(f => !f.HasError);
+    }
+}

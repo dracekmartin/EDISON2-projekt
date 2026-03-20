@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-03-20 — DepartureGrid per-column styling, redistribuce šířek, sloučené záhlaví
+
+- ✅ **DepartureGridElement — per-column nastavení** — `DepartureGroupColumnStyle`: viditelnost, barvy záhlaví/dat, font size, bold/italic, horizontální + vertikální zarovnání; nullable override vzor (null = výchozí z elementu)
+- ✅ **DepartureGroupEditorDialog** — nový dialog: seznam skupin s checkboxy, ComboBox pro zarovnání/font, CheckBox pro bold/italic, color picker; `DepartureGroupColumnVM` s `ToModel()`/`FromData()` konverzemi
+- ✅ **DepartureGridElement — redistribuce šířek sloupců** — sloupce skupin dnů se proporcionálně roztáhnou na celou šířku elementu (místo prázdného místa napravo)
+- ✅ **DepartureGridElement — word-wrap záhlaví** — text skupiny se nejprve zkusí na jeden řádek, zalamuje až když se nevejde; `WrapHeaderText` helper
+- ✅ **DepartureGridElement — sloučené záhlaví** — „Hod" a názvy skupin dnů v jednom řádku místo dvou; výška = `max(groupHeaderH, headerH)`
+- ✅ Odebrán `TotalWidth` z `GridLayout` recordu (redundantní po redistribuci)
+- ✅ Render optimalizace: style dictionary lookup O(1) místo O(n) per-group, pre-alokované SKPaint pro pozadí sloupců
+
+---
+
+## 2026-03-20 — Smart snap resize, sdílená hranice, split elementu, designer font cap
+
+- ✅ **SnapEngine.CalculateResize** — snap hran při změně velikosti elementu (edge + gap 4mm)
+- ✅ **Sdílená hranice** — tah za hranu mění i sousední element (CompositeCommand undo)
+- ✅ **Split element** — Ctrl+Shift+H (horizontální) / Ctrl+Shift+J (vertikální): rozdělení elementu na dvě poloviny (undoable)
+- ✅ **CleanupSelection po undo/redo** — odstranění osiřelých elementů z výběru
+- ✅ **Designer font cap** — omezení fontu na 10pt v designeru pro čitelnost placeholderů
+- ✅ Aktualizace nápovědy (F1) o nové zkratky a funkce
+
+## 2026-03-20 — Velikosti a orientace stránky, border, auto-scale, multi-element editing
+
+- ✅ **PageSize editor** v ElementPropertiesWindow — editace rozměrů stránky (šířka, výška, okraje), orientace (na šířku/na výšku), předdefinované formáty
+- ✅ **Clamp elementu na hranici sekce** — elementy se nepřesunou mimo bounds sekce
+- ✅ **StopColumnsEditorDialog** — nový dialog pro editaci sloupců StopListElement (pořadí, šířky, záhlaví, viditelnost, zarovnání)
+- ✅ **StopListElement vylepšení** — přehazování řádků u zastávek, nastavení elementů
+- ✅ **Caché refaktor** — AgendaAPI/AgendaJRAPI/TiskMHD úpravy a vylepšení
+- ✅ **Border systém v base class** (`TemplateElement`) — `BorderColor` + `BorderWidth`; dvouprůchodové renderování; pixel-snap na sdílených hranách
+- ✅ **Auto-scale font** (`ScheduleElementBase`) — proporcionální zmenšení fontů při přesahu pevné Height
+- ✅ **Pevná Height pro schedule elementy** — vertikální resize všemi 8 handles
+- ✅ **Multi-element editing** — Enter při multi-selectu → dialog společných vlastností
+
+---
+
 ## 2026-03-18 — MVVM refaktor + UX vylepšení
 
 - ✅ **Code-behind → ViewModel refaktor** — přesun 7 metod z `MainWindow.xaml.cs` do `MainWindowViewModel`: `UpdateStatusForSelection`, `SelectFromTree`, `InsertOrCopyPlaceholder`, `AppendPlaceholderToElement`, `AddElementAtPosition`, `HandleElementHit`, `HandleEmptyAreaHit`
@@ -10,15 +45,14 @@
 - ✅ **Ctrl+0 (Fit-to-Page)** — zoom na šířku stránky
 - ✅ **Potvrzení mazání sekce** — MessageBox před smazáním sekce s elementy
 - ✅ **Validace VisibilityExpression v UI** — live chybové hlášky v PropertiesPanel; `StringPropertyDescriptor.Validate` callback
-- ✅ **SectionRole (Header/Body/Footer)** — nový enum oddělující "kdy tisknout" od "kam umístit"; patičky umístěny od spodu stránky v designeru i PageLayoutEngine; `IsFooterVisibleOnPage` rozšířen o OnFirstPageOnly a OnEveryPageExceptFirst
-- ✅ **Canvas fixed height + section clamping** — stránka má pevnou výšku, sekce se clampují aby nepřesáhly stránku; `GetClampedSectionHeightPx`; footery kotveny ke spodnímu okraji; `CalculateMaxSectionHeight` brání překrývání v editoru
-- ✅ **Context menu na canvasu** — pravý klik: element items (Cut/Copy/Paste/Delete/Z-order/Vlastnosti) + section items (Vlastnosti/Přesunout/Smazat) sloučeny; tři vrstvy: element → obecné → sekce
-- ✅ **Bound resize** — element při resize nepřesáhne hranice sekce (clamp na PrintableWidth × EffectiveDesignerHeight)
-- ✅ **Nahrávání obrázků** — nové tlačítko "Nahrát obrázek..." v properties; max 5 MB, iterativní auto-downscale (0.7× per krok, max 5 iterací) s potvrzením
+- ✅ **SectionRole (Header/Body/Footer)** — nový enum oddělující "kdy tisknout" od "kam umístit"; patičky umístěny od spodu stránky v designeru i PageLayoutEngine
+- ✅ **Canvas fixed height + section clamping** — stránka má pevnou výšku, sekce se clampují; footery kotveny ke spodnímu okraji
+- ✅ **Context menu na canvasu** — pravý klik: element items + section items sloučeny
+- ✅ **Bound resize** — element při resize nepřesáhne hranice sekce
+- ✅ **Nahrávání obrázků** — max 5 MB, iterativní auto-downscale s potvrzením
 - ✅ **SelectAll** — `Ctrl+A` vybere všechny elementy aktivní sekce
 
 ---
-
 ## 2026-03-18 — Zastávkové jízdní řády a integrace do Caché
 
 - ✅ **ScheduleElementBase** — abstraktní základ JŘ elementů: DataSource klíče (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY), Build helpery s cache (SetCacheRef atomicky čistí cache při změně DataContext reference), společné vizuální properties (FontFamily, FontSize, GridColor, HeaderBackgroundColor)

@@ -5,7 +5,7 @@ Property key As %String;
 
 Property label As %String;
 
-/// "TEXT" or "NUMBER"
+/// $$$FieldTypeText or $$$FieldTypeNumber (Include EDInputForm).
 Property type As %String [ InitialExpression = "TEXT" ];
 
 Property value As %String;
@@ -17,9 +17,11 @@ Property required As %Boolean [ InitialExpression = 0 ];
 /// Empty string means no error.
 Property validationError As %String;
 
+Property editable As %Boolean [ InitialExpression = 1 ];
+
 Method Serialize() As %List
 {
-	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError)
+	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility)
 }
 
 }

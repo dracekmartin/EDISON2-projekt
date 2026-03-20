@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-18
+**Datum poslední aktualizace:** 2026-03-20
 
 ### 🎯 Aktuální focus
 
@@ -39,7 +39,7 @@ VehicleScheduleElement; FullTime mód zastávkového JŘ; konfigurovatelné poř
 - Strom šablony — záložka "Strom" v hlavním okně; hierarchický přehled celé šablony (sekce → skupiny → elementy)
 - LineElement — custom dash/gap pro čárkované a tečkované čáry
 - ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
-- **Zastávkový JŘ (MinutesOnly)** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery a cache; ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace
+- **Zastávkový JŘ (MinutesOnly)** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery a cache; ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace; DepartureGrid: redistribuce šířek sloupců na celou šířku, word-wrap záhlaví skupin, sloučený řádek záhlaví (Hod + názvy skupin); per-column nastavení (`DepartureGroupColumnStyle`: viditelnost, barvy, font, zarovnání H+V, bold/italic) přes `DepartureGroupEditorDialog`
 - **Caché AgendaJRAPI + TiskMHD** — abstraktní mezistupeň `AgendaJRAPI` pro JŘ agendy (helpery: BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka + AddAnotace/AddAtribut/AddPoznamkaZastavky); `ALVA.MHD.TiskAPI` konkrétní implementace s `GetData`/`GetMockData` pro MHD zastávkový JŘ (~1200 řádků business logiky)
 - **DataContext vnořená pole** — ParseMockData rozlišuje JsonArray/JsonObject vs skalární hodnoty; ScheduleElementBase parsuje vnořená pole (ZONY[], ATRIBUTY[], ANOTACE[], POZNAMKY_ZASTAVKY[])
 - **Multi-data PDF export + PrintDialog** — `RenderMultiDataToPdf` zpracovává více DataContextů (1 zastávka/směr = 1+ PDF stránek); PrintDialog s parametry a exportem reálných dat z Caché (`GetData`); tisk i mock preview v jednom dialogu
@@ -52,7 +52,14 @@ VehicleScheduleElement; FullTime mód zastávkového JŘ; konfigurovatelné poř
 - **SectionRole (Header/Body/Footer)** — oddělení "kdy tisknout" (PrintBehavior) od "kam umístit" (Role); patičky se umisťují od spodu stránky v designeru i v PageLayoutEngine
 - **Canvas fixed height** — stránka má pevnou výšku, sekce se clampují aby nepřesáhly stránku; footer sekce kotveny ke spodnímu okraji
 - **Context menu na canvasu** — pravý klik: element items (Cut/Copy/Paste/Delete/Z-order/Vlastnosti) + section items (Vlastnosti sekce/Přesunout/Smazat) sloučeny do jednoho menu
-- **Bound resize** — element při resize nepřesáhne hranice sekce (clamp na PrintableWidth × EffectiveDesignerHeight)
+- **Bound resize + clamp** — element při resize/přesunu nepřesáhne hranice sekce (clamp na PrintableWidth × EffectiveDesignerHeight)
+- **StopColumnsEditorDialog** — dialog pro editaci sloupců StopListElement (pořadí, šířky, záhlaví, viditelnost, zarovnání)
+- **PageSize editor** — editace rozměrů stránky, orientace, předdefinované formáty
+- **Smart snap resize** — snap hran při resize (edge + gap 4mm); sdílená hranice (tah za hranu mění i sousedního); split element Ctrl+Shift+H/J
+- **Designer font cap** — omezení fontu na 10pt v designeru pro čitelnost placeholderů
+- **Rámeček elementů (border)** — `BorderColor` + `BorderWidth` na base `TemplateElement`; dvouprůchodové renderování (obsah → rámečky mimo clip sekce); pixel-snap na sdílených hranách → jeden rámeček; viditelné i na hranici sekce
+- **Auto-scale font u JŘ elementů** — `ScheduleElementBase.ComputeFontScale(naturalH)`: pokud obsah přesahuje pevnou Height, fonty + výšky řádků se proporcionálně zmenší; schedule elementy nyní podporují pevnou Height (ne jen null/dynamickou)
+- **Multi-element editing** — Enter při výběru více elementů otevře dialog společných vlastností (BorderColor, BorderWidth, ZIndex, IsLocked); změna se aplikuje na všechny najednou
 
 ### 🐛 Známé problémy
 

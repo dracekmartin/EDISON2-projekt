@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="EDControls.Tests" />
+    <InternalsVisibleTo Include="EDISONMAIN2.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>

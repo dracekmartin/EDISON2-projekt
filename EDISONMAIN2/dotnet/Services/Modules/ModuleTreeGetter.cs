@@ -1,57 +1,14 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using ALVA.EDISONAPI;
 using ALWA.SYS;
 using EDControls;
-using EDISONMAIN2.Services.Modules;
-using EDISONMAIN2.Services;
-using static ALVA.EDISONAPI.Database;
 
-namespace EDISONMAIN2.Services.Data
+namespace EDISONMAIN2.Services.Modules
 {
-    public class EdisonMainDataService(ConnectionParams connParams) : IEdisonMainDataService
+    public class ModuleTreeGetter : IModuleTreeGetter
     {
-        private readonly ConnectionParams _connParams = connParams;
-
-        // MLRest instances are created once and reused. Two are needed because
-        // GetCompanies uses an empty namespace context while GetModuleTree needs
-        // the specific company namespace — MLRest binds these at construction time.
-        private MLRest? _emptyMLRest;
-        private MLRest? _customerSpecificMLRest;
-
-        private MLRest CreateMLRest(string database, string idfa) =>
-            new(_connParams.Server, _connParams.RestPort, database, idfa)
-            {
-                LoginName = _connParams.UserName,
-                FullName = _connParams.FullName,
-                Mlp = _connParams.Mlp.ToString()
-            };
-
-        private MLRest EmptyRest =>
-            _emptyMLRest ??= CreateMLRest(database: "", idfa: "");
-
-        private MLRest GetTreeRest(string database, string idfa)
+        public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest)
         {
-            if (_customerSpecificMLRest == null || _customerSpecificMLRest.DataNamespace != database || _customerSpecificMLRest.Idfa != idfa)
-            {
-                _customerSpecificMLRest = CreateMLRest(database, idfa);
-            }
-            return _customerSpecificMLRest;
-        }
-
-        public IReadOnlyList<CompanyStruct> GetCompanies()
-        {
-            string errState = "";
-            var companies = GetCompanyList(ref errState, EmptyRest, false);
-            if (!string.IsNullOrEmpty(errState))
-                throw new InvalidOperationException(errState);
-            return companies;
-        }
-
-        public IReadOnlyList<IModule> GetModuleTree(string database, string idfa)
-        {
-            var mlRest = GetTreeRest(database, idfa);
             CVar treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", new CVar());
             return ParseTree(treeData);
         }
@@ -63,7 +20,7 @@ namespace EDISONMAIN2.Services.Data
         ///   "EXE"        → $lb("EXE", displayName, executablePath, formName)
         ///   "FAMILY_END" → $lb("FAMILY_END")
         /// </summary>
-        private static ObservableCollection<IModule> ParseTree(CVar treeData)
+        internal static ObservableCollection<IModule> ParseTree(CVar treeData)
         {
             var result = new ObservableCollection<IModule>();
             var familyStack = new Stack<ObservableCollection<IModule>>();

@@ -17,6 +17,71 @@
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.Resources>
+                <!-- Shared error style for TextBox-based fields -->
+                <Style x:Key="FieldTextBoxStyle" TargetType="TextBox">
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding HasError}" Value="True">
+                            <Setter Property="BorderBrush" Value="Red"/>
+                            <Setter Property="BorderThickness" Value="1.5"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Editable}" Value="False">
+                            <Setter Property="IsReadOnly" Value="True"/>
+                            <Setter Property="Background" Value="#F0F0F0"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+
+                <!-- Text: plain TextBox -->
+                <DataTemplate x:Key="TextFieldTemplate">
+                    <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                             ToolTip="{Binding ValidationError}"
+                             Style="{StaticResource FieldTextBoxStyle}"/>
+                </DataTemplate>
+
+                <!-- Number: right-aligned, integer-only input -->
+                <DataTemplate x:Key="NumberFieldTemplate">
+                    <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                             TextAlignment="Right"
+                             local:NumericInput.Mode="Integer"
+                             ToolTip="{Binding ValidationError}"
+                             Style="{StaticResource FieldTextBoxStyle}"/>
+                </DataTemplate>
+
+                <!-- Decimal: right-aligned, decimal input -->
+                <DataTemplate x:Key="DecimalFieldTemplate">
+                    <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                             TextAlignment="Right"
+                             local:NumericInput.Mode="Decimal"
+                             ToolTip="{Binding ValidationError}"
+                             Style="{StaticResource FieldTextBoxStyle}"/>
+                </DataTemplate>
+
+                <!-- Date: DatePicker with calendar -->
+                <DataTemplate x:Key="DateFieldTemplate">
+                    <DatePicker SelectedDate="{Binding DateValue}"
+                                IsEnabled="{Binding Editable}"
+                                ToolTip="{Binding ValidationError}">
+                        <DatePicker.Style>
+                            <Style TargetType="DatePicker">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                        <Setter Property="BorderBrush" Value="Red"/>
+                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </DatePicker.Style>
+                    </DatePicker>
+                </DataTemplate>
+
+                <!-- Bool: CheckBox -->
+                <DataTemplate x:Key="BoolFieldTemplate">
+                    <CheckBox IsChecked="{Binding BoolValue}"
+                              IsEnabled="{Binding Editable}"
+                              VerticalAlignment="Center"
+                              ToolTip="{Binding ValidationError}"/>
+                </DataTemplate>
+
                 <!-- Field row: fixed 130px label column, input fills the rest -->
                 <DataTemplate DataType="{x:Type local:Field}">
                     <Grid Margin="2,1" Visibility="{Binding EffectiveVisibility}">
@@ -42,24 +107,28 @@
                             <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
                                        VerticalAlignment="Top" Margin="0,2,2,2"/>
                         </DockPanel>
-                        <TextBox Grid.Column="1" VerticalAlignment="Top"
-                                 Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
-                                 ToolTip="{Binding ValidationError}"
-                                 Margin="2,1">
-                            <TextBox.Style>
-                                <Style TargetType="TextBox">
+                        <ContentControl Grid.Column="1" VerticalAlignment="Top"
+                                        Content="{Binding}" Margin="2,1" Focusable="False">
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl">
+                                    <Setter Property="ContentTemplate" Value="{StaticResource TextFieldTemplate}"/>
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Number}">
-                                            <Setter Property="TextAlignment" Value="Right"/>
+                                            <Setter Property="ContentTemplate" Value="{StaticResource NumberFieldTemplate}"/>
                                         </DataTrigger>
-                                        <DataTrigger Binding="{Binding HasError}" Value="True">
-                                            <Setter Property="BorderBrush" Value="Red"/>
-                                            <Setter Property="BorderThickness" Value="1.5"/>
+                                        <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Decimal}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource DecimalFieldTemplate}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Date}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource DateFieldTemplate}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Bool}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource BoolFieldTemplate}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
-                            </TextBox.Style>
-                        </TextBox>
+                            </ContentControl.Style>
+                        </ContentControl>
                     </Grid>
                 </DataTemplate>
 

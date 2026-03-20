@@ -4,28 +4,31 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Threading;
-using ALWA.SYS;
 
 namespace EDControls.EDViewModel;
 
 public class EDViewModel : INotifyPropertyChanged
 {
-    private static MLRest? _mlRest;
-    public MLRest? MLRest { get => _mlRest; protected set => _mlRest = value; }
+    protected readonly EDServices _services;
+
+    /// <summary>
+    /// Shared MLRest instance. Reads from the shared <see cref="EDServices"/>;
+    /// only composition-root ViewModels (EdisonMainViewModel, TemplateDesignerViewModel)
+    /// write to <c>services.MLRest</c> directly.
+    /// </summary>
+    public IMLRest? MLRest => _services.MLRest;
 
     /// <summary>
     /// Navigator for opening other windows. Use WindowNavigator.Show(...) or ShowDialog(...)
     /// from ViewModel subclasses.
     /// </summary>
-    private static readonly IWindowNavigator _windowNavigator = new ReflectionWindowNavigator();
-    protected static IWindowNavigator WindowNavigator => _windowNavigator;
+    protected IWindowNavigator WindowNavigator => _services.WindowNavigator;
 
     /// <summary>
     /// Service for showing popups. Always targets the currently active window as owner.
     /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
     /// </summary>
-    private static readonly IPopupDisplayer _popupDisplayer = new PopupDisplayer();
-    public IPopupDisplayer PopupDisplayer => _popupDisplayer;
+    public IPopupDisplayer PopupDisplayer => _services.PopupDisplayer;
 
     /// <summary>
     /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.
@@ -84,14 +87,36 @@ public class EDViewModel : INotifyPropertyChanged
     public ICommand EditCommand { get; }
     public ICommand DeleteCommand { get; }
 
-    public EDViewModel()
+    /// <summary>
+    /// Parameterless constructor — reads from <see cref="EDServices.Current"/>.
+    /// Used by windows created via ReflectionWindowNavigator (Activator.CreateInstance).
+    /// </summary>
+    public EDViewModel() : this(EDServices.Current) { }
+
+    /// <summary>
+    /// Explicit constructor for dependency injection. Tests pass mocks here;
+    /// composition-root ViewModels forward the EDServices they received.
+    /// </summary>
+    public EDViewModel(EDServices services)
     {
-        OkCommand     = new RelayCommand(OnOk);
-        AddCommand    = new RelayCommand(OnAdd);
-        EditCommand   = new RelayCommand(OnEdit);
-        DeleteCommand = new RelayCommand(OnDelete);
+        _services = services;
+        OkCommand     = Command(OnOk);
+        AddCommand    = Command(OnAdd);
+        EditCommand   = Command(OnEdit);
+        DeleteCommand = Command(OnDelete);
         Application.Current?.Dispatcher.BeginInvoke(RegisterKeyBindings, DispatcherPriority.Loaded);
     }
+
+    /// <summary>
+    /// Creates a <see cref="RelayCommand"/> with <see cref="PopupDisplayer"/> wired for error handling.
+    /// Use instead of <c>new RelayCommand(...)</c> in ViewModel subclasses.
+    /// </summary>
+    protected RelayCommand Command(Action execute, Func<bool>? canExecute = null) =>
+        new(execute, canExecute, PopupDisplayer);
+
+    /// <inheritdoc cref="Command(Action, Func{bool}?)"/>
+    protected RelayCommand<T> Command<T>(Action<T> execute, Func<T, bool>? canExecute = null) =>
+        new(execute, canExecute, PopupDisplayer);
 
     private void RegisterKeyBindings()
     {
@@ -126,22 +151,28 @@ public class EDViewModel : INotifyPropertyChanged
         public EDAction Delete() => Delete(vm.DeleteCommand);
 
         public EDAction Add(ICommand command) =>
-            new((string)Application.Current.FindResource("EDStrings.Add"),
+            new(FindString("EDStrings.Add") ?? "Přidat",
                 command,
-                (ImageSource)Application.Current.FindResource("EDIcons.Add"),
+                FindImage("EDIcons.Add"),
                 Key.N, ModifierKeys.Control);
 
         public EDAction Edit(ICommand command) =>
-            new((string)Application.Current.FindResource("EDStrings.Edit"),
+            new(FindString("EDStrings.Edit") ?? "Upravit",
                 command,
-                (ImageSource)Application.Current.FindResource("EDIcons.Edit"),
+                FindImage("EDIcons.Edit"),
                 Key.E, ModifierKeys.Control);
 
         public EDAction Delete(ICommand command) =>
-            new((string)Application.Current.FindResource("EDStrings.Delete"),
+            new(FindString("EDStrings.Delete") ?? "Smazat",
                 command,
-                (ImageSource)Application.Current.FindResource("EDIcons.Delete"),
+                FindImage("EDIcons.Delete"),
                 Key.D, ModifierKeys.Control);
+
+        private static string? FindString(string key) =>
+            Application.Current?.TryFindResource(key) as string;
+
+        private static ImageSource? FindImage(string key) =>
+            Application.Current?.TryFindResource(key) as ImageSource;
     }
 
     /// <summary>

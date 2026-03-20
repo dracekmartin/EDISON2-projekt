@@ -153,4 +153,132 @@ public class SnapEngine
         if (dist < threshold)
             list.Add(new Candidate(dist, target, refEdge, el, kind, gapFrom, gapTo));
     }
+
+    /// <summary>
+    /// Snap pro resize — snapuje pouze hrany, které se mění.
+    /// movingLeft/Right/Top/Bottom = true pokud daný handle mění tuto hranu.
+    /// Vrací snapnuté hodnoty (newX, newY, newW, newH).
+    /// </summary>
+    public (float X, float Y, float W, float? H, List<TemplateElement> Targets, List<GapIndicator> Gaps)
+        CalculateResize(
+            float newX, float newY, float newW, float? newH,
+            bool movingLeft, bool movingRight, bool movingTop, bool movingBottom,
+            IEnumerable<TemplateElement> otherElements,
+            TemplateElement resizeElement,
+            float thresholdMm)
+    {
+        var others = otherElements.ToList();
+        var targets = new List<TemplateElement>();
+        var gaps = new List<GapIndicator>();
+
+        if (others.Count == 0)
+            return (newX, newY, newW, newH, targets, gaps);
+
+        float h = newH ?? 0f;
+
+        // X osa
+        if (movingLeft || movingRight)
+        {
+            float refLeft  = newX;
+            float refRight = newX + newW;
+            var candidates = new List<Candidate>();
+
+            foreach (var other in others)
+            {
+                float oL = other.X;
+                float oR = other.X + other.Width;
+
+                if (movingLeft)
+                {
+                    TryAdd(candidates, refLeft, oL, thresholdMm, other, MatchKind.Edge);
+                    TryAdd(candidates, refLeft, oR, thresholdMm, other, MatchKind.Edge);
+                    if (GapMm > 0)
+                        TryAdd(candidates, refLeft, oR + GapMm, thresholdMm, other, MatchKind.Gap,
+                            gapFrom: oR, gapTo: oR + GapMm);
+                }
+                if (movingRight)
+                {
+                    TryAdd(candidates, refRight, oL, thresholdMm, other, MatchKind.Edge);
+                    TryAdd(candidates, refRight, oR, thresholdMm, other, MatchKind.Edge);
+                    if (GapMm > 0)
+                        TryAdd(candidates, refRight, oL - GapMm, thresholdMm, other, MatchKind.Gap,
+                            gapFrom: oL - GapMm, gapTo: oL);
+                }
+            }
+
+            if (candidates.Count > 0)
+            {
+                float minDist = candidates.Min(c => c.Dist);
+                var winners = candidates.Where(c => c.Dist <= minDist + 0.01f).ToList();
+                var best = winners[0];
+                float shift = best.SnapTo - best.RefEdge;
+                targets.AddRange(winners.Select(c => c.El).Distinct());
+
+                if (best.Kind == MatchKind.Gap)
+                {
+                    float crossMid = winners[0].El.Y + (winners[0].El.Height ?? winners[0].El.EffectiveDesignerHeight) / 2f;
+                    gaps.Add(new GapIndicator(true, best.GapFrom, best.GapTo, crossMid));
+                }
+
+                if (movingLeft && best.RefEdge == refLeft)
+                { newX += shift; newW -= shift; }
+                else if (movingRight && best.RefEdge == refRight)
+                { newW += shift; }
+            }
+        }
+
+        // Y osa
+        if (movingTop || movingBottom)
+        {
+            float refTop    = newY;
+            float refBottom = newY + h;
+            var candidates = new List<Candidate>();
+
+            foreach (var other in others)
+            {
+                float oH = other.Height ?? other.EffectiveDesignerHeight;
+                float oT = other.Y;
+                float oB = other.Y + oH;
+
+                if (movingTop)
+                {
+                    TryAdd(candidates, refTop, oT, thresholdMm, other, MatchKind.Edge);
+                    TryAdd(candidates, refTop, oB, thresholdMm, other, MatchKind.Edge);
+                    if (GapMm > 0)
+                        TryAdd(candidates, refTop, oB + GapMm, thresholdMm, other, MatchKind.Gap,
+                            gapFrom: oB, gapTo: oB + GapMm);
+                }
+                if (movingBottom)
+                {
+                    TryAdd(candidates, refBottom, oT, thresholdMm, other, MatchKind.Edge);
+                    TryAdd(candidates, refBottom, oB, thresholdMm, other, MatchKind.Edge);
+                    if (GapMm > 0)
+                        TryAdd(candidates, refBottom, oT - GapMm, thresholdMm, other, MatchKind.Gap,
+                            gapFrom: oT - GapMm, gapTo: oT);
+                }
+            }
+
+            if (candidates.Count > 0)
+            {
+                float minDist = candidates.Min(c => c.Dist);
+                var winners = candidates.Where(c => c.Dist <= minDist + 0.01f).ToList();
+                var best = winners[0];
+                float shift = best.SnapTo - best.RefEdge;
+                targets.AddRange(winners.Select(c => c.El).Distinct());
+
+                if (best.Kind == MatchKind.Gap)
+                {
+                    float crossMid = winners[0].El.X + winners[0].El.Width / 2f;
+                    gaps.Add(new GapIndicator(false, best.GapFrom, best.GapTo, crossMid));
+                }
+
+                if (movingTop && best.RefEdge == refTop)
+                { newY += shift; h -= shift; }
+                else if (movingBottom && best.RefEdge == refBottom)
+                { h += shift; }
+            }
+        }
+
+        return (newX, newY, newW, newH.HasValue ? h : null, targets, gaps);
+    }
 }

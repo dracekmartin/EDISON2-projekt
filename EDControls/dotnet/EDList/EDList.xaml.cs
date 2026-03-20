@@ -19,7 +19,7 @@ namespace EDControls.EDList
     {
         // ─── Konfigurace ──────────────────────────────────────────────────────────
 
-        private MLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
+        private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
         public string CacheClass { get; set; } = "";
 
         // ─── Stav ─────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ namespace EDControls.EDList
 
         // ─── Parsování ────────────────────────────────────────────────────────────
 
-        private static IReadOnlyList<ListColumn> ParseColumns(object[] output)
+        internal static IReadOnlyList<ListColumn> ParseColumns(object[] output)
         {
             if (output.Length < 2) return [];
             var json = output[1]?.ToString() ?? "[]";
@@ -144,13 +144,13 @@ namespace EDControls.EDList
             };
         }
 
-        private static string? FormatHHMM(string? raw)
+        internal static string? FormatHHMM(string? raw)
         {
             if (!int.TryParse(raw, out int val)) return raw;
             return $"{val / 100:D2}:{val % 100:D2}";
         }
 
-        private static string? FormatDate(string? raw, string format)
+        internal static string? FormatDate(string? raw, string format)
         {
             if (string.IsNullOrEmpty(raw)) return raw;
             return DateTime.TryParse(raw, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dt)
@@ -158,7 +158,7 @@ namespace EDControls.EDList
                 : raw;
         }
 
-        private static string? FormatNumber(string? raw, string format)
+        internal static string? FormatNumber(string? raw, string format)
         {
             if (string.IsNullOrEmpty(format)) return raw;
             return double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out double d)

@@ -53,6 +53,7 @@ public class BarcodeElement : TemplateElement
         {
             DrawPlaceholder(ctx.Canvas, rect);
         }
+
     }
 
     private void RenderBarcode(SKCanvas canvas, SKRect rect, string content)
@@ -143,6 +144,7 @@ public class BarcodeElement : TemplateElement
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
         GroupId = GroupId,
+        BorderColor = BorderColor, BorderWidth = BorderWidth,
         Content = Content,
         BarcodeType = BarcodeType,
         ForeColor = ForeColor,

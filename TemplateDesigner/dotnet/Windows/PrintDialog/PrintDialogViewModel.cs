@@ -44,8 +44,8 @@ public class PrintDialogViewModel : EDViewModel
         _buildMockData = buildMockData;
         _buildRealData = buildRealData;
 
-        ExportPdfCommand = new RelayCommand(ExportPdf);
-        ExportRealDataPdfCommand = new RelayCommand(ExportRealDataPdf, () => _buildRealData is not null);
+        ExportPdfCommand = Command(ExportPdf);
+        ExportRealDataPdfCommand = Command(ExportRealDataPdf, () => _buildRealData is not null);
 
         // Inicializace hodnot parametrů z defaults
         foreach (var p in parameters)
