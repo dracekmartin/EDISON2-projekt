@@ -13,6 +13,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
+		d form.AddField("poznamka", "Poznámka", "TEXT", 0, 0)
+
 		d form.AddGroup("Osobní údaje")
 		d form.AddField("jmeno",    "Jméno",    "TEXT",   1, 1)
 		d form.AddField("prijmeni", "Příjmení", "TEXT",   1, 1)
