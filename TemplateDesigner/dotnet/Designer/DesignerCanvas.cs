@@ -354,6 +354,11 @@ public class DesignerCanvas
             }
             canvas.Restore();
 
+            // Druhý průchod — rámečky elementů MIMO clip sekce, aby byly vidět i na hranici sekce.
+            // Na sdílené hraně dvou elementů se strokes překryjí na stejném pixelu → jeden rámeček.
+            foreach (var el in section.Elements.OrderBy(e => e.ZIndex))
+                el.RenderBorderPass(ctx);
+
             // Rámeček sekce
             using var border = new SKPaint
             {

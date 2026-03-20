@@ -7,7 +7,7 @@ namespace TemplateDesigner.Models.Elements;
 /// SkupinaDnuId = "" → zobrazí všechny skupiny dnů vedle sebe se sdíleným sloupcem hodin.
 /// SkupinaDnuId = "SMO1" → zobrazí pouze jednu skupinu.
 /// SkupinaDnuId = "SMO1,SMO2" → zobrazí vybrané skupiny.
-/// Height je vždy null (dynamický).
+/// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// </summary>
 public class DepartureGridElement : ScheduleElementBase
 {
@@ -214,18 +214,27 @@ public class DepartureGridElement : ScheduleElementBase
             return;
         }
 
-        // Clip na hranice elementu — obsah přesahující Width se ořízne
-        float clipH = layout.GroupHeaderH + layout.HeaderH + layout.Hours.Count * layout.RowH;
+        // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit vše proporcionálně
+        float naturalH = layout.GroupHeaderH + layout.HeaderH + layout.Hours.Count * layout.RowH;
+        float scale = ComputeFontScale(naturalH);
+
+        float scaledRowH = layout.RowH * scale;
+        float scaledHeaderH = layout.HeaderH * scale;
+        float scaledGroupHeaderH = layout.GroupHeaderH * scale;
+        float scaledGroupLineH = SkupinaDnuHeaderLineHeight * scale;
+
+        // Clip na hranice elementu
+        float clipH = scaledGroupHeaderH + scaledHeaderH + layout.Hours.Count * scaledRowH;
         var clipRect = ctx.ToCanvasRect(X, Y, Width, clipH);
         ctx.Canvas.Save();
         ctx.Canvas.ClipRect(clipRect);
 
         using var paints = CreateStandardPaints();
 
-        float fontPx = layout.FontSizeMm * ctx.MmToPx;
-        float headerFontPx = layout.HeaderFontMm * ctx.MmToPx;
-        float minuteFontPx = layout.MinuteFontMm * ctx.MmToPx;
-        float groupNameFontPx = SkupinaDnuHeaderLineHeight * 0.65f * ctx.MmToPx;
+        float fontPx = layout.FontSizeMm * scale * ctx.MmToPx;
+        float headerFontPx = layout.HeaderFontMm * scale * ctx.MmToPx;
+        float minuteFontPx = layout.MinuteFontMm * scale * ctx.MmToPx;
+        float groupNameFontPx = SkupinaDnuHeaderLineHeight * scale * 0.65f * ctx.MmToPx;
 
         using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
         using var headerFont = new SKFont(
@@ -243,28 +252,28 @@ public class DepartureGridElement : ScheduleElementBase
         float currentY = Y;
 
         // ── Záhlaví skupin dnů ──────────────────────────────────────────────
-        if (ShowSkupinaDnuHeader && layout.GroupHeaderH > 0)
+        if (ShowSkupinaDnuHeader && scaledGroupHeaderH > 0)
         {
-            var headerRect = ctx.ToCanvasRect(X, currentY, usedWidth, layout.GroupHeaderH);
+            var headerRect = ctx.ToCanvasRect(X, currentY, usedWidth, scaledGroupHeaderH);
             ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
             float gx = X + HourColumnWidth;
             foreach (var g in layout.Groups)
             {
                 int lineCount = g.HeaderLines.Length;
-                float blockH = lineCount * SkupinaDnuHeaderLineHeight;
+                float blockH = lineCount * scaledGroupLineH;
 
                 // Vertikální zarovnání bloku textu
                 float startLineY = HeaderVerticalAlignment switch
                 {
                     VerticalTextAlignment.Top => currentY,
-                    VerticalTextAlignment.Center => currentY + (layout.GroupHeaderH - blockH) / 2f,
-                    _ => currentY + layout.GroupHeaderH - blockH, // Bottom
+                    VerticalTextAlignment.Center => currentY + (scaledGroupHeaderH - blockH) / 2f,
+                    _ => currentY + scaledGroupHeaderH - blockH, // Bottom
                 };
 
                 for (int i = 0; i < lineCount; i++)
                 {
-                    float lineY = startLineY + (i + 0.8f) * SkupinaDnuHeaderLineHeight;
+                    float lineY = startLineY + (i + 0.8f) * scaledGroupLineH;
 
                     // Horizontálně centrovat ve sloupci skupiny
                     float textW = MeasureTextMm(groupNameFont, g.HeaderLines[i], ctx.MmToPx);
@@ -277,22 +286,23 @@ public class DepartureGridElement : ScheduleElementBase
                 gx += g.GroupWidth + GroupSeparatorWidth;
             }
 
-            currentY += layout.GroupHeaderH;
+            currentY += scaledGroupHeaderH;
         }
 
         // ── Záhlaví sloupců (Hod) ───────────────────────────────────────────
-        var colHeaderRect = ctx.ToCanvasRect(X, currentY, usedWidth, layout.HeaderH);
+        var colHeaderRect = ctx.ToCanvasRect(X, currentY, usedWidth, scaledHeaderH);
         ctx.Canvas.DrawRect(colHeaderRect, paints.HeaderBg);
 
-        var hourHeaderPt = ctx.ToCanvas(X + 1f, currentY + layout.HeaderH * HeaderBaselineFactor);
+        var hourHeaderPt = ctx.ToCanvas(X + 1f, currentY + scaledHeaderH * HeaderBaselineFactor);
         ctx.Canvas.DrawText("Hod", hourHeaderPt.X, hourHeaderPt.Y, headerFont, paints.HeaderText);
 
-        currentY += layout.HeaderH;
+        currentY += scaledHeaderH;
 
         // ── Řádky hodin ──────────────────────────────────────────────────────
+        float scaledMinuteW = MinuteWidth * scale;
         foreach (int hour in layout.Hours)
         {
-            var hourPt = ctx.ToCanvas(X + 1f, currentY + layout.RowH * TextBaselineFactor);
+            var hourPt = ctx.ToCanvas(X + 1f, currentY + scaledRowH * TextBaselineFactor);
             ctx.Canvas.DrawText(hour.ToString(), hourPt.X, hourPt.Y, font, paints.Text);
 
             float gx = X + HourColumnWidth;
@@ -320,17 +330,17 @@ public class DepartureGridElement : ScheduleElementBase
                                 minutePaint = paints.Text;
                             }
 
-                            var minPt = ctx.ToCanvas(minX + 0.5f, currentY + layout.RowH * TextBaselineFactor);
+                            var minPt = ctx.ToCanvas(minX + 0.5f, currentY + scaledRowH * TextBaselineFactor);
                             ctx.Canvas.DrawText(minuteText, minPt.X, minPt.Y, minuteFont, minutePaint);
 
                             if (ShowAnotace && odj.Anotace.Count > 0)
                             {
                                 var anotaceText = string.Join("", odj.Anotace.Select(a => a.Znak));
-                                var anotPt = ctx.ToCanvas(minX + MinuteWidth * 0.7f, currentY + layout.RowH * 0.3f);
+                                var anotPt = ctx.ToCanvas(minX + scaledMinuteW * 0.7f, currentY + scaledRowH * 0.3f);
                                 ctx.Canvas.DrawText(anotaceText, anotPt.X, anotPt.Y, anotFont, anotPaint);
                             }
 
-                            minX += MinuteWidth;
+                            minX += scaledMinuteW;
                         }
                     }
                     finally
@@ -342,10 +352,10 @@ public class DepartureGridElement : ScheduleElementBase
                 gx += g.GroupWidth + GroupSeparatorWidth;
             }
 
-            var rowLineStart = ctx.ToCanvas(X, currentY + layout.RowH);
-            var rowLineEnd = ctx.ToCanvas(X + usedWidth, currentY + layout.RowH);
+            var rowLineStart = ctx.ToCanvas(X, currentY + scaledRowH);
+            var rowLineEnd = ctx.ToCanvas(X + usedWidth, currentY + scaledRowH);
             ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
-            currentY += layout.RowH;
+            currentY += scaledRowH;
         }
 
         // ── Svislé čáry ──────────────────────────────────────────────────────
@@ -370,9 +380,9 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         // ── Horizontální čára pod záhlavím skupin ────────────────────────────
-        if (ShowSkupinaDnuHeader && layout.GroupHeaderH > 0)
+        if (ShowSkupinaDnuHeader && scaledGroupHeaderH > 0)
         {
-            float lineY = Y + layout.GroupHeaderH;
+            float lineY = Y + scaledGroupHeaderH;
             var hLineStart = ctx.ToCanvas(X + HourColumnWidth, lineY);
             var hLineEnd = ctx.ToCanvas(X + usedWidth, lineY);
             ctx.Canvas.DrawLine(hLineStart, hLineEnd, paints.Grid);
@@ -549,6 +559,7 @@ public class DepartureGridElement : ScheduleElementBase
             VisibilityExpression = VisibilityExpression,
             CustomProperties = CustomProperties is null ? null : new(CustomProperties),
             GroupId = GroupId,
+            BorderColor = BorderColor, BorderWidth = BorderWidth,
 
             SkupinaDnuId               = SkupinaDnuId,
             DisplayMode                = DisplayMode,

@@ -619,9 +619,9 @@ public class TemplateDesignerViewModel : EDViewModel
             "TableElement"     => new TableElement     { X = x, Y = y, Width = w },
             "BarcodeQR"        => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.QR },
             "BarcodeCode128"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.Code128 },
-            "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w },
-            "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w },
-            "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w },
+            "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
+            "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
+            "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
             _                  => new TextElement      { X = x, Y = y, Width = w, Height = h, Text = type }
         };
     }

@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-18
+**Datum poslední aktualizace:** 2026-03-20
 
 ### 🎯 Aktuální focus
 
@@ -47,6 +47,14 @@ Vozové jízdní řády — VehicleScheduleElement (nový typ JŘ elementu); dot
 - **PageLayoutEngine** — čistý logický engine (vrstva 3): Template + DataContext → `List<Page>` s PlacedSections; multi-page stránkování, hlavičky/patičky (OnEveryPage, OnFirstPageOnly, OnLastPageOnly, OnEveryPageExceptFirst), SplitAcrossPages, PerDataRow expanze, flow layout uvnitř sekcí, PAGE/TOTAL_PAGES injekce, dvouprůchodový layout pro OnLastPageOnly
 - Multi-page preview — PreviewCanvas zobrazuje všechny stránky pod sebou se stíny a rámečky
 - Multi-page PDF export — každá stránka LayoutResult = jedna stránka PDF
+- **Clamp elementu na hranici sekce** — elementy se nepřesunou mimo bounds sekce
+- **StopColumnsEditorDialog** — dialog pro editaci sloupců StopListElement (pořadí, šířky, záhlaví, viditelnost, zarovnání)
+- **PageSize editor** — editace rozměrů stránky, orientace, předdefinované formáty
+- **Smart snap resize** — snap hran při resize (edge + gap 4mm); sdílená hranice (tah za hranu mění i sousedního); split element Ctrl+Shift+H/J
+- **Designer font cap** — omezení fontu na 10pt v designeru pro čitelnost placeholderů
+- **Rámeček elementů (border)** — `BorderColor` + `BorderWidth` na base `TemplateElement`; dvouprůchodové renderování (obsah → rámečky mimo clip sekce); pixel-snap na sdílených hranách → jeden rámeček; viditelné i na hranici sekce
+- **Auto-scale font u JŘ elementů** — `ScheduleElementBase.ComputeFontScale(naturalH)`: pokud obsah přesahuje pevnou Height, fonty + výšky řádků se proporcionálně zmenší; schedule elementy nyní podporují pevnou Height (ne jen null/dynamickou)
+- **Multi-element editing** — Enter při výběru více elementů otevře dialog společných vlastností (BorderColor, BorderWidth, ZIndex, IsLocked); změna se aplikuje na všechny najednou
 
 ### 🐛 Známé problémy
 

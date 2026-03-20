@@ -1126,6 +1126,14 @@ public partial class MainWindow : Window
         _vm!.RebuildSections();
     }
 
+    private void OpenPropertiesForMultipleElements(List<TemplateElement> elements)
+    {
+        _propsVm!.PrepareForMultipleElements(elements);
+        new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
+        InvalidateCanvas();
+        InvalidatePreview();
+    }
+
     private void OpenPropertiesForPage(Template template)
     {
         _propsVm!.PrepareForPage(template);
@@ -1154,7 +1162,7 @@ public partial class MainWindow : Window
         }
 
         _vm.StatusText = _vm.State.SelectedElements.Count > 1
-            ? $"Vybráno {_vm.State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru"
+            ? $"Vybráno {_vm.State.SelectedElements.Count} elementů  |  Enter = společné vlastnosti  |  Ctrl+klik pro odebrání"
             : _vm.State.ActiveSection is not null
                 ? $"Sekce: {_vm.State.ActiveSection.Name}  |  " +
                   $"Výška: {_vm.State.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
@@ -1300,6 +1308,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)
         {
             OpenPropertiesForElement(_vm.State.SelectedElements[0]);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count > 1)
+        {
+            OpenPropertiesForMultipleElements(_vm.State.SelectedElements);
             e.Handled = true;
         }
         else if (e.Key == Key.F1)

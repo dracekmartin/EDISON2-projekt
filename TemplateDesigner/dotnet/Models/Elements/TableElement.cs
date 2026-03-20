@@ -209,6 +209,7 @@ public class TableElement : TemplateElement
         // Vnější rámeček
         if (BorderStyle != TableBorderStyle.None)
             ctx.Canvas.DrawRect(tableRect, borderPaint);
+
     }
 
     private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
@@ -562,6 +563,7 @@ public class TableElement : TemplateElement
         VisibilityExpression = VisibilityExpression,
         CustomProperties     = CustomProperties is null ? null : new(CustomProperties),
         GroupId              = GroupId,
+        BorderColor = BorderColor, BorderWidth = BorderWidth,
         Mode                 = Mode,
         DataSource           = DataSource,
         Columns              = Columns.Select(c => c.Clone()).ToList(),

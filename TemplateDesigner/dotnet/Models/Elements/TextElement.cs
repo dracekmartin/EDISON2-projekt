@@ -147,6 +147,7 @@ public class TextElement : TemplateElement
         VisibilityExpression = VisibilityExpression,
         CustomProperties = CustomProperties is null ? null : new(CustomProperties),
         GroupId = GroupId,
+        BorderColor = BorderColor, BorderWidth = BorderWidth,
         Text = Text,
         FontFamily = FontFamily,
         FontSize = FontSize,

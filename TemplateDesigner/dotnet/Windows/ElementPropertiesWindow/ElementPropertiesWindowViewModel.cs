@@ -134,6 +134,22 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         return CurrentDescriptors = BuildPageDescriptors(template);
     }
 
+    /// <summary>
+    /// Připraví deskriptory společných vlastností pro více vybraných elementů.
+    /// Změna hodnoty se aplikuje na všechny elementy najednou (CompositeCommand).
+    /// </summary>
+    public IReadOnlyList<Models.PropertyDescriptor> PrepareForMultipleElements(List<TemplateElement> elements)
+    {
+        if (elements.Count == 0) return CurrentDescriptors = [];
+
+        _undoDepthAtOpen   = _state.UndoStack.Count;
+        CurrentElement     = null;
+        _currentInvalidate = _invalidate;
+        WindowTitle        = $"Společné vlastnosti ({elements.Count} elementů)";
+
+        return CurrentDescriptors = BuildMultiElementDescriptors(elements);
+    }
+
     /// <summary>Vrátí veškeré změny provedené od posledního otevření a překreslí.</summary>
     public void CancelChanges()
     {
@@ -555,5 +571,44 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         }
 
         return list;
+    }
+
+    // ── Multi-element společné vlastnosti ───────────────────────────────
+
+    private IReadOnlyList<Models.PropertyDescriptor> BuildMultiElementDescriptors(List<TemplateElement> elements)
+    {
+        var first = elements[0];
+
+        // Helper: vytvoří setter, který změní property na všech elementech
+        // Čte aktuální hodnotu z prvního elementu, nastaví na všechny
+        return
+        [
+            new ColorPropertyDescriptor
+            {
+                Label = "Barva rámečku", Group = "Rámeček",
+                Get = () => first.BorderColor,
+                Set = v => { foreach (var el in elements) el.BorderColor = v; }
+            },
+            new FloatPropertyDescriptor
+            {
+                Label = "Šířka rámečku", Group = "Rámeček",
+                Get = () => first.BorderWidth,
+                Set = v => { foreach (var el in elements) el.BorderWidth = v; },
+                Min = 0, Max = 5, Unit = "mm", Format = "0.0#"
+            },
+            new FloatPropertyDescriptor
+            {
+                Label = "ZIndex", Group = "Pozice",
+                Get = () => first.ZIndex,
+                Set = v => { foreach (var el in elements) el.ZIndex = (int)Math.Round(v); },
+                Min = 0, Max = 100, Format = "0"
+            },
+            new BoolPropertyDescriptor
+            {
+                Label = "Zamčeno", Group = "Pozice",
+                Get = () => first.IsLocked,
+                Set = v => { foreach (var el in elements) el.IsLocked = v; }
+            },
+        ];
     }
 }
