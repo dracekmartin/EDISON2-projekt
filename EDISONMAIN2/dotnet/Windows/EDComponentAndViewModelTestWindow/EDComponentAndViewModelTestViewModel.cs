@@ -17,7 +17,7 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
         Actions =
         [
             StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete(),
-            new EDAction("Auto", new RelayCommand(OnCar),
+            new EDAction("Auto", Command(OnCar),
                 (ImageSource)Application.Current.FindResource("EDIcons.Car")),
         ];
     }
@@ -28,11 +28,11 @@ class EDComponentAndViewModelTestViewModel : EDViewModel
     private void OnCar() => Status = "Auto";
 
     public RelayCommand SimulateActionCommand => _simulateActionCommand
-        ??= new RelayCommand(SimulateAction);
+        ??= Command(SimulateAction);
     private RelayCommand? _simulateActionCommand;
 
     public RelayCommand ThrowCommand => _throwCommand
-        ??= new RelayCommand(() => throw new InvalidOperationException("Testovací výjimka z RelayCommand."));
+        ??= Command(() => throw new InvalidOperationException("Testovací výjimka z RelayCommand."));
     private RelayCommand? _throwCommand;
 
     private async void SimulateAction()

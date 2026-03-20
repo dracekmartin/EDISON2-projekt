@@ -91,9 +91,9 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         foreach (var col in columns)
             ColumnVMs.Add(StopColumnVM.FromModel(col));
 
-        MoveUpCommand   = new RelayCommand(MoveUp);
-        MoveDownCommand = new RelayCommand(MoveDown);
-        ResetCommand    = new RelayCommand(Reset);
+        MoveUpCommand   = Command(MoveUp);
+        MoveDownCommand = Command(MoveDown);
+        ResetCommand    = Command(Reset);
     }
 
     // ── Přesouvání ──────────────────────────────────────────────────────────

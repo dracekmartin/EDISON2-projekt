@@ -1,45 +1,48 @@
-# EDFooter — developer notes
+# EDFooter — poznámky pro vývojáře
 
-Standardised window footer as a plain `UserControl` — fully XAML-defined so it is always
-visible in the WPF designer.
+Standardizovaný footer okna jako obyčejný `UserControl` — plně definovaný v XAML, takže je
+vždy viditelný v designeru.
 
-## File map
+## Mapa souborů
 
-| File | Role |
-|---|---|
-| `EFooterMode.cs` | Enum: `Close` (default), `OkCancel`. |
-| `EDFooter.xaml` | Border with left `ContentPresenter` + right button panel. Default visibility: Zavřít shown, Ok/Storno collapsed. |
-| `EDFooter.xaml.cs` | DependencyProperties, button visibility switch, ViewModel wiring. Note: `CloseBtn` (Zavřít) also calls `CloseWindow(false)` — same handler as Storno. |
+| Soubor | Role |
+| --- | --- |
+| `EFooterMode.cs` | Enum: `Close` (výchozí), `OkCancel`. |
+| `EDFooter.xaml` | Border s levým `ContentPresenter` + pravý panel tlačítek. Výchozí viditelnost: Zavřít zobrazen, Ok/Storno skryté. |
+| `EDFooter.xaml.cs` | DependencyProperties, přepínání viditelnosti tlačítek, napojení na ViewModel. Poznámka: `CloseBtn` (Zavřít) volá `CloseWindow(false)` — stejný handler jako Storno. |
 
 ## Dependency properties
 
-| Property | Type | Default | Description |
-|---|---|---|---|
-| `FooterMode` | `EFooterMode` | `Close` | Switches between Zavřít / Ok+Storno. |
-| `LeftContent` | `UIElement?` | `null` | Optional element in the left column of the footer grid. Set via `LeftContent` property (not a binding — assigned directly to `LeftContentPresenter.Content`). |
+| Vlastnost | Typ | Výchozí | Popis |
+| --- | --- | --- | --- |
+| `FooterMode` | `EFooterMode` | `Close` | Přepíná mezi Zavřít / Ok+Storno. |
+| `LeftContent` | `UIElement?` | `null` | Volitelný element v levém sloupci footer gridu. Nastavuje se přes `LeftContent` property (ne binding — přiřazuje se přímo do `LeftContentPresenter.Content`). |
 
-## Actions menu (automatic)
+## Menu akcí (automatické)
 
-When the window's `EDViewModel` exposes a non-empty `Actions` list, `EDFooter` automatically shows an **"Akce" dropdown menu** in the bottom-left corner — no XAML attribute needed. The menu is driven entirely by DataContext inheritance:
+Když `EDViewModel` okna vystavuje neprázdný `Actions` seznam, `EDFooter` automaticky zobrazí
+**rozbalovací menu „Akce"** v levém dolním rohu — žádný XAML atribut není potřeba. Menu je řízeno
+výhradně dědičností DataContext:
 
-- `ActionsMenuItem` binds `ItemsSource="{Binding Actions}"`.
-- `Menu` visibility binds to `ActionsMenuItem.HasItems` via `BooleanToVisibilityConverter` — the menu appears and disappears as the collection changes.
-- Each item's `Header`, `Command`, `InputGestureText`, and `Icon` are set through `ItemContainerStyle` bindings on `EDAction` properties.
+- `ActionsMenuItem` binduje `ItemsSource="{Binding Actions}"`.
+- Viditelnost `Menu` binduje na `ActionsMenuItem.HasItems` přes `BooleanToVisibilityConverter` — menu se zobrazí a schová podle změn kolekce.
+- `Header`, `Command`, `InputGestureText` a `Icon` každé položky se nastavují přes `ItemContainerStyle` bindingy na vlastnosti `EDAction`.
 
-The `LeftContent` slot (custom buttons) sits to the right of the "Akce" menu in the same `StackPanel`.
+Slot `LeftContent` (vlastní tlačítka) je napravo od menu „Akce" ve stejném `StackPanel`.
 
-## ViewModel integration (automatic)
+## Napojení na ViewModel (automatické)
 
-On `Loaded`, `EDFooter` walks up to the parent `Window` and:
-1. Subscribes to `Window.DataContextChanged`.
-2. If DataContext is an `EDViewModel`, subscribes to `EDViewModel.RequestClose`.
-3. When `RequestClose` fires with a non-null result, tries `window.DialogResult = result`
-   (succeeds for `ShowDialog()` windows, also closes them). If that throws
-   `InvalidOperationException` (i.e. a `Show()` window), falls back to `window.Close()`.
-   When `RequestClose` fires with `null`, calls `window.Close()` directly.
-   No flag needed on the host window.
+Na `Loaded` se `EDFooter` vyšplhá k rodičovskému `Window` a:
 
-## Usage in XAML
+1. Přihlásí se k `Window.DataContextChanged`.
+2. Pokud je DataContext `EDViewModel`, přihlásí se k `EDViewModel.RequestClose`.
+3. Když `RequestClose` vyvolá non-null výsledek, zkusí `window.DialogResult = result`
+   (úspěšné pro `ShowDialog()` okna, ta i zavře). Pokud to vyhodí
+   `InvalidOperationException` (tj. `Show()` okno), spadne na `window.Close()`.
+   Když `RequestClose` vyvolá `null`, volá `window.Close()` přímo.
+   Na hostitelském okně není potřeba žádný flag.
+
+## Použití v XAML
 
 ```xaml
 <Window xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls">
@@ -50,45 +53,48 @@ On `Loaded`, `EDFooter` walks up to the parent `Window` and:
             </ef:EDFooter.LeftContent>
         </ef:EDFooter>
 
-        <!-- main content fills remaining space -->
+        <!-- hlavní obsah vyplní zbývající prostor -->
         <Grid>...</Grid>
     </DockPanel>
 </Window>
 ```
 
-## Designer support
+## Podpora designeru
 
-`EDFooter` is a standard UserControl — its buttons are declared in XAML and always visible
-in the WPF designer. `FooterMode` switches button visibility via a `DependencyProperty`
-`PropertyChangedCallback`, which also runs at design time.
+`EDFooter` je standardní UserControl — jeho tlačítka jsou deklarována v XAML a vždy viditelná
+v designeru. `FooterMode` přepíná viditelnost tlačítek přes `DependencyProperty`
+`PropertyChangedCallback`, který běží i v design time.
 
 ---
 
-## Creating a new standard window
+## Vytvoření nového standardního okna
 
-1. Add a new `Window` to EDISONMAIN2 (standard WPF, no special base class).
-2. Add a `<ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>` at the bottom of the
-   root `DockPanel`.
-3. Create a ViewModel that extends `EDViewModel` (or `EDDataViewModel` if MLRest is needed).
-4. In the constructor set `DataContext = new MyViewModel(...)` **before** `InitializeComponent()`.
-5. Add a parameterless constructor for the WPF designer (just calls `InitializeComponent()`).
+1. Přidej nové `Window` do EDISONMAIN2 (standardní WPF, žádná speciální bázová třída).
+2. Přidej `<ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>` na spodek
+   kořenového `DockPanel`.
+3. Vytvoř ViewModel dědící `EDViewModel`. Caché volání jdou přes `MLRest` property
+   (čte z `EDServices.Current`).
+4. V konstruktoru nastav `DataContext = new MyViewModel(...)` **před** `InitializeComponent()`.
 
 ```csharp
 public partial class MyWindow : Window
 {
-    private readonly MyViewModel? _vm;
+    private readonly MyViewModel _vm;
 
-    public MyWindow() => InitializeComponent();          // designer
-
-    public MyWindow(MLRest mlRest)
+    public MyWindow()
     {
-        DataContext = _vm = new MyViewModel(mlRest);
+        DataContext = _vm = new MyWindowViewModel();
         InitializeComponent();
     }
 }
 ```
 
-6. Register the window class in `ReflectionWindowNavigator` (handled automatically — the
-   navigator resolves windows by class name). Add a command + toolbar button in
-   `EdisonMainViewModel` / `EdisonMainWindow.xaml` — follow the
-   `OpenEDComponentAndViewModelTestCommand` / `EDComponentAndViewModelTestWindow` pattern.
+5. Zaregistruj třídu okna v `ReflectionWindowNavigator` (děje se automaticky — navigator
+   nachází okna podle názvu třídy). Přidej příkaz + tlačítko na toolbar v
+   `EdisonMainViewModel` / `EdisonMainWindow.xaml` — viz vzor
+   `OpenEDComponentAndViewModelTestCommand` / `EDComponentAndViewModelTestWindow`.
+
+```csharp
+// V EdisonMainViewModel:
+OpenMyWindowCommand = Command(() => WindowNavigator.ShowDialog("MyWindow"));
+```

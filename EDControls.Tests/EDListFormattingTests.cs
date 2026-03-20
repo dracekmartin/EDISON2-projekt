@@ -1,3 +1,4 @@
+using System.Globalization;
 using EDControls.EDList;
 
 namespace EDControls.Tests;
@@ -64,6 +65,13 @@ public class EDListFormattingTests
     }
 
     // ─── FormatNumber ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void FormatNumber_ValidNumber_FormatsCorrectly()
+    {
+        string expected = 1234.5.ToString("N2", CultureInfo.CurrentCulture);
+        Assert.Equal(expected, EDList.EDList.FormatNumber("1234.5", "N2"));
+    }
 
     [Fact]
     public void FormatNumber_EmptyFormat_ReturnsRaw()

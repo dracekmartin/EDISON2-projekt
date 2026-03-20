@@ -47,7 +47,7 @@ public class EDViewModelTests
     public void CloseDialog_Null_FiresRequestCloseWithNull()
     {
         var vm = new TestViewModel(MockServices());
-        bool? received = 42 > 0 ? true : null; // init to non-null
+        bool? received = true;
         vm.RequestClose += result => received = result;
 
         vm.InvokeCloseDialog(null);
@@ -135,6 +135,55 @@ public class EDViewModelTests
         Assert.Same(mockPopup, vm.PopupDisplayer);
     }
 
+    [Fact]
+    public void Command_ExceptionRoutedToMockPopupDisplayer()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        var vm = new TestViewModel(MockServices(popup: mockPopup));
+        var ex = new InvalidOperationException("test error");
+
+        var cmd = vm.CreateTestCommand(() => throw ex);
+        cmd.Execute(null);
+
+        mockPopup.Received(1).Error(ex);
+    }
+
+    [Fact]
+    public void Command_NoExceptionDoesNotCallPopupDisplayer()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        var vm = new TestViewModel(MockServices(popup: mockPopup));
+
+        var cmd = vm.CreateTestCommand(() => { });
+        cmd.Execute(null);
+
+        mockPopup.DidNotReceive().Error(Arg.Any<Exception>());
+    }
+
+    [Fact]
+    public void StandardActions_WorksWithoutWpfApplication()
+    {
+        var vm = new TestViewModelWithActions(MockServices());
+        vm.SetupActions();
+
+        Assert.NotNull(vm.Actions);
+        Assert.Equal(3, vm.Actions!.Count);
+        Assert.Equal("Přidat", vm.Actions[0].Label);
+        Assert.Equal("Upravit", vm.Actions[1].Label);
+        Assert.Equal("Smazat", vm.Actions[2].Label);
+    }
+
+    [Fact]
+    public void StandardActions_CommandsAreWiredToViewModel()
+    {
+        var vm = new TestViewModelWithActions(MockServices());
+        vm.SetupActions();
+
+        Assert.Same(vm.AddCommand, vm.Actions![0].Command);
+        Assert.Same(vm.EditCommand, vm.Actions[1].Command);
+        Assert.Same(vm.DeleteCommand, vm.Actions[2].Command);
+    }
+
     /// <summary>
     /// Concrete subclass that exposes protected members for testing.
     /// </summary>
@@ -148,5 +197,13 @@ public class EDViewModelTests
         }
 
         public void InvokeCloseDialog(bool? result) => CloseDialog(result);
+
+        public RelayCommand CreateTestCommand(Action action) => Command(action);
+    }
+
+    private class TestViewModelWithActions(EDServices services) : EDViewModel.EDViewModel(services)
+    {
+        public void SetupActions() =>
+            Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];
     }
 }

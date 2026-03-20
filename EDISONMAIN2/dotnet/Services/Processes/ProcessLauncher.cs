@@ -7,7 +7,7 @@ using System.IO;
 
 namespace EDISONMAIN2.Services.Processes
 {
-    public class ProcessLaunchService(ConnectionParams connParams) : IProcessLaunchService
+    public class ProcessLauncher(ConnectionParams connParams) : IProcessLauncher
     {
         private readonly List<Process> _processes = [];
         private readonly ConnectionParams _connParams = connParams;

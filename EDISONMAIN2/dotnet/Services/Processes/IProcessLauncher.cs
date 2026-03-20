@@ -2,7 +2,7 @@ using EDISONMAIN2.Services.Modules;
 
 namespace EDISONMAIN2.Services.Processes
 {
-    public interface IProcessLaunchService
+    public interface IProcessLauncher
     {
         /// <summary>Launches the executable for the given module using the provided connection context.</summary>
         void Launch(ExecutableModule module, string Namespace, string Idfa);

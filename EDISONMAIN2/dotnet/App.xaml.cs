@@ -1,9 +1,16 @@
-﻿using System.Windows;
+using System;
+using System.Diagnostics;
+using System.Linq;
+using System.Windows;
+using ALVA.EDISONAPI;
+using ALWA.SYS;
+using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Services;
-using EDISONMAIN2.Services.Data;
+using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
 using EDISONMAIN2.Windows.EdisonMainWindow;
+using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2
 {
@@ -17,11 +24,52 @@ namespace EDISONMAIN2
             var services = new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer());
             EDServices.Initialize(services);
 
-            // TODO (Priority 5): load these from config rather than hardcoding defaults
-            var connParams = new ConnectionParams("192.168.16.1", 57770, "martin.hubata", "martin.hubata", 167);
-            var dataService = new EdisonMainDataService(connParams);
-            var processService = new ProcessLaunchService(connParams);
-            var viewModel = new EdisonMainViewModel(dataService, processService, connParams);
+            var config = SettingsLoader.Load();
+            string server = config.Server.Host;
+            int port = config.Server.Port;
+
+            var loginRest = new MLRest(server, port, "", "");
+
+            // Fetch companies first — Caché Login method needs non-empty Idfa
+            string errState = "";
+            var companies = GetCompanyList(ref errState, loginRest, false);
+            if (!string.IsNullOrEmpty(errState))
+                throw new InvalidOperationException(errState);
+
+            var defaultCompany = companies.FirstOrDefault(c => c.IsDefault);
+            if (defaultCompany.Id == null) defaultCompany = companies[0];
+
+            // Set Idfa so ALVA.SYS.Login.Login can resolve user's startupForm
+            loginRest.Idfa = defaultCompany.Id;
+
+            LoginResult login;
+#if DEBUG
+            login = new LoginResult(167, "martin.hubata", "martin.hubata", true, "", false, true, "");
+#else
+            // Login — prevent auto-shutdown when dialog closes (no other window is open yet)
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest);
+            if (loginWindow.ShowDialog() != true)
+            {
+                Shutdown();
+                return;
+            }
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
+            login = loginWindow.Result!;
+#endif
+
+            // Create the real MLRest connection with company context
+            var connParams = new ConnectionParams(server, port, login.UserName, login.FullName, login.Mlp);
+            var mlRest = new MLRestAdapter(new MLRest(server, port, defaultCompany.Database, defaultCompany.Id)
+            {
+                LoginName = login.UserName,
+                FullName  = login.FullName,
+                Mlp       = login.Mlp.ToString()
+            });
+
+            var treeGetter = new ModuleTreeGetter();
+            var processLauncher = new ProcessLauncher(connParams);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();

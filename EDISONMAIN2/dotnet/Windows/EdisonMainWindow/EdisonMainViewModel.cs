@@ -1,15 +1,13 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
-using ALVA.EDISONAPI;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Services;
-using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
-using System.Windows;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -18,8 +16,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
     class EdisonMainViewModel : EDViewModel
     {
-        private readonly IEdisonMainDataService _dataService;
-        private readonly IProcessLaunchService _processService;
+        private readonly IModuleTreeGetter _treeGetter;
+        private readonly IProcessLauncher _processLauncher;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -27,35 +25,37 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenEDComponentAndViewModelTestCommand { get; }
         public ICommand CloseAllCommand { get; }
 
-        public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
+        public EdisonMainViewModel(
+            IReadOnlyList<CompanyStruct> companies,
+            IMLRest mlRest,
+            IModuleTreeGetter treeService,
+            IProcessLauncher processService,
+            ConnectionParams connParams)
         {
+            _treeGetter = treeService;
+            _processLauncher = processService;
             ConnParams = connParams;
-            _dataService = dataService;
-            _processService = processService;
 
-            OpenModuleCommand        = new RelayCommand<IModule>(OpenModule);
-            OpenInputFormTestCommand = new RelayCommand(() => WindowNavigator.Show("EDInputFormTestWindow"));
-            OpenEDListTestCommand    = new RelayCommand(() => WindowNavigator.Show("EDListTestWindow"));
-            OpenEDComponentAndViewModelTestCommand = new RelayCommand(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
-            CloseAllCommand          = new RelayCommand(_processService.CloseAll);
+            OpenModuleCommand        = Command<IModule>(OpenModule);
+            OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
+            OpenEDListTestCommand    = Command(() => WindowNavigator.Show("EDListTestWindow"));
+            OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
+            CloseAllCommand          = Command(_processLauncher.CloseAll);
 
             TopLevelModules = [];
 
-            var companies = _dataService.GetCompanies();
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
 
-            _services.MLRest = new MLRestAdapter(new MLRest(ConnParams.Server, ConnParams.RestPort, Namespace, Idfa)
-            {
-                LoginName = ConnParams.UserName,
-                FullName  = ConnParams.FullName,
-                Mlp       = ConnParams.Mlp.ToString()
-            });
+            _services.MLRest = mlRest;
 
-            var tree = _dataService.GetModuleTree(Namespace, Idfa);
+            var tree = _treeGetter.GetModuleTree(MLRest!);
             foreach (var module in tree)
                 TopLevelModules.Add(module);
         }
+
+        /// <summary>Exposed for StatusBar bindings in EdisonMainWindow.xaml.</summary>
+        public ConnectionParams ConnParams { get; }
 
         public ObservableCollection<IModule> TopLevelModules { get; }
 
@@ -69,18 +69,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             {
                 if (_selectedCompanyIndex != value)
                 {
-                    var result = MessageBox.Show(
-                        "Změna společnosti zavře všechna otevřená okna. Pokračovat?",
-                        "Upozornění",
-                        MessageBoxButton.YesNo,
-                        MessageBoxImage.Warning);
-
-                    if (result != MessageBoxResult.Yes) return;
+                    if (!PopupDisplayer.Confirm("Změna společnosti zavře všechna otevřená okna. Pokračovat?"))
+                        return;
 
                     Set(ref _selectedCompanyIndex, value);
                     OnPropertyChanged(nameof(Namespace));
                     OnPropertyChanged(nameof(Idfa));
-                    _processService.CloseAll();
+                    _processLauncher.CloseAll();
                     MLRest!.DataNamespace = Namespace;
                     MLRest!.Idfa = Idfa;
                 }
@@ -89,8 +84,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         public CompanyItem SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
 
-        public ConnectionParams ConnParams { get; init; }
-
         public string Namespace => SelectedCompany.Database;
 
         public string Idfa => SelectedCompany.Id;
@@ -98,7 +91,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void OpenModule(IModule module)
         {
             if (module is ExecutableModule executableModule)
-                _processService.Launch(executableModule, Namespace, Idfa);
+                _processLauncher.Launch(executableModule, Namespace, Idfa);
         }
     }
 }

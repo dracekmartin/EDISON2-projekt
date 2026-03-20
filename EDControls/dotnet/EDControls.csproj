@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="EDControls.Tests" />
+    <InternalsVisibleTo Include="EDISONMAIN2.Tests" />
   </ItemGroup>
 
   <ItemGroup>

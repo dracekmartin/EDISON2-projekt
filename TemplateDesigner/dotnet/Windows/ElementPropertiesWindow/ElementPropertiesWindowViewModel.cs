@@ -75,7 +75,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         _currentInvalidate     = invalidate;
 
         // OkCommand je zděděn z EDViewModel — base.OnOk() volá CloseDialog(true), což je správně
-        CancelCommand = new RelayCommand(() => { CancelChanges(); CloseDialog(false); });
+        CancelCommand = Command(() => { CancelChanges(); CloseDialog(false); });
     }
 
     // ── Příprava deskriptorů ──────────────────────────────────────────────

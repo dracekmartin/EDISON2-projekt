@@ -271,20 +271,20 @@ class TableEditorDialogViewModel : EDViewModel
         foreach (var row in element.SummaryRows ?? [])
             SummaryVMs.Add(RowVM.FromModel(row, element.Columns));
 
-        AddColumnCommand      = new RelayCommand(AddColumn);
-        RemoveColumnCommand   = new RelayCommand(RemoveColumn);
-        MoveColumnUpCommand   = new RelayCommand(MoveColumnUp);
-        MoveColumnDownCommand = new RelayCommand(MoveColumnDown);
+        AddColumnCommand      = Command(AddColumn);
+        RemoveColumnCommand   = Command(RemoveColumn);
+        MoveColumnUpCommand   = Command(MoveColumnUp);
+        MoveColumnDownCommand = Command(MoveColumnDown);
 
-        AddRowCommand         = new RelayCommand(AddRow);
-        RemoveRowCommand      = new RelayCommand(RemoveRow);
-        MoveRowUpCommand      = new RelayCommand(MoveRowUp);
-        MoveRowDownCommand    = new RelayCommand(MoveRowDown);
+        AddRowCommand         = Command(AddRow);
+        RemoveRowCommand      = Command(RemoveRow);
+        MoveRowUpCommand      = Command(MoveRowUp);
+        MoveRowDownCommand    = Command(MoveRowDown);
 
-        AddSummaryCommand     = new RelayCommand(AddSummary);
-        RemoveSummaryCommand  = new RelayCommand(RemoveSummary);
+        AddSummaryCommand     = Command(AddSummary);
+        RemoveSummaryCommand  = Command(RemoveSummary);
 
-        LoadTemplateCommand   = new RelayCommand(LoadTemplate);
+        LoadTemplateCommand   = Command(LoadTemplate);
     }
 
     // ── Sloupce ───────────────────────────────────────────────────────────────

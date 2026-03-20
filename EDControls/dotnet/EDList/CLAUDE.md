@@ -1,18 +1,21 @@
 # EDList — poznámky pro vývojáře
 
-## Stav: FUNKČNÍ — MVP implementováno ✅
+## Stav: FUNKČNÍ ✅
 
 **Co funguje:**
+
 - ✅ Kompletní backend (Column.cls, List.cls, MockList.cls)
 - ✅ Plně funkční EDList.xaml/.xaml.cs UserControl
 - ✅ Parsování a formátování všech základních typů (TEXT, NUMBER, DATE, DATETIME, BOOL, HHMM, COLOR)
-- ✅ Eventy: SelectionChanged, RowDoubleClicked
+- ✅ Eventy: SelectionChanged, RowDoubleClicked, CellLinkClicked
+- ✅ isLink sloupce — klikatelný podtržený text s `CellLinkClicked` eventem
 - ✅ Testovací okno EDListTestWindow s mock daty
 - ✅ JSON komunikace přes MLRest
+- ✅ MLRest se čte automaticky z DataContext rodičovského okna (EDViewModel)
 
 **Co chybí:**
+
 - ⚠️ IMAGE typ (není implementován DataGridTemplateColumn s Image)
-- ⚠️ isLink sloupce (event definován, ale chybí klikatelný UI)
 - ⚠️ CODEBOOK typ
 - ⚠️ Filtrování v LoadList
 - ⚠️ ColumnLayout pro ukládání uživatelského nastavení
@@ -20,9 +23,10 @@
 ## Účel
 
 `EDList` je samostatný WPF `UserControl` zobrazující read-only seznam (tabulka se sloupci
-a řádky) řízený z Caché backendu. Host nastaví `MLRest` a `CacheClass`, zavolá
-`InitializeList()` pro definici sloupců a `LoadList()` pro načtení dat. Výběr řádku
-a standardní interakce (dvojklik, kontextové menu) jsou vystaveny jako eventy.
+a řádky) řízený z Caché backendu. Host nastaví `CacheClass` a zavolá `InitializeList()`
+pro definici sloupců a `LoadList()` pro načtení dat. `MLRest` se čte automaticky
+z `DataContext` rodičovského okna (`EDViewModel`). Výběr řádku a standardní interakce
+(dvojklik, kontextové menu) jsou vystaveny jako eventy.
 
 Více instancí v jednom okně je standardní scénář — každá instance je samostatný objekt
 se svým `CacheClass` a voláními:
@@ -635,8 +639,8 @@ namespace EDControls.EDList
 {
     public partial class EDList : UserControl
     {
-        // ─── Konfigurace (nastavit před prvním voláním) ───────────────────
-        public MLRest? MLRest { get; set; }
+        // ─── Konfigurace ──────────────────────────────────────────────────
+        // MLRest se čte automaticky z DataContext rodičovského okna (EDViewModel)
         public string CacheClass { get; set; } = "";
 
         // ─── Volání ───────────────────────────────────────────────────────
@@ -660,8 +664,7 @@ namespace EDControls.EDList
         /// Vyvolá se při změně výběru. Parametr: rowId nebo null
         public event EventHandler<string?>? SelectionChanged;
 
-        /// Vyvolá se při kliknutí na buňku s isLink=true
-        /// ZATÍM NEIMPLEMENTOVÁNO — event definován, ale chybí UI
+        /// Vyvolá se při kliknutí na buňku s isLink=true (podtržený modrý text)
         public event EventHandler<(string RowId, string ColKey)>? CellLinkClicked;
     }
 }
@@ -718,12 +721,12 @@ Generování sloupců po `InitializeList`:
 ```csharp
 public partial class VozidlaWindow : Window
 {
-    public VozidlaWindow(MLRest mlRest)
+    public VozidlaWindow()
     {
+        DataContext = new VozidlaViewModel();
         InitializeComponent();
 
-        // Konfigurace
-        VozidlaList.MLRest     = mlRest;
+        // Konfigurace — MLRest se čte z DataContext (EDViewModel) automaticky
         VozidlaList.CacheClass = "APP.VozidlaList";
 
         // Načtení
@@ -762,18 +765,17 @@ public partial class VozidlaWindow : Window
 // Dvě instance EDList v jednom okně
 public partial class DispecinkWindow : Window
 {
-    public DispecinkWindow(MLRest mlRest)
+    public DispecinkWindow()
     {
+        DataContext = new DispecinkViewModel();
         InitializeComponent();
 
-        // Master list — vozidla
-        ListVozidla.MLRest     = mlRest;
+        // Master list — vozidla (MLRest z DataContext automaticky)
         ListVozidla.CacheClass = "APP.VozidlaList";
         ListVozidla.InitializeList();
         ListVozidla.LoadList();
 
         // Detail list — spoje vybraného vozidla
-        ListSpoje.MLRest     = mlRest;
         ListSpoje.CacheClass = "APP.SpojeList";
         ListSpoje.InitializeList();
 
@@ -805,8 +807,8 @@ Testovací okno je v projektu EDISONMAIN2 ve složce `Windows/EDListTestWindow/`
 ### Použití
 
 ```csharp
-var window = new EDListTestWindow(mlRest);
-window.ShowDialog();
+// Otevřeni přes WindowNavigator (MLRest z EDServices automaticky):
+WindowNavigator.Show("EDListTestWindow");
 ```
 
 ### Funkce
@@ -849,7 +851,7 @@ window.ShowDialog();
 ### 🚧 Dokončení základních funkcí
 
 - [ ] **IMAGE typ** — DataGridTemplateColumn s Image elementem + resource lookup
-- [ ] **isLink sloupce** — DataGridHyperlinkColumn nebo klikatelný TextBlock + event CellLinkClicked
+- [x] **isLink sloupce** — DataGridTemplateColumn s podtrženým modrým textem + event CellLinkClicked ✅
 - [ ] **CODEBOOK typ** — mapování kódů na labely z inline options
 
 ### 📋 Pokročilé funkce
