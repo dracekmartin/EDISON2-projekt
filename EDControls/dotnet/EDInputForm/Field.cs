@@ -35,6 +35,9 @@ namespace EDControls.EDInputForm
 
         public EFieldType FieldType { get; set; } = EFieldType.Text;
 
+        /// <summary>When false, the field is rendered as read-only (server-controlled).</summary>
+        public bool Editable { get; set; } = true;
+
         private string? _value;
         public string? Value
         {

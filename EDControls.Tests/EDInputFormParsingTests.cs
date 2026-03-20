@@ -310,6 +310,46 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
+    public void ParseItems_ParsesNonEditableField()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0", "", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.False(f.Editable);
+    }
+
+    [Fact]
+    public void ParseItems_FieldWithoutEditableDefaultsToTrue()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.True(f.Editable);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsEditableField()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Value = "v", Editable = false
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.False(f.Editable);
+    }
+
+    [Fact]
     public void SerializeItemsCVar_NullItems_ReturnsEmptyCVar()
     {
         CVar result = EDInputForm.EDInputForm.SerializeItemsCVar(null);

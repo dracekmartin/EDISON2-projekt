@@ -15,10 +15,10 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `EDInputFormController.cs` | Testovatelná orchestrace (Init/Validate/Save) bez WPF závislosti. Přijímá `IMLRest` a `CacheClass` jako parametry konstruktoru. |
 | `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number` (1-based sekvenční). |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsVisible` (řízené serverem), `IsExpanded` (řízené uživatelem). Implementuje `INotifyPropertyChanged`. |
-| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `ValidationError`, `Required`, `ValidateOnChange`, `ParentGroup`. Implementuje `INotifyPropertyChanged`. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `ValidationError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`. Implementuje `INotifyPropertyChanged`. |
 | `EFieldType.cs` | Enum: `Text`, `Number`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
-| `ValidationContext.cs` | Nese trigger + `ChangedKey` — serializuje se do CTRL záznamu v IN. |
+| `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
 | `DesignTimeData/EDInputFormDesignTimeData.cs` | Design-time ukázková data; nikdy se neinstanciuje za běhu. |
 
 ## Integrace s hostem (minimální)
@@ -67,20 +67,23 @@ Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
 CVar["1"] = CList("GROUP", number, groupName, "1"|"0"(visible))
-CVar["2"] = CList("FIELD", number, key, label, "TEXT"|"NUMBER", value, "0"|"1"(validateOnChange), "0"|"1"(required))
+CVar["2"] = CList("FIELD", number, key, label, "TEXT"|"NUMBER", value, "0"|"1"(validateOnChange), "0"|"1"(required), [validationError], [editable])
 ```
 
-Caché OUT může přidat 9. element u FIELD záznamů pro validační chyby:
+Caché OUT může přidat 9. element u FIELD záznamů pro validační chyby a 10. element pro editovatelnost:
 
 ```text
-CList("FIELD", number, key, label, "TEXT", value, "0", "1", "Chyba: pole je povinné")
+CList("FIELD", number, key, label, "TEXT", value, "0", "1", "Chyba: pole je povinné", "1")
 ```
+
+Editable (10. pozice): `"1"` = editovatelné (výchozí), `"0"` = pouze ke čtení. Pokud chybí, pole je editovatelné.
 
 ### Struktura volání Validate
 
 ```text
-IN["trigger"] = "Init" | "Change" | "BeforeSave"
-IN["1"..]     = serializované položky formuláře (CList záznamy)
+IN["trigger"]    = "Init" | "Change" | "BeforeSave"
+IN["changedKey"] = "fieldKey"   (pouze pro Change trigger s konkrétním polem; jinak chybí)
+IN["1"..]        = serializované položky formuláře (CList záznamy)
 ```
 
 ## Automatická inicializace při Loaded
@@ -92,6 +95,8 @@ Pokud je `CacheClass` neprázdný, `Init()` se zavolá automaticky při událost
 
 Když `Field` s `ValidateOnChange == true` změní svou `Value`, EDInputForm zavolá
 `ExecuteValidate(Change)` automaticky přes `Dispatcher.BeginInvoke` — bez zásahu hostitele.
+Klíč změněného pole se předá jako `changedKey` — na Caché straně dostupný přes
+`form.changedKey`, `form.HasChangedField()` nebo `form.GetChangedField()`.
 
 ## Klávesová navigace
 

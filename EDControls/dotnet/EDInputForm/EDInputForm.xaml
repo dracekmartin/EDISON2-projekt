@@ -24,6 +24,10 @@
                             <Setter Property="BorderBrush" Value="Red"/>
                             <Setter Property="BorderThickness" Value="1.5"/>
                         </DataTrigger>
+                        <DataTrigger Binding="{Binding Editable}" Value="False">
+                            <Setter Property="IsReadOnly" Value="True"/>
+                            <Setter Property="Background" Value="#F0F0F0"/>
+                        </DataTrigger>
                     </Style.Triggers>
                 </Style>
 
@@ -55,6 +59,7 @@
                 <!-- Date: DatePicker with calendar -->
                 <DataTemplate x:Key="DateFieldTemplate">
                     <DatePicker SelectedDate="{Binding DateValue}"
+                                IsEnabled="{Binding Editable}"
                                 ToolTip="{Binding ValidationError}">
                         <DatePicker.Style>
                             <Style TargetType="DatePicker">
@@ -72,6 +77,7 @@
                 <!-- Bool: CheckBox -->
                 <DataTemplate x:Key="BoolFieldTemplate">
                     <CheckBox IsChecked="{Binding BoolValue}"
+                              IsEnabled="{Binding Editable}"
                               VerticalAlignment="Center"
                               ToolTip="{Binding ValidationError}"/>
                 </DataTemplate>

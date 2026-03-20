@@ -148,4 +148,51 @@ public class EDInputFormControllerTests
         mlRest.Received().QueryOrThrow(CacheClass, "Validate",
             Arg.Is<CVar>(c => c["trigger"].Value != null && c["trigger"].Value.ToString() == "Change"));
     }
+
+    [Fact]
+    public void Validate_WithChangedKey_SendsChangedKeyInInput()
+    {
+        var data = FieldData();
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        controller.Validate("k");
+
+        mlRest.Received().QueryOrThrow(CacheClass, "Validate",
+            Arg.Is<CVar>(c =>
+                c["trigger"].Value != null && c["trigger"].Value.ToString() == "Change" &&
+                c["changedKey"].Value != null && c["changedKey"].Value.ToString() == "k"));
+    }
+
+    [Fact]
+    public void Validate_WithoutChangedKey_DoesNotSendChangedKey()
+    {
+        var data = FieldData();
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        controller.Validate();
+
+        mlRest.Received().QueryOrThrow(CacheClass, "Validate",
+            Arg.Is<CVar>(c =>
+                c["trigger"].Value != null && c["trigger"].Value.ToString() == "Change" &&
+                (c["changedKey"].Value == null || c["changedKey"].Value.ToString() == "")));
+    }
+
+    [Fact]
+    public void Init_DoesNotSendChangedKey()
+    {
+        var data = FieldData();
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+
+        controller.Init();
+
+        mlRest.Received().QueryOrThrow(CacheClass, "Validate",
+            Arg.Is<CVar>(c =>
+                c["trigger"].Value != null && c["trigger"].Value.ToString() == "Init" &&
+                (c["changedKey"].Value == null || c["changedKey"].Value.ToString() == "")));
+    }
 }

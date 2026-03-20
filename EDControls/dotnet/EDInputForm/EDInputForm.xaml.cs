@@ -101,7 +101,9 @@ namespace EDControls.EDInputForm
                         f.FieldType.ToWire(),
                         f.Value ?? "",
                         f.ValidateOnChange ? "1" : "0",
-                        f.Required ? "1" : "0"),
+                        f.Required ? "1" : "0",
+                        f.ValidationError ?? "",
+                        f.Editable ? "1" : "0"),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -142,6 +144,7 @@ namespace EDControls.EDInputForm
                         ValidateOnChange = row.GetString(7) == "1",
                         Required         = row.GetString(8) == "1",
                         ValidationError  = row.Length >= 9 && row.GetString(9) != "" ? row.GetString(9) : null,
+                        Editable         = row.Length < 10 || row.GetString(10) != "0",
                         ParentGroup      = currentGroup,
                     });
                 }
@@ -256,8 +259,8 @@ namespace EDControls.EDInputForm
 
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                Debug.WriteLine("[EDInputForm] Auto-validating on Change");
-                Controller.Validate();
+                Debug.WriteLine($"[EDInputForm] Auto-validating on Change (changedKey={field.Key})");
+                Controller.Validate(field.Key);
                 Items = Controller.Items;
             }));
         }

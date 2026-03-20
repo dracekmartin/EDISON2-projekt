@@ -37,6 +37,13 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		d form.AddFieldToLastGroup("aktivni",  "Aktivní",  $$$FieldTypeBool, 0, 0)
 		d form.AddFieldToLastGroup("smazano",  "Smazáno",  $$$FieldTypeBool, 0, 0)
 
+		d form.AddGroup("nemoc", "Nemoc")
+		d form.AddFieldToLastGroup("nemocny", "Nemocný", $$$FieldTypeBool, 1, 0)
+		s f = form.AddFieldToLastGroup("od", "Od", $$$FieldTypeDate, 0, 0)
+		s f.editable = 0
+		s f = form.AddFieldToLastGroup("do", "Do", $$$FieldTypeDate, 0, 0)
+		s f.editable = 0
+
 		d form.WriteToOut()
 	}
 	catch (ex) { $$$CatchErrRest }
@@ -71,7 +78,21 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 
 		s f = form.GetField("prijmeni")
 		i f.value="" s f.validationError = "Příjmení je povinné"
-		
+
+		// Nemocný checkbox controls editability of Od/Do date fields
+		s nemocny = form.GetField("nemocny")
+		s fOd = form.GetField("od")
+		s fDo = form.GetField("do")
+		i nemocny.value="1" {
+			s fOd.editable = 1
+			s fDo.editable = 1
+		} else {
+			s fOd.editable = 0
+			s fDo.editable = 0
+			s fOd.value = ""
+			s fDo.value = ""
+		}
+
 		d form.WriteToOut()
 	}
 	catch (ex) { $$$CatchErrRest }
