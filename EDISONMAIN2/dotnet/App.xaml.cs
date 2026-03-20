@@ -69,7 +69,7 @@ namespace EDISONMAIN2
 
             var treeGetter = new ModuleTreeGetter();
             var processLauncher = new ProcessLauncher(connParams);
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();

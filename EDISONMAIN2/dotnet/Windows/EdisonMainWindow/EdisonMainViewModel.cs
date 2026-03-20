@@ -5,6 +5,7 @@ using System.Windows.Input;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDISONMAIN2.Services;
 using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
 using static ALVA.EDISONAPI.Database;
@@ -28,10 +29,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
             IModuleTreeGetter treeService,
-            IProcessLauncher processService)
+            IProcessLauncher processService,
+            ConnectionParams connParams)
         {
             _treeGetter = treeService;
             _processLauncher = processService;
+            ConnParams = connParams;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
@@ -50,6 +53,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             foreach (var module in tree)
                 TopLevelModules.Add(module);
         }
+
+        /// <summary>Exposed for StatusBar bindings in EdisonMainWindow.xaml.</summary>
+        public ConnectionParams ConnParams { get; }
 
         public ObservableCollection<IModule> TopLevelModules { get; }
 
