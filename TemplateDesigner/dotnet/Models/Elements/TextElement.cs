@@ -67,7 +67,10 @@ public class TextElement : TemplateElement
             ?? SKTypeface.Default;
 
         // FontSize je v bodech (pt): 1pt = 0.3528mm → mm → px
-        float fontSizePx = ctx.Px(FontSize * 0.3528f);
+        // V designeru (bez dat) omezit velikost fontu, aby placeholdery typu {NAZEV_POLE}
+        // nepřetékaly — zobrazit čitelně místo ve skutečné velikosti.
+        float effectiveFontSize = ctx.Data is null ? Math.Min(FontSize, 10f) : FontSize;
+        float fontSizePx = ctx.Px(effectiveFontSize * 0.3528f);
         using var font = new SKFont(typeface, fontSizePx);
         using var paint = new SKPaint { Color = SkTextColor, IsAntialias = true };
 

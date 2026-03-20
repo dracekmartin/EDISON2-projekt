@@ -49,6 +49,10 @@ public partial class MainWindow : Window
     private float  _resizeMouseStartX, _resizeMouseStartY;
     private float  _resizeOriginX, _resizeOriginY;
     private float  _resizeSectionW, _resizeSectionH;
+    // Sdílená hranice — sousední element, který se mění opačně
+    private TemplateElement? _resizeNeighbor;
+    private float  _neighborInitX, _neighborInitY, _neighborInitW;
+    private float? _neighborInitH;
 
     // ── Adding element (drag from palette / field drag) ────────────────────────
     private string? _addingElementType;
@@ -1236,6 +1240,16 @@ public partial class MainWindow : Window
             InvalidateCanvas();
             e.Handled = true;
         }
+        else if (e.Key == Key.H && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.SplitSelected(horizontal: true);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.J && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.SplitSelected(horizontal: false);
+            e.Handled = true;
+        }
         else if (e.Key == Key.C && ctrl)
         {
             _vm.CopySelected();
@@ -1383,6 +1397,17 @@ public partial class MainWindow : Window
             _resizeSectionH    = origin.Section.EffectiveDesignerHeight;
             _resizeMouseStartX = (cx - _resizeOriginX) / _canvas.MmToPx;
             _resizeMouseStartY = (cy - _resizeOriginY) / _canvas.MmToPx;
+
+            // Detekce sousedního elementu na sdílené hranici
+            _resizeNeighbor = FindResizeNeighbor(el, handle, origin.Section);
+            if (_resizeNeighbor is not null)
+            {
+                _neighborInitX = _resizeNeighbor.X;
+                _neighborInitY = _resizeNeighbor.Y;
+                _neighborInitW = _resizeNeighbor.Width;
+                _neighborInitH = _resizeNeighbor.Height;
+            }
+
             _mouseMode         = MouseMode.Resizing;
             skCanvas.CaptureMouse();
             skCanvas.Cursor = GetResizeCursor(handle);
@@ -1535,8 +1560,37 @@ public partial class MainWindow : Window
             }
 
             var (newX, newY, newW, newH) = ComputeResize(mouseMmX, mouseMmY);
+
+            // Smart snap při resize
+            _vm.State.ActiveGapIndicators.Clear();
+            _vm.State.SnapTargetElements.Clear();
+            if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection)
+            {
+                bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
+                bool movR = _resizeHandle is ResizeHandle.TopRight or ResizeHandle.MiddleRight or ResizeHandle.BottomRight;
+                bool movT = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.TopCenter or ResizeHandle.TopRight;
+                bool movB = _resizeHandle is ResizeHandle.BottomLeft or ResizeHandle.BottomCenter or ResizeHandle.BottomRight;
+
+                var others = resizeSection.Elements.Where(e2 => e2 != _resizeElement);
+                float threshold = 8f / _canvas.MmToPx;
+
+                var snap = _snapEngine.CalculateResize(
+                    newX, newY, newW, newH,
+                    movL, movR, movT, movB,
+                    others, _resizeElement, threshold);
+
+                newX = snap.X; newY = snap.Y; newW = snap.W; newH = snap.H;
+                foreach (var g in snap.Gaps) _vm.State.ActiveGapIndicators.Add(g);
+                _vm.State.SnapTargetElements.AddRange(snap.Targets);
+            }
+
             _resizeElement.X = newX; _resizeElement.Y = newY;
             _resizeElement.Width = newW; _resizeElement.Height = newH;
+
+            // Synchronizovat sousední element na sdílené hranici
+            if (_resizeNeighbor is not null)
+                SyncNeighborResize(newX, newY, newW, newH);
+
             InvalidateCanvas();
             return;
         }
@@ -1732,26 +1786,52 @@ public partial class MainWindow : Window
         {
             if (commit)
             {
+                var commands = new List<IDesignerCommand>();
+
+                // Hlavní element
                 float? finalH = _resizeElement.Height;
                 if (_resizeElement.X != _resizeInitX || _resizeElement.Y != _resizeInitY ||
                     _resizeElement.Width != _resizeInitW || finalH != _resizeInitH)
                 {
-                    _vm.Execute(new ResizeElementCommand(
+                    commands.Add(new ResizeElementCommand(
                         _resizeElement,
                         _resizeInitX, _resizeInitY, _resizeInitW, _resizeInitH,
                         _resizeElement.X, _resizeElement.Y, _resizeElement.Width, finalH));
                 }
+
+                // Sousední element
+                if (_resizeNeighbor is not null)
+                {
+                    float? nFinalH = _resizeNeighbor.Height;
+                    if (_resizeNeighbor.X != _neighborInitX || _resizeNeighbor.Y != _neighborInitY ||
+                        _resizeNeighbor.Width != _neighborInitW || nFinalH != _neighborInitH)
+                    {
+                        commands.Add(new ResizeElementCommand(
+                            _resizeNeighbor,
+                            _neighborInitX, _neighborInitY, _neighborInitW, _neighborInitH,
+                            _resizeNeighbor.X, _resizeNeighbor.Y, _resizeNeighbor.Width, nFinalH));
+                    }
+                }
+
+                if (commands.Count == 1) _vm.Execute(commands[0]);
+                else if (commands.Count > 1) _vm.Execute(new CompositeCommand("Změna velikosti elementů", commands));
             }
             else
             {
                 _resizeElement.X = _resizeInitX; _resizeElement.Y = _resizeInitY;
                 _resizeElement.Width = _resizeInitW; _resizeElement.Height = _resizeInitH;
+                if (_resizeNeighbor is not null)
+                {
+                    _resizeNeighbor.X = _neighborInitX; _resizeNeighbor.Y = _neighborInitY;
+                    _resizeNeighbor.Width = _neighborInitW; _resizeNeighbor.Height = _neighborInitH;
+                }
             }
         }
         _vm?.State.ActiveGapIndicators.Clear();
         _vm?.State.SnapTargetElements.Clear();
-        _mouseMode     = MouseMode.Idle;
-        _resizeElement = null;
+        _mouseMode      = MouseMode.Idle;
+        _resizeElement  = null;
+        _resizeNeighbor = null;
         skCanvas.ReleaseMouseCapture();
         skCanvas.Cursor = Cursors.Arrow;
         InvalidateCanvas();
@@ -1825,6 +1905,102 @@ public partial class MainWindow : Window
         ResizeHandle.MiddleLeft  or ResizeHandle.MiddleRight  => Cursors.SizeWE,
         _ => Cursors.Arrow
     };
+
+    /// <summary>
+    /// Synchronizuje sousední element — opačná změna na sdílené hranici.
+    /// Např. táhnu pravou hranu doprava → sousedova levá hrana se posune doprava (zmenší se).
+    /// </summary>
+    private void SyncNeighborResize(float newX, float newY, float newW, float? newH)
+    {
+        if (_resizeNeighbor is null) return;
+        const float minW = 3f, minH = 2f;
+
+        switch (_resizeHandle)
+        {
+            // Táhnu pravou hranu → sousedova levá se posune
+            case ResizeHandle.MiddleRight or ResizeHandle.TopRight or ResizeHandle.BottomRight:
+            {
+                float newRight = newX + newW;
+                float neighborRight = _neighborInitX + _neighborInitW;
+                float nw = Math.Max(minW, neighborRight - newRight);
+                _resizeNeighbor.X = neighborRight - nw;
+                _resizeNeighbor.Width = nw;
+                break;
+            }
+            // Táhnu levou hranu → sousedova pravá se mění
+            case ResizeHandle.MiddleLeft or ResizeHandle.TopLeft or ResizeHandle.BottomLeft:
+            {
+                float nw = Math.Max(minW, newX - _neighborInitX);
+                _resizeNeighbor.Width = nw;
+                break;
+            }
+            // Táhnu spodní hranu → sousedova horní se posune
+            case ResizeHandle.BottomCenter:
+            {
+                float newBottom = newY + (newH ?? 0f);
+                float neighborBottom = _neighborInitY + (_neighborInitH ?? _resizeNeighbor.EffectiveDesignerHeight);
+                float nh = Math.Max(minH, neighborBottom - newBottom);
+                _resizeNeighbor.Y = neighborBottom - nh;
+                _resizeNeighbor.Height = nh;
+                break;
+            }
+            // Táhnu horní hranu → sousedova spodní se mění
+            case ResizeHandle.TopCenter:
+            {
+                float nh = Math.Max(minH, newY - _neighborInitY);
+                _resizeNeighbor.Height = nh;
+                break;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Najde sousední element, jehož hrana přiléhá k tažené hraně resize elementu.
+    /// Tolerance 0.5mm. Vrací null pokud žádný soused neexistuje.
+    /// Podporuje jen jednoosé handles (MiddleLeft/Right, TopCenter/BottomCenter).
+    /// </summary>
+    private static TemplateElement? FindResizeNeighbor(
+        TemplateElement el, ResizeHandle handle, Section section)
+    {
+        const float tolerance = 0.5f;
+        float elH = el.Height ?? el.EffectiveDesignerHeight;
+
+        foreach (var other in section.Elements)
+        {
+            if (other == el || other.IsLocked) continue;
+            float oH = other.Height ?? other.EffectiveDesignerHeight;
+
+            switch (handle)
+            {
+                // Táhnu levou hranu → sousedova pravá hrana musí být na mé levé
+                case ResizeHandle.MiddleLeft or ResizeHandle.TopLeft or ResizeHandle.BottomLeft:
+                    if (MathF.Abs((other.X + other.Width) - el.X) < tolerance && HasVerticalOverlap(el.Y, elH, other.Y, oH))
+                        return other;
+                    break;
+                // Táhnu pravou hranu → sousedova levá hrana musí být na mé pravé
+                case ResizeHandle.MiddleRight or ResizeHandle.TopRight or ResizeHandle.BottomRight:
+                    if (MathF.Abs(other.X - (el.X + el.Width)) < tolerance && HasVerticalOverlap(el.Y, elH, other.Y, oH))
+                        return other;
+                    break;
+                // Táhnu horní hranu → sousedova spodní hrana musí být na mé horní
+                case ResizeHandle.TopCenter:
+                    if (MathF.Abs((other.Y + oH) - el.Y) < tolerance && HasHorizontalOverlap(el.X, el.Width, other.X, other.Width))
+                        return other;
+                    break;
+                // Táhnu spodní hranu → sousedova horní hrana musí být na mé spodní
+                case ResizeHandle.BottomCenter:
+                    if (MathF.Abs(other.Y - (el.Y + elH)) < tolerance && HasHorizontalOverlap(el.X, el.Width, other.X, other.Width))
+                        return other;
+                    break;
+            }
+        }
+        return null;
+
+        static bool HasVerticalOverlap(float y1, float h1, float y2, float h2) =>
+            y1 < y2 + h2 && y2 < y1 + h1;
+        static bool HasHorizontalOverlap(float x1, float w1, float x2, float w2) =>
+            x1 < x2 + w2 && x2 < x1 + w1;
+    }
 
     private (float deltaX, float deltaY) ClampDragDelta(float rawDeltaX, float rawDeltaY)
     {
