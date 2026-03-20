@@ -47,7 +47,7 @@ public class EDViewModelTests
     public void CloseDialog_Null_FiresRequestCloseWithNull()
     {
         var vm = new TestViewModel(MockServices());
-        bool? received = 42 > 0 ? true : null; // init to non-null
+        bool? received = true;
         vm.RequestClose += result => received = result;
 
         vm.InvokeCloseDialog(null);

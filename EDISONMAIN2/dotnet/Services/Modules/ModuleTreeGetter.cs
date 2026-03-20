@@ -5,7 +5,7 @@ using EDControls;
 
 namespace EDISONMAIN2.Services.Modules
 {
-    public class ModuleTreeService : IModuleTreeService
+    public class ModuleTreeGetter : IModuleTreeGetter
     {
         public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest)
         {

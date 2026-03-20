@@ -47,9 +47,9 @@ namespace EDISONMAIN2
                 Mlp       = connParams.Mlp.ToString()
             });
 
-            var treeService = new ModuleTreeService();
-            var processService = new ProcessLaunchService(connParams);
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeService, processService);
+            var treeGetter = new ModuleTreeGetter();
+            var processLauncher = new ProcessLauncher(connParams);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();

@@ -18,7 +18,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_EmptyOutput_ReturnsEmpty()
     {
-        var tree = ModuleTreeService.ParseTree(new CVar());
+        var tree = ModuleTreeGetter.ParseTree(new CVar());
 
         Assert.Empty(tree);
     }
@@ -29,7 +29,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["ERR"] = new CVar("metadata");
 
-        var tree = ModuleTreeService.ParseTree(data);
+        var tree = ModuleTreeGetter.ParseTree(data);
 
         Assert.Empty(tree);
     }
@@ -40,7 +40,7 @@ public class ParseTreeTests
         var data = new CVar();
         data["1"] = new CList("EXE", "Moje Okno", "MyApp.exe", "MyForm");
 
-        var tree = ModuleTreeService.ParseTree(data);
+        var tree = ModuleTreeGetter.ParseTree(data);
 
         var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
         Assert.Equal("Moje Okno", mod.DisplayedName);
@@ -57,7 +57,7 @@ public class ParseTreeTests
         data["3"] = new CList("EXE", "Spoje", "spoje.exe", "SpojeForm");
         data["4"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeService.ParseTree(data);
+        var tree = ModuleTreeGetter.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("Doprava", fam.DisplayedName);
@@ -74,7 +74,7 @@ public class ParseTreeTests
         data["1"] = new CList("FAMILY", "Archiv", "0");
         data["2"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeService.ParseTree(data);
+        var tree = ModuleTreeGetter.ParseTree(data);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.False(fam.IsExpanded);
@@ -90,7 +90,7 @@ public class ParseTreeTests
         data["4"] = new CList("FAMILY_END");
         data["5"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeService.ParseTree(data);
+        var tree = ModuleTreeGetter.ParseTree(data);
 
         var outer = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("Vnější", outer.DisplayedName);
@@ -109,12 +109,52 @@ public class ParseTreeTests
         data["3"] = new CList("EXE", "Child", "child.exe", "");
         data["4"] = new CList("FAMILY_END");
 
-        var tree = ModuleTreeService.ParseTree(data);
+        var tree = ModuleTreeGetter.ParseTree(data);
 
         Assert.Equal(2, tree.Count);
         Assert.IsType<ExecutableModule>(tree[0]);
         var fam = Assert.IsType<ModuleFamily>(tree[1]);
         Assert.Single(fam.NestedModules);
+    }
+
+    [Fact]
+    public void ParseTree_OrphanFamilyEnd_IsIgnored()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FAMILY_END");
+        data["2"] = new CList("EXE", "App", "app.exe", "Form");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("App", mod.DisplayedName);
+    }
+
+    [Fact]
+    public void ParseTree_UnclosedFamily_KeepsChildrenInside()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FAMILY", "Open", "1");
+        data["2"] = new CList("EXE", "Child", "child.exe", "Form");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
+        Assert.Equal("Open", fam.DisplayedName);
+        Assert.Single(fam.NestedModules);
+    }
+
+    [Fact]
+    public void ParseTree_UnknownType_IsSkipped()
+    {
+        var data = new CVar();
+        data["1"] = new CList("UNKNOWN", "Something");
+        data["2"] = new CList("EXE", "App", "app.exe", "Form");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("App", mod.DisplayedName);
     }
 
     [Fact]
@@ -126,7 +166,7 @@ public class ParseTreeTests
         data["3"] = new CList("FAMILY_END");
         var mockMLRest = MockTreeCall(data);
 
-        var service = new ModuleTreeService();
+        var service = new ModuleTreeGetter();
         var tree = service.GetModuleTree(mockMLRest);
 
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));

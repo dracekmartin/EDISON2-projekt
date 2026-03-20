@@ -16,8 +16,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
     class EdisonMainViewModel : EDViewModel
     {
-        private readonly IModuleTreeService _treeService;
-        private readonly IProcessLaunchService _processService;
+        private readonly IModuleTreeGetter _treeGetter;
+        private readonly IProcessLauncher _processLauncher;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -28,17 +28,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
-            IModuleTreeService treeService,
-            IProcessLaunchService processService)
+            IModuleTreeGetter treeService,
+            IProcessLauncher processService)
         {
-            _treeService = treeService;
-            _processService = processService;
+            _treeGetter = treeService;
+            _processLauncher = processService;
 
             OpenModuleCommand        = new RelayCommand<IModule>(OpenModule);
             OpenInputFormTestCommand = new RelayCommand(() => WindowNavigator.Show("EDInputFormTestWindow"));
             OpenEDListTestCommand    = new RelayCommand(() => WindowNavigator.Show("EDListTestWindow"));
             OpenEDComponentAndViewModelTestCommand = new RelayCommand(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
-            CloseAllCommand          = new RelayCommand(_processService.CloseAll);
+            CloseAllCommand          = new RelayCommand(_processLauncher.CloseAll);
 
             TopLevelModules = [];
 
@@ -47,7 +47,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
-            var tree = _treeService.GetModuleTree(MLRest!);
+            var tree = _treeGetter.GetModuleTree(MLRest!);
             foreach (var module in tree)
                 TopLevelModules.Add(module);
         }
@@ -75,7 +75,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     Set(ref _selectedCompanyIndex, value);
                     OnPropertyChanged(nameof(Namespace));
                     OnPropertyChanged(nameof(Idfa));
-                    _processService.CloseAll();
+                    _processLauncher.CloseAll();
                     MLRest!.DataNamespace = Namespace;
                     MLRest!.Idfa = Idfa;
                 }
@@ -91,7 +91,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void OpenModule(IModule module)
         {
             if (module is ExecutableModule executableModule)
-                _processService.Launch(executableModule, Namespace, Idfa);
+                _processLauncher.Launch(executableModule, Namespace, Idfa);
         }
     }
 }

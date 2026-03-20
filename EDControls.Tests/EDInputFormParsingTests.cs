@@ -149,20 +149,24 @@ public class EDInputFormParsingTests
             Value = "hello", ValidateOnChange = true, Required = true
         };
 
-        CVar result = EDInputForm.EDInputForm.SerializeItemsCVar([group, field]);
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([group, field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
 
-        CList g = result["1"];
-        Assert.Equal("GROUP", g.GetString(1));
-        Assert.Equal("1", g.GetString(2));
-        Assert.Equal("Sekce", g.GetString(3));
-        Assert.Equal("1", g.GetString(4));
+        Assert.Equal(2, parsed.Count);
 
-        CList f = result["2"];
-        Assert.Equal("FIELD", f.GetString(1));
-        Assert.Equal("k", f.GetString(3));
-        Assert.Equal("hello", f.GetString(6));
-        Assert.Equal("1", f.GetString(7)); // ValidateOnChange
-        Assert.Equal("1", f.GetString(8)); // Required
+        var g = Assert.IsType<Group>(parsed[0]);
+        Assert.Equal(1, g.Number);
+        Assert.Equal("Sekce", g.GroupName);
+        Assert.True(g.IsVisible);
+
+        var f = Assert.IsType<Field>(parsed[1]);
+        Assert.Equal(2, f.Number);
+        Assert.Equal("k", f.Key);
+        Assert.Equal("Lbl", f.Label);
+        Assert.Equal(EFieldType.Text, f.FieldType);
+        Assert.Equal("hello", f.Value);
+        Assert.True(f.ValidateOnChange);
+        Assert.True(f.Required);
     }
 
     [Fact]
