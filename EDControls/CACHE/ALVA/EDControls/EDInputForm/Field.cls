@@ -5,7 +5,7 @@ Property key As %String;
 
 Property label As %String;
 
-/// "TEXT" or "NUMBER"
+/// $$$FieldTypeText or $$$FieldTypeNumber (Include EDInputForm).
 Property type As %String [ InitialExpression = "TEXT" ];
 
 Property value As %String;

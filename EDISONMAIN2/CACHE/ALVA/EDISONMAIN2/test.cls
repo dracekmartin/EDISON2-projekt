@@ -1,4 +1,4 @@
-Include GENERAL
+Include (GENERAL, EDInputForm)
 
 Class ALVA.EDISONMAIN2.test Extends %RegisteredObject
 {
@@ -12,22 +12,24 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		$$$FillParams
 
 		s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+		#define Text   form.#TypeText
+		#define Number form.#TypeNumber
 
-		d form.AddFieldToLastGroup("poznamka", "Poznámka", "TEXT", 0, 0)
+		d form.AddFieldToLastGroup("poznamka", "Poznámka", $$$FieldTypeText, 0, 0)
 
 		d form.AddGroup("osobni", "Osobní údaje")
-		d form.AddFieldToLastGroup("jmeno",    "Jméno",    "TEXT",   1, 1)
-		d form.AddFieldToLastGroup("prijmeni", "Příjmení", "TEXT",   1, 1)
-		d form.AddFieldToLastGroup("vek",      "Věk",      "NUMBER", 1, 0)
+		d form.AddFieldToLastGroup("jmeno",    "Jméno",    $$$FieldTypeText,   1, 1)
+		d form.AddFieldToLastGroup("prijmeni", "Příjmení", $$$FieldTypeText,   1, 1)
+		d form.AddFieldToLastGroup("vek",      "Věk",      $$$FieldTypeNumber, 1, 0)
 
 		d form.AddGroup("adresa", "Adresa")
-		d form.AddFieldToLastGroup("ulice", "Ulice", "TEXT",   0, 0)
-		d form.AddFieldToLastGroup("mesto", "Město", "TEXT",   0, 0)
-		d form.AddFieldToLastGroup("psc",   "PSČ",   "NUMBER", 1, 0)
+		d form.AddFieldToLastGroup("ulice", "Ulice", $$$FieldTypeText,   0, 0)
+		d form.AddFieldToLastGroup("mesto", "Město", $$$FieldTypeText,   0, 0)
+		d form.AddFieldToLastGroup("psc",   "PSČ",   $$$FieldTypeNumber, 1, 0)
 
 		d form.AddGroup("kontakt", "Kontakt")
-		d form.AddFieldToLastGroup("email",   "E-mail",  "TEXT",   0, 0)
-		d form.AddFieldToLastGroup("telefon", "Telefon", "NUMBER", 0, 0)
+		d form.AddFieldToLastGroup("email",   "E-mail",  $$$FieldTypeText,   0, 0)
+		d form.AddFieldToLastGroup("telefon", "Telefon", $$$FieldTypeNumber, 0, 0)
 
 		d form.WriteToOut()
 	}

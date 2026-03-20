@@ -1,3 +1,5 @@
+Include EDInputForm
+
 Class ALVA.EDControls.EDInputForm.Form Extends %RegisteredObject
 {
 
@@ -31,7 +33,7 @@ Method AddGroup(key As %String, groupName As %String, isVisible As %Boolean = 1)
 
 /// Appends a field and returns it so the caller can set value / validationError.
 /// number is assigned automatically (1-based, sequential across groups and fields).
-Method AddFieldToLastGroup(key As %String, label As %String, type As %String = "TEXT", validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {$$$FieldTypeText}, validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
 	s f = ##class(ALVA.EDControls.EDInputForm.Field).%New()
 	s f.key = key
@@ -47,7 +49,7 @@ Method AddFieldToLastGroup(key As %String, label As %String, type As %String = "
 /// Inserts a field into the group identified by groupKey (after its last field).
 /// If the group is not found, appends to the end.
 /// Returns the new field so the caller can set value / validationError.
-Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %String, type As %String = "TEXT", validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %String, type As %String = {$$$FieldTypeText}, validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
 	s f = ##class(ALVA.EDControls.EDInputForm.Field).%New()
 	s f.key = key

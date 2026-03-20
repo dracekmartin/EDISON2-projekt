@@ -98,7 +98,7 @@ namespace EDControls.EDInputForm
                     Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.IsVisible ? "1" : "0"),
                     Field f => new CList(
                         "FIELD", f.Number, f.Key, f.Label,
-                        f.FieldType == EFieldType.Number ? "NUMBER" : "TEXT",
+                        f.FieldType.ToWire(),
                         f.Value ?? "",
                         f.ValidateOnChange ? "1" : "0",
                         f.Required ? "1" : "0"),
@@ -137,7 +137,7 @@ namespace EDControls.EDInputForm
                         Number           = int.TryParse(row.GetString(2), out int fn) ? fn : 0,
                         Key              = row.GetString(3),
                         Label            = row.GetString(4),
-                        FieldType        = row.GetString(5) == "NUMBER" ? EFieldType.Number : EFieldType.Text,
+                        FieldType        = EFieldTypeWire.FromWire(row.GetString(5)),
                         Value            = row.GetString(6) == "" ? null : row.GetString(6),
                         ValidateOnChange = row.GetString(7) == "1",
                         Required         = row.GetString(8) == "1",
