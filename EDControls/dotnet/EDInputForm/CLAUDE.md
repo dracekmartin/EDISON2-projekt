@@ -15,10 +15,11 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `EDInputFormController.cs` | Testovatelná orchestrace (Init/Validate/Save) bez WPF závislosti. Přijímá `IMLRest` a `CacheClass` jako parametry konstruktoru. |
 | `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number` (1-based sekvenční). |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsVisible` (řízené serverem), `IsExpanded` (řízené uživatelem). Implementuje `INotifyPropertyChanged`. |
-| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `ValidationError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`. Implementuje `INotifyPropertyChanged`. |
-| `EFieldType.cs` | Enum: `Text`, `Number`. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility`. Metoda `GetTypeError()` — klientská typová validace. Implementuje `INotifyPropertyChanged`. |
+| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
+| `NumericInput.cs` | Attached behavior — omezuje vstup TextBoxu na numerické znaky. Režimy: `Integer`, `Decimal`. |
 | `DesignTimeData/EDInputFormDesignTimeData.cs` | Design-time ukázková data; nikdy se neinstanciuje za běhu. |
 
 ## Integrace s hostem (minimální)
@@ -66,8 +67,8 @@ List<Item> items = controller.Items;
 Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
-CVar["1"] = CList("GROUP", number, groupName, "1"|"0"(visible))
-CVar["2"] = CList("FIELD", number, key, label, "TEXT"|"NUMBER", value, "0"|"1"(validateOnChange), "0"|"1"(required), [validationError], [editable])
+CVar["1"] = CList("GROUP", number, key, groupName, "1"|"0"(visible))
+CVar["2"] = CList("FIELD", number, key, label, "TEXT"|"NUMBER"|"DATE"|"DECIMAL"|"BOOL", value, "0"|"1"(validateOnChange), "0"|"1"(required), [validationError], [editable])
 ```
 
 Caché OUT může přidat 9. element u FIELD záznamů pro validační chyby a 10. element pro editovatelnost:
