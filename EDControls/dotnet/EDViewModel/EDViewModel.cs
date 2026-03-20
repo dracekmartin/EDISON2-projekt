@@ -100,12 +100,23 @@ public class EDViewModel : INotifyPropertyChanged
     public EDViewModel(EDServices services)
     {
         _services = services;
-        OkCommand     = new RelayCommand(OnOk);
-        AddCommand    = new RelayCommand(OnAdd);
-        EditCommand   = new RelayCommand(OnEdit);
-        DeleteCommand = new RelayCommand(OnDelete);
+        OkCommand     = Command(OnOk);
+        AddCommand    = Command(OnAdd);
+        EditCommand   = Command(OnEdit);
+        DeleteCommand = Command(OnDelete);
         Application.Current?.Dispatcher.BeginInvoke(RegisterKeyBindings, DispatcherPriority.Loaded);
     }
+
+    /// <summary>
+    /// Creates a <see cref="RelayCommand"/> with <see cref="PopupDisplayer"/> wired for error handling.
+    /// Use instead of <c>new RelayCommand(...)</c> in ViewModel subclasses.
+    /// </summary>
+    protected RelayCommand Command(Action execute, Func<bool>? canExecute = null) =>
+        new(execute, canExecute, PopupDisplayer);
+
+    /// <inheritdoc cref="Command(Action, Func{bool}?)"/>
+    protected RelayCommand<T> Command<T>(Action<T> execute, Func<T, bool>? canExecute = null) =>
+        new(execute, canExecute, PopupDisplayer);
 
     private void RegisterKeyBindings()
     {

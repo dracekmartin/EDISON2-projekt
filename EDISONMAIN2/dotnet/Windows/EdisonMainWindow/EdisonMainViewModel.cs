@@ -34,11 +34,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _treeGetter = treeService;
             _processLauncher = processService;
 
-            OpenModuleCommand        = new RelayCommand<IModule>(OpenModule);
-            OpenInputFormTestCommand = new RelayCommand(() => WindowNavigator.Show("EDInputFormTestWindow"));
-            OpenEDListTestCommand    = new RelayCommand(() => WindowNavigator.Show("EDListTestWindow"));
-            OpenEDComponentAndViewModelTestCommand = new RelayCommand(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
-            CloseAllCommand          = new RelayCommand(_processLauncher.CloseAll);
+            OpenModuleCommand        = Command<IModule>(OpenModule);
+            OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
+            OpenEDListTestCommand    = Command(() => WindowNavigator.Show("EDListTestWindow"));
+            OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
+            CloseAllCommand          = Command(_processLauncher.CloseAll);
 
             TopLevelModules = [];
 
