@@ -8,6 +8,10 @@ Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP 
 | --- | --- |
 | `EDISONMAIN2/dotnet/` | Hlavní WPF aplikace (vstupní bod, okna, služby). |
 | `EDControls/dotnet/` | Sdílená WPF knihovna — ovládací prvky (EDFooter, EDToolbar, EDInputForm, EDList, EDActionInProgress) a základní třída pro ViewModely (EDViewModel). |
+| `TemplateDesigner/dotnet/` | WPF aplikace — návrhář tiskových šablon (WYSIWYG editor). Vlastní `CLAUDE.md`. |
+| `ServiceGtfsRt/` | ASP.NET Core Windows Service — GTFS Realtime feed (vozidla, spoje). Vlastní `CLAUDE.md`. |
+| `EDControls.Tests/` | xUnit testy pro EDControls (EDViewModel, EDInputForm parsing, EDList formátování). |
+| `EDISONMAIN2.Tests/` | xUnit testy pro EDISONMAIN2 (parsování stromu modulů). |
 | `MLRest.md` | Kompletní referenční dokumentace Caché architektury (namespace, makra, komunikační protokol). |
 
 ---
@@ -19,8 +23,41 @@ Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP 
 
 DLL je odkazována přímo: `C:\Edison\MLRest.dll`.
 
-Instance `MLRest` se nikdy nevytváří přímo ve windows nebo ovládacích prvcích — bere se
-z `EDViewModel.MLRest` (statická vlastnost dostupná všem potomkům).
+### IMLRest a EDServices — architektura
+
+Instance `MLRest` se nikdy nevytváří přímo ve windows ani ViewModelech. Přístup jde přes
+abstrakci `IMLRest` a sdílený kontejner `EDServices`:
+
+```csharp
+// IMLRest — interface pro testovatelnost (EDControls/IMLRest.cs)
+public interface IMLRest
+{
+    CVar QueryOrThrow(string cacheClass, string method, CVar input);
+    object[] QueryOrThrow(string cacheClass, string method, object[] input);
+    string DataNamespace { get; set; }
+    string Idfa { get; set; }
+}
+
+// MLRestAdapter — obaluje konkrétní MLRest za IMLRest
+public class MLRestAdapter(MLRest inner) : IMLRest { ... }
+
+// EDServices — service container (inicializován jednou v App.xaml.cs)
+public class EDServices(IMLRest? mlRest, IWindowNavigator navigator, IPopupDisplayer displayer)
+{
+    public IMLRest? MLRest { get; set; }           // mutable — mění se při přepnutí firmy
+    public IWindowNavigator WindowNavigator { get; }
+    public IPopupDisplayer PopupDisplayer { get; }
+    public static EDServices Current { get; }       // singleton
+    public static void Initialize(EDServices s);    // volat jednou v App.xaml.cs
+}
+```
+
+Všechny ViewModely přistupují k `MLRest` přes `EDServices`:
+
+- `EDViewModel` má property `MLRest => _services.MLRest`
+- Bezparametrický konstruktor čte z `EDServices.Current`
+- Testy předávají vlastní `EDServices` s mock `IMLRest`
+- Ovládací prvky (`EDInputForm`, `EDList`) čtou `MLRest` z `DataContext` rodičovského okna
 
 ### Volání Caché metody — používej CVar (silně doporučeno)
 
@@ -64,8 +101,13 @@ foreach (KeyValuePair<string, CVar> kvp in output)
 }
 ```
 
-`QueryOrThrow` (extension v `EDControls`) volá `Query` + `RestStatus.ThrowIfError()`
-atomicky. Volej je zvlášť pouze tehdy, kdy potřebuješ graceful degradation (`continue` ve smyčce,
+`QueryOrThrow` je definováno dvěma způsoby:
+
+- **`IMLRest.QueryOrThrow`** — metoda přímo na rozhraní. Používej ve ViewModelech přes `MLRest!.QueryOrThrow(...)`.
+- **Extension metoda na `MLRest`** — pro legacy kód pracující přímo s konkrétní třídou `MLRest`.
+
+Obě varianty volají `Query` + `RestStatus.ThrowIfError()` atomicky.
+Volej je zvlášť pouze tehdy, kdy potřebuješ graceful degradation (`continue` ve smyčce,
 `return null`).
 
 ### Caché wire format pro CVar
@@ -170,8 +212,9 @@ foreach (KeyValuePair<string, CVar> kvp in output)
 
 1. Vytvoř složku pod `EDISONMAIN2/dotnet/Windows/MyWindow/`.
 2. Přidej `MyWindow.xaml` (Window), `MyWindow.xaml.cs`, `MyWindowViewModel.cs`.
-3. ViewModel dědí `EDViewModel`. Caché volání jdou přes statickou `EDViewModel.MLRest` —
-   v okně ani ViewModelu se `MLRest` nevytváří ani nepředává.
+3. ViewModel dědí `EDViewModel`. Caché volání jdou přes `MLRest` (property z `EDServices`) —
+   v okně ani ViewModelu se `MLRest` nevytváří ani nepředává. Bezparametrický konstruktor
+   `EDViewModel()` čte automaticky z `EDServices.Current`.
 4. V code-behind nastav `DataContext` **před** `InitializeComponent()`:
 
    ```csharp
@@ -182,12 +225,15 @@ foreach (KeyValuePair<string, CVar> kvp in output)
    }
    ```
 
-5. Zaregistruj `RelayCommand` v `EdisonMainViewModel` přes `WindowNavigator.Show` (modeless)
+5. Zaregistruj příkaz v `EdisonMainViewModel` přes `WindowNavigator.Show` (modeless)
    nebo `WindowNavigator.ShowDialog` (modální) s názvem třídy okna jako string:
 
    ```csharp
-   OpenMyWindowCommand = new RelayCommand(() => WindowNavigator.Show("MyWindow"));
+   OpenMyWindowCommand = Command(() => WindowNavigator.Show("MyWindow"));
    ```
+
+   `Command(...)` je helper na `EDViewModel`, který vytvoří `RelayCommand` s automatickým
+   error handlingem přes `PopupDisplayer`.
 
    Pokud okno potřebuje vstupní data, předej `EDWindowInput` a přidej konstruktor
    `public MyWindow(EDWindowInput input)`.
@@ -231,7 +277,9 @@ aplikace skutečně používá. Resource dictionary `EDIcons.xaml` mapuje každ�
 ## Obsluha výjimek — povinné nastavení pro každý nový projekt
 
 `RelayCommand.Execute` zachytí výjimky automaticky a zobrazí `EDErrorPopup` přes `PopupDisplayer`.
-Výjimky mimo příkazy (např. auto-validace v `EDInputForm`, `async void`) se zachytí globálně.
+Příkazy vytvářej přes helper `Command(...)` na `EDViewModel` — ten automaticky předá
+`PopupDisplayer` do `RelayCommand`. Výjimky mimo příkazy (např. auto-validace v `EDInputForm`,
+`async void`) se zachytí globálně.
 
 Každý nový aplikační projekt musí v `App.xaml.cs` přidat handler:
 
@@ -289,6 +337,7 @@ Po přidání merge je `{StaticResource EDIcons.X}` dostupný v každém okně n
 | `EDIcons.Add`      | `add2.png`          | Přidat položku                    |
 | `EDIcons.Edit`     | `edit.png`          | Upravit položku                   |
 | `EDIcons.Delete`   | `delete2.png`       | Smazat položku                    |
+| `EDIcons.Car`      | `car.png`           | Vozidlo / doprava                 |
 
 ---
 

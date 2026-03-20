@@ -1,91 +1,111 @@
-# EDInputForm — developer notes
+# EDInputForm — poznámky pro vývojáře
 
-## Purpose
+## Účel
 
-`EDInputForm` is a self-contained WPF `UserControl` that loads, renders, validates, and saves a
-dynamic data-entry form via a Caché (InterSystems) back-end. The host window only needs to
-supply `MLRest` and `CacheClass`, then call `Init()` / `Validate()` / `Save()` from button
-handlers — all Caché communication and serialization is handled internally.
+`EDInputForm` je samostatný WPF `UserControl`, který načte, vykreslí, validuje a uloží
+dynamický formulář přes Caché (InterSystems) back-end. Hostitelské okno potřebuje pouze
+nastavit `CacheClass` — `MLRest` se čte automaticky z `EDViewModel` DataContext rodičovského
+okna. Veškerá Caché komunikace a serializace je řešena interně.
 
-## File map
+## Mapa souborů
 
-| File | Role |
+| Soubor | Role |
 | --- | --- |
-| `EDInputForm.xaml / .xaml.cs` | The UserControl. Owns all Caché calls, serialization helpers, and the Items DP. |
-| `FormItem.cs` | Abstract base for all form items. |
-| `FormGroup.cs` | Section header: `GroupName`. |
-| `FormField.cs` | Editable field: `Key`, `Label`, `FieldType`, `Value`, `ValidationError`, `Required`, `ValidateOnChange`. Implements `INotifyPropertyChanged`. |
-| `FieldType.cs` | Enum: `Text`, `Number`. |
+| `EDInputForm.xaml / .xaml.cs` | UserControl. Vlastní všechna Caché volání, serializační helpery a Items DP. |
+| `EDInputFormController.cs` | Testovatelná orchestrace (Init/Validate/Save) bez WPF závislosti. Přijímá `IMLRest` a `CacheClass` jako parametry konstruktoru. |
+| `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number` (1-based sekvenční). |
+| `Group.cs` | Hlavička sekce: `GroupName`, `IsVisible` (řízené serverem), `IsExpanded` (řízené uživatelem). Implementuje `INotifyPropertyChanged`. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `ValidationError`, `Required`, `ValidateOnChange`, `ParentGroup`. Implementuje `INotifyPropertyChanged`. |
+| `EFieldType.cs` | Enum: `Text`, `Number`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
-| `ValidationContext.cs` | Carries trigger + `ChangedKey` — reserved for future use (see note below). |
-| `FormInputDesignData.cs` | Design-time sample data only; never instantiated at runtime. |
+| `ValidationContext.cs` | Nese trigger + `ChangedKey` — serializuje se do CTRL záznamu v IN. |
+| `DesignTimeData/EDInputFormDesignTimeData.cs` | Design-time ukázková data; nikdy se neinstanciuje za běhu. |
 
-## Host integration (minimal)
+## Integrace s hostem (minimální)
 
 ```csharp
-// In the host window constructor:
-TheInputForm.MLRest     = mlRest;
-TheInputForm.CacheClass = "NAMESPACE.MyClass";
+// V XAML:
+<eif:EDInputForm x:Name="TheInputForm" CacheClass="NAMESPACE.MyClass"/>
 
-// Button handlers — pure UI:
-void Init_Click(...)     { TheInputForm.Init();              /* update StatusText */ }
-void Validate_Click(...) { bool ok = TheInputForm.Validate(); /* update StatusText */ }
-void Save_Click(...)     { bool ok = TheInputForm.Save();     /* update StatusText */ }
+// MLRest se čte automaticky z DataContext rodičovského okna (EDViewModel).
+// Init() se volá automaticky při Loaded, pokud je CacheClass nastaveno.
+
+// Handlery tlačítek (pokud je potřeba ruční řízení):
+void Validate_Click(...) { bool ok = TheInputForm.Validate(); }
+void Save_Click(...)     { bool ok = TheInputForm.Save();     }
 ```
 
-No event subscriptions, no callbacks, no serialization in the host.
+Žádné nastavování MLRest není potřeba — control ho čte z DataContext rodičovského okna.
 
-## Public API
+## Veřejné API
 
-| Member | Description |
+| Člen | Popis |
 | --- | --- |
-| `MLRest MLRest` | Must be set before any call. |
-| `string CacheClass` | Must be set before any call. |
-| `void Init()` | Calls Caché `Init`, populates Items, runs `ExecuteValidate(Init)`. |
-| `bool Validate()` | Calls Caché `Validate` with Change trigger; returns true if no errors. |
-| `bool Save()` | Validates with BeforeSave, calls Caché `Save` only if clean; returns true on success. |
-| `IEnumerable<FormItem>? Items` | DP — current form items; updated after every Caché call. |
-| `static object[] SerializeItems(items, delimiter)` | Converts Items → Caché IN array (no trigger prefix). |
-| `static List<FormItem> ParseItems(output, delimiter)` | Converts Caché OUT array → FormItem list; skips `output[0]`. |
+| `string CacheClass` | Musí být nastaveno před jakýmkoliv voláním. Caché třída implementující Init/Validate/Save. |
+| `void Init()` | Volá Caché `Init`, naplní Items, spustí `ExecuteValidate(Init)`. Volá se automaticky při `Loaded` pokud je `CacheClass` nastaveno. |
+| `bool Validate()` | Volá Caché `Validate` s Change triggerem; vrací true pokud nejsou chyby. |
+| `bool Save()` | Validuje s BeforeSave triggerem, volá Caché `Save` pouze pokud je čistý stav; vrací true při úspěchu. |
+| `IEnumerable<Item>? Items` | DP — aktuální položky formuláře; aktualizuje se po každém Caché volání. |
+| `static CVar SerializeItemsCVar(items)` | Převede Items → CVar pro odeslání do Caché. |
+| `static List<Item> ParseItems(CVar output)` | Převede Caché CVar výstup → seznam Item; přeskočí klíč "ERR". |
 
-## Caché wire protocol
+### EDInputFormController (testovatelný, bez WPF)
 
-### Shared delimiter
-
-`MLRest.Delimiter` (typically `\x1C`) is used as the field separator in all entries.
-
-### Form items (both directions)
-
-```text
-GROUP <del> groupName
-FIELD <del> key <del> label <del> TEXT|NUMBER <del> value <del> 0|1(validateOnChange) <del> 0|1(required)
+```csharp
+// Pro unit testy nebo non-WPF scénáře:
+var controller = new EDInputFormController(mockMLRest, "NAMESPACE.MyClass");
+controller.Init();
+bool ok = controller.Save();
+List<Item> items = controller.Items;
 ```
 
-Caché OUT may append an extra field on FIELD entries:
+## Caché wire protokol (CVar/CList)
+
+### Položky formuláře (oba směry)
+
+Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
-FIELD <del> ... <del> validationError
+CVar["1"] = CList("GROUP", number, groupName, "1"|"0"(visible))
+CVar["2"] = CList("FIELD", number, key, label, "TEXT"|"NUMBER", value, "0"|"1"(validateOnChange), "0"|"1"(required))
 ```
 
-### Validate call structure
+Caché OUT může přidat 9. element u FIELD záznamů pro validační chyby:
 
 ```text
-IN[1]   = trigger string ("Init" | "Change" | "BeforeSave")
-IN[2..] = serialised form items
+CList("FIELD", number, key, label, "TEXT", value, "0", "1", "Chyba: pole je povinné")
 ```
 
-The Caché class reads `IN[1]` as a plain string. `ValidationContext.Serialize` produces a
-future CTRL-format string (`"CTRL|trigger|changedKey"`) not yet used on the Caché side.
+### Struktura volání Validate
 
-## Auto-validate on field change
+```text
+IN["trigger"] = "Init" | "Change" | "BeforeSave"
+IN["1"..]     = serializované položky formuláře (CList záznamy)
+```
 
-When a `FormField` with `ValidateOnChange == true` has its `Value` changed, EDInputForm calls
-`ExecuteValidate(Change)` automatically via `Dispatcher.BeginInvoke` — no host involvement.
+## Automatická inicializace při Loaded
 
-## Design notes
+Pokud je `CacheClass` neprázdný, `Init()` se zavolá automaticky při události `Loaded`.
+Žádné ruční volání `Init()` v hostitelském okně není potřeba.
 
-- `EDControls.csproj` references `C:\Edison\MLRest.dll` directly (same HintPath convention as EDISONMAIN2).
-- `ExecuteValidate` is private; hosts use `Validate()` and `Save()` instead.
-- `ValidationRequested` event has been removed — all validation is driven internally.
-- `OnItemsChanged` subscribes/unsubscribes `PropertyChanged` on each `FormField` to avoid leaks.
-- `FormInputDesignData` is referenced only from `d:DataContext` in the XAML; never instantiate at runtime.
+## Automatická validace při změně pole
+
+Když `Field` s `ValidateOnChange == true` změní svou `Value`, EDInputForm zavolá
+`ExecuteValidate(Change)` automaticky přes `Dispatcher.BeginInvoke` — bez zásahu hostitele.
+
+## Klávesová navigace
+
+`Ctrl+číslice` naviguje na položku, jejíž `Number` odpovídá akumulované hodnotě:
+
+- Číslice se bufferují 200 ms (např. Ctrl+1, Ctrl+2 → položka 12)
+- Pokud je cíl `Field`, zaostří jeho TextBox
+- Pokud je cíl `Group`, přepne `IsExpanded`
+
+## Návrhové poznámky
+
+- `MLRest` se čte z `EDViewModel` DataContext rodičovského okna — žádný setter na controlu.
+- `EDControls.csproj` odkazuje `C:\Edison\MLRest.dll` přímo (stejná HintPath konvence jako EDISONMAIN2).
+- `ExecuteValidate` je private; host používá `Validate()` a `Save()`.
+- `OnItemsChanged` přihlašuje/odhlašuje `PropertyChanged` na každém `Field` proti únikům paměti.
+- `EDInputFormDesignTimeData` je odkazován pouze z `d:DataContext` v XAML; nikdy neinstanciuj za běhu.
+- `PreserveExpansionState` zachovává uživatelem přepnuté rozbalení skupin napříč překreslením.

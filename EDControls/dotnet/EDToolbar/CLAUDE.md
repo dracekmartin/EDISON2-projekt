@@ -1,29 +1,30 @@
-# EDToolbar — developer notes
+# EDToolbar — poznámky pro vývojáře
 
-Toolbar that renders icon buttons for all actions defined in the window's `EDViewModel.Actions`.
-No per-window XAML configuration needed — add the element once and it populates itself.
+Toolbar, který vykreslí ikonová tlačítka pro všechny akce definované v `EDViewModel.Actions`
+okna. Žádná konfigurace v XAML pro konkrétní okno není potřeba — stačí přidat element jednou
+a naplní se sám.
 
-## File map
+## Mapa souborů
 
-| File | Role |
+| Soubor | Role |
 | --- | --- |
-| `EDToolbar.xaml` | `ToolBar` containing an `ItemsControl` with a `DataTemplate` for icon buttons. |
-| `EDToolbar.xaml.cs` | `Loaded` handler that reads `Actions` from the parent window's `EDViewModel` DataContext. |
+| `EDToolbar.xaml` | `ToolBar` obsahující `ItemsControl` s `DataTemplate` pro ikonová tlačítka. |
+| `EDToolbar.xaml.cs` | Pouze `InitializeComponent()`. |
 
-## How it works
+## Jak funguje
 
-`EDToolbar` has no code-behind beyond `InitializeComponent()`. `ItemsControl` binds directly
-to `{Binding Actions}` — DataContext is inherited from the parent window. Each `EDAction`
-is rendered as a `Button` with:
+`EDToolbar` nemá žádný code-behind kromě `InitializeComponent()`. `ItemsControl` binduje přímo
+na `{Binding Actions}` — DataContext se dědí z rodičovského okna. Každá `EDAction` se vykreslí
+jako `Button` s:
 
-- `Command` — the action's command
-- `ToolTip` — `EDAction.ToolTipText`, formatted as `"Label [ShortcutText]"` (e.g. `"Přidat [Ins]"`)
-- Content — a 16×16 `Image` bound to `EDAction.Icon`
+- `Command` — příkaz akce
+- `ToolTip` — `EDAction.ToolTipText`, formátovaný jako `"Label [ShortcutText]"` (např. `"Přidat [Ctrl+N]"`)
+- Content — 16×16 `Image` navázaný na `EDAction.Icon`
 
-Key bindings are **not** registered here. They are registered by `EDViewModel` itself on
-`DispatcherPriority.Loaded` — so keyboard shortcuts work even if the window has no `EDToolbar`.
+Klávesové zkratky se **neregistrují** zde. Registruje je `EDViewModel` sám na
+`DispatcherPriority.Loaded` — takže klávesové zkratky fungují i když okno nemá `EDToolbar`.
 
-## Usage
+## Použití
 
 ```xaml
 <Window xmlns:et="clr-namespace:EDControls.EDToolbar;assembly=EDControls">
@@ -34,8 +35,8 @@ Key bindings are **not** registered here. They are registered by `EDViewModel` i
 </Window>
 ```
 
-No `Actions` attribute needed — the toolbar reads it from `DataContext` automatically.
+Žádný atribut `Actions` není potřeba — toolbar si je přečte z `DataContext` automaticky.
 
-## Designer support
+## Podpora designeru
 
-`EDToolbar` is empty at design time (no actions are loaded). This is expected.
+`EDToolbar` je v design time prázdný (žádné akce nejsou načteny). To je očekávané chování.
