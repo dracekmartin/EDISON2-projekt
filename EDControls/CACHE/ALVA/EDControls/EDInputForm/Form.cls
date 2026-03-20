@@ -23,14 +23,15 @@ Property items As list Of ALVA.EDControls.EDInputForm.Item;
 
 // ─── Builder ─────────────────────────────────────────────────────────────────
 
-/// Appends a group separator. Pass isVisible=0 to hide the group on the .NET side.
+/// Appends a group separator. Pass visibility to control display on the .NET side
+/// ($$$ItemVisibilityVisible, $$$ItemVisibilityCollapsed, etc.).
 /// number is assigned automatically (1-based, sequential across groups and fields).
-Method AddGroup(key As %String, groupName As %String, isVisible As %Boolean = 1)
+Method AddGroup(key As %String, groupName As %String, visibility As %String = {$$$ItemVisibilityVisible})
 {
 	s g = ##class(ALVA.EDControls.EDInputForm.Group).%New()
 	s g.key = key
 	s g.groupName = groupName
-	s g.isVisible = isVisible
+	s g.visibility = visibility
 	d ..items.Insert(g)
 	s g.number = ..items.Count()
 }
@@ -165,8 +166,8 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 /// Writes all items to ^||ML("OUT",...) as CList ($lb) values.
 /// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
 /// Format per item (number is always position 2):
-///   GROUP → $lb("GROUP", number, key, groupName, isVisible)
-///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required [, validationError])
+///   GROUP → $lb("GROUP", number, key, groupName, visibility)
+///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility)
 Method WriteToOut()
 {
 	s i = 0
@@ -179,8 +180,8 @@ Method WriteToOut()
 /// Reads ^||ML("IN",...) and returns a populated Form.
 /// Trigger is at string subscript "trigger".
 /// Items are at subscripts 1, 2, ... as CList ($lb) values:
-///   $lb("GROUP", number, key, groupName, isVisible)   ; number round-tripped, re-assigned on insert
-///   $lb("FIELD", number, key, label, type, value, validateOnChange, required)
+///   $lb("GROUP", number, key, groupName, visibility)   ; number round-tripped, re-assigned on insert
+///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility)
 ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
@@ -195,13 +196,14 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 		s listVal = ^||ML("IN",idx)
 		s type = $li(listVal,1)
 		i type="GROUP" {
-			s isVisible = $s($ll(listVal)>=5:$li(listVal,5)'="0",1:1)
-			d form.AddGroup($li(listVal,3),$li(listVal,4),isVisible)
+			s visibility = $s($ll(listVal)>=5:$li(listVal,5),1:$$$ItemVisibilityVisible)
+			d form.AddGroup($li(listVal,3),$li(listVal,4),visibility)
 		}
 		i type="FIELD" {
 			s f = form.AddFieldToLastGroup($li(listVal,3),$li(listVal,4),$li(listVal,5),$li(listVal,7),$li(listVal,8))
 			s f.value = $li(listVal,6)
 			i $ll(listVal)>=10 s f.editable = $li(listVal,10)
+			i $ll(listVal)>=11 s f.visibility = $li(listVal,11)
 		}
 	}
 	q form

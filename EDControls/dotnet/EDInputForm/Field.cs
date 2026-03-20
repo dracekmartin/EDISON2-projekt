@@ -1,12 +1,11 @@
 using System;
 using System.ComponentModel;
 using System.Globalization;
-using System.Runtime.CompilerServices;
-using System.Windows;
+using WpfVisibility = System.Windows.Visibility;
 
 namespace EDControls.EDInputForm
 {
-    public class Field : Item, INotifyPropertyChanged
+    public class Field : Item
     {
         /// <summary>Stable identifier used as the key when communicating with Caché.</summary>
         public string Key { get; set; } = "";
@@ -20,18 +19,18 @@ namespace EDControls.EDInputForm
         /// Visible in DEBUG builds when ValidateOnChange is true; Collapsed otherwise.
         /// Used by InputForm to render a debug-mode indicator dot.
         /// </summary>
-        public Visibility ValidateIndicatorVisibility =>
+        public WpfVisibility ValidateIndicatorVisibility =>
 #if DEBUG
-            ValidateOnChange ? Visibility.Visible : Visibility.Collapsed;
+            ValidateOnChange ? WpfVisibility.Visible : WpfVisibility.Collapsed;
 #else
-            Visibility.Collapsed;
+            WpfVisibility.Collapsed;
 #endif
 
         /// <summary>When true, displays a required-field asterisk next to the label.</summary>
         public bool Required { get; set; } = false;
 
-        public Visibility RequiredIndicatorVisibility =>
-            Required ? Visibility.Visible : Visibility.Collapsed;
+        public WpfVisibility RequiredIndicatorVisibility =>
+            Required ? WpfVisibility.Visible : WpfVisibility.Collapsed;
 
         public EFieldType FieldType { get; set; } = EFieldType.Text;
 
@@ -126,21 +125,18 @@ namespace EDControls.EDInputForm
 
         private void OnGroupPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName is nameof(Group.IsVisible) or nameof(Group.IsExpanded))
+            if (e.PropertyName == nameof(Group.Visibility))
                 OnPropertyChanged(nameof(EffectiveVisibility));
         }
 
         /// <summary>
-        /// Collapsed when the parent group is hidden (IsVisible=false) or collapsed by the user (IsExpanded=false).
+        /// Collapsed when this field is non-Visible or the parent group is non-Visible.
+        /// Parent group Collapsed hides fields too (header stays visible via Group.EffectiveVisibility).
         /// </summary>
-        public Visibility EffectiveVisibility =>
-            (_parentGroup?.IsVisible ?? true) && (_parentGroup?.IsExpanded ?? true)
-                ? Visibility.Visible
-                : Visibility.Collapsed;
-
-        public event PropertyChangedEventHandler? PropertyChanged;
-
-        protected void OnPropertyChanged([CallerMemberName] string? name = null)
-            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        public override WpfVisibility EffectiveVisibility =>
+            Visibility == EItemVisibility.Visible
+            && (_parentGroup?.Visibility ?? EItemVisibility.Visible) == EItemVisibility.Visible
+                ? WpfVisibility.Visible
+                : WpfVisibility.Collapsed;
     }
 }

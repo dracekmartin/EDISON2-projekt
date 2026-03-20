@@ -13,10 +13,11 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | --- | --- |
 | `EDInputForm.xaml / .xaml.cs` | UserControl. Vlastní všechna Caché volání, serializační helpery a Items DP. |
 | `EDInputFormController.cs` | Testovatelná orchestrace (Init/Validate/Save) bez WPF závislosti. Přijímá `IMLRest` a `CacheClass` jako parametry konstruktoru. |
-| `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number` (1-based sekvenční). |
-| `Group.cs` | Hlavička sekce: `GroupName`, `IsVisible` (řízené serverem), `IsExpanded` (řízené uživatelem). Implementuje `INotifyPropertyChanged`. |
-| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility`. Metoda `GetTypeError()` — klientská typová validace. Implementuje `INotifyPropertyChanged`. |
+| `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální). Implementuje `INotifyPropertyChanged`. |
+| `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. |
 | `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
 | `NumericInput.cs` | Attached behavior — omezuje vstup TextBoxu na numerické znaky. Režimy: `Integer`, `Decimal`. |
@@ -67,17 +68,13 @@ List<Item> items = controller.Items;
 Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
-CVar["1"] = CList("GROUP", number, key, groupName, "1"|"0"(visible))
-CVar["2"] = CList("FIELD", number, key, label, "TEXT"|"NUMBER"|"DATE"|"DECIMAL"|"BOOL", value, "0"|"1"(validateOnChange), "0"|"1"(required), [validationError], [editable])
+CVar["1"] = CList("GROUP", number, key, groupName, visibility)
+CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility)
 ```
 
-Caché OUT může přidat 9. element u FIELD záznamů pro validační chyby a 10. element pro editovatelnost:
+Visibility (GROUP pozice 5, FIELD pozice 11): `"0"` = Visible (výchozí), `"1"` = Collapsed, `"2"` = UserHidden, `"3"` = ProgrammerHidden. Pokud chybí, položka je viditelná.
 
-```text
-CList("FIELD", number, key, label, "TEXT", value, "0", "1", "Chyba: pole je povinné", "1")
-```
-
-Editable (10. pozice): `"1"` = editovatelné (výchozí), `"0"` = pouze ke čtení. Pokud chybí, pole je editovatelné.
+Editable (FIELD pozice 10): `"1"` = editovatelné (výchozí), `"0"` = pouze ke čtení. Pokud chybí, pole je editovatelné.
 
 ### Struktura volání Validate
 
@@ -114,4 +111,5 @@ Klíč změněného pole se předá jako `changedKey` — na Caché straně dost
 - `ExecuteValidate` je private; host používá `Validate()` a `Save()`.
 - `OnItemsChanged` přihlašuje/odhlašuje `PropertyChanged` na každém `Field` proti únikům paměti.
 - `EDInputFormDesignTimeData` je odkazován pouze z `d:DataContext` v XAML; nikdy neinstanciuj za běhu.
-- `PreserveExpansionState` zachovává uživatelem přepnuté rozbalení skupin napříč překreslením.
+- Stav `Visibility` se přenáší přes wire format — server ho round-tripuje přes `ReadFromIn` → `WriteToOut`. Žádné client-side preservation není potřeba.
+- `IsExpanded` na `Group` je computed property mapující `Visibility`: `Visible` = expanded, `Collapsed` = collapsed. Není to samostatný stav.

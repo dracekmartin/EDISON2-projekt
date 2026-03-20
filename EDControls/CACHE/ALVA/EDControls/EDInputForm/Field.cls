@@ -21,7 +21,7 @@ Property editable As %Boolean [ InitialExpression = 1 ];
 
 Method Serialize() As %List
 {
-	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable)
+	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility)
 }
 
 }

@@ -36,20 +36,32 @@ public class EDInputFormParsingTests
         Assert.Equal(1, g.Number);
         Assert.Equal("osobni", g.Key);
         Assert.Equal("Osobní údaje", g.GroupName);
-        Assert.True(g.IsVisible);
+        Assert.Equal(EItemVisibility.Visible, g.Visibility);
     }
 
     [Fact]
-    public void ParseItems_ParsesHiddenGroup()
+    public void ParseItems_ParsesCollapsedGroup()
     {
         var data = new CVar();
-        data["1"] = new CList("GROUP", "5", "skryta", "Skrytá", "0");
+        data["1"] = new CList("GROUP", "5", "skryta", "Skrytá", "1");
 
         var items = EDInputForm.EDInputForm.ParseItems(data);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal(5, g.Number);
-        Assert.False(g.IsVisible);
+        Assert.Equal(EItemVisibility.Collapsed, g.Visibility);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesGroupWithProgrammerHidden()
+    {
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "1", "g", "G", "3");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var g = Assert.IsType<Group>(Assert.Single(items));
+        Assert.Equal(EItemVisibility.ProgrammerHidden, g.Visibility);
     }
 
     [Fact]
@@ -143,7 +155,7 @@ public class EDInputFormParsingTests
     [Fact]
     public void SerializeItemsCVar_RoundTripsGroupAndField()
     {
-        var group = new Group { Number = 1, Key = "sekce", GroupName = "Sekce", IsVisible = true };
+        var group = new Group { Number = 1, Key = "sekce", GroupName = "Sekce" };
         var field = new Field
         {
             Number = 2, Key = "k", Label = "Lbl", FieldType = EFieldType.Text,
@@ -159,7 +171,7 @@ public class EDInputFormParsingTests
         Assert.Equal(1, g.Number);
         Assert.Equal("sekce", g.Key);
         Assert.Equal("Sekce", g.GroupName);
-        Assert.True(g.IsVisible);
+        Assert.Equal(EItemVisibility.Visible, g.Visibility);
 
         var f = Assert.IsType<Field>(parsed[1]);
         Assert.Equal(2, f.Number);
@@ -357,5 +369,102 @@ public class EDInputFormParsingTests
         int count = 0;
         foreach (var _ in result) count++;
         Assert.Equal(0, count);
+    }
+
+    // ─── Visibility tests ────────────────────────────────────────────────────
+
+    [Theory]
+    [InlineData("0", EItemVisibility.Visible)]
+    [InlineData("1", EItemVisibility.Collapsed)]
+    [InlineData("2", EItemVisibility.UserHidden)]
+    [InlineData("3", EItemVisibility.ProgrammerHidden)]
+    [InlineData("UNKNOWN", EItemVisibility.Visible)]
+    public void EItemVisibilityWire_RoundTrips(string wire, EItemVisibility expected)
+    {
+        Assert.Equal(expected, EItemVisibilityWire.FromWire(wire));
+        if (wire != "UNKNOWN")
+            Assert.Equal(wire, expected.ToWire());
+    }
+
+    [Fact]
+    public void ParseItems_ParsesFieldWithUserHidden()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "2");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EItemVisibility.UserHidden, f.Visibility);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesFieldWithProgrammerHidden()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "3");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EItemVisibility.ProgrammerHidden, f.Visibility);
+    }
+
+    [Fact]
+    public void ParseItems_FieldWithoutVisibilityDefaultsToVisible()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EItemVisibility.Visible, f.Visibility);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsFieldVisibility()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Value = "v", Visibility = EItemVisibility.ProgrammerHidden
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EItemVisibility.ProgrammerHidden, f.Visibility);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsGroupVisibility()
+    {
+        var group = new Group
+        {
+            Number = 1, Key = "g", GroupName = "G",
+            Visibility = EItemVisibility.Collapsed
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([group]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var g = Assert.IsType<Group>(Assert.Single(parsed));
+        Assert.Equal(EItemVisibility.Collapsed, g.Visibility);
+    }
+
+    [Fact]
+    public void EffectiveVisibility_HiddenField_IsCollapsed()
+    {
+        var field = new Field { Visibility = EItemVisibility.ProgrammerHidden };
+        Assert.Equal(System.Windows.Visibility.Collapsed, field.EffectiveVisibility);
+    }
+
+    [Fact]
+    public void EffectiveVisibility_VisibleFieldNoParent_IsVisible()
+    {
+        var field = new Field { Visibility = EItemVisibility.Visible };
+        Assert.Equal(System.Windows.Visibility.Visible, field.EffectiveVisibility);
     }
 }
