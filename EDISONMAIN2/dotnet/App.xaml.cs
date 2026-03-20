@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using ALVA.EDISONAPI;
@@ -23,28 +24,47 @@ namespace EDISONMAIN2
             var services = new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer());
             EDServices.Initialize(services);
 
-            // TODO (Priority 5): load these from config rather than hardcoding defaults
-            var connParams = new ConnectionParams("192.168.16.1", 57770, "martin.hubata", "martin.hubata", 167);
+            // TODO (Priority 5): load server/port from config rather than hardcoding
+            string server = "192.168.16.1";
+            int port = 57770;
 
-            // Fetch companies using a temporary empty-namespace MLRest (legacy API requires concrete MLRest)
-            var emptyRest = new MLRest(connParams.Server, connParams.RestPort, "", "")
-            {
-                LoginName = connParams.UserName,
-                FullName  = connParams.FullName,
-                Mlp       = connParams.Mlp.ToString()
-            };
+            var loginRest = new MLRest(server, port, "", "");
+
+            // Fetch companies first — Caché Login method needs non-empty Idfa
             string errState = "";
-            var companies = GetCompanyList(ref errState, emptyRest, false);
+            var companies = GetCompanyList(ref errState, loginRest, false);
             if (!string.IsNullOrEmpty(errState))
                 throw new InvalidOperationException(errState);
 
-            // Find default company to create the real MLRest connection
-            var defaultCompany = companies[companies.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i];
-            var mlRest = new MLRestAdapter(new MLRest(connParams.Server, connParams.RestPort, defaultCompany.Database, defaultCompany.Id)
+            var defaultCompany = companies.FirstOrDefault(c => c.IsDefault);
+            if (defaultCompany.Id == null) defaultCompany = companies[0];
+
+            // Set Idfa so ALVA.SYS.Login.Login can resolve user's startupForm
+            loginRest.Idfa = defaultCompany.Id;
+
+            LoginResult login;
+#if DEBUG
+            login = new LoginResult(167, "martin.hubata", "martin.hubata", true, "", false, true, "");
+#else
+            // Login — prevent auto-shutdown when dialog closes (no other window is open yet)
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest);
+            if (loginWindow.ShowDialog() != true)
             {
-                LoginName = connParams.UserName,
-                FullName  = connParams.FullName,
-                Mlp       = connParams.Mlp.ToString()
+                Shutdown();
+                return;
+            }
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
+            login = loginWindow.Result!;
+#endif
+
+            // Create the real MLRest connection with company context
+            var connParams = new ConnectionParams(server, port, login.UserName, login.FullName, login.Mlp);
+            var mlRest = new MLRestAdapter(new MLRest(server, port, defaultCompany.Database, defaultCompany.Id)
+            {
+                LoginName = login.UserName,
+                FullName  = login.FullName,
+                Mlp       = login.Mlp.ToString()
             });
 
             var treeGetter = new ModuleTreeGetter();
