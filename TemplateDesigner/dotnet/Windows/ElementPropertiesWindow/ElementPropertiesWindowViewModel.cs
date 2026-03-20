@@ -298,6 +298,68 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         return list;
     }
 
+    // Předdefinované formáty stránek (kratší strana × delší strana)
+    private static readonly (string Label, float Short, float Long)[] PageFormats =
+    [
+        ("A2 (420 × 594 mm)", 420f, 594f),
+        ("A3 (297 × 420 mm)", 297f, 420f),
+        ("A4 (210 × 297 mm)", 210f, 297f),
+        ("A5 (148 × 210 mm)", 148f, 210f),
+    ];
+
+    private static string DetectPageFormat(float w, float h)
+    {
+        float shorter = Math.Min(w, h);
+        float longer  = Math.Max(w, h);
+        foreach (var (label, s, l) in PageFormats)
+            if (Math.Abs(shorter - s) < 0.5f && Math.Abs(longer - l) < 0.5f)
+                return label;
+        return "Vlastní";
+    }
+
+    private static string DetectOrientation(float w, float h) =>
+        w <= h ? "Na výšku" : "Na šířku";
+
+    /// <summary>
+    /// Při změně rozměrů stránky proporcionálně upraví DesignerHeight
+    /// obsahových sekcí (PrintBehavior = Once), aby se vešly na novou stránku.
+    /// Hlavičky, patičky a ostatní speciální sekce zůstávají beze změny.
+    /// </summary>
+    private static void ScaleBodySections(Template template, float oldPrintableHeight)
+    {
+        float newPrintableHeight = template.PageSize.PrintableHeight;
+        if (newPrintableHeight <= 0 || oldPrintableHeight <= 0) return;
+        if (Math.Abs(newPrintableHeight - oldPrintableHeight) < 0.1f) return;
+
+        // Spočítat kolik zabírají fixní sekce (hlavičky, patičky, ...)
+        float fixedHeight = 0f;
+        float bodyHeight = 0f;
+        foreach (var s in template.Sections)
+        {
+            if (s.DesignerHeight is null) continue; // dynamické sekce nešálujeme
+            if (s.PrintBehavior == SectionPrintBehavior.Once)
+                bodyHeight += s.DesignerHeight.Value;
+            else
+                fixedHeight += s.DesignerHeight.Value;
+        }
+
+        if (bodyHeight <= 0) return;
+
+        float availableForBody = newPrintableHeight - fixedHeight;
+        if (availableForBody <= 0) return;
+
+        float scale = availableForBody / bodyHeight;
+        // Nezvětšovat nad rozumnou mez (max 2×), jen zmenšovat nebo mírně zvětšovat
+        scale = Math.Clamp(scale, 0.1f, 2f);
+
+        foreach (var s in template.Sections)
+        {
+            if (s.DesignerHeight is null) continue;
+            if (s.PrintBehavior != SectionPrintBehavior.Once) continue;
+            s.DesignerHeight = MathF.Round(s.DesignerHeight.Value * scale, 1);
+        }
+    }
+
     private IReadOnlyList<Models.PropertyDescriptor> BuildPageDescriptors(Template template)
     {
         var ps = template.PageSize;
@@ -320,6 +382,56 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                     ("Slovenština (sk-SK)", (object)"sk-SK"),
                     ("Angličtina (en-US)",  (object)"en-US"),
                     ("Němčina (de-DE)",     (object)"de-DE"),
+                ]
+            },
+            new EnumPropertyDescriptor
+            {
+                Label = "Formát stránky", Group = "Rozměry stránky",
+                Get   = () => (object)DetectPageFormat(ps.Width, ps.Height),
+                Set   = v  =>
+                {
+                    var label = (string)v;
+                    if (label == "Vlastní") return;
+                    float oldPH = ps.PrintableHeight;
+                    foreach (var (fl, s, l) in PageFormats)
+                    {
+                        if (fl != label) continue;
+                        bool landscape = ps.Width > ps.Height;
+                        ps.Width  = landscape ? l : s;
+                        ps.Height = landscape ? s : l;
+                        break;
+                    }
+                    ScaleBodySections(template, oldPH);
+                },
+                Options =
+                [
+                    ("A2 (420 × 594 mm)", (object)"A2 (420 × 594 mm)"),
+                    ("A3 (297 × 420 mm)", (object)"A3 (297 × 420 mm)"),
+                    ("A4 (210 × 297 mm)", (object)"A4 (210 × 297 mm)"),
+                    ("A5 (148 × 210 mm)", (object)"A5 (148 × 210 mm)"),
+                    ("Vlastní",           (object)"Vlastní"),
+                ]
+            },
+            new EnumPropertyDescriptor
+            {
+                Label = "Orientace", Group = "Rozměry stránky",
+                Get   = () => (object)DetectOrientation(ps.Width, ps.Height),
+                Set   = v  =>
+                {
+                    var orient = (string)v;
+                    bool wantLandscape = orient == "Na šířku";
+                    bool isLandscape   = ps.Width > ps.Height;
+                    if (wantLandscape != isLandscape)
+                    {
+                        float oldPH = ps.PrintableHeight;
+                        (ps.Width, ps.Height) = (ps.Height, ps.Width);
+                        ScaleBodySections(template, oldPH);
+                    }
+                },
+                Options =
+                [
+                    ("Na výšku",  (object)"Na výšku"),
+                    ("Na šířku",  (object)"Na šířku"),
                 ]
             },
             new FloatPropertyDescriptor
