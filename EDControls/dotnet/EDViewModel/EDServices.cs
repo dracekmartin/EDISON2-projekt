@@ -33,4 +33,9 @@ public class EDServices(
     /// </summary>
     public static void Initialize(EDServices services) =>
         _current = services;
+
+    /// <summary>
+    /// Clears the static singleton. Test-only — prevents state leaking between tests.
+    /// </summary>
+    internal static void Reset() => _current = null;
 }
