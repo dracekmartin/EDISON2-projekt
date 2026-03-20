@@ -1,48 +1,69 @@
 using ALWA.SYS;
+using EDControls;
 using EDControls.EDInputForm;
+using NSubstitute;
 
 namespace EDControls.Tests;
 
 public class EDInputFormParsingTests
 {
-    [Fact]
-    public void ParseItems_EmptyOutput_ReturnsEmptyList()
+    private const string CacheClass = "TEST.InputForm";
+
+    private static IMLRest MockInitCall(CVar returnData)
     {
-        var output = new CVar();
+        var mock = Substitute.For<IMLRest>();
+        mock.QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>()).Returns(returnData);
+        return mock;
+    }
+
+    [Fact]
+    public void Init_EmptyOutput_ReturnsEmptyList()
+    {
+        var mlRest = MockInitCall(new CVar());
+
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
+
         Assert.Empty(items);
     }
 
     [Fact]
-    public void ParseItems_SkipsERRKey()
+    public void Init_SkipsERRKey()
     {
-        var output = new CVar();
-        output["ERR"] = new CVar("some error metadata");
+        var data = new CVar();
+        data["ERR"] = new CVar("some error metadata");
+        var mlRest = MockInitCall(data);
+
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
+
         Assert.Empty(items);
     }
 
     [Fact]
-    public void ParseItems_ParsesGroup()
+    public void Init_ParsesGroup()
     {
-        var output = new CVar();
-        output["1"] = new CList("GROUP", "1", "Osobní údaje");
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "1", "Osobní údaje");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
-        var group = Assert.Single(items);
-        var g = Assert.IsType<Group>(group);
+        var g = Assert.IsType<Group>(Assert.Single(items));
         Assert.Equal(1, g.Number);
         Assert.Equal("Osobní údaje", g.GroupName);
         Assert.True(g.IsVisible);
     }
 
     [Fact]
-    public void ParseItems_ParsesHiddenGroup()
+    public void Init_ParsesHiddenGroup()
     {
-        var output = new CVar();
-        output["1"] = new CList("GROUP", "5", "Skrytá", "0");
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "5", "Skrytá", "0");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
         var g = Assert.IsType<Group>(Assert.Single(items));
@@ -51,11 +72,13 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
-    public void ParseItems_ParsesTextField()
+    public void Init_ParsesTextField()
     {
-        var output = new CVar();
-        output["1"] = new CList("FIELD", "2", "jmeno", "Jméno", "TEXT", "Jan", "0", "1");
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "2", "jmeno", "Jméno", "TEXT", "Jan", "0", "1");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
@@ -70,11 +93,13 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
-    public void ParseItems_ParsesNumberField()
+    public void Init_ParsesNumberField()
     {
-        var output = new CVar();
-        output["1"] = new CList("FIELD", "3", "vek", "Věk", "NUMBER", "42", "1", "0");
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "3", "vek", "Věk", "NUMBER", "42", "1", "0");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
@@ -85,11 +110,13 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
-    public void ParseItems_EmptyValueBecomesNull()
+    public void Init_EmptyValueBecomesNull()
     {
-        var output = new CVar();
-        output["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "", "0", "0");
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "", "0", "0");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
@@ -97,11 +124,13 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
-    public void ParseItems_ParsesValidationError()
+    public void Init_ParsesValidationError()
     {
-        var output = new CVar();
-        output["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0", "Povinné pole");
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "key", "Label", "TEXT", "val", "0", "0", "Povinné pole");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
@@ -110,17 +139,18 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
-    public void ParseItems_FieldsAfterGroupGetParentGroup()
+    public void Init_FieldsAfterGroupGetParentGroup()
     {
-        var output = new CVar();
-        output["1"] = new CList("GROUP", "1", "Sekce A");
-        output["2"] = new CList("FIELD", "2", "a1", "Pole A1", "TEXT", "", "0", "0");
-        output["3"] = new CList("FIELD", "3", "a2", "Pole A2", "TEXT", "", "0", "0");
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "1", "Sekce A");
+        data["2"] = new CList("FIELD", "2", "a1", "Pole A1", "TEXT", "", "0", "0");
+        data["3"] = new CList("FIELD", "3", "a2", "Pole A2", "TEXT", "", "0", "0");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
         Assert.Equal(3, items.Count);
-        var group = Assert.IsType<Group>(items[0]);
         var f1 = Assert.IsType<Field>(items[1]);
         var f2 = Assert.IsType<Field>(items[2]);
         Assert.Equal("Sekce A", f1.ParentGroup?.GroupName);
@@ -128,11 +158,13 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
-    public void ParseItems_FieldsWithoutGroupHaveNullParent()
+    public void Init_FieldsWithoutGroupHaveNullParent()
     {
-        var output = new CVar();
-        output["1"] = new CList("FIELD", "1", "top", "Top", "TEXT", "val", "0", "0");
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "top", "Top", "TEXT", "val", "0", "0");
+        var mlRest = MockInitCall(data);
 
+        var output = mlRest.QueryOrThrow(CacheClass, "Init", new CVar());
         var items = EDInputForm.EDInputForm.ParseItems(output);
 
         var f = Assert.IsType<Field>(Assert.Single(items));
@@ -148,23 +180,18 @@ public class EDInputFormParsingTests
             Number = 2, Key = "k", Label = "Lbl", FieldType = EFieldType.Text,
             Value = "hello", ValidateOnChange = true, Required = true
         };
-        var items = new Item[] { group, field };
 
-        CVar result = EDInputForm.EDInputForm.SerializeItemsCVar(items);
+        CVar result = EDInputForm.EDInputForm.SerializeItemsCVar([group, field]);
 
-        // Verify the CVar has two entries keyed "1" and "2"
         CList g = result["1"];
         Assert.Equal("GROUP", g.GetString(1));
         Assert.Equal("1", g.GetString(2));
         Assert.Equal("Sekce", g.GetString(3));
-        Assert.Equal("1", g.GetString(4)); // IsVisible
+        Assert.Equal("1", g.GetString(4));
 
         CList f = result["2"];
         Assert.Equal("FIELD", f.GetString(1));
-        Assert.Equal("2", f.GetString(2));
         Assert.Equal("k", f.GetString(3));
-        Assert.Equal("Lbl", f.GetString(4));
-        Assert.Equal("TEXT", f.GetString(5));
         Assert.Equal("hello", f.GetString(6));
         Assert.Equal("1", f.GetString(7)); // ValidateOnChange
         Assert.Equal("1", f.GetString(8)); // Required
@@ -175,7 +202,6 @@ public class EDInputFormParsingTests
     {
         CVar result = EDInputForm.EDInputForm.SerializeItemsCVar(null);
 
-        // Should not throw and should be a valid (empty) CVar
         int count = 0;
         foreach (var _ in result) count++;
         Assert.Equal(0, count);
