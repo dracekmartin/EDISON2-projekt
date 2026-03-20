@@ -292,7 +292,9 @@ public partial class MainWindow : Window
         SKSurface surface = args.Surface;
         float w = (float)args.Info.Width;
         float h = (float)args.Info.Height;
-        _previewCanvas.Render(surface.Canvas, w, h, _vm.BuildPreviewMockData());
+        var previewData = _vm.BuildPreviewMockData();
+        _vm.State.CurrentPreviewData = previewData;
+        _previewCanvas.Render(surface.Canvas, w, h, previewData);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

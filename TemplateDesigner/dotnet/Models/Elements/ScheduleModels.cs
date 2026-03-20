@@ -104,6 +104,47 @@ public class StopColumn
     };
 }
 
+/// <summary>Nastavení sloupce skupiny dnů v DepartureGridElement (serializuje se do šablony).</summary>
+public class DepartureGroupColumnStyle
+{
+    public string SkupinaDnuId { get; set; } = "";
+    public bool IsVisible { get; set; } = true;
+
+    // Barvy záhlaví — null = použít výchozí z elementu
+    public string? HeaderTextColor { get; set; }
+    public string? HeaderBackgroundColor { get; set; }
+
+    // Záhlaví — font/styl — null = výchozí z elementu
+    public TextHorizontalAlignment? HeaderAlignment { get; set; }
+    public VerticalTextAlignment? HeaderVerticalAlignment { get; set; }
+    public float? HeaderFontSize { get; set; }
+    public bool? HeaderBold { get; set; }
+    public bool? HeaderItalic { get; set; }
+
+    // Datový sloupec — null = výchozí z elementu
+    public string? ColumnBackgroundColor { get; set; }
+    public float? DataFontSize { get; set; }
+    public bool? DataBold { get; set; }
+    public bool? DataItalic { get; set; }
+
+    public DepartureGroupColumnStyle Clone() => new()
+    {
+        SkupinaDnuId = SkupinaDnuId,
+        IsVisible = IsVisible,
+        HeaderTextColor = HeaderTextColor,
+        HeaderBackgroundColor = HeaderBackgroundColor,
+        HeaderAlignment = HeaderAlignment,
+        HeaderVerticalAlignment = HeaderVerticalAlignment,
+        HeaderFontSize = HeaderFontSize,
+        HeaderBold = HeaderBold,
+        HeaderItalic = HeaderItalic,
+        ColumnBackgroundColor = ColumnBackgroundColor,
+        DataFontSize = DataFontSize,
+        DataBold = DataBold,
+        DataItalic = DataItalic
+    };
+}
+
 /// <summary>Barevné pravidlo vyhodnocované přes ExpressionEvaluator.</summary>
 public class ColorRule
 {

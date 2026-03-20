@@ -108,6 +108,9 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         if (element is StopListElement stopListElement)
             descriptors = EnhanceStopListEditor(descriptors, stopListElement);
 
+        if (element is DepartureGridElement departureGridElement)
+            descriptors = EnhanceDepartureGroupEditor(descriptors, departureGridElement);
+
         CurrentDescriptors = descriptors;
         return descriptors;
     }
@@ -276,6 +279,55 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
                         RequestShowDescriptors?.Invoke(
                             EnhanceStopListEditor(element.GetPropertyDescriptors(), element));
+                    }
+                });
+            }
+            else
+            {
+                list.Add(d);
+            }
+        }
+        return list;
+    }
+
+    private IReadOnlyList<Models.PropertyDescriptor> EnhanceDepartureGroupEditor(
+        IReadOnlyList<Models.PropertyDescriptor> descriptors,
+        DepartureGridElement element)
+    {
+        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
+        foreach (var d in descriptors)
+        {
+            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Skupiny dnů")
+            {
+                list.Add(new Models.ButtonPropertyDescriptor
+                {
+                    Label       = btn.Label,
+                    Group       = btn.Group,
+                    ButtonLabel = btn.ButtonLabel,
+                    OnClick     = () =>
+                    {
+                        // Načíst dostupné skupiny z preview dat (cached v elementu)
+                        var previewData = _state.CurrentPreviewData;
+                        var availableGroups = element.GetAvailableSkupinyDnu(previewData);
+                        if (availableGroups.Count == 0)
+                        {
+                            System.Windows.MessageBox.Show(
+                                "Nejsou dostupná žádná data pro skupiny dnů.\nZapněte live preview se šablonou obsahující JŘ data.",
+                                "Skupiny dnů", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
+                            return;
+                        }
+
+                        var dlg = new DepartureGroupEditorDialog(availableGroups, element.GroupColumns)
+                            { Owner = Application.Current.MainWindow };
+                        if (dlg.ShowDialog() != true) return;
+
+                        _state.Execute(new Commands.Implementations.SetPropertyCommand(
+                            "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
+                            v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
+                        _currentInvalidate();
+
+                        RequestShowDescriptors?.Invoke(
+                            EnhanceDepartureGroupEditor(element.GetPropertyDescriptors(), element));
                     }
                 });
             }
