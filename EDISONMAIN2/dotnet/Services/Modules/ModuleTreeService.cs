@@ -1,38 +1,12 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using ALVA.EDISONAPI;
 using ALWA.SYS;
 using EDControls;
-using EDISONMAIN2.Services.Modules;
-using EDISONMAIN2.Services;
-using static ALVA.EDISONAPI.Database;
 
-namespace EDISONMAIN2.Services.Data
+namespace EDISONMAIN2.Services.Modules
 {
-    public class EdisonMainDataService(ConnectionParams connParams) : IEdisonMainDataService
+    public class ModuleTreeService : IModuleTreeService
     {
-        // GetCompanies needs a concrete MLRest with empty namespace — the legacy
-        // GetCompanyList API requires it. Created lazily and reused.
-        private MLRest? _emptyMLRest;
-
-        private MLRest EmptyRest =>
-            _emptyMLRest ??= new(connParams.Server, connParams.RestPort, "", "")
-            {
-                LoginName = connParams.UserName,
-                FullName  = connParams.FullName,
-                Mlp       = connParams.Mlp.ToString()
-            };
-
-        public IReadOnlyList<CompanyStruct> GetCompanies()
-        {
-            string errState = "";
-            var companies = GetCompanyList(ref errState, EmptyRest, false);
-            if (!string.IsNullOrEmpty(errState))
-                throw new InvalidOperationException(errState);
-            return companies;
-        }
-
         public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest)
         {
             CVar treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", new CVar());

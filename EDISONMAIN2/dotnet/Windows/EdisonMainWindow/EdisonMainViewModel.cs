@@ -1,12 +1,10 @@
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
-using ALVA.EDISONAPI;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Services;
-using EDISONMAIN2.Services.Data;
 using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
 using System.Windows;
@@ -18,7 +16,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
     class EdisonMainViewModel : EDViewModel
     {
-        private readonly IEdisonMainDataService _dataService;
+        private readonly IModuleTreeService _treeService;
         private readonly IProcessLaunchService _processService;
 
         public ICommand OpenModuleCommand { get; }
@@ -27,10 +25,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenEDComponentAndViewModelTestCommand { get; }
         public ICommand CloseAllCommand { get; }
 
-        public EdisonMainViewModel(IEdisonMainDataService dataService, IProcessLaunchService processService, ConnectionParams connParams)
+        public EdisonMainViewModel(
+            IReadOnlyList<CompanyStruct> companies,
+            IMLRest mlRest,
+            IModuleTreeService treeService,
+            IProcessLaunchService processService)
         {
-            ConnParams = connParams;
-            _dataService = dataService;
+            _treeService = treeService;
             _processService = processService;
 
             OpenModuleCommand        = new RelayCommand<IModule>(OpenModule);
@@ -41,18 +42,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             TopLevelModules = [];
 
-            var companies = _dataService.GetCompanies();
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
 
-            _services.MLRest = new MLRestAdapter(new MLRest(ConnParams.Server, ConnParams.RestPort, Namespace, Idfa)
-            {
-                LoginName = ConnParams.UserName,
-                FullName  = ConnParams.FullName,
-                Mlp       = ConnParams.Mlp.ToString()
-            });
+            _services.MLRest = mlRest;
 
-            var tree = _dataService.GetModuleTree(MLRest!);
+            var tree = _treeService.GetModuleTree(MLRest!);
             foreach (var module in tree)
                 TopLevelModules.Add(module);
         }
@@ -88,8 +83,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         public CompanyItem SelectedCompany => VisibleIdfas[_selectedCompanyIndex];
-
-        public ConnectionParams ConnParams { get; init; }
 
         public string Namespace => SelectedCompany.Database;
 
