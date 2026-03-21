@@ -137,6 +137,7 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 | `data-model.md` | C# datové třídy, JSON formáty, renderovací pipeline, interakční model | `dotnet/Models/**` |
 | `mvvm-patterns.md` | PropertyDescriptor, TableElement architektura, jak přidat element/okno | `dotnet/Windows/**` |
 | `cache-api.md` | AgendaAPI architektura, wire formáty, Caché skeleton, nová agenda checklist | `CACHE/**` |
+| `cache-database.md` | Mentální model DB: globály (LSO, ZST, CHR, ENUMS, SETTINGS), subscripty, business koncepty | `CACHE/**` |
 | `implementation-patterns.md` | Barvy, RenderContext, ComboBox gotcha, SkiaSharp quirks | `dotnet/**/*.cs` |
 
 Ruční reference:
