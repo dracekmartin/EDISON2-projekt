@@ -52,6 +52,19 @@ public class DepartureGridElement : ScheduleElementBase
     public int TimeAxisRangeTo { get; set; } = 24;
 
     // ═══════════════════════════════════════════
+    // Řádky dat
+    // ═══════════════════════════════════════════
+
+    /// <summary>Výška datového řádku v mm. Null = vypočítat z FontSize.</summary>
+    public float? DataRowHeight { get; set; }
+
+    /// <summary>Minuty tučně.</summary>
+    public bool MinuteBold { get; set; } = true;
+
+    /// <summary>Barva pozadí sudých řádků (zebra pattern). Null = bez podbarvení.</summary>
+    public string? AlternatingRowColor { get; set; } = "#FFF5F5F5";
+
+    // ═══════════════════════════════════════════
     // Anotace
     // ═══════════════════════════════════════════
     public bool ShowAnotace { get; set; } = true;
@@ -201,7 +214,7 @@ public class DepartureGridElement : ScheduleElementBase
         float fontSizeMm = FontSize * PtToMm;
         float headerFontMm = HeaderFontSize * PtToMm;
         float minuteFontMm = MinuteFontSize * PtToMm;
-        float rowH = ComputeRowH(FontSize);
+        float rowH = DataRowHeight ?? ComputeRowH(FontSize);
         float headerH = ComputeHeaderH(HeaderFontSize);
 
         int maxHeaderLines = finalGroups.Max(g => g.HeaderLines.Length);
@@ -245,10 +258,16 @@ public class DepartureGridElement : ScheduleElementBase
         float combinedHeaderH = ShowSkupinaDnuHeader
             ? Math.Max(layout.GroupHeaderH, layout.HeaderH)
             : layout.HeaderH;
+        // Pro scale použít font-driven výšku řádku, ne uživatelskou DataRowHeight —
+        // jinak zvětšení řádku paradoxně zmenšuje fonty
+        float fontRowH = ComputeRowH(FontSize);
+        float scaleNaturalH = combinedHeaderH + layout.Hours.Count * fontRowH;
+        float scale = ComputeFontScale(scaleNaturalH);
         float naturalH = combinedHeaderH + layout.Hours.Count * layout.RowH;
-        float scale = ComputeFontScale(naturalH);
 
-        float scaledRowH = layout.RowH * scale;
+        // Pokud je DataRowHeight explicitně nastavená, nescalovat ji — uživatel ji řídí přímo.
+        // Scale se aplikuje jen na fonty a záhlaví.
+        float scaledRowH = DataRowHeight.HasValue ? layout.RowH : layout.RowH * scale;
         float scaledHeaderH = layout.HeaderH * scale;
         float scaledGroupHeaderH = layout.GroupHeaderH * scale;
         float scaledGroupLineH = SkupinaDnuHeaderLineHeight * scale;
@@ -275,14 +294,22 @@ public class DepartureGridElement : ScheduleElementBase
         using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
         using var headerFont = new SKFont(
             SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerFontPx);
-        using var minuteFont = new SKFont(SKTypeface.FromFamilyName(FontFamily), minuteFontPx);
+        var minuteFontStyle = MinuteBold ? SKFontStyle.Bold : SKFontStyle.Normal;
+        using var minuteFont = new SKFont(SKTypeface.FromFamilyName(FontFamily, minuteFontStyle), minuteFontPx);
         using var groupNameFont = new SKFont(
             SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), groupNameFontPx);
 
-        // Anotace — font a paint vytvořeny jednou, ne per-minuta
-        float anotFontPx = AnotaceFontSize * PtToMm * ctx.MmToPx;
-        using var anotFont = new SKFont(SKTypeface.FromFamilyName(FontFamily), anotFontPx);
-        using var anotPaint = new SKPaint { Color = new SKColor(0xFFCC0000), IsAntialias = true };
+        // Anotace — dva fonty: specialni (~80% minut) a text (menší AnotaceFontSize)
+        float anotPrimaryFontPx = minuteFontPx * 0.8f; // specialni/nz: mírně menší než minuty
+        float anotSecondaryFontPx = AnotaceFontSize * PtToMm * scale * ctx.MmToPx; // text: výrazně menší
+        using var anotPrimaryFont = new SKFont(SKTypeface.FromFamilyName(FontFamily), anotPrimaryFontPx);
+        using var anotSecondaryFont = new SKFont(SKTypeface.FromFamilyName(FontFamily), anotSecondaryFontPx);
+        using var anotPaint = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
+
+        // Zebra pattern
+        SKPaint? zebraPaint = null;
+        if (AlternatingRowColor is not null)
+            zebraPaint = new SKPaint { Color = SKColor.Parse(AlternatingRowColor) };
 
         float usedWidth = Width;
         float currentY = Y;
@@ -378,11 +405,11 @@ public class DepartureGridElement : ScheduleElementBase
         foreach (var g in layout.Groups)
         {
             colStyles.TryGetValue(g.Skupina.Id, out var cs);
-            if (cs?.DataFontSize is not null || cs?.DataBold == true || cs?.DataItalic == true)
+            if (cs?.DataFontSize is not null || cs?.DataBold is not null || cs?.DataItalic == true)
             {
                 float dfMm = (cs.DataFontSize ?? MinuteFontSize) * PtToMm;
                 float dfPx = dfMm * scale * ctx.MmToPx;
-                bool bold = cs.DataBold ?? false;
+                bool bold = cs.DataBold ?? MinuteBold; // respektovat element default
                 bool italic = cs.DataItalic ?? false;
                 perGroupDataFonts[g.Skupina.Id] = new SKFont(
                     SKTypeface.FromFamilyName(FontFamily, MakeFontStyle(bold, italic)), dfPx);
@@ -393,15 +420,23 @@ public class DepartureGridElement : ScheduleElementBase
 
         // ── Řádky hodin ──────────────────────────────────────────────────────
         float scaledMinuteW = MinuteWidth * scale;
+        int rowIndex = 0;
         foreach (int hour in layout.Hours)
         {
+            // Zebra pattern — pozadí celého řádku
+            if (zebraPaint is not null && rowIndex % 2 == 1)
+            {
+                var zebraRect = ctx.ToCanvasRect(X, currentY, usedWidth, scaledRowH);
+                ctx.Canvas.DrawRect(zebraRect, zebraPaint);
+            }
+
             var hourPt = ctx.ToCanvas(X + 1f, currentY + scaledRowH * TextBaselineFactor);
             ctx.Canvas.DrawText(hour.ToString(), hourPt.X, hourPt.Y, font, paints.Text);
 
             float gx = X + HourColumnWidth;
             foreach (var g in layout.Groups)
             {
-                // Per-column pozadí datové oblasti
+                // Per-column pozadí datové oblasti (přes zebru)
                 if (perGroupColBgPaints.TryGetValue(g.Skupina.Id, out var colBg))
                 {
                     var colBgRect = ctx.ToCanvasRect(gx, currentY, g.GroupWidth, scaledRowH);
@@ -434,14 +469,36 @@ public class DepartureGridElement : ScheduleElementBase
                                 minutePaint = paints.Text;
                             }
 
+                            // Minuta
                             var minPt = ctx.ToCanvas(minX + 0.5f, currentY + scaledRowH * TextBaselineFactor);
                             ctx.Canvas.DrawText(minuteText, minPt.X, minPt.Y, dataFont, minutePaint);
 
+                            // Anotace — inline za minutou, velikost podle typu
                             if (ShowAnotace && odj.Anotace.Count > 0)
                             {
-                                var anotaceText = string.Join("", odj.Anotace.Select(a => a.Znak));
-                                var anotPt = ctx.ToCanvas(minX + scaledMinuteW * 0.7f, currentY + scaledRowH * 0.3f);
-                                ctx.Canvas.DrawText(anotaceText, anotPt.X, anotPt.Y, anotFont, anotPaint);
+                                float minuteTextW = dataFont.MeasureText(minuteText);
+                                float anotX = minPt.X + minuteTextW;
+
+                                foreach (var anot in odj.Anotace)
+                                {
+                                    // Specialni/NZ: stejná velikost jako minuty, na baseline
+                                    // Text: menší, mírně nahoru (subscript-like)
+                                    SKFont aFont;
+                                    float anotY;
+                                    if (anot.Typ == TypAnotace.Text)
+                                    {
+                                        aFont = anotSecondaryFont;
+                                        anotY = minPt.Y; // stejná baseline, menší font vypadá jako subscript
+                                    }
+                                    else
+                                    {
+                                        aFont = anotPrimaryFont;
+                                        anotY = minPt.Y;
+                                    }
+
+                                    ctx.Canvas.DrawText(anot.Znak, anotX, anotY, aFont, anotPaint);
+                                    anotX += aFont.MeasureText(anot.Znak);
+                                }
                             }
 
                             minX += scaledMinuteW;
@@ -460,6 +517,7 @@ public class DepartureGridElement : ScheduleElementBase
             var rowLineEnd = ctx.ToCanvas(X + usedWidth, currentY + scaledRowH);
             ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
             currentY += scaledRowH;
+            rowIndex++;
         }
 
         // ── Svislé čáry ──────────────────────────────────────────────────────
@@ -488,6 +546,7 @@ public class DepartureGridElement : ScheduleElementBase
         // Uvolnit per-column resources
         foreach (var f in perGroupDataFonts.Values) f.Dispose();
         foreach (var p in perGroupColBgPaints.Values) p.Dispose();
+        zebraPaint?.Dispose();
 
         ctx.Canvas.Restore(); // Uvolnit clip rect
     }
@@ -505,7 +564,7 @@ public class DepartureGridElement : ScheduleElementBase
 
     private void RenderPlaceholder(RenderContext ctx)
     {
-        float rowH = ComputeRowH(FontSize);
+        float rowH = DataRowHeight ?? ComputeRowH(FontSize);
         float headerH = ComputeHeaderH(HeaderFontSize);
 
         using var paints = CreateStandardPaints();
@@ -693,6 +752,10 @@ public class DepartureGridElement : ScheduleElementBase
         new FloatPropertyDescriptor { Label = "Velikost minut",     Group = "Odjezdy", Get = () => MinuteFontSize,             Set = v => MinuteFontSize = v, Min = 4, Max = 20, Unit = "pt" },
         new FloatPropertyDescriptor { Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
 
+        new FloatPropertyDescriptor { Label = "Výška řádku",       Group = "Řádky dat", Get = () => DataRowHeight ?? 0, Set = v => DataRowHeight = v > 0 ? v : null, Min = 0, Max = 15, Unit = "mm" },
+        new BoolPropertyDescriptor  { Label = "Minuty tučně",     Group = "Řádky dat", Get = () => MinuteBold,           Set = v => MinuteBold = v },
+        new ColorPropertyDescriptor { Label = "Zebra barva",       Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },
+
         new EnumPropertyDescriptor  { Label = "Časová osa", Group = "Časová osa",
             Get = () => TimeAxisMode, Set = v => TimeAxisMode = (TimeAxisMode)v,
             Options = [("Kompaktní", (object)TimeAxisMode.Compact), ("Plná (0–23)", (object)TimeAxisMode.Full), ("Rozsah", (object)TimeAxisMode.Range)] },
@@ -730,6 +793,9 @@ public class DepartureGridElement : ScheduleElementBase
             MinuteWidth                = MinuteWidth,
             MinuteFontSize             = MinuteFontSize,
             GroupSeparatorWidth        = GroupSeparatorWidth,
+            DataRowHeight              = DataRowHeight,
+            MinuteBold                 = MinuteBold,
+            AlternatingRowColor        = AlternatingRowColor,
             TimeAxisMode               = TimeAxisMode,
             TimeAxisRangeFrom          = TimeAxisRangeFrom,
             TimeAxisRangeTo            = TimeAxisRangeTo,
