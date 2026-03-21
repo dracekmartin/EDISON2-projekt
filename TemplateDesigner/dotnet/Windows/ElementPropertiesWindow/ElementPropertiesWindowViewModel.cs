@@ -49,6 +49,12 @@ public class ElementPropertiesWindowViewModel : EDViewModel
     /// <summary>Deskriptory připravené posledním voláním PrepareFor* — Window je přečte v konstruktoru.</summary>
     public IReadOnlyList<Models.PropertyDescriptor>? CurrentDescriptors { get; private set; }
 
+    /// <summary>
+    /// Callback pro otevření DepartureGroupEditorDialog z inline panelu.
+    /// Sdílí logiku s MainWindow.OpenDepartureGridDialog — jedna cesta, žádná duplikace.
+    /// </summary>
+    public Action<DepartureGridElement>? RequestOpenDepartureGridDialog { get; set; }
+
     /// <summary>Zruší změny a zavře dialog (DialogResult = false).</summary>
     public RelayCommand CancelCommand { get; }
 
@@ -367,38 +373,14 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Skupiny dnů")
+            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Nastavení odjezdů")
             {
                 list.Add(new Models.ButtonPropertyDescriptor
                 {
                     Label       = btn.Label,
                     Group       = btn.Group,
                     ButtonLabel = btn.ButtonLabel,
-                    OnClick     = () =>
-                    {
-                        // Načíst dostupné skupiny z preview dat (cached v elementu)
-                        var previewData = _state.CurrentPreviewData;
-                        var availableGroups = element.GetAvailableSkupinyDnu(previewData);
-                        if (availableGroups.Count == 0)
-                        {
-                            System.Windows.MessageBox.Show(
-                                "Nejsou dostupná žádná data pro skupiny dnů.\nZapněte live preview se šablonou obsahující JŘ data.",
-                                "Skupiny dnů", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Information);
-                            return;
-                        }
-
-                        var dlg = new DepartureGroupEditorDialog(availableGroups, element.GroupColumns)
-                            { Owner = Application.Current.MainWindow };
-                        if (dlg.ShowDialog() != true) return;
-
-                        _state.Execute(new Commands.Implementations.SetPropertyCommand(
-                            "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
-                            v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
-                        _currentInvalidate();
-
-                        RequestShowDescriptors?.Invoke(
-                            EnhanceDepartureGroupEditor(element.GetPropertyDescriptors(), element));
-                    }
+                    OnClick     = () => RequestOpenDepartureGridDialog?.Invoke(element)
                 });
             }
             else

@@ -368,7 +368,7 @@
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Mřížka odjezdů JŘ" FontWeight="SemiBold"/>
-                    <Run Text="— minutová mřížka odjezdů per skupina dnů (MinutesOnly / FullTime)" Foreground="#666666"/>
+                    <Run Text="— minutová mřížka odjezdů per skupina dnů" Foreground="#666666"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Legenda poznámek JŘ" FontWeight="SemiBold"/>

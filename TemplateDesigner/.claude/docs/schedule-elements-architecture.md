@@ -105,7 +105,6 @@ Další properties: `ShowStopIndentation`, `ShowSignalStopIndicator`, `SignalSto
 
 Mřížka minut odjezdů. Klíčové properties:
 - `SkupinaDnuId` — filtr skupin ("" = všechny, "SMO1,SMO2" = výběr)
-- `DisplayMode` — `MinutesOnly` (MHD) / `FullTime` (meziměsto, TBD)
 - `HourColumnWidth`, `MinuteWidth`, `MinuteFontSize`, `MinuteBold`
 - `ShowSkupinaDnuHeader`, `SkupinaDnuHeaderLineHeight`, `HeaderVerticalAlignment`
 - `TimeAxisMode` — `Compact` / `Full` / `Range` + `TimeAxisRangeFrom/To`
@@ -145,26 +144,6 @@ Legenda poznámek: `HeaderText`, `NoteSeparator`, `NoteFontSize`, `NoteLineHeigh
 ```
 
 **Poznámka:** StopListElement, DepartureGridElement a NotesLegendElement jsou 3 nezávislé elementy. Uživatel je umístí na canvas vedle sebe / pod sebe. Mohou být v jedné sekci nebo ve více sekcích.
-
----
-
-## Display mód "FullTime" (meziměstský styl) — TBD
-
-Matice: zastávky (řádky) × spoje (sloupce), seskupené po typech dne. `DepartureGridElement.DisplayMode = FullTime`.
-
-```
-┌ StopListElement ──┐ ┌ DepartureGridElement (FullTime) ──────────────────┐
-│                   │ │              │ PRACOVNÍ DNY         │ SOBOTY       │
-│  Zastávka         │ │              │ 6:00  8:00 10:00 ... │ 7:00 11:00   │
-│  Praha hl.n.      │ │ Praha hl.n.  │ 6:00  8:00 10:00    │ 7:00 11:00   │
-│  Pardubice        │ │ Pardubice    │ 7:44  9:44 11:44    │ 8:44 12:44   │
-│  Brno hl.n.       │ │ Brno hl.n.   │ 9:30 11:30 13:30    │ 10:30 14:30  │
-└───────────────────┘ └───────────────────────────────────────────────────┘
-┌ NotesLegendElement ─────────────────────────────────────────────────────┐
-│ a  nezajíždí do zast. Pardubice                                        │
-│ ²² Nejede 24.12.                                                       │
-└─────────────────────────────────────────────────────────────────────────┘
-```
 
 ---
 

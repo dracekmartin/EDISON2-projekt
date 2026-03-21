@@ -355,55 +355,35 @@ public abstract class ScheduleElementBase : TemplateElement
     [
         new StringPropertyDescriptor
         {
-            Label = "Font", Group = "JŘ Společné",
+            Label = "Font", Group = "Výchozí styl",
             Get = () => FontFamily, Set = v => FontFamily = v
         },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost písma", Group = "JŘ Společné",
+            Label = "Velikost písma", Group = "Výchozí styl",
             Get = () => FontSize, Set = v => FontSize = v,
             Min = 4, Max = 30, Unit = "pt"
         },
         new FloatPropertyDescriptor
         {
-            Label = "Velikost záhlaví", Group = "JŘ Společné",
+            Label = "Velikost záhlaví", Group = "Výchozí styl",
             Get = () => HeaderFontSize, Set = v => HeaderFontSize = v,
             Min = 4, Max = 30, Unit = "pt"
         },
         new ColorPropertyDescriptor
         {
-            Label = "Barva mřížky", Group = "JŘ Společné",
+            Label = "Barva mřížky", Group = "Výchozí styl",
             Get = () => GridColor, Set = v => GridColor = v
         },
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí záhlaví", Group = "JŘ Společné",
+            Label = "Pozadí záhlaví", Group = "Výchozí styl",
             Get = () => HeaderBackgroundColor, Set = v => HeaderBackgroundColor = v
         },
         new ColorPropertyDescriptor
         {
-            Label = "Barva záhlaví", Group = "JŘ Společné",
+            Label = "Barva záhlaví", Group = "Výchozí styl",
             Get = () => HeaderForeColor, Set = v => HeaderForeColor = v
-        },
-        new StringPropertyDescriptor
-        {
-            Label = "Zdroj zastávek", Group = "JŘ Zdroje dat",
-            Get = () => ZastavkyDataSource, Set = v => ZastavkyDataSource = v
-        },
-        new StringPropertyDescriptor
-        {
-            Label = "Zdroj skupin dnů", Group = "JŘ Zdroje dat",
-            Get = () => SkupinyDnuDataSource, Set = v => SkupinyDnuDataSource = v
-        },
-        new StringPropertyDescriptor
-        {
-            Label = "Zdroj odjezdů", Group = "JŘ Zdroje dat",
-            Get = () => OdjezdyDataSource, Set = v => OdjezdyDataSource = v
-        },
-        new StringPropertyDescriptor
-        {
-            Label = "Zdroj poznámek", Group = "JŘ Zdroje dat",
-            Get = () => PoznamkyDataSource, Set = v => PoznamkyDataSource = v
         },
     ];
 

@@ -55,14 +55,14 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 
 ---
 
-#### Fáze C: Meziměstský JŘ (FullTime mód)
+#### Fáze C: Meziměstský JŘ
 
-Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl: sloupce odjezdů nejsou typy provozu (jako MHD), ale mají jiný koncept specifický pro meziměsto. Layout je pivot tabulka (zastávky × spoje).
+Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl: sloupce odjezdů nejsou typy provozu (jako MHD), ale mají jiný koncept specifický pro meziměsto. Layout je pivot tabulka (zastávky × spoje). Pravděpodobně bude potřeba samostatný element (ne rozšíření DepartureGridElement).
 
 | Krok | Co | Stav |
 |---|---|---|
-| 14 | Definovat FullTime layout — analýza referenčních PDF meziměstských JŘ, wire formát dat | |
-| 15 | Implementace FullTime módu v StopListElement + DepartureGridElement (rozšíření existujících elementů) | |
+| 14 | Definovat meziměstský layout — analýza referenčních PDF, wire formát dat | |
+| 15 | Implementace meziměstského JŘ elementu | |
 | 16 | Caché `TiskMeziměsto` — GetData/GetMockData pro meziměstský JŘ | |
 
 ---
@@ -99,7 +99,7 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 | **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. |
 | **SKTypeface/SKPaint alokace** | Schedule elementy alokují SKTypeface a SKPaint per render frame. Funguje, ale není optimální. Cachovat fonty a painty. |
 | **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
-| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu (FullTime mód odložen). |
+| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu. |
 
 ---
 

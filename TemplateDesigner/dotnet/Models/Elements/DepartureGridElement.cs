@@ -41,6 +41,24 @@ public class DepartureGridElement : ScheduleElementBase
     public float MinuteWidth { get; set; } = 5f;
     public float MinuteFontSize { get; set; } = 7f;
 
+    /// <summary>Styl textu minuty (font, bold, barva). Null properties = element defaults.</summary>
+    public InlineTextStyle MinuteStyle { get; set; } = new();
+
+    /// <summary>Styl anotací typu speciální/NZ (symboly ×, F, H). Null properties = 80% velikosti minuty.</summary>
+    public InlineTextStyle AnotaceSymbolStyle { get; set; } = new();
+
+    /// <summary>Styl anotací typu text (písmena a, A, dny). Null properties = AnotaceFontSize.</summary>
+    public InlineTextStyle AnotaceTextStyle { get; set; } = new();
+
+    /// <summary>Mezera mezi minutou a první anotací (mm). 0 = bez mezery.</summary>
+    public float AnotaceGap { get; set; } = 0f;
+
+    /// <summary>Mezera mezi anotacemi navzájem (mm). 0 = bez mezery.</summary>
+    public float AnotaceInterGap { get; set; } = 0f;
+
+    /// <summary>Mezera mezi odjezdy v rámci jedné buňky (mm). 0 = jen MinuteWidth slot.</summary>
+    public float OdjezdGap { get; set; } = 0f;
+
     /// <summary>Šířka oddělovače mezi skupinami dnů (mm).</summary>
     public float GroupSeparatorWidth { get; set; } = 0.5f;
 
@@ -72,8 +90,12 @@ public class DepartureGridElement : ScheduleElementBase
     public bool ShowZkraceneOznaceniLinky { get; set; }
 
     // ═══════════════════════════════════════════
-    // Nastavení sloupců skupin dnů
+    // Nastavení sloupců
     // ═══════════════════════════════════════════
+
+    /// <summary>Vizuální styl sloupce hodin (záhlaví "Hod" + čísla hodin). Null = element defaults.</summary>
+    public ColumnVisualStyle? HourColumnStyle { get; set; }
+
     public List<DepartureGroupColumnStyle> GroupColumns { get; set; } = [];
 
     // ═══════════════════════════════════════════
@@ -181,7 +203,8 @@ public class DepartureGridElement : ScheduleElementBase
         {
             int maxMin = GetMaxMinutesPerHour(g.ByHour, hours);
             if (maxMin < 1) maxMin = 1;
-            float minuteBasedW = maxMin * MinuteWidth;
+            float effectiveSlotW = MinuteWidth + AnotaceGap;
+            float minuteBasedW = maxMin * effectiveSlotW + Math.Max(0, maxMin - 1) * OdjezdGap;
             float groupW = Math.Max(minuteBasedW, g.MinWidthForText);
             finalGroups.Add(g with { MaxMinutesPerHour = maxMin, GroupWidth = groupW });
         }
@@ -238,10 +261,7 @@ public class DepartureGridElement : ScheduleElementBase
     {
         if (Width <= 0) return;
 
-        if (DisplayMode == ScheduleDisplayMode.MinutesOnly)
-            RenderMinutesOnly(ctx);
-        else
-            RenderFullTime(ctx);
+        RenderMinutesOnly(ctx);
     }
 
     private void RenderMinutesOnly(RenderContext ctx)
@@ -294,34 +314,170 @@ public class DepartureGridElement : ScheduleElementBase
         using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
         using var headerFont = new SKFont(
             SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerFontPx);
-        var minuteFontStyle = MinuteBold ? SKFontStyle.Bold : SKFontStyle.Normal;
-        using var minuteFont = new SKFont(SKTypeface.FromFamilyName(FontFamily, minuteFontStyle), minuteFontPx);
+
+        // Minuty — InlineTextStyle override nebo element defaults
+        var ms = MinuteStyle;
+        float minuteEffFontPx = (ms.FontSize ?? MinuteFontSize) * PtToMm * scale * ctx.MmToPx;
+        bool minuteEffBold = ms.Bold ?? MinuteBold;
+        bool minuteEffItalic = ms.Italic ?? false;
+        using var minuteFont = new SKFont(
+            SKTypeface.FromFamilyName(ms.FontFamily ?? FontFamily,
+                MakeFontStyle(minuteEffBold, minuteEffItalic)),
+            minuteEffFontPx);
+        // Manuálně spravované resources — dispose v finally bloku na konci metody
+        var manualDisposables = new List<IDisposable>();
+
+        SKPaint? minuteStylePaint = null;
+        if (ms.TextColor is not null)
+        {
+            minuteStylePaint = new SKPaint { Color = SKColor.Parse(ms.TextColor), IsAntialias = true };
+            manualDisposables.Add(minuteStylePaint);
+        }
+
         using var groupNameFont = new SKFont(
             SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), groupNameFontPx);
 
-        // Anotace — dva fonty: specialni (~80% minut) a text (menší AnotaceFontSize)
-        float anotPrimaryFontPx = minuteFontPx * 0.8f; // specialni/nz: mírně menší než minuty
-        float anotSecondaryFontPx = AnotaceFontSize * PtToMm * scale * ctx.MmToPx; // text: výrazně menší
-        using var anotPrimaryFont = new SKFont(SKTypeface.FromFamilyName(FontFamily), anotPrimaryFontPx);
-        using var anotSecondaryFont = new SKFont(SKTypeface.FromFamilyName(FontFamily), anotSecondaryFontPx);
-        using var anotPaint = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
+        // Anotace symboly (speciální/NZ) — InlineTextStyle override nebo 80% minut
+        var ass = AnotaceSymbolStyle;
+        float anotSymFontPx = ass.FontSize is not null
+            ? ass.FontSize.Value * PtToMm * scale * ctx.MmToPx
+            : minuteEffFontPx * 0.8f;
+        using var anotPrimaryFont = new SKFont(
+            SKTypeface.FromFamilyName(ass.FontFamily ?? FontFamily,
+                MakeFontStyle(ass.Bold ?? false, ass.Italic ?? false)),
+            anotSymFontPx);
+        SKPaint? anotSymPaint = null;
+        if (ass.TextColor is not null)
+        {
+            anotSymPaint = new SKPaint { Color = SKColor.Parse(ass.TextColor), IsAntialias = true };
+            manualDisposables.Add(anotSymPaint);
+        }
+
+        // Anotace text — InlineTextStyle override nebo AnotaceFontSize
+        var ats = AnotaceTextStyle;
+        float anotTextFontPx = (ats.FontSize ?? AnotaceFontSize) * PtToMm * scale * ctx.MmToPx;
+        using var anotSecondaryFont = new SKFont(
+            SKTypeface.FromFamilyName(ats.FontFamily ?? FontFamily,
+                MakeFontStyle(ats.Bold ?? false, ats.Italic ?? false)),
+            anotTextFontPx);
+        SKPaint? anotTextPaint = null;
+        if (ats.TextColor is not null)
+        {
+            anotTextPaint = new SKPaint { Color = SKColor.Parse(ats.TextColor), IsAntialias = true };
+            manualDisposables.Add(anotTextPaint);
+        }
+
+        // Default anotace barva (fallback pokud žádný InlineTextStyle nemá TextColor)
+        using var anotDefaultPaint = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
+
+        float anotGapPx = AnotaceGap * scale * ctx.MmToPx;
+        float anotInterGapPx = AnotaceInterGap * scale * ctx.MmToPx;
+        float scaledOdjezdGap = OdjezdGap * scale; // v mm (model space), ne v px
 
         // Zebra pattern
         SKPaint? zebraPaint = null;
         if (AlternatingRowColor is not null)
+        {
             zebraPaint = new SKPaint { Color = SKColor.Parse(AlternatingRowColor) };
+            manualDisposables.Add(zebraPaint);
+        }
 
         float usedWidth = Width;
         float currentY = Y;
 
+        // ── Hour column style resources ─────────────────────────────────────
+        var hourHs = HourColumnStyle?.Header;
+        var hourDs = HourColumnStyle?.Data;
+        SKFont? hourHeaderFontCustom = null;
+        SKFont? hourDataFontCustom = null;
+        SKPaint? hourHeaderTextPaint = null;
+        SKPaint? hourHeaderBgPaint = null;
+        SKPaint? hourDataTextPaint = null;
+        SKPaint? hourDataBgPaint = null;
+        if (hourHs is not null)
+        {
+            if (hourHs.FontFamily is not null || hourHs.FontSize is not null || hourHs.Bold is not null || hourHs.Italic is not null)
+            {
+                float hfMm = (hourHs.FontSize ?? HeaderFontSize) * PtToMm * scale;
+                hourHeaderFontCustom = new SKFont(
+                    SKTypeface.FromFamilyName(hourHs.FontFamily ?? FontFamily,
+                        MakeFontStyle(hourHs.Bold ?? true, hourHs.Italic ?? false)),
+                    hfMm * ctx.MmToPx);
+                manualDisposables.Add(hourHeaderFontCustom);
+            }
+            if (hourHs.TextColor is not null)
+            {
+                hourHeaderTextPaint = new SKPaint { Color = SKColor.Parse(hourHs.TextColor), IsAntialias = true };
+                manualDisposables.Add(hourHeaderTextPaint);
+            }
+            if (hourHs.BackgroundColor is not null)
+            {
+                hourHeaderBgPaint = new SKPaint { Color = SKColor.Parse(hourHs.BackgroundColor) };
+                manualDisposables.Add(hourHeaderBgPaint);
+            }
+        }
+        if (hourDs is not null)
+        {
+            if (hourDs.FontFamily is not null || hourDs.FontSize is not null || hourDs.Bold is not null || hourDs.Italic is not null)
+            {
+                float dfMm = (hourDs.FontSize ?? FontSize) * PtToMm * scale;
+                hourDataFontCustom = new SKFont(
+                    SKTypeface.FromFamilyName(hourDs.FontFamily ?? FontFamily,
+                        MakeFontStyle(hourDs.Bold ?? false, hourDs.Italic ?? false)),
+                    dfMm * ctx.MmToPx);
+                manualDisposables.Add(hourDataFontCustom);
+            }
+            if (hourDs.TextColor is not null)
+            {
+                hourDataTextPaint = new SKPaint { Color = SKColor.Parse(hourDs.TextColor), IsAntialias = true };
+                manualDisposables.Add(hourDataTextPaint);
+            }
+            if (hourDs.BackgroundColor is not null)
+            {
+                hourDataBgPaint = new SKPaint { Color = SKColor.Parse(hourDs.BackgroundColor) };
+                manualDisposables.Add(hourDataBgPaint);
+            }
+        }
+
+        // Per-column resources — deklarace před try, aby finally mohl uvolnit
+        var perGroupDataFonts = new Dictionary<string, SKFont>();
+        var perGroupColBgPaints = new Dictionary<string, SKPaint>();
+        var perGroupDataTextPaints = new Dictionary<string, SKPaint>();
+
+        try
+        {
         // ── Sloučené záhlaví (Hod + názvy skupin dnů) ────────────────────────
         {
             var headerRect = ctx.ToCanvasRect(X, currentY, usedWidth, scaledCombinedHeaderH);
             ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
-            // "Hod" v levém sloupci — vertikálně dole
-            var hourHeaderPt = ctx.ToCanvas(X + 1f, currentY + scaledCombinedHeaderH - scaledHeaderH * (1f - HeaderBaselineFactor));
-            ctx.Canvas.DrawText("Hod", hourHeaderPt.X, hourHeaderPt.Y, headerFont, paints.HeaderText);
+            // Pozadí sloupce hodin v záhlaví
+            if (hourHeaderBgPaint is not null)
+            {
+                var hourBgRect = ctx.ToCanvasRect(X, currentY, HourColumnWidth, scaledCombinedHeaderH);
+                ctx.Canvas.DrawRect(hourBgRect, hourHeaderBgPaint);
+            }
+
+            // "Hod" v levém sloupci — s per-column zarovnáním a paddingem
+            var hourHdrFont = hourHeaderFontCustom ?? headerFont;
+            var hourHdrHAlign = hourHs?.HAlignment ?? TextHorizontalAlignment.Left;
+            float hourHPadLeft = (hourHs?.PaddingLeft ?? 0f) * scale;
+            float hourHPadRight = (hourHs?.PaddingRight ?? 0f) * scale;
+            float hourHPadBottom = (hourHs?.PaddingBottom ?? 0f) * scale;
+            float hodTextW = MeasureTextMm(hourHdrFont, "Hod", ctx.MmToPx);
+            float hodTextX = hourHdrHAlign switch
+            {
+                TextHorizontalAlignment.Center => X + hourHPadLeft + (HourColumnWidth - hourHPadLeft - hourHPadRight - hodTextW) / 2f,
+                TextHorizontalAlignment.Right  => X + HourColumnWidth - hodTextW - hourHPadRight - 1f,
+                _ => X + hourHPadLeft + 1f
+            };
+            float hodTextY = hourHs?.PaddingTop is float hourHPadTop
+                ? currentY + hourHPadTop * scale + scaledHeaderH * HeaderBaselineFactor
+                : currentY + scaledCombinedHeaderH - scaledHeaderH * (1f - HeaderBaselineFactor) - hourHPadBottom;
+            var hourHeaderPt = ctx.ToCanvas(hodTextX, hodTextY);
+            ctx.Canvas.DrawText("Hod", hourHeaderPt.X, hourHeaderPt.Y,
+                hourHdrFont,
+                hourHeaderTextPaint ?? paints.HeaderText);
 
             // Názvy skupin dnů
             if (ShowSkupinaDnuHeader && scaledGroupHeaderH > 0)
@@ -332,48 +488,59 @@ public class DepartureGridElement : ScheduleElementBase
                     colStyles.TryGetValue(g.Skupina.Id, out var colStyle);
 
                     // Per-column záhlaví pozadí
-                    if (colStyle?.HeaderBackgroundColor is not null)
+                    var hs = colStyle?.Style.Header;
+                    if (hs?.BackgroundColor is not null)
                     {
-                        using var colHeaderBg = new SKPaint { Color = SKColor.Parse(colStyle.HeaderBackgroundColor) };
+                        using var colHeaderBg = new SKPaint { Color = SKColor.Parse(hs.BackgroundColor) };
                         var colRect = ctx.ToCanvasRect(gx, currentY, g.GroupWidth, scaledCombinedHeaderH);
                         ctx.Canvas.DrawRect(colRect, colHeaderBg);
                     }
 
                     // Per-column font záhlaví
-                    float colHeaderFontMm = colStyle?.HeaderFontSize is float fs
+                    float colHeaderFontMm = hs?.FontSize is float fs
                         ? fs * PtToMm : SkupinaDnuHeaderLineHeight * 0.65f;
-                    float colLineH = colStyle?.HeaderFontSize is not null
+                    float colLineH = hs?.FontSize is not null
                         ? colHeaderFontMm * 1.5f * scale : scaledGroupLineH;
-                    bool colBold = colStyle?.HeaderBold ?? true;
-                    bool colItalic = colStyle?.HeaderItalic ?? false;
+                    bool colBold = hs?.Bold ?? true;
+                    bool colItalic = hs?.Italic ?? false;
                     float colHeaderFontPx = colHeaderFontMm * scale * ctx.MmToPx;
                     using var colFont = new SKFont(
-                        SKTypeface.FromFamilyName(FontFamily, MakeFontStyle(colBold, colItalic)),
+                        SKTypeface.FromFamilyName(hs?.FontFamily ?? FontFamily, MakeFontStyle(colBold, colItalic)),
                         colHeaderFontPx);
 
                     int lineCount = g.HeaderLines.Length;
                     float blockH = lineCount * colLineH;
 
-                    // Vertikální zarovnání — per-column override nebo element default
-                    var vAlign = colStyle?.HeaderVerticalAlignment ?? HeaderVerticalAlignment;
-                    float startLineY = vAlign switch
+                    // Vertikální pozice — padding nebo element default
+                    float hPadTop = (hs?.PaddingTop ?? 0f) * scale;
+                    float hPadBottom = (hs?.PaddingBottom ?? 0f) * scale;
+                    float hPadLeft = (hs?.PaddingLeft ?? 0f) * scale;
+                    float hPadRight = (hs?.PaddingRight ?? 0f) * scale;
+                    float startLineY;
+                    if (hs?.PaddingTop is not null)
+                        startLineY = currentY + hPadTop;
+                    else
                     {
-                        VerticalTextAlignment.Top => currentY,
-                        VerticalTextAlignment.Center => currentY + (scaledCombinedHeaderH - blockH) / 2f,
-                        _ => currentY + scaledCombinedHeaderH - blockH, // Bottom
-                    };
+                        // Fallback: element-level vertikální zarovnání
+                        startLineY = HeaderVerticalAlignment switch
+                        {
+                            VerticalTextAlignment.Top => currentY,
+                            VerticalTextAlignment.Center => currentY + (scaledCombinedHeaderH - blockH) / 2f,
+                            _ => currentY + scaledCombinedHeaderH - blockH, // Bottom
+                        };
+                    }
 
                     // Per-column text barva
                     SKPaint textPaint = paints.HeaderText;
                     SKPaint? customTextPaint = null;
-                    if (colStyle?.HeaderTextColor is not null)
+                    if (hs?.TextColor is not null)
                     {
-                        customTextPaint = new SKPaint { Color = SKColor.Parse(colStyle.HeaderTextColor), IsAntialias = true };
+                        customTextPaint = new SKPaint { Color = SKColor.Parse(hs.TextColor), IsAntialias = true };
                         textPaint = customTextPaint;
                     }
 
-                    // Per-column horizontální zarovnání
-                    var hAlign = colStyle?.HeaderAlignment ?? TextHorizontalAlignment.Center;
+                    // Per-column horizontální zarovnání (s padding)
+                    var hAlign = hs?.HAlignment ?? TextHorizontalAlignment.Center;
 
                     for (int i = 0; i < lineCount; i++)
                     {
@@ -382,9 +549,9 @@ public class DepartureGridElement : ScheduleElementBase
                         float textW = MeasureTextMm(colFont, g.HeaderLines[i], ctx.MmToPx);
                         float textX = hAlign switch
                         {
-                            TextHorizontalAlignment.Left  => gx + 1f,
-                            TextHorizontalAlignment.Right => gx + g.GroupWidth - textW - 1f,
-                            _ => gx + (g.GroupWidth - textW) / 2f
+                            TextHorizontalAlignment.Left  => gx + hPadLeft + 1f,
+                            TextHorizontalAlignment.Right => gx + g.GroupWidth - textW - hPadRight - 1f,
+                            _ => gx + hPadLeft + (g.GroupWidth - hPadLeft - hPadRight - textW) / 2f
                         };
 
                         var pt = ctx.ToCanvas(textX, lineY);
@@ -400,26 +567,45 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         // ── Per-column resources (vytvoříme jednou, ne per řádek) ─────────────
-        var perGroupDataFonts = new Dictionary<string, SKFont>();
-        var perGroupColBgPaints = new Dictionary<string, SKPaint>();
+        var perGroupDataHAlign = new Dictionary<string, TextHorizontalAlignment>();
+        // TryGetValue vrací default (0,0,0,0) pokud klíč neexistuje — žádný padding
+        var perGroupDataPadding = new Dictionary<string, (float Top, float Right, float Bottom, float Left)>();
         foreach (var g in layout.Groups)
         {
             colStyles.TryGetValue(g.Skupina.Id, out var cs);
-            if (cs?.DataFontSize is not null || cs?.DataBold is not null || cs?.DataItalic == true)
+            var ds = cs?.Style.Data;
+            if (ds?.FontFamily is not null || ds?.FontSize is not null || ds?.Bold is not null || ds?.Italic == true)
             {
-                float dfMm = (cs.DataFontSize ?? MinuteFontSize) * PtToMm;
+                float dfMm = (ds.FontSize ?? MinuteFontSize) * PtToMm;
                 float dfPx = dfMm * scale * ctx.MmToPx;
-                bool bold = cs.DataBold ?? MinuteBold; // respektovat element default
-                bool italic = cs.DataItalic ?? false;
+                bool bold = ds.Bold ?? MinuteBold;
+                bool italic = ds.Italic ?? false;
                 perGroupDataFonts[g.Skupina.Id] = new SKFont(
-                    SKTypeface.FromFamilyName(FontFamily, MakeFontStyle(bold, italic)), dfPx);
+                    SKTypeface.FromFamilyName(ds.FontFamily ?? FontFamily, MakeFontStyle(bold, italic)), dfPx);
             }
-            if (cs?.ColumnBackgroundColor is not null)
-                perGroupColBgPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(cs.ColumnBackgroundColor) };
+            if (ds?.BackgroundColor is not null)
+                perGroupColBgPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(ds.BackgroundColor) };
+            if (ds?.TextColor is not null)
+                perGroupDataTextPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(ds.TextColor), IsAntialias = true };
+            if (ds?.HAlignment is not null)
+                perGroupDataHAlign[g.Skupina.Id] = ds.HAlignment.Value;
+            if (ds?.PaddingTop is not null || ds?.PaddingRight is not null || ds?.PaddingBottom is not null || ds?.PaddingLeft is not null)
+                perGroupDataPadding[g.Skupina.Id] = (
+                    (ds?.PaddingTop ?? 0f) * scale, (ds?.PaddingRight ?? 0f) * scale,
+                    (ds?.PaddingBottom ?? 0f) * scale, (ds?.PaddingLeft ?? 0f) * scale);
         }
 
         // ── Řádky hodin ──────────────────────────────────────────────────────
-        float scaledMinuteW = MinuteWidth * scale;
+        float scaledMinuteW = (MinuteWidth + AnotaceGap) * scale;
+
+        // Hoisted: hour column data style — konstantní přes všechny řádky
+        var hourDFont = hourDataFontCustom ?? font;
+        var hourDataHAlign = hourDs?.HAlignment ?? TextHorizontalAlignment.Left;
+        float hourDPadLeft = (hourDs?.PaddingLeft ?? 0f) * scale;
+        float hourDPadRight = (hourDs?.PaddingRight ?? 0f) * scale;
+        float hourDPadTop = (hourDs?.PaddingTop ?? 0f) * scale;
+        var hourDPaint = hourDataTextPaint ?? paints.Text;
+
         int rowIndex = 0;
         foreach (int hour in layout.Hours)
         {
@@ -430,8 +616,23 @@ public class DepartureGridElement : ScheduleElementBase
                 ctx.Canvas.DrawRect(zebraRect, zebraPaint);
             }
 
-            var hourPt = ctx.ToCanvas(X + 1f, currentY + scaledRowH * TextBaselineFactor);
-            ctx.Canvas.DrawText(hour.ToString(), hourPt.X, hourPt.Y, font, paints.Text);
+            // Pozadí sloupce hodin
+            if (hourDataBgPaint is not null)
+            {
+                var hourBgRect = ctx.ToCanvasRect(X, currentY, HourColumnWidth, scaledRowH);
+                ctx.Canvas.DrawRect(hourBgRect, hourDataBgPaint);
+            }
+
+            var hourStr = hour.ToString();
+            float hourTextW = MeasureTextMm(hourDFont, hourStr, ctx.MmToPx);
+            float hourTextX = hourDataHAlign switch
+            {
+                TextHorizontalAlignment.Center => X + hourDPadLeft + (HourColumnWidth - hourDPadLeft - hourDPadRight - hourTextW) / 2f,
+                TextHorizontalAlignment.Right  => X + HourColumnWidth - hourTextW - hourDPadRight - 1f,
+                _ => X + hourDPadLeft + 1f
+            };
+            var hourPt = ctx.ToCanvas(hourTextX, currentY + hourDPadTop + scaledRowH * TextBaselineFactor);
+            ctx.Canvas.DrawText(hourStr, hourPt.X, hourPt.Y, hourDFont, hourDPaint);
 
             float gx = X + HourColumnWidth;
             foreach (var g in layout.Groups)
@@ -449,8 +650,28 @@ public class DepartureGridElement : ScheduleElementBase
 
                 if (g.ByHour.TryGetValue(hour, out var odjezdy))
                 {
-                    float minX = gx;
+                    // Per-column padding
+                    perGroupDataPadding.TryGetValue(g.Skupina.Id, out var dPad);
+
+                    // Zarovnání bloku minut ve sloupci (s padding)
+                    float availW = g.GroupWidth - dPad.Left - dPad.Right;
+                    float blockW = odjezdy.Count * (scaledMinuteW + scaledOdjezdGap) - scaledOdjezdGap;
+                    float alignOffset = dPad.Left;
+                    if (perGroupDataHAlign.TryGetValue(g.Skupina.Id, out var dataHAlign))
+                    {
+                        alignOffset += dataHAlign switch
+                        {
+                            TextHorizontalAlignment.Center => (availW - blockW) / 2f,
+                            TextHorizontalAlignment.Right  => availW - blockW - 0.5f,
+                            _ => 0f
+                        };
+                    }
+                    if (alignOffset < dPad.Left) alignOffset = dPad.Left;
+
+                    float minX = gx + alignOffset;
                     SKPaint? customMinutePaint = null;
+                    // Per-column text barva pro data
+                    perGroupDataTextPaints.TryGetValue(g.Skupina.Id, out var colDataTextPaint);
                     try
                     {
                         foreach (var odj in odjezdy)
@@ -466,42 +687,40 @@ public class DepartureGridElement : ScheduleElementBase
                             }
                             else
                             {
-                                minutePaint = paints.Text;
+                                minutePaint = colDataTextPaint ?? minuteStylePaint ?? paints.Text;
                             }
 
                             // Minuta
-                            var minPt = ctx.ToCanvas(minX + 0.5f, currentY + scaledRowH * TextBaselineFactor);
+                            var minPt = ctx.ToCanvas(minX + 0.5f, currentY + dPad.Top + scaledRowH * TextBaselineFactor);
                             ctx.Canvas.DrawText(minuteText, minPt.X, minPt.Y, dataFont, minutePaint);
 
-                            // Anotace — inline za minutou, velikost podle typu
+                            // Anotace — inline za minutou, s mezerou a per-typ stylem
                             if (ShowAnotace && odj.Anotace.Count > 0)
                             {
                                 float minuteTextW = dataFont.MeasureText(minuteText);
-                                float anotX = minPt.X + minuteTextW;
+                                float anotX = minPt.X + minuteTextW + anotGapPx;
 
                                 foreach (var anot in odj.Anotace)
                                 {
-                                    // Specialni/NZ: stejná velikost jako minuty, na baseline
-                                    // Text: menší, mírně nahoru (subscript-like)
                                     SKFont aFont;
-                                    float anotY;
+                                    SKPaint aPaint;
                                     if (anot.Typ == TypAnotace.Text)
                                     {
                                         aFont = anotSecondaryFont;
-                                        anotY = minPt.Y; // stejná baseline, menší font vypadá jako subscript
+                                        aPaint = anotTextPaint ?? anotDefaultPaint;
                                     }
                                     else
                                     {
                                         aFont = anotPrimaryFont;
-                                        anotY = minPt.Y;
+                                        aPaint = anotSymPaint ?? anotDefaultPaint;
                                     }
 
-                                    ctx.Canvas.DrawText(anot.Znak, anotX, anotY, aFont, anotPaint);
-                                    anotX += aFont.MeasureText(anot.Znak);
+                                    ctx.Canvas.DrawText(anot.Znak, anotX, minPt.Y, aFont, aPaint);
+                                    anotX += aFont.MeasureText(anot.Znak) + anotInterGapPx;
                                 }
                             }
 
-                            minX += scaledMinuteW;
+                            minX += scaledMinuteW + scaledOdjezdGap;
                         }
                     }
                     finally
@@ -543,24 +762,19 @@ public class DepartureGridElement : ScheduleElementBase
 
         RenderOuterBorder(ctx, X, Y, usedWidth, currentY - Y, paints.Grid);
 
-        // Uvolnit per-column resources
-        foreach (var f in perGroupDataFonts.Values) f.Dispose();
-        foreach (var p in perGroupColBgPaints.Values) p.Dispose();
-        zebraPaint?.Dispose();
+        } // try
+        finally
+        {
+            // Uvolnit per-column resources
+            foreach (var f in perGroupDataFonts.Values) f.Dispose();
+            foreach (var p in perGroupColBgPaints.Values) p.Dispose();
+            foreach (var p in perGroupDataTextPaints.Values) p.Dispose();
+            foreach (var d in manualDisposables) d.Dispose();
 
-        ctx.Canvas.Restore(); // Uvolnit clip rect
+            ctx.Canvas.Restore(); // Uvolnit clip rect
+        }
     }
 
-    private void RenderFullTime(RenderContext ctx)
-    {
-        float fontSizeMm = FontSize * PtToMm;
-        float fontPx = fontSizeMm * ctx.MmToPx;
-        using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
-        using var paint = new SKPaint { Color = new SKColor(0xFF999999), IsAntialias = true };
-
-        var pt = ctx.ToCanvas(X + 2f, Y + 10f);
-        ctx.Canvas.DrawText("FullTime mód (připravuje se)", pt.X, pt.Y, font, paint);
-    }
 
     private void RenderPlaceholder(RenderContext ctx)
     {
@@ -737,10 +951,10 @@ public class DepartureGridElement : ScheduleElementBase
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new ButtonPropertyDescriptor { Label = "Skupiny dnů", Group = "Odjezdy", ButtonLabel = "Upravit skupiny..." },
-        new EnumPropertyDescriptor  { Label = "Režim zobrazení", Group = "Odjezdy",
-            Get = () => DisplayMode, Set = v => DisplayMode = (ScheduleDisplayMode)v,
-            Options = [("Minuty", (object)ScheduleDisplayMode.MinutesOnly), ("Plný čas", (object)ScheduleDisplayMode.FullTime)] },
+        // ── Výchozí styl (základ pro dědění — per-column nastavení ho přepisuje) ──
+        .. GetScheduleBaseDescriptors(),
+
+        new ButtonPropertyDescriptor { Label = "Nastavení odjezdů", Group = "Odjezdy", ButtonLabel = "Upravit odjezdy..." },
 
         new BoolPropertyDescriptor  { Label = "Záhlaví skupin",     Group = "Odjezdy", Get = () => ShowSkupinaDnuHeader,       Set = v => ShowSkupinaDnuHeader = v },
         new FloatPropertyDescriptor { Label = "Výška řádku záhl.",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
@@ -749,24 +963,39 @@ public class DepartureGridElement : ScheduleElementBase
             Options = [("Nahoru", (object)VerticalTextAlignment.Top), ("Na střed", (object)VerticalTextAlignment.Center), ("Dolů", (object)VerticalTextAlignment.Bottom)] },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Velikost minut",     Group = "Odjezdy", Get = () => MinuteFontSize,             Set = v => MinuteFontSize = v, Min = 4, Max = 20, Unit = "pt" },
         new FloatPropertyDescriptor { Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
 
         new FloatPropertyDescriptor { Label = "Výška řádku",       Group = "Řádky dat", Get = () => DataRowHeight ?? 0, Set = v => DataRowHeight = v > 0 ? v : null, Min = 0, Max = 15, Unit = "mm" },
-        new BoolPropertyDescriptor  { Label = "Minuty tučně",     Group = "Řádky dat", Get = () => MinuteBold,           Set = v => MinuteBold = v },
         new ColorPropertyDescriptor { Label = "Zebra barva",       Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },
 
-        new EnumPropertyDescriptor  { Label = "Časová osa", Group = "Časová osa",
-            Get = () => TimeAxisMode, Set = v => TimeAxisMode = (TimeAxisMode)v,
-            Options = [("Kompaktní", (object)TimeAxisMode.Compact), ("Plná (0–23)", (object)TimeAxisMode.Full), ("Rozsah", (object)TimeAxisMode.Range)] },
-        new FloatPropertyDescriptor { Label = "Od hodiny", Group = "Časová osa", Get = () => TimeAxisRangeFrom, Set = v => TimeAxisRangeFrom = (int)v, Min = 0, Max = 23, Format = "0" },
-        new FloatPropertyDescriptor { Label = "Do hodiny", Group = "Časová osa", Get = () => TimeAxisRangeTo,   Set = v => TimeAxisRangeTo = (int)v,   Min = 0, Max = 23, Format = "0" },
+        // ── Styl minuty ──
+        new StringPropertyDescriptor { Label = "Font",         Group = "Styl minuty", Get = () => MinuteStyle.FontFamily ?? "", Set = v => MinuteStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Styl minuty", Get = () => MinuteStyle.FontSize ?? MinuteFontSize, Set = v => MinuteStyle.FontSize = v, Min = 3, Max = 24, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Styl minuty", Get = () => MinuteStyle.Bold ?? MinuteBold,         Set = v => MinuteStyle.Bold = v },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Styl minuty", Get = () => MinuteStyle.Italic ?? false,            Set = v => MinuteStyle.Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Styl minuty", Get = () => MinuteStyle.TextColor ?? "",            Set = v => MinuteStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
-        new BoolPropertyDescriptor  { Label = "Anotace",             Group = "Anotace", Get = () => ShowAnotace,                Set = v => ShowAnotace = v },
-        new FloatPropertyDescriptor { Label = "Velikost anotací",    Group = "Anotace", Get = () => AnotaceFontSize,            Set = v => AnotaceFontSize = v, Min = 3, Max = 12, Unit = "pt" },
-        new BoolPropertyDescriptor  { Label = "Zkr. označ. linky",  Group = "Anotace", Get = () => ShowZkraceneOznaceniLinky,   Set = v => ShowZkraceneOznaceniLinky = v },
+        // ── Styl anotací — symboly (speciální/NZ) ──
+        new StringPropertyDescriptor { Label = "Font",         Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.FontFamily ?? "", Set = v => AnotaceSymbolStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.FontSize ?? 0, Set = v => AnotaceSymbolStyle.FontSize = v > 0 ? v : null, Min = 0, Max = 20, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
-        .. GetScheduleBaseDescriptors(),
+        // ── Styl anotací — text (písmena, dny) ──
+        new StringPropertyDescriptor { Label = "Font",         Group = "Anotace — text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
+        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Anotace — text", Get = () => AnotaceTextStyle.FontSize ?? AnotaceFontSize, Set = v => AnotaceTextStyle.FontSize = v, Min = 3, Max = 20, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace — text", Get = () => AnotaceTextStyle.Bold ?? false,   Set = v => AnotaceTextStyle.Bold = v ? true : null },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace — text", Get = () => AnotaceTextStyle.Italic ?? false, Set = v => AnotaceTextStyle.Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace — text", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
+
+        new BoolPropertyDescriptor  { Label = "Anotace",              Group = "Anotace", Get = () => ShowAnotace,              Set = v => ShowAnotace = v },
+        new BoolPropertyDescriptor  { Label = "Zkr. označ. linky",   Group = "Anotace", Get = () => ShowZkraceneOznaceniLinky, Set = v => ShowZkraceneOznaceniLinky = v },
+
+        new FloatPropertyDescriptor { Label = "Mezera min. ↔ anot.",  Group = "Mezery", Get = () => AnotaceGap,      Set = v => AnotaceGap = v,      Min = 0, Max = 5, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Mezera anot. ↔ anot.", Group = "Mezery", Get = () => AnotaceInterGap, Set = v => AnotaceInterGap = v, Min = 0, Max = 5, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Mezera mezi odjezdy",  Group = "Mezery", Get = () => OdjezdGap,       Set = v => OdjezdGap = v,       Min = 0, Max = 10, Unit = "mm" },
+
         .. GetPositionDescriptors()
     ];
 
@@ -792,6 +1021,12 @@ public class DepartureGridElement : ScheduleElementBase
             HourColumnWidth            = HourColumnWidth,
             MinuteWidth                = MinuteWidth,
             MinuteFontSize             = MinuteFontSize,
+            MinuteStyle                = MinuteStyle.Clone(),
+            AnotaceSymbolStyle         = AnotaceSymbolStyle.Clone(),
+            AnotaceTextStyle           = AnotaceTextStyle.Clone(),
+            AnotaceGap                 = AnotaceGap,
+            AnotaceInterGap            = AnotaceInterGap,
+            OdjezdGap                  = OdjezdGap,
             GroupSeparatorWidth        = GroupSeparatorWidth,
             DataRowHeight              = DataRowHeight,
             MinuteBold                 = MinuteBold,
@@ -802,6 +1037,7 @@ public class DepartureGridElement : ScheduleElementBase
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
             ShowZkraceneOznaceniLinky   = ShowZkraceneOznaceniLinky,
+            HourColumnStyle            = HourColumnStyle?.Clone(),
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
             ColorRules                 = ColorRules.Select(r => r.Clone()).ToList(),
         };

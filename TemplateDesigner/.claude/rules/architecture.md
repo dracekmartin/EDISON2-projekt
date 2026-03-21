@@ -89,7 +89,7 @@ ElementPropertiesWindow.xaml / .cs — dialog vlastností elementu/sekce
 | `TableElement.cs` | `TableElement` | Tabulka Fixed/Dynamic, UI editor sloupců + řádků |
 | `ScheduleModels.cs` | `ZastavkaData`, `OdjezdData`, ... | Runtime POCO modely pro JŘ elementy (neserializují se) |
 | `ScheduleElementBase.cs` | `ScheduleElementBase` | Abstraktní základ JŘ elementů: DataSource klíče, Build helpery, společné properties |
-| `StopScheduleElement.cs` | `StopScheduleElement` | Zastávkový JŘ: MinutesOnly (MHD) + FullTime (meziměsto), ~30 properties |
+| `StopScheduleElement.cs` | `StopScheduleElement` | Zastávkový JŘ: MHD minutová mřížka, ~30 properties |
 
 ### /Commands/Implementations
 | Soubor | Třída | Zodpovědnost |

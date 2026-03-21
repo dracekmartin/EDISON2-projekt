@@ -85,6 +85,77 @@ public class PoznamkaData
     public string Text { get; set; } = "";
 }
 
+// ─── Generický per-column styling ────────────────────────────────────────────
+
+/// <summary>
+/// Lehký textový styl pro inline segmenty (minuty, anotace).
+/// Null property = dědit z element-level default.
+/// </summary>
+public class InlineTextStyle
+{
+    public string? FontFamily { get; set; }
+    public float? FontSize { get; set; }
+    public bool? Bold { get; set; }
+    public bool? Italic { get; set; }
+    public string? TextColor { get; set; }
+
+    public InlineTextStyle Clone() => (InlineTextStyle)MemberwiseClone();
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEmpty =>
+        FontFamily is null && FontSize is null && Bold is null
+        && Italic is null && TextColor is null;
+}
+
+/// <summary>
+/// Vizuální styl jedné zóny buňky (záhlaví NEBO data).
+/// Null property = dědit z element-level default.
+/// </summary>
+public class CellStyle
+{
+    public string? FontFamily { get; set; }
+    public float? FontSize { get; set; }
+    public bool? Bold { get; set; }
+    public bool? Italic { get; set; }
+    public string? TextColor { get; set; }
+    public string? BackgroundColor { get; set; }
+    public TextHorizontalAlignment? HAlignment { get; set; }
+    public float? PaddingTop { get; set; }
+    public float? PaddingRight { get; set; }
+    public float? PaddingBottom { get; set; }
+    public float? PaddingLeft { get; set; }
+
+    public CellStyle Clone() => (CellStyle)MemberwiseClone();
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEmpty =>
+        FontFamily is null && FontSize is null && Bold is null
+        && Italic is null && TextColor is null && BackgroundColor is null
+        && HAlignment is null
+        && PaddingTop is null && PaddingRight is null
+        && PaddingBottom is null && PaddingLeft is null;
+}
+
+/// <summary>
+/// Kompletní vizuální styl sloupce = záhlaví + datové buňky.
+/// </summary>
+public class ColumnVisualStyle
+{
+    public CellStyle? Header { get; set; }
+    public CellStyle? Data { get; set; }
+
+    public ColumnVisualStyle Clone() => new()
+    {
+        Header = Header?.Clone(),
+        Data = Data?.Clone()
+    };
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEmpty => (Header is null || Header.IsEmpty) && (Data is null || Data.IsEmpty);
+}
+
+// ─── Per-element column models ───────────────────────────────────────────────
+
 /// <summary>Konfigurovatelný sloupec tabulky zastávek (StopListElement).</summary>
 public class StopColumn
 {
@@ -109,39 +180,13 @@ public class DepartureGroupColumnStyle
 {
     public string SkupinaDnuId { get; set; } = "";
     public bool IsVisible { get; set; } = true;
-
-    // Barvy záhlaví — null = použít výchozí z elementu
-    public string? HeaderTextColor { get; set; }
-    public string? HeaderBackgroundColor { get; set; }
-
-    // Záhlaví — font/styl — null = výchozí z elementu
-    public TextHorizontalAlignment? HeaderAlignment { get; set; }
-    public VerticalTextAlignment? HeaderVerticalAlignment { get; set; }
-    public float? HeaderFontSize { get; set; }
-    public bool? HeaderBold { get; set; }
-    public bool? HeaderItalic { get; set; }
-
-    // Datový sloupec — null = výchozí z elementu
-    public string? ColumnBackgroundColor { get; set; }
-    public float? DataFontSize { get; set; }
-    public bool? DataBold { get; set; }
-    public bool? DataItalic { get; set; }
+    public ColumnVisualStyle Style { get; set; } = new();
 
     public DepartureGroupColumnStyle Clone() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
         IsVisible = IsVisible,
-        HeaderTextColor = HeaderTextColor,
-        HeaderBackgroundColor = HeaderBackgroundColor,
-        HeaderAlignment = HeaderAlignment,
-        HeaderVerticalAlignment = HeaderVerticalAlignment,
-        HeaderFontSize = HeaderFontSize,
-        HeaderBold = HeaderBold,
-        HeaderItalic = HeaderItalic,
-        ColumnBackgroundColor = ColumnBackgroundColor,
-        DataFontSize = DataFontSize,
-        DataBold = DataBold,
-        DataItalic = DataItalic
+        Style = Style.Clone()
     };
 }
 

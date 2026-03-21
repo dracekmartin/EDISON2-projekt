@@ -162,6 +162,8 @@ public class NotesLegendElement : ScheduleElementBase
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
+        .. GetScheduleBaseDescriptors(),
+
         new StringPropertyDescriptor { Label = "Nadpis",               Group = "Poznámky", Get = () => HeaderText,       Set = v => HeaderText = v },
         new StringPropertyDescriptor { Label = "Oddělovač",           Group = "Poznámky", Get = () => NoteSeparator,    Set = v => NoteSeparator = v },
         new FloatPropertyDescriptor  { Label = "Velikost písma pozn.", Group = "Poznámky", Get = () => NoteFontSize,     Set = v => NoteFontSize = v,     Min = 4, Max = 20, Unit = "pt" },
@@ -174,7 +176,6 @@ public class NotesLegendElement : ScheduleElementBase
         new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
-        .. GetScheduleBaseDescriptors(),
         .. GetPositionDescriptors()
     ];
 

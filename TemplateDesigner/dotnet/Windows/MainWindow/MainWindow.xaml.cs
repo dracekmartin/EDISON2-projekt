@@ -142,6 +142,9 @@ public partial class MainWindow : Window
             getAvailableGroups:    _vm.GetAvailableGroups,
             tableTemplateProvider: _vm.TableTemplateProvider);
 
+        // Callback: otevření DepartureGroupEditorDialog z inline panelu i modálního dialogu
+        _propsVm.RequestOpenDepartureGridDialog = el => OpenDepartureGridDialog(el);
+
         // Inline properties panel — SetContext s execute + invalidate callbacky
         InlinePropertiesPanel.SetContext(
             cmd => _vm.State.Execute(cmd),
@@ -1110,10 +1113,66 @@ public partial class MainWindow : Window
 
     private void OpenPropertiesForElement(TemplateElement element)
     {
+        if (element is DepartureGridElement depEl)
+        {
+            OpenDepartureGridDialog(depEl);
+            return;
+        }
+
         _propsVm!.PrepareForElement(element, isNewSession: true);
         new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
         InvalidateCanvas();
         InvalidatePreview();
+    }
+
+    private void OpenDepartureGridDialog(DepartureGridElement element)
+    {
+        var undoDepth = _vm!.State.UndoStack.Count;
+
+        // Obecné descriptory = element properties bez tlačítka "Nastavení odjezdů"
+        var allDescriptors = element.GetPropertyDescriptors();
+        var generalDescriptors = allDescriptors
+            .Where(d => d is not Models.ButtonPropertyDescriptor)
+            .ToList();
+
+        // Dostupné skupiny z preview dat
+        var previewData = _vm.State.CurrentPreviewData;
+        var availableGroups = element.GetAvailableSkupinyDnu(previewData);
+
+        var dlg = new DepartureGroupEditorDialog(
+            availableGroups,
+            element.GroupColumns,
+            element.HourColumnStyle,
+            generalDescriptors,
+            cmd => _vm.State.Execute(cmd),
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
+            { Owner = this };
+
+        if (dlg.ShowDialog() == true)
+        {
+            // Uložit per-column styles
+            if (availableGroups.Count > 0)
+            {
+                _vm.State.Execute(new Commands.Implementations.SetPropertyCommand(
+                    "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
+                    v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
+            }
+
+            // Uložit hour column style
+            _vm.State.Execute(new Commands.Implementations.SetPropertyCommand(
+                "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
+                v => element.HourColumnStyle = (ColumnVisualStyle?)v));
+        }
+        else
+        {
+            // Cancel — vrátit změny z obecného tabu
+            while (_vm.State.UndoStack.Count > undoDepth)
+                _vm.State.Undo();
+        }
+
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
     }
 
     private void OpenPropertiesForSection(Section section)

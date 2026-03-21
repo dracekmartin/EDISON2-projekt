@@ -18,6 +18,10 @@
       "designerHeight": 25,
       "printBehavior": "OnEveryPage",
       "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
       "elements": [
         {
           "type": "TextElement",
@@ -184,6 +188,10 @@
       "designerHeight": 150,
       "printBehavior": "Once",
       "overflowBehavior": "SplitAcrossPages",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
       "elements": [
         {
           "type": "StopListElement",
@@ -271,13 +279,74 @@
           "hourColumnWidth": 8,
           "minuteWidth": 5,
           "minuteFontSize": 7,
+          "minuteStyle": {
+            "fontSize": 9,
+            "bold": true,
+            "isEmpty": false
+          },
+          "anotaceSymbolStyle": {
+            "fontSize": 8,
+            "bold": true,
+            "isEmpty": false
+          },
+          "anotaceTextStyle": {
+            "fontSize": 6,
+            "isEmpty": false
+          },
+          "anotaceGap": 0.2,
+          "anotaceInterGap": 0.2,
+          "odjezdGap": 5,
           "groupSeparatorWidth": 0.5,
           "timeAxisMode": "Compact",
           "timeAxisRangeFrom": 4,
           "timeAxisRangeTo": 24,
+          "minuteBold": true,
+          "alternatingRowColor": "#FFF5F5F5",
           "showAnotace": true,
           "anotaceFontSize": 5,
           "showZkraceneOznaceniLinky": false,
+          "hourColumnStyle": {
+            "header": {
+              "bold": true,
+              "isEmpty": false
+            },
+            "isEmpty": false
+          },
+          "groupColumns": [
+            {
+              "skupinaDnuId": "1001",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "bold": true,
+                  "isEmpty": false
+                },
+                "isEmpty": false
+              }
+            },
+            {
+              "skupinaDnuId": "1002",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "bold": true,
+                  "isEmpty": false
+                },
+                "isEmpty": false
+              }
+            },
+            {
+              "skupinaDnuId": "1003",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "bold": true,
+                  "isEmpty": false
+                },
+                "isEmpty": false
+              }
+            }
+          ],
           "colorRules": [],
           "zastavkyDataSource": "ZASTAVKY",
           "skupinyDnuDataSource": "SKUPINY_DNU",
@@ -499,6 +568,10 @@
       "designerHeight": 15,
       "printBehavior": "OnEveryPage",
       "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
       "elements": []
     }
   ],
@@ -559,5 +632,5 @@
     }
   ],
   "createdAt": "2026-03-20T09:43:50.6510864Z",
-  "modifiedAt": "2026-03-20T12:15:14.6850218Z"
+  "modifiedAt": "2026-03-21T20:46:08.9394921Z"
 }
