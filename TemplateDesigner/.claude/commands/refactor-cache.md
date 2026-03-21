@@ -13,7 +13,11 @@ Business logika (JŘ kontext): !`cat .claude/rules/cache-business-logic.md`
 Referenční implementace (vzor): !`cat CACHE/ALVA/TemplateDesigner/API/ZastavkoveJrMhdAPI.cls`
 Abstraktní základ: !`cat CACHE/ALVA/TemplateDesigner/API/AgendaAPI.cls`
 
-Zdrojový soubor k refaktoru: !`cat $ARGUMENTS`
+Dostupné .cls soubory: !`ls CACHE/ALVA/TemplateDesigner/API/`
+
+**PRVNÍ KROK:** Najdi a přečti soubor "$ARGUMENTS" pomocí Glob a Read nástrojů.
+Uživatel může zadat: přesnou cestu (`CACHE/ALVA/.../Foo.cls`), jen název (`Foo.cls`), nebo tečkovou notaci (`ALVA.TemplateDesigner.API.Foo.cls`).
+Použij `Glob("CACHE/**/$ARGUMENTS")` nebo `Glob("CACHE/**/*.cls")` pro nalezení souboru. Pokud nenajdeš, vypiš dostupné soubory a zeptej se uživatele.
 
 ## Refaktorovací checklist
 
@@ -34,13 +38,14 @@ Projdi kód systematicky a aplikuj každý bod:
 ### Globály a reference
 - [ ] `@indirection@(...)` → přímé reference `^||NazevGlobalu(...)`
 - [ ] Tajemné číselné indexy `^||wg(1,2,3)` → pojmenované klíče `^||TiskMHD("trasa",SmerID,BodID)`
+- [ ] **SMOID** — zastaralý koncept. Pokud kód používá `SMOID` nebo `SMO`, zkonzultovat s uživatelem a nahradit přímým `TypProvozuID`
 
 ### Dot-notation
 - [ ] `obj.KEY_NAME = v` → `obj.%Set("KEY_NAME", v)` (podtržítko v dot-notation nefunguje)
 - [ ] Ověřit že jednoduché `obj.name = v` bez podtržítka zůstávají (ty fungují)
 
 ### Struktura metod
-- [ ] Každá metoda s `ByRef sys`: `$$$Init` + `$$$FillParams` + `$$$CatchErrRest`
+- [ ] API metody (s `ByRef sys`): `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` (ne `ret 1`, ne `$$$Init`)
 - [ ] Vstup přes `$g(^||ML("IN","key"))` — ne přes parametry metody
 - [ ] Výstup přes `^||ML("OUT",...)` — pojmenované klíče nebo indexované řádky
 - [ ] `$$$FillParams` místo předávání IdFa/dataDB mezi metodami
@@ -49,6 +54,18 @@ Projdi kód systematicky a aplikuj každý bod:
 - [ ] `isZdendaPC` / `isDebug` bloky → smazat z produkčního kódu
 - [ ] Pokud je potřeba debug výstup, použít `^jm` global — ale v produkci musí být čisté
 - [ ] Žádné debug globals v commitnutém kódu
+
+### Kvalita kódu (priorita = udržitelnost, ne performance)
+- [ ] **Duplikace** — opakující se bloky extrahovat do helper metod
+- [ ] **Mrtvý kód** — nepoužívané metody, proměnné, větve podmínek → smazat
+- [ ] **Jasnost** — složité podmínky rozdělit do pojmenovaných proměnných; magické konstanty pojmenovat
+- [ ] **Dlouhé metody** — rozdělit na menší s jasnými názvy (každá dělá jednu věc)
+- [ ] **Zbytečná složitost** — zjednodušit kde to jde, i za cenu mírně delšího kódu
+
+### Komentáře
+- [ ] Komentovat **neočividná business rozhodnutí** — proč se něco dělá takhle, ne jinak (ne co kód dělá, ale proč)
+- [ ] **KRITICKÉ: Komentáře VÝHRADNĚ uvnitř třídy** — NIC mimo blok `Class ... { }`. Žádné `///` komentáře před `Class`, žádné `//` komentáře za uzavírací `}`. Caché API pro vyhledávání tříd je ignoruje/ořízne. Komentáře k třídě patří dovnitř bloku jako `///` na metodách nebo `//` v kódu.
+- [ ] **Víceřádkové komentáře mimo metody** (class-level dokumentace) psát jako `///` blok bez prázdných řádků — Caché/IRIS u `//` komentářů vkládá prázdné řádky mezi každý řádek při formátování. `///` blok zůstane souvislý.
 
 ### Čištění
 - [ ] Zakomentovaný kód → smazat (historie je v gitu)
@@ -65,17 +82,44 @@ Projdi kód systematicky a aplikuj každý bod:
 ### Klíčová slova
 - [ ] Zkratky `s`, `d`, `i`, `q`, `f` jsou OK (firemní standard) — nepřepisovat na plné tvary
 
+### For cykly — povinný formát
+- [ ] Iterující proměnná na **vlastním řádku**, pojmenovaná podle toho, přes co se iteruje (žádné `cnt`, `ii`, `jj`)
+- [ ] `f {` na **vlastním řádku**
+- [ ] Iterace + ukončovací podmínka na **jednom řádku** přes **postcondition** `q:var=""`
+
+```objectscript
+// ✅ Správně
+s BodID = ""
+f {
+    s BodID = $o(^||TiskMHD("trasa",SmerID,BodID)) q:BodID=""
+    i BodID = "slouceni" continue
+    // ... logika ...
+}
+
+// ❌ Špatně
+s BodID = "" f {
+    s BodID = $o(^||TiskMHD("trasa",SmerID,BodID)) i BodID = "" q
+```
+
+### **HLAVNÍ PRIORITA: Klarita a udržitelnost kódu**
+
+Cílem refaktoringu je **maximální čitelnost a udržitelnost**. Vše ostatní (performance, stručnost) je sekundární. Pojmenování proměnných, metod a klíčů je nejdůležitější aspekt — kód se čte 10× víc než se píše. Pokud je kód čitelný a pochopitelný i pro někoho, kdo ho vidí poprvé, refaktoring splnil svůj účel.
+
 ## Postup
 
 1. **Přečti celý zdrojový soubor** — porozuměj business logice
 2. **Identifikuj problémy** — vypiš seznam konkrétních nálezů podle checklistu
 3. **Navrhni změny** — vypiš co a proč měníš, zeptej se uživatele jestli souhlasí
 4. **Proveď refaktor** — aplikuj změny
-5. **Shrnutí** — co se změnilo, co zůstalo, na co dát pozor
+5. **Finální validace** — po provedení změn přečti výsledný soubor a projdi KAŽDÝ bod checklistu znovu. Ověř zejména:
+   - Žádné komentáře mimo `Class ... { }` (ani `///` před Class, ani `//` za uzavírací `}`)
+   - Žádný `$$$Init` — vracet `$$$OK`
+   - Žádné `IdFa`/`dataDB` v parametrech helper metod (mají mít `ByRef sys` + `$$$FillParams`)
+   - Žádné mrtvé proměnné (přiřazené ale nepřečtené)
+   Pokud najdeš problém, oprav ho PŘED shrnutím.
+6. **Shrnutí** — co se změnilo, co zůstalo, na co dát pozor
 
 ## Po dokončení
 
 Připomeň uživateli:
-- Nahrát třídu do systému (`do $system.OBJ.Load(...)` nebo přes Studio)
-- Ověřit kompilaci v správném namespace
-- Otestovat volání z C# strany (pokud existuje)
+- Otestovat v aplikaci, že po refaktoringu vše funguje jako předtím

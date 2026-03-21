@@ -259,6 +259,12 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 9. **Konzistentní error handling** — `$$$CatchErrRest`; debug přes `^jm` jen při ladění, v produkci čisté
 10. **`_` v dot-notation** — zakázáno (`obj.KEY_NAME` nefunguje); používat `obj.%Set("KEY_NAME", v)`
 11. **Preferovat třídy + ClassMethody** — žádné routiny, makra ani jiné legacy konstrukty
+12. **Komentáře jen uvnitř třídy** — žádné komentáře mimo blok `Class ... { }` (Caché API pro vyhledávání tříd je ignoruje/ořízne)
 
 ### Parametry a makra
-12. **`$$$FillParams` místo předávání IdFa/dataDB** — pokud třída Include GENERAL a metoda má `ByRef sys`, makro `$$$FillParams` zpřístupní `IdFa`, `dataDB`, `del`, `userID`, `GUID` atd. jako lokální proměnné. Nepředávat je jako parametry mezi metodami — každá metoda si zavolá `$$$FillParams` sama.
+13. **`$$$FillParams` místo předávání IdFa/dataDB** — pokud třída Include GENERAL a metoda má `ByRef sys`, makro `$$$FillParams` zpřístupní `IdFa`, `dataDB`, `del`, `userID`, `GUID` atd. jako lokální proměnné. Nepředávat je jako parametry mezi metodami — každá metoda si zavolá `$$$FillParams` sama.
+
+### Návratové hodnoty a error handling
+14. **Nepoužívat `$$$Init`** — zastaralé makro. Metody vracejí `$$$OK` (úspěch) nebo `$$$ERROR(...)` (chyba).
+15. **Návratový vzor pro API metody** (s `ByRef sys`): `try { $$$FillParams ... } catch (ex) { $$$CatchErrRest } ret $$$OK`
+16. **Helper metody bez `ByRef sys`** — nemusí mít try/catch ani vracet %Status, pokud jsou volány jen z API metod které catch mají.
