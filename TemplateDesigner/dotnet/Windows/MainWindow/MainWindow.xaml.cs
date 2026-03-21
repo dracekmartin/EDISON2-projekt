@@ -142,6 +142,12 @@ public partial class MainWindow : Window
             getAvailableGroups:    _vm.GetAvailableGroups,
             tableTemplateProvider: _vm.TableTemplateProvider);
 
+        // Inline properties panel — SetContext s execute + invalidate callbacky
+        InlinePropertiesPanel.SetContext(
+            cmd => _vm.State.Execute(cmd),
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
+        InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
+
         // Initial state
         _vm.RefreshFieldsList();
         UpdateTitle();
@@ -539,7 +545,17 @@ public partial class MainWindow : Window
     {
         if (PreviewColumn is null) return; // Event fires during InitializeComponent before controls are ready
         bool show = BtnPreview.IsChecked == true;
-        PreviewColumn.Width = show ? new GridLength(660, GridUnitType.Pixel) : new GridLength(0);
+        if (show)
+        {
+            // Reset both columns to 1* so they split 50:50
+            // (GridSplitter converts star sizes to pixels internally)
+            CanvasColumn.Width = new GridLength(1, GridUnitType.Star);
+            PreviewColumn.Width = new GridLength(1, GridUnitType.Star);
+        }
+        else
+        {
+            PreviewColumn.Width = new GridLength(0);
+        }
         MenuPreview.IsChecked = show;
         if (show) InvalidatePreview();
     }
@@ -1132,6 +1148,41 @@ public partial class MainWindow : Window
 
         RefreshTreeIfVisible();
         _vm.UpdateStatusForSelection();
+        RefreshInlineProperties();
+    }
+
+    private void RefreshInlineProperties()
+    {
+        if (_propsVm is null || InlinePropertiesPanel is null) return;
+
+        var selected = _vm!.State.SelectedElements;
+        if (selected.Count == 1)
+        {
+            var descriptors = _propsVm.PrepareForElement(selected[0], isNewSession: false);
+            InlinePropertiesPanel.SetContext(
+                cmd => _vm.State.Execute(cmd),
+                () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
+            InlinePropertiesPanel.ShowDescriptors(descriptors);
+
+            // Přepnout na záložku Vlastnosti pokud jsme na Sekce nebo Strom
+            if (LeftTabControl.SelectedItem != TabFields)
+                LeftTabControl.SelectedItem = TabProperties;
+        }
+        else if (selected.Count > 1)
+        {
+            var descriptors = _propsVm.PrepareForMultipleElements(selected);
+            InlinePropertiesPanel.SetContext(
+                cmd => _vm.State.Execute(cmd),
+                () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
+            InlinePropertiesPanel.ShowDescriptors(descriptors);
+
+            if (LeftTabControl.SelectedItem != TabFields)
+                LeftTabControl.SelectedItem = TabProperties;
+        }
+        else
+        {
+            InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
+        }
     }
 
     private void UpdateTitle()
