@@ -24,6 +24,40 @@
     <Resource Include="EDIcons\png\edit.png"/>
     <Resource Include="EDIcons\png\delete2.png"/>
     <Resource Include="EDIcons\png\car.png"/>
+    <!-- Fluent UI System Icons (Microsoft, MIT licence) -->
+    <Resource Include="EDIcons\png\new.png"/>
+    <Resource Include="EDIcons\png\open.png"/>
+    <Resource Include="EDIcons\png\save.png"/>
+    <Resource Include="EDIcons\png\print.png"/>
+    <Resource Include="EDIcons\png\undo.png"/>
+    <Resource Include="EDIcons\png\redo.png"/>
+    <Resource Include="EDIcons\png\add_section.png"/>
+    <Resource Include="EDIcons\png\add_element.png"/>
+    <Resource Include="EDIcons\png\text_element.png"/>
+    <Resource Include="EDIcons\png\rect_element.png"/>
+    <Resource Include="EDIcons\png\line_element.png"/>
+    <Resource Include="EDIcons\png\image_element.png"/>
+    <Resource Include="EDIcons\png\table_element.png"/>
+    <Resource Include="EDIcons\png\qr_code.png"/>
+    <Resource Include="EDIcons\png\barcode.png"/>
+    <Resource Include="EDIcons\png\stop_list.png"/>
+    <Resource Include="EDIcons\png\departure_grid.png"/>
+    <Resource Include="EDIcons\png\notes_legend.png"/>
+    <Resource Include="EDIcons\png\z_forward.png"/>
+    <Resource Include="EDIcons\png\z_backward.png"/>
+    <Resource Include="EDIcons\png\z_front.png"/>
+    <Resource Include="EDIcons\png\z_back.png"/>
+    <Resource Include="EDIcons\png\align_left.png"/>
+    <Resource Include="EDIcons\png\align_right.png"/>
+    <Resource Include="EDIcons\png\align_center_h.png"/>
+    <Resource Include="EDIcons\png\align_top.png"/>
+    <Resource Include="EDIcons\png\align_bottom.png"/>
+    <Resource Include="EDIcons\png\align_center_v.png"/>
+    <Resource Include="EDIcons\png\distribute_h.png"/>
+    <Resource Include="EDIcons\png\distribute_v.png"/>
+    <Resource Include="EDIcons\png\grid.png"/>
+    <Resource Include="EDIcons\png\snap.png"/>
+    <Resource Include="EDIcons\png\eye.png"/>
   </ItemGroup>
 
 </Project>
