@@ -29,10 +29,13 @@ Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými
 
 | Krok | Co | Stav |
 |---|---|---|
-| 7 | Ladění MinutesOnly na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | |
-| 8 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
-| 9 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
-| 10 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |
+| 7 | Per-column styling framework — CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ hotovo (2026-03-21) |
+| 7a | StopListElement — per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) | |
+| 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST atd.)? | |
+| 8 | Ladění MinutesOnly na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | |
+| 9 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
+| 10 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
+| 11 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |
 
 ---
 
