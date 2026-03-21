@@ -1,13 +1,14 @@
 Include (ALVAMHD, GENERAL)
 
-/// Konkrétní implementace AgendaJRAPI pro MHD jízdní řády.
-/// Refaktor z legacy ALVA.MHD.LinkyPrintFormatMHD.MakeData() — čistý JSON výstup.
+/// API pro MHD zastávkový jízdní řád.
+/// Kompletní implementace: schema, parametry, mock data, reálná data z DB.
+/// Obsahuje 6-fázový tiskový engine (trasa → bitmapy → JSON výstup).
 /// 
 /// appsettings.json:
-///   { "code": "MHD", "name": "MHD Jízdní řád", "cacheClass": "ALVA.TemplateDesigner.API.TiskMHD" }
+///   { "code": "MHD", "name": "MHD Jízdní řád", "cacheClass": "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI" }
 /// 
 /// GetData vstup:  IN["LINKA_ID"] = číslo linky
-/// GetData výstup: OUT[1] = JSON pole stránek, každá stránka = { "values": {...}, "rows": {...} }
+/// GetData výstup: OUT[1..N] = JSON stránky, každá = { "values": {...}, "rows": {...} }
 ///                 Jedna stránka = jedna zastávka × jeden směr
 /// 
 /// Wire formát: viz schedule-elements-architecture.md (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY)
@@ -32,8 +33,14 @@ Include (ALVAMHD, GENERAL)
 ///   ("obsluhaKonec",SmerID,BodID,SpojID)                       = konečný bod spoje
 ///   ("rozdilTrasy",SmerID,BodID,Typ,Bitmap,SpojID)             = ""
 ///   ("rozdilTrasyPism",SmerID,BodID,Typ,Bitmap)                = písmeno
-Class ALVA.TemplateDesigner.API.TiskMHD Extends ALVA.TemplateDesigner.API.AgendaJRAPI
+Class ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI Extends ALVA.TemplateDesigner.API.AgendaAPI
 {
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// AgendaAPI implementace
+
+// ═══════════════════════════════════════════════════════════════════════════════
 
 /// Vrátí schéma polí MHD agendy.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
@@ -128,7 +135,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 
 /// Vrátí kompletní data pro tisk zastávkového MHD JŘ.
 /// Vstup:  IN["LINKA_ID"] = ID linky
-/// Výstup: OUT[1] = JSON pole stránek (jedna stránka = zastávka × směr)
+/// Výstup: OUT[1..N] = JSON stránky (jedna stránka = zastávka × směr)
 /// 
 /// Každá stránka má strukturu:
 ///   { "values": { skalární pole }, "rows": { ZASTAVKY: [...], SKUPINY_DNU: [...], ODJEZDY: [...], POZNAMKY: [...] } }
@@ -149,16 +156,16 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s platnostOdHrl = $zdh(platnostOd, 3)
         s PlatnostChronometrazeID = ##class(ALVA.MHD.ChronometrazeFce).GetPlatnostChronometrazeID(IdFa, dataDB, VariantaChronometrazeID, platnostOdHrl)
         // Nastavení auto-poznámkování
-        s AutoPoznRozdTrsSp = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpoju"))
-        s AutoPoznRozdTrsSpAlg = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpojuAlgoritmus"))
-        s AutoPoznRozdTrsSpPism = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpojuPismena"))
-        i 'AutoPoznRozdTrsSpAlg s AutoPoznRozdTrsSpAlg = 1001
-        i AutoPoznRozdTrsSpPism = "" s AutoPoznRozdTrsSpPism = "abcdefghijklmnopqrstuvwxyz"
-        s AutoPoznOdlPlatnSp = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatOdlisnostiVPlatnostechSpoju"))
+        s AutoPoznamkyRozdilTrasy = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpoju"))
+        s AutoPoznamkyRozdilTrasyAlgoritmus = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpojuAlgoritmus"))
+        s AutoPoznamkyRozdilTrasyPismena = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpojuPismena"))
+        i 'AutoPoznamkyRozdilTrasyAlgoritmus s AutoPoznamkyRozdilTrasyAlgoritmus = 1001
+        i AutoPoznamkyRozdilTrasyPismena = "" s AutoPoznamkyRozdilTrasyPismena = "abcdefghijklmnopqrstuvwxyz"
+        s AutoPoznamkyOdlisnostiPlatnosti = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatOdlisnostiVPlatnostechSpoju"))
 
         // NZ rozsah
-        s nzOd = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekOd"))
-        s nzDo = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekDo"))
+        s rozsahNZOd = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekOd"))
+        s rozsahNZDo = $g(^[dataDB]ALVA.MHD.SETTINGS(IdFa,"Obecne","DTA",1001,"RozsahNegativnichZnacekDo"))
 
         // ═══════════════════════════════════════════════════════════════════
         // FÁZE 1: Příprava trasy pro oba směry
@@ -173,19 +180,19 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // ═══════════════════════════════════════════════════════════════════
         // FÁZE 3: Auto-poznámkování rozdílů v platnostech (NZ)
         // ═══════════════════════════════════════════════════════════════════
-        i AutoPoznOdlPlatnSp {
-            d ..AutoPoznamkovatPlatnosti(IdFa, dataDB, LinkaID, nzOd, nzDo)
+        i AutoPoznamkyOdlisnostiPlatnosti {
+            d ..AutoPoznamkovatPlatnosti(IdFa, dataDB, LinkaID, rozsahNZOd, rozsahNZDo)
         }
 
         // ═══════════════════════════════════════════════════════════════════
         // FÁZE 4: Promítnutí spojů do zastávek
         // ═══════════════════════════════════════════════════════════════════
-        d ..PromitnutSpoje(.sys, IdFa, dataDB, LinkaID, AutoPoznOdlPlatnSp, AutoPoznRozdTrsSpPism, nzOd, nzDo)
+        d ..PromitnutSpoje(.sys, LinkaID, AutoPoznamkyOdlisnostiPlatnosti, AutoPoznamkyRozdilTrasyPismena, rozsahNZOd, rozsahNZDo)
 
         // ═══════════════════════════════════════════════════════════════════
         // FÁZE 5: Bitmapy obsluhovaných zastávek + rozdíly tras
         // ═══════════════════════════════════════════════════════════════════
-        d ..VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp, AutoPoznRozdTrsSpAlg, AutoPoznRozdTrsSpPism)
+        d ..VypocitatBitmapyObsluhy(AutoPoznamkyRozdilTrasy, AutoPoznamkyRozdilTrasyAlgoritmus, AutoPoznamkyRozdilTrasyPismena)
 
         // ═══════════════════════════════════════════════════════════════════
         // FÁZE 6: Sestavení JSON výstupu — pole stránek
@@ -193,7 +200,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // Konverze datumů na horolog pro formátování
         s platnostOdHrl2 = $zdh(platnostOd, 3)
         s platnostDoHrl = $zdh(platnostDo, 3)
-        d ..SestavitStranky(IdFa, dataDB, LinkaID, TrasaID, platnostOdHrl2, platnostDoHrl, AutoPoznRozdTrsSp, AutoPoznRozdTrsSpAlg, AutoPoznRozdTrsSpPism)
+        d ..SestavitStranky(IdFa, dataDB, LinkaID, TrasaID, platnostOdHrl2, platnostDoHrl, AutoPoznamkyRozdilTrasy, AutoPoznamkyRozdilTrasyAlgoritmus, AutoPoznamkyRozdilTrasyPismena)
         k ^||TiskMHD
     }
     catch (ex) { $$$CatchErrRest }
@@ -265,7 +272,7 @@ ClassMethod SloucitTotozneZastavky(SmerID As %Integer)
         s pokracovat = 0
 
         f {
-            s dalsiVal = "" s dalsiBodID = $o(^||TiskMHD("trasa",SmerID,dalsiBodID), -smerKrok, dalsiVal) i (dalsiBodID = "") ! (pokracovat) q
+            s dalsiVal = "" s dalsiBodID = $o(^||TiskMHD("trasa",SmerID,dalsiBodID), -smerKrok, dalsiVal) i (dalsiBodID = "") || (pokracovat) q
             i dalsiBodID = "slouceni" continue
             s pokracovat = 1
 
@@ -313,9 +320,9 @@ ClassMethod NacistPoznamkyAAtributyZastavek(IdFa As %String, dataDB As %String, 
                 s subBodID = $o(^||TiskMHD("trasa",SmerID,"slouceni",BodID,subBodID)) i subBodID = "" q
 
                 // Poznámky
-                s pozCnt = "" f {
-                    s pozCnt = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Poznamky"_smerKlic,pozCnt)) i pozCnt = "" q
-                    s PoznamkaSpojID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Poznamky"_smerKlic,pozCnt,"Itm"))
+                s poznamkaCnt = "" f {
+                    s poznamkaCnt = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Poznamky"_smerKlic,poznamkaCnt)) i poznamkaCnt = "" q
+                    s PoznamkaSpojID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Poznamky"_smerKlic,poznamkaCnt,"Itm"))
                     // Filtr: jen poznámky určené pro tisk zastávkového JŘ
                     i '$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDZastavkove")) continue
                     s pouzeZnacku = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDZastavkovePouzeZnacku"))
@@ -331,9 +338,9 @@ ClassMethod NacistPoznamkyAAtributyZastavek(IdFa As %String, dataDB As %String, 
                 }
 
                 // Atributy z trasy
-                s atrCnt = "" f {
-                    s atrCnt = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Atributy"_smerKlic,atrCnt)) i atrCnt = "" q
-                    s AtributID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Atributy"_smerKlic,atrCnt,"Itm"))
+                s atributCnt = "" f {
+                    s atributCnt = $o(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Atributy"_smerKlic,atributCnt)) i atributCnt = "" q
+                    s AtributID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",subBodID,"Val","Atributy"_smerKlic,atributCnt,"Itm"))
                     s Popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"Popis"))
                     s SpecialniZnak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",AtributID,"SpecZnak"))
                     i SpecialniZnak = "" continue
@@ -352,7 +359,7 @@ ClassMethod NacistPoznamkyAAtributyZastavek(IdFa As %String, dataDB As %String, 
 
 /// Automatické přidělení NZ (negativních značek) spojům s omezenou platností.
 /// Porovnává bitmapu platnosti spoje s bitmapou typu provozu.
-ClassMethod AutoPoznamkovatPlatnosti(IdFa As %String, dataDB As %String, LinkaID As %String, nzOd As %Integer, nzDo As %Integer)
+ClassMethod AutoPoznamkovatPlatnosti(IdFa As %String, dataDB As %String, LinkaID As %String, rozsahNZOd As %Integer, rozsahNZDo As %Integer)
 {
     s SpojID = "" f {
         s SpojID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,LinkaID,SpojID)) i SpojID = "" q
@@ -399,8 +406,9 @@ ClassMethod AutoPoznamkovatPlatnosti(IdFa As %String, dataDB As %String, LinkaID
 
 /// Iteruje všechny spoje linky, přiřadí odjezdové časy do zastávek,
 /// načte poznámky a atributy spoje, zpracuje NZ.
-ClassMethod PromitnutSpoje(ByRef sys As %String, IdFa As %String, dataDB As %String, LinkaID As %String, AutoPoznOdlPlatnSp As %Boolean, AutoPoznRozdTrsSpPism As %String, nzOd As %Integer, nzDo As %Integer)
+ClassMethod PromitnutSpoje(ByRef sys As %String, LinkaID As %String, AutoPoznamkyOdlisnostiPlatnosti As %Boolean, AutoPoznamkyRozdilTrasyPismena As %String, rozsahNZOd As %Integer, rozsahNZDo As %Integer)
 {
+    $$$FillParams
     s SpojID = "" f {
         s SpojID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,LinkaID,SpojID)) i SpojID = "" q
         s SmerID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",SpojID,"DTA",1,"SmerID"))
@@ -454,11 +462,11 @@ ClassMethod PromitnutSpoje(ByRef sys As %String, IdFa As %String, dataDB As %Str
         k myarr s isok = ##class(ALVA.MHD.SpojeFce).GetPoznamkySpoj(.sys,SpojID,"",.myarr)
         i 'isok continue
         // Pro auto-poznámkování platností odstranit spec.znaky a NZ
-        i AutoPoznOdlPlatnSp {
-            s myID = "" f {
-                s myID = $o(myarr("arr",1,myID)) i myID = "" q
-                s typPozn = $g(myarr("arr",1,myID,"TypPoznamkyID"))
-                i (typPozn = 1) ! (typPozn = 2) k myarr("arr",1,myID)
+        i AutoPoznamkyOdlisnostiPlatnosti {
+            s poznamkaID = "" f {
+                s poznamkaID = $o(myarr("arr",1,poznamkaID)) i poznamkaID = "" q
+                s typPozn = $g(myarr("arr",1,poznamkaID,"TypPoznamkyID"))
+                i (typPozn = 1) || (typPozn = 2) k myarr("arr",1,poznamkaID)
             }
         }
         k ^||TiskMHD("spojPoznamky",SpojID) m ^||TiskMHD("spojPoznamky",SpojID) = myarr
@@ -474,14 +482,14 @@ ClassMethod PromitnutSpoje(ByRef sys As %String, IdFa As %String, dataDB As %Str
         k ^||TiskMHD("spojAtributy",SpojID) m ^||TiskMHD("spojAtributy",SpojID) = myarr
 
         // NZ přiřazení
-        d ..PriraditNZSpoji(IdFa, dataDB, SpojID, TypProvozuID, AutoPoznOdlPlatnSp, nzOd, nzDo)
+        d ..PriraditNZSpoji(IdFa, dataDB, SpojID, TypProvozuID, AutoPoznamkyOdlisnostiPlatnosti, rozsahNZOd, rozsahNZDo)
     }
 }
 
 /// Přiřadí negativní značku spoji (automaticky nebo z ručního zadání).
-ClassMethod PriraditNZSpoji(IdFa As %String, dataDB As %String, SpojID As %String, TypProvozuID As %String, AutoPoznOdlPlatnSp As %Boolean, nzOd As %Integer, nzDo As %Integer)
+ClassMethod PriraditNZSpoji(IdFa As %String, dataDB As %String, SpojID As %String, TypProvozuID As %String, AutoPoznamkyOdlisnostiPlatnosti As %Boolean, rozsahNZOd As %Integer, rozsahNZDo As %Integer)
 {
-    i AutoPoznOdlPlatnSp {
+    i AutoPoznamkyOdlisnostiPlatnosti {
         // Automatické: z bitmapy platnosti
         i '$g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",SpojID,"DTA",1,"RucniZadani")) q
 
@@ -502,8 +510,6 @@ ClassMethod PriraditNZSpoji(IdFa As %String, dataDB As %String, SpojID As %Strin
         s arri("dta",4) = bitmapTypuProvozu
         s isok = ##class(ALVA.MHD.KalendarFce).MakeRozpisTplProTypProvozuID(IdFa,dataDB,TypProvozuID,.arri)
         i 'isok q
-        #; s err = $mkOmzFromOnlyTwoBitmaps^JRapi(IdFa,dataDB,.arri,.arr)
-        #; i +err q
         s err = ""
 
         // Týdenní platnost
@@ -521,24 +527,24 @@ ClassMethod PriraditNZSpoji(IdFa As %String, dataDB As %String, SpojID As %Strin
         s spojNZ = ""
         // Nejprve v číselníku NZ
         s nz = "" f {
-            s nz = $o(^||TiskMHD("nzTexty",nz)) i (nz = "") ! (spojNZ '= "") q
+            s nz = $o(^||TiskMHD("nzTexty",nz)) i (nz = "") || (spojNZ '= "") q
             i $g(^||TiskMHD("nzTexty",nz)) = OmezeniTXT s spojNZ = nz
         }
         // Pak v přiřazených NZ
         i spojNZ = "" {
             s nz = "" f {
-                s nz = $o(^||TiskMHD("nzPrirazen",nz)) i (nz = "") ! (spojNZ '= "") q
+                s nz = $o(^||TiskMHD("nzPrirazen",nz)) i (nz = "") || (spojNZ '= "") q
                 i $g(^||TiskMHD("nzPrirazen",nz)) = OmezeniTXT s spojNZ = nz
             }
         }
         // Nová značka
         i spojNZ = "" {
-            f spojNZ = nzOd:1 {
+            f spojNZ = rozsahNZOd:1 {
                 // Kontrola: není obsazená u typu provozu
                 s obsazena = 0
-                s myTyp = "" f {
-                    s myTyp = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",myTyp)) i myTyp = "" q
-                    i $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",myTyp,"NegativniZnacka")) = spojNZ s obsazena = 1
+                s typProvozuIter = "" f {
+                    s typProvozuIter = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",typProvozuIter)) i typProvozuIter = "" q
+                    i $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",typProvozuIter,"NegativniZnacka")) = spojNZ s obsazena = 1
                 }
                 i obsazena continue
                 i $d(^||TiskMHD("nzTexty",spojNZ)) continue
@@ -552,10 +558,10 @@ ClassMethod PriraditNZSpoji(IdFa As %String, dataDB As %String, SpojID As %Strin
     else {
         // Ruční: z ručně zadané poznámky spoje
         s PoznamkaID = ""
-        s myID = "" f {
-            s myID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID)) i (myID = "") ! (PoznamkaID '= "") q
-            i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TypPoznamkyID")) = 2 {
-                i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TiskJRMHDZastavkove")) s PoznamkaID = myID
+        s poznamkaID = "" f {
+            s poznamkaID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID)) i (poznamkaID = "") || (PoznamkaID '= "") q
+            i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TypPoznamkyID")) = 2 {
+                i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) s PoznamkaID = poznamkaID
             }
         }
         i PoznamkaID = "" q
@@ -576,7 +582,7 @@ ClassMethod PriraditNZSpoji(IdFa As %String, dataDB As %String, SpojID As %Strin
 
 /// Pro každou zastávku v obou směrech vypočítá bitmapu obsluhovaných zastávek
 /// a AllStopTrasaBitmap (1=všechny spoje, 9=jen některé).
-ClassMethod VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdTrsSpAlg As %Integer, AutoPoznRozdTrsSpPism As %String)
+ClassMethod VypocitatBitmapyObsluhy(AutoPoznamkyRozdilTrasy As %Boolean, AutoPoznamkyRozdilTrasyAlgoritmus As %Integer, AutoPoznamkyRozdilTrasyPismena As %String)
 {
     f SmerID = 0,1 {
         s smerKrok = 1 i SmerID s smerKrok = -1
@@ -606,12 +612,11 @@ ClassMethod VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdT
                     }
                 }
                 s ^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID) = konecnyBod
-                // Trasa spoje z bodu
+                // Trasa spoje z bodu — včetně konečného bodu (jako legacy)
                 s TrasaSpojZBodu = ""
                 s dalsiBod = BodID f {
                     s dalsiBod = $o(^||TiskMHD("trasa",SmerID,dalsiBod), smerKrok) i dalsiBod = "" q
                     i dalsiBod = "slouceni" continue
-                    i dalsiBod = konecnyBod q
                     i $e(TrasaSpojBitmap, dalsiBod) {
                         s $e(TrasaSpojZBodu, dalsiBod) = 1
                         s $e(TrasaSpojZBodu, BodID) = 1
@@ -627,17 +632,17 @@ ClassMethod VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdT
                 s SpojID = $o(^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID)) i SpojID = "" q
                 s TrasaSpojZBodu = $g(^||TiskMHD("spojTrasa",SmerID,SpojID,BodID))
                 s konecnyBod = $g(^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID))
-                f mycnt = BodID:smerKrok:konecnyBod {
-                    i ('$e(TrasaSpojZBodu, mycnt)) & (+$e(AllStopBitmap, mycnt)) {
-                        s $e(AllStopBitmap, mycnt) = 9
+                f bodIterator = BodID:smerKrok:konecnyBod {
+                    i ('$e(TrasaSpojZBodu, bodIterator)) && (+$e(AllStopBitmap, bodIterator)) {
+                        s $e(AllStopBitmap, bodIterator) = 9
                     }
                 }
             }
             s ^||TiskMHD("obsluhaVse",SmerID,BodID) = AllStopBitmap
 
             // Rozdílové bitmapy tras pro auto-poznámkování (alg. 1002)
-            i AutoPoznRozdTrsSp & (AutoPoznRozdTrsSpAlg = 1002) {
-                s pismCnt = 0
+            i AutoPoznamkyRozdilTrasy && (AutoPoznamkyRozdilTrasyAlgoritmus = 1002) {
+                s pocetPismen = 0
                 s SpojID = "" f {
                     s SpojID = $o(^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID)) i SpojID = "" q
                     s TrasaSpojZBodu = $g(^||TiskMHD("spojTrasa",SmerID,SpojID,BodID))
@@ -645,9 +650,9 @@ ClassMethod VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdT
 
                     // Zastavuje navíc (kde AllStopBitmap=9)
                     s DiffBitmap = ""
-                    f mycnt = BodID:smerKrok:konecnyBod {
-                        i (+$e(TrasaSpojZBodu, mycnt)) & (+$e(AllStopBitmap, mycnt) = 9) {
-                            s $e(DiffBitmap, mycnt) = 1
+                    f bodIterator = BodID:smerKrok:konecnyBod {
+                        i (+$e(TrasaSpojZBodu, bodIterator)) && (+$e(AllStopBitmap, bodIterator) = 9) {
+                            s $e(DiffBitmap, bodIterator) = 1
                         }
                     }
                     i DiffBitmap '= "" {
@@ -655,8 +660,10 @@ ClassMethod VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdT
                     }
 
                     // Konečný interval (končí dříve)
+                    // Najít poslední číselný BodID v trase (přeskočit "slouceni" a jiné stringy)
                     s lastBod = $o(^||TiskMHD("trasa",SmerID,""),-smerKrok)
-                    i ((smerKrok=1)&(konecnyBod < lastBod)) ! ((smerKrok=-1)&(konecnyBod > lastBod)) {
+                    i 'lastBod s lastBod = $o(^||TiskMHD("trasa",SmerID,lastBod),-smerKrok)
+                    i ((smerKrok=1)&&(konecnyBod < lastBod)) || ((smerKrok=-1)&&(konecnyBod > lastBod)) {
                         s EndDiffBitmap = ""
                         s $e(EndDiffBitmap, konecnyBod) = 1
                         s ^||TiskMHD("rozdilTrasy",SmerID,BodID,1,EndDiffBitmap,SpojID) = ""
@@ -664,15 +671,15 @@ ClassMethod VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdT
                 }
 
                 // Přiřadit písmena k rozdílovým bitmapám
-                s pismCnt = 0
-                s mytyp = "" f {
-                    s mytyp = $o(^||TiskMHD("rozdilTrasy",SmerID,BodID,mytyp)) i mytyp = "" q
+                s pocetPismen = 0
+                s typRozdilu = "" f {
+                    s typRozdilu = $o(^||TiskMHD("rozdilTrasy",SmerID,BodID,typRozdilu)) i typRozdilu = "" q
                     s DiffBitmap = "" f {
-                        s DiffBitmap = $o(^||TiskMHD("rozdilTrasy",SmerID,BodID,mytyp,DiffBitmap)) i DiffBitmap = "" q
-                        s pismCnt = pismCnt + 1
-                        s pism = $e(AutoPoznRozdTrsSpPism, pismCnt)
-                        i pism = "" s pism = "#"
-                        s ^||TiskMHD("rozdilTrasyPism",SmerID,BodID,mytyp,DiffBitmap) = pism
+                        s DiffBitmap = $o(^||TiskMHD("rozdilTrasy",SmerID,BodID,typRozdilu,DiffBitmap)) i DiffBitmap = "" q
+                        s pocetPismen = pocetPismen + 1
+                        s pismeno = $e(AutoPoznamkyRozdilTrasyPismena, pocetPismen)
+                        i pismeno = "" s pismeno = "#"
+                        s ^||TiskMHD("rozdilTrasyPism",SmerID,BodID,typRozdilu,DiffBitmap) = pismeno
                     }
                 }
             }
@@ -688,7 +695,7 @@ ClassMethod VypocitatBitmapyObsluhy(AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdT
 
 /// Hlavní výstupní smyčka: pro každou zastávku × směr sestaví jednu stránku JSON.
 /// Každá stránka se zapíše jako samostatný OUT node (řeší limit délky stringu).
-ClassMethod SestavitStranky(IdFa As %String, dataDB As %String, LinkaID As %String, TrasaID As %String, platnostOd As %Integer, platnostDo As %Integer, AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdTrsSpAlg As %Integer, AutoPoznRozdTrsSpPism As %String)
+ClassMethod SestavitStranky(IdFa As %String, dataDB As %String, LinkaID As %String, TrasaID As %String, platnostOd As %Integer, platnostDo As %Integer, AutoPoznamkyRozdilTrasy As %Boolean, AutoPoznamkyRozdilTrasyAlgoritmus As %Integer, AutoPoznamkyRozdilTrasyPismena As %String)
 {
     s CisloLinky = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
     s LokalniOznaceni = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
@@ -739,14 +746,14 @@ ClassMethod SestavitStranky(IdFa As %String, dataDB As %String, LinkaID As %Stri
             s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,aktualniZastBodID))
             i '$e(ObsluhaBitmap, aktualniZastBodID) continue
 
-            s page = ..SestavitJednuStranku(IdFa, dataDB, LinkaID, TrasaID, SmerID, aktualniZastBodID, CisloLinky, LokalniOznaceni, NazevLinky, QRKod, TypJR, platnostOd, platnostDo, smerPopis, pocetZastavek, AutoPoznRozdTrsSp, AutoPoznRozdTrsSpAlg, AutoPoznRozdTrsSpPism)
+            s page = ..SestavitJednuStranku(IdFa, dataDB, LinkaID, TrasaID, SmerID, aktualniZastBodID, CisloLinky, LokalniOznaceni, NazevLinky, QRKod, TypJR, platnostOd, platnostDo, smerPopis, pocetZastavek, AutoPoznamkyRozdilTrasy, AutoPoznamkyRozdilTrasyAlgoritmus, AutoPoznamkyRozdilTrasyPismena)
             s ^||ML("OUT",$i(^||ML("OUT"))) = page.%ToJSON()
         }
     }
 }
 
 /// Sestaví jednu stránku (= jedna zastávka × jeden směr).
-ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As %String, TrasaID As %String, SmerID As %Integer, aktualniZastBodID As %String, CisloLinky As %String, LokalniOznaceni As %String, NazevLinky As %String, QRKod As %String, TypJR As %String, platnostOd As %Integer, platnostDo As %Integer, smerPopis As %String, pocetZastavek As %Integer, AutoPoznRozdTrsSp As %Boolean, AutoPoznRozdTrsSpAlg As %Integer, AutoPoznRozdTrsSpPism As %String) As %DynamicObject
+ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As %String, TrasaID As %String, SmerID As %Integer, aktualniZastBodID As %String, CisloLinky As %String, LokalniOznaceni As %String, NazevLinky As %String, QRKod As %String, TypJR As %String, platnostOd As %Integer, platnostDo As %Integer, smerPopis As %String, pocetZastavek As %Integer, AutoPoznamkyRozdilTrasy As %Boolean, AutoPoznamkyRozdilTrasyAlgoritmus As %Integer, AutoPoznamkyRozdilTrasyPismena As %String) As %DynamicObject
 {
     s page = ##class(%DynamicObject).%New()
     s smerKrok = 1 i SmerID s smerKrok = -1
@@ -787,22 +794,22 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
     s zastavky = ##class(%DynamicArray).%New()
     s posledniBod = ""
     s poradiZast = 0
-    s mycnt = "" f {
-        s mycnt = $o(^||TiskMHD("trasa",SmerID,mycnt), smerKrok) i mycnt = "" q
-        i mycnt = "slouceni" continue
+    s bodIterator = "" f {
+        s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator), smerKrok) i bodIterator = "" q
+        i bodIterator = "slouceni" continue
         // Za aktuální: jen obsluhovatelné zastávky
-        i (SmerID=0)&(mycnt>aktualniZastBodID)&('$e(ObsluhaBitmap,mycnt)) continue
-        i (SmerID=1)&(mycnt<aktualniZastBodID)&('$e(ObsluhaBitmap,mycnt)) continue
+        i (SmerID=0)&&(bodIterator>aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
+        i (SmerID=1)&&(bodIterator<aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
 
-        s zastVal = $g(^||TiskMHD("trasa",SmerID,mycnt))
+        s zastVal = $g(^||TiskMHD("trasa",SmerID,bodIterator))
         s zastID = $lg(zastVal, 1)
         s zastCas = $lg(zastVal, 2)
         s zastCislo = $lg(zastVal, 3)
 
         s poradiZast = poradiZast + 1
-        s jeAktualni = (mycnt = aktualniZastBodID)
+        s jeAktualni = (bodIterator = aktualniZastBodID)
         s casJizdy = 0
-        i jeAktualni ! ((SmerID=0)&(mycnt>aktualniZastBodID)) ! ((SmerID=1)&(mycnt<aktualniZastBodID)) {
+        i jeAktualni || ((SmerID=0)&&(bodIterator>aktualniZastBodID)) || ((SmerID=1)&&(bodIterator<aktualniZastBodID)) {
             s casJizdy = zastCas - aktualniZastavkaCas
         }
 
@@ -814,7 +821,7 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
         // Na znamení
         s naZnameni = 0
 
-        s z = ..BuildZastavka(mycnt, zastNazev, zastCislo, casJizdy, poradiZast, jeAktualni, naZnameni, odsazeni)
+        s z = ..BuildZastavka(bodIterator, zastNazev, zastCislo, casJizdy, poradiZast, jeAktualni, naZnameni, odsazeni)
 
         // Zóny
         s zonaidx = "" f {
@@ -825,28 +832,28 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
         }
 
         // Atributy zastávky (jen neprojete + aktuální jen N,V,x)
-        i ((SmerID=0)&(mycnt'<aktualniZastBodID)) ! ((SmerID=1)&(mycnt'>aktualniZastBodID)) {
+        i ((SmerID=0)&&(bodIterator'<aktualniZastBodID)) || ((SmerID=1)&&(bodIterator'>aktualniZastBodID)) {
             s AtributID = "" f {
-                s AtributID = $o(^||TiskMHD("atributyZast",SmerID,mycnt,AtributID)) i AtributID = "" q
+                s AtributID = $o(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID)) i AtributID = "" q
                 // Aktuální zastávka: jen základní atributy (ID<=1003)
-                i (mycnt=aktualniZastBodID)&(AtributID>1003) continue
-                s atrVal = $g(^||TiskMHD("atributyZast",SmerID,mycnt,AtributID))
+                i (bodIterator=aktualniZastBodID)&&(AtributID>1003) continue
+                s atrVal = $g(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID))
                 s SpecZnak = ..ConvertSpecialniZnak($lg(atrVal,3))
                 d ..AddAtribut(z, SpecZnak, $lg(atrVal,1))
             }
         }
 
         // Poznámky zastávky (jen neprojete)
-        i ((SmerID=0)&(mycnt>aktualniZastBodID)) ! ((SmerID=1)&(mycnt<aktualniZastBodID)) {
-            s pozZnak = "" f {
-                s pozZnak = $o(^||TiskMHD("poznamkyZast",SmerID,mycnt,pozZnak)) i pozZnak = "" q
-                s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,mycnt,pozZnak))
-                d ..AddPoznamkaZastavky(z, pozZnak, "text", $lg(pozVal,1))
+        i ((SmerID=0)&&(bodIterator>aktualniZastBodID)) || ((SmerID=1)&&(bodIterator<aktualniZastBodID)) {
+            s znakPoznamky = "" f {
+                s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky)) i znakPoznamky = "" q
+                s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,bodIterator,znakPoznamky))
+                d ..AddPoznamkaZastavky(z, znakPoznamky, "text", $lg(pozVal,1))
             }
         }
 
         d zastavky.%Push(z)
-        s posledniBod = mycnt
+        s posledniBod = bodIterator
     }
     d rows.%Set("ZASTAVKY", zastavky)
 
@@ -894,8 +901,8 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
 
                     // Týdenní platnost (automatická)
                     s tydPlatnost = $g(^||TiskMHD("spojTydenni",SpojID))
-                    f plIdx = 1:1:$l(tydPlatnost) {
-                        s denZnak = $e(tydPlatnost, plIdx)
+                    f denIdx = 1:1:$l(tydPlatnost) {
+                        s denZnak = $e(tydPlatnost, denIdx)
                         i denZnak = "" continue
                         d ..AddAnotace(odj, "specialni", ..ConvertSpecialniZnak(denZnak))
                         // Poznámka pro den
@@ -904,15 +911,15 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
                     }
 
                     // Speciální znaky ze spoje (ručně zadané)
-                    s myID = "" f {
-                        s myID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID)) i myID = "" q
-                        i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TypPoznamkyID")) '= 1 continue
-                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TiskJRMHDZastavkove")) continue
-                        s specZnak = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"SpecZnak"))
+                    s poznamkaID = "" f {
+                        s poznamkaID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID)) i poznamkaID = "" q
+                        i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TypPoznamkyID")) '= 1 continue
+                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
+                        s specZnak = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"SpecZnak"))
                         i specZnak = "" continue
                         d ..AddAnotace(odj, "specialni", specZnak)
-                        s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"PopisPoznamky"))
-                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TiskJRMHDZastavkovePouzeZnacku")) {
+                        s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
+                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
                             s strankovePoznamky(specZnak) = $lb(PopisPozn, 2)
                         }
                     }
@@ -927,34 +934,37 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
                     }
 
                     // Atributy spoje
-                    s myID = "" f {
-                        s myID = $o(^||TiskMHD("spojAtributy",SpojID,"arr",1,myID)) i myID = "" q
-                        s specZnak = $g(^||TiskMHD("spojAtributy",SpojID,"arr",1,myID,"SpecZnak"))
-                        s Popis = $g(^||TiskMHD("spojAtributy",SpojID,"arr",1,myID,"Popis"))
+                    s atributID = "" f {
+                        s atributID = $o(^||TiskMHD("spojAtributy",SpojID,"arr",1,atributID)) i atributID = "" q
+                        // SpecZnak z GetAtributySpoj může obsahovat interní ID — přečíst displayový znak z ENUMS
+                        s specZnak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"Atribut","DTA",atributID,"SpecZnak"))
+                        i specZnak = "" continue
+                        s specZnak = ..ConvertSpecialniZnak(specZnak)
+                        s Popis = $g(^||TiskMHD("spojAtributy",SpojID,"arr",1,atributID,"Popis"))
                         d ..AddAnotace(odj, "specialni", specZnak)
                         s strankovePoznamky(specZnak) = $lb(Popis, 2)
                     }
 
                     // Auto-poznámkování tras (alg. 1001)
-                    i AutoPoznRozdTrsSp & (AutoPoznRozdTrsSpAlg = 1001) {
-                        d ..DoplnitPoznamkuRozdilTrasy1001(IdFa, dataDB, odj, SmerID, aktualniZastBodID, SpojID, platnostOd, AutoPoznRozdTrsSpPism, .strankovePoznamky)
+                    i AutoPoznamkyRozdilTrasy && (AutoPoznamkyRozdilTrasyAlgoritmus = 1001) {
+                        d ..DoplnitPoznamkuRozdilTrasy1001(IdFa, dataDB, odj, SmerID, aktualniZastBodID, SpojID, platnostOd, AutoPoznamkyRozdilTrasyPismena, .strankovePoznamky)
                     }
 
                     // Auto-poznámkování tras (alg. 1002)
-                    i AutoPoznRozdTrsSp & (AutoPoznRozdTrsSpAlg = 1002) {
-                        d ..DoplnitPoznamkuRozdilTrasy1002(odj, SmerID, aktualniZastBodID, SpojID, .strankovePoznamky)
+                    i AutoPoznamkyRozdilTrasy && (AutoPoznamkyRozdilTrasyAlgoritmus = 1002) {
+                        d ..DoplnitPoznamkuRozdilTrasy1002(IdFa, dataDB, platnostOd, odj, SmerID, aktualniZastBodID, SpojID, .strankovePoznamky)
                     }
 
                     // Textové poznámky spoje
-                    s myID = "" f {
-                        s myID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID)) i myID = "" q
-                        i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TypPoznamkyID")) '= 0 continue
-                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TiskJRMHDZastavkove")) continue
-                        s znakPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"Text"))
+                    s poznamkaID = "" f {
+                        s poznamkaID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID)) i poznamkaID = "" q
+                        i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TypPoznamkyID")) '= 0 continue
+                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
+                        s znakPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"Text"))
                         i znakPozn = "" continue
                         d ..AddAnotace(odj, "text", znakPozn)
-                        s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"PopisPoznamky"))
-                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,myID,"TiskJRMHDZastavkovePouzeZnacku")) {
+                        s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
+                        i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
                             s strankovePoznamky(znakPozn) = $lb(PopisPozn, 0)
                         }
                     }
@@ -970,10 +980,10 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
     s poznamky = ##class(%DynamicArray).%New()
 
     // Znaky z trasy (textové poznámky)
-    s pozZnak = "" f {
-        s pozZnak = $o(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,pozZnak)) i pozZnak = "" q
-        s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,pozZnak))
-        d poznamky.%Push(..BuildPoznamka("text", pozZnak, $lg(pozVal,1)))
+    s znakPoznamky = "" f {
+        s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky)) i znakPoznamky = "" q
+        s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky))
+        d poznamky.%Push(..BuildPoznamka("text", znakPoznamky, $lg(pozVal,1)))
     }
 
     // Poznámky ze stránky (odjezdy) — seřazené
@@ -987,12 +997,25 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
         d poznamky.%Push(..BuildPoznamka(pTyp, pZnak, pText))
     }
 
-    // Atributy zastávky jako poznámky (speciální znaky)
-    s AtributID = "" f {
-        s AtributID = $o(^||TiskMHD("atributyZast",SmerID,aktualniZastBodID,AtributID)) i AtributID = "" q
-        s atrVal = $g(^||TiskMHD("atributyZast",SmerID,aktualniZastBodID,AtributID))
-        s SpecZnak = ..ConvertSpecialniZnak($lg(atrVal,3))
-        d poznamky.%Push(..BuildPoznamka("specialni", SpecZnak, $lg(atrVal,1)))
+    // Atributy zastávky jako poznámky — ze VŠECH zobrazených zastávek (ne jen aktuální)
+    // Deduplikace přes poznamkyAtribut(SpecZnak) aby se stejný atribut nevypsal víckrát
+    k poznamkyAtribut
+    s bodIterator = "" f {
+        s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator)) i bodIterator = "" q
+        i bodIterator = "slouceni" continue
+        // Stejný filtr jako u zastávek v StopList: jen neprojete + aktuální
+        i (SmerID=0)&&(bodIterator<aktualniZastBodID) continue
+        i (SmerID=1)&&(bodIterator>aktualniZastBodID) continue
+        s AtributID = "" f {
+            s AtributID = $o(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID)) i AtributID = "" q
+            i (bodIterator=aktualniZastBodID)&&(AtributID>1003) continue
+            s atrVal = $g(^||TiskMHD("atributyZast",SmerID,bodIterator,AtributID))
+            s SpecZnak = ..ConvertSpecialniZnak($lg(atrVal,3))
+            i SpecZnak = "" continue
+            i $d(poznamkyAtribut(SpecZnak)) continue
+            s poznamkyAtribut(SpecZnak) = ""
+            d poznamky.%Push(..BuildPoznamka("specialni", SpecZnak, $lg(atrVal,1)))
+        }
     }
 
     d rows.%Set("POZNAMKY", poznamky)
@@ -1008,7 +1031,7 @@ ClassMethod SestavitJednuStranku(IdFa As %String, dataDB As %String, LinkaID As 
 // ═══════════════════════════════════════════════════════════════════════════════
 
 /// Auto-poznámkování alg. 1001: textová poznámka o rozdílech v trase spoje.
-ClassMethod DoplnitPoznamkuRozdilTrasy1001(IdFa As %String, dataDB As %String, odj As %DynamicObject, SmerID As %Integer, aktualniZastBodID As %String, SpojID As %String, platnostOd As %String, AutoPoznRozdTrsSpPism As %String, ByRef strankovePoznamky)
+ClassMethod DoplnitPoznamkuRozdilTrasy1001(IdFa As %String, dataDB As %String, odj As %DynamicObject, SmerID As %Integer, aktualniZastBodID As %String, SpojID As %String, platnostOd As %String, AutoPoznamkyRozdilTrasyPismena As %String, ByRef strankovePoznamky)
 {
     s TrasaSpojZBodu = $g(^||TiskMHD("spojTrasa",SmerID,SpojID,aktualniZastBodID))
     s TisknutaTrasaBitmap = $g(^||TiskMHD("obsluha",SmerID,aktualniZastBodID))
@@ -1041,15 +1064,15 @@ ClassMethod DoplnitPoznamkuRozdilTrasy1001(IdFa As %String, dataDB As %String, o
     // Dohledat existující znak
     s idznk = ""
     s existujiciZnak = "" f {
-        s existujiciZnak = $o(strankovePoznamky(existujiciZnak)) i (existujiciZnak = "") ! (idznk '= "") q
+        s existujiciZnak = $o(strankovePoznamky(existujiciZnak)) i (existujiciZnak = "") || (idznk '= "") q
         i $lg($g(strankovePoznamky(existujiciZnak)),1) = poznamkaText s idznk = existujiciZnak
     }
 
     // Přiřadit nový znak
     i idznk = "" {
-        f myinx = 1:1:$l(AutoPoznRozdTrsSpPism) {
+        f pismenoIdx = 1:1:$l(AutoPoznamkyRozdilTrasyPismena) {
             i idznk '= "" continue
-            s kandidat = $e(AutoPoznRozdTrsSpPism, myinx)
+            s kandidat = $e(AutoPoznamkyRozdilTrasyPismena, pismenoIdx)
             i '$d(strankovePoznamky(kandidat)) {
                 s idznk = kandidat
                 s strankovePoznamky(idznk) = $lb(poznamkaText, 0)
@@ -1065,17 +1088,40 @@ ClassMethod DoplnitPoznamkuRozdilTrasy1001(IdFa As %String, dataDB As %String, o
 }
 
 /// Auto-poznámkování alg. 1002: písmena z rozdílových bitmap.
-ClassMethod DoplnitPoznamkuRozdilTrasy1002(odj As %DynamicObject, SmerID As %Integer, aktualniZastBodID As %String, SpojID As %String, ByRef strankovePoznamky)
+/// Přidá anotaci k odjezdu + text legendy do strankovePoznamky.
+ClassMethod DoplnitPoznamkuRozdilTrasy1002(IdFa As %String, dataDB As %String, platnostOd As %Integer, odj As %DynamicObject, SmerID As %Integer, aktualniZastBodID As %String, SpojID As %String, ByRef strankovePoznamky)
 {
-    s mytyp = "" f {
-        s mytyp = $o(^||TiskMHD("rozdilTrasy",SmerID,aktualniZastBodID,mytyp)) i mytyp = "" q
+    s typRozdilu = "" f {
+        s typRozdilu = $o(^||TiskMHD("rozdilTrasy",SmerID,aktualniZastBodID,typRozdilu)) i typRozdilu = "" q
         s DiffBitmap = "" f {
-            s DiffBitmap = $o(^||TiskMHD("rozdilTrasy",SmerID,aktualniZastBodID,mytyp,DiffBitmap)) i DiffBitmap = "" q
+            s DiffBitmap = $o(^||TiskMHD("rozdilTrasy",SmerID,aktualniZastBodID,typRozdilu,DiffBitmap)) i DiffBitmap = "" q
             // Kontrola: tento spoj je v této rozdílové skupině?
-            i '$d(^||TiskMHD("rozdilTrasy",SmerID,aktualniZastBodID,mytyp,DiffBitmap,SpojID)) continue
-            s pism = $g(^||TiskMHD("rozdilTrasyPism",SmerID,aktualniZastBodID,mytyp,DiffBitmap))
-            i pism '= "" {
-                d ..AddAnotace(odj, "text", pism)
+            i '$d(^||TiskMHD("rozdilTrasy",SmerID,aktualniZastBodID,typRozdilu,DiffBitmap,SpojID)) continue
+            s pismeno = $g(^||TiskMHD("rozdilTrasyPism",SmerID,aktualniZastBodID,typRozdilu,DiffBitmap))
+            i pismeno = "" continue
+            d ..AddAnotace(odj, "text", pismeno)
+
+            // Přidat text do legendy (jen jednou per písmeno)
+            i '$d(strankovePoznamky(pismeno)) {
+                i typRozdilu = 0 {
+                    // Rozdíl trasy: "zastávky obsluhují pouze shodně označené spoje"
+                    s strankovePoznamky(pismeno) = $lb("zastávky obsluhují pouze shodně označené spoje", 0)
+                }
+                elseif typRozdilu = 1 {
+                    // Končí dříve: najít název konečné zastávky z DiffBitmap
+                    s konBod = "" f pp = 1:1:$l(DiffBitmap) { i $e(DiffBitmap,pp) s konBod = pp q }
+                    s konNazev = ""
+                    i konBod '= "" {
+                        s trasaVal = $g(^||TiskMHD("trasa",SmerID,konBod))
+                        s konZastID = $lg(trasaVal, 1)
+                        i konZastID '= "" s konNazev = $lg(##class(ALVA.MHD.ZastavkyFce).GetNazevHrl(IdFa, dataDB, konZastID, platnostOd), 1)
+                    }
+                    i konNazev '= "" {
+                        s strankovePoznamky(pismeno) = $lb("končí v zast."_konNazev, 0)
+                    } else {
+                        s strankovePoznamky(pismeno) = $lb("končí dříve", 0)
+                    }
+                }
             }
         }
     }
@@ -1092,6 +1138,223 @@ ClassMethod GetDenVTydnuText(denZnak As %String) As %String
     i denZnak = "6" q "jede v sobotu"
     i denZnak = "7" q "jede v neděli"
     q ""
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// JŘ helpery — stavba JSON objektů
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Vytvoří %DynamicObject zastávky s inicializovanými vnořenými poli.
+ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %Integer = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
+{
+    s zastavka = ##class(%DynamicObject).%New()
+    d zastavka.%Set("ID", id)
+    d zastavka.%Set("POPIS", popis)
+    d zastavka.%Set("TC", tc)
+    d zastavka.%Set("CAS_JIZDY", casJizdy)
+    d zastavka.%Set("PORADI", poradi)
+    d zastavka.%Set("JE_AKTUALNI", $s(jeAktualni:"true", 1:"false"))
+    d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
+    d zastavka.%Set("ODSAZENI", odsazeni)
+    d zastavka.%Set("ZAKLADNI_TRASA", "true")
+    d zastavka.%Set("ZONY", ##class(%DynamicArray).%New())
+    d zastavka.%Set("PRUBEHY", ##class(%DynamicArray).%New())
+    d zastavka.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
+    d zastavka.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
+    q zastavka
+}
+
+ClassMethod AddZona(zastavka As %DynamicObject, zona As %String)
+{
+    d zastavka.%Get("ZONY").%Push(zona)
+}
+
+ClassMethod AddPrubeh(zastavka As %DynamicObject, prubeh As %String)
+{
+    d zastavka.%Get("PRUBEHY").%Push(prubeh)
+}
+
+ClassMethod AddAtribut(zastavka As %DynamicObject, znak As %String, popis As %String = "")
+{
+    s atribut = ##class(%DynamicObject).%New()
+    d atribut.%Set("ZNAK", znak)
+    d atribut.%Set("POPIS", popis)
+    d zastavka.%Get("ATRIBUTY").%Push(atribut)
+}
+
+ClassMethod AddPoznamkaZastavky(zastavka As %DynamicObject, znak As %String, typ As %String = "text", text As %String = "")
+{
+    s poznamka = ##class(%DynamicObject).%New()
+    d poznamka.%Set("ZNAK", znak)
+    d poznamka.%Set("TYP", typ)
+    d poznamka.%Set("TEXT", text)
+    d zastavka.%Get("POZNAMKY_ZASTAVKY").%Push(poznamka)
+}
+
+ClassMethod BuildSkupinaDnu(id As %String, nadpis As %String, nadpis2 As %String = "", poradi As %Integer = 1) As %DynamicObject
+{
+    s skupina = ##class(%DynamicObject).%New()
+    d skupina.%Set("ID", id)
+    d skupina.%Set("NADPIS", nadpis)
+    d skupina.%Set("NADPIS2", nadpis2)
+    d skupina.%Set("PORADI", poradi)
+    q skupina
+}
+
+ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina As %Integer, minuta As %Integer, zkrOznLinky As %String = "") As %DynamicObject
+{
+    s odjezd = ##class(%DynamicObject).%New()
+    d odjezd.%Set("ZASTAVKA_ID", zastavkaId)
+    d odjezd.%Set("SKUPINA_DNU_ID", skupinaDnuId)
+    d odjezd.%Set("HODINA", hodina)
+    d odjezd.%Set("MINUTA", minuta)
+    d odjezd.%Set("ZKRACENE_OZNACENI_LINKY", zkrOznLinky)
+    d odjezd.%Set("FORE_COLOR", "")
+    d odjezd.%Set("BACK_COLOR", "")
+    d odjezd.%Set("ANOTACE", ##class(%DynamicArray).%New())
+    q odjezd
+}
+
+ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String)
+{
+    s anotace = ##class(%DynamicObject).%New()
+    d anotace.%Set("TYP", typ)
+    d anotace.%Set("ZNAK", znak)
+    d odjezd.%Get("ANOTACE").%Push(anotace)
+}
+
+ClassMethod SetOdjezdColors(odjezd As %DynamicObject, foreColor As %String = "", backColor As %String = "")
+{
+    d odjezd.%Set("FORE_COLOR", foreColor)
+    d odjezd.%Set("BACK_COLOR", backColor)
+}
+
+ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String) As %DynamicObject
+{
+    s poznamka = ##class(%DynamicObject).%New()
+    d poznamka.%Set("TYP", typ)
+    d poznamka.%Set("ZNAK", znak)
+    d poznamka.%Set("TEXT", text)
+    q poznamka
+}
+
+/// Konvertuje číselný kód speciálního znaku na Unicode string.
+ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
+{
+    if cislo = 1 q "Po"
+    if cislo = 2 q "Út"
+    if cislo = 3 q "St"
+    if cislo = 4 q "Čt"
+    if cislo = 5 q "Pá"
+    if cislo = 6 q "So"
+    if cislo = 7 q "Ne"
+    if +cislo > 31 q $c(cislo)
+    q cislo
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// Standardní JŘ schema definice
+
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/// Přidá standardní skalární pole JŘ agendy do pole fields.
+ClassMethod AddStandardJRFields(fields As %DynamicArray)
+{
+    d ..AddField(fields, "CISLO_LINKY",            "Číslo linky",            "number")
+    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Označení linky",         "text")
+    d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
+    d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
+    d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
+    d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
+    d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
+    d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
+    d ..AddField(fields, "POPIS_SMER",             "Popis směru",            "text")
+    d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
+    d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
+    d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
+    d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
+    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
+    d ..AddField(fields, "INFORMACE",              "Informace",              "text")
+    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nejedou spoje",          "text")
+}
+
+/// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
+ClassMethod AddStandardJRCollections(collections As %DynamicArray)
+{
+    // ZASTAVKY
+    s colZastavky = ##class(%DynamicObject).%New()
+    s colZastavky.name          = "Zastávky"
+    s colZastavky.collectionKey = "ZASTAVKY"
+    s colZastavkyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colZastavkyFields, "ID",                "ID zastávky",         "text")
+    d ..AddField(colZastavkyFields, "POPIS",             "Název zastávky",      "text")
+    d ..AddField(colZastavkyFields, "TC",                "Tarifní číslo",       "text")
+    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",           "number")
+    d ..AddField(colZastavkyFields, "NA_ZNAMENI",        "Na znamení",          "boolean")
+    s colZastavky.fields = colZastavkyFields
+    d collections.%Push(colZastavky)
+
+    // SKUPINY_DNU
+    s colSkupiny = ##class(%DynamicObject).%New()
+    s colSkupiny.name          = "Skupiny dnů"
+    s colSkupiny.collectionKey = "SKUPINY_DNU"
+    s colSkupinyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colSkupinyFields, "ID",      "ID skupiny",     "text")
+    d ..AddField(colSkupinyFields, "NADPIS",  "Nadpis skupiny", "text")
+    d ..AddField(colSkupinyFields, "NADPIS2", "Nadpis 2",       "text")
+    s colSkupiny.fields = colSkupinyFields
+    d collections.%Push(colSkupiny)
+
+    // ODJEZDY
+    s colOdjezdy = ##class(%DynamicObject).%New()
+    s colOdjezdy.name          = "Odjezdy"
+    s colOdjezdy.collectionKey = "ODJEZDY"
+    s colOdjezdyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colOdjezdyFields, "ZASTAVKA_ID",     "ID zastávky",       "text")
+    d ..AddField(colOdjezdyFields, "SKUPINA_DNU_ID",  "ID skupiny dnů",    "text")
+    d ..AddField(colOdjezdyFields, "HODINA",          "Hodina",            "number")
+    d ..AddField(colOdjezdyFields, "MINUTA",          "Minuta",            "number")
+    s colOdjezdy.fields = colOdjezdyFields
+    d collections.%Push(colOdjezdy)
+
+    // POZNAMKY
+    s colPoznamky = ##class(%DynamicObject).%New()
+    s colPoznamky.name          = "Poznámky"
+    s colPoznamky.collectionKey = "POZNAMKY"
+    s colPoznamkyFields = ##class(%DynamicArray).%New()
+    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky", "text")
+    d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
+    d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky",  "text")
+    s colPoznamky.fields = colPoznamkyFields
+    d collections.%Push(colPoznamky)
+}
+
+/// Přidá standardní JŘ parametry do pole parametrů.
+ClassMethod AddStandardJRParameters(arr As %DynamicArray)
+{
+    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
+    d ..AddBoolParam(arr, "TISK_TARIFU",         "Tarifní zóna",              "false")
+    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
+
+    // Časová osa
+    s param = ##class(%DynamicObject).%New()
+    s param.name         = "CASOVA_OSA"
+    s param.label        = "Časová osa odjezdů"
+    s param.type         = "enum"
+    s param.defaultValue = "compact"
+    s opts = ##class(%DynamicArray).%New()
+    d opts.%Push("compact")
+    d opts.%Push("full")
+    d opts.%Push("range")
+    s param.options = opts
+    d arr.%Push(param)
+
+    // Hodiny od/do — relevantní jen pro CASOVA_OSA = range
+    d ..AddNumberParam(arr, "HODINY_OD", "Hodiny od", "4")
+    d ..AddNumberParam(arr, "HODINY_DO", "Hodiny do", "24")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

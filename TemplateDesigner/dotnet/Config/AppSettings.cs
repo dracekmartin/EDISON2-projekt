@@ -121,7 +121,7 @@ public class SchemaAgendaSettings
 
     /// <summary>
     /// Caché třída implementující AgendaAPI,
-    /// např. "ALVA.TemplateDesigner.API.TemplateDesignerMHD".
+    /// např. "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI".
     /// </summary>
     public string CacheClass { get; set; } = "";
 }
