@@ -8,70 +8,102 @@
 
 > **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
 
-**Primární architektonická změna** — přidání specializovaných elementů pro tisk jízdních řádů. Nový princip: Caché vrací čistá data + business logiku (JSON), specializované C# elementy (`ScheduleElementBase` → `StopScheduleElement`, `DepartureGridElement`, `BookScheduleElement`, `VehicleScheduleElement`) mají vlastní nastavení a komplexní renderovací logiku. PageLayoutEngine zůstává generický beze změn.
+**Primární architektonická změna** — přidání specializovaných elementů pro tisk jízdních řádů. Nový princip: Caché vrací čistá data + business logiku (JSON), specializované C# elementy (`ScheduleElementBase` → `StopListElement`, `DepartureGridElement`, `NotesLegendElement`, `BookScheduleElement`, `VehicleScheduleElement`) mají vlastní nastavení a komplexní renderovací logiku. PageLayoutEngine zůstává generický beze změn.
+
+#### Dokončené kroky (společný základ)
 
 | Krok | Co | Stav |
 |---|---|---|
 | 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) | ✅ hotovo (2026-03-18) |
 | 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ, MinutesOnly (MHD) | ✅ hotovo (2026-03-18) |
-| 3 | Caché `AgendaJRAPI` + `TiskMHD` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) | ✅ hotovo (2026-03-18) |
+| 3 | Caché `ZastavkoveJrMhdAPI` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) | ✅ hotovo (2026-03-18) |
 | 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů | ✅ hotovo (2026-03-18) |
 | 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF | ✅ hotovo (2026-03-18) |
 | 6 | `CacheAgendaProvider` — ParseMockData vnořená pole, GetData, BuildRealData | ✅ hotovo (2026-03-18) |
-| 7 | Zastávkový JŘ — mód "FullTime" (meziměsto): matice zastávky × spoje | |
-| 8 | `BookScheduleElement` — knižní JŘ (layout TBD) | |
-| 9 | `VehicleScheduleElement` — vozový JŘ (layout TBD) | |
 
-**Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy:**
+---
 
-| Téma | Popis | Dopad na vozové JŘ |
+#### Fáze A: Odladění MHD zastávkového JŘ s reálnými daty ⬅️ AKTUÁLNÍ PRIORITA
+
+Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými daty z Caché → PDF 1:1 odpovídající současnému MHD JŘ. Zpětná vazba od kolegů.
+
+| Krok | Co | Stav |
 |---|---|---|
-| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy (`StopListElement`, `DepartureGridElement`, `NotesLegendElement`) — lépe odpovídá designerové filozofii (uživatel skládá ze stavebních bloků). | Vozový JŘ bude pravděpodobně taky víc elementů (hlavička oběhu, tabulka spojů, poznámky). Počítat s tím od začátku. |
-| **FullTime mód odložen** | MinutesOnly mód (MHD) je hotový, ale FullTime (meziměstský — matice zastávky × spoje) je odložen. Je to zásadně jiný layout (pivot tabulka). | Definovat layout vozového JŘ před implementací — aby se neopakovala situace kde se plán změní v průběhu. |
-| **Synchronní GetData v PrintDialogu** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké (100+ spojů) může zamrznout UI. | Vozový JŘ bude mít víc dat (celý denní oběh). Async loading s progress barem bude nutný. |
-| **SKTypeface/SKPaint alokace** | Schedule elementy alokují SKTypeface a SKPaint per render frame. Funguje, ale není optimální. | Cachovat fonty a painty — buď lazy static, nebo pool na elementu. |
-| **Caché business logika je rozsáhlá** | TiskMHD má ~1200 řádků — refaktor z legacy kódu zabral víc času než se čekalo. Hlavně: slučování zastávek, auto-poznámkování, NZ generování z bitmap. | Vozový JŘ bude mít jinou, ale podobně komplexní business logiku (oběhy, přestávky, výjezd/příjezd). Počítat s tím v odhadu. |
-| **Testování s reálnými daty** | Mock data v designeru fungují, ale reálná data z Caché odhalí edge cases (prázdné pole, null hodnoty, speciální znaky). | Připravit testovací scénáře s reálnými daty co nejdřív. |
+| 7 | Ladění MinutesOnly na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | |
+| 8 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
+| 9 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
+| 10 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |
+
+---
+
+#### Fáze B: UX polish + vylepšení importu
+
+Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a chytřejší import.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 11 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
+| 12 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
+| 13 | Import: JŘ-aware mód (3d) — uživatel označí oblast jako "zastávkový JŘ" → engine namapuje na StopList/DepartureGrid/NotesLegend; případně AI asistence při rozpoznávání | |
+
+**Import PDF — aktuální stav:**
+- ✅ Režim 1 (deterministický 1:1 import) hotovo (2026-03-13)
+- 3a: Detekce tabulek z mřížky čar (viz popis níže)
+- 3b: Křivky/Bézier (nízká priorita — zaoblené rohy rasterizovat jako bitmapa)
+- 3c: AI post-processing — nahrazení statických textů za `{PLACEHOLDER}`, detekce záhlaví/patičky
+- **3d: JŘ-aware import** — při importu PDF jízdního řádu uživatel může ručně označit oblast a říct "toto je zastávkový JŘ". Engine pak namapuje na specializované elementy (StopListElement, DepartureGridElement, NotesLegendElement) místo generických textů/čar. Volitelně AI asistence pro automatické rozpoznání struktury JŘ.
+
+---
+
+#### Fáze C: Meziměstský JŘ (FullTime mód)
+
+Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl: sloupce odjezdů nejsou typy provozu (jako MHD), ale mají jiný koncept specifický pro meziměsto. Layout je pivot tabulka (zastávky × spoje).
+
+| Krok | Co | Stav |
+|---|---|---|
+| 14 | Definovat FullTime layout — analýza referenčních PDF meziměstských JŘ, wire formát dat | |
+| 15 | Implementace FullTime módu v StopListElement + DepartureGridElement (rozšíření existujících elementů) | |
+| 16 | Caché `TiskMeziměsto` — GetData/GetMockData pro meziměstský JŘ | |
+
+---
+
+#### Fáze D: Knižní JŘ
+
+Layout TBD — pravděpodobně kompaktní formát pro knižní publikaci. Definovat layout před implementací.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 17 | Analýza referenčních knižních JŘ — definice layoutu a wire formátu | |
+| 18 | `BookScheduleElement` — implementace (pravděpodobně víc elementů, viz poučení z MHD) | |
+| 19 | Caché `TiskKnizni` — GetData/GetMockData | |
+
+---
+
+#### Fáze E: Vozový JŘ
+
+Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc elementů (viz poučení z MHD).
+
+| Krok | Co | Stav |
+|---|---|---|
+| 20 | Analýza referenčních vozových JŘ — definice layoutu a wire formátu | |
+| 21 | `VehicleScheduleElement` — implementace (pravděpodobně víc nezávislých elementů) | |
+| 22 | Caché `TiskVozovy` — GetData/GetMockData + async loading (větší objem dat) | |
+
+---
+
+#### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
+
+| Téma | Popis |
+|---|---|
+| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy — lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
+| **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. |
+| **SKTypeface/SKPaint alokace** | Schedule elementy alokují SKTypeface a SKPaint per render frame. Funguje, ale není optimální. Cachovat fonty a painty. |
+| **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
+| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu (FullTime mód odložen). |
 
 ---
 
 ### 🟡 Důležité — omezení flexibility bez toho
-
-**3. Import PDF → šablona**
-Strojová analýza existujícího PDF a převod na TemplateDesigner šablonu.
-- Knihovna: **PdfPig** (open source, .NET, per-word bounding boxy, vestavěné algoritmy pro seskupování textu)
-
-**Aktuální stav (režim 1 — deterministický 1:1 import):** ✅ hotovo (2026-03-13)
-- PdfPig extrahuje text (pozice, font, barva), čáry, obdélníky, obrázky
-- 3 merge módy grafiky (None / LinesOnly / All); detekce okrajů; auto-grouping elementů
-- Texty se seskupují do bloků, pozice a fonty se zachovávají
-- PdfImportDialog s async konverzí, výběrem stránek, debug logem
-
-**3a. Detekce tabulek z mřížky čar**
-PDF neobsahuje "tabulku" jako objekt — je to jen mřížka čar + text uvnitř.
-- Detekovat pravidelnou mřížku horizontálních a vertikálních čar → bounding box tabulky
-- Identifikovat sloupce (svislé čáry) a řádky (vodorovné čáry) → `TableElement` (Fixed)
-- Přiřadit texty do buněk podle pozice (text overlaps cell rect)
-- Záhlaví = první řádek (volitelně tučný/odlišená barva pozadí)
-- Výsledek: místo 50 čar + 20 textů → jeden `TableElement` s definovanými sloupci a řádky
-- Komplikace: merged cells, nested tabulky, tabulky bez viditelných čar (jen zarovnané texty)
-
-**3b. Křivky a zaoblené čáry (BezierElement / PathElement)**
-PDF obsahuje Bézierovy křivky (oblouky, zaoblené rohy, dekorativní prvky). Aktuálně se importují jako artefakty — zaoblené části generují obdélníkové aproximace.
-- Nový typ elementu: `PathElement` nebo `BezierElement` — SVG-like path s body a křivkami
-- PdfPig extrahuje `BezierCurve` a `Subpath` z PDF content streamu
-- Import: převod PDF path → zjednodušený path model (move, line, curve, close)
-- Renderování: `SKPath` s `MoveTo`, `LineTo`, `CubicTo` (SkiaSharp nativně podporuje Bézier)
-- Alternativa (jednodušší): zaoblené rohy rasterizovat do bitmapy jako součást background merge
-
-**3c. AI post-processing (režim 2 — "Zchytři to")**
-Nadstavba nad režimem 1 — vezme hotový deterministický import + schéma agendy a navrhne vylepšení.
-- AI navrhne nahrazení statických textů za `{PLACEHOLDER}` na základě schématu agendy
-- Identifikace opakujícího se záhlaví/patičky (→ sekce OnEveryPage)
-- Rozpoznání kandidátů na Dynamic tabulku (opakující se struktura řádků)
-- Návrh seskupení elementů do logických skupin
-- UI: uživatel vidí návrhy a potvrdí/upraví/odmítne jednotlivé změny
-- Režim 1 je užitečný sám o sobě; režim 2 je volitelná nadstavba
 
 **4. Min/max počet řádků dynamic tabulky**
 Nové properties na `TableElement`: `MinRows`, `MaxRows`. Print engine ořízne přebývající řádky nebo doplní prázdné řádky do minima. Užitečné pro tabulky s proměnlivým počtem dat (faktury, JŘ).
@@ -82,16 +114,7 @@ Nové properties na `TableElement`: `MinRows`, `MaxRows`. Print engine ořízne 
 **6. Zarovnávání napříč sekcemi**
 Aktuálně alignment funguje jen v rámci jedné sekce. Umožnit zarovnat elementy z různých sekcí — referenční bod = stránka, ne sekce. Vyžaduje přepočet souřadnic (element.X/Y jsou relativní k sekci).
 
-**7. Fonty pro speciální znaky (JŘ poznámky)**
-Symboly anotací v JŘ (①②③, ikonky poznámek) aktuálně řešené jako obrázky → nahradit fontem (např. Segoe UI Symbol nebo vlastní icon font). Vyžaduje font fallback mechanismus v rendereru (primary font → fallback font pro symboly mimo rozsah).
-
-**8. MRU seznam nedávno otevřených šablon**
-Menu Soubor → posledních 5–10 šablon. Uložit cesty do user settings souboru vedle .exe. Klik otevře šablonu přímo.
-
-**9. Rulers na canvasu**
-Pravítka podél horního a levého okraje canvasu s mm značkami. Reagují na zoom. Ukazatel aktuální pozice myši na pravítku.
-
-**10. Vnořené datasource (hierarchická data)**
+**7. Vnořené datasource (hierarchická data)**
 Flat `_values + _rows` nestačí pro hierarchická data.
 - `_rows` uvnitř `_rows` — kolekce uvnitř kolekce (faktura → položky → daně)
 - TableElement může mít vnořený DataSource odkazující na child kolekci
@@ -105,18 +128,18 @@ Flat `_values + _rows` nestačí pro hierarchická data.
 | # | Položka | Náročnost | Popis |
 |---|---------|-----------|-------|
 | c | Zoom persistence | Malá | Uložit zoom do Caché user preferences; řešit až při nasazení |
-| f | Side panel vlastností místo modálního dialogu | Velká | Největší UX zlepšení, ale architektonická změna (PropertiesPanel + layout) |
+| f | Side panel vlastností místo modálního dialogu | Velká | ✅ základ hotovo (2026-03-21) — inline záložka "Vlastnosti" v levém panelu; modální dialog zachován jako fallback |
 | g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu |
-| h | Ikonový toolbar | Střední | Nahradit textové "T", "▭", "Zast" ikonami |
+| h | Ikonový toolbar | Střední | ✅ hotovo (2026-03-21) — 33 Fluent UI ikon, 7 skupin, ToolbarStyles.xaml |
 
-**11. Grouping v TableElement**
+**8. Grouping v TableElement**
 Seskupení řádků dynamické tabulky podle hodnoty pole.
 - `TableRowType` enum: `GroupHeader`, `Data`, `GroupFooter`, `Summary`
 - `GroupByField` property na TableElement
 - Print engine sleduje změnu hodnoty groupovacího pole a vkládá Header/Footer řádky
 - GroupFooter může obsahovat agregace ze skupiny (SUM/COUNT)
 
-**12. Computed fields**
+**9. Computed fields**
 Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 - Definice v agendě (nebo přímo v šabloně)
 - Např. `CELKOVA_CENA = CENA * MNOZSTVI` — hotovo před renderováním
@@ -151,7 +174,7 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 
 **Zastávkový JŘ (MinutesOnly) + Caché integrace** ✅ hotovo (2026-03-18)
 - ScheduleElementBase + 3 elementy (StopListElement, DepartureGridElement, NotesLegendElement)
-- AgendaJRAPI + TiskMHD (~1200 řádků business logiky z legacy refaktoru)
+- ZastavkoveJrMhdAPI (~1200 řádků business logiky z legacy refaktoru, sloučeno z AgendaJRAPI + TiskMHD + TemplateDesignerMHD)
 - CacheAgendaProvider: ParseMockData vnořená pole, GetData, BuildRealData
 - PrintDialog: parametry + export reálných dat + multi-data PDF
 - SkiaHeightCalculator: schedule element height calculation
@@ -222,13 +245,7 @@ Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v Template
 
 ### Vrstvy systému
 
-```
-5. Aplikace         WPF Designer, EDISON tisk, Server API, CLI batch
-4. Renderer         element.Render(ctx) → SKCanvas / PDF (SkiaSharp, žádné WPF)
-3. PageLayoutEngine Template + DataContext → List<Page> (žádný SkiaSharp, žádné UI)
-2. Expressions      ExpressionEvaluator, PlaceholderFormatter, AggregationResolver
-1. Models           Template, Section, TemplateElement, DataContext, DataSchema
-```
+Viz diagram v `CLAUDE.md` (sekce "Architektura — vrstvy systému").
 
 ### PageLayoutEngine — vstup/výstup ✅
 

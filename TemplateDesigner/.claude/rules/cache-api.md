@@ -37,7 +37,7 @@ Každá nová agenda **musí** implementovat všech pět metod — Caché kompil
 ### Implementace per agenda
 
 ```objectscript
-Class ALVA.JR.TiskAPI Extends ALVA.TemplateDesigner.AgendaAPI
+Class ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI Extends ALVA.TemplateDesigner.API.AgendaAPI
 {
     ClassMethod GetSchema(ByRef sys As %String) As %Status
     {
@@ -201,8 +201,8 @@ OUT[3] = {"collection":"ZASTAVKY","POPIS":"Smíchovské n.","CAS_ODJ":"812"}
 ```json
 {
   "agendas": [
-    { "code": "JR",      "label": "Jízdní řád", "cacheClass": "ALVA.JR.TiskAPI" },
-    { "code": "FAKTURY", "label": "Faktury",     "cacheClass": "ALVA.Faktury.TiskAPI" }
+    { "code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI" },
+    { "code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerFAKTURY" }
   ]
 }
 ```
@@ -212,7 +212,7 @@ OUT[3] = {"collection":"ZASTAVKY","POPIS":"Smíchovské n.","CAS_ODJ":"812"}
 // Implementuje IDataSchemaProvider + ITableTemplateProvider
 class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 {
-    string _cacheClass;   // "ALVA.JR.TiskAPI"
+    string _cacheClass;   // "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI"
     MLRest _mlRest;
 
     // IDataSchemaProvider
@@ -233,7 +233,7 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 ### Přidání nové agendy — checklist
 
-1. Vytvořit Caché třídu `ALVA.<Agenda>.TiskAPI Extends ALVA.TemplateDesigner.AgendaAPI`
+1. Vytvořit Caché třídu `ALVA.TemplateDesigner.API.<Agenda>API Extends ALVA.TemplateDesigner.API.AgendaAPI`
 2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`, `GetMockData`
 3. Přidat záznam do `appsettings.json` → `agendas[]`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
@@ -241,19 +241,24 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 ---
 
-## Vzdálená vize (mimo aktuální scope)
+## Kódové konvence pro ObjectScript
 
-**JR specifika:**
-- `JRTableElement` — specializovaný element pro jízdní řády (matice zastávky × spoje)
-  - Aktuální `TableElement` Fixed/Dynamic nestačí — sloupce jsou dynamické i v ose X
-  - Properties: levé sloupce (Zóna/Km/Zastávka/MHD), šířka sloupce spoje, záhlaví skupin dní, šipky
-  - Data z Caché GetData; šablona přenositelná přes linky
+### Operátory
+1. **Vždy `&&` pro AND** — nikdy `&` (legacy syntaxe)
+2. **Vždy `||` pro OR** — nikdy `!` (legacy OR syntaxe); negace v ObjectScript = `'` (apostrof), ne `!`
 
-**Komponenty:**
-- **Fragmenty** — uložené skupiny elementů pro opakované použití (jako custom section templates, ale na úrovni elementů)
-- **ChartElement** — grafy
+### Pojmenování
+3. **Čitelné názvy — čím globálnější, tím důležitější.** Parametry metod, properties tříd, klíče globálů: vždy celá slova (`AutoPoznamkyRozdilTrasyAlgoritmus` místo `AutoPoznRozdTrsSpAlg`). Lokální temp proměnná použitá na jednom místě může být rozumná zkratka.
+4. **Žádné `_` v názvech proměnných** — `_` je v ObjectScript operátor spojení stringů. Použít camelCase nebo celá slova.
+5. **Jazyk: "czechglish"** — business logika česky (`pocetZastavek`, `aktualniSmer`, `casOdjezdu`), obecné programátorské vzory anglicky (`GetData`, `SetTrasa`, `BuildOdjezdy`). Ne `ZiskatData` ani `NastavitTrasu`.
+6. **Žádné tajemné číselné indexy** v globálech — pojmenované klíče (`^||TiskMHD("trasa",SmerID,BodID)` místo `^||wg(1,2,3)`)
 
-**Pokročilé features:**
-- **Conditional formatting** — barva/font buňky nebo elementu podle hodnoty dat
-- **DB backend pro custom šablony** — `CacheSectionTemplateProvider` místo file-based V1
-- **AI asistent** — generování šablon z přirozeného jazyka
+### Struktura kódu
+7. **Žádná `@` indirection** — přímé reference (`^||TiskMHD(...)` místo `@wg@(...)`)
+8. **Klíčová slova ve zkratkách** — `s`, `d`, `i`, `q`, `f` jsou OK (firemní standard)
+9. **Konzistentní error handling** — `$$$CatchErrRest`; debug přes `^jm` jen při ladění, v produkci čisté
+10. **`_` v dot-notation** — zakázáno (`obj.KEY_NAME` nefunguje); používat `obj.%Set("KEY_NAME", v)`
+11. **Preferovat třídy + ClassMethody** — žádné routiny, makra ani jiné legacy konstrukty
+
+### Parametry a makra
+12. **`$$$FillParams` místo předávání IdFa/dataDB** — pokud třída Include GENERAL a metoda má `ByRef sys`, makro `$$$FillParams` zpřístupní `IdFa`, `dataDB`, `del`, `userID`, `GUID` atd. jako lokální proměnné. Nepředávat je jako parametry mezi metodami — každá metoda si zavolá `$$$FillParams` sama.

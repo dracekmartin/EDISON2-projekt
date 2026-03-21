@@ -14,11 +14,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-20
+**Datum poslední aktualizace:** 2026-03-21
 
 ### 🎯 Aktuální focus
 
-VehicleScheduleElement; FullTime mód zastávkového JŘ; konfigurovatelné pořadí sloupců StopListElement
+Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), FullTime mód, data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
 
 ### ✅ Co máme
 
@@ -40,7 +40,7 @@ VehicleScheduleElement; FullTime mód zastávkového JŘ; konfigurovatelné poř
 - LineElement — custom dash/gap pro čárkované a tečkované čáry
 - ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
 - **Zastávkový JŘ (MinutesOnly)** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery a cache; ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace; DepartureGrid: redistribuce šířek sloupců na celou šířku, word-wrap záhlaví skupin, sloučený řádek záhlaví (Hod + názvy skupin); per-column nastavení (`DepartureGroupColumnStyle`: viditelnost, barvy, font, zarovnání H+V, bold/italic) přes `DepartureGroupEditorDialog`
-- **Caché AgendaJRAPI + TiskMHD** — abstraktní mezistupeň `AgendaJRAPI` pro JŘ agendy (helpery: BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka + AddAnotace/AddAtribut/AddPoznamkaZastavky); `ALVA.MHD.TiskAPI` konkrétní implementace s `GetData`/`GetMockData` pro MHD zastávkový JŘ (~1200 řádků business logiky)
+- **Caché ZastavkoveJrMhdAPI** — jedna třída `ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI` dědící přímo z `AgendaAPI`; kompletní 6-fázový tiskový engine MHD + všechny helpery (BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka, AddAnotace, AddAtribut, AddPoznamkaZastavky, ConvertSpecialniZnak) + GetSchema/GetData/GetMockData
 - **DataContext vnořená pole** — ParseMockData rozlišuje JsonArray/JsonObject vs skalární hodnoty; ScheduleElementBase parsuje vnořená pole (ZONY[], ATRIBUTY[], ANOTACE[], POZNAMKY_ZASTAVKY[])
 - **Multi-data PDF export + PrintDialog** — `RenderMultiDataToPdf` zpracovává více DataContextů (1 zastávka/směr = 1+ PDF stránek); PrintDialog s parametry a exportem reálných dat z Caché (`GetData`); tisk i mock preview v jednom dialogu
 - Word wrap + dynamická výška TextElementu — `WordWrap=true` + `Height=null` → text se zalamuje a výška se dopočítá z obsahu; `LineSpacing` property
@@ -60,6 +60,8 @@ VehicleScheduleElement; FullTime mód zastávkového JŘ; konfigurovatelné poř
 - **Rámeček elementů (border)** — `BorderColor` + `BorderWidth` na base `TemplateElement`; dvouprůchodové renderování (obsah → rámečky mimo clip sekce); pixel-snap na sdílených hranách → jeden rámeček; viditelné i na hranici sekce
 - **Auto-scale font u JŘ elementů** — `ScheduleElementBase.ComputeFontScale(naturalH)`: pokud obsah přesahuje pevnou Height, fonty + výšky řádků se proporcionálně zmenší; schedule elementy nyní podporují pevnou Height (ne jen null/dynamickou)
 - **Multi-element editing** — Enter při výběru více elementů otevře dialog společných vlastností (BorderColor, BorderWidth, ZIndex, IsLocked); změna se aplikuje na všechny najednou
+- **Ikonový toolbar** — 33 Fluent UI System Icons (Microsoft, MIT); 1 band, 7 skupin (Soubor, Upravit, Přidat, Elementy, Vrstva, Zarovnat, Zobrazení); ToolbarStyles.xaml; maximalizované okno; preview 50:50 star sizing
+- **Inline properties panel** — záložka "Vlastnosti" v levém panelu; automatická aktualizace při výběru elementu; modální dialog zachován jako fallback (Enter/dvojklik)
 
 ### 🐛 Známé problémy
 

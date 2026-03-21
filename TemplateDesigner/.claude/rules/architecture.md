@@ -5,7 +5,7 @@
 **Struktura složek repozitáře:**
 ```
 TemplateDesigner/
-├── CACHE/                    — Caché ObjectScript kód (AgendaAPI, TemplateDesignerMHD)
+├── CACHE/                    — Caché ObjectScript kód (AgendaAPI, ZastavkoveJrMhdAPI, TemplateDesignerFAKTURY)
 │   ├── .project              — "ALVA_TEMPLATE_DESIGNER"
 │   └── ALVA/TemplateDesigner/API/
 ├── dotnet/                   — veškerý .NET/WPF zdrojový kód + .csproj

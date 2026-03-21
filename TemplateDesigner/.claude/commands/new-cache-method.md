@@ -11,7 +11,7 @@ Vždy používej CVar formát — nikdy object[].
 
 Existující Caché třídy: !`ls CACHE/ALVA/TemplateDesigner/API/`
 Vzorová Caché třída: !`cat CACHE/ALVA/TemplateDesigner/API/AgendaAPI.cls`
-Referenční implementace: !`cat CACHE/ALVA/TemplateDesigner/API/TemplateDesignerMHD.cls`
+Referenční implementace: !`cat CACHE/ALVA/TemplateDesigner/API/ZastavkoveJrMhdAPI.cls`
 CacheAgendaProvider (C# strana): !`cat dotnet/Serialization/CacheAgendaProvider.cs`
 
 ## Co vytvořit
