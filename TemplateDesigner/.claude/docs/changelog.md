@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-03-23 — Ověření parametrů šablony, fix PrintDialog export, auto-open PDF
+
+- ✅ **Fix: parametry nefungovaly v PrintDialog exportu** — `buildRealData` callback nevkládal parametry do DataContextu; C# rendering (HODINY_OD, CASOVA_OSA atd.) je nenašel → nyní merge přes `WithExtraValues()` po `GetData()`
+- ✅ **Fix: HODINY_OD/DO filtr ve všech režimech** — dříve se rozsah hodin aplikoval jen v režimu Range; nyní filtruje i v Compact a Full režimu
+- ✅ **TISK_SIPKY parametr** — nový runtime override pro `ShowDirectionArrow` v StopListElement
+- ✅ **Auto-open PDF** — po exportu se PDF automaticky otevře ve výchozím prohlížeči (PrintDialog mock + real data + quick export)
+- ✅ **Odebrán BAREVNE_ODLISENI** — nepoužívaný parametr z Caché `GetParameters()`
+- ✅ **Odebrán TISK_TARIFU** — nepoužívaný parametr + C# Zone override logika
+
+---
+
 ## 2026-03-23 — Per-column styling generalizace, StopList styling, architektonické vylepšení
 
 - ✅ **ScheduleElementBase — sdílené font/paint helpery** — `CreateCellFont`, `CreateCellTextPaint`, `CreateCellBgPaint`, `RenderCellBackground`, `MakeFontStyle` extrahované ze schedule elementů do base class; eliminuje ~60 řádků duplikovaného kódu

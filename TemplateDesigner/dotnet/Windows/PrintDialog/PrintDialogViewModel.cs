@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using EDControls.EDViewModel;
 using Microsoft.Win32;
@@ -67,6 +68,7 @@ public class PrintDialogViewModel : EDViewModel
         {
             var data = _buildMockData(_paramValues);
             RequestRenderPdf?.Invoke(filePath, data);
+            OpenPdf(filePath);
             StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}";
         }
         catch (Exception ex)
@@ -94,12 +96,19 @@ public class PrintDialogViewModel : EDViewModel
             }
 
             RequestRenderMultiPdf?.Invoke(filePath, dataPages);
+            OpenPdf(filePath);
             StatusText = $"PDF uloženo ({dataPages.Count} stránek dat): {Path.GetFileName(filePath)}";
         }
         catch (Exception ex)
         {
             StatusText = $"Chyba: {ex.Message}";
         }
+    }
+
+    private static void OpenPdf(string filePath)
+    {
+        try { Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true }); }
+        catch { /* PDF viewer nemusí být nainstalován */ }
     }
 
     private string? ShowSaveDialog(string title)

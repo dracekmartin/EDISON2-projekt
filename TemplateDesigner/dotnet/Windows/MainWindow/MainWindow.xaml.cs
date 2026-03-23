@@ -118,6 +118,8 @@ public partial class MainWindow : Window
             {
                 _previewCanvas!.RenderToPdf(filePath, _vm.BuildPreviewMockData());
                 _vm.StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}";
+                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true }); }
+                catch { /* PDF viewer nemusí být nainstalován */ }
             }
             catch (Exception ex)
             {
@@ -589,7 +591,23 @@ public partial class MainWindow : Window
         {
             var provider = _vm.CacheProvider;
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
-            buildRealData = paramValues => provider.GetData(agendaCode, paramValues);
+            buildRealData = paramValues =>
+            {
+                var pages = provider.GetData(agendaCode, paramValues);
+                if (pages is null) return null;
+
+                // Merge parametrů do každého DataContextu — C# rendering je potřebuje
+                // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
+                var stringParams = paramValues
+                    .Where(kv => kv.Value is not null)
+                    .ToDictionary(kv => kv.Key, kv => (object?)kv.Value!.ToString(),
+                        StringComparer.OrdinalIgnoreCase);
+
+                if (stringParams.Count > 0)
+                    pages = pages.Select(p => p.WithExtraValues(stringParams)).ToList();
+
+                return pages;
+            };
         }
 
         var vm = new PrintDialogViewModel(

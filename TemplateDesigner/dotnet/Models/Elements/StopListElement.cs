@@ -125,8 +125,9 @@ public class StopListElement : ScheduleElementBase
         float currentY = RenderColumnHeaders(ctx, columns, headerH, headerFont, paints,
             perColHeaderFonts, perColHeaderTextPaints, perColHeaderBgPaints);
 
-        // Řádky zastávek — parametr TISK_PROJETYCH_ZAST přepíše ShowPassedStops
+        // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
+        bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
 
         if (hasData)
         {
@@ -189,7 +190,7 @@ public class StopListElement : ScheduleElementBase
             }
 
             // Šipka směru jízdy ┌─▼
-            if (ShowDirectionArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
+            if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
                 RenderDirectionArrow(ctx, columns, arrowStartY, arrowEndY, rowH);
         }
         else

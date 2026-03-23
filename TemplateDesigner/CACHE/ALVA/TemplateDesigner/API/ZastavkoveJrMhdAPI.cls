@@ -134,9 +134,6 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 
     d ..AddStandardJRParameters(arr)
 
-    // MHD-specifické
-    d ..AddBoolParam(arr, "BAREVNE_ODLISENI", "Barevné odlišení", "false")
-
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
     q $$$OK
 }
@@ -1400,7 +1397,6 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
-    d ..AddBoolParam(arr, "TISK_TARIFU",         "Tarifní zóna",              "false")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
 
     // Časová osa

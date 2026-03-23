@@ -812,7 +812,7 @@ public class DepartureGridElement : ScheduleElementBase
     private static List<int> GetVisibleHoursFromSet(
         HashSet<int> allHours, TimeAxisMode timeAxis, int rangeFrom, int rangeTo)
     {
-        return timeAxis switch
+        var hours = timeAxis switch
         {
             TimeAxisMode.Compact => allHours.OrderBy(h => h).ToList(),
             TimeAxisMode.Full => Enumerable.Range(0, 24).ToList(),
@@ -820,6 +820,12 @@ public class DepartureGridElement : ScheduleElementBase
                 Math.Max(1, rangeTo - rangeFrom + 1)).ToList(),
             _ => allHours.OrderBy(h => h).ToList()
         };
+
+        // HODINY_OD/DO filtr se aplikuje i v Compact/Full režimu
+        if (timeAxis != TimeAxisMode.Range && (rangeFrom > 0 || rangeTo < 23))
+            hours = hours.Where(h => h >= rangeFrom && h <= rangeTo).ToList();
+
+        return hours;
     }
 
     private static TimeAxisMode ParseTimeAxisMode(string s) => s.ToLowerInvariant() switch
