@@ -72,9 +72,28 @@ public class TemplateDesignerViewModel : EDViewModel
             if (_realPreviewData is null || _realPreviewData.Count == 0) return;
             var clamped = Math.Clamp(value, 0, _realPreviewData.Count - 1);
             if (Set(ref _realPreviewIndex, clamped))
+            {
                 RequestPreviewRefresh?.Invoke();
+                OnPropertyChanged(nameof(PageNavigationText));
+                System.Windows.Input.CommandManager.InvalidateRequerySuggested();
+            }
         }
     }
+
+    /// <summary>Text stránkování "3 / 12" pro UI.</summary>
+    public string PageNavigationText => RealPreviewPageCount > 0
+        ? $"{RealPreviewIndex + 1} / {RealPreviewPageCount}"
+        : "—";
+
+    public bool HasMultiplePages => RealPreviewPageCount > 1;
+
+    private RelayCommand? _prevPage, _nextPage;
+    public RelayCommand PreviousPageCommand => _prevPage ??= new(
+        () => RealPreviewIndex--,
+        () => RealPreviewIndex > 0);
+    public RelayCommand NextPageCommand => _nextPage ??= new(
+        () => RealPreviewIndex++,
+        () => RealPreviewIndex < RealPreviewPageCount - 1);
 
     /// <summary>Parametry agendy pro PrintDialog.</summary>
     public IReadOnlyList<TemplateParameter> AgendaParameters => _agendaParameters;
@@ -183,6 +202,7 @@ public class TemplateDesignerViewModel : EDViewModel
         State.Execute(cmd);
         IsDirty = true;
         NotifyUndoRedo();
+        RequestPropertiesPanelUpdate?.Invoke();
     }
 
     private void Undo()
@@ -1073,43 +1093,59 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
-    /// Načte reálná data z Caché pro live preview. Pokud GetData selže nebo vrátí
-    /// prázdný výsledek, _realPreviewData zůstane null → fallback na mock data.
+    /// Načte reálná data z Caché pro live preview. Parametry se berou z _previewParams
+    /// (včetně LINKA_ID). Pokud GetData selže nebo vrátí prázdný výsledek,
+    /// _realPreviewData zůstane null → fallback na mock data.
     /// </summary>
-    /// <summary>ID linky pro načítání reálných dat do preview. Zatím hardcoded, v budoucnu z UI.</summary>
-    public string PreviewLinkaId { get; set; } = "7372";
-
     public void LoadRealPreviewData()
     {
         _realPreviewData = null;
         _realPreviewIndex = 0;
+        OnPropertyChanged(nameof(RealPreviewPageCount));
+        OnPropertyChanged(nameof(RealPreviewIndex));
+        OnPropertyChanged(nameof(PageNavigationText));
+        OnPropertyChanged(nameof(HasMultiplePages));
 
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode) || CacheProvider is null) return;
 
         try
         {
-            // Sestavit parametry z výchozích hodnot + LINKA_ID
-            var defaultParams = _previewParams.ToDictionary(
+            var callParams = _previewParams.ToDictionary(
                 kv => kv.Key,
                 kv => (object?)kv.Value?.ToString(),
                 StringComparer.OrdinalIgnoreCase);
 
-            if (!string.IsNullOrEmpty(PreviewLinkaId))
-                defaultParams["LINKA_ID"] = PreviewLinkaId;
-
-            var data = CacheProvider.GetData(agendaCode, defaultParams);
+            var data = CacheProvider.GetData(agendaCode, callParams);
             if (data is { Count: > 0 })
             {
                 _realPreviewData = data;
-                StatusText = $"Načteno {data.Count} stránek reálných dat (linka {PreviewLinkaId})";
+                var linkaId = _previewParams.TryGetValue("LINKA_ID", out var v) ? v?.ToString() : null;
+                StatusText = linkaId is not null
+                    ? $"Načteno {data.Count} stránek dat (linka {linkaId})"
+                    : $"Načteno {data.Count} stránek dat";
+            }
+            else
+            {
+                StatusText = "Žádná data z Caché.";
             }
         }
         catch (Exception ex)
         {
+            StatusText = $"Chyba načítání dat: {ex.Message}";
             System.Diagnostics.Debug.WriteLine($"[Preview] LoadRealPreviewData failed: {ex.Message}");
         }
+
+        OnPropertyChanged(nameof(RealPreviewPageCount));
+        OnPropertyChanged(nameof(RealPreviewIndex));
+        OnPropertyChanged(nameof(PageNavigationText));
+        OnPropertyChanged(nameof(HasMultiplePages));
+        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
     }
+
+    /// <summary>Názvy parametrů, jejichž změna vyžaduje přenačtení dat z Caché (ne jen překreslení).</summary>
+    private static readonly HashSet<string> DataReloadParams = new(StringComparer.OrdinalIgnoreCase)
+        { "LINKA_ID" };
 
     public void RebuildParametersPanel()
     {
@@ -1120,7 +1156,12 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 _cachedParamValues = null;
                 RequestPreviewRefresh?.Invoke();
-            }));
+            },
+            onCommit: DataReloadParams.Contains(p.Name) ? () =>
+            {
+                LoadRealPreviewData();
+                RequestPreviewRefresh?.Invoke();
+            } : null));
         }
         HasParameters = PreviewParameters.Count > 0;
     }
@@ -1596,23 +1637,33 @@ public class ParameterControlVM : INotifyPropertyChanged
     private readonly TemplateParameter           _param;
     private readonly Dictionary<string, object?> _values;
     private readonly Action?                     _onChanged;
+    private readonly Action?                     _onCommit;
 
-    public ParameterControlVM(TemplateParameter param, Dictionary<string,object?> values, Action? onChanged)
+    public ParameterControlVM(TemplateParameter param, Dictionary<string,object?> values,
+        Action? onChanged, Action? onCommit = null)
     {
         _param     = param;
         _values    = values;
         _onChanged = onChanged;
+        _onCommit  = onCommit;
     }
 
     public string                    Label         => _param.Label;
     public string                    ParameterType => _param.Type;
     public IReadOnlyList<string>     Options       => _param.Options ?? [];
 
+    /// <summary>Hodnota parametru — setter volá onChanged (live refresh) při každé změně.</summary>
     public object? Value
     {
         get => _values.TryGetValue(_param.Name, out var v) ? v : _param.GetDefaultTyped();
         set { _values[_param.Name] = value; OnPropertyChanged(); _onChanged?.Invoke(); }
     }
+
+    /// <summary>Má se volat při potvrzení hodnoty (Enter/LostFocus) — spustí těžší operace (reload dat).</summary>
+    public bool HasCommit => _onCommit is not null;
+
+    private RelayCommand? _commitCmd;
+    public RelayCommand CommitCommand => _commitCmd ??= new(() => _onCommit?.Invoke());
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null)
@@ -1625,15 +1676,25 @@ public class ParameterControlVM : INotifyPropertyChanged
 
 public class ParameterTemplateSelector : System.Windows.Controls.DataTemplateSelector
 {
-    public System.Windows.DataTemplate? BoolTemplate    { get; set; }
-    public System.Windows.DataTemplate? EnumTemplate    { get; set; }
-    public System.Windows.DataTemplate? DefaultTemplate { get; set; }
+    public System.Windows.DataTemplate? BoolTemplate          { get; set; }
+    public System.Windows.DataTemplate? EnumTemplate          { get; set; }
+    public System.Windows.DataTemplate? CommitStringTemplate  { get; set; }
+    public System.Windows.DataTemplate? DefaultTemplate       { get; set; }
 
     public override System.Windows.DataTemplate? SelectTemplate(object item,
         System.Windows.DependencyObject container)
-        => item is ParameterControlVM vm
-            ? vm.ParameterType switch
-              { "bool" => BoolTemplate, "enum" => EnumTemplate, _ => DefaultTemplate }
-              ?? DefaultTemplate
-            : DefaultTemplate;
+    {
+        if (item is not ParameterControlVM vm) return DefaultTemplate;
+
+        // Parametry s commit callbackem (LINKA_ID) → template s tlačítkem "Načíst"
+        if (vm.HasCommit && CommitStringTemplate is not null)
+            return CommitStringTemplate;
+
+        return (vm.ParameterType switch
+        {
+            "bool" => BoolTemplate,
+            "enum" => EnumTemplate,
+            _      => DefaultTemplate
+        }) ?? DefaultTemplate;
+    }
 }

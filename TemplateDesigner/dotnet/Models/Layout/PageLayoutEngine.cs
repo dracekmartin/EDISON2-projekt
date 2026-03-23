@@ -72,8 +72,23 @@ public class PageLayoutEngine
     private static void ClassifySections(List<Section> all,
         List<Section> headers, List<Section> footers, List<Section> body)
     {
-        foreach (var section in all)
+        // Najít index posledního body sekce (Once/PerDataRow) — repeating sekce
+        // za ním s Role=Body se automaticky klasifikují jako footer (pozice v šabloně)
+        int lastBodyIndex = -1;
+        for (int i = all.Count - 1; i >= 0; i--)
         {
+            if (all[i].PrintBehavior is SectionPrintBehavior.Once
+                                     or SectionPrintBehavior.PerDataRow)
+            {
+                lastBodyIndex = i;
+                break;
+            }
+        }
+
+        for (int i = 0; i < all.Count; i++)
+        {
+            var section = all[i];
+
             // Once / PerDataRow → vždy body
             if (section.PrintBehavior is SectionPrintBehavior.Once
                                      or SectionPrintBehavior.PerDataRow)
@@ -85,8 +100,17 @@ public class PageLayoutEngine
             // Opakující se sekce: Role určuje umístění (Header nahoře, Footer dole)
             if (section.Role == SectionRole.Footer)
                 footers.Add(section);
+            else if (section.Role == SectionRole.Header)
+                headers.Add(section);
             else
-                headers.Add(section); // Header i Body role → umístí se nahoře
+            {
+                // Role=Body (default) u repeating sekce — heuristika podle pozice:
+                // za posledním body sectionem → footer, jinak header
+                if (lastBodyIndex >= 0 && i > lastBodyIndex)
+                    footers.Add(section);
+                else
+                    headers.Add(section);
+            }
         }
     }
 

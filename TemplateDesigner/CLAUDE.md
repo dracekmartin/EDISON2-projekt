@@ -18,7 +18,8 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), FullTime mód, data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
+1. Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), FullTime mód, data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
+2. Sjednocení textových nastavení napříč elementy — konzistentní font/size/bold/italic/color/alignment (krok 8a roadmapy).
 
 ### ✅ Co máme
 

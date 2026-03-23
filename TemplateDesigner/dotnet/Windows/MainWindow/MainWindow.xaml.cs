@@ -150,7 +150,7 @@ public partial class MainWindow : Window
 
         // Inline properties panel — SetContext s execute + invalidate callbacky
         InlinePropertiesPanel.SetContext(
-            cmd => _vm.State.Execute(cmd),
+            cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
         InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
 
@@ -1166,7 +1166,7 @@ public partial class MainWindow : Window
             element.GroupColumns,
             element.HourColumnStyle,
             generalDescriptors,
-            cmd => _vm.State.Execute(cmd),
+            cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
             { Owner = this };
 
@@ -1175,13 +1175,13 @@ public partial class MainWindow : Window
             // Uložit per-column styles
             if (availableGroups.Count > 0)
             {
-                _vm.State.Execute(new Commands.Implementations.SetPropertyCommand(
+                _vm.Execute(new Commands.Implementations.SetPropertyCommand(
                     "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
                     v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
             }
 
             // Uložit hour column style
-            _vm.State.Execute(new Commands.Implementations.SetPropertyCommand(
+            _vm.Execute(new Commands.Implementations.SetPropertyCommand(
                 "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
                 v => element.HourColumnStyle = (ColumnVisualStyle?)v));
         }
@@ -1208,13 +1208,13 @@ public partial class MainWindow : Window
         var dlg = new StopColumnsEditorDialog(
             element.Columns,
             generalDescriptors,
-            cmd => _vm.State.Execute(cmd),
+            cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
             { Owner = this };
 
         if (dlg.ShowDialog() == true)
         {
-            _vm.State.Execute(new Commands.Implementations.SetPropertyCommand(
+            _vm.Execute(new Commands.Implementations.SetPropertyCommand(
                 "Sloupce zastávek", element.Columns, dlg.ResultColumns,
                 v => element.Columns = (List<StopColumn>)v!));
         }
@@ -1274,7 +1274,7 @@ public partial class MainWindow : Window
         {
             var descriptors = _propsVm.PrepareForElement(selected[0], isNewSession: false);
             InlinePropertiesPanel.SetContext(
-                cmd => _vm.State.Execute(cmd),
+                cmd => _vm.Execute(cmd),
                 () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
             InlinePropertiesPanel.ShowDescriptors(descriptors);
 
@@ -1286,7 +1286,7 @@ public partial class MainWindow : Window
         {
             var descriptors = _propsVm.PrepareForMultipleElements(selected);
             InlinePropertiesPanel.SetContext(
-                cmd => _vm.State.Execute(cmd),
+                cmd => _vm.Execute(cmd),
                 () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
             InlinePropertiesPanel.ShowDescriptors(descriptors);
 

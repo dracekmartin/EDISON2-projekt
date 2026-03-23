@@ -129,7 +129,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s param.name = "LINKA_ID"
     s param.label = "ID linky"
     s param.type = "string"
-    s param.defaultValue = ""
+    s param.defaultValue = "7372"
     d arr.%Push(param)
 
     d ..AddStandardJRParameters(arr)

@@ -26,6 +26,12 @@ public class StopListElement : ScheduleElementBase
     ];
 
     // ═══════════════════════════════════════════
+    // Řádky
+    // ═══════════════════════════════════════════
+    public float? DataRowHeight { get; set; }
+    public bool ShowRowSeparators { get; set; } = true;
+
+    // ═══════════════════════════════════════════
     // Zobrazení zastávek (nesouvisí se sloupci)
     // ═══════════════════════════════════════════
     public bool ShowStopIndentation { get; set; } = true;
@@ -42,10 +48,18 @@ public class StopListElement : ScheduleElementBase
     public bool DirectionArrowBold { get; set; }
 
     // ═══════════════════════════════════════════
+    // Záhlaví sloupců
+    // ═══════════════════════════════════════════
+    public bool ShowHeader { get; set; } = true;
+
+    // ═══════════════════════════════════════════
     // Zvýraznění aktuální zastávky
     // ═══════════════════════════════════════════
     public bool HighlightCurrentStop { get; set; } = true;
     public bool CurrentStopUnderline { get; set; } = true;
+    public bool CurrentStopBold { get; set; } = true;
+    public float? CurrentStopFontSize { get; set; }
+    public string? CurrentStopBackgroundColor { get; set; }
 
     // ═══════════════════════════════════════════
     // Projeté zastávky
@@ -76,7 +90,7 @@ public class StopListElement : ScheduleElementBase
         float effectiveFontSize = FontSize * scale;
         float effectiveHeaderFontSize = HeaderFontSize * scale;
 
-        float rowH = ComputeRowH(effectiveFontSize);
+        float rowH = DataRowHeight ?? ComputeRowH(effectiveFontSize);
         float headerH = ComputeHeaderH(effectiveHeaderFontSize);
 
         using var paints = CreateStandardPaints();
@@ -87,8 +101,12 @@ public class StopListElement : ScheduleElementBase
         using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
         using var headerFont = new SKFont(
             SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerFontPx);
-        using var boldFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), fontPx);
+        // Font pro aktuální zastávku — konfigurovatelná velikost + tučnost
+        float currentFontSize = (CurrentStopFontSize ?? FontSize) * scale;
+        float currentFontPx = currentFontSize * PtToMm * ctx.MmToPx;
+        var currentStyle = CurrentStopBold ? SKFontStyle.Bold : SKFontStyle.Normal;
+        using var currentStopFont = new SKFont(
+            SKTypeface.FromFamilyName(FontFamily, currentStyle), currentFontPx);
 
         // Per-column fonty a painty — manualDisposables pattern (dispose v finally)
         var columns = GetVisibleColumns();
@@ -122,8 +140,10 @@ public class StopListElement : ScheduleElementBase
         }
 
         // Záhlaví sloupců
-        float currentY = RenderColumnHeaders(ctx, columns, headerH, headerFont, paints,
-            perColHeaderFonts, perColHeaderTextPaints, perColHeaderBgPaints);
+        float currentY = ShowHeader
+            ? RenderColumnHeaders(ctx, columns, headerH, headerFont, paints,
+                perColHeaderFonts, perColHeaderTextPaints, perColHeaderBgPaints)
+            : Y;
 
         // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
@@ -149,7 +169,15 @@ public class StopListElement : ScheduleElementBase
                 if (isCurrent) arrowStartY = currentY;
                 arrowEndY = currentY;
 
-                var defaultRowFont = isCurrent ? boldFont : font;
+                // Podbarvení aktuálního řádku
+                if (isCurrent && CurrentStopBackgroundColor is not null)
+                {
+                    var bgRect = ctx.ToCanvasRect(X, currentY, Width, rowH);
+                    using var bgPaint = new SKPaint { Color = SKColor.Parse(CurrentStopBackgroundColor) };
+                    ctx.Canvas.DrawRect(bgRect, bgPaint);
+                }
+
+                var defaultRowFont = isCurrent ? currentStopFont : font;
                 var rowColor = isPassed
                     ? SKColor.Parse(PassedStopsForeColor)
                     : new SKColor(0xFF222222);
@@ -183,9 +211,12 @@ public class StopListElement : ScheduleElementBase
                     colX += col.Width;
                 }
 
-                var rowLineStart = ctx.ToCanvas(X, currentY + rowH);
-                var rowLineEnd = ctx.ToCanvas(X + Width, currentY + rowH);
-                ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
+                if (ShowRowSeparators)
+                {
+                    var rowLineStart = ctx.ToCanvas(X, currentY + rowH);
+                    var rowLineEnd = ctx.ToCanvas(X + Width, currentY + rowH);
+                    ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
+                }
                 currentY += rowH;
             }
 
@@ -318,7 +349,9 @@ public class StopListElement : ScheduleElementBase
             if (currentIdx >= 0) visibleStops = zastavky.Count - currentIdx;
         }
 
-        return ComputeHeaderH(HeaderFontSize) + visibleStops * ComputeRowH(FontSize);
+        float headerH = ShowHeader ? ComputeHeaderH(HeaderFontSize) : 0f;
+        float rowH = DataRowHeight ?? ComputeRowH(FontSize);
+        return headerH + visibleStops * rowH;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -407,6 +440,9 @@ public class StopListElement : ScheduleElementBase
 
         new ButtonPropertyDescriptor { Label = "Nastavení zastávek", Group = "Zastávky", ButtonLabel = "Upravit...", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
 
+        new FloatPropertyDescriptor { Label = "Výška řádku (mm)",  Group = "Řádky",    Get = () => DataRowHeight ?? ComputeRowH(FontSize), Set = v => DataRowHeight = Math.Abs(v - ComputeRowH(FontSize)) < 0.01f ? null : v, Min = 1, Max = 50, Unit = "mm" },
+        new BoolPropertyDescriptor  { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators,     Set = v => ShowRowSeparators = v },
+
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
         new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
@@ -417,8 +453,13 @@ public class StopListElement : ScheduleElementBase
         new ColorPropertyDescriptor { Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
         new BoolPropertyDescriptor  { Label = "Tučná šipka",     Group = "Směr jízdy", Get = () => DirectionArrowBold,   Set = v => DirectionArrowBold = v },
 
+        new BoolPropertyDescriptor  { Label = "Záhlaví sloupců",      Group = "Záhlaví",    Get = () => ShowHeader,            Set = v => ShowHeader = v },
+
         new BoolPropertyDescriptor  { Label = "Zvýraznit aktuální",  Group = "Zvýraznění", Get = () => HighlightCurrentStop, Set = v => HighlightCurrentStop = v },
         new BoolPropertyDescriptor  { Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
+        new BoolPropertyDescriptor  { Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
+        new FloatPropertyDescriptor { Label = "Font aktuální (pt)",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? FontSize, Set = v => CurrentStopFontSize = Math.Abs(v - FontSize) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
+        new ColorPropertyDescriptor { Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         new BoolPropertyDescriptor  { Label = "Projeté zastávky",    Group = "Zvýraznění", Get = () => ShowPassedStops,      Set = v => ShowPassedStops = v },
         new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
 
@@ -439,6 +480,8 @@ public class StopListElement : ScheduleElementBase
             GroupId = GroupId,
             BorderColor = BorderColor, BorderWidth = BorderWidth,
 
+            DataRowHeight           = DataRowHeight,
+            ShowRowSeparators       = ShowRowSeparators,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),
             ShowDirectionArrow      = ShowDirectionArrow,
             DirectionArrowColor     = DirectionArrowColor,
@@ -453,6 +496,10 @@ public class StopListElement : ScheduleElementBase
             ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
             ExcludedAttributeIds    = [.. ExcludedAttributeIds],
+            ShowHeader              = ShowHeader,
+            CurrentStopBold         = CurrentStopBold,
+            CurrentStopFontSize     = CurrentStopFontSize,
+            CurrentStopBackgroundColor = CurrentStopBackgroundColor,
         };
         CopyScheduleBaseProperties(clone);
         return clone;
