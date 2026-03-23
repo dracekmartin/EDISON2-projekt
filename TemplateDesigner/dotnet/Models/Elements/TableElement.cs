@@ -473,7 +473,7 @@ public class TableElement : TemplateElement
             Label       = "Editor",
             Group       = "Tabulka",
             ButtonLabel = "Upravit sloupce / řádky...",
-            // OnClick je nastaveno externě z ElementPropertiesWindow
+            ActionId    = ButtonPropertyDescriptor.ActionOpenTableEditor,
         },
         new EnumPropertyDescriptor
         {

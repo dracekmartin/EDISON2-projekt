@@ -90,7 +90,7 @@ public class ImageElement : TemplateElement
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new ButtonPropertyDescriptor { Label = "Obrázek", Group = "Obrázek", ButtonLabel = "Nahrát obrázek..." },
+        new ButtonPropertyDescriptor { Label = "Obrázek", Group = "Obrázek", ButtonLabel = "Nahrát obrázek...", ActionId = ButtonPropertyDescriptor.ActionUploadImage },
         new StringPropertyDescriptor { Label = "Datové pole", Group = "Obrázek",
             Get = () => DataField ?? "",
             Set = v => DataField = string.IsNullOrWhiteSpace(v) ? null : v },

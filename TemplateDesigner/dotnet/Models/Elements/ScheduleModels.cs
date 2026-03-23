@@ -165,13 +165,17 @@ public class StopColumn
     public bool Visible { get; set; } = true;
     public TextHorizontalAlignment Alignment { get; set; } = TextHorizontalAlignment.Left;
 
+    /// <summary>Per-column vizuální styl (záhlaví + data). Null = dědit z elementu.</summary>
+    public ColumnVisualStyle? Style { get; set; }
+
     public StopColumn Clone() => new()
     {
         Key = Key,
         Header = Header,
         Width = Width,
         Visible = Visible,
-        Alignment = Alignment
+        Alignment = Alignment,
+        Style = Style?.Clone()
     };
 }
 

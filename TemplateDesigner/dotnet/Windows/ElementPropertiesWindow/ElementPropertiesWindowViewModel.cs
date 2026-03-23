@@ -55,6 +55,12 @@ public class ElementPropertiesWindowViewModel : EDViewModel
     /// </summary>
     public Action<DepartureGridElement>? RequestOpenDepartureGridDialog { get; set; }
 
+    /// <summary>
+    /// Callback pro otevření StopColumnsEditorDialog z inline panelu.
+    /// Sdílí logiku s MainWindow.OpenStopColumnsDialog — jedna cesta, žádná duplikace.
+    /// </summary>
+    public Action<StopListElement>? RequestOpenStopColumnsDialog { get; set; }
+
     /// <summary>Zruší změny a zavře dialog (DialogResult = false).</summary>
     public RelayCommand CancelCommand { get; }
 
@@ -209,7 +215,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                     GetSuggestions = () => collections.Select(c => (c.CollectionKey, c.Name))
                 });
             }
-            else if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Editor")
+            else if (d is Models.ButtonPropertyDescriptor btn && btn.ActionId == Models.ButtonPropertyDescriptor.ActionOpenTableEditor)
             {
                 list.Add(new Models.ButtonPropertyDescriptor
                 {
@@ -268,27 +274,14 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Sloupce")
+            if (d is Models.ButtonPropertyDescriptor btn && btn.ActionId == Models.ButtonPropertyDescriptor.ActionOpenStopColumnsEditor)
             {
                 list.Add(new Models.ButtonPropertyDescriptor
                 {
                     Label       = btn.Label,
                     Group       = btn.Group,
                     ButtonLabel = btn.ButtonLabel,
-                    OnClick     = () =>
-                    {
-                        var dlg = new StopColumnsEditorDialog(element.Columns)
-                            { Owner = Application.Current.MainWindow };
-                        if (dlg.ShowDialog() != true) return;
-
-                        _state.Execute(new Commands.Implementations.SetPropertyCommand(
-                            "Sloupce zastávek", element.Columns, dlg.ResultColumns,
-                            v => element.Columns = (List<StopColumn>)v!));
-                        _currentInvalidate();
-
-                        RequestShowDescriptors?.Invoke(
-                            EnhanceStopListEditor(element.GetPropertyDescriptors(), element));
-                    }
+                    OnClick     = () => RequestOpenStopColumnsDialog?.Invoke(element)
                 });
             }
             else
@@ -306,7 +299,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Obrázek")
+            if (d is Models.ButtonPropertyDescriptor btn && btn.ActionId == Models.ButtonPropertyDescriptor.ActionUploadImage)
             {
                 list.Add(new Models.ButtonPropertyDescriptor
                 {
@@ -373,7 +366,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         var list = new List<Models.PropertyDescriptor>(descriptors.Count);
         foreach (var d in descriptors)
         {
-            if (d is Models.ButtonPropertyDescriptor btn && btn.Label == "Nastavení odjezdů")
+            if (d is Models.ButtonPropertyDescriptor btn && btn.ActionId == Models.ButtonPropertyDescriptor.ActionOpenDepartureGridEditor)
             {
                 list.Add(new Models.ButtonPropertyDescriptor
                 {

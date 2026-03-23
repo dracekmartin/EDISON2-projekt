@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-03-23 — Per-column styling generalizace, StopList styling, architektonické vylepšení
+
+- ✅ **ScheduleElementBase — sdílené font/paint helpery** — `CreateCellFont`, `CreateCellTextPaint`, `CreateCellBgPaint`, `RenderCellBackground`, `MakeFontStyle` extrahované ze schedule elementů do base class; eliminuje ~60 řádků duplikovaného kódu
+- ✅ **StopListElement — per-column styling** — `ColumnVisualStyle` (Header/Data `CellStyle`) na `StopColumn`; font, barvy, zarovnání, bold/italic per sloupec; šipka směru jízdy (`ShowDirectionArrow`, `DirectionArrowColor`, `DirectionArrowBold`)
+- ✅ **StopColumnsEditorDialog — dvou-tabový refaktor** — Tab 1 "Obecné" (PropertiesPanel pro element properties), Tab 2 "Sloupce" (ListBox + per-column Header/Data CellStyle editory)
+- ✅ **CellStyleVM extrakce** — sdílený ViewModel pro CellStyle (header/data zóny) přesunut z DepartureGroupEditorDialogViewModel do `Controls/CellStyleVM.cs`; znovupoužitelný pro oba editorové dialogy
+- ✅ **ColorPickerHelper** — sdílená statická utilita pro WinForms ColorDialog z WPF oken; eliminuje duplikaci v code-behind dialogů
+- ✅ **ButtonPropertyDescriptor.ActionId** — stabilní strojový identifikátor pro routování button akcí; nahrazuje křehké porovnávání UI labelů (`btn.Label == "..."` → `btn.ActionId == ActionXxx`)
+- ✅ **Unifikace disposal patternu** — `manualDisposables` seznam s jedním `foreach` dispose ve `finally`; konzistentní v DepartureGridElement i StopListElement
+
+---
+
 ## 2026-03-20 — DepartureGrid per-column styling, redistribuce šířek, sloučené záhlaví
 
 - ✅ **DepartureGridElement — per-column nastavení** — `DepartureGroupColumnStyle`: viditelnost, barvy záhlaví/dat, font size, bold/italic, horizontální + vertikální zarovnání; nullable override vzor (null = výchozí z elementu)

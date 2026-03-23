@@ -123,6 +123,55 @@ public abstract class ScheduleElementBase : TemplateElement
         return defaultValue;
     }
 
+    // ─── Font/Paint helpery (sdílené pro per-column styling) ─────────────────
+
+    /// <summary>Vytvoří SKFontStyle z bold/italic flagů.</summary>
+    protected static SKFontStyle MakeFontStyle(bool bold, bool italic) => (bold, italic) switch
+    {
+        (true, true)   => SKFontStyle.BoldItalic,
+        (true, false)  => SKFontStyle.Bold,
+        (false, true)  => SKFontStyle.Italic,
+        (false, false) => SKFontStyle.Normal,
+    };
+
+    /// <summary>
+    /// Vytvoří SKFont z CellStyle. Vrátí null pokud CellStyle nemá žádné fontové override.
+    /// Volající musí výsledek uvolnit (přidat do manualDisposables).
+    /// </summary>
+    protected SKFont? CreateCellFont(CellStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx)
+    {
+        if (style is null) return null;
+        if (style.FontFamily is null && style.FontSize is null && style.Bold is null && style.Italic is null)
+            return null;
+
+        var family = style.FontFamily ?? FontFamily;
+        var sizePx = (style.FontSize ?? defaultSizePt) * PtToMm * scale * mmToPx;
+        var fontStyle = MakeFontStyle(style.Bold ?? defaultBold, style.Italic ?? false);
+        return new SKFont(SKTypeface.FromFamilyName(family, fontStyle), sizePx);
+    }
+
+    /// <summary>Vytvoří SKPaint pro text z CellStyle.TextColor. Null pokud nemá override.</summary>
+    protected static SKPaint? CreateCellTextPaint(CellStyle? style)
+    {
+        if (style?.TextColor is null) return null;
+        return new SKPaint { Color = SKColor.Parse(style.TextColor), IsAntialias = true };
+    }
+
+    /// <summary>Vytvoří SKPaint pro pozadí z CellStyle.BackgroundColor. Null pokud nemá override.</summary>
+    protected static SKPaint? CreateCellBgPaint(CellStyle? style)
+    {
+        if (style?.BackgroundColor is null) return null;
+        return new SKPaint { Color = SKColor.Parse(style.BackgroundColor) };
+    }
+
+    /// <summary>Vykreslí pozadí buňky pokud existuje per-column bgPaint.</summary>
+    protected static void RenderCellBackground(RenderContext ctx, SKPaint? bgPaint, float x, float y, float w, float h)
+    {
+        if (bgPaint is null) return;
+        var rect = ctx.ToCanvasRect(x, y, w, h);
+        ctx.Canvas.DrawRect(rect, bgPaint);
+    }
+
     // ─── Render helpery ─────────────────────────────────────────────────────
 
     /// <summary>Změří šířku textu v mm pomocí daného fontu a MmToPx koeficientu.</summary>

@@ -106,7 +106,18 @@ public class ButtonPropertyDescriptor : PropertyDescriptor
     public required string ButtonLabel { get; init; }
 
     /// <summary>
+    /// Strojový identifikátor akce — pro spolehlivé routování v ElementPropertiesWindowViewModel.
+    /// </summary>
+    public string? ActionId { get; init; }
+
+    /// <summary>
     /// Akce volaná při kliknutí. Null = tlačítko je zobrazeno ale nedělá nic.
     /// </summary>
     public Action? OnClick { get; init; }
+
+    // ── Známé ActionId hodnoty ────────────────────────────────────────────
+    public const string ActionOpenTableEditor = "OpenTableEditor";
+    public const string ActionOpenStopColumnsEditor = "OpenStopColumnsEditor";
+    public const string ActionOpenDepartureGridEditor = "OpenDepartureGridEditor";
+    public const string ActionUploadImage = "UploadImage";
 }

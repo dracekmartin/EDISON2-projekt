@@ -144,6 +144,7 @@ public partial class MainWindow : Window
 
         // Callback: otevření DepartureGroupEditorDialog z inline panelu i modálního dialogu
         _propsVm.RequestOpenDepartureGridDialog = el => OpenDepartureGridDialog(el);
+        _propsVm.RequestOpenStopColumnsDialog = el => OpenStopColumnsDialog(el);
 
         // Inline properties panel — SetContext s execute + invalidate callbacky
         InlinePropertiesPanel.SetContext(
@@ -1118,6 +1119,11 @@ public partial class MainWindow : Window
             OpenDepartureGridDialog(depEl);
             return;
         }
+        if (element is StopListElement stopEl)
+        {
+            OpenStopColumnsDialog(stopEl);
+            return;
+        }
 
         _propsVm!.PrepareForElement(element, isNewSession: true);
         new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
@@ -1129,9 +1135,7 @@ public partial class MainWindow : Window
     {
         var undoDepth = _vm!.State.UndoStack.Count;
 
-        // Obecné descriptory = element properties bez tlačítka "Nastavení odjezdů"
-        var allDescriptors = element.GetPropertyDescriptors();
-        var generalDescriptors = allDescriptors
+        var generalDescriptors = element.GetPropertyDescriptors()
             .Where(d => d is not Models.ButtonPropertyDescriptor)
             .ToList();
 
@@ -1162,6 +1166,39 @@ public partial class MainWindow : Window
             _vm.State.Execute(new Commands.Implementations.SetPropertyCommand(
                 "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
                 v => element.HourColumnStyle = (ColumnVisualStyle?)v));
+        }
+        else
+        {
+            // Cancel — vrátit změny z obecného tabu
+            while (_vm.State.UndoStack.Count > undoDepth)
+                _vm.State.Undo();
+        }
+
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
+    }
+
+    private void OpenStopColumnsDialog(StopListElement element)
+    {
+        var undoDepth = _vm!.State.UndoStack.Count;
+
+        var generalDescriptors = element.GetPropertyDescriptors()
+            .Where(d => d is not Models.ButtonPropertyDescriptor)
+            .ToList();
+
+        var dlg = new StopColumnsEditorDialog(
+            element.Columns,
+            generalDescriptors,
+            cmd => _vm.State.Execute(cmd),
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
+            { Owner = this };
+
+        if (dlg.ShowDialog() == true)
+        {
+            _vm.State.Execute(new Commands.Implementations.SetPropertyCommand(
+                "Sloupce zastávek", element.Columns, dlg.ResultColumns,
+                v => element.Columns = (List<StopColumn>)v!));
         }
         else
         {

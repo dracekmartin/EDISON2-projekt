@@ -388,56 +388,18 @@ public class DepartureGridElement : ScheduleElementBase
         // ── Hour column style resources ─────────────────────────────────────
         var hourHs = HourColumnStyle?.Header;
         var hourDs = HourColumnStyle?.Data;
-        SKFont? hourHeaderFontCustom = null;
-        SKFont? hourDataFontCustom = null;
-        SKPaint? hourHeaderTextPaint = null;
-        SKPaint? hourHeaderBgPaint = null;
-        SKPaint? hourDataTextPaint = null;
-        SKPaint? hourDataBgPaint = null;
-        if (hourHs is not null)
-        {
-            if (hourHs.FontFamily is not null || hourHs.FontSize is not null || hourHs.Bold is not null || hourHs.Italic is not null)
-            {
-                float hfMm = (hourHs.FontSize ?? HeaderFontSize) * PtToMm * scale;
-                hourHeaderFontCustom = new SKFont(
-                    SKTypeface.FromFamilyName(hourHs.FontFamily ?? FontFamily,
-                        MakeFontStyle(hourHs.Bold ?? true, hourHs.Italic ?? false)),
-                    hfMm * ctx.MmToPx);
-                manualDisposables.Add(hourHeaderFontCustom);
-            }
-            if (hourHs.TextColor is not null)
-            {
-                hourHeaderTextPaint = new SKPaint { Color = SKColor.Parse(hourHs.TextColor), IsAntialias = true };
-                manualDisposables.Add(hourHeaderTextPaint);
-            }
-            if (hourHs.BackgroundColor is not null)
-            {
-                hourHeaderBgPaint = new SKPaint { Color = SKColor.Parse(hourHs.BackgroundColor) };
-                manualDisposables.Add(hourHeaderBgPaint);
-            }
-        }
-        if (hourDs is not null)
-        {
-            if (hourDs.FontFamily is not null || hourDs.FontSize is not null || hourDs.Bold is not null || hourDs.Italic is not null)
-            {
-                float dfMm = (hourDs.FontSize ?? FontSize) * PtToMm * scale;
-                hourDataFontCustom = new SKFont(
-                    SKTypeface.FromFamilyName(hourDs.FontFamily ?? FontFamily,
-                        MakeFontStyle(hourDs.Bold ?? false, hourDs.Italic ?? false)),
-                    dfMm * ctx.MmToPx);
-                manualDisposables.Add(hourDataFontCustom);
-            }
-            if (hourDs.TextColor is not null)
-            {
-                hourDataTextPaint = new SKPaint { Color = SKColor.Parse(hourDs.TextColor), IsAntialias = true };
-                manualDisposables.Add(hourDataTextPaint);
-            }
-            if (hourDs.BackgroundColor is not null)
-            {
-                hourDataBgPaint = new SKPaint { Color = SKColor.Parse(hourDs.BackgroundColor) };
-                manualDisposables.Add(hourDataBgPaint);
-            }
-        }
+        var hourHeaderFontCustom = CreateCellFont(hourHs, HeaderFontSize, true, scale, ctx.MmToPx);
+        var hourHeaderTextPaint = CreateCellTextPaint(hourHs);
+        var hourHeaderBgPaint = CreateCellBgPaint(hourHs);
+        var hourDataFontCustom = CreateCellFont(hourDs, FontSize, false, scale, ctx.MmToPx);
+        var hourDataTextPaint = CreateCellTextPaint(hourDs);
+        var hourDataBgPaint = CreateCellBgPaint(hourDs);
+        if (hourHeaderFontCustom is not null) manualDisposables.Add(hourHeaderFontCustom);
+        if (hourHeaderTextPaint is not null) manualDisposables.Add(hourHeaderTextPaint);
+        if (hourHeaderBgPaint is not null) manualDisposables.Add(hourHeaderBgPaint);
+        if (hourDataFontCustom is not null) manualDisposables.Add(hourDataFontCustom);
+        if (hourDataTextPaint is not null) manualDisposables.Add(hourDataTextPaint);
+        if (hourDataBgPaint is not null) manualDisposables.Add(hourDataBgPaint);
 
         // Per-column resources — deklarace před try, aby finally mohl uvolnit
         var perGroupDataFonts = new Dictionary<string, SKFont>();
@@ -452,11 +414,7 @@ public class DepartureGridElement : ScheduleElementBase
             ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
             // Pozadí sloupce hodin v záhlaví
-            if (hourHeaderBgPaint is not null)
-            {
-                var hourBgRect = ctx.ToCanvasRect(X, currentY, HourColumnWidth, scaledCombinedHeaderH);
-                ctx.Canvas.DrawRect(hourBgRect, hourHeaderBgPaint);
-            }
+            RenderCellBackground(ctx, hourHeaderBgPaint, X, currentY, HourColumnWidth, scaledCombinedHeaderH);
 
             // "Hod" v levém sloupci — s per-column zarovnáním a paddingem
             var hourHdrFont = hourHeaderFontCustom ?? headerFont;
@@ -489,12 +447,8 @@ public class DepartureGridElement : ScheduleElementBase
 
                     // Per-column záhlaví pozadí
                     var hs = colStyle?.Style.Header;
-                    if (hs?.BackgroundColor is not null)
-                    {
-                        using var colHeaderBg = new SKPaint { Color = SKColor.Parse(hs.BackgroundColor) };
-                        var colRect = ctx.ToCanvasRect(gx, currentY, g.GroupWidth, scaledCombinedHeaderH);
-                        ctx.Canvas.DrawRect(colRect, colHeaderBg);
-                    }
+                    using var colHeaderBg = CreateCellBgPaint(hs);
+                    RenderCellBackground(ctx, colHeaderBg, gx, currentY, g.GroupWidth, scaledCombinedHeaderH);
 
                     // Per-column font záhlaví
                     float colHeaderFontMm = hs?.FontSize is float fs
@@ -574,19 +528,12 @@ public class DepartureGridElement : ScheduleElementBase
         {
             colStyles.TryGetValue(g.Skupina.Id, out var cs);
             var ds = cs?.Style.Data;
-            if (ds?.FontFamily is not null || ds?.FontSize is not null || ds?.Bold is not null || ds?.Italic == true)
-            {
-                float dfMm = (ds.FontSize ?? MinuteFontSize) * PtToMm;
-                float dfPx = dfMm * scale * ctx.MmToPx;
-                bool bold = ds.Bold ?? MinuteBold;
-                bool italic = ds.Italic ?? false;
-                perGroupDataFonts[g.Skupina.Id] = new SKFont(
-                    SKTypeface.FromFamilyName(ds.FontFamily ?? FontFamily, MakeFontStyle(bold, italic)), dfPx);
-            }
-            if (ds?.BackgroundColor is not null)
-                perGroupColBgPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(ds.BackgroundColor) };
-            if (ds?.TextColor is not null)
-                perGroupDataTextPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(ds.TextColor), IsAntialias = true };
+            if (CreateCellFont(ds, MinuteFontSize, MinuteBold, scale, ctx.MmToPx) is { } gdf)
+            { perGroupDataFonts[g.Skupina.Id] = gdf; manualDisposables.Add(gdf); }
+            if (CreateCellBgPaint(ds) is { } gbp)
+            { perGroupColBgPaints[g.Skupina.Id] = gbp; manualDisposables.Add(gbp); }
+            if (CreateCellTextPaint(ds) is { } gtp)
+            { perGroupDataTextPaints[g.Skupina.Id] = gtp; manualDisposables.Add(gtp); }
             if (ds?.HAlignment is not null)
                 perGroupDataHAlign[g.Skupina.Id] = ds.HAlignment.Value;
             if (ds?.PaddingTop is not null || ds?.PaddingRight is not null || ds?.PaddingBottom is not null || ds?.PaddingLeft is not null)
@@ -617,11 +564,7 @@ public class DepartureGridElement : ScheduleElementBase
             }
 
             // Pozadí sloupce hodin
-            if (hourDataBgPaint is not null)
-            {
-                var hourBgRect = ctx.ToCanvasRect(X, currentY, HourColumnWidth, scaledRowH);
-                ctx.Canvas.DrawRect(hourBgRect, hourDataBgPaint);
-            }
+            RenderCellBackground(ctx, hourDataBgPaint, X, currentY, HourColumnWidth, scaledRowH);
 
             var hourStr = hour.ToString();
             float hourTextW = MeasureTextMm(hourDFont, hourStr, ctx.MmToPx);
@@ -638,11 +581,8 @@ public class DepartureGridElement : ScheduleElementBase
             foreach (var g in layout.Groups)
             {
                 // Per-column pozadí datové oblasti (přes zebru)
-                if (perGroupColBgPaints.TryGetValue(g.Skupina.Id, out var colBg))
-                {
-                    var colBgRect = ctx.ToCanvasRect(gx, currentY, g.GroupWidth, scaledRowH);
-                    ctx.Canvas.DrawRect(colBgRect, colBg);
-                }
+                perGroupColBgPaints.TryGetValue(g.Skupina.Id, out var colBg);
+                RenderCellBackground(ctx, colBg, gx, currentY, g.GroupWidth, scaledRowH);
 
                 // Vybrat font pro data (per-column override nebo výchozí)
                 var dataFont = perGroupDataFonts.TryGetValue(g.Skupina.Id, out var customDataFont)
@@ -765,10 +705,6 @@ public class DepartureGridElement : ScheduleElementBase
         } // try
         finally
         {
-            // Uvolnit per-column resources
-            foreach (var f in perGroupDataFonts.Values) f.Dispose();
-            foreach (var p in perGroupColBgPaints.Values) p.Dispose();
-            foreach (var p in perGroupDataTextPaints.Values) p.Dispose();
             foreach (var d in manualDisposables) d.Dispose();
 
             ctx.Canvas.Restore(); // Uvolnit clip rect
@@ -870,14 +806,6 @@ public class DepartureGridElement : ScheduleElementBase
         return filtered.Count > 0 ? filtered : [all[0]];
     }
 
-    private static SKFontStyle MakeFontStyle(bool bold, bool italic) => (bold, italic) switch
-    {
-        (true, true)   => SKFontStyle.BoldItalic,
-        (true, false)  => SKFontStyle.Bold,
-        (false, true)  => SKFontStyle.Italic,
-        (false, false) => SKFontStyle.Normal,
-    };
-
     /// <summary>Vrátí dostupné skupiny dnů z naposledy zpracovaných dat (pro dialog).</summary>
     public List<SkupinaDnuData> GetAvailableSkupinyDnu(DataContext? data) => BuildSkupinyDnu(data);
 
@@ -954,7 +882,7 @@ public class DepartureGridElement : ScheduleElementBase
         // ── Výchozí styl (základ pro dědění — per-column nastavení ho přepisuje) ──
         .. GetScheduleBaseDescriptors(),
 
-        new ButtonPropertyDescriptor { Label = "Nastavení odjezdů", Group = "Odjezdy", ButtonLabel = "Upravit odjezdy..." },
+        new ButtonPropertyDescriptor { Label = "Nastavení odjezdů", Group = "Odjezdy", ButtonLabel = "Upravit odjezdy...", ActionId = ButtonPropertyDescriptor.ActionOpenDepartureGridEditor },
 
         new BoolPropertyDescriptor  { Label = "Záhlaví skupin",     Group = "Odjezdy", Get = () => ShowSkupinaDnuHeader,       Set = v => ShowSkupinaDnuHeader = v },
         new FloatPropertyDescriptor { Label = "Výška řádku záhl.",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
