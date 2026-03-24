@@ -67,6 +67,14 @@ public class LineElement : TemplateElement
         }
     }
 
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        StrokeWidth *= scale;
+        if (CustomDashMm is not null) CustomDashMm *= scale;
+        if (CustomGapMm is not null) CustomGapMm *= scale;
+    }
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new EnumPropertyDescriptor  { Label = "Orientace", Group = "Čára", Get = () => Orientation, Set = v => Orientation = (LineOrientation)v,

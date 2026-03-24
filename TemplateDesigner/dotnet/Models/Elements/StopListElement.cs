@@ -468,6 +468,17 @@ public class StopListElement : ScheduleElementBase
         .. GetPositionDescriptors()
     ];
 
+    // ─── Scale ──────────────────────────────────────────────────────────────
+
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        if (DataRowHeight is not null) DataRowHeight *= scale;
+        if (CurrentStopFontSize is not null) CurrentStopFontSize *= scale;
+        foreach (var col in Columns)
+            col.Width *= scale;
+    }
+
     // ─── Clone ──────────────────────────────────────────────────────────────
 
     public override TemplateElement Clone()

@@ -93,8 +93,8 @@ public class TextStyle
         Underline = false,
         TextColor = "#FF000000",
         BackgroundColor = "#00FFFFFF",
-        HAlign = TextHorizontalAlignment.Left,
-        VAlign = TextVerticalAlignment.Top,
+        HAlign = TextHorizontalAlignment.Center,
+        VAlign = TextVerticalAlignment.Middle,
         LineSpacing = 1.2f,
     };
 }

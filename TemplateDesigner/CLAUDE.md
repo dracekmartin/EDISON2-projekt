@@ -26,7 +26,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Text, Image, Rectangle, Line, BarcodeElement (QR + Code128), TableElement (Fixed/Dynamic)
 - Parametry sestavy (Part 1 + serializace do JSON), VisibilityExpression evaluator
 - Výrazový jazyk kompletní: podmínky (`&&`, `||`, `!`), formátování (`{POLE:N2}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}`), agregace (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`) v souhrnných řádcích tabulky
-- Live preview, PDF export, DataSchema tree, section management, undo/redo (10 cmd typů)
+- Live preview, PDF export, DataSchema tree, section management, undo/redo (12 cmd typů)
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
 - Custom section templates (file-based), CompositeDataSchemaProvider (Caché + JSON fallback)
 - Smart snap — přichytávání elementů k sobě (edge↔edge, center↔center, gap snap 4mm), zvýraznění cílových elementů, gap indikátor
@@ -64,6 +64,10 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Ikonový toolbar** — 33 Fluent UI System Icons (Microsoft, MIT); 1 band, 7 skupin (Soubor, Upravit, Přidat, Elementy, Vrstva, Zarovnat, Zobrazení); ToolbarStyles.xaml; maximalizované okno; preview 50:50 star sizing
 - **Inline properties panel** — záložka "Vlastnosti" v levém panelu; automatická aktualizace při výběru elementu; modální dialog zachován jako fallback (Enter/dvojklik)
 - **TextStyle unifikace** — `TextStyle` (nullable POCO, CSS cascade přes `Resolve()`) + `ResolvedTextStyle` (struct se SkiaSharp helpery: `CreateFont`, `CreateTextPaint`, `CreateBgPaint`); migrace všech elementů (TextElement, TableElement, ScheduleElementBase + StopList/DepartureGrid/NotesLegend); `BackgroundColor` na base `TemplateElement`; `CopyBaseTo()` eliminuje Clone() boilerplate; breaking JSON change (flat text props → composable `style`/`headerStyle`/`dataStyle`)
+- **Proporcionální škálování šablony** — `ScaleTemplateCommand`: škáluje PageSize, margins, sekce (výšky), elementy (pozice, rozměry, mm/pt properties); `ApplyScale(float)` virtual metoda na všech elementech; dropdown v toolbaru (50%–200%); `LineSpacing` se neškáluje (bezrozměrný násobitel); undo přes inverzní škálu (1/scale)
+- **Redistribuce výšek sekcí** — při smazání sekce se uvolněná výška proporcionálně rozdělí mezi zbývající; při přidání sekce se stávající proporcionálně zmenší; `AddSectionCommand` pro undo/redo
+- **Výchozí nastavení nových elementů** — TextElement bez placeholder textu, zarovnání Center/Middle; všechny elementy: černý rámeček 0.1mm (jen nové — model defaults zůstávají pro zpětnou kompatibilitu JSON)
+- **DepartureGrid: HourColumnPerGroup** — `HourColumnPerGroup=true` zobrazí sloupec hodin u každé skupiny dnů (nejen vlevo)
 
 ### 🐛 Známé problémy
 

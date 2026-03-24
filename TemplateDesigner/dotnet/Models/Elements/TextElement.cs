@@ -91,6 +91,13 @@ public class TextElement : TemplateElement
         ctx.Canvas.Restore();
     }
 
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        if (Style.FontSize is not null) Style.FontSize *= scale;
+        // LineSpacing je bezrozměrný násobitel (1.2 = 120 %) — neškáluje se
+    }
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new StringPropertyDescriptor { Label = "Text",         Group = "Obsah",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },

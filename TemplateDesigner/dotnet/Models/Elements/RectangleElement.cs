@@ -39,6 +39,13 @@ public class RectangleElement : TemplateElement
 
     }
 
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        StrokeWidth *= scale;
+        CornerRadius *= scale;
+    }
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new ColorPropertyDescriptor { Label = "Výplň",       Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },

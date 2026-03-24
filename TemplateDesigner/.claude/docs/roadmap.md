@@ -34,6 +34,7 @@ Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými
 | 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ hotovo (2026-03-23) |
 | 8 | Ladění MinutesOnly na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | ⬅️ |
 | 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ hotovo (2026-03-24) |
+| 8b | Proporcionální škálování šablony + UX vylepšení — `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ hotovo (2026-03-24) |
 | 9 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
 | 10 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
 | 11 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |
@@ -48,14 +49,19 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 |---|---|---|
 | 11 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
 | 12 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
-| 13 | Import: JŘ-aware mód (3d) — uživatel označí oblast jako "zastávkový JŘ" → engine namapuje na StopList/DepartureGrid/NotesLegend; případně AI asistence při rozpoznávání | |
+| 13 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | |
 
 **Import PDF — aktuální stav:**
 - ✅ Režim 1 (deterministický 1:1 import) hotovo (2026-03-13)
 - 3a: Detekce tabulek z mřížky čar (viz popis níže)
 - 3b: Křivky/Bézier (nízká priorita — zaoblené rohy rasterizovat jako bitmapa)
 - 3c: AI post-processing — nahrazení statických textů za `{PLACEHOLDER}`, detekce záhlaví/patičky
-- **3d: JŘ-aware import** — při importu PDF jízdního řádu uživatel může ručně označit oblast a říct "toto je zastávkový JŘ". Engine pak namapuje na specializované elementy (StopListElement, DepartureGridElement, NotesLegendElement) místo generických textů/čar. Volitelně AI asistence pro automatické rozpoznání struktury JŘ.
+- **3d: JŘ-aware import — dvoustupňový AI + engine přístup:**
+  - **Stupeň 1 — AI (sémantika):** Claude dostane screenshot PDF + DataSchema agendy. Vrátí sémantickou mapu oblastí: "levý sloupec = StopList, střed = DepartureGrid se 3 skupinami dnů, spodek = NotesLegend". AI řeší **co** je kde, neřeší přesné rozměry.
+  - **Stupeň 2 — Engine (geometrie):** Deterministický kód vezme extrahované čáry/texty z PDF + sémantickou mapu od AI. Z průsečíků čar spočítá přesné pozice (X,Y,W,H), z rozestupů textů odvodí HourColumnWidth/MinuteWidth, z textů v záhlaví identifikuje skupiny dnů, z font size odvodí DataStyle/HeaderStyle. Výstup = přesný Template JSON.
+  - **Princip:** AI = rozpoznání struktury (co), engine = přesné rozměry (kde). AI nemusí hádat pixely, engine nemusí rozumět sémantice.
+  - **Prerekvizity:** Fungující elementy (krok 8/9), zdokumentované JSON schema elementů, Claude API přístup.
+  - **Mezikrok (jednodušší alternativa):** Import PDF jako background obrázek (merge mode All) → uživatel ručně skládá elementy přes referenci → smaže background. Funguje okamžitě, bez AI.
 
 ---
 

@@ -182,6 +182,15 @@ public class NotesLegendElement : ScheduleElementBase
         .. GetPositionDescriptors()
     ];
 
+    // ─── Scale ──────────────────────────────────────────────────────────────
+
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        NoteFontSize *= scale;
+        NoteLineHeight *= scale;
+    }
+
     // ─── Clone ──────────────────────────────────────────────────────────────
 
     public override TemplateElement Clone()

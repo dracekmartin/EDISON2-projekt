@@ -574,6 +574,17 @@ public class TableElement : TemplateElement
         .. GetPositionDescriptors()
     ];
 
+    // ─── Scale ───────────────────────────────────────────────────────
+
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        RowHeight *= scale;
+        HeaderHeight *= scale;
+        foreach (var col in Columns)
+            if (col.WidthMode == ColumnWidthMode.Mm) col.Width *= scale;
+    }
+
     // ─── Clone ───────────────────────────────────────────────────────
 
     public override TemplateElement Clone()

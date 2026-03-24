@@ -403,6 +403,15 @@ public abstract class ScheduleElementBase : TemplateElement
         return result;
     }
 
+    // ─── Scale ──────────────────────────────────────────────────────────────
+
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        if (DataStyle.FontSize is not null) DataStyle.FontSize *= scale;
+        if (HeaderStyle.FontSize is not null) HeaderStyle.FontSize *= scale;
+    }
+
     // ─── Společné property descriptory ──────────────────────────────────────
 
     protected IReadOnlyList<PropertyDescriptor> GetScheduleBaseDescriptors() =>

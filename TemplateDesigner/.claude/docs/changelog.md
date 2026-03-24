@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-03-24 — Proporcionální škálování, redistribuce sekcí, výchozí nastavení
+
+- ✅ **Proporcionální škálování šablony** — `ScaleTemplateCommand` škáluje celou šablonu (PageSize, margins, sekce, elementy); `ApplyScale(float)` virtual metoda na všech elementech s override pro specifické mm/pt properties; dropdown v toolbaru (50%–200%); undo přes inverzní škálu
+- ✅ **ApplyScale override na všech elementech** — TextElement (FontSize), LineElement (StrokeWidth, CustomDashMm, CustomGapMm), RectangleElement (StrokeWidth, CornerRadius), TableElement (RowHeight, HeaderHeight, column widths Mm), ScheduleElementBase (DataStyle/HeaderStyle FontSize), StopListElement (DataRowHeight, CurrentStopFontSize, column widths), DepartureGridElement (~12 mm/pt properties), NotesLegendElement (NoteFontSize, NoteLineHeight)
+- ✅ **Redistribuce výšek sekcí** — smazání sekce proporcionálně rozdělí uvolněnou výšku; přidání sekce proporcionálně zmenší stávající; `AddSectionCommand` pro undo/redo
+- ✅ **Výchozí nastavení nových elementů** — TextElement: prázdný text, Center/Middle zarovnání; všechny: černý rámeček 0.1mm (factory default, ne model default — zpětná kompatibilita JSON)
+- ✅ **DepartureGrid: HourColumnPerGroup** — `HourColumnPerGroup` property; sloupec hodin u každé skupiny dnů
+- ✅ **Fix: LineSpacing se neškáluje** — bezrozměrný násobitel (1.2 = 120%), ne absolutní rozměr
+
+---
+
 ## 2026-03-24 — TextStyle unifikace (krok 8a)
 
 - ✅ **`TextStyle` třída** — nullable POCO s CSS cascade vzorem; `TextStyle.Resolve(parent)` → `ResolvedTextStyle` (struct se SkiaSharp helpery: `CreateFont`, `CreateTextPaint`, `CreateBgPaint`, `ToSKFontStyle`)

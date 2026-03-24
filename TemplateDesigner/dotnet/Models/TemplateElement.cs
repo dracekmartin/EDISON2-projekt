@@ -160,6 +160,19 @@ public abstract class TemplateElement
             : Array.Empty<PropertyDescriptor>()),
     ];
 
+    // ── Scale ────────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Proporcionálně přeškáluje pozici, rozměry a vizuální properties elementu.
+    /// Každý element overridne a přidá vlastní mm/pt properties.
+    /// </summary>
+    public virtual void ApplyScale(float scale)
+    {
+        X *= scale; Y *= scale; Width *= scale;
+        if (Height is not null) Height *= scale;
+        if (BorderWidth > 0) BorderWidth *= scale;
+    }
+
     // ── Clone helper ──────────────────────────────────────────────────────────
 
     /// <summary>
