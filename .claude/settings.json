@@ -1,0 +1,27 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/compile-objectscript.sh",
+            "timeout": 30000
+          },
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/dotnet-build.sh",
+            "timeout": 60000
+          }
+        ]
+      }
+    ]
+  },
+  "env": {
+    "CACHE_SERVER": "http://192.168.16.1:57770",
+    "CACHE_NAMESPACE": "MLINE",
+    "CACHE_USER": "_mline",
+    "CACHE_PASSWORD": "mli"
+  }
+}
