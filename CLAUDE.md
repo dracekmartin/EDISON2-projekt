@@ -2,6 +2,8 @@
 
 Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP (MLRest).
 
+Nové features pokrývej xUnit testy (`EDControls.Tests/`, `EDISONMAIN2.Tests/`).
+
 ## Struktura repozitáře
 
 | Složka | Role |
@@ -26,38 +28,12 @@ DLL je odkazována přímo: `C:\Edison\MLRest.dll`.
 ### IMLRest a EDServices — architektura
 
 Instance `MLRest` se nikdy nevytváří přímo ve windows ani ViewModelech. Přístup jde přes
-abstrakci `IMLRest` a sdílený kontejner `EDServices`:
+abstrakci `IMLRest` (viz `EDControls/IMLRest.cs`) a sdílený kontejner `EDServices`
+(singleton `EDServices.Current`, inicializován v `App.xaml.cs`).
 
-```csharp
-// IMLRest — interface pro testovatelnost (EDControls/IMLRest.cs)
-public interface IMLRest
-{
-    CVar QueryOrThrow(string cacheClass, string method, CVar input);
-    object[] QueryOrThrow(string cacheClass, string method, object[] input);
-    string DataNamespace { get; set; }
-    string Idfa { get; set; }
-}
-
-// MLRestAdapter — obaluje konkrétní MLRest za IMLRest
-public class MLRestAdapter(MLRest inner) : IMLRest { ... }
-
-// EDServices — service container (inicializován jednou v App.xaml.cs)
-public class EDServices(IMLRest? mlRest, IWindowNavigator navigator, IPopupDisplayer displayer)
-{
-    public IMLRest? MLRest { get; set; }           // mutable — mění se při přepnutí firmy
-    public IWindowNavigator WindowNavigator { get; }
-    public IPopupDisplayer PopupDisplayer { get; }
-    public static EDServices Current { get; }       // singleton
-    public static void Initialize(EDServices s);    // volat jednou v App.xaml.cs
-}
-```
-
-Všechny ViewModely přistupují k `MLRest` přes `EDServices`:
-
-- `EDViewModel` má property `MLRest => _services.MLRest`
-- Bezparametrický konstruktor čte z `EDServices.Current`
-- Testy předávají vlastní `EDServices` s mock `IMLRest`
-- Ovládací prvky (`EDInputForm`, `EDList`) čtou `MLRest` z `DataContext` rodičovského okna
+- ViewModely: `MLRest` property z `EDViewModel` (čte z `EDServices.Current`)
+- Testy: vlastní `EDServices` s mock `IMLRest`
+- Ovládací prvky (`EDInputForm`, `EDList`): čtou `MLRest` z `DataContext` rodičovského okna
 
 ### Volání Caché metody — používej CVar (silně doporučeno)
 
@@ -185,22 +161,7 @@ ClassMethod MyMethod(ByRef sys As %String) As %Status
 }
 ```
 
-Odpovídající čtení v .NET:
-
-```csharp
-CVar output = mlRest.QueryOrThrow("ALVA.MY.Class", "MyMethod", input);
-
-string result = output["result"].Value?.ToString() ?? "";  // named string value
-CList info   = output["info"];                             // named CList
-
-foreach (KeyValuePair<string, CVar> kvp in output)
-{
-    if (kvp.Key == "ERR") continue;
-    if (kvp.Key == "result" || kvp.Key == "info") continue; // skip named keys if mixed
-    CList row = kvp.Value;
-    // row.GetString(1) == "ROW", row.GetString(2) == "a", etc.
-}
-```
+Odpovídající čtení v .NET viz sekce „Volání Caché metody" výše (CVar příklady).
 
 - `$$$Init` — nastaví `ret=0`, `err=""`
 - `$$$FillParams` — naplní `IdFa`, `del`, `dataDB`, `userID`, `GUID`, atd.
@@ -247,142 +208,38 @@ Viz `EDComponentAndViewModelTestWindow` pro funkční referenční implementaci.
 
 ## EDIcons — sdílená knihovna ikon
 
-Ikony jsou uloženy v `EDControls/dotnet/EDIcons/`. Do složky se kopírují pouze ikony, které
-aplikace skutečně používá. Resource dictionary `EDIcons.xaml` mapuje každý soubor na sémantický klíč.
+Ikony: `EDControls/dotnet/EDIcons/`. Resource dictionary `EDIcons.xaml` mapuje soubory na sémantické klíče.
+Aktuální ikony viz `EDIcons.xaml`.
 
 ### Přidání nové ikony
 
-1. Zkopíruj PNG ze sady ikon do `EDControls/dotnet/EDIcons/png/`.
-2. Zaregistruj ho v `EDControls/dotnet/EDControls.csproj`:
-
-   ```xml
-   <Resource Include="EDIcons\png\myicon.png"/>
-   ```
-
-   Explicitní registrace je potřebná pouze pro PNG soubory. SDK automaticky zahrnuje všechny
-   `.xaml` soubory jako `Page` položky — ruční přidání `<Page>` záznamu způsobí chybu duplikátu.
-
-3. Přidej `BitmapImage` záznam do `EDControls/dotnet/EDIcons/EDIcons.xaml`:
-
-   ```xml
-   <BitmapImage x:Key="EDIcons.MyName"
-                UriSource="pack://application:,,,/EDControls;component/EDIcons/png/myicon.png"/>
-   ```
-
-   Používej **sémantický klíč** (`EDIcons.MyName`, ne `EDIcons.Myicon`) — výměna PNG souboru
-   pak vyžaduje změnu pouze v `EDIcons.xaml`.
-
----
-
-## Obsluha výjimek — povinné nastavení pro každý nový projekt
-
-`RelayCommand.Execute` zachytí výjimky automaticky a zobrazí `EDErrorPopup` přes `PopupDisplayer`.
-Příkazy vytvářej přes helper `Command(...)` na `EDViewModel` — ten automaticky předá
-`PopupDisplayer` do `RelayCommand`. Výjimky mimo příkazy (např. auto-validace v `EDInputForm`,
-`async void`) se zachytí globálně.
-
-Každý nový aplikační projekt musí v `App.xaml.cs` přidat handler:
-
-```csharp
-private void Application_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
-{
-    new PopupDisplayer().Error(e.Exception);
-    e.Handled = true;
-}
-```
-
-A navázat ho v `App.xaml`:
-
-```xml
-<Application ...
-             DispatcherUnhandledException="Application_DispatcherUnhandledException">
-```
-
-Bez `e.Handled = true` aplikace po výjimce spadne. Bez handleru vůbec výjimky mimo příkazy
-aplikaci ukončí bez zprávy uživateli.
-
-### App.xaml — povinné přidání
-
-Každá aplikace, která používá ikony, musí jednou v `App.xaml` mergovat `EDIcons.xaml`.
-Bez toho `{StaticResource EDIcons.X}` za běhu hodí výjimku.
-
-```xml
-<Application.Resources>
-    <ResourceDictionary>
-        <ResourceDictionary.MergedDictionaries>
-            <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDIcons/EDIcons.xaml"/>
-        </ResourceDictionary.MergedDictionaries>
-    </ResourceDictionary>
-</Application.Resources>
-```
-
-Již hotovo v `EDISONMAIN2/dotnet/App.xaml` a `TemplateDesigner/dotnet/App.xaml`.
-Každý nový aplikační projekt musí stejný merge přidat.
-
-### Použití ikony v XAML
-
-Po přidání merge je `{StaticResource EDIcons.X}` dostupný v každém okně napříč všemi projekty:
-
-```xml
-<Button ToolTip="{StaticResource EDStrings.Add}">
-    <Image Source="{StaticResource EDIcons.Add}" Width="16" Height="16"/>
-</Button>
-```
-
-### Aktuální ikony
-
-| Klíč               | Soubor              | Význam                            |
-|--------------------|---------------------|-----------------------------------|
-| `EDIcons.Molecule` | `cube_molecule.png` | Ikona aplikace (EdisonMainWindow) |
-| `EDIcons.Add`      | `add2.png`          | Přidat položku                    |
-| `EDIcons.Edit`     | `edit.png`          | Upravit položku                   |
-| `EDIcons.Delete`   | `delete2.png`       | Smazat položku                    |
-| `EDIcons.Car`      | `car.png`           | Vozidlo / doprava                 |
+1. Zkopíruj PNG do `EDControls/dotnet/EDIcons/png/`.
+2. Zaregistruj v `EDControls.csproj` jako `<Resource Include="EDIcons\png\myicon.png"/>`.
+   Pouze PNG potřebuje explicitní registraci — `.xaml` soubory SDK zahrnuje automaticky
+   (ruční `<Page>` způsobí duplikát).
+3. Přidej `BitmapImage` do `EDIcons.xaml` se **sémantickým klíčem** (`EDIcons.MyName`, ne `EDIcons.Myicon`).
 
 ---
 
 ## EDStrings — sdílené texty tlačítek
 
-Texty běžných akčních tlačítek jsou centralizovány v `EDControls/dotnet/EDStrings/EDStrings.xaml`.
-Díky tomu stačí změnit text na jednom místě a projeví se všude.
+Texty: `EDControls/dotnet/EDStrings/EDStrings.xaml`. Aktuální texty viz soubor.
+Přidání: vlož `<sys:String x:Key="EDStrings.X">Text</sys:String>`. Žádná změna v `.csproj`.
 
-### Přidání nového textu
+---
 
-Přidej `sys:String` záznam do `EDControls/dotnet/EDStrings/EDStrings.xaml`:
+## Obsluha výjimek
 
-```xml
-<sys:String x:Key="EDStrings.MyLabel">Můj text</sys:String>
-```
+`Command(...)` na `EDViewModel` automaticky zachytává výjimky přes `PopupDisplayer`.
+Výjimky mimo příkazy se zachytí globálním handlerem.
 
-Žádná změna v `.csproj` není potřebná — SDK zahrnuje `.xaml` soubory automaticky.
+---
 
-### Merge v App.xaml
+## Povinné nastavení App.xaml pro každý nový projekt
 
-Každá aplikace, která používá texty, musí jednou v `App.xaml` mergovat `EDStrings.xaml`
-(vedle `EDIcons.xaml`):
+Každý nový aplikační projekt musí:
 
-```xml
-<ResourceDictionary Source="pack://application:,,,/EDControls;component/EDStrings/EDStrings.xaml"/>
-```
+1. Mergovat resource dictionaries (`EDIcons.xaml`, `EDStrings.xaml`) — bez toho `{StaticResource}` hodí výjimku za běhu.
+2. Přidat `DispatcherUnhandledException` handler — bez `e.Handled = true` aplikace po výjimce spadne.
 
-Již hotovo v `EDISONMAIN2/dotnet/App.xaml` a `TemplateDesigner/dotnet/App.xaml`.
-
-### Použití v XAML
-
-```xml
-<Button Content="{StaticResource EDStrings.Ok}"/>
-<Button Content="{StaticResource EDStrings.Cancel}"/>
-<Button ToolTip="{StaticResource EDStrings.Add}"/>
-```
-
-### Aktuální texty
-
-| Klíč                  | Hodnota   | Použití                        |
-|-----------------------|-----------|--------------------------------|
-| `EDStrings.Add`       | Přidat    | Tooltip tlačítka Přidat        |
-| `EDStrings.Edit`      | Upravit   | Tooltip tlačítka Upravit       |
-| `EDStrings.Delete`    | Smazat    | Tooltip tlačítka Smazat        |
-| `EDStrings.Close`     | Zavřít    | EDFooter Close mode, dialogy   |
-| `EDStrings.Ok`        | OK        | EDFooter OkCancel mode, dialogy|
-| `EDStrings.Cancel`    | Storno    | EDFooter OkCancel mode, dialogy|
-| `EDStrings.Save`      | Uložit    | Tlačítka uložení               |
+Viz `EDISONMAIN2/dotnet/App.xaml` a `App.xaml.cs` jako referenční implementaci.
