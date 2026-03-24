@@ -14,12 +14,12 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-23
+**Datum poslední aktualizace:** 2026-03-24
 
 ### 🎯 Aktuální focus
 
 1. Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), FullTime mód, data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
-2. Sjednocení textových nastavení napříč elementy — konzistentní font/size/bold/italic/color/alignment (krok 8a roadmapy).
+2. Ladění MinutesOnly na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 roadmapy).
 
 ### ✅ Co máme
 
@@ -63,6 +63,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Multi-element editing** — Enter při výběru více elementů otevře dialog společných vlastností (BorderColor, BorderWidth, ZIndex, IsLocked); změna se aplikuje na všechny najednou
 - **Ikonový toolbar** — 33 Fluent UI System Icons (Microsoft, MIT); 1 band, 7 skupin (Soubor, Upravit, Přidat, Elementy, Vrstva, Zarovnat, Zobrazení); ToolbarStyles.xaml; maximalizované okno; preview 50:50 star sizing
 - **Inline properties panel** — záložka "Vlastnosti" v levém panelu; automatická aktualizace při výběru elementu; modální dialog zachován jako fallback (Enter/dvojklik)
+- **TextStyle unifikace** — `TextStyle` (nullable POCO, CSS cascade přes `Resolve()`) + `ResolvedTextStyle` (struct se SkiaSharp helpery: `CreateFont`, `CreateTextPaint`, `CreateBgPaint`); migrace všech elementů (TextElement, TableElement, ScheduleElementBase + StopList/DepartureGrid/NotesLegend); `BackgroundColor` na base `TemplateElement`; `CopyBaseTo()` eliminuje Clone() boilerplate; breaking JSON change (flat text props → composable `style`/`headerStyle`/`dataStyle`)
 
 ### 🐛 Známé problémy
 

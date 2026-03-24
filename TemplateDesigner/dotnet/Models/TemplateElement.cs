@@ -48,13 +48,19 @@ public abstract class TemplateElement
     /// <summary>Bag pro budoucí vlastnosti bez zásahu do modelu.</summary>
     public Dictionary<string, string>? CustomProperties { get; set; }
 
-    // ── Rámeček (společný pro všechny elementy) ──────────────────────────────
+    // ── Vizuální obal (společný pro všechny elementy) ──────────────────────────
+
+    /// <summary>Barva pozadí elementu (#AARRGGBB). "#00FFFFFF" = průhledné.</summary>
+    public string BackgroundColor { get; set; } = "#00FFFFFF";
 
     /// <summary>Barva rámečku ve formátu #AARRGGBB. "#00FFFFFF" = žádný rámeček.</summary>
     public string BorderColor { get; set; } = "#00FFFFFF";
 
     /// <summary>Šířka rámečku v mm. 0 = žádný rámeček.</summary>
     public float BorderWidth { get; set; } = 0f;
+
+    [JsonIgnore]
+    public SKColor SkBackgroundColor => SKColor.Parse(BackgroundColor);
 
     [JsonIgnore]
     public SKColor SkBorderColor => SKColor.Parse(BorderColor);
@@ -154,6 +160,24 @@ public abstract class TemplateElement
             : Array.Empty<PropertyDescriptor>()),
     ];
 
+    // ── Clone helper ──────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Zkopíruje společné base properties do cílového elementu (nové Id, pozice, border, background, ...).
+    /// Volej v Clone() místo manuálního kopírování 10+ řádků.
+    /// </summary>
+    protected void CopyBaseTo(TemplateElement target)
+    {
+        target.Id = Guid.NewGuid();
+        target.X = X; target.Y = Y; target.Width = Width; target.Height = Height;
+        target.ZIndex = ZIndex; target.IsLocked = IsLocked;
+        target.VisibilityExpression = VisibilityExpression;
+        target.CustomProperties = CustomProperties is null ? null : new(CustomProperties);
+        target.GroupId = GroupId;
+        target.BackgroundColor = BackgroundColor;
+        target.BorderColor = BorderColor; target.BorderWidth = BorderWidth;
+    }
+
     // ---------------------------------------------------------------------------
 
     [JsonIgnore]
@@ -171,9 +195,9 @@ public abstract class TemplateElement
     /// <summary>Zkrácený popis elementu pro strom šablony a debug výpisy.</summary>
     public static string GetSummary(TemplateElement el) => el switch
     {
-        TextElement t      => $"\"{TruncateText(t.Text, 50)}\"  {t.FontFamily} {t.FontSize}pt",
+        TextElement t      => $"\"{TruncateText(t.Text, 50)}\"  {t.Style.FontFamily ?? "Arial"} {t.Style.FontSize ?? 10f}pt",
         LineElement l      => $"{l.Orientation} {l.StrokeWidth}mm {l.Color}",
-        RectangleElement r => $"Fill={r.FillColor} Stroke={r.StrokeColor}",
+        RectangleElement r => $"Fill={r.BackgroundColor} Stroke={r.StrokeColor}",
         ImageElement       => "Image",
         BarcodeElement b   => $"{b.BarcodeType}",
         TableElement t     => $"{t.Mode} cols={t.Columns.Count}",

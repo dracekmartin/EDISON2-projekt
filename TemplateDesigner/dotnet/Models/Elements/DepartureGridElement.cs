@@ -32,7 +32,7 @@ public class DepartureGridElement : ScheduleElementBase
     public float SkupinaDnuHeaderLineHeight { get; set; } = 4f;
 
     /// <summary>Zarovnání textu záhlaví skupin: Top, Center, Bottom.</summary>
-    public VerticalTextAlignment HeaderVerticalAlignment { get; set; } = VerticalTextAlignment.Bottom;
+    public TextVerticalAlignment HeaderVerticalAlignment { get; set; } = TextVerticalAlignment.Bottom;
 
     // ═══════════════════════════════════════════
     // Mřížka minut (MinutesOnly mód)
@@ -42,13 +42,13 @@ public class DepartureGridElement : ScheduleElementBase
     public float MinuteFontSize { get; set; } = 7f;
 
     /// <summary>Styl textu minuty (font, bold, barva). Null properties = element defaults.</summary>
-    public InlineTextStyle MinuteStyle { get; set; } = new();
+    public TextStyle MinuteStyle { get; set; } = new();
 
     /// <summary>Styl anotací typu speciální/NZ (symboly ×, F, H). Null properties = 80% velikosti minuty.</summary>
-    public InlineTextStyle AnotaceSymbolStyle { get; set; } = new();
+    public TextStyle AnotaceSymbolStyle { get; set; } = new();
 
     /// <summary>Styl anotací typu text (písmena a, A, dny). Null properties = AnotaceFontSize.</summary>
-    public InlineTextStyle AnotaceTextStyle { get; set; } = new();
+    public TextStyle AnotaceTextStyle { get; set; } = new();
 
     /// <summary>Mezera mezi minutou a první anotací (mm). 0 = bez mezery.</summary>
     public float AnotaceGap { get; set; } = 0f;
@@ -156,7 +156,7 @@ public class DepartureGridElement : ScheduleElementBase
         // Font pro měření textu záhlaví
         float headerLineFontPx = SkupinaDnuHeaderLineHeight * 0.65f * (mmToPx > 0 ? mmToPx : 3.78f);
         using var measureFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerLineFontPx);
+            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerLineFontPx);
         float effectiveMmToPx = mmToPx > 0 ? mmToPx : 3.78f;
 
         var groupLayouts = new List<GroupLayout>();
@@ -234,11 +234,13 @@ public class DepartureGridElement : ScheduleElementBase
             return g with { HeaderLines = wrapped };
         }).ToList();
 
-        float fontSizeMm = FontSize * PtToMm;
-        float headerFontMm = HeaderFontSize * PtToMm;
+        float effFontSize = DataStyle.FontSize ?? 8f;
+        float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
+        float fontSizeMm = effFontSize * PtToMm;
+        float headerFontMm = effHeaderFontSize * PtToMm;
         float minuteFontMm = MinuteFontSize * PtToMm;
-        float rowH = DataRowHeight ?? ComputeRowH(FontSize);
-        float headerH = ComputeHeaderH(HeaderFontSize);
+        float rowH = DataRowHeight ?? ComputeRowH(effFontSize);
+        float headerH = ComputeHeaderH(effHeaderFontSize);
 
         int maxHeaderLines = finalGroups.Max(g => g.HeaderLines.Length);
         float groupHeaderH = ShowSkupinaDnuHeader
@@ -280,7 +282,7 @@ public class DepartureGridElement : ScheduleElementBase
             : layout.HeaderH;
         // Pro scale použít font-driven výšku řádku, ne uživatelskou DataRowHeight —
         // jinak zvětšení řádku paradoxně zmenšuje fonty
-        float fontRowH = ComputeRowH(FontSize);
+        float fontRowH = ComputeRowH(DataStyle.FontSize ?? 8f);
         float scaleNaturalH = combinedHeaderH + layout.Hours.Count * fontRowH;
         float scale = ComputeFontScale(scaleNaturalH);
         float naturalH = combinedHeaderH + layout.Hours.Count * layout.RowH;
@@ -311,17 +313,17 @@ public class DepartureGridElement : ScheduleElementBase
         float minuteFontPx = layout.MinuteFontMm * scale * ctx.MmToPx;
         float groupNameFontPx = SkupinaDnuHeaderLineHeight * scale * 0.65f * ctx.MmToPx;
 
-        using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
+        using var font = new SKFont(SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial"), fontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerFontPx);
+            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerFontPx);
 
-        // Minuty — InlineTextStyle override nebo element defaults
+        // Minuty — TextStyle override nebo element defaults
         var ms = MinuteStyle;
         float minuteEffFontPx = (ms.FontSize ?? MinuteFontSize) * PtToMm * scale * ctx.MmToPx;
         bool minuteEffBold = ms.Bold ?? MinuteBold;
         bool minuteEffItalic = ms.Italic ?? false;
         using var minuteFont = new SKFont(
-            SKTypeface.FromFamilyName(ms.FontFamily ?? FontFamily,
+            SKTypeface.FromFamilyName(ms.FontFamily ?? DataStyle.FontFamily ?? "Arial",
                 MakeFontStyle(minuteEffBold, minuteEffItalic)),
             minuteEffFontPx);
         // Manuálně spravované resources — dispose v finally bloku na konci metody
@@ -335,15 +337,15 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         using var groupNameFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), groupNameFontPx);
+            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), groupNameFontPx);
 
-        // Anotace symboly (speciální/NZ) — InlineTextStyle override nebo 80% minut
+        // Anotace symboly (speciální/NZ) — TextStyle override nebo 80% minut
         var ass = AnotaceSymbolStyle;
         float anotSymFontPx = ass.FontSize is not null
             ? ass.FontSize.Value * PtToMm * scale * ctx.MmToPx
             : minuteEffFontPx * 0.8f;
         using var anotPrimaryFont = new SKFont(
-            SKTypeface.FromFamilyName(ass.FontFamily ?? FontFamily,
+            SKTypeface.FromFamilyName(ass.FontFamily ?? DataStyle.FontFamily ?? "Arial",
                 MakeFontStyle(ass.Bold ?? false, ass.Italic ?? false)),
             anotSymFontPx);
         SKPaint? anotSymPaint = null;
@@ -353,11 +355,11 @@ public class DepartureGridElement : ScheduleElementBase
             manualDisposables.Add(anotSymPaint);
         }
 
-        // Anotace text — InlineTextStyle override nebo AnotaceFontSize
+        // Anotace text — TextStyle override nebo AnotaceFontSize
         var ats = AnotaceTextStyle;
         float anotTextFontPx = (ats.FontSize ?? AnotaceFontSize) * PtToMm * scale * ctx.MmToPx;
         using var anotSecondaryFont = new SKFont(
-            SKTypeface.FromFamilyName(ats.FontFamily ?? FontFamily,
+            SKTypeface.FromFamilyName(ats.FontFamily ?? DataStyle.FontFamily ?? "Arial",
                 MakeFontStyle(ats.Bold ?? false, ats.Italic ?? false)),
             anotTextFontPx);
         SKPaint? anotTextPaint = null;
@@ -367,7 +369,7 @@ public class DepartureGridElement : ScheduleElementBase
             manualDisposables.Add(anotTextPaint);
         }
 
-        // Default anotace barva (fallback pokud žádný InlineTextStyle nemá TextColor)
+        // Default anotace barva (fallback pokud žádný TextStyle nemá TextColor)
         using var anotDefaultPaint = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
 
         float anotGapPx = AnotaceGap * scale * ctx.MmToPx;
@@ -388,10 +390,10 @@ public class DepartureGridElement : ScheduleElementBase
         // ── Hour column style resources ─────────────────────────────────────
         var hourHs = HourColumnStyle?.Header;
         var hourDs = HourColumnStyle?.Data;
-        var hourHeaderFontCustom = CreateCellFont(hourHs, HeaderFontSize, true, scale, ctx.MmToPx);
+        var hourHeaderFontCustom = CreateCellFont(hourHs, HeaderStyle.FontSize ?? 9f, true, scale, ctx.MmToPx);
         var hourHeaderTextPaint = CreateCellTextPaint(hourHs);
         var hourHeaderBgPaint = CreateCellBgPaint(hourHs);
-        var hourDataFontCustom = CreateCellFont(hourDs, FontSize, false, scale, ctx.MmToPx);
+        var hourDataFontCustom = CreateCellFont(hourDs, DataStyle.FontSize ?? 8f, false, scale, ctx.MmToPx);
         var hourDataTextPaint = CreateCellTextPaint(hourDs);
         var hourDataBgPaint = CreateCellBgPaint(hourDs);
         if (hourHeaderFontCustom is not null) manualDisposables.Add(hourHeaderFontCustom);
@@ -418,7 +420,7 @@ public class DepartureGridElement : ScheduleElementBase
 
             // "Hod" v levém sloupci — s per-column zarovnáním a paddingem
             var hourHdrFont = hourHeaderFontCustom ?? headerFont;
-            var hourHdrHAlign = hourHs?.HAlignment ?? TextHorizontalAlignment.Left;
+            var hourHdrHAlign = hourHs?.HAlign ?? TextHorizontalAlignment.Left;
             float hourHPadLeft = (hourHs?.PaddingLeft ?? 0f) * scale;
             float hourHPadRight = (hourHs?.PaddingRight ?? 0f) * scale;
             float hourHPadBottom = (hourHs?.PaddingBottom ?? 0f) * scale;
@@ -459,7 +461,7 @@ public class DepartureGridElement : ScheduleElementBase
                     bool colItalic = hs?.Italic ?? false;
                     float colHeaderFontPx = colHeaderFontMm * scale * ctx.MmToPx;
                     using var colFont = new SKFont(
-                        SKTypeface.FromFamilyName(hs?.FontFamily ?? FontFamily, MakeFontStyle(colBold, colItalic)),
+                        SKTypeface.FromFamilyName(hs?.FontFamily ?? DataStyle.FontFamily ?? "Arial", MakeFontStyle(colBold, colItalic)),
                         colHeaderFontPx);
 
                     int lineCount = g.HeaderLines.Length;
@@ -478,8 +480,8 @@ public class DepartureGridElement : ScheduleElementBase
                         // Fallback: element-level vertikální zarovnání
                         startLineY = HeaderVerticalAlignment switch
                         {
-                            VerticalTextAlignment.Top => currentY,
-                            VerticalTextAlignment.Center => currentY + (scaledCombinedHeaderH - blockH) / 2f,
+                            TextVerticalAlignment.Top => currentY,
+                            TextVerticalAlignment.Middle => currentY + (scaledCombinedHeaderH - blockH) / 2f,
                             _ => currentY + scaledCombinedHeaderH - blockH, // Bottom
                         };
                     }
@@ -494,7 +496,7 @@ public class DepartureGridElement : ScheduleElementBase
                     }
 
                     // Per-column horizontální zarovnání (s padding)
-                    var hAlign = hs?.HAlignment ?? TextHorizontalAlignment.Center;
+                    var hAlign = hs?.HAlign ?? TextHorizontalAlignment.Center;
 
                     for (int i = 0; i < lineCount; i++)
                     {
@@ -534,8 +536,8 @@ public class DepartureGridElement : ScheduleElementBase
             { perGroupColBgPaints[g.Skupina.Id] = gbp; manualDisposables.Add(gbp); }
             if (CreateCellTextPaint(ds) is { } gtp)
             { perGroupDataTextPaints[g.Skupina.Id] = gtp; manualDisposables.Add(gtp); }
-            if (ds?.HAlignment is not null)
-                perGroupDataHAlign[g.Skupina.Id] = ds.HAlignment.Value;
+            if (ds?.HAlign is not null)
+                perGroupDataHAlign[g.Skupina.Id] = ds.HAlign.Value;
             if (ds?.PaddingTop is not null || ds?.PaddingRight is not null || ds?.PaddingBottom is not null || ds?.PaddingLeft is not null)
                 perGroupDataPadding[g.Skupina.Id] = (
                     (ds?.PaddingTop ?? 0f) * scale, (ds?.PaddingRight ?? 0f) * scale,
@@ -547,7 +549,7 @@ public class DepartureGridElement : ScheduleElementBase
 
         // Hoisted: hour column data style — konstantní přes všechny řádky
         var hourDFont = hourDataFontCustom ?? font;
-        var hourDataHAlign = hourDs?.HAlignment ?? TextHorizontalAlignment.Left;
+        var hourDataHAlign = hourDs?.HAlign ?? TextHorizontalAlignment.Left;
         float hourDPadLeft = (hourDs?.PaddingLeft ?? 0f) * scale;
         float hourDPadRight = (hourDs?.PaddingRight ?? 0f) * scale;
         float hourDPadTop = (hourDs?.PaddingTop ?? 0f) * scale;
@@ -714,17 +716,19 @@ public class DepartureGridElement : ScheduleElementBase
 
     private void RenderPlaceholder(RenderContext ctx)
     {
-        float rowH = DataRowHeight ?? ComputeRowH(FontSize);
-        float headerH = ComputeHeaderH(HeaderFontSize);
+        float effFontSize = DataStyle.FontSize ?? 8f;
+        float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
+        float rowH = DataRowHeight ?? ComputeRowH(effFontSize);
+        float headerH = ComputeHeaderH(effHeaderFontSize);
 
         using var paints = CreateStandardPaints();
 
-        float fontPx = FontSize * PtToMm * ctx.MmToPx;
-        float headerFontPx = HeaderFontSize * PtToMm * ctx.MmToPx;
+        float fontPx = effFontSize * PtToMm * ctx.MmToPx;
+        float headerFontPx = effHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
+        using var font = new SKFont(SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial"), fontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerFontPx);
+            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerFontPx);
 
         float currentY = Y;
 
@@ -893,8 +897,8 @@ public class DepartureGridElement : ScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Záhlaví skupin",     Group = "Odjezdy", Get = () => ShowSkupinaDnuHeader,       Set = v => ShowSkupinaDnuHeader = v },
         new FloatPropertyDescriptor { Label = "Výška řádku záhl.",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
         new EnumPropertyDescriptor  { Label = "Zarovnání záhlaví", Group = "Odjezdy",
-            Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (VerticalTextAlignment)v,
-            Options = [("Nahoru", (object)VerticalTextAlignment.Top), ("Na střed", (object)VerticalTextAlignment.Center), ("Dolů", (object)VerticalTextAlignment.Bottom)] },
+            Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
+            Options = [("Nahoru", (object)TextVerticalAlignment.Top), ("Na střed", (object)TextVerticalAlignment.Middle), ("Dolů", (object)TextVerticalAlignment.Bottom)] },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
@@ -939,14 +943,6 @@ public class DepartureGridElement : ScheduleElementBase
     {
         var clone = new DepartureGridElement
         {
-            Id = Guid.NewGuid(),
-            X = X, Y = Y, Width = Width, Height = Height,
-            ZIndex = ZIndex, IsLocked = IsLocked,
-            VisibilityExpression = VisibilityExpression,
-            CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-            GroupId = GroupId,
-            BorderColor = BorderColor, BorderWidth = BorderWidth,
-
             SkupinaDnuId               = SkupinaDnuId,
             DisplayMode                = DisplayMode,
             ShowSkupinaDnuHeader       = ShowSkupinaDnuHeader,
@@ -975,6 +971,7 @@ public class DepartureGridElement : ScheduleElementBase
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
             ColorRules                 = ColorRules.Select(r => r.Clone()).ToList(),
         };
+        CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);
         return clone;
     }

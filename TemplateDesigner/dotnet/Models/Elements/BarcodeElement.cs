@@ -19,11 +19,13 @@ public class BarcodeElement : TemplateElement
     /// <summary>Barva modulů (popředí) ve formátu #AARRGGBB.</summary>
     public string ForeColor { get; set; } = "#FF000000";
 
-    /// <summary>Barva pozadí ve formátu #AARRGGBB.</summary>
-    public string BackColor { get; set; } = "#FFFFFFFF";
-
     [JsonIgnore] public SKColor SkForeColor => SKColor.Parse(ForeColor);
-    [JsonIgnore] public SKColor SkBackColor => SKColor.Parse(BackColor);
+
+    public BarcodeElement()
+    {
+        // Čárový kód potřebuje bílé pozadí (ne průhledné jako ostatní elementy)
+        BackgroundColor = "#FFFFFFFF";
+    }
 
     public override void Render(RenderContext ctx)
     {
@@ -33,9 +35,9 @@ public class BarcodeElement : TemplateElement
         var content = ctx.Data?.ResolvePlaceholders(Content) ?? Content;
 
         // Pozadí
-        if (SkBackColor.Alpha > 0)
+        if (SkBackgroundColor.Alpha > 0)
         {
-            using var bgPaint = new SKPaint { Color = SkBackColor, Style = SKPaintStyle.Fill };
+            using var bgPaint = new SKPaint { Color = SkBackgroundColor, Style = SKPaintStyle.Fill };
             ctx.Canvas.DrawRect(rect, bgPaint);
         }
 
@@ -130,26 +132,23 @@ public class BarcodeElement : TemplateElement
                 ("Code 128", (object)BarcodeElementType.Code128)
             ]
         },
-        new ColorPropertyDescriptor { Label = "Barva kódu",   Group = "Vzhled", Get = () => ForeColor, Set = v => ForeColor = v },
-        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Vzhled", Get = () => BackColor,  Set = v => BackColor  = v },
+        new ColorPropertyDescriptor { Label = "Barva kódu",   Group = "Vzhled", Get = () => ForeColor,       Set = v => ForeColor = v },
+        new ColorPropertyDescriptor { Label = "Barva pozadí", Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
 
         .. GetPositionDescriptors()
     ];
 
-    public override TemplateElement Clone() => new BarcodeElement
+    public override TemplateElement Clone()
     {
-        Id = Guid.NewGuid(),
-        X = X, Y = Y, Width = Width, Height = Height,
-        ZIndex = ZIndex, IsLocked = IsLocked,
-        VisibilityExpression = VisibilityExpression,
-        CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-        GroupId = GroupId,
-        BorderColor = BorderColor, BorderWidth = BorderWidth,
-        Content = Content,
-        BarcodeType = BarcodeType,
-        ForeColor = ForeColor,
-        BackColor = BackColor
-    };
+        var clone = new BarcodeElement
+        {
+            Content = Content,
+            BarcodeType = BarcodeType,
+            ForeColor = ForeColor,
+        };
+        CopyBaseTo(clone);
+        return clone;
+    }
 }
 
 public enum BarcodeElementType { QR, Code128 }

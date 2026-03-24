@@ -32,8 +32,8 @@ Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými
 | 7 | Per-column styling framework — CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ hotovo (2026-03-21) |
 | 7a | StopListElement — per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) + generalizace shared helpers do ScheduleElementBase + ColorPickerHelper + ActionId routing | ✅ hotovo (2026-03-23) |
 | 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ hotovo (2026-03-23) |
-| 8 | Ladění MinutesOnly na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | |
-| 8a | Sjednocení textových nastavení — konzistentní font/size/bold/italic/color/alignment u všech elementů kde se vyskytuje text (TextElement, TableElement buňky, StopList, DepartureGrid, NotesLegend, záhlaví sloupců). Audit stávajících properties + návrh sdíleného `TextStyle` vzoru | ⬅️ |
+| 8 | Ladění MinutesOnly na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | ⬅️ |
+| 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ hotovo (2026-03-24) |
 | 9 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
 | 10 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
 | 11 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |

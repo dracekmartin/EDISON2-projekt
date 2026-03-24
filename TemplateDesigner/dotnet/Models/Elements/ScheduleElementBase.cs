@@ -37,12 +37,17 @@ public abstract class ScheduleElementBase : TemplateElement
 
     // ─── Společné vizuální properties ───────────────────────────────────────
 
-    public string FontFamily { get; set; } = "Arial";
-    public float FontSize { get; set; } = 8f;
-    public float HeaderFontSize { get; set; } = 9f;
+    /// <summary>Výchozí styl datových buněk (font, velikost). Per-column TextStyle cascaduje od tohoto.</summary>
+    public TextStyle DataStyle { get; set; } = new() { FontFamily = "Arial", FontSize = 8f };
+
+    /// <summary>Výchozí styl záhlaví (font, velikost, bold, barvy). Per-column TextStyle cascaduje od tohoto.</summary>
+    public TextStyle HeaderStyle { get; set; } = new()
+    {
+        FontFamily = "Arial", FontSize = 9f, Bold = true,
+        BackgroundColor = "#FFE0E0E0", TextColor = "#FF000000"
+    };
+
     public string GridColor { get; set; } = "#FFD0D0D0";
-    public string HeaderBackgroundColor { get; set; } = "#FFE0E0E0";
-    public string HeaderForeColor { get; set; } = "#FF000000";
 
     // ─── Auto-scale ──────────────────────────────────────────────────────────
 
@@ -135,30 +140,30 @@ public abstract class ScheduleElementBase : TemplateElement
     };
 
     /// <summary>
-    /// Vytvoří SKFont z CellStyle. Vrátí null pokud CellStyle nemá žádné fontové override.
+    /// Vytvoří SKFont z TextStyle. Vrátí null pokud TextStyle nemá žádné fontové override.
     /// Volající musí výsledek uvolnit (přidat do manualDisposables).
     /// </summary>
-    protected SKFont? CreateCellFont(CellStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx)
+    protected SKFont? CreateCellFont(TextStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx)
     {
         if (style is null) return null;
         if (style.FontFamily is null && style.FontSize is null && style.Bold is null && style.Italic is null)
             return null;
 
-        var family = style.FontFamily ?? FontFamily;
+        var family = style.FontFamily ?? DataStyle.FontFamily ?? "Arial";
         var sizePx = (style.FontSize ?? defaultSizePt) * PtToMm * scale * mmToPx;
         var fontStyle = MakeFontStyle(style.Bold ?? defaultBold, style.Italic ?? false);
         return new SKFont(SKTypeface.FromFamilyName(family, fontStyle), sizePx);
     }
 
-    /// <summary>Vytvoří SKPaint pro text z CellStyle.TextColor. Null pokud nemá override.</summary>
-    protected static SKPaint? CreateCellTextPaint(CellStyle? style)
+    /// <summary>Vytvoří SKPaint pro text z TextStyle.TextColor. Null pokud nemá override.</summary>
+    protected static SKPaint? CreateCellTextPaint(TextStyle? style)
     {
         if (style?.TextColor is null) return null;
         return new SKPaint { Color = SKColor.Parse(style.TextColor), IsAntialias = true };
     }
 
-    /// <summary>Vytvoří SKPaint pro pozadí z CellStyle.BackgroundColor. Null pokud nemá override.</summary>
-    protected static SKPaint? CreateCellBgPaint(CellStyle? style)
+    /// <summary>Vytvoří SKPaint pro pozadí z TextStyle.BackgroundColor. Null pokud nemá override.</summary>
+    protected static SKPaint? CreateCellBgPaint(TextStyle? style)
     {
         if (style?.BackgroundColor is null) return null;
         return new SKPaint { Color = SKColor.Parse(style.BackgroundColor) };
@@ -187,8 +192,8 @@ public abstract class ScheduleElementBase : TemplateElement
     /// <summary>Vytvoří standardní sadu paintů pro JŘ elementy. Volající musí dispose.</summary>
     protected SchedulePaints CreateStandardPaints() => new(
         SKColor.Parse(GridColor),
-        SKColor.Parse(HeaderBackgroundColor),
-        SKColor.Parse(HeaderForeColor));
+        SKColor.Parse(HeaderStyle.BackgroundColor ?? "#FFE0E0E0"),
+        SKColor.Parse(HeaderStyle.TextColor ?? "#FF000000"));
 
     /// <summary>Vykreslí záhlaví sekce: pozadí + text + horizontální čára pod záhlavím.</summary>
     protected static float RenderSectionHeader(
@@ -405,18 +410,18 @@ public abstract class ScheduleElementBase : TemplateElement
         new StringPropertyDescriptor
         {
             Label = "Font", Group = "Výchozí styl",
-            Get = () => FontFamily, Set = v => FontFamily = v
+            Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = v
         },
         new FloatPropertyDescriptor
         {
             Label = "Velikost písma", Group = "Výchozí styl",
-            Get = () => FontSize, Set = v => FontSize = v,
+            Get = () => DataStyle.FontSize ?? 8f, Set = v => DataStyle.FontSize = v,
             Min = 4, Max = 30, Unit = "pt"
         },
         new FloatPropertyDescriptor
         {
             Label = "Velikost záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderFontSize, Set = v => HeaderFontSize = v,
+            Get = () => HeaderStyle.FontSize ?? 9f, Set = v => HeaderStyle.FontSize = v,
             Min = 4, Max = 30, Unit = "pt"
         },
         new ColorPropertyDescriptor
@@ -427,12 +432,12 @@ public abstract class ScheduleElementBase : TemplateElement
         new ColorPropertyDescriptor
         {
             Label = "Pozadí záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderBackgroundColor, Set = v => HeaderBackgroundColor = v
+            Get = () => HeaderStyle.BackgroundColor ?? "#FFE0E0E0", Set = v => HeaderStyle.BackgroundColor = v
         },
         new ColorPropertyDescriptor
         {
             Label = "Barva záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderForeColor, Set = v => HeaderForeColor = v
+            Get = () => HeaderStyle.TextColor ?? "#FF000000", Set = v => HeaderStyle.TextColor = v
         },
     ];
 
@@ -465,16 +470,13 @@ public abstract class ScheduleElementBase : TemplateElement
 
     protected void CopyScheduleBaseProperties(ScheduleElementBase target)
     {
-        target.ZastavkyDataSource    = ZastavkyDataSource;
-        target.SkupinyDnuDataSource  = SkupinyDnuDataSource;
-        target.OdjezdyDataSource     = OdjezdyDataSource;
-        target.PoznamkyDataSource    = PoznamkyDataSource;
-        target.FontFamily            = FontFamily;
-        target.FontSize              = FontSize;
-        target.HeaderFontSize        = HeaderFontSize;
-        target.GridColor             = GridColor;
-        target.HeaderBackgroundColor = HeaderBackgroundColor;
-        target.HeaderForeColor       = HeaderForeColor;
+        target.ZastavkyDataSource   = ZastavkyDataSource;
+        target.SkupinyDnuDataSource = SkupinyDnuDataSource;
+        target.OdjezdyDataSource    = OdjezdyDataSource;
+        target.PoznamkyDataSource   = PoznamkyDataSource;
+        target.DataStyle            = DataStyle.Clone();
+        target.HeaderStyle          = HeaderStyle.Clone();
+        target.GridColor            = GridColor;
     }
 }
 

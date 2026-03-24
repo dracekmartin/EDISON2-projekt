@@ -128,7 +128,7 @@ public class PdfToTemplateConverter
                             X = Math.Max(0, rect.X - marginLeft), Y = Math.Max(0, rect.Y - marginTop),
                             Width = rect.Width, Height = rect.Height,
                             ZIndex = zIdx++,
-                            FillColor = rect.FillColorHex ?? Transparent,
+                            BackgroundColor = rect.FillColorHex ?? Transparent,
                             StrokeColor = rect.StrokeColorHex ?? Black,
                             StrokeWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f)
                         });
@@ -216,12 +216,15 @@ public class PdfToTemplateConverter
                 Height = height,
                 ZIndex = zIndex++,
                 Text = block.Text,
-                FontFamily = block.FontFamily,
-                FontSize = block.FontSizePt,
-                FontWeight = block.IsBold ? TextFontWeight.Bold : TextFontWeight.Normal,
-                FontStyle = block.IsItalic ? TextFontStyle.Italic : TextFontStyle.Normal,
-                HorizontalAlignment = alignment,
-                TextColor = block.ColorHex,
+                Style = new TextStyle
+                {
+                    FontFamily = block.FontFamily,
+                    FontSize = block.FontSizePt,
+                    Bold = block.IsBold,
+                    Italic = block.IsItalic,
+                    HAlign = alignment,
+                    TextColor = block.ColorHex,
+                },
                 WordWrap = block.Text.Contains('\n')
             });
         }
@@ -248,7 +251,7 @@ public class PdfToTemplateConverter
                 X = rect.X, Y = rect.Y,
                 Width = rect.Width, Height = rect.Height,
                 ZIndex = zIndex++,
-                FillColor = rect.FillColorHex ?? Transparent,
+                BackgroundColor = rect.FillColorHex ?? Transparent,
                 StrokeColor = rect.StrokeColorHex ?? Black,
                 StrokeWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f)
             });

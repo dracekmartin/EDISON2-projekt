@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-03-24 — TextStyle unifikace (krok 8a)
+
+- ✅ **`TextStyle` třída** — nullable POCO s CSS cascade vzorem; `TextStyle.Resolve(parent)` → `ResolvedTextStyle` (struct se SkiaSharp helpery: `CreateFont`, `CreateTextPaint`, `CreateBgPaint`, `ToSKFontStyle`)
+- ✅ **TextElement migrace** — flat properties (`FontFamily`, `FontSize`, `FontStyle`, `FontWeight`, `HorizontalAlignment`, `VerticalAlignment`, `TextColor`) nahrazeny jedním `TextStyle Style`; odstraněny enumy `TextFontStyle` a `TextFontWeight` (→ `bool Bold`/`Italic`)
+- ✅ **TableElement migrace** — `HeaderFontWeight`/`HeaderBackgroundColor`/`HeaderTextColor` → `TextStyle? HeaderStyle`; `TableColumn.HeaderStyle`; `TableCell.FontWeight`/`TextColor`/`BackgroundColor`/`Alignment` → `TextStyle? Style`
+- ✅ **ScheduleElementBase migrace** — `FontFamily`/`FontSize`/`HeaderFontSize`/`HeaderBackgroundColor`/`HeaderForeColor` → `TextStyle DataStyle` + `TextStyle HeaderStyle`; `CopyScheduleBaseProperties` kopíruje `Clone()`
+- ✅ **StopListElement / DepartureGridElement / NotesLegendElement** — všechny reference aktualizovány na `DataStyle`/`HeaderStyle`
+- ✅ **PdfToTemplateConverter** — vytváří TextElement s `Style = new TextStyle { ... }`
+- ✅ **CacheAgendaProvider** — `TableCell` konstrukce přes `TextStyle? Style`
+- ✅ **`BackgroundColor` na base `TemplateElement`** — sdílená property pro všechny elementy
+- ✅ **`CopyBaseTo()` pattern** — eliminuje Clone() boilerplate (base properties se kopírují jedním voláním)
+- ⚠️ **Breaking JSON change** — flat text properties → composable `style`/`headerStyle`/`dataStyle` objekty; staré šablony se nenačtou
+
+---
+
 ## 2026-03-23 — Ověření parametrů šablony, fix PrintDialog export, auto-open PDF
 
 - ✅ **Fix: parametry nefungovaly v PrintDialog exportu** — `buildRealData` callback nevkládal parametry do DataContextu; C# rendering (HODINY_OD, CASOVA_OSA atd.) je nenašel → nyní merge přes `WithExtraValues()` po `GetData()`

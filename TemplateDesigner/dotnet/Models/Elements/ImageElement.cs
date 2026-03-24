@@ -101,19 +101,17 @@ public class ImageElement : TemplateElement
         .. GetPositionDescriptors()
     ];
 
-    public override TemplateElement Clone() => new ImageElement
+    public override TemplateElement Clone()
     {
-        Id = Guid.NewGuid(),
-        X = X, Y = Y, Width = Width, Height = Height,
-        ZIndex = ZIndex, IsLocked = IsLocked,
-        VisibilityExpression = VisibilityExpression,
-        CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-        GroupId = GroupId,
-        BorderColor = BorderColor, BorderWidth = BorderWidth,
-        ImageBase64 = ImageBase64,
-        DataField = DataField,
-        ScaleMode = ScaleMode
-    };
+        var clone = new ImageElement
+        {
+            ImageBase64 = ImageBase64,
+            DataField = DataField,
+            ScaleMode = ScaleMode
+        };
+        CopyBaseTo(clone);
+        return clone;
+    }
 }
 
 public enum ImageScaleMode

@@ -5,9 +5,6 @@ namespace TemplateDesigner.Models.Elements;
 
 public class RectangleElement : TemplateElement
 {
-    /// <summary>Barva výplně ve formátu #AARRGGBB. Průhledná = "#00FFFFFF".</summary>
-    public string FillColor { get; set; } = "#00FFFFFF";
-
     /// <summary>Barva okraje ve formátu #AARRGGBB.</summary>
     public string StrokeColor { get; set; } = "#FF000000";
 
@@ -18,9 +15,6 @@ public class RectangleElement : TemplateElement
     public float CornerRadius { get; set; } = 0f;
 
     [JsonIgnore]
-    public SKColor SkFillColor => SKColor.Parse(FillColor);
-
-    [JsonIgnore]
     public SKColor SkStrokeColor => SKColor.Parse(StrokeColor);
 
     public override void Render(RenderContext ctx)
@@ -29,9 +23,9 @@ public class RectangleElement : TemplateElement
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
         float rx = ctx.Px(CornerRadius), ry = rx;
 
-        if (SkFillColor.Alpha > 0)
+        if (SkBackgroundColor.Alpha > 0)
         {
-            using var fill = new SKPaint { Color = SkFillColor, IsAntialias = CornerRadius > 0 };
+            using var fill = new SKPaint { Color = SkBackgroundColor, IsAntialias = CornerRadius > 0 };
             if (CornerRadius > 0) ctx.Canvas.DrawRoundRect(rect, rx, ry, fill);
             else ctx.Canvas.DrawRect(rect, fill);
         }
@@ -47,7 +41,7 @@ public class RectangleElement : TemplateElement
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new ColorPropertyDescriptor { Label = "Výplň",       Group = "Vzhled", Get = () => FillColor,    Set = v => FillColor = v },
+        new ColorPropertyDescriptor { Label = "Výplň",       Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva okraje", Group = "Vzhled", Get = () => StrokeColor,  Set = v => StrokeColor = v },
         new FloatPropertyDescriptor { Label = "Tl. okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Zaoblení",    Group = "Vzhled", Get = () => CornerRadius, Set = v => CornerRadius = v, Min = 0, Max = 50, Unit = "mm" },
@@ -55,18 +49,15 @@ public class RectangleElement : TemplateElement
         .. GetPositionDescriptors()
     ];
 
-    public override TemplateElement Clone() => new RectangleElement
+    public override TemplateElement Clone()
     {
-        Id = Guid.NewGuid(),
-        X = X, Y = Y, Width = Width, Height = Height,
-        ZIndex = ZIndex, IsLocked = IsLocked,
-        VisibilityExpression = VisibilityExpression,
-        CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-        GroupId = GroupId,
-        BorderColor = BorderColor, BorderWidth = BorderWidth,
-        FillColor = FillColor,
-        StrokeColor = StrokeColor,
-        StrokeWidth = StrokeWidth,
-        CornerRadius = CornerRadius
-    };
+        var clone = new RectangleElement
+        {
+            StrokeColor = StrokeColor,
+            StrokeWidth = StrokeWidth,
+            CornerRadius = CornerRadius
+        };
+        CopyBaseTo(clone);
+        return clone;
+    }
 }

@@ -11,29 +11,10 @@ public class TextElement : TemplateElement
     /// </summary>
     public string Text { get; set; } = "";
 
-    public string FontFamily { get; set; } = "Arial";
-    public float FontSize { get; set; } = 10f;
-    public TextFontStyle FontStyle { get; set; } = TextFontStyle.Normal;
-    public TextFontWeight FontWeight { get; set; } = TextFontWeight.Normal;
-    public TextHorizontalAlignment HorizontalAlignment { get; set; } = TextHorizontalAlignment.Left;
-    public TextVerticalAlignment VerticalAlignment { get; set; } = TextVerticalAlignment.Top;
-
-    /// <summary>Barva textu ve formátu #AARRGGBB, např. "#FF000000" = černá.</summary>
-    public string TextColor { get; set; } = "#FF000000";
-
-    /// <summary>Barva pozadí ve formátu #AARRGGBB, např. "#00FFFFFF" = průhledná, "#FFFFFF00" = žlutá.</summary>
-    public string BackgroundColor { get; set; } = "#00FFFFFF";
+    /// <summary>Styl textu — font, barvy, zarovnání, řádkování, padding.</summary>
+    public TextStyle Style { get; set; } = TextStyle.CreateDefault();
 
     public bool WordWrap { get; set; } = true;
-
-    /// <summary>Řádkování jako násobek velikosti fontu (1.2 = 20% navíc). Použije se při WordWrap = true.</summary>
-    public float LineSpacing { get; set; } = 1.2f;
-
-    [JsonIgnore]
-    public SKColor SkTextColor => SKColor.Parse(TextColor);
-
-    [JsonIgnore]
-    public SKColor SkBackgroundColor => SKColor.Parse(BackgroundColor);
 
     /// <summary>
     /// Když Height = null a WordWrap = true, výška se dopočítá z textu.
@@ -48,31 +29,27 @@ public class TextElement : TemplateElement
         var resolvedText = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
         if (string.IsNullOrEmpty(resolvedText)) return;
 
+        var rs = Style.Resolve();
+
         // Dynamická výška: Height ?? dopočítaná z textu (pokud WordWrap)
         float heightMm = Height ?? (WordWrap ? CalculateTextHeight(resolvedText) : EffectiveDesignerHeight);
         var rect = ctx.ToCanvasRect(X, Y, Width, heightMm);
 
         // Pozadí (pokud není průhledné)
-        if (SkBackgroundColor.Alpha > 0)
+        using (var bgPaint = rs.CreateBgPaint())
         {
-            using var bgPaint = new SKPaint { Color = SkBackgroundColor, Style = SKPaintStyle.Fill };
-            ctx.Canvas.DrawRect(rect, bgPaint);
+            if (bgPaint is not null)
+                ctx.Canvas.DrawRect(rect, bgPaint);
         }
 
-        var typeface = SKTypeface.FromFamilyName(
-            FontFamily,
-            FontWeight == TextFontWeight.Bold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal,
-            SKFontStyleWidth.Normal,
-            FontStyle == TextFontStyle.Italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright)
-            ?? SKTypeface.Default;
-
-        // FontSize je v bodech (pt): 1pt = 0.3528mm → mm → px
         // V designeru (bez dat) omezit velikost fontu, aby placeholdery typu {NAZEV_POLE}
         // nepřetékaly — zobrazit čitelně místo ve skutečné velikosti.
-        float effectiveFontSize = ctx.Data is null ? Math.Min(FontSize, 10f) : FontSize;
-        float fontSizePx = ctx.Px(effectiveFontSize * 0.3528f);
+        float effectiveFontSize = ctx.Data is null ? Math.Min(rs.FontSize, 10f) : rs.FontSize;
+        float fontSizePx = ctx.Px(effectiveFontSize * ResolvedTextStyle.PtToMm);
+
+        var typeface = SKTypeface.FromFamilyName(rs.FontFamily, rs.ToSKFontStyle()) ?? SKTypeface.Default;
         using var font = new SKFont(typeface, fontSizePx);
-        using var paint = new SKPaint { Color = SkTextColor, IsAntialias = true };
+        using var paint = rs.CreateTextPaint();
 
         ctx.Canvas.Save();
         ctx.Canvas.ClipRect(rect);
@@ -81,11 +58,11 @@ public class TextElement : TemplateElement
         {
             float widthPx = ctx.Px(Width);
             var lines = TextWrapHelper.WrapText(resolvedText, font, widthPx);
-            float lineHeightPx = fontSizePx * LineSpacing;
+            float lineHeightPx = fontSizePx * rs.LineSpacing;
 
             // Vertikální zarovnání bloku řádků
             float totalTextHeight = lines.Count * lineHeightPx;
-            float yStart = VerticalAlignment switch
+            float yStart = rs.VAlign switch
             {
                 TextVerticalAlignment.Middle => rect.Top + (rect.Height - totalTextHeight) / 2 + fontSizePx,
                 TextVerticalAlignment.Bottom => rect.Bottom - totalTextHeight + fontSizePx,
@@ -95,7 +72,7 @@ public class TextElement : TemplateElement
             float yPx = yStart;
             foreach (var line in lines)
             {
-                float xPx = HorizontalAlignment switch
+                float xPx = rs.HAlign switch
                 {
                     TextHorizontalAlignment.Center => rect.Left + (widthPx - font.MeasureText(line)) / 2,
                     TextHorizontalAlignment.Right => rect.Right - font.MeasureText(line),
@@ -118,48 +95,37 @@ public class TextElement : TemplateElement
     [
         new StringPropertyDescriptor { Label = "Text",         Group = "Obsah",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },
 
-        new StringPropertyDescriptor { Label = "Rodina písma", Group = "Font",      Get = () => FontFamily,          Set = v => FontFamily = v },
-        new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => FontSize,            Set = v => FontSize = v,                               Min = 4, Max = 200, Unit = "pt" },
-        new EnumPropertyDescriptor   { Label = "Tučnost",       Group = "Font",      Get = () => FontWeight,          Set = v => FontWeight = (TextFontWeight)v,
-            Options = [("Normální", (object)TextFontWeight.Normal), ("Tučné", (object)TextFontWeight.Bold)] },
-        new EnumPropertyDescriptor   { Label = "Styl",          Group = "Font",      Get = () => FontStyle,           Set = v => FontStyle = (TextFontStyle)v,
-            Options = [("Normální", (object)TextFontStyle.Normal), ("Kurzíva", (object)TextFontStyle.Italic)] },
-        new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,            Set = v => WordWrap = v },
-        new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => LineSpacing,         Set = v => LineSpacing = v,                            Min = 0.8f, Max = 3f, Format = "0.0#" },
+        new StringPropertyDescriptor { Label = "Rodina písma", Group = "Font",      Get = () => Style.FontFamily ?? "Arial",  Set = v => Style.FontFamily = v },
+        new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => Style.FontSize ?? 10f,        Set = v => Style.FontSize = v,                 Min = 4, Max = 200, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Font",      Get = () => Style.Bold ?? false,          Set = v => Style.Bold = v },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Font",      Get = () => Style.Italic ?? false,        Set = v => Style.Italic = v },
+        new BoolPropertyDescriptor   { Label = "Podtržení",   Group = "Font",      Get = () => Style.Underline ?? false,     Set = v => Style.Underline = v },
+        new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,                     Set = v => WordWrap = v },
+        new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => Style.LineSpacing ?? 1.2f,    Set = v => Style.LineSpacing = v,               Min = 0.8f, Max = 3f, Format = "0.0#" },
 
-        new EnumPropertyDescriptor   { Label = "Vodorovně",     Group = "Zarovnání", Get = () => HorizontalAlignment, Set = v => HorizontalAlignment = (TextHorizontalAlignment)v,
+        new EnumPropertyDescriptor   { Label = "Vodorovně",     Group = "Zarovnání", Get = () => Style.HAlign ?? TextHorizontalAlignment.Left, Set = v => Style.HAlign = (TextHorizontalAlignment)v,
             Options = [("Vlevo", (object)TextHorizontalAlignment.Left), ("Na střed", (object)TextHorizontalAlignment.Center),
                        ("Vpravo", (object)TextHorizontalAlignment.Right), ("Do bloku", (object)TextHorizontalAlignment.Justify)] },
-        new EnumPropertyDescriptor   { Label = "Svisle",        Group = "Zarovnání", Get = () => VerticalAlignment,   Set = v => VerticalAlignment = (TextVerticalAlignment)v,
+        new EnumPropertyDescriptor   { Label = "Svisle",        Group = "Zarovnání", Get = () => Style.VAlign ?? TextVerticalAlignment.Top, Set = v => Style.VAlign = (TextVerticalAlignment)v,
             Options = [("Nahoře", (object)TextVerticalAlignment.Top), ("Na střed", (object)TextVerticalAlignment.Middle), ("Dole", (object)TextVerticalAlignment.Bottom)] },
 
-        new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Vzhled",    Get = () => TextColor,           Set = v => TextColor = v },
-        new ColorPropertyDescriptor  { Label = "Barva pozadí", Group = "Vzhled",    Get = () => BackgroundColor,     Set = v => BackgroundColor = v },
+        new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Vzhled",    Get = () => Style.TextColor ?? "#FF000000",     Set = v => Style.TextColor = v },
+        new ColorPropertyDescriptor  { Label = "Barva pozadí", Group = "Vzhled",    Get = () => Style.BackgroundColor ?? "#00FFFFFF", Set = v => Style.BackgroundColor = v },
 
         .. GetPositionDescriptors()
     ];
 
-    public override TemplateElement Clone() => new TextElement
+    public override TemplateElement Clone()
     {
-        Id = Guid.NewGuid(),
-        X = X, Y = Y, Width = Width, Height = Height,
-        ZIndex = ZIndex, IsLocked = IsLocked,
-        VisibilityExpression = VisibilityExpression,
-        CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-        GroupId = GroupId,
-        BorderColor = BorderColor, BorderWidth = BorderWidth,
-        Text = Text,
-        FontFamily = FontFamily,
-        FontSize = FontSize,
-        FontStyle = FontStyle,
-        FontWeight = FontWeight,
-        HorizontalAlignment = HorizontalAlignment,
-        VerticalAlignment = VerticalAlignment,
-        TextColor = TextColor,
-        BackgroundColor = BackgroundColor,
-        WordWrap = WordWrap,
-        LineSpacing = LineSpacing
-    };
+        var clone = new TextElement
+        {
+            Text = Text,
+            Style = Style.Clone(),
+            WordWrap = WordWrap,
+        };
+        CopyBaseTo(clone);
+        return clone;
+    }
 
     // ── Word wrap helpers ────────────────────────────────────────────────────
 
@@ -168,27 +134,22 @@ public class TextElement : TemplateElement
     {
         if (string.IsNullOrEmpty(text) || Width <= 0) return 8f;
 
-        var typeface = SKTypeface.FromFamilyName(
-            FontFamily,
-            FontWeight == TextFontWeight.Bold ? SKFontStyleWeight.Bold : SKFontStyleWeight.Normal,
-            SKFontStyleWidth.Normal,
-            FontStyle == TextFontStyle.Italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright)
-            ?? SKTypeface.Default;
+        var rs = Style.Resolve();
 
-        float fontSizeMm = FontSize * 0.3528f;
+        var typeface = SKTypeface.FromFamilyName(rs.FontFamily, rs.ToSKFontStyle()) ?? SKTypeface.Default;
+
+        float fontSizeMm = rs.FontSize * ResolvedTextStyle.PtToMm;
         float refMmToPx = 96f / 25.4f;
         float fontSizePx = fontSizeMm * refMmToPx;
         float widthPx = Width * refMmToPx;
 
         using var font = new SKFont(typeface, fontSizePx);
         var lines = TextWrapHelper.WrapText(text, font, widthPx);
-        float lineHeightMm = fontSizeMm * LineSpacing;
+        float lineHeightMm = fontSizeMm * rs.LineSpacing;
 
         return Math.Max(lineHeightMm * lines.Count + fontSizeMm * 0.3f, fontSizeMm);
     }
 }
 
-public enum TextFontStyle { Normal, Italic }
-public enum TextFontWeight { Normal, Bold }
 public enum TextHorizontalAlignment { Left, Center, Right, Justify }
 public enum TextVerticalAlignment { Top, Middle, Bottom }
