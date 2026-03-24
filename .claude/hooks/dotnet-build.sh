@@ -22,9 +22,9 @@ OUTPUT=$(dotnet build --nologo -v q 2>&1)
 EXIT_CODE=$?
 
 if [ $EXIT_CODE -ne 0 ]; then
-  # Feed build errors back to Claude via stderr
-  echo "dotnet build FAILED after editing $FILE_PATH:" >&2
-  echo "$OUTPUT" | grep -E "(error |warning )" | head -20 >&2
+  # Feed build errors to stdout — Claude sees stdout as context and can self-correct
+  echo "dotnet build FAILED after editing $FILE_PATH:"
+  echo "$OUTPUT" | grep -E "(error |warning )" | head -20
 fi
 
 # Always exit 0 — don't block the edit, just inform Claude
