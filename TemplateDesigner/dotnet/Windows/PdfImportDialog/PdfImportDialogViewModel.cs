@@ -31,6 +31,27 @@ public class PdfImportDialogViewModel : EDViewModel
     private bool _enableDebug;
     public bool EnableDebug { get => _enableDebug; set => Set(ref _enableDebug, value); }
 
+    // ── Typ importu ───────────────────────────────────────────────────────
+    private ScheduleImportType _scheduleImportType = ScheduleImportType.None;
+    public ScheduleImportType ScheduleImportType
+    {
+        get => _scheduleImportType;
+        set
+        {
+            Set(ref _scheduleImportType, value);
+            OnPropertyChanged(nameof(IsImportGeneral));
+            OnPropertyChanged(nameof(IsImportZastavkovyJr));
+            OnPropertyChanged(nameof(IsGraphicsModeVisible));
+        }
+    }
+
+    public bool IsImportGeneral { get => ScheduleImportType == ScheduleImportType.None; set { if (value) ScheduleImportType = ScheduleImportType.None; } }
+    public bool IsImportZastavkovyJr { get => ScheduleImportType == ScheduleImportType.ZastavkovyJrMhd; set { if (value) ScheduleImportType = ScheduleImportType.ZastavkovyJrMhd; } }
+
+    /// <summary>Režim grafiky je relevantní jen pro obecný import — JŘ import grafiku ignoruje.</summary>
+    public bool IsGraphicsModeVisible => ScheduleImportType == ScheduleImportType.None;
+
+    // ── Režim grafiky ───────────────────────────────────────────────────────
     private GraphicsMergeMode _mergeMode = GraphicsMergeMode.LinesOnly;
     public GraphicsMergeMode MergeMode
     {
@@ -131,6 +152,7 @@ public class PdfImportDialogViewModel : EDViewModel
             string pdfPath = PdfFilePath;
             bool enableDebug = EnableDebug;
             var mergeMode = MergeMode;
+            var scheduleType = ScheduleImportType;
             var pagesArr = pages;
 
             var (template, debugLog) = await Task.Run(() =>
@@ -138,7 +160,8 @@ public class PdfImportDialogViewModel : EDViewModel
                 var converter = new PdfToTemplateConverter
                 {
                     EnableDebug = enableDebug,
-                    MergeMode = mergeMode
+                    MergeMode = mergeMode,
+                    ScheduleImportType = scheduleType
                 };
                 var result = converter.Convert(pdfPath, pagesArr);
                 return (result, converter.DebugLog);
