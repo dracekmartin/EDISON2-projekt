@@ -2,6 +2,8 @@
 
 Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP (MLRest).
 
+Aplikační projekty (EDISONMAIN2, TemplateDesigner) buildí do `C:\Edison\` (`OutputPath` v .csproj).
+
 Nové features pokrývej xUnit testy (`EDControls.Tests/`, `EDISONMAIN2.Tests/`).
 
 ## Struktura repozitáře
