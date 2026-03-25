@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-24
+**Datum poslední aktualizace:** 2026-03-25
 
 ### 🎯 Aktuální focus
 
@@ -68,6 +68,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Redistribuce výšek sekcí** — při smazání sekce se uvolněná výška proporcionálně rozdělí mezi zbývající; při přidání sekce se stávající proporcionálně zmenší; `AddSectionCommand` pro undo/redo
 - **Výchozí nastavení nových elementů** — TextElement bez placeholder textu, zarovnání Center/Middle; všechny elementy: černý rámeček 0.1mm (jen nové — model defaults zůstávají pro zpětnou kompatibilitu JSON)
 - **DepartureGrid: HourColumnPerGroup** — `HourColumnPerGroup=true` zobrazí sloupec hodin u každé skupiny dnů (nejen vlevo)
+- **AI-enhanced PDF import** — dvoustupňový pipeline: heuristiky (geometrie) → volitelný AI enrichment (sémantika); `AiImportEnricher` s kontextovými prompty per `ScheduleImportType`; `EnrichedImportResult` (TextMappings s confidence, DayGroupValidations, DetectionValidation); sdílená `AnthropicApiClient.CallApiAsync()` (claude-haiku-4-5); auto-apply DB polí při confidence >= 0.7; graceful fallback při chybějícím API klíči nebo selhání AI; UI checkbox + agenda dropdown v `PdfImportDialog`
 
 ### 🐛 Známé problémy
 

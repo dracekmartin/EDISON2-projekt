@@ -132,7 +132,17 @@ public static class ScheduleDetector
 
         // Krok 6: Najdi zastávky — texty vlevo od prvního hodinového sloupce
         var stopWords = FindStopNames(page.Words, primaryHourCol.x, minuteRows);
-        float stopAreaLeft = stopWords.Count > 0 ? stopWords.Min(w => w.X) : 0;
+        // Sloupec jízdních dob (travel times): čísla vlevo od zastávek, zarovnaná s řádky mřížky
+        var travelTimeWords = FindTravelTimeNumbers(page.Words, primaryHourCol.x, minuteRows);
+        // "min." label nad sloupcem jízdních dob — zahrnout do oblasti
+        var minLabel = page.Words.FirstOrDefault(w =>
+            w.Text.Equals("min.", StringComparison.OrdinalIgnoreCase)
+            && w.X < primaryHourCol.x);
+        float stopAreaLeft = Math.Min(
+            stopWords.Count > 0 ? stopWords.Min(w => w.X) : primaryHourCol.x,
+            travelTimeWords.Count > 0 ? travelTimeWords.Min(w => w.X) : primaryHourCol.x);
+        if (minLabel is not null)
+            stopAreaLeft = Math.Min(stopAreaLeft, minLabel.X);
         float stopAreaRight = primaryHourCol.x;
         float stopFontSize = stopWords.Count > 0
             ? stopWords.Average(w => w.FontSizePt) : 8f;
@@ -164,10 +174,15 @@ public static class ScheduleDetector
         float gridLeft = primaryHourCol.x;
         float gridTopWithHeader = gridTop - headerHeight;
 
+        // StopList Y začíná buď od gridTop nebo od "min." labelu (pokud je výš)
+        float stopTop = gridTop;
+        if (minLabel is not null)
+            stopTop = Math.Min(stopTop, minLabel.Y);
+
         var stopListRegion = new DetectedRegion(
-            stopAreaLeft, gridTop,
+            stopAreaLeft, stopTop,
             stopAreaRight - stopAreaLeft,
-            gridBottom - gridTop);
+            gridBottom - stopTop);
 
         var departureGridRegion = new DetectedRegion(
             gridLeft, gridTopWithHeader,
@@ -176,7 +191,7 @@ public static class ScheduleDetector
 
         // Unmapped content
         var textBlocks = PdfTextGrouper.GroupWords(page.Words);
-        var mappedYRange = (top: Math.Min(gridTopWithHeader, gridTop) - Tolerance,
+        var mappedYRange = (top: Math.Min(gridTopWithHeader, stopTop) - Tolerance,
                            bottom: (notesRegion?.Y + notesRegion?.Height ?? gridBottom) + Tolerance);
         var mappedXRange = (left: stopAreaLeft - Tolerance,
                            right: minuteAreaRight + Tolerance);
@@ -184,6 +199,28 @@ public static class ScheduleDetector
         var unmappedTexts = textBlocks
             .Where(b => !IsInRange(b.X, b.Y, b.Width, b.Height, mappedXRange, mappedYRange))
             .ToList();
+
+        // Detekce poznámkových párů (symbol + popis) — typicky "D na znamení", "x přestup na žel."
+        // Tyto texty patří do NotesLegend, ne jako samostatné TextElementy.
+        var noteLegendBlocks = FindNoteLegendBlocks(unmappedTexts);
+        if (noteLegendBlocks.Count > 0)
+        {
+            unmappedTexts = unmappedTexts.Except(noteLegendBlocks).ToList();
+
+            // Rozšířit notes region aby zahrnul legendové bloky
+            if (notesRegion is not null || noteLegendBlocks.Count >= 2)
+            {
+                float nLeft = notesRegion?.X ?? noteLegendBlocks.Min(b => b.X);
+                float nTop = notesRegion?.Y ?? noteLegendBlocks.Min(b => b.Y);
+                float nRight = Math.Max(
+                    notesRegion is not null ? notesRegion.X + notesRegion.Width : 0,
+                    noteLegendBlocks.Max(b => b.X + b.Width));
+                float nBottom = Math.Max(
+                    notesRegion is not null ? notesRegion.Y + notesRegion.Height : 0,
+                    noteLegendBlocks.Max(b => b.Y + b.Height));
+                notesRegion = new DetectedRegion(nLeft, nTop, nRight - nLeft, nBottom - nTop);
+            }
+        }
 
         var unmappedImages = page.Images
             .Where(i => !IsInRange(i.X, i.Y, i.Width, i.Height, mappedXRange, mappedYRange))
@@ -479,6 +516,31 @@ public static class ScheduleDetector
     }
 
     /// <summary>
+    /// Najde čísla jízdních dob (travel times) vlevo od hodinového sloupce, zarovnaná s řádky mřížky.
+    /// Tyto čísla patří do StopList oblasti, ale nejsou názvy zastávek.
+    /// </summary>
+    private static List<ExtractedWord> FindTravelTimeNumbers(
+        List<ExtractedWord> words, float hourColumnLeft,
+        List<(float y, float height, List<ExtractedWord> words)> minuteRows)
+    {
+        float gridTop = minuteRows.First().y - Tolerance;
+        float gridBottom = minuteRows.Last().y + minuteRows.Last().height + Tolerance;
+
+        return words
+            .Where(w =>
+            {
+                // Vlevo od hodinového sloupce
+                if (w.X + w.Width > hourColumnLeft) return false;
+                // Ve vertikálním rozsahu mřížky
+                if (w.Y < gridTop || w.Y > gridBottom) return false;
+                // Musí být číslo (1-2 cifry) — jízdní doby jsou krátká čísla
+                if (w.Text.Length > 2 || !int.TryParse(w.Text, out _)) return false;
+                return true;
+            })
+            .ToList();
+    }
+
+    /// <summary>
     /// Odhadne šířky sloupců zastávkové tabulky z pozic textů.
     /// Detekuje sloupec s čísly (jízdní doba) a sloupec s texty (názvy).
     /// </summary>
@@ -553,10 +615,12 @@ public static class ScheduleDetector
             float colWidth = colRight - colLeft;
 
             // Najdi slova v záhlaví zóně tohoto sloupce
+            // X rozsah: text musí PŘEKRÝVAT oblast sloupce (ne být celý uvnitř)
+            // — záhlaví jako "Sobota, neděle a státní svátky" může přesahovat více sloupců
             var headerWords = words
                 .Where(w =>
                     w.Y >= headerSearchTop && w.Y < headerSearchBottom
-                    && w.X >= colLeft - 5f && w.X + w.Width <= colRight + 5f
+                    && w.X + w.Width > colLeft - 2f && w.X < colRight + 2f // overlap, ne containment
                     && w.IsBold // záhlaví skupin je typicky tučné
                     && w.FontSizePt >= 5f && w.FontSizePt <= 14f)
                 .OrderBy(w => w.Y).ThenBy(w => w.X)
@@ -564,11 +628,11 @@ public static class ScheduleDetector
 
             if (headerWords.Count == 0)
             {
-                // Fallback: zkus i ne-tučná slova, ale musí být v úzkém pásu
+                // Fallback: zkus i ne-tučná slova (overlap test)
                 headerWords = words
                     .Where(w =>
                         w.Y >= gridTop - 8f && w.Y < headerSearchBottom
-                        && w.X >= colLeft - 3f && w.X + w.Width <= colRight + 3f
+                        && w.X + w.Width > colLeft - 2f && w.X < colRight + 2f
                         && w.FontSizePt >= 5f && w.FontSizePt <= 14f)
                     .OrderBy(w => w.Y).ThenBy(w => w.X)
                     .ToList();
@@ -588,12 +652,68 @@ public static class ScheduleDetector
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Test zda text patří do JŘ oblasti. Používá overlap pro X (text může přesahovat přes oblast,
+    /// typicky záhlaví skupin dnů) a center-point pro Y.
+    /// </summary>
     private static bool IsInRange(float x, float y, float w, float h,
         (float left, float right) xRange, (float top, float bottom) yRange)
     {
-        float cx = x + w / 2f;
+        // X: overlap — text začíná v oblasti nebo do ní zasahuje
+        bool xOverlap = x <= xRange.right + 5f && x + w >= xRange.left;
+        // Y: center point v oblasti
         float cy = y + h / 2f;
-        return cx >= xRange.left && cx <= xRange.right
-            && cy >= yRange.top && cy <= yRange.bottom;
+        bool yInRange = cy >= yRange.top && cy <= yRange.bottom;
+        return xOverlap && yInRange;
+    }
+
+    /// <summary>
+    /// Detekuje poznámkové páry v unmapped textech — krátký symbol (1-2 znaky: D, x, {, H, F)
+    /// následovaný popisným textem na stejném řádku. Typicky "D" + "na znamení", "x" + "přestup na žel.".
+    /// </summary>
+    private static List<ExtractedTextBlock> FindNoteLegendBlocks(List<ExtractedTextBlock> unmappedTexts)
+    {
+        var result = new List<ExtractedTextBlock>();
+        var used = new HashSet<int>();
+
+        for (int i = 0; i < unmappedTexts.Count; i++)
+        {
+            if (used.Contains(i)) continue;
+            var symbol = unmappedTexts[i];
+
+            // Symbol = 1-2 znaky, ne číslo, ne běžné slovo
+            if (symbol.Text.Length > 2) continue;
+            if (int.TryParse(symbol.Text, out _)) continue;
+
+            // Hledej popisný text na stejném řádku (Y blízko, X napravo od symbolu)
+            for (int j = 0; j < unmappedTexts.Count; j++)
+            {
+                if (i == j || used.Contains(j)) continue;
+                var desc = unmappedTexts[j];
+
+                // Popis musí být delší než symbol
+                if (desc.Text.Length <= 2) continue;
+
+                // Stejný řádek — Y souřadnice blízko sebe (tolerance 2mm)
+                float yDiff = Math.Abs(symbol.Y - desc.Y);
+                if (yDiff > 2f) continue;
+
+                // Popis napravo od symbolu (nebo mírně překrývající), vzdálenost max 10mm
+                float gap = desc.X - (symbol.X + symbol.Width);
+                if (gap < -1f || gap > 10f) continue;
+
+                // Podobná velikost fontu (tolerance 2pt)
+                if (Math.Abs(symbol.FontSizePt - desc.FontSizePt) > 2f) continue;
+
+                // Nalezený pár — obojí patří do legendy poznámek
+                result.Add(symbol);
+                result.Add(desc);
+                used.Add(i);
+                used.Add(j);
+                break; // symbol má jen jeden popis
+            }
+        }
+
+        return result;
     }
 }

@@ -677,7 +677,8 @@ public partial class MainWindow : Window
     private void MenuImportPdf_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var vm = new PdfImportDialogViewModel();
+        var apiKey = Config.AppSettings.Current?.AiAssistant.AnthropicApiKey;
+        var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey);
         var dialog = new PdfImportDialog(vm) { Owner = this };
 
         if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)

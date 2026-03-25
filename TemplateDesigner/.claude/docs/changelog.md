@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-03-25 — AI-enhanced PDF import pro JŘ šablony
+
+**AI enrichment pipeline:**
+- ✅ **`EnrichedImportResult`** — datový model: `TextMapping` (OriginalText → DbField/PlaceholderText s Confidence), `DayGroupValidation`, `DetectionValidation`
+- ✅ **`AiImportEnricher`** — AI služba s kontextovými prompty per `ScheduleImportType`; claude-haiku-4-5; strukturovaný user prompt z detekce + DataSchema; JSON response parsing; debug log
+- ✅ **Refaktor `AnthropicApiClient`** — sdílená `CallApiAsync()` statická metoda; `GenerateTemplateAsync()` deleguje
+- ✅ **`PdfImportDialogViewModel`** — AI checkbox, agenda dropdown, 3-fázový workflow (heuristiky → AI → apply); graceful fallback; `ApplyEnrichment` odstraní dekorativní texty + nahradí statické za placeholdery
+- ✅ **`PdfImportDialog.xaml`** — sekce "AI obohacení" (viditelná jen při JŘ importu): checkbox s API key detekcí, ComboBox agend
+- ✅ **MainWindow wiring** — předání `SchemaProvider` + `AnthropicApiKey` do dialogu
+
+**Vylepšení heuristického importu:**
+- ✅ **`ScheduleElementBuilder`** — detekce rámečků kolem textů (`FindEnclosingRectangle`); placeholder loga z prázdných obdélníků v hlavičce; Center/Middle zarovnání textů; NotesLegend s dynamickou výškou těsně pod DepartureGrid
+- ✅ **`ScheduleDetector`** — detekce jízdních dob (`FindTravelTimeNumbers`); detekce poznámkových párů (`FindNoteLegendBlocks`); overlap test pro záhlaví skupin dnů; rozšíření notes regionu o legendové bloky
+- ✅ **`PdfToTemplateConverter`** — margin detection s `ScheduleDetectionResult` (řeší dynamické elementy s `Height=null`); správná výška sekce (přesně = tisknutelná oblast)
+- ✅ **`TextElement` bug fix** — jednořádkový režim (WordWrap=false) nyní respektuje HAlign/VAlign
+- ✅ **API klíč** — přesunut z `appsettings.json` do `appsettings.local.json` (gitignored)
+
+---
+
 ## 2026-03-24 — Proporcionální škálování, redistribuce sekcí, výchozí nastavení
 
 - ✅ **Proporcionální škálování šablony** — `ScaleTemplateCommand` škáluje celou šablonu (PageSize, margins, sekce, elementy); `ApplyScale(float)` virtual metoda na všech elementech s override pro specifické mm/pt properties; dropdown v toolbaru (50%–200%); undo přes inverzní škálu

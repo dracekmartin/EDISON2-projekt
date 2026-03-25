@@ -1,13 +1,38 @@
 using System.IO;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Schema;
 using TemplateDesigner.PdfImport;
+using TemplateDesigner.Services;
 using UglyToad.PdfPig;
 
 namespace TemplateDesigner;
 
 public class PdfImportDialogViewModel : EDViewModel
 {
+    private readonly IDataSchemaProvider? _schemaProvider;
+    private readonly string? _apiKey;
+
+    public PdfImportDialogViewModel(IDataSchemaProvider? schemaProvider = null, string? apiKey = null)
+    {
+        _schemaProvider = schemaProvider;
+        _apiKey = apiKey;
+
+        // Načíst dostupné agendy pro dropdown
+        if (schemaProvider is not null)
+        {
+            try { AvailableAgendas = schemaProvider.GetAvailableAgendas().ToList(); }
+            catch { /* Caché nedostupná */ }
+        }
+
+        // Předvybrat první agendu
+        if (AvailableAgendas.Count > 0)
+            SelectedAgendaCode = AvailableAgendas[0].Code;
+
+        // AI enrichment je dostupný pokud máme API klíč
+        HasApiKey = !string.IsNullOrEmpty(apiKey);
+    }
+
     private string _pdfFilePath = "";
     public string PdfFilePath
     {
@@ -42,6 +67,7 @@ public class PdfImportDialogViewModel : EDViewModel
             OnPropertyChanged(nameof(IsImportGeneral));
             OnPropertyChanged(nameof(IsImportZastavkovyJr));
             OnPropertyChanged(nameof(IsGraphicsModeVisible));
+            OnPropertyChanged(nameof(IsAiSectionVisible));
         }
     }
 
@@ -50,6 +76,23 @@ public class PdfImportDialogViewModel : EDViewModel
 
     /// <summary>Režim grafiky je relevantní jen pro obecný import — JŘ import grafiku ignoruje.</summary>
     public bool IsGraphicsModeVisible => ScheduleImportType == ScheduleImportType.None;
+
+    // ── AI obohacení ──────────────────────────────────────────────────────
+
+    private bool _useAiEnrichment;
+    public bool UseAiEnrichment { get => _useAiEnrichment; set => Set(ref _useAiEnrichment, value); }
+
+    /// <summary>Máme API klíč z appsettings.json?</summary>
+    public bool HasApiKey { get; }
+
+    /// <summary>Sekce AI obohacení je viditelná jen při JŘ importu.</summary>
+    public bool IsAiSectionVisible => ScheduleImportType != ScheduleImportType.None;
+
+    /// <summary>Dostupné agendy pro dropdown.</summary>
+    public List<AgendaInfo> AvailableAgendas { get; } = [];
+
+    private string _selectedAgendaCode = "";
+    public string SelectedAgendaCode { get => _selectedAgendaCode; set => Set(ref _selectedAgendaCode, value); }
 
     // ── Režim grafiky ───────────────────────────────────────────────────────
     private GraphicsMergeMode _mergeMode = GraphicsMergeMode.LinesOnly;
@@ -155,17 +198,58 @@ public class PdfImportDialogViewModel : EDViewModel
             var scheduleType = ScheduleImportType;
             var pagesArr = pages;
 
-            var (template, debugLog) = await Task.Run(() =>
+            PdfToTemplateConverter converter = null!;
+            var template = await Task.Run(() =>
             {
-                var converter = new PdfToTemplateConverter
+                converter = new PdfToTemplateConverter
                 {
                     EnableDebug = enableDebug,
                     MergeMode = mergeMode,
                     ScheduleImportType = scheduleType
                 };
-                var result = converter.Convert(pdfPath, pagesArr);
-                return (result, converter.DebugLog);
+                return converter.Convert(pdfPath, pagesArr);
             });
+
+            // AI enrichment — pokud zapnutý a máme API klíč a detekce proběhla
+            string? aiDebugLog = null;
+            if (UseAiEnrichment && !string.IsNullOrEmpty(_apiKey)
+                && scheduleType != ScheduleImportType.None
+                && converter.LastDetectionResult is { } detection
+                && detection.Confidence >= 0.5f
+                && converter.LastExtractedPages.Count > 0)
+            {
+                StatusText = "AI analyzuje strukturu...";
+                var enricher = new AiImportEnricher();
+                try
+                {
+                    var schema = !string.IsNullOrEmpty(SelectedAgendaCode)
+                        ? _schemaProvider?.GetSchema(SelectedAgendaCode)
+                        : null;
+
+                    var enrichment = await enricher.EnrichAsync(
+                        detection, converter.LastExtractedPages[0], schema, scheduleType, _apiKey);
+
+                    if (enrichment is not null)
+                    {
+                        ApplyEnrichment(template, enrichment);
+                        int mappedCount = enrichment.TextMappings.Count(m => m.DbField is not null && m.Confidence >= 0.7f);
+                        StatusText = $"AI: {mappedCount} polí namapováno";
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Graceful fallback — AI selhala, pokračujeme bez enrichmentu
+                    StatusText = $"AI nedostupná ({ex.Message}), pokračuji bez obohacení";
+                }
+                finally
+                {
+                    aiDebugLog = enricher.DebugLog;
+                }
+            }
+
+            // Nastavit agendu na šabloně pokud importujeme JŘ
+            if (scheduleType != ScheduleImportType.None && !string.IsNullOrEmpty(SelectedAgendaCode))
+                template.AgendaCode = SelectedAgendaCode;
 
             ImportedTemplate = template;
 
@@ -180,13 +264,35 @@ public class PdfImportDialogViewModel : EDViewModel
                     "Upozornění");
             }
 
-            // Uložit debug log vedle PDF
+            // Uložit debug logy vedle PDF
+            var debugLog = converter.DebugLog;
+            var savedLogPaths = new List<string>();
+
             if (enableDebug && debugLog is not null)
             {
                 var logPath = Path.ChangeExtension(pdfPath, ".import-debug.txt");
                 await File.WriteAllTextAsync(logPath, debugLog);
-                StatusText = $"Import dokončen: {elementCount} elementů. Debug log: {Path.GetFileName(logPath)}";
-                RequestShowInfo?.Invoke($"Debug log uložen do:\n{logPath}", "Debug");
+                savedLogPaths.Add(logPath);
+            }
+
+            // AI debug log se ukládá VŽDY když AI enrichment proběhl (i bez debug checkboxu)
+            if (aiDebugLog is not null)
+            {
+                var aiLogPath = Path.ChangeExtension(pdfPath, ".ai-debug.txt");
+                await File.WriteAllTextAsync(aiLogPath, aiDebugLog);
+                savedLogPaths.Add(aiLogPath);
+            }
+
+            if (savedLogPaths.Count > 0)
+            {
+                var fileNames = string.Join(", ", savedLogPaths.Select(Path.GetFileName));
+                StatusText = $"Import dokončen: {elementCount} elementů. Debug: {fileNames}";
+                RequestShowInfo?.Invoke($"Debug logy uloženy:\n{string.Join("\n", savedLogPaths)}", "Debug");
+            }
+            else if (StatusText.StartsWith("AI"))
+            {
+                // Zachovat AI status a doplnit celkový výsledek
+                StatusText += $" | Import: {template.Sections.Count} sekcí, {elementCount} elementů";
             }
             else
             {
@@ -203,6 +309,39 @@ public class PdfImportDialogViewModel : EDViewModel
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Aplikuje AI enrichment na importovanou šablonu.
+    /// Nahradí statické texty za placeholdery kde AI navrhla mapování s dostatečnou confidence.
+    /// </summary>
+    private static void ApplyEnrichment(Template template, EnrichedImportResult enrichment)
+    {
+        foreach (var section in template.Sections)
+        {
+            // Odebrat dekorativní texty (pomlčky, oddělovače) označené AI
+            section.Elements.RemoveAll(el =>
+            {
+                if (el is not Models.Elements.TextElement txt) return false;
+                var mapping = enrichment.TextMappings.FirstOrDefault(m =>
+                    string.Equals(m.OriginalText, txt.Text, StringComparison.OrdinalIgnoreCase));
+                return mapping is not null
+                    && string.Equals(mapping.Role, "decoration", StringComparison.OrdinalIgnoreCase)
+                    && mapping.DbField is null;
+            });
+
+            // Nahradit statické texty za placeholdery
+            foreach (var element in section.Elements)
+            {
+                if (element is not Models.Elements.TextElement textEl) continue;
+
+                var mapping = enrichment.TextMappings.FirstOrDefault(m =>
+                    string.Equals(m.OriginalText, textEl.Text, StringComparison.OrdinalIgnoreCase));
+
+                if (mapping?.PlaceholderText is not null && mapping.Confidence >= 0.7f)
+                    textEl.Text = mapping.PlaceholderText;
+            }
         }
     }
 }

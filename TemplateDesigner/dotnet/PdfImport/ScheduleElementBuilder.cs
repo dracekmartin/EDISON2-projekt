@@ -13,12 +13,14 @@ public static class ScheduleElementBuilder
     /// <summary>
     /// Z detekovaného layoutu vytvoří sekci s JŘ elementy + generic TextElement pro nezařazený obsah.
     /// Souřadnice jsou absolutní (v mm od levého horního rohu stránky) — volající posune o marginy.
+    /// Pokud je k dispozici AI enrichment, aplikuje mapování textů na DB pole.
     /// </summary>
     public static List<TemplateElement> BuildElements(
         ScheduleDetectionResult detection,
         ExtractedPage page,
         float marginLeft,
-        float marginTop)
+        float marginTop,
+        EnrichedImportResult? enrichment = null)
     {
         var elements = new List<TemplateElement>();
         int zIndex = 0;
@@ -91,39 +93,80 @@ public static class ScheduleElementBuilder
             elements.Add(grid);
         }
 
-        // 3. NotesLegendElement
+        // 3. NotesLegendElement — těsně pod DepartureGrid
         if (detection.NotesRegion is { } notesReg)
         {
+            float noteLineH = Math.Max(detection.DataRowHeight - 1, 3f);
+            // Pozice: těsně pod DepartureGrid
+            float gridBottom = detection.DepartureGridRegion is { } gr
+                ? gr.Y + gr.Height - marginTop
+                : notesReg.Y - marginTop;
+            float notesY = gridBottom + 0.5f;
+
             var notes = new NotesLegendElement
             {
                 Id = Guid.NewGuid(),
                 X = notesReg.X - marginLeft,
-                Y = notesReg.Y - marginTop,
+                Y = notesY,
                 Width = notesReg.Width,
-                Height = notesReg.Height,
+                // Dynamická výška — print engine dopočítá z počtu poznámek
+                Height = null,
                 ZIndex = zIndex++,
                 NoteFontSize = Math.Max(detection.MinuteFontSizePt - 1, 6f),
-                NoteLineHeight = Math.Max(detection.DataRowHeight - 1, 3f),
+                NoteLineHeight = noteLineH,
             };
             elements.Add(notes);
         }
 
-        // 4. Nezařazené texty → generic TextElement
+        // 4. Nezařazené texty → generic TextElement (s AI mapováním pokud dostupné)
         foreach (var block in detection.UnmappedTexts)
         {
             float fontHeightMm = block.FontSizePt * 0.3528f;
             int lineCount = block.Text.Count(c => c == '\n') + 1;
             float minHeight = fontHeightMm * 1.4f * lineCount;
 
+            // AI enrichment: nahradit statický text placeholderem pokud AI navrhla mapování
+            // Texty s rolí "decoration" přeskočit — jsou to oddělovače (pomlčky apod.)
+            string displayText = block.Text;
+            if (enrichment is not null)
+            {
+                var mapping = FindMapping(enrichment.TextMappings, block.Text);
+                if (mapping is not null && string.Equals(mapping.Role, "decoration", StringComparison.OrdinalIgnoreCase)
+                    && mapping.DbField is null)
+                    continue; // přeskočit dekorativní text (pomlčky, oddělovače)
+
+                if (mapping?.PlaceholderText is not null && mapping.Confidence >= 0.7f)
+                    displayText = mapping.PlaceholderText;
+            }
+
+            // Najít obdélník z PDF, který obklopuje text → rámeček + rozšířit element
+            float elX = block.X - marginLeft;
+            float elY = Math.Max(0, block.Y - marginTop - fontHeightMm * 0.2f);
+            float elW = Math.Max(block.Width, fontHeightMm * 2);
+            float elH = Math.Max(block.Height, minHeight);
+            string borderColor = "#00FFFFFF";
+            float borderWidth = 0f;
+
+            var enclosingRect = FindEnclosingRectangle(page.Rectangles, block);
+            if (enclosingRect is not null)
+            {
+                elX = enclosingRect.X - marginLeft;
+                elY = enclosingRect.Y - marginTop;
+                elW = enclosingRect.Width;
+                elH = enclosingRect.Height;
+                borderColor = enclosingRect.StrokeColorHex ?? "#FF000000";
+                borderWidth = Math.Clamp(enclosingRect.StrokeWidth, 0.1f, 0.5f);
+            }
+
             elements.Add(new TextElement
             {
                 Id = Guid.NewGuid(),
-                X = block.X - marginLeft,
-                Y = Math.Max(0, block.Y - marginTop - fontHeightMm * 0.2f),
-                Width = Math.Max(block.Width, fontHeightMm * 2),
-                Height = Math.Max(block.Height, minHeight),
+                X = elX,
+                Y = Math.Max(0, elY),
+                Width = elW,
+                Height = elH,
                 ZIndex = zIndex++,
-                Text = block.Text,
+                Text = displayText,
                 Style = new TextStyle
                 {
                     FontFamily = block.FontFamily,
@@ -131,8 +174,13 @@ public static class ScheduleElementBuilder
                     Bold = block.IsBold,
                     Italic = block.IsItalic,
                     TextColor = block.ColorHex,
+                    HAlign = TextHorizontalAlignment.Center,
+                    VAlign = TextVerticalAlignment.Middle,
                 },
-                WordWrap = block.Text.Contains('\n')
+                WordWrap = block.Text.Contains('\n'),
+                BorderColor = borderColor,
+                BorderWidth = borderWidth,
+                BackgroundColor = enclosingRect?.FillColorHex ?? "#00FFFFFF",
             });
         }
 
@@ -149,6 +197,49 @@ public static class ScheduleElementBuilder
                 ZIndex = zIndex++,
                 ImageBase64 = img.Base64Png
             });
+        }
+
+        // 6. Prázdné obdélníky v hlavičce → ImageElement placeholder (pro loga)
+        // Obdélníky nad JŘ oblastí, které neobsahují žádný unmapped text = pravděpodobně logo
+        float jrTop = Math.Min(
+            detection.StopListRegion?.Y ?? float.MaxValue,
+            detection.DepartureGridRegion?.Y ?? float.MaxValue);
+        if (jrTop < float.MaxValue)
+        {
+            var textRects = new HashSet<ExtractedRectangle>(); // obdélníky již použité pro texty
+            foreach (var block in detection.UnmappedTexts)
+            {
+                var encl = FindEnclosingRectangle(page.Rectangles, block);
+                if (encl is not null) textRects.Add(encl);
+            }
+
+            foreach (var rect in page.Rectangles)
+            {
+                // Jen obdélníky nad JŘ oblastí
+                if (rect.Y + rect.Height > jrTop) continue;
+                // Minimální rozumná velikost pro logo/obrázek (5×5mm)
+                if (rect.Width < 5f || rect.Height < 5f) continue;
+                // Přeskočit obdélníky již přiřazené textu
+                if (textRects.Contains(rect)) continue;
+                // Přeskočit pokud obdélník obsahuje nějaký text
+                bool containsText = detection.UnmappedTexts.Any(t =>
+                    t.X >= rect.X - 1f && t.Y >= rect.Y - 1f
+                    && t.X + t.Width <= rect.X + rect.Width + 1f
+                    && t.Y + t.Height <= rect.Y + rect.Height + 1f);
+                if (containsText) continue;
+
+                elements.Add(new ImageElement
+                {
+                    Id = Guid.NewGuid(),
+                    X = Math.Max(0, rect.X - marginLeft),
+                    Y = Math.Max(0, rect.Y - marginTop),
+                    Width = rect.Width,
+                    Height = rect.Height,
+                    ZIndex = zIndex++,
+                    BorderColor = rect.StrokeColorHex ?? "#FF000000",
+                    BorderWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f),
+                });
+            }
         }
 
         // Zajistit kladné pozice
@@ -201,6 +292,59 @@ public static class ScheduleElementBuilder
         }
 
         return columns;
+    }
+
+    /// <summary>Najde TextMapping pro daný text (exact match nebo obsahuje).</summary>
+    private static TextMapping? FindMapping(List<TextMapping> mappings, string originalText)
+    {
+        // Nejdřív přesná shoda
+        var exact = mappings.FirstOrDefault(m =>
+            string.Equals(m.OriginalText, originalText, StringComparison.OrdinalIgnoreCase));
+        if (exact is not null) return exact;
+
+        // Pak obsahuje (pro případ drobných rozdílů v whitespace)
+        return mappings.FirstOrDefault(m =>
+            !string.IsNullOrEmpty(m.OriginalText) &&
+            originalText.Contains(m.OriginalText, StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Najde obdélník z PDF, který obklopuje textový blok (rámeček kolem textu).
+    /// Obdélník musí obsahovat celý text s tolerancí a mít viditelný stroke.
+    /// </summary>
+    private static ExtractedRectangle? FindEnclosingRectangle(
+        List<ExtractedRectangle> rectangles, ExtractedTextBlock block)
+    {
+        const float tolerance = 2f; // mm tolerance — obdélník může být mírně větší než text
+
+        ExtractedRectangle? best = null;
+        float bestArea = float.MaxValue;
+
+        foreach (var rect in rectangles)
+        {
+            // Obdélník musí mít viditelný stroke
+            if (rect.StrokeWidth <= 0 && string.IsNullOrEmpty(rect.StrokeColorHex)) continue;
+
+            // Obdélník musí obsahovat text (s tolerancí)
+            if (block.X < rect.X - tolerance) continue;
+            if (block.Y < rect.Y - tolerance) continue;
+            if (block.X + block.Width > rect.X + rect.Width + tolerance) continue;
+            if (block.Y + block.Height > rect.Y + rect.Height + tolerance) continue;
+
+            // Obdélník nesmí být příliš velký (max 20× plocha textu) — vyloučit celostránkové rámečky
+            float rectArea = rect.Width * rect.Height;
+            float textArea = Math.Max(block.Width, 1f) * Math.Max(block.Height, 1f);
+            if (rectArea > textArea * 20f) continue;
+
+            // Preferovat nejmenší obklopující obdélník
+            if (rectArea < bestArea)
+            {
+                best = rect;
+                bestArea = rectArea;
+            }
+        }
+
+        return best;
     }
 
     private static float EstimateGroupSeparator(ScheduleDetectionResult detection)

@@ -455,69 +455,70 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
 
     public async Task<Template?> GenerateTemplateAsync(string description, string? agendaCode, DataSchema? schema, string apiKey)
     {
+        var userPrompt = BuildUserPrompt(description, agendaCode, schema);
+        var responseText = await CallApiAsync(apiKey, SystemPrompt, userPrompt, ModelId, MaxTokens, Temperature);
+
+        if (string.IsNullOrWhiteSpace(responseText))
+            return null;
+
+        var debugPath = SaveDebugFile(responseText);
+
         try
         {
-            using var httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
-            httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
-
-            var requestBody = new
-            {
-                model = ModelId,
-                max_tokens = MaxTokens,
-                temperature = Temperature,
-                system = SystemPrompt,
-                messages = new[]
-                {
-                    new
-                    {
-                        role = "user",
-                        content = BuildUserPrompt(description, agendaCode, schema)
-                    }
-                }
-            };
-
-            var json = JsonSerializer.Serialize(requestBody);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            var response = await httpClient.PostAsync(ApiEndpoint, content);
-
-            // Přečti response body před EnsureSuccessStatusCode pro lepší error reporting
-            var responseJson = await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new Exception($"Anthropic API vrátilo chybu {(int)response.StatusCode} ({response.StatusCode}):\n{responseJson}");
-            }
-
-            var responseDoc = JsonDocument.Parse(responseJson);
-
-            if (responseDoc.RootElement.TryGetProperty("content", out var contentArray) &&
-                contentArray.GetArrayLength() > 0)
-            {
-                var jsonText = contentArray[0].GetProperty("text").GetString();
-                if (string.IsNullOrWhiteSpace(jsonText))
-                    return null;
-
-                jsonText = RemoveMarkdownCodeBlocks(jsonText);
-                var debugPath = SaveDebugFile(jsonText);
-
-                try
-                {
-                    return TemplateSerializer.Deserialize(jsonText);
-                }
-                catch (Exception ex)
-                {
-                    throw CreateParseException(jsonText, debugPath, ex);
-                }
-            }
-
-            return null;
+            return TemplateSerializer.Deserialize(responseText);
         }
         catch (Exception ex)
         {
-            throw new Exception($"Chyba při volání Anthropic API: {ex.Message}", ex);
+            throw CreateParseException(responseText, debugPath, ex);
         }
+    }
+
+    /// <summary>
+    /// Sdílená metoda pro volání Anthropic Messages API.
+    /// Vrací textovou odpověď (bez markdown code bloků).
+    /// </summary>
+    public static async Task<string?> CallApiAsync(
+        string apiKey, string systemPrompt, string userPrompt,
+        string model = "claude-haiku-4-5", int maxTokens = 4096, double temperature = 0.3)
+    {
+        using var httpClient = new HttpClient();
+        httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
+        httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
+
+        var requestBody = new
+        {
+            model,
+            max_tokens = maxTokens,
+            temperature,
+            system = systemPrompt,
+            messages = new[]
+            {
+                new { role = "user", content = userPrompt }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await httpClient.PostAsync(ApiEndpoint, content);
+        var responseJson = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"Anthropic API vrátilo chybu {(int)response.StatusCode} ({response.StatusCode}):\n{responseJson}");
+
+        var responseDoc = JsonDocument.Parse(responseJson);
+
+        if (responseDoc.RootElement.TryGetProperty("content", out var contentArray) &&
+            contentArray.GetArrayLength() > 0)
+        {
+            var text = contentArray[0].GetProperty("text").GetString();
+            if (string.IsNullOrWhiteSpace(text))
+                return null;
+
+            return RemoveMarkdownCodeBlocks(text);
+        }
+
+        return null;
     }
 
     private static string RemoveMarkdownCodeBlocks(string text)

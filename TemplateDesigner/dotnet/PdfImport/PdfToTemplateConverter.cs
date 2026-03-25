@@ -30,6 +30,9 @@ public class PdfToTemplateConverter
     /// <summary>Výsledek detekce JŘ (pro debug/preview). Null pokud nebyla detekce.</summary>
     public ScheduleDetectionResult? LastDetectionResult { get; private set; }
 
+    /// <summary>Extrahované stránky z posledního importu (pro AI enrichment).</summary>
+    public List<ExtractedPage> LastExtractedPages { get; private set; } = [];
+
     public Template Convert(string pdfPath, int[]? pages = null)
     {
         using var doc = PdfDocument.Open(pdfPath);
@@ -103,6 +106,7 @@ public class PdfToTemplateConverter
                     }
 
                     // Použij schedule builder místo generic BuildSection
+                    // Enrichment se aplikuje později ve ViewModelu (ApplyEnrichment) — zde ještě není k dispozici
                     var scheduleElements = ScheduleElementBuilder.BuildElements(
                         detection, extracted, 0, 0); // marginy se aplikují později v AdjustElementPositions
 
@@ -129,15 +133,16 @@ public class PdfToTemplateConverter
         }
 
         DebugLog = log?.ToString();
+        LastExtractedPages = extractedPages;
 
-        // Detekce okrajů ze všech elementů (v merge mode jen z textů)
+        // Detekce okrajů ze všech elementů + JŘ detekce (pro správný odhad spodního okraje)
         var (marginTop, marginBottom, marginLeft, marginRight) =
-            DetectMargins(sections, pageWidthMm, pageHeightMm);
+            DetectMargins(sections, pageWidthMm, pageHeightMm, LastDetectionResult);
 
         // Posunout elementy relativně k okrajům
         AdjustElementPositions(sections, marginLeft, marginTop);
 
-        // Výška sekcí = výška stránky minus okraje
+        // Výška sekcí = výška stránky minus okraje (přesně = tisknutelná oblast)
         float contentHeight = pageHeightMm - marginTop - marginBottom;
         foreach (var section in sections)
             section.DesignerHeight = Math.Max(contentHeight, 10f);
@@ -533,7 +538,8 @@ public class PdfToTemplateConverter
     }
 
     private static (float Top, float Bottom, float Left, float Right) DetectMargins(
-        List<Section> sections, float pageWidthMm, float pageHeightMm)
+        List<Section> sections, float pageWidthMm, float pageHeightMm,
+        ScheduleDetectionResult? detection = null)
     {
         float minX = float.MaxValue;
         float minY = float.MaxValue;
@@ -551,17 +557,30 @@ public class PdfToTemplateConverter
             }
         }
 
+        // JŘ detekce: zahrnout detekované regiony (Notes má dynamickou výšku,
+        // ale detekce ví kde v PDF obsah končí)
+        if (detection is not null)
+        {
+            if (detection.NotesRegion is { } notes)
+                maxBottom = Math.Max(maxBottom, notes.Y + notes.Height);
+            if (detection.DepartureGridRegion is { } grid)
+                maxBottom = Math.Max(maxBottom, grid.Y + grid.Height);
+            if (detection.StopListRegion is { } stops)
+                maxBottom = Math.Max(maxBottom, stops.Y + stops.Height);
+        }
+
         if (minX == float.MaxValue)
         {
             // Žádné elementy — výchozí okraje
             return (10f, 10f, 10f, 10f);
         }
 
-        // Zaokrouhlit okraje na celé mm, s minimem 2mm
-        float marginLeft = Math.Max(MathF.Floor(minX), 2f);
-        float marginTop = Math.Max(MathF.Floor(minY), 2f);
-        float marginRight = Math.Max(MathF.Floor(pageWidthMm - maxRight), 2f);
-        float marginBottom = Math.Max(MathF.Floor(pageHeightMm - maxBottom), 2f);
+        // Okraje = vzdálenost od okraje stránky k nejbližšímu elementu
+        // Mírný epsilon (0.1mm) dovnitř, aby elementy po shift spolehlivě vešly do section
+        float marginLeft = Math.Max(minX - 0.1f, 0.5f);
+        float marginTop = Math.Max(minY - 0.1f, 0.5f);
+        float marginRight = Math.Max(pageWidthMm - maxRight - 0.1f, 0.5f);
+        float marginBottom = Math.Max(pageHeightMm - maxBottom - 0.1f, 0.5f);
 
         // Omezit rozumný rozsah
         marginLeft = Math.Min(marginLeft, 50f);

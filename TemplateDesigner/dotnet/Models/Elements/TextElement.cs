@@ -84,8 +84,21 @@ public class TextElement : TemplateElement
         }
         else
         {
-            // Jednořádkový režim — původní chování
-            ctx.Canvas.DrawText(resolvedText, rect.Left + 1f, rect.Top + fontSizePx, font, paint);
+            // Jednořádkový režim — s horizontálním a vertikálním zarovnáním
+            float textWidth = font.MeasureText(resolvedText);
+            float xPx = rs.HAlign switch
+            {
+                TextHorizontalAlignment.Center => rect.Left + (rect.Width - textWidth) / 2,
+                TextHorizontalAlignment.Right => rect.Right - textWidth - 1f,
+                _ => rect.Left + 1f
+            };
+            float yPx = rs.VAlign switch
+            {
+                TextVerticalAlignment.Middle => rect.Top + (rect.Height + fontSizePx) / 2 - fontSizePx * 0.15f,
+                TextVerticalAlignment.Bottom => rect.Bottom - fontSizePx * 0.3f,
+                _ => rect.Top + fontSizePx
+            };
+            ctx.Canvas.DrawText(resolvedText, xPx, yPx, font, paint);
         }
 
         ctx.Canvas.Restore();
