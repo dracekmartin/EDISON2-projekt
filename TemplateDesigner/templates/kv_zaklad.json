@@ -1,0 +1,406 @@
+{
+  "version": "1.0",
+  "id": "72681fc5-de24-443d-9c55-9d200744f4cb",
+  "name": "Nov\u00E1 \u0161ablona",
+  "description": "",
+  "pageSize": {
+    "width": 297,
+    "height": 210,
+    "marginTop": 10,
+    "marginBottom": 10,
+    "marginLeft": 10,
+    "marginRight": 10
+  },
+  "sections": [
+    {
+      "id": "d8607d1a-cb04-4b38-b4f2-1e89032516d7",
+      "name": "Sekce 2",
+      "designerHeight": 190,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{CISLO_LINKY}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 32,
+            "bold": true,
+            "italic": false,
+            "underline": false,
+            "textColor": "#FF000000",
+            "backgroundColor": "#00FFFFFF",
+            "hAlign": "Center",
+            "vAlign": "Middle",
+            "lineSpacing": 1.2
+          },
+          "wordWrap": true,
+          "id": "01c8b9ca-d8b0-487c-9ab4-120ab21574b0",
+          "x": 3.175,
+          "y": 2.3738,
+          "width": 60.4208,
+          "height": 20.9646,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "StopListElement",
+          "columns": [
+            {
+              "key": "TravelTime",
+              "header": "\u010Cas",
+              "width": 8,
+              "visible": true,
+              "alignment": "Left"
+            },
+            {
+              "key": "Tc",
+              "header": "T\u010C",
+              "width": 8,
+              "visible": false,
+              "alignment": "Left"
+            },
+            {
+              "key": "StopName",
+              "header": "Zast\u00E1vka",
+              "width": 50,
+              "visible": true,
+              "alignment": "Left"
+            },
+            {
+              "key": "Zone",
+              "header": "Z\u00F3na",
+              "width": 12,
+              "visible": false,
+              "alignment": "Left"
+            },
+            {
+              "key": "RouteLetters",
+              "header": "Trasa",
+              "width": 8,
+              "visible": false,
+              "alignment": "Left"
+            },
+            {
+              "key": "BaseRoute",
+              "header": "ZT",
+              "width": 6,
+              "visible": false,
+              "alignment": "Left"
+            }
+          ],
+          "showRowSeparators": true,
+          "showStopIndentation": true,
+          "showSignalStopIndicator": true,
+          "signalStopSymbol": "\u00D7",
+          "showStopAttributes": true,
+          "showStopNotes": true,
+          "showDirectionArrow": true,
+          "directionArrowColor": "#FF000000",
+          "directionArrowBold": false,
+          "showHeader": true,
+          "highlightCurrentStop": true,
+          "currentStopUnderline": true,
+          "currentStopBold": true,
+          "showPassedStops": false,
+          "passedStopsForeColor": "#FF999999",
+          "excludedAttributeIds": [],
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 9,
+            "bold": true,
+            "textColor": "#FF000000",
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "gridColor": "#FFD0D0D0",
+          "id": "7425952d-71a7-43f0-9e32-eb376711c4c1",
+          "x": 3.1271,
+          "y": 30.6134,
+          "width": 60,
+          "height": 148.9,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "DepartureGridElement",
+          "skupinaDnuId": "",
+          "displayMode": "MinutesOnly",
+          "showSkupinaDnuHeader": true,
+          "skupinaDnuHeaderLineHeight": 4,
+          "headerVerticalAlignment": "Bottom",
+          "hourColumnWidth": 8,
+          "minuteWidth": 5,
+          "minuteFontSize": 7,
+          "minuteStyle": {},
+          "anotaceSymbolStyle": {},
+          "anotaceTextStyle": {},
+          "anotaceGap": 0,
+          "anotaceInterGap": 0,
+          "odjezdGap": 0,
+          "groupSeparatorWidth": 0.5,
+          "hourColumnPerGroup": false,
+          "timeAxisMode": "Compact",
+          "timeAxisRangeFrom": 4,
+          "timeAxisRangeTo": 24,
+          "minuteBold": true,
+          "alternatingRowColor": "#FFF5F5F5",
+          "showAnotace": true,
+          "anotaceFontSize": 5,
+          "showZkraceneOznaceniLinky": false,
+          "groupColumns": [],
+          "colorRules": [],
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 9,
+            "bold": true,
+            "textColor": "#FF000000",
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "gridColor": "#FFD0D0D0",
+          "id": "b2ffdb0f-515e-416c-85e7-83a3fc08df50",
+          "x": 67.1271,
+          "y": 30.6134,
+          "width": 145.6646,
+          "height": 148.9,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "NotesLegendElement",
+          "headerText": "Pozn\u00E1mky",
+          "noteSeparator": " \u2014 ",
+          "noteFontSize": 7,
+          "noteLineHeight": 4,
+          "negativniZnackaBackColor": "#FF000000",
+          "negativniZnackaForeColor": "#FFFFFFFF",
+          "showNegativniZnacky": true,
+          "showSpecialniZnaky": true,
+          "showTextovePoznamky": true,
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 9,
+            "bold": true,
+            "textColor": "#FF000000",
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "gridColor": "#FFD0D0D0",
+          "id": "2bccef59-82e0-4334-931c-906c12f0bfcc",
+          "x": 216.7916,
+          "y": 30.6134,
+          "width": 58.5021,
+          "height": 134.2729,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Text",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 10,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "textColor": "#FF000000",
+            "backgroundColor": "#00FFFFFF",
+            "hAlign": "Left",
+            "vAlign": "Top",
+            "lineSpacing": 1.2
+          },
+          "wordWrap": true,
+          "id": "c7f2027c-7907-439f-95e9-0bdc1d1d86ac",
+          "x": 67.5958,
+          "y": 2,
+          "width": 60.4208,
+          "height": 8.5292,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Text",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 10,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "textColor": "#FF000000",
+            "backgroundColor": "#00FFFFFF",
+            "hAlign": "Left",
+            "vAlign": "Top",
+            "lineSpacing": 1.2
+          },
+          "wordWrap": true,
+          "id": "58462952-f921-4dae-a72d-e8139056037a",
+          "x": 133.0167,
+          "y": 2,
+          "width": 60.4208,
+          "height": 8.5292,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Text",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 10,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "textColor": "#FF000000",
+            "backgroundColor": "#00FFFFFF",
+            "hAlign": "Left",
+            "vAlign": "Top",
+            "lineSpacing": 1.2
+          },
+          "wordWrap": true,
+          "id": "c739efba-062f-4564-8386-260c52dd6c66",
+          "x": 67.1271,
+          "y": 10.5292,
+          "width": 125.8417,
+          "height": 8.5292,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Text",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 10,
+            "bold": false,
+            "italic": false,
+            "underline": false,
+            "textColor": "#FF000000",
+            "backgroundColor": "#00FFFFFF",
+            "hAlign": "Left",
+            "vAlign": "Top",
+            "lineSpacing": 1.2
+          },
+          "wordWrap": true,
+          "id": "38b7f7f5-a966-425c-bc47-a2b109f994c0",
+          "x": 67.5958,
+          "y": 19.0583,
+          "width": 207.6979,
+          "height": 8.5292,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        },
+        {
+          "type": "ImageElement",
+          "scaleMode": "Fit",
+          "id": "ceb0b967-3f4c-4fd1-aab3-b5072adfad9d",
+          "x": 221.4172,
+          "y": 2,
+          "width": 49.2511,
+          "height": 20.0843,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0
+        }
+      ]
+    }
+  ],
+  "agendaCode": "MHD",
+  "parameters": [
+    {
+      "name": "LINKA_ID",
+      "label": "ID linky",
+      "type": "string",
+      "defaultValue": "7372"
+    },
+    {
+      "name": "TISK_SIPKY",
+      "label": "Tisknout \u0161ipky sm\u011Bru",
+      "type": "bool",
+      "defaultValue": "false"
+    },
+    {
+      "name": "TISK_PROJETYCH_ZAST",
+      "label": "Tisknout projet\u00E9 zast\u00E1vky",
+      "type": "bool",
+      "defaultValue": "false"
+    },
+    {
+      "name": "CASOVA_OSA",
+      "label": "\u010Casov\u00E1 osa odjezd\u016F",
+      "type": "enum",
+      "defaultValue": "compact",
+      "options": [
+        "compact",
+        "full",
+        "range"
+      ]
+    },
+    {
+      "name": "HODINY_OD",
+      "label": "Hodiny od",
+      "type": "number",
+      "defaultValue": "4"
+    },
+    {
+      "name": "HODINY_DO",
+      "label": "Hodiny do",
+      "type": "number",
+      "defaultValue": "24"
+    }
+  ],
+  "createdAt": "2026-03-24T19:50:28.1628619Z",
+  "modifiedAt": "2026-03-24T20:06:08.6877446Z"
+}

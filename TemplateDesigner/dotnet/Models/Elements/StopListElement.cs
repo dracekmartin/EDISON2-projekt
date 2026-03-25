@@ -87,8 +87,10 @@ public class StopListElement : ScheduleElementBase
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
         float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
-        float effectiveFontSize = FontSize * scale;
-        float effectiveHeaderFontSize = HeaderFontSize * scale;
+        float baseFontSize = DataStyle.FontSize ?? 8f;
+        float baseHeaderFontSize = HeaderStyle.FontSize ?? 9f;
+        float effectiveFontSize = baseFontSize * scale;
+        float effectiveHeaderFontSize = baseHeaderFontSize * scale;
 
         float rowH = DataRowHeight ?? ComputeRowH(effectiveFontSize);
         float headerH = ComputeHeaderH(effectiveHeaderFontSize);
@@ -98,15 +100,15 @@ public class StopListElement : ScheduleElementBase
         float fontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effectiveHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(SKTypeface.FromFamilyName(FontFamily), fontPx);
+        using var font = new SKFont(SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial"), fontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerFontPx);
+            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerFontPx);
         // Font pro aktuální zastávku — konfigurovatelná velikost + tučnost
-        float currentFontSize = (CurrentStopFontSize ?? FontSize) * scale;
+        float currentFontSize = (CurrentStopFontSize ?? baseFontSize) * scale;
         float currentFontPx = currentFontSize * PtToMm * ctx.MmToPx;
         var currentStyle = CurrentStopBold ? SKFontStyle.Bold : SKFontStyle.Normal;
         using var currentStopFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, currentStyle), currentFontPx);
+            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", currentStyle), currentFontPx);
 
         // Per-column fonty a painty — manualDisposables pattern (dispose v finally)
         var columns = GetVisibleColumns();
@@ -123,7 +125,7 @@ public class StopListElement : ScheduleElementBase
         foreach (var col in columns)
         {
             // Data font/paints
-            if (CreateCellFont(col.Style?.Data, FontSize, false, scale, ctx.MmToPx) is { } df)
+            if (CreateCellFont(col.Style?.Data, baseFontSize, false, scale, ctx.MmToPx) is { } df)
             { perColDataFonts[col.Key] = df; manualDisposables.Add(df); }
             if (CreateCellTextPaint(col.Style?.Data) is { } dtp)
             { perColDataTextPaints[col.Key] = dtp; manualDisposables.Add(dtp); }
@@ -131,7 +133,7 @@ public class StopListElement : ScheduleElementBase
             { perColDataBgPaints[col.Key] = dbp; manualDisposables.Add(dbp); }
 
             // Header font/paints (výchozí tučné)
-            if (CreateCellFont(col.Style?.Header, HeaderFontSize, true, scale, ctx.MmToPx) is { } hf)
+            if (CreateCellFont(col.Style?.Header, baseHeaderFontSize, true, scale, ctx.MmToPx) is { } hf)
             { perColHeaderFonts[col.Key] = hf; manualDisposables.Add(hf); }
             if (CreateCellTextPaint(col.Style?.Header) is { } htp)
             { perColHeaderTextPaints[col.Key] = htp; manualDisposables.Add(htp); }
@@ -349,8 +351,8 @@ public class StopListElement : ScheduleElementBase
             if (currentIdx >= 0) visibleStops = zastavky.Count - currentIdx;
         }
 
-        float headerH = ShowHeader ? ComputeHeaderH(HeaderFontSize) : 0f;
-        float rowH = DataRowHeight ?? ComputeRowH(FontSize);
+        float headerH = ShowHeader ? ComputeHeaderH(HeaderStyle.FontSize ?? 9f) : 0f;
+        float rowH = DataRowHeight ?? ComputeRowH(DataStyle.FontSize ?? 8f);
         return headerH + visibleStops * rowH;
     }
 
@@ -440,7 +442,7 @@ public class StopListElement : ScheduleElementBase
 
         new ButtonPropertyDescriptor { Label = "Nastavení zastávek", Group = "Zastávky", ButtonLabel = "Upravit...", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
 
-        new FloatPropertyDescriptor { Label = "Výška řádku (mm)",  Group = "Řádky",    Get = () => DataRowHeight ?? ComputeRowH(FontSize), Set = v => DataRowHeight = Math.Abs(v - ComputeRowH(FontSize)) < 0.01f ? null : v, Min = 1, Max = 50, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Výška řádku (mm)",  Group = "Řádky",    Get = () => DataRowHeight ?? ComputeRowH(DataStyle.FontSize ?? 8f), Set = v => DataRowHeight = Math.Abs(v - ComputeRowH(DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 1, Max = 50, Unit = "mm" },
         new BoolPropertyDescriptor  { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators,     Set = v => ShowRowSeparators = v },
 
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
@@ -458,7 +460,7 @@ public class StopListElement : ScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Zvýraznit aktuální",  Group = "Zvýraznění", Get = () => HighlightCurrentStop, Set = v => HighlightCurrentStop = v },
         new BoolPropertyDescriptor  { Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
         new BoolPropertyDescriptor  { Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
-        new FloatPropertyDescriptor { Label = "Font aktuální (pt)",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? FontSize, Set = v => CurrentStopFontSize = Math.Abs(v - FontSize) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
+        new FloatPropertyDescriptor { Label = "Font aktuální (pt)",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
         new ColorPropertyDescriptor { Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         new BoolPropertyDescriptor  { Label = "Projeté zastávky",    Group = "Zvýraznění", Get = () => ShowPassedStops,      Set = v => ShowPassedStops = v },
         new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
@@ -466,20 +468,23 @@ public class StopListElement : ScheduleElementBase
         .. GetPositionDescriptors()
     ];
 
+    // ─── Scale ──────────────────────────────────────────────────────────────
+
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        if (DataRowHeight is not null) DataRowHeight *= scale;
+        if (CurrentStopFontSize is not null) CurrentStopFontSize *= scale;
+        foreach (var col in Columns)
+            col.Width *= scale;
+    }
+
     // ─── Clone ──────────────────────────────────────────────────────────────
 
     public override TemplateElement Clone()
     {
         var clone = new StopListElement
         {
-            Id = Guid.NewGuid(),
-            X = X, Y = Y, Width = Width, Height = Height,
-            ZIndex = ZIndex, IsLocked = IsLocked,
-            VisibilityExpression = VisibilityExpression,
-            CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-            GroupId = GroupId,
-            BorderColor = BorderColor, BorderWidth = BorderWidth,
-
             DataRowHeight           = DataRowHeight,
             ShowRowSeparators       = ShowRowSeparators,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),
@@ -501,6 +506,7 @@ public class StopListElement : ScheduleElementBase
             CurrentStopFontSize     = CurrentStopFontSize,
             CurrentStopBackgroundColor = CurrentStopBackgroundColor,
         };
+        CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);
         return clone;
     }

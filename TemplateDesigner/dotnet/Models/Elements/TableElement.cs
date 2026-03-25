@@ -38,20 +38,19 @@ public class TableColumn
 
     public bool Visible { get; set; } = true;
 
-    public string? HeaderBackgroundColor { get; set; }
-    public string? HeaderTextColor       { get; set; }
+    /// <summary>Per-column styl záhlaví. Null = dědit z elementu.</summary>
+    public TextStyle? HeaderStyle { get; set; }
 
     public TableColumn Clone() => new()
     {
-        Header               = Header,
-        Width                = Width,
-        WidthMode            = WidthMode,
-        Field                = Field,
-        Format               = Format,
-        Alignment            = Alignment,
-        Visible              = Visible,
-        HeaderBackgroundColor = HeaderBackgroundColor,
-        HeaderTextColor      = HeaderTextColor
+        Header      = Header,
+        Width       = Width,
+        WidthMode   = WidthMode,
+        Field       = Field,
+        Format      = Format,
+        Alignment   = Alignment,
+        Visible     = Visible,
+        HeaderStyle = HeaderStyle?.Clone(),
     };
 }
 
@@ -79,20 +78,16 @@ public class TableCell
     /// <summary>Statický text nebo "{POLE}" placeholder.</summary>
     public string Content { get; set; } = "";
 
-    public string? Format      { get; set; }
-    public TextHorizontalAlignment? Alignment  { get; set; }
-    public string? FontWeight  { get; set; }
-    public string? TextColor   { get; set; }
-    public string? BackgroundColor { get; set; }
+    public string? Format { get; set; }
+
+    /// <summary>Per-cell styl. Null = výchozí. Jen nenullové properties přepisují default.</summary>
+    public TextStyle? Style { get; set; }
 
     public TableCell Clone() => new()
     {
-        Content         = Content,
-        Format          = Format,
-        Alignment       = Alignment,
-        FontWeight      = FontWeight,
-        TextColor       = TextColor,
-        BackgroundColor = BackgroundColor
+        Content = Content,
+        Format  = Format,
+        Style   = Style?.Clone(),
     };
 }
 
@@ -132,15 +127,13 @@ public class TableElement : TemplateElement
     /// <summary>Výška řádku záhlaví v mm.</summary>
     public float HeaderHeight { get; set; } = 8f;
 
-    public string HeaderFontWeight { get; set; } = "Bold";
+    /// <summary>Styl záhlaví tabulky. Null = výchozí (Bold, #E8E8E8 pozadí, #333333 text).</summary>
+    public TextStyle? HeaderStyle { get; set; }
 
     public TableBorderStyle BorderStyle { get; set; } = TableBorderStyle.Outer;
 
     /// <summary>Barva střídajících se řádků (#AARRGGBB). Null = bez střídání.</summary>
     public string? AlternatingRowColor { get; set; }
-
-    public string? HeaderBackgroundColor { get; set; }
-    public string? HeaderTextColor       { get; set; }
 
     /// <summary>
     /// Souhrnné řádky zobrazené pod datovými řádky (zápatí tabulky).
@@ -164,6 +157,28 @@ public class TableElement : TemplateElement
             return 40f + summaryH;
         }
     }
+
+    // ─── Header style defaults ────────────────────────────────────────
+
+    private static readonly ResolvedTextStyle DefaultHeaderParent = new()
+    {
+        FontFamily = "Arial", FontSize = 10f,
+        Bold = true, Italic = false, Underline = false,
+        TextColor = "#FF333333", BackgroundColor = "#FFE8E8E8",
+        HAlign = TextHorizontalAlignment.Left, VAlign = TextVerticalAlignment.Top,
+        PaddingTop = 0, PaddingRight = 0, PaddingBottom = 0, PaddingLeft = 0,
+        LineSpacing = 1.2f,
+    };
+
+    private static readonly ResolvedTextStyle DefaultDataParent = new()
+    {
+        FontFamily = "Arial", FontSize = 10f,
+        Bold = false, Italic = false, Underline = false,
+        TextColor = "#FF222222", BackgroundColor = "#00FFFFFF",
+        HAlign = TextHorizontalAlignment.Left, VAlign = TextVerticalAlignment.Top,
+        PaddingTop = 0, PaddingRight = 0, PaddingBottom = 0, PaddingLeft = 0,
+        LineSpacing = 1.2f,
+    };
 
     // ─── Render ──────────────────────────────────────────────────────
 
@@ -216,17 +231,14 @@ public class TableElement : TemplateElement
         SKRect tableRect, float currentY,
         SKPaint borderPaint, SKPaint sepPaint)
     {
-        float headerPx  = ctx.Px(HeaderHeight);
-        var   hBgColor  = HeaderBackgroundColor is not null
-            ? SKColor.Parse(HeaderBackgroundColor) : new SKColor(0xFFE8E8E8);
-        var   hTxtColor = HeaderTextColor is not null
-            ? SKColor.Parse(HeaderTextColor) : new SKColor(0xFF333333);
+        float headerPx = ctx.Px(HeaderHeight);
+        var rs = (HeaderStyle ?? new TextStyle()).Resolve(DefaultHeaderParent);
 
-        using var hBg   = new SKPaint { Color = hBgColor };
-        using var hText = new SKPaint { Color = hTxtColor, IsAntialias = true };
-        using var hFont = new SKFont(SKTypeface.Default, headerPx * 0.55f);
-        if (HeaderFontWeight == "Bold")
-            hFont.Typeface = SKTypeface.FromFamilyName(null, SKFontStyle.Bold);
+        using var hBg   = new SKPaint { Color = rs.ParsedBackgroundColor };
+        using var hText = rs.CreateTextPaint();
+        using var hFont = new SKFont(
+            SKTypeface.FromFamilyName(rs.FontFamily, rs.ToSKFontStyle()) ?? SKTypeface.Default,
+            headerPx * 0.55f);
 
         ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + headerPx), hBg);
 
@@ -237,14 +249,21 @@ public class TableElement : TemplateElement
             var   col  = cols[i];
             float colW = colWidths[i];
 
-            // Vlastní záhlaví pozadí sloupce
-            if (col.HeaderBackgroundColor is not null)
+            // Per-column záhlaví styl (cascade: column → table → default)
+            if (col.HeaderStyle is not null)
             {
-                using var colHBg = new SKPaint { Color = SKColor.Parse(col.HeaderBackgroundColor) };
-                ctx.Canvas.DrawRect(new SKRect(colX, currentY, colX + colW, currentY + headerPx), colHBg);
-            }
+                var colRs = col.HeaderStyle.Resolve(rs);
+                using var colHBg = colRs.CreateBgPaint();
+                if (colHBg is not null)
+                    ctx.Canvas.DrawRect(new SKRect(colX, currentY, colX + colW, currentY + headerPx), colHBg);
 
-            ctx.Canvas.DrawText(col.Header, colX + 4, currentY + headerPx * 0.72f, hFont, hText);
+                using var colHText = colRs.CreateTextPaint();
+                ctx.Canvas.DrawText(col.Header, colX + 4, currentY + headerPx * 0.72f, hFont, colHText);
+            }
+            else
+            {
+                ctx.Canvas.DrawText(col.Header, colX + 4, currentY + headerPx * 0.72f, hFont, hText);
+            }
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
                 ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + headerPx, sepPaint);
@@ -307,18 +326,20 @@ public class TableElement : TemplateElement
                     if (cellFormat is not null)
                         content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-                    // Vlastní barva buňky
-                    if (cell.BackgroundColor is not null)
+                    // Per-cell styl
+                    if (cell.Style is not null)
                     {
-                        using var cellBg = new SKPaint { Color = SKColor.Parse(cell.BackgroundColor) };
-                        ctx.Canvas.DrawRect(new SKRect(colX, currentY, colX + colW, currentY + rowPx), cellBg);
-                    }
+                        var cellRs = cell.Style.Resolve(DefaultDataParent);
+                        using var cellBg = cellRs.CreateBgPaint();
+                        if (cellBg is not null)
+                            ctx.Canvas.DrawRect(new SKRect(colX, currentY, colX + colW, currentY + rowPx), cellBg);
 
-                    // Barva textu buňky
-                    if (cell.TextColor is not null)
-                        rText.Color = SKColor.Parse(cell.TextColor);
+                        rText.Color = cellRs.ParsedTextColor;
+                    }
                     else
+                    {
                         rText.Color = new SKColor(0xFF222222);
+                    }
                 }
 
                 ctx.Canvas.DrawText(content, colX + 4, currentY + rowPx * 0.72f, rFont, rText);
@@ -443,9 +464,9 @@ public class TableElement : TemplateElement
                     if (cellFormat is not null)
                         content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-                    // Barva textu buňky
-                    sText.Color = cell.TextColor is not null
-                        ? SKColor.Parse(cell.TextColor)
+                    // Per-cell styl
+                    sText.Color = cell.Style?.TextColor is not null
+                        ? SKColor.Parse(cell.Style.TextColor)
                         : new SKColor(0xFF222222);
                 }
 
@@ -520,8 +541,8 @@ public class TableElement : TemplateElement
         {
             Label = "Tučné záhlaví",
             Group = "Tabulka",
-            Get   = () => HeaderFontWeight == "Bold",
-            Set   = v => HeaderFontWeight = v ? "Bold" : "Normal"
+            Get   = () => HeaderStyle?.Bold ?? true,
+            Set   = v => { HeaderStyle ??= new TextStyle(); HeaderStyle.Bold = v; }
         },
         new EnumPropertyDescriptor
         {
@@ -539,8 +560,8 @@ public class TableElement : TemplateElement
         {
             Label = "Pozadí záhlaví",
             Group = "Tabulka",
-            Get   = () => HeaderBackgroundColor ?? "#FFE8E8E8",
-            Set   = v => HeaderBackgroundColor = v
+            Get   = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",
+            Set   = v => { HeaderStyle ??= new TextStyle(); HeaderStyle.BackgroundColor = v; }
         },
         new ColorPropertyDescriptor
         {
@@ -553,29 +574,36 @@ public class TableElement : TemplateElement
         .. GetPositionDescriptors()
     ];
 
+    // ─── Scale ───────────────────────────────────────────────────────
+
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        RowHeight *= scale;
+        HeaderHeight *= scale;
+        foreach (var col in Columns)
+            if (col.WidthMode == ColumnWidthMode.Mm) col.Width *= scale;
+    }
+
     // ─── Clone ───────────────────────────────────────────────────────
 
-    public override TemplateElement Clone() => new TableElement
+    public override TemplateElement Clone()
     {
-        Id                   = Guid.NewGuid(),
-        X                    = X, Y = Y, Width = Width, Height = Height,
-        ZIndex               = ZIndex, IsLocked = IsLocked,
-        VisibilityExpression = VisibilityExpression,
-        CustomProperties     = CustomProperties is null ? null : new(CustomProperties),
-        GroupId              = GroupId,
-        BorderColor = BorderColor, BorderWidth = BorderWidth,
-        Mode                 = Mode,
-        DataSource           = DataSource,
-        Columns              = Columns.Select(c => c.Clone()).ToList(),
-        Rows                 = Rows?.Select(r => r.Clone()).ToList(),
-        SummaryRows          = SummaryRows?.Select(r => r.Clone()).ToList(),
-        RowHeight            = RowHeight,
-        ShowHeader           = ShowHeader,
-        HeaderHeight         = HeaderHeight,
-        HeaderFontWeight     = HeaderFontWeight,
-        BorderStyle          = BorderStyle,
-        AlternatingRowColor  = AlternatingRowColor,
-        HeaderBackgroundColor = HeaderBackgroundColor,
-        HeaderTextColor      = HeaderTextColor
-    };
+        var clone = new TableElement
+        {
+            Mode                = Mode,
+            DataSource          = DataSource,
+            Columns             = Columns.Select(c => c.Clone()).ToList(),
+            Rows                = Rows?.Select(r => r.Clone()).ToList(),
+            SummaryRows         = SummaryRows?.Select(r => r.Clone()).ToList(),
+            RowHeight           = RowHeight,
+            ShowHeader          = ShowHeader,
+            HeaderHeight        = HeaderHeight,
+            HeaderStyle         = HeaderStyle?.Clone(),
+            BorderStyle         = BorderStyle,
+            AlternatingRowColor = AlternatingRowColor,
+        };
+        CopyBaseTo(clone);
+        return clone;
+    }
 }

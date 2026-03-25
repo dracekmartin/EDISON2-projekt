@@ -261,7 +261,39 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public void AddSection(Section section)
     {
-        State.CurrentTemplate.Sections.Add(section);
+        var commands = new List<IDesignerCommand>();
+
+        // Uvolnit místo pro novou sekci — zmenšit existující fixed-height sekce
+        float needed = section.DesignerHeight ?? 30f;
+        var resizable = State.CurrentTemplate.Sections
+            .Where(s => s.DesignerHeight.HasValue && s.DesignerHeight.Value > 5f)
+            .ToList();
+
+        if (resizable.Count > 0 && needed > 0)
+        {
+            float totalResizable = resizable.Sum(s => s.DesignerHeight!.Value);
+            if (totalResizable > needed)
+            {
+                foreach (var s in resizable)
+                {
+                    float oldH = s.DesignerHeight!.Value;
+                    float share = oldH / totalResizable * needed;
+                    float newH = MathF.Max(5f, oldH - share);
+                    if (Math.Abs(oldH - newH) > 0.01f)
+                        commands.Add(new SetPropertyCommand(
+                            $"Výška sekce {s.Name}", oldH, newH,
+                            v => s.DesignerHeight = (float)v!));
+                }
+            }
+        }
+
+        commands.Add(new AddSectionCommand(State.CurrentTemplate, section));
+
+        if (commands.Count > 1)
+            Execute(new CompositeCommand("Přidat sekci", commands));
+        else
+            Execute(commands[0]);
+
         ActivateSection(section);
         RequestCanvasSizeUpdate?.Invoke();
     }
@@ -313,7 +345,31 @@ public class TemplateDesignerViewModel : EDViewModel
         if (State.ActiveSection == section)
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault(s => s != section);
 
-        Execute(new DeleteSectionCommand(State.CurrentTemplate, section));
+        var commands = new List<IDesignerCommand>();
+        commands.Add(new DeleteSectionCommand(State.CurrentTemplate, section));
+
+        // Redistribuovat uvolněnou výšku mezi zbývající fixed-height sekce
+        float freed = section.DesignerHeight ?? 0f;
+        var remaining = State.CurrentTemplate.Sections
+            .Where(s => s != section && s.DesignerHeight.HasValue)
+            .ToList();
+
+        if (freed > 0 && remaining.Count > 0)
+        {
+            float totalRemaining = remaining.Sum(s => s.DesignerHeight!.Value);
+            foreach (var s in remaining)
+            {
+                float oldH = s.DesignerHeight!.Value;
+                float share = totalRemaining > 0 ? oldH / totalRemaining * freed : freed / remaining.Count;
+                float newH = oldH + share;
+                if (Math.Abs(newH - oldH) > 0.01f)
+                    commands.Add(new SetPropertyCommand(
+                        $"Výška sekce {s.Name}", oldH, newH,
+                        v => s.DesignerHeight = (float)v!));
+            }
+        }
+
+        Execute(commands.Count == 1 ? commands[0] : new CompositeCommand("Smazat sekci", commands));
         RebuildSections();
         RequestCanvasSizeUpdate?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
@@ -734,9 +790,9 @@ public class TemplateDesignerViewModel : EDViewModel
     public static TemplateElement CreateElementByType(string type, float x, float y)
     {
         var (w, h) = GetDefaultElementSize(type);
-        return type switch
+        var el = type switch
         {
-            "TextElement"      => new TextElement      { X = x, Y = y, Width = w, Height = h, Text = "Text" },
+            "TextElement"      => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
             "RectangleElement" => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
             "LineElement"      => new LineElement      { X = x, Y = y, Width = w, Height = h },
             "ImageElement"     => new ImageElement     { X = x, Y = y, Width = w, Height = h },
@@ -746,8 +802,12 @@ public class TemplateDesignerViewModel : EDViewModel
             "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
             "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
             "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
-            _                  => new TextElement      { X = x, Y = y, Width = w, Height = h, Text = type }
+            _                  => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
         };
+        // Výchozí rámeček pro nové elementy (na modelu je default bez rámečku kvůli zpětné kompatibilitě)
+        el.BorderColor = "#FF000000";
+        el.BorderWidth = 0.1f;
+        return el;
     }
 
     // ── Delete ──────────────────────────────────────────────────────────────────
@@ -974,6 +1034,17 @@ public class TemplateDesignerViewModel : EDViewModel
         => new SetPropertyCommand("X", el.X, nx, v => el.X = (float)v!);
     private static IDesignerCommand MakeYCmd(TemplateElement el, float ny)
         => new SetPropertyCommand("Y", el.Y, ny, v => el.Y = (float)v!);
+
+    // ── Template scaling ─────────────────────────────────────────────────────
+    public void ScaleTemplate(float scale)
+    {
+        if (Math.Abs(scale - 1f) < 0.001f) return;
+        var cmd = new ScaleTemplateCommand(State.CurrentTemplate, scale);
+        Execute(cmd);
+        RebuildSections();
+        RequestCanvasSizeUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
 
     // ── Key movement ──────────────────────────────────────────────────────────
     public void MoveByKey(Key key, bool largeStep)

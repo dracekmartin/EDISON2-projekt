@@ -548,13 +548,23 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                         foreach (var cell in cells)
                         {
                             if (cell is null) continue;
+                            var fontWeight = cell["fontWeight"]?.GetValue<string>();
+                            var textColor  = cell["textColor"]?.GetValue<string>();
+                            var bgColor    = cell["backgroundColor"]?.GetValue<string>();
+                            TextStyle? cellStyle = (fontWeight is not null || textColor is not null || bgColor is not null)
+                                ? new TextStyle
+                                {
+                                    Bold = fontWeight == "Bold" ? true : null,
+                                    TextColor = textColor,
+                                    BackgroundColor = bgColor,
+                                }
+                                : null;
+
                             row.Cells.Add(new TableCell
                             {
-                                Content    = cell["content"]?.GetValue<string>() ?? "",
-                                Format     = cell["format"]?.GetValue<string>(),
-                                FontWeight = cell["fontWeight"]?.GetValue<string>(),
-                                TextColor  = cell["textColor"]?.GetValue<string>(),
-                                BackgroundColor = cell["backgroundColor"]?.GetValue<string>()
+                                Content = cell["content"]?.GetValue<string>() ?? "",
+                                Format  = cell["format"]?.GetValue<string>(),
+                                Style   = cellStyle,
                             });
                         }
 

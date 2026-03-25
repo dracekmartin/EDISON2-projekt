@@ -48,18 +48,21 @@ public class NotesLegendElement : ScheduleElementBase
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
         float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
 
+        float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
+        string effFontFamily = DataStyle.FontFamily ?? "Arial";
+
         float noteFontPx = NoteFontSize * scale * PtToMm * ctx.MmToPx;
-        float headerFontPx = HeaderFontSize * scale * PtToMm * ctx.MmToPx;
-        float headerH = ComputeHeaderH(HeaderFontSize * scale);
+        float headerFontPx = effHeaderFontSize * scale * PtToMm * ctx.MmToPx;
+        float headerH = ComputeHeaderH(effHeaderFontSize * scale);
         float scaledNoteLineH = NoteLineHeight * scale;
 
         using var paints = CreateStandardPaints();
 
-        using var noteFont = new SKFont(SKTypeface.FromFamilyName(FontFamily), noteFontPx);
+        using var noteFont = new SKFont(SKTypeface.FromFamilyName(effFontFamily), noteFontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), headerFontPx);
+            SKTypeface.FromFamilyName(effFontFamily, SKFontStyle.Bold), headerFontPx);
         using var boldFont = new SKFont(
-            SKTypeface.FromFamilyName(FontFamily, SKFontStyle.Bold), noteFontPx);
+            SKTypeface.FromFamilyName(effFontFamily, SKFontStyle.Bold), noteFontPx);
 
         // Záhlaví
         float currentY = RenderSectionHeader(ctx, HeaderText,
@@ -144,7 +147,7 @@ public class NotesLegendElement : ScheduleElementBase
         var filtered = FilterPoznamky(poznamky);
         if (filtered.Count == 0) return DesignerPlaceholderHeight;
 
-        return ComputeHeaderH(HeaderFontSize) + filtered.Count * NoteLineHeight;
+        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + filtered.Count * NoteLineHeight;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -179,20 +182,21 @@ public class NotesLegendElement : ScheduleElementBase
         .. GetPositionDescriptors()
     ];
 
+    // ─── Scale ──────────────────────────────────────────────────────────────
+
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        NoteFontSize *= scale;
+        NoteLineHeight *= scale;
+    }
+
     // ─── Clone ──────────────────────────────────────────────────────────────
 
     public override TemplateElement Clone()
     {
         var clone = new NotesLegendElement
         {
-            Id = Guid.NewGuid(),
-            X = X, Y = Y, Width = Width, Height = Height,
-            ZIndex = ZIndex, IsLocked = IsLocked,
-            VisibilityExpression = VisibilityExpression,
-            CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-            GroupId = GroupId,
-            BorderColor = BorderColor, BorderWidth = BorderWidth,
-
             HeaderText               = HeaderText,
             NoteSeparator            = NoteSeparator,
             NoteFontSize             = NoteFontSize,
@@ -203,6 +207,7 @@ public class NotesLegendElement : ScheduleElementBase
             ShowSpecialniZnaky       = ShowSpecialniZnaky,
             ShowTextovePoznamky      = ShowTextovePoznamky,
         };
+        CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);
         return clone;
     }

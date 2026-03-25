@@ -537,6 +537,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CmbScale_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null || CmbScale.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;
+        if (item.Tag is string tagStr && float.TryParse(tagStr,
+                System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out float scale))
+        {
+            _vm.ScaleTemplate(scale);
+        }
+        // Vrátit zpět na "Škálovat..." (index 0) — dropdown funguje jako akční menu
+        CmbScale.SelectedIndex = 0;
+    }
+
     // ── Panel visibility ──────────────────────────────────────────────────────
 
     private void MenuPanelSection_Changed(object sender, RoutedEventArgs e)

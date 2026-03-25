@@ -11,7 +11,7 @@ public enum ScheduleDisplayMode { MinutesOnly, FullTime }
 
 public enum TimeAxisMode { Compact, Full, Range }
 
-public enum VerticalTextAlignment { Top, Center, Bottom }
+
 
 // ─── Runtime POCO modely (neserializují se do JSON šablony) ─────────────────
 
@@ -86,63 +86,15 @@ public class PoznamkaData
 }
 
 // ─── Generický per-column styling ────────────────────────────────────────────
-
-/// <summary>
-/// Lehký textový styl pro inline segmenty (minuty, anotace).
-/// Null property = dědit z element-level default.
-/// </summary>
-public class InlineTextStyle
-{
-    public string? FontFamily { get; set; }
-    public float? FontSize { get; set; }
-    public bool? Bold { get; set; }
-    public bool? Italic { get; set; }
-    public string? TextColor { get; set; }
-
-    public InlineTextStyle Clone() => (InlineTextStyle)MemberwiseClone();
-
-    [System.Text.Json.Serialization.JsonIgnore]
-    public bool IsEmpty =>
-        FontFamily is null && FontSize is null && Bold is null
-        && Italic is null && TextColor is null;
-}
-
-/// <summary>
-/// Vizuální styl jedné zóny buňky (záhlaví NEBO data).
-/// Null property = dědit z element-level default.
-/// </summary>
-public class CellStyle
-{
-    public string? FontFamily { get; set; }
-    public float? FontSize { get; set; }
-    public bool? Bold { get; set; }
-    public bool? Italic { get; set; }
-    public string? TextColor { get; set; }
-    public string? BackgroundColor { get; set; }
-    public TextHorizontalAlignment? HAlignment { get; set; }
-    public float? PaddingTop { get; set; }
-    public float? PaddingRight { get; set; }
-    public float? PaddingBottom { get; set; }
-    public float? PaddingLeft { get; set; }
-
-    public CellStyle Clone() => (CellStyle)MemberwiseClone();
-
-    [System.Text.Json.Serialization.JsonIgnore]
-    public bool IsEmpty =>
-        FontFamily is null && FontSize is null && Bold is null
-        && Italic is null && TextColor is null && BackgroundColor is null
-        && HAlignment is null
-        && PaddingTop is null && PaddingRight is null
-        && PaddingBottom is null && PaddingLeft is null;
-}
+// InlineTextStyle a CellStyle nahrazeny univerzální třídou TextStyle (viz Models/TextStyle.cs).
 
 /// <summary>
 /// Kompletní vizuální styl sloupce = záhlaví + datové buňky.
 /// </summary>
 public class ColumnVisualStyle
 {
-    public CellStyle? Header { get; set; }
-    public CellStyle? Data { get; set; }
+    public TextStyle? Header { get; set; }
+    public TextStyle? Data { get; set; }
 
     public ColumnVisualStyle Clone() => new()
     {

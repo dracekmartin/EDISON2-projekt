@@ -67,6 +67,14 @@ public class LineElement : TemplateElement
         }
     }
 
+    public override void ApplyScale(float scale)
+    {
+        base.ApplyScale(scale);
+        StrokeWidth *= scale;
+        if (CustomDashMm is not null) CustomDashMm *= scale;
+        if (CustomGapMm is not null) CustomGapMm *= scale;
+    }
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new EnumPropertyDescriptor  { Label = "Orientace", Group = "Čára", Get = () => Orientation, Set = v => Orientation = (LineOrientation)v,
@@ -81,22 +89,20 @@ public class LineElement : TemplateElement
         .. GetPositionDescriptors()
     ];
 
-    public override TemplateElement Clone() => new LineElement
+    public override TemplateElement Clone()
     {
-        Id = Guid.NewGuid(),
-        X = X, Y = Y, Width = Width, Height = Height,
-        ZIndex = ZIndex, IsLocked = IsLocked,
-        VisibilityExpression = VisibilityExpression,
-        CustomProperties = CustomProperties is null ? null : new(CustomProperties),
-        GroupId = GroupId,
-        BorderColor = BorderColor, BorderWidth = BorderWidth,
-        Orientation = Orientation,
-        Color = Color,
-        StrokeWidth = StrokeWidth,
-        Style = Style,
-        CustomDashMm = CustomDashMm,
-        CustomGapMm = CustomGapMm
-    };
+        var clone = new LineElement
+        {
+            Orientation = Orientation,
+            Color = Color,
+            StrokeWidth = StrokeWidth,
+            Style = Style,
+            CustomDashMm = CustomDashMm,
+            CustomGapMm = CustomGapMm
+        };
+        CopyBaseTo(clone);
+        return clone;
+    }
 }
 
 public enum LineOrientation { Horizontal, Vertical }

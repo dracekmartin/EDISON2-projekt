@@ -1,10 +1,11 @@
 using System.ComponentModel;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner;
 
 /// <summary>
-/// ViewModel pro jednu CellStyle zónu (záhlaví NEBO data).
+/// ViewModel pro jednu TextStyle zónu (záhlaví NEBO data).
 /// Všechny properties jsou nullable/defaultní — null = dědit z elementu.
 /// Sdílený across all column-style dialogs (DepartureGrid, StopList, budoucí).
 /// </summary>
@@ -45,9 +46,9 @@ public class CellStyleVM : INotifyPropertyChanged
 
     // ── Konverze Model ↔ VM ───────────────────────────────────────────────
 
-    public CellStyle? ToModel()
+    public TextStyle? ToModel()
     {
-        var s = new CellStyle
+        var s = new TextStyle
         {
             FontFamily      = NullIfEmpty(FontFamily),
             FontSize        = FontSize,
@@ -55,7 +56,7 @@ public class CellStyleVM : INotifyPropertyChanged
             Italic          = _italic ? true : null,
             TextColor       = NullIfEmpty(TextColor),
             BackgroundColor = NullIfEmpty(BgColor),
-            HAlignment      = _hAlignmentIndex >= 0 && _hAlignmentIndex < HAlignMap.Length ? HAlignMap[_hAlignmentIndex] : null,
+            HAlign          = _hAlignmentIndex >= 0 && _hAlignmentIndex < HAlignMap.Length ? HAlignMap[_hAlignmentIndex] : null,
             PaddingTop      = PaddingTop,
             PaddingRight    = PaddingRight,
             PaddingBottom   = PaddingBottom,
@@ -64,7 +65,7 @@ public class CellStyleVM : INotifyPropertyChanged
         return s.IsEmpty ? null : s;
     }
 
-    public static CellStyleVM FromModel(CellStyle? s, bool defaultBold = false) => new()
+    public static CellStyleVM FromModel(TextStyle? s, bool defaultBold = false) => new()
     {
         FontFamily      = s?.FontFamily ?? "",
         FontSize        = s?.FontSize,
@@ -72,7 +73,7 @@ public class CellStyleVM : INotifyPropertyChanged
         Italic          = s?.Italic ?? false,
         TextColor       = s?.TextColor ?? "",
         BgColor         = s?.BackgroundColor ?? "",
-        HAlignmentIndex = s?.HAlignment switch
+        HAlignmentIndex = s?.HAlign switch
         {
             TextHorizontalAlignment.Left   => 0,
             TextHorizontalAlignment.Center => 1,

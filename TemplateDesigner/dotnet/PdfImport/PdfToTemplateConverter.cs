@@ -24,6 +24,12 @@ public class PdfToTemplateConverter
     /// <summary>Režim sloučení grafiky do pozadí obrázku.</summary>
     public GraphicsMergeMode MergeMode { get; set; } = GraphicsMergeMode.None;
 
+    /// <summary>Typ JŘ importu — uživatel volí apriorně. None = obecný import.</summary>
+    public ScheduleImportType ScheduleImportType { get; set; } = ScheduleImportType.None;
+
+    /// <summary>Výsledek detekce JŘ (pro debug/preview). Null pokud nebyla detekce.</summary>
+    public ScheduleDetectionResult? LastDetectionResult { get; private set; }
+
     public Template Convert(string pdfPath, int[]? pages = null)
     {
         using var doc = PdfDocument.Open(pdfPath);
@@ -73,6 +79,50 @@ public class PdfToTemplateConverter
                     log.AppendLine($"  [{b.X:0.#},{b.Y:0.#} {b.Width:0.#}x{b.Height:0.#}] \"{b.Text.Replace("\n","\\n")}\"  font={b.FontFamily} {b.FontSizePt:0.#}pt");
             }
 
+            // Pokus o detekci JŘ struktury (pokud uživatel zvolil typ)
+            if (ScheduleImportType == ScheduleImportType.ZastavkovyJrMhd)
+            {
+                var detection = ScheduleDetector.DetectZastavkovyJr(extracted);
+                LastDetectionResult = detection;
+
+                if (detection is not null && detection.Confidence >= 0.5f)
+                {
+                    if (log is not null)
+                    {
+                        log.AppendLine($"\n--- SCHEDULE DETECTION (confidence={detection.Confidence:0.##}) ---");
+                        log.AppendLine($"  StopList: {FormatRegion(detection.StopListRegion)}");
+                        log.AppendLine($"  DepartureGrid: {FormatRegion(detection.DepartureGridRegion)}");
+                        log.AppendLine($"  Notes: {FormatRegion(detection.NotesRegion)}");
+                        log.AppendLine($"  DayGroups: {detection.DayGroups.Count}");
+                        foreach (var g in detection.DayGroups)
+                            log.AppendLine($"    \"{g.HeaderText}\" x={g.X:0.#} w={g.Width:0.#}");
+                        log.AppendLine($"  HourColW={detection.HourColumnWidth:0.#} MinuteW={detection.MinuteCellWidth:0.#} RowH={detection.DataRowHeight:0.#}");
+                        log.AppendLine($"  MinuteFontPt={detection.MinuteFontSizePt:0.#} StopFontPt={detection.StopFontSizePt:0.#}");
+                        log.AppendLine($"  StopColWidths=[{string.Join(", ", detection.StopColumnWidths.Select(w => w.ToString("0.#")))}]");
+                        log.AppendLine($"  UnmappedTexts={detection.UnmappedTexts.Count} UnmappedImages={detection.UnmappedImages.Count}");
+                    }
+
+                    // Použij schedule builder místo generic BuildSection
+                    var scheduleElements = ScheduleElementBuilder.BuildElements(
+                        detection, extracted, 0, 0); // marginy se aplikují později v AdjustElementPositions
+
+                    var schedSection = new Section
+                    {
+                        Id = Guid.NewGuid(),
+                        Name = $"JŘ — Strana {pageNum}",
+                        PrintBehavior = SectionPrintBehavior.Once,
+                        OverflowBehavior = SectionOverflowBehavior.KeepTogether,
+                        Elements = scheduleElements
+                    };
+                    sections.Add(schedSection);
+                    extractedPages.Add(extracted);
+                    continue;
+                }
+
+                if (log is not null)
+                    log.AppendLine($"\n--- SCHEDULE DETECTION FAILED (confidence={detection?.Confidence:0.##}) → fallback to generic ---");
+            }
+
             var section = BuildSection(pageNum, extracted, textBlocks, pageWidthMm, pageHeightMm, MergeMode);
             sections.Add(section);
             extractedPages.Add(extracted);
@@ -93,7 +143,8 @@ public class PdfToTemplateConverter
             section.DesignerHeight = Math.Max(contentHeight, 10f);
 
         // Merge mode: vykreslení sloučené grafiky s offset na margin
-        if (MergeMode != GraphicsMergeMode.None)
+        // JŘ import grafiku přeskakuje — mřížku/čáry renderují JŘ elementy samy
+        if (MergeMode != GraphicsMergeMode.None && ScheduleImportType == ScheduleImportType.None)
         {
             float contentWidth = pageWidthMm - marginLeft - marginRight;
             for (int i = 0; i < sections.Count; i++)
@@ -128,7 +179,7 @@ public class PdfToTemplateConverter
                             X = Math.Max(0, rect.X - marginLeft), Y = Math.Max(0, rect.Y - marginTop),
                             Width = rect.Width, Height = rect.Height,
                             ZIndex = zIdx++,
-                            FillColor = rect.FillColorHex ?? Transparent,
+                            BackgroundColor = rect.FillColorHex ?? Transparent,
                             StrokeColor = rect.StrokeColorHex ?? Black,
                             StrokeWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f)
                         });
@@ -216,12 +267,15 @@ public class PdfToTemplateConverter
                 Height = height,
                 ZIndex = zIndex++,
                 Text = block.Text,
-                FontFamily = block.FontFamily,
-                FontSize = block.FontSizePt,
-                FontWeight = block.IsBold ? TextFontWeight.Bold : TextFontWeight.Normal,
-                FontStyle = block.IsItalic ? TextFontStyle.Italic : TextFontStyle.Normal,
-                HorizontalAlignment = alignment,
-                TextColor = block.ColorHex,
+                Style = new TextStyle
+                {
+                    FontFamily = block.FontFamily,
+                    FontSize = block.FontSizePt,
+                    Bold = block.IsBold,
+                    Italic = block.IsItalic,
+                    HAlign = alignment,
+                    TextColor = block.ColorHex,
+                },
                 WordWrap = block.Text.Contains('\n')
             });
         }
@@ -248,7 +302,7 @@ public class PdfToTemplateConverter
                 X = rect.X, Y = rect.Y,
                 Width = rect.Width, Height = rect.Height,
                 ZIndex = zIndex++,
-                FillColor = rect.FillColorHex ?? Transparent,
+                BackgroundColor = rect.FillColorHex ?? Transparent,
                 StrokeColor = rect.StrokeColorHex ?? Black,
                 StrokeWidth = Math.Clamp(rect.StrokeWidth, 0.1f, 0.5f)
             });
@@ -456,6 +510,9 @@ public class PdfToTemplateConverter
             // All: background image je jen jeden prvek — skupina nemá smysl
         }
     }
+
+    private static string FormatRegion(DetectedRegion? r) =>
+        r is null ? "(none)" : $"[{r.X:0.#},{r.Y:0.#} {r.Width:0.#}x{r.Height:0.#}]";
 
     private static TextHorizontalAlignment DetectAlignment(ExtractedTextBlock block, float pageWidthMm)
     {
