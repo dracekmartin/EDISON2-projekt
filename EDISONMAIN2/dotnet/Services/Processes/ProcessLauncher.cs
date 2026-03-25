@@ -19,11 +19,18 @@ namespace EDISONMAIN2.Services.Processes
             var prc = Process.Start(new ProcessStartInfo()
             {
                 UseShellExecute = true,
-                FileName = Path.Combine("C:\\EDISON", module.ExecutablePath),
+                FileName = ResolveExecutablePath(module.ExecutablePath),
                 Arguments = $"EDISONMAIN2 \"{_connParams.Server}\" \"{_connParams.RestPort}\" \"{Namespace}\" \"{Idfa}\" \"{_connParams.UserName}\" \"{_connParams.FullName}\" \"{_connParams.Mlp}\" \"{module.FormName}\"",
             });
 
             if (prc != null) _processes.Add(prc);
+        }
+
+        private static string ResolveExecutablePath(string relativePath)
+        {
+            var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
+            if (File.Exists(localPath)) return localPath;
+            return Path.Combine(@"C:\Edison", relativePath);
         }
 
         public void CloseAll()
