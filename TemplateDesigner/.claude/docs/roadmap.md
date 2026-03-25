@@ -50,7 +50,7 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 |---|---|---|
 | 11 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
 | 12 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
-| 13 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | ✅ základ hotovo (2026-03-25) — AiImportEnricher, kontextové prompty per ScheduleImportType, auto-apply DB polí |
+| 13 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | ⬅️ rozpracováno (2026-03-25) — pipeline funguje, ladění na širší sadě JŘ |
 
 **Import PDF — aktuální stav:**
 - ✅ Režim 1 (deterministický 1:1 import) hotovo (2026-03-13)
