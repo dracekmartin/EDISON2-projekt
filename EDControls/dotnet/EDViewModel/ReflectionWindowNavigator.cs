@@ -31,9 +31,15 @@ public class ReflectionWindowNavigator : IWindowNavigator
         var type = FindTypeInAssembly(typeName, assemblyName)
             ?? throw new InvalidOperationException(
                 $"Window type '{typeName}' not found in assembly '{assemblyName}'.");
-        return input is null
+        var window = input is null
             ? (Window)Activator.CreateInstance(type)!
             : (Window)Activator.CreateInstance(type, input)!;
+
+        var idfa = EDServices.Current.MLRest?.Idfa;
+        if (!string.IsNullOrEmpty(idfa))
+            window.Title = $"{window.Title} [{idfa}]";
+
+        return window;
     }
 
     private static Type? FindTypeInAssembly(string typeName, string assemblyName)

@@ -75,6 +75,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     Set(ref _selectedCompanyIndex, value);
                     OnPropertyChanged(nameof(Namespace));
                     OnPropertyChanged(nameof(Idfa));
+                    OnPropertyChanged(nameof(WindowTitle));
                     _processLauncher.CloseAll();
                     MLRest!.DataNamespace = Namespace;
                     MLRest!.Idfa = Idfa;
@@ -87,6 +88,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string Namespace => SelectedCompany.Database;
 
         public string Idfa => SelectedCompany.Id;
+
+        public string WindowTitle => $"M-line EDISON [{Idfa}]";
 
         private void OpenModule(IModule module)
         {
