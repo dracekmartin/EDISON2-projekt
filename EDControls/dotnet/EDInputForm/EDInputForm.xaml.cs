@@ -4,7 +4,6 @@ using EDControls.EDViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -311,7 +310,6 @@ namespace EDControls.EDInputForm
         private void ButtonField_Click(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
-            Debug.WriteLine($"[EDInputForm] Button clicked (changedKey={field.Key}, ValidateOnChange={field.ValidateOnChange})");
             if (!field.ValidateOnChange) return;
             Controller.Validate(field.Key);
         }
@@ -348,7 +346,6 @@ namespace EDControls.EDInputForm
                     field.Value = dialog.FileName;
             }
 
-            Debug.WriteLine($"[EDInputForm] File browse completed (key={field.Key}, value={field.Value})");
         }
 
         // ─── Internal ─────────────────────────────────────────────────────────────
@@ -371,24 +368,15 @@ namespace EDControls.EDInputForm
                 foreach (var field in newItems.OfType<Field>())
                     field.PropertyChanged += control.Field_PropertyChanged;
 
-            int autoValidateCount = e.NewValue is IEnumerable<Item> ni ? ni.OfType<Field>().Count(f => f.ValidateOnChange) : 0;
-            Debug.WriteLine($"[EDInputForm] Items changed — subscribed to {autoValidateCount} auto-validate field(s)");
         }
 
         private void Field_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName != nameof(Field.Value)) return;
             if (sender is not Field field) return;
-
-            Debug.WriteLine($"[EDInputForm] '{field.Key}' Value changed. ValidateOnChange={field.ValidateOnChange}");
-
             if (!field.ValidateOnChange) return;
 
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                Debug.WriteLine($"[EDInputForm] Auto-validating on Change (changedKey={field.Key})");
-                Controller.Validate(field.Key);
-            }));
+            Dispatcher.BeginInvoke(new Action(() => Controller.Validate(field.Key)));
         }
     }
 }
