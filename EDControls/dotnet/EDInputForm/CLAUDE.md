@@ -125,6 +125,10 @@ Když `Field` s `ValidateOnChange == true` změní svou `Value`, EDInputForm zav
 Klíč změněného pole se předá jako `changedKey` — na Caché straně dostupný přes
 `form.changedKey`, `form.HasChangedField()` nebo `form.GetChangedField()`.
 
+Totéž platí pro tlačítka (`FieldTypeButton`): kliknutí spustí validační roundtrip pouze
+pokud má pole `ValidateOnChange == true`. Tlačítko s `ValidateOnChange == false` při
+kliknutí neprovede žádný server roundtrip.
+
 ## Klávesová navigace
 
 `Ctrl+číslice` naviguje na položku, jejíž `Number` odpovídá akumulované hodnotě:

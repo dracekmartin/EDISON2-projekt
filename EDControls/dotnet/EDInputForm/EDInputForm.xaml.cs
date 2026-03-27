@@ -311,7 +311,8 @@ namespace EDControls.EDInputForm
         private void ButtonField_Click(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
-            Debug.WriteLine($"[EDInputForm] Button clicked (changedKey={field.Key})");
+            Debug.WriteLine($"[EDInputForm] Button clicked (changedKey={field.Key}, ValidateOnChange={field.ValidateOnChange})");
+            if (!field.ValidateOnChange) return;
             Controller.Validate(field.Key);
         }
 

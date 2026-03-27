@@ -42,7 +42,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		d f.AddListItem("C", "Volba C")
 		s f.value = "A"
 
-		s f = form.AddFieldToLastGroup("button", "Tlačítko", $$$FieldTypeButton, 0, 0)
+		s f = form.AddFieldToLastGroup("button", "Tlačítko", $$$FieldTypeButton, 1, 0)
 		s f.value = "Klikni"
 
 		s f = form.AddFieldToLastGroup("file", "Soubor", $$$FieldTypeFile, 0, 0)
@@ -71,7 +71,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f = form.AddFieldToLastGroup("htField", "Pole s nápovědou", $$$FieldTypeText, 0, 0)
 		s f.helpText = "Toto je nápověda k poli — zobrazí se jako tooltip nebo ve sloupci"
 
-		s f = form.AddFieldToLastGroup("htToggle", "Režim nápovědy", $$$FieldTypeButton, 0, 0)
+		s f = form.AddFieldToLastGroup("htToggle", "Režim nápovědy", $$$FieldTypeButton, 1, 0)
 		s f.value = "Přepnout na sloupec"
 
 		// ── Skupina 4: Editovatelnost ────────────────────────────────────────
@@ -93,7 +93,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		d form.AddFieldToLastGroup("visField", "Skryté pole", $$$FieldTypeText, 0, 0)
 
 		d form.AddGroup("visControls", "Ovládání viditelnosti")
-		s f = form.AddFieldToLastGroup("visToggle", "Přepnout skupinu", $$$FieldTypeButton, 0, 0)
+		s f = form.AddFieldToLastGroup("visToggle", "Přepnout skupinu", $$$FieldTypeButton, 1, 0)
 		s f.value = "Rozbalit skupinu"
 
 		// ── Skupina 6: Validace ──────────────────────────────────────────────
@@ -138,10 +138,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		d form.AddGroup("actions", "Akční tlačítka")
 
-		s f = form.AddFieldToLastGroup("fillDefaults", "Vyplnit příklady", $$$FieldTypeButton, 0, 0)
+		s f = form.AddFieldToLastGroup("fillDefaults", "Vyplnit příklady", $$$FieldTypeButton, 1, 0)
 		s f.value = "Vyplnit výchozí hodnoty"
 
-		s f = form.AddFieldToLastGroup("clearAll", "Vyčistit formulář", $$$FieldTypeButton, 0, 0)
+		s f = form.AddFieldToLastGroup("clearAll", "Vyčistit formulář", $$$FieldTypeButton, 1, 0)
 		s f.value = "Vyčistit vše"
 
 		d form.WriteToOut()
