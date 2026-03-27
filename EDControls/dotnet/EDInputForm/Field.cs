@@ -88,6 +88,19 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
+        /// Returns a required-field validation error if this field is Required and empty,
+        /// or null if no error. Bool and Button fields are always valid (no empty state).
+        /// </summary>
+        public string? GetRequiredError()
+        {
+            if (!Required) return null;
+            if (FieldType == EFieldType.Bool) return null;
+            if (FieldType == EFieldType.Button) return null;
+            if (string.IsNullOrEmpty(_value)) return "Povinné pole";
+            return null;
+        }
+
+        /// <summary>
         /// Returns a client-side type validation error, or null if the value is valid.
         /// Empty/null values are not flagged here — use Required for that.
         /// </summary>

@@ -58,7 +58,39 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
         CVar output = mlRest.QueryOrThrow(cacheClass, "Validate", input);
         ApplyOutput(output);
+        ApplyRequiredValidation();
         return Items.OfType<Field>().All(f => !f.HasError);
+    }
+
+    /// <summary>
+    /// Builds a Czech-language error summary from fields that have validation errors.
+    /// Returns null when there are no errors.
+    /// </summary>
+    public static string? FormatValidationErrors(List<Item> items)
+    {
+        var errors = items.OfType<Field>()
+            .Where(f => f.HasError)
+            .Select(f => $"• {f.Label} — {f.ValidationError}")
+            .ToList();
+
+        if (errors.Count == 0) return null;
+
+        return "Formulář obsahuje chyby:\n" + string.Join("\n", errors);
+    }
+
+    /// <summary>
+    /// Sets "Povinné pole" on required fields that are empty and have no server error.
+    /// Server/programmer errors take priority — only fields without errors are touched.
+    /// </summary>
+    private void ApplyRequiredValidation()
+    {
+        foreach (var field in Items.OfType<Field>())
+        {
+            if (field.HasError) continue;
+            var requiredError = field.GetRequiredError();
+            if (requiredError != null)
+                field.ValidationError = requiredError;
+        }
     }
 
     private void ApplyOutput(CVar output)

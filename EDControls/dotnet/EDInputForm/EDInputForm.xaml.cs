@@ -22,6 +22,7 @@ namespace EDControls.EDInputForm
         // ─── Configuration ────────────────────────────────────────────────────────
 
         private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
+        private EDViewModel.IPopupDisplayer? PopupDisplayer => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.PopupDisplayer;
 
         /// <summary>Caché class that implements Init / Validate / Save.</summary>
         public string CacheClass { get; set; } = "";
@@ -110,7 +111,14 @@ namespace EDControls.EDInputForm
         public bool Save()
         {
             EnsureConfigured();
-            return Controller.Save();
+            bool result = Controller.Save();
+            if (!result)
+            {
+                var message = EDInputFormController.FormatValidationErrors(Controller.Items);
+                if (message != null)
+                    PopupDisplayer?.Info(message);
+            }
+            return result;
         }
 
         internal static CVar SerializeItemsCVar(IEnumerable<Item>? items)

@@ -812,4 +812,39 @@ public class EDInputFormParsingTests
         Assert.Equal(@"C:\Output", f.Value);
         Assert.Equal("$FOLDER", f.FileFilter);
     }
+
+    // ─── GetRequiredError tests ───────────────────────────────────────────────
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void GetRequiredError_RequiredEmptyField_ReturnsError(string? value)
+    {
+        var field = new Field { Required = true, Value = value };
+        Assert.Equal("Povinné pole", field.GetRequiredError());
+    }
+
+    [Fact]
+    public void GetRequiredError_RequiredFilledField_ReturnsNull()
+    {
+        var field = new Field { Required = true, Value = "Jan" };
+        Assert.Null(field.GetRequiredError());
+    }
+
+    [Fact]
+    public void GetRequiredError_NotRequired_ReturnsNull()
+    {
+        var field = new Field { Required = false, Value = null };
+        Assert.Null(field.GetRequiredError());
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("1")]
+    [InlineData(null)]
+    public void GetRequiredError_RequiredBoolField_ReturnsNull(string? value)
+    {
+        var field = new Field { Required = true, FieldType = EFieldType.Bool, Value = value };
+        Assert.Null(field.GetRequiredError());
+    }
 }

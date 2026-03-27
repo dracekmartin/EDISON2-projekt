@@ -351,4 +351,155 @@ public class EDInputFormControllerTests
         Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
         Assert.Equal("Přepnout na tooltip", controller.Items.OfType<Field>().Single().Value);
     }
+
+    // ─── FormatValidationErrors tests ─────────────────────────────────────────
+
+    [Fact]
+    public void FormatValidationErrors_NoErrors_ReturnsNull()
+    {
+        var items = new List<Item>
+        {
+            new Field { Label = "Jméno", ValidationError = null },
+            new Field { Label = "Věk", ValidationError = null },
+        };
+
+        Assert.Null(EDInputFormController.FormatValidationErrors(items));
+    }
+
+    [Fact]
+    public void FormatValidationErrors_SingleError_ReturnsFormattedMessage()
+    {
+        var items = new List<Item>
+        {
+            new Field { Label = "Jméno", ValidationError = "Povinné pole" },
+        };
+
+        string? result = EDInputFormController.FormatValidationErrors(items);
+
+        Assert.NotNull(result);
+        Assert.Contains("Jméno", result);
+        Assert.Contains("Povinné pole", result);
+        Assert.StartsWith("Formulář obsahuje chyby:", result);
+    }
+
+    [Fact]
+    public void FormatValidationErrors_MultipleErrors_ListsOnlyErrorFields()
+    {
+        var items = new List<Item>
+        {
+            new Field { Label = "Jméno", ValidationError = "Povinné pole" },
+            new Field { Label = "Věk", ValidationError = null },
+            new Field { Label = "Email", ValidationError = "Neplatný formát" },
+        };
+
+        string? result = EDInputFormController.FormatValidationErrors(items);
+
+        Assert.NotNull(result);
+        Assert.Contains("Jméno — Povinné pole", result);
+        Assert.Contains("Email — Neplatný formát", result);
+        Assert.DoesNotContain("Věk", result);
+    }
+
+    [Fact]
+    public void FormatValidationErrors_SkipsGroupItems()
+    {
+        var items = new List<Item>
+        {
+            new Group { GroupName = "Sekce" },
+            new Field { Label = "Pole", ValidationError = "Chyba" },
+        };
+
+        string? result = EDInputFormController.FormatValidationErrors(items);
+
+        Assert.NotNull(result);
+        Assert.DoesNotContain("Sekce", result);
+        Assert.Contains("Pole — Chyba", result);
+    }
+
+    [Fact]
+    public void FormatValidationErrors_EmptyList_ReturnsNull()
+    {
+        Assert.Null(EDInputFormController.FormatValidationErrors(new List<Item>()));
+    }
+
+    // ─── Required validation tests ────────────────────────────────────────────
+
+    [Fact]
+    public void Validate_RequiredEmptyField_SetsErrorAndReturnsFalse()
+    {
+        var data = FieldData(value: "", required: true);
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        bool result = controller.Validate();
+
+        Assert.False(result);
+        var f = Assert.IsType<Field>(Assert.Single(controller.Items));
+        Assert.Equal("Povinné pole", f.ValidationError);
+    }
+
+    [Fact]
+    public void Validate_RequiredFilledField_NoError()
+    {
+        var data = FieldData(value: "Jan", required: true);
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        bool result = controller.Validate();
+
+        Assert.True(result);
+        var f = Assert.IsType<Field>(Assert.Single(controller.Items));
+        Assert.Null(f.ValidationError);
+    }
+
+    [Fact]
+    public void Validate_RequiredFieldWithProgrammerError_ProgrammerErrorPreserved()
+    {
+        var data = FieldData(value: "", required: true, error: "Vyplňte celé jméno");
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        controller.Validate();
+
+        var f = Assert.IsType<Field>(Assert.Single(controller.Items));
+        Assert.Equal("Vyplňte celé jméno", f.ValidationError);
+    }
+
+    [Fact]
+    public void Save_RequiredEmptyField_ReturnsFalseAndDoesNotCallSave()
+    {
+        var data = FieldData(value: "", required: true);
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        bool result = controller.Save();
+
+        Assert.False(result);
+        mlRest.DidNotReceive().QueryOrThrow(CacheClass, "Save", Arg.Any<CVar>());
+    }
+
+    [Fact]
+    public void Validate_RequiredFieldBecomesFilled_ErrorClears()
+    {
+        var emptyData = FieldData(value: "", required: true);
+        var filledData = FieldData(value: "Jan", required: true);
+        var mlRest = Substitute.For<IMLRest>();
+        mlRest.QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>()).Returns(emptyData);
+        mlRest.QueryOrThrow(CacheClass, "Validate", Arg.Any<CVar>())
+            .Returns(emptyData, emptyData, filledData);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        // First Validate — field is empty → required error
+        controller.Validate();
+        Assert.Equal("Povinné pole", controller.Items.OfType<Field>().Single().ValidationError);
+
+        // Second Validate — field is now filled → no error
+        controller.Validate();
+        Assert.Null(controller.Items.OfType<Field>().Single().ValidationError);
+    }
 }
