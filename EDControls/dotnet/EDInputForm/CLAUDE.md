@@ -13,7 +13,8 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | --- | --- |
 | `EDInputForm.xaml / .xaml.cs` | UserControl. Vlastní všechna Caché volání, serializační helpery a Items DP. |
 | `EDInputFormController.cs` | Testovatelná orchestrace (Init/Validate/Save) bez WPF závislosti. Přijímá `IMLRest` a `CacheClass` jako parametry konstruktoru. |
-| `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální). Implementuje `INotifyPropertyChanged`. |
+| `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální), `HelpText`, `HelpTextVisibility`. Implementuje `INotifyPropertyChanged`. |
+| `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
 | `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. |
 | `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
@@ -48,8 +49,10 @@ void Save_Click(...)     { bool ok = TheInputForm.Save();     }
 | `bool Validate()` | Volá Caché `Validate` s Change triggerem; vrací true pokud nejsou chyby. |
 | `bool Save()` | Validuje s BeforeSave triggerem, volá Caché `Save` pouze pokud je čistý stav; vrací true při úspěchu. |
 | `IEnumerable<Item>? Items` | DP — aktuální položky formuláře; aktualizuje se po každém Caché volání. |
+| `EHelpTextMode HelpTextMode` | DP — režim zobrazení nápovědy (`Tooltip` nebo `Column`). Čte se z Caché odpovědi. |
 | `static CVar SerializeItemsCVar(items)` | Převede Items → CVar pro odeslání do Caché. |
-| `static List<Item> ParseItems(CVar output)` | Převede Caché CVar výstup → seznam Item; přeskočí klíč "ERR". |
+| `static List<Item> ParseItems(CVar output)` | Převede Caché CVar výstup → seznam Item; přeskočí klíče "ERR" a "helpTextMode". |
+| `static EHelpTextMode ParseHelpTextMode(output)` | Přečte `helpTextMode` z CVar výstupu. |
 
 ### EDInputFormController (testovatelný, bez WPF)
 
@@ -68,13 +71,18 @@ List<Item> items = controller.Items;
 Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
-CVar["1"] = CList("GROUP", number, key, groupName, visibility)
-CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility)
+CVar["1"] = CList("GROUP", number, key, groupName, visibility, helpText)
+CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText)
+CVar["helpTextMode"] = "tooltip" | "column"   ; form-level setting, default "tooltip"
 ```
 
 Visibility (GROUP pozice 5, FIELD pozice 11): `"0"` = Visible (výchozí), `"1"` = Collapsed, `"2"` = UserHidden, `"3"` = ProgrammerHidden. Pokud chybí, položka je viditelná.
 
 Editable (FIELD pozice 10): `"1"` = editovatelné (výchozí), `"0"` = pouze ke čtení. Pokud chybí, pole je editovatelné.
+
+HelpText (GROUP pozice 6, FIELD pozice 12): volitelný text nápovědy. Pokud chybí nebo prázdný, nápověda se nezobrazí.
+
+HelpTextMode: `"tooltip"` (výchozí) zobrazí ikonu `?` s tooltipem, `"column"` zobrazí text v samostatném sloupci vpravo.
 
 ### Struktura volání Validate
 

@@ -11,3 +11,6 @@ ROUTINE EDInputForm [Type=INC]
 #define ItemVisibilityCollapsed        "1"
 #define ItemVisibilityUserHidden       "2"
 #define ItemVisibilityProgrammerHidden "3"
+
+#define HelpTextModeTooltip "tooltip"
+#define HelpTextModeColumn  "column"

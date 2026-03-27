@@ -13,20 +13,28 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
+		s f = form.AddFieldToLastGroup("toggleHelp", "Režim nápovědy", $$$FieldTypeButton, 0, 0)
+		s f.value = "Přepnout na sloupec"
+
 		d form.AddFieldToLastGroup("poznamka", "Poznámka", $$$FieldTypeText, 0, 0)
 
 		d form.AddGroup("osobni", "Osobní údaje")
-		d form.AddFieldToLastGroup("jmeno",    "Jméno",    $$$FieldTypeText,   1, 1)
-		d form.AddFieldToLastGroup("prijmeni", "Příjmení", $$$FieldTypeText,   1, 1)
+		s form.GetGroup("osobni").helpText = "Vyplňte osobní údaje cestujícího"
+		s f = form.AddFieldToLastGroup("jmeno",    "Jméno",    $$$FieldTypeText,   1, 1)
+		s f.helpText = "Křestní jméno cestujícího"
+		s f = form.AddFieldToLastGroup("prijmeni", "Příjmení", $$$FieldTypeText,   1, 1)
+		s f.helpText = "Příjmení bez titulů"
 		d form.AddFieldToLastGroup("vek",      "Věk",      $$$FieldTypeNumber, 1, 0)
 
 		d form.AddGroup("adresa", "Adresa")
 		d form.AddFieldToLastGroup("ulice", "Ulice", $$$FieldTypeText,   0, 0)
 		d form.AddFieldToLastGroup("mesto", "Město", $$$FieldTypeText,   0, 0)
-		d form.AddFieldToLastGroup("psc",   "PSČ",   $$$FieldTypeNumber, 1, 0)
+		s f = form.AddFieldToLastGroup("psc",   "PSČ",   $$$FieldTypeNumber, 1, 0)
+		s f.helpText = "Poštovní směrovací číslo (5 číslic)"
 
 		d form.AddGroup("kontakt", "Kontakt")
-		d form.AddFieldToLastGroup("email",   "E-mail",  $$$FieldTypeText,   0, 0)
+		s f = form.AddFieldToLastGroup("email",   "E-mail",  $$$FieldTypeText,   0, 0)
+		s f.helpText = "Kontaktní e-mailová adresa"
 		d form.AddFieldToLastGroup("telefon", "Telefon", $$$FieldTypeNumber, 0, 0)
 
 		d form.AddGroup("dalsi", "Další údaje")
@@ -41,6 +49,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f.value = "Vyplnit výchozí"
 
 		d form.AddGroup("nemoc", "Nemoc")
+		s form.GetGroup("nemoc").helpText = "Vyplňte pouze v případě nemoci"
 		d form.AddFieldToLastGroup("nemocny", "Nemocný", $$$FieldTypeBool, 1, 0)
 		s f = form.AddFieldToLastGroup("od", "Od", $$$FieldTypeDate, 0, 0)
 		s f.editable = 0
@@ -73,6 +82,17 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 			s f = form.GetField("psc")
 			i f.value'="" {
 				i $l(f.value)'=5 s f.validationError = "PSČ musí mít 5 číslic"
+			}
+		}
+
+		// "Přepnout režim nápovědy" button — toggles helpTextMode between tooltip and column
+		i form.HasChangedField() && (form.changedKey = "toggleHelp") {
+			i form.helpTextMode = $$$HelpTextModeTooltip {
+				s form.helpTextMode = $$$HelpTextModeColumn
+				s form.GetField("toggleHelp").value = "Přepnout na tooltip"
+			} else {
+				s form.helpTextMode = $$$HelpTextModeTooltip
+				s form.GetField("toggleHelp").value = "Přepnout na sloupec"
 			}
 		}
 

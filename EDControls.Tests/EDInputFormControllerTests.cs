@@ -260,4 +260,95 @@ public class EDInputFormControllerTests
         var fieldAfter = controller.Items.OfType<Field>().Single();
         Assert.Equal(EItemVisibility.ProgrammerHidden, fieldAfter.Visibility);
     }
+
+    // ─── HelpTextMode tests ─────────────────────────────────────────────────
+
+    [Fact]
+    public void Init_ReadsHelpTextModeFromInitResponse()
+    {
+        var data = FieldData();
+        data["helpTextMode"] = new CVar("column");
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+
+        controller.Init();
+
+        Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
+    }
+
+    [Fact]
+    public void Init_DefaultsToTooltipWhenHelpTextModeMissing()
+    {
+        var mlRest = MockMLRest(FieldData());
+        var controller = new EDInputFormController(mlRest, CacheClass);
+
+        controller.Init();
+
+        Assert.Equal(EHelpTextMode.Tooltip, controller.HelpTextMode);
+    }
+
+    [Fact]
+    public void Validate_UpdatesHelpTextModeFromResponse()
+    {
+        var initData = FieldData();
+        var columnData = FieldData();
+        columnData["helpTextMode"] = new CVar("column");
+        var mlRest = Substitute.For<IMLRest>();
+        mlRest.QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>()).Returns(initData);
+        // First Validate (during Init) returns tooltip, second (explicit) returns column
+        mlRest.QueryOrThrow(CacheClass, "Validate", Arg.Any<CVar>())
+            .Returns(initData, columnData);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+        Assert.Equal(EHelpTextMode.Tooltip, controller.HelpTextMode);
+
+        controller.Validate();
+
+        Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
+    }
+
+    [Fact]
+    public void Init_PreservesFieldHelpText()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "Help text here");
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+
+        controller.Init();
+
+        var f = controller.Items.OfType<Field>().Single();
+        Assert.Equal("Help text here", f.HelpText);
+    }
+
+    [Fact]
+    public void ButtonClick_TogglesHelpTextMode()
+    {
+        // Init returns tooltip mode with a toggle button
+        var initData = new CVar();
+        initData["1"] = new CList("FIELD", "1", "toggleHelp", "Režim", "BUTTON", "Přepnout na sloupec", "0", "0");
+
+        // First Validate (Init trigger) returns tooltip, second (button click) returns column
+        var tooltipData = new CVar();
+        tooltipData["1"] = new CList("FIELD", "1", "toggleHelp", "Režim", "BUTTON", "Přepnout na tooltip", "0", "0");
+        tooltipData["helpTextMode"] = new CVar("tooltip");
+
+        var columnData = new CVar();
+        columnData["1"] = new CList("FIELD", "1", "toggleHelp", "Režim", "BUTTON", "Přepnout na tooltip", "0", "0");
+        columnData["helpTextMode"] = new CVar("column");
+
+        var mlRest = Substitute.For<IMLRest>();
+        mlRest.QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>()).Returns(initData);
+        mlRest.QueryOrThrow(CacheClass, "Validate", Arg.Any<CVar>())
+            .Returns(tooltipData, columnData);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+
+        controller.Init();
+        Assert.Equal(EHelpTextMode.Tooltip, controller.HelpTextMode);
+
+        // Simulate button click — server toggles to column
+        controller.Validate("toggleHelp");
+        Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
+        Assert.Equal("Přepnout na tooltip", controller.Items.OfType<Field>().Single().Value);
+    }
 }

@@ -467,4 +467,184 @@ public class EDInputFormParsingTests
         var field = new Field { Visibility = EItemVisibility.Visible };
         Assert.Equal(System.Windows.Visibility.Visible, field.EffectiveVisibility);
     }
+
+    // ─── HelpText tests ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesFieldHelpText()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "Zadejte hodnotu");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal("Zadejte hodnotu", f.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesGroupHelpText()
+    {
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "1", "g", "Skupina", "0", "Vyplňte tuto sekci");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var g = Assert.IsType<Group>(Assert.Single(items));
+        Assert.Equal("Vyplňte tuto sekci", g.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_FieldWithoutHelpTextDefaultsToNull()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Null(f.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_GroupWithoutHelpTextDefaultsToNull()
+    {
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "1", "g", "Skupina", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var g = Assert.IsType<Group>(Assert.Single(items));
+        Assert.Null(g.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_FieldEmptyHelpTextBecomesNull()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Null(f.HelpText);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsFieldHelpText()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Value = "v", HelpText = "Help for field"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal("Help for field", f.HelpText);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsGroupHelpText()
+    {
+        var group = new Group
+        {
+            Number = 1, Key = "g", GroupName = "G", HelpText = "Help for group"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([group]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var g = Assert.IsType<Group>(Assert.Single(parsed));
+        Assert.Equal("Help for group", g.HelpText);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_NullHelpText_RoundTripsAsNull()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Value = "v", HelpText = null
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Null(f.HelpText);
+    }
+
+    [Fact]
+    public void HelpTextVisibility_WithHelpText_IsVisible()
+    {
+        var field = new Field { HelpText = "Some help" };
+        Assert.Equal(System.Windows.Visibility.Visible, field.HelpTextVisibility);
+    }
+
+    [Fact]
+    public void HelpTextVisibility_WithoutHelpText_IsCollapsed()
+    {
+        var field = new Field { HelpText = null };
+        Assert.Equal(System.Windows.Visibility.Collapsed, field.HelpTextVisibility);
+    }
+
+    // ─── HelpTextMode tests ──────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseHelpTextMode_Tooltip_ReturnsTooltip()
+    {
+        var data = new CVar();
+        data["helpTextMode"] = new CVar("tooltip");
+
+        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+    }
+
+    [Fact]
+    public void ParseHelpTextMode_Column_ReturnsColumn()
+    {
+        var data = new CVar();
+        data["helpTextMode"] = new CVar("column");
+
+        Assert.Equal(EHelpTextMode.Column, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+    }
+
+    [Fact]
+    public void ParseHelpTextMode_Missing_DefaultsToTooltip()
+    {
+        var data = new CVar();
+
+        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+    }
+
+    [Fact]
+    public void ParseItems_SkipsHelpTextModeKey()
+    {
+        var data = new CVar();
+        data["helpTextMode"] = new CVar("column");
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        Assert.Single(items);
+        Assert.IsType<Field>(items[0]);
+    }
+
+    [Theory]
+    [InlineData("tooltip", EHelpTextMode.Tooltip)]
+    [InlineData("column", EHelpTextMode.Column)]
+    [InlineData("UNKNOWN", EHelpTextMode.Tooltip)]
+    public void EHelpTextModeWire_FromWire(string wire, EHelpTextMode expected)
+    {
+        Assert.Equal(expected, EHelpTextModeWire.FromWire(wire));
+    }
+
+    [Fact]
+    public void EHelpTextModeWire_RoundTrips()
+    {
+        Assert.Equal("tooltip", EHelpTextMode.Tooltip.ToWire());
+        Assert.Equal("column", EHelpTextMode.Column.ToWire());
+    }
 }

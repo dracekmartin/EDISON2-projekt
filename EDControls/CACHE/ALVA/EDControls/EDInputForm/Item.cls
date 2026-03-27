@@ -10,6 +10,9 @@ Property number As %Integer [ InitialExpression = 0 ];
 /// $$$ItemVisibilityUserHidden, $$$ItemVisibilityProgrammerHidden.
 Property visibility As %String [ InitialExpression = {$$$ItemVisibilityVisible} ];
 
+/// Optional help text displayed next to the item. Empty string means no help text.
+Property helpText As %String;
+
 /// Serializes this item to a CList ($lb) for MLRest CVar wire format.
 Method Serialize() As %List [ Abstract ]
 {

@@ -24,12 +24,26 @@ namespace EDControls.EDInputForm
 
         private EDInputFormController? _controller;
 
-        private EDInputFormController Controller =>
-            _controller ??= new EDInputFormController(
-                MLRest ?? throw new InvalidOperationException("EDInputForm: MLRest not available."),
-                CacheClass);
+        private EDInputFormController Controller
+        {
+            get
+            {
+                if (_controller == null)
+                {
+                    _controller = new EDInputFormController(
+                        MLRest ?? throw new InvalidOperationException("EDInputForm: MLRest not available."),
+                        CacheClass);
+                    _controller.StateChanged += () =>
+                    {
+                        Items = _controller.Items;
+                        HelpTextMode = _controller.HelpTextMode;
+                    };
+                }
+                return _controller;
+            }
+        }
 
-        // ─── Items dependency property ────────────────────────────────────────────
+        // ─── Dependency properties ───────────────────────────────────────────────
 
         public static readonly DependencyProperty ItemsProperty =
             DependencyProperty.Register(
@@ -42,6 +56,19 @@ namespace EDControls.EDInputForm
         {
             get => (IEnumerable<Item>?)GetValue(ItemsProperty);
             set => SetValue(ItemsProperty, value);
+        }
+
+        public static readonly DependencyProperty HelpTextModeProperty =
+            DependencyProperty.Register(
+                nameof(HelpTextMode),
+                typeof(EHelpTextMode),
+                typeof(EDInputForm),
+                new PropertyMetadata(EHelpTextMode.Tooltip));
+
+        public EHelpTextMode HelpTextMode
+        {
+            get => (EHelpTextMode)GetValue(HelpTextModeProperty);
+            set => SetValue(HelpTextModeProperty, value);
         }
 
         public EDInputForm()
@@ -60,7 +87,6 @@ namespace EDControls.EDInputForm
         {
             EnsureConfigured();
             Controller.Init();
-            Items = Controller.Items;
         }
 
         /// <summary>
@@ -70,9 +96,7 @@ namespace EDControls.EDInputForm
         public bool Validate()
         {
             EnsureConfigured();
-            bool result = Controller.Validate();
-            Items = Controller.Items;
-            return result;
+            return Controller.Validate();
         }
 
         /// <summary>
@@ -82,9 +106,7 @@ namespace EDControls.EDInputForm
         public bool Save()
         {
             EnsureConfigured();
-            bool result = Controller.Save();
-            Items = Controller.Items;
-            return result;
+            return Controller.Save();
         }
 
         internal static CVar SerializeItemsCVar(IEnumerable<Item>? items)
@@ -95,7 +117,7 @@ namespace EDControls.EDInputForm
             {
                 CList entry = item switch
                 {
-                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.Visibility.ToWire()),
+                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.Visibility.ToWire(), g.HelpText ?? ""),
                     Field f => new CList(
                         "FIELD", f.Number, f.Key, f.Label,
                         f.FieldType.ToWire(),
@@ -104,7 +126,8 @@ namespace EDControls.EDInputForm
                         f.Required ? "1" : "0",
                         f.ValidationError ?? "",
                         f.Editable ? "1" : "0",
-                        f.Visibility.ToWire()),
+                        f.Visibility.ToWire(),
+                        f.HelpText ?? ""),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -119,7 +142,7 @@ namespace EDControls.EDInputForm
             Group? currentGroup = null;
             foreach (KeyValuePair<string, CVar> kvp in output)
             {
-                if (kvp.Key == "ERR") continue;
+                if (kvp.Key is "ERR" or "helpTextMode") continue;
                 CList row = kvp.Value;
                 string type = row.GetString(1);
                 if (type == "GROUP")
@@ -130,6 +153,7 @@ namespace EDControls.EDInputForm
                         Key        = row.GetString(3),
                         GroupName  = row.GetString(4),
                         Visibility = row.Length >= 5 ? EItemVisibilityWire.FromWire(row.GetString(5)) : EItemVisibility.Visible,
+                        HelpText   = row.Length >= 6 && row.GetString(6) != "" ? row.GetString(6) : null,
                     };
                     items.Add(currentGroup);
                 }
@@ -147,11 +171,18 @@ namespace EDControls.EDInputForm
                         ValidationError  = row.Length >= 9 && row.GetString(9) != "" ? row.GetString(9) : null,
                         Editable         = row.Length < 10 || row.GetString(10) != "0",
                         Visibility       = row.Length >= 11 ? EItemVisibilityWire.FromWire(row.GetString(11)) : EItemVisibility.Visible,
+                        HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                         ParentGroup      = currentGroup,
                     });
                 }
             }
             return items;
+        }
+
+        internal static EHelpTextMode ParseHelpTextMode(CVar output)
+        {
+            string? wire = output["helpTextMode"]?.Value?.ToString();
+            return EHelpTextModeWire.FromWire(wire);
         }
 
         // ─── Keyboard navigation ──────────────────────────────────────────────────
@@ -233,7 +264,6 @@ namespace EDControls.EDInputForm
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
             Debug.WriteLine($"[EDInputForm] Button clicked (changedKey={field.Key})");
             Controller.Validate(field.Key);
-            Items = Controller.Items;
         }
 
         // ─── Internal ─────────────────────────────────────────────────────────────
@@ -273,7 +303,6 @@ namespace EDControls.EDInputForm
             {
                 Debug.WriteLine($"[EDInputForm] Auto-validating on Change (changedKey={field.Key})");
                 Controller.Validate(field.Key);
-                Items = Controller.Items;
             }));
         }
     }

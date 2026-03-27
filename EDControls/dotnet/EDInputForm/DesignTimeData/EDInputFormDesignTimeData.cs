@@ -14,15 +14,15 @@ namespace EDControls.EDInputForm.DesignTimeData
         [
             new Field { Number =  1, Key = "poznamka", Label = "Poznámka", FieldType = EFieldType.Text },
 
-            new Group { Number =  2, Key = "osobni", GroupName = "Osobní údaje" },
-            new Field { Number =  3, Key = "jmeno",    Label = "Jméno",    FieldType = EFieldType.Text,   Required = true,  ValidateOnChange = true,  Value = "Jan" },
-            new Field { Number =  4, Key = "prijmeni", Label = "Příjmení", FieldType = EFieldType.Text,   Required = true,  ValidateOnChange = true,  Value = "Novák" },
+            new Group { Number =  2, Key = "osobni", GroupName = "Osobní údaje", HelpText = "Vyplňte osobní údaje cestujícího" },
+            new Field { Number =  3, Key = "jmeno",    Label = "Jméno",    FieldType = EFieldType.Text,   Required = true,  ValidateOnChange = true,  Value = "Jan", HelpText = "Křestní jméno cestujícího" },
+            new Field { Number =  4, Key = "prijmeni", Label = "Příjmení", FieldType = EFieldType.Text,   Required = true,  ValidateOnChange = true,  Value = "Novák", HelpText = "Příjmení bez titulů" },
             new Field { Number =  5, Key = "vek",      Label = "Věk",      FieldType = EFieldType.Number, Required = false, Value = "42", Editable = false },
 
             new Group { Number =  6, Key = "adresa", GroupName = "Adresa" },
             new Field { Number =  7, Key = "ulice", Label = "Ulice", FieldType = EFieldType.Text,   Required = false, Value = "Hlavní 1" },
             new Field { Number =  8, Key = "mesto", Label = "Město", FieldType = EFieldType.Text,   Required = false, Value = "Praha" },
-            new Field { Number =  9, Key = "psc",   Label = "PSČ",   FieldType = EFieldType.Number, Required = false, Value = "10000", ValidateOnChange = true, ValidationError = "PSČ musí mít 5 číslic" },
+            new Field { Number =  9, Key = "psc",   Label = "PSČ",   FieldType = EFieldType.Number, Required = false, Value = "10000", ValidateOnChange = true, ValidationError = "PSČ musí mít 5 číslic", HelpText = "Poštovní směrovací číslo (5 číslic)" },
 
             new Group { Number = 10, Key = "skryta", GroupName = "Skrytá sekce", Visibility = EItemVisibility.Collapsed },
             new Field { Number = 11, Key = "skryte", Label = "Skryté pole", FieldType = EFieldType.Text, Value = "never shown" },
