@@ -141,3 +141,8 @@ Bez round-tripu server ztratí stav po prvním round-tripu a přepíše ho vých
 - `EDInputFormDesignTimeData` je odkazován pouze z `d:DataContext` v XAML; nikdy neinstanciuj za běhu.
 - Stav `Visibility` se přenáší přes wire format — server ho round-tripuje přes `ReadFromIn` → `WriteToOut`. Žádné client-side preservation není potřeba.
 - `IsExpanded` na `Group` je computed property mapující `Visibility`: `Visible` = expanded, `Collapsed` = collapsed. Není to samostatný stav.
+
+## Referenční příklad — EDIFExample.cls
+
+`EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` je kompletní ukázka všech EDIF featur (typy polí, povinnost, helpText, editovatelnost, viditelnost, validace, tlačítka, kombinace).
+Při přidání nové featury do EDInputFormu přidej odpovídající příklad i do Example.cls.

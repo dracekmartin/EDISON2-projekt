@@ -205,6 +205,7 @@ Odpovídající čtení v .NET viz sekce „Volání Caché metody" výše (CVar
 
 Viz `EDFooter/CLAUDE.md` pro kompletní šablonu okna s footerem.
 Viz `EDComponentAndViewModelTestWindow` pro funkční referenční implementaci.
+Viz `EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` pro referenční příklad EDInputFormu — při přidání nové EDIF featury přidej ukázku i sem.
 
 ---
 

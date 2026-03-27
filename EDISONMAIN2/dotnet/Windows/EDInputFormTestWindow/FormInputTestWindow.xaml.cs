@@ -12,7 +12,7 @@ namespace EDISONMAIN2
         {
             DataContext = _vm = new FormInputTestWindowViewModel();
             InitializeComponent();
-            TheInputForm.CacheClass = "ALVA.EDISONMAIN2.test";
+            TheInputForm.CacheClass = "ALVA.EDControls.EDInputForm.EDIFExample";
         }
 
         private void Init_Click(object sender, RoutedEventArgs e)

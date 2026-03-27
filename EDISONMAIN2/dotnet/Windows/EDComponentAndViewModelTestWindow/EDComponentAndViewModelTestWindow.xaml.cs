@@ -8,6 +8,6 @@ public partial class EDComponentAndViewModelTestWindow : Window
     {
         DataContext = new EDComponentAndViewModelTestViewModel();
         InitializeComponent();
-        TheInputForm.CacheClass = "ALVA.EDISONMAIN2.test";
+        TheInputForm.CacheClass = "ALVA.EDControls.EDInputForm.EDIFExample";
     }
 }
