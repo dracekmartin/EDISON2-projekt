@@ -112,6 +112,17 @@ Klíč změněného pole se předá jako `changedKey` — na Caché straně dost
 - Pokud je cíl `Field`, zaostří jeho TextBox
 - Pokud je cíl `Group`, přepne `IsExpanded`
 
+## DŮLEŽITÉ: Round-trip pravidlo
+
+**Každá** property EDInputFormu (položek i formuláře) musí být nastavitelná na Caché straně a musí se round-tripovat — tj. hodnota nastavená serverem se odešle zpět v dalším Validate/Save volání, aby ji server mohl číst a měnit. Pokud přidáváš novou property, zajisti:
+
+1. Caché ji zapisuje do `Serialize()` / `WriteToOut()`.
+2. .NET ji čte v `ParseItems()` / `ParseHelpTextMode()` (nebo analogicky).
+3. .NET ji zapisuje zpět v `SerializeItemsCVar()` / `ExecuteValidate()`.
+4. Caché ji čte v `ReadFromIn()`.
+
+Bez round-tripu server ztratí stav po prvním round-tripu a přepíše ho výchozí hodnotou.
+
 ## Návrhové poznámky
 
 - `MLRest` se čte z `EDViewModel` DataContext rodičovského okna — žádný setter na controlu.
