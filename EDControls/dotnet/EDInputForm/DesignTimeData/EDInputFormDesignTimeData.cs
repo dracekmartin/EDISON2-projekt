@@ -37,6 +37,7 @@ namespace EDControls.EDInputForm.DesignTimeData
             new Field { Number = 18, Key = "plat",     Label = "Plat",          FieldType = EFieldType.Decimal, Value = "45000.50" },
             new Field { Number = 19, Key = "aktivni",  Label = "Aktivní",       FieldType = EFieldType.Bool,    Value = "1" },
             new Field { Number = 20, Key = "smazano",  Label = "Smazáno",       FieldType = EFieldType.Bool,    Value = "0" },
+            new Field { Number = 21, Key = "defaults", Label = "Výchozí hodnoty", FieldType = EFieldType.Button,  Value = "Vyplnit výchozí" },
         ];
     }
 }

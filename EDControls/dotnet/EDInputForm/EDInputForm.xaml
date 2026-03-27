@@ -82,6 +82,16 @@
                               ToolTip="{Binding ValidationError}"/>
                 </DataTemplate>
 
+                <!-- Button: clickable action button -->
+                <DataTemplate x:Key="ButtonFieldTemplate">
+                    <Button Content="{Binding Value}"
+                            IsEnabled="{Binding Editable}"
+                            Click="ButtonField_Click"
+                            ToolTip="{Binding ValidationError}"
+                            HorizontalAlignment="Left"
+                            Padding="12,2"/>
+                </DataTemplate>
+
                 <!-- Field row: fixed 130px label column, input fills the rest -->
                 <DataTemplate DataType="{x:Type local:Field}">
                     <Grid Margin="2,1" Visibility="{Binding EffectiveVisibility}">
@@ -124,6 +134,9 @@
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Bool}">
                                             <Setter Property="ContentTemplate" Value="{StaticResource BoolFieldTemplate}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Button}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource ButtonFieldTemplate}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

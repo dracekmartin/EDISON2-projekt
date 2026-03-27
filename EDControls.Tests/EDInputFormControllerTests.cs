@@ -196,6 +196,54 @@ public class EDInputFormControllerTests
     }
 
     [Fact]
+    public void ButtonField_RoundTripsCorrectly()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "btn", "Label", "BUTTON", "Click me", "0", "0");
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+
+        controller.Init();
+
+        var f = Assert.IsType<Field>(Assert.Single(controller.Items));
+        Assert.Equal("btn", f.Key);
+        Assert.Equal(EFieldType.Button, f.FieldType);
+        Assert.Equal("Click me", f.Value);
+    }
+
+    [Fact]
+    public void ButtonField_ValidateWithKey_SendsChangedKey()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "btn", "Label", "BUTTON", "Click me", "0", "0");
+        var mlRest = MockMLRest(data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        controller.Validate("btn");
+
+        mlRest.Received().QueryOrThrow(CacheClass, "Validate",
+            Arg.Is<CVar>(c =>
+                c["trigger"].Value != null && c["trigger"].Value.ToString() == "Change" &&
+                c["changedKey"].Value != null && c["changedKey"].Value.ToString() == "btn"));
+    }
+
+    [Fact]
+    public void ButtonField_SerializesWithButtonType()
+    {
+        var items = new List<Item>
+        {
+            new Field { Number = 1, Key = "btn", Label = "L", FieldType = EFieldType.Button, Value = "Go" }
+        };
+
+        var cVar = EDControls.EDInputForm.EDInputForm.SerializeItemsCVar(items);
+
+        CList entry = cVar["1"];
+        Assert.Equal("BUTTON", entry.GetString(5));
+        Assert.Equal("Go", entry.GetString(6));
+    }
+
+    [Fact]
     public void Validate_ServerVisibilityIsAuthoritative()
     {
         var visibleData = new CVar();

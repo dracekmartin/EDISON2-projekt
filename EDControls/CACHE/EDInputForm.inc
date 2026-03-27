@@ -5,6 +5,7 @@ ROUTINE EDInputForm [Type=INC]
 #define FieldTypeDate    "DATE"
 #define FieldTypeDecimal "DECIMAL"
 #define FieldTypeBool    "BOOL"
+#define FieldTypeButton  "BUTTON"
 
 #define ItemVisibilityVisible          "0"
 #define ItemVisibilityCollapsed        "1"

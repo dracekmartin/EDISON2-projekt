@@ -226,6 +226,16 @@ namespace EDControls.EDInputForm
             return null;
         }
 
+        // ─── Button click ────────────────────────────────────────────────────────
+
+        private void ButtonField_Click(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            Debug.WriteLine($"[EDInputForm] Button clicked (changedKey={field.Key})");
+            Controller.Validate(field.Key);
+            Items = Controller.Items;
+        }
+
         // ─── Internal ─────────────────────────────────────────────────────────────
 
         private void EnsureConfigured()

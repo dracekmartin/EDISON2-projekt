@@ -37,6 +37,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		d form.AddFieldToLastGroup("aktivni",  "Aktivní",  $$$FieldTypeBool, 0, 0)
 		d form.AddFieldToLastGroup("smazano",  "Smazáno",  $$$FieldTypeBool, 0, 0)
 
+		s f = form.AddFieldToLastGroup("defaults", "Výchozí hodnoty", $$$FieldTypeButton, 0, 0)
+		s f.value = "Vyplnit výchozí"
+
 		d form.AddGroup("nemoc", "Nemoc")
 		d form.AddFieldToLastGroup("nemocny", "Nemocný", $$$FieldTypeBool, 1, 0)
 		s f = form.AddFieldToLastGroup("od", "Od", $$$FieldTypeDate, 0, 0)
@@ -71,6 +74,17 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 			i f.value'="" {
 				i $l(f.value)'=5 s f.validationError = "PSČ musí mít 5 číslic"
 			}
+		}
+
+		// "Vyplnit výchozí" button — fills default values
+		i form.HasChangedField() && (form.changedKey = "defaults") {
+			s form.GetField("jmeno").value = "Jan"
+			s form.GetField("prijmeni").value = "Novák"
+			s form.GetField("vek").value = "30"
+			s form.GetField("ulice").value = "Hlavní 1"
+			s form.GetField("mesto").value = "Praha"
+			s form.GetField("psc").value = "11000"
+			s form.GetField("email").value = "jan.novak@example.com"
 		}
 
 		s f = form.GetField("jmeno")
