@@ -171,7 +171,7 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 /// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
 /// Format per item (number is always position 2):
 ///   GROUP → $lb("GROUP", number, key, groupName, visibility, helpText)
-///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText)
+///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems)
 /// Also writes helpTextMode at string subscript "helpTextMode".
 Method WriteToOut()
 {
@@ -187,7 +187,7 @@ Method WriteToOut()
 /// Trigger is at string subscript "trigger".
 /// Items are at subscripts 1, 2, ... as CList ($lb) values:
 ///   $lb("GROUP", number, key, groupName, visibility, helpText)   ; number round-tripped, re-assigned on insert
-///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText)
+///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems)
 ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
@@ -215,6 +215,19 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 			i $ll(listVal)>=10 s f.editable = $li(listVal,10)
 			i $ll(listVal)>=11 s f.visibility = $li(listVal,11)
 			i $ll(listVal)>=12 s f.helpText = $li(listVal,12)
+			// Position 13: list items for List field type
+			i $ll(listVal)>=13 {
+				s optStr = $li(listVal,13)
+				i optStr'="" {
+					f k=1:1:$l(optStr,$$$ListItemSep) {
+						s entry = $p(optStr,$$$ListItemSep,k)
+						s key = $p(entry,$$$ListKeyValSep,1)
+						s label = $p(entry,$$$ListKeyValSep,2)
+						s:label="" label = key
+						d f.AddListItem(key, label)
+					}
+				}
+			}
 		}
 	}
 	q form

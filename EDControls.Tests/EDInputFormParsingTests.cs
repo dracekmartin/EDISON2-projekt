@@ -251,6 +251,8 @@ public class EDInputFormParsingTests
     [InlineData("BOOL", EFieldType.Bool)]
     [InlineData("TEXT", EFieldType.Text)]
     [InlineData("NUMBER", EFieldType.Number)]
+    [InlineData("BUTTON", EFieldType.Button)]
+    [InlineData("LIST", EFieldType.List)]
     [InlineData("UNKNOWN", EFieldType.Text)]
     public void EFieldTypeWire_RoundTrips(string wire, EFieldType expected)
     {
@@ -304,6 +306,7 @@ public class EDInputFormParsingTests
     [InlineData(EFieldType.Bool, "0", null)]
     [InlineData(EFieldType.Bool, "yes", "Musí být 0 nebo 1")]
     [InlineData(EFieldType.Text, "anything", null)]
+    [InlineData(EFieldType.List, "anything", null)]
     public void GetTypeError_ValidatesValueByFieldType(EFieldType type, string value, string? expected)
     {
         var field = new Field { FieldType = type, Value = value };
@@ -315,6 +318,7 @@ public class EDInputFormParsingTests
     [InlineData(EFieldType.Decimal, null)]
     [InlineData(EFieldType.Date, null)]
     [InlineData(EFieldType.Bool, null)]
+    [InlineData(EFieldType.List, null)]
     public void GetTypeError_EmptyValue_ReturnsNull(EFieldType type, string? value)
     {
         var field = new Field { FieldType = type, Value = value };
@@ -646,5 +650,80 @@ public class EDInputFormParsingTests
     {
         Assert.Equal("tooltip", EHelpTextMode.Tooltip.ToWire());
         Assert.Equal("column", EHelpTextMode.Column.ToWire());
+    }
+
+    // ─── List field tests ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesListField()
+    {
+        var data = new CVar();
+        // Position 12 = helpText (empty), position 13 = listItems
+        data["1"] = new CList("FIELD", "1", "stav", "Stav", "LIST", "A", "0", "0", "", "1", "0", "",
+            "A~Aktivní|B~Neaktivní");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Equal("A", f.Value);
+        Assert.Equal(2, f.ListItems.Count);
+        Assert.Equal("A", f.ListItems[0].Key);
+        Assert.Equal("Aktivní", f.ListItems[0].Label);
+        Assert.Equal("B", f.ListItems[1].Key);
+        Assert.Equal("Neaktivní", f.ListItems[1].Label);
+    }
+
+    [Fact]
+    public void ParseItems_ListFieldEmptyOptions()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "stav", "Stav", "LIST", "", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Empty(f.ListItems);
+    }
+
+    [Fact]
+    public void ParseItems_ListFieldKeyOnlyOptions()
+    {
+        var data = new CVar();
+        // Position 12 = helpText (empty), position 13 = listItems (key-only)
+        data["1"] = new CList("FIELD", "1", "barva", "Barva", "LIST", "Červená", "0", "0", "", "1", "0", "",
+            "Červená|Zelená|Modrá");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(3, f.ListItems.Count);
+        Assert.Equal("Červená", f.ListItems[0].Key);
+        Assert.Equal("Červená", f.ListItems[0].Label);
+        Assert.Equal("Zelená", f.ListItems[1].Key);
+        Assert.Equal("Zelená", f.ListItems[1].Label);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsListField()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "stav", Label = "Stav", FieldType = EFieldType.List,
+            Value = "A", ListItems = [new ListItem("A", "Aktivní"), new ListItem("N", "Neaktivní")]
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Equal("A", f.Value);
+        Assert.Equal(2, f.ListItems.Count);
+        Assert.Equal("A", f.ListItems[0].Key);
+        Assert.Equal("Aktivní", f.ListItems[0].Label);
+        Assert.Equal("N", f.ListItems[1].Key);
+        Assert.Equal("Neaktivní", f.ListItems[1].Label);
     }
 }

@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using WpfVisibility = System.Windows.Visibility;
 
 namespace EDControls.EDInputForm
 {
+    public record ListItem(string Key, string Label);
+
     public class Field : Item
     {
         /// <summary>Stable identifier used as the key when communicating with Caché.</summary>
@@ -36,6 +39,12 @@ namespace EDControls.EDInputForm
 
         /// <summary>When false, the field is rendered as read-only (server-controlled).</summary>
         public bool Editable { get; set; } = true;
+
+        /// <summary>Available options for List field type. Empty for other types.</summary>
+        public List<ListItem> ListItems { get; set; } = [];
+
+        /// <summary>ListItems with an implicit empty entry prepended for ComboBox binding.</summary>
+        public List<ListItem> ListItemsForDisplay => [new ListItem("", ""), .. ListItems];
 
         private string? _value;
         public string? Value

@@ -7,7 +7,8 @@ namespace EDControls.EDInputForm
         Date,
         Decimal,
         Bool,
-        Button
+        Button,
+        List
     }
 
     public static class EFieldTypeWire
@@ -18,6 +19,7 @@ namespace EDControls.EDInputForm
         private const string DecimalWire = "DECIMAL";
         private const string BoolWire = "BOOL";
         private const string ButtonWire = "BUTTON";
+        private const string ListWire = "LIST";
 
         public static string ToWire(this EFieldType type) => type switch
         {
@@ -26,6 +28,7 @@ namespace EDControls.EDInputForm
             EFieldType.Decimal => DecimalWire,
             EFieldType.Bool    => BoolWire,
             EFieldType.Button  => ButtonWire,
+            EFieldType.List    => ListWire,
             _                  => TextWire
         };
 
@@ -36,6 +39,7 @@ namespace EDControls.EDInputForm
             DecimalWire => EFieldType.Decimal,
             BoolWire    => EFieldType.Bool,
             ButtonWire  => EFieldType.Button,
+            ListWire    => EFieldType.List,
             _           => EFieldType.Text
         };
     }

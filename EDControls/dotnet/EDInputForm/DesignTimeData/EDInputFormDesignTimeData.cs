@@ -38,6 +38,8 @@ namespace EDControls.EDInputForm.DesignTimeData
             new Field { Number = 19, Key = "aktivni",  Label = "Aktivní",       FieldType = EFieldType.Bool,    Value = "1" },
             new Field { Number = 20, Key = "smazano",  Label = "Smazáno",       FieldType = EFieldType.Bool,    Value = "0" },
             new Field { Number = 21, Key = "defaults", Label = "Výchozí hodnoty", FieldType = EFieldType.Button,  Value = "Vyplnit výchozí" },
+            new Field { Number = 22, Key = "stav",     Label = "Stav",          FieldType = EFieldType.List,    Value = "A",
+                ListItems = [new ListItem("A", "Aktivní"), new ListItem("N", "Neaktivní"), new ListItem("P", "Pozastavený")] },
         ];
     }
 }

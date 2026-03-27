@@ -120,6 +120,27 @@
                             Padding="12,2"/>
                 </DataTemplate>
 
+                <!-- List: ComboBox dropdown -->
+                <DataTemplate x:Key="ListFieldTemplate">
+                    <ComboBox ItemsSource="{Binding ListItemsForDisplay}"
+                              DisplayMemberPath="Label"
+                              SelectedValuePath="Key"
+                              SelectedValue="{Binding Value}"
+                              IsEnabled="{Binding Editable}"
+                              ToolTip="{Binding ValidationError}">
+                        <ComboBox.Style>
+                            <Style TargetType="ComboBox">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding HasError}" Value="True">
+                                        <Setter Property="BorderBrush" Value="Red"/>
+                                        <Setter Property="BorderThickness" Value="1.5"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ComboBox.Style>
+                    </ComboBox>
+                </DataTemplate>
+
                 <!-- Field row: fixed 130px label column, input fills the rest, optional help column -->
                 <DataTemplate DataType="{x:Type local:Field}">
                     <Grid Margin="2,1" Visibility="{Binding EffectiveVisibility}">
@@ -172,6 +193,9 @@
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Button}">
                                             <Setter Property="ContentTemplate" Value="{StaticResource ButtonFieldTemplate}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.List}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource ListFieldTemplate}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

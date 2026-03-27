@@ -16,8 +16,8 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální), `HelpText`, `HelpTextVisibility`. Implementuje `INotifyPropertyChanged`. |
 | `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
-| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. |
-| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
+| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
 | `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
@@ -72,7 +72,7 @@ Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
 CVar["1"] = CList("GROUP", number, key, groupName, visibility, helpText)
-CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText)
+CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems)
 CVar["helpTextMode"] = "tooltip" | "column"   ; form-level setting, default "tooltip"
 ```
 
@@ -83,6 +83,15 @@ Editable (FIELD pozice 10): `"1"` = editovatelné (výchozí), `"0"` = pouze ke 
 HelpText (GROUP pozice 6, FIELD pozice 12): volitelný text nápovědy. Pokud chybí nebo prázdný, nápověda se nezobrazí.
 
 HelpTextMode: `"tooltip"` (výchozí) zobrazí ikonu `?` s tooltipem, `"column"` zobrazí text v samostatném sloupci vpravo.
+
+ListItems (FIELD pozice 13): volitelný řetězec s volbami pro typ `List`. Oddělovač mezi položkami: `|` (pipe). Oddělovač mezi klíčem a popiskem: `~` (tilda). Příklad: `"A~Aktivní|N~Neaktivní"`. Pokud oddělovač `~` chybí, popisek = klíč. Přidání voleb v Caché:
+
+```objectscript
+s f = form.AddFieldToLastGroup("stav", "Stav", $$$FieldTypeList, 1, 0)
+d f.AddListItem("A", "Aktivní")
+d f.AddListItem("N", "Neaktivní")
+s f.value = "A"
+```
 
 ### Struktura volání Validate
 
@@ -109,7 +118,7 @@ Klíč změněného pole se předá jako `changedKey` — na Caché straně dost
 `Ctrl+číslice` naviguje na položku, jejíž `Number` odpovídá akumulované hodnotě:
 
 - Číslice se bufferují 200 ms (např. Ctrl+1, Ctrl+2 → položka 12)
-- Pokud je cíl `Field`, zaostří jeho TextBox
+- Pokud je cíl `Field`, zaostří jeho TextBox (nebo ComboBox pro typ List)
 - Pokud je cíl `Group`, přepne `IsExpanded`
 
 ## DŮLEŽITÉ: Round-trip pravidlo

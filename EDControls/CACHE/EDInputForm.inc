@@ -6,6 +6,10 @@ ROUTINE EDInputForm [Type=INC]
 #define FieldTypeDecimal "DECIMAL"
 #define FieldTypeBool    "BOOL"
 #define FieldTypeButton  "BUTTON"
+#define FieldTypeList    "LIST"
+
+#define ListItemSep      "|"
+#define ListKeyValSep    "~"
 
 #define ItemVisibilityVisible          "0"
 #define ItemVisibilityCollapsed        "1"

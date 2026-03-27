@@ -15,6 +15,10 @@ namespace EDControls.EDInputForm
 {
     public partial class EDInputForm : UserControl
     {
+        // ─── List wire format ────────────────────────────────────────────────────
+        internal const char ListItemSep = '|';
+        internal const char ListKeyValSep = '~';
+
         // ─── Configuration ────────────────────────────────────────────────────────
 
         private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
@@ -127,7 +131,8 @@ namespace EDControls.EDInputForm
                         f.ValidationError ?? "",
                         f.Editable ? "1" : "0",
                         f.Visibility.ToWire(),
-                        f.HelpText ?? ""),
+                        f.HelpText ?? "",
+                        SerializeListItems(f.ListItems)),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -159,7 +164,7 @@ namespace EDControls.EDInputForm
                 }
                 else if (type == "FIELD")
                 {
-                    items.Add(new Field
+                    var field = new Field
                     {
                         Number           = int.TryParse(row.GetString(2), out int fn) ? fn : 0,
                         Key              = row.GetString(3),
@@ -173,7 +178,10 @@ namespace EDControls.EDInputForm
                         Visibility       = row.Length >= 11 ? EItemVisibilityWire.FromWire(row.GetString(11)) : EItemVisibility.Visible,
                         HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                         ParentGroup      = currentGroup,
-                    });
+                    };
+                    if (field.FieldType == EFieldType.List && row.Length >= 13)
+                        field.ListItems = ParseListItems(row.GetString(13));
+                    items.Add(field);
                 }
             }
             return items;
@@ -183,6 +191,30 @@ namespace EDControls.EDInputForm
         {
             string? wire = output["helpTextMode"]?.Value?.ToString();
             return EHelpTextModeWire.FromWire(wire);
+        }
+
+        // ─── List items serialization ────────────────────────────────────────────
+
+        internal static string SerializeListItems(List<ListItem> items)
+        {
+            if (items.Count == 0) return "";
+            return string.Join(ListItemSep.ToString(),
+                items.Select(i => i.Key == i.Label ? i.Key : i.Key + ListKeyValSep + i.Label));
+        }
+
+        internal static List<ListItem> ParseListItems(string wire)
+        {
+            if (string.IsNullOrEmpty(wire)) return [];
+            return wire.Split(ListItemSep)
+                .Where(entry => entry.Length > 0)
+                .Select(entry =>
+                {
+                    int sep = entry.IndexOf(ListKeyValSep);
+                    return sep >= 0
+                        ? new ListItem(entry[..sep], entry[(sep + 1)..])
+                        : new ListItem(entry, entry);
+                })
+                .ToList();
         }
 
         // ─── Keyboard navigation ──────────────────────────────────────────────────
@@ -240,7 +272,13 @@ namespace EDControls.EDInputForm
             if (container == null) return;
 
             if (item is Field)
-                FindVisualChild<TextBox>(container)?.Focus();
+            {
+                var textBox = FindVisualChild<TextBox>(container);
+                if (textBox != null)
+                    textBox.Focus();
+                else
+                    FindVisualChild<ComboBox>(container)?.Focus();
+            }
             else if (item is Group g)
                 g.IsExpanded = !g.IsExpanded;
         }

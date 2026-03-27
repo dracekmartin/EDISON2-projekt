@@ -44,6 +44,11 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f.value = "45000.50"
 		d form.AddFieldToLastGroup("aktivni",  "Aktivní",  $$$FieldTypeBool, 0, 0)
 		d form.AddFieldToLastGroup("smazano",  "Smazáno",  $$$FieldTypeBool, 0, 0)
+		s f = form.AddFieldToLastGroup("stav", "Stav", $$$FieldTypeList, 1, 0)
+		d f.AddListItem("A", "Aktivní")
+		d f.AddListItem("N", "Neaktivní")
+		d f.AddListItem("P", "Pozastavený")
+		s f.value = "A"
 
 		s f = form.AddFieldToLastGroup("defaults", "Výchozí hodnoty", $$$FieldTypeButton, 0, 0)
 		s f.value = "Vyplnit výchozí"
