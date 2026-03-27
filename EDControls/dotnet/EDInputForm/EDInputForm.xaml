@@ -187,58 +187,59 @@
                     </Grid>
                 </DataTemplate>
 
-                <!-- Group separator: spans columns as a labelled horizontal rule -->
+                <!-- Group separator: labelled horizontal rule, help text shares column with fields -->
                 <DataTemplate DataType="{x:Type local:Group}">
-                    <StackPanel Visibility="{Binding EffectiveVisibility}">
-                        <Grid Margin="2,8,2,2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="Auto"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-                            <!-- Collapse/expand toggle -->
-                            <ToggleButton Grid.Column="0"
-                                          IsChecked="{Binding IsExpanded}"
-                                          Background="Transparent" BorderThickness="0"
-                                          Padding="2,0" VerticalAlignment="Center"
-                                          Focusable="False" Cursor="Hand">
-                                <ToggleButton.Style>
-                                    <Style TargetType="ToggleButton">
-                                        <Setter Property="Content" Value="&#x25BC;"/>
-                                        <Style.Triggers>
-                                            <Trigger Property="IsChecked" Value="False">
-                                                <Setter Property="Content" Value="&#x25BA;"/>
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </ToggleButton.Style>
-                            </ToggleButton>
-                            <!-- Item number for keyboard navigation (Ctrl+number) -->
-                            <TextBlock Grid.Column="1"
-                                       Text="{Binding Number, StringFormat='{}{0}.'}"
-                                       Foreground="Gray" FontSize="10"
-                                       VerticalAlignment="Bottom" Margin="2,0,4,1"/>
-                            <TextBlock Grid.Column="2"
-                                       Text="{Binding GroupName}"
-                                       FontWeight="SemiBold"
-                                       VerticalAlignment="Bottom"
-                                       Margin="2,0,4,0"/>
-                            <!-- Help icon (tooltip mode) next to group name -->
-                            <Image Grid.Column="3" Source="{StaticResource EDIcons.Help}"
-                                   Width="14" Height="14" Margin="0,0,8,0"
-                                   ToolTip="{Binding HelpText}" Cursor="Help"
-                                   VerticalAlignment="Center"
-                                   Style="{StaticResource HelpIconStyle}"/>
-                            <Separator Grid.Column="4" VerticalAlignment="Center"/>
-                        </Grid>
-                        <!-- Help text row (column mode): below group header -->
-                        <TextBlock Text="{Binding HelpText}" TextWrapping="Wrap"
+                    <Grid Margin="2,8,2,2" Visibility="{Binding EffectiveVisibility}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="HelpText"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Collapse/expand toggle -->
+                        <ToggleButton Grid.Column="0"
+                                      IsChecked="{Binding IsExpanded}"
+                                      Background="Transparent" BorderThickness="0"
+                                      Padding="2,0" VerticalAlignment="Center"
+                                      Focusable="False" Cursor="Hand">
+                            <ToggleButton.Style>
+                                <Style TargetType="ToggleButton">
+                                    <Setter Property="Content" Value="&#x25BC;"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsChecked" Value="False">
+                                            <Setter Property="Content" Value="&#x25BA;"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ToggleButton.Style>
+                        </ToggleButton>
+                        <!-- Item number for keyboard navigation (Ctrl+number) -->
+                        <TextBlock Grid.Column="1"
+                                   Text="{Binding Number, StringFormat='{}{0}.'}"
+                                   Foreground="Gray" FontSize="10"
+                                   VerticalAlignment="Bottom" Margin="2,0,4,1"/>
+                        <TextBlock Grid.Column="2"
+                                   Text="{Binding GroupName}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Bottom"
+                                   Margin="2,0,4,0"/>
+                        <!-- Help icon (tooltip mode) next to group name -->
+                        <Image Grid.Column="3" Source="{StaticResource EDIcons.Help}"
+                               Width="14" Height="14" Margin="0,0,8,0"
+                               ToolTip="{Binding HelpText}" Cursor="Help"
+                               VerticalAlignment="Center"
+                               Style="{StaticResource HelpIconStyle}"/>
+                        <Separator Grid.Column="4" VerticalAlignment="Center"/>
+                        <!-- Help text (column mode): aligned with field help texts -->
+                        <TextBlock Grid.Column="5"
+                                   Text="{Binding HelpText}" TextWrapping="Wrap"
                                    Foreground="Gray" FontSize="11"
-                                   Margin="24,0,4,2"
+                                   VerticalAlignment="Center" Margin="8,0,4,0"
+                                   MaxWidth="200"
                                    Style="{StaticResource HelpTextColumnStyle}"/>
-                    </StackPanel>
+                    </Grid>
                 </DataTemplate>
             </ItemsControl.Resources>
         </ItemsControl>
