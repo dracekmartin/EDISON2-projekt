@@ -171,7 +171,7 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 /// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
 /// Format per item (number is always position 2):
 ///   GROUP → $lb("GROUP", number, key, groupName, visibility, helpText)
-///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems)
+///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
 /// Also writes helpTextMode at string subscript "helpTextMode".
 Method WriteToOut()
 {
@@ -187,7 +187,7 @@ Method WriteToOut()
 /// Trigger is at string subscript "trigger".
 /// Items are at subscripts 1, 2, ... as CList ($lb) values:
 ///   $lb("GROUP", number, key, groupName, visibility, helpText)   ; number round-tripped, re-assigned on insert
-///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems)
+///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
 ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
@@ -228,6 +228,8 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 					}
 				}
 			}
+			// Position 14: file filter for File field type
+			i $ll(listVal)>=14 s f.fileFilter = $li(listVal,14)
 		}
 	}
 	q form

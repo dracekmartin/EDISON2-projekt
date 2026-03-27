@@ -16,8 +16,8 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální), `HelpText`, `HelpTextVisibility`. Implementuje `INotifyPropertyChanged`. |
 | `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
-| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
-| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `FileFilter`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
+| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`, `File`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
 | `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
@@ -72,7 +72,7 @@ Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
 CVar["1"] = CList("GROUP", number, key, groupName, visibility, helpText)
-CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems)
+CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
 CVar["helpTextMode"] = "tooltip" | "column"   ; form-level setting, default "tooltip"
 ```
 
@@ -91,6 +91,18 @@ s f = form.AddFieldToLastGroup("stav", "Stav", $$$FieldTypeList, 1, 0)
 d f.AddListItem("A", "Aktivní")
 d f.AddListItem("N", "Neaktivní")
 s f.value = "A"
+```
+
+FileFilter (FIELD pozice 14): konfigurační řetězec pro typ `File`. Speciální hodnota `"$FOLDER"` přepne na výběr složky (`OpenFolderDialog`). Jiná hodnota se použije jako filtr pro `OpenFileDialog` (např. `"PDF (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"`). Pokud prázdný, výchozí filtr je "Všechny soubory". Příklad:
+
+```objectscript
+; File selection with filter
+s f = form.AddFieldToLastGroup("soubor", "Soubor", $$$FieldTypeFile)
+s f.fileFilter = "PDF (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"
+
+; Folder selection
+s f = form.AddFieldToLastGroup("slozka", "Složka", $$$FieldTypeFile)
+s f.fileFilter = $$$FileFilterFolder
 ```
 
 ### Struktura volání Validate

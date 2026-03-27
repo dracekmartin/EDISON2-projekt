@@ -40,6 +40,10 @@ namespace EDControls.EDInputForm.DesignTimeData
             new Field { Number = 21, Key = "defaults", Label = "Výchozí hodnoty", FieldType = EFieldType.Button,  Value = "Vyplnit výchozí" },
             new Field { Number = 22, Key = "stav",     Label = "Stav",          FieldType = EFieldType.List,    Value = "A",
                 ListItems = [new ListItem("A", "Aktivní"), new ListItem("N", "Neaktivní"), new ListItem("P", "Pozastavený")] },
+            new Field { Number = 23, Key = "soubor",   Label = "Soubor",        FieldType = EFieldType.File,    Value = @"C:\Documents\report.pdf",
+                FileFilter = "PDF soubory (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*" },
+            new Field { Number = 24, Key = "slozka",   Label = "Výstupní složka", FieldType = EFieldType.File,  Value = @"C:\Documents\Output",
+                FileFilter = "$FOLDER" },
         ];
     }
 }

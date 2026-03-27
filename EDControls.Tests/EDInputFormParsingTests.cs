@@ -253,6 +253,7 @@ public class EDInputFormParsingTests
     [InlineData("NUMBER", EFieldType.Number)]
     [InlineData("BUTTON", EFieldType.Button)]
     [InlineData("LIST", EFieldType.List)]
+    [InlineData("FILE", EFieldType.File)]
     [InlineData("UNKNOWN", EFieldType.Text)]
     public void EFieldTypeWire_RoundTrips(string wire, EFieldType expected)
     {
@@ -307,6 +308,7 @@ public class EDInputFormParsingTests
     [InlineData(EFieldType.Bool, "yes", "Musí být 0 nebo 1")]
     [InlineData(EFieldType.Text, "anything", null)]
     [InlineData(EFieldType.List, "anything", null)]
+    [InlineData(EFieldType.File, @"C:\some\path.pdf", null)]
     public void GetTypeError_ValidatesValueByFieldType(EFieldType type, string value, string? expected)
     {
         var field = new Field { FieldType = type, Value = value };
@@ -319,6 +321,7 @@ public class EDInputFormParsingTests
     [InlineData(EFieldType.Date, null)]
     [InlineData(EFieldType.Bool, null)]
     [InlineData(EFieldType.List, null)]
+    [InlineData(EFieldType.File, null)]
     public void GetTypeError_EmptyValue_ReturnsNull(EFieldType type, string? value)
     {
         var field = new Field { FieldType = type, Value = value };
@@ -725,5 +728,88 @@ public class EDInputFormParsingTests
         Assert.Equal("Aktivní", f.ListItems[0].Label);
         Assert.Equal("N", f.ListItems[1].Key);
         Assert.Equal("Neaktivní", f.ListItems[1].Label);
+    }
+
+    // ─── File field tests ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesFileFieldWithFilter()
+    {
+        var data = new CVar();
+        // positions: 1-type, 2-number, 3-key, 4-label, 5-fieldType, 6-value, 7-voc, 8-req,
+        //            9-valErr, 10-editable, 11-visibility, 12-helpText, 13-listItems, 14-fileFilter
+        data["1"] = new CList("FIELD", "1", "soubor", "Soubor", "FILE", @"C:\test.pdf", "0", "0",
+            "", "1", "0", "", "", "PDF (*.pdf)|*.pdf");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\test.pdf", f.Value);
+        Assert.Equal("PDF (*.pdf)|*.pdf", f.FileFilter);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesFileFolderMode()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "slozka", "Složka", "FILE", @"C:\Output", "0", "0",
+            "", "1", "0", "", "", "$FOLDER");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\Output", f.Value);
+        Assert.Equal("$FOLDER", f.FileFilter);
+    }
+
+    [Fact]
+    public void ParseItems_FileFieldWithoutFilter_DefaultsToEmpty()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "soubor", "Soubor", "FILE", "", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal("", f.FileFilter);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsFileField()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "soubor", Label = "Soubor", FieldType = EFieldType.File,
+            Value = @"C:\test.pdf", FileFilter = "PDF (*.pdf)|*.pdf"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\test.pdf", f.Value);
+        Assert.Equal("PDF (*.pdf)|*.pdf", f.FileFilter);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsFileFolderMode()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "slozka", Label = "Složka", FieldType = EFieldType.File,
+            Value = @"C:\Output", FileFilter = "$FOLDER"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\Output", f.Value);
+        Assert.Equal("$FOLDER", f.FileFilter);
     }
 }

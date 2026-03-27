@@ -7,6 +7,8 @@ ROUTINE EDInputForm [Type=INC]
 #define FieldTypeBool    "BOOL"
 #define FieldTypeButton  "BUTTON"
 #define FieldTypeList    "LIST"
+#define FieldTypeFile    "FILE"
+#define FileFilterFolder "$FOLDER"
 
 #define ListItemSep      "|"
 #define ListKeyValSep    "~"

@@ -43,6 +43,13 @@ namespace EDControls.EDInputForm
         /// <summary>Available options for List field type. Empty for other types.</summary>
         public List<ListItem> ListItems { get; set; } = [];
 
+        /// <summary>
+        /// Configuration for File field type. Contains the dialog filter string
+        /// (e.g. "PDF (*.pdf)|*.pdf") for file selection, or "$FOLDER" for folder selection.
+        /// Empty defaults to all files. Ignored for non-File field types.
+        /// </summary>
+        public string FileFilter { get; set; } = "";
+
         /// <summary>ListItems with an implicit empty entry prepended for ComboBox binding.</summary>
         public List<ListItem> ListItemsForDisplay => [new ListItem("", ""), .. ListItems];
 

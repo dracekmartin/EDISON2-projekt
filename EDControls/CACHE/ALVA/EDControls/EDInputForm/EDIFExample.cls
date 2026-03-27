@@ -45,6 +45,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f = form.AddFieldToLastGroup("button", "Tlačítko", $$$FieldTypeButton, 0, 0)
 		s f.value = "Klikni"
 
+		s f = form.AddFieldToLastGroup("file", "Soubor", $$$FieldTypeFile, 0, 0)
+		s f.fileFilter = "PDF soubory (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"
+
+		s f = form.AddFieldToLastGroup("folder", "Složka", $$$FieldTypeFile, 0, 0)
+		s f.fileFilter = $$$FileFilterFolder
+
 		// ── Skupina 2: Povinná pole ──────────────────────────────────────────
 		// required=1 → červená hvězdička, BeforeSave validuje neprázdnost.
 
@@ -242,6 +248,8 @@ ClassMethod Validate(ByRef sys As %String) As %Status
 				s form.GetField("valFormat").value = "AB123"
 				s form.GetField("comboReqHelp").value = "Ukázka"
 				s form.GetField("comboListVal").value = "OK"
+				s form.GetField("file").value = "C:\Documents\report.pdf"
+				s form.GetField("folder").value = "C:\Documents\Output"
 			}
 
 			// Vyčistit vše

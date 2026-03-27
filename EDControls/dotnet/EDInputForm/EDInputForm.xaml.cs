@@ -132,7 +132,8 @@ namespace EDControls.EDInputForm
                         f.Editable ? "1" : "0",
                         f.Visibility.ToWire(),
                         f.HelpText ?? "",
-                        SerializeListItems(f.ListItems)),
+                        SerializeListItems(f.ListItems),
+                        f.FileFilter ?? ""),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -181,6 +182,8 @@ namespace EDControls.EDInputForm
                     };
                     if (field.FieldType == EFieldType.List && row.Length >= 13)
                         field.ListItems = ParseListItems(row.GetString(13));
+                    if (field.FieldType == EFieldType.File && row.Length >= 14)
+                        field.FileFilter = row.GetString(14);
                     items.Add(field);
                 }
             }
@@ -302,6 +305,41 @@ namespace EDControls.EDInputForm
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
             Debug.WriteLine($"[EDInputForm] Button clicked (changedKey={field.Key})");
             Controller.Validate(field.Key);
+        }
+
+        // ─── File browse ──────────────────────────────────────────────────────────
+
+        internal const string FolderModeSentinel = "$FOLDER";
+
+        private void FileField_BrowseClick(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            if (!field.Editable) return;
+
+            string filter = field.FileFilter ?? "";
+
+            if (filter == FolderModeSentinel)
+            {
+                var dialog = new Microsoft.Win32.OpenFolderDialog { Title = field.Label };
+                if (!string.IsNullOrEmpty(field.Value) && System.IO.Directory.Exists(field.Value))
+                    dialog.InitialDirectory = field.Value;
+                if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+                    field.Value = dialog.FolderName;
+            }
+            else
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = field.Label,
+                    Filter = string.IsNullOrEmpty(filter) ? "Všechny soubory (*.*)|*.*" : filter
+                };
+                if (!string.IsNullOrEmpty(field.Value) && System.IO.File.Exists(field.Value))
+                    dialog.FileName = field.Value;
+                if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+                    field.Value = dialog.FileName;
+            }
+
+            Debug.WriteLine($"[EDInputForm] File browse completed (key={field.Key}, value={field.Value})");
         }
 
         // ─── Internal ─────────────────────────────────────────────────────────────

@@ -22,6 +22,10 @@ Property editable As %Boolean [ InitialExpression = 1 ];
 /// Options for List field type. Each element is $lb(key, label).
 Property listItems As list Of %List;
 
+/// Dialog filter for File field type. "$FOLDER" for folder selection,
+/// otherwise interpreted as OpenFileDialog filter string.
+Property fileFilter As %String;
+
 Method AddListItem(key As %String, label As %String)
 {
 	d ..listItems.Insert($lb(key, label))
@@ -44,7 +48,7 @@ Method Serialize() As %List
 			s listStr = listStr _ key _ $$$ListKeyValSep _ label
 		}
 	}
-	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility,..helpText,listStr)
+	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility,..helpText,listStr,..fileFilter)
 }
 
 }

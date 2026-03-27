@@ -141,6 +141,26 @@
                     </ComboBox>
                 </DataTemplate>
 
+                <!-- File: TextBox + Browse button -->
+                <DataTemplate x:Key="FileFieldTemplate">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox Grid.Column="0"
+                                 Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                                 ToolTip="{Binding ValidationError}"
+                                 Style="{StaticResource FieldTextBoxStyle}"/>
+                        <Button Grid.Column="1"
+                                Content="..."
+                                Click="FileField_BrowseClick"
+                                Width="28" Margin="2,0,0,0"
+                                IsEnabled="{Binding Editable}"
+                                ToolTip="Procházet..."/>
+                    </Grid>
+                </DataTemplate>
+
                 <!-- Field row: fixed 130px label column, input fills the rest, optional help column -->
                 <DataTemplate DataType="{x:Type local:Field}">
                     <Grid Margin="2,1" Visibility="{Binding EffectiveVisibility}">
@@ -196,6 +216,9 @@
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.List}">
                                             <Setter Property="ContentTemplate" Value="{StaticResource ListFieldTemplate}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.File}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource FileFieldTemplate}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>
