@@ -120,10 +120,13 @@ public class EDViewModel : INotifyPropertyChanged
 
     private void RegisterKeyBindings()
     {
-        if (Actions == null) return;
         var window = Application.Current.Windows.OfType<Window>()
             .FirstOrDefault(w => w.DataContext == this);
         if (window == null) return;
+
+        window.InputBindings.Add(new KeyBinding(OkCommand, Key.Return, ModifierKeys.Control));
+
+        if (Actions == null) return;
         foreach (var action in Actions.Where(a => a.Key != Key.None))
             window.InputBindings.Add(new KeyBinding(action.Command, action.Key, action.Modifiers));
     }

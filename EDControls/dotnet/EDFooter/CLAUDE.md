@@ -42,6 +42,12 @@ Na `Loaded` se `EDFooter` vyšplhá k rodičovskému `Window` a:
    Když `RequestClose` vyvolá `null`, volá `window.Close()` přímo.
    Na hostitelském okně není potřeba žádný flag.
 
+## Potvrzení dialogu klávesou
+
+OK tlačítko **nemá** `IsDefault="True"` — samotný Enter dialog nepotvrdí. Potvrzení jde přes
+**Ctrl+Enter**, které `EDViewModel` automaticky registruje jako window-level `InputBinding`
+pro `OkCommand`. Toto umožňuje EDInputFormu používat Enter pro navigaci mezi poli.
+
 ## Použití v XAML
 
 ```xaml
