@@ -250,13 +250,23 @@
                                       IsChecked="{Binding IsExpanded}"
                                       Background="Transparent" BorderThickness="0"
                                       Padding="2,0" VerticalAlignment="Center"
-                                      Focusable="False" Cursor="Hand">
+                                      Focusable="False" Cursor="Hand"
+                                      Content="&#x25BC;">
+                            <ToggleButton.RenderTransformOrigin>0.5,0.5</ToggleButton.RenderTransformOrigin>
                             <ToggleButton.Style>
                                 <Style TargetType="ToggleButton">
-                                    <Setter Property="Content" Value="&#x25BC;"/>
+                                    <Setter Property="RenderTransform">
+                                        <Setter.Value>
+                                            <RotateTransform Angle="0"/>
+                                        </Setter.Value>
+                                    </Setter>
                                     <Style.Triggers>
                                         <Trigger Property="IsChecked" Value="False">
-                                            <Setter Property="Content" Value="&#x25BA;"/>
+                                            <Setter Property="RenderTransform">
+                                                <Setter.Value>
+                                                    <RotateTransform Angle="-90"/>
+                                                </Setter.Value>
+                                            </Setter>
                                         </Trigger>
                                     </Style.Triggers>
                                 </Style>
