@@ -131,11 +131,13 @@ kliknutí neprovede žádný server roundtrip.
 
 ## Klávesová navigace
 
-`Ctrl+číslice` naviguje na položku, jejíž `Number` odpovídá akumulované hodnotě:
+**Tab / Shift+Tab** přesouvá fokus přímo mezi vnitřními controly polí (TextBox, ComboBox, DatePicker, CheckBox) — nativní WPF chování.
 
-- Číslice se bufferují 200 ms (např. Ctrl+1, Ctrl+2 → položka 12)
-- Pokud je cíl `Field`, zaostří jeho TextBox (nebo ComboBox pro typ List)
-- Pokud je cíl `Group`, přepne `IsExpanded`
+**Enter** (bez Ctrl) funguje jako Tab — přesune fokus na další pole. Na poli typu Button místo toho rovnou klikne.
+
+**Ctrl+Enter** potvrdí dialog (vyvolá `OkCommand` na EDViewModelu). Samotný Enter tedy NEZAVÍRÁ dialog.
+
+**Ctrl+číslice** naviguje na položku, jejíž `Number` odpovídá akumulované hodnotě (200 ms buffer, např. Ctrl+1,2 → položka 12). Pokud je cíl `Group`, přepne `IsExpanded`.
 
 ## DŮLEŽITÉ: Round-trip pravidlo
 

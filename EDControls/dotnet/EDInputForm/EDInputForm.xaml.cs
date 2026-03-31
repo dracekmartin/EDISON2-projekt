@@ -228,8 +228,10 @@ namespace EDControls.EDInputForm
         }
 
         // ─── Keyboard navigation ──────────────────────────────────────────────────
-        // Ctrl+digits: buffer digits for 600 ms, then navigate to the item whose
-        // Number equals the accumulated value.  Ctrl+1,2 → item 12, etc.
+        // Tab / Shift+Tab: native WPF — jumps between inner controls directly.
+        // Enter (no Ctrl): move to next control (like Tab); on Button → click.
+        // Ctrl+Enter: bubbles to OkCommand (window-level InputBinding).
+        // Ctrl+digits: buffer for 200 ms, then navigate to item by Number.
 
         private string _navBuffer = "";
         private System.Windows.Threading.DispatcherTimer? _navTimer;
@@ -237,6 +239,26 @@ namespace EDControls.EDInputForm
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
+
+            // Enter (no Ctrl) → move to next control, or click Button
+            if (e.Key == Key.Return && (Keyboard.Modifiers & ModifierKeys.Control) == 0)
+            {
+                // If on a Button field, click it and then move forward
+                if (GetCurrentField() is { FieldType: EFieldType.Button } btnField)
+                {
+                    if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(btnField)
+                            is FrameworkElement container)
+                        FindVisualChild<System.Windows.Controls.Button>(container)?.RaiseEvent(
+                            new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                }
+
+                (Keyboard.FocusedElement as UIElement)?.MoveFocus(
+                    new TraversalRequest(FocusNavigationDirection.Next));
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+digit buffering
             if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
 
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
@@ -273,21 +295,52 @@ namespace EDControls.EDInputForm
             _navTimer.Start();
         }
 
+        // ─── Navigation helpers ─────────────────────────────────────────────────
+
+        private Field? GetCurrentField()
+        {
+            if (Keyboard.FocusedElement is not DependencyObject focused) return null;
+            foreach (var field in Items?.OfType<Field>() ?? [])
+            {
+                if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(field)
+                        is FrameworkElement container && container.IsAncestorOf(focused))
+                    return field;
+            }
+            return null;
+        }
+
+        private void FocusField(Field field)
+        {
+            if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(field)
+                    is not FrameworkElement container) return;
+            switch (field.FieldType)
+            {
+                case EFieldType.Date:
+                    FindVisualChild<DatePicker>(container)?.Focus();
+                    break;
+                case EFieldType.Bool:
+                    FindVisualChild<CheckBox>(container)?.Focus();
+                    break;
+                case EFieldType.List:
+                    FindVisualChild<ComboBox>(container)?.Focus();
+                    break;
+                default:
+                    FindVisualChild<TextBox>(container)?.Focus();
+                    break;
+            }
+        }
+
         private void NavigateToNumber(int number)
         {
             var item = Items?.FirstOrDefault(i => i.Number == number);
             if (item == null) return;
 
-            var container = TheItemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
-            if (container == null) return;
-
-            if (item is Field)
+            if (item is Field field)
             {
-                var textBox = FindVisualChild<TextBox>(container);
-                if (textBox != null)
-                    textBox.Focus();
-                else
-                    FindVisualChild<ComboBox>(container)?.Focus();
+                // Expand parent group if collapsed
+                if (field.ParentGroup is { IsExpanded: false } group)
+                    group.IsExpanded = true;
+                FocusField(field);
             }
             else if (item is Group g)
                 g.IsExpanded = !g.IsExpanded;
