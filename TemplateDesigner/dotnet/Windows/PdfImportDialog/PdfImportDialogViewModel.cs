@@ -82,11 +82,21 @@ public class PdfImportDialogViewModel : EDViewModel
     private bool _useAiEnrichment;
     public bool UseAiEnrichment { get => _useAiEnrichment; set => Set(ref _useAiEnrichment, value); }
 
+    private bool _useAiVision;
+    public bool UseAiVision
+    {
+        get => _useAiVision;
+        set { Set(ref _useAiVision, value); OnPropertyChanged(nameof(IsAiVisionAgendaVisible)); }
+    }
+
     /// <summary>Máme API klíč z appsettings.json?</summary>
     public bool HasApiKey { get; }
 
     /// <summary>Sekce AI obohacení je viditelná jen při JŘ importu.</summary>
     public bool IsAiSectionVisible => ScheduleImportType != ScheduleImportType.None;
+
+    /// <summary>Agenda dropdown pro AI Vision je viditelný když je AI Vision zapnutý.</summary>
+    public bool IsAiVisionAgendaVisible => UseAiVision;
 
     /// <summary>Dostupné agendy pro dropdown.</summary>
     public List<AgendaInfo> AvailableAgendas { get; } = [];
@@ -197,53 +207,69 @@ public class PdfImportDialogViewModel : EDViewModel
             var mergeMode = MergeMode;
             var scheduleType = ScheduleImportType;
             var pagesArr = pages;
+            bool useVision = UseAiVision && !string.IsNullOrEmpty(_apiKey)
+                             && scheduleType != ScheduleImportType.None;
 
-            PdfToTemplateConverter converter = null!;
-            var template = await Task.Run(() =>
-            {
-                converter = new PdfToTemplateConverter
-                {
-                    EnableDebug = enableDebug,
-                    MergeMode = mergeMode,
-                    ScheduleImportType = scheduleType
-                };
-                return converter.Convert(pdfPath, pagesArr);
-            });
-
-            // AI enrichment — pokud zapnutý a máme API klíč a detekce proběhla
+            PdfToTemplateConverter? converter = null;
+            Template template;
             string? aiDebugLog = null;
-            if (UseAiEnrichment && !string.IsNullOrEmpty(_apiKey)
-                && scheduleType != ScheduleImportType.None
-                && converter.LastDetectionResult is { } detection
-                && detection.Confidence >= 0.5f
-                && converter.LastExtractedPages.Count > 0)
+
+            if (useVision)
             {
-                StatusText = "AI analyzuje strukturu...";
-                var enricher = new AiImportEnricher();
-                try
+                // ── AI Vision pipeline ──────────────────────────────────────
+                template = await ImportWithAiVisionAsync(
+                    pdfPath, pagesArr, scheduleType, enableDebug,
+                    s => StatusText = s,
+                    log => aiDebugLog = log);
+            }
+            else
+            {
+                // ── Heuristický pipeline (stávající) ────────────────────────
+                template = await Task.Run(() =>
                 {
-                    var schema = !string.IsNullOrEmpty(SelectedAgendaCode)
-                        ? _schemaProvider?.GetSchema(SelectedAgendaCode)
-                        : null;
-
-                    var enrichment = await enricher.EnrichAsync(
-                        detection, converter.LastExtractedPages[0], schema, scheduleType, _apiKey);
-
-                    if (enrichment is not null)
+                    converter = new PdfToTemplateConverter
                     {
-                        ApplyEnrichment(template, enrichment);
-                        int mappedCount = enrichment.TextMappings.Count(m => m.DbField is not null && m.Confidence >= 0.7f);
-                        StatusText = $"AI: {mappedCount} polí namapováno";
+                        EnableDebug = enableDebug,
+                        MergeMode = mergeMode,
+                        ScheduleImportType = scheduleType
+                    };
+                    return converter.Convert(pdfPath, pagesArr);
+                });
+
+                // AI enrichment — pokud zapnutý a máme API klíč a detekce proběhla
+                if (UseAiEnrichment && !string.IsNullOrEmpty(_apiKey)
+                    && scheduleType != ScheduleImportType.None
+                    && converter is not null
+                    && converter.LastDetectionResult is { } detection
+                    && detection.Confidence >= 0.5f
+                    && converter.LastExtractedPages.Count > 0)
+                {
+                    StatusText = "AI analyzuje strukturu...";
+                    var enricher = new AiImportEnricher();
+                    try
+                    {
+                        var schema = !string.IsNullOrEmpty(SelectedAgendaCode)
+                            ? _schemaProvider?.GetSchema(SelectedAgendaCode)
+                            : null;
+
+                        var enrichment = await enricher.EnrichAsync(
+                            detection, converter.LastExtractedPages[0], schema, scheduleType, _apiKey);
+
+                        if (enrichment is not null)
+                        {
+                            ApplyEnrichment(template, enrichment);
+                            int mappedCount = enrichment.TextMappings.Count(m => m.DbField is not null && m.Confidence >= 0.7f);
+                            StatusText = $"AI: {mappedCount} polí namapováno";
+                        }
                     }
-                }
-                catch (Exception ex)
-                {
-                    // Graceful fallback — AI selhala, pokračujeme bez enrichmentu
-                    StatusText = $"AI nedostupná ({ex.Message}), pokračuji bez obohacení";
-                }
-                finally
-                {
-                    aiDebugLog = enricher.DebugLog;
+                    catch (Exception ex)
+                    {
+                        StatusText = $"AI nedostupná ({ex.Message}), pokračuji bez obohacení";
+                    }
+                    finally
+                    {
+                        aiDebugLog = enricher.DebugLog;
+                    }
                 }
             }
 
@@ -265,7 +291,7 @@ public class PdfImportDialogViewModel : EDViewModel
             }
 
             // Uložit debug logy vedle PDF
-            var debugLog = converter.DebugLog;
+            var debugLog = converter?.DebugLog;
             var savedLogPaths = new List<string>();
 
             if (enableDebug && debugLog is not null)
@@ -310,6 +336,32 @@ public class PdfImportDialogViewModel : EDViewModel
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// AI Vision import pipeline: deleguje na AiVisionImportPipeline.
+    /// </summary>
+    private async Task<Template> ImportWithAiVisionAsync(
+        string pdfPath, int[]? pages, ScheduleImportType scheduleType, bool enableDebug,
+        Action<string> setStatus, Action<string?> setAiLog)
+    {
+        // Získat known parametry z Caché agendy (pokud dostupné)
+        IReadOnlyList<TemplateParameter>? knownParams = null;
+        if (_schemaProvider is Serialization.CacheAgendaProvider cacheProvider
+            && !string.IsNullOrEmpty(SelectedAgendaCode))
+        {
+            try { knownParams = cacheProvider.GetParameters(SelectedAgendaCode); }
+            catch { /* Caché nedostupná */ }
+        }
+
+        var pipeline = new AiVisionImportPipeline(
+            _apiKey!, _schemaProvider, SelectedAgendaCode, knownParams);
+
+        var template = await pipeline.ImportAsync(
+            pdfPath, pages, scheduleType, enableDebug, setStatus);
+
+        setAiLog(pipeline.AiDebugLog);
+        return template;
     }
 
     /// <summary>

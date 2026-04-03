@@ -27,8 +27,10 @@ public static class PdfFontMapper
         if (string.IsNullOrWhiteSpace(pdfFontName))
             return ("Arial", false, false);
 
+        // Odstranit trailing čárky/mezery (PdfPig občas vrátí "Arial,")
+        string name = pdfFontName.TrimEnd(',', ' ');
+
         // Odstranit subset prefix (vše před '+')
-        string name = pdfFontName;
         int plusIndex = name.IndexOf('+');
         if (plusIndex >= 0 && plusIndex < name.Length - 1)
             name = name[(plusIndex + 1)..];

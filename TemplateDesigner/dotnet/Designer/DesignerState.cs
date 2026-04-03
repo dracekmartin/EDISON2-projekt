@@ -22,6 +22,7 @@ public class DesignerState
     public bool ShowGrid { get; set; } = false;
     public bool SnapToGrid { get; set; } = false;
     public bool SnapToElements { get; set; } = true;
+    public bool ShowSectionHeaders { get; set; } = true;
     public float GridSize { get; set; } = 5f; // mm
     public List<GapIndicator> ActiveGapIndicators { get; } = [];
 

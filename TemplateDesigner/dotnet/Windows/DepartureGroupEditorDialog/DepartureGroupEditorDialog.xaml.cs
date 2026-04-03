@@ -1,6 +1,7 @@
 using System.Windows;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Controls;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
@@ -19,9 +20,11 @@ public partial class DepartureGroupEditorDialog : Window
         ColumnVisualStyle? hourColumnStyle,
         IReadOnlyList<PropertyDescriptor> generalDescriptors,
         Action<IDesignerCommand> executeCommand,
-        Action invalidate)
+        Action invalidate,
+        TextStyle? headerDefaults = null,
+        TextStyle? dataDefaults = null)
     {
-        _vm = new DepartureGroupEditorDialogViewModel(availableGroups, currentStyles, hourColumnStyle, generalDescriptors);
+        _vm = new DepartureGroupEditorDialogViewModel(availableGroups, currentStyles, hourColumnStyle, generalDescriptors, headerDefaults, dataDefaults);
         DataContext = _vm;
         InitializeComponent();
 

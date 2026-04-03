@@ -138,4 +138,7 @@ public class AiAssistantSettings
     /// Získat na https://console.anthropic.com/
     /// </summary>
     public string AnthropicApiKey { get; set; } = "";
+
+    /// <summary>Model pro AI Vision import (default: claude-sonnet-4-6).</summary>
+    public string VisionModel { get; set; } = "claude-sonnet-4-6";
 }

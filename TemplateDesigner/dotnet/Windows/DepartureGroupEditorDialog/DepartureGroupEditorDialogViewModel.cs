@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using EDControls.EDViewModel;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
@@ -21,6 +22,13 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     public CellStyleVM Header { get; set; } = new();
     public CellStyleVM Data { get; set; } = new();
 
+    private string _alternatingRowColor = "";
+    public string AlternatingRowColor
+    {
+        get => _alternatingRowColor;
+        set { _alternatingRowColor = value; OnChanged(); }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
@@ -29,6 +37,7 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     {
         SkupinaDnuId = SkupinaDnuId,
         IsVisible = IsVisible,
+        AlternatingRowColor = string.IsNullOrWhiteSpace(AlternatingRowColor) ? null : AlternatingRowColor,
         Style = new ColumnVisualStyle
         {
             Header = Header.ToModel(),
@@ -37,13 +46,17 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     };
 
     public static DepartureGroupColumnVM FromData(
-        SkupinaDnuData skupina, DepartureGroupColumnStyle? s) => new()
+        SkupinaDnuData skupina, DepartureGroupColumnStyle? s,
+        TextStyle? headerDefaults = null, TextStyle? dataDefaults = null) => new()
     {
         SkupinaDnuId = skupina.Id,
         Name = skupina.Nadpis + (skupina.Nadpis2.Length > 0 ? " " + skupina.Nadpis2 : ""),
         IsVisible = s?.IsVisible ?? true,
-        Header = CellStyleVM.FromModel(s?.Style.Header, defaultBold: true),
-        Data = CellStyleVM.FromModel(s?.Style.Data)
+        AlternatingRowColor = s?.AlternatingRowColor ?? "",
+        Header = CellStyleVM.FromModel(s?.Style.Header, defaultBold: true,
+            defaultFontFamily: headerDefaults?.FontFamily, defaultFontSize: headerDefaults?.FontSize),
+        Data = CellStyleVM.FromModel(s?.Style.Data,
+            defaultFontFamily: dataDefaults?.FontFamily, defaultFontSize: dataDefaults?.FontSize)
     };
 }
 
@@ -103,7 +116,9 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         List<SkupinaDnuData> availableGroups,
         List<DepartureGroupColumnStyle> currentStyles,
         ColumnVisualStyle? hourColumnStyle,
-        IReadOnlyList<PropertyDescriptor> generalDescriptors)
+        IReadOnlyList<PropertyDescriptor> generalDescriptors,
+        TextStyle? headerDefaults = null,
+        TextStyle? dataDefaults = null)
     {
         GeneralDescriptors = generalDescriptors;
 
@@ -113,18 +128,19 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             SkupinaDnuId = HourColumnId,
             Name = "Hodiny",
             IsVisible = true,
-            Header = CellStyleVM.FromModel(hourColumnStyle?.Header, defaultBold: true),
-            Data = CellStyleVM.FromModel(hourColumnStyle?.Data)
+            Header = CellStyleVM.FromModel(hourColumnStyle?.Header, defaultBold: true,
+                defaultFontFamily: headerDefaults?.FontFamily, defaultFontSize: headerDefaults?.FontSize),
+            Data = CellStyleVM.FromModel(hourColumnStyle?.Data,
+                defaultFontFamily: dataDefaults?.FontFamily, defaultFontSize: dataDefaults?.FontSize)
         });
 
-        var styleMap = new Dictionary<string, DepartureGroupColumnStyle>(StringComparer.OrdinalIgnoreCase);
-        foreach (var s in currentStyles)
-            styleMap[s.SkupinaDnuId] = s;
+        var groupIds = availableGroups.Select(g => g.Id).ToList();
+        var styleMap = GroupColumnIndexResolver.BuildStyleLookup(currentStyles, groupIds);
 
         foreach (var skupina in availableGroups)
         {
             styleMap.TryGetValue(skupina.Id, out var existing);
-            GroupVMs.Add(DepartureGroupColumnVM.FromData(skupina, existing));
+            GroupVMs.Add(DepartureGroupColumnVM.FromData(skupina, existing, headerDefaults, dataDefaults));
         }
 
         if (GroupVMs.Count > 0) SelectedGroupVM = GroupVMs[0];
