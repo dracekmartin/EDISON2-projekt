@@ -36,6 +36,7 @@ Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými
 | 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ hotovo (2026-03-24) |
 | 8b | Proporcionální škálování šablony + UX vylepšení — `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ hotovo (2026-03-24) |
 | 8c | AI-enhanced PDF import — dvoustupňový pipeline (heuristiky → AI enrichment); `AiImportEnricher` s kontextovými prompty; detekce rámečků, loga placeholder, margin fix, TextElement alignment fix | ✅ hotovo (2026-03-25) |
+| 8d | AI Vision import pipeline — `AiVisionImportService` (composable prompty), `AiGuidedScheduleBuilder` (PdfPig geometrie), `AiVisionImportPipeline` (orchestrace); per-column font wrapping; section headers auto-hide; CellStyleVM font defaults; shared HttpClient | ✅ hotovo (2026-04-03) |
 | 9 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
 | 10 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
 | 11 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |
@@ -50,7 +51,7 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 |---|---|---|
 | 11 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
 | 12 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
-| 13 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | ⬅️ rozpracováno (2026-03-25) — pipeline funguje, ladění na širší sadě JŘ |
+| 13 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | ⬅️ rozpracováno (2026-04-03) — AI Vision pipeline + AiGuidedScheduleBuilder fungují, ladění na širší sadě JŘ |
 
 **Import PDF — aktuální stav:**
 - ✅ Režim 1 (deterministický 1:1 import) hotovo (2026-03-13)
