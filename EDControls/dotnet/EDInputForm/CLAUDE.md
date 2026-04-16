@@ -13,10 +13,11 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | --- | --- |
 | `EDInputForm.xaml / .xaml.cs` | UserControl. Vlastní všechna Caché volání, serializační helpery a Items DP. |
 | `EDInputFormController.cs` | Testovatelná orchestrace (Init/Validate/Save) bez WPF závislosti. Přijímá `IMLRest` a `CacheClass` jako parametry konstruktoru. |
-| `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální). Implementuje `INotifyPropertyChanged`. |
+| `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální), `HelpText`, `HelpTextVisibility`. Implementuje `INotifyPropertyChanged`. |
+| `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
-| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. |
-| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `FileFilter`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
+| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`, `File`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
 | `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
@@ -48,8 +49,10 @@ void Save_Click(...)     { bool ok = TheInputForm.Save();     }
 | `bool Validate()` | Volá Caché `Validate` s Change triggerem; vrací true pokud nejsou chyby. |
 | `bool Save()` | Validuje s BeforeSave triggerem, volá Caché `Save` pouze pokud je čistý stav; vrací true při úspěchu. |
 | `IEnumerable<Item>? Items` | DP — aktuální položky formuláře; aktualizuje se po každém Caché volání. |
+| `EHelpTextMode HelpTextMode` | DP — režim zobrazení nápovědy (`Tooltip` nebo `Column`). Čte se z Caché odpovědi. |
 | `static CVar SerializeItemsCVar(items)` | Převede Items → CVar pro odeslání do Caché. |
-| `static List<Item> ParseItems(CVar output)` | Převede Caché CVar výstup → seznam Item; přeskočí klíč "ERR". |
+| `static List<Item> ParseItems(CVar output)` | Převede Caché CVar výstup → seznam Item; přeskočí klíče "ERR" a "helpTextMode". |
+| `static EHelpTextMode ParseHelpTextMode(output)` | Přečte `helpTextMode` z CVar výstupu. |
 
 ### EDInputFormController (testovatelný, bez WPF)
 
@@ -68,13 +71,39 @@ List<Item> items = controller.Items;
 Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
-CVar["1"] = CList("GROUP", number, key, groupName, visibility)
-CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility)
+CVar["1"] = CList("GROUP", number, key, groupName, visibility, helpText)
+CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
+CVar["helpTextMode"] = "tooltip" | "column"   ; form-level setting, default "tooltip"
 ```
 
 Visibility (GROUP pozice 5, FIELD pozice 11): `"0"` = Visible (výchozí), `"1"` = Collapsed, `"2"` = UserHidden, `"3"` = ProgrammerHidden. Pokud chybí, položka je viditelná.
 
 Editable (FIELD pozice 10): `"1"` = editovatelné (výchozí), `"0"` = pouze ke čtení. Pokud chybí, pole je editovatelné.
+
+HelpText (GROUP pozice 6, FIELD pozice 12): volitelný text nápovědy. Pokud chybí nebo prázdný, nápověda se nezobrazí.
+
+HelpTextMode: `"tooltip"` (výchozí) zobrazí ikonu `?` s tooltipem, `"column"` zobrazí text v samostatném sloupci vpravo.
+
+ListItems (FIELD pozice 13): volitelný řetězec s volbami pro typ `List`. Oddělovač mezi položkami: `|` (pipe). Oddělovač mezi klíčem a popiskem: `~` (tilda). Příklad: `"A~Aktivní|N~Neaktivní"`. Pokud oddělovač `~` chybí, popisek = klíč. Přidání voleb v Caché:
+
+```objectscript
+s f = form.AddFieldToLastGroup("stav", "Stav", $$$FieldTypeList, 1, 0)
+d f.AddListItem("A", "Aktivní")
+d f.AddListItem("N", "Neaktivní")
+s f.value = "A"
+```
+
+FileFilter (FIELD pozice 14): konfigurační řetězec pro typ `File`. Speciální hodnota `"$FOLDER"` přepne na výběr složky (`OpenFolderDialog`). Jiná hodnota se použije jako filtr pro `OpenFileDialog` (např. `"PDF (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"`). Pokud prázdný, výchozí filtr je "Všechny soubory". Příklad:
+
+```objectscript
+; File selection with filter
+s f = form.AddFieldToLastGroup("soubor", "Soubor", $$$FieldTypeFile)
+s f.fileFilter = "PDF (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"
+
+; Folder selection
+s f = form.AddFieldToLastGroup("slozka", "Složka", $$$FieldTypeFile)
+s f.fileFilter = $$$FileFilterFolder
+```
 
 ### Struktura volání Validate
 
@@ -96,13 +125,30 @@ Když `Field` s `ValidateOnChange == true` změní svou `Value`, EDInputForm zav
 Klíč změněného pole se předá jako `changedKey` — na Caché straně dostupný přes
 `form.changedKey`, `form.HasChangedField()` nebo `form.GetChangedField()`.
 
+Totéž platí pro tlačítka (`FieldTypeButton`): kliknutí spustí validační roundtrip pouze
+pokud má pole `ValidateOnChange == true`. Tlačítko s `ValidateOnChange == false` při
+kliknutí neprovede žádný server roundtrip.
+
 ## Klávesová navigace
 
-`Ctrl+číslice` naviguje na položku, jejíž `Number` odpovídá akumulované hodnotě:
+**Tab / Shift+Tab** přesouvá fokus přímo mezi vnitřními controly polí (TextBox, ComboBox, DatePicker, CheckBox) — nativní WPF chování.
 
-- Číslice se bufferují 200 ms (např. Ctrl+1, Ctrl+2 → položka 12)
-- Pokud je cíl `Field`, zaostří jeho TextBox
-- Pokud je cíl `Group`, přepne `IsExpanded`
+**Enter** (bez Ctrl) funguje jako Tab — přesune fokus na další pole. Na poli typu Button místo toho rovnou klikne.
+
+**Ctrl+Enter** potvrdí dialog (vyvolá `OkCommand` na EDViewModelu). Samotný Enter tedy NEZAVÍRÁ dialog.
+
+**Ctrl+číslice** naviguje na položku, jejíž `Number` odpovídá akumulované hodnotě (200 ms buffer, např. Ctrl+1,2 → položka 12). Pokud je cíl `Group`, přepne `IsExpanded`.
+
+## DŮLEŽITÉ: Round-trip pravidlo
+
+**Každá** property EDInputFormu (položek i formuláře) musí být nastavitelná na Caché straně a musí se round-tripovat — tj. hodnota nastavená serverem se odešle zpět v dalším Validate/Save volání, aby ji server mohl číst a měnit. Pokud přidáváš novou property, zajisti:
+
+1. Caché ji zapisuje do `Serialize()` / `WriteToOut()`.
+2. .NET ji čte v `ParseItems()` / `ParseHelpTextMode()` (nebo analogicky).
+3. .NET ji zapisuje zpět v `SerializeItemsCVar()` / `ExecuteValidate()`.
+4. Caché ji čte v `ReadFromIn()`.
+
+Bez round-tripu server ztratí stav po prvním round-tripu a přepíše ho výchozí hodnotou.
 
 ## Návrhové poznámky
 
@@ -113,3 +159,8 @@ Klíč změněného pole se předá jako `changedKey` — na Caché straně dost
 - `EDInputFormDesignTimeData` je odkazován pouze z `d:DataContext` v XAML; nikdy neinstanciuj za běhu.
 - Stav `Visibility` se přenáší přes wire format — server ho round-tripuje přes `ReadFromIn` → `WriteToOut`. Žádné client-side preservation není potřeba.
 - `IsExpanded` na `Group` je computed property mapující `Visibility`: `Visible` = expanded, `Collapsed` = collapsed. Není to samostatný stav.
+
+## Referenční příklad — EDIFExample.cls
+
+`EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` je kompletní ukázka všech EDIF featur (typy polí, povinnost, helpText, editovatelnost, viditelnost, validace, tlačítka, kombinace).
+Při přidání nové featury do EDInputFormu přidej odpovídající příklad i do Example.cls.

@@ -58,6 +58,7 @@
     <Resource Include="EDIcons\png\grid.png"/>
     <Resource Include="EDIcons\png\snap.png"/>
     <Resource Include="EDIcons\png\eye.png"/>
+    <Resource Include="EDIcons\png\help.png"/>
   </ItemGroup>
 
 </Project>

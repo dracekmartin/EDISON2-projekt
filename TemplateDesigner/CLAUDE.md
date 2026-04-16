@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-25
+**Datum poslední aktualizace:** 2026-04-03
 
 ### 🎯 Aktuální focus
 
@@ -69,6 +69,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Výchozí nastavení nových elementů** — TextElement bez placeholder textu, zarovnání Center/Middle; všechny elementy: černý rámeček 0.1mm (jen nové — model defaults zůstávají pro zpětnou kompatibilitu JSON)
 - **DepartureGrid: HourColumnPerGroup** — `HourColumnPerGroup=true` zobrazí sloupec hodin u každé skupiny dnů (nejen vlevo)
 - **AI-enhanced PDF import** — dvoustupňový pipeline: heuristiky (geometrie) → volitelný AI enrichment (sémantika); `AiImportEnricher` s kontextovými prompty per `ScheduleImportType`; `EnrichedImportResult` (TextMappings s confidence, DayGroupValidations, DetectionValidation); sdílená `AnthropicApiClient.CallApiAsync()` (claude-haiku-4-5); auto-apply DB polí při confidence >= 0.7; graceful fallback při chybějícím API klíči nebo selhání AI; UI checkbox + agenda dropdown v `PdfImportDialog`
+- **AI Vision import pipeline** — `AiVisionImportService` s composable `AgendaPromptContext` prompt systémem (extensibilní per agenda); `AiGuidedScheduleBuilder` (PDF → rasterizace → Claude Vision → rozpoznání JŘ struktury → přesné elementy z PdfPig geometrie); `AiVisionImportPipeline` orchestruje celý flow s fallback na heuristiku; konfigurovatelný model (`AppSettings.AiAssistant.VisionModel`); typ parametrů z `AgendaAPI.GetParameters()` s value-based fallback; font family z PdfPig
+- **DepartureGrid: per-column font wrapping** — `ComputeLayout` respektuje per-column header font pro wrapping i min width měření; dynamická výška záhlaví z max per-column line height; `GroupColumnIndexResolver` — generický `BuildLookup<T>` s `IndexKeyPrefix` konstantou pro resolve `__INDEX_` klíčů
+- **Skrytí záhlaví sekcí** — `DesignerState.ShowSectionHeaders` toggle; auto-detekce JŘ šablon (skryje záhlaví automaticky); toolbar menu položka
+- **CellStyleVM font defaults** — dialog sloupců zobrazuje skutečné font hodnoty z elementu (ne prázdná pole); `headerDefaults`/`dataDefaults` parametry
+- **AnthropicApiClient: shared HttpClient** — statický `HttpClient` s per-request headers místo per-call instancí
 
 ### 🐛 Známé problémy
 

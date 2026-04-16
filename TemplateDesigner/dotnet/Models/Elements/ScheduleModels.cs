@@ -138,12 +138,65 @@ public class DepartureGroupColumnStyle
     public bool IsVisible { get; set; } = true;
     public ColumnVisualStyle Style { get; set; } = new();
 
+    /// <summary>Per-group zebra barva (alternating rows). Null = použít globální AlternatingRowColor.</summary>
+    public string? AlternatingRowColor { get; set; }
+
     public DepartureGroupColumnStyle Clone() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
         IsVisible = IsVisible,
-        Style = Style.Clone()
+        Style = Style.Clone(),
+        AlternatingRowColor = AlternatingRowColor
     };
+}
+
+/// <summary>
+/// Resolves __INDEX_0, __INDEX_1, ... positional keys to actual SkupinaDnuId.
+/// Import uses __INDEX_ keys because runtime IDs aren't known at import time.
+/// This method maps them by position to the actual group IDs.
+/// </summary>
+public static class GroupColumnIndexResolver
+{
+    /// <summary>Prefix pro poziční klíče přiřazené při importu.</summary>
+    public const string IndexKeyPrefix = "__INDEX_";
+
+    /// <summary>
+    /// Builds a style lookup dictionary, resolving __INDEX_ keys to actual IDs.
+    /// </summary>
+    public static Dictionary<string, DepartureGroupColumnStyle> BuildStyleLookup(
+        IReadOnlyList<DepartureGroupColumnStyle> groupColumns,
+        IReadOnlyList<string> actualGroupIds)
+        => BuildLookup(groupColumns, actualGroupIds, gc => gc);
+
+    /// <summary>
+    /// Builds a font-size-only lookup from group column styles, resolving __INDEX_ keys.
+    /// </summary>
+    public static Dictionary<string, float?> BuildHeaderFontLookup(
+        IReadOnlyList<DepartureGroupColumnStyle> groupColumns,
+        IReadOnlyList<string> actualGroupIds)
+        => BuildLookup(groupColumns, actualGroupIds, gc => gc.Style?.Header?.FontSize);
+
+    private static Dictionary<string, T> BuildLookup<T>(
+        IReadOnlyList<DepartureGroupColumnStyle> groupColumns,
+        IReadOnlyList<string> actualGroupIds,
+        Func<DepartureGroupColumnStyle, T> selector)
+    {
+        var result = new Dictionary<string, T>(StringComparer.OrdinalIgnoreCase);
+        foreach (var gc in groupColumns)
+            result[gc.SkupinaDnuId] = selector(gc);
+
+        var indexEntries = groupColumns
+            .Where(gc => gc.SkupinaDnuId.StartsWith(IndexKeyPrefix, StringComparison.Ordinal))
+            .OrderBy(gc => gc.SkupinaDnuId)
+            .ToList();
+        for (int i = 0; i < Math.Min(indexEntries.Count, actualGroupIds.Count); i++)
+        {
+            if (!result.ContainsKey(actualGroupIds[i]))
+                result[actualGroupIds[i]] = selector(indexEntries[i]);
+        }
+
+        return result;
+    }
 }
 
 /// <summary>Barevné pravidlo vyhodnocované přes ExpressionEvaluator.</summary>

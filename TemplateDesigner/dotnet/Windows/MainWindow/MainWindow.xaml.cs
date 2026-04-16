@@ -1181,7 +1181,9 @@ public partial class MainWindow : Window
             element.HourColumnStyle,
             generalDescriptors,
             cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
+            headerDefaults: element.HeaderStyle,
+            dataDefaults: element.DataStyle)
             { Owner = this };
 
         if (dlg.ShowDialog() == true)

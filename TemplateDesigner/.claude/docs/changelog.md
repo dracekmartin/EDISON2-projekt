@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-04-03 — AI Vision import pipeline, per-column font wrapping, UX vylepšení
+
+**AI Vision import:**
+- ✅ **`AiVisionImportService`** — composable `AgendaPromptContext` prompt systém; per-agenda factory metody (`ZastavkovyJrMhdPromptContext`, `GenericPromptContext`); konfigurovatelný model z `AppSettings.AiAssistant.VisionModel`
+- ✅ **`AiGuidedScheduleBuilder`** — PDF screenshot → Claude Vision → JŘ elementy s přesnými rozměry z PdfPig; refaktor `BuildFromVision` do 6 sub-metod; font family z PdfPig (`DetectDominantFontFamily`); `NormalizeHexColor` konsolidace; `PtToMm` konstanta z `ResolvedTextStyle`
+- ✅ **`AiVisionImportPipeline`** — orchestrace: extrakce → rasterizace → AI vision → engine → Template; fallback na heuristiku; typ parametrů z `AgendaAPI.GetParameters()` s value-based fallback
+- ✅ **`PdfPageRasterizer`** — rasterizace PDF stránky na base64 PNG pro AI Vision
+
+**DepartureGrid per-column font wrapping:**
+- ✅ **`ComputeLayout`** — per-column header font pro wrapping i min width měření; dynamická výška záhlaví z max per-column line height
+- ✅ **`GroupColumnIndexResolver`** — generický `BuildLookup<T>` nahrazuje 3 duplicitní implementace; `IndexKeyPrefix` konstanta pro `__INDEX_` klíče
+- ✅ **Layout cache fingerprint** — `ComputeLayoutFingerprint()` pro invalidaci cache při změně properties
+
+**UX vylepšení:**
+- ✅ **Skrytí záhlaví sekcí** — `DesignerState.ShowSectionHeaders` toggle; auto-detekce JŘ šablon; toolbar menu položka "Záhlaví sekcí"
+- ✅ **CellStyleVM font defaults** — dialog sloupců zobrazuje skutečné font hodnoty z elementu (`headerDefaults`/`dataDefaults`)
+- ✅ **AnthropicApiClient** — shared static `HttpClient` s per-request headers
+
+---
+
 ## 2026-03-25 — AI-enhanced PDF import pro JŘ šablony
 
 **AI enrichment pipeline:**

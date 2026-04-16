@@ -16,7 +16,8 @@ public enum ResizeHandle
 /// </summary>
 public class DesignerCanvas
 {
-    public const float SectionHeaderPx = 20f;
+    public const float SectionHeaderPxDefault = 20f;
+    public float SectionHeaderPx => _state.ShowSectionHeaders ? SectionHeaderPxDefault : 0f;
     private const float PagePaddingPx  = 40f;
     private const float HandleSizePx   = 7f;
 
@@ -357,14 +358,17 @@ public class DesignerCanvas
             float headerY  = oy - SectionHeaderPx;
 
             // Hlavička
-            var hdrRect = new SKRect(ox, headerY, ox + contentW, oy);
-            using (var bg = new SKPaint { Color = dynamic ? ClrSectionHeaderDyn : ClrSectionHeader })
-                canvas.DrawRect(hdrRect, bg);
-            using var hdrFont  = new SKFont(SKTypeface.Default, 11f);
-            using var hdrText  = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
-            canvas.DrawText(section.Name, ox + 8f, headerY + SectionHeaderPx - 5f, hdrFont, hdrText);
-            if (dynamic)
-                canvas.DrawText("∞", ox + contentW - 18f, headerY + SectionHeaderPx - 5f, hdrFont, hdrText);
+            if (_state.ShowSectionHeaders)
+            {
+                var hdrRect = new SKRect(ox, headerY, ox + contentW, oy);
+                using (var bg = new SKPaint { Color = dynamic ? ClrSectionHeaderDyn : ClrSectionHeader })
+                    canvas.DrawRect(hdrRect, bg);
+                using var hdrFont  = new SKFont(SKTypeface.Default, 11f);
+                using var hdrText  = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
+                canvas.DrawText(section.Name, ox + 8f, headerY + SectionHeaderPxDefault - 5f, hdrFont, hdrText);
+                if (dynamic)
+                    canvas.DrawText("∞", ox + contentW - 18f, headerY + SectionHeaderPxDefault - 5f, hdrFont, hdrText);
+            }
 
             // Obsah sekce
             var contentRect = new SKRect(ox, oy, ox + contentW, oy + sectionH);

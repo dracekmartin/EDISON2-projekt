@@ -251,6 +251,9 @@ public class EDInputFormParsingTests
     [InlineData("BOOL", EFieldType.Bool)]
     [InlineData("TEXT", EFieldType.Text)]
     [InlineData("NUMBER", EFieldType.Number)]
+    [InlineData("BUTTON", EFieldType.Button)]
+    [InlineData("LIST", EFieldType.List)]
+    [InlineData("FILE", EFieldType.File)]
     [InlineData("UNKNOWN", EFieldType.Text)]
     public void EFieldTypeWire_RoundTrips(string wire, EFieldType expected)
     {
@@ -304,6 +307,8 @@ public class EDInputFormParsingTests
     [InlineData(EFieldType.Bool, "0", null)]
     [InlineData(EFieldType.Bool, "yes", "Musí být 0 nebo 1")]
     [InlineData(EFieldType.Text, "anything", null)]
+    [InlineData(EFieldType.List, "anything", null)]
+    [InlineData(EFieldType.File, @"C:\some\path.pdf", null)]
     public void GetTypeError_ValidatesValueByFieldType(EFieldType type, string value, string? expected)
     {
         var field = new Field { FieldType = type, Value = value };
@@ -315,6 +320,8 @@ public class EDInputFormParsingTests
     [InlineData(EFieldType.Decimal, null)]
     [InlineData(EFieldType.Date, null)]
     [InlineData(EFieldType.Bool, null)]
+    [InlineData(EFieldType.List, null)]
+    [InlineData(EFieldType.File, null)]
     public void GetTypeError_EmptyValue_ReturnsNull(EFieldType type, string? value)
     {
         var field = new Field { FieldType = type, Value = value };
@@ -466,5 +473,378 @@ public class EDInputFormParsingTests
     {
         var field = new Field { Visibility = EItemVisibility.Visible };
         Assert.Equal(System.Windows.Visibility.Visible, field.EffectiveVisibility);
+    }
+
+    // ─── HelpText tests ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesFieldHelpText()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "Zadejte hodnotu");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal("Zadejte hodnotu", f.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesGroupHelpText()
+    {
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "1", "g", "Skupina", "0", "Vyplňte tuto sekci");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var g = Assert.IsType<Group>(Assert.Single(items));
+        Assert.Equal("Vyplňte tuto sekci", g.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_FieldWithoutHelpTextDefaultsToNull()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Null(f.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_GroupWithoutHelpTextDefaultsToNull()
+    {
+        var data = new CVar();
+        data["1"] = new CList("GROUP", "1", "g", "Skupina", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var g = Assert.IsType<Group>(Assert.Single(items));
+        Assert.Null(g.HelpText);
+    }
+
+    [Fact]
+    public void ParseItems_FieldEmptyHelpTextBecomesNull()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Null(f.HelpText);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsFieldHelpText()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Value = "v", HelpText = "Help for field"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal("Help for field", f.HelpText);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsGroupHelpText()
+    {
+        var group = new Group
+        {
+            Number = 1, Key = "g", GroupName = "G", HelpText = "Help for group"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([group]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var g = Assert.IsType<Group>(Assert.Single(parsed));
+        Assert.Equal("Help for group", g.HelpText);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_NullHelpText_RoundTripsAsNull()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "k", Label = "L", FieldType = EFieldType.Text,
+            Value = "v", HelpText = null
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Null(f.HelpText);
+    }
+
+    [Fact]
+    public void HelpTextVisibility_WithHelpText_IsVisible()
+    {
+        var field = new Field { HelpText = "Some help" };
+        Assert.Equal(System.Windows.Visibility.Visible, field.HelpTextVisibility);
+    }
+
+    [Fact]
+    public void HelpTextVisibility_WithoutHelpText_IsCollapsed()
+    {
+        var field = new Field { HelpText = null };
+        Assert.Equal(System.Windows.Visibility.Collapsed, field.HelpTextVisibility);
+    }
+
+    // ─── HelpTextMode tests ──────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseHelpTextMode_Tooltip_ReturnsTooltip()
+    {
+        var data = new CVar();
+        data["helpTextMode"] = new CVar("tooltip");
+
+        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+    }
+
+    [Fact]
+    public void ParseHelpTextMode_Column_ReturnsColumn()
+    {
+        var data = new CVar();
+        data["helpTextMode"] = new CVar("column");
+
+        Assert.Equal(EHelpTextMode.Column, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+    }
+
+    [Fact]
+    public void ParseHelpTextMode_Missing_DefaultsToTooltip()
+    {
+        var data = new CVar();
+
+        Assert.Equal(EHelpTextMode.Tooltip, EDInputForm.EDInputForm.ParseHelpTextMode(data));
+    }
+
+    [Fact]
+    public void ParseItems_SkipsHelpTextModeKey()
+    {
+        var data = new CVar();
+        data["helpTextMode"] = new CVar("column");
+        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        Assert.Single(items);
+        Assert.IsType<Field>(items[0]);
+    }
+
+    [Theory]
+    [InlineData("tooltip", EHelpTextMode.Tooltip)]
+    [InlineData("column", EHelpTextMode.Column)]
+    [InlineData("UNKNOWN", EHelpTextMode.Tooltip)]
+    public void EHelpTextModeWire_FromWire(string wire, EHelpTextMode expected)
+    {
+        Assert.Equal(expected, EHelpTextModeWire.FromWire(wire));
+    }
+
+    [Fact]
+    public void EHelpTextModeWire_RoundTrips()
+    {
+        Assert.Equal("tooltip", EHelpTextMode.Tooltip.ToWire());
+        Assert.Equal("column", EHelpTextMode.Column.ToWire());
+    }
+
+    // ─── List field tests ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesListField()
+    {
+        var data = new CVar();
+        // Position 12 = helpText (empty), position 13 = listItems
+        data["1"] = new CList("FIELD", "1", "stav", "Stav", "LIST", "A", "0", "0", "", "1", "0", "",
+            "A~Aktivní|B~Neaktivní");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Equal("A", f.Value);
+        Assert.Equal(2, f.ListItems.Count);
+        Assert.Equal("A", f.ListItems[0].Key);
+        Assert.Equal("Aktivní", f.ListItems[0].Label);
+        Assert.Equal("B", f.ListItems[1].Key);
+        Assert.Equal("Neaktivní", f.ListItems[1].Label);
+    }
+
+    [Fact]
+    public void ParseItems_ListFieldEmptyOptions()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "stav", "Stav", "LIST", "", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Empty(f.ListItems);
+    }
+
+    [Fact]
+    public void ParseItems_ListFieldKeyOnlyOptions()
+    {
+        var data = new CVar();
+        // Position 12 = helpText (empty), position 13 = listItems (key-only)
+        data["1"] = new CList("FIELD", "1", "barva", "Barva", "LIST", "Červená", "0", "0", "", "1", "0", "",
+            "Červená|Zelená|Modrá");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(3, f.ListItems.Count);
+        Assert.Equal("Červená", f.ListItems[0].Key);
+        Assert.Equal("Červená", f.ListItems[0].Label);
+        Assert.Equal("Zelená", f.ListItems[1].Key);
+        Assert.Equal("Zelená", f.ListItems[1].Label);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsListField()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "stav", Label = "Stav", FieldType = EFieldType.List,
+            Value = "A", ListItems = [new ListItem("A", "Aktivní"), new ListItem("N", "Neaktivní")]
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EFieldType.List, f.FieldType);
+        Assert.Equal("A", f.Value);
+        Assert.Equal(2, f.ListItems.Count);
+        Assert.Equal("A", f.ListItems[0].Key);
+        Assert.Equal("Aktivní", f.ListItems[0].Label);
+        Assert.Equal("N", f.ListItems[1].Key);
+        Assert.Equal("Neaktivní", f.ListItems[1].Label);
+    }
+
+    // ─── File field tests ─────────────────────────────────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesFileFieldWithFilter()
+    {
+        var data = new CVar();
+        // positions: 1-type, 2-number, 3-key, 4-label, 5-fieldType, 6-value, 7-voc, 8-req,
+        //            9-valErr, 10-editable, 11-visibility, 12-helpText, 13-listItems, 14-fileFilter
+        data["1"] = new CList("FIELD", "1", "soubor", "Soubor", "FILE", @"C:\test.pdf", "0", "0",
+            "", "1", "0", "", "", "PDF (*.pdf)|*.pdf");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\test.pdf", f.Value);
+        Assert.Equal("PDF (*.pdf)|*.pdf", f.FileFilter);
+    }
+
+    [Fact]
+    public void ParseItems_ParsesFileFolderMode()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "slozka", "Složka", "FILE", @"C:\Output", "0", "0",
+            "", "1", "0", "", "", "$FOLDER");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\Output", f.Value);
+        Assert.Equal("$FOLDER", f.FileFilter);
+    }
+
+    [Fact]
+    public void ParseItems_FileFieldWithoutFilter_DefaultsToEmpty()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FIELD", "1", "soubor", "Soubor", "FILE", "", "0", "0");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal("", f.FileFilter);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsFileField()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "soubor", Label = "Soubor", FieldType = EFieldType.File,
+            Value = @"C:\test.pdf", FileFilter = "PDF (*.pdf)|*.pdf"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\test.pdf", f.Value);
+        Assert.Equal("PDF (*.pdf)|*.pdf", f.FileFilter);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsFileFolderMode()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "slozka", Label = "Složka", FieldType = EFieldType.File,
+            Value = @"C:\Output", FileFilter = "$FOLDER"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EFieldType.File, f.FieldType);
+        Assert.Equal(@"C:\Output", f.Value);
+        Assert.Equal("$FOLDER", f.FileFilter);
+    }
+
+    // ─── GetRequiredError tests ───────────────────────────────────────────────
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    public void GetRequiredError_RequiredEmptyField_ReturnsError(string? value)
+    {
+        var field = new Field { Required = true, Value = value };
+        Assert.Equal("Povinné pole", field.GetRequiredError());
+    }
+
+    [Fact]
+    public void GetRequiredError_RequiredFilledField_ReturnsNull()
+    {
+        var field = new Field { Required = true, Value = "Jan" };
+        Assert.Null(field.GetRequiredError());
+    }
+
+    [Fact]
+    public void GetRequiredError_NotRequired_ReturnsNull()
+    {
+        var field = new Field { Required = false, Value = null };
+        Assert.Null(field.GetRequiredError());
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("1")]
+    [InlineData(null)]
+    public void GetRequiredError_RequiredBoolField_ReturnsNull(string? value)
+    {
+        var field = new Field { Required = true, FieldType = EFieldType.Bool, Value = value };
+        Assert.Null(field.GetRequiredError());
     }
 }

@@ -21,6 +21,10 @@ Property changedKey As %String;
 /// Ordered list of Group and Field items that make up the form.
 Property items As list Of ALVA.EDControls.EDInputForm.Item;
 
+/// Controls how help text is displayed on the .NET side.
+/// $$$HelpTextModeTooltip (default) or $$$HelpTextModeColumn.
+Property helpTextMode As %String [ InitialExpression = {$$$HelpTextModeTooltip} ];
+
 // ─── Builder ─────────────────────────────────────────────────────────────────
 
 /// Appends a group separator. Pass visibility to control display on the .NET side
@@ -166,8 +170,9 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 /// Writes all items to ^||ML("OUT",...) as CList ($lb) values.
 /// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
 /// Format per item (number is always position 2):
-///   GROUP → $lb("GROUP", number, key, groupName, visibility)
-///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility)
+///   GROUP → $lb("GROUP", number, key, groupName, visibility, helpText)
+///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
+/// Also writes helpTextMode at string subscript "helpTextMode".
 Method WriteToOut()
 {
 	s i = 0
@@ -175,35 +180,56 @@ Method WriteToOut()
 	f idx=1:1:cnt {
 		s ^||ML("OUT",$i(i)) = ..items.GetAt(idx).Serialize()
 	}
+	s ^||ML("OUT","helpTextMode") = ..helpTextMode
 }
 
 /// Reads ^||ML("IN",...) and returns a populated Form.
 /// Trigger is at string subscript "trigger".
 /// Items are at subscripts 1, 2, ... as CList ($lb) values:
-///   $lb("GROUP", number, key, groupName, visibility)   ; number round-tripped, re-assigned on insert
-///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility)
+///   $lb("GROUP", number, key, groupName, visibility, helpText)   ; number round-tripped, re-assigned on insert
+///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
 ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
 	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 	s form.trigger = $g(^||ML("IN","trigger"))
 	s form.changedKey = $g(^||ML("IN","changedKey"))
+	s form.helpTextMode = $s($g(^||ML("IN","helpTextMode"))'="":^||ML("IN","helpTextMode"),1:$$$HelpTextModeTooltip)
 	s idx = ""
 	f {
 		s idx = $o(^||ML("IN",idx))
 		q:idx=""
 		i idx="trigger" continue
 		i idx="changedKey" continue
+		i idx="helpTextMode" continue
 		s listVal = ^||ML("IN",idx)
 		s type = $li(listVal,1)
 		i type="GROUP" {
 			s visibility = $s($ll(listVal)>=5:$li(listVal,5),1:$$$ItemVisibilityVisible)
 			d form.AddGroup($li(listVal,3),$li(listVal,4),visibility)
+			// Read helpText for the group just added
+			i $ll(listVal)>=6 s form.items.GetAt(form.items.Count()).helpText = $li(listVal,6)
 		}
 		i type="FIELD" {
 			s f = form.AddFieldToLastGroup($li(listVal,3),$li(listVal,4),$li(listVal,5),$li(listVal,7),$li(listVal,8))
 			s f.value = $li(listVal,6)
 			i $ll(listVal)>=10 s f.editable = $li(listVal,10)
 			i $ll(listVal)>=11 s f.visibility = $li(listVal,11)
+			i $ll(listVal)>=12 s f.helpText = $li(listVal,12)
+			// Position 13: list items for List field type
+			i $ll(listVal)>=13 {
+				s optStr = $li(listVal,13)
+				i optStr'="" {
+					f k=1:1:$l(optStr,$$$ListItemSep) {
+						s entry = $p(optStr,$$$ListItemSep,k)
+						s key = $p(entry,$$$ListKeyValSep,1)
+						s label = $p(entry,$$$ListKeyValSep,2)
+						s:label="" label = key
+						d f.AddListItem(key, label)
+					}
+				}
+			}
+			// Position 14: file filter for File field type
+			i $ll(listVal)>=14 s f.fileFilter = $li(listVal,14)
 		}
 	}
 	q form

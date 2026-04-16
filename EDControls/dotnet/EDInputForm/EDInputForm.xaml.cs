@@ -4,7 +4,6 @@ using EDControls.EDViewModel;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,21 +14,40 @@ namespace EDControls.EDInputForm
 {
     public partial class EDInputForm : UserControl
     {
+        // ─── List wire format ────────────────────────────────────────────────────
+        internal const char ListItemSep = '|';
+        internal const char ListKeyValSep = '~';
+
         // ─── Configuration ────────────────────────────────────────────────────────
 
         private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
+        private EDViewModel.IPopupDisplayer? PopupDisplayer => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.PopupDisplayer;
 
         /// <summary>Caché class that implements Init / Validate / Save.</summary>
         public string CacheClass { get; set; } = "";
 
         private EDInputFormController? _controller;
 
-        private EDInputFormController Controller =>
-            _controller ??= new EDInputFormController(
-                MLRest ?? throw new InvalidOperationException("EDInputForm: MLRest not available."),
-                CacheClass);
+        private EDInputFormController Controller
+        {
+            get
+            {
+                if (_controller == null)
+                {
+                    _controller = new EDInputFormController(
+                        MLRest ?? throw new InvalidOperationException("EDInputForm: MLRest not available."),
+                        CacheClass);
+                    _controller.StateChanged += () =>
+                    {
+                        Items = _controller.Items;
+                        HelpTextMode = _controller.HelpTextMode;
+                    };
+                }
+                return _controller;
+            }
+        }
 
-        // ─── Items dependency property ────────────────────────────────────────────
+        // ─── Dependency properties ───────────────────────────────────────────────
 
         public static readonly DependencyProperty ItemsProperty =
             DependencyProperty.Register(
@@ -42,6 +60,19 @@ namespace EDControls.EDInputForm
         {
             get => (IEnumerable<Item>?)GetValue(ItemsProperty);
             set => SetValue(ItemsProperty, value);
+        }
+
+        public static readonly DependencyProperty HelpTextModeProperty =
+            DependencyProperty.Register(
+                nameof(HelpTextMode),
+                typeof(EHelpTextMode),
+                typeof(EDInputForm),
+                new PropertyMetadata(EHelpTextMode.Tooltip));
+
+        public EHelpTextMode HelpTextMode
+        {
+            get => (EHelpTextMode)GetValue(HelpTextModeProperty);
+            set => SetValue(HelpTextModeProperty, value);
         }
 
         public EDInputForm()
@@ -60,7 +91,6 @@ namespace EDControls.EDInputForm
         {
             EnsureConfigured();
             Controller.Init();
-            Items = Controller.Items;
         }
 
         /// <summary>
@@ -70,9 +100,7 @@ namespace EDControls.EDInputForm
         public bool Validate()
         {
             EnsureConfigured();
-            bool result = Controller.Validate();
-            Items = Controller.Items;
-            return result;
+            return Controller.Validate();
         }
 
         /// <summary>
@@ -83,7 +111,12 @@ namespace EDControls.EDInputForm
         {
             EnsureConfigured();
             bool result = Controller.Save();
-            Items = Controller.Items;
+            if (!result)
+            {
+                var message = EDInputFormController.FormatValidationErrors(Controller.Items);
+                if (message != null)
+                    PopupDisplayer?.Info(message);
+            }
             return result;
         }
 
@@ -95,7 +128,7 @@ namespace EDControls.EDInputForm
             {
                 CList entry = item switch
                 {
-                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.Visibility.ToWire()),
+                    Group g => new CList("GROUP", g.Number, g.Key, g.GroupName, g.Visibility.ToWire(), g.HelpText ?? ""),
                     Field f => new CList(
                         "FIELD", f.Number, f.Key, f.Label,
                         f.FieldType.ToWire(),
@@ -104,7 +137,10 @@ namespace EDControls.EDInputForm
                         f.Required ? "1" : "0",
                         f.ValidationError ?? "",
                         f.Editable ? "1" : "0",
-                        f.Visibility.ToWire()),
+                        f.Visibility.ToWire(),
+                        f.HelpText ?? "",
+                        SerializeListItems(f.ListItems),
+                        f.FileFilter ?? ""),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -119,7 +155,7 @@ namespace EDControls.EDInputForm
             Group? currentGroup = null;
             foreach (KeyValuePair<string, CVar> kvp in output)
             {
-                if (kvp.Key == "ERR") continue;
+                if (kvp.Key is "ERR" or "helpTextMode") continue;
                 CList row = kvp.Value;
                 string type = row.GetString(1);
                 if (type == "GROUP")
@@ -130,12 +166,13 @@ namespace EDControls.EDInputForm
                         Key        = row.GetString(3),
                         GroupName  = row.GetString(4),
                         Visibility = row.Length >= 5 ? EItemVisibilityWire.FromWire(row.GetString(5)) : EItemVisibility.Visible,
+                        HelpText   = row.Length >= 6 && row.GetString(6) != "" ? row.GetString(6) : null,
                     };
                     items.Add(currentGroup);
                 }
                 else if (type == "FIELD")
                 {
-                    items.Add(new Field
+                    var field = new Field
                     {
                         Number           = int.TryParse(row.GetString(2), out int fn) ? fn : 0,
                         Key              = row.GetString(3),
@@ -147,16 +184,54 @@ namespace EDControls.EDInputForm
                         ValidationError  = row.Length >= 9 && row.GetString(9) != "" ? row.GetString(9) : null,
                         Editable         = row.Length < 10 || row.GetString(10) != "0",
                         Visibility       = row.Length >= 11 ? EItemVisibilityWire.FromWire(row.GetString(11)) : EItemVisibility.Visible,
+                        HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                         ParentGroup      = currentGroup,
-                    });
+                    };
+                    if (field.FieldType == EFieldType.List && row.Length >= 13)
+                        field.ListItems = ParseListItems(row.GetString(13));
+                    if (field.FieldType == EFieldType.File && row.Length >= 14)
+                        field.FileFilter = row.GetString(14);
+                    items.Add(field);
                 }
             }
             return items;
         }
 
+        internal static EHelpTextMode ParseHelpTextMode(CVar output)
+        {
+            string? wire = output["helpTextMode"]?.Value?.ToString();
+            return EHelpTextModeWire.FromWire(wire);
+        }
+
+        // ─── List items serialization ────────────────────────────────────────────
+
+        internal static string SerializeListItems(List<ListItem> items)
+        {
+            if (items.Count == 0) return "";
+            return string.Join(ListItemSep.ToString(),
+                items.Select(i => i.Key == i.Label ? i.Key : i.Key + ListKeyValSep + i.Label));
+        }
+
+        internal static List<ListItem> ParseListItems(string wire)
+        {
+            if (string.IsNullOrEmpty(wire)) return [];
+            return wire.Split(ListItemSep)
+                .Where(entry => entry.Length > 0)
+                .Select(entry =>
+                {
+                    int sep = entry.IndexOf(ListKeyValSep);
+                    return sep >= 0
+                        ? new ListItem(entry[..sep], entry[(sep + 1)..])
+                        : new ListItem(entry, entry);
+                })
+                .ToList();
+        }
+
         // ─── Keyboard navigation ──────────────────────────────────────────────────
-        // Ctrl+digits: buffer digits for 600 ms, then navigate to the item whose
-        // Number equals the accumulated value.  Ctrl+1,2 → item 12, etc.
+        // Tab / Shift+Tab: native WPF — jumps between inner controls directly.
+        // Enter (no Ctrl): move to next control (like Tab); on Button → click.
+        // Ctrl+Enter: bubbles to OkCommand (window-level InputBinding).
+        // Ctrl+digits: buffer for 200 ms, then navigate to item by Number.
 
         private string _navBuffer = "";
         private System.Windows.Threading.DispatcherTimer? _navTimer;
@@ -164,6 +239,26 @@ namespace EDControls.EDInputForm
         protected override void OnPreviewKeyDown(KeyEventArgs e)
         {
             base.OnPreviewKeyDown(e);
+
+            // Enter (no Ctrl) → move to next control, or click Button
+            if (e.Key == Key.Return && (Keyboard.Modifiers & ModifierKeys.Control) == 0)
+            {
+                // If on a Button field, click it and then move forward
+                if (GetCurrentField() is { FieldType: EFieldType.Button } btnField)
+                {
+                    if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(btnField)
+                            is FrameworkElement container)
+                        FindVisualChild<System.Windows.Controls.Button>(container)?.RaiseEvent(
+                            new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                }
+
+                (Keyboard.FocusedElement as UIElement)?.MoveFocus(
+                    new TraversalRequest(FocusNavigationDirection.Next));
+                e.Handled = true;
+                return;
+            }
+
+            // Ctrl+digit buffering
             if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
 
             var key = e.Key == Key.System ? e.SystemKey : e.Key;
@@ -200,16 +295,53 @@ namespace EDControls.EDInputForm
             _navTimer.Start();
         }
 
+        // ─── Navigation helpers ─────────────────────────────────────────────────
+
+        private Field? GetCurrentField()
+        {
+            if (Keyboard.FocusedElement is not DependencyObject focused) return null;
+            foreach (var field in Items?.OfType<Field>() ?? [])
+            {
+                if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(field)
+                        is FrameworkElement container && container.IsAncestorOf(focused))
+                    return field;
+            }
+            return null;
+        }
+
+        private void FocusField(Field field)
+        {
+            if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(field)
+                    is not FrameworkElement container) return;
+            switch (field.FieldType)
+            {
+                case EFieldType.Date:
+                    FindVisualChild<DatePicker>(container)?.Focus();
+                    break;
+                case EFieldType.Bool:
+                    FindVisualChild<CheckBox>(container)?.Focus();
+                    break;
+                case EFieldType.List:
+                    FindVisualChild<ComboBox>(container)?.Focus();
+                    break;
+                default:
+                    FindVisualChild<TextBox>(container)?.Focus();
+                    break;
+            }
+        }
+
         private void NavigateToNumber(int number)
         {
             var item = Items?.FirstOrDefault(i => i.Number == number);
             if (item == null) return;
 
-            var container = TheItemsControl.ItemContainerGenerator.ContainerFromItem(item) as FrameworkElement;
-            if (container == null) return;
-
-            if (item is Field)
-                FindVisualChild<TextBox>(container)?.Focus();
+            if (item is Field field)
+            {
+                // Expand parent group if collapsed
+                if (field.ParentGroup is { IsExpanded: false } group)
+                    group.IsExpanded = true;
+                FocusField(field);
+            }
             else if (item is Group g)
                 g.IsExpanded = !g.IsExpanded;
         }
@@ -224,6 +356,49 @@ namespace EDControls.EDInputForm
                 if (result != null) return result;
             }
             return null;
+        }
+
+        // ─── Button click ────────────────────────────────────────────────────────
+
+        private void ButtonField_Click(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            if (!field.ValidateOnChange) return;
+            Controller.Validate(field.Key);
+        }
+
+        // ─── File browse ──────────────────────────────────────────────────────────
+
+        internal const string FolderModeSentinel = "$FOLDER";
+
+        private void FileField_BrowseClick(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            if (!field.Editable) return;
+
+            string filter = field.FileFilter ?? "";
+
+            if (filter == FolderModeSentinel)
+            {
+                var dialog = new Microsoft.Win32.OpenFolderDialog { Title = field.Label };
+                if (!string.IsNullOrEmpty(field.Value) && System.IO.Directory.Exists(field.Value))
+                    dialog.InitialDirectory = field.Value;
+                if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+                    field.Value = dialog.FolderName;
+            }
+            else
+            {
+                var dialog = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = field.Label,
+                    Filter = string.IsNullOrEmpty(filter) ? "Všechny soubory (*.*)|*.*" : filter
+                };
+                if (!string.IsNullOrEmpty(field.Value) && System.IO.File.Exists(field.Value))
+                    dialog.FileName = field.Value;
+                if (dialog.ShowDialog(Window.GetWindow(this)) == true)
+                    field.Value = dialog.FileName;
+            }
+
         }
 
         // ─── Internal ─────────────────────────────────────────────────────────────
@@ -246,25 +421,15 @@ namespace EDControls.EDInputForm
                 foreach (var field in newItems.OfType<Field>())
                     field.PropertyChanged += control.Field_PropertyChanged;
 
-            int autoValidateCount = e.NewValue is IEnumerable<Item> ni ? ni.OfType<Field>().Count(f => f.ValidateOnChange) : 0;
-            Debug.WriteLine($"[EDInputForm] Items changed — subscribed to {autoValidateCount} auto-validate field(s)");
         }
 
         private void Field_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName != nameof(Field.Value)) return;
             if (sender is not Field field) return;
-
-            Debug.WriteLine($"[EDInputForm] '{field.Key}' Value changed. ValidateOnChange={field.ValidateOnChange}");
-
             if (!field.ValidateOnChange) return;
 
-            Dispatcher.BeginInvoke(new Action(() =>
-            {
-                Debug.WriteLine($"[EDInputForm] Auto-validating on Change (changedKey={field.Key})");
-                Controller.Validate(field.Key);
-                Items = Controller.Items;
-            }));
+            Dispatcher.BeginInvoke(new Action(() => Controller.Validate(field.Key)));
         }
     }
 }

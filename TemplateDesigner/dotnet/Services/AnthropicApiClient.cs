@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
@@ -17,6 +18,11 @@ public class AnthropicApiClient
     private const string ApiEndpoint = "https://api.anthropic.com/v1/messages";
     private const string ApiVersion = "2023-06-01";
     private const string ModelId = "claude-haiku-4-5";
+
+    private static readonly HttpClient _httpClient = new()
+    {
+        Timeout = TimeSpan.FromMinutes(3)
+    };
     private const int MaxTokens = 8192;
     private const double Temperature = 0.7;
     private const int ErrorPreviewLength = 500;
@@ -481,10 +487,6 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         string apiKey, string systemPrompt, string userPrompt,
         string model = "claude-haiku-4-5", int maxTokens = 4096, double temperature = 0.3)
     {
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.Add("x-api-key", apiKey);
-        httpClient.DefaultRequestHeaders.Add("anthropic-version", ApiVersion);
-
         var requestBody = new
         {
             model,
@@ -498,9 +500,13 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         };
 
         var json = JsonSerializer.Serialize(requestBody);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await httpClient.PostAsync(ApiEndpoint, content);
+        using var request = new HttpRequestMessage(HttpMethod.Post, ApiEndpoint);
+        request.Headers.Add("x-api-key", apiKey);
+        request.Headers.Add("anthropic-version", ApiVersion);
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request);
         var responseJson = await response.Content.ReadAsStringAsync();
 
         if (!response.IsSuccessStatusCode)
@@ -512,6 +518,78 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
             contentArray.GetArrayLength() > 0)
         {
             var text = contentArray[0].GetProperty("text").GetString();
+            if (string.IsNullOrWhiteSpace(text))
+                return null;
+
+            return RemoveMarkdownCodeBlocks(text);
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Volání Anthropic Messages API s obrázkem (vision).
+    /// Obrázek se posílá jako base64 PNG v content bloku.
+    /// </summary>
+    public static async Task<string?> CallApiWithImageAsync(
+        string apiKey, string systemPrompt, string base64Png, string textPrompt,
+        string model = "claude-sonnet-4-6", int maxTokens = 8192, double temperature = 0.2)
+    {
+        // Sestavit content array s image + text bloky
+        var contentArray = new JsonArray
+        {
+            new JsonObject
+            {
+                ["type"] = "image",
+                ["source"] = new JsonObject
+                {
+                    ["type"] = "base64",
+                    ["media_type"] = "image/png",
+                    ["data"] = base64Png
+                }
+            },
+            new JsonObject
+            {
+                ["type"] = "text",
+                ["text"] = textPrompt
+            }
+        };
+
+        var requestBody = new JsonObject
+        {
+            ["model"] = model,
+            ["max_tokens"] = maxTokens,
+            ["temperature"] = temperature,
+            ["system"] = systemPrompt,
+            ["messages"] = new JsonArray
+            {
+                new JsonObject
+                {
+                    ["role"] = "user",
+                    ["content"] = contentArray
+                }
+            }
+        };
+
+        var json = requestBody.ToJsonString();
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, ApiEndpoint);
+        request.Headers.Add("x-api-key", apiKey);
+        request.Headers.Add("anthropic-version", ApiVersion);
+        request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.SendAsync(request);
+        var responseJson = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+            throw new Exception($"Anthropic API vrátilo chybu {(int)response.StatusCode} ({response.StatusCode}):\n{responseJson}");
+
+        var responseDoc = JsonDocument.Parse(responseJson);
+
+        if (responseDoc.RootElement.TryGetProperty("content", out var contentArr) &&
+            contentArr.GetArrayLength() > 0)
+        {
+            var text = contentArr[0].GetProperty("text").GetString();
             if (string.IsNullOrWhiteSpace(text))
                 return null;
 

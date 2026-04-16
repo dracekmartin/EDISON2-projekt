@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
 using WpfVisibility = System.Windows.Visibility;
 
 namespace EDControls.EDInputForm
 {
+    public record ListItem(string Key, string Label);
+
     public class Field : Item
     {
         /// <summary>Stable identifier used as the key when communicating with Caché.</summary>
@@ -36,6 +39,19 @@ namespace EDControls.EDInputForm
 
         /// <summary>When false, the field is rendered as read-only (server-controlled).</summary>
         public bool Editable { get; set; } = true;
+
+        /// <summary>Available options for List field type. Empty for other types.</summary>
+        public List<ListItem> ListItems { get; set; } = [];
+
+        /// <summary>
+        /// Configuration for File field type. Contains the dialog filter string
+        /// (e.g. "PDF (*.pdf)|*.pdf") for file selection, or "$FOLDER" for folder selection.
+        /// Empty defaults to all files. Ignored for non-File field types.
+        /// </summary>
+        public string FileFilter { get; set; } = "";
+
+        /// <summary>ListItems with an implicit empty entry prepended for ComboBox binding.</summary>
+        public List<ListItem> ListItemsForDisplay => [new ListItem("", ""), .. ListItems];
 
         private string? _value;
         public string? Value
@@ -69,6 +85,19 @@ namespace EDControls.EDInputForm
             get => DateTime.TryParseExact(_value, "yyyy-MM-dd", CultureInfo.InvariantCulture,
                        DateTimeStyles.None, out var d) ? d : null;
             set => Value = value?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+        }
+
+        /// <summary>
+        /// Returns a required-field validation error if this field is Required and empty,
+        /// or null if no error. Bool and Button fields are always valid (no empty state).
+        /// </summary>
+        public string? GetRequiredError()
+        {
+            if (!Required) return null;
+            if (FieldType == EFieldType.Bool) return null;
+            if (FieldType == EFieldType.Button) return null;
+            if (string.IsNullOrEmpty(_value)) return "Povinné pole";
+            return null;
         }
 
         /// <summary>

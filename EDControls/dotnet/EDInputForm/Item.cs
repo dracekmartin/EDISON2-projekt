@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using WpfVisibility = System.Windows.Visibility;
 
 namespace EDControls.EDInputForm
 {
@@ -29,13 +30,33 @@ namespace EDControls.EDInputForm
         /// <summary>
         /// Computed WPF Visibility for XAML binding. Override in subclasses for additional logic.
         /// </summary>
-        public virtual System.Windows.Visibility EffectiveVisibility =>
+        public virtual WpfVisibility EffectiveVisibility =>
             _visibility == EItemVisibility.Visible
-                ? System.Windows.Visibility.Visible
-                : System.Windows.Visibility.Collapsed;
+                ? WpfVisibility.Visible
+                : WpfVisibility.Collapsed;
 
         /// <summary>Called after Visibility changes. Override to notify derived properties.</summary>
         protected virtual void OnVisibilityChanged() { }
+
+        private string? _helpText;
+        /// <summary>
+        /// Optional help text set by Caché. Displayed as a tooltip or in a dedicated column
+        /// depending on the form-level HelpTextMode setting.
+        /// </summary>
+        public string? HelpText
+        {
+            get => _helpText;
+            set
+            {
+                _helpText = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(HelpTextVisibility));
+            }
+        }
+
+        /// <summary>Visible when HelpText is non-empty; Collapsed otherwise.</summary>
+        public WpfVisibility HelpTextVisibility =>
+            string.IsNullOrEmpty(_helpText) ? WpfVisibility.Collapsed : WpfVisibility.Visible;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 

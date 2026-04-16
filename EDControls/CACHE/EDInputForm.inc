@@ -5,8 +5,18 @@ ROUTINE EDInputForm [Type=INC]
 #define FieldTypeDate    "DATE"
 #define FieldTypeDecimal "DECIMAL"
 #define FieldTypeBool    "BOOL"
+#define FieldTypeButton  "BUTTON"
+#define FieldTypeList    "LIST"
+#define FieldTypeFile    "FILE"
+#define FileFilterFolder "$FOLDER"
+
+#define ListItemSep      "|"
+#define ListKeyValSep    "~"
 
 #define ItemVisibilityVisible          "0"
 #define ItemVisibilityCollapsed        "1"
 #define ItemVisibilityUserHidden       "2"
 #define ItemVisibilityProgrammerHidden "3"
+
+#define HelpTextModeTooltip "tooltip"
+#define HelpTextModeColumn  "column"

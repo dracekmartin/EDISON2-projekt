@@ -129,7 +129,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     s param.name = "LINKA_ID"
     s param.label = "ID linky"
     s param.type = "string"
-    s param.defaultValue = "7372"
+    s param.defaultValue = "1230"
     d arr.%Push(param)
 
     d ..AddStandardJRParameters(arr)
@@ -833,9 +833,9 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s vals = ##class(%DynamicObject).%New()
     d vals.%Set("CISLO_LINKY",            CisloLinky)
     d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni)
-    d vals.%Set("TITULEK",                "")
+    d vals.%Set("TITULEK",                "Městská doprava Karlovy Vary")
     d vals.%Set("POPIS_LINKY",            NazevLinky)
-    d vals.%Set("POPIS_DOPRAVCE",         "")
+    d vals.%Set("POPIS_DOPRAVCE",         "Dopravce: Dopravni podnik Karlovy Vary, a.s.........." )
     d vals.%Set("POPIS_PLATNOSTI",        $zd(platnostOd,4)_" - "_$zd(platnostDo,4))
     d vals.%Set("DATUM_PLATNOSTI_OD",     $zd(platnostOd,4))
     d vals.%Set("DATUM_PLATNOSTI_DO",     $zd(platnostDo,4))

@@ -41,5 +41,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 
         public static string Namespace => "CBDB";
         public static string Idfa => "CB_DP";
+        public static string WindowTitle => "M-line EDISON [CB_DP]";
     }
 }

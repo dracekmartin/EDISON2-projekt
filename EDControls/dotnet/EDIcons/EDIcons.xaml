@@ -12,6 +12,8 @@
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/delete2.png"/>
     <BitmapImage x:Key="EDIcons.Car"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/car.png"/>
+    <BitmapImage x:Key="EDIcons.Help"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/help.png"/>
 
     <!-- Fluent UI System Icons (Microsoft, MIT licence) -->
     <BitmapImage x:Key="EDIcons.New"

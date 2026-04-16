@@ -5,6 +5,11 @@
 # Config env vars (set in ~/.claude/settings.json):
 #   CACHE_SERVER, CACHE_NAMESPACE, CACHE_USER, CACHE_PASSWORD
 
+# Skip compilation in worktree runs
+case "$CLAUDE_PROJECT_DIR" in
+  */.claude/worktrees/*) exit 0 ;;
+esac
+
 INPUT=$(cat)
 
 # Extract file_path from hook JSON using pure bash/sed

@@ -209,6 +209,8 @@
                           IsChecked="{Binding SnapToGrid, Mode=TwoWay}"/>
                 <MenuItem x:Name="MenuSnapElements" Header="Přichytit k elementům" IsCheckable="True"
                           IsChecked="{Binding SnapToElements, Mode=TwoWay}"/>
+                <MenuItem Header="Záhlaví sekcí" IsCheckable="True"
+                          IsChecked="{Binding ShowSectionHeaders, Mode=TwoWay}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>

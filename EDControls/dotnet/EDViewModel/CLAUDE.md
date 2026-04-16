@@ -59,6 +59,9 @@ je v `Application.Current.Windows`. Metoda najde okno, jehož `DataContext == th
 `KeyBinding` pro každou akci. **V žádném view není potřeba nic nastavovat** — akce deklarované
 ve ViewModelu jsou automaticky dostupné z klávesnice, i když okno nemá `EDToolbar` ani `EDFooter`.
 
+Navíc se vždy registruje **Ctrl+Enter → OkCommand** (nahrazuje `IsDefault="True"` na EDFooter).
+Toto umožňuje EDInputFormu používat Enter pro navigaci mezi poli.
+
 ## StandardActions — továrna standardních akcí
 
 `StandardActions` je protected property na `EDViewModel` vracející `StandardActionsAccessor`.

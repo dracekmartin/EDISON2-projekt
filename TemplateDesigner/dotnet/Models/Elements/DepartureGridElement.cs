@@ -65,6 +65,9 @@ public class DepartureGridElement : ScheduleElementBase
     /// <summary>Sloupec hodin před každou skupinou dnů (místo jednoho sdíleného vlevo).</summary>
     public bool HourColumnPerGroup { get; set; }
 
+    /// <summary>Maximální počet zobrazených skupin dnů (0 = bez limitu).</summary>
+    public int MaxGroupCount { get; set; } = 3;
+
     // ═══════════════════════════════════════════
     // Časová osa
     // ═══════════════════════════════════════════
@@ -97,9 +100,19 @@ public class DepartureGridElement : ScheduleElementBase
     // ═══════════════════════════════════════════
 
     /// <summary>Vizuální styl sloupce hodin (záhlaví "Hod" + čísla hodin). Null = element defaults.</summary>
-    public ColumnVisualStyle? HourColumnStyle { get; set; }
+    public ColumnVisualStyle? HourColumnStyle
+    {
+        get => _hourColumnStyle;
+        set { _hourColumnStyle = value; _cachedLayout = null; }
+    }
+    private ColumnVisualStyle? _hourColumnStyle;
 
-    public List<DepartureGroupColumnStyle> GroupColumns { get; set; } = [];
+    public List<DepartureGroupColumnStyle> GroupColumns
+    {
+        get => _groupColumns;
+        set { _groupColumns = value; _cachedLayout = null; }
+    }
+    private List<DepartureGroupColumnStyle> _groupColumns = [];
 
     // ═══════════════════════════════════════════
     // Barvy (data-driven)
@@ -138,17 +151,28 @@ public class DepartureGridElement : ScheduleElementBase
     private GridLayout? _cachedLayout;
     [System.Text.Json.Serialization.JsonIgnore]
     private DataContext? _cachedLayoutDataRef;
+    [System.Text.Json.Serialization.JsonIgnore]
+    private int _cachedLayoutFingerprint;
+
+    /// <summary>Rychlý fingerprint layout-affecting properties pro invalidaci cache.</summary>
+    private int ComputeLayoutFingerprint() => HashCode.Combine(
+        HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
+        MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount,
+        GroupColumns.Count);
 
     private GridLayout? ComputeLayout(DataContext? data, float mmToPx = 0f)
     {
-        // Cache hit — stejná data, vrátit uložený layout (CalculateHeight + Render se volají po sobě)
-        if (_cachedLayout is not null && ReferenceEquals(data, _cachedLayoutDataRef))
+        // Cache hit — stejná data A stejné layout-affecting properties
+        int fp = ComputeLayoutFingerprint();
+        if (_cachedLayout is not null && ReferenceEquals(data, _cachedLayoutDataRef) && fp == _cachedLayoutFingerprint)
             return _cachedLayout;
 
         var skupinyDnu = BuildSkupinyDnu(data);
         var odjezdyBySkupina = BuildOdjezdyBySkupina(data);
 
         var targetSkupiny = ResolveSkupiny(skupinyDnu);
+        if (MaxGroupCount > 0 && targetSkupiny.Count > MaxGroupCount)
+            targetSkupiny = targetSkupiny.Take(MaxGroupCount).ToList();
         if (targetSkupiny.Count == 0)
         {
             _cachedLayout = null;
@@ -156,11 +180,13 @@ public class DepartureGridElement : ScheduleElementBase
             return null;
         }
 
-        // Font pro měření textu záhlaví
-        float headerLineFontPx = SkupinaDnuHeaderLineHeight * 0.65f * (mmToPx > 0 ? mmToPx : 3.78f);
-        using var measureFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerLineFontPx);
+        // Font pro měření textu záhlaví (default, přepíše se per-column)
         float effectiveMmToPx = mmToPx > 0 ? mmToPx : 3.78f;
+
+        // Per-column header font lookup pro měření i wrapping (resolves __INDEX_ keys)
+        var groupIds = targetSkupiny.Select(s => s.Id).ToList();
+        var colFontLookup = GroupColumnIndexResolver.BuildHeaderFontLookup(GroupColumns, groupIds);
+        float defaultHeaderFontPt = HeaderStyle.FontSize ?? 9f;
 
         var groupLayouts = new List<GroupLayout>();
         foreach (var sk in targetSkupiny)
@@ -171,6 +197,13 @@ public class DepartureGridElement : ScheduleElementBase
             string fullName = sk.Nadpis;
             if (sk.Nadpis2.Length > 0) fullName += " " + sk.Nadpis2;
             var words = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            // Per-column font pro měření minimální šířky
+            colFontLookup.TryGetValue(sk.Id, out var colFontPt);
+            float fontPt = colFontPt ?? defaultHeaderFontPt;
+            float fontPx = fontPt * PtToMm * effectiveMmToPx;
+            using var measureFont = new SKFont(
+                SKTypeface.FromFamilyName(HeaderStyle.FontFamily ?? "Arial", SKFontStyle.Bold), fontPx);
 
             // Minimální šířka = nejdelší slovo záhlaví + 2mm padding
             float maxWordW = 0;
@@ -229,12 +262,20 @@ public class DepartureGridElement : ScheduleElementBase
             }
         }
 
-        // Word-wrap záhlaví skupin podle skutečné šířky sloupce
+        // Word-wrap záhlaví skupin podle skutečné šířky sloupce a per-column fontu
         finalGroups = finalGroups.Select(g =>
         {
             string fullText = g.Skupina.Nadpis;
             if (g.Skupina.Nadpis2.Length > 0) fullText += " " + g.Skupina.Nadpis2;
-            var wrapped = WrapHeaderText(fullText, g.GroupWidth, measureFont, effectiveMmToPx);
+
+            // Použít per-column font nebo element default
+            colFontLookup.TryGetValue(g.Skupina.Id, out var colFontPt);
+            float fontPt = colFontPt ?? defaultHeaderFontPt;
+            float fontPx = fontPt * PtToMm * effectiveMmToPx;
+            using var wrapFont = new SKFont(
+                SKTypeface.FromFamilyName(HeaderStyle.FontFamily ?? "Arial", SKFontStyle.Bold), fontPx);
+
+            var wrapped = WrapHeaderText(fullText, g.GroupWidth, wrapFont, effectiveMmToPx);
             return g with { HeaderLines = wrapped };
         }).ToList();
 
@@ -246,9 +287,19 @@ public class DepartureGridElement : ScheduleElementBase
         float rowH = DataRowHeight ?? ComputeRowH(effFontSize);
         float headerH = ComputeHeaderH(effHeaderFontSize);
 
+        // Výška řádku záhlaví — zohlednit per-column font (větší font = vyšší řádek)
+        float maxGroupLineH = SkupinaDnuHeaderLineHeight;
+        foreach (var g in finalGroups)
+        {
+            colFontLookup.TryGetValue(g.Skupina.Id, out var colFontPt);
+            float fontPt = colFontPt ?? defaultHeaderFontPt;
+            float colLineH = fontPt * PtToMm * 1.5f;
+            if (colLineH > maxGroupLineH) maxGroupLineH = colLineH;
+        }
+
         int maxHeaderLines = finalGroups.Max(g => g.HeaderLines.Length);
         float groupHeaderH = ShowSkupinaDnuHeader
-            ? maxHeaderLines * SkupinaDnuHeaderLineHeight
+            ? maxHeaderLines * maxGroupLineH
             : 0f;
 
         var result = new GridLayout(finalGroups, hours, fontSizeMm, headerFontMm, minuteFontMm,
@@ -256,6 +307,7 @@ public class DepartureGridElement : ScheduleElementBase
 
         _cachedLayout = result;
         _cachedLayoutDataRef = data;
+        _cachedLayoutFingerprint = fp;
         return result;
     }
 
@@ -307,10 +359,9 @@ public class DepartureGridElement : ScheduleElementBase
 
         using var paints = CreateStandardPaints();
 
-        // ── Style lookup — jednou na frame, ne per-group ────────────────────
-        var colStyles = new Dictionary<string, DepartureGroupColumnStyle>(StringComparer.OrdinalIgnoreCase);
-        foreach (var gc in GroupColumns)
-            colStyles[gc.SkupinaDnuId] = gc;
+        // ── Style lookup — jednou na frame, resolves __INDEX_ keys ──────────
+        var layoutGroupIds = layout.Groups.Select(g => g.Skupina.Id).ToList();
+        var colStyles = GroupColumnIndexResolver.BuildStyleLookup(GroupColumns, layoutGroupIds);
 
         float fontPx = layout.FontSizeMm * scale * ctx.MmToPx;
         float headerFontPx = layout.HeaderFontMm * scale * ctx.MmToPx;
@@ -388,6 +439,22 @@ public class DepartureGridElement : ScheduleElementBase
             manualDisposables.Add(zebraPaint);
         }
 
+        // Per-group zebra paints (z DepartureGroupColumnStyle.AlternatingRowColor)
+        var perGroupZebraPaints = new Dictionary<string, SKPaint>();
+        if (layout is not null)
+        {
+            foreach (var g in layout.Groups)
+            {
+                if (colStyles.TryGetValue(g.Skupina.Id, out var cs) && cs.AlternatingRowColor is not null)
+                {
+                    var zp = new SKPaint { Color = SKColor.Parse(cs.AlternatingRowColor) };
+                    perGroupZebraPaints[g.Skupina.Id] = zp;
+                    manualDisposables.Add(zp);
+                }
+            }
+        }
+        bool hasPerGroupZebra = perGroupZebraPaints.Count > 0;
+
         float usedWidth = Width;
         float currentY = Y;
 
@@ -426,10 +493,10 @@ public class DepartureGridElement : ScheduleElementBase
             float hourHPadRight = (hourHs?.PaddingRight ?? 0f) * scale;
             float hourHPadBottom = (hourHs?.PaddingBottom ?? 0f) * scale;
 
-            // Helper: nakreslí "Hod" záhlaví na dané X pozici
-            void DrawHourHeader(float hx)
+            // Helper: nakreslí "Hod" záhlaví na dané X pozici (groupBg = per-group barva hlavičky)
+            void DrawHourHeader(float hx, SKPaint? groupBg = null)
             {
-                RenderCellBackground(ctx, hourHeaderBgPaint, hx, currentY, HourColumnWidth, scaledCombinedHeaderH);
+                RenderCellBackground(ctx, groupBg ?? hourHeaderBgPaint, hx, currentY, HourColumnWidth, scaledCombinedHeaderH);
                 float hodTextW = MeasureTextMm(hourHdrFont, "Hod", ctx.MmToPx);
                 float hodTextX = hourHdrHAlign switch
                 {
@@ -457,14 +524,15 @@ public class DepartureGridElement : ScheduleElementBase
                 float gx = HourColumnPerGroup ? X : X + HourColumnWidth;
                 foreach (var g in layout.Groups)
                 {
-                    // Hour column per group — nakreslit "Hod" záhlaví a posunout gx
+                    colStyles.TryGetValue(g.Skupina.Id, out var colStyle);
+
+                    // Hour column per group — nakreslit "Hod" záhlaví s per-group barvou
                     if (HourColumnPerGroup)
                     {
-                        DrawHourHeader(gx);
+                        using var groupHourBg = CreateCellBgPaint(colStyle?.Style.Header);
+                        DrawHourHeader(gx, groupHourBg);
                         gx += HourColumnWidth;
                     }
-
-                    colStyles.TryGetValue(g.Skupina.Id, out var colStyle);
 
                     // Per-column záhlaví pozadí
                     var hs = colStyle?.Style.Header;
@@ -584,10 +652,10 @@ public class DepartureGridElement : ScheduleElementBase
         float hourDPadTop = (hourDs?.PaddingTop ?? 0f) * scale;
         var hourDPaint = hourDataTextPaint ?? paints.Text;
 
-        // Helper: nakreslí datovou buňku hodiny na dané X pozici
-        void DrawHourDataCell(float hx, int hour)
+        // Helper: nakreslí datovou buňku hodiny na dané X pozici (groupBg = per-group barva)
+        void DrawHourDataCell(float hx, int hour, SKPaint? groupBg = null)
         {
-            RenderCellBackground(ctx, hourDataBgPaint, hx, currentY, HourColumnWidth, scaledRowH);
+            RenderCellBackground(ctx, groupBg ?? hourDataBgPaint, hx, currentY, HourColumnWidth, scaledRowH);
             var hourStr = hour.ToString();
             float hourTextW = MeasureTextMm(hourDFont, hourStr, ctx.MmToPx);
             float hourTextX = hourDataHAlign switch
@@ -603,11 +671,50 @@ public class DepartureGridElement : ScheduleElementBase
         int rowIndex = 0;
         foreach (int hour in layout.Hours)
         {
-            // Zebra pattern — pozadí celého řádku
-            if (zebraPaint is not null && rowIndex % 2 == 1)
+            // Zebra pattern — pozadí řádku (per-group nebo globální)
+            if (rowIndex % 2 == 1)
             {
-                var zebraRect = ctx.ToCanvasRect(X, currentY, usedWidth, scaledRowH);
-                ctx.Canvas.DrawRect(zebraRect, zebraPaint);
+                if (hasPerGroupZebra)
+                {
+                    // Per-group zebra — kreslit zvlášť pro každou skupinu
+                    float zx = HourColumnPerGroup ? X : X + HourColumnWidth;
+
+                    // Sdílený hour column (pokud není per-group)
+                    if (!HourColumnPerGroup && zebraPaint is not null)
+                    {
+                        var r = ctx.ToCanvasRect(X, currentY, HourColumnWidth, scaledRowH);
+                        ctx.Canvas.DrawRect(r, zebraPaint);
+                    }
+
+                    foreach (var g in layout.Groups)
+                    {
+                        var gZebra = perGroupZebraPaints.TryGetValue(g.Skupina.Id, out var gzp)
+                            ? gzp : zebraPaint;
+                        if (gZebra is not null)
+                        {
+                            if (HourColumnPerGroup)
+                            {
+                                // Hour column pro tuto skupinu
+                                var hr = ctx.ToCanvasRect(zx, currentY, HourColumnWidth, scaledRowH);
+                                ctx.Canvas.DrawRect(hr, gZebra);
+                                zx += HourColumnWidth;
+                            }
+                            // Datový sloupec pro tuto skupinu
+                            var dr = ctx.ToCanvasRect(zx, currentY, g.GroupWidth, scaledRowH);
+                            ctx.Canvas.DrawRect(dr, gZebra);
+                        }
+                        else if (HourColumnPerGroup)
+                            zx += HourColumnWidth;
+
+                        zx += g.GroupWidth + GroupSeparatorWidth;
+                    }
+                }
+                else if (zebraPaint is not null)
+                {
+                    // Globální zebra fallback — celá šířka (původní chování)
+                    var zebraRect = ctx.ToCanvasRect(X, currentY, usedWidth, scaledRowH);
+                    ctx.Canvas.DrawRect(zebraRect, zebraPaint);
+                }
             }
 
             if (!HourColumnPerGroup)
@@ -618,7 +725,9 @@ public class DepartureGridElement : ScheduleElementBase
             {
                 if (HourColumnPerGroup)
                 {
-                    DrawHourDataCell(gx, hour);
+                    // Per-group hour column: použít barvu skupiny pokud existuje
+                    perGroupColBgPaints.TryGetValue(g.Skupina.Id, out var hourGroupBg);
+                    DrawHourDataCell(gx, hour, hourGroupBg);
                     gx += HourColumnWidth;
                 }
                 // Per-column pozadí datové oblasti (přes zebru)
@@ -954,6 +1063,7 @@ public class DepartureGridElement : ScheduleElementBase
             Options = [("Nahoru", (object)TextVerticalAlignment.Top), ("Na střed", (object)TextVerticalAlignment.Middle), ("Dolů", (object)TextVerticalAlignment.Bottom)] },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
         new BoolPropertyDescriptor  { Label = "Hodiny u každé sk.",  Group = "Odjezdy", Get = () => HourColumnPerGroup,        Set = v => HourColumnPerGroup = v },
+        new FloatPropertyDescriptor { Label = "Max skupin",          Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0", Unit = "(0=∞)" },
         new FloatPropertyDescriptor { Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
 
@@ -1021,6 +1131,7 @@ public class DepartureGridElement : ScheduleElementBase
             HeaderVerticalAlignment    = HeaderVerticalAlignment,
             HourColumnWidth            = HourColumnWidth,
             HourColumnPerGroup         = HourColumnPerGroup,
+            MaxGroupCount              = MaxGroupCount,
             MinuteWidth                = MinuteWidth,
             MinuteFontSize             = MinuteFontSize,
             MinuteStyle                = MinuteStyle.Clone(),
