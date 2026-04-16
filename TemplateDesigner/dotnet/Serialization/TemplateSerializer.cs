@@ -48,8 +48,11 @@ public static class TemplateSerializer
     public static async Task SaveAsync(Template template, string filePath, CancellationToken ct = default)
     {
         template.ModifiedAt = DateTime.UtcNow;
-        await using var stream = File.Open(filePath, FileMode.Create, FileAccess.Write);
-        await JsonSerializer.SerializeAsync(stream, template, Options, ct);
+        // Serializace běží na threadpoolu — JsonSerializer.SerializeAsync dělá
+        // reflection walk synchronně na volajícím threadu. Velké šablony
+        // (schedule elementy, base64 obrázky) jinak zamrazí UI.
+        var bytes = await Task.Run(() => JsonSerializer.SerializeToUtf8Bytes(template, Options), ct);
+        await File.WriteAllBytesAsync(filePath, bytes, ct);
     }
 
     // --- Deserializace ---
