@@ -110,41 +110,22 @@ public class StopListElement : ScheduleElementBase
         using var currentStopFont = new SKFont(
             GetTypeface(DataStyle.FontFamily, currentStyle), currentFontPx);
 
-        // Per-column fonty a painty — manualDisposables pattern (dispose v finally)
+        // Per-column resources — CellStyleResources drží font/textPaint/bgPaint pro header i data
         var columns = GetVisibleColumns();
-        var manualDisposables = new List<IDisposable>();
-        var perColDataFonts = new Dictionary<string, SKFont>();
-        var perColHeaderFonts = new Dictionary<string, SKFont>();
-        var perColDataTextPaints = new Dictionary<string, SKPaint>();
-        var perColHeaderTextPaints = new Dictionary<string, SKPaint>();
-        var perColDataBgPaints = new Dictionary<string, SKPaint>();
-        var perColHeaderBgPaints = new Dictionary<string, SKPaint>();
+        var headerCells = new Dictionary<string, CellStyleResources>();
+        var dataCells = new Dictionary<string, CellStyleResources>();
 
         try
         {
         foreach (var col in columns)
         {
-            // Data font/paints
-            if (CreateCellFont(col.Style?.Data, baseFontSize, false, scale, ctx.MmToPx) is { } df)
-            { perColDataFonts[col.Key] = df; manualDisposables.Add(df); }
-            if (CreateCellTextPaint(col.Style?.Data) is { } dtp)
-            { perColDataTextPaints[col.Key] = dtp; manualDisposables.Add(dtp); }
-            if (CreateCellBgPaint(col.Style?.Data) is { } dbp)
-            { perColDataBgPaints[col.Key] = dbp; manualDisposables.Add(dbp); }
-
-            // Header font/paints (výchozí tučné)
-            if (CreateCellFont(col.Style?.Header, baseHeaderFontSize, true, scale, ctx.MmToPx) is { } hf)
-            { perColHeaderFonts[col.Key] = hf; manualDisposables.Add(hf); }
-            if (CreateCellTextPaint(col.Style?.Header) is { } htp)
-            { perColHeaderTextPaints[col.Key] = htp; manualDisposables.Add(htp); }
-            if (CreateCellBgPaint(col.Style?.Header) is { } hbp)
-            { perColHeaderBgPaints[col.Key] = hbp; manualDisposables.Add(hbp); }
+            dataCells[col.Key] = BuildCellStyle(col.Style?.Data, baseFontSize, false, scale, ctx.MmToPx);
+            headerCells[col.Key] = BuildCellStyle(col.Style?.Header, baseHeaderFontSize, true, scale, ctx.MmToPx);
         }
 
         // Záhlaví sloupců
         float currentY = ShowHeader
-            ? RenderColumnHeaders(ctx, columns, headerH, headerFont, paints,
-                perColHeaderFonts, perColHeaderTextPaints, perColHeaderBgPaints)
+            ? RenderColumnHeaders(ctx, columns, headerH, headerFont, paints, headerCells)
             : Y;
 
         // Parametry z tiskového dialogu přepíší element properties
@@ -187,16 +168,14 @@ public class StopListElement : ScheduleElementBase
 
                 foreach (var col in columns)
                 {
-                    // Per-column data background
-                    perColDataBgPaints.TryGetValue(col.Key, out var bgPaint);
-                    RenderCellBackground(ctx, bgPaint, colX, currentY, col.Width, rowH);
+                    var cell = dataCells[col.Key];
 
-                    // Per-column font (fallback na default)
-                    var rowFont = perColDataFonts.TryGetValue(col.Key, out var customFont) && !isCurrent
-                        ? customFont : defaultRowFont;
-                    // Per-column text color
-                    var textPaint = perColDataTextPaints.TryGetValue(col.Key, out var customPaint) && !isPassed
-                        ? customPaint : paints.Text;
+                    RenderCellBackground(ctx, cell.BgPaint, colX, currentY, col.Width, rowH);
+
+                    // Per-column font (fallback na default) — neaplikovat na aktuální zastávku (ta má vlastní font)
+                    var rowFont = !isCurrent && cell.Font is not null ? cell.Font : defaultRowFont;
+                    // Per-column text color — neaplikovat na projeté zastávky (mají šedou)
+                    var textPaint = !isPassed && cell.TextPaint is not null ? cell.TextPaint : paints.Text;
 
                     string cellText = GetCellText(z, col.Key);
                     float textX = AlignTextX(col, colX, cellText, rowFont, ctx.MmToPx);
@@ -237,7 +216,8 @@ public class StopListElement : ScheduleElementBase
         } // try
         finally
         {
-            foreach (var d in manualDisposables) d.Dispose();
+            DisposeAll(headerCells);
+            DisposeAll(dataCells);
         }
     }
 
@@ -245,9 +225,7 @@ public class StopListElement : ScheduleElementBase
     private float RenderColumnHeaders(
         RenderContext ctx, List<StopColumn> columns,
         float headerH, SKFont headerFont, SchedulePaints paints,
-        Dictionary<string, SKFont> perColHeaderFonts,
-        Dictionary<string, SKPaint> perColHeaderTextPaints,
-        Dictionary<string, SKPaint> perColHeaderBgPaints)
+        Dictionary<string, CellStyleResources> headerCells)
     {
         // Výchozí pozadí záhlaví
         var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
@@ -256,12 +234,11 @@ public class StopListElement : ScheduleElementBase
         float colX = X;
         foreach (var col in columns)
         {
-            // Per-column pozadí záhlaví (přes výchozí)
-            perColHeaderBgPaints.TryGetValue(col.Key, out var hdrBgPaint);
-            RenderCellBackground(ctx, hdrBgPaint, colX, Y, col.Width, headerH);
+            var cell = headerCells[col.Key];
+            RenderCellBackground(ctx, cell.BgPaint, colX, Y, col.Width, headerH);
 
-            var colFont = perColHeaderFonts.TryGetValue(col.Key, out var customFont) ? customFont : headerFont;
-            var colPaint = perColHeaderTextPaints.TryGetValue(col.Key, out var customPaint) ? customPaint : paints.HeaderText;
+            var colFont = cell.Font ?? headerFont;
+            var colPaint = cell.TextPaint ?? paints.HeaderText;
 
             float textX = AlignTextX(col, colX, col.Header, colFont, ctx.MmToPx);
             var pt = ctx.ToCanvas(textX, Y + headerH * HeaderBaselineFactor);

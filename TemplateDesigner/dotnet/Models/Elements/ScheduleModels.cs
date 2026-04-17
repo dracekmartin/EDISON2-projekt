@@ -7,8 +7,6 @@ namespace TemplateDesigner.Models.Elements;
 public enum TypPoznamky { Text, NegativniZnacka, SpecialniZnak }
 public enum TypAnotace  { Text, NegativniZnacka, SpecialniZnak }
 
-public enum ScheduleDisplayMode { MinutesOnly, FullTime }
-
 public enum TimeAxisMode { Compact, Full, Range }
 
 

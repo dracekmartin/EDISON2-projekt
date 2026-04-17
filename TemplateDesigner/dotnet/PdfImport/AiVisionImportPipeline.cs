@@ -228,14 +228,18 @@ public class AiVisionImportPipeline
     }
 
     /// <summary>Heuristická inference typu z hodnoty (fallback pokud schema nemá parametr).</summary>
-    private static string InferParameterType(string value) => value.ToLowerInvariant() switch
+    private static string InferParameterType(string value)
     {
-        "true" or "false" => "bool",
-        _ when int.TryParse(value, out _) => "number",
-        _ when float.TryParse(value, System.Globalization.NumberStyles.Float,
-            System.Globalization.CultureInfo.InvariantCulture, out _) => "number",
-        _ => "string"
-    };
+        var v = value.Trim();
+        return v.ToLowerInvariant() switch
+        {
+            "true" or "false" => "bool",
+            _ when int.TryParse(v, out _) => "number",
+            _ when float.TryParse(v, System.Globalization.NumberStyles.Float,
+                System.Globalization.CultureInfo.InvariantCulture, out _) => "number",
+            _ => "string"
+        };
+    }
 
     /// <summary>Detekce okrajů z pozic elementů.</summary>
     private static (float Top, float Bottom, float Left, float Right) DetectMarginsFromElements(

@@ -300,7 +300,6 @@ public class AiVisionImportService
     {
       ""type"": ""DepartureGrid"",
       ""left"": 0.25, ""top"": 0.13, ""right"": 0.85, ""bottom"": 0.85,
-      ""displayMode"": ""MinutesOnly"",
       ""dayGroups"": [
         { ""header"": ""Pracovní den"", ""relativeLeft"": 0.26 },
         { ""header"": ""Sobota, neděle a svátky"", ""relativeLeft"": 0.6 }
@@ -576,7 +575,6 @@ public class AiVisionImportService
                 Top = GetFloat(item, "top"),
                 Right = GetFloat(item, "right"),
                 Bottom = GetFloat(item, "bottom"),
-                DisplayMode = item.GetStringOrNull("displayMode"),
                 HasHeader = item.TryGetProperty("hasHeader", out var hh) && hh.GetBoolean(),
             };
 
@@ -694,7 +692,6 @@ public class AiVisionElement
     public float Top { get; init; }
     public float Right { get; init; }
     public float Bottom { get; init; }
-    public string? DisplayMode { get; init; }
     public List<string> Columns { get; init; } = [];
     public bool HasHeader { get; init; }
     public List<AiVisionDayGroup> DayGroups { get; init; } = [];

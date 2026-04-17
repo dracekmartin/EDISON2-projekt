@@ -14,6 +14,15 @@ namespace TemplateDesigner.PdfImport;
 /// </summary>
 public static class AiGuidedScheduleBuilder
 {
+    // Detekční prahy (ladění přes testy na reálných PDF):
+    private const int DefaultTimeAxisFromHour = 4;      // JŘ obvykle začíná od 4:00
+    private const int DefaultTimeAxisToHour = 24;       // a končí o půlnoci
+    private const int HourDigitDetectionMin = 4;        // minutové číslice v gridu jsou <4 nebo >23 → filtrujeme jen hodiny
+    private const int HourDigitDetectionMax = 23;
+    private const float MinHeaderSpaceAboveScheduleMm = 10f;  // pod touto výškou už nedává smysl vkládat placeholder do záhlaví
+    private const float HeaderDataSeparatorOffsetMm = 10f;    // obdélníky pod gridTop+10mm jsou zebra, ne záhlaví
+    private const float HeaderRectYToleranceMm = 15f;         // hlavička skupiny = rects v této Y-vzdálenosti od gridTop
+
     /// <summary>Debug info z posledního BuildFromVision volání.</summary>
     public static string? LastDebugInfo { get; private set; }
 
@@ -186,7 +195,7 @@ public static class AiGuidedScheduleBuilder
         var gp = ai.Properties;
 
         // TimeAxis: AI může navrhnout rozsah hodin
-        int timeFrom = 4, timeTo = 24;
+        int timeFrom = DefaultTimeAxisFromHour, timeTo = DefaultTimeAxisToHour;
         var timeAxisMode = TimeAxisMode.Compact;
         if (gp.TryGetValue("timeAxisRangeFrom", out var fromStr) && int.TryParse(fromStr, out var f))
             timeFrom = f;
@@ -234,7 +243,6 @@ public static class AiGuidedScheduleBuilder
             Width = w,
             Height = h,
             ZIndex = zIndex++,
-            DisplayMode = ScheduleDisplayMode.MinutesOnly,
             HourColumnWidth = hourColW,
             HourColumnPerGroup = GetBoolProp(gp, "hourColumnPerGroup", false),
             MinuteWidth = gridMeasure.MinuteCellWidthMm > 0 ? gridMeasure.MinuteCellWidthMm : 4f,
@@ -599,7 +607,7 @@ public static class AiGuidedScheduleBuilder
                 ? vision.Elements.Min(e => e.Top) * pageH
                 : pageH * 0.15f;
 
-            if (scheduleTop > 10) // alespoň 10mm prostoru nad schedule
+            if (scheduleTop > MinHeaderSpaceAboveScheduleMm)
             {
                 // Rozdělit záhlaví na sloupce a najít nepokryté
                 const int cols = 6;
@@ -717,7 +725,7 @@ public static class AiGuidedScheduleBuilder
 
             // Hlavička = horní obdélník (nejblíž k gridTop)
             var headerRect = groupRects
-                .Where(r => r.Y < gridTop + 15)
+                .Where(r => r.Y < gridTop + HeaderRectYToleranceMm)
                 .OrderBy(r => r.Y)
                 .FirstOrDefault();
             string headerColor = headerRect?.FillColorHex is not null
@@ -726,7 +734,7 @@ public static class AiGuidedScheduleBuilder
 
             // Zebra = nejčastější barva datových obdélníků (pod hlavičkou)
             string? zebraColor = null;
-            var dataRects = groupRects.Where(r => r.Y > gridTop + 10).ToList();
+            var dataRects = groupRects.Where(r => r.Y > gridTop + HeaderDataSeparatorOffsetMm).ToList();
             if (dataRects.Count >= 2)
             {
                 var mostCommon = dataRects
@@ -744,11 +752,23 @@ public static class AiGuidedScheduleBuilder
         return result;
     }
 
+    /// <summary>
+    /// Normalizuje "#RRGGBB" na "#FFRRGGBB" (přidá neprůhledný alfa kanál).
+    /// "#AARRGGBB" nechá beze změny. Neplatný formát (špatná délka nebo ne-hex znaky)
+    /// vrátí fallback "#FFE0E0E0" (světle šedá).
+    /// </summary>
     private static string NormalizeHexColor(string color)
     {
-        if (color.StartsWith("#") && color.Length == 7)
-            return "#FF" + color[1..];
-        return color;
+        const string fallback = "#FFE0E0E0";
+        if (string.IsNullOrEmpty(color) || color[0] != '#') return fallback;
+
+        string hex = color[1..];
+        if (hex.Length != 6 && hex.Length != 8) return fallback;
+        foreach (char c in hex)
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F')))
+                return fallback;
+
+        return hex.Length == 6 ? "#FF" + hex : color;
     }
 
     // ── PdfPig measurements ─────────────────────────────────────────────
@@ -848,9 +868,10 @@ public static class AiGuidedScheduleBuilder
             ? Median(minuteWords.Select(w => w.FontSizePt))
             : Median(gridWords.Select(w => w.FontSizePt));
 
-        // Hodinové číslice (4-23 pro detekci řádků)
+        // Hodinové číslice (pro detekci řádků)
         var hourWords = gridWords
-            .Where(w => w.Text.Length <= 2 && int.TryParse(w.Text, out int n) && n >= 4 && n <= 23)
+            .Where(w => w.Text.Length <= 2 && int.TryParse(w.Text, out int n)
+                     && n >= HourDigitDetectionMin && n <= HourDigitDetectionMax)
             .OrderBy(w => w.Y)
             .ToList();
 

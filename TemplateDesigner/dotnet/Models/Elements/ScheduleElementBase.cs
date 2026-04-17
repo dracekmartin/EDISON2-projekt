@@ -193,6 +193,49 @@ public abstract class ScheduleElementBase : TemplateElement
         ctx.Canvas.DrawRect(rect, bgPaint);
     }
 
+    /// <summary>
+    /// Sdružené font/textPaint/bgPaint resources pro jednu buňku (sloupec, hlavičku, data).
+    /// Kterýkoli může být null pokud TextStyle nemá daný override. Disposable.
+    /// </summary>
+    public sealed class CellStyleResources : IDisposable
+    {
+        public SKFont? Font { get; }
+        public SKPaint? TextPaint { get; }
+        public SKPaint? BgPaint { get; }
+
+        internal CellStyleResources(SKFont? font, SKPaint? textPaint, SKPaint? bgPaint)
+        {
+            Font = font;
+            TextPaint = textPaint;
+            BgPaint = bgPaint;
+        }
+
+        public void Dispose()
+        {
+            Font?.Dispose();
+            TextPaint?.Dispose();
+            BgPaint?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Vytvoří CellStyleResources z TextStyle. Všechny tři items mohou být null,
+    /// pokud TextStyle nemá daný override. Volající dispose (nebo ji vloží do
+    /// dictionary, která se dispose hromadně přes DisposeAll).
+    /// </summary>
+    protected CellStyleResources BuildCellStyle(
+        TextStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx) =>
+        new(CreateCellFont(style, defaultSizePt, defaultBold, scale, mmToPx),
+            CreateCellTextPaint(style),
+            CreateCellBgPaint(style));
+
+    /// <summary>Dispose všech resources v dictionary (bezpečné při null nebo prázdném).</summary>
+    protected static void DisposeAll<TKey>(Dictionary<TKey, CellStyleResources>? map) where TKey : notnull
+    {
+        if (map is null) return;
+        foreach (var r in map.Values) r.Dispose();
+    }
+
     // ─── Render helpery ─────────────────────────────────────────────────────
 
     /// <summary>Změří šířku textu v mm pomocí daného fontu a MmToPx koeficientu.</summary>
