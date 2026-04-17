@@ -36,8 +36,13 @@ public partial class MainWindow : Window
     private TemplateElement? _dragElement;
     private float _dragMouseStartCanvasX, _dragMouseStartCanvasY;
     private readonly Dictionary<TemplateElement, (float X, float Y)> _dragInitPositions = new();
+    // Per-axis snap state z posledního mouse move (pro soft-snap v EndDrag)
+    private bool _lastSnapActiveX, _lastSnapActiveY;
 
     private readonly SnapEngine _snapEngine = new();
+
+    /// <summary>Soft-snap: zaokrouhlení na celé mm po puštění dragu, pokud smart-snap nezareagoval.</summary>
+    private const float SoftSnapMm = 1f;
 
     private SKPoint _rubberBandStart;
     private SKRect? _rubberBandRect;
@@ -1641,9 +1646,31 @@ public partial class MainWindow : Window
                 {
                     var others = section.Elements.Where(el2 => !_dragInitPositions.ContainsKey(el2));
                     float threshold = 8f / _canvas.MmToPx; // ~8px
+
+                    // Extra X anchors: levý/pravý okraj sekce, horizontální střed + X hodnoty
+                    // elementů z ostatních sekcí (všechny sekce sdílejí levý margin → X je přímo porovnatelné).
+                    float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+                    float refElW = _dragElement!.Width;
+                    var extraX = new List<float> { 0f, sectionW, (sectionW - refElW) / 2f };
+                    foreach (var otherSection in _vm.State.CurrentTemplate.Sections)
+                    {
+                        if (otherSection == section) continue;
+                        foreach (var el in otherSection.Elements)
+                        {
+                            extraX.Add(el.X);
+                            extraX.Add(el.X + el.Width);
+                        }
+                    }
+
+                    // Extra Y anchors: horní/spodní okraj aktuální sekce, vertikální střed
+                    float sectionH = section.EffectiveDesignerHeight;
+                    float refElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
+                    var extraY = new List<float> { 0f, sectionH, (sectionH - refElH) / 2f };
+
                     var snap = _snapEngine.Calculate(
                         _dragElement!, (refInit.X, refInit.Y),
-                        deltaMmX, deltaMmY, others, threshold);
+                        deltaMmX, deltaMmY, others, threshold,
+                        extraXAnchors: extraX, extraYAnchors: extraY);
 
                     if (snap.X.HasSnap) { deltaMmX = snap.X.AdjustedDelta; snappedX = true; }
                     if (snap.Y.HasSnap) { deltaMmY = snap.Y.AdjustedDelta; snappedY = true; }
@@ -1670,6 +1697,8 @@ public partial class MainWindow : Window
                     }
                 }
             }
+            _lastSnapActiveX = snappedX;
+            _lastSnapActiveY = snappedY;
 
             var (clampedX, clampedY) = ClampDragDelta(deltaMmX, deltaMmY);
             foreach (var kvp in _dragInitPositions)
@@ -1948,6 +1977,20 @@ public partial class MainWindow : Window
     {
         if (commit && _vm is not null)
         {
+            // Soft-snap na celé mm pro osy, kde se neuplatnil smart-snap ani grid snap.
+            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají
+            // přesně alignovat klávesami. Snap-to-grid má prioritu, pokud je zapnutý.
+            bool applySoftX = !_lastSnapActiveX && !_vm.State.SnapToGrid;
+            bool applySoftY = !_lastSnapActiveY && !_vm.State.SnapToGrid;
+            if ((applySoftX || applySoftY) && _dragInitPositions.Count > 0)
+            {
+                foreach (var el in _dragInitPositions.Keys)
+                {
+                    if (applySoftX) el.X = MathF.Round(el.X / SoftSnapMm) * SoftSnapMm;
+                    if (applySoftY) el.Y = MathF.Round(el.Y / SoftSnapMm) * SoftSnapMm;
+                }
+            }
+
             var moves = new List<IDesignerCommand>();
             foreach (var kvp in _dragInitPositions)
                 if (kvp.Key.X != kvp.Value.X || kvp.Key.Y != kvp.Value.Y)

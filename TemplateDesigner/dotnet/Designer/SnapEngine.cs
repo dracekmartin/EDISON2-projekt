@@ -30,7 +30,7 @@ public record struct SnapResult(AxisSnap X, AxisSnap Y);
 public class SnapEngine
 {
     /// <summary>Výchozí mezera pro gap snap a směrové duplikování v mm.</summary>
-    public const float DefaultGapMm = 4f;
+    public const float DefaultGapMm = 2f;
 
     /// <summary>Mezera pro gap snap v mm.</summary>
     public float GapMm { get; set; } = DefaultGapMm;
@@ -40,13 +40,18 @@ public class SnapEngine
         (float X, float Y) refInitPos,
         float rawDeltaX, float rawDeltaY,
         IEnumerable<TemplateElement> otherElements,
-        float thresholdMm)
+        float thresholdMm,
+        IReadOnlyList<float>? extraXAnchors = null,
+        IReadOnlyList<float>? extraYAnchors = null)
     {
         float refW = refElement.Width;
         float refH = refElement.Height ?? refElement.EffectiveDesignerHeight;
 
         var others = otherElements.ToList();
-        if (others.Count == 0)
+        bool hasAnyTargets = others.Count > 0
+            || (extraXAnchors is { Count: > 0 })
+            || (extraYAnchors is { Count: > 0 });
+        if (!hasAnyTargets)
             return new SnapResult(
                 new AxisSnap(rawDeltaX, false),
                 new AxisSnap(rawDeltaY, false));
@@ -55,13 +60,15 @@ public class SnapEngine
             refInitPos.X, refW, rawDeltaX, thresholdMm, GapMm,
             others, e => e.X, e => e.Width,
             refInitPos.Y + rawDeltaY, refH, e => e.Y, e => e.Height ?? e.EffectiveDesignerHeight,
-            isHorizontalGap: true);
+            isHorizontalGap: true,
+            extraAnchors: extraXAnchors);
 
         var axisY = SnapAxis(
             refInitPos.Y, refH, rawDeltaY, thresholdMm, GapMm,
             others, e => e.Y, e => e.Height ?? e.EffectiveDesignerHeight,
             refInitPos.X + rawDeltaX, refW, e => e.X, e => e.Width,
-            isHorizontalGap: false);
+            isHorizontalGap: false,
+            extraAnchors: extraYAnchors);
 
         return new SnapResult(axisX, axisY);
     }
@@ -70,8 +77,8 @@ public class SnapEngine
 
     private record struct Candidate(
         float Dist, float SnapTo, float RefEdge,
-        TemplateElement El, MatchKind Kind,
-        float GapFrom, float GapTo);    // GapFrom/GapTo jen pro Kind=Gap
+        TemplateElement? El, MatchKind Kind,
+        float GapFrom, float GapTo);    // GapFrom/GapTo jen pro Kind=Gap; El=null pro extra anchors
 
     private static AxisSnap SnapAxis(
         float refPos, float refSize, float rawDelta, float threshold, float gapMm,
@@ -79,7 +86,8 @@ public class SnapEngine
         Func<TemplateElement, float> getPos, Func<TemplateElement, float> getSize,
         float refCrossPos, float refCrossSize,
         Func<TemplateElement, float> getCrossPos, Func<TemplateElement, float> getCrossSize,
-        bool isHorizontalGap)
+        bool isHorizontalGap,
+        IReadOnlyList<float>? extraAnchors = null)
     {
         float projected = refPos + rawDelta;
         float refStart  = projected;
@@ -116,6 +124,18 @@ public class SnapEngine
             }
         }
 
+        // ── Extra anchors (point targets bez elementu) ──
+        // Používá se pro section edges (0, šířka sekce) a cross-section X snap.
+        // Jen edge-to-point matching, žádný gap snap ani centering.
+        if (extraAnchors is not null)
+        {
+            foreach (float anchor in extraAnchors)
+            {
+                TryAdd(candidates, refStart, anchor, threshold, null!, MatchKind.Edge);
+                TryAdd(candidates, refEnd,   anchor, threshold, null!, MatchKind.Edge);
+            }
+        }
+
         if (candidates.Count == 0)
             return new AxisSnap(rawDelta, false);
 
@@ -128,7 +148,7 @@ public class SnapEngine
         float refEdge  = best.RefEdge;
         var matchKind  = best.Kind;
         float gf = best.GapFrom, gt = best.GapTo;
-        var matchedEls = winners.Select(c => c.El).Distinct().ToList();
+        var matchedEls = winners.Select(c => c.El).Where(e => e is not null).Cast<TemplateElement>().Distinct().ToList();
 
         float adjustedDelta = rawDelta + (snapTo - refEdge);
 
@@ -136,7 +156,7 @@ public class SnapEngine
         // CrossMid se počítá z pozic cílových elementů (ty jsou stabilní),
         // ne z pozice ref elementu (ta závisí na myši a "popojíždí").
         GapIndicator? gap = null;
-        if (matchKind == MatchKind.Gap)
+        if (matchKind == MatchKind.Gap && matchedEls.Count > 0)
         {
             float crossMid = getCrossPos(matchedEls[0]) + getCrossSize(matchedEls[0]) / 2f;
             gap = new GapIndicator(isHorizontalGap, gf, gt, crossMid);
@@ -146,7 +166,7 @@ public class SnapEngine
     }
 
     private static void TryAdd(List<Candidate> list,
-        float refEdge, float target, float threshold, TemplateElement el, MatchKind kind,
+        float refEdge, float target, float threshold, TemplateElement? el, MatchKind kind,
         float gapFrom = 0, float gapTo = 0)
     {
         float dist = MathF.Abs(refEdge - target);
@@ -212,11 +232,11 @@ public class SnapEngine
                 var winners = candidates.Where(c => c.Dist <= minDist + 0.01f).ToList();
                 var best = winners[0];
                 float shift = best.SnapTo - best.RefEdge;
-                targets.AddRange(winners.Select(c => c.El).Distinct());
+                targets.AddRange(winners.Select(c => c.El).Where(e => e is not null).Cast<TemplateElement>().Distinct());
 
-                if (best.Kind == MatchKind.Gap)
+                if (best.Kind == MatchKind.Gap && winners[0].El is TemplateElement gapEl)
                 {
-                    float crossMid = winners[0].El.Y + (winners[0].El.Height ?? winners[0].El.EffectiveDesignerHeight) / 2f;
+                    float crossMid = gapEl.Y + (gapEl.Height ?? gapEl.EffectiveDesignerHeight) / 2f;
                     gaps.Add(new GapIndicator(true, best.GapFrom, best.GapTo, crossMid));
                 }
 
@@ -264,11 +284,11 @@ public class SnapEngine
                 var winners = candidates.Where(c => c.Dist <= minDist + 0.01f).ToList();
                 var best = winners[0];
                 float shift = best.SnapTo - best.RefEdge;
-                targets.AddRange(winners.Select(c => c.El).Distinct());
+                targets.AddRange(winners.Select(c => c.El).Where(e => e is not null).Cast<TemplateElement>().Distinct());
 
-                if (best.Kind == MatchKind.Gap)
+                if (best.Kind == MatchKind.Gap && winners[0].El is TemplateElement gapEl)
                 {
-                    float crossMid = winners[0].El.X + winners[0].El.Width / 2f;
+                    float crossMid = gapEl.X + gapEl.Width / 2f;
                     gaps.Add(new GapIndicator(false, best.GapFrom, best.GapTo, crossMid));
                 }
 

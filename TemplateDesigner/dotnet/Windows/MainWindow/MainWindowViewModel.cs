@@ -949,64 +949,78 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Alignment ─────────────────────────────────────────────────────────────
     public void AlignElements(AlignMode mode)
     {
-        if (State.ActiveSection is null) return;
+        // X-align pracuje napříč sekcemi (sekce sdílejí levý margin → X je přímo porovnatelné).
+        // Y-align zůstává per-aktivní-sekce (Y je relativní k hornímu okraji sekce).
+        bool isXMode = mode is AlignMode.Left or AlignMode.Right or AlignMode.CenterH or AlignMode.DistributeH;
 
-        var inSection = State.SelectedElements
-            .Where(el => State.ActiveSection.Elements.Contains(el))
-            .ToList();
+        List<TemplateElement> els;
+        if (isXMode)
+        {
+            els = State.SelectedElements.ToList();
+        }
+        else
+        {
+            if (State.ActiveSection is null) return;
+            els = State.SelectedElements
+                .Where(el => State.ActiveSection.Elements.Contains(el))
+                .ToList();
+        }
 
         int minCount = mode is AlignMode.DistributeH or AlignMode.DistributeV ? 3 : 2;
-        if (inSection.Count < minCount) return;
+        if (els.Count < minCount) return;
 
         var commands = new List<IDesignerCommand>();
+
+        // Zaokrouhlení na celé mm — align cílí na "čistou" hodnotu konzistentní se soft-snapem při dragu.
+        static float Rnd(float v) => MathF.Round(v);
 
         switch (mode)
         {
             case AlignMode.Left:
             {
-                float t = inSection.Min(e => e.X);
-                foreach (var el in inSection.Where(e => e.X != t))
-                    commands.Add(MakeXCmd(el, t));
+                float t = Rnd(els.Min(e => e.X));
+                foreach (var el in els)
+                { if (Math.Abs(el.X - t) > 0.001f) commands.Add(MakeXCmd(el, t)); }
                 break;
             }
             case AlignMode.Right:
             {
-                float t = inSection.Max(e => e.X + e.Width);
-                foreach (var el in inSection)
-                { float nx = t - el.Width; if (Math.Abs(el.X - nx) > 0.01f) commands.Add(MakeXCmd(el, nx)); }
+                float t = Rnd(els.Max(e => e.X + e.Width));
+                foreach (var el in els)
+                { float nx = t - el.Width; if (Math.Abs(el.X - nx) > 0.001f) commands.Add(MakeXCmd(el, nx)); }
                 break;
             }
             case AlignMode.CenterH:
             {
-                float cx = (inSection.Min(e => e.X) + inSection.Max(e => e.X + e.Width)) / 2f;
-                foreach (var el in inSection)
-                { float nx = cx - el.Width / 2f; if (Math.Abs(el.X - nx) > 0.01f) commands.Add(MakeXCmd(el, nx)); }
+                float cx = Rnd((els.Min(e => e.X) + els.Max(e => e.X + e.Width)) / 2f);
+                foreach (var el in els)
+                { float nx = cx - el.Width / 2f; if (Math.Abs(el.X - nx) > 0.001f) commands.Add(MakeXCmd(el, nx)); }
                 break;
             }
             case AlignMode.Top:
             {
-                float t = inSection.Min(e => e.Y);
-                foreach (var el in inSection.Where(e => e.Y != t))
-                    commands.Add(MakeYCmd(el, t));
+                float t = Rnd(els.Min(e => e.Y));
+                foreach (var el in els)
+                { if (Math.Abs(el.Y - t) > 0.001f) commands.Add(MakeYCmd(el, t)); }
                 break;
             }
             case AlignMode.Bottom:
             {
-                float t = inSection.Max(e => e.Y + e.EffectiveDesignerHeight);
-                foreach (var el in inSection)
-                { float ny = t - el.EffectiveDesignerHeight; if (Math.Abs(el.Y - ny) > 0.01f) commands.Add(MakeYCmd(el, ny)); }
+                float t = Rnd(els.Max(e => e.Y + e.EffectiveDesignerHeight));
+                foreach (var el in els)
+                { float ny = t - el.EffectiveDesignerHeight; if (Math.Abs(el.Y - ny) > 0.001f) commands.Add(MakeYCmd(el, ny)); }
                 break;
             }
             case AlignMode.MiddleV:
             {
-                float cy = (inSection.Min(e => e.Y) + inSection.Max(e => e.Y + e.EffectiveDesignerHeight)) / 2f;
-                foreach (var el in inSection)
-                { float ny = cy - el.EffectiveDesignerHeight / 2f; if (Math.Abs(el.Y - ny) > 0.01f) commands.Add(MakeYCmd(el, ny)); }
+                float cy = Rnd((els.Min(e => e.Y) + els.Max(e => e.Y + e.EffectiveDesignerHeight)) / 2f);
+                foreach (var el in els)
+                { float ny = cy - el.EffectiveDesignerHeight / 2f; if (Math.Abs(el.Y - ny) > 0.001f) commands.Add(MakeYCmd(el, ny)); }
                 break;
             }
             case AlignMode.DistributeH:
             {
-                var sorted = inSection.OrderBy(e => e.X).ToList();
+                var sorted = els.OrderBy(e => e.X).ToList();
                 float totalW = sorted.Sum(e => e.Width);
                 float span   = sorted.Last().X + sorted.Last().Width - sorted.First().X;
                 float gap    = (span - totalW) / (sorted.Count - 1);
@@ -1017,7 +1031,7 @@ public class TemplateDesignerViewModel : EDViewModel
             }
             case AlignMode.DistributeV:
             {
-                var sorted = inSection.OrderBy(e => e.Y).ToList();
+                var sorted = els.OrderBy(e => e.Y).ToList();
                 float totalH = sorted.Sum(e => e.EffectiveDesignerHeight);
                 float span   = sorted.Last().Y + sorted.Last().EffectiveDesignerHeight - sorted.First().Y;
                 float gap    = (span - totalH) / (sorted.Count - 1);
