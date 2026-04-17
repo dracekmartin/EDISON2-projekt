@@ -58,11 +58,9 @@ public class NotesLegendElement : ScheduleElementBase
 
         using var paints = CreateStandardPaints();
 
-        using var noteFont = new SKFont(SKTypeface.FromFamilyName(effFontFamily), noteFontPx);
-        using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(effFontFamily, SKFontStyle.Bold), headerFontPx);
-        using var boldFont = new SKFont(
-            SKTypeface.FromFamilyName(effFontFamily, SKFontStyle.Bold), noteFontPx);
+        using var noteFont = new SKFont(GetTypeface(effFontFamily), noteFontPx);
+        using var headerFont = new SKFont(GetTypeface(effFontFamily, SKFontStyle.Bold), headerFontPx);
+        using var boldFont = new SKFont(GetTypeface(effFontFamily, SKFontStyle.Bold), noteFontPx);
 
         // Záhlaví
         float currentY = RenderSectionHeader(ctx, HeaderText,

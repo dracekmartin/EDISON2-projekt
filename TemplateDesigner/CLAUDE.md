@@ -19,7 +19,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 ### 🎯 Aktuální focus
 
 1. Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), FullTime mód, data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
-2. Ladění MinutesOnly na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 roadmapy).
+2. Ladění zastávkového JŘ na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 roadmapy).
 
 ### ✅ Co máme
 
@@ -40,7 +40,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Strom šablony — záložka "Strom" v hlavním okně; hierarchický přehled celé šablony (sekce → skupiny → elementy)
 - LineElement — custom dash/gap pro čárkované a tečkované čáry
 - ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
-- **Zastávkový JŘ (MinutesOnly)** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery, cache a sdílenými font/paint helpery (`CreateCellFont`, `CreateCellTextPaint`, `CreateCellBgPaint`, `MakeFontStyle`); ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace; DepartureGrid: redistribuce šířek sloupců na celou šířku, word-wrap záhlaví skupin, sloučený řádek záhlaví (Hod + názvy skupin); per-column nastavení (`DepartureGroupColumnStyle` + `ColumnVisualStyle`/`CellStyle`: viditelnost, barvy, font, zarovnání H+V, bold/italic, padding) přes `DepartureGroupEditorDialog`; StopList: per-column styling analogicky k DepartureGrid, šipka směru jízdy (┌─▼)
+- **Zastávkový JŘ** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery, cache a sdílenými font/paint helpery (`CreateCellFont`, `CreateCellTextPaint`, `CreateCellBgPaint`, `MakeFontStyle`); ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace; DepartureGrid: redistribuce šířek sloupců na celou šířku, word-wrap záhlaví skupin, sloučený řádek záhlaví (Hod + názvy skupin); per-column nastavení (`DepartureGroupColumnStyle` + `ColumnVisualStyle`/`CellStyle`: viditelnost, barvy, font, zarovnání H+V, bold/italic, padding) přes `DepartureGroupEditorDialog`; StopList: per-column styling analogicky k DepartureGrid, šipka směru jízdy (┌─▼)
 - **Caché ZastavkoveJrMhdAPI** — jedna třída `ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI` dědící přímo z `AgendaAPI`; kompletní 6-fázový tiskový engine MHD + všechny helpery (BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka, AddAnotace, AddAtribut, AddPoznamkaZastavky, ConvertSpecialniZnak) + GetSchema/GetData/GetMockData
 - **DataContext vnořená pole** — ParseMockData rozlišuje JsonArray/JsonObject vs skalární hodnoty; ScheduleElementBase parsuje vnořená pole (ZONY[], ATRIBUTY[], ANOTACE[], POZNAMKY_ZASTAVKY[])
 - **Multi-data PDF export + PrintDialog** — `RenderMultiDataToPdf` zpracovává více DataContextů (1 zastávka/směr = 1+ PDF stránek); PrintDialog s parametry a exportem reálných dat z Caché (`GetData`); tisk i mock preview v jednom dialogu

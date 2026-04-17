@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SkiaSharp;
@@ -139,6 +140,21 @@ public abstract class ScheduleElementBase : TemplateElement
         (false, false) => SKFontStyle.Normal,
     };
 
+    // Typeface cache. SKTypeface loading (HarfBuzz) je drahý — per frame se volá 10+×.
+    // SKFont nevlastní typeface (reference, ne owned), sdílení je bezpečné.
+    private static readonly ConcurrentDictionary<(string Family, int Weight, int Width, SKFontStyleSlant Slant), SKTypeface> _typefaceCache = new();
+
+    /// <summary>Vrátí sdílený SKTypeface pro kombinaci (family, style). Nikdy nevrací null.</summary>
+    protected static SKTypeface GetTypeface(string? family, SKFontStyle? style = null)
+    {
+        var fam = string.IsNullOrEmpty(family) ? "Arial" : family!;
+        var st = style ?? SKFontStyle.Normal;
+        var key = (fam, st.Weight, st.Width, st.Slant);
+        return _typefaceCache.GetOrAdd(key, k =>
+            SKTypeface.FromFamilyName(k.Family, new SKFontStyle(k.Weight, k.Width, k.Slant))
+            ?? SKTypeface.Default);
+    }
+
     /// <summary>
     /// Vytvoří SKFont z TextStyle. Vrátí null pokud TextStyle nemá žádné fontové override.
     /// Volající musí výsledek uvolnit (přidat do manualDisposables).
@@ -152,7 +168,7 @@ public abstract class ScheduleElementBase : TemplateElement
         var family = style.FontFamily ?? DataStyle.FontFamily ?? "Arial";
         var sizePx = (style.FontSize ?? defaultSizePt) * PtToMm * scale * mmToPx;
         var fontStyle = MakeFontStyle(style.Bold ?? defaultBold, style.Italic ?? false);
-        return new SKFont(SKTypeface.FromFamilyName(family, fontStyle), sizePx);
+        return new SKFont(GetTypeface(family, fontStyle), sizePx);
     }
 
     /// <summary>Vytvoří SKPaint pro text z TextStyle.TextColor. Null pokud nemá override.</summary>

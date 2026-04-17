@@ -203,7 +203,7 @@ public class DepartureGridElement : ScheduleElementBase
             float fontPt = colFontPt ?? defaultHeaderFontPt;
             float fontPx = fontPt * PtToMm * effectiveMmToPx;
             using var measureFont = new SKFont(
-                SKTypeface.FromFamilyName(HeaderStyle.FontFamily ?? "Arial", SKFontStyle.Bold), fontPx);
+                GetTypeface(HeaderStyle.FontFamily, SKFontStyle.Bold), fontPx);
 
             // Minimální šířka = nejdelší slovo záhlaví + 2mm padding
             float maxWordW = 0;
@@ -273,7 +273,7 @@ public class DepartureGridElement : ScheduleElementBase
             float fontPt = colFontPt ?? defaultHeaderFontPt;
             float fontPx = fontPt * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
-                SKTypeface.FromFamilyName(HeaderStyle.FontFamily ?? "Arial", SKFontStyle.Bold), fontPx);
+                GetTypeface(HeaderStyle.FontFamily, SKFontStyle.Bold), fontPx);
 
             var wrapped = WrapHeaderText(fullText, g.GroupWidth, wrapFont, effectiveMmToPx);
             return g with { HeaderLines = wrapped };
@@ -368,9 +368,9 @@ public class DepartureGridElement : ScheduleElementBase
         float minuteFontPx = layout.MinuteFontMm * scale * ctx.MmToPx;
         float groupNameFontPx = SkupinaDnuHeaderLineHeight * scale * 0.65f * ctx.MmToPx;
 
-        using var font = new SKFont(SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial"), fontPx);
+        using var font = new SKFont(GetTypeface(DataStyle.FontFamily), fontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerFontPx);
+            GetTypeface(DataStyle.FontFamily, SKFontStyle.Bold), headerFontPx);
 
         // Minuty — TextStyle override nebo element defaults
         var ms = MinuteStyle;
@@ -378,8 +378,7 @@ public class DepartureGridElement : ScheduleElementBase
         bool minuteEffBold = ms.Bold ?? MinuteBold;
         bool minuteEffItalic = ms.Italic ?? false;
         using var minuteFont = new SKFont(
-            SKTypeface.FromFamilyName(ms.FontFamily ?? DataStyle.FontFamily ?? "Arial",
-                MakeFontStyle(minuteEffBold, minuteEffItalic)),
+            GetTypeface(ms.FontFamily ?? DataStyle.FontFamily, MakeFontStyle(minuteEffBold, minuteEffItalic)),
             minuteEffFontPx);
         // Manuálně spravované resources — dispose v finally bloku na konci metody
         var manualDisposables = new List<IDisposable>();
@@ -392,7 +391,7 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         using var groupNameFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), groupNameFontPx);
+            GetTypeface(DataStyle.FontFamily, SKFontStyle.Bold), groupNameFontPx);
 
         // Anotace symboly (speciální/NZ) — TextStyle override nebo 80% minut
         var ass = AnotaceSymbolStyle;
@@ -400,8 +399,7 @@ public class DepartureGridElement : ScheduleElementBase
             ? ass.FontSize.Value * PtToMm * scale * ctx.MmToPx
             : minuteEffFontPx * 0.8f;
         using var anotPrimaryFont = new SKFont(
-            SKTypeface.FromFamilyName(ass.FontFamily ?? DataStyle.FontFamily ?? "Arial",
-                MakeFontStyle(ass.Bold ?? false, ass.Italic ?? false)),
+            GetTypeface(ass.FontFamily ?? DataStyle.FontFamily, MakeFontStyle(ass.Bold ?? false, ass.Italic ?? false)),
             anotSymFontPx);
         SKPaint? anotSymPaint = null;
         if (ass.TextColor is not null)
@@ -414,8 +412,7 @@ public class DepartureGridElement : ScheduleElementBase
         var ats = AnotaceTextStyle;
         float anotTextFontPx = (ats.FontSize ?? AnotaceFontSize) * PtToMm * scale * ctx.MmToPx;
         using var anotSecondaryFont = new SKFont(
-            SKTypeface.FromFamilyName(ats.FontFamily ?? DataStyle.FontFamily ?? "Arial",
-                MakeFontStyle(ats.Bold ?? false, ats.Italic ?? false)),
+            GetTypeface(ats.FontFamily ?? DataStyle.FontFamily, MakeFontStyle(ats.Bold ?? false, ats.Italic ?? false)),
             anotTextFontPx);
         SKPaint? anotTextPaint = null;
         if (ats.TextColor is not null)
@@ -548,7 +545,7 @@ public class DepartureGridElement : ScheduleElementBase
                     bool colItalic = hs?.Italic ?? false;
                     float colHeaderFontPx = colHeaderFontMm * scale * ctx.MmToPx;
                     using var colFont = new SKFont(
-                        SKTypeface.FromFamilyName(hs?.FontFamily ?? DataStyle.FontFamily ?? "Arial", MakeFontStyle(colBold, colItalic)),
+                        GetTypeface(hs?.FontFamily ?? DataStyle.FontFamily, MakeFontStyle(colBold, colItalic)),
                         colHeaderFontPx);
 
                     int lineCount = g.HeaderLines.Length;
@@ -888,9 +885,9 @@ public class DepartureGridElement : ScheduleElementBase
         float fontPx = effFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial"), fontPx);
+        using var font = new SKFont(GetTypeface(DataStyle.FontFamily), fontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerFontPx);
+            GetTypeface(DataStyle.FontFamily, SKFontStyle.Bold), headerFontPx);
 
         float currentY = Y;
 

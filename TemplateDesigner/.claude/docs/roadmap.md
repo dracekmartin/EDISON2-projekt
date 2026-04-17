@@ -15,7 +15,7 @@
 | Krok | Co | Stav |
 |---|---|---|
 | 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) | ✅ hotovo (2026-03-18) |
-| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ, MinutesOnly (MHD) | ✅ hotovo (2026-03-18) |
+| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ (MHD) | ✅ hotovo (2026-03-18) |
 | 3 | Caché `ZastavkoveJrMhdAPI` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) | ✅ hotovo (2026-03-18) |
 | 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů | ✅ hotovo (2026-03-18) |
 | 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF | ✅ hotovo (2026-03-18) |
@@ -32,7 +32,7 @@ Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými
 | 7 | Per-column styling framework — CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ hotovo (2026-03-21) |
 | 7a | StopListElement — per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) + generalizace shared helpers do ScheduleElementBase + ColorPickerHelper + ActionId routing | ✅ hotovo (2026-03-23) |
 | 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ hotovo (2026-03-23) |
-| 8 | Ladění MinutesOnly na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | ⬅️ |
+| 8 | Ladění zastávkového JŘ na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | ⬅️ |
 | 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ hotovo (2026-03-24) |
 | 8b | Proporcionální škálování šablony + UX vylepšení — `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ hotovo (2026-03-24) |
 | 8c | AI-enhanced PDF import — dvoustupňový pipeline (heuristiky → AI enrichment); `AiImportEnricher` s kontextovými prompty; detekce rámečků, loga placeholder, margin fix, TextElement alignment fix | ✅ hotovo (2026-03-25) |
@@ -49,9 +49,9 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 
 | Krok | Co | Stav |
 |---|---|---|
-| 11 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
-| 12 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
-| 13 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | ⬅️ rozpracováno (2026-04-03) — AI Vision pipeline + AiGuidedScheduleBuilder fungují, ladění na širší sadě JŘ |
+| 12 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
+| 13 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
+| 14 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | ⬅️ rozpracováno (2026-04-03) — AI Vision pipeline + AiGuidedScheduleBuilder fungují, ladění na širší sadě JŘ |
 
 **Import PDF — aktuální stav:**
 - ✅ Režim 1 (deterministický 1:1 import) hotovo (2026-03-13)
@@ -73,9 +73,9 @@ Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl:
 
 | Krok | Co | Stav |
 |---|---|---|
-| 14 | Definovat meziměstský layout — analýza referenčních PDF, wire formát dat | |
-| 15 | Implementace meziměstského JŘ elementu | |
-| 16 | Caché `TiskMeziměsto` — GetData/GetMockData pro meziměstský JŘ | |
+| 15 | Definovat meziměstský layout — analýza referenčních PDF, wire formát dat | |
+| 16 | Implementace meziměstského JŘ elementu | |
+| 17 | Caché `TiskMeziměsto` — GetData/GetMockData pro meziměstský JŘ | |
 
 ---
 
@@ -85,9 +85,9 @@ Layout TBD — pravděpodobně kompaktní formát pro knižní publikaci. Defino
 
 | Krok | Co | Stav |
 |---|---|---|
-| 17 | Analýza referenčních knižních JŘ — definice layoutu a wire formátu | |
-| 18 | `BookScheduleElement` — implementace (pravděpodobně víc elementů, viz poučení z MHD) | |
-| 19 | Caché `TiskKnizni` — GetData/GetMockData | |
+| 18 | Analýza referenčních knižních JŘ — definice layoutu a wire formátu | |
+| 19 | `BookScheduleElement` — implementace (pravděpodobně víc elementů, viz poučení z MHD) | |
+| 20 | Caché `TiskKnizni` — GetData/GetMockData | |
 
 ---
 
@@ -97,9 +97,9 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 | Krok | Co | Stav |
 |---|---|---|
-| 20 | Analýza referenčních vozových JŘ — definice layoutu a wire formátu | |
-| 21 | `VehicleScheduleElement` — implementace (pravděpodobně víc nezávislých elementů) | |
-| 22 | Caché `TiskVozovy` — GetData/GetMockData + async loading (větší objem dat) | |
+| 21 | Analýza referenčních vozových JŘ — definice layoutu a wire formátu | |
+| 22 | `VehicleScheduleElement` — implementace (pravděpodobně víc nezávislých elementů) | |
+| 23 | Caché `TiskVozovy` — GetData/GetMockData + async loading (větší objem dat) | |
 
 ---
 
@@ -184,7 +184,7 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 - Ctrl+X, Ctrl+0, context menu na canvasu, bound resize, potvrzení mazání sekce
 - Nahrávání obrázků s auto-downscale (max 5 MB), SelectAll
 
-**Zastávkový JŘ (MinutesOnly) + Caché integrace** ✅ hotovo (2026-03-18)
+**Zastávkový JŘ + Caché integrace** ✅ hotovo (2026-03-18)
 - ScheduleElementBase + 3 elementy (StopListElement, DepartureGridElement, NotesLegendElement)
 - ZastavkoveJrMhdAPI (~1200 řádků business logiky z legacy refaktoru, sloučeno z AgendaJRAPI + TiskMHD + TemplateDesignerMHD)
 - CacheAgendaProvider: ParseMockData vnořená pole, GetData, BuildRealData

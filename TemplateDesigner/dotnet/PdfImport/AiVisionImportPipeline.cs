@@ -40,14 +40,13 @@ public class AiVisionImportPipeline
         setStatus("Extrahuji obsah PDF...");
 
         // 1. Extrahovat stránky
-        List<ExtractedPage> extractedPages = null!;
+        var extractedPages = new List<ExtractedPage>();
         float pageWidthMm = 210f, pageHeightMm = 297f;
 
         await Task.Run(() =>
         {
             using var doc = UglyToad.PdfPig.PdfDocument.Open(pdfPath);
             var pageNumbers = pages ?? Enumerable.Range(1, doc.NumberOfPages).ToArray();
-            extractedPages = [];
 
             foreach (int pageNum in pageNumbers)
             {

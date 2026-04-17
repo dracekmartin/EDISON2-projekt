@@ -100,15 +100,15 @@ public class StopListElement : ScheduleElementBase
         float fontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effectiveHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial"), fontPx);
+        using var font = new SKFont(GetTypeface(DataStyle.FontFamily), fontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerFontPx);
+            GetTypeface(DataStyle.FontFamily, SKFontStyle.Bold), headerFontPx);
         // Font pro aktuální zastávku — konfigurovatelná velikost + tučnost
         float currentFontSize = (CurrentStopFontSize ?? baseFontSize) * scale;
         float currentFontPx = currentFontSize * PtToMm * ctx.MmToPx;
         var currentStyle = CurrentStopBold ? SKFontStyle.Bold : SKFontStyle.Normal;
         using var currentStopFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", currentStyle), currentFontPx);
+            GetTypeface(DataStyle.FontFamily, currentStyle), currentFontPx);
 
         // Per-column fonty a painty — manualDisposables pattern (dispose v finally)
         var columns = GetVisibleColumns();
