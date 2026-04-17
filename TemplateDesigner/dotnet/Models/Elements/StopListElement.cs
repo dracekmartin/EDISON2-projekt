@@ -78,7 +78,7 @@ public class StopListElement : ScheduleElementBase
 
     // ─── Render ─────────────────────────────────────────────────────────────
 
-    /// <summary>Šířka vyhrazeného prostoru (mm) pro šipku směru jízdy nalevo od sloupců.</summary>
+    /// <summary>Šířka vyhrazeného prostoru (mm) pro šipku směru jízdy napravo od sloupců.</summary>
     private const float ArrowGutterMm = 2.5f;
 
     public override void Render(RenderContext ctx)
@@ -130,13 +130,12 @@ public class StopListElement : ScheduleElementBase
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
         bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
 
-        // Šipka si rezervuje vlastní gutter vlevo; sloupce se posunou doprava
+        // Šipka si rezervuje vlastní gutter vpravo; sloupce zůstávají u levého okraje
         float arrowGutter = showArrow ? ArrowGutterMm : 0f;
-        float contentX = X + arrowGutter;
 
         // Záhlaví sloupců
         float currentY = ShowHeader
-            ? RenderColumnHeaders(ctx, columns, contentX, headerH, headerFont, paints, headerCells)
+            ? RenderColumnHeaders(ctx, columns, X, headerH, headerFont, paints, headerCells)
             : Y;
 
         if (hasData)
@@ -151,7 +150,7 @@ public class StopListElement : ScheduleElementBase
                     continue;
                 if (z.JeAktualni) foundCurrent = true;
 
-                float colX = contentX;
+                float colX = X;
                 bool isCurrent = z.JeAktualni && HighlightCurrentStop;
                 bool isPassed = !foundCurrent && !z.JeAktualni;
 
@@ -208,7 +207,7 @@ public class StopListElement : ScheduleElementBase
                 currentY += rowH;
             }
 
-            // Šipka směru jízdy ┌─▼ (v rezervovaném gutteru vlevo)
+            // Šipka směru jízdy ─┐│▼ (v rezervovaném gutteru vpravo)
             if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
                 RenderDirectionArrow(ctx, arrowGutter, arrowStartY, arrowEndY, rowH);
         }
@@ -263,15 +262,16 @@ public class StopListElement : ScheduleElementBase
     // ─── Šipka směru jízdy ──────────────────────────────────────────────────
 
     /// <summary>
-    /// Vykreslí šipku ┌─▼ v rezervovaném gutteru vlevo od sloupců.
+    /// Vykreslí šipku ─┐│▼ v rezervovaném gutteru vpravo od sloupců.
+    /// Horizontální bracket vede od posledního sloupce doprava, pak dolů k V hrotu.
     /// </summary>
     private void RenderDirectionArrow(
         RenderContext ctx, float arrowGutter,
         float startY, float endY, float rowH)
     {
-        // Vertikální čára uprostřed gutteru, bracket k pravé hraně gutteru (těsně před sloupci)
-        float lineXMm = X + arrowGutter * 0.5f;
-        float bracketRightMm = X + arrowGutter;
+        // Vertikální čára uprostřed gutteru, bracket od levé hrany gutteru (od sloupců) k čáře
+        float lineXMm = X + Width - arrowGutter * 0.5f;
+        float bracketLeftMm = X + Width - arrowGutter;
 
         float strokeW = DirectionArrowBold ? 1.5f : 0.8f;
         using var paint = new SKPaint
@@ -288,10 +288,10 @@ public class StopListElement : ScheduleElementBase
         float bottomY = endY + rowH * 0.8f;       // kousek nad spodní hranou řádku
         var lineTop = ctx.ToCanvas(lineXMm, topY);
         var lineBottom = ctx.ToCanvas(lineXMm, bottomY);
-        var bracketRight = ctx.ToCanvas(bracketRightMm, topY);
+        var bracketLeft = ctx.ToCanvas(bracketLeftMm, topY);
 
-        // ┐ — horizontální čára doprava (od zastávek) + vertikální dolů
-        ctx.Canvas.DrawLine(bracketRight, lineTop, paint);
+        // ─┐ — horizontální čára od sloupců doprava + vertikální dolů
+        ctx.Canvas.DrawLine(bracketLeft, lineTop, paint);
         ctx.Canvas.DrawLine(lineTop, lineBottom, paint);
 
         // ▼ — šipka na konci
