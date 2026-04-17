@@ -55,6 +55,14 @@ public static class TemplateSerializer
         await File.WriteAllBytesAsync(filePath, bytes, ct);
     }
 
+    /// <summary>Synchronní varianta pro volající kteří nemohou await (např. ConfirmUnsavedChanges při zavírání okna).</summary>
+    public static void Save(Template template, string filePath)
+    {
+        template.ModifiedAt = DateTime.UtcNow;
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(template, Options);
+        File.WriteAllBytes(filePath, bytes);
+    }
+
     // --- Deserializace ---
 
     /// <summary>

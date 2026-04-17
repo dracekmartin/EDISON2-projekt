@@ -616,7 +616,7 @@ public class TemplateDesignerViewModel : EDViewModel
             CurrentFilePath = dlg.FileName;
         }
         SyncParametersToTemplate();
-        TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath).GetAwaiter().GetResult();
+        TemplateSerializer.Save(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         return true;
     }
