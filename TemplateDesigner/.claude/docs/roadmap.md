@@ -123,6 +123,9 @@ Do té doby `PropertyDescriptor` systém funguje a neblokuje — ale počítat s
 
 ### 🟡 Důležité — omezení flexibility bez toho
 
+**3b. Obecný layout-reservation pattern u elementů**
+Aktuálně když element potřebuje rezervovat místo pro volitelný vizuální prvek (šipka směru u `StopListElement`, případně jiné badge/decorace), řeší se to ad-hoc — vypočítá se vlastní gutter a posune se obsah. Pro každou takovou vlastnost to znamená hardkódovat výjimku v `Render` metodě elementu. Do budoucna zvážit obecný mechanismus: např. deklarativní mapu "pokud property X=true → rezervuj Y mm vlevo/vpravo/nahoře/dole", nebo vrstvu „před-layout" kde element hlásí své padding požadavky a base třída spočítá contentRect. Vyřeší to konzistentně napříč všemi elementy a zjednoduší přidávání podobných featur.
+
 **4. Min/max počet řádků dynamic tabulky**
 Nové properties na `TableElement`: `MinRows`, `MaxRows`. Print engine ořízne přebývající řádky nebo doplní prázdné řádky do minima. Užitečné pro tabulky s proměnlivým počtem dat (faktury, JŘ).
 

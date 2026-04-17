@@ -78,6 +78,9 @@ public class StopListElement : ScheduleElementBase
 
     // ─── Render ─────────────────────────────────────────────────────────────
 
+    /// <summary>Šířka vyhrazeného prostoru (mm) pro šipku směru jízdy nalevo od sloupců.</summary>
+    private const float ArrowGutterMm = 2.5f;
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -123,14 +126,18 @@ public class StopListElement : ScheduleElementBase
             headerCells[col.Key] = BuildCellStyle(col.Style?.Header, baseHeaderFontSize, true, scale, ctx.MmToPx);
         }
 
-        // Záhlaví sloupců
-        float currentY = ShowHeader
-            ? RenderColumnHeaders(ctx, columns, headerH, headerFont, paints, headerCells)
-            : Y;
-
         // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
         bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
+
+        // Šipka si rezervuje vlastní gutter vlevo; sloupce se posunou doprava
+        float arrowGutter = showArrow ? ArrowGutterMm : 0f;
+        float contentX = X + arrowGutter;
+
+        // Záhlaví sloupců
+        float currentY = ShowHeader
+            ? RenderColumnHeaders(ctx, columns, contentX, headerH, headerFont, paints, headerCells)
+            : Y;
 
         if (hasData)
         {
@@ -144,7 +151,7 @@ public class StopListElement : ScheduleElementBase
                     continue;
                 if (z.JeAktualni) foundCurrent = true;
 
-                float colX = X;
+                float colX = contentX;
                 bool isCurrent = z.JeAktualni && HighlightCurrentStop;
                 bool isPassed = !foundCurrent && !z.JeAktualni;
 
@@ -201,9 +208,9 @@ public class StopListElement : ScheduleElementBase
                 currentY += rowH;
             }
 
-            // Šipka směru jízdy ┌─▼
+            // Šipka směru jízdy ┌─▼ (v rezervovaném gutteru vlevo)
             if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
-                RenderDirectionArrow(ctx, columns, arrowStartY, arrowEndY, rowH);
+                RenderDirectionArrow(ctx, arrowGutter, arrowStartY, arrowEndY, rowH);
         }
         else
         {
@@ -223,15 +230,15 @@ public class StopListElement : ScheduleElementBase
 
     /// <summary>Vykreslí záhlaví sloupců tabulky zastávek.</summary>
     private float RenderColumnHeaders(
-        RenderContext ctx, List<StopColumn> columns,
+        RenderContext ctx, List<StopColumn> columns, float startX,
         float headerH, SKFont headerFont, SchedulePaints paints,
         Dictionary<string, CellStyleResources> headerCells)
     {
-        // Výchozí pozadí záhlaví
+        // Výchozí pozadí záhlaví (přes celou šířku elementu, včetně arrow gutteru)
         var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
-        float colX = X;
+        float colX = startX;
         foreach (var col in columns)
         {
             var cell = headerCells[col.Key];
@@ -256,25 +263,15 @@ public class StopListElement : ScheduleElementBase
     // ─── Šipka směru jízdy ──────────────────────────────────────────────────
 
     /// <summary>
-    /// Vykreslí šipku ┌─▼ mezi sloupci — od aktuální zastávky dolů k poslední.
-    /// Pozice X: levý okraj sloupce StopName (nebo první viditelný sloupec).
+    /// Vykreslí šipku ┌─▼ v rezervovaném gutteru vlevo od sloupců.
     /// </summary>
     private void RenderDirectionArrow(
-        RenderContext ctx, List<StopColumn> columns,
+        RenderContext ctx, float arrowGutter,
         float startY, float endY, float rowH)
     {
-        // Najít X pozici sloupce StopName
-        float arrowX = X;
-        float colX = X;
-        foreach (var col in columns)
-        {
-            if (col.Key == "StopName") { arrowX = colX; break; }
-            colX += col.Width;
-        }
-        // Šipka je 1.5mm vlevo od sloupce StopName (mezera mezi zastávkami a šipkou)
-        float lineXMm = arrowX - 1.5f;
-        // Horizontální úsečka: od lineX doprava o 1.5mm (směrem k zastávkám = ke StopName)
-        float bracketRightMm = lineXMm + 1.5f;
+        // Vertikální čára uprostřed gutteru, bracket k pravé hraně gutteru (těsně před sloupci)
+        float lineXMm = X + arrowGutter * 0.5f;
+        float bracketRightMm = X + arrowGutter;
 
         float strokeW = DirectionArrowBold ? 1.5f : 0.8f;
         using var paint = new SKPaint
