@@ -635,7 +635,7 @@
       "name": "LINKA_ID",
       "label": "ID linky",
       "type": "string",
-      "defaultValue": "7372"
+      "defaultValue": "1230"
     },
     {
       "name": "TISK_SIPKY",
