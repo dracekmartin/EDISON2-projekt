@@ -1,49 +1,40 @@
 # Roadmap
 
-## 📋 Roadmap
+## 🎯 Aktuální focus
+
+1. Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
+2. Ladění zastávkového JŘ na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 níže).
 
 ---
 
-### 🔴 Kritické — Specializované JŘ elementy
+## 📋 Co je potřeba dělat
 
-> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
-
-**Primární architektonická změna** — přidání specializovaných elementů pro tisk jízdních řádů. Nový princip: Caché vrací čistá data + business logiku (JSON), specializované C# elementy (`ScheduleElementBase` → `StopListElement`, `DepartureGridElement`, `NotesLegendElement`, `BookScheduleElement`, `VehicleScheduleElement`) mají vlastní nastavení a komplexní renderovací logiku. PageLayoutEngine zůstává generický beze změn.
-
-#### Dokončené kroky (společný základ)
-
-| Krok | Co | Stav |
-|---|---|---|
-| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) | ✅ hotovo (2026-03-18) |
-| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ (MHD) | ✅ hotovo (2026-03-18) |
-| 3 | Caché `ZastavkoveJrMhdAPI` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) | ✅ hotovo (2026-03-18) |
-| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů | ✅ hotovo (2026-03-18) |
-| 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF | ✅ hotovo (2026-03-18) |
-| 6 | `CacheAgendaProvider` — ParseMockData vnořená pole, GetData, BuildRealData | ✅ hotovo (2026-03-18) |
-
----
-
-#### Fáze A: Odladění MHD zastávkového JŘ s reálnými daty ⬅️ AKTUÁLNÍ PRIORITA
+### 🔴 Fáze A: Odladění MHD zastávkového JŘ s reálnými daty ⬅️ AKTUÁLNÍ PRIORITA
 
 Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými daty z Caché → PDF 1:1 odpovídající současnému MHD JŘ. Zpětná vazba od kolegů.
 
+> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
+
 | Krok | Co | Stav |
 |---|---|---|
-| 7 | Per-column styling framework — CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ hotovo (2026-03-21) |
-| 7a | StopListElement — per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) + generalizace shared helpers do ScheduleElementBase + ColorPickerHelper + ActionId routing | ✅ hotovo (2026-03-23) |
-| 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ hotovo (2026-03-23) |
 | 8 | Ladění zastávkového JŘ na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | ⬅️ |
-| 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ hotovo (2026-03-24) |
-| 8b | Proporcionální škálování šablony + UX vylepšení — `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ hotovo (2026-03-24) |
-| 8c | AI-enhanced PDF import — dvoustupňový pipeline (heuristiky → AI enrichment); `AiImportEnricher` s kontextovými prompty; detekce rámečků, loga placeholder, margin fix, TextElement alignment fix | ✅ hotovo (2026-03-25) |
-| 8d | AI Vision import pipeline — `AiVisionImportService` (composable prompty), `AiGuidedScheduleBuilder` (PdfPig geometrie), `AiVisionImportPipeline` (orchestrace); per-column font wrapping; section headers auto-hide; CellStyleVM font defaults; shared HttpClient | ✅ hotovo (2026-04-03) |
 | 9 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
 | 10 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
 | 11 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |
 
+#### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
+
+| Téma | Popis |
+|---|---|
+| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy — lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
+| **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. |
+| **SKTypeface/SKPaint alokace** | Schedule elementy alokují SKTypeface a SKPaint per render frame. Funguje, ale není optimální. Cachovat fonty a painty. |
+| **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
+| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu. |
+
 ---
 
-#### Fáze B: UX polish + vylepšení importu
+### 🟠 Fáze B: UX polish + vylepšení importu
 
 Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a chytřejší import.
 
@@ -51,7 +42,7 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 |---|---|---|
 | 12 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
 | 13 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
-| 14 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import (viz popis níže) | ⬅️ rozpracováno (2026-04-03) — AI Vision pipeline + AiGuidedScheduleBuilder fungují, ladění na širší sadě JŘ |
+| 14 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import | ⬅️ rozpracováno (2026-04-03) — AI Vision pipeline + AiGuidedScheduleBuilder fungují, ladění na širší sadě JŘ |
 
 **Import PDF — aktuální stav:**
 - ✅ Režim 1 (deterministický 1:1 import) hotovo (2026-03-13)
@@ -67,7 +58,7 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 
 ---
 
-#### Fáze C: Meziměstský JŘ
+### 🟠 Fáze C: Meziměstský JŘ
 
 Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl: sloupce odjezdů nejsou typy provozu (jako MHD), ale mají jiný koncept specifický pro meziměsto. Layout je pivot tabulka (zastávky × spoje). Pravděpodobně bude potřeba samostatný element (ne rozšíření DepartureGridElement).
 
@@ -79,7 +70,7 @@ Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl:
 
 ---
 
-#### Fáze D: Knižní JŘ
+### 🟠 Fáze D: Knižní JŘ
 
 Layout TBD — pravděpodobně kompaktní formát pro knižní publikaci. Definovat layout před implementací.
 
@@ -91,7 +82,7 @@ Layout TBD — pravděpodobně kompaktní formát pro knižní publikaci. Defino
 
 ---
 
-#### Fáze E: Vozový JŘ
+### 🟠 Fáze E: Vozový JŘ
 
 Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc elementů (viz poučení z MHD).
 
@@ -103,15 +94,30 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ---
 
-#### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
+### 🟣 Plánované architektonické změny (nutné, ne volitelné)
 
-| Téma | Popis |
-|---|---|
-| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy — lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
-| **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. |
-| **SKTypeface/SKPaint alokace** | Schedule elementy alokují SKTypeface a SKPaint per render frame. Funguje, ale není optimální. Cachovat fonty a painty. |
-| **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
-| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu. |
+**Caché-driven formuláře a komponenty (větší refaktor — neobejdeme se bez něj)**
+
+Současný `PropertiesPanel` + `PropertyDescriptor` systém je dočasné řešení. Do budoucna bude veškerá business logika (definice vlastností elementů, formuláře, tabulky) řízena z Caché přes standardní EDControls komponenty. **Není to urgentní teď**, ale protože jde o větší refaktor, eviduje se jako vyšší priorita než běžné feature items — až přijde čas, musí být jasné že se bude řešit.
+
+**Cílová architektura:**
+- `ElementPropertiesWindow` — místo vlastního `PropertiesPanel` použít `EDInputForm` (z EDControls)
+- Formulář pro každý element bude definovaný v Caché třídě `ALVA.TemplateDesigner.Elements.<Typ>.Init/Validate/Save`
+- Editor sloupců `TableElement` — použít `EDDataGrid` (z EDControls, až bude hotový)
+- Presety elementů a tabulek (např. JR tabulka se sloupci) — načítat z Caché místo hardkódování v C#
+
+**Co se NEZMĚNÍ:**
+- C# třídy elementů (renderování, Clone, model, JSON serializace)
+- Drag & drop, resize, canvas logika
+
+**Překladová vrstva .NET ↔ Caché (nutná pro undo/redo):**
+- `Init`: .NET serializuje aktuální hodnoty elementu → Caché postaví formulář s hodnotami
+- `Save`: Caché vrátí změněné hodnoty → .NET updatuje element přes `SetPropertyCommand` (zachová undo/redo)
+
+**Kdy řešit:** Až bude `EDDataGrid` hotový a/nebo bude potřeba první Caché-driven formulář.
+Do té doby `PropertyDescriptor` systém funguje a neblokuje — ale počítat s refaktorem při plánování dalších vlastností elementů (aby se nepřekopávalo dvakrát).
+
+**Reference:** Viz `EDControls/EDInputForm/` — existující implementace + Caché třídy `ALVA.EDControls.EDInputForm.*`
 
 ---
 
@@ -140,9 +146,7 @@ Flat `_values + _rows` nestačí pro hierarchická data.
 | # | Položka | Náročnost | Popis |
 |---|---------|-----------|-------|
 | c | Zoom persistence | Malá | Uložit zoom do Caché user preferences; řešit až při nasazení |
-| f | Side panel vlastností místo modálního dialogu | Velká | ✅ základ hotovo (2026-03-21) — inline záložka "Vlastnosti" v levém panelu; modální dialog zachován jako fallback |
 | g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu |
-| h | Ikonový toolbar | Střední | ✅ hotovo (2026-03-21) — 33 Fluent UI ikon, 7 skupin, ToolbarStyles.xaml |
 
 **8. Grouping v TableElement**
 Seskupení řádků dynamické tabulky podle hodnoty pole.
@@ -172,141 +176,6 @@ Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit 
 - Autor, datum změny, kategorie, popis
 - Thumbnail preview (PNG generovaný při uložení)
 - Verzování šablon (kdo kdy co změnil)
-
----
-
-### ✅ Implementováno
-
-**UX audit — bezpečnost + frustrace + polish** ✅ hotovo (2026-03-18)
-- Sanitizace VisibilityExpression (whitelist tokenizer + live validace v UI)
-- Canvas fixed height + section clamping (sekce nepřesáhnou stránku)
-- SectionRole (Header/Body/Footer) — patičky od spodu stránky
-- Ctrl+X, Ctrl+0, context menu na canvasu, bound resize, potvrzení mazání sekce
-- Nahrávání obrázků s auto-downscale (max 5 MB), SelectAll
-
-**Zastávkový JŘ + Caché integrace** ✅ hotovo (2026-03-18)
-- ScheduleElementBase + 3 elementy (StopListElement, DepartureGridElement, NotesLegendElement)
-- ZastavkoveJrMhdAPI (~1200 řádků business logiky z legacy refaktoru, sloučeno z AgendaJRAPI + TiskMHD + TemplateDesignerMHD)
-- CacheAgendaProvider: ParseMockData vnořená pole, GetData, BuildRealData
-- PrintDialog: parametry + export reálných dat + multi-data PDF
-- SkiaHeightCalculator: schedule element height calculation
-
-**PageLayoutEngine + multi-page** ✅ hotovo (2026-03-17)
-- Template + DataContext → `List<Page>` s PlacedSections; čistá logika (vrstva 3), žádný SkiaSharp/WPF
-- Klasifikace sekcí (headers/footers/body), stránkování (KeepTogether/SplitAcrossPages), dvouprůchodový layout pro OnLastPageOnly
-- Flow layout uvnitř sekcí, PerDataRow expanze, PAGE/TOTAL_PAGES injekce
-- Multi-page preview (stránky pod sebou) + multi-page PDF export
-- IElementHeightCalculator: SkiaHeightCalculator měří TextElement (word wrap) a TableElement
-
-**Flow text v designeru (Word wrap + dynamická výška)** ✅ hotovo (2026-03-17)
-- TextElement: `WordWrap=true` + `Height=null` → text se zalamuje, výška se dopočítá z obsahu
-- `LineSpacing` property, vertikální zarovnání víceřádkového textu, fix `\r\n`
-- InfiniteTextElement jako samostatný typ zamítnut — jedno chování řízené properties
-
-**ElementGroup — seskupování elementů** ✅ základ hotovo (2026-03-12)
-- `GroupId` property na `TemplateElement` — lehká logická vazba bez nested souřadnic
-- Kliknutí na člen skupiny vybere celou skupinu; Alt+klik = jen ten jeden element
-- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit (plný undo/redo)
-- Vizuální indikace: barevný badge v rohu, bounding box skupiny při výběru
-- Strom šablony zobrazuje skupiny jako sbalitelné uzly
-- Copy/Paste/Duplicate přemapují GroupId (klony nedědí skupinu originálu)
-- PDF import automaticky seskupí grafiku podle typu a merge mode
-
-**Locale / CultureInfo v šabloně** ✅ hotovo (2026-03-12)
-- `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)
-- Protéká celým pipeline: Template → DataContext.Culture → PlaceholderFormatter → TableElement
-- Dropdown ve vlastnostech stránky; null = cs-CZ (výchozí); parsování vstupů zůstává InvariantCulture
-
-**Drag & drop při přidávání elementů a sekcí** ✅ hotovo (2026-03-12)
-- Drag element z toolbaru/palety na canvas — ghost preview, drop target highlight, clamp + snap
-- Drag pole z panelu "Pole agendy" na canvas — vytvoří TextElement nebo append k existujícímu
-- Drag & drop sekcí v levém panelu — přeřazení tažením, vizuální indikátor, `ReorderSectionCommand`
-- Drag element mezi sekcemi — záměrně odloženo (nízká priorita, aktuální UX postačuje)
-
-**Chytré duplikování elementů** ✅ hotovo (2026-03-12)
-- Ctrl+D → šipka = směrové duplikování (kopie vedle originálu s 4mm mezerou)
-- Ctrl+D bez šipky = plain duplikát (+5mm offset); neovlivňuje clipboard
-- Multi-select, clamp na bounds sekce, plný undo/redo
-
-**Přichytávání elementů k sobě (smart snap)** ✅ hotovo (2026-03-12)
-- Edge↔Edge (4 kombinace), Center↔Center, Gap snap (4mm mezera) — bez kategorické priority, vyhraje nejbližší match
-- Zvýraznění cílových elementů (šedý dashed rámeček), gap indikátor (černá čárka v mezeře)
-- Element snap má přednost před grid snapem; osy X/Y nezávisle
-- Toggle v toolbaru + menu; výchozí zapnuto
-
-**Výrazový jazyk** ✅ hotovo (2026-03-12)
-- Part 1 — podmínky a logické operátory: `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
-- Part 2a — agregace: `SUM({CENA})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})` v TableElement; SummaryRows; AggregationResolver; záložka Souhrn v TableEditorDialog
-- Part 2b — formátování placeholderů: `{POLE:N2}`, `{POLE:dd.MM.yyyy}` (.NET formáty); PlaceholderFormatter + DataContext rozšíření
-- Part 2c — řetězcové funkce: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`, `{POLE:TRIM}`
-
----
-
-### ✅ Záměrně jinak — neřešit
-
-- **Caché jako source of truth pro tabulkové šablony** — dává smysl pro doménovou logiku
-- **Univerzální Section třída** — jednodušší než pevná hierarchie (Crystal Reports)
-- **Absolutní pozicování jako default** — správné pro tiskové sestavy s pevným layoutem
-
----
-
-## 🖨️ PageLayoutEngine + stránkovaný preview (fáze 2) ✅ hotovo (2026-03-17)
-
-Preview v designeru = plný engine. "Tisk" = ten samý engine s reálnými daty → PDF.
-Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v TemplateDesigneru, ne samostatný projekt. Oddělení do samostatných .csproj se udělá až bude druhý konzument.
-
-### Vrstvy systému
-
-Viz diagram v `CLAUDE.md` (sekce "Architektura — vrstvy systému").
-
-### PageLayoutEngine — vstup/výstup ✅
-
-```csharp
-class PageLayoutEngine {
-    LayoutResult Layout(Template template, DataContext? data);
-}
-class LayoutResult { List<Page> Pages; int TotalPages; }
-class Page { int PageNumber; List<PlacedSection> Sections; }
-class PlacedSection {
-    Section Source;        // odkaz na originální sekci
-    float Y, Height;      // absolutní pozice na stránce (mm)
-    float? ClipTop, ClipBottom;  // ořez pro SplitAcrossPages
-    DataContext? Data;     // obohacená o PAGE/TOTAL_PAGES
-}
-```
-
-### Implementační kroky ✅ vše hotovo
-
-| Krok | Co | Stav |
-|---|---|---|
-| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | ✅ |
-| 2 | Stránkovaný preview — multi-page pod sebou se stíny a rámečky | ✅ |
-| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | ✅ |
-| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky (ClipTop/ClipBottom) | ✅ |
-| 5 | PerDataRow expanze — sekce se opakuje pro každý řádek dat | ✅ |
-| 6 | PAGE/TOTAL_PAGES injekce + VisibilityExpression per stránku | ✅ |
-| 7 | Multi-page PDF export — každá stránka = jedna PDF stránka | ✅ |
-
-### Budoucí modularizace (až bude potřeba)
-
-```
-TemplateDesigner.Core.csproj      ← vrstvy 1+2+3 (žádný SkiaSharp, žádné WPF)
-TemplateDesigner.Rendering.csproj ← vrstva 4 (SkiaSharp, žádné WPF)
-TemplateDesigner.csproj           ← vrstva 5 WPF Designer
-Edison.PrintService.csproj        ← vrstva 5 headless tisk z EDISONu
-```
-
-### Use cases díky oddělitelnosti
-
-| Use case | Vrstvy | Popis |
-|---|---|---|
-| WPF Designer + preview | 1–5 | Aktuální aplikace |
-| Tisk z EDISONu | 1–4 | Print dialog → GetData → engine → PDF |
-| Batch tisk | 1–4 | Noční job: 200 faktur → 200 PDF |
-| PDF jako služba | 1–4 | EDISON interně: dej PDF pro fakturu #123 |
-| REST API | 1–4 | HTTP POST šablona + data → PDF response |
-| Web preview | 1–4 | ASP.NET endpoint → PNG/PDF → iframe |
-| Email příloha | 1–4 | Auto-generování PDF a připojení k emailu |
 
 ---
 
@@ -370,27 +239,166 @@ JSON šablona je stabilní kontrakt mezi designerem a AI. Dokud AI umí číst a
 
 ---
 
-## 🏗️ Plánované architektonické změny (nutné, ne volitelné)
+## ✅ Záměrně jinak — neřešit
 
-**Caché-driven formuláře a komponenty (střední/dlouhodobý horizont)**
+- **Caché jako source of truth pro tabulkové šablony** — dává smysl pro doménovou logiku
+- **Univerzální Section třída** — jednodušší než pevná hierarchie (Crystal Reports)
+- **Absolutní pozicování jako default** — správné pro tiskové sestavy s pevným layoutem
 
-Současný `PropertiesPanel` + `PropertyDescriptor` systém je dočasné řešení. Do budoucna bude veškerá business logika (definice vlastností elementů, formuláře, tabulky) řízena z Caché přes standardní EDControls komponenty.
+---
 
-**Cílová architektura:**
-- `ElementPropertiesWindow` — místo vlastního `PropertiesPanel` použít `EDInputForm` (z EDControls)
-- Formulář pro každý element bude definovaný v Caché třídě `ALVA.TemplateDesigner.Elements.<Typ>.Init/Validate/Save`
-- Editor sloupců `TableElement` — použít `EDDataGrid` (z EDControls, až bude hotový)
-- Presety elementů a tabulek (např. JR tabulka se sloupci) — načítat z Caché místo hardkódování v C#
+# 🗄️ Archiv — hotové kroky
 
-**Co se NEZMĚNÍ:**
-- C# třídy elementů (renderování, Clone, model, JSON serializace)
-- Drag & drop, resize, canvas logika
+> Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
-**Překladová vrstva .NET ↔ Caché (nutná pro undo/redo):**
-- `Init`: .NET serializuje aktuální hodnoty elementu → Caché postaví formulář s hodnotami
-- `Save`: Caché vrátí změněné hodnoty → .NET updatuje element přes `SetPropertyCommand` (zachová undo/redo)
+## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
 
-**Kdy řešit:** Až bude `EDDataGrid` hotový a/nebo bude potřeba první Caché-driven formulář.
-Do té doby `PropertyDescriptor` systém funguje a neblokuje.
+| Krok | Co |
+|---|---|
+| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) |
+| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ (MHD) |
+| 3 | Caché `ZastavkoveJrMhdAPI` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) |
+| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů |
+| 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF |
+| 6 | `CacheAgendaProvider` — ParseMockData vnořená pole, GetData, BuildRealData |
 
-**Reference:** Viz `EDControls/EDInputForm/` — existující implementace + Caché třídy `ALVA.EDControls.EDInputForm.*`
+## Fáze A: Odladění MHD zastávkového JŘ — hotové kroky
+
+| Krok | Co | Stav |
+|---|---|---|
+| 7 | Per-column styling framework — CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ (2026-03-21) |
+| 7a | StopListElement — per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) + generalizace shared helpers do ScheduleElementBase + ColorPickerHelper + ActionId routing | ✅ (2026-03-23) |
+| 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ (2026-03-23) |
+| 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ (2026-03-24) |
+| 8b | Proporcionální škálování šablony + UX vylepšení — `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ (2026-03-24) |
+| 8c | AI-enhanced PDF import — dvoustupňový pipeline (heuristiky → AI enrichment); `AiImportEnricher` s kontextovými prompty; detekce rámečků, loga placeholder, margin fix, TextElement alignment fix | ✅ (2026-03-25) |
+| 8d | AI Vision import pipeline — `AiVisionImportService` (composable prompty), `AiGuidedScheduleBuilder` (PdfPig geometrie), `AiVisionImportPipeline` (orchestrace); per-column font wrapping; section headers auto-hide; CellStyleVM font defaults; shared HttpClient | ✅ (2026-04-03) |
+
+## Další implementované oblasti
+
+**UX audit — bezpečnost + frustrace + polish** ✅ (2026-03-18)
+- Sanitizace VisibilityExpression (whitelist tokenizer + live validace v UI)
+- Canvas fixed height + section clamping (sekce nepřesáhnou stránku)
+- SectionRole (Header/Body/Footer) — patičky od spodu stránky
+- Ctrl+X, Ctrl+0, context menu na canvasu, bound resize, potvrzení mazání sekce
+- Nahrávání obrázků s auto-downscale (max 5 MB), SelectAll
+
+**Zastávkový JŘ + Caché integrace** ✅ (2026-03-18)
+- ScheduleElementBase + 3 elementy (StopListElement, DepartureGridElement, NotesLegendElement)
+- ZastavkoveJrMhdAPI (~1200 řádků business logiky z legacy refaktoru, sloučeno z AgendaJRAPI + TiskMHD + TemplateDesignerMHD)
+- CacheAgendaProvider: ParseMockData vnořená pole, GetData, BuildRealData
+- PrintDialog: parametry + export reálných dat + multi-data PDF
+- SkiaHeightCalculator: schedule element height calculation
+
+**PageLayoutEngine + multi-page** ✅ (2026-03-17)
+- Template + DataContext → `List<Page>` s PlacedSections; čistá logika (vrstva 3), žádný SkiaSharp/WPF
+- Klasifikace sekcí (headers/footers/body), stránkování (KeepTogether/SplitAcrossPages), dvouprůchodový layout pro OnLastPageOnly
+- Flow layout uvnitř sekcí, PerDataRow expanze, PAGE/TOTAL_PAGES injekce
+- Multi-page preview (stránky pod sebou) + multi-page PDF export
+- IElementHeightCalculator: SkiaHeightCalculator měří TextElement (word wrap) a TableElement
+
+**Flow text v designeru (Word wrap + dynamická výška)** ✅ (2026-03-17)
+- TextElement: `WordWrap=true` + `Height=null` → text se zalamuje, výška se dopočítá z obsahu
+- `LineSpacing` property, vertikální zarovnání víceřádkového textu, fix `\r\n`
+- InfiniteTextElement jako samostatný typ zamítnut — jedno chování řízené properties
+
+**ElementGroup — seskupování elementů** ✅ (2026-03-12)
+- `GroupId` property na `TemplateElement` — lehká logická vazba bez nested souřadnic
+- Kliknutí na člen skupiny vybere celou skupinu; Alt+klik = jen ten jeden element
+- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit (plný undo/redo)
+- Vizuální indikace: barevný badge v rohu, bounding box skupiny při výběru
+- Strom šablony zobrazuje skupiny jako sbalitelné uzly
+- Copy/Paste/Duplicate přemapují GroupId (klony nedědí skupinu originálu)
+- PDF import automaticky seskupí grafiku podle typu a merge mode
+
+**Locale / CultureInfo v šabloně** ✅ (2026-03-12)
+- `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)
+- Protéká celým pipeline: Template → DataContext.Culture → PlaceholderFormatter → TableElement
+- Dropdown ve vlastnostech stránky; null = cs-CZ (výchozí); parsování vstupů zůstává InvariantCulture
+
+**Drag & drop při přidávání elementů a sekcí** ✅ (2026-03-12)
+- Drag element z toolbaru/palety na canvas — ghost preview, drop target highlight, clamp + snap
+- Drag pole z panelu "Pole agendy" na canvas — vytvoří TextElement nebo append k existujícímu
+- Drag & drop sekcí v levém panelu — přeřazení tažením, vizuální indikátor, `ReorderSectionCommand`
+- Drag element mezi sekcemi — záměrně odloženo (nízká priorita, aktuální UX postačuje)
+
+**Chytré duplikování elementů** ✅ (2026-03-12)
+- Ctrl+D → šipka = směrové duplikování (kopie vedle originálu s 4mm mezerou)
+- Ctrl+D bez šipky = plain duplikát (+5mm offset); neovlivňuje clipboard
+- Multi-select, clamp na bounds sekce, plný undo/redo
+
+**Přichytávání elementů k sobě (smart snap)** ✅ (2026-03-12)
+- Edge↔Edge (4 kombinace), Center↔Center, Gap snap (4mm mezera) — bez kategorické priority, vyhraje nejbližší match
+- Zvýraznění cílových elementů (šedý dashed rámeček), gap indikátor (černá čárka v mezeře)
+- Element snap má přednost před grid snapem; osy X/Y nezávisle
+- Toggle v toolbaru + menu; výchozí zapnuto
+
+**Výrazový jazyk** ✅ (2026-03-12)
+- Part 1 — podmínky a logické operátory: `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
+- Part 2a — agregace: `SUM({CENA})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})` v TableElement; SummaryRows; AggregationResolver; záložka Souhrn v TableEditorDialog
+- Part 2b — formátování placeholderů: `{POLE:N2}`, `{POLE:dd.MM.yyyy}` (.NET formáty); PlaceholderFormatter + DataContext rozšíření
+- Part 2c — řetězcové funkce: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`, `{POLE:TRIM}`
+
+**UX polish — hotové položky**
+- **f. Side panel vlastností** ✅ základ (2026-03-21) — inline záložka "Vlastnosti" v levém panelu; modální dialog zachován jako fallback
+- **h. Ikonový toolbar** ✅ (2026-03-21) — 33 Fluent UI ikon, 7 skupin, ToolbarStyles.xaml
+
+---
+
+## 🖨️ PageLayoutEngine + stránkovaný preview (detail) ✅ (2026-03-17)
+
+Preview v designeru = plný engine. "Tisk" = ten samý engine s reálnými daty → PDF.
+Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v TemplateDesigneru, ne samostatný projekt. Oddělení do samostatných .csproj se udělá až bude druhý konzument.
+
+### Vrstvy systému
+
+Viz diagram v `CLAUDE.md` (sekce "Architektura — vrstvy systému").
+
+### PageLayoutEngine — vstup/výstup
+
+```csharp
+class PageLayoutEngine {
+    LayoutResult Layout(Template template, DataContext? data);
+}
+class LayoutResult { List<Page> Pages; int TotalPages; }
+class Page { int PageNumber; List<PlacedSection> Sections; }
+class PlacedSection {
+    Section Source;        // odkaz na originální sekci
+    float Y, Height;      // absolutní pozice na stránce (mm)
+    float? ClipTop, ClipBottom;  // ořez pro SplitAcrossPages
+    DataContext? Data;     // obohacená o PAGE/TOTAL_PAGES
+}
+```
+
+### Implementační kroky ✅ vše hotovo
+
+| Krok | Co | Stav |
+|---|---|---|
+| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | ✅ |
+| 2 | Stránkovaný preview — multi-page pod sebou se stíny a rámečky | ✅ |
+| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | ✅ |
+| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky (ClipTop/ClipBottom) | ✅ |
+| 5 | PerDataRow expanze — sekce se opakuje pro každý řádek dat | ✅ |
+| 6 | PAGE/TOTAL_PAGES injekce + VisibilityExpression per stránku | ✅ |
+| 7 | Multi-page PDF export — každá stránka = jedna PDF stránka | ✅ |
+
+### Budoucí modularizace (až bude potřeba)
+
+```
+TemplateDesigner.Core.csproj      ← vrstvy 1+2+3 (žádný SkiaSharp, žádné WPF)
+TemplateDesigner.Rendering.csproj ← vrstva 4 (SkiaSharp, žádné WPF)
+TemplateDesigner.csproj           ← vrstva 5 WPF Designer
+Edison.PrintService.csproj        ← vrstva 5 headless tisk z EDISONu
+```
+
+### Use cases díky oddělitelnosti
+
+| Use case | Vrstvy | Popis |
+|---|---|---|
+| WPF Designer + preview | 1–5 | Aktuální aplikace |
+| Tisk z EDISONu | 1–4 | Print dialog → GetData → engine → PDF |
+| Batch tisk | 1–4 | Noční job: 200 faktur → 200 PDF |
+| PDF jako služba | 1–4 | EDISON interně: dej PDF pro fakturu #123 |
+| REST API | 1–4 | HTTP POST šablona + data → PDF response |
+| Web preview | 1–4 | ASP.NET endpoint → PNG/PDF → iframe |
+| Email příloha | 1–4 | Auto-generování PDF a připojení k emailu |
