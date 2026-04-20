@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-20 — Precision fix, strikethrough, barcode typy, konsolidace palety
+
+**Precision fix (B0-4/B0-5/B0-8):**
+- ✅ **`MmMath.Round(float mm)`** — nový helper, zaokrouhlí na 0.1mm (`MidpointRounding.AwayFromZero`); nullable overload
+- ✅ **`EndResize`** — zaokrouhlení X/Y/Width/Height těsně před commitem (drag zůstane plynulý)
+- ✅ **`TemplateElement.ApplyScale()`** — zaokrouhlení po každém násobení scale
+- ✅ **`ScaleTemplateCommand.Apply()`** — zaokrouhlení PageSize a sekcí po škálování
+- ✅ **`DistributeH/V`** — gap zaokrouhlen na 0.1mm, poslední element drží původní pozici (absorbuje zbytek)
+- ✅ **Properties panel** — mm pole zaokrouhlena na commit (`fd.Unit == "mm"`); X/Y/Šířka/Výška zobrazují `"0.0#"` formát
+
+---
+
 ## 2026-04-20 — Strikethrough, více barcode typů, konsolidace palety
 
 **TextStyle — Strikethrough + oprava Underline:**

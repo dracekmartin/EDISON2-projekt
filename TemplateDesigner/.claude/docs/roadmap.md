@@ -62,9 +62,10 @@ Cíl: zastavit nové float precision leaky, dodat 3 rychlé features.
 |---|---|---|---|
 | B0-1 | ~~**Strikethrough** na `TextStyle` + descriptor; oprava tichého nefungování Underline~~ | ✅ | ✅ |
 | B0-2 | ~~**Více barcode typů** — EAN-13, EAN-8, PDF417, DataMatrix; konsolidace palety (1 tlačítko Kód)~~ | ✅ | ✅ |
-| B0-3 | **PNG export** — `PreviewCanvas.RenderToPng()`, File menu | Triviální, SkiaSharp nativně | S ⬅️ |
-| B0-4 | **Precision fix** — `MmMath.RoundMm(v, 0.5f)` helper; aplikovat na: resize end (chybí soft-snap), `ScaleTemplate` (round po scale), `DistributeH/V` (round gap), properties panel float commit | Základ pro všechno dál | S |
-| B0-5 | **DistributeH/V: přesný gap** — zaokrouhlit mezeru na 0.5mm, zbytek absorbovat do posledního elementu | Navazuje na B0-4 | S |
+| B0-3 | **PNG export** — `PreviewCanvas.RenderToPng()`, File menu | Odloženo (nízká priorita) | S |
+| B0-4 | ~~**Precision fix** — `MmMath.Round(0.1mm)`; resize end, ScaleTemplate, DistributeH/V, properties panel~~ | ✅ | ✅ |
+| B0-5 | ~~**DistributeH/V: přesný gap** — zaokrouhlit, poslední element absorbuje zbytek~~ | ✅ | ✅ |
+| B0-8 | ~~**Properties panel float formát** — `"0.0#"` pro mm pole, round on commit~~ | ✅ | ✅ |
 
 ---
 
