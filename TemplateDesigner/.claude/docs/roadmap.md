@@ -93,7 +93,7 @@ Cíl: properties panel přehledný, styling přenosný.
 |---|---|---|---|
 | B0-10 | **Collapsible groups** v `PropertiesPanel` — accordion s `GroupDescriptor`, sbalené skupiny zobrazují summary řádek, stav sbalení per element type do `DesignerState` | Přehlednost u elementů s 20+ properties | M |
 | B0-11 | **Inline validace** — červený rámeček + tooltip místo textu pod polem | Méně vizuálního šumu | S |
-| B0-12 | **Copy Style / Paste Style** (`Ctrl+Shift+C/V`) — `StyleClipboard` v `DesignerState`, kopíruje `TextStyle` + `BorderColor/Width` + `BackgroundColor`; `PasteStyleCommand` přes `CompositeCommand` | Konzistence stylů bez editace každého elementu | M |
+| B0-12 | ~~**Copy Style / Paste Style** (`Ctrl+Shift+C/V`) — `StyleClipboard` v `DesignerState`, kopíruje `TextStyle` + `BorderColor/Width` + `BackgroundColor`; `PasteStyleCommand` přes `CompositeCommand`~~ | ✅ | ✅ |
 
 ---
 
@@ -103,7 +103,7 @@ Cíl: nejčastější text operace = 1 kliknutí.
 
 | # | Co | Proč teď | Velikost |
 |---|---|---|---|
-| B0-13 | **Kontextový format mini-toolbar** — zobrazí se nad properties panelem při výběru TextElement nebo TableElement; tlačítka: B/I/U/S̶ \| Align L/C/R/J \| VAlign ▲/▪/▼; napojené na existující `PropertyDescriptor` callbacks, žádná nová logika | Viditelný UX win, nízká implementační cena | M |
+| B0-13 | ~~**Kontextový format mini-toolbar** — zobrazí se nad properties panelem při výběru TextElement; tlačítka: B/I/U/S̶ \| Align L/C/R/J \| VAlign ▲/▪/▼; napojené na existující `PropertyDescriptor` callbacks~~ | ✅ | ✅ |
 
 ---
 
@@ -113,10 +113,10 @@ Cíl: vodoznaky, svislé popisky, záhlaví sloupců 90°.
 
 | # | Co | Proč teď | Velikost |
 |---|---|---|---|
-| B0-14 | `Rotation` property na `TemplateElement` (float, stupně) + JSON serializace + `ApplyScale` rotaci neškáluje | Model základ | S |
-| B0-15 | Render: `canvas.Save/RotateDegrees(cx,cy)/Restore` obalí `element.Render()` | Jádro featurky | S |
-| B0-16 | Hit-testing: AABB z rotovaných rohů pro selection a handles | Potřebné pro použitelnost | M |
-| B0-17 | Resize handles zakázat pro rotované elementy (jen Move + Enter) + visual indicator rotace | UX doplněk | S |
+| B0-14 | ~~`Rotation` property na `TemplateElement` (float, stupně) + JSON serializace + `ApplyScale` rotaci neškáluje~~ | ✅ | ✅ |
+| B0-15 | ~~Render: `canvas.Save/RotateDegrees(cx,cy)/Restore` obalí `element.Render()`~~ | ✅ | ✅ |
+| B0-16 | ~~Hit-testing: AABB z rotovaných rohů pro selection a handles~~ | ✅ | ✅ |
+| B0-17 | ~~Resize handles zakázat pro rotované elementy (jen Move + Enter) + visual indicator rotace~~ | ✅ | ✅ |
 
 ---
 

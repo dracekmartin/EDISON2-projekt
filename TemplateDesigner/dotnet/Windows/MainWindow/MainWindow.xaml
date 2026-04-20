@@ -203,6 +203,9 @@
                 <MenuItem Header="Rozložit svisle"              Click="BtnDistributeV_Click"/>
                 <Separator/>
                 <MenuItem Header="Normalizovat pozice…" InputGestureText="Ctrl+Shift+N" Click="MenuNormalizePositions_Click"/>
+                <Separator/>
+                <MenuItem Header="Kopírovat styl"  InputGestureText="Ctrl+Shift+C" Click="MenuCopyStyle_Click"/>
+                <MenuItem Header="Vložit styl"     InputGestureText="Ctrl+Shift+V" Click="MenuPasteStyle_Click"/>
             </MenuItem>
             <MenuItem Header="Zobrazit">
                 <MenuItem x:Name="MenuGrid" Header="Mřížka" IsCheckable="True"
@@ -558,7 +561,10 @@
                     </TabItem>
                     <!-- ── Záložka Vlastnosti (inline properties panel) ── -->
                     <TabItem Header="Vlastnosti" x:Name="TabProperties">
-                        <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
+                        <DockPanel>
+                            <controls:FormatToolbar x:Name="FormatToolbar" DockPanel.Dock="Top"/>
+                            <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
+                        </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Strom šablony ── -->
                     <TabItem Header="Strom" x:Name="TabTree">

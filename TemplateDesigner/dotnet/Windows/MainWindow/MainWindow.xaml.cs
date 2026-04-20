@@ -880,6 +880,8 @@ public partial class MainWindow : Window
     private void BtnDistributeH_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeH);
     private void BtnDistributeV_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeV);
     private void MenuNormalizePositions_Click(object sender, RoutedEventArgs e) => OpenNormalizePositionsDialog();
+    private void MenuCopyStyle_Click(object sender, RoutedEventArgs e)          => _vm?.CopyStyle();
+    private void MenuPasteStyle_Click(object sender, RoutedEventArgs e)         => _vm?.PasteStyle();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Add section / element menus
@@ -1297,33 +1299,29 @@ public partial class MainWindow : Window
     {
         if (_propsVm is null || InlinePropertiesPanel is null) return;
 
+        Action<IDesignerCommand> execute  = cmd => _vm!.Execute(cmd);
+        Action                   invalidate = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
+        InlinePropertiesPanel.SetContext(execute, invalidate);
+        FormatToolbar.SetContext(execute, invalidate);
+
         var selected = _vm!.State.SelectedElements;
-        if (selected.Count == 1)
+        if (selected.Count >= 1)
         {
-            var descriptors = _propsVm.PrepareForElement(selected[0], isNewSession: false);
-            InlinePropertiesPanel.SetContext(
-                cmd => _vm.Execute(cmd),
-                () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
+            var descriptors = selected.Count == 1
+                ? _propsVm.PrepareForElement(selected[0], isNewSession: false)
+                : _propsVm.PrepareForMultipleElements(selected);
+
             InlinePropertiesPanel.ShowDescriptors(descriptors);
+            FormatToolbar.ShowDescriptors(descriptors);
 
             // Přepnout na záložku Vlastnosti pokud jsme na Sekce nebo Strom
-            if (LeftTabControl.SelectedItem != TabFields)
-                LeftTabControl.SelectedItem = TabProperties;
-        }
-        else if (selected.Count > 1)
-        {
-            var descriptors = _propsVm.PrepareForMultipleElements(selected);
-            InlinePropertiesPanel.SetContext(
-                cmd => _vm.Execute(cmd),
-                () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
-            InlinePropertiesPanel.ShowDescriptors(descriptors);
-
             if (LeftTabControl.SelectedItem != TabFields)
                 LeftTabControl.SelectedItem = TabProperties;
         }
         else
         {
             InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
+            FormatToolbar.ShowDescriptors(null);
         }
     }
 
@@ -1428,6 +1426,16 @@ public partial class MainWindow : Window
         else if (e.Key == Key.J && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             _vm.SplitSelected(horizontal: false);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.C && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.CopyStyle();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.V && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.PasteStyle();
             e.Handled = true;
         }
         else if (e.Key == Key.C && ctrl)

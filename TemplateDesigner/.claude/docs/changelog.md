@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-04-20 — Rotace elementů (B0-14–17)
+
+- ✅ **`Rotation` property** na `TemplateElement` (float, stupně CW) + JSON serializace + `CopyBaseTo()` + descriptor "Rotace" v panelu vlastností
+- ✅ **Render** — `DesignerCanvas` + `PreviewCanvas`: `canvas.Save/RotateDegrees(cx,cy)/Restore` obaluje `el.Render()` i `RenderBorderPass()` pro rotované elementy
+- ✅ **Hit-testing** — `HitTestElement` transformuje testovací bod inverzní rotací před AABB testem (kliknutí na rotovaný element funguje správně)
+- ✅ **Resize handles** zakázány pro rotované elementy (`GetHandlesForElement` → `yield break` při `Rotation != 0`); `DrawRotationBadge` — modrý badge s úhlem nad vybraným rotovaným elementem
+- ✅ **Selekční rámeček** nakreslen rotovaně (canvas.Save/RotateDegrees/DrawRect/Restore) — odpovídá skutečnému tvaru elementu
+
+---
+
+## 2026-04-20 — Format mini-toolbar + Copy/Paste Style (B0-13, B0-12)
+
+- ✅ **`FormatToolbar` UserControl** — nad properties panelem; zobrazí se pouze pro TextElement (Group "Font" + "Zarovnání")
+- ✅ **B I U S** — toggle tlačítka pro Tučné/Kurzíva/Podtržení/Přeškrtnutí; napojeno na `BoolPropertyDescriptor` přes `SetPropertyCommand`
+- ✅ **L C R J** — vodorovné zarovnání (Left/Center/Right/Justify); mutually exclusive, stav synced přes `EnumPropertyDescriptor`
+- ✅ **▲ ▬ ▼** — svislé zarovnání (Top/Middle/Bottom)
+- ✅ **`StyleClipboard` record** v `DesignerState` — drží `TextStyle?`, `BorderColor`, `BorderWidth`, `BackgroundColor`
+- ✅ **`CopyStyle()`** (`Ctrl+Shift+C`) — zachytí styl prvního vybraného elementu; `TextStyle.Clone()` pro TextElement
+- ✅ **`PasteStyle()`** (`Ctrl+Shift+V`) — aplikuje na všechny vybrané elementy; `SetPropertyCommand` jen pro změněné property; obaleno `CompositeCommand` pro jeden Undo krok
+- ✅ **Toolbar a properties panel** — oba refreshovány přes existující `RequestPropertiesPanelUpdate` pipeline; undo/redo udržuje sync automaticky
+
+---
+
 ## 2026-04-20 — Normalizovat pozice (B0-6)
 
 - ✅ **`MmMath.Snap(mm, step)`** — přichytí hodnotu na nejbližší násobek kroku (0.1/0.5/1/2/5mm)

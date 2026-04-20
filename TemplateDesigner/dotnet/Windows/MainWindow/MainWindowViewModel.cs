@@ -173,7 +173,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste, _cut;
+    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
 
     public RelayCommand UndoCommand     => _undo      ??= new(Undo,          () => CanUndo);
     public RelayCommand RedoCommand     => _redo      ??= new(Redo,          () => CanRedo);
@@ -186,6 +186,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
     public RelayCommand PasteCommand    => _paste     ??= new(PasteClipboard);
+    public RelayCommand CopyStyleCommand  => _copyStyle  ??= new(CopyStyle);
+    public RelayCommand PasteStyleCommand => _pasteStyle ??= new(PasteStyle, () => State.StyleClipboard is not null);
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public TemplateDesignerViewModel(MLRest? mlRest = null)
@@ -681,6 +683,48 @@ public class TemplateDesignerViewModel : EDViewModel
         State.SelectedElements.Clear();
         State.SelectedElements.AddRange(newElements);
         RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    // ── Style clipboard ──────────────────────────────────────────────────────
+
+    public void CopyStyle()
+    {
+        var el = State.SelectedElements.FirstOrDefault();
+        if (el is null) return;
+        var textStyle = el is TextElement te ? te.Style.Clone() : null;
+        State.StyleClipboard = new StyleClipboard(textStyle, el.BorderColor, el.BorderWidth, el.BackgroundColor);
+    }
+
+    public void PasteStyle()
+    {
+        var clip = State.StyleClipboard;
+        if (clip is null || State.SelectedElements.Count == 0) return;
+
+        var commands = new List<IDesignerCommand>();
+        foreach (var el in State.SelectedElements)
+        {
+            if (el.BorderColor != clip.BorderColor)
+                commands.Add(new SetPropertyCommand("Barva rámečku", el.BorderColor, clip.BorderColor,
+                    v => { el.BorderColor = (string)v!; }));
+            if (MathF.Abs(el.BorderWidth - clip.BorderWidth) > 0.001f)
+                commands.Add(new SetPropertyCommand("Šířka rámečku", el.BorderWidth, clip.BorderWidth,
+                    v => { el.BorderWidth = (float)v!; }));
+            if (el.BackgroundColor != clip.BackgroundColor)
+                commands.Add(new SetPropertyCommand("Barva pozadí", el.BackgroundColor, clip.BackgroundColor,
+                    v => { el.BackgroundColor = (string)v!; }));
+
+            if (clip.TextStyle is not null && el is TextElement te)
+            {
+                var oldStyle = te.Style;
+                var newStyle = clip.TextStyle.Clone();
+                commands.Add(new SetPropertyCommand("Styl textu", oldStyle, newStyle,
+                    v => { te.Style = (TextStyle)v!; }));
+            }
+        }
+
+        if (commands.Count == 0) return;
+        Execute(new CompositeCommand("Vložit styl", commands));
         RequestCanvasRefresh?.Invoke();
     }
 
