@@ -542,6 +542,13 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CmbGridSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null || CmbGridSize.SelectedItem is not ComboBoxItem item) return;
+        if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float size))
+            _vm.GridSize = size;
+    }
+
     private void CmbScale_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_vm is null || CmbScale.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;

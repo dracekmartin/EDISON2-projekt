@@ -391,6 +391,14 @@
                                       IsChecked="{Binding SnapToElements, Mode=TwoWay}">
                             <Image Source="{StaticResource EDIcons.Snap}" Width="16" Height="16" Opacity="0.6"/>
                         </ToggleButton>
+                        <ComboBox x:Name="CmbGridSize" Width="60" VerticalAlignment="Center" Margin="2,0"
+                                  ToolTip="Velikost mřížky" SelectedIndex="2"
+                                  SelectionChanged="CmbGridSize_SelectionChanged">
+                            <ComboBoxItem Content="1 mm"  Tag="1"/>
+                            <ComboBoxItem Content="2 mm"  Tag="2"/>
+                            <ComboBoxItem Content="5 mm"  Tag="5"/>
+                            <ComboBoxItem Content="10 mm" Tag="10"/>
+                        </ComboBox>
                         <ComboBox x:Name="CmbZoom" Width="80" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
                                   SelectionChanged="CmbZoom_SelectionChanged">
                             <ComboBoxItem Content=" 50 %"/>

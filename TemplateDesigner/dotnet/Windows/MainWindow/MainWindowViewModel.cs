@@ -155,6 +155,12 @@ public class TemplateDesignerViewModel : EDViewModel
         set { State.SnapToElements = value; OnPropertyChanged(); }
     }
 
+    public float GridSize
+    {
+        get => State.GridSize;
+        set { State.GridSize = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); }
+    }
+
     // ── Callbacks wired by code-behind ────────────────────────────────────────
     public Action? RequestCanvasRefresh      { get; set; }
     public Action? RequestTitleUpdate        { get; set; }
