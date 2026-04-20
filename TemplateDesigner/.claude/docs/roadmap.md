@@ -92,7 +92,7 @@ Cíl: properties panel přehledný, styling přenosný.
 | # | Co | Proč teď | Velikost |
 |---|---|---|---|
 | B0-10 | **Collapsible groups** v `PropertiesPanel` — accordion s `GroupDescriptor`, sbalené skupiny zobrazují summary řádek, stav sbalení per element type do `DesignerState` | Přehlednost u elementů s 20+ properties | M |
-| B0-11 | **Inline validace** — červený rámeček + tooltip místo textu pod polem | Méně vizuálního šumu | S |
+| B0-11 | ~~**Inline validace** — červený rámeček + tooltip místo textu pod polem~~ | ✅ | ✅ |
 | B0-12 | ~~**Copy Style / Paste Style** (`Ctrl+Shift+C/V`) — `StyleClipboard` v `DesignerState`, kopíruje `TextStyle` + `BorderColor/Width` + `BackgroundColor`; `PasteStyleCommand` přes `CompositeCommand`~~ | ✅ | ✅ |
 
 ---

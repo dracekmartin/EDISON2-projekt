@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-20 — Inline validace v PropertiesPanel (B0-11)
+
+- ✅ Chybový stav pole: červený rámeček + tooltip s chybou místo TextBlocku pod polem
+- ✅ `ApplyValidation(TextBox, string?)` sdílený helper — `ClearValue(BorderBrushProperty)` pro reset na výchozí styl
+- ✅ `AddStringRow`: live validace přes `Validate` callback (aktuálně VisibilityExpression)
+- ✅ `AddTextWithPickerRow`: neznámé `{PLACEHOLDER}` — stejný vizuální vzor; `UpdateFieldValidation` přepracována na `TextBox`
+
+---
+
 ## 2026-04-20 — Rotace elementů (B0-14–17)
 
 - ✅ **`Rotation` property** na `TemplateElement` (float, stupně CW) + JSON serializace + `CopyBaseTo()` + descriptor "Rotace" v panelu vlastností
