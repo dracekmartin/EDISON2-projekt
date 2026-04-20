@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-20 — Normalizovat pozice (B0-6)
+
+- ✅ **`MmMath.Snap(mm, step)`** — přichytí hodnotu na nejbližší násobek kroku (0.1/0.5/1/2/5mm)
+- ✅ **`NormalizePositionsDialog`** — ComboBox s krokem, live preview "Bude upraveno: X elementů", OK/Storno
+- ✅ **`NormalizePositions(elements, step)`** — `ResizeElementCommand` per změněný element, obaleno `CompositeCommand`; no-op guard (commands.Count == 0)
+- ✅ **`Ctrl+Shift+N`** + menu Elementy → "Normalizovat pozice…"; bez výběru = všechny elementy šablony
+
+---
+
 ## 2026-04-20 — Grid size v UI (B0-9)
 
 - ✅ **`DesignerState.GridSize`** — property (dříve hardcoded 5mm); výchozí hodnota 5mm zachována
