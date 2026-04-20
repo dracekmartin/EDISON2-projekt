@@ -1081,6 +1081,32 @@ public class TemplateDesignerViewModel : EDViewModel
     private static IDesignerCommand MakeYCmd(TemplateElement el, float ny)
         => new SetPropertyCommand("Y", el.Y, ny, v => el.Y = (float)v!);
 
+    // ── Normalize positions ───────────────────────────────────────────────────
+    public void NormalizePositions(IReadOnlyList<TemplateElement> elements, float step)
+    {
+        if (elements.Count == 0) return;
+
+        var commands = new List<IDesignerCommand>();
+        foreach (var el in elements)
+        {
+            float nx = MmMath.Snap(el.X, step), ny = MmMath.Snap(el.Y, step);
+            float nw = MmMath.Snap(el.Width, step);
+            float? nh = el.Height is not null ? MmMath.Snap(el.Height.Value, step) : null;
+
+            bool posChanged  = Math.Abs(nx - el.X) > 0.001f || Math.Abs(ny - el.Y) > 0.001f;
+            bool sizeChanged = Math.Abs(nw - el.Width) > 0.001f
+                            || (nh is not null && Math.Abs(nh.Value - el.Height!.Value) > 0.001f);
+
+            if (posChanged || sizeChanged)
+                commands.Add(new ResizeElementCommand(el, el.X, el.Y, el.Width, el.Height, nx, ny, nw, nh));
+        }
+
+        if (commands.Count == 0) return;
+        Execute(new CompositeCommand("Normalizovat pozice", commands));
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
     // ── Template scaling ─────────────────────────────────────────────────────
     public void ScaleTemplate(float scale)
     {

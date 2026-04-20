@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-20 — Grid size v UI (B0-9)
+
+- ✅ **`DesignerState.GridSize`** — property (dříve hardcoded 5mm); výchozí hodnota 5mm zachována
+- ✅ **`MainWindowViewModel.GridSize`** — bindovatelná property; nastavení propaguje do `DesignerState` a invaliduje canvas
+- ✅ **ComboBox v toolbaru** — možnosti 1/2/5/10mm vedle snap tlačítek; výchozí 5mm (index 2)
+- ✅ **`CmbGridSize_SelectionChanged`** — čte `Tag` ComboBoxItem a předá `_vm.GridSize`
+
+---
+
 ## 2026-04-20 — Precision fix, strikethrough, barcode typy, konsolidace palety
 
 **Precision fix (B0-4/B0-5/B0-8):**

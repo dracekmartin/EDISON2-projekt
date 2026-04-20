@@ -81,7 +81,7 @@ Sub-mm floaty se dostávají do modelu 10 různými cestami (drag delta, smart-s
 | B0-6 | **"Normalizovat pozice"** (`Ctrl+Shift+N`) — zaokrouhlit X/Y/W/H vybraných elementů na zvolený krok (0.5mm default); dialog s náhledem; `CompositeCommand` pro undo | Opraví existující křivé šablony | M |
 | B0-7 | **`LayoutGridDialog`** — rozmístit vybrané elementy do řádku/sloupce/mřížky se zadanou mezerou (mm); zakotvit od prvního elementu nebo od X=0; volba vyrovnat šířky/výšky; výstup = `CompositeCommand` | Standard UX pro report designer | M |
 | B0-8 | **Properties panel float zobrazení** — formát `"0.0#"` mm, round na commit (0.5mm), bez trailing zeros | Zabraňuje novým leakům přes UI | S |
-| B0-9 | **Grid size v UI** — input v toolbaru nebo nastavení (aktuálně hardcoded 5mm v `DesignerState`) | Flexibilita bez recompile | S |
+| B0-9 | ~~**Grid size v UI** — ComboBox 1/2/5/10mm v toolbaru, `DesignerState.GridSize` property~~ | ✅ | ✅ |
 
 ---
 

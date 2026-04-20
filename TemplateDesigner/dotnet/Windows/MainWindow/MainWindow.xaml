@@ -201,6 +201,8 @@
                 <Separator/>
                 <MenuItem Header="Rozložit vodorovně"           Click="BtnDistributeH_Click"/>
                 <MenuItem Header="Rozložit svisle"              Click="BtnDistributeV_Click"/>
+                <Separator/>
+                <MenuItem Header="Normalizovat pozice…" InputGestureText="Ctrl+Shift+N" Click="MenuNormalizePositions_Click"/>
             </MenuItem>
             <MenuItem Header="Zobrazit">
                 <MenuItem x:Name="MenuGrid" Header="Mřížka" IsCheckable="True"

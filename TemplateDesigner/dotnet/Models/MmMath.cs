@@ -13,4 +13,7 @@ public static class MmMath
     /// <summary>Zaokrouhlí nullable mm hodnotu na 0.1 mm.</summary>
     public static float? Round(float? mm) =>
         mm is null ? null : Round(mm.Value);
+
+    /// <summary>Přichytí mm hodnotu na nejbližší násobek kroku.</summary>
+    public static float Snap(float mm, float step) => MathF.Round(mm / step) * step;
 }

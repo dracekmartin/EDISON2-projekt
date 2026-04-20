@@ -879,6 +879,7 @@ public partial class MainWindow : Window
     private void BtnAlignMiddleV_Click(object sender, RoutedEventArgs e) => _vm!.AlignElements(AlignMode.MiddleV);
     private void BtnDistributeH_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeH);
     private void BtnDistributeV_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeV);
+    private void MenuNormalizePositions_Click(object sender, RoutedEventArgs e) => OpenNormalizePositionsDialog();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Add section / element menus
@@ -1341,6 +1342,20 @@ public partial class MainWindow : Window
         helpDialog.ShowDialog();
     }
 
+    private void OpenNormalizePositionsDialog()
+    {
+        if (_vm is null) return;
+        var elements = _vm.State.SelectedElements.Count > 0
+            ? (IReadOnlyList<TemplateElement>)_vm.State.SelectedElements
+            : _vm.State.CurrentTemplate.Sections.SelectMany(s => s.Elements).ToList();
+        if (elements.Count == 0) return;
+
+        var vm  = new NormalizePositionsDialogViewModel(elements);
+        var dlg = new NormalizePositionsDialog(vm) { Owner = this };
+        if (dlg.ShowDialog() == true)
+            _vm.NormalizePositions(elements, vm.Step);
+    }
+
     // ─────────────────────────────────────────────────────────────────────────
     // Keyboard handler
     // ─────────────────────────────────────────────────────────────────────────
@@ -1486,6 +1501,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.D0 && ctrl)
         {
             FitToPage();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.N && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            OpenNormalizePositionsDialog();
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
