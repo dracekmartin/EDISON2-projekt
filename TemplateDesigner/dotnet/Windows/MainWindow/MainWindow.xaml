@@ -301,13 +301,9 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="QR kód — táhni na canvas" Tag="BarcodeQR"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, ...) — táhni na canvas" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Čárový kód — táhni na canvas" Tag="BarcodeCode128"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.Barcode}" Width="16" Height="16"/>
                         </Button>
                         <Border Width="1" Background="#E0E0E0" Margin="3,2" VerticalAlignment="Stretch"/>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek — táhni na canvas" Tag="StopListElement"

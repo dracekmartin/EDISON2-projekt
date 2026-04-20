@@ -991,8 +991,7 @@ public partial class MainWindow : Window
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType("LineElement", 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType("ImageElement", 5, 5));
         Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType("TableElement", 0, 0));
-        Add("QR kód",    () => TemplateDesignerViewModel.CreateElementByType("BarcodeQR", 5, 5));
-        Add("Čárový kód", () => TemplateDesignerViewModel.CreateElementByType("BarcodeCode128", 5, 5));
+        Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType("BarcodeElement", 5, 5));
         menu.Items.Add(new Separator());
         Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType("StopListElement", 0, 0));
         Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType("DepartureGridElement", 0, 0));
