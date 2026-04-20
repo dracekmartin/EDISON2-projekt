@@ -1,4 +1,5 @@
 using TemplateDesigner.Models;
+using static TemplateDesigner.Models.MmMath;
 
 namespace TemplateDesigner.Commands.Implementations;
 
@@ -28,22 +29,22 @@ public class ScaleTemplateCommand : IDesignerCommand
     {
         // Stránka
         var ps = _template.PageSize;
-        ps.Width *= s;
-        ps.Height *= s;
-        ps.MarginTop *= s;
-        ps.MarginBottom *= s;
-        ps.MarginLeft *= s;
-        ps.MarginRight *= s;
+        ps.Width  = Round(ps.Width  * s);
+        ps.Height = Round(ps.Height * s);
+        ps.MarginTop    = Round(ps.MarginTop    * s);
+        ps.MarginBottom = Round(ps.MarginBottom * s);
+        ps.MarginLeft   = Round(ps.MarginLeft   * s);
+        ps.MarginRight  = Round(ps.MarginRight  * s);
 
         // Sekce + elementy
         foreach (var section in _template.Sections)
         {
             if (section.DesignerHeight is not null)
-                section.DesignerHeight *= s;
+                section.DesignerHeight = Round(section.DesignerHeight.Value * s);
             if (section.RowHeight is not null)
-                section.RowHeight *= s;
+                section.RowHeight = Round(section.RowHeight.Value * s);
             if (section.BorderWidth > 0)
-                section.BorderWidth *= s;
+                section.BorderWidth = Round(section.BorderWidth * s);
 
             foreach (var element in section.Elements)
                 element.ApplyScale(s);

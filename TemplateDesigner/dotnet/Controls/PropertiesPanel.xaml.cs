@@ -441,6 +441,7 @@ public partial class PropertiesPanel : UserControl
                 return;
             }
             parsed = Math.Clamp(parsed, fd.Min, fd.Max);
+            if (fd.Unit == "mm") parsed = MmMath.Round(parsed);
             if (Math.Abs(parsed - fd.Get()) < 0.0001f) return;
             float captured = oldVal;
             Commit(fd.Label, captured, parsed, v => { fd.Set((float)v!); _invalidate?.Invoke(); });

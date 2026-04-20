@@ -1021,10 +1021,15 @@ public class TemplateDesignerViewModel : EDViewModel
                 var sorted = els.OrderBy(e => e.X).ToList();
                 float totalW = sorted.Sum(e => e.Width);
                 float span   = sorted.Last().X + sorted.Last().Width - sorted.First().X;
-                float gap    = (span - totalW) / (sorted.Count - 1);
+                float gap    = MmMath.Round((span - totalW) / (sorted.Count - 1));
                 float cur    = sorted.First().X;
-                foreach (var el in sorted)
-                { if (Math.Abs(el.X - cur) > 0.01f) commands.Add(MakeXCmd(el, cur)); cur += el.Width + gap; }
+                for (int i = 0; i < sorted.Count - 1; i++)
+                {
+                    var el = sorted[i];
+                    float x = MmMath.Round(cur);
+                    if (Math.Abs(el.X - x) > 0.01f) commands.Add(MakeXCmd(el, x));
+                    cur += el.Width + gap;
+                }
                 break;
             }
             case AlignMode.DistributeV:
@@ -1032,10 +1037,15 @@ public class TemplateDesignerViewModel : EDViewModel
                 var sorted = els.OrderBy(e => e.Y).ToList();
                 float totalH = sorted.Sum(e => e.EffectiveDesignerHeight);
                 float span   = sorted.Last().Y + sorted.Last().EffectiveDesignerHeight - sorted.First().Y;
-                float gap    = (span - totalH) / (sorted.Count - 1);
+                float gap    = MmMath.Round((span - totalH) / (sorted.Count - 1));
                 float cur    = sorted.First().Y;
-                foreach (var el in sorted)
-                { if (Math.Abs(el.Y - cur) > 0.01f) commands.Add(MakeYCmd(el, cur)); cur += el.EffectiveDesignerHeight + gap; }
+                for (int i = 0; i < sorted.Count - 1; i++)
+                {
+                    var el = sorted[i];
+                    float y = MmMath.Round(cur);
+                    if (Math.Abs(el.Y - y) > 0.01f) commands.Add(MakeYCmd(el, y));
+                    cur += el.EffectiveDesignerHeight + gap;
+                }
                 break;
             }
         }

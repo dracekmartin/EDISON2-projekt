@@ -124,15 +124,15 @@ public abstract class TemplateElement
     /// </summary>
     protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
     [
-        new FloatPropertyDescriptor { Label = "X",       Group = "Pozice", Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Y",       Group = "Pozice", Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Šířka",   Group = "Pozice", Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "X",       Group = "Pozice", Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Y",       Group = "Pozice", Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Šířka",   Group = "Pozice", Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm", Format = "0.0#" },
         .. (IsDynamic
             ? new PropertyDescriptor[] { new StringPropertyDescriptor { Label = "Výška", Group = "Pozice",
                 Get = () => "(dynamická)", Set = _ => { } } }
             : new PropertyDescriptor[] { new FloatPropertyDescriptor { Label = "Výška", Group = "Pozice",
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
-                Min = 1, Max = 9999, Unit = "mm" } }),
+                Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
 
@@ -168,9 +168,11 @@ public abstract class TemplateElement
     /// </summary>
     public virtual void ApplyScale(float scale)
     {
-        X *= scale; Y *= scale; Width *= scale;
-        if (Height is not null) Height *= scale;
-        if (BorderWidth > 0) BorderWidth *= scale;
+        X = MmMath.Round(X * scale);
+        Y = MmMath.Round(Y * scale);
+        Width = MmMath.Round(Width * scale);
+        if (Height is not null) Height = MmMath.Round(Height.Value * scale);
+        if (BorderWidth > 0) BorderWidth = MmMath.Round(BorderWidth * scale);
     }
 
     // ── Clone helper ──────────────────────────────────────────────────────────

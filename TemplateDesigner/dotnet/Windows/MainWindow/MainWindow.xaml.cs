@@ -2019,6 +2019,21 @@ public partial class MainWindow : Window
         {
             if (commit)
             {
+                // Zaokrouhlit na 0.1mm před commitem — eliminuje float artefakty z dragu
+                _resizeElement.X     = MmMath.Round(_resizeElement.X);
+                _resizeElement.Y     = MmMath.Round(_resizeElement.Y);
+                _resizeElement.Width = MmMath.Round(_resizeElement.Width);
+                if (_resizeElement.Height is not null)
+                    _resizeElement.Height = MmMath.Round(_resizeElement.Height.Value);
+                if (_resizeNeighbor is not null)
+                {
+                    _resizeNeighbor.X     = MmMath.Round(_resizeNeighbor.X);
+                    _resizeNeighbor.Y     = MmMath.Round(_resizeNeighbor.Y);
+                    _resizeNeighbor.Width = MmMath.Round(_resizeNeighbor.Width);
+                    if (_resizeNeighbor.Height is not null)
+                        _resizeNeighbor.Height = MmMath.Round(_resizeNeighbor.Height.Value);
+                }
+
                 var commands = new List<IDesignerCommand>();
 
                 // Hlavní element
