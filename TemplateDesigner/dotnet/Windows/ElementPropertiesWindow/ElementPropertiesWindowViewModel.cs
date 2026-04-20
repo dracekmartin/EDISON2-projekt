@@ -469,7 +469,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         {
             if (s.DesignerHeight is null) continue;
             if (s.PrintBehavior != SectionPrintBehavior.Once) continue;
-            s.DesignerHeight = MathF.Round(s.DesignerHeight.Value * scale, 1);
+            s.DesignerHeight = MmMath.Round(s.DesignerHeight.Value * scale);
         }
     }
 
