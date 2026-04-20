@@ -1,9 +1,23 @@
 # Roadmap
 
+## 🔁 Pracovní postup (krok po kroku)
+
+Každá položka projde tímto cyklem — nevynechat ani jeden krok:
+
+1. **Projít** — připomenout co přesně má krok dělat, kontext a závislosti
+2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
+3. **Implementovat** — kód, Caché, XAML — dle pravidel v CLAUDE.md
+4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
+5. **Aktualizovat docs** — changelog + roadmap (přesun do archivu) + CLAUDE.md pokud se mění architektura
+6. **Další krok** — posunout `⬅️` na následující položku
+
+---
+
 ## 🎯 Aktuální focus
 
 1. Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
 2. Ladění zastávkového JŘ na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 níže).
+3. **Fáze B: UX Foundation** — po uzavření Fáze A; cíl: aplikace použitelná jako skutečný report designer bez každodenní friction.
 
 ---
 
@@ -34,15 +48,256 @@ Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými
 
 ---
 
-### 🟠 Fáze B: UX polish + vylepšení importu
+### 🟠 Fáze B0: UX Sprint — implementační pořadí ⬅️ NÁSLEDUJÍCÍ PRIORITA
 
-Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a chytřejší import.
+Konkrétní pořadí kroků pro Fázi B + B2 seřazené podle závislostí a viditelného dopadu. Každý krok projde pracovním postupem výše (validace → implementace → test → docs).
+
+---
+
+#### Blok 1 — Rychlé výhry + precision fix
+
+Cíl: zastavit nové float precision leaky, dodat 3 rychlé features.
+
+| # | Co | Proč teď | Velikost |
+|---|---|---|---|
+| B0-1 | **Strikethrough** na `TextStyle` (`SKPaint.StrikeThruText`) + descriptor | Triviální, unblockuje faktury | S |
+| B0-2 | **Více barcode typů** — EAN-13, EAN-8, PDF417, DataMatrix do `BarcodeType` enum (ZXing to umí) | Triviální, jen UI | S |
+| B0-3 | **PNG export** — `PreviewCanvas.RenderToPng()`, File menu | SkiaSharp to umí nativně | S |
+| B0-4 | **Precision fix** — `MmMath.RoundMm(v, 0.5f)` helper; aplikovat na: resize end (chybí soft-snap), `ScaleTemplate` (round po scale), `DistributeH/V` (round gap), properties panel float commit | Základ pro všechno dál | S |
+| B0-5 | **DistributeH/V: přesný gap** — zaokrouhlit mezeru na 0.5mm, zbytek absorbovat do posledního elementu | Navazuje na B0-4 | S |
+
+---
+
+#### Blok 2 — Normalizace + Layout assistant
+
+Cíl: uživatel dokáže vzít "rozhozené" elementy a dostat je do čisté mřížky jedním dialogem.
+
+**Kontext precision problému:**
+Sub-mm floaty se dostávají do modelu 10 různými cestami (drag delta, smart-snap na float cíl, scale, distribute, properties panel). Snap pak nefunguje protože edge elementu A je na `X+39.49mm` a element B je na `40.0mm` — rozdíl 0.51mm může být mimo snap threshold závislý na zoomu.
+
+| # | Co | Proč teď | Velikost |
+|---|---|---|---|
+| B0-6 | **"Normalizovat pozice"** (`Ctrl+Shift+N`) — zaokrouhlit X/Y/W/H vybraných elementů na zvolený krok (0.5mm default); dialog s náhledem; `CompositeCommand` pro undo | Opraví existující křivé šablony | M |
+| B0-7 | **`LayoutGridDialog`** — rozmístit vybrané elementy do řádku/sloupce/mřížky se zadanou mezerou (mm); zakotvit od prvního elementu nebo od X=0; volba vyrovnat šířky/výšky; výstup = `CompositeCommand` | Standard UX pro report designer | M |
+| B0-8 | **Properties panel float zobrazení** — formát `"0.0#"` mm, round na commit (0.5mm), bez trailing zeros | Zabraňuje novým leakům přes UI | S |
+| B0-9 | **Grid size v UI** — input v toolbaru nebo nastavení (aktuálně hardcoded 5mm v `DesignerState`) | Flexibilita bez recompile | S |
+
+---
+
+#### Blok 3 — Properties panel UX
+
+Cíl: properties panel přehledný, styling přenosný.
+
+| # | Co | Proč teď | Velikost |
+|---|---|---|---|
+| B0-10 | **Collapsible groups** v `PropertiesPanel` — accordion s `GroupDescriptor`, sbalené skupiny zobrazují summary řádek, stav sbalení per element type do `DesignerState` | Přehlednost u elementů s 20+ properties | M |
+| B0-11 | **Inline validace** — červený rámeček + tooltip místo textu pod polem | Méně vizuálního šumu | S |
+| B0-12 | **Copy Style / Paste Style** (`Ctrl+Shift+C/V`) — `StyleClipboard` v `DesignerState`, kopíruje `TextStyle` + `BorderColor/Width` + `BackgroundColor`; `PasteStyleCommand` přes `CompositeCommand` | Konzistence stylů bez editace každého elementu | M |
+
+---
+
+#### Blok 4 — Format toolbar
+
+Cíl: nejčastější text operace = 1 kliknutí.
+
+| # | Co | Proč teď | Velikost |
+|---|---|---|---|
+| B0-13 | **Kontextový format mini-toolbar** — zobrazí se nad properties panelem při výběru TextElement nebo TableElement; tlačítka: B/I/U/S̶ \| Align L/C/R/J \| VAlign ▲/▪/▼; napojené na existující `PropertyDescriptor` callbacks, žádná nová logika | Viditelný UX win, nízká implementační cena | M |
+
+---
+
+#### Blok 5 — Rotace
+
+Cíl: vodoznaky, svislé popisky, záhlaví sloupců 90°.
+
+| # | Co | Proč teď | Velikost |
+|---|---|---|---|
+| B0-14 | `Rotation` property na `TemplateElement` (float, stupně) + JSON serializace + `ApplyScale` rotaci neškáluje | Model základ | S |
+| B0-15 | Render: `canvas.Save/RotateDegrees(cx,cy)/Restore` obalí `element.Render()` | Jádro featurky | S |
+| B0-16 | Hit-testing: AABB z rotovaných rohů pro selection a handles | Potřebné pro použitelnost | M |
+| B0-17 | Resize handles zakázat pro rotované elementy (jen Move + Enter) + visual indicator rotace | UX doplněk | S |
+
+---
+
+#### Blok 6 — Template versioning
+
+Prerekvizita pro Caché persistence — bez migrace se nové šablony nespustí na starším buildu.
+
+| # | Co | Proč teď | Velikost |
+|---|---|---|---|
+| B0-18 | `TemplateMigrator.Migrate(JsonDocument)` — detekce verze, pipeline migrací, spouští se před deserializací | Ochrana existujících šablon | S |
+| B0-19 | Migrace V1→V2: `TextStyle` flat→nested (breaking change 2026-03-24) + varování v UI | Konkrétní existující breaking change | S |
+
+---
+
+> **Po dokončení Bloku 1–6:** Přejít na Fázi B (Caché persistence, WPF color picker) — viz sekce níže.
+
+---
+
+### 🟠 Fáze B: UX Foundation — základní použitelnost
+
+Po schválení MHD proof of conceptu. Cíl: odbourat každodenní friction a dostat designer na úroveň skutečného report nástroje. Vychází z hloubkové UX analýzy (2026-04-20).
+
+#### 🔴 B1: Caché persistence uživatelských preferencí — primární blocker
+
+Aktuálně se mezi sezeními neukládá **vůbec nic** kromě samotného JSON souboru šablony. Každé ráno: otevření souboru přes dialog, ruční nastavení zoomu, gridu, rozbalení skupin polí.
+
+**Nová Caché třída `ALVA.TemplateDesigner.API.UserPreferencesAPI`:**
+```
+GetPreferences(ByRef sys) → OUT[1] = JSON string s preferencemi uživatele
+SavePreferences(ByRef sys) → IN["json"] = JSON string; uloží do ^ALVA.TDPrefs(IdFa, UserId)
+```
+
+Klíčovány per `IdFa` × `Mlp` (userId z MLRest) — každý uživatel každé firmy má vlastní nastavení.
+
+**.NET `UserPreferencesService`:**
+```csharp
+class UserPreferences {
+    float Zoom;                            // 1.0 = 100 %
+    bool ShowGrid, SnapToGrid, SnapToElements;
+    double MainSplitterPosition;           // levý panel / canvas
+    double PreviewSplitterPosition;        // canvas / preview
+    List<string> RecentFiles;             // max 10 cest
+    List<string> RecentColors;            // max 16, #AARRGGBB — pro color picker
+    Dictionary<string, bool> GroupExpanded; // stav rozbalení skupin v poli stromu
+    string? LastActiveTab;                 // "Sekce" / "Pole" / "Vlastnosti" / "Strom"
+}
+```
+
+- Načítá při startu (async, fallback na default hodnoty pokud Caché nedostupná)
+- Ukládá při zavření okna (fire-and-forget, neblokuje)
+- `appsettings.json` zůstává jen pro **síťovou konfiguraci** (Caché host, port, agendas)
 
 | Krok | Co | Stav |
 |---|---|---|
-| 12 | UX polish — inline text editing (g), zoom persistence (c), MRU šablon, rulers na canvasu | |
-| 13 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
-| 14 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import | ⬅️ rozpracováno (2026-04-03) — AI Vision pipeline + AiGuidedScheduleBuilder fungují, ladění na širší sadě JŘ |
+| 12 | Caché `UserPreferencesAPI` — `GetPreferences` + `SavePreferences`, storage v `^ALVA.TDPrefs` | |
+| 13 | .NET `UserPreferencesService` — Load/Save, fallback, napojení na MainWindow lifecycle | |
+| 14 | Napojit na stav: Zoom, Grid/Snap toggles, SplitterPositions, LastActiveTab | |
+| 15 | Recent Files — File menu + keyboard Ctrl+R (filterable dialog), uložení do Caché prefs | |
+| 16 | Template thumbnails — při uložení šablony generovat PNG náhled (100×140px) vedle `.json` | |
+
+---
+
+#### 🔴 B2: WPF Color Picker — fix blokující bug
+
+`WinForms ColorDialog` minimalizuje Properties panel při kliknutí OK (known TODO v `PropertiesPanel.xaml.cs:555`). Uživatel musí panel znovu otevřít po každém výběru barvy.
+
+**Řešení: vlastní WPF color picker popup:**
+- 16 swatches z `UserPreferences.RecentColors` (aktualizuje se po výběru)
+- Hex input field (#AARRGGBB) + alpha slider
+- Tlačítko "Více barev..." → rozšířená paleta nebo HSV picker
+- Popup nad fields kde je aktuálně ColorDialog — `PlacementTarget` = color button
+
+| Krok | Co | Stav |
+|---|---|---|
+| 17 | WPF color picker control (`ColorPickerPopup.xaml`) — swatches, hex, alpha | |
+| 18 | Nahradit všechna volání `ColorPickerHelper.PickColor()` novým controllem | |
+| 19 | Synchronizovat `RecentColors` s `UserPreferencesService` | |
+
+---
+
+#### 🟠 B3: Properties panel — přehlednost
+
+Aktuálně lineární seznam 15–30 properties bez hierarchie. Každá změna fontu = scroll přes pozici/barvy/zarovnání.
+
+**Collapsible groups (accordion):**
+```
+▼ Pozice         [X: 10] [Y: 5] [W: 80] [H: 20]
+▶ Font           Arial 10pt Tučné                  ← sbaleno, zobrazuje summary
+▼ Barvy          Text: ■ #000  Pozadí: □
+▶ Ohraničení     0.1mm Plné                        ← sbaleno
+▶ Pokročilé      VisibilityExpr, Lock, ZIndex       ← výchozí sbaleno
+```
+
+- Stav sbalení skupin uložen do `UserPreferences.GroupExpanded` (per element type)
+- Sbalená skupina zobrazí 1-řádkový summary (hodnoty klíčových properties)
+
+**Format mini-toolbar nad properties panelem (pro TextElement + Table):**
+```
+[B] [I] [U] [S̶] | [≡] [⟺] [≡] [⟷] | [▲─] [▪] [─▼]
+```
+- Zobrazí se kontextově jen pro elementy s textem
+- Snižuje počet kliknutí pro nejčastější operace z ~6 na 2
+
+| Krok | Co | Stav |
+|---|---|---|
+| 20 | Accordion wrapper v `PropertiesPanel` — `GroupDescriptor`, collapsible sekce, stav do prefs | |
+| 21 | Format mini-toolbar — kontextový, napojený na existující `PropertyDescriptor` callbacks | |
+| 22 | Inline validace — červený rámeček + tooltip místo textu pod polem | |
+
+---
+
+#### 🟠 B4: Copy Style / Paste Style
+
+Uživatel nadesignuje TextElement (font, barvy, padding) — chce aplikovat styl na dalších 5 elementů. Aktuálně edituje každý zvlášť.
+
+- `Ctrl+Shift+C` = Copy Style (zkopíruje `TextStyle` / `BorderColor,BorderWidth` / `BackgroundColor`)
+- `Ctrl+Shift+V` = Paste Style (aplikuje styl na všechny vybrané elementy, zachová pozici/obsah)
+- Undo/redo přes `CompositeCommand` + `SetPropertyCommand`
+- Styl clipboardu = samostatná proměnná vedle elementového clipboardu
+
+| Krok | Co | Stav |
+|---|---|---|
+| 23 | `StyleClipboard` v `DesignerState` + `CopyStyle`/`PasteStyleCommand` | |
+| 24 | Keyboard shortcuts Ctrl+Shift+C/V + menu položky | |
+
+---
+
+#### 🟠 B5: Rotace elementů
+
+Bez rotace nelze dělat: svislé popisky sloupců, vodoznaky ("NÁVRH", "VÝLUKA"), záhlaví otočená 90° pro úzké sloupce.
+
+- `float Rotation` property na `TemplateElement` (stupně; 0/90/180/270 nebo libovolné)
+- `canvas.RotateDegrees(rotation, centerX, centerY)` obalí `Render()` call
+- Hit-testing přepočítá bounds pro rotovaný element (AABB z rotovaných rohů)
+- `ApplyScale()` rotaci nepřekládá (bezrozměrná)
+- Vodoznak = RectangleElement (alpha) + TextElement (45°, 30% alpha) seskupené přes GroupId
+
+| Krok | Co | Stav |
+|---|---|---|
+| 25 | `Rotation` property na base + JSON serializace | |
+| 26 | Render: `canvas.Save/RotateDegrees/Restore` kolem `element.Render()` | |
+| 27 | Hit-testing: rotovaný AABB pro handle a selection overlay | |
+| 28 | Resize handles zakázány pro rotované elementy (jen move + Enter pro properties) | |
+
+---
+
+#### 🟡 B6: Template versioning
+
+Aktuálně žádná migrace při změně JSON formátu. Existující šablony přestávají fungovat při každém breaking change.
+
+- `"version": "2"` field v JSON (aktuálně `"1.0"` ale nepoužíváno)
+- `TemplateMigrator.Migrate(JsonDocument)` — spouští se před deserializací
+- Konkrétní migrace: V1→V2 = přejmenování properties, přidání defaults pro nová pole
+- Varování v UI při načtení starší verze
+
+| Krok | Co | Stav |
+|---|---|---|
+| 29 | `TemplateMigrator` class — detekce verze + pipeline migrací | |
+| 30 | Migrace V1→V2: `TextStyle` flat → nested (breaking change z 2026-03-24) | |
+
+---
+
+#### 🟡 B7: Ruler na canvasu
+
+Pro přesné layouty fakticky nezbytné. Bez pravítka uživatel odhaduje polohu vizuálně.
+
+- Horizontální + vertikální pravítko v mm podél hran canvasu
+- Zvýrazňuje rozsah vybraného elementu (šrafovaný pruh na pravítku)
+- Respektuje zoom level
+
+| Krok | Co | Stav |
+|---|---|---|
+| 31 | Ruler rendering v `DesignerCanvas` — mm ticks, labels, zvýraznění selection | |
+
+---
+
+#### 🟡 B8: Vylepšení importu PDF
+
+| Krok | Co | Stav |
+|---|---|---|
+| 32 | Import: detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | |
+| 33 | Import: JŘ-aware mód (3d) — dvoustupňový AI+engine import | ⬅️ rozpracováno (2026-04-03) — AI Vision pipeline + AiGuidedScheduleBuilder fungují, ladění na širší sadě JŘ |
 
 **Import PDF — aktuální stav:**
 - ✅ Režim 1 (deterministický 1:1 import) hotovo (2026-03-13)
@@ -58,15 +313,69 @@ Po schválení MHD proof of conceptu. Zaměření na použitelnost designeru a c
 
 ---
 
+### 🟠 Fáze B2: Element flexibility — rozšíření možností elementů
+
+Vychází z gap analýzy oproti komerčním report generátorům (Crystal Reports, Stimulsoft, DevExpress). Nezávislé na JŘ — platí pro fakturační i obecné šablony.
+
+#### Strikethrough + TextStyle doladění
+
+| Krok | Co | Stav |
+|---|---|---|
+| 34 | `Strikethrough` property na `TextStyle` — `SKPaint.StrikeThruText = true`; přidat do descriptors | |
+
+#### Merged cells v TableElement
+
+Pro faktury standardní. Záhlaví přes 2 sloupce ("Dodavatel / Odběratel"), sloučené řádky titulu.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 35 | `ColSpan` + `RowSpan` na `TableCell` — JSON serializace, rendering skip pro sloučené | |
+| 36 | Merge editor v `TableEditorDialog` — UI pro nastavení span | |
+
+#### Conditional cell formatting v tabulce
+
+Analogie `ColorRules` z `DepartureGrid` — generalizovat na `TableColumn`.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 37 | `ColorRules` na `TableColumn` — `{ expression, foreColor, backColor }` array | |
+| 38 | Vyhodnocení v print engine při renderování buňky | |
+
+#### Více formátů barkódů
+
+ZXing.Net podporuje vše, jen chybí UI enum.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 39 | Přidat do `BarcodeType`: EAN-13, EAN-8, PDF417, DataMatrix, Aztec | |
+
+#### PNG export
+
+SkiaSharp `SKBitmap.Encode()` — triviální přidání.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 40 | PNG export (per-page nebo všechny stránky) — File menu + `PreviewCanvas.RenderToPng()` | |
+
+#### Dynamická viditelnost sekce v designeru
+
+VisibilityExpression se vyhodnocuje jen při tisku. Uživatel nevidí jak bude šablona vypadat.
+
+| Krok | Co | Stav |
+|---|---|---|
+| 41 | Toggle "Simulovat viditelnost" v sekci — vyhodnotí expression s mock daty, zšedí/skryje sekci v designeru | |
+
+---
+
 ### 🟠 Fáze C: Meziměstský JŘ
 
 Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl: sloupce odjezdů nejsou typy provozu (jako MHD), ale mají jiný koncept specifický pro meziměsto. Layout je pivot tabulka (zastávky × spoje). Pravděpodobně bude potřeba samostatný element (ne rozšíření DepartureGridElement).
 
 | Krok | Co | Stav |
 |---|---|---|
-| 15 | Definovat meziměstský layout — analýza referenčních PDF, wire formát dat | |
-| 16 | Implementace meziměstského JŘ elementu | |
-| 17 | Caché `TiskMeziměsto` — GetData/GetMockData pro meziměstský JŘ | |
+| 42 | Definovat meziměstský layout — analýza referenčních PDF, wire formát dat | |
+| 43 | Implementace meziměstského JŘ elementu | |
+| 44 | Caché `TiskMeziměsto` — GetData/GetMockData pro meziměstský JŘ | |
 
 ---
 
@@ -76,9 +385,9 @@ Layout TBD — pravděpodobně kompaktní formát pro knižní publikaci. Defino
 
 | Krok | Co | Stav |
 |---|---|---|
-| 18 | Analýza referenčních knižních JŘ — definice layoutu a wire formátu | |
-| 19 | `BookScheduleElement` — implementace (pravděpodobně víc elementů, viz poučení z MHD) | |
-| 20 | Caché `TiskKnizni` — GetData/GetMockData | |
+| 45 | Analýza referenčních knižních JŘ — definice layoutu a wire formátu | |
+| 46 | `BookScheduleElement` — implementace (pravděpodobně víc elementů, viz poučení z MHD) | |
+| 47 | Caché `TiskKnizni` — GetData/GetMockData | |
 
 ---
 
@@ -88,9 +397,9 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 | Krok | Co | Stav |
 |---|---|---|
-| 21 | Analýza referenčních vozových JŘ — definice layoutu a wire formátu | |
-| 22 | `VehicleScheduleElement` — implementace (pravděpodobně víc nezávislých elementů) | |
-| 23 | Caché `TiskVozovy` — GetData/GetMockData + async loading (větší objem dat) | |
+| 48 | Analýza referenčních vozových JŘ — definice layoutu a wire formátu | |
+| 49 | `VehicleScheduleElement` — implementace (pravděpodobně víc nezávislých elementů) | |
+| 50 | Caché `TiskVozovy` — GetData/GetMockData + async loading (větší objem dat) | |
 
 ---
 
@@ -148,8 +457,12 @@ Flat `_values + _rows` nestačí pro hierarchická data.
 **UX polish:**
 | # | Položka | Náročnost | Popis |
 |---|---------|-----------|-------|
-| c | Zoom persistence | Malá | Uložit zoom do Caché user preferences; řešit až při nasazení |
-| g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu |
+| g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu (bez otevření dialogu) |
+| h | Cross-section rubber band selection | Střední | Aktuálně funguje jen v aktivní sekci; umožnit výběr přes sekce s přepočtem souřadnic |
+| i | Align to page center | Malá | Zarovnat element na střed stránky (horizontálně nebo vertikálně); aktuálně jen k prvnímu/poslednímu prvku |
+| j | Grid size v UI | Malá | Aktuálně hardcoded 5mm v `DesignerState.cs:26`; přidat do nastavení designeru |
+| k | Page Break element | Malá | Explicitní element "zalomit stránku zde" — alternativa k oddělení přes sekce |
+| l | XLSX export | Velká | Tabulky → Excel; vyžaduje ClosedXML nebo NPOI |
 
 **8. Grouping v TableElement**
 Seskupení řádků dynamické tabulky podle hodnoty pole.
@@ -169,10 +482,10 @@ Pole vypočítaná na C# straně ze surových dat před předáním šabloně.
 ### 🔵 Před produkcí (odloženo — řešit až půjde do produkce)
 
 **7. Migrace verzí šablon**
-Teď je v JSON pouze `"version": "1.0"` bez jakékoliv migrace. Během vývoje se model mění často a šablony se neverzují — migrace má smysl až při nasazení, kdy existující soubory nesmí přestat fungovat.
-- Explicitní migrace při načítání starších JSON šablon (JsonNode pipeline před deserializací)
-- Při změně modelu (přejmenování property, nový povinný field) nerozbít existující soubory
-- Minimálně: logovat varování při načtení šablony se starší verzí
+Základní versioning je naplánovaný v B6 (krok 29–30). Rozšíření pro produkci:
+- Full migration pipeline pro každou breaking change (ne jen 2 verze)
+- Verzování šablon v Caché (kdo kdy co změnil)
+- CI/CD linting — ověřit šablony před deployem
 
 **8. Metadata a správa šablon**
 Důležité jakmile šablon bude víc než 10. Zatím jich je málo — řešit až při nasazení.
