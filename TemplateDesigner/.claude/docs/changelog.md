@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: `async void` → `async Task` + AsyncRelayCommand (H-2)
+
+- ✅ **EDControls `AsyncRelayCommand`** — nová třída vedle `RelayCommand`, async ekvivalent; chytá výjimky přes `IPopupDisplayer.Error(ex)` (pravidlo R2), `CanExecute` vrací false během běhu → prevence double-click
+- ✅ **EDControls `EDViewModel.CommandAsync(Func<Task>)`** — helper pro async handlery; samostatný název kvůli overload resolution (žádný dopad na existující `Command(Action)` volání)
+- ✅ **`MainWindowViewModel`** — `OpenTemplateAsync` / `SaveTemplate` / `SaveAsTemplate` převedeny na `async Task`; commandy jdou přes `CommandAsync(...)`; property typ `AsyncRelayCommand`
+- ✅ **Bonus fix `SaveTemplate` → `SaveAsTemplate`** — `await` místo fire-and-forget volání (předtím asymptomatická race condition: SaveTemplate se vrátil dřív než SaveAs dokončil)
+- ✅ **`AiTemplateAssistantDialogViewModel.GenerateCommand`** — bonus: byl zamaskovaný `async void` přes lambdu `Command(async () => await GenerateAsync())`; teď `CommandAsync(GenerateAsync)` → výjimky už nepadají na UI thread
+- ✅ **Pravidlo R1** — připraveno pro Wave 1–3 (Caché async volání masivně), pattern jednou zavedený místo retrofitu
+
+---
+
 ## 2026-04-21 — Code Hygiene: smazat `ShowZkraceneOznaceniLinky` (H-1)
 
 - ✅ **`DepartureGridElement`** — smazána ghost property `ShowZkraceneOznaceniLinky` (declaration, PropertyDescriptor, Clone); nikde se nečetla, klamala uživatele v panelu vlastností

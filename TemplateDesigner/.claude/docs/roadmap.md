@@ -58,7 +58,6 @@ Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění e
 
 | # | Co | Proč | Velikost |
 |---|---|---|---|
-| H-2 | **`async void` → `async Task`** + global handler — `OpenTemplateAsync` (MainWindowViewModel:482), `SaveTemplate` (547), `SaveAsTemplate` (556). Přidat `AsyncRelayCommand` nebo wrapper, který spolkne Task exceptions a pošle do `IPopupDisplayer.Error(ex)`. | `async void` výjimky padají na UI thread a vyhodí celou app. Aktuálně živý bug. Wave 1 to bude dělat masivně — musí být vyřešeno předem. | S |
 | H-3 | **`ElementTypes` konstanty** — statická třída s `const string TextElement = "TextElement"` atd.; nahradit všechny magic strings (hit-testing, serializace, toolbar). | Stringly-typed kód — překlepy se neodhalí, rename nefunguje. Wave 4 bude typy elementů matchovat se Caché form class names → musí být na jednom místě. | S |
 | H-4 | **JSON wire format verify** — ověřit, že stávající `CacheAgendaProvider.GetData/GetMockData/GetSchema` skutečně používá JSON formát (`obj.%ToJSON()` → `JsonSerializer.Deserialize`), ne smíšený CVar+JSON hybrid. Dokumentovat v `cache-api.md`. | Nové API metody mají začít s JSON (R3). Musíme ověřit, že stávající už nejsou v hybridním stavu — jinak jde o precedent. | S |
 | H-5 | **Silent catch fix v `PropertiesPanel.xaml.cs:510-512`** — prázdný `catch { /* TODO ColorDialog */ }`. Buď vyhodit exception ven, nebo logovat, nebo smazat pokud je to obsolete. | Silent catches maskují bugy. B2 (WPF color picker) tohle řeší komplexně, ale než přijde, alespoň logovat. | XS |
@@ -603,6 +602,7 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 | # | Co | Hotovo |
 |---|---|---|
 | H-1 | Smazat `ShowZkraceneOznaceniLinky` — ghost property v `DepartureGridElement` (nikde se nečetla) | 2026-04-21 |
+| H-2 | `async void` → `async Task` + `AsyncRelayCommand` (EDControls) + `CommandAsync` helper; Open/Save/SaveAs + bonus GenerateCommand | 2026-04-21 |
 
 ## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
 

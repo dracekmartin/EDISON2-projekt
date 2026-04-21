@@ -30,7 +30,7 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
     /// <summary>Vygenerovaná šablona — čtena volajícím po ShowDialog() == true.</summary>
     public Template? GeneratedTemplate { get; private set; }
 
-    public RelayCommand GenerateCommand { get; }
+    public AsyncRelayCommand GenerateCommand { get; }
 
     public AiTemplateAssistantDialogViewModel(string? defaultApiKey, IDataSchemaProvider schemaProvider)
     {
@@ -38,7 +38,7 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
         _schemaProvider = schemaProvider;
         ApiKey          = defaultApiKey ?? "";
 
-        GenerateCommand = Command(async () => await GenerateAsync());
+        GenerateCommand = CommandAsync(GenerateAsync);
     }
 
     private async Task GenerateAsync()

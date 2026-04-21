@@ -173,15 +173,16 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
+    private RelayCommand? _undo, _redo, _new, _exportPdf, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
+    private AsyncRelayCommand? _save, _saveAs, _open;
 
-    public RelayCommand UndoCommand     => _undo      ??= new(Undo,          () => CanUndo);
-    public RelayCommand RedoCommand     => _redo      ??= new(Redo,          () => CanRedo);
-    public RelayCommand SaveCommand     => _save      ??= new(SaveTemplate);
-    public RelayCommand SaveAsCommand   => _saveAs    ??= new(SaveAsTemplate);
-    public RelayCommand NewCommand      => _new       ??= new(NewTemplate);
-    public RelayCommand OpenCommand     => _open      ??= new(OpenTemplateAsync);
-    public RelayCommand ExportPdfCommand=> _exportPdf ??= new(ExportPreviewPdf);
+    public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
+    public RelayCommand RedoCommand          => _redo      ??= new(Redo,          () => CanRedo);
+    public AsyncRelayCommand SaveCommand     => _save      ??= CommandAsync(SaveTemplate);
+    public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveAsTemplate);
+    public RelayCommand NewCommand           => _new       ??= new(NewTemplate);
+    public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
+    public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
     public RelayCommand DeleteCommand   => _delete    ??= new(DeleteSelected);
     public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
@@ -479,7 +480,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
     }
 
-    private async void OpenTemplateAsync()
+    private async Task OpenTemplateAsync()
     {
         if (!ConfirmUnsavedChanges()) return;
         var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Otevřít šablonu" };
@@ -544,16 +545,16 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPreviewRefresh?.Invoke();
     }
 
-    private async void SaveTemplate()
+    private async Task SaveTemplate()
     {
-        if (CurrentFilePath is null) { SaveAsTemplate(); return; }
+        if (CurrentFilePath is null) { await SaveAsTemplate(); return; }
         SyncParametersToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         RequestTitleUpdate?.Invoke();
     }
 
-    private async void SaveAsTemplate()
+    private async Task SaveAsTemplate()
     {
         var dlg = new SaveFileDialog
         {
