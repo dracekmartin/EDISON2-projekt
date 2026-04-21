@@ -16,6 +16,8 @@
     <PackageReference Include="SkiaSharp.Views.WPF" Version="3.119.2" />
 <PackageReference Include="PdfPig" Version="0.1.13" />
 <PackageReference Include="ZXing.Net" Version="0.16.9" />
+    <!-- MLRest.dll očekává Newtonsoft.Json 7.0.0.0 — bez této reference CLR knihovnu neresolvne. -->
+    <PackageReference Include="Newtonsoft.Json" Version="7.0.1" />
   </ItemGroup>
 
   <ItemGroup>
