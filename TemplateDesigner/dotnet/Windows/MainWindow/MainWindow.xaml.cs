@@ -998,7 +998,13 @@ public partial class MainWindow : Window
     // ─────────────────────────────────────────────────────────────────────────
 
     private void SaveSectionAsTemplate(Section section)
-        => _vm?.SaveSectionAsTemplate(section, owner: this);
+    {
+        if (_vm is null) return;
+        var dlgVm = new SaveSectionTemplateDialogViewModel(section.Name);
+        var dlg   = new SaveSectionTemplateDialog(dlgVm) { Owner = this };
+        if (dlg.ShowDialog() == true)
+            _vm.SaveSectionTemplate(section, dlgVm.Name);
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers

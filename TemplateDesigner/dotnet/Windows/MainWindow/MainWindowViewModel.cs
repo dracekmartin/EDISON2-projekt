@@ -388,65 +388,16 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
     }
 
-    public void SaveSectionAsTemplate(Section section, Window? owner = null)
+    public void SaveSectionTemplate(Section section, string name)
     {
-        var dialog = new Window
+        try
         {
-            Title                 = "Uložit sekci jako šablonu",
-            Width                 = 400,
-            Height                = 160,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Owner                 = owner,
-            ResizeMode            = ResizeMode.NoResize
-        };
-
-        var stack = new System.Windows.Controls.StackPanel { Margin = new Thickness(15) };
-        stack.Children.Add(new System.Windows.Controls.TextBlock
-            { Text = "Název šablony:", Margin = new Thickness(0, 0, 0, 5) });
-
-        var nameBox = new System.Windows.Controls.TextBox
-            { Text = section.Name, Margin = new Thickness(0, 0, 0, 15) };
-        stack.Children.Add(nameBox);
-
-        var buttonsPanel = new System.Windows.Controls.StackPanel
+            _sectionTemplates.Save(section, name);
+            PopupDisplayer.Info($"Šablona '{name}' byla uložena.");
+        }
+        catch (Exception ex)
         {
-            Orientation = System.Windows.Controls.Orientation.Horizontal,
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-        };
-
-        var btnCancel = new System.Windows.Controls.Button
-            { Content = "Zrušit", Width = 80, Height = 25, Margin = new Thickness(0, 0, 10, 0), IsCancel = true };
-        var btnSave   = new System.Windows.Controls.Button
-            { Content = "Uložit", Width = 80, Height = 25, IsDefault = true };
-
-        bool? result = null;
-        btnSave.Click   += (_, _) =>
-        {
-            if (string.IsNullOrWhiteSpace(nameBox.Text)) { PopupDisplayer.Info("Zadejte název šablony."); return; }
-            result = true;
-            dialog.Close();
-        };
-        btnCancel.Click += (_, _) => { result = false; dialog.Close(); };
-
-        buttonsPanel.Children.Add(btnCancel);
-        buttonsPanel.Children.Add(btnSave);
-        stack.Children.Add(buttonsPanel);
-        dialog.Content = stack;
-        nameBox.Focus();
-        nameBox.SelectAll();
-        dialog.ShowDialog();
-
-        if (result == true)
-        {
-            try
-            {
-                _sectionTemplates.Save(section, nameBox.Text.Trim());
-                PopupDisplayer.Info($"Šablona '{nameBox.Text.Trim()}' byla uložena.");
-            }
-            catch (Exception ex)
-            {
-                PopupDisplayer.Error(ex);
-            }
+            PopupDisplayer.Error(ex);
         }
     }
 

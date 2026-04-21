@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: Extract SaveSectionTemplateDialog (H-9)
+
+- ✅ **Nový dialog triad `Windows/SaveSectionTemplateDialog/`** — Window + ViewModel + XAML dle závazného standardu (architecture.md); `SaveSectionTemplateDialogViewModel : EDViewModel` s `Name` property, `OnOk()` override (validace + close), používá `OkCommand` z base
+- ✅ **`MainWindowViewModel.SaveSectionAsTemplate(Section, Window?)` → `SaveSectionTemplate(Section, string name)`** — odstraněno ~60 řádků imperativního WPF kódu (StackPanel, TextBox, Button, Click handlery); zůstala jen save logika (~10 řádků)
+- ✅ **`MainWindow.xaml.cs.SaveSectionAsTemplate`** — nyní vytváří `SaveSectionTemplateDialog` + VM a na OK volá `_vm.SaveSectionTemplate(...)`; dialog konstrukce patří do code-behind (R4: VM bez WPF)
+- 📋 **Zbytek `using System.Windows;` v MainWindowViewModel.cs** zachován pro `CommandManager.InvalidateRequerySuggested` (WPF command infra), YesNoCancel TODO (H-7), `Clipboard.SetText` a `ParameterTemplateSelector` class — žádné další inline dialog konstrukce
+
+---
+
 ## 2026-04-21 — Code Hygiene: Extract TemplateTreePanel (H-8)
 
 - ✅ **Nový UserControl `Controls/TemplateTreePanel/`** — XAML (DockPanel s hlavičkovým textem + TreeView) + code-behind (`Rebuild()`, 3 event handlery, `CreateElementNode`, `FindItemByTag`); ~160 řádků

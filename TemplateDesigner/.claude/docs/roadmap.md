@@ -62,10 +62,9 @@ Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění e
 
 | # | Co | Proč | Velikost |
 |---|---|---|---|
-| H-9 | **`SaveSectionTemplateDialog` extract** — stejný důvod jako H-8. | Konzistence. | S |
 | H-10 | **`TemplatePickerDialog` extract** — stejný důvod jako H-8. | Konzistence. | S |
 
-✅ **Hotovo** — H-7, H-8. Viz archiv Fáze B0.5 níže.
+✅ **Hotovo** — H-7, H-8, H-9. Viz archiv Fáze B0.5 níže.
 
 #### Tier 3 — Medium architecture (vybraně)
 
@@ -604,6 +603,7 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 | H-6 | Nový `.claude/rules/new-element-checklist.md` — 10-kroková autoritativní reference (třída, ElementTypes, JsonDerivedType, 2 switches, toolbar menu, paleta, dynamická výška, GetSummary, docs); konsolidace z `mvvm-patterns.md` | 2026-04-21 |
 | H-7 | `MessageBox.Show` → `IPopupDisplayer` — 5 VM (AiTemplateAssistant, TableEditor, ElementProperties, MainWindow, PdfImport); PdfImport odstranil 3 callback properties; YesNoCancel kept s TODO (IPopupDisplayer nemá ekvivalent); Warning → Info (WPF rozdíl byl jen ikona) | 2026-04-21 |
 | H-8 | Extract `Controls/TemplateTreePanel/` — ~150 řádků ze `MainWindow.xaml.cs` přesunuto do samostatného UserControlu; `MainWindow` jen volá `TreePanel.Rebuild()`; smazán orphan `Windows/TemplateTreeDialog/` (nikdy se neinstanciovalo) | 2026-04-21 |
+| H-9 | Extract `Windows/SaveSectionTemplateDialog/` — inline WPF konstrukce dialogu (~60 řádků StackPanel+TextBox+Button) z `MainWindowViewModel` přesunuta do Window+ViewModel+XAML dle závazného standardu; `SaveSectionTemplate(Section, string)` nyní čistá save logika | 2026-04-21 |
 
 ## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
 
