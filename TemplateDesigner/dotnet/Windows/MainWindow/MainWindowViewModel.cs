@@ -341,18 +341,15 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (State.CurrentTemplate.Sections.Count <= 1)
         {
-            MessageBox.Show("Šablona musí mít alespoň jednu sekci.", "Smazat sekci",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            PopupDisplayer.Info("Šablona musí mít alespoň jednu sekci.");
             return;
         }
 
         int elementCount = section.Elements.Count;
         if (elementCount > 0)
         {
-            var result = MessageBox.Show(
-                $"Opravdu smazat sekci \"{section.Name}\" s {elementCount} elementy?",
-                "Smazat sekci", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result != MessageBoxResult.Yes) return;
+            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci \"{section.Name}\" s {elementCount} elementy?"))
+                return;
         }
 
         State.SelectedElements.RemoveAll(el => section.Elements.Contains(el));
@@ -425,7 +422,7 @@ public class TemplateDesignerViewModel : EDViewModel
         bool? result = null;
         btnSave.Click   += (_, _) =>
         {
-            if (string.IsNullOrWhiteSpace(nameBox.Text)) { MessageBox.Show("Zadejte název šablony."); return; }
+            if (string.IsNullOrWhiteSpace(nameBox.Text)) { PopupDisplayer.Info("Zadejte název šablony."); return; }
             result = true;
             dialog.Close();
         };
@@ -444,13 +441,11 @@ public class TemplateDesignerViewModel : EDViewModel
             try
             {
                 _sectionTemplates.Save(section, nameBox.Text.Trim());
-                MessageBox.Show($"Šablona '{nameBox.Text.Trim()}' byla uložena.",
-                    "Uložit šablonu", MessageBoxButton.OK, MessageBoxImage.Information);
+                PopupDisplayer.Info($"Šablona '{nameBox.Text.Trim()}' byla uložena.");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Chyba při ukládání šablony: {ex.Message}",
-                    "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                PopupDisplayer.Error(ex);
             }
         }
     }
@@ -504,7 +499,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
         catch (TemplateDeserializationException ex)
         {
-            MessageBox.Show(ex.Message, "Chyba při načítání", MessageBoxButton.OK, MessageBoxImage.Error);
+            PopupDisplayer.Error(ex);
         }
     }
 
@@ -597,6 +592,8 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (!IsDirty) return true;
 
+        // TODO: IPopupDisplayer nemá YesNoCancel — až bude potřeba v EDControls,
+        // přidat `bool? ConfirmYesNoCancel(string)` a nahradit zdejší MessageBox.Show.
         var result = MessageBox.Show(
             "Šablona obsahuje neuložené změny. Chcete je uložit?",
             "Neuložené změny",
@@ -656,8 +653,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (_clipboard.Count == 0) return;
         if (State.ActiveSection is null)
         {
-            MessageBox.Show("Nejprve vyberte sekci.", "Vložit",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            PopupDisplayer.Info("Nejprve vyberte sekci.");
             return;
         }
 

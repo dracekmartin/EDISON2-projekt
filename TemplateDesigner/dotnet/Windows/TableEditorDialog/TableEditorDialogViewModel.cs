@@ -400,8 +400,7 @@ class TableEditorDialogViewModel : EDViewModel
         var templates = _templateProvider.GetAvailableTemplates();
         if (templates.Count == 0)
         {
-            MessageBox.Show("Nejsou dostupné žádné šablony tabulek.", "Načíst šablonu",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            PopupDisplayer.Info("Nejsou dostupné žádné šablony tabulek.");
             return;
         }
 
@@ -457,8 +456,7 @@ class TableEditorDialogViewModel : EDViewModel
         var def = _templateProvider.GetTemplate(key);
         if (def is null)
         {
-            MessageBox.Show("Šablonu se nepodařilo načíst.", "Načíst šablonu",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            PopupDisplayer.Info("Šablonu se nepodařilo načíst.");
             return;
         }
 

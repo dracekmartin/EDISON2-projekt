@@ -21,12 +21,5 @@ public partial class PdfImportDialog : Window
             };
             return dlg.ShowDialog() == true ? dlg.FileName : null;
         };
-
-        vm.RequestShowError = (msg, title) =>
-            MessageBox.Show(this, msg, title, MessageBoxButton.OK, MessageBoxImage.Error);
-        vm.RequestShowWarning = (msg, title) =>
-            MessageBox.Show(this, msg, title, MessageBoxButton.OK, MessageBoxImage.Warning);
-        vm.RequestShowInfo = (msg, title) =>
-            MessageBox.Show(this, msg, title, MessageBoxButton.OK, MessageBoxImage.Information);
     }
 }

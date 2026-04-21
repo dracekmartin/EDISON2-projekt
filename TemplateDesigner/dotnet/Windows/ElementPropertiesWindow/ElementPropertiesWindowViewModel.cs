@@ -319,23 +319,20 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                         try { data = System.IO.File.ReadAllBytes(dlg.FileName); }
                         catch (Exception ex)
                         {
-                            MessageBox.Show($"Nelze načíst soubor: {ex.Message}", "Chyba",
-                                MessageBoxButton.OK, MessageBoxImage.Error);
+                            PopupDisplayer.Error(ex);
                             return;
                         }
 
                         string? base64;
                         if (data.Length > ImageElement.MaxImageBytes)
                         {
-                            var result = MessageBox.Show(
-                                $"Obrázek má {data.Length / 1024 / 1024} MB (limit {ImageElement.MaxImageBytes / 1024 / 1024} MB). Zmenšit automaticky?",
-                                "Velký obrázek", MessageBoxButton.YesNo, MessageBoxImage.Question);
-                            if (result != MessageBoxResult.Yes) return;
+                            if (!PopupDisplayer.Confirm(
+                                $"Obrázek má {data.Length / 1024 / 1024} MB (limit {ImageElement.MaxImageBytes / 1024 / 1024} MB). Zmenšit automaticky?"))
+                                return;
                             base64 = ImageElement.EncodeAndResize(data);
                             if (base64 is null)
                             {
-                                MessageBox.Show("Obrázek se nepodařilo dostatečně zmenšit.", "Chyba",
-                                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                                PopupDisplayer.Info("Obrázek se nepodařilo dostatečně zmenšit.");
                                 return;
                             }
                         }

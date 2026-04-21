@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: MessageBox.Show → IPopupDisplayer (H-7)
+
+- ✅ **`AiTemplateAssistantDialogViewModel`** — 5× `MessageBox.Show` → 4× `PopupDisplayer.Info` + 1× `PopupDisplayer.Error(ex)`; odstraněn `using System.Windows;`
+- ✅ **`TableEditorDialogViewModel`** — 2× `MessageBox.Show` → 2× `PopupDisplayer.Info`
+- ✅ **`ElementPropertiesWindowViewModel`** — 3× `MessageBox.Show` → 1× `Error(ex)` + 1× `Confirm(...)` + 1× `Info(...)`
+- ✅ **`MainWindowViewModel`** — 7× `MessageBox.Show` → `PopupDisplayer.Confirm/Info/Error`; 1× kept s TODO komentářem (YesNoCancel v `ConfirmUnsavedChanges` nemá IPopupDisplayer ekvivalent — čeká na rozšíření EDControls)
+- ✅ **`PdfImportDialogViewModel`** — 4× `Action<string,string>?` callback → `PopupDisplayer` přímo; odstraněny 3 property + 3 wire-up řádky v code-behind (`RequestShowError/Warning/Info`)
+- 📋 **Design rozhodnutí** — `Warning` → `Info` (IPopupDisplayer nemá Warning — WPF rozdíl byl jen ikona); `YesNoCancel` → kept as MessageBox s TODO (jedna jediná výjimka v celé code base)
+- 📋 **Proč teď** — rule R4: VM nesmí přímo znát WPF; rule R2: error handling přes `IPopupDisplayer`; toto byla poslední výjimka
+
+---
+
 ## 2026-04-21 — Code Hygiene: checklist pro nové elementy (H-6)
 
 - ✅ **Nový soubor `.claude/rules/new-element-checklist.md`** — autoritativní 10-kroková reference přidání nového elementu: třída + rendering, `ElementTypes` konstanta, `JsonDerivedType`, `MainWindowViewModel` 2 switches, toolbar menu, paleta, dynamická výška (`SkiaHeightCalculator`), `TemplateElement.GetSummary` pro strom, dokumentace; Glob `dotnet/Models/Elements/**` → automaticky načteno při práci na elementech

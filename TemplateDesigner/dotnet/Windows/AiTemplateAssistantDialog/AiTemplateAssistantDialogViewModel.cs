@@ -1,4 +1,3 @@
-using System.Windows;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Schema;
@@ -45,14 +44,12 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
     {
         if (string.IsNullOrWhiteSpace(Description))
         {
-            MessageBox.Show("Zadejte popis šablony, kterou chcete vygenerovat.",
-                "Chybí popis", MessageBoxButton.OK, MessageBoxImage.Warning);
+            PopupDisplayer.Info("Zadejte popis šablony, kterou chcete vygenerovat.");
             return;
         }
         if (string.IsNullOrWhiteSpace(ApiKey))
         {
-            MessageBox.Show("Zadejte Anthropic API klíč nebo jej nastavte v appsettings.json.",
-                "Chybí API klíč", MessageBoxButton.OK, MessageBoxImage.Warning);
+            PopupDisplayer.Info("Zadejte Anthropic API klíč nebo jej nastavte v appsettings.json.");
             return;
         }
 
@@ -66,20 +63,17 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
 
             if (GeneratedTemplate is not null)
             {
-                MessageBox.Show("Šablona byla úspěšně vygenerována a bude otevřena v designeru.",
-                    "Úspěch", MessageBoxButton.OK, MessageBoxImage.Information);
+                PopupDisplayer.Info("Šablona byla úspěšně vygenerována a bude otevřena v designeru.");
                 CloseDialog(true);
             }
             else
             {
-                MessageBox.Show("AI vrátila prázdnou odpověď. Zkuste upravit popis nebo zkusit znovu.",
-                    "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                PopupDisplayer.Info("AI vrátila prázdnou odpověď. Zkuste upravit popis nebo zkusit znovu.");
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"Chyba při generování šablony:\n\n{ex.Message}",
-                "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+            PopupDisplayer.Error(ex);
         }
         finally
         {
