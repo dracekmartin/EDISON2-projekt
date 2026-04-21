@@ -1535,11 +1535,16 @@ public partial class MainWindow : Window
                     var others = section.Elements.Where(el2 => !_dragInitPositions.ContainsKey(el2));
                     float threshold = 8f / _canvas.MmToPx; // ~8px
 
-                    // Extra X anchors: levý/pravý okraj sekce, horizontální střed + X hodnoty
-                    // elementů z ostatních sekcí (všechny sekce sdílejí levý margin → X je přímo porovnatelné).
+                    // Edge anchors: hrany sekce/printable area — edge-to-edge i gap snap (mezera od okraje).
                     float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+                    float sectionH = section.EffectiveDesignerHeight;
+                    var edgeX = new List<float> { 0f, sectionW };
+                    var edgeY = new List<float> { 0f, sectionH };
+
+                    // Extra X anchors: horizontální střed + X hodnoty elementů z ostatních sekcí
+                    // (všechny sekce sdílejí levý margin → X je přímo porovnatelné). Bez gap snap.
                     float refElW = _dragElement!.Width;
-                    var extraX = new List<float> { 0f, sectionW, (sectionW - refElW) / 2f };
+                    var extraX = new List<float> { (sectionW - refElW) / 2f };
                     foreach (var otherSection in _vm.State.CurrentTemplate.Sections)
                     {
                         if (otherSection == section) continue;
@@ -1550,15 +1555,15 @@ public partial class MainWindow : Window
                         }
                     }
 
-                    // Extra Y anchors: horní/spodní okraj aktuální sekce, vertikální střed
-                    float sectionH = section.EffectiveDesignerHeight;
+                    // Extra Y anchors: vertikální střed. Bez gap snap.
                     float refElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
-                    var extraY = new List<float> { 0f, sectionH, (sectionH - refElH) / 2f };
+                    var extraY = new List<float> { (sectionH - refElH) / 2f };
 
                     var snap = _snapEngine.Calculate(
                         _dragElement!, (refInit.X, refInit.Y),
                         deltaMmX, deltaMmY, others, threshold,
-                        extraXAnchors: extraX, extraYAnchors: extraY);
+                        extraXAnchors: extraX, extraYAnchors: extraY,
+                        edgeXAnchors: edgeX, edgeYAnchors: edgeY);
 
                     if (snap.X.HasSnap) { deltaMmX = snap.X.AdjustedDelta; snappedX = true; }
                     if (snap.Y.HasSnap) { deltaMmY = snap.Y.AdjustedDelta; snappedY = true; }
