@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: JSON wire format verify (H-4)
+
+- ✅ **Průzkum** — `CacheAgendaProvider.cs` (C#) i `AgendaAPI.cls` + `ZastavkoveJrMhdAPI.cls` + `TemplateDesignerFAKTURY.cls` (Caché) používají **100% čistý JSON** wire formát: vše je `obj.%ToJSON()` → `JsonNode.Parse` / `JsonSerializer.Deserialize`. Žádné CVar tuple parsing, žádné `$lb()` na wire. `$lb()` výskyty jsou pouze v interních working globals (`^||TiskMHD(...)` 6-fázové intermediate data)
+- ✅ **Kód se nemění** — pravidlo R3 je už dodržené
+- ⚠️ **Oprava dokumentace** — `cache-api.md` + `AgendaAPI.cls` docstring u `GetData` popisovaly zastaralý formát (`OUT[1]` skaláry, `OUT[2..]` řádky s klíčem `collection`). Reálný stav: každý `OUT[n]` = jedna kompletní samostatná stránka ve formátu `GetMockData` (`{ values, rows }`)
+- ✅ **Nová sekce "Wire formát pravidlo (R3)"** v `cache-api.md` — explicitní kontrakt pro příští agendy: čistý JSON, žádný hybrid, `$lb()` jen pro working globals
+
+---
+
 ## 2026-04-21 — Code Hygiene: `ElementTypes` konstanty (H-3)
 
 - ✅ **Nový soubor `Models/ElementTypes.cs`** — 9 `const string` konstant pro identifikátory typů elementů (`Text`, `Rectangle`, `Line`, `Image`, `Table`, `Barcode`, `StopList`, `DepartureGrid`, `NotesLegend`); jedna autoritativní definice pro JSON wire formát

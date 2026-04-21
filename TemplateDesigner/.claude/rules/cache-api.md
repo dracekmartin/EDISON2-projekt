@@ -164,14 +164,34 @@ IN: key = "ZAHLAVI_LINKY"
 ```
 
 #### GetData — IN + OUT (print-time)
+
+Na rozdíl od ostatních metod může `GetData` vrátit **více stránek** (např. zastávkový JŘ MHD = 1 stránka per zastávka × směr). Každá `OUT[n]` je **jedna kompletní samostatná stránka** ve stejném formátu jako `GetMockData`:
+
 ```
-IN: parametry závislé na agendě (číslo linky, datum, ...)
-OUT[1] = {"CISLO_LINKY":"42","NAZEV":"Linka 42"}          ← skalární hodnoty (JSON objekt)
-OUT[2] = {"collection":"ZASTAVKY","POPIS":"Praha hl.n.","CAS_ODJ":"800"}
-OUT[3] = {"collection":"ZASTAVKY","POPIS":"Smíchovské n.","CAS_ODJ":"812"}
+IN:      parametry závislé na agendě (číslo linky, datum, ...)
+OUT[1] = { "values": {...}, "rows": { "ZASTAVKY": [...], "POZNAMKY": [...] } }   ← stránka 1
+OUT[2] = { "values": {...}, "rows": {...} }                                       ← stránka 2
+...
+OUT[N] = { "values": {...}, "rows": {...} }                                       ← stránka N
 ```
 
-Řádky kolekce jsou identifikovatelné přítomností klíče `"collection"`. Skalární objekt je vždy OUT[1].
+Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `CacheAgendaProvider.GetData` iteruje všechny OUT klíče (kromě `"ERR"`) a parsuje každý jako samostatný `DataContext`. Výsledek je `List<DataContext>` předaný print enginu.
+
+**Pro agendu s jediným výstupem** (např. jedna faktura) stačí zapsat pouze `OUT[1]` — C# strana přijímá 1..N stránek.
+
+---
+
+### Wire formát pravidlo (R3)
+
+**Veškerá komunikace mezi Caché API a .NET stranou je čistě JSON.** Caché vždy zapisuje `obj.%ToJSON()` do `^||ML("OUT", n)`, .NET čte `result[key]?.Value?.ToString()` a parsuje přes `JsonNode.Parse` / `JsonSerializer.Deserialize`.
+
+**Co se NEpoužívá:**
+- `$lb()` / `$listbuild` na wire formátu — pouze pro interní working globals (`^||TiskMHD("trasa",...)`), nikdy v `^||ML("OUT",...)`
+- Numerické subscripty na `^||ML("OUT",...)` jako strukturovaná data (jen jako sekvenční indexy pro multi-page u `GetData`)
+- Pipe-delimited nebo `del`-delimited stringy
+- Smíšený CVar+JSON hybrid
+
+**Proč:** JSON je autoreferenční (struktura popsaná schématem), verzovatelný, debugovatelný v síťovém monitoru, a mapuje se 1:1 na `%DynamicObject` v Caché a `JsonNode` v .NET. Nové API metody musí tento vzor následovat.
 
 ---
 
