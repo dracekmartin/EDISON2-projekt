@@ -60,11 +60,7 @@ Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění e
 
 #### Tier 2 — MVVM consistency (doporučené)
 
-| # | Co | Proč | Velikost |
-|---|---|---|---|
-| H-10 | **`TemplatePickerDialog` extract** — stejný důvod jako H-8. | Konzistence. | S |
-
-✅ **Hotovo** — H-7, H-8, H-9. Viz archiv Fáze B0.5 níže.
+✅ **Všechny dokončeny** — H-7, H-8, H-9, H-10 (N/A). Viz archiv Fáze B0.5 níže.
 
 #### Tier 3 — Medium architecture (vybraně)
 
@@ -604,6 +600,7 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 | H-7 | `MessageBox.Show` → `IPopupDisplayer` — 5 VM (AiTemplateAssistant, TableEditor, ElementProperties, MainWindow, PdfImport); PdfImport odstranil 3 callback properties; YesNoCancel kept s TODO (IPopupDisplayer nemá ekvivalent); Warning → Info (WPF rozdíl byl jen ikona) | 2026-04-21 |
 | H-8 | Extract `Controls/TemplateTreePanel/` — ~150 řádků ze `MainWindow.xaml.cs` přesunuto do samostatného UserControlu; `MainWindow` jen volá `TreePanel.Rebuild()`; smazán orphan `Windows/TemplateTreeDialog/` (nikdy se neinstanciovalo) | 2026-04-21 |
 | H-9 | Extract `Windows/SaveSectionTemplateDialog/` — inline WPF konstrukce dialogu (~60 řádků StackPanel+TextBox+Button) z `MainWindowViewModel` přesunuta do Window+ViewModel+XAML dle závazného standardu; `SaveSectionTemplate(Section, string)` nyní čistá save logika | 2026-04-21 |
+| H-10 | **N/A** — `TemplatePickerDialog` v kódu neexistoval. Template picker = `OpenFileDialog` (standardní Windows), section template picker = menu položky v "Add Section" dropdown. Žádný samostatný dialog k extrakci. Uzavřeno bez změn. | 2026-04-21 |
 
 ## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
 

@@ -14,12 +14,12 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-04-03
+**Datum poslední aktualizace:** 2026-04-21
 
 ### 🎯 Aktuální focus
 
-1. Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), FullTime mód, data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
-2. Ladění zastávkového JŘ na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 roadmapy).
+1. **Fáze A: Odladění MHD zastávkového JŘ s reálnými daty** (Fáze B0.5 Code Hygiene dokončena).
+2. Krok 8 roadmapy — edge cases (prázdné směry, speciální znaky, velké linky), vizuální shoda s referenčním PDF (pixel-by-pixel), fonty pro speciální znaky.
 
 ### ✅ Co máme
 
