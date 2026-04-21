@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: silent catch → TryParse (H-5)
+
+- ✅ **`PropertiesPanel.xaml.cs` color picker seed** — prázdný `catch { /* ignore */ }` kolem `SKColor.Parse(cd.Get())` nahrazen za `SKColor.TryParse(...)`; stejné chování (dialog s defaultní barvou při nevalidním vstupu), ale bez try/catch jako control flow
+- ℹ️ **TODO komentář** (ColorDialog minimalizuje Properties window) ponechán — patří do B2 (vlastní WPF color picker)
+
+---
+
 ## 2026-04-21 — Code Hygiene: JSON wire format verify (H-4)
 
 - ✅ **Průzkum** — `CacheAgendaProvider.cs` (C#) i `AgendaAPI.cls` + `ZastavkoveJrMhdAPI.cls` + `TemplateDesignerFAKTURY.cls` (Caché) používají **100% čistý JSON** wire formát: vše je `obj.%ToJSON()` → `JsonNode.Parse` / `JsonSerializer.Deserialize`. Žádné CVar tuple parsing, žádné `$lb()` na wire. `$lb()` výskyty jsou pouze v interních working globals (`^||TiskMHD(...)` 6-fázové intermediate data)
