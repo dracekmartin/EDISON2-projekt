@@ -67,7 +67,6 @@ public static class ScheduleElementBuilder
                 Width = gridReg.Width,
                 Height = gridReg.Height,
                 ZIndex = zIndex++,
-                DisplayMode = ScheduleDisplayMode.MinutesOnly,
                 HourColumnWidth = detection.HourColumnWidth,
                 MinuteWidth = detection.MinuteCellWidth,
                 MinuteFontSize = detection.MinuteFontSizePt,

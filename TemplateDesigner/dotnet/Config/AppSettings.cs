@@ -10,7 +10,7 @@ namespace TemplateDesigner.Config;
 /// </summary>
 public class AppSettings
 {
-    public CacheConnectionSettings Cache     { get; set; } = new();
+    public CacheConnectionSettings? Cache    { get; set; }
     public List<SchemaAgendaSettings> Agendas { get; set; } = [];
     public AiAssistantSettings AiAssistant   { get; set; } = new();
 
@@ -58,8 +58,8 @@ public class AppSettings
                 var local = JsonSerializer.Deserialize<AppSettings>(localJson, JsonOptions);
                 if (local is not null)
                 {
-                    // Merge: lokální hodnoty přepíšou hlavní
-                    if (!string.IsNullOrEmpty(local.Cache.Server))
+                    // Merge: lokální hodnoty přepíšou hlavní (jen pokud jsou v .local.json opravdu definované)
+                    if (local.Cache is not null)
                         settings.Cache = local.Cache;
                     if (local.Agendas.Count > 0)
                         settings.Agendas = local.Agendas;
@@ -138,4 +138,7 @@ public class AiAssistantSettings
     /// Získat na https://console.anthropic.com/
     /// </summary>
     public string AnthropicApiKey { get; set; } = "";
+
+    /// <summary>Model pro AI Vision import (default: claude-sonnet-4-6).</summary>
+    public string VisionModel { get; set; } = "claude-sonnet-4-6";
 }

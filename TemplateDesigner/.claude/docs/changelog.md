@@ -1,5 +1,102 @@
 # Changelog
 
+## 2026-04-20 — Inline validace v PropertiesPanel (B0-11)
+
+- ✅ Chybový stav pole: červený rámeček + tooltip s chybou místo TextBlocku pod polem
+- ✅ `ApplyValidation(TextBox, string?)` sdílený helper — `ClearValue(BorderBrushProperty)` pro reset na výchozí styl
+- ✅ `AddStringRow`: live validace přes `Validate` callback (aktuálně VisibilityExpression)
+- ✅ `AddTextWithPickerRow`: neznámé `{PLACEHOLDER}` — stejný vizuální vzor; `UpdateFieldValidation` přepracována na `TextBox`
+
+---
+
+## 2026-04-20 — Rotace elementů (B0-14–17)
+
+- ✅ **`Rotation` property** na `TemplateElement` (float, stupně CW) + JSON serializace + `CopyBaseTo()` + descriptor "Rotace" v panelu vlastností
+- ✅ **Render** — `DesignerCanvas` + `PreviewCanvas`: `canvas.Save/RotateDegrees(cx,cy)/Restore` obaluje `el.Render()` i `RenderBorderPass()` pro rotované elementy
+- ✅ **Hit-testing** — `HitTestElement` transformuje testovací bod inverzní rotací před AABB testem (kliknutí na rotovaný element funguje správně)
+- ✅ **Resize handles** zakázány pro rotované elementy (`GetHandlesForElement` → `yield break` při `Rotation != 0`); `DrawRotationBadge` — modrý badge s úhlem nad vybraným rotovaným elementem
+- ✅ **Selekční rámeček** nakreslen rotovaně (canvas.Save/RotateDegrees/DrawRect/Restore) — odpovídá skutečnému tvaru elementu
+
+---
+
+## 2026-04-20 — Format mini-toolbar + Copy/Paste Style (B0-13, B0-12)
+
+- ✅ **`FormatToolbar` UserControl** — nad properties panelem; zobrazí se pouze pro TextElement (Group "Font" + "Zarovnání")
+- ✅ **B I U S** — toggle tlačítka pro Tučné/Kurzíva/Podtržení/Přeškrtnutí; napojeno na `BoolPropertyDescriptor` přes `SetPropertyCommand`
+- ✅ **L C R J** — vodorovné zarovnání (Left/Center/Right/Justify); mutually exclusive, stav synced přes `EnumPropertyDescriptor`
+- ✅ **▲ ▬ ▼** — svislé zarovnání (Top/Middle/Bottom)
+- ✅ **`StyleClipboard` record** v `DesignerState` — drží `TextStyle?`, `BorderColor`, `BorderWidth`, `BackgroundColor`
+- ✅ **`CopyStyle()`** (`Ctrl+Shift+C`) — zachytí styl prvního vybraného elementu; `TextStyle.Clone()` pro TextElement
+- ✅ **`PasteStyle()`** (`Ctrl+Shift+V`) — aplikuje na všechny vybrané elementy; `SetPropertyCommand` jen pro změněné property; obaleno `CompositeCommand` pro jeden Undo krok
+- ✅ **Toolbar a properties panel** — oba refreshovány přes existující `RequestPropertiesPanelUpdate` pipeline; undo/redo udržuje sync automaticky
+
+---
+
+## 2026-04-20 — Normalizovat pozice (B0-6)
+
+- ✅ **`MmMath.Snap(mm, step)`** — přichytí hodnotu na nejbližší násobek kroku (0.1/0.5/1/2/5mm)
+- ✅ **`NormalizePositionsDialog`** — ComboBox s krokem, live preview "Bude upraveno: X elementů", OK/Storno
+- ✅ **`NormalizePositions(elements, step)`** — `ResizeElementCommand` per změněný element, obaleno `CompositeCommand`; no-op guard (commands.Count == 0)
+- ✅ **`Ctrl+Shift+N`** + menu Elementy → "Normalizovat pozice…"; bez výběru = všechny elementy šablony
+
+---
+
+## 2026-04-20 — Grid size v UI (B0-9)
+
+- ✅ **`DesignerState.GridSize`** — property (dříve hardcoded 5mm); výchozí hodnota 5mm zachována
+- ✅ **`MainWindowViewModel.GridSize`** — bindovatelná property; nastavení propaguje do `DesignerState` a invaliduje canvas
+- ✅ **ComboBox v toolbaru** — možnosti 1/2/5/10mm vedle snap tlačítek; výchozí 5mm (index 2)
+- ✅ **`CmbGridSize_SelectionChanged`** — čte `Tag` ComboBoxItem a předá `_vm.GridSize`
+
+---
+
+## 2026-04-20 — Precision fix, strikethrough, barcode typy, konsolidace palety
+
+**Precision fix (B0-4/B0-5/B0-8):**
+- ✅ **`MmMath.Round(float mm)`** — nový helper, zaokrouhlí na 0.1mm (`MidpointRounding.AwayFromZero`); nullable overload
+- ✅ **`EndResize`** — zaokrouhlení X/Y/Width/Height těsně před commitem (drag zůstane plynulý)
+- ✅ **`TemplateElement.ApplyScale()`** — zaokrouhlení po každém násobení scale
+- ✅ **`ScaleTemplateCommand.Apply()`** — zaokrouhlení PageSize a sekcí po škálování
+- ✅ **`DistributeH/V`** — gap zaokrouhlen na 0.1mm, poslední element drží původní pozici (absorbuje zbytek)
+- ✅ **Properties panel** — mm pole zaokrouhlena na commit (`fd.Unit == "mm"`); X/Y/Šířka/Výška zobrazují `"0.0#"` formát
+
+---
+
+## 2026-04-20 — Strikethrough, více barcode typů, konsolidace palety
+
+**TextStyle — Strikethrough + oprava Underline:**
+- ✅ **`TextStyle` / `ResolvedTextStyle`** — přidána `Strikethrough` property (nullable bool / bool); `DrawTextDecorations()` metoda kreslí podtržení i přeškrtnutí pomocí `SKFont.Metrics` (UnderlinePosition, StrikeoutPosition) s fallback hodnotami
+- ✅ **`TextElement.Render()`** — opraveno tiché nefungování Underline (dekorace se musí kreslit manuálně v SkiaSharp 3); `DrawTextDecorations()` voláno po každém `DrawText` v obou větvích (WordWrap i jednořádkový)
+- ✅ **`TextElement.GetPropertyDescriptors()`** — přidán descriptor "Přeškrtnutí"
+
+**BarcodeElement — rozšíření typů:**
+- ✅ **`BarcodeElementType` enum** — rozšířen o EAN-13, EAN-8, PDF417, DataMatrix
+- ✅ **`RenderBarcode()`** — switch expression přes 6 typů na `BarcodeFormat`; `_hints` dict, `_writer` a `_dashEffect` jsou `static readonly` (žádné per-frame alokace)
+- ✅ **`GetPropertyDescriptors()`** — dropdown "Typ kódu" obsahuje všech 6 možností
+- ✅ **Paleta elementů** — "QR kód" + "Čárový kód" sloučeny do jednoho tlačítka "Kód"; stejně v menu "Přidat element"
+
+---
+
+## 2026-04-03 — AI Vision import pipeline, per-column font wrapping, UX vylepšení
+
+**AI Vision import:**
+- ✅ **`AiVisionImportService`** — composable `AgendaPromptContext` prompt systém; per-agenda factory metody (`ZastavkovyJrMhdPromptContext`, `GenericPromptContext`); konfigurovatelný model z `AppSettings.AiAssistant.VisionModel`
+- ✅ **`AiGuidedScheduleBuilder`** — PDF screenshot → Claude Vision → JŘ elementy s přesnými rozměry z PdfPig; refaktor `BuildFromVision` do 6 sub-metod; font family z PdfPig (`DetectDominantFontFamily`); `NormalizeHexColor` konsolidace; `PtToMm` konstanta z `ResolvedTextStyle`
+- ✅ **`AiVisionImportPipeline`** — orchestrace: extrakce → rasterizace → AI vision → engine → Template; fallback na heuristiku; typ parametrů z `AgendaAPI.GetParameters()` s value-based fallback
+- ✅ **`PdfPageRasterizer`** — rasterizace PDF stránky na base64 PNG pro AI Vision
+
+**DepartureGrid per-column font wrapping:**
+- ✅ **`ComputeLayout`** — per-column header font pro wrapping i min width měření; dynamická výška záhlaví z max per-column line height
+- ✅ **`GroupColumnIndexResolver`** — generický `BuildLookup<T>` nahrazuje 3 duplicitní implementace; `IndexKeyPrefix` konstanta pro `__INDEX_` klíče
+- ✅ **Layout cache fingerprint** — `ComputeLayoutFingerprint()` pro invalidaci cache při změně properties
+
+**UX vylepšení:**
+- ✅ **Skrytí záhlaví sekcí** — `DesignerState.ShowSectionHeaders` toggle; auto-detekce JŘ šablon; toolbar menu položka "Záhlaví sekcí"
+- ✅ **CellStyleVM font defaults** — dialog sloupců zobrazuje skutečné font hodnoty z elementu (`headerDefaults`/`dataDefaults`)
+- ✅ **AnthropicApiClient** — shared static `HttpClient` s per-request headers
+
+---
+
 ## 2026-03-25 — AI-enhanced PDF import pro JŘ šablony
 
 **AI enrichment pipeline:**

@@ -201,6 +201,11 @@
                 <Separator/>
                 <MenuItem Header="Rozložit vodorovně"           Click="BtnDistributeH_Click"/>
                 <MenuItem Header="Rozložit svisle"              Click="BtnDistributeV_Click"/>
+                <Separator/>
+                <MenuItem Header="Normalizovat pozice…" InputGestureText="Ctrl+Shift+N" Click="MenuNormalizePositions_Click"/>
+                <Separator/>
+                <MenuItem Header="Kopírovat styl"  InputGestureText="Ctrl+Shift+C" Click="MenuCopyStyle_Click"/>
+                <MenuItem Header="Vložit styl"     InputGestureText="Ctrl+Shift+V" Click="MenuPasteStyle_Click"/>
             </MenuItem>
             <MenuItem Header="Zobrazit">
                 <MenuItem x:Name="MenuGrid" Header="Mřížka" IsCheckable="True"
@@ -209,6 +214,8 @@
                           IsChecked="{Binding SnapToGrid, Mode=TwoWay}"/>
                 <MenuItem x:Name="MenuSnapElements" Header="Přichytit k elementům" IsCheckable="True"
                           IsChecked="{Binding SnapToElements, Mode=TwoWay}"/>
+                <MenuItem Header="Záhlaví sekcí" IsCheckable="True"
+                          IsChecked="{Binding ShowSectionHeaders, Mode=TwoWay}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
@@ -299,13 +306,9 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="QR kód — táhni na canvas" Tag="BarcodeQR"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, ...) — táhni na canvas" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Width="16" Height="16"/>
-                        </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Čárový kód — táhni na canvas" Tag="BarcodeCode128"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.Barcode}" Width="16" Height="16"/>
                         </Button>
                         <Border Width="1" Background="#E0E0E0" Margin="3,2" VerticalAlignment="Stretch"/>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek — táhni na canvas" Tag="StopListElement"
@@ -393,6 +396,14 @@
                                       IsChecked="{Binding SnapToElements, Mode=TwoWay}">
                             <Image Source="{StaticResource EDIcons.Snap}" Width="16" Height="16" Opacity="0.6"/>
                         </ToggleButton>
+                        <ComboBox x:Name="CmbGridSize" Width="60" VerticalAlignment="Center" Margin="2,0"
+                                  ToolTip="Velikost mřížky" SelectedIndex="2"
+                                  SelectionChanged="CmbGridSize_SelectionChanged">
+                            <ComboBoxItem Content="1 mm"  Tag="1"/>
+                            <ComboBoxItem Content="2 mm"  Tag="2"/>
+                            <ComboBoxItem Content="5 mm"  Tag="5"/>
+                            <ComboBoxItem Content="10 mm" Tag="10"/>
+                        </ComboBox>
                         <ComboBox x:Name="CmbZoom" Width="80" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
                                   SelectionChanged="CmbZoom_SelectionChanged">
                             <ComboBoxItem Content=" 50 %"/>
@@ -550,7 +561,10 @@
                     </TabItem>
                     <!-- ── Záložka Vlastnosti (inline properties panel) ── -->
                     <TabItem Header="Vlastnosti" x:Name="TabProperties">
-                        <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
+                        <DockPanel>
+                            <controls:FormatToolbar x:Name="FormatToolbar" DockPanel.Dock="Top"/>
+                            <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
+                        </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Strom šablony ── -->
                     <TabItem Header="Strom" x:Name="TabTree">

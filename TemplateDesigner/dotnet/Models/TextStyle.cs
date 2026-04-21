@@ -18,6 +18,7 @@ public class TextStyle
     public bool? Bold { get; set; }
     public bool? Italic { get; set; }
     public bool? Underline { get; set; }
+    public bool? Strikethrough { get; set; }
 
     // ── Barvy ─────────────────────────────────────────────────────────────────
 
@@ -47,7 +48,7 @@ public class TextStyle
     [JsonIgnore]
     public bool IsEmpty =>
         FontFamily is null && FontSize is null && Bold is null
-        && Italic is null && Underline is null
+        && Italic is null && Underline is null && Strikethrough is null
         && TextColor is null && BackgroundColor is null
         && HAlign is null && VAlign is null
         && PaddingTop is null && PaddingRight is null
@@ -69,6 +70,7 @@ public class TextStyle
             Bold = Bold ?? parent.Bold,
             Italic = Italic ?? parent.Italic,
             Underline = Underline ?? parent.Underline,
+            Strikethrough = Strikethrough ?? parent.Strikethrough,
             TextColor = TextColor ?? parent.TextColor,
             BackgroundColor = BackgroundColor ?? parent.BackgroundColor,
             HAlign = HAlign ?? parent.HAlign,
@@ -91,6 +93,7 @@ public class TextStyle
         Bold = false,
         Italic = false,
         Underline = false,
+        Strikethrough = false,
         TextColor = "#FF000000",
         BackgroundColor = "#00FFFFFF",
         HAlign = TextHorizontalAlignment.Center,
@@ -110,6 +113,7 @@ public struct ResolvedTextStyle
     public bool Bold { get; init; }
     public bool Italic { get; init; }
     public bool Underline { get; init; }
+    public bool Strikethrough { get; init; }
     public string TextColor { get; init; }
     public string BackgroundColor { get; init; }
     public TextHorizontalAlignment HAlign { get; init; }
@@ -130,6 +134,7 @@ public struct ResolvedTextStyle
         Bold = false,
         Italic = false,
         Underline = false,
+        Strikethrough = false,
         TextColor = "#FF000000",
         BackgroundColor = "#00FFFFFF",
         HAlign = TextHorizontalAlignment.Left,
@@ -172,4 +177,34 @@ public struct ResolvedTextStyle
 
     public readonly SKColor ParsedTextColor => SKColor.Parse(TextColor);
     public readonly SKColor ParsedBackgroundColor => SKColor.Parse(BackgroundColor);
+
+    /// <summary>
+    /// Nakreslí podtržení a/nebo přeškrtnutí pod/přes právě vykreslený text.
+    /// Volat ihned po DrawText se stejnými xPx, yBaseline (= baseline textu).
+    /// textWidth = font.MeasureText(text).
+    /// </summary>
+    public readonly void DrawTextDecorations(SKCanvas canvas, float xPx, float yBaseline, float textWidth, SKFont font, SKPaint textPaint)
+    {
+        if (!Underline && !Strikethrough) return;
+
+        var metrics = font.Metrics;
+
+        if (Underline)
+        {
+            // UnderlinePosition je kladné = pod účarím (v SkiaSharp y jde dolů)
+            float lineY = yBaseline + (metrics.UnderlinePosition ?? (font.Size * 0.12f));
+            float thickness = Math.Max(1f, metrics.UnderlineThickness ?? (font.Size * 0.07f));
+            using var p = new SKPaint { Color = textPaint.Color, StrokeWidth = thickness, IsAntialias = false };
+            canvas.DrawLine(xPx, lineY, xPx + textWidth, lineY, p);
+        }
+
+        if (Strikethrough)
+        {
+            // StrikeoutPosition je záporné = nad účarím
+            float lineY = yBaseline + (metrics.StrikeoutPosition ?? -(font.Size * 0.35f));
+            float thickness = Math.Max(1f, metrics.StrikeoutThickness ?? (font.Size * 0.07f));
+            using var p = new SKPaint { Color = textPaint.Color, StrokeWidth = thickness, IsAntialias = false };
+            canvas.DrawLine(xPx, lineY, xPx + textWidth, lineY, p);
+        }
+    }
 }

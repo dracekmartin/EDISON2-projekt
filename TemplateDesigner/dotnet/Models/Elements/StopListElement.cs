@@ -78,6 +78,9 @@ public class StopListElement : ScheduleElementBase
 
     // ─── Render ─────────────────────────────────────────────────────────────
 
+    /// <summary>Šířka vyhrazeného prostoru (mm) pro šipku směru jízdy napravo od sloupců.</summary>
+    private const float ArrowGutterMm = 2.5f;
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -100,56 +103,40 @@ public class StopListElement : ScheduleElementBase
         float fontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effectiveHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial"), fontPx);
+        using var font = new SKFont(GetTypeface(DataStyle.FontFamily), fontPx);
         using var headerFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", SKFontStyle.Bold), headerFontPx);
+            GetTypeface(DataStyle.FontFamily, SKFontStyle.Bold), headerFontPx);
         // Font pro aktuální zastávku — konfigurovatelná velikost + tučnost
         float currentFontSize = (CurrentStopFontSize ?? baseFontSize) * scale;
         float currentFontPx = currentFontSize * PtToMm * ctx.MmToPx;
         var currentStyle = CurrentStopBold ? SKFontStyle.Bold : SKFontStyle.Normal;
         using var currentStopFont = new SKFont(
-            SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial", currentStyle), currentFontPx);
+            GetTypeface(DataStyle.FontFamily, currentStyle), currentFontPx);
 
-        // Per-column fonty a painty — manualDisposables pattern (dispose v finally)
+        // Per-column resources — CellStyleResources drží font/textPaint/bgPaint pro header i data
         var columns = GetVisibleColumns();
-        var manualDisposables = new List<IDisposable>();
-        var perColDataFonts = new Dictionary<string, SKFont>();
-        var perColHeaderFonts = new Dictionary<string, SKFont>();
-        var perColDataTextPaints = new Dictionary<string, SKPaint>();
-        var perColHeaderTextPaints = new Dictionary<string, SKPaint>();
-        var perColDataBgPaints = new Dictionary<string, SKPaint>();
-        var perColHeaderBgPaints = new Dictionary<string, SKPaint>();
+        var headerCells = new Dictionary<string, CellStyleResources>();
+        var dataCells = new Dictionary<string, CellStyleResources>();
 
         try
         {
         foreach (var col in columns)
         {
-            // Data font/paints
-            if (CreateCellFont(col.Style?.Data, baseFontSize, false, scale, ctx.MmToPx) is { } df)
-            { perColDataFonts[col.Key] = df; manualDisposables.Add(df); }
-            if (CreateCellTextPaint(col.Style?.Data) is { } dtp)
-            { perColDataTextPaints[col.Key] = dtp; manualDisposables.Add(dtp); }
-            if (CreateCellBgPaint(col.Style?.Data) is { } dbp)
-            { perColDataBgPaints[col.Key] = dbp; manualDisposables.Add(dbp); }
-
-            // Header font/paints (výchozí tučné)
-            if (CreateCellFont(col.Style?.Header, baseHeaderFontSize, true, scale, ctx.MmToPx) is { } hf)
-            { perColHeaderFonts[col.Key] = hf; manualDisposables.Add(hf); }
-            if (CreateCellTextPaint(col.Style?.Header) is { } htp)
-            { perColHeaderTextPaints[col.Key] = htp; manualDisposables.Add(htp); }
-            if (CreateCellBgPaint(col.Style?.Header) is { } hbp)
-            { perColHeaderBgPaints[col.Key] = hbp; manualDisposables.Add(hbp); }
+            dataCells[col.Key] = BuildCellStyle(col.Style?.Data, baseFontSize, false, scale, ctx.MmToPx);
+            headerCells[col.Key] = BuildCellStyle(col.Style?.Header, baseHeaderFontSize, true, scale, ctx.MmToPx);
         }
-
-        // Záhlaví sloupců
-        float currentY = ShowHeader
-            ? RenderColumnHeaders(ctx, columns, headerH, headerFont, paints,
-                perColHeaderFonts, perColHeaderTextPaints, perColHeaderBgPaints)
-            : Y;
 
         // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
         bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
+
+        // Šipka si rezervuje vlastní gutter vpravo; sloupce zůstávají u levého okraje
+        float arrowGutter = showArrow ? ArrowGutterMm : 0f;
+
+        // Záhlaví sloupců
+        float currentY = ShowHeader
+            ? RenderColumnHeaders(ctx, columns, X, headerH, headerFont, paints, headerCells)
+            : Y;
 
         if (hasData)
         {
@@ -187,16 +174,14 @@ public class StopListElement : ScheduleElementBase
 
                 foreach (var col in columns)
                 {
-                    // Per-column data background
-                    perColDataBgPaints.TryGetValue(col.Key, out var bgPaint);
-                    RenderCellBackground(ctx, bgPaint, colX, currentY, col.Width, rowH);
+                    var cell = dataCells[col.Key];
 
-                    // Per-column font (fallback na default)
-                    var rowFont = perColDataFonts.TryGetValue(col.Key, out var customFont) && !isCurrent
-                        ? customFont : defaultRowFont;
-                    // Per-column text color
-                    var textPaint = perColDataTextPaints.TryGetValue(col.Key, out var customPaint) && !isPassed
-                        ? customPaint : paints.Text;
+                    RenderCellBackground(ctx, cell.BgPaint, colX, currentY, col.Width, rowH);
+
+                    // Per-column font (fallback na default) — neaplikovat na aktuální zastávku (ta má vlastní font)
+                    var rowFont = !isCurrent && cell.Font is not null ? cell.Font : defaultRowFont;
+                    // Per-column text color — neaplikovat na projeté zastávky (mají šedou)
+                    var textPaint = !isPassed && cell.TextPaint is not null ? cell.TextPaint : paints.Text;
 
                     string cellText = GetCellText(z, col.Key);
                     float textX = AlignTextX(col, colX, cellText, rowFont, ctx.MmToPx);
@@ -222,9 +207,9 @@ public class StopListElement : ScheduleElementBase
                 currentY += rowH;
             }
 
-            // Šipka směru jízdy ┌─▼
+            // Šipka směru jízdy ─┐│▼ (v rezervovaném gutteru vpravo)
             if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
-                RenderDirectionArrow(ctx, columns, arrowStartY, arrowEndY, rowH);
+                RenderDirectionArrow(ctx, arrowGutter, arrowStartY, arrowEndY, rowH);
         }
         else
         {
@@ -237,31 +222,29 @@ public class StopListElement : ScheduleElementBase
         } // try
         finally
         {
-            foreach (var d in manualDisposables) d.Dispose();
+            DisposeAll(headerCells);
+            DisposeAll(dataCells);
         }
     }
 
     /// <summary>Vykreslí záhlaví sloupců tabulky zastávek.</summary>
     private float RenderColumnHeaders(
-        RenderContext ctx, List<StopColumn> columns,
+        RenderContext ctx, List<StopColumn> columns, float startX,
         float headerH, SKFont headerFont, SchedulePaints paints,
-        Dictionary<string, SKFont> perColHeaderFonts,
-        Dictionary<string, SKPaint> perColHeaderTextPaints,
-        Dictionary<string, SKPaint> perColHeaderBgPaints)
+        Dictionary<string, CellStyleResources> headerCells)
     {
-        // Výchozí pozadí záhlaví
+        // Výchozí pozadí záhlaví (přes celou šířku elementu, včetně arrow gutteru)
         var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
-        float colX = X;
+        float colX = startX;
         foreach (var col in columns)
         {
-            // Per-column pozadí záhlaví (přes výchozí)
-            perColHeaderBgPaints.TryGetValue(col.Key, out var hdrBgPaint);
-            RenderCellBackground(ctx, hdrBgPaint, colX, Y, col.Width, headerH);
+            var cell = headerCells[col.Key];
+            RenderCellBackground(ctx, cell.BgPaint, colX, Y, col.Width, headerH);
 
-            var colFont = perColHeaderFonts.TryGetValue(col.Key, out var customFont) ? customFont : headerFont;
-            var colPaint = perColHeaderTextPaints.TryGetValue(col.Key, out var customPaint) ? customPaint : paints.HeaderText;
+            var colFont = cell.Font ?? headerFont;
+            var colPaint = cell.TextPaint ?? paints.HeaderText;
 
             float textX = AlignTextX(col, colX, col.Header, colFont, ctx.MmToPx);
             var pt = ctx.ToCanvas(textX, Y + headerH * HeaderBaselineFactor);
@@ -279,25 +262,16 @@ public class StopListElement : ScheduleElementBase
     // ─── Šipka směru jízdy ──────────────────────────────────────────────────
 
     /// <summary>
-    /// Vykreslí šipku ┌─▼ mezi sloupci — od aktuální zastávky dolů k poslední.
-    /// Pozice X: levý okraj sloupce StopName (nebo první viditelný sloupec).
+    /// Vykreslí šipku ─┐│▼ v rezervovaném gutteru vpravo od sloupců.
+    /// Horizontální bracket vede od posledního sloupce doprava, pak dolů k V hrotu.
     /// </summary>
     private void RenderDirectionArrow(
-        RenderContext ctx, List<StopColumn> columns,
+        RenderContext ctx, float arrowGutter,
         float startY, float endY, float rowH)
     {
-        // Najít X pozici sloupce StopName
-        float arrowX = X;
-        float colX = X;
-        foreach (var col in columns)
-        {
-            if (col.Key == "StopName") { arrowX = colX; break; }
-            colX += col.Width;
-        }
-        // Šipka je 1.5mm vlevo od sloupce StopName (mezera mezi zastávkami a šipkou)
-        float lineXMm = arrowX - 1.5f;
-        // Horizontální úsečka: od lineX doprava o 1.5mm (směrem k zastávkám = ke StopName)
-        float bracketRightMm = lineXMm + 1.5f;
+        // Vertikální čára uprostřed gutteru, bracket od levé hrany gutteru (od sloupců) k čáře
+        float lineXMm = X + Width - arrowGutter * 0.5f;
+        float bracketLeftMm = X + Width - arrowGutter;
 
         float strokeW = DirectionArrowBold ? 1.5f : 0.8f;
         using var paint = new SKPaint
@@ -314,10 +288,10 @@ public class StopListElement : ScheduleElementBase
         float bottomY = endY + rowH * 0.8f;       // kousek nad spodní hranou řádku
         var lineTop = ctx.ToCanvas(lineXMm, topY);
         var lineBottom = ctx.ToCanvas(lineXMm, bottomY);
-        var bracketRight = ctx.ToCanvas(bracketRightMm, topY);
+        var bracketLeft = ctx.ToCanvas(bracketLeftMm, topY);
 
-        // ┐ — horizontální čára doprava (od zastávek) + vertikální dolů
-        ctx.Canvas.DrawLine(bracketRight, lineTop, paint);
+        // ─┐ — horizontální čára od sloupců doprava + vertikální dolů
+        ctx.Canvas.DrawLine(bracketLeft, lineTop, paint);
         ctx.Canvas.DrawLine(lineTop, lineBottom, paint);
 
         // ▼ — šipka na konci

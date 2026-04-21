@@ -16,7 +16,8 @@ public enum ResizeHandle
 /// </summary>
 public class DesignerCanvas
 {
-    public const float SectionHeaderPx = 20f;
+    public const float SectionHeaderPxDefault = 20f;
+    public float SectionHeaderPx => _state.ShowSectionHeaders ? SectionHeaderPxDefault : 0f;
     private const float PagePaddingPx  = 40f;
     private const float HandleSizePx   = 7f;
 
@@ -125,8 +126,20 @@ public class DesignerCanvas
                 float ew = el.Width * MmToPx;
                 float eh = (el.Height ?? el.EffectiveDesignerHeight) * MmToPx;
 
-                if (canvasX >= ex && canvasX <= ex + ew &&
-                    canvasY >= ey && canvasY <= ey + eh)
+                // Pro rotované elementy transformovat testovací bod inverzní rotací
+                float testX = canvasX, testY = canvasY;
+                if (el.IsRotated)
+                {
+                    float ecx = ex + ew / 2f, ecy = ey + eh / 2f;
+                    float rad = -el.Rotation * MathF.PI / 180f;
+                    float cos = MathF.Cos(rad), sin = MathF.Sin(rad);
+                    float dx = canvasX - ecx, dy = canvasY - ecy;
+                    testX = ecx + dx * cos - dy * sin;
+                    testY = ecy + dx * sin + dy * cos;
+                }
+
+                if (testX >= ex && testX <= ex + ew &&
+                    testY >= ey && testY <= ey + eh)
                     return (section, el);
             }
         }
@@ -171,6 +184,8 @@ public class DesignerCanvas
     private static IEnumerable<(float hx, float hy, ResizeHandle handle)> GetHandlesForElement(
         TemplateElement el, SKRect r)
     {
+        if (el.IsRotated) yield break;
+
         float mx = r.MidX, my = r.MidY;
 
         if (el.IsDynamic)
@@ -357,14 +372,17 @@ public class DesignerCanvas
             float headerY  = oy - SectionHeaderPx;
 
             // Hlavička
-            var hdrRect = new SKRect(ox, headerY, ox + contentW, oy);
-            using (var bg = new SKPaint { Color = dynamic ? ClrSectionHeaderDyn : ClrSectionHeader })
-                canvas.DrawRect(hdrRect, bg);
-            using var hdrFont  = new SKFont(SKTypeface.Default, 11f);
-            using var hdrText  = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
-            canvas.DrawText(section.Name, ox + 8f, headerY + SectionHeaderPx - 5f, hdrFont, hdrText);
-            if (dynamic)
-                canvas.DrawText("∞", ox + contentW - 18f, headerY + SectionHeaderPx - 5f, hdrFont, hdrText);
+            if (_state.ShowSectionHeaders)
+            {
+                var hdrRect = new SKRect(ox, headerY, ox + contentW, oy);
+                using (var bg = new SKPaint { Color = dynamic ? ClrSectionHeaderDyn : ClrSectionHeader })
+                    canvas.DrawRect(hdrRect, bg);
+                using var hdrFont  = new SKFont(SKTypeface.Default, 11f);
+                using var hdrText  = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
+                canvas.DrawText(section.Name, ox + 8f, headerY + SectionHeaderPxDefault - 5f, hdrFont, hdrText);
+                if (dynamic)
+                    canvas.DrawText("∞", ox + contentW - 18f, headerY + SectionHeaderPxDefault - 5f, hdrFont, hdrText);
+            }
 
             // Obsah sekce
             var contentRect = new SKRect(ox, oy, ox + contentW, oy + sectionH);
@@ -375,7 +393,20 @@ public class DesignerCanvas
             canvas.ClipRect(contentRect);
             var ctx = new RenderContext(canvas, MmToPx) { SectionOriginX = ox, SectionOriginY = oy };
             foreach (var el in _state.GetElementsByZIndexAsc(section))
-                el.Render(ctx);
+            {
+                if (el.IsRotated)
+                {
+                    var (cx, cy) = el.GetCenterPx(ctx);
+                    canvas.Save();
+                    canvas.RotateDegrees(el.Rotation, cx, cy);
+                    el.Render(ctx);
+                    canvas.Restore();
+                }
+                else
+                {
+                    el.Render(ctx);
+                }
+            }
 
             // Indikátory podmíněné viditelnosti a skupin — jeden průchod
             foreach (var el in section.Elements)
@@ -469,7 +500,18 @@ public class DesignerCanvas
                 StrokeWidth = 1.5f,
                 PathEffect  = SKPathEffect.CreateDash([5f, 3f], 0)
             };
-            canvas.DrawRect(rect.Value, selBorder);
+
+            if (el.IsRotated)
+            {
+                canvas.Save();
+                canvas.RotateDegrees(el.Rotation, rect.Value.MidX, rect.Value.MidY);
+                canvas.DrawRect(rect.Value, selBorder);
+                canvas.Restore();
+            }
+            else
+            {
+                canvas.DrawRect(rect.Value, selBorder);
+            }
         }
 
         // Resize handles nebo lock badge — pouze při výběru jednoho elementu
@@ -482,12 +524,14 @@ public class DesignerCanvas
 
         if (singleEl.IsLocked)
         {
-            // Zamčený element: zobraz lock badge místo resize handles
             DrawLockBadge(canvas, r);
+        }
+        else if (singleEl.IsRotated)
+        {
+            DrawRotationBadge(canvas, r, singleEl.Rotation);
         }
         else
         {
-            // Odemčený element: klasické resize handles
             using var handleFill   = new SKPaint { Color = SKColors.White };
             using var handleBorder = new SKPaint { Color = ClrSelection, IsStroke = true, StrokeWidth = 1.5f };
 
@@ -519,6 +563,22 @@ public class DesignerCanvas
         using var font = new SKFont(SKTypeface.Default, 9f);
         using var tp   = new SKPaint { Color = SKColors.White, IsAntialias = true };
         canvas.DrawText("L", bx + 4f, by + sz - 3.5f, font, tp);
+    }
+
+    private static void DrawRotationBadge(SKCanvas canvas, SKRect elementRect, float rotation)
+    {
+        string label = $"{rotation:0.#}°";
+        const float pad = 3f, h = 14f;
+        using var font = new SKFont(SKTypeface.Default, 9f);
+        float w = MathF.Max(28f, font.MeasureText(label) + pad * 2);
+        float bx = elementRect.MidX - w / 2f;
+        float by = elementRect.Top - h - 3f;
+
+        using var bg = new SKPaint { Color = ClrSelection, IsAntialias = true };
+        canvas.DrawRoundRect(bx, by, w, h, 2f, 2f, bg);
+
+        using var tp = new SKPaint { Color = SKColors.White, IsAntialias = true };
+        canvas.DrawText(label, bx + pad, by + h - 3.5f, font, tp);
     }
 
     private void DrawSnapTargetHighlights(SKCanvas canvas, float canvasWidth)

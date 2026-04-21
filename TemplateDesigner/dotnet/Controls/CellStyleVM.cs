@@ -52,8 +52,9 @@ public class CellStyleVM : INotifyPropertyChanged
         {
             FontFamily      = NullIfEmpty(FontFamily),
             FontSize        = FontSize,
-            Bold            = _bold ? true : null,
-            Italic          = _italic ? true : null,
+            // Explicit false (not null) — user must be able to override parent cascade that sets bold/italic=true
+            Bold            = _bold,
+            Italic          = _italic,
             TextColor       = NullIfEmpty(TextColor),
             BackgroundColor = NullIfEmpty(BgColor),
             HAlign          = _hAlignmentIndex >= 0 && _hAlignmentIndex < HAlignMap.Length ? HAlignMap[_hAlignmentIndex] : null,
@@ -65,10 +66,11 @@ public class CellStyleVM : INotifyPropertyChanged
         return s.IsEmpty ? null : s;
     }
 
-    public static CellStyleVM FromModel(TextStyle? s, bool defaultBold = false) => new()
+    public static CellStyleVM FromModel(TextStyle? s, bool defaultBold = false,
+        string? defaultFontFamily = null, float? defaultFontSize = null) => new()
     {
-        FontFamily      = s?.FontFamily ?? "",
-        FontSize        = s?.FontSize,
+        FontFamily      = s?.FontFamily ?? defaultFontFamily ?? "",
+        FontSize        = s?.FontSize ?? defaultFontSize,
         Bold            = s?.Bold ?? defaultBold,
         Italic          = s?.Italic ?? false,
         TextColor       = s?.TextColor ?? "",

@@ -72,13 +72,15 @@ public class TextElement : TemplateElement
             float yPx = yStart;
             foreach (var line in lines)
             {
+                float lineWidth = font.MeasureText(line);
                 float xPx = rs.HAlign switch
                 {
-                    TextHorizontalAlignment.Center => rect.Left + (widthPx - font.MeasureText(line)) / 2,
-                    TextHorizontalAlignment.Right => rect.Right - font.MeasureText(line),
+                    TextHorizontalAlignment.Center => rect.Left + (widthPx - lineWidth) / 2,
+                    TextHorizontalAlignment.Right => rect.Right - lineWidth,
                     _ => rect.Left + 1f
                 };
                 ctx.Canvas.DrawText(line, xPx, yPx, font, paint);
+                rs.DrawTextDecorations(ctx.Canvas, xPx, yPx, lineWidth, font, paint);
                 yPx += lineHeightPx;
             }
         }
@@ -99,6 +101,7 @@ public class TextElement : TemplateElement
                 _ => rect.Top + fontSizePx
             };
             ctx.Canvas.DrawText(resolvedText, xPx, yPx, font, paint);
+            rs.DrawTextDecorations(ctx.Canvas, xPx, yPx, textWidth, font, paint);
         }
 
         ctx.Canvas.Restore();
@@ -119,7 +122,8 @@ public class TextElement : TemplateElement
         new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => Style.FontSize ?? 10f,        Set = v => Style.FontSize = v,                 Min = 4, Max = 200, Unit = "pt" },
         new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Font",      Get = () => Style.Bold ?? false,          Set = v => Style.Bold = v },
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Font",      Get = () => Style.Italic ?? false,        Set = v => Style.Italic = v },
-        new BoolPropertyDescriptor   { Label = "Podtržení",   Group = "Font",      Get = () => Style.Underline ?? false,     Set = v => Style.Underline = v },
+        new BoolPropertyDescriptor   { Label = "Podtržení",    Group = "Font",      Get = () => Style.Underline ?? false,      Set = v => Style.Underline = v },
+        new BoolPropertyDescriptor   { Label = "Přeškrtnutí", Group = "Font",      Get = () => Style.Strikethrough ?? false,  Set = v => Style.Strikethrough = v },
         new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,                     Set = v => WordWrap = v },
         new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => Style.LineSpacing ?? 1.2f,    Set = v => Style.LineSpacing = v,               Min = 0.8f, Max = 3f, Format = "0.0#" },
 

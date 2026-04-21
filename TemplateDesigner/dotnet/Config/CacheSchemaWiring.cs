@@ -25,9 +25,9 @@ internal static class CacheSchemaWiring
     /// </summary>
     public static MLRest? TryCreateMlRest(AppSettings settings)
     {
-        if (!settings.Cache.IsConfigured) return null;
-
         var cache = settings.Cache;
+        if (cache is null || !cache.IsConfigured) return null;
+
         return new MLRest(cache.Server, cache.Port, cache.Namespace, cache.Idfa)
         {
             LoginName = cache.LoginName,

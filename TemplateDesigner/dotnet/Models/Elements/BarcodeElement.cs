@@ -21,6 +21,14 @@ public class BarcodeElement : TemplateElement
 
     [JsonIgnore] public SKColor SkForeColor => SKColor.Parse(ForeColor);
 
+    private static readonly Dictionary<EncodeHintType, object> _hints = new()
+    {
+        [EncodeHintType.MARGIN] = 0,
+        [EncodeHintType.CHARACTER_SET] = "UTF-8"
+    };
+    private static readonly MultiFormatWriter _writer = new();
+    private static readonly SKPathEffect _dashEffect = SKPathEffect.CreateDash([4f, 3f], 0f);
+
     public BarcodeElement()
     {
         // Čárový kód potřebuje bílé pozadí (ne průhledné jako ostatní elementy)
@@ -63,15 +71,17 @@ public class BarcodeElement : TemplateElement
         int widthPx = Math.Max(1, (int)rect.Width);
         int heightPx = Math.Max(1, (int)rect.Height);
 
-        var format = BarcodeType == BarcodeElementType.QR ? BarcodeFormat.QR_CODE : BarcodeFormat.CODE_128;
-        var hints = new Dictionary<EncodeHintType, object>
+        var format = BarcodeType switch
         {
-            [EncodeHintType.MARGIN] = 0,
-            [EncodeHintType.CHARACTER_SET] = "UTF-8"
+            BarcodeElementType.QR         => BarcodeFormat.QR_CODE,
+            BarcodeElementType.Code128    => BarcodeFormat.CODE_128,
+            BarcodeElementType.Ean13      => BarcodeFormat.EAN_13,
+            BarcodeElementType.Ean8       => BarcodeFormat.EAN_8,
+            BarcodeElementType.Pdf417     => BarcodeFormat.PDF_417,
+            BarcodeElementType.DataMatrix => BarcodeFormat.DATA_MATRIX,
+            _ => throw new ArgumentOutOfRangeException(nameof(BarcodeType), BarcodeType, null),
         };
-
-        var writer = new MultiFormatWriter();
-        BitMatrix matrix = writer.encode(content, format, widthPx, heightPx, hints);
+        BitMatrix matrix = _writer.encode(content, format, widthPx, heightPx, _hints);
 
         float cellW = rect.Width / matrix.Width;
         float cellH = rect.Height / matrix.Height;
@@ -102,11 +112,20 @@ public class BarcodeElement : TemplateElement
             Color = SKColors.LightGray,
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1f,
-            PathEffect = SKPathEffect.CreateDash([4f, 3f], 0f)
+            PathEffect = _dashEffect
         };
         canvas.DrawRect(rect, borderPaint);
 
-        var label = BarcodeType == BarcodeElementType.QR ? "QR" : "CODE128";
+        var label = BarcodeType switch
+        {
+            BarcodeElementType.QR         => "QR",
+            BarcodeElementType.Code128    => "CODE 128",
+            BarcodeElementType.Ean13      => "EAN-13",
+            BarcodeElementType.Ean8       => "EAN-8",
+            BarcodeElementType.Pdf417     => "PDF417",
+            BarcodeElementType.DataMatrix => "DataMatrix",
+            _                             => BarcodeType.ToString(),
+        };
         using var textPaint = new SKPaint { Color = SKColors.Gray, IsAntialias = true };
         using var font = new SKFont(SKTypeface.Default, rect.Height * 0.3f);
         float textX = rect.MidX - font.MeasureText(label) / 2f;
@@ -128,8 +147,12 @@ public class BarcodeElement : TemplateElement
             Get = () => BarcodeType, Set = v => BarcodeType = (BarcodeElementType)v,
             Options =
             [
-                ("QR kód",   (object)BarcodeElementType.QR),
-                ("Code 128", (object)BarcodeElementType.Code128)
+                ("QR kód",     (object)BarcodeElementType.QR),
+                ("Code 128",   (object)BarcodeElementType.Code128),
+                ("EAN-13",     (object)BarcodeElementType.Ean13),
+                ("EAN-8",      (object)BarcodeElementType.Ean8),
+                ("PDF417",     (object)BarcodeElementType.Pdf417),
+                ("DataMatrix", (object)BarcodeElementType.DataMatrix),
             ]
         },
         new ColorPropertyDescriptor { Label = "Barva kódu",   Group = "Vzhled", Get = () => ForeColor,       Set = v => ForeColor = v },
@@ -151,4 +174,4 @@ public class BarcodeElement : TemplateElement
     }
 }
 
-public enum BarcodeElementType { QR, Code128 }
+public enum BarcodeElementType { QR, Code128, Ean13, Ean8, Pdf417, DataMatrix }

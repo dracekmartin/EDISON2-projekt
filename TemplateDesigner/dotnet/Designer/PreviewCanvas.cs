@@ -214,7 +214,20 @@ public class PreviewCanvas
                 .ToList();
 
             foreach (var el in visibleElements)
-                el.Render(ctx);
+            {
+                if (el.IsRotated)
+                {
+                    var (cx, cy) = el.GetCenterPx(ctx);
+                    canvas.Save();
+                    canvas.RotateDegrees(el.Rotation, cx, cy);
+                    el.Render(ctx);
+                    canvas.Restore();
+                }
+                else
+                {
+                    el.Render(ctx);
+                }
+            }
 
             // Rámeček sekce (volitelný — ShowBorder property)
             if (placed.Source.ShowBorder)

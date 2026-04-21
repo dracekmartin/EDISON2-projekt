@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SkiaSharp;
@@ -139,6 +140,21 @@ public abstract class ScheduleElementBase : TemplateElement
         (false, false) => SKFontStyle.Normal,
     };
 
+    // Typeface cache. SKTypeface loading (HarfBuzz) je drahý — per frame se volá 10+×.
+    // SKFont nevlastní typeface (reference, ne owned), sdílení je bezpečné.
+    private static readonly ConcurrentDictionary<(string Family, int Weight, int Width, SKFontStyleSlant Slant), SKTypeface> _typefaceCache = new();
+
+    /// <summary>Vrátí sdílený SKTypeface pro kombinaci (family, style). Nikdy nevrací null.</summary>
+    protected static SKTypeface GetTypeface(string? family, SKFontStyle? style = null)
+    {
+        var fam = string.IsNullOrEmpty(family) ? "Arial" : family!;
+        var st = style ?? SKFontStyle.Normal;
+        var key = (fam, st.Weight, st.Width, st.Slant);
+        return _typefaceCache.GetOrAdd(key, k =>
+            SKTypeface.FromFamilyName(k.Family, new SKFontStyle(k.Weight, k.Width, k.Slant))
+            ?? SKTypeface.Default);
+    }
+
     /// <summary>
     /// Vytvoří SKFont z TextStyle. Vrátí null pokud TextStyle nemá žádné fontové override.
     /// Volající musí výsledek uvolnit (přidat do manualDisposables).
@@ -152,7 +168,7 @@ public abstract class ScheduleElementBase : TemplateElement
         var family = style.FontFamily ?? DataStyle.FontFamily ?? "Arial";
         var sizePx = (style.FontSize ?? defaultSizePt) * PtToMm * scale * mmToPx;
         var fontStyle = MakeFontStyle(style.Bold ?? defaultBold, style.Italic ?? false);
-        return new SKFont(SKTypeface.FromFamilyName(family, fontStyle), sizePx);
+        return new SKFont(GetTypeface(family, fontStyle), sizePx);
     }
 
     /// <summary>Vytvoří SKPaint pro text z TextStyle.TextColor. Null pokud nemá override.</summary>
@@ -175,6 +191,49 @@ public abstract class ScheduleElementBase : TemplateElement
         if (bgPaint is null) return;
         var rect = ctx.ToCanvasRect(x, y, w, h);
         ctx.Canvas.DrawRect(rect, bgPaint);
+    }
+
+    /// <summary>
+    /// Sdružené font/textPaint/bgPaint resources pro jednu buňku (sloupec, hlavičku, data).
+    /// Kterýkoli může být null pokud TextStyle nemá daný override. Disposable.
+    /// </summary>
+    public sealed class CellStyleResources : IDisposable
+    {
+        public SKFont? Font { get; }
+        public SKPaint? TextPaint { get; }
+        public SKPaint? BgPaint { get; }
+
+        internal CellStyleResources(SKFont? font, SKPaint? textPaint, SKPaint? bgPaint)
+        {
+            Font = font;
+            TextPaint = textPaint;
+            BgPaint = bgPaint;
+        }
+
+        public void Dispose()
+        {
+            Font?.Dispose();
+            TextPaint?.Dispose();
+            BgPaint?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Vytvoří CellStyleResources z TextStyle. Všechny tři items mohou být null,
+    /// pokud TextStyle nemá daný override. Volající dispose (nebo ji vloží do
+    /// dictionary, která se dispose hromadně přes DisposeAll).
+    /// </summary>
+    protected CellStyleResources BuildCellStyle(
+        TextStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx) =>
+        new(CreateCellFont(style, defaultSizePt, defaultBold, scale, mmToPx),
+            CreateCellTextPaint(style),
+            CreateCellBgPaint(style));
+
+    /// <summary>Dispose všech resources v dictionary (bezpečné při null nebo prázdném).</summary>
+    protected static void DisposeAll<TKey>(Dictionary<TKey, CellStyleResources>? map) where TKey : notnull
+    {
+        if (map is null) return;
+        foreach (var r in map.Values) r.Dispose();
     }
 
     // ─── Render helpery ─────────────────────────────────────────────────────

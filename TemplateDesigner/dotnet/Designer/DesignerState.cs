@@ -3,6 +3,12 @@ using TemplateDesigner.Models;
 
 namespace TemplateDesigner.Designer;
 
+public record StyleClipboard(
+    TextStyle? TextStyle,
+    string BorderColor,
+    float BorderWidth,
+    string BackgroundColor);
+
 public class DesignerState
 {
     public Template CurrentTemplate { get; set; } = new();
@@ -22,6 +28,7 @@ public class DesignerState
     public bool ShowGrid { get; set; } = false;
     public bool SnapToGrid { get; set; } = false;
     public bool SnapToElements { get; set; } = true;
+    public bool ShowSectionHeaders { get; set; } = true;
     public float GridSize { get; set; } = 5f; // mm
     public List<GapIndicator> ActiveGapIndicators { get; } = [];
 
@@ -30,6 +37,8 @@ public class DesignerState
 
     /// <summary>Aktuální preview DataContext (nastavuje se při renderování preview).</summary>
     public DataContext? CurrentPreviewData { get; set; }
+
+    public StyleClipboard? StyleClipboard { get; set; }
 
     public Stack<IDesignerCommand> UndoStack { get; } = new();
     public Stack<IDesignerCommand> RedoStack { get; } = new();

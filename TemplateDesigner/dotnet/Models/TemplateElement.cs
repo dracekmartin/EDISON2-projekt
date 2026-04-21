@@ -59,6 +59,12 @@ public abstract class TemplateElement
     /// <summary>Šířka rámečku v mm. 0 = žádný rámeček.</summary>
     public float BorderWidth { get; set; } = 0f;
 
+    /// <summary>Rotace elementu ve stupních (po směru hodinových ručiček). 0 = žádná rotace.</summary>
+    public float Rotation { get; set; } = 0f;
+
+    [JsonIgnore]
+    public bool IsRotated => MathF.Abs(Rotation) > 0.001f;
+
     [JsonIgnore]
     public SKColor SkBackgroundColor => SKColor.Parse(BackgroundColor);
 
@@ -96,8 +102,25 @@ public abstract class TemplateElement
     /// </summary>
     public virtual void RenderBorderPass(RenderContext ctx)
     {
-        RenderBorder(ctx, ctx.ToCanvasRect(X, Y, Width, EffectiveDesignerHeight));
+        var rect = ctx.ToCanvasRect(X, Y, Width, EffectiveDesignerHeight);
+        if (IsRotated)
+        {
+            var (cx, cy) = GetCenterPx(ctx);
+            ctx.Canvas.Save();
+            ctx.Canvas.RotateDegrees(Rotation, cx, cy);
+            RenderBorder(ctx, rect);
+            ctx.Canvas.Restore();
+        }
+        else
+        {
+            RenderBorder(ctx, rect);
+        }
     }
+
+    /// <summary>Střed elementu v canvas px — pivot pro rotaci.</summary>
+    public (float cx, float cy) GetCenterPx(RenderContext ctx) =>
+        (ctx.SectionOriginX + (X + Width / 2f) * ctx.MmToPx,
+         ctx.SectionOriginY + (Y + EffectiveDesignerHeight / 2f) * ctx.MmToPx);
 
     // ---------------------------------------------------------------------------
 
@@ -124,15 +147,16 @@ public abstract class TemplateElement
     /// </summary>
     protected IReadOnlyList<PropertyDescriptor> GetPositionDescriptors() =>
     [
-        new FloatPropertyDescriptor { Label = "X",       Group = "Pozice", Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Y",       Group = "Pozice", Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Šířka",   Group = "Pozice", Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "X",       Group = "Pozice", Get = () => X,       Set = v => X = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Y",       Group = "Pozice", Get = () => Y,       Set = v => Y = v,      Min = 0,  Max = 9999, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Šířka",   Group = "Pozice", Get = () => Width,   Set = v => Width = v,  Min = 1,  Max = 9999, Unit = "mm", Format = "0.0#" },
         .. (IsDynamic
             ? new PropertyDescriptor[] { new StringPropertyDescriptor { Label = "Výška", Group = "Pozice",
                 Get = () => "(dynamická)", Set = _ => { } } }
             : new PropertyDescriptor[] { new FloatPropertyDescriptor { Label = "Výška", Group = "Pozice",
                 Get = () => Height ?? EffectiveDesignerHeight, Set = v => Height = v,
-                Min = 1, Max = 9999, Unit = "mm" } }),
+                Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
+        new FloatPropertyDescriptor { Label = "Rotace",  Group = "Pozice", Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
 
@@ -168,9 +192,11 @@ public abstract class TemplateElement
     /// </summary>
     public virtual void ApplyScale(float scale)
     {
-        X *= scale; Y *= scale; Width *= scale;
-        if (Height is not null) Height *= scale;
-        if (BorderWidth > 0) BorderWidth *= scale;
+        X = MmMath.Round(X * scale);
+        Y = MmMath.Round(Y * scale);
+        Width = MmMath.Round(Width * scale);
+        if (Height is not null) Height = MmMath.Round(Height.Value * scale);
+        if (BorderWidth > 0) BorderWidth = MmMath.Round(BorderWidth * scale);
     }
 
     // ── Clone helper ──────────────────────────────────────────────────────────
@@ -189,6 +215,7 @@ public abstract class TemplateElement
         target.GroupId = GroupId;
         target.BackgroundColor = BackgroundColor;
         target.BorderColor = BorderColor; target.BorderWidth = BorderWidth;
+        target.Rotation = Rotation;
     }
 
     // ---------------------------------------------------------------------------

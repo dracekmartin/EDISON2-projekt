@@ -36,8 +36,13 @@ public partial class MainWindow : Window
     private TemplateElement? _dragElement;
     private float _dragMouseStartCanvasX, _dragMouseStartCanvasY;
     private readonly Dictionary<TemplateElement, (float X, float Y)> _dragInitPositions = new();
+    // Per-axis snap state z posledního mouse move (pro soft-snap v EndDrag)
+    private bool _lastSnapActiveX, _lastSnapActiveY;
 
     private readonly SnapEngine _snapEngine = new();
+
+    /// <summary>Soft-snap: zaokrouhlení na celé mm po puštění dragu, pokud smart-snap nezareagoval.</summary>
+    private const float SoftSnapMm = 1f;
 
     private SKPoint _rubberBandStart;
     private SKRect? _rubberBandRect;
@@ -537,6 +542,13 @@ public partial class MainWindow : Window
         }
     }
 
+    private void CmbGridSize_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null || CmbGridSize.SelectedItem is not ComboBoxItem item) return;
+        if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float size))
+            _vm.GridSize = size;
+    }
+
     private void CmbScale_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_vm is null || CmbScale.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;
@@ -867,6 +879,9 @@ public partial class MainWindow : Window
     private void BtnAlignMiddleV_Click(object sender, RoutedEventArgs e) => _vm!.AlignElements(AlignMode.MiddleV);
     private void BtnDistributeH_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeH);
     private void BtnDistributeV_Click(object sender, RoutedEventArgs e)  => _vm!.AlignElements(AlignMode.DistributeV);
+    private void MenuNormalizePositions_Click(object sender, RoutedEventArgs e) => OpenNormalizePositionsDialog();
+    private void MenuCopyStyle_Click(object sender, RoutedEventArgs e)          => _vm?.CopyStyle();
+    private void MenuPasteStyle_Click(object sender, RoutedEventArgs e)         => _vm?.PasteStyle();
 
     // ─────────────────────────────────────────────────────────────────────────
     // Add section / element menus
@@ -986,8 +1001,7 @@ public partial class MainWindow : Window
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType("LineElement", 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType("ImageElement", 5, 5));
         Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType("TableElement", 0, 0));
-        Add("QR kód",    () => TemplateDesignerViewModel.CreateElementByType("BarcodeQR", 5, 5));
-        Add("Čárový kód", () => TemplateDesignerViewModel.CreateElementByType("BarcodeCode128", 5, 5));
+        Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType("BarcodeElement", 5, 5));
         menu.Items.Add(new Separator());
         Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType("StopListElement", 0, 0));
         Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType("DepartureGridElement", 0, 0));
@@ -1181,7 +1195,9 @@ public partial class MainWindow : Window
             element.HourColumnStyle,
             generalDescriptors,
             cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
+            headerDefaults: element.HeaderStyle,
+            dataDefaults: element.DataStyle)
             { Owner = this };
 
         if (dlg.ShowDialog() == true)
@@ -1283,33 +1299,29 @@ public partial class MainWindow : Window
     {
         if (_propsVm is null || InlinePropertiesPanel is null) return;
 
+        Action<IDesignerCommand> execute  = cmd => _vm!.Execute(cmd);
+        Action                   invalidate = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
+        InlinePropertiesPanel.SetContext(execute, invalidate);
+        FormatToolbar.SetContext(execute, invalidate);
+
         var selected = _vm!.State.SelectedElements;
-        if (selected.Count == 1)
+        if (selected.Count >= 1)
         {
-            var descriptors = _propsVm.PrepareForElement(selected[0], isNewSession: false);
-            InlinePropertiesPanel.SetContext(
-                cmd => _vm.Execute(cmd),
-                () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
+            var descriptors = selected.Count == 1
+                ? _propsVm.PrepareForElement(selected[0], isNewSession: false)
+                : _propsVm.PrepareForMultipleElements(selected);
+
             InlinePropertiesPanel.ShowDescriptors(descriptors);
+            FormatToolbar.ShowDescriptors(descriptors);
 
             // Přepnout na záložku Vlastnosti pokud jsme na Sekce nebo Strom
-            if (LeftTabControl.SelectedItem != TabFields)
-                LeftTabControl.SelectedItem = TabProperties;
-        }
-        else if (selected.Count > 1)
-        {
-            var descriptors = _propsVm.PrepareForMultipleElements(selected);
-            InlinePropertiesPanel.SetContext(
-                cmd => _vm.Execute(cmd),
-                () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
-            InlinePropertiesPanel.ShowDescriptors(descriptors);
-
             if (LeftTabControl.SelectedItem != TabFields)
                 LeftTabControl.SelectedItem = TabProperties;
         }
         else
         {
             InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
+            FormatToolbar.ShowDescriptors(null);
         }
     }
 
@@ -1326,6 +1338,20 @@ public partial class MainWindow : Window
     {
         var helpDialog = new HelpDialog { Owner = this };
         helpDialog.ShowDialog();
+    }
+
+    private void OpenNormalizePositionsDialog()
+    {
+        if (_vm is null) return;
+        var elements = _vm.State.SelectedElements.Count > 0
+            ? (IReadOnlyList<TemplateElement>)_vm.State.SelectedElements
+            : _vm.State.CurrentTemplate.Sections.SelectMany(s => s.Elements).ToList();
+        if (elements.Count == 0) return;
+
+        var vm  = new NormalizePositionsDialogViewModel(elements);
+        var dlg = new NormalizePositionsDialog(vm) { Owner = this };
+        if (dlg.ShowDialog() == true)
+            _vm.NormalizePositions(elements, vm.Step);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -1402,6 +1428,16 @@ public partial class MainWindow : Window
             _vm.SplitSelected(horizontal: false);
             e.Handled = true;
         }
+        else if (e.Key == Key.C && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.CopyStyle();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.V && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.PasteStyle();
+            e.Handled = true;
+        }
         else if (e.Key == Key.C && ctrl)
         {
             _vm.CopySelected();
@@ -1473,6 +1509,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.D0 && ctrl)
         {
             FitToPage();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.N && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            OpenNormalizePositionsDialog();
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)
@@ -1639,9 +1680,31 @@ public partial class MainWindow : Window
                 {
                     var others = section.Elements.Where(el2 => !_dragInitPositions.ContainsKey(el2));
                     float threshold = 8f / _canvas.MmToPx; // ~8px
+
+                    // Extra X anchors: levý/pravý okraj sekce, horizontální střed + X hodnoty
+                    // elementů z ostatních sekcí (všechny sekce sdílejí levý margin → X je přímo porovnatelné).
+                    float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+                    float refElW = _dragElement!.Width;
+                    var extraX = new List<float> { 0f, sectionW, (sectionW - refElW) / 2f };
+                    foreach (var otherSection in _vm.State.CurrentTemplate.Sections)
+                    {
+                        if (otherSection == section) continue;
+                        foreach (var el in otherSection.Elements)
+                        {
+                            extraX.Add(el.X);
+                            extraX.Add(el.X + el.Width);
+                        }
+                    }
+
+                    // Extra Y anchors: horní/spodní okraj aktuální sekce, vertikální střed
+                    float sectionH = section.EffectiveDesignerHeight;
+                    float refElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
+                    var extraY = new List<float> { 0f, sectionH, (sectionH - refElH) / 2f };
+
                     var snap = _snapEngine.Calculate(
                         _dragElement!, (refInit.X, refInit.Y),
-                        deltaMmX, deltaMmY, others, threshold);
+                        deltaMmX, deltaMmY, others, threshold,
+                        extraXAnchors: extraX, extraYAnchors: extraY);
 
                     if (snap.X.HasSnap) { deltaMmX = snap.X.AdjustedDelta; snappedX = true; }
                     if (snap.Y.HasSnap) { deltaMmY = snap.Y.AdjustedDelta; snappedY = true; }
@@ -1668,6 +1731,8 @@ public partial class MainWindow : Window
                     }
                 }
             }
+            _lastSnapActiveX = snappedX;
+            _lastSnapActiveY = snappedY;
 
             var (clampedX, clampedY) = ClampDragDelta(deltaMmX, deltaMmY);
             foreach (var kvp in _dragInitPositions)
@@ -1946,6 +2011,20 @@ public partial class MainWindow : Window
     {
         if (commit && _vm is not null)
         {
+            // Soft-snap na celé mm pro osy, kde se neuplatnil smart-snap ani grid snap.
+            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají
+            // přesně alignovat klávesami. Snap-to-grid má prioritu, pokud je zapnutý.
+            bool applySoftX = !_lastSnapActiveX && !_vm.State.SnapToGrid;
+            bool applySoftY = !_lastSnapActiveY && !_vm.State.SnapToGrid;
+            if ((applySoftX || applySoftY) && _dragInitPositions.Count > 0)
+            {
+                foreach (var el in _dragInitPositions.Keys)
+                {
+                    if (applySoftX) el.X = MathF.Round(el.X / SoftSnapMm) * SoftSnapMm;
+                    if (applySoftY) el.Y = MathF.Round(el.Y / SoftSnapMm) * SoftSnapMm;
+                }
+            }
+
             var moves = new List<IDesignerCommand>();
             foreach (var kvp in _dragInitPositions)
                 if (kvp.Key.X != kvp.Value.X || kvp.Key.Y != kvp.Value.Y)
@@ -1975,6 +2054,19 @@ public partial class MainWindow : Window
         {
             if (commit)
             {
+                // Zaokrouhlit na 0.1mm před commitem — eliminuje float artefakty z dragu
+                _resizeElement.X      = MmMath.Round(_resizeElement.X);
+                _resizeElement.Y      = MmMath.Round(_resizeElement.Y);
+                _resizeElement.Width  = MmMath.Round(_resizeElement.Width);
+                _resizeElement.Height = MmMath.Round(_resizeElement.Height);
+                if (_resizeNeighbor is not null)
+                {
+                    _resizeNeighbor.X      = MmMath.Round(_resizeNeighbor.X);
+                    _resizeNeighbor.Y      = MmMath.Round(_resizeNeighbor.Y);
+                    _resizeNeighbor.Width  = MmMath.Round(_resizeNeighbor.Width);
+                    _resizeNeighbor.Height = MmMath.Round(_resizeNeighbor.Height);
+                }
+
                 var commands = new List<IDesignerCommand>();
 
                 // Hlavní element

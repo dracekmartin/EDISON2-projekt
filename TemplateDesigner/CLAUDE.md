@@ -14,16 +14,16 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-03-25
+**Datum poslední aktualizace:** 2026-04-03
 
 ### 🎯 Aktuální focus
 
 1. Zastávkové JŘ end-to-end proof of concept: odladit elementy (StopList, DepartureGrid, NotesLegend), FullTime mód, data z Caché. Cíl: funkční tisk MHD + meziměstských JŘ.
-2. Ladění MinutesOnly na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 roadmapy).
+2. Ladění zastávkového JŘ na reálných datech — edge cases, vizuální shoda s referenčním PDF (krok 8 roadmapy).
 
 ### ✅ Co máme
 
-- Text, Image, Rectangle, Line, BarcodeElement (QR + Code128), TableElement (Fixed/Dynamic)
+- Text, Image, Rectangle, Line, BarcodeElement (QR, Code128, EAN-13, EAN-8, PDF417, DataMatrix), TableElement (Fixed/Dynamic)
 - Parametry sestavy (Part 1 + serializace do JSON), VisibilityExpression evaluator
 - Výrazový jazyk kompletní: podmínky (`&&`, `||`, `!`), formátování (`{POLE:N2}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}`), agregace (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`) v souhrnných řádcích tabulky
 - Live preview, PDF export, DataSchema tree, section management, undo/redo (12 cmd typů)
@@ -40,7 +40,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - Strom šablony — záložka "Strom" v hlavním okně; hierarchický přehled celé šablony (sekce → skupiny → elementy)
 - LineElement — custom dash/gap pro čárkované a tečkované čáry
 - ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
-- **Zastávkový JŘ (MinutesOnly)** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery, cache a sdílenými font/paint helpery (`CreateCellFont`, `CreateCellTextPaint`, `CreateCellBgPaint`, `MakeFontStyle`); ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace; DepartureGrid: redistribuce šířek sloupců na celou šířku, word-wrap záhlaví skupin, sloučený řádek záhlaví (Hod + názvy skupin); per-column nastavení (`DepartureGroupColumnStyle` + `ColumnVisualStyle`/`CellStyle`: viditelnost, barvy, font, zarovnání H+V, bold/italic, padding) přes `DepartureGroupEditorDialog`; StopList: per-column styling analogicky k DepartureGrid, šipka směru jízdy (┌─▼)
+- **Zastávkový JŘ** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery, cache a sdílenými font/paint helpery (`CreateCellFont`, `CreateCellTextPaint`, `CreateCellBgPaint`, `MakeFontStyle`); ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace; DepartureGrid: redistribuce šířek sloupců na celou šířku, word-wrap záhlaví skupin, sloučený řádek záhlaví (Hod + názvy skupin); per-column nastavení (`DepartureGroupColumnStyle` + `ColumnVisualStyle`/`CellStyle`: viditelnost, barvy, font, zarovnání H+V, bold/italic, padding) přes `DepartureGroupEditorDialog`; StopList: per-column styling analogicky k DepartureGrid, šipka směru jízdy (┌─▼)
 - **Caché ZastavkoveJrMhdAPI** — jedna třída `ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI` dědící přímo z `AgendaAPI`; kompletní 6-fázový tiskový engine MHD + všechny helpery (BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka, AddAnotace, AddAtribut, AddPoznamkaZastavky, ConvertSpecialniZnak) + GetSchema/GetData/GetMockData
 - **DataContext vnořená pole** — ParseMockData rozlišuje JsonArray/JsonObject vs skalární hodnoty; ScheduleElementBase parsuje vnořená pole (ZONY[], ATRIBUTY[], ANOTACE[], POZNAMKY_ZASTAVKY[])
 - **Multi-data PDF export + PrintDialog** — `RenderMultiDataToPdf` zpracovává více DataContextů (1 zastávka/směr = 1+ PDF stránek); PrintDialog s parametry a exportem reálných dat z Caché (`GetData`); tisk i mock preview v jednom dialogu
@@ -63,12 +63,22 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Multi-element editing** — Enter při výběru více elementů otevře dialog společných vlastností (BorderColor, BorderWidth, ZIndex, IsLocked); změna se aplikuje na všechny najednou
 - **Ikonový toolbar** — 33 Fluent UI System Icons (Microsoft, MIT); 1 band, 7 skupin (Soubor, Upravit, Přidat, Elementy, Vrstva, Zarovnat, Zobrazení); ToolbarStyles.xaml; maximalizované okno; preview 50:50 star sizing
 - **Inline properties panel** — záložka "Vlastnosti" v levém panelu; automatická aktualizace při výběru elementu; modální dialog zachován jako fallback (Enter/dvojklik)
-- **TextStyle unifikace** — `TextStyle` (nullable POCO, CSS cascade přes `Resolve()`) + `ResolvedTextStyle` (struct se SkiaSharp helpery: `CreateFont`, `CreateTextPaint`, `CreateBgPaint`); migrace všech elementů (TextElement, TableElement, ScheduleElementBase + StopList/DepartureGrid/NotesLegend); `BackgroundColor` na base `TemplateElement`; `CopyBaseTo()` eliminuje Clone() boilerplate; breaking JSON change (flat text props → composable `style`/`headerStyle`/`dataStyle`)
+- **TextStyle unifikace** — `TextStyle` (nullable POCO, CSS cascade přes `Resolve()`) + `ResolvedTextStyle` (struct se SkiaSharp helpery: `CreateFont`, `CreateTextPaint`, `CreateBgPaint`); migrace všech elementů (TextElement, TableElement, ScheduleElementBase + StopList/DepartureGrid/NotesLegend); `BackgroundColor` na base `TemplateElement`; `CopyBaseTo()` eliminuje Clone() boilerplate; breaking JSON change (flat text props → composable `style`/`headerStyle`/`dataStyle`); `Strikethrough` property; `DrawTextDecorations()` pro Underline + Strikethrough (SkiaSharp 3 nevykresluje automaticky)
 - **Proporcionální škálování šablony** — `ScaleTemplateCommand`: škáluje PageSize, margins, sekce (výšky), elementy (pozice, rozměry, mm/pt properties); `ApplyScale(float)` virtual metoda na všech elementech; dropdown v toolbaru (50%–200%); `LineSpacing` se neškáluje (bezrozměrný násobitel); undo přes inverzní škálu (1/scale)
 - **Redistribuce výšek sekcí** — při smazání sekce se uvolněná výška proporcionálně rozdělí mezi zbývající; při přidání sekce se stávající proporcionálně zmenší; `AddSectionCommand` pro undo/redo
 - **Výchozí nastavení nových elementů** — TextElement bez placeholder textu, zarovnání Center/Middle; všechny elementy: černý rámeček 0.1mm (jen nové — model defaults zůstávají pro zpětnou kompatibilitu JSON)
 - **DepartureGrid: HourColumnPerGroup** — `HourColumnPerGroup=true` zobrazí sloupec hodin u každé skupiny dnů (nejen vlevo)
 - **AI-enhanced PDF import** — dvoustupňový pipeline: heuristiky (geometrie) → volitelný AI enrichment (sémantika); `AiImportEnricher` s kontextovými prompty per `ScheduleImportType`; `EnrichedImportResult` (TextMappings s confidence, DayGroupValidations, DetectionValidation); sdílená `AnthropicApiClient.CallApiAsync()` (claude-haiku-4-5); auto-apply DB polí při confidence >= 0.7; graceful fallback při chybějícím API klíči nebo selhání AI; UI checkbox + agenda dropdown v `PdfImportDialog`
+- **AI Vision import pipeline** — `AiVisionImportService` s composable `AgendaPromptContext` prompt systémem (extensibilní per agenda); `AiGuidedScheduleBuilder` (PDF → rasterizace → Claude Vision → rozpoznání JŘ struktury → přesné elementy z PdfPig geometrie); `AiVisionImportPipeline` orchestruje celý flow s fallback na heuristiku; konfigurovatelný model (`AppSettings.AiAssistant.VisionModel`); typ parametrů z `AgendaAPI.GetParameters()` s value-based fallback; font family z PdfPig
+- **DepartureGrid: per-column font wrapping** — `ComputeLayout` respektuje per-column header font pro wrapping i min width měření; dynamická výška záhlaví z max per-column line height; `GroupColumnIndexResolver` — generický `BuildLookup<T>` s `IndexKeyPrefix` konstantou pro resolve `__INDEX_` klíčů
+- **Skrytí záhlaví sekcí** — `DesignerState.ShowSectionHeaders` toggle; auto-detekce JŘ šablon (skryje záhlaví automaticky); toolbar menu položka
+- **CellStyleVM font defaults** — dialog sloupců zobrazuje skutečné font hodnoty z elementu (ne prázdná pole); `headerDefaults`/`dataDefaults` parametry
+- **AnthropicApiClient: shared HttpClient** — statický `HttpClient` s per-request headers místo per-call instancí
+- **MmMath helpers** — `MmMath.Round(mm)` zaokrouhlí na 0.1mm (eliminuje IEEE-754 artefakty); `MmMath.Snap(mm, step)` přichytí na libovolný krok; nullable overload pro `Height`; aplikováno v EndResize, ScaleTemplate, DistributeH/V, PropertiesPanel
+- **Normalizovat pozice** (`Ctrl+Shift+N`) — dialog s volbou kroku (0.1–5mm), live preview počtu změn, `CompositeCommand` undo; opraví float artefakty v existujících šablonách
+- **Grid size v UI** — ComboBox 1/2/5/10mm v toolbaru; `DesignerState.GridSize` bindovatelná property (výchozí 5mm)
+- **BarcodeElement rozšíření** — EAN-13, EAN-8, PDF417, DataMatrix; `static readonly` hints/writer/dashEffect; paleta konsolidována na 1 tlačítko "Kód"
+- **TextStyle Strikethrough** — `Strikethrough` property + `DrawTextDecorations()`; oprava tichého nefungování Underline v SkiaSharp 3
 
 ### 🐛 Známé problémy
 

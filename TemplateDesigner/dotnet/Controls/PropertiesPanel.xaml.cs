@@ -148,20 +148,6 @@ public partial class PropertiesPanel : UserControl
             MaxLength = 2000
         };
 
-        // Validační label (zobrazí se pod polem pokud je chyba)
-        TextBlock? validationLabel = null;
-        if (sd.Validate is not null)
-        {
-            validationLabel = new TextBlock
-            {
-                Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0xC6, 0x60, 0x00)),
-                FontSize = 10,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(94, 0, 0, 2),
-                Visibility = Visibility.Collapsed
-            };
-        }
-
         string oldVal = sd.Get();
         box.LostFocus += (_, _) =>
         {
@@ -173,29 +159,13 @@ public partial class PropertiesPanel : UserControl
             oldVal = newVal;
         };
 
-        // Live validace při psaní
-        if (sd.Validate is not null && validationLabel is not null)
+        if (sd.Validate is not null)
         {
-            box.TextChanged += (_, _) =>
-            {
-                var error = sd.Validate(box.Text);
-                if (error is not null)
-                {
-                    validationLabel.Text = $"⚠ {error}";
-                    validationLabel.Visibility = Visibility.Visible;
-                }
-                else
-                {
-                    validationLabel.Visibility = Visibility.Collapsed;
-                }
-            };
+            box.TextChanged += (_, _) => ApplyValidation(box, sd.Validate(box.Text));
         }
 
         panel.Children.Add(box);
         ContentPanel.Children.Add(panel);
-
-        if (validationLabel is not null)
-            ContentPanel.Children.Add(validationLabel);
     }
 
     // ── Suggest (editovatelný ComboBox s filtrováním) ─────────────────────
@@ -304,15 +274,6 @@ public partial class PropertiesPanel : UserControl
             MaxLength = 2000
         };
 
-        // Validační řádek — zobrazí se jen při neznámých polích
-        var warnBlock = new TextBlock
-        {
-            Visibility   = Visibility.Collapsed,
-            Foreground   = new SolidColorBrush(Color.FromRgb(0xC6, 0x60, 0x00)),
-            FontSize     = 10,
-            Margin       = new Thickness(90, 0, 0, 3),
-            TextWrapping = TextWrapping.Wrap
-        };
 
         // Picker tlačítko — pouze pokud máme schéma
         if (tpd.AvailableFields is { Count: > 0 } fields)
@@ -344,7 +305,7 @@ public partial class PropertiesPanel : UserControl
                             tpd.Set((string)v!);
                             box.Text = (string)v!;
                             _invalidate?.Invoke();
-                            UpdateFieldValidation(box.Text, fields, warnBlock);
+                            UpdateFieldValidation(box.Text, fields, box);
                         });
                     };
                     menu.Items.Add(item);
@@ -368,19 +329,17 @@ public partial class PropertiesPanel : UserControl
         box.TextChanged += (_, _) =>
         {
             if (_suppressChanges || tpd.AvailableFields is null) return;
-            UpdateFieldValidation(box.Text, tpd.AvailableFields, warnBlock);
+            UpdateFieldValidation(box.Text, tpd.AvailableFields, box);
         };
 
         panel.Children.Add(box);
         ContentPanel.Children.Add(panel);
-        ContentPanel.Children.Add(warnBlock);
 
-        // Validace při prvním zobrazení
         if (tpd.AvailableFields is not null)
-            UpdateFieldValidation(tpd.Get(), tpd.AvailableFields, warnBlock);
+            UpdateFieldValidation(tpd.Get(), tpd.AvailableFields, box);
     }
 
-    private static void UpdateFieldValidation(string text, IReadOnlyList<DataField> fields, TextBlock warn)
+    private static void UpdateFieldValidation(string text, IReadOnlyList<DataField> fields, TextBox box)
     {
         var known = fields.Select(f => f.FieldName).ToHashSet(StringComparer.OrdinalIgnoreCase);
         var unknown = PlaceholderRegex.Matches(text)
@@ -389,13 +348,10 @@ public partial class PropertiesPanel : UserControl
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        if (unknown.Count == 0)
-            warn.Visibility = Visibility.Collapsed;
-        else
-        {
-            warn.Text = "⚠ Neznámá pole: " + string.Join(", ", unknown.Select(n => $"{{{n}}}"));
-            warn.Visibility = Visibility.Visible;
-        }
+        string? error = unknown.Count == 0
+            ? null
+            : "Neznámá pole: " + string.Join(", ", unknown.Select(n => $"{{{n}}}"));
+        ApplyValidation(box, error);
     }
 
     // ── Float ────────────────────────────────────────────────────────────
@@ -441,6 +397,7 @@ public partial class PropertiesPanel : UserControl
                 return;
             }
             parsed = Math.Clamp(parsed, fd.Min, fd.Max);
+            if (fd.Unit == "mm") parsed = MmMath.Round(parsed);
             if (Math.Abs(parsed - fd.Get()) < 0.0001f) return;
             float captured = oldVal;
             Commit(fd.Label, captured, parsed, v => { fd.Set((float)v!); _invalidate?.Invoke(); });
@@ -620,6 +577,23 @@ public partial class PropertiesPanel : UserControl
 
     // ─────────────────────────────────────────────────────────────────────
     // Helpers
+
+    private static readonly SolidColorBrush ErrorBorderBrush =
+        new(Color.FromRgb(0xCC, 0x00, 0x00));
+
+    private static void ApplyValidation(TextBox box, string? error)
+    {
+        if (error is not null)
+        {
+            box.BorderBrush = ErrorBorderBrush;
+            box.ToolTip = error;
+        }
+        else
+        {
+            box.ClearValue(TextBox.BorderBrushProperty);
+            box.ToolTip = null;
+        }
+    }
 
     private void Commit(string label, object? oldVal, object? newVal, Action<object?> apply)
         => _execute?.Invoke(new SetPropertyCommand(label, oldVal, newVal, apply));

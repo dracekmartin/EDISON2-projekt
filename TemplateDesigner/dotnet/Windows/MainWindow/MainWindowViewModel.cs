@@ -137,6 +137,12 @@ public class TemplateDesignerViewModel : EDViewModel
         set { State.ShowGrid = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); }
     }
 
+    public bool ShowSectionHeaders
+    {
+        get => State.ShowSectionHeaders;
+        set { State.ShowSectionHeaders = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); RequestCanvasSizeUpdate?.Invoke(); }
+    }
+
     public bool SnapToGrid
     {
         get => State.SnapToGrid;
@@ -147,6 +153,12 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         get => State.SnapToElements;
         set { State.SnapToElements = value; OnPropertyChanged(); }
+    }
+
+    public float GridSize
+    {
+        get => State.GridSize;
+        set { State.GridSize = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); }
     }
 
     // ── Callbacks wired by code-behind ────────────────────────────────────────
@@ -161,7 +173,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste, _cut;
+    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
 
     public RelayCommand UndoCommand     => _undo      ??= new(Undo,          () => CanUndo);
     public RelayCommand RedoCommand     => _redo      ??= new(Redo,          () => CanRedo);
@@ -174,6 +186,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
     public RelayCommand PasteCommand    => _paste     ??= new(PasteClipboard);
+    public RelayCommand CopyStyleCommand  => _copyStyle  ??= new(CopyStyle);
+    public RelayCommand PasteStyleCommand => _pasteStyle ??= new(PasteStyle, () => State.StyleClipboard is not null);
 
     // ── Constructor ───────────────────────────────────────────────────────────
     public TemplateDesignerViewModel(MLRest? mlRest = null)
@@ -480,6 +494,7 @@ public class TemplateDesignerViewModel : EDViewModel
             State.RedoStack.Clear();
             NotifyUndoRedo();
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
+            AutoSetSectionHeaders();
             RebuildSections();
             RefreshFieldsList();
             RequestTitleUpdate?.Invoke();
@@ -504,9 +519,20 @@ public class TemplateDesignerViewModel : EDViewModel
         CurrentFilePath = null;
         IsDirty = true;
 
+        AutoSetSectionHeaders();
         RebuildSections();
         InvalidateAll();
         RefreshFieldsList();
+    }
+
+    /// <summary>Auto-nastaví ShowSectionHeaders podle obsahu šablony (JŘ agendy = skryto).</summary>
+    private void AutoSetSectionHeaders()
+    {
+        bool hasScheduleElements = State.CurrentTemplate.Sections
+            .SelectMany(s => s.Elements)
+            .Any(e => e is ScheduleElementBase);
+        State.ShowSectionHeaders = !hasScheduleElements;
+        OnPropertyChanged(nameof(ShowSectionHeaders));
     }
 
     private void InvalidateAll()
@@ -598,7 +624,7 @@ public class TemplateDesignerViewModel : EDViewModel
             CurrentFilePath = dlg.FileName;
         }
         SyncParametersToTemplate();
-        TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath).GetAwaiter().GetResult();
+        TemplateSerializer.Save(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         return true;
     }
@@ -657,6 +683,48 @@ public class TemplateDesignerViewModel : EDViewModel
         State.SelectedElements.Clear();
         State.SelectedElements.AddRange(newElements);
         RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
+
+    // ── Style clipboard ──────────────────────────────────────────────────────
+
+    public void CopyStyle()
+    {
+        var el = State.SelectedElements.FirstOrDefault();
+        if (el is null) return;
+        var textStyle = el is TextElement te ? te.Style.Clone() : null;
+        State.StyleClipboard = new StyleClipboard(textStyle, el.BorderColor, el.BorderWidth, el.BackgroundColor);
+    }
+
+    public void PasteStyle()
+    {
+        var clip = State.StyleClipboard;
+        if (clip is null || State.SelectedElements.Count == 0) return;
+
+        var commands = new List<IDesignerCommand>();
+        foreach (var el in State.SelectedElements)
+        {
+            if (el.BorderColor != clip.BorderColor)
+                commands.Add(new SetPropertyCommand("Barva rámečku", el.BorderColor, clip.BorderColor,
+                    v => { el.BorderColor = (string)v!; }));
+            if (MathF.Abs(el.BorderWidth - clip.BorderWidth) > 0.001f)
+                commands.Add(new SetPropertyCommand("Šířka rámečku", el.BorderWidth, clip.BorderWidth,
+                    v => { el.BorderWidth = (float)v!; }));
+            if (el.BackgroundColor != clip.BackgroundColor)
+                commands.Add(new SetPropertyCommand("Barva pozadí", el.BackgroundColor, clip.BackgroundColor,
+                    v => { el.BackgroundColor = (string)v!; }));
+
+            if (clip.TextStyle is not null && el is TextElement te)
+            {
+                var oldStyle = te.Style;
+                var newStyle = clip.TextStyle.Clone();
+                commands.Add(new SetPropertyCommand("Styl textu", oldStyle, newStyle,
+                    v => { te.Style = (TextStyle)v!; }));
+            }
+        }
+
+        if (commands.Count == 0) return;
+        Execute(new CompositeCommand("Vložit styl", commands));
         RequestCanvasRefresh?.Invoke();
     }
 
@@ -779,8 +847,7 @@ public class TemplateDesignerViewModel : EDViewModel
         "LineElement"      => (190f, 1f),
         "ImageElement"     => (40f, 30f),
         "TableElement"     => (190f, 30f),
-        "BarcodeQR"        => (30f, 30f),
-        "BarcodeCode128"   => (80f, 15f),
+        "BarcodeElement"   => (30f, 30f),
         "StopListElement"      => (60f, 60f),
         "DepartureGridElement" => (120f, 60f),
         "NotesLegendElement"   => (190f, 25f),
@@ -797,8 +864,7 @@ public class TemplateDesignerViewModel : EDViewModel
             "LineElement"      => new LineElement      { X = x, Y = y, Width = w, Height = h },
             "ImageElement"     => new ImageElement     { X = x, Y = y, Width = w, Height = h },
             "TableElement"     => new TableElement     { X = x, Y = y, Width = w },
-            "BarcodeQR"        => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.QR },
-            "BarcodeCode128"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h, BarcodeType = BarcodeElementType.Code128 },
+            "BarcodeElement"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
             "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
             "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
             "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
@@ -931,81 +997,105 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Alignment ─────────────────────────────────────────────────────────────
     public void AlignElements(AlignMode mode)
     {
-        if (State.ActiveSection is null) return;
+        // X-align pracuje napříč sekcemi (sekce sdílejí levý margin → X je přímo porovnatelné).
+        // Y-align zůstává per-aktivní-sekce (Y je relativní k hornímu okraji sekce).
+        bool isXMode = mode is AlignMode.Left or AlignMode.Right or AlignMode.CenterH or AlignMode.DistributeH;
 
-        var inSection = State.SelectedElements
-            .Where(el => State.ActiveSection.Elements.Contains(el))
-            .ToList();
+        List<TemplateElement> els;
+        if (isXMode)
+        {
+            els = State.SelectedElements.ToList();
+        }
+        else
+        {
+            if (State.ActiveSection is null) return;
+            els = State.SelectedElements
+                .Where(el => State.ActiveSection.Elements.Contains(el))
+                .ToList();
+        }
 
         int minCount = mode is AlignMode.DistributeH or AlignMode.DistributeV ? 3 : 2;
-        if (inSection.Count < minCount) return;
+        if (els.Count < minCount) return;
 
         var commands = new List<IDesignerCommand>();
+
+        // Zaokrouhlení na celé mm — align cílí na "čistou" hodnotu konzistentní se soft-snapem při dragu.
+        static float Rnd(float v) => MathF.Round(v);
 
         switch (mode)
         {
             case AlignMode.Left:
             {
-                float t = inSection.Min(e => e.X);
-                foreach (var el in inSection.Where(e => e.X != t))
-                    commands.Add(MakeXCmd(el, t));
+                float t = Rnd(els.Min(e => e.X));
+                foreach (var el in els)
+                { if (Math.Abs(el.X - t) > 0.001f) commands.Add(MakeXCmd(el, t)); }
                 break;
             }
             case AlignMode.Right:
             {
-                float t = inSection.Max(e => e.X + e.Width);
-                foreach (var el in inSection)
-                { float nx = t - el.Width; if (Math.Abs(el.X - nx) > 0.01f) commands.Add(MakeXCmd(el, nx)); }
+                float t = Rnd(els.Max(e => e.X + e.Width));
+                foreach (var el in els)
+                { float nx = t - el.Width; if (Math.Abs(el.X - nx) > 0.001f) commands.Add(MakeXCmd(el, nx)); }
                 break;
             }
             case AlignMode.CenterH:
             {
-                float cx = (inSection.Min(e => e.X) + inSection.Max(e => e.X + e.Width)) / 2f;
-                foreach (var el in inSection)
-                { float nx = cx - el.Width / 2f; if (Math.Abs(el.X - nx) > 0.01f) commands.Add(MakeXCmd(el, nx)); }
+                float cx = Rnd((els.Min(e => e.X) + els.Max(e => e.X + e.Width)) / 2f);
+                foreach (var el in els)
+                { float nx = cx - el.Width / 2f; if (Math.Abs(el.X - nx) > 0.001f) commands.Add(MakeXCmd(el, nx)); }
                 break;
             }
             case AlignMode.Top:
             {
-                float t = inSection.Min(e => e.Y);
-                foreach (var el in inSection.Where(e => e.Y != t))
-                    commands.Add(MakeYCmd(el, t));
+                float t = Rnd(els.Min(e => e.Y));
+                foreach (var el in els)
+                { if (Math.Abs(el.Y - t) > 0.001f) commands.Add(MakeYCmd(el, t)); }
                 break;
             }
             case AlignMode.Bottom:
             {
-                float t = inSection.Max(e => e.Y + e.EffectiveDesignerHeight);
-                foreach (var el in inSection)
-                { float ny = t - el.EffectiveDesignerHeight; if (Math.Abs(el.Y - ny) > 0.01f) commands.Add(MakeYCmd(el, ny)); }
+                float t = Rnd(els.Max(e => e.Y + e.EffectiveDesignerHeight));
+                foreach (var el in els)
+                { float ny = t - el.EffectiveDesignerHeight; if (Math.Abs(el.Y - ny) > 0.001f) commands.Add(MakeYCmd(el, ny)); }
                 break;
             }
             case AlignMode.MiddleV:
             {
-                float cy = (inSection.Min(e => e.Y) + inSection.Max(e => e.Y + e.EffectiveDesignerHeight)) / 2f;
-                foreach (var el in inSection)
-                { float ny = cy - el.EffectiveDesignerHeight / 2f; if (Math.Abs(el.Y - ny) > 0.01f) commands.Add(MakeYCmd(el, ny)); }
+                float cy = Rnd((els.Min(e => e.Y) + els.Max(e => e.Y + e.EffectiveDesignerHeight)) / 2f);
+                foreach (var el in els)
+                { float ny = cy - el.EffectiveDesignerHeight / 2f; if (Math.Abs(el.Y - ny) > 0.001f) commands.Add(MakeYCmd(el, ny)); }
                 break;
             }
             case AlignMode.DistributeH:
             {
-                var sorted = inSection.OrderBy(e => e.X).ToList();
+                var sorted = els.OrderBy(e => e.X).ToList();
                 float totalW = sorted.Sum(e => e.Width);
                 float span   = sorted.Last().X + sorted.Last().Width - sorted.First().X;
-                float gap    = (span - totalW) / (sorted.Count - 1);
+                float gap    = MmMath.Round((span - totalW) / (sorted.Count - 1));
                 float cur    = sorted.First().X;
-                foreach (var el in sorted)
-                { if (Math.Abs(el.X - cur) > 0.01f) commands.Add(MakeXCmd(el, cur)); cur += el.Width + gap; }
+                for (int i = 0; i < sorted.Count - 1; i++)
+                {
+                    var el = sorted[i];
+                    float x = MmMath.Round(cur);
+                    if (Math.Abs(el.X - x) > 0.01f) commands.Add(MakeXCmd(el, x));
+                    cur += el.Width + gap;
+                }
                 break;
             }
             case AlignMode.DistributeV:
             {
-                var sorted = inSection.OrderBy(e => e.Y).ToList();
+                var sorted = els.OrderBy(e => e.Y).ToList();
                 float totalH = sorted.Sum(e => e.EffectiveDesignerHeight);
                 float span   = sorted.Last().Y + sorted.Last().EffectiveDesignerHeight - sorted.First().Y;
-                float gap    = (span - totalH) / (sorted.Count - 1);
+                float gap    = MmMath.Round((span - totalH) / (sorted.Count - 1));
                 float cur    = sorted.First().Y;
-                foreach (var el in sorted)
-                { if (Math.Abs(el.Y - cur) > 0.01f) commands.Add(MakeYCmd(el, cur)); cur += el.EffectiveDesignerHeight + gap; }
+                for (int i = 0; i < sorted.Count - 1; i++)
+                {
+                    var el = sorted[i];
+                    float y = MmMath.Round(cur);
+                    if (Math.Abs(el.Y - y) > 0.01f) commands.Add(MakeYCmd(el, y));
+                    cur += el.EffectiveDesignerHeight + gap;
+                }
                 break;
             }
         }
@@ -1034,6 +1124,32 @@ public class TemplateDesignerViewModel : EDViewModel
         => new SetPropertyCommand("X", el.X, nx, v => el.X = (float)v!);
     private static IDesignerCommand MakeYCmd(TemplateElement el, float ny)
         => new SetPropertyCommand("Y", el.Y, ny, v => el.Y = (float)v!);
+
+    // ── Normalize positions ───────────────────────────────────────────────────
+    public void NormalizePositions(IReadOnlyList<TemplateElement> elements, float step)
+    {
+        if (elements.Count == 0) return;
+
+        var commands = new List<IDesignerCommand>();
+        foreach (var el in elements)
+        {
+            float nx = MmMath.Snap(el.X, step), ny = MmMath.Snap(el.Y, step);
+            float nw = MmMath.Snap(el.Width, step);
+            float? nh = el.Height is not null ? MmMath.Snap(el.Height.Value, step) : null;
+
+            bool posChanged  = Math.Abs(nx - el.X) > 0.001f || Math.Abs(ny - el.Y) > 0.001f;
+            bool sizeChanged = Math.Abs(nw - el.Width) > 0.001f
+                            || (nh is not null && Math.Abs(nh.Value - el.Height!.Value) > 0.001f);
+
+            if (posChanged || sizeChanged)
+                commands.Add(new ResizeElementCommand(el, el.X, el.Y, el.Width, el.Height, nx, ny, nw, nh));
+        }
+
+        if (commands.Count == 0) return;
+        Execute(new CompositeCommand("Normalizovat pozice", commands));
+        RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+    }
 
     // ── Template scaling ─────────────────────────────────────────────────────
     public void ScaleTemplate(float scale)
