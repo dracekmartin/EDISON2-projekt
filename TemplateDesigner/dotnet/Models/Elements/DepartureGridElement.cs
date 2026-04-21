@@ -88,7 +88,6 @@ public class DepartureGridElement : ScheduleElementBase
     // ═══════════════════════════════════════════
     public bool ShowAnotace { get; set; } = true;
     public float AnotaceFontSize { get; set; } = 5f;
-    public bool ShowZkraceneOznaceniLinky { get; set; }
 
     // ═══════════════════════════════════════════
     // Nastavení sloupců
@@ -1063,7 +1062,6 @@ public class DepartureGridElement : ScheduleElementBase
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace — text", Get = () => AnotaceTextStyle.TextColor ?? "", Set = v => AnotaceTextStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         new BoolPropertyDescriptor  { Label = "Anotace",              Group = "Anotace", Get = () => ShowAnotace,              Set = v => ShowAnotace = v },
-        new BoolPropertyDescriptor  { Label = "Zkr. označ. linky",   Group = "Anotace", Get = () => ShowZkraceneOznaceniLinky, Set = v => ShowZkraceneOznaceniLinky = v },
 
         new FloatPropertyDescriptor { Label = "Mezera min. ↔ anot.",  Group = "Mezery", Get = () => AnotaceGap,      Set = v => AnotaceGap = v,      Min = 0, Max = 5, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Mezera anot. ↔ anot.", Group = "Mezery", Get = () => AnotaceInterGap, Set = v => AnotaceInterGap = v, Min = 0, Max = 5, Unit = "mm" },
@@ -1119,7 +1117,6 @@ public class DepartureGridElement : ScheduleElementBase
             TimeAxisRangeTo            = TimeAxisRangeTo,
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
-            ShowZkraceneOznaceniLinky   = ShowZkraceneOznaceniLinky,
             HourColumnStyle            = HourColumnStyle?.Clone(),
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
             ColorRules                 = ColorRules.Select(r => r.Clone()).ToList(),

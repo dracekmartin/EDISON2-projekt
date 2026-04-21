@@ -109,7 +109,7 @@ Mřížka minut odjezdů. Klíčové properties:
 - `ShowSkupinaDnuHeader`, `SkupinaDnuHeaderLineHeight`, `HeaderVerticalAlignment`
 - `TimeAxisMode` — `Compact` / `Full` / `Range` + `TimeAxisRangeFrom/To`
 - `GroupSeparatorWidth`, `AlternatingRowColor`, `DataRowHeight`
-- `ShowAnotace`, `AnotaceFontSize`, `ShowZkraceneOznaceniLinky`
+- `ShowAnotace`, `AnotaceFontSize`
 - `GroupColumns: List<DepartureGroupColumnStyle>` — per-column nastavení (viditelnost, barvy, font, zarovnání, bold/italic) editovatelné přes `DepartureGroupEditorDialog`
 - `ColorRules: List<ColorRule>` — template-driven barvy
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: smazat `ShowZkraceneOznaceniLinky` (H-1)
+
+- ✅ **`DepartureGridElement`** — smazána ghost property `ShowZkraceneOznaceniLinky` (declaration, PropertyDescriptor, Clone); nikde se nečetla, klamala uživatele v panelu vlastností
+- ✅ **Datová property `ZkraceneOznaceniLinky`** na `OdjezdData` zůstává (reálně se plní z Caché `ZKRACENE_OZNACENI_LINKY`)
+- ✅ **Existující šablony** (`kv.json`, `kv_zaklad.json`, `test_cb_na_sirku.json`) — ghost klíč `showZkraceneOznaceniLinky` v JSON se deserializerem tiše ignoruje, migrace nepotřeba
+- ✅ **Docs** — odstraněno ze seznamu properties v `schedule-elements-architecture.md`
+
+---
+
 ## 2026-04-20 — Inline validace v PropertiesPanel (B0-11)
 
 - ✅ Chybový stav pole: červený rámeček + tooltip s chybou místo TextBlocku pod polem
