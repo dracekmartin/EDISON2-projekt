@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: `ElementTypes` konstanty (H-3)
+
+- ✅ **Nový soubor `Models/ElementTypes.cs`** — 9 `const string` konstant pro identifikátory typů elementů (`Text`, `Rectangle`, `Line`, `Image`, `Table`, `Barcode`, `StopList`, `DepartureGrid`, `NotesLegend`); jedna autoritativní definice pro JSON wire formát
+- ✅ **`TemplateElement.cs`** — všech 9 `[JsonDerivedType(...)]` atributů odkazuje na `ElementTypes.X` (C# const expression je validní v atributu)
+- ✅ **`MainWindowViewModel.GetDefaultElementSize` + `CreateElementByType`** — switch expressions + fallback `?? "TextElement"` → konstanty
+- ✅ **`MainWindow.xaml.cs`** — 9 toolbar itemů + ghost ruler fallback → konstanty
+- ⚠️ **XAML `Tag="TextElement"`** zůstává literál — `{x:Static}` binding v `Tag` by přidal verbose `xmlns` bez reálného benefitu; drift odchytne první switch výraz
+- ⚠️ **`AnthropicApiClient.cs` JSON ukázky** zůstávají literály — jsou to prompt texty dokumentující wire formát pro AI model, ne code comparisons
+- 📋 **Směrem dopředu** — nový element = přidat konstantu do `ElementTypes`, použít ji v JsonDerivedType atributu a ve factory; Wave 4 Caché migrace bude mapovat tyto konstanty na Caché form class names
+
+---
+
 ## 2026-04-21 — Code Hygiene: `async void` → `async Task` + AsyncRelayCommand (H-2)
 
 - ✅ **EDControls `AsyncRelayCommand`** — nová třída vedle `RelayCommand`, async ekvivalent; chytá výjimky přes `IPopupDisplayer.Error(ex)` (pravidlo R2), `CanExecute` vrací false během běhu → prevence double-click

@@ -75,8 +75,11 @@ DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (D
 1. Vytvořit třídu dědící z `TemplateElement` v `/Models/Elements/`
 2. Implementovat `Render(RenderContext ctx)` a `Clone()`
 3. Implementovat `GetPropertyDescriptors()` — vrací seznam deskriptorů pro panel vlastností
-4. Přidat `[JsonDerivedType(typeof(NovyElement), "NovyElement")]` na `TemplateElement`
-5. Přidat do toolbar menu v `BtnAddElement_Click`
+4. **Přidat konstantu do `Models/ElementTypes.cs`** (např. `public const string NovyElement = "NovyElement";`) — jedna autoritativní definice string identifikátoru
+5. Přidat `[JsonDerivedType(typeof(NovyElement), ElementTypes.NovyElement)]` na `TemplateElement` — **vždy přes konstantu, nikdy literál**
+6. Doplnit `MainWindowViewModel.GetDefaultElementSize` + `CreateElementByType` switch — také přes `ElementTypes.NovyElement`
+7. Přidat do toolbar menu v `BtnAddElement_Click` (volání `CreateElementByType(ElementTypes.NovyElement, ...)`)
+8. Pokud má paletové tlačítko v `MainWindow.xaml`, `Tag="NovyElement"` zůstává literál (XAML si nevynucuje `x:Static`) — drift odchytne první switch výraz při prvním přetažení
 
 ---
 

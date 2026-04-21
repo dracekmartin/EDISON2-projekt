@@ -843,16 +843,16 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public static (float Width, float Height) GetDefaultElementSize(string type) => type switch
     {
-        "TextElement"      => (80f, 8f),
-        "RectangleElement" => (60f, 20f),
-        "LineElement"      => (190f, 1f),
-        "ImageElement"     => (40f, 30f),
-        "TableElement"     => (190f, 30f),
-        "BarcodeElement"   => (30f, 30f),
-        "StopListElement"      => (60f, 60f),
-        "DepartureGridElement" => (120f, 60f),
-        "NotesLegendElement"   => (190f, 25f),
-        _                  => (80f, 8f)
+        ElementTypes.Text          => (80f, 8f),
+        ElementTypes.Rectangle     => (60f, 20f),
+        ElementTypes.Line          => (190f, 1f),
+        ElementTypes.Image         => (40f, 30f),
+        ElementTypes.Table         => (190f, 30f),
+        ElementTypes.Barcode       => (30f, 30f),
+        ElementTypes.StopList      => (60f, 60f),
+        ElementTypes.DepartureGrid => (120f, 60f),
+        ElementTypes.NotesLegend   => (190f, 25f),
+        _                          => (80f, 8f)
     };
 
     public static TemplateElement CreateElementByType(string type, float x, float y)
@@ -860,16 +860,16 @@ public class TemplateDesignerViewModel : EDViewModel
         var (w, h) = GetDefaultElementSize(type);
         var el = type switch
         {
-            "TextElement"      => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
-            "RectangleElement" => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
-            "LineElement"      => new LineElement      { X = x, Y = y, Width = w, Height = h },
-            "ImageElement"     => new ImageElement     { X = x, Y = y, Width = w, Height = h },
-            "TableElement"     => new TableElement     { X = x, Y = y, Width = w },
-            "BarcodeElement"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
-            "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
-            "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
-            "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
-            _                  => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
+            ElementTypes.Text          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
+            ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.Table         => new TableElement     { X = x, Y = y, Width = w },
+            ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.DepartureGrid => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
+            _                          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
         };
         // Výchozí rámeček pro nové elementy (na modelu je default bez rámečku kvůli zpětné kompatibilitě)
         el.BorderColor = "#FF000000";
@@ -1606,7 +1606,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Vytvoří a umístí nový element na danou pozici v sekci (dříve v EndAddingElement code-behind).</summary>
     public void AddElementAtPosition(Section targetSection, float mmX, float mmY, string? elementType, string? fieldName)
     {
-        var (defW, defH) = GetDefaultElementSize(elementType ?? "TextElement");
+        var (defW, defH) = GetDefaultElementSize(elementType ?? ElementTypes.Text);
 
         // Centrovat element na pozici kurzoru
         mmX -= defW / 2f;

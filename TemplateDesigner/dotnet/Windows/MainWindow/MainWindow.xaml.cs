@@ -240,7 +240,7 @@ public partial class MainWindow : Window
                     surface.Canvas.DrawRect(sRect, sectionHighlight);
 
                     // Ghost element — čárkovaný obdélník
-                    var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? "TextElement");
+                    var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? ElementTypes.Text);
                     float gx = _addingGhostPos.X - (defW * _canvas.MmToPx / 2f);
                     float gy = _addingGhostPos.Y - (defH * _canvas.MmToPx / 2f);
                     var ghostRect = new SKRect(gx, gy, gx + defW * _canvas.MmToPx, gy + defH * _canvas.MmToPx);
@@ -996,16 +996,16 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
 
-        Add("Text",        () => TemplateDesignerViewModel.CreateElementByType("TextElement", 5, 5));
-        Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType("RectangleElement", 5, 5));
-        Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType("LineElement", 0, 10));
-        Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType("ImageElement", 5, 5));
-        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType("TableElement", 0, 0));
-        Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType("BarcodeElement", 5, 5));
+        Add("Text",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Text, 5, 5));
+        Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Rectangle, 5, 5));
+        Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
+        Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
+        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0));
+        Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
         menu.Items.Add(new Separator());
-        Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType("StopListElement", 0, 0));
-        Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType("DepartureGridElement", 0, 0));
-        Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType("NotesLegendElement", 0, 0));
+        Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
+        Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
+        Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
