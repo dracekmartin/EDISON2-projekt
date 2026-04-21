@@ -272,7 +272,7 @@ public partial class MainWindow : Window
         float padding = 80f;
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
         float pageH   = _canvas.CalculatePageHeightPx(_vm.State.CurrentTemplate);
-        skCanvas.Width  = pageW + padding;
+        skCanvas.Width  = pageW + padding + _canvas.ExtraLeftPx;
         skCanvas.Height = pageH + padding;
         skCanvas.InvalidateVisual();
         UpdatePreviewSize();
