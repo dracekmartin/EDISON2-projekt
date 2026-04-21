@@ -72,14 +72,9 @@ DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (D
 
 ## Jak přidat nový typ elementu
 
-1. Vytvořit třídu dědící z `TemplateElement` v `/Models/Elements/`
-2. Implementovat `Render(RenderContext ctx)` a `Clone()`
-3. Implementovat `GetPropertyDescriptors()` — vrací seznam deskriptorů pro panel vlastností
-4. **Přidat konstantu do `Models/ElementTypes.cs`** (např. `public const string NovyElement = "NovyElement";`) — jedna autoritativní definice string identifikátoru
-5. Přidat `[JsonDerivedType(typeof(NovyElement), ElementTypes.NovyElement)]` na `TemplateElement` — **vždy přes konstantu, nikdy literál**
-6. Doplnit `MainWindowViewModel.GetDefaultElementSize` + `CreateElementByType` switch — také přes `ElementTypes.NovyElement`
-7. Přidat do toolbar menu v `BtnAddElement_Click` (volání `CreateElementByType(ElementTypes.NovyElement, ...)`)
-8. Pokud má paletové tlačítko v `MainWindow.xaml`, `Tag="NovyElement"` zůstává literál (XAML si nevynucuje `x:Static`) — drift odchytne první switch výraz při prvním přetažení
+Kompletní checklist včetně dotčených souborů, factory switches, dynamické výšky a strom šablony → viz **`.claude/rules/new-element-checklist.md`**.
+
+Reference implementace: `BarcodeElement` (minimální), `TextElement` (TextStyle + dynamická výška), `ScheduleElementBase`-derived (komplexní s cache).
 
 ---
 

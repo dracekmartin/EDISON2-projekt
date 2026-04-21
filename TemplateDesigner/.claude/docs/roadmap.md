@@ -56,9 +56,7 @@ Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění e
 
 #### Tier 1 — Quick wins (povinné)
 
-| # | Co | Proč | Velikost |
-|---|---|---|---|
-| H-6 | **Checklist doc pro nové elementy** — `.claude/rules/new-element-checklist.md`: Clone, ApplyScale, JsonDerivedType, PropertyDescriptors, toolbar menu, dokumentace. Aktuálně roztroušeno v `mvvm-patterns.md` a v kódu. | Při přidání nového elementu se stabilně zapomene 1–2 věci (např. `ApplyScale`). Checklist = 0 miss. | XS |
+✅ **Všechny dokončeny** — H-1 až H-6. Viz archiv Fáze B0.5 níže.
 
 #### Tier 2 — MVVM consistency (doporučené)
 
@@ -603,6 +601,7 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 | H-3 | `ElementTypes` statické konstanty v `Models/ElementTypes.cs` — nahrazeno ~30 magic strings v JsonDerivedType, `CreateElementByType`, `GetDefaultElementSize` a toolbar menu | 2026-04-21 |
 | H-4 | JSON wire format verify — průzkum potvrdil 100% čistý JSON (Caché `obj.%ToJSON()` → .NET `JsonNode.Parse`); opraven zastaralý docstring `GetData` v `AgendaAPI.cls` + `cache-api.md` + přidána sekce "Wire formát pravidlo (R3)" | 2026-04-21 |
 | H-5 | Silent catch v `PropertiesPanel.xaml.cs` color picker seed nahrazen za `SKColor.TryParse` — odstranil try/catch jako control flow | 2026-04-21 |
+| H-6 | Nový `.claude/rules/new-element-checklist.md` — 10-kroková autoritativní reference (třída, ElementTypes, JsonDerivedType, 2 switches, toolbar menu, paleta, dynamická výška, GetSummary, docs); konsolidace z `mvvm-patterns.md` | 2026-04-21 |
 
 ## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
 

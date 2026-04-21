@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: checklist pro nové elementy (H-6)
+
+- ✅ **Nový soubor `.claude/rules/new-element-checklist.md`** — autoritativní 10-kroková reference přidání nového elementu: třída + rendering, `ElementTypes` konstanta, `JsonDerivedType`, `MainWindowViewModel` 2 switches, toolbar menu, paleta, dynamická výška (`SkiaHeightCalculator`), `TemplateElement.GetSummary` pro strom, dokumentace; Glob `dotnet/Models/Elements/**` → automaticky načteno při práci na elementech
+- ✅ **Tabulka dotčených souborů** — 10 bodů, jasně označeno co je povinné a co volitelné
+- ✅ **Reference implementace** — `BarcodeElement` (minimální), `TextElement` (TextStyle + dynamická výška), `ScheduleElementBase`-derived (komplexní s cache)
+- ✅ **`mvvm-patterns.md`** — 8-kroková sekce „Jak přidat nový typ elementu" zkrácena na pointer do checklistu (eliminace duplikátní dokumentace)
+- 📋 **Proč teď** — během H-3 / H-4 se ukázalo, že checklist je rozesetý: `mvvm-patterns.md` má 8 kroků, ale nepokrývá `GetSummary`, `ApplyScale`, `SkiaHeightCalculator`, `CopyBaseTo`, paletu — vše bylo nutné dohledat v kódu
+
+---
+
 ## 2026-04-21 — Code Hygiene: silent catch → TryParse (H-5)
 
 - ✅ **`PropertiesPanel.xaml.cs` color picker seed** — prázdný `catch { /* ignore */ }` kolem `SKColor.Parse(cd.Get())` nahrazen za `SKColor.TryParse(...)`; stejné chování (dialog s defaultní barvou při nevalidním vstupu), ale bez try/catch jako control flow
