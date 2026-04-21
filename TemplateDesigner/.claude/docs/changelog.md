@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-04-21 — Code Hygiene: Extract TemplateTreePanel (H-8)
+
+- ✅ **Nový UserControl `Controls/TemplateTreePanel/`** — XAML (DockPanel s hlavičkovým textem + TreeView) + code-behind (`Rebuild()`, 3 event handlery, `CreateElementNode`, `FindItemByTag`); ~160 řádků
+- ✅ **API** — `SetContext(vm, openElementProperties, openSectionProperties, afterSelectionChanged)` + `Rebuild()`; pattern identický s `FormatToolbar`/`PropertiesPanel` (imperativní, bez samostatného VM — strom je čistě vizuální projekce `DesignerState`)
+- ✅ **`MainWindow.xaml`** — inline TreeView + header Border nahrazeny `<controls:TemplateTreePanel x:Name="TreePanel"/>`
+- ✅ **`MainWindow.xaml.cs`** — odstraněno ~150 řádků (`RebuildTemplateTree`, `CreateElementTreeNode`, `FindTreeItemByTag`, `GetTreeElementDetails`, `TemplateTree_SelectedItemChanged`, `TemplateTree_MouseDoubleClick`, `TemplateTree_PreviewKeyDown`, `_suppressTreeSelection`); `RefreshTreeIfVisible()` + `LeftTabControl_SelectionChanged` delegují na `TreePanel.Rebuild()`
+- ✅ **Smazán orphan `Windows/TemplateTreeDialog/`** — nikdy se neinstanciovalo, dead code z doby, kdy strom byl modální okno
+- 📋 **Proč UserControl, ne Window** — strom je tab content v levém panelu, ne dialog; kdyby někdy byla potřeba i samostatného okna, stačí UserControl hostovat v Window
+
+---
+
 ## 2026-04-21 — Code Hygiene: MessageBox.Show → IPopupDisplayer (H-7)
 
 - ✅ **`AiTemplateAssistantDialogViewModel`** — 5× `MessageBox.Show` → 4× `PopupDisplayer.Info` + 1× `PopupDisplayer.Error(ex)`; odstraněn `using System.Windows;`

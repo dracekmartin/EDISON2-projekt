@@ -159,6 +159,13 @@ public partial class MainWindow : Window
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
         InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
 
+        // Template tree panel — SetContext
+        TreePanel.SetContext(
+            _vm,
+            OpenPropertiesForElement,
+            OpenPropertiesForSection,
+            RestoreSectionSelection);
+
         // Initial state
         _vm.RefreshFieldsList();
         UpdateTitle();
@@ -700,170 +707,11 @@ public partial class MainWindow : Window
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Template tree tab — bidirectional selection sync
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private bool _suppressTreeSelection;
-
-    private void RebuildTemplateTree()
-    {
-        if (_vm is null) return;
-        _suppressTreeSelection = true;
-        try
-        {
-            TemplateTree.Items.Clear();
-            var template = _vm.State.CurrentTemplate;
-
-            var root = new TreeViewItem
-            {
-                Header = $"Template: {template.Name}",
-                FontWeight = FontWeights.Bold,
-                IsExpanded = true
-            };
-
-            var ps = template.PageSize;
-            root.Items.Add(new TreeViewItem
-            {
-                Header = $"PageSize: {ps.Width}x{ps.Height}mm  (L={ps.MarginLeft} T={ps.MarginTop} R={ps.MarginRight} B={ps.MarginBottom})",
-                Foreground = System.Windows.Media.Brushes.Gray
-            });
-
-            foreach (var section in template.Sections)
-            {
-                var sNode = new TreeViewItem
-                {
-                    Header = $"[{section.PrintBehavior}] {section.Name}  ({section.DesignerHeight?.ToString("0.#") ?? "auto"} mm)",
-                    Tag = section,
-                    IsExpanded = true,
-                    FontWeight = section == _vm.State.ActiveSection ? FontWeights.SemiBold : FontWeights.Normal
-                };
-
-                // Seskupit elementy podle GroupId pro hierarchické zobrazení
-                var orderedElements = section.Elements.OrderBy(e => e.ZIndex).ToList();
-                var processedGroups = new HashSet<string>();
-
-                foreach (var el in orderedElements)
-                {
-                    if (el.GroupId is not null && !processedGroups.Contains(el.GroupId))
-                    {
-                        // Sbalitelný uzel pro skupinu
-                        processedGroups.Add(el.GroupId);
-                        var groupMembers = orderedElements.Where(e2 => e2.GroupId == el.GroupId).ToList();
-                        var groupNode = new TreeViewItem
-                        {
-                            Header = $"[G] {el.GroupId}  [{groupMembers.Count} elem.]",
-                            Tag = el.GroupId,
-                            IsExpanded = true,
-                            FontStyle = FontStyles.Italic
-                        };
-
-                        foreach (var member in groupMembers)
-                            groupNode.Items.Add(CreateElementTreeNode(member));
-                        sNode.Items.Add(groupNode);
-                    }
-                    else if (el.GroupId is null)
-                    {
-                        sNode.Items.Add(CreateElementTreeNode(el));
-                    }
-                    // else: element patří do skupiny, která už byla zpracována → přeskočit
-                }
-
-                root.Items.Add(sNode);
-            }
-
-            TemplateTree.Items.Add(root);
-
-            // Obnovit výběr a focus na aktuálně vybraný element
-            if (_vm.State.SelectedElements.Count > 0)
-            {
-                var selectedEl = _vm.State.SelectedElements[0];
-                var itemToSelect = FindTreeItemByTag(root, selectedEl);
-                if (itemToSelect is not null)
-                {
-                    itemToSelect.IsSelected = true;
-                    itemToSelect.Focus();
-                }
-            }
-        }
-        finally { _suppressTreeSelection = false; }
-    }
-
-    /// <summary>Najde TreeViewItem s daným Tag v celém stromu.</summary>
-    private static TreeViewItem? FindTreeItemByTag(TreeViewItem parent, object tag)
-    {
-        foreach (TreeViewItem child in parent.Items)
-        {
-            if (child.Tag == tag) return child;
-            var found = FindTreeItemByTag(child, tag);
-            if (found is not null) return found;
-        }
-        return null;
-    }
-
-    private static string GetTreeElementDetails(TemplateElement el) => TemplateElement.GetSummary(el);
-
-    private TreeViewItem CreateElementTreeNode(TemplateElement el)
-    {
-        string typeName = el.GetType().Name.Replace("Element", "");
-        string details = GetTreeElementDetails(el);
-        bool isSelected = _vm!.State.SelectedElements.Contains(el);
-        return new TreeViewItem
-        {
-            Header = $"[Z{el.ZIndex}] {typeName}: {details}",
-            Tag = el,
-            FontWeight = isSelected ? FontWeights.Bold : FontWeights.Normal,
-            Foreground = isSelected
-                ? System.Windows.Media.Brushes.Blue
-                : System.Windows.Media.Brushes.Black
-        };
-    }
-
-    private void TemplateTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-    {
-        if (_suppressTreeSelection || _vm is null) return;
-        if (e.NewValue is not TreeViewItem item) return;
-
-        _vm.SelectFromTree(item.Tag);
-        RestoreSectionSelection();
-    }
-
-    private void TemplateTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        // Najít TreeViewItem z vizuálního stromu (event bubbluje z TextBlocku)
-        var source = e.OriginalSource as System.Windows.DependencyObject;
-        while (source is not null and not TreeViewItem)
-            source = System.Windows.Media.VisualTreeHelper.GetParent(source);
-
-        if (source is not TreeViewItem item) return;
-
-        if (item.Tag is TemplateElement element)
-            OpenPropertiesForElement(element);
-        else if (item.Tag is Section section)
-            OpenPropertiesForSection(section);
-
-        e.Handled = true;
-    }
-
-    private void TemplateTree_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        // Enter na elementu = otevřít vlastnosti (jako dvojklik)
-        if (e.Key == Key.Enter && TemplateTree.SelectedItem is TreeViewItem item)
-        {
-            if (item.Tag is TemplateElement element)
-                OpenPropertiesForElement(element);
-            else if (item.Tag is Section section)
-                OpenPropertiesForSection(section);
-            e.Handled = true;
-        }
-    }
-
-
     /// <summary>Aktualizuje strom pokud je viditelný (po změně výběru na canvasu).</summary>
     private void RefreshTreeIfVisible()
     {
         if (TabTree?.IsSelected == true)
-            RebuildTemplateTree();
+            TreePanel.Rebuild();
     }
 
     private void BtnZForward_Click(object sender, RoutedEventArgs e)  => _vm!.ChangeZIndex(+1, false);
@@ -1134,7 +982,7 @@ public partial class MainWindow : Window
         if (TabFields?.IsSelected == true)
             _vm?.RefreshFieldsList();
         if (TabTree?.IsSelected == true)
-            RebuildTemplateTree();
+            TreePanel.Rebuild();
     }
 
     private void SchemaTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
