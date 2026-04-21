@@ -118,6 +118,15 @@ public class EDViewModel : INotifyPropertyChanged
     protected RelayCommand<T> Command<T>(Action<T> execute, Func<T, bool>? canExecute = null) =>
         new(execute, canExecute, PopupDisplayer);
 
+    /// <summary>
+    /// Creates an <see cref="AsyncRelayCommand"/> with <see cref="PopupDisplayer"/> wired for error handling.
+    /// Use for <c>async Task</c> handlers to avoid fire-and-forget <c>async void</c>.
+    /// Named differently from <see cref="Command(Action, Func{bool}?)"/> to keep overload resolution
+    /// unambiguous for existing call sites (e.g. throw-only lambdas).
+    /// </summary>
+    protected AsyncRelayCommand CommandAsync(Func<Task> execute, Func<bool>? canExecute = null) =>
+        new(execute, canExecute, PopupDisplayer);
+
     private void RegisterKeyBindings()
     {
         var window = Application.Current.Windows.OfType<Window>()
