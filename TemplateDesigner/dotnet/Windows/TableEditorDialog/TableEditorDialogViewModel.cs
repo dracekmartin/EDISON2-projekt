@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
+using TemplateDesigner.Rendering;
 using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner;
@@ -29,6 +30,12 @@ public class ColumnVM : INotifyPropertyChanged
     public string  AlignmentLabel { get => _alignmentLabel; set { _alignmentLabel = value;  OnChanged(); } }
     public string? Format         { get => _format;         set { _format = value;          OnChanged(); } }
     public bool    Visible        { get => _visible;        set { _visible = value;         OnChanged(); } }
+
+    /// <summary>Per-column styl záhlaví (kaskáda override).</summary>
+    public CellStyleVM HeaderStyle { get; set; } = new();
+
+    /// <summary>Per-column styl datových buněk (kaskáda override).</summary>
+    public CellStyleVM DataStyle   { get; set; } = new();
 
     /// <summary>
     /// Sada platných názvů polí ze schématu. Null = validace vypnuta (schéma není dostupné).
@@ -60,18 +67,20 @@ public class ColumnVM : INotifyPropertyChanged
 
     public TableColumn ToModel() => new()
     {
-        Header    = Header,
-        Field     = string.IsNullOrWhiteSpace(Field) ? null : Field.Trim().Trim('{', '}'),
-        Width     = Width,
-        WidthMode = WidthMode == "%" ? ColumnWidthMode.Percent : ColumnWidthMode.Mm,
-        Alignment = AlignmentLabel switch
+        Header      = Header,
+        Field       = string.IsNullOrWhiteSpace(Field) ? null : Field.Trim().Trim('{', '}'),
+        Width       = Width,
+        WidthMode   = WidthMode == "%" ? ColumnWidthMode.Percent : ColumnWidthMode.Mm,
+        Alignment   = AlignmentLabel switch
         {
             "Střed"  => TextHorizontalAlignment.Center,
             "Vpravo" => TextHorizontalAlignment.Right,
             _        => TextHorizontalAlignment.Left
         },
-        Format  = string.IsNullOrWhiteSpace(Format) ? null : Format,
-        Visible = Visible
+        Format      = string.IsNullOrWhiteSpace(Format) ? null : Format,
+        Visible     = Visible,
+        HeaderStyle = HeaderStyle.ToModel(),
+        DataStyle   = DataStyle.ToModel(),
     };
 
     public static ColumnVM FromModel(TableColumn c) => new()
@@ -86,8 +95,10 @@ public class ColumnVM : INotifyPropertyChanged
             TextHorizontalAlignment.Right  => "Vpravo",
             _                              => "Vlevo"
         },
-        Format  = c.Format,
-        Visible = c.Visible
+        Format      = c.Format,
+        Visible     = c.Visible,
+        HeaderStyle = CellStyleVM.FromModel(c.HeaderStyle, defaultBold: true),
+        DataStyle   = CellStyleVM.FromModel(c.DataStyle),
     };
 }
 
@@ -170,6 +181,10 @@ class TableEditorDialogViewModel : EDViewModel
     public string[] AlignmentOptions  { get; } = ["Vlevo", "Střed", "Vpravo"];
     public string[] FieldNameOptions  { get; }
 
+    // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
+    public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
+    public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
+
     /// <summary>Výsledné sloupce po OK — čteny volajícím.</summary>
     public List<TableColumn> ResultColumns { get; private set; } = [];
 
@@ -217,6 +232,9 @@ class TableEditorDialogViewModel : EDViewModel
     /// <summary>Callback: před potvrzením commitni editaci DataGridů. Wired v code-behind.</summary>
     public Action? RequestCommitEdits { get; set; }
 
+    /// <summary>Callback: zobraz color picker, vrať zvolenou barvu (nebo null při Storno).</summary>
+    public Func<string, string?>? RequestColorPicker { get; set; }
+
     // ── Commands ──────────────────────────────────────────────────────────────
 
     public RelayCommand AddColumnCommand      { get; }
@@ -233,6 +251,16 @@ class TableEditorDialogViewModel : EDViewModel
     public RelayCommand RemoveSummaryCommand  { get; }
 
     public RelayCommand LoadTemplateCommand   { get; }
+
+    public RelayCommand PickHeaderTextColorCommand  { get; }
+    public RelayCommand PickHeaderBgColorCommand    { get; }
+    public RelayCommand PickDataTextColorCommand    { get; }
+    public RelayCommand PickDataBgColorCommand      { get; }
+    public RelayCommand ClearHeaderTextColorCommand { get; }
+    public RelayCommand ClearHeaderBgColorCommand   { get; }
+    public RelayCommand ClearDataTextColorCommand   { get; }
+    public RelayCommand ClearDataBgColorCommand     { get; }
+    public RelayCommand ResetStyleCommand           { get; }
 
     // ── Konstruktor ───────────────────────────────────────────────────────────
 
@@ -285,6 +313,31 @@ class TableEditorDialogViewModel : EDViewModel
         RemoveSummaryCommand  = Command(RemoveSummary);
 
         LoadTemplateCommand   = Command(LoadTemplate);
+
+        // Color picker commands — cascade od SelectedColumnVM.HeaderStyle / DataStyle
+        PickHeaderTextColorCommand  = Command(() => PickColor(c => c.HeaderStyle.TextColor, (c, v) => c.HeaderStyle.TextColor = v));
+        PickHeaderBgColorCommand    = Command(() => PickColor(c => c.HeaderStyle.BgColor,   (c, v) => c.HeaderStyle.BgColor   = v));
+        PickDataTextColorCommand    = Command(() => PickColor(c => c.DataStyle.TextColor,   (c, v) => c.DataStyle.TextColor   = v));
+        PickDataBgColorCommand      = Command(() => PickColor(c => c.DataStyle.BgColor,     (c, v) => c.DataStyle.BgColor     = v));
+        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = ""; });
+        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor   = ""; });
+        ClearDataTextColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor   = ""; });
+        ClearDataBgColorCommand     = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor     = ""; });
+
+        ResetStyleCommand = Command(() =>
+        {
+            if (SelectedColumnVM is null) return;
+            SelectedColumnVM.HeaderStyle.Reset();
+            SelectedColumnVM.DataStyle.Reset();
+        });
+    }
+
+    private void PickColor(Func<ColumnVM, string> getter, Action<ColumnVM, string> setter)
+    {
+        if (SelectedColumnVM is null || RequestColorPicker is null) return;
+        var result = RequestColorPicker(getter(SelectedColumnVM));
+        if (result is not null)
+            setter(SelectedColumnVM, result);
     }
 
     // ── Sloupce ───────────────────────────────────────────────────────────────

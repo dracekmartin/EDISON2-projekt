@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
 namespace TemplateDesigner;
@@ -69,7 +70,7 @@ public class StopColumnVM : INotifyPropertyChanged
             TextHorizontalAlignment.Right  => "Vpravo",
             _                              => "Vlevo"
         },
-        HeaderStyle = CellStyleVM.FromModel(c.Style?.Header),
+        HeaderStyle = CellStyleVM.FromModel(c.Style?.Header, defaultBold: true),
         DataStyle   = CellStyleVM.FromModel(c.Style?.Data)
     };
 }
@@ -88,6 +89,10 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public string[] AlignmentOptions { get; } = ["Vlevo", "Střed", "Vpravo"];
     public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
+
+    // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
+    public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
+    public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
 
     /// <summary>Výsledné sloupce po OK — čteny volajícím.</summary>
     public List<StopColumn> ResultColumns { get; private set; } = [];

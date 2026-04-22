@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using TemplateDesigner.Controls;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
@@ -35,6 +36,7 @@ public partial class TableEditorDialog : Window
             SummaryCellsGrid.CommitEdit(DataGridEditingUnit.Row, true);
         };
 
+        _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
     }
 

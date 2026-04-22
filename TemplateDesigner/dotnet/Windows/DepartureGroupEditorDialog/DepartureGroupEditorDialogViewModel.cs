@@ -3,6 +3,7 @@ using System.ComponentModel;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
 namespace TemplateDesigner;
@@ -72,8 +73,9 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 
     public ObservableCollection<DepartureGroupColumnVM> GroupVMs { get; } = [];
 
-    public string[] AlignmentOptions { get; } = ["Vlevo", "Na střed", "Vpravo"];
-    public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
+    // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
+    public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
+    public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
 
     public List<DepartureGroupColumnStyle> ResultGroupColumns { get; private set; } = [];
     public ColumnVisualStyle? ResultHourColumnStyle { get; private set; }

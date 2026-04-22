@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         Title="Odjezdy — nastavení"
-        Width="620" Height="580"
-        MinWidth="520" MinHeight="480"
+        Width="680" Height="640"
+        MinWidth="560" MinHeight="520"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
@@ -72,100 +72,25 @@
 
                             <!-- ── Záhlaví ──────────────────── -->
                             <TextBlock Text="Záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <controls:CellStyleEditor
+                                DataContext="{Binding SelectedGroupVM.Header}"
+                                EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ClearTextColorCommand="{Binding DataContext.ClearHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                PickBgColorCommand="{Binding DataContext.PickHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ClearBgColorCommand="{Binding DataContext.ClearHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
-                            <!-- Font + velikost + B/I -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Font:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="90" Text="{Binding SelectedGroupVM.Header.FontFamily, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
-                                <TextBlock Text="Velikost:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <ComboBox IsEditable="True" Width="55"
-                                          ItemsSource="{Binding DataContext.FontSizeOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          Text="{Binding SelectedGroupVM.Header.FontSize, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
-                                          Margin="0,0,10,0"/>
-                                <CheckBox Content="Tučné" IsChecked="{Binding SelectedGroupVM.Header.Bold}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <CheckBox Content="Kurzíva" IsChecked="{Binding SelectedGroupVM.Header.Italic}" VerticalAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Zarovnání -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Zarovnání:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <ComboBox Width="90"
-                                          ItemsSource="{Binding DataContext.AlignmentOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          SelectedIndex="{Binding SelectedGroupVM.Header.HAlignmentIndex, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-
-                            <!-- Barva textu -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Barva textu:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <Button Content="▪" Width="24" Command="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="4,1" Margin="0,0,2,0"/>
-                                <Button Content="✕" Width="20" Command="{Binding DataContext.ClearHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="2,1" FontSize="10" Margin="0,0,10,0"/>
-                                <TextBlock Text="Pozadí:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <Button Content="▪" Width="24" Command="{Binding DataContext.PickHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="4,1" Margin="0,0,2,0"/>
-                                <Button Content="✕" Width="20" Command="{Binding DataContext.ClearHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="2,1" FontSize="10"/>
-                            </StackPanel>
-
-                            <!-- Padding -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Padding (mm):" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Header.PaddingTop, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" Margin="0,0,6,0"/>
-                                <TextBlock Text="→" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Header.PaddingRight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" Margin="0,0,6,0"/>
-                                <TextBlock Text="↓" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Header.PaddingBottom, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" Margin="0,0,6,0"/>
-                                <TextBlock Text="←" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Header.PaddingLeft, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                            </StackPanel>
-
-                            <!-- ── Oddělovač ──────────────────── -->
                             <Separator Margin="0,8,0,8"/>
 
                             <!-- ── Datové buňky ──────────────── -->
                             <TextBlock Text="Datové buňky" FontWeight="SemiBold" Margin="0,0,0,6"/>
-
-                            <!-- Font + velikost + B/I -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Font:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="90" Text="{Binding SelectedGroupVM.Data.FontFamily, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
-                                <TextBlock Text="Velikost:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <ComboBox IsEditable="True" Width="55"
-                                          ItemsSource="{Binding DataContext.FontSizeOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          Text="{Binding SelectedGroupVM.Data.FontSize, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"
-                                          Margin="0,0,10,0"/>
-                                <CheckBox Content="Tučné" IsChecked="{Binding SelectedGroupVM.Data.Bold}" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <CheckBox Content="Kurzíva" IsChecked="{Binding SelectedGroupVM.Data.Italic}" VerticalAlignment="Center"/>
-                            </StackPanel>
-
-                            <!-- Zarovnání -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Zarovnání:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <ComboBox Width="90"
-                                          ItemsSource="{Binding DataContext.AlignmentOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          SelectedIndex="{Binding SelectedGroupVM.Data.HAlignmentIndex, UpdateSourceTrigger=PropertyChanged}"/>
-                            </StackPanel>
-
-                            <!-- Barva textu + pozadí -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Barva textu:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <Button Content="▪" Width="24" Command="{Binding DataContext.PickDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="4,1" Margin="0,0,2,0"/>
-                                <Button Content="✕" Width="20" Command="{Binding DataContext.ClearDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="2,1" FontSize="10" Margin="0,0,10,0"/>
-                                <TextBlock Text="Pozadí:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <Button Content="▪" Width="24" Command="{Binding DataContext.PickDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="4,1" Margin="0,0,2,0"/>
-                                <Button Content="✕" Width="20" Command="{Binding DataContext.ClearDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}" Padding="2,1" FontSize="10"/>
-                            </StackPanel>
-
-                            <!-- Padding -->
-                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                <TextBlock Text="Padding (mm):" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Data.PaddingTop, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" Margin="0,0,6,0"/>
-                                <TextBlock Text="→" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Data.PaddingRight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" Margin="0,0,6,0"/>
-                                <TextBlock Text="↓" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Data.PaddingBottom, UpdateSourceTrigger=LostFocus, TargetNullValue=''}" Margin="0,0,6,0"/>
-                                <TextBlock Text="←" VerticalAlignment="Center" Margin="0,0,2,0"/>
-                                <TextBox Width="35" Text="{Binding SelectedGroupVM.Data.PaddingLeft, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                            </StackPanel>
+                            <controls:CellStyleEditor
+                                DataContext="{Binding SelectedGroupVM.Data}"
+                                EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                                PickTextColorCommand="{Binding DataContext.PickDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ClearTextColorCommand="{Binding DataContext.ClearDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                PickBgColorCommand="{Binding DataContext.PickDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                ClearBgColorCommand="{Binding DataContext.ClearDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
                             <!-- Resetovat -->
                             <Button Content="Resetovat styl" Command="{Binding DataContext.ResetStyleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
