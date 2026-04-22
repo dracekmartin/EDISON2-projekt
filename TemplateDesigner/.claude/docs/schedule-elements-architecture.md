@@ -113,6 +113,12 @@ Mřížka minut odjezdů. Klíčové properties:
 - `GroupColumns: List<DepartureGroupColumnStyle>` — per-column nastavení (viditelnost, barvy, font, zarovnání, bold/italic) editovatelné přes `DepartureGroupEditorDialog`
 - `ColorRules: List<ColorRule>` — template-driven barvy
 
+### Jednotná kaskáda stylů buněk
+
+Všechny tři tabulkové JŘ elementy (StopList, DepartureGrid, NotesLegend) používají spolu s `TableElement` sdílenou 4-vrstvou kaskádu `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`. Rendering přes `Rendering/CellRenderer.DrawCell` — jediné místo v aplikaci pozicování textu buňky (bg → padding → HAlign+VAlign → decorations). Dialogy sloupců (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`) používají sdílený `Controls/CellStyleEditor` UserControl.
+
+Detaily patternu + element-side pattern (`Resolve*Style` helpery, pre-created per-column fonty/painty pro perf) viz `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`.
+
 ### NotesLegendElement
 
 Legenda poznámek: `HeaderText`, `NoteSeparator`, `NoteFontSize`, `NoteLineHeight`, `NegativniZnackaBackColor/ForeColor`, `ShowNegativniZnacky`, `ShowSpecialniZnaky`, `ShowTextovePoznamky`.

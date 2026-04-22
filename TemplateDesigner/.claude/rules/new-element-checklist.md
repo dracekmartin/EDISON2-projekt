@@ -7,7 +7,8 @@ Tento soubor je autoritativní reference. Kroky jsou uspořádány tak, že po k
 Reference implementace:
 - **Jednoduchý element:** `BarcodeElement` (pevná výška, vlastní rendering, žádný TextStyle)
 - **Textový element:** `TextElement` (TextStyle, dynamická výška přes WordWrap)
-- **Komplexní element:** `StopListElement` / `DepartureGridElement` / `NotesLegendElement` (dědí z `ScheduleElementBase`, per-column styling, data cache)
+- **Tabulkový element:** `TableElement` / `StopListElement` / `DepartureGridElement` — používají **jednotnou kaskádu** `column.Style → element.HeaderStyle/DataStyle → defaults → CellDefaults`; pozicování textu přes `Rendering/CellRenderer.DrawCell`; viz `mvvm-patterns.md §Jednotná kaskáda stylů buněk`. Pro sloupce použij sdílený `Controls/CellStyleEditor` UserControl v dialogu (nikdy neduplikuj inline XAML)
+- **Komplexní element:** `NotesLegendElement` (dědí z `ScheduleElementBase`, per-column styling, data cache)
 
 ---
 

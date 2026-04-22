@@ -70,6 +70,68 @@ DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (D
 
 ---
 
+## Jednotná kaskáda stylů buněk (tabulkové elementy)
+
+Všechny tabulkové elementy (StopList, DepartureGrid, TableElement) sdílejí jednu 4-vrstvou kaskádu:
+
+```
+column.Style (per-column override)
+  → element.HeaderStyle / DataStyle (element-wide default)
+    → element-specific defaults (TableHeaderParent, ScheduleElementBase.HeaderStyle...)
+      → CellDefaults.Default (autoritativní konec kaskády)
+```
+
+**Klíčové třídy v `Rendering/`:**
+- `CellDefaults.Default` — jediný autoritativní zdroj výchozích hodnot buňky (Arial 9pt, VAlign=Middle, padding 0.5mm, ...)
+- `CellRenderer.DrawCell(ctx, rectMm, text, style, fontScale)` — **jediné místo v aplikaci**, kde se pozicuje a vykresluje text buňky. Bg → padding shrink → HAlign+VAlign → Underline/Strikethrough
+- `ColumnRenderer.DrawRow(ctx, xStartMm, yMm, heightMm, cells, gridPaint)` — orchestruje řádek sloupců přes `CellRenderer` + volitelné svislé čáry
+- `CellStyleEditOptions` — record s `Allow<X>` flagy pro per-kontextové skrývání UI kontrolek editace stylu
+
+**Element-side pattern** — každý tabulkový element implementuje `Resolve*Style` helpery:
+```csharp
+private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) {
+    var elementResolved = ResolveTableHeaderStyle();              // element → defaults
+    var resolved = col.HeaderStyle is { } h
+        ? h.Resolve(elementResolved) : elementResolved;           // column override
+    // Legacy fallback: col.Alignment (jen pokud cascade nenastavila HAlign)
+    if (col.HeaderStyle?.HAlign is null && HeaderStyle?.HAlign is null)
+        resolved = resolved with { HAlign = col.Alignment };
+    return resolved;
+}
+```
+
+Pro větší počet buněk na frame (100+, např. DepartureGrid minuty) **pre-create fonty/painty** per-group/per-column jednou před render loopem (6 dictionary: font/textPaint/bgPaint × header/data), dispose v `finally`.
+
+## Sdílený `CellStyleEditor` (dialogy sloupců)
+
+`Controls/CellStyleEditor.xaml` — UserControl konzumovaný všemi třemi dialogy (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`). DataContext = `CellStyleVM`.
+
+**Dependency properties:**
+- `EditOptions` (`CellStyleEditOptions`) — řídí viditelnost řádků přes `BooleanToVisibilityConverter`
+- 4× `ICommand` — `Pick/ClearTextColor`, `Pick/ClearBgColor` — dialog passuje své VM commands
+- `HAlignmentOptions`/`VAlignmentOptions`/`FontSizeOptions` — s rozumnými defaults, lze override per dialog
+
+**Host dialog (VM) musí poskytnout:**
+- `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`)
+- Pick/Clear commands per zóna × barva (Text/Bg) = 8 commands
+- `RequestColorPicker: Func<string, string?>` callback (dialog wire `ColorPickerHelper.PickColor`)
+- `ResetStyleCommand` (volitelný, pro tlačítko „Resetovat styl")
+
+**Host dialog (XAML):**
+```xml
+<controls:CellStyleEditor
+    DataContext="{Binding SelectedColumnVM.HeaderStyle}"
+    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+    PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+    ... /> <!-- 3 zbývající color commands -->
+```
+
+**Známé omezení** (pro budoucí fix):
+- `CellStyleVM.Bold/Italic/Underline/Strikethrough` jsou `bool` (ne `bool?`) — `ToModel()` vždy emituje explicit hodnotu, takže open+OK beze změn uloží non-null TextStyle. Pokud defaultní VM.Bold neodpovídá element-level default Bold, kaskáda se rozbije. Volající musí passovat `defaultBold: true` v `CellStyleVM.FromModel(...)` pro záhlaví.
+- UI neukazuje placeholder hodnoty pro dědené vlastnosti — user vidí prázdný FontFamily i když default "Arial" existuje. Tri-state checkbox + placeholder converter = budoucí iterace.
+
+---
+
 ## Jak přidat nový typ elementu
 
 Kompletní checklist včetně dotčených souborů, factory switches, dynamické výšky a strom šablony → viz **`.claude/rules/new-element-checklist.md`**.

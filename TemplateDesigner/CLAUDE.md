@@ -14,11 +14,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-04-21
+**Datum poslední aktualizace:** 2026-04-22
 
 ### 🎯 Aktuální focus
 
-1. **Fáze A: Odladění MHD zastávkového JŘ s reálnými daty** (Fáze B0.5 Code Hygiene dokončena).
+1. **Fáze A: Odladění MHD zastávkového JŘ s reálnými daty** (Fáze B0.5 Code Hygiene dokončena; jednotná kaskáda stylů buněk napříč StopList/DepartureGrid/TableElement dokončena).
 2. Krok 8 roadmapy — edge cases (prázdné směry, speciální znaky, velké linky), vizuální shoda s referenčním PDF (pixel-by-pixel), fonty pro speciální znaky.
 
 ### ✅ Co máme
@@ -79,6 +79,8 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Grid size v UI** — ComboBox 1/2/5/10mm v toolbaru; `DesignerState.GridSize` bindovatelná property (výchozí 5mm)
 - **BarcodeElement rozšíření** — EAN-13, EAN-8, PDF417, DataMatrix; `static readonly` hints/writer/dashEffect; paleta konsolidována na 1 tlačítko "Kód"
 - **TextStyle Strikethrough** — `Strikethrough` property + `DrawTextDecorations()`; oprava tichého nefungování Underline v SkiaSharp 3
+- **Jednotná kaskáda stylů buněk** — 4-vrstvá CSS-like kaskáda `column.Style → element.HeaderStyle/DataStyle → table/schedule defaults → CellDefaults` jednotně ve StopList, DepartureGrid, TableElement; `Rendering/CellDefaults.cs` (autoritativní defaults), `Rendering/CellRenderer.cs` (jediné místo pozicování textu buňky: bg → padding → HAlign+VAlign → decorations), `Rendering/ColumnRenderer.cs` (orchestruje řádek sloupců), `Rendering/CellStyleEditOptions.cs` (per-kontextové skrývání UI); `TableColumn.DataStyle` + `TableElement.DataStyle` (per-column + element-level override datových buněk); `col.Alignment` legacy fallback zachován; TableElement nyní respektuje HAlign/VAlign/Padding/Underline/Strikethrough (dříve hardcoded baseline+4px offset)
+- **Sdílený CellStyleEditor** — `Controls/CellStyleEditor.xaml` UserControl konzumovaný StopColumnsEditorDialog, DepartureGroupEditorDialog, TableEditorDialog; `CellStyleVM` rozšířen o `VAlignmentIndex`, `Underline`, `Strikethrough`, `LineSpacing`; per-dialog omezení přes `CellStyleEditOptions` (HeaderEditOptions/DataEditOptions na VM); `TableEditorDialog` má nový tab „Styl sloupců"
 
 ### 🐛 Známé problémy
 

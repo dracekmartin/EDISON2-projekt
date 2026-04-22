@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-04-22 — Jednotná kaskáda stylů buněk (fáze 0–4)
+
+Koherentní refactor přes 4 commity: sjednocení stylování buněk napříč všemi tabulkovými elementy (StopList, DepartureGrid, TableElement) do čtyřvrstvé kaskády `column → element → defaults → CellDefaults`.
+
+**Fáze 0+1 — infrastruktura + StopList** (`b19d5e9`):
+- ✅ **`Rendering/CellDefaults.cs`** — autoritativní výchozí hodnoty pro buňku (`FontFamily=Arial`, `FontSize=9pt`, padding=0.5mm, HAlign=Left, VAlign=Middle, LineSpacing=1.2). Poslední vrstva kaskády
+- ✅ **`Rendering/CellStyleEditOptions.cs`** — record s flagy `Allow<X>` pro per-kontextové skrývání UI editace (zatím všude `AllEnabled`)
+- ✅ **`Rendering/CellRenderer.cs`** — jediné místo v aplikaci, kde se pozicuje a vykresluje text buňky: bg → padding shrink → HAlign+VAlign text → Underline/Strikethrough
+- ✅ **`Rendering/ColumnRenderer.cs`** — orchestruje kreslení řádku sloupců přes `CellRenderer` + volitelné svislé mřížkové čáry
+- ✅ **StopListElement** migrován na kaskádu: `Resolve*Style` helpery, `col.Alignment` legacy fallback zachován
+
+**Fáze 2 — DepartureGrid** (`574e9b1`):
+- ✅ **4 `Resolve*Style` helpery** — HourHeader, HourData, GroupHeader, GroupMinute
+- ✅ **Pre-created per-group fonty/painty** — perf pro 100+ buněk/frame (6 dictionary: header/data × font/textPaint/bgPaint)
+- ✅ **Anotace element-level** — nedědí z column.Data (symboly 80% z minute fontu, text z `AnotaceFontSize`)
+- ✅ **Smazán dead code v ScheduleElementBase** — `BuildCellStyle`, `CellStyleResources`, `DisposeAll`, `RenderCellBackground`, `CreateCellBgPaint`, `CreateCellTextPaint`, `CreateCellFont`, `MakeFontStyle`. Zůstal jen typeface cache + `GetTypeface`
+
+**Fáze 3 — TableElement** (`7080ea5`):
+- ✅ **`TableColumn.DataStyle`** (new) + **`TableElement.DataStyle`** (new) — per-column a element-level override datových buněk
+- ✅ **`TableHeaderParent`/`TableDataParent`/`TableSummaryParent`** kompaktně nad `CellDefaults.Default` přes `with { ... }` — nahradily 10-řádkové plné deklarace
+- ✅ **Všechny 4 render paths** (Header, FixedRows, DynamicRows, SummaryRows) jdou přes `CellRenderer.DrawCell`
+- ✅ **Legacy `col.Alignment`** zachován jako fallback v kaskádě (dříve nefunkční v UI, teď začíná reálně fungovat)
+- ✅ **Vedlejší opravy** získané kaskádou: HAlign funguje všude, VAlign=Middle (místo hardcoded baseline), Padding 0.5mm default (místo hardcoded 4px), Underline/Strikethrough respektované u Dynamic řádků
+
+**Fáze 4 — sdílený `CellStyleEditor`** (`f8b59d3`):
+- ✅ **`Controls/CellStyleEditor.xaml` + `.xaml.cs`** — UserControl (jedno místo UI editace TextStyle zóny), DP `EditOptions`, 4× color picker commands, `HAlignmentOptions`/`VAlignmentOptions`/`FontSizeOptions` defaults
+- ✅ **`CellStyleVM` rozšířen** — `VAlignmentIndex`, `Underline`, `Strikethrough`, `LineSpacing` (+ FromModel/ToModel/Reset)
+- ✅ **3 dialogy migrovány** — `DepartureGroupEditorDialog` (-107 inline), `StopColumnsEditorDialog` (-107 inline), `TableEditorDialog` (nový tab „Styl sloupců" +65)
+- ✅ **Bugfix** — `StopColumnVM.FromModel` nepředával `defaultBold: true` → po open+OK beze změn se ukládal explicit `Bold=false` overrriduje element-level `Bold=true` → záhlaví zastávek ztratilo tučnost. DepartureGroup/Table to měly správně
+- 📋 **Známá omezení** — `CellStyleVM.Bold/Italic/Underline/Strikethrough` jsou `bool` (ne `bool?`), takže `ToModel()` vždy emituje explicit hodnotu. Funguje díky `defaultBold: true` na všech volajících; tri-state checkbox = budoucí fix. Placeholder hodnoty v UI pro dědené vlastnosti = budoucí iterace
+
+**Celkový efekt** (9 commitů modified, 2 new files):
+- Jedna kaskáda pro všechny tři tabulkové elementy (ze 3 různých ad-hoc přístupů)
+- Jeden render helper (`CellRenderer.DrawCell`) místo duplikované pozicovací logiky
+- Jeden UI control (`CellStyleEditor`) místo inline XAML ve třech dialozích
+- Nové vlastnosti (VAlign, Underline, Strikethrough, LineSpacing) dostupné napříč všemi elementy najednou
+- Připraveno pro přidání dalších tabulkových elementů bez duplikace
+
+---
+
 ## 2026-04-21 — Code Hygiene: Extract SaveSectionTemplateDialog (H-9)
 
 - ✅ **Nový dialog triad `Windows/SaveSectionTemplateDialog/`** — Window + ViewModel + XAML dle závazného standardu (architecture.md); `SaveSectionTemplateDialogViewModel : EDViewModel` s `Name` property, `OnOk()` override (validace + close), používá `OkCommand` z base
