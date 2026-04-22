@@ -206,10 +206,16 @@ public class StopListElement : ScheduleElementBase
 
     // ─── Style resolution (kaskáda column → element → CellDefaults) ─────────
 
+    /// <summary>Parent kaskády pro per-column header override — co sloupec dědí, když vlastní styl nemá.</summary>
+    public ResolvedTextStyle ResolveColumnHeaderParent() => HeaderStyle.Resolve(CellDefaults.Default);
+
+    /// <summary>Parent kaskády pro per-column data override — co sloupec dědí, když vlastní styl nemá.</summary>
+    public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(CellDefaults.Default);
+
     /// <summary>Vyřeší styl záhlaví sloupce. Legacy StopColumn.Alignment je fallback pokud HAlign není v cascade.</summary>
     private ResolvedTextStyle ResolveHeaderStyle(StopColumn col)
     {
-        var elementResolved = HeaderStyle.Resolve(CellDefaults.Default);
+        var elementResolved = ResolveColumnHeaderParent();
         var resolved = col.Style?.Header is { } h ? h.Resolve(elementResolved) : elementResolved;
 
         // Legacy Alignment fallback: pokud ani sloupec, ani element HAlign nedefinuje, vezmi col.Alignment
@@ -222,7 +228,7 @@ public class StopListElement : ScheduleElementBase
     /// <summary>Vyřeší styl datové buňky sloupce. Legacy Alignment fallback stejně jako pro header.</summary>
     private ResolvedTextStyle ResolveDataStyle(StopColumn col)
     {
-        var elementResolved = DataStyle.Resolve(CellDefaults.Default);
+        var elementResolved = ResolveColumnDataParent();
         var resolved = col.Style?.Data is { } d ? d.Resolve(elementResolved) : elementResolved;
 
         if (col.Style?.Data?.HAlign is null && DataStyle.HAlign is null)

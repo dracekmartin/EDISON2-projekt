@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using EDControls.EDViewModel;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Rendering;
 using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
@@ -23,15 +24,12 @@ public class StopColumnVM : INotifyPropertyChanged
     public bool   Visible        { get => _visible;        set { _visible = value;        OnChanged(); } }
     public string AlignmentLabel { get => _alignmentLabel; set { _alignmentLabel = value; OnChanged(); } }
 
-    public CellStyleVM HeaderStyle { get; set; } = new();
-    public CellStyleVM DataStyle { get; set; } = new();
+    public CellStyleVM HeaderStyle { get; private init; } = null!;
+    public CellStyleVM DataStyle   { get; private init; } = null!;
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
-
-    private static readonly TextHorizontalAlignment[] HAlignMap =
-        [TextHorizontalAlignment.Left, TextHorizontalAlignment.Center, TextHorizontalAlignment.Right];
 
     public StopColumn ToModel() => new()
     {
@@ -58,7 +56,8 @@ public class StopColumnVM : INotifyPropertyChanged
         return style.IsEmpty ? null : style;
     }
 
-    public static StopColumnVM FromModel(StopColumn c) => new()
+    public static StopColumnVM FromModel(StopColumn c,
+        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) => new()
     {
         Key            = c.Key,
         Header         = c.Header,
@@ -70,8 +69,8 @@ public class StopColumnVM : INotifyPropertyChanged
             TextHorizontalAlignment.Right  => "Vpravo",
             _                              => "Vlevo"
         },
-        HeaderStyle = CellStyleVM.FromModel(c.Style?.Header, defaultBold: true),
-        DataStyle   = CellStyleVM.FromModel(c.Style?.Data)
+        HeaderStyle = CellStyleVM.FromModel(c.Style?.Header, headerInherited),
+        DataStyle   = CellStyleVM.FromModel(c.Style?.Data,   dataInherited)
     };
 }
 
@@ -135,14 +134,21 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     // ── Konstruktor ─────────────────────────────────────────────────────────
 
+    private readonly StopListElement _element;
+
     public StopColumnsEditorDialogViewModel(
+        StopListElement element,
         List<StopColumn> columns,
         IReadOnlyList<PropertyDescriptor> generalDescriptors)
     {
+        _element           = element;
         GeneralDescriptors = generalDescriptors;
 
+        var headerInherited = element.ResolveColumnHeaderParent();
+        var dataInherited   = element.ResolveColumnDataParent();
+
         foreach (var col in columns)
-            ColumnVMs.Add(StopColumnVM.FromModel(col));
+            ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
 
         if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
 
@@ -153,14 +159,14 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         // Color picker commands — záhlaví
         PickHeaderTextColorCommand  = Command(() => PickColor(g => g.HeaderStyle.TextColor, (g, c) => g.HeaderStyle.TextColor = c));
         PickHeaderBgColorCommand    = Command(() => PickColor(g => g.HeaderStyle.BgColor,   (g, c) => g.HeaderStyle.BgColor = c));
-        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = ""; });
-        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor = ""; });
+        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = null; });
+        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor   = null; });
 
         // Color picker commands — data
         PickDataTextColorCommand  = Command(() => PickColor(g => g.DataStyle.TextColor, (g, c) => g.DataStyle.TextColor = c));
         PickDataBgColorCommand    = Command(() => PickColor(g => g.DataStyle.BgColor,   (g, c) => g.DataStyle.BgColor = c));
-        ClearDataTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor = ""; });
-        ClearDataBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor = ""; });
+        ClearDataTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor = null; });
+        ClearDataBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor   = null; });
 
         // Reset style
         ResetStyleCommand = Command(() =>
@@ -189,16 +195,19 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     private void Reset()
     {
+        var headerInherited = _element.ResolveColumnHeaderParent();
+        var dataInherited   = _element.ResolveColumnDataParent();
+
         ColumnVMs.Clear();
         foreach (var col in StopListElement.GetDefaultColumns())
-            ColumnVMs.Add(StopColumnVM.FromModel(col));
+            ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
         if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
     }
 
-    private void PickColor(Func<StopColumnVM, string> getter, Action<StopColumnVM, string> setter)
+    private void PickColor(Func<StopColumnVM, string?> getter, Action<StopColumnVM, string?> setter)
     {
         if (SelectedColumnVM is null || RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(SelectedColumnVM));
+        var result = RequestColorPicker(getter(SelectedColumnVM) ?? "");
         if (result is not null)
             setter(SelectedColumnVM, result);
     }

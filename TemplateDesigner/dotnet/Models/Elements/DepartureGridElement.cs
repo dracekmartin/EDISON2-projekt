@@ -310,71 +310,77 @@ public class DepartureGridElement : ScheduleElementBase
     // Style resolution (kaskáda column → element → CellDefaults)
     // ═══════════════════════════════════════════════════════════════════════════
 
-    /// <summary>Vyřeší styl záhlaví sloupce hodin. VAlign fallback na legacy HeaderVerticalAlignment.</summary>
-    private ResolvedTextStyle ResolveHourHeaderStyle()
+    /// <summary>Parent kaskády pro per-column override záhlaví sloupce hodin.</summary>
+    public ResolvedTextStyle ResolveHourHeaderParent()
     {
-        var elementResolved = HeaderStyle.Resolve(CellDefaults.Default);
-        var resolved = HourColumnStyle?.Header is { } h ? h.Resolve(elementResolved) : elementResolved;
-
-        if (HourColumnStyle?.Header?.VAlign is null && HeaderStyle.VAlign is null)
-            resolved = resolved with { VAlign = HeaderVerticalAlignment };
-
-        return resolved;
+        var p = HeaderStyle.Resolve(CellDefaults.Default);
+        if (HeaderStyle.VAlign is null)
+            p = p with { VAlign = HeaderVerticalAlignment };
+        return p;
     }
 
-    /// <summary>Vyřeší styl datové buňky sloupce hodin.</summary>
-    private ResolvedTextStyle ResolveHourDataStyle()
-    {
-        var elementResolved = DataStyle.Resolve(CellDefaults.Default);
-        return HourColumnStyle?.Data is { } d ? d.Resolve(elementResolved) : elementResolved;
-    }
+    /// <summary>Parent kaskády pro per-column override datové buňky sloupce hodin.</summary>
+    public ResolvedTextStyle ResolveHourDataParent() => DataStyle.Resolve(CellDefaults.Default);
 
-    /// <summary>
-    /// Vyřeší styl záhlaví skupiny dnů. Legacy default FontSize odvozena od SkupinaDnuHeaderLineHeight.
-    /// VAlign fallback na HeaderVerticalAlignment, HAlign fallback na Center (úzké sloupce).
-    /// </summary>
-    private ResolvedTextStyle ResolveGroupHeaderStyle(DepartureGroupColumnStyle? cs)
+    /// <summary>Parent kaskády pro per-column override záhlaví skupiny dnů.</summary>
+    public ResolvedTextStyle ResolveGroupHeaderParent()
     {
         // Legacy default: group header font = 65% of SkupinaDnuHeaderLineHeight (v mm) → pt
         float legacyDefaultPt = SkupinaDnuHeaderLineHeight * 0.65f / PtToMm;
-
-        var elementBase = HeaderStyle.Resolve(CellDefaults.Default) with { FontSize = legacyDefaultPt };
-        var resolved = cs?.Style.Header is { } h ? h.Resolve(elementBase) : elementBase;
-
-        if (cs?.Style.Header?.VAlign is null && HeaderStyle.VAlign is null)
-            resolved = resolved with { VAlign = HeaderVerticalAlignment };
-        if (cs?.Style.Header?.HAlign is null && HeaderStyle.HAlign is null)
-            resolved = resolved with { HAlign = TextHorizontalAlignment.Center };
-
-        return resolved;
+        var p = HeaderStyle.Resolve(CellDefaults.Default) with { FontSize = legacyDefaultPt };
+        if (HeaderStyle.VAlign is null)
+            p = p with { VAlign = HeaderVerticalAlignment };
+        if (HeaderStyle.HAlign is null)
+            p = p with { HAlign = TextHorizontalAlignment.Center };
+        return p;
     }
 
-    /// <summary>
-    /// Vyřeší styl minutové buňky (per-skupina). Kaskáda:
-    /// column.Data → MinuteStyle → DataStyle → CellDefaults, s fallbacky na scalar
-    /// MinuteFontSize / MinuteBold pokud MinuteStyle neurčuje. Padding defaultně 0
-    /// (minutová mřížka je hustá — padding by "požral" slot).
-    /// </summary>
-    private ResolvedTextStyle ResolveGroupMinuteStyle(DepartureGroupColumnStyle? cs)
+    /// <summary>Parent kaskády pro per-column override minutové buňky skupiny.</summary>
+    public ResolvedTextStyle ResolveGroupMinuteParent()
     {
         var dataResolved = DataStyle.Resolve(CellDefaults.Default);
-        var elementResolved = MinuteStyle.Resolve(dataResolved);
-
+        var p = MinuteStyle.Resolve(dataResolved);
         if (MinuteStyle.FontSize is null)
-            elementResolved = elementResolved with { FontSize = MinuteFontSize };
+            p = p with { FontSize = MinuteFontSize };
         if (MinuteStyle.Bold is null)
-            elementResolved = elementResolved with { Bold = MinuteBold };
-
-        // Minutové buňky: padding default 0 (přepsat jen pokud user nastavil explicitně)
-        elementResolved = elementResolved with
+            p = p with { Bold = MinuteBold };
+        // Minutové buňky: padding default 0 (hustá mřížka)
+        p = p with
         {
             PaddingLeft   = MinuteStyle.PaddingLeft   ?? 0f,
             PaddingRight  = MinuteStyle.PaddingRight  ?? 0f,
             PaddingTop    = MinuteStyle.PaddingTop    ?? 0f,
             PaddingBottom = MinuteStyle.PaddingBottom ?? 0f,
         };
+        return p;
+    }
 
-        return cs?.Style.Data is { } d ? d.Resolve(elementResolved) : elementResolved;
+    /// <summary>Vyřeší styl záhlaví sloupce hodin.</summary>
+    private ResolvedTextStyle ResolveHourHeaderStyle()
+    {
+        var parent = ResolveHourHeaderParent();
+        return HourColumnStyle?.Header is { } h ? h.Resolve(parent) : parent;
+    }
+
+    /// <summary>Vyřeší styl datové buňky sloupce hodin.</summary>
+    private ResolvedTextStyle ResolveHourDataStyle()
+    {
+        var parent = ResolveHourDataParent();
+        return HourColumnStyle?.Data is { } d ? d.Resolve(parent) : parent;
+    }
+
+    /// <summary>Vyřeší styl záhlaví skupiny dnů.</summary>
+    private ResolvedTextStyle ResolveGroupHeaderStyle(DepartureGroupColumnStyle? cs)
+    {
+        var parent = ResolveGroupHeaderParent();
+        return cs?.Style.Header is { } h ? h.Resolve(parent) : parent;
+    }
+
+    /// <summary>Vyřeší styl minutové buňky (per-skupina).</summary>
+    private ResolvedTextStyle ResolveGroupMinuteStyle(DepartureGroupColumnStyle? cs)
+    {
+        var parent = ResolveGroupMinuteParent();
+        return cs?.Style.Data is { } d ? d.Resolve(parent) : parent;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════

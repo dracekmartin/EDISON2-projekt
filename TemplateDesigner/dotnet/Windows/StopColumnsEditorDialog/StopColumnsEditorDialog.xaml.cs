@@ -14,12 +14,12 @@ public partial class StopColumnsEditorDialog : Window
     public List<StopColumn> ResultColumns => _vm.ResultColumns;
 
     public StopColumnsEditorDialog(
-        List<StopColumn> columns,
+        StopListElement element,
         IReadOnlyList<PropertyDescriptor> generalDescriptors,
         Action<IDesignerCommand> executeCommand,
         Action invalidate)
     {
-        _vm = new StopColumnsEditorDialogViewModel(columns, generalDescriptors);
+        _vm = new StopColumnsEditorDialogViewModel(element, element.Columns, generalDescriptors);
         DataContext = _vm;
         InitializeComponent();
 

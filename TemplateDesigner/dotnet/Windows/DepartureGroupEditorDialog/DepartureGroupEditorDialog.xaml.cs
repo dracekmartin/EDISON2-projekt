@@ -15,16 +15,15 @@ public partial class DepartureGroupEditorDialog : Window
     public ColumnVisualStyle? ResultHourColumnStyle => _vm.ResultHourColumnStyle;
 
     public DepartureGroupEditorDialog(
+        DepartureGridElement element,
         List<SkupinaDnuData> availableGroups,
         List<DepartureGroupColumnStyle> currentStyles,
         ColumnVisualStyle? hourColumnStyle,
         IReadOnlyList<PropertyDescriptor> generalDescriptors,
         Action<IDesignerCommand> executeCommand,
-        Action invalidate,
-        TextStyle? headerDefaults = null,
-        TextStyle? dataDefaults = null)
+        Action invalidate)
     {
-        _vm = new DepartureGroupEditorDialogViewModel(availableGroups, currentStyles, hourColumnStyle, generalDescriptors, headerDefaults, dataDefaults);
+        _vm = new DepartureGroupEditorDialogViewModel(element, availableGroups, currentStyles, hourColumnStyle, generalDescriptors);
         DataContext = _vm;
         InitializeComponent();
 

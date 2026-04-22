@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using EDControls.EDViewModel;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Rendering;
@@ -32,10 +33,10 @@ public class ColumnVM : INotifyPropertyChanged
     public bool    Visible        { get => _visible;        set { _visible = value;         OnChanged(); } }
 
     /// <summary>Per-column styl záhlaví (kaskáda override).</summary>
-    public CellStyleVM HeaderStyle { get; set; } = new();
+    public CellStyleVM HeaderStyle { get; private init; } = null!;
 
     /// <summary>Per-column styl datových buněk (kaskáda override).</summary>
-    public CellStyleVM DataStyle   { get; set; } = new();
+    public CellStyleVM DataStyle   { get; private init; } = null!;
 
     /// <summary>
     /// Sada platných názvů polí ze schématu. Null = validace vypnuta (schéma není dostupné).
@@ -83,7 +84,8 @@ public class ColumnVM : INotifyPropertyChanged
         DataStyle   = DataStyle.ToModel(),
     };
 
-    public static ColumnVM FromModel(TableColumn c) => new()
+    public static ColumnVM FromModel(TableColumn c,
+        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) => new()
     {
         Header         = c.Header,
         Field          = c.Field,
@@ -97,8 +99,8 @@ public class ColumnVM : INotifyPropertyChanged
         },
         Format      = c.Format,
         Visible     = c.Visible,
-        HeaderStyle = CellStyleVM.FromModel(c.HeaderStyle, defaultBold: true),
-        DataStyle   = CellStyleVM.FromModel(c.DataStyle),
+        HeaderStyle = CellStyleVM.FromModel(c.HeaderStyle, headerInherited),
+        DataStyle   = CellStyleVM.FromModel(c.DataStyle,   dataInherited),
     };
 }
 
@@ -264,12 +266,17 @@ class TableEditorDialogViewModel : EDViewModel
 
     // ── Konstruktor ───────────────────────────────────────────────────────────
 
+    private ResolvedTextStyle _headerInherited;
+    private ResolvedTextStyle _dataInherited;
+
     public TableEditorDialogViewModel(TableElement element,
         IReadOnlyList<DataField>? collectionFields = null,
         ITableTemplateProvider? templateProvider = null)
     {
         _element          = element;
         _templateProvider = templateProvider;
+        _headerInherited  = element.ResolveColumnHeaderParent();
+        _dataInherited    = element.ResolveColumnDataParent();
 
         FieldNameOptions = collectionFields?.Select(f => f.FieldName).OrderBy(n => n).ToArray() ?? [];
         _validFieldNames  = FieldNameOptions.Length > 0
@@ -286,7 +293,7 @@ class TableEditorDialogViewModel : EDViewModel
             : element.Columns.AsEnumerable();
 
         foreach (var col in sourceCols)
-            ColumnVMs.Add(WithValidation(ColumnVM.FromModel(col)));
+            ColumnVMs.Add(WithValidation(ColumnVM.FromModel(col, _headerInherited, _dataInherited)));
 
         if (element.Mode == TableMode.Fixed)
         {
@@ -319,10 +326,10 @@ class TableEditorDialogViewModel : EDViewModel
         PickHeaderBgColorCommand    = Command(() => PickColor(c => c.HeaderStyle.BgColor,   (c, v) => c.HeaderStyle.BgColor   = v));
         PickDataTextColorCommand    = Command(() => PickColor(c => c.DataStyle.TextColor,   (c, v) => c.DataStyle.TextColor   = v));
         PickDataBgColorCommand      = Command(() => PickColor(c => c.DataStyle.BgColor,     (c, v) => c.DataStyle.BgColor     = v));
-        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = ""; });
-        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor   = ""; });
-        ClearDataTextColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor   = ""; });
-        ClearDataBgColorCommand     = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor     = ""; });
+        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = null; });
+        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor   = null; });
+        ClearDataTextColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor   = null; });
+        ClearDataBgColorCommand     = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor     = null; });
 
         ResetStyleCommand = Command(() =>
         {
@@ -332,10 +339,10 @@ class TableEditorDialogViewModel : EDViewModel
         });
     }
 
-    private void PickColor(Func<ColumnVM, string> getter, Action<ColumnVM, string> setter)
+    private void PickColor(Func<ColumnVM, string?> getter, Action<ColumnVM, string?> setter)
     {
         if (SelectedColumnVM is null || RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(SelectedColumnVM));
+        var result = RequestColorPicker(getter(SelectedColumnVM) ?? "");
         if (result is not null)
             setter(SelectedColumnVM, result);
     }
@@ -344,7 +351,8 @@ class TableEditorDialogViewModel : EDViewModel
 
     private void AddColumn()
     {
-        var vm = WithValidation(new ColumnVM { Header = $"Sloupec {ColumnVMs.Count + 1}", Width = 30f });
+        var newCol = new TableColumn { Header = $"Sloupec {ColumnVMs.Count + 1}", Width = 30f };
+        var vm = WithValidation(ColumnVM.FromModel(newCol, _headerInherited, _dataInherited));
         ColumnVMs.Add(vm);
         SelectedColumnVM = vm;
         RequestScrollColumnIntoView?.Invoke(vm);
@@ -515,7 +523,7 @@ class TableEditorDialogViewModel : EDViewModel
 
         ColumnVMs.Clear();
         foreach (var col in def.Columns)
-            ColumnVMs.Add(WithValidation(ColumnVM.FromModel(col)));
+            ColumnVMs.Add(WithValidation(ColumnVM.FromModel(col, _headerInherited, _dataInherited)));
 
         RowVMs.Clear();
         foreach (var row in def.Rows)

@@ -20,8 +20,8 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     public string Name         { get => _name;         set { _name = value;         OnChanged(); } }
     public bool   IsVisible    { get => _isVisible;    set { _isVisible = value;    OnChanged(); } }
 
-    public CellStyleVM Header { get; set; } = new();
-    public CellStyleVM Data { get; set; } = new();
+    public CellStyleVM Header { get; init; } = null!;
+    public CellStyleVM Data   { get; init; } = null!;
 
     private string _alternatingRowColor = "";
     public string AlternatingRowColor
@@ -48,16 +48,14 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
 
     public static DepartureGroupColumnVM FromData(
         SkupinaDnuData skupina, DepartureGroupColumnStyle? s,
-        TextStyle? headerDefaults = null, TextStyle? dataDefaults = null) => new()
+        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) => new()
     {
         SkupinaDnuId = skupina.Id,
         Name = skupina.Nadpis + (skupina.Nadpis2.Length > 0 ? " " + skupina.Nadpis2 : ""),
         IsVisible = s?.IsVisible ?? true,
         AlternatingRowColor = s?.AlternatingRowColor ?? "",
-        Header = CellStyleVM.FromModel(s?.Style.Header, defaultBold: true,
-            defaultFontFamily: headerDefaults?.FontFamily, defaultFontSize: headerDefaults?.FontSize),
-        Data = CellStyleVM.FromModel(s?.Style.Data,
-            defaultFontFamily: dataDefaults?.FontFamily, defaultFontSize: dataDefaults?.FontSize)
+        Header = CellStyleVM.FromModel(s?.Style.Header, headerInherited),
+        Data   = CellStyleVM.FromModel(s?.Style.Data,   dataInherited),
     };
 }
 
@@ -115,14 +113,19 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     // ── Konstruktor ──────────────────────────────────────────────────
 
     public DepartureGroupEditorDialogViewModel(
+        DepartureGridElement element,
         List<SkupinaDnuData> availableGroups,
         List<DepartureGroupColumnStyle> currentStyles,
         ColumnVisualStyle? hourColumnStyle,
-        IReadOnlyList<PropertyDescriptor> generalDescriptors,
-        TextStyle? headerDefaults = null,
-        TextStyle? dataDefaults = null)
+        IReadOnlyList<PropertyDescriptor> generalDescriptors)
     {
         GeneralDescriptors = generalDescriptors;
+
+        // Vyřešené rodičovské styly pro kaskádu (element-level → column override)
+        var hourHeaderInherited  = element.ResolveHourHeaderParent();
+        var hourDataInherited    = element.ResolveHourDataParent();
+        var groupHeaderInherited = element.ResolveGroupHeaderParent();
+        var groupDataInherited   = element.ResolveGroupMinuteParent();
 
         // Sloupec hodin — vždy první v seznamu
         GroupVMs.Add(new DepartureGroupColumnVM
@@ -130,10 +133,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             SkupinaDnuId = HourColumnId,
             Name = "Hodiny",
             IsVisible = true,
-            Header = CellStyleVM.FromModel(hourColumnStyle?.Header, defaultBold: true,
-                defaultFontFamily: headerDefaults?.FontFamily, defaultFontSize: headerDefaults?.FontSize),
-            Data = CellStyleVM.FromModel(hourColumnStyle?.Data,
-                defaultFontFamily: dataDefaults?.FontFamily, defaultFontSize: dataDefaults?.FontSize)
+            Header = CellStyleVM.FromModel(hourColumnStyle?.Header, hourHeaderInherited),
+            Data   = CellStyleVM.FromModel(hourColumnStyle?.Data,   hourDataInherited),
         });
 
         var groupIds = availableGroups.Select(g => g.Id).ToList();
@@ -142,22 +143,22 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         foreach (var skupina in availableGroups)
         {
             styleMap.TryGetValue(skupina.Id, out var existing);
-            GroupVMs.Add(DepartureGroupColumnVM.FromData(skupina, existing, headerDefaults, dataDefaults));
+            GroupVMs.Add(DepartureGroupColumnVM.FromData(skupina, existing, groupHeaderInherited, groupDataInherited));
         }
 
         if (GroupVMs.Count > 0) SelectedGroupVM = GroupVMs[0];
 
         // Color picker commands — záhlaví
         PickHeaderTextColorCommand  = Command(() => PickColor(g => g.Header.TextColor, (g, c) => g.Header.TextColor = c));
-        PickHeaderBgColorCommand    = Command(() => PickColor(g => g.Header.BgColor,   (g, c) => g.Header.BgColor = c));
-        ClearHeaderTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.TextColor = ""; });
-        ClearHeaderBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.BgColor = ""; });
+        PickHeaderBgColorCommand    = Command(() => PickColor(g => g.Header.BgColor,   (g, c) => g.Header.BgColor   = c));
+        ClearHeaderTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.TextColor = null; });
+        ClearHeaderBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Header.BgColor   = null; });
 
         // Color picker commands — data
         PickDataTextColorCommand  = Command(() => PickColor(g => g.Data.TextColor, (g, c) => g.Data.TextColor = c));
-        PickDataBgColorCommand    = Command(() => PickColor(g => g.Data.BgColor,   (g, c) => g.Data.BgColor = c));
-        ClearDataTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.TextColor = ""; });
-        ClearDataBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.BgColor = ""; });
+        PickDataBgColorCommand    = Command(() => PickColor(g => g.Data.BgColor,   (g, c) => g.Data.BgColor   = c));
+        ClearDataTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.TextColor = null; });
+        ClearDataBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.BgColor   = null; });
 
         // Reset
         ResetStyleCommand = Command(() =>
@@ -185,10 +186,10 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         });
     }
 
-    private void PickColor(Func<DepartureGroupColumnVM, string> getter, Action<DepartureGroupColumnVM, string> setter)
+    private void PickColor(Func<DepartureGroupColumnVM, string?> getter, Action<DepartureGroupColumnVM, string?> setter)
     {
         if (SelectedGroupVM is null || RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(SelectedGroupVM));
+        var result = RequestColorPicker(getter(SelectedGroupVM) ?? "");
         if (result is not null)
             setter(SelectedGroupVM, result);
     }

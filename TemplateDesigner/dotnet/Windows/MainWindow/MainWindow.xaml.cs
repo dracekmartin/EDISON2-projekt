@@ -1072,14 +1072,13 @@ public partial class MainWindow : Window
         var availableGroups = element.GetAvailableSkupinyDnu(previewData);
 
         var dlg = new DepartureGroupEditorDialog(
+            element,
             availableGroups,
             element.GroupColumns,
             element.HourColumnStyle,
             generalDescriptors,
             cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
-            headerDefaults: element.HeaderStyle,
-            dataDefaults: element.DataStyle)
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
             { Owner = this };
 
         if (dlg.ShowDialog() == true)
@@ -1118,7 +1117,7 @@ public partial class MainWindow : Window
             .ToList();
 
         var dlg = new StopColumnsEditorDialog(
-            element.Columns,
+            element,
             generalDescriptors,
             cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })

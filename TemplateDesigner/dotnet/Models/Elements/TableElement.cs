@@ -190,13 +190,19 @@ public class TableElement : TemplateElement
         BackgroundColor = "#FFF0F0F0",
     };
 
-    /// <summary>Vyřeší styl záhlaví tabulky (element → defaults).</summary>
-    private ResolvedTextStyle ResolveTableHeaderStyle() =>
+    /// <summary>Parent kaskády pro per-column header override.</summary>
+    public ResolvedTextStyle ResolveColumnHeaderParent() =>
         (HeaderStyle ?? new TextStyle()).Resolve(TableHeaderParent);
 
-    /// <summary>Vyřeší styl datových buněk tabulky (element → defaults).</summary>
-    private ResolvedTextStyle ResolveTableDataStyle() =>
+    /// <summary>Parent kaskády pro per-column data override.</summary>
+    public ResolvedTextStyle ResolveColumnDataParent() =>
         (DataStyle ?? new TextStyle()).Resolve(TableDataParent);
+
+    /// <summary>Vyřeší styl záhlaví tabulky (element → defaults).</summary>
+    private ResolvedTextStyle ResolveTableHeaderStyle() => ResolveColumnHeaderParent();
+
+    /// <summary>Vyřeší styl datových buněk tabulky (element → defaults).</summary>
+    private ResolvedTextStyle ResolveTableDataStyle() => ResolveColumnDataParent();
 
     /// <summary>Vyřeší styl záhlaví sloupce. Legacy col.Alignment je fallback pokud HAlign není v kaskádě.</summary>
     private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col)
