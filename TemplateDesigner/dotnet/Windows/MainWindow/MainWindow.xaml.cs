@@ -110,6 +110,7 @@ public partial class MainWindow : Window
         skCanvas.MouseLeftButtonUp    += OnCanvasMouseUp;
         skCanvas.MouseRightButtonUp   += OnCanvasRightClick;
         CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
+        PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
 
         // Wire VM callbacks
         _vm.RequestCanvasRefresh         = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
@@ -312,13 +313,40 @@ public partial class MainWindow : Window
 
     // ── Preview ───────────────────────────────────────────────────────────────
 
-    private const float PreviewFixedZoom = 1.0f;
+    private float PreviewZoom =>
+        CmbPreviewZoom is { SelectedIndex: var idx } && idx >= 0 && idx < ZoomLevels.Length
+            ? ZoomLevels[idx]
+            : 1.0f;
 
     private void UpdatePreviewSize()
     {
         if (BtnPreview?.IsChecked != true || _previewCanvas is null || _vm is null) return;
-        skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom, _vm.BuildPreviewMockData()) + 40f;
+        float zoom = PreviewZoom;
+        skPreview.Width  = _previewCanvas.ComputePageWidthPx(zoom);
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(zoom, _vm.BuildPreviewMockData()) + 40f;
+    }
+
+    private void OnPreviewScrollWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
+        e.Handled = true;
+        int newIdx = Math.Clamp(CmbPreviewZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
+        if (newIdx != CmbPreviewZoom.SelectedIndex)
+            CmbPreviewZoom.SelectedIndex = newIdx;
+    }
+
+    private void CmbPreviewZoom_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null || _previewCanvas is null) return;
+        InvalidatePreview();
+    }
+
+    /// <summary>Reset obou zoomů (designeru i náhledu) na 100 %.</summary>
+    private void BtnResetView_Click(object sender, RoutedEventArgs e)
+    {
+        const int defaultIdx = 2; // 100 %
+        if (CmbZoom is not null)        CmbZoom.SelectedIndex        = defaultIdx;
+        if (CmbPreviewZoom is not null) CmbPreviewZoom.SelectedIndex = defaultIdx;
     }
 
     private void InvalidatePreview()

@@ -412,6 +412,9 @@
                             <ComboBoxItem Content="150 %"/>
                             <ComboBoxItem Content="200 %"/>
                         </ComboBox>
+                        <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
+                                ToolTip="Resetovat zoom designeru i náhledu na 100 %"
+                                Click="BtnResetView_Click" Content="1:1" FontSize="11" FontWeight="SemiBold"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
                                       IsChecked="True" Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed">
                             <Image Source="{StaticResource EDIcons.Eye}" Width="16" Height="16"/>
@@ -603,6 +606,16 @@
                             <Button DockPanel.Dock="Right" Content="PDF"
                                     Click="MenuExportPdf_Click" Padding="8,2"
                                     ToolTip="Exportovat náhled jako PDF..."/>
+                            <ComboBox x:Name="CmbPreviewZoom" DockPanel.Dock="Right"
+                                      Width="70" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
+                                      ToolTip="Zoom náhledu (Ctrl+Scroll)"
+                                      SelectionChanged="CmbPreviewZoom_SelectionChanged">
+                                <ComboBoxItem Content=" 50 %"/>
+                                <ComboBoxItem Content=" 75 %"/>
+                                <ComboBoxItem Content="100 %"/>
+                                <ComboBoxItem Content="150 %"/>
+                                <ComboBoxItem Content="200 %"/>
+                            </ComboBox>
                             <TextBlock Text="Náhled  ·  vzorová data ze schématu"
                                        FontSize="11" Foreground="#666666"
                                        VerticalAlignment="Center"/>
@@ -643,7 +656,8 @@
                     </Border>
 
                     <!-- Scrollovatelný canvas náhledu -->
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                    <ScrollViewer x:Name="PreviewScrollViewer"
+                                  HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
                                   Background="#E8E8E8">
                         <skia:SKElement x:Name="skPreview" HorizontalAlignment="Left" Height="800"/>
