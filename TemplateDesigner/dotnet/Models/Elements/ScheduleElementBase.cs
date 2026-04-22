@@ -129,18 +129,9 @@ public abstract class ScheduleElementBase : TemplateElement
         return defaultValue;
     }
 
-    // ─── Font/Paint helpery (sdílené pro per-column styling) ─────────────────
+    // ─── Typeface cache ─────────────────────────────────────────────────────
 
-    /// <summary>Vytvoří SKFontStyle z bold/italic flagů.</summary>
-    protected static SKFontStyle MakeFontStyle(bool bold, bool italic) => (bold, italic) switch
-    {
-        (true, true)   => SKFontStyle.BoldItalic,
-        (true, false)  => SKFontStyle.Bold,
-        (false, true)  => SKFontStyle.Italic,
-        (false, false) => SKFontStyle.Normal,
-    };
-
-    // Typeface cache. SKTypeface loading (HarfBuzz) je drahý — per frame se volá 10+×.
+    // SKTypeface loading (HarfBuzz) je drahý — per frame se volá 10+×.
     // SKFont nevlastní typeface (reference, ne owned), sdílení je bezpečné.
     private static readonly ConcurrentDictionary<(string Family, int Weight, int Width, SKFontStyleSlant Slant), SKTypeface> _typefaceCache = new();
 
@@ -153,87 +144,6 @@ public abstract class ScheduleElementBase : TemplateElement
         return _typefaceCache.GetOrAdd(key, k =>
             SKTypeface.FromFamilyName(k.Family, new SKFontStyle(k.Weight, k.Width, k.Slant))
             ?? SKTypeface.Default);
-    }
-
-    /// <summary>
-    /// Vytvoří SKFont z TextStyle. Vrátí null pokud TextStyle nemá žádné fontové override.
-    /// Volající musí výsledek uvolnit (přidat do manualDisposables).
-    /// </summary>
-    protected SKFont? CreateCellFont(TextStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx)
-    {
-        if (style is null) return null;
-        if (style.FontFamily is null && style.FontSize is null && style.Bold is null && style.Italic is null)
-            return null;
-
-        var family = style.FontFamily ?? DataStyle.FontFamily ?? "Arial";
-        var sizePx = (style.FontSize ?? defaultSizePt) * PtToMm * scale * mmToPx;
-        var fontStyle = MakeFontStyle(style.Bold ?? defaultBold, style.Italic ?? false);
-        return new SKFont(GetTypeface(family, fontStyle), sizePx);
-    }
-
-    /// <summary>Vytvoří SKPaint pro text z TextStyle.TextColor. Null pokud nemá override.</summary>
-    protected static SKPaint? CreateCellTextPaint(TextStyle? style)
-    {
-        if (style?.TextColor is null) return null;
-        return new SKPaint { Color = SKColor.Parse(style.TextColor), IsAntialias = true };
-    }
-
-    /// <summary>Vytvoří SKPaint pro pozadí z TextStyle.BackgroundColor. Null pokud nemá override.</summary>
-    protected static SKPaint? CreateCellBgPaint(TextStyle? style)
-    {
-        if (style?.BackgroundColor is null) return null;
-        return new SKPaint { Color = SKColor.Parse(style.BackgroundColor) };
-    }
-
-    /// <summary>Vykreslí pozadí buňky pokud existuje per-column bgPaint.</summary>
-    protected static void RenderCellBackground(RenderContext ctx, SKPaint? bgPaint, float x, float y, float w, float h)
-    {
-        if (bgPaint is null) return;
-        var rect = ctx.ToCanvasRect(x, y, w, h);
-        ctx.Canvas.DrawRect(rect, bgPaint);
-    }
-
-    /// <summary>
-    /// Sdružené font/textPaint/bgPaint resources pro jednu buňku (sloupec, hlavičku, data).
-    /// Kterýkoli může být null pokud TextStyle nemá daný override. Disposable.
-    /// </summary>
-    public sealed class CellStyleResources : IDisposable
-    {
-        public SKFont? Font { get; }
-        public SKPaint? TextPaint { get; }
-        public SKPaint? BgPaint { get; }
-
-        internal CellStyleResources(SKFont? font, SKPaint? textPaint, SKPaint? bgPaint)
-        {
-            Font = font;
-            TextPaint = textPaint;
-            BgPaint = bgPaint;
-        }
-
-        public void Dispose()
-        {
-            Font?.Dispose();
-            TextPaint?.Dispose();
-            BgPaint?.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Vytvoří CellStyleResources z TextStyle. Všechny tři items mohou být null,
-    /// pokud TextStyle nemá daný override. Volající dispose (nebo ji vloží do
-    /// dictionary, která se dispose hromadně přes DisposeAll).
-    /// </summary>
-    protected CellStyleResources BuildCellStyle(
-        TextStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx) =>
-        new(CreateCellFont(style, defaultSizePt, defaultBold, scale, mmToPx),
-            CreateCellTextPaint(style),
-            CreateCellBgPaint(style));
-
-    /// <summary>Dispose všech resources v dictionary (bezpečné při null nebo prázdném).</summary>
-    protected static void DisposeAll<TKey>(Dictionary<TKey, CellStyleResources>? map) where TKey : notnull
-    {
-        if (map is null) return;
-        foreach (var r in map.Values) r.Dispose();
     }
 
     // ─── Render helpery ─────────────────────────────────────────────────────
