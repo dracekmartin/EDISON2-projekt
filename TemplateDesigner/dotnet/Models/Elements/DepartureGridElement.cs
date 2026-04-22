@@ -464,7 +464,7 @@ public class DepartureGridElement : ScheduleElementBase
         // TryGetValue vrací default (0,0,0,0) pokud klíč neexistuje — žádný padding
         var perGroupDataPadding = new Dictionary<string, (float Top, float Right, float Bottom, float Left)>();
         float headerDefaultPt = SkupinaDnuHeaderLineHeight * 0.65f / PtToMm;
-        foreach (var g in layout.Groups)
+        foreach (var g in layout!.Groups)
         {
             colStyles.TryGetValue(g.Skupina.Id, out var cs);
             var ds = cs?.Style.Data;

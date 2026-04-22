@@ -183,7 +183,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand NewCommand           => _new       ??= new(NewTemplate);
     public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
     public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
-    public RelayCommand DeleteCommand   => _delete    ??= new(DeleteSelected);
+    public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
     public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
     public RelayCommand PasteCommand    => _paste     ??= new(PasteClipboard);
@@ -441,7 +441,6 @@ public class TemplateDesignerViewModel : EDViewModel
             State.RedoStack.Clear();
             NotifyUndoRedo();
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
-            AutoSetSectionHeaders();
             RebuildSections();
             RefreshFieldsList();
             RequestTitleUpdate?.Invoke();
@@ -466,20 +465,9 @@ public class TemplateDesignerViewModel : EDViewModel
         CurrentFilePath = null;
         IsDirty = true;
 
-        AutoSetSectionHeaders();
         RebuildSections();
         InvalidateAll();
         RefreshFieldsList();
-    }
-
-    /// <summary>Auto-nastaví ShowSectionHeaders podle obsahu šablony (JŘ agendy = skryto).</summary>
-    private void AutoSetSectionHeaders()
-    {
-        bool hasScheduleElements = State.CurrentTemplate.Sections
-            .SelectMany(s => s.Elements)
-            .Any(e => e is ScheduleElementBase);
-        State.ShowSectionHeaders = !hasScheduleElements;
-        OnPropertyChanged(nameof(ShowSectionHeaders));
     }
 
     private void InvalidateAll()
