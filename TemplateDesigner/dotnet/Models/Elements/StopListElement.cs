@@ -219,10 +219,10 @@ public class StopListElement : ScheduleElementBase
     // ─── Style resolution (kaskáda column → element → CellDefaults) ─────────
 
     /// <summary>Parent kaskády pro per-column header override — co sloupec dědí, když vlastní styl nemá.</summary>
-    public ResolvedTextStyle ResolveColumnHeaderParent() => HeaderStyle.Resolve(CellDefaults.Default);
+    public ResolvedTextStyle ResolveColumnHeaderParent() => HeaderStyle.Resolve(ScheduleHeaderDefaults);
 
     /// <summary>Parent kaskády pro per-column data override — co sloupec dědí, když vlastní styl nemá.</summary>
-    public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(CellDefaults.Default);
+    public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
     /// <summary>Vyřeší styl záhlaví sloupce. Legacy StopColumn.Alignment je fallback pokud HAlign není v cascade.</summary>
     private ResolvedTextStyle ResolveHeaderStyle(StopColumn col)

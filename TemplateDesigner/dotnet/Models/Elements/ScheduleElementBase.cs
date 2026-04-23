@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SkiaSharp;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models.Elements;
 
@@ -38,17 +39,36 @@ public abstract class ScheduleElementBase : TemplateElement
 
     // ─── Společné vizuální properties ───────────────────────────────────────
 
-    /// <summary>Výchozí styl datových buněk (font, velikost). Per-column TextStyle cascaduje od tohoto.</summary>
-    public TextStyle DataStyle { get; set; } = new() { FontFamily = "Arial", FontSize = 8f };
-
-    /// <summary>Výchozí styl záhlaví (font, velikost, bold, barvy). Per-column TextStyle cascaduje od tohoto.</summary>
-    public TextStyle HeaderStyle { get; set; } = new()
+    /// <summary>
+    /// Výchozí baked-in styl záhlaví pro JŘ elementy (Arial 9pt, Bold, šedé pozadí, černý text).
+    /// Poslední vrstva kaskády před CellDefaults — user může kterýkoli atribut přepsat v
+    /// element.HeaderStyle nebo per-column, nebo kliknout „×" a vrátit se sem.
+    /// </summary>
+    public static readonly ResolvedTextStyle ScheduleHeaderDefaults = CellDefaults.Default with
     {
         FontFamily = "Arial", FontSize = 9f, Bold = true,
-        BackgroundColor = "#FFE0E0E0", TextColor = "#FF000000"
+        BackgroundColor = "#FFE0E0E0", TextColor = "#FF000000",
     };
 
+    /// <summary>Výchozí baked-in styl datových buněk pro JŘ elementy (Arial 8pt).</summary>
+    public static readonly ResolvedTextStyle ScheduleDataDefaults = CellDefaults.Default with
+    {
+        FontFamily = "Arial", FontSize = 8f,
+    };
+
+    /// <summary>Výchozí styl datových buněk (font, velikost). Per-column TextStyle cascaduje od tohoto.</summary>
+    public TextStyle DataStyle { get; set; } = new();
+
+    /// <summary>Výchozí styl záhlaví. Per-column TextStyle cascaduje od tohoto, tohle pak od <see cref="ScheduleHeaderDefaults"/>.</summary>
+    public TextStyle HeaderStyle { get; set; } = new();
+
     public string GridColor { get; set; } = "#FFD0D0D0";
+
+    /// <summary>Vyřešený parent pro element-level záhlaví CellStyleVM (= baked defaults, protože není nic nad tímhle).</summary>
+    public ResolvedTextStyle ResolveElementHeaderParent() => ScheduleHeaderDefaults;
+
+    /// <summary>Vyřešený parent pro element-level data CellStyleVM.</summary>
+    public ResolvedTextStyle ResolveElementDataParent() => ScheduleDataDefaults;
 
     // ─── Auto-scale ──────────────────────────────────────────────────────────
 
@@ -383,39 +403,17 @@ public abstract class ScheduleElementBase : TemplateElement
 
     // ─── Společné property descriptory ──────────────────────────────────────
 
+    /// <summary>
+    /// Non-style element-level descriptory pro PropertiesPanel v tabu „Obecné".
+    /// Font/barvy/alignment pro Header a Data jsou editované přes sdílený CellStyleEditor
+    /// v dialogu sloupců — nejsou tady, aby se nedublovaly.
+    /// </summary>
     protected IReadOnlyList<PropertyDescriptor> GetScheduleBaseDescriptors() =>
     [
-        new StringPropertyDescriptor
-        {
-            Label = "Font", Group = "Výchozí styl",
-            Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = v
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Velikost písma", Group = "Výchozí styl",
-            Get = () => DataStyle.FontSize ?? 8f, Set = v => DataStyle.FontSize = v,
-            Min = 4, Max = 30, Unit = "pt"
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Velikost záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderStyle.FontSize ?? 9f, Set = v => HeaderStyle.FontSize = v,
-            Min = 4, Max = 30, Unit = "pt"
-        },
         new ColorPropertyDescriptor
         {
-            Label = "Barva mřížky", Group = "Výchozí styl",
+            Label = "Barva mřížky", Group = "Obecné",
             Get = () => GridColor, Set = v => GridColor = v
-        },
-        new ColorPropertyDescriptor
-        {
-            Label = "Pozadí záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderStyle.BackgroundColor ?? "#FFE0E0E0", Set = v => HeaderStyle.BackgroundColor = v
-        },
-        new ColorPropertyDescriptor
-        {
-            Label = "Barva záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderStyle.TextColor ?? "#FF000000", Set = v => HeaderStyle.TextColor = v
         },
     ];
 

@@ -313,21 +313,21 @@ public class DepartureGridElement : ScheduleElementBase
     /// <summary>Parent kaskády pro per-column override záhlaví sloupce hodin.</summary>
     public ResolvedTextStyle ResolveHourHeaderParent()
     {
-        var p = HeaderStyle.Resolve(CellDefaults.Default);
+        var p = HeaderStyle.Resolve(ScheduleHeaderDefaults);
         if (HeaderStyle.VAlign is null)
             p = p with { VAlign = HeaderVerticalAlignment };
         return p;
     }
 
     /// <summary>Parent kaskády pro per-column override datové buňky sloupce hodin.</summary>
-    public ResolvedTextStyle ResolveHourDataParent() => DataStyle.Resolve(CellDefaults.Default);
+    public ResolvedTextStyle ResolveHourDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
     /// <summary>Parent kaskády pro per-column override záhlaví skupiny dnů.</summary>
     public ResolvedTextStyle ResolveGroupHeaderParent()
     {
         // Legacy default: group header font = 65% of SkupinaDnuHeaderLineHeight (v mm) → pt
         float legacyDefaultPt = SkupinaDnuHeaderLineHeight * 0.65f / PtToMm;
-        var p = HeaderStyle.Resolve(CellDefaults.Default) with { FontSize = legacyDefaultPt };
+        var p = HeaderStyle.Resolve(ScheduleHeaderDefaults) with { FontSize = legacyDefaultPt };
         if (HeaderStyle.VAlign is null)
             p = p with { VAlign = HeaderVerticalAlignment };
         if (HeaderStyle.HAlign is null)
@@ -338,7 +338,7 @@ public class DepartureGridElement : ScheduleElementBase
     /// <summary>Parent kaskády pro per-column override minutové buňky skupiny.</summary>
     public ResolvedTextStyle ResolveGroupMinuteParent()
     {
-        var dataResolved = DataStyle.Resolve(CellDefaults.Default);
+        var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
         var p = MinuteStyle.Resolve(dataResolved);
         if (MinuteStyle.FontSize is null)
             p = p with { FontSize = MinuteFontSize };
@@ -446,7 +446,7 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         // Anotace — element-level (nedědí z column.Data)
-        var dataBase = DataStyle.Resolve(CellDefaults.Default);
+        var dataBase = DataStyle.Resolve(ScheduleDataDefaults);
         var minuteElementStyle = ResolveGroupMinuteStyle(null);
         var anotSymStyle = AnotaceSymbolStyle.Resolve(dataBase);
         if (AnotaceSymbolStyle.FontSize is null)

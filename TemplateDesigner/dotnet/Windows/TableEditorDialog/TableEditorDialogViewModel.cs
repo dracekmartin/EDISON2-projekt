@@ -183,6 +183,14 @@ class TableEditorDialogViewModel : EDViewModel
     public string[] AlignmentOptions  { get; } = ["Vlevo", "Střed", "Vpravo"];
     public string[] FieldNameOptions  { get; }
 
+    // ── Tab Obecné: element-level styly (analogie k JŘ dialogům) ─────────
+
+    /// <summary>Výchozí styl záhlaví tabulky (kaskáda: per-column → tento → TableHeaderParent).</summary>
+    public CellStyleVM ElementHeaderStyle { get; }
+
+    /// <summary>Výchozí styl datových buněk tabulky (kaskáda: per-column → tento → TableDataParent).</summary>
+    public CellStyleVM ElementDataStyle { get; }
+
     // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
     public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
     public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
@@ -254,6 +262,7 @@ class TableEditorDialogViewModel : EDViewModel
 
     public RelayCommand LoadTemplateCommand   { get; }
 
+    // Per-column (tab Styl sloupců)
     public RelayCommand PickHeaderTextColorCommand  { get; }
     public RelayCommand PickHeaderBgColorCommand    { get; }
     public RelayCommand PickDataTextColorCommand    { get; }
@@ -263,6 +272,17 @@ class TableEditorDialogViewModel : EDViewModel
     public RelayCommand ClearDataTextColorCommand   { get; }
     public RelayCommand ClearDataBgColorCommand     { get; }
     public RelayCommand ResetStyleCommand           { get; }
+
+    // Element-level (tab Obecné)
+    public RelayCommand PickElementHeaderTextColorCommand  { get; }
+    public RelayCommand PickElementHeaderBgColorCommand    { get; }
+    public RelayCommand PickElementDataTextColorCommand    { get; }
+    public RelayCommand PickElementDataBgColorCommand      { get; }
+    public RelayCommand ClearElementHeaderTextColorCommand { get; }
+    public RelayCommand ClearElementHeaderBgColorCommand   { get; }
+    public RelayCommand ClearElementDataTextColorCommand   { get; }
+    public RelayCommand ClearElementDataBgColorCommand     { get; }
+    public RelayCommand ResetElementStyleCommand           { get; }
 
     // ── Konstruktor ───────────────────────────────────────────────────────────
 
@@ -277,6 +297,10 @@ class TableEditorDialogViewModel : EDViewModel
         _templateProvider = templateProvider;
         _headerInherited  = element.ResolveColumnHeaderParent();
         _dataInherited    = element.ResolveColumnDataParent();
+
+        // Element-level CellStyleVM (tab Obecné) — parent je TableHeaderParent/TableDataParent (baked defaults)
+        ElementHeaderStyle = CellStyleVM.FromModel(element.HeaderStyle, element.ResolveElementHeaderParent());
+        ElementDataStyle   = CellStyleVM.FromModel(element.DataStyle,   element.ResolveElementDataParent());
 
         FieldNameOptions = collectionFields?.Select(f => f.FieldName).OrderBy(n => n).ToArray() ?? [];
         _validFieldNames  = FieldNameOptions.Length > 0
@@ -337,6 +361,22 @@ class TableEditorDialogViewModel : EDViewModel
             SelectedColumnVM.HeaderStyle.Reset();
             SelectedColumnVM.DataStyle.Reset();
         });
+
+        // Element-level color picker commands (tab Obecné)
+        PickElementHeaderTextColorCommand  = Command(() => PickElementColor(ElementHeaderStyle, s => s.TextColor, (s, c) => s.TextColor = c));
+        PickElementHeaderBgColorCommand    = Command(() => PickElementColor(ElementHeaderStyle, s => s.BgColor,   (s, c) => s.BgColor   = c));
+        PickElementDataTextColorCommand    = Command(() => PickElementColor(ElementDataStyle,   s => s.TextColor, (s, c) => s.TextColor = c));
+        PickElementDataBgColorCommand      = Command(() => PickElementColor(ElementDataStyle,   s => s.BgColor,   (s, c) => s.BgColor   = c));
+        ClearElementHeaderTextColorCommand = Command(() => ElementHeaderStyle.TextColor = null);
+        ClearElementHeaderBgColorCommand   = Command(() => ElementHeaderStyle.BgColor   = null);
+        ClearElementDataTextColorCommand   = Command(() => ElementDataStyle.TextColor   = null);
+        ClearElementDataBgColorCommand     = Command(() => ElementDataStyle.BgColor     = null);
+
+        ResetElementStyleCommand = Command(() =>
+        {
+            ElementHeaderStyle.Reset();
+            ElementDataStyle.Reset();
+        });
     }
 
     private void PickColor(Func<ColumnVM, string?> getter, Action<ColumnVM, string?> setter)
@@ -345,6 +385,14 @@ class TableEditorDialogViewModel : EDViewModel
         var result = RequestColorPicker(getter(SelectedColumnVM) ?? "");
         if (result is not null)
             setter(SelectedColumnVM, result);
+    }
+
+    private void PickElementColor(CellStyleVM vm, Func<CellStyleVM, string?> getter, Action<CellStyleVM, string?> setter)
+    {
+        if (RequestColorPicker is null) return;
+        var result = RequestColorPicker(getter(vm) ?? "");
+        if (result is not null)
+            setter(vm, result);
     }
 
     // ── Sloupce ───────────────────────────────────────────────────────────────
@@ -536,6 +584,10 @@ class TableEditorDialogViewModel : EDViewModel
     protected override void OnOk()
     {
         RequestCommitEdits?.Invoke();
+
+        // Element-level styl — zápis zpět do elementu (TableElement.HeaderStyle/DataStyle jsou nullable)
+        _element.HeaderStyle = ElementHeaderStyle.ToModel();
+        _element.DataStyle   = ElementDataStyle.ToModel();
 
         ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
         if (_element.Mode == TableMode.Fixed)

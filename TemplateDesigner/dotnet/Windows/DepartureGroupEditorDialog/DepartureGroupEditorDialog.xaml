@@ -19,7 +19,41 @@
 
             <!-- ── Tab 1: Obecné ──────────────────────────────────── -->
             <TabItem Header="Obecné">
-                <controls:PropertiesPanel x:Name="GeneralPanel" Margin="6"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="6">
+                        <TextBlock Text="Výchozí styl pro všechny sloupce. V tabu Sloupce můžete nastavení jednotlivých sloupců přepsat."
+                                   FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,0,0,10"
+                                   TextWrapping="Wrap"/>
+
+                        <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <controls:CellStyleEditor
+                            DataContext="{Binding ElementHeaderStyle}"
+                            EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                            PickTextColorCommand="{Binding DataContext.PickElementHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ClearTextColorCommand="{Binding DataContext.ClearElementHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            PickBgColorCommand="{Binding DataContext.PickElementHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ClearBgColorCommand="{Binding DataContext.ClearElementHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+
+                        <Separator Margin="0,8,0,8"/>
+
+                        <TextBlock Text="Styl datových buněk" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <controls:CellStyleEditor
+                            DataContext="{Binding ElementDataStyle}"
+                            EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                            PickTextColorCommand="{Binding DataContext.PickElementDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ClearTextColorCommand="{Binding DataContext.ClearElementDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            PickBgColorCommand="{Binding DataContext.PickElementDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            ClearBgColorCommand="{Binding DataContext.ClearElementDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+
+                        <Button Content="Resetovat výchozí styl" Command="{Binding ResetElementStyleCommand}"
+                                HorizontalAlignment="Left" Padding="10,3" Margin="0,12,0,12"/>
+
+                        <Separator Margin="0,4,0,8"/>
+
+                        <TextBlock Text="Ostatní nastavení elementu" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                        <controls:PropertiesPanel x:Name="GeneralPanel"/>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
@@ -69,6 +103,9 @@
                                   VerticalScrollBarVisibility="Auto"
                                   IsEnabled="{Binding HasSelection}">
                         <StackPanel>
+
+                            <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
+                                       FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,0,0,8"/>
 
                             <!-- ── Záhlaví ──────────────────── -->
                             <TextBlock Text="Záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>

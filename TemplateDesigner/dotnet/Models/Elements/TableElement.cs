@@ -190,6 +190,12 @@ public class TableElement : TemplateElement
         BackgroundColor = "#FFF0F0F0",
     };
 
+    /// <summary>Parent kaskády pro element-level záhlaví CellStyleVM (= baked defaults).</summary>
+    public ResolvedTextStyle ResolveElementHeaderParent() => TableHeaderParent;
+
+    /// <summary>Parent kaskády pro element-level data CellStyleVM (= baked defaults).</summary>
+    public ResolvedTextStyle ResolveElementDataParent() => TableDataParent;
+
     /// <summary>Parent kaskády pro per-column header override.</summary>
     public ResolvedTextStyle ResolveColumnHeaderParent() =>
         (HeaderStyle ?? new TextStyle()).Resolve(TableHeaderParent);
