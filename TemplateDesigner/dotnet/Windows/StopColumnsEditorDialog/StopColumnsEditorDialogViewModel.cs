@@ -119,6 +119,22 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
     public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
 
+    // ── Overflow detekce (součet šířek viditelných sloupců vs element Width) ──
+
+    public float ElementWidth => _element.Width;
+
+    /// <summary>Součet šířek viditelných sloupců (mm).</summary>
+    public float TotalVisibleColumnWidth =>
+        ColumnVMs.Where(c => c.Visible).Sum(c => c.Width);
+
+    /// <summary>True pokud sloupce přesahují šířku elementu (ořízne se content).</summary>
+    public bool HasColumnOverflow =>
+        TotalVisibleColumnWidth > ElementWidth + 0.01f;
+
+    /// <summary>Text pro warning badge.</summary>
+    public string ColumnOverflowText =>
+        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku elementu ({ElementWidth:0.#} mm). Obsah se oříže.";
+
     /// <summary>Výsledné sloupce po OK — čteny volajícím.</summary>
     public List<StopColumn> ResultColumns { get; private set; } = [];
 
@@ -158,6 +174,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public RelayCommand ResetStyleCommand { get; }
     public RelayCommand ResetAllColumnStylesCommand { get; }
+    public RelayCommand FitColumnsToWidthCommand { get; }
 
     // Element-level (Obecné tab)
     public RelayCommand PickElementHeaderTextColorCommand { get; }
@@ -228,6 +245,22 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             }
         });
 
+        // Přizpůsobit šířky sloupců k šířce elementu — proporcionální scale
+        FitColumnsToWidthCommand = Command(() =>
+        {
+            var visible = ColumnVMs.Where(c => c.Visible).ToList();
+            if (visible.Count == 0) return;
+            float total = visible.Sum(c => c.Width);
+            if (total <= 0.01f) return;
+            float scale = ElementWidth / total;
+            foreach (var vm in visible)
+                vm.Width = (float)Math.Round(vm.Width * scale, 2);
+        });
+
+        // Subscribe na Width / Visible změny každého sloupce → refresh overflow warning
+        foreach (var vm in ColumnVMs)
+            vm.PropertyChanged += OnColumnChanged;
+
         // Element-level color picker commands (Obecné tab)
         PickElementHeaderTextColorCommand  = Command(() => PickElementColor(ElementHeaderStyle, s => s.TextColor, (s, c) => s.TextColor = c));
         PickElementHeaderBgColorCommand    = Command(() => PickElementColor(ElementHeaderStyle, s => s.BgColor,   (s, c) => s.BgColor   = c));
@@ -253,6 +286,17 @@ class StopColumnsEditorDialogViewModel : EDViewModel
             setter(vm, result);
     }
 
+    private void OnColumnChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(StopColumnVM.Width) ||
+            e.PropertyName == nameof(StopColumnVM.Visible))
+        {
+            OnPropertyChanged(nameof(TotalVisibleColumnWidth));
+            OnPropertyChanged(nameof(HasColumnOverflow));
+            OnPropertyChanged(nameof(ColumnOverflowText));
+        }
+    }
+
     // ── Přesouvání ──────────────────────────────────────────────────────────
 
     private void MoveUp()
@@ -276,8 +320,16 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
         ColumnVMs.Clear();
         foreach (var col in StopListElement.GetDefaultColumns())
-            ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
+        {
+            var vm = StopColumnVM.FromModel(col, headerInherited, dataInherited);
+            vm.PropertyChanged += OnColumnChanged;
+            ColumnVMs.Add(vm);
+        }
         if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
+
+        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
+        OnPropertyChanged(nameof(HasColumnOverflow));
+        OnPropertyChanged(nameof(ColumnOverflowText));
     }
 
     private void PickColor(Func<StopColumnVM, string?> getter, Action<StopColumnVM, string?> setter)

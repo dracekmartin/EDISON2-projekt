@@ -202,6 +202,20 @@ class TableEditorDialogViewModel : EDViewModel
     public string[] AlignmentOptions  { get; } = ["Vlevo", "Střed", "Vpravo"];
     public string[] FieldNameOptions  { get; }
 
+    // ── Overflow detekce (součet šířek viditelných sloupců vs element Width) ──
+
+    public float ElementWidth => _element.Width;
+
+    /// <summary>Součet šířek viditelných sloupců v mm (Percent se konvertuje na mm).</summary>
+    public float TotalVisibleColumnWidth =>
+        ColumnVMs.Where(c => c.Visible).Sum(c =>
+            c.WidthMode == "%" ? c.Width * ElementWidth / 100f : c.Width);
+
+    public bool HasColumnOverflow => TotalVisibleColumnWidth > ElementWidth + 0.01f;
+
+    public string ColumnOverflowText =>
+        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku elementu ({ElementWidth:0.#} mm). Obsah se oříže.";
+
     // ── Tab Obecné: element-level styly (analogie k JŘ dialogům) ─────────
 
     /// <summary>Výchozí styl záhlaví tabulky (kaskáda: per-column → tento → TableHeaderParent).</summary>
@@ -292,6 +306,7 @@ class TableEditorDialogViewModel : EDViewModel
     public RelayCommand ClearDataBgColorCommand     { get; }
     public RelayCommand ResetStyleCommand           { get; }
     public RelayCommand ResetAllColumnStylesCommand { get; }
+    public RelayCommand FitColumnsToWidthCommand   { get; }
 
     // Element-level (tab Obecné)
     public RelayCommand PickElementHeaderTextColorCommand  { get; }
@@ -392,6 +407,22 @@ class TableEditorDialogViewModel : EDViewModel
             }
         });
 
+        // Přizpůsobit sloupce k šířce elementu — proporcionální scale (zachová mód Mm/%)
+        FitColumnsToWidthCommand = Command(() =>
+        {
+            var visible = ColumnVMs.Where(c => c.Visible).ToList();
+            if (visible.Count == 0) return;
+            float totalMm = visible.Sum(c => c.WidthMode == "%" ? c.Width * ElementWidth / 100f : c.Width);
+            if (totalMm <= 0.01f) return;
+            float scale = ElementWidth / totalMm;
+            foreach (var vm in visible)
+                vm.Width = (float)Math.Round(vm.Width * scale, 2);
+        });
+
+        // Subscribe na Width / Visible / WidthMode — refresh overflow warning
+        foreach (var vm in ColumnVMs)
+            vm.PropertyChanged += OnColumnChanged;
+
         // Element-level color picker commands (tab Obecné)
         PickElementHeaderTextColorCommand  = Command(() => PickElementColor(ElementHeaderStyle, s => s.TextColor, (s, c) => s.TextColor = c));
         PickElementHeaderBgColorCommand    = Command(() => PickElementColor(ElementHeaderStyle, s => s.BgColor,   (s, c) => s.BgColor   = c));
@@ -425,13 +456,29 @@ class TableEditorDialogViewModel : EDViewModel
             setter(vm, result);
     }
 
+    private void OnColumnChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ColumnVM.Width) ||
+            e.PropertyName == nameof(ColumnVM.Visible) ||
+            e.PropertyName == nameof(ColumnVM.WidthMode))
+        {
+            OnPropertyChanged(nameof(TotalVisibleColumnWidth));
+            OnPropertyChanged(nameof(HasColumnOverflow));
+            OnPropertyChanged(nameof(ColumnOverflowText));
+        }
+    }
+
     // ── Sloupce ───────────────────────────────────────────────────────────────
 
     private void AddColumn()
     {
         var newCol = new TableColumn { Header = $"Sloupec {ColumnVMs.Count + 1}", Width = 30f };
         var vm = WithValidation(ColumnVM.FromModel(newCol, _headerInherited, _dataInherited));
+        vm.PropertyChanged += OnColumnChanged;
         ColumnVMs.Add(vm);
+        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
+        OnPropertyChanged(nameof(HasColumnOverflow));
+        OnPropertyChanged(nameof(ColumnOverflowText));
         SelectedColumnVM = vm;
         RequestScrollColumnIntoView?.Invoke(vm);
 
@@ -453,7 +500,11 @@ class TableEditorDialogViewModel : EDViewModel
     {
         if (SelectedColumnVM is not ColumnVM vm) return;
         int idx = ColumnVMs.IndexOf(vm);
+        vm.PropertyChanged -= OnColumnChanged;
         ColumnVMs.Remove(vm);
+        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
+        OnPropertyChanged(nameof(HasColumnOverflow));
+        OnPropertyChanged(nameof(ColumnOverflowText));
 
         if (_element.Mode == TableMode.Fixed && idx >= 0)
             foreach (var row in RowVMs)

@@ -9,6 +9,10 @@
         ShowInTaskbar="False"
         ResizeMode="CanResizeWithGrip">
 
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+
     <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -78,9 +82,6 @@
                                  ItemsSource="{Binding ColumnVMs}"
                                  SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
                                  BorderThickness="1" BorderBrush="#CCCCCC">
-                            <ListBox.Resources>
-                                <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-                            </ListBox.Resources>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Margin="2">
@@ -108,13 +109,27 @@
                             </ListBox.ItemTemplate>
                         </ListBox>
 
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
-                            <Button Content="▲" Width="28" Padding="2,1"
-                                    Command="{Binding MoveUpCommand}" Margin="0,0,4,0"/>
-                            <Button Content="▼" Width="28" Padding="2,1"
-                                    Command="{Binding MoveDownCommand}" Margin="0,0,12,0"/>
-                            <Button Content="Výchozí" Padding="6,1"
-                                    Command="{Binding ResetCommand}"/>
+                        <StackPanel Grid.Row="2" Margin="0,4,0,0">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="▲" Width="28" Padding="2,1"
+                                        Command="{Binding MoveUpCommand}" Margin="0,0,4,0"/>
+                                <Button Content="▼" Width="28" Padding="2,1"
+                                        Command="{Binding MoveDownCommand}" Margin="0,0,12,0"/>
+                                <Button Content="Výchozí" Padding="6,1"
+                                        Command="{Binding ResetCommand}"/>
+                            </StackPanel>
+
+                            <!-- Warning při přesahu šířky -->
+                            <TextBlock Text="{Binding ColumnOverflowText}"
+                                       Foreground="#C62828" FontSize="11" Margin="0,8,0,0"
+                                       TextWrapping="Wrap"
+                                       Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
+
+                            <Button Content="Přizpůsobit sloupce k šířce elementu"
+                                    Command="{Binding FitColumnsToWidthCommand}"
+                                    ToolTip="Proporcionálně zmenší/zvětší šířky všech sloupců, aby součet odpovídal šířce elementu."
+                                    HorizontalAlignment="Stretch" Padding="6,3" Margin="0,4,0,0"
+                                    Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
                     </Grid>
 

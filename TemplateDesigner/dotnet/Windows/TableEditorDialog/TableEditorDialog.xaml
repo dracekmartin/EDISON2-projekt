@@ -167,6 +167,17 @@
                         </StackPanel>
                         <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="#888888"
                                    Text="Pole: název ze schématu bez závorek (nebo s závorkami — {ZASTAVKA} i ZASTAVKA je přijato)."/>
+
+                        <!-- Warning při přesahu šířky -->
+                        <TextBlock Text="{Binding ColumnOverflowText}"
+                                   Foreground="#C62828" FontSize="11" Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
+                                   Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
+                        <Button Content="Přizpůsobit sloupce k šířce elementu"
+                                Command="{Binding FitColumnsToWidthCommand}"
+                                ToolTip="Proporcionálně zmenší/zvětší šířky všech sloupců, aby součet odpovídal šířce elementu."
+                                HorizontalAlignment="Left" Padding="6,3" Margin="0,4,0,0"
+                                Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
