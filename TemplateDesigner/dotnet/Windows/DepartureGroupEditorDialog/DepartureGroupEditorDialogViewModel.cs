@@ -20,8 +20,28 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     public string Name         { get => _name;         set { _name = value;         OnChanged(); } }
     public bool   IsVisible    { get => _isVisible;    set { _isVisible = value;    OnChanged(); } }
 
-    public CellStyleVM Header { get; init; } = null!;
-    public CellStyleVM Data   { get; init; } = null!;
+    private CellStyleVM _header = null!;
+    public CellStyleVM Header
+    {
+        get => _header;
+        init { _header = value; _header.PropertyChanged += OnChildChanged; }
+    }
+
+    private CellStyleVM _data = null!;
+    public CellStyleVM Data
+    {
+        get => _data;
+        init { _data = value; _data.PropertyChanged += OnChildChanged; }
+    }
+
+    /// <summary>True pokud sloupec má aspoň jeden per-column override v Header nebo Data.</summary>
+    public bool HasAnyOverride => Header.HasAnyExplicit || Data.HasAnyExplicit;
+
+    private void OnChildChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CellStyleVM.HasAnyExplicit))
+            OnChanged(nameof(HasAnyOverride));
+    }
 
     private string _alternatingRowColor = "";
     public string AlternatingRowColor
@@ -116,6 +136,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     public RelayCommand ClearDataTextColorCommand { get; }
     public RelayCommand ClearDataBgColorCommand { get; }
     public RelayCommand ResetStyleCommand { get; }
+    public RelayCommand ResetAllColumnStylesCommand { get; }
     public RelayCommand MoveUpCommand { get; }
     public RelayCommand MoveDownCommand { get; }
 
@@ -185,12 +206,22 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         ClearDataTextColorCommand = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.TextColor = null; });
         ClearDataBgColorCommand   = Command(() => { if (SelectedGroupVM is not null) SelectedGroupVM.Data.BgColor   = null; });
 
-        // Reset
+        // Reset vybraného sloupce
         ResetStyleCommand = Command(() =>
         {
             if (SelectedGroupVM is null) return;
             SelectedGroupVM.Header.Reset();
             SelectedGroupVM.Data.Reset();
+        });
+
+        // Reset všech sloupců — smaže per-column overrides, všechny sloupce budou dědit z Obecné
+        ResetAllColumnStylesCommand = Command(() =>
+        {
+            foreach (var vm in GroupVMs)
+            {
+                vm.Header.Reset();
+                vm.Data.Reset();
+            }
         });
 
         // Element-level color picker commands (Obecné tab)

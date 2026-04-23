@@ -71,6 +71,17 @@ public class CellStyleVM : INotifyPropertyChanged
     public bool HasExplicitHAlign        => _hAlign        is not null;
     public bool HasExplicitVAlign        => _vAlign        is not null;
 
+    /// <summary>True pokud VM má aspoň jednu explicitně nastavenou vlastnost (= override).</summary>
+    public bool HasAnyExplicit =>
+        _fontFamily is not null || _fontSize is not null ||
+        _bold is not null || _italic is not null ||
+        _underline is not null || _strikethrough is not null ||
+        _textColor is not null || _bgColor is not null ||
+        _hAlign is not null || _vAlign is not null ||
+        _paddingTop is not null || _paddingRight is not null ||
+        _paddingBottom is not null || _paddingLeft is not null ||
+        _lineSpacing is not null;
+
     // ── Rodičovský (zděděný) styl — read-only, pro placeholder zobrazení ──
 
     /// <summary>
@@ -189,7 +200,12 @@ public class CellStyleVM : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
-        => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
+        // Jakákoli změna mění HasAnyExplicit → notifikovat vždy (ne jen u explicit fields)
+        if (p != nameof(HasAnyExplicit))
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasAnyExplicit)));
+    }
 
     private static string? NullIfEmpty(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
 }

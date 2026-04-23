@@ -78,12 +78,16 @@
                                  ItemsSource="{Binding ColumnVMs}"
                                  SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
                                  BorderThickness="1" BorderBrush="#CCCCCC">
+                            <ListBox.Resources>
+                                <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+                            </ListBox.Resources>
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Margin="2">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <CheckBox IsChecked="{Binding Visible, UpdateSourceTrigger=PropertyChanged}"
@@ -92,7 +96,11 @@
                                             <TextBlock Text="{Binding Header}" FontWeight="SemiBold"/>
                                             <TextBlock Text="{Binding Key}" Foreground="#888888" FontSize="10"/>
                                         </StackPanel>
-                                        <TextBlock Grid.Column="2" VerticalAlignment="Center"
+                                        <Ellipse Grid.Column="2" Width="7" Height="7" Fill="#2196F3"
+                                                 Margin="6,0,0,0" VerticalAlignment="Center"
+                                                 ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
+                                                 Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
+                                        <TextBlock Grid.Column="3" VerticalAlignment="Center"
                                                    Foreground="#888888" FontSize="10" Margin="4,0,0,0"
                                                    Text="{Binding Width, StringFormat='{}{0} mm'}"/>
                                     </Grid>
@@ -159,8 +167,15 @@
                                 ClearBgColorCommand="{Binding DataContext.ClearDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
 
                             <!-- Resetovat -->
-                            <Button Content="Resetovat styl" Command="{Binding DataContext.ResetStyleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    HorizontalAlignment="Left" Padding="10,3" Margin="0,12,0,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <Button Content="Resetovat styl sloupce"
+                                        Command="{Binding DataContext.ResetStyleCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        Padding="10,3" Margin="0,0,6,0"/>
+                                <Button Content="Resetovat všechny sloupce"
+                                        Command="{Binding DataContext.ResetAllColumnStylesCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        ToolTip="Smaže per-sloupec overrides — všechny sloupce budou dědit z tabu Obecné"
+                                        Padding="10,3"/>
+                            </StackPanel>
 
                         </StackPanel>
                     </ScrollViewer>

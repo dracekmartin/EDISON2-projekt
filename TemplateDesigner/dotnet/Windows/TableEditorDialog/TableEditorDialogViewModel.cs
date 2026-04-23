@@ -32,11 +32,30 @@ public class ColumnVM : INotifyPropertyChanged
     public string? Format         { get => _format;         set { _format = value;          OnChanged(); } }
     public bool    Visible        { get => _visible;        set { _visible = value;         OnChanged(); } }
 
+    private CellStyleVM _headerStyle = null!;
     /// <summary>Per-column styl záhlaví (kaskáda override).</summary>
-    public CellStyleVM HeaderStyle { get; private init; } = null!;
+    public CellStyleVM HeaderStyle
+    {
+        get => _headerStyle;
+        private init { _headerStyle = value; _headerStyle.PropertyChanged += OnChildChanged; }
+    }
 
+    private CellStyleVM _dataStyle = null!;
     /// <summary>Per-column styl datových buněk (kaskáda override).</summary>
-    public CellStyleVM DataStyle   { get; private init; } = null!;
+    public CellStyleVM DataStyle
+    {
+        get => _dataStyle;
+        private init { _dataStyle = value; _dataStyle.PropertyChanged += OnChildChanged; }
+    }
+
+    /// <summary>True pokud sloupec má per-column override v HeaderStyle nebo DataStyle.</summary>
+    public bool HasAnyOverride => HeaderStyle.HasAnyExplicit || DataStyle.HasAnyExplicit;
+
+    private void OnChildChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CellStyleVM.HasAnyExplicit))
+            OnChanged(nameof(HasAnyOverride));
+    }
 
     /// <summary>
     /// Sada platných názvů polí ze schématu. Null = validace vypnuta (schéma není dostupné).
@@ -272,6 +291,7 @@ class TableEditorDialogViewModel : EDViewModel
     public RelayCommand ClearDataTextColorCommand   { get; }
     public RelayCommand ClearDataBgColorCommand     { get; }
     public RelayCommand ResetStyleCommand           { get; }
+    public RelayCommand ResetAllColumnStylesCommand { get; }
 
     // Element-level (tab Obecné)
     public RelayCommand PickElementHeaderTextColorCommand  { get; }
@@ -360,6 +380,16 @@ class TableEditorDialogViewModel : EDViewModel
             if (SelectedColumnVM is null) return;
             SelectedColumnVM.HeaderStyle.Reset();
             SelectedColumnVM.DataStyle.Reset();
+        });
+
+        // Reset všech sloupců
+        ResetAllColumnStylesCommand = Command(() =>
+        {
+            foreach (var vm in ColumnVMs)
+            {
+                vm.HeaderStyle.Reset();
+                vm.DataStyle.Reset();
+            }
         });
 
         // Element-level color picker commands (tab Obecné)

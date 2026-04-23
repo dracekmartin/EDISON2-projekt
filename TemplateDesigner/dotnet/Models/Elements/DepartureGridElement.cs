@@ -857,8 +857,13 @@ public class DepartureGridElement : ScheduleElementBase
 
     private void RenderPlaceholder(RenderContext ctx)
     {
-        float effFontSize = DataStyle.FontSize ?? 8f;
-        float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
+        // Použít kaskádu (element → ScheduleDefaults → CellDefaults), aby placeholder
+        // v designeru ukazoval to samé, co preview s daty (bez per-column override).
+        var headerResolved = ResolveElementHeaderParent();
+        var dataResolved   = ResolveElementDataParent();
+
+        float effFontSize = dataResolved.FontSize;
+        float effHeaderFontSize = headerResolved.FontSize;
         float rowH = DataRowHeight ?? ComputeRowH(effFontSize);
         float headerH = ComputeHeaderH(effHeaderFontSize);
 
@@ -867,9 +872,9 @@ public class DepartureGridElement : ScheduleElementBase
         float fontPx = effFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(GetTypeface(DataStyle.FontFamily), fontPx);
+        using var font = new SKFont(GetTypeface(dataResolved.FontFamily), fontPx);
         using var headerFont = new SKFont(
-            GetTypeface(DataStyle.FontFamily, SKFontStyle.Bold), headerFontPx);
+            GetTypeface(headerResolved.FontFamily, SKFontStyle.Bold), headerFontPx);
 
         float currentY = Y;
 

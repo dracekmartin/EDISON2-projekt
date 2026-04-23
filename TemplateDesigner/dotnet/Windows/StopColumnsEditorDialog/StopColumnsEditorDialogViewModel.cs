@@ -24,8 +24,28 @@ public class StopColumnVM : INotifyPropertyChanged
     public bool   Visible        { get => _visible;        set { _visible = value;        OnChanged(); } }
     public string AlignmentLabel { get => _alignmentLabel; set { _alignmentLabel = value; OnChanged(); } }
 
-    public CellStyleVM HeaderStyle { get; private init; } = null!;
-    public CellStyleVM DataStyle   { get; private init; } = null!;
+    private CellStyleVM _headerStyle = null!;
+    public CellStyleVM HeaderStyle
+    {
+        get => _headerStyle;
+        private init { _headerStyle = value; _headerStyle.PropertyChanged += OnChildChanged; }
+    }
+
+    private CellStyleVM _dataStyle = null!;
+    public CellStyleVM DataStyle
+    {
+        get => _dataStyle;
+        private init { _dataStyle = value; _dataStyle.PropertyChanged += OnChildChanged; }
+    }
+
+    /// <summary>True pokud sloupec má aspoň jeden per-column override v HeaderStyle nebo DataStyle.</summary>
+    public bool HasAnyOverride => HeaderStyle.HasAnyExplicit || DataStyle.HasAnyExplicit;
+
+    private void OnChildChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CellStyleVM.HasAnyExplicit))
+            OnChanged(nameof(HasAnyOverride));
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
@@ -137,6 +157,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     public RelayCommand ClearDataBgColorCommand { get; }
 
     public RelayCommand ResetStyleCommand { get; }
+    public RelayCommand ResetAllColumnStylesCommand { get; }
 
     // Element-level (Obecné tab)
     public RelayCommand PickElementHeaderTextColorCommand { get; }
@@ -189,12 +210,22 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         ClearDataTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor = null; });
         ClearDataBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor   = null; });
 
-        // Reset style
+        // Reset style — vybraný sloupec
         ResetStyleCommand = Command(() =>
         {
             if (SelectedColumnVM is null) return;
             SelectedColumnVM.HeaderStyle.Reset();
             SelectedColumnVM.DataStyle.Reset();
+        });
+
+        // Reset všech sloupců — smaže per-column overrides
+        ResetAllColumnStylesCommand = Command(() =>
+        {
+            foreach (var vm in ColumnVMs)
+            {
+                vm.HeaderStyle.Reset();
+                vm.DataStyle.Reset();
+            }
         });
 
         // Element-level color picker commands (Obecné tab)
