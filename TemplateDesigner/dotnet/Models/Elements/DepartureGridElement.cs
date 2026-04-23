@@ -325,9 +325,15 @@ public class DepartureGridElement : ScheduleElementBase
     /// <summary>Parent kaskády pro per-column override záhlaví skupiny dnů.</summary>
     public ResolvedTextStyle ResolveGroupHeaderParent()
     {
-        // Legacy default: group header font = 65% of SkupinaDnuHeaderLineHeight (v mm) → pt
-        float legacyDefaultPt = SkupinaDnuHeaderLineHeight * 0.65f / PtToMm;
-        var p = HeaderStyle.Resolve(ScheduleHeaderDefaults) with { FontSize = legacyDefaultPt };
+        var p = HeaderStyle.Resolve(ScheduleHeaderDefaults);
+
+        // Legacy fallback: pokud user nenastavil FontSize v HeaderStyle, odvodit z SkupinaDnuHeaderLineHeight.
+        // (Priorita: HeaderStyle.FontSize > SkupinaDnuHeaderLineHeight-derived > ScheduleHeaderDefaults.FontSize)
+        if (HeaderStyle.FontSize is null)
+        {
+            float legacyDefaultPt = SkupinaDnuHeaderLineHeight * 0.65f / PtToMm;
+            p = p with { FontSize = legacyDefaultPt };
+        }
         if (HeaderStyle.VAlign is null)
             p = p with { VAlign = HeaderVerticalAlignment };
         if (HeaderStyle.HAlign is null)
@@ -340,10 +346,14 @@ public class DepartureGridElement : ScheduleElementBase
     {
         var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
         var p = MinuteStyle.Resolve(dataResolved);
-        if (MinuteStyle.FontSize is null)
+
+        // Legacy fallback: scalar MinuteFontSize/MinuteBold platí pouze když cascade (MinuteStyle + DataStyle)
+        // nenastavil explicit. Tím se user-set DataStyle.FontSize/Bold z tabu Obecné nepřebije.
+        if (MinuteStyle.FontSize is null && DataStyle.FontSize is null)
             p = p with { FontSize = MinuteFontSize };
-        if (MinuteStyle.Bold is null)
+        if (MinuteStyle.Bold is null && DataStyle.Bold is null)
             p = p with { Bold = MinuteBold };
+
         // Minutové buňky: padding default 0 (hustá mřížka)
         p = p with
         {

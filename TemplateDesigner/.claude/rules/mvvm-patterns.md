@@ -110,6 +110,45 @@ private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) {
 
 Pro větší počet buněk na frame (100+, např. DepartureGrid minuty) **pre-create fonty/painty** per-group/per-column jednou před render loopem (6 dictionary: font/textPaint/bgPaint × header/data), dispose v `finally`.
 
+### ⚠️ Anti-pattern: scalar property override v `Resolve*Parent()`
+
+**Častý bug** (historicky 2× opraven v DepartureGrid): element má scalar property (`MinuteFontSize`, `SkupinaDnuHeaderLineHeight`, …) jako legacy auto-derived fallback, a v `Resolve*Parent()` se **unconditionally** aplikuje přes `with { ... }` po Resolve. Tím přebíjí user-set hodnotu z kaskády.
+
+**❌ Špatně** — scalar override po Resolve:
+```csharp
+var p = HeaderStyle.Resolve(ScheduleHeaderDefaults) with { FontSize = legacyDefaultPt };
+// → HeaderStyle.FontSize je ignorováno, i když user ho nastavil v tabu Obecné!
+```
+
+```csharp
+var p = MinuteStyle.Resolve(dataResolved);
+if (MinuteStyle.FontSize is null)
+    p = p with { FontSize = MinuteFontSize };
+// → DataStyle.FontSize je ignorováno, pokud MinuteStyle.FontSize je null
+//   ale DataStyle.FontSize set (MinuteFontSize přebije DataStyle.FontSize).
+```
+
+**✅ Správně** — scalar je **poslední** fallback, aplikuje se jen když **žádná** vrstva kaskády property nenastavila:
+```csharp
+var p = HeaderStyle.Resolve(ScheduleHeaderDefaults);
+if (HeaderStyle.FontSize is null)
+    p = p with { FontSize = legacyDefaultPt };
+```
+
+```csharp
+var p = MinuteStyle.Resolve(dataResolved);
+if (MinuteStyle.FontSize is null && DataStyle.FontSize is null)
+    p = p with { FontSize = MinuteFontSize };
+if (MinuteStyle.Bold is null && DataStyle.Bold is null)
+    p = p with { Bold = MinuteBold };
+```
+
+**Pravidlo:** priorita kaskády je `explicit-nejspecifičtější-vrstva > ... > element-level > element-scalar-fallback > baked-defaults > CellDefaults`. Scalar fallback **NIKDY** nepřebíjí explicitní hodnotu z kaskády, jen doplňuje když je všude null.
+
+**Jak poznat takové místo:** hledej v `Resolve*()` metodách `with { SomeProp = ... }` bez předchozího `if (someProp is null)` checku pro **všechny relevantní vrstvy kaskády** (column + element + sub-style).
+
+**Výjimka — feature overrides (ne cascade fallbacky):** `ResolveRowStyle` u StopListElement zvýrazňuje aktuální zastávku přes unconditional overrides (`Bold = CurrentStopBold || resolved.Bold`). To je záměrné highlighting, ne fallback — user chce aby tato vlastnost přebila. Rozpoznávací znak: feature override **je aktivován runtime stavem** (isCurrent, isPassed), ne statickou konfigurací.
+
 ## Sdílený `CellStyleEditor` (dialogy sloupců)
 
 `Controls/CellStyleEditor.xaml` — UserControl konzumovaný všemi třemi dialogy (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`). DataContext = `CellStyleVM`. Converters v `CellStyleEditor.Converters.cs`.

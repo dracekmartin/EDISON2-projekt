@@ -88,3 +88,19 @@ pro budoucí vlastnosti bez změny modelu a bez nutnosti verzovat JSON schéma.
 - `using SkiaSharp;` **není** v implicitních using WPF projektu — přidej explicitně do každého souboru, kde se používají SK typy (`SKCanvas`, `SKPaint`, `SKColor`, `SKFont`…)
 - `using System.IO;` taktéž není implicitní — přidej do souborů pracujících se soubory
 - `SKFilterQuality` v SkiaSharp 3.x **neexistuje** — byl odebrán; pro kvalitu renderování nastav `SKSamplingOptions` nebo nech výchozí hodnotu
+
+---
+
+## Debugging: proč se user-set styl nepropíše do renderu?
+
+Historicky nejčastější kořen (2× opraveno v DepartureGrid):
+
+**Symptom:** user nastaví vlastnost (FontSize, Bold, …) ve stylovém dialogu, ale render ji ignoruje / přebíjí starou hodnotou.
+
+**Checklist — kde hledat:**
+1. **`ToModel()` → cascade zápis.** Otevři dialog, změň hodnotu, OK. Potvrď že nová hodnota dorazí do `element.HeaderStyle` / `col.Style` (breakpoint v `OnOk` write-back).
+2. **Resolve*Parent() / Resolve*Style().** Hledej `with { SomeProp = scalarValue }` bez `if (someProp is null)` checku → to je anti-pattern (přebíjí cascade). Viz `mvvm-patterns.md §Anti-pattern: scalar property override`.
+3. **Legacy scalar fallback musí respektovat VŠECHNY vrstvy kaskády.** Pokud element má `MinuteStyle` + `DataStyle` + `Element-scalar MinuteFontSize`, fallback na scalar smí padnout jen když **oba** `MinuteStyle.FontSize` i `DataStyle.FontSize` jsou null.
+4. **Render používá resolved cascade, ne raw style properties.** Pokud kód volá např. `HeaderStyle.FontSize ?? 9f` přímo (místo `ResolveXxx().FontSize`), obchází kaskádu. Grep po `Style\.[A-Z]\w*\s*\?\?` — podezřelé.
+
+**Trigger:** tato třída bugů se objevuje při přidávání nové vrstvy do kaskády (např. když `ElementHeaderStyle` začalo být editovatelné v tabu Obecné, starý scalar override který dřív „jen doplňoval" začal přebíjet novou vrstvu).
