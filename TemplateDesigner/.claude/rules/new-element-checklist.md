@@ -187,6 +187,77 @@ Bez tohoto se v záložce „Strom" zobrazí generický fallback `(X, Y) WxH`.
 
 ---
 
+## Dodatek: tabulkový element s per-column stylingem
+
+Pokud nový element má **sloupce se samostatným stylingem záhlaví/dat** (jako `TableElement`/`StopListElement`/`DepartureGridElement`), postupuj podle 4 doplňujících kroků (detaily v `.claude/rules/mvvm-patterns.md §Jednotná kaskáda stylů buněk`):
+
+**1. Model — per-column `TextStyle?`:**
+```csharp
+public class NovyColumn {
+    public TextStyle? HeaderStyle { get; set; }  // null = dědit z elementu
+    public TextStyle? DataStyle   { get; set; }  // null = dědit z elementu
+    // + existing: Header, Width, Visible, ...
+}
+```
+
+**2. Element — public `Resolve<Zone>Parent()` API:**
+```csharp
+public class NovyElement : TemplateElement {
+    public TextStyle? HeaderStyle { get; set; }
+    public TextStyle? DataStyle   { get; set; }
+
+    private static readonly ResolvedTextStyle NovyHeaderParent =
+        CellDefaults.Default with { Bold = true, /* per-element defaults */ };
+    private static readonly ResolvedTextStyle NovyDataParent =
+        CellDefaults.Default with { /* per-element defaults */ };
+
+    public ResolvedTextStyle ResolveColumnHeaderParent() =>
+        (HeaderStyle ?? new TextStyle()).Resolve(NovyHeaderParent);
+    public ResolvedTextStyle ResolveColumnDataParent() =>
+        (DataStyle ?? new TextStyle()).Resolve(NovyDataParent);
+
+    // Private — per-column override pro render
+    private ResolvedTextStyle ResolveColumnHeaderStyle(NovyColumn col) =>
+        col.HeaderStyle is { } h ? h.Resolve(ResolveColumnHeaderParent())
+                                 : ResolveColumnHeaderParent();
+}
+```
+
+**3. Render — přes `CellRenderer.DrawCell`:**
+```csharp
+public override void Render(RenderContext ctx) {
+    foreach (var col in Columns) {
+        var style = ResolveColumnHeaderStyle(col);
+        var rectMm = new SKRect(colXMm, yMm, colXMm + colWMm, yMm + headerHeightMm);
+        CellRenderer.DrawCell(ctx, rectMm, col.Header, style);
+        // + per-row iteration similarly for DataStyle
+    }
+}
+```
+
+**4. Dialog sloupců — sdílený `<CellStyleEditor>`:**
+
+Dialog (okno triad): `Windows/NovyColumnsEditorDialog/{Window,ViewModel,xaml}.cs`. VM musí:
+- V konstruktoru brát `NovyElement element` a volat `element.ResolveColumnHeaderParent()` / `ResolveColumnDataParent()`
+- Předat inherited do `CellStyleVM.FromModel(column.HeaderStyle, headerInherited)`
+- Exposovat 8 commands (`Pick/Clear<Header|Data><Text|Bg>ColorCommand`), `ResetStyleCommand`, `RequestColorPicker` callback
+- Exposovat `HeaderEditOptions` + `DataEditOptions` (`CellStyleEditOptions.AllEnabled` obvykle)
+
+XAML dialogu — 2× `<controls:CellStyleEditor>` (Header + Data zone):
+```xml
+<controls:CellStyleEditor
+    DataContext="{Binding SelectedColumnVM.HeaderStyle}"
+    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+    PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+    ... /> <!-- 3 zbývající color commands -->
+```
+
+**Reference implementace:** `TableEditorDialog` (Fixed+Dynamic sloupce), `StopColumnsEditorDialog` (jednoduché sloupce), `DepartureGroupEditorDialog` (skupiny dnů + sloupec hodin).
+
+**NIKDY neduplikuj inline XAML pro editaci stylu buněk** — vše přes `<CellStyleEditor>`.
+
+---
+
 ## Shrnutí — dotčené soubory
 
 | # | Soubor | Povinné |

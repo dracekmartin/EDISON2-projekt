@@ -87,12 +87,20 @@ column.Style (per-column override)
 - `ColumnRenderer.DrawRow(ctx, xStartMm, yMm, heightMm, cells, gridPaint)` — orchestruje řádek sloupců přes `CellRenderer` + volitelné svislé čáry
 - `CellStyleEditOptions` — record s `Allow<X>` flagy pro per-kontextové skrývání UI kontrolek editace stylu
 
-**Element-side pattern** — každý tabulkový element implementuje `Resolve*Style` helpery:
+**Element-side pattern** — každý tabulkový element má dvě vrstvy API:
+
+1. **`Resolve<Zone>Parent(): ResolvedTextStyle`** (public) — vyřešený rodičovský styl pro dialog. Dialogy ho používají jako inherited vrstvu pro `CellStyleVM.Inherited`.
+2. **`Resolve<Zone>Style(col): ResolvedTextStyle`** (private, per element) — kompletní kaskáda včetně per-column overridů. Vrací hotový styl pro `CellRenderer.DrawCell`.
+
 ```csharp
+// Public — pro dialog kaskády
+public ResolvedTextStyle ResolveColumnHeaderParent() =>
+    (HeaderStyle ?? new TextStyle()).Resolve(TableHeaderParent);
+
+// Private — pro render (per-column override)
 private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) {
-    var elementResolved = ResolveTableHeaderStyle();              // element → defaults
-    var resolved = col.HeaderStyle is { } h
-        ? h.Resolve(elementResolved) : elementResolved;           // column override
+    var elementResolved = ResolveColumnHeaderParent();
+    var resolved = col.HeaderStyle is { } h ? h.Resolve(elementResolved) : elementResolved;
     // Legacy fallback: col.Alignment (jen pokud cascade nenastavila HAlign)
     if (col.HeaderStyle?.HAlign is null && HeaderStyle?.HAlign is null)
         resolved = resolved with { HAlign = col.Alignment };
@@ -104,18 +112,30 @@ Pro větší počet buněk na frame (100+, např. DepartureGrid minuty) **pre-cr
 
 ## Sdílený `CellStyleEditor` (dialogy sloupců)
 
-`Controls/CellStyleEditor.xaml` — UserControl konzumovaný všemi třemi dialogy (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`). DataContext = `CellStyleVM`.
+`Controls/CellStyleEditor.xaml` — UserControl konzumovaný všemi třemi dialogy (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`). DataContext = `CellStyleVM`. Converters v `CellStyleEditor.Converters.cs`.
 
 **Dependency properties:**
 - `EditOptions` (`CellStyleEditOptions`) — řídí viditelnost řádků přes `BooleanToVisibilityConverter`
 - 4× `ICommand` — `Pick/ClearTextColor`, `Pick/ClearBgColor` — dialog passuje své VM commands
-- `HAlignmentOptions`/`VAlignmentOptions`/`FontSizeOptions` — s rozumnými defaults, lze override per dialog
+- `HAlignOptions`/`VAlignOptions`/`FontSizeOptions` — defaults s rozumnými labely, lze override per dialog
+
+**`CellStyleVM` — tri-state kaskáda (nullable = dědit):**
+
+Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `TextHorizontalAlignment?`…). Null = dědit od rodiče.
+
+- `Inherited: ResolvedTextStyle` (read-only) — vyřešený parent styl, XAML ho zobrazuje jako šedivý italic placeholder v prázdných polích
+- `EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery (`_bold ?? Inherited.Bold`) — binding pro 2-stavové checkboxy. Setter zapisuje explicit override
+- `HasExplicit<X>` derived — viditelnost „×" reset tlačítek (jen když user explicitně přepsal)
+- `ResetFieldCommand(paramName: string?)` — jedno command, CommandParameter = název property („Bold", „HAlign", …)
+- `FromModel(TextStyle? explicit, ResolvedTextStyle inherited)` — povinně bere inherited z elementu
+- `ToModel()` emituje nullable TextStyle — prázdná pole zůstanou null (idempotentní: open+OK beze změn nezmění JSON)
 
 **Host dialog (VM) musí poskytnout:**
-- `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`)
+- `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`; do budoucna per-kontextové skrytí irelevantních voleb)
 - Pick/Clear commands per zóna × barva (Text/Bg) = 8 commands
 - `RequestColorPicker: Func<string, string?>` callback (dialog wire `ColorPickerHelper.PickColor`)
 - `ResetStyleCommand` (volitelný, pro tlačítko „Resetovat styl")
+- V konstruktoru: `CellStyleVM.FromModel(columnTextStyle, element.Resolve<Zone>Parent())` — nikdy nevytváří VM bez inherited!
 
 **Host dialog (XAML):**
 ```xml
@@ -125,10 +145,6 @@ Pro větší počet buněk na frame (100+, např. DepartureGrid minuty) **pre-cr
     PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
     ... /> <!-- 3 zbývající color commands -->
 ```
-
-**Známé omezení** (pro budoucí fix):
-- `CellStyleVM.Bold/Italic/Underline/Strikethrough` jsou `bool` (ne `bool?`) — `ToModel()` vždy emituje explicit hodnotu, takže open+OK beze změn uloží non-null TextStyle. Pokud defaultní VM.Bold neodpovídá element-level default Bold, kaskáda se rozbije. Volající musí passovat `defaultBold: true` v `CellStyleVM.FromModel(...)` pro záhlaví.
-- UI neukazuje placeholder hodnoty pro dědené vlastnosti — user vidí prázdný FontFamily i když default "Arial" existuje. Tri-state checkbox + placeholder converter = budoucí iterace.
 
 ---
 

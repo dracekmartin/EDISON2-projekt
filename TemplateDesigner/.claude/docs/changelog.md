@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-04-22 — Tri-state editor stylů + placeholdery zděděných hodnot (`3cf59d1`)
+
+Dokončení „známých omezení" z fáze 4 — editor stylů buněk nyní plně rozlišuje „dědit od rodiče" od „explicitně nastaveno".
+
+- ✅ **`CellStyleVM` — nullable properties napříč** — všechny editovatelné vlastnosti jsou `T?` (`string?`, `float?`, `bool?`, `TextHorizontalAlignment?`, …). Null = dědit od rodiče v kaskádě. Konec workaround `defaultBold`/`defaultFontFamily`/`defaultFontSize` parametrů — FromModel bere povinně `ResolvedTextStyle inherited`
+- ✅ **`EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery** — `_bold ?? Inherited.Bold` — 2-stavové checkboxy zobrazují reálnou platnou hodnotu (nikoli „explicit override"). Setter zapisuje explicit override
+- ✅ **`HasExplicit<X>` derived** — řídí viditelnost „×" reset tlačítek (vidět jen při explicit override)
+- ✅ **Jeden `ResetFieldCommand(paramName)`** nahrazuje per-field reset commands; CommandParameter = název property
+- ✅ **`CellStyleVM.Inherited: ResolvedTextStyle`** — read-only, drží vyřešený rodičovský styl; XAML ho bindne jako šedivý italic placeholder v prázdných polích (`FontFamily`, `FontSize`, HAlign/VAlign ComboBox overlay)
+- ✅ **`CellStyleEditor.xaml`** přepracován — 2-stavové checkboxy (dřív matoucí IsThreeState s indeterminate čtverečkem); HAlign/VAlign ComboBox bez null-sentinelu, placeholder jako overlay TextBlock; barva přes `FirstNonEmptyHexToBrush` MultiBinding (explicit ?? inherited)
+- ✅ **`Controls/CellStyleEditor.Converters.cs`** (nový) — `NullOrEmptyToVisibleConverter`, `NotNullToVisibleConverter`, `FirstNonEmptyHexToBrushConverter` (MultiBinding), `HAlignToLabelConverter`, `VAlignToLabelConverter`
+- ✅ **Public API `Resolve<X>Parent()` na elementech** — `StopListElement.ResolveColumnHeaderParent/Data()`, `DepartureGridElement.ResolveHour{Header,Data}Parent()/ResolveGroup{Header,Minute}Parent()`, `TableElement.ResolveColumnHeaderParent/Data()`. Dialogy si volají parent kaskádu místo hardcoded defaultů
+- ✅ **Legacy fallbacky v DepartureGrid přesunuty do parent getterů** — `HeaderVerticalAlignment`, `SkupinaDnuHeaderLineHeight`, `MinuteFontSize`, `MinuteBold` aplikovány v parent pro konzistenci UI a renderu
+- 📋 **Bez breaking JSON změny** — model TextStyle byl již nullable, kaskáda renderu se nemění
+- 📋 **Rozšiřitelnost hotová** — nový tabulkový element stačí implementovat `Resolve<X>Parent()` metody + host dialog volá `CellStyleVM.FromModel(style, element.Resolve<X>Parent())` + XAML `<CellStyleEditor>`
+
+---
+
 ## 2026-04-22 — Jednotná kaskáda stylů buněk (fáze 0–4)
 
 Koherentní refactor přes 4 commity: sjednocení stylování buněk napříč všemi tabulkovými elementy (StopList, DepartureGrid, TableElement) do čtyřvrstvé kaskády `column → element → defaults → CellDefaults`.
@@ -29,7 +47,7 @@ Koherentní refactor přes 4 commity: sjednocení stylování buněk napříč v
 - ✅ **`CellStyleVM` rozšířen** — `VAlignmentIndex`, `Underline`, `Strikethrough`, `LineSpacing` (+ FromModel/ToModel/Reset)
 - ✅ **3 dialogy migrovány** — `DepartureGroupEditorDialog` (-107 inline), `StopColumnsEditorDialog` (-107 inline), `TableEditorDialog` (nový tab „Styl sloupců" +65)
 - ✅ **Bugfix** — `StopColumnVM.FromModel` nepředával `defaultBold: true` → po open+OK beze změn se ukládal explicit `Bold=false` overrriduje element-level `Bold=true` → záhlaví zastávek ztratilo tučnost. DepartureGroup/Table to měly správně
-- 📋 **Známá omezení** — `CellStyleVM.Bold/Italic/Underline/Strikethrough` jsou `bool` (ne `bool?`), takže `ToModel()` vždy emituje explicit hodnotu. Funguje díky `defaultBold: true` na všech volajících; tri-state checkbox = budoucí fix. Placeholder hodnoty v UI pro dědené vlastnosti = budoucí iterace
+- 📋 ~~**Známá omezení** — `CellStyleVM.Bold/...` jsou `bool` + placeholder hodnoty chybí~~ → **vyřešeno v `3cf59d1`** (viz entry výše)
 
 **Celkový efekt** (9 commitů modified, 2 new files):
 - Jedna kaskáda pro všechny tři tabulkové elementy (ze 3 různých ad-hoc přístupů)
