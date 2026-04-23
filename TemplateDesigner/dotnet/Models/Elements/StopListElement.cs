@@ -111,71 +111,83 @@ public class StopListElement : ScheduleElementBase
         // Šipka si rezervuje vlastní gutter vpravo; sloupce zůstávají u levého okraje
         float arrowGutter = showArrow ? ArrowGutterMm : 0f;
 
-        // Záhlaví sloupců
-        float currentY = ShowHeader
-            ? RenderColumnHeaders(ctx, columns, headerH, paints, scale)
-            : Y;
-
-        if (hasData)
+        // Clip na hranice elementu — chrání před přesahem, pokud součet šířek sloupců
+        // přesahuje Width (nekonzistentní konfigurace). Konzistentní s DepartureGridElement.
+        var clipRect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+        ctx.Canvas.Save();
+        ctx.Canvas.ClipRect(clipRect);
+        try
         {
-            bool foundCurrent = false;
-            float arrowStartY = -1f;
-            float arrowEndY = -1f;
+            // Záhlaví sloupců
+            float currentY = ShowHeader
+                ? RenderColumnHeaders(ctx, columns, headerH, paints, scale)
+                : Y;
 
-            foreach (var z in zastavky)
+            if (hasData)
             {
-                if (!showPassed && !foundCurrent && !z.JeAktualni)
-                    continue;
-                if (z.JeAktualni) foundCurrent = true;
+                bool foundCurrent = false;
+                float arrowStartY = -1f;
+                float arrowEndY = -1f;
 
-                bool isCurrent = z.JeAktualni && HighlightCurrentStop;
-                bool isPassed = !foundCurrent && !z.JeAktualni;
-
-                // Sledovat Y pro šipku směru
-                if (isCurrent) arrowStartY = currentY;
-                arrowEndY = currentY;
-
-                // Podbarvení aktuálního řádku přes celou šířku elementu (za sloupci i v gap za posledním).
-                // Per-column Style.Data.BackgroundColor (pokud je neprůhledná) toto lokálně přepíše.
-                if (isCurrent && CurrentStopBackgroundColor is not null)
+                foreach (var z in zastavky)
                 {
-                    var bgRect = ctx.ToCanvasRect(X, currentY, Width, rowH);
-                    using var bgPaint = new SKPaint { Color = SKColor.Parse(CurrentStopBackgroundColor) };
-                    ctx.Canvas.DrawRect(bgRect, bgPaint);
+                    if (!showPassed && !foundCurrent && !z.JeAktualni)
+                        continue;
+                    if (z.JeAktualni) foundCurrent = true;
+
+                    bool isCurrent = z.JeAktualni && HighlightCurrentStop;
+                    bool isPassed = !foundCurrent && !z.JeAktualni;
+
+                    // Sledovat Y pro šipku směru
+                    if (isCurrent) arrowStartY = currentY;
+                    arrowEndY = currentY;
+
+                    // Podbarvení aktuálního řádku přes celou šířku elementu (za sloupci i v gap za posledním).
+                    // Per-column Style.Data.BackgroundColor (pokud je neprůhledná) toto lokálně přepíše.
+                    if (isCurrent && CurrentStopBackgroundColor is not null)
+                    {
+                        var bgRect = ctx.ToCanvasRect(X, currentY, Width, rowH);
+                        using var bgPaint = new SKPaint { Color = SKColor.Parse(CurrentStopBackgroundColor) };
+                        ctx.Canvas.DrawRect(bgRect, bgPaint);
+                    }
+
+                    var specs = new ColumnRenderer.CellSpec[columns.Count];
+                    for (int i = 0; i < columns.Count; i++)
+                    {
+                        var col = columns[i];
+                        string cellText = GetCellText(z, col.Key);
+                        var cellStyle = ResolveRowStyle(col, isCurrent, isPassed);
+                        specs[i] = new ColumnRenderer.CellSpec(col.Width, cellText, cellStyle);
+                    }
+                    ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
+
+                    if (ShowRowSeparators)
+                    {
+                        var rowLineStart = ctx.ToCanvas(X, currentY + rowH);
+                        var rowLineEnd = ctx.ToCanvas(X + Width, currentY + rowH);
+                        ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
+                    }
+                    currentY += rowH;
                 }
 
-                var specs = new ColumnRenderer.CellSpec[columns.Count];
-                for (int i = 0; i < columns.Count; i++)
-                {
-                    var col = columns[i];
-                    string cellText = GetCellText(z, col.Key);
-                    var cellStyle = ResolveRowStyle(col, isCurrent, isPassed);
-                    specs[i] = new ColumnRenderer.CellSpec(col.Width, cellText, cellStyle);
-                }
-                ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
-
-                if (ShowRowSeparators)
-                {
-                    var rowLineStart = ctx.ToCanvas(X, currentY + rowH);
-                    var rowLineEnd = ctx.ToCanvas(X + Width, currentY + rowH);
-                    ctx.Canvas.DrawLine(rowLineStart, rowLineEnd, paints.Grid);
-                }
-                currentY += rowH;
+                // Šipka směru jízdy ─┐│▼ (v rezervovaném gutteru vpravo)
+                if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
+                    RenderDirectionArrow(ctx, arrowGutter, arrowStartY, arrowEndY, rowH);
+            }
+            else
+            {
+                float placeholderFontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
+                using var placeholderFont = new SKFont(GetTypeface(DataStyle.FontFamily), placeholderFontPx);
+                currentY = RenderPlaceholderRows(ctx, 4, "Zastávka",
+                    X, currentY, Width, rowH, placeholderFont, paints.Text, paints.Grid);
             }
 
-            // Šipka směru jízdy ─┐│▼ (v rezervovaném gutteru vpravo)
-            if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
-                RenderDirectionArrow(ctx, arrowGutter, arrowStartY, arrowEndY, rowH);
+            RenderOuterBorder(ctx, X, Y, Width, currentY - Y, paints.Grid);
         }
-        else
+        finally
         {
-            float placeholderFontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
-            using var placeholderFont = new SKFont(GetTypeface(DataStyle.FontFamily), placeholderFontPx);
-            currentY = RenderPlaceholderRows(ctx, 4, "Zastávka",
-                X, currentY, Width, rowH, placeholderFont, paints.Text, paints.Grid);
+            ctx.Canvas.Restore();
         }
-
-        RenderOuterBorder(ctx, X, Y, Width, currentY - Y, paints.Grid);
     }
 
     /// <summary>Vykreslí záhlaví sloupců přes ColumnRenderer.</summary>

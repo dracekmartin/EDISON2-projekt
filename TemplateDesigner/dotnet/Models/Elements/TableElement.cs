@@ -259,25 +259,36 @@ public class TableElement : TemplateElement
         var headerStyles = visibleColumns.Select(ResolveColumnHeaderStyle).ToArray();
         var dataStyles   = visibleColumns.Select(ResolveColumnDataStyle).ToArray();
 
-        float currentY = Y;
-
-        if (ShowHeader)
-            currentY = RenderHeader(ctx, visibleColumns, colWidths, headerStyles, currentY, borderPaint, sepPaint);
-
-        IReadOnlyList<DataContext> dataRows = [];
-        if (Mode == TableMode.Fixed)
-            currentY = RenderFixedRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint);
-        else
+        // Clip na hranice elementu — chrání před přesahem, pokud součet šířek sloupců
+        // přesahuje Width (nekonzistentní konfigurace). Konzistentní s ostatními tabulkovými elementy.
+        ctx.Canvas.Save();
+        ctx.Canvas.ClipRect(tableRect);
+        try
         {
-            dataRows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
-            currentY = RenderDynamicRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint, dataRows);
+            float currentY = Y;
+
+            if (ShowHeader)
+                currentY = RenderHeader(ctx, visibleColumns, colWidths, headerStyles, currentY, borderPaint, sepPaint);
+
+            IReadOnlyList<DataContext> dataRows = [];
+            if (Mode == TableMode.Fixed)
+                currentY = RenderFixedRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint);
+            else
+            {
+                dataRows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
+                currentY = RenderDynamicRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint, dataRows);
+            }
+
+            if (SummaryRows is { Count: > 0 })
+                RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, borderPaint, sepPaint, dataRows);
+
+            if (BorderStyle != TableBorderStyle.None)
+                ctx.Canvas.DrawRect(tableRect, borderPaint);
         }
-
-        if (SummaryRows is { Count: > 0 })
-            RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, borderPaint, sepPaint, dataRows);
-
-        if (BorderStyle != TableBorderStyle.None)
-            ctx.Canvas.DrawRect(tableRect, borderPaint);
+        finally
+        {
+            ctx.Canvas.Restore();
+        }
     }
 
     private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
