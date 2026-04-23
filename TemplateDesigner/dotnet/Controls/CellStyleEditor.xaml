@@ -194,44 +194,53 @@
         </StackPanel>
 
         <!-- ── Padding (mm) ─────────────────────────────────────────── -->
+        <!-- Šipky = směr, kam se posune text (design-tool konvence, ne CSS edge).
+             ↑ = push text up = PaddingBottom (shrink z dolu)
+             → = push text right = PaddingLeft (shrink zleva)
+             ↓ = push text down = PaddingTop (shrink z vrchu)
+             ← = push text left = PaddingRight (shrink z pravá) -->
         <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
                     Visibility="{Binding EditOptions.AllowPadding, ElementName=Root, Converter={StaticResource BoolToVis}}">
             <TextBlock Text="Padding (mm):" VerticalAlignment="Center" Margin="0,0,6,0"/>
 
-            <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"/>
+            <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text nahoru (padding zdola)"/>
             <Grid Width="45" Margin="0,0,6,0">
-                <TextBox x:Name="PadTop"
-                         Text="{Binding PaddingTop, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                           Text="{Binding Inherited.PaddingTop}"
-                           Visibility="{Binding Text, ElementName=PadTop, Converter={StaticResource NullToVis}}"/>
-            </Grid>
-
-            <TextBlock Text="→" VerticalAlignment="Center" Margin="0,0,2,0"/>
-            <Grid Width="45" Margin="0,0,6,0">
-                <TextBox x:Name="PadRight"
-                         Text="{Binding PaddingRight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                           Text="{Binding Inherited.PaddingRight}"
-                           Visibility="{Binding Text, ElementName=PadRight, Converter={StaticResource NullToVis}}"/>
-            </Grid>
-
-            <TextBlock Text="↓" VerticalAlignment="Center" Margin="0,0,2,0"/>
-            <Grid Width="45" Margin="0,0,6,0">
-                <TextBox x:Name="PadBottom"
+                <TextBox x:Name="PadUp"
                          Text="{Binding PaddingBottom, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                 <TextBlock Style="{StaticResource InheritedPlaceholder}"
                            Text="{Binding Inherited.PaddingBottom}"
-                           Visibility="{Binding Text, ElementName=PadBottom, Converter={StaticResource NullToVis}}"/>
+                           Visibility="{Binding Text, ElementName=PadUp, Converter={StaticResource NullToVis}}"/>
             </Grid>
 
-            <TextBlock Text="←" VerticalAlignment="Center" Margin="0,0,2,0"/>
-            <Grid Width="45">
-                <TextBox x:Name="PadLeft"
+            <TextBlock Text="→" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text doprava (padding zleva)"/>
+            <Grid Width="45" Margin="0,0,6,0">
+                <TextBox x:Name="PadRightward"
                          Text="{Binding PaddingLeft, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                 <TextBlock Style="{StaticResource InheritedPlaceholder}"
                            Text="{Binding Inherited.PaddingLeft}"
-                           Visibility="{Binding Text, ElementName=PadLeft, Converter={StaticResource NullToVis}}"/>
+                           Visibility="{Binding Text, ElementName=PadRightward, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+
+            <TextBlock Text="↓" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text dolů (padding shora)"/>
+            <Grid Width="45" Margin="0,0,6,0">
+                <TextBox x:Name="PadDown"
+                         Text="{Binding PaddingTop, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                           Text="{Binding Inherited.PaddingTop}"
+                           Visibility="{Binding Text, ElementName=PadDown, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+
+            <TextBlock Text="←" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text doleva (padding zprava)"/>
+            <Grid Width="45">
+                <TextBox x:Name="PadLeftward"
+                         Text="{Binding PaddingRight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                           Text="{Binding Inherited.PaddingRight}"
+                           Visibility="{Binding Text, ElementName=PadLeftward, Converter={StaticResource NullToVis}}"/>
             </Grid>
         </StackPanel>
 
