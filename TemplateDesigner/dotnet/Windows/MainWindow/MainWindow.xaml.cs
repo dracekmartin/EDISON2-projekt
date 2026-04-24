@@ -27,7 +27,7 @@ public partial class MainWindow : Window
     private PreviewCanvas?          _previewCanvas;
     private ElementPropertiesWindowViewModel? _propsVm;
 
-    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
+    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 8.0f, 10.0f];
 
     // ── Mouse state machine ───────────────────────────────────────────────────
     private enum MouseMode { Idle, Dragging, Resizing, RubberBand, AddingElement }
@@ -40,9 +40,6 @@ public partial class MainWindow : Window
     private bool _lastSnapActiveX, _lastSnapActiveY;
 
     private readonly SnapEngine _snapEngine = new();
-
-    /// <summary>Soft-snap: zaokrouhlení na celé mm po puštění dragu, pokud smart-snap nezareagoval.</summary>
-    private const float SoftSnapMm = 1f;
 
     private SKPoint _rubberBandStart;
     private SKRect? _rubberBandRect;
@@ -582,6 +579,13 @@ public partial class MainWindow : Window
         if (_vm is null || CmbGridSize.SelectedItem is not ComboBoxItem item) return;
         if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float size))
             _vm.GridSize = size;
+    }
+
+    private void CmbSnapGap_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null || CmbSnapGap.SelectedItem is not ComboBoxItem item) return;
+        if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gap))
+            _vm.SnapGapMm = gap;
     }
 
     private void CmbScale_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1369,7 +1373,9 @@ public partial class MainWindow : Window
         else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
                  && _vm.State.SelectedElements.Count > 0)
         {
-            _vm.MoveByKey(e.Key, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            _vm.MoveByKey(e.Key,
+                largeStep: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
+                fineStep:  Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
             e.Handled = true;
         }
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)
@@ -1557,10 +1563,13 @@ public partial class MainWindow : Window
             bool snappedX = false, snappedY = false;
             if (_dragInitPositions.TryGetValue(_dragElement!, out var refInit))
             {
-                if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } section)
+                // Ctrl držený = dočasně vypnout snap (free positioning).
+                bool ctrlHeld = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+                if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } section && !ctrlHeld)
                 {
                     var others = section.Elements.Where(el2 => !_dragInitPositions.ContainsKey(el2));
                     float threshold = 8f / _canvas.MmToPx; // ~8px
+                    _snapEngine.GapMm = _vm.State.SnapGapMm;
 
                     // Edge anchors: hrany sekce/printable area — edge-to-edge i gap snap (mezera od okraje).
                     float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
@@ -1602,17 +1611,29 @@ public partial class MainWindow : Window
                     _vm.State.SnapTargetElements.AddRange(targets);
                 }
 
-                if (_vm.State.SnapToGrid)
+                if (_vm.State.SnapToGrid && !ctrlHeld)
                 {
                     float g = _vm.State.GridSize;
-                    if (!snappedX)
+                    // Bounds elementu v sekci — aby grid snap nepřekročil okraje (jinak by clamp odsunul element mimo grid line)
+                    float boundSectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+                    var gridSection = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(_dragElement!));
+                    float boundSectionH = gridSection?.EffectiveDesignerHeight ?? float.MaxValue;
+                    float boundElW = _dragElement!.Width;
+                    float boundElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
+                    float maxGridX = MathF.Max(0, MathF.Floor((boundSectionW - boundElW) / g) * g);
+                    float maxGridY = MathF.Max(0, MathF.Floor((boundSectionH - boundElH) / g) * g);
+
+                    // Grid snap má prioritu — pokud je zapnutý, zaokrouhlí i výsledek smart snapu,
+                    // takže pozice je vždy grid-aligned (očekávání uživatele: "mám grid 1mm → pozice jsou v 1mm krocích").
+                    // Bez tohoto smart snap k non-grid pozicím sousedů (typicky po PDF importu) obchází grid.
                     {
                         float sx = MathF.Round((refInit.X + deltaMmX) / g) * g;
+                        sx = Math.Clamp(sx, 0f, maxGridX);
                         deltaMmX = sx - refInit.X;
                     }
-                    if (!snappedY)
                     {
                         float sy = MathF.Round((refInit.Y + deltaMmY) / g) * g;
+                        sy = Math.Clamp(sy, 0f, maxGridY);
                         deltaMmY = sy - refInit.Y;
                     }
                 }
@@ -1623,6 +1644,12 @@ public partial class MainWindow : Window
             var (clampedX, clampedY) = ClampDragDelta(deltaMmX, deltaMmY);
             foreach (var kvp in _dragInitPositions)
             { kvp.Key.X = kvp.Value.X + clampedX; kvp.Key.Y = kvp.Value.Y + clampedY; }
+
+            // Měřící badge — aktuální pozice draggovaného elementu
+            _vm.State.DragBadgeText = $"X: {_dragElement!.X:0.#} mm   Y: {_dragElement!.Y:0.#} mm";
+            _vm.State.DragBadgeX = cx;
+            _vm.State.DragBadgeY = cy;
+
             InvalidateCanvas();
             return;
         }
@@ -1635,7 +1662,9 @@ public partial class MainWindow : Window
             float mouseMmX = (cx - _resizeOriginX) / _canvas.MmToPx;
             float mouseMmY = (cy - _resizeOriginY) / _canvas.MmToPx;
 
-            if (_vm.State.SnapToGrid)
+            // Ctrl držený = dočasně vypnout snap (free positioning/resize)
+            bool resizeCtrlHeld = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            if (_vm.State.SnapToGrid && !resizeCtrlHeld)
             {
                 float g = _vm.State.GridSize;
                 mouseMmX = MathF.Round(mouseMmX / g) * g;
@@ -1647,7 +1676,7 @@ public partial class MainWindow : Window
             // Smart snap při resize
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
-            if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection)
+            if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection && !resizeCtrlHeld)
             {
                 bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
                 bool movR = _resizeHandle is ResizeHandle.TopRight or ResizeHandle.MiddleRight or ResizeHandle.BottomRight;
@@ -1656,6 +1685,7 @@ public partial class MainWindow : Window
 
                 var others = resizeSection.Elements.Where(e2 => e2 != _resizeElement);
                 float threshold = 8f / _canvas.MmToPx;
+                _snapEngine.GapMm = _vm.State.SnapGapMm;
 
                 var snap = _snapEngine.CalculateResize(
                     newX, newY, newW, newH,
@@ -1673,6 +1703,11 @@ public partial class MainWindow : Window
             // Synchronizovat sousední element na sdílené hranici
             if (_resizeNeighbor is not null)
                 SyncNeighborResize(newX, newY, newW, newH);
+
+            // Měřící badge — aktuální rozměr a pozice (stejný formát jako u dragu)
+            _vm.State.DragBadgeText = $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
+            _vm.State.DragBadgeX = cx;
+            _vm.State.DragBadgeY = cy;
 
             InvalidateCanvas();
             return;
@@ -1897,17 +1932,19 @@ public partial class MainWindow : Window
     {
         if (commit && _vm is not null)
         {
-            // Soft-snap na celé mm pro osy, kde se neuplatnil smart-snap ani grid snap.
-            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají
-            // přesně alignovat klávesami. Snap-to-grid má prioritu, pokud je zapnutý.
+            // Soft-snap na aktuální GridSize krok pro osy, kde se neuplatnil smart-snap ani grid snap.
+            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají přesně alignovat
+            // klávesami. Snap-to-grid má prioritu, pokud je zapnutý. Bez grid snapu respektujeme
+            // user-vybraný GridSize (0.1 / 0.5 / 1 / 2 / 5 / 10 mm) místo hardcoded 1 mm.
             bool applySoftX = !_lastSnapActiveX && !_vm.State.SnapToGrid;
             bool applySoftY = !_lastSnapActiveY && !_vm.State.SnapToGrid;
             if ((applySoftX || applySoftY) && _dragInitPositions.Count > 0)
             {
+                float softStep = _vm.State.GridSize;
                 foreach (var el in _dragInitPositions.Keys)
                 {
-                    if (applySoftX) el.X = MathF.Round(el.X / SoftSnapMm) * SoftSnapMm;
-                    if (applySoftY) el.Y = MathF.Round(el.Y / SoftSnapMm) * SoftSnapMm;
+                    if (applySoftX) el.X = MathF.Round(el.X / softStep) * softStep;
+                    if (applySoftY) el.Y = MathF.Round(el.Y / softStep) * softStep;
                 }
             }
 
@@ -1926,6 +1963,7 @@ public partial class MainWindow : Window
         _dragInitPositions.Clear();
         _vm?.State.ActiveGapIndicators.Clear();
         _vm?.State.SnapTargetElements.Clear();
+        if (_vm is not null) _vm.State.DragBadgeText = null;
         _mouseMode   = MouseMode.Idle;
         _dragElement = null;
         skCanvas.ReleaseMouseCapture();
@@ -1996,6 +2034,7 @@ public partial class MainWindow : Window
         }
         _vm?.State.ActiveGapIndicators.Clear();
         _vm?.State.SnapTargetElements.Clear();
+        if (_vm is not null) _vm.State.DragBadgeText = null;
         _mouseMode      = MouseMode.Idle;
         _resizeElement  = null;
         _resizeNeighbor = null;

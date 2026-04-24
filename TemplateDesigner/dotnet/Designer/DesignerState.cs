@@ -22,7 +22,7 @@ public class DesignerState
     public float Zoom
     {
         get => _zoom;
-        set => _zoom = Math.Clamp(value, 0.1f, 5.0f);
+        set => _zoom = Math.Clamp(value, 0.1f, 10.0f);
     }
 
     public bool ShowGrid { get; set; } = false;
@@ -30,7 +30,24 @@ public class DesignerState
     public bool SnapToElements { get; set; } = true;
     public bool ShowSectionHeaders { get; set; } = true;
     public float GridSize { get; set; } = 5f; // mm
+
+    /// <summary>
+    /// Výchozí mezera mezi objekty při smart snapu (element↔element, element↔okraj sekce po P1)
+    /// a při směrovém duplikování (Ctrl+D+šipka). User-configurable v toolbaru.
+    /// </summary>
+    public float SnapGapMm { get; set; } = 2f;
     public List<GapIndicator> ActiveGapIndicators { get; } = [];
+
+    // ── Drag/resize badge — real-time pozice/rozměr během interakce ──
+
+    /// <summary>Text badge zobrazovaný během dragu/resize (např. "X: 20 mm, Y: 40 mm" nebo "42 × 8 mm"). Null = skrýt.</summary>
+    public string? DragBadgeText { get; set; }
+
+    /// <summary>Pozice badge v px na canvasu (obvykle u kurzoru). Platí jen pokud DragBadgeText != null.</summary>
+    public float DragBadgeX { get; set; }
+
+    /// <summary>Pozice badge v px na canvasu.</summary>
+    public float DragBadgeY { get; set; }
 
     /// <summary>Elementy jejichž boundary se zvýrazní během snapu (cílové elementy).</summary>
     public List<TemplateElement> SnapTargetElements { get; } = [];

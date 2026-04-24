@@ -161,6 +161,12 @@ public class TemplateDesignerViewModel : EDViewModel
         set { State.GridSize = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); }
     }
 
+    public float SnapGapMm
+    {
+        get => State.SnapGapMm;
+        set { State.SnapGapMm = value; OnPropertyChanged(); }
+    }
+
     // ── Callbacks wired by code-behind ────────────────────────────────────────
     public Action? RequestCanvasRefresh      { get; set; }
     public Action? RequestTitleUpdate        { get; set; }
@@ -672,7 +678,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         float sectionW = State.CurrentTemplate.PageSize.PrintableWidth;
         float sectionH = State.ActiveSection.EffectiveDesignerHeight;
-        float gap = SnapEngine.DefaultGapMm;
+        float gap = State.SnapGapMm;
 
         var newElements = new List<TemplateElement>();
         var commands = new List<IDesignerCommand>();
@@ -1099,9 +1105,15 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Key movement ──────────────────────────────────────────────────────────
-    public void MoveByKey(Key key, bool largeStep)
+    /// <summary>
+    /// Arrow key nudging. Kroky:
+    ///   fineStep=true (Ctrl)   → 0.5 mm (jemné doladění)
+    ///   largeStep=true (Shift) → GridSize (rychlý skok)
+    ///   bez modifikátorů       → 1 mm (default)
+    /// </summary>
+    public void MoveByKey(Key key, bool largeStep, bool fineStep = false)
     {
-        float step = largeStep ? State.GridSize : 1f;
+        float step = fineStep ? 0.5f : (largeStep ? State.GridSize : 1f);
         float dx   = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
         float dy   = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
 

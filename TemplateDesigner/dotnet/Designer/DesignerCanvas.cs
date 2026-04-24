@@ -31,7 +31,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrPage               = SKColors.White;
     private static readonly SKColor ClrPageBorder         = new(0xFFAAAAAA);
     private static readonly SKColor ClrMarginGuide        = new(0x35FF6600);
-    private static readonly SKColor ClrGrid               = new(0x22000080);
+    private static readonly SKColor ClrGrid               = new(0x40000080);
     private static readonly SKColor ClrSectionHeader      = new(0xFF4A90D9);
     private static readonly SKColor ClrSectionHeaderDyn   = new(0xFF3A7AC9);
     private static readonly SKColor ClrSectionHeaderText  = SKColors.White;
@@ -65,15 +65,41 @@ public class DesignerCanvas
 
         DrawPageShadow(canvas, pageX, pageY, pageW, pageH);
         DrawPageBackground(canvas, pageX, pageY, pageW, pageH);
-        if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, template.PageSize);
         DrawMarginGuides(canvas, pageX, pageY, template.PageSize);
         DrawSections(canvas, template, pageX, pageY, canvasWidth);
+        // Grid — kreslen po sekcích, aby byl vidět přes jejich pozadí (v printable area, kde se pozicují elementy).
+        if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, template.PageSize);
         DrawPageBorder(canvas, pageX, pageY, pageW, pageH);
 
         // Selection handles kreslíme naposled — vždy nad elementy
         DrawSnapTargetHighlights(canvas, canvasWidth);
         DrawSelectionOverlay(canvas, canvasWidth);
         DrawSnapLines(canvas, canvasWidth);
+
+        // Měřící badge během dragu/resize — zcela nahoře
+        DrawDragBadge(canvas);
+    }
+
+    /// <summary>Floating badge s pozicí/rozměrem během dragu nebo resize.</summary>
+    private void DrawDragBadge(SKCanvas canvas)
+    {
+        var text = _state.DragBadgeText;
+        if (string.IsNullOrEmpty(text)) return;
+
+        using var font = new SKFont(SKTypeface.Default, 12f);
+        float textW = font.MeasureText(text);
+        var metrics = font.Metrics;
+        float textH = -metrics.Ascent + metrics.Descent;
+
+        const float padX = 6f, padY = 4f, offsetX = 14f, offsetY = 14f;
+        float bx = _state.DragBadgeX + offsetX;
+        float by = _state.DragBadgeY + offsetY;
+        var rect = new SKRect(bx, by, bx + textW + 2 * padX, by + textH + 2 * padY);
+
+        using var bg = new SKPaint { Color = new SKColor(0xE0333333), IsAntialias = true };
+        using var textPaint = new SKPaint { Color = SKColors.White, IsAntialias = true };
+        canvas.DrawRoundRect(rect, 3f, 3f, bg);
+        canvas.DrawText(text, bx + padX, by + padY - metrics.Ascent, font, textPaint);
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -349,14 +375,23 @@ public class DesignerCanvas
 
     private void DrawGrid(SKCanvas canvas, float pageX, float pageY, float pageW, PageSize ps)
     {
-        float step  = _state.GridSize * MmToPx;
-        float endX  = pageX + pageW;
-        float endY  = pageY + ps.Height * MmToPx;
-        using var p = new SKPaint { Color = ClrGrid, StrokeWidth = 0.5f };
-        for (float gx = pageX + ps.MarginLeft * MmToPx; gx < endX; gx += step)
-            canvas.DrawLine(gx, pageY, gx, endY, p);
-        for (float gy = pageY + ps.MarginTop  * MmToPx; gy < endY; gy += step)
-            canvas.DrawLine(pageX, gy, endX, gy, p);
+        // Grid jen v printable area (kde se pozicují elementy), ne v margins. Slabě modrá, aby nerušila obsah.
+        float step   = _state.GridSize * MmToPx;
+        float startX = pageX + ps.MarginLeft  * MmToPx;
+        float startY = pageY + ps.MarginTop   * MmToPx;
+        float endX   = pageX + (ps.Width  - ps.MarginRight)  * MmToPx;
+        float endY   = pageY + (ps.Height - ps.MarginBottom) * MmToPx;
+
+        using var p = new SKPaint
+        {
+            Color = ClrGrid,
+            StrokeWidth = 0.5f,
+            IsAntialias = true,
+        };
+        for (float gx = startX; gx <= endX + 0.1f; gx += step)
+            canvas.DrawLine(gx, startY, gx, endY, p);
+        for (float gy = startY; gy <= endY + 0.1f; gy += step)
+            canvas.DrawLine(startX, gy, endX, gy, p);
     }
 
     private void DrawMarginGuides(SKCanvas canvas, float pageX, float pageY, PageSize ps)
