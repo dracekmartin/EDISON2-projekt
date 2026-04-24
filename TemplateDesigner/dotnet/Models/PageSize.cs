@@ -6,10 +6,13 @@ public class PageSize
 {
     public float Width { get; set; } = 210f;       // mm
     public float Height { get; set; } = 297f;      // mm
-    public float MarginTop { get; set; } = 10f;    // mm
-    public float MarginBottom { get; set; } = 10f; // mm
-    public float MarginLeft { get; set; } = 10f;   // mm
-    public float MarginRight { get; set; } = 10f;  // mm
+    // Margins default = 0 (full-bleed design jako výchozí).
+    // Reálné tiskárny mají vlastní unprintable area (3-5mm), tak je to safe;
+    // user si může margins nastavit přes PageSize editor pokud je chce jako safe zone.
+    public float MarginTop { get; set; } = 0f;
+    public float MarginBottom { get; set; } = 0f;
+    public float MarginLeft { get; set; } = 0f;
+    public float MarginRight { get; set; } = 0f;
 
     [JsonIgnore]
     public float PrintableWidth => Width - MarginLeft - MarginRight;
