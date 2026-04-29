@@ -19,6 +19,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         private readonly IModuleTreeGetter _treeGetter;
         private readonly IProcessLauncher _processLauncher;
+        private readonly Lic? _activeLicence;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -36,6 +37,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             _treeGetter = treeService;
             _processLauncher = processService;
+            _activeLicence = activeLicence;
             ConnParams = connParams;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
@@ -47,7 +49,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             TopLevelModules = [];
 
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
-            _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == "CB_DP").i;
+            // Inicializace musí odpovídat tomu, kde shell vytvořil ACTIVITY zámek
+            // (App.xaml.cs: VerifyLic běží proti mlRest.Idfa). Pokud bychom tu měli
+            // jiné IdFa, modul by hledal lock pod neaktivním IdFa a vždy by selhal.
+            _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
 
             _services.MLRest = mlRest;
 
@@ -108,18 +113,43 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             get => _selectedCompanyIndex;
             set
             {
-                if (_selectedCompanyIndex != value)
-                {
-                    if (!PopupDisplayer.Confirm("Změna společnosti zavře všechna otevřená okna. Pokračovat?"))
-                        return;
+                if (_selectedCompanyIndex == value) return;
 
-                    Set(ref _selectedCompanyIndex, value);
-                    OnPropertyChanged(nameof(Namespace));
-                    OnPropertyChanged(nameof(Idfa));
-                    OnPropertyChanged(nameof(WindowTitle));
-                    _processLauncher.CloseAll();
-                    MLRest!.DataNamespace = Namespace;
-                    MLRest!.Idfa = Idfa;
+                if (!PopupDisplayer.Confirm("Změna společnosti zavře všechna otevřená okna. Pokračovat?"))
+                    return;
+
+                int originalIndex = _selectedCompanyIndex;
+                string originalIdfa = MLRest!.Idfa;
+                string originalNamespace = MLRest!.DataNamespace;
+
+                Set(ref _selectedCompanyIndex, value);
+                OnPropertyChanged(nameof(Namespace));
+                OnPropertyChanged(nameof(Idfa));
+                OnPropertyChanged(nameof(WindowTitle));
+                _processLauncher.CloseAll();
+                MLRest!.DataNamespace = Namespace;
+                MLRest!.Idfa = Idfa;
+
+                // ACTIVITY zámek je per-IdFa. Po přepnutí má shell stále lock pod
+                // starým IdFa, kde server hledá pod novým. Re-VerifyLic vytvoří
+                // nový lock pod novým IdFa. Starý časem vyprší.
+                if (_activeLicence != null)
+                {
+                    var output = MLRest!.QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
+                        new object[] { _activeLicence.CountsLOGIN });
+                    if (int.Parse(output[1]?.ToString() ?? "0") != 1)
+                    {
+                        // Server nedovolil další lock pod novým IdFa (typicky překročen
+                        // počet licencí). Vrátit shell do původního IdFa, kde funkční
+                        // zámek stále drží.
+                        MLRest.Idfa = originalIdfa;
+                        MLRest.DataNamespace = originalNamespace;
+                        Set(ref _selectedCompanyIndex, originalIndex);
+                        OnPropertyChanged(nameof(Namespace));
+                        OnPropertyChanged(nameof(Idfa));
+                        OnPropertyChanged(nameof(WindowTitle));
+                        PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
+                    }
                 }
             }
         }

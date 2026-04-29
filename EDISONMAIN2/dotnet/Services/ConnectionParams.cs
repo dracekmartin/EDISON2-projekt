@@ -11,5 +11,6 @@ namespace EDISONMAIN2.Services
         int RestPort,
         string UserName,
         string FullName,
-        int Mlp);
+        int Mlp,
+        string Guid);
 }

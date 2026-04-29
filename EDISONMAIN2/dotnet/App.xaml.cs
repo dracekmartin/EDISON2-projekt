@@ -60,7 +60,6 @@ namespace EDISONMAIN2
 #endif
 
             // Create the real MLRest connection with company context
-            var connParams = new ConnectionParams(server, port, login.UserName, login.FullName, login.Mlp);
             var mlRest = new MLRestAdapter(new MLRest(server, port, defaultCompany.Database, defaultCompany.Id)
             {
                 LoginName = login.UserName,
@@ -84,6 +83,20 @@ namespace EDISONMAIN2
                 return;
             }
 
+            // Když server zámek z jakéhokoli důvodu odstraní (admin force-logout,
+            // dlouhý síťový výpadek, expirace), klient hodí "ACTIVITY: Lock exist failed!"
+            // → graceful shutdown místo pádu aplikace.
+            mlRest.Inner.EdisonActivityFailed += (_, _) =>
+                Dispatcher.Invoke(() =>
+                {
+                    services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
+                    Shutdown();
+                });
+
+            // Hostované moduly (.exe) sdílejí shellův GUID + CacheLocks=1, aby
+            // jejich aktivita udržovala shell session naživu a aby zánik shell
+            // zámku korektně shodil i moduly. Viz FormToRunGetter v EDISONMAIN2API.
+            var connParams = new ConnectionParams(server, port, login.UserName, login.FullName, login.Mlp, mlRest.Inner.GUID);
             var treeGetter = new ModuleTreeGetter();
             var processLauncher = new ProcessLauncher(connParams);
             var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams, activeLicence);

@@ -20,7 +20,7 @@ namespace EDISONMAIN2.Services.Processes
             {
                 UseShellExecute = true,
                 FileName = ResolveExecutablePath(module.ExecutablePath),
-                Arguments = $"EDISONMAIN2 \"{_connParams.Server}\" \"{_connParams.RestPort}\" \"{Namespace}\" \"{Idfa}\" \"{_connParams.UserName}\" \"{_connParams.FullName}\" \"{_connParams.Mlp}\" \"{module.FormName}\"",
+                Arguments = $"EDISONMAIN2 \"{_connParams.Server}\" \"{_connParams.RestPort}\" \"{Namespace}\" \"{Idfa}\" \"{_connParams.UserName}\" \"{_connParams.FullName}\" \"{_connParams.Mlp}\" \"{module.FormName}\" \"{_connParams.Guid}\"",
             });
 
             if (prc != null) _processes.Add(prc);

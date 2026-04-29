@@ -18,7 +18,7 @@ public class EdisonMainViewModelTests
         new() { Id = "JI_DP", Database = "DB_JI" },
     ];
 
-    private static readonly ConnectionParams TestConnParams = new("localhost", 57770, "test", "Test User", 1);
+    private static readonly ConnectionParams TestConnParams = new("localhost", 57770, "test", "Test User", 1, "test-guid");
 
     private static EDServices MockServices(
         IMLRest? mlRest = null,
@@ -28,13 +28,20 @@ public class EdisonMainViewModelTests
             nav ?? Substitute.For<IWindowNavigator>(),
             popup ?? Substitute.For<IPopupDisplayer>());
 
+    private static IMLRest MockMLRest(string idfa = "CB_DP")
+    {
+        var mock = Substitute.For<IMLRest>();
+        mock.Idfa.Returns(idfa);
+        return mock;
+    }
+
     private static EdisonMainViewModel CreateVM(
         EDServices? services = null,
         IModuleTreeGetter? treeGetter = null,
         IProcessLauncher? processLauncher = null,
         IPopupDisplayer? popup = null)
     {
-        var mockMLRest = Substitute.For<IMLRest>();
+        var mockMLRest = MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var mockProcess = processLauncher ?? Substitute.For<IProcessLauncher>();
         var svc = services ?? MockServices(popup: popup);
@@ -98,7 +105,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var mockMLRest = Substitute.For<IMLRest>();
+        var mockMLRest = MockMLRest();
         var mockProcess = Substitute.For<IProcessLauncher>();
         var svc = MockServices(popup: mockPopup);
         EDServices.Initialize(svc);
@@ -127,7 +134,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var mockMLRest = Substitute.For<IMLRest>();
+        var mockMLRest = MockMLRest();
         var mockProcess = Substitute.For<IProcessLauncher>();
         var svc = MockServices(popup: mockPopup);
         EDServices.Initialize(svc);
