@@ -70,13 +70,128 @@ DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (D
 
 ---
 
+## Jednotná kaskáda stylů buněk (tabulkové elementy)
+
+Všechny tabulkové elementy (StopList, DepartureGrid, TableElement) sdílejí jednu 4-vrstvou kaskádu:
+
+```
+column.Style (per-column override)
+  → element.HeaderStyle / DataStyle (element-wide default)
+    → element-specific defaults (TableHeaderParent, ScheduleElementBase.HeaderStyle...)
+      → CellDefaults.Default (autoritativní konec kaskády)
+```
+
+**Klíčové třídy v `Rendering/`:**
+- `CellDefaults.Default` — jediný autoritativní zdroj výchozích hodnot buňky (Arial 9pt, VAlign=Middle, padding 0.5mm, ...)
+- `CellRenderer.DrawCell(ctx, rectMm, text, style, fontScale)` — **jediné místo v aplikaci**, kde se pozicuje a vykresluje text buňky. Bg → padding shrink → HAlign+VAlign → Underline/Strikethrough
+- `ColumnRenderer.DrawRow(ctx, xStartMm, yMm, heightMm, cells, gridPaint)` — orchestruje řádek sloupců přes `CellRenderer` + volitelné svislé čáry
+- `CellStyleEditOptions` — record s `Allow<X>` flagy pro per-kontextové skrývání UI kontrolek editace stylu
+
+**Element-side pattern** — každý tabulkový element má dvě vrstvy API:
+
+1. **`Resolve<Zone>Parent(): ResolvedTextStyle`** (public) — vyřešený rodičovský styl pro dialog. Dialogy ho používají jako inherited vrstvu pro `CellStyleVM.Inherited`.
+2. **`Resolve<Zone>Style(col): ResolvedTextStyle`** (private, per element) — kompletní kaskáda včetně per-column overridů. Vrací hotový styl pro `CellRenderer.DrawCell`.
+
+```csharp
+// Public — pro dialog kaskády
+public ResolvedTextStyle ResolveColumnHeaderParent() =>
+    (HeaderStyle ?? new TextStyle()).Resolve(TableHeaderParent);
+
+// Private — pro render (per-column override)
+private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) {
+    var elementResolved = ResolveColumnHeaderParent();
+    var resolved = col.HeaderStyle is { } h ? h.Resolve(elementResolved) : elementResolved;
+    // Legacy fallback: col.Alignment (jen pokud cascade nenastavila HAlign)
+    if (col.HeaderStyle?.HAlign is null && HeaderStyle?.HAlign is null)
+        resolved = resolved with { HAlign = col.Alignment };
+    return resolved;
+}
+```
+
+Pro větší počet buněk na frame (100+, např. DepartureGrid minuty) **pre-create fonty/painty** per-group/per-column jednou před render loopem (6 dictionary: font/textPaint/bgPaint × header/data), dispose v `finally`.
+
+### ⚠️ Anti-pattern: scalar property override v `Resolve*Parent()`
+
+**Častý bug** (historicky 2× opraven v DepartureGrid): element má scalar property (`MinuteFontSize`, `SkupinaDnuHeaderLineHeight`, …) jako legacy auto-derived fallback, a v `Resolve*Parent()` se **unconditionally** aplikuje přes `with { ... }` po Resolve. Tím přebíjí user-set hodnotu z kaskády.
+
+**❌ Špatně** — scalar override po Resolve:
+```csharp
+var p = HeaderStyle.Resolve(ScheduleHeaderDefaults) with { FontSize = legacyDefaultPt };
+// → HeaderStyle.FontSize je ignorováno, i když user ho nastavil v tabu Obecné!
+```
+
+```csharp
+var p = MinuteStyle.Resolve(dataResolved);
+if (MinuteStyle.FontSize is null)
+    p = p with { FontSize = MinuteFontSize };
+// → DataStyle.FontSize je ignorováno, pokud MinuteStyle.FontSize je null
+//   ale DataStyle.FontSize set (MinuteFontSize přebije DataStyle.FontSize).
+```
+
+**✅ Správně** — scalar je **poslední** fallback, aplikuje se jen když **žádná** vrstva kaskády property nenastavila:
+```csharp
+var p = HeaderStyle.Resolve(ScheduleHeaderDefaults);
+if (HeaderStyle.FontSize is null)
+    p = p with { FontSize = legacyDefaultPt };
+```
+
+```csharp
+var p = MinuteStyle.Resolve(dataResolved);
+if (MinuteStyle.FontSize is null && DataStyle.FontSize is null)
+    p = p with { FontSize = MinuteFontSize };
+if (MinuteStyle.Bold is null && DataStyle.Bold is null)
+    p = p with { Bold = MinuteBold };
+```
+
+**Pravidlo:** priorita kaskády je `explicit-nejspecifičtější-vrstva > ... > element-level > element-scalar-fallback > baked-defaults > CellDefaults`. Scalar fallback **NIKDY** nepřebíjí explicitní hodnotu z kaskády, jen doplňuje když je všude null.
+
+**Jak poznat takové místo:** hledej v `Resolve*()` metodách `with { SomeProp = ... }` bez předchozího `if (someProp is null)` checku pro **všechny relevantní vrstvy kaskády** (column + element + sub-style).
+
+**Výjimka — feature overrides (ne cascade fallbacky):** `ResolveRowStyle` u StopListElement zvýrazňuje aktuální zastávku přes unconditional overrides (`Bold = CurrentStopBold || resolved.Bold`). To je záměrné highlighting, ne fallback — user chce aby tato vlastnost přebila. Rozpoznávací znak: feature override **je aktivován runtime stavem** (isCurrent, isPassed), ne statickou konfigurací.
+
+## Sdílený `CellStyleEditor` (dialogy sloupců)
+
+`Controls/CellStyleEditor.xaml` — UserControl konzumovaný všemi třemi dialogy (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`). DataContext = `CellStyleVM`. Converters v `CellStyleEditor.Converters.cs`.
+
+**Dependency properties:**
+- `EditOptions` (`CellStyleEditOptions`) — řídí viditelnost řádků přes `BooleanToVisibilityConverter`
+- 4× `ICommand` — `Pick/ClearTextColor`, `Pick/ClearBgColor` — dialog passuje své VM commands
+- `HAlignOptions`/`VAlignOptions`/`FontSizeOptions` — defaults s rozumnými labely, lze override per dialog
+
+**`CellStyleVM` — tri-state kaskáda (nullable = dědit):**
+
+Všechny editovatelné vlastnosti jsou nullable (`string?`, `float?`, `bool?`, `TextHorizontalAlignment?`…). Null = dědit od rodiče.
+
+- `Inherited: ResolvedTextStyle` (read-only) — vyřešený parent styl, XAML ho zobrazuje jako šedivý italic placeholder v prázdných polích
+- `EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery (`_bold ?? Inherited.Bold`) — binding pro 2-stavové checkboxy. Setter zapisuje explicit override
+- `HasExplicit<X>` derived — viditelnost „×" reset tlačítek (jen když user explicitně přepsal)
+- `ResetFieldCommand(paramName: string?)` — jedno command, CommandParameter = název property („Bold", „HAlign", …)
+- `FromModel(TextStyle? explicit, ResolvedTextStyle inherited)` — povinně bere inherited z elementu
+- `ToModel()` emituje nullable TextStyle — prázdná pole zůstanou null (idempotentní: open+OK beze změn nezmění JSON)
+
+**Host dialog (VM) musí poskytnout:**
+- `HeaderEditOptions` + `DataEditOptions` (zatím všude `AllEnabled`; do budoucna per-kontextové skrytí irelevantních voleb)
+- Pick/Clear commands per zóna × barva (Text/Bg) = 8 commands
+- `RequestColorPicker: Func<string, string?>` callback (dialog wire `ColorPickerHelper.PickColor`)
+- `ResetStyleCommand` (volitelný, pro tlačítko „Resetovat styl")
+- V konstruktoru: `CellStyleVM.FromModel(columnTextStyle, element.Resolve<Zone>Parent())` — nikdy nevytváří VM bez inherited!
+
+**Host dialog (XAML):**
+```xml
+<controls:CellStyleEditor
+    DataContext="{Binding SelectedColumnVM.HeaderStyle}"
+    EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+    PickTextColorCommand="{Binding DataContext.PickHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+    ... /> <!-- 3 zbývající color commands -->
+```
+
+---
+
 ## Jak přidat nový typ elementu
 
-1. Vytvořit třídu dědící z `TemplateElement` v `/Models/Elements/`
-2. Implementovat `Render(RenderContext ctx)` a `Clone()`
-3. Implementovat `GetPropertyDescriptors()` — vrací seznam deskriptorů pro panel vlastností
-4. Přidat `[JsonDerivedType(typeof(NovyElement), "NovyElement")]` na `TemplateElement`
-5. Přidat do toolbar menu v `BtnAddElement_Click`
+Kompletní checklist včetně dotčených souborů, factory switches, dynamické výšky a strom šablony → viz **`.claude/rules/new-element-checklist.md`**.
+
+Reference implementace: `BarcodeElement` (minimální), `TextElement` (TextStyle + dynamická výška), `ScheduleElementBase`-derived (komplexní s cache).
 
 ---
 

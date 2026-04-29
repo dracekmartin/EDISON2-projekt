@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using EDControls.EDViewModel;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Rendering;
 using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
 namespace TemplateDesigner;
@@ -22,15 +24,32 @@ public class StopColumnVM : INotifyPropertyChanged
     public bool   Visible        { get => _visible;        set { _visible = value;        OnChanged(); } }
     public string AlignmentLabel { get => _alignmentLabel; set { _alignmentLabel = value; OnChanged(); } }
 
-    public CellStyleVM HeaderStyle { get; set; } = new();
-    public CellStyleVM DataStyle { get; set; } = new();
+    private CellStyleVM _headerStyle = null!;
+    public CellStyleVM HeaderStyle
+    {
+        get => _headerStyle;
+        private init { _headerStyle = value; _headerStyle.PropertyChanged += OnChildChanged; }
+    }
+
+    private CellStyleVM _dataStyle = null!;
+    public CellStyleVM DataStyle
+    {
+        get => _dataStyle;
+        private init { _dataStyle = value; _dataStyle.PropertyChanged += OnChildChanged; }
+    }
+
+    /// <summary>True pokud sloupec má aspoň jeden per-column override v HeaderStyle nebo DataStyle.</summary>
+    public bool HasAnyOverride => HeaderStyle.HasAnyExplicit || DataStyle.HasAnyExplicit;
+
+    private void OnChildChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(CellStyleVM.HasAnyExplicit))
+            OnChanged(nameof(HasAnyOverride));
+    }
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
-
-    private static readonly TextHorizontalAlignment[] HAlignMap =
-        [TextHorizontalAlignment.Left, TextHorizontalAlignment.Center, TextHorizontalAlignment.Right];
 
     public StopColumn ToModel() => new()
     {
@@ -57,7 +76,8 @@ public class StopColumnVM : INotifyPropertyChanged
         return style.IsEmpty ? null : style;
     }
 
-    public static StopColumnVM FromModel(StopColumn c) => new()
+    public static StopColumnVM FromModel(StopColumn c,
+        ResolvedTextStyle headerInherited, ResolvedTextStyle dataInherited) => new()
     {
         Key            = c.Key,
         Header         = c.Header,
@@ -69,8 +89,8 @@ public class StopColumnVM : INotifyPropertyChanged
             TextHorizontalAlignment.Right  => "Vpravo",
             _                              => "Vlevo"
         },
-        HeaderStyle = CellStyleVM.FromModel(c.Style?.Header),
-        DataStyle   = CellStyleVM.FromModel(c.Style?.Data)
+        HeaderStyle = CellStyleVM.FromModel(c.Style?.Header, headerInherited),
+        DataStyle   = CellStyleVM.FromModel(c.Style?.Data,   dataInherited)
     };
 }
 
@@ -78,7 +98,13 @@ public class StopColumnVM : INotifyPropertyChanged
 
 class StopColumnsEditorDialogViewModel : EDViewModel
 {
-    // ── Tab 1: Obecné — property descriptors z elementu ──────────────────
+    // ── Tab 1: Obecné — element-level styly + property descriptors ───────
+
+    /// <summary>Výchozí styl záhlaví elementu (kaskáda: per-column → tento → ScheduleHeaderDefaults).</summary>
+    public CellStyleVM ElementHeaderStyle { get; }
+
+    /// <summary>Výchozí styl dat elementu (kaskáda: per-column → tento → ScheduleDataDefaults).</summary>
+    public CellStyleVM ElementDataStyle { get; }
 
     public IReadOnlyList<PropertyDescriptor> GeneralDescriptors { get; }
 
@@ -88,6 +114,26 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public string[] AlignmentOptions { get; } = ["Vlevo", "Střed", "Vpravo"];
     public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
+
+    // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────
+    public CellStyleEditOptions HeaderEditOptions { get; } = CellStyleEditOptions.AllEnabled;
+    public CellStyleEditOptions DataEditOptions   { get; } = CellStyleEditOptions.AllEnabled;
+
+    // ── Overflow detekce (součet šířek viditelných sloupců vs element Width) ──
+
+    public float ElementWidth => _element.Width;
+
+    /// <summary>Součet šířek viditelných sloupců (mm).</summary>
+    public float TotalVisibleColumnWidth =>
+        ColumnVMs.Where(c => c.Visible).Sum(c => c.Width);
+
+    /// <summary>True pokud sloupce přesahují šířku elementu (ořízne se content).</summary>
+    public bool HasColumnOverflow =>
+        TotalVisibleColumnWidth > ElementWidth + 0.01f;
+
+    /// <summary>Text pro warning badge.</summary>
+    public string ColumnOverflowText =>
+        $"⚠ Součet šířek sloupců ({TotalVisibleColumnWidth:0.#} mm) přesahuje šířku elementu ({ElementWidth:0.#} mm). Obsah se oříže.";
 
     /// <summary>Výsledné sloupce po OK — čteny volajícím.</summary>
     public List<StopColumn> ResultColumns { get; private set; } = [];
@@ -127,17 +173,41 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     public RelayCommand ClearDataBgColorCommand { get; }
 
     public RelayCommand ResetStyleCommand { get; }
+    public RelayCommand ResetAllColumnStylesCommand { get; }
+    public RelayCommand FitColumnsToWidthCommand { get; }
+
+    // Element-level (Obecné tab)
+    public RelayCommand PickElementHeaderTextColorCommand { get; }
+    public RelayCommand PickElementHeaderBgColorCommand { get; }
+    public RelayCommand PickElementDataTextColorCommand { get; }
+    public RelayCommand PickElementDataBgColorCommand { get; }
+    public RelayCommand ClearElementHeaderTextColorCommand { get; }
+    public RelayCommand ClearElementHeaderBgColorCommand { get; }
+    public RelayCommand ClearElementDataTextColorCommand { get; }
+    public RelayCommand ClearElementDataBgColorCommand { get; }
+    public RelayCommand ResetElementStyleCommand { get; }
 
     // ── Konstruktor ─────────────────────────────────────────────────────────
 
+    private readonly StopListElement _element;
+
     public StopColumnsEditorDialogViewModel(
+        StopListElement element,
         List<StopColumn> columns,
         IReadOnlyList<PropertyDescriptor> generalDescriptors)
     {
+        _element           = element;
         GeneralDescriptors = generalDescriptors;
 
+        // Element-level CellStyleVM (Obecné tab) — parent je ScheduleHeaderDefaults/ScheduleDataDefaults
+        ElementHeaderStyle = CellStyleVM.FromModel(element.HeaderStyle, element.ResolveElementHeaderParent());
+        ElementDataStyle   = CellStyleVM.FromModel(element.DataStyle,   element.ResolveElementDataParent());
+
+        var headerInherited = element.ResolveColumnHeaderParent();
+        var dataInherited   = element.ResolveColumnDataParent();
+
         foreach (var col in columns)
-            ColumnVMs.Add(StopColumnVM.FromModel(col));
+            ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
 
         if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
 
@@ -148,22 +218,83 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         // Color picker commands — záhlaví
         PickHeaderTextColorCommand  = Command(() => PickColor(g => g.HeaderStyle.TextColor, (g, c) => g.HeaderStyle.TextColor = c));
         PickHeaderBgColorCommand    = Command(() => PickColor(g => g.HeaderStyle.BgColor,   (g, c) => g.HeaderStyle.BgColor = c));
-        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = ""; });
-        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor = ""; });
+        ClearHeaderTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.TextColor = null; });
+        ClearHeaderBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.HeaderStyle.BgColor   = null; });
 
         // Color picker commands — data
         PickDataTextColorCommand  = Command(() => PickColor(g => g.DataStyle.TextColor, (g, c) => g.DataStyle.TextColor = c));
         PickDataBgColorCommand    = Command(() => PickColor(g => g.DataStyle.BgColor,   (g, c) => g.DataStyle.BgColor = c));
-        ClearDataTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor = ""; });
-        ClearDataBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor = ""; });
+        ClearDataTextColorCommand = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.TextColor = null; });
+        ClearDataBgColorCommand   = Command(() => { if (SelectedColumnVM is not null) SelectedColumnVM.DataStyle.BgColor   = null; });
 
-        // Reset style
+        // Reset style — vybraný sloupec
         ResetStyleCommand = Command(() =>
         {
             if (SelectedColumnVM is null) return;
             SelectedColumnVM.HeaderStyle.Reset();
             SelectedColumnVM.DataStyle.Reset();
         });
+
+        // Reset všech sloupců — smaže per-column overrides
+        ResetAllColumnStylesCommand = Command(() =>
+        {
+            foreach (var vm in ColumnVMs)
+            {
+                vm.HeaderStyle.Reset();
+                vm.DataStyle.Reset();
+            }
+        });
+
+        // Přizpůsobit šířky sloupců k šířce elementu — proporcionální scale
+        FitColumnsToWidthCommand = Command(() =>
+        {
+            var visible = ColumnVMs.Where(c => c.Visible).ToList();
+            if (visible.Count == 0) return;
+            float total = visible.Sum(c => c.Width);
+            if (total <= 0.01f) return;
+            float scale = ElementWidth / total;
+            foreach (var vm in visible)
+                vm.Width = (float)Math.Round(vm.Width * scale, 2);
+        });
+
+        // Subscribe na Width / Visible změny každého sloupce → refresh overflow warning
+        foreach (var vm in ColumnVMs)
+            vm.PropertyChanged += OnColumnChanged;
+
+        // Element-level color picker commands (Obecné tab)
+        PickElementHeaderTextColorCommand  = Command(() => PickElementColor(ElementHeaderStyle, s => s.TextColor, (s, c) => s.TextColor = c));
+        PickElementHeaderBgColorCommand    = Command(() => PickElementColor(ElementHeaderStyle, s => s.BgColor,   (s, c) => s.BgColor   = c));
+        PickElementDataTextColorCommand    = Command(() => PickElementColor(ElementDataStyle,   s => s.TextColor, (s, c) => s.TextColor = c));
+        PickElementDataBgColorCommand      = Command(() => PickElementColor(ElementDataStyle,   s => s.BgColor,   (s, c) => s.BgColor   = c));
+        ClearElementHeaderTextColorCommand = Command(() => ElementHeaderStyle.TextColor = null);
+        ClearElementHeaderBgColorCommand   = Command(() => ElementHeaderStyle.BgColor   = null);
+        ClearElementDataTextColorCommand   = Command(() => ElementDataStyle.TextColor   = null);
+        ClearElementDataBgColorCommand     = Command(() => ElementDataStyle.BgColor     = null);
+
+        ResetElementStyleCommand = Command(() =>
+        {
+            ElementHeaderStyle.Reset();
+            ElementDataStyle.Reset();
+        });
+    }
+
+    private void PickElementColor(CellStyleVM vm, Func<CellStyleVM, string?> getter, Action<CellStyleVM, string?> setter)
+    {
+        if (RequestColorPicker is null) return;
+        var result = RequestColorPicker(getter(vm) ?? "");
+        if (result is not null)
+            setter(vm, result);
+    }
+
+    private void OnColumnChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(StopColumnVM.Width) ||
+            e.PropertyName == nameof(StopColumnVM.Visible))
+        {
+            OnPropertyChanged(nameof(TotalVisibleColumnWidth));
+            OnPropertyChanged(nameof(HasColumnOverflow));
+            OnPropertyChanged(nameof(ColumnOverflowText));
+        }
     }
 
     // ── Přesouvání ──────────────────────────────────────────────────────────
@@ -184,16 +315,27 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     private void Reset()
     {
+        var headerInherited = _element.ResolveColumnHeaderParent();
+        var dataInherited   = _element.ResolveColumnDataParent();
+
         ColumnVMs.Clear();
         foreach (var col in StopListElement.GetDefaultColumns())
-            ColumnVMs.Add(StopColumnVM.FromModel(col));
+        {
+            var vm = StopColumnVM.FromModel(col, headerInherited, dataInherited);
+            vm.PropertyChanged += OnColumnChanged;
+            ColumnVMs.Add(vm);
+        }
         if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
+
+        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
+        OnPropertyChanged(nameof(HasColumnOverflow));
+        OnPropertyChanged(nameof(ColumnOverflowText));
     }
 
-    private void PickColor(Func<StopColumnVM, string> getter, Action<StopColumnVM, string> setter)
+    private void PickColor(Func<StopColumnVM, string?> getter, Action<StopColumnVM, string?> setter)
     {
         if (SelectedColumnVM is null || RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(SelectedColumnVM));
+        var result = RequestColorPicker(getter(SelectedColumnVM) ?? "");
         if (result is not null)
             setter(SelectedColumnVM, result);
     }
@@ -203,6 +345,11 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     protected override void OnOk()
     {
         RequestCommitEdits?.Invoke();
+
+        // Element-level styl — zápis zpět do elementu (ScheduleElementBase.HeaderStyle/DataStyle)
+        _element.HeaderStyle = ElementHeaderStyle.ToModel() ?? new TextStyle();
+        _element.DataStyle   = ElementDataStyle.ToModel()   ?? new TextStyle();
+
         ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
         CloseDialog(true);
     }

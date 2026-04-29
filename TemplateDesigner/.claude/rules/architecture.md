@@ -57,6 +57,12 @@ TemplateDesigner/
   PageLayoutEngine.cs       — hlavní layout algoritmus: Template + DataContext → List<Page>
   SkiaHeightCalculator.cs   — implementace IElementHeightCalculator pomocí SkiaSharp
 
+/Rendering                  — sdílená infrastruktura pro stylování buněk tabulek
+  CellDefaults.cs           — autoritativní výchozí hodnoty (ResolvedTextStyle); poslední vrstva kaskády
+  CellRenderer.cs           — DrawCell: bg → padding → HAlign+VAlign → decorations; jediné místo pozicování textu buňky
+  ColumnRenderer.cs         — DrawRow: orchestruje řádek sloupců + volitelné svislé mřížkové čáry
+  CellStyleEditOptions.cs   — record s Allow<X> flagy pro per-kontextové skrývání UI editace stylu
+
 /schemas
   *.schema.json             — schémata agend (offline fallback); kopírováno do output dir
 

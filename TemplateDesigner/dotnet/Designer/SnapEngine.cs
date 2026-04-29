@@ -42,7 +42,9 @@ public class SnapEngine
         IEnumerable<TemplateElement> otherElements,
         float thresholdMm,
         IReadOnlyList<float>? extraXAnchors = null,
-        IReadOnlyList<float>? extraYAnchors = null)
+        IReadOnlyList<float>? extraYAnchors = null,
+        IReadOnlyList<float>? edgeXAnchors = null,
+        IReadOnlyList<float>? edgeYAnchors = null)
     {
         float refW = refElement.Width;
         float refH = refElement.Height ?? refElement.EffectiveDesignerHeight;
@@ -50,7 +52,9 @@ public class SnapEngine
         var others = otherElements.ToList();
         bool hasAnyTargets = others.Count > 0
             || (extraXAnchors is { Count: > 0 })
-            || (extraYAnchors is { Count: > 0 });
+            || (extraYAnchors is { Count: > 0 })
+            || (edgeXAnchors is { Count: > 0 })
+            || (edgeYAnchors is { Count: > 0 });
         if (!hasAnyTargets)
             return new SnapResult(
                 new AxisSnap(rawDeltaX, false),
@@ -61,14 +65,16 @@ public class SnapEngine
             others, e => e.X, e => e.Width,
             refInitPos.Y + rawDeltaY, refH, e => e.Y, e => e.Height ?? e.EffectiveDesignerHeight,
             isHorizontalGap: true,
-            extraAnchors: extraXAnchors);
+            extraAnchors: extraXAnchors,
+            edgeAnchors: edgeXAnchors);
 
         var axisY = SnapAxis(
             refInitPos.Y, refH, rawDeltaY, thresholdMm, GapMm,
             others, e => e.Y, e => e.Height ?? e.EffectiveDesignerHeight,
             refInitPos.X + rawDeltaX, refW, e => e.X, e => e.Width,
             isHorizontalGap: false,
-            extraAnchors: extraYAnchors);
+            extraAnchors: extraYAnchors,
+            edgeAnchors: edgeYAnchors);
 
         return new SnapResult(axisX, axisY);
     }
@@ -87,7 +93,8 @@ public class SnapEngine
         float refCrossPos, float refCrossSize,
         Func<TemplateElement, float> getCrossPos, Func<TemplateElement, float> getCrossSize,
         bool isHorizontalGap,
-        IReadOnlyList<float>? extraAnchors = null)
+        IReadOnlyList<float>? extraAnchors = null,
+        IReadOnlyList<float>? edgeAnchors = null)
     {
         float projected = refPos + rawDelta;
         float refStart  = projected;
@@ -125,14 +132,36 @@ public class SnapEngine
         }
 
         // ── Extra anchors (point targets bez elementu) ──
-        // Používá se pro section edges (0, šířka sekce) a cross-section X snap.
-        // Jen edge-to-point matching, žádný gap snap ani centering.
+        // Používá se pro horizontální/vertikální střed a cross-section X snap.
+        // Jen edge-to-point matching, žádný gap snap.
         if (extraAnchors is not null)
         {
             foreach (float anchor in extraAnchors)
             {
                 TryAdd(candidates, refStart, anchor, threshold, null!, MatchKind.Edge);
                 TryAdd(candidates, refEnd,   anchor, threshold, null!, MatchKind.Edge);
+            }
+        }
+
+        // ── Edge anchors (hrany sekce / printable area) ──
+        // Edge-to-point (element hranou na okraji) + gap-to-point (element s mezerou od okraje).
+        if (edgeAnchors is not null)
+        {
+            foreach (float anchor in edgeAnchors)
+            {
+                // Edge alignment — element hranou přesně na okraji.
+                TryAdd(candidates, refStart, anchor, threshold, null!, MatchKind.Edge);
+                TryAdd(candidates, refEnd,   anchor, threshold, null!, MatchKind.Edge);
+
+                if (gapMm > 0)
+                {
+                    // Ref je uvnitř, anchor je levý/horní okraj → element nalevo má refStart = anchor + gap.
+                    TryAdd(candidates, refStart, anchor + gapMm, threshold, null!, MatchKind.Gap,
+                        gapFrom: anchor, gapTo: anchor + gapMm);
+                    // Ref je uvnitř, anchor je pravý/spodní okraj → element napravo má refEnd = anchor - gap.
+                    TryAdd(candidates, refEnd, anchor - gapMm, threshold, null!, MatchKind.Gap,
+                        gapFrom: anchor - gapMm, gapTo: anchor);
+                }
             }
         }
 
@@ -153,12 +182,14 @@ public class SnapEngine
         float adjustedDelta = rawDelta + (snapTo - refEdge);
 
         // Gap indikátor — krátká spojnice v mezeře
-        // CrossMid se počítá z pozic cílových elementů (ty jsou stabilní),
-        // ne z pozice ref elementu (ta závisí na myši a "popojíždí").
+        // CrossMid se počítá z pozic cílových elementů (ty jsou stabilní).
+        // Pro anchor-based gap (hrana sekce) použijeme cross střed ref elementu.
         GapIndicator? gap = null;
-        if (matchKind == MatchKind.Gap && matchedEls.Count > 0)
+        if (matchKind == MatchKind.Gap)
         {
-            float crossMid = getCrossPos(matchedEls[0]) + getCrossSize(matchedEls[0]) / 2f;
+            float crossMid = matchedEls.Count > 0
+                ? getCrossPos(matchedEls[0]) + getCrossSize(matchedEls[0]) / 2f
+                : refCrossPos + refCrossSize / 2f;
             gap = new GapIndicator(isHorizontalGap, gf, gt, crossMid);
         }
 

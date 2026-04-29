@@ -16,17 +16,22 @@ public enum ResizeHandle
 /// </summary>
 public class DesignerCanvas
 {
-    public const float SectionHeaderPxDefault = 20f;
-    public float SectionHeaderPx => _state.ShowSectionHeaders ? SectionHeaderPxDefault : 0f;
+    /// <summary>Šířka levého štítku sekce v px (vlevo od stránky).</summary>
+    public const float SectionTabWidthPx = 80f;
+    /// <summary>Minimální výška štítku aby se vešlo textové označení.</summary>
+    private const float SectionTabMinLabelPx = 28f;
     private const float PagePaddingPx  = 40f;
     private const float HandleSizePx   = 7f;
+
+    /// <summary>Extra levý prostor, který potřebuje canvas navíc kvůli štítkům sekcí.</summary>
+    public float ExtraLeftPx => _state.ShowSectionHeaders ? SectionTabWidthPx : 0f;
 
     // Barvy designeru
     private static readonly SKColor ClrBackground         = new(0xFFE4E4E4);
     private static readonly SKColor ClrPage               = SKColors.White;
     private static readonly SKColor ClrPageBorder         = new(0xFFAAAAAA);
     private static readonly SKColor ClrMarginGuide        = new(0x35FF6600);
-    private static readonly SKColor ClrGrid               = new(0x22000080);
+    private static readonly SKColor ClrGrid               = new(0x40000080);
     private static readonly SKColor ClrSectionHeader      = new(0xFF4A90D9);
     private static readonly SKColor ClrSectionHeaderDyn   = new(0xFF3A7AC9);
     private static readonly SKColor ClrSectionHeaderText  = SKColors.White;
@@ -55,35 +60,64 @@ public class DesignerCanvas
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;
         float pageH  = template.PageSize.Height * MmToPx;
-        float pageX  = Math.Max(PagePaddingPx, (canvasWidth - pageW) / 2f);
+        float pageX  = CalculatePageX(canvasWidth);
         float pageY  = PagePaddingPx;
 
         DrawPageShadow(canvas, pageX, pageY, pageW, pageH);
         DrawPageBackground(canvas, pageX, pageY, pageW, pageH);
-        if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, template.PageSize);
         DrawMarginGuides(canvas, pageX, pageY, template.PageSize);
         DrawSections(canvas, template, pageX, pageY, canvasWidth);
+        // Grid — kreslen po sekcích, aby byl vidět přes jejich pozadí (v printable area, kde se pozicují elementy).
+        if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, template.PageSize);
         DrawPageBorder(canvas, pageX, pageY, pageW, pageH);
 
         // Selection handles kreslíme naposled — vždy nad elementy
         DrawSnapTargetHighlights(canvas, canvasWidth);
         DrawSelectionOverlay(canvas, canvasWidth);
         DrawSnapLines(canvas, canvasWidth);
+
+        // Měřící badge během dragu/resize — zcela nahoře
+        DrawDragBadge(canvas);
+    }
+
+    /// <summary>Floating badge s pozicí/rozměrem během dragu nebo resize.</summary>
+    private void DrawDragBadge(SKCanvas canvas)
+    {
+        var text = _state.DragBadgeText;
+        if (string.IsNullOrEmpty(text)) return;
+
+        using var font = new SKFont(SKTypeface.Default, 12f);
+        float textW = font.MeasureText(text);
+        var metrics = font.Metrics;
+        float textH = -metrics.Ascent + metrics.Descent;
+
+        const float padX = 6f, padY = 4f, offsetX = 14f, offsetY = 14f;
+        float bx = _state.DragBadgeX + offsetX;
+        float by = _state.DragBadgeY + offsetY;
+        var rect = new SKRect(bx, by, bx + textW + 2 * padX, by + textH + 2 * padY);
+
+        using var bg = new SKPaint { Color = new SKColor(0xE0333333), IsAntialias = true };
+        using var textPaint = new SKPaint { Color = SKColors.White, IsAntialias = true };
+        canvas.DrawRoundRect(rect, 3f, 3f, bg);
+        canvas.DrawText(text, bx + padX, by + padY - metrics.Ascent, font, textPaint);
     }
 
     // ─────────────────────────────────────────────────────────────────────
     // Veřejné pomocné metody pro MainWindow (hit testing, layout)
 
-    /// <summary>Vrátí sekci pokud klik dopadl do záhlaví sekce (pruh nad sekcí), nebo null.</summary>
+    /// <summary>Vrátí sekci pokud klik dopadl na levý štítek sekce, nebo null.</summary>
     public Section? HitTestSectionHeader(float canvasX, float canvasY, float canvasWidth)
     {
+        if (!_state.ShowSectionHeaders) return null;
+        float bottomY = GetPageBottomY(canvasWidth);
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
-            float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
-            float headerY  = oy - SectionHeaderPx;
+            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
+            float tabLeft  = ox - _state.CurrentTemplate.PageSize.MarginLeft * MmToPx - SectionTabWidthPx;
+            float tabRight = ox - _state.CurrentTemplate.PageSize.MarginLeft * MmToPx;
 
-            if (canvasX >= ox && canvasX <= ox + sectionW &&
-                canvasY >= headerY && canvasY < oy)
+            if (canvasX >= tabLeft && canvasX < tabRight &&
+                canvasY >= oy && canvasY <= oy + sectionH)
                 return section;
         }
         return null;
@@ -97,10 +131,9 @@ public class DesignerCanvas
         {
             float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
             float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
-            float headerY  = oy - SectionHeaderPx;
 
             if (canvasX >= ox && canvasX <= ox + sectionW &&
-                canvasY >= headerY && canvasY <= oy + sectionH)
+                canvasY >= oy && canvasY <= oy + sectionH)
                 return section;
         }
         return null;
@@ -248,12 +281,19 @@ public class DesignerCanvas
         return result;
     }
 
+    /// <summary>Spočítá X souřadnici levého okraje stránky na canvasu.</summary>
+    private float CalculatePageX(float canvasWidth)
+    {
+        float pageW = _state.CurrentTemplate.PageSize.Width * MmToPx;
+        float minLeft = PagePaddingPx + ExtraLeftPx;
+        return Math.Max(minLeft, (canvasWidth - pageW) / 2f);
+    }
+
     /// <summary>Vrátí origin (levý horní roh obsahu) každé sekce na canvasu.</summary>
     public IEnumerable<(Section Section, float OriginX, float OriginY)> GetSectionOrigins(float canvasWidth)
     {
         var ps      = _state.CurrentTemplate.PageSize;
-        float pageW = ps.Width * MmToPx;
-        float pageX = Math.Max(PagePaddingPx, (canvasWidth - pageW) / 2f);
+        float pageX = CalculatePageX(canvasWidth);
         float pageY = PagePaddingPx;
 
         float ox       = pageX + ps.MarginLeft * MmToPx;
@@ -267,21 +307,20 @@ public class DesignerCanvas
         foreach (var s in sections)
         {
             if (s.Role == SectionRole.Footer)
-                totalFooterH += SectionHeaderPx + s.EffectiveDesignerHeight * MmToPx;
+                totalFooterH += s.EffectiveDesignerHeight * MmToPx;
         }
 
         // Body limit = bottomY mínus footery
         float bodyBottomY = bottomY - totalFooterH;
 
-        // Header + Body sekce shora dolů
+        // Header + Body sekce shora dolů — obsah začíná přímo na topY, bez header offsetu
         float currentY = topY;
         foreach (var section in sections)
         {
             if (section.Role == SectionRole.Footer) continue;
-            float contentY = currentY + SectionHeaderPx;
-            if (contentY >= bodyBottomY) break;
-            yield return (section, ox, contentY);
-            currentY = contentY + GetClampedSectionHeightPx(section, contentY, bodyBottomY);
+            if (currentY >= bodyBottomY) break;
+            yield return (section, ox, currentY);
+            currentY += GetClampedSectionHeightPx(section, currentY, bodyBottomY);
         }
 
         // Footer sekce od spodu nahoru
@@ -289,9 +328,8 @@ public class DesignerCanvas
         foreach (var section in sections)
         {
             if (section.Role != SectionRole.Footer) continue;
-            float contentY = footerY + SectionHeaderPx;
-            yield return (section, ox, contentY);
-            footerY = contentY + section.EffectiveDesignerHeight * MmToPx;
+            yield return (section, ox, footerY);
+            footerY += section.EffectiveDesignerHeight * MmToPx;
         }
     }
 
@@ -337,14 +375,23 @@ public class DesignerCanvas
 
     private void DrawGrid(SKCanvas canvas, float pageX, float pageY, float pageW, PageSize ps)
     {
-        float step  = _state.GridSize * MmToPx;
-        float endX  = pageX + pageW;
-        float endY  = pageY + ps.Height * MmToPx;
-        using var p = new SKPaint { Color = ClrGrid, StrokeWidth = 0.5f };
-        for (float gx = pageX + ps.MarginLeft * MmToPx; gx < endX; gx += step)
-            canvas.DrawLine(gx, pageY, gx, endY, p);
-        for (float gy = pageY + ps.MarginTop  * MmToPx; gy < endY; gy += step)
-            canvas.DrawLine(pageX, gy, endX, gy, p);
+        // Grid jen v printable area (kde se pozicují elementy), ne v margins. Slabě modrá, aby nerušila obsah.
+        float step   = _state.GridSize * MmToPx;
+        float startX = pageX + ps.MarginLeft  * MmToPx;
+        float startY = pageY + ps.MarginTop   * MmToPx;
+        float endX   = pageX + (ps.Width  - ps.MarginRight)  * MmToPx;
+        float endY   = pageY + (ps.Height - ps.MarginBottom) * MmToPx;
+
+        using var p = new SKPaint
+        {
+            Color = ClrGrid,
+            StrokeWidth = 0.5f,
+            IsAntialias = true,
+        };
+        for (float gx = startX; gx <= endX + 0.1f; gx += step)
+            canvas.DrawLine(gx, startY, gx, endY, p);
+        for (float gy = startY; gy <= endY + 0.1f; gy += step)
+            canvas.DrawLine(startX, gy, endX, gy, p);
     }
 
     private void DrawMarginGuides(SKCanvas canvas, float pageX, float pageY, PageSize ps)
@@ -369,20 +416,6 @@ public class DesignerCanvas
             float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
             bool  dynamic  = section.DesignerHeight is null;
             bool  isActive = section == _state.ActiveSection;
-            float headerY  = oy - SectionHeaderPx;
-
-            // Hlavička
-            if (_state.ShowSectionHeaders)
-            {
-                var hdrRect = new SKRect(ox, headerY, ox + contentW, oy);
-                using (var bg = new SKPaint { Color = dynamic ? ClrSectionHeaderDyn : ClrSectionHeader })
-                    canvas.DrawRect(hdrRect, bg);
-                using var hdrFont  = new SKFont(SKTypeface.Default, 11f);
-                using var hdrText  = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
-                canvas.DrawText(section.Name, ox + 8f, headerY + SectionHeaderPxDefault - 5f, hdrFont, hdrText);
-                if (dynamic)
-                    canvas.DrawText("∞", ox + contentW - 18f, headerY + SectionHeaderPxDefault - 5f, hdrFont, hdrText);
-            }
 
             // Obsah sekce
             var contentRect = new SKRect(ox, oy, ox + contentW, oy + sectionH);
@@ -445,7 +478,69 @@ public class DesignerCanvas
                 using var accent = new SKPaint { Color = ClrSectionActive, StrokeWidth = 3f };
                 canvas.DrawLine(ox, oy, ox, oy + sectionH, accent);
             }
+
+            // Levý štítek sekce
+            if (_state.ShowSectionHeaders)
+                DrawSectionTab(canvas, section, ox, oy, sectionH, dynamic, isActive, template.PageSize);
         }
+    }
+
+    private void DrawSectionTab(SKCanvas canvas, Section section, float contentOx, float contentOy,
+        float sectionH, bool dynamic, bool isActive, PageSize ps)
+    {
+        // Tab je přilepený k levé hraně stránky (ne k levé hraně sekce — ta je posunutá o MarginLeft).
+        float pageLeft = contentOx - ps.MarginLeft * MmToPx;
+        float tabRight = pageLeft;
+        float tabLeft  = tabRight - SectionTabWidthPx;
+
+        var tabRect = new SKRect(tabLeft, contentOy, tabRight, contentOy + sectionH);
+        using (var bg = new SKPaint { Color = isActive ? ClrSectionActive : (dynamic ? ClrSectionHeaderDyn : ClrSectionHeader) })
+            canvas.DrawRect(tabRect, bg);
+
+        // Tenký rámeček štítku — vizuální oddělení
+        using (var tabBorder = new SKPaint { Color = ClrSectionBorder, IsStroke = true, StrokeWidth = 1f })
+            canvas.DrawRect(tabRect, tabBorder);
+
+        // Text jen pokud je dost místa vertikálně
+        if (sectionH >= SectionTabMinLabelPx)
+        {
+            using var font    = new SKFont(SKTypeface.Default, 11f);
+            using var txtPaint = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
+
+            // Název sekce — zkrátíme pokud nesedí
+            string name = section.Name ?? "";
+            float maxTextW = SectionTabWidthPx - 12f;
+            string drawn = TruncateToWidth(name, font, maxTextW);
+
+            // Text nahoře v štítku, s malým odsazením
+            canvas.DrawText(drawn, tabLeft + 6f, contentOy + 14f, font, txtPaint);
+
+            // Indikátor Role a dynamické výšky na pravém okraji štítku
+            string badge = "";
+            if (section.Role == SectionRole.Header) badge = "H";
+            else if (section.Role == SectionRole.Footer) badge = "F";
+            if (dynamic) badge = badge.Length > 0 ? badge + " ∞" : "∞";
+
+            if (badge.Length > 0)
+            {
+                using var badgeFont  = new SKFont(SKTypeface.Default, 9f);
+                using var badgePaint = new SKPaint { Color = ClrSectionHeaderText.WithAlpha(200), IsAntialias = true };
+                float badgeW = badgeFont.MeasureText(badge);
+                canvas.DrawText(badge, tabRight - badgeW - 4f, contentOy + sectionH - 4f, badgeFont, badgePaint);
+            }
+        }
+    }
+
+    private static string TruncateToWidth(string text, SKFont font, float maxWidth)
+    {
+        if (font.MeasureText(text) <= maxWidth) return text;
+        const string ellipsis = "…";
+        for (int len = text.Length - 1; len > 0; len--)
+        {
+            string candidate = text[..len] + ellipsis;
+            if (font.MeasureText(candidate) <= maxWidth) return candidate;
+        }
+        return ellipsis;
     }
 
     private void DrawSelectionOverlay(SKCanvas canvas, float canvasWidth)

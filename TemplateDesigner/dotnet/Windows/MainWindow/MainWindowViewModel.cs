@@ -161,6 +161,12 @@ public class TemplateDesignerViewModel : EDViewModel
         set { State.GridSize = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); }
     }
 
+    public float SnapGapMm
+    {
+        get => State.SnapGapMm;
+        set { State.SnapGapMm = value; OnPropertyChanged(); }
+    }
+
     // ── Callbacks wired by code-behind ────────────────────────────────────────
     public Action? RequestCanvasRefresh      { get; set; }
     public Action? RequestTitleUpdate        { get; set; }
@@ -173,16 +179,17 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _save, _saveAs, _new, _open, _exportPdf, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
+    private RelayCommand? _undo, _redo, _new, _exportPdf, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
+    private AsyncRelayCommand? _save, _saveAs, _open;
 
-    public RelayCommand UndoCommand     => _undo      ??= new(Undo,          () => CanUndo);
-    public RelayCommand RedoCommand     => _redo      ??= new(Redo,          () => CanRedo);
-    public RelayCommand SaveCommand     => _save      ??= new(SaveTemplate);
-    public RelayCommand SaveAsCommand   => _saveAs    ??= new(SaveAsTemplate);
-    public RelayCommand NewCommand      => _new       ??= new(NewTemplate);
-    public RelayCommand OpenCommand     => _open      ??= new(OpenTemplateAsync);
-    public RelayCommand ExportPdfCommand=> _exportPdf ??= new(ExportPreviewPdf);
-    public RelayCommand DeleteCommand   => _delete    ??= new(DeleteSelected);
+    public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
+    public RelayCommand RedoCommand          => _redo      ??= new(Redo,          () => CanRedo);
+    public AsyncRelayCommand SaveCommand     => _save      ??= CommandAsync(SaveTemplate);
+    public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveAsTemplate);
+    public RelayCommand NewCommand           => _new       ??= new(NewTemplate);
+    public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
+    public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
+    public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
     public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
     public RelayCommand PasteCommand    => _paste     ??= new(PasteClipboard);
@@ -340,18 +347,15 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (State.CurrentTemplate.Sections.Count <= 1)
         {
-            MessageBox.Show("Šablona musí mít alespoň jednu sekci.", "Smazat sekci",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            PopupDisplayer.Info("Šablona musí mít alespoň jednu sekci.");
             return;
         }
 
         int elementCount = section.Elements.Count;
         if (elementCount > 0)
         {
-            var result = MessageBox.Show(
-                $"Opravdu smazat sekci \"{section.Name}\" s {elementCount} elementy?",
-                "Smazat sekci", MessageBoxButton.YesNo, MessageBoxImage.Question);
-            if (result != MessageBoxResult.Yes) return;
+            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci \"{section.Name}\" s {elementCount} elementy?"))
+                return;
         }
 
         State.SelectedElements.RemoveAll(el => section.Elements.Contains(el));
@@ -390,67 +394,16 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestCanvasRefresh?.Invoke();
     }
 
-    public void SaveSectionAsTemplate(Section section, Window? owner = null)
+    public void SaveSectionTemplate(Section section, string name)
     {
-        var dialog = new Window
+        try
         {
-            Title                 = "Uložit sekci jako šablonu",
-            Width                 = 400,
-            Height                = 160,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Owner                 = owner,
-            ResizeMode            = ResizeMode.NoResize
-        };
-
-        var stack = new System.Windows.Controls.StackPanel { Margin = new Thickness(15) };
-        stack.Children.Add(new System.Windows.Controls.TextBlock
-            { Text = "Název šablony:", Margin = new Thickness(0, 0, 0, 5) });
-
-        var nameBox = new System.Windows.Controls.TextBox
-            { Text = section.Name, Margin = new Thickness(0, 0, 0, 15) };
-        stack.Children.Add(nameBox);
-
-        var buttonsPanel = new System.Windows.Controls.StackPanel
+            _sectionTemplates.Save(section, name);
+            PopupDisplayer.Info($"Šablona '{name}' byla uložena.");
+        }
+        catch (Exception ex)
         {
-            Orientation = System.Windows.Controls.Orientation.Horizontal,
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right
-        };
-
-        var btnCancel = new System.Windows.Controls.Button
-            { Content = "Zrušit", Width = 80, Height = 25, Margin = new Thickness(0, 0, 10, 0), IsCancel = true };
-        var btnSave   = new System.Windows.Controls.Button
-            { Content = "Uložit", Width = 80, Height = 25, IsDefault = true };
-
-        bool? result = null;
-        btnSave.Click   += (_, _) =>
-        {
-            if (string.IsNullOrWhiteSpace(nameBox.Text)) { MessageBox.Show("Zadejte název šablony."); return; }
-            result = true;
-            dialog.Close();
-        };
-        btnCancel.Click += (_, _) => { result = false; dialog.Close(); };
-
-        buttonsPanel.Children.Add(btnCancel);
-        buttonsPanel.Children.Add(btnSave);
-        stack.Children.Add(buttonsPanel);
-        dialog.Content = stack;
-        nameBox.Focus();
-        nameBox.SelectAll();
-        dialog.ShowDialog();
-
-        if (result == true)
-        {
-            try
-            {
-                _sectionTemplates.Save(section, nameBox.Text.Trim());
-                MessageBox.Show($"Šablona '{nameBox.Text.Trim()}' byla uložena.",
-                    "Uložit šablonu", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Chyba při ukládání šablony: {ex.Message}",
-                    "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            PopupDisplayer.Error(ex);
         }
     }
 
@@ -479,7 +432,7 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
     }
 
-    private async void OpenTemplateAsync()
+    private async Task OpenTemplateAsync()
     {
         if (!ConfirmUnsavedChanges()) return;
         var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Otevřít šablonu" };
@@ -494,7 +447,6 @@ public class TemplateDesignerViewModel : EDViewModel
             State.RedoStack.Clear();
             NotifyUndoRedo();
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
-            AutoSetSectionHeaders();
             RebuildSections();
             RefreshFieldsList();
             RequestTitleUpdate?.Invoke();
@@ -503,7 +455,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
         catch (TemplateDeserializationException ex)
         {
-            MessageBox.Show(ex.Message, "Chyba při načítání", MessageBoxButton.OK, MessageBoxImage.Error);
+            PopupDisplayer.Error(ex);
         }
     }
 
@@ -519,20 +471,9 @@ public class TemplateDesignerViewModel : EDViewModel
         CurrentFilePath = null;
         IsDirty = true;
 
-        AutoSetSectionHeaders();
         RebuildSections();
         InvalidateAll();
         RefreshFieldsList();
-    }
-
-    /// <summary>Auto-nastaví ShowSectionHeaders podle obsahu šablony (JŘ agendy = skryto).</summary>
-    private void AutoSetSectionHeaders()
-    {
-        bool hasScheduleElements = State.CurrentTemplate.Sections
-            .SelectMany(s => s.Elements)
-            .Any(e => e is ScheduleElementBase);
-        State.ShowSectionHeaders = !hasScheduleElements;
-        OnPropertyChanged(nameof(ShowSectionHeaders));
     }
 
     private void InvalidateAll()
@@ -544,16 +485,16 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPreviewRefresh?.Invoke();
     }
 
-    private async void SaveTemplate()
+    private async Task SaveTemplate()
     {
-        if (CurrentFilePath is null) { SaveAsTemplate(); return; }
+        if (CurrentFilePath is null) { await SaveAsTemplate(); return; }
         SyncParametersToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         RequestTitleUpdate?.Invoke();
     }
 
-    private async void SaveAsTemplate()
+    private async Task SaveAsTemplate()
     {
         var dlg = new SaveFileDialog
         {
@@ -596,6 +537,8 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (!IsDirty) return true;
 
+        // TODO: IPopupDisplayer nemá YesNoCancel — až bude potřeba v EDControls,
+        // přidat `bool? ConfirmYesNoCancel(string)` a nahradit zdejší MessageBox.Show.
         var result = MessageBox.Show(
             "Šablona obsahuje neuložené změny. Chcete je uložit?",
             "Neuložené změny",
@@ -655,8 +598,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (_clipboard.Count == 0) return;
         if (State.ActiveSection is null)
         {
-            MessageBox.Show("Nejprve vyberte sekci.", "Vložit",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            PopupDisplayer.Info("Nejprve vyberte sekci.");
             return;
         }
 
@@ -736,7 +678,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         float sectionW = State.CurrentTemplate.PageSize.PrintableWidth;
         float sectionH = State.ActiveSection.EffectiveDesignerHeight;
-        float gap = SnapEngine.DefaultGapMm;
+        float gap = State.SnapGapMm;
 
         var newElements = new List<TemplateElement>();
         var commands = new List<IDesignerCommand>();
@@ -842,16 +784,16 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public static (float Width, float Height) GetDefaultElementSize(string type) => type switch
     {
-        "TextElement"      => (80f, 8f),
-        "RectangleElement" => (60f, 20f),
-        "LineElement"      => (190f, 1f),
-        "ImageElement"     => (40f, 30f),
-        "TableElement"     => (190f, 30f),
-        "BarcodeElement"   => (30f, 30f),
-        "StopListElement"      => (60f, 60f),
-        "DepartureGridElement" => (120f, 60f),
-        "NotesLegendElement"   => (190f, 25f),
-        _                  => (80f, 8f)
+        ElementTypes.Text          => (80f, 8f),
+        ElementTypes.Rectangle     => (60f, 20f),
+        ElementTypes.Line          => (190f, 1f),
+        ElementTypes.Image         => (40f, 30f),
+        ElementTypes.Table         => (190f, 30f),
+        ElementTypes.Barcode       => (30f, 30f),
+        ElementTypes.StopList      => (60f, 60f),
+        ElementTypes.DepartureGrid => (120f, 60f),
+        ElementTypes.NotesLegend   => (190f, 25f),
+        _                          => (80f, 8f)
     };
 
     public static TemplateElement CreateElementByType(string type, float x, float y)
@@ -859,16 +801,16 @@ public class TemplateDesignerViewModel : EDViewModel
         var (w, h) = GetDefaultElementSize(type);
         var el = type switch
         {
-            "TextElement"      => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
-            "RectangleElement" => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
-            "LineElement"      => new LineElement      { X = x, Y = y, Width = w, Height = h },
-            "ImageElement"     => new ImageElement     { X = x, Y = y, Width = w, Height = h },
-            "TableElement"     => new TableElement     { X = x, Y = y, Width = w },
-            "BarcodeElement"   => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
-            "StopListElement"      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
-            "DepartureGridElement" => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
-            "NotesLegendElement"   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
-            _                  => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
+            ElementTypes.Text          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.Rectangle     => new RectangleElement { X = x, Y = y, Width = w, Height = h, StrokeWidth = 0.5f },
+            ElementTypes.Line          => new LineElement      { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.Image         => new ImageElement     { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.Table         => new TableElement     { X = x, Y = y, Width = w },
+            ElementTypes.Barcode       => new BarcodeElement   { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.DepartureGrid => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
+            _                          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
         };
         // Výchozí rámeček pro nové elementy (na modelu je default bez rámečku kvůli zpětné kompatibilitě)
         el.BorderColor = "#FF000000";
@@ -1163,9 +1105,15 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Key movement ──────────────────────────────────────────────────────────
-    public void MoveByKey(Key key, bool largeStep)
+    /// <summary>
+    /// Arrow key nudging. Kroky:
+    ///   fineStep=true (Ctrl)   → 0.5 mm (jemné doladění)
+    ///   largeStep=true (Shift) → GridSize (rychlý skok)
+    ///   bez modifikátorů       → 1 mm (default)
+    /// </summary>
+    public void MoveByKey(Key key, bool largeStep, bool fineStep = false)
     {
-        float step = largeStep ? State.GridSize : 1f;
+        float step = fineStep ? 0.5f : (largeStep ? State.GridSize : 1f);
         float dx   = key switch { Key.Left => -step, Key.Right => step, _ => 0f };
         float dy   = key switch { Key.Up   => -step, Key.Down  => step, _ => 0f };
 
@@ -1605,7 +1553,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Vytvoří a umístí nový element na danou pozici v sekci (dříve v EndAddingElement code-behind).</summary>
     public void AddElementAtPosition(Section targetSection, float mmX, float mmY, string? elementType, string? fieldName)
     {
-        var (defW, defH) = GetDefaultElementSize(elementType ?? "TextElement");
+        var (defW, defH) = GetDefaultElementSize(elementType ?? ElementTypes.Text);
 
         // Centrovat element na pozici kurzoru
         mmX -= defW / 2f;

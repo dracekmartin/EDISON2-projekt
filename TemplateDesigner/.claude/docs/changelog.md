@@ -1,5 +1,153 @@
 # Changelog
 
+## 2026-04-22 — Tri-state editor stylů + placeholdery zděděných hodnot (`3cf59d1`)
+
+Dokončení „známých omezení" z fáze 4 — editor stylů buněk nyní plně rozlišuje „dědit od rodiče" od „explicitně nastaveno".
+
+- ✅ **`CellStyleVM` — nullable properties napříč** — všechny editovatelné vlastnosti jsou `T?` (`string?`, `float?`, `bool?`, `TextHorizontalAlignment?`, …). Null = dědit od rodiče v kaskádě. Konec workaround `defaultBold`/`defaultFontFamily`/`defaultFontSize` parametrů — FromModel bere povinně `ResolvedTextStyle inherited`
+- ✅ **`EffectiveBold`/`EffectiveItalic`/`EffectiveUnderline`/`EffectiveStrikethrough` derived gettery** — `_bold ?? Inherited.Bold` — 2-stavové checkboxy zobrazují reálnou platnou hodnotu (nikoli „explicit override"). Setter zapisuje explicit override
+- ✅ **`HasExplicit<X>` derived** — řídí viditelnost „×" reset tlačítek (vidět jen při explicit override)
+- ✅ **Jeden `ResetFieldCommand(paramName)`** nahrazuje per-field reset commands; CommandParameter = název property
+- ✅ **`CellStyleVM.Inherited: ResolvedTextStyle`** — read-only, drží vyřešený rodičovský styl; XAML ho bindne jako šedivý italic placeholder v prázdných polích (`FontFamily`, `FontSize`, HAlign/VAlign ComboBox overlay)
+- ✅ **`CellStyleEditor.xaml`** přepracován — 2-stavové checkboxy (dřív matoucí IsThreeState s indeterminate čtverečkem); HAlign/VAlign ComboBox bez null-sentinelu, placeholder jako overlay TextBlock; barva přes `FirstNonEmptyHexToBrush` MultiBinding (explicit ?? inherited)
+- ✅ **`Controls/CellStyleEditor.Converters.cs`** (nový) — `NullOrEmptyToVisibleConverter`, `NotNullToVisibleConverter`, `FirstNonEmptyHexToBrushConverter` (MultiBinding), `HAlignToLabelConverter`, `VAlignToLabelConverter`
+- ✅ **Public API `Resolve<X>Parent()` na elementech** — `StopListElement.ResolveColumnHeaderParent/Data()`, `DepartureGridElement.ResolveHour{Header,Data}Parent()/ResolveGroup{Header,Minute}Parent()`, `TableElement.ResolveColumnHeaderParent/Data()`. Dialogy si volají parent kaskádu místo hardcoded defaultů
+- ✅ **Legacy fallbacky v DepartureGrid přesunuty do parent getterů** — `HeaderVerticalAlignment`, `SkupinaDnuHeaderLineHeight`, `MinuteFontSize`, `MinuteBold` aplikovány v parent pro konzistenci UI a renderu
+- 📋 **Bez breaking JSON změny** — model TextStyle byl již nullable, kaskáda renderu se nemění
+- 📋 **Rozšiřitelnost hotová** — nový tabulkový element stačí implementovat `Resolve<X>Parent()` metody + host dialog volá `CellStyleVM.FromModel(style, element.Resolve<X>Parent())` + XAML `<CellStyleEditor>`
+
+---
+
+## 2026-04-22 — Jednotná kaskáda stylů buněk (fáze 0–4)
+
+Koherentní refactor přes 4 commity: sjednocení stylování buněk napříč všemi tabulkovými elementy (StopList, DepartureGrid, TableElement) do čtyřvrstvé kaskády `column → element → defaults → CellDefaults`.
+
+**Fáze 0+1 — infrastruktura + StopList** (`b19d5e9`):
+- ✅ **`Rendering/CellDefaults.cs`** — autoritativní výchozí hodnoty pro buňku (`FontFamily=Arial`, `FontSize=9pt`, padding=0.5mm, HAlign=Left, VAlign=Middle, LineSpacing=1.2). Poslední vrstva kaskády
+- ✅ **`Rendering/CellStyleEditOptions.cs`** — record s flagy `Allow<X>` pro per-kontextové skrývání UI editace (zatím všude `AllEnabled`)
+- ✅ **`Rendering/CellRenderer.cs`** — jediné místo v aplikaci, kde se pozicuje a vykresluje text buňky: bg → padding shrink → HAlign+VAlign text → Underline/Strikethrough
+- ✅ **`Rendering/ColumnRenderer.cs`** — orchestruje kreslení řádku sloupců přes `CellRenderer` + volitelné svislé mřížkové čáry
+- ✅ **StopListElement** migrován na kaskádu: `Resolve*Style` helpery, `col.Alignment` legacy fallback zachován
+
+**Fáze 2 — DepartureGrid** (`574e9b1`):
+- ✅ **4 `Resolve*Style` helpery** — HourHeader, HourData, GroupHeader, GroupMinute
+- ✅ **Pre-created per-group fonty/painty** — perf pro 100+ buněk/frame (6 dictionary: header/data × font/textPaint/bgPaint)
+- ✅ **Anotace element-level** — nedědí z column.Data (symboly 80% z minute fontu, text z `AnotaceFontSize`)
+- ✅ **Smazán dead code v ScheduleElementBase** — `BuildCellStyle`, `CellStyleResources`, `DisposeAll`, `RenderCellBackground`, `CreateCellBgPaint`, `CreateCellTextPaint`, `CreateCellFont`, `MakeFontStyle`. Zůstal jen typeface cache + `GetTypeface`
+
+**Fáze 3 — TableElement** (`7080ea5`):
+- ✅ **`TableColumn.DataStyle`** (new) + **`TableElement.DataStyle`** (new) — per-column a element-level override datových buněk
+- ✅ **`TableHeaderParent`/`TableDataParent`/`TableSummaryParent`** kompaktně nad `CellDefaults.Default` přes `with { ... }` — nahradily 10-řádkové plné deklarace
+- ✅ **Všechny 4 render paths** (Header, FixedRows, DynamicRows, SummaryRows) jdou přes `CellRenderer.DrawCell`
+- ✅ **Legacy `col.Alignment`** zachován jako fallback v kaskádě (dříve nefunkční v UI, teď začíná reálně fungovat)
+- ✅ **Vedlejší opravy** získané kaskádou: HAlign funguje všude, VAlign=Middle (místo hardcoded baseline), Padding 0.5mm default (místo hardcoded 4px), Underline/Strikethrough respektované u Dynamic řádků
+
+**Fáze 4 — sdílený `CellStyleEditor`** (`f8b59d3`):
+- ✅ **`Controls/CellStyleEditor.xaml` + `.xaml.cs`** — UserControl (jedno místo UI editace TextStyle zóny), DP `EditOptions`, 4× color picker commands, `HAlignmentOptions`/`VAlignmentOptions`/`FontSizeOptions` defaults
+- ✅ **`CellStyleVM` rozšířen** — `VAlignmentIndex`, `Underline`, `Strikethrough`, `LineSpacing` (+ FromModel/ToModel/Reset)
+- ✅ **3 dialogy migrovány** — `DepartureGroupEditorDialog` (-107 inline), `StopColumnsEditorDialog` (-107 inline), `TableEditorDialog` (nový tab „Styl sloupců" +65)
+- ✅ **Bugfix** — `StopColumnVM.FromModel` nepředával `defaultBold: true` → po open+OK beze změn se ukládal explicit `Bold=false` overrriduje element-level `Bold=true` → záhlaví zastávek ztratilo tučnost. DepartureGroup/Table to měly správně
+- 📋 ~~**Známá omezení** — `CellStyleVM.Bold/...` jsou `bool` + placeholder hodnoty chybí~~ → **vyřešeno v `3cf59d1`** (viz entry výše)
+
+**Celkový efekt** (9 commitů modified, 2 new files):
+- Jedna kaskáda pro všechny tři tabulkové elementy (ze 3 různých ad-hoc přístupů)
+- Jeden render helper (`CellRenderer.DrawCell`) místo duplikované pozicovací logiky
+- Jeden UI control (`CellStyleEditor`) místo inline XAML ve třech dialozích
+- Nové vlastnosti (VAlign, Underline, Strikethrough, LineSpacing) dostupné napříč všemi elementy najednou
+- Připraveno pro přidání dalších tabulkových elementů bez duplikace
+
+---
+
+## 2026-04-21 — Code Hygiene: Extract SaveSectionTemplateDialog (H-9)
+
+- ✅ **Nový dialog triad `Windows/SaveSectionTemplateDialog/`** — Window + ViewModel + XAML dle závazného standardu (architecture.md); `SaveSectionTemplateDialogViewModel : EDViewModel` s `Name` property, `OnOk()` override (validace + close), používá `OkCommand` z base
+- ✅ **`MainWindowViewModel.SaveSectionAsTemplate(Section, Window?)` → `SaveSectionTemplate(Section, string name)`** — odstraněno ~60 řádků imperativního WPF kódu (StackPanel, TextBox, Button, Click handlery); zůstala jen save logika (~10 řádků)
+- ✅ **`MainWindow.xaml.cs.SaveSectionAsTemplate`** — nyní vytváří `SaveSectionTemplateDialog` + VM a na OK volá `_vm.SaveSectionTemplate(...)`; dialog konstrukce patří do code-behind (R4: VM bez WPF)
+- 📋 **Zbytek `using System.Windows;` v MainWindowViewModel.cs** zachován pro `CommandManager.InvalidateRequerySuggested` (WPF command infra), YesNoCancel TODO (H-7), `Clipboard.SetText` a `ParameterTemplateSelector` class — žádné další inline dialog konstrukce
+
+---
+
+## 2026-04-21 — Code Hygiene: Extract TemplateTreePanel (H-8)
+
+- ✅ **Nový UserControl `Controls/TemplateTreePanel/`** — XAML (DockPanel s hlavičkovým textem + TreeView) + code-behind (`Rebuild()`, 3 event handlery, `CreateElementNode`, `FindItemByTag`); ~160 řádků
+- ✅ **API** — `SetContext(vm, openElementProperties, openSectionProperties, afterSelectionChanged)` + `Rebuild()`; pattern identický s `FormatToolbar`/`PropertiesPanel` (imperativní, bez samostatného VM — strom je čistě vizuální projekce `DesignerState`)
+- ✅ **`MainWindow.xaml`** — inline TreeView + header Border nahrazeny `<controls:TemplateTreePanel x:Name="TreePanel"/>`
+- ✅ **`MainWindow.xaml.cs`** — odstraněno ~150 řádků (`RebuildTemplateTree`, `CreateElementTreeNode`, `FindTreeItemByTag`, `GetTreeElementDetails`, `TemplateTree_SelectedItemChanged`, `TemplateTree_MouseDoubleClick`, `TemplateTree_PreviewKeyDown`, `_suppressTreeSelection`); `RefreshTreeIfVisible()` + `LeftTabControl_SelectionChanged` delegují na `TreePanel.Rebuild()`
+- ✅ **Smazán orphan `Windows/TemplateTreeDialog/`** — nikdy se neinstanciovalo, dead code z doby, kdy strom byl modální okno
+- 📋 **Proč UserControl, ne Window** — strom je tab content v levém panelu, ne dialog; kdyby někdy byla potřeba i samostatného okna, stačí UserControl hostovat v Window
+
+---
+
+## 2026-04-21 — Code Hygiene: MessageBox.Show → IPopupDisplayer (H-7)
+
+- ✅ **`AiTemplateAssistantDialogViewModel`** — 5× `MessageBox.Show` → 4× `PopupDisplayer.Info` + 1× `PopupDisplayer.Error(ex)`; odstraněn `using System.Windows;`
+- ✅ **`TableEditorDialogViewModel`** — 2× `MessageBox.Show` → 2× `PopupDisplayer.Info`
+- ✅ **`ElementPropertiesWindowViewModel`** — 3× `MessageBox.Show` → 1× `Error(ex)` + 1× `Confirm(...)` + 1× `Info(...)`
+- ✅ **`MainWindowViewModel`** — 7× `MessageBox.Show` → `PopupDisplayer.Confirm/Info/Error`; 1× kept s TODO komentářem (YesNoCancel v `ConfirmUnsavedChanges` nemá IPopupDisplayer ekvivalent — čeká na rozšíření EDControls)
+- ✅ **`PdfImportDialogViewModel`** — 4× `Action<string,string>?` callback → `PopupDisplayer` přímo; odstraněny 3 property + 3 wire-up řádky v code-behind (`RequestShowError/Warning/Info`)
+- 📋 **Design rozhodnutí** — `Warning` → `Info` (IPopupDisplayer nemá Warning — WPF rozdíl byl jen ikona); `YesNoCancel` → kept as MessageBox s TODO (jedna jediná výjimka v celé code base)
+- 📋 **Proč teď** — rule R4: VM nesmí přímo znát WPF; rule R2: error handling přes `IPopupDisplayer`; toto byla poslední výjimka
+
+---
+
+## 2026-04-21 — Code Hygiene: checklist pro nové elementy (H-6)
+
+- ✅ **Nový soubor `.claude/rules/new-element-checklist.md`** — autoritativní 10-kroková reference přidání nového elementu: třída + rendering, `ElementTypes` konstanta, `JsonDerivedType`, `MainWindowViewModel` 2 switches, toolbar menu, paleta, dynamická výška (`SkiaHeightCalculator`), `TemplateElement.GetSummary` pro strom, dokumentace; Glob `dotnet/Models/Elements/**` → automaticky načteno při práci na elementech
+- ✅ **Tabulka dotčených souborů** — 10 bodů, jasně označeno co je povinné a co volitelné
+- ✅ **Reference implementace** — `BarcodeElement` (minimální), `TextElement` (TextStyle + dynamická výška), `ScheduleElementBase`-derived (komplexní s cache)
+- ✅ **`mvvm-patterns.md`** — 8-kroková sekce „Jak přidat nový typ elementu" zkrácena na pointer do checklistu (eliminace duplikátní dokumentace)
+- 📋 **Proč teď** — během H-3 / H-4 se ukázalo, že checklist je rozesetý: `mvvm-patterns.md` má 8 kroků, ale nepokrývá `GetSummary`, `ApplyScale`, `SkiaHeightCalculator`, `CopyBaseTo`, paletu — vše bylo nutné dohledat v kódu
+
+---
+
+## 2026-04-21 — Code Hygiene: silent catch → TryParse (H-5)
+
+- ✅ **`PropertiesPanel.xaml.cs` color picker seed** — prázdný `catch { /* ignore */ }` kolem `SKColor.Parse(cd.Get())` nahrazen za `SKColor.TryParse(...)`; stejné chování (dialog s defaultní barvou při nevalidním vstupu), ale bez try/catch jako control flow
+- ℹ️ **TODO komentář** (ColorDialog minimalizuje Properties window) ponechán — patří do B2 (vlastní WPF color picker)
+
+---
+
+## 2026-04-21 — Code Hygiene: JSON wire format verify (H-4)
+
+- ✅ **Průzkum** — `CacheAgendaProvider.cs` (C#) i `AgendaAPI.cls` + `ZastavkoveJrMhdAPI.cls` + `TemplateDesignerFAKTURY.cls` (Caché) používají **100% čistý JSON** wire formát: vše je `obj.%ToJSON()` → `JsonNode.Parse` / `JsonSerializer.Deserialize`. Žádné CVar tuple parsing, žádné `$lb()` na wire. `$lb()` výskyty jsou pouze v interních working globals (`^||TiskMHD(...)` 6-fázové intermediate data)
+- ✅ **Kód se nemění** — pravidlo R3 je už dodržené
+- ⚠️ **Oprava dokumentace** — `cache-api.md` + `AgendaAPI.cls` docstring u `GetData` popisovaly zastaralý formát (`OUT[1]` skaláry, `OUT[2..]` řádky s klíčem `collection`). Reálný stav: každý `OUT[n]` = jedna kompletní samostatná stránka ve formátu `GetMockData` (`{ values, rows }`)
+- ✅ **Nová sekce "Wire formát pravidlo (R3)"** v `cache-api.md` — explicitní kontrakt pro příští agendy: čistý JSON, žádný hybrid, `$lb()` jen pro working globals
+
+---
+
+## 2026-04-21 — Code Hygiene: `ElementTypes` konstanty (H-3)
+
+- ✅ **Nový soubor `Models/ElementTypes.cs`** — 9 `const string` konstant pro identifikátory typů elementů (`Text`, `Rectangle`, `Line`, `Image`, `Table`, `Barcode`, `StopList`, `DepartureGrid`, `NotesLegend`); jedna autoritativní definice pro JSON wire formát
+- ✅ **`TemplateElement.cs`** — všech 9 `[JsonDerivedType(...)]` atributů odkazuje na `ElementTypes.X` (C# const expression je validní v atributu)
+- ✅ **`MainWindowViewModel.GetDefaultElementSize` + `CreateElementByType`** — switch expressions + fallback `?? "TextElement"` → konstanty
+- ✅ **`MainWindow.xaml.cs`** — 9 toolbar itemů + ghost ruler fallback → konstanty
+- ⚠️ **XAML `Tag="TextElement"`** zůstává literál — `{x:Static}` binding v `Tag` by přidal verbose `xmlns` bez reálného benefitu; drift odchytne první switch výraz
+- ⚠️ **`AnthropicApiClient.cs` JSON ukázky** zůstávají literály — jsou to prompt texty dokumentující wire formát pro AI model, ne code comparisons
+- 📋 **Směrem dopředu** — nový element = přidat konstantu do `ElementTypes`, použít ji v JsonDerivedType atributu a ve factory; Wave 4 Caché migrace bude mapovat tyto konstanty na Caché form class names
+
+---
+
+## 2026-04-21 — Code Hygiene: `async void` → `async Task` + AsyncRelayCommand (H-2)
+
+- ✅ **EDControls `AsyncRelayCommand`** — nová třída vedle `RelayCommand`, async ekvivalent; chytá výjimky přes `IPopupDisplayer.Error(ex)` (pravidlo R2), `CanExecute` vrací false během běhu → prevence double-click
+- ✅ **EDControls `EDViewModel.CommandAsync(Func<Task>)`** — helper pro async handlery; samostatný název kvůli overload resolution (žádný dopad na existující `Command(Action)` volání)
+- ✅ **`MainWindowViewModel`** — `OpenTemplateAsync` / `SaveTemplate` / `SaveAsTemplate` převedeny na `async Task`; commandy jdou přes `CommandAsync(...)`; property typ `AsyncRelayCommand`
+- ✅ **Bonus fix `SaveTemplate` → `SaveAsTemplate`** — `await` místo fire-and-forget volání (předtím asymptomatická race condition: SaveTemplate se vrátil dřív než SaveAs dokončil)
+- ✅ **`AiTemplateAssistantDialogViewModel.GenerateCommand`** — bonus: byl zamaskovaný `async void` přes lambdu `Command(async () => await GenerateAsync())`; teď `CommandAsync(GenerateAsync)` → výjimky už nepadají na UI thread
+- ✅ **Pravidlo R1** — připraveno pro Wave 1–3 (Caché async volání masivně), pattern jednou zavedený místo retrofitu
+
+---
+
+## 2026-04-21 — Code Hygiene: smazat `ShowZkraceneOznaceniLinky` (H-1)
+
+- ✅ **`DepartureGridElement`** — smazána ghost property `ShowZkraceneOznaceniLinky` (declaration, PropertyDescriptor, Clone); nikde se nečetla, klamala uživatele v panelu vlastností
+- ✅ **Datová property `ZkraceneOznaceniLinky`** na `OdjezdData` zůstává (reálně se plní z Caché `ZKRACENE_OZNACENI_LINKY`)
+- ✅ **Existující šablony** (`kv.json`, `kv_zaklad.json`, `test_cb_na_sirku.json`) — ghost klíč `showZkraceneOznaceniLinky` v JSON se deserializerem tiše ignoruje, migrace nepotřeba
+- ✅ **Docs** — odstraněno ze seznamu properties v `schedule-elements-architecture.md`
+
+---
+
 ## 2026-04-20 — Inline validace v PropertiesPanel (B0-11)
 
 - ✅ Chybový stav pole: červený rámeček + tooltip s chybou místo TextBlocku pod polem

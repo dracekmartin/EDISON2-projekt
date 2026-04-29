@@ -1,6 +1,7 @@
 using SkiaSharp;
 using System.Text.Json.Serialization;
 using TemplateDesigner.Models.Expressions;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models.Elements;
 
@@ -41,6 +42,9 @@ public class TableColumn
     /// <summary>Per-column styl záhlaví. Null = dědit z elementu.</summary>
     public TextStyle? HeaderStyle { get; set; }
 
+    /// <summary>Per-column styl datových buněk. Null = dědit z elementu.</summary>
+    public TextStyle? DataStyle { get; set; }
+
     public TableColumn Clone() => new()
     {
         Header      = Header,
@@ -51,6 +55,7 @@ public class TableColumn
         Alignment   = Alignment,
         Visible     = Visible,
         HeaderStyle = HeaderStyle?.Clone(),
+        DataStyle   = DataStyle?.Clone(),
     };
 }
 
@@ -130,6 +135,9 @@ public class TableElement : TemplateElement
     /// <summary>Styl záhlaví tabulky. Null = výchozí (Bold, #E8E8E8 pozadí, #333333 text).</summary>
     public TextStyle? HeaderStyle { get; set; }
 
+    /// <summary>Styl datových buněk tabulky. Null = výchozí (#222222 text, průhledné pozadí).</summary>
+    public TextStyle? DataStyle { get; set; }
+
     public TableBorderStyle BorderStyle { get; set; } = TableBorderStyle.Outer;
 
     /// <summary>Barva střídajících se řádků (#AARRGGBB). Null = bez střídání.</summary>
@@ -158,27 +166,73 @@ public class TableElement : TemplateElement
         }
     }
 
-    // ─── Header style defaults ────────────────────────────────────────
+    // ─── Style resolution (kaskáda column → element → table defaults → CellDefaults) ──
 
-    private static readonly ResolvedTextStyle DefaultHeaderParent = new()
+    /// <summary>Výchozí parent styl pro záhlaví tabulky. Bold + šedé pozadí (#FFE8E8E8) + tmavě šedý text (#FF333333).</summary>
+    private static readonly ResolvedTextStyle TableHeaderParent = CellDefaults.Default with
     {
-        FontFamily = "Arial", FontSize = 10f,
-        Bold = true, Italic = false, Underline = false,
-        TextColor = "#FF333333", BackgroundColor = "#FFE8E8E8",
-        HAlign = TextHorizontalAlignment.Left, VAlign = TextVerticalAlignment.Top,
-        PaddingTop = 0, PaddingRight = 0, PaddingBottom = 0, PaddingLeft = 0,
-        LineSpacing = 1.2f,
+        Bold = true,
+        TextColor = "#FF333333",
+        BackgroundColor = "#FFE8E8E8",
     };
 
-    private static readonly ResolvedTextStyle DefaultDataParent = new()
+    /// <summary>Výchozí parent styl pro datové buňky. Tmavě šedý text (#FF222222) na průhledném pozadí.</summary>
+    private static readonly ResolvedTextStyle TableDataParent = CellDefaults.Default with
     {
-        FontFamily = "Arial", FontSize = 10f,
-        Bold = false, Italic = false, Underline = false,
-        TextColor = "#FF222222", BackgroundColor = "#00FFFFFF",
-        HAlign = TextHorizontalAlignment.Left, VAlign = TextVerticalAlignment.Top,
-        PaddingTop = 0, PaddingRight = 0, PaddingBottom = 0, PaddingLeft = 0,
-        LineSpacing = 1.2f,
+        TextColor = "#FF222222",
     };
+
+    /// <summary>Výchozí parent styl pro souhrnné řádky. Bold + světle šedé pozadí (#FFF0F0F0).</summary>
+    private static readonly ResolvedTextStyle TableSummaryParent = CellDefaults.Default with
+    {
+        Bold = true,
+        TextColor = "#FF222222",
+        BackgroundColor = "#FFF0F0F0",
+    };
+
+    /// <summary>Parent kaskády pro element-level záhlaví CellStyleVM (= baked defaults).</summary>
+    public ResolvedTextStyle ResolveElementHeaderParent() => TableHeaderParent;
+
+    /// <summary>Parent kaskády pro element-level data CellStyleVM (= baked defaults).</summary>
+    public ResolvedTextStyle ResolveElementDataParent() => TableDataParent;
+
+    /// <summary>Parent kaskády pro per-column header override.</summary>
+    public ResolvedTextStyle ResolveColumnHeaderParent() =>
+        (HeaderStyle ?? new TextStyle()).Resolve(TableHeaderParent);
+
+    /// <summary>Parent kaskády pro per-column data override.</summary>
+    public ResolvedTextStyle ResolveColumnDataParent() =>
+        (DataStyle ?? new TextStyle()).Resolve(TableDataParent);
+
+    /// <summary>Vyřeší styl záhlaví tabulky (element → defaults).</summary>
+    private ResolvedTextStyle ResolveTableHeaderStyle() => ResolveColumnHeaderParent();
+
+    /// <summary>Vyřeší styl datových buněk tabulky (element → defaults).</summary>
+    private ResolvedTextStyle ResolveTableDataStyle() => ResolveColumnDataParent();
+
+    /// <summary>Vyřeší styl záhlaví sloupce. Legacy col.Alignment je fallback pokud HAlign není v kaskádě.</summary>
+    private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col)
+    {
+        var elementResolved = ResolveTableHeaderStyle();
+        var resolved = col.HeaderStyle is { } h ? h.Resolve(elementResolved) : elementResolved;
+
+        if (col.HeaderStyle?.HAlign is null && HeaderStyle?.HAlign is null)
+            resolved = resolved with { HAlign = col.Alignment };
+
+        return resolved;
+    }
+
+    /// <summary>Vyřeší styl datové buňky sloupce. Legacy col.Alignment fallback stejně jako pro header.</summary>
+    private ResolvedTextStyle ResolveColumnDataStyle(TableColumn col)
+    {
+        var elementResolved = ResolveTableDataStyle();
+        var resolved = col.DataStyle is { } d ? d.Resolve(elementResolved) : elementResolved;
+
+        if (col.DataStyle?.HAlign is null && DataStyle?.HAlign is null)
+            resolved = resolved with { HAlign = col.Alignment };
+
+        return resolved;
+    }
 
     // ─── Render ──────────────────────────────────────────────────────
 
@@ -196,199 +250,184 @@ public class TableElement : TemplateElement
         ctx.Canvas.DrawRect(tableRect, bgPaint);
 
         var visibleColumns = Columns.Where(c => c.Visible).ToList();
-        // Šířky sloupců předpočítáme jednou — reuse ve všech třech metodách render
-        var colWidths = visibleColumns.Select(c =>
-            c.WidthMode == ColumnWidthMode.Percent
-                ? tableRect.Width * c.Width / 100f
-                : ctx.Px(c.Width)).ToArray();
-        float currentY = tableRect.Top;
-
-        // Záhlaví
-        if (ShowHeader)
-            currentY = RenderHeader(ctx, visibleColumns, colWidths, tableRect, currentY, borderPaint, sepPaint);
-
-        // Datové řádky
-        IReadOnlyList<DataContext> dataRows = [];
-        if (Mode == TableMode.Fixed)
-            currentY = RenderFixedRows(ctx, visibleColumns, colWidths, tableRect, currentY, borderPaint, sepPaint);
-        else
+        if (visibleColumns.Count == 0)
         {
-            dataRows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
-            currentY = RenderDynamicRows(ctx, visibleColumns, colWidths, tableRect, currentY, sepPaint, dataRows);
+            if (BorderStyle != TableBorderStyle.None)
+                ctx.Canvas.DrawRect(tableRect, borderPaint);
+            return;
         }
 
-        // Souhrnné řádky (zápatí s agregacemi)
-        if (SummaryRows is { Count: > 0 })
-            RenderSummaryRows(ctx, visibleColumns, colWidths, tableRect, currentY, borderPaint, sepPaint, dataRows);
+        // Šířky sloupců v mm — CellRenderer pracuje v mm, přepočítá si sám na px
+        float[] colWidths = visibleColumns.Select(c =>
+            c.WidthMode == ColumnWidthMode.Percent ? Width * c.Width / 100f : c.Width).ToArray();
 
-        // Vnější rámeček
-        if (BorderStyle != TableBorderStyle.None)
-            ctx.Canvas.DrawRect(tableRect, borderPaint);
+        // Pre-resolve styly (kaskáda je deterministická)
+        var headerStyles = visibleColumns.Select(ResolveColumnHeaderStyle).ToArray();
+        var dataStyles   = visibleColumns.Select(ResolveColumnDataStyle).ToArray();
 
+        // Clip na hranice elementu — chrání před přesahem, pokud součet šířek sloupců
+        // přesahuje Width (nekonzistentní konfigurace). Konzistentní s ostatními tabulkovými elementy.
+        ctx.Canvas.Save();
+        ctx.Canvas.ClipRect(tableRect);
+        try
+        {
+            float currentY = Y;
+
+            if (ShowHeader)
+                currentY = RenderHeader(ctx, visibleColumns, colWidths, headerStyles, currentY, borderPaint, sepPaint);
+
+            IReadOnlyList<DataContext> dataRows = [];
+            if (Mode == TableMode.Fixed)
+                currentY = RenderFixedRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint);
+            else
+            {
+                dataRows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
+                currentY = RenderDynamicRows(ctx, visibleColumns, colWidths, dataStyles, currentY, sepPaint, dataRows);
+            }
+
+            if (SummaryRows is { Count: > 0 })
+                RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, borderPaint, sepPaint, dataRows);
+
+            if (BorderStyle != TableBorderStyle.None)
+                ctx.Canvas.DrawRect(tableRect, borderPaint);
+        }
+        finally
+        {
+            ctx.Canvas.Restore();
+        }
     }
 
     private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        SKRect tableRect, float currentY,
-        SKPaint borderPaint, SKPaint sepPaint)
+        ResolvedTextStyle[] headerStyles, float startY, SKPaint borderPaint, SKPaint sepPaint)
     {
-        float headerPx = ctx.Px(HeaderHeight);
-        var rs = (HeaderStyle ?? new TextStyle()).Resolve(DefaultHeaderParent);
+        // Full-width pozadí z table-level stylu — pokryje případný přesah nebo mezery
+        var tableHeaderStyle = ResolveTableHeaderStyle();
+        using var headerBgPaint = tableHeaderStyle.CreateBgPaint();
+        if (headerBgPaint is not null)
+        {
+            var headerBgRect = ctx.ToCanvasRect(X, startY, Width, HeaderHeight);
+            ctx.Canvas.DrawRect(headerBgRect, headerBgPaint);
+        }
 
-        using var hBg   = new SKPaint { Color = rs.ParsedBackgroundColor };
-        using var hText = rs.CreateTextPaint();
-        using var hFont = new SKFont(
-            SKTypeface.FromFamilyName(rs.FontFamily, rs.ToSKFontStyle()) ?? SKTypeface.Default,
-            headerPx * 0.55f);
-
-        ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + headerPx), hBg);
-
-        float colX = tableRect.Left;
-
+        float colX = X;
         for (int i = 0; i < cols.Count; i++)
         {
-            var   col  = cols[i];
             float colW = colWidths[i];
-
-            // Per-column záhlaví styl (cascade: column → table → default)
-            if (col.HeaderStyle is not null)
-            {
-                var colRs = col.HeaderStyle.Resolve(rs);
-                using var colHBg = colRs.CreateBgPaint();
-                if (colHBg is not null)
-                    ctx.Canvas.DrawRect(new SKRect(colX, currentY, colX + colW, currentY + headerPx), colHBg);
-
-                using var colHText = colRs.CreateTextPaint();
-                ctx.Canvas.DrawText(col.Header, colX + 4, currentY + headerPx * 0.72f, hFont, colHText);
-            }
-            else
-            {
-                ctx.Canvas.DrawText(col.Header, colX + 4, currentY + headerPx * 0.72f, hFont, hText);
-            }
+            var cellRect = new SKRect(colX, startY, colX + colW, startY + HeaderHeight);
+            CellRenderer.DrawCell(ctx, cellRect, cols[i].Header, headerStyles[i]);
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
-                ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + headerPx, sepPaint);
-
+            {
+                var top = ctx.ToCanvas(colX + colW, startY);
+                var bot = ctx.ToCanvas(colX + colW, startY + HeaderHeight);
+                ctx.Canvas.DrawLine(top, bot, sepPaint);
+            }
             colX += colW;
         }
 
-        ctx.Canvas.DrawLine(tableRect.Left, currentY + headerPx, tableRect.Right, currentY + headerPx, borderPaint);
-        return currentY + headerPx;
+        // Čára pod záhlavím
+        var lineStart = ctx.ToCanvas(X, startY + HeaderHeight);
+        var lineEnd   = ctx.ToCanvas(X + Width, startY + HeaderHeight);
+        ctx.Canvas.DrawLine(lineStart, lineEnd, borderPaint);
+
+        return startY + HeaderHeight;
     }
 
     private float RenderFixedRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        SKRect tableRect, float startY,
-        SKPaint borderPaint, SKPaint sepPaint)
+        ResolvedTextStyle[] dataStyles, float startY, SKPaint sepPaint)
     {
         if (Rows is null || Rows.Count == 0) return startY;
 
-        float rowPx = ctx.Px(RowHeight);
-        using var rFont = new SKFont(SKTypeface.Default, rowPx * 0.55f);
-        using var rText = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
-
-        // Alternating color předparsovaná jednou — neopakovat Parse() pro každý řádek
         SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
         float currentY = startY;
-        int   visibleIdx = 0;   // index viditelných řádků — pro střídání barev
-        for (int rowIdx = 0; rowIdx < Rows.Count; rowIdx++)
+        int visibleIdx = 0;
+        foreach (var row in Rows)
         {
-            var row = Rows[rowIdx];
-
-            // Podmíněná viditelnost — řádky s nesplněnou podmínkou se přeskočí
             if (!ExpressionEvaluator.IsVisible(row.VisibilityExpression, ctx.Data)) continue;
 
-            // Střídání barev — podle pořadí viditelných řádků, ne původního indexu
+            // Zebra
             if (altBgPaint is not null && visibleIdx % 2 == 1)
-                ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + rowPx), altBgPaint);
+                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), altBgPaint);
 
-            // Vlastní pozadí řádku
+            // Row-level bg override
             if (row.BackgroundColor is not null)
             {
                 using var rowBg = new SKPaint { Color = SKColor.Parse(row.BackgroundColor) };
-                ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + rowPx), rowBg);
+                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), rowBg);
             }
 
-            float colX = tableRect.Left;
+            float colX = X;
             for (int colIdx = 0; colIdx < cols.Count; colIdx++)
             {
-                var   col  = cols[colIdx];
+                var col = cols[colIdx];
                 float colW = colWidths[colIdx];
+                var cellStyle = dataStyles[colIdx];
 
-                // Obsah buňky
                 string content = "";
                 if (colIdx < row.Cells.Count)
                 {
                     var cell = row.Cells[colIdx];
                     content = ctx.Data?.ResolvePlaceholders(cell.Content) ?? cell.Content;
-                    // Aplikovat formát buňky (má přednost) nebo sloupce
                     var cellFormat = cell.Format ?? col.Format;
                     if (cellFormat is not null)
                         content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-                    // Per-cell styl
-                    if (cell.Style is not null)
-                    {
-                        var cellRs = cell.Style.Resolve(DefaultDataParent);
-                        using var cellBg = cellRs.CreateBgPaint();
-                        if (cellBg is not null)
-                            ctx.Canvas.DrawRect(new SKRect(colX, currentY, colX + colW, currentY + rowPx), cellBg);
-
-                        rText.Color = cellRs.ParsedTextColor;
-                    }
-                    else
-                    {
-                        rText.Color = new SKColor(0xFF222222);
-                    }
+                    // Per-cell styl v kaskádě od column data stylu
+                    if (cell.Style is { } cs) cellStyle = cs.Resolve(dataStyles[colIdx]);
                 }
 
-                ctx.Canvas.DrawText(content, colX + 4, currentY + rowPx * 0.72f, rFont, rText);
+                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
+                CellRenderer.DrawCell(ctx, cellRect, content, cellStyle);
 
                 if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
-                    ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + rowPx, sepPaint);
-
+                {
+                    var top = ctx.ToCanvas(colX + colW, currentY);
+                    var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
+                    ctx.Canvas.DrawLine(top, bot, sepPaint);
+                }
                 colX += colW;
             }
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
-                ctx.Canvas.DrawLine(tableRect.Left, currentY + rowPx, tableRect.Right, currentY + rowPx, sepPaint);
+            {
+                var a = ctx.ToCanvas(X, currentY + RowHeight);
+                var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
+                ctx.Canvas.DrawLine(a, b, sepPaint);
+            }
 
-            currentY += rowPx;
+            currentY += RowHeight;
             visibleIdx++;
         }
         return currentY;
     }
 
     private float RenderDynamicRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        SKRect tableRect, float startY,
-        SKPaint sepPaint, IReadOnlyList<DataContext> rows)
+        ResolvedTextStyle[] dataStyles, float startY, SKPaint sepPaint, IReadOnlyList<DataContext> rows)
     {
         bool hasRows = rows.Count > 0;
         int renderCount = hasRows ? rows.Count : DesignerPreviewRows;
 
-        float rowPx = ctx.Px(RowHeight);
-        using var rFont = new SKFont(SKTypeface.Default, rowPx * 0.55f);
-        using var rText = new SKPaint
-        {
-            Color = hasRows ? new SKColor(0xFF222222) : new SKColor(0xFF999999),
-            IsAntialias = true
-        };
-
-        // Alternating color předparsovaná jednou
         SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
-        float currentY = startY;
-        for (int i = 0; i < renderCount && currentY + rowPx <= tableRect.Bottom; i++)
-        {
-            // Střídání barev
-            if (altBgPaint is not null && i % 2 == 1)
-                ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + rowPx), altBgPaint);
+        // Placeholder styl pro designer — šedivý text
+        ResolvedTextStyle[] effectiveStyles = hasRows
+            ? dataStyles
+            : dataStyles.Select(s => s with { TextColor = "#FF999999" }).ToArray();
 
-            float colX = tableRect.Left;
+        float tableBottom = Y + EffectiveDesignerHeight;
+        float currentY = startY;
+        for (int i = 0; i < renderCount && currentY + RowHeight <= tableBottom; i++)
+        {
+            if (altBgPaint is not null && i % 2 == 1)
+                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), altBgPaint);
+
+            float colX = X;
             for (int ci = 0; ci < cols.Count; ci++)
             {
-                var   col  = cols[ci];
+                var col = cols[ci];
                 float colW = colWidths[ci];
 
                 string sample;
@@ -402,86 +441,103 @@ public class TableElement : TemplateElement
                 {
                     sample = $"{{{col.Field ?? col.Header}}}";
                 }
-                ctx.Canvas.DrawText(sample, colX + 4, currentY + rowPx * 0.72f, rFont, rText);
+
+                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
+                CellRenderer.DrawCell(ctx, cellRect, sample, effectiveStyles[ci]);
 
                 if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
-                    ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + rowPx, sepPaint);
-
+                {
+                    var top = ctx.ToCanvas(colX + colW, currentY);
+                    var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
+                    ctx.Canvas.DrawLine(top, bot, sepPaint);
+                }
                 colX += colW;
             }
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
-                ctx.Canvas.DrawLine(tableRect.Left, currentY + rowPx, tableRect.Right, currentY + rowPx, sepPaint);
+            {
+                var a = ctx.ToCanvas(X, currentY + RowHeight);
+                var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
+                ctx.Canvas.DrawLine(a, b, sepPaint);
+            }
 
-            currentY += rowPx;
+            currentY += RowHeight;
         }
         return currentY;
     }
 
     private void RenderSummaryRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
-        SKRect tableRect, float startY,
-        SKPaint borderPaint, SKPaint sepPaint,
-        IReadOnlyList<DataContext> dataRows)
+        float startY, SKPaint borderPaint, SKPaint sepPaint, IReadOnlyList<DataContext> dataRows)
     {
         if (SummaryRows is null || SummaryRows.Count == 0) return;
 
         // Oddělovací čára nad souhrnem
-        ctx.Canvas.DrawLine(tableRect.Left, startY, tableRect.Right, startY, borderPaint);
-
-        float rowPx = ctx.Px(RowHeight);
-        using var sFont = new SKFont(SKTypeface.FromFamilyName(null, SKFontStyle.Bold), rowPx * 0.55f);
-        using var sText = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
-        using var sBg   = new SKPaint { Color = new SKColor(0xFFF0F0F0) };
+        var topStart = ctx.ToCanvas(X, startY);
+        var topEnd   = ctx.ToCanvas(X + Width, startY);
+        ctx.Canvas.DrawLine(topStart, topEnd, borderPaint);
 
         float currentY = startY;
-        for (int rowIdx = 0; rowIdx < SummaryRows.Count; rowIdx++)
+        foreach (var row in SummaryRows)
         {
-            var row = SummaryRows[rowIdx];
-
-            // Pozadí souhrnného řádku
-            var bgColor = row.BackgroundColor is not null
+            // Pozadí řádku (buď custom, nebo default ze SummaryParent)
+            var rowBgColor = row.BackgroundColor is not null
                 ? SKColor.Parse(row.BackgroundColor)
-                : new SKColor(0xFFF0F0F0);
-            sBg.Color = bgColor;
-            ctx.Canvas.DrawRect(new SKRect(tableRect.Left, currentY, tableRect.Right, currentY + rowPx), sBg);
+                : TableSummaryParent.ParsedBackgroundColor;
+            if (rowBgColor.Alpha > 0)
+            {
+                using var sbg = new SKPaint { Color = rowBgColor };
+                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), sbg);
+            }
 
-            float colX = tableRect.Left;
+            float colX = X;
             for (int colIdx = 0; colIdx < cols.Count; colIdx++)
             {
-                var   col  = cols[colIdx];
+                var col = cols[colIdx];
                 float colW = colWidths[colIdx];
 
+                var cellStyle = TableSummaryParent;
                 string content = "";
+
                 if (colIdx < row.Cells.Count)
                 {
                     var cell = row.Cells[colIdx];
-                    // 1. Vyhodnotit agregace
                     content = AggregationResolver.Resolve(cell.Content, dataRows);
-                    // 2. Vyhodnotit zbývající placeholdery
                     content = ctx.Data?.ResolvePlaceholders(content) ?? content;
-                    // 3. Aplikovat formát
                     var cellFormat = cell.Format ?? col.Format;
                     if (cellFormat is not null)
                         content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
 
-                    // Per-cell styl
-                    sText.Color = cell.Style?.TextColor is not null
-                        ? SKColor.Parse(cell.Style.TextColor)
-                        : new SKColor(0xFF222222);
+                    if (cell.Style is { } cs) cellStyle = cs.Resolve(TableSummaryParent);
+
+                    // Legacy col.Alignment fallback, jen pokud cell.Style neurčil HAlign
+                    if (cell.Style?.HAlign is null)
+                        cellStyle = cellStyle with { HAlign = col.Alignment };
+                }
+                else
+                {
+                    cellStyle = cellStyle with { HAlign = col.Alignment };
                 }
 
-                ctx.Canvas.DrawText(content, colX + 4, currentY + rowPx * 0.72f, sFont, sText);
+                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + RowHeight);
+                CellRenderer.DrawCell(ctx, cellRect, content, cellStyle);
 
                 if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
-                    ctx.Canvas.DrawLine(colX + colW, currentY, colX + colW, currentY + rowPx, sepPaint);
-
+                {
+                    var top = ctx.ToCanvas(colX + colW, currentY);
+                    var bot = ctx.ToCanvas(colX + colW, currentY + RowHeight);
+                    ctx.Canvas.DrawLine(top, bot, sepPaint);
+                }
                 colX += colW;
             }
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
-                ctx.Canvas.DrawLine(tableRect.Left, currentY + rowPx, tableRect.Right, currentY + rowPx, sepPaint);
+            {
+                var a = ctx.ToCanvas(X, currentY + RowHeight);
+                var b = ctx.ToCanvas(X + Width, currentY + RowHeight);
+                ctx.Canvas.DrawLine(a, b, sepPaint);
+            }
 
-            currentY += rowPx;
+            currentY += RowHeight;
         }
     }
 
@@ -600,6 +656,7 @@ public class TableElement : TemplateElement
             ShowHeader          = ShowHeader,
             HeaderHeight        = HeaderHeight,
             HeaderStyle         = HeaderStyle?.Clone(),
+            DataStyle           = DataStyle?.Clone(),
             BorderStyle         = BorderStyle,
             AlternatingRowColor = AlternatingRowColor,
         };

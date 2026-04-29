@@ -45,7 +45,7 @@ public class PreviewCanvas
     {
         float pageW = _state.CurrentTemplate.PageSize.Width;
         float fitZoom = (availableWidth - 2 * PagePaddingPx) / (pageW * BaseMmToPx);
-        return Math.Clamp(fitZoom, 0.2f, 3.0f);
+        return Math.Clamp(fitZoom, 0.2f, 10.0f);
     }
 
     /// <summary>Šířka SKElementu v px pro daný zoom — zahrnuje PagePadding na obou stranách.</summary>

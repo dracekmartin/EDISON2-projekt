@@ -27,7 +27,7 @@ public partial class MainWindow : Window
     private PreviewCanvas?          _previewCanvas;
     private ElementPropertiesWindowViewModel? _propsVm;
 
-    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f];
+    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 8.0f, 10.0f];
 
     // ── Mouse state machine ───────────────────────────────────────────────────
     private enum MouseMode { Idle, Dragging, Resizing, RubberBand, AddingElement }
@@ -40,9 +40,6 @@ public partial class MainWindow : Window
     private bool _lastSnapActiveX, _lastSnapActiveY;
 
     private readonly SnapEngine _snapEngine = new();
-
-    /// <summary>Soft-snap: zaokrouhlení na celé mm po puštění dragu, pokud smart-snap nezareagoval.</summary>
-    private const float SoftSnapMm = 1f;
 
     private SKPoint _rubberBandStart;
     private SKRect? _rubberBandRect;
@@ -110,6 +107,7 @@ public partial class MainWindow : Window
         skCanvas.MouseLeftButtonUp    += OnCanvasMouseUp;
         skCanvas.MouseRightButtonUp   += OnCanvasRightClick;
         CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
+        PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
 
         // Wire VM callbacks
         _vm.RequestCanvasRefresh         = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
@@ -158,6 +156,13 @@ public partial class MainWindow : Window
             cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); });
         InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
+
+        // Template tree panel — SetContext
+        TreePanel.SetContext(
+            _vm,
+            OpenPropertiesForElement,
+            OpenPropertiesForSection,
+            RestoreSectionSelection);
 
         // Initial state
         _vm.RefreshFieldsList();
@@ -240,7 +245,7 @@ public partial class MainWindow : Window
                     surface.Canvas.DrawRect(sRect, sectionHighlight);
 
                     // Ghost element — čárkovaný obdélník
-                    var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? "TextElement");
+                    var (defW, defH) = TemplateDesignerViewModel.GetDefaultElementSize(_addingElementType ?? ElementTypes.Text);
                     float gx = _addingGhostPos.X - (defW * _canvas.MmToPx / 2f);
                     float gy = _addingGhostPos.Y - (defH * _canvas.MmToPx / 2f);
                     var ghostRect = new SKRect(gx, gy, gx + defW * _canvas.MmToPx, gy + defH * _canvas.MmToPx);
@@ -265,7 +270,7 @@ public partial class MainWindow : Window
         float padding = 80f;
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
         float pageH   = _canvas.CalculatePageHeightPx(_vm.State.CurrentTemplate);
-        skCanvas.Width  = pageW + padding;
+        skCanvas.Width  = pageW + padding + _canvas.ExtraLeftPx;
         skCanvas.Height = pageH + padding;
         skCanvas.InvalidateVisual();
         UpdatePreviewSize();
@@ -305,13 +310,40 @@ public partial class MainWindow : Window
 
     // ── Preview ───────────────────────────────────────────────────────────────
 
-    private const float PreviewFixedZoom = 1.0f;
+    private float PreviewZoom =>
+        CmbPreviewZoom is { SelectedIndex: var idx } && idx >= 0 && idx < ZoomLevels.Length
+            ? ZoomLevels[idx]
+            : 1.0f;
 
     private void UpdatePreviewSize()
     {
         if (BtnPreview?.IsChecked != true || _previewCanvas is null || _vm is null) return;
-        skPreview.Width  = _previewCanvas.ComputePageWidthPx(PreviewFixedZoom);
-        skPreview.Height = _previewCanvas.CalculatePageHeightPx(PreviewFixedZoom, _vm.BuildPreviewMockData()) + 40f;
+        float zoom = PreviewZoom;
+        skPreview.Width  = _previewCanvas.ComputePageWidthPx(zoom);
+        skPreview.Height = _previewCanvas.CalculatePageHeightPx(zoom, _vm.BuildPreviewMockData()) + 40f;
+    }
+
+    private void OnPreviewScrollWheel(object sender, MouseWheelEventArgs e)
+    {
+        if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
+        e.Handled = true;
+        int newIdx = Math.Clamp(CmbPreviewZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
+        if (newIdx != CmbPreviewZoom.SelectedIndex)
+            CmbPreviewZoom.SelectedIndex = newIdx;
+    }
+
+    private void CmbPreviewZoom_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null || _previewCanvas is null) return;
+        InvalidatePreview();
+    }
+
+    /// <summary>Reset obou zoomů (designeru i náhledu) na 100 %.</summary>
+    private void BtnResetView_Click(object sender, RoutedEventArgs e)
+    {
+        const int defaultIdx = 2; // 100 %
+        if (CmbZoom is not null)        CmbZoom.SelectedIndex        = defaultIdx;
+        if (CmbPreviewZoom is not null) CmbPreviewZoom.SelectedIndex = defaultIdx;
     }
 
     private void InvalidatePreview()
@@ -549,6 +581,13 @@ public partial class MainWindow : Window
             _vm.GridSize = size;
     }
 
+    private void CmbSnapGap_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_vm is null || CmbSnapGap.SelectedItem is not ComboBoxItem item) return;
+        if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float gap))
+            _vm.SnapGapMm = gap;
+    }
+
     private void CmbScale_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_vm is null || CmbScale.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;
@@ -700,170 +739,11 @@ public partial class MainWindow : Window
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Template tree tab — bidirectional selection sync
-    // ─────────────────────────────────────────────────────────────────────────
-
-    private bool _suppressTreeSelection;
-
-    private void RebuildTemplateTree()
-    {
-        if (_vm is null) return;
-        _suppressTreeSelection = true;
-        try
-        {
-            TemplateTree.Items.Clear();
-            var template = _vm.State.CurrentTemplate;
-
-            var root = new TreeViewItem
-            {
-                Header = $"Template: {template.Name}",
-                FontWeight = FontWeights.Bold,
-                IsExpanded = true
-            };
-
-            var ps = template.PageSize;
-            root.Items.Add(new TreeViewItem
-            {
-                Header = $"PageSize: {ps.Width}x{ps.Height}mm  (L={ps.MarginLeft} T={ps.MarginTop} R={ps.MarginRight} B={ps.MarginBottom})",
-                Foreground = System.Windows.Media.Brushes.Gray
-            });
-
-            foreach (var section in template.Sections)
-            {
-                var sNode = new TreeViewItem
-                {
-                    Header = $"[{section.PrintBehavior}] {section.Name}  ({section.DesignerHeight?.ToString("0.#") ?? "auto"} mm)",
-                    Tag = section,
-                    IsExpanded = true,
-                    FontWeight = section == _vm.State.ActiveSection ? FontWeights.SemiBold : FontWeights.Normal
-                };
-
-                // Seskupit elementy podle GroupId pro hierarchické zobrazení
-                var orderedElements = section.Elements.OrderBy(e => e.ZIndex).ToList();
-                var processedGroups = new HashSet<string>();
-
-                foreach (var el in orderedElements)
-                {
-                    if (el.GroupId is not null && !processedGroups.Contains(el.GroupId))
-                    {
-                        // Sbalitelný uzel pro skupinu
-                        processedGroups.Add(el.GroupId);
-                        var groupMembers = orderedElements.Where(e2 => e2.GroupId == el.GroupId).ToList();
-                        var groupNode = new TreeViewItem
-                        {
-                            Header = $"[G] {el.GroupId}  [{groupMembers.Count} elem.]",
-                            Tag = el.GroupId,
-                            IsExpanded = true,
-                            FontStyle = FontStyles.Italic
-                        };
-
-                        foreach (var member in groupMembers)
-                            groupNode.Items.Add(CreateElementTreeNode(member));
-                        sNode.Items.Add(groupNode);
-                    }
-                    else if (el.GroupId is null)
-                    {
-                        sNode.Items.Add(CreateElementTreeNode(el));
-                    }
-                    // else: element patří do skupiny, která už byla zpracována → přeskočit
-                }
-
-                root.Items.Add(sNode);
-            }
-
-            TemplateTree.Items.Add(root);
-
-            // Obnovit výběr a focus na aktuálně vybraný element
-            if (_vm.State.SelectedElements.Count > 0)
-            {
-                var selectedEl = _vm.State.SelectedElements[0];
-                var itemToSelect = FindTreeItemByTag(root, selectedEl);
-                if (itemToSelect is not null)
-                {
-                    itemToSelect.IsSelected = true;
-                    itemToSelect.Focus();
-                }
-            }
-        }
-        finally { _suppressTreeSelection = false; }
-    }
-
-    /// <summary>Najde TreeViewItem s daným Tag v celém stromu.</summary>
-    private static TreeViewItem? FindTreeItemByTag(TreeViewItem parent, object tag)
-    {
-        foreach (TreeViewItem child in parent.Items)
-        {
-            if (child.Tag == tag) return child;
-            var found = FindTreeItemByTag(child, tag);
-            if (found is not null) return found;
-        }
-        return null;
-    }
-
-    private static string GetTreeElementDetails(TemplateElement el) => TemplateElement.GetSummary(el);
-
-    private TreeViewItem CreateElementTreeNode(TemplateElement el)
-    {
-        string typeName = el.GetType().Name.Replace("Element", "");
-        string details = GetTreeElementDetails(el);
-        bool isSelected = _vm!.State.SelectedElements.Contains(el);
-        return new TreeViewItem
-        {
-            Header = $"[Z{el.ZIndex}] {typeName}: {details}",
-            Tag = el,
-            FontWeight = isSelected ? FontWeights.Bold : FontWeights.Normal,
-            Foreground = isSelected
-                ? System.Windows.Media.Brushes.Blue
-                : System.Windows.Media.Brushes.Black
-        };
-    }
-
-    private void TemplateTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
-    {
-        if (_suppressTreeSelection || _vm is null) return;
-        if (e.NewValue is not TreeViewItem item) return;
-
-        _vm.SelectFromTree(item.Tag);
-        RestoreSectionSelection();
-    }
-
-    private void TemplateTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
-    {
-        // Najít TreeViewItem z vizuálního stromu (event bubbluje z TextBlocku)
-        var source = e.OriginalSource as System.Windows.DependencyObject;
-        while (source is not null and not TreeViewItem)
-            source = System.Windows.Media.VisualTreeHelper.GetParent(source);
-
-        if (source is not TreeViewItem item) return;
-
-        if (item.Tag is TemplateElement element)
-            OpenPropertiesForElement(element);
-        else if (item.Tag is Section section)
-            OpenPropertiesForSection(section);
-
-        e.Handled = true;
-    }
-
-    private void TemplateTree_PreviewKeyDown(object sender, KeyEventArgs e)
-    {
-        // Enter na elementu = otevřít vlastnosti (jako dvojklik)
-        if (e.Key == Key.Enter && TemplateTree.SelectedItem is TreeViewItem item)
-        {
-            if (item.Tag is TemplateElement element)
-                OpenPropertiesForElement(element);
-            else if (item.Tag is Section section)
-                OpenPropertiesForSection(section);
-            e.Handled = true;
-        }
-    }
-
-
     /// <summary>Aktualizuje strom pokud je viditelný (po změně výběru na canvasu).</summary>
     private void RefreshTreeIfVisible()
     {
         if (TabTree?.IsSelected == true)
-            RebuildTemplateTree();
+            TreePanel.Rebuild();
     }
 
     private void BtnZForward_Click(object sender, RoutedEventArgs e)  => _vm!.ChangeZIndex(+1, false);
@@ -996,16 +876,16 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
 
-        Add("Text",        () => TemplateDesignerViewModel.CreateElementByType("TextElement", 5, 5));
-        Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType("RectangleElement", 5, 5));
-        Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType("LineElement", 0, 10));
-        Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType("ImageElement", 5, 5));
-        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType("TableElement", 0, 0));
-        Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType("BarcodeElement", 5, 5));
+        Add("Text",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Text, 5, 5));
+        Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Rectangle, 5, 5));
+        Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
+        Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
+        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0));
+        Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
         menu.Items.Add(new Separator());
-        Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType("StopListElement", 0, 0));
-        Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType("DepartureGridElement", 0, 0));
-        Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType("NotesLegendElement", 0, 0));
+        Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
+        Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
+        Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
@@ -1134,7 +1014,7 @@ public partial class MainWindow : Window
         if (TabFields?.IsSelected == true)
             _vm?.RefreshFieldsList();
         if (TabTree?.IsSelected == true)
-            RebuildTemplateTree();
+            TreePanel.Rebuild();
     }
 
     private void SchemaTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -1150,7 +1030,13 @@ public partial class MainWindow : Window
     // ─────────────────────────────────────────────────────────────────────────
 
     private void SaveSectionAsTemplate(Section section)
-        => _vm?.SaveSectionAsTemplate(section, owner: this);
+    {
+        if (_vm is null) return;
+        var dlgVm = new SaveSectionTemplateDialogViewModel(section.Name);
+        var dlg   = new SaveSectionTemplateDialog(dlgVm) { Owner = this };
+        if (dlg.ShowDialog() == true)
+            _vm.SaveSectionTemplate(section, dlgVm.Name);
+    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // Helpers
@@ -1190,14 +1076,13 @@ public partial class MainWindow : Window
         var availableGroups = element.GetAvailableSkupinyDnu(previewData);
 
         var dlg = new DepartureGroupEditorDialog(
+            element,
             availableGroups,
             element.GroupColumns,
             element.HourColumnStyle,
             generalDescriptors,
             cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
-            headerDefaults: element.HeaderStyle,
-            dataDefaults: element.DataStyle)
+            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
             { Owner = this };
 
         if (dlg.ShowDialog() == true)
@@ -1236,7 +1121,7 @@ public partial class MainWindow : Window
             .ToList();
 
         var dlg = new StopColumnsEditorDialog(
-            element.Columns,
+            element,
             generalDescriptors,
             cmd => _vm.Execute(cmd),
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
@@ -1488,7 +1373,9 @@ public partial class MainWindow : Window
         else if (e.Key is Key.Left or Key.Right or Key.Up or Key.Down
                  && _vm.State.SelectedElements.Count > 0)
         {
-            _vm.MoveByKey(e.Key, Keyboard.Modifiers.HasFlag(ModifierKeys.Shift));
+            _vm.MoveByKey(e.Key,
+                largeStep: Keyboard.Modifiers.HasFlag(ModifierKeys.Shift),
+                fineStep:  Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
             e.Handled = true;
         }
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count == 1)
@@ -1676,16 +1563,24 @@ public partial class MainWindow : Window
             bool snappedX = false, snappedY = false;
             if (_dragInitPositions.TryGetValue(_dragElement!, out var refInit))
             {
-                if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } section)
+                // Ctrl držený = dočasně vypnout snap (free positioning).
+                bool ctrlHeld = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+                if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } section && !ctrlHeld)
                 {
                     var others = section.Elements.Where(el2 => !_dragInitPositions.ContainsKey(el2));
                     float threshold = 8f / _canvas.MmToPx; // ~8px
+                    _snapEngine.GapMm = _vm.State.SnapGapMm;
 
-                    // Extra X anchors: levý/pravý okraj sekce, horizontální střed + X hodnoty
-                    // elementů z ostatních sekcí (všechny sekce sdílejí levý margin → X je přímo porovnatelné).
+                    // Edge anchors: hrany sekce/printable area — edge-to-edge i gap snap (mezera od okraje).
                     float sectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+                    float sectionH = section.EffectiveDesignerHeight;
+                    var edgeX = new List<float> { 0f, sectionW };
+                    var edgeY = new List<float> { 0f, sectionH };
+
+                    // Extra X anchors: horizontální střed + X hodnoty elementů z ostatních sekcí
+                    // (všechny sekce sdílejí levý margin → X je přímo porovnatelné). Bez gap snap.
                     float refElW = _dragElement!.Width;
-                    var extraX = new List<float> { 0f, sectionW, (sectionW - refElW) / 2f };
+                    var extraX = new List<float> { (sectionW - refElW) / 2f };
                     foreach (var otherSection in _vm.State.CurrentTemplate.Sections)
                     {
                         if (otherSection == section) continue;
@@ -1696,15 +1591,15 @@ public partial class MainWindow : Window
                         }
                     }
 
-                    // Extra Y anchors: horní/spodní okraj aktuální sekce, vertikální střed
-                    float sectionH = section.EffectiveDesignerHeight;
+                    // Extra Y anchors: vertikální střed. Bez gap snap.
                     float refElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
-                    var extraY = new List<float> { 0f, sectionH, (sectionH - refElH) / 2f };
+                    var extraY = new List<float> { (sectionH - refElH) / 2f };
 
                     var snap = _snapEngine.Calculate(
                         _dragElement!, (refInit.X, refInit.Y),
                         deltaMmX, deltaMmY, others, threshold,
-                        extraXAnchors: extraX, extraYAnchors: extraY);
+                        extraXAnchors: extraX, extraYAnchors: extraY,
+                        edgeXAnchors: edgeX, edgeYAnchors: edgeY);
 
                     if (snap.X.HasSnap) { deltaMmX = snap.X.AdjustedDelta; snappedX = true; }
                     if (snap.Y.HasSnap) { deltaMmY = snap.Y.AdjustedDelta; snappedY = true; }
@@ -1716,17 +1611,29 @@ public partial class MainWindow : Window
                     _vm.State.SnapTargetElements.AddRange(targets);
                 }
 
-                if (_vm.State.SnapToGrid)
+                if (_vm.State.SnapToGrid && !ctrlHeld)
                 {
                     float g = _vm.State.GridSize;
-                    if (!snappedX)
+                    // Bounds elementu v sekci — aby grid snap nepřekročil okraje (jinak by clamp odsunul element mimo grid line)
+                    float boundSectionW = _vm.State.CurrentTemplate.PageSize.PrintableWidth;
+                    var gridSection = _vm.State.CurrentTemplate.Sections.FirstOrDefault(s => s.Elements.Contains(_dragElement!));
+                    float boundSectionH = gridSection?.EffectiveDesignerHeight ?? float.MaxValue;
+                    float boundElW = _dragElement!.Width;
+                    float boundElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
+                    float maxGridX = MathF.Max(0, MathF.Floor((boundSectionW - boundElW) / g) * g);
+                    float maxGridY = MathF.Max(0, MathF.Floor((boundSectionH - boundElH) / g) * g);
+
+                    // Grid snap má prioritu — pokud je zapnutý, zaokrouhlí i výsledek smart snapu,
+                    // takže pozice je vždy grid-aligned (očekávání uživatele: "mám grid 1mm → pozice jsou v 1mm krocích").
+                    // Bez tohoto smart snap k non-grid pozicím sousedů (typicky po PDF importu) obchází grid.
                     {
                         float sx = MathF.Round((refInit.X + deltaMmX) / g) * g;
+                        sx = Math.Clamp(sx, 0f, maxGridX);
                         deltaMmX = sx - refInit.X;
                     }
-                    if (!snappedY)
                     {
                         float sy = MathF.Round((refInit.Y + deltaMmY) / g) * g;
+                        sy = Math.Clamp(sy, 0f, maxGridY);
                         deltaMmY = sy - refInit.Y;
                     }
                 }
@@ -1737,6 +1644,12 @@ public partial class MainWindow : Window
             var (clampedX, clampedY) = ClampDragDelta(deltaMmX, deltaMmY);
             foreach (var kvp in _dragInitPositions)
             { kvp.Key.X = kvp.Value.X + clampedX; kvp.Key.Y = kvp.Value.Y + clampedY; }
+
+            // Měřící badge — aktuální pozice draggovaného elementu
+            _vm.State.DragBadgeText = $"X: {_dragElement!.X:0.#} mm   Y: {_dragElement!.Y:0.#} mm";
+            _vm.State.DragBadgeX = cx;
+            _vm.State.DragBadgeY = cy;
+
             InvalidateCanvas();
             return;
         }
@@ -1749,7 +1662,9 @@ public partial class MainWindow : Window
             float mouseMmX = (cx - _resizeOriginX) / _canvas.MmToPx;
             float mouseMmY = (cy - _resizeOriginY) / _canvas.MmToPx;
 
-            if (_vm.State.SnapToGrid)
+            // Ctrl držený = dočasně vypnout snap (free positioning/resize)
+            bool resizeCtrlHeld = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+            if (_vm.State.SnapToGrid && !resizeCtrlHeld)
             {
                 float g = _vm.State.GridSize;
                 mouseMmX = MathF.Round(mouseMmX / g) * g;
@@ -1761,7 +1676,7 @@ public partial class MainWindow : Window
             // Smart snap při resize
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
-            if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection)
+            if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection && !resizeCtrlHeld)
             {
                 bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
                 bool movR = _resizeHandle is ResizeHandle.TopRight or ResizeHandle.MiddleRight or ResizeHandle.BottomRight;
@@ -1770,6 +1685,7 @@ public partial class MainWindow : Window
 
                 var others = resizeSection.Elements.Where(e2 => e2 != _resizeElement);
                 float threshold = 8f / _canvas.MmToPx;
+                _snapEngine.GapMm = _vm.State.SnapGapMm;
 
                 var snap = _snapEngine.CalculateResize(
                     newX, newY, newW, newH,
@@ -1787,6 +1703,11 @@ public partial class MainWindow : Window
             // Synchronizovat sousední element na sdílené hranici
             if (_resizeNeighbor is not null)
                 SyncNeighborResize(newX, newY, newW, newH);
+
+            // Měřící badge — aktuální rozměr a pozice (stejný formát jako u dragu)
+            _vm.State.DragBadgeText = $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
+            _vm.State.DragBadgeX = cx;
+            _vm.State.DragBadgeY = cy;
 
             InvalidateCanvas();
             return;
@@ -2011,17 +1932,19 @@ public partial class MainWindow : Window
     {
         if (commit && _vm is not null)
         {
-            // Soft-snap na celé mm pro osy, kde se neuplatnil smart-snap ani grid snap.
-            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají
-            // přesně alignovat klávesami. Snap-to-grid má prioritu, pokud je zapnutý.
+            // Soft-snap na aktuální GridSize krok pro osy, kde se neuplatnil smart-snap ani grid snap.
+            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají přesně alignovat
+            // klávesami. Snap-to-grid má prioritu, pokud je zapnutý. Bez grid snapu respektujeme
+            // user-vybraný GridSize (0.1 / 0.5 / 1 / 2 / 5 / 10 mm) místo hardcoded 1 mm.
             bool applySoftX = !_lastSnapActiveX && !_vm.State.SnapToGrid;
             bool applySoftY = !_lastSnapActiveY && !_vm.State.SnapToGrid;
             if ((applySoftX || applySoftY) && _dragInitPositions.Count > 0)
             {
+                float softStep = _vm.State.GridSize;
                 foreach (var el in _dragInitPositions.Keys)
                 {
-                    if (applySoftX) el.X = MathF.Round(el.X / SoftSnapMm) * SoftSnapMm;
-                    if (applySoftY) el.Y = MathF.Round(el.Y / SoftSnapMm) * SoftSnapMm;
+                    if (applySoftX) el.X = MathF.Round(el.X / softStep) * softStep;
+                    if (applySoftY) el.Y = MathF.Round(el.Y / softStep) * softStep;
                 }
             }
 
@@ -2040,6 +1963,7 @@ public partial class MainWindow : Window
         _dragInitPositions.Clear();
         _vm?.State.ActiveGapIndicators.Clear();
         _vm?.State.SnapTargetElements.Clear();
+        if (_vm is not null) _vm.State.DragBadgeText = null;
         _mouseMode   = MouseMode.Idle;
         _dragElement = null;
         skCanvas.ReleaseMouseCapture();
@@ -2110,6 +2034,7 @@ public partial class MainWindow : Window
         }
         _vm?.State.ActiveGapIndicators.Clear();
         _vm?.State.SnapTargetElements.Clear();
+        if (_vm is not null) _vm.State.DragBadgeText = null;
         _mouseMode      = MouseMode.Idle;
         _resizeElement  = null;
         _resizeNeighbor = null;

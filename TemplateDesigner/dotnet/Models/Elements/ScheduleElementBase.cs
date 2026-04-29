@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SkiaSharp;
+using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models.Elements;
 
@@ -38,17 +39,36 @@ public abstract class ScheduleElementBase : TemplateElement
 
     // ─── Společné vizuální properties ───────────────────────────────────────
 
-    /// <summary>Výchozí styl datových buněk (font, velikost). Per-column TextStyle cascaduje od tohoto.</summary>
-    public TextStyle DataStyle { get; set; } = new() { FontFamily = "Arial", FontSize = 8f };
-
-    /// <summary>Výchozí styl záhlaví (font, velikost, bold, barvy). Per-column TextStyle cascaduje od tohoto.</summary>
-    public TextStyle HeaderStyle { get; set; } = new()
+    /// <summary>
+    /// Výchozí baked-in styl záhlaví pro JŘ elementy (Arial 9pt, Bold, šedé pozadí, černý text).
+    /// Poslední vrstva kaskády před CellDefaults — user může kterýkoli atribut přepsat v
+    /// element.HeaderStyle nebo per-column, nebo kliknout „×" a vrátit se sem.
+    /// </summary>
+    public static readonly ResolvedTextStyle ScheduleHeaderDefaults = CellDefaults.Default with
     {
         FontFamily = "Arial", FontSize = 9f, Bold = true,
-        BackgroundColor = "#FFE0E0E0", TextColor = "#FF000000"
+        BackgroundColor = "#FFE0E0E0", TextColor = "#FF000000",
     };
 
+    /// <summary>Výchozí baked-in styl datových buněk pro JŘ elementy (Arial 8pt).</summary>
+    public static readonly ResolvedTextStyle ScheduleDataDefaults = CellDefaults.Default with
+    {
+        FontFamily = "Arial", FontSize = 8f,
+    };
+
+    /// <summary>Výchozí styl datových buněk (font, velikost). Per-column TextStyle cascaduje od tohoto.</summary>
+    public TextStyle DataStyle { get; set; } = new();
+
+    /// <summary>Výchozí styl záhlaví. Per-column TextStyle cascaduje od tohoto, tohle pak od <see cref="ScheduleHeaderDefaults"/>.</summary>
+    public TextStyle HeaderStyle { get; set; } = new();
+
     public string GridColor { get; set; } = "#FFD0D0D0";
+
+    /// <summary>Vyřešený parent pro element-level záhlaví CellStyleVM (= baked defaults, protože není nic nad tímhle).</summary>
+    public ResolvedTextStyle ResolveElementHeaderParent() => ScheduleHeaderDefaults;
+
+    /// <summary>Vyřešený parent pro element-level data CellStyleVM.</summary>
+    public ResolvedTextStyle ResolveElementDataParent() => ScheduleDataDefaults;
 
     // ─── Auto-scale ──────────────────────────────────────────────────────────
 
@@ -129,18 +149,9 @@ public abstract class ScheduleElementBase : TemplateElement
         return defaultValue;
     }
 
-    // ─── Font/Paint helpery (sdílené pro per-column styling) ─────────────────
+    // ─── Typeface cache ─────────────────────────────────────────────────────
 
-    /// <summary>Vytvoří SKFontStyle z bold/italic flagů.</summary>
-    protected static SKFontStyle MakeFontStyle(bool bold, bool italic) => (bold, italic) switch
-    {
-        (true, true)   => SKFontStyle.BoldItalic,
-        (true, false)  => SKFontStyle.Bold,
-        (false, true)  => SKFontStyle.Italic,
-        (false, false) => SKFontStyle.Normal,
-    };
-
-    // Typeface cache. SKTypeface loading (HarfBuzz) je drahý — per frame se volá 10+×.
+    // SKTypeface loading (HarfBuzz) je drahý — per frame se volá 10+×.
     // SKFont nevlastní typeface (reference, ne owned), sdílení je bezpečné.
     private static readonly ConcurrentDictionary<(string Family, int Weight, int Width, SKFontStyleSlant Slant), SKTypeface> _typefaceCache = new();
 
@@ -153,87 +164,6 @@ public abstract class ScheduleElementBase : TemplateElement
         return _typefaceCache.GetOrAdd(key, k =>
             SKTypeface.FromFamilyName(k.Family, new SKFontStyle(k.Weight, k.Width, k.Slant))
             ?? SKTypeface.Default);
-    }
-
-    /// <summary>
-    /// Vytvoří SKFont z TextStyle. Vrátí null pokud TextStyle nemá žádné fontové override.
-    /// Volající musí výsledek uvolnit (přidat do manualDisposables).
-    /// </summary>
-    protected SKFont? CreateCellFont(TextStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx)
-    {
-        if (style is null) return null;
-        if (style.FontFamily is null && style.FontSize is null && style.Bold is null && style.Italic is null)
-            return null;
-
-        var family = style.FontFamily ?? DataStyle.FontFamily ?? "Arial";
-        var sizePx = (style.FontSize ?? defaultSizePt) * PtToMm * scale * mmToPx;
-        var fontStyle = MakeFontStyle(style.Bold ?? defaultBold, style.Italic ?? false);
-        return new SKFont(GetTypeface(family, fontStyle), sizePx);
-    }
-
-    /// <summary>Vytvoří SKPaint pro text z TextStyle.TextColor. Null pokud nemá override.</summary>
-    protected static SKPaint? CreateCellTextPaint(TextStyle? style)
-    {
-        if (style?.TextColor is null) return null;
-        return new SKPaint { Color = SKColor.Parse(style.TextColor), IsAntialias = true };
-    }
-
-    /// <summary>Vytvoří SKPaint pro pozadí z TextStyle.BackgroundColor. Null pokud nemá override.</summary>
-    protected static SKPaint? CreateCellBgPaint(TextStyle? style)
-    {
-        if (style?.BackgroundColor is null) return null;
-        return new SKPaint { Color = SKColor.Parse(style.BackgroundColor) };
-    }
-
-    /// <summary>Vykreslí pozadí buňky pokud existuje per-column bgPaint.</summary>
-    protected static void RenderCellBackground(RenderContext ctx, SKPaint? bgPaint, float x, float y, float w, float h)
-    {
-        if (bgPaint is null) return;
-        var rect = ctx.ToCanvasRect(x, y, w, h);
-        ctx.Canvas.DrawRect(rect, bgPaint);
-    }
-
-    /// <summary>
-    /// Sdružené font/textPaint/bgPaint resources pro jednu buňku (sloupec, hlavičku, data).
-    /// Kterýkoli může být null pokud TextStyle nemá daný override. Disposable.
-    /// </summary>
-    public sealed class CellStyleResources : IDisposable
-    {
-        public SKFont? Font { get; }
-        public SKPaint? TextPaint { get; }
-        public SKPaint? BgPaint { get; }
-
-        internal CellStyleResources(SKFont? font, SKPaint? textPaint, SKPaint? bgPaint)
-        {
-            Font = font;
-            TextPaint = textPaint;
-            BgPaint = bgPaint;
-        }
-
-        public void Dispose()
-        {
-            Font?.Dispose();
-            TextPaint?.Dispose();
-            BgPaint?.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Vytvoří CellStyleResources z TextStyle. Všechny tři items mohou být null,
-    /// pokud TextStyle nemá daný override. Volající dispose (nebo ji vloží do
-    /// dictionary, která se dispose hromadně přes DisposeAll).
-    /// </summary>
-    protected CellStyleResources BuildCellStyle(
-        TextStyle? style, float defaultSizePt, bool defaultBold, float scale, float mmToPx) =>
-        new(CreateCellFont(style, defaultSizePt, defaultBold, scale, mmToPx),
-            CreateCellTextPaint(style),
-            CreateCellBgPaint(style));
-
-    /// <summary>Dispose všech resources v dictionary (bezpečné při null nebo prázdném).</summary>
-    protected static void DisposeAll<TKey>(Dictionary<TKey, CellStyleResources>? map) where TKey : notnull
-    {
-        if (map is null) return;
-        foreach (var r in map.Values) r.Dispose();
     }
 
     // ─── Render helpery ─────────────────────────────────────────────────────
@@ -473,39 +403,17 @@ public abstract class ScheduleElementBase : TemplateElement
 
     // ─── Společné property descriptory ──────────────────────────────────────
 
+    /// <summary>
+    /// Non-style element-level descriptory pro PropertiesPanel v tabu „Obecné".
+    /// Font/barvy/alignment pro Header a Data jsou editované přes sdílený CellStyleEditor
+    /// v dialogu sloupců — nejsou tady, aby se nedublovaly.
+    /// </summary>
     protected IReadOnlyList<PropertyDescriptor> GetScheduleBaseDescriptors() =>
     [
-        new StringPropertyDescriptor
-        {
-            Label = "Font", Group = "Výchozí styl",
-            Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = v
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Velikost písma", Group = "Výchozí styl",
-            Get = () => DataStyle.FontSize ?? 8f, Set = v => DataStyle.FontSize = v,
-            Min = 4, Max = 30, Unit = "pt"
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Velikost záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderStyle.FontSize ?? 9f, Set = v => HeaderStyle.FontSize = v,
-            Min = 4, Max = 30, Unit = "pt"
-        },
         new ColorPropertyDescriptor
         {
-            Label = "Barva mřížky", Group = "Výchozí styl",
+            Label = "Barva mřížky", Group = "Obecné",
             Get = () => GridColor, Set = v => GridColor = v
-        },
-        new ColorPropertyDescriptor
-        {
-            Label = "Pozadí záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderStyle.BackgroundColor ?? "#FFE0E0E0", Set = v => HeaderStyle.BackgroundColor = v
-        },
-        new ColorPropertyDescriptor
-        {
-            Label = "Barva záhlaví", Group = "Výchozí styl",
-            Get = () => HeaderStyle.TextColor ?? "#FF000000", Set = v => HeaderStyle.TextColor = v
         },
     ];
 

@@ -5,15 +5,15 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Models;
 
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
-[JsonDerivedType(typeof(TextElement),      "TextElement")]
-[JsonDerivedType(typeof(RectangleElement), "RectangleElement")]
-[JsonDerivedType(typeof(LineElement),      "LineElement")]
-[JsonDerivedType(typeof(ImageElement),     "ImageElement")]
-[JsonDerivedType(typeof(TableElement),     "TableElement")]
-[JsonDerivedType(typeof(BarcodeElement),  "BarcodeElement")]
-[JsonDerivedType(typeof(StopListElement),      "StopListElement")]
-[JsonDerivedType(typeof(DepartureGridElement), "DepartureGridElement")]
-[JsonDerivedType(typeof(NotesLegendElement),   "NotesLegendElement")]
+[JsonDerivedType(typeof(TextElement),          ElementTypes.Text)]
+[JsonDerivedType(typeof(RectangleElement),     ElementTypes.Rectangle)]
+[JsonDerivedType(typeof(LineElement),          ElementTypes.Line)]
+[JsonDerivedType(typeof(ImageElement),         ElementTypes.Image)]
+[JsonDerivedType(typeof(TableElement),         ElementTypes.Table)]
+[JsonDerivedType(typeof(BarcodeElement),       ElementTypes.Barcode)]
+[JsonDerivedType(typeof(StopListElement),      ElementTypes.StopList)]
+[JsonDerivedType(typeof(DepartureGridElement), ElementTypes.DepartureGrid)]
+[JsonDerivedType(typeof(NotesLegendElement),   ElementTypes.NotesLegend)]
 public abstract class TemplateElement
 {
     public Guid Id { get; set; } = Guid.NewGuid();

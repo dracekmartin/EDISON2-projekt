@@ -1,0 +1,262 @@
+<UserControl x:Class="TemplateDesigner.Controls.CellStyleEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TemplateDesigner.Controls"
+             x:Name="Root">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:NullOrEmptyToVisibleConverter x:Key="NullToVis"/>
+        <local:NotNullToVisibleConverter x:Key="NotNullToVis"/>
+        <local:FirstNonEmptyHexToBrushConverter x:Key="FirstColorToBrush"/>
+        <local:HAlignToLabelConverter x:Key="HAlignToLabel"/>
+        <local:VAlignToLabelConverter x:Key="VAlignToLabel"/>
+
+        <!-- Malé „×" tlačítko pro reset pole na „dědit". CommandParameter = název property. -->
+        <Style x:Key="ResetButton" TargetType="Button">
+            <Setter Property="Content" Value="×"/>
+            <Setter Property="Width" Value="16"/>
+            <Setter Property="Height" Value="16"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Margin" Value="2,0,0,0"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="ToolTip" Value="Resetovat na zděděnou hodnotu (dědit od rodiče)"/>
+            <Setter Property="Command" Value="{Binding ResetFieldCommand}"/>
+        </Style>
+
+        <!-- Šedivý italic placeholder zobrazující zděděnou hodnotu když pole není explicitně nastavené. -->
+        <Style x:Key="InheritedPlaceholder" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="5,0,0,0"/>
+        </Style>
+    </UserControl.Resources>
+
+    <StackPanel>
+
+        <!-- ── Font + velikost + B/I/U/S ─────────────────────────────── -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+
+            <!-- Font family — prázdné pole = dědit, placeholder ukazuje zděděnou hodnotu -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
+                        Visibility="{Binding EditOptions.AllowFontFamily, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Font:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <Grid Width="120">
+                    <TextBox x:Name="FontFamilyBox"
+                             ToolTip="Prázdné pole = dědit od rodiče"
+                             Text="{Binding FontFamily, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.FontFamily}"
+                               Visibility="{Binding Text, ElementName=FontFamilyBox, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Font size -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
+                        Visibility="{Binding EditOptions.AllowFontSize, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Velikost:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <Grid Width="70">
+                    <ComboBox x:Name="FontSizeBox"
+                              IsEditable="True"
+                              ToolTip="Prázdné pole = dědit od rodiče"
+                              ItemsSource="{Binding FontSizeOptions, ElementName=Root}"
+                              Text="{Binding FontSize, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.FontSize, StringFormat='{}{0}pt'}"
+                               Visibility="{Binding Text, ElementName=FontSizeBox, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+            </StackPanel>
+
+            <!-- Bold / Italic / Underline / Strikethrough: 2-state checkboxy (ukazují efektivní hodnotu). -->
+            <!-- Reset × je viditelné jen když je hodnota explicitně přepsaná. -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,6,0" VerticalAlignment="Center"
+                        Visibility="{Binding EditOptions.AllowBold, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <CheckBox Content="Tučné" VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveBold, UpdateSourceTrigger=PropertyChanged}"
+                          ToolTip="Kliknutím nastavíte explicitně. Pokud není přepsáno, dědí se."/>
+                <Button Style="{StaticResource ResetButton}"
+                        CommandParameter="Bold"
+                        Visibility="{Binding HasExplicitBold, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,6,0" VerticalAlignment="Center"
+                        Visibility="{Binding EditOptions.AllowItalic, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <CheckBox Content="Kurzíva" VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveItalic, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Style="{StaticResource ResetButton}"
+                        CommandParameter="Italic"
+                        Visibility="{Binding HasExplicitItalic, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,6,0" VerticalAlignment="Center"
+                        Visibility="{Binding EditOptions.AllowUnderline, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <CheckBox Content="Podtržené" VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveUnderline, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Style="{StaticResource ResetButton}"
+                        CommandParameter="Underline"
+                        Visibility="{Binding HasExplicitUnderline, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
+                        Visibility="{Binding EditOptions.AllowStrikethrough, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <CheckBox Content="Přeškrtnuté" VerticalAlignment="Center"
+                          IsChecked="{Binding EffectiveStrikethrough, UpdateSourceTrigger=PropertyChanged}"/>
+                <Button Style="{StaticResource ResetButton}"
+                        CommandParameter="Strikethrough"
+                        Visibility="{Binding HasExplicitStrikethrough, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- ── Zarovnání H + V ──────────────────────────────────────── -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+            <StackPanel Orientation="Horizontal" Margin="0,0,12,0"
+                        Visibility="{Binding EditOptions.AllowHAlign, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Vodorovně:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <Grid Width="120">
+                    <ComboBox x:Name="HAlignBox"
+                              ItemsSource="{Binding HAlignOptions, ElementName=Root}"
+                              DisplayMemberPath="Label"
+                              SelectedValuePath="Value"
+                              SelectedValue="{Binding HAlign}"/>
+                    <!-- Placeholder ukazuje zděděné zarovnání když HAlign je null (nic vybráno) -->
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.HAlign, Converter={StaticResource HAlignToLabel}, ConverterParameter=cs}"
+                               Visibility="{Binding HAlign, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+                <Button Style="{StaticResource ResetButton}"
+                        CommandParameter="HAlign"
+                        Visibility="{Binding HasExplicitHAlign, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding EditOptions.AllowVAlign, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Svisle:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                <Grid Width="120">
+                    <ComboBox x:Name="VAlignBox"
+                              ItemsSource="{Binding VAlignOptions, ElementName=Root}"
+                              DisplayMemberPath="Label"
+                              SelectedValuePath="Value"
+                              SelectedValue="{Binding VAlign}"/>
+                    <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                               Text="{Binding Inherited.VAlign, Converter={StaticResource VAlignToLabel}, ConverterParameter=cs}"
+                               Visibility="{Binding VAlign, Converter={StaticResource NullToVis}}"/>
+                </Grid>
+                <Button Style="{StaticResource ResetButton}"
+                        CommandParameter="VAlign"
+                        Visibility="{Binding HasExplicitVAlign, Converter={StaticResource BoolToVis}}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- ── Barva textu + pozadí ─────────────────────────────────── -->
+        <!-- Swatch vždy ukazuje efektivní barvu (explicit ?? inherited). × viditelné jen při explicit. -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
+                        Visibility="{Binding EditOptions.AllowTextColor, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Barva textu:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
+                        Command="{Binding PickTextColorCommand, ElementName=Root}"
+                        ToolTip="Vybrat barvu textu">
+                    <Border BorderBrush="#888" BorderThickness="1" Width="20" Height="14">
+                        <Border.Background>
+                            <MultiBinding Converter="{StaticResource FirstColorToBrush}">
+                                <Binding Path="TextColor"/>
+                                <Binding Path="Inherited.TextColor"/>
+                            </MultiBinding>
+                        </Border.Background>
+                    </Border>
+                </Button>
+                <Button Style="{StaticResource ResetButton}"
+                        Command="{Binding ClearTextColorCommand, ElementName=Root}"
+                        Visibility="{Binding TextColor, Converter={StaticResource NotNullToVis}}"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal"
+                        Visibility="{Binding EditOptions.AllowBackgroundColor, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Pozadí:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
+                        Command="{Binding PickBgColorCommand, ElementName=Root}"
+                        ToolTip="Vybrat barvu pozadí">
+                    <Border BorderBrush="#888" BorderThickness="1" Width="20" Height="14">
+                        <Border.Background>
+                            <MultiBinding Converter="{StaticResource FirstColorToBrush}">
+                                <Binding Path="BgColor"/>
+                                <Binding Path="Inherited.BackgroundColor"/>
+                            </MultiBinding>
+                        </Border.Background>
+                    </Border>
+                </Button>
+                <Button Style="{StaticResource ResetButton}"
+                        Command="{Binding ClearBgColorCommand, ElementName=Root}"
+                        Visibility="{Binding BgColor, Converter={StaticResource NotNullToVis}}"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- ── Padding (mm) ─────────────────────────────────────────── -->
+        <!-- Šipky = směr, kam se posune text (design-tool konvence, ne CSS edge).
+             ↑ = push text up = PaddingBottom (shrink z dolu)
+             → = push text right = PaddingLeft (shrink zleva)
+             ↓ = push text down = PaddingTop (shrink z vrchu)
+             ← = push text left = PaddingRight (shrink z pravá) -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
+                    Visibility="{Binding EditOptions.AllowPadding, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="Padding (mm):" VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+            <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text nahoru (padding zdola)"/>
+            <Grid Width="45" Margin="0,0,6,0">
+                <TextBox x:Name="PadUp"
+                         Text="{Binding PaddingBottom, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                           Text="{Binding Inherited.PaddingBottom}"
+                           Visibility="{Binding Text, ElementName=PadUp, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+
+            <TextBlock Text="→" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text doprava (padding zleva)"/>
+            <Grid Width="45" Margin="0,0,6,0">
+                <TextBox x:Name="PadRightward"
+                         Text="{Binding PaddingLeft, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                           Text="{Binding Inherited.PaddingLeft}"
+                           Visibility="{Binding Text, ElementName=PadRightward, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+
+            <TextBlock Text="↓" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text dolů (padding shora)"/>
+            <Grid Width="45" Margin="0,0,6,0">
+                <TextBox x:Name="PadDown"
+                         Text="{Binding PaddingTop, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                           Text="{Binding Inherited.PaddingTop}"
+                           Visibility="{Binding Text, ElementName=PadDown, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+
+            <TextBlock Text="←" VerticalAlignment="Center" Margin="0,0,2,0"
+                       ToolTip="Posune text doleva (padding zprava)"/>
+            <Grid Width="45">
+                <TextBox x:Name="PadLeftward"
+                         Text="{Binding PaddingRight, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                           Text="{Binding Inherited.PaddingRight}"
+                           Visibility="{Binding Text, ElementName=PadLeftward, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+        </StackPanel>
+
+        <!-- ── Řádkování ─────────────────────────────────────────── -->
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
+                    Visibility="{Binding EditOptions.AllowLineSpacing, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="Řádkování:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <Grid Width="60">
+                <TextBox x:Name="LineSpacingBox"
+                         Text="{Binding LineSpacing, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                <TextBlock Style="{StaticResource InheritedPlaceholder}"
+                           Text="{Binding Inherited.LineSpacing}"
+                           Visibility="{Binding Text, ElementName=LineSpacingBox, Converter={StaticResource NullToVis}}"/>
+            </Grid>
+            <TextBlock Text="× velikost fontu" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="#888"/>
+        </StackPanel>
+
+    </StackPanel>
+</UserControl>

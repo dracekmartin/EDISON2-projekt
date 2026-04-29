@@ -34,8 +34,12 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status [ Abstract ]
 
 /// Vrátí data pro tisk: skalární hodnoty + kolekce řádků.
 /// IN:  parametry závislé na agendě (ID záznamu, datum, ...)
-/// OUT[1]   = JSON objekt skalárních hodnot: { "CISLO_LINKY": "42", ... }
-/// OUT[2..] = JSON objekty řádků kolekcí:   { "collection": "ZASTAVKY", "POPIS": "Praha hl.n.", ... }
+/// OUT[1..N] = stejný JSON formát jako GetMockData, ale s reálnými daty.
+///             Každý OUT node = jedna samostatná stránka:
+///               { "values": { "FIELD": "value", ... }, "rows": { "COLL": [...] } }
+///             Agendy s jediným výstupem zapisují pouze OUT[1].
+///             Multi-page agendy (např. zastávkový JŘ MHD: 1 stránka per zastávka × směr)
+///             iterují a zapisují do OUT[$i(^||ML("OUT"))].
 ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ]
 {
 }

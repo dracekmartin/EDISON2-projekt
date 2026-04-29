@@ -502,12 +502,8 @@ public partial class PropertiesPanel : UserControl
                 AnyColor = true
             };
 
-            try
-            {
-                var c = SKColor.Parse(cd.Get());
-                dlg.Color = System.Drawing.Color.FromArgb(c.Red, c.Green, c.Blue);
-            }
-            catch { /* ignore */ }
+            if (SKColor.TryParse(cd.Get(), out var initial))
+                dlg.Color = System.Drawing.Color.FromArgb(initial.Red, initial.Green, initial.Blue);
 
             // TODO: ColorDialog způsobuje minimalizaci Properties window po kliknutí OK.
             // Problém: WinForms ColorDialog + WPF ToolWindow interakce.

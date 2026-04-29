@@ -56,23 +56,11 @@ Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění e
 
 #### Tier 1 — Quick wins (povinné)
 
-| # | Co | Proč | Velikost |
-|---|---|---|---|
-| H-1 | **Smazat `ShowZkraceneOznaceniLinky`** — deklarovaná property v `DepartureGridElement` (řádky 91, 1066, 1122) která se nikde nečte. Ghost code. | Klame čtenáře — vypadá to, že má efekt, nemá. Dva řádky smazat. | XS |
-| H-2 | **`async void` → `async Task`** + global handler — `OpenTemplateAsync` (MainWindowViewModel:482), `SaveTemplate` (547), `SaveAsTemplate` (556). Přidat `AsyncRelayCommand` nebo wrapper, který spolkne Task exceptions a pošle do `IPopupDisplayer.Error(ex)`. | `async void` výjimky padají na UI thread a vyhodí celou app. Aktuálně živý bug. Wave 1 to bude dělat masivně — musí být vyřešeno předem. | S |
-| H-3 | **`ElementTypes` konstanty** — statická třída s `const string TextElement = "TextElement"` atd.; nahradit všechny magic strings (hit-testing, serializace, toolbar). | Stringly-typed kód — překlepy se neodhalí, rename nefunguje. Wave 4 bude typy elementů matchovat se Caché form class names → musí být na jednom místě. | S |
-| H-4 | **JSON wire format verify** — ověřit, že stávající `CacheAgendaProvider.GetData/GetMockData/GetSchema` skutečně používá JSON formát (`obj.%ToJSON()` → `JsonSerializer.Deserialize`), ne smíšený CVar+JSON hybrid. Dokumentovat v `cache-api.md`. | Nové API metody mají začít s JSON (R3). Musíme ověřit, že stávající už nejsou v hybridním stavu — jinak jde o precedent. | S |
-| H-5 | **Silent catch fix v `PropertiesPanel.xaml.cs:510-512`** — prázdný `catch { /* TODO ColorDialog */ }`. Buď vyhodit exception ven, nebo logovat, nebo smazat pokud je to obsolete. | Silent catches maskují bugy. B2 (WPF color picker) tohle řeší komplexně, ale než přijde, alespoň logovat. | XS |
-| H-6 | **Checklist doc pro nové elementy** — `.claude/rules/new-element-checklist.md`: Clone, ApplyScale, JsonDerivedType, PropertyDescriptors, toolbar menu, dokumentace. Aktuálně roztroušeno v `mvvm-patterns.md` a v kódu. | Při přidání nového elementu se stabilně zapomene 1–2 věci (např. `ApplyScale`). Checklist = 0 miss. | XS |
+✅ **Všechny dokončeny** — H-1 až H-6. Viz archiv Fáze B0.5 níže.
 
 #### Tier 2 — MVVM consistency (doporučené)
 
-| # | Co | Proč | Velikost |
-|---|---|---|---|
-| H-7 | **`MessageBox.Show` → `IPopupDisplayer`** — 13 výskytů v ViewModelech (`AiTemplateAssistant`, `ElementProperties`, `MainWindow`, `TableEditorDialog`). VM dědí z `EDViewModel` a má `PopupDisplayer` z `EDServices.Current`; použít `PopupDisplayer.Confirm/Info/Error(ex)` místo přímého `MessageBox.Show`. | Pravidlo R4 (VM bez WPF referencí). Firemní standard z EDControls — už se používá v `Command(...)` automaticky. | M |
-| H-8 | **`TemplateTreeDialog` extract** — aktuálně logika v `MainWindow.xaml.cs`; extrahovat do `Windows/TemplateTreeDialog/` dle závazného standardu (Window + ViewModel). | Konzistence, stejný pattern jako ostatní dialogy, zbaví `MainWindow.xaml.cs` 200+ řádků. | M |
-| H-9 | **`SaveSectionTemplateDialog` extract** — stejný důvod jako H-8. | Konzistence. | S |
-| H-10 | **`TemplatePickerDialog` extract** — stejný důvod jako H-8. | Konzistence. | S |
+✅ **Všechny dokončeny** — H-7, H-8, H-9, H-10 (N/A). Viz archiv Fáze B0.5 níže.
 
 #### Tier 3 — Medium architecture (vybraně)
 
@@ -598,6 +586,21 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 # 🗄️ Archiv — hotové kroky
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
+
+## Fáze B0.5 — Code Hygiene Sprint
+
+| # | Co | Hotovo |
+|---|---|---|
+| H-1 | Smazat `ShowZkraceneOznaceniLinky` — ghost property v `DepartureGridElement` (nikde se nečetla) | 2026-04-21 |
+| H-2 | `async void` → `async Task` + `AsyncRelayCommand` (EDControls) + `CommandAsync` helper; Open/Save/SaveAs + bonus GenerateCommand | 2026-04-21 |
+| H-3 | `ElementTypes` statické konstanty v `Models/ElementTypes.cs` — nahrazeno ~30 magic strings v JsonDerivedType, `CreateElementByType`, `GetDefaultElementSize` a toolbar menu | 2026-04-21 |
+| H-4 | JSON wire format verify — průzkum potvrdil 100% čistý JSON (Caché `obj.%ToJSON()` → .NET `JsonNode.Parse`); opraven zastaralý docstring `GetData` v `AgendaAPI.cls` + `cache-api.md` + přidána sekce "Wire formát pravidlo (R3)" | 2026-04-21 |
+| H-5 | Silent catch v `PropertiesPanel.xaml.cs` color picker seed nahrazen za `SKColor.TryParse` — odstranil try/catch jako control flow | 2026-04-21 |
+| H-6 | Nový `.claude/rules/new-element-checklist.md` — 10-kroková autoritativní reference (třída, ElementTypes, JsonDerivedType, 2 switches, toolbar menu, paleta, dynamická výška, GetSummary, docs); konsolidace z `mvvm-patterns.md` | 2026-04-21 |
+| H-7 | `MessageBox.Show` → `IPopupDisplayer` — 5 VM (AiTemplateAssistant, TableEditor, ElementProperties, MainWindow, PdfImport); PdfImport odstranil 3 callback properties; YesNoCancel kept s TODO (IPopupDisplayer nemá ekvivalent); Warning → Info (WPF rozdíl byl jen ikona) | 2026-04-21 |
+| H-8 | Extract `Controls/TemplateTreePanel/` — ~150 řádků ze `MainWindow.xaml.cs` přesunuto do samostatného UserControlu; `MainWindow` jen volá `TreePanel.Rebuild()`; smazán orphan `Windows/TemplateTreeDialog/` (nikdy se neinstanciovalo) | 2026-04-21 |
+| H-9 | Extract `Windows/SaveSectionTemplateDialog/` — inline WPF konstrukce dialogu (~60 řádků StackPanel+TextBox+Button) z `MainWindowViewModel` přesunuta do Window+ViewModel+XAML dle závazného standardu; `SaveSectionTemplate(Section, string)` nyní čistá save logika | 2026-04-21 |
+| H-10 | **N/A** — `TemplatePickerDialog` v kódu neexistoval. Template picker = `OpenFileDialog` (standardní Windows), section template picker = menu položky v "Add Section" dropdown. Žádný samostatný dialog k extrakci. Uzavřeno bez změn. | 2026-04-21 |
 
 ## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
 

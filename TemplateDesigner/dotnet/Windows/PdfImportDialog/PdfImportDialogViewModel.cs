@@ -148,9 +148,6 @@ public class PdfImportDialogViewModel : EDViewModel
 
     // Callbacky — View je napojí v konstruktoru
     public Func<string?>? RequestOpenFile { get; set; }
-    public Action<string, string>? RequestShowError { get; set; }
-    public Action<string, string>? RequestShowWarning { get; set; }
-    public Action<string, string>? RequestShowInfo { get; set; }
 
     private RelayCommand? _browsePdf;
     public RelayCommand BrowsePdfCommand => _browsePdf ??= new(BrowsePdf);
@@ -180,7 +177,7 @@ public class PdfImportDialogViewModel : EDViewModel
         catch (Exception ex)
         {
             StatusText = $"Chyba: {ex.Message}";
-            RequestShowError?.Invoke($"Nelze otevřít PDF soubor:\n{ex.Message}", "Chyba");
+            PopupDisplayer.Error(ex);
         }
     }
 
@@ -283,11 +280,10 @@ public class PdfImportDialogViewModel : EDViewModel
             if (elementCount == 0)
             {
                 StatusText = "PDF neobsahuje textovou vrstvu ani grafické prvky.";
-                RequestShowWarning?.Invoke(
+                PopupDisplayer.Info(
                     "PDF neobsahuje rozpoznatelný textový obsah.\n" +
                     "Možná se jedná o skenovaný dokument bez OCR vrstvy.\n\n" +
-                    "Šablona bude vytvořena se správnými rozměry stránky, ale bez elementů.",
-                    "Upozornění");
+                    "Šablona bude vytvořena se správnými rozměry stránky, ale bez elementů.");
             }
 
             // Uložit debug logy vedle PDF
@@ -313,7 +309,7 @@ public class PdfImportDialogViewModel : EDViewModel
             {
                 var fileNames = string.Join(", ", savedLogPaths.Select(Path.GetFileName));
                 StatusText = $"Import dokončen: {elementCount} elementů. Debug: {fileNames}";
-                RequestShowInfo?.Invoke($"Debug logy uloženy:\n{string.Join("\n", savedLogPaths)}", "Debug");
+                PopupDisplayer.Info($"Debug logy uloženy:\n{string.Join("\n", savedLogPaths)}");
             }
             else if (StatusText.StartsWith("AI"))
             {
@@ -330,7 +326,7 @@ public class PdfImportDialogViewModel : EDViewModel
         catch (Exception ex)
         {
             StatusText = $"Chyba při importu: {ex.Message}";
-            RequestShowError?.Invoke($"Chyba při importu PDF:\n{ex.Message}", "Chyba importu");
+            PopupDisplayer.Error(ex);
         }
         finally
         {
