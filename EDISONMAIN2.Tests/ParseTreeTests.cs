@@ -49,6 +49,62 @@ public class ParseTreeTests
     }
 
     [Fact]
+    public void ParseTree_LegacyFormat_DefaultsElementIdAndIsLicensed()
+    {
+        // Old 4-field EXE row (without elementId/isLicensed) — backwards compat
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Legacy", "legacy.exe", "LegacyForm");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("", mod.ElementId);
+        Assert.False(mod.IsLicensed);
+    }
+
+    [Fact]
+    public void ParseTree_FullFormat_ReadsElementIdAndIsLicensed()
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Plán dopravy", "MHD2PlanDopravy.exe",
+                              "ALVA.MHD2.PlanDopravy.formMHD2PlanDopravyMain", "260001", "1");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("260001", mod.ElementId);
+        Assert.True(mod.IsLicensed);
+    }
+
+    [Fact]
+    public void ParseTree_FullFormatLicensedZero_IsLicensedFalse()
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Příplatky", "MHD2Ciselniky.exe",
+                              "ALVA.MHD2.Ciselniky.formMHD2CiselnikyPriplatky", "210024", "0");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("210024", mod.ElementId);
+        Assert.False(mod.IsLicensed);
+    }
+
+    [Fact]
+    public void ParseTree_FiveFields_OnlyElementIdReadIsLicensedDefault()
+    {
+        // Intermediate format with elementId but no isLicensed (e.g. partial migration)
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Mid", "mid.exe", "MidForm", "999");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("999", mod.ElementId);
+        Assert.False(mod.IsLicensed);
+    }
+
+    [Fact]
     public void ParseTree_FamilyWithChildren()
     {
         var data = new CVar();

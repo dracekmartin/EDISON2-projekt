@@ -17,7 +17,10 @@ namespace EDISONMAIN2.Services.Modules
         /// Parses the module tree from Caché output.
         /// Caché writes ^||ML("OUT","i") = $lb(type, ...) where type is:
         ///   "FAMILY"     → $lb("FAMILY", displayName, isExpanded)
-        ///   "EXE"        → $lb("EXE", displayName, executablePath, formName)
+        ///   "EXE"        → $lb("EXE", displayName, executablePath, formName, elementId, isLicensed)
+        ///                  elementId — unique identifier (preserved even when not gated)
+        ///                  isLicensed — "1" = check elementId against Lic.Elements whitelist;
+        ///                               "0" or empty/missing = always allowed
         ///   "FAMILY_END" → $lb("FAMILY_END")
         /// </summary>
         internal static ObservableCollection<IModule> ParseTree(CVar treeData)
@@ -45,7 +48,9 @@ namespace EDISONMAIN2.Services.Modules
                         currentList.Add(new ExecutableModule {
                             DisplayedName  = row.GetString(2),
                             ExecutablePath = row.GetString(3),
-                            FormName       = row.GetString(4)
+                            FormName       = row.GetString(4),
+                            ElementId      = row.Count >= 5 ? row.GetString(5) : "",
+                            IsLicensed     = row.Count >= 6 && row.GetString(6) == "1"
                         });
                         break;
                     case "FAMILY_END":

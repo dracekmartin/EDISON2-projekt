@@ -7,6 +7,7 @@ using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Services;
+using EDISONMAIN2.Services.Licence;
 using EDISONMAIN2.Services.Modules;
 using EDISONMAIN2.Services.Processes;
 using EDISONMAIN2.Windows.EdisonMainWindow;
@@ -67,9 +68,25 @@ namespace EDISONMAIN2
                 Mlp       = login.Mlp.ToString()
             });
 
+            // License gate — load active licence and ask Caché to verify session count.
+            // VerifyLic also creates the ACTIVITY lock for this session (see § 3.4 RESPONSIBILITIES).
+            var activeLicence = new LicenceService(mlRest.Inner).GetActiveLicence();
+            int countOfLicenses = activeLicence?.CountsLOGIN ?? 0;
+            var verifyOutput = mlRest.Inner.Query("ALVA.SYS.Login", "VerifyLic", new object[] { countOfLicenses });
+            mlRest.Inner.RestStatus.ThrowIfError();
+            int verifyResult = int.Parse(verifyOutput[1]?.ToString() ?? "0");
+            if (verifyResult != 1)
+            {
+                services.PopupDisplayer.Info(verifyResult == -1
+                    ? "Nelze se přihlásit, byl překročen počet licencí."
+                    : "Při ověření licence nastala neznámá chyba.");
+                Shutdown();
+                return;
+            }
+
             var treeGetter = new ModuleTreeGetter();
             var processLauncher = new ProcessLauncher(connParams);
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams, activeLicence);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();

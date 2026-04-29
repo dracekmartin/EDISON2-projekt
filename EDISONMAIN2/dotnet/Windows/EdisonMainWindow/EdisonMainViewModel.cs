@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Input;
+using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
@@ -30,7 +31,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IMLRest mlRest,
             IModuleTreeGetter treeService,
             IProcessLauncher processService,
-            ConnectionParams connParams)
+            ConnectionParams connParams,
+            Lic? activeLicence)
         {
             _treeGetter = treeService;
             _processLauncher = processService;
@@ -51,7 +53,46 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             var tree = _treeGetter.GetModuleTree(MLRest!);
             foreach (var module in tree)
-                TopLevelModules.Add(module);
+            {
+                if (TryFilter(module, activeLicence) is { } filtered)
+                    TopLevelModules.Add(filtered);
+            }
+        }
+
+        /// <summary>
+        /// Rekurzivně profiltruje uzel stromu podle licence.
+        /// EXE projde pokud <see cref="ExecutableModule.IsLicensed"/> je <c>false</c>
+        /// (vždy povoleno), nebo pokud je <see cref="ExecutableModule.ElementId"/>
+        /// v <see cref="Lic.Elements"/> whitelistu.
+        /// FAMILY se zachová, pokud po filtraci zbývá alespoň jedno dítě.
+        /// Vrací <c>null</c> pro uzly, které nemají projít.
+        /// </summary>
+        internal static IModule? TryFilter(IModule module, Lic? licence) => module switch
+        {
+            ExecutableModule exe => IsAllowed(exe, licence) ? exe : null,
+            ModuleFamily family  => FilterFamily(family, licence),
+            _                    => module,
+        };
+
+        internal static bool IsAllowed(ExecutableModule exe, Lic? licence) =>
+            !exe.IsLicensed || (licence?.Elements?.Contains(exe.ElementId) ?? false);
+
+        internal static ModuleFamily? FilterFamily(ModuleFamily family, Lic? licence)
+        {
+            var visibleChildren = family.NestedModules
+                .Select(child => TryFilter(child, licence))
+                .Where(child => child != null)
+                .ToList();
+
+            if (visibleChildren.Count == 0) return null;
+
+            var filtered = new ModuleFamily
+            {
+                DisplayedName = family.DisplayedName,
+                IsExpanded    = family.IsExpanded,
+            };
+            foreach (var child in visibleChildren) filtered.NestedModules.Add(child!);
+            return filtered;
         }
 
         /// <summary>Exposed for StatusBar bindings in EdisonMainWindow.xaml.</summary>

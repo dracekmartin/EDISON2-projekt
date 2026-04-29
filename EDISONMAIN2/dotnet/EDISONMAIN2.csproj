@@ -24,6 +24,9 @@
     <Reference Include="EDISONMAIN2API">
       <HintPath>C:\Edison\EDISONMAIN2API.dll</HintPath>
     </Reference>
+    <Reference Include="EDLicence">
+      <HintPath>C:\Edison\EDLicence.dll</HintPath>
+    </Reference>
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>

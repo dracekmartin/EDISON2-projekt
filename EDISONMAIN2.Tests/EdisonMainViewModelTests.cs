@@ -42,7 +42,7 @@ public class EdisonMainViewModelTests
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
         }
         finally
         {
@@ -107,7 +107,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
         }
         finally
         {
@@ -136,7 +136,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
         }
         finally
         {
