@@ -1650,22 +1650,25 @@ public class TemplateDesignerViewModel : EDViewModel
     public static Template CreateSampleTemplate()
     {
         var t = new Template { Name = "Nová šablona", AgendaCode = "MHD" };
+        const float headerH = 25f;
+        const float footerH = 15f;
+        float bodyH = Math.Max(0f, t.PageSize.PrintableHeight - headerH - footerH);
         t.Sections.Add(new Section
         {
             Name = "Záhlaví", PrintBehavior = SectionPrintBehavior.OnEveryPage,
             Role = SectionRole.Header,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 25f
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = headerH
         });
         t.Sections.Add(new Section
         {
             Name = "Obsah", PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = 237f
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = bodyH
         });
         t.Sections.Add(new Section
         {
             Name = "Patička", PrintBehavior = SectionPrintBehavior.OnEveryPage,
             Role = SectionRole.Footer,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = 15f
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = footerH
         });
         return t;
     }
