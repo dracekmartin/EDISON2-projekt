@@ -64,6 +64,13 @@ public abstract class ScheduleElementBase : TemplateElement
 
     public string GridColor { get; set; } = "#FFD0D0D0";
 
+    /// <summary>
+    /// Výška jednoho datového řádku v mm. Null = auto-výpočet z fontu (<see cref="ComputeRowH"/>).
+    /// Sdíleno všemi JŘ elementy (StopList, DepartureGrid, NotesLegend), které mají stejnou
+    /// semantiku „jeden řádek = jedna položka dat".
+    /// </summary>
+    public float? DataRowHeight { get; set; }
+
     /// <summary>Vyřešený parent pro element-level záhlaví CellStyleVM (= baked defaults, protože není nic nad tímhle).</summary>
     public ResolvedTextStyle ResolveElementHeaderParent() => ScheduleHeaderDefaults;
 

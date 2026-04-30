@@ -244,19 +244,9 @@
             </Grid>
         </StackPanel>
 
-        <!-- ── Řádkování ─────────────────────────────────────────── -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
-                    Visibility="{Binding EditOptions.AllowLineSpacing, ElementName=Root, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="Řádkování:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <Grid Width="60">
-                <TextBox x:Name="LineSpacingBox"
-                         Text="{Binding LineSpacing, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
-                <TextBlock Style="{StaticResource InheritedPlaceholder}"
-                           Text="{Binding Inherited.LineSpacing}"
-                           Visibility="{Binding Text, ElementName=LineSpacingBox, Converter={StaticResource NullToVis}}"/>
-            </Grid>
-            <TextBlock Text="× velikost fontu" VerticalAlignment="Center" Margin="6,0,0,0" Foreground="#888"/>
-        </StackPanel>
+        <!-- LineSpacing není editovatelný pro cell-based elementy: CellRenderer je single-line.
+             Pro výšku řádku tabulkových elementů je samostatná property „Výška řádku" v properties panelu
+             (StopList.DataRowHeight / DepartureGrid.DataRowHeight / TableElement.DataRowHeight). -->
 
     </StackPanel>
 </UserControl>

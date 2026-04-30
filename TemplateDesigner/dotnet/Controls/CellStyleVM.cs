@@ -33,7 +33,6 @@ public class CellStyleVM : INotifyPropertyChanged
     private float?                     _paddingRight;
     private float?                     _paddingBottom;
     private float?                     _paddingLeft;
-    private float?                     _lineSpacing;
 
     public string?                    FontFamily    { get => _fontFamily;    set { _fontFamily    = NullIfEmpty(value); OnChanged(); OnChanged(nameof(HasExplicitFontFamily)); } }
     public float?                     FontSize      { get => _fontSize;      set { _fontSize      = value;              OnChanged(); OnChanged(nameof(HasExplicitFontSize)); } }
@@ -49,7 +48,6 @@ public class CellStyleVM : INotifyPropertyChanged
     public float?                     PaddingRight  { get => _paddingRight;  set { _paddingRight  = value;              OnChanged(); } }
     public float?                     PaddingBottom { get => _paddingBottom; set { _paddingBottom = value;              OnChanged(); } }
     public float?                     PaddingLeft   { get => _paddingLeft;   set { _paddingLeft   = value;              OnChanged(); } }
-    public float?                     LineSpacing   { get => _lineSpacing;   set { _lineSpacing   = value;              OnChanged(); } }
 
     // ── Derived: efektivní bool (explicit ?? inherited) pro 2-state checkboxy ──
     // Setter nastaví explicit hodnotu (user kliká → explicit override).
@@ -79,8 +77,7 @@ public class CellStyleVM : INotifyPropertyChanged
         _textColor is not null || _bgColor is not null ||
         _hAlign is not null || _vAlign is not null ||
         _paddingTop is not null || _paddingRight is not null ||
-        _paddingBottom is not null || _paddingLeft is not null ||
-        _lineSpacing is not null;
+        _paddingBottom is not null || _paddingLeft is not null;
 
     // ── Rodičovský (zděděný) styl — read-only, pro placeholder zobrazení ──
 
@@ -116,7 +113,6 @@ public class CellStyleVM : INotifyPropertyChanged
                 case nameof(PaddingRight):  PaddingRight  = null; break;
                 case nameof(PaddingBottom): PaddingBottom = null; break;
                 case nameof(PaddingLeft):   PaddingLeft   = null; break;
-                case nameof(LineSpacing):   LineSpacing   = null; break;
             }
         });
     }
@@ -146,7 +142,6 @@ public class CellStyleVM : INotifyPropertyChanged
         _paddingRight  = style?.PaddingRight,
         _paddingBottom = style?.PaddingBottom,
         _paddingLeft   = style?.PaddingLeft,
-        _lineSpacing   = style?.LineSpacing,
     };
 
     /// <summary>
@@ -171,7 +166,6 @@ public class CellStyleVM : INotifyPropertyChanged
             PaddingRight    = _paddingRight,
             PaddingBottom   = _paddingBottom,
             PaddingLeft     = _paddingLeft,
-            LineSpacing     = _lineSpacing,
         };
         return s.IsEmpty ? null : s;
     }
@@ -193,7 +187,6 @@ public class CellStyleVM : INotifyPropertyChanged
         PaddingRight  = null;
         PaddingBottom = null;
         PaddingLeft   = null;
-        LineSpacing   = null;
     }
 
     // ── INPC ──────────────────────────────────────────────────────────────

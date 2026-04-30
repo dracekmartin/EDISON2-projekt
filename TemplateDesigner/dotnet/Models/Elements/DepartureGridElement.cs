@@ -72,11 +72,8 @@ public class DepartureGridElement : ScheduleElementBase
     public int TimeAxisRangeTo { get; set; } = 24;
 
     // ═══════════════════════════════════════════
-    // Řádky dat
+    // Řádky dat (DataRowHeight je na ScheduleElementBase)
     // ═══════════════════════════════════════════
-
-    /// <summary>Výška datového řádku v mm. Null = vypočítat z FontSize.</summary>
-    public float? DataRowHeight { get; set; }
 
     /// <summary>Minuty tučně.</summary>
     public bool MinuteBold { get; set; } = true;

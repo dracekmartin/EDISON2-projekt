@@ -28,9 +28,8 @@ public class StopListElement : ScheduleElementBase
     ];
 
     // ═══════════════════════════════════════════
-    // Řádky
+    // Řádky (DataRowHeight je na ScheduleElementBase)
     // ═══════════════════════════════════════════
-    public float? DataRowHeight { get; set; }
     public bool ShowRowSeparators { get; set; } = true;
 
     // ═══════════════════════════════════════════

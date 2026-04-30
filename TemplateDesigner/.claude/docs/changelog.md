@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-30 — Úklid duplicitního UI: LineSpacing + DataRowHeight
+
+Tichý mrtvý kód v editoru stylu buněk + duplicitní property mezi schedule elementy.
+
+- ✅ **`LineSpacing` smazán z `CellStyleEditor.xaml`** — pole „Řádkování × velikost fontu" nemělo žádný efekt: `CellRenderer.DrawCell` je single-line a `LineSpacing` ignoruje. Property fungovala jen v `TextElement` (multi-line word wrap), kde má vlastní property descriptor; pro tabulkové elementy (StopList/DepartureGrid/TableElement) byla mrtvá. Pro výšku řádku tabulkového elementu existuje `DataRowHeight` v properties panelu (skupina „Řádky")
+- ✅ **`AllowLineSpacing` flag odstraněn z `CellStyleEditOptions`**
+- ✅ **`CellStyleVM.LineSpacing` field smazán** — VM už ho neexponuje (TextStyle.LineSpacing zůstává v modelu pro TextElement). Existující JSON s `lineSpacing` na cell elementech round-tripne přes neserializované `null` → následující save ho odstraní
+- ✅ **`DataRowHeight` hoistován do `ScheduleElementBase`** — odstraněna duplicitní property z `StopListElement` a `DepartureGridElement`. Stejná semantika („výška jednoho datového řádku v mm; null = auto z fontu"), stejný typ (`float?`). NotesLegendElement teď property dostal zdarma; `TableElement.RowHeight` zůstává separátně (jiná hierarchie, jiná semantika — non-nullable, fixní default 6mm)
+
+Žádné breaking změny v JSON, žádné migrace třeba.
+
+---
+
 ## 2026-04-30 — Click bez snapu + per-template grid/snap
 
 Drobný UX fix kolem precizního pozicování:

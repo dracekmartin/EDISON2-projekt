@@ -17,7 +17,6 @@ public record CellStyleEditOptions
     public bool AllowHAlign           { get; init; } = true;
     public bool AllowVAlign           { get; init; } = true;
     public bool AllowPadding          { get; init; } = true;
-    public bool AllowLineSpacing      { get; init; } = true;
 
     /// <summary>Vše povolené — výchozí chování.</summary>
     public static readonly CellStyleEditOptions AllEnabled = new();
