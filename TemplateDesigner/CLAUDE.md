@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-04-23
+**Datum poslední aktualizace:** 2026-04-30
 
 ### 🎯 Aktuální focus
 
@@ -82,6 +82,8 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Jednotná kaskáda stylů buněk** — 4-vrstvá CSS-like kaskáda `column.Style → element.HeaderStyle/DataStyle → table/schedule defaults → CellDefaults` jednotně ve StopList, DepartureGrid, TableElement; `Rendering/CellDefaults.cs` (autoritativní defaults), `Rendering/CellRenderer.cs` (jediné místo pozicování textu buňky: bg → padding → HAlign+VAlign → decorations), `Rendering/ColumnRenderer.cs` (orchestruje řádek sloupců), `Rendering/CellStyleEditOptions.cs` (per-kontextové skrývání UI); `TableColumn.DataStyle` + `TableElement.DataStyle` (per-column + element-level override datových buněk); `col.Alignment` legacy fallback zachován; TableElement nyní respektuje HAlign/VAlign/Padding/Underline/Strikethrough (dříve hardcoded baseline+4px offset)
 - **Sdílený CellStyleEditor** — `Controls/CellStyleEditor.xaml` UserControl konzumovaný StopColumnsEditorDialog, DepartureGroupEditorDialog, TableEditorDialog; `CellStyleVM` rozšířen o `VAlignmentIndex`, `Underline`, `Strikethrough`, `LineSpacing`; per-dialog omezení přes `CellStyleEditOptions` (HeaderEditOptions/DataEditOptions na VM); `TableEditorDialog` má nový tab „Styl sloupců"
 - **Tri-state editor stylů + placeholdery zděděných hodnot** — `CellStyleVM` všechny vlastnosti nullable (null = dědit); `Inherited: ResolvedTextStyle` z elementu (přes public `Resolve<Zone>Parent()`); XAML zobrazuje zděděné hodnoty jako šedivý italic placeholder v prázdných polích; `EffectiveBold/Italic/Underline/Strikethrough` derived pro 2-stavové checkboxy; „×" reset tlačítko viditelné jen při explicit override; `ToModel()` emituje nullable TextStyle (idempotentní open+OK beze změn); `CellStyleEditor.Converters.cs` (NullToVis, NotNullToVis, FirstNonEmptyHexToBrush, HAlign/VAlignToLabel)
+- **Click-vs-drag threshold** — pouhý klik na element (selekce, otevření properties) nespustí soft-snap; element se začne hýbat až po překročení 4px myší. `_dragHasMoved` flag v `MainWindow.xaml.cs`; `EndDrag` necommituje, pokud myš nepřekročila threshold. Reason: před fixem klik při GridSize=5mm „strhnul" 0.1mm pozici elementu na 5mm grid
+- **Per-template editor preferences** — `Models/TemplateEditorPreferences.cs` (nullable `GridSize`/`SnapToGrid`/`SnapToElements`/`ShowGrid`); `Template.EditorPreferences` property (vedle `Parameters`, `SampleData`, `CultureCode`); apply on Open / capture on Save → designové prostředí (jemný grid pro precizní šablonu) přežije reload. `RequestGridSizeUiSync` callback synchronizuje nebindovaný `CmbGridSize` ComboBox
 
 ### 🐛 Známé problémy
 

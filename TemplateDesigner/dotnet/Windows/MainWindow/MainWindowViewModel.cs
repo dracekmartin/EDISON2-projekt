@@ -173,6 +173,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public Action? RequestCanvasSizeUpdate   { get; set; }
     public Action? RequestPropertiesPanelUpdate { get; set; }
     public Action? RequestPreviewRefresh     { get; set; }
+    /// <summary>Sync GridSize ComboBox v toolbaru po načtení šablony (ComboBox není bindovaný).</summary>
+    public Action<float>? RequestGridSizeUiSync { get; set; }
 
     // ── Events ────────────────────────────────────────────────────────────────
     /// <summary>Fired after Sections is rebuilt so code-behind can restore ListBox selection.</summary>
@@ -446,6 +448,7 @@ public class TemplateDesignerViewModel : EDViewModel
             State.UndoStack.Clear();
             State.RedoStack.Clear();
             NotifyUndoRedo();
+            ApplyEditorPreferencesFromTemplate();
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
             RebuildSections();
             RefreshFieldsList();
@@ -457,6 +460,33 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             PopupDisplayer.Error(ex);
         }
+    }
+
+    /// <summary>Aplikuje grid/snap nastavení uložené v šabloně. Null hodnoty → ponechat aktuální.</summary>
+    private void ApplyEditorPreferencesFromTemplate()
+    {
+        var prefs = State.CurrentTemplate.EditorPreferences;
+        if (prefs is null) return;
+        // VM proxy settery firnou PropertyChanged → bound toggle buttony (ShowGrid, SnapToGrid,
+        // SnapToElements) se aktualizují v toolbaru.
+        if (prefs.GridSize       is { } gs) GridSize       = gs;
+        if (prefs.SnapToGrid     is { } sg) SnapToGrid     = sg;
+        if (prefs.SnapToElements is { } se) SnapToElements = se;
+        if (prefs.ShowGrid       is { } sh) ShowGrid       = sh;
+        // CmbGridSize není bindovaný (event-driven dropdown) — explicit sync přes callback.
+        RequestGridSizeUiSync?.Invoke(State.GridSize);
+    }
+
+    /// <summary>Zaznamená aktuální grid/snap nastavení do šablony před uložením.</summary>
+    private void CaptureEditorPreferencesToTemplate()
+    {
+        State.CurrentTemplate.EditorPreferences = new TemplateEditorPreferences
+        {
+            GridSize       = State.GridSize,
+            SnapToGrid     = State.SnapToGrid,
+            SnapToElements = State.SnapToElements,
+            ShowGrid       = State.ShowGrid
+        };
     }
 
     /// <summary>Loads a template that was generated externally (e.g. AI assistant).</summary>
@@ -489,6 +519,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (CurrentFilePath is null) { await SaveAsTemplate(); return; }
         SyncParametersToTemplate();
+        CaptureEditorPreferencesToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         RequestTitleUpdate?.Invoke();
@@ -505,6 +536,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (dlg.ShowDialog() != true) return;
         CurrentFilePath = dlg.FileName;
         SyncParametersToTemplate();
+        CaptureEditorPreferencesToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         RequestTitleUpdate?.Invoke();
@@ -567,6 +599,7 @@ public class TemplateDesignerViewModel : EDViewModel
             CurrentFilePath = dlg.FileName;
         }
         SyncParametersToTemplate();
+        CaptureEditorPreferencesToTemplate();
         TemplateSerializer.Save(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         return true;

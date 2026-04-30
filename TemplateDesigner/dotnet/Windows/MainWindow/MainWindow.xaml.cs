@@ -38,6 +38,10 @@ public partial class MainWindow : Window
     private readonly Dictionary<TemplateElement, (float X, float Y)> _dragInitPositions = new();
     // Per-axis snap state z posledního mouse move (pro soft-snap v EndDrag)
     private bool _lastSnapActiveX, _lastSnapActiveY;
+    // True jakmile myš překročí click-vs-drag práh (4px). Před tím se klik chová jako selekce
+    // bez posunu — jinak by jemný cuk myší při kliku vyvolal soft-snap a rozbil pozici.
+    private bool _dragHasMoved;
+    private const float DragThresholdPxSquared = 16f; // 4px
 
     private readonly SnapEngine _snapEngine = new();
 
@@ -115,6 +119,7 @@ public partial class MainWindow : Window
         _vm.RequestTitleUpdate           = UpdateTitle;
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
+        _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
         _vm.RequestExportPdf             = filePath =>
         {
             try
@@ -579,6 +584,20 @@ public partial class MainWindow : Window
         if (_vm is null || CmbGridSize.SelectedItem is not ComboBoxItem item) return;
         if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float size))
             _vm.GridSize = size;
+    }
+
+    /// <summary>Najde ComboBoxItem s odpovídajícím Tagem a aktivuje ho. Volá se po načtení šablony.</summary>
+    private void SyncGridSizeComboBox(float gridSizeMm)
+    {
+        foreach (var item in CmbGridSize.Items.OfType<ComboBoxItem>())
+        {
+            if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v)
+                && Math.Abs(v - gridSizeMm) < 0.001f)
+            {
+                CmbGridSize.SelectedItem = item;
+                return;
+            }
+        }
     }
 
     private void CmbSnapGap_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -1523,6 +1542,7 @@ public partial class MainWindow : Window
             _dragElement           = element;
             _dragMouseStartCanvasX = cx;
             _dragMouseStartCanvasY = cy;
+            _dragHasMoved          = false;
             _dragInitPositions.Clear();
             foreach (var el in _vm.State.SelectedElements.Where(el2 => !el2.IsLocked))
                 _dragInitPositions[el] = (el.X, el.Y);
@@ -1554,6 +1574,16 @@ public partial class MainWindow : Window
         {
             if (e.LeftButton != MouseButtonState.Pressed) { EndDrag(false); return; }
             if (_dragElement is null || _dragInitPositions.Count == 0) return;
+
+            // Click vs drag — dokud myš nepřekročí threshold, nehýbáme s elementem.
+            // Brání tomu, aby pouhý klik (např. pro otevření properties) zaregistroval soft-snap.
+            if (!_dragHasMoved)
+            {
+                float dxPx = cx - _dragMouseStartCanvasX;
+                float dyPx = cy - _dragMouseStartCanvasY;
+                if (dxPx * dxPx + dyPx * dyPx < DragThresholdPxSquared) return;
+                _dragHasMoved = true;
+            }
 
             float deltaMmX = (cx - _dragMouseStartCanvasX) / _canvas.MmToPx;
             float deltaMmY = (cy - _dragMouseStartCanvasY) / _canvas.MmToPx;
@@ -1930,6 +1960,9 @@ public partial class MainWindow : Window
 
     private void EndDrag(bool commit)
     {
+        // Bez pohybu (čistý klik) zachovat init pozice — ne commit, ne soft-snap.
+        // Bez tohoto by klik na element s GridSize=5mm „strhl" jeho přesnou 0.1mm pozici na 5mm grid.
+        if (commit && !_dragHasMoved) commit = false;
         if (commit && _vm is not null)
         {
             // Soft-snap na aktuální GridSize krok pro osy, kde se neuplatnil smart-snap ani grid snap.

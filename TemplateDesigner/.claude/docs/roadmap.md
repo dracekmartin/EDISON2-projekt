@@ -255,10 +255,34 @@ ALVA.TemplateDesigner.API.TemplateAuditAPI
 - Caché může migrovat v dávce všechny šablony při nasazení nové verze.
 - Konzistence: EDISON print service, batch renderer, REST API — všichni dostanou migrovanou verzi automaticky.
 
+**Storage layout — JSON blob + indexovatelná metadata (rozhodnuto):**
+
+Šablona se ukládá jako **celý JSON v jednom uzlu**, mimo to `$lb()` s metadaty pro list/filter bez parsování JSON:
+
+```
+^ALVA.TDTemplate(IdFa, TemplateID)         = $lb(Name, AgendaCode, Description, ModifiedAt, CreatedBy, Version)
+^ALVA.TDTemplate(IdFa, TemplateID, "JSON") = celý template jako JSON string
+^ALVA.TDTemplate(IdFa, "IDX", "byAgenda", AgendaCode, TemplateID) = ""
+^ALVA.TDTemplate(IdFa, "IDX", "byName", $$$UPPER(Name), TemplateID) = ""
+```
+
+**Proč JSON blob, ne granulární rozklad sekcí/elementů:**
+- **Schema evolve rychle** — přidávání properties (např. `EditorPreferences`, `Parameters`, `SampleData`) nesmí vyžadovat Caché schema změnu. JSON blob izoluje schema do jedné vrstvy; verze řeší `TemplateMigrator` v .NET (R5) + `TemplateMigrationAPI` v Caché.
+- **Atomicita** — šablona je logická jednotka, vždy se čte/píše celá. Granulární rozklad by zkomplikoval save/load bez benefitu.
+- **Query patterns jsou ploché** — list & filter běží nad metadaty (`AgendaCode`, `Name`), ne nad vnitřkem elementů. Editace probíhá v report generatoru, ne v SQL.
+
+**Tradeoff:** žádné SQL query nad obsahem šablony (např. „najdi šablony s TextElementem FontSize 12"). Akceptovatelné — pokud někdy potřeba, denormalizovaná IDX tabulka se přidá separátně.
+
+**Co patří do `$lb()` mimo JSON:**
+- `Name`, `AgendaCode`, `Description` — pro list bez parsování JSON
+- `ModifiedAt`, `CreatedBy` — řazení a audit
+- `Version` (string z JSON `version` pole) — server-side router pro batch migraci
+- `Thumbnail` (volitelně, GUID na binární storage) — file picker s náhledem
+
 **Změny v kódu:**
 | Vrstva | Co |
 |---|---|
-| Caché | 3 nové třídy + `^ALVA.TDTemplates(IdFa,TemplateId,Version)` + audit log |
+| Caché | 3 nové třídy + `^ALVA.TDTemplate(IdFa,TemplateID)` (storage layout viz výše) + audit log |
 | .NET | `ITemplateStorage` (Cache + Fallback file-based) — Open/Save dialogy volají tohle místo `OpenFileDialog` |
 | .NET UI | Nový `TemplateBrowserDialog` — thumbnails, filter per agenda, verze, autor |
 | .NET migrace | Při Load → Caché vrátí migrovanou šablonu; `TemplateMigrator` je **.NET-side diagnostic helper** pro preview, autoritativní je Caché |

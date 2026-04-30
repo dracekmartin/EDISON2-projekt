@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-04-30 — Click bez snapu + per-template grid/snap
+
+Drobný UX fix kolem precizního pozicování:
+
+- ✅ **Click-vs-drag threshold (4px)** — `MainWindow.xaml.cs` — pouhý klik na element (např. pro selekci nebo otevření properties) nespustí soft-snap. `_dragHasMoved` flag se nastaví až po překročení prahu; `EndDrag` necommituje, pokud myš nepřekročila threshold. Reason: před fixem klik při GridSize=5mm „strhnul" 0.1mm pozici elementu na 5mm grid
+- ✅ **`TemplateEditorPreferences`** (nová třída v `Models/`) — nullable `GridSize`, `SnapToGrid`, `SnapToElements`, `ShowGrid`. Uloženo v JSON jako `editorPreferences` na `Template` (vedle `parameters`, `sampleData`, `cultureCode`)
+- ✅ **Apply on Open / Capture on Save** — `MainWindowViewModel.ApplyEditorPreferencesFromTemplate()` + `CaptureEditorPreferencesToTemplate()`; volá se v `OpenTemplateAsync`, `SaveTemplate`, `SaveAsTemplate`, `SaveAndContinue`
+- ✅ **`RequestGridSizeUiSync` callback** — VM → View; `MainWindow` napojuje `SyncGridSizeComboBox`, který najde `ComboBoxItem` podle Tag a aktivuje ho (CmbGridSize není bindovaný, jen event-driven)
+- ✅ **VM proxy settery** v Apply — `GridSize = gs` (ne `State.GridSize = gs`), aby se firnul `PropertyChanged` a bound toggle buttony (`ShowGrid`/`SnapToGrid`/`SnapToElements`) se v toolbaru aktualizovaly
+- 📋 **Backwards-compat** — staré šablony bez `editorPreferences` se chovají jako dřív (null → nepřebijí current state)
+
+---
+
 ## 2026-04-22 — Tri-state editor stylů + placeholdery zděděných hodnot (`3cf59d1`)
 
 Dokončení „známých omezení" z fáze 4 — editor stylů buněk nyní plně rozlišuje „dědit od rodiče" od „explicitně nastaveno".

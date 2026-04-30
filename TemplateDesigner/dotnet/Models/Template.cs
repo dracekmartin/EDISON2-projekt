@@ -39,6 +39,12 @@ public class Template
     /// </summary>
     public string? CultureCode { get; set; }
 
+    /// <summary>
+    /// Designer kontext (grid, snap) — zachová se prostředí, ve kterém byla šablona laděná.
+    /// Null = applikace použije globální default při otevření.
+    /// </summary>
+    public TemplateEditorPreferences? EditorPreferences { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 }
