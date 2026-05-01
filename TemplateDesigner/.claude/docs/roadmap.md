@@ -18,11 +18,7 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 1. **Fáze A — 1:1 šablona zastávkového JŘ** ⬅️ AKTUÁLNÍ PRIORITA — hotová první kompletní verze + review s kolegy.
 2. **Příprava na Caché Wave 1** (UserPreferences) — první vlna migrace, odladí patterns pro další vlny.
 
-**Hotová předchozí fáze:**
-- ✅ **Fáze B0.5 — Code Hygiene Sprint** (Tier 1 + Tier 2 dokončeny, Tier 3 explicitně skip do potřeby).
-- ✅ **Sjednocení Header/Data zón v properties panelu** napříč všemi tabulkovými elementy (StopList, DepartureGrid, NotesLegend, TableElement) — princip „rychlý přístup × kompletní cascade".
-- ✅ **Per-template editor preferences** (grid + snap settings v JSON šablony).
-- ✅ **UX vyladění** — click-vs-drag threshold, ImageElement ScaleMode, sub-pixelové rámečky, descriptor sort by group.
+> Hotové fáze (B0.5 Code Hygiene, sjednocení Header/Data zón, per-template prefs, UX vyladění) viz **Archiv** na konci dokumentu.
 
 ---
 
@@ -49,33 +45,6 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 ---
 
 ## 📋 Co je potřeba dělat
-
-### ✅ Fáze B0.5: Code Hygiene Sprint (HOTOVO)
-
-Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění elementů a do Caché migrace — ghost properties, async void antipattern, stringly-typed kód, silent catches, nekonzistentní dialogy. Levné, vysoký ROI; každé pozdější změny na schedule elementech budou na čistším základu.
-
-**Rozdělení:**
-- **Tier 1 (povinný)** — H-1 až H-6. Základní úklid; bez toho se nemá smysl pouštět do další práce.
-- **Tier 2 (doporučený)** — H-7 až H-10. MVVM consistency; užitečné pro Wave 4.
-- **Tier 3 (vybraně)** — H-11, H-12 skip pokud nebude akutní; H-13 se dělá, až bude potřeba jednotné místo pro error flow nad rámec `IPopupDisplayer`.
-
-#### Tier 1 — Quick wins (povinné)
-
-✅ **Všechny dokončeny** — H-1 až H-6. Viz archiv Fáze B0.5 níže.
-
-#### Tier 2 — MVVM consistency (doporučené)
-
-✅ **Všechny dokončeny** — H-7, H-8, H-9, H-10 (N/A). Viz archiv Fáze B0.5 níže.
-
-#### Tier 3 — Medium architecture (vybraně)
-
-| # | Co | Proč | Velikost | Povinné? |
-|---|---|---|---|---|
-| H-11 | **`PropertyDescriptor.VisibleWhen`** — predikát který skryje descriptor (např. schedule `ColumnsConfig` jen když `DataSource != ""`). Zjednodušuje dialogy s podmínkovými poli. | Aktuálně se skrývání řeší ad-hoc v dialozích. Ne blocker; skip pokud nepřijde akutní potřeba. | M | ⏭️ Skip do potřeby |
-| H-12 | **`SharedPropertyDescriptors`** — helper třída pro opakované descriptor šablony (Font, Border, Background) napříč elementy. | DRY. Ne blocker — duplikace je akceptovatelná za stávající cenu. | M | ⏭️ Skip do potřeby |
-| H-13 | **Volitelné rozšíření error flow** nad rámec `IPopupDisplayer` — např. strukturované logování nebo telemetrie, pokud bude potřeba víc než popup. Pokud ne, skip — `IPopupDisplayer` (R2) stačí. | Ne blocker; skip pokud nebude konkrétní požadavek. | S | ⏭️ Skip do potřeby |
-
----
 
 ### 🔴 Fáze A: Odladění MHD zastávkového JŘ s reálnými daty ⬅️ AKTUÁLNÍ PRIORITA
 
@@ -627,6 +596,26 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 | H-8 | Extract `Controls/TemplateTreePanel/` — ~150 řádků ze `MainWindow.xaml.cs` přesunuto do samostatného UserControlu; `MainWindow` jen volá `TreePanel.Rebuild()`; smazán orphan `Windows/TemplateTreeDialog/` (nikdy se neinstanciovalo) | 2026-04-21 |
 | H-9 | Extract `Windows/SaveSectionTemplateDialog/` — inline WPF konstrukce dialogu (~60 řádků StackPanel+TextBox+Button) z `MainWindowViewModel` přesunuta do Window+ViewModel+XAML dle závazného standardu; `SaveSectionTemplate(Section, string)` nyní čistá save logika | 2026-04-21 |
 | H-10 | **N/A** — `TemplatePickerDialog` v kódu neexistoval. Template picker = `OpenFileDialog` (standardní Windows), section template picker = menu položky v "Add Section" dropdown. Žádný samostatný dialog k extrakci. Uzavřeno bez změn. | 2026-04-21 |
+| H-11 | ⏭️ **Skip do potřeby** — `PropertyDescriptor.VisibleWhen` predikát. Aktuální ad-hoc skrývání v dialozích stačí, žádný blocker. | 2026-04-30 |
+| H-12 | ⏭️ **Skip do potřeby** — `SharedPropertyDescriptors` helper. Duplikace deskriptorů akceptovatelná za stávající cenu. | 2026-04-30 |
+| H-13 | ⏭️ **Skip do potřeby** — rozšíření error flow nad rámec `IPopupDisplayer`. Strukturované logování / telemetrie přidat až bude konkrétní požadavek. | 2026-04-30 |
+
+## Sjednocení patternů + UX vyladění ✅ (2026-04-30 → 2026-05-01)
+
+Kontinuální polish nad rámec původního B0.5 scope, motivovaný přípravou na 1:1 ladění zastávkového JŘ:
+
+| Co | Stručný popis |
+|---|---|
+| **Sjednocené Header/Data zóny v panelu** | Princip „rychlý přístup × kompletní cascade" napříč StopList/DepartureGrid/NotesLegend/TableElement; helper `GetCellZoneBaseColorDescriptors()` |
+| **Per-template editor preferences** | `Template.EditorPreferences` (grid + snap) — designové prostředí přežije reload |
+| **Click-vs-drag threshold** | Klik na element nespustí soft-snap (4px threshold) |
+| **ImageElement ScaleMode** | Renderer honoruje Fit/Fill/Stretch/None + tlačítko „Přizpůsobit poměru obrázku" |
+| **Sub-pixelové rámečky** | Adaptive `RenderBorder` — pod 1px AA fractional, nad 1px pixel-snap |
+| **Descriptor sort by group** | Stable sort v PropertiesPanel — bez duplicitních hlaviček |
+| **Border v „Obecné" group** | Konzistentní rychlý přístup k základním vlastnostem |
+| **DataRowHeight hoist** | Z duplicitních deklarací do `ScheduleElementBase` |
+| **Úklid mrtvého UI** | Smazán `LineSpacing` z `CellStyleEditor` (CellRenderer ho ignoroval) |
+| **Dokumentace stylingových patternů** | `mvvm-patterns.md` — Pattern 1 (single-zone) vs Pattern 2 (dual-zone) |
 
 ## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
 
