@@ -124,14 +124,36 @@ public partial class MainWindow : Window
         {
             try
             {
-                _previewCanvas!.RenderToPdf(filePath, _vm.BuildPreviewMockData());
-                _vm.StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}";
+                var allPages = _vm.BuildAllPreviewDataPages();
+                _previewCanvas!.RenderMultiDataToPdf(filePath, allPages);
+                _vm.StatusText = $"PDF uloženo: {Path.GetFileName(filePath)} ({allPages.Count} datových stránek)";
                 try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true }); }
                 catch { /* PDF viewer nemusí být nainstalován */ }
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Chyba při exportu PDF:\n{ex.Message}", "Export PDF",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        };
+        _vm.RequestExportPng             = filePath =>
+        {
+            try
+            {
+                var allPages = _vm.BuildAllPreviewDataPages();
+                int count = _previewCanvas!.RenderMultiDataToPng(filePath, allPages);
+                _vm.StatusText = count == 1
+                    ? $"PNG uloženo: {Path.GetFileName(filePath)}"
+                    : $"PNG uloženo: {count} souborů ({Path.GetFileNameWithoutExtension(filePath)}_001.png …)";
+                if (count == 1)
+                {
+                    try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true }); }
+                    catch { /* image viewer nemusí být nainstalován */ }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Chyba při exportu PNG:\n{ex.Message}", "Export PNG",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         };
@@ -665,6 +687,7 @@ public partial class MainWindow : Window
     private void MenuSave_Click(object sender, RoutedEventArgs e)      => _vm!.SaveCommand.Execute(null);
     private void MenuSaveAs_Click(object sender, RoutedEventArgs e)    => _vm!.SaveAsCommand.Execute(null);
     private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
+    private void MenuExportPng_Click(object sender, RoutedEventArgs e) => _vm!.ExportPngCommand.Execute(null);
 
     private void MenuPrint_Click(object sender, RoutedEventArgs e)
     {

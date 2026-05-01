@@ -120,6 +120,54 @@ public class PreviewCanvas
         doc.Close();
     }
 
+    /// <summary>
+    /// Vyrenderuje stránky šablony do PNG souboru/souborů.
+    /// Pokud je víc než 1 stránka, jména souborů budou očíslovaná: "name_001.png", "name_002.png", ...
+    /// Vrátí počet vytvořených souborů.
+    /// </summary>
+    /// <param name="filePath">Cílová cesta. Při více stránkách se před příponu vloží "_NNN".</param>
+    /// <param name="dataPages">Datové sady pro renderování.</param>
+    /// <param name="dpi">Rozlišení (default 150 = print quality, 96 = screen).</param>
+    public int RenderMultiDataToPng(string filePath, IReadOnlyList<DataContext> dataPages, float dpi = 150f)
+    {
+        float mmToPx = dpi / 25.4f;
+        var   ps     = _state.CurrentTemplate.PageSize;
+        int   wPx    = (int)MathF.Round(ps.Width  * mmToPx);
+        int   hPx    = (int)MathF.Round(ps.Height * mmToPx);
+
+        // Posbírat všechny renderované stránky napříč DataContexty
+        var renderedPages = new List<Page>();
+        foreach (var data in dataPages)
+            renderedPages.AddRange(_engine.Layout(_state.CurrentTemplate, data).Pages);
+
+        if (renderedPages.Count == 0) return 0;
+
+        bool multiPage = renderedPages.Count > 1;
+        string dir     = Path.GetDirectoryName(filePath) ?? "";
+        string baseName = Path.GetFileNameWithoutExtension(filePath);
+        string ext     = Path.GetExtension(filePath);
+        if (string.IsNullOrEmpty(ext)) ext = ".png";
+
+        for (int i = 0; i < renderedPages.Count; i++)
+        {
+            using var bitmap = new SKBitmap(wPx, hPx);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.White);
+            RenderPage(canvas, ps, mmToPx, 0, 0, renderedPages[i]);
+
+            string outPath = multiPage
+                ? Path.Combine(dir, $"{baseName}_{i + 1:D3}{ext}")
+                : filePath;
+
+            using var image = SKImage.FromBitmap(bitmap);
+            using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
+            using var fs = new FileStream(outPath, FileMode.Create);
+            encoded.SaveTo(fs);
+        }
+
+        return renderedPages.Count;
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Renderování
 

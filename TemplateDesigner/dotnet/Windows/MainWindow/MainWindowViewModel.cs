@@ -181,7 +181,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _new, _exportPdf, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
+    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
     private AsyncRelayCommand? _save, _saveAs, _open;
 
     public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
@@ -191,6 +191,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand NewCommand           => _new       ??= new(NewTemplate);
     public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
     public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
+    public RelayCommand ExportPngCommand     => _exportPng ??= new(ExportPreviewPng);
     public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
     public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
@@ -564,6 +565,24 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Code-behind wires this to actually call PreviewCanvas.RenderToPdf.</summary>
     public Action<string>? RequestExportPdf { get; set; }
+
+    private void ExportPreviewPng()
+    {
+        var dlg = new SaveFileDialog
+        {
+            Title      = "Exportovat náhled jako PNG",
+            Filter     = "PNG soubory (*.png)|*.png",
+            DefaultExt = "png",
+            FileName   = (Path.GetFileNameWithoutExtension(CurrentFilePath)
+                         ?? (string.IsNullOrWhiteSpace(State.CurrentTemplate.Name)
+                             ? "sablona" : State.CurrentTemplate.Name)) + ".png"
+        };
+        if (dlg.ShowDialog() != true) return;
+        RequestExportPng?.Invoke(dlg.FileName);
+    }
+
+    /// <summary>Code-behind wires this to actually call PreviewCanvas.RenderMultiDataToPng.</summary>
+    public Action<string>? RequestExportPng { get; set; }
 
     public bool ConfirmUnsavedChanges()
     {
@@ -1362,6 +1381,21 @@ public class TemplateDesignerViewModel : EDViewModel
     /// 3. Syntetická mock data ze schématu
     /// Volitelný parametr overrideParams nahrazuje interní _previewParams (pro PrintDialog).
     /// </summary>
+    /// <summary>
+    /// Vrátí všechny dostupné DataContexty pro export — všechny reálné stránky pokud jsou
+    /// načtené, jinak jeden mock context. Použito pro PDF/PNG export, aby se exportovaly
+    /// všechny zastávky/směry, ne jen aktuálně zobrazená.
+    /// </summary>
+    public IReadOnlyList<DataContext> BuildAllPreviewDataPages()
+    {
+        var culture = GetTemplateCulture();
+        if (_realPreviewData is { Count: > 0 })
+            return _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList();
+
+        var single = BuildPreviewMockData();
+        return single is null ? [] : [single];
+    }
+
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
     {
         var agendaCode = State.CurrentTemplate.AgendaCode;
