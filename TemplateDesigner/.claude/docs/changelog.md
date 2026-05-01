@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-04-30 — Doladění konzistence: DataRowHeight + dialog tlačítka + dokumentace patternů
+
+Drobná polish vrstva nad sjednocením Header/Data zón.
+
+- ✅ **Sjednocený `GetDataRowHeightDescriptor()` helper** na `ScheduleElementBase` — Get vrací reálnou výpočtenou výšku z fontu (uživatel vidí „4.5 mm" místo „0"), Set rozpozná „auto" zpětně přes epsilon comparison. StopList i DepartureGrid teď oba používají tento sjednocený pattern. Label jednotně „Výška řádku".
+- ✅ **Konzistentní popisky tlačítek dialogů sloupců** — sjednoceno na „Sloupce" (label) + „Upravit sloupce..." (ButtonLabel) napříč StopList/DepartureGrid/TableElement.
+- ✅ **`EnumPropertyDescriptor.HAlignOptions` + `VAlignOptions`** — sdílené statické tuple arrays na `EnumPropertyDescriptor`. DRY pro standardní zarovnání napříč elementy. TextElement `Vodorovně` rozšiřuje sdílené options o „Do bloku" (Justify) přes spread operátor — Justify nemá smysl pro cell-based elementy (CellRenderer ho ignoruje). Sjednoceny labely (Nahoře/Dole místo dřívějšího Nahoru/Dolů).
+- ✅ **TableElement `Header()`/`Data()` privátní helpery** — zkracují 5× boilerplate `HeaderStyle ??= new TextStyle(); HeaderStyle.X = v;` na `Header().X = v`. Lazy init pro nullable styles.
+- ✅ **`mvvm-patterns.md` doplněn o sekci „Styling patterny"** — Pattern 1 (single-zone, TextElement) vs Pattern 2 (dual-zone, tabulkové elementy). Šablony pro nové elementy + pravidla inheritance/composition + záměrné výjimky (NotesLegend `NoteFontSize`, DepartureGrid 5 zón, TableElement promoted shortcut).
+
+Žádné breaking změny.
+
+---
+
+## 2026-04-30 — Sjednocení Header/Data zón v properties panelu
+
+Konzistentní rychlý přístup k základním stylům buněk napříč všemi tabulkovými elementy.
+
+**Problém:**
+- StopList/DepartureGrid měly Header/Data styling jen v dialogu sloupců (špatná discoverability)
+- NotesLegend nemá column dialog → HeaderStyle/DataStyle úplně nepřístupné (uživatel narazil na nemožnost změnit pozadí záhlaví)
+- TableElement už měl ad-hoc 2 properties v panelu (legacy precedent), ale nekonzistentně se zbytkem
+
+**Řešení — princip „rychlý přístup v panelu, kompletní cascade v dialogu":**
+
+- ✅ **`ScheduleElementBase.GetCellZoneBaseColorDescriptors()`** (nový helper) — vrátí 4× `ColorPropertyDescriptor`:
+  - `Pozadí záhlaví` → `HeaderStyle.BackgroundColor` (fallback `ScheduleHeaderDefaults.BackgroundColor`)
+  - `Barva textu záhlaví` → `HeaderStyle.TextColor`
+  - `Pozadí buněk` → `DataStyle.BackgroundColor`
+  - `Barva textu buněk` → `DataStyle.TextColor`
+- ✅ **NotesLegend** — refaktor na helper, zrušen ad-hoc fix; přejmenování skupin na konzistentní „Záhlaví"/„Datové buňky"/„Filtrování"/„Negativní značky"
+- ✅ **StopListElement** + **DepartureGridElement** — přidaly `.. GetCellZoneBaseColorDescriptors()` do GetPropertyDescriptors. Nově dostupné 4 base barvy v panelu, dialog pro detail (font/align/padding) nezměněn
+- ✅ **TableElement** (parallel implementation, jiná hierarchie) — reorganizace: existující „Pozadí záhlaví" + „Tučné záhlaví" přesunuty do skupiny „Záhlaví"; doplněno „Barva textu záhlaví", „Pozadí buněk", „Barva textu buněk". `Tučné záhlaví` zachováno (uživatel ho v panelu očekává — častý toggle u tabulek)
+
+**Architektonické rozhodnutí — nesdílíme helper přes hranici `ScheduleElementBase ↔ TableElement`:**
+- Jiné baked defaults (`ScheduleHeaderDefaults` vs `TableHeaderParent`)
+- Jiná nullability `HeaderStyle` (non-null vs nullable)
+- Sdílení přes interface = víc kódu než duplikace 4 deskriptorů. Refaktor až kdyby přibyl 5. cell-based element.
+
+**Pattern „rychlý přístup × cascade":**
+- Panel: 4 base barvy (bg+text pro Header a Data) — nejčastější rychlé úpravy
+- Dialog sloupců: kompletní `CellStyleEditor` (font, align, padding, atd.) + per-column overridy
+
+**Round-trip safe:** panel a dialog editují stejné pole; `CellStyleVM.FromModel`/`ToModel` preservuje explicit hodnoty → nastavení barvy v panelu přežije otevření a OK dialogu beze změny.
+
+**Žádné breaking JSON změny** — jen UI cesta k existujícím polím.
+
+---
+
 ## 2026-04-30 — Úklid duplicitního UI: LineSpacing + DataRowHeight
 
 Tichý mrtvý kód v editoru stylu buněk + duplicitní property mezi schedule elementy.

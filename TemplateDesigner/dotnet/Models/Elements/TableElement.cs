@@ -543,13 +543,17 @@ public class TableElement : TemplateElement
 
     // ─── PropertyDescriptors ─────────────────────────────────────────
 
+    /// <summary>Lazy init helper — HeaderStyle/DataStyle jsou nullable, setter vždy potřebuje non-null instanci.</summary>
+    private TextStyle Header() => HeaderStyle ??= new TextStyle();
+    private TextStyle Data()   => DataStyle   ??= new TextStyle();
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new ButtonPropertyDescriptor
         {
-            Label       = "Editor",
+            Label       = "Sloupce",
             Group       = "Tabulka",
-            ButtonLabel = "Upravit sloupce / řádky...",
+            ButtonLabel = "Upravit sloupce...",
             ActionId    = ButtonPropertyDescriptor.ActionOpenTableEditor,
         },
         new EnumPropertyDescriptor
@@ -593,13 +597,6 @@ public class TableElement : TemplateElement
             Set   = v => HeaderHeight = v,
             Min   = 2, Max = 50, Unit = "mm"
         },
-        new BoolPropertyDescriptor
-        {
-            Label = "Tučné záhlaví",
-            Group = "Tabulka",
-            Get   = () => HeaderStyle?.Bold ?? true,
-            Set   = v => { HeaderStyle ??= new TextStyle(); HeaderStyle.Bold = v; }
-        },
         new EnumPropertyDescriptor
         {
             Label   = "Rámeček",
@@ -614,17 +611,48 @@ public class TableElement : TemplateElement
         },
         new ColorPropertyDescriptor
         {
-            Label = "Pozadí záhlaví",
-            Group = "Tabulka",
-            Get   = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",
-            Set   = v => { HeaderStyle ??= new TextStyle(); HeaderStyle.BackgroundColor = v; }
-        },
-        new ColorPropertyDescriptor
-        {
             Label = "Střídání řádků",
             Group = "Tabulka",
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
+        },
+
+        // ── Záhlaví / Datové buňky — element-level základní barvy.
+        // Detailní cascade (font, alignment, padding) je v TableEditorDialog.
+        new BoolPropertyDescriptor
+        {
+            Label = "Tučné záhlaví",
+            Group = "Záhlaví",
+            Get   = () => HeaderStyle?.Bold ?? true,
+            Set   = v => Header().Bold = v
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Pozadí záhlaví",
+            Group = "Záhlaví",
+            Get   = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",
+            Set   = v => Header().BackgroundColor = v
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Barva textu záhlaví",
+            Group = "Záhlaví",
+            Get   = () => HeaderStyle?.TextColor ?? "#FF333333",
+            Set   = v => Header().TextColor = v
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Pozadí buněk",
+            Group = "Datové buňky",
+            Get   = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",
+            Set   = v => Data().BackgroundColor = v
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Barva textu buněk",
+            Group = "Datové buňky",
+            Get   = () => DataStyle?.TextColor ?? "#FF222222",
+            Set   = v => Data().TextColor = v
         },
 
         .. GetPositionDescriptors()

@@ -412,8 +412,8 @@ public abstract class ScheduleElementBase : TemplateElement
 
     /// <summary>
     /// Non-style element-level descriptory pro PropertiesPanel v tabu „Obecné".
-    /// Font/barvy/alignment pro Header a Data jsou editované přes sdílený CellStyleEditor
-    /// v dialogu sloupců — nejsou tady, aby se nedublovaly.
+    /// Pokročilé Header/Data styling (font, alignment, padding) zůstává v dialogu sloupců;
+    /// základní barvy (bg + text pro Header a Data) najdeš v <see cref="GetCellZoneBaseColorDescriptors"/>.
     /// </summary>
     protected IReadOnlyList<PropertyDescriptor> GetScheduleBaseDescriptors() =>
     [
@@ -421,6 +421,60 @@ public abstract class ScheduleElementBase : TemplateElement
         {
             Label = "Barva mřížky", Group = "Obecné",
             Get = () => GridColor, Set = v => GridColor = v
+        },
+    ];
+
+    /// <summary>
+    /// Sjednocený descriptor pro <see cref="DataRowHeight"/> — výška datového řádku v mm.
+    /// Get vrací reálnou hodnotu (explicit nebo auto-vypočtenou z fontu),
+    /// Set rozpozná „auto" zpětně přes epsilon comparison — uživatel po editaci nemusí vědět magickou hodnotu.
+    /// </summary>
+    protected FloatPropertyDescriptor GetDataRowHeightDescriptor(string group = "Řádky") => new()
+    {
+        Label = "Výška řádku",
+        Group = group,
+        Get = () => DataRowHeight ?? ComputeRowH(DataStyle.FontSize ?? 8f),
+        Set = v =>
+        {
+            float autoVal = ComputeRowH(DataStyle.FontSize ?? 8f);
+            DataRowHeight = MathF.Abs(v - autoVal) < 0.01f ? null : v;
+        },
+        Min = 1, Max = 50, Unit = "mm",
+    };
+
+    /// <summary>
+    /// Element-level základní barvy pro zóny Header a Data — bg + text v properties panelu.
+    /// Sjednocuje rychlou cestu k nejčastějším úpravám napříč JŘ elementy
+    /// (StopList, DepartureGrid, NotesLegend) bez nutnosti otevírat dialog sloupců.
+    /// Detailní cascade (font, alignment, padding) zůstává v dialogu kde má per-column granularitu.
+    /// </summary>
+    protected IReadOnlyList<PropertyDescriptor> GetCellZoneBaseColorDescriptors(
+        string headerGroup = "Záhlaví",
+        string dataGroup = "Datové buňky") =>
+    [
+        new ColorPropertyDescriptor
+        {
+            Label = "Pozadí záhlaví", Group = headerGroup,
+            Get = () => HeaderStyle.BackgroundColor ?? ScheduleHeaderDefaults.BackgroundColor,
+            Set = v => HeaderStyle.BackgroundColor = v,
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Barva textu záhlaví", Group = headerGroup,
+            Get = () => HeaderStyle.TextColor ?? ScheduleHeaderDefaults.TextColor,
+            Set = v => HeaderStyle.TextColor = v,
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Pozadí buněk", Group = dataGroup,
+            Get = () => DataStyle.BackgroundColor ?? ScheduleDataDefaults.BackgroundColor,
+            Set = v => DataStyle.BackgroundColor = v,
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Barva textu buněk", Group = dataGroup,
+            Get = () => DataStyle.TextColor ?? ScheduleDataDefaults.TextColor,
+            Set = v => DataStyle.TextColor = v,
         },
     ];
 

@@ -42,6 +42,95 @@ public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
 
 ---
 
+## Styling patterny (kdy použít který)
+
+Aplikace má **dva čisté patterny** pro vystavení stylu textu uživateli, podle počtu „zón" elementu.
+
+### Pattern 1 — Single-zone text element
+
+**Pro:** elementy s jednou textovou zónou (`TextElement`).
+
+**Charakteristika:**
+- Element má **jednu** `Style: TextStyle` property
+- Cascade: `Style → ResolvedTextStyle.Default`
+- Vše se edituje v properties panelu jako flat properties (FontFamily, FontSize, Bold, …)
+- **Žádný dialog** — uživatel vidí všechno v panelu
+
+**Šablona pro nový jednozónový element:**
+```csharp
+public class MyElement : TemplateElement
+{
+    public TextStyle Style { get; set; } = new();
+
+    public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
+    [
+        new StringPropertyDescriptor { Label = "Font", Group = "Font", Get = () => Style.FontFamily ?? "", Set = v => Style.FontFamily = v },
+        new FloatPropertyDescriptor  { Label = "Velikost", Group = "Font", Get = () => Style.FontSize ?? 9f, Set = v => Style.FontSize = v },
+        // ... ostatní flat properties
+        new ColorPropertyDescriptor  { Label = "Barva textu", Group = "Vzhled", Get = () => Style.TextColor ?? "#FF000000", Set = v => Style.TextColor = v },
+        .. GetPositionDescriptors()
+    ];
+
+    public override void Render(RenderContext ctx)
+    {
+        var rs = Style.Resolve();   // ResolvedTextStyle.Default jako fallback parent
+        // ... použij rs.FontFamily / rs.FontSize / atd.
+    }
+}
+```
+
+### Pattern 2 — Dual-zone tabulkový element
+
+**Pro:** elementy s `Header` a `Data` zónou (`StopListElement`, `DepartureGridElement`, `NotesLegendElement`, `TableElement`).
+
+**Charakteristika:**
+- Element má **`HeaderStyle: TextStyle` + `DataStyle: TextStyle`** properties (kompozice)
+- Cascade: `column.Style → element.HeaderStyle/DataStyle → element-specific defaults → CellDefaults`
+- **Panel:** 4 base barvy přes helper `GetCellZoneBaseColorDescriptors()` (rychlý přístup)
+- **Dialog sloupců:** kompletní cascade přes sdílený `CellStyleEditor` (font, padding, align, decorations) + per-column overridy
+- Render přes `Rendering/CellRenderer.DrawCell` — jediné místo pozicování textu
+
+**Princip „rychlý přístup × cascade":**
+- Panel má jen nejčastěji upravované properties (bg + text color pro Header a Data)
+- Vše ostatní v dialogu kde má smysl per-column granularita
+- **Promoted shortcut** (výjimka): nejčastější toggle v elementu může jít do panelu ze záměrných UX důvodů (např. `Tučné záhlaví` u TableElement). Použít zřídka, dokumentovat proč
+
+**Šablona pro nový dual-zone element (schedule typu — dědí ze ScheduleElementBase):**
+```csharp
+public class MyScheduleElement : ScheduleElementBase
+{
+    // HeaderStyle, DataStyle, GridColor, DataRowHeight zděděné z base
+
+    public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
+    [
+        .. GetScheduleBaseDescriptors(),         // GridColor
+        .. GetCellZoneBaseColorDescriptors(),    // 4× Header/Data bg/text color
+        new ButtonPropertyDescriptor { Label = "Sloupce", Group = "...", ButtonLabel = "Upravit sloupce...", ActionId = ... },
+        GetDataRowHeightDescriptor(),            // 0=auto, mm
+        // ... element-specific properties
+        .. GetPositionDescriptors()
+    ];
+}
+```
+
+**Nový dual-zone element v jiné hierarchii** (jako TableElement): paralelní implementace 4 ColorPropertyDescriptorů přímo v `GetPropertyDescriptors()`. **Nesdílet** přes interface — různé baked defaults a nullability HeaderStyle, sdílení by stálo víc kódu než duplikace.
+
+### Pravidla pro inheritance vs composition
+
+- **Inheritance:** „is-a" vztah (StopList JE schedule element). Maximálně 2 úrovně (`TemplateElement → ScheduleElementBase → konkrétní`). Žádné hluboké hierarchie.
+- **Composition:** „has-a" vztah (StopList MÁ HeaderStyle). Styling, render util, dialogy — vše přes composition. TextStyle žije nezávisle na hierarchii elementu, sdíleno mezi `TextElement` a všemi tabulkovými elementy.
+- **Pro nové komplexní structures preferovat composition** — sdílené services, helper třídy, struct s explicit Resolve(), ne deep inheritance.
+
+### Známé záměrné výjimky (NE bug)
+
+| Element | Co | Proč ne v cascade |
+|---|---|---|
+| NotesLegend | `NoteFontSize` (scalar) místo `DataStyle.FontSize` | Element nemá dialog → font size MUSÍ být v panelu. Migrace by stála víc než hodnota. |
+| DepartureGrid | `MinuteStyle`, `AnotaceSymbolStyle`, `AnotaceTextStyle` flat v panelu | Element má 5 zón, ne 2. Pattern 2 pokrývá Header/Data; ostatní zóny jsou v panelu jako flat — kompletní dialog s 5 taby by byl horší UX. |
+| TableElement | `Tučné záhlaví` v panelu i dialogu | „Promoted shortcut" — bold pro header je nejčastější quick toggle u tabulek. Záměrná výjimka, ne plošný pattern. |
+
+---
+
 ## TableElement — architektura
 
 ### Dva módy

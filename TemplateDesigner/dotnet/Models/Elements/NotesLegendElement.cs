@@ -164,15 +164,17 @@ public class NotesLegendElement : ScheduleElementBase
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         .. GetScheduleBaseDescriptors(),
+        .. GetCellZoneBaseColorDescriptors(),
 
-        new StringPropertyDescriptor { Label = "Nadpis",               Group = "Poznámky", Get = () => HeaderText,       Set = v => HeaderText = v },
-        new StringPropertyDescriptor { Label = "Oddělovač",           Group = "Poznámky", Get = () => NoteSeparator,    Set = v => NoteSeparator = v },
-        new FloatPropertyDescriptor  { Label = "Velikost písma pozn.", Group = "Poznámky", Get = () => NoteFontSize,     Set = v => NoteFontSize = v,     Min = 4, Max = 20, Unit = "pt" },
-        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Poznámky", Get = () => NoteLineHeight,   Set = v => NoteLineHeight = v,   Min = 2, Max = 15, Unit = "mm" },
+        new StringPropertyDescriptor { Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
 
-        new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Poznámky", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
-        new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Poznámky", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
-        new BoolPropertyDescriptor  { Label = "Textové poznámky",    Group = "Poznámky", Get = () => ShowTextovePoznamky, Set = v => ShowTextovePoznamky = v },
+        new StringPropertyDescriptor { Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
+        new FloatPropertyDescriptor  { Label = "Velikost písma pozn.", Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
+        new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky", Get = () => NoteLineHeight, Set = v => NoteLineHeight = v, Min = 2, Max = 15, Unit = "mm" },
+
+        new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
+        new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Filtrování", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
+        new BoolPropertyDescriptor  { Label = "Textové poznámky",    Group = "Filtrování", Get = () => ShowTextovePoznamky, Set = v => ShowTextovePoznamky = v },
 
         new ColorPropertyDescriptor { Label = "NZ pozadí",  Group = "Negativní značky", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor { Label = "NZ barva",   Group = "Negativní značky", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },

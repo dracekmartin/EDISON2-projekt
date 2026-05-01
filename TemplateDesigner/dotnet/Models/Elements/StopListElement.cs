@@ -416,11 +416,12 @@ public class StopListElement : ScheduleElementBase
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         .. GetScheduleBaseDescriptors(),
+        .. GetCellZoneBaseColorDescriptors(),
 
-        new ButtonPropertyDescriptor { Label = "Nastavení zastávek", Group = "Zastávky", ButtonLabel = "Upravit...", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
+        new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce...", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
 
-        new FloatPropertyDescriptor { Label = "Výška řádku (mm)",  Group = "Řádky",    Get = () => DataRowHeight ?? ComputeRowH(DataStyle.FontSize ?? 8f), Set = v => DataRowHeight = Math.Abs(v - ComputeRowH(DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 1, Max = 50, Unit = "mm" },
-        new BoolPropertyDescriptor  { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators,     Set = v => ShowRowSeparators = v },
+        GetDataRowHeightDescriptor(),
+        new BoolPropertyDescriptor { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators, Set = v => ShowRowSeparators = v },
 
         new BoolPropertyDescriptor  { Label = "Odsazení",          Group = "Zastávky", Get = () => ShowStopIndentation,    Set = v => ShowStopIndentation = v },
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },

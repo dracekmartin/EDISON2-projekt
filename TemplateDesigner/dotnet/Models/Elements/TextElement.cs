@@ -127,11 +127,10 @@ public class TextElement : TemplateElement
         new BoolPropertyDescriptor   { Label = "Zalamování",    Group = "Font",      Get = () => WordWrap,                     Set = v => WordWrap = v },
         new FloatPropertyDescriptor  { Label = "Řádkování",    Group = "Font",      Get = () => Style.LineSpacing ?? 1.2f,    Set = v => Style.LineSpacing = v,               Min = 0.8f, Max = 3f, Format = "0.0#" },
 
-        new EnumPropertyDescriptor   { Label = "Vodorovně",     Group = "Zarovnání", Get = () => Style.HAlign ?? TextHorizontalAlignment.Left, Set = v => Style.HAlign = (TextHorizontalAlignment)v,
-            Options = [("Vlevo", (object)TextHorizontalAlignment.Left), ("Na střed", (object)TextHorizontalAlignment.Center),
-                       ("Vpravo", (object)TextHorizontalAlignment.Right), ("Do bloku", (object)TextHorizontalAlignment.Justify)] },
-        new EnumPropertyDescriptor   { Label = "Svisle",        Group = "Zarovnání", Get = () => Style.VAlign ?? TextVerticalAlignment.Top, Set = v => Style.VAlign = (TextVerticalAlignment)v,
-            Options = [("Nahoře", (object)TextVerticalAlignment.Top), ("Na střed", (object)TextVerticalAlignment.Middle), ("Dole", (object)TextVerticalAlignment.Bottom)] },
+        // HAlign rozšířený o Justify — inline (sdílené HAlignOptions Justify nemají, cell elementy ho v rendereru ignorují)
+        new EnumPropertyDescriptor   { Label = "Vodorovně", Group = "Zarovnání", Get = () => Style.HAlign ?? TextHorizontalAlignment.Left, Set = v => Style.HAlign = (TextHorizontalAlignment)v,
+            Options = [..EnumPropertyDescriptor.HAlignOptions, ("Do bloku", TextHorizontalAlignment.Justify)] },
+        new EnumPropertyDescriptor   { Label = "Svisle",    Group = "Zarovnání", Get = () => Style.VAlign ?? TextVerticalAlignment.Top,  Set = v => Style.VAlign = (TextVerticalAlignment)v,  Options = EnumPropertyDescriptor.VAlignOptions },
 
         new ColorPropertyDescriptor  { Label = "Barva textu",   Group = "Vzhled",    Get = () => Style.TextColor ?? "#FF000000",     Set = v => Style.TextColor = v },
         new ColorPropertyDescriptor  { Label = "Barva pozadí", Group = "Vzhled",    Get = () => Style.BackgroundColor ?? "#00FFFFFF", Set = v => Style.BackgroundColor = v },

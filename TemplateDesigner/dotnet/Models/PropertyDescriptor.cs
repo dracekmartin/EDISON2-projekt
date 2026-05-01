@@ -1,3 +1,4 @@
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 
 namespace TemplateDesigner.Models;
@@ -67,6 +68,23 @@ public class EnumPropertyDescriptor : PropertyDescriptor
 
     /// <summary>Možnosti zobranzené v ComboBoxu: (zobrazený popisek, hodnota enum).</summary>
     public required (string Label, object Value)[] Options { get; init; }
+
+    // ── Sdílené předdefinované Options pro běžné enumy (zarovnání) ──
+    // DRY napříč elementy; pokud potřebuješ jiné popisky, definuj inline.
+
+    public static readonly (string Label, object Value)[] HAlignOptions =
+    [
+        ("Vlevo",    TextHorizontalAlignment.Left),
+        ("Na střed", TextHorizontalAlignment.Center),
+        ("Vpravo",   TextHorizontalAlignment.Right),
+    ];
+
+    public static readonly (string Label, object Value)[] VAlignOptions =
+    [
+        ("Nahoře",   TextVerticalAlignment.Top),
+        ("Na střed", TextVerticalAlignment.Middle),
+        ("Dole",     TextVerticalAlignment.Bottom),
+    ];
 }
 
 /// <summary>
