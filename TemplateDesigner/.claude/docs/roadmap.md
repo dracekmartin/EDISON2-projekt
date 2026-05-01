@@ -15,9 +15,14 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-1. **Fáze B0.5 — Code Hygiene Sprint** (H-1 až H-13) — nejdřív úklid před 1:1 laděním a před Caché migrací; Tier 1 povinný, Tier 2 doporučený, Tier 3 vybraně.
-2. **Fáze A — 1:1 ladění zastávkového JŘ** (krok 8–11) — edge cases, vizuální shoda s referenčním PDF, feedback od kolegů.
-3. **Příprava na Caché Wave 1** (UserPreferences) — první vlna migrace, odladí patterns pro další vlny.
+1. **Fáze A — 1:1 ladění zastávkového JŘ** ⬅️ AKTUÁLNÍ PRIORITA (krok 8–11) — edge cases, vizuální shoda s referenčním PDF, feedback od kolegů.
+2. **Příprava na Caché Wave 1** (UserPreferences) — první vlna migrace, odladí patterns pro další vlny.
+
+**Hotová předchozí fáze:**
+- ✅ **Fáze B0.5 — Code Hygiene Sprint** (Tier 1 + Tier 2 dokončeny, Tier 3 explicitně skip do potřeby).
+- ✅ **Sjednocení Header/Data zón v properties panelu** napříč všemi tabulkovými elementy (StopList, DepartureGrid, NotesLegend, TableElement) — princip „rychlý přístup × kompletní cascade".
+- ✅ **Per-template editor preferences** (grid + snap settings v JSON šablony).
+- ✅ **UX vyladění** — click-vs-drag threshold, ImageElement ScaleMode, sub-pixelové rámečky, descriptor sort by group.
 
 ---
 
@@ -45,7 +50,7 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🟠 Fáze B0.5: Code Hygiene Sprint ⬅️ AKTUÁLNÍ PRIORITA
+### ✅ Fáze B0.5: Code Hygiene Sprint (HOTOVO)
 
 Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění elementů a do Caché migrace — ghost properties, async void antipattern, stringly-typed kód, silent catches, nekonzistentní dialogy. Levné, vysoký ROI; každé pozdější změny na schedule elementech budou na čistším základu.
 
@@ -72,7 +77,7 @@ Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění e
 
 ---
 
-### 🔴 Fáze A: Odladění MHD zastávkového JŘ s reálnými daty
+### 🔴 Fáze A: Odladění MHD zastávkového JŘ s reálnými daty ⬅️ AKTUÁLNÍ PRIORITA
 
 Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými daty z Caché → PDF 1:1 odpovídající současnému MHD JŘ. Zpětná vazba od kolegů. Navazuje na B0.5 — elementy se upravují na již uklizeném základě.
 
