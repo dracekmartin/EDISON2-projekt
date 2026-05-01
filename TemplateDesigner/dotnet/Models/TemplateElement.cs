@@ -79,21 +79,24 @@ public abstract class TemplateElement
     protected void RenderBorder(RenderContext ctx, SKRect rect)
     {
         if (BorderWidth <= 0 || SkBorderColor.Alpha == 0) return;
-        float strokePx = MathF.Max(1f, MathF.Round(BorderWidth * ctx.MmToPx));
 
-        // Snap hrany na celé pixely — sousední elementy pak sdílejí stejný pixel
-        var snappedRect = new SKRect(
-            MathF.Round(rect.Left),
-            MathF.Round(rect.Top),
-            MathF.Round(rect.Right),
-            MathF.Round(rect.Bottom));
+        float widthPx = BorderWidth * ctx.MmToPx;
+
+        // Sub-pixel rámečky (tenčí než 1px): fractional stroke + antialiasing.
+        // Nad 1px: pixel-snap pro čisté sdílení hran mezi sousedními elementy.
+        bool thin = widthPx < 1f;
+        float strokePx = thin ? widthPx : MathF.Round(widthPx);
+        var drawRect = thin
+            ? rect
+            : new SKRect(MathF.Round(rect.Left), MathF.Round(rect.Top),
+                         MathF.Round(rect.Right), MathF.Round(rect.Bottom));
 
         using var borderPaint = new SKPaint
         {
             Color = SkBorderColor, Style = SKPaintStyle.Stroke,
-            StrokeWidth = strokePx, IsAntialias = false
+            StrokeWidth = strokePx, IsAntialias = thin
         };
-        ctx.Canvas.DrawRect(snappedRect, borderPaint);
+        ctx.Canvas.DrawRect(drawRect, borderPaint);
     }
 
     /// <summary>
@@ -160,8 +163,8 @@ public abstract class TemplateElement
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
         new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
 
-        new ColorPropertyDescriptor { Label = "Barva rámečku", Group = "Rámeček", Get = () => BorderColor, Set = v => BorderColor = v },
-        new FloatPropertyDescriptor { Label = "Šířka rámečku", Group = "Rámeček", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
+        new ColorPropertyDescriptor { Label = "Barva rámečku", Group = "Obecné", Get = () => BorderColor, Set = v => BorderColor = v },
+        new FloatPropertyDescriptor { Label = "Šířka rámečku", Group = "Obecné", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
 
         new StringPropertyDescriptor
         {

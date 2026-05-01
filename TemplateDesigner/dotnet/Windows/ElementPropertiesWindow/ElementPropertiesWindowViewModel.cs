@@ -348,6 +348,33 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                     }
                 });
             }
+            else if (d is Models.ButtonPropertyDescriptor btn2 && btn2.ActionId == Models.ButtonPropertyDescriptor.ActionMatchImageAspect)
+            {
+                list.Add(new Models.ButtonPropertyDescriptor
+                {
+                    Label       = btn2.Label,
+                    Group       = btn2.Group,
+                    ButtonLabel = btn2.ButtonLabel,
+                    OnClick     = () =>
+                    {
+                        float? aspect = element.GetImageAspectRatio();
+                        if (aspect is null)
+                        {
+                            PopupDisplayer.Info("Nejdřív nahrajte obrázek.");
+                            return;
+                        }
+                        // Šířku zachováme, výšku přepočítáme. Composite command pro undo/redo jedním krokem.
+                        float newHeight = element.Width / aspect.Value;
+                        float oldHeight = element.Height ?? element.EffectiveDesignerHeight;
+                        if (MathF.Abs(newHeight - oldHeight) < 0.01f) return;
+                        _state.Execute(new Commands.Implementations.SetPropertyCommand(
+                            "Přizpůsobit poměru obrázku",
+                            oldHeight, newHeight,
+                            v => element.Height = (float)v!));
+                        _currentInvalidate();
+                    }
+                });
+            }
             else
             {
                 list.Add(d);

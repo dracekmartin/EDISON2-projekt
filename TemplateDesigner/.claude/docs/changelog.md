@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-05-01 — ImageElement ScaleMode + tenké rámečky + descriptor sort
+
+**Tři vyladění objevené při ladění šablon:**
+
+- ✅ **ImageElement honoruje `ScaleMode`** — bug: renderer ignoroval property, vždy používal Stretch (deformoval obrázek). Fix: extrahovaný helper `DrawImageWithScaleMode` se 4 módy (Fit = vejde se celý / Fill = vyplní s oříznutím / Stretch = roztáhne / None = originální velikost). Fill a None se klipují na element rect. Defaultní Fit zachová poměr s letterboxem. Element `BackgroundColor` se zobrazí v mezerách u Fit. České labely v dropdownu.
+- ✅ **„Přizpůsobit poměru obrázku" tlačítko** — `ButtonPropertyDescriptor.ActionMatchImageAspect`; `ImageElement.GetImageAspectRatio()` dekóduje base64 a vrátí W/H. Handler v `ElementPropertiesWindowViewModel` přepočítá `Height = Width / aspect`, undo přes `SetPropertyCommand`.
+- ✅ **Sub-pixelové rámečky** — `RenderBorder` adaptive: `widthPx < 1f` → fractional stroke + IsAntialias=true, jinak pixel-snap (původní chování pro sdílené hrany). Dříve `MathF.Max(1f, ...)` clampoval cokoli pod ~0.265mm na 1px → tenké rámečky nešly. Teď 0.05mm vykreslí jako jemný AA pruh.
+- ✅ **Stable sort by group v `PropertiesPanel`** — descriptory přicházející z různých helperů často nebyly seřazené podle skupiny; panel pak zobrazoval duplicitní hlavičky („Zastávky" a „Záhlaví" 2× v StopList). Teď se sortuje stabilně: skupiny v pořadí prvního výskytu, řádky uvnitř skupiny v deklaračním pořadí.
+- ✅ **Border v „Obecné" group** — `BorderColor`/`BorderWidth` přesunuty z group „Rámeček" do „Obecné" v `GetPositionDescriptors`. Pro schedule elementy se Border merguje s `GridColor` (konzistentní rychlý přístup k základním vlastnostem). Pro non-schedule vytváří „Obecné" group (jediný název napříč elementy).
+
+Žádné breaking JSON změny.
+
+---
+
 ## 2026-04-30 — Doladění konzistence: DataRowHeight + dialog tlačítka + dokumentace patternů
 
 Drobná polish vrstva nad sjednocením Header/Data zón.

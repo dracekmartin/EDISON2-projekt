@@ -138,4 +138,5 @@ public class ButtonPropertyDescriptor : PropertyDescriptor
     public const string ActionOpenStopColumnsEditor = "OpenStopColumnsEditor";
     public const string ActionOpenDepartureGridEditor = "OpenDepartureGridEditor";
     public const string ActionUploadImage = "UploadImage";
+    public const string ActionMatchImageAspect = "MatchImageAspect";
 }

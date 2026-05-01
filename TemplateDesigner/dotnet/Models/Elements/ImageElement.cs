@@ -25,6 +25,13 @@ public class ImageElement : TemplateElement
         if (Width <= 0) return;
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
 
+        // Pozadí elementu — projeví se v mezerách u Fit mode (letterbox).
+        if (SkBackgroundColor.Alpha > 0)
+        {
+            using var bgPaint = new SKPaint { Color = SkBackgroundColor };
+            ctx.Canvas.DrawRect(rect, bgPaint);
+        }
+
         // Pokus o dekódování obrázku
         SKBitmap? bitmap = null;
         if (!string.IsNullOrEmpty(ImageBase64))
@@ -39,9 +46,9 @@ public class ImageElement : TemplateElement
             using (var image = SKImage.FromBitmap(bitmap))
             using (var paint = new SKPaint { IsAntialias = true })
             {
-                // Lineární filtr + mipmapy pro kvalitní škálování (nahoru i dolů)
+                // Linear filter + mipmaps = kvalitní škálování nahoru i dolů (default by byl nearest).
                 var sampling = new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear);
-                ctx.Canvas.DrawImage(image, rect, sampling, paint);
+                DrawImageWithScaleMode(ctx.Canvas, image, rect, sampling, paint, ScaleMode);
             }
         }
         else
@@ -58,7 +65,63 @@ public class ImageElement : TemplateElement
             using var paint = new SKPaint { Color = new SKColor(0xFF999999), IsAntialias = true };
             ctx.Canvas.DrawText(label, rect.MidX - (label.Length * 3f), rect.MidY + font.Size / 3f, font, paint);
         }
+    }
 
+    /// <summary>
+    /// Vykreslí obrázek do rect podle zvoleného režimu škálování:
+    /// Fit = vejde se celý (mezery), Fill = vyplní (ořízne), Stretch = roztáhne (deformuje), None = originální velikost.
+    /// </summary>
+    private static void DrawImageWithScaleMode(
+        SKCanvas canvas, SKImage image, SKRect dest,
+        SKSamplingOptions sampling, SKPaint paint, ImageScaleMode mode)
+    {
+        float imgW = image.Width, imgH = image.Height;
+        if (imgW <= 0 || imgH <= 0 || dest.Width <= 0 || dest.Height <= 0) return;
+
+        float sx = dest.Width / imgW, sy = dest.Height / imgH;
+        SKRect target = mode switch
+        {
+            ImageScaleMode.Fit     => Centered(dest, imgW, imgH, MathF.Min(sx, sy)),
+            ImageScaleMode.Fill    => Centered(dest, imgW, imgH, MathF.Max(sx, sy)),
+            ImageScaleMode.Stretch => dest,
+            ImageScaleMode.None    => SKRect.Create(dest.Left, dest.Top, imgW, imgH),
+            _ => dest,
+        };
+
+        // Fill a None můžou přesáhnout dest → clip na element rect, ať nevylezou ven.
+        if (mode is ImageScaleMode.Fill or ImageScaleMode.None)
+        {
+            canvas.Save();
+            canvas.ClipRect(dest);
+            canvas.DrawImage(image, target, sampling, paint);
+            canvas.Restore();
+        }
+        else
+        {
+            canvas.DrawImage(image, target, sampling, paint);
+        }
+    }
+
+    private static SKRect Centered(SKRect dest, float imgW, float imgH, float scale)
+    {
+        float w = imgW * scale, h = imgH * scale;
+        return new SKRect(dest.MidX - w / 2f, dest.MidY - h / 2f, dest.MidX + w / 2f, dest.MidY + h / 2f);
+    }
+
+    /// <summary>
+    /// Vrátí poměr stran obrázku (W/H) pro „Přizpůsobit poměru" akci.
+    /// Null = obrázek není načten nebo je poškozený.
+    /// </summary>
+    public float? GetImageAspectRatio()
+    {
+        if (string.IsNullOrEmpty(ImageBase64)) return null;
+        try
+        {
+            using var bmp = SKBitmap.Decode(Convert.FromBase64String(ImageBase64));
+            if (bmp is null || bmp.Width <= 0 || bmp.Height <= 0) return null;
+            return (float)bmp.Width / bmp.Height;
+        }
+        catch { return null; }
     }
 
     /// <summary>Nastaví obrázek z byte[] s automatickým downscale pokud přesáhne limit.</summary>
@@ -91,12 +154,17 @@ public class ImageElement : TemplateElement
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new ButtonPropertyDescriptor { Label = "Obrázek", Group = "Obrázek", ButtonLabel = "Nahrát obrázek...", ActionId = ButtonPropertyDescriptor.ActionUploadImage },
+        new ButtonPropertyDescriptor { Label = "Poměr stran", Group = "Obrázek", ButtonLabel = "Přizpůsobit poměru obrázku", ActionId = ButtonPropertyDescriptor.ActionMatchImageAspect },
         new StringPropertyDescriptor { Label = "Datové pole", Group = "Obrázek",
             Get = () => DataField ?? "",
             Set = v => DataField = string.IsNullOrWhiteSpace(v) ? null : v },
-        new EnumPropertyDescriptor   { Label = "Škálování",   Group = "Obrázek", Get = () => ScaleMode, Set = v => ScaleMode = (ImageScaleMode)v,
-            Options = [("Fit", (object)ImageScaleMode.Fit), ("Fill", (object)ImageScaleMode.Fill),
-                       ("Stretch", (object)ImageScaleMode.Stretch), ("None", (object)ImageScaleMode.None)] },
+        new EnumPropertyDescriptor   { Label = "Škálování", Group = "Obrázek", Get = () => ScaleMode, Set = v => ScaleMode = (ImageScaleMode)v,
+            Options = [
+                ("Vejít celý",         (object)ImageScaleMode.Fit),
+                ("Vyplnit (oříznout)", (object)ImageScaleMode.Fill),
+                ("Roztáhnout",         (object)ImageScaleMode.Stretch),
+                ("Bez úpravy",         (object)ImageScaleMode.None),
+            ] },
 
         .. GetPositionDescriptors()
     ];

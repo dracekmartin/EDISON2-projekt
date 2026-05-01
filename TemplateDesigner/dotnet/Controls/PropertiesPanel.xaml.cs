@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -50,8 +51,21 @@ public partial class PropertiesPanel : UserControl
 
         if (descriptors.Count == 0) return;
 
+        // Stable sort by group: skupiny v pořadí prvního výskytu, řádky uvnitř skupiny
+        // zachovají původní pořadí. Brání duplikovaným hlavičkám když descriptory přicházejí
+        // z různých helperů a deklarační pořadí groups není sjednocené.
+        var groupOrder = new Dictionary<string, int>();
+        for (int i = 0; i < descriptors.Count; i++)
+            groupOrder.TryAdd(descriptors[i].Group, groupOrder.Count);
+
+        var sorted = descriptors
+            .Select((d, i) => (d, i))
+            .OrderBy(x => groupOrder[x.d.Group])
+            .ThenBy(x => x.i)
+            .Select(x => x.d);
+
         string? currentGroup = null;
-        foreach (var d in descriptors)
+        foreach (var d in sorted)
         {
             if (d.Group != currentGroup)
             {
