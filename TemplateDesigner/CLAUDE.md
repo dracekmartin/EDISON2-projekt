@@ -18,8 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-1. **Fáze A: Odladění MHD zastávkového JŘ s reálnými daty** (Fáze B0.5 Code Hygiene dokončena; jednotná kaskáda stylů buněk napříč StopList/DepartureGrid/TableElement dokončena).
-2. Krok 8 roadmapy — edge cases (prázdné směry, speciální znaky, velké linky), vizuální shoda s referenčním PDF (pixel-by-pixel), fonty pro speciální znaky.
+**Fáze A: 1:1 šablona zastávkového JŘ** — hotová první kompletní verze + review s kolegy. (Fáze B0.5 Code Hygiene + sjednocení Header/Data zón dokončeny.)
 
 ### ✅ Co máme
 

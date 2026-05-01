@@ -15,7 +15,7 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-1. **Fáze A — 1:1 ladění zastávkového JŘ** ⬅️ AKTUÁLNÍ PRIORITA (krok 8–11) — edge cases, vizuální shoda s referenčním PDF, feedback od kolegů.
+1. **Fáze A — 1:1 šablona zastávkového JŘ** ⬅️ AKTUÁLNÍ PRIORITA — hotová první kompletní verze + review s kolegy.
 2. **Příprava na Caché Wave 1** (UserPreferences) — první vlna migrace, odladí patterns pro další vlny.
 
 **Hotová předchozí fáze:**
@@ -79,16 +79,13 @@ Cíl: uklidit nízko viselé plody **dřív** než se pustíme do 1:1 ladění e
 
 ### 🔴 Fáze A: Odladění MHD zastávkového JŘ s reálnými daty ⬅️ AKTUÁLNÍ PRIORITA
 
-Cíl: end-to-end proof of concept — šablona v designeru → tisk s reálnými daty z Caché → PDF 1:1 odpovídající současnému MHD JŘ. Zpětná vazba od kolegů. Navazuje na B0.5 — elementy se upravují na již uklizeném základě.
+Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review s kolegy.
 
 > **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
 
 | Krok | Co | Stav |
 |---|---|---|
-| 8 | Ladění zastávkového JŘ na reálných datech — edge cases (prázdné směry, speciální znaky, velké linky) | |
-| 9 | Vizuální shoda s referenčním PDF — porovnání pixel-by-pixel, doladění mezer/fontů/zarovnání | |
-| 10 | Fonty pro speciální znaky (①②③ anotace) — font fallback mechanismus v rendereru | |
-| 11 | Proof of concept review — zpětná vazba od kolegů, seznam úprav | |
+| A | Hotová 1:1 šablona zastávkového JŘ + review s kolegy → seznam úprav | 🔄 v běhu |
 
 #### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
 
