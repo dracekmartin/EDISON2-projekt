@@ -99,7 +99,7 @@ public class StopListElement : ScheduleElementBase
         float rowH = DataRowHeight ?? ComputeRowH(effectiveFontSize);
         float headerH = ComputeHeaderH(effectiveHeaderFontSize);
 
-        using var paints = CreateStandardPaints();
+        using var paints = CreateStandardPaints(ctx);
 
         var columns = GetVisibleColumns();
 
@@ -173,15 +173,17 @@ public class StopListElement : ScheduleElementBase
                 if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
                     RenderDirectionArrow(ctx, arrowGutter, arrowStartY, arrowEndY, rowH);
             }
-            else
+            else if (ctx.Data is null)
             {
+                // Placeholder se ukazuje jen v designeru. Print s prázdnými daty nesmí
+                // vykreslovat fake zastávky.
                 float placeholderFontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
                 using var placeholderFont = new SKFont(GetTypeface(DataStyle.FontFamily), placeholderFontPx);
                 currentY = RenderPlaceholderRows(ctx, 4, "Zastávka",
                     X, currentY, Width, rowH, placeholderFont, paints.Text, paints.Grid);
             }
 
-            RenderOuterBorder(ctx, X, Y, Width, currentY - Y, paints.Grid);
+            // Outer border je řízen TemplateElement.BorderColor/BorderWidth (druhý průchod).
         }
         finally
         {

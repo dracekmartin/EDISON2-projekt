@@ -406,7 +406,9 @@ public class DepartureGridElement : ScheduleElementBase
         var layout = ComputeLayout(ctx.Data, ctx.MmToPx);
         if (layout is null)
         {
-            RenderPlaceholder(ctx);
+            // Placeholder se ukazuje jen v designeru. Print s prázdnými daty nesmí
+            // vykreslovat fake mřížku.
+            if (ctx.Data is null) RenderPlaceholder(ctx);
             return;
         }
 
@@ -433,7 +435,7 @@ public class DepartureGridElement : ScheduleElementBase
         ctx.Canvas.Save();
         ctx.Canvas.ClipRect(clipRect);
 
-        using var paints = CreateStandardPaints();
+        using var paints = CreateStandardPaints(ctx);
 
         // ── Style lookup — jednou na frame, resolves __INDEX_ keys ──────────
         var layoutGroupIds = layout.Groups.Select(g => g.Skupina.Id).ToList();
@@ -517,7 +519,7 @@ public class DepartureGridElement : ScheduleElementBase
             RenderGridHeader();
             RenderGridRows();
             RenderGridVerticalSeparators();
-            RenderOuterBorder(ctx, X, Y, usedWidth, currentY - Y, paints.Grid);
+            // Outer border je řízen TemplateElement.BorderColor/BorderWidth (druhý průchod).
         }
         finally
         {
@@ -864,7 +866,7 @@ public class DepartureGridElement : ScheduleElementBase
         float rowH = DataRowHeight ?? ComputeRowH(effFontSize);
         float headerH = ComputeHeaderH(effHeaderFontSize);
 
-        using var paints = CreateStandardPaints();
+        using var paints = CreateStandardPaints(ctx);
 
         float fontPx = effFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * PtToMm * ctx.MmToPx;
@@ -904,7 +906,7 @@ public class DepartureGridElement : ScheduleElementBase
             currentY += rowH;
         }
 
-        RenderOuterBorder(ctx, X, Y, Width, currentY - Y, paints.Grid);
+        // Outer border je řízen TemplateElement.BorderColor/BorderWidth (druhý průchod).
     }
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────

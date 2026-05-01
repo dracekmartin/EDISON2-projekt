@@ -186,10 +186,18 @@ public abstract class ScheduleElementBase : TemplateElement
     protected static float ComputeHeaderH(float headerFontSizePt) => headerFontSizePt * PtToMm * HeaderHeightFactor;
 
     /// <summary>Vytvoří standardní sadu paintů pro JŘ elementy. Volající musí dispose.</summary>
-    protected SchedulePaints CreateStandardPaints() => new(
+    protected SchedulePaints CreateStandardPaints(RenderContext ctx) => new(
         SKColor.Parse(GridColor),
         SKColor.Parse(HeaderStyle.BackgroundColor ?? "#FFE0E0E0"),
-        SKColor.Parse(HeaderStyle.TextColor ?? "#FF000000"));
+        SKColor.Parse(HeaderStyle.TextColor ?? "#FF000000"),
+        gridStrokePx: ComputeGridStrokePx(ctx));
+
+    /// <summary>
+    /// Tloušťka mřížky v px = `BorderWidth * MmToPx` (sjednocená s outer borderem),
+    /// minimum 0.5px aby byla vždy viditelná i když je border vypnutý.
+    /// </summary>
+    private float ComputeGridStrokePx(RenderContext ctx) =>
+        MathF.Max(0.5f, BorderWidth * ctx.MmToPx);
 
     /// <summary>Vykreslí záhlaví sekce: pozadí + text + horizontální čára pod záhlavím.</summary>
     protected static float RenderSectionHeader(
@@ -210,13 +218,6 @@ public abstract class ScheduleElementBase : TemplateElement
         return y + headerH;
     }
 
-    /// <summary>Vykreslí vnější rámeček elementu.</summary>
-    protected static void RenderOuterBorder(
-        RenderContext ctx, float x, float y, float width, float height, SKPaint gridPaint)
-    {
-        var outerRect = ctx.ToCanvasRect(x, y, width, height);
-        ctx.Canvas.DrawRect(outerRect, gridPaint);
-    }
 
     /// <summary>Vykreslí placeholder řádky (šedý text, mřížka).</summary>
     protected static float RenderPlaceholderRows(
@@ -527,9 +528,11 @@ public sealed class SchedulePaints : IDisposable
     public SKPaint Text { get; }
     public SKPaint HeaderText { get; }
 
-    public SchedulePaints(SKColor gridColor, SKColor headerBgColor, SKColor headerFgColor)
+    public SchedulePaints(SKColor gridColor, SKColor headerBgColor, SKColor headerFgColor, float gridStrokePx = 1f)
     {
-        Grid       = new SKPaint { Color = gridColor, IsStroke = true, StrokeWidth = 1f, IsAntialias = false };
+        // Adaptivní stroke (stejně jako RenderBorder): sub-pixel AA pro tenké, jinak pixel-snap.
+        bool thin = gridStrokePx < 1f;
+        Grid       = new SKPaint { Color = gridColor, IsStroke = true, StrokeWidth = gridStrokePx, IsAntialias = thin };
         HeaderBg   = new SKPaint { Color = headerBgColor };
         Text       = new SKPaint { Color = new SKColor(0xFF222222), IsAntialias = true };
         HeaderText = new SKPaint { Color = headerFgColor, IsAntialias = true };

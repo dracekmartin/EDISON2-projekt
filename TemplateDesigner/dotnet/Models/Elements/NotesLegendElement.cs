@@ -56,7 +56,7 @@ public class NotesLegendElement : ScheduleElementBase
         float headerH = ComputeHeaderH(effHeaderFontSize * scale);
         float scaledNoteLineH = NoteLineHeight * scale;
 
-        using var paints = CreateStandardPaints();
+        using var paints = CreateStandardPaints(ctx);
 
         using var noteFont = new SKFont(GetTypeface(effFontFamily), noteFontPx);
         using var headerFont = new SKFont(GetTypeface(effFontFamily, SKFontStyle.Bold), headerFontPx);
@@ -68,13 +68,17 @@ public class NotesLegendElement : ScheduleElementBase
 
         if (!hasData)
         {
-            // Placeholder
-            paints.Text.Color = new SKColor(0xFF999999);
-            for (int i = 0; i < 3; i++)
+            // Placeholder se ukazuje jen v designeru (bez DataContext) — print s prázdnými
+            // poznámkami nesmí vykreslovat fake řádky.
+            if (ctx.Data is null)
             {
-                var pt = ctx.ToCanvas(X + 1f, currentY + NoteLineHeight * 0.75f);
-                ctx.Canvas.DrawText($"Poznámka {i + 1}", pt.X, pt.Y, noteFont, paints.Text);
-                currentY += NoteLineHeight;
+                paints.Text.Color = new SKColor(0xFF999999);
+                for (int i = 0; i < 3; i++)
+                {
+                    var pt = ctx.ToCanvas(X + 1f, currentY + NoteLineHeight * 0.75f);
+                    ctx.Canvas.DrawText($"Poznámka {i + 1}", pt.X, pt.Y, noteFont, paints.Text);
+                    currentY += NoteLineHeight;
+                }
             }
         }
         else
@@ -108,7 +112,8 @@ public class NotesLegendElement : ScheduleElementBase
             }
         }
 
-        RenderOuterBorder(ctx, X, Y, Width, currentY - Y, paints.Grid);
+        // Outer border je řízen TemplateElement.BorderColor/BorderWidth (druhý průchod);
+        // sjednocená cesta s ostatními elementy.
     }
 
     private void RenderNegativniZnacka(RenderContext ctx, PoznamkaData pozn,
