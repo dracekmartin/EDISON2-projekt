@@ -49,7 +49,7 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
         }
         if (string.IsNullOrWhiteSpace(ApiKey))
         {
-            PopupDisplayer.Info("Zadejte Anthropic API klíč nebo jej nastavte v appsettings.json.");
+            PopupDisplayer.Info("Zadejte Anthropic API klíč nebo jej nastavte v templatedesigner.appsettings.json.");
             return;
         }
 

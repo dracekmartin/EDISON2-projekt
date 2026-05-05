@@ -13,7 +13,7 @@ namespace TemplateDesigner.Serialization;
 /// Nahrazuje CacheDataSchemaProvider — pracuje s JSON formátem místo pipe-delimited stringů.
 ///
 /// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.API.AgendaAPI,
-/// nakonfigurovanou v appsettings.json jako "cacheClass": "ALVA.JR.TiskAPI".
+/// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.JR.TiskAPI".
 /// </summary>
 public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 {

@@ -155,7 +155,7 @@
                             <Setter Property="Content" Value="AI Vision import (Sonnet — rozpoznání struktury z obrázku)"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding HasApiKey}" Value="False">
-                                    <Setter Property="Content" Value="AI Vision import (API klíč chybí v appsettings.json)"/>
+                                    <Setter Property="Content" Value="AI Vision import (API klíč chybí v templatedesigner.appsettings.json)"/>
                                     <Setter Property="IsEnabled" Value="False"/>
                                 </DataTrigger>
                             </Style.Triggers>

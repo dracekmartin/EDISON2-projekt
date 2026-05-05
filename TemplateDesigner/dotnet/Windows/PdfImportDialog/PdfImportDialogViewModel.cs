@@ -89,7 +89,7 @@ public class PdfImportDialogViewModel : EDViewModel
         set { Set(ref _useAiVision, value); OnPropertyChanged(nameof(IsAiVisionAgendaVisible)); }
     }
 
-    /// <summary>Máme API klíč z appsettings.json?</summary>
+    /// <summary>Máme API klíč z templatedesigner.appsettings.json?</summary>
     public bool HasApiKey { get; }
 
     /// <summary>Sekce AI obohacení je viditelná jen při JŘ importu.</summary>

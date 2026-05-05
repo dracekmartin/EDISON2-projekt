@@ -217,7 +217,7 @@ Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `Cac
 
 ### C# strana — konfigurace a provider
 
-**appsettings.json:**
+**templatedesigner.appsettings.json** (vlastní název kvůli sdílené složce `C:\Edison\`):
 ```json
 {
   "agendas": [
@@ -246,7 +246,7 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 ```
 
 **Wiring** (`Config/CacheSchemaWiring.cs`):
-- Přečte `appsettings.json` → pro každou agendu vytvoří `CacheAgendaProvider(cacheClass, mlRest)`
+- Přečte `templatedesigner.appsettings.json` → pro každou agendu vytvoří `CacheAgendaProvider(cacheClass, mlRest)`
 - Fallback: `CompositeDataSchemaProvider` (Caché primary + JSON fallback ze `schemas/*.schema.json`)
 
 ---
@@ -255,7 +255,7 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 1. Vytvořit Caché třídu `ALVA.TemplateDesigner.API.<Agenda>API Extends ALVA.TemplateDesigner.API.AgendaAPI`
 2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`, `GetMockData`
-3. Přidat záznam do `appsettings.json` → `agendas[]`
+3. Přidat záznam do `templatedesigner.appsettings.json` → `agendas[]`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback
    - `GetMockData` vrací JSON: `{ "values": { "POLE": "hodnota", ... }, "rows": { "KLIC": [ {...}, ... ] } }`
 

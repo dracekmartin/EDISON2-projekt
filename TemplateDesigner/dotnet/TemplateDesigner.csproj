@@ -39,11 +39,16 @@
     <Content Include="schemas\*.schema.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="appsettings.json">
+    <!-- Vlastní název kvůli sdílené složce C:\Edison\ — generický appsettings.json
+         tam patří jiným Edison aplikacím (např. EdisonCacheMcp) a docházelo by ke konfliktu. -->
+    <!-- Hlavní config je embedded resource → .exe je self-contained, žádný sidecar soubor není potřeba.
+         Externí soubor vedle .exe (pokud existuje) má přednost před embedded. -->
+    <EmbeddedResource Include="templatedesigner.appsettings.json" LogicalName="templatedesigner.appsettings.json" />
+
+    <!-- Lokální override (gitignored) — kopírujeme jen do bin/, ne do publish (každý si ho dropne sám). -->
+    <Content Include="templatedesigner.appsettings.local.json" Condition="Exists('templatedesigner.appsettings.local.json')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="appsettings.local.json" Condition="Exists('appsettings.local.json')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 
