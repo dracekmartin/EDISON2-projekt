@@ -256,11 +256,11 @@ AI Assistant vyžaduje **Anthropic API klíč** (Claude). Nastavit lze dvěma zp
 **Získání API klíče:**
 - Registrace na https://console.anthropic.com/
 - Vytvoření API klíče v sekci API Keys
-- Zkopírování klíče do `appsettings.local.json` nebo do dialogu
+- Zkopírování klíče do `templatedesigner.appsettings.local.json` nebo do dialogu
 
 **Zapnutí/vypnutí funkce:**
 
-V `appsettings.json`:
+V `templatedesigner.appsettings.json`:
 ```json
 "aiAssistant": {
   "enabled": true   // false = skryje menu položku

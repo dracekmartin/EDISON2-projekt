@@ -5,14 +5,27 @@ using System.Text.Json.Serialization;
 namespace TemplateDesigner.Config;
 
 /// <summary>
-/// Konfigurace aplikace načítaná z appsettings.json.
-/// Soubor leží vedle spustitelného souboru (AppContext.BaseDirectory).
+/// Konfigurace aplikace.
+/// Pořadí načítání (každá další vrstva přepíše předchozí):
+///  1. Embedded resource (zabudovaný v .exe — baseline, aby aplikace fungovala self-contained)
+///  2. Externí templatedesigner.appsettings.json vedle exe (volitelný override pro celý config)
+///  3. Externí templatedesigner.appsettings.local.json vedle exe (volitelný per-user override; gitignored)
+///
+/// Záměrně nesdílí název s generickým appsettings.json kvůli složce C:\Edison\,
+/// kde žije víc aplikací (EdisonCacheMcp atd.) s vlastní strukturou JSON.
 /// </summary>
 public class AppSettings
 {
+    public const string ConfigFileName      = "templatedesigner.appsettings.json";
+    public const string LocalConfigFileName = "templatedesigner.appsettings.local.json";
+
     public CacheConnectionSettings? Cache    { get; set; }
     public List<SchemaAgendaSettings> Agendas { get; set; } = [];
     public AiAssistantSettings AiAssistant   { get; set; } = new();
+
+    /// <summary>Zdroj nakonec použitého configu (pro diagnostiku startu).</summary>
+    [JsonIgnore]
+    public ConfigSource Source { get; private set; } = ConfigSource.None;
 
     /// <summary>Singleton instance načtená při startu aplikace.</summary>
     public static AppSettings? Current { get; private set; }
@@ -24,57 +37,87 @@ public class AppSettings
         AllowTrailingCommas         = true
     };
 
-    /// <summary>
-    /// Načte appsettings.json ze složky vedle exe.
-    /// Pokud existuje appsettings.local.json, přepíše hodnoty z něj (pro lokální konfiguraci).
-    /// Pokud soubor neexistuje nebo je poškozený, vrátí výchozí instanci (bez Caché).
-    /// </summary>
     public static AppSettings Load()
     {
         var baseDir = AppContext.BaseDirectory;
-        var path = Path.Combine(baseDir, "appsettings.json");
-        var localPath = Path.Combine(baseDir, "appsettings.local.json");
+        var path = Path.Combine(baseDir, ConfigFileName);
+        var localPath = Path.Combine(baseDir, LocalConfigFileName);
 
-        // Načíst hlavní config
-        AppSettings? settings = null;
+        // 1. Embedded baseline (vždy přítomný v .exe)
+        var (settings, source) = LoadFromEmbedded();
+
+        // 2. Externí soubor vedle exe (přepíše embedded, pokud existuje)
         if (File.Exists(path))
         {
-            try
+            var fromFile = TryLoadFromFile(path);
+            if (fromFile is not null)
             {
-                var json = File.ReadAllText(path, System.Text.Encoding.UTF8);
-                settings = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+                settings = fromFile;
+                source = ConfigSource.ExternalFile;
             }
-            catch { /* ignore */ }
         }
 
         settings ??= new AppSettings();
+        settings.Source = source;
 
-        // Merge s lokálním configem (přepíše hodnoty z appsettings.json)
+        // 3. Lokální override (per-user, gitignored)
         if (File.Exists(localPath))
         {
-            try
-            {
-                var localJson = File.ReadAllText(localPath, System.Text.Encoding.UTF8);
-                var local = JsonSerializer.Deserialize<AppSettings>(localJson, JsonOptions);
-                if (local is not null)
-                {
-                    // Merge: lokální hodnoty přepíšou hlavní (jen pokud jsou v .local.json opravdu definované)
-                    if (local.Cache is not null)
-                        settings.Cache = local.Cache;
-                    if (local.Agendas.Count > 0)
-                        settings.Agendas = local.Agendas;
-                    if (!string.IsNullOrEmpty(local.AiAssistant.AnthropicApiKey))
-                        settings.AiAssistant.AnthropicApiKey = local.AiAssistant.AnthropicApiKey;
-                    if (local.AiAssistant.Enabled != settings.AiAssistant.Enabled)
-                        settings.AiAssistant.Enabled = local.AiAssistant.Enabled;
-                }
-            }
-            catch { /* ignore */ }
+            var local = TryLoadFromFile(localPath);
+            if (local is not null) MergeLocal(settings, local);
         }
 
         Current = settings;
         return Current;
     }
+
+    /// <summary>Načte embedded resource zabudovaný do assembly při buildu.</summary>
+    private static (AppSettings? settings, ConfigSource source) LoadFromEmbedded()
+    {
+        try
+        {
+            var assembly = typeof(AppSettings).Assembly;
+            using var stream = assembly.GetManifestResourceStream(ConfigFileName);
+            if (stream is null) return (null, ConfigSource.None);
+
+            using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+            var json = reader.ReadToEnd();
+            var parsed = JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+            return parsed is not null ? (parsed, ConfigSource.Embedded) : (null, ConfigSource.None);
+        }
+        catch { return (null, ConfigSource.None); }
+    }
+
+    private static AppSettings? TryLoadFromFile(string path)
+    {
+        try
+        {
+            var json = File.ReadAllText(path, System.Text.Encoding.UTF8);
+            return JsonSerializer.Deserialize<AppSettings>(json, JsonOptions);
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Přepíše hodnoty v target hodnotami z local (jen pokud jsou v local explicitně nastavené).</summary>
+    private static void MergeLocal(AppSettings target, AppSettings local)
+    {
+        if (local.Cache is not null)
+            target.Cache = local.Cache;
+        if (local.Agendas.Count > 0)
+            target.Agendas = local.Agendas;
+        if (!string.IsNullOrEmpty(local.AiAssistant.AnthropicApiKey))
+            target.AiAssistant.AnthropicApiKey = local.AiAssistant.AnthropicApiKey;
+        if (local.AiAssistant.Enabled != target.AiAssistant.Enabled)
+            target.AiAssistant.Enabled = local.AiAssistant.Enabled;
+    }
+}
+
+/// <summary>Odkud byl primární config načten (pro diagnostiku).</summary>
+public enum ConfigSource
+{
+    None,           // Nic se nepodařilo načíst (chyba při buildu)
+    Embedded,       // Z embedded resource v .exe
+    ExternalFile    // Z externího souboru vedle .exe
 }
 
 /// <summary>Nastavení připojení k Caché / IRIS serveru přes MLRest.</summary>

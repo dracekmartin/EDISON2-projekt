@@ -2,6 +2,7 @@
 .claude/settings.local.json
 
 # Local configuration with secrets (API keys, etc.)
+dotnet/templatedesigner.appsettings.local.json
 dotnet/appsettings.local.json
 
 # Build output

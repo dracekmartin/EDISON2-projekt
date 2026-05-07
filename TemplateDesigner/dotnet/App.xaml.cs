@@ -39,7 +39,34 @@ public partial class App : Application
         EDServices.Initialize(new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer()));
         var settings = AppSettings.Load();
         var mlRest   = CacheSchemaWiring.TryCreateMlRest(settings);
+
+        WarnIfCacheMisconfigured(settings, mlRest);
+
         new MainWindow(mlRest).Show();
+    }
+
+    /// <summary>
+    /// Pokud nelze Caché vytvořit, zobrazí diagnostické varování.
+    /// Embedded config by měl vždy uspět — pokud nebyl, něco je rozbité při buildu.
+    /// </summary>
+    private static void WarnIfCacheMisconfigured(AppSettings settings, ALWA.SYS.MLRest? mlRest)
+    {
+        if (mlRest is not null) return;
+
+        var (title, message) = settings.Source switch
+        {
+            ConfigSource.None =>
+                ("Caché — chybějící embedded config",
+                 "Embedded baseline config se nenačetl. Pravděpodobně chybí EmbeddedResource " +
+                 "položka v csproj nebo selhalo parsování JSON. Aplikace pojede bez Caché."),
+            _ =>
+                ("Caché — neplatná konfigurace",
+                 $"Sekce 'cache' v configu (zdroj: {settings.Source}) chybí nebo je neplatná " +
+                 $"(prázdný Server / nevalidní Port). Aplikace pojede bez Caché. " +
+                 $"Pro override vlož '{AppSettings.ConfigFileName}' vedle exe.")
+        };
+
+        MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
     }
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

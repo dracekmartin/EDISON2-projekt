@@ -119,7 +119,7 @@
                            Foreground="#888888"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap">
-                    <Run Text="Pokud není zadán API klíč zde, použije se klíč z appsettings.json. Získat API klíč můžete na "/>
+                    <Run Text="Pokud není zadán API klíč zde, použije se klíč z templatedesigner.appsettings.json. Získat API klíč můžete na "/>
                     <Hyperlink NavigateUri="https://console.anthropic.com/" RequestNavigate="Hyperlink_RequestNavigate">
                         <Run Text="console.anthropic.com"/>
                     </Hyperlink>

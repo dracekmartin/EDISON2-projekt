@@ -149,6 +149,23 @@ Preview v designeru = plný engine s mock daty. "Tisk" = tentýž engine s reál
 
 ---
 
+## Publish — distribuce build .exe
+
+Single-file `.exe` se generuje skriptem `publish.ps1` v rootu projektu:
+
+```powershell
+cd C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner
+.\publish.ps1
+```
+
+Skript volá `dotnet publish` s profilem `SingleFile C-Edison` → výstup do `C:\Edison\TemplateDesigner.exe` (~30 MB, self-extracting bundle s `templatedesigner.appsettings.json` jako embedded resource).
+
+**Před spuštěním** — zavři běžící TemplateDesigner.exe (skript hned na začátku ověří lock a friendly errne, pokud je soubor uzamčený).
+
+**Pozn.:** Publish přes Visual Studio GUI je občas rozbitý (silent skip GenerateSingleFileBundle, build prošel ale single-file se nevyrobil). CLI variantou tohoto skriptu se to obchází.
+
+---
+
 ## Detailní dokumentace (`.claude/rules/`)
 
 Soubory se načítají automaticky při práci na relevantních souborech.

@@ -39,7 +39,7 @@ TemplateDesigner/
   CompositeDataSchemaProvider.cs    — Caché primary + JSON fallback
 
 /Config
-  AppSettings.cs            — POCO konfigurace + static Load() z appsettings.json
+  AppSettings.cs            — POCO konfigurace + static Load() z templatedesigner.appsettings.json
   CacheSchemaWiring.cs      — vytváří CacheAgendaProvider z AppSettings + MLRest
 
 /Commands
@@ -69,7 +69,7 @@ TemplateDesigner/
 /section-templates (runtime)
   *.json                    — custom šablony sekcí (uložené uživatelem); vedle .exe
 
-appsettings.json            — konfigurace Caché připojení + seznam agend (CopyToOutput)
+templatedesigner.appsettings.json — konfigurace Caché připojení + seznam agend (CopyToOutput); záměrně non-generický název kvůli sdílené složce C:\Edison\
 MainWindow.xaml / .cs       — hlavní okno s toolbarem a panely
 ElementPropertiesWindow.xaml / .cs — dialog vlastností elementu/sekce
 ```
