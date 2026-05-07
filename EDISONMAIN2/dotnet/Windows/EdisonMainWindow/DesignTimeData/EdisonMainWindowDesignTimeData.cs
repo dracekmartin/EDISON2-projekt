@@ -31,7 +31,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 
         public ObservableCollection<CompanyItem> VisibleIdfas { get; } =
         [
-            new CompanyItem("CB_DP", "CB_DB"),
+            new CompanyItem("CB_DP", "Dopravní podnik města České Budějovice", "CB_DB"),
         ];
 
         public int SelectedCompanyIndex { get; set; } = 0;

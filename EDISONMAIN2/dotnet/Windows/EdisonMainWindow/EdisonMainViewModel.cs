@@ -12,7 +12,10 @@ using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
 {
-    record CompanyItem(string Id, string Database);
+    record CompanyItem(string Id, string Name, string Database)
+    {
+        public string DisplayName => string.IsNullOrEmpty(Name) ? Id : $"{Name} [{Id}]";
+    }
 
     class EdisonMainViewModel : EDViewModel
     {
@@ -42,7 +45,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             TopLevelModules = [];
 
-            VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
+            // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
+            VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
             // Index musí odpovídat MLRest.Idfa — tam má App.xaml.cs vytvořený ACTIVITY zámek.
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
 
