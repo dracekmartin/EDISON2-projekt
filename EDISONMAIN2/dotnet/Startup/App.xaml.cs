@@ -96,10 +96,9 @@ namespace EDISONMAIN2
             // Hostované moduly (.exe) sdílejí shellův GUID + CacheLocks=1, aby
             // jejich aktivita udržovala shell session naživu a aby zánik shell
             // zámku korektně shodil i moduly. Viz FormToRunGetter v EDISONMAIN2API.
-            var connParams = new ConnectionParams(server, port, login.UserName, login.FullName, login.Mlp, mlRest.Inner.GUID);
             var treeGetter = new ModuleTreeGetter();
-            var processLauncher = new ProcessLauncher(connParams);
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams);
+            var processLauncher = new ProcessLauncher(mlRest);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();

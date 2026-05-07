@@ -1,4 +1,4 @@
-using EDISONMAIN2;
+using EDControls;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using System;
 using System.Collections.Generic;
@@ -7,20 +7,22 @@ using System.IO;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Processes
 {
-    public class ProcessLauncher(ConnectionParams connParams) : IProcessLauncher
+    public class ProcessLauncher(IMLRest mlRest) : IProcessLauncher
     {
         private readonly List<Process> _processes = [];
-        private readonly ConnectionParams _connParams = connParams;
+        private readonly IMLRest _mlRest = mlRest;
 
-        public void Launch(ExecutableModule module, string Namespace, string Idfa)
+        public void Launch(ExecutableModule module)
         {
             if (string.IsNullOrEmpty(module.ExecutablePath)) return;
 
+            // Connection kontext se čte za běhu z MLRest, takže po přepnutí firmy
+            // (změna Idfa / DataNamespace) modul dostane aktuální hodnoty.
             var prc = Process.Start(new ProcessStartInfo()
             {
                 UseShellExecute = true,
                 FileName = ResolveExecutablePath(module.ExecutablePath),
-                Arguments = $"EDISONMAIN2 \"{_connParams.Server}\" \"{_connParams.RestPort}\" \"{Namespace}\" \"{Idfa}\" \"{_connParams.UserName}\" \"{_connParams.FullName}\" \"{_connParams.Mlp}\" \"{module.FormName}\" \"{_connParams.Guid}\"",
+                Arguments = $"EDISONMAIN2 \"{_mlRest.Server}\" \"{_mlRest.Port}\" \"{_mlRest.DataNamespace}\" \"{_mlRest.Idfa}\" \"{_mlRest.LoginName}\" \"{_mlRest.FullName}\" \"{_mlRest.Mlp}\" \"{module.FormName}\" \"{_mlRest.Guid}\"",
             });
 
             if (prc != null) _processes.Add(prc);

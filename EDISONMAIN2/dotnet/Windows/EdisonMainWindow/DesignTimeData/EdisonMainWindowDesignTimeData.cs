@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 {
@@ -37,7 +36,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 
         public int SelectedCompanyIndex { get; set; } = 0;
 
-        public ConnectionParams ConnParams { get; } = new("localhost", 52773, "designer", "Design User", 0, "design-guid");
+        public static string Server    => "localhost";
+        public static int    RestPort  => 52773;
+        public static string UserName  => "designer";
+        public static string FullName  => "Design User";
+        public static string Mlp       => "0";
 
         public static string Namespace => "CBDB";
         public static string Idfa => "CB_DP";

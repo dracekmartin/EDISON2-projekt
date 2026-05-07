@@ -29,12 +29,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
             IModuleTreeGetter treeService,
-            IProcessLauncher processService,
-            ConnectionParams connParams)
+            IProcessLauncher processService)
         {
             _treeGetter = treeService;
             _processLauncher = processService;
-            ConnParams = connParams;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
@@ -96,8 +94,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             return filtered;
         }
 
-        /// <summary>Exposed for StatusBar bindings in EdisonMainWindow.xaml.</summary>
-        public ConnectionParams ConnParams { get; }
+        // StatusBar bindings — konstantní hodnoty z MLRest (nemění se po dobu života shellu).
+        public string Server    => MLRest!.Server;
+        public int    RestPort  => MLRest!.Port;
+        public string UserName  => MLRest!.LoginName;
+        public string FullName  => MLRest!.FullName;
+        public string Mlp       => MLRest!.Mlp;
 
         public ObservableCollection<IModule> TopLevelModules { get; }
 
@@ -161,7 +163,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void OpenModule(IModule module)
         {
             if (module is ExecutableModule executableModule)
-                _processLauncher.Launch(executableModule, Namespace, Idfa);
+                _processLauncher.Launch(executableModule);
         }
     }
 }
