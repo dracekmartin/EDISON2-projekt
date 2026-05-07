@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -21,6 +22,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         private readonly IModuleTreeGetter _treeGetter;
         private readonly IProcessLauncher _processLauncher;
+        private readonly Func<Lic?> _licenceLoader;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -32,10 +34,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
             IModuleTreeGetter treeService,
-            IProcessLauncher processService)
+            IProcessLauncher processService,
+            Func<Lic?> licenceLoader)
         {
             _treeGetter = treeService;
             _processLauncher = processService;
+            _licenceLoader = licenceLoader;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
@@ -52,6 +56,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
+            LoadAndFilterTree();
+        }
+
+        // Strom i licenční gating jsou per-IdFa, takže po přepnutí firmy refresh.
+        private void LoadAndFilterTree()
+        {
+            TopLevelModules.Clear();
             var tree = _treeGetter.GetModuleTree(MLRest!);
             foreach (var module in tree)
             {
@@ -117,6 +128,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 int originalIndex = _selectedCompanyIndex;
                 string originalIdfa = MLRest!.Idfa;
                 string originalNamespace = MLRest!.DataNamespace;
+                Lic? originalLicence = _services.ActiveLicence;
 
                 Set(ref _selectedCompanyIndex, value);
                 OnPropertyChanged(nameof(Namespace));
@@ -126,23 +138,32 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 MLRest!.DataNamespace = Namespace;
                 MLRest!.Idfa = Idfa;
 
-                // ACTIVITY zámek je per-IdFa — po přepnutí potřebuje VerifyLic vyrobit
-                // nový pod novým IdFa. Starý vyprší sám.
-                if (_services.ActiveLicence != null)
+                // ACTIVITY zámek + počet licencí jsou per-IdFa — pro VerifyLic potřebujeme
+                // licenci cílové firmy, ne původní (jinak bychom kontrolovali špatný limit).
+                Lic? newLicence = originalLicence;
+                bool switchAccepted = true;
+                if (originalLicence != null)
                 {
+                    newLicence = _licenceLoader();
                     var output = MLRest!.QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
-                        new object[] { _services.ActiveLicence.CountsLOGIN });
-                    if (int.Parse(output[1]?.ToString() ?? "0") != 1)
-                    {
-                        // Překročen počet licencí pro novou IdFa → revert na původní.
-                        MLRest.Idfa = originalIdfa;
-                        MLRest.DataNamespace = originalNamespace;
-                        Set(ref _selectedCompanyIndex, originalIndex);
-                        OnPropertyChanged(nameof(Namespace));
-                        OnPropertyChanged(nameof(Idfa));
-                        OnPropertyChanged(nameof(WindowTitle));
-                        PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
-                    }
+                        new object[] { newLicence?.CountsLOGIN ?? 0 });
+                    switchAccepted = int.Parse(output[1]?.ToString() ?? "0") == 1;
+                }
+
+                if (switchAccepted)
+                {
+                    _services.ActiveLicence = newLicence;
+                    LoadAndFilterTree();
+                }
+                else
+                {
+                    MLRest.Idfa = originalIdfa;
+                    MLRest.DataNamespace = originalNamespace;
+                    Set(ref _selectedCompanyIndex, originalIndex);
+                    OnPropertyChanged(nameof(Namespace));
+                    OnPropertyChanged(nameof(Idfa));
+                    OnPropertyChanged(nameof(WindowTitle));
+                    PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 }
             }
         }

@@ -67,7 +67,8 @@ namespace EDISONMAIN2
             });
 
             // VerifyLic also creates the ACTIVITY lock for this session.
-            var activeLicence = new LicenceService(mlRest.Inner).GetActiveLicence();
+            var licenceService = new LicenceService(mlRest.Inner);
+            var activeLicence = licenceService.GetActiveLicence();
             services.ActiveLicence = activeLicence;
             int countOfLicenses = activeLicence?.CountsLOGIN ?? 0;
             var verifyOutput = mlRest.Inner.Query("ALVA.SYS.Login", "VerifyLic", new object[] { countOfLicenses });
@@ -94,7 +95,9 @@ namespace EDISONMAIN2
             // ACTIVITY zámku shodil i moduly. Wiring viz FormToRunGetter v EDISONMAIN2API.
             var treeGetter = new ModuleTreeGetter();
             var processLauncher = new ProcessLauncher(mlRest);
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher);
+            // licenceService.GetActiveLicence čte aktuální stav MLRest, takže po přepnutí firmy
+            // dostane VM licenci cílové firmy (potřebné pro VerifyLic se správným CountsLOGIN).
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, licenceService.GetActiveLicence);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();

@@ -46,7 +46,7 @@ public class EdisonMainViewModelTests
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
         }
         finally
         {
@@ -111,7 +111,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
         }
         finally
         {
@@ -140,7 +140,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
         }
         finally
         {
