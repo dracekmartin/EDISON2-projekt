@@ -43,9 +43,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             TopLevelModules = [];
 
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Database))];
-            // Inicializace musí odpovídat tomu, kde shell vytvořil ACTIVITY zámek
-            // (App.xaml.cs: VerifyLic běží proti mlRest.Idfa). Pokud bychom tu měli
-            // jiné IdFa, modul by hledal lock pod neaktivním IdFa a vždy by selhal.
+            // Index musí odpovídat MLRest.Idfa — tam má App.xaml.cs vytvořený ACTIVITY zámek.
             _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i)).First(x => x.c.Id == mlRest.Idfa).i;
 
             _services.MLRest = mlRest;
@@ -59,12 +57,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         /// <summary>
-        /// Rekurzivně profiltruje uzel stromu podle licence.
-        /// EXE projde pokud <see cref="ExecutableModule.IsLicensed"/> je <c>false</c>
-        /// (vždy povoleno), nebo pokud je <see cref="ExecutableModule.ElementId"/>
-        /// v <see cref="Lic.Elements"/> whitelistu.
-        /// FAMILY se zachová, pokud po filtraci zbývá alespoň jedno dítě.
-        /// Vrací <c>null</c> pro uzly, které nemají projít.
+        /// Profiltruje strom podle licence. EXE projde pokud není gateovaný nebo je v
+        /// <see cref="Lic.Elements"/>; FAMILY zůstává, pokud má aspoň jedno viditelné dítě.
         /// </summary>
         internal static IModule? TryFilter(IModule module, Lic? licence) => module switch
         {
@@ -94,7 +88,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             return filtered;
         }
 
-        // StatusBar bindings — konstantní hodnoty z MLRest (nemění se po dobu života shellu).
+        // StatusBar — Identity props z MLRest (per session konstantní).
         public string Server    => MLRest!.Server;
         public int    RestPort  => MLRest!.Port;
         public string UserName  => MLRest!.LoginName;
@@ -128,18 +122,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 MLRest!.DataNamespace = Namespace;
                 MLRest!.Idfa = Idfa;
 
-                // ACTIVITY zámek je per-IdFa. Po přepnutí má shell stále lock pod
-                // starým IdFa, kde server hledá pod novým. Re-VerifyLic vytvoří
-                // nový lock pod novým IdFa. Starý časem vyprší.
+                // ACTIVITY zámek je per-IdFa — po přepnutí potřebuje VerifyLic vyrobit
+                // nový pod novým IdFa. Starý vyprší sám.
                 if (_services.ActiveLicence != null)
                 {
                     var output = MLRest!.QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
                         new object[] { _services.ActiveLicence.CountsLOGIN });
                     if (int.Parse(output[1]?.ToString() ?? "0") != 1)
                     {
-                        // Server nedovolil další lock pod novým IdFa (typicky překročen
-                        // počet licencí). Vrátit shell do původního IdFa, kde funkční
-                        // zámek stále drží.
+                        // Překročen počet licencí pro novou IdFa → revert na původní.
                         MLRest.Idfa = originalIdfa;
                         MLRest.DataNamespace = originalNamespace;
                         Set(ref _selectedCompanyIndex, originalIndex);

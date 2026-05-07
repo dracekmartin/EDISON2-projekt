@@ -16,8 +16,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Processes
         {
             if (string.IsNullOrEmpty(module.ExecutablePath)) return;
 
-            // Connection kontext se čte za běhu z MLRest, takže po přepnutí firmy
-            // (změna Idfa / DataNamespace) modul dostane aktuální hodnoty.
+            // Connection kontext čteme lazily — po přepnutí firmy nový modul dostane novou IdFa.
             var prc = Process.Start(new ProcessStartInfo()
             {
                 UseShellExecute = true,

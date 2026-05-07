@@ -66,8 +66,7 @@ namespace EDISONMAIN2
                 Mlp       = login.Mlp.ToString()
             });
 
-            // License gate — load active licence and ask Caché to verify session count.
-            // VerifyLic also creates the ACTIVITY lock for this session (see § 3.4 RESPONSIBILITIES).
+            // VerifyLic also creates the ACTIVITY lock for this session.
             var activeLicence = new LicenceService(mlRest.Inner).GetActiveLicence();
             services.ActiveLicence = activeLicence;
             int countOfLicenses = activeLicence?.CountsLOGIN ?? 0;
@@ -83,9 +82,7 @@ namespace EDISONMAIN2
                 return;
             }
 
-            // Když server zámek z jakéhokoli důvodu odstraní (admin force-logout,
-            // dlouhý síťový výpadek, expirace), klient hodí "ACTIVITY: Lock exist failed!"
-            // → graceful shutdown místo pádu aplikace.
+            // Server odstraní ACTIVITY zámek (force-logout, výpadek, expirace) → graceful shutdown.
             mlRest.Inner.EdisonActivityFailed += (_, _) =>
                 Dispatcher.Invoke(() =>
                 {
@@ -93,9 +90,8 @@ namespace EDISONMAIN2
                     Shutdown();
                 });
 
-            // Hostované moduly (.exe) sdílejí shellův GUID + CacheLocks=1, aby
-            // jejich aktivita udržovala shell session naživu a aby zánik shell
-            // zámku korektně shodil i moduly. Viz FormToRunGetter v EDISONMAIN2API.
+            // Moduly (.exe) sdílejí shellův GUID + CacheLocks=1, aby zánik shell
+            // ACTIVITY zámku shodil i moduly. Wiring viz FormToRunGetter v EDISONMAIN2API.
             var treeGetter = new ModuleTreeGetter();
             var processLauncher = new ProcessLauncher(mlRest);
             var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher);
