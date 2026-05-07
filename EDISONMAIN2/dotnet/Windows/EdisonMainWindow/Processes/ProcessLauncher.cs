@@ -1,11 +1,11 @@
-using EDISONMAIN2.Services;
-using EDISONMAIN2.Services.Modules;
+using EDISONMAIN2;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
-namespace EDISONMAIN2.Services.Processes
+namespace EDISONMAIN2.Windows.EdisonMainWindow.Processes
 {
     public class ProcessLauncher(ConnectionParams connParams) : IProcessLauncher
     {

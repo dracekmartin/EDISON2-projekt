@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text.Json;
 
-namespace EDISONMAIN2.Services;
+namespace EDISONMAIN2;
 
 /// <summary>
 /// Konfigurace aplikace načítaná z appsettings.json.

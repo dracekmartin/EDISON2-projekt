@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EDISONMAIN2.Services
+namespace EDISONMAIN2
 {
     public record ConnectionParams(
         string Server,

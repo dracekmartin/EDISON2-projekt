@@ -1,7 +1,7 @@
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 
-namespace EDISONMAIN2.Services.Licence;
+namespace EDISONMAIN2;
 
 /// <summary>
 /// Tenký wrapper kolem legacy VB třídy <see cref="Activation"/> z EDLicence.dll.

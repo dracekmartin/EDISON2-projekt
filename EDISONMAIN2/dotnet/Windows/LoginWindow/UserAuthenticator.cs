@@ -1,7 +1,7 @@
 using System;
 using ALWA.SYS;
 
-namespace EDISONMAIN2.Services
+namespace EDISONMAIN2.Windows.LoginWindow
 {
     public record LoginResult(
         int Mlp,

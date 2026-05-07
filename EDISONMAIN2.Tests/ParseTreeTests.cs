@@ -1,6 +1,6 @@
 using ALWA.SYS;
 using EDControls;
-using EDISONMAIN2.Services.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using NSubstitute;
 
 namespace EDISONMAIN2.Tests;

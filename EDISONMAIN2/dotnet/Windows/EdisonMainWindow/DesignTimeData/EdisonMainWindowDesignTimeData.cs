@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
-using EDISONMAIN2.Services.Modules;
-using EDISONMAIN2.Services;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData
 {

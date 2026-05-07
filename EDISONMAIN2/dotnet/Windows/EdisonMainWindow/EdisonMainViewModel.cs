@@ -6,9 +6,8 @@ using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Services;
-using EDISONMAIN2.Services.Modules;
-using EDISONMAIN2.Services.Processes;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.Processes;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -19,7 +18,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         private readonly IModuleTreeGetter _treeGetter;
         private readonly IProcessLauncher _processLauncher;
-        private readonly Lic? _activeLicence;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -32,12 +30,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IMLRest mlRest,
             IModuleTreeGetter treeService,
             IProcessLauncher processService,
-            ConnectionParams connParams,
-            Lic? activeLicence)
+            ConnectionParams connParams)
         {
             _treeGetter = treeService;
             _processLauncher = processService;
-            _activeLicence = activeLicence;
             ConnParams = connParams;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
@@ -59,7 +55,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var tree = _treeGetter.GetModuleTree(MLRest!);
             foreach (var module in tree)
             {
-                if (TryFilter(module, activeLicence) is { } filtered)
+                if (TryFilter(module, _services.ActiveLicence) is { } filtered)
                     TopLevelModules.Add(filtered);
             }
         }
@@ -133,10 +129,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 // ACTIVITY zámek je per-IdFa. Po přepnutí má shell stále lock pod
                 // starým IdFa, kde server hledá pod novým. Re-VerifyLic vytvoří
                 // nový lock pod novým IdFa. Starý časem vyprší.
-                if (_activeLicence != null)
+                if (_services.ActiveLicence != null)
                 {
                     var output = MLRest!.QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
-                        new object[] { _activeLicence.CountsLOGIN });
+                        new object[] { _services.ActiveLicence.CountsLOGIN });
                     if (int.Parse(output[1]?.ToString() ?? "0") != 1)
                     {
                         // Server nedovolil další lock pod novým IdFa (typicky překročen

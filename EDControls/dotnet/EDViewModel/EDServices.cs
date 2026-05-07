@@ -1,3 +1,5 @@
+using ALVA.LICENCE.EDLicence;
+
 namespace EDControls.EDViewModel;
 
 /// <summary>
@@ -8,6 +10,12 @@ namespace EDControls.EDViewModel;
 /// creates it after company selection and updates it on company switch.
 /// All ViewModels sharing the same EDServices instance see the change.
 /// </para>
+/// <para>
+/// <see cref="ActiveLicence"/> is mutable because the shell loads the licence
+/// after login and may refresh it later (admin "Refresh licence"). ViewModels
+/// read it for per-window licence checks (e.g., disabling buttons that lead
+/// to unlicensed features).
+/// </para>
 /// </summary>
 public class EDServices(
     IMLRest? mlRest,
@@ -17,6 +25,7 @@ public class EDServices(
     public IMLRest? MLRest { get; set; } = mlRest;
     public IWindowNavigator WindowNavigator { get; } = windowNavigator;
     public IPopupDisplayer PopupDisplayer { get; } = popupDisplayer;
+    public Lic? ActiveLicence { get; set; }
 
     private static EDServices? _current;
 

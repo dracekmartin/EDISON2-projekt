@@ -1,9 +1,9 @@
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Services.Modules;
-using EDISONMAIN2.Services.Processes;
-using EDISONMAIN2.Services;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.Processes;
+using EDISONMAIN2;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
@@ -49,7 +49,7 @@ public class EdisonMainViewModelTests
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams);
         }
         finally
         {
@@ -114,7 +114,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams);
         }
         finally
         {
@@ -143,7 +143,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams);
         }
         finally
         {

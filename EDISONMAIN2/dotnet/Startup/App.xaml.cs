@@ -6,11 +6,10 @@ using ALVA.EDISONAPI;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Services;
-using EDISONMAIN2.Services.Licence;
-using EDISONMAIN2.Services.Modules;
-using EDISONMAIN2.Services.Processes;
 using EDISONMAIN2.Windows.EdisonMainWindow;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.Processes;
+using EDISONMAIN2.Windows.LoginWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2
@@ -70,6 +69,7 @@ namespace EDISONMAIN2
             // License gate — load active licence and ask Caché to verify session count.
             // VerifyLic also creates the ACTIVITY lock for this session (see § 3.4 RESPONSIBILITIES).
             var activeLicence = new LicenceService(mlRest.Inner).GetActiveLicence();
+            services.ActiveLicence = activeLicence;
             int countOfLicenses = activeLicence?.CountsLOGIN ?? 0;
             var verifyOutput = mlRest.Inner.Query("ALVA.SYS.Login", "VerifyLic", new object[] { countOfLicenses });
             mlRest.Inner.RestStatus.ThrowIfError();
@@ -99,7 +99,7 @@ namespace EDISONMAIN2
             var connParams = new ConnectionParams(server, port, login.UserName, login.FullName, login.Mlp, mlRest.Inner.GUID);
             var treeGetter = new ModuleTreeGetter();
             var processLauncher = new ProcessLauncher(connParams);
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams, activeLicence);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, connParams);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             wnd.Show();

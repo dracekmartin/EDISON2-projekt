@@ -1,6 +1,6 @@
-using EDISONMAIN2.Services.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 
-namespace EDISONMAIN2.Services.Processes
+namespace EDISONMAIN2.Windows.EdisonMainWindow.Processes
 {
     public interface IProcessLauncher
     {

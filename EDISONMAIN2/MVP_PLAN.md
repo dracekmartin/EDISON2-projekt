@@ -142,46 +142,185 @@ chování, nekopírovat kód.
 
 ---
 
-## F3 — Licenční vrstva (1-2 týdny)
+## F3 — Licenční vrstva (1 týden, reuse cesta)
 
-**Cíl:** EDISONMAIN2 načítá licenci z Caché, respektuje `Elements` whitelist,
-blokuje login při `OutOfLicense`, filtruje modul tree. Sdílí úložiště s EDISONMAIN.
+**Cíl:** EDISONMAIN2 načítá licenci, respektuje `Elements` whitelist, blokuje login
+při `OutOfLicense`, filtruje modul tree. Sdílí úložiště i logiku s EDISONMAIN
+(stejná `EDLicence.dll`).
+
+**Strategie:** Reuse existující `EDLicence.dll` (.NET Framework 4.8) přes
+.NET 8 compatibility shim. EDISONMAIN2 už úspěšně konzumuje `MLRest.dll`
+stejným způsobem, takže precedent existuje. Vyhneme se duplikování 18 VB.NET
+souborů (`Lic`, `Activation`, `Api`, `CryptText`, `Update`, `MConsts`, `CTrees`,
+hardware-key check atd.) a kritérium DoD 5 (sdílené licenční chování) je
+triviálně splněné.
+
+**Reuse riziko:**
+
+- Module-level globální stav `Api.myMLREDL` (`Api.vb:24`) — `Activation.New(mlr)`
+  přepíše. V multi-thread WPF scénáři race condition. Mitigace: instance-level
+  `lock` v `LicenceService` wrapperu kolem všech volání EDLicence.
+- Reference na `System.Windows.Forms` v EDLicence — DLL drží assembly load,
+  drobný footprint (akceptovatelné, EDISONMAIN2 už je `net*-windows`).
+- Build warning `NU1701` — očekávaný, lze potlačit per-reference.
 
 **Tasky:**
 
-1. `Lic` POCO v `EDControls/Licence/` — všechny properties z § 13.1 (`Version`,
-   `Type`, `Idfa`, `ValidityFrom/To`, `ActivateTo`, `Elements`, `CountsLOGIN`,
-   `CountsUSERS`, `CountsRZ`, `CountsZAM`, `CountsTELMAX`, `CountsCACHE`, atd.).
-2. `LicState` enum (`E01_OK`, `E02_NOT_ACTIVATE`, `E03_NOT_INITKEY`, `E04_OUT_OF_DATE`).
-3. `LicenceLoader` → volá `ALVA.LICENCE.Activation.GetActiveLic` přes MLRest.
-   Parser tilde+pipe+newline formátu (§ 13.3), **podpora jen verzí 1.003 – 2.002**.
-   Legacy < 1.003 explicitně odmítnout se srozumitelnou hláškou.
-4. Default fallback licence (§ 13.4) když server vrátí prázdno: `Version="1.003"`,
-   `Type="Nezadána"`, `CountsLOGIN=1`, `Elements = { formEDISONMAINSettingsShow, SpolecnaEvidence }`.
-5. Integrace do login flow: po přihlášení → `LicenceLoader` → uložit do
-   `EDServices.Current.ActiveLicense`. Pokud `VerifyLic=-1` → zobrazit chybu
-   (dialog v F6 nahradí za admin kick flow).
-6. `LicenceGate` helper — předat `Lic.Elements` do `ModuleTreeGetter` pro filtraci
-   stromu (§ 5.2 whitelist logika).
-7. Expiration check — pokud `ValidityTo < NOW + 15 dní`, best-effort
-   `ALVA.LICENCE.EDLicence.Update.UpdateLicFromMlineToCustomer` (fallback neblokuje).
-8. Status bar binding — typ licence + `ValidityTo` jako TextBlock.
-9. Minimální `AddLicenseDialog` — TextBox na Base64 + Ok → `ALVA.LICENCE.Activation.Add`.
-   Vystaveno přes skrytou zkratku (`Ctrl+Shift+L`) — plný admin UI mimo MVP.
+1. **Reference v `EDISONMAIN2.csproj`** — přidat `EDLicence.dll` a `EDCore.dll`
+   (případné transitivní deps) z `C:\Edison\` jako `<Reference>` s `<HintPath>`
+   stejně jako stávající `MLRest.dll`. Nastavit `<NoWarn>NU1701</NoWarn>`
+   per-reference.
+2. **`LicenceService` wrapper** v EDISONMAIN2 (nikoliv v EDControls — reference
+   na .NET Framework DLL nebudou v EDControls výhodné):
+   - Drží jednu instanci `ALVA.LICENCE.EDLicence.Activation`.
+   - Exposuje C#-friendly API: `Task<Lic?> GetActiveLicenceAsync()`,
+     `Task<bool> AddLicenceAsync(string base64)`, `event Action<Lic> ActiveLicenceChanged`.
+   - **Instance-level `lock`** kolem každého volání `Activation.*` — neutralizuje
+     module-state race condition.
+   - Reset `Api.SetMLR(null)` po každém volání? Pokud možné z C# — diskutovat,
+     či raději jen lock.
+3. **Default fallback licence** (§ 13.4) — pokud `GetActiveLic` vrátí null,
+   `LicenceService` zkonstruuje **nový `Lic` objekt** ručně (přes properties)
+   s `Version="1.003"`, `Type="Nezadána"`, `CountsLOGIN=1`,
+   `Elements = { formEDISONMAINSettingsShow, SpolecnaEvidence }`. Toto **není**
+   v EDLicence — musíme dodat klient-side.
+4. **Login integrace:** po `UserAuthenticator.Login` zavolat
+   `LicenceService.GetActiveLicenceAsync()` → uložit do `EDServices.Current.ActiveLicence`.
+   Pokud server vrátí `VerifyLic=-1` → `OutOfLicense` chyba (admin kick UI v F6).
+5. **`LicenceGate` helper** v EDControls — čistá C# logika filtrace stromu:
+   přijme `IEnumerable<string> elements` a `bool isAdmin` z `Lic`, vrátí predikát
+   `Func<INode, bool>`. Předá se do `ModuleTreeGetter`.
+6. **Expiration UI** — status bar binding na `ActiveLicence.Type` +
+   `ActiveLicence.ValidityTo` (TextBlock). Pokud zbývá < 15 dní, červený
+   text. Reálný refresh M-line cloud volá samo EDLicence v `GetActiveLic`,
+   nemusíme nic dodávat.
+7. **`AddLicenceDialog`** — TextBox na Base64 + Ok → `LicenceService.AddLicenceAsync`.
+   Pro MVP přístup přes skrytou zkratku `Ctrl+Shift+L` (plný admin UI je mimo MVP).
+8. **Per-window licenční přístup z ViewModelů** — kritické pro budoucí portované
+   moduly. Pattern už existuje ve staré EDISONMAIN — ~20+ agendových formulářů
+   v AD\* modulech dělá inline check (vždy ručním for-loopem nad
+   `Me.MLProps.License.Elements`). EDISONMAIN2 musí zachovat **stejnou
+   sémantiku**, ale v ergonomičtější formě.
+
+   **Existující model v `EDLIBRARY/clsForm.vb:4705-4759`** (nutno replicate):
+
+   - `MLProps.License` — celý `Lic` objekt.
+   - `MLProps.LicenseTable` — `Hashtable` z `Lic.Elements` převedených na
+     integery, pre-parsed pro O(1) lookup.
+   - `MLProps.ReadOnlyMode` — bool, true když `Lic.State ∈ {E04_OUT_OF_DATE,
+     E03_NOT_INITKEY}`.
+
+   **Reálný pattern v agendě** kombinuje **dva gate axy**:
+
+   - **Licence axis** — per-feature element ID v whitelistu (např. `"34010"` =
+     Pracovní místa, `"33001"` = ADZPRACOVANI DZVAEdit).
+   - **Zapis axis** — ECL access (§ 7), říká jestli má uživatel právo zapisovat.
+
+   Reálná podmínka v UI = `Me.Licence AND Me.Zapis`.
+
+   **Návrh API na `EDViewModel`** (base class v `EDControls`):
+
+   ```csharp
+   public abstract class EDViewModel : INotifyPropertyChanged
+   {
+       protected Lic? ActiveLicence => EDServices.Current.ActiveLicence;
+
+       /// True když licence vypršela / je v read-only stavu (E04 / E03).
+       /// Používá se pro globální blokaci write-operations.
+       protected bool IsReadOnlyMode
+           => ActiveLicence != null
+              && (ActiveLicence.State == Lic.EStates.E04_OUT_OF_DATE
+                  || ActiveLicence.State == Lic.EStates.E03_NOT_INITKEY);
+
+       /// Vrátí true, pokud licence povoluje konkrétní element ID.
+       /// Pokud licence chybí, použije default fallback (§ 13.4).
+       /// O(1) přes pre-parsed LicenceTable, ne for-loop.
+       protected bool HasLicenceFor(string elementId)
+           => LicenceGate.IsAllowed(ActiveLicence, elementId);
+
+       /// Helper pro typed enums (EDISFormEnum, EDPackageEnum, EDMainPackageEnum).
+       protected bool HasLicenceFor<T>(T element) where T : Enum
+           => HasLicenceFor(((int)(object)element).ToString());
+
+       /// Vrací IsEnabled binding-friendly observable; přepočítá se při
+       /// ActiveLicenceChanged. Kombinuje licence + (volitelně) ECL zápis.
+       protected ICommand CommandLicensed(string elementId, Action body,
+                                          Func<bool>? canExecuteExtra = null)
+           => Command(body, canExecute: () =>
+                  HasLicenceFor(elementId)
+                  && !IsReadOnlyMode
+                  && (canExecuteExtra?.Invoke() ?? true));
+   }
+   ```
+
+   **Příklad použití** (port starého `formADSETTINGSPracovisteNS.vb` patternu):
+
+   ```csharp
+   // Místo manuálního for-loopu:
+   //   For i = 0 To licAll.GetUpperBound(0)
+   //       If licAll(i) = "34010" Then Me.Licence = True : Exit For
+   //   Next
+   //
+   // Stačí:
+   AddPracovisteCommand = CommandLicensed(
+       elementId: "34010",
+       body: () => WindowNavigator.Show("PracovisteEdit"),
+       canExecuteExtra: () => HasEclAccess("Pracoviste.Write"));
+   ```
+
+   Tlačítko v XAML je automaticky disabled, pokud licence neobsahuje element
+   `"34010"`, licence je v read-only módu, NEBO ECL zápis chybí. MenuItem.Visibility
+   přes converter `LicenceToVisibility`.
+
+   `LicenceGate.IsAllowed` musí zohlednit:
+   - Whitelist v `lic.Elements` (server v `Activation.GetActiveLic` už po trial
+     merge + element rename + fix elements).
+   - Klient si **nemusí** dělat trial merge / fix elements znovu — `Lic.Elements`
+     už je finální seznam.
+   - Admin fallback (§ 5.2): vždy `formEDISONMAINSettingsShow`, `SpolecnaEvidence`;
+     pokud `Type ≠ "Nezadána"` navíc `formUSERSMain`, `formTMList`.
+   - Performance: použít `HashSet<string>` postavený jednou při změně licence,
+     nikoliv lineární scan při každém checku (na rozdíl od staré VB).
+
+   **Element ID konvence zachovat** — stávající licence v Caché používá numerické
+   IDs (`"34010"`, `"33001"`, `"23002"`, `"25001"`, …). EDISONMAIN2 je musí
+   respektovat 1:1 — žádný refactoring na string-based IDs (rozbil by všechny
+   existující licence).
+9. **`ActiveLicenceChanged` event** na `EDServices` — pokud admin v F6 importuje
+   novou licenci za běhu, otevřená okna musí přepočítat `CanExecute` svých
+   příkazů. Realizováno přes `INotifyPropertyChanged` na `EDServices.Current`
+   nebo dedikovaným C# eventem.
+10. **Cross-thread test** — paralelní volání `GetActiveLicenceAsync` + `AddLicenceAsync`
+    ze dvou threadů. Pokud lock funguje, test projde. Pokud ne, padáme na port
+    problémových tříd (Lic POCO + Api parser jako nejjednodušší kus).
 
 **Soubory (EDISON2):**
 
-- **nové** `c:\MLineRepos\EDISON2\EDControls\dotnet\Licence\Lic.cs`
-- **nové** `c:\MLineRepos\EDISON2\EDControls\dotnet\Licence\LicState.cs`
-- **nové** `c:\MLineRepos\EDISON2\EDControls\dotnet\Licence\LicenceLoader.cs`
+- Úprava: `c:\MLineRepos\EDISON2\EDISONMAIN2\dotnet\EDISONMAIN2.csproj` (add references)
+- Úprava: `c:\MLineRepos\EDISON2\EDControls\dotnet\EDControls.csproj` (add reference
+  na `EDLicence.dll` — aby `LicenceGate` mohl vidět `Lic` typ)
+- **nové** `c:\MLineRepos\EDISON2\EDISONMAIN2\dotnet\Services\Licence\LicenceService.cs`
 - **nové** `c:\MLineRepos\EDISON2\EDControls\dotnet\Licence\LicenceGate.cs`
-- **nové** `c:\MLineRepos\EDISON2\EDISONMAIN2\dotnet\Windows\AddLicenseDialog\AddLicenseDialog.xaml(.cs)`
-- Úprava: `c:\MLineRepos\EDISON2\EDControls\dotnet\EDViewModel\EDServices.cs` (property `ActiveLicense`)
+  (statická C# logika filtrace + admin fallback + element rename)
+- **nové** `c:\MLineRepos\EDISON2\EDControls\dotnet\Licence\LicenceToVisibilityConverter.cs`
+  (XAML binding helper)
+- **nové** `c:\MLineRepos\EDISON2\EDISONMAIN2\dotnet\Windows\AddLicenceDialog\AddLicenceDialog.xaml(.cs)`
+- Úprava: `c:\MLineRepos\EDISON2\EDControls\dotnet\EDViewModel\EDServices.cs`
+  (property `ActiveLicence` + event `ActiveLicenceChanged`)
+- Úprava: `c:\MLineRepos\EDISON2\EDControls\dotnet\EDViewModel\EDViewModel.cs`
+  (helpers `HasLicenceFor`, `CommandLicensed`)
 - Úprava: `c:\MLineRepos\EDISON2\EDISONMAIN2\dotnet\Services\Modules\ModuleTreeGetter.cs`
+  (apply `LicenceGate`)
+- Úprava: `c:\MLineRepos\EDISON2\EDISONMAIN2\dotnet\Windows\EdisonMainWindow\EdisonMainWindow.xaml`
+  (status bar binding)
 
-**Reuse:** logika z `Licence/EDLicence/Lic.vb`, `Api.vb:GetLicFromCodeLic`,
-`Activation.vb:GetActiveLic` — portovat na C# (parser je jednoduchý string-split).
-**Nepoužívat `EDLicence.dll`** (Framework 4.8 vs. .NET 10 inkompatibilní).
+**Reuse:** přímo `ALVA.LICENCE.EDLicence.Lic`, `Activation`, `Api`, `CryptText`,
+`Update` z `EDLicence.dll`. Nelze přepsat — sdílíme.
+
+**Fallback plan:** pokud reuse selže (cross-thread, runtime API missing),
+zportujeme **pouze problémové třídy** (typicky `Lic` POCO + `Api.GetLicFromCodeLic`
+parser; `Activation.GetActiveLic` lze ponechat na DLL). Plný port = 1-2 týdny;
+částečný port = 2-3 dny.
 
 **DoD pokryto:** 5.
 
@@ -203,8 +342,8 @@ locks (DoD 3).
 2. First-launch detekce v `App.xaml.cs` před loginem: neexistuje nebo
    `<initialized>0</initialized>` → spustit Setup Wizard.
 3. Setup Wizard UI (`SetupWindow`) — 3 kroky: Connection, Database+IdFa, Test+první
-   login. Po úspěchu `MESSAGE_SetupChanged` + shutdown. Zrušení = `MESSAGE_SetupMissing`
-   + exit bez XML.
+   login. Po úspěchu `MESSAGE_SetupChanged` a shutdown. Zrušení = `MESSAGE_SetupMissing`
+   a exit bez XML.
 4. `SettingsLoader` fallback order: `EDISONini.xml` → `appsettings.local.json`
    → `appsettings.json`.
 5. **Business lock smoke test (DoD 3):** integration test scénář:
@@ -493,6 +632,201 @@ zkrátit o 1-2 týdny.
 - Žádné `EdisonVersionFailed!` / `ACTIVITY: Lock exist failed!` errory v logu.
 - Admin akce (kick, UpdateMode) fungují proti oběma klientům.
 - Dokumentace `PILOT_RUNBOOK.md` předána M-line support týmu.
+
+## REORGANIZACE — Services/ → feature-folders + license do EDControls
+
+**Status:** Plánováno mezi F2 a F4 — ne F-fáze, ale architektonický cleanup
+před tím, než přibyde víc kódu (F4 setup wizard, F5 reconnect).
+
+### Context
+
+`EDISONMAIN2.Services/` byl původně zamýšlen pro služby sdílené více formuláři
+(víc consumerů, DI-mockable). V realitě každá z dnešních "service" tříd má
+**jediného consumera** (App.xaml.cs nebo EdisonMainViewModel) — název "Service"
+nelže o nic víc, než jen "infrastruktura, kterou jsme nedali přímo do okna".
+
+Dvě části problému:
+
+1. **`Services/` název nedává smysl pro single-consumer kód.** Měl by být
+   ko-lokovaný se svým consumerem (modules → `EdisonMainWindow/`,
+   UserAuthenticator → `LoginWindow/`).
+2. **Licence se brzy stane skutečně cross-cutting** — bude potřeba dostupná
+   z každého ViewModelu (per-window licence checks u portovaných modulů).
+   To znamená, že **licenční stav patří do `EDControls.EDServices`**
+   (kde už jsou `IMLRest`, `IWindowNavigator`, `IPopupDisplayer`).
+   Ne LicenceService loader — ten zůstává shell-side. Ale **cached `Lic?`**
+   pro čtení z ViewModelů.
+
+### Princip
+
+1. **Cross-cutting věc → EDControls.** Konkrétně: `EDServices.ActiveLicence`
+   property + reference na `EDLicence.dll` v `EDControls.csproj`. **Žádný code
+   move**, jen API rozšíření.
+2. **Single-consumer infrastruktura → ko-lokovat se svým consumerem.**
+   `Modules/`, `Processes/` → do `Windows/EdisonMainWindow/`.
+   `UserAuthenticator` → do `Windows/LoginWindow/`.
+3. **Shell-only bootstrap → root nebo feature-folder.**
+   `ConnectionParams.cs`, `SettingsLoader.cs` → root `EDISONMAIN2/dotnet/`.
+   `LicenceService.cs` → `EDISONMAIN2/dotnet/Licence/` (samostatná feature
+   složka — dnes 1 file, ale logicky tam patří `AddLicenceDialog` v F-stretch).
+4. **Smazat `Services/`** úplně.
+
+### Cílová struktura
+
+```text
+EDISONMAIN2/dotnet/
+├── App.xaml(.cs)
+├── ConnectionParams.cs                    ← bylo Services/
+├── SettingsLoader.cs                      ← bylo Services/
+├── Licence/
+│   └── LicenceService.cs                  ← bylo Services/Licence/
+├── Properties/
+└── Windows/
+    ├── LoginWindow/
+    │   ├── LoginWindow.xaml(.cs)
+    │   └── UserAuthenticator.cs           ← bylo Services/
+    ├── EdisonMainWindow/
+    │   ├── EdisonMainWindow.xaml(.cs)
+    │   ├── EdisonMainViewModel.cs
+    │   ├── DesignTimeData/
+    │   ├── Modules/                       ← bylo Services/Modules/
+    │   │   ├── ExecutableModule.cs
+    │   │   ├── IModule.cs
+    │   │   ├── IModuleTreeGetter.cs
+    │   │   ├── ModuleFamily.cs
+    │   │   └── ModuleTreeGetter.cs
+    │   └── Processes/                     ← bylo Services/Processes/
+    │       ├── IProcessLauncher.cs
+    │       └── ProcessLauncher.cs
+    └── (test windows beze změny)
+```
+
+```text
+EDControls/dotnet/
+├── EDControls.csproj                      ← + reference na EDLicence.dll
+├── EDViewModel/
+│   └── EDServices.cs                      ← + Lic? ActiveLicence property
+└── (zbytek beze změny)
+```
+
+### Konkrétní změny
+
+#### EDControls/dotnet/
+
+1. **`EDControls.csproj`** — přidat:
+
+   ```xml
+   <Reference Include="EDLicence">
+     <HintPath>C:\Edison\EDLicence.dll</HintPath>
+   </Reference>
+   ```
+
+2. **`EDViewModel/EDServices.cs`** — přidat property:
+
+   ```csharp
+   using ALVA.LICENCE.EDLicence;
+
+   public class EDServices(...)
+   {
+       public IMLRest? MLRest { get; set; } = mlRest;
+       public IWindowNavigator WindowNavigator { get; } = windowNavigator;
+       public IPopupDisplayer PopupDisplayer { get; } = popupDisplayer;
+       public Lic? ActiveLicence { get; set; }    // NEW
+       ...
+   }
+   ```
+
+#### EDISONMAIN2/dotnet/
+
+1. **Move soubory** podle struktury výše. Namespaces přejmenovat:
+   - `EDISONMAIN2.Services` → odstranit; soubory na rootu zůstanou
+     v namespace `EDISONMAIN2`.
+   - `EDISONMAIN2.Services.Licence` → `EDISONMAIN2.Licence`.
+   - `EDISONMAIN2.Services.Modules` → `EDISONMAIN2.Windows.EdisonMainWindow.Modules`.
+   - `EDISONMAIN2.Services.Processes` → `EDISONMAIN2.Windows.EdisonMainWindow.Processes`.
+   - `EDISONMAIN2.Services` (UserAuthenticator) → `EDISONMAIN2.Windows.LoginWindow`.
+
+2. **Smazat** `EDISONMAIN2/dotnet/Services/` složku.
+
+3. **`App.xaml.cs`** — po loadu licence nastavit `services.ActiveLicence`:
+
+   ```csharp
+   var activeLicence = new LicenceService(mlRest.Inner).GetActiveLicence();
+   services.ActiveLicence = activeLicence;   // NEW
+   // VerifyLic check zůstává beze změny
+   ```
+
+4. **`EdisonMainViewModel`** — drop `Lic? activeLicence` constructor parametr,
+   drop `_activeLicence` field, číst z `_services.ActiveLicence` (nebo
+   `EDServices.Current.ActiveLicence`):
+
+   ```csharp
+   public EdisonMainViewModel(
+       IReadOnlyList<CompanyStruct> companies,
+       IMLRest mlRest,
+       IModuleTreeGetter treeService,
+       IProcessLauncher processService,
+       ConnectionParams connParams)
+       // ↑ Lic? activeLicence parametr odstraněn
+   {
+       ...
+       var activeLicence = _services.ActiveLicence;
+       foreach (var module in tree)
+           if (TryFilter(module, activeLicence) is { } filtered)
+               TopLevelModules.Add(filtered);
+   }
+   ```
+
+   V `SelectedCompanyIndex` setteru analogicky:
+
+   ```csharp
+   if (_services.ActiveLicence != null) { ... VerifyLic ... }
+   ```
+
+5. **Update všech `using` directiv** ve všech zasažených souborech (App,
+   EdisonMainViewModel, ProcessLauncher, ModuleTreeGetter, LicenceService,
+   UserAuthenticator, LoginWindow, DesignTimeData).
+
+#### EDISONMAIN2.Tests/
+
+1. Update `using` directives podle nových namespaces.
+2. Drop `activeLicence: null` argument ze 3 callsite EdisonMainViewModel
+   konstruktoru (mock už v EDServices defaultem `null`).
+3. Filter testy v `EdisonMainViewModelFilterTests` zůstávají — volají
+   statické helpers (`EdisonMainViewModel.IsAllowed` etc.), ty se nemění.
+4. ParseTreeTests — update `using EDISONMAIN2.Services.Modules` →
+   `using EDISONMAIN2.Windows.EdisonMainWindow.Modules`.
+
+### Verifikace
+
+- `dotnet build EDISON2.sln` — clean, 0 warnings, 0 errors.
+- `dotnet test EDISONMAIN2.Tests` — všech 34 testů zelených (žádný nový test
+  nepřidáváme; tohle je pure reorganizace).
+- Spustit aplikaci → login → strom modulů → ověřit, že nic není rozbité.
+- `git diff --stat` — měl by ukázat jen renames (CRLF + namespace bumps),
+  žádné funkční změny.
+
+### Out of scope této reorganizace
+
+- **Move LicenceService do EDControls** — odložit. Dnes jediný consumer je App
+  (load při startu). Až bude druhý consumer (admin "Refresh licence" v F6),
+  zvážit přesun. Pro teď stačí mít cached `Lic` v EDServices.
+- **`EDViewModel.HasLicenceFor` helper** — F3 step 5, nedělat teď. Až bude
+  reálný callsite v portovaném modulu.
+- **Rename `LicenceService` → `LicenceLoader`** — kosmetika. Až s F6 admin
+  refresh, kdy bude jasné final API.
+
+### Rizika
+
+- **Test setup `services.ActiveLicence = ...`** — pokud nějaký test potřebuje
+  licenci, nastaví ji přes mock EDServices. Existující testy ji nepotřebují
+  (filter testy testují statické helpers přímo, switch testy mají
+  `_activeLicence == null` guard).
+- **Namespace conflicts při move** — `using` directives ve všech zasažených
+  souborech musí jít sjednotit. Build chytá compile-time.
+- **Žádný funkční regress** — pure refactor, bez sémantických změn.
+
+---
 
 Po sign-off lze pilot rozšířit na širší sadu stanic a začít iteraci 2 (full
 admin menu, auto-update, LDAP UI, mini-apps).
