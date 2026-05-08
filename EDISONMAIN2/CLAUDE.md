@@ -19,7 +19,33 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
   ACTIVITY zámek se shellem.
 - **ACTIVITY zámek** — vytvořen `VerifyLic` při loginu. `EdisonActivityFailed` event
   → graceful shutdown.
+- **Admin override při překročení licencí** — VerifyLic loop v `App.xaml.cs`:
+  pokud admin při loginu narazí na out-of-license, popup → spawn legacy
+  `USERS.exe` s `formUSERSActivity` (sync, `WaitForExit`) → admin někoho odhlásí
+  → retry. Non-admin nebo Cancel → shutdown.
 - **App startup** — `Startup/App.xaml(.cs)` orchestruje celý bootstrap.
+
+## Spouštění legacy modulů — EDISONMAIN2API
+
+Most do legacy světa: knihovna `EDISONMAIN2API.dll`
+(`c:\MLineRepos\EDISON\EDISONMAIN2API\`), .NET Framework 4.8, deploy do
+`C:\Edison\`. Obsahuje:
+
+- `FormToRunGetter.TryGetFormFromArgs(args, out Form)` — parsne 10 cmdline args
+  (sentinel `"EDISONMAIN2"`, server, port, ns, idfa, login, fullName, mlp, **formName** = FQN třídy WinForms formy, **shellGuid**),
+  reflexí najde typ ve volajícím assembly, instancuje ho, naplní `MLRest`
+  (sdílí shellův GUID + `CacheLocks=1` → ACTIVITY shell ↔ modul) a `MLProps`.
+
+**Kontrakt:** legacy `.exe` ve své `Sub Main` (nebo `Program.Main`) zavolá
+`TryGetFormFromArgs` a předá výsledek do `Application.Run(form)`. Bez argů
+spustí původní standalone chování.
+
+EDISONMAIN2 strana posílá args přesně v tomto pořadí —
+[ProcessLauncher.cs](dotnet/Windows/EdisonMainWindow/Processes/ProcessLauncher.cs)
+(normální moduly z tree) i [App.xaml.cs](dotnet/Startup/App.xaml.cs) `LaunchUsersFormAndWait`
+(admin override). Libovolný legacy `.exe` se napojí přidáním `EDISONMAIN2API.dll`
+reference + úpravou entry pointu na `FormToRunGetter` pattern (referenční
+implementace: `MHD2PlanDopravy/Program.cs`, `USERS/Users-v4/Program.vb`).
 
 ## Mimo MVP (zatím)
 

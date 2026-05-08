@@ -140,17 +140,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
                 // ACTIVITY zámek + počet licencí jsou per-IdFa — pro VerifyLic potřebujeme
                 // licenci cílové firmy, ne původní (jinak bychom kontrolovali špatný limit).
+                // Při překročení licencí + admin nabídne LicenceVerifier okno aktivity uživatelů.
                 Lic? newLicence = originalLicence;
-                bool switchAccepted = true;
+                var outcome = LicenceAcquireOutcome.Accepted;
                 if (originalLicence != null)
-                {
-                    newLicence = _licenceLoader();
-                    var output = MLRest!.QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
-                        new object[] { newLicence?.CountsLOGIN ?? 0 });
-                    switchAccepted = int.Parse(output[1]?.ToString() ?? "0") == 1;
-                }
+                    (outcome, newLicence) = LicenceVerifier.TryAcquireSession(
+                        MLRest!, _licenceLoader, _services.IsAdmin, PopupDisplayer);
 
-                if (switchAccepted)
+                if (outcome == LicenceAcquireOutcome.Accepted)
                 {
                     _services.ActiveLicence = newLicence;
                     LoadAndFilterTree();
@@ -163,7 +160,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(Namespace));
                     OnPropertyChanged(nameof(Idfa));
                     OnPropertyChanged(nameof(WindowTitle));
-                    PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
+                    if (outcome == LicenceAcquireOutcome.Refused)
+                        PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 }
             }
         }

@@ -26,6 +26,7 @@ public class EDServices(
     public IWindowNavigator WindowNavigator { get; } = windowNavigator;
     public IPopupDisplayer PopupDisplayer { get; } = popupDisplayer;
     public Lic? ActiveLicence { get; set; }
+    public bool IsAdmin { get; set; }
 
     private static EDServices? _current;
 

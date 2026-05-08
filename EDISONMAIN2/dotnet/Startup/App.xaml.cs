@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using ALVA.EDISONAPI;
@@ -44,7 +43,7 @@ namespace EDISONMAIN2
 
             LoginResult login;
 #if DEBUG
-            login = new LoginResult(167, "martin.hubata", "martin.hubata", true, "", false, true, "");
+            login = new LoginResult(201, "martin.hubata", "martin.hubata", true, "", false, true, "");
 #else
             // Login — prevent auto-shutdown when dialog closes (no other window is open yet)
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
@@ -66,22 +65,21 @@ namespace EDISONMAIN2
                 Mlp       = login.Mlp.ToString()
             });
 
-            // VerifyLic also creates the ACTIVITY lock for this session.
+            services.IsAdmin = login.IsAdmin;
+
+            // VerifyLic vytvoří ACTIVITY zámek pro tuto session. Při překročení licencí + admin
+            // dostane retry s oknem aktivity uživatelů. Stejná logika i při přepnutí firmy ve VM.
             var licenceService = new LicenceService(mlRest.Inner);
-            var activeLicence = licenceService.GetActiveLicence();
-            services.ActiveLicence = activeLicence;
-            int countOfLicenses = activeLicence?.CountsLOGIN ?? 0;
-            var verifyOutput = mlRest.Inner.Query("ALVA.SYS.Login", "VerifyLic", new object[] { countOfLicenses });
-            mlRest.Inner.RestStatus.ThrowIfError();
-            int verifyResult = int.Parse(verifyOutput[1]?.ToString() ?? "0");
-            if (verifyResult != 1)
+            var (outcome, activeLicence) = LicenceVerifier.TryAcquireSession(
+                mlRest, licenceService.GetActiveLicence, services.IsAdmin, services.PopupDisplayer);
+            if (outcome != LicenceAcquireOutcome.Accepted)
             {
-                services.PopupDisplayer.Info(verifyResult == -1
-                    ? "Nelze se přihlásit, byl překročen počet licencí."
-                    : "Při ověření licence nastala neznámá chyba.");
+                if (outcome == LicenceAcquireOutcome.Refused)
+                    services.PopupDisplayer.Info("Nelze se přihlásit, byl překročen počet licencí.");
                 Shutdown();
                 return;
             }
+            services.ActiveLicence = activeLicence;
 
             // Server odstraní ACTIVITY zámek (force-logout, výpadek, expirace) → graceful shutdown.
             mlRest.Inner.EdisonActivityFailed += (_, _) =>
