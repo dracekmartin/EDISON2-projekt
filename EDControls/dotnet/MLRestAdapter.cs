@@ -42,4 +42,5 @@ public class MLRestAdapter(MLRest inner) : IMLRest
     public string FullName  => Inner.FullName;
     public string Mlp       => Inner.Mlp;
     public string Guid      => Inner.GUID;
+    public char   Delimiter => Inner.Delimiter;
 }

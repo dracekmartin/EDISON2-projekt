@@ -39,6 +39,10 @@ public class ReflectionWindowNavigator : IWindowNavigator
         if (!string.IsNullOrEmpty(idfa))
             window.Title = $"{window.Title} [{idfa}]";
 
+        // Pre-Show napojí klávesy + persistenci (SourceInitialized fires sync v Show, před prvním paintem).
+        if (window.DataContext is EDViewModel vm)
+            vm.AttachToWindow(window);
+
         return window;
     }
 

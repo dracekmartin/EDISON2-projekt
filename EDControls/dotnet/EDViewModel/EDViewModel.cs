@@ -104,7 +104,36 @@ public class EDViewModel : INotifyPropertyChanged
         AddCommand    = Command(OnAdd);
         EditCommand   = Command(OnEdit);
         DeleteCommand = Command(OnDelete);
-        Application.Current?.Dispatcher.BeginInvoke(RegisterKeyBindings, DispatcherPriority.Loaded);
+    }
+
+    /// <summary>
+    /// FormID pro persistenci stavu okna přes <see cref="WindowStatePersistence"/>.
+    /// Default odvozuje z názvu VM: <c>EdisonMainViewModel</c> → <c>"EDISON2.EdisonMainWindow"</c>.
+    /// Override na <c>null</c> v subclass pro opt-out.
+    /// </summary>
+    protected virtual string? PersistedFormId
+    {
+        get
+        {
+            var name = GetType().Name;
+            if (name.EndsWith("ViewModel"))
+                name = name[..^"ViewModel".Length] + "Window";
+            return $"EDISON2.{name}";
+        }
+    }
+
+    /// <summary>
+    /// Volat **před** <c>window.Show()</c> / <c>ShowDialog()</c> aby se klávesové zkratky
+    /// a perzistence stavu okna napojily na <c>SourceInitialized</c> ještě před prvním paintem
+    /// (jinak by se zobrazila XAML default velikost a pak teprve restored — flicker).
+    /// <see cref="ReflectionWindowNavigator"/> volá automaticky pro Show/ShowDialog;
+    /// composition-root v App.xaml.cs musí volat ručně pro shell okno.
+    /// </summary>
+    public void AttachToWindow(Window window)
+    {
+        RegisterKeyBindings(window);
+        if (PersistedFormId is { } formId)
+            WindowStatePersistence.Attach(window, formId);
     }
 
     /// <summary>
@@ -127,12 +156,8 @@ public class EDViewModel : INotifyPropertyChanged
     protected AsyncRelayCommand CommandAsync(Func<Task> execute, Func<bool>? canExecute = null) =>
         new(execute, canExecute, PopupDisplayer);
 
-    private void RegisterKeyBindings()
+    private void RegisterKeyBindings(Window window)
     {
-        var window = Application.Current.Windows.OfType<Window>()
-            .FirstOrDefault(w => w.DataContext == this);
-        if (window == null) return;
-
         window.InputBindings.Add(new KeyBinding(OkCommand, Key.Return, ModifierKeys.Control));
 
         if (Actions == null) return;

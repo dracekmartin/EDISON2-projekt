@@ -35,4 +35,7 @@ public interface IMLRest
 
     /// <summary>Session GUID propagovaný do hostovaných modulů (sdílená ACTIVITY session). Konstanta.</summary>
     string Guid { get; }
+
+    /// <summary>Oddělovač polí pro legacy <c>object[]</c> Caché volání (typicky <c>'\0'</c>).</summary>
+    char Delimiter { get; }
 }

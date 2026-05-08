@@ -106,6 +106,9 @@ namespace EDISONMAIN2
             var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, licenceService.GetActiveLicence);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
+            // AttachToWindow před Show — hookne SourceInitialized pro persistence předtím než fire
+            // (jinak by okno blikalo z XAML defaults na restored velikost).
+            viewModel.AttachToWindow(wnd);
             wnd.Show();
         }
 
