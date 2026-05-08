@@ -4,10 +4,10 @@ using ALWA.SYS;
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Testable orchestration for EDInputForm: Init, Validate, Save.
-/// No WPF dependency — takes IMLRest and CacheClass as constructor parameters.
-/// Raises <see cref="StateChanged"/> after every Caché round-trip so the view
-/// can sync without knowing which properties changed.
+/// Testovatelná orchestrace EDInputFormu: Init, Validate, Save. Bez WPF závislosti —
+/// bere <see cref="IMLRest"/> a <c>cacheClass</c> jako parametry konstruktoru. Vyvolává
+/// <see cref="StateChanged"/> po každém Caché roundtripu, aby view synchronizoval bez
+/// znalosti které property se změnily.
 /// </summary>
 public class EDInputFormController(IMLRest mlRest, string cacheClass)
 {
@@ -15,12 +15,12 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     public EHelpTextMode HelpTextMode { get; private set; } = EHelpTextMode.Tooltip;
 
-    /// <summary>Raised after every Caché round-trip that updates Items/HelpTextMode.</summary>
+    /// <summary>Vyvoláno po každém Caché roundtripu který aktualizuje Items/HelpTextMode.</summary>
     public event Action? StateChanged;
 
     /// <summary>
-    /// Calls Caché Init to load the form definition, then immediately runs
-    /// an Init-trigger validation pass to populate any default errors.
+    /// Volá Caché <c>Init</c> pro načtení definice formuláře, hned nato Init-trigger validaci
+    /// pro naplnění případných výchozích chyb.
     /// </summary>
     public void Init()
     {
@@ -29,15 +29,12 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
         ExecuteValidate(EValidationTrigger.Init);
     }
 
-    /// <summary>
-    /// Runs a Change-trigger validation pass and returns true when there are
-    /// no validation errors.
-    /// </summary>
+    /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>
     public bool Validate(string? changedKey = null) => ExecuteValidate(EValidationTrigger.Change, changedKey);
 
     /// <summary>
-    /// Validates with BeforeSave trigger and, if there are no errors, calls
-    /// Caché Save. Returns true on success.
+    /// Validuje s BeforeSave triggerem a pokud nejsou chyby, volá Caché <c>Save</c>.
+    /// Vrátí true při úspěchu.
     /// </summary>
     public bool Save()
     {
@@ -62,10 +59,7 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
         return Items.OfType<Field>().All(f => !f.HasError);
     }
 
-    /// <summary>
-    /// Builds a Czech-language error summary from fields that have validation errors.
-    /// Returns null when there are no errors.
-    /// </summary>
+    /// <summary>Sestaví souhrn chybových hlášek z polí s chybou. Vrací null pokud chyby nejsou.</summary>
     public static string? FormatValidationErrors(List<Item> items)
     {
         var errors = items.OfType<Field>()
@@ -79,8 +73,8 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     }
 
     /// <summary>
-    /// Sets "Povinné pole" on required fields that are empty and have no server error.
-    /// Server/programmer errors take priority — only fields without errors are touched.
+    /// Nastaví "Povinné pole" na povinná pole která jsou prázdná a nemají serverovou chybu.
+    /// Server/programmer chyby mají přednost — ovlivňujeme pouze pole bez chyb.
     /// </summary>
     private void ApplyRequiredValidation()
     {

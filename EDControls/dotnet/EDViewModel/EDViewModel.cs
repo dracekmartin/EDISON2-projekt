@@ -3,7 +3,6 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Threading;
 
 namespace EDControls.EDViewModel;
 
@@ -12,33 +11,29 @@ public class EDViewModel : INotifyPropertyChanged
     protected readonly EDServices _services;
 
     /// <summary>
-    /// Shared MLRest instance. Reads from the shared <see cref="EDServices"/>;
-    /// only composition-root ViewModels (EdisonMainViewModel, TemplateDesignerViewModel)
-    /// write to <c>services.MLRest</c> directly.
+    /// Sdílená MLRest instance ze shared <see cref="EDServices"/>. Pouze composition-root
+    /// VM (<c>EdisonMainViewModel</c>) zapisuje do <c>services.MLRest</c> přímo.
     /// </summary>
     public IMLRest? MLRest => _services.MLRest;
 
-    /// <summary>
-    /// Navigator for opening other windows. Use WindowNavigator.Show(...) or ShowDialog(...)
-    /// from ViewModel subclasses.
-    /// </summary>
+    /// <summary>Navigator pro otevírání oken — <c>WindowNavigator.Show(...)</c> / <c>ShowDialog(...)</c>.</summary>
     protected IWindowNavigator WindowNavigator => _services.WindowNavigator;
 
     /// <summary>
-    /// Service for showing popups. Always targets the currently active window as owner.
-    /// Use PopupDisplayer.Confirm(...) or PopupDisplayer.Info(...) from ViewModel logic.
+    /// Služba pro popupy — vždy cílí na aktivní okno jako owner.
+    /// Použití: <c>PopupDisplayer.Confirm(...)</c> nebo <c>PopupDisplayer.Info(...)</c> z VM.
     /// </summary>
     public IPopupDisplayer PopupDisplayer => _services.PopupDisplayer;
 
     /// <summary>
-    /// When true, EDFooter shows a confirmation dialog before closing on Storno/Zavřít.
-    /// Set to true in the ViewModel constructor for windows with unsaved-data risk.
+    /// Pokud true, <c>EDFooter</c> si vyžádá potvrzení před zavřením přes Storno/Zavřít.
+    /// Nastavuj v konstruktoru pro okna s neuloženými daty.
     /// </summary>
     public bool ConfirmOnCancel { get; protected set; }
 
     /// <summary>
-    /// Actions available in this window (Přidat, Upravit, Smazat, …).
-    /// EDToolbar and EDFooter read this automatically. Set in the subclass constructor.
+    /// Akce dostupné v okně (Přidat, Upravit, Smazat, …). <c>EDToolbar</c> a <c>EDFooter</c>
+    /// je čtou automaticky. Nastav v konstruktoru subclass.
     /// </summary>
     public IReadOnlyList<EDAction>? Actions { get; protected set; }
 
@@ -50,8 +45,8 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Sets IsActionInProgress = true and returns a scope that resets it on disposal.
-    /// Usage: using var _ = ActionInProgress();
+    /// Nastaví <see cref="IsActionInProgress"/> na true a vrátí scope, který ho resetuje při Dispose.
+    /// Použití: <c>using var _ = ActionInProgress();</c>
     /// </summary>
     public IDisposable ActionInProgress()
     {
@@ -67,35 +62,34 @@ public class EDViewModel : INotifyPropertyChanged
     public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// Fired by the ViewModel to request the window to close.
-    /// true = OK/confirmed, false = cancelled, null = just close.
-    /// EDWindow subscribes to this automatically when it detects EDViewModel as DataContext.
+    /// VM žádá zavření okna. <c>true</c> = potvrzeno (OK), <c>false</c> = zrušeno, <c>null</c> = jen zavřít.
+    /// <c>EDFooter</c> se na ni přihlásí automaticky když detekuje <c>EDViewModel</c> jako DataContext.
     /// </summary>
     public event Action<bool?>? RequestClose;
 
     /// <summary>
-    /// Bound to the Ok button in EDWindow (FooterMode = OkCancel).
-    /// Override OnOk() to add validation or custom logic before closing.
+    /// Bound na tlačítko Ok v <c>EDFooter</c> (FooterMode = OkCancel). Override <see cref="OnOk"/>
+    /// pro vlastní validaci nebo logiku před zavřením.
     /// </summary>
     public ICommand OkCommand { get; }
 
     /// <summary>
-    /// Standard CRUD commands. Override OnAdd/OnEdit/OnDelete in the subclass.
-    /// Wire to actions via EDStandardActions.Add(this) / Edit(this) / Delete(this).
+    /// Standardní CRUD commandy. Override <see cref="OnAdd"/> / <see cref="OnEdit"/> /
+    /// <see cref="OnDelete"/> v subclass. Napoj na akce přes <c>StandardActions.Add()</c> / Edit / Delete.
     /// </summary>
     public ICommand AddCommand { get; }
     public ICommand EditCommand { get; }
     public ICommand DeleteCommand { get; }
 
     /// <summary>
-    /// Parameterless constructor — reads from <see cref="EDServices.Current"/>.
-    /// Used by windows created via ReflectionWindowNavigator (Activator.CreateInstance).
+    /// Bezparametrický konstruktor — čte z <see cref="EDServices.Current"/>.
+    /// Používá se pro okna vytvářená přes <see cref="ReflectionWindowNavigator"/>.
     /// </summary>
     public EDViewModel() : this(EDServices.Current) { }
 
     /// <summary>
-    /// Explicit constructor for dependency injection. Tests pass mocks here;
-    /// composition-root ViewModels forward the EDServices they received.
+    /// Explicitní konstruktor pro DI. Testy předávají mocky; composition-root VM
+    /// předává <see cref="EDServices"/> z bootstrapu.
     /// </summary>
     public EDViewModel(EDServices services)
     {
@@ -137,8 +131,8 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Creates a <see cref="RelayCommand"/> with <see cref="PopupDisplayer"/> wired for error handling.
-    /// Use instead of <c>new RelayCommand(...)</c> in ViewModel subclasses.
+    /// Vytvoří <see cref="RelayCommand"/> s napojeným <see cref="PopupDisplayer"/> pro výjimky.
+    /// Používej místo <c>new RelayCommand(...)</c> ve VM subclass.
     /// </summary>
     protected RelayCommand Command(Action execute, Func<bool>? canExecute = null) =>
         new(execute, canExecute, PopupDisplayer);
@@ -148,10 +142,9 @@ public class EDViewModel : INotifyPropertyChanged
         new(execute, canExecute, PopupDisplayer);
 
     /// <summary>
-    /// Creates an <see cref="AsyncRelayCommand"/> with <see cref="PopupDisplayer"/> wired for error handling.
-    /// Use for <c>async Task</c> handlers to avoid fire-and-forget <c>async void</c>.
-    /// Named differently from <see cref="Command(Action, Func{bool}?)"/> to keep overload resolution
-    /// unambiguous for existing call sites (e.g. throw-only lambdas).
+    /// Vytvoří <see cref="AsyncRelayCommand"/> s napojeným <see cref="PopupDisplayer"/> pro výjimky.
+    /// Pro <c>async Task</c> handlery — vyhni se <c>async void</c>. Pojmenování
+    /// <c>CommandAsync</c> (ne overload <c>Command</c>) drží overload resolution jasné.
     /// </summary>
     protected AsyncRelayCommand CommandAsync(Func<Task> execute, Func<bool>? canExecute = null) =>
         new(execute, canExecute, PopupDisplayer);
@@ -166,8 +159,8 @@ public class EDViewModel : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Called when the Ok button is clicked. Override to add validation.
-    /// Call base.OnOk() (or CloseDialog(true)) to confirm and close.
+    /// Volá se po kliknutí na Ok. Override pro vlastní validaci. Volej <c>base.OnOk()</c>
+    /// (nebo <c>CloseDialog(true)</c>) pro potvrzení a zavření.
     /// </summary>
     protected virtual void OnOk() => CloseDialog(true);
 
@@ -176,8 +169,8 @@ public class EDViewModel : INotifyPropertyChanged
     protected virtual void OnDelete() { }
 
     /// <summary>
-    /// Entry point for standard action factory methods.
-    /// Usage: Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];
+    /// Továrna pro standardní akce. Použití:
+    /// <c>Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];</c>
     /// </summary>
     protected StandardActionsAccessor StandardActions => new(this);
 
@@ -212,9 +205,7 @@ public class EDViewModel : INotifyPropertyChanged
             Application.Current?.TryFindResource(key) as ImageSource;
     }
 
-    /// <summary>
-    /// Requests the window to close with the given dialog result.
-    /// </summary>
+    /// <summary>Žádá o zavření okna s daným dialog result.</summary>
     protected void CloseDialog(bool? result = null) => RequestClose?.Invoke(result);
 
     protected bool Set<T>(ref T field, T value, [CallerMemberName] string? property = null)

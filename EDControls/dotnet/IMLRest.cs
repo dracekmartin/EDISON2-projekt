@@ -3,9 +3,9 @@ using ALWA.SYS;
 namespace EDControls;
 
 /// <summary>
-/// Abstraction over MLRest for testability. Covers the two call patterns
-/// (CVar and object[]) plus the connection properties (mutable for
-/// company-switching, read-only identity).
+/// Abstrakce nad <c>MLRest</c> pro testovatelnost. Pokrývá dva volací patterny
+/// (CVar i <c>object[]</c>) plus connection property (mutable pro přepnutí firmy,
+/// read-only identity).
 /// </summary>
 public interface IMLRest
 {
@@ -36,6 +36,6 @@ public interface IMLRest
     /// <summary>Session GUID propagovaný do hostovaných modulů (sdílená ACTIVITY session). Konstanta.</summary>
     string Guid { get; }
 
-    /// <summary>Oddělovač polí pro legacy <c>object[]</c> Caché volání (typicky <c>'\0'</c>).</summary>
+    /// <summary>Oddělovač polí pro stará <c>object[]</c> Caché volání (typicky <c>'\0'</c>).</summary>
     char Delimiter { get; }
 }

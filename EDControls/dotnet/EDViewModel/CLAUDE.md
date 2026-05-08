@@ -8,12 +8,13 @@ integrovaný s `EDFooter`.
 
 | Soubor | Role |
 | --- | --- |
-| `EDViewModel.cs` | Základní třída. `INotifyPropertyChanged`, `Set<T>()`, `Command()`, `OkCommand`, `RequestClose`, `Actions`, `MLRest`, `StandardActionsAccessor`. |
+| `EDViewModel.cs` | Základní třída. `INotifyPropertyChanged`, `Set<T>()`, `Command()` / `CommandAsync()`, `OkCommand`, `RequestClose`, `Actions`, `MLRest`, `PersistedFormId`, `AttachToWindow()`, `StandardActionsAccessor`. |
 | `RelayCommand.cs` | `RelayCommand` (bez parametru) a `RelayCommand<T>`. Zachytávání výjimek přes `IPopupDisplayer`. |
+| `AsyncRelayCommand.cs` | Async verze — pro `async Task` handlery. CanExecute false během běhu (zabraňuje double-clicku). |
 | `EDAction.cs` | Model jedné akce pro toolbar/menu/klávesovou zkratku (label, ikona, klávesa, příkaz). |
-| `EDServices.cs` | DI kontejner: `IMLRest`, `IWindowNavigator`, `IPopupDisplayer`. Singleton `EDServices.Current`. |
+| `EDServices.cs` | DI kontejner: `IMLRest`, `IWindowNavigator`, `IPopupDisplayer`, `ActiveLicence`, `IsAdmin`. Singleton `EDServices.Current`. |
 | `IWindowNavigator.cs` | Interface pro otevírání oken (Show/ShowDialog s názvem třídy). |
-| `ReflectionWindowNavigator.cs` | Implementace — hledá typ okna reflexí, vytváří přes `Activator.CreateInstance`. |
+| `ReflectionWindowNavigator.cs` | Implementace — hledá typ okna reflexí, vytváří přes `Activator.CreateInstance`, automaticky volá `vm.AttachToWindow(window)` před Show. |
 | `IPopupDisplayer.cs` | Interface pro dialogy (`Confirm`, `Info`, `ConfirmClose`, `Error`). |
 | `PopupDisplayer.cs` | Implementace — zobrazí `EDPopup` / `EDErrorPopup` s aktivním oknem jako owner. |
 | `EDWindowInput.cs` | Bázová třída pro vstupní data předávaná do modálních oken. |
@@ -30,9 +31,12 @@ integrovaný s `EDFooter`.
 | `event Action<bool?>? RequestClose` | Vyvolán pro zavření okna. `true` = potvrzeno, `false` = zrušeno, `null` = jen zavřít. `EDFooter` se přihlásí automaticky na `Loaded`. |
 | `ICommand OkCommand` | Volá `OnOk()`. Navázáno na tlačítko Ok přes `EDFooter`. |
 | `ICommand AddCommand / EditCommand / DeleteCommand` | Volají `OnAdd/OnEdit/OnDelete()`. Automaticky použito v `StandardActions.Add/Edit/Delete()`. |
-| `IReadOnlyList<EDAction>? Actions` | Akce tohoto okna. Nastavit v konstruktoru podtřídy. `EDToolbar` je čte na `Loaded`; `EDFooter` binduje přes DataContext. Klávesové zkratky se registrují automaticky v `EDViewModel` (viz níže). |
+| `IReadOnlyList<EDAction>? Actions` | Akce tohoto okna. Nastavit v konstruktoru podtřídy. `EDToolbar` je čte na `Loaded`; `EDFooter` binduje přes DataContext. Klávesové zkratky se registrují přes `AttachToWindow` (viz níže). |
 | `protected RelayCommand Command(Action, canExecute?)` | **Preferovaný způsob vytváření příkazů.** Vytvoří `RelayCommand` s automatickým error handlingem přes `PopupDisplayer`. Používej místo `new RelayCommand(...)`. |
 | `protected RelayCommand<T> Command<T>(Action<T>, canExecute?)` | Generická varianta `Command()`. |
+| `protected AsyncRelayCommand CommandAsync(Func<Task>, canExecute?)` | Pro `async Task` handlery — vyhni se `async void`. Během běhu tasku `CanExecute` vrací false (brání double-clicku). |
+| `protected virtual string? PersistedFormId` | FormID pro perzistenci stavu okna. **Default odvozuje z názvu VM** (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`). Override na `null` pro opt-out. |
+| `public void AttachToWindow(Window)` | Volat **před** `Show()`/`ShowDialog()` — registruje klávesy + persistenci stavu okna. `ReflectionWindowNavigator` volá automaticky pro Show/ShowDialog; composition-root v App.xaml.cs musí volat ručně pro shell. |
 | `protected virtual void OnOk()` | Přepiš pro validaci. Zavolej `base.OnOk()` nebo `CloseDialog(true)` pro potvrzení. Bez volání base okno zůstane otevřené. |
 | `protected virtual void OnAdd/OnEdit/OnDelete()` | Přepiš pro obsluhu standardních CRUD akcí. Ve výchozím stavu nedělají nic. |
 | `protected void CloseDialog(bool? result)` | Vyvolá `RequestClose`. Použitelné z jakékoliv metody, nejen z `OnOk`. |
@@ -51,16 +55,41 @@ public EDViewModel() : this(EDServices.Current) { }
 public EDViewModel(EDServices services) { ... }
 ```
 
-### Automatická registrace klávesových zkratek
+### AttachToWindow — klávesy + persistence stavu okna
 
-`EDViewModel` naplánuje `RegisterKeyBindings()` přes `Dispatcher.BeginInvoke` na
-`DispatcherPriority.Loaded`. V tom okamžiku je celý řetězec konstruktorů dokončen a okno
-je v `Application.Current.Windows`. Metoda najde okno, jehož `DataContext == this`, a přidá
-`KeyBinding` pro každou akci. **V žádném view není potřeba nic nastavovat** — akce deklarované
-ve ViewModelu jsou automaticky dostupné z klávesnice, i když okno nemá `EDToolbar` ani `EDFooter`.
+`EDViewModel.AttachToWindow(window)` se volá synchronně **před** `Show()` /
+`ShowDialog()`. Zaregistruje:
 
-Navíc se vždy registruje **Ctrl+Enter → OkCommand** (nahrazuje `IsDefault="True"` na EDFooter).
-Toto umožňuje EDInputFormu používat Enter pro navigaci mezi poli.
+1. **Klávesové zkratky** z `Actions` (každá akce s `Key != Key.None` jako window-level
+   `KeyBinding`) plus vždy **Ctrl+Enter → OkCommand** (nahrazuje `IsDefault="True"`
+   na EDFooter; umožňuje EDInputFormu používat Enter pro navigaci mezi poli).
+2. **Persistenci stavu okna** — pokud `PersistedFormId` není null, hookne se
+   `SourceInitialized` (restore) + `Closing` (save) na `WindowStatePersistence`.
+
+**Volá se automaticky:**
+
+- Pro okna otevřená přes `WindowNavigator.Show(...)` / `ShowDialog(...)` —
+  `ReflectionWindowNavigator.CreateWindow` zavolá po vytvoření instance.
+- Pro shell okno (`EdisonMainWindow`) — App.xaml.cs volá ručně mezi
+  `new EdisonMainWindow { DataContext = vm }` a `wnd.Show()`.
+
+`SourceInitialized` se vyvolá synchronně uvnitř `Show()` ještě před prvním paintem,
+takže restore stavu okna proběhne včas a nenastane flicker z XAML defaults.
+
+### Persistence stavu okna
+
+Default `PersistedFormId` odvozuje formID z názvu VM třídy a přidává prefix
+`"EDISON2."` (odděluje od starých numerických IDs z `EDISFormEnum`). Storage je
+per-MLP × IDFa přes existující legacy endpoint `ALVA.LIBRARY.Form.SaveParams` /
+`LoadParams` (viz `WindowStatePersistence`).
+
+**Opt-out** v subclass:
+
+```csharp
+class MyDialogViewModel : EDViewModel {
+    protected override string? PersistedFormId => null;   // bez persistence
+}
+```
 
 ## StandardActions — továrna standardních akcí
 

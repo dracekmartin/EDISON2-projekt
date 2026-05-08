@@ -8,22 +8,22 @@ using EDControls.EDViewModel;
 namespace EDControls;
 
 /// <summary>
-/// Persistence stavu WPF okna (pozice, velikost, Maximized) přes legacy
+/// Persistence stavu WPF okna (pozice, velikost, Maximized) přes existující Caché endpoint
 /// <c>ALVA.LIBRARY.Form.SaveParams</c> / <c>LoadParams</c>. Storage je per-MLP × IDFa
 /// (server čte IDFa ze sys kontextu MLRest).
 /// </summary>
 /// <remarks>
-/// Aktivace: <see cref="EDViewModel.PersistedFormId"/> override v subclass VM. Konvence
-/// formID: <c>"EDISON2.&lt;WindowClassName&gt;"</c> — prefix odděluje od legacy numeric IDs
-/// z <c>EDISFormEnum</c>.
+/// FormID se default odvozuje z názvu VM (viz <see cref="EDViewModel.PersistedFormId"/>) a
+/// dostává prefix <c>"EDISON2."</c> — odděluje od starých numerických IDs z <c>EDISFormEnum</c>
+/// (tam VB moduly ukládají vlastní state).
 /// </remarks>
 public static class WindowStatePersistence
 {
     public static void Attach(Window window, string formId)
     {
-        // Volat před Show(): PresentationSource je null, hookne SourceInitialized event.
-        // SourceInitialized fire-uje synchronně uvnitř Show() ještě před prvním paintem,
-        // takže restore se aplikuje včas a nenastane flicker.
+        // Před Show(): PresentationSource je null, hookne se SourceInitialized event,
+        // který se synchronně vyvolá uvnitř Show() ještě před prvním paintem — restore
+        // dorazí včas a nenastane flicker z XAML defaults na uložený stav.
         if (PresentationSource.FromVisual(window) is null)
             window.SourceInitialized += (_, _) => TryRestore(window, formId);
         else

@@ -21,8 +21,9 @@ jako `Button` s:
 - `ToolTip` — `EDAction.ToolTipText`, formátovaný jako `"Label [ShortcutText]"` (např. `"Přidat [Ctrl+N]"`)
 - Content — 16×16 `Image` navázaný na `EDAction.Icon`
 
-Klávesové zkratky se **neregistrují** zde. Registruje je `EDViewModel` sám na
-`DispatcherPriority.Loaded` — takže klávesové zkratky fungují i když okno nemá `EDToolbar`.
+Klávesové zkratky se **neregistrují** zde. Registruje je `EDViewModel.AttachToWindow`
+(volá ho `ReflectionWindowNavigator` před `Show`/`ShowDialog`, případně App.xaml.cs
+ručně pro shell okno) — klávesové zkratky tedy fungují i když okno nemá `EDToolbar`.
 
 ## Použití
 

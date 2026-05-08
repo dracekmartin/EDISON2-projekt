@@ -24,10 +24,8 @@ public class LocalPrefs
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "m-line", "EDISONMAIN2", "local.json");
 
-    /// <summary>Singleton instance loaded při startu aplikace přes <see cref="Load"/>.</summary>
     public static LocalPrefs Current { get; private set; } = new();
 
-    /// <summary>Načte preference ze souboru. Při chybě/absenci ponechá default instanci.</summary>
     public static void Load()
     {
         try
@@ -38,11 +36,10 @@ public class LocalPrefs
         }
         catch
         {
-            // Korruptovaný soubor — držíme default instanci, příští Save() ji přepíše.
+            // Poškozený soubor — držíme default instanci, příští Save() ji přepíše.
         }
     }
 
-    /// <summary>Uloží aktuální stav do souboru. Vytvoří složku pokud chybí.</summary>
     public void Save()
     {
         Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);

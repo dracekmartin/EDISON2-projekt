@@ -7,11 +7,19 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
 ## Co je hotové
 
 - **Login** — `LoginWindow` + `UserAuthenticator` volá `ALVA.SYS.Login.Login`.
-- **Výběr firmy** — combobox v toolbaru; `EdisonMainViewModel.SelectedCompanyIndex`
-  setter mění `MLRest.Idfa` / `DataNamespace` a re-volá `VerifyLic` (per-IdFa
-  ACTIVITY zámek). Při překročení licencí revert na původní IdFa.
+- **Výběr firmy** — combobox v toolbaru s textovým názvem firmy + IDFa v `[]`,
+  abecedně řazeno (server vrací řazené přes `SortedDictionary`).
+  `EdisonMainViewModel.SelectedCompanyIndex` setter mění `MLRest.Idfa` /
+  `DataNamespace`, refreshuje strom modulů, re-volá VerifyLic přes
+  `LicenceVerifier` (per-IdFa ACTIVITY zámek + cílové firmy licence). Při
+  rejection revert na původní IdFa.
 - **Licence** — `LicenceService` (wrapper kolem legacy `EDLicence.dll`); filtrace
   stromu modulů přes `EdisonMainViewModel.TryFilter` + `ExecutableModule.IsLicensed/ElementId`.
+- **`LicenceVerifier`** — sdílený retry loop pro `VerifyLic`. Když je při
+  out-of-license uživatel admin, nabídne spawnout legacy `USERS.exe formUSERSActivity`
+  (přes EDISONMAIN2API), retry po zavření. Non-admin / Cancel → caller revertuje
+  (App.xaml.cs Shutdown, VM revert). Outcome enum `Accepted` / `Cancelled` /
+  `Refused` umožňuje context-specifický popup.
 - **Strom modulů** — `ModuleTreeGetter` parsuje wire formát z
   `ALVA.EDISONMAIN2.API.Tree.GetTree` (FAMILY / EXE / FAMILY_END).
 - **Process launcher** — `ProcessLauncher.Launch(module)` čte connection kontext
@@ -19,10 +27,14 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
   ACTIVITY zámek se shellem.
 - **ACTIVITY zámek** — vytvořen `VerifyLic` při loginu. `EdisonActivityFailed` event
   → graceful shutdown.
-- **Admin override při překročení licencí** — VerifyLic loop v `App.xaml.cs`:
-  pokud admin při loginu narazí na out-of-license, popup → spawn legacy
-  `USERS.exe` s `formUSERSActivity` (sync, `WaitForExit`) → admin někoho odhlásí
-  → retry. Non-admin nebo Cancel → shutdown.
+- **Pamatuje poslední firmu** — `LocalPrefs` (JSON v `%APPDATA%\m-line\EDISONMAIN2\local.json`)
+  ukládá `LastIdfa` po loginu / přepnutí. App.xaml.cs ho čte při startu jako prioritu
+  před `IsDefault` flagem. Funguje i v `#if DEBUG` modu.
+- **Persistence stavu oken** — automatická pro každý `EDViewModel`-derived VM
+  (pozice, velikost, Maximized) přes existující legacy endpoint
+  `ALVA.LIBRARY.Form.SaveParams` / `LoadParams`, per-MLP × IDFa. Default formID
+  odvozen z názvu VM třídy (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`).
+  Detaily v root [CLAUDE.md](../CLAUDE.md) (sekce "Persistence stavu").
 - **App startup** — `Startup/App.xaml(.cs)` orchestruje celý bootstrap.
 
 ## Spouštění legacy modulů — EDISONMAIN2API
@@ -56,7 +68,9 @@ cooperative logout countdown. Detaily fází F1–F8 v [MVP_PLAN.md](MVP_PLAN.md
 
 ```text
 EDISONMAIN2/dotnet/
-├── Startup/                    bootstrap (App.xaml, SettingsLoader, LicenceService)
+├── Startup/                    bootstrap: App.xaml(.cs), SettingsLoader, LocalPrefs,
+│                               LicenceService (wrapper EDLicence.dll), LicenceVerifier
+│                               (VerifyLic retry loop + USERS.exe spawn)
 └── Windows/
     ├── LoginWindow/            login dialog + UserAuthenticator
     ├── EdisonMainWindow/       hlavní okno (toolbar, tree, status bar)

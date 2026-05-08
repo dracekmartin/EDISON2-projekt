@@ -3,10 +3,10 @@ using System.Windows.Input;
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Async equivalent of <see cref="RelayCommand"/>. Wires an <c>async Task</c> handler
-/// to an <see cref="ICommand"/>, catching exceptions through <see cref="IPopupDisplayer"/>
-/// instead of leaking them to the UI thread as fire-and-forget <c>async void</c>.
-/// <see cref="CanExecute"/> returns false while the task is running — prevents double-click.
+/// Async varianta <see cref="RelayCommand"/>. Napojí <c>async Task</c> handler na
+/// <see cref="ICommand"/> a chytá výjimky přes <see cref="IPopupDisplayer"/> místo aby
+/// propadly na UI thread jako <c>async void</c>. Během běhu tasku <see cref="CanExecute"/>
+/// vrací false — brání double-clicku.
 /// </summary>
 public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null, IPopupDisplayer? popupDisplayer = null) : ICommand
 {
@@ -18,12 +18,11 @@ public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    // canExecute must not throw — WPF calls it on every UI interaction and exceptions
-    // propagate to DispatcherUnhandledException rather than being caught here.
+    // canExecute nesmí házet — WPF ho volá při každé UI interakci a výjimka by propadla
+    // na DispatcherUnhandledException, ne do našeho catch-u.
     public bool CanExecute(object? parameter) => !_isRunning && (canExecute == null || canExecute());
 
-    // async void is the one supported case: ICommand.Execute is void. Exceptions are
-    // guaranteed caught via try/catch and routed to IPopupDisplayer.
+    // async void je výjimečně OK: ICommand.Execute je void; výjimky chytá try/catch níže.
     public async void Execute(object? parameter)
     {
         if (_isRunning) return;

@@ -3,8 +3,8 @@ using ALWA.SYS;
 namespace EDControls;
 
 /// <summary>
-/// Wraps a concrete <see cref="MLRest"/> instance behind <see cref="IMLRest"/>
-/// so that ViewModels and controls can be tested with a substitute.
+/// Obaluje konkrétní <see cref="MLRest"/> pod rozhraní <see cref="IMLRest"/> aby šly
+/// VM a controls testovat s mock substitucí.
 /// </summary>
 public class MLRestAdapter(MLRest inner) : IMLRest
 {

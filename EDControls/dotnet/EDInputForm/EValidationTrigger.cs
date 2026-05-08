@@ -2,13 +2,13 @@ namespace EDControls.EDInputForm
 {
     public enum EValidationTrigger
     {
-        /// <summary>Called once immediately after the form is loaded.</summary>
+        /// <summary>Volá se jednou hned po načtení formuláře.</summary>
         Init,
 
-        /// <summary>Called automatically when a ValidateOnChange field is edited.</summary>
+        /// <summary>Volá se automaticky při editaci pole s <c>ValidateOnChange</c>.</summary>
         Change,
 
-        /// <summary>Called once before Save; required-field checks are enforced here.</summary>
+        /// <summary>Volá se jednou před Save; tady se vynucuje kontrola povinných polí.</summary>
         BeforeSave
     }
 }

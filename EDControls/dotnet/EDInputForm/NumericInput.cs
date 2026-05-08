@@ -5,8 +5,8 @@ using System.Windows.Input;
 namespace EDControls.EDInputForm
 {
     /// <summary>
-    /// Attached property that restricts TextBox input to numeric characters.
-    /// Set Mode="Integer" for digits only, "Decimal" for digits + one decimal separator.
+    /// Attached property omezující vstup TextBoxu na numerické znaky.
+    /// <c>Mode="Integer"</c> = jen číslice, <c>"Decimal"</c> = číslice + jeden desetinný oddělovač.
     /// </summary>
     public static class NumericInput
     {

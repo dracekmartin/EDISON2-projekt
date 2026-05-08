@@ -10,8 +10,8 @@ public class RelayCommand(Action execute, Func<bool>? canExecute = null, IPopupD
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    // canExecute must not throw — WPF calls it on every UI interaction and exceptions
-    // propagate to DispatcherUnhandledException rather than being caught here.
+    // canExecute nesmí házet — WPF ho volá při každé UI interakci a výjimka by propadla
+    // na DispatcherUnhandledException, ne do našeho catch-u.
     public bool CanExecute(object? parameter) => canExecute == null || canExecute();
     public void Execute(object? parameter) { try { execute(); } catch (Exception ex) { (popupDisplayer ?? new PopupDisplayer()).Error(ex); } }
 }
@@ -27,8 +27,8 @@ public class RelayCommand<T>(Action<T> execute, Func<T, bool>? canExecute = null
         remove => CommandManager.RequerySuggested -= value;
     }
 
-    // canExecute must not throw — WPF calls it on every UI interaction and exceptions
-    // propagate to DispatcherUnhandledException rather than being caught here.
+    // canExecute nesmí házet — WPF ho volá při každé UI interakci a výjimka by propadla
+    // na DispatcherUnhandledException, ne do našeho catch-u.
     public bool CanExecute(object? parameter) => _canExecute == null || (parameter is T t && _canExecute(t));
     public void Execute(object? parameter) { try { if (parameter is T t) _execute(t); } catch (Exception ex) { (popupDisplayer ?? new PopupDisplayer()).Error(ex); } }
 }

@@ -6,15 +6,11 @@ namespace EDControls.EDInputForm
 {
     public abstract class Item : INotifyPropertyChanged
     {
-        /// <summary>
-        /// 1-based sequential number assigned by Caché across all items (groups and fields).
-        /// </summary>
+        /// <summary>1-based sekvenční číslo přidělené Caché napříč všemi položkami (groups + fields).</summary>
         public int Number { get; set; }
 
         private EItemVisibility _visibility = EItemVisibility.Visible;
-        /// <summary>
-        /// Controls whether this item is shown, collapsed, or hidden (by user or programmer).
-        /// </summary>
+        /// <summary>Řídí zobrazení položky: visible / collapsed / hidden (uživatel nebo programátor).</summary>
         public EItemVisibility Visibility
         {
             get => _visibility;
@@ -27,21 +23,19 @@ namespace EDControls.EDInputForm
             }
         }
 
-        /// <summary>
-        /// Computed WPF Visibility for XAML binding. Override in subclasses for additional logic.
-        /// </summary>
+        /// <summary>Vypočtená WPF <see cref="WpfVisibility"/> pro XAML binding. Override v subclass pro dodatečnou logiku.</summary>
         public virtual WpfVisibility EffectiveVisibility =>
             _visibility == EItemVisibility.Visible
                 ? WpfVisibility.Visible
                 : WpfVisibility.Collapsed;
 
-        /// <summary>Called after Visibility changes. Override to notify derived properties.</summary>
+        /// <summary>Volá se po změně <see cref="Visibility"/>. Override pro notifikaci odvozených properties.</summary>
         protected virtual void OnVisibilityChanged() { }
 
         private string? _helpText;
         /// <summary>
-        /// Optional help text set by Caché. Displayed as a tooltip or in a dedicated column
-        /// depending on the form-level HelpTextMode setting.
+        /// Volitelný help text nastavený serverem. Zobrazí se jako tooltip nebo v samostatném sloupci
+        /// podle form-level <c>HelpTextMode</c> nastavení.
         /// </summary>
         public string? HelpText
         {
@@ -54,7 +48,7 @@ namespace EDControls.EDInputForm
             }
         }
 
-        /// <summary>Visible when HelpText is non-empty; Collapsed otherwise.</summary>
+        /// <summary>Visible pokud <see cref="HelpText"/> není prázdný, jinak Collapsed.</summary>
         public WpfVisibility HelpTextVisibility =>
             string.IsNullOrEmpty(_helpText) ? WpfVisibility.Collapsed : WpfVisibility.Visible;
 

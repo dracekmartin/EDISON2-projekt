@@ -10,19 +10,10 @@ public class EDAction(string label, ICommand command, ImageSource? icon = null, 
     public ICommand Command { get; } = command;
     public ImageSource? Icon { get; } = icon;
     /// <summary>
-    /// Returns a fresh <see cref="Image"/> element on every access.
-    /// <para>
-    /// WPF <c>MenuItem.Icon</c> can only be set through an <c>ItemContainerStyle</c> setter,
-    /// which shares a single value instance across all generated items. A <see cref="System.Windows.UIElement"/>
-    /// can only have one parent in the visual tree, so sharing one <c>Image</c> object causes a
-    /// runtime visual-tree error as soon as a second item tries to claim it.
-    /// </para>
-    /// <para>
-    /// The workaround: make the setter value a computed property that allocates a new <c>Image</c>
-    /// each time it is read. WPF evaluates the binding (and therefore calls this getter) once per
-    /// item, so every <c>MenuItem</c> ends up with its own independent <c>Image</c> instance even
-    /// though the setter mechanism is shared.
-    /// </para>
+    /// Vrací nový <see cref="Image"/> při každém přístupu — WPF <c>MenuItem.Icon</c> přes
+    /// <c>ItemContainerStyle</c> setter nesnáší sdílení jednoho UIElement instance napříč MenuItems
+    /// (UIElement smí mít právě jednoho rodiče). Computed property obejde tím že každý MenuItem
+    /// dostane vlastní <c>Image</c>.
     /// </summary>
     public Image? IconElement => Icon != null ? new Image { Source = Icon, Width = 16, Height = 16 } : null;
     public Key Key { get; } = key;

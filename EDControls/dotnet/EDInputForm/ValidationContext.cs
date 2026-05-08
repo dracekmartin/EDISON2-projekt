@@ -1,17 +1,17 @@
 namespace EDControls.EDInputForm;
 
 /// <summary>
-/// Carries the trigger kind and — for <see cref="EValidationTrigger.Change"/> events — the key
-/// of the field whose value changed.
+/// Nese typ triggeru a — pro <see cref="EValidationTrigger.Change"/> — klíč pole které
+/// změnu způsobilo.
 /// </summary>
 public sealed class ValidationContext(EValidationTrigger trigger, string? changedKey = null)
 {
-    /// <summary>What caused the validation call.</summary>
+    /// <summary>Důvod volání validace.</summary>
     public EValidationTrigger Trigger { get; } = trigger;
 
     /// <summary>
-    /// Key of the field that changed.
-    /// Non-null only when <see cref="Trigger"/> is <see cref="EValidationTrigger.Change"/>.
+    /// Klíč pole které změnilo hodnotu. Non-null pouze když <see cref="Trigger"/> je
+    /// <see cref="EValidationTrigger.Change"/>.
     /// </summary>
     public string? ChangedKey { get; } = changedKey;
 }
