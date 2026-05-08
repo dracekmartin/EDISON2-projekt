@@ -150,6 +150,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 if (outcome == LicenceAcquireOutcome.Accepted)
                 {
                     _services.ActiveLicence = newLicence;
+                    LocalPrefs.Current.LastIdfa = MLRest!.Idfa;
+                    LocalPrefs.Current.Save();
                     LoadAndFilterTree();
                 }
                 else

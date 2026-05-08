@@ -23,6 +23,8 @@ namespace EDISONMAIN2
             var services = new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer());
             EDServices.Initialize(services);
 
+            LocalPrefs.Load();
+
             var config = SettingsLoader.Load();
             string server = config.Server.Host;
             int port = config.Server.Port;
@@ -35,11 +37,14 @@ namespace EDISONMAIN2
             if (!string.IsNullOrEmpty(errState))
                 throw new InvalidOperationException(errState);
 
-            var defaultCompany = companies.FirstOrDefault(c => c.IsDefault);
-            if (defaultCompany.Id == null) defaultCompany = companies[0];
+            // Pre-fill firmy: priorita 1) lastIdfa z LocalPrefs (uživatel naposled přihlášen),
+            // 2) první s IsDefault, 3) fallback companies[0].
+            var startCompany = companies.FirstOrDefault(c => c.Id == LocalPrefs.Current.LastIdfa);
+            if (startCompany.Id == null) startCompany = companies.FirstOrDefault(c => c.IsDefault);
+            if (startCompany.Id == null) startCompany = companies[0];
 
             // Set Idfa so ALVA.SYS.Login.Login can resolve user's startupForm
-            loginRest.Idfa = defaultCompany.Id;
+            loginRest.Idfa = startCompany.Id;
 
             LoginResult login;
 #if DEBUG
@@ -58,7 +63,7 @@ namespace EDISONMAIN2
 #endif
 
             // Create the real MLRest connection with company context
-            var mlRest = new MLRestAdapter(new MLRest(server, port, defaultCompany.Database, defaultCompany.Id)
+            var mlRest = new MLRestAdapter(new MLRest(server, port, startCompany.Database, startCompany.Id)
             {
                 LoginName = login.UserName,
                 FullName  = login.FullName,
@@ -80,6 +85,9 @@ namespace EDISONMAIN2
                 return;
             }
             services.ActiveLicence = activeLicence;
+
+            LocalPrefs.Current.LastIdfa = mlRest.Idfa;
+            LocalPrefs.Current.Save();
 
             // Server odstraní ACTIVITY zámek (force-logout, výpadek, expirace) → graceful shutdown.
             mlRest.Inner.EdisonActivityFailed += (_, _) =>
