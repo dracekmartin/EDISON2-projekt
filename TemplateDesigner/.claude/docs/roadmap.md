@@ -15,10 +15,23 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-1. **Fáze A — 1:1 šablona zastávkového JŘ** ⬅️ AKTUÁLNÍ PRIORITA — hotová první kompletní verze + review s kolegy.
-2. **Příprava na Caché Wave 1** (UserPreferences) — první vlna migrace, odladí patterns pro další vlny.
+1. **Fáze A.2 — Zákaznické úpravy zastávkového JŘ** (z helpdesku) ⬅️ **AKTUÁLNÍ PRIORITA** — projít a uzavřít suspended tickety od TRANSDEV / KORID / DPKV. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+2. **Caché Migrace** — Wave 1 (UserPreferences) následuje po A.2.
 
-> Hotové fáze (B0.5 Code Hygiene, sjednocení Header/Data zón, per-template prefs, UX vyladění) viz **Archiv** na konci dokumentu.
+> Fáze A (1:1 šablona + review s kolegy) ✅ hotovo — review s kolegy proběhlo, výstupem je sada požadavků v Fázi A.2. Hotové fáze (Fáze A, B0.5, sjednocení Header/Data zón, per-template prefs, UX vyladění) viz **Archiv** na konci dokumentu.
+
+---
+
+## 📖 Závazné reference před implementací
+
+| Doc | Kdy číst |
+|---|---|
+| [`feature-design-principles.md`](feature-design-principles.md) | **Před každým novým requestem** — kódová + UX rozhodovací mřížka, klasifikace requestu (typ 1/2/3), per-customer divergence, anti-patterns |
+| [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md) | Při práci na zastávkovém JŘ — konkrétní požadavky zákazníků s citacemi a gap analýzou |
+| `.claude/rules/mvvm-patterns.md` | Při dotyku stylingu / dialogů / per-column editorů |
+| `.claude/rules/ux-conventions.md` | Při přidávání nového dialogu / okna / keyboardové zkratky |
+| `.claude/rules/new-element-checklist.md` | Při přidání nového typu elementu |
+| §5 Architektonických pravidel níže | R1–R5 (async, errors, JSON, MVVM, versioning) — závazné pro Caché migraci |
 
 ---
 
@@ -46,25 +59,75 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🔴 Fáze A: Odladění MHD zastávkového JŘ s reálnými daty ⬅️ AKTUÁLNÍ PRIORITA
+### 🔴 Fáze A.2: Zákaznické úpravy zastávkového JŘ (z helpdesku) ⬅️ AKTUÁLNÍ PRIORITA
 
-Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review s kolegy.
+Konkrétní požadavky z aktivních (suspended) tiketů Podpory M-line k zastávkovému JŘ. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
-> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
+**Před implementací každé položky:** projdi rozhodovací mřížku v [`feature-design-principles.md`](feature-design-principles.md) — typ 1/2/3, kam patří (panel/dialog/šablona), faktorování pro pozdější promotion.
 
-| Krok | Co | Stav |
-|---|---|---|
-| A | Hotová 1:1 šablona zastávkového JŘ + review s kolegy → seznam úprav | 🔄 v běhu |
+**Cíl fáze:** uzavřít suspended tickets od TRANSDEV, KORID, DPKV; M-line zákazníkům slíbil release nového tiskového modulu **polovina 2026**.
 
-#### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
+#### A.2.0 — Architektonická příprava (prerekvizita)
 
-| Téma | Popis |
-|---|---|
-| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy — lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
-| **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. Viz pravidlo R1. |
-| **SKTypeface/SKPaint alokace** | ✅ Opraveno — `ScheduleElementBase` cachuje `SKTypeface` přes statický `ConcurrentDictionary<string, SKTypeface>`; `SKPaint` se vytváří a ukládá per instance cache. |
-| **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
-| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu. |
+Před implementací jednotlivých zákaznických položek je třeba **layout refactor** elementů, kterých se to nejvíc týká (typ 2 dle principles doc — první varianta vynucuje refaktor). Bez toho se každá feature řeší jako copypasted hack.
+
+| Krok | Co | Související | Stav |
+|---|---|---|---|
+| A2-0a | **StopList layout vocabulary** — refaktor `Render()` na `ComputeArrowBox / ComputeContentBox / ComputeAttributePrefixBox`; per-row override infrastruktura | A2-A1, A2-A2, A2-A3, A2-A5 | |
+| A2-0b | **DepartureGrid header model** — podpora dvouřádkového headeru s per-line stylem (datový model + Render) | A2-B1 | |
+| A2-0c | **Conditional visibility v PropertiesPanel** — `PropertyDescriptor.VisibleWhen` predikát (H-11 odložené, teď je čas) | A2-A1, A2-A3, A2-A6 | |
+| A2-0d | **Per-template variants infrastruktura** — formalizovat `templates/<agenda>/<customer>.json` jako shipped defaults; UI „načti výchozí šablonu" | snižuje tlak na element properties | |
+| A2-0e | **VisibilityExpression verifikace** — ověřit, že podporuje `{CISLO_LINKY}`, `{TYP_LINKY}`, `{TYP_JR}`, `{KOD_DOPRAVY}` placeholdery | A2-E1 | |
+
+#### A.2.A — StopListElement úpravy
+
+| Krok | Tiket | Zákazník | Co | Typ | Stav |
+|---|---|---|---|---|---|
+| A2-A1 | #10660 | DPKV | `DirectionArrowPosition: Left \| Right` — přesun osy směru z mezi-minutami-a-názvem za název | 2 | |
+| A2-A2 | #10660 | DPKV | `AttributeRenderMode` — atribut „na znamení" inline prefix `x` před názvem (vs. samostatný sloupec) | 2 | |
+| A2-A3 | #10660 | DPKV | `CurrentStopBgColor` — podbarvení aktuální zastávky místo Underline | 1 | |
+| A2-A4 | #10660 | DPKV | Per-column header font — ověřit a vyladit default („min." menší než „Zastávky") | 1 | |
+| A2-A5 | #7937 | TRANSDEV | Per-row padding ve StopList, per-směr, volitelně per časové pásmo Tč | 2 | |
+| A2-A6 | #7959 | TRANSDEV | Filtr zastávek bez obsluhy z tištěné zastávky (Caché-side v `BuildZastavka`) | 2 | |
+
+#### A.2.B — DepartureGridElement úpravy
+
+| Krok | Tiket | Zákazník | Co | Typ | Stav |
+|---|---|---|---|---|---|
+| A2-B1 | #10660 | DPKV | Per-line font v dvouřádkovém headeru skupiny dnů („Pracovní" větší / „den" menší) | 2 | |
+| A2-B2 | #10660 | DPKV | **Bug** — nestejně silné podtržení obou řádků headeru; oprava `DrawTextDecorations` (konstantní tloušťka) | 1 | |
+| A2-B3 | #10660 | DPKV | Rozsah hodin přes půlnoc (3→0) + auto-fit zvětšení řádků při zúžení rozsahu | 2 | |
+| A2-B4 | #8828 | TRANSDEV | Per-sloupek zastávky — samostatná vývěska (Caché parametr + multi-data export) | 3 | |
+
+#### A.2.C — NotesLegendElement úpravy
+
+| Krok | Tiket | Zákazník | Co | Typ | Stav |
+|---|---|---|---|---|---|
+| A2-C1 | #10660 | DPKV | Barevné odlišení značky vs. text poznámky — `SymbolStyle` + `TextStyle` jako dvě zóny | 2 | |
+| A2-C2 | #10660 | DPKV | Volitelná hlavička sekce („Poznámky") — symetrie s headerem StopList | 1 | |
+| A2-C3 | #7487 | KORID | `Columns: 1 \| 2 \| 3 \| 4` — flow layout přes sloupce s overflow; aplikovat i na tisk týdenní platnosti | 2 | |
+
+#### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
+
+| Krok | Tiket | Zákazník | Co | Stav |
+|---|---|---|---|---|
+| A2-D1 | #7947 | TRANSDEV | Nový text template „spoj jede až do XY" pro spoje **prodlužující** základní trasu (symetrické k existujícímu „končí v zast. X") | |
+| A2-D2 | #7955 | TRANSDEV | Vlastní komentář spoje musí přebít auto-poznámku rozdílů (suppress auto pokud má spoj custom text) | |
+| A2-D3 | #7955 | TRANSDEV | **Bug** — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ); izolovat NZ od ostatních poznámek | |
+| A2-D4 | #7955 | TRANSDEV | **Bug** — výběr spoje v UI jen prvním číslem (Studio JŘ, ne přímo TD) | |
+| A2-D5 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | |
+| A2-D6 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | |
+| A2-D7 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | |
+
+#### A.2.E — Návrhář sestav (ověření)
+
+| Krok | Tiket | Zákazník | Co | Stav |
+|---|---|---|---|---|
+| A2-E1 | #8772 | TRANSDEV | Ověřit, že `VisibilityExpression` s placeholdery `{CISLO_LINKY}`, `{TYP_LINKY}` atd. funguje → uzavřít tiket s referenční šablonou | |
+
+#### A.2 — Status komunikace s klienty
+
+Při uzavírání jednotlivých tiketů odkazovat na **konkrétní featuru v TD** + verzi releasu. Texty M-line v helpdesku (`viz customer-requirements-zastavkovy-jr.md §H`) zákazníkům slíbily „nový tiskový modul" / „Studio JŘ" na polovinu 2026.
 
 ---
 
@@ -628,7 +691,27 @@ Kontinuální polish nad rámec původního B0.5 scope, motivovaný přípravou 
 | 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF |
 | 6 | `CacheAgendaProvider` — ParseMockData vnořená pole, GetData, BuildRealData |
 
-## Fáze A: Odladění MHD zastávkového JŘ — hotové kroky
+## Fáze A: Odladění MHD zastávkového JŘ ✅ (2026-05-11)
+
+Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review s kolegy.
+
+> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
+
+| Krok | Co | Stav |
+|---|---|---|
+| A | Hotová 1:1 šablona zastávkového JŘ + review s kolegy → seznam úprav v `customer-requirements-zastavkovy-jr.md` (= Fáze A.2) | ✅ (2026-05-11) |
+
+### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
+
+| Téma | Popis |
+|---|---|
+| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy — lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
+| **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. Viz pravidlo R1. |
+| **SKTypeface/SKPaint alokace** | ✅ Opraveno — `ScheduleElementBase` cachuje `SKTypeface` přes statický `ConcurrentDictionary<string, SKTypeface>`; `SKPaint` se vytváří a ukládá per instance cache. |
+| **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
+| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu. |
+
+### Fáze A — hotové kroky
 
 | Krok | Co | Stav |
 |---|---|---|

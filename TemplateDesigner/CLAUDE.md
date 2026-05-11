@@ -178,8 +178,11 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 | `cache-api.md` | AgendaAPI architektura, wire formáty, Caché skeleton, nová agenda checklist | `CACHE/**` |
 | `cache-database.md` | Mentální model DB: globály (LSO, ZST, CHR, ENUMS, SETTINGS), subscripty, business koncepty | `CACHE/**` |
 | `implementation-patterns.md` | Barvy, RenderContext, ComboBox gotcha, SkiaSharp quirks | `dotnet/**/*.cs` |
+| `ux-conventions.md` | Dialogová tlačítka (IsDefault/IsCancel), tooltipy, autoritativní tabulka keyboardových zkratek, context menu, confirmation patterns | `dotnet/Windows/**` |
 
 Ruční reference:
 - `.claude/docs/changelog.md` — kompletní changelog
 - `.claude/docs/roadmap.md` — plná roadmapa s detaily
 - `.claude/docs/schedule-elements-architecture.md` — architektura specializovaných JŘ elementů (Caché wire formát, hierarchie elementů, matice zodpovědností)
+- **`.claude/docs/feature-design-principles.md`** — **závazná reference před každým novým requestem**: kódová + UX rozhodovací mřížka, klasifikace typu variace (1/2/3), per-customer divergence, anti-patterns
+- `.claude/docs/customer-requirements-zastavkovy-jr.md` — konkrétní požadavky zákazníků z helpdesku Podpory M-line (zastávkový JŘ — DPKV, TRANSDEV, KORID)
