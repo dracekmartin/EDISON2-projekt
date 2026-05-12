@@ -52,12 +52,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 - **Co klient chce:** Aktuální zastávka zvýrazněná **podbarvením pozadí** (bg color), ne podtržením textu.
 - **Gap:** Doplnit `CurrentStopBgColor` na `StopListElement` (a v editoru per-row override) + vypnout default `Underline` pro aktuální zastávku ve prospěch bg colors.
 
-### A4. Záhlaví „min." menší než záhlaví „Zastávky"
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„nadpisu, kdy v naší verzi máme nápis min. menší, než nápis Zastávky, což také vypadá lépe a v návrháři jsem to nenašel"*
-- **Co máme dnes:** Per-column header font v `StopColumnsEditorDialog` přes `CellStyleEditor` (CellStyle kaskáda). Teoreticky umožňuje různé velikosti, ale klient to v UI nenašel.
-- **Co klient chce:** Sloupec „min." má **menší fontsize** v záhlaví než sloupec „Zastávky" — aby název zastávky vizuálně dominoval.
-- **Gap:** Pravděpodobně už lze přes per-column `HeaderStyle.FontSize` — **úkol:** ověřit reálně v UI, případně dělat UX lepší (default `min.` má mít menší font?).
+### A4. ✅ HOTOVO (2026-05-12) — viz §G
 
 ### A5. Odsazení/odrazení zastávky per směr, jen pro zastávkové JŘ
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7937
@@ -226,6 +221,14 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 ---
 
 ## G. Hotovo / vyřízeno
+
+### A4. Per-column header font ve StopList — již plně podporováno
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Datum ověření:** 2026-05-12
+- **Výsledek:** ✅ Funkčně pokryto. Klient nenašel UI cestu — funkce existuje, jen je v `StopColumnsEditorDialog` (tab „Sloupce") přes per-column `CellStyleEditor`, ne v properties panelu.
+- **Code path:** `StopListElement.ResolveHeaderStyle(col)` aplikuje `col.Style.Header.Resolve(elementResolved)` → per-column přebíjí element-level v 4-vrstvé kaskádě. `RenderHeader` vytváří `ColumnRenderer.CellSpec` s **per-column ResolvedTextStyle**, takže každý sloupec má vlastní FontSize.
+- **Tri-state placeholder** ✅ — sloupec bez override zobrazí šedý italic placeholder hodnoty zděděné z elementu; „×" reset jen při explicit override.
+- **UI test ověřeno:** dialog sloupců → per-column FontSize → různé velikosti záhlaví v náhledu.
 
 ### B2. Underline a Strikethrough v záhlaví skupin dnů (DepartureGrid)
 - **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.

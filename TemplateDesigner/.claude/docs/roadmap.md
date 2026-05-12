@@ -86,7 +86,7 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 | A2-A1 | #10660 | DPKV | `DirectionArrowPosition: Left \| Right` — přesun osy směru z mezi-minutami-a-názvem za název | 2 | |
 | A2-A2 | #10660 | DPKV | `AttributeRenderMode` — atribut „na znamení" inline prefix `x` před názvem (vs. samostatný sloupec) | 2 | |
 | A2-A3 | #10660 | DPKV | `CurrentStopBgColor` — podbarvení aktuální zastávky místo Underline | 1 | |
-| A2-A4 | #10660 | DPKV | Per-column header font — ověřit a vyladit default („min." menší než „Zastávky") | 1 | |
+| A2-A4 | #10660 | DPKV | Per-column header font — ověřit a vyladit default („min." menší než „Zastávky") | 1 | ✅ (2026-05-12) verifikace OK, viz §G |
 | A2-A5 | #7937 | TRANSDEV | Per-row padding ve StopList, per-směr, volitelně per časové pásmo Tč | 2 | |
 | A2-A6 | #7959 | TRANSDEV | Filtr zastávek bez obsluhy z tištěné zastávky (Caché-side v `BuildZastavka`) | 2 | |
 
