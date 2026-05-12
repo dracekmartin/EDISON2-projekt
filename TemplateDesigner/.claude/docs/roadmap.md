@@ -87,8 +87,8 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 | A2-A2 | #10660 | DPKV+CBDP | `MarkersPosition` — značky (na znamení / atributy / poznámky) před nebo za názvem; auto-fit šířky marker sub-cell | 2 | ✅ (2026-05-12) viz §G |
 | A2-A3 | #10660 | DPKV | `CurrentStopBgColor` — podbarvení aktuální zastávky místo Underline | 1 | ✅ (2026-05-12) + cleanup master toggle |
 | A2-A4 | #10660 | DPKV | Per-column header font — ověřit a vyladit default („min." menší než „Zastávky") | 1 | ✅ (2026-05-12) verifikace OK, viz §G |
-| A2-A5 | #7937 | TRANSDEV | Per-row padding ve StopList, per-směr, volitelně per časové pásmo Tč | 2 | |
-| A2-A6 | #7959 | TRANSDEV | Filtr zastávek bez obsluhy z tištěné zastávky (Caché-side v `BuildZastavka`) | 2 | |
+| A2-A5 | #7937 | TRANSDEV | Per-row indent ve StopList, per-směr, volitelně per časové pásmo Tč | 2 | ⏸️ Odloženo — vyžaduje diskuzi s kolegy (kde brát data o odsazení per zastávka/směr v `ALVA.MHD.ZST`). Infrastruktura v TD i Caché schématu existuje (`ZastavkaData.Odsazeni`, `ODSAZENI` JSON pole), ale Caché vrací stub `odsazeni = 0` (ZastavkoveJrMhdAPI:881). Není přímo TD práce. |
+| A2-A6 | #7959 | TRANSDEV | Filtr zastávek bez obsluhy z tištěné zastávky (Caché) | 2 | 🔍 Pravděpodobně už hotovo — filtr existuje v `ZastavkoveJrMhdAPI:862-864` (hardcoded, vždy aktivní, žádný vypínač). Vyžaduje verifikaci s konkrétními TRANSDEV daty (např. linka 876xx se školní zastávkou). Pokud bude třeba opt-out parametr, doplnit do `GetParameters`. |
 
 #### A.2.B — DepartureGridElement úpravy
 

@@ -39,24 +39,39 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ### A4. ✅ HOTOVO (2026-05-12) — viz §G
 
-### A5. Odsazení/odrazení zastávky per směr, jen pro zastávkové JŘ
+### A5. ⏸️ Odloženo (2026-05-12) — diskuze s kolegy potřeba
+
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7937
 - **Citace:** *„potřebuji mít možnost odstadit/odrazit zastávku o určitý počet bodů, ale pouze pro zastávkové JŘ a pro jednotlivé směry (v jednom směru ano, v druhém ne)"*
-- **Dodatek z #7937:** *„zda by šlo odražení nastavit tak, že se bude odrážet zastávka v nastavených Tč vývěsu, resp. nebude odrážet v určitých Tč vývěsu"* (tj. jen v určitých časových pásmech)
-- **Co máme dnes:** Padding lze nastavit přes CellStyle, ale jen per-sloupec / per-element — ne per-řádek (per-zastávka) a ne per-směr.
-- **Co klient chce:**
-  - Posunout konkrétní zastávku (řádek) doprava o N bodů (visualní hierarchie).
-  - Asymetricky: zastávka A je odsazena ve směru tam, ne ve směru zpět.
-  - Volitelně podmíněno na rozsah časových pásem (Tč) vývěsu.
-  - **Pouze pro zastávkové JŘ** — ne pro knižní.
-- **Gap:** Per-row left padding ve StopListElement + parametr per-směr + Caché parametr „aktuální směr" / „Tč rozsah" pro vyhodnocení podmínky.
+- **Dodatek:** *„zda by šlo odražení nastavit tak, že se bude odrážet zastávka v nastavených Tč vývěsu"* (per časové pásmo)
+- **Stav infrastruktury:**
+  - ✅ TD model: `ZastavkaData.Odsazeni: int` + `ShowStopIndentation` toggle
+  - ✅ TD render: prefix spaces (primitivní, potřebuje vylepšit na proper padding)
+  - ✅ Caché schema: `ODSAZENI` field v `BuildZastavka` (default 0)
+  - ❌ Caché data flow: `ZastavkoveJrMhdAPI.cls:881` má hardcoded `s odsazeni = 0` s komentářem „(legacy: dta 10)" — kdysi se to načítalo z legacy DB pole, v novém kódu nedotaženo
+- **Důvod odložení:** potřeba domluvit s kolegy:
+  - **Kde brát data** o odsazení per zastávka per směr (legacy field „dta 10" v `ALVA.MHD.ZST`? jiný?)
+  - **Jak se v EDISONu konfiguruje** odsazení per zastávku (UI?)
+  - **Jakou logiku** používat — per-směr, per-Tč pásmo, kombinace?
+- **Není přímo TD práce** — TD má infrastrukturu, čeká na Caché data flow doplnění a UX rozhodnutí.
 
-### A6. Skrýt zastávku, pokud z tištěné zastávky není obsluhována
+### A6. 🔍 Pravděpodobně hotovo (2026-05-12) — vyžaduje verifikaci s reálnými daty
+
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7959
 - **Citace:** *„Mám linku, která má druhou zastávku pro školní spoj, a mohl bych pro ní vytisknout JŘ. Ovšem z první zastávky na tuto druhou zastávku žádný spoj nepojede. Potřeboval bych, aby zastávka nebyla v seznamu zastávek, pokud není aktuální."*
-- **Co máme dnes:** `BuildZastavka` v `ZastavkoveJrMhdAPI.cls` generuje všechny zastávky trasy bez filtru na obsluhu ze zobrazované zastávky.
-- **Co klient chce:** Při tisku JŘ ze zastávky `X` se v seznamu zobrazí pouze ty zastávky, kam **alespoň jeden spoj z `X` jede**. Zastávky bez obsluhy z `X` se vynechají.
-- **Gap:** Filter v Caché `ZastavkoveJrMhdAPI` — fáze 6 `SestavitStranky` musí vyřadit zastávky, kde bitmapa obsluhy ze zobrazené zastávky je prázdná.
+- **Zjištění:** **Filter už existuje v `ZastavkoveJrMhdAPI.cls:862-864`** (po refaktoru z legacy):
+  ```objectscript
+  // Za aktuální: jen obsluhovatelné zastávky
+  i (SmerID=0)&&(bodIterator>aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
+  i (SmerID=1)&&(bodIterator<aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
+  ```
+- **Logika:** Pro každý bod v trase za aktuální zastávkou se kontroluje `ObsluhaBitmap` (= union obsluhovaných zastávek ze všech spojů z aktuální zastávky, viz fáze 5 `VypocitatBitmapyObsluhy`). Pokud bit pro daný bod není nastavený → zastávka se do `ZASTAVKY` arrayové nepřidá.
+- **Chování:** **Hardcoded, vždy aktivní, bez vypínače.** Komentář na řádku 855 *„ZASTAVKY — vždy všechny v daném směru"* je zavádějící — kód reálně filtruje.
+- **Co je potřeba:**
+  - Otestovat s konkrétními TRANSDEV daty (např. linka 876xx se školní zastávkou) — funguje to v praxi?
+  - Pokud ano → uzavřít tiket s referenční šablonou (jako E1, A4).
+  - Pokud bude některý klient chtít opt-out (vidět všechny zastávky bez filtru) → doplnit parametr `TISK_VSECH_ZASTAVEK` do `GetParameters` (paralelní s `TISK_PROJETYCH_ZAST`).
+  - Tiket #7959 byl podaný 2024-02-09 — to bylo o **starém legacy systému** před přepisem; v novém kódu by to mělo být OK.
 
 ---
 
