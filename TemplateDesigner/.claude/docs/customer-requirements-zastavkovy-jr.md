@@ -77,12 +77,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ## B. DepartureGridElement — mřížka minut odjezdu
 
-### B1. Per-line font v dvouřádkovém záhlaví skupiny dnů
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„v sekci minuty odjezdu. Tam by bylo dobré, aby se dala nastavit různá velikost písma u nadpisu u obou řádků (modré označení), aktuálně máme větší první nadpis a menší ten druhý"*
-- **Co máme dnes:** Per-column header font, sloučený řádek záhlaví, word-wrap záhlaví skupin. Není ale možnost dát **různý font pro 1. a 2. řádek** zalomeného textu v jednom buňce.
-- **Co klient chce:** Záhlaví skupiny dnů zobrazené na dvou řádcích — např. **„Pracovní"** (větší font) a **„den"** (menší font).
-- **Gap:** Header value parsing — pokud obsahuje `\n` nebo speciální token, různě stylovat řádky. Nebo: dva oddělené stringy (`HeaderLine1`, `HeaderLine2`) + dva `TextStyle`.
+### B1. ✅ HOTOVO (2026-05-12) — viz §G
 
 ### B2. ✅ HOTOVO (2026-05-12) — viz §G
 
@@ -221,6 +216,21 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 ---
 
 ## G. Hotovo / vyřízeno
+
+### B1. Per-line font v dvouřádkovém záhlaví skupin dnů (DepartureGrid)
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Datum:** 2026-05-12
+- **Zjištění:** Data jsou **už rozdělená na 2 řádky** napříč všemi vrstvami (Caché `NadpisSMOPrvni`/`NadpisSMODruhy` → JSON `NADPIS`/`NADPIS2` → TD `SkupinaDnuData.Nadpis`/`Nadpis2`). TD je ale dříve před wrap fází konkatenovala do single string → ztracená hranice mezi nadpisy.
+- **Implementace:**
+  - Nový enum-record `HeaderLine(Text, IsSecondary)` zachová hranici Nadpis vs Nadpis2 až do render fáze.
+  - Nová property `HeaderLine2Style: TextStyle?` na `DepartureGridElement` s cascade `HeaderLine2Style → HeaderStyle → ScheduleHeaderDefaults`.
+  - Wrap logika: pokud `Nadpis2 != ""` → 2 distinct řádky bez word-wrap (každý si vejde sám); pokud prázdné → word-wrap pouze Nadpis (současné chování).
+  - Height computation: per-line heights (Line 1 vs Line 2 font size), součet per group, max přes groupy.
+  - Render: per-line style/font/paint selection podle `IsSecondary`; cumulative `runningY` pro různé výšky řádků; decorations (Underline/Strikethrough) per-line.
+  - Pre-create `groupHeaderStyles2/Fonts2/TextPaints2` cache — vytváří se jen pokud `HeaderLine2Style != null` (žádná overhead při default).
+  - UI: nový group **„Záhlaví — 2. řádek"** v properties panelu s 4 položkami (Velikost, Tučné, Kurzíva, Barva textu). Lazy-init helper `EnsureHeaderLine2Style()`.
+- **Default chování zachované:** `HeaderLine2Style = null` → `hasLine2Override = false` → Line 2 použije stejný styl jako Line 1, žádná regrese pro existující šablony.
+- **Pattern:** plně extensible přes TextStyle cascade — uživatel může v budoucnu doplnit per-column override Line 2, HAlign, padding atd. bez schema změny.
 
 ### A2. Konfigurovatelná pozice značek u zastávek (StopList)
 - **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended** (řešíme i CBDP layout).
