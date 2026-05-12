@@ -81,16 +81,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ### B2. ✅ HOTOVO (2026-05-12) — viz §G
 
-### B3. Rozsah hodin přes půlnoc (3 → 0)
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„Když nastavím například 3-0 (což máme standartně), tak to nefunguje a když nastavím 3-24, tak se pouze zmenší tabulka o 3 řádky, což nevypadá dobře, ideální by bylo, aby šlo nastavit 3-0 a řádky by se automaticky zvětšily, aby to graficky vypadalo tak, jak má."*
-- **Co máme dnes:** `DepartureGridElement` má rozsah hodin (HourFrom/HourTo). Při `3-24` zobrazí 21 řádků; rozsah `3-0` zřejmě neprochází (validace nebo prázdný výstup).
-- **Co klient chce:**
-  - Akceptovat rozsah přesahující půlnoc: **3:00–23:59 + 0:00–2:59 jako kontinuální** mřížku (typický noční provoz MHD).
-  - + auto-fit: pokud má grid méně řádků než pevná výška elementu, **proporcionálně zvětšit výšku řádků** (ne nechat prázdné místo).
-- **Gap:**
-  - Logika wrap-around v `DepartureGridElement.ComputeLayout` — když `HourTo < HourFrom`, generovat `HourFrom..23` + `0..HourTo`.
-  - Inverzní `ComputeFontScale` — dnes element zmenšuje fonty když nestačí výška; přidat opačné chování („expand-to-fit") když je naopak málo řádků.
+### B3. ✅ HOTOVO (2026-05-12) — viz §G (auto-fit zvětšení odloženo)
 
 ### B4. Per-sloupek zastávky — samostatná vývěska
 - **Zákazník:** TRANSDEV (Jakub Holík přes Michala Podloučku), #8828
@@ -284,6 +275,31 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **Fix:** 1 řádek za `DrawText` — volání `hs.DrawTextDecorations(ctx.Canvas, pt.X, pt.Y, textW * ctx.MmToPx, hFont, hTextPaint)`. Tloušťka linky je automaticky konstantní napříč řádky, protože `hFont` je sdílený a `metrics.UnderlineThickness` je per-font deterministická.
 - **Otestováno:** Manuálně v běžícím TD — Underline + Strikethrough nyní fungují na single-line i multi-line headeru.
 - **Pozn.:** Stejný pattern (`DrawText` bez `DrawTextDecorations`) je na 5 dalších místech v souboru (minuty 780, anotace 803, hour header 899/901, designer placeholder 886/888). **Záměrně neopraveno** — nedotčeno reálným klientovým use casem; opravit až přijde konkrétní request.
+
+### B3. Rozsah hodin přes půlnoc + sjednocené parametrové UI (DepartureGrid)
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Datum:** 2026-05-12
+- **Diagnóza:** Stávající `RangeHoursWithWrap` clampovalo `to ≤ 23` a vůbec neumělo wrap přes půlnoc. Caché používá **extended hours konvenci** (data hour 24..47 = pokračování přes půlnoc následujícího provozního dne) — z fáze 4 `PromitnutSpoje` přicházejí kumulativní hodiny po chronometráži (např. spoj startuje 23:30, jede 90 min → poslední zastávka má `hh=25, mm=00`). Nová .NET pipeline ale očekávala 0..23 → noční odjezdy „mizely" v rozsahu 4→3.
+- **Implementace:**
+  - `TimeAxisMode` rozšířen o `DataBounded` (souvislá od první do poslední data hodiny — předtím chybělo). Plný den vědomě odebrán z UI (lze docílit přes Vlastní rozsah 0..23).
+  - `RangeHoursExtended(from, to)` (přejmenováno z `RangeHoursWithWrap`): když `to < from`, vrací **extended hours** `[from..23, 24..to+24]`. Tj. 22→3 = `[22, 23, 24, 25, 26, 27]`.
+  - `DrawHourDataCell` rendruje header label jako `H % 24` (data hour 27 → „3"). ByHour lookup zůstává raw — Caché dataset s extended hours se napáruje 1:1.
+  - Non-Range filter (Compact/DataBounded/Full + HODINY_OD/DO): když to < from, používá `[from..to+24]` místo `OR` filteru → data hour 27 projde filtrem 22→3.
+  - `ParseTimeAxisMode` — 3-vrstvý backward compat (popisné CZ + legacy CZ + EN názvy z předchozích iterací).
+  - Caché `AddStandardJRParameters`: české popisné labely pro CASOVA_OSA („Jen hodiny s odjezdy" / „Souvislá od první do poslední" / „Vlastní rozsah"); HODINY_OD/DO mají nově `visibleWhen = "CASOVA_OSA=Vlastní rozsah"`.
+- **Nová infrastruktura `VisibleWhen`:**
+  - `PropertyDescriptor.VisibleWhen: Func<bool>?` (in-process, lazy) — `PropertiesPanel` filtruje skryté řádky, po commitu rebuilduje panel pokud existuje aspoň jeden VisibleWhen.
+  - `TemplateParameter.VisibleWhen: string?` (JSON-friendly „NAME=VAL") — `ParameterControlVM.IsVisible` + `UpdateVisibility()`, parser v `CacheAgendaProvider`.
+- **Sjednocení parametrového UI:**
+  - Nové `Controls/ParameterTemplates.xaml` (shared ResourceDictionary se 4 DataTemplates) + `ParameterTemplateSelector` ve vlastním souboru.
+  - `ParameterControlVM.Init(target, parameters, values, onChanged, commitFactory)` — sjednocuje wiring (clear → loop → auto-refresh visibility → initial check) mezi MainWindow preview lištou a PrintDialog.
+- **Klientova „auto-fit zvětšení řádků" část:**
+  - Nová property `AutoExpandToFillHeight: bool` + Caché parametr `ROZTAHNOUT_NA_VYSKU` (default `false`, opt-in).
+  - Když `Height` fixní + obsah se vejde + flag = true → `dataGrow = (Height − headerH) / dataNaturalH` aplikuje se proporcionálně na: data řádky, minute fonty, anotace symbol/text fonty, padding minutových buněk, `scaledMinuteW`/`scaledOdjezdGap`, hour data buňka. Header (skupiny dnů + „Hod") zůstává na původním scale.
+  - Render kód rozdělen na 2 scale factory: `scale` (header) a `dataScale = scale × dataGrow` (data) — symetrický k existujícímu shrink, ale selektivně.
+  - Edge cases: `Height==null` → ignorováno; shrink + AutoExpand současně → shrink wins.
+  - Override priority (jako u CASOVA_OSA): designer property → PrintDialog parametr override per print job.
+- **Architektonický learning:** první iterace (Option A: `hodina # 24` v Caché) by ztratila informaci „toto je následující den" → konflikt pokud spoj jede ve 3:00 ráno **tento den i následující den**. Final fix (Option B) zachovává raw service hour v ByHour klíči, mod-24 jen na header label → distinct columns pro distinct service hours, žádné collisions.
 
 ### E1. Podmíněný tisk sekcí — VisibilityExpression
 - **Tiket:** #8772 (TRANSDEV, Jakub Holík); zůstává **suspended** (interní rozhodnutí, ne uzavřen klientovi).

@@ -77,6 +77,15 @@ public class DepartureGridElement : ScheduleElementBase
     public int TimeAxisRangeFrom { get; set; } = 4;
     public int TimeAxisRangeTo { get; set; } = 23;
 
+    /// <summary>
+    /// Když <see cref="TemplateElement.Height"/> je pevné a obsah je kratší (méně řádků než kapacita),
+    /// roztáhne datové řádky a jejich fonty proporcionálně tak, aby vyplnily celou výšku elementu.
+    /// Hlavička (skupiny dnů, „Hod" sloupec) zůstává původní velikost.
+    /// Override z PrintDialogu přes parametr <c>ROZTAHNOUT_NA_VYSKU</c>.
+    /// Default <c>false</c> — zachovává chování před přidáním této property (prázdné místo dole).
+    /// </summary>
+    public bool AutoExpandToFillHeight { get; set; }
+
     // ═══════════════════════════════════════════
     // Řádky dat (DataRowHeight je na ScheduleElementBase)
     // ═══════════════════════════════════════════
@@ -159,7 +168,7 @@ public class DepartureGridElement : ScheduleElementBase
     private int ComputeLayoutFingerprint() => HashCode.Combine(
         HashCode.Combine(HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
             MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
-        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style));
+        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight));
 
     private GridLayout? ComputeLayout(DataContext? data, float mmToPx = 0f)
     {
@@ -449,9 +458,24 @@ public class DepartureGridElement : ScheduleElementBase
         float scaleNaturalH = combinedHeaderH + layout.Hours.Count * fontRowH;
         float scale = ComputeFontScale(scaleNaturalH);
 
-        // Pokud je DataRowHeight explicitně nastavená, nescalovat ji — uživatel ji řídí přímo.
-        // Scale se aplikuje jen na fonty a záhlaví.
-        float scaledRowH = DataRowHeight.HasValue ? layout.RowH : layout.RowH * scale;
+        // Roztáhnout na výšku — pokud obsah je kratší než Height a feature je zapnutá,
+        // proporcionálně zvětšit data řádky + jejich fonty (header zůstává).
+        // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
+        bool effectiveAutoExpand = GetBoolParam(ctx.Data, "ROZTAHNOUT_NA_VYSKU", AutoExpandToFillHeight);
+        float dataGrow = 1f;
+        if (effectiveAutoExpand && Height.HasValue && scale >= 1f && layout.Hours.Count > 0)
+        {
+            float scaledCombinedH0 = combinedHeaderH;   // header při scale=1
+            float dataNaturalH = layout.Hours.Count * layout.RowH;
+            float availableDataH = Height.Value - scaledCombinedH0;
+            if (dataNaturalH > 0 && availableDataH > dataNaturalH)
+                dataGrow = availableDataH / dataNaturalH;
+        }
+        float dataScale = scale * dataGrow;
+
+        // Pokud je DataRowHeight explicitně nastavená, nescalovat ji při shrink — uživatel ji řídí přímo.
+        // Roztažení (dataGrow > 1) aplikujeme i na explicitní DataRowHeight (jinak by feature nic nedělala).
+        float scaledRowH = DataRowHeight.HasValue ? layout.RowH * dataGrow : layout.RowH * dataScale;
         float scaledGroupHeaderH = layout.GroupHeaderH * scale;
         float scaledCombinedHeaderH = combinedHeaderH * scale;
 
@@ -510,6 +534,7 @@ public class DepartureGridElement : ScheduleElementBase
             var hs = groupHeaderStyles[id];
             var ms = groupMinuteStyles[id];
 
+            // Header fonty: použít base scale (růst se neaplikuje na header).
             groupHeaderFonts[id]      = hs.CreateFont(scale, ctx.MmToPx);
             groupHeaderTextPaints[id] = hs.CreateTextPaint();
             groupHeaderBgPaints[id]   = hs.CreateBgPaint();
@@ -522,20 +547,21 @@ public class DepartureGridElement : ScheduleElementBase
                 groupHeaderTextPaints2[id] = hs2.CreateTextPaint();
             }
 
-            groupMinuteFonts[id]      = ms.CreateFont(scale, ctx.MmToPx);
+            // Minutové fonty: použít dataScale (růst se aplikuje, header ne).
+            groupMinuteFonts[id]      = ms.CreateFont(dataScale, ctx.MmToPx);
             groupMinuteTextPaints[id] = ms.CreateTextPaint();
             groupMinuteBgPaints[id]   = ms.CreateBgPaint();
         }
 
-        // Anotace fonty/painty — element-level, sdílené pro všechny buňky
-        var anotSymFont   = anotSymStyle.CreateFont(scale, ctx.MmToPx);
+        // Anotace fonty/painty — element-level, sdílené pro všechny buňky. Anotace patří k datovým buňkám → dataScale.
+        var anotSymFont   = anotSymStyle.CreateFont(dataScale, ctx.MmToPx);
         var anotSymPaint  = anotSymStyle.CreateTextPaint();
-        var anotTextFont  = anotTextStyle.CreateFont(scale, ctx.MmToPx);
+        var anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
         var anotTextPaint = anotTextStyle.CreateTextPaint();
 
-        float anotGapPx      = AnotaceGap * scale * ctx.MmToPx;
-        float anotInterGapPx = AnotaceInterGap * scale * ctx.MmToPx;
-        float scaledOdjezdGap = OdjezdGap * scale; // v mm (model space), ne v px
+        float anotGapPx      = AnotaceGap * dataScale * ctx.MmToPx;
+        float anotInterGapPx = AnotaceInterGap * dataScale * ctx.MmToPx;
+        float scaledOdjezdGap = OdjezdGap * dataScale; // v mm (model space), ne v px
 
         // Zebra — globální + per-group override
         SKPaint? zebraPaint = null;
@@ -552,7 +578,7 @@ public class DepartureGridElement : ScheduleElementBase
 
         float usedWidth = Width;
         float currentY = Y;
-        float scaledMinuteW = (MinuteWidth + AnotaceGap) * scale;
+        float scaledMinuteW = (MinuteWidth + AnotaceGap) * dataScale;
 
         try
         {
@@ -595,13 +621,14 @@ public class DepartureGridElement : ScheduleElementBase
         // Nakreslí datovou buňku sloupce hodin přes CellRenderer.
         // Hour je „service hour" (raw z dat, 0..47). Header zobrazuje clock hour = H % 24 —
         // night extension (24..) se uživateli ukáže jako 0..3 podle hodin zobrazované doby.
+        // Datová buňka → dataScale (růst při AutoExpandToFillHeight).
         void DrawHourDataCell(float hx, int hour, string? bgColorOverride = null)
         {
             var style = bgColorOverride is not null
                 ? hourDataStyle with { BackgroundColor = bgColorOverride }
                 : hourDataStyle;
             var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledRowH);
-            CellRenderer.DrawCell(ctx, rect, (hour % 24).ToString(), style, scale);
+            CellRenderer.DrawCell(ctx, rect, (hour % 24).ToString(), style, dataScale);
         }
 
         // ── Sloučené záhlaví (Hod + názvy skupin dnů) ────────────────────────
@@ -804,9 +831,10 @@ public class DepartureGridElement : ScheduleElementBase
             var mFont = groupMinuteFonts[gid];
             var mTextPaint = groupMinuteTextPaints[gid];
 
-            float padL = ms.PaddingLeft * scale;
-            float padR = ms.PaddingRight * scale;
-            float padT = ms.PaddingTop * scale;
+            // Padding minutové buňky — dataScale (s růstem AutoExpandu).
+            float padL = ms.PaddingLeft * dataScale;
+            float padR = ms.PaddingRight * dataScale;
+            float padT = ms.PaddingTop * dataScale;
 
             // Zarovnání bloku minut ve sloupci
             float availW = g.GroupWidth - padL - padR;
@@ -1185,6 +1213,13 @@ public class DepartureGridElement : ScheduleElementBase
             Min = 0, Max = 23, Format = "0", Unit = "h",
             VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
         },
+        // Když je kratší rozsah hodin než kapacita Height, vyplnit zbylé místo (jen data řádky).
+        // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
+        new BoolPropertyDescriptor
+        {
+            Label = "Roztáhnout na výšku", Group = "Časová osa",
+            Get = () => AutoExpandToFillHeight, Set = v => AutoExpandToFillHeight = v
+        },
 
         new BoolPropertyDescriptor  { Label = "Hodiny u každé sk.",  Group = "Odjezdy", Get = () => HourColumnPerGroup,        Set = v => HourColumnPerGroup = v },
         new FloatPropertyDescriptor { Label = "Max skupin",          Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0", Unit = "(0=∞)" },
@@ -1277,6 +1312,7 @@ public class DepartureGridElement : ScheduleElementBase
             TimeAxisMode               = TimeAxisMode,
             TimeAxisRangeFrom          = TimeAxisRangeFrom,
             TimeAxisRangeTo            = TimeAxisRangeTo,
+            AutoExpandToFillHeight     = AutoExpandToFillHeight,
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
             HourColumnStyle            = HourColumnStyle?.Clone(),

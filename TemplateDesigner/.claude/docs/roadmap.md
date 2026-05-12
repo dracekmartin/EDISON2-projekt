@@ -96,7 +96,7 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 |---|---|---|---|---|---|
 | A2-B1 | #10660 | DPKV | Per-line font v dvouřádkovém headeru skupiny dnů („Pracovní" větší / „den" menší) | 2 | ✅ (2026-05-12) viz §G |
 | A2-B2 | #10660 | DPKV | **Bug** — nestejně silné podtržení obou řádků headeru; oprava `DrawTextDecorations` (konstantní tloušťka) | 1 | ✅ (2026-05-12) |
-| A2-B3 | #10660 | DPKV | Rozsah hodin přes půlnoc (3→0) + auto-fit zvětšení řádků při zúžení rozsahu | 2 | |
+| A2-B3 | #10660 | DPKV | Rozsah hodin přes půlnoc (3→0) + auto-fit zvětšení řádků při zúžení rozsahu | 2 | ✅ (2026-05-12) — `TimeAxisMode` rozšířen o `DataBounded`; **Vlastní rozsah** podporuje wrap přes půlnoc s extended hours; HODINY_OD/DO + `VisibleWhen`; sjednocený parameter UI; **„Roztáhnout na výšku"** property + `ROZTAHNOUT_NA_VYSKU` parametr pro proporcionální růst data řádků + fontů (header beze změny) — pokrývá DPKV citaci „aby se řádky automaticky zvětšily, aby to graficky vypadalo tak, jak má". Detaily viz §G. |
 | A2-B4 | #8828 | TRANSDEV | Per-sloupek zastávky — samostatná vývěska (Caché parametr + multi-data export) | 3 | |
 
 #### A.2.C — NotesLegendElement úpravy

@@ -1428,6 +1428,10 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pDo.defaultValue = "23"
     s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pDo)
+
+    // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
+    // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
