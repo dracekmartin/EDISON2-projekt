@@ -83,35 +83,29 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ### B3. ✅ HOTOVO (2026-05-12) — viz §G (auto-fit zvětšení odloženo)
 
-### B4. Per-sloupek zastávky — samostatná vývěska
+### B4. Per-sloupek zastávky — samostatná vývěska ⏸️ Odloženo (2026-05-12)
 - **Zákazník:** TRANSDEV (Jakub Holík přes Michala Podloučku), #8828
 - **Konkrétní příklad:** Linka 876420, zastávka „Těrlicko,,obecní úřad" má 2 sloupky. Většina spojů obsluhuje sloupek 2 (oba směry), ale vybrané spoje obsluhují sloupek 1. Druhý příklad: linka 863383, zastávka „Šenov,,Škrbeň" má dva sloupky v každém směru — koordinátor (KORID) generuje vývěsky **per sloupek** odděleně.
 - **Citace klienta po prvním M-line návrhu** (rozdělit zastávku na 2 v trase linky): *„Vámi navržené nás s kolegy samozřejmě napadlo, ale asi to vždy není vhodné. (...) V JŘ je pouze jedna zastávka Šenov,,Škrbeň (...) Proto dále prosím o zvážení jiného způsobu řešení, než popisujete."*
 - **Co máme dnes:** Multi-data PDF export generuje 1 PDF stránku per `(zastávka × směr)`. Nezná pojem „sloupek" — atribut sloupku není ani v `ZastavkoveJrMhdAPI.GetData`.
 - **Co klient chce:** Pro zastávku s více sloupky vygenerovat **samostatnou vývěsku per sloupek** — jen spoje obsluhující daný sloupek se vytisknou.
 - **Gap:**
-  - Caché: rozšířit `BuildOdjezd` o filtr per sloupek (musí to být v datech spoje — `SpojBodZastavkaSloupek` nebo podobné).
-  - `GetData` API: pro zastávku s více sloupky vrátit `OUT[N]` per sloupek.
-  - TD: žádná změna — multi-data export to umí, jen dostane víc stránek.
+  - Caché: rozšířit `BuildOdjezd` (nebo `PromitnutSpoje` fáze 4) o filtr per sloupek — předtím rozšířit working globální klíč o `sloupekID` subscript: `^||TiskMHD("odjezdy",SmerID,BodID,TypProvozuID,sloupekID,hh,mm,SpojID)`.
+  - `GetData` API: pro zastávku s více sloupky iterovat `(Smer × Bod × Sloupek)` → `OUT[N]` per sloupek. Skalární info per stránka rozšířit o `SLOUPEK_CISLO` / `SLOUPEK_POPIS`.
+  - TD: **žádná změna kódu** — multi-data export už zvládá libovolný počet OUT stránek. Volitelně placeholder `{SLOUPEK_CISLO}` v šabloně.
   - Pro: zachovat single zastávku v trase linky (klient výslovně odmítá duplikaci v trase).
+- **Důvod odložení:** Téměř 100 % práce je v Caché a vyžaduje:
+  - **Datový průzkum** — zjistit, kde v `ALVA.MHD.*` globálech leží info o sloupcích (atribut spoje? per-bod v trase `("ModelTrasaBodDetail",BodID,"Val","SloupekTam")`? jinde?). Není dokumentováno v `cache-database.md`.
+  - **Business decision s kolegy** — identifikace sloupku (číslo 1/2/3, písmeno A/B, nebo popis?), default chování (opt-in přes parametr `PER_SLOUPEK` vs vždy zapnuté), chování pro zastávky s jedním sloupkem.
+  - Po vyjasnění obojího je vlastní implementace odhad **~půl dne až den** (rozšíření working globálu + iterace v `SestavitStranky` + nový parametr v `AddStandardJRParameters`).
 
 ---
 
 ## C. NotesLegendElement — legenda poznámek pod mřížkou
 
-### C1. Barevné odlišení značky (písmena) od textu poznámky
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„Kdyby bylo možné barevně odlišit značku (písmeno) poznámky, zpřehlednilo by to celý zastávkový jízdní řád."*
-- **Co máme dnes:** `NotesLegendElement` renderuje řádky jako `<značka> <text>`. Celá buňka má jeden TextStyle (jedna barva).
-- **Co klient chce:** Značka (jeden znak / krátký kód) má **odlišnou barvu / styl** od textu vysvětlení.
-- **Gap:** V NotesLegendElement zavést dvě zóny stylu — `SymbolStyle` (left) + `TextStyle` (right), oddělené pevným paddingem nebo vlastním sloupcem.
+### C1. ✅ HOTOVO (2026-05-12) — viz §G (DB-driven barvy z PoznamkaSpoj)
 
-### C2. Vlastní hlavička/nadpis sekce poznámek (symetrie s levou stranou)
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„by vypadalo lépe, kdyby celá sekce měla nadpis (hlavičku), protože by to symetricky sedělo s druhou stranou a sekcí seznam zastávek"*
-- **Co máme dnes:** `NotesLegendElement` ověřit — pokud má header row, je vypnutý / není designed.
-- **Co klient chce:** Sekce legendy s vlastním záhlavím (např. „Poznámky") — vizuální symetrie s headerem StopList.
-- **Gap:** Přidat volitelný `HeaderText` + `HeaderStyle` do NotesLegendElement (nebo přes wrapper TextElement nad legendou). Default off pro zpětnou kompatibilitu, ON pro nové šablony zastávkového JŘ.
+### C2. ✅ HOTOVO (2026-05-12) — viz §G (verifikace, žádný kód)
 
 ### C3. NZ + týdenní platnost — 4 na řádek (úspora místa)
 - **Zákazník:** KORID (Jaroslav Smištík), #7487
@@ -300,6 +294,30 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
   - Edge cases: `Height==null` → ignorováno; shrink + AutoExpand současně → shrink wins.
   - Override priority (jako u CASOVA_OSA): designer property → PrintDialog parametr override per print job.
 - **Architektonický learning:** první iterace (Option A: `hodina # 24` v Caché) by ztratila informaci „toto je následující den" → konflikt pokud spoj jede ve 3:00 ráno **tento den i následující den**. Final fix (Option B) zachovává raw service hour v ByHour klíči, mod-24 jen na header label → distinct columns pro distinct service hours, žádné collisions.
+
+### C1. Barevné odlišení značky vs. text poznámky (DB-driven)
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Datum:** 2026-05-12
+- **Citace:** *„Kdyby bylo možné barevně odlišit značku (písmeno) poznámky, zpřehlednilo by to celý zastávkový jízdní řád."*
+- **Architektonické rozhodnutí — DB-driven místo designer SymbolStyle:** Původní plán byl přidat designer-level `SymbolStyle` property (statická barva v šabloně). Při průzkumu DB se ale ukázalo, že DPKV **už má barvy uložené** per-poznámka v `^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",ID,"TiskJRMHDVozoveBarvaZnakuRGB")` (a `TiskJRMHDVozoveBarvaPozadiRGB`) — historicky pro vozové JŘ. Přeneseme stejnou barvu i do zastávkového JŘ — žádné zdvojené nastavování per-šablona.
+- **Implementace:**
+  - **Caché:** `IntToHex2` + `RgbToHex` helpery (převod „R;G;B" → „#FFRRGGBB" pro SkiaSharp). `BuildPoznamka` rozšířen o `foreColor`/`backColor` parametry → JSON `FORE_COLOR`/`BACK_COLOR`. `AddAnotace` rozšířen analogicky (pro konzistenci legenda ↔ anotace v odjezdech). Color lookup z `PoznamkaSpoj` ENUMS na 4 místech (poznámky trasy, speciální znaky spoje, textové poznámky spoje — vždy stejný pattern).
+  - **.NET:** `PoznamkaData` + `AnotaceData` rozšířeny o `ForeColor`/`BackColor` properties (nullable). Parser v `BuildPoznamky` + `BuildOdjezdyBySkupina` čte `FORE_COLOR`/`BACK_COLOR` z JSON. Render v `NotesLegend.RenderSymbolWithText` aplikuje barvu na znak (tělo zůstává default). Render v `DepartureGrid` aplikuje barvu na anotaci nad minutou (konzistence s legendou).
+  - **NZ vyloučeno** — `NegativniZnacka` má vlastní invertovaný styl (`NegativniZnackaBackColor`/`ForeColor` v elementu), color override z DB se neaplikuje.
+  - **BackColor přenášeno přes wire, ale render zatím ignoruje** — klient explicitně chce zatím jen barvu znaku. Připraveno pro budoucí rozšíření bez schema break.
+- **Stav v aktuálních DPKV datech (KV_DP):**
+  - 1071 záznamů `PoznamkaSpoj`, z toho 69 má barvy (1003-1071) ale `TiskJRMHDZastavkove=0` (jen vozové). Záznamy 1001-1002 mají `TiskJRMHDZastavkove=1` ale žádnou barvu.
+  - **Žádný současný záznam nemá současně zapnutý zastávkový tisk AND barvu** — infrastruktura připravená, klient si nastaví v DB.
+  - Quick test pro ověření: dočasně `s ^ALVA.MHD.ENUMS("KV_DP","PoznamkaSpoj","DTA",1002,"TiskJRMHDVozoveBarvaZnakuRGB") = "255;0;0"`, najít linku se spojem používajícím 1002, render → znak „W" červený v legendě i nad minutou.
+- **Co bylo doprovodně opraveno:** `<SUBSCRIPT>` pád v iteraci `^||TiskMHD("trasa",SmerID,...)` při linkách se sloučenými zastávkami (např. linka 1073). Příčina: `SloucitTotozneZastavky` zapisovala pomocný klíč `"slouceniInv"`, ale 7 iterací jen skipovalo `"slouceni"`. Fix: sjednoceno na `i 'BodID continue` (numeric coercion filtruje všechny ne-numerické subscripty, future-proof).
+- **Auto-generované poznámky** (rozdíl tras 1001/1002 — „končí v zast. X", týdenní platnost) zůstávají default černé. Klient explicitně nepožadoval; pokud někdy přijde request, bude to drobné rozšíření (per-linka color v `LSO` nebo per-algorithm static).
+
+### C2. Hlavička sekce poznámek (NotesLegend) — již plně podporováno
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Datum ověření:** 2026-05-12
+- **Výsledek:** ✅ Funkčně pokryto. `NotesLegendElement` má `HeaderText` property (default „Poznámky") + volá `RenderSectionHeader` (background + text + linka pod) — stejný pattern jako StopList. UI exponuje text v properties panelu (group „Záhlaví"), barvy pozadí + textu přes `GetCellZoneBaseColorDescriptors` (skupina „Záhlaví"). Klient si může nastavit libovolný text + barvy v designeru.
+- **Diagnóza klientovy zmatky:** DPKV šablona `kv.json` má `HeaderText = "na znamení"` (omylem nastaveno z dřívější iterace, kdy NotesLegend obsahoval jen tu poznámku). Po opravě na „Poznámky" header funguje jak DPKV chtěl.
+- **Code path:** `NotesLegendElement.Render:66-67` → `RenderSectionHeader` v `ScheduleElementBase`. Property descriptor v `GetPropertyDescriptors` (Label = „Nadpis", Group = „Záhlaví").
 
 ### E1. Podmíněný tisk sekcí — VisibilityExpression
 - **Tiket:** #8772 (TRANSDEV, Jakub Holík); zůstává **suspended** (interní rozhodnutí, ne uzavřen klientovi).

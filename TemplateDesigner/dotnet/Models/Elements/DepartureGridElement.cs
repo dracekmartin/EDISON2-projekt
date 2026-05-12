@@ -849,6 +849,7 @@ public class DepartureGridElement : ScheduleElementBase
 
             float minX = gx + alignOffset;
             SKPaint? customMinutePaint = null;
+            SKPaint? customAnotPaint = null;
             try
             {
                 foreach (var odj in odjezdy)
@@ -891,6 +892,15 @@ public class DepartureGridElement : ScheduleElementBase
                                 aPaint = anotSymPaint;
                             }
 
+                            // Per-anotace barva z DB (konzistence s legendou poznámek).
+                            // NZ anotace zachová default styl — má vlastní invertovaný render v NotesLegend.
+                            if (anot.ForeColor is not null && anot.Typ != TypAnotace.NegativniZnacka)
+                            {
+                                customAnotPaint ??= new SKPaint { IsAntialias = true };
+                                customAnotPaint.Color = SKColor.Parse(anot.ForeColor);
+                                aPaint = customAnotPaint;
+                            }
+
                             ctx.Canvas.DrawText(anot.Znak, anotX, minPt.Y, aFont, aPaint);
                             anotX += aFont.MeasureText(anot.Znak) + anotInterGapPx;
                         }
@@ -902,6 +912,7 @@ public class DepartureGridElement : ScheduleElementBase
             finally
             {
                 customMinutePaint?.Dispose();
+                customAnotPaint?.Dispose();
             }
         }
 

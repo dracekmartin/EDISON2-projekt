@@ -97,14 +97,14 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 | A2-B1 | #10660 | DPKV | Per-line font v dvouřádkovém headeru skupiny dnů („Pracovní" větší / „den" menší) | 2 | ✅ (2026-05-12) viz §G |
 | A2-B2 | #10660 | DPKV | **Bug** — nestejně silné podtržení obou řádků headeru; oprava `DrawTextDecorations` (konstantní tloušťka) | 1 | ✅ (2026-05-12) |
 | A2-B3 | #10660 | DPKV | Rozsah hodin přes půlnoc (3→0) + auto-fit zvětšení řádků při zúžení rozsahu | 2 | ✅ (2026-05-12) — `TimeAxisMode` rozšířen o `DataBounded`; **Vlastní rozsah** podporuje wrap přes půlnoc s extended hours; HODINY_OD/DO + `VisibleWhen`; sjednocený parameter UI; **„Roztáhnout na výšku"** property + `ROZTAHNOUT_NA_VYSKU` parametr pro proporcionální růst data řádků + fontů (header beze změny) — pokrývá DPKV citaci „aby se řádky automaticky zvětšily, aby to graficky vypadalo tak, jak má". Detaily viz §G. |
-| A2-B4 | #8828 | TRANSDEV | Per-sloupek zastávky — samostatná vývěska (Caché parametr + multi-data export) | 3 | |
+| A2-B4 | #8828 | TRANSDEV | Per-sloupek zastávky — samostatná vývěska (Caché parametr + multi-data export) | 3 | ⏸️ Odloženo (2026-05-12) — vyžaduje (a) datový průzkum v `^[dataDB]ALVA.MHD.LSO`/`ZST` kde leží info o sloupcích (atribut spoje? per-bod v trase?), (b) business decision s kolegy: identifikace sloupku (číslo/písmeno/popis), default chování (opt-in přes `PER_SLOUPEK` parametr vs vždy zapnuté), behavior pro single-sloupek zastávky. **Téměř 100 % práce v Caché** — TD multi-data PDF export už zvládá libovolný počet OUT stránek. |
 
 #### A.2.C — NotesLegendElement úpravy
 
 | Krok | Tiket | Zákazník | Co | Typ | Stav |
 |---|---|---|---|---|---|
-| A2-C1 | #10660 | DPKV | Barevné odlišení značky vs. text poznámky — `SymbolStyle` + `TextStyle` jako dvě zóny | 2 | |
-| A2-C2 | #10660 | DPKV | Volitelná hlavička sekce („Poznámky") — symetrie s headerem StopList | 1 | |
+| A2-C1 | #10660 | DPKV | Barevné odlišení značky vs. text poznámky — DB-driven barvy z `PoznamkaSpoj` | 2 | ✅ (2026-05-12) — místo designer-level `SymbolStyle` použit **DB-driven** zdroj barev: `TiskJRMHDVozoveBarvaZnakuRGB`/`BarvaPozadiRGB` z `PoznamkaSpoj` ENUMS → propagace přes wire formát (`FORE_COLOR`/`BACK_COLOR`) → render v NotesLegend i anotacích DepartureGrid. Konzistentní mezi legendou a odjezdy. Aktuální DPKV data nemají barevné záznamy s `TiskJRMHDZastavkove=1` — infrastruktura připravená, klient si nastaví v DB. Detaily viz §G. |
+| A2-C2 | #10660 | DPKV | Volitelná hlavička sekce („Poznámky") — symetrie s headerem StopList | 1 | ✅ (2026-05-12) Verifikace — `HeaderText` property + `RenderSectionHeader` (BG + text + linka pod) už existují; konfigurovatelné v properties panelu včetně barvy pozadí (přes `GetCellZoneBaseColorDescriptors`). Klient si může nastavit libovolný text + barvy. Viz §G. |
 | A2-C3 | #7487 | KORID | `Columns: 1 \| 2 \| 3 \| 4` — flow layout přes sloupce s overflow; aplikovat i na tisk týdenní platnosti | 2 | |
 
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy

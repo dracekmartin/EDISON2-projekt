@@ -86,6 +86,19 @@ public class AnotaceData
 {
     public TypAnotace Typ { get; set; }
     public string Znak { get; set; } = "";
+
+    /// <summary>
+    /// Volitelná barva textu znaku anotace (hex „#FFRRGGBB", null = default render).
+    /// Pochází z Caché <c>PoznamkaSpoj.TiskJRMHDVozoveBarvaZnakuRGB</c> přes <c>AddAnotace</c>.
+    /// Konzistentní s odpovídající barvou poznámky v legendě.
+    /// </summary>
+    public string? ForeColor { get; set; }
+
+    /// <summary>
+    /// Volitelná barva pozadí (hex „#FFRRGGBB", null = default render).
+    /// Wire-format zatím rendering ignoruje (rezervováno).
+    /// </summary>
+    public string? BackColor { get; set; }
 }
 
 /// <summary>Poznámka v legendě pod mřížkou.</summary>
@@ -94,6 +107,18 @@ public class PoznamkaData
     public TypPoznamky Typ { get; set; }
     public string Znak { get; set; } = "";
     public string Text { get; set; } = "";
+
+    /// <summary>
+    /// Volitelná barva textu znaku (hex „#FFRRGGBB", null = default render).
+    /// Pochází z Caché <c>PoznamkaSpoj.TiskJRMHDVozoveBarvaZnakuRGB</c> přes <c>BuildPoznamka</c>.
+    /// </summary>
+    public string? ForeColor { get; set; }
+
+    /// <summary>
+    /// Volitelná barva pozadí (hex „#FFRRGGBB", null = default render).
+    /// Wire-format zatím rendering ignoruje (rezervováno, klient zatím chce jen barvu znaku).
+    /// </summary>
+    public string? BackColor { get; set; }
 }
 
 // ─── Generický per-column styling ────────────────────────────────────────────
