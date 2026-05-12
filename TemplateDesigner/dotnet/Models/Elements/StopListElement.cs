@@ -47,6 +47,7 @@ public class StopListElement : ScheduleElementBase
     public bool ShowDirectionArrow { get; set; } = true;
     public string DirectionArrowColor { get; set; } = "#FF000000";
     public bool DirectionArrowBold { get; set; }
+    public DirectionArrowSide DirectionArrowPosition { get; set; } = DirectionArrowSide.Right;
 
     // ═══════════════════════════════════════════
     // Záhlaví sloupců
@@ -79,8 +80,15 @@ public class StopListElement : ScheduleElementBase
 
     // ─── Render ─────────────────────────────────────────────────────────────
 
-    /// <summary>Šířka vyhrazeného prostoru (mm) pro šipku směru jízdy napravo od sloupců.</summary>
-    private const float ArrowGutterMm = 2.5f;
+    /// <summary>Odsazení vertikální čáry šipky od pravého okraje sloupce zastávek (mm) — pro Vpravo.</summary>
+    private const float ArrowInsetFromEdgeMm = 0.6f;
+
+    /// <summary>Délka horizontálního bracketu šipky pro Vpravo (mm) — bracket míří doleva do sloupce.</summary>
+    private const float ArrowBracketLengthMm = 1.5f;
+
+    /// <summary>Odsazení vertikální čáry šipky doleva mimo sloupec zastávek (mm) — pro Vlevo.</summary>
+    /// <remarks>Šipka pro Vlevo jde mimo sloupec, aby se nepřekrývala s left-aligned textem. Bracket pak vede k levé hraně sloupce.</remarks>
+    private const float ArrowOutsideOffsetMm = 1.5f;
 
     public override void Render(RenderContext ctx)
     {
@@ -106,9 +114,29 @@ public class StopListElement : ScheduleElementBase
         // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
         bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
+        bool arrowLeft = showArrow && DirectionArrowPosition == DirectionArrowSide.Left;
 
-        // Šipka si rezervuje vlastní gutter vpravo; sloupce zůstávají u levého okraje
-        float arrowGutter = showArrow ? ArrowGutterMm : 0f;
+        // Šipka se vykresluje UVNITŘ sloupce zastávek (Key = "StopName") — vertikální čára je
+        // kousek od vnitřního okraje sloupce, bracket horizontálně směřuje do sloupce.
+        // Nepřičítá se nic k šířce layoutu → element a sloupce zachovávají Width.
+        // Pro běžně krátké názvy zastávek se text se šipkou nepřekrývá.
+        // Fallback (žádný StopName sloupec): poslední sloupec.
+        int stopNameIdx = columns.FindIndex(c => c.Key == "StopName");
+        if (stopNameIdx < 0) stopNameIdx = columns.Count - 1;
+        float stopNameLeftMm = X;
+        for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameLeftMm += columns[i].Width;
+        float stopNameRightMm = stopNameLeftMm + (stopNameIdx >= 0 && stopNameIdx < columns.Count ? columns[stopNameIdx].Width : 0f);
+
+        // Asymetrická pozice šipky:
+        //   Vpravo: šipka UVNITŘ sloupce u pravé hrany — text je left-aligned, k pravé hraně obvykle nezasahuje.
+        //   Vlevo:  šipka MIMO sloupec (vlevo od jeho levé hrany) — left-aligned text by jinak kolidoval.
+        //           Bracket pak vede zpět až k levé hraně sloupce (do prázdné padding-right oblasti předchozího sloupce).
+        float arrowLineXMm = arrowLeft
+            ? stopNameLeftMm - ArrowOutsideOffsetMm
+            : stopNameRightMm - ArrowInsetFromEdgeMm;
+        float bracketColumnsSideMm = arrowLeft
+            ? stopNameLeftMm                         // bracket od šipky doprava až k levé hraně sloupce zastávek
+            : arrowLineXMm - ArrowBracketLengthMm;   // bracket od šipky doleva do sloupce
 
         // Clip na hranice elementu — chrání před přesahem, pokud součet šířek sloupců
         // přesahuje Width (nekonzistentní konfigurace). Konzistentní s DepartureGridElement.
@@ -154,9 +182,10 @@ public class StopListElement : ScheduleElementBase
                     for (int i = 0; i < columns.Count; i++)
                     {
                         var col = columns[i];
-                        string cellText = GetCellText(z, col.Key);
-                        var cellStyle = ResolveRowStyle(col, isCurrent, isPassed);
-                        specs[i] = new ColumnRenderer.CellSpec(col.Width, cellText, cellStyle);
+                        specs[i] = new ColumnRenderer.CellSpec(
+                            col.Width,
+                            GetCellText(z, col.Key),
+                            ResolveRowStyle(col, isCurrent, isPassed));
                     }
                     ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
 
@@ -169,9 +198,9 @@ public class StopListElement : ScheduleElementBase
                     currentY += rowH;
                 }
 
-                // Šipka směru jízdy ─┐│▼ (v rezervovaném gutteru vpravo)
+                // Šipka směru jízdy v rezervovaném gutteru — ┌─▼ (vlevo) nebo ─┐▼ (vpravo)
                 if (showArrow && arrowStartY >= 0 && arrowEndY > arrowStartY)
-                    RenderDirectionArrow(ctx, arrowGutter, arrowStartY, arrowEndY, rowH);
+                    RenderDirectionArrow(ctx, arrowLineXMm, bracketColumnsSideMm, arrowStartY, arrowEndY, rowH);
             }
             else if (ctx.Data is null)
             {
@@ -195,7 +224,7 @@ public class StopListElement : ScheduleElementBase
     private float RenderColumnHeaders(
         RenderContext ctx, List<StopColumn> columns, float headerH, SchedulePaints paints, float scale)
     {
-        // Výchozí pozadí záhlaví (přes celou šířku elementu, včetně arrow gutteru).
+        // Výchozí pozadí záhlaví (přes celou šířku elementu).
         // Per-column header bg z kaskády to lokálně přepíše.
         var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
@@ -204,8 +233,7 @@ public class StopListElement : ScheduleElementBase
         for (int i = 0; i < columns.Count; i++)
         {
             var col = columns[i];
-            var style = ResolveHeaderStyle(col);
-            specs[i] = new ColumnRenderer.CellSpec(col.Width, col.Header, style);
+            specs[i] = new ColumnRenderer.CellSpec(col.Width, col.Header, ResolveHeaderStyle(col));
         }
         ColumnRenderer.DrawRow(ctx, X, Y, headerH, specs, fontScale: scale);
 
@@ -280,17 +308,13 @@ public class StopListElement : ScheduleElementBase
     // ─── Šipka směru jízdy ──────────────────────────────────────────────────
 
     /// <summary>
-    /// Vykreslí šipku ─┐│▼ v rezervovaném gutteru vpravo od sloupců.
-    /// Horizontální bracket vede od posledního sloupce doprava, pak dolů k V hrotu.
+    /// Vykreslí šipku směru jízdy uvnitř sloupce zastávek. Bracket míří do sloupce
+    /// (vpravo: ──┐▼ u pravé hrany sloupce, vlevo: ┌── u levé hrany sloupce).
     /// </summary>
     private void RenderDirectionArrow(
-        RenderContext ctx, float arrowGutter,
+        RenderContext ctx, float lineXMm, float bracketColumnsSideMm,
         float startY, float endY, float rowH)
     {
-        // Vertikální čára uprostřed gutteru, bracket od levé hrany gutteru (od sloupců) k čáře
-        float lineXMm = X + Width - arrowGutter * 0.5f;
-        float bracketLeftMm = X + Width - arrowGutter;
-
         float strokeW = DirectionArrowBold ? 1.5f : 0.8f;
         using var paint = new SKPaint
         {
@@ -301,15 +325,15 @@ public class StopListElement : ScheduleElementBase
             StrokeCap = SKStrokeCap.Round
         };
 
-        // Souřadnice v px
-        float topY = startY + rowH * 0.2f;       // kousek pod horní hranou řádku
-        float bottomY = endY + rowH * 0.8f;       // kousek nad spodní hranou řádku
+        // Souřadnice v px — start uprostřed písmen aktuální zastávky, konec u spodní hrany poslední zastávky
+        float topY = startY + rowH * 0.5f;       // uprostřed písmen aktuální zastávky
+        float bottomY = endY + rowH * 0.8f;       // kousek nad spodní hranou řádku poslední zastávky
         var lineTop = ctx.ToCanvas(lineXMm, topY);
         var lineBottom = ctx.ToCanvas(lineXMm, bottomY);
-        var bracketLeft = ctx.ToCanvas(bracketLeftMm, topY);
+        var bracketColumnsSide = ctx.ToCanvas(bracketColumnsSideMm, topY);
 
-        // ─┐ — horizontální čára od sloupců doprava + vertikální dolů
-        ctx.Canvas.DrawLine(bracketLeft, lineTop, paint);
+        // Horizontální bracket od strany sloupců k čáře + vertikální dolů (vlevo: ┌─, vpravo: ─┐)
+        ctx.Canvas.DrawLine(bracketColumnsSide, lineTop, paint);
         ctx.Canvas.DrawLine(lineTop, lineBottom, paint);
 
         // ▼ — šipka na konci
@@ -432,6 +456,17 @@ public class StopListElement : ScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
 
         new BoolPropertyDescriptor  { Label = "Šipka směru",      Group = "Směr jízdy", Get = () => ShowDirectionArrow,    Set = v => ShowDirectionArrow = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Pozice šipky", Group = "Směr jízdy",
+            Get = () => DirectionArrowPosition,
+            Set = v => DirectionArrowPosition = (DirectionArrowSide)v,
+            Options =
+            [
+                ("Vpravo", (object)DirectionArrowSide.Right),
+                ("Vlevo",  (object)DirectionArrowSide.Left),
+            ]
+        },
         new ColorPropertyDescriptor { Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },
         new BoolPropertyDescriptor  { Label = "Tučná šipka",     Group = "Směr jízdy", Get = () => DirectionArrowBold,   Set = v => DirectionArrowBold = v },
 
@@ -470,6 +505,7 @@ public class StopListElement : ScheduleElementBase
             ShowDirectionArrow      = ShowDirectionArrow,
             DirectionArrowColor     = DirectionArrowColor,
             DirectionArrowBold      = DirectionArrowBold,
+            DirectionArrowPosition  = DirectionArrowPosition,
             ShowStopIndentation     = ShowStopIndentation,
             ShowSignalStopIndicator = ShowSignalStopIndicator,
             SignalStopSymbol        = SignalStopSymbol,
@@ -488,4 +524,11 @@ public class StopListElement : ScheduleElementBase
         CopyScheduleBaseProperties(clone);
         return clone;
     }
+}
+
+/// <summary>Strana, na které se vykresluje šipka směru jízdy. Right = výchozí pro DPKV. Left = pro CBDP.</summary>
+public enum DirectionArrowSide
+{
+    Right,
+    Left
 }

@@ -31,12 +31,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ## A. StopListElement — seznam zastávek vlevo
 
-### A1. Pozice „osy směru" (svislé čáry) v sekci se zastávkami
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„Červeně označenou čáru bychom měli radši na původním místě, tedy ne mezi minutami a názvem zastávky, ale až za názvem úplně vpravo v této sekci. Takto tato čára zbytečně zabírá moc místa na úkor názvu zastávky."*
-- **Co máme dnes:** Šipka směru jízdy `┌─▼` ve StopList je vykreslená **mezi sloupcem minut a sloupcem názvu zastávky** (vlevo od názvu).
-- **Co klient chce:** Tutéž svislou čáru přesunout **až za sloupec názvu zastávky** (vpravo, na pravém okraji sekce StopList). Cíl: ušetřit šířku pro název zastávky.
-- **Gap:** Konfigurovatelná pozice šipky/osy směru ve StopList — `DirectionArrowPosition: BeforeStopName | AfterStopName` (default = aktuální BeforeStopName).
+### A1. ✅ HOTOVO (2026-05-12) — viz §G
 
 ### A2. Atribut „na znamení" — prefix `x` před názvem zastávky
 - **Zákazník:** DPKV (Jan Slavík), #10660
@@ -216,6 +211,20 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 ---
 
 ## G. Hotovo / vyřízeno
+
+### A1. Konfigurovatelná pozice šipky směru jízdy (StopList)
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended** (řešíme i CBDP, kteří chtěli Vlevo).
+- **Datum:** 2026-05-12
+- **Diagnóza:** Stávající TD šipku kreslil VŽDY vpravo (DPKV preference). CBDP a podobní zákazníci, kteří dříve používali legacy se šipkou vlevo, neměli volbu.
+- **Implementace:**
+  - Nový enum `DirectionArrowSide { Right, Left }` + property `DirectionArrowPosition` (default `Right`, zachová zpětnou kompatibilitu).
+  - Asymetrická pozice šipky (architektonicky čistá):
+    - **Vpravo:** šipka UVNITŘ sloupce zastávek u pravé hrany. Funguje, protože text je left-aligned a k pravé hraně nezasahuje.
+    - **Vlevo:** šipka MIMO sloupec na levé straně (1.5mm vlevo od levé hrany). Bracket vede zpět k hraně sloupce. Tento posun nezpůsobuje overflow šířky elementu.
+  - `topY` posunut z `startY + 0.2 * rowH` (kousek pod horní hranou) na `startY + 0.5 * rowH` (uprostřed písmen aktuální zastávky).
+  - Drobný padding `ArrowInsetFromEdgeMm = 0.6mm` mezi koncem bracketu a textem pro vizuální vzdušnost.
+  - `EnumPropertyDescriptor` „Pozice šipky" v group „Směr jízdy".
+- **Architektonický learning:** první návrh přidával gutter MIMO sloupec → způsobilo overflow Width elementu (clip ořezal arrow). Druhá iterace dala arrow UVNITŘ column → na Vlevo to kolidovalo s left-aligned textem. Třetí (final) iterace asymetricky — Vpravo inside, Vlevo outside — funguje bez overflow i bez kolize s textem. **Per-customer divergence řešena přes property, ne template variant** (per `feature-design-principles.md` §5 — 2 bounded hodnoty, ne kombinace settings).
 
 ### A3. CurrentStopBackgroundColor + cleanup master toggle
 - **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
