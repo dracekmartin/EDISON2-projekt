@@ -23,7 +23,7 @@ namespace EDControls.EDInputForm
         private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
         private EDViewModel.IPopupDisplayer? PopupDisplayer => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.PopupDisplayer;
 
-        /// <summary>Caché class that implements Init / Validate / Save.</summary>
+        /// <summary>Caché třída implementující <c>Init</c> / <c>Validate</c> / <c>Save</c>.</summary>
         public string CacheClass { get; set; } = "";
 
         private EDInputFormController? _controller;
@@ -84,8 +84,8 @@ namespace EDControls.EDInputForm
         // ─── Public API ───────────────────────────────────────────────────────────
 
         /// <summary>
-        /// Calls Caché Init to load the form definition, then immediately runs
-        /// an Init-trigger validation pass to populate any default errors.
+        /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
+        /// validaci pro naplnění případných výchozích chyb.
         /// </summary>
         public void Init()
         {
@@ -93,10 +93,7 @@ namespace EDControls.EDInputForm
             Controller.Init();
         }
 
-        /// <summary>
-        /// Runs a Change-trigger validation pass and returns true when there are
-        /// no validation errors.
-        /// </summary>
+        /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>
         public bool Validate()
         {
             EnsureConfigured();
@@ -104,8 +101,8 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// Validates with BeforeSave trigger and, if there are no errors, calls
-        /// Caché Save.  Returns true on success.
+        /// Validuje s BeforeSave triggerem a pokud nejsou chyby, volá Caché <c>Save</c>.
+        /// Vrátí true při úspěchu.
         /// </summary>
         public bool Save()
         {
@@ -227,11 +224,11 @@ namespace EDControls.EDInputForm
                 .ToList();
         }
 
-        // ─── Keyboard navigation ──────────────────────────────────────────────────
-        // Tab / Shift+Tab: native WPF — jumps between inner controls directly.
-        // Enter (no Ctrl): move to next control (like Tab); on Button → click.
-        // Ctrl+Enter: bubbles to OkCommand (window-level InputBinding).
-        // Ctrl+digits: buffer for 200 ms, then navigate to item by Number.
+        // ─── Klávesová navigace ───────────────────────────────────────────────────
+        // Tab / Shift+Tab: native WPF — skáče přímo mezi vnitřními controly.
+        // Enter (bez Ctrl): posun na další control (jako Tab); na Button → click.
+        // Ctrl+Enter: bublá na OkCommand (window-level InputBinding).
+        // Ctrl+číslice: buffer 200 ms, pak navigace na položku podle Number.
 
         private string _navBuffer = "";
         private System.Windows.Threading.DispatcherTimer? _navTimer;
@@ -240,10 +237,10 @@ namespace EDControls.EDInputForm
         {
             base.OnPreviewKeyDown(e);
 
-            // Enter (no Ctrl) → move to next control, or click Button
+            // Enter (bez Ctrl) → posun na další control, případně klik na Button
             if (e.Key == Key.Return && (Keyboard.Modifiers & ModifierKeys.Control) == 0)
             {
-                // If on a Button field, click it and then move forward
+                // Pokud jsme na Button poli, klikni a pak skoč dál
                 if (GetCurrentField() is { FieldType: EFieldType.Button } btnField)
                 {
                     if (TheItemsControl.ItemContainerGenerator.ContainerFromItem(btnField)
@@ -337,7 +334,7 @@ namespace EDControls.EDInputForm
 
             if (item is Field field)
             {
-                // Expand parent group if collapsed
+                // Pokud je rodičovská skupina sbalená, rozbal ji
                 if (field.ParentGroup is { IsExpanded: false } group)
                     group.IsExpanded = true;
                 FocusField(field);

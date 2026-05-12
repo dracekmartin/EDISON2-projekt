@@ -3,7 +3,7 @@ using System.Collections.ObjectModel;
 using ALWA.SYS;
 using EDControls;
 
-namespace EDISONMAIN2.Services.Modules
+namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     public class ModuleTreeGetter : IModuleTreeGetter
     {
@@ -14,14 +14,10 @@ namespace EDISONMAIN2.Services.Modules
         }
 
         /// <summary>
-        /// Parses the module tree from Caché output.
-        /// Caché writes ^||ML("OUT","i") = $lb(type, ...) where type is:
-        ///   "FAMILY"     → $lb("FAMILY", displayName, isExpanded)
-        ///   "EXE"        → $lb("EXE", displayName, executablePath, formName, elementId, isLicensed)
-        ///                  elementId — unique identifier (preserved even when not gated)
-        ///                  isLicensed — "1" = check elementId against Lic.Elements whitelist;
-        ///                               "0" or empty/missing = always allowed
-        ///   "FAMILY_END" → $lb("FAMILY_END")
+        /// Wire format (z ALVA.EDISONMAIN2.API.Tree.GetTree):
+        ///   $lb("FAMILY", displayName, isExpanded)
+        ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed)
+        ///   $lb("FAMILY_END")
         /// </summary>
         internal static ObservableCollection<IModule> ParseTree(CVar treeData)
         {

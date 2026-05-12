@@ -8,8 +8,8 @@ namespace EDControls.EDInputForm
         public string GroupName { get; set; } = "";
 
         /// <summary>
-        /// Computed from Visibility. Visible = expanded, Collapsed = collapsed.
-        /// Setting this toggles Visibility between Visible and Collapsed.
+        /// Odvozeno z <see cref="Item.Visibility"/>: Visible = expanded, Collapsed = collapsed.
+        /// Set přepne <see cref="Item.Visibility"/> mezi Visible a Collapsed.
         /// </summary>
         public bool IsExpanded
         {
@@ -21,8 +21,8 @@ namespace EDControls.EDInputForm
             => OnPropertyChanged(nameof(IsExpanded));
 
         /// <summary>
-        /// Group header is visible when Visible or Collapsed.
-        /// Hidden only for UserHidden / ProgrammerHidden.
+        /// Header skupiny je viditelný pro Visible i Collapsed (zachová možnost rozbalení).
+        /// Skrytý jen pro UserHidden / ProgrammerHidden.
         /// </summary>
         public override WpfVisibility EffectiveVisibility =>
             Visibility is EItemVisibility.Visible or EItemVisibility.Collapsed

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace EDISONMAIN2.Services.Modules
+namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     class ModuleFamily : IModule
     {

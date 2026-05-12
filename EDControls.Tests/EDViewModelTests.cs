@@ -6,8 +6,8 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 /// <summary>
-/// Tests for the EDViewModel base class. Each test creates its own EDServices
-/// with mocks — no shared static state, no ConfigureForTesting.
+/// Testy základní třídy <see cref="EDViewModel"/>. Každý test si vytváří vlastní
+/// <c>EDServices</c> s mocky — žádný sdílený static state.
 /// </summary>
 public class EDViewModelTests
 {
@@ -184,9 +184,7 @@ public class EDViewModelTests
         Assert.Same(vm.DeleteCommand, vm.Actions[2].Command);
     }
 
-    /// <summary>
-    /// Concrete subclass that exposes protected members for testing.
-    /// </summary>
+    /// <summary>Konkrétní subclass která vystavuje protected členy pro testy.</summary>
     private class TestViewModel(EDServices services) : EDViewModel.EDViewModel(services)
     {
         private string _title = "";

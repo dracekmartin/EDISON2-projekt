@@ -5,11 +5,7 @@ using EDControls.EDViewModel;
 
 namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
 
-/// <summary>
-/// Demonstrates EDViewModel usage: inherits MLRest, overrides OnOk() for validation,
-/// and uses the Set() helper for property change notification.
-/// The save delegate is injected from the code-behind so the ViewModel stays View-agnostic.
-/// </summary>
+/// <summary>Demo EDViewModel: StandardActions, RelayCommand, ActionInProgress, Set() helper, error throw.</summary>
 class EDComponentAndViewModelTestViewModel : EDViewModel
 {
     public EDComponentAndViewModelTestViewModel()

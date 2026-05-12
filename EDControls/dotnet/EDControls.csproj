@@ -13,6 +13,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="EDLicence">
+      <HintPath>C:\Edison\EDLicence.dll</HintPath>
+    </Reference>
     <Reference Include="MLRest">
       <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>

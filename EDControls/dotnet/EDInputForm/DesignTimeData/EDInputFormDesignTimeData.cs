@@ -4,9 +4,8 @@ using System.Collections.Generic;
 namespace EDControls.EDInputForm.DesignTimeData
 {
     /// <summary>
-    /// Design-time only sample data for the <see cref="InputForm"/> control.
-    /// Referenced exclusively via <c>d:ItemsSource</c> in InputForm.xaml;
-    /// never instantiated at runtime.
+    /// Design-time ukázková data pro <see cref="EDInputForm"/>. Reference jen z <c>d:ItemsSource</c>
+    /// v EDInputForm.xaml — za běhu se neinstanciuje.
     /// </summary>
     public class EDInputFormDesignTimeData
     {

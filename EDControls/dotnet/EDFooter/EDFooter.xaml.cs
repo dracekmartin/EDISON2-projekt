@@ -20,7 +20,7 @@ public partial class EDFooter : UserControl
         set => SetValue(FooterModeProperty, value);
     }
 
-    /// <summary>Optional UIElement placed on the left side of the footer.</summary>
+    /// <summary>Volitelný UIElement umístěný na levé straně footeru.</summary>
     public UIElement? LeftContent
     {
         get => (UIElement?)GetValue(LeftContentProperty);
@@ -73,7 +73,7 @@ public partial class EDFooter : UserControl
     private void OkBtn_Click(object sender, RoutedEventArgs e)
     {
         if (_vm != null)
-            _vm.OkCommand.Execute(null);    // VM fires RequestClose when ready
+            _vm.OkCommand.Execute(null);    // VM samo vyvolá RequestClose až bude připraveno
         else
             CloseWindow(true);
     }
@@ -98,11 +98,11 @@ public partial class EDFooter : UserControl
             try
             {
                 window.DialogResult = dialogResult;
-                return;     // also closes the window
+                return;     // setting DialogResult zároveň okno zavře
             }
-            catch (InvalidOperationException) { }   // not a ShowDialog() window
+            catch (InvalidOperationException) { }   // okno není ShowDialog() — fallback níž
         }
-        window.Owner?.Activate();   // ensure owner gets focus before this window closes
+        window.Owner?.Activate();   // dáme focus ownerovi předtím než toto okno zavřeme
         window.Close();
     }
 }

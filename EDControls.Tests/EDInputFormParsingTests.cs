@@ -598,7 +598,7 @@ public class EDInputFormParsingTests
         Assert.Equal(System.Windows.Visibility.Collapsed, field.HelpTextVisibility);
     }
 
-    // ─── HelpTextMode tests ──────────────────────────────────────────────────
+    // ─── HelpTextMode testy ──────────────────────────────────────────────────
 
     [Fact]
     public void ParseHelpTextMode_Tooltip_ReturnsTooltip()
@@ -655,7 +655,7 @@ public class EDInputFormParsingTests
         Assert.Equal("column", EHelpTextMode.Column.ToWire());
     }
 
-    // ─── List field tests ─────────────────────────────────────────────────────
+    // ─── List field testy ─────────────────────────────────────────────────────
 
     [Fact]
     public void ParseItems_ParsesListField()
@@ -730,7 +730,7 @@ public class EDInputFormParsingTests
         Assert.Equal("Neaktivní", f.ListItems[1].Label);
     }
 
-    // ─── File field tests ─────────────────────────────────────────────────────
+    // ─── File field testy ─────────────────────────────────────────────────────
 
     [Fact]
     public void ParseItems_ParsesFileFieldWithFilter()

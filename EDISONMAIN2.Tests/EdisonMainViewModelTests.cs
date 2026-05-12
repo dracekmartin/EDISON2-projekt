@@ -1,9 +1,8 @@
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
-using EDISONMAIN2.Services.Modules;
-using EDISONMAIN2.Services.Processes;
-using EDISONMAIN2.Services;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.Processes;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
@@ -17,8 +16,6 @@ public class EdisonMainViewModelTests
         new() { Id = "CB_DP", Database = "DB_CB" },
         new() { Id = "JI_DP", Database = "DB_JI" },
     ];
-
-    private static readonly ConnectionParams TestConnParams = new("localhost", 57770, "test", "Test User", 1, "test-guid");
 
     private static EDServices MockServices(
         IMLRest? mlRest = null,
@@ -49,7 +46,7 @@ public class EdisonMainViewModelTests
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
         }
         finally
         {
@@ -114,7 +111,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
         }
         finally
         {
@@ -143,7 +140,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, TestConnParams, activeLicence: null);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
         }
         finally
         {

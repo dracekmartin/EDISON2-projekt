@@ -1,7 +1,7 @@
 using System;
 using ALWA.SYS;
 
-namespace EDISONMAIN2.Services
+namespace EDISONMAIN2.Windows.LoginWindow
 {
     public record LoginResult(
         int Mlp,
@@ -18,8 +18,8 @@ namespace EDISONMAIN2.Services
     public static class UserAuthenticator
     {
         /// <summary>
-        /// Calls ALVA.SYS.Login.Login on Caché and returns user info on success.
-        /// Uses object[] because the Caché method uses numeric subscripts.
+        /// Volá <c>ALVA.SYS.Login.Login</c> na Caché. Používá <c>object[]</c> protože server
+        /// metoda čte přes numerické subscripty <c>^||ML("IN", N)</c>.
         /// </summary>
         public static LoginResult Login(MLRest mlRest, string username, string password)
         {

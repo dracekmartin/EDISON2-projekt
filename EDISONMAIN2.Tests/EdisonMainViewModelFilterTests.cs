@@ -1,5 +1,5 @@
 using ALVA.LICENCE.EDLicence;
-using EDISONMAIN2.Services.Modules;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 
 namespace EDISONMAIN2.Tests;

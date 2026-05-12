@@ -7,7 +7,7 @@
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         xmlns:local="clr-namespace:EDISONMAIN2"
         xmlns:designTime="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData"
-        xmlns:modules="clr-namespace:EDISONMAIN2.Services.Modules"
+        xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" Height="800" Width="1200" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
@@ -35,7 +35,7 @@
             <ComboBox ItemsSource="{Binding VisibleIdfas}" SelectedIndex="{Binding SelectedCompanyIndex}" >
                 <ComboBox.ItemTemplate>
                     <DataTemplate>
-                        <TextBlock Text="{Binding Id}" />
+                        <TextBlock Text="{Binding DisplayName}" />
                     </DataTemplate>
                 </ComboBox.ItemTemplate>
             </ComboBox>
@@ -94,13 +94,13 @@
         </Grid>
 
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
-            <TextBlock Text="{Binding ConnParams.Server, StringFormat='Server: {0}'}"/>
-            <TextBlock Text="{Binding ConnParams.RestPort, StringFormat='RestPort: {0}'}"/>
+            <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>
+            <TextBlock Text="{Binding RestPort, StringFormat='RestPort: {0}'}"/>
             <TextBlock Text="{Binding Namespace, StringFormat='Namespace: {0}'}"/>
             <TextBlock Text="{Binding Idfa, StringFormat='Idfa: {0}'}"/>
-            <TextBlock Text="{Binding ConnParams.UserName, StringFormat='UserName: {0}'}"/>
-            <TextBlock Text="{Binding ConnParams.FullName, StringFormat='FullName: {0}'}"/>
-            <TextBlock Text="{Binding ConnParams.Mlp, StringFormat='Mlp: {0}'}"/>
+            <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
+            <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
+            <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
         </StatusBar>
         
     </Grid>

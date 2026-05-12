@@ -1,17 +1,13 @@
 using System.IO;
 using System.Text.Json;
 
-namespace EDISONMAIN2.Services;
+namespace EDISONMAIN2;
 
-/// <summary>
-/// Konfigurace aplikace načítaná z appsettings.json.
-/// Soubor leží vedle spustitelného souboru (AppContext.BaseDirectory).
-/// </summary>
+/// <summary>Konfigurace ze <c>appsettings.json</c> vedle exe, případně přepsaná z <c>appsettings.local.json</c>.</summary>
 public class SettingsLoader
 {
     public ServerSettings Server { get; set; } = new();
 
-    /// <summary>Singleton instance načtená při startu aplikace.</summary>
     public static SettingsLoader? Current { get; private set; }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -21,11 +17,6 @@ public class SettingsLoader
         AllowTrailingCommas         = true
     };
 
-    /// <summary>
-    /// Načte appsettings.json ze složky vedle exe.
-    /// Pokud existuje appsettings.local.json, přepíše hodnoty z něj (pro lokální konfiguraci).
-    /// Pokud soubor neexistuje nebo je poškozený, vrátí výchozí instanci.
-    /// </summary>
     public static SettingsLoader Load()
     {
         var baseDir = AppContext.BaseDirectory;
@@ -62,12 +53,8 @@ public class SettingsLoader
     }
 }
 
-/// <summary>Nastavení připojení k Caché / IRIS serveru přes MLRest.</summary>
 public class ServerSettings
 {
-    /// <summary>IP adresa nebo hostname serveru.</summary>
     public string Host { get; set; } = "192.168.16.1";
-
-    /// <summary>Port MLRest serveru.</summary>
-    public int Port { get; set; } = 57770;
+    public int    Port { get; set; } = 57770;
 }

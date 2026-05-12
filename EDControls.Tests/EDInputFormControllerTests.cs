@@ -124,9 +124,9 @@ public class EDInputFormControllerTests
 
         controller.Init();
         var group = controller.Items.OfType<Group>().Single();
-        group.IsExpanded = false; // sets Visibility = Collapsed
+        group.IsExpanded = false; // nastaví Visibility = Collapsed
 
-        // Re-init builds from scratch — server sends Visible, so group is expanded again
+        // Re-init staví od nuly — server pošle Visible, skupina je opět rozbalená
         controller.Init();
         var groupAfter = controller.Items.OfType<Group>().Single();
         Assert.True(groupAfter.IsExpanded);
@@ -142,8 +142,8 @@ public class EDInputFormControllerTests
 
         controller.Validate();
 
-        // The third Validate call (first two are from Init: init + validate)
-        // should have "Change" trigger
+        // Třetí Validate volání (první dvě byly z Init: init + validate)
+        // má mít trigger "Change"
         mlRest.Received().QueryOrThrow(CacheClass, "Validate",
             Arg.Is<CVar>(c => c["trigger"].Value != null && c["trigger"].Value.ToString() == "Change"));
     }
@@ -255,13 +255,13 @@ public class EDInputFormControllerTests
 
         controller.Init();
 
-        // Validate — server returns ProgrammerHidden
+        // Validate — server vrací ProgrammerHidden
         controller.Validate();
         var fieldAfter = controller.Items.OfType<Field>().Single();
         Assert.Equal(EItemVisibility.ProgrammerHidden, fieldAfter.Visibility);
     }
 
-    // ─── HelpTextMode tests ─────────────────────────────────────────────────
+    // ─── HelpTextMode testy ─────────────────────────────────────────────────
 
     [Fact]
     public void Init_ReadsHelpTextModeFromInitResponse()
@@ -295,7 +295,7 @@ public class EDInputFormControllerTests
         columnData["helpTextMode"] = new CVar("column");
         var mlRest = Substitute.For<IMLRest>();
         mlRest.QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>()).Returns(initData);
-        // First Validate (during Init) returns tooltip, second (explicit) returns column
+        // První Validate (z Init) vrátí tooltip, druhé (explicitní) vrátí column
         mlRest.QueryOrThrow(CacheClass, "Validate", Arg.Any<CVar>())
             .Returns(initData, columnData);
         var controller = new EDInputFormController(mlRest, CacheClass);
@@ -324,11 +324,11 @@ public class EDInputFormControllerTests
     [Fact]
     public void ButtonClick_TogglesHelpTextMode()
     {
-        // Init returns tooltip mode with a toggle button
+        // Init vrátí tooltip mode s toggle tlačítkem
         var initData = new CVar();
         initData["1"] = new CList("FIELD", "1", "toggleHelp", "Režim", "BUTTON", "Přepnout na sloupec", "0", "0");
 
-        // First Validate (Init trigger) returns tooltip, second (button click) returns column
+        // První Validate (Init trigger) vrátí tooltip, druhé (button click) vrátí column
         var tooltipData = new CVar();
         tooltipData["1"] = new CList("FIELD", "1", "toggleHelp", "Režim", "BUTTON", "Přepnout na tooltip", "0", "0");
         tooltipData["helpTextMode"] = new CVar("tooltip");
@@ -346,13 +346,13 @@ public class EDInputFormControllerTests
         controller.Init();
         Assert.Equal(EHelpTextMode.Tooltip, controller.HelpTextMode);
 
-        // Simulate button click — server toggles to column
+        // Simuluj klik na tlačítko — server přepne na column
         controller.Validate("toggleHelp");
         Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
         Assert.Equal("Přepnout na tooltip", controller.Items.OfType<Field>().Single().Value);
     }
 
-    // ─── FormatValidationErrors tests ─────────────────────────────────────────
+    // ─── FormatValidationErrors testy ─────────────────────────────────────────
 
     [Fact]
     public void FormatValidationErrors_NoErrors_ReturnsNull()
@@ -422,7 +422,7 @@ public class EDInputFormControllerTests
         Assert.Null(EDInputFormController.FormatValidationErrors(new List<Item>()));
     }
 
-    // ─── Required validation tests ────────────────────────────────────────────
+    // ─── Required validation testy ────────────────────────────────────────────
 
     [Fact]
     public void Validate_RequiredEmptyField_SetsErrorAndReturnsFalse()
@@ -494,11 +494,11 @@ public class EDInputFormControllerTests
         var controller = new EDInputFormController(mlRest, CacheClass);
         controller.Init();
 
-        // First Validate — field is empty → required error
+        // První Validate — pole je prázdné → required error
         controller.Validate();
         Assert.Equal("Povinné pole", controller.Items.OfType<Field>().Single().ValidationError);
 
-        // Second Validate — field is now filled → no error
+        // Druhý Validate — pole je vyplněné → bez chyby
         controller.Validate();
         Assert.Null(controller.Items.OfType<Field>().Single().ValidationError);
     }

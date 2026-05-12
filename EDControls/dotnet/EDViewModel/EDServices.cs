@@ -1,12 +1,17 @@
+using ALVA.LICENCE.EDLicence;
+
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Bundles the shared services that every EDViewModel needs.
-/// Created once at application startup; tests create their own instance.
+/// Sdílené služby pro každý <see cref="EDViewModel"/>. Vytváří se jednou při startu aplikace,
+/// testy si dělají vlastní instanci.
 /// <para>
-/// <see cref="MLRest"/> is mutable because the composition-root ViewModel
-/// creates it after company selection and updates it on company switch.
-/// All ViewModels sharing the same EDServices instance see the change.
+/// <see cref="MLRest"/> je mutable — composition-root VM ji nastaví po výběru firmy a aktualizuje
+/// při přepnutí. Všechny VM sdílející stejnou <see cref="EDServices"/> vidí změnu.
+/// </para>
+/// <para>
+/// <see cref="ActiveLicence"/> je mutable — shell ji načte po loginu, případně refreshuje
+/// (admin „Refresh licence"). VM ji čtou pro per-window licence checky.
 /// </para>
 /// </summary>
 public class EDServices(
@@ -17,25 +22,23 @@ public class EDServices(
     public IMLRest? MLRest { get; set; } = mlRest;
     public IWindowNavigator WindowNavigator { get; } = windowNavigator;
     public IPopupDisplayer PopupDisplayer { get; } = popupDisplayer;
+    public Lic? ActiveLicence { get; set; }
+    public bool IsAdmin { get; set; }
 
     private static EDServices? _current;
 
     /// <summary>
-    /// Application-wide default. Set once in App.xaml.cs via <see cref="Initialize"/>.
-    /// Throws if accessed before initialization (catches misuse at startup, not at test time).
+    /// Globální default. Nastav jednou v <c>App.xaml.cs</c> přes <see cref="Initialize"/>.
+    /// Vyhazuje výjimku pokud někdo přistoupí před inicializací (chytí misuse při startu).
     /// </summary>
     public static EDServices Current =>
         _current ?? throw new InvalidOperationException(
             "EDServices.Initialize must be called before any EDViewModel is created.");
 
-    /// <summary>
-    /// Call once from App.xaml.cs at startup. Not called from tests.
-    /// </summary>
+    /// <summary>Volat jednou z <c>App.xaml.cs</c> při startu. Z testů se nevolá.</summary>
     public static void Initialize(EDServices services) =>
         _current = services;
 
-    /// <summary>
-    /// Clears the static singleton. Test-only — prevents state leaking between tests.
-    /// </summary>
+    /// <summary>Smaže static singleton. Pouze pro testy — zabraňuje úniku stavu mezi testy.</summary>
     internal static void Reset() => _current = null;
 }

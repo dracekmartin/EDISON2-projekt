@@ -10,18 +10,15 @@ namespace EDControls.EDInputForm
 
     public class Field : Item
     {
-        /// <summary>Stable identifier used as the key when communicating with Caché.</summary>
+        /// <summary>Stabilní identifikátor — klíč pro komunikaci s Caché.</summary>
         public string Key { get; set; } = "";
 
         public string Label { get; set; } = "";
 
-        /// <summary>When true, changing Value automatically triggers validation of the whole form.</summary>
+        /// <summary>Pokud true, změna <c>Value</c> automaticky spouští validaci celého formuláře.</summary>
         public bool ValidateOnChange { get; set; } = false;
 
-        /// <summary>
-        /// Visible in DEBUG builds when ValidateOnChange is true; Collapsed otherwise.
-        /// Used by InputForm to render a debug-mode indicator dot.
-        /// </summary>
+        /// <summary>Visible v DEBUG buildu když ValidateOnChange = true. EDInputForm zobrazí debug indikátor.</summary>
         public WpfVisibility ValidateIndicatorVisibility =>
 #if DEBUG
             ValidateOnChange ? WpfVisibility.Visible : WpfVisibility.Collapsed;
@@ -29,7 +26,7 @@ namespace EDControls.EDInputForm
             WpfVisibility.Collapsed;
 #endif
 
-        /// <summary>When true, displays a required-field asterisk next to the label.</summary>
+        /// <summary>Pokud true, vedle labelu se zobrazí hvězdička povinnosti.</summary>
         public bool Required { get; set; } = false;
 
         public WpfVisibility RequiredIndicatorVisibility =>
@@ -37,20 +34,20 @@ namespace EDControls.EDInputForm
 
         public EFieldType FieldType { get; set; } = EFieldType.Text;
 
-        /// <summary>When false, the field is rendered as read-only (server-controlled).</summary>
+        /// <summary>Pokud false, pole je read-only (server-controlled).</summary>
         public bool Editable { get; set; } = true;
 
-        /// <summary>Available options for List field type. Empty for other types.</summary>
+        /// <summary>Volby pro pole typu List. U ostatních typů prázdné.</summary>
         public List<ListItem> ListItems { get; set; } = [];
 
         /// <summary>
-        /// Configuration for File field type. Contains the dialog filter string
-        /// (e.g. "PDF (*.pdf)|*.pdf") for file selection, or "$FOLDER" for folder selection.
-        /// Empty defaults to all files. Ignored for non-File field types.
+        /// Konfigurace pro pole typu File: filtr dialogu (např. <c>"PDF (*.pdf)|*.pdf"</c>),
+        /// nebo speciální <c>"$FOLDER"</c> pro výběr složky. Prázdné = všechny soubory.
+        /// Ignoruje se pro ostatní typy.
         /// </summary>
         public string FileFilter { get; set; } = "";
 
-        /// <summary>ListItems with an implicit empty entry prepended for ComboBox binding.</summary>
+        /// <summary>ListItems s implicitní prázdnou položkou na začátku — pro ComboBox binding.</summary>
         public List<ListItem> ListItemsForDisplay => [new ListItem("", ""), .. ListItems];
 
         private string? _value;
@@ -66,20 +63,14 @@ namespace EDControls.EDInputForm
             }
         }
 
-        /// <summary>
-        /// Two-way bool view of Value for CheckBox binding.
-        /// "1" = true, anything else = false.
-        /// </summary>
+        /// <summary>Two-way bool pohled na <c>Value</c> pro CheckBox binding. <c>"1"</c> = true, ostatní = false.</summary>
         public bool BoolValue
         {
             get => _value == "1";
             set => Value = value ? "1" : "0";
         }
 
-        /// <summary>
-        /// Two-way DateTime view of Value for DatePicker binding.
-        /// Wire format: "yyyy-MM-dd".
-        /// </summary>
+        /// <summary>Two-way DateTime pohled na <c>Value</c> pro DatePicker binding. Wire formát: <c>"yyyy-MM-dd"</c>.</summary>
         public DateTime? DateValue
         {
             get => DateTime.TryParseExact(_value, "yyyy-MM-dd", CultureInfo.InvariantCulture,
@@ -88,8 +79,8 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// Returns a required-field validation error if this field is Required and empty,
-        /// or null if no error. Bool and Button fields are always valid (no empty state).
+        /// Validační error pro povinné pole pokud je <see cref="Required"/> a prázdné.
+        /// Bool a Button typy nemají "prázdný" stav — vždy validní.
         /// </summary>
         public string? GetRequiredError()
         {
@@ -101,8 +92,8 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// Returns a client-side type validation error, or null if the value is valid.
-        /// Empty/null values are not flagged here — use Required for that.
+        /// Klientská typová validace — vrátí chybu pokud hodnota neodpovídá typu, jinak null.
+        /// Prázdné hodnoty netestuje — od toho je <see cref="Required"/>.
         /// </summary>
         public string? GetTypeError()
         {
@@ -136,8 +127,8 @@ namespace EDControls.EDInputForm
         public bool HasError => !string.IsNullOrEmpty(_validationError);
 
         /// <summary>
-        /// The group this field belongs to. Set by EDInputForm after parsing.
-        /// When null the field is treated as always visible.
+        /// Skupina ke které pole patří. Nastavuje EDInputForm po parsování.
+        /// Pokud null, pole se chová jako vždy viditelné.
         /// </summary>
         internal Group? ParentGroup
         {
@@ -159,8 +150,8 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// Collapsed when this field is non-Visible or the parent group is non-Visible.
-        /// Parent group Collapsed hides fields too (header stays visible via Group.EffectiveVisibility).
+        /// Collapsed pokud pole je non-Visible NEBO parent group je non-Visible
+        /// (skrytá skupina skryje i pole; její header zůstává přes <c>Group.EffectiveVisibility</c>).
         /// </summary>
         public override WpfVisibility EffectiveVisibility =>
             Visibility == EItemVisibility.Visible

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 
-namespace EDISONMAIN2.Services.Modules
+namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     public interface IModule
     {

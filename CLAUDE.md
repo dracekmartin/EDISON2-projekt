@@ -245,4 +245,82 @@ Každý nový aplikační projekt musí:
 1. Mergovat resource dictionaries (`EDIcons.xaml`, `EDStrings.xaml`) — bez toho `{StaticResource}` hodí výjimku za běhu.
 2. Přidat `DispatcherUnhandledException` handler — bez `e.Handled = true` aplikace po výjimce spadne.
 
-Viz `EDISONMAIN2/dotnet/App.xaml` a `App.xaml.cs` jako referenční implementaci.
+Viz `EDISONMAIN2/dotnet/Startup/App.xaml(.cs)` jako referenční implementaci.
+
+---
+
+## Persistence stavu
+
+Dva čisté layery pro user preferences / state:
+
+### Per-machine (lokální JSON)
+
+`LocalPrefs` (`EDISONMAIN2/dotnet/Startup/LocalPrefs.cs`) — JSON soubor v
+`%APPDATA%\m-line\EDISONMAIN2\local.json`. Per Windows-user, sdílí mezi
+relacemi na stejné stanici.
+
+Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení).
+Pro nové preference přidej nullable property; chybějící klíče v existujícím
+souboru zůstanou null (kompatibilní upgrade).
+
+```csharp
+LocalPrefs.Load();                              // jednou v App.xaml.cs
+var idfa = LocalPrefs.Current.LastIdfa;          // čtení
+LocalPrefs.Current.LastIdfa = "CB_DP";           // zápis
+LocalPrefs.Current.Save();
+```
+
+### Per-uživatel × IDFa (Caché server-side)
+
+`WindowStatePersistence` (`EDControls/dotnet/WindowStatePersistence.cs`) —
+persistuje pozici, velikost a Maximized stav WPF okna přes existující legacy
+endpoint `ALVA.LIBRARY.Form.SaveParams` / `LoadParams`. Storage automaticky
+per-MLP × IDFa (server čte sys kontext z MLRest).
+
+**Aktivace**: VM dědí `EDViewModel` → `PersistedFormId` se odvozuje z názvu třídy
+(`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`). Override v subclass
+na `null` pro opt-out. ReflectionWindowNavigator zavolá `vm.AttachToWindow(window)`
+před `Show()` automaticky; pro shell okno volá App.xaml.cs ručně.
+
+Prefix `"EDISON2."` odděluje od starých numerických IDs z `EDISFormEnum` (tam
+VB moduly ukládají vlastní state).
+
+---
+
+## Spouštění legacy modulů — EDISONMAIN2API
+
+Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,
+.NET Framework 4.8, deploy do `C:\Edison\`). `FormToRunGetter.TryGetFormFromArgs`
+parsuje 10 cmdline args (sentinel `"EDISONMAIN2"`, server, port, ns, idfa, login,
+fullName, mlp, **formName** = FQN třídy WinForms formy, **shellGuid**), reflexí
+najde typ ve volajícím assembly a instancuje ho.
+
+**Sdílení ACTIVITY session:** non-prázdný `shellGuid` → modul dostane shellův
+GUID a `CacheLocks=1` (server na každém requestu volá `UpdateHistory` +
+`LockExist` — zánik shell zámku shodí i moduly). Prázdný `shellGuid` (over-license
+retry před `VerifyLic`) → modul si vygeneruje vlastní GUID, bez `CacheLocks`.
+
+Kontrakt pro legacy `.exe`: ve své `Sub Main` zavolat
+`FormToRunGetter.TryGetFormFromArgs(args, out form)` a předat do `Application.Run(form)`.
+Bez argů původní standalone chování. Reference: `MHD2PlanDopravy/Program.cs`,
+`USERS/Users-v4/Program.vb`.
+
+EDISONMAIN2 strana: `ProcessLauncher.Launch(module)` (moduly z module tree)
+a `LicenceVerifier.LaunchUsersFormAndWait` (admin override při out-of-license).
+
+---
+
+## Komentáře
+
+Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky**. Stock VS šablony
+(`Interaction logic for ...`) jsou výjimka.
+
+Defaultně nekomentovat. Přidávej jen když:
+
+- WHY je netriviální — skrytá invarianta, workaround konkrétního bugu.
+- Sémantika legacy systému (Caché global, ACTIVITY zámek, licenční flag).
+
+**Nekomentovat:** WHAT (pojmenování to říká), reference na task / fix / commit
+(rotí, patří do commit message), stock VS šablony.
+
+**Délka:** preferuj 1 řádek, max 2–3. Multi-paragraph `<remarks>` blok je špatně.
