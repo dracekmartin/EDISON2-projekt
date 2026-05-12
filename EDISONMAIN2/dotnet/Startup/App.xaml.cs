@@ -7,7 +7,6 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2.Windows.EdisonMainWindow.Processes;
 using EDISONMAIN2.Windows.LoginWindow;
 using static ALVA.EDISONAPI.Database;
 
@@ -16,11 +15,12 @@ namespace EDISONMAIN2
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
-    public partial class App : Application
+    public partial class App : System.Windows.Application
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
-            var services = new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer());
+            var nav = new WindowNavigator();
+            var services = new EDServices(null, nav, new PopupDisplayer());
             EDServices.Initialize(services);
 
             LocalPrefs.Load();
@@ -71,12 +71,16 @@ namespace EDISONMAIN2
             });
 
             services.IsAdmin = login.IsAdmin;
+            // services.MLRest musí být nastaveno už tady — admin override v LicenceVerifier
+            // spouští USERS.exe přes WindowNavigator.ShowLegacyAndWait, ten čte connection
+            // kontext z EDServices.Current.MLRest.
+            services.MLRest = mlRest;
 
             // VerifyLic vytvoří ACTIVITY zámek pro tuto session. Při překročení licencí + admin
             // dostane retry s oknem aktivity uživatelů. Stejná logika i při přepnutí firmy ve VM.
             var licenceService = new LicenceService(mlRest.Inner);
             var (outcome, activeLicence) = LicenceVerifier.TryAcquireSession(
-                mlRest, licenceService.GetActiveLicence, services.IsAdmin, services.PopupDisplayer);
+                mlRest, licenceService.GetActiveLicence, services.IsAdmin, services.PopupDisplayer, services.WindowNavigator);
             if (outcome != LicenceAcquireOutcome.Accepted)
             {
                 if (outcome == LicenceAcquireOutcome.Refused)
@@ -100,16 +104,17 @@ namespace EDISONMAIN2
             // Moduly (.exe) sdílejí shellův GUID + CacheLocks=1, aby zánik shell
             // ACTIVITY zámku shodil i moduly. Wiring viz FormToRunGetter v EDISONMAIN2API.
             var treeGetter = new ModuleTreeGetter();
-            var processLauncher = new ProcessLauncher(mlRest);
             // licenceService.GetActiveLicence čte aktuální stav MLRest, takže po přepnutí firmy
             // dostane VM licenci cílové firmy (potřebné pro VerifyLic se správným CountsLOGIN).
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, processLauncher, licenceService.GetActiveLicence);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, licenceService.GetActiveLicence, nav.CloseAll);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             // AttachToWindow před Show — hookne SourceInitialized pro persistence předtím než fire
             // (jinak by okno blikalo z XAML defaults na restored velikost).
             viewModel.AttachToWindow(wnd);
             wnd.Show();
+            // Aplikace uloženého fontu (Styl → Použít z LocalPrefs) — Application.MainWindow už je set.
+            EdisonMainViewModel.ApplyFontToMainWindow();
         }
 
         private void Application_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)

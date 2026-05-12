@@ -6,7 +6,7 @@ EDISONMAIN2 (C# / WPF) v budoucnu nahradí starou `EDISONMAIN` (VB.NET WinForms)
 Cíl tohoto plánu je dovést EDISONMAIN2 do **pilot-ready** stavu — klient, který lze
 bezpečně nasadit paralelně vedle stávajícího EDISONMAIN proti stejné Caché
 instanci. Hostované moduly (JR, MZDY, …) zůstávají jako legacy `.exe` pouštěné
-přes `ProcessLauncher` + `EDISONMAIN2API.FormToRunGetter`.
+přes `IWindowNavigator.ShowLegacy` + `EDISONMAIN2API.FormToRunGetter`.
 
 ## Definition of Done
 
@@ -57,7 +57,74 @@ implicitně. Cíl je test scénář:
 
 **Provedení:** ruční test na pilotní stanici. Záznam v `DOD_TESTS.md`.
 
-### 2. Pilot runbook + verification doc
+### 2. Horní menu — postupná funkční implementace stub položek
+
+**Stav:** struktura menu replikuje legacy `frmNoMDI.mnuMain` (EDISON / Firma /
+Uživatel / Helpdesk / Spuštěné moduly / Nástroje / Nápověda / Styl / Test funkcí
+/ INFO) v přesném pořadí. Většina položek je stub (`NotYetImplemented` popup).
+
+**Funkční dnes:** Konec, Spustit další EDISON, Možnosti (3 toggles — persist),
+Načítat nástěnky (live efekt na WebView2), Obnovit výchozí nastavení oken, Správa
+zámků, Aktivita uživatelů, Aktualizovat licenci, Informace o verzi, Helpdesk Wiki,
+Zvolený font, Použít font, plus combobox firem (replikuje legacy "Firma:" label).
+
+**INFO** (right-aligned placeholder vpravo v menu): v legacy je to status label
+plněný serverem přes `ALVA.EDISONAPI.InformationArea` — zobrazuje "Dnes je
+dd.MM.yyyy, svátek má X" (NameDay). Není klikací. V EDISONMAIN2 je zatím
+`IsEnabled=False` placeholder; pro pilot doplnit naplnění z téhož endpointu
+(low priority — kosmetická feature).
+
+**Stub položky** (poppou „Tato funkce zatím není v EDISONu 2 dostupná"):
+
+| Položka | Cíl pro pilot |
+| --- | --- |
+| EDISON → Připojit k databázi | Otevřít vlastní WPF dialog pro výběr/přepnutí connection. |
+| Uživatel → Přihlásit jiného uživatele | Otevřít LoginWindow s reconnect logic (závisí na novém endpointu nebo nepilot.) |
+| Uživatel → Aktuální uživatel | `formEDISONMAINUserEdit` — žije v legacy `EDISONMAIN.exe`. Retrofit EDISONMAIN.exe stejně jako USERS.exe (`Program.vb` + FormToRunGetter) → spustit přes `WindowNavigator.ShowLegacy`. |
+| Uživatel → Úlohy na pozadí | `formEDISONMAINTaskList` — totéž (sdílí retrofit EDISONMAIN.exe). |
+| Nástroje → Nastavení jazyka | `formEDISONMAINLanguageList` — totéž (sdílí retrofit EDISONMAIN.exe). |
+| Nástroje → Odeslat systémové soubory | `formEDISONMAINLogList` — totéž (sdílí retrofit EDISONMAIN.exe). |
+
+**Možnosti — chybějící konzumenty (low priority pro pilot):**
+
+- `ShowWindowsAsDialogs` — persistuje, ale žádný consumer neexistuje (legacy:
+  ovlivnilo modal/modeless launch portovaných oken). Až bude port nebo
+  WindowNavigator rozhodovat dialog vs. modeless, číst z `LocalPrefs.Current.ShowWindowsAsDialogs`.
+- `ShowMiniApps` — persistuje, ale mini-apps v EDISONMAIN2 nejsou implementovány
+  (mimo pilot scope).
+- `LoadBoards` — funguje (toggluje viditelnost WebView2 s nástěnkou).
+
+**Font — částečná aplikace:**
+
+`ApplyFontToMainWindow` nastaví `FontFamily` / `FontSize` na hlavní okno; WPF
+inheritance pokryje `TreeView` (strom modulů), ale **horní `Menu` se nemění**
+(WPF výchozí styl pro `MenuItem` nastavuje vlastní `FontFamily`/`FontSize`,
+což přebije inheritance). Pro pilot stačí; doladit přes implicit `Style` pro
+`MenuItem` / `StatusBarItem` s `Setter` na `FontFamily`/`FontSize` bound na
+`MainWindow`.
+
+**Pravidlo pro pilot:** všechny stub položky lze nechat stub, **pokud uživatel jejich
+denní funkčnost nepotřebuje**. Postupně implementovat na základě feedbacku z pilotu —
+typicky volat legacy formu přes `FormToRunGetter`, pokud její .exe je retrofitnuté,
+jinak port do WPF.
+
+### 3. Klávesová zkratka Ctrl+W,W — Utilities (formUTILITIESMain)
+
+Legacy reaguje na **dvojité stisknutí Ctrl+W** (chord) — spustí
+`EDFormInterface.EDISFormEnum.formUTILITIESMain` z `Utilities.exe`
+(`c:\MLineRepos\EDISON\Utilities\Utilities\formUTILITIESMain.vb`). Pro pilot
+zachovat tuto zkratku v EDISONMAIN2.
+
+**Kroky:**
+
+1. Retrofitnout `Utilities.exe` s `EDISONMAIN2API.FormToRunGetter` (stejně jako
+   USERS.exe — přidat `Program.vb` + EDISONMAIN2API reference + změna
+   `StartupObject` v `.vbproj`).
+2. EDISONMAIN2 shell: state-machine pro chord `Ctrl+W` → status text → druhé
+   `Ctrl+W` v okně ~2 s → `WindowNavigator.ShowLegacy("Utilities.exe", ...)` +
+   `ALVA.UTILITIES.formUTILITIESMain`. Escape přeruší.
+
+### 4. Pilot runbook + verification doc
 
 **Cíl:** dokumenty pro M-line support tým.
 
@@ -74,7 +141,7 @@ implicitně. Cíl je test scénář:
 Vše níže není v pilot scope. Reasoning u každého, ať je jasné proč.
 
 | Položka | Důvod škrtu |
-|---|---|
+| --- | --- |
 | **`ClientKind` ve stacku** (`MLRest.cs`, `Activity.cls`, `Rest.cls`) | Server v současné konfiguraci EDISONMAIN2 přijímá. Pokud na pilotním Caché narazíme na `EdisonVersionFailed!` nebo neidentifikovatelný admin audit, řešíme tehdy. |
 | **ActivitySession (keepalive timer)** | Legacy taky nemá explicitní keepalive — ACTIVITY lock se osvěží pouze přes user-driven MLRest volání (`CacheLocks=1` → `UpdateHistory`). Idle shell vyprší stejně v EDISONMAIN i EDISONMAIN2. |
 | **`maSeUkoncit` polling** | Legacy ho má pro brzkou detekci admin force-logoutu (60s). Bez něj uvidíme force-logout až při příštím MLRest volání přes `EdisonActivityFailed` event → shutdown. UX rozdíl, ne blocker. |

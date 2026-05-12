@@ -83,7 +83,7 @@ public class EDViewModel : INotifyPropertyChanged
 
     /// <summary>
     /// Bezparametrický konstruktor — čte z <see cref="EDServices.Current"/>.
-    /// Používá se pro okna vytvářená přes <see cref="ReflectionWindowNavigator"/>.
+    /// Používá se pro okna vytvářená přes <see cref="WindowNavigator"/>.
     /// </summary>
     public EDViewModel() : this(EDServices.Current) { }
 
@@ -120,7 +120,7 @@ public class EDViewModel : INotifyPropertyChanged
     /// Volat **před** <c>window.Show()</c> / <c>ShowDialog()</c> aby se klávesové zkratky
     /// a perzistence stavu okna napojily na <c>SourceInitialized</c> ještě před prvním paintem
     /// (jinak by se zobrazila XAML default velikost a pak teprve restored — flicker).
-    /// <see cref="ReflectionWindowNavigator"/> volá automaticky pro Show/ShowDialog;
+    /// <see cref="WindowNavigator"/> volá automaticky pro Show/ShowDialog;
     /// composition-root v App.xaml.cs musí volat ručně pro shell okno.
     /// </summary>
     public void AttachToWindow(Window window)

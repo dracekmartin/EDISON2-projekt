@@ -95,7 +95,7 @@ public partial class MyWindow : Window
 }
 ```
 
-5. Zaregistruj třídu okna v `ReflectionWindowNavigator` (děje se automaticky — navigator
+5. Zaregistruj třídu okna ve `WindowNavigator` (děje se automaticky — navigator
    nachází okna podle názvu třídy). Přidej příkaz + tlačítko na toolbar v
    `EdisonMainViewModel` / `EdisonMainWindow.xaml` — viz vzor
    `OpenEDComponentAndViewModelTestCommand` / `EDComponentAndViewModelTestWindow`.
