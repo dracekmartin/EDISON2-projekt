@@ -624,6 +624,7 @@ public class DepartureGridElement : ScheduleElementBase
                         };
                         var pt = ctx.ToCanvas(textX, lineY);
                         ctx.Canvas.DrawText(g.HeaderLines[i], pt.X, pt.Y, hFont, hTextPaint);
+                        hs.DrawTextDecorations(ctx.Canvas, pt.X, pt.Y, textW * ctx.MmToPx, hFont, hTextPaint);
                     }
 
                     gx += g.GroupWidth + GroupSeparatorWidth;

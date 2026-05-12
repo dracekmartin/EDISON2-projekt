@@ -89,12 +89,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 - **Co klient chce:** Záhlaví skupiny dnů zobrazené na dvou řádcích — např. **„Pracovní"** (větší font) a **„den"** (menší font).
 - **Gap:** Header value parsing — pokud obsahuje `\n` nebo speciální token, různě stylovat řádky. Nebo: dva oddělené stringy (`HeaderLine1`, `HeaderLine2`) + dva `TextStyle`.
 
-### B2. Bug: nestejně silné podtržení obou řádků záhlaví
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„když chceme mít Podtrhnutý každý řádek, tak se jeden řádek podtrhne tučněji, než ten druhý, což vizuálně nevypadá dobře, každý řádek by měl být podtrhnutý stejném způsobem"*
-- **Co máme dnes:** `DrawTextDecorations()` v `TextStyle` resp. `ResolvedTextStyle` kreslí Underline manuálně (SkiaSharp 3 neumí Underline automaticky). Tloušťka linky je zřejmě počítaná z metric daného line breaku.
-- **Co klient chce:** Stejně silné podtržení na obou řádcích zalomeného headeru.
-- **Gap:** Bug v `DrawTextDecorations` — pro multi-line text používat **konstantní tloušťku** (např. odvozenou z fontSize × poměr) napříč všemi řádky, ne per-line metric.
+### B2. ✅ HOTOVO (2026-05-12) — viz §G
 
 ### B3. Rozsah hodin přes půlnoc (3 → 0)
 - **Zákazník:** DPKV (Jan Slavík), #10660
@@ -231,6 +226,15 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 ---
 
 ## G. Hotovo / vyřízeno
+
+### B2. Underline a Strikethrough v záhlaví skupin dnů (DepartureGrid)
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Datum:** 2026-05-12
+- **Diagnóza:** V `DepartureGridElement.cs:626` se text headeru skupiny dnů renderuje přes `Canvas.DrawText` napřímo, **bez** volání `DrawTextDecorations`. Důsledek: `HeaderStyle.Underline = true` ani `Strikethrough = true` v UI nic neměnily — decorations se nevykreslovaly vůbec. Bold/Italic fungovaly, protože jdou přes SKFont.
+- **Customer complaint vs. reality:** DPKV v legacy systému viděl podtržení s nestejnou tloušťkou. V novém TD by viděli žádné podtržení. Fix pokrývá oba symptomy.
+- **Fix:** 1 řádek za `DrawText` — volání `hs.DrawTextDecorations(ctx.Canvas, pt.X, pt.Y, textW * ctx.MmToPx, hFont, hTextPaint)`. Tloušťka linky je automaticky konstantní napříč řádky, protože `hFont` je sdílený a `metrics.UnderlineThickness` je per-font deterministická.
+- **Otestováno:** Manuálně v běžícím TD — Underline + Strikethrough nyní fungují na single-line i multi-line headeru.
+- **Pozn.:** Stejný pattern (`DrawText` bez `DrawTextDecorations`) je na 5 dalších místech v souboru (minuty 780, anotace 803, hour header 899/901, designer placeholder 886/888). **Záměrně neopraveno** — nedotčeno reálným klientovým use casem; opravit až přijde konkrétní request.
 
 ### E1. Podmíněný tisk sekcí — VisibilityExpression
 - **Tiket:** #8772 (TRANSDEV, Jakub Holík); zůstává **suspended** (interní rozhodnutí, ne uzavřen klientovi).
