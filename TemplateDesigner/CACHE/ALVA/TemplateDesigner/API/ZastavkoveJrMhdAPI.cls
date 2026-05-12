@@ -1399,22 +1399,35 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
 
-    // Časová osa
+    // Časová osa odjezdů — popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
     s param = ##class(%DynamicObject).%New()
     s param.name         = "CASOVA_OSA"
     s param.label        = "Časová osa odjezdů"
     s param.type         = "enum"
-    s param.defaultValue = "compact"
+    s param.defaultValue = "Jen hodiny s odjezdy"
     s opts = ##class(%DynamicArray).%New()
-    d opts.%Push("compact")
-    d opts.%Push("full")
-    d opts.%Push("range")
+    d opts.%Push("Jen hodiny s odjezdy")
+    d opts.%Push("Souvislá od první do poslední")
+    d opts.%Push("Vlastní rozsah")
     s param.options = opts
     d arr.%Push(param)
 
-    // Hodiny od/do — relevantní jen pro CASOVA_OSA = range
-    d ..AddNumberParam(arr, "HODINY_OD", "Hodiny od", "4")
-    d ..AddNumberParam(arr, "HODINY_DO", "Hodiny do", "24")
+    // Hodiny od/do — viditelné jen pro Vlastní rozsah; podporují wrap přes půlnoc (např. 22-5).
+    s pOd = ##class(%DynamicObject).%New()
+    s pOd.name         = "HODINY_OD"
+    s pOd.label        = "Hodiny od"
+    s pOd.type         = "number"
+    s pOd.defaultValue = "4"
+    s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
+    d arr.%Push(pOd)
+
+    s pDo = ##class(%DynamicObject).%New()
+    s pDo.name         = "HODINY_DO"
+    s pDo.label        = "Hodiny do"
+    s pDo.type         = "number"
+    s pDo.defaultValue = "23"
+    s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
+    d arr.%Push(pDo)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

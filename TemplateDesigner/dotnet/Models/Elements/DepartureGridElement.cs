@@ -75,7 +75,7 @@ public class DepartureGridElement : ScheduleElementBase
     // ═══════════════════════════════════════════
     public TimeAxisMode TimeAxisMode { get; set; } = TimeAxisMode.Compact;
     public int TimeAxisRangeFrom { get; set; } = 4;
-    public int TimeAxisRangeTo { get; set; } = 24;
+    public int TimeAxisRangeTo { get; set; } = 23;
 
     // ═══════════════════════════════════════════
     // Řádky dat (DataRowHeight je na ScheduleElementBase)
@@ -157,9 +157,9 @@ public class DepartureGridElement : ScheduleElementBase
 
     /// <summary>Rychlý fingerprint layout-affecting properties pro invalidaci cache.</summary>
     private int ComputeLayoutFingerprint() => HashCode.Combine(
-        HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
-        MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount,
-        GroupColumns.Count);
+        HashCode.Combine(HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
+            MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
+        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style));
 
     private GridLayout? ComputeLayout(DataContext? data, float mmToPx = 0f)
     {
@@ -593,13 +593,15 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         // Nakreslí datovou buňku sloupce hodin přes CellRenderer.
+        // Hour je „service hour" (raw z dat, 0..47). Header zobrazuje clock hour = H % 24 —
+        // night extension (24..) se uživateli ukáže jako 0..3 podle hodin zobrazované doby.
         void DrawHourDataCell(float hx, int hour, string? bgColorOverride = null)
         {
             var style = bgColorOverride is not null
                 ? hourDataStyle with { BackgroundColor = bgColorOverride }
                 : hourDataStyle;
             var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledRowH);
-            CellRenderer.DrawCell(ctx, rect, hour.ToString(), style, scale);
+            CellRenderer.DrawCell(ctx, rect, (hour % 24).ToString(), style, scale);
         }
 
         // ── Sloučené záhlaví (Hod + názvy skupin dnů) ────────────────────────
@@ -1024,26 +1026,71 @@ public class DepartureGridElement : ScheduleElementBase
     {
         var hours = timeAxis switch
         {
-            TimeAxisMode.Compact => allHours.OrderBy(h => h).ToList(),
-            TimeAxisMode.Full => Enumerable.Range(0, 24).ToList(),
-            TimeAxisMode.Range => Enumerable.Range(rangeFrom,
-                Math.Max(1, rangeTo - rangeFrom + 1)).ToList(),
+            TimeAxisMode.Compact     => allHours.OrderBy(h => h).ToList(),
+            TimeAxisMode.DataBounded => DataBoundedHours(allHours),
+            TimeAxisMode.Range       => RangeHoursExtended(rangeFrom, rangeTo),
+            TimeAxisMode.Full        => Enumerable.Range(0, 24).ToList(),
             _ => allHours.OrderBy(h => h).ToList()
         };
 
-        // HODINY_OD/DO filtr se aplikuje i v Compact/Full režimu
+        // HODINY_OD/DO filtr se aplikuje i mimo Range mode (zúžení Compact/DataBounded/Full).
+        // V Range mode už jsou hodiny generované přesně z rangeFrom..rangeTo, filtr přeskočit.
         if (timeAxis != TimeAxisMode.Range && (rangeFrom > 0 || rangeTo < 23))
-            hours = hours.Where(h => h >= rangeFrom && h <= rangeTo).ToList();
+        {
+            // Pokud to < from → wrap přes půlnoc: zahrnuje extended hours (24..to+24).
+            // Data hour 27 (= 03:00 následujícího provozního dne) projde filtrem 22→3 jako 27 ∈ [22..27].
+            int hi = rangeTo >= rangeFrom ? rangeTo : rangeTo + 24;
+            hours = hours.Where(h => h >= rangeFrom && h <= hi).ToList();
+        }
 
         return hours;
     }
 
+    /// <summary>Souvislé hodiny od min(data) do max(data) — včetně prázdných v rozsahu.
+    /// Data s extended hours (24..47) přirozeně rozšíří horní mez.</summary>
+    private static List<int> DataBoundedHours(HashSet<int> allHours)
+    {
+        if (allHours.Count == 0) return new List<int>();
+        int min = allHours.Min();
+        int max = allHours.Max();
+        return Enumerable.Range(min, max - min + 1).ToList();
+    }
+
+    /// <summary>Service hours [from..to]. Pokud to &lt; from, wrap přes půlnoc se reprezentuje
+    /// jako extended hours: [from..23] + [24..to+24]. Tj. 22→3 = [22, 23, 24, 25, 26, 27].
+    /// Tyto hodnoty se na header rendrují jako H%24 (např. 27 = „3"), ale v ByHour lookupu zůstávají
+    /// raw — Caché dataset s konvencí extended hours se napáruje 1:1.</summary>
+    private static List<int> RangeHoursExtended(int from, int to)
+    {
+        from = Math.Clamp(from, 0, 23);
+        to   = Math.Clamp(to, 0, 23);
+        if (to >= from)
+            return Enumerable.Range(from, to - from + 1).ToList();
+        // Wrap → extended: 22-5 → [22, 23, 24, 25, 26, 27, 28, 29]
+        // (data lookup byHour[24] → odjezdy v 0:xx následujícího provozního dne)
+        return Enumerable.Range(from, 24 - from)
+            .Concat(Enumerable.Range(24, to + 1))
+            .ToList();
+    }
+
     private static TimeAxisMode ParseTimeAxisMode(string s) => s.ToLowerInvariant() switch
     {
-        "compact" => TimeAxisMode.Compact,
-        "full" => TimeAxisMode.Full,
-        "range" => TimeAxisMode.Range,
-        _ => TimeAxisMode.Compact
+        // Nové popisné labely (varianta A — z Caché AddStandardJRParameters)
+        "jen hodiny s odjezdy"          => TimeAxisMode.Compact,
+        "souvislá od první do poslední"
+            or "souvisla od prvni do posledni" => TimeAxisMode.DataBounded,
+        "vlastní rozsah" or "vlastni rozsah"   => TimeAxisMode.Range,
+        // Staré české labely (backward compat — předchozí iterace tohoto enumu)
+        "souvislá bez mezer"  or "souvisla bez mezer"  => TimeAxisMode.Compact,
+        "souvislá s mezerami" or "souvisla s mezerami" => TimeAxisMode.DataBounded,
+        "daná intervalem"     or "dana intervalem"     => TimeAxisMode.Range,
+        "plný den"            or "plny den"            => TimeAxisMode.Full,
+        // Anglické hodnoty (backward compat pro nejstarší šablony / přímé enum názvy)
+        "compact"     => TimeAxisMode.Compact,
+        "databounded" => TimeAxisMode.DataBounded,
+        "range"       => TimeAxisMode.Range,
+        "full"        => TimeAxisMode.Full,
+        _             => TimeAxisMode.Compact
     };
 
     private string[] WrapHeaderText(string fullText, float availableWidthMm, SKFont font, float mmToPx)
@@ -1110,6 +1157,35 @@ public class DepartureGridElement : ScheduleElementBase
             Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
             Options = EnumPropertyDescriptor.VAlignOptions },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
+
+        // ── Časová osa odjezdů (mapuje na parametry CASOVA_OSA / HODINY_OD / HODINY_DO) ──
+        // Labely jsou popisné, ne legacy žargon. Plný den (0–23) v UI vědomě vynechán — lze docílit přes Vlastní rozsah 0..23.
+        new EnumPropertyDescriptor
+        {
+            Label = "Časová osa", Group = "Časová osa",
+            Get = () => TimeAxisMode, Set = v => TimeAxisMode = (TimeAxisMode)v,
+            Options =
+            [
+                ("Jen hodiny s odjezdy",          (object)TimeAxisMode.Compact),
+                ("Souvislá od první do poslední", (object)TimeAxisMode.DataBounded),
+                ("Vlastní rozsah",                (object)TimeAxisMode.Range),
+            ]
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Hodiny od", Group = "Časová osa",
+            Get = () => TimeAxisRangeFrom, Set = v => TimeAxisRangeFrom = Math.Clamp((int)v, 0, 23),
+            Min = 0, Max = 23, Format = "0", Unit = "h",
+            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Hodiny do", Group = "Časová osa",
+            Get = () => TimeAxisRangeTo, Set = v => TimeAxisRangeTo = Math.Clamp((int)v, 0, 23),
+            Min = 0, Max = 23, Format = "0", Unit = "h",
+            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
+        },
+
         new BoolPropertyDescriptor  { Label = "Hodiny u každé sk.",  Group = "Odjezdy", Get = () => HourColumnPerGroup,        Set = v => HourColumnPerGroup = v },
         new FloatPropertyDescriptor { Label = "Max skupin",          Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0", Unit = "(0=∞)" },
         new FloatPropertyDescriptor { Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },

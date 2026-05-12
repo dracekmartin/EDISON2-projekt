@@ -17,6 +17,8 @@ public partial class PropertiesPanel : UserControl
     private Action<IDesignerCommand>? _execute;
     private Action?                   _invalidate;
     private TemplateElement?          _currentElement;
+    private IReadOnlyList<PropertyDescriptor>? _currentDescriptors;
+    private bool                      _hasVisibleWhen;
 
     // Příznak zabraňující vzniku commandů při programatickém přestavění panelu
     private bool _suppressChanges;
@@ -45,20 +47,27 @@ public partial class PropertiesPanel : UserControl
     /// </summary>
     public void ShowDescriptors(IReadOnlyList<PropertyDescriptor> descriptors)
     {
+        _currentDescriptors = descriptors;
+        _hasVisibleWhen = descriptors.Any(d => d.VisibleWhen is not null);
+
         _suppressChanges = true;
         ContentPanel.Children.Clear();
         _suppressChanges = false;
 
         if (descriptors.Count == 0) return;
 
+        // Filtruj skryté (VisibleWhen() vrátí false). Null VisibleWhen = vždy viditelný.
+        var visible = descriptors.Where(d => d.VisibleWhen is null || d.VisibleWhen()).ToList();
+        if (visible.Count == 0) return;
+
         // Stable sort by group: skupiny v pořadí prvního výskytu, řádky uvnitř skupiny
         // zachovají původní pořadí. Brání duplikovaným hlavičkám když descriptory přicházejí
         // z různých helperů a deklarační pořadí groups není sjednocené.
         var groupOrder = new Dictionary<string, int>();
-        for (int i = 0; i < descriptors.Count; i++)
-            groupOrder.TryAdd(descriptors[i].Group, groupOrder.Count);
+        for (int i = 0; i < visible.Count; i++)
+            groupOrder.TryAdd(visible[i].Group, groupOrder.Count);
 
-        var sorted = descriptors
+        var sorted = visible
             .Select((d, i) => (d, i))
             .OrderBy(x => groupOrder[x.d.Group])
             .ThenBy(x => x.i)
@@ -559,9 +568,19 @@ public partial class PropertiesPanel : UserControl
         DockPanel.SetDock(label, Dock.Left);
         panel.Children.Add(label);
 
-        var combo = new ComboBox { FontSize = 11 };
+        var combo = new ComboBox { FontSize = 11, MinWidth = 220 };
         foreach (var (optLabel, optValue) in ed.Options)
             combo.Items.Add(new ComboBoxItem { Content = optLabel, Tag = optValue });
+
+        // Dropdown by se měl auto-fit širším než klade prostor pro klid celého optLabelu při otevření
+        combo.Loaded += (_, _) =>
+        {
+            double max = 0;
+            foreach (ComboBoxItem it in combo.Items)
+                if (it.ActualWidth > max) max = it.ActualWidth;
+            if (max > combo.ActualWidth - 30) // pokud labely širší než closed combobox
+                combo.SetValue(ComboBox.MinWidthProperty, max + 40);
+        };
 
         // Nastav aktuální hodnotu PŘED přidáním handleru
         object current = ed.Get();
@@ -606,7 +625,14 @@ public partial class PropertiesPanel : UserControl
     }
 
     private void Commit(string label, object? oldVal, object? newVal, Action<object?> apply)
-        => _execute?.Invoke(new SetPropertyCommand(label, oldVal, newVal, apply));
+    {
+        _execute?.Invoke(new SetPropertyCommand(label, oldVal, newVal, apply));
+
+        // Pokud má panel deskriptory s VisibleWhen, rebuildni — změna jedné hodnoty
+        // mohla ovlivnit viditelnost jiných řádků (např. HodinyOd/Do závisí na TimeAxisMode).
+        if (_hasVisibleWhen && _currentDescriptors is not null)
+            Dispatcher.BeginInvoke(new Action(() => ShowDescriptors(_currentDescriptors)));
+    }
 
     private static DockPanel MakeRow() => new() { Margin = new Thickness(0, 1, 0, 1), LastChildFill = true };
 

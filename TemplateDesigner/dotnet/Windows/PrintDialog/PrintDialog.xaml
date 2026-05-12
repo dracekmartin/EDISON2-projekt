@@ -7,40 +7,13 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize">
     <Window.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-
-        <DataTemplate x:Key="BoolParamTemplate">
-            <StackPanel Orientation="Horizontal" Margin="0,0,16,4" VerticalAlignment="Center">
-                <CheckBox Content="{Binding Label}"
-                          IsChecked="{Binding Value, Mode=TwoWay}"
-                          VerticalAlignment="Center" FontSize="12"/>
-            </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate x:Key="EnumParamTemplate">
-            <StackPanel Orientation="Horizontal" Margin="0,0,16,4" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                           VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
-                <ComboBox Width="120" FontSize="12"
-                          ItemsSource="{Binding Options}"
-                          SelectedItem="{Binding Value, Mode=TwoWay}"/>
-            </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate x:Key="StringParamTemplate">
-            <StackPanel Orientation="Horizontal" Margin="0,0,16,4" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                           VerticalAlignment="Center" Margin="0,0,6,0" FontSize="12"/>
-                <TextBox Width="120" FontSize="12"
-                         Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         VerticalAlignment="Center"/>
-            </StackPanel>
-        </DataTemplate>
-
-        <local:ParameterTemplateSelector x:Key="ParamTemplateSelector"
-            BoolTemplate="{StaticResource BoolParamTemplate}"
-            EnumTemplate="{StaticResource EnumParamTemplate}"
-            DefaultTemplate="{StaticResource StringParamTemplate}"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Sdílené šablony parametrů (preview lišta v MainWindow + tento dialog používají stejné). -->
+                <ResourceDictionary Source="/Controls/ParameterTemplates.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        </ResourceDictionary>
     </Window.Resources>
 
     <DockPanel Margin="16">

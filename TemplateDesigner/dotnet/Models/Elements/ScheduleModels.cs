@@ -7,7 +7,20 @@ namespace TemplateDesigner.Models.Elements;
 public enum TypPoznamky { Text, NegativniZnacka, SpecialniZnak }
 public enum TypAnotace  { Text, NegativniZnacka, SpecialniZnak }
 
-public enum TimeAxisMode { Compact, Full, Range }
+/// <summary>
+/// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
+/// </summary>
+public enum TimeAxisMode
+{
+    /// <summary>Souvislá bez mezer: jen hodiny s daty (default, kompaktní).</summary>
+    Compact,
+    /// <summary>Souvislá s mezerami: od první hodiny s daty do poslední, včetně prázdných hodin v rozsahu.</summary>
+    DataBounded,
+    /// <summary>Daná intervalem: HODINY_OD..HODINY_DO (uživatel zadá). Podporuje wrap přes půlnoc (Do &lt; Od).</summary>
+    Range,
+    /// <summary>Plný den (všech 24 hodin 0–23).</summary>
+    Full
+}
 
 
 

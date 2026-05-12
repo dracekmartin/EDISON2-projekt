@@ -52,9 +52,8 @@ public class PrintDialogViewModel : EDViewModel
         foreach (var p in parameters)
             _paramValues[p.Name] = p.GetDefaultTyped();
 
-        // Vytvoření UI kontrolek pro parametry
-        foreach (var p in parameters)
-            Parameters.Add(new ParameterControlVM(p, _paramValues, null));
+        // Helper se postará o auto-refresh visibility + initial check (sjednoceno s preview lištou).
+        ParameterControlVM.Init(Parameters, parameters, _paramValues);
 
         HasParameters = Parameters.Count > 0;
     }

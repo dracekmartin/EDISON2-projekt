@@ -8,157 +8,118 @@
         WindowState="Maximized"
         Closing="Window_Closing">
     <Window.Resources>
-        <Style x:Key="PanelHeader" TargetType="TextBlock">
-            <Setter Property="Background"   Value="#F0F0F0"/>
-            <Setter Property="Padding"      Value="8,6"/>
-            <Setter Property="FontWeight"   Value="SemiBold"/>
-            <Setter Property="FontSize"     Value="12"/>
-            <Setter Property="Foreground"   Value="#333333"/>
-        </Style>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- Sdílené šablony parametrů (preview lišta + PrintDialog používají stejné). -->
+                <ResourceDictionary Source="/Controls/ParameterTemplates.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+            <Style x:Key="PanelHeader" TargetType="TextBlock">
+                <Setter Property="Background"   Value="#F0F0F0"/>
+                <Setter Property="Padding"      Value="8,6"/>
+                <Setter Property="FontWeight"   Value="SemiBold"/>
+                <Setter Property="FontSize"     Value="12"/>
+                <Setter Property="Foreground"   Value="#333333"/>
+            </Style>
+            <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
-        <!-- ── Section item DataTemplate ── -->
-        <DataTemplate x:Key="SectionItemTemplate" DataType="{x:Type local:SectionVM}">
-            <Border Margin="0,2,0,0"
-                    Padding="8,5,4,5"
-                    CornerRadius="3"
-                    Cursor="Hand"
-                    Tag="{Binding}">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background"       Value="#F5F5F5"/>
-                        <Setter Property="BorderBrush"      Value="#D2D2D2"/>
-                        <Setter Property="BorderThickness"  Value="1"/>
-                        <Style.Triggers>
-                            <!-- Dynamic (non-active) -->
-                            <MultiDataTrigger>
-                                <MultiDataTrigger.Conditions>
-                                    <Condition Binding="{Binding IsDynamic}" Value="True"/>
-                                    <Condition Binding="{Binding IsActive}"  Value="False"/>
-                                </MultiDataTrigger.Conditions>
-                                <Setter Property="Background"  Value="#EAF3FF"/>
-                                <Setter Property="BorderBrush" Value="#B4D2F5"/>
-                            </MultiDataTrigger>
-                            <!-- Active -->
-                            <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                <Setter Property="Background"      Value="#D2E6FF"/>
-                                <Setter Property="BorderBrush"     Value="#2196F3"/>
-                                <Setter Property="BorderThickness" Value="2"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <Border.ContextMenu>
-                    <ContextMenu DataContext="{Binding PlacementTarget.Tag,
-                                  RelativeSource={RelativeSource Self}}">
-                        <MenuItem Header="Vlastnosti sekce…"
-                                  Command="{Binding ShowPropertiesCommand}"/>
-                        <MenuItem Header="Přesunout nahoru"
-                                  Command="{Binding MoveUpCommand}"/>
-                        <MenuItem Header="Přesunout dolů"
-                                  Command="{Binding MoveDownCommand}"/>
-                        <MenuItem Header="Uložit jako šablonu…"
-                                  Command="{Binding SaveTemplateCommand}"/>
-                        <Separator/>
-                        <MenuItem Header="Smazat sekci"
-                                  Foreground="DarkRed"
-                                  Command="{Binding DeleteCommand}"/>
-                    </ContextMenu>
-                </Border.ContextMenu>
-                <DockPanel LastChildFill="True">
-                    <Button DockPanel.Dock="Right"
-                            Content="▼" Width="18" Height="16" FontSize="8"
-                            Padding="0" Margin="2,0,0,0"
-                            VerticalAlignment="Center"
-                            Command="{Binding MoveDownCommand}"
-                            ToolTip="Přesunout dolů (Ctrl+Shift+↓)"/>
-                    <Button DockPanel.Dock="Right"
-                            Content="▲" Width="18" Height="16" FontSize="8"
-                            Padding="0" Margin="2,0,0,0"
-                            VerticalAlignment="Center"
-                            Command="{Binding MoveUpCommand}"
-                            ToolTip="Přesunout nahoru (Ctrl+Shift+↑)"/>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="{Binding Name}"
-                                   FontSize="12"
-                                   TextTrimming="CharacterEllipsis">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="FontWeight" Value="Normal"/>
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                            <Setter Property="FontWeight" Value="SemiBold"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                        <TextBlock Text="{Binding Subtitle}"
-                                   FontSize="10"
-                                   Foreground="Gray"
-                                   TextTrimming="CharacterEllipsis">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding HasSubtitle}" Value="False">
-                                            <Setter Property="Visibility" Value="Collapsed"/>
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
-                    </StackPanel>
-                </DockPanel>
-            </Border>
-        </DataTemplate>
+            <!-- ── Section item DataTemplate ── -->
+            <DataTemplate x:Key="SectionItemTemplate" DataType="{x:Type local:SectionVM}">
+                <Border Margin="0,2,0,0"
+                        Padding="8,5,4,5"
+                        CornerRadius="3"
+                        Cursor="Hand"
+                        Tag="{Binding}">
+                    <Border.Style>
+                        <Style TargetType="Border">
+                            <Setter Property="Background"       Value="#F5F5F5"/>
+                            <Setter Property="BorderBrush"      Value="#D2D2D2"/>
+                            <Setter Property="BorderThickness"  Value="1"/>
+                            <Style.Triggers>
+                                <!-- Dynamic (non-active) -->
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding IsDynamic}" Value="True"/>
+                                        <Condition Binding="{Binding IsActive}"  Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Background"  Value="#EAF3FF"/>
+                                    <Setter Property="BorderBrush" Value="#B4D2F5"/>
+                                </MultiDataTrigger>
+                                <!-- Active -->
+                                <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                    <Setter Property="Background"      Value="#D2E6FF"/>
+                                    <Setter Property="BorderBrush"     Value="#2196F3"/>
+                                    <Setter Property="BorderThickness" Value="2"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Border.Style>
+                    <Border.ContextMenu>
+                        <ContextMenu DataContext="{Binding PlacementTarget.Tag,
+                                      RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="Vlastnosti sekce…"
+                                      Command="{Binding ShowPropertiesCommand}"/>
+                            <MenuItem Header="Přesunout nahoru"
+                                      Command="{Binding MoveUpCommand}"/>
+                            <MenuItem Header="Přesunout dolů"
+                                      Command="{Binding MoveDownCommand}"/>
+                            <MenuItem Header="Uložit jako šablonu…"
+                                      Command="{Binding SaveTemplateCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Smazat sekci"
+                                      Foreground="DarkRed"
+                                      Command="{Binding DeleteCommand}"/>
+                        </ContextMenu>
+                    </Border.ContextMenu>
+                    <DockPanel LastChildFill="True">
+                        <Button DockPanel.Dock="Right"
+                                Content="▼" Width="18" Height="16" FontSize="8"
+                                Padding="0" Margin="2,0,0,0"
+                                VerticalAlignment="Center"
+                                Command="{Binding MoveDownCommand}"
+                                ToolTip="Přesunout dolů (Ctrl+Shift+↓)"/>
+                        <Button DockPanel.Dock="Right"
+                                Content="▲" Width="18" Height="16" FontSize="8"
+                                Padding="0" Margin="2,0,0,0"
+                                VerticalAlignment="Center"
+                                Command="{Binding MoveUpCommand}"
+                                ToolTip="Přesunout nahoru (Ctrl+Shift+↑)"/>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="{Binding Name}"
+                                       FontSize="12"
+                                       TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="FontWeight" Value="Normal"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsActive}" Value="True">
+                                                <Setter Property="FontWeight" Value="SemiBold"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding Subtitle}"
+                                       FontSize="10"
+                                       Foreground="Gray"
+                                       TextTrimming="CharacterEllipsis">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasSubtitle}" Value="False">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+            </DataTemplate>
 
-        <!-- ── Parameter DataTemplates ── -->
-        <DataTemplate x:Key="BoolParamTemplate">
-            <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
-                <CheckBox Content="{Binding Label}"
-                          IsChecked="{Binding Value, Mode=TwoWay}"
-                          VerticalAlignment="Center" FontSize="11"/>
-            </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate x:Key="EnumParamTemplate">
-            <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                           VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
-                <ComboBox Width="90" FontSize="11"
-                          ItemsSource="{Binding Options}"
-                          SelectedItem="{Binding Value, Mode=TwoWay}"/>
-            </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate x:Key="StringParamTemplate">
-            <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                           VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
-                <TextBox Width="80" FontSize="11"
-                         Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         VerticalAlignment="Center"/>
-            </StackPanel>
-        </DataTemplate>
-
-        <DataTemplate x:Key="CommitStringParamTemplate">
-            <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                           VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
-                <TextBox Width="80" FontSize="11"
-                         Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
-                         VerticalAlignment="Center"/>
-                <Button Content="Načíst" Command="{Binding CommitCommand}"
-                        FontSize="10" Padding="6,1" Margin="4,0,0,0"
-                        VerticalAlignment="Center"/>
-            </StackPanel>
-        </DataTemplate>
-
-        <local:ParameterTemplateSelector x:Key="ParamTemplateSelector"
-            BoolTemplate="{StaticResource BoolParamTemplate}"
-            EnumTemplate="{StaticResource EnumParamTemplate}"
-            CommitStringTemplate="{StaticResource CommitStringParamTemplate}"
-            DefaultTemplate="{StaticResource StringParamTemplate}"/>
+            <!-- Parameter DataTemplates jsou ve sdílené ResourceDictionary (viz MergedDictionaries výše).
+                 Klíče: ParamBoolTemplate, ParamEnumTemplate, ParamStringTemplate, ParamCommitStringTemplate, ParamTemplateSelector. -->
+        </ResourceDictionary>
     </Window.Resources>
 
     <DockPanel LastChildFill="True">

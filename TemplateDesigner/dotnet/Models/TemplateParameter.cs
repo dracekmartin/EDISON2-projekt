@@ -21,6 +21,13 @@ public class TemplateParameter
     /// <summary>Možné hodnoty pro typ "enum".</summary>
     public List<string>? Options { get; set; }
 
+    /// <summary>
+    /// Podmínka viditelnosti parametru. Formát „NázevParametru=Hodnota".
+    /// Null nebo prázdný = vždy viditelný. Vyhodnocuje se proti aktuálním hodnotám ostatních parametrů.
+    /// Příklad: „CASOVA_OSA=Vlastní rozsah" — HODINY_OD/DO jsou viditelné jen v Range módu.
+    /// </summary>
+    public string? VisibleWhen { get; set; }
+
     /// <summary>Vrátí DefaultValue převedenou na typovanou hodnotu dle Type.</summary>
     public object? GetDefaultTyped() => Type switch
     {
