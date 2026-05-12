@@ -16,9 +16,32 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 ## 🎯 Aktuální focus
 
 1. **Fáze A.2 — Zákaznické úpravy zastávkového JŘ** (z helpdesku) ⬅️ **AKTUÁLNÍ PRIORITA** — projít a uzavřít suspended tickety od TRANSDEV / KORID / DPKV. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-2. **Caché Migrace** — Wave 1 (UserPreferences) následuje po A.2.
+2. **Release readiness pro testovací nasazení** — minimální infrastruktura aby šel TemplateDesigner dát zákazníkovi k testu (viz níže).
+3. **Caché Migrace** — Wave 1 (UserPreferences) následuje po A.2.
 
 > Fáze A (1:1 šablona + review s kolegy) ✅ hotovo — review s kolegy proběhlo, výstupem je sada požadavků v Fázi A.2. Hotové fáze (Fáze A, B0.5, sjednocení Header/Data zón, per-template prefs, UX vyladění) viz **Archiv** na konci dokumentu.
+
+---
+
+## 🚀 Release readiness — minimální infrastruktura pro testovací nasazení
+
+Před nasazením prvnímu zákazníkovi je třeba doplnit základ workflow, aby uživatel věděl s čím pracuje a kde má data uložená. Aktuálně je vše file-based + parametr LINKA_ID se píše ručně.
+
+| Krok | Téma | Pracnost | Stav |
+|---|---|---|---|
+| **R1** | **Agenda + Linka picker UX** — nové Caché API `AgendaAPI.GetAvailableInstances` (pro MHD vrátí seznam linek: ID, Číslo, Název, Platnost). TD dialog se search/filter, indicator v toolbaru „[Agenda] — [Linka XYZ — Název]". Zrušit ruční psaní LINKA_ID. | 1 den | ⏳ |
+| **R2** | **Template storage v Caché** — nová `ALVA.TemplateDesigner.Templates` třída (analogie legacy `ALVA.LIBRARY.Form.SaveParams`). Per-IDFa storage, metadata (autor, created, modified). TD Soubor → Otevřít/Uložit dialog se 2 záložkami: „Z Caché" (default) + „Z disku" (legacy fallback). Mini-CRUD: Smazat, Přejmenovat. | 2 dny | ⏳ |
+| **R3** | **Section templates v Caché** *(nice-to-have pro v1)* — stejný pattern jako R2 pro `section-templates/`. Pokud release tlačí, ponechat file-based. | 0.5 dne | ⏳ |
+| **R4** | **Polish před release** — confirmation dialogy, lepší error messages při Caché failure, status text v toolbaru, friendly hlášky místo „Žádná data z Caché". | 0.5 dne | ⏳ |
+
+**Celkem ~4 dny** pro stav „dáme to zákazníkovi a má základní workflow".
+
+**Otevřené otázky před implementací (konzultace s kolegy):**
+- Existuje v M-line legacy nějaká univerzální Template storage knihovna v Caché, nebo děláme od nuly? Stálo by za to ověřit pattern (analogie `WindowStatePersistence` × `ALVA.LIBRARY.Form.SaveParams`).
+- Linka picker: ID + Číslo + Název + Platnost stačí, nebo i Dopravce / TypLinkyID / Verejne číslo?
+- Templates **per-IDFa** (oddělené dopravce) nebo globální? Per-MLP × IDFa (jako WindowStatePersistence) by bylo standard.
+
+**Vztah ke Caché Migrace:** R2 je „rychlá MVP varianta" — Wave 3 (níže) je plné řešení s versioningem, migrátorem, rollback. R2 doručí základní save/load v Caché, Wave 3 to později nahradí čistší architekturou.
 
 ---
 
