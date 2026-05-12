@@ -13,6 +13,17 @@ public class LocalPrefs
 {
     public string? LastIdfa { get; set; }
 
+    // Uživatel → Možnosti (replikuje legacy frmNoMDI checkboxy). Pro EDISONMAIN2 zatím
+    // bez behaviorálního efektu kromě LoadBoards (řídí viditelnost WebView2 s nástěnkou).
+    public bool ShowWindowsAsDialogs { get; set; }
+    public bool ShowMiniApps { get; set; }
+    public bool LoadBoards { get; set; } = true;
+
+    // Styl — user font. FontApplied=true → font se aplikuje na MainWindow při startu/apply.
+    public string? FontFamily { get; set; }
+    public double? FontSize { get; set; }
+    public bool FontApplied { get; set; }
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,

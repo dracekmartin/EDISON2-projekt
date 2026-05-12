@@ -5,12 +5,15 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Media;
+// Aliasy proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
+using Application = System.Windows.Application;
+using FontFamily = System.Windows.Media.FontFamily;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2.Windows.EdisonMainWindow.Processes;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -23,8 +26,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     class EdisonMainViewModel : EDViewModel
     {
         private readonly IModuleTreeGetter _treeGetter;
-        private readonly IProcessLauncher _processLauncher;
         private readonly Func<Lic?> _licenceLoader;
+        private readonly Action _closeAllWindows;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -41,9 +44,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand LoginAsAnotherUserCommand { get; }
         public ICommand ShowUserEditCommand { get; }
         public ICommand ShowBgTasksCommand { get; }
-        public ICommand ToggleDialogModeCommand { get; }
-        public ICommand ToggleMiniAppsCommand { get; }
-        public ICommand ToggleLoadBoardsCommand { get; }
         public ICommand ResetFormsCommand { get; }
         // Nástroje menu
         public ICommand RefreshLicenseCommand { get; }
@@ -54,55 +54,50 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Nápověda menu
         public ICommand ShowInfoCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
-        // Styl menu
-        public ICommand ApplyStyleCommand { get; }
+        // Styl menu — SelectFont je akce, FontApplied je toggle (níže jako bool property).
         public ICommand SelectFontCommand { get; }
 
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
             IModuleTreeGetter treeService,
-            IProcessLauncher processService,
-            Func<Lic?> licenceLoader)
+            Func<Lic?> licenceLoader,
+            Action closeAllWindows)
         {
             _treeGetter = treeService;
-            _processLauncher = processService;
             _licenceLoader = licenceLoader;
+            _closeAllWindows = closeAllWindows;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show("EDListTestWindow"));
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
-            CloseAllCommand          = Command(_processLauncher.CloseAll);
+            CloseAllCommand          = Command(_closeAllWindows);
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);
-            RunEdisonCopyCommand          = Command(NotYetImplemented);
+            RunEdisonCopyCommand          = Command(RunEdisonCopy);
             ExitCommand                   = Command(ExitApplication);
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = Command(NotYetImplemented);
-            ShowUserEditCommand           = Command(NotYetImplemented);
-            ShowBgTasksCommand            = Command(NotYetImplemented);
-            ToggleDialogModeCommand       = Command(NotYetImplemented);
-            ToggleMiniAppsCommand         = Command(NotYetImplemented);
-            ToggleLoadBoardsCommand       = Command(NotYetImplemented);
+            ShowUserEditCommand           = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
+            ShowBgTasksCommand            = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             ResetFormsCommand             = Command(ResetForms);
 
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
-            RefreshLicenseCommand         = Command(NotYetImplemented);
-            ShowUsersLocksCommand         = Command(() => LaunchLegacyForm("USERS.exe", "ALVA.USERS.formUSERSLocks", "Správa zámků"));
-            ShowUsersActivityCommand      = Command(() => LaunchLegacyForm("USERS.exe", "ALVA.USERS.formUSERSActivity", "Aktivita uživatelů"));
-            ShowLanguageSettingsCommand   = Command(NotYetImplemented);
-            SendSystemLogCommand          = Command(NotYetImplemented);
+            RefreshLicenseCommand         = Command(RefreshLicense);
+            ShowUsersLocksCommand         = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSLocks"));
+            ShowUsersActivityCommand      = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSActivity"));
+            ShowLanguageSettingsCommand   = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
+            SendSystemLogCommand          = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
             // Nápověda menu
             ShowInfoCommand               = Command(ShowAppInfo);
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
 
             // Styl menu
-            ApplyStyleCommand             = Command(NotYetImplemented);
-            SelectFontCommand             = Command(NotYetImplemented);
+            SelectFontCommand             = Command(SelectFont);
 
             TopLevelModules = [];
 
@@ -191,7 +186,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 OnPropertyChanged(nameof(Namespace));
                 OnPropertyChanged(nameof(Idfa));
                 OnPropertyChanged(nameof(WindowTitle));
-                _processLauncher.CloseAll();
+                _closeAllWindows();
                 MLRest!.DataNamespace = Namespace;
                 MLRest!.Idfa = Idfa;
 
@@ -202,7 +197,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 var outcome = LicenceAcquireOutcome.Accepted;
                 if (originalLicence != null)
                     (outcome, newLicence) = LicenceVerifier.TryAcquireSession(
-                        MLRest!, _licenceLoader, _services.IsAdmin, PopupDisplayer);
+                        MLRest!, _licenceLoader, _services.IsAdmin, PopupDisplayer, WindowNavigator);
 
                 if (outcome == LicenceAcquireOutcome.Accepted)
                 {
@@ -235,21 +230,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private void OpenModule(IModule module)
         {
-            if (module is ExecutableModule executableModule)
-                _processLauncher.Launch(executableModule);
-        }
-
-        // Pro legacy moduly, na které neukazuje žádný uzel module-tree (typicky systémové
-        // formy v USERS.exe). Stejný kontrakt jako ProcessLauncher.Launch — propaguje
-        // shellův GUID, aby modul sdílel ACTIVITY zámek.
-        private void LaunchLegacyForm(string exePath, string formFqn, string displayName)
-        {
-            _processLauncher.Launch(new ExecutableModule
-            {
-                DisplayedName  = displayName,
-                ExecutablePath = exePath,
-                FormName       = formFqn,
-            });
+            if (module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em)
+                WindowNavigator.ShowLegacy(path, em.FormName);
         }
 
         private void ExitApplication()
@@ -265,6 +247,116 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Reset persistovaných pozic/velikostí oken (per MLP × IDFa) — legacy endpoint.
             MLRest!.QueryOrThrow("ALVA.LIBRARY.Form", "ResetSettings", new CVar());
             PopupDisplayer.Info("Nastavení oken bylo obnoveno. Změna se projeví po jejich příštím otevření.");
+        }
+
+        private static void RunEdisonCopy()
+        {
+            var exe = Process.GetCurrentProcess().MainModule?.FileName;
+            if (string.IsNullOrEmpty(exe)) return;
+            Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
+        }
+
+        private void RefreshLicense()
+        {
+            var fresh = _licenceLoader();
+            _services.ActiveLicence = fresh;
+            LoadAndFilterTree();
+            PopupDisplayer.Info("Licence byla aktualizována.");
+        }
+
+        // Uživatel → Možnosti — toggles uložené do LocalPrefs. Setter persistuje a notifikuje.
+        // ShowWindowsAsDialogs a ShowMiniApps zatím bez behaviorálního efektu (EDISONMAIN2
+        // nemá miniaplikace, dialog mode nikdo nečte) — flagy se ukládají pro budoucnost.
+        public bool ShowWindowsAsDialogs
+        {
+            get => LocalPrefs.Current.ShowWindowsAsDialogs;
+            set
+            {
+                if (LocalPrefs.Current.ShowWindowsAsDialogs == value) return;
+                LocalPrefs.Current.ShowWindowsAsDialogs = value;
+                LocalPrefs.Current.Save();
+                OnPropertyChanged();
+            }
+        }
+
+        public bool ShowMiniApps
+        {
+            get => LocalPrefs.Current.ShowMiniApps;
+            set
+            {
+                if (LocalPrefs.Current.ShowMiniApps == value) return;
+                LocalPrefs.Current.ShowMiniApps = value;
+                LocalPrefs.Current.Save();
+                OnPropertyChanged();
+            }
+        }
+
+        public bool LoadBoards
+        {
+            get => LocalPrefs.Current.LoadBoards;
+            set
+            {
+                if (LocalPrefs.Current.LoadBoards == value) return;
+                LocalPrefs.Current.LoadBoards = value;
+                LocalPrefs.Current.Save();
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(BoardsVisibility));
+            }
+        }
+
+        public Visibility BoardsVisibility => LoadBoards ? Visibility.Visible : Visibility.Collapsed;
+
+        // Styl → Použít — aplikuje uložený font na hlavní okno (přes inherited FontFamily/FontSize).
+        public bool FontApplied
+        {
+            get => LocalPrefs.Current.FontApplied;
+            set
+            {
+                if (LocalPrefs.Current.FontApplied == value) return;
+                LocalPrefs.Current.FontApplied = value;
+                LocalPrefs.Current.Save();
+                OnPropertyChanged();
+                ApplyFontToMainWindow();
+            }
+        }
+
+        // Styl → Zvolený font — WinForms FontDialog (jediný standardní picker dostupný v .NET).
+        private void SelectFont()
+        {
+            using var dialog = new System.Windows.Forms.FontDialog();
+            if (!string.IsNullOrEmpty(LocalPrefs.Current.FontFamily))
+            {
+                try
+                {
+                    dialog.Font = new System.Drawing.Font(
+                        LocalPrefs.Current.FontFamily,
+                        (float)(LocalPrefs.Current.FontSize ?? 12));
+                }
+                catch { /* nepřežijeme nepoužitelný font — picker použije default */ }
+            }
+            if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+            LocalPrefs.Current.FontFamily = dialog.Font.FontFamily.Name;
+            LocalPrefs.Current.FontSize = dialog.Font.Size;
+            LocalPrefs.Current.Save();
+            if (FontApplied) ApplyFontToMainWindow();
+        }
+
+        // Public — volá App.xaml.cs po Show() pro startup-time aplikaci podle persistovaných LocalPrefs.
+        public static void ApplyFontToMainWindow()
+        {
+            var window = Application.Current?.MainWindow;
+            if (window is null) return;
+
+            if (LocalPrefs.Current.FontApplied && !string.IsNullOrEmpty(LocalPrefs.Current.FontFamily))
+            {
+                window.FontFamily = new FontFamily(LocalPrefs.Current.FontFamily);
+                if (LocalPrefs.Current.FontSize is { } size) window.FontSize = size;
+            }
+            else
+            {
+                window.ClearValue(Window.FontFamilyProperty);
+                window.ClearValue(Window.FontSizeProperty);
+            }
         }
 
         private void OpenWebUrl(string url)

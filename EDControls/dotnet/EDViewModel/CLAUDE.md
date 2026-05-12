@@ -13,8 +13,8 @@ integrovaný s `EDFooter`.
 | `AsyncRelayCommand.cs` | Async verze — pro `async Task` handlery. CanExecute false během běhu (zabraňuje double-clicku). |
 | `EDAction.cs` | Model jedné akce pro toolbar/menu/klávesovou zkratku (label, ikona, klávesa, příkaz). |
 | `EDServices.cs` | DI kontejner: `IMLRest`, `IWindowNavigator`, `IPopupDisplayer`, `ActiveLicence`, `IsAdmin`. Singleton `EDServices.Current`. |
-| `IWindowNavigator.cs` | Interface pro otevírání oken (Show/ShowDialog s názvem třídy). |
-| `ReflectionWindowNavigator.cs` | Implementace — hledá typ okna reflexí, vytváří přes `Activator.CreateInstance`, automaticky volá `vm.AttachToWindow(window)` před Show. |
+| `IWindowNavigator.cs` | Interface pro otevírání oken (WPF Show/ShowDialog + legacy WinForms ShowLegacy/ShowLegacyAndWait + CloseAllLegacy). |
+| `WindowNavigator.cs` | Implementace — WPF přes reflexi + `Activator.CreateInstance` (automaticky volá `vm.AttachToWindow(window)` před Show). Legacy přes `EDISONMAIN2API.FormToRunGetter` 10-arg kontrakt; trackuje child procesy, kill na `CloseAllLegacy`. |
 | `IPopupDisplayer.cs` | Interface pro dialogy (`Confirm`, `Info`, `ConfirmClose`, `Error`). |
 | `PopupDisplayer.cs` | Implementace — zobrazí `EDPopup` / `EDErrorPopup` s aktivním oknem jako owner. |
 | `EDWindowInput.cs` | Bázová třída pro vstupní data předávaná do modálních oken. |
@@ -36,7 +36,7 @@ integrovaný s `EDFooter`.
 | `protected RelayCommand<T> Command<T>(Action<T>, canExecute?)` | Generická varianta `Command()`. |
 | `protected AsyncRelayCommand CommandAsync(Func<Task>, canExecute?)` | Pro `async Task` handlery — vyhni se `async void`. Během běhu tasku `CanExecute` vrací false (brání double-clicku). |
 | `protected virtual string? PersistedFormId` | FormID pro perzistenci stavu okna. **Default odvozuje z názvu VM** (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`). Override na `null` pro opt-out. |
-| `public void AttachToWindow(Window)` | Volat **před** `Show()`/`ShowDialog()` — registruje klávesy + persistenci stavu okna. `ReflectionWindowNavigator` volá automaticky pro Show/ShowDialog; composition-root v App.xaml.cs musí volat ručně pro shell. |
+| `public void AttachToWindow(Window)` | Volat **před** `Show()`/`ShowDialog()` — registruje klávesy + persistenci stavu okna. `WindowNavigator` volá automaticky pro Show/ShowDialog; composition-root v App.xaml.cs musí volat ručně pro shell. |
 | `protected virtual void OnOk()` | Přepiš pro validaci. Zavolej `base.OnOk()` nebo `CloseDialog(true)` pro potvrzení. Bez volání base okno zůstane otevřené. |
 | `protected virtual void OnAdd/OnEdit/OnDelete()` | Přepiš pro obsluhu standardních CRUD akcí. Ve výchozím stavu nedělají nic. |
 | `protected void CloseDialog(bool? result)` | Vyvolá `RequestClose`. Použitelné z jakékoliv metody, nejen z `OnOk`. |
@@ -48,7 +48,7 @@ integrovaný s `EDFooter`.
 ### Konstruktory
 
 ```csharp
-// Bezparametrický — čte z EDServices.Current (pro okna vytvářená přes ReflectionWindowNavigator)
+// Bezparametrický — čte z EDServices.Current (pro okna vytvářená přes WindowNavigator)
 public EDViewModel() : this(EDServices.Current) { }
 
 // Explicitní — pro DI v testech nebo composition-root ViewModelech
@@ -69,7 +69,7 @@ public EDViewModel(EDServices services) { ... }
 **Volá se automaticky:**
 
 - Pro okna otevřená přes `WindowNavigator.Show(...)` / `ShowDialog(...)` —
-  `ReflectionWindowNavigator.CreateWindow` zavolá po vytvoření instance.
+  `WindowNavigator.CreateWindow` zavolá po vytvoření instance.
 - Pro shell okno (`EdisonMainWindow`) — App.xaml.cs volá ručně mezi
   `new EdisonMainWindow { DataContext = vm }` a `wnd.Show()`.
 

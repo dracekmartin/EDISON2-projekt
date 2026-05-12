@@ -22,9 +22,9 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
   `Refused` umožňuje context-specifický popup.
 - **Strom modulů** — `ModuleTreeGetter` parsuje wire formát z
   `ALVA.EDISONMAIN2.API.Tree.GetTree` (FAMILY / EXE / FAMILY_END).
-- **Process launcher** — `ProcessLauncher.Launch(module)` čte connection kontext
-  lazily z `IMLRest`, propaguje shellův GUID (10. cmdline arg) → moduly sdílejí
-  ACTIVITY zámek se shellem.
+- **Spouštění legacy modulů** — `IWindowNavigator.ShowLegacy(exe, fqn)` skládá
+  10-arg payload z `EDServices.MLRest`, propaguje shellův GUID → moduly sdílejí
+  ACTIVITY zámek. Trackuje child procesy, `CloseAllLegacy()` při shell close.
 - **ACTIVITY zámek** — vytvořen `VerifyLic` při loginu. `EdisonActivityFailed` event
   → graceful shutdown.
 - **Pamatuje poslední firmu** — `LocalPrefs` (JSON v `%APPDATA%\m-line\EDISONMAIN2\local.json`)
@@ -52,12 +52,11 @@ Most do legacy světa: knihovna `EDISONMAIN2API.dll`
 `TryGetFormFromArgs` a předá výsledek do `Application.Run(form)`. Bez argů
 spustí původní standalone chování.
 
-EDISONMAIN2 strana posílá args přesně v tomto pořadí —
-[ProcessLauncher.cs](dotnet/Windows/EdisonMainWindow/Processes/ProcessLauncher.cs)
-(normální moduly z tree) i [App.xaml.cs](dotnet/Startup/App.xaml.cs) `LaunchUsersFormAndWait`
-(admin override). Libovolný legacy `.exe` se napojí přidáním `EDISONMAIN2API.dll`
-reference + úpravou entry pointu na `FormToRunGetter` pattern (referenční
-implementace: `MHD2PlanDopravy/Program.cs`, `USERS/Users-v4/Program.vb`).
+EDISONMAIN2 strana posílá args přes [WindowNavigator](../EDControls/dotnet/EDViewModel/WindowNavigator.cs)
+— `ShowLegacy(exe, fqn)` pro modeless, `ShowLegacyAndWait` pro blokující (pre-login admin override
+v `LicenceVerifier`). Libovolný legacy `.exe` se napojí přidáním `EDISONMAIN2API.dll` reference
+a úpravou entry pointu na `FormToRunGetter` pattern (referenční implementace:
+`MHD2PlanDopravy/Program.cs`, `USERS/Users-v4/Program.vb`, `EDISONMAIN/ApplicationEvents.vb` `OnRun`).
 
 ## Mimo MVP (zatím)
 
@@ -74,8 +73,7 @@ EDISONMAIN2/dotnet/
 └── Windows/
     ├── LoginWindow/            login dialog + UserAuthenticator
     ├── EdisonMainWindow/       hlavní okno (toolbar, tree, status bar)
-    │   ├── Modules/            IModule, ExecutableModule, ModuleFamily, ModuleTreeGetter
-    │   └── Processes/          IProcessLauncher, ProcessLauncher
+    │   └── Modules/            IModule, ExecutableModule, ModuleFamily, ModuleTreeGetter
     └── ED*TestWindow/          dema EDControls komponent
 ```
 

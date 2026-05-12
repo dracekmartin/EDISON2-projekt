@@ -36,7 +36,7 @@ public partial class App : Application
         }
 #endif
 
-        EDServices.Initialize(new EDServices(null, new ReflectionWindowNavigator(), new PopupDisplayer()));
+        EDServices.Initialize(new EDServices(null, new WindowNavigator(), new PopupDisplayer()));
         var settings = AppSettings.Load();
         var mlRest   = CacheSchemaWiring.TryCreateMlRest(settings);
 

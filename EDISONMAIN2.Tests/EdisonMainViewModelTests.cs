@@ -2,7 +2,6 @@ using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
-using EDISONMAIN2.Windows.EdisonMainWindow.Processes;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
@@ -35,18 +34,17 @@ public class EdisonMainViewModelTests
     private static EdisonMainViewModel CreateVM(
         EDServices? services = null,
         IModuleTreeGetter? treeGetter = null,
-        IProcessLauncher? processLauncher = null,
-        IPopupDisplayer? popup = null)
+        IPopupDisplayer? popup = null,
+        Action? closeAllWindows = null)
     {
         var mockMLRest = MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
-        var mockProcess = processLauncher ?? Substitute.For<IProcessLauncher>();
         var svc = services ?? MockServices(popup: popup);
 
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, closeAllWindows ?? (() => { }));
         }
         finally
         {
@@ -103,7 +101,6 @@ public class EdisonMainViewModelTests
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
-        var mockProcess = Substitute.For<IProcessLauncher>();
         var svc = MockServices(popup: mockPopup);
         EDServices.Initialize(svc);
         var mockTree = Substitute.For<IModuleTreeGetter>();
@@ -111,7 +108,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, () => { });
         }
         finally
         {
@@ -132,7 +129,6 @@ public class EdisonMainViewModelTests
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
-        var mockProcess = Substitute.For<IProcessLauncher>();
         var svc = MockServices(popup: mockPopup);
         EDServices.Initialize(svc);
         var mockTree = Substitute.For<IModuleTreeGetter>();
@@ -140,7 +136,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, mockProcess, () => null);
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, () => { });
         }
         finally
         {
@@ -156,17 +152,17 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void SelectedCompanyIndex_Switch_ClosesAllProcesses()
+    public void SelectedCompanyIndex_Switch_ClosesAllWindows()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var mockProcess = Substitute.For<IProcessLauncher>();
-        var vm = CreateVM(popup: mockPopup, processLauncher: mockProcess);
+        var closeAll = Substitute.For<Action>();
+        var vm = CreateVM(popup: mockPopup, closeAllWindows: closeAll);
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         vm.SelectedCompanyIndex = target;
 
-        mockProcess.Received(1).CloseAll();
+        closeAll.Received(1).Invoke();
     }
 
     [Fact]

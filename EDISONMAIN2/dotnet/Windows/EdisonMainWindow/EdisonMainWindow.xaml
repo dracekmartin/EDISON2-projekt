@@ -54,9 +54,9 @@
                 <MenuItem Header="Aktuální uživatel"              Command="{Binding ShowUserEditCommand}"/>
                 <MenuItem Header="Úlohy na pozadí"                Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Možnosti">
-                    <MenuItem Header="Spouštět okna jako dialogy" Command="{Binding ToggleDialogModeCommand}"/>
-                    <MenuItem Header="Zobrazit miniaplikace"      Command="{Binding ToggleMiniAppsCommand}"/>
-                    <MenuItem Header="Načítat nástěnky"           Command="{Binding ToggleLoadBoardsCommand}"/>
+                    <MenuItem Header="Spouštět okna jako dialogy" IsCheckable="True" IsChecked="{Binding ShowWindowsAsDialogs}"/>
+                    <MenuItem Header="Zobrazit miniaplikace"      IsCheckable="True" IsChecked="{Binding ShowMiniApps}"/>
+                    <MenuItem Header="Načítat nástěnky"           IsCheckable="True" IsChecked="{Binding LoadBoards}"/>
                 </MenuItem>
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
@@ -77,7 +77,7 @@
                 <MenuItem Header="Helpdesk, Wiki"    Command="{Binding OpenHelpdeskWebCommand}"/>
             </MenuItem>
             <MenuItem Header="Styl">
-                <MenuItem Header="Použít"       Command="{Binding ApplyStyleCommand}"/>
+                <MenuItem Header="Použít"       IsCheckable="True" IsChecked="{Binding FontApplied}"/>
                 <MenuItem Header="Zvolený font" Command="{Binding SelectFontCommand}"/>
             </MenuItem>
             <MenuItem Header="Test funkcí">
@@ -117,7 +117,7 @@
             </Grid.RowDefinitions>
         </Grid>
         <GridSplitter Grid.Column="3" Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <Grid Grid.Column="4" Grid.Row="1" >
+        <Grid Grid.Column="4" Grid.Row="1" Visibility="{Binding BoardsVisibility}">
             <wv2:WebView2 Source="https://www.m-line.cz/Nastenka1.html" />
         </Grid>
         <GridSplitter Grid.Column="5" Grid.Row="1" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>

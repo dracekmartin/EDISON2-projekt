@@ -22,7 +22,7 @@ jako `Button` s:
 - Content — 16×16 `Image` navázaný na `EDAction.Icon`
 
 Klávesové zkratky se **neregistrují** zde. Registruje je `EDViewModel.AttachToWindow`
-(volá ho `ReflectionWindowNavigator` před `Show`/`ShowDialog`, případně App.xaml.cs
+(volá ho `WindowNavigator` před `Show`/`ShowDialog`, případně App.xaml.cs
 ručně pro shell okno) — klávesové zkratky tedy fungují i když okno nemá `EDToolbar`.
 
 ## Použití

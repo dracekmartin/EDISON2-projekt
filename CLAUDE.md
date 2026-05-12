@@ -279,7 +279,7 @@ per-MLP × IDFa (server čte sys kontext z MLRest).
 
 **Aktivace**: VM dědí `EDViewModel` → `PersistedFormId` se odvozuje z názvu třídy
 (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`). Override v subclass
-na `null` pro opt-out. ReflectionWindowNavigator zavolá `vm.AttachToWindow(window)`
+na `null` pro opt-out. WindowNavigator zavolá `vm.AttachToWindow(window)`
 před `Show()` automaticky; pro shell okno volá App.xaml.cs ručně.
 
 Prefix `"EDISON2."` odděluje od starých numerických IDs z `EDISFormEnum` (tam

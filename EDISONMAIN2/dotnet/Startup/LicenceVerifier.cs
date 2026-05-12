@@ -1,6 +1,4 @@
 using System;
-using System.Diagnostics;
-using System.IO;
 using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
@@ -28,7 +26,8 @@ public static class LicenceVerifier
         IMLRest mlRest,
         Func<Lic?> licenceLoader,
         bool isAdmin,
-        IPopupDisplayer popup)
+        IPopupDisplayer popup,
+        IWindowNavigator windowNavigator)
     {
         Lic? licence;
         while (true)
@@ -44,34 +43,13 @@ public static class LicenceVerifier
                 if (!popup.Confirm(
                     "Byl překročen počet licencí. Otevřu okno aktivity uživatelů — můžete někoho odhlásit. Po zavření okna zkusím znovu. Pokračovat?"))
                     return (LicenceAcquireOutcome.Cancelled, licence);
-                LaunchUsersFormAndWait(mlRest, "ALVA.USERS.formUSERSActivity");
+                // shareShellSession=false: retry-loop běží před úspěšným VerifyLic, shell ještě
+                // nemá ACTIVITY zámek pod aktuální IdFa. CacheLocks=1 by každý request modulu padal na LockExist.
+                windowNavigator.ShowLegacyAndWait("USERS.exe", "ALVA.USERS.formUSERSActivity", shareShellSession: false);
                 continue;
             }
 
             return (LicenceAcquireOutcome.Refused, licence);
         }
-    }
-
-    // Synchronní spawn legacy .exe přes EDISONMAIN2API.FormToRunGetter kontrakt (10 args).
-    // Prázdný shellGuid (10. arg): retry-loop volá formu **před** úspěšným VerifyLic, takže shell
-    // nemá ACTIVITY zámek pod aktuální IdFa. FormToRunGetter v takovém případě neaktivuje
-    // CacheLocks=1 (jinak by každý server request padal na LockExist). Forma získá vlastní GUID.
-    private static void LaunchUsersFormAndWait(IMLRest mlRest, string formName)
-    {
-        var psi = new ProcessStartInfo
-        {
-            UseShellExecute = true,
-            FileName = ResolveExecutablePath("USERS.exe"),
-            Arguments = $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formName}\" \"\"",
-        };
-        using var prc = Process.Start(psi);
-        prc?.WaitForExit();
-    }
-
-    private static string ResolveExecutablePath(string relativePath)
-    {
-        var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
-        if (File.Exists(localPath)) return localPath;
-        return Path.Combine(@"C:\Edison", relativePath);
     }
 }
