@@ -57,7 +57,37 @@ implicitně. Cíl je test scénář:
 
 **Provedení:** ruční test na pilotní stanici. Záznam v `DOD_TESTS.md`.
 
-### 2. Pilot runbook + verification doc
+### 2. Horní menu — postupná funkční implementace stub položek
+
+**Stav:** struktura menu replikuje legacy `frmNoMDI.mnuMain` (EDISON / Firma /
+Uživatel / Helpdesk / Spuštěné moduly / Nástroje / Nápověda / Styl / Test funkcí
+/ INFO) v přesném pořadí. Většina položek je stub (`NotYetImplemented` popup).
+
+**Funkční dnes:** Konec, Obnovit výchozí nastavení oken, Správa zámků, Aktivita
+uživatelů, Informace o verzi, Helpdesk Wiki. Plus "Firma:" label (binding
+na aktuální IDFa) a "INFO" / "Spuštěné moduly" placeholdery.
+
+**Stub položky** (poppou „Tato funkce zatím není v EDISONu 2 dostupná"):
+
+| Položka | Cíl pro pilot |
+| --- | --- |
+| EDISON → Připojit k databázi | Otevřít vlastní WPF dialog pro výběr/přepnutí connection. |
+| EDISON → Spustit další EDISON | `Process.Start` na vlastní `EDISONMAIN2.exe`. |
+| Uživatel → Přihlásit jiného uživatele | Otevřít LoginWindow s reconnect logic (závisí na novém endpointu nebo nepilot.) |
+| Uživatel → Aktuální uživatel | `formEDISONMAINUserEdit` — žije v legacy EDISONMAIN.exe (= nahrazujeme). Vyžaduje port do WPF nebo přesun do retrofitnutého .exe. |
+| Uživatel → Úlohy na pozadí | `formEDISONMAINTaskList` — totéž jako výše. |
+| Uživatel → Možnosti (3 přepínače) | Persist do `LocalPrefs`; behavioral effect (spouštět dialogy / miniapps / boards) implementovat až bude relevantní. |
+| Nástroje → Aktualizovat licenci | Volání `EDLicence.dll` pro reload + UI feedback. |
+| Nástroje → Nastavení jazyka | `formEDISONMAINLanguageList` — port do WPF nebo přesun. |
+| Nástroje → Odeslat systémové soubory | `formEDISONMAINLogList` — totéž. |
+| Styl → Použít / Zvolený font | Theming feature. Mimo pilot. |
+
+**Pravidlo pro pilot:** všechny stub položky lze nechat stub, **pokud uživatel jejich
+denní funkčnost nepotřebuje**. Postupně implementovat na základě feedbacku z pilotu —
+typicky volat legacy formu přes `FormToRunGetter`, pokud její .exe je retrofitnuté,
+jinak port do WPF.
+
+### 3. Pilot runbook + verification doc
 
 **Cíl:** dokumenty pro M-line support tým.
 
@@ -74,7 +104,7 @@ implicitně. Cíl je test scénář:
 Vše níže není v pilot scope. Reasoning u každého, ať je jasné proč.
 
 | Položka | Důvod škrtu |
-|---|---|
+| --- | --- |
 | **`ClientKind` ve stacku** (`MLRest.cs`, `Activity.cls`, `Rest.cls`) | Server v současné konfiguraci EDISONMAIN2 přijímá. Pokud na pilotním Caché narazíme na `EdisonVersionFailed!` nebo neidentifikovatelný admin audit, řešíme tehdy. |
 | **ActivitySession (keepalive timer)** | Legacy taky nemá explicitní keepalive — ACTIVITY lock se osvěží pouze přes user-driven MLRest volání (`CacheLocks=1` → `UpdateHistory`). Idle shell vyprší stejně v EDISONMAIN i EDISONMAIN2. |
 | **`maSeUkoncit` polling** | Legacy ho má pro brzkou detekci admin force-logoutu (60s). Bez něj uvidíme force-logout až při příštím MLRest volání přes `EdisonActivityFailed` event → shutdown. UX rozdíl, ne blocker. |
