@@ -23,9 +23,12 @@ Snapshot z Podpory M-line k **2026-05-11**. Slouží jako vstup pro plánování
 | 7955  | dd0f7bd3-0efa-4e2d-947d-ed16559952ce | suspended | **TRANSDEV** (Michal Podloučka) | Vlastní komentář spoje má přebít auto-poznámku + 2 buga |
 | 7937  | 64fd847c-7090-47d1-bc91-bc581b0aea42 | suspended | **TRANSDEV** (Michal Podloučka) | Odsazení/odrazení zastávky per směr, jen pro zastávkové JŘ |
 | 7161  | 44e0a446-b05b-4c44-9497-3c96fbb945a2 | suspended | **TRANSDEV** (Vladimír Šimko) | Vypínatelné automatické poznámky (na znamení, bezbariér.) |
-| 7487  | 20a4ff75-b7c1-4fb9-80cc-5d7be57c9dcf | suspended | **KORID** (Jaroslav Smištík) | NZ + týdenní platnost — 4 na řádek (úspora místa) |
+| 9036  | ?                                    | suspended | **TRANSDEV** (Vladimír Šimko) | Nočné spoje — časová osa cez polnoc (22-5h) → **pokryto B3** |
 
 Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — „úprava šablony") jsou obecné tracker / dotazy, ne konkrétní featury — neuvedeny.
+
+Mimo scope zastávkového JŘ:
+- **#7487** (KORID — NZ + týdenní platnost 4 na řádek) — týká se **knižních/linkových JŘ**, ne zastávkových. Vyřadit z této roadmap.
 
 ---
 
@@ -107,16 +110,8 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ### C2. ✅ HOTOVO (2026-05-12) — viz §G (verifikace, žádný kód)
 
-### C3. NZ + týdenní platnost — 4 na řádek (úspora místa)
-- **Zákazník:** KORID (Jaroslav Smištík), #7487
-- **Citace:** *„Kvitujeme možnost tisku 1,2 nebo 3 na řádek, protože řada NZ je jen velmi krátkých, uvítali bychom možnost tisku i 4 NZ na řádek a uspořili tím místo."*
-- **Z interních komentářů M-line:** Stará Caché třída `formTISKJRReportDotNet_Module.Render_SekceDataLinky_Poznamky_RenderJedenDruhPoznamky` má ~1000 řádků; David Zeman to odložil jako 2–3 dny práce.
-- **Co máme dnes:** NotesLegendElement → ověřit aktuální max počet sloupců (zřejmě 1).
-- **Co klient chce:**
-  - Pro **negativní značky (NZ)**: až **4 NZ na řádek**.
-  - Stejné rozšíření pro **tisk týdenní platnosti** (taky krátké texty).
-  - Pokud položka přeleze do dalšího sloupce, další položka začne tisknout do volného sloupce.
-- **Gap:** Konfigurovatelný `Columns: 1 | 2 | 3 | 4` na NotesLegendElement + flow layout přes sloupce s podporou overflow do dalšího sloupce.
+### ~~C3. NZ + týdenní platnost — 4 na řádek (úspora místa)~~
+**Mimo scope zastávkového JŘ** (přesunuto, 2026-05-12). Tiket #7487 (KORID) se týká **knižních/linkových** JŘ, ne zastávkových. Patří do roadmap knižních JŘ až bude existovat.
 
 ---
 
@@ -271,8 +266,9 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 - **Pozn.:** Stejný pattern (`DrawText` bez `DrawTextDecorations`) je na 5 dalších místech v souboru (minuty 780, anotace 803, hour header 899/901, designer placeholder 886/888). **Záměrně neopraveno** — nedotčeno reálným klientovým use casem; opravit až přijde konkrétní request.
 
 ### B3. Rozsah hodin přes půlnoc + sjednocené parametrové UI (DepartureGrid)
-- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Tikety:** #10660 (DPKV, Jan Slavík) + **#9036 (TRANSDEV, Vladimír Šimko — MHD Trenčín, nočné spoje 22-5h)**; oba zůstávají **suspended**.
 - **Datum:** 2026-05-12
+- **Tiket #9036 — explicitní pokrytí:** TRANSDEV potřeboval pro MHD Trenčín (provoz cca 22-5h) časovou osu „cez polnoc" (22, 23, 0, 1, 2, 3, 4, 5). Naše implementace **přesně toto** umí — `TimeAxisMode = Range`, `HODINY_OD = 22`, `HODINY_DO = 5` → wrap přes půlnoc s extended hours (data hodina 24-29 = pokračování). Spoje se přiřazují do sloupců podle `TypProvozuID` (skupiny dnů) beze změny — což TRANSDEV výslovně přijal („v noci z piatka na sobotu spoje pred polnocou budú obsiahnuté v stĺpci pracovný deň a spoje po polnoci v stĺpci sobota, nedeľa").
 - **Diagnóza:** Stávající `RangeHoursWithWrap` clampovalo `to ≤ 23` a vůbec neumělo wrap přes půlnoc. Caché používá **extended hours konvenci** (data hour 24..47 = pokračování přes půlnoc následujícího provozního dne) — z fáze 4 `PromitnutSpoje` přicházejí kumulativní hodiny po chronometráži (např. spoj startuje 23:30, jede 90 min → poslední zastávka má `hh=25, mm=00`). Nová .NET pipeline ale očekávala 0..23 → noční odjezdy „mizely" v rozsahu 4→3.
 - **Implementace:**
   - `TimeAxisMode` rozšířen o `DataBounded` (souvislá od první do poslední data hodiny — předtím chybělo). Plný den vědomě odebrán z UI (lze docílit přes Vlastní rozsah 0..23).
