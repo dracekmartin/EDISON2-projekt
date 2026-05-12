@@ -45,12 +45,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 - **Co klient chce:** Atribut „na znamení" se má prezentovat **inline jako malé písmeno `x` bezprostředně před názvem zastávky** (ne v separátním sloupci, ne v jiném tvaru).
 - **Gap:** Per-atribut volba prezentace — `AttributeRenderMode: SeparateColumn | InlinePrefix | InlineSuffix`. Pro `na znamení` default `InlinePrefix` se znakem `x`.
 
-### A3. Highlight aktuální zastávky — podbarvení místo podtržení
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„Aktuální zastávka (tedy na obrázku konkrétně Globus) je u nás podbarvená, což myslím vypadá lépe, než když je pouze podtržená, jelikož podtržená číslovka 0 nevypadá úplně dobře."*
-- **Co máme dnes:** `StopListElement` zvýrazňuje aktuální zastávku přes `CurrentStopBold` / podtržení (`Underline`). Hodnota minut „0" má podtržení = nevypadá hezky.
-- **Co klient chce:** Aktuální zastávka zvýrazněná **podbarvením pozadí** (bg color), ne podtržením textu.
-- **Gap:** Doplnit `CurrentStopBgColor` na `StopListElement` (a v editoru per-row override) + vypnout default `Underline` pro aktuální zastávku ve prospěch bg colors.
+### A3. ✅ HOTOVO (2026-05-12) — viz §G
 
 ### A4. ✅ HOTOVO (2026-05-12) — viz §G
 
@@ -221,6 +216,13 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 ---
 
 ## G. Hotovo / vyřízeno
+
+### A3. CurrentStopBackgroundColor + cleanup master toggle
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.
+- **Datum:** 2026-05-12
+- **Výsledek:** ✅ `CurrentStopBackgroundColor` property + render path + properties panel descriptor („Pozadí aktuální") v group „Zvýraznění" — vše už existovalo. Customer use case (podbarvení místo podtržení) je plně podporovaný — uživatel vypne `CurrentStopUnderline` a nastaví barvu `CurrentStopBackgroundColor`.
+- **Bonus cleanup:** Odstraněn master toggle `HighlightCurrentStop` (matoucí UX — vypadal jako sourozenec sub-options, ale choval se jako rodič). Highlight se teď aktivuje implicitně podle toho, jestli je některá z highlight properties nastavená. Šipka směru jízdy teď navíc vždy ukazuje na aktuální zastávku (dřív závisela na master toggle).
+- **Minor regression:** Staré šablony s explicitně vypnutým `HighlightCurrentStop=false` po načtení dostanou defaultní Bold+Underline (protože System.Text.Json ignoruje smazaný field). Per principles („no backward compat shims") neřeším migrací.
 
 ### A4. Per-column header font ve StopList — již plně podporováno
 - **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended**.

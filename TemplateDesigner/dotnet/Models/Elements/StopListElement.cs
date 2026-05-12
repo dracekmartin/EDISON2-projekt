@@ -55,8 +55,8 @@ public class StopListElement : ScheduleElementBase
 
     // ═══════════════════════════════════════════
     // Zvýraznění aktuální zastávky
+    // Highlight se aktivuje automaticky, když je nastavená alespoň jedna z těchto vlastností.
     // ═══════════════════════════════════════════
-    public bool HighlightCurrentStop { get; set; } = true;
     public bool CurrentStopUnderline { get; set; } = true;
     public bool CurrentStopBold { get; set; } = true;
     public float? CurrentStopFontSize { get; set; }
@@ -134,7 +134,7 @@ public class StopListElement : ScheduleElementBase
                         continue;
                     if (z.JeAktualni) foundCurrent = true;
 
-                    bool isCurrent = z.JeAktualni && HighlightCurrentStop;
+                    bool isCurrent = z.JeAktualni;
                     bool isPassed = !foundCurrent && !z.JeAktualni;
 
                     // Sledovat Y pro šipku směru
@@ -437,7 +437,6 @@ public class StopListElement : ScheduleElementBase
 
         new BoolPropertyDescriptor  { Label = "Záhlaví sloupců",      Group = "Záhlaví",    Get = () => ShowHeader,            Set = v => ShowHeader = v },
 
-        new BoolPropertyDescriptor  { Label = "Zvýraznit aktuální",  Group = "Zvýraznění", Get = () => HighlightCurrentStop, Set = v => HighlightCurrentStop = v },
         new BoolPropertyDescriptor  { Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
         new BoolPropertyDescriptor  { Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
         new FloatPropertyDescriptor { Label = "Font aktuální (pt)",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
@@ -476,7 +475,6 @@ public class StopListElement : ScheduleElementBase
             SignalStopSymbol        = SignalStopSymbol,
             ShowStopAttributes      = ShowStopAttributes,
             ShowStopNotes           = ShowStopNotes,
-            HighlightCurrentStop    = HighlightCurrentStop,
             CurrentStopUnderline    = CurrentStopUnderline,
             ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
