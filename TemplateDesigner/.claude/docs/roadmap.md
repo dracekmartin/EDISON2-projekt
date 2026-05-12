@@ -84,7 +84,7 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 | Krok | Tiket | Zákazník | Co | Typ | Stav |
 |---|---|---|---|---|---|
 | A2-A1 | #10660 | DPKV+CBDP | `DirectionArrowPosition: Left \| Right` — konfigurovatelná pozice (asymetricky: Vpravo uvnitř sloupce, Vlevo mimo sloupec) | 2 | ✅ (2026-05-12) viz §G |
-| A2-A2 | #10660 | DPKV | `AttributeRenderMode` — atribut „na znamení" inline prefix `x` před názvem (vs. samostatný sloupec) | 2 | |
+| A2-A2 | #10660 | DPKV+CBDP | `MarkersPosition` — značky (na znamení / atributy / poznámky) před nebo za názvem; auto-fit šířky marker sub-cell | 2 | ✅ (2026-05-12) viz §G |
 | A2-A3 | #10660 | DPKV | `CurrentStopBgColor` — podbarvení aktuální zastávky místo Underline | 1 | ✅ (2026-05-12) + cleanup master toggle |
 | A2-A4 | #10660 | DPKV | Per-column header font — ověřit a vyladit default („min." menší než „Zastávky") | 1 | ✅ (2026-05-12) verifikace OK, viz §G |
 | A2-A5 | #7937 | TRANSDEV | Per-row padding ve StopList, per-směr, volitelně per časové pásmo Tč | 2 | |

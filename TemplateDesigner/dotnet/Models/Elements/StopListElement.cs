@@ -41,6 +41,10 @@ public class StopListElement : ScheduleElementBase
     public bool ShowStopAttributes { get; set; } = true;
     public bool ShowStopNotes { get; set; } = true;
 
+    /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
+    /// <remarks>Default AfterName = za názvem zastávky (CBDP layout). BeforeName = před názvem (DPKV layout, např. „× Globus").</remarks>
+    public StopMarkersSide MarkersPosition { get; set; } = StopMarkersSide.AfterName;
+
     // ═══════════════════════════════════════════
     // Šipka směru jízdy (┌─▼ od aktuální zastávky dolů)
     // ═══════════════════════════════════════════
@@ -90,6 +94,9 @@ public class StopListElement : ScheduleElementBase
     /// <remarks>Šipka pro Vlevo jde mimo sloupec, aby se nepřekrývala s left-aligned textem. Bracket pak vede k levé hraně sloupce.</remarks>
     private const float ArrowOutsideOffsetMm = 1.5f;
 
+    /// <summary>Padding sub-cell značek kolem textu — pro vizuální vzdušnost vlevo i vpravo (mm celkem).</summary>
+    private const float MarkersSubCellPaddingMm = 1.0f;
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -127,6 +134,11 @@ public class StopListElement : ScheduleElementBase
         for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameLeftMm += columns[i].Width;
         float stopNameRightMm = stopNameLeftMm + (stopNameIdx >= 0 && stopNameIdx < columns.Count ? columns[stopNameIdx].Width : 0f);
 
+        // Šířka sub-cell pro značky (BeforeName) — auto-fit podle nejširšího marker textu v datech.
+        float markersSubCellWidth = MarkersPosition == StopMarkersSide.BeforeName
+            ? ComputeMarkersSubCellWidth(zastavky, effectiveFontSize, ctx.MmToPx)
+            : 0f;
+
         // Asymetrická pozice šipky:
         //   Vpravo: šipka UVNITŘ sloupce u pravé hrany — text je left-aligned, k pravé hraně obvykle nezasahuje.
         //   Vlevo:  šipka MIMO sloupec (vlevo od jeho levé hrany) — left-aligned text by jinak kolidoval.
@@ -147,7 +159,7 @@ public class StopListElement : ScheduleElementBase
         {
             // Záhlaví sloupců
             float currentY = ShowHeader
-                ? RenderColumnHeaders(ctx, columns, headerH, paints, scale)
+                ? RenderColumnHeaders(ctx, columns, stopNameIdx, markersSubCellWidth, headerH, paints, scale)
                 : Y;
 
             if (hasData)
@@ -178,15 +190,7 @@ public class StopListElement : ScheduleElementBase
                         ctx.Canvas.DrawRect(bgRect, bgPaint);
                     }
 
-                    var specs = new ColumnRenderer.CellSpec[columns.Count];
-                    for (int i = 0; i < columns.Count; i++)
-                    {
-                        var col = columns[i];
-                        specs[i] = new ColumnRenderer.CellSpec(
-                            col.Width,
-                            GetCellText(z, col.Key),
-                            ResolveRowStyle(col, isCurrent, isPassed));
-                    }
+                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth);
                     ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
 
                     if (ShowRowSeparators)
@@ -222,19 +226,15 @@ public class StopListElement : ScheduleElementBase
 
     /// <summary>Vykreslí záhlaví sloupců přes ColumnRenderer.</summary>
     private float RenderColumnHeaders(
-        RenderContext ctx, List<StopColumn> columns, float headerH, SchedulePaints paints, float scale)
+        RenderContext ctx, List<StopColumn> columns, int stopNameIdx, float markersSubCellWidth,
+        float headerH, SchedulePaints paints, float scale)
     {
         // Výchozí pozadí záhlaví (přes celou šířku elementu).
         // Per-column header bg z kaskády to lokálně přepíše.
         var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
-        var specs = new ColumnRenderer.CellSpec[columns.Count];
-        for (int i = 0; i < columns.Count; i++)
-        {
-            var col = columns[i];
-            specs[i] = new ColumnRenderer.CellSpec(col.Width, col.Header, ResolveHeaderStyle(col));
-        }
+        var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth);
         ColumnRenderer.DrawRow(ctx, X, Y, headerH, specs, fontScale: scale);
 
         // Čára pod záhlavím
@@ -306,6 +306,92 @@ public class StopListElement : ScheduleElementBase
     }
 
     // ─── Šipka směru jízdy ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Sestaví CellSpec[] pro datový řádek. Když MarkersPosition = BeforeName a existuje sloupec zastávek,
+    /// rozdělí cell sloupce zastávek na [markers sub-cell, name sub-cell] aby názvy zůstaly zarovnané.
+    /// </summary>
+    private ColumnRenderer.CellSpec[] BuildDataRowSpecs(
+        List<StopColumn> columns, ZastavkaData z, bool isCurrent, bool isPassed,
+        int stopNameIdx, float markersSubCellWidth)
+    {
+        bool split = markersSubCellWidth > 0
+                     && stopNameIdx >= 0 && stopNameIdx < columns.Count
+                     && columns[stopNameIdx].Width > markersSubCellWidth;
+
+        if (!split)
+        {
+            var specs = new ColumnRenderer.CellSpec[columns.Count];
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var col = columns[i];
+                specs[i] = new ColumnRenderer.CellSpec(
+                    col.Width,
+                    GetCellText(z, col.Key),
+                    ResolveRowStyle(col, isCurrent, isPassed));
+            }
+            return specs;
+        }
+
+        var result = new ColumnRenderer.CellSpec[columns.Count + 1];
+        int idx = 0;
+        for (int i = 0; i < columns.Count; i++)
+        {
+            var col = columns[i];
+            if (i == stopNameIdx)
+            {
+                var nameStyle = ResolveRowStyle(col, isCurrent, isPassed);
+                var markerStyle = nameStyle with { HAlign = TextHorizontalAlignment.Right };
+                result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, GetStopMarkersText(z), markerStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(col.Width - markersSubCellWidth, GetCellText(z, col.Key), nameStyle);
+            }
+            else
+            {
+                result[idx++] = new ColumnRenderer.CellSpec(
+                    col.Width,
+                    GetCellText(z, col.Key),
+                    ResolveRowStyle(col, isCurrent, isPassed));
+            }
+        }
+        return result;
+    }
+
+    /// <summary>Sestaví CellSpec[] pro řádek záhlaví. Pokud BeforeName a markersSubCellWidth > 0, rozdělí stop name sloupec stejně jako datové řádky.</summary>
+    private ColumnRenderer.CellSpec[] BuildHeaderRowSpecs(List<StopColumn> columns, int stopNameIdx, float markersSubCellWidth)
+    {
+        bool split = markersSubCellWidth > 0
+                     && stopNameIdx >= 0 && stopNameIdx < columns.Count
+                     && columns[stopNameIdx].Width > markersSubCellWidth;
+
+        if (!split)
+        {
+            var specs = new ColumnRenderer.CellSpec[columns.Count];
+            for (int i = 0; i < columns.Count; i++)
+            {
+                var col = columns[i];
+                specs[i] = new ColumnRenderer.CellSpec(col.Width, col.Header, ResolveHeaderStyle(col));
+            }
+            return specs;
+        }
+
+        var result = new ColumnRenderer.CellSpec[columns.Count + 1];
+        int idx = 0;
+        for (int i = 0; i < columns.Count; i++)
+        {
+            var col = columns[i];
+            if (i == stopNameIdx)
+            {
+                var headerStyle = ResolveHeaderStyle(col);
+                result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", headerStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(col.Width - markersSubCellWidth, col.Header, headerStyle);
+            }
+            else
+            {
+                result[idx++] = new ColumnRenderer.CellSpec(col.Width, col.Header, ResolveHeaderStyle(col));
+            }
+        }
+        return result;
+    }
 
     /// <summary>
     /// Vykreslí šipku směru jízdy uvnitř sloupce zastávek. Bracket míří do sloupce
@@ -406,35 +492,64 @@ public class StopListElement : ScheduleElementBase
         return _excludedSet;
     }
 
-    private string BuildStopDisplayText(ZastavkaData z)
+    /// <summary>
+    /// Spočítá optimální šířku sub-cell pro značky (mm) podle nejširšího marker textu v datech.
+    /// 0 = žádné značky → není potřeba split. Padding zajistí vizuální vzdušnost.
+    /// </summary>
+    private float ComputeMarkersSubCellWidth(List<ZastavkaData> zastavky, float fontSizePt, float mmToPx)
     {
-        var text = z.Popis;
+        if (zastavky.Count == 0) return 0f;
+        float fontPx = fontSizePt * PtToMm * mmToPx;
+        using var font = new SKFont(GetTypeface(DataStyle.FontFamily), fontPx);
+        float maxPx = 0f;
+        foreach (var z in zastavky)
+        {
+            var t = GetStopMarkersText(z);
+            if (t.Length > 0)
+            {
+                float w = font.MeasureText(t);
+                if (w > maxPx) maxPx = w;
+            }
+        }
+        return maxPx > 0 ? maxPx / mmToPx + MarkersSubCellPaddingMm : 0f;
+    }
 
-        if (ShowStopIndentation && z.Odsazeni > 0)
-            text = new string(' ', z.Odsazeni) + text;
-
+    /// <summary>Zformátovaný text značek pro zastávku (na znamení, atributy, poznámky).</summary>
+    /// <remarks>Při BeforeName se používá pro samostatnou sub-cell před názvem (aby názvy zůstaly zarovnané). Při AfterName se přidává jako suffix do názvu.</remarks>
+    private string GetStopMarkersText(ZastavkaData z)
+    {
+        var parts = new List<string>();
         if (ShowSignalStopIndicator && z.NaZnameni)
-            text += " " + SignalStopSymbol;
+            parts.Add(SignalStopSymbol);
 
         if (ShowStopAttributes && z.Atributy.Count > 0)
         {
             var excluded = GetExcludedSet();
-            var symbols = z.Atributy
-                .Where(a => !excluded.Contains(a.Znak))
-                .Select(a => a.Znak);
-            var symbolStr = string.Join("", symbols);
-            if (symbolStr.Length > 0)
-                text += " " + symbolStr;
+            var symbolStr = string.Join("", z.Atributy.Where(a => !excluded.Contains(a.Znak)).Select(a => a.Znak));
+            if (symbolStr.Length > 0) parts.Add(symbolStr);
         }
 
         if (ShowStopNotes && z.PoznamkyZastavky.Count > 0)
         {
             var noteSymbols = string.Join("", z.PoznamkyZastavky.Select(p => p.Znak));
-            if (noteSymbols.Length > 0)
-                text += noteSymbols;
+            if (noteSymbols.Length > 0) parts.Add(noteSymbols);
         }
 
-        return text;
+        return parts.Count == 0 ? "" : string.Join(" ", parts);
+    }
+
+    private string BuildStopDisplayText(ZastavkaData z)
+    {
+        var name = z.Popis;
+        if (ShowStopIndentation && z.Odsazeni > 0)
+            name = new string(' ', z.Odsazeni) + name;
+
+        // BeforeName → značky jdou do samostatné sub-cell před názvem (handled v render loop).
+        if (MarkersPosition == StopMarkersSide.BeforeName)
+            return name;
+
+        var markers = GetStopMarkersText(z);
+        return markers.Length == 0 ? name : name + " " + markers;
     }
 
     // ─── PropertyDescriptors ────────────────────────────────────────────────
@@ -454,6 +569,17 @@ public class StopListElement : ScheduleElementBase
         new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
         new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Pozice značek", Group = "Zastávky",
+            Get = () => MarkersPosition,
+            Set = v => MarkersPosition = (StopMarkersSide)v,
+            Options =
+            [
+                ("Za zastávkou",  (object)StopMarkersSide.AfterName),
+                ("Před zastávkou", (object)StopMarkersSide.BeforeName),
+            ]
+        },
 
         new BoolPropertyDescriptor  { Label = "Šipka směru",      Group = "Směr jízdy", Get = () => ShowDirectionArrow,    Set = v => ShowDirectionArrow = v },
         new EnumPropertyDescriptor
@@ -511,6 +637,7 @@ public class StopListElement : ScheduleElementBase
             SignalStopSymbol        = SignalStopSymbol,
             ShowStopAttributes      = ShowStopAttributes,
             ShowStopNotes           = ShowStopNotes,
+            MarkersPosition         = MarkersPosition,
             CurrentStopUnderline    = CurrentStopUnderline,
             ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
@@ -531,4 +658,13 @@ public enum DirectionArrowSide
 {
     Right,
     Left
+}
+
+/// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
+public enum StopMarkersSide
+{
+    /// <summary>Značky za názvem zastávky (default, CBDP layout).</summary>
+    AfterName,
+    /// <summary>Značky před názvem zastávky (DPKV layout, např. „× Globus").</summary>
+    BeforeName
 }

@@ -33,12 +33,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ### A1. ✅ HOTOVO (2026-05-12) — viz §G
 
-### A2. Atribut „na znamení" — prefix `x` před názvem zastávky
-- **Zákazník:** DPKV (Jan Slavík), #10660
-- **Citace:** *„označení zastávky na znamení (žluté označení) vypadá lépe, když je pouze malým písmenem x před názvem zastávky, tak jak to máme aktuálně"* (myšleno aktuálně v legacy verzi)
-- **Co máme dnes:** Atributy zastávek se ve StopList tisknou jako samostatný sloupec nebo skupina značek (viz `StopColumnsEditorDialog`). Konkrétní prezentace pro `1003 = na znamení` je vizuálně odlišná než „malé `x` před názvem".
-- **Co klient chce:** Atribut „na znamení" se má prezentovat **inline jako malé písmeno `x` bezprostředně před názvem zastávky** (ne v separátním sloupci, ne v jiném tvaru).
-- **Gap:** Per-atribut volba prezentace — `AttributeRenderMode: SeparateColumn | InlinePrefix | InlineSuffix`. Pro `na znamení` default `InlinePrefix` se znakem `x`.
+### A2. ✅ HOTOVO (2026-05-12) — viz §G
 
 ### A3. ✅ HOTOVO (2026-05-12) — viz §G
 
@@ -211,6 +206,21 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 ---
 
 ## G. Hotovo / vyřízeno
+
+### A2. Konfigurovatelná pozice značek u zastávek (StopList)
+- **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended** (řešíme i CBDP layout).
+- **Datum:** 2026-05-12
+- **Diagnóza:** Stávající TD renderoval značky (na znamení `×`, atributy, poznámky) vždy **za názvem** zastávky (CBDP layout). DPKV chce na znamení jako **prefix** před názvem (např. „× Globus") + chtějí, aby názvy zůstaly **zarovnané** i u zastávek bez značky.
+- **Implementace:**
+  - Nový enum `StopMarkersSide { AfterName, BeforeName }` + property `MarkersPosition` (default `AfterName` = CBDP layout).
+  - Když `BeforeName`: render rozdělí sloupec zastávek na **2 sub-cells**:
+    - **Marker sub-cell** (úzký, right-aligned) — značky
+    - **Name sub-cell** (zbytek šířky, left-aligned) — pouze název
+  - Šířka marker sub-cell je **auto-computed** podle nejširšího marker textu v datech přes `SKFont.MeasureText` + padding `MarkersSubCellPaddingMm = 1.0mm`. Pro běžné single-char markery (`×`, `D`) ~2.5mm.
+  - Total width sloupce zastávek se nemění → žádný overflow.
+  - Všechny 3 typy značek (na znamení + atributy + poznámky) se přepínají najednou jedním přepínačem. Per principles — minimum, per-marker per request later.
+  - UI: `EnumPropertyDescriptor` „Pozice značek" v group „Zastávky" s labely „Za zastávkou" / „Před zastávkou".
+- **Architektonický learning:** první návrh prepended markery do textu buňky (`„× Globus"`). To posouvalo názvy zastávek per řádek podle přítomnosti značky → nezarovnané. Druhá iterace s fixed 4mm sub-cell přidala vzdušnost ale byla zbytečně široká. Třetí (final) s auto-fit measure se přizpůsobí datům přesně. **Symetricky paralelní s A1 (DirectionArrowSide) — bounded enum, ne template variant.**
 
 ### A1. Konfigurovatelná pozice šipky směru jízdy (StopList)
 - **Tiket:** #10660 (DPKV, Jan Slavík); zůstává **suspended** (řešíme i CBDP, kteří chtěli Vlevo).
