@@ -77,7 +77,7 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 | A2-0b | **DepartureGrid header model** — podpora dvouřádkového headeru s per-line stylem (datový model + Render) | A2-B1 | |
 | A2-0c | **Conditional visibility v PropertiesPanel** — `PropertyDescriptor.VisibleWhen` predikát (H-11 odložené, teď je čas) | A2-A1, A2-A3, A2-A6 | |
 | A2-0d | **Per-template variants infrastruktura** — formalizovat `templates/<agenda>/<customer>.json` jako shipped defaults; UI „načti výchozí šablonu" | snižuje tlak na element properties | |
-| A2-0e | **VisibilityExpression verifikace** — ověřit, že podporuje `{CISLO_LINKY}`, `{TYP_LINKY}`, `{TYP_JR}`, `{KOD_DOPRAVY}` placeholdery | A2-E1 | |
+| A2-0e | **VisibilityExpression verifikace** — ověřit, že podporuje `{CISLO_LINKY}`, `{TYP_LINKY}`, `{TYP_JR}`, `{KOD_DOPRAVY}` placeholdery | A2-E1 | ✅ (2026-05-11) |
 
 #### A.2.A — StopListElement úpravy
 
@@ -123,7 +123,9 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 
 | Krok | Tiket | Zákazník | Co | Stav |
 |---|---|---|---|---|
-| A2-E1 | #8772 | TRANSDEV | Ověřit, že `VisibilityExpression` s placeholdery `{CISLO_LINKY}`, `{TYP_LINKY}` atd. funguje → uzavřít tiket s referenční šablonou | |
+| A2-E1 | #8772 | TRANSDEV | Ověřit, že `VisibilityExpression` s placeholdery `{CISLO_LINKY}`, `{TYP_LINKY}` atd. funguje → uzavřít tiket s referenční šablonou | ✅ (2026-05-11) verifikace OK, tiket zůstává suspended (interní), viz `customer-requirements-zastavkovy-jr.md §G` |
+
+Také vyřazuje **A2-0e** z prerekvizit (verifikace VisibilityExpression v sekci A.2.0).
 
 #### A.2 — Status komunikace s klienty
 

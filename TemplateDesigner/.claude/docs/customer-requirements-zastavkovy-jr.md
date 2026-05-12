@@ -212,17 +212,7 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 ## E. Návrhář sestav (TemplateDesigner UI)
 
-### E1. Podmíněný tisk sekcí — pravděpodobně už hotovo
-- **Zákazník:** TRANSDEV (Jakub Holík), #8772, priorita 5 (nejnižší)
-- **Citace:** *„byla by možnost doplnit v Návrháři sestav pro JŘ do nastavení jednotlivých sekcí nastavení, aby se sekce tiskla na základě podmínky splněné podmínky (...). Podmínky by mohly být vázány např. na číslo linky, typ linky, typ JŘ, Kód dopravy dle číselníku CIS Nastavený druh Tisku v rozvržení apod."*
-- **Účel:** *„Využití by bylo pro sjednocení tiskových formulářů, kdyby i pro více systémů doprav by mohl být shodný tiskový formulář s rozlišením dle nastavených podmínek. Nyní (...) je navržen základní formulář, který se duplikuje a upravují jednotlivé duplikáty."*
-- **Co máme dnes:** ✅ **`VisibilityExpression`** na `Section` i `TemplateElement` — vyhodnocuje `ExpressionEvaluator` s placeholdery a operátory `&&`, `||`, `!`.
-- **Co klient chce:** Přesně toto — podmínka per-sekce kombinující placeholdery a operátory.
-- **Status:** Pravděpodobně pokryto, potřebuje **ověření**:
-  1. Lze v `VisibilityExpression` použít `{CISLO_LINKY}`, `{TYP_LINKY}`, `{TYP_JR}`, `{KOD_DOPRAVY}`?
-  2. Live validace expression v UI funguje a podporuje tyto placeholdery?
-  3. Pokud ano → uzavřít tiket s referencí na ukázkovou šablonu.
-- **Gap:** Jen ověřit, případně doplnit chybějící placeholdery do schématu agendy.
+*(Žádné aktivní položky — E1 přesunuto do §G Hotovo.)*
 
 ---
 
@@ -242,7 +232,16 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 
 ## G. Hotovo / vyřízeno
 
-*(prázdné — doplň po implementaci dané položky s datem, commit hashem a odkazem na tiket)*
+### E1. Podmíněný tisk sekcí — VisibilityExpression
+- **Tiket:** #8772 (TRANSDEV, Jakub Holík); zůstává **suspended** (interní rozhodnutí, ne uzavřen klientovi).
+- **Datum ověření:** 2026-05-11
+- **Výsledek verifikace:** ✅ Funkčně pokryto. `VisibilityExpression` na sekci i elementu se vyhodnocuje na 4 místech v `PageLayoutEngine` (elementy, sekce, page headers, page footers). `ExpressionEvaluator` podporuje `==`, `!=`, `>`, `<`, `>=`, `<=`, `&&`, `||`, `!`, numerické i string porovnání s auto-detekcí, závorky, literály (`"..."`, čísla), placeholdery `{POLE}` plus `{PAGE}`, `{TOTAL_PAGES}`. Live validace v UI přes `Validate()` v PropertyDescriptoru, AST cache, fail-open runtime.
+- **Pokrytí klientova seznamu polí** ze schématu `ZastavkoveJrMhdAPI.GetSchema`:
+  - ✅ `CISLO_LINKY`, `TYP_JR`
+  - ⚠️ „typ linky" — částečně přes `LOKALNI_OZNACENI_LINKY`
+  - ❌ `KOD_DOPRAVY` (CIS) chybí, ale v praxi nahraditelné `POPIS_DOPRAVCE`
+- **Interní status note** (sepsáno 2026-05-11): kompaktní popis featury, syntaxe a možných rozšíření. Tiket zůstává suspended — na rozšíření čekáme až bude konkrétní potřeba od klienta.
+- **Možná rozšíření** (až bude konkrétní request, ne preventivně): doplnění chybějících placeholderů, `IN` operátor, string funkce (`CONTAINS`, `STARTSWITH`), pattern matching, aritmetika, date typování v `Compare()`, `IS NULL` test.
 
 ---
 
