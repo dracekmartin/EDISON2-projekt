@@ -133,7 +133,22 @@ zachovat tuto zkratku v EDISONMAIN2.
    `Ctrl+W` v okně ~2 s → `WindowNavigator.ShowLegacy("Utilities.exe", ...)` +
    `ALVA.UTILITIES.formUTILITIESMain`. Escape přeruší.
 
-### 4. Pilot runbook + verification doc
+### 4. Hlavní nabídka — doplnit zbylé moduly nebo migrate XML → Caché
+
+**Stav:** Tři stromy modulů (Hlavní nabídka / Správa systému / Partnerská řešení)
+jsou hotové. **Správa systému** a **Partnerská řešení** v `Tree.cls` přesně replikují
+legacy `edisonnavbar.xml` + `edisontree.xml` kompozici (včetně sub-FAMILY, AdminMode=1
+input param na id=2011 přes nové 7-arg wire format).
+
+**Hlavní nabídka má pilot scope limit** — v `FillMain` je jen modul **MHD** (id=45).
+Legacy navbar -2 referencuje 29 aktivních top-level modulů; 28 (Autobusová doprava,
+Ekonomický systém, JŘ JIRA, Mzdy, Lístky, Reporting, …) chybí.
+
+**Po-pilot směr:** server-side parsing `edisontree.xml` přímo v ObjectScript (přes
+`%XML.Document`), nebo migrace XML → Caché global. Jeden zdroj pravdy. Eliminuje
+hardcoded duplikaci v `Tree.cls`. Pro pilot stačí MHD + omezený tree.
+
+### 5. Pilot runbook + verification doc
 
 **Cíl:** dokumenty pro M-line support tým.
 

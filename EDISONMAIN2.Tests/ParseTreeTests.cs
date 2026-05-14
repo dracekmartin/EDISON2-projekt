@@ -232,4 +232,31 @@ public class ParseTreeTests
         mockMLRest.Received(1).QueryOrThrow(
             "ALVA.EDISONMAIN2.API.Tree", "GetTree", Arg.Any<CVar>());
     }
+
+    [Fact]
+    public void GetModuleTree_DefaultParam_SendsMainAsTreeName()
+    {
+        var mockMLRest = MockTreeCall(new CVar());
+
+        new ModuleTreeGetter().GetModuleTree(mockMLRest);
+
+        mockMLRest.Received(1).QueryOrThrow(
+            "ALVA.EDISONMAIN2.API.Tree", "GetTree",
+            Arg.Is<CVar>(c => c["tree"].Value!.ToString() == "main"));
+    }
+
+    [Theory]
+    [InlineData("main")]
+    [InlineData("system")]
+    [InlineData("partners")]
+    public void GetModuleTree_TreeNameParam_ForwardedAsCVarInput(string treeName)
+    {
+        var mockMLRest = MockTreeCall(new CVar());
+
+        new ModuleTreeGetter().GetModuleTree(mockMLRest, treeName);
+
+        mockMLRest.Received(1).QueryOrThrow(
+            "ALVA.EDISONMAIN2.API.Tree", "GetTree",
+            Arg.Is<CVar>(c => c["tree"].Value!.ToString() == treeName));
+    }
 }

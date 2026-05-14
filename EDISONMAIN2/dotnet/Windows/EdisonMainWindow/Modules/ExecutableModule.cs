@@ -13,5 +13,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         /// <summary>Když true, <see cref="ElementId"/> se kontroluje proti <c>Lic.Elements</c>; jinak modul vidí každý.</summary>
         public bool IsLicensed { get; set; } = false;
+
+        /// <summary>
+        /// Volitelný launch parametr předaný formě jako <c>EDParamIn</c> (string).
+        /// Legacy navbar <c>input="AdminMode=1"</c> ekvivalent. Default <c>""</c> = forma použije svůj default.
+        /// </summary>
+        public string InputParam { get; set; } = "";
     }
 }
