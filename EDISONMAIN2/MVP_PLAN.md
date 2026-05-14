@@ -38,6 +38,19 @@ Kritéria pro pilot-ready (z [RESPONSIBILITIES.md § 18.3](RESPONSIBILITIES.md))
   (pozice, velikost, Maximized) přes legacy `ALVA.LIBRARY.Form.SaveParams`,
   per MLP × IDFa, FormID odvozený z názvu VM.
 - USERS.exe retrofit: nový `Program.vb` s `Sub Main` → `FormToRunGetter` pattern.
+- **EDISONMAIN.exe retrofit** — `ApplicationEvents.vb` `OnRun` override (args path
+  → `ShowDialog`), `ApplyDefaultInput` per-form defaults pro UserEdit + LanguageList.
+  Legacy `frmNoMDI` standalone path nezměněna.
+- **Unified `IWindowNavigator`** v EDControls — `Show/ShowDialog` (WPF reflexe) +
+  `ShowLegacy/ShowLegacyAsDialog/ShowLegacyAndWait` (legacy WinForms přes
+  `FormToRunGetter`) + `CloseAll` (shell-only, agenda VMs nevidí, předané přes
+  `Action` callback). Cross-process modal bounce přes `Activated` event +
+  `SetForegroundWindow`. `ProcessLauncher` odstraněn.
+- **4 menu commandy funkční** přes `ShowLegacyAsDialog`:
+  Uživatel → Aktuální uživatel (`formEDISONMAINUserEdit`),
+  Uživatel → Úlohy na pozadí (`formEDISONMAINTaskList`),
+  Nástroje → Nastavení jazyka (`formEDISONMAINLanguageList`),
+  Nástroje → Odeslat systémové soubory (`formEDISONMAINLogList`).
 - 199 testů (165 EDControls + 34 EDISONMAIN2).
 
 ---
@@ -74,16 +87,12 @@ dd.MM.yyyy, svátek má X" (NameDay). Není klikací. V EDISONMAIN2 je zatím
 `IsEnabled=False` placeholder; pro pilot doplnit naplnění z téhož endpointu
 (low priority — kosmetická feature).
 
-**Stub položky** (poppou „Tato funkce zatím není v EDISONu 2 dostupná"):
+**Zbylé stub položky** (poppou „Tato funkce zatím není v EDISONu 2 dostupná"):
 
 | Položka | Cíl pro pilot |
 | --- | --- |
 | EDISON → Připojit k databázi | Otevřít vlastní WPF dialog pro výběr/přepnutí connection. |
 | Uživatel → Přihlásit jiného uživatele | Otevřít LoginWindow s reconnect logic (závisí na novém endpointu nebo nepilot.) |
-| Uživatel → Aktuální uživatel | `formEDISONMAINUserEdit` — žije v legacy `EDISONMAIN.exe`. Retrofit EDISONMAIN.exe stejně jako USERS.exe (`Program.vb` + FormToRunGetter) → spustit přes `WindowNavigator.ShowLegacy`. |
-| Uživatel → Úlohy na pozadí | `formEDISONMAINTaskList` — totéž (sdílí retrofit EDISONMAIN.exe). |
-| Nástroje → Nastavení jazyka | `formEDISONMAINLanguageList` — totéž (sdílí retrofit EDISONMAIN.exe). |
-| Nástroje → Odeslat systémové soubory | `formEDISONMAINLogList` — totéž (sdílí retrofit EDISONMAIN.exe). |
 
 **Možnosti — chybějící konzumenty (low priority pro pilot):**
 
