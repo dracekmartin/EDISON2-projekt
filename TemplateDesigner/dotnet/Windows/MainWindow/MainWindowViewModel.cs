@@ -183,7 +183,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
+    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda;
     private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs;
 
     public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
@@ -195,6 +195,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public AsyncRelayCommand OpenFromCacheCommand  => _openFromCache  ??= CommandAsync(OpenFromCacheAsync,  () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
+    public RelayCommand ChangeAgendaCommand        => _changeAgenda   ??= Command(ChangeAgenda);
     public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
     public RelayCommand ExportPngCommand     => _exportPng ??= new(ExportPreviewPng);
     public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
@@ -429,7 +430,18 @@ public class TemplateDesignerViewModel : EDViewModel
     private void NewTemplate()
     {
         if (!ConfirmUnsavedChanges()) return;
+        ReplaceWithBlankTemplate(agendaCode: null);
+    }
+
+    /// <summary>
+    /// Sdílený helper pro &quot;clean slate&quot;: nahradí aktivní šablonu prázdnou
+    /// (volitelně se zadanou agendou) a resetuje veškerý designový stav.
+    /// Volající MUSÍ předtím zavolat <see cref="ConfirmUnsavedChanges"/>.
+    /// </summary>
+    private void ReplaceWithBlankTemplate(string? agendaCode)
+    {
         State.CurrentTemplate = new Template();
+        if (agendaCode is not null) State.CurrentTemplate.AgendaCode = agendaCode;
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
@@ -443,6 +455,29 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestTitleUpdate?.Invoke();
         RequestCanvasSizeUpdate?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+        RequestPreviewRefresh?.Invoke();
+    }
+
+    private void ChangeAgenda()
+    {
+        var agendas = SchemaProvider.GetAvailableAgendas();
+        if (agendas.Count == 0)
+        {
+            PopupDisplayer.Info("Žádné agendy nejsou nakonfigurované.");
+            return;
+        }
+
+        var vm = new ChangeAgendaDialogViewModel(agendas, State.CurrentTemplate.AgendaCode);
+        var dlg = new ChangeAgendaDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true || vm.ChosenCode is null) return;
+
+        // Stejná agenda — nic neměním (vyhne se zbytečnému potvrzování neuložených změn).
+        if (string.Equals(State.CurrentTemplate.AgendaCode, vm.ChosenCode, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (!ConfirmUnsavedChanges()) return;
+        ReplaceWithBlankTemplate(vm.ChosenCode);
     }
 
     private async Task OpenTemplateAsync()

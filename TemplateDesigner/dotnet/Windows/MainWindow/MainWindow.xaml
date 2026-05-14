@@ -188,6 +188,8 @@
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
+                <MenuItem x:Name="MenuChangeAgenda" Header="Změnit agendu..." InputGestureText="Ctrl+Shift+A"
+                          Command="{Binding ChangeAgendaCommand}"/>
                 <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v Caché..."
                           Command="{Binding OpenFromCacheCommand}"/>
                 <Separator/>
@@ -501,7 +503,13 @@
                             <!-- Záhlaví: název agendy -->
                             <Border DockPanel.Dock="Top"
                                     BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
-                                    Background="#F0F0F0" Padding="8,5">
+                                    Background="#F0F0F0" Padding="8,5"
+                                    Cursor="Hand"
+                                    ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick"
+                                                  Command="{Binding ChangeAgendaCommand}"/>
+                                </Border.InputBindings>
                                 <TextBlock x:Name="AgendaNameTextBlock"
                                            Text="{Binding AgendaNameText}"
                                            FontSize="11" Foreground="#555555"
@@ -662,10 +670,34 @@
             <!-- ── Status bar ── -->
             <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="5"
                     Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
-                <TextBlock x:Name="StatusText"
-                           Text="{Binding StatusText}"
-                           VerticalAlignment="Center" Margin="10,0"
-                           FontSize="11" Foreground="#555555"/>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Permanentní agenda chip (klikatelný) -->
+                    <Border Grid.Column="0"
+                            Background="#E8F5E9" Padding="10,3"
+                            Cursor="Hand"
+                            ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ChangeAgendaCommand}"/>
+                        </Border.InputBindings>
+                        <TextBlock Text="{Binding AgendaNameText}"
+                                   FontSize="11" Foreground="#1B5E20" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+
+                    <Border Grid.Column="1" Width="1" Background="#DDDDDD"/>
+
+                    <!-- Dynamický kontextový status -->
+                    <TextBlock x:Name="StatusText" Grid.Column="2"
+                               Text="{Binding StatusText}"
+                               VerticalAlignment="Center" Margin="10,0"
+                               FontSize="11" Foreground="#555555"/>
+                </Grid>
             </Border>
 
         </Grid>

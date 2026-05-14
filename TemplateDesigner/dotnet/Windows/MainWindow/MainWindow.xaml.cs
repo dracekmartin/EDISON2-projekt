@@ -1255,10 +1255,12 @@ public partial class MainWindow : Window
     private void UpdateTitle()
     {
         if (_vm is null) return;
+        string agenda = !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode)
+            ? $"[{_vm.State.CurrentTemplate.AgendaCode}] " : "";
         string name = _vm.State.CurrentTemplate.Name;
         string file = _vm.CurrentFilePath is not null ? $" — {Path.GetFileName(_vm.CurrentFilePath)}" : "";
         string dirty = _vm.IsDirty ? " *" : "";
-        Title = $"{name}{file}{dirty} — Template Designer";
+        Title = $"{agenda}{name}{file}{dirty} — Template Designer";
     }
 
     private void ShowHelp()
@@ -1313,6 +1315,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.P && ctrl)
         {
             MenuPrint_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (e.Key == Key.A && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.ChangeAgendaCommand.Execute(null);
             e.Handled = true;
         }
         else if (e.Key == Key.PageUp && ctrl)
