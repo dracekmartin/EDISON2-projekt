@@ -17,6 +17,13 @@ public abstract class PropertyDescriptor
 
     /// <summary>Název skupiny pro vizuální oddělení (např. "Font", "Vzhled", "Pozice").</summary>
     public required string Group { get; init; }
+
+    /// <summary>
+    /// Volitelná podmínka viditelnosti deskriptoru v panelu.
+    /// Null = vždy viditelný. Vrátí false = řádek se skryje (např. závisí na jiné property).
+    /// Po commitu hodnoty v panelu se kontroluje znovu — panel se rebuildne pokud existuje aspoň jeden deskriptor s VisibleWhen.
+    /// </summary>
+    public Func<bool>? VisibleWhen { get; init; }
 }
 
 // ─── Konkrétní typy ────────────────────────────────────────────────────────────

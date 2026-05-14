@@ -1,0 +1,63 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:TemplateDesigner.Controls">
+
+    <BooleanToVisibilityConverter x:Key="ParamBoolToVis"/>
+
+    <!-- ── Šablony parametrů sdílené mezi MainWindow (preview lišta) a PrintDialog ── -->
+    <!--    Každá šablona má Visibility binding na IsVisible (řízen VisibleWhen dependency).  -->
+
+    <DataTemplate x:Key="ParamBoolTemplate">
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center"
+                    Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
+            <CheckBox Content="{Binding Label}"
+                      IsChecked="{Binding Value, Mode=TwoWay}"
+                      VerticalAlignment="Center" FontSize="11"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ParamEnumTemplate">
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center"
+                    Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
+            <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
+                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
+            <ComboBox MinWidth="220" FontSize="11"
+                      ItemsSource="{Binding Options}"
+                      SelectedItem="{Binding Value, Mode=TwoWay}"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ParamStringTemplate">
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center"
+                    Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
+            <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
+                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
+            <TextBox MinWidth="60" FontSize="11"
+                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                     VerticalAlignment="Center"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="ParamCommitStringTemplate">
+        <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center"
+                    Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
+            <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
+                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
+            <TextBox MinWidth="60" FontSize="11"
+                     Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
+                     VerticalAlignment="Center"/>
+            <Button Content="Načíst" Command="{Binding CommitCommand}"
+                    FontSize="10" Padding="6,1" Margin="4,0,0,0"
+                    VerticalAlignment="Center"/>
+        </StackPanel>
+    </DataTemplate>
+
+    <!-- Selector — používá se s ItemTemplateSelector v ItemsControl.
+         CommitStringTemplate je optional (PrintDialog ho nepoužívá — set-and-OK flow). -->
+    <controls:ParameterTemplateSelector x:Key="ParamTemplateSelector"
+        BoolTemplate="{StaticResource ParamBoolTemplate}"
+        EnumTemplate="{StaticResource ParamEnumTemplate}"
+        CommitStringTemplate="{StaticResource ParamCommitStringTemplate}"
+        DefaultTemplate="{StaticResource ParamStringTemplate}"/>
+
+</ResourceDictionary>

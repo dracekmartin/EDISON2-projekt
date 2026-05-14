@@ -1336,20 +1336,21 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public void RebuildParametersPanel()
     {
-        PreviewParameters.Clear();
-        foreach (var p in _agendaParameters)
-        {
-            PreviewParameters.Add(new ParameterControlVM(p, _previewParams, () =>
+        ParameterControlVM.Init(
+            target:     PreviewParameters,
+            parameters: _agendaParameters,
+            values:     _previewParams,
+            onChanged:  () =>
             {
                 _cachedParamValues = null;
                 RequestPreviewRefresh?.Invoke();
             },
-            onCommit: DataReloadParams.Contains(p.Name) ? () =>
+            commitFactory: p => DataReloadParams.Contains(p.Name) ? () =>
             {
                 LoadRealPreviewData();
                 RequestPreviewRefresh?.Invoke();
-            } : null));
-        }
+            } : null);
+
         HasParameters = PreviewParameters.Count > 0;
     }
 
@@ -1843,6 +1844,7 @@ public class ParameterControlVM : INotifyPropertyChanged
     private readonly Dictionary<string, object?> _values;
     private readonly Action?                     _onChanged;
     private readonly Action?                     _onCommit;
+    private bool                                 _isVisible = true;
 
     public ParameterControlVM(TemplateParameter param, Dictionary<string,object?> values,
         Action? onChanged, Action? onCommit = null)
@@ -1851,6 +1853,40 @@ public class ParameterControlVM : INotifyPropertyChanged
         _values    = values;
         _onChanged = onChanged;
         _onCommit  = onCommit;
+    }
+
+    /// <summary>
+    /// Naplní kolekci VM pro daný seznam parametrů + sdílený <paramref name="values"/> slovník.
+    /// Auto-zapojuje re-vyhodnocení viditelnosti všech VM po každé změně (volá se PŘED <paramref name="onChanged"/>)
+    /// a provede initial visibility check po naplnění. Sjednocuje wiring mezi preview lištou (MainWindow) a PrintDialog.
+    /// </summary>
+    /// <param name="target">Cílová kolekce (typicky ObservableCollection napojená na ItemsControl).</param>
+    /// <param name="parameters">Definice parametrů agendy/šablony.</param>
+    /// <param name="values">Slovník hodnot — sdílený mezi VM (každá změna ho aktualizuje).</param>
+    /// <param name="onChanged">Volitelný callback po změně hodnoty (např. invalidace cache + překreslení).</param>
+    /// <param name="commitFactory">Volitelný factory — pro každý parametr může vrátit commit akci (Načíst tlačítko).</param>
+    public static void Init(
+        ICollection<ParameterControlVM>      target,
+        IEnumerable<TemplateParameter>       parameters,
+        Dictionary<string, object?>          values,
+        Action?                              onChanged     = null,
+        Func<TemplateParameter, Action?>?    commitFactory = null)
+    {
+        target.Clear();
+        foreach (var p in parameters)
+        {
+            // Auto-refresh visibility všech VM před externím callbackem — VisibleWhen rule ve VisualWhen
+            // se musí přepočítat dřív, než UI dostane signál k překreslení.
+            Action vmOnChanged = () =>
+            {
+                foreach (var vm in target) vm.UpdateVisibility();
+                onChanged?.Invoke();
+            };
+            target.Add(new ParameterControlVM(p, values, vmOnChanged, commitFactory?.Invoke(p)));
+        }
+
+        // Initial visibility check — proběhne až po naplnění kolekce, aby VisibleWhen vidělo všechny VM.
+        foreach (var vm in target) vm.UpdateVisibility();
     }
 
     public string                    Label         => _param.Label;
@@ -1864,6 +1900,30 @@ public class ParameterControlVM : INotifyPropertyChanged
         set { _values[_param.Name] = value; OnPropertyChanged(); _onChanged?.Invoke(); }
     }
 
+    /// <summary>Viditelnost parametru — řízena dependency rule VisibleWhen z TemplateParameter.</summary>
+    public bool IsVisible
+    {
+        get => _isVisible;
+        private set { if (_isVisible != value) { _isVisible = value; OnPropertyChanged(); } }
+    }
+
+    /// <summary>Vyhodnotí VisibleWhen rule proti aktuálním hodnotám. Volá se po každé změně libovolného parametru.</summary>
+    public void UpdateVisibility()
+    {
+        if (string.IsNullOrEmpty(_param.VisibleWhen)) { IsVisible = true; return; }
+
+        var parts = _param.VisibleWhen.Split('=', 2);
+        if (parts.Length != 2) { IsVisible = true; return; }
+
+        var depName = parts[0].Trim();
+        var expectedValue = parts[1].Trim();
+
+        if (_values.TryGetValue(depName, out var actualValue))
+            IsVisible = string.Equals(actualValue?.ToString(), expectedValue, StringComparison.OrdinalIgnoreCase);
+        else
+            IsVisible = true;
+    }
+
     /// <summary>Má se volat při potvrzení hodnoty (Enter/LostFocus) — spustí těžší operace (reload dat).</summary>
     public bool HasCommit => _onCommit is not null;
 
@@ -1875,31 +1935,4 @@ public class ParameterControlVM : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ParameterTemplateSelector
-// ─────────────────────────────────────────────────────────────────────────────
-
-public class ParameterTemplateSelector : System.Windows.Controls.DataTemplateSelector
-{
-    public System.Windows.DataTemplate? BoolTemplate          { get; set; }
-    public System.Windows.DataTemplate? EnumTemplate          { get; set; }
-    public System.Windows.DataTemplate? CommitStringTemplate  { get; set; }
-    public System.Windows.DataTemplate? DefaultTemplate       { get; set; }
-
-    public override System.Windows.DataTemplate? SelectTemplate(object item,
-        System.Windows.DependencyObject container)
-    {
-        if (item is not ParameterControlVM vm) return DefaultTemplate;
-
-        // Parametry s commit callbackem (LINKA_ID) → template s tlačítkem "Načíst"
-        if (vm.HasCommit && CommitStringTemplate is not null)
-            return CommitStringTemplate;
-
-        return (vm.ParameterType switch
-        {
-            "bool" => BoolTemplate,
-            "enum" => EnumTemplate,
-            _      => DefaultTemplate
-        }) ?? DefaultTemplate;
-    }
-}
+// Selector přesunut do Controls/ParameterTemplateSelector.cs (sdílený mezi MainWindow a PrintDialog).

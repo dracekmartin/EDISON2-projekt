@@ -353,8 +353,10 @@ public abstract class ScheduleElementBase : TemplateElement
                     .Where(n => n is not null)
                     .Select(n => new AnotaceData
                     {
-                        Typ  = ParseTypAnotace(n!["TYP"]?.ToString()),
-                        Znak = n!["ZNAK"]?.ToString() ?? ""
+                        Typ       = ParseTypAnotace(n!["TYP"]?.ToString()),
+                        Znak      = n!["ZNAK"]?.ToString() ?? "",
+                        ForeColor = NullIfEmpty(n!["FORE_COLOR"]?.ToString()),
+                        BackColor = NullIfEmpty(n!["BACK_COLOR"]?.ToString())
                     }).ToList();
 
             if (!result.TryGetValue(odjezd.SkupinaDnuId, out var byHour))
@@ -391,9 +393,11 @@ public abstract class ScheduleElementBase : TemplateElement
         var rows = data.GetRows(PoznamkyDataSource);
         var result = rows.Select(row => new PoznamkaData
         {
-            Typ  = ParseTypPoznamky(row.GetString("TYP")),
-            Znak = row.GetString("ZNAK"),
-            Text = row.GetString("TEXT")
+            Typ       = ParseTypPoznamky(row.GetString("TYP")),
+            Znak      = row.GetString("ZNAK"),
+            Text      = row.GetString("TEXT"),
+            ForeColor = NullIfEmpty(row.GetString("FORE_COLOR")),
+            BackColor = NullIfEmpty(row.GetString("BACK_COLOR"))
         }).ToList();
 
         _cachedPoznamky = result;

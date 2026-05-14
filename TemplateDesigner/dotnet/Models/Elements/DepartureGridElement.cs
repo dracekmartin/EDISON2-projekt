@@ -30,6 +30,12 @@ public class DepartureGridElement : ScheduleElementBase
     /// <summary>Zarovnání textu záhlaví skupin: Top, Center, Bottom.</summary>
     public TextVerticalAlignment HeaderVerticalAlignment { get; set; } = TextVerticalAlignment.Bottom;
 
+    /// <summary>
+    /// Styl 2. řádku záhlaví skupin dnů (např. „den" v „Pracovní / den"). Null = stejný jako HeaderStyle (Line 1).
+    /// Aplikuje se POUZE když SkupinaDnu.Nadpis2 je vyplněn. Cascade: HeaderLine2Style → HeaderStyle → ScheduleHeaderDefaults.
+    /// </summary>
+    public TextStyle? HeaderLine2Style { get; set; }
+
     // ═══════════════════════════════════════════
     // Mřížka minut
     // ═══════════════════════════════════════════
@@ -69,7 +75,16 @@ public class DepartureGridElement : ScheduleElementBase
     // ═══════════════════════════════════════════
     public TimeAxisMode TimeAxisMode { get; set; } = TimeAxisMode.Compact;
     public int TimeAxisRangeFrom { get; set; } = 4;
-    public int TimeAxisRangeTo { get; set; } = 24;
+    public int TimeAxisRangeTo { get; set; } = 23;
+
+    /// <summary>
+    /// Když <see cref="TemplateElement.Height"/> je pevné a obsah je kratší (méně řádků než kapacita),
+    /// roztáhne datové řádky a jejich fonty proporcionálně tak, aby vyplnily celou výšku elementu.
+    /// Hlavička (skupiny dnů, „Hod" sloupec) zůstává původní velikost.
+    /// Override z PrintDialogu přes parametr <c>ROZTAHNOUT_NA_VYSKU</c>.
+    /// Default <c>false</c> — zachovává chování před přidáním této property (prázdné místo dole).
+    /// </summary>
+    public bool AutoExpandToFillHeight { get; set; }
 
     // ═══════════════════════════════════════════
     // Řádky dat (DataRowHeight je na ScheduleElementBase)
@@ -119,12 +134,15 @@ public class DepartureGridElement : ScheduleElementBase
     // Layout computation
     // ═══════════════════════════════════════════════════════════════════════════
 
+    /// <summary>Jeden řádek záhlaví skupiny dnů. IsSecondary = pochází z Nadpis2 (jiný styl).</summary>
+    private record HeaderLine(string Text, bool IsSecondary);
+
     private record GroupLayout(
         SkupinaDnuData Skupina,
         Dictionary<int, List<OdjezdData>> ByHour,
         int MaxMinutesPerHour,
         float GroupWidth,
-        string[] HeaderLines,
+        HeaderLine[] HeaderLines,
         float MinWidthForText);
 
     private record GridLayout(
@@ -148,9 +166,9 @@ public class DepartureGridElement : ScheduleElementBase
 
     /// <summary>Rychlý fingerprint layout-affecting properties pro invalidaci cache.</summary>
     private int ComputeLayoutFingerprint() => HashCode.Combine(
-        HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
-        MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount,
-        GroupColumns.Count);
+        HashCode.Combine(HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
+            MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
+        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight));
 
     private GridLayout? ComputeLayout(DataContext? data, float mmToPx = 0f)
     {
@@ -207,7 +225,7 @@ public class DepartureGridElement : ScheduleElementBase
             float minTextWidth = maxWordW + 2f;
 
             // HeaderLines se přepočítají po redistribuci šířek (zatím placeholder)
-            groupLayouts.Add(new GroupLayout(sk, byHour, 0, 0, words, minTextWidth));
+            groupLayouts.Add(new GroupLayout(sk, byHour, 0, 0, Array.Empty<HeaderLine>(), minTextWidth));
         }
 
         if (groupLayouts.All(g => g.ByHour.Count == 0))
@@ -254,21 +272,30 @@ public class DepartureGridElement : ScheduleElementBase
             }
         }
 
-        // Word-wrap záhlaví skupin podle skutečné šířky sloupce a per-column fontu
+        // Layout řádků záhlaví:
+        // - Pokud má skupina vyplněn Nadpis2 → 2 distinct řádky bez word-wrap (Line 1 + Line 2, různé styly)
+        // - Jinak → word-wrap pouze Nadpis (všechny řádky jako Line 1, společný styl)
         finalGroups = finalGroups.Select(g =>
         {
-            string fullText = g.Skupina.Nadpis;
-            if (g.Skupina.Nadpis2.Length > 0) fullText += " " + g.Skupina.Nadpis2;
+            if (g.Skupina.Nadpis2.Length > 0)
+            {
+                // Zachovat hranici Nadpis / Nadpis2 — bez wrap (předpokládáme, že každý se vejde)
+                var lines = new HeaderLine[]
+                {
+                    new(g.Skupina.Nadpis, IsSecondary: false),
+                    new(g.Skupina.Nadpis2, IsSecondary: true),
+                };
+                return g with { HeaderLines = lines };
+            }
 
-            // Použít per-column font nebo element default
+            // Single-nadpis: word-wrap přes celý text, všechny řádky Line 1
             colFontLookup.TryGetValue(g.Skupina.Id, out var colFontPt);
             float fontPt = colFontPt ?? defaultHeaderFontPt;
             float fontPx = fontPt * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
                 GetTypeface(HeaderStyle.FontFamily, SKFontStyle.Bold), fontPx);
-
-            var wrapped = WrapHeaderText(fullText, g.GroupWidth, wrapFont, effectiveMmToPx);
-            return g with { HeaderLines = wrapped };
+            var wrapped = WrapHeaderText(g.Skupina.Nadpis, g.GroupWidth, wrapFont, effectiveMmToPx);
+            return g with { HeaderLines = wrapped.Select(w => new HeaderLine(w, IsSecondary: false)).ToArray() };
         }).ToList();
 
         float effFontSize = DataStyle.FontSize ?? 8f;
@@ -279,19 +306,27 @@ public class DepartureGridElement : ScheduleElementBase
         float rowH = DataRowHeight ?? ComputeRowH(effFontSize);
         float headerH = ComputeHeaderH(effHeaderFontSize);
 
-        // Výška řádku záhlaví — zohlednit per-column font (větší font = vyšší řádek)
-        float maxGroupLineH = SkupinaDnuHeaderLineHeight;
+        // Výška řádku záhlaví — Line 1 (HeaderStyle / per-column font), Line 2 (HeaderLine2Style, element-level).
+        // Per-group celková výška = součet výšek jeho řádků (různé výšky pro Line 1 a Line 2).
+        float line2FontPt = HeaderLine2Style?.FontSize ?? defaultHeaderFontPt;
+        float line2LineH = Math.Max(SkupinaDnuHeaderLineHeight, line2FontPt * PtToMm * 1.5f);
+
+        float maxGroupBlockH = 0f;
         foreach (var g in finalGroups)
         {
             colFontLookup.TryGetValue(g.Skupina.Id, out var colFontPt);
-            float fontPt = colFontPt ?? defaultHeaderFontPt;
-            float colLineH = fontPt * PtToMm * 1.5f;
-            if (colLineH > maxGroupLineH) maxGroupLineH = colLineH;
+            float line1FontPt = colFontPt ?? defaultHeaderFontPt;
+            float line1LineH = Math.Max(SkupinaDnuHeaderLineHeight, line1FontPt * PtToMm * 1.5f);
+
+            float blockH = 0f;
+            foreach (var hl in g.HeaderLines)
+                blockH += hl.IsSecondary ? line2LineH : line1LineH;
+            if (blockH > maxGroupBlockH) maxGroupBlockH = blockH;
         }
 
-        int maxHeaderLines = finalGroups.Max(g => g.HeaderLines.Length);
+        int maxHeaderLines = finalGroups.Count == 0 ? 0 : finalGroups.Max(g => g.HeaderLines.Length);
         float groupHeaderH = ShowSkupinaDnuHeader
-            ? maxHeaderLines * maxGroupLineH
+            ? maxGroupBlockH
             : 0f;
 
         var result = new GridLayout(finalGroups, hours, fontSizeMm, headerFontMm, minuteFontMm,
@@ -423,9 +458,24 @@ public class DepartureGridElement : ScheduleElementBase
         float scaleNaturalH = combinedHeaderH + layout.Hours.Count * fontRowH;
         float scale = ComputeFontScale(scaleNaturalH);
 
-        // Pokud je DataRowHeight explicitně nastavená, nescalovat ji — uživatel ji řídí přímo.
-        // Scale se aplikuje jen na fonty a záhlaví.
-        float scaledRowH = DataRowHeight.HasValue ? layout.RowH : layout.RowH * scale;
+        // Roztáhnout na výšku — pokud obsah je kratší než Height a feature je zapnutá,
+        // proporcionálně zvětšit data řádky + jejich fonty (header zůstává).
+        // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
+        bool effectiveAutoExpand = GetBoolParam(ctx.Data, "ROZTAHNOUT_NA_VYSKU", AutoExpandToFillHeight);
+        float dataGrow = 1f;
+        if (effectiveAutoExpand && Height.HasValue && scale >= 1f && layout.Hours.Count > 0)
+        {
+            float scaledCombinedH0 = combinedHeaderH;   // header při scale=1
+            float dataNaturalH = layout.Hours.Count * layout.RowH;
+            float availableDataH = Height.Value - scaledCombinedH0;
+            if (dataNaturalH > 0 && availableDataH > dataNaturalH)
+                dataGrow = availableDataH / dataNaturalH;
+        }
+        float dataScale = scale * dataGrow;
+
+        // Pokud je DataRowHeight explicitně nastavená, nescalovat ji při shrink — uživatel ji řídí přímo.
+        // Roztažení (dataGrow > 1) aplikujeme i na explicitní DataRowHeight (jinak by feature nic nedělala).
+        float scaledRowH = DataRowHeight.HasValue ? layout.RowH * dataGrow : layout.RowH * dataScale;
         float scaledGroupHeaderH = layout.GroupHeaderH * scale;
         float scaledCombinedHeaderH = combinedHeaderH * scale;
 
@@ -472,30 +522,46 @@ public class DepartureGridElement : ScheduleElementBase
         var groupMinuteTextPaints  = new Dictionary<string, SKPaint>();
         var groupMinuteBgPaints    = new Dictionary<string, SKPaint?>();
 
+        // Line 2 záhlaví — vytváří se pouze pokud HeaderLine2Style != null (jinak Line 2 sdílí Line 1).
+        bool hasLine2Override = HeaderLine2Style is not null;
+        var groupHeaderStyles2     = new Dictionary<string, ResolvedTextStyle>();
+        var groupHeaderFonts2      = new Dictionary<string, SKFont>();
+        var groupHeaderTextPaints2 = new Dictionary<string, SKPaint>();
+
         foreach (var g in layout.Groups)
         {
             var id = g.Skupina.Id;
             var hs = groupHeaderStyles[id];
             var ms = groupMinuteStyles[id];
 
+            // Header fonty: použít base scale (růst se neaplikuje na header).
             groupHeaderFonts[id]      = hs.CreateFont(scale, ctx.MmToPx);
             groupHeaderTextPaints[id] = hs.CreateTextPaint();
             groupHeaderBgPaints[id]   = hs.CreateBgPaint();
 
-            groupMinuteFonts[id]      = ms.CreateFont(scale, ctx.MmToPx);
+            if (hasLine2Override)
+            {
+                var hs2 = HeaderLine2Style!.Resolve(hs);
+                groupHeaderStyles2[id]     = hs2;
+                groupHeaderFonts2[id]      = hs2.CreateFont(scale, ctx.MmToPx);
+                groupHeaderTextPaints2[id] = hs2.CreateTextPaint();
+            }
+
+            // Minutové fonty: použít dataScale (růst se aplikuje, header ne).
+            groupMinuteFonts[id]      = ms.CreateFont(dataScale, ctx.MmToPx);
             groupMinuteTextPaints[id] = ms.CreateTextPaint();
             groupMinuteBgPaints[id]   = ms.CreateBgPaint();
         }
 
-        // Anotace fonty/painty — element-level, sdílené pro všechny buňky
-        var anotSymFont   = anotSymStyle.CreateFont(scale, ctx.MmToPx);
+        // Anotace fonty/painty — element-level, sdílené pro všechny buňky. Anotace patří k datovým buňkám → dataScale.
+        var anotSymFont   = anotSymStyle.CreateFont(dataScale, ctx.MmToPx);
         var anotSymPaint  = anotSymStyle.CreateTextPaint();
-        var anotTextFont  = anotTextStyle.CreateFont(scale, ctx.MmToPx);
+        var anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
         var anotTextPaint = anotTextStyle.CreateTextPaint();
 
-        float anotGapPx      = AnotaceGap * scale * ctx.MmToPx;
-        float anotInterGapPx = AnotaceInterGap * scale * ctx.MmToPx;
-        float scaledOdjezdGap = OdjezdGap * scale; // v mm (model space), ne v px
+        float anotGapPx      = AnotaceGap * dataScale * ctx.MmToPx;
+        float anotInterGapPx = AnotaceInterGap * dataScale * ctx.MmToPx;
+        float scaledOdjezdGap = OdjezdGap * dataScale; // v mm (model space), ne v px
 
         // Zebra — globální + per-group override
         SKPaint? zebraPaint = null;
@@ -512,7 +578,7 @@ public class DepartureGridElement : ScheduleElementBase
 
         float usedWidth = Width;
         float currentY = Y;
-        float scaledMinuteW = (MinuteWidth + AnotaceGap) * scale;
+        float scaledMinuteW = (MinuteWidth + AnotaceGap) * dataScale;
 
         try
         {
@@ -526,6 +592,8 @@ public class DepartureGridElement : ScheduleElementBase
             foreach (var f in groupHeaderFonts.Values)      f.Dispose();
             foreach (var p in groupHeaderTextPaints.Values) p.Dispose();
             foreach (var p in groupHeaderBgPaints.Values)   p?.Dispose();
+            foreach (var f in groupHeaderFonts2.Values)     f.Dispose();
+            foreach (var p in groupHeaderTextPaints2.Values) p.Dispose();
             foreach (var f in groupMinuteFonts.Values)      f.Dispose();
             foreach (var p in groupMinuteTextPaints.Values) p.Dispose();
             foreach (var p in groupMinuteBgPaints.Values)   p?.Dispose();
@@ -551,13 +619,16 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         // Nakreslí datovou buňku sloupce hodin přes CellRenderer.
+        // Hour je „service hour" (raw z dat, 0..47). Header zobrazuje clock hour = H % 24 —
+        // night extension (24..) se uživateli ukáže jako 0..3 podle hodin zobrazované doby.
+        // Datová buňka → dataScale (růst při AutoExpandToFillHeight).
         void DrawHourDataCell(float hx, int hour, string? bgColorOverride = null)
         {
             var style = bgColorOverride is not null
                 ? hourDataStyle with { BackgroundColor = bgColorOverride }
                 : hourDataStyle;
             var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledRowH);
-            CellRenderer.DrawCell(ctx, rect, hour.ToString(), style, scale);
+            CellRenderer.DrawCell(ctx, rect, (hour % 24).ToString(), style, dataScale);
         }
 
         // ── Sloučené záhlaví (Hod + názvy skupin dnů) ────────────────────────
@@ -595,10 +666,19 @@ public class DepartureGridElement : ScheduleElementBase
                         ctx.Canvas.DrawRect(bgRect, hBgPaint);
                     }
 
-                    // Multi-line text — line height odvozená z cascade FontSize
-                    float colLineH = hs.FontSize * PtToMm * 1.5f * scale;
+                    // Per-line font/paint: Line 1 = HeaderStyle (hs), Line 2 (IsSecondary) = HeaderLine2Style cascade.
+                    // Pokud HeaderLine2Style == null, IsSecondary řádky sdílí Line 1 styl (žádná regrese).
+                    ResolvedTextStyle hs2 = hasLine2Override ? groupHeaderStyles2[gid] : hs;
+                    SKFont hFont2 = hasLine2Override ? groupHeaderFonts2[gid] : hFont;
+                    SKPaint hTextPaint2 = hasLine2Override ? groupHeaderTextPaints2[gid] : hTextPaint;
+
+                    // Per-line výška řádku — Line 1 z hs, Line 2 z hs2 (pokud override).
+                    float line1H = hs.FontSize  * PtToMm * 1.5f * scale;
+                    float line2H = hs2.FontSize * PtToMm * 1.5f * scale;
+
                     int lineCount = g.HeaderLines.Length;
-                    float blockH = lineCount * colLineH;
+                    float blockH = 0f;
+                    foreach (var hl in g.HeaderLines) blockH += hl.IsSecondary ? line2H : line1H;
 
                     float hPadTop    = hs.PaddingTop    * scale;
                     float hPadBottom = hs.PaddingBottom * scale;
@@ -612,18 +692,28 @@ public class DepartureGridElement : ScheduleElementBase
                         _ /* Bottom */               => currentY + scaledCombinedHeaderH - blockH - hPadBottom
                     };
 
+                    float runningY = startLineY;
                     for (int i = 0; i < lineCount; i++)
                     {
-                        float lineY = startLineY + (i + 0.8f) * colLineH;
-                        float textW = MeasureTextMm(hFont, g.HeaderLines[i], ctx.MmToPx);
-                        float textX = hs.HAlign switch
+                        var hl = g.HeaderLines[i];
+                        var lineStyle = hl.IsSecondary ? hs2 : hs;
+                        var lineFont  = hl.IsSecondary ? hFont2 : hFont;
+                        var linePaint = hl.IsSecondary ? hTextPaint2 : hTextPaint;
+                        float lineH   = hl.IsSecondary ? line2H : line1H;
+
+                        float baselineY = runningY + lineH * 0.8f;
+                        float textW = MeasureTextMm(lineFont, hl.Text, ctx.MmToPx);
+                        float textX = lineStyle.HAlign switch
                         {
                             TextHorizontalAlignment.Left  => gx + hPadLeft + 1f,
                             TextHorizontalAlignment.Right => gx + g.GroupWidth - textW - hPadRight - 1f,
                             _ /* Center */                => gx + hPadLeft + (g.GroupWidth - hPadLeft - hPadRight - textW) / 2f
                         };
-                        var pt = ctx.ToCanvas(textX, lineY);
-                        ctx.Canvas.DrawText(g.HeaderLines[i], pt.X, pt.Y, hFont, hTextPaint);
+                        var pt = ctx.ToCanvas(textX, baselineY);
+                        ctx.Canvas.DrawText(hl.Text, pt.X, pt.Y, lineFont, linePaint);
+                        lineStyle.DrawTextDecorations(ctx.Canvas, pt.X, pt.Y, textW * ctx.MmToPx, lineFont, linePaint);
+
+                        runningY += lineH;
                     }
 
                     gx += g.GroupWidth + GroupSeparatorWidth;
@@ -741,9 +831,10 @@ public class DepartureGridElement : ScheduleElementBase
             var mFont = groupMinuteFonts[gid];
             var mTextPaint = groupMinuteTextPaints[gid];
 
-            float padL = ms.PaddingLeft * scale;
-            float padR = ms.PaddingRight * scale;
-            float padT = ms.PaddingTop * scale;
+            // Padding minutové buňky — dataScale (s růstem AutoExpandu).
+            float padL = ms.PaddingLeft * dataScale;
+            float padR = ms.PaddingRight * dataScale;
+            float padT = ms.PaddingTop * dataScale;
 
             // Zarovnání bloku minut ve sloupci
             float availW = g.GroupWidth - padL - padR;
@@ -758,6 +849,7 @@ public class DepartureGridElement : ScheduleElementBase
 
             float minX = gx + alignOffset;
             SKPaint? customMinutePaint = null;
+            SKPaint? customAnotPaint = null;
             try
             {
                 foreach (var odj in odjezdy)
@@ -800,6 +892,15 @@ public class DepartureGridElement : ScheduleElementBase
                                 aPaint = anotSymPaint;
                             }
 
+                            // Per-anotace barva z DB (konzistence s legendou poznámek).
+                            // NZ anotace zachová default styl — má vlastní invertovaný render v NotesLegend.
+                            if (anot.ForeColor is not null && anot.Typ != TypAnotace.NegativniZnacka)
+                            {
+                                customAnotPaint ??= new SKPaint { IsAntialias = true };
+                                customAnotPaint.Color = SKColor.Parse(anot.ForeColor);
+                                aPaint = customAnotPaint;
+                            }
+
                             ctx.Canvas.DrawText(anot.Znak, anotX, minPt.Y, aFont, aPaint);
                             anotX += aFont.MeasureText(anot.Znak) + anotInterGapPx;
                         }
@@ -811,6 +912,7 @@ public class DepartureGridElement : ScheduleElementBase
             finally
             {
                 customMinutePaint?.Dispose();
+                customAnotPaint?.Dispose();
             }
         }
 
@@ -963,26 +1065,71 @@ public class DepartureGridElement : ScheduleElementBase
     {
         var hours = timeAxis switch
         {
-            TimeAxisMode.Compact => allHours.OrderBy(h => h).ToList(),
-            TimeAxisMode.Full => Enumerable.Range(0, 24).ToList(),
-            TimeAxisMode.Range => Enumerable.Range(rangeFrom,
-                Math.Max(1, rangeTo - rangeFrom + 1)).ToList(),
+            TimeAxisMode.Compact     => allHours.OrderBy(h => h).ToList(),
+            TimeAxisMode.DataBounded => DataBoundedHours(allHours),
+            TimeAxisMode.Range       => RangeHoursExtended(rangeFrom, rangeTo),
+            TimeAxisMode.Full        => Enumerable.Range(0, 24).ToList(),
             _ => allHours.OrderBy(h => h).ToList()
         };
 
-        // HODINY_OD/DO filtr se aplikuje i v Compact/Full režimu
+        // HODINY_OD/DO filtr se aplikuje i mimo Range mode (zúžení Compact/DataBounded/Full).
+        // V Range mode už jsou hodiny generované přesně z rangeFrom..rangeTo, filtr přeskočit.
         if (timeAxis != TimeAxisMode.Range && (rangeFrom > 0 || rangeTo < 23))
-            hours = hours.Where(h => h >= rangeFrom && h <= rangeTo).ToList();
+        {
+            // Pokud to < from → wrap přes půlnoc: zahrnuje extended hours (24..to+24).
+            // Data hour 27 (= 03:00 následujícího provozního dne) projde filtrem 22→3 jako 27 ∈ [22..27].
+            int hi = rangeTo >= rangeFrom ? rangeTo : rangeTo + 24;
+            hours = hours.Where(h => h >= rangeFrom && h <= hi).ToList();
+        }
 
         return hours;
     }
 
+    /// <summary>Souvislé hodiny od min(data) do max(data) — včetně prázdných v rozsahu.
+    /// Data s extended hours (24..47) přirozeně rozšíří horní mez.</summary>
+    private static List<int> DataBoundedHours(HashSet<int> allHours)
+    {
+        if (allHours.Count == 0) return new List<int>();
+        int min = allHours.Min();
+        int max = allHours.Max();
+        return Enumerable.Range(min, max - min + 1).ToList();
+    }
+
+    /// <summary>Service hours [from..to]. Pokud to &lt; from, wrap přes půlnoc se reprezentuje
+    /// jako extended hours: [from..23] + [24..to+24]. Tj. 22→3 = [22, 23, 24, 25, 26, 27].
+    /// Tyto hodnoty se na header rendrují jako H%24 (např. 27 = „3"), ale v ByHour lookupu zůstávají
+    /// raw — Caché dataset s konvencí extended hours se napáruje 1:1.</summary>
+    private static List<int> RangeHoursExtended(int from, int to)
+    {
+        from = Math.Clamp(from, 0, 23);
+        to   = Math.Clamp(to, 0, 23);
+        if (to >= from)
+            return Enumerable.Range(from, to - from + 1).ToList();
+        // Wrap → extended: 22-5 → [22, 23, 24, 25, 26, 27, 28, 29]
+        // (data lookup byHour[24] → odjezdy v 0:xx následujícího provozního dne)
+        return Enumerable.Range(from, 24 - from)
+            .Concat(Enumerable.Range(24, to + 1))
+            .ToList();
+    }
+
     private static TimeAxisMode ParseTimeAxisMode(string s) => s.ToLowerInvariant() switch
     {
-        "compact" => TimeAxisMode.Compact,
-        "full" => TimeAxisMode.Full,
-        "range" => TimeAxisMode.Range,
-        _ => TimeAxisMode.Compact
+        // Nové popisné labely (varianta A — z Caché AddStandardJRParameters)
+        "jen hodiny s odjezdy"          => TimeAxisMode.Compact,
+        "souvislá od první do poslední"
+            or "souvisla od prvni do posledni" => TimeAxisMode.DataBounded,
+        "vlastní rozsah" or "vlastni rozsah"   => TimeAxisMode.Range,
+        // Staré české labely (backward compat — předchozí iterace tohoto enumu)
+        "souvislá bez mezer"  or "souvisla bez mezer"  => TimeAxisMode.Compact,
+        "souvislá s mezerami" or "souvisla s mezerami" => TimeAxisMode.DataBounded,
+        "daná intervalem"     or "dana intervalem"     => TimeAxisMode.Range,
+        "plný den"            or "plny den"            => TimeAxisMode.Full,
+        // Anglické hodnoty (backward compat pro nejstarší šablony / přímé enum názvy)
+        "compact"     => TimeAxisMode.Compact,
+        "databounded" => TimeAxisMode.DataBounded,
+        "range"       => TimeAxisMode.Range,
+        "full"        => TimeAxisMode.Full,
+        _             => TimeAxisMode.Compact
     };
 
     private string[] WrapHeaderText(string fullText, float availableWidthMm, SKFont font, float mmToPx)
@@ -1032,6 +1179,9 @@ public class DepartureGridElement : ScheduleElementBase
 
     // ─── PropertyDescriptors ────────────────────────────────────────────────
 
+    /// <summary>Lazy-init HeaderLine2Style při prvním nastavení libovolné jeho hodnoty z UI.</summary>
+    private TextStyle EnsureHeaderLine2Style() => HeaderLine2Style ??= new TextStyle();
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         // ── Výchozí styl (základ pro dědění — per-column nastavení ho přepisuje) ──
@@ -1046,6 +1196,42 @@ public class DepartureGridElement : ScheduleElementBase
             Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
             Options = EnumPropertyDescriptor.VAlignOptions },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
+
+        // ── Časová osa odjezdů (mapuje na parametry CASOVA_OSA / HODINY_OD / HODINY_DO) ──
+        // Labely jsou popisné, ne legacy žargon. Plný den (0–23) v UI vědomě vynechán — lze docílit přes Vlastní rozsah 0..23.
+        new EnumPropertyDescriptor
+        {
+            Label = "Časová osa", Group = "Časová osa",
+            Get = () => TimeAxisMode, Set = v => TimeAxisMode = (TimeAxisMode)v,
+            Options =
+            [
+                ("Jen hodiny s odjezdy",          (object)TimeAxisMode.Compact),
+                ("Souvislá od první do poslední", (object)TimeAxisMode.DataBounded),
+                ("Vlastní rozsah",                (object)TimeAxisMode.Range),
+            ]
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Hodiny od", Group = "Časová osa",
+            Get = () => TimeAxisRangeFrom, Set = v => TimeAxisRangeFrom = Math.Clamp((int)v, 0, 23),
+            Min = 0, Max = 23, Format = "0", Unit = "h",
+            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Hodiny do", Group = "Časová osa",
+            Get = () => TimeAxisRangeTo, Set = v => TimeAxisRangeTo = Math.Clamp((int)v, 0, 23),
+            Min = 0, Max = 23, Format = "0", Unit = "h",
+            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
+        },
+        // Když je kratší rozsah hodin než kapacita Height, vyplnit zbylé místo (jen data řádky).
+        // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
+        new BoolPropertyDescriptor
+        {
+            Label = "Roztáhnout na výšku", Group = "Časová osa",
+            Get = () => AutoExpandToFillHeight, Set = v => AutoExpandToFillHeight = v
+        },
+
         new BoolPropertyDescriptor  { Label = "Hodiny u každé sk.",  Group = "Odjezdy", Get = () => HourColumnPerGroup,        Set = v => HourColumnPerGroup = v },
         new FloatPropertyDescriptor { Label = "Max skupin",          Group = "Odjezdy", Get = () => MaxGroupCount,             Set = v => MaxGroupCount = (int)v, Min = 0, Max = 10, Format = "0", Unit = "(0=∞)" },
         new FloatPropertyDescriptor { Label = "Šířka minuty",       Group = "Odjezdy", Get = () => MinuteWidth,                Set = v => MinuteWidth = v, Min = 3, Max = 15, Unit = "mm" },
@@ -1053,6 +1239,13 @@ public class DepartureGridElement : ScheduleElementBase
 
         GetDataRowHeightDescriptor("Řádky dat"),
         new ColorPropertyDescriptor { Label = "Zebra barva", Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },
+
+        // ── Styl 2. řádku záhlaví skupin dnů (např. "den" v "Pracovní / den") ──
+        // Aplikuje se POUZE pokud SkupinaDnu.Nadpis2 je vyplněn. Null = stejné jako Line 1 (HeaderStyle).
+        new FloatPropertyDescriptor  { Label = "Velikost",     Group = "Záhlaví — 2. řádek", Get = () => HeaderLine2Style?.FontSize ?? HeaderStyle.FontSize ?? 9f, Set = v => EnsureHeaderLine2Style().FontSize = v, Min = 3, Max = 24, Unit = "pt" },
+        new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Záhlaví — 2. řádek", Get = () => HeaderLine2Style?.Bold ?? HeaderStyle.Bold ?? true, Set = v => EnsureHeaderLine2Style().Bold = v },
+        new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Záhlaví — 2. řádek", Get = () => HeaderLine2Style?.Italic ?? HeaderStyle.Italic ?? false, Set = v => EnsureHeaderLine2Style().Italic = v ? true : null },
+        new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Záhlaví — 2. řádek", Get = () => HeaderLine2Style?.TextColor ?? HeaderStyle.TextColor ?? "", Set = v => EnsureHeaderLine2Style().TextColor = string.IsNullOrEmpty(v) ? null : v },
 
         // ── Styl minuty ──
         new StringPropertyDescriptor { Label = "Font",         Group = "Styl minuty", Get = () => MinuteStyle.FontFamily ?? "", Set = v => MinuteStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
@@ -1111,6 +1304,7 @@ public class DepartureGridElement : ScheduleElementBase
             ShowSkupinaDnuHeader       = ShowSkupinaDnuHeader,
             SkupinaDnuHeaderLineHeight = SkupinaDnuHeaderLineHeight,
             HeaderVerticalAlignment    = HeaderVerticalAlignment,
+            HeaderLine2Style           = HeaderLine2Style?.Clone(),
             HourColumnWidth            = HourColumnWidth,
             HourColumnPerGroup         = HourColumnPerGroup,
             MaxGroupCount              = MaxGroupCount,
@@ -1129,6 +1323,7 @@ public class DepartureGridElement : ScheduleElementBase
             TimeAxisMode               = TimeAxisMode,
             TimeAxisRangeFrom          = TimeAxisRangeFrom,
             TimeAxisRangeTo            = TimeAxisRangeTo,
+            AutoExpandToFillHeight     = AutoExpandToFillHeight,
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
             HourColumnStyle            = HourColumnStyle?.Clone(),

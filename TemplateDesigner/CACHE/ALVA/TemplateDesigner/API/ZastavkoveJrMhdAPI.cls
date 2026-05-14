@@ -305,13 +305,13 @@ ClassMethod SloucitTotozneZastavky(SmerID As %Integer)
     s BodID = ""
     f {
         s val = "" s BodID = $o(^||TiskMHD("trasa",SmerID,BodID), -smerKrok, val) q:BodID=""
-        i BodID = "slouceni" continue
+        i 'BodID continue ; skip "slouceni"/"slouceniInv" a ostatní ne-numerické pomocné subscripty
         s dalsiBodID = BodID
         s pokracovat = 0
 
         f {
             s dalsiVal = "" s dalsiBodID = $o(^||TiskMHD("trasa",SmerID,dalsiBodID), -smerKrok, dalsiVal) i (dalsiBodID = "") || (pokracovat) q
-            i dalsiBodID = "slouceni" continue
+            i 'dalsiBodID continue ; skip ne-numerické pomocné subscripty
             s pokracovat = 1
 
             // Stejné číslo zastávky → sloučit
@@ -339,7 +339,7 @@ ClassMethod NacistPoznamkyAAtributyZastavek(ByRef sys As %String)
         s BodID = ""
         f {
             s val = "" s BodID = $o(^||TiskMHD("trasa",SmerID,BodID), 1, val) q:BodID=""
-            i BodID = "slouceni" continue
+            i 'BodID continue ; skip ne-numerické pomocné subscripty ("slouceni", "slouceniInv")
             s ZastavkaID = $lg(val, 1)
             i ZastavkaID = "" continue
 
@@ -373,9 +373,12 @@ ClassMethod NacistPoznamkyAAtributyZastavek(ByRef sys As %String)
                     s PopisPoznamky = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"PopisPoznamky"))
                     i pouzeZnacku s PopisPoznamky = ""
                     i Text = "" continue
+                    // Barvy (volitelné — sdíleno s vozovým JŘ; prázdné → default rendering)
+                    s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                    s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",PoznamkaSpojID,"TiskJRMHDVozoveBarvaPozadiRGB")))
                     // Textová poznámka (TypPoznamkyID=0)
                     i 'TypPoznamkyID {
-                        s ^||TiskMHD("poznamkyZast",SmerID,BodID,Text) = $lb(PopisPoznamky, 0)
+                        s ^||TiskMHD("poznamkyZast",SmerID,BodID,Text) = $lb(PopisPoznamky, 0, pForeColor, pBackColor)
                     }
                 }
 
@@ -490,7 +493,7 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         s BodID = ""
         f {
             s BodID = $o(^||TiskMHD("trasa",SmerID,BodID)) q:BodID=""
-            i BodID = "slouceni" continue
+            i 'BodID continue ; skip ne-numerické pomocné subscripty
             s jeKonecny = (BodID = konecnyBod)
 
             // Najít čas spoje v tomto bodu (včetně sloučených)
@@ -637,7 +640,7 @@ ClassMethod VypocitatBitmapyObsluhy()
         s BodID = ""
         f {
             s BodID = $o(^||TiskMHD("trasa",SmerID,BodID)) q:BodID=""
-            i BodID = "slouceni" continue
+            i 'BodID continue ; skip ne-numerické pomocné subscripty
 
             // Bitmapa obsluhovaných zastávek z tohoto bodu
             s ObsluhaBitmap = ""
@@ -653,7 +656,7 @@ ClassMethod VypocitatBitmapyObsluhy()
                 s konecnyBod = BodID
                 s dalsiBod = BodID f {
                     s dalsiBod = $o(^||TiskMHD("trasa",SmerID,dalsiBod), smerKrok) i dalsiBod = "" q
-                    i dalsiBod = "slouceni" continue
+                    i 'dalsiBod continue ; skip ne-numerické subscripty
                     i $e(TrasaSpojBitmap, dalsiBod) {
                         s $e(ObsluhaBitmap, dalsiBod) = 1
                         s $e(ObsluhaBitmap, BodID) = 1
@@ -665,7 +668,7 @@ ClassMethod VypocitatBitmapyObsluhy()
                 s TrasaSpojZBodu = ""
                 s dalsiBod = BodID f {
                     s dalsiBod = $o(^||TiskMHD("trasa",SmerID,dalsiBod), smerKrok) i dalsiBod = "" q
-                    i dalsiBod = "slouceni" continue
+                    i 'dalsiBod continue ; skip ne-numerické subscripty
                     i $e(TrasaSpojBitmap, dalsiBod) {
                         s $e(TrasaSpojZBodu, dalsiBod) = 1
                         s $e(TrasaSpojZBodu, BodID) = 1
@@ -858,7 +861,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s bodIterator = ""
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator), smerKrok) q:bodIterator=""
-        i bodIterator = "slouceni" continue
+        i 'bodIterator continue ; skip ne-numerické pomocné subscripty ("slouceni"/"slouceniInv")
         // Za aktuální: jen obsluhovatelné zastávky
         i (SmerID=0)&&(bodIterator>aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
         i (SmerID=1)&&(bodIterator<aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
@@ -976,10 +979,14 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
                         s specZnak = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"SpecZnak"))
                         i specZnak = "" continue
-                        d ..AddAnotace(odj, "specialni", specZnak)
+                        // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
+                        // Aplikují se i na anotaci nad minutou (konzistence s legendou).
+                        s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                        s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                        d ..AddAnotace(odj, "specialni", specZnak, pForeColor, pBackColor)
                         s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
-                            s strankovePoznamky(specZnak) = $lb(PopisPozn, 2)
+                            s strankovePoznamky(specZnak) = $lb(PopisPozn, 2, "", pForeColor, pBackColor)
                         }
                     }
 
@@ -1023,10 +1030,14 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
                         s znakPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"Text"))
                         i znakPozn = "" continue
-                        d ..AddAnotace(odj, "text", znakPozn)
+                        // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
+                        // Aplikují se i na anotaci nad minutou (konzistence s legendou).
+                        s pForeColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaZnakuRGB")))
+                        s pBackColor = ..RgbToHex($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"PoznamkaSpoj","DTA",poznamkaID,"TiskJRMHDVozoveBarvaPozadiRGB")))
+                        d ..AddAnotace(odj, "text", znakPozn, pForeColor, pBackColor)
                         s PopisPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"PopisPoznamky"))
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkovePouzeZnacku")) {
-                            s strankovePoznamky(znakPozn) = $lb(PopisPozn, 0)
+                            s strankovePoznamky(znakPozn) = $lb(PopisPozn, 0, "", pForeColor, pBackColor)
                         }
                     }
 
@@ -1040,15 +1051,16 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // POZNAMKY — seřazené: znaky (text) → NZ → speciální
     s poznamky = ##class(%DynamicArray).%New()
 
-    // Znaky z trasy (textové poznámky)
+    // Znaky z trasy (textové poznámky) — formát $lb(text, 0, foreColor, backColor)
     s znakPoznamky = ""
     f {
         s znakPoznamky = $o(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky)) q:znakPoznamky=""
         s pozVal = $g(^||TiskMHD("poznamkyZast",SmerID,aktualniZastBodID,znakPoznamky))
-        d poznamky.%Push(..BuildPoznamka("text", znakPoznamky, $lg(pozVal,1)))
+        d poznamky.%Push(..BuildPoznamka("text", znakPoznamky, $lg(pozVal,1), $lg(pozVal,3), $lg(pozVal,4)))
     }
 
-    // Poznámky ze stránky (odjezdy) — seřazené
+    // Poznámky ze stránky (odjezdy) — formát $lb(text, typeCode, znakOrEmpty, foreColor, backColor)
+    // NZ má znak v poli 3 a žádnou barvu (4,5 prázdné); text/specialni má 3 prázdné a barvy v 4,5.
     s znak = ""
     f {
         s znak = $o(strankovePoznamky(znak)) q:znak=""
@@ -1057,7 +1069,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
         s pTyp = $s(pTypCislo=0:"text", pTypCislo=1:"nz", 1:"specialni")
         s pZnak = $s(pTypCislo=1:$lg(pVal,3), 1:znak)
         s pText = $lg(pVal, 1)
-        d poznamky.%Push(..BuildPoznamka(pTyp, pZnak, pText))
+        d poznamky.%Push(..BuildPoznamka(pTyp, pZnak, pText, $lg(pVal,4), $lg(pVal,5)))
     }
 
     // Atributy zastávky jako poznámky — ze VŠECH zobrazených zastávek (ne jen aktuální)
@@ -1066,7 +1078,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s bodIterator = ""
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator)) q:bodIterator=""
-        i bodIterator = "slouceni" continue
+        i 'bodIterator continue ; skip ne-numerické pomocné subscripty
         // Stejný filtr jako u zastávek v StopList: jen neprojete + aktuální
         i (SmerID=0)&&(bodIterator<aktualniZastBodID) continue
         i (SmerID=1)&&(bodIterator>aktualniZastBodID) continue
@@ -1115,7 +1127,7 @@ ClassMethod DoplnitPoznamkuRozdilTrasy1001(ByRef sys As %String, odj As %Dynamic
     s tmpcnt = ""
     f {
         s tmpcnt = $o(^||TiskMHD("trasa",SmerID,tmpcnt)) q:tmpcnt=""
-        i tmpcnt = "slouceni" continue
+        i 'tmpcnt continue ; skip ne-numerické pomocné subscripty
         s arri("arr",tmpcnt) = ^||TiskMHD("trasa",SmerID,tmpcnt)
     }
     try {
@@ -1287,21 +1299,45 @@ ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina A
     q odjezd
 }
 
-ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String)
+ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "")
 {
     s anotace = ##class(%DynamicObject).%New()
     d anotace.%Set("TYP", typ)
     d anotace.%Set("ZNAK", znak)
+    d anotace.%Set("FORE_COLOR", foreColor)
+    d anotace.%Set("BACK_COLOR", backColor)
     d odjezd.%Get("ANOTACE").%Push(anotace)
 }
 
-ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String) As %DynamicObject
+ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "") As %DynamicObject
 {
     s poznamka = ##class(%DynamicObject).%New()
     d poznamka.%Set("TYP", typ)
     d poznamka.%Set("ZNAK", znak)
     d poznamka.%Set("TEXT", text)
+    d poznamka.%Set("FORE_COLOR", foreColor)
+    d poznamka.%Set("BACK_COLOR", backColor)
     q poznamka
+}
+
+/// Konvertuje 8-bit integer (0-255) na dvouznakovou velkou hex reprezentaci.
+ClassMethod IntToHex2(n As %Integer) As %String [ Private ]
+{
+    s digits = "0123456789ABCDEF"
+    i n < 0 s n = 0
+    i n > 255 s n = 255
+    q $e(digits, (n\16) + 1) _ $e(digits, (n#16) + 1)
+}
+
+/// Konvertuje RGB string "R;G;B" (např. "255;191;128") na SkiaSharp hex "#FFRRGGBB".
+/// Prázdný vstup nebo nevalidní formát → prázdný string.
+ClassMethod RgbToHex(rgb As %String) As %String
+{
+    i rgb = "" q ""
+    s r = +$p(rgb,";",1)
+    s g = +$p(rgb,";",2)
+    s b = +$p(rgb,";",3)
+    q "#FF"_..IntToHex2(r)_..IntToHex2(g)_..IntToHex2(b)
 }
 
 /// Konvertuje číselný kód speciálního znaku na Unicode string.
@@ -1399,22 +1435,39 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
 
-    // Časová osa
+    // Časová osa odjezdů — popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
     s param = ##class(%DynamicObject).%New()
     s param.name         = "CASOVA_OSA"
     s param.label        = "Časová osa odjezdů"
     s param.type         = "enum"
-    s param.defaultValue = "compact"
+    s param.defaultValue = "Jen hodiny s odjezdy"
     s opts = ##class(%DynamicArray).%New()
-    d opts.%Push("compact")
-    d opts.%Push("full")
-    d opts.%Push("range")
+    d opts.%Push("Jen hodiny s odjezdy")
+    d opts.%Push("Souvislá od první do poslední")
+    d opts.%Push("Vlastní rozsah")
     s param.options = opts
     d arr.%Push(param)
 
-    // Hodiny od/do — relevantní jen pro CASOVA_OSA = range
-    d ..AddNumberParam(arr, "HODINY_OD", "Hodiny od", "4")
-    d ..AddNumberParam(arr, "HODINY_DO", "Hodiny do", "24")
+    // Hodiny od/do — viditelné jen pro Vlastní rozsah; podporují wrap přes půlnoc (např. 22-5).
+    s pOd = ##class(%DynamicObject).%New()
+    s pOd.name         = "HODINY_OD"
+    s pOd.label        = "Hodiny od"
+    s pOd.type         = "number"
+    s pOd.defaultValue = "4"
+    s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
+    d arr.%Push(pOd)
+
+    s pDo = ##class(%DynamicObject).%New()
+    s pDo.name         = "HODINY_DO"
+    s pDo.label        = "Hodiny do"
+    s pDo.type         = "number"
+    s pDo.defaultValue = "23"
+    s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
+    d arr.%Push(pDo)
+
+    // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
+    // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

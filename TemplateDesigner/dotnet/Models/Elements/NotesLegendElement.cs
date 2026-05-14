@@ -94,17 +94,24 @@ public class NotesLegendElement : ScheduleElementBase
                         break;
 
                     case TypPoznamky.SpecialniZnak:
-                        var znakPt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
-                        ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, boldFont, paints.Text);
-                        lineX += boldFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
-                        var textPt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
-                        ctx.Canvas.DrawText(pozn.Text, textPt.X, textPt.Y, noteFont, paints.Text);
+                        // Symbol v pozn.ForeColor (pokud z DB), tělo poznámky default barvou.
+                        RenderSymbolWithText(ctx, pozn, ref lineX, currentY, scaledNoteLineH,
+                            boldFont, noteFont, paints.Text, suffixSeparator: false);
                         break;
 
                     default:
-                        var pt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
-                        string displayText = pozn.Znak.Length > 0 ? $"{pozn.Znak}{NoteSeparator}{pozn.Text}" : pozn.Text;
-                        ctx.Canvas.DrawText(displayText, pt.X, pt.Y, noteFont, paints.Text);
+                        // Text větev: pokud má znak, vyrenderuj samostatně barevně + separator + tělo.
+                        // Bez znaku → jen tělo poznámky default barvou.
+                        if (pozn.Znak.Length > 0)
+                        {
+                            RenderSymbolWithText(ctx, pozn, ref lineX, currentY, scaledNoteLineH,
+                                noteFont, noteFont, paints.Text, suffixSeparator: true);
+                        }
+                        else
+                        {
+                            var pt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
+                            ctx.Canvas.DrawText(pozn.Text, pt.X, pt.Y, noteFont, paints.Text);
+                        }
                         break;
                 }
 
@@ -140,6 +147,42 @@ public class NotesLegendElement : ScheduleElementBase
         // Text za značkou
         var textPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
         ctx.Canvas.DrawText(pozn.Text, textPt.X, textPt.Y, noteFont, textPaint);
+    }
+
+    /// <summary>
+    /// Vykreslí symbol (znak) ve volitelné barvě z DB (<c>pozn.ForeColor</c>),
+    /// následovaný textem v default barvě (<c>textPaint</c>).
+    /// <paramref name="suffixSeparator"/>=true → mezi symbolem a textem se vloží <c>NoteSeparator</c>.
+    /// BackColor zatím **ignorován** — rezervováno pro budoucí rozšíření (klient zatím chce jen barvu znaku).
+    /// </summary>
+    private void RenderSymbolWithText(RenderContext ctx, PoznamkaData pozn,
+        ref float lineX, float currentY, float lineH,
+        SKFont symbolFont, SKFont textFont, SKPaint textPaint, bool suffixSeparator)
+    {
+        // Symbol — pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
+        SKPaint symbolPaint = textPaint;
+        SKPaint? customSymbolPaint = null;
+        if (!string.IsNullOrEmpty(pozn.ForeColor))
+        {
+            customSymbolPaint = new SKPaint { Color = SKColor.Parse(pozn.ForeColor), IsAntialias = true };
+            symbolPaint = customSymbolPaint;
+        }
+
+        try
+        {
+            var znakPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
+            ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
+            lineX += symbolFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
+
+            // Text — vždy default barva (klient výslovně chce barvit jen znak)
+            string displayText = suffixSeparator ? $"{NoteSeparator}{pozn.Text}" : pozn.Text;
+            var textPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
+            ctx.Canvas.DrawText(displayText, textPt.X, textPt.Y, textFont, textPaint);
+        }
+        finally
+        {
+            customSymbolPaint?.Dispose();
+        }
     }
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────

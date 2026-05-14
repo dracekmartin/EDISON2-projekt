@@ -7,7 +7,20 @@ namespace TemplateDesigner.Models.Elements;
 public enum TypPoznamky { Text, NegativniZnacka, SpecialniZnak }
 public enum TypAnotace  { Text, NegativniZnacka, SpecialniZnak }
 
-public enum TimeAxisMode { Compact, Full, Range }
+/// <summary>
+/// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
+/// </summary>
+public enum TimeAxisMode
+{
+    /// <summary>Souvislá bez mezer: jen hodiny s daty (default, kompaktní).</summary>
+    Compact,
+    /// <summary>Souvislá s mezerami: od první hodiny s daty do poslední, včetně prázdných hodin v rozsahu.</summary>
+    DataBounded,
+    /// <summary>Daná intervalem: HODINY_OD..HODINY_DO (uživatel zadá). Podporuje wrap přes půlnoc (Do &lt; Od).</summary>
+    Range,
+    /// <summary>Plný den (všech 24 hodin 0–23).</summary>
+    Full
+}
 
 
 
@@ -73,6 +86,19 @@ public class AnotaceData
 {
     public TypAnotace Typ { get; set; }
     public string Znak { get; set; } = "";
+
+    /// <summary>
+    /// Volitelná barva textu znaku anotace (hex „#FFRRGGBB", null = default render).
+    /// Pochází z Caché <c>PoznamkaSpoj.TiskJRMHDVozoveBarvaZnakuRGB</c> přes <c>AddAnotace</c>.
+    /// Konzistentní s odpovídající barvou poznámky v legendě.
+    /// </summary>
+    public string? ForeColor { get; set; }
+
+    /// <summary>
+    /// Volitelná barva pozadí (hex „#FFRRGGBB", null = default render).
+    /// Wire-format zatím rendering ignoruje (rezervováno).
+    /// </summary>
+    public string? BackColor { get; set; }
 }
 
 /// <summary>Poznámka v legendě pod mřížkou.</summary>
@@ -81,6 +107,18 @@ public class PoznamkaData
     public TypPoznamky Typ { get; set; }
     public string Znak { get; set; } = "";
     public string Text { get; set; } = "";
+
+    /// <summary>
+    /// Volitelná barva textu znaku (hex „#FFRRGGBB", null = default render).
+    /// Pochází z Caché <c>PoznamkaSpoj.TiskJRMHDVozoveBarvaZnakuRGB</c> přes <c>BuildPoznamka</c>.
+    /// </summary>
+    public string? ForeColor { get; set; }
+
+    /// <summary>
+    /// Volitelná barva pozadí (hex „#FFRRGGBB", null = default render).
+    /// Wire-format zatím rendering ignoruje (rezervováno, klient zatím chce jen barvu znaku).
+    /// </summary>
+    public string? BackColor { get; set; }
 }
 
 // ─── Generický per-column styling ────────────────────────────────────────────
