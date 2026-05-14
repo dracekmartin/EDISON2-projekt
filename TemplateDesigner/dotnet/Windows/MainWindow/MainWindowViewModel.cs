@@ -16,6 +16,7 @@ using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
+using TemplateDesigner.Services;
 using ALWA.SYS;
 
 namespace TemplateDesigner;
@@ -48,6 +49,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public  IDataSchemaProvider    SchemaProvider        { get; }
     public  CacheAgendaProvider?   CacheProvider         { get; }
     public  ITableTemplateProvider? TableTemplateProvider => CacheProvider;
+    public  Services.CacheTemplateService? TemplateStorage { get; }
     private readonly SectionTemplateManager _sectionTemplates;
 
     // ── Preview params ────────────────────────────────────────────────────────
@@ -182,7 +184,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Commands ──────────────────────────────────────────────────────────────
     private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
-    private AsyncRelayCommand? _save, _saveAs, _open;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs;
 
     public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= new(Redo,          () => CanRedo);
@@ -190,6 +192,9 @@ public class TemplateDesignerViewModel : EDViewModel
     public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveAsTemplate);
     public RelayCommand NewCommand           => _new       ??= new(NewTemplate);
     public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
+    public AsyncRelayCommand OpenFromCacheCommand  => _openFromCache  ??= CommandAsync(OpenFromCacheAsync,  () => TemplateStorage is not null);
+    public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
+    public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
     public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
     public RelayCommand ExportPngCommand     => _exportPng ??= new(ExportPreviewPng);
     public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
@@ -208,9 +213,13 @@ public class TemplateDesignerViewModel : EDViewModel
         var schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
         _sectionTemplates = new SectionTemplateManager();
 
-        CacheProvider = mlRest is not null
-            ? CacheSchemaWiring.TryCreate(mlRest, settings)
-            : CacheSchemaWiring.TryCreate(settings);
+        var resolvedMlRest = mlRest ?? CacheSchemaWiring.TryCreateMlRest(settings);
+        CacheProvider = resolvedMlRest is not null
+            ? CacheSchemaWiring.TryCreate(resolvedMlRest, settings)
+            : null;
+        TemplateStorage = resolvedMlRest is not null
+            ? new Services.CacheTemplateService(resolvedMlRest)
+            : null;
 
         SchemaProvider = CacheProvider is not null
             ? new CompositeDataSchemaProvider(CacheProvider, new JsonFileDataSchemaProvider(schemasDir))
@@ -422,6 +431,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (!ConfirmUnsavedChanges()) return;
         State.CurrentTemplate = new Template();
         CurrentFilePath = null;
+        _loadedFromCache = false;
         IsDirty = false;
         State.SelectedElements.Clear();
         State.UndoStack.Clear();
@@ -444,6 +454,7 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             State.CurrentTemplate = await TemplateSerializer.LoadAsync(dlg.FileName);
             CurrentFilePath = dlg.FileName;
+            _loadedFromCache = false;
             IsDirty = false;
             State.SelectedElements.Clear();
             State.UndoStack.Clear();
@@ -518,7 +529,10 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task SaveTemplate()
     {
-        if (CurrentFilePath is null) { await SaveAsTemplate(); return; }
+        // Šablona z Caché → update v Caché. Šablona ze souboru → save do souboru. Nová → SaveAs.
+        if (_loadedFromCache)          { await SaveToCacheAsync(); return; }
+        if (CurrentFilePath is null)   { await SaveAsTemplate();   return; }
+
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
@@ -541,6 +555,95 @@ public class TemplateDesignerViewModel : EDViewModel
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
         RequestTitleUpdate?.Invoke();
+    }
+
+    // ── Caché storage ─────────────────────────────────────────────────────────
+
+    /// <summary>True pokud aktuální šablona byla naposledy načtená/uložená do Caché.</summary>
+    private bool _loadedFromCache;
+
+    private async Task OpenFromCacheAsync()
+    {
+        if (TemplateStorage is null) return;
+
+        // Confirmace neuložených změn AŽ po explicitním Otevřít — dialog funguje i jako
+        // správce (smazat / přejmenovat) bez intent načíst do editoru.
+        var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
+        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, agendas);
+        var dlg = new CacheTemplatePickerDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true || vm.SelectedTemplateId is null) return;
+
+        if (!ConfirmUnsavedChanges()) return;
+
+        try
+        {
+            var (_, template) = await TemplateStorage.LoadAsync(vm.SelectedTemplateId.Value);
+            State.CurrentTemplate = template;
+            CurrentFilePath = null;
+            _loadedFromCache = true;
+            IsDirty = false;
+            State.SelectedElements.Clear();
+            State.UndoStack.Clear();
+            State.RedoStack.Clear();
+            NotifyUndoRedo();
+            ApplyEditorPreferencesFromTemplate();
+            State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
+            RebuildSections();
+            RefreshFieldsList();
+            RequestTitleUpdate?.Invoke();
+            RequestCanvasSizeUpdate?.Invoke();
+            RequestPropertiesPanelUpdate?.Invoke();
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    private async Task SaveToCacheAsync()
+    {
+        if (TemplateStorage is null) return;
+        // Pokud šablona ještě v Caché není (z disku nebo nová) → spustit Save As
+        if (!_loadedFromCache) { await SaveToCacheAsAsync(); return; }
+
+        SyncParametersToTemplate();
+        CaptureEditorPreferencesToTemplate();
+        try
+        {
+            await TemplateStorage.SaveAsync(State.CurrentTemplate);
+            IsDirty = false;
+            RequestTitleUpdate?.Invoke();
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    private async Task SaveToCacheAsAsync()
+    {
+        if (TemplateStorage is null) return;
+
+        var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
+        var vm = new SaveToCacheDialogViewModel(
+            State.CurrentTemplate.Name,
+            State.CurrentTemplate.AgendaCode,
+            agendas);
+        var dlg = new SaveToCacheDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true) return;
+
+        // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
+        State.CurrentTemplate.Id = Guid.NewGuid();
+        State.CurrentTemplate.Name = vm.Name;
+        State.CurrentTemplate.AgendaCode = vm.SelectedAgenda.Code;
+
+        SyncParametersToTemplate();
+        CaptureEditorPreferencesToTemplate();
+        try
+        {
+            await TemplateStorage.SaveAsync(State.CurrentTemplate);
+            _loadedFromCache = true;
+            CurrentFilePath = null;
+            IsDirty = false;
+            RequestTitleUpdate?.Invoke();
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
     private void SyncParametersToTemplate()
@@ -1393,8 +1496,10 @@ public class TemplateDesignerViewModel : EDViewModel
         if (_realPreviewData is { Count: > 0 })
             return _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList();
 
-        var single = BuildPreviewMockData();
-        return single is null ? [] : [single];
+        // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
+        // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
+        // jedna stránka s placeholdery beze změny.
+        return [BuildPreviewMockData() ?? new DataContext()];
     }
 
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)

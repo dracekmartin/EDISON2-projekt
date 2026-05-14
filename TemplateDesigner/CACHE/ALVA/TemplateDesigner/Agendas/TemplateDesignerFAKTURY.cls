@@ -2,8 +2,8 @@
 /// Referenční implementace pro fakturační systém.
 /// 
 /// appsettings.json:
-///   { "code": "FAKTURY", "name": "Faktury", "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerFAKTURY" }
-Class ALVA.TemplateDesigner.API.TemplateDesignerFAKTURY Extends ALVA.TemplateDesigner.API.AgendaAPI
+///   { "code": "FAKTURY", "name": "Faktury", "cacheClass": "ALVA.TemplateDesigner.Agendas.TemplateDesignerFAKTURY" }
+Class ALVA.TemplateDesigner.Agendas.TemplateDesignerFAKTURY Extends ALVA.TemplateDesigner.Agendas.AgendaAPI
 {
 
 /// Vrátí schéma polí FAKTURY agendy: skalární pole + položky faktury.

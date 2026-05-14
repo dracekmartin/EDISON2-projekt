@@ -151,7 +151,7 @@ public class CacheConnectionSettings
 
 /// <summary>
 /// Definice jedné agendy načítané z Caché.
-/// Caché třída musí dědit z ALVA.TemplateDesigner.API.AgendaAPI
+/// Caché třída musí dědit z ALVA.TemplateDesigner.Agendas.AgendaAPI
 /// a implementovat GetSchema, GetTableTemplates, GetTableTemplate, GetData.
 /// </summary>
 public class SchemaAgendaSettings
@@ -164,7 +164,7 @@ public class SchemaAgendaSettings
 
     /// <summary>
     /// Caché třída implementující AgendaAPI,
-    /// např. "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI".
+    /// např. "ALVA.TemplateDesigner.Agendas.ZastavkoveJrMhdAPI".
     /// </summary>
     public string CacheClass { get; set; } = "";
 }

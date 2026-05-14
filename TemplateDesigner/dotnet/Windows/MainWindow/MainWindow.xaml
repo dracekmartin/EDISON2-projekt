@@ -128,10 +128,13 @@
         <Menu DockPanel.Dock="Top" Background="#F8F8F8">
             <MenuItem Header="Soubor">
                 <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="Ctrl+N" Click="MenuNew_Click"/>
-                <MenuItem x:Name="MenuOpen"   Header="Otevřít..."    InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
+                <MenuItem x:Name="MenuOpen"   Header="Otevřít ze souboru..."  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
+                <MenuItem x:Name="MenuOpenFromCache" Header="Otevřít z Caché..." Command="{Binding OpenFromCacheCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSave"   Header="Uložit"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
-                <MenuItem x:Name="MenuSaveAs" Header="Uložit jako..."                          Click="MenuSaveAs_Click"/>
+                <MenuItem x:Name="MenuSaveAs" Header="Uložit jako soubor..."                  Click="MenuSaveAs_Click"/>
+                <MenuItem x:Name="MenuSaveToCache"   Header="Uložit do Caché"          Command="{Binding SaveToCacheCommand}"/>
+                <MenuItem x:Name="MenuSaveToCacheAs" Header="Uložit do Caché jako..." Command="{Binding SaveToCacheAsCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF..." Click="MenuExportPdf_Click"/>
                 <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG..." Click="MenuExportPng_Click"/>
@@ -185,6 +188,9 @@
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
+                <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v Caché..."
+                          Command="{Binding OpenFromCacheCommand}"/>
+                <Separator/>
                 <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon..." Click="MenuAiAssistant_Click"/>
                 <MenuItem x:Name="MenuImportPdf" Header="Import PDF..." Click="MenuImportPdf_Click"/>
             </MenuItem>

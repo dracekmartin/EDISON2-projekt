@@ -6,7 +6,7 @@ namespace TemplateDesigner.Config;
 /// <summary>
 /// Propojení TemplateDesigneru s Caché databází přes MLRest.
 /// Vytváří CacheAgendaProvider z nastavení v templatedesigner.appsettings.json.
-/// Každá agenda odkazuje na Caché třídu dědící z ALVA.TemplateDesigner.API.AgendaAPI.
+/// Každá agenda odkazuje na Caché třídu dědící z ALVA.TemplateDesigner.Agendas.AgendaAPI.
 /// </summary>
 internal static class CacheSchemaWiring
 {
@@ -44,11 +44,12 @@ internal static class CacheSchemaWiring
     {
         if (settings.Agendas.Count == 0) return null;
 
+        // Agenda s prázdným CacheClass (např. "GENERAL") je validní volba — bez DB polí,
+        // jen statický obsah šablony. CacheAgendaProvider pro ni vrací null schema.
         var agendas = settings.Agendas
-            .Where(a => !string.IsNullOrWhiteSpace(a.CacheClass))
             .Select(a => (a.Code, a.Name, a.CacheClass))
             .ToList();
 
-        return agendas.Count == 0 ? null : new CacheAgendaProvider(mlRest, agendas);
+        return new CacheAgendaProvider(mlRest, agendas);
     }
 }

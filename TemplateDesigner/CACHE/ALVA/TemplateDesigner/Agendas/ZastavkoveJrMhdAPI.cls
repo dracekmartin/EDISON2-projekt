@@ -1,6 +1,6 @@
 Include (ALVAMHD, GENERAL)
 
-Class ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI Extends ALVA.TemplateDesigner.API.AgendaAPI
+Class ALVA.TemplateDesigner.Agendas.ZastavkoveJrMhdAPI Extends ALVA.TemplateDesigner.Agendas.AgendaAPI
 {
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -11,7 +11,7 @@ Class ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI Extends ALVA.TemplateDesigner
 /// Obsahuje 6-fázový tiskový engine (trasa → bitmapy → JSON výstup).
 /// 
 /// appsettings.json:
-///   { "code": "MHD", "name": "MHD Jízdní řád", "cacheClass": "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI" }
+///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendas.ZastavkoveJrMhdAPI" }
 /// 
 /// GetData vstup:  IN["LINKA_ID"] = číslo linky
 /// GetData výstup: OUT[1..N] = JSON stránky, každá = { "values": {...}, "rows": {...} }

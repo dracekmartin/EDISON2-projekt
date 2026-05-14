@@ -12,7 +12,7 @@ namespace TemplateDesigner.Serialization;
 /// Volá Caché AgendaAPI (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
 /// Nahrazuje CacheDataSchemaProvider — pracuje s JSON formátem místo pipe-delimited stringů.
 ///
-/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.API.AgendaAPI,
+/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendas.AgendaAPI,
 /// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.JR.TiskAPI".
 /// </summary>
 public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
@@ -62,6 +62,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass))
             return null;
 
+        // Agenda bez Caché třídy (např. GENERAL) — žádné DB schema, jen statický obsah šablony
+        if (string.IsNullOrWhiteSpace(cacheClass)) return null;
+
         var agenda = _agendas.FirstOrDefault(a =>
             a.Code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase));
         if (agenda is null) return null;
@@ -109,6 +112,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 !code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase))
                 continue;
 
+            // Agenda bez Caché třídy (GENERAL) — žádné Fixed šablony
+            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
+
             try
             {
                 CVar cvResult = _mlRest.Query(cacheClass, "GetTableTemplates", new CVar());
@@ -144,6 +150,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         // Zkus každou třídu dokud nenajdeme šablonu
         foreach (var cacheClass in _classMap.Values)
         {
+            // Agenda bez Caché třídy (GENERAL) — žádné šablony
+            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
+
             try
             {
                 var inVar = new CVar();
@@ -185,6 +194,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (string.IsNullOrEmpty(agendaCode)) return [];
         if (_parametersCache.TryGetValue(agendaCode, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
+
+        // Agenda bez Caché třídy (GENERAL) — žádné parametry
+        if (string.IsNullOrWhiteSpace(cacheClass)) { _parametersCache[agendaCode] = []; return []; }
 
         try
         {
@@ -266,6 +278,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     {
         if (string.IsNullOrEmpty(agendaCode)) return null;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
+
+        // Agenda bez Caché třídy (GENERAL) — žádná reálná data, šablona se tiskne s parametry přímo
+        if (string.IsNullOrWhiteSpace(cacheClass)) return null;
 
         try
         {
@@ -357,6 +372,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (string.IsNullOrEmpty(agendaCode)) return null;
         if (_mockDataCache.TryGetValue(agendaCode, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
+
+        // Agenda bez Caché třídy (GENERAL) — žádná mock data, preview používá SampleData ze šablony
+        if (string.IsNullOrWhiteSpace(cacheClass)) return null;
 
         try
         {

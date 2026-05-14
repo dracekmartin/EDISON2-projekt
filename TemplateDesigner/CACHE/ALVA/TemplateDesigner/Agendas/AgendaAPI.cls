@@ -3,8 +3,8 @@
 /// Caché kompilátor vynucuje implementaci všech Abstract metod.
 /// 
 /// Konfigurace v appsettings.json:
-///   { "code": "JR", "name": "Jízdní řád", "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerMHD" }
-Class ALVA.TemplateDesigner.API.AgendaAPI Extends %RegisteredObject [ Abstract ]
+///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendas.ZastavkoveJrMhdAPI" }
+Class ALVA.TemplateDesigner.Agendas.AgendaAPI Extends %RegisteredObject [ Abstract ]
 {
 
 /// Vrátí DataSchema pro agendu: skalární pole (fields) + tabulkové kolekce (fieldCollections).
