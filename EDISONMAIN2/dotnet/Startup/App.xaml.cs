@@ -5,6 +5,7 @@ using ALVA.EDISONAPI;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.UserPrefs;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
@@ -75,6 +76,7 @@ namespace EDISONMAIN2
             // spouští USERS.exe přes WindowNavigator.ShowLegacyAndWait, ten čte connection
             // kontext z EDServices.Current.MLRest.
             services.MLRest = mlRest;
+            services.UserPrefs = new CacheUserPrefsService(mlRest);
 
             // VerifyLic vytvoří ACTIVITY zámek pro tuto session. Při překročení licencí + admin
             // dostane retry s oknem aktivity uživatelů. Stejná logika i při přepnutí firmy ve VM.

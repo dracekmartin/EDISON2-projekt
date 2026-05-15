@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
+using EDControls;
 using EDControls.EDViewModel;
 using TemplateDesigner.Config;
 
@@ -41,6 +42,9 @@ public partial class App : Application
         var mlRest   = CacheSchemaWiring.TryCreateMlRest(settings);
 
         WarnIfCacheMisconfigured(settings, mlRest);
+
+        if (mlRest is not null)
+            EDServices.Current.UserPrefs = new EDControls.UserPrefs.CacheUserPrefsService(new MLRestAdapter(mlRest));
 
         new MainWindow(mlRest).Show();
     }

@@ -1,17 +1,21 @@
 using ALWA.SYS;
 using EDControls.EDViewModel;
+using EDControls.UserPrefs;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace EDControls.EDList
 {
@@ -20,7 +24,19 @@ namespace EDControls.EDList
         // ─── Konfigurace ──────────────────────────────────────────────────────────
 
         private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
+        private IUserPrefsService UserPrefs =>
+            (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.UserPrefs
+            ?? new NullUserPrefsService();
+
         public string CacheClass { get; set; } = "";
+
+        /// <summary>
+        /// Identifikátor hosta pro persist column layout (šířky + pořadí + sort) přes UserPrefs.
+        /// Konvence: <c>"&lt;Project&gt;.&lt;ConsumerName&gt;"</c>, např. <c>"TemplateDesigner.TemplatePicker"</c>.
+        /// Null nebo prázdné → persist je vypnutý (žádný Load/Save).
+        /// </summary>
+        public string? HostId { get; set; }
+        private const string PrefsScope = "EDControls.EDList";
 
         // ─── Stav ─────────────────────────────────────────────────────────────────
 
@@ -64,6 +80,18 @@ namespace EDControls.EDList
         {
             InitializeComponent();
             dataGrid.ItemsSource = _rows;
+            Unloaded += OnUnloaded;
+        }
+
+        private async void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            // Force save layout — pokud byl debouncer ještě běžel, dokončit teď.
+            if (_saveDebouncer is { IsEnabled: true })
+            {
+                _saveDebouncer.Stop();
+                await SaveLayoutAsync();
+            }
+            UnhookColumnEvents();  // cleanup DPD subscriptions
         }
 
         // ─── Multi-select API ─────────────────────────────────────────────────────
@@ -150,6 +178,9 @@ namespace EDControls.EDList
                 _rows.Add(row);
             }
             FireCheckedRowsChanged();
+            // Aplikuj persistent column layout asynchronně po data load — minor flicker (default
+            // sloupce → persistované), ale UI neblokuje.
+            _ = LoadLayoutAsync();
         }
 
         // ─── Parsování ────────────────────────────────────────────────────────────
@@ -262,12 +293,18 @@ namespace EDControls.EDList
 
         private void RebuildColumns()
         {
+            UnhookColumnEvents();
             dataGrid.Columns.Clear();
             if (_selectionMode == EListSelectionMode.Check)
                 dataGrid.Columns.Add(BuildCheckBoxColumn());
             if (_columns is null) return;
             foreach (var col in _columns.Where(c => c.Visible))
-                dataGrid.Columns.Add(BuildDataGridColumn(col));
+            {
+                var dgCol = BuildDataGridColumn(col);
+                dgCol.SetValue(FrameworkElement.TagProperty, col.Key);  // mapping zpět při SnapshotLayout
+                dataGrid.Columns.Add(dgCol);
+            }
+            HookColumnEvents();
         }
 
         private DataGridColumn BuildCheckBoxColumn()
@@ -408,6 +445,155 @@ namespace EDControls.EDList
             if (MLRest is null || string.IsNullOrEmpty(CacheClass))
                 throw new InvalidOperationException("EDList: MLRest a CacheClass musí být nastaveny před použitím.");
         }
+
+        // ─── Column layout persist (L2) ──────────────────────────────────────────
+
+        private DispatcherTimer? _saveDebouncer;
+        private bool _suppressLayoutSave;  // true během ApplyLayout — eventy nesmí trigger save
+
+        /// <summary>Subscribe na width/displayIndex/sort změny sloupců — trigger debounced save.</summary>
+        private void HookColumnEvents()
+        {
+            foreach (var col in dataGrid.Columns)
+            {
+                if (col.GetValue(FrameworkElement.TagProperty) is not string) continue;
+                DependencyPropertyDescriptor.FromProperty(DataGridColumn.ActualWidthProperty, typeof(DataGridColumn))
+                    ?.AddValueChanged(col, OnColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(DataGridColumn.DisplayIndexProperty, typeof(DataGridColumn))
+                    ?.AddValueChanged(col, OnColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(DataGridColumn.SortDirectionProperty, typeof(DataGridColumn))
+                    ?.AddValueChanged(col, OnColumnPropertyChanged);
+            }
+        }
+
+        private void UnhookColumnEvents()
+        {
+            foreach (var col in dataGrid.Columns)
+            {
+                if (col.GetValue(FrameworkElement.TagProperty) is not string) continue;
+                DependencyPropertyDescriptor.FromProperty(DataGridColumn.ActualWidthProperty, typeof(DataGridColumn))
+                    ?.RemoveValueChanged(col, OnColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(DataGridColumn.DisplayIndexProperty, typeof(DataGridColumn))
+                    ?.RemoveValueChanged(col, OnColumnPropertyChanged);
+                DependencyPropertyDescriptor.FromProperty(DataGridColumn.SortDirectionProperty, typeof(DataGridColumn))
+                    ?.RemoveValueChanged(col, OnColumnPropertyChanged);
+            }
+        }
+
+        private void OnColumnPropertyChanged(object? sender, EventArgs e)
+        {
+            if (_suppressLayoutSave) return;
+            ScheduleSaveLayout();
+        }
+
+        private void ScheduleSaveLayout()
+        {
+            if (string.IsNullOrEmpty(HostId)) return;
+            _saveDebouncer ??= CreateDebouncer();
+            _saveDebouncer.Stop();
+            _saveDebouncer.Start();
+        }
+
+        private DispatcherTimer CreateDebouncer()
+        {
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(500) };
+            timer.Tick += async (_, _) =>
+            {
+                timer.Stop();
+                await SaveLayoutAsync();
+            };
+            return timer;
+        }
+
+        /// <summary>Sebere current layout z DataGridu a uloží přes UserPrefs.</summary>
+        private async Task SaveLayoutAsync()
+        {
+            if (string.IsNullOrEmpty(HostId)) return;
+            try
+            {
+                var layout = SnapshotLayout();
+                await UserPrefs.SaveAsync(PrefsScope, HostId, ColumnLayoutSerializer.Serialize(layout));
+            }
+            catch { /* best-effort */ }
+        }
+
+        private ColumnLayout SnapshotLayout()
+        {
+            var columns = new List<ColumnPref>();
+            foreach (var col in dataGrid.Columns)
+            {
+                if (col.GetValue(FrameworkElement.TagProperty) is not string key) continue;
+                columns.Add(new ColumnPref
+                {
+                    Key = key,
+                    Width = col.ActualWidth,
+                    DisplayIndex = col.DisplayIndex,
+                });
+            }
+            var sort = dataGrid.Columns
+                .Where(c => c.SortDirection.HasValue && c.GetValue(FrameworkElement.TagProperty) is string)
+                .Select(c => new SortPref
+                {
+                    Key = (string)c.GetValue(FrameworkElement.TagProperty),
+                    Direction = c.SortDirection == ListSortDirection.Descending ? "desc" : "asc",
+                }).ToList();
+            return new ColumnLayout { Columns = columns, Sort = sort.Count > 0 ? sort : null };
+        }
+
+        /// <summary>Načte layout z UserPrefs a aplikuje na aktuální sloupce. Best-effort.</summary>
+        private async Task LoadLayoutAsync()
+        {
+            if (string.IsNullOrEmpty(HostId)) return;
+            try
+            {
+                var json = await UserPrefs.LoadAsync(PrefsScope, HostId);
+                var layout = ColumnLayoutSerializer.Deserialize(json);
+                if (layout is null) return;
+                ApplyLayout(layout);
+            }
+            catch { /* best-effort */ }
+        }
+
+        private void ApplyLayout(ColumnLayout layout)
+        {
+            _suppressLayoutSave = true;
+            try
+            {
+                // 1) Šířky — apply v current pořadí
+                foreach (var pref in layout.Columns)
+                {
+                    var col = FindColumnByKey(pref.Key);
+                    if (col is null) continue;
+                    if (pref.Width > 0) col.Width = new DataGridLength(pref.Width);
+                }
+                // 2) DisplayIndex — apply v cílovém pořadí (low → high), DataGrid přesype zbytek
+                foreach (var pref in layout.Columns.OrderBy(p => p.DisplayIndex))
+                {
+                    var col = FindColumnByKey(pref.Key);
+                    if (col is null) continue;
+                    if (pref.DisplayIndex >= 0 && pref.DisplayIndex < dataGrid.Columns.Count)
+                        col.DisplayIndex = pref.DisplayIndex;
+                }
+                // 3) Sort — visual indicator + ICollectionView sort descriptions
+                if (layout.Sort is { Count: > 0 })
+                {
+                    var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
+                    view?.SortDescriptions.Clear();
+                    foreach (var sort in layout.Sort)
+                    {
+                        var col = FindColumnByKey(sort.Key);
+                        if (col is null) continue;
+                        var dir = sort.Direction == "desc" ? ListSortDirection.Descending : ListSortDirection.Ascending;
+                        col.SortDirection = dir;
+                        view?.SortDescriptions.Add(new SortDescription($"[{sort.Key}]", dir));
+                    }
+                }
+            }
+            finally { _suppressLayoutSave = false; }
+        }
+
+        private DataGridColumn? FindColumnByKey(string key) =>
+            dataGrid.Columns.FirstOrDefault(c => c.GetValue(FrameworkElement.TagProperty) as string == key);
     }
 
     // ─── Extension metody pro JsonElement ─────────────────────────────────────────

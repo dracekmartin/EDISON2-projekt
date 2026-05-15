@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
+using EDControls.UserPrefs;
 
 namespace EDControls.EDViewModel;
 
@@ -24,6 +25,13 @@ public class EDViewModel : INotifyPropertyChanged
     /// Použití: <c>PopupDisplayer.Confirm(...)</c> nebo <c>PopupDisplayer.Info(...)</c> z VM.
     /// </summary>
     public IPopupDisplayer PopupDisplayer => _services.PopupDisplayer;
+
+    /// <summary>
+    /// Per-user persist API (column layouts, hidden položky, ...). Default je no-op
+    /// <see cref="NullUserPrefsService"/>; composition-root nastavuje
+    /// <see cref="CacheUserPrefsService"/> v App.xaml.cs po vytvoření MLRest.
+    /// </summary>
+    public IUserPrefsService UserPrefs => _services.UserPrefs;
 
     /// <summary>
     /// Pokud true, <c>EDFooter</c> si vyžádá potvrzení před zavřením přes Storno/Zavřít.

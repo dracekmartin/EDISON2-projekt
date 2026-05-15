@@ -18,16 +18,18 @@
 - ⚠️ IMAGE typ (není implementován DataGridTemplateColumn s Image)
 - ⚠️ CODEBOOK typ
 - ⚠️ Filtrování v LoadList
-- ⚠️ ColumnLayout pro ukládání uživatelského nastavení (L2 — připravuje se)
 - ⚠️ Search box v toolbaru (L3)
 - ⚠️ CRUD tlačítka Add/Edit/Delete (L8 — nice to have)
 
-**Co bylo dodáno (2026-05-15, L1):**
+**Co bylo dodáno (2026-05-15):**
 
-- ✅ Multi-select Check mode — `SelectionMode = Check` zobrazí checkbox sloupec
-- ✅ Tri-state header checkbox (all / none / mixed)
-- ✅ `EDListRow` s INotifyPropertyChanged — programmatic IsChecked changes propagují do UI
-- ✅ Batch operace `CheckAll()` / `UncheckAll()` / `SetChecked(id, bool)` (event fires 1×)
+- ✅ **L1** — Multi-select Check mode (`SelectionMode = Check`), tri-state header, `CheckAll`/`UncheckAll`, `EDListRow` s INotifyPropertyChanged
+- ✅ **L2** — Column layout persist (šířky + pořadí + sort) přes `IUserPrefsService`
+  - `HostId` property na EDList (povinné pro persist; null = persist off)
+  - Storage: `^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)` = JSON blob
+  - Load při `LoadList` (async, best-effort), Save debounced 500ms + force při Unload
+  - Best-effort čtení — neznámé sloupce ignorovány, missing fields default
+  - JSON schema versioning (`"version": 1`)
 - ✅ MockList rozšířen o DATETIME + COLOR sloupce pro testing všech typů
 
 ## Účel
@@ -754,14 +756,27 @@ public sealed class EDListRow : INotifyPropertyChanged
 
 Host ji **nepoužívá přímo** — EDList ji vystavuje jen jako `dataGrid.SelectedItem` typ pro WPF binding. Pokud host potřebuje data, použije `SelectedRowId` / `SelectedRowIds` a vlastní cache toho, co posílá do Caché.
 
+### L2 — Column layout persist (implementováno)
+
+```csharp
+public string? HostId { get; set; }
+// Klíč pro persist column layout přes IUserPrefsService.
+// null nebo prázdné = persist off (žádný Load/Save).
+// Konvence: "<Project>.<ConsumerName>", např. "TemplateDesigner.TemplatePicker".
+// Storage: ^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)
+//
+// Layout obsahuje:
+// - widths (column.ActualWidth)
+// - order (column.DisplayIndex)
+// - sort (column.SortDirection + ICollectionView.SortDescriptions)
+//
+// Save: debounced 500ms po změně column property + force při Unload okna.
+// Load: async po LoadList, aplikuje na current sloupce best-effort.
+```
+
 ### Budoucí rozšíření (v dalších commitech)
 
 ```csharp
-// L2 — ColumnLayout persist (šířky + pořadí + visible per uživatel)
-public string? HostId { get; set; }            // unique klíč pro IUserPrefsService
-// LoadList automaticky aplikuje persistent layout
-// Při změně column width / order se layout async ukládá
-
 // L3 — Search + Title
 public string Title { get; set; }              // header text nad gridem
 public string SearchText { get; set; }         // client-side filter
