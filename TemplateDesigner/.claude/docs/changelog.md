@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-05-15 — fix: cleanup aktivních instancí při Open template s jinou agendou
+
+Když user otevřel šablonu (z disku nebo z Caché) s jinou `AgendaCode`, než měla předchozí, aktivní instance (linky MHD) se nevyčistily → ◀▶ na chipu zkusilo GetData s LinkaID z původní agendy → silent fail. Corner case z `2026-05-15 — v1.0 demo balíček` known limits.
+
+- ✅ Nový helper `ClearActiveInstances()` v `MainWindowViewModel` — no-op pokud už prázdné, jinak reset + fire change events
+- ✅ `OpenTemplateAsync` (disk) — snapshot starého `AgendaCode` před Load, po Load porovnání case-insensitive, clear pokud se změnilo
+- ✅ `OpenFromCacheAsync` — totéž
+- ✅ `ReplaceWithBlankTemplate` (volaná z `ChangeAgenda` / `NewTemplate`) — refaktor inline clearu na sdílený `ClearActiveInstances()` helper
+
+Žádné breaking změny.
+
+---
+
 ## 2026-05-15 — v1.0 demo balíček: Caché storage + přepínač agendy + Instance Picker
 
 **Tři postupné commity (5ac9dd0 → 82b68be → fd25008) tvoří kompletní release readiness pro testovací nasazení.** Zákazníkovi lze ukázat end-to-end workflow pro zastávkový JŘ MHD.
@@ -46,7 +59,6 @@
 
 - LocalPrefs persistence aktivních instancí (po restartu se znovu vyberou)
 - Pořadí linek v pickeru podle subscriptu ($o iterace), ne by Cislo/Nazev
-- Open template s jinou agendou nečistí instance (corner case)
 - Tabbed UI pro Open dialog (zatím dvě menu cesty)
 - Batch export blokuje UI thread (OK pro 1–30 linek; pro 100+ progress bar potřeba)
 

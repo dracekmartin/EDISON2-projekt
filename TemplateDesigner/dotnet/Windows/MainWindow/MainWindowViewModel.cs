@@ -98,6 +98,15 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public bool HasMultipleActiveInstances => _activeInstances.Count > 1;
 
+    /// <summary>Vyčistí aktivní instance — volá se při změně agendy / načtení šablony s jinou agendou.</summary>
+    private void ClearActiveInstances()
+    {
+        if (_activeInstances.Count == 0) return;
+        _activeInstances = [];
+        _activeInstanceIndex = 0;
+        OnActiveInstancesChanged(reloadData: false);
+    }
+
     private void OnActiveInstancesChanged(bool reloadData)
     {
         OnPropertyChanged(nameof(ActiveInstanceText));
@@ -553,9 +562,7 @@ public class TemplateDesignerViewModel : EDViewModel
         _loadedFromCache = false;
         IsDirty = false;
         // Aktivní instance jsou agenda-specifické — při změně agendy ztrácí smysl.
-        _activeInstances = [];
-        _activeInstanceIndex = 0;
-        OnActiveInstancesChanged(reloadData: false);
+        ClearActiveInstances();
         State.SelectedElements.Clear();
         State.UndoStack.Clear();
         State.RedoStack.Clear();
@@ -621,7 +628,12 @@ public class TemplateDesignerViewModel : EDViewModel
         if (dlg.ShowDialog() != true) return;
         try
         {
+            var oldAgenda = State.CurrentTemplate.AgendaCode;
             State.CurrentTemplate = await TemplateSerializer.LoadAsync(dlg.FileName);
+            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
+            // IDs patří staré agendě a v nové by GetData padl.
+            if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
+                ClearActiveInstances();
             CurrentFilePath = dlg.FileName;
             _loadedFromCache = false;
             IsDirty = false;
@@ -746,8 +758,13 @@ public class TemplateDesignerViewModel : EDViewModel
 
         try
         {
+            var oldAgenda = State.CurrentTemplate.AgendaCode;
             var (_, template) = await TemplateStorage.LoadAsync(vm.SelectedTemplateId.Value);
             State.CurrentTemplate = template;
+            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
+            // IDs patří staré agendě a v nové by GetData padl.
+            if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
+                ClearActiveInstances();
             CurrentFilePath = null;
             _loadedFromCache = true;
             IsDirty = false;
