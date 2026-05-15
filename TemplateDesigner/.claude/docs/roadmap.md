@@ -15,33 +15,11 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-1. **Fáze A.2 — Zákaznické úpravy zastávkového JŘ** (z helpdesku) ⬅️ **AKTUÁLNÍ PRIORITA** — projít a uzavřít suspended tickety od TRANSDEV / KORID / DPKV. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-2. **Release readiness pro testovací nasazení** — minimální infrastruktura aby šel TemplateDesigner dát zákazníkovi k testu (viz níže).
-3. **Caché Migrace** — Wave 1 (UserPreferences) následuje po A.2.
+> **v1.0 demo balíček HOTOV (2026-05-15)** — Release readiness R1+R2+R4 splněno (3 commity: `5ac9dd0` Caché Template Storage, `82b68be` Přepínač agendy, `fd25008` Instance Picker). Zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md). Hotové sekce → **Archiv** dole.
 
-> Fáze A (1:1 šablona + review s kolegy) ✅ hotovo — review s kolegy proběhlo, výstupem je sada požadavků v Fázi A.2. Hotové fáze (Fáze A, B0.5, sjednocení Header/Data zón, per-template prefs, UX vyladění) viz **Archiv** na konci dokumentu.
-
----
-
-## 🚀 Release readiness — minimální infrastruktura pro testovací nasazení
-
-Před nasazením prvnímu zákazníkovi je třeba doplnit základ workflow, aby uživatel věděl s čím pracuje a kde má data uložená. Aktuálně je vše file-based + parametr LINKA_ID se píše ručně.
-
-| Krok | Téma | Pracnost | Stav |
-|---|---|---|---|
-| **R1** | **Agenda + Linka picker UX** — nové Caché API `AgendaAPI.GetAvailableInstances` (pro MHD vrátí seznam linek: ID, Číslo, Název, Platnost). TD dialog se search/filter, indicator v toolbaru „[Agenda] — [Linka XYZ — Název]". Zrušit ruční psaní LINKA_ID. | 1 den | ⏳ |
-| **R2** | **Template storage v Caché** — nová `ALVA.TemplateDesigner.Templates` třída (analogie legacy `ALVA.LIBRARY.Form.SaveParams`). Per-IDFa storage, metadata (autor, created, modified). TD Soubor → Otevřít/Uložit dialog se 2 záložkami: „Z Caché" (default) + „Z disku" (legacy fallback). Mini-CRUD: Smazat, Přejmenovat. | 2 dny | ⏳ |
-| **R3** | **Section templates v Caché** *(nice-to-have pro v1)* — stejný pattern jako R2 pro `section-templates/`. Pokud release tlačí, ponechat file-based. | 0.5 dne | ⏳ |
-| **R4** | **Polish před release** — confirmation dialogy, lepší error messages při Caché failure, status text v toolbaru, friendly hlášky místo „Žádná data z Caché". | 0.5 dne | ⏳ |
-
-**Celkem ~4 dny** pro stav „dáme to zákazníkovi a má základní workflow".
-
-**Otevřené otázky před implementací (konzultace s kolegy):**
-- Existuje v M-line legacy nějaká univerzální Template storage knihovna v Caché, nebo děláme od nuly? Stálo by za to ověřit pattern (analogie `WindowStatePersistence` × `ALVA.LIBRARY.Form.SaveParams`).
-- Linka picker: ID + Číslo + Název + Platnost stačí, nebo i Dopravce / TypLinkyID / Verejne číslo?
-- Templates **per-IDFa** (oddělené dopravce) nebo globální? Per-MLP × IDFa (jako WindowStatePersistence) by bylo standard.
-
-**Vztah ke Caché Migrace:** R2 je „rychlá MVP varianta" — Wave 3 (níže) je plné řešení s versioningem, migrátorem, rollback. R2 doručí základní save/load v Caché, Wave 3 to později nahradí čistší architekturou.
+1. **Fáze A.2-D — Caché business logic** ⬅️ **DALŠÍ PRIORITA** — projít TRANSDEV/KORID suspended tickety: D1 „spoj jede až do XY", D2 custom komentář přebije auto-poznámku, D3 NZ bug, D5 skrýt atributy u hidden sloupců, D6 vypnutí auto-poznámky bezbariér, D7 KORID přípojové řádky. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+2. **Wave 1 — UserPreferences (LocalPrefs v Caché)** — per-user × IDFa nastavení (zoom, grid, recent files, instance picker default). Souvisí s budoucími EDComponents2 (refaktor EDInputGrid/EDList).
+3. **Demo polish** — Edison icon do okna, sample template „showcase" pro zastávkový JŘ, drobné UX (pořadí linek v pickeru, persistence aktivních instancí přes restart).
 
 ---
 
@@ -82,54 +60,11 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🔴 Fáze A.2: Zákaznické úpravy zastávkového JŘ (z helpdesku) ⬅️ AKTUÁLNÍ PRIORITA
+### 🔴 Fáze A.2-D: Caché business logic ⬅️ AKTUÁLNÍ PRIORITA
 
-Konkrétní požadavky z aktivních (suspended) tiketů Podpory M-line k zastávkovému JŘ. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
+Suspended tickety TRANSDEV/KORID — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
-**Před implementací každé položky:** projdi rozhodovací mřížku v [`feature-design-principles.md`](feature-design-principles.md) — typ 1/2/3, kam patří (panel/dialog/šablona), faktorování pro pozdější promotion.
-
-**Cíl fáze:** uzavřít suspended tickets od TRANSDEV, KORID, DPKV; M-line zákazníkům slíbil release nového tiskového modulu **polovina 2026**.
-
-#### A.2.0 — Architektonická příprava (prerekvizita)
-
-Před implementací jednotlivých zákaznických položek je třeba **layout refactor** elementů, kterých se to nejvíc týká (typ 2 dle principles doc — první varianta vynucuje refaktor). Bez toho se každá feature řeší jako copypasted hack.
-
-| Krok | Co | Související | Stav |
-|---|---|---|---|
-| A2-0a | **StopList layout vocabulary** — refaktor `Render()` na `ComputeArrowBox / ComputeContentBox / ComputeAttributePrefixBox`; per-row override infrastruktura | A2-A1, A2-A2, A2-A3, A2-A5 | |
-| A2-0b | **DepartureGrid header model** — podpora dvouřádkového headeru s per-line stylem (datový model + Render) | A2-B1 | |
-| A2-0c | **Conditional visibility v PropertiesPanel** — `PropertyDescriptor.VisibleWhen` predikát (H-11 odložené, teď je čas) | A2-A1, A2-A3, A2-A6 | |
-| A2-0d | **Per-template variants infrastruktura** — formalizovat `templates/<agenda>/<customer>.json` jako shipped defaults; UI „načti výchozí šablonu" | snižuje tlak na element properties | |
-| A2-0e | **VisibilityExpression verifikace** — ověřit, že podporuje `{CISLO_LINKY}`, `{TYP_LINKY}`, `{TYP_JR}`, `{KOD_DOPRAVY}` placeholdery | A2-E1 | ✅ (2026-05-11) |
-
-#### A.2.A — StopListElement úpravy
-
-| Krok | Tiket | Zákazník | Co | Typ | Stav |
-|---|---|---|---|---|---|
-| A2-A1 | #10660 | DPKV+CBDP | `DirectionArrowPosition: Left \| Right` — konfigurovatelná pozice (asymetricky: Vpravo uvnitř sloupce, Vlevo mimo sloupec) | 2 | ✅ (2026-05-12) viz §G |
-| A2-A2 | #10660 | DPKV+CBDP | `MarkersPosition` — značky (na znamení / atributy / poznámky) před nebo za názvem; auto-fit šířky marker sub-cell | 2 | ✅ (2026-05-12) viz §G |
-| A2-A3 | #10660 | DPKV | `CurrentStopBgColor` — podbarvení aktuální zastávky místo Underline | 1 | ✅ (2026-05-12) + cleanup master toggle |
-| A2-A4 | #10660 | DPKV | Per-column header font — ověřit a vyladit default („min." menší než „Zastávky") | 1 | ✅ (2026-05-12) verifikace OK, viz §G |
-| A2-A5 | #7937 | TRANSDEV | Per-row indent ve StopList, per-směr, volitelně per časové pásmo Tč | 2 | ⏸️ Odloženo — vyžaduje diskuzi s kolegy (kde brát data o odsazení per zastávka/směr v `ALVA.MHD.ZST`). Infrastruktura v TD i Caché schématu existuje (`ZastavkaData.Odsazeni`, `ODSAZENI` JSON pole), ale Caché vrací stub `odsazeni = 0` (ZastavkoveJrMhdAPI:881). Není přímo TD práce. |
-| A2-A6 | #7959 | TRANSDEV | Filtr zastávek bez obsluhy z tištěné zastávky (Caché) | 2 | 🔍 Pravděpodobně už hotovo — filtr existuje v `ZastavkoveJrMhdAPI:862-864` (hardcoded, vždy aktivní, žádný vypínač). Vyžaduje verifikaci s konkrétními TRANSDEV daty (např. linka 876xx se školní zastávkou). Pokud bude třeba opt-out parametr, doplnit do `GetParameters`. |
-
-#### A.2.B — DepartureGridElement úpravy
-
-| Krok | Tiket | Zákazník | Co | Typ | Stav |
-|---|---|---|---|---|---|
-| A2-B1 | #10660 | DPKV | Per-line font v dvouřádkovém headeru skupiny dnů („Pracovní" větší / „den" menší) | 2 | ✅ (2026-05-12) viz §G |
-| A2-B2 | #10660 | DPKV | **Bug** — nestejně silné podtržení obou řádků headeru; oprava `DrawTextDecorations` (konstantní tloušťka) | 1 | ✅ (2026-05-12) |
-| A2-B3 | #10660, **#9036** | DPKV, **TRANSDEV** | Rozsah hodin přes půlnoc (3→0) + auto-fit zvětšení řádků při zúžení rozsahu | 2 | ✅ (2026-05-12) — `TimeAxisMode` rozšířen o `DataBounded`; **Vlastní rozsah** podporuje wrap přes půlnoc s extended hours; HODINY_OD/DO + `VisibleWhen`; sjednocený parameter UI; **„Roztáhnout na výšku"** property + `ROZTAHNOUT_NA_VYSKU` parametr pro proporcionální růst data řádků + fontů. **Pokrývá i TRANSDEV #9036** — MHD Trenčín nočné spoje 22-5h s časovou osou cez polnoc. Detaily viz §G. |
-| A2-B4 | #8828 | TRANSDEV | Per-sloupek zastávky — samostatná vývěska (Caché parametr + multi-data export) | 3 | ⏸️ Odloženo (2026-05-12) — vyžaduje (a) datový průzkum v `^[dataDB]ALVA.MHD.LSO`/`ZST` kde leží info o sloupcích (atribut spoje? per-bod v trase?), (b) business decision s kolegy: identifikace sloupku (číslo/písmeno/popis), default chování (opt-in přes `PER_SLOUPEK` parametr vs vždy zapnuté), behavior pro single-sloupek zastávky. **Téměř 100 % práce v Caché** — TD multi-data PDF export už zvládá libovolný počet OUT stránek. |
-
-#### A.2.C — NotesLegendElement úpravy
-
-| Krok | Tiket | Zákazník | Co | Typ | Stav |
-|---|---|---|---|---|---|
-| A2-C1 | #10660 | DPKV | Barevné odlišení značky vs. text poznámky — DB-driven barvy z `PoznamkaSpoj` | 2 | ✅ (2026-05-12) — místo designer-level `SymbolStyle` použit **DB-driven** zdroj barev: `TiskJRMHDVozoveBarvaZnakuRGB`/`BarvaPozadiRGB` z `PoznamkaSpoj` ENUMS → propagace přes wire formát (`FORE_COLOR`/`BACK_COLOR`) → render v NotesLegend i anotacích DepartureGrid. Konzistentní mezi legendou a odjezdy. Aktuální DPKV data nemají barevné záznamy s `TiskJRMHDZastavkove=1` — infrastruktura připravená, klient si nastaví v DB. Detaily viz §G. |
-| A2-C2 | #10660 | DPKV | Volitelná hlavička sekce („Poznámky") — symetrie s headerem StopList | 1 | ✅ (2026-05-12) Verifikace — `HeaderText` property + `RenderSectionHeader` (BG + text + linka pod) už existují; konfigurovatelné v properties panelu včetně barvy pozadí (přes `GetCellZoneBaseColorDescriptors`). Klient si může nastavit libovolný text + barvy. Viz §G. |
-
-**~~A2-C3 (KORID #7487, NZ + týdenní platnost 4 na řádek)~~** — přesunuto mimo scope zastávkového JŘ (týká se knižních/linkových JŘ).
+> **Pozn.:** Fáze A.2-A..C (StopList / DepartureGrid / NotesLegend UI úpravy) je hotová — viz Archiv níže. Zbývá A.2-D série (Caché logika) + A.2-A5/A6/B4 (odložené pro datový průzkum / diskuzi s kolegy).
 
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
 
@@ -143,13 +78,13 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 | A2-D6 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | |
 | A2-D7 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | |
 
-#### A.2.E — Návrhář sestav (ověření)
+#### Odložené z A.2 (na rozhodnutí s kolegy)
 
-| Krok | Tiket | Zákazník | Co | Stav |
-|---|---|---|---|---|
-| A2-E1 | #8772 | TRANSDEV | Ověřit, že `VisibilityExpression` s placeholdery `{CISLO_LINKY}`, `{TYP_LINKY}` atd. funguje → uzavřít tiket s referenční šablonou | ✅ (2026-05-11) verifikace OK, tiket zůstává suspended (interní), viz `customer-requirements-zastavkovy-jr.md §G` |
-
-Také vyřazuje **A2-0e** z prerekvizit (verifikace VisibilityExpression v sekci A.2.0).
+| Krok | Tiket | Co | Důvod odložení |
+|---|---|---|---|
+| A2-A5 | #7937 | StopList per-row indent per směr / per Tč | Caché vrací stub `odsazeni=0`; chybí datový tok z `ALVA.MHD.ZST` (legacy „dta 10"?). Není přímo TD práce. |
+| A2-A6 | #7959 | Filtr neobsluhovaných zastávek | Pravděpodobně už hotovo v Caché — vyžaduje verifikaci s reálnými TRANSDEV daty (linka 876xx se školní zastávkou) |
+| A2-B4 | #8828 | Per-sloupek zastávky — samostatná vývěska | Vyžaduje (a) datový průzkum kde v `^ALVA.MHD` leží info o sloupcích, (b) business decision (identifikace, default chování). ~100 % práce v Caché. |
 
 #### A.2 — Status komunikace s klienty
 
@@ -670,6 +605,40 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 # 🗄️ Archiv — hotové kroky
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
+
+## v1.0 demo balíček ✅ (2026-05-15)
+
+Tři commity tvoří kompletní release readiness pro testovací nasazení — zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md) 2026-05-15 entry.
+
+| # | Co | Commit |
+|---|---|---|
+| R1 | **Agenda + Linka picker UX** — `ChangeAgendaDialog` se 3 entry pointy (menu / Ctrl+Shift+A / klik na status chip); `InstancePickerDialog` (multi-výběr linek, search, batch); Caché `GetAvailableInstances` iteruje skupinu linek; permanentní status indikátor (zelený agenda chip + modrý instance chip s ◀▶ + window title `[MHD]` prefix) | `82b68be` + `fd25008` |
+| R2 | **Template storage v Caché** — třída `ALVA.TemplateDesigner.API.Templates` (5 metod, per-IDFa, JSON wire); `CacheTemplateService` async wrapper; `CacheTemplatePickerDialog` (správce: list + filtr + search + Open/Rename/Delete); `SaveToCacheDialog`; menu „Soubor → Otevřít z Caché... / Uložit do Caché [jako...]" + „Nástroje → Šablony v Caché..."; Caché namespace refactor `API/Agendas/Forms`; GENERAL agenda fallback | `5ac9dd0` |
+| R4 | **Polish** — status bar chips, ConfirmUnsavedChanges integrace, error reporting přes IPopupDisplayer, BuildAllPreviewDataPages bugfix pro šablony bez agendy, debug logging do `^jm` (po debugu odstraněno) | průběžně |
+
+**Performance:** 600 stránek MHD JŘ za ~9s (5.2s fetch + 3.6s render, ~15ms/stránka) — top decile vs commercial reporting (Crystal Reports 30-60s, SSRS 20-45s, JasperReports 15-30s).
+
+**Architektonická pravidla R1–R5 (async/IPopupDisplayer/JSON/MVVM/versioning) dodržena ve všech 3 commitech.**
+
+## Fáze A.2: Zákaznické úpravy zastávkového JŘ ✅ (2026-05-11 → 2026-05-12)
+
+Suspended tickety od DPKV (#10660) a TRANSDEV (#7937, #7959, #9036) z helpdesku. Detail viz [`customer-requirements-zastavkovy-jr.md §G`](customer-requirements-zastavkovy-jr.md).
+
+| Krok | Tiket | Co | Datum |
+|---|---|---|---|
+| A2-A1 | #10660 | StopList: `DirectionArrowPosition` (Left/Right asymetricky) | 2026-05-12 |
+| A2-A2 | #10660 | StopList: `MarkersPosition` (Before/After name) + auto-fit marker sub-cell | 2026-05-12 |
+| A2-A3 | #10660 | StopList: `CurrentStopBgColor` + odstranění master toggle `HighlightCurrentStop` | 2026-05-12 |
+| A2-A4 | #10660 | StopList: per-column header font (verifikace, již plně podporováno) | 2026-05-12 |
+| A2-B1 | #10660 | DepartureGrid: per-line font v dvouřádkovém headeru (`HeaderLine2Style`) | 2026-05-12 |
+| A2-B2 | #10660 | DepartureGrid: fix nestejného podtržení (`DrawTextDecorations` na header) | 2026-05-12 |
+| A2-B3 | #10660 + #9036 | DepartureGrid: časová osa přes půlnoc + extended hours + „Roztáhnout na výšku" | 2026-05-12 |
+| A2-C1 | #10660 | NotesLegend: DB-driven barvy poznámek (`PoznamkaSpoj.BarvaZnakuRGB/BarvaPozadiRGB`) | 2026-05-12 |
+| A2-C2 | #10660 | NotesLegend: konfigurovatelná hlavička (verifikace, již podporováno) | 2026-05-12 |
+| A2-E1 | #8772 | VisibilityExpression placeholdery — verifikace funkčnosti | 2026-05-11 |
+| A2-A5 | #7937 | ⏸️ StopList per-row indent — odloženo (chybí Caché data flow, mimo TD scope) | — |
+| A2-A6 | #7959 | 🔍 Filtr neobsluhovaných zastávek — již implementováno v Caché, vyžaduje verifikaci | — |
+| A2-B4 | #8828 | ⏸️ Per-sloupek zastávky — odloženo (Caché datový průzkum + business decision) | — |
 
 ## Fáze B0.5 — Code Hygiene Sprint
 

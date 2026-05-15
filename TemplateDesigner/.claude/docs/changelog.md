@@ -1,5 +1,59 @@
 # Changelog
 
+## 2026-05-15 — v1.0 demo balíček: Caché storage + přepínač agendy + Instance Picker
+
+**Tři postupné commity (5ac9dd0 → 82b68be → fd25008) tvoří kompletní release readiness pro testovací nasazení.** Zákazníkovi lze ukázat end-to-end workflow pro zastávkový JŘ MHD.
+
+### Caché Template Storage (`5ac9dd0`)
+
+- ✅ **Nová třída** `ALVA.TemplateDesigner.API.Templates` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). Per-IDFa storage `^ALVA.TemplateDesigner.Templates(IdFa,"DTA",TemplateID,"Metadata"|"Data")` + sekundární index `("IDX","ByAgenda",AgendaCode,TemplateID)`. JSON wire formát (R3 architektonické pravidlo). Metadata: Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version.
+- ✅ **`CacheTemplateService`** (.NET) — async wrapper přes `Task.Run` nad sync MLRest (R1), vlastní `CacheTemplateException` (R2 přes `IPopupDisplayer`), POCO `CacheTemplateMetadata`.
+- ✅ **`CacheTemplatePickerDialog`** — list šablon s filtrem agendy + search + Open/Rename/Delete; client-side ICollectionView filter (instant refresh). Druhý entry point „Nástroje → Šablony v Caché..." sdílí stejný dialog jako „Soubor → Otevřít z Caché..." (správce + open intent v jednom).
+- ✅ **`SaveToCacheDialog`** — name + agenda dropdown při Save As.
+- ✅ **Menu wiring** — „Soubor → Otevřít z Caché... / Uložit do Caché [jako...]"; `SaveCommand` routing: Caché origin → save zpět do Caché; disk → file; nová → SaveAs.
+- ✅ **Caché namespace refactor** — `API/` (obecné nástroje, např. Templates) vs `Agendas/` (per-agenda data + AgendaAPI base) vs `Forms/` (Wave 4). ZastavkoveJrMhdAPI a TemplateDesignerFAKTURY přesunuty do Agendas/.
+- ✅ **GENERAL agenda fallback** — agenda s `cacheClass = ""` v appsettings → šablona bez DB vazby. CacheAgendaProvider short-circuit ve všech metodách (GetSchema/Data/Mock/atd). Bugfix: `BuildAllPreviewDataPages` vrací `[new DataContext()]` místo `[]` → PDF/PNG export funguje i bez agendy.
+
+### Přepínač agendy + permanentní status indikátor (`82b68be`)
+
+- ✅ **`ChangeAgendaDialog`** — list dostupných agend s „(aktuální)" badge, výběr přepne celý kontext šablony. Důvod: agenda určuje schéma DB polí + typy elementů + reálná data, zachovat rozdělanou JŘ šablonu jako fakturu nedává smysl.
+- ✅ **Tok přepnutí**: Klik na chip / menu / **Ctrl+Shift+A** → ChangeAgendaDialog → pokud nová agenda jiná → ConfirmUnsavedChanges (Save/Discard/Cancel) → `ReplaceWithBlankTemplate(agendaCode)` (sdílený helper s NewTemplate).
+- ✅ **Permanentní viditelnost agendy na 3 místech**:
+  - Status bar dole vlevo: zelený klikatelný chip „Agenda: …"
+  - Window title prefix: `[MHD]` / `[FAKTURY]` / `[GENERAL]`
+  - Sidebar „Pole agendy" header (klikatelný)
+
+### Instance Picker pro MHD linky (`fd25008`)
+
+- ✅ **`AgendaAPI.GetAvailableInstances`** (abstract default vrací prázdné pole) — agenda bez konceptu instancí nemusí přepisovat.
+- ✅ **`ZastavkoveJrMhdAPI` impl** — iteruje `^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID)`, pouze linky aktivní **skupiny linek** (default první nezblokovaná z `^ALVA.MHD.ENUMS(IdFa,"SkupinyLinek")` přes nový helper `GetDefaultSkupinaLinekID`; optional `SKUPINA_LINEK_ID` IN parametr pro Edison-driven kontext). TrasaID filter pro orphan linky (jinak by GetData padl na `<SUBSCRIPT>`). Case-insensitive substring search server-side, limit 50. Defensivní `if TrasaID = ""` guard v GetData s meaningful chybou.
+- ✅ **`CacheAgendaProvider.GetAvailableInstances(agendaCode, search?, limit=50)`** + POCO `AgendaInstance(Value, Display, Subtitle?)`.
+- ✅ **`InstancePickerDialog`** — search box (Enter → server query), checkboxy multi-select, Vybrat vše / Odznačit vše, count indicator.
+- ✅ **`ActiveInstances` state** v VM (mimo Template — session scope; reset při změně agendy): `ActiveInstanceIndex`, `CurrentActiveInstance`, `ActiveInstanceText`, `HasMultipleActiveInstances`. Commands `OpenInstancePicker / Previous / Next`. `RefreshDataForCurrentInstanceAsync` — async fetch GetData při změně instance, status text feedback („Načítám / N stránek / Chyba").
+- ✅ **Status bar 2. modrý chip** vedle agendy: „Instance: X — Y (N/M)" s ◀▶ tlačítky; klik otevře picker.
+- ✅ **Multi-instance batch** — `BuildAllPreviewDataPages` (Soubor → Exportovat...) i `PrintDialog buildRealData` (Soubor → Tisk...) iterují všechny ActiveInstances, generují N×K stránek. **Performance: 600 stránek za ~9s (5.2s fetch + 3.6s render, ~15ms/stránka)** — top decile vs commercial reporting (Crystal Reports 30-60s, SSRS 20-45s, JasperReports 15-30s).
+- ✅ **Per-agenda param mapping** — MHD → `LINKA_ID`, ostatní → `INSTANCE_ID` (hardcoded zatím; generalizace až přibude druhá agenda s instancemi).
+
+### Architektonická pravidla (z roadmap §5 — všechna dodržena)
+
+- **R1 Async-only Caché** — `CacheTemplateService` i instance fetch přes `Task.Run` (MLRest je sync, wrapper uvolní UI thread)
+- **R2 Chyby přes `IPopupDisplayer`** — `PopupDisplayer.Error(ex)` / `Info(msg)` / `Confirm`; žádný `MessageBox.Show` v VM
+- **R3 JSON wire format** — všechny nové API metody `obj.%ToJSON()` v OUT, .NET `JsonSerializer.Deserialize`
+- **R4 ViewModely bez WPF** — `Application.Current.MainWindow` jen v handlerech otevírajících dialog (Owner), žádné `System.Windows` v core VM logice
+- **R5 Template versioning** — `Template.Version` field uložen v metadatech v Caché; `TemplateMigrator` zatím no-op (žádné breaking změny)
+
+### Známé limity (akceptované pro v1.0)
+
+- LocalPrefs persistence aktivních instancí (po restartu se znovu vyberou)
+- Pořadí linek v pickeru podle subscriptu ($o iterace), ne by Cislo/Nazev
+- Open template s jinou agendou nečistí instance (corner case)
+- Tabbed UI pro Open dialog (zatím dvě menu cesty)
+- Batch export blokuje UI thread (OK pro 1–30 linek; pro 100+ progress bar potřeba)
+
+Žádné breaking JSON změny v Template formátu. Caché global `^ALVA.TemplateDesigner.Templates` je nový (žádná migrace dat).
+
+---
+
 ## 2026-05-01 — ImageElement ScaleMode + tenké rámečky + descriptor sort
 
 **Tři vyladění objevené při ladění šablon:**

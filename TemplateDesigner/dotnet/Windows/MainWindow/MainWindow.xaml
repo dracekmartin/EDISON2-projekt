@@ -5,6 +5,7 @@
         xmlns:local="clr-namespace:TemplateDesigner"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         Title="Template Designer" Height="768" Width="1280"
+        Icon="{StaticResource EDIcons.Molecule}"
         WindowState="Maximized"
         Closing="Window_Closing">
     <Window.Resources>

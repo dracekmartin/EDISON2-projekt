@@ -14,11 +14,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-05-01
+**Datum poslední aktualizace:** 2026-05-15
 
 ### 🎯 Aktuální focus
 
-**Fáze A: 1:1 šablona zastávkového JŘ** — hotová první kompletní verze + review s kolegy. (Fáze B0.5 Code Hygiene + sjednocení Header/Data zón dokončeny.)
+**v1.0 demo balíček** — Release readiness pro testovací nasazení (R1 Agenda+Linka picker, R2 Template storage v Caché, R4 polish — vše hotovo); zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Dál: A.2-D série (Caché business logic — auto-poznámky bugs, KORID přípojové řádky) + Wave 1 (LocalPrefs migrace).
 
 ### ✅ Co máme
 
@@ -84,6 +84,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - **Click-vs-drag threshold** — pouhý klik na element (selekce, otevření properties) nespustí soft-snap; element se začne hýbat až po překročení 4px myší. `_dragHasMoved` flag v `MainWindow.xaml.cs`; `EndDrag` necommituje, pokud myš nepřekročila threshold. Reason: před fixem klik při GridSize=5mm „strhnul" 0.1mm pozici elementu na 5mm grid
 - **Per-template editor preferences** — `Models/TemplateEditorPreferences.cs` (nullable `GridSize`/`SnapToGrid`/`SnapToElements`/`ShowGrid`); `Template.EditorPreferences` property (vedle `Parameters`, `SampleData`, `CultureCode`); apply on Open / capture on Save → designové prostředí (jemný grid pro precizní šablonu) přežije reload. `RequestGridSizeUiSync` callback synchronizuje nebindovaný `CmbGridSize` ComboBox
 - **Sjednocené Header/Data zóny v panelu** — princip „rychlý přístup × cascade": 4 base barvy (Header bg/text + Data bg/text) v properties panelu napříč všemi tabulkovými elementy (StopList/DepartureGrid/NotesLegend/TableElement); detailní cascade (font/align/padding/per-column overridy) zůstává v dialogu sloupců. Helper `ScheduleElementBase.GetCellZoneBaseColorDescriptors()`; TableElement parallel implementation (jiná hierarchie). Skupiny „Záhlaví"/„Datové buňky" konzistentně. Round-trip safe (panel↔dialog editují totéž pole)
+- **Caché Template Storage** — třída `ALVA.TemplateDesigner.API.Templates` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`); per-IDFa storage v `^ALVA.TemplateDesigner.Templates(IdFa,"DTA",TemplateID,"Metadata"|"Data")` + index `ByAgenda`; JSON wire formát; metadata Name/AgendaCode/Author/CreatedAt/ModifiedAt/Version. .NET strana: `CacheTemplateService` (async wrapper přes Task.Run + `CacheTemplateException`), `CacheTemplatePickerDialog` (správce: list + filtr agendy + search + Open/Rename/Delete), `SaveToCacheDialog`. Menu „Soubor → Otevřít z Caché... / Uložit do Caché [jako...]" + „Nástroje → Šablony v Caché..." (dva entry pointy, sdílí dialog). `_loadedFromCache` flag + SaveCommand routing (Caché → save zpět; disk → file; nová → SaveAs)
+- **Caché namespace struktura** — `ALVA.TemplateDesigner.API.*` pro obecné nástroje (Templates), `ALVA.TemplateDesigner.Agendas.*` pro agenda-specific (AgendaAPI base + ZastavkoveJrMhdAPI + TemplateDesignerFAKTURY), `Forms.*` reservováno pro Wave 4
+- **GENERAL agenda fallback** — `cacheClass = ""` v appsettings → šablona bez DB vazby (statický obsah); CacheAgendaProvider short-circuit ve všech metodách; BuildAllPreviewDataPages vrací `[new DataContext()]` místo `[]` → PDF/PNG export funguje i bez agendy
+- **Přepínač agendy** — `ChangeAgendaDialog` (list agend s „(aktuální)" badge); 3 entry pointy: menu „Nástroje → Změnit agendu...", **Ctrl+Shift+A**, klik na agenda chip ve status baru. Přepnutí vytváří **novou prázdnou šablonu** se zvolenou agendou (po Save/Discard/Cancel) — sdílený `ReplaceWithBlankTemplate(agendaCode)` helper s NewTemplate. Permanentní viditelnost agendy na 3 místech: status bar (zelený klikatelný chip), window title prefix `[MHD]`, sidebar „Pole agendy" header
+- **Instance Picker (multi-výběr linek)** — `InstancePickerDialog` se search boxem (Enter), checkboxy multi-select, Vybrat vše / Odznačit vše. Caché `AgendaAPI.GetAvailableInstances` (abstract default empty) + impl v `ZastavkoveJrMhdAPI` iteruje `^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID)` — pouze linky aktivní skupiny linek (default první nezblokovaná z ENUMS, optional IN parametr `SKUPINA_LINEK_ID` pro Edison-driven kontext); TrasaID filter pro orphan linky; case-insensitive substring search server-side; limit 50. POCO `AgendaInstance(Value, Display, Subtitle?)`. `ActiveInstances` state v VM (mimo Template — session scope), `ActiveInstanceIndex`, `CurrentActiveInstance`. Status bar 2. modrý chip „Instance: X — Y (N/M)" s ◀▶ tlačítky; klik otevře picker. `RefreshDataForCurrentInstanceAsync` async GetData při změně instance, status feedback. Multi-instance batch v `BuildAllPreviewDataPages` (PDF/PNG) i `PrintDialog buildRealData` — 600 stránek za ~9s (5s fetch + 3.6s render, ~15ms/stránka, top decile vs commercial reporting). Reset instancí při změně agendy
 
 ### 🐛 Známé problémy
 
