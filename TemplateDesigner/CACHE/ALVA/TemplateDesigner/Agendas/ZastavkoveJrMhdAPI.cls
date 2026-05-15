@@ -138,6 +138,80 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     q $$$OK
 }
 
+/// Vrátí seznam linek pro Instance Picker.
+/// IN["search"] = volitelný substring filtr (case-insensitive na display = "Cislo — Nazev")
+/// IN["limit"]  = max počet řádků (default 50)
+/// IN["SKUPINA_LINEK_ID"] = ID skupiny linek (volitelné; default = první nezblokovaná);
+///                          v budoucnu bude předáváno z Edisona jako kontext
+/// OUT["1"] = JSON pole { "value": LinkaID, "display": "Cislo — Nazev", "subtitle": "Platnost ..." }
+ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
+{
+    try {
+        $$$FillParams
+
+        s search = $zcvt($g(^||ML("IN","search")), "L")
+        s limit  = +$g(^||ML("IN","limit"))
+        if 'limit s limit = 50
+
+        // Skupina linek = organizační kontext. V budoucnu předáváno z Edisona;
+        // zatím default první nezblokovaná skupina v ENUMS.
+        s SkupinaLinekID = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
+        if 'SkupinaLinekID s SkupinaLinekID = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
+        if 'SkupinaLinekID $$$ThrowStatus($$$ERROR($$$GeneralError, "Žádná aktivní skupina linek v ENUMS"))
+
+        s arr = ##class(%DynamicArray).%New()
+        s count = 0
+        // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID)
+        // — pouze linky patřící do dané skupiny.
+        s LinkaID = ""
+        for {
+            s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
+            q:LinkaID=""
+
+            // Přeskočit linky bez nastavené trasy — orphan / nedokončené záznamy,
+            // GetData by na nich padl na <SUBSCRIPT> v PripravitTrasu.
+            s TrasaID = ##class(ALVA.MHD.LinkyFce).GetTrasaId(IdFa, dataDB, LinkaID)
+            if TrasaID = "" continue
+
+            s cislo  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloVerejne"))
+            if cislo = "" s cislo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"CisloLinkyDleLicence"))
+            s nazev  = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"NazevLinky"))
+            s platOd = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiOd"))
+            s platDo = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"PlatiDo"))
+
+            s display = cislo
+            if nazev '= "" {
+                if display '= "" s display = display_" — "_nazev
+                else  s display = nazev
+            }
+            if display = "" s display = "Linka "_LinkaID
+
+            // Filtr — substring match case-insensitive na display
+            if search '= "" {
+                if '$f($zcvt(display, "L"), search) continue
+            }
+
+            s subtitle = ""
+            if platOd '= "" {
+                s subtitle = "Platnost od "_platOd
+                if platDo '= "" s subtitle = subtitle_" do "_platDo
+            }
+
+            s obj = ##class(%DynamicObject).%New()
+            d obj.%Set("value",    LinkaID)
+            d obj.%Set("display",  display)
+            if subtitle '= "" d obj.%Set("subtitle", subtitle)
+            d arr.%Push(obj)
+
+            s count = count + 1
+            q:count>=limit
+        }
+
+        s ^||ML("OUT","1") = arr.%ToJSON()
+    } catch (ex) { $$$CatchErrRest }
+    q $$$OK
+}
+
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// GetData — hlavní metoda pro tisk
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -165,6 +239,9 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         s platnostOdHrl = $zdh(platnostOd, 3)
         s platnostDoHrl = $zdh(platnostDo, 3)
         s PlatnostChronometrazeID = ##class(ALVA.MHD.ChronometrazeFce).GetPlatnostChronometrazeID(IdFa, dataDB, VariantaChronometrazeID, platnostOdHrl)
+
+        // Linka bez nastavené trasy — fáze 1 by padla na <SUBSCRIPT>. Vyhodit srozumitelnou chybu.
+        if TrasaID = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_LinkaID_" nemá nastavenou trasu — nelze tisknout"))
 
         // Nastavení auto-poznámkování
         s AutoPoznamkyRozdilTrasy = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"AutomatickyPoznamkovatRozdilyVTraseSpoju"))
@@ -1596,6 +1673,20 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d out.%Set("rows", rows)
     s ^||ML("OUT", $i(^||ML("OUT"))) = out.%ToJSON()
     q $$$OK
+}
+
+/// Vrátí ID první nezblokované skupiny linek pro danou IdFa.
+/// Vrátí 0 pokud žádná aktivní skupina není.
+/// Použito jako default pro Instance Picker — v budoucnu nahrazeno parametrem z Edisona.
+ClassMethod GetDefaultSkupinaLinekID(IdFa As %String, dataDB As %String) As %Integer
+{
+    s id = ""
+    for {
+        s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
+        q:id=""
+        if '+$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) ret id
+    }
+    ret 0
 }
 
 }

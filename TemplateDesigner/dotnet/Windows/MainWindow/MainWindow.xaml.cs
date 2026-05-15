@@ -699,9 +699,6 @@ public partial class MainWindow : Window
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
             buildRealData = paramValues =>
             {
-                var pages = provider.GetData(agendaCode, paramValues);
-                if (pages is null) return null;
-
                 // Merge parametrů do každého DataContextu — C# rendering je potřebuje
                 // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
                 var stringParams = paramValues
@@ -709,6 +706,30 @@ public partial class MainWindow : Window
                     .ToDictionary(kv => kv.Key, kv => (object?)kv.Value!.ToString(),
                         StringComparer.OrdinalIgnoreCase);
 
+                List<DataContext>? pages;
+
+                // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
+                // a vygeneruj batch napříč všemi — ignoruje LINKA_ID z parametrů dialogu.
+                if (_vm.ActiveInstances.Count > 0)
+                {
+                    var paramName = agendaCode.Equals("MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
+                    var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
+                    foreach (var inst in _vm.ActiveInstances)
+                    {
+                        var p = new Dictionary<string, object?>(paramValues) { [paramName] = inst.Value };
+                        var instPages = provider.GetData(agendaCode, p);
+                        if (instPages is null) continue;
+                        all.AddRange(instPages);
+                    }
+                    pages = all.Count > 0 ? all : null;
+                }
+                else
+                {
+                    // Fallback — manuálně zadaný LINKA_ID v parametrech (legacy chování)
+                    pages = provider.GetData(agendaCode, paramValues);
+                }
+
+                if (pages is null) return null;
                 if (stringParams.Count > 0)
                     pages = pages.Select(p => p.WithExtraValues(stringParams)).ToList();
 

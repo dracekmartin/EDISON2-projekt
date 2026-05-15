@@ -60,6 +60,29 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     q 1
 }
 
+/// Vrátí seznam dostupných instancí agendy (např. linky pro MHD, faktury pro FAKTURY).
+/// Slouží pro Instance Picker v TD — uživatel vybere 1-N instancí, nad kterými pracuje.
+/// 
+/// Výchozí implementace vrací prázdný seznam — agenda bez konceptu instancí (GENERAL,
+/// případně FAKTURY před implementací) ho nemusí přepisovat.
+/// 
+/// IN["search"] = volitelný filtr (substring, case-insensitive)
+/// IN["limit"]  = max počet řádků (default 50)
+/// OUT["1"] = JSON pole:
+///   [
+///     { "value": "42", "display": "42 — Praha–Brno", "subtitle": "Platnost od 1.1.2024" },
+///     ...
+///   ]
+/// 
+/// value    = opaque ID předaný do GetData (IN["LINKA_ID"] u MHD)
+/// display  = hlavní zobrazovaný text (číslo + název)
+/// subtitle = volitelný menší text pod displayem (platnost, dopravce, atd.)
+ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
+{
+    s ^||ML("OUT","1") = "[]"
+    q 1
+}
+
 /// Vrátí ukázková (mock) data pro live preview v designeru.
 /// OUT[1] = JSON objekt:
 ///   {

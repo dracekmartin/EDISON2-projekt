@@ -58,6 +58,110 @@ public class TemplateDesignerViewModel : EDViewModel
     private Dictionary<string,object?>?         _cachedParamValues;
     private string?                             _lastParamsAgendaCode;
 
+    // ── Active instances (linky pro MHD, faktury pro FAKTURY, ...) ────────────
+    // Mimo Template — session state vázané na aktuální agendu. Preview rendruje vždy
+    // jednu (aktivní index), tisk batch projíždí všechny.
+    private List<AgendaInstance> _activeInstances = [];
+    public IReadOnlyList<AgendaInstance> ActiveInstances => _activeInstances;
+
+    private int _activeInstanceIndex;
+    public int ActiveInstanceIndex
+    {
+        get => _activeInstanceIndex;
+        set
+        {
+            if (_activeInstances.Count == 0) { _activeInstanceIndex = 0; return; }
+            var clamped = Math.Clamp(value, 0, _activeInstances.Count - 1);
+            if (_activeInstanceIndex != clamped)
+            {
+                _activeInstanceIndex = clamped;
+                OnActiveInstancesChanged(reloadData: true);
+            }
+        }
+    }
+
+    public AgendaInstance? CurrentActiveInstance =>
+        _activeInstances.Count > 0 && _activeInstanceIndex < _activeInstances.Count
+            ? _activeInstances[_activeInstanceIndex] : null;
+
+    public string ActiveInstanceText
+    {
+        get
+        {
+            if (_activeInstances.Count == 0) return "Instance: — (klikni pro výběr)";
+            var cur = CurrentActiveInstance;
+            return _activeInstances.Count == 1
+                ? $"Instance: {cur?.Display}"
+                : $"Instance: {cur?.Display} ({_activeInstanceIndex + 1}/{_activeInstances.Count})";
+        }
+    }
+
+    public bool HasMultipleActiveInstances => _activeInstances.Count > 1;
+
+    private void OnActiveInstancesChanged(bool reloadData)
+    {
+        OnPropertyChanged(nameof(ActiveInstanceText));
+        OnPropertyChanged(nameof(CurrentActiveInstance));
+        OnPropertyChanged(nameof(HasMultipleActiveInstances));
+        if (reloadData)
+        {
+            // Invalidate cached real data, fetch nového v pozadí
+            _realPreviewData = null;
+            _realPreviewIndex = 0;
+            OnPropertyChanged(nameof(RealPreviewPageCount));
+            OnPropertyChanged(nameof(RealPreviewIndex));
+            OnPropertyChanged(nameof(PageNavigationText));
+            OnPropertyChanged(nameof(HasMultiplePages));
+            RequestPreviewRefresh?.Invoke();
+            _ = RefreshDataForCurrentInstanceAsync();
+        }
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    /// <summary>Caché GetData pro aktuální instanci → _realPreviewData. Async, fire-and-forget.</summary>
+    private async Task RefreshDataForCurrentInstanceAsync()
+    {
+        var instance = CurrentActiveInstance;
+        if (CacheProvider is null || instance is null) return;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return;
+
+        try
+        {
+            StatusText = $"Načítám data: {instance.Display}…";
+            var paramName = InstanceParamName(agendaCode);
+            var pages = await Task.Run(() => CacheProvider.GetData(
+                agendaCode,
+                new Dictionary<string, object?> { [paramName] = instance.Value }));
+
+            if (pages is null || pages.Count == 0)
+            {
+                _realPreviewData = null;
+                StatusText = $"Žádná data: {instance.Display}";
+            }
+            else
+            {
+                var culture = GetTemplateCulture();
+                _realPreviewData = pages.Select(d => d.WithCulture(culture)).ToList();
+                _realPreviewIndex = 0;
+                StatusText = $"{instance.Display}: {pages.Count} stránek";
+            }
+            OnPropertyChanged(nameof(RealPreviewPageCount));
+            OnPropertyChanged(nameof(RealPreviewIndex));
+            OnPropertyChanged(nameof(PageNavigationText));
+            OnPropertyChanged(nameof(HasMultiplePages));
+            RequestPreviewRefresh?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Chyba načítání: {ex.Message}";
+        }
+    }
+
+    /// <summary>Per-agenda mapování instance value → jméno parametru pro GetData.</summary>
+    private static string InstanceParamName(string agendaCode) =>
+        agendaCode.Equals("MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
+
     // ── Real preview data ────────────────────────────────────────────────────
     private List<DataContext>?                  _realPreviewData;
     private int                                _realPreviewIndex;
@@ -183,7 +287,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda;
+    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda, _openInstancePicker, _prevInstance, _nextInstance;
     private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs;
 
     public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
@@ -196,6 +300,9 @@ public class TemplateDesignerViewModel : EDViewModel
     public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
     public RelayCommand ChangeAgendaCommand        => _changeAgenda   ??= Command(ChangeAgenda);
+    public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
+    public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= new(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
+    public RelayCommand NextInstanceCommand        => _nextInstance   ??= new(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
     public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
     public RelayCommand ExportPngCommand     => _exportPng ??= new(ExportPreviewPng);
     public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
@@ -445,6 +552,10 @@ public class TemplateDesignerViewModel : EDViewModel
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
+        // Aktivní instance jsou agenda-specifické — při změně agendy ztrácí smysl.
+        _activeInstances = [];
+        _activeInstanceIndex = 0;
+        OnActiveInstancesChanged(reloadData: false);
         State.SelectedElements.Clear();
         State.UndoStack.Clear();
         State.RedoStack.Clear();
@@ -457,6 +568,29 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();
         RequestPreviewRefresh?.Invoke();
+    }
+
+    private void OpenInstancePicker()
+    {
+        if (CacheProvider is null)
+        {
+            PopupDisplayer.Info("Caché není nakonfigurováno — výběr instancí není dostupný.");
+            return;
+        }
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode))
+        {
+            PopupDisplayer.Info("Nejprve vyber agendu (Ctrl+Shift+A).");
+            return;
+        }
+
+        var vm = new InstancePickerDialogViewModel(CacheProvider, agendaCode, _activeInstances);
+        var dlg = new InstancePickerDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true) return;
+
+        _activeInstances = vm.SelectedInstances.ToList();
+        _activeInstanceIndex = 0;
+        OnActiveInstancesChanged(reloadData: true);
     }
 
     private void ChangeAgenda()
@@ -1528,6 +1662,25 @@ public class TemplateDesignerViewModel : EDViewModel
     public IReadOnlyList<DataContext> BuildAllPreviewDataPages()
     {
         var culture = GetTemplateCulture();
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+
+        // Multi-instance batch: pro každou aktivní instanci fetch GetData a sloučit do flat seznamu.
+        // PDF export tak vygeneruje N×K stránek (N instancí × K stránek per instance, např. zastávka×směr).
+        if (_activeInstances.Count > 0 && CacheProvider is not null && !string.IsNullOrEmpty(agendaCode))
+        {
+            var paramName = InstanceParamName(agendaCode);
+            var all = new List<DataContext>(_activeInstances.Count * 4);
+            foreach (var inst in _activeInstances)
+            {
+                var pages = CacheProvider.GetData(
+                    agendaCode,
+                    new Dictionary<string, object?> { [paramName] = inst.Value });
+                if (pages is null) continue;
+                foreach (var p in pages) all.Add(p.WithCulture(culture));
+            }
+            if (all.Count > 0) return all;
+        }
+
         if (_realPreviewData is { Count: > 0 })
             return _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList();
 

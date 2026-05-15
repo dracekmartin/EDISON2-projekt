@@ -80,3 +80,9 @@ public enum FieldDataType
 
 /// <summary>Základní info o dostupné agendě — pro výběr v UI.</summary>
 public record AgendaInfo(string Code, string Name);
+
+/// <summary>
+/// Konkrétní instance agendy — např. jedna linka pro MHD, jedna faktura pro FAKTURY.
+/// Vrací Caché GetAvailableInstances; Value se předává do GetData(LINKA_ID=Value).
+/// </summary>
+public record AgendaInstance(string Value, string Display, string? Subtitle);

@@ -674,10 +674,12 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Permanentní agenda chip (klikatelný) -->
+                    <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
                     <Border Grid.Column="0"
                             Background="#E8F5E9" Padding="10,3"
                             Cursor="Hand"
@@ -692,8 +694,35 @@
 
                     <Border Grid.Column="1" Width="1" Background="#DDDDDD"/>
 
-                    <!-- Dynamický kontextový status -->
-                    <TextBlock x:Name="StatusText" Grid.Column="2"
+                    <!-- 2) Instance chip (klikatelný — OpenInstancePicker) -->
+                    <Border Grid.Column="2"
+                            Background="#E3F2FD" Padding="10,3"
+                            Cursor="Hand"
+                            ToolTip="Klikni pro výběr instancí (linky, faktury, ...)">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding OpenInstancePickerCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="◀" Command="{Binding PreviousInstanceCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,0"
+                                    FontSize="11" Foreground="#0D47A1"
+                                    Cursor="Hand" Margin="0,0,4,0"
+                                    ToolTip="Předchozí instance"/>
+                            <TextBlock Text="{Binding ActiveInstanceText}"
+                                       FontSize="11" Foreground="#0D47A1" FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="▶" Command="{Binding NextInstanceCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,0"
+                                    FontSize="11" Foreground="#0D47A1"
+                                    Cursor="Hand" Margin="4,0,0,0"
+                                    ToolTip="Další instance"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="3" Width="1" Background="#DDDDDD"/>
+
+                    <!-- 3) Dynamický kontextový status -->
+                    <TextBlock x:Name="StatusText" Grid.Column="4"
                                Text="{Binding StatusText}"
                                VerticalAlignment="Center" Margin="10,0"
                                FontSize="11" Foreground="#555555"/>

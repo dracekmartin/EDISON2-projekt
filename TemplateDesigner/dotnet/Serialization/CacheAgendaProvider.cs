@@ -267,6 +267,57 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
     }
 
+    // ─── Dostupné instance (linky / faktury / ...) ───────────────────────────
+
+    /// <summary>
+    /// Volá GetAvailableInstances na Caché třídě a vrátí seznam instancí (např. linek pro MHD).
+    /// Server-side filter — předaný search se aplikuje v Caché (case-insensitive substring).
+    /// Prázdný seznam = agenda nemá koncept instancí (GENERAL) nebo žádné neodpovídají filtru.
+    /// </summary>
+    public IReadOnlyList<AgendaInstance> GetAvailableInstances(string agendaCode, string? search = null, int limit = 50)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return [];
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
+        if (string.IsNullOrWhiteSpace(cacheClass)) return [];
+
+        try
+        {
+            var inVar = new CVar();
+            inVar["search"] = new CVar(search ?? "");
+            inVar["limit"]  = new CVar(limit.ToString());
+
+            CVar result = _mlRest.Query(cacheClass, "GetAvailableInstances", inVar);
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+            {
+                Debug.WriteLine($"[AgendaProvider] GetAvailableInstances error: {_mlRest.RestStatus.Message}");
+                return [];
+            }
+
+            string? json = result["1"]?.Value?.ToString();
+            if (string.IsNullOrEmpty(json)) return [];
+
+            var node = JsonNode.Parse(json);
+            if (node is not JsonArray arr) return [];
+
+            var list = new List<AgendaInstance>(arr.Count);
+            foreach (var item in arr)
+            {
+                if (item is null) continue;
+                var value   = item["value"]?.GetValue<string>();
+                var display = item["display"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(display)) continue;
+                var subtitle = item["subtitle"]?.GetValue<string>();
+                list.Add(new AgendaInstance(value, display, subtitle));
+            }
+            return list;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AgendaProvider] GetAvailableInstances exception: {ex.Message}");
+            return [];
+        }
+    }
+
     // ─── Reálná data pro tisk ───────────────────────────────────────────────
 
     /// <summary>
