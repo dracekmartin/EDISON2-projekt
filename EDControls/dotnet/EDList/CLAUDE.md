@@ -17,8 +17,8 @@
 
 - ⚠️ IMAGE typ (není implementován DataGridTemplateColumn s Image)
 - ⚠️ CODEBOOK typ
-- ⚠️ Filtrování v LoadList
-- ⚠️ Search box v toolbaru (L3)
+- ⚠️ Server-side filter v LoadList (pro velké datasety)
+- ⚠️ Column visibility UI — context menu na header (L9)
 - ⚠️ CRUD tlačítka Add/Edit/Delete (L8 — nice to have)
 
 **Co bylo dodáno (2026-05-15):**
@@ -30,6 +30,14 @@
   - Load při `LoadList` (async, best-effort), Save debounced 500ms + force při Unload
   - Best-effort čtení — neznámé sloupce ignorovány, missing fields default
   - JSON schema versioning (`"version": 1`)
+- ✅ **L3** — Title + client-side search box v header baru
+  - `Title: string?` property — text vlevo v header baru
+  - `SearchText: string` property — textfield vpravo, case-insensitive substring filter napříč všemi viditelnými sloupci
+  - `SearchVisible: bool` property — explicit toggle (default: true pokud Title set)
+  - Header bar skrytý pokud ani Title ani SearchVisible (zero disruption pro stávající use cases)
+  - Search filtruje **formátované hodnoty** (HHMM "08:30" hledatelné jako "8:30", ne raw "830")
+  - Search se NEpersistuje (transient — prázdné při každém otevření)
+  - Check state preserved napříč filterem (skrytý checked řádek zůstává checked)
 - ✅ MockList rozšířen o DATETIME + COLOR sloupce pro testing všech typů
 
 ## Účel
@@ -774,15 +782,34 @@ public string? HostId { get; set; }
 // Load: async po LoadList, aplikuje na current sloupce best-effort.
 ```
 
+### L3 — Title + Search (implementováno)
+
+```csharp
+public string? Title { get; set; }
+// Text vlevo v header baru. Null/empty = title skrytý.
+
+public string SearchText { get; set; }
+// Vstupní pole pro client-side filter. Case-insensitive substring napříč všemi
+// viditelnými data sloupci (skipuje checkbox column). Filtruje formátované hodnoty
+// (co user vidí v buňce), ne raw data — "8:30" matchne "08:30" HHMM ale "830" ne.
+// Nepersistuje se, prázdné při Init.
+
+public bool SearchVisible { get; set; }
+// Default: true pokud Title set, jinak false. Lze explicit override.
+// Skrývá search box ne header bar — pokud SearchVisible=false + Title set,
+// header bar zobrazí jen Title.
+
+// Header bar viditelný jen pokud Title nebo SearchVisible. Bez nich
+// EDList vypadá identicky jako před L3 (jen DataGrid).
+```
+
 ### Budoucí rozšíření (v dalších commitech)
 
 ```csharp
-// L3 — Search + Title
-public string Title { get; set; }              // header text nad gridem
-public string SearchText { get; set; }         // client-side filter
-
 // L7 (později) — Image sloupec, Codebook field type
 // L8 — CRUD tlačítka (Add/Edit/Delete) → otevírá EDInputForm dialog
+// L9 — Column visibility UI (context menu na header s checkboxes)
+//     — schema ColumnLayout extend o "visibility" pole, backward compat
 ```
 
 ---

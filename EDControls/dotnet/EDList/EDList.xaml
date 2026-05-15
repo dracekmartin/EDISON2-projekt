@@ -5,15 +5,36 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              mc:Ignorable="d"
              d:DesignHeight="300" d:DesignWidth="600">
-    <DataGrid x:Name="dataGrid"
-              AutoGenerateColumns="False"
-              CanUserAddRows="False"
-              CanUserDeleteRows="False"
-              CanUserReorderColumns="True"
-              CanUserResizeColumns="True"
-              CanUserSortColumns="True"
-              SelectionMode="Single"
-              IsReadOnly="True"
-              MouseDoubleClick="DataGrid_MouseDoubleClick"
-              SelectionChanged="DataGrid_SelectionChanged"/>
+    <DockPanel>
+        <Border x:Name="headerBar" DockPanel.Dock="Top"
+                Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
+                Padding="6,4" Visibility="Collapsed">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock x:Name="titleText" Grid.Column="0"
+                           VerticalAlignment="Center" FontWeight="SemiBold"
+                           Visibility="Collapsed"/>
+                <TextBox x:Name="searchBox" Grid.Column="1"
+                         Width="200" VerticalAlignment="Center"
+                         Padding="4,2"
+                         ToolTip="Hledat..."
+                         TextChanged="SearchBox_TextChanged"
+                         Visibility="Collapsed"/>
+            </Grid>
+        </Border>
+        <DataGrid x:Name="dataGrid"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  CanUserReorderColumns="True"
+                  CanUserResizeColumns="True"
+                  CanUserSortColumns="True"
+                  SelectionMode="Single"
+                  IsReadOnly="True"
+                  MouseDoubleClick="DataGrid_MouseDoubleClick"
+                  SelectionChanged="DataGrid_SelectionChanged"/>
+    </DockPanel>
 </UserControl>

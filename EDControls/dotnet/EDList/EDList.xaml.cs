@@ -38,6 +38,56 @@ namespace EDControls.EDList
         public string? HostId { get; set; }
         private const string PrefsScope = "EDControls.EDList";
 
+        // ─── Title + Search (L3) ──────────────────────────────────────────────────
+
+        private string? _title;
+        public string? Title
+        {
+            get => _title;
+            set { _title = value; titleText.Text = value ?? ""; UpdateHeaderVisibility(); }
+        }
+
+        public string SearchText
+        {
+            get => searchBox.Text;
+            set { searchBox.Text = value; /* TextChanged event triggers re-filter */ }
+        }
+
+        private bool? _searchVisible;
+        /// <summary>Default: true pokud Title set, jinak false. Lze nastavit explicitně.</summary>
+        public bool SearchVisible
+        {
+            get => _searchVisible ?? !string.IsNullOrEmpty(_title);
+            set { _searchVisible = value; UpdateHeaderVisibility(); }
+        }
+
+        private void UpdateHeaderVisibility()
+        {
+            bool showTitle  = !string.IsNullOrEmpty(_title);
+            bool showSearch = SearchVisible;
+            titleText.Visibility  = showTitle  ? Visibility.Visible : Visibility.Collapsed;
+            searchBox.Visibility  = showSearch ? Visibility.Visible : Visibility.Collapsed;
+            headerBar.Visibility  = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshFilter();
+
+        private void RefreshFilter()
+        {
+            var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
+            if (view is null) return;
+            var search = searchBox.Text;
+            // Filtruje napříč všemi viditelnými data sloupci (skipuje checkbox column, který nemá Tag=key)
+            var searchableKeys = dataGrid.Columns
+                .Select(c => c.GetValue(FrameworkElement.TagProperty) as string)
+                .Where(k => !string.IsNullOrEmpty(k))
+                .Select(k => k!)
+                .ToList();
+            view.Filter = string.IsNullOrWhiteSpace(search)
+                ? null
+                : row => row is EDListRow r && EDListFilter.Matches(r, search, searchableKeys);
+        }
+
         // ─── Stav ─────────────────────────────────────────────────────────────────
 
         private IReadOnlyList<ListColumn>? _columns;
@@ -178,6 +228,7 @@ namespace EDControls.EDList
                 _rows.Add(row);
             }
             FireCheckedRowsChanged();
+            RefreshFilter();  // re-apply current search po LoadList (nový dataset)
             // Aplikuj persistent column layout asynchronně po data load — minor flicker (default
             // sloupce → persistované), ale UI neblokuje.
             _ = LoadLayoutAsync();
