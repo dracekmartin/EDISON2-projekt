@@ -98,6 +98,9 @@ namespace EDControls.EDList
         public string? SelectedRowId =>
             dataGrid.SelectedItem is EDListRow row ? row.Id : null;
 
+        /// <summary>Aktuálně vybraný řádek (jeho data přes indexer), nebo null.</summary>
+        public EDListRow? SelectedRow => dataGrid.SelectedItem as EDListRow;
+
         // ─── Multi-select (L1) ────────────────────────────────────────────────────
 
         /// <summary>Mode výběru: Single (klasický), Check (checkbox sloupec, multi-select).</summary>
@@ -215,10 +218,27 @@ namespace EDControls.EDList
             RebuildColumns();
         }
 
-        public void LoadList()
+        public void LoadList() => LoadList(filter: null);
+
+        /// <summary>
+        /// Načte data z Caché s volitelným filtrem. Filtr se pošle do Caché jako
+        /// pojmenované IN klíče: <c>filter["agendaCode"] = "MHD"</c> → <c>^||ML("IN","agendaCode") = "MHD"</c>.
+        /// Server může (ale nemusí) filtr aplikovat — strana .NET předá co dostane.
+        /// </summary>
+        public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
             EnsureConfigured();
-            var output = MLRest!.QueryOrThrow(CacheClass, "LoadList", Array.Empty<object>());
+            object[] input;
+            if (filter is null || filter.Count == 0)
+            {
+                input = Array.Empty<object>();
+            }
+            else
+            {
+                char del = MLRest!.Delimiter;
+                input = filter.Select(kv => (object)$"{kv.Key}{del}{kv.Value}").ToArray();
+            }
+            var output = MLRest!.QueryOrThrow(CacheClass, "LoadList", input);
             // Unsubscribe stará data — žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _rows.Clear();
