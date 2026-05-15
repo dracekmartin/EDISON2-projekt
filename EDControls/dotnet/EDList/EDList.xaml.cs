@@ -27,17 +27,36 @@ namespace EDControls.EDList
         private IReadOnlyList<ListColumn>? _columns;
         public IReadOnlyList<ListColumn>? Columns => _columns;
 
-        private readonly ObservableCollection<Dictionary<string, string?>> _rows = new();
+        private readonly ObservableCollection<EDListRow> _rows = new();
 
         public string? SelectedRowId =>
-            dataGrid.SelectedItem is Dictionary<string, string?> row &&
-            row.TryGetValue("id", out var id) ? id : null;
+            dataGrid.SelectedItem is EDListRow row ? row.Id : null;
+
+        // ─── Multi-select (L1) ────────────────────────────────────────────────────
+
+        /// <summary>Mode výběru: Single (klasický), Check (checkbox sloupec, multi-select).</summary>
+        public EListSelectionMode SelectionMode
+        {
+            get => _selectionMode;
+            set { if (_selectionMode != value) { _selectionMode = value; RebuildColumns(); } }
+        }
+        private EListSelectionMode _selectionMode = EListSelectionMode.Single;
+
+        /// <summary>V Check mode: ID checknutých řádků (z <see cref="EDListRow.IsChecked"/>).
+        /// V Single mode: vrátí <c>[SelectedRowId]</c> nebo prázdné.</summary>
+        public IReadOnlyList<string> SelectedRowIds =>
+            _selectionMode == EListSelectionMode.Check
+                ? _rows.Where(r => r.IsChecked).Select(r => r.Id).ToList()
+                : SelectedRowId is { } id ? [id] : [];
+
+        private bool _suppressCheckedEvents;
 
         // ─── Eventy ───────────────────────────────────────────────────────────────
 
         public event EventHandler<string>? RowDoubleClicked;
         public event EventHandler<string?>? SelectionChanged;
         public event EventHandler<(string RowId, string ColKey)>? CellLinkClicked;
+        public event EventHandler<IReadOnlyList<string>>? CheckedRowsChanged;
 
         // ─── Inicializace ─────────────────────────────────────────────────────────
 
@@ -45,6 +64,67 @@ namespace EDControls.EDList
         {
             InitializeComponent();
             dataGrid.ItemsSource = _rows;
+        }
+
+        // ─── Multi-select API ─────────────────────────────────────────────────────
+
+        /// <summary>Nastaví checked stav konkrétního řádku.</summary>
+        public void SetChecked(string rowId, bool isChecked)
+        {
+            var row = _rows.FirstOrDefault(r => r.Id == rowId);
+            if (row is not null) row.IsChecked = isChecked;
+        }
+
+        /// <summary>Zaškrtne všechny aktuálně viditelné řádky (po LoadList).</summary>
+        public void CheckAll() => SetAllChecked(true);
+
+        /// <summary>Odznačí všechny řádky.</summary>
+        public void UncheckAll() => SetAllChecked(false);
+
+        private void SetAllChecked(bool value)
+        {
+            _suppressCheckedEvents = true;
+            try
+            {
+                foreach (var row in _rows) row.IsChecked = value;
+            }
+            finally { _suppressCheckedEvents = false; }
+            FireCheckedRowsChanged();
+        }
+
+        private void FireCheckedRowsChanged()
+        {
+            SyncHeaderCheckState();
+            CheckedRowsChanged?.Invoke(this, SelectedRowIds);
+        }
+
+        private CheckBox? _headerCheckBox;
+
+        /// <summary>User klikl na CheckBox v řádku — toggleval CheckBox.IsChecked. Propaguj do EDListRow.</summary>
+        private void OnRowCheckClick(object sender, RoutedEventArgs e)
+        {
+            if (sender is CheckBox cb && cb.DataContext is EDListRow row)
+                row.IsChecked = cb.IsChecked == true;
+        }
+
+        /// <summary>Aktualizuje header CheckBox podle aggregate stavu (true / false / null = mixed).</summary>
+        private void SyncHeaderCheckState()
+        {
+            if (_headerCheckBox is null) return;
+            int total = _rows.Count;
+            int checkedCount = _rows.Count(r => r.IsChecked);
+            bool? state = total == 0 ? false
+                        : checkedCount == 0 ? false
+                        : checkedCount == total ? true
+                        : null;  // mixed
+            if (_headerCheckBox.IsChecked != state) _headerCheckBox.IsChecked = state;
+        }
+
+        private void OnRowPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (_suppressCheckedEvents) return;
+            if (e.PropertyName == nameof(EDListRow.IsChecked))
+                FireCheckedRowsChanged();
         }
 
         // ─── Veřejné API ──────────────────────────────────────────────────────────
@@ -61,9 +141,15 @@ namespace EDControls.EDList
         {
             EnsureConfigured();
             var output = MLRest!.QueryOrThrow(CacheClass, "LoadList", Array.Empty<object>());
+            // Unsubscribe stará data — žádné spying na zaniklé řádky
+            foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _rows.Clear();
             foreach (var row in ParseRows(output))
+            {
+                row.PropertyChanged += OnRowPropertyChanged;
                 _rows.Add(row);
+            }
+            FireCheckedRowsChanged();
         }
 
         // ─── Parsování ────────────────────────────────────────────────────────────
@@ -110,7 +196,7 @@ namespace EDControls.EDList
             _        => EListColumnAlign.Auto,
         };
 
-        private IEnumerable<Dictionary<string, string?>> ParseRows(object[] output)
+        private IEnumerable<EDListRow> ParseRows(object[] output)
         {
             for (int i = 1; i < output.Length; i++)
             {
@@ -119,9 +205,15 @@ namespace EDControls.EDList
 
                 using var doc = JsonDocument.Parse(json);
                 var dict = new Dictionary<string, string?>();
+                string? id = null;
                 foreach (var prop in doc.RootElement.EnumerateObject())
-                    dict[prop.Name] = FormatValue(prop.Value.GetString(), prop.Name);
-                yield return dict;
+                {
+                    var formatted = FormatValue(prop.Value.GetString(), prop.Name);
+                    if (prop.Name == "id") id = formatted;
+                    else dict[prop.Name] = formatted;
+                }
+                if (!string.IsNullOrEmpty(id))
+                    yield return new EDListRow(id, dict);
             }
         }
 
@@ -171,9 +263,48 @@ namespace EDControls.EDList
         private void RebuildColumns()
         {
             dataGrid.Columns.Clear();
+            if (_selectionMode == EListSelectionMode.Check)
+                dataGrid.Columns.Add(BuildCheckBoxColumn());
             if (_columns is null) return;
             foreach (var col in _columns.Where(c => c.Visible))
                 dataGrid.Columns.Add(BuildDataGridColumn(col));
+        }
+
+        private DataGridColumn BuildCheckBoxColumn()
+        {
+            var checkBox = new FrameworkElementFactory(typeof(CheckBox));
+            checkBox.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            checkBox.SetValue(CheckBox.VerticalAlignmentProperty, VerticalAlignment.Center);
+            // OneWay binding: source (EDListRow.IsChecked) → CheckBox (programmatic změny propagují
+            // do UI přes INotifyPropertyChanged). User click řeší explicit ClickEvent handler níže —
+            // DataGridTemplateColumn.CellTemplate má známé problémy s reverzní cestou TwoWay binding.
+            checkBox.SetBinding(CheckBox.IsCheckedProperty,
+                new Binding(nameof(EDListRow.IsChecked)) { Mode = BindingMode.OneWay });
+            checkBox.AddHandler(CheckBox.ClickEvent, new RoutedEventHandler(OnRowCheckClick));
+
+            _headerCheckBox = new CheckBox
+            {
+                ToolTip = "Označit / odznačit vše viditelné",
+                IsThreeState = true  // null = mixed state (zobrazí jako čtvereček)
+            };
+            // Click (ne Checked/Unchecked) fires jen z user akce, ne z programmatic IsChecked.
+            // Tím se vyhneme rekurzi: CheckAll → SyncHeaderCheckState → IsChecked set → Click NEFires.
+            _headerCheckBox.Click += (_, _) =>
+            {
+                int total = _rows.Count;
+                int checkedCount = _rows.Count(r => r.IsChecked);
+                if (checkedCount == total && total > 0) UncheckAll();
+                else CheckAll();
+            };
+
+            return new DataGridTemplateColumn
+            {
+                Header = _headerCheckBox,
+                Width = new DataGridLength(32),
+                CellTemplate = new DataTemplate { VisualTree = checkBox },
+                CanUserSort = false,
+                CanUserReorder = false,
+            };
         }
 
         private DataGridColumn BuildDataGridColumn(ListColumn col)
@@ -197,10 +328,8 @@ namespace EDControls.EDList
                     tb.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
                 tb.AddHandler(TextBlock.PreviewMouseLeftButtonUpEvent, new MouseButtonEventHandler((sender, _) =>
                 {
-                    if (sender is TextBlock el &&
-                        el.DataContext is Dictionary<string, string?> row &&
-                        row.TryGetValue("id", out var rowId) && rowId is not null)
-                        CellLinkClicked?.Invoke(this, (rowId, col.Key));
+                    if (sender is TextBlock el && el.DataContext is EDListRow row)
+                        CellLinkClicked?.Invoke(this, (row.Id, col.Key));
                 }));
                 return new DataGridTemplateColumn
                 {

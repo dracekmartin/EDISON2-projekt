@@ -5,18 +5,29 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
         mc:Ignorable="d"
-        Title="Test EDList" Height="480" Width="700"
+        Title="Test EDList" Height="540" Width="900"
         WindowStartupLocation="CenterOwner">
     <DockPanel>
         <ToolBar DockPanel.Dock="Top">
             <Button Content="InitializeList" Click="InitializeList_Click" ToolTip="Načíst definici sloupců z Caché"/>
             <Separator/>
             <Button Content="LoadList"       Click="LoadList_Click"       ToolTip="Načíst data z Caché"/>
+            <Separator/>
+            <TextBlock Text="Mode:" VerticalAlignment="Center" Margin="4,0"/>
+            <ComboBox x:Name="ModeCombo" SelectedIndex="0" Width="100" SelectionChanged="ModeCombo_SelectionChanged">
+                <ComboBoxItem>Single</ComboBoxItem>
+                <ComboBoxItem>Check</ComboBoxItem>
+            </ComboBox>
+            <Separator/>
+            <Button Content="Check all"   Click="CheckAll_Click"   ToolTip="Označit všechny řádky"/>
+            <Button Content="Uncheck all" Click="UncheckAll_Click" ToolTip="Odznačit"/>
         </ToolBar>
         <StatusBar DockPanel.Dock="Bottom">
             <TextBlock x:Name="StatusText"/>
             <Separator/>
             <TextBlock x:Name="LinkText" Foreground="DarkBlue"/>
+            <Separator/>
+            <TextBlock x:Name="CheckedText" Foreground="DarkGreen"/>
         </StatusBar>
         <el:EDList x:Name="TheList" Margin="4"/>
     </DockPanel>
