@@ -36,21 +36,21 @@ public class WindowNavigator : IWindowNavigator
         return window.ShowDialog();
     }
 
-    public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true)
+    public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession);
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc != null) _legacyProcesses.Add(prc);
     }
 
-    public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true)
+    public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
-        using var prc = LaunchLegacy(exeName, formFqn, shareShellSession);
+        using var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         prc?.WaitForExit();
     }
 
-    public void ShowLegacyAsDialog(string exeName, string formFqn, bool shareShellSession = true)
+    public void ShowLegacyAsDialog(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
-        var prc = LaunchLegacy(exeName, formFqn, shareShellSession);
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
         _legacyProcesses.Add(prc);
 
@@ -113,7 +113,7 @@ public class WindowNavigator : IWindowNavigator
         _legacyProcesses.Clear();
     }
 
-    private static Process? LaunchLegacy(string exeName, string formFqn, bool shareShellSession)
+    private static Process? LaunchLegacy(string exeName, string formFqn, bool shareShellSession, string inputParam)
     {
         var mlRest = EDServices.Current.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
@@ -122,7 +122,7 @@ public class WindowNavigator : IWindowNavigator
         {
             UseShellExecute = true,
             FileName = ResolveExecutablePath(exeName),
-            Arguments = $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\"",
+            Arguments = $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\"",
         });
     }
 

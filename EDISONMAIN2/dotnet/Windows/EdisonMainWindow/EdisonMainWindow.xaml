@@ -88,14 +88,10 @@
             <MenuItem Header="INFO" IsEnabled="False"/>
         </Menu>
 
-        <TreeView x:Name="ModuleTree" Grid.Column="0" Grid.Row="1" ItemsSource="{Binding TopLevelModules}" Grid.ColumnSpan="2">
-            <b:Interaction.Triggers>
-                <b:EventTrigger EventName="MouseDoubleClick">
-                    <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
-                                           CommandParameter="{Binding SelectedItem, ElementName=ModuleTree}"/>
-                </b:EventTrigger>
-            </b:Interaction.Triggers>
-            <TreeView.Resources>
+        <!-- Tři stromy odpovídají legacy edisonnavbar.xml: Hlavní nabídka (id=-2),
+             Správa systému (id=-3), Partnerská řešení (id=-4). -->
+        <Grid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
+            <Grid.Resources>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
                     <TextBlock Text="{Binding DisplayedName}" />
                 </HierarchicalDataTemplate>
@@ -105,8 +101,40 @@
                 <Style TargetType="{x:Type TreeViewItem}">
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded}"/>
                 </Style>
-            </TreeView.Resources>
-        </TreeView>
+            </Grid.Resources>
+            <TabControl>
+                <TabItem Header="Hlavní nabídka">
+                    <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="MouseDoubleClick">
+                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
+                                                       CommandParameter="{Binding SelectedItem, ElementName=MainMenuTreeView}"/>
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </TreeView>
+                </TabItem>
+                <TabItem Header="Správa systému">
+                    <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="MouseDoubleClick">
+                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
+                                                       CommandParameter="{Binding SelectedItem, ElementName=SystemAdminTreeView}"/>
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </TreeView>
+                </TabItem>
+                <TabItem Header="Partnerská řešení">
+                    <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="MouseDoubleClick">
+                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
+                                                       CommandParameter="{Binding SelectedItem, ElementName=PartnerSolutionsTreeView}"/>
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </TreeView>
+                </TabItem>
+            </TabControl>
+        </Grid>
         <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <Grid Grid.Column="2" Grid.Row="1" >
             <Grid.RowDefinitions>

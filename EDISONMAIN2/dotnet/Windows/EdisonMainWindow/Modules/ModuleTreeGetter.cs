@@ -7,16 +7,18 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     public class ModuleTreeGetter : IModuleTreeGetter
     {
-        public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest)
+        public IReadOnlyList<IModule> GetModuleTree(IMLRest mlRest, string treeName = "main")
         {
-            CVar treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", new CVar());
+            var input = new CVar();
+            input["tree"] = new CVar(treeName);
+            CVar treeData = mlRest.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", input);
             return ParseTree(treeData);
         }
 
         /// <summary>
         /// Wire format (z ALVA.EDISONMAIN2.API.Tree.GetTree):
         ///   $lb("FAMILY", displayName, isExpanded)
-        ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed)
+        ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed, inputParam)
         ///   $lb("FAMILY_END")
         /// </summary>
         internal static ObservableCollection<IModule> ParseTree(CVar treeData)
@@ -46,7 +48,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                             ExecutablePath = row.GetString(3),
                             FormName       = row.GetString(4),
                             ElementId      = row.Count >= 5 ? row.GetString(5) : "",
-                            IsLicensed     = row.Count >= 6 && row.GetString(6) == "1"
+                            IsLicensed     = row.Count >= 6 && row.GetString(6) == "1",
+                            InputParam     = row.Count >= 7 ? row.GetString(7) : ""
                         });
                         break;
                     case "FAMILY_END":

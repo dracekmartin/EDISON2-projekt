@@ -55,7 +55,7 @@ public class EdisonMainViewModelTests
     private static IModuleTreeGetter EmptyTreeGetter()
     {
         var mock = Substitute.For<IModuleTreeGetter>();
-        mock.GetModuleTree(Arg.Any<IMLRest>()).Returns([]);
+        mock.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
         return mock;
     }
 
@@ -70,16 +70,21 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void Constructor_FetchesModuleTree()
+    public void Constructor_FetchesAllThreeTrees()
     {
         var mockTree = Substitute.For<IModuleTreeGetter>();
-        mockTree.GetModuleTree(Arg.Any<IMLRest>())
-            .Returns([new ExecutableModule { DisplayedName = "App", ExecutablePath = "app.exe", FormName = "" }]);
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main")
+            .Returns([new ExecutableModule { DisplayedName = "MainApp", ExecutablePath = "app.exe", FormName = "" }]);
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), "system")
+            .Returns([new ExecutableModule { DisplayedName = "SysTool", ExecutablePath = "sys.exe", FormName = "" }]);
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), "partners")
+            .Returns([new ExecutableModule { DisplayedName = "Partner", ExecutablePath = "p.exe", FormName = "" }]);
 
         var vm = CreateVM(treeGetter: mockTree);
 
-        Assert.Single(vm.TopLevelModules);
-        Assert.Equal("App", vm.TopLevelModules[0].DisplayedName);
+        Assert.Equal("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
+        Assert.Equal("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
+        Assert.Equal("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
     }
 
     [Fact]

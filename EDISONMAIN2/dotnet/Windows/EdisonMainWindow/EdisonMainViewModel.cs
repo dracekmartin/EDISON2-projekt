@@ -87,8 +87,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
             RefreshLicenseCommand         = Command(RefreshLicense);
-            ShowUsersLocksCommand         = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSLocks"));
-            ShowUsersActivityCommand      = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSActivity"));
+            // Admin-only — legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
+            ShowUsersLocksCommand         = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
+            ShowUsersActivityCommand      = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
             ShowLanguageSettingsCommand   = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
             SendSystemLogCommand          = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
@@ -99,7 +100,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Styl menu
             SelectFontCommand             = Command(SelectFont);
 
-            TopLevelModules = [];
+            MainMenuTree = [];
+            SystemAdminTree = [];
+            PartnerSolutionsTree = [];
 
             // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
@@ -108,18 +111,25 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
-            LoadAndFilterTree();
+            LoadAndFilterTrees();
         }
 
-        // Strom i licenční gating jsou per-IdFa, takže po přepnutí firmy refresh.
-        private void LoadAndFilterTree()
+        // Stromy i licenční gating jsou per-IdFa, takže po přepnutí firmy refresh všech tří.
+        private void LoadAndFilterTrees()
         {
-            TopLevelModules.Clear();
-            var tree = _treeGetter.GetModuleTree(MLRest!);
+            LoadAndFilterTree(MainMenuTree, "main");
+            LoadAndFilterTree(SystemAdminTree, "system");
+            LoadAndFilterTree(PartnerSolutionsTree, "partners");
+        }
+
+        private void LoadAndFilterTree(ObservableCollection<IModule> target, string treeName)
+        {
+            target.Clear();
+            var tree = _treeGetter.GetModuleTree(MLRest!, treeName);
             foreach (var module in tree)
             {
                 if (TryFilter(module, _services.ActiveLicence) is { } filtered)
-                    TopLevelModules.Add(filtered);
+                    target.Add(filtered);
             }
         }
 
@@ -162,7 +172,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string FullName  => MLRest!.FullName;
         public string Mlp       => MLRest!.Mlp;
 
-        public ObservableCollection<IModule> TopLevelModules { get; }
+        public ObservableCollection<IModule> MainMenuTree { get; }
+        public ObservableCollection<IModule> SystemAdminTree { get; }
+        public ObservableCollection<IModule> PartnerSolutionsTree { get; }
 
         public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 
@@ -204,7 +216,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _services.ActiveLicence = newLicence;
                     LocalPrefs.Current.LastIdfa = MLRest!.Idfa;
                     LocalPrefs.Current.Save();
-                    LoadAndFilterTree();
+                    LoadAndFilterTrees();
                 }
                 else
                 {
@@ -231,7 +243,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void OpenModule(IModule module)
         {
             if (module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em)
-                WindowNavigator.ShowLegacy(path, em.FormName);
+                WindowNavigator.ShowLegacy(path, em.FormName, inputParam: em.InputParam);
         }
 
         private void ExitApplication()
@@ -260,7 +272,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             var fresh = _licenceLoader();
             _services.ActiveLicence = fresh;
-            LoadAndFilterTree();
+            LoadAndFilterTrees();
             PopupDisplayer.Info("Licence byla aktualizována.");
         }
 
