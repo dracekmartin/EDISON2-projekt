@@ -1,6 +1,7 @@
 <Window x:Class="TemplateDesigner.CacheTemplatePickerDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
         Title="Šablony v Caché"
         Width="720" Height="480"
         MinWidth="500" MinHeight="320"
@@ -13,15 +14,12 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Filtry -->
+        <!-- Agenda filter (host-specific) -->
         <Grid Grid.Row="0" Margin="0,0,0,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="250"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0" Text="Agenda:" VerticalAlignment="Center" Margin="0,0,6,0"/>
@@ -29,41 +27,10 @@
                       ItemsSource="{Binding AgendaFilters}"
                       SelectedItem="{Binding SelectedFilter, Mode=TwoWay}"
                       DisplayMemberPath="Label"/>
-
-            <TextBlock Grid.Column="3" Text="Hledat:" VerticalAlignment="Center" Margin="12,0,6,0"/>
-            <TextBox Grid.Column="4"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     VerticalContentAlignment="Center"/>
-
-            <Button Grid.Column="5" Content="Obnovit"
-                    Command="{Binding RefreshCommand}"
-                    Margin="8,0,0,0" Padding="10,2"/>
         </Grid>
 
-        <!-- List šablon -->
-        <DataGrid Grid.Row="1"
-                  ItemsSource="{Binding TemplatesView}"
-                  SelectedItem="{Binding Selected, Mode=TwoWay}"
-                  AutoGenerateColumns="False"
-                  IsReadOnly="True"
-                  SelectionMode="Single"
-                  HeadersVisibility="Column"
-                  GridLinesVisibility="Horizontal"
-                  RowHeaderWidth="0"
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  CanUserResizeRows="False"
-                  CanUserReorderColumns="False">
-            <DataGrid.Columns>
-                <DataGridTextColumn Header="Název"     Binding="{Binding Name}"           Width="*" />
-                <DataGridTextColumn Header="Agenda"    Binding="{Binding AgendaCode}"     Width="100" />
-                <DataGridTextColumn Header="Změněno"   Binding="{Binding ModifiedAtText}" Width="130" />
-                <DataGridTextColumn Header="Kým"        Binding="{Binding ModifiedBy}"     Width="80" />
-            </DataGrid.Columns>
-            <DataGrid.InputBindings>
-                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding OpenCommand}"/>
-            </DataGrid.InputBindings>
-        </DataGrid>
+        <!-- List šablon (Caché-driven přes EDList) -->
+        <el:EDList x:Name="TheList" Grid.Row="1"/>
 
         <!-- Akce -->
         <Grid Grid.Row="2" Margin="0,12,0,0">

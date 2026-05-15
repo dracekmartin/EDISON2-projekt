@@ -17,7 +17,41 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 > **v1.0 demo balíček HOTOV (2026-05-15)** — Release readiness R1+R2+R4 splněno (3 commity: `5ac9dd0` Caché Template Storage, `82b68be` Přepínač agendy, `fd25008` Instance Picker). Zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md). Hotové sekce → **Archiv** dole.
 
-1. **Fáze A.2-D — Caché business logic** ⬅️ **DALŠÍ PRIORITA** — projít TRANSDEV/KORID suspended tickety: D1 „spoj jede až do XY", D2 custom komentář přebije auto-poznámku, D3 NZ bug, D5 skrýt atributy u hidden sloupců, D6 vypnutí auto-poznámky bezbariér, D7 KORID přípojové řádky. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+### 🔧 WIP — EDList migrace + EDFilter (2026-05-15)
+
+**Co se rozjelo dnes**, abys mohl navázat na druhém PC:
+
+- **EDList** (`EDControls/dotnet/EDList/`) má hotové L1 (multi-select), L2 (column layout persist), L3 (search + title).
+- **L5 — CacheTemplatePickerDialog na EDList** — kód je napsaný (VM, XAML, code-behind, `TemplatesList.cls`), build čistý, picker se otevře, list se naplní. **Bug:** agenda combo nefiltruje (wire formát IN — EDList posílá `object[]` + delimiter, `TemplatesList` čte CVar named klíče).
+- **Architektonická rozhodnutí dohodnutá dnes:**
+  1. Wire format standard — viz nový doc [`EDControls/.claude/docs/wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md). R3 v této roadmapě upřesněno.
+  2. EDFilter komponent — varianta **A** (samostatná komponenta, ne content slot). Začínáme jen s `FilterCombo`, další typy (text, date) přidáme jak budou potřeba.
+
+**Pořadí pro navázání:**
+
+1. **Fix wire formátu** — `EDList.LoadList(filter)` v `EDControls/dotnet/EDList/EDList.xaml.cs` (řádek ~228) přepnout z `object[]` na `CVar` s pojmenovanými klíči. Lze sjednotit i `InitializeList` a `LoadList()` na CVar overload. Caché strana (`TemplatesList.cls`) už pojmenované klíče čte správně — žádná změna tam.
+2. **EDFilter komponent** v `EDControls/dotnet/EDFilter/`:
+   - `EDFilter.xaml/.cs` (UserControl) — horizontální panel, `Target: EDList` DP, na změnu kteréhokoliv pole sestaví `Dictionary<string,string>` z neprázdných hodnot a zavolá `Target.LoadList(filter)`. Initial load (Loaded) volá `LoadList()` s prázdným filtrem; EDList pak přestane initial-loadit sám, pokud má napojený EDFilter.
+   - `FilterCombo` — combo field s `Key`, `Label`, `ItemsSource`, `SelectedValuePath`, `DisplayMemberPath`. Hodnota `null`/prázdná = filter klíč se neposílá.
+   - Žádný `FilterText`, `FilterDate`, `FilterBool` zatím — přidáme až je první dialog reálně bude chtít (YAGNI).
+3. **`CacheTemplatePickerDialog` refactor** — odstranit `SelectedFilter`/`AgendaFilters` z VM, odstranit `PropertyChanged` subscription v code-behind. V XAML nahradit současný agenda combo deklarací:
+   ```xml
+   <el:EDFilter Target="{Binding ElementName=TheList}">
+       <el:FilterCombo Key="agendaCode" Label="Agenda"
+                       ItemsSource="{Binding AgendaFilters}"
+                       SelectedValuePath="Code" DisplayMemberPath="Label"/>
+   </el:EDFilter>
+   ```
+   `AgendaFilters` zůstane v VM (zdroj dat pro combo); zbytek logiky filtru řeší `EDFilter`.
+4. **L6 — InstancePickerDialog na EDList multi-select** — po dokončení L5. Použije `EDFilter` s vlastními poli (zatím čistě search box, později možná SkupinaLinekID combo).
+
+**Co ne-dělat hned:**
+- EDInputForm `$lb()` OUT refactor na JSON — samostatný ticket, mimo scope L5/L6 (viz wire-formats.md sekce „Co dotáhnout").
+- Plnou sadu Filter polí (date, text, bool) — počkat na konkrétní dialog.
+
+### Po L5/L6
+
+1. **Fáze A.2-D — Caché business logic** — projít TRANSDEV/KORID suspended tickety: D1 „spoj jede až do XY", D2 custom komentář přebije auto-poznámku, D3 NZ bug, D5 skrýt atributy u hidden sloupců, D6 vypnutí auto-poznámky bezbariér, D7 KORID přípojové řádky. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 2. **Wave 1 — UserPreferences (LocalPrefs v Caché)** — per-user × IDFa nastavení (zoom, grid, recent files, instance picker default). Souvisí s budoucími EDComponents2 (refaktor EDInputGrid/EDList).
 3. **Demo polish** — Edison icon do okna, sample template „showcase" pro zastávkový JŘ, drobné UX (pořadí linek v pickeru, persistence aktivních instancí přes restart).
 
@@ -44,7 +78,7 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 |---|---|---|
 | R1 | **Async-only Caché volání** — žádné synchronní `MLRest` v UI threadu, vždy `async Task` + `await` | Caché volání trvá 50–500ms; synchronní volání zamrzne UI. Musíme to chytit hned, ne retro-fit. |
 | R2 | **Chyby přes `IPopupDisplayer` z EDControls** — žádný `MessageBox.Show` ani silent catch. Používat existující `EDControls.EDViewModel.IPopupDisplayer` (metody `Error(ex)`, `Confirm`, `Info`, `ConfirmClose`) přes DI nebo `EDViewModel` base. | Bez jednotné cesty se chyby v distribuci ztratí. `IPopupDisplayer` je firemní standard — už ho používá `EDViewModel.Command(...)` automaticky. |
-| R3 | **JSON wire format, ne CVar** — nové Caché API metody vrací JSON string v `OUT[1]`, ne strukturované CVary | JSON je serializovatelný/versionovatelný, jeden `System.Text.Json` deserialize místo custom CVar parseru. Caché strana dělá `obj.%ToJSON()`, .NET strana `JsonSerializer.Deserialize`. |
+| R3 | **CVar named IN + JSON OUT** — IN parametry jako CVar pojmenované klíče (`^||ML("IN","klic")`), OUT strukturovaný payload jako JSON string přes `%ToJSON()`. Plný audit, checklist a důvody: [`EDControls/.claude/docs/wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md). | CVar je nativní zrcadlo Caché globálů (1 řádek per parametr), JSON je versionovatelný strukturovaný formát na výstupu. Hybrid není kompromis — odráží přirozenost obou stran. |
 | R4 | **ViewModely bez WPF referencí** — žádný `using System.Windows` ani `MessageBox.Show` v `*ViewModel.cs` | MVVM princip, testovatelnost, možnost pozdějšího portu/unit testů. Dialogy přes `IPopupDisplayer` (R2). |
 | R5 | **Template versioning je prerekvizita persistence** — dokud není `TemplateMigrator` + version field v JSON, neukládá se nic do Caché | Bez migrace se nové šablony nespustí na starším buildu → zničené ranní otevření souboru. Nelze to retro-fit po nasazení. |
 
@@ -53,7 +87,7 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 **Kde jsou pravidla ověřitelná:**
 - R1: review PR → `grep "MLRest\." *ViewModel*.cs` ukáže synchronní volání
 - R2/R4: `grep "MessageBox\." **/*ViewModel.cs` musí vracet 0 hitů
-- R3: nové API metody mají `^||ML("OUT","json")` s JSON stringem, ne vícero CVar klíčů
+- R3: nové API metody: IN `$g(^||ML("IN","klic"))`, OUT `^||ML("OUT","klic") = obj.%ToJSON()` — viz [`wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md)
 - R5: Wave 3 nemůže začít bez hotového H-18/H-19 (versioning a migrator)
 
 ---
