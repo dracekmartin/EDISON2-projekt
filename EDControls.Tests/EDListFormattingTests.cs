@@ -1,4 +1,5 @@
 using System.Globalization;
+using ALWA.SYS;
 using EDControls.EDList;
 
 namespace EDControls.Tests;
@@ -96,7 +97,7 @@ public class EDListFormattingTests
     [Fact]
     public void ParseColumns_EmptyOutput_ReturnsEmpty()
     {
-        var output = new object[] { "0" };
+        var output = new CVar();
         var cols = EDList.EDList.ParseColumns(output);
         Assert.Empty(cols);
     }
@@ -105,7 +106,8 @@ public class EDListFormattingTests
     public void ParseColumns_SingleColumn_ParsesAllProperties()
     {
         string json = """[{"key":"rz","label":"RZ","type":"TEXT","format":"","width":110,"align":"LEFT","sortable":true,"visible":true,"isLink":false}]""";
-        var output = new object[] { "1", json };
+        var output = new CVar();
+        output["1"] = new CVar(json);
 
         var cols = EDList.EDList.ParseColumns(output);
 
@@ -132,7 +134,8 @@ public class EDListFormattingTests
             {"key":"e","label":"E","type":"COLOR","format":"","width":60,"align":"","sortable":false,"visible":true,"isLink":false}
         ]
         """;
-        var output = new object[] { "5", json };
+        var output = new CVar();
+        output["1"] = new CVar(json);
         var cols = EDList.EDList.ParseColumns(output);
 
         Assert.Equal(5, cols.Count);

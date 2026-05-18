@@ -213,7 +213,7 @@ namespace EDControls.EDList
         public void InitializeList()
         {
             EnsureConfigured();
-            var output = MLRest!.QueryOrThrow(CacheClass, "InitializeList", Array.Empty<object>());
+            var output = MLRest!.QueryOrThrow(CacheClass, "InitializeList", new CVar());
             _columns = ParseColumns(output);
             RebuildColumns();
         }
@@ -228,15 +228,11 @@ namespace EDControls.EDList
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
             EnsureConfigured();
-            object[] input;
-            if (filter is null || filter.Count == 0)
+            var input = new CVar();
+            if (filter is not null)
             {
-                input = Array.Empty<object>();
-            }
-            else
-            {
-                char del = MLRest!.Delimiter;
-                input = filter.Select(kv => (object)$"{kv.Key}{del}{kv.Value}").ToArray();
+                foreach (var kv in filter)
+                    input[kv.Key] = new CVar(kv.Value);
             }
             var output = MLRest!.QueryOrThrow(CacheClass, "LoadList", input);
             // Unsubscribe stará data — žádné spying na zaniklé řádky
@@ -256,10 +252,10 @@ namespace EDControls.EDList
 
         // ─── Parsování ────────────────────────────────────────────────────────────
 
-        internal static IReadOnlyList<ListColumn> ParseColumns(object[] output)
+        internal static IReadOnlyList<ListColumn> ParseColumns(CVar output)
         {
-            if (output.Length < 2) return [];
-            var json = output[1]?.ToString() ?? "[]";
+            var json = output["1"]?.Value?.ToString();
+            if (string.IsNullOrEmpty(json)) return [];
             using var doc = JsonDocument.Parse(json);
             return [.. doc.RootElement.EnumerateArray().Select(ParseColumn)];
         }
@@ -298,11 +294,12 @@ namespace EDControls.EDList
             _        => EListColumnAlign.Auto,
         };
 
-        private IEnumerable<EDListRow> ParseRows(object[] output)
+        private IEnumerable<EDListRow> ParseRows(CVar output)
         {
-            for (int i = 1; i < output.Length; i++)
+            foreach (KeyValuePair<string, CVar> kvp in output)
             {
-                var json = output[i]?.ToString();
+                if (kvp.Key == "ERR") continue;
+                var json = kvp.Value?.Value?.ToString();
                 if (string.IsNullOrWhiteSpace(json)) continue;
 
                 using var doc = JsonDocument.Parse(json);
