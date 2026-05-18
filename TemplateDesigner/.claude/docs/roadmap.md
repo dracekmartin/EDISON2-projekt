@@ -17,24 +17,25 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 > **v1.0 demo balíček HOTOV (2026-05-15)** — Release readiness R1+R2+R4 splněno (3 commity: `5ac9dd0` Caché Template Storage, `82b68be` Přepínač agendy, `fd25008` Instance Picker). Zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md). Hotové sekce → **Archiv** dole.
 
-### 🔧 WIP — EDList migrace + EDFilter (2026-05-15)
+### 🔧 WIP — EDControls foundation work (stav 2026-05-18)
 
-**Co se rozjelo dnes**, abys mohl navázat na druhém PC:
+Souběžně s TD specifickou prací probíhá **rozšíření EDControls knihovny** — generické komponenty (EDList, EDInputForm, EDFilter) jako dodavatel pro **Wave 1** (UserPreferences) a **Wave 4** (Form-driven UI) v sekci „Caché Migrace — 5 Vln" níže. Toto je jejich aktuální stav:
 
-- **EDList** (`EDControls/dotnet/EDList/`) má hotové L1 (multi-select), L2 (column layout persist), L3 (search + title).
-- **L5 — CacheTemplatePickerDialog na EDList** — kód je napsaný (VM, XAML, code-behind, `TemplatesList.cls`), build čistý, picker se otevře, list se naplní. **Bug:** agenda combo nefiltruje (wire formát IN — EDList posílá `object[]` + delimiter, `TemplatesList` čte CVar named klíče).
-- **Architektonická rozhodnutí dohodnutá dnes:**
-  1. Wire format standard — viz nový doc [`EDControls/.claude/docs/wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md). R3 v této roadmapě upřesněno.
-  2. EDFilter komponent — varianta **A** (samostatná komponenta, ne content slot). Začínáme jen s `FilterCombo`, další typy (text, date) přidáme jak budou potřeba.
+**Hotové foundation kusy:**
+- ✅ **F1 — `IUserPrefsService`** + `LocalPrefs` impl + Caché `ALVA.EDControls.UserData` (per-user × IDFa × scope × key blob storage). Prerekvizita Wave 1.
+- ✅ **L1 — EDList multi-select** (checkbox sloupec, tri-state header, `SelectionMode = Single | Check`)
+- ✅ **L2 — EDList column layout persist** (šířky / pořadí / sort přes `IUserPrefsService`, 500ms debounced save)
+- ✅ **L3 — EDList Title + client-side search**
+- ✅ **EDList wire formát fix** — `LoadList(filter)` přepnut z `object[]` + delimiter na CVar named keys (sjednoceno s wire-formats.md standardem)
 
-**Pořadí pro navázání:**
+**Rozpracované:**
+- 🔄 **L5 — `CacheTemplatePickerDialog` na EDList** (task #20) — kód hotový, filter funguje, build čistý, testy zelené (19/19). Ke commitnutí jako completed.
+- ⏳ **L6 — `InstancePickerDialog` na EDList multi-select** (task #21) — pending, blokuje #20.
+- ⏳ **#22 — Experiment JSON envelope vs současný hybrid** na `TemplatesList` — pending, blokují #20+#21. Cíl: porovnat dva wire formáty na konkrétním endpointu, rozhodnout standard pro nové endpointy. Výsledek propsat do wire-formats.md.
 
-1. **Fix wire formátu** — `EDList.LoadList(filter)` v `EDControls/dotnet/EDList/EDList.xaml.cs` (řádek ~228) přepnout z `object[]` na `CVar` s pojmenovanými klíči. Lze sjednotit i `InitializeList` a `LoadList()` na CVar overload. Caché strana (`TemplatesList.cls`) už pojmenované klíče čte správně — žádná změna tam.
-2. **EDFilter komponent** v `EDControls/dotnet/EDFilter/`:
-   - `EDFilter.xaml/.cs` (UserControl) — horizontální panel, `Target: EDList` DP, na změnu kteréhokoliv pole sestaví `Dictionary<string,string>` z neprázdných hodnot a zavolá `Target.LoadList(filter)`. Initial load (Loaded) volá `LoadList()` s prázdným filtrem; EDList pak přestane initial-loadit sám, pokud má napojený EDFilter.
-   - `FilterCombo` — combo field s `Key`, `Label`, `ItemsSource`, `SelectedValuePath`, `DisplayMemberPath`. Hodnota `null`/prázdná = filter klíč se neposílá.
-   - Žádný `FilterText`, `FilterDate`, `FilterBool` zatím — přidáme až je první dialog reálně bude chtít (YAGNI).
-3. **`CacheTemplatePickerDialog` refactor** — odstranit `SelectedFilter`/`AgendaFilters` z VM, odstranit `PropertyChanged` subscription v code-behind. V XAML nahradit současný agenda combo deklarací:
+**Po experimentu (#22) v pořadí:**
+
+1. **EDFilter komponent** v `EDControls/dotnet/EDFilter/` — nahradit ad-hoc agenda combo v dialozích standardní deklarativní komponentou. Začínáme jen s `FilterCombo`, další typy (text, date) podle reálné potřeby. Vzor:
    ```xml
    <el:EDFilter Target="{Binding ElementName=TheList}">
        <el:FilterCombo Key="agendaCode" Label="Agenda"
@@ -42,17 +43,26 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
                        SelectedValuePath="Code" DisplayMemberPath="Label"/>
    </el:EDFilter>
    ```
-   `AgendaFilters` zůstane v VM (zdroj dat pro combo); zbytek logiky filtru řeší `EDFilter`.
-4. **L6 — InstancePickerDialog na EDList multi-select** — po dokončení L5. Použije `EDFilter` s vlastními poli (zatím čistě search box, později možná SkupinaLinekID combo).
+2. **`CacheTemplatePickerDialog` refactor na EDFilter** — odstranit `SelectedFilter`/`AgendaFilters` z VM, deklarativní XAML.
+3. **Rozhodnutí o další větvi** — buď **Wave 1** (UserPreferences plné využití) nebo **A.2-D** (zákaznické tickety TRANSDEV/KORID, vyšší zákaznický dopad).
 
-**Co ne-dělat hned:**
-- EDInputForm `$lb()` OUT refactor na JSON — samostatný ticket, mimo scope L5/L6 (viz wire-formats.md sekce „Co dotáhnout").
-- Plnou sadu Filter polí (date, text, bool) — počkat na konkrétní dialog.
+**Architektonická rozhodnutí pro EDControls foundation (dokumenty pro detail):**
 
-### Po L5/L6
+| Téma | Kde |
+|---|---|
+| Wire formát standard (CVar named IN + JSON OUT) | [`wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md) |
+| Migrace TD editorů na EDInputForm (architektura, drift handling, příklady) | [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md) |
+| Legacy EDISON komponenty (BIG/BIL/BDG) — baseline analýza | [`legacy-component-research.md`](../../../EDControls/.claude/docs/legacy-component-research.md) |
 
-1. **Fáze A.2-D — Caché business logic** — projít TRANSDEV/KORID suspended tickety: D1 „spoj jede až do XY", D2 custom komentář přebije auto-poznámku, D3 NZ bug, D5 skrýt atributy u hidden sloupců, D6 vypnutí auto-poznámky bezbariér, D7 KORID přípojové řádky. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-2. **Wave 1 — UserPreferences (LocalPrefs v Caché)** — per-user × IDFa nastavení (zoom, grid, recent files, instance picker default). Souvisí s budoucími EDComponents2 (refaktor EDInputGrid/EDList).
+**Co dělat až později:**
+- Plná sada Filter polí (date, text, bool) — počkat na konkrétní dialog, který je bude chtít (YAGNI)
+- EDInputForm `$lb()` OUT refactor na JSON — součást Wave 4
+- Nové typy polí v EDInputForm (Color, Font, Suggest, Text+Picker, ActionId Button) — součást Wave 4 přípravy
+
+### TD-specifické další kroky (vedle EDControls work)
+
+1. **Fáze A.2-D — Caché business logic** — projít TRANSDEV/KORID suspended tickety. Viz tabulka A.2-D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+2. **Wave 1 plné využití** — UserPreferences (zoom, grid, recent files, instance picker default) postavené nad hotovým `IUserPrefsService` foundation.
 3. **Demo polish** — Edison icon do okna, sample template „showcase" pro zastávkový JŘ, drobné UX (pořadí linek v pickeru, persistence aktivních instancí přes restart).
 
 ---

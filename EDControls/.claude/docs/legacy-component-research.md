@@ -402,57 +402,23 @@ namespace ALVA.BASE.API {
 | **Wire format** | CList (`$lb` poziční + `~` delimited) | JSON (samo-popisný, versionable) (R3) |
 | **Testovatelnost** | ❌ tightly coupled to WinForms | ✅ Controller pattern bez WPF |
 | **DI** | ❌ tightly coupled na BaseForm | ✅ EDServices.Current, IMLRest |
-| **Persist user state** | ✅ generic UserData blob storage | ❌ chybí (musíme dotáhnout) |
-| **Multi-select v listu** | ✅ EFlexGrid2.mCheckSelect | ❌ chybí |
-| **CRUD v listu** | ✅ Add/Edit/Delete tlačítka | ❌ read-only |
-| **Filter UI v listu** | ✅ FilterController | ❌ chybí |
-| **Codebook** | ✅ ~100+ typů, generic picker | ❌ deklarováno v EDList, neimpl |
-| **Lokální groups mode BIG** | ✅ ano | ❌ jen Package mode |
+| **Persist user state** | ✅ generic UserData blob storage | ✅ `ALVA.EDControls.UserData` + `IUserPrefsService` (F1) |
+| **Multi-select v listu** | ✅ EFlexGrid2.mCheckSelect | ✅ EDList checkbox sloupec (L1) |
+| **CRUD v listu** | ✅ Add/Edit/Delete tlačítka | ❌ EDList read-only — host dialog drží CRUD akce |
+| **Filter UI v listu** | ✅ FilterController | ⚠️ dnes ad-hoc combo v hosting dialog, EDFilter komponenta plánována |
+| **Codebook** | ✅ ~100+ typů, generic picker | ❌ deklarováno v EDList, neimpl (TD má jen 2-3 codebooky) |
+| **Lokální groups mode BIG** | ✅ ano | ❌ jen Package mode (TD jde Caché-driven přes Wave 4) |
 | **LOC** | ~24 000 (EDFORMS) | ~2 100 (EDInputForm + EDList + base) |
 
 ---
 
-## 7. Současný stav EDControls
+## 7. Aktuální stav EDControls
 
-### EDInputForm (analogie BIG, ~1 500 LOC)
+Konkrétní status implementovaných features (EDInputForm + EDList) **není v tomto dokumentu** — průběžně se mění. Aktuální stav je v jediné autoritativní roadmapě [`TemplateDesigner/.claude/docs/roadmap.md`](../../../TemplateDesigner/.claude/docs/roadmap.md) v sekci „WIP — EDControls foundation work".
 
-| Feature | Stav |
-|---|---|
-| Caché Package mode | ✅ |
-| Lokální Groups mode | ❌ |
-| Adaptor (reflexe) mode | ❌ |
-| Datové typy | Text, Number, Date, Decimal, Bool, Button, List, File |
-| Codebook field type | ❌ |
-| Validation (Init/Change/BeforeSave triggers) | ✅ |
-| Per-item ValidateOnChange | ✅ |
-| Visibility (4 stavy: Visible/Collapsed/UserHidden/ProgrammerHidden) | ✅ jemnější než legacy |
-| HelpText (Tooltip / Column) | ✅ |
-| Klávesy (Enter/Tab next, Ctrl+Enter, Ctrl+číslo) | ✅ |
-| Persist user state (UserData) | ❌ |
-| Round-trip pattern (server keeps state) | ✅ |
-| Testovatelný Controller | ✅ EDInputFormController bez WPF |
+### Co EDControls má vedle EDList/EDInputForm
 
-### EDList (analogie BIL, ~600 LOC)
-
-| Feature | Stav |
-|---|---|
-| Caché-driven sloupce (InitializeList) | ✅ |
-| Caché-driven data (LoadList) | ✅ |
-| Datové typy | TEXT, NUMBER, DATE, DATETIME, BOOL, IMAGE (chybí), COLOR, HHMM, CODEBOOK (deklar., neimpl.) |
-| Wire formát | **JSON** (lepší než legacy CList) |
-| Single-select (SelectedRowId) | ✅ |
-| Multi-select (checkbox sloupec) | ❌ |
-| Sort (z WPF DataGridu) | ⚠️ základní |
-| Persist sort | ❌ |
-| Filter UI | ❌ |
-| ColumnLayout persist (šířky + pořadí + visible) | ❌ deklarováno, neimpl. |
-| CRUD tlačítka | ❌ |
-| Search v DB (F3) | ❌ |
-| Context menu | ❌ |
-| isLink hyperlink cells | ✅ (lepší design než HyperLinkString/Integer typy) |
-| Eventy (Selection, RowDouble, CellLink) | ✅ |
-
-### Co dalšího EDControls má
+Permanentní vrstva, kterou nikam nemigrujeme:
 
 - `EDViewModel` base s `Command(...)`, `CommandAsync(...)`, `RelayCommand`, `AsyncRelayCommand`
 - `EDFooter`, `EDToolbar` — high-level UI komponenty
@@ -461,90 +427,51 @@ namespace ALVA.BASE.API {
 - `EDStrings` — sdílené texty tlačítek
 - `WindowStatePersistence` — pozice/velikost/maximized state per (MLP × IDFa) přes legacy `ALVA.LIBRARY.Form.SaveParams`
 - `IMLRest` + `MLRestAdapter` — abstrakce nad MLRest, sdílená přes EDServices
+- `IPopupDisplayer` + WPF impl — error/confirm/info dialogy (R2)
+- `IUserPrefsService` (F1, hotové) — generic per-user blob storage (`ALVA.EDControls.UserData`)
 
-### Co EDControls **nemá** oproti legacy
+### Co EDControls **vědomě nemá** oproti legacy
 
-- BDG (editovatelná tabulka) — záměrně, je to 4 494 LOC + C1FlexGrid (komerční licence)
-- Atomické kontrolky (EDButton, EDCheckedComboBox, EDDatum...) — nahrazujeme nativními WPF
-- EDFilter (komplexní filter controller)
-- EDInputBox, EDMessageBox, EDScheduler, EDWait* — pokryto WPF `IPopupDisplayer`
+- BDG (editovatelná tabulka) — záměrně, je to 4 494 LOC + komerční C1FlexGrid
+- Atomické kontrolky (EDButton, EDCheckedComboBox, EDDatum, …) — nahrazujeme nativními WPF
 - BaseDocument framework — nepotřebujeme pro TD scope
-- PackageAdaptors (frmBig/Bdg/BilPackageAdaptor) — naše dialogy v WPF jsou už standalone
+- PackageAdaptors (frmBig/Bdg/BilPackageAdaptor) — naše dialogy jsou už standalone
+- EDInputBox, EDMessageBox, EDScheduler, EDWait* — pokryto WPF `IPopupDisplayer`
+- Codebook centrální katalog — TD má 2–3 codebooky, overhead se nevyplatí
 - Codebook centrální katalog — TD má jen 2-3 codebooky (agendy, linky, šablony), nevyplatí se overhead
 - Centrální color/style class — místo toho mohou být WPF resource dictionaries (budoucnost)
 
 ---
 
-## 8. Roadmap věci k převzetí (priorita)
+## 8. Roadmap a konkrétní kroky migrace
 
-### Tier 1 — Foundation (`UserData` persist API)
+Tento dokument popisuje **legacy baseline a srovnání** (co existuje, jak to funguje, co máme/nemáme). **Roadmap a konkrétní kroky implementace** žijí v jediné autoritativní roadmapě [`TemplateDesigner/.claude/docs/roadmap.md`](../../../TemplateDesigner/.claude/docs/roadmap.md), konkrétně v sekci **„Caché Migrace — 5 Vln"** (Wave 1 = UserPreferences, Wave 4 = Form-driven UI nahrazující PropertyDescriptor systém, atd.).
 
-**Co převzít:** generic Save/Load pattern z `BIG.UserData.cls`
+Tento dokument se aktualizuje **jen při změně analýzy legacy** (nový průzkum, doplnění zjištění). Není to roadmapový dokument.
 
-**Caché design:**
-```objectscript
-Class ALVA.EDControls.UserData [ Abstract ] {
-    /// Save(scope, key) — uloží IN strom pod (IdFa × userID × scope × key)
-    ClassMethod Save(ByRef sys As %String) As %Status
-    /// Load(scope, key) — vrátí strom do OUT
-    ClassMethod Load(ByRef sys As %String) As %Status
-    /// Delete(scope, key) — smaže klíč
-    ClassMethod Delete(ByRef sys As %String) As %Status
-}
-// Globál: ^ALVA.EDControls.UserData(IdFa, userID, scope, key, ...) = blob
-```
+### Klíčové architektonické rozhodnutí převzaté z legacy
 
-**.NET design:**
-```csharp
-public interface IUserPrefsService {
-    Task<JsonNode?> LoadAsync(string scope, string key);
-    Task SaveAsync(string scope, string key, JsonNode data);
-    Task DeleteAsync(string scope, string key);
-}
-```
+Generic `UserData` persist API (převzato z `BIG.UserData.cls`) je v EDControls implementováno jako `ALVA.EDControls.UserData` + `IUserPrefsService` na .NET straně. Pattern: per (IdFa × userID × scope × key) blob storage. Konvence pro `scope`:
+- `"EDList"` — column layouty, sort, search state
+- `"EDInputForm"` — viditelnost polí, last values
+- `"TD"` — TemplateDesigner-level prefs (LastAgenda, LastInstances)
 
-**Konvence pro `scope`:**
-- `"EDList"` — pro EDList persistované state (ColumnLayout, sort, ...)
-- `"EDInputForm"` — pro EDInputForm persistované state (hidden items, ...)
-- `"TD"` — pro TemplateDesigner-level prefs (LastAgenda, LastInstances, ...)
+Konvence pro `key`: unikátní string identifikátor instance (např. `"TemplateDesigner.TemplatePicker"`).
 
-**Konvence pro `key`:** unikátní string identifikátor instance (např. `"TemplatePickerColumnLayout"`, `"InstancePickerSort"`)
+### Co převzít a co ne (dlouhodobá rozhodnutí)
 
-### Tier 2 — EDList feature parity s BIL
-
-| Krok | Co | Hodnota |
+| Co | Stav | Odkaz na detail |
 |---|---|---|
-| L1 | Multi-select checkbox sloupec (`SelectionMode = Single \| Check` + `SelectedRowIds`) | ⭐⭐⭐⭐ |
-| L2 | ColumnLayout persist (šířky + pořadí + visible) přes IUserPrefsService | ⭐⭐⭐⭐ |
-| L3 | Sort by column + persist | ⭐⭐⭐ |
-| L4 | Filter / search box | ⭐⭐⭐ |
-| L5 | Migrate `CacheTemplatePickerDialog` na EDList (real-world test) | ⭐⭐⭐⭐ |
-| L6 | Migrate `InstancePickerDialog` na EDList multi-select | ⭐⭐⭐⭐ |
-| L7 | Image sloupec typ | ⭐ |
-| L8 | CRUD tlačítka (volitelně otevírá EDInputForm) | ⭐⭐ |
-
-### Tier 3 — EDInputForm feature parity s BIG (volitelné)
-
-| Krok | Co | Hodnota |
-|---|---|---|
-| I1 | Lokální Groups mode (mimo Caché) | ⭐⭐⭐⭐ |
-| I2 | UserData persist (hidden + last values) | ⭐⭐⭐ |
-| I3 | Migrate `SaveToCacheDialog` + `ChangeAgendaDialog` na EDInputForm lokál | ⭐⭐⭐ |
-| I4 | Codebook field type | ⭐⭐ |
-| I5 | DateInterval, Color, Font, Password | ⭐ |
-
-### Tier 4 — NE dělat (rozhodnutí)
-
-| Co | Důvod |
-|---|---|
-| **BDG / EditableDataGrid** | 4 494 LOC, AI integrace, Excel export — overkill. TD má StopColumnsEditorDialog s vlastní DataGrid logikou, funguje. |
-| **PackageAdaptors** | Legacy WinForms pattern — naše dialogy v WPF jsou už standalone. |
-| **EDFilter v plné šíři** | Komplexní filter controller — pro TD stačí jednoduchý search box. |
-| **BaseDocument framework** | Nemáme zákazníky pro „komplexní strukturované formuláře". |
-| **EDInputBox/MessageBox/Scheduler** | WPF + `IPopupDisplayer` to pokrývá; Scheduler je vlastní doménová věc. |
-| **Atomické kontrolky (EDButton, EDCheckedComboBox, ...)** | Nativní WPF kontrolky jsou plně dostatečné. |
-| **Centrální color/style class** | Mohu udělat WPF Resource Dictionary later (budoucí), ne teď. |
-| **Codebook centrální katalog** | TD má 2-3 codebooky — overhead se nevyplatí. |
+| **EDList parity s BIL** (multi-select, persist, filter, search) | aktivně se rozvíjí | TD roadmap WIP sekce |
+| **EDInputForm parity s BIG** (Color, Font, Suggest, Tabs, ActionId) | plánováno | TD roadmap Wave 4 |
+| **EDFilter komponenta** | malá, plánováno hned po L6 | TD roadmap WIP sekce |
+| **`BDG` / EditableDataGrid** | ❌ ne | 4 494 LOC, komerční C1FlexGrid. TD má StopColumnsEditorDialog s vlastní DataGrid logikou. |
+| **`PackageAdaptors`** | ❌ ne | Legacy WinForms pattern. WPF dialogy jsou už standalone. |
+| **`BaseDocument` framework** | ❌ ne | Nemáme „komplexní strukturované formuláře" v TD scope. |
+| **`EDInputBox/MessageBox/Scheduler`** | ❌ ne | Pokrývá WPF + `IPopupDisplayer`. |
+| **Atomické kontrolky** (EDButton, EDCheckedComboBox, EDDatum, ...) | ❌ ne | Nativní WPF kontrolky stačí. |
+| **Centrální Color/Style class** | ⏳ later | WPF Resource Dictionary, budoucí, ne teď. |
+| **Codebook centrální katalog** | ❌ ne | TD má 2–3 codebooky, overhead se nevyplatí. |
 
 ---
 

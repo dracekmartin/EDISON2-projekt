@@ -309,15 +309,11 @@ Tj. **renderer změna je vždy nutná**, ať tak nebo tak — to je doménová l
 
 ---
 
-## 11. Migrace v tier-strukturovaném plánu
+## 11. Migrace v rámci celkového plánu
 
-| Fáze | Co | Velikost | Stav |
-|---|---|---|---|
-| **Tier 1** | `IUserPrefsService` foundation + Caché stub | malá | ✅ hotová |
-| **Tier 2** | Dokončit EDList migraci (L5 = TemplatePicker, L6 = InstancePicker) | malá | 🔄 in progress |
-| **Tier 3 — EDInputForm parity** | Doplnit chybějící typy polí (Color, Font, Suggest, Text+Picker, závislosti, Button+ActionId). Wire formát refactor `$lb()` → JSON. | středně velká, týdny | ⏳ čeká |
-| **Tier 4 — TD migrace** | Caché editor třídy per typ elementu (~10), most přes reflexi, refaktor 4 dialogů (Element/Table/StopColumns/DepartureGroup) | středně velká, týdny | ⏳ čeká |
-| **Tier 5 — per-customer patche v praxi** | Mechanismus pro override Caché definice per IDFa (subclass / overlay metoda / globální patch storage). Dohoda s týmem. | malá až střední | ⏳ čeká |
+Konkrétní pořadí a stav implementace **není v tomto dokumentu** — je v jediné autoritativní roadmapě [`TemplateDesigner/.claude/docs/roadmap.md`](../../../TemplateDesigner/.claude/docs/roadmap.md), konkrétně v sekci **„Caché Migrace — 5 Vln"** → **Wave 4 (Form-driven UI)**.
+
+Tento dokument popisuje **architekturu a důvody** rozhodnutí (proč entitu v C# vs definici v Caché, jak řešit drift, jak rozdělit odpovědnosti). Wave 4 v TD roadmapě popisuje **konkrétní kroky a status** (W4-1 až W4-7).
 
 Cyklus celé migrace: **měsíce, ne týdny**. Realistický předpoklad.
 
