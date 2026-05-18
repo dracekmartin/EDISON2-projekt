@@ -1,0 +1,5 @@
+# Verzujeme jen samotnou prezentaci — buildovaci skripty a podklady (vzor,
+# screenshoty) drzime lokalne. Vse ignorovano krome explicitnich vyjimek.
+*
+!.gitignore
+!TemplateDesigner.pptx
