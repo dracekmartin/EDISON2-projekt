@@ -95,6 +95,9 @@ namespace EDControls.EDList
 
         private readonly ObservableCollection<EDListRow> _rows = new();
 
+        /// <summary>Aktuální načtené řádky (read-only pohled). Po <c>LoadList</c> obsahuje server data.</summary>
+        public IReadOnlyList<EDListRow> Rows => _rows;
+
         public string? SelectedRowId =>
             dataGrid.SelectedItem is EDListRow row ? row.Id : null;
 

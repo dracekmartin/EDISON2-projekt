@@ -1,5 +1,49 @@
 # Changelog
 
+## 2026-05-19 — L6: InstancePickerDialog na EDList + EDControls DOCS + wire formát standard
+
+Tři propojené kusy práce na uzavření EDList migrace + dokumentační vrstvy.
+
+### L6 — InstancePickerDialog na EDList multi-select
+
+- ✅ Nový Caché endpoint `ALVA.TemplateDesigner.API.InstancesList` (`InitializeList` + `LoadList`) — routuje na agenda-specifickou `GetAvailableInstances` přes `$classmethod`. Wire formát: CVar named IN + JSON multi-slot OUT (Styl 3 standardu).
+- ✅ `InstancePickerDialog` kompletně refaktorovaný: XAML `<ListBox>` + custom DataTemplate → `<el:EDList SelectionMode="Check">`. VM zjednodušena — odpadly `Instances` collection, `InstanceRowVM`, `SearchText`, `SearchCommand`, `SelectAll/Clear` (vše obsluhuje EDList).
+- ✅ `EDList.Rows` accessor přidán (read-only `IReadOnlyList<EDListRow>` pro host dialog → mapování zaškrtnutých řádků na `AgendaInstance`).
+- ✅ `CacheInstanceService` — alternativní service cesta s typed records, pro batch volání mimo EDList kontext.
+
+### EDControls DOCS — programátorská dokumentace
+
+Nová složka `EDControls/DOCS/` jako single source of truth pro developery konzumující EDControls:
+- `00-overview.md` — entry point, seznam komponent, quickstart, architektonická pravidla
+- `01-wire-formats.md` — finální wire formát standard (CVar named IN + 4 OUT styly), decision tree, příklady kódu, `record` pattern, checklist
+- `02-EDList.md` — kompletní API reference (properties, events, Caché contract, vzory použití)
+
+Konvence: každá změna komponenty = update odpovídajícího `0X-název.md` ve stejném commitu.
+
+### Wire formát experiment + finální standard
+
+Experiment paralelní implementace klasické vs JSON envelope cesty na L6 InstancesList. Výsledek:
+
+- **Klasický multi-slot JSON** zůstává default pro listy a běžné entity — konzistentní s legacy multi-slot mentálním modelem (~6700 výskytů `$lb` v OUT slotech v legacy)
+- **JSON envelope** je opt-in pro composite endpointy (Tier 3 EDInputForm)
+- **Type safety v .NET přes `record` + `JsonSerializer.Deserialize<T>`** — funguje pro oba styly
+- **`MLRestJson.CallAsync<TReq, TResp>` helper** ponechán v `EDControls/dotnet/MLRestJson.cs` pro budoucí envelope volání
+
+Plný standard, decision tree, příklady a checklist v `EDControls/DOCS/01-wire-formats.md`.
+
+### Cleanup
+
+- ❌ Smazáno: `EDControls/.claude/docs/wire-formats.md` (obsah migrován do veřejné `DOCS/01-wire-formats.md`)
+- ❌ Smazáno: `EDControls/.claude/docs/wire-format-standardization-analysis.md` (temp analytický doc, rozhodnutí propsáno)
+- ❌ Smazáno: `LoadListJson` v `InstancesList.cls` + `LoadInstancesEnvelopeAsync` + envelope records v `CacheInstanceService.cs` (Var B prototyp experimentu)
+- ✅ Aktualizováno: odkazy v `td-editor-migration-plan.md`, `legacy-component-research.md`, TD `roadmap.md` (R3 pravidlo zpřesněno + odkazy na DOCS/)
+
+### Bugfix v Caché
+
+- ✅ Inicializace `s err = ""` před `try` blokem — `$$$CatchErrRest` makro v MLRest větvi GENERAL.inc referuje `err` bez `$g()`. Bez init proměnné každá výjimka uvnitř `try` maskuje skutečnou chybu (catch handler sám crashne `<UNDEFINED>`). Aplikováno v `InstancesList.cls`; ostatní třídy ošetříme při příští editaci.
+
+---
+
 ## 2026-05-15 — fix: cleanup aktivních instancí při Open template s jinou agendou
 
 Když user otevřel šablonu (z disku nebo z Caché) s jinou `AgendaCode`, než měla předchozí, aktivní instance (linky MHD) se nevyčistily → ◀▶ na chipu zkusilo GetData s LinkaID z původní agendy → silent fail. Corner case z `2026-05-15 — v1.0 demo balíček` known limits.

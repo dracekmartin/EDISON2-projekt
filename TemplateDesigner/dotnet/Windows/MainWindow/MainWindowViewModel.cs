@@ -591,7 +591,7 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        var vm = new InstancePickerDialogViewModel(CacheProvider, agendaCode, _activeInstances);
+        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances);
         var dlg = new InstancePickerDialog(vm) { Owner = Application.Current.MainWindow };
         if (dlg.ShowDialog() != true) return;
 

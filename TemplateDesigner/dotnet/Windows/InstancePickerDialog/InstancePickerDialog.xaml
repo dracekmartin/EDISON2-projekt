@@ -1,70 +1,24 @@
 <Window x:Class="TemplateDesigner.InstancePickerDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
         Title="Výběr instancí"
-        Width="640" Height="540"
+        Width="700" Height="560"
         MinWidth="500" MinHeight="380"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
     <Grid Margin="14">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Search -->
-        <Grid Grid.Row="0" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" Text="Hledat:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-            <TextBox Grid.Column="1"
-                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     VerticalContentAlignment="Center">
-                <TextBox.InputBindings>
-                    <KeyBinding Key="Return" Command="{Binding SearchCommand}"/>
-                </TextBox.InputBindings>
-            </TextBox>
-            <Button Grid.Column="2" Content="Hledat" Command="{Binding SearchCommand}"
-                    Margin="8,0,0,0" Padding="14,2"/>
-        </Grid>
+        <!-- EDList — server data + multi-select + persist sloupců + client-side search -->
+        <el:EDList x:Name="TheList" Grid.Row="0"/>
 
-        <!-- Bulk akce -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,6">
-            <Button Content="Vybrat vše"   Command="{Binding SelectAllCommand}"      Padding="10,2" Margin="0,0,6,0"/>
-            <Button Content="Odznačit vše" Command="{Binding ClearSelectionCommand}" Padding="10,2"/>
-        </StackPanel>
-
-        <!-- List instancí s checkboxy -->
-        <ListBox Grid.Row="2"
-                 ItemsSource="{Binding Instances}"
-                 HorizontalContentAlignment="Stretch">
-            <ListBox.ItemTemplate>
-                <DataTemplate>
-                    <Grid Margin="2,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <CheckBox Grid.Column="0"
-                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
-                                  VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <StackPanel Grid.Column="1">
-                            <TextBlock Text="{Binding Display}"   FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Subtitle}"  FontSize="10" Foreground="#888888"/>
-                        </StackPanel>
-                    </Grid>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
-
-        <!-- Status + count -->
-        <Grid Grid.Row="3" Margin="0,8,0,0">
+        <!-- Status -->
+        <Grid Grid.Row="1" Margin="0,8,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
@@ -78,7 +32,7 @@
         </Grid>
 
         <!-- Tlačítka -->
-        <Grid Grid.Row="4" Margin="0,12,0,0">
+        <Grid Grid.Row="2" Margin="0,12,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
