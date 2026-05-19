@@ -26,6 +26,7 @@
 | **`WindowStatePersistence`** | Pozice/velikost/maximized okna per (MLP × IDFa) | Stabilní | — |
 | **`EDIcons`** | Resource dictionary 33 Fluent UI System Icons | Stabilní | — |
 | **`EDStrings`** | Sdílené texty tlačítek (Ok / Cancel / Apply / Yes / No / Close) | Stabilní | — |
+| **`EDTheme`** | Sdílené design tokens (barvy, typografie, spacing) — konzumuj přes `DynamicResource` | Stabilní (v1) | [`04-EDTheme.md`](04-EDTheme.md) |
 
 ## Klíčové dokumenty
 

@@ -15,11 +15,11 @@
                 <ResourceDictionary Source="/Controls/ParameterTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style x:Key="PanelHeader" TargetType="TextBlock">
-                <Setter Property="Background"   Value="#F0F0F0"/>
+                <Setter Property="Background"   Value="{DynamicResource EDTheme.Bg.Panel}"/>
                 <Setter Property="Padding"      Value="8,6"/>
                 <Setter Property="FontWeight"   Value="SemiBold"/>
-                <Setter Property="FontSize"     Value="12"/>
-                <Setter Property="Foreground"   Value="#333333"/>
+                <Setter Property="FontSize"     Value="{DynamicResource EDTheme.FontSize.Header}"/>
+                <Setter Property="Foreground"   Value="{DynamicResource EDTheme.Text.Primary}"/>
             </Style>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
@@ -684,7 +684,9 @@
 
             <!-- ── Status bar ── -->
             <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="5"
-                    Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+                    Background="{DynamicResource EDTheme.Bg.Panel}"
+                    BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                    BorderThickness="0,1,0,0">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
@@ -696,22 +698,24 @@
 
                     <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
                     <Border Grid.Column="0"
-                            Background="#E8F5E9" Padding="10,3"
+                            Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3"
                             Cursor="Hand"
                             ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
                         <Border.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding ChangeAgendaCommand}"/>
                         </Border.InputBindings>
                         <TextBlock Text="{Binding AgendaNameText}"
-                                   FontSize="11" Foreground="#1B5E20" FontWeight="SemiBold"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                   Foreground="{DynamicResource EDTheme.Accent.GreenDark}"
+                                   FontWeight="SemiBold"
                                    VerticalAlignment="Center"/>
                     </Border>
 
-                    <Border Grid.Column="1" Width="1" Background="#DDDDDD"/>
+                    <Border Grid.Column="1" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
 
                     <!-- 2) Instance chip (klikatelný — OpenInstancePicker) -->
                     <Border Grid.Column="2"
-                            Background="#E3F2FD" Padding="10,3"
+                            Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3"
                             Cursor="Hand"
                             ToolTip="Klikni pro výběr instancí (linky, faktury, ...)">
                         <Border.InputBindings>
@@ -720,27 +724,32 @@
                         <StackPanel Orientation="Horizontal">
                             <Button Content="◀" Command="{Binding PreviousInstanceCommand}"
                                     Background="Transparent" BorderThickness="0" Padding="4,0"
-                                    FontSize="11" Foreground="#0D47A1"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="0,0,4,0"
                                     ToolTip="Předchozí instance"/>
                             <TextBlock Text="{Binding ActiveInstanceText}"
-                                       FontSize="11" Foreground="#0D47A1" FontWeight="SemiBold"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                       FontWeight="SemiBold"
                                        VerticalAlignment="Center"/>
                             <Button Content="▶" Command="{Binding NextInstanceCommand}"
                                     Background="Transparent" BorderThickness="0" Padding="4,0"
-                                    FontSize="11" Foreground="#0D47A1"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="4,0,0,0"
                                     ToolTip="Další instance"/>
                         </StackPanel>
                     </Border>
 
-                    <Border Grid.Column="3" Width="1" Background="#DDDDDD"/>
+                    <Border Grid.Column="3" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
 
                     <!-- 3) Dynamický kontextový status -->
                     <TextBlock x:Name="StatusText" Grid.Column="4"
                                Text="{Binding StatusText}"
                                VerticalAlignment="Center" Margin="10,0"
-                               FontSize="11" Foreground="#555555"/>
+                               FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                               Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
                 </Grid>
             </Border>
 

@@ -24,11 +24,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E8E8E8"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#D0D0D0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#D0D0D0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
@@ -62,12 +62,12 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E8E8E8"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#D0D0D0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
                         </Trigger>
                         <Trigger Property="IsChecked" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#D0E0F0"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#90B8E0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Checked}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.Blue}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
@@ -102,11 +102,11 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#E8E8E8"/>
-                            <Setter TargetName="Bd" Property="BorderBrush" Value="#D0D0D0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="Bd" Property="Background" Value="#D0D0D0"/>
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.4"/>
@@ -119,8 +119,8 @@
 
     <!-- ToolbarGroupLabel: malý popisek pod skupinou -->
     <Style x:Key="ToolbarGroupLabel" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="9"/>
-        <Setter Property="Foreground" Value="#999999"/>
+        <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Small}"/>
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Setter Property="Margin" Value="0,1,0,0"/>
     </Style>
@@ -128,7 +128,7 @@
     <!-- ToolbarGroupSep: svislý oddělovač skupin -->
     <Style x:Key="ToolbarGroupSep" TargetType="Border">
         <Setter Property="Width" Value="1"/>
-        <Setter Property="Background" Value="#D0D0D0"/>
+        <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
         <Setter Property="Margin" Value="4,2"/>
         <Setter Property="VerticalAlignment" Value="Stretch"/>
     </Style>
