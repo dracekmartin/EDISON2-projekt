@@ -105,6 +105,10 @@
     <Color x:Key="EDTheme.Accent.BlueSelected.Color">#FFD2E6FF</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueSelected" Color="{StaticResource EDTheme.Accent.BlueSelected.Color}"/>
 
+    <!-- Soft accent border — pro non-active stavy s náznakem accent barvy (např. dynamic section item) -->
+    <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FFB4D2F5</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Accent: Green (agenda status, success)
          ═══════════════════════════════════════════════════════════════════ -->
