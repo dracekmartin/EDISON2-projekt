@@ -1,0 +1,68 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        EDStyles — implicitní styly pro WPF kontrolky.
+
+        Sjednocuje vzhled tlačítek, textboxů, comboboxů atd. napříč EDControls knihovnou
+        a hostitelskou aplikací. Používá design tokens z EDTheme.xaml.
+
+        Charakter: moderní desktop look (flat, jemně zaoblené rohy 3px, žádné gradienty,
+        subtilní hover/pressed). Referenční inspirace: Fluent UI / Office 365 / VS Code.
+
+        Konzumace v aplikacích (opt-in):
+          <Application.Resources>
+            <ResourceDictionary.MergedDictionaries>
+              <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDTheme.xaml"/>
+              <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+          </Application.Resources>
+
+        Buttons s explicit Style="..." nejsou ovlivněny (mají vlastní vizuál — ToolbarButton,
+        PaletteButton apod.). Inline atributy (Background, BorderThickness) také vítězí.
+    -->
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         Button — flat moderní desktop look
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style TargetType="Button">
+        <Setter Property="Padding"         Value="12,4"/>
+        <Setter Property="Background"      Value="White"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="3"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background"  Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Strong}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+</ResourceDictionary>
