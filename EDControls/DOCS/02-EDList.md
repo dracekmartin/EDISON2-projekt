@@ -147,6 +147,8 @@ TheList.LoadList();   // bez filtru
 TheList.LoadList(new Dictionary<string, string> { ["agendaCode"] = "MHD" });
 ```
 
+> **Poznámka k async:** `InitializeList()` i `LoadList()` jsou dnes **synchronní** — adekvátní pro typické TD listy (50–300ms load). Pro slow operace (1s+, velké agenda listy) přidáme `LoadListAsync()` jako paralelní async metodu, až bude reálný konzument. Viz R1 v TD roadmapě — sync je validní výjimka pro fast foundational komponenty.
+
 ### `SetChecked(string rowId, bool isChecked)`
 V `Check` mode programaticky zaškrtne / odškrtne konkrétní řádek.
 
