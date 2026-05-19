@@ -583,7 +583,19 @@
                           VerticalScrollBarVisibility="Auto"
                           Background="#E0E0E0"
                           x:Name="CanvasScrollViewer">
-                <skia:SKElement x:Name="skCanvas" Width="900" Height="1200"/>
+                <Grid Width="900" Height="1200">
+                    <skia:SKElement x:Name="skCanvas" Width="900" Height="1200"/>
+                    <!-- Overlay pro inline edit TextElement. Canvas bez Backgroundu nezachycuje
+                         hit testy mimo TextBox; SKElement dostává mouse eventy normálně. -->
+                    <Canvas x:Name="InlineEditOverlay" Width="900" Height="1200">
+                        <TextBox x:Name="InlineEditBox" Visibility="Collapsed"
+                                 BorderThickness="1.5" BorderBrush="#2196F3"
+                                 Background="White" Padding="2"
+                                 AcceptsReturn="True" AcceptsTab="False"
+                                 PreviewKeyDown="InlineEditBox_PreviewKeyDown"
+                                 LostKeyboardFocus="InlineEditBox_LostKeyboardFocus"/>
+                    </Canvas>
+                </Grid>
             </ScrollViewer>
 
             <!-- ── GridSplitter pravý ── -->

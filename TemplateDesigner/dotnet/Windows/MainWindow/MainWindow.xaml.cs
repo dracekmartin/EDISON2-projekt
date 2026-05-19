@@ -1311,6 +1311,9 @@ public partial class MainWindow : Window
     private void OnWindowKeyDown(object sender, KeyEventArgs e)
     {
         if (_vm is null) return;
+        // V inline edit modu nereagujeme na globální zkratky — TextBox si Enter/Esc obslouží sám.
+        // Bez tohoto by PreviewKeyDown odchytil Enter dřív než TextBox a otevřel dialog místo commitu.
+        if (_inlineEditElement is not null) return;
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
 
         if (e.Key == Key.Z && ctrl)
@@ -1456,6 +1459,13 @@ public partial class MainWindow : Window
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count > 1)
         {
             OpenPropertiesForMultipleElements(_vm.State.SelectedElements);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F2 && _vm.State.SelectedElements.Count == 1
+                 && _vm.State.SelectedElements[0] is TextElement te
+                 && te.Rotation == 0f && !te.IsLocked)
+        {
+            EnterInlineEdit(te);
             e.Handled = true;
         }
         else if (e.Key == Key.F1)
@@ -2324,5 +2334,83 @@ public partial class MainWindow : Window
         float clampedX = minDeltaX <= maxDeltaX ? Math.Clamp(rawDeltaX, minDeltaX, maxDeltaX) : 0f;
         float clampedY = minDeltaY <= maxDeltaY ? Math.Clamp(rawDeltaY, minDeltaY, maxDeltaY) : 0f;
         return (clampedX, clampedY);
+    }
+
+    // ── Inline text edit (V0 — TextElement only, no rotation, no lock) ─────────
+
+    private TextElement? _inlineEditElement;
+    private string? _inlineEditOriginalText;
+
+    private void EnterInlineEdit(TextElement el)
+    {
+        if (_canvas is null || _vm is null) return;
+        var rect = _canvas.GetElementCanvasRect(el, (float)skCanvas.ActualWidth);
+        if (rect is null) return;
+
+        _inlineEditElement = el;
+        _inlineEditOriginalText = el.Text;
+
+        // Pozice + rozměr v canvas px (Canvas overlay má stejné souřadnice jako SKElement)
+        Canvas.SetLeft(InlineEditBox, rect.Value.Left);
+        Canvas.SetTop (InlineEditBox, rect.Value.Top);
+        InlineEditBox.Width  = rect.Value.Width;
+        InlineEditBox.Height = rect.Value.Height;
+
+        // WPF FontSize v DIP; Skia kreslí FontSize_pt * MmToPx_per_inch * zoom px.
+        // Pro vizuální shodu při zoom=1, 96dpi: FontSize_DIP = FontSize_pt * 96/72 * Zoom.
+        float fontPt = el.Style.FontSize ?? 10f;
+        InlineEditBox.FontSize   = fontPt * (96f / 72f) * _vm.State.Zoom;
+        InlineEditBox.FontFamily = new FontFamily(el.Style.FontFamily ?? "Arial");
+        InlineEditBox.Text       = el.Text ?? "";
+        InlineEditBox.Visibility = Visibility.Visible;
+
+        InlineEditBox.Focus();
+        InlineEditBox.SelectAll();
+    }
+
+    private void ExitInlineEdit(bool commit)
+    {
+        if (_inlineEditElement is null || _vm is null) return;
+
+        var el = _inlineEditElement;
+        var originalText = _inlineEditOriginalText ?? "";
+        var newText = InlineEditBox.Text ?? "";
+
+        _inlineEditElement = null;
+        _inlineEditOriginalText = null;
+        InlineEditBox.Visibility = Visibility.Collapsed;
+
+        if (commit && newText != originalText)
+        {
+            var cmd = new SetPropertyCommand(
+                "Text", originalText, newText,
+                v => el.Text = (string)(v ?? ""));
+            _vm.Execute(cmd);
+        }
+
+        skCanvas.InvalidateVisual();
+        skCanvas.Focus(); // vrátit focus na canvas pro klávesové zkratky
+    }
+
+    private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // PreviewKeyDown — musí zachytit Enter dřív než TextBox.AcceptsReturn vloží newline.
+        if (e.Key == Key.Escape)
+        {
+            ExitInlineEdit(commit: false);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+        {
+            // Enter sám = commit; Shift+Enter = nový řádek (default WPF chování projde)
+            ExitInlineEdit(commit: true);
+            e.Handled = true;
+        }
+    }
+
+    private void InlineEditBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_inlineEditElement is not null)
+            ExitInlineEdit(commit: true);
     }
 }

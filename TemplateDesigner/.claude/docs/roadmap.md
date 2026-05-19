@@ -527,10 +527,7 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ### 🟢 Menší priorita — UX polish
 
-| # | Položka | Náročnost | Popis |
-|---|---------|-----------|-------|
-| g | Inline text editing na canvasu | Velká | Dvojklik na TextElement → editace `Text` content přímo na canvasu (caret, multi-line, Esc/Enter commit). Scope = jen content, styl se dál mění v dialogu. Pouze TextElement (ostatní typy nemají editovatelný text). |
-| m | Ruler na canvasu | Střední | Horizontální + vertikální pravítko v mm podél hran canvasu; zvýrazňuje rozsah vybraného elementu |
+*(prázdné — všechny zachycené QoF body jsou hotové, viz changelog)*
 
 **Grouping v TableElement** — seskupení řádků dynamické tabulky podle hodnoty pole (`GroupHeader`, `GroupFooter`, `Summary` řádky).
 

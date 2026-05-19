@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-05-19 — UX: inline úprava textu (F2) na canvasu — V0
+
+Rychlá inline editace `Text` contentu na TextElementu přímo na canvasu bez nutnosti otevírat properties dialog. Standardní design tool / Windows konvence pro „rename in place".
+
+**Spuštění:** Vyber TextElement, stiskni **F2** → ve stejné pozici se objeví WPF TextBox s modrým rámečkem, text rovnou selectnutý.
+
+**Ovládání v inline editu:**
+- **Enter** = commit a vrátit na canvas
+- **Shift+Enter** = nový řádek (multi-line)
+- **Esc** = zrušit změny
+- **Klik mimo TextBox** = commit
+
+**Scope V0 (záměrně omezený):**
+- Jen TextElement (ostatní elementy nemají vizuální `Text` content)
+- Skip rotace + locked (fallback na dialog)
+- WPF FontSize ≈ Skia (`FontSize_pt × 96/72 × Zoom`) — vizuálně blízko, ne pixel-perfect
+- Bez podpory `WordWrap` overlap (TextBox má vlastní layout)
+
+**Konzistence UI:**
+- Dvojklik = dál otevírá properties dialog (jako u ostatních elementů)
+- Enter na vybraném elementu = dál otevírá properties dialog
+- F2 = nová zkratka **jen** pro inline edit textu
+
+**Implementace:**
+- WPF `<TextBox>` overlay v `Canvas` nad SKElement (XAML)
+- `EnterInlineEdit(TextElement)` / `ExitInlineEdit(commit)` v `MainWindow.xaml.cs`
+- `PreviewKeyDown` na TextBoxu — musí zachytit Enter dřív než `TextBox.AcceptsReturn` vloží newline
+- `OnWindowKeyDown` (globální `PreviewKeyDown`) returns early když je `_inlineEditElement` aktivní — bez toho by globální handler odchytil Enter dřív než TextBox a otevřel dialog
+- Commit přes `SetPropertyCommand` (undo/redo)
+
+**Help dialog** aktualizován — F2 přidáno do tabulky klávesových zkratek, popisy „Vlastnosti elementu" upraveny.
+
+Pokud bude V0 vyhovovat: zvážit polishing v dalším kole (rotace, lock, pixel-perfect font matching, vertikální align uvnitř TextBoxu).
+
 ## 2026-05-19 — UX: pravítka (rulers) na canvasu
 
 Horizontální + vertikální pravítka v mm podél stránky, togglovatelná v menu `Zobrazit → Pravítka`. Standardní design tool feature (Word/Figma/PowerPoint).

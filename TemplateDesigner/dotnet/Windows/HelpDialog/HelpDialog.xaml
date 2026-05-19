@@ -110,7 +110,7 @@
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="5. Editovat vlastnosti:" FontWeight="SemiBold"/>
-                    <Run Text=" Záložka 'Vlastnosti' v levém panelu se aktualizuje podle výběru. Pro modální dialog: F2 / Enter / dvojklik." Foreground="#666666"/>
+                    <Run Text=" Záložka 'Vlastnosti' v levém panelu se aktualizuje podle výběru. Pro modální dialog: Enter / dvojklik. F2 na TextElementu = inline úprava textu." Foreground="#666666"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="6. Náhled a tisk:" FontWeight="SemiBold"/>
@@ -130,6 +130,7 @@
                         <ColumnDefinition Width="Auto" MinWidth="140"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -161,16 +162,19 @@
                     <TextBlock Grid.Row="5" Grid.Column="1" Text="Táhnout úchyt" Style="{StaticResource ShortcutText}"/>
 
                     <TextBlock Grid.Row="6" Grid.Column="0" Text="Vlastnosti elementu/sekce" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="6" Grid.Column="1" Text="Dvojklik / F2 / Enter" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="6" Grid.Column="1" Text="Dvojklik / Enter" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Změna zoomu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="7" Grid.Column="1" Text="Ctrl + scroll" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Inline úprava textu (TextElement)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="7" Grid.Column="1" Text="F2" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Změna zoomu (ComboBox)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="8" Grid.Column="1" Text="Dropdown" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Změna zoomu" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="8" Grid.Column="1" Text="Ctrl + scroll" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Nápověda (tento dialog)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="9" Grid.Column="1" Text="F1" Style="{StaticResource ShortcutText}"/>
+                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Změna zoomu (ComboBox)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="9" Grid.Column="1" Text="Dropdown" Style="{StaticResource ShortcutText}"/>
+
+                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Nápověda (tento dialog)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="10" Grid.Column="1" Text="F1" Style="{StaticResource ShortcutText}"/>
                 </Grid>
 
                 <TextBlock Text="💡 Rubber band: Táhněte myší přes prázdné místo canvasu pro výběr více elementů najednou. Při výběru více elementů otevře Enter dialog společných vlastností (multi-edit)."
@@ -446,7 +450,7 @@
 
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Záložka 'Vlastnosti':" FontWeight="SemiBold"/>
-                    <Run Text=" Inline editor v levém panelu — automaticky se aktualizuje podle výběru. Pro modální dialog F2 / Enter / dvojklik." Foreground="#666666"/>
+                    <Run Text=" Inline editor v levém panelu — automaticky se aktualizuje podle výběru. Pro modální dialog Enter / dvojklik. F2 na TextElementu spustí inline úpravu textu přímo na canvasu (Enter = potvrdit, Shift+Enter = nový řádek, Esc = zrušit)." Foreground="#666666"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Záložka 'Strom':" FontWeight="SemiBold"/>
