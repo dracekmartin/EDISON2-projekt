@@ -26,12 +26,12 @@ Souběžně s TD specifickou prací probíhá **rozšíření EDControls knihovn
 - ✅ **L1 — EDList multi-select** (checkbox sloupec, tri-state header, `SelectionMode = Single | Check`)
 - ✅ **L2 — EDList column layout persist** (šířky / pořadí / sort přes `IUserPrefsService`, 500ms debounced save)
 - ✅ **L3 — EDList Title + client-side search**
-- ✅ **EDList wire formát fix** — `LoadList(filter)` přepnut z `object[]` + delimiter na CVar named keys (sjednoceno s wire-formats.md standardem)
+- ✅ **EDList wire formát fix** — `LoadList(filter)` přepnut z `object[]` + delimiter na CVar named keys (sjednoceno se standardem v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md))
 
 **Rozpracované:**
 - 🔄 **L5 — `CacheTemplatePickerDialog` na EDList** (task #20) — kód hotový, filter funguje, build čistý, testy zelené (19/19). Ke commitnutí jako completed.
 - ⏳ **L6 — `InstancePickerDialog` na EDList multi-select** (task #21) — pending, blokuje #20.
-- ⏳ **#22 — Experiment JSON envelope vs současný hybrid** na `TemplatesList` — pending, blokují #20+#21. Cíl: porovnat dva wire formáty na konkrétním endpointu, rozhodnout standard pro nové endpointy. Výsledek propsat do wire-formats.md.
+- ✅ **Wire formát experiment** — paralelní implementace klasické vs envelope cesty na L6 InstancesList. Výsledek: CVar named IN + JSON OUT (4 styly podle obsahu) jako standard, JSON envelope opt-in pro Tier 3 composite. Plně dokumentováno v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md).
 
 **Po experimentu (#22) v pořadí:**
 
@@ -50,7 +50,7 @@ Souběžně s TD specifickou prací probíhá **rozšíření EDControls knihovn
 
 | Téma | Kde |
 |---|---|
-| Wire formát standard (CVar named IN + JSON OUT) | [`wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md) |
+| Wire formát standard (CVar named IN + 4 OUT styly) | [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md) |
 | Migrace TD editorů na EDInputForm (architektura, drift handling, příklady) | [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md) |
 | Legacy EDISON komponenty (BIG/BIL/BDG) — baseline analýza | [`legacy-component-research.md`](../../../EDControls/.claude/docs/legacy-component-research.md) |
 
@@ -88,7 +88,7 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 |---|---|---|
 | R1 | **Async-only Caché volání** — žádné synchronní `MLRest` v UI threadu, vždy `async Task` + `await` | Caché volání trvá 50–500ms; synchronní volání zamrzne UI. Musíme to chytit hned, ne retro-fit. |
 | R2 | **Chyby přes `IPopupDisplayer` z EDControls** — žádný `MessageBox.Show` ani silent catch. Používat existující `EDControls.EDViewModel.IPopupDisplayer` (metody `Error(ex)`, `Confirm`, `Info`, `ConfirmClose`) přes DI nebo `EDViewModel` base. | Bez jednotné cesty se chyby v distribuci ztratí. `IPopupDisplayer` je firemní standard — už ho používá `EDViewModel.Command(...)` automaticky. |
-| R3 | **CVar named IN + JSON OUT** — IN parametry jako CVar pojmenované klíče (`^||ML("IN","klic")`), OUT strukturovaný payload jako JSON string přes `%ToJSON()`. Plný audit, checklist a důvody: [`EDControls/.claude/docs/wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md). | CVar je nativní zrcadlo Caché globálů (1 řádek per parametr), JSON je versionovatelný strukturovaný formát na výstupu. Hybrid není kompromis — odráží přirozenost obou stran. |
+| R3 | **CVar named IN + 4 OUT styly podle obsahu** — IN vždy CVar pojmenované klíče; OUT podle typu: CVar scalars (triviální), JSON v slotu (entita), JSON multi-slot (list), JSON envelope (composite, opt-in pro Tier 3). Plný standard, decision tree, příklady a checklist: [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md). | CVar je nativní zrcadlo Caché globálů (1 řádek per parametr), JSON pro strukturovaná data dává typovou bezpečnost přes `record` typy v .NET. Asymetrie není kompromis — odráží přirozenost obou stran. |
 | R4 | **ViewModely bez WPF referencí** — žádný `using System.Windows` ani `MessageBox.Show` v `*ViewModel.cs` | MVVM princip, testovatelnost, možnost pozdějšího portu/unit testů. Dialogy přes `IPopupDisplayer` (R2). |
 | R5 | **Template versioning je prerekvizita persistence** — dokud není `TemplateMigrator` + version field v JSON, neukládá se nic do Caché | Bez migrace se nové šablony nespustí na starším buildu → zničené ranní otevření souboru. Nelze to retro-fit po nasazení. |
 
@@ -97,7 +97,7 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 **Kde jsou pravidla ověřitelná:**
 - R1: review PR → `grep "MLRest\." *ViewModel*.cs` ukáže synchronní volání
 - R2/R4: `grep "MessageBox\." **/*ViewModel.cs` musí vracet 0 hitů
-- R3: nové API metody: IN `$g(^||ML("IN","klic"))`, OUT `^||ML("OUT","klic") = obj.%ToJSON()` — viz [`wire-formats.md`](../../../EDControls/.claude/docs/wire-formats.md)
+- R3: nové API metody: IN `$g(^||ML("IN","klic"))`, OUT podle obsahu (decision tree) — viz [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md)
 - R5: Wave 3 nemůže začít bez hotového H-18/H-19 (versioning a migrator)
 
 ---

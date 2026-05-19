@@ -1,7 +1,7 @@
 # Plán migrace editorů TemplateDesigneru na EDInputForm
 
 > Konsolidace architektonické diskuze z 2026-05-18. Slouží jako trvalá reference pro budoucí implementaci.
-> Související dokumenty: [`wire-formats.md`](wire-formats.md), [`legacy-component-research.md`](legacy-component-research.md).
+> Související dokumenty: [`../../DOCS/01-wire-formats.md`](../../DOCS/01-wire-formats.md), [`legacy-component-research.md`](legacy-component-research.md).
 
 ---
 
@@ -220,7 +220,7 @@ Z auditu `legacy-component-research.md` sekce 7 + diskuze:
 | **Tlačítko s callback ID** (Button → otevři sub-dialog) | „Upravit sloupce..." otevírá nested editor | BIG měl button typ s callbackem |
 | **Persist viditelnosti polí per uživatel** | „Tohle pole nepoužívám, schovat ho" | BIG měl `BIG.UserData` blob storage — máme analogii v `ALVA.EDControls.UserData` (Tier 1, hotové) |
 
-**Wire formát** EDInputForm dnes vrací `$lb()` poziční seznam (legacy CVar wire). Při refaktoru by se měl přejít na JSON přes `%ToJSON()` — symetricky s ostatními novými endpointy. Viz [`wire-formats.md`](wire-formats.md).
+**Wire formát** EDInputForm dnes vrací `$lb()` poziční seznam (legacy CVar wire). Při refaktoru by se měl přejít na JSON přes `%ToJSON()` — symetricky s ostatními novými endpointy. Viz [`../../DOCS/01-wire-formats.md`](../../DOCS/01-wire-formats.md).
 
 ---
 
@@ -328,16 +328,15 @@ Cyklus celé migrace: **měsíce, ne týdny**. Realistický předpoklad.
 
 ---
 
-## 13. Návazné rozhodnutí — JSON envelope jako optional wire pattern
+## 13. Wire formát pro EDInputForm (rozhodnuto)
 
-Před Tier 3 se rozhodne, zda EDInputForm zachová současný hybrid (CVar named IN + JSON OUT sloty) nebo přejde na **JSON envelope** (single JSON payload oběma směry).
+Experiment proběhl na L6 InstancePickerDialog s paralelní implementací klasické vs envelope cesty. **Finální standard** je v [`../../DOCS/01-wire-formats.md`](../../DOCS/01-wire-formats.md):
 
-Experiment proběhne na **EDList endpointu `TemplatesList`**:
-- Paralelní implementace dvou variant (`LoadList` současný, `LoadListJson` nový)
-- Helper `MLRestJson.CallAsync<TReq, TResp>` v EDControls (cca 15 řádků, žádná změna MLRest.dll)
-- Porovnání reálné ergonomie: LOC, type safety, refactor, versioning, debug
+- **Default pro nové endpointy**: CVar named IN + 4 OUT styly podle obsahu (CVar scalars / JSON v slotu / JSON multi-slot / JSON envelope)
+- **JSON envelope je opt-in pro composite endpointy** — což zahrnuje právě EDInputForm Init/Validate/Save (Tab → Group → Field hierarchii)
+- **Helper `MLRestJson.CallAsync<TReq, TResp>`** v EDControls je dostupný pro envelope volání
 
-Pokud experiment dopadne pozitivně pro JSON envelope, propíše se to do `wire-formats.md` a Tier 3 EDInputForm refactor použije tento vzor. Pokud rovno nebo hůř, držíme současný hybrid.
+EDInputForm Tier 3 refactor použije envelope wire formát — composite struktura formuláře to vyžaduje.
 
 ---
 
@@ -358,7 +357,7 @@ Pokud experiment dopadne pozitivně pro JSON envelope, propíše se to do `wire-
 
 1. **Tier 2 dokončit** — L5 (TemplatePicker) commit + L6 (InstancePicker)
 2. **Experiment JSON envelope** na `TemplatesList` endpointu (paralelní implementace, porovnání)
-3. **Rozhodnutí o JSON envelope** → propíše se do `wire-formats.md`
+3. **Rozhodnutí o JSON envelope** → propsáno do [`../../DOCS/01-wire-formats.md`](../../DOCS/01-wire-formats.md)
 4. **Tier 3 začne** s rozhodnutým wire formátem a feature parity EDInputForm s BIG
 5. **Tier 4 a 5** podle plánu
 
