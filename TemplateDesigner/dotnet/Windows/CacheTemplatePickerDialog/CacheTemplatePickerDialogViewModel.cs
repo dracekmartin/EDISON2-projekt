@@ -7,7 +7,7 @@ namespace TemplateDesigner;
 
 /// <summary>
 /// ViewModel pro Caché picker dialog. Data drží EDList (Caché-driven přes
-/// <c>ALVA.TemplateDesigner.API.TemplatesList</c>), filter řídí <c>EDFilter</c>
+/// <c>ALVA.TemplateDesigner.EDList.Sablony</c>), filter řídí <c>EDFilter</c>
 /// (deklarativně v XAML přes <c>FilterCombo</c>); VM jen vystavuje seznam agend
 /// pro combo, CRUD akce a OK output.
 /// </summary>

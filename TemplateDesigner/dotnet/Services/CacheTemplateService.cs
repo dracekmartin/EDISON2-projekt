@@ -8,13 +8,13 @@ using TemplateDesigner.Serialization;
 namespace TemplateDesigner.Services;
 
 /// <summary>
-/// Klient pro Caché class ALVA.TemplateDesigner.API.Templates.
+/// Klient pro Caché class ALVA.TemplateDesigner.API.Sablony.
 /// Async wrapper nad MLRest sync voláními — MLRest.Query je sync (HTTP),
 /// Task.Run uvolní UI thread.
 /// </summary>
 public class CacheTemplateService
 {
-    public const string CacheClass = "ALVA.TemplateDesigner.API.Templates";
+    public const string CacheClass = "ALVA.TemplateDesigner.API.Sablony";
 
     /// <summary>Speciální AgendaCode pro šablony bez vazby na konkrétní agendu.</summary>
     public const string GeneralAgendaCode = "GENERAL";

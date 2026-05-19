@@ -16,7 +16,7 @@
 
         <!-- EDList — server data + multi-select + persist sloupců + client-side search -->
         <el:EDList x:Name="TheList" Grid.Row="0"
-                   CacheClass="ALVA.TemplateDesigner.API.InstancesList"
+                   CacheClass="ALVA.TemplateDesigner.EDList.Instance"
                    HostId="TemplateDesigner.InstancePicker"
                    Title="Výběr instancí"
                    SelectionMode="Check"/>

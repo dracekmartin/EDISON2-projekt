@@ -240,7 +240,7 @@ Lokální cache v paměti       →  rychlost v rámci session (refresh na vyž�
 
 #### 🟡 Wave 3 — Template storage
 
-**Základní CRUD hotový** (commit `5ac9dd0`, 2026-05-15). Šablony se ukládají do Caché přes `ALVA.TemplateDesigner.API.Templates` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). UI v `CacheTemplatePickerDialog` (po L5 migraci přes EDList) + `SaveToCacheDialog`. JSON wire formát (R3), per-IDFa storage.
+**Základní CRUD hotový** (commit `5ac9dd0`, 2026-05-15). Šablony se ukládají do Caché přes `ALVA.TemplateDesigner.API.Sablony` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). UI v `CacheTemplatePickerDialog` (po L5 migraci přes EDList) + `SaveToCacheDialog`. JSON wire formát (R3), per-IDFa storage.
 
 **Reálný storage layout** (liší se od původního plánu — atomická Metadata/Data + sekundární index):
 ```
@@ -273,7 +273,7 @@ Lokální cache v paměti       →  rychlost v rámci session (refresh na vyž�
 
 | Krok | Co | Stav |
 |---|---|---|
-| W3-1 | Caché `ALVA.TemplateDesigner.API.Templates` (CRUD: List, Load, Save, Delete, Rename) | ✅ 5ac9dd0 |
+| W3-1 | Caché `ALVA.TemplateDesigner.API.Sablony` (CRUD: List, Load, Save, Delete, Rename) | ✅ 5ac9dd0 |
 | W3-2 | .NET `CacheTemplateService` async wrapper + `CacheTemplateException` | ✅ 5ac9dd0 |
 | W3-3 | `CacheTemplatePickerDialog` + `SaveToCacheDialog` UI | ✅ 5ac9dd0 (L5 migration na EDList: 9f5b165) |
 | W3-4 | H-18 + H-19 (versioning + migrator) — prerekvizita R5 | |

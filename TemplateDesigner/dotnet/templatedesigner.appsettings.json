@@ -18,12 +18,12 @@
     {
       "code":       "MHD",
       "name":       "Zastávkový JŘ MHD",
-      "cacheClass": "ALVA.TemplateDesigner.Agendas.ZastavkoveJrMhdAPI"
+      "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
     },
     {
       "code":       "FAKTURY",
       "name":       "Faktury",
-      "cacheClass": "ALVA.TemplateDesigner.Agendas.TemplateDesignerFAKTURY"
+      "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury"
     }
   ],
 

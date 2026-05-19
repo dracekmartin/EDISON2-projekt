@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-05-19 — Caché refactor: struktura tříd podle role (Agendy/EDList/API)
+
+Sjednocení Caché namespace struktury s konvencí používanou v ostatních M-line projektech — separace **podle role třídy** (data source vs UI dispatch vs business CRUD), ne podle domény.
+
+**Před:**
+```
+ALVA.TemplateDesigner.API.Templates             (CRUD)
+ALVA.TemplateDesigner.API.TemplatesList         (EDList dispatch — smíchané s API)
+ALVA.TemplateDesigner.API.InstancesList         (EDList dispatch — smíchané s API)
+ALVA.TemplateDesigner.Agendas.AgendaAPI         (abstract base — anglický název)
+ALVA.TemplateDesigner.Agendas.ZastavkoveJrMhdAPI
+ALVA.TemplateDesigner.Agendas.TemplateDesignerFAKTURY
+```
+
+**Po:**
+```
+ALVA.TemplateDesigner.API.Sablony               (CRUD)
+ALVA.TemplateDesigner.Agendy.BaseAgenda         (abstract base)
+ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd    (MHD agenda — bez API sufixu)
+ALVA.TemplateDesigner.Agendy.Faktury            (faktury — bez TemplateDesigner prefixu)
+ALVA.TemplateDesigner.EDList.Sablony            (EDList dispatch nad šablonami)
+ALVA.TemplateDesigner.EDList.Instance           (EDList dispatch nad instancemi)
+```
+
+**Princip:**
+- `API/` = obecná business logika TD projektu
+- `Agendy/` = agenda implementations (data sources)
+- `EDList/` = dispatch třídy pro EDList komponentu
+- Budoucí: `EDInputForm/`, `EDInputGrid/`
+- Folder/namespace 1:1 mapuje na **roli třídy**; doménový název může opakovat (`API.Sablony` vs `EDList.Sablony` — namespace prefix rozliší)
+- Krátké názvy (`Sablony`, `Instance`, `Faktury`) — bez prefix-suffix balastu
+
+**Postup:** Staré `.cls` soubory v `Agendas/` a `API/TemplatesList.cls`, `API/InstancesList.cls`, `API/Templates.cls` **ponechány netknuté** pro verifikaci. Po otestování (user otevře šablonu z Caché, instance picker, agenda dispatch) může staré soubory smazat. Caché class rename je občas nevyzpytatelný — proto file-copy přístup.
+
+**Změny v .NET:**
+- `CacheTemplateService.cs` — `CacheClass = "ALVA.TemplateDesigner.API.Sablony"`
+- `CacheTemplatePickerDialog.xaml` — `CacheClass="ALVA.TemplateDesigner.EDList.Sablony"`
+- `InstancePickerDialog.xaml` — `CacheClass="ALVA.TemplateDesigner.EDList.Instance"`
+- `templatedesigner.appsettings.json` — `cacheClass` per agenda na nové FQN
+- 3 komentáře v Config/Serialization (CacheAgendaProvider, AppSettings, CacheSchemaWiring) aktualizovány
+- 2 VM XML komentáře aktualizovány
+
+**Změny v Caché (nové soubory):**
+- `Agendy/BaseAgenda.cls` (z `Agendas/AgendaAPI.cls`)
+- `Agendy/Faktury.cls` (z `Agendas/TemplateDesignerFAKTURY.cls`) — Extends změněno na `BaseAgenda`
+- `Agendy/ZastavkoveJrMhd.cls` (z `Agendas/ZastavkoveJrMhdAPI.cls`) — Extends změněno
+- `API/Sablony.cls` (z `API/Templates.cls`)
+- `EDList/Sablony.cls` (z `API/TemplatesList.cls`)
+- `EDList/Instance.cls` (z `API/InstancesList.cls`) — dispatch v `GetClassForAgenda` na nová FQN
+
+**Docs:** CLAUDE.md namespace bullet + cache-api.md (struktura, příklady, checklist nové agendy) aktualizováno. Memory `project_cache_class_structure.md` přepsáno.
+
 ## 2026-05-19 — UX: inline úprava textu (F2) na canvasu — V0
 
 Rychlá inline editace `Text` contentu na TextElementu přímo na canvasu bez nutnosti otevírat properties dialog. Standardní design tool / Windows konvence pro „rename in place".

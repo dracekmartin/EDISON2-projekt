@@ -9,11 +9,11 @@ using TemplateDesigner.Models.Schema;
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
-/// Volá Caché AgendaAPI (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
+/// Volá Caché BaseAgenda (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
 /// Nahrazuje CacheDataSchemaProvider — pracuje s JSON formátem místo pipe-delimited stringů.
 ///
-/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendas.AgendaAPI,
-/// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.JR.TiskAPI".
+/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendy.BaseAgenda,
+/// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd".
 /// </summary>
 public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 {

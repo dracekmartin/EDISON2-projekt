@@ -42,7 +42,7 @@
 
         <!-- List šablon (Caché-driven přes EDList) — konfigurace v XAML -->
         <el:EDList x:Name="TheList"
-                   CacheClass="ALVA.TemplateDesigner.API.TemplatesList"
+                   CacheClass="ALVA.TemplateDesigner.EDList.Sablony"
                    HostId="TemplateDesigner.TemplatePicker"
                    Title="Šablony v Caché"/>
 

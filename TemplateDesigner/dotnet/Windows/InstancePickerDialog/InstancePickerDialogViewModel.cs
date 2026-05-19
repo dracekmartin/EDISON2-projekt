@@ -5,7 +5,7 @@ namespace TemplateDesigner;
 
 /// <summary>
 /// Multi-výběr dostupných instancí pro aktuální agendu (např. linky pro MHD).
-/// Data + UI řeší <c>EDList</c> přes Caché endpoint <c>ALVA.TemplateDesigner.API.InstancesList</c>.
+/// Data + UI řeší <c>EDList</c> přes Caché endpoint <c>ALVA.TemplateDesigner.EDList.Instance</c>.
 /// VM jen drží kontext (agendaCode), počítá výběr a sestaví výstup po OK.
 /// </summary>
 public class InstancePickerDialogViewModel : EDViewModel

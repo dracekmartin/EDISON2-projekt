@@ -6,7 +6,7 @@ namespace TemplateDesigner.Config;
 /// <summary>
 /// Propojení TemplateDesigneru s Caché databází přes MLRest.
 /// Vytváří CacheAgendaProvider z nastavení v templatedesigner.appsettings.json.
-/// Každá agenda odkazuje na Caché třídu dědící z ALVA.TemplateDesigner.Agendas.AgendaAPI.
+/// Každá agenda odkazuje na Caché třídu dědící z ALVA.TemplateDesigner.Agendy.BaseAgenda.
 /// </summary>
 internal static class CacheSchemaWiring
 {
