@@ -15,51 +15,19 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-> **v1.0 demo balíček HOTOV (2026-05-15)** — Release readiness R1+R2+R4 splněno (3 commity: `5ac9dd0` Caché Template Storage, `82b68be` Přepínač agendy, `fd25008` Instance Picker). Zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md). Hotová práce → [`roadmap-archive.md`](roadmap-archive.md).
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 ekosystém uzavřen (2026-05-19) — všechny Caché-driven listy v TD běží na EDListu, wire formát standard + public DOCS hotové. Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
-### ✅ EDList + EDFilter ekosystém uzavřen (stav 2026-05-19)
+**Kde pokračovat dál** (dvě paralelní větve, nevylučují se):
 
-Foundation work pro EDControls knihovnu je za prvním milníkem. **Všechny TD dialogy s Caché-driven listy jsou na EDList**, **EDFilter komponenta postavená a nasazená**, wire formát standard propsaný, public developer DOCS hotové. Konvence „konfigurace v XAML, wiring v code-behind, dynamický stav ve VM" vynucena přes DependencyProperty refactor.
+1. **Fáze A.2-D — Caché business logic** ⬅️ nejvyšší zákaznický dopad
+   TRANSDEV/KORID suspended tickety v `ZastavkoveJrMhdAPI`. Tabulka níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
-**Hotové (commity v repu):**
-- ✅ **F1 — `IUserPrefsService`** + `LocalPrefs` + Caché `ALVA.EDControls.UserData` (prerekvizita Wave 1)
-- ✅ **L1–L3 EDList foundation** — multi-select, column layout persist (přes IUserPrefsService), Title + client-side search
-- ✅ **L5 — CacheTemplatePickerDialog na EDList** (filter podle agendy, CRUD v parent dialogu)
-- ✅ **L6 — InstancePickerDialog na EDList multi-select** (linky MHD, pre-selection, search)
-- ✅ **EDList wire formát fix** — `LoadList(filter)` na CVar named keys
-- ✅ **Wire formát standard** — CVar named IN + 4 OUT styly podle obsahu (CVar scalars / JSON v slotu / JSON multi-slot / JSON envelope opt-in) + filter sub-subscript konvence (`^||ML("IN","filter","klic")`). Detail v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md).
-- ✅ **EDControls public DOCS** — `00-overview.md`, `01-wire-formats.md`, `02-EDList.md`, `03-EDFilter.md` (single source of truth pro programátory). Konvence: změna komponenty = update odpovídajícího `0X-název.md` ve stejném commitu.
-- ✅ **`MLRestJson.CallAsync<TReq, TResp>` helper** — připraven v EDControls pro Tier 3 EDInputForm composite endpointy.
-- ✅ **EDFilter v1 komponenta** — deklarativní filter nad EDListem s auto-trigger, `FilterCombo` jako první typ pole, extensible přes `FilterFieldBase` abstract base
-- ✅ **EDList DP refactor** — `CacheClass`, `HostId`, `Title`, `SearchVisible`, `SearchText`, `SelectionMode` konvertovány na DependencyProperty (umožní XAML konfiguraci místo imperativního setování v code-behind)
-- ✅ **Dialog refactor** — `CacheTemplatePickerDialog` na deklarativní `<edf:EDFilter>` v XAML, `InstancePickerDialog` na XAML konfiguraci EDListu
+2. **Wave 1 — UserPreferences plné využití** (foundation `IUserPrefsService` hotová)
+   Per-user × IDFa state: zoom, grid, recent files, instance picker default, splittery, recent colors. Plný plán v § Wave 1 níže.
 
-**Architektonická rozhodnutí (referenční dokumenty):**
+**Mimo aktuální focus** (až bude potřeba): plná sada Filter polí (EDFilter rozšíření), Tier 3 EDInputForm refactor (`$lb()` → JSON envelope + chybějící typy polí), Tier 4 TD editor migrace na EDInputForm. Detail v [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md).
 
-| Téma | Kde |
-|---|---|
-| Wire formát standard (CVar named IN + 4 OUT styly + filter sub-subscript) | [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md) |
-| EDList API reference | [`EDControls/DOCS/02-EDList.md`](../../../EDControls/DOCS/02-EDList.md) |
-| EDFilter API reference | [`EDControls/DOCS/03-EDFilter.md`](../../../EDControls/DOCS/03-EDFilter.md) |
-| Migrace TD editorů na EDInputForm (architektura, drift handling) | [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md) |
-| Legacy EDISON komponenty (BIG/BIL/BDG) — baseline analýza | [`legacy-component-research.md`](../../../EDControls/.claude/docs/legacy-component-research.md) |
-
----
-
-### 🟢 Kde pokračovat dál
-
-Dvě realistické větve, nevylučují se (běží paralelně podle priority):
-
-**1. Fáze A.2-D — Caché business logic** ⬅️ NEJVYŠŠÍ ZÁKAZNICKÝ DOPAD
-Projít TRANSDEV/KORID suspended tickety v `ZastavkoveJrMhdAPI`: „spoj jede až do XY" template, custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů u hidden sloupců, vypnutí auto-poznámky bezbariérovosti, KORID přípojové řádky. Tabulka A.2-D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-
-**2. Wave 1 — UserPreferences plné využití** (foundation hotová)
-Per-user × IDFa nastavení nad hotovým `IUserPrefsService`: zoom, grid, recent files, instance picker default, splittery, recent colors. Klíčové API + storage popsaná v Caché Migrace § Wave 1 níže.
-
-**Co dělat až později (mimo aktuální focus):**
-- Plná sada Filter polí (date, text, bool, checkedCombo) — počkat na konkrétní dialog (YAGNI). Detail v [`03-EDFilter.md`](../../../EDControls/DOCS/03-EDFilter.md) extensibility sekce.
-- Tier 3 EDInputForm refactor — `$lb()` OUT → JSON envelope, doplnění chybějících typů polí (Color, Font, Suggest, Text+Picker, ActionId Button). Detailní plán v `td-editor-migration-plan.md`.
-- Tier 4 TD editor migrace na EDInputForm — Caché editor třídy per typ elementu, refactor 4 dialogů.
+**Reference docs** (vznikly při Foundation milníku): [`EDControls/DOCS/`](../../../EDControls/DOCS/) — `00-overview`, `01-wire-formats`, `02-EDList`, `03-EDFilter`.
 
 ---
 
