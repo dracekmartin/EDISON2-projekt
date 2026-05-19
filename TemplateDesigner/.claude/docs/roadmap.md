@@ -15,19 +15,23 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 ekosystém uzavřen (2026-05-19) — všechny Caché-driven listy v TD běží na EDListu, wire formát standard + public DOCS hotové. Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor (Agendy/EDList/API role separation) + EDTheme design tokens + implicit Button style hotové (2026-05-19). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
-**Kde pokračovat dál** (dvě paralelní větve, nevylučují se):
+**Aktivně rozpracované — UI polish (theme):**
+
+⬅️ **Implicit styles pro WPF kontrolky** — Button hotov v EDStyles.xaml (flat moderní desktop look, 3px corner radius). Zítra pokračovat s `TextBox`, `ComboBox`, `MenuItem`, `TabItem`. Pak drobnosti v TD samotném (title bar polish, status bar zoom indikátor, dialog button audit z původního UI audit).
+
+**Po UI polish (paralelní větve):**
 
 1. **Fáze A.2-D — Caché business logic** ⬅️ nejvyšší zákaznický dopad
-   TRANSDEV/KORID suspended tickety v `ZastavkoveJrMhdAPI`. Tabulka níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+   TRANSDEV/KORID suspended tickety v `Agendy/ZastavkoveJrMhd`. Tabulka níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
 2. **Wave 1 — UserPreferences plné využití** (foundation `IUserPrefsService` hotová)
    Per-user × IDFa state: zoom, grid, recent files, instance picker default, splittery, recent colors. Plný plán v § Wave 1 níže.
 
 **Mimo aktuální focus** (až bude potřeba): plná sada Filter polí (EDFilter rozšíření), Tier 3 EDInputForm refactor (`$lb()` → JSON envelope + chybějící typy polí), Tier 4 TD editor migrace na EDInputForm. Detail v [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md).
 
-**Reference docs** (vznikly při Foundation milníku): [`EDControls/DOCS/`](../../../EDControls/DOCS/) — `00-overview`, `01-wire-formats`, `02-EDList`, `03-EDFilter`.
+**Reference docs:** [`EDControls/DOCS/`](../../../EDControls/DOCS/) — `00-overview`, `01-wire-formats`, `02-EDList`, `03-EDFilter`, `04-EDTheme`.
 
 ---
 

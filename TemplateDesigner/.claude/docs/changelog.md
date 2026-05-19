@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-05-19 — EDTheme design tokens + implicit Button style
+
+Sjednocení vizuálu napříč TemplateDesignerem + EDControls knihovnou přes design tokens v EDControls (jedno místo, runtime swap přes DynamicResource).
+
+**EDControls (nové):**
+- `EDTheme/EDTheme.xaml` — 33 tokenů: barvy (borders, backgrounds, text, 5 accent variant blue, agenda green, brand brown, semantic danger/warning/success/condition), font sizes (Small/Caption/Body/Header/Large), spacing (XS/S/M/L/XL). Každá barva má `.Color` (Color) + `.X` (SolidColorBrush) dual key.
+- `EDTheme/EDStyles.xaml` — implicit Button style (flat moderní desktop look, 3px corner radius, hover/pressed přes tokens). Opt-in via merge.
+- `DOCS/04-EDTheme.md` — kompletní reference + konzumace + per-app override + dark mode plán.
+- 5 EDControls komponent (EDList, EDFilter, FilterCombo, EDFooter, EDInputForm) převedeno na tokens.
+
+**TemplateDesigner adoption:**
+- `App.xaml` merguje EDTheme.xaml + EDStyles.xaml + EDIcons.xaml + EDStrings.xaml + ToolbarStyles.xaml.
+- `App.xaml.cs OnAnyWindowLoaded` class handler nastavuje Edison Molecule ikonu na všechna okna (implicit Window style v WPF kvůli quirky nestačí pro derived Window classes).
+- `MainWindow.xaml` 100% na tokens (status bar, levý panel, canvas wrapper, preview, InlineEditBox).
+- `ToolbarStyles.xaml` 100% na tokens.
+- 10 dialogů 100% na tokens (Help, ChangeAgenda, NormalizePositions, InstancePicker, Print, AiTemplate, PdfImport — 3 další byly bez hex).
+- **Skip Wave 4 scope:** ElementPropertiesWindow, TableEditorDialog, StopColumnsEditorDialog, DepartureGroupEditorDialog — budou nahrazeny EDInputForm/EDInputGrid migrací.
+- **EDActionInProgress** zachován s hardcoded brand brown spinner gradients (intentional brand expression).
+
+**Reverzibilita:** Každý refactor step = vlastní commit (c343de3 EDTheme + first adoption, 6b35659 MainWindow, 7af7f13 dialogs, a93b07b EDControls + Window icon, 08d042c icon class handler fix, 368cd65 Button implicit style). Worst-case rollback = sekvence `git revert`.
+
+**Pokračování (zítra+):** Implicit styles pro TextBox, ComboBox, MenuItem, TabItem v EDStyles.xaml.
+
 ## 2026-05-19 — Caché refactor: struktura tříd podle role (Agendy/EDList/API)
 
 Sjednocení Caché namespace struktury s konvencí používanou v ostatních M-line projektech — separace **podle role třídy** (data source vs UI dispatch vs business CRUD), ne podle domény.
