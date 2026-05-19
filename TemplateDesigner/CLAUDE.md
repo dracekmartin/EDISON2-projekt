@@ -187,7 +187,7 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 
 Ruční reference:
 - `.claude/docs/changelog.md` — kompletní changelog
-- `.claude/docs/roadmap.md` — plná roadmapa s detaily
+- `.claude/docs/roadmap.md` — aktuální roadmapa (jen otevřené body); hotová práce → `.claude/docs/roadmap-archive.md`
 - `.claude/docs/schedule-elements-architecture.md` — architektura specializovaných JŘ elementů (Caché wire formát, hierarchie elementů, matice zodpovědností)
 - **`.claude/docs/feature-design-principles.md`** — **závazná reference před každým novým requestem**: kódová + UX rozhodovací mřížka, klasifikace typu variace (1/2/3), per-customer divergence, anti-patterns
 - `.claude/docs/customer-requirements-zastavkovy-jr.md` — konkrétní požadavky zákazníků z helpdesku Podpory M-line (zastávkový JŘ — DPKV, TRANSDEV, KORID)
