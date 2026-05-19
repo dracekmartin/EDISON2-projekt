@@ -1,7 +1,23 @@
-/// Abstraktní základ pro API rozhraní TemplateDesigneru.
-/// Každá agenda (JR, FAKTURY, ...) musí mít vlastní třídu dědící z této.
-/// Caché kompilátor vynucuje implementaci všech Abstract metod.
-/// 
+/// Abstraktní základ pro implementaci agendy v TemplateDesigneru.
+///
+/// Agenda = zdroj dat a doménová logika pro konkrétní typ tiskové sestavy:
+/// - **MHD** — zastávkové jízdní řády městské hromadné dopravy (linky, zastávky, spoje)
+/// - **FAKTURY** — fakturační sestavy (faktury, položky, DPH)
+/// - připravované: Meziměstský JŘ, Knižní JŘ, Vozový JŘ
+///
+/// Každá agenda dědí z této třídy a implementuje povinné Abstract metody:
+/// - GetSchema           — definice dostupných polí (skalární + tabulkové kolekce)
+/// - GetData             — reálná data pro tisk (per IDFa, per instance)
+/// - GetMockData         — vzorová data pro live preview v designeru
+/// - GetTableTemplates   — seznam Fixed šablon tabulek (záhlaví, platnost, ...)
+/// - GetTableTemplate    — definice konkrétní Fixed šablony (sloupce + řádky)
+///
+/// Volitelně přepsatelné (default = prázdný seznam):
+/// - GetParameters       — parametry pro PrintDialog (zaškrtávátka, výběry, ...)
+/// - GetAvailableInstances — seznam instancí pro Instance Picker
+///
+/// Caché kompilátor vynucuje implementaci Abstract metod; bez nich třída neprojde compile.
+///
 /// Konfigurace v appsettings.json:
 ///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" }
 Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]

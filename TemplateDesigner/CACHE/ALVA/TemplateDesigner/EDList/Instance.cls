@@ -1,10 +1,21 @@
 Include GENERAL
 
-/// EDList backing pro InstancePickerDialog v TemplateDesigneru.
-/// Vrací sloupce + řádky dostupných instancí pro danou agendu (např. linky pro MHD).
-/// 
-/// Routuje na agenda-specifickou metodu GetAvailableInstances přes $classmethod.
-/// Wire formát: CVar named IN + JSON multi-slot OUT (standard Styl 3 viz DOCS/01-wire-formats.md).
+/// Seznam instancí pro aktuální agendu — konkrétní záznamy, nad kterými se bude tisknout
+/// šablona (uživatel jednu/víc vybere v Instance Pickeru, výběr se předá do GetData).
+///
+/// Co je "instance" závisí na agendě:
+/// - **MHD** (zastávkový JŘ)  → linky MHD (např. "42 — Praha–Brno", "15 — Linka přes centrum")
+/// - **FAKTURY**             → jednotlivé faktury (např. "2024001 — ACME s.r.o.", "2024002 — Beta a.s.")
+/// - **Meziměstský JŘ**       → linky meziměstské dopravy (až bude implementováno)
+/// - **Vozový JŘ**            → oběhy vozidel (až bude implementováno)
+///
+/// Sloupce seznamu: value (opaque ID předaný do GetData), display (hlavní popis), subtitle (volitelný detail).
+///
+/// Data: routuje přes $classmethod na agenda-specifickou GetAvailableInstances
+///       v ALVA.TemplateDesigner.Agendy.<konkrétní> (každá agenda iteruje vlastní doménovou strukturu —
+///       MHD: ^ALVA.MHD.LSO(IdFa,1,"IDX",...); faktury: TBD).
+/// Wire formát: CVar named IN + JSON multi-slot OUT (Styl 3 viz EDControls/DOCS/01-wire-formats.md).
+/// Konzument: InstancePickerDialog v TD (.NET)
 Class ALVA.TemplateDesigner.EDList.Instance Extends %RegisteredObject
 {
 

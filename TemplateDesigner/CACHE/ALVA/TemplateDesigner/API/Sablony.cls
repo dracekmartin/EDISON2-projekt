@@ -1,19 +1,27 @@
 Include GENERAL
 
-/// Storage šablon TemplateDesigneru v Caché.
-/// 
-/// Per-IDFa, sdílené napříč uživateli (autor je jen metadata).
-/// Šablona = JSON blob + sada metadat pro identifikaci a filtraci.
-/// 
+/// Storage tiskových šablon TemplateDesigneru v Caché (CRUD).
+///
+/// Šablona = uložený layout tiskové sestavy (např. zastávkový JŘ MHD pro linku 42,
+/// faktura pro fakturační systém, ...) jako JSON blob + sada metadat pro identifikaci.
+///
+/// Per-IDFa (každá firma má vlastní úložiště), sdílené napříč uživateli — autor
+/// je jen metadata, ne access control. Šablony bez vazby na agendu mají AgendaCode = "GENERAL".
+///
+/// Operace: ListTemplates (metadata), LoadTemplate, SaveTemplate (insert nebo update),
+/// DeleteTemplate, RenameTemplate.
+///
 /// Globální struktura:
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata", <pole>) = <hodnota>
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")             = <JSON blob>
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
-/// 
+///
 /// Metadata pole: Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version
-/// 
+///
 /// TemplateID je GUID generovaný na klientovi (Template.Id v C# modelu) — round-trip s file JSON
 /// je beze ztráty identity.
+///
+/// Seznam pro UI: ALVA.TemplateDesigner.EDList.Sablony (read-only čtení metadat pro picker).
 Class ALVA.TemplateDesigner.API.Sablony Extends %RegisteredObject
 {
 

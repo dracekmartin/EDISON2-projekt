@@ -1,61 +1,34 @@
 Include (ALVAMHD, GENERAL)
 
+/// Agenda MHD — zastávkové jízdní řády městské hromadné dopravy.
+///
+/// Data:
+/// - **Skalární pole linky**: číslo (licenční + veřejné), název, platnost od/do,
+///   QR kód, typ JŘ (návrh/výlukový/normální), dopravce atd.
+/// - **Tabulkové kolekce per stránka**: ZASTAVKY (zastávka + tarifní číslo + čas jízdy + atributy),
+///   SKUPINY_DNU (typy provozu — pracovní den/sobota/neděle/...), ODJEZDY (čas + anotace),
+///   POZNAMKY (legenda symbolů a omezení).
+///
+/// Multi-page výstup: jedna stránka = jedna zastávka × jeden směr. Linka má typicky desítky
+/// až stovky stránek (např. 50 zastávek × 2 směry = 100 stránek).
+///
+/// Zdrojová data v Caché:
+/// - `^[dataDB]ALVA.MHD.LSO` — linky, spoje, trasy
+/// - `^[dataDB]ALVA.MHD.ZST` — zastávky
+/// - `^[dataDB]ALVA.MHD.CHR` — chronometráže (doby jízdy)
+/// - `^[dataDB]ALVA.MHD.ENUMS` — atributy, typy provozu, poznámky
+/// - Helper třídy: `ALVA.MHD.LinkyFce`, `SpojeFce`, `ZastavkyFce`, `KalendarFce`, `ChronometrazeFce`
+///
+/// Implementace = 6-fázový tiskový engine v procesně-privátním globálu ^||TiskMHD
+/// (detail struktury v komentáři u GetData).
+///
+/// Wire formát výstupu viz `.claude/docs/schedule-elements-architecture.md`.
+///
+/// appsettings.json:
+///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" }
 Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
-/// ═══════════════════════════════════════════════════════════════════════════════
-/// BaseAgenda implementace
-/// ═══════════════════════════════════════════════════════════════════════════════
-/// API pro MHD zastávkový jízdní řád.
-/// Kompletní implementace: schema, parametry, mock data, reálná data z DB.
-/// Obsahuje 6-fázový tiskový engine (trasa → bitmapy → JSON výstup).
-/// 
-/// appsettings.json:
-///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" }
-/// 
-/// GetData vstup:  IN["LINKA_ID"] = číslo linky
-/// GetData výstup: OUT[1..N] = JSON stránky, každá = { "values": {...}, "rows": {...} }
-///                 Jedna stránka = jedna zastávka × jeden směr
-/// 
-/// Wire formát: viz schedule-elements-architecture.md (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY)
-/// 
-/// Pracovní globál ^||TiskMHD (process-private, kilnuto na začátku i konci GetData):
-///   ("config","LinkaID")                                       = ID linky
-///   ("config","TrasaID")                                       = ID trasy
-///   ("config","platnostOdHrl")                                 = platnost od (horolog)
-///   ("config","platnostDoHrl")                                 = platnost do (horolog)
-///   ("config","PlatnostChronometrazeID")                       = ID platnosti chronometráže
-///   ("config","AutoPoznamkyRozdilTrasy")                       = flag: auto-poznámky rozdílů tras
-///   ("config","AutoPoznamkyRozdilTrasyAlgoritmus")             = 1001 nebo 1002
-///   ("config","AutoPoznamkyRozdilTrasyPismena")                = písmena pro alg. 1001/1002
-///   ("config","AutoPoznamkyOdlisnostiPlatnosti")               = flag: auto-poznámky platností
-///   ("config","rozsahNZOd")                                    = rozsah NZ značek od
-///   ("config","rozsahNZDo")                                    = rozsah NZ značek do
-///   ("config","CisloLinky")                                    = číslo linky dle licence
-///   ("config","LokalniOznaceni")                               = veřejné číslo linky
-///   ("config","NazevLinky")                                    = název linky
-///   ("config","QRKod")                                         = QR kód URL
-///   ("config","TypJR")                                         = typ JŘ (NÁVRH/VÝLUKOVÝ/"")
-///   ("trasa",SmerID,BodID)                                     = $lb(ZastavkaID, CasJizdy, ZastavkaCislo)
-///   ("trasa",SmerID,"slouceni",BodID,BodID2)                   = ""   konverzní tabulka sloučených bodů
-///   ("trasa",SmerID,"slouceniInv",BodID2)                      = BodID hlavní bod po sloučení
-///   ("poznamkyZast",SmerID,BodID,Znak)                         = $lb(TextPoznamky, TypPoznamky)
-///   ("atributyZast",SmerID,BodID,AtributID)                    = $lb(Popis, Typ, SpecialniZnak)
-///   ("odjezdy",SmerID,BodID,TypProvozuID,Hodina,Minuta,SpojID) = ""
-///   ("typyProvozu",TypProvozuID)                               = ""
-///   ("spojTrasa",SmerID,SpojID)                                = TrasaBitmap
-///   ("spojTrasa",SmerID,SpojID,BodID)                          = TrasaBitmapZBodu
-///   ("spojNZ",SpojID)                                          = NegativniZnacka
-///   ("nzTexty",NZ)                                             = OmezeniTXT
-///   ("spojTydenni",SpojID)                                     = tydenniPlatnost
-///   ("spojPoznamky",SpojID,...)                                = poznámky spoje
-///   ("spojAtributy",SpojID,...)                                = atributy spoje
-///   ("obsluha",SmerID,BodID)                                   = TrasaBitmap obsluhovaných zastávek z bodu
-///   ("obsluhaVse",SmerID,BodID)                                = AllStopTrasaBitmap (1=všechny, 9=jen některé)
-///   ("obsluhaKonec",SmerID,BodID,SpojID)                       = konečný bod spoje
-///   ("rozdilTrasy",SmerID,BodID,Typ,Bitmap,SpojID)             = ""
-///   ("rozdilTrasyPism",SmerID,BodID,Typ,Bitmap)                = písmeno
-/// 
 /// Vrátí schéma polí MHD agendy.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
@@ -218,9 +191,46 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 /// Vrátí kompletní data pro tisk zastávkového MHD JŘ.
 /// Vstup:  IN["LINKA_ID"] = ID linky
 /// Výstup: OUT[1..N] = JSON stránky (jedna stránka = zastávka × směr)
-/// 
+///
 /// Každá stránka má strukturu:
 ///   { "values": { skalární pole }, "rows": { ZASTAVKY: [...], SKUPINY_DNU: [...], ODJEZDY: [...], POZNAMKY: [...] } }
+///
+/// Pracovní procesně-privátní globál ^||TiskMHD (kilnuto na začátku i konci GetData):
+///   ("config","LinkaID")                                       = ID linky
+///   ("config","TrasaID")                                       = ID trasy
+///   ("config","platnostOdHrl")                                 = platnost od (horolog)
+///   ("config","platnostDoHrl")                                 = platnost do (horolog)
+///   ("config","PlatnostChronometrazeID")                       = ID platnosti chronometráže
+///   ("config","AutoPoznamkyRozdilTrasy")                       = flag: auto-poznámky rozdílů tras
+///   ("config","AutoPoznamkyRozdilTrasyAlgoritmus")             = 1001 nebo 1002
+///   ("config","AutoPoznamkyRozdilTrasyPismena")                = písmena pro alg. 1001/1002
+///   ("config","AutoPoznamkyOdlisnostiPlatnosti")               = flag: auto-poznámky platností
+///   ("config","rozsahNZOd")                                    = rozsah NZ značek od
+///   ("config","rozsahNZDo")                                    = rozsah NZ značek do
+///   ("config","CisloLinky")                                    = číslo linky dle licence
+///   ("config","LokalniOznaceni")                               = veřejné číslo linky
+///   ("config","NazevLinky")                                    = název linky
+///   ("config","QRKod")                                         = QR kód URL
+///   ("config","TypJR")                                         = typ JŘ (NÁVRH/VÝLUKOVÝ/"")
+///   ("trasa",SmerID,BodID)                                     = $lb(ZastavkaID, CasJizdy, ZastavkaCislo)
+///   ("trasa",SmerID,"slouceni",BodID,BodID2)                   = ""   konverzní tabulka sloučených bodů
+///   ("trasa",SmerID,"slouceniInv",BodID2)                      = BodID hlavní bod po sloučení
+///   ("poznamkyZast",SmerID,BodID,Znak)                         = $lb(TextPoznamky, TypPoznamky)
+///   ("atributyZast",SmerID,BodID,AtributID)                    = $lb(Popis, Typ, SpecialniZnak)
+///   ("odjezdy",SmerID,BodID,TypProvozuID,Hodina,Minuta,SpojID) = ""
+///   ("typyProvozu",TypProvozuID)                               = ""
+///   ("spojTrasa",SmerID,SpojID)                                = TrasaBitmap
+///   ("spojTrasa",SmerID,SpojID,BodID)                          = TrasaBitmapZBodu
+///   ("spojNZ",SpojID)                                          = NegativniZnacka
+///   ("nzTexty",NZ)                                             = OmezeniTXT
+///   ("spojTydenni",SpojID)                                     = tydenniPlatnost
+///   ("spojPoznamky",SpojID,...)                                = poznámky spoje
+///   ("spojAtributy",SpojID,...)                                = atributy spoje
+///   ("obsluha",SmerID,BodID)                                   = TrasaBitmap obsluhovaných zastávek z bodu
+///   ("obsluhaVse",SmerID,BodID)                                = AllStopTrasaBitmap (1=všechny, 9=jen některé)
+///   ("obsluhaKonec",SmerID,BodID,SpojID)                       = konečný bod spoje
+///   ("rozdilTrasy",SmerID,BodID,Typ,Bitmap,SpojID)             = ""
+///   ("rozdilTrasyPism",SmerID,BodID,Typ,Bitmap)                = písmeno
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
     try {

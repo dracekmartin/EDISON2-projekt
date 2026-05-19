@@ -1,9 +1,14 @@
 Include GENERAL
 
-/// EDList backing pro CacheTemplatePickerDialog v TemplateDesigneru.
-/// Vrací sloupce + řádky uložených šablon iterací nad ^ALVA.TemplateDesigner.Templates.
-/// 
-/// Storage je v třídě ALVA.TemplateDesigner.API.Sablony (CRUD); tato třída ho jen čte.
+/// Seznam tiskových šablon uložených v TemplateDesigneru — metadata všech šablon
+/// per aktuální IDFa (firmu).
+///
+/// Šablona = uložený layout tiskové sestavy (zastávkový JŘ MHD, faktura, ...) s odkazem
+/// na agendu odkud čerpá data. Sloupce seznamu: název, agenda, datum změny, autor.
+///
+/// Data:  ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata", ...)
+/// CRUD:  ALVA.TemplateDesigner.API.Sablony (tato třída pouze čte)
+/// Konzument: CacheTemplatePickerDialog v TD (.NET)
 Class ALVA.TemplateDesigner.EDList.Sablony Extends %RegisteredObject
 {
 
