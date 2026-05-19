@@ -7,7 +7,8 @@
              d:DesignHeight="300" d:DesignWidth="600">
     <DockPanel>
         <Border x:Name="headerBar" DockPanel.Dock="Top"
-                Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
+                Background="{DynamicResource EDTheme.Bg.Panel}"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                 Padding="6,4" Visibility="Collapsed">
             <Grid>
                 <Grid.ColumnDefinitions>

@@ -6,7 +6,8 @@
     <StackPanel Orientation="Vertical" Margin="0,0,8,0">
         <TextBlock x:Name="labelText"
                    Text="{Binding Label, RelativeSource={RelativeSource AncestorType=local:FilterCombo}}"
-                   FontSize="11" Foreground="#666666" Margin="0,0,0,2"/>
+                   FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                   Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,0,0,2"/>
         <ComboBox x:Name="combo"
                   ItemsSource="{Binding ItemsSource,        RelativeSource={RelativeSource AncestorType=local:FilterCombo}}"
                   SelectedValue="{Binding SelectedValue,    RelativeSource={RelativeSource AncestorType=local:FilterCombo}, Mode=TwoWay}"

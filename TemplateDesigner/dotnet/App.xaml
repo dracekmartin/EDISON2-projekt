@@ -10,6 +10,11 @@
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDStrings/EDStrings.xaml"/>
                 <ResourceDictionary Source="Styles/ToolbarStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Default Window icon — aplikuje se na všechna okna (MainWindow + dialogy) bez explicit Icon -->
+            <Style TargetType="Window">
+                <Setter Property="Icon" Value="{StaticResource EDIcons.Molecule}"/>
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>
