@@ -16,7 +16,8 @@ public record struct AxisSnap(
     float AdjustedDelta,
     bool HasSnap,
     GapIndicator? Gap = null,
-    List<TemplateElement>? MatchedElements = null);
+    List<TemplateElement>? MatchedElements = null,
+    bool IsSectionCenter = false);
 
 public record struct SnapResult(AxisSnap X, AxisSnap Y);
 
@@ -44,7 +45,8 @@ public class SnapEngine
         IReadOnlyList<float>? extraXAnchors = null,
         IReadOnlyList<float>? extraYAnchors = null,
         IReadOnlyList<float>? edgeXAnchors = null,
-        IReadOnlyList<float>? edgeYAnchors = null)
+        IReadOnlyList<float>? edgeYAnchors = null,
+        float? sectionCenterX = null)
     {
         float refW = refElement.Width;
         float refH = refElement.Height ?? refElement.EffectiveDesignerHeight;
@@ -66,7 +68,8 @@ public class SnapEngine
             refInitPos.Y + rawDeltaY, refH, e => e.Y, e => e.Height ?? e.EffectiveDesignerHeight,
             isHorizontalGap: true,
             extraAnchors: extraXAnchors,
-            edgeAnchors: edgeXAnchors);
+            edgeAnchors: edgeXAnchors,
+            sectionCenterAnchor: sectionCenterX);
 
         var axisY = SnapAxis(
             refInitPos.Y, refH, rawDeltaY, thresholdMm, GapMm,
@@ -79,7 +82,7 @@ public class SnapEngine
         return new SnapResult(axisX, axisY);
     }
 
-    private enum MatchKind { Edge, Center, Gap }
+    private enum MatchKind { Edge, Center, Gap, SectionCenter }
 
     private record struct Candidate(
         float Dist, float SnapTo, float RefEdge,
@@ -94,7 +97,8 @@ public class SnapEngine
         Func<TemplateElement, float> getCrossPos, Func<TemplateElement, float> getCrossSize,
         bool isHorizontalGap,
         IReadOnlyList<float>? extraAnchors = null,
-        IReadOnlyList<float>? edgeAnchors = null)
+        IReadOnlyList<float>? edgeAnchors = null,
+        float? sectionCenterAnchor = null)
     {
         float projected = refPos + rawDelta;
         float refStart  = projected;
@@ -132,8 +136,7 @@ public class SnapEngine
         }
 
         // ── Extra anchors (point targets bez elementu) ──
-        // Používá se pro horizontální/vertikální střed a cross-section X snap.
-        // Jen edge-to-point matching, žádný gap snap.
+        // Cross-section X snap. Edge-to-point matching, žádný gap snap.
         if (extraAnchors is not null)
         {
             foreach (float anchor in extraAnchors)
@@ -141,6 +144,14 @@ public class SnapEngine
                 TryAdd(candidates, refStart, anchor, threshold, null!, MatchKind.Edge);
                 TryAdd(candidates, refEnd,   anchor, threshold, null!, MatchKind.Edge);
             }
+        }
+
+        // ── Section center (center-to-anchor) ──
+        // Aligns element center s daným X (typicky střed sekce na ose).
+        // Označeno samostatným MatchKind aby DesignerCanvas mohl vykreslit guide line.
+        if (sectionCenterAnchor is { } scAnchor)
+        {
+            TryAdd(candidates, refCenter, scAnchor, threshold, null!, MatchKind.SectionCenter);
         }
 
         // ── Edge anchors (hrany sekce / printable area) ──
@@ -193,7 +204,8 @@ public class SnapEngine
             gap = new GapIndicator(isHorizontalGap, gf, gt, crossMid);
         }
 
-        return new AxisSnap(adjustedDelta, true, gap, matchedEls);
+        bool isSectionCenter = matchKind == MatchKind.SectionCenter;
+        return new AxisSnap(adjustedDelta, true, gap, matchedEls, isSectionCenter);
     }
 
     private static void TryAdd(List<Candidate> list,

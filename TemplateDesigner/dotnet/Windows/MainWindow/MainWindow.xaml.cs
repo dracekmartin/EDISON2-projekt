@@ -1641,6 +1641,7 @@ public partial class MainWindow : Window
 
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
+            _vm.State.ActiveSectionCenterX = null;
             bool snappedX = false, snappedY = false;
             if (_dragInitPositions.TryGetValue(_dragElement!, out var refInit))
             {
@@ -1658,10 +1659,9 @@ public partial class MainWindow : Window
                     var edgeX = new List<float> { 0f, sectionW };
                     var edgeY = new List<float> { 0f, sectionH };
 
-                    // Extra X anchors: horizontální střed + X hodnoty elementů z ostatních sekcí
+                    // Extra X anchors: X hodnoty elementů z ostatních sekcí
                     // (všechny sekce sdílejí levý margin → X je přímo porovnatelné). Bez gap snap.
-                    float refElW = _dragElement!.Width;
-                    var extraX = new List<float> { (sectionW - refElW) / 2f };
+                    var extraX = new List<float>();
                     foreach (var otherSection in _vm.State.CurrentTemplate.Sections)
                     {
                         if (otherSection == section) continue;
@@ -1676,16 +1676,23 @@ public partial class MainWindow : Window
                     float refElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
                     var extraY = new List<float> { (sectionH - refElH) / 2f };
 
+                    // Section center X (center-to-anchor) — pro horizontální guide line.
+                    float sectionCenterX = sectionW / 2f;
+
                     var snap = _snapEngine.Calculate(
                         _dragElement!, (refInit.X, refInit.Y),
                         deltaMmX, deltaMmY, others, threshold,
                         extraXAnchors: extraX, extraYAnchors: extraY,
-                        edgeXAnchors: edgeX, edgeYAnchors: edgeY);
+                        edgeXAnchors: edgeX, edgeYAnchors: edgeY,
+                        sectionCenterX: sectionCenterX);
 
                     if (snap.X.HasSnap) { deltaMmX = snap.X.AdjustedDelta; snappedX = true; }
                     if (snap.Y.HasSnap) { deltaMmY = snap.Y.AdjustedDelta; snappedY = true; }
                     if (snap.X.Gap is { } gx) _vm.State.ActiveGapIndicators.Add(gx);
                     if (snap.Y.Gap is { } gy) _vm.State.ActiveGapIndicators.Add(gy);
+
+                    // Section center guide line — pokud snap právě sedí na sectionCenterX
+                    _vm.State.ActiveSectionCenterX = snap.X.IsSectionCenter ? (float?)sectionCenterX : null;
 
                     // Zvýrazni cílové elementy
                     var targets = (snap.X.MatchedElements ?? []).Concat(snap.Y.MatchedElements ?? []).Distinct();
@@ -1757,6 +1764,7 @@ public partial class MainWindow : Window
             // Smart snap při resize
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
+            _vm.State.ActiveSectionCenterX = null;
             if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection && !resizeCtrlHeld)
             {
                 bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;

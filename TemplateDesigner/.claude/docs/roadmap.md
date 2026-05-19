@@ -62,8 +62,8 @@ Per-user × IDFa nastavení nad hotovým `IUserPrefsService`: zoom, grid, recent
 - Tier 4 TD editor migrace na EDInputForm — Caché editor třídy per typ elementu, refactor 4 dialogů.
 
 **Demo polish (kdykoli, malé položky):**
-- Edison icon do okna, sample template „showcase" pro zastávkový JŘ
-- Pořadí linek v pickeru, persistence aktivních instancí přes restart
+- Sample template „showcase" pro zastávkový JŘ (ukázková šablona MHD JŘ co se otevře po startu)
+- Persistence aktivních instancí přes restart (poprvé využití `IUserPrefsService` v TD scope)
 
 ---
 
@@ -470,14 +470,6 @@ Analogie `ColorRules` z `DepartureGrid` — generalizovat na `TableColumn`.
 | 37 | `ColorRules` na `TableColumn` — `{ expression, foreColor, backColor }` array | |
 | 38 | Vyhodnocení v print engine při renderování buňky | |
 
-#### PNG export
-
-SkiaSharp `SKBitmap.Encode()` — triviální přidání.
-
-| Krok | Co | Stav |
-|---|---|---|
-| 40 | PNG export (per-page nebo všechny stránky) — File menu + `PreviewCanvas.RenderToPng()` | |
-
 #### Dynamická viditelnost sekce v designeru
 
 VisibilityExpression se vyhodnocuje jen při tisku. Uživatel nevidí jak bude šablona vypadat.
@@ -566,8 +558,6 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 |---|---------|-----------|-------|
 | g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu (bez otevření dialogu) |
 | h | Cross-section rubber band selection | Střední | Aktuálně funguje jen v aktivní sekci; umožnit výběr přes sekce s přepočtem souřadnic |
-| i | Align to page center | Malá | Zarovnat element na střed stránky (horizontálně nebo vertikálně) |
-| k | Page Break element | Malá | Explicitní element "zalomit stránku zde" — alternativa k oddělení přes sekce |
 | l | XLSX export | Velká | Tabulky → Excel; vyžaduje ClosedXML nebo NPOI |
 | m | Ruler na canvasu | Střední | Horizontální + vertikální pravítko v mm podél hran canvasu; zvýrazňuje rozsah vybraného elementu |
 | n | `LayoutGridDialog` (B0-7) | Střední | Rozmístit vybrané elementy do řádku/sloupce/mřížky se zadanou mezerou; výstup = `CompositeCommand` |

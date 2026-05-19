@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-05-19 — UX: section-center snap guide line
+
+Section-center snap (horizontální i vertikální) **funkčně existoval** přes `extraXAnchors`/
+`extraYAnchors` se v `SnapEngine.SnapAxis`, ale **bez vizuální indikace** — uživatel
+nevěděl, že právě sedí na centeru.
+
+- `SnapEngine`: nový `MatchKind.SectionCenter` + `sectionCenterX` parametr pro `Calculate`
+  (center-to-anchor matching), `AxisSnap.IsSectionCenter` flag
+- `DesignerState.ActiveSectionCenterX` — tracking aktivního section-center match
+- `DesignerCanvas.DrawSectionCenterGuide` — dashed cyan vertical line přes plnou výšku
+  sekce, když snap právě sedí na horizontálním středu
+- `MainWindow.xaml.cs`: předává `sectionCenterX = sectionW / 2f` při dragu, čistí state
+  na začátku každého move + při resize
+
+Funguje horizontálně s visual guide; vertikálně stále funkční přes `extraY` (bez visual).
+Pokud bude potřeba i vertikální guide, snadno přidat analogicky.
+
+Roadmap: `i. Align to page center` z menší priorita UX polish odstraněno (section-center
+snap pokrývá use case s lepším UX — visual feedback během drag).
+
 ## 2026-05-19 — L6: InstancePickerDialog na EDList + EDControls DOCS + wire formát standard
 
 Tři propojené kusy práce na uzavření EDList migrace + dokumentační vrstvy.

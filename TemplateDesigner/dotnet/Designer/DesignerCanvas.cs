@@ -75,6 +75,7 @@ public class DesignerCanvas
         DrawSnapTargetHighlights(canvas, canvasWidth);
         DrawSelectionOverlay(canvas, canvasWidth);
         DrawSnapLines(canvas, canvasWidth);
+        DrawSectionCenterGuide(canvas, canvasWidth);
 
         // Měřící badge během dragu/resize — zcela nahoře
         DrawDragBadge(canvas);
@@ -734,6 +735,36 @@ public class DesignerCanvas
                 canvas.DrawLine(cx, y1, cx, y2, paint);
             }
         }
+    }
+
+    /// <summary>
+    /// Dashed vertical guide line přes celou výšku aktivní sekce, když element snapem
+    /// právě sedí na horizontálním středu sekce. Standardní design tool UX pattern.
+    /// </summary>
+    private void DrawSectionCenterGuide(SKCanvas canvas, float canvasWidth)
+    {
+        if (_state.ActiveSectionCenterX is not { } centerXMm) return;
+        var section = _state.ActiveSection;
+        if (section is null) return;
+
+        var origin = GetSectionOrigins(canvasWidth)
+            .FirstOrDefault(s => s.Section == section);
+        if (origin.Section is null) return;
+
+        float ox = origin.OriginX, oy = origin.OriginY;
+        float sectionHpx = section.EffectiveDesignerHeight * MmToPx;
+
+        using var paint = new SKPaint
+        {
+            Color = new SKColor(0xC000B0FF),   // cyan, polo-transparentní
+            StrokeWidth = 1f,
+            IsStroke = true,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([4f, 3f], 0)
+        };
+
+        float x = ox + centerXMm * MmToPx;
+        canvas.DrawLine(x, oy, x, oy + sectionHpx, paint);
     }
 
     /// <summary>
