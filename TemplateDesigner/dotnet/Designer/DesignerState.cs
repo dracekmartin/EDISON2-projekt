@@ -29,6 +29,7 @@ public class DesignerState
     public bool SnapToGrid { get; set; } = false;
     public bool SnapToElements { get; set; } = true;
     public bool ShowSectionHeaders { get; set; } = true;
+    public bool ShowRuler { get; set; } = false;
     public float GridSize { get; set; } = 5f; // mm
 
     /// <summary>

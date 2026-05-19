@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-05-19 — UX: pravítka (rulers) na canvasu
+
+Horizontální + vertikální pravítka v mm podél stránky, togglovatelná v menu `Zobrazit → Pravítka`. Standardní design tool feature (Word/Figma/PowerPoint).
+
+- Horizontální pravítko nad stránkou (X osa), vertikální vpravo od stránky (Y osa) — vlevo jsou modré štítky sekcí, proto right-side ruler.
+- 0mm = okraj stránky. Ticky každých 10mm s číslem; podle zoom se přidávají 5mm a 1mm subticky a krok čísel klesá na 20/50mm.
+- Vertikální čísla rotovaná -90° (čte se zdola nahoru — standard).
+- Modrý highlight pásek na obou pravítkách v rozsahu vybraných elementů; multi-výběr = bounding box.
+- Vejdou se do existujícího `PagePaddingPx` (40px) — žádná layout změna v `MainWindow.xaml`.
+
+Soubory: `DesignerCanvas.cs` (5 nových metod: `DrawRulers`, `DrawRulerStrip`, `DrawRulerTicks`, `DrawRulerHighlights` + barvy + konstanty), `DesignerState.ShowRuler`, `MainWindowViewModel.ShowRuler` proxy, `MainWindow.xaml` menu položka.
+
+Persistence přes restart (W1) zatím ne — session-only, defaultně off.
+
+## 2026-05-19 — Cleanup: B2 (WPF Color Picker) + B0-10 (Collapsible groups) odstraněny z roadmap
+
+- **B2** — `WinForms ColorDialog` minimalizace Properties window už neopakovatelná (po testu), TODO komentář v `PropertiesPanel.xaml.cs:531-534` smazán. Color picker work se přesune do W4-8 (EDInputForm Color field) až bude EDInputForm refactor — žádný důvod budovat samostatný WPF picker.
+- **B0-10** Collapsible groups v `PropertiesPanel` — přesunuto jako W4-10 do Wave 4 EDInputForm scope. Dělat to v dočasném panelu (který bude nahrazen) je wasted effort; generická vlastnost EDInputForm pokryje TD i ostatní formuláře.
+- W1-5 (Recent Colors) reformulováno bez B2 reference; W2-2 reformulováno bez B2 reference.
+- W1-7 přidán: instance picker default (per-template seznam vybraných instancí, vlastní key v `IUserPrefsService`).
+
+Roadmap UX polish vyčištěn: odstraněno `h. Cross-section rubber band`, `l. XLSX export`, `n. LayoutGridDialog`, `41. Toggle Simulovat viditelnost` (preview už pokrývá), demo polish „Sample template showcase" (hotovo) a „Persistence aktivních instancí" (přejmenováno do W1-7).
+
 ## 2026-05-19 — UX: section-center snap guide line
 
 Section-center snap (horizontální i vertikální) **funkčně existoval** přes `extraXAnchors`/

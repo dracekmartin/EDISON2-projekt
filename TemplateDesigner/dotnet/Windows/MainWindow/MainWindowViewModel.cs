@@ -258,6 +258,12 @@ public class TemplateDesignerViewModel : EDViewModel
         set { State.ShowSectionHeaders = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); RequestCanvasSizeUpdate?.Invoke(); }
     }
 
+    public bool ShowRuler
+    {
+        get => State.ShowRuler;
+        set { State.ShowRuler = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); }
+    }
+
     public bool SnapToGrid
     {
         get => State.SnapToGrid;

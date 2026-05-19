@@ -61,10 +61,6 @@ Per-user × IDFa nastavení nad hotovým `IUserPrefsService`: zoom, grid, recent
 - Tier 3 EDInputForm refactor — `$lb()` OUT → JSON envelope, doplnění chybějících typů polí (Color, Font, Suggest, Text+Picker, ActionId Button). Detailní plán v `td-editor-migration-plan.md`.
 - Tier 4 TD editor migrace na EDInputForm — Caché editor třídy per typ elementu, refactor 4 dialogů.
 
-**Demo polish (kdykoli, malé položky):**
-- Sample template „showcase" pro zastávkový JŘ (ukázková šablona MHD JŘ co se otevře po startu)
-- Persistence aktivních instancí přes restart (poprvé využití `IUserPrefsService` v TD scope)
-
 ---
 
 ## 📖 Závazné reference před implementací
@@ -217,8 +213,9 @@ public class TdPreferencesService {
 | W1-2 | Wire-up: `App.xaml.cs` load at startup (async + timeout) | |
 | W1-3 | `MainWindowViewModel` — bind Zoom/Grid/Snap/Splitters/Tab přes preferences | |
 | W1-4 | Recent Files (Ctrl+R picker, File menu) — ukládá do prefs | |
-| W1-5 | Recent Colors — integrace s color pickerem (po B2) | |
+| W1-5 | Recent Colors — last-used barvy v color pickeru (swatches v `ColorPickerHelper` nebo v EDInputForm Color field po W4-8) | |
 | W1-6 | Template thumbnails — 100×140px PNG při uložení šablony | |
+| W1-7 | Instance picker default — per-template (`AgendaCode + TemplateID`) seznam vybraných instancí; obnoví se při otevření šablony. Vlastní key (`InstanceDefaults/{guid}`), ne MainState blob | |
 
 ---
 
@@ -256,7 +253,7 @@ Lokální cache v paměti       →  rychlost v rámci session (refresh na vyž�
 | .NET Services | `IAgendaRegistry`, `ICompanyPalette`, `IElementDefaults`, `ISectionTemplateCatalog` — každý má Caché implementaci |
 | .NET DI | Centrální `ServiceLocator` / `EDServices` rozšířit o tyto 4 služby |
 | .NET Elements | Constructor čte z `IElementDefaults.GetDefaults("TextElement")` místo hardcoded hodnot |
-| .NET UI | ColorPicker (B2) čte swatches z `ICompanyPalette` |
+| .NET UI | ColorPicker čte swatches z `ICompanyPalette` (zatím `ColorPickerHelper`, později EDInputForm Color field po W4-8) |
 | .NET `SectionTemplateManager` | Nahrazen `ISectionTemplateCatalog` |
 | appsettings.json | **Smazat `agendas[]`** — přesouvá se do Caché |
 
@@ -269,7 +266,7 @@ Lokální cache v paměti       →  rychlost v rámci session (refresh na vyž�
 | Krok | Co | Stav |
 |---|---|---|
 | W2-1 | Caché `AgendaRegistryAPI` + `.NET IAgendaRegistry` — migrace `appsettings.json` agendas | |
-| W2-2 | Caché `CompanyPaletteAPI` + integrace s ColorPicker (B2) | |
+| W2-2 | Caché `CompanyPaletteAPI` + integrace s ColorPickerem (firemní paleta swatchů) | |
 | W2-3 | Caché `ElementDefaultsAPI` + `IElementDefaults` konzumované v elementech | |
 | W2-4 | Caché `SectionTemplateAPI` + `ISectionTemplateCatalog` + jednorázová migrace lokálních souborů | |
 
@@ -389,6 +386,7 @@ Uživatel může postupně přepnout element po elementu; při problémech rollb
 | W4-7 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
 | W4-8 | EDInputForm rozšíření: chybějící typy polí (Color, Font, Suggest, Text+Picker, ActionId Button) | |
 | W4-9 | EDInputForm wire formát refactor `$lb()` OUT → JSON | |
+| W4-10 | **Collapsible groups** v EDInputForm — generický koncept (accordion, summary řádek u sbalené, stav per element type/scope do `IUserPrefsService`). Nahrazuje dříve plánovaný B0-10 v `PropertiesPanel` (zbytečné dělat v dočasném panelu). | |
 
 ---
 
@@ -470,35 +468,10 @@ Analogie `ColorRules` z `DepartureGrid` — generalizovat na `TableColumn`.
 | 37 | `ColorRules` na `TableColumn` — `{ expression, foreColor, backColor }` array | |
 | 38 | Vyhodnocení v print engine při renderování buňky | |
 
-#### Dynamická viditelnost sekce v designeru
-
-VisibilityExpression se vyhodnocuje jen při tisku. Uživatel nevidí jak bude šablona vypadat.
-
-| Krok | Co | Stav |
-|---|---|---|
-| 41 | Toggle "Simulovat viditelnost" v sekci — vyhodnotí expression s mock daty, zšedí/skryje sekci v designeru | |
-
 #### Obecný layout-reservation pattern u elementů
 
 Aktuálně když element potřebuje rezervovat místo pro volitelný vizuální prvek (šipka směru u `StopListElement`), řeší se to ad-hoc. Do budoucna zvážit deklarativní mapu "pokud property X=true → rezervuj Y mm vlevo/vpravo". Vyřeší konzistentně napříč všemi elementy.
 
-#### Collapsible groups v properties panelu
-
-| Krok | Co | Stav |
-|---|---|---|
-| B0-10 | **Collapsible groups** v `PropertiesPanel` — accordion s `GroupDescriptor`, sbalené skupiny zobrazují summary řádek, stav sbalení per element type do `UserPreferences.GroupExpanded` | |
-
-#### WPF Color Picker — fix blokující bug
-
-`WinForms ColorDialog` minimalizuje Properties panel při kliknutí OK (TODO v `PropertiesPanel.xaml.cs:555`). Vlastní WPF color picker s palette z `UserPreferences.RecentColors`.
-
-| Krok | Co | Stav |
-|---|---|---|
-| B2-1 | WPF color picker control (`ColorPickerPopup.xaml`) — swatches, hex, alpha | |
-| B2-2 | Nahradit všechna volání `ColorPickerHelper.PickColor()` novým controllem | |
-| B2-3 | Synchronizovat `RecentColors` s `UserPreferencesService` (Wave 1) | |
-
----
 
 ### 🟠 Fáze C: Meziměstský JŘ
 
@@ -556,11 +529,8 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 | # | Položka | Náročnost | Popis |
 |---|---------|-----------|-------|
-| g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu (bez otevření dialogu) |
-| h | Cross-section rubber band selection | Střední | Aktuálně funguje jen v aktivní sekci; umožnit výběr přes sekce s přepočtem souřadnic |
-| l | XLSX export | Velká | Tabulky → Excel; vyžaduje ClosedXML nebo NPOI |
+| g | Inline text editing na canvasu | Velká | Dvojklik na TextElement → editace `Text` content přímo na canvasu (caret, multi-line, Esc/Enter commit). Scope = jen content, styl se dál mění v dialogu. Pouze TextElement (ostatní typy nemají editovatelný text). |
 | m | Ruler na canvasu | Střední | Horizontální + vertikální pravítko v mm podél hran canvasu; zvýrazňuje rozsah vybraného elementu |
-| n | `LayoutGridDialog` (B0-7) | Střední | Rozmístit vybrané elementy do řádku/sloupce/mřížky se zadanou mezerou; výstup = `CompositeCommand` |
 
 **Grouping v TableElement** — seskupení řádků dynamické tabulky podle hodnoty pole (`GroupHeader`, `GroupFooter`, `Summary` řádky).
 
