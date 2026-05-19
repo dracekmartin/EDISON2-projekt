@@ -241,6 +241,72 @@ var resp = await MLRestJson.CallAsync<GetFormRequest, FormDefinition>(
 
 ---
 
+## Filter konvence — kde žijí filter hodnoty
+
+Pro **list endpointy** (Styl 3) existuje vedle běžných IN parametrů (kontext, paging, sort) navíc kategorie **filter hodnot** — pole z UI filter komponenty (`EDFilter` + její `FilterX` children, nebo manuálně předaný `IReadOnlyDictionary` do `EDList.LoadList(filter)`).
+
+**Konvence:** filter hodnoty vždy žijí pod sub-subscriptem `^||ML("IN","filter",klic)`. Klasické parametry zůstávají top-level.
+
+### Příklad
+
+```
+^||ML("IN","templateId") = "abc-123"           ← parametr volání (top level)
+^||ML("IN","limit") = "50"                     ← paging
+^||ML("IN","sortBy") = "name"                  ← sort
+^||ML("IN","filter","agendaCode") = "MHD"      ← filter hodnota
+^||ML("IN","filter","name") = "Šablona A"      ← filter hodnota
+^||ML("IN","filter","active") = "1"            ← filter hodnota
+```
+
+### Čtení v Caché
+
+Per-klíč (typický případ):
+```objectscript
+s agendaCode = $g(^||ML("IN","filter","agendaCode"))
+s nameFilter = $g(^||ML("IN","filter","name"))
+```
+
+Generický iterátor (pro dynamický filter handler):
+```objectscript
+s key = ""
+for {
+    s key = $o(^||ML("IN","filter",key), 1, val)
+    q:key=""
+    ; ... process per filter key (val)
+}
+```
+
+### Sběr v .NET
+
+`EDList.LoadList(filter)` automaticky balí filter dict pod `filter` subscript v CVar:
+```csharp
+var filter = new Dictionary<string, string> {
+    ["agendaCode"] = "MHD",
+    ["name"] = "Šablona A"
+};
+TheList.LoadList(filter);
+// → ^||ML("IN","filter","agendaCode") = "MHD"
+// → ^||ML("IN","filter","name") = "Šablona A"
+```
+
+`EDFilter` komponenta dělá totéž — sebere hodnoty ze svých `FilterX` children, sestaví dict, předá EDList.
+
+### Kdy filter, kdy ne
+
+| Hodnota | Kde |
+|---|---|
+| Kontext volání (`templateId` při Load, `agendaCode` při GetAvailableInstances) | **Top-level** — `^||ML("IN","klic")` |
+| Filter (zužuje výsledek listu, hodnoty z EDFilter UI) | **Pod `filter`** — `^||ML("IN","filter","klic")` |
+| Paging, sort, konfigurace (`limit`, `offset`, `sortBy`, `includeArchived`) | **Top-level** |
+
+**Rozhodovací pravidlo:** „je to query parametr (zužuje výsledek) nebo parametr volání/konfigurace?". Query → filter subscript. Volání → top level.
+
+### Mentální paralela s legacy
+
+Legacy `$$$GetFiltr` makro naplnilo lokální Caché pole `filtr(klic) = hodnota` po parsing delimiter stringu z plochých numerických slotů. Naše pojmenovaná struktura `^||ML("IN","filter",klic) = hodnota` je **stejný mentální model**, jen bez parsing makra — pojmenované klíče jdou rovnou do globálu.
+
+---
+
 ## Speciální případy mimo wire formát
 
 ### Binární data — `MLRest.BinarySave / BinaryLoad`

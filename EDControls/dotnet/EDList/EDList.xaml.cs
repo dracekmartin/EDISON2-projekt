@@ -21,56 +21,87 @@ namespace EDControls.EDList
 {
     public partial class EDList : UserControl
     {
-        // ─── Konfigurace ──────────────────────────────────────────────────────────
+        // ─── Konfigurace (DependencyProperties pro XAML attribute setování) ──────
 
         private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
         private IUserPrefsService UserPrefs =>
             (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.UserPrefs
             ?? new NullUserPrefsService();
 
-        public string CacheClass { get; set; } = "";
+        public static readonly DependencyProperty CacheClassProperty =
+            DependencyProperty.Register(nameof(CacheClass), typeof(string), typeof(EDList),
+                new PropertyMetadata(""));
+
+        public string CacheClass
+        {
+            get => (string)GetValue(CacheClassProperty);
+            set => SetValue(CacheClassProperty, value);
+        }
 
         /// <summary>
         /// Identifikátor hosta pro persist column layout (šířky + pořadí + sort) přes UserPrefs.
         /// Konvence: <c>"&lt;Project&gt;.&lt;ConsumerName&gt;"</c>, např. <c>"TemplateDesigner.TemplatePicker"</c>.
         /// Null nebo prázdné → persist je vypnutý (žádný Load/Save).
         /// </summary>
-        public string? HostId { get; set; }
+        public static readonly DependencyProperty HostIdProperty =
+            DependencyProperty.Register(nameof(HostId), typeof(string), typeof(EDList),
+                new PropertyMetadata(null));
+
+        public string? HostId
+        {
+            get => (string?)GetValue(HostIdProperty);
+            set => SetValue(HostIdProperty, value);
+        }
+
         private const string PrefsScope = "EDControls.EDList";
 
         // ─── Title + Search (L3) ──────────────────────────────────────────────────
 
-        private string? _title;
+        public static readonly DependencyProperty TitleProperty =
+            DependencyProperty.Register(nameof(Title), typeof(string), typeof(EDList),
+                new PropertyMetadata(null, OnTitleOrSearchVisibleChanged));
+
         public string? Title
         {
-            get => _title;
-            set { _title = value; titleText.Text = value ?? ""; UpdateHeaderVisibility(); }
+            get => (string?)GetValue(TitleProperty);
+            set => SetValue(TitleProperty, value);
         }
+
+        /// <summary>Default: <c>null</c> = auto (true pokud Title set, jinak false). Lze nastavit explicitně true/false.</summary>
+        public static readonly DependencyProperty SearchVisibleProperty =
+            DependencyProperty.Register(nameof(SearchVisible), typeof(bool?), typeof(EDList),
+                new PropertyMetadata(null, OnTitleOrSearchVisibleChanged));
+
+        public bool? SearchVisible
+        {
+            get => (bool?)GetValue(SearchVisibleProperty);
+            set => SetValue(SearchVisibleProperty, value);
+        }
+
+        public static readonly DependencyProperty SearchTextProperty =
+            DependencyProperty.Register(nameof(SearchText), typeof(string), typeof(EDList),
+                new FrameworkPropertyMetadata("", FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, OnSearchTextChanged));
 
         public string SearchText
         {
-            get => searchBox.Text;
-            set { searchBox.Text = value; /* TextChanged event triggers re-filter */ }
+            get => (string)GetValue(SearchTextProperty);
+            set => SetValue(SearchTextProperty, value);
         }
 
-        private bool? _searchVisible;
-        /// <summary>Default: true pokud Title set, jinak false. Lze nastavit explicitně.</summary>
-        public bool SearchVisible
-        {
-            get => _searchVisible ?? !string.IsNullOrEmpty(_title);
-            set { _searchVisible = value; UpdateHeaderVisibility(); }
-        }
+        private static void OnTitleOrSearchVisibleChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+            (d as EDList)?.UpdateHeaderVisibility();
+
+        private static void OnSearchTextChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+            (d as EDList)?.RefreshFilter();
 
         private void UpdateHeaderVisibility()
         {
-            bool showTitle  = !string.IsNullOrEmpty(_title);
-            bool showSearch = SearchVisible;
+            bool showTitle  = !string.IsNullOrEmpty(Title);
+            bool showSearch = SearchVisible ?? !string.IsNullOrEmpty(Title);   // null = auto z Title
             titleText.Visibility  = showTitle  ? Visibility.Visible : Visibility.Collapsed;
             searchBox.Visibility  = showSearch ? Visibility.Visible : Visibility.Collapsed;
             headerBar.Visibility  = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
         }
-
-        private void SearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshFilter();
 
         private void RefreshFilter()
         {
@@ -107,17 +138,23 @@ namespace EDControls.EDList
         // ─── Multi-select (L1) ────────────────────────────────────────────────────
 
         /// <summary>Mode výběru: Single (klasický), Check (checkbox sloupec, multi-select).</summary>
+        public static readonly DependencyProperty SelectionModeProperty =
+            DependencyProperty.Register(nameof(SelectionMode), typeof(EListSelectionMode), typeof(EDList),
+                new PropertyMetadata(EListSelectionMode.Single, OnSelectionModeChanged));
+
         public EListSelectionMode SelectionMode
         {
-            get => _selectionMode;
-            set { if (_selectionMode != value) { _selectionMode = value; RebuildColumns(); } }
+            get => (EListSelectionMode)GetValue(SelectionModeProperty);
+            set => SetValue(SelectionModeProperty, value);
         }
-        private EListSelectionMode _selectionMode = EListSelectionMode.Single;
+
+        private static void OnSelectionModeChanged(DependencyObject d, DependencyPropertyChangedEventArgs e) =>
+            (d as EDList)?.RebuildColumns();
 
         /// <summary>V Check mode: ID checknutých řádků (z <see cref="EDListRow.IsChecked"/>).
         /// V Single mode: vrátí <c>[SelectedRowId]</c> nebo prázdné.</summary>
         public IReadOnlyList<string> SelectedRowIds =>
-            _selectionMode == EListSelectionMode.Check
+            SelectionMode == EListSelectionMode.Check
                 ? _rows.Where(r => r.IsChecked).Select(r => r.Id).ToList()
                 : SelectedRowId is { } id ? [id] : [];
 
@@ -224,9 +261,10 @@ namespace EDControls.EDList
         public void LoadList() => LoadList(filter: null);
 
         /// <summary>
-        /// Načte data z Caché s volitelným filtrem. Filtr se pošle do Caché jako
-        /// pojmenované IN klíče: <c>filter["agendaCode"] = "MHD"</c> → <c>^||ML("IN","agendaCode") = "MHD"</c>.
-        /// Server může (ale nemusí) filtr aplikovat — strana .NET předá co dostane.
+        /// Načte data z Caché s volitelným filtrem. Filter hodnoty jdou do Caché jako sub-subscript
+        /// pod <c>filter</c>: <c>filter["agendaCode"] = "MHD"</c> → <c>^||ML("IN","filter","agendaCode") = "MHD"</c>.
+        /// Caché endpoint čte přes <c>$g(^||ML("IN","filter","klic"))</c>. Detail viz
+        /// <c>EDControls/DOCS/01-wire-formats.md §Filter konvence</c>.
         /// </summary>
         public void LoadList(IReadOnlyDictionary<string, string>? filter)
         {
@@ -235,7 +273,7 @@ namespace EDControls.EDList
             if (filter is not null)
             {
                 foreach (var kv in filter)
-                    input[kv.Key] = new CVar(kv.Value);
+                    input["filter"][kv.Key] = new CVar(kv.Value);
             }
             var output = MLRest!.QueryOrThrow(CacheClass, "LoadList", input);
             // Unsubscribe stará data — žádné spying na zaniklé řádky
@@ -366,7 +404,7 @@ namespace EDControls.EDList
         {
             UnhookColumnEvents();
             dataGrid.Columns.Clear();
-            if (_selectionMode == EListSelectionMode.Check)
+            if (SelectionMode == EListSelectionMode.Check)
                 dataGrid.Columns.Add(BuildCheckBoxColumn());
             if (_columns is null) return;
             foreach (var col in _columns.Where(c => c.Visible))

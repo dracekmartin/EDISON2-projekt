@@ -15,6 +15,7 @@
 | Komponenta | Co dělá | Stav | Doc |
 |---|---|---|---|
 | **`EDList`** | Caché-driven list / picker / multi-select s persist sloupců a client-side search | Stabilní | [`02-EDList.md`](02-EDList.md) |
+| **`EDFilter`** | Deklarativní filter komponenta pro EDList (auto-trigger reload, typed filter fields) | v1 plánováno | [`03-EDFilter.md`](03-EDFilter.md) |
 | **`EDInputForm`** | Caché-driven editovatelný formulář (analogie legacy BIG) | Refactor v plánu (Tier 3) | `03-EDInputForm.md` *(později)* |
 | **`EDViewModel`** | Base třída pro VM s `Command(...)`, `CommandAsync(...)`, `IPopupDisplayer` integrací | Stabilní | — |
 | **`EDFooter`** | Footer s tlačítky OK/Storno/Aplikovat (standardní rozložení) | Stabilní | — |
@@ -30,8 +31,9 @@
 
 | Dokument | O čem je |
 |---|---|
-| [`01-wire-formats.md`](01-wire-formats.md) | Standard pro Caché ↔ .NET komunikaci přes MLRest — co je IN, co je OUT, kdy CVar vs JSON, jak na type safety v .NET |
+| [`01-wire-formats.md`](01-wire-formats.md) | Standard pro Caché ↔ .NET komunikaci přes MLRest — co je IN, co je OUT, kdy CVar vs JSON, jak na type safety v .NET, filter konvence |
 | [`02-EDList.md`](02-EDList.md) | Kompletní reference EDList komponenty — properties, events, Caché contract, příklady |
+| [`03-EDFilter.md`](03-EDFilter.md) | EDFilter spec — deklarativní filter nad EDListem, FilterCombo, wire formát, extensibility |
 
 ## Jak začít
 

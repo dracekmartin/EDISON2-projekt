@@ -21,7 +21,7 @@
                          Width="200" VerticalAlignment="Center"
                          Padding="4,2"
                          ToolTip="Hledat..."
-                         TextChanged="SearchBox_TextChanged"
+                         Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"
                          Visibility="Collapsed"/>
             </Grid>
         </Border>

@@ -65,19 +65,22 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
 
 ### 2. WPF okno
 
-**XAML:**
+**XAML — konfigurace v atributech** (konstanty per dialog patří sem):
 ```xml
 <Window x:Class="MyProject.MyDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
         Width="600" Height="400">
     <Grid Margin="12">
-        <el:EDList x:Name="TheList"/>
+        <el:EDList x:Name="TheList"
+                   CacheClass="ALVA.MyProject.API.MyList"
+                   HostId="MyProject.MyList"
+                   Title="Můj list"/>
     </Grid>
 </Window>
 ```
 
-**Code-behind:**
+**Code-behind — jen WPF wiring** (eventy, Loaded handler):
 ```csharp
 public partial class MyDialog : Window
 {
@@ -86,9 +89,9 @@ public partial class MyDialog : Window
         DataContext = vm;
         InitializeComponent();
 
-        TheList.CacheClass = "ALVA.MyProject.API.MyList";
-        TheList.HostId = "MyProject.MyList";   // pro persist sloupců
-        TheList.Title = "Můj list";
+        // Wire-up event handlerů (events nelze přímo v XAML jako Command)
+        TheList.SelectionChanged += (_, id) => /* ... */;
+        TheList.RowDoubleClicked += (_, id) => /* ... */;
 
         Loaded += (_, _) =>
         {
@@ -98,6 +101,8 @@ public partial class MyDialog : Window
     }
 }
 ```
+
+**Pravidlo:** konfigurační konstanty (CacheClass, HostId, Title, SelectionMode) patří **do XAML**. Code-behind drží jen **wiring** (DataContext, event handlery, Loaded entry point, VM callbacks). Dynamický stav (hodnoty z filteru, výběr řádku, mock data) žije ve **ViewModelu**.
 
 Tím máš funkční list s automatickým client-side search, persist šířky sloupců, sort by header click.
 
@@ -332,7 +337,18 @@ private void ReloadList()
 }
 ```
 
-Toto je dnešní řešení. Až bude **EDFilter komponenta** hotová (plánováno po L6), filter UI bude deklarativní v XAML místo PropertyChanged subscription.
+Toto je legacy ad-hoc řešení. **Preferovaná cesta od v1 EDFilter komponenty** je deklarativní — viz [`03-EDFilter.md`](03-EDFilter.md):
+
+```xml
+<el:EDFilter Target="{Binding ElementName=TheList}">
+    <edf:FilterCombo Key="agendaCode" Label="Agenda"
+                     ItemsSource="{Binding AgendaFilters}"
+                     SelectedValuePath="Code" DisplayMemberPath="Label"/>
+</el:EDFilter>
+<el:EDList x:Name="TheList"/>
+```
+
+**Důležité:** filter hodnoty se v CVar balí pod sub-subscript `^||ML("IN","filter","klic")` (nikoliv flat `^||ML("IN","klic")`). Caché endpoint čte přes `$g(^||ML("IN","filter","klic"))`. Detail v [`01-wire-formats.md`](01-wire-formats.md#filter-konvence---kde-zijí-filter-hodnoty).
 
 ---
 
