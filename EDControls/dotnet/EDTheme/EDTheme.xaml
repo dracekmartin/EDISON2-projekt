@@ -63,6 +63,10 @@
     <Color x:Key="EDTheme.Bg.Canvas.Color">#FFE4E4E4</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Canvas" Color="{StaticResource EDTheme.Bg.Canvas.Color}"/>
 
+    <!-- Info banner background — soft bluish-grey pro dialog hlavičky vysvětlující účel dialogu -->
+    <Color x:Key="EDTheme.Bg.InfoBanner.Color">#FFF0F4F8</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.InfoBanner" Color="{StaticResource EDTheme.Bg.InfoBanner.Color}"/>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Text
          ═══════════════════════════════════════════════════════════════════ -->

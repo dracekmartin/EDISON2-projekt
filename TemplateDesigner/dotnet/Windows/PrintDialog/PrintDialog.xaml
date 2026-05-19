@@ -30,8 +30,8 @@
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0" Text="{Binding StatusText}"
-                       VerticalAlignment="Center" FontSize="11"
-                       Foreground="#FF666666" TextTrimming="CharacterEllipsis"/>
+                       VerticalAlignment="Center" FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                       Foreground="{DynamicResource EDTheme.Text.Muted}" TextTrimming="CharacterEllipsis"/>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
                 <Button Content="Tisk s daty" Padding="16,6"
@@ -45,8 +45,8 @@
         </Grid>
 
         <!-- Obsah — parametry -->
-        <Border DockPanel.Dock="Top" BorderBrush="#DDDDDD" BorderThickness="1"
-                CornerRadius="4" Padding="12" Background="#FAFAFA">
+        <Border DockPanel.Dock="Top" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1"
+                CornerRadius="4" Padding="12" Background="{DynamicResource EDTheme.Bg.Footer}">
             <Grid>
                 <!-- Stav: má parametry -->
                 <StackPanel Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}">
@@ -64,7 +64,8 @@
 
                 <!-- Stav: nemá parametry -->
                 <TextBlock Text="Šablona nemá žádné parametry."
-                           FontSize="12" Foreground="#FF999999"
+                           FontSize="{DynamicResource EDTheme.FontSize.Header}"
+                           Foreground="{DynamicResource EDTheme.Border.Strong}"
                            VerticalAlignment="Center" HorizontalAlignment="Center">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">

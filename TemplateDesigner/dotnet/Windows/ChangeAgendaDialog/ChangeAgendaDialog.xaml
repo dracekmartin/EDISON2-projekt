@@ -18,7 +18,7 @@
 
         <TextBlock Grid.Row="0"
                    Text="Vyber agendu pro novou šablonu. Po potvrzení dojde k vytvoření nové prázdné šablony — případnou rozdělanou práci budeš nejdřív vyzván uložit nebo zahodit."
-                   TextWrapping="Wrap" Margin="0,0,0,10" Foreground="#555555"/>
+                   TextWrapping="Wrap" Margin="0,0,0,10" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
 
         <ListBox Grid.Row="1"
                  ItemsSource="{Binding Agendas}"
@@ -32,11 +32,13 @@
                         </Grid.ColumnDefinitions>
                         <StackPanel Grid.Column="0">
                             <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
-                            <TextBlock Text="{Binding Code}" FontSize="10" Foreground="#888888"/>
+                            <TextBlock Text="{Binding Code}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                         </StackPanel>
                         <TextBlock Grid.Column="1"
                                    Text="(aktuální)"
-                                   FontStyle="Italic" Foreground="#2E7D32"
+                                   FontStyle="Italic" Foreground="{DynamicResource EDTheme.Semantic.Success}"
                                    VerticalAlignment="Center" Margin="8,0,0,0"
                                    Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVis}}"/>
                     </Grid>

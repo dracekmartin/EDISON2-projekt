@@ -28,7 +28,8 @@
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
             <TextBlock Grid.Column="0" Text="{Binding StatusText}"
-                       FontSize="11" Foreground="#666666" VerticalAlignment="Center"/>
+                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                       Foreground="{DynamicResource EDTheme.Text.Muted}" VerticalAlignment="Center"/>
             <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold">
                 <Run Text="Vybráno: "/>
                 <Run Text="{Binding SelectedCount, Mode=OneWay}"/>

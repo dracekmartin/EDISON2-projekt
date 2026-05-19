@@ -23,14 +23,14 @@
         <Style x:Key="CategoryHeader" TargetType="TextBlock">
             <Setter Property="FontSize" Value="16"/>
             <Setter Property="FontWeight" Value="Bold"/>
-            <Setter Property="Foreground" Value="#1A5276"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.BlueDark}"/>
             <Setter Property="Margin" Value="0,16,0,8"/>
         </Style>
 
         <Style x:Key="SectionHeader" TargetType="TextBlock">
             <Setter Property="FontSize" Value="13"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#2C3E50"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.BlueDark}"/>
             <Setter Property="Margin" Value="0,12,0,6"/>
         </Style>
 
@@ -40,7 +40,7 @@
 
         <Style x:Key="ActionText" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
-            <Setter Property="Foreground" Value="#333333"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
             <Setter Property="Margin" Value="0,2"/>
         </Style>
 
@@ -48,13 +48,13 @@
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="FontFamily" Value="Consolas"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="#0066CC"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.Blue}"/>
             <Setter Property="Margin" Value="0,2"/>
             <Setter Property="TextAlignment" Value="Right"/>
         </Style>
 
         <Style x:Key="DescriptionText" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#666666"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>
             <Setter Property="Margin" Value="16,4,0,8"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="FontStyle" Value="Italic"/>
@@ -63,21 +63,21 @@
 
     <DockPanel>
         <!-- Header -->
-        <Border DockPanel.Dock="Top" Background="#F0F4F8" Padding="16,12">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="16,12">
             <StackPanel>
                 <TextBlock Text="Nápověda - Ovládání Template Designeru"
                            FontSize="18"
                            FontWeight="Bold"
-                           Foreground="#1A5276"/>
+                           Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                 <TextBlock Text="Přehled klávesových zkratek a funkcí aplikace"
                            FontSize="11"
-                           Foreground="#666666"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"/>
             </StackPanel>
         </Border>
 
         <!-- Footer s tlačítkem Zavřít -->
-        <Border DockPanel.Dock="Bottom" Background="#F8F8F8" Padding="12" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource EDTheme.Bg.Footer}" Padding="12" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
             <Button Content="{StaticResource EDStrings.Close}"
                     IsDefault="True"
                     IsCancel="True"
@@ -94,31 +94,31 @@
 
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="1. Otevřít / vytvořit šablonu:" FontWeight="SemiBold"/>
-                    <Run Text=" Ctrl+O nebo Ctrl+N. Vlevo je panel se záložkami Sekce / Pole agendy / Vlastnosti / Strom." Foreground="#666666"/>
+                    <Run Text=" Ctrl+O nebo Ctrl+N. Vlevo je panel se záložkami Sekce / Pole agendy / Vlastnosti / Strom." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="2. Vybrat agendu:" FontWeight="SemiBold"/>
-                    <Run Text=" Záložka 'Pole agendy' → dropdown nahoře (např. Zastávkový JŘ MHD). Tím se naplní seznam datových polí." Foreground="#666666"/>
+                    <Run Text=" Záložka 'Pole agendy' → dropdown nahoře (např. Zastávkový JŘ MHD). Tím se naplní seznam datových polí." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="3. Přidat sekce a elementy:" FontWeight="SemiBold"/>
-                    <Run Text=" Tlačítko '+ Sekce' v levém panelu, elementy přetáhnout z palety nahoře nebo přes menu '+ Element'." Foreground="#666666"/>
+                    <Run Text=" Tlačítko '+ Sekce' v levém panelu, elementy přetáhnout z palety nahoře nebo přes menu '+ Element'." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="4. Napojit data:" FontWeight="SemiBold"/>
-                    <Run Text=" Pole z agendy lze přetáhnout přímo na canvas (vytvoří TextElement) nebo na existující text (přidá placeholder {POLE}). Dvojklik = vloží do schránky." Foreground="#666666"/>
+                    <Run Text=" Pole z agendy lze přetáhnout přímo na canvas (vytvoří TextElement) nebo na existující text (přidá placeholder {POLE}). Dvojklik = vloží do schránky." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="5. Editovat vlastnosti:" FontWeight="SemiBold"/>
-                    <Run Text=" Záložka 'Vlastnosti' v levém panelu se aktualizuje podle výběru. Pro modální dialog: Enter / dvojklik. F2 na TextElementu = inline úprava textu." Foreground="#666666"/>
+                    <Run Text=" Záložka 'Vlastnosti' v levém panelu se aktualizuje podle výběru. Pro modální dialog: Enter / dvojklik. F2 na TextElementu = inline úprava textu." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="6. Náhled a tisk:" FontWeight="SemiBold"/>
-                    <Run Text=" Live náhled vpravo se aktualizuje. Pro tisk reálných dat: menu Soubor → Tisk z Caché (parametry + multi-page PDF). Export: PDF nebo PNG." Foreground="#666666"/>
+                    <Run Text=" Live náhled vpravo se aktualizuje. Pro tisk reálných dat: menu Soubor → Tisk z Caché (parametry + multi-page PDF). Export: PDF nebo PNG." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="💡 Strom šablony:" FontWeight="SemiBold"/>
-                    <Run Text=" Záložka 'Strom' v levém panelu zobrazí celou hierarchii (sekce → skupiny → elementy) — užitečné u větších šablon." Foreground="#666666"/>
+                    <Run Text=" Záložka 'Strom' v levém panelu zobrazí celou hierarchii (sekce → skupiny → elementy) — užitečné u větších šablon." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
 
                 <!-- ═══ ZÁKLADNÍ OVLÁDÁNÍ ═══ -->
@@ -407,39 +407,39 @@
                 <TextBlock Text="Dostupné typy elementů:" Style="{StaticResource SectionHeader}"/>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Text" FontWeight="SemiBold"/>
-                    <Run Text="— statický text nebo text s datovými poli (např. {NAZEV})" Foreground="#666666"/>
+                    <Run Text="— statický text nebo text s datovými poli (např. {NAZEV})" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Obrázek" FontWeight="SemiBold"/>
-                    <Run Text="— statický obrázek nebo z datasource" Foreground="#666666"/>
+                    <Run Text="— statický obrázek nebo z datasource" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Obdélník" FontWeight="SemiBold"/>
-                    <Run Text="— pozadí, rámeček, barevný blok" Foreground="#666666"/>
+                    <Run Text="— pozadí, rámeček, barevný blok" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Čára" FontWeight="SemiBold"/>
-                    <Run Text="— horizontální nebo vertikální oddělovač" Foreground="#666666"/>
+                    <Run Text="— horizontální nebo vertikální oddělovač" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Čárový kód" FontWeight="SemiBold"/>
-                    <Run Text="— QR, Code128, EAN-13, EAN-8, PDF417, DataMatrix; podporuje placeholdery" Foreground="#666666"/>
+                    <Run Text="— QR, Code128, EAN-13, EAN-8, PDF417, DataMatrix; podporuje placeholdery" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Tabulka" FontWeight="SemiBold"/>
-                    <Run Text="— Fixed (pevný layout) nebo Dynamic (data z datasource)" Foreground="#666666"/>
+                    <Run Text="— Fixed (pevný layout) nebo Dynamic (data z datasource)" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Zastávky JŘ" FontWeight="SemiBold"/>
-                    <Run Text="— tabulka zastávek s TČ, názvem, časem jízdy, zónami, atributy" Foreground="#666666"/>
+                    <Run Text="— tabulka zastávek s TČ, názvem, časem jízdy, zónami, atributy" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Mřížka odjezdů JŘ" FontWeight="SemiBold"/>
-                    <Run Text="— minutová mřížka odjezdů per skupina dnů" Foreground="#666666"/>
+                    <Run Text="— minutová mřížka odjezdů per skupina dnů" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="16,4,0,4">
                     <Run Text="• Legenda poznámek JŘ" FontWeight="SemiBold"/>
-                    <Run Text="— vysvětlivky: negativní značky, speciální znaky, textové poznámky" Foreground="#666666"/>
+                    <Run Text="— vysvětlivky: negativní značky, speciální znaky, textové poznámky" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
 
                 <TextBlock Text="💡 Datová pole: Pole z agendy lze přetáhnout přímo na canvas (vytvoří TextElement) nebo na existující text (přidá placeholder). Dvojklik vloží {NAZEV_POLE} do schránky. JŘ elementy mají vlastní DataSource — vybírá se ve vlastnostech elementu."
@@ -450,71 +450,71 @@
 
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Záložka 'Vlastnosti':" FontWeight="SemiBold"/>
-                    <Run Text=" Inline editor v levém panelu — automaticky se aktualizuje podle výběru. Pro modální dialog Enter / dvojklik. F2 na TextElementu spustí inline úpravu textu přímo na canvasu (Enter = potvrdit, Shift+Enter = nový řádek, Esc = zrušit)." Foreground="#666666"/>
+                    <Run Text=" Inline editor v levém panelu — automaticky se aktualizuje podle výběru. Pro modální dialog Enter / dvojklik. F2 na TextElementu spustí inline úpravu textu přímo na canvasu (Enter = potvrdit, Shift+Enter = nový řádek, Esc = zrušit)." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Záložka 'Strom':" FontWeight="SemiBold"/>
-                    <Run Text=" Hierarchický přehled celé šablony (sekce → skupiny → elementy). Klik na uzel = výběr v canvasu." Foreground="#666666"/>
+                    <Run Text=" Hierarchický přehled celé šablony (sekce → skupiny → elementy). Klik na uzel = výběr v canvasu." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Hromadná editace:" FontWeight="SemiBold"/>
-                    <Run Text=" Vyberte víc elementů (Ctrl+klik nebo rubber band) a stiskněte Enter — dialog společných vlastností (rámeček, ZIndex, zámek)." Foreground="#666666"/>
+                    <Run Text=" Vyberte víc elementů (Ctrl+klik nebo rubber band) a stiskněte Enter — dialog společných vlastností (rámeček, ZIndex, zámek)." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Proporcionální škálování:" FontWeight="SemiBold"/>
-                    <Run Text=" Dropdown 50–200 % v toolbaru — přepočítá rozměry stránky, sekcí i všech elementů (undoable)." Foreground="#666666"/>
+                    <Run Text=" Dropdown 50–200 % v toolbaru — přepočítá rozměry stránky, sekcí i všech elementů (undoable)." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Podmíněná viditelnost:" FontWeight="SemiBold"/>
-                    <Run Text=" Zadejte výraz do vlastnosti 'Viditelnost' (např. {POCET} > 0 nebo {TISK_SIPKY})" Foreground="#666666"/>
+                    <Run Text=" Zadejte výraz do vlastnosti 'Viditelnost' (např. {POCET} > 0 nebo {TISK_SIPKY})" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Parametry sestavy:" FontWeight="SemiBold"/>
-                    <Run Text=" V live náhledu se zobrazí panel s parametry (checkbox, combobox), které můžete měnit" Foreground="#666666"/>
+                    <Run Text=" V live náhledu se zobrazí panel s parametry (checkbox, combobox), které můžete měnit" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Custom šablony sekcí:" FontWeight="SemiBold"/>
-                    <Run Text=" Pravý klik na sekci → 'Uložit jako šablonu...' pro opakované použití" Foreground="#666666"/>
+                    <Run Text=" Pravý klik na sekci → 'Uložit jako šablonu...' pro opakované použití" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Tabulky ze šablony:" FontWeight="SemiBold"/>
-                    <Run Text=" V editoru tabulky (Fixed mód) použijte tlačítko 'Ze šablony...' pro načtení předdefinovaných layoutů z Caché" Foreground="#666666"/>
+                    <Run Text=" V editoru tabulky (Fixed mód) použijte tlačítko 'Ze šablony...' pro načtení předdefinovaných layoutů z Caché" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• PDF export:" FontWeight="SemiBold"/>
-                    <Run Text=" Tlačítko PDF v náhledu nebo menu Soubor → Exportovat náhled jako PDF" Foreground="#666666"/>
+                    <Run Text=" Tlačítko PDF v náhledu nebo menu Soubor → Exportovat náhled jako PDF" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Kopírování vs. duplikování:" FontWeight="SemiBold"/>
-                    <Run Text=" Ctrl+C/V vytvoří kopii o 5 mm dál (vložit lze opakovaně). Ctrl+D duplikuje na stejné místo bez offsetu." Foreground="#666666"/>
+                    <Run Text=" Ctrl+C/V vytvoří kopii o 5 mm dál (vložit lze opakovaně). Ctrl+D duplikuje na stejné místo bez offsetu." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Přesné umístění elementů:" FontWeight="SemiBold"/>
-                    <Run Text=" Používejte šipky (↑↓←→) pro posun o 1 mm nebo Shift+šipky pro posun o velikost mřížky" Foreground="#666666"/>
+                    <Run Text=" Používejte šipky (↑↓←→) pro posun o 1 mm nebo Shift+šipky pro posun o velikost mřížky" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Uzamčení elementů:" FontWeight="SemiBold"/>
-                    <Run Text=" Vlastnost 'Zamčeno' chrání element před náhodným posunem nebo změnou velikosti" Foreground="#666666"/>
+                    <Run Text=" Vlastnost 'Zamčeno' chrání element před náhodným posunem nebo změnou velikosti" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Podmíněné řádky tabulky:" FontWeight="SemiBold"/>
-                    <Run Text=" V editoru Fixed tabulky (záložka Řádky) lze zadat VisibilityExpression pro každý řádek" Foreground="#666666"/>
+                    <Run Text=" V editoru Fixed tabulky (záložka Řádky) lze zadat VisibilityExpression pro každý řádek" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Smart snap při resize:" FontWeight="SemiBold"/>
-                    <Run Text=" Při změně velikosti elementu se hrany přichytí k hranám sousedních elementů (edge, gap 4 mm) — stejně jako při přesouvání" Foreground="#666666"/>
+                    <Run Text=" Při změně velikosti elementu se hrany přichytí k hranám sousedních elementů (edge, gap 4 mm) — stejně jako při přesouvání" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Sdílená hranice:" FontWeight="SemiBold"/>
-                    <Run Text=" Dva elementy těsně u sebe — při tahu za hranici jednoho se druhý automaticky zmenšuje/zvětšuje (undoable)" Foreground="#666666"/>
+                    <Run Text=" Dva elementy těsně u sebe — při tahu za hranici jednoho se druhý automaticky zmenšuje/zvětšuje (undoable)" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Resize neopustí sekci:" FontWeight="SemiBold"/>
-                    <Run Text=" Změna velikosti je omezena hranicemi sekce — element nemůže přesáhnout okraj stránky ani sekce" Foreground="#666666"/>
+                    <Run Text=" Změna velikosti je omezena hranicemi sekce — element nemůže přesáhnout okraj stránky ani sekce" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,16">
                     <Run Text="• Formát stránky:" FontWeight="SemiBold"/>
-                    <Run Text=" Ve vlastnostech stránky (Ctrl+Shift+P) lze vybrat předdefinovaný formát (A2–A5) a orientaci; obsahové sekce se automaticky přeškálují" Foreground="#666666"/>
+                    <Run Text=" Ve vlastnostech stránky (Ctrl+Shift+P) lze vybrat předdefinovaný formát (A2–A5) a orientaci; obsahové sekce se automaticky přeškálují" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
 
             </StackPanel>

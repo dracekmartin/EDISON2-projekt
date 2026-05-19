@@ -17,22 +17,22 @@
 
     <DockPanel Margin="16">
         <!-- Header -->
-        <Border DockPanel.Dock="Top" Background="#F0F4F8" Padding="12" Margin="-16,-16,-16,0" BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="12" Margin="-16,-16,-16,0" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
             <StackPanel>
                 <TextBlock Text="🤖 AI Asistent pro generování šablon"
                            FontSize="16"
                            FontWeight="Bold"
-                           Foreground="#1A5276"/>
+                           Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                 <TextBlock Text="Popište šablonu, kterou chcete vytvořit, a AI vygeneruje kompletní JSON strukturu."
                            FontSize="11"
-                           Foreground="#666666"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
 
         <!-- Footer s tlačítky -->
-        <Border DockPanel.Dock="Bottom" Background="#F8F8F8" Padding="12" Margin="-16,16,-16,-16" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource EDTheme.Bg.Footer}" Padding="12" Margin="-16,16,-16,-16" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -86,7 +86,7 @@
                 </ComboBox>
                 <TextBlock Text="Vyberte agendu, pokud chcete použít specifická datová pole."
                            FontSize="10"
-                           Foreground="#888888"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap"/>
 
@@ -101,7 +101,7 @@
                          FontFamily="Segoe UI"
                          Padding="8"/>
                 <TextBlock FontSize="10"
-                           Foreground="#888888"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap">
                     <Run Text="Příklad:"/>
@@ -116,7 +116,7 @@
                          FontFamily="Consolas"
                          Padding="8"/>
                 <TextBlock FontSize="10"
-                           Foreground="#888888"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap">
                     <Run Text="Pokud není zadán API klíč zde, použije se klíč z templatedesigner.appsettings.json. Získat API klíč můžete na "/>
