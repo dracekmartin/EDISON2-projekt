@@ -23,7 +23,9 @@ public partial class InstancePickerDialog : Window
         // Close
         _vm.RequestClose += result => { DialogResult = result; Close(); };
 
-        // Init list po načtení okna — agenda je host kontext, jde top-level (ne pod "filter")
+        // Init list po načtení okna. Agenda je sice host kontext, ne uživatelský filter,
+        // ale EDList.LoadList(filter) ji posílá pod ^||ML("IN","filter","agendaCode") sub-subscript
+        // a InstancesList.LoadList ji odtud čte — sémanticky jediný "filter" tohoto endpointu.
         Loaded += (_, _) =>
         {
             TheList.InitializeList();

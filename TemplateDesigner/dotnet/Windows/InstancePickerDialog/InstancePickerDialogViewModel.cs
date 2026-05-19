@@ -1,4 +1,3 @@
-using EDControls.EDList;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models.Schema;
 
@@ -30,9 +29,6 @@ public class InstancePickerDialogViewModel : EDViewModel
         get => _selectedCount;
         private set => Set(ref _selectedCount, value);
     }
-
-    /// <summary>Code-behind napojí — VM žádá EDList aby překreslil row checkboxy podle initiallySelected.</summary>
-    public Action<HashSet<string>>? RequestRestoreSelection { get; set; }
 
     /// <summary>Code-behind napojí — VM žádá výstupní mapu vybraných řádků na AgendaInstance.</summary>
     public Func<IReadOnlyList<AgendaInstance>>? RequestSelectedInstances { get; set; }

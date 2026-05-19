@@ -15,7 +15,7 @@
 | Komponenta | Co dělá | Stav | Doc |
 |---|---|---|---|
 | **`EDList`** | Caché-driven list / picker / multi-select s persist sloupců a client-side search | Stabilní | [`02-EDList.md`](02-EDList.md) |
-| **`EDFilter`** | Deklarativní filter komponenta pro EDList (auto-trigger reload, typed filter fields) | v1 plánováno | [`03-EDFilter.md`](03-EDFilter.md) |
+| **`EDFilter`** | Deklarativní filter komponenta pro EDList (auto-trigger reload, typed filter fields) | Stabilní (v1) | [`03-EDFilter.md`](03-EDFilter.md) |
 | **`EDInputForm`** | Caché-driven editovatelný formulář (analogie legacy BIG) | Refactor v plánu (Tier 3) | `03-EDInputForm.md` *(později)* |
 | **`EDViewModel`** | Base třída pro VM s `Command(...)`, `CommandAsync(...)`, `IPopupDisplayer` integrací | Stabilní | — |
 | **`EDFooter`** | Footer s tlačítky OK/Storno/Aplikovat (standardní rozložení) | Stabilní | — |

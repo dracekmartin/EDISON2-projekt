@@ -140,7 +140,7 @@ Volá Caché `InitializeList` na `CacheClass` → načte definici sloupců → v
 **Volej v `Loaded` event dialogu.**
 
 ### `LoadList()` / `LoadList(IReadOnlyDictionary<string, string>? filter)`
-Volá Caché `LoadList` → načte řádky. Volitelný `filter` se předá do Caché jako pojmenované IN klíče (`^||ML("IN", "klic") = "hodnota"`). Server může (ale nemusí) filter aplikovat.
+Volá Caché `LoadList` → načte řádky. Volitelný `filter` se posílá pod sub-subscript `^||ML("IN", "filter", "klic") = "hodnota"` (filter konvence — viz [`01-wire-formats.md`](01-wire-formats.md#filter-konvence---kde-zijí-filter-hodnoty)). Server může (ale nemusí) filter aplikovat.
 
 ```csharp
 TheList.LoadList();   // bez filtru
@@ -222,7 +222,7 @@ Plus `isLink = 1` udělá z buňky klikatelný hyperlink → fires `CellLinkClic
 
 ### `LoadList(ByRef sys As %String) As %Status`
 
-Načte řádky. Vstup: pojmenované klíče z IN (filtr). Výstup: multi-slot JSON (jeden slot per řádek).
+Načte řádky. Vstup: filter klíče pod sub-subscriptem `^||ML("IN","filter",klic)` (viz [filter konvence](01-wire-formats.md#filter-konvence---kde-zijí-filter-hodnoty)). Výstup: multi-slot JSON (jeden slot per řádek).
 
 ```objectscript
 ClassMethod LoadList(ByRef sys As %String) As %Status
@@ -230,7 +230,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     s err = ""
     try {
         $$$FillParams
-        s filter = $g(^||ML("IN","agendaCode"))
+        s filter = $g(^||ML("IN","filter","agendaCode"))
 
         s list = ##class(ALVA.EDControls.EDList.List).%New()
 

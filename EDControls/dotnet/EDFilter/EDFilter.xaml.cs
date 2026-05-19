@@ -66,9 +66,8 @@ public partial class EDFilter : UserControl
     {
         if (_initialLoadDone) return;
         _initialLoadDone = true;
-        // Subscribe na všechny už přidané fields (XAML children jsou v Fields k dnešnímu okamžiku)
-        foreach (var field in Fields)
-            field.ValueChanged += OnFieldValueChanged;
+        // Subscribe je zajištěn přes OnFieldsCollectionChanged (XAML [ContentProperty]
+        // přidává child přes Fields.Add() který fires CollectionChanged).
         Refresh();   // initial load — bez filteru nebo s default hodnotami fields
     }
 

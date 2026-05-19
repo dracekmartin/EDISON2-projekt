@@ -72,7 +72,7 @@ Tím máš funkční list s filtrem. Změna v `FilterCombo` automaticky vyvolá 
 
 ### Kontrolky a životní cyklus
 
-`EDFilter` je `ContentControl` který:
+`EDFilter` je `UserControl` s `[ContentProperty(nameof(Fields))]` který:
 - Vykresluje **horizontální panel** s child `FilterX` poli (vedle sebe)
 - Při `Loaded` sebere initial hodnoty ze všech `FilterX` children a zavolá `Target.LoadList(filter)` (initial load)
 - Subscribuje na `ValueChanged` event každé `FilterX` field
@@ -116,7 +116,7 @@ Každé pole zná svůj **filter klíč** (`Key` property) a aktuální **hodnot
 
 ### Content
 
-`EDFilter` je `ContentControl` přijímající 0+ `FilterFieldBase` children. Layout: `WrapPanel` horizontálně (přetečení do dalšího řádku při užším okně).
+`EDFilter` přijímá 0+ `FilterFieldBase` children jako XAML content (přes `[ContentProperty(nameof(Fields))]`). Layout: `WrapPanel` horizontálně (přetečení do dalšího řádku při užším okně).
 
 ### Veřejné metody
 
@@ -143,12 +143,13 @@ Společný kontrakt všech filter polí. Hostovatelné jako child v `EDFilter`.
 |---|---|---|
 | `Key` | `string` (DP) | Klíč, pod kterým hodnota poletí do Caché — `^||ML("IN","filter",Key)`. **Povinné.** |
 | `Label` | `string?` (DP) | Vizuální popisek nad/vedle pole. Pokud null, label se nevykresluje |
-| `Width` | `double` (DP, default `Auto`) | Šířka pole v panelu |
 
 | Metoda / Event | Popis |
 |---|---|
 | `GetValue(): string` | Vrátí aktuální hodnotu jako string (prázdná pokud žádná). Implementuje konkrétní subclass |
 | `ValueChanged` | Event vyvolaný při změně hodnoty. EDFilter ho subscribuje |
+
+> **Šířku pole** lze nastavit standardně přes WPF `Width` / `MinWidth` / `MaxWidth` atributy (zděděno z `UserControl`).
 
 ### `FilterCombo` — combo box (v1)
 
@@ -157,17 +158,18 @@ Společný kontrakt všech filter polí. Hostovatelné jako child v `EDFilter`.
                  ItemsSource="{Binding AgendaFilters}"
                  SelectedValuePath="Code"
                  DisplayMemberPath="Label"
-                 Width="200"/>
+                 MinWidth="200"/>
 ```
 
 | Property | Typ | Popis |
 |---|---|---|
-| `Key`, `Label`, `Width` | (zděděno) | |
+| `Key`, `Label` | (zděděno z `FilterFieldBase`) | |
 | `ItemsSource` | `IEnumerable` (DP) | Zdroj dat pro combo. Aplikace si binding zařídí přes VM |
 | `SelectedValuePath` | `string` (DP) | Cesta k value property položky (typicky `Code` / `Id`) |
 | `DisplayMemberPath` | `string` (DP) | Cesta k display property položky (typicky `Label` / `Name`) |
 | `SelectedValue` | `object?` (DP, TwoWay) | Aktuální výběr. Null/empty → filter klíč se neposílá (= žádný filter) |
-| `Placeholder` | `string?` (DP) | Text pro prázdnou volbu (např. „Všechny agendy"). Implicitně přidá speciální položku s value `null` |
+
+> **Prázdná volba** („Všechny agendy") se dnes řeší tak, že VM přidá speciální item s `Code=null` do `ItemsSource`. Vyhrazený `Placeholder` DP plánován pro v2.
 
 `GetValue()` vrátí `SelectedValue?.ToString() ?? ""`.
 
