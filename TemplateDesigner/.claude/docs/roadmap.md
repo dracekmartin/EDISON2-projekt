@@ -17,53 +17,60 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 > **v1.0 demo balíček HOTOV (2026-05-15)** — Release readiness R1+R2+R4 splněno (3 commity: `5ac9dd0` Caché Template Storage, `82b68be` Přepínač agendy, `fd25008` Instance Picker). Zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md). Hotové sekce → **Archiv** dole.
 
-### 🔧 WIP — EDControls foundation work (stav 2026-05-18)
+### ✅ EDList migrační vlna uzavřena (stav 2026-05-19)
 
-Souběžně s TD specifickou prací probíhá **rozšíření EDControls knihovny** — generické komponenty (EDList, EDInputForm, EDFilter) jako dodavatel pro **Wave 1** (UserPreferences) a **Wave 4** (Form-driven UI) v sekci „Caché Migrace — 5 Vln" níže. Toto je jejich aktuální stav:
+Foundation work pro EDControls knihovnu je za prvním milníkem. **Všechny TD dialogy s Caché-driven listy jsou na EDList**, wire formát standard je propsaný, public developer DOCS hotové. Detail viz commity `7982005` (DOCS), `22b9256` (L6), `9d3fbd1` (wire formát fix), `4b55396` (migration plan), `e54a382` (LoadList overload), `9f5b165` (L5).
 
-**Hotové foundation kusy:**
-- ✅ **F1 — `IUserPrefsService`** + `LocalPrefs` impl + Caché `ALVA.EDControls.UserData` (per-user × IDFa × scope × key blob storage). Prerekvizita Wave 1.
-- ✅ **L1 — EDList multi-select** (checkbox sloupec, tri-state header, `SelectionMode = Single | Check`)
-- ✅ **L2 — EDList column layout persist** (šířky / pořadí / sort přes `IUserPrefsService`, 500ms debounced save)
-- ✅ **L3 — EDList Title + client-side search**
-- ✅ **EDList wire formát fix** — `LoadList(filter)` přepnut z `object[]` + delimiter na CVar named keys (sjednoceno se standardem v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md))
+**Hotové (commity v repu):**
+- ✅ **F1 — `IUserPrefsService`** + `LocalPrefs` + Caché `ALVA.EDControls.UserData` (prerekvizita Wave 1)
+- ✅ **L1–L3 EDList foundation** — multi-select, column layout persist (přes IUserPrefsService), Title + client-side search
+- ✅ **L5 — CacheTemplatePickerDialog na EDList** (filter podle agendy, CRUD v parent dialogu)
+- ✅ **L6 — InstancePickerDialog na EDList multi-select** (linky MHD, pre-selection, search)
+- ✅ **EDList wire formát fix** — `LoadList(filter)` na CVar named keys (sjednoceno se standardem)
+- ✅ **Wire formát standard** — experiment paralelní implementace na L6, výsledek: CVar named IN + 4 OUT styly podle obsahu (CVar scalars / JSON v slotu / JSON multi-slot / JSON envelope opt-in). Detail v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md).
+- ✅ **EDControls public DOCS** — `00-overview.md`, `01-wire-formats.md`, `02-EDList.md` (single source of truth pro programátory). Konvence: změna komponenty = update odpovídajícího `0X-název.md` ve stejném commitu.
+- ✅ **`MLRestJson.CallAsync<TReq, TResp>` helper** — připraven v EDControls pro Tier 3 EDInputForm composite endpointy.
 
-**Rozpracované:**
-- 🔄 **L5 — `CacheTemplatePickerDialog` na EDList** (task #20) — kód hotový, filter funguje, build čistý, testy zelené (19/19). Ke commitnutí jako completed.
-- ⏳ **L6 — `InstancePickerDialog` na EDList multi-select** (task #21) — pending, blokuje #20.
-- ✅ **Wire formát experiment** — paralelní implementace klasické vs envelope cesty na L6 InstancesList. Výsledek: CVar named IN + JSON OUT (4 styly podle obsahu) jako standard, JSON envelope opt-in pro Tier 3 composite. Plně dokumentováno v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md).
-
-**Po experimentu (#22) v pořadí:**
-
-1. **EDFilter komponent** v `EDControls/dotnet/EDFilter/` — nahradit ad-hoc agenda combo v dialozích standardní deklarativní komponentou. Začínáme jen s `FilterCombo`, další typy (text, date) podle reálné potřeby. Vzor:
-   ```xml
-   <el:EDFilter Target="{Binding ElementName=TheList}">
-       <el:FilterCombo Key="agendaCode" Label="Agenda"
-                       ItemsSource="{Binding AgendaFilters}"
-                       SelectedValuePath="Code" DisplayMemberPath="Label"/>
-   </el:EDFilter>
-   ```
-2. **`CacheTemplatePickerDialog` refactor na EDFilter** — odstranit `SelectedFilter`/`AgendaFilters` z VM, deklarativní XAML.
-3. **Rozhodnutí o další větvi** — buď **Wave 1** (UserPreferences plné využití) nebo **A.2-D** (zákaznické tickety TRANSDEV/KORID, vyšší zákaznický dopad).
-
-**Architektonická rozhodnutí pro EDControls foundation (dokumenty pro detail):**
+**Architektonická rozhodnutí (referenční dokumenty):**
 
 | Téma | Kde |
 |---|---|
 | Wire formát standard (CVar named IN + 4 OUT styly) | [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md) |
-| Migrace TD editorů na EDInputForm (architektura, drift handling, příklady) | [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md) |
+| EDList API reference | [`EDControls/DOCS/02-EDList.md`](../../../EDControls/DOCS/02-EDList.md) |
+| Migrace TD editorů na EDInputForm (architektura, drift handling) | [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md) |
 | Legacy EDISON komponenty (BIG/BIL/BDG) — baseline analýza | [`legacy-component-research.md`](../../../EDControls/.claude/docs/legacy-component-research.md) |
 
-**Co dělat až později:**
-- Plná sada Filter polí (date, text, bool) — počkat na konkrétní dialog, který je bude chtít (YAGNI)
-- EDInputForm `$lb()` OUT refactor na JSON — součást Wave 4
-- Nové typy polí v EDInputForm (Color, Font, Suggest, Text+Picker, ActionId Button) — součást Wave 4 přípravy
+---
 
-### TD-specifické další kroky (vedle EDControls work)
+### 🟢 Kde pokračovat dál
 
-1. **Fáze A.2-D — Caché business logic** — projít TRANSDEV/KORID suspended tickety. Viz tabulka A.2-D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-2. **Wave 1 plné využití** — UserPreferences (zoom, grid, recent files, instance picker default) postavené nad hotovým `IUserPrefsService` foundation.
-3. **Demo polish** — Edison icon do okna, sample template „showcase" pro zastávkový JŘ, drobné UX (pořadí linek v pickeru, persistence aktivních instancí přes restart).
+Tři realistické větve, nevylučují se (běží paralelně podle priority):
+
+**1. Fáze A.2-D — Caché business logic** ⬅️ NEJVYŠŠÍ ZÁKAZNICKÝ DOPAD
+Projít TRANSDEV/KORID suspended tickety v `ZastavkoveJrMhdAPI`: „spoj jede až do XY" template, custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů u hidden sloupců, vypnutí auto-poznámky bezbariérovosti, KORID přípojové řádky. Tabulka A.2-D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+
+**2. Wave 1 — UserPreferences plné využití** (foundation hotová)
+Per-user × IDFa nastavení nad hotovým `IUserPrefsService`: zoom, grid, recent files, instance picker default, splittery, recent colors. Klíčové API + storage popsaná v Caché Migrace § Wave 1 níže.
+
+**3. EDFilter komponenta** (drobný rozsah, dotahuje L5/L6)
+Nahradit ad-hoc agenda combo v `CacheTemplatePickerDialog` standardní deklarativní komponentou. Začít jen s `FilterCombo`, další typy (text, date, bool) podle reálné potřeby. Vzor:
+```xml
+<el:EDFilter Target="{Binding ElementName=TheList}">
+    <el:FilterCombo Key="agendaCode" Label="Agenda"
+                    ItemsSource="{Binding AgendaFilters}"
+                    SelectedValuePath="Code" DisplayMemberPath="Label"/>
+</el:EDFilter>
+```
+Po dokončení: refactor `CacheTemplatePickerDialog` na deklarativní XAML, odstranit `SelectedFilter` z VM.
+
+**Co dělat až později (mimo aktuální focus):**
+- Plná sada Filter polí (date, text, bool) — počkat na konkrétní dialog (YAGNI)
+- Tier 3 EDInputForm refactor — `$lb()` OUT → JSON envelope, doplnění chybějících typů polí (Color, Font, Suggest, Text+Picker, ActionId Button). Detailní plán v `td-editor-migration-plan.md`.
+- Tier 4 TD editor migrace na EDInputForm — Caché editor třídy per typ elementu, refactor 4 dialogů.
+
+**Demo polish (kdykoli, malé položky):**
+- Edison icon do okna, sample template „showcase" pro zastávkový JŘ
+- Pořadí linek v pickeru, persistence aktivních instancí přes restart
 
 ---
 
@@ -138,49 +145,60 @@ Při uzavírání jednotlivých tiketů odkazovat na **konkrétní featuru v TD*
 
 ### 🔵 Caché Migrace — 5 Vln
 
-Postupný přesun state a logiky z .NET na Caché. Každá vlna učí pattern pro další — záměrně sekvenční závislosti. Cíl: žádné "zjistili jsme že by se muselo přepsat všechno" překvapení.
+Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili jsme že by se muselo přepsat všechno" překvapení.
 
-**Shrnutí:**
-| Vlna | Název | Závislost | Velikost | Cíl |
-|---|---|---|---|---|
-| 1 | Per-user state | B0.5 Tier 1 | M | UserPreferences (zoom, grid, recent files, splitters) |
-| 2 | Shared catalogs | Wave 1 | L | Agenda registry, palette, element defaults, section templates |
-| 3 | Template storage | Wave 2 + H-18/H-19 | XL | Template CRUD z Caché (místo souboru) |
-| 4 | Form-driven UI | Wave 3 | XL | EDInputForm místo vlastního PropertiesPanel |
-| 5 | Business logic per agenda | paralelně s 1–4 | XL | Čisté rozdělení agenda-specific logiky |
+**Stav vln:**
+| Vlna | Název | Stav | Cíl |
+|---|---|---|---|
+| 1 | Per-user state | 🟠 Foundation hotová (F1), zbývá full integration | `IUserPrefsService` (✅) + TD specific binding (zoom, grid, recent files, splitters) |
+| 2 | Shared catalogs | ⬜ Nezačato | Agenda registry, palette, element defaults, section templates |
+| 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
+| 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
+| 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 
-**Graf závislostí:** `1 → 2 → 3 → 4` (sekvenčně), `5` běží paralelně nezávisle.
+**Graf závislostí:** Wave 1 → 2 → 3 → 4 (sekvenčně), Wave 5 běží paralelně nezávisle.
+
+**Foundation hotová** (může se použít napříč všemi vlnami):
+- ✅ `IUserPrefsService` + Caché `ALVA.EDControls.UserData` — generic per-user state (F1)
+- ✅ Wire formát standard — CVar named IN + 4 OUT styly (DOCS/01-wire-formats.md)
+- ✅ `MLRestJson.CallAsync<TReq, TResp>` helper — připraven pro Wave 4 composite endpointy
+- ✅ EDList komponenta (Wave 3 list konzumenti používají)
 
 ---
 
-#### 🔴 Wave 1 — Per-user state (UserPreferences)
+#### 🟠 Wave 1 — Per-user state (UserPreferences)
 
-Aktuálně se mezi sezeními neukládá **nic** kromě JSON souboru šablony. Cíl: zapamatovat si per-uživatele × per-firma: zoom, grid, snap, rozložení panelů, poslední soubory, recent colors, rozbalené skupiny.
+**Foundation hotová** (F1 commit, 2026-05-15) — generický `IUserPrefsService` + Caché `ALVA.EDControls.UserData` poskytují per (IdFa × userID × scope × key) blob storage. Dnes využíváno přes scope `"EDControls.EDList"` pro persist sloupců EDListu.
 
-**Klíčové API:**
-```
-ALVA.TemplateDesigner.API.UserPreferencesAPI
-  GetPreferences(ByRef sys) → OUT["json"] = { zoom, grid, recentFiles, recentColors, splitters, ... }
-  SavePreferences(ByRef sys) → IN["json"] = kompletní state → uloží do ^ALVA.TDPrefs(IdFa, UserId)
-```
+**Zbývá:** napojit konkrétní TD state na foundation a vystavit UX (recent files picker, scope `"TemplateDesigner"`).
+
+**Klíčový design:** Wave 1 **nebude mít vlastní Caché endpoint** — použije existující `ALVA.EDControls.UserData` se scope `"TemplateDesigner"` a structured JSON value. To zjednodušuje storage layer a unifikuje per-user persistenci napříč EDControls i TD.
 
 **.NET strana:**
 ```csharp
-interface IUserPreferencesService {
-    Task<UserPreferences> LoadAsync();
-    Task SaveAsync(UserPreferences prefs);     // fire-and-forget, nesmí blokovat close
-}
+public record TdPreferences(
+    float Zoom,
+    bool ShowGrid, bool SnapToGrid, bool SnapToElements,
+    int GridSize,
+    double? MainSplitterPosition,
+    double? PreviewSplitterPosition,
+    List<string> RecentFiles,
+    List<string> RecentColors,
+    Dictionary<string, bool> GroupExpanded,
+    string? LastActiveTab
+);
 
-class UserPreferences {
-    float Zoom;
-    bool ShowGrid, SnapToGrid, SnapToElements;
-    int GridSize;                     // z B0-9
-    double MainSplitterPosition;
-    double PreviewSplitterPosition;
-    List<string> RecentFiles;        // max 10
-    List<string> RecentColors;       // max 16
-    Dictionary<string, bool> GroupExpanded;   // per element type × group name
-    string? LastActiveTab;
+public class TdPreferencesService {
+    private readonly IUserPrefsService _prefs;
+    private const string Scope = "TemplateDesigner";
+    private const string Key = "MainState";
+
+    public async Task<TdPreferences> LoadAsync() {
+        var json = await _prefs.LoadAsync(Scope, Key);
+        return json?.Deserialize<TdPreferences>() ?? TdPreferences.Default;
+    }
+    public Task SaveAsync(TdPreferences prefs) =>
+        _prefs.SaveAsync(Scope, Key, JsonSerializer.SerializeToNode(prefs)!);
 }
 ```
 
@@ -190,26 +208,24 @@ class UserPreferences {
 **Změny v kódu:**
 | Vrstva | Co |
 |---|---|
-| Caché | Nová třída `UserPreferencesAPI` + storage `^ALVA.TDPrefs(IdFa, UserId)` |
-| .NET Services | `IUserPreferencesService` + `CacheUserPreferencesService` (jediná implementace — aplikace běží nad Caché) |
-| .NET App | `App.xaml.cs` — load async před `MainWindow.Show`; save v `MainWindow.Closing` |
-| .NET VM | `MainWindowViewModel` — bindovat `Zoom`, `ShowGrid`, atd. skrze preferences |
+| Caché | **Žádná** — foundation `ALVA.EDControls.UserData` (F1) už hotová |
+| .NET Services | Nový `TdPreferencesService` jako wrapper nad `IUserPrefsService` se scope `"TemplateDesigner"` |
+| .NET App | `App.xaml.cs` — load async před `MainWindow.Show`; save v `MainWindow.Closing` (fire-and-forget) |
+| .NET VM | `MainWindowViewModel` — bindovat `Zoom`, `ShowGrid`, atd. skrze `TdPreferences` |
 | appsettings.json | **Zůstává jen pro síťovou konfiguraci** (Caché host, port, agenda seznam) |
 
 **Risks:**
-- Performance: `LoadAsync` musí proběhnout do ~300ms nebo startup zamrzne. Mitigace: timeout + při selhání defaults v paměti pro danou session (žádná trvalá persistence mimo Caché).
-
-**Výstup:** šablona patternu "Caché API + async service + VM konzumuje" → reuse ve všech dalších vlnách.
+- Performance: `LoadAsync` musí proběhnout do ~300ms nebo startup zamrzne. Mitigace: timeout + při selhání defaults v paměti pro danou session.
 
 | Krok | Co | Stav |
 |---|---|---|
-| W1-1 | Caché `UserPreferencesAPI.GetPreferences` + `SavePreferences` | |
-| W1-2 | .NET `IUserPreferencesService` + `CacheUserPreferencesService` | |
-| W1-3 | Wire-up: `App.xaml.cs` load at startup (async + timeout) | |
-| W1-4 | `MainWindowViewModel` — bind Zoom/Grid/Snap/Splitters/Tab přes preferences | |
-| W1-5 | Recent Files (Ctrl+R picker, File menu) — ukládá do prefs | |
-| W1-6 | Recent Colors — integrace s color pickerem (po B2) | |
-| W1-7 | Template thumbnails — 100×140px PNG při uložení šablony | |
+| W1-0 | `IUserPrefsService` foundation + Caché `ALVA.EDControls.UserData` | ✅ F1 (2026-05-15) |
+| W1-1 | `TdPreferencesService` wrapper nad `IUserPrefsService` | |
+| W1-2 | Wire-up: `App.xaml.cs` load at startup (async + timeout) | |
+| W1-3 | `MainWindowViewModel` — bind Zoom/Grid/Snap/Splitters/Tab přes preferences | |
+| W1-4 | Recent Files (Ctrl+R picker, File menu) — ukládá do prefs | |
+| W1-5 | Recent Colors — integrace s color pickerem (po B2) | |
+| W1-6 | Template thumbnails — 100×140px PNG při uložení šablony | |
 
 ---
 
@@ -266,83 +282,50 @@ Lokální cache v paměti       →  rychlost v rámci session (refresh na vyž�
 
 ---
 
-#### 🔴 Wave 3 — Template storage
+#### 🟡 Wave 3 — Template storage
 
-Šablony se neukládají do souborů, ale do Caché. Uživatel otevírá přes browser dialog "vyber šablonu" z centrálního storage s thumbnails, verzí, autorem, datem změny.
+**Základní CRUD hotový** (commit `5ac9dd0`, 2026-05-15). Šablony se ukládají do Caché přes `ALVA.TemplateDesigner.API.Templates` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). UI v `CacheTemplatePickerDialog` (po L5 migraci přes EDList) + `SaveToCacheDialog`. JSON wire formát (R3), per-IDFa storage.
 
-**⚠️ Prerekvizita:** H-18 + H-19 (template versioning + migrator). **Bez migrátoru tato vlna nesmí začít** — jinak breaking change zničí existující šablony.
-
-**Klíčové API:**
+**Reálný storage layout** (liší se od původního plánu — atomická Metadata/Data + sekundární index):
 ```
-ALVA.TemplateDesigner.API.TemplateStorageAPI
-  ListTemplates(agendaCode?) → OUT["json"] = [{id,name,version,author,updatedAt,thumbnail},...]
-  LoadTemplate(id) → OUT["json"] = Template JSON
-  SaveTemplate(template,metadata) → IN["json"] → vrátí id + novou verzi
-  DeleteTemplate(id) → soft-delete
-  GetHistory(id) → seznam verzí
-
-ALVA.TemplateDesigner.API.TemplateMigrationAPI   ← R5 prerekvizita
-  MigrateTemplate(json) → OUT["json"] = migrated template (server-side source of truth!)
-
-ALVA.TemplateDesigner.API.TemplateAuditAPI
-  LogAction(templateId, action, userId, timestamp)
-  GetAuditLog(templateId) → [...]
+^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata") = $lb(Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version)
+^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")     = JSON šablony
+^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
 ```
 
-**Proč Caché dělá migraci a ne .NET:**
-- Server je zdroj pravdy. Kdyby to migroval klient, starý klient by uložil starou verzi.
-- Caché může migrovat v dávce všechny šablony při nasazení nové verze.
-- Konzistence: EDISON print service, batch renderer, REST API — všichni dostanou migrovanou verzi automaticky.
+**Zbývá pro plnou Wave 3:**
+- Versioning (R5 prerekvizita) — H-18 + H-19 (TemplateMigrator + version field v JSON)
+- Server-side migrace (`TemplateMigrationAPI` — migrace při Load)
+- Audit log (`TemplateAuditAPI`)
+- Thumbnails (100×140px PNG při Save → file picker s náhledem)
+- History (seznam verzí + restore)
+- Soft-delete místo hard delete
+- Import wizard (jednorázová migrace `*.json` z disku do Caché)
 
-**Storage layout — JSON blob + indexovatelná metadata (rozhodnuto):**
+**Pozn.:** dnešní stav postačuje pro **demo a běžné použití**. Versioning a audit budou potřeba před produkčním nasazením s reálnými zákaznickými šablonami — bez migrátoru breaking change zničí data.
 
-Šablona se ukládá jako **celý JSON v jednom uzlu**, mimo to `$lb()` s metadaty pro list/filter bez parsování JSON:
-
-```
-^ALVA.TDTemplate(IdFa, TemplateID)         = $lb(Name, AgendaCode, Description, ModifiedAt, CreatedBy, Version)
-^ALVA.TDTemplate(IdFa, TemplateID, "JSON") = celý template jako JSON string
-^ALVA.TDTemplate(IdFa, "IDX", "byAgenda", AgendaCode, TemplateID) = ""
-^ALVA.TDTemplate(IdFa, "IDX", "byName", $$$UPPER(Name), TemplateID) = ""
-```
-
-**Proč JSON blob, ne granulární rozklad sekcí/elementů:**
-- **Schema evolve rychle** — přidávání properties (např. `EditorPreferences`, `Parameters`, `SampleData`) nesmí vyžadovat Caché schema změnu. JSON blob izoluje schema do jedné vrstvy; verze řeší `TemplateMigrator` v .NET (R5) + `TemplateMigrationAPI` v Caché.
-- **Atomicita** — šablona je logická jednotka, vždy se čte/píše celá. Granulární rozklad by zkomplikoval save/load bez benefitu.
-- **Query patterns jsou ploché** — list & filter běží nad metadaty (`AgendaCode`, `Name`), ne nad vnitřkem elementů. Editace probíhá v report generatoru, ne v SQL.
-
-**Tradeoff:** žádné SQL query nad obsahem šablony (např. „najdi šablony s TextElementem FontSize 12"). Akceptovatelné — pokud někdy potřeba, denormalizovaná IDX tabulka se přidá separátně.
-
-**Co patří do `$lb()` mimo JSON:**
-- `Name`, `AgendaCode`, `Description` — pro list bez parsování JSON
-- `ModifiedAt`, `CreatedBy` — řazení a audit
-- `Version` (string z JSON `version` pole) — server-side router pro batch migraci
-- `Thumbnail` (volitelně, GUID na binární storage) — file picker s náhledem
-
-**Změny v kódu:**
+**Změny v kódu pro doplnění:**
 | Vrstva | Co |
 |---|---|
-| Caché | 3 nové třídy + `^ALVA.TDTemplate(IdFa,TemplateID)` (storage layout viz výše) + audit log |
-| .NET | `ITemplateStorage` (Cache + Fallback file-based) — Open/Save dialogy volají tohle místo `OpenFileDialog` |
-| .NET UI | Nový `TemplateBrowserDialog` — thumbnails, filter per agenda, verze, autor |
-| .NET migrace | Při Load → Caché vrátí migrovanou šablonu; `TemplateMigrator` je **.NET-side diagnostic helper** pro preview, autoritativní je Caché |
-| File menu | "Otevřít..." → `TemplateBrowserDialog` (ne FileDialog); "Import ze souboru" zůstává jako fallback pro ad-hoc |
+| Caché | Rozšířit `Templates.cls` o versioning logic; nové třídy `TemplateMigrationAPI`, `TemplateAuditAPI` |
+| .NET migrace | `TemplateMigrator` (R5) jako .NET-side diagnostic helper; autoritativní je Caché |
+| .NET UI | `TemplateBrowserDialog` rozšířit o thumbnails, history, filter UI |
 
 **Risks:**
-- Migrace existujících šablon: musí proběhnout všech na disku → do Caché. Mitigace: import wizard při prvním spuštění.
 - Conflict handling: uživatel A a B editují stejnou šablonu. MVP: last-write-wins + varování. V2: lock nebo merge.
-- Performance: load 50 šablon s thumbnails = 5 MB JSON. Mitigace: `ListTemplates` vrací jen metadata, `LoadTemplate(id)` fetch-on-demand.
-
-**Výstup:** `appsettings.json` má jen `cacheConnection`; všechno ostatní v Caché.
+- Performance: load 50 šablon s thumbnails = 5 MB JSON. Mitigace: `ListTemplates` vrací jen metadata, thumbnails fetch-on-demand.
 
 | Krok | Co | Stav |
 |---|---|---|
-| W3-0 | **H-18 + H-19 hotové** (versioning + migrator) — prerekvizita R5 | |
-| W3-1 | Caché `TemplateMigrationAPI` — server-side migrace jako source of truth | |
-| W3-2 | Caché `TemplateStorageAPI` — CRUD + versioning + soft-delete | |
-| W3-3 | Caché `TemplateAuditAPI` — audit log | |
-| W3-4 | .NET `ITemplateStorage` konzumující Caché API | |
-| W3-5 | `TemplateBrowserDialog` — thumbnails, filter, verze | |
-| W3-6 | Import wizard — jednorázová migrace existujících `*.json` souborů do Caché | |
+| W3-1 | Caché `ALVA.TemplateDesigner.API.Templates` (CRUD: List, Load, Save, Delete, Rename) | ✅ 5ac9dd0 |
+| W3-2 | .NET `CacheTemplateService` async wrapper + `CacheTemplateException` | ✅ 5ac9dd0 |
+| W3-3 | `CacheTemplatePickerDialog` + `SaveToCacheDialog` UI | ✅ 5ac9dd0 (L5 migration na EDList: 9f5b165) |
+| W3-4 | H-18 + H-19 (versioning + migrator) — prerekvizita R5 | |
+| W3-5 | Caché `TemplateMigrationAPI` — server-side migrace jako source of truth | |
+| W3-6 | Caché `TemplateAuditAPI` — audit log | |
+| W3-7 | Thumbnails (100×140px PNG při uložení) | |
+| W3-8 | History (verze + restore UI) | |
+| W3-9 | Import wizard — jednorázová migrace existujících `*.json` souborů do Caché | |
 
 ---
 
@@ -397,17 +380,22 @@ Uživatel může postupně přepnout element po elementu; při problémech rollb
 - Latency: každé otevření properties = Caché round-trip. Mitigace: cache form definice per element type (Init = statická definice, Values = dynamická).
 - EDDataGrid pro TableEditorDialog — odložit do chvíle, kdy EDDataGrid bude produkčně zralý.
 
-**Kdy začít:** až bude Wave 3 stabilní a EDDataGrid hotový. Není blocker teď — `PropertyDescriptor` funguje. Ale každá nová property v PropertyDescriptor = práce k přepsání později → zvažovat nové properties s vědomím, že budou dvakrát.
+**Kdy začít:** Wave 3 CRUD je stabilní, foundation pro Wave 4 (`MLRestJson.CallAsync`, wire formát standard, JSON envelope dokumentován jako Styl 4) je hotová. Není blocker teď — `PropertyDescriptor` funguje. Ale každá nová property v PropertyDescriptor = práce k přepsání později → zvažovat nové properties s vědomím, že budou dvakrát.
+
+**Wire formát Wave 4:** JSON envelope (Styl 4) — composite struktura formuláře (Tab → Group → Field s validacemi) přirozeně pasuje. Helper `MLRestJson.CallAsync<TReq, TResp>` v EDControls je připraven. Detail wire formátu v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md), architektonický plán v [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md).
 
 | Krok | Co | Stav |
 |---|---|---|
-| W4-1 | Caché `ALVA.TemplateDesigner.Elements.TextElement` — první element migrace | |
-| W4-2 | .NET `ElementFormBridge` — JSON ↔ EDInputForm values | |
+| W4-0 | `MLRestJson.CallAsync<TReq, TResp>` helper + JSON envelope wire formát | ✅ 22b9256 |
+| W4-1 | Caché `ALVA.TemplateDesigner.Forms.TextElement` — první element migrace | |
+| W4-2 | .NET `ElementFormBridge` — JSON ↔ element instance přes reflexi | |
 | W4-3 | Feature flag + fallback na PropertyDescriptor | |
 | W4-4 | Postupně: ImageElement, RectangleElement, LineElement, BarcodeElement | |
-| W4-5 | TableElement — po zralosti EDDataGrid | |
+| W4-5 | TableElement — composite case (tabs Obecné/Sloupce, nested CellStyleEditor) | |
 | W4-6 | Schedule elements (StopList, DepartureGrid, NotesLegend) | |
 | W4-7 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
+| W4-8 | EDInputForm rozšíření: chybějící typy polí (Color, Font, Suggest, Text+Picker, ActionId Button) | |
+| W4-9 | EDInputForm wire formát refactor `$lb()` OUT → JSON | |
 
 ---
 
@@ -438,7 +426,8 @@ Každá implementuje:
 
 | Krok | Co | Stav |
 |---|---|---|
-| W5-1 | Dokumentace `AgendaAPI` contract — co se musí implementovat, co je volitelné | |
+| W5-0 | `AgendaAPI` abstrakt base class + 2 implementace (`ZastavkoveJrMhdAPI`, `TemplateDesignerFAKTURY`) | ✅ v archivu |
+| W5-1 | Dokumentace `AgendaAPI` contract — co se musí implementovat, co je volitelné | ✅ částečně v [`cache-api.md`](../rules/cache-api.md) |
 | W5-2 | Fáze C (Meziměstský) — využije pattern | |
 | W5-3 | Fáze D (Knižní) — využije pattern | |
 | W5-4 | Fáze E (Vozový) — využije pattern | |
@@ -452,7 +441,7 @@ Konkrétní situace, které Caché migrace musí předejít. Kontrolní seznam p
 
 1. **Synchronní Caché volání v UI thread** → zamrznutí aplikace. Kontrola: `grep "MLRest\." *ViewModel*.cs` hledá synchronní volání.
 2. **Silent fail při Caché chybě** → UserPreferences se nenačetly, uživatel neví proč. Kontrola: chyba jde přes `IPopupDisplayer.Error(ex)`.
-3. **Breaking JSON change bez migrátoru** → staré šablony nejdou otevřít. Kontrola: Wave 3 nezačne bez H-18/H-19 hotových.
+3. **Breaking JSON change bez migrátoru** → staré šablony nejdou otevřít. Kontrola: před produkčním nasazením s reálnými šablonami musí být H-18/H-19 hotové (versioning + migrator). Wave 3 CRUD už běží, ale versioning chybí.
 4. **Všechno naráz** (big bang migration) → nelze vrátit. Kontrola: feature flags per element (Wave 4), paralelní běh starého a nového systému.
 
 ---
@@ -461,7 +450,9 @@ Konkrétní situace, které Caché migrace musí předejít. Kontrolní seznam p
 
 Vychází z gap analýzy oproti komerčním report generátorům (Crystal Reports, Stimulsoft, DevExpress). Nezávislé na JŘ — platí pro fakturační i obecné šablony. Může běžet paralelně s Caché migrací (neblokuje a není blokované).
 
-#### Template versioning (prerekvizita Wave 3)
+#### Template versioning (prerekvizita produkčního Wave 3)
+
+Wave 3 CRUD už běží bez versioning, ale **před produkčním nasazením s reálnými zákaznickými šablonami** musí být H-18/H-19 hotové — jinak breaking JSON change zničí existující data.
 
 | # | Co | Proč | Velikost |
 |---|---|---|---|
@@ -608,8 +599,8 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 |---|---|
 | Full migration pipeline | Po H-18/H-19 rozšířit na každou breaking change (ne jen 2 verze) |
 | CI/CD linting šablon | Ověřit šablony před deployem (Caché job) |
-| Šablony v Caché s verzováním | Wave 3 dokončuje; produkce potřebuje: kdo kdy co změnil, rollback |
-| Autor, datum, kategorie, popis | Metadata šablon — důležité při >10 šablonách |
+| Versioning šablon v Caché | Wave 3 CRUD už běží; produkce potřebuje: kdo kdy co změnil, rollback (W3-5/W3-6/W3-8) |
+| Autor, datum, kategorie, popis | Wave 3 dnes drží Author/CreatedAt/ModifiedAt/Version v metadatech; chybí kategorie + popis v UI |
 
 ---
 
