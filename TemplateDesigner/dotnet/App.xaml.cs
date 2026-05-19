@@ -17,6 +17,12 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // Globální default icon pro všechna Window v aplikaci. Implicit <Style TargetType="Window">
+        // v App.xaml se v WPF neaplikuje na derived Window classes (známý quirk) — registrace
+        // class handleru je spolehlivá pro všechna okna i dialogy.
+        EventManager.RegisterClassHandler(typeof(Window), Window.LoadedEvent,
+            new RoutedEventHandler(OnAnyWindowLoaded));
+
 #if DEBUG
         // Jednorázový test detektoru JŘ — zakomentuj po otestování
         if (e.Args.Length > 0 && e.Args[0] == "--test-detector")
@@ -71,6 +77,14 @@ public partial class App : Application
         };
 
         MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private static void OnAnyWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Window window) return;
+        if (window.Icon is not null) return;   // explicit Icon (např. MainWindow) ponechán
+        if (Application.Current.TryFindResource("EDIcons.Molecule") is System.Windows.Media.ImageSource icon)
+            window.Icon = icon;
     }
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

@@ -11,10 +11,8 @@
                 <ResourceDictionary Source="Styles/ToolbarStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
-            <!-- Default Window icon — aplikuje se na všechna okna (MainWindow + dialogy) bez explicit Icon -->
-            <Style TargetType="Window">
-                <Setter Property="Icon" Value="{StaticResource EDIcons.Molecule}"/>
-            </Style>
+            <!-- Default Window icon je nastaven v App.xaml.cs OnAnyWindowLoaded — implicit Window style
+                 v WPF se neaplikuje na derived Window classes, proto class handler v code-behind. -->
         </ResourceDictionary>
     </Application.Resources>
 </Application>
