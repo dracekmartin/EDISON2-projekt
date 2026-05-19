@@ -14,12 +14,6 @@ public partial class InstancePickerDialog : Window
         DataContext = _vm = vm;
         InitializeComponent();
 
-        // Konfigurace EDListu
-        TheList.CacheClass = "ALVA.TemplateDesigner.API.InstancesList";
-        TheList.HostId = "TemplateDesigner.InstancePicker";
-        TheList.Title = "Výběr instancí";
-        TheList.SelectionMode = EDControls.EDList.EListSelectionMode.Check;
-
         // Eventy
         TheList.CheckedRowsChanged += (_, ids) => _vm.OnCheckedRowsChanged(ids.Count, TheList.Rows.Count);
 
@@ -29,7 +23,7 @@ public partial class InstancePickerDialog : Window
         // Close
         _vm.RequestClose += result => { DialogResult = result; Close(); };
 
-        // Init list po načtení okna
+        // Init list po načtení okna — agenda je host kontext, jde top-level (ne pod "filter")
         Loaded += (_, _) =>
         {
             TheList.InitializeList();

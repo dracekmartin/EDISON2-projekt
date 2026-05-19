@@ -23,14 +23,15 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// IN["agendaCode"] = kód agendy (např. "MHD")
+/// Filter (sub-subscript pod "filter"):
+///   IN["filter","agendaCode"] = kód agendy (např. "MHD")
 /// OUT[1..N] = JSON objekt per řádek
 ClassMethod LoadList(ByRef sys As %String) As %Status
 {
     s err = ""
     try {
         $$$FillParams
-        s agendaCode = $g(^||ML("IN","agendaCode"))
+        s agendaCode = $g(^||ML("IN","filter","agendaCode"))
         s instances = ..FetchInstances(.sys, agendaCode)
 
         s list = ##class(ALVA.EDControls.EDList.List).%New()

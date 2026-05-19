@@ -10,6 +10,7 @@ Class ALVA.TemplateDesigner.API.TemplatesList Extends %RegisteredObject
 /// Vrátí definici sloupců pro EDList.
 ClassMethod InitializeList(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -24,14 +25,15 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Vrátí řádky šablon. Volitelný filter v IN:
-///   IN["agendaCode"] = "MHD" | "FAKTURY" | "GENERAL" | "" (všechny)
+/// Vrátí řádky šablon. Volitelný filter (sub-subscript pod "filter"):
+///   IN["filter","agendaCode"] = "MHD" | "FAKTURY" | "GENERAL" | "" (všechny)
 ClassMethod LoadList(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
-        s filterAgenda = $g(^||ML("IN","agendaCode"))
+        s filterAgenda = $g(^||ML("IN","filter","agendaCode"))
         s list = ##class(ALVA.EDControls.EDList.List).%New()
 
         // Pokud je filter, použij sekundární index, jinak iteruj všechny TemplateID.

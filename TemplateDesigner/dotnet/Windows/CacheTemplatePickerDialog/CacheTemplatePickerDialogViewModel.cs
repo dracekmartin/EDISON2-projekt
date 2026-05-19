@@ -7,21 +7,16 @@ namespace TemplateDesigner;
 
 /// <summary>
 /// ViewModel pro Caché picker dialog. Data drží EDList (Caché-driven přes
-/// <c>ALVA.TemplateDesigner.API.TemplatesList</c>); VM jen řídí agenda filter,
-/// CRUD akce a OK output.
+/// <c>ALVA.TemplateDesigner.API.TemplatesList</c>), filter řídí <c>EDFilter</c>
+/// (deklarativně v XAML přes <c>FilterCombo</c>); VM jen vystavuje seznam agend
+/// pro combo, CRUD akce a OK output.
 /// </summary>
 public class CacheTemplatePickerDialogViewModel : EDViewModel
 {
     private readonly CacheTemplateService _service;
 
+    /// <summary>Seznam agend pro <c>FilterCombo</c>. První položka <c>null</c> kód = „Všechny agendy".</summary>
     public List<AgendaFilterVM> AgendaFilters { get; }
-
-    private AgendaFilterVM _selectedFilter;
-    public AgendaFilterVM SelectedFilter
-    {
-        get => _selectedFilter;
-        set => Set(ref _selectedFilter, value);  // change → code-behind volá reload
-    }
 
     private EDListRow? _selected;
     /// <summary>Code-behind plní z <c>EDList.SelectionChanged</c>.</summary>
@@ -42,7 +37,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     public AsyncRelayCommand DeleteCommand { get; }
     public AsyncRelayCommand RenameCommand { get; }
 
-    /// <summary>Code-behind napojí — VM žádá o reload EDListu (např. po Delete / Rename / agenda změně).</summary>
+    /// <summary>Code-behind napojí — VM žádá o reload EDListu (po Delete / Rename). EDFilter sebere current filter.</summary>
     public Action? RequestReload { get; set; }
 
     public CacheTemplatePickerDialogViewModel(CacheTemplateService service, IReadOnlyList<AgendaInfo> agendas)
@@ -52,7 +47,6 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         AgendaFilters = new List<AgendaFilterVM> { new(null, "Všechny agendy") };
         foreach (var a in agendas)
             AgendaFilters.Add(new AgendaFilterVM(a.Code, $"{a.Code} — {a.Name}"));
-        _selectedFilter = AgendaFilters[0];
 
         OpenCommand    = Command(Open,                () => Selected is not null);
         DeleteCommand  = CommandAsync(DeleteAsync,    () => Selected is not null);
