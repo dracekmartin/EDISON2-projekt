@@ -1,6 +1,6 @@
 /// Implementace BaseAgenda pro agendu FAKTURY.
 /// Referenční implementace pro fakturační systém.
-///
+/// 
 /// appsettings.json:
 ///   { "code": "FAKTURY", "name": "Faktury", "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury" }
 Class ALVA.TemplateDesigner.Agendy.Faktury Extends ALVA.TemplateDesigner.Agendy.BaseAgenda

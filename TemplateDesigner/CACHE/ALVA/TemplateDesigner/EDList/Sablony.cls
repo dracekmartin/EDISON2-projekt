@@ -2,7 +2,7 @@ Include GENERAL
 
 /// EDList backing pro CacheTemplatePickerDialog v TemplateDesigneru.
 /// Vrací sloupce + řádky uložených šablon iterací nad ^ALVA.TemplateDesigner.Templates.
-///
+/// 
 /// Storage je v třídě ALVA.TemplateDesigner.API.Sablony (CRUD); tato třída ho jen čte.
 Class ALVA.TemplateDesigner.EDList.Sablony Extends %RegisteredObject
 {

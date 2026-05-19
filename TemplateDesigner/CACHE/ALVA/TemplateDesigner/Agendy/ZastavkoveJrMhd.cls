@@ -9,7 +9,7 @@ Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner
 /// API pro MHD zastávkový jízdní řád.
 /// Kompletní implementace: schema, parametry, mock data, reálná data z DB.
 /// Obsahuje 6-fázový tiskový engine (trasa → bitmapy → JSON výstup).
-///
+/// 
 /// appsettings.json:
 ///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" }
 /// 

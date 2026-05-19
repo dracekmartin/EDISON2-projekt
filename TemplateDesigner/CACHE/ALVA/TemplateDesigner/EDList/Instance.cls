@@ -2,7 +2,7 @@ Include GENERAL
 
 /// EDList backing pro InstancePickerDialog v TemplateDesigneru.
 /// Vrací sloupce + řádky dostupných instancí pro danou agendu (např. linky pro MHD).
-///
+/// 
 /// Routuje na agenda-specifickou metodu GetAvailableInstances přes $classmethod.
 /// Wire formát: CVar named IN + JSON multi-slot OUT (standard Styl 3 viz DOCS/01-wire-formats.md).
 Class ALVA.TemplateDesigner.EDList.Instance Extends %RegisteredObject
