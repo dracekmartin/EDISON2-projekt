@@ -131,6 +131,7 @@
                 <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="Ctrl+N" Click="MenuNew_Click"/>
                 <MenuItem x:Name="MenuOpen"   Header="Otevřít ze souboru..."  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
                 <MenuItem x:Name="MenuOpenFromCache" Header="Otevřít z Caché..." Command="{Binding OpenFromCacheCommand}"/>
+                <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSave"   Header="Uložit"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
                 <MenuItem x:Name="MenuSaveAs" Header="Uložit jako soubor..."                  Click="MenuSaveAs_Click"/>

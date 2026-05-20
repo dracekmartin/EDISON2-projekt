@@ -92,15 +92,22 @@ public partial class MainWindow : Window
     // Constructors
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ── Per-user preferences (per-user × IDFa state from Caché) ──
+    private Services.TdPreferencesService? _preferences;
+
     /// <summary>WPF designer constructor — do not use at runtime.</summary>
     public MainWindow() { InitializeComponent(); }
 
-    /// <summary>Runtime constructor. mlRest = null for standalone mode.</summary>
-    public MainWindow(MLRest? mlRest)
+    /// <summary>Runtime constructor. mlRest = null for standalone mode; preferences = null disables persist.</summary>
+    public MainWindow(MLRest? mlRest, Services.TdPreferencesService? preferences = null)
     {
-        _vm         = new TemplateDesignerViewModel(mlRest);
+        _preferences = preferences;
+        _vm         = new TemplateDesignerViewModel(mlRest, preferences);
         DataContext = _vm;
         InitializeComponent();
+
+        // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
+        ApplyUiPreferences();
 
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
@@ -216,6 +223,111 @@ public partial class MainWindow : Window
         SectionsList.PreviewMouseMove           += SectionsList_PreviewMouseMove;
         SectionsList.PreviewMouseLeftButtonUp   += SectionsList_PreviewMouseUp;
         SectionsList.MouseLeave                 += SectionsList_DragCancel;
+
+        // Per-user prefs save on close + Recent Files menu populate on open
+        this.Closing += OnWindowClosing;
+        MenuRecentFiles.SubmenuOpened += (_, _) => RebuildRecentFilesMenu();
+        RebuildRecentFilesMenu();
+
+        // Sync nebindovaných UI elementů (CmbGridSize) s loaded GridSize. VM ctor
+        // už nastavil State.GridSize, ale RequestGridSizeUiSync callback v tu chvíli
+        // ještě nebyl napojený — explicit sync teď, kdy už je vše drátované.
+        SyncGridSizeComboBox(_vm.State.GridSize);
+
+        // Pokud LoadAsync nestihl dokončit před Show() (cold-start Caché HTTP trvá 2-3s),
+        // subscribe na Loaded event — handler dispatchne re-apply na UI thread.
+        // Subscribe-after-loaded case (warm cache) řeší Loaded event accessor — invoke immediately.
+        if (_preferences is not null)
+            _preferences.Loaded += OnPreferencesLoaded;
+    }
+
+    private void OnPreferencesLoaded()
+    {
+        // Loaded event fires from threadpool — dispatch to UI thread.
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (_vm is null || _preferences is null) return;
+            _vm.ApplyLoadedPreferences();
+            ApplyUiPreferences();
+            SyncGridSizeComboBox(_vm.State.GridSize);
+            RebuildRecentFilesMenu();
+            skCanvas.InvalidateVisual();
+            InvalidatePreview();
+        });
+    }
+
+    /// <summary>
+    /// Aplikuje UI-side prefs (splittery, levý tab, viditelnost preview pane) z TdPreferencesService.
+    /// Volá se po InitializeComponent, kdy už ColumnDefinitions a TabControl existují.
+    /// VM-side prefs (zoom, grid, snap) se aplikují v VM konstruktoru přímo do DesignerState.
+    /// </summary>
+    private void ApplyUiPreferences()
+    {
+        var pref = _preferences?.MainState;
+        if (pref is null) return;
+
+        if (pref.LeftPanelWidthPx is { } leftW && leftW > 0)
+            SectionsColumn.Width = new GridLength(leftW, GridUnitType.Pixel);
+
+        if (!pref.ShowPreviewPane)
+        {
+            // BtnPreview_Changed handler nastaví PreviewColumn na 0.
+            BtnPreview.IsChecked = false;
+        }
+        else if (pref.PreviewPanelWidthPx is { } previewW && previewW > 0)
+        {
+            // Star sizes (1*) → pixel; canvas dostane zbytek. Zachová pozici splitteru.
+            PreviewColumn.Width = new GridLength(previewW, GridUnitType.Pixel);
+        }
+
+        if (pref.ActiveLeftTabIndex >= 0 && pref.ActiveLeftTabIndex < LeftTabControl.Items.Count)
+            LeftTabControl.SelectedIndex = pref.ActiveLeftTabIndex;
+    }
+
+    private void OnWindowClosing(object? sender, CancelEventArgs e)
+    {
+        if (_vm is null || _preferences is null) return;
+
+        // Snapshot UI-side state pro persist. ActualWidth=0 → null (nepřepsat na neplatnou hodnotu).
+        double? leftPx    = SectionsColumn.ActualWidth > 0 ? SectionsColumn.ActualWidth : null;
+        double? previewPx = PreviewColumn.ActualWidth   > 0 ? PreviewColumn.ActualWidth   : null;
+        int tabIndex      = LeftTabControl.SelectedIndex;
+        bool showPreview  = BtnPreview.IsChecked == true;
+
+        // Fire-and-forget — closing nesmí čekat na Caché latenci. Pokud proces zhasne dřív
+        // než save dokončí, ztratí se poslední session změny (akceptovatelný trade-off).
+        _ = _vm.SaveMainStateAsync(leftPx, previewPx, tabIndex, showPreview);
+    }
+
+    private void RebuildRecentFilesMenu()
+    {
+        if (_preferences is null || MenuRecentFiles is null) return;
+        MenuRecentFiles.Items.Clear();
+        var files = _preferences.RecentFiles;
+        if (files.Count == 0)
+        {
+            MenuRecentFiles.Items.Add(new MenuItem { Header = "(žádné)", IsEnabled = false });
+            return;
+        }
+        for (int i = 0; i < files.Count; i++)
+        {
+            var path = files[i];
+            var item = new MenuItem
+            {
+                Header = $"_{i + 1}  {System.IO.Path.GetFileName(path)}",
+                ToolTip = path,
+                Tag = path
+            };
+            item.Click += async (_, _) =>
+            {
+                if (_vm is not null && item.Tag is string p)
+                {
+                    await _vm.OpenTemplateFromFileAsync(p);
+                    RebuildRecentFilesMenu();
+                }
+            };
+            MenuRecentFiles.Items.Add(item);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────

@@ -1,5 +1,36 @@
 # Changelog
 
+## 2026-05-20 — Wave 1: per-user preferences via Caché
+
+První dávka Caché Migration Wave 1 — persistence per-user × IDFa state. Žádné lokální JSON soubory (`%APPDATA%`); vše v `^ALVA.EDControls.UserData` přes `IUserPrefsService`.
+
+**Nové soubory:**
+- `Services/TdPreferencesService.cs` — typed wrapper nad `IUserPrefsService`. Drží 3 typy blobů:
+  - `MainStatePref` record (zoom, ShowGrid, SnapToGrid, SnapToElements, ShowSectionHeaders, ShowRuler, GridSize, SnapGapMm, ShowPreviewPane, LeftPanelWidthPx, PreviewPanelWidthPx, ActiveLeftTabIndex) v scope `"TemplateDesigner"` / key `"MainState"`
+  - `List<string>` recent files v scope `"TemplateDesigner"` / key `"RecentFiles"` (cap 10, dedup case-insensitive)
+  - Per-template instance defaults v scope `"TemplateDesigner.InstanceDefaults"` / key = template Guid
+- `EDControls/DOCS/05-userdata-scopes.md` — registr scope ownerships napříč EDISON ekosystémem; konvence pro klienty (scope naming, typed records, defensive parsing, backward-compat schémat, save policy); rozhodovací mřížka „kam s tím"; anti-patterns
+
+**Wire-up:**
+- `App.OnStartup` — instantiace `TdPreferencesService`, sync `LoadAsync.Wait(300ms)` před `MainWindow.Show()`. Pokud Caché odpoví do timeoutu, MainWindow startuje s loaded state; jinak defaults
+- `TemplateDesignerViewModel(MLRest?, TdPreferencesService?)` — 2. parametr (nullable); `ApplyLoadedPreferences()` v ctoru aplikuje MainStatePref na DesignerState + OnPropertyChanged pro bindings
+- `SaveMainStateAsync(leftPx, previewPx, tabIndex, showPreview)` — VM snapshot pro persist; UI-side parametry plní code-behind (VM nezná WPF kontrolky)
+- `MainWindow.OnWindowClosing` — fire-and-forget save (closing nesmí blokovat Caché latencí)
+- `MainWindow.ApplyUiPreferences()` — apply splitter šířek, levý tab index, viditelnost preview pane po `InitializeComponent`
+
+**Recent Files menu:**
+- `Soubor → Otevřít poslední` submenu, dynamicky populated z `_preferences.RecentFiles` při `SubmenuOpened`
+- `OpenTemplateFromFileAsync(filePath)` — public metoda pro File→Open i Recent Files; `FileNotFoundException` → info dialog + `RemoveRecentFileAsync` (graceful)
+- `SaveAsTemplate` + `OpenTemplateAsync` volají `AddRecentFileAsync` (Caché → ne, ten má vlastní storage)
+
+**Instance defaults per template:**
+- `TryLoadInstanceDefaultsAsync()` v Open i OpenFromCache — načte uložený výběr instancí pro `Template.Id`, filtrované přes `CacheProvider.GetAvailableInstances` (orphan IDs se ignorují)
+- `OpenInstancePicker` na OK → `SaveInstanceDefaultsAsync(template.Id, instanceIds)` fire-and-forget
+
+**Architektonické rozhodnutí (důležité):**
+- **Žádné lokální JSON soubory** pro persistentní state. Per-machine pattern (`LocalPrefs.cs` v EDISONMAIN2) se v TD nepoužívá — TD běží typicky embedded z EDISONMAIN2 a IDfu dostává v MLRest sys kontextu. Pro standalone testing jsou hodnoty hardcoded.
+- **Generic blob storage pattern** — server (Caché) je schema-less, klienti vlastní typed records. Inspirováno localStorage / NSUserDefaults / SharedPreferences. Detail v `EDControls/DOCS/05-userdata-scopes.md`.
+
 ## 2026-05-20 — UI polish: implicit styles, popup, perf, layout
 
 Druhý den UI polish dotahuje EDTheme/EDStyles ekosystém + hlavní okno k modernímu desktop look + řeší výkonnostní problém canvas při vysokém zoomu.

@@ -28,6 +28,50 @@ Centrální evidence všech **scope × key** kombinací uložených v `^ALVA.EDC
 
 ---
 
+## Dva patterny: komponenta vs aplikace
+
+Konzumenti `IUserPrefsService` se dělí na dvě kategorie. Liší se v tom, **jak generují klíče v rámci scope** — pochopení rozdílu pomáhá při návrhu scope/key schématu.
+
+| Aspekt | **Standard komponenta** (EDList, EDInputGrid, EDFilter) | **Ad-hoc aplikace / form** (TemplateDesigner, Grafikon) |
+|---|---|---|
+| Sdílení | Mnoho instancí napříč mnoha okny | Jediná aplikace |
+| Identita instance | **HostId** (per použití) | **App name** + případně sub-features |
+| Schema | **Fixní** — každá instance má stejný tvar (např. `ColumnLayout`) | **Specifické** pro tu aplikaci (custom records) |
+| Scope naming | `"EDControls.<ComponentName>"` | `"<AppName>"` + případně `"<AppName>.<Feature>"` |
+| Keys v scope | **N** (jeden per HostId/instance) | **Málo** (`"MainState"`, `"RecentFiles"`, …) |
+| Schema evolution | Vlastník = autor komponenty (řízeně, breaking change zasahuje všechny konzumenty) | Aplikace evoluje samostatně |
+| Příklad | 20 EDList instancí v projektu = 20 keys v jednom scope | TD má 3 scopes (`"TemplateDesigner"`, `"TemplateDesigner.InstanceDefaults"`, později další) |
+
+### Jak global vypadá s ekosystémem několika aplikací + komponent
+
+```
+^ALVA.EDControls.UserData(IdFa, user, "EDControls.EDList",                  "TD.TemplatePicker") = {...}
+                                                                            "MHD.LinkyList")     = {...}
+                                                                            "MHD.SpojeList")     = {...}
+^ALVA.EDControls.UserData(IdFa, user, "EDControls.EDInputGrid",             "TD.StopColumns")    = {...}
+^ALVA.EDControls.UserData(IdFa, user, "EDControls.EDFilter",                "MHD.LinkyFilter")   = {...}
+^ALVA.EDControls.UserData(IdFa, user, "TemplateDesigner",                   "MainState")         = {...}
+                                                                            "RecentFiles")       = [...]
+^ALVA.EDControls.UserData(IdFa, user, "TemplateDesigner.InstanceDefaults",  "<guid-1>")          = [...]
+^ALVA.EDControls.UserData(IdFa, user, "Grafikon",                           "MainState")         = {...}
+                                                                            "Tabs")              = [...]
+^ALVA.EDControls.UserData(IdFa, user, "Grafikon.LineLayouts",               "<lineId-42>")       = {...}
+```
+
+V Caché Studio si pak vidíš celý strom najednou. `zw ^ALVA.EDControls.UserData(IdFa, user, "TemplateDesigner")` vrátí jen TD věci.
+
+### Když je hraniční případ
+
+Někdy aplikace **používá komponentu vnitřně** a chce její state persistovat per-aplikační kontext (např. TemplatePicker dialog v TD chce vlastní column layout). V tom případě:
+
+- **EDList si vlastní svůj scope** (`"EDControls.EDList"`)
+- **TD definuje konkrétní HostId** (např. `"TemplateDesigner.TemplatePicker"`)
+- Tím se HostId stává **bridge mezi 2 patterny** — komponenta vlastní schema, aplikace vlastní namespace v HostId
+
+Funguje to čistě, dokud HostIdy mají FQN prefix té aplikace.
+
+---
+
 ## Konvence pro klienty
 
 ### 1. Scope naming
@@ -77,15 +121,49 @@ catch (Exception ex)
 
 ### 4. Backward-compatible schema changes
 
-**Default:** přidávej pole s default hodnotou (chybějící v starých blobech → default).
+Klient se musí umět vyrovnat s tím, že starý JSON v globalu nemá nová pole nebo má pole, která už nezná.
 
-**Breaking change** (např. rename pole, změna typu): přidej `int Version` do blobu a migrate kód.
+**Tabulka jak `System.Text.Json` reaguje na mismatch (s typed recordem + defaults):**
 
-```json
-{ "v": 2, "zoom": 1.0, "showGrid": false, ... }
+| Změna ve schématu | JSON v globalu | Výsledek |
+|---|---|---|
+| Přidáš pole s default (`bool ShowMinimap = false`) | chybí klíč „ShowMinimap" | ✅ default `false` se použije, ostatní načteno OK |
+| Smažeš pole | JSON obsahuje navíc starý klíč | ✅ extra klíč se tiše ignoruje |
+| Přidáš pole **bez** default | chybí klíč | ⚠️ Deserialize vrátí null → defensive catch → fallback na `T.Default` (vše ztratíš) |
+| Přejmenuješ pole | starý název v JSON | ⚠️ stará hodnota propadne, dostaneš default pro nové jméno |
+| Změníš typ pole | nekompatibilní hodnota | ⚠️ JsonException → catch → fallback na defaults |
+| Změníš sémantiku (jednotky, význam) | starou hodnotu načteš s novým významem | 💀 Tichý bug — nepoznáme, doporučujeme **bumpnout Version** |
+
+**Pravidlo zlatého standardu pro evoluci schématu:**
+
+> Vždy nová property má **default hodnotu v primary ctoru** — `bool Foo = false`, ne `bool Foo`.
+
+To samo o sobě zajišťuje seamless upgrade v 95% případů. Konkrétně:
+
+```csharp
+public record MainStatePref(
+    float Zoom = 1.0f,
+    bool ShowGrid = false,
+    bool ShowMinimap = false,   // ← přidáno v nové verzi, starý JSON to nezná
+    ...);
 ```
 
-Klient kontroluje `v` a aplikuje migrační logiku. **Nezavádí dopředu** (YAGNI) — až bude breaking change, přidat.
+Starý JSON bez „ShowMinimap" se načte → `ShowMinimap = false` (z ctor default), ostatní fields normálně. Po prvním save se „ShowMinimap" zapíše a od té chvíle je v globalu permanentně.
+
+**Breaking change** (rename, type change, sémantika): explicitní version + migration v `LoadBlobAsync`:
+
+```csharp
+public record MainStatePref(
+    int Version = 2,              // ← bumpni z 1 na 2
+    float CellSize = 5f,          // ← rename z GridSize
+    ...);
+
+// v LoadBlobAsync, mezi LoadAsync a Deserialize:
+if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
+    node["CellSize"] = oldGridSize.GetValue<float>();
+```
+
+**Nezavádíme dopředu** (YAGNI) — `Version` přidáme až tehdy, kdy bude první skutečně breaking change. Do té doby všechny nové fields mají default.
 
 ### 5. Save policy
 

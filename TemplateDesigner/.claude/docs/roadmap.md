@@ -15,7 +15,7 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor (Agendy/EDList/API role separation) hotov (2026-05-19). **UI polish (theme, implicit styles, perf, layout) uzavřen** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish (theme, implicit styles, perf, layout) uzavřen (2026-05-20). **Wave 1 — per-user preferences přes Caché HOTOVA** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
 **Stav UI/theme** (po 2 dnech práce):
 - EDTheme design tokens (33 barev + typo + spacing) v EDControls — runtime swap přes DynamicResource
@@ -33,8 +33,8 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 1. **Fáze A.2-D — Caché business logic** ⬅️ nejvyšší zákaznický dopad
    TRANSDEV/KORID suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
-2. **Wave 1 — UserPreferences plné využití** (foundation `IUserPrefsService` hotová)
-   Per-user × IDFa state: zoom, grid, recent files, instance picker default, splittery, recent colors. Plný plán v § Wave 1 níže.
+2. **Wave 1.5 — UserPreferences rozšíření** (Wave 1 hotová ✅ 2026-05-20)
+   Wave 1 dodala MainState (zoom, grid, snap, splittery, tab index, preview pane), RecentFiles, InstanceDefaults per šablona. Co zbývá pro 1.5: recent colors, PropertiesPanel group expanded state, font override. Plný plán v § Wave 1 níže.
 
 3. **H-18/H-19 — Template versioning + migrator** (prerekvizita produkčního Wave 3)
    Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
@@ -124,7 +124,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 **Stav vln:**
 | Vlna | Název | Stav | Cíl |
 |---|---|---|---|
-| 1 | Per-user state | 🟠 Foundation hotová (F1), zbývá full integration | `IUserPrefsService` (✅) + TD specific binding (zoom, grid, recent files, splitters) |
+| 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
 | 2 | Shared catalogs | ⬜ Nezačato | Agenda registry, palette, element defaults, section templates |
 | 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
 | 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
@@ -133,73 +133,43 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 **Graf závislostí:** Wave 1 → 2 → 3 → 4 (sekvenčně), Wave 5 běží paralelně nezávisle.
 
 **Foundation hotová** (může se použít napříč všemi vlnami):
-- ✅ `IUserPrefsService` + Caché `ALVA.EDControls.UserData` — generic per-user state (F1)
+- ✅ `IUserPrefsService` + Caché `ALVA.EDControls.UserData` — generic per-user state (F1, 2026-05-15)
+- ✅ Wave 1 typed konzument — `TdPreferencesService` se 3 scopes pro TD (2026-05-20)
+- ✅ Registr scope ownerships — [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md)
 - ✅ Wire formát standard — CVar named IN + 4 OUT styly (DOCS/01-wire-formats.md)
 - ✅ `MLRestJson.CallAsync<TReq, TResp>` helper — připraven pro Wave 4 composite endpointy
 - ✅ EDList komponenta (Wave 3 list konzumenti používají)
 
 ---
 
-#### 🟠 Wave 1 — Per-user state (UserPreferences)
+#### ✅ Wave 1 — Per-user state (HOTOVO 2026-05-20)
 
-**Foundation hotová** (F1 commit, 2026-05-15) — generický `IUserPrefsService` + Caché `ALVA.EDControls.UserData` poskytují per (IdFa × userID × scope × key) blob storage. Dnes využíváno přes scope `"EDControls.EDList"` pro persist sloupců EDListu.
+**Foundation** `IUserPrefsService` + Caché `ALVA.EDControls.UserData` (F1, 2026-05-15) poskytuje generic blob storage per (IdFa × userID × scope × key).
 
-**Zbývá:** napojit konkrétní TD state na foundation a vystavit UX (recent files picker, scope `"TemplateDesigner"`).
-
-**Klíčový design:** Wave 1 **nebude mít vlastní Caché endpoint** — použije existující `ALVA.EDControls.UserData` se scope `"TemplateDesigner"` a structured JSON value. To zjednodušuje storage layer a unifikuje per-user persistenci napříč EDControls i TD.
-
-**.NET strana:**
-```csharp
-public record TdPreferences(
-    float Zoom,
-    bool ShowGrid, bool SnapToGrid, bool SnapToElements,
-    int GridSize,
-    double? MainSplitterPosition,
-    double? PreviewSplitterPosition,
-    List<string> RecentFiles,
-    List<string> RecentColors,
-    Dictionary<string, bool> GroupExpanded,
-    string? LastActiveTab
-);
-
-public class TdPreferencesService {
-    private readonly IUserPrefsService _prefs;
-    private const string Scope = "TemplateDesigner";
-    private const string Key = "MainState";
-
-    public async Task<TdPreferences> LoadAsync() {
-        var json = await _prefs.LoadAsync(Scope, Key);
-        return json?.Deserialize<TdPreferences>() ?? TdPreferences.Default;
-    }
-    public Task SaveAsync(TdPreferences prefs) =>
-        _prefs.SaveAsync(Scope, Key, JsonSerializer.SerializeToNode(prefs)!);
-}
-```
-
-**Před:** každé ráno: `Ctrl+O` → dialog → navigace → nastavení zoomu → rozbalení skupin.
-**Po:** aplikace spadne do stavu z posledního zavření, recent files v File menu, Ctrl+R = picker.
-
-**Změny v kódu:**
-| Vrstva | Co |
-|---|---|
-| Caché | **Žádná** — foundation `ALVA.EDControls.UserData` (F1) už hotová |
-| .NET Services | Nový `TdPreferencesService` jako wrapper nad `IUserPrefsService` se scope `"TemplateDesigner"` |
-| .NET App | `App.xaml.cs` — load async před `MainWindow.Show`; save v `MainWindow.Closing` (fire-and-forget) |
-| .NET VM | `MainWindowViewModel` — bindovat `Zoom`, `ShowGrid`, atd. skrze `TdPreferences` |
-| appsettings.json | **Zůstává jen pro síťovou konfiguraci** (Caché host, port, agenda seznam) |
-
-**Risks:**
-- Performance: `LoadAsync` musí proběhnout do ~300ms nebo startup zamrzne. Mitigace: timeout + při selhání defaults v paměti pro danou session.
+**Wave 1 dodala** typed wrapper a UX integraci. Detail dokumentace, registr scope ownerships a konvence pro nové konzumenty v [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md).
 
 | Krok | Co | Stav |
 |---|---|---|
 | W1-0 | `IUserPrefsService` foundation + Caché `ALVA.EDControls.UserData` | ✅ F1 (2026-05-15) |
-| W1-1 | `TdPreferencesService` wrapper nad `IUserPrefsService` | |
-| W1-2 | Wire-up: `App.xaml.cs` load at startup (async + timeout) | |
-| W1-3 | `MainWindowViewModel` — bind Zoom/Grid/Snap/Splitters/Tab přes preferences | |
-| W1-4 | Recent Files (Ctrl+R picker, File menu) — ukládá do prefs | |
-| W1-5 | Recent Colors — last-used barvy v color pickeru (swatches v `ColorPickerHelper` nebo v EDInputForm Color field po W4-8) | |
-| W1-6 | Instance picker default — per-template (`AgendaCode + TemplateID`) seznam vybraných instancí; obnoví se při otevření šablony. Vlastní key (`InstanceDefaults/{guid}`), ne MainState blob | |
+| W1-1 | `TdPreferencesService` wrapper + `MainStatePref` typed record | ✅ |
+| W1-2 | Wire-up: `App.xaml.cs` async load + Loaded event fallback pro cold-start | ✅ |
+| W1-3 | `MainWindowViewModel.ApplyLoadedPreferences` — Zoom/Grid/Snap/SnapGapMm/ShowGrid/ShowSectionHeaders/ShowRuler | ✅ |
+| W1-3b | UI-side prefs — splittery (LeftPanelWidthPx, PreviewPanelWidthPx), ActiveLeftTabIndex, ShowPreviewPane | ✅ |
+| W1-4 | Recent Files menu (Soubor → Otevřít poslední) + AddRecentFile při Open/SaveAs, missing-file graceful | ✅ |
+| W1-6 | Instance defaults per šablona (scope `"TemplateDesigner.InstanceDefaults"`, key = template Guid) | ✅ |
+
+**Wave 1.5 (deferred, nice-to-have):**
+
+| Krok | Co | Stav |
+|---|---|---|
+| W1.5-1 | Recent Colors — last-used barvy v color pickeru (scope `"TemplateDesigner.RecentColors"`) | |
+| W1.5-2 | PropertiesPanel group expanded state | (možná odložit do Wave 4 — EDInputForm migrace stejně PropertiesPanel nahradí) |
+| W1.5-3 | Font override (analogie EDISONMAIN2 LocalPrefs.FontFamily/FontSize) | |
+
+**Klíčové architektonické rozhodnutí (Wave 1):**
+- **Žádné lokální JSON soubory** pro persistent state (TD běží embedded z EDISONMAIN2)
+- **Async load + event fallback** — krátký `Wait(200ms)` pro warm cache, jinak `TdPreferencesService.Loaded` event re-apply
+- **Schema evolution backward-compat** — všechny `MainStatePref` properties mají defaults v primary ctoru
 
 ---
 

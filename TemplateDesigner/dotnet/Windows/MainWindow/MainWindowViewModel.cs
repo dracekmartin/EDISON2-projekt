@@ -328,9 +328,18 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand PasteStyleCommand => _pasteStyle ??= new(PasteStyle, () => State.StyleClipboard is not null);
 
     // ── Constructor ───────────────────────────────────────────────────────────
-    public TemplateDesignerViewModel(MLRest? mlRest = null)
+    /// <summary>
+    /// Per-user state (zoom, grid, splittery, recent files, instance defaults).
+    /// Null v testech / standalone bez Caché — get pro UI binding loaded files menu;
+    /// service interní fallback na defaults i bez Caché.
+    /// </summary>
+    public TdPreferencesService? Preferences { get; }
+
+    public TemplateDesignerViewModel(MLRest? mlRest = null, TdPreferencesService? preferences = null)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
+
+        Preferences = preferences;
 
         var settings   = AppSettings.Load();
         var schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
@@ -350,6 +359,65 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
         RebuildSections();
+
+        // Aplikuj loaded MainState na State + VM properties. Volá se po inicializaci State,
+        // aby loaded hodnoty přepsaly defaults z DesignerState ctoru.
+        ApplyLoadedPreferences();
+    }
+
+    /// <summary>
+    /// Aplikuje MainStatePref z <see cref="Preferences"/> na DesignerState + bindovatelné VM properties.
+    /// Volá se v konstruktoru a znovu po dokončení LoadAsync (event Loaded) — pro cold-start scénář
+    /// kdy LoadAsync nestihl dokončit před Show().
+    /// </summary>
+    public void ApplyLoadedPreferences()
+    {
+        var pref = Preferences?.MainState;
+        if (pref is null) return;
+
+        State.Zoom               = pref.Zoom;
+        State.ShowGrid           = pref.ShowGrid;
+        State.SnapToGrid         = pref.SnapToGrid;
+        State.SnapToElements     = pref.SnapToElements;
+        State.ShowSectionHeaders = pref.ShowSectionHeaders;
+        State.ShowRuler          = pref.ShowRuler;
+        State.GridSize           = pref.GridSize;
+        State.SnapGapMm          = pref.SnapGapMm;
+
+        // Property notifications pro bindings (toolbar toggle buttony)
+        OnPropertyChanged(nameof(ShowGrid));
+        OnPropertyChanged(nameof(SnapToGrid));
+        OnPropertyChanged(nameof(SnapToElements));
+        OnPropertyChanged(nameof(ShowSectionHeaders));
+        OnPropertyChanged(nameof(ShowRuler));
+        OnPropertyChanged(nameof(GridSize));
+        OnPropertyChanged(nameof(SnapGapMm));
+    }
+
+    /// <summary>
+    /// Snapshot aktuálního state z DesignerState do MainStatePref a uloží do Caché.
+    /// Volá se z MainWindow.OnClosing. Splitter šířky a tab index doplňuje code-behind
+    /// (VM nezná konkrétní WPF kontrolky).
+    /// </summary>
+    public Task SaveMainStateAsync(double? leftPanelPx, double? previewPanelPx, int activeTabIndex, bool showPreviewPane)
+    {
+        if (Preferences is null) return Task.CompletedTask;
+
+        var snapshot = new MainStatePref(
+            Zoom:               State.Zoom,
+            ShowGrid:           State.ShowGrid,
+            SnapToGrid:         State.SnapToGrid,
+            SnapToElements:     State.SnapToElements,
+            ShowSectionHeaders: State.ShowSectionHeaders,
+            ShowRuler:          State.ShowRuler,
+            GridSize:           State.GridSize,
+            SnapGapMm:          State.SnapGapMm,
+            ShowPreviewPane:    showPreviewPane,
+            LeftPanelWidthPx:   leftPanelPx,
+            PreviewPanelWidthPx: previewPanelPx,
+            ActiveLeftTabIndex: activeTabIndex);
+
+        return Preferences.SaveMainStateAsync(snapshot);
     }
 
     // ── Execute wrapper ───────────────────────────────────────────────────────
@@ -604,6 +672,13 @@ public class TemplateDesignerViewModel : EDViewModel
         _activeInstances = vm.SelectedInstances.ToList();
         _activeInstanceIndex = 0;
         OnActiveInstancesChanged(reloadData: true);
+
+        // Persist výběr pro tuto šablonu — při příštím otevření se předvyplní.
+        if (Preferences is not null)
+        {
+            var ids = _activeInstances.Select(i => i.Value).ToList();
+            _ = Preferences.SaveInstanceDefaultsAsync(State.CurrentTemplate.Id, ids);
+        }
     }
 
     private void ChangeAgenda()
@@ -632,15 +707,23 @@ public class TemplateDesignerViewModel : EDViewModel
         if (!ConfirmUnsavedChanges()) return;
         var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Otevřít šablonu" };
         if (dlg.ShowDialog() != true) return;
+        await OpenTemplateFromFileAsync(dlg.FileName);
+    }
+
+    /// <summary>
+    /// Otevře šablonu ze zadané cesty. Společná implementace pro File→Open a Recent Files menu.
+    /// </summary>
+    public async Task OpenTemplateFromFileAsync(string filePath)
+    {
         try
         {
             var oldAgenda = State.CurrentTemplate.AgendaCode;
-            State.CurrentTemplate = await TemplateSerializer.LoadAsync(dlg.FileName);
+            State.CurrentTemplate = await TemplateSerializer.LoadAsync(filePath);
             // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
             // IDs patří staré agendě a v nové by GetData padl.
             if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
                 ClearActiveInstances();
-            CurrentFilePath = dlg.FileName;
+            CurrentFilePath = filePath;
             _loadedFromCache = false;
             IsDirty = false;
             State.SelectedElements.Clear();
@@ -651,6 +734,8 @@ public class TemplateDesignerViewModel : EDViewModel
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
             RebuildSections();
             RefreshFieldsList();
+            await TryLoadInstanceDefaultsAsync();
+            if (Preferences is not null) await Preferences.AddRecentFileAsync(filePath);
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
@@ -658,6 +743,36 @@ public class TemplateDesignerViewModel : EDViewModel
         catch (TemplateDeserializationException ex)
         {
             PopupDisplayer.Error(ex);
+        }
+        catch (FileNotFoundException)
+        {
+            PopupDisplayer.Info($"Soubor nenalezen: {filePath}");
+            if (Preferences is not null) await Preferences.RemoveRecentFileAsync(filePath);
+        }
+    }
+
+    /// <summary>
+    /// Načte uložený výběr instancí pro aktuální šablonu (pokud existují a CacheProvider je k dispozici).
+    /// </summary>
+    private async Task TryLoadInstanceDefaultsAsync()
+    {
+        if (Preferences is null || CacheProvider is null) return;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return;
+
+        var savedIds = await Preferences.LoadInstanceDefaultsAsync(State.CurrentTemplate.Id);
+        if (savedIds.Count == 0) return;
+
+        try
+        {
+            var available = await Task.Run(() => CacheProvider.GetAvailableInstances(agendaCode!, null));
+            _activeInstances = available.Where(i => savedIds.Contains(i.Value)).ToList();
+            _activeInstanceIndex = 0;
+            OnActiveInstancesChanged(reloadData: true);
+        }
+        catch
+        {
+            // Saved instances nejsou kompatibilní s aktuálním stavem DB — ignorujeme tiše
         }
     }
 
@@ -741,6 +856,7 @@ public class TemplateDesignerViewModel : EDViewModel
         CaptureEditorPreferencesToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
+        if (Preferences is not null) await Preferences.AddRecentFileAsync(CurrentFilePath);
         RequestTitleUpdate?.Invoke();
     }
 
@@ -782,6 +898,7 @@ public class TemplateDesignerViewModel : EDViewModel
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
             RebuildSections();
             RefreshFieldsList();
+            await TryLoadInstanceDefaultsAsync();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();

@@ -52,7 +52,15 @@ public partial class App : Application
         if (mlRest is not null)
             EDServices.Current.UserPrefs = new EDControls.UserPrefs.CacheUserPrefsService(new MLRestAdapter(mlRest));
 
-        new MainWindow(mlRest).Show();
+        // Per-user state (zoom, grid, splittery, recent files, instance defaults).
+        // Krátký sync wait (200ms) pro warm-cache happy path; pokud propadne (cold-start
+        // Caché HTTP typicky 2-3s), MainWindow startuje s defaults a po dokončení LoadAsync
+        // se hodnoty aplikují přes event TdPreferencesService.Loaded (MainWindow subscribe).
+        // Detail v EDControls/DOCS/05-userdata-scopes.md.
+        var prefs = new TemplateDesigner.Services.TdPreferencesService(EDServices.Current.UserPrefs);
+        prefs.LoadAsync().Wait(TimeSpan.FromMilliseconds(200));
+
+        new MainWindow(mlRest, prefs).Show();
     }
 
     /// <summary>
