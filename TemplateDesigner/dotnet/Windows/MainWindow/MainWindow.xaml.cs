@@ -99,10 +99,12 @@ public partial class MainWindow : Window
     public MainWindow() { InitializeComponent(); }
 
     /// <summary>Runtime constructor. mlRest = null for standalone mode; preferences = null disables persist.</summary>
-    public MainWindow(MLRest? mlRest, Services.TdPreferencesService? preferences = null)
+    public MainWindow(MLRest? mlRest,
+                      Services.TdPreferencesService? preferences = null,
+                      IReadOnlyList<Serialization.AgendaRegistryEntry>? agendas = null)
     {
         _preferences = preferences;
-        _vm         = new TemplateDesignerViewModel(mlRest, preferences);
+        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas);
         DataContext = _vm;
         InitializeComponent();
 
@@ -853,7 +855,7 @@ public partial class MainWindow : Window
                 // a vygeneruj batch napříč všemi — ignoruje LINKA_ID z parametrů dialogu.
                 if (_vm.ActiveInstances.Count > 0)
                 {
-                    var paramName = agendaCode.Equals("MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
+                    var paramName = agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
                     var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
                     foreach (var inst in _vm.ActiveInstances)
                     {

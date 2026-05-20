@@ -30,8 +30,9 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 **Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
 
-1. **Wave 2 — Shared catalogs** ⬅️ AKTUÁLNÍ (Wave 1 + 1.5 hotové ✅ 2026-05-20)
-   Caché-driven AgendaRegistry / CompanyPalette / ElementDefaults / SectionTemplates. Přesun z `appsettings.json` + hardcoded → jedno místo pravdy, žádný redeploy pro novou agendu. Detail v § Wave 2 níže.
+1. **Wave 2 — Shared catalogs** ⬅️ AKTUÁLNÍ (W2-1 hotová ✅ 2026-05-20, W2-2 zbývá)
+   W2-1 ✅: Agenda registry — auto-discovery z `BaseAgenda` subclasses v Caché (eliminuje `appsettings.json agendas[]`). Konvence agenda code `<TYP_SESTAVY>_<DATOVY_ZDROJ>` (např. `ZASTAVKOVY_JR_MHD`).
+   W2-2 ⬜: Section templates → Caché backend (sdílení šablon sekcí mezi PC v rámci firmy). Detail v § Wave 2 níže.
 
 2. **H-18/H-19 — Template versioning + migrator** (prereq produkčního Wave 3)
    Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
@@ -130,7 +131,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | Vlna | Název | Stav | Cíl |
 |---|---|---|---|
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
-| 2 | Shared catalogs | 🟠 V plánu | Agenda registry (auto-discovery), section templates (Caché backend). Element defaults + company palette skipnuté po diskusi 2026-05-20 |
+| 2 | Shared catalogs | 🟡 W2-1 ✅ hotová (2026-05-20), W2-2 zbývá | Agenda registry (auto-discovery ✅), section templates (Caché backend). Element defaults + company palette skipnuté |
 | 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
 | 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
@@ -251,7 +252,7 @@ Mirror Wave 3 (Template CRUD) — pattern už existuje, jen klon.
 
 | Krok | Co | Stav |
 |---|---|---|
-| W2-1 | Agenda registry — auto-discovery v `BaseAgenda` + Caché `API.AgendyRegistr` + .NET `IAgendaRegistry` | |
+| W2-1 | Agenda registry — auto-discovery v `BaseAgenda` + Caché `API.AgendyRegistr` + .NET `IAgendaRegistry` | ✅ 2026-05-20 |
 | W2-2 | Section templates → Caché — `API.SekceSablon` + .NET `ISectionTemplateCatalog` + file migration | |
 
 ---

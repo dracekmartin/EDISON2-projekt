@@ -18,10 +18,25 @@
 ///
 /// Caché kompilátor vynucuje implementaci Abstract metod; bez nich třída neprojde compile.
 ///
-/// Konfigurace v appsettings.json:
-///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" }
+/// Registrace agendy (Wave 2, 2026-05-20):
+///   Místo seznamu v appsettings.json se agenda nyní registruje **deklarativně** přes
+///   class parametry AgendaCode + AgendaLabel. ALVA.TemplateDesigner.API.AgendyRegistr
+///   prochází %Dictionary, najde všechny subclassy BaseAgenda a vrátí jejich metadata
+///   jako JSON list. Vytvoření třídy = registrace agendy.
+///
+///   GENERAL agenda (šablona bez DB vazby) nemá Caché class — .NET strana ji inject
+///   syntheticky v IAgendaRegistry impl.
 Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
 {
+
+/// Kód agendy (např. "ZASTAVKOVY_JR_MHD", "FAKTURY"). Override v každé subclass.
+/// Slouží jako klíč v Template.AgendaCode a IN parametrech CacheAgendaProvider.
+/// Konvence: <TYP_SESTAVY>_<DATOVY_ZDROJ>, velkými písmeny, podtržítka.
+/// Příklady: ZASTAVKOVY_JR_MHD, MEZIMESTSKY_JR_MHD (future), FAKTURY.
+Parameter AgendaCode As %String = "";
+
+/// User-facing label zobrazený v ChangeAgendaDialog. Override v každé subclass.
+Parameter AgendaLabel As %String = "";
 
 /// Vrátí DataSchema pro agendu: skalární pole (fields) + tabulkové kolekce (fieldCollections).
 /// OUT[1] = JSON objekt:

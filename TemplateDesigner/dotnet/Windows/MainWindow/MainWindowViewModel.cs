@@ -169,7 +169,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Per-agenda mapování instance value → jméno parametru pro GetData.</summary>
     private static string InstanceParamName(string agendaCode) =>
-        agendaCode.Equals("MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
+        agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
 
     // ── Real preview data ────────────────────────────────────────────────────
     private List<DataContext>?                  _realPreviewData;
@@ -341,7 +341,9 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     public TdPreferencesService? Preferences { get; }
 
-    public TemplateDesignerViewModel(MLRest? mlRest = null, TdPreferencesService? preferences = null)
+    public TemplateDesignerViewModel(MLRest? mlRest = null,
+                                     TdPreferencesService? preferences = null,
+                                     IReadOnlyList<AgendaRegistryEntry>? agendas = null)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
 
@@ -352,8 +354,9 @@ public class TemplateDesignerViewModel : EDViewModel
         _sectionTemplates = new SectionTemplateManager();
 
         var resolvedMlRest = mlRest ?? CacheSchemaWiring.TryCreateMlRest(settings);
-        CacheProvider = resolvedMlRest is not null
-            ? CacheSchemaWiring.TryCreate(resolvedMlRest, settings)
+        var resolvedAgendas = agendas ?? [];
+        CacheProvider = resolvedMlRest is not null && resolvedAgendas.Count > 0
+            ? CacheSchemaWiring.TryCreate(resolvedMlRest, resolvedAgendas)
             : null;
         TemplateStorage = resolvedMlRest is not null
             ? new Services.CacheTemplateService(resolvedMlRest)
@@ -2215,7 +2218,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Sample template ───────────────────────────────────────────────────────
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "MHD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_MHD" };
         const float headerH = 25f;
         const float footerH = 15f;
         float bodyH = Math.Max(0f, t.PageSize.PrintableHeight - headerH - footerH);

@@ -110,12 +110,12 @@ ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String) As %Dyna
 }
 
 /// Mapuje agenda kód na FQN Caché třídy implementující BaseAgenda.
-/// Aktuálně hardcoded — odpovídá agendas[] v templatedesigner.appsettings.json.
-/// TODO: po Wave 2 přechod na AgendaRegistryAPI z Caché.
+/// Aktuálně hardcoded mirror Wave 2 AgendyRegistr — TODO: refactor na volání
+/// ALVA.TemplateDesigner.API.AgendyRegistr.ListAgendy a lookup z výsledku.
 ClassMethod GetClassForAgenda(agendaCode As %String) As %String
 {
-    if agendaCode = "MHD"     q "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
-    if agendaCode = "FAKTURY" q "ALVA.TemplateDesigner.Agendy.Faktury"
+    if agendaCode = "ZASTAVKOVY_JR_MHD" q "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+    if agendaCode = "FAKTURY"           q "ALVA.TemplateDesigner.Agendy.Faktury"
     q ""
 }
 

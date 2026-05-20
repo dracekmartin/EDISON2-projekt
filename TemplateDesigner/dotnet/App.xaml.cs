@@ -63,7 +63,24 @@ public partial class App : Application
         // Color picker recent colors integrace — static reference, žádný explicit DI.
         TemplateDesigner.Controls.ColorPickerHelper.Preferences = prefs;
 
-        new MainWindow(mlRest, prefs).Show();
+        // Wave 2 (W2-1): registr agend — Caché auto-discovery z BaseAgenda subclasses.
+        // Sync wait do 3s — pokud propadne, MainWindow startuje jen s GENERAL agendou
+        // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.
+        IReadOnlyList<TemplateDesigner.Serialization.AgendaRegistryEntry> agendas = [];
+        if (mlRest is not null)
+        {
+            var agendaRegistry = new TemplateDesigner.Serialization.CacheAgendaRegistry(new MLRestAdapter(mlRest));
+            var listTask = agendaRegistry.ListAsync();
+            if (listTask.Wait(TimeSpan.FromSeconds(3)))
+                agendas = listTask.Result;
+        }
+        else
+        {
+            // Standalone bez Caché — pouze GENERAL (synthetic injection v registru, ale registr není volaný)
+            agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez databáze)", "")];
+        }
+
+        new MainWindow(mlRest, prefs, agendas).Show();
     }
 
     /// <summary>

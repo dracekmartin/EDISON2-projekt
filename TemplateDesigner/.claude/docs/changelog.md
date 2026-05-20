@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-05-20 — Wave 2 W2-1: Agenda registry → Caché auto-discovery
+
+První polovina Wave 2 Caché migrace — seznam dostupných agend přesunut z `templatedesigner.appsettings.json agendas[]` do Caché auto-discovery z `BaseAgenda` subclasses. Druhá polovina (section templates) zbývá.
+
+**Caché:**
+- `BaseAgenda.cls` — 2 nové class parametry (`AgendaCode`, `AgendaLabel`); konvence `<TYP_SESTAVY>_<DATOVY_ZDROJ>` (např. `ZASTAVKOVY_JR_MHD`)
+- `ZastavkoveJrMhd.cls` — declares `AgendaCode = "ZASTAVKOVY_JR_MHD"` (přejmenováno z původního `"MHD"` — MHD je datový modul, ne typ sestavy)
+- `Faktury.cls` — declares `AgendaCode = "FAKTURY"`, `AgendaLabel = "Faktury"`
+- NEW `API/AgendyRegistr.cls` — `ListAgendy` metoda přes `%Dictionary` SQL (SELECT subclasses BaseAgenda), vrátí JSON pole `[{code, label, cacheClass}, ...]`. Třída JE registrace — žádný drift mezi registrem a impl.
+
+**.NET:**
+- NEW `Serialization/IAgendaRegistry.cs` — interface + `AgendaRegistryEntry` record
+- NEW `Serialization/CacheAgendaRegistry.cs` — Caché-backed impl, syntheticky prepend GENERAL agendy (`code="GENERAL", cacheClass=""`), fallback při chybě jen GENERAL
+- `Config/CacheSchemaWiring.cs` — `TryCreate(MLRest, IReadOnlyList<AgendaRegistryEntry>)` místo `(MLRest, AppSettings)`
+- `Config/AppSettings.cs` — odstraněna `Agendas` property + `SchemaAgendaSettings` třída + reference v `MergeLocal`
+- `App.xaml.cs` — sync load agendy ze Caché s 3s timeoutem, fallback na pouze GENERAL při neúspěchu
+- `MainWindow(MLRest?, prefs?, agendas?)` — 3. ctor param; propagováno do VM
+- `templatedesigner.appsettings.json` — smazáno `agendas[]`
+- `MainWindowViewModel.InstanceParamName` a `MainWindow.OpenPrintDialog` — string check `"MHD"` → `"ZASTAVKOVY_JR_MHD"`
+
+**Architektonická rozhodnutí:**
+- **Auto-discovery místo hardcoded list** — `třída JE registrace`. Eliminuje drift (registr ≠ impl).
+- **GENERAL synthetic injection v .NET** — agenda bez Caché class (šablona bez DB vazby), vždy dostupná
+- **Per-customer kontrola odložena** (YAGNI) — všichni zákazníci mají stejný kód, AgendaEnabled parameter ani per-IDfa override teď nepotřebujeme
+- **Naming `<TYP_SESTAVY>_<DATOVY_ZDROJ>`** — `MHD` je datový modul, ne typ sestavy. Budoucí JŘ agendy: `KNIZNI_JR_MHD`, `MEZIMESTSKY_JR_MHD`, `VOZOVY_JR_MHD`.
+
 ## 2026-05-20 — Wave 1.5: Recent Colors + PrintDialog params (per-agenda)
 
 Dokončení Wave 1 ekvivalentního rozsahu — recent colors v color pickeru + persistované PrintDialog params sdílené s preview lištou.

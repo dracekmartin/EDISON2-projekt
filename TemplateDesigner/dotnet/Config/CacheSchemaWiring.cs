@@ -11,16 +11,6 @@ namespace TemplateDesigner.Config;
 internal static class CacheSchemaWiring
 {
     /// <summary>
-    /// Pokusí se vytvořit CacheAgendaProvider podle nastavení z templatedesigner.appsettings.json.
-    /// Vrátí null pokud připojení není nakonfigurováno nebo nejsou definovány žádné agendy.
-    /// </summary>
-    public static CacheAgendaProvider? TryCreate(AppSettings settings)
-    {
-        var mlRest = TryCreateMlRest(settings);
-        return mlRest is not null ? TryCreate(mlRest, settings) : null;
-    }
-
-    /// <summary>
     /// Vytvoří MLRest instanci z nastavení. Vrátí null pokud připojení není nakonfigurováno.
     /// </summary>
     public static MLRest? TryCreateMlRest(AppSettings settings)
@@ -37,19 +27,21 @@ internal static class CacheSchemaWiring
     }
 
     /// <summary>
-    /// Vytvoří CacheAgendaProvider s předaným MLRest (EDISON mód — MLRest pochází z hlavní aplikace).
-    /// Vrátí null pokud nejsou definovány žádné agendy.
+    /// Vytvoří <see cref="CacheAgendaProvider"/> s předaným MLRest a seznamem agend.
+    /// Wave 2: agendy přichází z Caché registru (<see cref="IAgendaRegistry"/>), nikoli
+    /// z <c>appsettings.json</c>. GENERAL agenda je v seznamu injektována syntheticky
+    /// implementací registru. Vrátí null pokud seznam je prázdný.
     /// </summary>
-    public static CacheAgendaProvider? TryCreate(MLRest mlRest, AppSettings settings)
+    public static CacheAgendaProvider? TryCreate(MLRest mlRest, IReadOnlyList<AgendaRegistryEntry> agendas)
     {
-        if (settings.Agendas.Count == 0) return null;
+        if (agendas.Count == 0) return null;
 
         // Agenda s prázdným CacheClass (např. "GENERAL") je validní volba — bez DB polí,
         // jen statický obsah šablony. CacheAgendaProvider pro ni vrací null schema.
-        var agendas = settings.Agendas
-            .Select(a => (a.Code, a.Name, a.CacheClass))
+        var tuples = agendas
+            .Select(a => (a.Code, a.Label, a.CacheClass))
             .ToList();
 
-        return new CacheAgendaProvider(mlRest, agendas);
+        return new CacheAgendaProvider(mlRest, tuples);
     }
 }

@@ -20,7 +20,6 @@ public class AppSettings
     public const string LocalConfigFileName = "templatedesigner.appsettings.local.json";
 
     public CacheConnectionSettings? Cache    { get; set; }
-    public List<SchemaAgendaSettings> Agendas { get; set; } = [];
     public AiAssistantSettings AiAssistant   { get; set; } = new();
 
     /// <summary>Zdroj nakonec použitého configu (pro diagnostiku startu).</summary>
@@ -103,8 +102,6 @@ public class AppSettings
     {
         if (local.Cache is not null)
             target.Cache = local.Cache;
-        if (local.Agendas.Count > 0)
-            target.Agendas = local.Agendas;
         if (!string.IsNullOrEmpty(local.AiAssistant.AnthropicApiKey))
             target.AiAssistant.AnthropicApiKey = local.AiAssistant.AnthropicApiKey;
         if (local.AiAssistant.Enabled != target.AiAssistant.Enabled)
@@ -147,26 +144,6 @@ public class CacheConnectionSettings
     /// <summary>True pokud je připojení nakonfigurováno.</summary>
     [JsonIgnore]
     public bool IsConfigured => !string.IsNullOrWhiteSpace(Server) && Port > 0;
-}
-
-/// <summary>
-/// Definice jedné agendy načítané z Caché.
-/// Caché třída musí dědit z ALVA.TemplateDesigner.Agendy.BaseAgenda
-/// a implementovat GetSchema, GetTableTemplates, GetTableTemplate, GetData.
-/// </summary>
-public class SchemaAgendaSettings
-{
-    /// <summary>Kód agendy — musí odpovídat Template.AgendaCode, např. "JR".</summary>
-    public string Code       { get; set; } = "";
-
-    /// <summary>Čitelný název agendy pro UI.</summary>
-    public string Name       { get; set; } = "";
-
-    /// <summary>
-    /// Caché třída implementující BaseAgenda,
-    /// např. "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd".
-    /// </summary>
-    public string CacheClass { get; set; } = "";
 }
 
 /// <summary>Nastavení AI asistenta pro generování šablon.</summary>

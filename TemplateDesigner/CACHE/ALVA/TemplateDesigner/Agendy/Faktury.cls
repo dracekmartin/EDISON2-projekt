@@ -11,11 +11,12 @@
 ///
 /// Aktuálně **referenční implementace s mock daty** — reálné DB volání (GetData)
 /// vyžaduje napojení na konkrétní strukturu fakturačního systému (TODO).
-///
-/// appsettings.json:
-///   { "code": "FAKTURY", "name": "Faktury", "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury" }
 Class ALVA.TemplateDesigner.Agendy.Faktury Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
+
+Parameter AgendaCode = "FAKTURY";
+
+Parameter AgendaLabel = "Faktury";
 
 /// Vrátí schéma polí FAKTURY agendy: skalární pole + položky faktury.
 ClassMethod GetSchema(ByRef sys As %String) As %Status

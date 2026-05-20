@@ -23,11 +23,12 @@ Include (ALVAMHD, GENERAL)
 /// (detail struktury v komentáři u GetData).
 ///
 /// Wire formát výstupu viz `.claude/docs/schedule-elements-architecture.md`.
-///
-/// appsettings.json:
-///   { "code": "MHD", "name": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" }
 Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
+
+Parameter AgendaCode = "ZASTAVKOVY_JR_MHD";
+
+Parameter AgendaLabel = "Zastávkový JŘ (MHD)";
 
 /// Vrátí schéma polí MHD agendy.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
