@@ -883,19 +883,15 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (!IsDirty) return true;
 
-        // TODO: IPopupDisplayer nemá YesNoCancel — až bude potřeba v EDControls,
-        // přidat `bool? ConfirmYesNoCancel(string)` a nahradit zdejší MessageBox.Show.
-        var result = MessageBox.Show(
+        var result = PopupDisplayer.ConfirmYesNoCancel(
             "Šablona obsahuje neuložené změny. Chcete je uložit?",
-            "Neuložené změny",
-            MessageBoxButton.YesNoCancel,
-            MessageBoxImage.Warning);
+            title: "Neuložené změny");
 
         return result switch
         {
-            MessageBoxResult.Yes => SaveAndContinue(),
-            MessageBoxResult.No => true,
-            _ => false // Cancel
+            true  => SaveAndContinue(),  // Ano = uložit a pokračovat
+            false => true,                // Ne = pokračovat bez uložení (zahodit změny)
+            null  => false                // Storno = zrušit zavírání
         };
     }
 

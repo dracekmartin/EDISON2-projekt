@@ -17,6 +17,9 @@ public class PopupDisplayer : IPopupDisplayer
     public bool ConfirmClose() =>
         Confirm("Opravdu chcete zavřít okno bez uložení?");
 
+    public bool? ConfirmYesNoCancel(string message, string? title = null) =>
+        EDPopup.ShowYesNoCancel(ActiveWindow, message, title);
+
     public void Error(Exception ex) =>
         EDErrorPopup.Show(ActiveWindow, ex);
 }
