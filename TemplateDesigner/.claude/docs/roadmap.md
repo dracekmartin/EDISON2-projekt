@@ -28,16 +28,22 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**Kde pokračovat dál — návrat ke core**:
+**Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
 
-1. **Fáze A.2-D — Caché business logic** ⬅️ nejvyšší zákaznický dopad
-   TRANSDEV/KORID suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+1. **Wave 1.5 — UserPreferences cleanup** ⬅️ AKTUÁLNÍ (Wave 1 hotová ✅ 2026-05-20)
+   Krátké doplnění validující Wave 1 pattern v praxi (recent colors), případně skip pro odložené (group expanded → Wave 4 stejně nahradí, font override → není user request). Scope k odsouhlasení. Plný plán v § Wave 1 níže.
 
-2. **Wave 1.5 — UserPreferences rozšíření** (Wave 1 hotová ✅ 2026-05-20)
-   Wave 1 dodala MainState (zoom, grid, snap, splittery, tab index, preview pane), RecentFiles, InstanceDefaults per šablona. Co zbývá pro 1.5: recent colors, PropertiesPanel group expanded state, font override. Plný plán v § Wave 1 níže.
+2. **Wave 2 — Shared catalogs**
+   Caché-driven AgendaRegistry / CompanyPalette / ElementDefaults / SectionTemplates. Přesun z `appsettings.json` + hardcoded → jedno místo pravdy, žádný redeploy pro novou agendu. Detail v § Wave 2 níže.
 
-3. **H-18/H-19 — Template versioning + migrator** (prerekvizita produkčního Wave 3)
+3. **H-18/H-19 — Template versioning + migrator** (prereq produkčního Wave 3)
    Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
+
+4. **Wave 3 finishing — produkční Template storage**
+   Wave 3 CRUD ✅ hotový; chybí audit log, thumbnails, advanced features.
+
+5. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-4)
+   TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
 **Mimo aktuální focus** (až bude potřeba):
 - Plná sada Filter polí (EDFilter rozšíření)
@@ -86,11 +92,13 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🔴 Fáze A.2-D: Caché business logic ⬅️ AKTUÁLNÍ PRIORITA
+### 🟠 Fáze A.2-D: Caché business logic (po dokončení Wave 1.5 → 2 → 3)
 
-Suspended tickety TRANSDEV/KORID — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
+Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
 > **Pozn.:** Fáze A.2-A..C (StopList / DepartureGrid / NotesLegend UI úpravy) je hotová — viz Archiv níže. Zbývá A.2-D série (Caché logika) + A.2-A5/A6/B4 (odložené pro datový průzkum / diskuzi s kolegy).
+>
+> **Priorita:** Wave 1.5 → Wave 2 → H-18/H-19 → Wave 3 finishing → Fáze A.2-D. Caché Migration foundation se uzavře dřív, než se vrátíme k zákaznickým ticketům — eliminuje riziko rework po pozdním přechodu.
 
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
 

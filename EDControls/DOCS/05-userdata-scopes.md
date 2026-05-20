@@ -6,6 +6,8 @@ Centrální evidence všech **scope × key** kombinací uložených v `^ALVA.EDC
 - Kdo vlastní jaký scope (přidání nové aplikace = nový scope, ne klíč v existujícím)
 - Schéma jednotlivých blobů (klienti znají strukturu, server je „dumb")
 
+> **🛑 Než přidáš nový state, přečti [§ 3 typy state — rozhodovací mřížka](#3-typy-state--rozhodovací-mřížka).** Bez ní vznikne ad-hoc nepořádek.
+>
 > **Když přidáváš nový konzument, ZAVOLEJ:** doplň řádek do tabulky [§ Registr](#registr) níže ve stejném commitu jako kód.
 
 ---
@@ -25,6 +27,71 @@ Centrální evidence všech **scope × key** kombinací uložených v `^ALVA.EDC
 
 **Pros:** Server-side schema-less, klienti se evolují nezávisle, žádné DB migrace při přidání nové komponenty.
 **Cons → mitigace:** schema drift → backward-compatible JSON, corrupt blob → defensive parsing fallback na defaults, kolize → tento registr + scope naming konvence.
+
+---
+
+## 3 typy state — rozhodovací mřížka
+
+> **Závazné pravidlo pro každý nový state:** zařaď ho do jednoho ze 3 typů níže. Tabulka pokrývá ~99% per-user persistence v EDISON ekosystému. Pokud věříš že tvůj případ tam **nepatří**, otevři diskusi a doplň zde — neulož to ad-hoc.
+
+| Typ | Charakteristika | Trigger savu | Storage pattern |
+|---|---|---|---|
+| **1. UI state** | Omezená sada preferencí; všechny se mění během session, persistují společně | **On close** (jeden event) | **Jeden blob** ve scope `"<App>"`, key `"MainState"` |
+| **2. Activity log** | Rostoucí list (FIFO, cap), aktualizuje se s každou user akcí | **On event** (per akce) | **Per-list klíč** ve scope `"<App>"`, key = název listu |
+| **3. Per-entity** | Stav scaluje s N entitami (šablony, okna, sekce, ...) | **On event** (per entita) | **Vlastní scope** `"<App>.<Feature>"`, key = entity ID |
+
+### Rozhodovací mřížka
+
+```
+1. Scaluje to s N entitami (templates, okna, sekce, ...)?
+   ├── YES → Typ 3: separátní scope "<App>.<Feature>", key = entity ID
+   └── NO → krok 2
+
+2. Roste to v čase (list, history, FIFO)?
+   ├── YES → Typ 2: vlastní key v app scope, save on event
+   └── NO → Typ 1: do MainState blobu, save on close
+```
+
+### Příklady aplikace (TemplateDesigner)
+
+| Item | Typ | Storage |
+|---|---|---|
+| Zoom, grid, snap, splittery, tab index, preview pane | 1 | `"TemplateDesigner"` / `"MainState"` |
+| RecentFiles | 2 | `"TemplateDesigner"` / `"RecentFiles"` |
+| RecentColors | 2 | `"TemplateDesigner"` / `"RecentColors"` |
+| InstanceDefaults per šablona | 3 | `"TemplateDesigner.InstanceDefaults"` / `<template-guid>` |
+| PrintParams per šablona | 3 | `"TemplateDesigner.PrintParams"` / `<template-guid>` |
+
+### Proč 3 typy a ne víc/míň
+
+**Proč nebundlovat všechno** do jednoho MainState blobu napříč všemi typy:
+
+| Problém s bundling | Důvod splitnout |
+|---|---|
+| Crash ztratí celou history (Type 2) | Activity log saveuje **immediately on event** |
+| Race condition (save on close + during-session save) | Per-list key má vlastní lifecycle |
+| Write amplification (open jednoho file přepíše celý MainState) | Per-list key = malý zápis |
+| 200 templates v MainState by ho zaplnily | Type 3 má vlastní scope = vizuální izolace |
+
+**Proč neseparovat všechno** na samostatné klíče (i pro UI state):
+
+| Problém s plnou separací | Důvod bundle Type 1 |
+|---|---|
+| N round-tripů při savu | Jeden save = atomic |
+| Atomicita — Zoom uložen, GridSize ne | Bundle = guaranteed konsistentní snapshot |
+| Overhead (Caché ~50ms per call) | 12 fields = 1 save místo 12 |
+
+### Edge cases (zatím v EDISON neřešíme)
+
+Pokud někdy přijde podobný požadavek, **otevři diskusi** — pravděpodobně to nepatří do `^ALVA.EDControls.UserData` ale do separátního storage mechanismu:
+
+| Scenario | Proč nepatří sem | Co by mohlo být řešení |
+|---|---|---|
+| Auth tokens, credentials | Bezpečnostní concern, separátní treatment | Secure storage (DPAPI, key vault) |
+| Audit log (kdo co kdy) | Cross-user/server log, ne per-user prefs | Vlastní auditní global |
+| Real-time collaborative state | Multi-user shared editing | WebSocket session storage |
+| Velká binární data (>100KB) | Storage určen na JSON blobs, ne BLOBs | `BinarySave` / file storage |
+| Per-machine settings (path k Caché serveru) | Není per-user × IdFa, je per-machine | Lokální config (appsettings.json) |
 
 ---
 
@@ -186,38 +253,38 @@ if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
 
 **Stav:** ✅ Implementováno (L1, F1 commit, 2026-05-15).
 
-### `TemplateDesigner` (Wave 1)
+### `TemplateDesigner` — Typ 1 (UI state) + Typ 2 (activity logs)
+
+| Key | Typ | Schema | Owner |
+|---|---|---|---|
+| `"MainState"` | 1 | `MainStatePref` record — zoom, grid, snap, showGrid, showSectionHeaders, showRuler, gridSize, snapGapMm, showPreviewPane, leftPanelWidthPx, previewPanelWidthPx, activeLeftTabIndex | `TemplateDesigner.Services.TdPreferencesService` |
+| `"RecentFiles"` | 2 | `List<string>` — last 10 opened file paths (capped, dedup case-insensitive) | `TdPreferencesService.AddRecentFileAsync` |
+| `"RecentColors"` | 2 | `List<string>` — last 8 použitých barev v color pickeru (`"#AARRGGBB"`) | (Wave 1.5 — TBD) |
+
+**Stav:** ✅ Wave 1 (MainState + RecentFiles, 2026-05-20). ⬜ Wave 1.5 (RecentColors).
+
+### `TemplateDesigner.InstanceDefaults` — Typ 3 (per template)
 
 | Key | Schema | Owner |
 |---|---|---|
-| `"MainState"` | `MainStatePref` record — zoom, grid, snap, showGrid, showSectionHeaders, showRuler, gridSize, snapGapMm, showPreviewPane, leftPanelWidthPx, previewPanelWidthPx, activeLeftTabIndex | `TemplateDesigner.Services.TdPreferencesService` (plánováno) |
-| `"RecentFiles"` | `List<string>` — last N opened file paths (capped, např. 10) | `TemplateDesigner.Services.TdPreferencesService` (plánováno) |
+| `<templateID>` (Guid string) | `List<string>` — instance IDs vybrané při posledním použití šablony | `TdPreferencesService.SaveInstanceDefaultsAsync` |
 
-**Stav:** ⬜ Wave 1 — plánováno.
+**Stav:** ✅ Wave 1 (2026-05-20).
 
-### `TemplateDesigner.InstanceDefaults` (Wave 1)
-
-| Key | Schema | Owner |
-|---|---|---|
-| `<templateID>` (Guid string) | `List<string>` — instance IDs vybrané při posledním použití šablony | `TemplateDesigner.Services.TdPreferencesService` (plánováno) |
-
-**Stav:** ⬜ Wave 1 — plánováno.
-
-### `TemplateDesigner.PropertiesPanel` (budoucí)
+### `TemplateDesigner.PrintParams` — Typ 3 (per template)
 
 | Key | Schema | Owner |
 |---|---|---|
-| `"GroupExpanded.<elementType>"` (např. `"GroupExpanded.TextElement"`) | `Dictionary<string, bool>` — group name → expanded/collapsed | TD PropertiesPanel (zatím skip — Wave 4 EDInputForm migrace stejně to nahradí) |
+| `<templateID>` (Guid string) | `Dictionary<string, JsonNode?>` — values for `TemplateParameter` keys uložené při posledním Print/Export pro tuto šablonu | (Wave 1.5 — TBD) |
 
-**Stav:** ⬜ Skip — odloženo do Wave 4.
+**Stav:** ⬜ Wave 1.5 — plánováno.
 
-### `TemplateDesigner.RecentColors` (budoucí)
+### Záměrně skipnuté
 
-| Key | Schema | Owner |
-|---|---|---|
-| `"Colors"` | `List<string>` — last N použitých barev v color pickeru (#AARRGGBB) | TD ColorPickerHelper |
-
-**Stav:** ⬜ Skip pro V1 — možná Wave 1.5.
+| Scope/key | Důvod skipu |
+|---|---|
+| `"TemplateDesigner.PropertiesPanel"` (group expanded state) | Wave 4 EDInputForm migrace panel kompletně nahradí (W4-10 řeší stejnou potřebu generic) |
+| `"TemplateDesigner.FontOverride"` (per-user UI font) | Žádný user request pro TD; EDISONMAIN2 to má kvůli legacy accessibility, TD má EDTheme tokens |
 
 ---
 
@@ -245,22 +312,30 @@ Ujasnění proti dalším storage mechanismům v EDISON ekosystému:
 
 ---
 
-## Jak přidat nový scope
+## Jak přidat nový state — checklist
 
-1. **Rozhodni:** je to per-user × IDfa state? Pokud ano, pokračuj. Pokud ne, použij jiný layer.
-2. **Naming:** vyber fully qualified scope (`MyComponent.SubFeature`).
-3. **Schema:** vytvoř C# record s defaults pro všechny pole.
-4. **Service wrapper:** napiš service třídu kolem `IUserPrefsService` s typed API (LoadAsync / SaveAsync s konkrétním record).
-5. **Defensive parsing:** Load → catch exception → fallback na defaults.
-6. **Doplň řádek do § Registr výše** ve stejném commitu jako kód.
+1. **Layer rozhodnutí:** je to per-user × IDfa state? Pokud ano, pokračuj. Jinak viz [§ Storage layery](#storage-layery--co-kde) (window pozice → B, doménová data → C, per-machine → out-of-band).
+2. **Typ rozhodnutí:** projdi [§ 3 typy state — rozhodovací mřížka](#3-typy-state--rozhodovací-mřížka). Zařaď do Typu 1 / 2 / 3.
+3. **Naming podle typu:**
+   - Typ 1 → key v hlavním app scope (např. `"MainState"`)
+   - Typ 2 → vlastní key v hlavním app scope (např. `"RecentFiles"`)
+   - Typ 3 → vlastní scope `"<App>.<Feature>"`, key = entity ID
+4. **Schema:** typed C# record (Typ 1) nebo `List<>` / `Dictionary<>` (Typ 2/3) s defaults pro všechny pole.
+5. **Service wrapper:** rozšiř existující service třídu (např. `TdPreferencesService`) — typed API pro Load/Save dané položky.
+6. **Defensive parsing:** Load → catch exception → fallback na defaults / empty.
+7. **Save policy:** Typ 1 = on close (atomic). Typ 2/3 = on event (immediate).
+8. **Doplň řádek do § Registr** ve stejném commitu jako kód — uveď i číslo typu.
 
 ---
 
 ## Anti-patterns — neopakovat
 
+- ❌ **Ad-hoc rozhodnutí kam to dát** — vždy zařadit do [§ 3 typů](#3-typy-state--rozhodovací-mřížka)
 - ❌ **Generic JsonNode manipulation** v aplikaci — vždy typed records
 - ❌ **Sdílený scope mezi nesouvisejícími features** („misc") — separátní scopes vždy
 - ❌ **Encoding metadata do key** místo do struktury (`"GroupExpanded.TextElement.Font"` → použij vnořený JSON v hodnotě)
 - ❌ **Save on every keystroke** bez debouncing — flooding Caché
 - ❌ **Throw on parsing failure** — vždy graceful degradation na defaults
 - ❌ **Persistovat per-session state** (selected elements, undo stack, transient UI state) — to není „preference"
+- ❌ **Bundlovat Typ 2/3 do MainState blobu** — crash ztratí history; race condition mezi save on close vs save on event
+- ❌ **Separovat Typ 1 properties na samostatné klíče** — N round-tripů, ztráta atomicity
