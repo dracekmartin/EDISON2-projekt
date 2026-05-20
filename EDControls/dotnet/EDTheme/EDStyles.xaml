@@ -23,6 +23,92 @@
     -->
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         TabItem — moderní underline tabs (Chrome/VS Code styl)
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style TargetType="TabItem">
+        <Setter Property="Padding"    Value="12,6"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Secondary}"/>
+        <Setter Property="FontSize"   Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Cursor"     Value="Hand"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="Transparent"
+                            BorderThickness="0,0,0,2"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter x:Name="Content"
+                                          ContentSource="Header"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          RecognizesAccessKey="True"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"
+                                          TextElement.FontWeight="Normal"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                            <Setter TargetName="Content" Property="TextElement.Foreground"
+                                    Value="{DynamicResource EDTheme.Text.Primary}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush"
+                                    Value="{DynamicResource EDTheme.Accent.Blue}"/>
+                            <Setter TargetName="Content" Property="TextElement.Foreground"
+                                    Value="{DynamicResource EDTheme.Text.Primary}"/>
+                            <Setter TargetName="Content" Property="TextElement.FontWeight" Value="SemiBold"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- TabControl — odstranění defaultního borderu/pozadí, čistá tab strip area -->
+    <Style TargetType="TabControl">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
+        <Setter Property="BorderThickness" Value="0,0,0,1"/>
+        <Setter Property="Padding"         Value="0"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <Grid SnapsToDevicePixels="True">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+                        <!-- Tab strip -->
+                        <Border Grid.Row="0"
+                                Background="Transparent"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <TabPanel IsItemsHost="True"
+                                      Margin="0"
+                                      Background="Transparent"
+                                      KeyboardNavigation.TabIndex="1"/>
+                        </Border>
+                        <!-- Content -->
+                        <Border Grid.Row="1"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter ContentSource="SelectedContent"/>
+                        </Border>
+                    </Grid>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          ComboBox — flat dropdown s focus accent
          ═══════════════════════════════════════════════════════════════════ -->
 

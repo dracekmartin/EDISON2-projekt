@@ -454,13 +454,6 @@
             <Border Grid.Column="0" Grid.Row="0"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,1,0">
                 <TabControl x:Name="LeftTabControl" SelectionChanged="LeftTabControl_SelectionChanged">
-                    <TabControl.Resources>
-                        <Style TargetType="TabItem">
-                            <Setter Property="Padding" Value="8,4"/>
-                            <Setter Property="FontSize" Value="11"/>
-                        </Style>
-                    </TabControl.Resources>
-
                     <!-- ── Záložka Sekce ── -->
                     <TabItem Header="▣ Sekce">
                         <DockPanel>
