@@ -21,7 +21,7 @@
 | **`EDFooter`** | Footer s tlačítky OK/Storno/Aplikovat (standardní rozložení) | Stabilní | — |
 | **`EDToolbar`** | Toolbar s ikonami a tooltipy | Stabilní | — |
 | **`EDActionInProgress`** | Loading overlay pro long-running operace | Stabilní | — |
-| **`IUserPrefsService`** | Per-user × IDFa persist state (zoom, sort, recent files…) | Stabilní | — |
+| **`IUserPrefsService`** | Per-user × IDFa persist state (zoom, sort, recent files…) | Stabilní | [`05-userdata-scopes.md`](05-userdata-scopes.md) |
 | **`IPopupDisplayer`** | Error/Confirm/Info/ConfirmClose dialogy přes Popups | Stabilní | — |
 | **`WindowStatePersistence`** | Pozice/velikost/maximized okna per (MLP × IDFa) | Stabilní | — |
 | **`EDIcons`** | Resource dictionary 33 Fluent UI System Icons | Stabilní | — |
