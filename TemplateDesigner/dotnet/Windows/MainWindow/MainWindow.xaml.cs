@@ -132,8 +132,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Chyba při exportu PDF:\n{ex.Message}", "Export PDF",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _vm!.PopupDisplayer.Error(ex);
             }
         };
         _vm.RequestExportPng             = filePath =>
@@ -153,8 +152,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Chyba při exportu PNG:\n{ex.Message}", "Export PNG",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _vm!.PopupDisplayer.Error(ex);
             }
         };
 
@@ -892,8 +890,7 @@ public partial class MainWindow : Window
                     var t = _vm.LoadCustomSectionTemplate(name);
                     if (t is null)
                     {
-                        MessageBox.Show($"Šablonu '{name}' se nepodařilo načíst.",
-                            "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                        _vm.PopupDisplayer.Info($"Šablonu '{name}' se nepodařilo načíst.");
                         return new Section { Name = "Chyba" };
                     }
                     return t;
@@ -918,8 +915,7 @@ public partial class MainWindow : Window
         if (_vm is null) return;
         if (_vm.State.ActiveSection is null)
         {
-            MessageBox.Show("Nejprve vyberte sekci kliknutím v levém panelu nebo na canvasu.",
-                "Žádná aktivní sekce", MessageBoxButton.OK, MessageBoxImage.Information);
+            _vm.PopupDisplayer.Info("Nejprve vyberte sekci kliknutím v levém panelu nebo na canvasu.");
             return;
         }
 
