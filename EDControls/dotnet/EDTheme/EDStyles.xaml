@@ -23,6 +23,208 @@
     -->
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         ComboBox — flat dropdown s focus accent
+         ═══════════════════════════════════════════════════════════════════ -->
+
+    <!-- Interní ToggleButton ComboBoxu — pokrývá celou šířku, šipka vpravo.
+         Kliknutí kdekoliv na ComboBox toggluje dropdown (standard WPF chování). -->
+    <Style x:Key="EDTheme.ComboBox.ToggleStyle" TargetType="ToggleButton">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="ClickMode" Value="Press"/>
+        <Setter Property="OverridesDefaultStyle" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ToggleButton">
+                    <Border Background="Transparent" SnapsToDevicePixels="True">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                            </Grid.ColumnDefinitions>
+                            <Path Grid.Column="1"
+                                  HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Data="M 0 0 L 4 4 L 8 0 Z"
+                                  Fill="{DynamicResource EDTheme.Text.Secondary}"/>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Položka v dropdown -->
+    <Style TargetType="ComboBoxItem">
+        <Setter Property="Padding"    Value="8,4"/>
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontSize"   Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBoxItem">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueSelected}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ComboBox -->
+    <Style TargetType="ComboBox">
+        <Setter Property="Padding"         Value="6,4"/>
+        <Setter Property="Background"      Value="White"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="MinHeight" Value="24"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ComboBox">
+                    <Grid>
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- ToggleButton pokrývá celou plochu — klik kdekoliv otevře dropdown.
+                                     Šipka uvnitř jeho template je vpravo (20px sloupec). -->
+                                <ToggleButton x:Name="PART_ToggleButton"
+                                              Style="{StaticResource EDTheme.ComboBox.ToggleStyle}"
+                                              IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"/>
+
+                                <!-- Selected item display — překryv ToggleButton, IsHitTestVisible=False
+                                     aby kliknutí prošlo na ToggleButton pod ním. Margin vpravo 20px = místo pro šipku. -->
+                                <ContentPresenter x:Name="ContentSite"
+                                                  IsHitTestVisible="False"
+                                                  Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                                  Margin="6,4,26,4"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+
+                                <!-- Editable TextBox — pro IsEditable=True ComboBox -->
+                                <TextBox x:Name="PART_EditableTextBox"
+                                         Visibility="Collapsed"
+                                         Background="Transparent"
+                                         BorderThickness="0"
+                                         Margin="6,4,26,4"
+                                         Padding="0"
+                                         Foreground="{TemplateBinding Foreground}"
+                                         IsReadOnly="{TemplateBinding IsReadOnly}"
+                                         VerticalContentAlignment="Center"
+                                         Focusable="True"/>
+                            </Grid>
+                        </Border>
+
+                        <!-- Dropdown popup -->
+                        <Popup x:Name="Popup"
+                               Placement="Bottom"
+                               IsOpen="{TemplateBinding IsDropDownOpen}"
+                               AllowsTransparency="True"
+                               Focusable="False"
+                               PopupAnimation="Slide">
+                            <Border MinWidth="{TemplateBinding ActualWidth}"
+                                    MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                    Background="White"
+                                    BorderBrush="{DynamicResource EDTheme.Border.Medium}"
+                                    BorderThickness="1"
+                                    CornerRadius="3"
+                                    Margin="0,2,0,0"
+                                    SnapsToDevicePixels="True">
+                                <ScrollViewer SnapsToDevicePixels="True">
+                                    <StackPanel IsItemsHost="True"
+                                                KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                </ScrollViewer>
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEditable" Value="True">
+                            <Setter Property="IsTabStop" Value="False"/>
+                            <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible"/>
+                            <Setter TargetName="ContentSite" Property="Visibility" Value="Hidden"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Strong}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         TextBox — flat input s focus accent
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style TargetType="TextBox">
+        <Setter Property="Padding"         Value="6,4"/>
+        <Setter Property="Background"      Value="White"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TextBox">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="3"
+                            SnapsToDevicePixels="True">
+                        <ScrollViewer x:Name="PART_ContentHost"
+                                      Padding="{TemplateBinding Padding}"
+                                      VerticalAlignment="{TemplateBinding VerticalContentAlignment}"
+                                      Focusable="False"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Strong}"/>
+                        </Trigger>
+                        <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.Blue}"/>
+                        </Trigger>
+                        <Trigger Property="IsReadOnly" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Panel}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.5"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          Button — flat moderní desktop look
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="Button">
