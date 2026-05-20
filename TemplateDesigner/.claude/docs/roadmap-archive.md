@@ -2,6 +2,49 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Wave 1 + 1.5 — Per-user state přes Caché ✅ (2026-05-20)
+
+První dvě dávky Caché Migration — persistence per-user × IDFa state v `^ALVA.EDControls.UserData` přes `IUserPrefsService`. Žádné lokální JSON soubory (TD běží embedded z EDISONMAIN2). Detail dokumentace, registr scope ownerships a 3-typová taxonomie state v [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md).
+
+**Wave 1 (foundation + UX integrace):**
+
+| Krok | Co | Commit |
+|---|---|---|
+| W1-0 | `IUserPrefsService` foundation + Caché `ALVA.EDControls.UserData` (generic blob storage per IdFa × userID × scope × key) | F1 (2026-05-15) |
+| W1-1 | `TdPreferencesService` wrapper + `MainStatePref` typed record (Typ 1 — UI state, jeden blob) | 7cd39ab |
+| W1-2 | Wire-up: `App.xaml.cs` async load + `TdPreferencesService.Loaded` event fallback pro cold-start | 7cd39ab |
+| W1-3 | `MainWindowViewModel.ApplyLoadedPreferences` — Zoom/Grid/Snap/SnapGapMm/ShowGrid/ShowSectionHeaders/ShowRuler | 7cd39ab |
+| W1-3b | UI-side prefs — splittery (LeftPanelWidthPx, PreviewPanelWidthPx), ActiveLeftTabIndex, ShowPreviewPane | 7cd39ab |
+| W1-4 | Recent Files menu (Soubor → Otevřít poslední) + AddRecentFile při Open/SaveAs, missing-file graceful (Typ 2 — activity log) | 7cd39ab |
+| W1-6 | Instance defaults per šablona (scope `"TemplateDesigner.InstanceDefaults"`, key = template Guid, Typ 3 — per entity) | 7cd39ab |
+
+**Wave 1.5 (Recent Colors + PrintParams):**
+
+| Krok | Co | Commit |
+|---|---|---|
+| W1.5-1 | Recent Colors — 8 last-used barev v color pickeru (`"TemplateDesigner"` / `"RecentColors"`, Typ 2). DRY refactor `ColorPickerHelper` jako single entry point — odstranění duplicitního WinForms ColorDialog kódu z `PropertiesPanel` | 06eeda2 |
+| W1.5-2 | PrintDialog params per-agenda persist + live sync s preview lištou (`"TemplateDesigner.PrintParams"` / `<agendaCode>`, Typ 3 per agenda). Sdílený dict + cross-notification callback. Crash fix (odstranění sync `.Result` blocking UI thread) + re-entrance guard pro rychlé Ctrl+P. | 06eeda2 |
+| W1.5-3 | PropertiesPanel group expanded state | ⛔ Odloženo do Wave 4 (EDInputForm migrace nahradí PropertiesPanel) |
+| W1.5-4 | Font override (analogie EDISONMAIN2 LocalPrefs.FontFamily/FontSize) | ⛔ Odloženo (žádný user request) |
+
+**Doc commity:**
+
+| Commit | Obsah |
+|---|---|
+| ec654e4 | `EDControls/DOCS/05-userdata-scopes.md` — registr UserData scopes |
+| ced96fa | 3 typy state taxonomy + Wave 1.5 priorities |
+
+**Klíčová architektonická rozhodnutí:**
+- **Žádné lokální JSON soubory** pro persistent state (TD běží embedded z EDISONMAIN2)
+- **Async-first pattern** — žádné sync `.Result` block na UI threadu (poučení z crash fixu)
+- **Per-agenda granularita pro PrintParams** — nová šablona stejné agendy zdědí poslední hodnoty
+- **Sdílený dict + cross-notification** — single source of truth pro params mezi PreviewLišta a PrintDialog
+- **3-typová taxonomie state** dokumentována jako závazná pro budoucí konzumenty (Typ 1 UI state, Typ 2 activity log, Typ 3 per entity)
+- **Schema evolution backward-compat** — všechna pole records mají defaults v primary ctoru
+- **DRY ColorPickerHelper** — jediný entry point pro color picker napříč TD
+
+---
+
 ## v1.0 demo balíček ✅ (2026-05-15)
 
 Tři commity tvoří kompletní release readiness pro testovací nasazení — zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Detaily viz [`changelog.md`](changelog.md) 2026-05-15 entry.

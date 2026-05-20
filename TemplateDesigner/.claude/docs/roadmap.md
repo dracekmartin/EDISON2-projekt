@@ -145,40 +145,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 - ✅ `MLRestJson.CallAsync<TReq, TResp>` helper — připraven pro Wave 4 composite endpointy
 - ✅ EDList komponenta (Wave 3 list konzumenti používají)
 
----
-
-#### ✅ Wave 1 + 1.5 — Per-user state (HOTOVO 2026-05-20)
-
-**Foundation** `IUserPrefsService` + Caché `ALVA.EDControls.UserData` (F1, 2026-05-15) poskytuje generic blob storage per (IdFa × userID × scope × key).
-
-**Wave 1 dodala** typed wrapper a UX integraci. Detail dokumentace, registr scope ownerships a konvence pro nové konzumenty v [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md).
-
-| Krok | Co | Stav |
-|---|---|---|
-| W1-0 | `IUserPrefsService` foundation + Caché `ALVA.EDControls.UserData` | ✅ F1 (2026-05-15) |
-| W1-1 | `TdPreferencesService` wrapper + `MainStatePref` typed record | ✅ |
-| W1-2 | Wire-up: `App.xaml.cs` async load + Loaded event fallback pro cold-start | ✅ |
-| W1-3 | `MainWindowViewModel.ApplyLoadedPreferences` — Zoom/Grid/Snap/SnapGapMm/ShowGrid/ShowSectionHeaders/ShowRuler | ✅ |
-| W1-3b | UI-side prefs — splittery (LeftPanelWidthPx, PreviewPanelWidthPx), ActiveLeftTabIndex, ShowPreviewPane | ✅ |
-| W1-4 | Recent Files menu (Soubor → Otevřít poslední) + AddRecentFile při Open/SaveAs, missing-file graceful | ✅ |
-| W1-6 | Instance defaults per šablona (scope `"TemplateDesigner.InstanceDefaults"`, key = template Guid) | ✅ |
-
-**Wave 1.5 (2026-05-20):**
-
-| Krok | Co | Stav |
-|---|---|---|
-| W1.5-1 | Recent Colors — 8 last-used barev v color pickeru (`"TemplateDesigner"` / `"RecentColors"`, Typ 2). DRY refactor `ColorPickerHelper` jako single entry point | ✅ |
-| W1.5-2 | PrintDialog params per-agenda persist + live sync s preview lištou (`"TemplateDesigner.PrintParams"` / `<agendaCode>`, Typ 3 per agenda) | ✅ |
-| W1.5-3 | PropertiesPanel group expanded state | Odloženo do Wave 4 (EDInputForm migrace nahradí PropertiesPanel) |
-| W1.5-4 | Font override (analogie EDISONMAIN2 LocalPrefs.FontFamily/FontSize) | Odloženo (žádný user request) |
-
-**Klíčové architektonické rozhodnutí (Wave 1 + 1.5):**
-- **Žádné lokální JSON soubory** pro persistent state (TD běží embedded z EDISONMAIN2)
-- **Async load + event fallback** — krátký `Wait(200ms)` pro warm cache, jinak `TdPreferencesService.Loaded` event re-apply
-- **Schema evolution backward-compat** — všechny `MainStatePref` properties mají defaults v primary ctoru
-- **Per-agenda granularita** pro PrintParams (ne per-template) — params jsou agenda-level concerns, nová šablona zdědí
-- **Sdílený dict pro preview lišta + PrintDialog** — single source of truth, live sync přes cross-notification callback
-- **3-typová taxonomie state** dokumentována v [`05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md): Typ 1 (UI state, MainState blob, save on close), Typ 2 (activity log, per-list key, save on event), Typ 3 (per entity, vlastní scope, save on event)
+> **Wave 1 + 1.5 hotové ✅ 2026-05-20** — detail v [`roadmap-archive.md`](roadmap-archive.md).
 
 ---
 
