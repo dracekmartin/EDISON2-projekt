@@ -1327,6 +1327,16 @@ public partial class MainWindow : Window
             _vm.SaveCommand.Execute(null);
             e.Handled = true;
         }
+        else if (e.Key == Key.N && ctrl && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.NewCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.O && ctrl)
+        {
+            MenuOpen_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
         else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             OpenPropertiesForPage(_vm.State.CurrentTemplate);
