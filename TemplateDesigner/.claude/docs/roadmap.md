@@ -15,21 +15,35 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor (Agendy/EDList/API role separation) + EDTheme design tokens + implicit Button style hotové (2026-05-19). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor (Agendy/EDList/API role separation) hotov (2026-05-19). **UI polish (theme, implicit styles, perf, layout) uzavřen** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
-**Aktivně rozpracované — UI polish (theme):**
+**Stav UI/theme** (po 2 dnech práce):
+- EDTheme design tokens (33 barev + typo + spacing) v EDControls — runtime swap přes DynamicResource
+- EDStyles implicit styles pro Button/TextBox/ComboBox/CheckBox/TabItem/MenuItem/Menu/ContextMenu/Separator
+- TD MainWindow + 10 dialogů + 5 EDControls komponent na tokens
+- Default Window icon (Edison Molecule) všude přes class handler
+- 3-button popup (IPopupDisplayer.ConfirmYesNoCancel) — náhrada Win32 MessageBox
+- Toolbar restructure (Mřížka & snap / Zoom / Náhled podskupiny + CmbScale do Upravit menu)
+- Y-zarovnání designer ↔ preview přes TopBufferPx 60px
+- Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
+- Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-⬅️ **Implicit styles pro WPF kontrolky** — Button hotov v EDStyles.xaml (flat moderní desktop look, 3px corner radius). Zítra pokračovat s `TextBox`, `ComboBox`, `MenuItem`, `TabItem`. Pak drobnosti v TD samotném (title bar polish, status bar zoom indikátor, dialog button audit z původního UI audit).
-
-**Po UI polish (paralelní větve):**
+**Kde pokračovat dál — návrat ke core**:
 
 1. **Fáze A.2-D — Caché business logic** ⬅️ nejvyšší zákaznický dopad
-   TRANSDEV/KORID suspended tickety v `Agendy/ZastavkoveJrMhd`. Tabulka níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+   TRANSDEV/KORID suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
 2. **Wave 1 — UserPreferences plné využití** (foundation `IUserPrefsService` hotová)
    Per-user × IDFa state: zoom, grid, recent files, instance picker default, splittery, recent colors. Plný plán v § Wave 1 níže.
 
-**Mimo aktuální focus** (až bude potřeba): plná sada Filter polí (EDFilter rozšíření), Tier 3 EDInputForm refactor (`$lb()` → JSON envelope + chybějící typy polí), Tier 4 TD editor migrace na EDInputForm. Detail v [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md).
+3. **H-18/H-19 — Template versioning + migrator** (prerekvizita produkčního Wave 3)
+   Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
+
+**Mimo aktuální focus** (až bude potřeba):
+- Plná sada Filter polí (EDFilter rozšíření)
+- Tier 3 EDInputForm refactor (`$lb()` → JSON envelope + chybějící typy polí)
+- Tier 4 TD editor migrace na EDInputForm
+- Virtualized canvas rendering (zoom >500%)
 
 **Reference docs:** [`EDControls/DOCS/`](../../../EDControls/DOCS/) — `00-overview`, `01-wire-formats`, `02-EDList`, `03-EDFilter`, `04-EDTheme`.
 

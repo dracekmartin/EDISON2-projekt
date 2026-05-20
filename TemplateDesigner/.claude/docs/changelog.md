@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-05-20 — UI polish: implicit styles, popup, perf, layout
+
+Druhý den UI polish dotahuje EDTheme/EDStyles ekosystém + hlavní okno k modernímu desktop look + řeší výkonnostní problém canvas při vysokém zoomu.
+
+**EDStyles.xaml — implicit styles dokončené:**
+- **TextBox**: flat 1px border, 3px corners, focus accent blue, ReadOnly subtle bg
+- **ComboBox + ComboBoxItem**: flat dropdown, šipka ▼ vpravo, popup s rounded border, hover/selected stavy. Fix: ToggleButton roztažen přes celou plochu (klik kdekoliv otvírá dropdown)
+- **TabItem + TabControl**: moderní underline tabs (Chrome/VS Code styl) — flat, 2px Accent.Blue bottom border u selected. LeftTabControl odstraněn lokální override
+- **CheckBox**: 14×14 box, 2px corners, focus Accent.Blue border, checked = Accent.Blue bg + bílý ✓ vector checkmark
+- **MenuItem (4 role) + Menu + ContextMenu + Separator**: kompletní template pokrývající TopLevelHeader/TopLevelItem/SubmenuItem/SubmenuHeader. Icon column + Header + Shortcut column (InputGestureText) + Arrow column. IsCheckable items mají modré ✓. ScrollViewer s Auto vertical/Disabled horizontal scrollbar.
+
+**3-button popup přes IPopupDisplayer:**
+- `EDPopupButtons.AnoNeStorno` (3-button mode) + třetí Button v EDPopup.xaml
+- `IPopupDisplayer.ConfirmYesNoCancel(message, title?) → bool?` (true Ano / false Ne / null Storno+Esc)
+- EDPopup auto-title default per mode (Informace/Potvrzení), volitelný custom title parameter
+- `MainWindowViewModel.ConfirmUnsavedChanges` migrace z `MessageBox.Show` → `PopupDisplayer.ConfirmYesNoCancel(.., title: "Neuložené změny")` — dialog má moderní vzhled, ne starý Windows MessageBox
+
+**MessageBox.Show sweep:**
+4 zbylé `MessageBox.Show` v MainWindow.xaml.cs nahrazeny:
+- Export PDF/PNG error catch → `PopupDisplayer.Error(ex)` (plný scrollable error dialog)
+- "Šablonu nepodařilo načíst" → `PopupDisplayer.Info(...)`
+- "Nejprve vyberte sekci" → `PopupDisplayer.Info(...)`
+Zbývající 3 `MessageBox.Show` v App.xaml.cs jsou architektonicky nutné (debug --test-detector arg, startup před EDServices.Initialize, OnUnhandledException safety net).
+
+**Keyboard binding fix:**
+Ctrl+N a Ctrl+O byly v menu jen jako `InputGestureText` (vizuální text), bez actual handleru. Globální `OnWindowKeyDown` měl wired jen Ctrl+S/Ctrl+P/Ctrl+Shift+P/Ctrl+Shift+N. Přidáno actual wiring Ctrl+N → NewCommand a Ctrl+O → MenuOpen_Click.
+
+**Toolbar restructure "Zobrazení" → 3 podskupiny:**
+- **Mřížka & snap**: BtnGrid + CmbGridSize (vlevo), interní oddělovač, BtnSnap + BtnSnapElements + CmbSnapGap (vpravo). Visual pairing — button+combo k sobě patří jsou hned vedle sebe.
+- **Zoom**: CmbZoom + 1:1 reset
+- **Náhled**: BtnPreview toggle
+BtnSnap "M" / BtnSnapElements "O" textové labels místo identické Snap ikony s opacity (visual confusion fix).
+CmbScale přesunut z toolbaru do **Upravit → Škálovat šablonu** submenu (50-200%) — destruktivní akce není view setting.
+
+**Y-zarovnání designer ↔ preview:**
+Designer dostává 60px top buffer (`TopBufferPx`) kompenzující preview chrome (header + parametry + page nav). Designer pageY = 100px místo 40px. Tops stránek sjednocené napříč panely.
+
+**Canvas perf — viewport culling:**
+- `DesignerCanvas.VisibleViewport` property, set z `OnPaintSurface` na základě `CanvasScrollViewer` offset+viewport
+- `canvas.ClipRect(VisibleViewport)` na začátku Render — Skia přeskočí draw ops mimo viewport (Clear, page shadow, sekce, atd.)
+- DrawGrid viewport culling — kreslí jen linky uvnitř viewportu (předtím tisíce linek mimo při vysokém zoomu)
+- Page shadow paint cachován (`_shadowPaint` statický field) — `MaskFilter.CreateBlur` se vytvářel každý frame
+- `ScrollChanged → InvalidateVisual` aby culling reagoval na scroll
+
+**Zoom limit 500%:**
+SKElement při zoom 1000% má ~91 MP → 365 MB buffer upload per frame (hardware-bound limit SkiaSharp.Views.WPF — alokuje + uploaduje full surface byte buffer). ClipRect snižuje cost draw operations, ne alokaci. CmbZoom + CmbPreviewZoom omezeny na 50-500% (93 MB max). Roadmap doplněn o "Virtualized canvas rendering" sekci jako budoucí proper fix.
+
+**Default Window icon:**
+`App.OnStartup` registruje class handler pro Window.Loaded — všechna okna (krom MainWindow s explicit Icon) dostanou EDIcons.Molecule. Implicit `<Style TargetType="Window">` v WPF se neaplikuje na derived Window classes (TargetType matchuje exact type, ne subclasses) — class handler je spolehlivá alternativa.
+
+**Drobnosti:**
+- 9× element palette tooltip cleanup — odstraněno "— táhni na canvas" instructional text
+- Grid combo 0.1mm → 0.2mm jako nejmenší (rychlejší + 0.1mm precision se prakticky nepoužívá)
+- HelpDialog F1 aktualizován o F2 inline edit zkratku
+- Caché tříd headers přepsány s business-focused popisem (čím je třída, ne ".NET form X to konzumuje")
+- 7 dialogů refactorováno na EDTheme tokens (HelpDialog, ChangeAgendaDialog, NormalizePositionsDialog, InstancePickerDialog, PrintDialog, AiTemplateAssistantDialog, PdfImportDialog)
+- MainWindow.xaml + ToolbarStyles.xaml 100% na EDTheme tokens
+
 ## 2026-05-19 — EDTheme design tokens + implicit Button style
 
 Sjednocení vizuálu napříč TemplateDesignerem + EDControls knihovnou přes design tokens v EDControls (jedno místo, runtime swap přes DynamicResource).
