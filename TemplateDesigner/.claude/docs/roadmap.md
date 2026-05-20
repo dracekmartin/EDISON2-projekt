@@ -130,7 +130,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | Vlna | Název | Stav | Cíl |
 |---|---|---|---|
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
-| 2 | Shared catalogs | ⬜ Nezačato | Agenda registry, palette, element defaults, section templates |
+| 2 | Shared catalogs | 🟠 V plánu | Agenda registry (auto-discovery), section templates (Caché backend). Element defaults + company palette skipnuté po diskusi 2026-05-20 |
 | 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
 | 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
@@ -149,56 +149,110 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 
 ---
 
-#### 🟠 Wave 2 — Shared catalogs
+#### 🟠 Wave 2 — Shared catalogs (2-item scope)
 
-Sdílený konfigurační obsah, který dnes žije v .NET souborech nebo hardcoded v kódu. Přesun do Caché = jedno místo pravdy, možnost aktualizace bez redeploymentu.
+Sdílený konfigurační obsah dnes žijící v .NET souborech / file-based storage. Přesun do Caché = jedno místo pravdy, sdílení mezi PC / uživateli firmy.
 
-**4 nové Caché třídy:**
+**Scope po diskusi 2026-05-20** zúžen na 2 položky (původně 4):
 
-| Třída | Co | Dnes |
-|---|---|---|
-| `AgendaRegistryAPI` | Seznam dostupných agend (kód, label, Caché class pointer) | `appsettings.json` `agendas[]` |
-| `CompanyPaletteAPI` | Firemní paleta barev (16 swatches, logo, default fonts) | Hardcoded v `DesignerState` |
-| `ElementDefaultsAPI` | Výchozí property values per element type (font size, border width, ...) | Hardcoded v C# constructors |
-| `SectionTemplateAPI` | Custom section templates (vlastní šablony sekcí) | Soubory v `section-templates/*.json` |
+| # | Položka | Wave 2 akce | Dnes |
+|---|---|---|---|
+| W2-1 | Agenda registry | ✅ Migrovat — auto-discovery z `BaseAgenda` subclasses | `templatedesigner.appsettings.json` `agendas[]` |
+| W2-2 | Section templates | ✅ Migrovat — Caché backend s migration files | `section-templates/*.json` (per-machine, file-based) |
+| ~~W2-3~~ | ~~Element defaults~~ | ❌ SKIP — hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case | |
+| ~~W2-4~~ | ~~Company palette~~ | ❌ SKIP — Wave 1.5 RecentColors pokrývá; brand palette není user request | |
 
-**Před:**
+---
+
+##### W2-1 Agenda registry — auto-discovery design
+
+**Princip:** „Třída JE registrace". Místo separátního config listu (drift risk: registr ≠ impl) využijeme `%Dictionary` API — auto-discovery `BaseAgenda` subclasses + class parameter metadata.
+
+**Změny v `BaseAgenda`:**
+```objectscript
+Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [Abstract]
+{
+    Parameter AgendaCode    As %String  = "";       // "MHD", "FAKTURY"
+    Parameter AgendaLabel   As %String  = "";       // "Zastávkový JŘ MHD"
+    Parameter AgendaOrder   As %Integer = 999;      // sort order v UI
+    Parameter AgendaEnabled As %Boolean = 1;        // false → skryté (pre-release)
+    // ... existing abstract methods (GetSchema, GetData, ...) ...
+}
 ```
-appsettings.json  →  seznam agend (každý uživatel má vlastní)
-C# constructors   →  TextElement.FontSize = 10, BorderWidth = 0.1, ...
-section-templates/*.json  →  per-machine soubory, nesdílí se
+
+**Nová Caché class:**
+```objectscript
+Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
+{
+    ClassMethod ListAgendy(ByRef sys As %String) As %Status
+    {
+        // SQL nad %Dictionary najde subclasses BaseAgenda
+        // Pro každou: read AgendaCode/Label/Order/Enabled parametry
+        // Filter Enabled=1, sort by Order, vrátí JSON array
+    }
+}
 ```
 
-**Po:**
-```
-Caché ^ALVA.TDConfig(IdFa)   →  jedno místo pravdy pro firmu
-IConfigCatalog (DI)         →  všechny klienti čtou odsud
-Lokální cache v paměti       →  rychlost v rámci session (refresh na vyžádání)
+**Wire formát (R3):**
+```json
+[
+  {"code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"},
+  {"code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury"}
+]
 ```
 
-**Změny v kódu:**
+**Per-class metadata** zachovají self-documentation v Studiu (programátor vidí AgendaCode přímo u class declaration).
+
+**Edge case GENERAL:** `cacheClass=""` → žádná třída → auto-discovery ji nenajde. **.NET strana inject syntheticky** v `IAgendaRegistry`:
+```csharp
+public IReadOnlyList<AgendaInfo> GetAvailableAgendas() {
+    var fromCache = _cacheRegistry.ListAgendy();
+    return [GeneralAgenda, .. fromCache];  // GENERAL = static const
+}
+```
+
+**Změny v kódu (.NET):**
 | Vrstva | Co |
 |---|---|
-| Caché | 4 nové třídy + storage `^ALVA.TDConfig(IdFa,<catalog>)` |
-| .NET Services | `IAgendaRegistry`, `ICompanyPalette`, `IElementDefaults`, `ISectionTemplateCatalog` — každý má Caché implementaci |
-| .NET DI | Centrální `ServiceLocator` / `EDServices` rozšířit o tyto 4 služby |
-| .NET Elements | Constructor čte z `IElementDefaults.GetDefaults("TextElement")` místo hardcoded hodnot |
-| .NET UI | ColorPicker čte swatches z `ICompanyPalette` (zatím `ColorPickerHelper`, později EDInputForm Color field po W4-8) |
-| .NET `SectionTemplateManager` | Nahrazen `ISectionTemplateCatalog` |
-| appsettings.json | **Smazat `agendas[]`** — přesouvá se do Caché |
+| Caché | `BaseAgenda` rozšířena o 4 parametry; nová `API.AgendyRegistr` class |
+| Agendy classes | `ZastavkoveJrMhd`, `Faktury` — declare AgendaCode/Label/Order parametry |
+| .NET service | `IAgendaRegistry` (interface) + `CacheAgendaRegistry` (impl); `EDServices` rozšíření |
+| .NET wiring | `CacheSchemaWiring` — místo čtení `AppSettings.Agendas[]` volá `IAgendaRegistry.GetAvailableAgendas` |
+| `appsettings.json` | **Smazat `agendas[]`** — registr v Caché |
 
 **Risks:**
-- Backward compat: existující šablony musí pokračovat s hardcoded defaults pokud Caché nemá `ElementDefaults` naplněné. Mitigace: `IElementDefaults.GetDefaults` vrací merge (Caché přepíše C# defaults).
-- Migration: per-machine `section-templates/*.json` se musí jednorázově importovat do Caché. Mitigace: startup detekce → upload dialog "Nahrát šablony z disku?".
+- Cold-start: registry call ~500ms-2s při studeném startu (jako Wave 1) — Mitigace: `IAgendaRegistry` cached after first load, refresh na user request (menu „Reload agendas")
+- Backward compat: starý JSON `agendas[]` se po W2-1 ignoruje — během rollout fáze ponechat dual-read (Caché primary + JSON fallback)
 
-**Výstup:** žádné agenda/styl info v kódu → při přidání nové agendy se restart už neřeší.
+##### W2-2 Section templates — Caché backend
+
+Mirror Wave 3 (Template CRUD) — pattern už existuje, jen klon.
+
+**Caché class:** `ALVA.TemplateDesigner.API.SekceSablon` — 5 metod (List / Load / Save / Delete / Rename) analogicky `Sablony`.
+
+**Storage:** `^ALVA.TemplateDesigner.SectionTemplates(IdFa, "DTA", id, "Metadata"|"Data")` + index — paralelně k `Templates` global.
+
+**Wire formát:** R3, JSON, per-IDFa.
+
+**Section template metadata:** Name + Category (např. „Hlavičky", „Patičky") pro budoucí filtraci.
+
+**Changes (.NET):**
+| Vrstva | Co |
+|---|---|
+| Caché | Nová `API.SekceSablon` + storage global |
+| .NET service | `ISectionTemplateCatalog` (interface) — refactor stávajícího `SectionTemplateManager` |
+| Impl | `CacheSectionTemplateCatalog` (Caché backend) — fallback `FileSectionTemplateCatalog` pro standalone |
+| Existing client | `SectionTemplateManager` → grep+replace na interface |
+| Migration | First-Caché-startup: popup „Nahrát X local section-templates do Caché?" + import |
+
+**Per-IDFa storage** — firma A nevidí KORID section templates (jako u Wave 3 Templates).
+
+---
 
 | Krok | Co | Stav |
 |---|---|---|
-| W2-1 | Caché `AgendaRegistryAPI` + `.NET IAgendaRegistry` — migrace `appsettings.json` agendas | |
-| W2-2 | Caché `CompanyPaletteAPI` + integrace s ColorPickerem (firemní paleta swatchů) | |
-| W2-3 | Caché `ElementDefaultsAPI` + `IElementDefaults` konzumované v elementech | |
-| W2-4 | Caché `SectionTemplateAPI` + `ISectionTemplateCatalog` + jednorázová migrace lokálních souborů | |
+| W2-1 | Agenda registry — auto-discovery v `BaseAgenda` + Caché `API.AgendyRegistr` + .NET `IAgendaRegistry` | |
+| W2-2 | Section templates → Caché — `API.SekceSablon` + .NET `ISectionTemplateCatalog` + file migration | |
 
 ---
 
