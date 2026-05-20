@@ -170,6 +170,17 @@
                 <Separator/>
                 <MenuItem Header="Normalizovat pozice…" InputGestureText="Ctrl+Shift+N" Click="MenuNormalizePositions_Click"/>
                 <Separator/>
+                <MenuItem Header="Škálovat šablonu">
+                    <MenuItem Header="50 %"  Tag="0.5"  Click="MenuScale_Click"/>
+                    <MenuItem Header="75 %"  Tag="0.75" Click="MenuScale_Click"/>
+                    <MenuItem Header="90 %"  Tag="0.9"  Click="MenuScale_Click"/>
+                    <MenuItem Header="100 %" Tag="1.0"  Click="MenuScale_Click"/>
+                    <MenuItem Header="110 %" Tag="1.1"  Click="MenuScale_Click"/>
+                    <MenuItem Header="125 %" Tag="1.25" Click="MenuScale_Click"/>
+                    <MenuItem Header="150 %" Tag="1.5"  Click="MenuScale_Click"/>
+                    <MenuItem Header="200 %" Tag="2.0"  Click="MenuScale_Click"/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="Kopírovat styl"  InputGestureText="Ctrl+Shift+C" Click="MenuCopyStyle_Click"/>
                 <MenuItem Header="Vložit styl"     InputGestureText="Ctrl+Shift+V" Click="MenuPasteStyle_Click"/>
             </MenuItem>
@@ -259,40 +270,40 @@
                 <!-- ── 4. Elementy (drag-to-canvas paleta) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Text — táhni na canvas" Tag="TextElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Text" Tag="TextElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TextElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obdélník — táhni na canvas" Tag="RectangleElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obdélník" Tag="RectangleElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.RectElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Čára — táhni na canvas" Tag="LineElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Čára" Tag="LineElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.LineElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obrázek — táhni na canvas" Tag="ImageElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obrázek" Tag="ImageElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.ImageElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka — táhni na canvas" Tag="TableElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka" Tag="TableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, ...) — táhni na canvas" Tag="BarcodeElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, EAN, ...)" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Width="16" Height="16"/>
                         </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek — táhni na canvas" Tag="StopListElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů — táhni na canvas" Tag="DepartureGridElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů" Tag="DepartureGridElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.DepartureGrid}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek — táhni na canvas" Tag="NotesLegendElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek" Tag="NotesLegendElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.NotesLegend}" Width="16" Height="16"/>
                         </Button>
@@ -354,31 +365,37 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
-                <!-- ── 7. Zobrazení ── -->
+                <!-- ── 7. Mřížka & snap ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ToggleButton x:Name="BtnGrid" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt mřížku"
+                        <!-- Mřížka: zobrazit + velikost -->
+                        <ToggleButton x:Name="BtnGrid" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit mřížku"
                                       IsChecked="{Binding ShowGrid, Mode=TwoWay}">
                             <Image Source="{StaticResource EDIcons.Grid}" Width="16" Height="16"/>
-                        </ToggleButton>
-                        <ToggleButton x:Name="BtnSnap" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytit na mřížku"
-                                      IsChecked="{Binding SnapToGrid, Mode=TwoWay}">
-                            <Image Source="{StaticResource EDIcons.Snap}" Width="16" Height="16"/>
-                        </ToggleButton>
-                        <ToggleButton x:Name="BtnSnapElements" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytávat k objektům (elementy + okraje sekce)"
-                                      IsChecked="{Binding SnapToElements, Mode=TwoWay}">
-                            <Image Source="{StaticResource EDIcons.Snap}" Width="16" Height="16" Opacity="0.6"/>
                         </ToggleButton>
                         <ComboBox x:Name="CmbGridSize" Width="70" VerticalAlignment="Center" Margin="2,0"
                                   ToolTip="Velikost mřížky" SelectedIndex="4"
                                   SelectionChanged="CmbGridSize_SelectionChanged">
-                            <ComboBoxItem Content="0,1 mm" Tag="0.1"/>
+                            <ComboBoxItem Content="0,2 mm" Tag="0.2"/>
                             <ComboBoxItem Content="0,5 mm" Tag="0.5"/>
                             <ComboBoxItem Content="1 mm"   Tag="1"/>
                             <ComboBoxItem Content="2 mm"   Tag="2"/>
                             <ComboBoxItem Content="5 mm"   Tag="5"/>
                             <ComboBoxItem Content="10 mm"  Tag="10"/>
                         </ComboBox>
+
+                        <!-- Vizuální oddělovač podskupin "Mřížka" vs "Snap" -->
+                        <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="6,2" VerticalAlignment="Stretch"/>
+
+                        <!-- Snap k mřížce -->
+                        <ToggleButton x:Name="BtnSnap" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytit k mřížce"
+                                      IsChecked="{Binding SnapToGrid, Mode=TwoWay}"
+                                      Content="M" FontSize="11" FontWeight="SemiBold"/>
+
+                        <!-- Snap k objektům + mezera -->
+                        <ToggleButton x:Name="BtnSnapElements" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytávat k objektům (elementy + okraje sekce)"
+                                      IsChecked="{Binding SnapToElements, Mode=TwoWay}"
+                                      Content="O" FontSize="11" FontWeight="SemiBold"/>
                         <ComboBox x:Name="CmbSnapGap" Width="90" VerticalAlignment="Center" Margin="2,0"
                                   ToolTip="Mezera mezi objekty při snapu a duplikaci"
                                   SelectedIndex="2"
@@ -390,42 +407,43 @@
                             <ComboBoxItem Content="5 mm"  Tag="5"/>
                             <ComboBoxItem Content="10 mm" Tag="10"/>
                         </ComboBox>
+                    </StackPanel>
+                    <TextBlock Text="Mřížka &amp; snap" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── 8. Zoom ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ComboBox x:Name="CmbZoom" Width="80" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
+                                  ToolTip="Zoom designeru"
                                   SelectionChanged="CmbZoom_SelectionChanged">
-                            <ComboBoxItem Content="  50 %"/>
-                            <ComboBoxItem Content="  75 %"/>
-                            <ComboBoxItem Content=" 100 %"/>
-                            <ComboBoxItem Content=" 150 %"/>
-                            <ComboBoxItem Content=" 200 %"/>
-                            <ComboBoxItem Content=" 300 %"/>
-                            <ComboBoxItem Content=" 400 %"/>
-                            <ComboBoxItem Content=" 500 %"/>
-                            <ComboBoxItem Content=" 800 %"/>
-                            <ComboBoxItem Content="1000 %"/>
+                            <ComboBoxItem Content=" 50 %"/>
+                            <ComboBoxItem Content=" 75 %"/>
+                            <ComboBoxItem Content="100 %"/>
+                            <ComboBoxItem Content="150 %"/>
+                            <ComboBoxItem Content="200 %"/>
+                            <ComboBoxItem Content="300 %"/>
+                            <ComboBoxItem Content="400 %"/>
+                            <ComboBoxItem Content="500 %"/>
                         </ComboBox>
                         <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
                                 ToolTip="Resetovat zoom designeru i náhledu na 100 %"
                                 Click="BtnResetView_Click" Content="1:1" FontSize="11" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Text="Zoom" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── 9. Panely ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
                                       IsChecked="True" Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed">
                             <Image Source="{StaticResource EDIcons.Eye}" Width="16" Height="16"/>
                         </ToggleButton>
-                        <Border Width="1" Background="{DynamicResource EDTheme.Bg.Pressed}" Margin="4,2" VerticalAlignment="Stretch"/>
-                        <ComboBox x:Name="CmbScale" Width="90" VerticalAlignment="Center" Margin="2,0"
-                                  ToolTip="Škálovat celou šablonu"
-                                  SelectionChanged="CmbScale_SelectionChanged">
-                            <ComboBoxItem Content="Škálovat..." IsEnabled="False"/>
-                            <ComboBoxItem Content="50 %"  Tag="0.5"/>
-                            <ComboBoxItem Content="75 %"  Tag="0.75"/>
-                            <ComboBoxItem Content="90 %"  Tag="0.9"/>
-                            <ComboBoxItem Content="100 %" Tag="1.0"/>
-                            <ComboBoxItem Content="110 %" Tag="1.1"/>
-                            <ComboBoxItem Content="125 %" Tag="1.25"/>
-                            <ComboBoxItem Content="150 %" Tag="1.5"/>
-                            <ComboBoxItem Content="200 %" Tag="2.0"/>
-                        </ComboBox>
                     </StackPanel>
-                    <TextBlock Text="Zobrazení" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Náhled" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
 
             </StackPanel>
@@ -576,11 +594,14 @@
                           VerticalScrollBarVisibility="Auto"
                           Background="{DynamicResource EDTheme.Border.Light}"
                           x:Name="CanvasScrollViewer">
-                <Grid Width="900" Height="1200">
+                <Grid>
                     <skia:SKElement x:Name="skCanvas" Width="900" Height="1200"/>
                     <!-- Overlay pro inline edit TextElement. Canvas bez Backgroundu nezachycuje
-                         hit testy mimo TextBox; SKElement dostává mouse eventy normálně. -->
-                    <Canvas x:Name="InlineEditOverlay" Width="900" Height="1200">
+                         hit testy mimo TextBox; SKElement dostává mouse eventy normálně.
+                         Velikost se synchronizuje se skCanvas přes ElementName binding. -->
+                    <Canvas x:Name="InlineEditOverlay"
+                            Width="{Binding ElementName=skCanvas, Path=Width}"
+                            Height="{Binding ElementName=skCanvas, Path=Height}">
                         <TextBox x:Name="InlineEditBox" Visibility="Collapsed"
                                  BorderThickness="1.5" BorderBrush="{DynamicResource EDTheme.Accent.Blue}"
                                  Background="White" Padding="2"
@@ -615,16 +636,14 @@
                                       Width="80" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
                                       ToolTip="Zoom náhledu (Ctrl+Scroll)"
                                       SelectionChanged="CmbPreviewZoom_SelectionChanged">
-                                <ComboBoxItem Content="  50 %"/>
-                                <ComboBoxItem Content="  75 %"/>
-                                <ComboBoxItem Content=" 100 %"/>
-                                <ComboBoxItem Content=" 150 %"/>
-                                <ComboBoxItem Content=" 200 %"/>
-                                <ComboBoxItem Content=" 300 %"/>
-                                <ComboBoxItem Content=" 400 %"/>
-                                <ComboBoxItem Content=" 500 %"/>
-                                <ComboBoxItem Content=" 800 %"/>
-                                <ComboBoxItem Content="1000 %"/>
+                                <ComboBoxItem Content=" 50 %"/>
+                                <ComboBoxItem Content=" 75 %"/>
+                                <ComboBoxItem Content="100 %"/>
+                                <ComboBoxItem Content="150 %"/>
+                                <ComboBoxItem Content="200 %"/>
+                                <ComboBoxItem Content="300 %"/>
+                                <ComboBoxItem Content="400 %"/>
+                                <ComboBoxItem Content="500 %"/>
                             </ComboBox>
                             <TextBlock Text="Náhled  ·  vzorová data ze schématu"
                                        FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}"

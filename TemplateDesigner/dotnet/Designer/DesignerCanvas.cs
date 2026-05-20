@@ -21,6 +21,12 @@ public class DesignerCanvas
     /// <summary>Minimální výška štítku aby se vešlo textové označení.</summary>
     private const float SectionTabMinLabelPx = 28f;
     private const float PagePaddingPx  = 40f;
+    /// <summary>
+    /// Extra prostor nad stránkou v designeru — kompenzuje vyšší chrome live preview pane
+    /// (header bar + parametry sestavy + page navigation). Drží Y-zarovnání stránky mezi
+    /// designerem a preview, aby vizuálně nebyly posunuté na ose Y.
+    /// </summary>
+    private const float TopBufferPx    = 60f;
     private const float HandleSizePx   = 7f;
     private const float RulerThicknessPx = 20f;
     private const float RulerOffsetPx    = 3f;
@@ -57,18 +63,32 @@ public class DesignerCanvas
 
     public float MmToPx => (96f / 25.4f) * _state.Zoom;
 
+    /// <summary>
+    /// Viditelná oblast canvas v lokálních souřadnicích (set z MainWindow podle ScrollVieweru).
+    /// Default = celý canvas (zero rectangle vypne culling). Používá DrawGrid pro viewport culling
+    /// — bez něj při vysokém zoomu kreslíme tisíce linek mimo viditelnou oblast.
+    /// </summary>
+    public SKRect VisibleViewport { get; set; }
+
     // ─────────────────────────────────────────────────────────────────────
     // Render
 
     public void Render(SKCanvas canvas, float canvasWidth, float canvasHeight)
     {
+        // Viewport clip — při vyšším zoomu je SKElement velký (5000+ px), ale viditelná je
+        // jen malá část. ClipRect umožní Skia přeskočit draw operace mimo viewport
+        // (canvas.Clear, page shadow s blur, sekce atd.). Nepomáhá s alokací a uploadem
+        // buffer surface — to je dáno velikostí SKElementu (viz roadmap Virtualized canvas).
+        if (VisibleViewport.Width > 0 && VisibleViewport.Height > 0)
+            canvas.ClipRect(VisibleViewport);
+
         canvas.Clear(ClrBackground);
 
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;
         float pageH  = template.PageSize.Height * MmToPx;
         float pageX  = CalculatePageX(canvasWidth);
-        float pageY  = PagePaddingPx;
+        float pageY  = PagePaddingPx + TopBufferPx;
 
         DrawPageShadow(canvas, pageX, pageY, pageW, pageH);
         DrawPageBackground(canvas, pageX, pageY, pageW, pageH);
@@ -305,7 +325,7 @@ public class DesignerCanvas
     {
         var ps      = _state.CurrentTemplate.PageSize;
         float pageX = CalculatePageX(canvasWidth);
-        float pageY = PagePaddingPx;
+        float pageY = PagePaddingPx + TopBufferPx;
 
         float ox       = pageX + ps.MarginLeft * MmToPx;
         float topY     = pageY + ps.MarginTop  * MmToPx;
@@ -349,7 +369,7 @@ public class DesignerCanvas
     {
         _ = canvasWidth; // parametr zachován pro konzistenci API
         var ps = _state.CurrentTemplate.PageSize;
-        return PagePaddingPx + (ps.Height - ps.MarginBottom) * MmToPx;
+        return PagePaddingPx + TopBufferPx + (ps.Height - ps.MarginBottom) * MmToPx;
     }
 
     /// <summary>Výška sekce v px omezená tak, aby nepřesáhla spodní okraj stránky.</summary>
@@ -366,10 +386,16 @@ public class DesignerCanvas
     // ─────────────────────────────────────────────────────────────────────
     // Interní renderovací metody
 
+    // Cache paint + maskfilter — `CreateBlur` je drahý, vytvářet jednou stačí.
+    private static readonly SKPaint _shadowPaint = new()
+    {
+        Color = new SKColor(0x35000000),
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6f)
+    };
+
     private static void DrawPageShadow(SKCanvas canvas, float x, float y, float w, float h)
     {
-        using var p = new SKPaint { Color = new SKColor(0x35000000), MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6f) };
-        canvas.DrawRect(new SKRect(x + 5, y + 5, x + w + 5, y + h + 5), p);
+        canvas.DrawRect(new SKRect(x + 5, y + 5, x + w + 5, y + h + 5), _shadowPaint);
     }
 
     private static void DrawPageBackground(SKCanvas canvas, float x, float y, float w, float h)
@@ -388,20 +414,41 @@ public class DesignerCanvas
     {
         // Grid jen v printable area (kde se pozicují elementy), ne v margins. Slabě modrá, aby nerušila obsah.
         float step   = _state.GridSize * MmToPx;
+        if (step <= 0f) return;
+
         float startX = pageX + ps.MarginLeft  * MmToPx;
         float startY = pageY + ps.MarginTop   * MmToPx;
         float endX   = pageX + (ps.Width  - ps.MarginRight)  * MmToPx;
         float endY   = pageY + (ps.Height - ps.MarginBottom) * MmToPx;
 
+        // Viewport culling — vykresli jen linky uvnitř viditelné oblasti.
+        // Při vysokém zoomu jsou tisíce linek mimo viewport (uživatel je nevidí),
+        // jejich vynechání výrazně zrychlí drag bez vizuální změny.
+        SKRect vp = VisibleViewport;
+        bool cull = vp.Width > 0 && vp.Height > 0;
+        float clipLeft   = cull ? Math.Max(startX, vp.Left)   : startX;
+        float clipRight  = cull ? Math.Min(endX,   vp.Right)  : endX;
+        float clipTop    = cull ? Math.Max(startY, vp.Top)    : startY;
+        float clipBottom = cull ? Math.Min(endY,   vp.Bottom) : endY;
+
+        // První viditelná linka (zaokrouhleno na grid krok pro správné zarovnání)
+        float firstX = startX + MathF.Floor((clipLeft - startX) / step) * step;
+        float firstY = startY + MathF.Floor((clipTop  - startY) / step) * step;
+        if (firstX < startX) firstX = startX;
+        if (firstY < startY) firstY = startY;
+
         using var p = new SKPaint
         {
             Color = ClrGrid,
             StrokeWidth = 0.5f,
-            IsAntialias = true,
+            IsAntialias = true,    // AA potřebné pro pravidelný vzor — bez AA se 0.5px linky
+                                   // zaokrouhlují na pixely a při non-integer kroku vznikají
+                                   // nepravidelnosti. Při viewport culling je linek málo (~100),
+                                   // takže AA má zanedbatelný cost.
         };
-        for (float gx = startX; gx <= endX + 0.1f; gx += step)
+        for (float gx = firstX; gx <= clipRight + 0.1f; gx += step)
             canvas.DrawLine(gx, startY, gx, endY, p);
-        for (float gy = startY; gy <= endY + 0.1f; gy += step)
+        for (float gy = firstY; gy <= clipBottom + 0.1f; gy += step)
             canvas.DrawLine(startX, gy, endX, gy, p);
     }
 

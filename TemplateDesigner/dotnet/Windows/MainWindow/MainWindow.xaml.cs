@@ -27,7 +27,10 @@ public partial class MainWindow : Window
     private PreviewCanvas?          _previewCanvas;
     private ElementPropertiesWindowViewModel? _propsVm;
 
-    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 8.0f, 10.0f];
+    // Zoom max omezen na 500% — při vyšším zoomu má SKElement >20 MP, což způsobuje
+    // pomalé buffer uploads v SkiaSharp.Views.WPF (full surface kopie každý frame).
+    // Pro skutečně vysoké zoomy bude potřeba virtualizace rendering (viz roadmap).
+    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f];
 
     // ── Mouse state machine ───────────────────────────────────────────────────
     private enum MouseMode { Idle, Dragging, Resizing, RubberBand, AddingElement }
@@ -112,6 +115,8 @@ public partial class MainWindow : Window
         skCanvas.MouseRightButtonUp   += OnCanvasRightClick;
         CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
         PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
+        // Repaint canvas po scroll — viewport culling potřebuje aktuální viditelnou oblast
+        CanvasScrollViewer.ScrollChanged += (_, _) => skCanvas.InvalidateVisual();
 
         // Wire VM callbacks
         _vm.RequestCanvasRefresh         = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
@@ -222,6 +227,12 @@ public partial class MainWindow : Window
         if (_canvas is null) return;
         var args    = (dynamic)e;
         SKSurface surface = args.Surface;
+        // Předat viditelnou oblast pro viewport culling (grid pak nekreslí mimo viewport).
+        _canvas.VisibleViewport = new SKRect(
+            (float)CanvasScrollViewer.HorizontalOffset,
+            (float)CanvasScrollViewer.VerticalOffset,
+            (float)(CanvasScrollViewer.HorizontalOffset + CanvasScrollViewer.ViewportWidth),
+            (float)(CanvasScrollViewer.VerticalOffset + CanvasScrollViewer.ViewportHeight));
         _canvas.Render(surface.Canvas, (float)skCanvas.ActualWidth, (float)skCanvas.ActualHeight);
 
         if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
@@ -292,11 +303,12 @@ public partial class MainWindow : Window
     private void UpdateCanvasSize()
     {
         if (_canvas is null || _vm is null) return;
-        float padding = 80f;
+        const float padding   = 80f;  // 40 top + 40 bottom standardní okraj kolem stránky
+        const float topBuffer = 60f;  // extra prostor nahoře — kompenzuje preview chrome (Y-zarovnání)
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
         float pageH   = _canvas.CalculatePageHeightPx(_vm.State.CurrentTemplate);
         skCanvas.Width  = pageW + padding + _canvas.ExtraLeftPx;
-        skCanvas.Height = pageH + padding;
+        skCanvas.Height = pageH + padding + topBuffer;
         skCanvas.InvalidateVisual();
         UpdatePreviewSize();
     }
@@ -627,17 +639,15 @@ public partial class MainWindow : Window
             _vm.SnapGapMm = gap;
     }
 
-    private void CmbScale_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void MenuScale_Click(object sender, RoutedEventArgs e)
     {
-        if (_vm is null || CmbScale.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;
-        if (item.Tag is string tagStr && float.TryParse(tagStr,
+        if (_vm is null || sender is not MenuItem item || item.Tag is not string tagStr) return;
+        if (float.TryParse(tagStr,
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out float scale))
         {
             _vm.ScaleTemplate(scale);
         }
-        // Vrátit zpět na "Škálovat..." (index 0) — dropdown funguje jako akční menu
-        CmbScale.SelectedIndex = 0;
     }
 
     // ── Panel visibility ──────────────────────────────────────────────────────
