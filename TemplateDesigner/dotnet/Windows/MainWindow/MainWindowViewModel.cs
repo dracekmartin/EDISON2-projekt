@@ -213,6 +213,12 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Parametry agendy pro PrintDialog.</summary>
     public IReadOnlyList<TemplateParameter> AgendaParameters => _agendaParameters;
 
+    /// <summary>
+    /// Sdílený dictionary parametrů (preview lišta + PrintDialog operují nad stejnou instancí).
+    /// Hodnoty se persistují přes <see cref="LoadPrintParamsAndApplyAsync"/> a <see cref="SavePrintParamsAsync"/>.
+    /// </summary>
+    public Dictionary<string, object?> PreviewParamValues => _previewParams;
+
     // ── Clipboard ─────────────────────────────────────────────────────────────
     private List<TemplateElement> _clipboard = [];
 
@@ -735,6 +741,7 @@ public class TemplateDesignerViewModel : EDViewModel
             RebuildSections();
             RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
+            await LoadPrintParamsAndApplyAsync();
             if (Preferences is not null) await Preferences.AddRecentFileAsync(filePath);
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
@@ -899,6 +906,7 @@ public class TemplateDesignerViewModel : EDViewModel
             RebuildSections();
             RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
+            await LoadPrintParamsAndApplyAsync();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
@@ -1688,6 +1696,67 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
+    /// Načte uložené PrintParams pro aktuální agendu a aplikuje je nad <see cref="_previewParams"/>.
+    /// Volá se po opening šablony (po LoadAgendaParameters) a z OnPreferencesLoaded (cold-start fallback).
+    /// Idempotentní — pokud žádná saved data, nic nemění. Per-agenda granularita: nová šablona
+    /// v rámci stejné agendy zdědí naposledy použité hodnoty.
+    /// </summary>
+    public async Task LoadPrintParamsAndApplyAsync()
+    {
+        if (Preferences is null || _agendaParameters.Count == 0) return;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return;
+
+        var saved = await Preferences.LoadPrintParamsAsync(agendaCode);
+        if (saved.Count == 0) return;
+
+        bool changed = false;
+        foreach (var p in _agendaParameters)
+        {
+            if (!saved.TryGetValue(p.Name, out var node) || node is null) continue;
+            try
+            {
+                object? newValue = p.Type switch
+                {
+                    "bool"   => node.GetValue<bool>(),
+                    "number" => node.GetValue<float>(),
+                    _        => node.GetValue<string>()
+                };
+                if (!Equals(_previewParams.GetValueOrDefault(p.Name), newValue))
+                {
+                    _previewParams[p.Name] = newValue;
+                    changed = true;
+                }
+            }
+            catch { /* malformed value pro tento param — ponecháme default */ }
+        }
+
+        if (changed) OnExternalParamsChanged();
+    }
+
+    /// <summary>
+    /// Externí konzument (typicky PrintDialog) změnil hodnotu v sdíleném <see cref="_previewParams"/>.
+    /// Cross-notify preview lišta VMs + invalidate cache + refresh preview canvas. Bez tohoto
+    /// volání preview lišta neukáže změnu, protože její <c>ParameterControlVM</c> jsou jiné instance
+    /// než PrintDialogovy a vlastní PropertyChanged events se nepropagují automaticky.
+    /// </summary>
+    public void OnExternalParamsChanged()
+    {
+        _cachedParamValues = null;
+        foreach (var vm in PreviewParameters) vm.NotifyValueChanged();
+        RequestPreviewRefresh?.Invoke();
+    }
+
+    /// <summary>Uloží aktuální <see cref="_previewParams"/> pro tuto agendu (fire-and-forget).</summary>
+    public Task SavePrintParamsAsync()
+    {
+        if (Preferences is null) return Task.CompletedTask;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return Task.CompletedTask;
+        return Preferences.SavePrintParamsAsync(agendaCode, _previewParams);
+    }
+
+    /// <summary>
     /// Načte reálná data z Caché pro live preview. Parametry se berou z _previewParams
     /// (včetně LINKA_ID). Pokud GetData selže nebo vrátí prázdný výsledek,
     /// _realPreviewData zůstane null → fallback na mock data.
@@ -2328,6 +2397,12 @@ public class ParameterControlVM : INotifyPropertyChanged
         get => _values.TryGetValue(_param.Name, out var v) ? v : _param.GetDefaultTyped();
         set { _values[_param.Name] = value; OnPropertyChanged(); _onChanged?.Invoke(); }
     }
+
+    /// <summary>
+    /// Notifikuje UI binding po externí změně <c>_values[Name]</c> (např. po loaded PrintParams).
+    /// Bez volání setteru se neaktivuje OnPropertyChanged — proto explicit notifikace.
+    /// </summary>
+    public void NotifyValueChanged() => OnPropertyChanged(nameof(Value));
 
     /// <summary>Viditelnost parametru — řízena dependency rule VisibleWhen z TemplateParameter.</summary>
     public bool IsVisible

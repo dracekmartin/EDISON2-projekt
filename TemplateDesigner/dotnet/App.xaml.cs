@@ -60,6 +60,9 @@ public partial class App : Application
         var prefs = new TemplateDesigner.Services.TdPreferencesService(EDServices.Current.UserPrefs);
         prefs.LoadAsync().Wait(TimeSpan.FromMilliseconds(200));
 
+        // Color picker recent colors integrace — static reference, žádný explicit DI.
+        TemplateDesigner.Controls.ColorPickerHelper.Preferences = prefs;
+
         new MainWindow(mlRest, prefs).Show();
     }
 

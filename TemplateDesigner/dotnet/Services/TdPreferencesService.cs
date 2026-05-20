@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using EDControls.UserPrefs;
 
 namespace TemplateDesigner.Services;
@@ -29,9 +30,12 @@ public class TdPreferencesService
     private const string Scope                 = "TemplateDesigner";
     private const string MainStateKey          = "MainState";
     private const string RecentFilesKey        = "RecentFiles";
+    private const string RecentColorsKey       = "RecentColors";
     private const string InstanceDefaultsScope = "TemplateDesigner.InstanceDefaults";
+    private const string PrintParamsScope      = "TemplateDesigner.PrintParams";
 
-    private const int MaxRecentFiles = 10;
+    private const int MaxRecentFiles  = 10;
+    private const int MaxRecentColors = 8;
 
     private readonly IUserPrefsService _prefs;
 
@@ -42,6 +46,9 @@ public class TdPreferencesService
 
     /// <summary>Aktuální Recent Files — prázdný dokud neproběhl <see cref="LoadAsync"/>.</summary>
     public List<string> RecentFiles { get; private set; } = [];
+
+    /// <summary>Aktuální Recent Colors (hex `"#AARRGGBB"`) — prázdný dokud neproběhl <see cref="LoadAsync"/>.</summary>
+    public List<string> RecentColors { get; private set; } = [];
 
     /// <summary>True jakmile LoadAsync dokončí (úspěch i fallback na defaults).</summary>
     public bool IsLoaded { get; private set; }
@@ -72,8 +79,9 @@ public class TdPreferencesService
     /// <summary>Načte všechny scope/key bloby. Volat jednou při startu.</summary>
     public async Task LoadAsync()
     {
-        MainState   = await LoadBlobAsync<MainStatePref>(Scope, MainStateKey)   ?? MainStatePref.Default;
-        RecentFiles = await LoadBlobAsync<List<string>>(Scope, RecentFilesKey) ?? [];
+        MainState    = await LoadBlobAsync<MainStatePref>(Scope, MainStateKey)    ?? MainStatePref.Default;
+        RecentFiles  = await LoadBlobAsync<List<string>>(Scope, RecentFilesKey)  ?? [];
+        RecentColors = await LoadBlobAsync<List<string>>(Scope, RecentColorsKey) ?? [];
 
         Action? handlers;
         lock (_loadedLock)
@@ -126,6 +134,20 @@ public class TdPreferencesService
         return removed > 0 ? SaveBlobAsync(Scope, RecentFilesKey, RecentFiles) : Task.CompletedTask;
     }
 
+    /// <summary>
+    /// Přidá barvu na začátek Recent Colors (dedup case-insensitive, cap na <see cref="MaxRecentColors"/>).
+    /// Volat z color pickeru po úspěšném výběru.
+    /// </summary>
+    public Task AddRecentColorAsync(string hexColor)
+    {
+        if (string.IsNullOrWhiteSpace(hexColor)) return Task.CompletedTask;
+        RecentColors.RemoveAll(c => string.Equals(c, hexColor, StringComparison.OrdinalIgnoreCase));
+        RecentColors.Insert(0, hexColor);
+        if (RecentColors.Count > MaxRecentColors)
+            RecentColors.RemoveRange(MaxRecentColors, RecentColors.Count - MaxRecentColors);
+        return SaveBlobAsync(Scope, RecentColorsKey, RecentColors);
+    }
+
     /// <summary>Vrátí naposledy zvolené instance pro danou šablonu, nebo prázdný list.</summary>
     public async Task<List<string>> LoadInstanceDefaultsAsync(Guid templateId)
         => await LoadBlobAsync<List<string>>(InstanceDefaultsScope, templateId.ToString()) ?? [];
@@ -133,6 +155,41 @@ public class TdPreferencesService
     /// <summary>Uloží vybrané instance pro šablonu.</summary>
     public Task SaveInstanceDefaultsAsync(Guid templateId, IReadOnlyList<string> instanceIds)
         => SaveBlobAsync(InstanceDefaultsScope, templateId.ToString(), instanceIds);
+
+    /// <summary>
+    /// Vrátí naposledy použité hodnoty parametrů pro PrintDialog dané agendy, nebo prázdný dict.
+    /// Klíče v dict odpovídají <c>TemplateParameter.Name</c>; hodnoty jsou JsonNode (bool/number/string),
+    /// caller je konvertuje podle <c>TemplateParameter.Type</c>.
+    /// <para>
+    /// Klíč = AgendaCode (např. "MHD", "FAKTURY"). Per-agenda granularita je záměrná —
+    /// params (datum, varianta JŘ, ...) jsou agenda-level concerns, nikoli template-level.
+    /// Nová šablona v rámci stejné agendy zdědí poslední uživatelovy hodnoty.
+    /// </para>
+    /// </summary>
+    public async Task<Dictionary<string, JsonNode?>> LoadPrintParamsAsync(string agendaCode)
+    {
+        if (string.IsNullOrWhiteSpace(agendaCode)) return [];
+        try
+        {
+            var node = await _prefs.LoadAsync(PrintParamsScope, agendaCode);
+            if (node is not JsonObject obj) return [];
+            var result = new Dictionary<string, JsonNode?>(obj.Count);
+            foreach (var kvp in obj) result[kvp.Key] = kvp.Value;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[TdPreferences] LoadPrintParams failed ({agendaCode}): {ex.Message}");
+            return [];
+        }
+    }
+
+    /// <summary>Uloží hodnoty parametrů pro PrintDialog dané agendy (fire-and-forget).</summary>
+    public Task SavePrintParamsAsync(string agendaCode, IReadOnlyDictionary<string, object?> values)
+    {
+        if (string.IsNullOrWhiteSpace(agendaCode)) return Task.CompletedTask;
+        return SaveBlobAsync(PrintParamsScope, agendaCode, values);
+    }
 
     private async Task SaveBlobAsync<T>(string scope, string key, T value)
     {

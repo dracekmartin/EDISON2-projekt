@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-05-20 — Wave 1.5: Recent Colors + PrintDialog params (per-agenda)
+
+Dokončení Wave 1 ekvivalentního rozsahu — recent colors v color pickeru + persistované PrintDialog params sdílené s preview lištou.
+
+**Recent Colors:**
+- `TdPreferencesService.RecentColors` (List<string>) + `AddRecentColorAsync` — scope `"TemplateDesigner"` / key `"RecentColors"` (Typ 2 — activity log)
+- `ColorPickerHelper.Preferences` static reference (wired v App.OnStartup) — pickColor populuje `dlg.CustomColors` slot z RecentColors, po výběru fire-and-forget save
+- `PropertiesPanel.AddColorRow` DRY refactor — duplicitní inline WinForms ColorDialog kód (-32 řádků) nahrazen voláním `ColorPickerHelper.PickColor`; nepoužitá `Win32Window` třída smazána
+- Cap 8, dedup case-insensitive
+
+**PrintDialog params — per-agenda persist + live sync s preview lištou:**
+- `TdPreferencesService.LoadPrintParamsAsync(string agendaCode)` / `SavePrintParamsAsync(string agendaCode, ...)` — scope `"TemplateDesigner.PrintParams"` / key = AgendaCode (Typ 3 — per agenda entity)
+- **Per-agenda granularita** (důležité): klíč je AgendaCode (`"MHD"`, `"FAKTURY"`), ne template Guid. Params (datum, varianta JŘ, časová osa) jsou agenda-level concerns. Nová šablona stejné agendy zdědí naposledy použité hodnoty.
+- `MainWindowViewModel.PreviewParamValues` (public Dictionary) — sdílený s PrintDialog (`PrintDialogViewModel` ctor přijímá `sharedParamValues` referenci místo vlastní kopie)
+- `MainWindowViewModel.LoadPrintParamsAndApplyAsync` — load při openu šablony (file + Caché) + cold-start fallback v `OnPreferencesLoaded`
+- `MainWindowViewModel.OnExternalParamsChanged` — public metoda pro cross-notification: PrintDialog při změně paramu volá callback → preview lišta VMs fire PropertyChanged → live update behind modal
+- `ParameterControlVM.NotifyValueChanged` — explicit notification po externí změně sdíleného `_values` dict (bez setteru)
+- Save trigger: před Export PDF/PNG (`PersistParams`) + při Window Closing v MainWindow (`SavePrintParamsAsync` alongside MainState)
+
+**Crash fixes (původně z Wave 1.5 testování):**
+- Odstraněno sync `LoadPrintParamsAsync().Result` z PrintDialogViewModel ctoru — blokovalo UI thread → queued Ctrl+P events → InvalidOperationException „Owner cannot be set on closed Window" + okno minimalizace
+- Re-entrance guard `_printDialogOpening` v `MainWindow.MenuPrint_Click` — modální `ShowDialog` otevírá vnořený dispatcher který může doručit queueované Ctrl+P; bez guardu by druhé pressnutí vytvořilo paralel dialog
+
+**Dokumentace:**
+- `EDControls/DOCS/05-userdata-scopes.md` — registr update: RecentColors a PrintParams stav ✅, schema dokumentován včetně per-agenda granularity rationale
+
 ## 2026-05-20 — Wave 1: per-user preferences via Caché
 
 První dávka Caché Migration Wave 1 — persistence per-user × IDFa state. Žádné lokální JSON soubory (`%APPDATA%`); vše v `^ALVA.EDControls.UserData` přes `IUserPrefsService`.

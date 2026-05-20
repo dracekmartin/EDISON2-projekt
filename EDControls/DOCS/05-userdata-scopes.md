@@ -259,9 +259,9 @@ if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
 |---|---|---|---|
 | `"MainState"` | 1 | `MainStatePref` record — zoom, grid, snap, showGrid, showSectionHeaders, showRuler, gridSize, snapGapMm, showPreviewPane, leftPanelWidthPx, previewPanelWidthPx, activeLeftTabIndex | `TemplateDesigner.Services.TdPreferencesService` |
 | `"RecentFiles"` | 2 | `List<string>` — last 10 opened file paths (capped, dedup case-insensitive) | `TdPreferencesService.AddRecentFileAsync` |
-| `"RecentColors"` | 2 | `List<string>` — last 8 použitých barev v color pickeru (`"#AARRGGBB"`) | (Wave 1.5 — TBD) |
+| `"RecentColors"` | 2 | `List<string>` — last 8 použitých barev v color pickeru (`"#AARRGGBB"`) | `TdPreferencesService.AddRecentColorAsync` (Wave 1.5) |
 
-**Stav:** ✅ Wave 1 (MainState + RecentFiles, 2026-05-20). ⬜ Wave 1.5 (RecentColors).
+**Stav:** ✅ Wave 1 (2026-05-20, MainState + RecentFiles). ✅ Wave 1.5 (2026-05-20, RecentColors).
 
 ### `TemplateDesigner.InstanceDefaults` — Typ 3 (per template)
 
@@ -271,13 +271,15 @@ if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
 
 **Stav:** ✅ Wave 1 (2026-05-20).
 
-### `TemplateDesigner.PrintParams` — Typ 3 (per template)
+### `TemplateDesigner.PrintParams` — Typ 3 (per agenda)
 
 | Key | Schema | Owner |
 |---|---|---|
-| `<templateID>` (Guid string) | `Dictionary<string, JsonNode?>` — values for `TemplateParameter` keys uložené při posledním Print/Export pro tuto šablonu | (Wave 1.5 — TBD) |
+| `<agendaCode>` (např. `"MHD"`, `"FAKTURY"`) | `Dictionary<string, JsonNode?>` — values for `TemplateParameter` keys naposledy použité v PrintDialog / preview liště pro tuto agendu | `TdPreferencesService.SavePrintParamsAsync` |
 
-**Stav:** ⬜ Wave 1.5 — plánováno.
+**Per-agenda granularita** (ne per-template): parametry (datum, varianta JŘ, časová osa) jsou agenda-level concerns. Nová šablona v rámci stejné agendy zdědí naposledy použité hodnoty — uživatel pokračuje kde skončil.
+
+**Stav:** ✅ Wave 1.5 (2026-05-20).
 
 ### Záměrně skipnuté
 

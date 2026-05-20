@@ -244,13 +244,16 @@ public partial class MainWindow : Window
     private void OnPreferencesLoaded()
     {
         // Loaded event fires from threadpool — dispatch to UI thread.
-        Dispatcher.BeginInvoke(() =>
+        Dispatcher.BeginInvoke(async () =>
         {
             if (_vm is null || _preferences is null) return;
             _vm.ApplyLoadedPreferences();
             ApplyUiPreferences();
             SyncGridSizeComboBox(_vm.State.GridSize);
             RebuildRecentFilesMenu();
+            // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány —
+            // dohnat to teď.
+            await _vm.LoadPrintParamsAndApplyAsync();
             skCanvas.InvalidateVisual();
             InvalidatePreview();
         });
@@ -297,6 +300,7 @@ public partial class MainWindow : Window
         // Fire-and-forget — closing nesmí čekat na Caché latenci. Pokud proces zhasne dřív
         // než save dokončí, ztratí se poslední session změny (akceptovatelný trade-off).
         _ = _vm.SaveMainStateAsync(leftPx, previewPx, tabIndex, showPreview);
+        _ = _vm.SavePrintParamsAsync();
     }
 
     private void RebuildRecentFilesMenu()
@@ -809,8 +813,25 @@ public partial class MainWindow : Window
     private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
     private void MenuExportPng_Click(object sender, RoutedEventArgs e) => _vm!.ExportPngCommand.Execute(null);
 
+    // Re-entrance guard — modální ShowDialog otevírá vnořený dispatcher, který může
+    // doručit dříve queueované Ctrl+P. Bez guardu by druhé pressnutí během už-otevřeného
+    // dialogu vyvolalo nový PrintDialog skrz Owner-set-on-closed crash.
+    private bool _printDialogOpening;
+
     private void MenuPrint_Click(object sender, RoutedEventArgs e)
     {
+        if (_printDialogOpening || _vm is null) return;
+        _printDialogOpening = true;
+        try { OpenPrintDialog(); }
+        finally { _printDialogOpening = false; }
+    }
+
+    private void OpenPrintDialog()
+    {
+        // PrintDialog operuje nad sdíleným dict s preview lištou (_vm.PreviewParamValues).
+        // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
+        // takže _previewParams už obsahuje persistované hodnoty — žádný extra I/O zde.
+
         // Callback pro reálná data — pouze pokud je CacheProvider k dispozici
         Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null;
         if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
@@ -860,8 +881,11 @@ public partial class MainWindow : Window
         var vm = new PrintDialogViewModel(
             _vm.State.CurrentTemplate,
             _vm.AgendaParameters,
+            _vm.PreviewParamValues,
             paramValues => _vm.BuildPreviewMockData(paramValues),
-            buildRealData);
+            buildRealData,
+            _preferences,
+            onParamsChanged: _vm.OnExternalParamsChanged);
 
         vm.RequestRenderPdf = (filePath, data) =>
             _previewCanvas!.RenderToPdf(filePath, data);

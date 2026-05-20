@@ -30,19 +30,16 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 **Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
 
-1. **Wave 1.5 — UserPreferences cleanup** ⬅️ AKTUÁLNÍ (Wave 1 hotová ✅ 2026-05-20)
-   Krátké doplnění validující Wave 1 pattern v praxi (recent colors), případně skip pro odložené (group expanded → Wave 4 stejně nahradí, font override → není user request). Scope k odsouhlasení. Plný plán v § Wave 1 níže.
-
-2. **Wave 2 — Shared catalogs**
+1. **Wave 2 — Shared catalogs** ⬅️ AKTUÁLNÍ (Wave 1 + 1.5 hotové ✅ 2026-05-20)
    Caché-driven AgendaRegistry / CompanyPalette / ElementDefaults / SectionTemplates. Přesun z `appsettings.json` + hardcoded → jedno místo pravdy, žádný redeploy pro novou agendu. Detail v § Wave 2 níže.
 
-3. **H-18/H-19 — Template versioning + migrator** (prereq produkčního Wave 3)
+2. **H-18/H-19 — Template versioning + migrator** (prereq produkčního Wave 3)
    Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
 
-4. **Wave 3 finishing — produkční Template storage**
+3. **Wave 3 finishing — produkční Template storage**
    Wave 3 CRUD ✅ hotový; chybí audit log, thumbnails, advanced features.
 
-5. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-4)
+4. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-3)
    TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
 **Mimo aktuální focus** (až bude potřeba):
@@ -92,13 +89,13 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🟠 Fáze A.2-D: Caché business logic (po dokončení Wave 1.5 → 2 → 3)
+### 🟠 Fáze A.2-D: Caché business logic (po dokončení Wave 2 → 3)
 
 Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
 > **Pozn.:** Fáze A.2-A..C (StopList / DepartureGrid / NotesLegend UI úpravy) je hotová — viz Archiv níže. Zbývá A.2-D série (Caché logika) + A.2-A5/A6/B4 (odložené pro datový průzkum / diskuzi s kolegy).
 >
-> **Priorita:** Wave 1.5 → Wave 2 → H-18/H-19 → Wave 3 finishing → Fáze A.2-D. Caché Migration foundation se uzavře dřív, než se vrátíme k zákaznickým ticketům — eliminuje riziko rework po pozdním přechodu.
+> **Priorita:** Wave 2 → H-18/H-19 → Wave 3 finishing → Fáze A.2-D. Caché Migration foundation se uzavře dřív, než se vrátíme k zákaznickým ticketům — eliminuje riziko rework po pozdním přechodu.
 
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
 
@@ -150,7 +147,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 
 ---
 
-#### ✅ Wave 1 — Per-user state (HOTOVO 2026-05-20)
+#### ✅ Wave 1 + 1.5 — Per-user state (HOTOVO 2026-05-20)
 
 **Foundation** `IUserPrefsService` + Caché `ALVA.EDControls.UserData` (F1, 2026-05-15) poskytuje generic blob storage per (IdFa × userID × scope × key).
 
@@ -166,18 +163,22 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | W1-4 | Recent Files menu (Soubor → Otevřít poslední) + AddRecentFile při Open/SaveAs, missing-file graceful | ✅ |
 | W1-6 | Instance defaults per šablona (scope `"TemplateDesigner.InstanceDefaults"`, key = template Guid) | ✅ |
 
-**Wave 1.5 (deferred, nice-to-have):**
+**Wave 1.5 (2026-05-20):**
 
 | Krok | Co | Stav |
 |---|---|---|
-| W1.5-1 | Recent Colors — last-used barvy v color pickeru (scope `"TemplateDesigner.RecentColors"`) | |
-| W1.5-2 | PropertiesPanel group expanded state | (možná odložit do Wave 4 — EDInputForm migrace stejně PropertiesPanel nahradí) |
-| W1.5-3 | Font override (analogie EDISONMAIN2 LocalPrefs.FontFamily/FontSize) | |
+| W1.5-1 | Recent Colors — 8 last-used barev v color pickeru (`"TemplateDesigner"` / `"RecentColors"`, Typ 2). DRY refactor `ColorPickerHelper` jako single entry point | ✅ |
+| W1.5-2 | PrintDialog params per-agenda persist + live sync s preview lištou (`"TemplateDesigner.PrintParams"` / `<agendaCode>`, Typ 3 per agenda) | ✅ |
+| W1.5-3 | PropertiesPanel group expanded state | Odloženo do Wave 4 (EDInputForm migrace nahradí PropertiesPanel) |
+| W1.5-4 | Font override (analogie EDISONMAIN2 LocalPrefs.FontFamily/FontSize) | Odloženo (žádný user request) |
 
-**Klíčové architektonické rozhodnutí (Wave 1):**
+**Klíčové architektonické rozhodnutí (Wave 1 + 1.5):**
 - **Žádné lokální JSON soubory** pro persistent state (TD běží embedded z EDISONMAIN2)
 - **Async load + event fallback** — krátký `Wait(200ms)` pro warm cache, jinak `TdPreferencesService.Loaded` event re-apply
 - **Schema evolution backward-compat** — všechny `MainStatePref` properties mají defaults v primary ctoru
+- **Per-agenda granularita** pro PrintParams (ne per-template) — params jsou agenda-level concerns, nová šablona zdědí
+- **Sdílený dict pro preview lišta + PrintDialog** — single source of truth, live sync přes cross-notification callback
+- **3-typová taxonomie state** dokumentována v [`05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md): Typ 1 (UI state, MainState blob, save on close), Typ 2 (activity log, per-list key, save on event), Typ 3 (per entity, vlastní scope, save on event)
 
 ---
 
