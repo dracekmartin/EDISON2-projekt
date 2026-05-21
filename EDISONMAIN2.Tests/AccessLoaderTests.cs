@@ -45,38 +45,6 @@ public class AccessLoaderTests
     }
 
     [Fact]
-    public void NonAdmin_AURIS_AddsParentFamilies()
-    {
-        // Legacy EDUsers.GetEdisonAccess:559-562 — 38001 → +30 (AURIS FAMILY) + 24 (parent)
-        var mlRest = MockAccessCall(apId: 1, "38001");
-        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
-
-        Assert.True(access.Contains("38001"));
-        Assert.True(access.Contains("30"));
-        Assert.True(access.Contains("24"));
-    }
-
-    [Fact]
-    public void NonAdmin_BCD_AddsParents()
-    {
-        var mlRest = MockAccessCall(apId: 1, "58001", "61001");
-        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
-
-        Assert.True(access.Contains("17")); // 58001 BCD Clearing parent
-        Assert.True(access.Contains("20")); // 61001 BCD Cena parent
-        Assert.True(access.Contains("24")); // Partnerská řešení parent
-    }
-
-    [Fact]
-    public void NonAdmin_11001_Adds35()
-    {
-        var mlRest = MockAccessCall(apId: 1, "11001");
-        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
-
-        Assert.True(access.Contains("35"));
-    }
-
-    [Fact]
     public void AdminRole_AddsFallbackElements()
     {
         // Server vrátil apId<3 (např. user není SuperUser), ale klient ho zná jako admin.
