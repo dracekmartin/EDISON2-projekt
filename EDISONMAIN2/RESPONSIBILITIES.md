@@ -1,5 +1,14 @@
 # EDISONMAIN2 — odpovědnosti aplikace
 
+> **⚠️ DŮLEŽITÉ — tento dokument NENÍ kanonická specifikace.**
+>
+> Je to **studnice nápadů** vytažená z legacy systému. Obsahuje 1:1 port úvah z legacy
+> `EDISONMAIN` + aspirativní features bez ověřeného user story. **Spousta tam uvedených
+> věcí je irelevantní pro EDISONMAIN2 nebo nemá smysl.** Při čerpání z tohoto souboru
+> vždy ověř, jestli má daná věc reálnou hodnotu — neber ji jako automaticky validní.
+>
+> **Single source of truth** pro to, co reálně děláme, je [`PLAN.md`](PLAN.md).
+
 Tento dokument popisuje, za co je shell aplikace `EDISONMAIN2` (a její předchůdce
 `EDISONMAIN`) zodpovědná. Neměl by popisovat **business agendy hostovaných modulů**
 (ty mají své vlastní repo složky a dokumentace) — jen **infrastrukturu hostování**.
