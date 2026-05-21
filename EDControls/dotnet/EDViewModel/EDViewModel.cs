@@ -20,11 +20,16 @@ public class EDViewModel : INotifyPropertyChanged
     /// <summary>Navigator pro otevírání oken — <c>WindowNavigator.Show(...)</c> / <c>ShowDialog(...)</c>.</summary>
     protected IWindowNavigator WindowNavigator => _services.WindowNavigator;
 
+    private IPopupDisplayer? _scopedPopupDisplayer;
+
     /// <summary>
-    /// Služba pro popupy — vždy cílí na aktivní okno jako owner.
+    /// Služba pro popupy. Po <see cref="AttachToWindow"/> vrací wrapper, který do popupů
+    /// automaticky injektuje VM-vlastní okno jako owner — agendová okna tak nedostávají
+    /// popupy nad shellem. Před attach (nebo když VM není window-bound) fallback na globální
+    /// instanci z <see cref="EDServices"/>.
     /// Použití: <c>PopupDisplayer.Confirm(...)</c> nebo <c>PopupDisplayer.Info(...)</c> z VM.
     /// </summary>
-    public IPopupDisplayer PopupDisplayer => _services.PopupDisplayer;
+    public IPopupDisplayer PopupDisplayer => _scopedPopupDisplayer ?? _services.PopupDisplayer;
 
     /// <summary>
     /// Per-user persist API (column layouts, hidden položky, ...). Default je no-op
@@ -133,6 +138,7 @@ public class EDViewModel : INotifyPropertyChanged
     /// </summary>
     public void AttachToWindow(Window window)
     {
+        _scopedPopupDisplayer = new WindowScopedPopupDisplayer(_services.PopupDisplayer, window);
         RegisterKeyBindings(window);
         if (PersistedFormId is { } formId)
             WindowStatePersistence.Attach(window, formId);

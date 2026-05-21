@@ -23,7 +23,8 @@ namespace EDISONMAIN2
         {
             var nav = new WindowNavigator();
             RegisterShellWindows(nav.Registry);
-            var services = new EDServices(null, nav, new PopupDisplayer());
+            var popupDisplayer = new PopupDisplayer();
+            var services = new EDServices(null, nav, popupDisplayer);
             EDServices.Initialize(services);
 
             LocalPrefs.Load();
@@ -114,6 +115,8 @@ namespace EDISONMAIN2
             var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, licenceService.GetActiveLicence, activeLicence, nav.CloseAll);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
+            // Shell okno existuje → PopupDisplayer použije ho jako default owner pro popupy.
+            popupDisplayer.DefaultOwner = wnd;
             // AttachToWindow před Show — hookne SourceInitialized pro persistence předtím než fire
             // (jinak by okno blikalo z XAML defaults na restored velikost).
             viewModel.AttachToWindow(wnd);
