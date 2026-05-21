@@ -2,17 +2,14 @@ namespace EDControls.EDViewModel;
 
 public interface IWindowNavigator
 {
-    /// <summary>Otevře okno modeless v entry assembly.</summary>
-    void Show(string windowTypeName, EDWindowInput? input = null);
+    /// <summary>
+    /// Otevře okno modeless. Klíč musí být registrovaný v <see cref="WindowNavigator.Registry"/>
+    /// při startupu (typicky composition root nebo bootstrap agendy).
+    /// </summary>
+    void Show(string key, EDWindowInput? input = null);
 
-    /// <summary>Otevře okno modeless v zadané assembly.</summary>
-    void Show(string windowTypeName, string assemblyName, EDWindowInput? input = null);
-
-    /// <summary>Otevře okno jako modální dialog v entry assembly.</summary>
-    bool? ShowDialog(string windowTypeName, EDWindowInput? input = null);
-
-    /// <summary>Otevře okno jako modální dialog v zadané assembly.</summary>
-    bool? ShowDialog(string windowTypeName, string assemblyName, EDWindowInput? input = null);
+    /// <summary>Otevře okno jako modální dialog. Klíč musí být registrovaný v <see cref="WindowNavigator.Registry"/>.</summary>
+    bool? ShowDialog(string key, EDWindowInput? input = null);
 
     /// <summary>
     /// Spustí legacy WinForms formu z jiného .exe přes EDISONMAIN2API.FormToRunGetter kontrakt.

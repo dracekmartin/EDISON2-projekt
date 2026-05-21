@@ -1,37 +1,36 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Otevírá WPF okna (reflexe v entry assembly) i legacy WinForms formuláře z externích
+/// Otevírá WPF okna registrovaná v <see cref="Registry"/> + legacy WinForms formuláře z externích
 /// .exe (přes 10-arg kontrakt <c>EDISONMAIN2API.FormToRunGetter</c>). Trackuje child procesy,
-/// <see cref="CloseAllLegacy"/> kill při shell close.
+/// <see cref="CloseAll"/> kill při shell close.
 /// </summary>
 public class WindowNavigator : IWindowNavigator
 {
     private readonly List<Process> _legacyProcesses = [];
 
-    public void Show(string typeName, EDWindowInput? input = null) =>
-        Show(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, input);
+    /// <summary>
+    /// Registr klíč → factory pro WPF okna. Naplňuje composition root při startupu;
+    /// agendy si registrují vlastní okna v rámci svého bootstrap hooku.
+    /// </summary>
+    public WindowRegistry Registry { get; } = new();
 
-    public void Show(string typeName, string assemblyName, EDWindowInput? input = null)
+    public void Show(string key, EDWindowInput? input = null)
     {
-        var window = CreateWindow(typeName, assemblyName, input);
+        var window = CreateWindow(key, input);
         window.Owner = Application.Current.MainWindow;
         window.Show();
     }
 
-    public bool? ShowDialog(string typeName, EDWindowInput? input = null) =>
-        ShowDialog(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, input);
-
-    public bool? ShowDialog(string typeName, string assemblyName, EDWindowInput? input = null)
+    public bool? ShowDialog(string key, EDWindowInput? input = null)
     {
-        var window = CreateWindow(typeName, assemblyName, input);
+        var window = CreateWindow(key, input);
         window.Owner = Application.Current.MainWindow;
         return window.ShowDialog();
     }
@@ -133,14 +132,9 @@ public class WindowNavigator : IWindowNavigator
         return Path.Combine(@"C:\Edison", relativePath);
     }
 
-    private static Window CreateWindow(string typeName, string assemblyName, EDWindowInput? input)
+    private Window CreateWindow(string key, EDWindowInput? input)
     {
-        var type = FindTypeInAssembly(typeName, assemblyName)
-            ?? throw new InvalidOperationException(
-                $"Window type '{typeName}' not found in assembly '{assemblyName}'.");
-        var window = input is null
-            ? (Window)Activator.CreateInstance(type)!
-            : (Window)Activator.CreateInstance(type, input)!;
+        var window = Registry.Create(key, input);
 
         var idfa = EDServices.Current.MLRest?.Idfa;
         if (!string.IsNullOrEmpty(idfa))
@@ -152,23 +146,5 @@ public class WindowNavigator : IWindowNavigator
             vm.AttachToWindow(window);
 
         return window;
-    }
-
-    private static Type? FindTypeInAssembly(string typeName, string assemblyName)
-    {
-        var loaded = AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == assemblyName ||
-                                 Path.GetFileNameWithoutExtension(a.Location) == assemblyName);
-        if (loaded != null)
-            return loaded.GetTypes().FirstOrDefault(t => t.Name == typeName || t.FullName == typeName);
-
-        var fileName = Path.HasExtension(assemblyName) ? assemblyName : assemblyName + ".dll";
-        var fullPath = Path.Combine(AppContext.BaseDirectory, fileName);
-        if (!File.Exists(fullPath))
-            throw new InvalidOperationException(
-                $"Assembly '{assemblyName}' not found in '{AppContext.BaseDirectory}'.");
-
-        var asm = Assembly.LoadFrom(fullPath);
-        return asm.GetTypes().FirstOrDefault(t => t.Name == typeName || t.FullName == typeName);
     }
 }

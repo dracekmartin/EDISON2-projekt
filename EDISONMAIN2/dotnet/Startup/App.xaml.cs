@@ -9,6 +9,7 @@ using EDControls.UserPrefs;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
+using ComponentTestWindow = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2
@@ -21,6 +22,7 @@ namespace EDISONMAIN2
         private void Application_Startup(object sender, StartupEventArgs e)
         {
             var nav = new WindowNavigator();
+            RegisterShellWindows(nav.Registry);
             var services = new EDServices(null, nav, new PopupDisplayer());
             EDServices.Initialize(services);
 
@@ -124,6 +126,20 @@ namespace EDISONMAIN2
         {
             new PopupDisplayer().Error(e.Exception);
             e.Handled = true;
+        }
+
+        // Klíče jsou ZÁMĚRNĚ literal stringy, ne nameof(). Pointa registry je decoupling
+        // klíče (veřejný kontrakt) od jména třídy (implementační detail) — když se třída
+        // přejmenuje, IDE updatuje `new XxxWindow()` ale callsity `Show("...")` ne; literal
+        // string v registraci proto zůstane stabilní s callsity. Při budoucím renamu lze
+        // dočasně registrovat oba klíče (starý i nový) než se callsity migrují.
+        // Konvence: pro shell-internal okna jméno třídy; pro cross-agenda preferovat
+        // namespacovaný klíč (např. "MZDY.ZamestnanecEdit") proti kolizím mezi agendami.
+        private static void RegisterShellWindows(WindowRegistry r)
+        {
+            r.Register("EDInputFormTestWindow", _ => new EDInputFormTestWindow());
+            r.Register("EDListTestWindow", _ => new EDListTestWindow());
+            r.Register("EDComponentAndViewModelTestWindow", _ => new ComponentTestWindow());
         }
     }
 
