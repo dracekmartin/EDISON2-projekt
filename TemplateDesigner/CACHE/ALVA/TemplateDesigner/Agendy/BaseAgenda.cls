@@ -1,11 +1,42 @@
-/// Abstraktní základ pro API rozhraní TemplateDesigneru.
-/// Každá agenda (JR, FAKTURY, ...) musí mít vlastní třídu dědící z této.
-/// Caché kompilátor vynucuje implementaci všech Abstract metod.
-/// 
-/// Konfigurace v appsettings.json:
-///   { "code": "JR", "name": "Jízdní řád", "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerMHD" }
-Class ALVA.TemplateDesigner.API.AgendaAPI Extends %RegisteredObject [ Abstract ]
+/// Abstraktní základ pro implementaci agendy v TemplateDesigneru.
+///
+/// Agenda = zdroj dat a doménová logika pro konkrétní typ tiskové sestavy:
+/// - **MHD** — zastávkové jízdní řády městské hromadné dopravy (linky, zastávky, spoje)
+/// - **FAKTURY** — fakturační sestavy (faktury, položky, DPH)
+/// - připravované: Meziměstský JŘ, Knižní JŘ, Vozový JŘ
+///
+/// Každá agenda dědí z této třídy a implementuje povinné Abstract metody:
+/// - GetSchema           — definice dostupných polí (skalární + tabulkové kolekce)
+/// - GetData             — reálná data pro tisk (per IDFa, per instance)
+/// - GetMockData         — vzorová data pro live preview v designeru
+/// - GetTableTemplates   — seznam Fixed šablon tabulek (záhlaví, platnost, ...)
+/// - GetTableTemplate    — definice konkrétní Fixed šablony (sloupce + řádky)
+///
+/// Volitelně přepsatelné (default = prázdný seznam):
+/// - GetParameters       — parametry pro PrintDialog (zaškrtávátka, výběry, ...)
+/// - GetAvailableInstances — seznam instancí pro Instance Picker
+///
+/// Caché kompilátor vynucuje implementaci Abstract metod; bez nich třída neprojde compile.
+///
+/// Registrace agendy (Wave 2, 2026-05-20):
+///   Místo seznamu v appsettings.json se agenda nyní registruje **deklarativně** přes
+///   class parametry AgendaCode + AgendaLabel. ALVA.TemplateDesigner.API.AgendyRegistr
+///   prochází %Dictionary, najde všechny subclassy BaseAgenda a vrátí jejich metadata
+///   jako JSON list. Vytvoření třídy = registrace agendy.
+///
+///   GENERAL agenda (šablona bez DB vazby) nemá Caché class — .NET strana ji inject
+///   syntheticky v IAgendaRegistry impl.
+Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
 {
+
+/// Kód agendy (např. "ZASTAVKOVY_JR_MHD", "FAKTURY"). Override v každé subclass.
+/// Slouží jako klíč v Template.AgendaCode a IN parametrech CacheAgendaProvider.
+/// Konvence: <TYP_SESTAVY>_<DATOVY_ZDROJ>, velkými písmeny, podtržítka.
+/// Příklady: ZASTAVKOVY_JR_MHD, MEZIMESTSKY_JR_MHD (future), FAKTURY.
+Parameter AgendaCode As %String = "";
+
+/// User-facing label zobrazený v ChangeAgendaDialog. Override v každé subclass.
+Parameter AgendaLabel As %String = "";
 
 /// Vrátí DataSchema pro agendu: skalární pole (fields) + tabulkové kolekce (fieldCollections).
 /// OUT[1] = JSON objekt:
@@ -57,6 +88,29 @@ ClassMethod GetData(ByRef sys As %String) As %Status [ Abstract ]
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
     s ^||ML("OUT", $i(^||ML("OUT"))) = "[]"
+    q 1
+}
+
+/// Vrátí seznam dostupných instancí agendy (např. linky pro MHD, faktury pro FAKTURY).
+/// Slouží pro Instance Picker v TD — uživatel vybere 1-N instancí, nad kterými pracuje.
+/// 
+/// Výchozí implementace vrací prázdný seznam — agenda bez konceptu instancí (GENERAL,
+/// případně FAKTURY před implementací) ho nemusí přepisovat.
+/// 
+/// IN["search"] = volitelný filtr (substring, case-insensitive)
+/// IN["limit"]  = max počet řádků (default 50)
+/// OUT["1"] = JSON pole:
+///   [
+///     { "value": "42", "display": "42 — Praha–Brno", "subtitle": "Platnost od 1.1.2024" },
+///     ...
+///   ]
+/// 
+/// value    = opaque ID předaný do GetData (IN["LINKA_ID"] u MHD)
+/// display  = hlavní zobrazovaný text (číslo + název)
+/// subtitle = volitelný menší text pod displayem (platnost, dopravce, atd.)
+ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
+{
+    s ^||ML("OUT","1") = "[]"
     q 1
 }
 

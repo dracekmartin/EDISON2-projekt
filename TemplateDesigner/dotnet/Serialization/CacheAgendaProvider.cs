@@ -9,11 +9,11 @@ using TemplateDesigner.Models.Schema;
 namespace TemplateDesigner.Serialization;
 
 /// <summary>
-/// Volá Caché AgendaAPI (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
+/// Volá Caché BaseAgenda (GetSchema, GetTableTemplates, GetTableTemplate) přes MLRest.
 /// Nahrazuje CacheDataSchemaProvider — pracuje s JSON formátem místo pipe-delimited stringů.
 ///
-/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.API.AgendaAPI,
-/// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.JR.TiskAPI".
+/// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendy.BaseAgenda,
+/// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd".
 /// </summary>
 public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 {
@@ -62,6 +62,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass))
             return null;
 
+        // Agenda bez Caché třídy (např. GENERAL) — žádné DB schema, jen statický obsah šablony
+        if (string.IsNullOrWhiteSpace(cacheClass)) return null;
+
         var agenda = _agendas.FirstOrDefault(a =>
             a.Code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase));
         if (agenda is null) return null;
@@ -109,6 +112,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 !code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase))
                 continue;
 
+            // Agenda bez Caché třídy (GENERAL) — žádné Fixed šablony
+            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
+
             try
             {
                 CVar cvResult = _mlRest.Query(cacheClass, "GetTableTemplates", new CVar());
@@ -144,6 +150,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         // Zkus každou třídu dokud nenajdeme šablonu
         foreach (var cacheClass in _classMap.Values)
         {
+            // Agenda bez Caché třídy (GENERAL) — žádné šablony
+            if (string.IsNullOrWhiteSpace(cacheClass)) continue;
+
             try
             {
                 var inVar = new CVar();
@@ -185,6 +194,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (string.IsNullOrEmpty(agendaCode)) return [];
         if (_parametersCache.TryGetValue(agendaCode, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
+
+        // Agenda bez Caché třídy (GENERAL) — žádné parametry
+        if (string.IsNullOrWhiteSpace(cacheClass)) { _parametersCache[agendaCode] = []; return []; }
 
         try
         {
@@ -255,6 +267,57 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
     }
 
+    // ─── Dostupné instance (linky / faktury / ...) ───────────────────────────
+
+    /// <summary>
+    /// Volá GetAvailableInstances na Caché třídě a vrátí seznam instancí (např. linek pro MHD).
+    /// Server-side filter — předaný search se aplikuje v Caché (case-insensitive substring).
+    /// Prázdný seznam = agenda nemá koncept instancí (GENERAL) nebo žádné neodpovídají filtru.
+    /// </summary>
+    public IReadOnlyList<AgendaInstance> GetAvailableInstances(string agendaCode, string? search = null, int limit = 50)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return [];
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
+        if (string.IsNullOrWhiteSpace(cacheClass)) return [];
+
+        try
+        {
+            var inVar = new CVar();
+            inVar["search"] = new CVar(search ?? "");
+            inVar["limit"]  = new CVar(limit.ToString());
+
+            CVar result = _mlRest.Query(cacheClass, "GetAvailableInstances", inVar);
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+            {
+                Debug.WriteLine($"[AgendaProvider] GetAvailableInstances error: {_mlRest.RestStatus.Message}");
+                return [];
+            }
+
+            string? json = result["1"]?.Value?.ToString();
+            if (string.IsNullOrEmpty(json)) return [];
+
+            var node = JsonNode.Parse(json);
+            if (node is not JsonArray arr) return [];
+
+            var list = new List<AgendaInstance>(arr.Count);
+            foreach (var item in arr)
+            {
+                if (item is null) continue;
+                var value   = item["value"]?.GetValue<string>();
+                var display = item["display"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(display)) continue;
+                var subtitle = item["subtitle"]?.GetValue<string>();
+                list.Add(new AgendaInstance(value, display, subtitle));
+            }
+            return list;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[AgendaProvider] GetAvailableInstances exception: {ex.Message}");
+            return [];
+        }
+    }
+
     // ─── Reálná data pro tisk ───────────────────────────────────────────────
 
     /// <summary>
@@ -266,6 +329,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     {
         if (string.IsNullOrEmpty(agendaCode)) return null;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
+
+        // Agenda bez Caché třídy (GENERAL) — žádná reálná data, šablona se tiskne s parametry přímo
+        if (string.IsNullOrWhiteSpace(cacheClass)) return null;
 
         try
         {
@@ -357,6 +423,9 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         if (string.IsNullOrEmpty(agendaCode)) return null;
         if (_mockDataCache.TryGetValue(agendaCode, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return null;
+
+        // Agenda bez Caché třídy (GENERAL) — žádná mock data, preview používá SampleData ze šablony
+        if (string.IsNullOrWhiteSpace(cacheClass)) return null;
 
         try
         {

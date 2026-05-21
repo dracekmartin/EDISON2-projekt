@@ -1,5 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Threading;
+using EDControls;
 using EDControls.EDViewModel;
 using TemplateDesigner.Config;
 
@@ -15,6 +16,12 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+
+        // Globální default icon pro všechna Window v aplikaci. Implicit <Style TargetType="Window">
+        // v App.xaml se v WPF neaplikuje na derived Window classes (známý quirk) — registrace
+        // class handleru je spolehlivá pro všechna okna i dialogy.
+        EventManager.RegisterClassHandler(typeof(Window), Window.LoadedEvent,
+            new RoutedEventHandler(OnAnyWindowLoaded));
 
 #if DEBUG
         // Jednorázový test detektoru JŘ — zakomentuj po otestování
@@ -42,7 +49,38 @@ public partial class App : Application
 
         WarnIfCacheMisconfigured(settings, mlRest);
 
-        new MainWindow(mlRest).Show();
+        if (mlRest is not null)
+            EDServices.Current.UserPrefs = new EDControls.UserPrefs.CacheUserPrefsService(new MLRestAdapter(mlRest));
+
+        // Per-user state (zoom, grid, splittery, recent files, instance defaults).
+        // Krátký sync wait (200ms) pro warm-cache happy path; pokud propadne (cold-start
+        // Caché HTTP typicky 2-3s), MainWindow startuje s defaults a po dokončení LoadAsync
+        // se hodnoty aplikují přes event TdPreferencesService.Loaded (MainWindow subscribe).
+        // Detail v EDControls/DOCS/05-userdata-scopes.md.
+        var prefs = new TemplateDesigner.Services.TdPreferencesService(EDServices.Current.UserPrefs);
+        prefs.LoadAsync().Wait(TimeSpan.FromMilliseconds(200));
+
+        // Color picker recent colors integrace — static reference, žádný explicit DI.
+        TemplateDesigner.Controls.ColorPickerHelper.Preferences = prefs;
+
+        // Wave 2 (W2-1): registr agend — Caché auto-discovery z BaseAgenda subclasses.
+        // Sync wait do 3s — pokud propadne, MainWindow startuje jen s GENERAL agendou
+        // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.
+        IReadOnlyList<TemplateDesigner.Serialization.AgendaRegistryEntry> agendas = [];
+        if (mlRest is not null)
+        {
+            var agendaRegistry = new TemplateDesigner.Serialization.CacheAgendaRegistry(new MLRestAdapter(mlRest));
+            var listTask = agendaRegistry.ListAsync();
+            if (listTask.Wait(TimeSpan.FromSeconds(3)))
+                agendas = listTask.Result;
+        }
+        else
+        {
+            // Standalone bez Caché — pouze GENERAL (synthetic injection v registru, ale registr není volaný)
+            agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez databáze)", "")];
+        }
+
+        new MainWindow(mlRest, prefs, agendas).Show();
     }
 
     /// <summary>
@@ -67,6 +105,14 @@ public partial class App : Application
         };
 
         MessageBox.Show(message, title, MessageBoxButton.OK, MessageBoxImage.Warning);
+    }
+
+    private static void OnAnyWindowLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Window window) return;
+        if (window.Icon is not null) return;   // explicit Icon (např. MainWindow) ponechán
+        if (Application.Current.TryFindResource("EDIcons.Molecule") is System.Windows.Media.ImageSource icon)
+            window.Icon = icon;
     }
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)

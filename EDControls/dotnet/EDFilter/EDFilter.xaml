@@ -1,0 +1,14 @@
+<UserControl x:Class="EDControls.EDFilter.EDFilter"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Border Background="{DynamicResource EDTheme.Bg.Footer}"
+            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1" Padding="8,6">
+        <ItemsControl x:Name="fieldsHost">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
+    </Border>
+</UserControl>

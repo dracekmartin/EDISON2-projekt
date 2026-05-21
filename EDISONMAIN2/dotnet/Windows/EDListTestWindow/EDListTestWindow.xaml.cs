@@ -1,4 +1,6 @@
 using System.Windows;
+using System.Windows.Controls;
+using EDControls.EDList;
 
 namespace EDISONMAIN2
 {
@@ -9,10 +11,13 @@ namespace EDISONMAIN2
             DataContext = new EDControls.EDViewModel.EDViewModel();
             InitializeComponent();
             TheList.CacheClass = "ALVA.EDControls.EDList.MockList";
+            TheList.HostId = "EDISONMAIN2.EDListTestWindow";  // persist column layout (L2)
+            TheList.Title  = "Test EDList — mock data";       // header + search (L3)
 
-            TheList.SelectionChanged  += (_, id)  => StatusText.Text = $"Výběr: {id ?? "(žádný)"}";
-            TheList.RowDoubleClicked  += (_, id)  => StatusText.Text = $"Dvojklik: {id}";
-            TheList.CellLinkClicked   += (_, e)   => LinkText.Text = $"Link: {e.ColKey} = {e.RowId}";
+            TheList.SelectionChanged    += (_, id) => StatusText.Text  = $"Výběr: {id ?? "(žádný)"}";
+            TheList.RowDoubleClicked    += (_, id) => StatusText.Text  = $"Dvojklik: {id}";
+            TheList.CellLinkClicked     += (_, e)  => LinkText.Text    = $"Link: {e.ColKey} = {e.RowId}";
+            TheList.CheckedRowsChanged  += (_, ids) => CheckedText.Text = $"Checked: {string.Join(", ", ids)}";
         }
 
         private void InitializeList_Click(object sender, RoutedEventArgs e)
@@ -27,5 +32,16 @@ namespace EDISONMAIN2
             TheList.LoadList();
             StatusText.Text = "LoadList OK";
         }
+
+        private void ModeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (TheList is null) return;
+            TheList.SelectionMode = ModeCombo.SelectedIndex == 1
+                ? EListSelectionMode.Check
+                : EListSelectionMode.Single;
+        }
+
+        private void CheckAll_Click(object sender, RoutedEventArgs e)   => TheList.CheckAll();
+        private void UncheckAll_Click(object sender, RoutedEventArgs e) => TheList.UncheckAll();
     }
 }

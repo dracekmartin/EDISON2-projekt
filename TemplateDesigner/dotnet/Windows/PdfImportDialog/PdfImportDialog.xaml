@@ -9,19 +9,19 @@
 
     <DockPanel Margin="16">
         <!-- Header -->
-        <Border DockPanel.Dock="Top" Background="#F0F4F8" Padding="12" Margin="-16,-16,-16,0"
-                BorderBrush="#DDDDDD" BorderThickness="0,0,0,1">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="12" Margin="-16,-16,-16,0"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
             <StackPanel>
                 <TextBlock Text="Import PDF do šablony"
-                           FontSize="16" FontWeight="Bold" Foreground="#1A5276"/>
+                           FontSize="16" FontWeight="Bold" Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                 <TextBlock Text="Vyberte PDF soubor a převeďte ho na editovatelnou šablonu."
-                           FontSize="11" Foreground="#666666" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                           FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
 
         <!-- Footer -->
-        <Border DockPanel.Dock="Bottom" Background="#F8F8F8" Padding="12" Margin="-16,16,-16,-16"
-                BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource EDTheme.Bg.Footer}" Padding="12" Margin="-16,16,-16,-16"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -100,7 +100,7 @@
                     <TextBox Text="{Binding PageTo, UpdateSourceTrigger=PropertyChanged}" Width="40" Margin="6,0"
                              VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
                              IsEnabled="{Binding ImportPageRange}"/>
-                    <TextBlock Text="{Binding PageRangeInfo}" VerticalAlignment="Center" Foreground="#888888" Margin="4,0,0,0"/>
+                    <TextBlock Text="{Binding PageRangeInfo}" VerticalAlignment="Center" Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="4,0,0,0"/>
                 </StackPanel>
             </StackPanel>
 
@@ -195,7 +195,7 @@
                                 </DataTrigger>
                                 <DataTrigger Binding="{Binding UseAiVision}" Value="True">
                                     <Setter Property="IsEnabled" Value="False"/>
-                                    <Setter Property="Foreground" Value="#999999"/>
+                                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Border.Strong}"/>
                                 </DataTrigger>
                             </Style.Triggers>
                         </Style>
@@ -229,11 +229,12 @@
             <!-- Debug -->
             <CheckBox Content="Debug log (uloží .import-debug.txt vedle PDF)"
                       IsChecked="{Binding EnableDebug}"
-                      Margin="0,4,0,0" FontSize="11" Foreground="#888888"/>
+                      Margin="0,4,0,0" FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
 
             <!-- Status -->
             <TextBlock Text="{Binding StatusText}" Margin="0,8,0,0"
-                       FontSize="11" Foreground="#444444" TextWrapping="Wrap"/>
+                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                       Foreground="{DynamicResource EDTheme.Text.Header}" TextWrapping="Wrap"/>
         </StackPanel>
     </DockPanel>
 </Window>

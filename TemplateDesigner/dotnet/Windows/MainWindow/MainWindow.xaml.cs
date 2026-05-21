@@ -27,7 +27,10 @@ public partial class MainWindow : Window
     private PreviewCanvas?          _previewCanvas;
     private ElementPropertiesWindowViewModel? _propsVm;
 
-    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f, 8.0f, 10.0f];
+    // Zoom max omezen na 500% — při vyšším zoomu má SKElement >20 MP, což způsobuje
+    // pomalé buffer uploads v SkiaSharp.Views.WPF (full surface kopie každý frame).
+    // Pro skutečně vysoké zoomy bude potřeba virtualizace rendering (viz roadmap).
+    private static readonly float[] ZoomLevels = [0.5f, 0.75f, 1.0f, 1.5f, 2.0f, 3.0f, 4.0f, 5.0f];
 
     // ── Mouse state machine ───────────────────────────────────────────────────
     private enum MouseMode { Idle, Dragging, Resizing, RubberBand, AddingElement }
@@ -89,15 +92,24 @@ public partial class MainWindow : Window
     // Constructors
     // ─────────────────────────────────────────────────────────────────────────
 
+    // ── Per-user preferences (per-user × IDFa state from Caché) ──
+    private Services.TdPreferencesService? _preferences;
+
     /// <summary>WPF designer constructor — do not use at runtime.</summary>
     public MainWindow() { InitializeComponent(); }
 
-    /// <summary>Runtime constructor. mlRest = null for standalone mode.</summary>
-    public MainWindow(MLRest? mlRest)
+    /// <summary>Runtime constructor. mlRest = null for standalone mode; preferences = null disables persist.</summary>
+    public MainWindow(MLRest? mlRest,
+                      Services.TdPreferencesService? preferences = null,
+                      IReadOnlyList<Serialization.AgendaRegistryEntry>? agendas = null)
     {
-        _vm         = new TemplateDesignerViewModel(mlRest);
+        _preferences = preferences;
+        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas);
         DataContext = _vm;
         InitializeComponent();
+
+        // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
+        ApplyUiPreferences();
 
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
@@ -112,6 +124,8 @@ public partial class MainWindow : Window
         skCanvas.MouseRightButtonUp   += OnCanvasRightClick;
         CanvasScrollViewer.PreviewMouseWheel += OnCanvasScrollWheel;
         PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
+        // Repaint canvas po scroll — viewport culling potřebuje aktuální viditelnou oblast
+        CanvasScrollViewer.ScrollChanged += (_, _) => skCanvas.InvalidateVisual();
 
         // Wire VM callbacks
         _vm.RequestCanvasRefresh         = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
@@ -132,8 +146,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Chyba při exportu PDF:\n{ex.Message}", "Export PDF",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _vm!.PopupDisplayer.Error(ex);
             }
         };
         _vm.RequestExportPng             = filePath =>
@@ -153,8 +166,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Chyba při exportu PNG:\n{ex.Message}", "Export PNG",
-                    MessageBoxButton.OK, MessageBoxImage.Error);
+                _vm!.PopupDisplayer.Error(ex);
             }
         };
 
@@ -213,6 +225,115 @@ public partial class MainWindow : Window
         SectionsList.PreviewMouseMove           += SectionsList_PreviewMouseMove;
         SectionsList.PreviewMouseLeftButtonUp   += SectionsList_PreviewMouseUp;
         SectionsList.MouseLeave                 += SectionsList_DragCancel;
+
+        // Per-user prefs save on close + Recent Files menu populate on open
+        this.Closing += OnWindowClosing;
+        MenuRecentFiles.SubmenuOpened += (_, _) => RebuildRecentFilesMenu();
+        RebuildRecentFilesMenu();
+
+        // Sync nebindovaných UI elementů (CmbGridSize) s loaded GridSize. VM ctor
+        // už nastavil State.GridSize, ale RequestGridSizeUiSync callback v tu chvíli
+        // ještě nebyl napojený — explicit sync teď, kdy už je vše drátované.
+        SyncGridSizeComboBox(_vm.State.GridSize);
+
+        // Pokud LoadAsync nestihl dokončit před Show() (cold-start Caché HTTP trvá 2-3s),
+        // subscribe na Loaded event — handler dispatchne re-apply na UI thread.
+        // Subscribe-after-loaded case (warm cache) řeší Loaded event accessor — invoke immediately.
+        if (_preferences is not null)
+            _preferences.Loaded += OnPreferencesLoaded;
+    }
+
+    private void OnPreferencesLoaded()
+    {
+        // Loaded event fires from threadpool — dispatch to UI thread.
+        Dispatcher.BeginInvoke(async () =>
+        {
+            if (_vm is null || _preferences is null) return;
+            _vm.ApplyLoadedPreferences();
+            ApplyUiPreferences();
+            SyncGridSizeComboBox(_vm.State.GridSize);
+            RebuildRecentFilesMenu();
+            // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány —
+            // dohnat to teď.
+            await _vm.LoadPrintParamsAndApplyAsync();
+            skCanvas.InvalidateVisual();
+            InvalidatePreview();
+        });
+    }
+
+    /// <summary>
+    /// Aplikuje UI-side prefs (splittery, levý tab, viditelnost preview pane) z TdPreferencesService.
+    /// Volá se po InitializeComponent, kdy už ColumnDefinitions a TabControl existují.
+    /// VM-side prefs (zoom, grid, snap) se aplikují v VM konstruktoru přímo do DesignerState.
+    /// </summary>
+    private void ApplyUiPreferences()
+    {
+        var pref = _preferences?.MainState;
+        if (pref is null) return;
+
+        if (pref.LeftPanelWidthPx is { } leftW && leftW > 0)
+            SectionsColumn.Width = new GridLength(leftW, GridUnitType.Pixel);
+
+        if (!pref.ShowPreviewPane)
+        {
+            // BtnPreview_Changed handler nastaví PreviewColumn na 0.
+            BtnPreview.IsChecked = false;
+        }
+        else if (pref.PreviewPanelWidthPx is { } previewW && previewW > 0)
+        {
+            // Star sizes (1*) → pixel; canvas dostane zbytek. Zachová pozici splitteru.
+            PreviewColumn.Width = new GridLength(previewW, GridUnitType.Pixel);
+        }
+
+        if (pref.ActiveLeftTabIndex >= 0 && pref.ActiveLeftTabIndex < LeftTabControl.Items.Count)
+            LeftTabControl.SelectedIndex = pref.ActiveLeftTabIndex;
+    }
+
+    private void OnWindowClosing(object? sender, CancelEventArgs e)
+    {
+        if (_vm is null || _preferences is null) return;
+
+        // Snapshot UI-side state pro persist. ActualWidth=0 → null (nepřepsat na neplatnou hodnotu).
+        double? leftPx    = SectionsColumn.ActualWidth > 0 ? SectionsColumn.ActualWidth : null;
+        double? previewPx = PreviewColumn.ActualWidth   > 0 ? PreviewColumn.ActualWidth   : null;
+        int tabIndex      = LeftTabControl.SelectedIndex;
+        bool showPreview  = BtnPreview.IsChecked == true;
+
+        // Fire-and-forget — closing nesmí čekat na Caché latenci. Pokud proces zhasne dřív
+        // než save dokončí, ztratí se poslední session změny (akceptovatelný trade-off).
+        _ = _vm.SaveMainStateAsync(leftPx, previewPx, tabIndex, showPreview);
+        _ = _vm.SavePrintParamsAsync();
+    }
+
+    private void RebuildRecentFilesMenu()
+    {
+        if (_preferences is null || MenuRecentFiles is null) return;
+        MenuRecentFiles.Items.Clear();
+        var files = _preferences.RecentFiles;
+        if (files.Count == 0)
+        {
+            MenuRecentFiles.Items.Add(new MenuItem { Header = "(žádné)", IsEnabled = false });
+            return;
+        }
+        for (int i = 0; i < files.Count; i++)
+        {
+            var path = files[i];
+            var item = new MenuItem
+            {
+                Header = $"_{i + 1}  {System.IO.Path.GetFileName(path)}",
+                ToolTip = path,
+                Tag = path
+            };
+            item.Click += async (_, _) =>
+            {
+                if (_vm is not null && item.Tag is string p)
+                {
+                    await _vm.OpenTemplateFromFileAsync(p);
+                    RebuildRecentFilesMenu();
+                }
+            };
+            MenuRecentFiles.Items.Add(item);
+        }
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -224,6 +345,12 @@ public partial class MainWindow : Window
         if (_canvas is null) return;
         var args    = (dynamic)e;
         SKSurface surface = args.Surface;
+        // Předat viditelnou oblast pro viewport culling (grid pak nekreslí mimo viewport).
+        _canvas.VisibleViewport = new SKRect(
+            (float)CanvasScrollViewer.HorizontalOffset,
+            (float)CanvasScrollViewer.VerticalOffset,
+            (float)(CanvasScrollViewer.HorizontalOffset + CanvasScrollViewer.ViewportWidth),
+            (float)(CanvasScrollViewer.VerticalOffset + CanvasScrollViewer.ViewportHeight));
         _canvas.Render(surface.Canvas, (float)skCanvas.ActualWidth, (float)skCanvas.ActualHeight);
 
         if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
@@ -294,11 +421,12 @@ public partial class MainWindow : Window
     private void UpdateCanvasSize()
     {
         if (_canvas is null || _vm is null) return;
-        float padding = 80f;
+        const float padding   = 80f;  // 40 top + 40 bottom standardní okraj kolem stránky
+        const float topBuffer = 60f;  // extra prostor nahoře — kompenzuje preview chrome (Y-zarovnání)
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
         float pageH   = _canvas.CalculatePageHeightPx(_vm.State.CurrentTemplate);
         skCanvas.Width  = pageW + padding + _canvas.ExtraLeftPx;
-        skCanvas.Height = pageH + padding;
+        skCanvas.Height = pageH + padding + topBuffer;
         skCanvas.InvalidateVisual();
         UpdatePreviewSize();
     }
@@ -629,17 +757,15 @@ public partial class MainWindow : Window
             _vm.SnapGapMm = gap;
     }
 
-    private void CmbScale_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void MenuScale_Click(object sender, RoutedEventArgs e)
     {
-        if (_vm is null || CmbScale.SelectedItem is not System.Windows.Controls.ComboBoxItem item) return;
-        if (item.Tag is string tagStr && float.TryParse(tagStr,
+        if (_vm is null || sender is not MenuItem item || item.Tag is not string tagStr) return;
+        if (float.TryParse(tagStr,
                 System.Globalization.NumberStyles.Float,
                 System.Globalization.CultureInfo.InvariantCulture, out float scale))
         {
             _vm.ScaleTemplate(scale);
         }
-        // Vrátit zpět na "Škálovat..." (index 0) — dropdown funguje jako akční menu
-        CmbScale.SelectedIndex = 0;
     }
 
     // ── Panel visibility ──────────────────────────────────────────────────────
@@ -689,8 +815,25 @@ public partial class MainWindow : Window
     private void MenuExportPdf_Click(object sender, RoutedEventArgs e) => _vm!.ExportPdfCommand.Execute(null);
     private void MenuExportPng_Click(object sender, RoutedEventArgs e) => _vm!.ExportPngCommand.Execute(null);
 
+    // Re-entrance guard — modální ShowDialog otevírá vnořený dispatcher, který může
+    // doručit dříve queueované Ctrl+P. Bez guardu by druhé pressnutí během už-otevřeného
+    // dialogu vyvolalo nový PrintDialog skrz Owner-set-on-closed crash.
+    private bool _printDialogOpening;
+
     private void MenuPrint_Click(object sender, RoutedEventArgs e)
     {
+        if (_printDialogOpening || _vm is null) return;
+        _printDialogOpening = true;
+        try { OpenPrintDialog(); }
+        finally { _printDialogOpening = false; }
+    }
+
+    private void OpenPrintDialog()
+    {
+        // PrintDialog operuje nad sdíleným dict s preview lištou (_vm.PreviewParamValues).
+        // Saved PrintParams se aplikují při openu šablony (LoadPrintParamsAndApplyAsync),
+        // takže _previewParams už obsahuje persistované hodnoty — žádný extra I/O zde.
+
         // Callback pro reálná data — pouze pokud je CacheProvider k dispozici
         Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null;
         if (_vm!.CacheProvider is not null && !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode))
@@ -699,9 +842,6 @@ public partial class MainWindow : Window
             var agendaCode = _vm.State.CurrentTemplate.AgendaCode!;
             buildRealData = paramValues =>
             {
-                var pages = provider.GetData(agendaCode, paramValues);
-                if (pages is null) return null;
-
                 // Merge parametrů do každého DataContextu — C# rendering je potřebuje
                 // (HODINY_OD, HODINY_DO, CASOVA_OSA, TISK_PROJETYCH_ZAST atd.)
                 var stringParams = paramValues
@@ -709,6 +849,30 @@ public partial class MainWindow : Window
                     .ToDictionary(kv => kv.Key, kv => (object?)kv.Value!.ToString(),
                         StringComparer.OrdinalIgnoreCase);
 
+                List<DataContext>? pages;
+
+                // Pokud má uživatel aktivní instance (vybrané přes Instance Picker), iteruj je
+                // a vygeneruj batch napříč všemi — ignoruje LINKA_ID z parametrů dialogu.
+                if (_vm.ActiveInstances.Count > 0)
+                {
+                    var paramName = agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
+                    var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
+                    foreach (var inst in _vm.ActiveInstances)
+                    {
+                        var p = new Dictionary<string, object?>(paramValues) { [paramName] = inst.Value };
+                        var instPages = provider.GetData(agendaCode, p);
+                        if (instPages is null) continue;
+                        all.AddRange(instPages);
+                    }
+                    pages = all.Count > 0 ? all : null;
+                }
+                else
+                {
+                    // Fallback — manuálně zadaný LINKA_ID v parametrech (legacy chování)
+                    pages = provider.GetData(agendaCode, paramValues);
+                }
+
+                if (pages is null) return null;
                 if (stringParams.Count > 0)
                     pages = pages.Select(p => p.WithExtraValues(stringParams)).ToList();
 
@@ -719,8 +883,11 @@ public partial class MainWindow : Window
         var vm = new PrintDialogViewModel(
             _vm.State.CurrentTemplate,
             _vm.AgendaParameters,
+            _vm.PreviewParamValues,
             paramValues => _vm.BuildPreviewMockData(paramValues),
-            buildRealData);
+            buildRealData,
+            _preferences,
+            onParamsChanged: _vm.OnExternalParamsChanged);
 
         vm.RequestRenderPdf = (filePath, data) =>
             _previewCanvas!.RenderToPdf(filePath, data);
@@ -871,8 +1038,7 @@ public partial class MainWindow : Window
                     var t = _vm.LoadCustomSectionTemplate(name);
                     if (t is null)
                     {
-                        MessageBox.Show($"Šablonu '{name}' se nepodařilo načíst.",
-                            "Chyba", MessageBoxButton.OK, MessageBoxImage.Error);
+                        _vm.PopupDisplayer.Info($"Šablonu '{name}' se nepodařilo načíst.");
                         return new Section { Name = "Chyba" };
                     }
                     return t;
@@ -897,8 +1063,7 @@ public partial class MainWindow : Window
         if (_vm is null) return;
         if (_vm.State.ActiveSection is null)
         {
-            MessageBox.Show("Nejprve vyberte sekci kliknutím v levém panelu nebo na canvasu.",
-                "Žádná aktivní sekce", MessageBoxButton.OK, MessageBoxImage.Information);
+            _vm.PopupDisplayer.Info("Nejprve vyberte sekci kliknutím v levém panelu nebo na canvasu.");
             return;
         }
 
@@ -1255,10 +1420,12 @@ public partial class MainWindow : Window
     private void UpdateTitle()
     {
         if (_vm is null) return;
+        string agenda = !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode)
+            ? $"[{_vm.State.CurrentTemplate.AgendaCode}] " : "";
         string name = _vm.State.CurrentTemplate.Name;
         string file = _vm.CurrentFilePath is not null ? $" — {Path.GetFileName(_vm.CurrentFilePath)}" : "";
         string dirty = _vm.IsDirty ? " *" : "";
-        Title = $"{name}{file}{dirty} — Template Designer";
+        Title = $"{agenda}{name}{file}{dirty} — Template Designer";
     }
 
     private void ShowHelp()
@@ -1288,6 +1455,9 @@ public partial class MainWindow : Window
     private void OnWindowKeyDown(object sender, KeyEventArgs e)
     {
         if (_vm is null) return;
+        // V inline edit modu nereagujeme na globální zkratky — TextBox si Enter/Esc obslouží sám.
+        // Bez tohoto by PreviewKeyDown odchytil Enter dřív než TextBox a otevřel dialog místo commitu.
+        if (_inlineEditElement is not null) return;
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
 
         if (e.Key == Key.Z && ctrl)
@@ -1305,6 +1475,16 @@ public partial class MainWindow : Window
             _vm.SaveCommand.Execute(null);
             e.Handled = true;
         }
+        else if (e.Key == Key.N && ctrl && !Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.NewCommand.Execute(null);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.O && ctrl)
+        {
+            MenuOpen_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
         else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
             OpenPropertiesForPage(_vm.State.CurrentTemplate);
@@ -1313,6 +1493,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.P && ctrl)
         {
             MenuPrint_Click(this, new RoutedEventArgs());
+            e.Handled = true;
+        }
+        else if (e.Key == Key.A && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
+        {
+            _vm.ChangeAgendaCommand.Execute(null);
             e.Handled = true;
         }
         else if (e.Key == Key.PageUp && ctrl)
@@ -1428,6 +1613,13 @@ public partial class MainWindow : Window
         else if (e.Key == Key.Enter && _vm.State.SelectedElements.Count > 1)
         {
             OpenPropertiesForMultipleElements(_vm.State.SelectedElements);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.F2 && _vm.State.SelectedElements.Count == 1
+                 && _vm.State.SelectedElements[0] is TextElement te
+                 && te.Rotation == 0f && !te.IsLocked)
+        {
+            EnterInlineEdit(te);
             e.Handled = true;
         }
         else if (e.Key == Key.F1)
@@ -1613,6 +1805,7 @@ public partial class MainWindow : Window
 
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
+            _vm.State.ActiveSectionCenterX = null;
             bool snappedX = false, snappedY = false;
             if (_dragInitPositions.TryGetValue(_dragElement!, out var refInit))
             {
@@ -1630,10 +1823,9 @@ public partial class MainWindow : Window
                     var edgeX = new List<float> { 0f, sectionW };
                     var edgeY = new List<float> { 0f, sectionH };
 
-                    // Extra X anchors: horizontální střed + X hodnoty elementů z ostatních sekcí
+                    // Extra X anchors: X hodnoty elementů z ostatních sekcí
                     // (všechny sekce sdílejí levý margin → X je přímo porovnatelné). Bez gap snap.
-                    float refElW = _dragElement!.Width;
-                    var extraX = new List<float> { (sectionW - refElW) / 2f };
+                    var extraX = new List<float>();
                     foreach (var otherSection in _vm.State.CurrentTemplate.Sections)
                     {
                         if (otherSection == section) continue;
@@ -1648,16 +1840,23 @@ public partial class MainWindow : Window
                     float refElH = _dragElement!.Height ?? _dragElement!.EffectiveDesignerHeight;
                     var extraY = new List<float> { (sectionH - refElH) / 2f };
 
+                    // Section center X (center-to-anchor) — pro horizontální guide line.
+                    float sectionCenterX = sectionW / 2f;
+
                     var snap = _snapEngine.Calculate(
                         _dragElement!, (refInit.X, refInit.Y),
                         deltaMmX, deltaMmY, others, threshold,
                         extraXAnchors: extraX, extraYAnchors: extraY,
-                        edgeXAnchors: edgeX, edgeYAnchors: edgeY);
+                        edgeXAnchors: edgeX, edgeYAnchors: edgeY,
+                        sectionCenterX: sectionCenterX);
 
                     if (snap.X.HasSnap) { deltaMmX = snap.X.AdjustedDelta; snappedX = true; }
                     if (snap.Y.HasSnap) { deltaMmY = snap.Y.AdjustedDelta; snappedY = true; }
                     if (snap.X.Gap is { } gx) _vm.State.ActiveGapIndicators.Add(gx);
                     if (snap.Y.Gap is { } gy) _vm.State.ActiveGapIndicators.Add(gy);
+
+                    // Section center guide line — pokud snap právě sedí na sectionCenterX
+                    _vm.State.ActiveSectionCenterX = snap.X.IsSectionCenter ? (float?)sectionCenterX : null;
 
                     // Zvýrazni cílové elementy
                     var targets = (snap.X.MatchedElements ?? []).Concat(snap.Y.MatchedElements ?? []).Distinct();
@@ -1729,6 +1928,7 @@ public partial class MainWindow : Window
             // Smart snap při resize
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
+            _vm.State.ActiveSectionCenterX = null;
             if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection && !resizeCtrlHeld)
             {
                 bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
@@ -2288,5 +2488,83 @@ public partial class MainWindow : Window
         float clampedX = minDeltaX <= maxDeltaX ? Math.Clamp(rawDeltaX, minDeltaX, maxDeltaX) : 0f;
         float clampedY = minDeltaY <= maxDeltaY ? Math.Clamp(rawDeltaY, minDeltaY, maxDeltaY) : 0f;
         return (clampedX, clampedY);
+    }
+
+    // ── Inline text edit (V0 — TextElement only, no rotation, no lock) ─────────
+
+    private TextElement? _inlineEditElement;
+    private string? _inlineEditOriginalText;
+
+    private void EnterInlineEdit(TextElement el)
+    {
+        if (_canvas is null || _vm is null) return;
+        var rect = _canvas.GetElementCanvasRect(el, (float)skCanvas.ActualWidth);
+        if (rect is null) return;
+
+        _inlineEditElement = el;
+        _inlineEditOriginalText = el.Text;
+
+        // Pozice + rozměr v canvas px (Canvas overlay má stejné souřadnice jako SKElement)
+        Canvas.SetLeft(InlineEditBox, rect.Value.Left);
+        Canvas.SetTop (InlineEditBox, rect.Value.Top);
+        InlineEditBox.Width  = rect.Value.Width;
+        InlineEditBox.Height = rect.Value.Height;
+
+        // WPF FontSize v DIP; Skia kreslí FontSize_pt * MmToPx_per_inch * zoom px.
+        // Pro vizuální shodu při zoom=1, 96dpi: FontSize_DIP = FontSize_pt * 96/72 * Zoom.
+        float fontPt = el.Style.FontSize ?? 10f;
+        InlineEditBox.FontSize   = fontPt * (96f / 72f) * _vm.State.Zoom;
+        InlineEditBox.FontFamily = new FontFamily(el.Style.FontFamily ?? "Arial");
+        InlineEditBox.Text       = el.Text ?? "";
+        InlineEditBox.Visibility = Visibility.Visible;
+
+        InlineEditBox.Focus();
+        InlineEditBox.SelectAll();
+    }
+
+    private void ExitInlineEdit(bool commit)
+    {
+        if (_inlineEditElement is null || _vm is null) return;
+
+        var el = _inlineEditElement;
+        var originalText = _inlineEditOriginalText ?? "";
+        var newText = InlineEditBox.Text ?? "";
+
+        _inlineEditElement = null;
+        _inlineEditOriginalText = null;
+        InlineEditBox.Visibility = Visibility.Collapsed;
+
+        if (commit && newText != originalText)
+        {
+            var cmd = new SetPropertyCommand(
+                "Text", originalText, newText,
+                v => el.Text = (string)(v ?? ""));
+            _vm.Execute(cmd);
+        }
+
+        skCanvas.InvalidateVisual();
+        skCanvas.Focus(); // vrátit focus na canvas pro klávesové zkratky
+    }
+
+    private void InlineEditBox_PreviewKeyDown(object sender, KeyEventArgs e)
+    {
+        // PreviewKeyDown — musí zachytit Enter dřív než TextBox.AcceptsReturn vloží newline.
+        if (e.Key == Key.Escape)
+        {
+            ExitInlineEdit(commit: false);
+            e.Handled = true;
+        }
+        else if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+        {
+            // Enter sám = commit; Shift+Enter = nový řádek (default WPF chování projde)
+            ExitInlineEdit(commit: true);
+            e.Handled = true;
+        }
+    }
+
+    private void InlineEditBox_LostKeyboardFocus(object sender, KeyboardFocusChangedEventArgs e)
+    {
+        if (_inlineEditElement is not null)
+            ExitInlineEdit(commit: true);
     }
 }

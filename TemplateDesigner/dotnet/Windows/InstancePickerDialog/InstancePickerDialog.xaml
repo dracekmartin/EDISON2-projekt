@@ -1,0 +1,52 @@
+<Window x:Class="TemplateDesigner.InstancePickerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
+        Title="Výběr instancí"
+        Width="700" Height="560"
+        MinWidth="500" MinHeight="380"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- EDList — server data + multi-select + persist sloupců + client-side search -->
+        <el:EDList x:Name="TheList" Grid.Row="0"
+                   CacheClass="ALVA.TemplateDesigner.EDList.Instance"
+                   HostId="TemplateDesigner.InstancePicker"
+                   Title="Výběr instancí"
+                   SelectionMode="Check"/>
+
+        <!-- Status -->
+        <Grid Grid.Row="1" Margin="0,8,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="{Binding StatusText}"
+                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                       Foreground="{DynamicResource EDTheme.Text.Muted}" VerticalAlignment="Center"/>
+            <TextBlock Grid.Column="1" VerticalAlignment="Center" FontWeight="SemiBold">
+                <Run Text="Vybráno: "/>
+                <Run Text="{Binding SelectedCount, Mode=OneWay}"/>
+            </TextBlock>
+        </Grid>
+
+        <!-- Tlačítka -->
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Content="Použít" IsDefault="True"
+                    Command="{Binding OkCommand}"
+                    Width="90" Padding="14,4" Margin="0,0,8,0"/>
+            <Button Grid.Column="2" Content="Zrušit" IsCancel="True" Width="80"/>
+        </Grid>
+    </Grid>
+</Window>

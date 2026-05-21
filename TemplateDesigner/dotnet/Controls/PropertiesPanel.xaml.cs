@@ -519,39 +519,12 @@ public partial class PropertiesPanel : UserControl
 
         swatch.Click += (_, _) =>
         {
-            var dlg = new System.Windows.Forms.ColorDialog
-            {
-                FullOpen = true,
-                AnyColor = true
-            };
-
-            if (SKColor.TryParse(cd.Get(), out var initial))
-                dlg.Color = System.Drawing.Color.FromArgb(initial.Red, initial.Green, initial.Blue);
-
-            // TODO: ColorDialog způsobuje minimalizaci Properties window po kliknutí OK.
-            // Problém: WinForms ColorDialog + WPF ToolWindow interakce.
-            // Neblokující - uživatel může znovu otevřít Properties panel.
-            // Možná řešení k vyzkoušení: vlastní WPF ColorPicker control.
-
             var owner = Window.GetWindow(this);
-            System.Windows.Forms.DialogResult result;
-            if (owner != null)
-            {
-                var handle = new System.Windows.Interop.WindowInteropHelper(owner).Handle;
-                result = dlg.ShowDialog(new Win32Window(handle));
-            }
-            else
-            {
-                result = dlg.ShowDialog();
-            }
-
-            if (result == System.Windows.Forms.DialogResult.OK)
-            {
-                var c = dlg.Color;
-                string hex = $"#FF{c.R:X2}{c.G:X2}{c.B:X2}";
-                box.Text = hex;
-                ApplyColor(hex);
-            }
+            if (owner is null) return;
+            var hex = ColorPickerHelper.PickColor(owner, cd.Get());
+            if (hex is null) return;
+            box.Text = hex;
+            ApplyColor(hex);
         };
 
         panel.Children.Add(box);
@@ -663,10 +636,4 @@ public partial class PropertiesPanel : UserControl
         if (btn.Content is Border b) b.Background = brush;
     }
 
-    /// <summary>Helper pro předání WPF window handle do WinForms dialogu.</summary>
-    private class Win32Window : System.Windows.Forms.IWin32Window
-    {
-        public IntPtr Handle { get; }
-        public Win32Window(IntPtr handle) => Handle = handle;
-    }
 }

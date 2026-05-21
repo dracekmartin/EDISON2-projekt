@@ -1,0 +1,50 @@
+<Window x:Class="TemplateDesigner.CacheTemplatePickerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
+        xmlns:edf="clr-namespace:EDControls.EDFilter;assembly=EDControls"
+        Title="Šablony v Caché"
+        Width="720" Height="480"
+        MinWidth="500" MinHeight="320"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <DockPanel Margin="12">
+
+        <!-- Akce -->
+        <Grid DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Column="0" Content="Přejmenovat..." Command="{Binding RenameCommand}"
+                    Padding="10,4" Margin="0,0,8,0"/>
+            <Button Grid.Column="1" Content="Smazat"         Command="{Binding DeleteCommand}"
+                    Padding="10,4"/>
+
+            <Button Grid.Column="3" Content="Otevřít" IsDefault="True"
+                    Command="{Binding OpenCommand}"
+                    Padding="14,4" Width="90" Margin="0,0,8,0"/>
+            <Button Grid.Column="4" Content="Zrušit"  IsCancel="True" Width="80"/>
+        </Grid>
+
+        <!-- Filter — deklarativní přes EDFilter komponentu -->
+        <edf:EDFilter x:Name="TheFilter" DockPanel.Dock="Top" Target="{Binding ElementName=TheList}" Margin="0,0,0,8">
+            <edf:FilterCombo Key="agendaCode" Label="Agenda"
+                             ItemsSource="{Binding AgendaFilters}"
+                             SelectedValuePath="Code"
+                             DisplayMemberPath="Label"
+                             MinWidth="250"/>
+        </edf:EDFilter>
+
+        <!-- List šablon (Caché-driven přes EDList) — konfigurace v XAML -->
+        <el:EDList x:Name="TheList"
+                   CacheClass="ALVA.TemplateDesigner.EDList.Sablony"
+                   HostId="TemplateDesigner.TemplatePicker"
+                   Title="Šablony v Caché"/>
+
+    </DockPanel>
+</Window>

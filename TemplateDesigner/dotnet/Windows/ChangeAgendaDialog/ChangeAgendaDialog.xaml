@@ -1,0 +1,64 @@
+<Window x:Class="TemplateDesigner.ChangeAgendaDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Změnit agendu"
+        Width="420" Height="360"
+        MinWidth="360" MinHeight="280"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </Window.Resources>
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0"
+                   Text="Vyber agendu pro novou šablonu. Po potvrzení dojde k vytvoření nové prázdné šablony — případnou rozdělanou práci budeš nejdřív vyzván uložit nebo zahodit."
+                   TextWrapping="Wrap" Margin="0,0,0,10" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+
+        <ListBox Grid.Row="1"
+                 ItemsSource="{Binding Agendas}"
+                 SelectedItem="{Binding Selected, Mode=TwoWay}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="2,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                            <TextBlock Text="{Binding Code}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                        </StackPanel>
+                        <TextBlock Grid.Column="1"
+                                   Text="(aktuální)"
+                                   FontStyle="Italic" Foreground="{DynamicResource EDTheme.Semantic.Success}"
+                                   VerticalAlignment="Center" Margin="8,0,0,0"
+                                   Visibility="{Binding IsCurrent, Converter={StaticResource BoolToVis}}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.InputBindings>
+                <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding OkCommand}"/>
+            </ListBox.InputBindings>
+        </ListBox>
+
+        <Grid Grid.Row="2" Margin="0,12,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Content="Použít" IsDefault="True"
+                    Command="{Binding OkCommand}"
+                    Width="90" Padding="14,4" Margin="0,0,8,0"/>
+            <Button Grid.Column="2" Content="Zrušit" IsCancel="True" Width="80"/>
+        </Grid>
+    </Grid>
+</Window>

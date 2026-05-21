@@ -29,6 +29,7 @@ public class DesignerState
     public bool SnapToGrid { get; set; } = false;
     public bool SnapToElements { get; set; } = true;
     public bool ShowSectionHeaders { get; set; } = true;
+    public bool ShowRuler { get; set; } = false;
     public float GridSize { get; set; } = 5f; // mm
 
     /// <summary>
@@ -51,6 +52,9 @@ public class DesignerState
 
     /// <summary>Elementy jejichž boundary se zvýrazní během snapu (cílové elementy).</summary>
     public List<TemplateElement> SnapTargetElements { get; } = [];
+
+    /// <summary>X souřadnice (mm v section coords) section-center guide line. Null = neaktivní.</summary>
+    public float? ActiveSectionCenterX { get; set; }
 
     /// <summary>Aktuální preview DataContext (nastavuje se při renderování preview).</summary>
     public DataContext? CurrentPreviewData { get; set; }

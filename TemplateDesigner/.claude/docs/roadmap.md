@@ -15,33 +15,41 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-1. **Fáze A.2 — Zákaznické úpravy zastávkového JŘ** (z helpdesku) ⬅️ **AKTUÁLNÍ PRIORITA** — projít a uzavřít suspended tickety od TRANSDEV / KORID / DPKV. Viz [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-2. **Release readiness pro testovací nasazení** — minimální infrastruktura aby šel TemplateDesigner dát zákazníkovi k testu (viz níže).
-3. **Caché Migrace** — Wave 1 (UserPreferences) následuje po A.2.
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish (theme, implicit styles, perf, layout) uzavřen (2026-05-20). **Wave 1 — per-user preferences přes Caché HOTOVA** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
-> Fáze A (1:1 šablona + review s kolegy) ✅ hotovo — review s kolegy proběhlo, výstupem je sada požadavků v Fázi A.2. Hotové fáze (Fáze A, B0.5, sjednocení Header/Data zón, per-template prefs, UX vyladění) viz **Archiv** na konci dokumentu.
+**Stav UI/theme** (po 2 dnech práce):
+- EDTheme design tokens (33 barev + typo + spacing) v EDControls — runtime swap přes DynamicResource
+- EDStyles implicit styles pro Button/TextBox/ComboBox/CheckBox/TabItem/MenuItem/Menu/ContextMenu/Separator
+- TD MainWindow + 10 dialogů + 5 EDControls komponent na tokens
+- Default Window icon (Edison Molecule) všude přes class handler
+- 3-button popup (IPopupDisplayer.ConfirmYesNoCancel) — náhrada Win32 MessageBox
+- Toolbar restructure (Mřížka & snap / Zoom / Náhled podskupiny + CmbScale do Upravit menu)
+- Y-zarovnání designer ↔ preview přes TopBufferPx 60px
+- Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
+- Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
----
+**Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
 
-## 🚀 Release readiness — minimální infrastruktura pro testovací nasazení
+1. **Wave 2 — Shared catalogs** ⬅️ AKTUÁLNÍ (W2-1 hotová ✅ 2026-05-20, W2-2 zbývá)
+   W2-1 ✅: Agenda registry — auto-discovery z `BaseAgenda` subclasses v Caché (eliminuje `appsettings.json agendas[]`). Konvence agenda code `<TYP_SESTAVY>_<DATOVY_ZDROJ>` (např. `ZASTAVKOVY_JR_MHD`).
+   W2-2 ⬜: Section templates → Caché backend (sdílení šablon sekcí mezi PC v rámci firmy). Detail v § Wave 2 níže.
 
-Před nasazením prvnímu zákazníkovi je třeba doplnit základ workflow, aby uživatel věděl s čím pracuje a kde má data uložená. Aktuálně je vše file-based + parametr LINKA_ID se píše ručně.
+2. **H-18/H-19 — Template versioning + migrator** (prereq produkčního Wave 3)
+   Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
 
-| Krok | Téma | Pracnost | Stav |
-|---|---|---|---|
-| **R1** | **Agenda + Linka picker UX** — nové Caché API `AgendaAPI.GetAvailableInstances` (pro MHD vrátí seznam linek: ID, Číslo, Název, Platnost). TD dialog se search/filter, indicator v toolbaru „[Agenda] — [Linka XYZ — Název]". Zrušit ruční psaní LINKA_ID. | 1 den | ⏳ |
-| **R2** | **Template storage v Caché** — nová `ALVA.TemplateDesigner.Templates` třída (analogie legacy `ALVA.LIBRARY.Form.SaveParams`). Per-IDFa storage, metadata (autor, created, modified). TD Soubor → Otevřít/Uložit dialog se 2 záložkami: „Z Caché" (default) + „Z disku" (legacy fallback). Mini-CRUD: Smazat, Přejmenovat. | 2 dny | ⏳ |
-| **R3** | **Section templates v Caché** *(nice-to-have pro v1)* — stejný pattern jako R2 pro `section-templates/`. Pokud release tlačí, ponechat file-based. | 0.5 dne | ⏳ |
-| **R4** | **Polish před release** — confirmation dialogy, lepší error messages při Caché failure, status text v toolbaru, friendly hlášky místo „Žádná data z Caché". | 0.5 dne | ⏳ |
+3. **Wave 3 finishing — produkční Template storage**
+   Wave 3 CRUD ✅ hotový; chybí audit log, thumbnails, advanced features.
 
-**Celkem ~4 dny** pro stav „dáme to zákazníkovi a má základní workflow".
+4. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-3)
+   TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
-**Otevřené otázky před implementací (konzultace s kolegy):**
-- Existuje v M-line legacy nějaká univerzální Template storage knihovna v Caché, nebo děláme od nuly? Stálo by za to ověřit pattern (analogie `WindowStatePersistence` × `ALVA.LIBRARY.Form.SaveParams`).
-- Linka picker: ID + Číslo + Název + Platnost stačí, nebo i Dopravce / TypLinkyID / Verejne číslo?
-- Templates **per-IDFa** (oddělené dopravce) nebo globální? Per-MLP × IDFa (jako WindowStatePersistence) by bylo standard.
+**Mimo aktuální focus** (až bude potřeba):
+- Plná sada Filter polí (EDFilter rozšíření)
+- Tier 3 EDInputForm refactor (`$lb()` → JSON envelope + chybějící typy polí)
+- Tier 4 TD editor migrace na EDInputForm
+- Virtualized canvas rendering (zoom >500%)
 
-**Vztah ke Caché Migrace:** R2 je „rychlá MVP varianta" — Wave 3 (níže) je plné řešení s versioningem, migrátorem, rollback. R2 doručí základní save/load v Caché, Wave 3 to později nahradí čistší architekturou.
+**Reference docs:** [`EDControls/DOCS/`](../../../EDControls/DOCS/) — `00-overview`, `01-wire-formats`, `02-EDList`, `03-EDFilter`, `04-EDTheme`.
 
 ---
 
@@ -64,72 +72,31 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 | # | Pravidlo | Proč |
 |---|---|---|
-| R1 | **Async-only Caché volání** — žádné synchronní `MLRest` v UI threadu, vždy `async Task` + `await` | Caché volání trvá 50–500ms; synchronní volání zamrzne UI. Musíme to chytit hned, ne retro-fit. |
+| R1 | **Async Caché volání pro očekávaně pomalé operace** — pro Caché volání kde očekávaná doba >500ms (velké listy, složité queries, batch operace, nahrávání) vždy `async Task` + `await Task.Run(() => mlRest.Query(...))`. Pro typické fast operations (foundational komponenty s 50–300ms loady jako EDList, jednoduché lookupy) sync OK — async by přinesl spíš flicker než benefit. Při neznámé velikosti pesimisticky async. | Legacy BIL/BDG bylo 20 let synchronní a fungovalo — důkaz že je to akceptovatelné pro typické workflow. Naopak sync pro 1s+ operaci zamrzne UI a Windows zobrazí „Not Responding". Pravidlo chrání proti druhému; první je validní výjimka. |
 | R2 | **Chyby přes `IPopupDisplayer` z EDControls** — žádný `MessageBox.Show` ani silent catch. Používat existující `EDControls.EDViewModel.IPopupDisplayer` (metody `Error(ex)`, `Confirm`, `Info`, `ConfirmClose`) přes DI nebo `EDViewModel` base. | Bez jednotné cesty se chyby v distribuci ztratí. `IPopupDisplayer` je firemní standard — už ho používá `EDViewModel.Command(...)` automaticky. |
-| R3 | **JSON wire format, ne CVar** — nové Caché API metody vrací JSON string v `OUT[1]`, ne strukturované CVary | JSON je serializovatelný/versionovatelný, jeden `System.Text.Json` deserialize místo custom CVar parseru. Caché strana dělá `obj.%ToJSON()`, .NET strana `JsonSerializer.Deserialize`. |
+| R3 | **CVar named IN + 4 OUT styly podle obsahu** — IN vždy CVar pojmenované klíče; OUT podle typu: CVar scalars (triviální), JSON v slotu (entita), JSON multi-slot (list), JSON envelope (composite, opt-in pro Tier 3). Plný standard, decision tree, příklady a checklist: [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md). | CVar je nativní zrcadlo Caché globálů (1 řádek per parametr), JSON pro strukturovaná data dává typovou bezpečnost přes `record` typy v .NET. Asymetrie není kompromis — odráží přirozenost obou stran. |
 | R4 | **ViewModely bez WPF referencí** — žádný `using System.Windows` ani `MessageBox.Show` v `*ViewModel.cs` | MVVM princip, testovatelnost, možnost pozdějšího portu/unit testů. Dialogy přes `IPopupDisplayer` (R2). |
 | R5 | **Template versioning je prerekvizita persistence** — dokud není `TemplateMigrator` + version field v JSON, neukládá se nic do Caché | Bez migrace se nové šablony nespustí na starším buildu → zničené ranní otevření souboru. Nelze to retro-fit po nasazení. |
 
 **Předpoklad:** aplikace poběží nad Caché — není cíl fungovat offline, ne každá API potřebuje in-memory fallback. Fallback se řeší jen tam, kde to má konkrétní business smysl (např. poslední otevřené soubory v paměti během session).
 
 **Kde jsou pravidla ověřitelná:**
-- R1: review PR → `grep "MLRest\." *ViewModel*.cs` ukáže synchronní volání
+- R1: review PR → `grep "MLRest\." *ViewModel*.cs` najde synchronní volání. U každého ověřit očekávanou dobu — fast operace OK, slow musí být async.
 - R2/R4: `grep "MessageBox\." **/*ViewModel.cs` musí vracet 0 hitů
-- R3: nové API metody mají `^||ML("OUT","json")` s JSON stringem, ne vícero CVar klíčů
+- R3: nové API metody: IN `$g(^||ML("IN","klic"))`, OUT podle obsahu (decision tree) — viz [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md)
 - R5: Wave 3 nemůže začít bez hotového H-18/H-19 (versioning a migrator)
 
 ---
 
 ## 📋 Co je potřeba dělat
 
-### 🔴 Fáze A.2: Zákaznické úpravy zastávkového JŘ (z helpdesku) ⬅️ AKTUÁLNÍ PRIORITA
+### 🟠 Fáze A.2-D: Caché business logic (po dokončení Wave 2 → 3)
 
-Konkrétní požadavky z aktivních (suspended) tiketů Podpory M-line k zastávkovému JŘ. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
+Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
-**Před implementací každé položky:** projdi rozhodovací mřížku v [`feature-design-principles.md`](feature-design-principles.md) — typ 1/2/3, kam patří (panel/dialog/šablona), faktorování pro pozdější promotion.
-
-**Cíl fáze:** uzavřít suspended tickets od TRANSDEV, KORID, DPKV; M-line zákazníkům slíbil release nového tiskového modulu **polovina 2026**.
-
-#### A.2.0 — Architektonická příprava (prerekvizita)
-
-Před implementací jednotlivých zákaznických položek je třeba **layout refactor** elementů, kterých se to nejvíc týká (typ 2 dle principles doc — první varianta vynucuje refaktor). Bez toho se každá feature řeší jako copypasted hack.
-
-| Krok | Co | Související | Stav |
-|---|---|---|---|
-| A2-0a | **StopList layout vocabulary** — refaktor `Render()` na `ComputeArrowBox / ComputeContentBox / ComputeAttributePrefixBox`; per-row override infrastruktura | A2-A1, A2-A2, A2-A3, A2-A5 | |
-| A2-0b | **DepartureGrid header model** — podpora dvouřádkového headeru s per-line stylem (datový model + Render) | A2-B1 | |
-| A2-0c | **Conditional visibility v PropertiesPanel** — `PropertyDescriptor.VisibleWhen` predikát (H-11 odložené, teď je čas) | A2-A1, A2-A3, A2-A6 | |
-| A2-0d | **Per-template variants infrastruktura** — formalizovat `templates/<agenda>/<customer>.json` jako shipped defaults; UI „načti výchozí šablonu" | snižuje tlak na element properties | |
-| A2-0e | **VisibilityExpression verifikace** — ověřit, že podporuje `{CISLO_LINKY}`, `{TYP_LINKY}`, `{TYP_JR}`, `{KOD_DOPRAVY}` placeholdery | A2-E1 | ✅ (2026-05-11) |
-
-#### A.2.A — StopListElement úpravy
-
-| Krok | Tiket | Zákazník | Co | Typ | Stav |
-|---|---|---|---|---|---|
-| A2-A1 | #10660 | DPKV+CBDP | `DirectionArrowPosition: Left \| Right` — konfigurovatelná pozice (asymetricky: Vpravo uvnitř sloupce, Vlevo mimo sloupec) | 2 | ✅ (2026-05-12) viz §G |
-| A2-A2 | #10660 | DPKV+CBDP | `MarkersPosition` — značky (na znamení / atributy / poznámky) před nebo za názvem; auto-fit šířky marker sub-cell | 2 | ✅ (2026-05-12) viz §G |
-| A2-A3 | #10660 | DPKV | `CurrentStopBgColor` — podbarvení aktuální zastávky místo Underline | 1 | ✅ (2026-05-12) + cleanup master toggle |
-| A2-A4 | #10660 | DPKV | Per-column header font — ověřit a vyladit default („min." menší než „Zastávky") | 1 | ✅ (2026-05-12) verifikace OK, viz §G |
-| A2-A5 | #7937 | TRANSDEV | Per-row indent ve StopList, per-směr, volitelně per časové pásmo Tč | 2 | ⏸️ Odloženo — vyžaduje diskuzi s kolegy (kde brát data o odsazení per zastávka/směr v `ALVA.MHD.ZST`). Infrastruktura v TD i Caché schématu existuje (`ZastavkaData.Odsazeni`, `ODSAZENI` JSON pole), ale Caché vrací stub `odsazeni = 0` (ZastavkoveJrMhdAPI:881). Není přímo TD práce. |
-| A2-A6 | #7959 | TRANSDEV | Filtr zastávek bez obsluhy z tištěné zastávky (Caché) | 2 | 🔍 Pravděpodobně už hotovo — filtr existuje v `ZastavkoveJrMhdAPI:862-864` (hardcoded, vždy aktivní, žádný vypínač). Vyžaduje verifikaci s konkrétními TRANSDEV daty (např. linka 876xx se školní zastávkou). Pokud bude třeba opt-out parametr, doplnit do `GetParameters`. |
-
-#### A.2.B — DepartureGridElement úpravy
-
-| Krok | Tiket | Zákazník | Co | Typ | Stav |
-|---|---|---|---|---|---|
-| A2-B1 | #10660 | DPKV | Per-line font v dvouřádkovém headeru skupiny dnů („Pracovní" větší / „den" menší) | 2 | ✅ (2026-05-12) viz §G |
-| A2-B2 | #10660 | DPKV | **Bug** — nestejně silné podtržení obou řádků headeru; oprava `DrawTextDecorations` (konstantní tloušťka) | 1 | ✅ (2026-05-12) |
-| A2-B3 | #10660, **#9036** | DPKV, **TRANSDEV** | Rozsah hodin přes půlnoc (3→0) + auto-fit zvětšení řádků při zúžení rozsahu | 2 | ✅ (2026-05-12) — `TimeAxisMode` rozšířen o `DataBounded`; **Vlastní rozsah** podporuje wrap přes půlnoc s extended hours; HODINY_OD/DO + `VisibleWhen`; sjednocený parameter UI; **„Roztáhnout na výšku"** property + `ROZTAHNOUT_NA_VYSKU` parametr pro proporcionální růst data řádků + fontů. **Pokrývá i TRANSDEV #9036** — MHD Trenčín nočné spoje 22-5h s časovou osou cez polnoc. Detaily viz §G. |
-| A2-B4 | #8828 | TRANSDEV | Per-sloupek zastávky — samostatná vývěska (Caché parametr + multi-data export) | 3 | ⏸️ Odloženo (2026-05-12) — vyžaduje (a) datový průzkum v `^[dataDB]ALVA.MHD.LSO`/`ZST` kde leží info o sloupcích (atribut spoje? per-bod v trase?), (b) business decision s kolegy: identifikace sloupku (číslo/písmeno/popis), default chování (opt-in přes `PER_SLOUPEK` parametr vs vždy zapnuté), behavior pro single-sloupek zastávky. **Téměř 100 % práce v Caché** — TD multi-data PDF export už zvládá libovolný počet OUT stránek. |
-
-#### A.2.C — NotesLegendElement úpravy
-
-| Krok | Tiket | Zákazník | Co | Typ | Stav |
-|---|---|---|---|---|---|
-| A2-C1 | #10660 | DPKV | Barevné odlišení značky vs. text poznámky — DB-driven barvy z `PoznamkaSpoj` | 2 | ✅ (2026-05-12) — místo designer-level `SymbolStyle` použit **DB-driven** zdroj barev: `TiskJRMHDVozoveBarvaZnakuRGB`/`BarvaPozadiRGB` z `PoznamkaSpoj` ENUMS → propagace přes wire formát (`FORE_COLOR`/`BACK_COLOR`) → render v NotesLegend i anotacích DepartureGrid. Konzistentní mezi legendou a odjezdy. Aktuální DPKV data nemají barevné záznamy s `TiskJRMHDZastavkove=1` — infrastruktura připravená, klient si nastaví v DB. Detaily viz §G. |
-| A2-C2 | #10660 | DPKV | Volitelná hlavička sekce („Poznámky") — symetrie s headerem StopList | 1 | ✅ (2026-05-12) Verifikace — `HeaderText` property + `RenderSectionHeader` (BG + text + linka pod) už existují; konfigurovatelné v properties panelu včetně barvy pozadí (přes `GetCellZoneBaseColorDescriptors`). Klient si může nastavit libovolný text + barvy. Viz §G. |
-
-**~~A2-C3 (KORID #7487, NZ + týdenní platnost 4 na řádek)~~** — přesunuto mimo scope zastávkového JŘ (týká se knižních/linkových JŘ).
+> **Pozn.:** Fáze A.2-A..C (StopList / DepartureGrid / NotesLegend UI úpravy) je hotová — viz Archiv níže. Zbývá A.2-D série (Caché logika) + A.2-A5/A6/B4 (odložené pro datový průzkum / diskuzi s kolegy).
+>
+> **Priorita:** Wave 2 → H-18/H-19 → Wave 3 finishing → Fáze A.2-D. Caché Migration foundation se uzavře dřív, než se vrátíme k zákaznickým ticketům — eliminuje riziko rework po pozdním přechodu.
 
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
 
@@ -138,18 +105,17 @@ Před implementací jednotlivých zákaznických položek je třeba **layout ref
 | A2-D1 | #7947 | TRANSDEV | Nový text template „spoj jede až do XY" pro spoje **prodlužující** základní trasu (symetrické k existujícímu „končí v zast. X") | |
 | A2-D2 | #7955 | TRANSDEV | Vlastní komentář spoje musí přebít auto-poznámku rozdílů (suppress auto pokud má spoj custom text) | |
 | A2-D3 | #7955 | TRANSDEV | **Bug** — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ); izolovat NZ od ostatních poznámek | |
-| A2-D4 | #7955 | TRANSDEV | **Bug** — výběr spoje v UI jen prvním číslem (Studio JŘ, ne přímo TD) | |
-| A2-D5 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | |
-| A2-D6 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | |
-| A2-D7 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | |
+| A2-D4 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | |
+| A2-D5 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | |
+| A2-D6 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | |
 
-#### A.2.E — Návrhář sestav (ověření)
+#### Odložené z A.2 (na rozhodnutí s kolegy)
 
-| Krok | Tiket | Zákazník | Co | Stav |
-|---|---|---|---|---|
-| A2-E1 | #8772 | TRANSDEV | Ověřit, že `VisibilityExpression` s placeholdery `{CISLO_LINKY}`, `{TYP_LINKY}` atd. funguje → uzavřít tiket s referenční šablonou | ✅ (2026-05-11) verifikace OK, tiket zůstává suspended (interní), viz `customer-requirements-zastavkovy-jr.md §G` |
-
-Také vyřazuje **A2-0e** z prerekvizit (verifikace VisibilityExpression v sekci A.2.0).
+| Krok | Tiket | Co | Důvod odložení |
+|---|---|---|---|
+| A2-A5 | #7937 | StopList per-row indent per směr / per Tč | Caché vrací stub `odsazeni=0`; chybí datový tok z `ALVA.MHD.ZST` (legacy „dta 10"?). Není přímo TD práce. |
+| A2-A6 | #7959 | Filtr neobsluhovaných zastávek | Pravděpodobně už hotovo v Caché — vyžaduje verifikaci s reálnými TRANSDEV daty (linka 876xx se školní zastávkou) |
+| A2-B4 | #8828 | Per-sloupek zastávky — samostatná vývěska | Vyžaduje (a) datový průzkum kde v `^ALVA.MHD` leží info o sloupcích, (b) business decision (identifikace, default chování). ~100 % práce v Caché. |
 
 #### A.2 — Status komunikace s klienty
 
@@ -159,211 +125,182 @@ Při uzavírání jednotlivých tiketů odkazovat na **konkrétní featuru v TD*
 
 ### 🔵 Caché Migrace — 5 Vln
 
-Postupný přesun state a logiky z .NET na Caché. Každá vlna učí pattern pro další — záměrně sekvenční závislosti. Cíl: žádné "zjistili jsme že by se muselo přepsat všechno" překvapení.
+Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili jsme že by se muselo přepsat všechno" překvapení.
 
-**Shrnutí:**
-| Vlna | Název | Závislost | Velikost | Cíl |
-|---|---|---|---|---|
-| 1 | Per-user state | B0.5 Tier 1 | M | UserPreferences (zoom, grid, recent files, splitters) |
-| 2 | Shared catalogs | Wave 1 | L | Agenda registry, palette, element defaults, section templates |
-| 3 | Template storage | Wave 2 + H-18/H-19 | XL | Template CRUD z Caché (místo souboru) |
-| 4 | Form-driven UI | Wave 3 | XL | EDInputForm místo vlastního PropertiesPanel |
-| 5 | Business logic per agenda | paralelně s 1–4 | XL | Čisté rozdělení agenda-specific logiky |
+**Stav vln:**
+| Vlna | Název | Stav | Cíl |
+|---|---|---|---|
+| 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
+| 2 | Shared catalogs | 🟡 W2-1 ✅ hotová (2026-05-20), W2-2 zbývá | Agenda registry (auto-discovery ✅), section templates (Caché backend). Element defaults + company palette skipnuté |
+| 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
+| 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
+| 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 
-**Graf závislostí:** `1 → 2 → 3 → 4` (sekvenčně), `5` běží paralelně nezávisle.
+**Graf závislostí:** Wave 1 → 2 → 3 → 4 (sekvenčně), Wave 5 běží paralelně nezávisle.
+
+**Foundation hotová** (může se použít napříč všemi vlnami):
+- ✅ `IUserPrefsService` + Caché `ALVA.EDControls.UserData` — generic per-user state (F1, 2026-05-15)
+- ✅ Wave 1 typed konzument — `TdPreferencesService` se 3 scopes pro TD (2026-05-20)
+- ✅ Registr scope ownerships — [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md)
+- ✅ Wire formát standard — CVar named IN + 4 OUT styly (DOCS/01-wire-formats.md)
+- ✅ `MLRestJson.CallAsync<TReq, TResp>` helper — připraven pro Wave 4 composite endpointy
+- ✅ EDList komponenta (Wave 3 list konzumenti používají)
+
+> **Wave 1 + 1.5 hotové ✅ 2026-05-20** — detail v [`roadmap-archive.md`](roadmap-archive.md).
 
 ---
 
-#### 🔴 Wave 1 — Per-user state (UserPreferences)
+#### 🟠 Wave 2 — Shared catalogs (2-item scope)
 
-Aktuálně se mezi sezeními neukládá **nic** kromě JSON souboru šablony. Cíl: zapamatovat si per-uživatele × per-firma: zoom, grid, snap, rozložení panelů, poslední soubory, recent colors, rozbalené skupiny.
+Sdílený konfigurační obsah dnes žijící v .NET souborech / file-based storage. Přesun do Caché = jedno místo pravdy, sdílení mezi PC / uživateli firmy.
 
-**Klíčové API:**
+**Scope po diskusi 2026-05-20** zúžen na 2 položky (původně 4):
+
+| # | Položka | Wave 2 akce | Dnes |
+|---|---|---|---|
+| W2-1 | Agenda registry | ✅ Migrovat — auto-discovery z `BaseAgenda` subclasses | `templatedesigner.appsettings.json` `agendas[]` |
+| W2-2 | Section templates | ✅ Migrovat — Caché backend s migration files | `section-templates/*.json` (per-machine, file-based) |
+| ~~W2-3~~ | ~~Element defaults~~ | ❌ SKIP — hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case | |
+| ~~W2-4~~ | ~~Company palette~~ | ❌ SKIP — Wave 1.5 RecentColors pokrývá; brand palette není user request | |
+
+---
+
+##### W2-1 Agenda registry — auto-discovery design
+
+**Princip:** „Třída JE registrace". Místo separátního config listu (drift risk: registr ≠ impl) využijeme `%Dictionary` API — auto-discovery `BaseAgenda` subclasses + class parameter metadata.
+
+**Změny v `BaseAgenda`:**
+```objectscript
+Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [Abstract]
+{
+    Parameter AgendaCode    As %String  = "";       // "MHD", "FAKTURY"
+    Parameter AgendaLabel   As %String  = "";       // "Zastávkový JŘ MHD"
+    Parameter AgendaOrder   As %Integer = 999;      // sort order v UI
+    Parameter AgendaEnabled As %Boolean = 1;        // false → skryté (pre-release)
+    // ... existing abstract methods (GetSchema, GetData, ...) ...
+}
 ```
-ALVA.TemplateDesigner.API.UserPreferencesAPI
-  GetPreferences(ByRef sys) → OUT["json"] = { zoom, grid, recentFiles, recentColors, splitters, ... }
-  SavePreferences(ByRef sys) → IN["json"] = kompletní state → uloží do ^ALVA.TDPrefs(IdFa, UserId)
+
+**Nová Caché class:**
+```objectscript
+Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
+{
+    ClassMethod ListAgendy(ByRef sys As %String) As %Status
+    {
+        // SQL nad %Dictionary najde subclasses BaseAgenda
+        // Pro každou: read AgendaCode/Label/Order/Enabled parametry
+        // Filter Enabled=1, sort by Order, vrátí JSON array
+    }
+}
 ```
 
-**.NET strana:**
+**Wire formát (R3):**
+```json
+[
+  {"code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"},
+  {"code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury"}
+]
+```
+
+**Per-class metadata** zachovají self-documentation v Studiu (programátor vidí AgendaCode přímo u class declaration).
+
+**Edge case GENERAL:** `cacheClass=""` → žádná třída → auto-discovery ji nenajde. **.NET strana inject syntheticky** v `IAgendaRegistry`:
 ```csharp
-interface IUserPreferencesService {
-    Task<UserPreferences> LoadAsync();
-    Task SaveAsync(UserPreferences prefs);     // fire-and-forget, nesmí blokovat close
-}
-
-class UserPreferences {
-    float Zoom;
-    bool ShowGrid, SnapToGrid, SnapToElements;
-    int GridSize;                     // z B0-9
-    double MainSplitterPosition;
-    double PreviewSplitterPosition;
-    List<string> RecentFiles;        // max 10
-    List<string> RecentColors;       // max 16
-    Dictionary<string, bool> GroupExpanded;   // per element type × group name
-    string? LastActiveTab;
+public IReadOnlyList<AgendaInfo> GetAvailableAgendas() {
+    var fromCache = _cacheRegistry.ListAgendy();
+    return [GeneralAgenda, .. fromCache];  // GENERAL = static const
 }
 ```
 
-**Před:** každé ráno: `Ctrl+O` → dialog → navigace → nastavení zoomu → rozbalení skupin.
-**Po:** aplikace spadne do stavu z posledního zavření, recent files v File menu, Ctrl+R = picker.
-
-**Změny v kódu:**
+**Změny v kódu (.NET):**
 | Vrstva | Co |
 |---|---|
-| Caché | Nová třída `UserPreferencesAPI` + storage `^ALVA.TDPrefs(IdFa, UserId)` |
-| .NET Services | `IUserPreferencesService` + `CacheUserPreferencesService` (jediná implementace — aplikace běží nad Caché) |
-| .NET App | `App.xaml.cs` — load async před `MainWindow.Show`; save v `MainWindow.Closing` |
-| .NET VM | `MainWindowViewModel` — bindovat `Zoom`, `ShowGrid`, atd. skrze preferences |
-| appsettings.json | **Zůstává jen pro síťovou konfiguraci** (Caché host, port, agenda seznam) |
+| Caché | `BaseAgenda` rozšířena o 4 parametry; nová `API.AgendyRegistr` class |
+| Agendy classes | `ZastavkoveJrMhd`, `Faktury` — declare AgendaCode/Label/Order parametry |
+| .NET service | `IAgendaRegistry` (interface) + `CacheAgendaRegistry` (impl); `EDServices` rozšíření |
+| .NET wiring | `CacheSchemaWiring` — místo čtení `AppSettings.Agendas[]` volá `IAgendaRegistry.GetAvailableAgendas` |
+| `appsettings.json` | **Smazat `agendas[]`** — registr v Caché |
 
 **Risks:**
-- Performance: `LoadAsync` musí proběhnout do ~300ms nebo startup zamrzne. Mitigace: timeout + při selhání defaults v paměti pro danou session (žádná trvalá persistence mimo Caché).
+- Cold-start: registry call ~500ms-2s při studeném startu (jako Wave 1) — Mitigace: `IAgendaRegistry` cached after first load, refresh na user request (menu „Reload agendas")
+- Backward compat: starý JSON `agendas[]` se po W2-1 ignoruje — během rollout fáze ponechat dual-read (Caché primary + JSON fallback)
 
-**Výstup:** šablona patternu "Caché API + async service + VM konzumuje" → reuse ve všech dalších vlnách.
+##### W2-2 Section templates — Caché backend
 
-| Krok | Co | Stav |
-|---|---|---|
-| W1-1 | Caché `UserPreferencesAPI.GetPreferences` + `SavePreferences` | |
-| W1-2 | .NET `IUserPreferencesService` + `CacheUserPreferencesService` | |
-| W1-3 | Wire-up: `App.xaml.cs` load at startup (async + timeout) | |
-| W1-4 | `MainWindowViewModel` — bind Zoom/Grid/Snap/Splitters/Tab přes preferences | |
-| W1-5 | Recent Files (Ctrl+R picker, File menu) — ukládá do prefs | |
-| W1-6 | Recent Colors — integrace s color pickerem (po B2) | |
-| W1-7 | Template thumbnails — 100×140px PNG při uložení šablony | |
+Mirror Wave 3 (Template CRUD) — pattern už existuje, jen klon.
+
+**Caché class:** `ALVA.TemplateDesigner.API.SekceSablon` — 5 metod (List / Load / Save / Delete / Rename) analogicky `Sablony`.
+
+**Storage:** `^ALVA.TemplateDesigner.SectionTemplates(IdFa, "DTA", id, "Metadata"|"Data")` + index — paralelně k `Templates` global.
+
+**Wire formát:** R3, JSON, per-IDFa.
+
+**Section template metadata:** Name + Category (např. „Hlavičky", „Patičky") pro budoucí filtraci.
+
+**Changes (.NET):**
+| Vrstva | Co |
+|---|---|
+| Caché | Nová `API.SekceSablon` + storage global |
+| .NET service | `ISectionTemplateCatalog` (interface) — refactor stávajícího `SectionTemplateManager` |
+| Impl | `CacheSectionTemplateCatalog` (Caché backend) — fallback `FileSectionTemplateCatalog` pro standalone |
+| Existing client | `SectionTemplateManager` → grep+replace na interface |
+| Migration | First-Caché-startup: popup „Nahrát X local section-templates do Caché?" + import |
+
+**Per-IDFa storage** — firma A nevidí KORID section templates (jako u Wave 3 Templates).
 
 ---
 
-#### 🟠 Wave 2 — Shared catalogs
-
-Sdílený konfigurační obsah, který dnes žije v .NET souborech nebo hardcoded v kódu. Přesun do Caché = jedno místo pravdy, možnost aktualizace bez redeploymentu.
-
-**4 nové Caché třídy:**
-
-| Třída | Co | Dnes |
-|---|---|---|
-| `AgendaRegistryAPI` | Seznam dostupných agend (kód, label, Caché class pointer) | `appsettings.json` `agendas[]` |
-| `CompanyPaletteAPI` | Firemní paleta barev (16 swatches, logo, default fonts) | Hardcoded v `DesignerState` |
-| `ElementDefaultsAPI` | Výchozí property values per element type (font size, border width, ...) | Hardcoded v C# constructors |
-| `SectionTemplateAPI` | Custom section templates (vlastní šablony sekcí) | Soubory v `section-templates/*.json` |
-
-**Před:**
-```
-appsettings.json  →  seznam agend (každý uživatel má vlastní)
-C# constructors   →  TextElement.FontSize = 10, BorderWidth = 0.1, ...
-section-templates/*.json  →  per-machine soubory, nesdílí se
-```
-
-**Po:**
-```
-Caché ^ALVA.TDConfig(IdFa)   →  jedno místo pravdy pro firmu
-IConfigCatalog (DI)         →  všechny klienti čtou odsud
-Lokální cache v paměti       →  rychlost v rámci session (refresh na vyžádání)
-```
-
-**Změny v kódu:**
-| Vrstva | Co |
-|---|---|
-| Caché | 4 nové třídy + storage `^ALVA.TDConfig(IdFa,<catalog>)` |
-| .NET Services | `IAgendaRegistry`, `ICompanyPalette`, `IElementDefaults`, `ISectionTemplateCatalog` — každý má Caché implementaci |
-| .NET DI | Centrální `ServiceLocator` / `EDServices` rozšířit o tyto 4 služby |
-| .NET Elements | Constructor čte z `IElementDefaults.GetDefaults("TextElement")` místo hardcoded hodnot |
-| .NET UI | ColorPicker (B2) čte swatches z `ICompanyPalette` |
-| .NET `SectionTemplateManager` | Nahrazen `ISectionTemplateCatalog` |
-| appsettings.json | **Smazat `agendas[]`** — přesouvá se do Caché |
-
-**Risks:**
-- Backward compat: existující šablony musí pokračovat s hardcoded defaults pokud Caché nemá `ElementDefaults` naplněné. Mitigace: `IElementDefaults.GetDefaults` vrací merge (Caché přepíše C# defaults).
-- Migration: per-machine `section-templates/*.json` se musí jednorázově importovat do Caché. Mitigace: startup detekce → upload dialog "Nahrát šablony z disku?".
-
-**Výstup:** žádné agenda/styl info v kódu → při přidání nové agendy se restart už neřeší.
-
 | Krok | Co | Stav |
 |---|---|---|
-| W2-1 | Caché `AgendaRegistryAPI` + `.NET IAgendaRegistry` — migrace `appsettings.json` agendas | |
-| W2-2 | Caché `CompanyPaletteAPI` + integrace s ColorPicker (B2) | |
-| W2-3 | Caché `ElementDefaultsAPI` + `IElementDefaults` konzumované v elementech | |
-| W2-4 | Caché `SectionTemplateAPI` + `ISectionTemplateCatalog` + jednorázová migrace lokálních souborů | |
+| W2-1 | Agenda registry — auto-discovery v `BaseAgenda` + Caché `API.AgendyRegistr` + .NET `IAgendaRegistry` | ✅ 2026-05-20 |
+| W2-2 | Section templates → Caché — `API.SekceSablon` + .NET `ISectionTemplateCatalog` + file migration | |
 
 ---
 
-#### 🔴 Wave 3 — Template storage
+#### 🟡 Wave 3 — Template storage
 
-Šablony se neukládají do souborů, ale do Caché. Uživatel otevírá přes browser dialog "vyber šablonu" z centrálního storage s thumbnails, verzí, autorem, datem změny.
+**Základní CRUD hotový** (commit `5ac9dd0`, 2026-05-15). Šablony se ukládají do Caché přes `ALVA.TemplateDesigner.API.Sablony` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). UI v `CacheTemplatePickerDialog` (po L5 migraci přes EDList) + `SaveToCacheDialog`. JSON wire formát (R3), per-IDFa storage.
 
-**⚠️ Prerekvizita:** H-18 + H-19 (template versioning + migrator). **Bez migrátoru tato vlna nesmí začít** — jinak breaking change zničí existující šablony.
-
-**Klíčové API:**
+**Reálný storage layout** (liší se od původního plánu — atomická Metadata/Data + sekundární index):
 ```
-ALVA.TemplateDesigner.API.TemplateStorageAPI
-  ListTemplates(agendaCode?) → OUT["json"] = [{id,name,version,author,updatedAt,thumbnail},...]
-  LoadTemplate(id) → OUT["json"] = Template JSON
-  SaveTemplate(template,metadata) → IN["json"] → vrátí id + novou verzi
-  DeleteTemplate(id) → soft-delete
-  GetHistory(id) → seznam verzí
-
-ALVA.TemplateDesigner.API.TemplateMigrationAPI   ← R5 prerekvizita
-  MigrateTemplate(json) → OUT["json"] = migrated template (server-side source of truth!)
-
-ALVA.TemplateDesigner.API.TemplateAuditAPI
-  LogAction(templateId, action, userId, timestamp)
-  GetAuditLog(templateId) → [...]
+^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata") = $lb(Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version)
+^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")     = JSON šablony
+^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
 ```
 
-**Proč Caché dělá migraci a ne .NET:**
-- Server je zdroj pravdy. Kdyby to migroval klient, starý klient by uložil starou verzi.
-- Caché může migrovat v dávce všechny šablony při nasazení nové verze.
-- Konzistence: EDISON print service, batch renderer, REST API — všichni dostanou migrovanou verzi automaticky.
+**Zbývá pro plnou Wave 3:**
+- Versioning (R5 prerekvizita) — H-18 + H-19 (TemplateMigrator + version field v JSON)
+- Server-side migrace (`TemplateMigrationAPI` — migrace při Load)
+- Audit log (`TemplateAuditAPI`)
+- Thumbnails (100×140px PNG při Save → file picker s náhledem)
+- History (seznam verzí + restore)
+- Soft-delete místo hard delete
+- Import wizard (jednorázová migrace `*.json` z disku do Caché)
 
-**Storage layout — JSON blob + indexovatelná metadata (rozhodnuto):**
+**Pozn.:** dnešní stav postačuje pro **demo a běžné použití**. Versioning a audit budou potřeba před produkčním nasazením s reálnými zákaznickými šablonami — bez migrátoru breaking change zničí data.
 
-Šablona se ukládá jako **celý JSON v jednom uzlu**, mimo to `$lb()` s metadaty pro list/filter bez parsování JSON:
-
-```
-^ALVA.TDTemplate(IdFa, TemplateID)         = $lb(Name, AgendaCode, Description, ModifiedAt, CreatedBy, Version)
-^ALVA.TDTemplate(IdFa, TemplateID, "JSON") = celý template jako JSON string
-^ALVA.TDTemplate(IdFa, "IDX", "byAgenda", AgendaCode, TemplateID) = ""
-^ALVA.TDTemplate(IdFa, "IDX", "byName", $$$UPPER(Name), TemplateID) = ""
-```
-
-**Proč JSON blob, ne granulární rozklad sekcí/elementů:**
-- **Schema evolve rychle** — přidávání properties (např. `EditorPreferences`, `Parameters`, `SampleData`) nesmí vyžadovat Caché schema změnu. JSON blob izoluje schema do jedné vrstvy; verze řeší `TemplateMigrator` v .NET (R5) + `TemplateMigrationAPI` v Caché.
-- **Atomicita** — šablona je logická jednotka, vždy se čte/píše celá. Granulární rozklad by zkomplikoval save/load bez benefitu.
-- **Query patterns jsou ploché** — list & filter běží nad metadaty (`AgendaCode`, `Name`), ne nad vnitřkem elementů. Editace probíhá v report generatoru, ne v SQL.
-
-**Tradeoff:** žádné SQL query nad obsahem šablony (např. „najdi šablony s TextElementem FontSize 12"). Akceptovatelné — pokud někdy potřeba, denormalizovaná IDX tabulka se přidá separátně.
-
-**Co patří do `$lb()` mimo JSON:**
-- `Name`, `AgendaCode`, `Description` — pro list bez parsování JSON
-- `ModifiedAt`, `CreatedBy` — řazení a audit
-- `Version` (string z JSON `version` pole) — server-side router pro batch migraci
-- `Thumbnail` (volitelně, GUID na binární storage) — file picker s náhledem
-
-**Změny v kódu:**
+**Změny v kódu pro doplnění:**
 | Vrstva | Co |
 |---|---|
-| Caché | 3 nové třídy + `^ALVA.TDTemplate(IdFa,TemplateID)` (storage layout viz výše) + audit log |
-| .NET | `ITemplateStorage` (Cache + Fallback file-based) — Open/Save dialogy volají tohle místo `OpenFileDialog` |
-| .NET UI | Nový `TemplateBrowserDialog` — thumbnails, filter per agenda, verze, autor |
-| .NET migrace | Při Load → Caché vrátí migrovanou šablonu; `TemplateMigrator` je **.NET-side diagnostic helper** pro preview, autoritativní je Caché |
-| File menu | "Otevřít..." → `TemplateBrowserDialog` (ne FileDialog); "Import ze souboru" zůstává jako fallback pro ad-hoc |
+| Caché | Rozšířit `Templates.cls` o versioning logic; nové třídy `TemplateMigrationAPI`, `TemplateAuditAPI` |
+| .NET migrace | `TemplateMigrator` (R5) jako .NET-side diagnostic helper; autoritativní je Caché |
+| .NET UI | `TemplateBrowserDialog` rozšířit o thumbnails, history, filter UI |
 
 **Risks:**
-- Migrace existujících šablon: musí proběhnout všech na disku → do Caché. Mitigace: import wizard při prvním spuštění.
 - Conflict handling: uživatel A a B editují stejnou šablonu. MVP: last-write-wins + varování. V2: lock nebo merge.
-- Performance: load 50 šablon s thumbnails = 5 MB JSON. Mitigace: `ListTemplates` vrací jen metadata, `LoadTemplate(id)` fetch-on-demand.
-
-**Výstup:** `appsettings.json` má jen `cacheConnection`; všechno ostatní v Caché.
+- Performance: load 50 šablon s thumbnails = 5 MB JSON. Mitigace: `ListTemplates` vrací jen metadata, thumbnails fetch-on-demand.
 
 | Krok | Co | Stav |
 |---|---|---|
-| W3-0 | **H-18 + H-19 hotové** (versioning + migrator) — prerekvizita R5 | |
-| W3-1 | Caché `TemplateMigrationAPI` — server-side migrace jako source of truth | |
-| W3-2 | Caché `TemplateStorageAPI` — CRUD + versioning + soft-delete | |
-| W3-3 | Caché `TemplateAuditAPI` — audit log | |
-| W3-4 | .NET `ITemplateStorage` konzumující Caché API | |
-| W3-5 | `TemplateBrowserDialog` — thumbnails, filter, verze | |
-| W3-6 | Import wizard — jednorázová migrace existujících `*.json` souborů do Caché | |
+| W3-1 | Caché `ALVA.TemplateDesigner.API.Sablony` (CRUD: List, Load, Save, Delete, Rename) | ✅ 5ac9dd0 |
+| W3-2 | .NET `CacheTemplateService` async wrapper + `CacheTemplateException` | ✅ 5ac9dd0 |
+| W3-3 | `CacheTemplatePickerDialog` + `SaveToCacheDialog` UI | ✅ 5ac9dd0 (L5 migration na EDList: 9f5b165) |
+| W3-4 | H-18 + H-19 (versioning + migrator) — prerekvizita R5 | |
+| W3-5 | Caché `TemplateMigrationAPI` — server-side migrace jako source of truth | |
+| W3-6 | Caché `TemplateAuditAPI` — audit log | |
+| W3-7 | Thumbnails (100×140px PNG při uložení) | |
+| W3-8 | History (verze + restore UI) | |
+| W3-9 | Import wizard — jednorázová migrace existujících `*.json` souborů do Caché | |
 
 ---
 
@@ -418,17 +355,23 @@ Uživatel může postupně přepnout element po elementu; při problémech rollb
 - Latency: každé otevření properties = Caché round-trip. Mitigace: cache form definice per element type (Init = statická definice, Values = dynamická).
 - EDDataGrid pro TableEditorDialog — odložit do chvíle, kdy EDDataGrid bude produkčně zralý.
 
-**Kdy začít:** až bude Wave 3 stabilní a EDDataGrid hotový. Není blocker teď — `PropertyDescriptor` funguje. Ale každá nová property v PropertyDescriptor = práce k přepsání později → zvažovat nové properties s vědomím, že budou dvakrát.
+**Kdy začít:** Wave 3 CRUD je stabilní, foundation pro Wave 4 (`MLRestJson.CallAsync`, wire formát standard, JSON envelope dokumentován jako Styl 4) je hotová. Není blocker teď — `PropertyDescriptor` funguje. Ale každá nová property v PropertyDescriptor = práce k přepsání později → zvažovat nové properties s vědomím, že budou dvakrát.
+
+**Wire formát Wave 4:** JSON envelope (Styl 4) — composite struktura formuláře (Tab → Group → Field s validacemi) přirozeně pasuje. Helper `MLRestJson.CallAsync<TReq, TResp>` v EDControls je připraven. Detail wire formátu v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md), architektonický plán v [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md).
 
 | Krok | Co | Stav |
 |---|---|---|
-| W4-1 | Caché `ALVA.TemplateDesigner.Elements.TextElement` — první element migrace | |
-| W4-2 | .NET `ElementFormBridge` — JSON ↔ EDInputForm values | |
+| W4-0 | `MLRestJson.CallAsync<TReq, TResp>` helper + JSON envelope wire formát | ✅ 22b9256 |
+| W4-1 | Caché `ALVA.TemplateDesigner.Forms.TextElement` — první element migrace | |
+| W4-2 | .NET `ElementFormBridge` — JSON ↔ element instance přes reflexi | |
 | W4-3 | Feature flag + fallback na PropertyDescriptor | |
 | W4-4 | Postupně: ImageElement, RectangleElement, LineElement, BarcodeElement | |
-| W4-5 | TableElement — po zralosti EDDataGrid | |
+| W4-5 | TableElement — composite case (tabs Obecné/Sloupce, nested CellStyleEditor) | |
 | W4-6 | Schedule elements (StopList, DepartureGrid, NotesLegend) | |
 | W4-7 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
+| W4-8 | EDInputForm rozšíření: chybějící typy polí (Color, Font, Suggest, Text+Picker, ActionId Button) | |
+| W4-9 | EDInputForm wire formát refactor `$lb()` OUT → JSON | |
+| W4-10 | **Collapsible groups** v EDInputForm — generický koncept (accordion, summary řádek u sbalené, stav per element type/scope do `IUserPrefsService`). Nahrazuje dříve plánovaný B0-10 v `PropertiesPanel` (zbytečné dělat v dočasném panelu). | |
 
 ---
 
@@ -459,7 +402,8 @@ Každá implementuje:
 
 | Krok | Co | Stav |
 |---|---|---|
-| W5-1 | Dokumentace `AgendaAPI` contract — co se musí implementovat, co je volitelné | |
+| W5-0 | `AgendaAPI` abstrakt base class + 2 implementace (`ZastavkoveJrMhdAPI`, `TemplateDesignerFAKTURY`) | ✅ v archivu |
+| W5-1 | Dokumentace `AgendaAPI` contract — co se musí implementovat, co je volitelné | ✅ částečně v [`cache-api.md`](../rules/cache-api.md) |
 | W5-2 | Fáze C (Meziměstský) — využije pattern | |
 | W5-3 | Fáze D (Knižní) — využije pattern | |
 | W5-4 | Fáze E (Vozový) — využije pattern | |
@@ -473,7 +417,7 @@ Konkrétní situace, které Caché migrace musí předejít. Kontrolní seznam p
 
 1. **Synchronní Caché volání v UI thread** → zamrznutí aplikace. Kontrola: `grep "MLRest\." *ViewModel*.cs` hledá synchronní volání.
 2. **Silent fail při Caché chybě** → UserPreferences se nenačetly, uživatel neví proč. Kontrola: chyba jde přes `IPopupDisplayer.Error(ex)`.
-3. **Breaking JSON change bez migrátoru** → staré šablony nejdou otevřít. Kontrola: Wave 3 nezačne bez H-18/H-19 hotových.
+3. **Breaking JSON change bez migrátoru** → staré šablony nejdou otevřít. Kontrola: před produkčním nasazením s reálnými šablonami musí být H-18/H-19 hotové (versioning + migrator). Wave 3 CRUD už běží, ale versioning chybí.
 4. **Všechno naráz** (big bang migration) → nelze vrátit. Kontrola: feature flags per element (Wave 4), paralelní běh starého a nového systému.
 
 ---
@@ -482,7 +426,9 @@ Konkrétní situace, které Caché migrace musí předejít. Kontrolní seznam p
 
 Vychází z gap analýzy oproti komerčním report generátorům (Crystal Reports, Stimulsoft, DevExpress). Nezávislé na JŘ — platí pro fakturační i obecné šablony. Může běžet paralelně s Caché migrací (neblokuje a není blokované).
 
-#### Template versioning (prerekvizita Wave 3)
+#### Template versioning (prerekvizita produkčního Wave 3)
+
+Wave 3 CRUD už běží bez versioning, ale **před produkčním nasazením s reálnými zákaznickými šablonami** musí být H-18/H-19 hotové — jinak breaking JSON change zničí existující data.
 
 | # | Co | Proč | Velikost |
 |---|---|---|---|
@@ -507,43 +453,10 @@ Analogie `ColorRules` z `DepartureGrid` — generalizovat na `TableColumn`.
 | 37 | `ColorRules` na `TableColumn` — `{ expression, foreColor, backColor }` array | |
 | 38 | Vyhodnocení v print engine při renderování buňky | |
 
-#### PNG export
-
-SkiaSharp `SKBitmap.Encode()` — triviální přidání.
-
-| Krok | Co | Stav |
-|---|---|---|
-| 40 | PNG export (per-page nebo všechny stránky) — File menu + `PreviewCanvas.RenderToPng()` | |
-
-#### Dynamická viditelnost sekce v designeru
-
-VisibilityExpression se vyhodnocuje jen při tisku. Uživatel nevidí jak bude šablona vypadat.
-
-| Krok | Co | Stav |
-|---|---|---|
-| 41 | Toggle "Simulovat viditelnost" v sekci — vyhodnotí expression s mock daty, zšedí/skryje sekci v designeru | |
-
 #### Obecný layout-reservation pattern u elementů
 
 Aktuálně když element potřebuje rezervovat místo pro volitelný vizuální prvek (šipka směru u `StopListElement`), řeší se to ad-hoc. Do budoucna zvážit deklarativní mapu "pokud property X=true → rezervuj Y mm vlevo/vpravo". Vyřeší konzistentně napříč všemi elementy.
 
-#### Collapsible groups v properties panelu
-
-| Krok | Co | Stav |
-|---|---|---|
-| B0-10 | **Collapsible groups** v `PropertiesPanel` — accordion s `GroupDescriptor`, sbalené skupiny zobrazují summary řádek, stav sbalení per element type do `UserPreferences.GroupExpanded` | |
-
-#### WPF Color Picker — fix blokující bug
-
-`WinForms ColorDialog` minimalizuje Properties panel při kliknutí OK (TODO v `PropertiesPanel.xaml.cs:555`). Vlastní WPF color picker s palette z `UserPreferences.RecentColors`.
-
-| Krok | Co | Stav |
-|---|---|---|
-| B2-1 | WPF color picker control (`ColorPickerPopup.xaml`) — swatches, hex, alpha | |
-| B2-2 | Nahradit všechna volání `ColorPickerHelper.PickColor()` novým controllem | |
-| B2-3 | Synchronizovat `RecentColors` s `UserPreferencesService` (Wave 1) | |
-
----
 
 ### 🟠 Fáze C: Meziměstský JŘ
 
@@ -599,27 +512,16 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ### 🟢 Menší priorita — UX polish
 
-| # | Položka | Náročnost | Popis |
-|---|---------|-----------|-------|
-| g | Inline text editing na canvasu | Velká | Dvojklik na text → inline editace přímo na canvasu (bez otevření dialogu) |
-| h | Cross-section rubber band selection | Střední | Aktuálně funguje jen v aktivní sekci; umožnit výběr přes sekce s přepočtem souřadnic |
-| i | Align to page center | Malá | Zarovnat element na střed stránky (horizontálně nebo vertikálně) |
-| k | Page Break element | Malá | Explicitní element "zalomit stránku zde" — alternativa k oddělení přes sekce |
-| l | XLSX export | Velká | Tabulky → Excel; vyžaduje ClosedXML nebo NPOI |
-| m | Ruler na canvasu | Střední | Horizontální + vertikální pravítko v mm podél hran canvasu; zvýrazňuje rozsah vybraného elementu |
-| n | `LayoutGridDialog` (B0-7) | Střední | Rozmístit vybrané elementy do řádku/sloupce/mřížky se zadanou mezerou; výstup = `CompositeCommand` |
+*(prázdné — všechny zachycené QoF body jsou hotové, viz changelog)*
 
-**Grouping v TableElement** — seskupení řádků dynamické tabulky podle hodnoty pole (`GroupHeader`, `GroupFooter`, `Summary` řádky).
+---
 
-**Computed fields** — pole vypočítaná na C# straně ze surových dat před předáním šabloně (`CELKOVA_CENA = CENA * MNOZSTVI`).
+### Tabulkové featury (na backlogu, zatím bez customer demand)
 
-**Min/max počet řádků dynamic tabulky** — `MinRows`, `MaxRows` properties; engine ořízne/doplní.
-
-**Hranice mezi buňkami tabulky** — vnitřní cell borders (h/v čáry mezi buňkami).
-
-**Zarovnávání napříč sekcemi** — alignment s referenčním bodem = stránka, ne sekce.
-
-**Vnořené datasource** — `_rows` uvnitř `_rows` (faktura → položky → daně); TableElement s child kolekcí.
+- **Grouping v TableElement** — seskupení řádků dynamické tabulky podle hodnoty pole (`GroupHeader`, `GroupFooter`, `Summary` řádky)
+- **Computed fields** — pole vypočítaná na C# straně ze surových dat před předáním šabloně (`CELKOVA_CENA = CENA * MNOZSTVI`)
+- **Vnořené datasource** — `_rows` uvnitř `_rows` (faktura → položky → daně); TableElement s child kolekcí
+- **Min/max počet řádků dynamic tabulky** — `MinRows`, `MaxRows` properties; engine ořízne/doplní (zmínil kolega, není urgent)
 
 ---
 
@@ -629,8 +531,25 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 |---|---|
 | Full migration pipeline | Po H-18/H-19 rozšířit na každou breaking change (ne jen 2 verze) |
 | CI/CD linting šablon | Ověřit šablony před deployem (Caché job) |
-| Šablony v Caché s verzováním | Wave 3 dokončuje; produkce potřebuje: kdo kdy co změnil, rollback |
-| Autor, datum, kategorie, popis | Metadata šablon — důležité při >10 šablonách |
+| Kategorie + popis šablony v UI | Wave 3 dnes drží Author/CreatedAt/ModifiedAt/Version v metadatech; chybí kategorie + popis v UI |
+
+> Versioning, audit, thumbnails, history → viz Wave 3 (W3-4 až W3-9).
+
+---
+
+### 🟡 Virtualized canvas rendering (zoom >500%)
+
+**Problém:** `SkiaSharp.Views.WPF.SKElement` při každém repaint alokuje a uploaduje byte buffer velikosti celé plochy (`Width × Height × 4`). Při zoom 1000% (A4) je SKElement ~8000×11000 px = **365 MB upload per frame**. Toto je hardware-bound bottleneck SkiaSharp Views.WPF integrace.
+
+**Aktuální workaround (2026-05-20):** Zoom max omezen na 500% (SKElement ~93 MB upload). Funguje, ale teoretické maximum zoomu omezené.
+
+**Proper řešení (až bude potřeba):** Virtualizace — SKElement udržovat ve velikosti viewport (~1600×900 px), implementovat custom scroll handling. Skia canvas translatuje by scroll offset, uživatel vidí jen viewport, ScrollViewer/scrollbary řízeny manuálně.
+
+**Velikost:** ~4-6h. Refactor `<ScrollViewer><SKElement/></ScrollViewer>` na `<Grid><SKElement/> + custom ScrollBars/></Grid>`. Update hit testing (mouse coords → page coords s scroll offset), drag&drop, rubber band selection.
+
+**Risk:** middle — mouse event coordinate transformation se musí důsledně updatovat napříč všemi interakcemi.
+
+**Kdy:** jakmile bude potřeba zoom >500% pro reálnou práci. Aktuálně 500% pokrývá většinu inspekčních use case.
 
 ---
 
@@ -667,234 +586,7 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 
 ---
 
-# 🗄️ Archiv — hotové kroky
+## 🗄️ Hotová práce
 
-> Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
+Detail dokončených etap (v1.0 demo balíček, Fáze A.2, B0/B0.5, JŘ elementy, PageLayoutEngine, …) → [`roadmap-archive.md`](roadmap-archive.md). Průběžný changelog → [`changelog.md`](changelog.md).
 
-## Fáze B0.5 — Code Hygiene Sprint
-
-| # | Co | Hotovo |
-|---|---|---|
-| H-1 | Smazat `ShowZkraceneOznaceniLinky` — ghost property v `DepartureGridElement` (nikde se nečetla) | 2026-04-21 |
-| H-2 | `async void` → `async Task` + `AsyncRelayCommand` (EDControls) + `CommandAsync` helper; Open/Save/SaveAs + bonus GenerateCommand | 2026-04-21 |
-| H-3 | `ElementTypes` statické konstanty v `Models/ElementTypes.cs` — nahrazeno ~30 magic strings v JsonDerivedType, `CreateElementByType`, `GetDefaultElementSize` a toolbar menu | 2026-04-21 |
-| H-4 | JSON wire format verify — průzkum potvrdil 100% čistý JSON (Caché `obj.%ToJSON()` → .NET `JsonNode.Parse`); opraven zastaralý docstring `GetData` v `AgendaAPI.cls` + `cache-api.md` + přidána sekce "Wire formát pravidlo (R3)" | 2026-04-21 |
-| H-5 | Silent catch v `PropertiesPanel.xaml.cs` color picker seed nahrazen za `SKColor.TryParse` — odstranil try/catch jako control flow | 2026-04-21 |
-| H-6 | Nový `.claude/rules/new-element-checklist.md` — 10-kroková autoritativní reference (třída, ElementTypes, JsonDerivedType, 2 switches, toolbar menu, paleta, dynamická výška, GetSummary, docs); konsolidace z `mvvm-patterns.md` | 2026-04-21 |
-| H-7 | `MessageBox.Show` → `IPopupDisplayer` — 5 VM (AiTemplateAssistant, TableEditor, ElementProperties, MainWindow, PdfImport); PdfImport odstranil 3 callback properties; YesNoCancel kept s TODO (IPopupDisplayer nemá ekvivalent); Warning → Info (WPF rozdíl byl jen ikona) | 2026-04-21 |
-| H-8 | Extract `Controls/TemplateTreePanel/` — ~150 řádků ze `MainWindow.xaml.cs` přesunuto do samostatného UserControlu; `MainWindow` jen volá `TreePanel.Rebuild()`; smazán orphan `Windows/TemplateTreeDialog/` (nikdy se neinstanciovalo) | 2026-04-21 |
-| H-9 | Extract `Windows/SaveSectionTemplateDialog/` — inline WPF konstrukce dialogu (~60 řádků StackPanel+TextBox+Button) z `MainWindowViewModel` přesunuta do Window+ViewModel+XAML dle závazného standardu; `SaveSectionTemplate(Section, string)` nyní čistá save logika | 2026-04-21 |
-| H-10 | **N/A** — `TemplatePickerDialog` v kódu neexistoval. Template picker = `OpenFileDialog` (standardní Windows), section template picker = menu položky v "Add Section" dropdown. Žádný samostatný dialog k extrakci. Uzavřeno bez změn. | 2026-04-21 |
-| H-11 | ⏭️ **Skip do potřeby** — `PropertyDescriptor.VisibleWhen` predikát. Aktuální ad-hoc skrývání v dialozích stačí, žádný blocker. | 2026-04-30 |
-| H-12 | ⏭️ **Skip do potřeby** — `SharedPropertyDescriptors` helper. Duplikace deskriptorů akceptovatelná za stávající cenu. | 2026-04-30 |
-| H-13 | ⏭️ **Skip do potřeby** — rozšíření error flow nad rámec `IPopupDisplayer`. Strukturované logování / telemetrie přidat až bude konkrétní požadavek. | 2026-04-30 |
-
-## Sjednocení patternů + UX vyladění ✅ (2026-04-30 → 2026-05-01)
-
-Kontinuální polish nad rámec původního B0.5 scope, motivovaný přípravou na 1:1 ladění zastávkového JŘ:
-
-| Co | Stručný popis |
-|---|---|
-| **Sjednocené Header/Data zóny v panelu** | Princip „rychlý přístup × kompletní cascade" napříč StopList/DepartureGrid/NotesLegend/TableElement; helper `GetCellZoneBaseColorDescriptors()` |
-| **Per-template editor preferences** | `Template.EditorPreferences` (grid + snap) — designové prostředí přežije reload |
-| **Click-vs-drag threshold** | Klik na element nespustí soft-snap (4px threshold) |
-| **ImageElement ScaleMode** | Renderer honoruje Fit/Fill/Stretch/None + tlačítko „Přizpůsobit poměru obrázku" |
-| **Sub-pixelové rámečky** | Adaptive `RenderBorder` — pod 1px AA fractional, nad 1px pixel-snap |
-| **Descriptor sort by group** | Stable sort v PropertiesPanel — bez duplicitních hlaviček |
-| **Border v „Obecné" group** | Konzistentní rychlý přístup k základním vlastnostem |
-| **DataRowHeight hoist** | Z duplicitních deklarací do `ScheduleElementBase` |
-| **Úklid mrtvého UI** | Smazán `LineSpacing` z `CellStyleEditor` (CellRenderer ho ignoroval) |
-| **Dokumentace stylingových patternů** | `mvvm-patterns.md` — Pattern 1 (single-zone) vs Pattern 2 (dual-zone) |
-
-## Specializované JŘ elementy — společný základ ✅ (2026-03-18)
-
-| Krok | Co |
-|---|---|
-| 1 | `ScheduleElementBase` — abstraktní základ (indexy, grouping, společné properties) |
-| 2 | `StopListElement` + `DepartureGridElement` + `NotesLegendElement` — zastávkový JŘ (MHD) |
-| 3 | Caché `ZastavkoveJrMhdAPI` — `GetData`/`GetMockData` + wire formát (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY) |
-| 4 | `SkiaHeightCalculator` — měření výšky JŘ elementů |
-| 5 | `PrintDialog` — parametry + export reálných dat z Caché (`GetData`) + multi-data PDF |
-| 6 | `CacheAgendaProvider` — ParseMockData vnořená pole, GetData, BuildRealData |
-
-## Fáze A: Odladění MHD zastávkového JŘ ✅ (2026-05-11)
-
-Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review s kolegy.
-
-> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
-
-| Krok | Co | Stav |
-|---|---|---|
-| A | Hotová 1:1 šablona zastávkového JŘ + review s kolegy → seznam úprav v `customer-requirements-zastavkovy-jr.md` (= Fáze A.2) | ✅ (2026-05-11) |
-
-### Poučení z implementace zastávkového JŘ — co vzít v potaz pro další JŘ typy
-
-| Téma | Popis |
-|---|---|
-| **Jeden element → tři elementy** | Původní plán počítal s jedním `StopScheduleElement`. Ve skutečnosti se rozpadl na 3 nezávislé elementy — lépe odpovídá filozofii designeru (uživatel skládá ze stavebních bloků). Počítat s tím od začátku u dalších JŘ typů. |
-| **Synchronní GetData** | `GetData` běží synchronně na UI thread — pro malé linky OK, pro velké může zamrznout UI. Vozový JŘ bude mít víc dat → async loading s progress barem bude nutný. Viz pravidlo R1. |
-| **SKTypeface/SKPaint alokace** | ✅ Opraveno — `ScheduleElementBase` cachuje `SKTypeface` přes statický `ConcurrentDictionary<string, SKTypeface>`; `SKPaint` se vytváří a ukládá per instance cache. |
-| **Caché business logika je rozsáhlá** | ZastavkoveJrMhdAPI má ~1200 řádků. Počítat s tím v odhadu pro další JŘ typy. |
-| **Definovat layout před implementací** | Aby se neopakovala situace, kde se plán změní v průběhu. |
-
-### Fáze A — hotové kroky
-
-| Krok | Co | Stav |
-|---|---|---|
-| 7 | Per-column styling framework — CellStyle/ColumnVisualStyle, dva taby v DepartureGroupEditorDialog, InlineTextStyle pro minuty/anotace | ✅ (2026-03-21) |
-| 7a | StopListElement — per-column styling analogicky k DepartureGrid (CellStyle pro záhlaví/data sloupců zastávek) + generalizace shared helpers do ScheduleElementBase + ColorPickerHelper + ActionId routing | ✅ (2026-03-23) |
-| 7b | Ověření parametrů šablony — funguje přepsání element properties z template parameters (CASOVA_OSA, HODINY_OD, HODINY_DO, TISK_PROJETYCH_ZAST, TISK_SIPKY); fix merge parametrů do real data exportu; auto-open PDF; odebrání BAREVNE_ODLISENI + TISK_TARIFU | ✅ (2026-03-23) |
-| 8a | Sjednocení textových nastavení — `TextStyle` (nullable POCO, CSS cascade) + `ResolvedTextStyle` (SkiaSharp helpery). Migrace: TextElement, TableElement, ScheduleElementBase + 3 JŘ elementy, PdfImport, CacheAgendaProvider. Breaking JSON change (flat props → `style`/`headerStyle`/`dataStyle`) | ✅ (2026-03-24) |
-| 8b | Proporcionální škálování šablony + UX vylepšení — `ScaleTemplateCommand`, `ApplyScale()` na všech elementech, redistribuce výšek sekcí, výchozí nastavení nových elementů, `HourColumnPerGroup` | ✅ (2026-03-24) |
-| 8c | AI-enhanced PDF import — dvoustupňový pipeline (heuristiky → AI enrichment); `AiImportEnricher` s kontextovými prompty; detekce rámečků, loga placeholder, margin fix, TextElement alignment fix | ✅ (2026-03-25) |
-| 8d | AI Vision import pipeline — `AiVisionImportService` (composable prompty), `AiGuidedScheduleBuilder` (PdfPig geometrie), `AiVisionImportPipeline` (orchestrace); per-column font wrapping; section headers auto-hide; CellStyleVM font defaults; shared HttpClient | ✅ (2026-04-03) |
-
-## Fáze B0 — UX Sprint ✅ (2026-04-20)
-
-| # | Co |
-|---|---|
-| B0-1 | Strikethrough na TextStyle + descriptor; oprava tichého nefungování Underline |
-| B0-2 | Více barcode typů — EAN-13, EAN-8, PDF417, DataMatrix; konsolidace palety |
-| B0-4 | Precision fix — `MmMath.Round(0.1mm)`; resize end, ScaleTemplate, DistributeH/V, properties panel |
-| B0-5 | DistributeH/V: přesný gap — zaokrouhlit, poslední element absorbuje zbytek |
-| B0-6 | Normalizovat pozice (Ctrl+Shift+N) — dialog s krokem, live preview, CompositeCommand undo |
-| B0-8 | Properties panel float formát — `"0.0#"` pro mm pole, round on commit |
-| B0-9 | Grid size v UI — ComboBox 1/2/5/10mm v toolbaru, DesignerState.GridSize property |
-| B0-11 | Inline validace — červený rámeček + tooltip místo textu pod polem |
-| B0-12 | Copy Style / Paste Style (Ctrl+Shift+C/V) — StyleClipboard, kopíruje TextStyle + BorderColor/Width + BackgroundColor |
-| B0-13 | Kontextový format mini-toolbar — B/I/U/S + L/C/R/J + ▲/▬/▼ nad properties panelem |
-| B0-14 | Rotation property na TemplateElement — float, stupně, JSON serializace |
-| B0-15 | Render rotace — canvas.Save/RotateDegrees(cx,cy)/Restore + IsRotated bool helper |
-| B0-16 | Hit-testing rotovaných elementů — inverzní rotace test pointu kolem středu |
-| B0-17 | Resize handles zakázány pro rotované elementy + rotation badge (angle label) |
-
----
-
-## Další implementované oblasti
-
-**UX audit — bezpečnost + frustrace + polish** ✅ (2026-03-18)
-- Sanitizace VisibilityExpression (whitelist tokenizer + live validace v UI)
-- Canvas fixed height + section clamping (sekce nepřesáhnou stránku)
-- SectionRole (Header/Body/Footer) — patičky od spodu stránky
-- Ctrl+X, Ctrl+0, context menu na canvasu, bound resize, potvrzení mazání sekce
-- Nahrávání obrázků s auto-downscale (max 5 MB), SelectAll
-
-**Zastávkový JŘ + Caché integrace** ✅ (2026-03-18)
-- ScheduleElementBase + 3 elementy (StopListElement, DepartureGridElement, NotesLegendElement)
-- ZastavkoveJrMhdAPI (~1200 řádků business logiky z legacy refaktoru, sloučeno z AgendaJRAPI + TiskMHD + TemplateDesignerMHD)
-- CacheAgendaProvider: ParseMockData vnořená pole, GetData, BuildRealData
-- PrintDialog: parametry + export reálných dat + multi-data PDF
-- SkiaHeightCalculator: schedule element height calculation
-
-**PageLayoutEngine + multi-page** ✅ (2026-03-17)
-- Template + DataContext → `List<Page>` s PlacedSections; čistá logika (vrstva 3), žádný SkiaSharp/WPF
-- Klasifikace sekcí (headers/footers/body), stránkování (KeepTogether/SplitAcrossPages), dvouprůchodový layout pro OnLastPageOnly
-- Flow layout uvnitř sekcí, PerDataRow expanze, PAGE/TOTAL_PAGES injekce
-- Multi-page preview (stránky pod sebou) + multi-page PDF export
-- IElementHeightCalculator: SkiaHeightCalculator měří TextElement (word wrap) a TableElement
-
-**Flow text v designeru (Word wrap + dynamická výška)** ✅ (2026-03-17)
-- TextElement: `WordWrap=true` + `Height=null` → text se zalamuje, výška se dopočítá z obsahu
-- `LineSpacing` property, vertikální zarovnání víceřádkového textu, fix `\r\n`
-- InfiniteTextElement jako samostatný typ zamítnut — jedno chování řízené properties
-
-**ElementGroup — seskupování elementů** ✅ (2026-03-12)
-- `GroupId` property na `TemplateElement` — lehká logická vazba bez nested souřadnic
-- Kliknutí na člen skupiny vybere celou skupinu; Alt+klik = jen ten jeden element
-- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit (plný undo/redo)
-- Vizuální indikace: barevný badge v rohu, bounding box skupiny při výběru
-- Strom šablony zobrazuje skupiny jako sbalitelné uzly
-- Copy/Paste/Duplicate přemapují GroupId (klony nedědí skupinu originálu)
-- PDF import automaticky seskupí grafiku podle typu a merge mode
-
-**Locale / CultureInfo v šabloně** ✅ (2026-03-12)
-- `Template.CultureCode` — kultura pro formátování čísel a datumů (cs-CZ, sk-SK, en-US, de-DE)
-- Protéká celým pipeline: Template → DataContext.Culture → PlaceholderFormatter → TableElement
-- Dropdown ve vlastnostech stránky; null = cs-CZ (výchozí); parsování vstupů zůstává InvariantCulture
-
-**Drag & drop při přidávání elementů a sekcí** ✅ (2026-03-12)
-- Drag element z toolbaru/palety na canvas — ghost preview, drop target highlight, clamp + snap
-- Drag pole z panelu "Pole agendy" na canvas — vytvoří TextElement nebo append k existujícímu
-- Drag & drop sekcí v levém panelu — přeřazení tažením, vizuální indikátor, `ReorderSectionCommand`
-- Drag element mezi sekcemi — záměrně odloženo (nízká priorita, aktuální UX postačuje)
-
-**Chytré duplikování elementů** ✅ (2026-03-12)
-- Ctrl+D → šipka = směrové duplikování (kopie vedle originálu s 4mm mezerou)
-- Ctrl+D bez šipky = plain duplikát (+5mm offset); neovlivňuje clipboard
-- Multi-select, clamp na bounds sekce, plný undo/redo
-
-**Přichytávání elementů k sobě (smart snap)** ✅ (2026-03-12)
-- Edge↔Edge (4 kombinace), Center↔Center, Gap snap (4mm mezera) — bez kategorické priority, vyhraje nejbližší match
-- Zvýraznění cílových elementů (šedý dashed rámeček), gap indikátor (černá čárka v mezeře)
-- Element snap má přednost před grid snapem; osy X/Y nezávisle
-- Toggle v toolbaru + menu; výchozí zapnuto
-
-**Výrazový jazyk** ✅ (2026-03-12)
-- Part 1 — podmínky a logické operátory: `{TISK_SIPKY}`, `{POCET} > 0`, `{TYP} == "PD"`, `&&`, `||`, `!`, závorky; VisibilityExpression na elementech a sekcích; ExpressionEvaluator + Parser + AST nodes
-- Part 2a — agregace: `SUM({CENA})`, `COUNT()`, `AVG({POLE})`, `MIN({POLE})`, `MAX({POLE})` v TableElement; SummaryRows; AggregationResolver; záložka Souhrn v TableEditorDialog
-- Part 2b — formátování placeholderů: `{POLE:N2}`, `{POLE:dd.MM.yyyy}` (.NET formáty); PlaceholderFormatter + DataContext rozšíření
-- Part 2c — řetězcové funkce: `{POLE:LEFT(4)}`, `{POLE:UPPER}`, `{POLE:PADLEFT(3,'0')}`, `{POLE:TRIM}`
-
-**UX polish — hotové položky**
-- **f. Side panel vlastností** ✅ základ (2026-03-21) — inline záložka "Vlastnosti" v levém panelu; modální dialog zachován jako fallback
-- **h. Ikonový toolbar** ✅ (2026-03-21) — 33 Fluent UI ikon, 7 skupin, ToolbarStyles.xaml
-
----
-
-## 🖨️ PageLayoutEngine + stránkovaný preview (detail) ✅ (2026-03-17)
-
-Preview v designeru = plný engine. "Tisk" = ten samý engine s reálnými daty → PDF.
-Architektonické rozhodnutí (2026-03-17): engine je **integrovaný** v TemplateDesigneru, ne samostatný projekt. Oddělení do samostatných .csproj se udělá až bude druhý konzument.
-
-### Vrstvy systému
-
-Viz diagram v `CLAUDE.md` (sekce "Architektura — vrstvy systému").
-
-### PageLayoutEngine — vstup/výstup
-
-```csharp
-class PageLayoutEngine {
-    LayoutResult Layout(Template template, DataContext? data);
-}
-class LayoutResult { List<Page> Pages; int TotalPages; }
-class Page { int PageNumber; List<PlacedSection> Sections; }
-class PlacedSection {
-    Section Source;        // odkaz na originální sekci
-    float Y, Height;      // absolutní pozice na stránce (mm)
-    float? ClipTop, ClipBottom;  // ořez pro SplitAcrossPages
-    DataContext? Data;     // obohacená o PAGE/TOTAL_PAGES
-}
-```
-
-### Implementační kroky ✅ vše hotovo
-
-| Krok | Co | Stav |
-|---|---|---|
-| 1 | `PageLayoutEngine` — section ordering + repeating (OnEveryPage atd.) | ✅ |
-| 2 | Stránkovaný preview — multi-page pod sebou se stíny a rámečky | ✅ |
-| 3 | Flow layout — dynamická výška elementů posouvá elementy pod nimi | ✅ |
-| 4 | Page breaking — sekce SplitAcrossPages se rozdělí přes stránky (ClipTop/ClipBottom) | ✅ |
-| 5 | PerDataRow expanze — sekce se opakuje pro každý řádek dat | ✅ |
-| 6 | PAGE/TOTAL_PAGES injekce + VisibilityExpression per stránku | ✅ |
-| 7 | Multi-page PDF export — každá stránka = jedna PDF stránka | ✅ |
-
-### Budoucí modularizace (až bude potřeba)
-
-```
-TemplateDesigner.Core.csproj      ← vrstvy 1+2+3 (žádný SkiaSharp, žádné WPF)
-TemplateDesigner.Rendering.csproj ← vrstva 4 (SkiaSharp, žádné WPF)
-TemplateDesigner.csproj           ← vrstva 5 WPF Designer
-Edison.PrintService.csproj        ← vrstva 5 headless tisk z EDISONu
-```
-
-### Use cases díky oddělitelnosti
-
-| Use case | Vrstvy | Popis |
-|---|---|---|
-| WPF Designer + preview | 1–5 | Aktuální aplikace |
-| Tisk z EDISONu | 1–4 | Print dialog → GetData → engine → PDF |
-| Batch tisk | 1–4 | Noční job: 200 faktur → 200 PDF |
-| PDF jako služba | 1–4 | EDISON interně: dej PDF pro fakturu #123 |
-| REST API | 1–4 | HTTP POST šablona + data → PDF response |
-| Web preview | 1–4 | ASP.NET endpoint → PNG/PDF → iframe |
-| Email příloha | 1–4 | Auto-generování PDF a připojení k emailu |

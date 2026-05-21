@@ -1,10 +1,22 @@
-/// Implementace AgendaAPI pro agendu FAKTURY.
-/// Referenční implementace pro fakturační systém.
-/// 
-/// appsettings.json:
-///   { "code": "FAKTURY", "name": "Faktury", "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerFAKTURY" }
-Class ALVA.TemplateDesigner.API.TemplateDesignerFAKTURY Extends ALVA.TemplateDesigner.API.AgendaAPI
+/// Agenda FAKTURY — fakturační sestavy.
+///
+/// Data:
+/// - **Skalární pole faktury**: číslo, datumy (vystavení/splatnost), variabilní/konstantní/specifický symbol,
+///   dodavatel (název, IČ, DIČ, adresa, kontakty), odběratel (název, IČ, DIČ, adresa),
+///   platební údaje (číslo účtu, IBAN, SWIFT), částky (základ daně, DPH, celkem), poznámky.
+/// - **Tabulková kolekce POLOZKY**: jednotlivé položky faktury (popis, kód, množství,
+///   měrná jednotka, jednotková cena, celkem, sazba DPH).
+///
+/// Fixed šablony tabulek: shrnutí faktury (základ + DPH + celkem), platební údaje.
+///
+/// Aktuálně **referenční implementace s mock daty** — reálné DB volání (GetData)
+/// vyžaduje napojení na konkrétní strukturu fakturačního systému (TODO).
+Class ALVA.TemplateDesigner.Agendy.Faktury Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
+
+Parameter AgendaCode = "FAKTURY";
+
+Parameter AgendaLabel = "Faktury";
 
 /// Vrátí schéma polí FAKTURY agendy: skalární pole + položky faktury.
 ClassMethod GetSchema(ByRef sys As %String) As %Status

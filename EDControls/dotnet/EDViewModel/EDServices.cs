@@ -1,4 +1,5 @@
 using ALVA.LICENCE.EDLicence;
+using EDControls.UserPrefs;
 
 namespace EDControls.EDViewModel;
 
@@ -26,6 +27,13 @@ public class EDServices(
     /// <summary>Aplikační přístup uživatele (per-IdFa). Načteno post-login, refresh při switch firmy.</summary>
     public AccessTable? AccessTable { get; set; }
     public bool IsAdmin { get; set; }
+
+    /// <summary>
+    /// Persistent per-user state (column layouty, hidden položky, ...). Default je
+    /// no-op <see cref="NullUserPrefsService"/>; composition-root nastaví
+    /// <see cref="CacheUserPrefsService"/> po vytvoření <see cref="MLRest"/>.
+    /// </summary>
+    public IUserPrefsService UserPrefs { get; set; } = new NullUserPrefsService();
 
     private static EDServices? _current;
 

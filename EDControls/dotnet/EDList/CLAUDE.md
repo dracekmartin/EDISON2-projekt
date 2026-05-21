@@ -17,8 +17,28 @@
 
 - ⚠️ IMAGE typ (není implementován DataGridTemplateColumn s Image)
 - ⚠️ CODEBOOK typ
-- ⚠️ Filtrování v LoadList
-- ⚠️ ColumnLayout pro ukládání uživatelského nastavení
+- ⚠️ Server-side filter v LoadList (pro velké datasety)
+- ⚠️ Column visibility UI — context menu na header (L9)
+- ⚠️ CRUD tlačítka Add/Edit/Delete (L8 — nice to have)
+
+**Co bylo dodáno (2026-05-15):**
+
+- ✅ **L1** — Multi-select Check mode (`SelectionMode = Check`), tri-state header, `CheckAll`/`UncheckAll`, `EDListRow` s INotifyPropertyChanged
+- ✅ **L2** — Column layout persist (šířky + pořadí + sort) přes `IUserPrefsService`
+  - `HostId` property na EDList (povinné pro persist; null = persist off)
+  - Storage: `^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)` = JSON blob
+  - Load při `LoadList` (async, best-effort), Save debounced 500ms + force při Unload
+  - Best-effort čtení — neznámé sloupce ignorovány, missing fields default
+  - JSON schema versioning (`"version": 1`)
+- ✅ **L3** — Title + client-side search box v header baru
+  - `Title: string?` property — text vlevo v header baru
+  - `SearchText: string` property — textfield vpravo, case-insensitive substring filter napříč všemi viditelnými sloupci
+  - `SearchVisible: bool` property — explicit toggle (default: true pokud Title set)
+  - Header bar skrytý pokud ani Title ani SearchVisible (zero disruption pro stávající use cases)
+  - Search filtruje **formátované hodnoty** (HHMM "08:30" hledatelné jako "8:30", ne raw "830")
+  - Search se NEpersistuje (transient — prázdné při každém otevření)
+  - Check state preserved napříč filterem (skrytý checked řádek zůstává checked)
+- ✅ MockList rozšířen o DATETIME + COLOR sloupce pro testing všech typů
 
 ## Účel
 
@@ -632,54 +652,164 @@ Class APP.VozidlaList Extends %RegisteredObject
 
 ## C# veřejné API
 
-### Aktuální implementace
+Pro hostitelské okno je toto **public contract** EDList. Co tady **není**, je interní implementační detail — neopírej se o to.
+
+### Konfigurace (set před InitializeList)
 
 ```csharp
-namespace EDControls.EDList
-{
-    public partial class EDList : UserControl
-    {
-        // ─── Konfigurace ──────────────────────────────────────────────────
-        // MLRest se čte automaticky z DataContext rodičovského okna (EDViewModel)
-        public string CacheClass { get; set; } = "";
+public string CacheClass { get; set; } = "";
+// Caché třída implementující InitializeList + LoadList (např. "ALVA.MHD.LinkyList").
+// MLRest se čte automaticky z DataContext rodičovského okna (EDViewModel).
 
-        // ─── Volání ───────────────────────────────────────────────────────
-        /// Načte definici sloupců z Caché, parsuje JSON, generuje DataGrid sloupce
-        public void InitializeList()
+public EListSelectionMode SelectionMode { get; set; } = EListSelectionMode.Single;
+// Single: klasický single-select přes DataGrid.SelectedItem
+// Check : multi-select — vlevo se prepend checkbox sloupec (header = toggle-all tri-state)
+// Změna za běhu vyvolá RebuildColumns (přidá/odebere checkbox sloupec).
+```
 
-        /// Načte data z Caché, parsuje JSON řádky, naplní ObservableCollection
-        public void LoadList()
+### Volání (host inicializuje + reaguje na refresh)
 
-        // ─── Stav ─────────────────────────────────────────────────────────
-        /// Read-only kolekce definic sloupců (dostupné po InitializeList)
-        public IReadOnlyList<ListColumn>? Columns { get; }
+```csharp
+public void InitializeList();
+// Načte definici sloupců z Caché → generuje DataGrid sloupce. Volat 1× po setup.
 
-        /// ID aktuálně vybraného řádku, nebo null pokud není žádný výběr
-        public string? SelectedRowId { get; }
+public void LoadList();
+// Načte data z Caché → naplní řádky. Volat opakovaně (refresh, after filter).
+// Při LoadList se vyčistí checked state.
+```
 
-        // ─── Eventy ───────────────────────────────────────────────────────
-        /// Vyvolá se při dvojkliku na řádek. Parametr: rowId
-        public event EventHandler<string>? RowDoubleClicked;
+### Stav (read-only)
 
-        /// Vyvolá se při změně výběru. Parametr: rowId nebo null
-        public event EventHandler<string?>? SelectionChanged;
+```csharp
+public IReadOnlyList<ListColumn>? Columns { get; }
+// Definice sloupců, dostupné po InitializeList.
 
-        /// Vyvolá se při kliknutí na buňku s isLink=true (podtržený modrý text)
-        public event EventHandler<(string RowId, string ColKey)>? CellLinkClicked;
-    }
+public string? SelectedRowId { get; }
+// Single mode: ID aktuálně vybraného řádku (DataGrid SelectedItem).
+// Check mode: stejné jako Single (řádek může být "selected" navíc k "checked").
+
+public IReadOnlyList<string> SelectedRowIds { get; }
+// Single mode: [SelectedRowId] nebo prázdné.
+// Check mode: ID všech checknutých řádků (z EDListRow.IsChecked).
+```
+
+### Multi-select API (Check mode)
+
+```csharp
+public void SetChecked(string rowId, bool isChecked);
+// Programaticky toggle checked stav konkrétního řádku.
+// No-op pokud rowId neexistuje. Vyvolá CheckedRowsChanged.
+
+public void CheckAll();
+// Zaškrtne všechny řádky. Vyvolá CheckedRowsChanged 1×.
+
+public void UncheckAll();
+// Odznačí všechny. Vyvolá CheckedRowsChanged 1×.
+```
+
+### Eventy (host subscribe v constructoru)
+
+```csharp
+public event EventHandler<string?>? SelectionChanged;
+// DataGrid native — fire při změně SelectedRowId (klik na řádek).
+
+public event EventHandler<string>? RowDoubleClicked;
+// Dvojklik na řádek → rowId.
+
+public event EventHandler<IReadOnlyList<string>>? CheckedRowsChanged;
+// Check mode — fire kdykoliv se checked sada změní (manual click / SetChecked /
+// CheckAll / UncheckAll / LoadList reset). Argument = aktuální SelectedRowIds.
+
+public event EventHandler<(string RowId, string ColKey)>? CellLinkClicked;
+// Klik na buňku se sloupcem IsLink=true (modrý podtržený text).
+```
+
+### Typický vzor použití
+
+```xaml
+<el:EDList x:Name="LinkyList"
+           CacheClass="ALVA.MHD.LinkyList"
+           SelectionMode="Check"/>
+```
+
+```csharp
+public LinkyPickerDialog() {
+    DataContext = new EDViewModel();           // poskytuje MLRest
+    InitializeComponent();
+
+    LinkyList.InitializeList();                // sloupce z Caché
+    LinkyList.LoadList();                      // data z Caché
+
+    LinkyList.CheckedRowsChanged += (_, ids) =>
+        OkButton.IsEnabled = ids.Count > 0;
+}
+
+private void OkClick(...) {
+    var ids = LinkyList.SelectedRowIds;        // z Check mode
+    // nebo: var id = LinkyList.SelectedRowId; // z Single mode
 }
 ```
 
-### Budoucí rozšíření (připraveno)
+### Implementační detail — EDListRow
 
 ```csharp
-// Ukládání uživatelského nastavení sloupců (pořadí + šířka)
-public ColumnLayout[] GetCurrentLayout();
-public void ApplyLayout(ColumnLayout[] layout);
+public sealed class EDListRow : INotifyPropertyChanged
+{
+    public string Id { get; }
+    public IReadOnlyDictionary<string, string?> Values { get; }
+    public string? this[string key] { get; }      // = Values[key] nebo null
+    public bool IsChecked { get; set; }            // notifikuje
+}
+```
 
-// Filtrování s parametry
-public void LoadList(object filter);  // přijme CVar nebo anonymous object
-public void ReloadData();             // znovu načte s posledním filtrem
+Host ji **nepoužívá přímo** — EDList ji vystavuje jen jako `dataGrid.SelectedItem` typ pro WPF binding. Pokud host potřebuje data, použije `SelectedRowId` / `SelectedRowIds` a vlastní cache toho, co posílá do Caché.
+
+### L2 — Column layout persist (implementováno)
+
+```csharp
+public string? HostId { get; set; }
+// Klíč pro persist column layout přes IUserPrefsService.
+// null nebo prázdné = persist off (žádný Load/Save).
+// Konvence: "<Project>.<ConsumerName>", např. "TemplateDesigner.TemplatePicker".
+// Storage: ^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)
+//
+// Layout obsahuje:
+// - widths (column.ActualWidth)
+// - order (column.DisplayIndex)
+// - sort (column.SortDirection + ICollectionView.SortDescriptions)
+//
+// Save: debounced 500ms po změně column property + force při Unload okna.
+// Load: async po LoadList, aplikuje na current sloupce best-effort.
+```
+
+### L3 — Title + Search (implementováno)
+
+```csharp
+public string? Title { get; set; }
+// Text vlevo v header baru. Null/empty = title skrytý.
+
+public string SearchText { get; set; }
+// Vstupní pole pro client-side filter. Case-insensitive substring napříč všemi
+// viditelnými data sloupci (skipuje checkbox column). Filtruje formátované hodnoty
+// (co user vidí v buňce), ne raw data — "8:30" matchne "08:30" HHMM ale "830" ne.
+// Nepersistuje se, prázdné při Init.
+
+public bool SearchVisible { get; set; }
+// Default: true pokud Title set, jinak false. Lze explicit override.
+// Skrývá search box ne header bar — pokud SearchVisible=false + Title set,
+// header bar zobrazí jen Title.
+
+// Header bar viditelný jen pokud Title nebo SearchVisible. Bez nich
+// EDList vypadá identicky jako před L3 (jen DataGrid).
+```
+
+### Budoucí rozšíření (v dalších commitech)
+
+```csharp
+// L7 (později) — Image sloupec, Codebook field type
+// L8 — CRUD tlačítka (Add/Edit/Delete) → otevírá EDInputForm dialog
+// L9 — Column visibility UI (context menu na header s checkboxes)
+//     — schema ColumnLayout extend o "visibility" pole, backward compat
 ```
 
 ---

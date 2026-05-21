@@ -21,7 +21,15 @@ public class DesignerCanvas
     /// <summary>Minimální výška štítku aby se vešlo textové označení.</summary>
     private const float SectionTabMinLabelPx = 28f;
     private const float PagePaddingPx  = 40f;
+    /// <summary>
+    /// Extra prostor nad stránkou v designeru — kompenzuje vyšší chrome live preview pane
+    /// (header bar + parametry sestavy + page navigation). Drží Y-zarovnání stránky mezi
+    /// designerem a preview, aby vizuálně nebyly posunuté na ose Y.
+    /// </summary>
+    private const float TopBufferPx    = 60f;
     private const float HandleSizePx   = 7f;
+    private const float RulerThicknessPx = 20f;
+    private const float RulerOffsetPx    = 3f;
 
     /// <summary>Extra levý prostor, který potřebuje canvas navíc kvůli štítkům sekcí.</summary>
     public float ExtraLeftPx => _state.ShowSectionHeaders ? SectionTabWidthPx : 0f;
@@ -42,6 +50,11 @@ public class DesignerCanvas
     private static readonly SKColor ClrSelection          = new(0xFF2196F3);
     private static readonly SKColor ClrLocked             = new(0xFFFF8C00); // jantarová pro zamčené elementy
     private static readonly SKColor ClrCondition         = new(0xFF7B1FA2); // fialová pro podmíněné elementy
+    private static readonly SKColor ClrRulerBg           = new(0xFFF2F2F2);
+    private static readonly SKColor ClrRulerBorder       = new(0xFF999999);
+    private static readonly SKColor ClrRulerTick         = new(0xFF555555);
+    private static readonly SKColor ClrRulerText         = new(0xFF333333);
+    private static readonly SKColor ClrRulerHighlight    = new(0x602196F3); // poloprůhledná modrá
 
 
     private readonly DesignerState _state;
@@ -50,18 +63,32 @@ public class DesignerCanvas
 
     public float MmToPx => (96f / 25.4f) * _state.Zoom;
 
+    /// <summary>
+    /// Viditelná oblast canvas v lokálních souřadnicích (set z MainWindow podle ScrollVieweru).
+    /// Default = celý canvas (zero rectangle vypne culling). Používá DrawGrid pro viewport culling
+    /// — bez něj při vysokém zoomu kreslíme tisíce linek mimo viditelnou oblast.
+    /// </summary>
+    public SKRect VisibleViewport { get; set; }
+
     // ─────────────────────────────────────────────────────────────────────
     // Render
 
     public void Render(SKCanvas canvas, float canvasWidth, float canvasHeight)
     {
+        // Viewport clip — při vyšším zoomu je SKElement velký (5000+ px), ale viditelná je
+        // jen malá část. ClipRect umožní Skia přeskočit draw operace mimo viewport
+        // (canvas.Clear, page shadow s blur, sekce atd.). Nepomáhá s alokací a uploadem
+        // buffer surface — to je dáno velikostí SKElementu (viz roadmap Virtualized canvas).
+        if (VisibleViewport.Width > 0 && VisibleViewport.Height > 0)
+            canvas.ClipRect(VisibleViewport);
+
         canvas.Clear(ClrBackground);
 
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;
         float pageH  = template.PageSize.Height * MmToPx;
         float pageX  = CalculatePageX(canvasWidth);
-        float pageY  = PagePaddingPx;
+        float pageY  = PagePaddingPx + TopBufferPx;
 
         DrawPageShadow(canvas, pageX, pageY, pageW, pageH);
         DrawPageBackground(canvas, pageX, pageY, pageW, pageH);
@@ -75,6 +102,10 @@ public class DesignerCanvas
         DrawSnapTargetHighlights(canvas, canvasWidth);
         DrawSelectionOverlay(canvas, canvasWidth);
         DrawSnapLines(canvas, canvasWidth);
+        DrawSectionCenterGuide(canvas, canvasWidth);
+
+        // Pravítka — nad stránkou a vpravo, v existujícím PagePaddingPx prostoru
+        if (_state.ShowRuler) DrawRulers(canvas, pageX, pageY, pageW, pageH, canvasWidth);
 
         // Měřící badge během dragu/resize — zcela nahoře
         DrawDragBadge(canvas);
@@ -294,7 +325,7 @@ public class DesignerCanvas
     {
         var ps      = _state.CurrentTemplate.PageSize;
         float pageX = CalculatePageX(canvasWidth);
-        float pageY = PagePaddingPx;
+        float pageY = PagePaddingPx + TopBufferPx;
 
         float ox       = pageX + ps.MarginLeft * MmToPx;
         float topY     = pageY + ps.MarginTop  * MmToPx;
@@ -338,7 +369,7 @@ public class DesignerCanvas
     {
         _ = canvasWidth; // parametr zachován pro konzistenci API
         var ps = _state.CurrentTemplate.PageSize;
-        return PagePaddingPx + (ps.Height - ps.MarginBottom) * MmToPx;
+        return PagePaddingPx + TopBufferPx + (ps.Height - ps.MarginBottom) * MmToPx;
     }
 
     /// <summary>Výška sekce v px omezená tak, aby nepřesáhla spodní okraj stránky.</summary>
@@ -355,10 +386,16 @@ public class DesignerCanvas
     // ─────────────────────────────────────────────────────────────────────
     // Interní renderovací metody
 
+    // Cache paint + maskfilter — `CreateBlur` je drahý, vytvářet jednou stačí.
+    private static readonly SKPaint _shadowPaint = new()
+    {
+        Color = new SKColor(0x35000000),
+        MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6f)
+    };
+
     private static void DrawPageShadow(SKCanvas canvas, float x, float y, float w, float h)
     {
-        using var p = new SKPaint { Color = new SKColor(0x35000000), MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6f) };
-        canvas.DrawRect(new SKRect(x + 5, y + 5, x + w + 5, y + h + 5), p);
+        canvas.DrawRect(new SKRect(x + 5, y + 5, x + w + 5, y + h + 5), _shadowPaint);
     }
 
     private static void DrawPageBackground(SKCanvas canvas, float x, float y, float w, float h)
@@ -377,20 +414,41 @@ public class DesignerCanvas
     {
         // Grid jen v printable area (kde se pozicují elementy), ne v margins. Slabě modrá, aby nerušila obsah.
         float step   = _state.GridSize * MmToPx;
+        if (step <= 0f) return;
+
         float startX = pageX + ps.MarginLeft  * MmToPx;
         float startY = pageY + ps.MarginTop   * MmToPx;
         float endX   = pageX + (ps.Width  - ps.MarginRight)  * MmToPx;
         float endY   = pageY + (ps.Height - ps.MarginBottom) * MmToPx;
 
+        // Viewport culling — vykresli jen linky uvnitř viditelné oblasti.
+        // Při vysokém zoomu jsou tisíce linek mimo viewport (uživatel je nevidí),
+        // jejich vynechání výrazně zrychlí drag bez vizuální změny.
+        SKRect vp = VisibleViewport;
+        bool cull = vp.Width > 0 && vp.Height > 0;
+        float clipLeft   = cull ? Math.Max(startX, vp.Left)   : startX;
+        float clipRight  = cull ? Math.Min(endX,   vp.Right)  : endX;
+        float clipTop    = cull ? Math.Max(startY, vp.Top)    : startY;
+        float clipBottom = cull ? Math.Min(endY,   vp.Bottom) : endY;
+
+        // První viditelná linka (zaokrouhleno na grid krok pro správné zarovnání)
+        float firstX = startX + MathF.Floor((clipLeft - startX) / step) * step;
+        float firstY = startY + MathF.Floor((clipTop  - startY) / step) * step;
+        if (firstX < startX) firstX = startX;
+        if (firstY < startY) firstY = startY;
+
         using var p = new SKPaint
         {
             Color = ClrGrid,
             StrokeWidth = 0.5f,
-            IsAntialias = true,
+            IsAntialias = true,    // AA potřebné pro pravidelný vzor — bez AA se 0.5px linky
+                                   // zaokrouhlují na pixely a při non-integer kroku vznikají
+                                   // nepravidelnosti. Při viewport culling je linek málo (~100),
+                                   // takže AA má zanedbatelný cost.
         };
-        for (float gx = startX; gx <= endX + 0.1f; gx += step)
+        for (float gx = firstX; gx <= clipRight + 0.1f; gx += step)
             canvas.DrawLine(gx, startY, gx, endY, p);
-        for (float gy = startY; gy <= endY + 0.1f; gy += step)
+        for (float gy = firstY; gy <= clipBottom + 0.1f; gy += step)
             canvas.DrawLine(startX, gy, endX, gy, p);
     }
 
@@ -737,6 +795,36 @@ public class DesignerCanvas
     }
 
     /// <summary>
+    /// Dashed vertical guide line přes celou výšku aktivní sekce, když element snapem
+    /// právě sedí na horizontálním středu sekce. Standardní design tool UX pattern.
+    /// </summary>
+    private void DrawSectionCenterGuide(SKCanvas canvas, float canvasWidth)
+    {
+        if (_state.ActiveSectionCenterX is not { } centerXMm) return;
+        var section = _state.ActiveSection;
+        if (section is null) return;
+
+        var origin = GetSectionOrigins(canvasWidth)
+            .FirstOrDefault(s => s.Section == section);
+        if (origin.Section is null) return;
+
+        float ox = origin.OriginX, oy = origin.OriginY;
+        float sectionHpx = section.EffectiveDesignerHeight * MmToPx;
+
+        using var paint = new SKPaint
+        {
+            Color = new SKColor(0xC000B0FF),   // cyan, polo-transparentní
+            StrokeWidth = 1f,
+            IsStroke = true,
+            IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([4f, 3f], 0)
+        };
+
+        float x = ox + centerXMm * MmToPx;
+        canvas.DrawLine(x, oy, x, oy + sectionHpx, paint);
+    }
+
+    /// <summary>
     /// Kreslí malý barevný čtvereček v pravém dolním rohu elementu.
     /// Barva je deterministická z GroupId — stejná skupina = stejná barva.
     /// </summary>
@@ -751,6 +839,144 @@ public class DesignerCanvas
         var color = ElementGroupHelper.GetGroupColor(groupId);
         using var bg = new SKPaint { Color = color, IsAntialias = true };
         canvas.DrawRoundRect(bx, by, sz, sz, 2f, 2f, bg);
+    }
+
+    /// <summary>
+    /// Pravítka v mm — horizontální nad stránkou, vertikální vpravo od stránky.
+    /// 0mm = okraj stránky. Vejdou se do existujícího PagePaddingPx prostoru, žádná layout změna.
+    /// Zvýrazňuje rozsah vybraného elementu (single) nebo bounding box (multi).
+    /// </summary>
+    private void DrawRulers(SKCanvas canvas, float pageX, float pageY, float pageW, float pageH, float canvasWidth)
+    {
+        float topRulerY   = Math.Max(2f, pageY - RulerOffsetPx - RulerThicknessPx);
+        float rightRulerX = pageX + pageW + RulerOffsetPx;
+
+        // Pořadí: strip (background) → highlight → ticky/text.
+        // Highlight musí být nad pruhem (jinak ho strip přepíše) a pod tickami.
+        DrawRulerStrip(canvas, pageX,       topRulerY, pageW,            RulerThicknessPx);
+        DrawRulerStrip(canvas, rightRulerX, pageY,     RulerThicknessPx, pageH);
+        DrawRulerHighlights(canvas, pageX, pageY, pageW, pageH, topRulerY, rightRulerX, canvasWidth);
+        DrawRulerTicks(canvas, horizontal: true,  pageX,       topRulerY, pageW,            RulerThicknessPx);
+        DrawRulerTicks(canvas, horizontal: false, rightRulerX, pageY,     RulerThicknessPx, pageH);
+    }
+
+    private static void DrawRulerStrip(SKCanvas canvas, float x, float y, float w, float h)
+    {
+        var rect = new SKRect(x, y, x + w, y + h);
+        using var bg = new SKPaint { Color = ClrRulerBg };
+        canvas.DrawRect(rect, bg);
+        using var border = new SKPaint { Color = ClrRulerBorder, IsStroke = true, StrokeWidth = 1f };
+        canvas.DrawRect(rect, border);
+    }
+
+    private void DrawRulerTicks(SKCanvas canvas, bool horizontal, float x, float y, float w, float h)
+    {
+        float mmToPx = MmToPx;
+        // Volba kroku číselných popisků — řídí čitelnost při různém zoomu
+        int numberStep = mmToPx >= 2f ? 10 : (mmToPx >= 1f ? 20 : 50);
+        bool show5mm = mmToPx >= 1.5f;
+        bool show1mm = mmToPx >= 4f;
+
+        float lengthMm = (horizontal ? w : h) / mmToPx;
+
+        // Layout pravítka: ticky/text dělí lateral dimension (tloušťku), ne délku
+        float lateral  = horizontal ? h : w;
+        float tickZone = lateral * 0.45f;
+        float textZone = lateral - tickZone;
+
+        using var tickPaint = new SKPaint { Color = ClrRulerTick, StrokeWidth = 1f, IsAntialias = false };
+        using var font      = new SKFont(SKTypeface.Default, 9f);
+        using var textPaint = new SKPaint { Color = ClrRulerText, IsAntialias = true };
+        var metrics = font.Metrics;
+        float textHeight = -metrics.Ascent + metrics.Descent;
+
+        for (int mm = 0; mm <= (int)lengthMm + 1; mm++)
+        {
+            bool isMajor = mm % 10 == 0;
+            bool isMid   = mm % 5 == 0;
+            if (!isMajor && !isMid && !show1mm) continue;
+            if (!isMajor && isMid && !show5mm) continue;
+
+            float tickLen = isMajor ? tickZone
+                          : isMid   ? tickZone * 0.65f
+                                    : tickZone * 0.40f;
+
+            if (horizontal)
+            {
+                float px = x + mm * mmToPx;
+                if (px > x + w + 0.5f) break;
+                // Tick kreslíme od spodní (vnitřní, k stránce přilehlé) hrany směrem nahoru
+                canvas.DrawLine(px, y + h - tickLen, px, y + h, tickPaint);
+
+                if (isMajor && mm % numberStep == 0 && mm > 0)
+                {
+                    string label = mm.ToString();
+                    float tw = font.MeasureText(label);
+                    // Text v horní polovině pruhu, vertikálně vystředěný v textZone
+                    float textY = y + (textZone - textHeight) / 2f - metrics.Ascent;
+                    canvas.DrawText(label, px - tw / 2f, textY, font, textPaint);
+                }
+            }
+            else
+            {
+                float py = y + mm * mmToPx;
+                if (py > y + h + 0.5f) break;
+                // Tick kreslíme od levé (vnitřní, k stránce přilehlé) hrany směrem doprava
+                canvas.DrawLine(x, py, x + tickLen, py, tickPaint);
+
+                if (isMajor && mm % numberStep == 0 && mm > 0)
+                {
+                    string label = mm.ToString();
+                    float tw = font.MeasureText(label);
+                    // Text rotovaný -90° — čte se zdola nahoru, šetří horizontální místo
+                    float textCenterX = x + tickZone + textZone / 2f;
+                    canvas.Save();
+                    canvas.Translate(textCenterX, py);
+                    canvas.RotateDegrees(-90f);
+                    // dx = -tw/2 centruje text vertikálně kolem py (po rotaci local +X = screen -Y)
+                    // dy posunuje baseline horizontálně tak, aby bbox textu byl centrován na textCenterX
+                    canvas.DrawText(label, -tw / 2f, -(metrics.Ascent + metrics.Descent) / 2f, font, textPaint);
+                    canvas.Restore();
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Modré zvýraznění úseků pravítek pro rozsah vybraných elementů.
+    /// Single = rozsah jednoho elementu, multi = bounding box přes všechny vybrané.
+    /// </summary>
+    private void DrawRulerHighlights(SKCanvas canvas, float pageX, float pageY, float pageW, float pageH,
+        float topRulerY, float rightRulerX, float canvasWidth)
+    {
+        if (_state.SelectedElements.Count == 0) return;
+
+        float minX = float.MaxValue, minY = float.MaxValue;
+        float maxX = float.MinValue, maxY = float.MinValue;
+        foreach (var el in _state.SelectedElements)
+        {
+            var r = GetElementCanvasRect(el, canvasWidth);
+            if (r is null) continue;
+            minX = Math.Min(minX, r.Value.Left);
+            maxX = Math.Max(maxX, r.Value.Right);
+            minY = Math.Min(minY, r.Value.Top);
+            maxY = Math.Max(maxY, r.Value.Bottom);
+        }
+        if (minX >= maxX) return;
+
+        using var hl = new SKPaint { Color = ClrRulerHighlight };
+
+        // Horizontální pravítko — průmět X rozsahu
+        float hx1 = Math.Max(pageX, minX);
+        float hx2 = Math.Min(pageX + pageW, maxX);
+        if (hx2 > hx1)
+            canvas.DrawRect(new SKRect(hx1, topRulerY, hx2, topRulerY + RulerThicknessPx), hl);
+
+        // Vertikální pravítko — průmět Y rozsahu
+        float hy1 = Math.Max(pageY, minY);
+        float hy2 = Math.Min(pageY + pageH, maxY);
+        if (hy2 > hy1)
+            canvas.DrawRect(new SKRect(rightRulerX, hy1, rightRulerX + RulerThicknessPx, hy2), hl);
     }
 
     /// <summary>

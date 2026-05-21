@@ -1,6 +1,22 @@
 # Glob: CACHE/**
 
-## Caché AgendaAPI architektura (implementováno)
+## Caché namespace struktura
+
+`ALVA.TemplateDesigner.*` se dělí **podle role třídy** do folder/namespace:
+
+- **`ALVA.TemplateDesigner.API.*`** — obecná business logika TD projektu (cross-cutting). Příklady: `Sablony` (CRUD šablon), v budoucnu `UserPreferences`, `SectionTemplates`.
+- **`ALVA.TemplateDesigner.Agendy.*`** — agenda implementations (data sources). Příklady: `BaseAgenda` (abstract base), `ZastavkoveJrMhd`, `Faktury`.
+- **`ALVA.TemplateDesigner.EDList.*`** — dispatch třídy pro EDList komponentu (UI contract). Příklady: `Sablony` (backing pro CacheTemplatePickerDialog), `Instance` (backing pro InstancePickerDialog).
+- **`ALVA.TemplateDesigner.EDInputForm.*`** — dispatch třídy pro EDInputForm komponentu (Wave 4, zatím prázdné).
+- **`ALVA.TemplateDesigner.EDInputGrid.*`** — dispatch třídy pro EDInputGrid (až bude potřeba).
+
+**Klíčový princip:** folder/namespace 1:1 mapuje na **roli třídy**. Doménový název může opakovat napříč rolemi — `API.Sablony` (CRUD) vs `EDList.Sablony` (EDList dispatch nad šablonami) jsou jasně rozlišené namespace prefixem.
+
+Folder = namespace prefix; class name musí odpovídat file path (InterSystems convention).
+
+---
+
+## Caché BaseAgenda architektura (implementováno)
 
 Každá agenda (JR, FAKTURY, ...) má jednu Caché třídu dědící z abstraktního základu.
 Třída slouží jako **kompletní API rozhraní** pro TemplateDesigner — design-time i print-time.
@@ -8,7 +24,7 @@ Třída slouží jako **kompletní API rozhraní** pro TemplateDesigner — desi
 ### Abstraktní základ — vynucuje kontrakt
 
 ```objectscript
-Class ALVA.TemplateDesigner.AgendaAPI Extends %RegisteredObject [ Abstract ]
+Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
 {
     /// Vrátí DataSchema: skalární pole + skupiny tabulek (scope=table)
     ClassMethod GetSchema(ByRef sys As %String) As %Status [ Abstract ] {}
@@ -37,7 +53,7 @@ Každá nová agenda **musí** implementovat všech pět metod — Caché kompil
 ### Implementace per agenda
 
 ```objectscript
-Class ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI Extends ALVA.TemplateDesigner.API.AgendaAPI
+Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
     ClassMethod GetSchema(ByRef sys As %String) As %Status
     {
@@ -221,8 +237,8 @@ Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `Cac
 ```json
 {
   "agendas": [
-    { "code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI" },
-    { "code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerFAKTURY" }
+    { "code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" },
+    { "code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury" }
   ]
 }
 ```
@@ -232,7 +248,7 @@ Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `Cac
 // Implementuje IDataSchemaProvider + ITableTemplateProvider
 class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 {
-    string _cacheClass;   // "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI"
+    string _cacheClass;   // "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
     MLRest _mlRest;
 
     // IDataSchemaProvider
@@ -253,7 +269,7 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
 ### Přidání nové agendy — checklist
 
-1. Vytvořit Caché třídu `ALVA.TemplateDesigner.API.<Agenda>API Extends ALVA.TemplateDesigner.API.AgendaAPI`
+1. Vytvořit Caché třídu `ALVA.TemplateDesigner.Agendy.<Agenda> Extends ALVA.TemplateDesigner.Agendy.BaseAgenda`
 2. Implementovat `GetSchema`, `GetTableTemplates`, `GetTableTemplate`, `GetData`, `GetMockData`
 3. Přidat záznam do `templatedesigner.appsettings.json` → `agendas[]`
 4. Volitelně: přidat `schemas/<Agenda>.schema.json` jako offline fallback

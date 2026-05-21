@@ -4,4 +4,5 @@ public enum EDPopupButtons
 {
     Ok,
     AnoNe,
+    AnoNeStorno,
 }

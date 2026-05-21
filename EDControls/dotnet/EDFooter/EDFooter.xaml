@@ -10,9 +10,9 @@
     </UserControl.Resources>
 
     <Border Padding="8,6,8,6"
-            BorderBrush="#DDDDDD"
+            BorderBrush="{DynamicResource EDTheme.Border.Light}"
             BorderThickness="0,1,0,0"
-            Background="#F8F8F8">
+            Background="{DynamicResource EDTheme.Bg.Footer}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>

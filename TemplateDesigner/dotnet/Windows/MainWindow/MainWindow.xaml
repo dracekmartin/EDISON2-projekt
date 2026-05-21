@@ -5,6 +5,7 @@
         xmlns:local="clr-namespace:TemplateDesigner"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         Title="Template Designer" Height="768" Width="1280"
+        Icon="{StaticResource EDIcons.Molecule}"
         WindowState="Maximized"
         Closing="Window_Closing">
     <Window.Resources>
@@ -14,11 +15,11 @@
                 <ResourceDictionary Source="/Controls/ParameterTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
             <Style x:Key="PanelHeader" TargetType="TextBlock">
-                <Setter Property="Background"   Value="#F0F0F0"/>
+                <Setter Property="Background"   Value="{DynamicResource EDTheme.Bg.Panel}"/>
                 <Setter Property="Padding"      Value="8,6"/>
                 <Setter Property="FontWeight"   Value="SemiBold"/>
-                <Setter Property="FontSize"     Value="12"/>
-                <Setter Property="Foreground"   Value="#333333"/>
+                <Setter Property="FontSize"     Value="{DynamicResource EDTheme.FontSize.Header}"/>
+                <Setter Property="Foreground"   Value="{DynamicResource EDTheme.Text.Primary}"/>
             </Style>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
@@ -31,8 +32,8 @@
                         Tag="{Binding}">
                     <Border.Style>
                         <Style TargetType="Border">
-                            <Setter Property="Background"       Value="#F5F5F5"/>
-                            <Setter Property="BorderBrush"      Value="#D2D2D2"/>
+                            <Setter Property="Background"       Value="{DynamicResource EDTheme.Bg.PanelAlt}"/>
+                            <Setter Property="BorderBrush"      Value="{DynamicResource EDTheme.Border.Light}"/>
                             <Setter Property="BorderThickness"  Value="1"/>
                             <Style.Triggers>
                                 <!-- Dynamic (non-active) -->
@@ -41,13 +42,13 @@
                                         <Condition Binding="{Binding IsDynamic}" Value="True"/>
                                         <Condition Binding="{Binding IsActive}"  Value="False"/>
                                     </MultiDataTrigger.Conditions>
-                                    <Setter Property="Background"  Value="#EAF3FF"/>
-                                    <Setter Property="BorderBrush" Value="#B4D2F5"/>
+                                    <Setter Property="Background"  Value="{DynamicResource EDTheme.Accent.BlueBg}"/>
+                                    <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Accent.BlueBorder}"/>
                                 </MultiDataTrigger>
                                 <!-- Active -->
                                 <DataTrigger Binding="{Binding IsActive}" Value="True">
-                                    <Setter Property="Background"      Value="#D2E6FF"/>
-                                    <Setter Property="BorderBrush"     Value="#2196F3"/>
+                                    <Setter Property="Background"      Value="{DynamicResource EDTheme.Accent.BlueSelected}"/>
+                                    <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Accent.Blue}"/>
                                     <Setter Property="BorderThickness" Value="2"/>
                                 </DataTrigger>
                             </Style.Triggers>
@@ -85,7 +86,7 @@
                                 ToolTip="Přesunout nahoru (Ctrl+Shift+↑)"/>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}"
-                                       FontSize="12"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Header}"
                                        TextTrimming="CharacterEllipsis">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -99,8 +100,8 @@
                                 </TextBlock.Style>
                             </TextBlock>
                             <TextBlock Text="{Binding Subtitle}"
-                                       FontSize="10"
-                                       Foreground="Gray"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
                                        TextTrimming="CharacterEllipsis">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
@@ -125,13 +126,17 @@
     <DockPanel LastChildFill="True">
 
         <!-- ═══ Menu ═══ -->
-        <Menu DockPanel.Dock="Top" Background="#F8F8F8">
+        <Menu DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.Footer}">
             <MenuItem Header="Soubor">
                 <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="Ctrl+N" Click="MenuNew_Click"/>
-                <MenuItem x:Name="MenuOpen"   Header="Otevřít..."    InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
+                <MenuItem x:Name="MenuOpen"   Header="Otevřít ze souboru..."  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
+                <MenuItem x:Name="MenuOpenFromCache" Header="Otevřít z Caché..." Command="{Binding OpenFromCacheCommand}"/>
+                <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSave"   Header="Uložit"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
-                <MenuItem x:Name="MenuSaveAs" Header="Uložit jako..."                          Click="MenuSaveAs_Click"/>
+                <MenuItem x:Name="MenuSaveAs" Header="Uložit jako soubor..."                  Click="MenuSaveAs_Click"/>
+                <MenuItem x:Name="MenuSaveToCache"   Header="Uložit do Caché"          Command="{Binding SaveToCacheCommand}"/>
+                <MenuItem x:Name="MenuSaveToCacheAs" Header="Uložit do Caché jako..." Command="{Binding SaveToCacheAsCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF..." Click="MenuExportPdf_Click"/>
                 <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG..." Click="MenuExportPng_Click"/>
@@ -166,6 +171,17 @@
                 <Separator/>
                 <MenuItem Header="Normalizovat pozice…" InputGestureText="Ctrl+Shift+N" Click="MenuNormalizePositions_Click"/>
                 <Separator/>
+                <MenuItem Header="Škálovat šablonu">
+                    <MenuItem Header="50 %"  Tag="0.5"  Click="MenuScale_Click"/>
+                    <MenuItem Header="75 %"  Tag="0.75" Click="MenuScale_Click"/>
+                    <MenuItem Header="90 %"  Tag="0.9"  Click="MenuScale_Click"/>
+                    <MenuItem Header="100 %" Tag="1.0"  Click="MenuScale_Click"/>
+                    <MenuItem Header="110 %" Tag="1.1"  Click="MenuScale_Click"/>
+                    <MenuItem Header="125 %" Tag="1.25" Click="MenuScale_Click"/>
+                    <MenuItem Header="150 %" Tag="1.5"  Click="MenuScale_Click"/>
+                    <MenuItem Header="200 %" Tag="2.0"  Click="MenuScale_Click"/>
+                </MenuItem>
+                <Separator/>
                 <MenuItem Header="Kopírovat styl"  InputGestureText="Ctrl+Shift+C" Click="MenuCopyStyle_Click"/>
                 <MenuItem Header="Vložit styl"     InputGestureText="Ctrl+Shift+V" Click="MenuPasteStyle_Click"/>
             </MenuItem>
@@ -178,6 +194,8 @@
                           IsChecked="{Binding SnapToElements, Mode=TwoWay}"/>
                 <MenuItem Header="Záhlaví sekcí" IsCheckable="True"
                           IsChecked="{Binding ShowSectionHeaders, Mode=TwoWay}"/>
+                <MenuItem Header="Pravítka" IsCheckable="True"
+                          IsChecked="{Binding ShowRuler, Mode=TwoWay}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
@@ -185,6 +203,11 @@
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
+                <MenuItem x:Name="MenuChangeAgenda" Header="Změnit agendu..." InputGestureText="Ctrl+Shift+A"
+                          Command="{Binding ChangeAgendaCommand}"/>
+                <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v Caché..."
+                          Command="{Binding OpenFromCacheCommand}"/>
+                <Separator/>
                 <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon..." Click="MenuAiAssistant_Click"/>
                 <MenuItem x:Name="MenuImportPdf" Header="Import PDF..." Click="MenuImportPdf_Click"/>
             </MenuItem>
@@ -194,7 +217,7 @@
         </Menu>
 
         <!-- ═══ Toolbar ═══ -->
-        <Border DockPanel.Dock="Top" Background="#F8F8F8" BorderBrush="#E0E0E0" BorderThickness="0,0,0,1" Padding="4,2">
+        <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.Footer}" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1" Padding="4,2">
             <StackPanel Orientation="Horizontal">
 
                 <!-- ── 1. Soubor ── -->
@@ -248,40 +271,40 @@
                 <!-- ── 4. Elementy (drag-to-canvas paleta) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Text — táhni na canvas" Tag="TextElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Text" Tag="TextElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TextElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obdélník — táhni na canvas" Tag="RectangleElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obdélník" Tag="RectangleElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.RectElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Čára — táhni na canvas" Tag="LineElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Čára" Tag="LineElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.LineElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obrázek — táhni na canvas" Tag="ImageElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Obrázek" Tag="ImageElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.ImageElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka — táhni na canvas" Tag="TableElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka" Tag="TableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, ...) — táhni na canvas" Tag="BarcodeElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, EAN, ...)" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Width="16" Height="16"/>
                         </Button>
-                        <Border Width="1" Background="#E0E0E0" Margin="3,2" VerticalAlignment="Stretch"/>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek — táhni na canvas" Tag="StopListElement"
+                        <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů — táhni na canvas" Tag="DepartureGridElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů" Tag="DepartureGridElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.DepartureGrid}" Width="16" Height="16"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek — táhni na canvas" Tag="NotesLegendElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek" Tag="NotesLegendElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.NotesLegend}" Width="16" Height="16"/>
                         </Button>
@@ -331,7 +354,7 @@
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Zarovnat dolů" Click="BtnAlignBottom_Click">
                             <Image Source="{StaticResource EDIcons.AlignBottom}" Width="16" Height="16"/>
                         </Button>
-                        <Border Width="1" Background="#E0E0E0" Margin="3,2" VerticalAlignment="Stretch"/>
+                        <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Rozložit rovnoměrně vodorovně (min 3)" Click="BtnDistributeH_Click">
                             <Image Source="{StaticResource EDIcons.DistributeH}" Width="16" Height="16"/>
                         </Button>
@@ -343,31 +366,37 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
-                <!-- ── 7. Zobrazení ── -->
+                <!-- ── 7. Mřížka & snap ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <ToggleButton x:Name="BtnGrid" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt mřížku"
+                        <!-- Mřížka: zobrazit + velikost -->
+                        <ToggleButton x:Name="BtnGrid" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit mřížku"
                                       IsChecked="{Binding ShowGrid, Mode=TwoWay}">
                             <Image Source="{StaticResource EDIcons.Grid}" Width="16" Height="16"/>
-                        </ToggleButton>
-                        <ToggleButton x:Name="BtnSnap" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytit na mřížku"
-                                      IsChecked="{Binding SnapToGrid, Mode=TwoWay}">
-                            <Image Source="{StaticResource EDIcons.Snap}" Width="16" Height="16"/>
-                        </ToggleButton>
-                        <ToggleButton x:Name="BtnSnapElements" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytávat k objektům (elementy + okraje sekce)"
-                                      IsChecked="{Binding SnapToElements, Mode=TwoWay}">
-                            <Image Source="{StaticResource EDIcons.Snap}" Width="16" Height="16" Opacity="0.6"/>
                         </ToggleButton>
                         <ComboBox x:Name="CmbGridSize" Width="70" VerticalAlignment="Center" Margin="2,0"
                                   ToolTip="Velikost mřížky" SelectedIndex="4"
                                   SelectionChanged="CmbGridSize_SelectionChanged">
-                            <ComboBoxItem Content="0,1 mm" Tag="0.1"/>
+                            <ComboBoxItem Content="0,2 mm" Tag="0.2"/>
                             <ComboBoxItem Content="0,5 mm" Tag="0.5"/>
                             <ComboBoxItem Content="1 mm"   Tag="1"/>
                             <ComboBoxItem Content="2 mm"   Tag="2"/>
                             <ComboBoxItem Content="5 mm"   Tag="5"/>
                             <ComboBoxItem Content="10 mm"  Tag="10"/>
                         </ComboBox>
+
+                        <!-- Vizuální oddělovač podskupin "Mřížka" vs "Snap" -->
+                        <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="6,2" VerticalAlignment="Stretch"/>
+
+                        <!-- Snap k mřížce -->
+                        <ToggleButton x:Name="BtnSnap" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytit k mřížce"
+                                      IsChecked="{Binding SnapToGrid, Mode=TwoWay}"
+                                      Content="M" FontSize="11" FontWeight="SemiBold"/>
+
+                        <!-- Snap k objektům + mezera -->
+                        <ToggleButton x:Name="BtnSnapElements" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytávat k objektům (elementy + okraje sekce)"
+                                      IsChecked="{Binding SnapToElements, Mode=TwoWay}"
+                                      Content="O" FontSize="11" FontWeight="SemiBold"/>
                         <ComboBox x:Name="CmbSnapGap" Width="90" VerticalAlignment="Center" Margin="2,0"
                                   ToolTip="Mezera mezi objekty při snapu a duplikaci"
                                   SelectedIndex="2"
@@ -379,42 +408,43 @@
                             <ComboBoxItem Content="5 mm"  Tag="5"/>
                             <ComboBoxItem Content="10 mm" Tag="10"/>
                         </ComboBox>
+                    </StackPanel>
+                    <TextBlock Text="Mřížka &amp; snap" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── 8. Zoom ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ComboBox x:Name="CmbZoom" Width="80" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
+                                  ToolTip="Zoom designeru"
                                   SelectionChanged="CmbZoom_SelectionChanged">
-                            <ComboBoxItem Content="  50 %"/>
-                            <ComboBoxItem Content="  75 %"/>
-                            <ComboBoxItem Content=" 100 %"/>
-                            <ComboBoxItem Content=" 150 %"/>
-                            <ComboBoxItem Content=" 200 %"/>
-                            <ComboBoxItem Content=" 300 %"/>
-                            <ComboBoxItem Content=" 400 %"/>
-                            <ComboBoxItem Content=" 500 %"/>
-                            <ComboBoxItem Content=" 800 %"/>
-                            <ComboBoxItem Content="1000 %"/>
+                            <ComboBoxItem Content=" 50 %"/>
+                            <ComboBoxItem Content=" 75 %"/>
+                            <ComboBoxItem Content="100 %"/>
+                            <ComboBoxItem Content="150 %"/>
+                            <ComboBoxItem Content="200 %"/>
+                            <ComboBoxItem Content="300 %"/>
+                            <ComboBoxItem Content="400 %"/>
+                            <ComboBoxItem Content="500 %"/>
                         </ComboBox>
                         <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
                                 ToolTip="Resetovat zoom designeru i náhledu na 100 %"
                                 Click="BtnResetView_Click" Content="1:1" FontSize="11" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Text="Zoom" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── 9. Panely ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
                                       IsChecked="True" Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed">
                             <Image Source="{StaticResource EDIcons.Eye}" Width="16" Height="16"/>
                         </ToggleButton>
-                        <Border Width="1" Background="#D0D0D0" Margin="4,2" VerticalAlignment="Stretch"/>
-                        <ComboBox x:Name="CmbScale" Width="90" VerticalAlignment="Center" Margin="2,0"
-                                  ToolTip="Škálovat celou šablonu"
-                                  SelectionChanged="CmbScale_SelectionChanged">
-                            <ComboBoxItem Content="Škálovat..." IsEnabled="False"/>
-                            <ComboBoxItem Content="50 %"  Tag="0.5"/>
-                            <ComboBoxItem Content="75 %"  Tag="0.75"/>
-                            <ComboBoxItem Content="90 %"  Tag="0.9"/>
-                            <ComboBoxItem Content="100 %" Tag="1.0"/>
-                            <ComboBoxItem Content="110 %" Tag="1.1"/>
-                            <ComboBoxItem Content="125 %" Tag="1.25"/>
-                            <ComboBoxItem Content="150 %" Tag="1.5"/>
-                            <ComboBoxItem Content="200 %" Tag="2.0"/>
-                        </ComboBox>
                     </StackPanel>
-                    <TextBlock Text="Zobrazení" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Náhled" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
 
             </StackPanel>
@@ -441,21 +471,14 @@
 
             <!-- ── Panel sekcí + pole agendy ── -->
             <Border Grid.Column="0" Grid.Row="0"
-                    BorderBrush="#DDDDDD" BorderThickness="0,0,1,0">
+                    BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,1,0">
                 <TabControl x:Name="LeftTabControl" SelectionChanged="LeftTabControl_SelectionChanged">
-                    <TabControl.Resources>
-                        <Style TargetType="TabItem">
-                            <Setter Property="Padding" Value="8,4"/>
-                            <Setter Property="FontSize" Value="11"/>
-                        </Style>
-                    </TabControl.Resources>
-
                     <!-- ── Záložka Sekce ── -->
                     <TabItem Header="▣ Sekce">
                         <DockPanel>
                             <Border DockPanel.Dock="Bottom"
-                                    BorderBrush="#DDDDDD" BorderThickness="0,1,0,0"
-                                    Padding="6" Background="#FAFAFA">
+                                    BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
+                                    Padding="6" Background="{DynamicResource EDTheme.Bg.Footer}">
                                 <Button x:Name="BtnAddSectionPanel" Content="+ Přidat sekci"
                                         Click="BtnAddSection_Click" HorizontalAlignment="Stretch" Padding="4,4"/>
                             </Border>
@@ -494,19 +517,25 @@
                         <DockPanel>
                             <!-- Záhlaví: název agendy -->
                             <Border DockPanel.Dock="Top"
-                                    BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
-                                    Background="#F0F0F0" Padding="8,5">
+                                    BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
+                                    Background="{DynamicResource EDTheme.Bg.Panel}" Padding="8,5"
+                                    Cursor="Hand"
+                                    ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick"
+                                                  Command="{Binding ChangeAgendaCommand}"/>
+                                </Border.InputBindings>
                                 <TextBlock x:Name="AgendaNameTextBlock"
                                            Text="{Binding AgendaNameText}"
-                                           FontSize="11" Foreground="#555555"
+                                           FontSize="11" Foreground="{DynamicResource EDTheme.Text.Secondary}"
                                            TextTrimming="CharacterEllipsis"/>
                             </Border>
                             <!-- Tip dole -->
                             <Border DockPanel.Dock="Bottom"
-                                    BorderBrush="#DDDDDD" BorderThickness="0,1,0,0"
-                                    Background="#FAFAFA" Padding="6,4">
+                                    BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
+                                    Background="{DynamicResource EDTheme.Bg.Footer}" Padding="6,4">
                                 <TextBlock Text="💡 Dvojklik = vložit {POLE}"
-                                           FontSize="10" Foreground="#888888"
+                                           FontSize="10" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                            TextWrapping="Wrap"/>
                             </Border>
                             <!-- Data-bound schema tree -->
@@ -521,16 +550,16 @@
                                                               ItemsSource="{Binding Fields}">
                                         <TextBlock Text="{Binding Header}"
                                                    FontWeight="SemiBold" FontSize="11"
-                                                   Foreground="#444444"/>
+                                                   Foreground="{DynamicResource EDTheme.Text.Header}"/>
                                     </HierarchicalDataTemplate>
                                     <!-- SchemaFieldVM: leaf field -->
                                     <DataTemplate DataType="{x:Type local:SchemaFieldVM}">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding FieldName}"
                                                        FontFamily="Consolas" FontSize="11"
-                                                       Foreground="#1A5276"/>
+                                                       Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                                             <TextBlock Text="{Binding LabelDisplay}"
-                                                       FontSize="10" Foreground="#666666"/>
+                                                       FontSize="10" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </TreeView.Resources>
@@ -558,29 +587,44 @@
 
             <!-- ── GridSplitter levý ── -->
             <GridSplitter Grid.Column="1" Grid.Row="0"
-                          HorizontalAlignment="Stretch" Background="#DDDDDD" Cursor="SizeWE"/>
+                          HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Border.Light}" Cursor="SizeWE"/>
 
             <!-- ── Canvas ── -->
             <ScrollViewer Grid.Column="2" Grid.Row="0"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
-                          Background="#E0E0E0"
+                          Background="{DynamicResource EDTheme.Border.Light}"
                           x:Name="CanvasScrollViewer">
-                <skia:SKElement x:Name="skCanvas" Width="900" Height="1200"/>
+                <Grid>
+                    <skia:SKElement x:Name="skCanvas" Width="900" Height="1200"/>
+                    <!-- Overlay pro inline edit TextElement. Canvas bez Backgroundu nezachycuje
+                         hit testy mimo TextBox; SKElement dostává mouse eventy normálně.
+                         Velikost se synchronizuje se skCanvas přes ElementName binding. -->
+                    <Canvas x:Name="InlineEditOverlay"
+                            Width="{Binding ElementName=skCanvas, Path=Width}"
+                            Height="{Binding ElementName=skCanvas, Path=Height}">
+                        <TextBox x:Name="InlineEditBox" Visibility="Collapsed"
+                                 BorderThickness="1.5" BorderBrush="{DynamicResource EDTheme.Accent.Blue}"
+                                 Background="White" Padding="2"
+                                 AcceptsReturn="True" AcceptsTab="False"
+                                 PreviewKeyDown="InlineEditBox_PreviewKeyDown"
+                                 LostKeyboardFocus="InlineEditBox_LostKeyboardFocus"/>
+                    </Canvas>
+                </Grid>
             </ScrollViewer>
 
             <!-- ── GridSplitter pravý ── -->
             <GridSplitter Grid.Column="3" Grid.Row="0"
-                          HorizontalAlignment="Stretch" Background="#DDDDDD" Cursor="SizeWE"/>
+                          HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Border.Light}" Cursor="SizeWE"/>
 
             <!-- ── Live Preview (výchozí: skrytý, panel se zobrazí togglem) ── -->
             <Border Grid.Column="4" Grid.Row="0"
-                    BorderBrush="#DDDDDD" BorderThickness="1,0,0,0">
+                    BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,0,0">
                 <DockPanel>
                     <!-- Záhlaví preview panelu -->
                     <Border DockPanel.Dock="Top"
-                            Background="#F0F0F0"
-                            BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
+                            Background="{DynamicResource EDTheme.Bg.Panel}"
+                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                             Padding="8,4">
                         <DockPanel>
                             <Button DockPanel.Dock="Right" Content="PNG"
@@ -593,27 +637,25 @@
                                       Width="80" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
                                       ToolTip="Zoom náhledu (Ctrl+Scroll)"
                                       SelectionChanged="CmbPreviewZoom_SelectionChanged">
-                                <ComboBoxItem Content="  50 %"/>
-                                <ComboBoxItem Content="  75 %"/>
-                                <ComboBoxItem Content=" 100 %"/>
-                                <ComboBoxItem Content=" 150 %"/>
-                                <ComboBoxItem Content=" 200 %"/>
-                                <ComboBoxItem Content=" 300 %"/>
-                                <ComboBoxItem Content=" 400 %"/>
-                                <ComboBoxItem Content=" 500 %"/>
-                                <ComboBoxItem Content=" 800 %"/>
-                                <ComboBoxItem Content="1000 %"/>
+                                <ComboBoxItem Content=" 50 %"/>
+                                <ComboBoxItem Content=" 75 %"/>
+                                <ComboBoxItem Content="100 %"/>
+                                <ComboBoxItem Content="150 %"/>
+                                <ComboBoxItem Content="200 %"/>
+                                <ComboBoxItem Content="300 %"/>
+                                <ComboBoxItem Content="400 %"/>
+                                <ComboBoxItem Content="500 %"/>
                             </ComboBox>
                             <TextBlock Text="Náhled  ·  vzorová data ze schématu"
-                                       FontSize="11" Foreground="#666666"
+                                       FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                        VerticalAlignment="Center"/>
                         </DockPanel>
                     </Border>
                     <!-- Parametry sestavy -->
                     <Border x:Name="PreviewParamsBorder" DockPanel.Dock="Top"
                             Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}"
-                            Background="#FAFAFA"
-                            BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
+                            Background="{DynamicResource EDTheme.Bg.Footer}"
+                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                             Padding="8,6">
                         <ItemsControl ItemsSource="{Binding PreviewParameters}"
                                       ItemTemplateSelector="{StaticResource ParamTemplateSelector}">
@@ -628,14 +670,14 @@
                     <!-- Stránkování dat -->
                     <Border DockPanel.Dock="Top"
                             Visibility="{Binding HasMultiplePages, Converter={StaticResource BoolToVis}}"
-                            Background="#F5F5F5"
-                            BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
+                            Background="{DynamicResource EDTheme.Bg.PanelAlt}"
+                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                             Padding="8,3">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button Content="◀" Command="{Binding PreviousPageCommand}"
                                     FontSize="11" Padding="8,1" MinWidth="28"/>
                             <TextBlock Text="{Binding PageNavigationText}"
-                                       FontSize="11" Foreground="#444444"
+                                       FontSize="11" Foreground="{DynamicResource EDTheme.Text.Header}"
                                        VerticalAlignment="Center" Margin="8,0"
                                        MinWidth="40" TextAlignment="Center"/>
                             <Button Content="▶" Command="{Binding NextPageCommand}"
@@ -647,7 +689,7 @@
                     <ScrollViewer x:Name="PreviewScrollViewer"
                                   HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
-                                  Background="#E8E8E8">
+                                  Background="{DynamicResource EDTheme.Bg.Hover}">
                         <skia:SKElement x:Name="skPreview" HorizontalAlignment="Left" Height="800"/>
                     </ScrollViewer>
                 </DockPanel>
@@ -655,11 +697,73 @@
 
             <!-- ── Status bar ── -->
             <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="5"
-                    Background="#F0F0F0" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
-                <TextBlock x:Name="StatusText"
-                           Text="{Binding StatusText}"
-                           VerticalAlignment="Center" Margin="10,0"
-                           FontSize="11" Foreground="#555555"/>
+                    Background="{DynamicResource EDTheme.Bg.Panel}"
+                    BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                    BorderThickness="0,1,0,0">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
+                    <Border Grid.Column="0"
+                            Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3"
+                            Cursor="Hand"
+                            ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding ChangeAgendaCommand}"/>
+                        </Border.InputBindings>
+                        <TextBlock Text="{Binding AgendaNameText}"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                   Foreground="{DynamicResource EDTheme.Accent.GreenDark}"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+
+                    <Border Grid.Column="1" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
+
+                    <!-- 2) Instance chip (klikatelný — OpenInstancePicker) -->
+                    <Border Grid.Column="2"
+                            Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3"
+                            Cursor="Hand"
+                            ToolTip="Klikni pro výběr instancí (linky, faktury, ...)">
+                        <Border.InputBindings>
+                            <MouseBinding MouseAction="LeftClick" Command="{Binding OpenInstancePickerCommand}"/>
+                        </Border.InputBindings>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="◀" Command="{Binding PreviousInstanceCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,0"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                    Cursor="Hand" Margin="0,0,4,0"
+                                    ToolTip="Předchozí instance"/>
+                            <TextBlock Text="{Binding ActiveInstanceText}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                       FontWeight="SemiBold"
+                                       VerticalAlignment="Center"/>
+                            <Button Content="▶" Command="{Binding NextInstanceCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,0"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                    Cursor="Hand" Margin="4,0,0,0"
+                                    ToolTip="Další instance"/>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="3" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
+
+                    <!-- 3) Dynamický kontextový status -->
+                    <TextBlock x:Name="StatusText" Grid.Column="4"
+                               Text="{Binding StatusText}"
+                               VerticalAlignment="Center" Margin="10,0"
+                               FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                               Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                </Grid>
             </Border>
 
         </Grid>

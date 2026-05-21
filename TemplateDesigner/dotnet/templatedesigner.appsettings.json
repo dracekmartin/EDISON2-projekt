@@ -9,19 +9,6 @@
     "Mlp": "167"
   },
 
-  "agendas": [
-    {
-      "code":       "MHD",
-      "name":       "Zastávkový JŘ MHD",
-      "cacheClass": "ALVA.TemplateDesigner.API.ZastavkoveJrMhdAPI"
-    },
-    {
-      "code":       "FAKTURY",
-      "name":       "Faktury",
-      "cacheClass": "ALVA.TemplateDesigner.API.TemplateDesignerFAKTURY"
-    }
-  ],
-
   "aiAssistant": {
     "enabled": true,
     "anthropicApiKey": ""

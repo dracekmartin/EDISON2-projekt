@@ -16,6 +16,7 @@ using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
+using TemplateDesigner.Services;
 using ALWA.SYS;
 
 namespace TemplateDesigner;
@@ -48,6 +49,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public  IDataSchemaProvider    SchemaProvider        { get; }
     public  CacheAgendaProvider?   CacheProvider         { get; }
     public  ITableTemplateProvider? TableTemplateProvider => CacheProvider;
+    public  Services.CacheTemplateService? TemplateStorage { get; }
     private readonly SectionTemplateManager _sectionTemplates;
 
     // ── Preview params ────────────────────────────────────────────────────────
@@ -55,6 +57,119 @@ public class TemplateDesignerViewModel : EDViewModel
     private readonly Dictionary<string,object?> _previewParams       = new();
     private Dictionary<string,object?>?         _cachedParamValues;
     private string?                             _lastParamsAgendaCode;
+
+    // ── Active instances (linky pro MHD, faktury pro FAKTURY, ...) ────────────
+    // Mimo Template — session state vázané na aktuální agendu. Preview rendruje vždy
+    // jednu (aktivní index), tisk batch projíždí všechny.
+    private List<AgendaInstance> _activeInstances = [];
+    public IReadOnlyList<AgendaInstance> ActiveInstances => _activeInstances;
+
+    private int _activeInstanceIndex;
+    public int ActiveInstanceIndex
+    {
+        get => _activeInstanceIndex;
+        set
+        {
+            if (_activeInstances.Count == 0) { _activeInstanceIndex = 0; return; }
+            var clamped = Math.Clamp(value, 0, _activeInstances.Count - 1);
+            if (_activeInstanceIndex != clamped)
+            {
+                _activeInstanceIndex = clamped;
+                OnActiveInstancesChanged(reloadData: true);
+            }
+        }
+    }
+
+    public AgendaInstance? CurrentActiveInstance =>
+        _activeInstances.Count > 0 && _activeInstanceIndex < _activeInstances.Count
+            ? _activeInstances[_activeInstanceIndex] : null;
+
+    public string ActiveInstanceText
+    {
+        get
+        {
+            if (_activeInstances.Count == 0) return "Instance: — (klikni pro výběr)";
+            var cur = CurrentActiveInstance;
+            return _activeInstances.Count == 1
+                ? $"Instance: {cur?.Display}"
+                : $"Instance: {cur?.Display} ({_activeInstanceIndex + 1}/{_activeInstances.Count})";
+        }
+    }
+
+    public bool HasMultipleActiveInstances => _activeInstances.Count > 1;
+
+    /// <summary>Vyčistí aktivní instance — volá se při změně agendy / načtení šablony s jinou agendou.</summary>
+    private void ClearActiveInstances()
+    {
+        if (_activeInstances.Count == 0) return;
+        _activeInstances = [];
+        _activeInstanceIndex = 0;
+        OnActiveInstancesChanged(reloadData: false);
+    }
+
+    private void OnActiveInstancesChanged(bool reloadData)
+    {
+        OnPropertyChanged(nameof(ActiveInstanceText));
+        OnPropertyChanged(nameof(CurrentActiveInstance));
+        OnPropertyChanged(nameof(HasMultipleActiveInstances));
+        if (reloadData)
+        {
+            // Invalidate cached real data, fetch nového v pozadí
+            _realPreviewData = null;
+            _realPreviewIndex = 0;
+            OnPropertyChanged(nameof(RealPreviewPageCount));
+            OnPropertyChanged(nameof(RealPreviewIndex));
+            OnPropertyChanged(nameof(PageNavigationText));
+            OnPropertyChanged(nameof(HasMultiplePages));
+            RequestPreviewRefresh?.Invoke();
+            _ = RefreshDataForCurrentInstanceAsync();
+        }
+        CommandManager.InvalidateRequerySuggested();
+    }
+
+    /// <summary>Caché GetData pro aktuální instanci → _realPreviewData. Async, fire-and-forget.</summary>
+    private async Task RefreshDataForCurrentInstanceAsync()
+    {
+        var instance = CurrentActiveInstance;
+        if (CacheProvider is null || instance is null) return;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return;
+
+        try
+        {
+            StatusText = $"Načítám data: {instance.Display}…";
+            var paramName = InstanceParamName(agendaCode);
+            var pages = await Task.Run(() => CacheProvider.GetData(
+                agendaCode,
+                new Dictionary<string, object?> { [paramName] = instance.Value }));
+
+            if (pages is null || pages.Count == 0)
+            {
+                _realPreviewData = null;
+                StatusText = $"Žádná data: {instance.Display}";
+            }
+            else
+            {
+                var culture = GetTemplateCulture();
+                _realPreviewData = pages.Select(d => d.WithCulture(culture)).ToList();
+                _realPreviewIndex = 0;
+                StatusText = $"{instance.Display}: {pages.Count} stránek";
+            }
+            OnPropertyChanged(nameof(RealPreviewPageCount));
+            OnPropertyChanged(nameof(RealPreviewIndex));
+            OnPropertyChanged(nameof(PageNavigationText));
+            OnPropertyChanged(nameof(HasMultiplePages));
+            RequestPreviewRefresh?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Chyba načítání: {ex.Message}";
+        }
+    }
+
+    /// <summary>Per-agenda mapování instance value → jméno parametru pro GetData.</summary>
+    private static string InstanceParamName(string agendaCode) =>
+        agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
 
     // ── Real preview data ────────────────────────────────────────────────────
     private List<DataContext>?                  _realPreviewData;
@@ -97,6 +212,12 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Parametry agendy pro PrintDialog.</summary>
     public IReadOnlyList<TemplateParameter> AgendaParameters => _agendaParameters;
+
+    /// <summary>
+    /// Sdílený dictionary parametrů (preview lišta + PrintDialog operují nad stejnou instancí).
+    /// Hodnoty se persistují přes <see cref="LoadPrintParamsAndApplyAsync"/> a <see cref="SavePrintParamsAsync"/>.
+    /// </summary>
+    public Dictionary<string, object?> PreviewParamValues => _previewParams;
 
     // ── Clipboard ─────────────────────────────────────────────────────────────
     private List<TemplateElement> _clipboard = [];
@@ -143,6 +264,12 @@ public class TemplateDesignerViewModel : EDViewModel
         set { State.ShowSectionHeaders = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); RequestCanvasSizeUpdate?.Invoke(); }
     }
 
+    public bool ShowRuler
+    {
+        get => State.ShowRuler;
+        set { State.ShowRuler = value; OnPropertyChanged(); RequestCanvasRefresh?.Invoke(); }
+    }
+
     public bool SnapToGrid
     {
         get => State.SnapToGrid;
@@ -181,8 +308,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle;
-    private AsyncRelayCommand? _save, _saveAs, _open;
+    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda, _openInstancePicker, _prevInstance, _nextInstance;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs;
 
     public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= new(Redo,          () => CanRedo);
@@ -190,6 +317,13 @@ public class TemplateDesignerViewModel : EDViewModel
     public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveAsTemplate);
     public RelayCommand NewCommand           => _new       ??= new(NewTemplate);
     public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
+    public AsyncRelayCommand OpenFromCacheCommand  => _openFromCache  ??= CommandAsync(OpenFromCacheAsync,  () => TemplateStorage is not null);
+    public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
+    public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
+    public RelayCommand ChangeAgendaCommand        => _changeAgenda   ??= Command(ChangeAgenda);
+    public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
+    public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= new(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
+    public RelayCommand NextInstanceCommand        => _nextInstance   ??= new(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
     public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
     public RelayCommand ExportPngCommand     => _exportPng ??= new(ExportPreviewPng);
     public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
@@ -200,17 +334,33 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand PasteStyleCommand => _pasteStyle ??= new(PasteStyle, () => State.StyleClipboard is not null);
 
     // ── Constructor ───────────────────────────────────────────────────────────
-    public TemplateDesignerViewModel(MLRest? mlRest = null)
+    /// <summary>
+    /// Per-user state (zoom, grid, splittery, recent files, instance defaults).
+    /// Null v testech / standalone bez Caché — get pro UI binding loaded files menu;
+    /// service interní fallback na defaults i bez Caché.
+    /// </summary>
+    public TdPreferencesService? Preferences { get; }
+
+    public TemplateDesignerViewModel(MLRest? mlRest = null,
+                                     TdPreferencesService? preferences = null,
+                                     IReadOnlyList<AgendaRegistryEntry>? agendas = null)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
+
+        Preferences = preferences;
 
         var settings   = AppSettings.Load();
         var schemasDir = Path.Combine(AppContext.BaseDirectory, "schemas");
         _sectionTemplates = new SectionTemplateManager();
 
-        CacheProvider = mlRest is not null
-            ? CacheSchemaWiring.TryCreate(mlRest, settings)
-            : CacheSchemaWiring.TryCreate(settings);
+        var resolvedMlRest = mlRest ?? CacheSchemaWiring.TryCreateMlRest(settings);
+        var resolvedAgendas = agendas ?? [];
+        CacheProvider = resolvedMlRest is not null && resolvedAgendas.Count > 0
+            ? CacheSchemaWiring.TryCreate(resolvedMlRest, resolvedAgendas)
+            : null;
+        TemplateStorage = resolvedMlRest is not null
+            ? new Services.CacheTemplateService(resolvedMlRest)
+            : null;
 
         SchemaProvider = CacheProvider is not null
             ? new CompositeDataSchemaProvider(CacheProvider, new JsonFileDataSchemaProvider(schemasDir))
@@ -218,6 +368,65 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
         RebuildSections();
+
+        // Aplikuj loaded MainState na State + VM properties. Volá se po inicializaci State,
+        // aby loaded hodnoty přepsaly defaults z DesignerState ctoru.
+        ApplyLoadedPreferences();
+    }
+
+    /// <summary>
+    /// Aplikuje MainStatePref z <see cref="Preferences"/> na DesignerState + bindovatelné VM properties.
+    /// Volá se v konstruktoru a znovu po dokončení LoadAsync (event Loaded) — pro cold-start scénář
+    /// kdy LoadAsync nestihl dokončit před Show().
+    /// </summary>
+    public void ApplyLoadedPreferences()
+    {
+        var pref = Preferences?.MainState;
+        if (pref is null) return;
+
+        State.Zoom               = pref.Zoom;
+        State.ShowGrid           = pref.ShowGrid;
+        State.SnapToGrid         = pref.SnapToGrid;
+        State.SnapToElements     = pref.SnapToElements;
+        State.ShowSectionHeaders = pref.ShowSectionHeaders;
+        State.ShowRuler          = pref.ShowRuler;
+        State.GridSize           = pref.GridSize;
+        State.SnapGapMm          = pref.SnapGapMm;
+
+        // Property notifications pro bindings (toolbar toggle buttony)
+        OnPropertyChanged(nameof(ShowGrid));
+        OnPropertyChanged(nameof(SnapToGrid));
+        OnPropertyChanged(nameof(SnapToElements));
+        OnPropertyChanged(nameof(ShowSectionHeaders));
+        OnPropertyChanged(nameof(ShowRuler));
+        OnPropertyChanged(nameof(GridSize));
+        OnPropertyChanged(nameof(SnapGapMm));
+    }
+
+    /// <summary>
+    /// Snapshot aktuálního state z DesignerState do MainStatePref a uloží do Caché.
+    /// Volá se z MainWindow.OnClosing. Splitter šířky a tab index doplňuje code-behind
+    /// (VM nezná konkrétní WPF kontrolky).
+    /// </summary>
+    public Task SaveMainStateAsync(double? leftPanelPx, double? previewPanelPx, int activeTabIndex, bool showPreviewPane)
+    {
+        if (Preferences is null) return Task.CompletedTask;
+
+        var snapshot = new MainStatePref(
+            Zoom:               State.Zoom,
+            ShowGrid:           State.ShowGrid,
+            SnapToGrid:         State.SnapToGrid,
+            SnapToElements:     State.SnapToElements,
+            ShowSectionHeaders: State.ShowSectionHeaders,
+            ShowRuler:          State.ShowRuler,
+            GridSize:           State.GridSize,
+            SnapGapMm:          State.SnapGapMm,
+            ShowPreviewPane:    showPreviewPane,
+            LeftPanelWidthPx:   leftPanelPx,
+            PreviewPanelWidthPx: previewPanelPx,
+            ActiveLeftTabIndex: activeTabIndex);
+
+        return Preferences.SaveMainStateAsync(snapshot);
     }
 
     // ── Execute wrapper ───────────────────────────────────────────────────────
@@ -420,9 +629,23 @@ public class TemplateDesignerViewModel : EDViewModel
     private void NewTemplate()
     {
         if (!ConfirmUnsavedChanges()) return;
+        ReplaceWithBlankTemplate(agendaCode: null);
+    }
+
+    /// <summary>
+    /// Sdílený helper pro &quot;clean slate&quot;: nahradí aktivní šablonu prázdnou
+    /// (volitelně se zadanou agendou) a resetuje veškerý designový stav.
+    /// Volající MUSÍ předtím zavolat <see cref="ConfirmUnsavedChanges"/>.
+    /// </summary>
+    private void ReplaceWithBlankTemplate(string? agendaCode)
+    {
         State.CurrentTemplate = new Template();
+        if (agendaCode is not null) State.CurrentTemplate.AgendaCode = agendaCode;
         CurrentFilePath = null;
+        _loadedFromCache = false;
         IsDirty = false;
+        // Aktivní instance jsou agenda-specifické — při změně agendy ztrácí smysl.
+        ClearActiveInstances();
         State.SelectedElements.Clear();
         State.UndoStack.Clear();
         State.RedoStack.Clear();
@@ -433,6 +656,59 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestTitleUpdate?.Invoke();
         RequestCanvasSizeUpdate?.Invoke();
         RequestPropertiesPanelUpdate?.Invoke();
+        RequestCanvasRefresh?.Invoke();
+        RequestPreviewRefresh?.Invoke();
+    }
+
+    private void OpenInstancePicker()
+    {
+        if (CacheProvider is null)
+        {
+            PopupDisplayer.Info("Caché není nakonfigurováno — výběr instancí není dostupný.");
+            return;
+        }
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode))
+        {
+            PopupDisplayer.Info("Nejprve vyber agendu (Ctrl+Shift+A).");
+            return;
+        }
+
+        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances);
+        var dlg = new InstancePickerDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true) return;
+
+        _activeInstances = vm.SelectedInstances.ToList();
+        _activeInstanceIndex = 0;
+        OnActiveInstancesChanged(reloadData: true);
+
+        // Persist výběr pro tuto šablonu — při příštím otevření se předvyplní.
+        if (Preferences is not null)
+        {
+            var ids = _activeInstances.Select(i => i.Value).ToList();
+            _ = Preferences.SaveInstanceDefaultsAsync(State.CurrentTemplate.Id, ids);
+        }
+    }
+
+    private void ChangeAgenda()
+    {
+        var agendas = SchemaProvider.GetAvailableAgendas();
+        if (agendas.Count == 0)
+        {
+            PopupDisplayer.Info("Žádné agendy nejsou nakonfigurované.");
+            return;
+        }
+
+        var vm = new ChangeAgendaDialogViewModel(agendas, State.CurrentTemplate.AgendaCode);
+        var dlg = new ChangeAgendaDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true || vm.ChosenCode is null) return;
+
+        // Stejná agenda — nic neměním (vyhne se zbytečnému potvrzování neuložených změn).
+        if (string.Equals(State.CurrentTemplate.AgendaCode, vm.ChosenCode, StringComparison.OrdinalIgnoreCase))
+            return;
+
+        if (!ConfirmUnsavedChanges()) return;
+        ReplaceWithBlankTemplate(vm.ChosenCode);
     }
 
     private async Task OpenTemplateAsync()
@@ -440,10 +716,24 @@ public class TemplateDesignerViewModel : EDViewModel
         if (!ConfirmUnsavedChanges()) return;
         var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Otevřít šablonu" };
         if (dlg.ShowDialog() != true) return;
+        await OpenTemplateFromFileAsync(dlg.FileName);
+    }
+
+    /// <summary>
+    /// Otevře šablonu ze zadané cesty. Společná implementace pro File→Open a Recent Files menu.
+    /// </summary>
+    public async Task OpenTemplateFromFileAsync(string filePath)
+    {
         try
         {
-            State.CurrentTemplate = await TemplateSerializer.LoadAsync(dlg.FileName);
-            CurrentFilePath = dlg.FileName;
+            var oldAgenda = State.CurrentTemplate.AgendaCode;
+            State.CurrentTemplate = await TemplateSerializer.LoadAsync(filePath);
+            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
+            // IDs patří staré agendě a v nové by GetData padl.
+            if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
+                ClearActiveInstances();
+            CurrentFilePath = filePath;
+            _loadedFromCache = false;
             IsDirty = false;
             State.SelectedElements.Clear();
             State.UndoStack.Clear();
@@ -453,6 +743,9 @@ public class TemplateDesignerViewModel : EDViewModel
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
             RebuildSections();
             RefreshFieldsList();
+            await TryLoadInstanceDefaultsAsync();
+            await LoadPrintParamsAndApplyAsync();
+            if (Preferences is not null) await Preferences.AddRecentFileAsync(filePath);
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
@@ -460,6 +753,36 @@ public class TemplateDesignerViewModel : EDViewModel
         catch (TemplateDeserializationException ex)
         {
             PopupDisplayer.Error(ex);
+        }
+        catch (FileNotFoundException)
+        {
+            PopupDisplayer.Info($"Soubor nenalezen: {filePath}");
+            if (Preferences is not null) await Preferences.RemoveRecentFileAsync(filePath);
+        }
+    }
+
+    /// <summary>
+    /// Načte uložený výběr instancí pro aktuální šablonu (pokud existují a CacheProvider je k dispozici).
+    /// </summary>
+    private async Task TryLoadInstanceDefaultsAsync()
+    {
+        if (Preferences is null || CacheProvider is null) return;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return;
+
+        var savedIds = await Preferences.LoadInstanceDefaultsAsync(State.CurrentTemplate.Id);
+        if (savedIds.Count == 0) return;
+
+        try
+        {
+            var available = await Task.Run(() => CacheProvider.GetAvailableInstances(agendaCode!, null));
+            _activeInstances = available.Where(i => savedIds.Contains(i.Value)).ToList();
+            _activeInstanceIndex = 0;
+            OnActiveInstancesChanged(reloadData: true);
+        }
+        catch
+        {
+            // Saved instances nejsou kompatibilní s aktuálním stavem DB — ignorujeme tiše
         }
     }
 
@@ -518,7 +841,10 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task SaveTemplate()
     {
-        if (CurrentFilePath is null) { await SaveAsTemplate(); return; }
+        // Šablona z Caché → update v Caché. Šablona ze souboru → save do souboru. Nová → SaveAs.
+        if (_loadedFromCache)          { await SaveToCacheAsync(); return; }
+        if (CurrentFilePath is null)   { await SaveAsTemplate();   return; }
+
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
@@ -540,7 +866,104 @@ public class TemplateDesignerViewModel : EDViewModel
         CaptureEditorPreferencesToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
         IsDirty = false;
+        if (Preferences is not null) await Preferences.AddRecentFileAsync(CurrentFilePath);
         RequestTitleUpdate?.Invoke();
+    }
+
+    // ── Caché storage ─────────────────────────────────────────────────────────
+
+    /// <summary>True pokud aktuální šablona byla naposledy načtená/uložená do Caché.</summary>
+    private bool _loadedFromCache;
+
+    private async Task OpenFromCacheAsync()
+    {
+        if (TemplateStorage is null) return;
+
+        // Confirmace neuložených změn AŽ po explicitním Otevřít — dialog funguje i jako
+        // správce (smazat / přejmenovat) bez intent načíst do editoru.
+        var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
+        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, agendas);
+        var dlg = new CacheTemplatePickerDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true || vm.SelectedTemplateId is null) return;
+
+        if (!ConfirmUnsavedChanges()) return;
+
+        try
+        {
+            var oldAgenda = State.CurrentTemplate.AgendaCode;
+            var (_, template) = await TemplateStorage.LoadAsync(vm.SelectedTemplateId.Value);
+            State.CurrentTemplate = template;
+            // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
+            // IDs patří staré agendě a v nové by GetData padl.
+            if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
+                ClearActiveInstances();
+            CurrentFilePath = null;
+            _loadedFromCache = true;
+            IsDirty = false;
+            State.SelectedElements.Clear();
+            State.UndoStack.Clear();
+            State.RedoStack.Clear();
+            NotifyUndoRedo();
+            ApplyEditorPreferencesFromTemplate();
+            State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
+            RebuildSections();
+            RefreshFieldsList();
+            await TryLoadInstanceDefaultsAsync();
+            await LoadPrintParamsAndApplyAsync();
+            RequestTitleUpdate?.Invoke();
+            RequestCanvasSizeUpdate?.Invoke();
+            RequestPropertiesPanelUpdate?.Invoke();
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    private async Task SaveToCacheAsync()
+    {
+        if (TemplateStorage is null) return;
+        // Pokud šablona ještě v Caché není (z disku nebo nová) → spustit Save As
+        if (!_loadedFromCache) { await SaveToCacheAsAsync(); return; }
+
+        SyncParametersToTemplate();
+        CaptureEditorPreferencesToTemplate();
+        try
+        {
+            await TemplateStorage.SaveAsync(State.CurrentTemplate);
+            IsDirty = false;
+            RequestTitleUpdate?.Invoke();
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+    }
+
+    private async Task SaveToCacheAsAsync()
+    {
+        if (TemplateStorage is null) return;
+
+        var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
+        var vm = new SaveToCacheDialogViewModel(
+            State.CurrentTemplate.Name,
+            State.CurrentTemplate.AgendaCode,
+            agendas);
+        var dlg = new SaveToCacheDialog(vm) { Owner = Application.Current.MainWindow };
+        if (dlg.ShowDialog() != true) return;
+
+        // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
+        State.CurrentTemplate.Id = Guid.NewGuid();
+        State.CurrentTemplate.Name = vm.Name;
+        State.CurrentTemplate.AgendaCode = vm.SelectedAgenda.Code;
+
+        SyncParametersToTemplate();
+        CaptureEditorPreferencesToTemplate();
+        try
+        {
+            await TemplateStorage.SaveAsync(State.CurrentTemplate);
+            _loadedFromCache = true;
+            CurrentFilePath = null;
+            IsDirty = false;
+            RequestTitleUpdate?.Invoke();
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+        }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
     private void SyncParametersToTemplate()
@@ -588,19 +1011,15 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (!IsDirty) return true;
 
-        // TODO: IPopupDisplayer nemá YesNoCancel — až bude potřeba v EDControls,
-        // přidat `bool? ConfirmYesNoCancel(string)` a nahradit zdejší MessageBox.Show.
-        var result = MessageBox.Show(
+        var result = PopupDisplayer.ConfirmYesNoCancel(
             "Šablona obsahuje neuložené změny. Chcete je uložit?",
-            "Neuložené změny",
-            MessageBoxButton.YesNoCancel,
-            MessageBoxImage.Warning);
+            title: "Neuložené změny");
 
         return result switch
         {
-            MessageBoxResult.Yes => SaveAndContinue(),
-            MessageBoxResult.No => true,
-            _ => false // Cancel
+            true  => SaveAndContinue(),  // Ano = uložit a pokračovat
+            false => true,                // Ne = pokračovat bez uložení (zahodit změny)
+            null  => false                // Storno = zrušit zavírání
         };
     }
 
@@ -1280,6 +1699,67 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>
+    /// Načte uložené PrintParams pro aktuální agendu a aplikuje je nad <see cref="_previewParams"/>.
+    /// Volá se po opening šablony (po LoadAgendaParameters) a z OnPreferencesLoaded (cold-start fallback).
+    /// Idempotentní — pokud žádná saved data, nic nemění. Per-agenda granularita: nová šablona
+    /// v rámci stejné agendy zdědí naposledy použité hodnoty.
+    /// </summary>
+    public async Task LoadPrintParamsAndApplyAsync()
+    {
+        if (Preferences is null || _agendaParameters.Count == 0) return;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return;
+
+        var saved = await Preferences.LoadPrintParamsAsync(agendaCode);
+        if (saved.Count == 0) return;
+
+        bool changed = false;
+        foreach (var p in _agendaParameters)
+        {
+            if (!saved.TryGetValue(p.Name, out var node) || node is null) continue;
+            try
+            {
+                object? newValue = p.Type switch
+                {
+                    "bool"   => node.GetValue<bool>(),
+                    "number" => node.GetValue<float>(),
+                    _        => node.GetValue<string>()
+                };
+                if (!Equals(_previewParams.GetValueOrDefault(p.Name), newValue))
+                {
+                    _previewParams[p.Name] = newValue;
+                    changed = true;
+                }
+            }
+            catch { /* malformed value pro tento param — ponecháme default */ }
+        }
+
+        if (changed) OnExternalParamsChanged();
+    }
+
+    /// <summary>
+    /// Externí konzument (typicky PrintDialog) změnil hodnotu v sdíleném <see cref="_previewParams"/>.
+    /// Cross-notify preview lišta VMs + invalidate cache + refresh preview canvas. Bez tohoto
+    /// volání preview lišta neukáže změnu, protože její <c>ParameterControlVM</c> jsou jiné instance
+    /// než PrintDialogovy a vlastní PropertyChanged events se nepropagují automaticky.
+    /// </summary>
+    public void OnExternalParamsChanged()
+    {
+        _cachedParamValues = null;
+        foreach (var vm in PreviewParameters) vm.NotifyValueChanged();
+        RequestPreviewRefresh?.Invoke();
+    }
+
+    /// <summary>Uloží aktuální <see cref="_previewParams"/> pro tuto agendu (fire-and-forget).</summary>
+    public Task SavePrintParamsAsync()
+    {
+        if (Preferences is null) return Task.CompletedTask;
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+        if (string.IsNullOrEmpty(agendaCode)) return Task.CompletedTask;
+        return Preferences.SavePrintParamsAsync(agendaCode, _previewParams);
+    }
+
+    /// <summary>
     /// Načte reálná data z Caché pro live preview. Parametry se berou z _previewParams
     /// (včetně LINKA_ID). Pokud GetData selže nebo vrátí prázdný výsledek,
     /// _realPreviewData zůstane null → fallback na mock data.
@@ -1390,11 +1870,32 @@ public class TemplateDesignerViewModel : EDViewModel
     public IReadOnlyList<DataContext> BuildAllPreviewDataPages()
     {
         var culture = GetTemplateCulture();
+        var agendaCode = State.CurrentTemplate.AgendaCode;
+
+        // Multi-instance batch: pro každou aktivní instanci fetch GetData a sloučit do flat seznamu.
+        // PDF export tak vygeneruje N×K stránek (N instancí × K stránek per instance, např. zastávka×směr).
+        if (_activeInstances.Count > 0 && CacheProvider is not null && !string.IsNullOrEmpty(agendaCode))
+        {
+            var paramName = InstanceParamName(agendaCode);
+            var all = new List<DataContext>(_activeInstances.Count * 4);
+            foreach (var inst in _activeInstances)
+            {
+                var pages = CacheProvider.GetData(
+                    agendaCode,
+                    new Dictionary<string, object?> { [paramName] = inst.Value });
+                if (pages is null) continue;
+                foreach (var p in pages) all.Add(p.WithCulture(culture));
+            }
+            if (all.Count > 0) return all;
+        }
+
         if (_realPreviewData is { Count: > 0 })
             return _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList();
 
-        var single = BuildPreviewMockData();
-        return single is null ? [] : [single];
+        // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
+        // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
+        // jedna stránka s placeholdery beze změny.
+        return [BuildPreviewMockData() ?? new DataContext()];
     }
 
     public DataContext? BuildPreviewMockData(Dictionary<string, object?>? overrideParams = null)
@@ -1717,7 +2218,7 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Sample template ───────────────────────────────────────────────────────
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "MHD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_MHD" };
         const float headerH = 25f;
         const float footerH = 15f;
         float bodyH = Math.Max(0f, t.PageSize.PrintableHeight - headerH - footerH);
@@ -1899,6 +2400,12 @@ public class ParameterControlVM : INotifyPropertyChanged
         get => _values.TryGetValue(_param.Name, out var v) ? v : _param.GetDefaultTyped();
         set { _values[_param.Name] = value; OnPropertyChanged(); _onChanged?.Invoke(); }
     }
+
+    /// <summary>
+    /// Notifikuje UI binding po externí změně <c>_values[Name]</c> (např. po loaded PrintParams).
+    /// Bez volání setteru se neaktivuje OnPropertyChanged — proto explicit notifikace.
+    /// </summary>
+    public void NotifyValueChanged() => OnPropertyChanged(nameof(Value));
 
     /// <summary>Viditelnost parametru — řízena dependency rule VisibleWhen z TemplateParameter.</summary>
     public bool IsVisible

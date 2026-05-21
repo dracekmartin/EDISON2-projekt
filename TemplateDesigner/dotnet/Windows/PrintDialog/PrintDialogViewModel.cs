@@ -4,15 +4,17 @@ using System.IO;
 using EDControls.EDViewModel;
 using Microsoft.Win32;
 using TemplateDesigner.Models;
+using TemplateDesigner.Services;
 
 namespace TemplateDesigner;
 
 public class PrintDialogViewModel : EDViewModel
 {
     private readonly Template _template;
-    private readonly Dictionary<string, object?> _paramValues = new();
+    private readonly Dictionary<string, object?> _paramValues;
     private readonly Func<Dictionary<string, object?>, DataContext?> _buildMockData;
     private readonly Func<Dictionary<string, object?>, List<DataContext>?>? _buildRealData;
+    private readonly TdPreferencesService? _preferences;
 
     private string _statusText = "";
     private bool _hasParameters;
@@ -35,27 +37,53 @@ public class PrintDialogViewModel : EDViewModel
     /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf.</summary>
     public Action<string, IReadOnlyList<DataContext>>? RequestRenderMultiPdf { get; set; }
 
+    /// <summary>
+    /// PrintDialog operuje nad **sdíleným** dictionary parametrů (typicky <c>MainWindowViewModel.PreviewParamValues</c>).
+    /// Tím je zaručeno že preview lišta a PrintDialog ukazují stejné hodnoty — když user změní
+    /// param v PrintDialogu, preview se live aktualizuje přes <paramref name="onParamsChanged"/>
+    /// callback (typicky <c>MainWindowViewModel.OnExternalParamsChanged</c>).
+    /// </summary>
     public PrintDialogViewModel(
         Template template,
         IReadOnlyList<TemplateParameter> parameters,
+        Dictionary<string, object?> sharedParamValues,
         Func<Dictionary<string, object?>, DataContext?> buildMockData,
-        Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null)
+        Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null,
+        TdPreferencesService? preferences = null,
+        Action? onParamsChanged = null)
     {
         _template = template;
+        _paramValues = sharedParamValues;
         _buildMockData = buildMockData;
         _buildRealData = buildRealData;
+        _preferences = preferences;
 
         ExportPdfCommand = Command(ExportPdf);
         ExportRealDataPdfCommand = Command(ExportRealDataPdf, () => _buildRealData is not null);
 
-        // Inicializace hodnot parametrů z defaults
+        // _paramValues přichází už naplněný (preview lišta defaults + případně saved PrintParams
+        // aplikované při openu šablony). Pro chybějící klíče (nový parametr přidaný po předchozím
+        // savu) doplníme defaults — nepřepisuje existing values.
         foreach (var p in parameters)
-            _paramValues[p.Name] = p.GetDefaultTyped();
+            _paramValues.TryAdd(p.Name, p.GetDefaultTyped());
 
-        // Helper se postará o auto-refresh visibility + initial check (sjednoceno s preview lištou).
-        ParameterControlVM.Init(Parameters, parameters, _paramValues);
+        // ParameterControlVM.Init helper předá onChanged do každé VM — při změně value se notifikace
+        // propaguje do MainWindow (preview lišta + canvas refresh).
+        ParameterControlVM.Init(Parameters, parameters, _paramValues, onChanged: onParamsChanged);
 
         HasParameters = Parameters.Count > 0;
+    }
+
+    /// <summary>
+    /// Uloží aktuální _paramValues (= shared dict s preview lištou) do prefs (fire-and-forget).
+    /// Volá se před export — perzistuje uživatelovy hodnoty pro příští session.
+    /// MainWindow.OnWindowClosing taky uloží přes <c>SavePrintParamsAsync</c> jako safety.
+    /// </summary>
+    private void PersistParams()
+    {
+        if (_preferences is null) return;
+        if (string.IsNullOrEmpty(_template.AgendaCode)) return;
+        _ = _preferences.SavePrintParamsAsync(_template.AgendaCode, _paramValues);
     }
 
     private void ExportPdf()
@@ -65,6 +93,7 @@ public class PrintDialogViewModel : EDViewModel
 
         try
         {
+            PersistParams();
             var data = _buildMockData(_paramValues);
             RequestRenderPdf?.Invoke(filePath, data);
             OpenPdf(filePath);
@@ -85,6 +114,7 @@ public class PrintDialogViewModel : EDViewModel
 
         try
         {
+            PersistParams();
             StatusText = "Načítání dat z Caché...";
             var dataPages = _buildRealData(_paramValues);
 

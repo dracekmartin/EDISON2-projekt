@@ -5,10 +5,15 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDTheme.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDIcons/EDIcons.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDStrings/EDStrings.xaml"/>
                 <ResourceDictionary Source="Styles/ToolbarStyles.xaml"/>
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Default Window icon je nastaven v App.xaml.cs OnAnyWindowLoaded — implicit Window style
+                 v WPF se neaplikuje na derived Window classes, proto class handler v code-behind. -->
         </ResourceDictionary>
     </Application.Resources>
 </Application>

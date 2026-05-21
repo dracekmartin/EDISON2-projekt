@@ -1,5 +1,408 @@
 # Changelog
 
+## 2026-05-20 — Wave 2 W2-1: Agenda registry → Caché auto-discovery
+
+První polovina Wave 2 Caché migrace — seznam dostupných agend přesunut z `templatedesigner.appsettings.json agendas[]` do Caché auto-discovery z `BaseAgenda` subclasses. Druhá polovina (section templates) zbývá.
+
+**Caché:**
+- `BaseAgenda.cls` — 2 nové class parametry (`AgendaCode`, `AgendaLabel`); konvence `<TYP_SESTAVY>_<DATOVY_ZDROJ>` (např. `ZASTAVKOVY_JR_MHD`)
+- `ZastavkoveJrMhd.cls` — declares `AgendaCode = "ZASTAVKOVY_JR_MHD"` (přejmenováno z původního `"MHD"` — MHD je datový modul, ne typ sestavy)
+- `Faktury.cls` — declares `AgendaCode = "FAKTURY"`, `AgendaLabel = "Faktury"`
+- NEW `API/AgendyRegistr.cls` — `ListAgendy` metoda přes `%Dictionary` SQL (SELECT subclasses BaseAgenda), vrátí JSON pole `[{code, label, cacheClass}, ...]`. Třída JE registrace — žádný drift mezi registrem a impl.
+
+**.NET:**
+- NEW `Serialization/IAgendaRegistry.cs` — interface + `AgendaRegistryEntry` record
+- NEW `Serialization/CacheAgendaRegistry.cs` — Caché-backed impl, syntheticky prepend GENERAL agendy (`code="GENERAL", cacheClass=""`), fallback při chybě jen GENERAL
+- `Config/CacheSchemaWiring.cs` — `TryCreate(MLRest, IReadOnlyList<AgendaRegistryEntry>)` místo `(MLRest, AppSettings)`
+- `Config/AppSettings.cs` — odstraněna `Agendas` property + `SchemaAgendaSettings` třída + reference v `MergeLocal`
+- `App.xaml.cs` — sync load agendy ze Caché s 3s timeoutem, fallback na pouze GENERAL při neúspěchu
+- `MainWindow(MLRest?, prefs?, agendas?)` — 3. ctor param; propagováno do VM
+- `templatedesigner.appsettings.json` — smazáno `agendas[]`
+- `MainWindowViewModel.InstanceParamName` a `MainWindow.OpenPrintDialog` — string check `"MHD"` → `"ZASTAVKOVY_JR_MHD"`
+
+**Architektonická rozhodnutí:**
+- **Auto-discovery místo hardcoded list** — `třída JE registrace`. Eliminuje drift (registr ≠ impl).
+- **GENERAL synthetic injection v .NET** — agenda bez Caché class (šablona bez DB vazby), vždy dostupná
+- **Per-customer kontrola odložena** (YAGNI) — všichni zákazníci mají stejný kód, AgendaEnabled parameter ani per-IDfa override teď nepotřebujeme
+- **Naming `<TYP_SESTAVY>_<DATOVY_ZDROJ>`** — `MHD` je datový modul, ne typ sestavy. Budoucí JŘ agendy: `KNIZNI_JR_MHD`, `MEZIMESTSKY_JR_MHD`, `VOZOVY_JR_MHD`.
+
+## 2026-05-20 — Wave 1.5: Recent Colors + PrintDialog params (per-agenda)
+
+Dokončení Wave 1 ekvivalentního rozsahu — recent colors v color pickeru + persistované PrintDialog params sdílené s preview lištou.
+
+**Recent Colors:**
+- `TdPreferencesService.RecentColors` (List<string>) + `AddRecentColorAsync` — scope `"TemplateDesigner"` / key `"RecentColors"` (Typ 2 — activity log)
+- `ColorPickerHelper.Preferences` static reference (wired v App.OnStartup) — pickColor populuje `dlg.CustomColors` slot z RecentColors, po výběru fire-and-forget save
+- `PropertiesPanel.AddColorRow` DRY refactor — duplicitní inline WinForms ColorDialog kód (-32 řádků) nahrazen voláním `ColorPickerHelper.PickColor`; nepoužitá `Win32Window` třída smazána
+- Cap 8, dedup case-insensitive
+
+**PrintDialog params — per-agenda persist + live sync s preview lištou:**
+- `TdPreferencesService.LoadPrintParamsAsync(string agendaCode)` / `SavePrintParamsAsync(string agendaCode, ...)` — scope `"TemplateDesigner.PrintParams"` / key = AgendaCode (Typ 3 — per agenda entity)
+- **Per-agenda granularita** (důležité): klíč je AgendaCode (`"MHD"`, `"FAKTURY"`), ne template Guid. Params (datum, varianta JŘ, časová osa) jsou agenda-level concerns. Nová šablona stejné agendy zdědí naposledy použité hodnoty.
+- `MainWindowViewModel.PreviewParamValues` (public Dictionary) — sdílený s PrintDialog (`PrintDialogViewModel` ctor přijímá `sharedParamValues` referenci místo vlastní kopie)
+- `MainWindowViewModel.LoadPrintParamsAndApplyAsync` — load při openu šablony (file + Caché) + cold-start fallback v `OnPreferencesLoaded`
+- `MainWindowViewModel.OnExternalParamsChanged` — public metoda pro cross-notification: PrintDialog při změně paramu volá callback → preview lišta VMs fire PropertyChanged → live update behind modal
+- `ParameterControlVM.NotifyValueChanged` — explicit notification po externí změně sdíleného `_values` dict (bez setteru)
+- Save trigger: před Export PDF/PNG (`PersistParams`) + při Window Closing v MainWindow (`SavePrintParamsAsync` alongside MainState)
+
+**Crash fixes (původně z Wave 1.5 testování):**
+- Odstraněno sync `LoadPrintParamsAsync().Result` z PrintDialogViewModel ctoru — blokovalo UI thread → queued Ctrl+P events → InvalidOperationException „Owner cannot be set on closed Window" + okno minimalizace
+- Re-entrance guard `_printDialogOpening` v `MainWindow.MenuPrint_Click` — modální `ShowDialog` otevírá vnořený dispatcher který může doručit queueované Ctrl+P; bez guardu by druhé pressnutí vytvořilo paralel dialog
+
+**Dokumentace:**
+- `EDControls/DOCS/05-userdata-scopes.md` — registr update: RecentColors a PrintParams stav ✅, schema dokumentován včetně per-agenda granularity rationale
+
+## 2026-05-20 — Wave 1: per-user preferences via Caché
+
+První dávka Caché Migration Wave 1 — persistence per-user × IDFa state. Žádné lokální JSON soubory (`%APPDATA%`); vše v `^ALVA.EDControls.UserData` přes `IUserPrefsService`.
+
+**Nové soubory:**
+- `Services/TdPreferencesService.cs` — typed wrapper nad `IUserPrefsService`. Drží 3 typy blobů:
+  - `MainStatePref` record (zoom, ShowGrid, SnapToGrid, SnapToElements, ShowSectionHeaders, ShowRuler, GridSize, SnapGapMm, ShowPreviewPane, LeftPanelWidthPx, PreviewPanelWidthPx, ActiveLeftTabIndex) v scope `"TemplateDesigner"` / key `"MainState"`
+  - `List<string>` recent files v scope `"TemplateDesigner"` / key `"RecentFiles"` (cap 10, dedup case-insensitive)
+  - Per-template instance defaults v scope `"TemplateDesigner.InstanceDefaults"` / key = template Guid
+- `EDControls/DOCS/05-userdata-scopes.md` — registr scope ownerships napříč EDISON ekosystémem; konvence pro klienty (scope naming, typed records, defensive parsing, backward-compat schémat, save policy); rozhodovací mřížka „kam s tím"; anti-patterns
+
+**Wire-up:**
+- `App.OnStartup` — instantiace `TdPreferencesService`, sync `LoadAsync.Wait(300ms)` před `MainWindow.Show()`. Pokud Caché odpoví do timeoutu, MainWindow startuje s loaded state; jinak defaults
+- `TemplateDesignerViewModel(MLRest?, TdPreferencesService?)` — 2. parametr (nullable); `ApplyLoadedPreferences()` v ctoru aplikuje MainStatePref na DesignerState + OnPropertyChanged pro bindings
+- `SaveMainStateAsync(leftPx, previewPx, tabIndex, showPreview)` — VM snapshot pro persist; UI-side parametry plní code-behind (VM nezná WPF kontrolky)
+- `MainWindow.OnWindowClosing` — fire-and-forget save (closing nesmí blokovat Caché latencí)
+- `MainWindow.ApplyUiPreferences()` — apply splitter šířek, levý tab index, viditelnost preview pane po `InitializeComponent`
+
+**Recent Files menu:**
+- `Soubor → Otevřít poslední` submenu, dynamicky populated z `_preferences.RecentFiles` při `SubmenuOpened`
+- `OpenTemplateFromFileAsync(filePath)` — public metoda pro File→Open i Recent Files; `FileNotFoundException` → info dialog + `RemoveRecentFileAsync` (graceful)
+- `SaveAsTemplate` + `OpenTemplateAsync` volají `AddRecentFileAsync` (Caché → ne, ten má vlastní storage)
+
+**Instance defaults per template:**
+- `TryLoadInstanceDefaultsAsync()` v Open i OpenFromCache — načte uložený výběr instancí pro `Template.Id`, filtrované přes `CacheProvider.GetAvailableInstances` (orphan IDs se ignorují)
+- `OpenInstancePicker` na OK → `SaveInstanceDefaultsAsync(template.Id, instanceIds)` fire-and-forget
+
+**Architektonické rozhodnutí (důležité):**
+- **Žádné lokální JSON soubory** pro persistentní state. Per-machine pattern (`LocalPrefs.cs` v EDISONMAIN2) se v TD nepoužívá — TD běží typicky embedded z EDISONMAIN2 a IDfu dostává v MLRest sys kontextu. Pro standalone testing jsou hodnoty hardcoded.
+- **Generic blob storage pattern** — server (Caché) je schema-less, klienti vlastní typed records. Inspirováno localStorage / NSUserDefaults / SharedPreferences. Detail v `EDControls/DOCS/05-userdata-scopes.md`.
+
+## 2026-05-20 — UI polish: implicit styles, popup, perf, layout
+
+Druhý den UI polish dotahuje EDTheme/EDStyles ekosystém + hlavní okno k modernímu desktop look + řeší výkonnostní problém canvas při vysokém zoomu.
+
+**EDStyles.xaml — implicit styles dokončené:**
+- **TextBox**: flat 1px border, 3px corners, focus accent blue, ReadOnly subtle bg
+- **ComboBox + ComboBoxItem**: flat dropdown, šipka ▼ vpravo, popup s rounded border, hover/selected stavy. Fix: ToggleButton roztažen přes celou plochu (klik kdekoliv otvírá dropdown)
+- **TabItem + TabControl**: moderní underline tabs (Chrome/VS Code styl) — flat, 2px Accent.Blue bottom border u selected. LeftTabControl odstraněn lokální override
+- **CheckBox**: 14×14 box, 2px corners, focus Accent.Blue border, checked = Accent.Blue bg + bílý ✓ vector checkmark
+- **MenuItem (4 role) + Menu + ContextMenu + Separator**: kompletní template pokrývající TopLevelHeader/TopLevelItem/SubmenuItem/SubmenuHeader. Icon column + Header + Shortcut column (InputGestureText) + Arrow column. IsCheckable items mají modré ✓. ScrollViewer s Auto vertical/Disabled horizontal scrollbar.
+
+**3-button popup přes IPopupDisplayer:**
+- `EDPopupButtons.AnoNeStorno` (3-button mode) + třetí Button v EDPopup.xaml
+- `IPopupDisplayer.ConfirmYesNoCancel(message, title?) → bool?` (true Ano / false Ne / null Storno+Esc)
+- EDPopup auto-title default per mode (Informace/Potvrzení), volitelný custom title parameter
+- `MainWindowViewModel.ConfirmUnsavedChanges` migrace z `MessageBox.Show` → `PopupDisplayer.ConfirmYesNoCancel(.., title: "Neuložené změny")` — dialog má moderní vzhled, ne starý Windows MessageBox
+
+**MessageBox.Show sweep:**
+4 zbylé `MessageBox.Show` v MainWindow.xaml.cs nahrazeny:
+- Export PDF/PNG error catch → `PopupDisplayer.Error(ex)` (plný scrollable error dialog)
+- "Šablonu nepodařilo načíst" → `PopupDisplayer.Info(...)`
+- "Nejprve vyberte sekci" → `PopupDisplayer.Info(...)`
+Zbývající 3 `MessageBox.Show` v App.xaml.cs jsou architektonicky nutné (debug --test-detector arg, startup před EDServices.Initialize, OnUnhandledException safety net).
+
+**Keyboard binding fix:**
+Ctrl+N a Ctrl+O byly v menu jen jako `InputGestureText` (vizuální text), bez actual handleru. Globální `OnWindowKeyDown` měl wired jen Ctrl+S/Ctrl+P/Ctrl+Shift+P/Ctrl+Shift+N. Přidáno actual wiring Ctrl+N → NewCommand a Ctrl+O → MenuOpen_Click.
+
+**Toolbar restructure "Zobrazení" → 3 podskupiny:**
+- **Mřížka & snap**: BtnGrid + CmbGridSize (vlevo), interní oddělovač, BtnSnap + BtnSnapElements + CmbSnapGap (vpravo). Visual pairing — button+combo k sobě patří jsou hned vedle sebe.
+- **Zoom**: CmbZoom + 1:1 reset
+- **Náhled**: BtnPreview toggle
+BtnSnap "M" / BtnSnapElements "O" textové labels místo identické Snap ikony s opacity (visual confusion fix).
+CmbScale přesunut z toolbaru do **Upravit → Škálovat šablonu** submenu (50-200%) — destruktivní akce není view setting.
+
+**Y-zarovnání designer ↔ preview:**
+Designer dostává 60px top buffer (`TopBufferPx`) kompenzující preview chrome (header + parametry + page nav). Designer pageY = 100px místo 40px. Tops stránek sjednocené napříč panely.
+
+**Canvas perf — viewport culling:**
+- `DesignerCanvas.VisibleViewport` property, set z `OnPaintSurface` na základě `CanvasScrollViewer` offset+viewport
+- `canvas.ClipRect(VisibleViewport)` na začátku Render — Skia přeskočí draw ops mimo viewport (Clear, page shadow, sekce, atd.)
+- DrawGrid viewport culling — kreslí jen linky uvnitř viewportu (předtím tisíce linek mimo při vysokém zoomu)
+- Page shadow paint cachován (`_shadowPaint` statický field) — `MaskFilter.CreateBlur` se vytvářel každý frame
+- `ScrollChanged → InvalidateVisual` aby culling reagoval na scroll
+
+**Zoom limit 500%:**
+SKElement při zoom 1000% má ~91 MP → 365 MB buffer upload per frame (hardware-bound limit SkiaSharp.Views.WPF — alokuje + uploaduje full surface byte buffer). ClipRect snižuje cost draw operations, ne alokaci. CmbZoom + CmbPreviewZoom omezeny na 50-500% (93 MB max). Roadmap doplněn o "Virtualized canvas rendering" sekci jako budoucí proper fix.
+
+**Default Window icon:**
+`App.OnStartup` registruje class handler pro Window.Loaded — všechna okna (krom MainWindow s explicit Icon) dostanou EDIcons.Molecule. Implicit `<Style TargetType="Window">` v WPF se neaplikuje na derived Window classes (TargetType matchuje exact type, ne subclasses) — class handler je spolehlivá alternativa.
+
+**Drobnosti:**
+- 9× element palette tooltip cleanup — odstraněno "— táhni na canvas" instructional text
+- Grid combo 0.1mm → 0.2mm jako nejmenší (rychlejší + 0.1mm precision se prakticky nepoužívá)
+- HelpDialog F1 aktualizován o F2 inline edit zkratku
+- Caché tříd headers přepsány s business-focused popisem (čím je třída, ne ".NET form X to konzumuje")
+- 7 dialogů refactorováno na EDTheme tokens (HelpDialog, ChangeAgendaDialog, NormalizePositionsDialog, InstancePickerDialog, PrintDialog, AiTemplateAssistantDialog, PdfImportDialog)
+- MainWindow.xaml + ToolbarStyles.xaml 100% na EDTheme tokens
+
+## 2026-05-19 — EDTheme design tokens + implicit Button style
+
+Sjednocení vizuálu napříč TemplateDesignerem + EDControls knihovnou přes design tokens v EDControls (jedno místo, runtime swap přes DynamicResource).
+
+**EDControls (nové):**
+- `EDTheme/EDTheme.xaml` — 33 tokenů: barvy (borders, backgrounds, text, 5 accent variant blue, agenda green, brand brown, semantic danger/warning/success/condition), font sizes (Small/Caption/Body/Header/Large), spacing (XS/S/M/L/XL). Každá barva má `.Color` (Color) + `.X` (SolidColorBrush) dual key.
+- `EDTheme/EDStyles.xaml` — implicit Button style (flat moderní desktop look, 3px corner radius, hover/pressed přes tokens). Opt-in via merge.
+- `DOCS/04-EDTheme.md` — kompletní reference + konzumace + per-app override + dark mode plán.
+- 5 EDControls komponent (EDList, EDFilter, FilterCombo, EDFooter, EDInputForm) převedeno na tokens.
+
+**TemplateDesigner adoption:**
+- `App.xaml` merguje EDTheme.xaml + EDStyles.xaml + EDIcons.xaml + EDStrings.xaml + ToolbarStyles.xaml.
+- `App.xaml.cs OnAnyWindowLoaded` class handler nastavuje Edison Molecule ikonu na všechna okna (implicit Window style v WPF kvůli quirky nestačí pro derived Window classes).
+- `MainWindow.xaml` 100% na tokens (status bar, levý panel, canvas wrapper, preview, InlineEditBox).
+- `ToolbarStyles.xaml` 100% na tokens.
+- 10 dialogů 100% na tokens (Help, ChangeAgenda, NormalizePositions, InstancePicker, Print, AiTemplate, PdfImport — 3 další byly bez hex).
+- **Skip Wave 4 scope:** ElementPropertiesWindow, TableEditorDialog, StopColumnsEditorDialog, DepartureGroupEditorDialog — budou nahrazeny EDInputForm/EDInputGrid migrací.
+- **EDActionInProgress** zachován s hardcoded brand brown spinner gradients (intentional brand expression).
+
+**Reverzibilita:** Každý refactor step = vlastní commit (c343de3 EDTheme + first adoption, 6b35659 MainWindow, 7af7f13 dialogs, a93b07b EDControls + Window icon, 08d042c icon class handler fix, 368cd65 Button implicit style). Worst-case rollback = sekvence `git revert`.
+
+**Pokračování (zítra+):** Implicit styles pro TextBox, ComboBox, MenuItem, TabItem v EDStyles.xaml.
+
+## 2026-05-19 — Caché refactor: struktura tříd podle role (Agendy/EDList/API)
+
+Sjednocení Caché namespace struktury s konvencí používanou v ostatních M-line projektech — separace **podle role třídy** (data source vs UI dispatch vs business CRUD), ne podle domény.
+
+**Před:**
+```
+ALVA.TemplateDesigner.API.Templates             (CRUD)
+ALVA.TemplateDesigner.API.TemplatesList         (EDList dispatch — smíchané s API)
+ALVA.TemplateDesigner.API.InstancesList         (EDList dispatch — smíchané s API)
+ALVA.TemplateDesigner.Agendas.AgendaAPI         (abstract base — anglický název)
+ALVA.TemplateDesigner.Agendas.ZastavkoveJrMhdAPI
+ALVA.TemplateDesigner.Agendas.TemplateDesignerFAKTURY
+```
+
+**Po:**
+```
+ALVA.TemplateDesigner.API.Sablony               (CRUD)
+ALVA.TemplateDesigner.Agendy.BaseAgenda         (abstract base)
+ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd    (MHD agenda — bez API sufixu)
+ALVA.TemplateDesigner.Agendy.Faktury            (faktury — bez TemplateDesigner prefixu)
+ALVA.TemplateDesigner.EDList.Sablony            (EDList dispatch nad šablonami)
+ALVA.TemplateDesigner.EDList.Instance           (EDList dispatch nad instancemi)
+```
+
+**Princip:**
+- `API/` = obecná business logika TD projektu
+- `Agendy/` = agenda implementations (data sources)
+- `EDList/` = dispatch třídy pro EDList komponentu
+- Budoucí: `EDInputForm/`, `EDInputGrid/`
+- Folder/namespace 1:1 mapuje na **roli třídy**; doménový název může opakovat (`API.Sablony` vs `EDList.Sablony` — namespace prefix rozliší)
+- Krátké názvy (`Sablony`, `Instance`, `Faktury`) — bez prefix-suffix balastu
+
+**Postup:** Staré `.cls` soubory v `Agendas/` a `API/TemplatesList.cls`, `API/InstancesList.cls`, `API/Templates.cls` **ponechány netknuté** pro verifikaci. Po otestování (user otevře šablonu z Caché, instance picker, agenda dispatch) může staré soubory smazat. Caché class rename je občas nevyzpytatelný — proto file-copy přístup.
+
+**Změny v .NET:**
+- `CacheTemplateService.cs` — `CacheClass = "ALVA.TemplateDesigner.API.Sablony"`
+- `CacheTemplatePickerDialog.xaml` — `CacheClass="ALVA.TemplateDesigner.EDList.Sablony"`
+- `InstancePickerDialog.xaml` — `CacheClass="ALVA.TemplateDesigner.EDList.Instance"`
+- `templatedesigner.appsettings.json` — `cacheClass` per agenda na nové FQN
+- 3 komentáře v Config/Serialization (CacheAgendaProvider, AppSettings, CacheSchemaWiring) aktualizovány
+- 2 VM XML komentáře aktualizovány
+
+**Změny v Caché (nové soubory):**
+- `Agendy/BaseAgenda.cls` (z `Agendas/AgendaAPI.cls`)
+- `Agendy/Faktury.cls` (z `Agendas/TemplateDesignerFAKTURY.cls`) — Extends změněno na `BaseAgenda`
+- `Agendy/ZastavkoveJrMhd.cls` (z `Agendas/ZastavkoveJrMhdAPI.cls`) — Extends změněno
+- `API/Sablony.cls` (z `API/Templates.cls`)
+- `EDList/Sablony.cls` (z `API/TemplatesList.cls`)
+- `EDList/Instance.cls` (z `API/InstancesList.cls`) — dispatch v `GetClassForAgenda` na nová FQN
+
+**Docs:** CLAUDE.md namespace bullet + cache-api.md (struktura, příklady, checklist nové agendy) aktualizováno. Memory `project_cache_class_structure.md` přepsáno.
+
+## 2026-05-19 — UX: inline úprava textu (F2) na canvasu — V0
+
+Rychlá inline editace `Text` contentu na TextElementu přímo na canvasu bez nutnosti otevírat properties dialog. Standardní design tool / Windows konvence pro „rename in place".
+
+**Spuštění:** Vyber TextElement, stiskni **F2** → ve stejné pozici se objeví WPF TextBox s modrým rámečkem, text rovnou selectnutý.
+
+**Ovládání v inline editu:**
+- **Enter** = commit a vrátit na canvas
+- **Shift+Enter** = nový řádek (multi-line)
+- **Esc** = zrušit změny
+- **Klik mimo TextBox** = commit
+
+**Scope V0 (záměrně omezený):**
+- Jen TextElement (ostatní elementy nemají vizuální `Text` content)
+- Skip rotace + locked (fallback na dialog)
+- WPF FontSize ≈ Skia (`FontSize_pt × 96/72 × Zoom`) — vizuálně blízko, ne pixel-perfect
+- Bez podpory `WordWrap` overlap (TextBox má vlastní layout)
+
+**Konzistence UI:**
+- Dvojklik = dál otevírá properties dialog (jako u ostatních elementů)
+- Enter na vybraném elementu = dál otevírá properties dialog
+- F2 = nová zkratka **jen** pro inline edit textu
+
+**Implementace:**
+- WPF `<TextBox>` overlay v `Canvas` nad SKElement (XAML)
+- `EnterInlineEdit(TextElement)` / `ExitInlineEdit(commit)` v `MainWindow.xaml.cs`
+- `PreviewKeyDown` na TextBoxu — musí zachytit Enter dřív než `TextBox.AcceptsReturn` vloží newline
+- `OnWindowKeyDown` (globální `PreviewKeyDown`) returns early když je `_inlineEditElement` aktivní — bez toho by globální handler odchytil Enter dřív než TextBox a otevřel dialog
+- Commit přes `SetPropertyCommand` (undo/redo)
+
+**Help dialog** aktualizován — F2 přidáno do tabulky klávesových zkratek, popisy „Vlastnosti elementu" upraveny.
+
+Pokud bude V0 vyhovovat: zvážit polishing v dalším kole (rotace, lock, pixel-perfect font matching, vertikální align uvnitř TextBoxu).
+
+## 2026-05-19 — UX: pravítka (rulers) na canvasu
+
+Horizontální + vertikální pravítka v mm podél stránky, togglovatelná v menu `Zobrazit → Pravítka`. Standardní design tool feature (Word/Figma/PowerPoint).
+
+- Horizontální pravítko nad stránkou (X osa), vertikální vpravo od stránky (Y osa) — vlevo jsou modré štítky sekcí, proto right-side ruler.
+- 0mm = okraj stránky. Ticky každých 10mm s číslem; podle zoom se přidávají 5mm a 1mm subticky a krok čísel klesá na 20/50mm.
+- Vertikální čísla rotovaná -90° (čte se zdola nahoru — standard).
+- Modrý highlight pásek na obou pravítkách v rozsahu vybraných elementů; multi-výběr = bounding box.
+- Vejdou se do existujícího `PagePaddingPx` (40px) — žádná layout změna v `MainWindow.xaml`.
+
+Soubory: `DesignerCanvas.cs` (5 nových metod: `DrawRulers`, `DrawRulerStrip`, `DrawRulerTicks`, `DrawRulerHighlights` + barvy + konstanty), `DesignerState.ShowRuler`, `MainWindowViewModel.ShowRuler` proxy, `MainWindow.xaml` menu položka.
+
+Persistence přes restart (W1) zatím ne — session-only, defaultně off.
+
+## 2026-05-19 — Cleanup: B2 (WPF Color Picker) + B0-10 (Collapsible groups) odstraněny z roadmap
+
+- **B2** — `WinForms ColorDialog` minimalizace Properties window už neopakovatelná (po testu), TODO komentář v `PropertiesPanel.xaml.cs:531-534` smazán. Color picker work se přesune do W4-8 (EDInputForm Color field) až bude EDInputForm refactor — žádný důvod budovat samostatný WPF picker.
+- **B0-10** Collapsible groups v `PropertiesPanel` — přesunuto jako W4-10 do Wave 4 EDInputForm scope. Dělat to v dočasném panelu (který bude nahrazen) je wasted effort; generická vlastnost EDInputForm pokryje TD i ostatní formuláře.
+- W1-5 (Recent Colors) reformulováno bez B2 reference; W2-2 reformulováno bez B2 reference.
+- W1-7 přidán: instance picker default (per-template seznam vybraných instancí, vlastní key v `IUserPrefsService`).
+
+Roadmap UX polish vyčištěn: odstraněno `h. Cross-section rubber band`, `l. XLSX export`, `n. LayoutGridDialog`, `41. Toggle Simulovat viditelnost` (preview už pokrývá), demo polish „Sample template showcase" (hotovo) a „Persistence aktivních instancí" (přejmenováno do W1-7).
+
+## 2026-05-19 — UX: section-center snap guide line
+
+Section-center snap (horizontální i vertikální) **funkčně existoval** přes `extraXAnchors`/
+`extraYAnchors` se v `SnapEngine.SnapAxis`, ale **bez vizuální indikace** — uživatel
+nevěděl, že právě sedí na centeru.
+
+- `SnapEngine`: nový `MatchKind.SectionCenter` + `sectionCenterX` parametr pro `Calculate`
+  (center-to-anchor matching), `AxisSnap.IsSectionCenter` flag
+- `DesignerState.ActiveSectionCenterX` — tracking aktivního section-center match
+- `DesignerCanvas.DrawSectionCenterGuide` — dashed cyan vertical line přes plnou výšku
+  sekce, když snap právě sedí na horizontálním středu
+- `MainWindow.xaml.cs`: předává `sectionCenterX = sectionW / 2f` při dragu, čistí state
+  na začátku každého move + při resize
+
+Funguje horizontálně s visual guide; vertikálně stále funkční přes `extraY` (bez visual).
+Pokud bude potřeba i vertikální guide, snadno přidat analogicky.
+
+Roadmap: `i. Align to page center` z menší priorita UX polish odstraněno (section-center
+snap pokrývá use case s lepším UX — visual feedback během drag).
+
+## 2026-05-19 — L6: InstancePickerDialog na EDList + EDControls DOCS + wire formát standard
+
+Tři propojené kusy práce na uzavření EDList migrace + dokumentační vrstvy.
+
+### L6 — InstancePickerDialog na EDList multi-select
+
+- ✅ Nový Caché endpoint `ALVA.TemplateDesigner.API.InstancesList` (`InitializeList` + `LoadList`) — routuje na agenda-specifickou `GetAvailableInstances` přes `$classmethod`. Wire formát: CVar named IN + JSON multi-slot OUT (Styl 3 standardu).
+- ✅ `InstancePickerDialog` kompletně refaktorovaný: XAML `<ListBox>` + custom DataTemplate → `<el:EDList SelectionMode="Check">`. VM zjednodušena — odpadly `Instances` collection, `InstanceRowVM`, `SearchText`, `SearchCommand`, `SelectAll/Clear` (vše obsluhuje EDList).
+- ✅ `EDList.Rows` accessor přidán (read-only `IReadOnlyList<EDListRow>` pro host dialog → mapování zaškrtnutých řádků na `AgendaInstance`).
+- ✅ `CacheInstanceService` — alternativní service cesta s typed records, pro batch volání mimo EDList kontext.
+
+### EDControls DOCS — programátorská dokumentace
+
+Nová složka `EDControls/DOCS/` jako single source of truth pro developery konzumující EDControls:
+- `00-overview.md` — entry point, seznam komponent, quickstart, architektonická pravidla
+- `01-wire-formats.md` — finální wire formát standard (CVar named IN + 4 OUT styly), decision tree, příklady kódu, `record` pattern, checklist
+- `02-EDList.md` — kompletní API reference (properties, events, Caché contract, vzory použití)
+
+Konvence: každá změna komponenty = update odpovídajícího `0X-název.md` ve stejném commitu.
+
+### Wire formát experiment + finální standard
+
+Experiment paralelní implementace klasické vs JSON envelope cesty na L6 InstancesList. Výsledek:
+
+- **Klasický multi-slot JSON** zůstává default pro listy a běžné entity — konzistentní s legacy multi-slot mentálním modelem (~6700 výskytů `$lb` v OUT slotech v legacy)
+- **JSON envelope** je opt-in pro composite endpointy (Tier 3 EDInputForm)
+- **Type safety v .NET přes `record` + `JsonSerializer.Deserialize<T>`** — funguje pro oba styly
+- **`MLRestJson.CallAsync<TReq, TResp>` helper** ponechán v `EDControls/dotnet/MLRestJson.cs` pro budoucí envelope volání
+
+Plný standard, decision tree, příklady a checklist v `EDControls/DOCS/01-wire-formats.md`.
+
+### Cleanup
+
+- ❌ Smazáno: `EDControls/.claude/docs/wire-formats.md` (obsah migrován do veřejné `DOCS/01-wire-formats.md`)
+- ❌ Smazáno: `EDControls/.claude/docs/wire-format-standardization-analysis.md` (temp analytický doc, rozhodnutí propsáno)
+- ❌ Smazáno: `LoadListJson` v `InstancesList.cls` + `LoadInstancesEnvelopeAsync` + envelope records v `CacheInstanceService.cs` (Var B prototyp experimentu)
+- ✅ Aktualizováno: odkazy v `td-editor-migration-plan.md`, `legacy-component-research.md`, TD `roadmap.md` (R3 pravidlo zpřesněno + odkazy na DOCS/)
+
+### Bugfix v Caché
+
+- ✅ Inicializace `s err = ""` před `try` blokem — `$$$CatchErrRest` makro v MLRest větvi GENERAL.inc referuje `err` bez `$g()`. Bez init proměnné každá výjimka uvnitř `try` maskuje skutečnou chybu (catch handler sám crashne `<UNDEFINED>`). Aplikováno v `InstancesList.cls`; ostatní třídy ošetříme při příští editaci.
+
+---
+
+## 2026-05-15 — fix: cleanup aktivních instancí při Open template s jinou agendou
+
+Když user otevřel šablonu (z disku nebo z Caché) s jinou `AgendaCode`, než měla předchozí, aktivní instance (linky MHD) se nevyčistily → ◀▶ na chipu zkusilo GetData s LinkaID z původní agendy → silent fail. Corner case z `2026-05-15 — v1.0 demo balíček` known limits.
+
+- ✅ Nový helper `ClearActiveInstances()` v `MainWindowViewModel` — no-op pokud už prázdné, jinak reset + fire change events
+- ✅ `OpenTemplateAsync` (disk) — snapshot starého `AgendaCode` před Load, po Load porovnání case-insensitive, clear pokud se změnilo
+- ✅ `OpenFromCacheAsync` — totéž
+- ✅ `ReplaceWithBlankTemplate` (volaná z `ChangeAgenda` / `NewTemplate`) — refaktor inline clearu na sdílený `ClearActiveInstances()` helper
+
+Žádné breaking změny.
+
+---
+
+## 2026-05-15 — v1.0 demo balíček: Caché storage + přepínač agendy + Instance Picker
+
+**Tři postupné commity (5ac9dd0 → 82b68be → fd25008) tvoří kompletní release readiness pro testovací nasazení.** Zákazníkovi lze ukázat end-to-end workflow pro zastávkový JŘ MHD.
+
+### Caché Template Storage (`5ac9dd0`)
+
+- ✅ **Nová třída** `ALVA.TemplateDesigner.API.Templates` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). Per-IDFa storage `^ALVA.TemplateDesigner.Templates(IdFa,"DTA",TemplateID,"Metadata"|"Data")` + sekundární index `("IDX","ByAgenda",AgendaCode,TemplateID)`. JSON wire formát (R3 architektonické pravidlo). Metadata: Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version.
+- ✅ **`CacheTemplateService`** (.NET) — async wrapper přes `Task.Run` nad sync MLRest (R1), vlastní `CacheTemplateException` (R2 přes `IPopupDisplayer`), POCO `CacheTemplateMetadata`.
+- ✅ **`CacheTemplatePickerDialog`** — list šablon s filtrem agendy + search + Open/Rename/Delete; client-side ICollectionView filter (instant refresh). Druhý entry point „Nástroje → Šablony v Caché..." sdílí stejný dialog jako „Soubor → Otevřít z Caché..." (správce + open intent v jednom).
+- ✅ **`SaveToCacheDialog`** — name + agenda dropdown při Save As.
+- ✅ **Menu wiring** — „Soubor → Otevřít z Caché... / Uložit do Caché [jako...]"; `SaveCommand` routing: Caché origin → save zpět do Caché; disk → file; nová → SaveAs.
+- ✅ **Caché namespace refactor** — `API/` (obecné nástroje, např. Templates) vs `Agendas/` (per-agenda data + AgendaAPI base) vs `Forms/` (Wave 4). ZastavkoveJrMhdAPI a TemplateDesignerFAKTURY přesunuty do Agendas/.
+- ✅ **GENERAL agenda fallback** — agenda s `cacheClass = ""` v appsettings → šablona bez DB vazby. CacheAgendaProvider short-circuit ve všech metodách (GetSchema/Data/Mock/atd). Bugfix: `BuildAllPreviewDataPages` vrací `[new DataContext()]` místo `[]` → PDF/PNG export funguje i bez agendy.
+
+### Přepínač agendy + permanentní status indikátor (`82b68be`)
+
+- ✅ **`ChangeAgendaDialog`** — list dostupných agend s „(aktuální)" badge, výběr přepne celý kontext šablony. Důvod: agenda určuje schéma DB polí + typy elementů + reálná data, zachovat rozdělanou JŘ šablonu jako fakturu nedává smysl.
+- ✅ **Tok přepnutí**: Klik na chip / menu / **Ctrl+Shift+A** → ChangeAgendaDialog → pokud nová agenda jiná → ConfirmUnsavedChanges (Save/Discard/Cancel) → `ReplaceWithBlankTemplate(agendaCode)` (sdílený helper s NewTemplate).
+- ✅ **Permanentní viditelnost agendy na 3 místech**:
+  - Status bar dole vlevo: zelený klikatelný chip „Agenda: …"
+  - Window title prefix: `[MHD]` / `[FAKTURY]` / `[GENERAL]`
+  - Sidebar „Pole agendy" header (klikatelný)
+
+### Instance Picker pro MHD linky (`fd25008`)
+
+- ✅ **`AgendaAPI.GetAvailableInstances`** (abstract default vrací prázdné pole) — agenda bez konceptu instancí nemusí přepisovat.
+- ✅ **`ZastavkoveJrMhdAPI` impl** — iteruje `^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID)`, pouze linky aktivní **skupiny linek** (default první nezblokovaná z `^ALVA.MHD.ENUMS(IdFa,"SkupinyLinek")` přes nový helper `GetDefaultSkupinaLinekID`; optional `SKUPINA_LINEK_ID` IN parametr pro Edison-driven kontext). TrasaID filter pro orphan linky (jinak by GetData padl na `<SUBSCRIPT>`). Case-insensitive substring search server-side, limit 50. Defensivní `if TrasaID = ""` guard v GetData s meaningful chybou.
+- ✅ **`CacheAgendaProvider.GetAvailableInstances(agendaCode, search?, limit=50)`** + POCO `AgendaInstance(Value, Display, Subtitle?)`.
+- ✅ **`InstancePickerDialog`** — search box (Enter → server query), checkboxy multi-select, Vybrat vše / Odznačit vše, count indicator.
+- ✅ **`ActiveInstances` state** v VM (mimo Template — session scope; reset při změně agendy): `ActiveInstanceIndex`, `CurrentActiveInstance`, `ActiveInstanceText`, `HasMultipleActiveInstances`. Commands `OpenInstancePicker / Previous / Next`. `RefreshDataForCurrentInstanceAsync` — async fetch GetData při změně instance, status text feedback („Načítám / N stránek / Chyba").
+- ✅ **Status bar 2. modrý chip** vedle agendy: „Instance: X — Y (N/M)" s ◀▶ tlačítky; klik otevře picker.
+- ✅ **Multi-instance batch** — `BuildAllPreviewDataPages` (Soubor → Exportovat...) i `PrintDialog buildRealData` (Soubor → Tisk...) iterují všechny ActiveInstances, generují N×K stránek. **Performance: 600 stránek za ~9s (5.2s fetch + 3.6s render, ~15ms/stránka)** — top decile vs commercial reporting (Crystal Reports 30-60s, SSRS 20-45s, JasperReports 15-30s).
+- ✅ **Per-agenda param mapping** — MHD → `LINKA_ID`, ostatní → `INSTANCE_ID` (hardcoded zatím; generalizace až přibude druhá agenda s instancemi).
+
+### Architektonická pravidla (z roadmap §5 — všechna dodržena)
+
+- **R1 Async-only Caché** — `CacheTemplateService` i instance fetch přes `Task.Run` (MLRest je sync, wrapper uvolní UI thread)
+- **R2 Chyby přes `IPopupDisplayer`** — `PopupDisplayer.Error(ex)` / `Info(msg)` / `Confirm`; žádný `MessageBox.Show` v VM
+- **R3 JSON wire format** — všechny nové API metody `obj.%ToJSON()` v OUT, .NET `JsonSerializer.Deserialize`
+- **R4 ViewModely bez WPF** — `Application.Current.MainWindow` jen v handlerech otevírajících dialog (Owner), žádné `System.Windows` v core VM logice
+- **R5 Template versioning** — `Template.Version` field uložen v metadatech v Caché; `TemplateMigrator` zatím no-op (žádné breaking změny)
+
+### Známé limity (akceptované pro v1.0)
+
+- LocalPrefs persistence aktivních instancí (po restartu se znovu vyberou)
+- Pořadí linek v pickeru podle subscriptu ($o iterace), ne by Cislo/Nazev
+- Tabbed UI pro Open dialog (zatím dvě menu cesty)
+- Batch export blokuje UI thread (OK pro 1–30 linek; pro 100+ progress bar potřeba)
+
+Žádné breaking JSON změny v Template formátu. Caché global `^ALVA.TemplateDesigner.Templates` je nový (žádná migrace dat).
+
+---
+
 ## 2026-05-01 — ImageElement ScaleMode + tenké rámečky + descriptor sort
 
 **Tři vyladění objevené při ladění šablon:**
