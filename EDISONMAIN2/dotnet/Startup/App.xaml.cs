@@ -88,7 +88,8 @@ namespace EDISONMAIN2
                 Shutdown();
                 return;
             }
-            services.ActiveLicence = activeLicence;
+            // services.ActiveLicence + services.AccessTable nastaví VM v RebuildSessionState
+            // (jediný bod přebuildu session-scoped state — initial / switch firmy / manual refresh).
 
             LocalPrefs.Current.LastIdfa = mlRest.Idfa;
             LocalPrefs.Current.Save();
@@ -106,7 +107,7 @@ namespace EDISONMAIN2
             var treeGetter = new ModuleTreeGetter();
             // licenceService.GetActiveLicence čte aktuální stav MLRest, takže po přepnutí firmy
             // dostane VM licenci cílové firmy (potřebné pro VerifyLic se správným CountsLOGIN).
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, licenceService.GetActiveLicence, nav.CloseAll);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, licenceService.GetActiveLicence, activeLicence, nav.CloseAll);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             // AttachToWindow před Show — hookne SourceInitialized pro persistence předtím než fire

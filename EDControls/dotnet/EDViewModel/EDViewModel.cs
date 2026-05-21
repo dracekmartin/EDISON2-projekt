@@ -142,6 +142,14 @@ public class EDViewModel : INotifyPropertyChanged
         new(execute, canExecute, PopupDisplayer);
 
     /// <summary>
+    /// Aplikační přístup uživatele pro <paramref name="elementId"/> (string ID z legacy
+    /// EDISFormEnum / EDPackageEnum / EDMainPackageEnum). Pokud <c>AccessTable</c> nebyl
+    /// loadnut (testy, pre-login UI), vrací <c>true</c> — degrade gracefully.
+    /// </summary>
+    protected bool HasAccess(string elementId) =>
+        _services.AccessTable?.Contains(elementId) ?? true;
+
+    /// <summary>
     /// Vytvoří <see cref="AsyncRelayCommand"/> s napojeným <see cref="PopupDisplayer"/> pro výjimky.
     /// Pro <c>async Task</c> handlery — vyhni se <c>async void</c>. Pojmenování
     /// <c>CommandAsync</c> (ne overload <c>Command</c>) drží overload resolution jasné.

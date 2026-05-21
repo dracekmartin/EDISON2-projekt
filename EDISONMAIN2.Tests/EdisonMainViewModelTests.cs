@@ -28,6 +28,11 @@ public class EdisonMainViewModelTests
     {
         var mock = Substitute.For<IMLRest>();
         mock.Idfa.Returns(idfa);
+        // AccessLoader volá GetEdisonAccess při initial / switch / refresh. Default mock
+        // vrátí apId=3 (admin, IsAllAccess=true) → access filter nepřebíjí ostatní testy.
+        // Specifické access testy si MockMLRest přepíší vlastním setupem.
+        mock.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
+            .Returns(new object[] { "", "3" });
         return mock;
     }
 
@@ -44,7 +49,7 @@ public class EdisonMainViewModelTests
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, closeAllWindows ?? (() => { }));
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, closeAllWindows ?? (() => { }));
         }
         finally
         {
@@ -113,7 +118,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, null, () => { });
         }
         finally
         {
@@ -141,7 +146,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, null, () => { });
         }
         finally
         {

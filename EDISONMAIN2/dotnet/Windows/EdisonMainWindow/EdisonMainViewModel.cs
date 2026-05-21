@@ -62,6 +62,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IMLRest mlRest,
             IModuleTreeGetter treeService,
             Func<Lic?> licenceLoader,
+            Lic? initialLicence,
             Action closeAllWindows)
         {
             _treeGetter = treeService;
@@ -111,6 +112,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
+            RebuildSessionState(initialLicence);
+        }
+
+        /// <summary>
+        /// Po změně session state (initial load v ctor, switch firmy, manual refresh licence)
+        /// přebuduje VEŠKERÝ session-scoped derived state. Jediný bod rozšíření pro budoucí
+        /// session-scoped data (ECL, user settings, font scheme per firma, …) — přidá se sem,
+        /// callsity nepotřebují vědět.
+        /// </summary>
+        private void RebuildSessionState(Lic? licence)
+        {
+            _services.ActiveLicence = licence;
+            _services.AccessTable = AccessLoader.Load(MLRest!, licence, _services.IsAdmin);
             LoadAndFilterTrees();
         }
 
@@ -128,29 +142,42 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             var tree = _treeGetter.GetModuleTree(MLRest!, treeName);
             foreach (var module in tree)
             {
-                if (TryFilter(module, _services.ActiveLicence) is { } filtered)
+                if (TryFilter(module, _services.ActiveLicence, _services.AccessTable) is { } filtered)
                     target.Add(filtered);
             }
         }
 
         /// <summary>
-        /// Profiltruje strom podle licence. EXE projde pokud není gateovaný nebo je v
-        /// <see cref="Lic.Elements"/>; FAMILY zůstává, pokud má aspoň jedno viditelné dítě.
+        /// 4-vrstvá filtrace stromu (viz RESPONSIBILITIES § 5.2):
+        /// 1) licence — <see cref="ExecutableModule.IsLicensed"/> uzel musí být v <see cref="Lic.Elements"/>;
+        /// 2) hidden — TODO (zatím nemáme `hidden` ve wire formátu);
+        /// 3) aplikační přístup — <c>AccessTable.Contains(ElementId)</c> pro každý EXE uzel;
+        /// 4) admin fallback — řešen v <see cref="AccessLoader"/> už při loadu (přidá konkrétní IDs).
+        /// FAMILY se auto-skryje, pokud všechny děti odfiltrované.
         /// </summary>
-        internal static IModule? TryFilter(IModule module, Lic? licence) => module switch
+        internal static IModule? TryFilter(IModule module, Lic? licence, AccessTable? access = null) => module switch
         {
-            ExecutableModule exe => IsAllowed(exe, licence) ? exe : null,
-            ModuleFamily family  => FilterFamily(family, licence),
+            ExecutableModule exe => IsAllowed(exe, licence, access) ? exe : null,
+            ModuleFamily family  => FilterFamily(family, licence, access),
             _                    => module,
         };
 
-        internal static bool IsAllowed(ExecutableModule exe, Lic? licence) =>
-            !exe.IsLicensed || (licence?.Elements?.Contains(exe.ElementId) ?? false);
+        internal static bool IsAllowed(ExecutableModule exe, Lic? licence, AccessTable? access = null)
+        {
+            // Krok 1: licence gate
+            if (exe.IsLicensed && !(licence?.Elements?.Contains(exe.ElementId) ?? false))
+                return false;
+            // Krok 3: aplikační přístup — pokud AccessTable je null (load nebyl proveden, např. testy),
+            // pasujeme všechno (degrade gracefully). V produkci je vždy non-null po App startup.
+            if (access != null && !access.Contains(exe.ElementId))
+                return false;
+            return true;
+        }
 
-        internal static ModuleFamily? FilterFamily(ModuleFamily family, Lic? licence)
+        internal static ModuleFamily? FilterFamily(ModuleFamily family, Lic? licence, AccessTable? access = null)
         {
             var visibleChildren = family.NestedModules
-                .Select(child => TryFilter(child, licence))
+                .Select(child => TryFilter(child, licence, access))
                 .Where(child => child != null)
                 .ToList();
 
@@ -213,10 +240,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
                 if (outcome == LicenceAcquireOutcome.Accepted)
                 {
-                    _services.ActiveLicence = newLicence;
+                    RebuildSessionState(newLicence);
                     LocalPrefs.Current.LastIdfa = MLRest!.Idfa;
                     LocalPrefs.Current.Save();
-                    LoadAndFilterTrees();
                 }
                 else
                 {
@@ -270,9 +296,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private void RefreshLicense()
         {
-            var fresh = _licenceLoader();
-            _services.ActiveLicence = fresh;
-            LoadAndFilterTrees();
+            RebuildSessionState(_licenceLoader());
             PopupDisplayer.Info("Licence byla aktualizována.");
         }
 
