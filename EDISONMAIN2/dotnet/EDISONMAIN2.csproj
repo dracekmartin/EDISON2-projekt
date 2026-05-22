@@ -7,14 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <EnableDefaultApplicationDefinition>false</EnableDefaultApplicationDefinition>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ApplicationDefinition Include="Startup\App.xaml">
-      <Generator>MSBuild:Compile</Generator>
-    </ApplicationDefinition>
-  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="EDISONMAIN2.Tests" />

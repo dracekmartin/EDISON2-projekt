@@ -5,10 +5,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using System.Windows.Media;
-// Aliasy proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
+// Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
 using Application = System.Windows.Application;
-using FontFamily = System.Windows.Media.FontFamily;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
@@ -33,6 +31,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenInputFormTestCommand { get; }
         public ICommand OpenEDListTestCommand { get; }
         public ICommand OpenEDComponentAndViewModelTestCommand { get; }
+        public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand CloseAllCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
@@ -74,6 +73,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show("EDListTestWindow"));
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
+            OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             CloseAllCommand          = Command(closeAllWindows);
 
             // EDISON menu
@@ -278,6 +278,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Process.Start(new ProcessStartInfo(exe) { UseShellExecute = true });
         }
 
+        // Spustí TemplateDesigner.exe standalone — používá vlastní MLRest z templatedesigner.appsettings.json,
+        // nesdílí shell session. Pro plnou integraci by TD musel implementovat EDISONMAIN2API kontrakt.
+        private static void OpenTemplateDesigner()
+        {
+            var path = System.IO.Path.Combine(AppContext.BaseDirectory, "TemplateDesigner.exe");
+            if (!System.IO.File.Exists(path))
+                path = System.IO.Path.Combine(EDControls.EDViewModel.WindowNavigator.EdisonDeployRoot, "TemplateDesigner.exe");
+            Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
+        }
+
         private void RefreshLicense()
         {
             RebuildSessionState(_licenceLoader());
@@ -336,7 +346,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 LocalPrefs.Current.FontApplied = value;
                 LocalPrefs.Current.Save();
                 OnPropertyChanged();
-                ApplyFontToMainWindow();
+                ApplyFont();
             }
         }
 
@@ -358,26 +368,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             LocalPrefs.Current.FontFamily = dialog.Font.FontFamily.Name;
             LocalPrefs.Current.FontSize = dialog.Font.Size;
             LocalPrefs.Current.Save();
-            if (FontApplied) ApplyFontToMainWindow();
+            if (FontApplied) ApplyFont();
         }
 
-        // Public — volá App.xaml.cs po Show() pro startup-time aplikaci podle persistovaných LocalPrefs.
-        public static void ApplyFontToMainWindow()
-        {
-            var window = Application.Current?.MainWindow;
-            if (window is null) return;
-
-            if (LocalPrefs.Current.FontApplied && !string.IsNullOrEmpty(LocalPrefs.Current.FontFamily))
-            {
-                window.FontFamily = new FontFamily(LocalPrefs.Current.FontFamily);
-                if (LocalPrefs.Current.FontSize is { } size) window.FontSize = size;
-            }
-            else
-            {
-                window.ClearValue(Window.FontFamilyProperty);
-                window.ClearValue(Window.FontSizeProperty);
-            }
-        }
+        private void ApplyFont() => FontService.Apply(LocalPrefs.Current);
 
         private void OpenWebUrl(string url)
         {

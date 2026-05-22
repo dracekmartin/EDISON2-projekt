@@ -29,7 +29,9 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="24" />
+            <!-- Auto — StatusBar musí růst se zvolenou velikostí fontu (user preference).
+                 Pevná výška by ořízla text při větším fontu. -->
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Top-level menu — replikuje pořadí a obsah legacy frmNoMDI.mnuMain.
@@ -84,6 +86,8 @@
                 <MenuItem Header="Test InputForm"    Command="{Binding OpenInputFormTestCommand}"/>
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
+                <Separator/>
+                <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
             </MenuItem>
             <MenuItem Header="INFO" IsEnabled="False"/>
         </Menu>
