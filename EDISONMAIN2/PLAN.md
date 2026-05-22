@@ -28,6 +28,7 @@ Kotva pro PR review a budoucí rozhodnutí.
 6. **Komentáře = WHY, ne WHAT** (viz [CLAUDE.md](CLAUDE.md)).
 7. **Backward compat s legacy EDISONMAIN** během transition. Sdílený Caché backend, žádný breaking change ve `^||ML`, ACTIVITY zámku, business locks, licenčním formátu.
 8. **YAGNI hlídka.** Před přidáním abstrakce: existuje 2+ konkrétní use case dnes? Pokud ne, ne.
+9. **Testovatelnost je first-class.** Každá netriviální logika (services, switchers, bootstrap kroky, parsery wire formátů) musí mít xUnit pokrytí (`EDControls.Tests`, `EDISONMAIN2.Tests`). VM logika přes mock `IMLRest` / `IPopupDisplayer` / `IWindowNavigator` (NSubstitute), ne přes integraci proti Caché. Když nový refactor zavádí abstrakci kvůli testovatelnosti (např. extrakce do service), test pokrývající dříve nemožný edge case musí být součástí stejné PR. Bez něj refactor neplní svůj účel.
 
 ---
 
@@ -53,6 +54,24 @@ Existující návrhové dluhy, které je třeba uklidit než přibyde další fu
 | L1 | LOW | Open | Komentář-na-WHY audit | Některé komentáře v `EdisonMainViewModel` popisují WHAT (co kód dělá) místo WHY (proč zrovna takhle), což je v rozporu s [CLAUDE.md](CLAUDE.md) pravidlem. Není kritické — jen sjednotit. | EdisonMainViewModel a okolí | Projít komentáře, smazat ty co popisují WHAT, doplnit WHY tam kde chybí (např. proč zrovna `_selectedCompanyIndex` musí odpovídat `mlRest.Idfa`). |
 | L2 | LOW | Open | `StandardActionsAccessor.FindString` hardcoded český fallback | Fallback texty "Přidat", "Upravit", "Smazat" jsou hardcoded v `EDViewModel.StandardActionsAccessor`. Pokud `EDStrings.xaml` resource není dostupný, použije se čeština — což pro pilot OK, ale brání budoucí lokalizaci do jiného jazyka bez úpravy kódu. | [EDViewModel.cs:217-221](../EDControls/dotnet/EDViewModel/EDViewModel.cs#L217) | Vyřeší se v rámci lokalizační infrastruktury (feature Lokalizace). |
 | L3 | LOW | Deferred | Inkonzistentní Window title `[Idfa]` suffix | `WindowNavigator.CreateWindow` appenduje `[Idfa]` do `window.Title` při Show/ShowDialog, ale shell okno (`EdisonMainWindow`) si title bind-uje sám přes `{Binding WindowTitle}`. | `WindowNavigator.cs:146-147` + `EdisonMainWindow.xaml:13` | **Deferred:** po review (2026-05-22) — user vidí `[Idfa]` na každém okně (shell přes binding, ostatní přes navigator append), žádná visible inkonzistence. "Forced chokepoint" by zaváděl infrastrukturu pro neexistující problém. Otevřít teprve když někdo začne přidávat okna mimo `WindowNavigator` (porušení konvence) NEBO když přibude požadavek na jednotný formát title napříč okny. |
+
+---
+
+## Komprehensivní review po dořešení backlogu
+
+Po uzavření všech `Open` položek z refactoring backlogu (případně i stubs S1–S9) udělat jednu vědomou pauzu před přechodem na features. Cíl: ověřit, že refactory nepřinesly regression, že VŠECHNA stávající funkcionalita pořád chodí, a že nově vzniklé services / chokepointy mají test coverage odpovídající principu #9.
+
+**Co projít:**
+
+- **Smoke-test funkcionalita** — projít každou existující featuru shellu manuálně proti aktuálnímu buildu (per `Co je hotové` v [CLAUDE.md](CLAUDE.md)): login, výběr firmy + přepnutí, spouštění legacy `.exe`, persistence stavu oken, ACTIVITY zámek + force-logout flow, font apply, menu pohyby, error popupy. Aspoň happy path každé feature. Cíl: žádný refactor nesmí nevědomky shodit existující práci.
+- **Test coverage audit** — projít všechny services / parsery / switchery vzniklé v rámci backlogu (`AccessLoader`, `ModuleTreeGetter`, `CompanySwitcher`, `LicenceVerifier`, `WindowRegistry`, případně `AppBootstrapper` po C2, `FontService` po M5) a zkontrolovat, že každá netriviální větev má xUnit test. Chybějící doplnit. Cíl: refactor zavádí abstrakce kvůli testovatelnosti — neměl by skončit bez testu.
+- **Edge cases test plán** — sepsat seznam edge cases které dnes nemají test (např. `CompanySwitcher.Switch` při Refused/Cancelled outcome + rollback; `LicenceVerifier` retry loop s admin cancel; `AccessLoader` se starým apId; persist/restore okno se starým form ID). Pro každý buď přidat test nebo zdůvodnit proč netřeba (typicky external integration test out of scope).
+- **Dead code sweep** — `grep` po `NotYetImplemented`, `TODO`, `FIXME`, `[Obsolete]`, `#if false`, prázdných catch blocích. Vyhodnotit co je legit (stuby čekající na implementaci → P (PLAN.md)) a co je sirotek po refactoru → smazat.
+- **CLAUDE.md / RESPONSIBILITIES.md sync** — projít, jestli `Co je hotové` v `CLAUDE.md` odpovídá realitě a `RESPONSIBILITIES.md` má disclaimer "idea pool, ne canonical spec" (TODO z Context sekce tohoto plánu).
+
+**Kdy:** po posledním uzavřeném backlog itemu, před přechodem na první **Feature** z dolní části plánu (#1 Updater). Materializuje se jako checklist v PR popisu / commit zprávě, ne jako další refactor sprint.
+
+**Výstup:** krátký zápis (1-2 odstavce) v commitu / poznámkách: co projito, co opraveno, co odloženo s důvodem. Slouží jako audit trail před tím, než začneme stavět nové features na (předpokládaně) zdravé základně.
 
 ---
 
