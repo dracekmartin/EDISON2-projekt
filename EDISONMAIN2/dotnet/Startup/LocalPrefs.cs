@@ -19,10 +19,9 @@ public class LocalPrefs
     public bool ShowMiniApps { get; set; }
     public bool LoadBoards { get; set; } = true;
 
-    // Styl — user font. FontApplied=true → font se aplikuje na MainWindow při startu/apply.
-    public string? FontFamily { get; set; }
-    public double? FontSize { get; set; }
-    public bool FontApplied { get; set; }
+    // FontApplied/FontFamily/FontSize byly přesunuty do EDControls.UserFonts.UserFontPreference
+    // (shared %APPDATA%\m-line\common\font.json) aby je TemplateDesigner mohl sdílet a reagovat
+    // na změnu fontu v shellu přes FileSystemWatcher.
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

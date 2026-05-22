@@ -2,6 +2,7 @@
 using System.Windows.Threading;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.UserFonts;
 using TemplateDesigner.Config;
 
 namespace TemplateDesigner;
@@ -44,6 +45,11 @@ public partial class App : Application
 #endif
 
         EDServices.Initialize(new EDServices(null, new WindowNavigator(), new PopupDisplayer()));
+
+        // User font preference — sdílené storage s EDISONMAIN2 (%APPDATA%\m-line\common\font.json).
+        // Apply před MainWindow.Show eliminuje flicker; FileSystemWatcher reaguje na change ze shellu.
+        FontService.Initialize(this);
+
         var settings = AppSettings.Load();
         var mlRest   = CacheSchemaWiring.TryCreateMlRest(settings);
 

@@ -4,6 +4,7 @@ using ALVA.EDISONAPI;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.UserFonts;
 using EDControls.UserPrefs;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
@@ -105,9 +106,9 @@ public class AppBootstrapper(Application application)
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popupDisplayer.DefaultOwner = wnd;
         viewModel.AttachToWindow(wnd);
-        // Apply user font preference PŘED Show — overridne EDTheme tokeny v Application.Resources,
-        // DynamicResource v EDThemeStyles okamžitě propaguje na všechny ovládací prvky.
-        FontService.Apply(LocalPrefs.Current);
+        // User font preference: load shared shell+TD storage, apply na EDTheme tokeny PŘED Show
+        // (eliminuje flicker), spustit FileSystemWatcher pro cross-process propagaci změny.
+        FontService.Initialize(application);
         return wnd;
     }
 

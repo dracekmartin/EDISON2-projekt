@@ -11,6 +11,7 @@ using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.UserFonts;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using static ALVA.EDISONAPI.Database;
 
@@ -336,17 +337,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         public Visibility BoardsVisibility => LoadBoards ? Visibility.Visible : Visibility.Collapsed;
 
-        // Styl → Použít — aplikuje uložený font na hlavní okno (přes inherited FontFamily/FontSize).
+        // Styl → Použít — aplikuje uložený font (FontFamily + FontSize) na celou aplikaci.
+        // Storage je shared font.json (EDControls.UserFonts.UserFontPreference), takže ostatní
+        // m-line tooly (TemplateDesigner) přes FileSystemWatcher okamžitě reagují na změnu.
         public bool FontApplied
         {
-            get => LocalPrefs.Current.FontApplied;
+            get => UserFontPreference.Current.FontApplied;
             set
             {
-                if (LocalPrefs.Current.FontApplied == value) return;
-                LocalPrefs.Current.FontApplied = value;
-                LocalPrefs.Current.Save();
+                if (UserFontPreference.Current.FontApplied == value) return;
+                UserFontPreference.Current.FontApplied = value;
+                UserFontPreference.Current.Save();
                 OnPropertyChanged();
-                ApplyFont();
+                FontService.Apply(UserFontPreference.Current);
             }
         }
 
@@ -354,24 +357,22 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void SelectFont()
         {
             using var dialog = new System.Windows.Forms.FontDialog();
-            if (!string.IsNullOrEmpty(LocalPrefs.Current.FontFamily))
+            if (!string.IsNullOrEmpty(UserFontPreference.Current.FontFamily))
             {
                 try
                 {
                     dialog.Font = new System.Drawing.Font(
-                        LocalPrefs.Current.FontFamily,
-                        (float)(LocalPrefs.Current.FontSize ?? 12));
+                        UserFontPreference.Current.FontFamily,
+                        (float)(UserFontPreference.Current.FontSize ?? 12));
                 }
                 catch { /* nepřežijeme nepoužitelný font — picker použije default */ }
             }
             if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
-            LocalPrefs.Current.FontFamily = dialog.Font.FontFamily.Name;
-            LocalPrefs.Current.FontSize = dialog.Font.Size;
-            LocalPrefs.Current.Save();
-            if (FontApplied) ApplyFont();
+            UserFontPreference.Current.FontFamily = dialog.Font.FontFamily.Name;
+            UserFontPreference.Current.FontSize = dialog.Font.Size;
+            UserFontPreference.Current.Save();
+            if (FontApplied) FontService.Apply(UserFontPreference.Current);
         }
-
-        private void ApplyFont() => FontService.Apply(LocalPrefs.Current);
 
         private void OpenWebUrl(string url)
         {

@@ -29,6 +29,7 @@ Kotva pro PR review a budoucí rozhodnutí.
 7. **Backward compat s legacy EDISONMAIN** během transition. Sdílený Caché backend, žádný breaking change ve `^||ML`, ACTIVITY zámku, business locks, licenčním formátu.
 8. **YAGNI hlídka.** Před přidáním abstrakce: existuje 2+ konkrétní use case dnes? Pokud ne, ne.
 9. **Testovatelnost je first-class.** Každá netriviální logika (services, switchers, bootstrap kroky, parsery wire formátů) musí mít xUnit pokrytí (`EDControls.Tests`, `EDISONMAIN2.Tests`). VM logika přes mock `IMLRest` / `IPopupDisplayer` / `IWindowNavigator` (NSubstitute), ne přes integraci proti Caché. Když nový refactor zavádí abstrakci kvůli testovatelnosti (např. extrakce do service), test pokrývající dříve nemožný edge case musí být součástí stejné PR. Bez něj refactor neplní svůj účel.
+10. **Předprodukční fáze — neřešit migrace ani backward-compat pro vlastní data.** EDISONMAIN2 dnes nikde reálně neběží (vyvíjíme ve dvou lidech, žádní uživatelé). Když refactor mění lokaci / formát / klíče naší vlastní persistence (`LocalPrefs`, `UserFontPreference`, custom JSON soubory, nově zaváděné Caché globály), **NEPSAT** migrační code path — kontrolu starých formátů, jednorázový import, fallback. Stačí čistá nová cesta. Když po prvním deployu (pilot) přibyde reálný uživatel, migrace se naopak stanou povinnou součástí refactoru. **Backward-compat s legacy EDISONMAIN** (princip #7) je jiná věc — produkce, povinná.
 
 ---
 
