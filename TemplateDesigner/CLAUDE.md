@@ -165,7 +165,7 @@ cd C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner
 .\publish.ps1
 ```
 
-Skript volá `dotnet publish` s profilem `SingleFile C-Edison` → výstup do `C:\Edison\TemplateDesigner.exe` (~30 MB, self-extracting bundle s `templatedesigner.appsettings.json` jako embedded resource).
+Skript volá `dotnet publish` s profilem `SingleFileCEdison` → výstup do `C:\Edison\TemplateDesigner.exe` (~30 MB, self-extracting bundle s `templatedesigner.appsettings.json` jako embedded resource).
 
 **Před spuštěním** — zavři běžící TemplateDesigner.exe (skript hned na začátku ověří lock a friendly errne, pokud je soubor uzamčený).
 

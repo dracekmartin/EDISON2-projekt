@@ -2,7 +2,7 @@
 
 Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP (MLRest).
 
-Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se dostávají pouze přes `dotnet publish` s publish profilem „SingleFile C-Edison" (`Properties/PublishProfiles/`) — single-file výstup bez volných DLL.
+Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se dostávají pouze přes `dotnet publish` s publish profilem „SingleFileCEdison" (`Properties/PublishProfiles/`) — single-file výstup bez volných DLL.
 
 Nové features pokrývej xUnit testy (`EDControls.Tests/`, `EDISONMAIN2.Tests/`).
 
