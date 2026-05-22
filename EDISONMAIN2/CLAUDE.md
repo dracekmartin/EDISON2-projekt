@@ -18,7 +18,7 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
 - **`LicenceVerifier`** — sdílený retry loop pro `VerifyLic`. Když je při
   out-of-license uživatel admin, nabídne spawnout legacy `USERS.exe formUSERSActivity`
   (přes EDISONMAIN2API), retry po zavření. Non-admin / Cancel → caller revertuje
-  (App.xaml.cs Shutdown, VM revert). Outcome enum `Accepted` / `Cancelled` /
+  (AppBootstrapper vrátí null = no window shown → App.xaml.cs Shutdown, VM revert). Outcome enum `Accepted` / `Cancelled` /
   `Refused` umožňuje context-specifický popup.
 - **Strom modulů** — `ModuleTreeGetter` parsuje wire formát z
   `ALVA.EDISONMAIN2.API.Tree.GetTree` (FAMILY / EXE / FAMILY_END).
@@ -28,14 +28,16 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
 - **ACTIVITY zámek** — vytvořen `VerifyLic` při loginu. `EdisonActivityFailed` event
   → graceful shutdown.
 - **Pamatuje poslední firmu** — `LocalPrefs` (JSON v `%APPDATA%\m-line\EDISONMAIN2\local.json`)
-  ukládá `LastIdfa` po loginu / přepnutí. App.xaml.cs ho čte při startu jako prioritu
-  před `IsDefault` flagem. Funguje i v `#if DEBUG` modu.
+  ukládá `LastIdfa` po loginu / přepnutí. `AppBootstrapper` ho čte při startu jako prioritu
+  před `IsDefault` flagem (přes `CompanySwitcher.PickInitial`). Funguje i v `#if DEBUG` modu.
 - **Persistence stavu oken** — automatická pro každý `EDViewModel`-derived VM
   (pozice, velikost, Maximized) přes existující legacy endpoint
   `ALVA.LIBRARY.Form.SaveParams` / `LoadParams`, per-MLP × IDFa. Default formID
   odvozen z názvu VM třídy (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`).
   Detaily v root [CLAUDE.md](../CLAUDE.md) (sekce "Persistence stavu").
-- **App startup** — `Startup/App.xaml(.cs)` orchestruje celý bootstrap.
+- **App startup** — `Startup/App.xaml(.cs)` jen dispatchne na `AppBootstrapper`, který
+  orchestruje celý bootstrap workflow (load prefs → login → MLRest → pick firmu → VerifyLic →
+  ModuleTree → font → return shell okno). Každý krok testovatelný v izolaci.
 
 ## Spouštění legacy modulů — EDISONMAIN2API
 
@@ -103,7 +105,7 @@ nebo RESPONSIBILITIES.md.
 **Příklad** — komentář popisuje neobvyklou invariantu:
 
 ```csharp
-// Index musí odpovídat MLRest.Idfa — tam má App.xaml.cs vytvořený ACTIVITY zámek.
+// Index musí odpovídat MLRest.Idfa — tam má AppBootstrapper vytvořený ACTIVITY zámek.
 _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i))
     .First(x => x.c.Id == mlRest.Idfa).i;
 ```

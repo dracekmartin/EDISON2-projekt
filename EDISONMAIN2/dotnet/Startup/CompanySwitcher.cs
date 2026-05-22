@@ -17,7 +17,7 @@ public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
 
 /// <summary>
 /// Sdílená logika pro výběr a přepnutí firmy. <see cref="PickInitial"/> řeší startup
-/// (App.xaml.cs), <see cref="Switch"/> runtime přepnutí ve VM. Drift mezi oběma cestami
+/// (<see cref="AppBootstrapper"/>), <see cref="Switch"/> runtime přepnutí ve VM. Drift mezi oběma cestami
 /// (priorita firmy, ACTIVITY zámek, licenční retry, rollback) byl historicky zdrojem
 /// bugů — proto společný service.
 /// </summary>
@@ -31,7 +31,7 @@ public class CompanySwitcher(
 {
     /// <summary>
     /// Vybere výchozí firmu pro startup: priorita <paramref name="preferredIdfa"/> →
-    /// <c>IsDefault</c> flag → <c>companies[0]</c>. Stateless, volá se v App.xaml.cs
+    /// <c>IsDefault</c> flag → <c>companies[0]</c>. Stateless, volá se v <see cref="AppBootstrapper"/>
     /// před vytvořením MLRest connection.
     /// </summary>
     public static CompanyStruct PickInitial(IReadOnlyList<CompanyStruct> companies, string? preferredIdfa)
