@@ -150,7 +150,7 @@ public class PdfImportDialogViewModel : EDViewModel
     public Func<string?>? RequestOpenFile { get; set; }
 
     private RelayCommand? _browsePdf;
-    public RelayCommand BrowsePdfCommand => _browsePdf ??= new(BrowsePdf);
+    public RelayCommand BrowsePdfCommand => _browsePdf ??= Command(BrowsePdf);
 
     protected override void OnOk()
     {

@@ -171,6 +171,11 @@ SomeCommand = new RelayCommand(DoSomething);
 SomeCommand = new RelayCommand(DoSomething, () => CanDoSomething, popupDisplayer);
 ```
 
+Když `popupDisplayer` není předán, použije se `EDServices.Current.PopupDisplayer`
+(composition root). Tests, které volají `RelayCommand.Execute()` a očekávají,
+že případnou výjimku odchytí mock, musí mock `IPopupDisplayer` zaregistrovat
+přes `EDServices` nebo předat jako 3. argument.
+
 `RelayCommand` zachytí výjimky v `Execute` a zobrazí je přes `IPopupDisplayer.Error()`.
 `CanExecuteChanged` se napojí na `CommandManager.RequerySuggested` — WPF automaticky
 přehodnotí `CanExecute` po UI interakcích.

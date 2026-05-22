@@ -29,7 +29,9 @@ public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null
         _isRunning = true;
         CommandManager.InvalidateRequerySuggested();
         try { await execute(); }
-        catch (Exception ex) { (popupDisplayer ?? new PopupDisplayer()).Error(ex); }
+        // Fallback na EDServices.Current.PopupDisplayer (composition root) — ne new PopupDisplayer():
+        // App.xaml.cs wiring zajistí owner, takže popup neletí jako orphan top-level dialog.
+        catch (Exception ex) { (popupDisplayer ?? EDServices.Current.PopupDisplayer).Error(ex); }
         finally
         {
             _isRunning = false;
