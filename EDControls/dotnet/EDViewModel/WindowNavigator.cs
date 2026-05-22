@@ -13,6 +13,13 @@ namespace EDControls.EDViewModel;
 /// </summary>
 public class WindowNavigator : IWindowNavigator
 {
+    /// <summary>
+    /// Cíl deploye legacy `.exe` agend (`USERS.exe`, `MHD2PlanDopravy.exe`, ...).
+    /// Single-file publish profiles tam zapisují, <see cref="ResolveExecutablePath"/>
+    /// odtud čte fallback, když relativní path nenajde v <see cref="AppContext.BaseDirectory"/>.
+    /// </summary>
+    public const string EdisonDeployRoot = @"C:\Edison";
+
     private readonly List<Process> _legacyProcesses = [];
 
     /// <summary>
@@ -129,7 +136,7 @@ public class WindowNavigator : IWindowNavigator
     {
         var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
         if (File.Exists(localPath)) return localPath;
-        return Path.Combine(@"C:\Edison", relativePath);
+        return Path.Combine(EdisonDeployRoot, relativePath);
     }
 
     private Window CreateWindow(string key, EDWindowInput? input)
