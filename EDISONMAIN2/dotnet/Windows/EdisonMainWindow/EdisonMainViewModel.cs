@@ -27,6 +27,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly IModuleTreeGetter _treeGetter;
         private readonly Func<Lic?> _licenceLoader;
         private readonly CompanySwitcher _switcher;
+        private readonly ILocalPrefs _prefs;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -64,11 +65,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Func<Lic?> licenceLoader,
             Lic? initialLicence,
             CompanySwitcher switcher,
+            ILocalPrefs prefs,
             Action closeAllWindows)
         {
             _treeGetter = treeService;
             _licenceLoader = licenceLoader;
             _switcher = switcher;
+            _prefs = prefs;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
@@ -300,36 +303,36 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // nemá miniaplikace, dialog mode nikdo nečte) — flagy se ukládají pro budoucnost.
         public bool ShowWindowsAsDialogs
         {
-            get => LocalPrefs.Current.ShowWindowsAsDialogs;
+            get => _prefs.ShowWindowsAsDialogs;
             set
             {
-                if (LocalPrefs.Current.ShowWindowsAsDialogs == value) return;
-                LocalPrefs.Current.ShowWindowsAsDialogs = value;
-                LocalPrefs.Current.Save();
+                if (_prefs.ShowWindowsAsDialogs == value) return;
+                _prefs.ShowWindowsAsDialogs = value;
+                _prefs.Save();
                 OnPropertyChanged();
             }
         }
 
         public bool ShowMiniApps
         {
-            get => LocalPrefs.Current.ShowMiniApps;
+            get => _prefs.ShowMiniApps;
             set
             {
-                if (LocalPrefs.Current.ShowMiniApps == value) return;
-                LocalPrefs.Current.ShowMiniApps = value;
-                LocalPrefs.Current.Save();
+                if (_prefs.ShowMiniApps == value) return;
+                _prefs.ShowMiniApps = value;
+                _prefs.Save();
                 OnPropertyChanged();
             }
         }
 
         public bool LoadBoards
         {
-            get => LocalPrefs.Current.LoadBoards;
+            get => _prefs.LoadBoards;
             set
             {
-                if (LocalPrefs.Current.LoadBoards == value) return;
-                LocalPrefs.Current.LoadBoards = value;
-                LocalPrefs.Current.Save();
+                if (_prefs.LoadBoards == value) return;
+                _prefs.LoadBoards = value;
+                _prefs.Save();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(BoardsVisibility));
             }

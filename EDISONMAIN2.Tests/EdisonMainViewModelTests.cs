@@ -40,19 +40,21 @@ public class EdisonMainViewModelTests
         EDServices? services = null,
         IModuleTreeGetter? treeGetter = null,
         IPopupDisplayer? popup = null,
+        ILocalPrefs? prefs = null,
         Action? closeAllWindows = null)
     {
         var mockMLRest = MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var svc = services ?? MockServices(popup: popup);
         var close = closeAllWindows ?? (() => { });
+        var p = prefs ?? Substitute.For<ILocalPrefs>();
         var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
-                                           svc.PopupDisplayer, svc.WindowNavigator, close);
+                                           svc.PopupDisplayer, svc.WindowNavigator, p, close);
 
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, switcher, close);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, switcher, p, close);
         }
         finally
         {
@@ -130,13 +132,14 @@ public class EdisonMainViewModelTests
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
         var svc = MockServices(popup: mockPopup);
+        var prefs = Substitute.For<ILocalPrefs>();
         var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
-                                           svc.PopupDisplayer, svc.WindowNavigator, () => { });
+                                           svc.PopupDisplayer, svc.WindowNavigator, prefs, () => { });
         EDServices.Initialize(svc);
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), () => null, null, switcher, () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), () => null, null, switcher, prefs, () => { });
         }
         finally
         {

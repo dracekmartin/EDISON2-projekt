@@ -257,17 +257,25 @@ Dva čisté layery pro user preferences / state:
 
 `LocalPrefs` (`EDISONMAIN2/dotnet/Startup/LocalPrefs.cs`) — JSON soubor v
 `%APPDATA%\m-line\EDISONMAIN2\local.json`. Per Windows-user, sdílí mezi
-relacemi na stejné stanici.
+relacemi na stejné stanici. Přístup přes injektovaný `ILocalPrefs`
+(composition root v `AppBootstrapper` vytvoří jednu instanci, propaguje
+do consumerů — testy substituují mock).
 
-Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení).
+Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení) +
+3 toggly (`ShowWindowsAsDialogs`, `ShowMiniApps`, `LoadBoards`).
 Pro nové preference přidej nullable property; chybějící klíče v existujícím
 souboru zůstanou null (kompatibilní upgrade).
 
 ```csharp
-LocalPrefs.Load();                              // jednou v App.xaml.cs
-var idfa = LocalPrefs.Current.LastIdfa;          // čtení
-LocalPrefs.Current.LastIdfa = "CB_DP";           // zápis
-LocalPrefs.Current.Save();
+// AppBootstrapper (composition root):
+var prefs = LocalPrefs.Load();         // vrátí ILocalPrefs naplněný z disku
+// předá se dál do CompanySwitcher / EdisonMainViewModel přes ctor
+
+// Consumer (VM, switcher):
+private readonly ILocalPrefs _prefs;
+var idfa = _prefs.LastIdfa;             // čtení
+_prefs.LastIdfa = "CB_DP";              // zápis
+_prefs.Save();                          // persist
 ```
 
 ### Per-uživatel × IDFa (Caché server-side)

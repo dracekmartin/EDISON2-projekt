@@ -27,6 +27,7 @@ public class CompanySwitcher(
     bool isAdmin,
     IPopupDisplayer popup,
     IWindowNavigator windowNavigator,
+    ILocalPrefs localPrefs,
     Action closeAllWindows)
 {
     /// <summary>
@@ -45,7 +46,7 @@ public class CompanySwitcher(
     /// <summary>
     /// Přepne firmu: zavře všechna agendová okna, vymění Idfa+Namespace v MLRest a získá
     /// licenci přes <see cref="LicenceVerifier"/> (s admin USERS.exe retry). Při neúspěchu
-    /// rollbackuje MLRest na původní hodnoty. <see cref="LocalPrefs.LastIdfa"/> aktualizuje
+    /// rollbackuje MLRest na původní hodnoty. <see cref="ILocalPrefs.LastIdfa"/> aktualizuje
     /// při <see cref="LicenceAcquireOutcome.Accepted"/>. Confirm popup je odpovědnost
     /// callsite (VM ho zobrazí před voláním).
     /// </summary>
@@ -73,8 +74,8 @@ public class CompanySwitcher(
 
         if (outcome == LicenceAcquireOutcome.Accepted)
         {
-            LocalPrefs.Current.LastIdfa = newIdfa;
-            LocalPrefs.Current.Save();
+            localPrefs.LastIdfa = newIdfa;
+            localPrefs.Save();
             return new SwitchOutcome(outcome, newLicence);
         }
 

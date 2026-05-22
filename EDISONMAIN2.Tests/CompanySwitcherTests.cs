@@ -40,10 +40,12 @@ public class CompanySwitcherTests
         bool isAdmin = false,
         IPopupDisplayer? popup = null,
         IWindowNavigator? nav = null,
+        ILocalPrefs? prefs = null,
         Action? closeAllWindows = null) =>
         new(mlRest, licenceLoader, isAdmin,
             popup ?? Substitute.For<IPopupDisplayer>(),
             nav ?? Substitute.For<IWindowNavigator>(),
+            prefs ?? Substitute.For<ILocalPrefs>(),
             closeAllWindows ?? (() => { }));
 
     // ---------- PickInitial ----------
@@ -272,6 +274,35 @@ public class CompanySwitcherTests
         switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
 
         closeAll.Received(1).Invoke();
+    }
+
+    // ---------- Switch — prefs persistence ----------
+
+    [Fact]
+    public void Switch_Accepted_SavesLastIdfaToPrefs()
+    {
+        var mlRest = MockMLRest();
+        var prefs = Substitute.For<ILocalPrefs>();
+        var switcher = CreateSwitcher(mlRest, () => null, prefs: prefs);
+
+        switcher.Switch("JI_DP", "DB_JI", currentLicence: null);
+
+        prefs.Received().LastIdfa = "JI_DP";
+        prefs.Received(1).Save();
+    }
+
+    [Fact]
+    public void Switch_Refused_DoesNotSavePrefs()
+    {
+        var mlRest = MockMLRest();
+        SetupVerifyLic(mlRest, -1);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var prefs = Substitute.For<ILocalPrefs>();
+        var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false, prefs: prefs);
+
+        switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+
+        prefs.DidNotReceive().Save();
     }
 
     // ---------- Switch — licenceLoader interaction ----------
