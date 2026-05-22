@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Windows;
 using ALVA.EDISONAPI;
 using ALWA.SYS;
@@ -43,9 +42,7 @@ namespace EDISONMAIN2
 
             // Pre-fill firmy: priorita 1) lastIdfa z LocalPrefs (uživatel naposled přihlášen),
             // 2) první s IsDefault, 3) fallback companies[0].
-            var startCompany = companies.FirstOrDefault(c => c.Id == LocalPrefs.Current.LastIdfa);
-            if (startCompany.Id == null) startCompany = companies.FirstOrDefault(c => c.IsDefault);
-            if (startCompany.Id == null) startCompany = companies[0];
+            var startCompany = CompanySwitcher.PickInitial(companies, LocalPrefs.Current.LastIdfa);
 
             // Set Idfa so ALVA.SYS.Login.Login can resolve user's startupForm
             loginRest.Idfa = startCompany.Id;
@@ -112,7 +109,9 @@ namespace EDISONMAIN2
             var treeGetter = new ModuleTreeGetter();
             // licenceService.GetActiveLicence čte aktuální stav MLRest, takže po přepnutí firmy
             // dostane VM licenci cílové firmy (potřebné pro VerifyLic se správným CountsLOGIN).
-            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, licenceService.GetActiveLicence, activeLicence, nav.CloseAll);
+            var switcher = new CompanySwitcher(mlRest, licenceService.GetActiveLicence, services.IsAdmin,
+                                               services.PopupDisplayer, nav, nav.CloseAll);
+            var viewModel = new EdisonMainViewModel(companies, mlRest, treeGetter, licenceService.GetActiveLicence, activeLicence, switcher, nav.CloseAll);
 
             var wnd = new EdisonMainWindow { DataContext = viewModel };
             // Shell okno existuje → PopupDisplayer použije ho jako default owner pro popupy.

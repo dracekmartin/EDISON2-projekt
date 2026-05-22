@@ -27,7 +27,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     {
         private readonly IModuleTreeGetter _treeGetter;
         private readonly Func<Lic?> _licenceLoader;
-        private readonly Action _closeAllWindows;
+        private readonly CompanySwitcher _switcher;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -63,17 +63,18 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IModuleTreeGetter treeService,
             Func<Lic?> licenceLoader,
             Lic? initialLicence,
+            CompanySwitcher switcher,
             Action closeAllWindows)
         {
             _treeGetter = treeService;
             _licenceLoader = licenceLoader;
-            _closeAllWindows = closeAllWindows;
+            _switcher = switcher;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show("EDListTestWindow"));
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
-            CloseAllCommand          = Command(_closeAllWindows);
+            CloseAllCommand          = Command(closeAllWindows);
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);
@@ -217,42 +218,25 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
 
                 int originalIndex = _selectedCompanyIndex;
-                string originalIdfa = MLRest!.Idfa;
-                string originalNamespace = MLRest!.DataNamespace;
-                Lic? originalLicence = _services.ActiveLicence;
 
                 Set(ref _selectedCompanyIndex, value);
                 OnPropertyChanged(nameof(Namespace));
                 OnPropertyChanged(nameof(Idfa));
                 OnPropertyChanged(nameof(WindowTitle));
-                _closeAllWindows();
-                MLRest!.DataNamespace = Namespace;
-                MLRest!.Idfa = Idfa;
 
-                // ACTIVITY zámek + počet licencí jsou per-IdFa — pro VerifyLic potřebujeme
-                // licenci cílové firmy, ne původní (jinak bychom kontrolovali špatný limit).
-                // Při překročení licencí + admin nabídne LicenceVerifier okno aktivity uživatelů.
-                Lic? newLicence = originalLicence;
-                var outcome = LicenceAcquireOutcome.Accepted;
-                if (originalLicence != null)
-                    (outcome, newLicence) = LicenceVerifier.TryAcquireSession(
-                        MLRest!, _licenceLoader, _services.IsAdmin, PopupDisplayer, WindowNavigator);
+                var result = _switcher.Switch(Idfa, Namespace, _services.ActiveLicence);
 
-                if (outcome == LicenceAcquireOutcome.Accepted)
+                if (result.Outcome == LicenceAcquireOutcome.Accepted)
                 {
-                    RebuildSessionState(newLicence);
-                    LocalPrefs.Current.LastIdfa = MLRest!.Idfa;
-                    LocalPrefs.Current.Save();
+                    RebuildSessionState(result.Licence);
                 }
                 else
                 {
-                    MLRest.Idfa = originalIdfa;
-                    MLRest.DataNamespace = originalNamespace;
                     Set(ref _selectedCompanyIndex, originalIndex);
                     OnPropertyChanged(nameof(Namespace));
                     OnPropertyChanged(nameof(Idfa));
                     OnPropertyChanged(nameof(WindowTitle));
-                    if (outcome == LicenceAcquireOutcome.Refused)
+                    if (result.Outcome == LicenceAcquireOutcome.Refused)
                         PopupDisplayer.Info("Pro tuto firmu byl překročen počet licencí. Firma nebyla přepnuta.");
                 }
             }

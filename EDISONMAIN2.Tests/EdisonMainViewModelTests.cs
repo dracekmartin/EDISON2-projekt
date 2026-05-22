@@ -45,11 +45,14 @@ public class EdisonMainViewModelTests
         var mockMLRest = MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var svc = services ?? MockServices(popup: popup);
+        var close = closeAllWindows ?? (() => { });
+        var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
+                                           svc.PopupDisplayer, svc.WindowNavigator, close);
 
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, closeAllWindows ?? (() => { }));
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, switcher, close);
         }
         finally
         {
@@ -110,20 +113,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var mockMLRest = MockMLRest();
-        var svc = MockServices(popup: mockPopup);
-        EDServices.Initialize(svc);
-        var mockTree = Substitute.For<IModuleTreeGetter>();
-        mockTree.GetModuleTree(Arg.Any<IMLRest>()).Returns([]);
-        EdisonMainViewModel vm;
-        try
-        {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, null, () => { });
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
+        var vm = CreateVM(popup: mockPopup);
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         vm.SelectedCompanyIndex = target;
@@ -140,13 +130,13 @@ public class EdisonMainViewModelTests
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
         var svc = MockServices(popup: mockPopup);
+        var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
+                                           svc.PopupDisplayer, svc.WindowNavigator, () => { });
         EDServices.Initialize(svc);
-        var mockTree = Substitute.For<IModuleTreeGetter>();
-        mockTree.GetModuleTree(Arg.Any<IMLRest>()).Returns([]);
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, null, () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), () => null, null, switcher, () => { });
         }
         finally
         {
