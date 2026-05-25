@@ -17,8 +17,9 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
 | `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `FileFilter`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
-| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`, `File`, `Color`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List` (strict dropdown), `ComboBox` (editable s autocomplete), `File`, `Color`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
 | `HexToBrushConverter.cs` | IValueConverter pro Color field — parsuje `#AARRGGBB` / `#RRGGBB` string na `SolidColorBrush` pro swatch binding. |
+| `SuggestComboBox.cs` | Custom ComboBox subclass pro Suggest field — editable, live filtering, custom string allowed mimo list. Event-ordering safeguards (PreviewKeyDown/Up flag) — viz implementační poznámka v třídě. |
 | `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
@@ -107,6 +108,24 @@ s f.fileFilter = "PDF (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"
 s f = form.AddFieldToLastGroup("slozka", "Složka", $$$FieldTypeFile)
 s f.fileFilter = $$$FileFilterFolder
 ```
+
+### ComboBox field type (editable s autocomplete)
+
+Editable ComboBox s live filtrováním. Storage sdílí s `List` přes `Field.ListItems`, ale na rozdíl od List **user může napsat libovolný text** mimo list — items jsou nápověda (autocomplete), ne striktní enum. Analogie HTML `<select>` (= `List`) vs `<input list="...">` (= `ComboBox`).
+
+```objectscript
+s f = form.AddFieldToLastGroup("placeholder", "Pole agendy", $$$FieldTypeComboBox)
+d f.AddListItem("CISLO_LINKY", "Číslo linky")
+d f.AddListItem("NAZEV_LINKY", "Název linky")
+d f.AddListItem("DATUM_OD",    "Platnost od")
+; User si může napsat "MUJ_VLASTNI_KOD" — list je nápověda, ne enum
+```
+
+UI: zobrazí display string ve formátu `"KEY  —  Label"` v dropdownu, po výběru se `Field.Value` nastaví na samotný `Key`. Filter prochází key i label case-insensitive.
+
+**Rozdíl od List:**
+- `List` = strict (jen value z items, žádný custom string)
+- `ComboBox` = editable (custom value allowed, items jsou nápověda)
 
 ### Color field type
 

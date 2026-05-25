@@ -181,6 +181,16 @@
                     </Grid>
                 </DataTemplate>
 
+                <!-- ComboBox: editable s autocomplete; user can type custom value not in list -->
+                <DataTemplate x:Key="ComboBoxFieldTemplate">
+                    <local:SuggestComboBox
+                        Suggestions="{Binding ListItems}"
+                        Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                        IsEnabled="{Binding Editable}"
+                        ToolTip="{Binding ValidationError}"
+                        FontSize="11" Padding="1"/>
+                </DataTemplate>
+
                 <!-- Color: swatch (clickable) + hex TextBox + picker button -->
                 <DataTemplate x:Key="ColorFieldTemplate">
                     <Grid>
@@ -281,6 +291,9 @@
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Color}">
                                             <Setter Property="ContentTemplate" Value="{StaticResource ColorFieldTemplate}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.ComboBox}">
+                                            <Setter Property="ContentTemplate" Value="{StaticResource ComboBoxFieldTemplate}"/>
                                         </DataTrigger>
                                     </Style.Triggers>
                                 </Style>

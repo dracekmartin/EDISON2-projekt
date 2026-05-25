@@ -188,7 +188,9 @@ namespace EDControls.EDInputForm
                         HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                         ParentGroup      = currentGroup,
                     };
-                    if (field.FieldType == EFieldType.List && row.Length >= 13)
+                    // List + ComboBox sdílejí listItems storage v pozici 13
+                    if ((field.FieldType == EFieldType.List || field.FieldType == EFieldType.ComboBox)
+                        && row.Length >= 13)
                         field.ListItems = ParseListItems(row.GetString(13));
                     if (field.FieldType == EFieldType.File && row.Length >= 14)
                         field.FileFilter = row.GetString(14);

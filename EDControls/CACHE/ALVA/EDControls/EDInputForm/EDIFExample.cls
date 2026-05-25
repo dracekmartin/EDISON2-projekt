@@ -62,6 +62,14 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f = form.AddFieldToLastGroup("color", "Barva", $$$FieldTypeColor, 0, 0)
 		s f.value = "#FF003366"
 
+		; ComboBox: editable s autocomplete — user může napsat libovolný text, list je nápověda
+		s f = form.AddFieldToLastGroup("combo", "Pole agendy (combo)", $$$FieldTypeComboBox, 0, 0)
+		d f.AddListItem("CISLO_LINKY",  "Číslo linky")
+		d f.AddListItem("NAZEV_LINKY",  "Název linky")
+		d f.AddListItem("DATUM_OD",     "Platnost od")
+		d f.AddListItem("DATUM_DO",     "Platnost do")
+		d f.AddListItem("DOPRAVCE",     "Dopravce")
+
 		// ── Skupina 2: Povinná pole ──────────────────────────────────────────
 		// required=1 → červená hvězdička, BeforeSave validuje neprázdnost.
 
