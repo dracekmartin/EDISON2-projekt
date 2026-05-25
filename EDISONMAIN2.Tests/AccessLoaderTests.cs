@@ -80,4 +80,67 @@ public class AccessLoaderTests
         Assert.False(access.Contains("5001"));
         Assert.False(access.Contains("40001"));
     }
+
+    [Fact]
+    public void ApId3_IsAdminFalse_StillAllAccess()
+    {
+        // Server-side flag apId=3 (SuperUser) přebíjí client isAdmin — IsAllAccess
+        // se nastavuje pouze podle serveru, ne podle client-side hodnoty.
+        var mlRest = MockAccessCall(apId: 3);
+        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
+
+        Assert.True(access.IsAllAccess);
+        Assert.True(access.Contains("any-id"));
+    }
+
+    [Fact]
+    public void ApId3_AdminFallback_SkippedWhenAllAccess()
+    {
+        // Když IsAllAccess, admin fallback je no-op (gatovaný přes !isAllAccess).
+        // Allowed set zůstává prázdný — kontrola jde přes IsAllAccess flag, ne přes Contains.
+        var licence = new Lic { Type = "Standard" };
+        var mlRest = MockAccessCall(apId: 3);
+        var access = AccessLoader.Load(mlRest, licence: licence, isAdmin: true);
+
+        Assert.True(access.IsAllAccess);
+    }
+
+    [Fact]
+    public void NonAdmin_NoExplicitIds_EmptyAccess()
+    {
+        var mlRest = MockAccessCall(apId: 1);
+        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
+
+        Assert.False(access.IsAllAccess);
+        Assert.False(access.Contains("0"));
+        Assert.False(access.Contains("8"));
+    }
+
+    [Fact]
+    public void EmptyOrNullIds_InOutput_AreSkipped()
+    {
+        // Server občas vrátí null/empty entries (např. mezery v allowedIds). Loader je smaže
+        // — nikdy by AccessTable.Contains("") neměl trefovat.
+        var mlRest = Substitute.For<IMLRest>();
+        mlRest.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
+            .Returns(new object[] { "", "1", "8", null!, "", "12" });
+        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
+
+        Assert.True(access.Contains("8"));
+        Assert.True(access.Contains("12"));
+        Assert.False(access.Contains(""));
+    }
+
+    [Fact]
+    public void MissingApId_FallsBackToZero()
+    {
+        // output[1] null → int.Parse(... ?? "0") = 0 ≠ ApIdAdmin → IsAllAccess=false.
+        var mlRest = Substitute.For<IMLRest>();
+        mlRest.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
+            .Returns(new object[] { "", null!, "8" });
+        var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
+
+        Assert.False(access.IsAllAccess);
+        Assert.True(access.Contains("8"));
+    }
 }
