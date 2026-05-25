@@ -171,7 +171,9 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 /// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
 /// Format per item (number is always position 2):
 ///   GROUP → $lb("GROUP", number, key, groupName, visibility, helpText)
-///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
+///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required,
+///                validationError, editable, visibility, helpText, listItems, fileFilter,
+///                min, max, format, unit)
 /// Also writes helpTextMode at string subscript "helpTextMode".
 Method WriteToOut()
 {
@@ -230,6 +232,11 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 			}
 			// Position 14: file filter for File field type
 			i $ll(listVal)>=14 s f.fileFilter = $li(listVal,14)
+			// Positions 15-18: Decimal/Number extras (min, max, format, unit)
+			i $ll(listVal)>=15 s f.min    = $li(listVal,15)
+			i $ll(listVal)>=16 s f.max    = $li(listVal,16)
+			i $ll(listVal)>=17 s f.format = $li(listVal,17)
+			i $ll(listVal)>=18 s f.unit   = $li(listVal,18)
 		}
 	}
 	q form

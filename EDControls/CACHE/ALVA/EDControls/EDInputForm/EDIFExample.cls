@@ -27,9 +27,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		d form.AddFieldToLastGroup("text", "Text", $$$FieldTypeText, 0, 0)
 
-		d form.AddFieldToLastGroup("number", "Celé číslo", $$$FieldTypeNumber, 0, 0)
+		s f = form.AddFieldToLastGroup("number", "Celé číslo", $$$FieldTypeNumber, 0, 0)
+		s f.min  = "0"
+		s f.max  = "999"
+		s f.unit = "ks"
 
-		d form.AddFieldToLastGroup("decimal", "Desetinné číslo", $$$FieldTypeDecimal, 0, 0)
+		s f = form.AddFieldToLastGroup("decimal", "Velikost fontu", $$$FieldTypeDecimal, 0, 0)
+		s f.min    = "4"
+		s f.max    = "200"
+		s f.format = "N2"
+		s f.unit   = "pt"
+		s f.value  = "10"
 
 		s f = form.AddFieldToLastGroup("date", "Datum", $$$FieldTypeDate, 0, 0)
 		s f.value = "2025-01-15"

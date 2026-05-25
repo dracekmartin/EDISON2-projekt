@@ -72,9 +72,11 @@ Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
 CVar["1"] = CList("GROUP", number, key, groupName, visibility, helpText)
-CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
+CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter, min, max, format, unit)
 CVar["helpTextMode"] = "tooltip" | "column"   ; form-level setting, default "tooltip"
 ```
+
+Min/Max/Format/Unit (FIELD pozice 15-18): rozšíření pro Number/Decimal typy. `Min` a `Max` jako string formátovaný v InvariantCulture (validuje se klient i server). `Format` je standardní .NET format string (např. "N2", "0.##") — aplikován v UI. `Unit` je suffix label zobrazený vedle inputu (např. "mm", "pt") — pouze visualní, nemění Value.
 
 Visibility (GROUP pozice 5, FIELD pozice 11): `"0"` = Visible (výchozí), `"1"` = Collapsed, `"2"` = UserHidden, `"3"` = ProgrammerHidden. Pokud chybí, položka je viditelná.
 

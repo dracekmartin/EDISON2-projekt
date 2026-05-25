@@ -73,17 +73,18 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     }
 
     /// <summary>
-    /// Nastaví "Povinné pole" na povinná pole která jsou prázdná a nemají serverovou chybu.
+    /// Aplikuje client-side validaci (type + required) na pole bez serverové chyby.
     /// Server/programmer chyby mají přednost — ovlivňujeme pouze pole bez chyb.
+    /// Type chyba (Min/Max/Format/parsing) má přednost před Required (povinné prázdné pole).
     /// </summary>
     private void ApplyRequiredValidation()
     {
         foreach (var field in Items.OfType<Field>())
         {
             if (field.HasError) continue;
-            var requiredError = field.GetRequiredError();
-            if (requiredError != null)
-                field.ValidationError = requiredError;
+            var clientError = field.GetTypeError() ?? field.GetRequiredError();
+            if (clientError != null)
+                field.ValidationError = clientError;
         }
     }
 

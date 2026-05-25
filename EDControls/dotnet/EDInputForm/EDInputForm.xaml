@@ -7,6 +7,9 @@
              xmlns:designTime="clr-namespace:EDControls.EDInputForm.DesignTimeData"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="420">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" Background="White">
         <ItemsControl x:Name="TheItemsControl"
                       ItemsSource="{Binding Items, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"
@@ -66,22 +69,38 @@
                              Style="{StaticResource FieldTextBoxStyle}"/>
                 </DataTemplate>
 
-                <!-- Number: right-aligned, integer-only input -->
+                <!-- Number: right-aligned, integer-only input + optional unit suffix -->
                 <DataTemplate x:Key="NumberFieldTemplate">
-                    <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
-                             TextAlignment="Right"
-                             local:NumericInput.Mode="Integer"
-                             ToolTip="{Binding ValidationError}"
-                             Style="{StaticResource FieldTextBoxStyle}"/>
+                    <DockPanel LastChildFill="True">
+                        <TextBlock DockPanel.Dock="Right"
+                                   Text="{Binding Unit}"
+                                   Visibility="{Binding UnitVisibility}"
+                                   VerticalAlignment="Center"
+                                   Margin="4,0,0,0"
+                                   Opacity="0.7"/>
+                        <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                                 TextAlignment="Right"
+                                 local:NumericInput.Mode="Integer"
+                                 ToolTip="{Binding ValidationError}"
+                                 Style="{StaticResource FieldTextBoxStyle}"/>
+                    </DockPanel>
                 </DataTemplate>
 
-                <!-- Decimal: right-aligned, decimal input -->
+                <!-- Decimal: right-aligned, decimal input + optional unit suffix -->
                 <DataTemplate x:Key="DecimalFieldTemplate">
-                    <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
-                             TextAlignment="Right"
-                             local:NumericInput.Mode="Decimal"
-                             ToolTip="{Binding ValidationError}"
-                             Style="{StaticResource FieldTextBoxStyle}"/>
+                    <DockPanel LastChildFill="True">
+                        <TextBlock DockPanel.Dock="Right"
+                                   Text="{Binding Unit}"
+                                   Visibility="{Binding UnitVisibility}"
+                                   VerticalAlignment="Center"
+                                   Margin="4,0,0,0"
+                                   Opacity="0.7"/>
+                        <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
+                                 TextAlignment="Right"
+                                 local:NumericInput.Mode="Decimal"
+                                 ToolTip="{Binding ValidationError}"
+                                 Style="{StaticResource FieldTextBoxStyle}"/>
+                    </DockPanel>
                 </DataTemplate>
 
                 <!-- Date: DatePicker with calendar -->
@@ -169,7 +188,11 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto" SharedSizeGroup="HelpText"/>
                         </Grid.ColumnDefinitions>
-                        <DockPanel Grid.Column="0" VerticalAlignment="Top">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <DockPanel Grid.Row="0" Grid.Column="0" VerticalAlignment="Top">
                             <!-- Item number for keyboard navigation (Ctrl+number) -->
                             <TextBlock DockPanel.Dock="Left"
                                        Text="{Binding Number, StringFormat='{}{0}.'}"
@@ -193,7 +216,7 @@
                             <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
                                        VerticalAlignment="Top" Margin="0,2,2,2"/>
                         </DockPanel>
-                        <ContentControl Grid.Column="1" VerticalAlignment="Top"
+                        <ContentControl Grid.Row="0" Grid.Column="1" VerticalAlignment="Top"
                                         Content="{Binding}" Margin="2,1" Focusable="False">
                             <ContentControl.Style>
                                 <Style TargetType="ContentControl">
@@ -225,12 +248,19 @@
                             </ContentControl.Style>
                         </ContentControl>
                         <!-- Help text column (column mode): visible when HelpText is set and mode is Column -->
-                        <TextBlock Grid.Column="2"
+                        <TextBlock Grid.Row="0" Grid.Column="2"
                                    Text="{Binding HelpText}" TextWrapping="Wrap"
                                    Foreground="Gray" FontSize="11"
                                    VerticalAlignment="Top" Margin="8,2,4,2"
                                    MaxWidth="200"
                                    Style="{StaticResource HelpTextColumnStyle}"/>
+                        <!-- Inline validation error: visible under input when HasError = true -->
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding ValidationError}"
+                                   Foreground="Red" FontSize="11"
+                                   TextWrapping="Wrap"
+                                   Margin="4,1,2,3"
+                                   Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
                     </Grid>
                 </DataTemplate>
 

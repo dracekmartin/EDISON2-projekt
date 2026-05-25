@@ -26,6 +26,22 @@ Property listItems As list Of %List;
 /// otherwise interpreted as OpenFileDialog filter string.
 Property fileFilter As %String;
 
+/// Minimum allowed value for Number / Decimal field types.
+/// Empty string = no lower bound. Validated client-side and server-side.
+Property min As %String;
+
+/// Maximum allowed value for Number / Decimal field types.
+/// Empty string = no upper bound.
+Property max As %String;
+
+/// Display format for Decimal field values (e.g. "N2", "0.##").
+/// Applied in UI on focus loss. Empty = no formatting.
+Property format As %String;
+
+/// Unit shown as suffix next to the input (e.g. "mm", "pt"). Visual only.
+/// Empty = no unit suffix.
+Property unit As %String;
+
 Method AddListItem(key As %String, label As %String)
 {
 	d ..listItems.Insert($lb(key, label))
@@ -48,7 +64,7 @@ Method Serialize() As %List
 			s listStr = listStr _ key _ $$$ListKeyValSep _ label
 		}
 	}
-	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility,..helpText,listStr,..fileFilter)
+	q $lb("FIELD",..number,..key,..label,..type,..value,..validateOnChange,..required,..validationError,..editable,..visibility,..helpText,listStr,..fileFilter,..min,..max,..format,..unit)
 }
 
 }

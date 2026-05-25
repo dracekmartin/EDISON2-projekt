@@ -137,7 +137,11 @@ namespace EDControls.EDInputForm
                         f.Visibility.ToWire(),
                         f.HelpText ?? "",
                         SerializeListItems(f.ListItems),
-                        f.FileFilter ?? ""),
+                        f.FileFilter ?? "",
+                        f.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                        f.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                        f.Format ?? "",
+                        f.Unit ?? ""),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -188,6 +192,19 @@ namespace EDControls.EDInputForm
                         field.ListItems = ParseListItems(row.GetString(13));
                     if (field.FieldType == EFieldType.File && row.Length >= 14)
                         field.FileFilter = row.GetString(14);
+                    // Positions 15-18: Decimal/Number extras (min, max, format, unit)
+                    if (row.Length >= 15 && decimal.TryParse(row.GetString(15),
+                            System.Globalization.NumberStyles.Number,
+                            System.Globalization.CultureInfo.InvariantCulture, out var minVal))
+                        field.Min = minVal;
+                    if (row.Length >= 16 && decimal.TryParse(row.GetString(16),
+                            System.Globalization.NumberStyles.Number,
+                            System.Globalization.CultureInfo.InvariantCulture, out var maxVal))
+                        field.Max = maxVal;
+                    if (row.Length >= 17 && row.GetString(17) != "")
+                        field.Format = row.GetString(17);
+                    if (row.Length >= 18 && row.GetString(18) != "")
+                        field.Unit = row.GetString(18);
                     items.Add(field);
                 }
             }
