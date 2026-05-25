@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using TemplateDesigner.Models;
 
@@ -66,16 +67,29 @@ public static class TemplateSerializer
     // --- Deserializace ---
 
     /// <summary>
-    /// Načte šablonu z JSON stringu. Vrátí null při chybě parsování.
+    /// Sdílený migrátor — bezstavový, thread-safe, lze opakovaně použít.
+    /// Pokud bude potřeba dependency injection, refactor na instance per consumer.
+    /// </summary>
+    private static readonly TemplateMigrator Migrator = new();
+
+    /// <summary>
+    /// Načte šablonu z JSON stringu. Před deserializací aplikuje <see cref="TemplateMigrator"/>
+    /// pokud verze v JSON je nižší než <see cref="TemplateMigrator.CurrentVersion"/>.
     /// </summary>
     /// <exception cref="TemplateDeserializationException">Pokud JSON nelze načíst nebo není platná šablona.</exception>
     public static Template Deserialize(string json)
     {
         try
         {
-            var template = JsonSerializer.Deserialize<Template>(json, Options);
-            return template ?? throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+            var root = JsonNode.Parse(json)
+                ?? throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+            var (migrated, wasMigrated, _) = Migrator.Migrate(root);
+            var template = migrated.Deserialize<Template>(Options)
+                ?? throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+            template.WasMigrated = wasMigrated;
+            return template;
         }
+        catch (TemplateDeserializationException) { throw; }
         catch (JsonException ex)
         {
             throw new TemplateDeserializationException($"Neplatný formát JSON: {ex.Message}", ex);
@@ -83,21 +97,17 @@ public static class TemplateSerializer
     }
 
     /// <summary>
-    /// Načte šablonu ze souboru.
+    /// Načte šablonu ze souboru. Před deserializací aplikuje <see cref="TemplateMigrator"/>.
     /// </summary>
     /// <exception cref="TemplateDeserializationException">Pokud soubor nelze načíst nebo není platná šablona.</exception>
     public static async Task<Template> LoadAsync(string filePath, CancellationToken ct = default)
     {
         try
         {
-            await using var stream = File.OpenRead(filePath);
-            var template = await JsonSerializer.DeserializeAsync<Template>(stream, Options, ct);
-            return template ?? throw new TemplateDeserializationException("Soubor neobsahuje platnou šablonu.");
+            string json = await File.ReadAllTextAsync(filePath, ct);
+            return Deserialize(json);
         }
-        catch (TemplateDeserializationException)
-        {
-            throw;
-        }
+        catch (TemplateDeserializationException) { throw; }
         catch (JsonException ex)
         {
             throw new TemplateDeserializationException($"Neplatný formát šablony v souboru '{Path.GetFileName(filePath)}': {ex.Message}", ex);

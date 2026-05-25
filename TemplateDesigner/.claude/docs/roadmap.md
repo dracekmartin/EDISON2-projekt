@@ -30,8 +30,11 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 **Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
 
-1. **H-18/H-19 — Template versioning + migrator** ⬅️ AKTUÁLNÍ (Wave 1 + 1.5 + 2 hotové ✅ 2026-05-20)
-   Prereq produkčního Wave 3. Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
+1. **Wave 3 Fáze 1 — Template schema versioning + migrator** ✅ 2026-05-25 (Wave 1 + 1.5 + 2 hotové ✅ 2026-05-20)
+   H-18 hotov: `TemplateMigrator` framework + version field v Template JSON + status bar warning. Žádné konkrétní migrace zatím (framework je no-op, připraven). Detail v `template-schema-versions.md`.
+
+   **Wave 3 Fáze 2 — Auto-snapshots** ⬅️ AKTUÁLNÍ (TBD)
+   Cap-N auto-snapshot na každý Save, komprese, restore UI. Diskuse final detailů než spustit. Section templates skipnuto (W3-8 výslovně), per-template history s explicit names skipnuto (duplicate templates pattern stačí).
 
 2. **Wave 3 finishing — produkční Template storage**
    Wave 3 CRUD ✅ hotový; chybí audit log, thumbnails, advanced features.
@@ -128,7 +131,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 |---|---|---|---|
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
 | 2 | Shared catalogs | ✅ Hotová (2026-05-20) | W2-1 ✅ Agenda registry (auto-discovery). W2-2 Section templates skipnuto — funkčně překryto Wave 3 Template starters. Element defaults + company palette skipnuté |
-| 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
+| 3 | Template storage | 🟡 CRUD ✅, versioning framework ✅ (Fáze 1), auto-snapshots zbývají (Fáze 2) | Template Caché CRUD (✅), schema versioning + migrator framework (✅), auto-snapshots history (zbývá), audit/thumbnails (deferred) |
 | 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 

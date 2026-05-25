@@ -1,0 +1,121 @@
+# Template schema verze — convention
+
+Tento dokument popisuje verzování Template JSON formátu a jak přidat migraci při breaking change. Detail implementace v `dotnet/Serialization/TemplateMigrator.cs`.
+
+## Princip
+
+Template JSON má top-level `version` field (semver string, např. `"1.0.0"`). Při loadu `TemplateMigrator` detekuje verzi a aplikuje pipeline migrací do aktuální verze.
+
+```json
+{
+  "version": "1.0.0",
+  "id": "...",
+  "name": "...",
+  "sections": [...]
+}
+```
+
+**Aktuální verze:** definovaná v `TemplateMigrator.CurrentVersion`.
+
+## Pravidla pro vývojáře
+
+### Kdy bumpnout verzi?
+
+**Bumpni verzi POUZE pro breaking change** — tj. change ve schématu JSON, který by způsobil:
+- ❌ Deserializace staré šablony do nového modelu selže (exception)
+- ❌ Deserializace projde, ale data jsou semanticky špatná (silent corruption)
+
+**Příklady breaking changes:**
+- Rename pole (`textColor` → `foregroundColor`)
+- Change typu pole (`fontSize: int` → `fontSize: float`)
+- Restructure (flat fields → nested object, např. `TextStyle` flat → nested)
+- Remove pole které je required
+- Change sémantiky (např. souřadnice mm → palce)
+
+**Příklady NON-breaking changes (NE bumpovat):**
+- Add nové optional pole s default hodnotou (System.Text.Json default behavior)
+- Add nový element type (`JsonDerivedType` rozhoduje, neexistující typ jen failuje to který element)
+- Remove pole které je unused (silently ignored)
+
+### Jak verzi bumpnout
+
+1. **Update `TemplateMigrator.CurrentVersion`** — bumpni minor verzi (např. `"1.0.0"` → `"1.1.0"`)
+2. **Vytvoř `ITemplateMigration` implementaci** v `Serialization/Migrations/`:
+   ```csharp
+   public class MigrationFrom1_0_0To1_1_0 : ITemplateMigration
+   {
+       public string FromVersion => "1.0.0";
+       public string Description => "Rename textColor → foregroundColor in TextElement";
+
+       public JsonNode Migrate(JsonNode root)
+       {
+           // Transformace — iteruj sections/elements, rename pole
+           foreach (var section in root["sections"]?.AsArray() ?? [])
+           foreach (var element in section?["elements"]?.AsArray() ?? [])
+               if (element?["type"]?.GetValue<string>() == "TextElement"
+                   && element["textColor"] is { } oldColor)
+               {
+                   element["foregroundColor"] = oldColor.DeepClone();
+                   element.AsObject().Remove("textColor");
+               }
+           return root;
+       }
+   }
+   ```
+3. **Register v `TemplateMigrator._migrations`** list (sorted by FromVersion):
+   ```csharp
+   private readonly List<ITemplateMigration> _migrations = [
+       new MigrationFrom1_0_0To1_1_0(),
+   ];
+   ```
+4. **Aktualizuj sekci [Verze](#verze) níže** s popisem co se změnilo
+5. **Unit test** — old-schema JSON → migrator → new-schema validní deserialize
+
+## Verzování semver
+
+- **Major** (1.x.x → 2.x.x): velká breaking change s rizikem dat ztratit. V budoucnu zatím nepoužíváme.
+- **Minor** (x.1.x → x.2.x): běžná breaking change s migrací bez ztráty.
+- **Patch** (x.x.1 → x.x.2): non-breaking (TD aktuálně neeviduje patch — bumpovat pouze pro breaking).
+
+V praxi pro TD: bumpovat **minor** při každé breaking change.
+
+## Migration safety rules
+
+1. **Idempotentní** — opakovaná aplikace migrace = stejný výsledek. Migrátor může běžet vícekrát při ladění.
+2. **Defensive** — chybějící pole, neočekávaná struktura → fallback na default, neházet exception.
+3. **Per-migration scope** — jedna migrace = jedna change. Nedělej „big bang" migraci přes 5 verzí najednou.
+4. **Backward read-only** — migrace pouze **čte** starou strukturu a píše novou. Žádné side effects (DB calls, file I/O).
+
+## Co se stane bez migrátoru
+
+Bez `TemplateMigrator` by breaking change v `Models/Template.cs` znamenala:
+- Staré šablony (před changem) → deserializace failuje nebo dá silent corrupt data
+- User otevře starou šablonu → crash nebo ztracené hodnoty
+- **Nelze opravit retroaktivně** — staré JSON soubory uložené v Caché/disk nejdou load
+
+S `TemplateMigrator` (this design): user otevře starou šablonu → migrator detekuje verzi → aplikuje transformaci → deserialize succeeds → user vidí migrovaný stav + status bar warning „uložením přepíšete starou verzi".
+
+## Verze
+
+### V1.0.0 (initial, 2026-05-25)
+
+Baseline schema. Současný tvar Template.cs k 2026-05-25:
+- `version` (string semver), `id` (Guid), `name`, `description`, `pageSize`, `sections` (s `elements`)
+- Per-element flat properties + `style: TextStyle` nested object (po refaktoru z 03/2026)
+- `parameters` array (TemplateParameter), `editorPreferences` object
+- `agendaCode` (string nebo null pro GENERAL)
+
+Žádné migrace zatím — framework je no-op.
+
+---
+
+## Operational notes
+
+**UI signalizace migrace:**
+- Status bar po loadu: „⚠ Šablona migrována na nový formát (Vx.y.z). Uložením přepíšete starou verzi."
+- `IsDirty = true` po migraci — user musí explicitně uložit, aby se nová verze propsala do souboru/Caché
+
+**Wire-up:**
+- `TemplateSerializer.Deserialize(json)` — používá interně `TemplateMigrator`. Volá ji Caché path i file path.
+- `TemplateSerializer.LoadAsync(filePath)` — wrapper kolem `Deserialize`.
+- `CacheTemplateService.LoadAsync` — používá `TemplateSerializer.Deserialize` → automaticky routes through migrator.

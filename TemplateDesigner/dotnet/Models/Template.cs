@@ -1,9 +1,23 @@
+using System.Text.Json.Serialization;
+
 namespace TemplateDesigner.Models;
 
 public class Template
 {
-    /// <summary>Verze formátu JSON — pro budoucí migrace.</summary>
-    public string Version { get; set; } = "1.0";
+    /// <summary>
+    /// Schema verze formátu Template JSON (semver, např. "1.0.0").
+    /// Při breaking change v JSON schema → bumpni verzi + přidej migraci do <c>TemplateMigrator</c>.
+    /// TemplateMigrator čte verzi při loadu a aplikuje pipeline migrací do aktuální verze.
+    /// Detail convention: <c>docs/template-schema-versions.md</c>.
+    /// </summary>
+    public string Version { get; set; } = "1.0.0";
+
+    /// <summary>
+    /// True pokud byla šablona auto-migrována při loadu (verze v souboru byla starší než aktuální).
+    /// Transient — neserializuje se. UI vrstva (status bar) podle toho zobrazí warning.
+    /// </summary>
+    [JsonIgnore]
+    public bool WasMigrated { get; set; }
 
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = "Nová šablona";

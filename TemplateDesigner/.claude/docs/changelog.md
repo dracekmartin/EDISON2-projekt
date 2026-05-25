@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-05-25 — Wave 3 Fáze 1: Template schema versioning + migrator framework
+
+První polovina Wave 3 finishing. Schema versioning foundation pro Template JSON — defensive infrastructure proti budoucím breaking changes.
+
+**Princip:** Template JSON má top-level `version` field (semver, např. `"1.0.0"`). Při loadu `TemplateMigrator` detekuje verzi a aplikuje pipeline migrací do aktuální verze (`TemplateMigrator.CurrentVersion`). Migrace pipeline je v Fázi 1 prázdná (framework only); při budoucí breaking change se přidá `ITemplateMigration` impl.
+
+**Nové soubory:**
+- `Serialization/TemplateMigrator.cs` — `TemplateMigrator` + `ITemplateMigration` interface + `VersionComparer` (semver comparison, tolerantní k chybějícím komponentám)
+- `.claude/docs/template-schema-versions.md` — convention pro vývojáře: kdy bumpovat verzi, jak přidat migraci, safety rules (idempotentní + defensive)
+
+**Změny:**
+- `Models/Template.cs` — Version default `"1.0"` → `"1.0.0"` (semver) + nový `[JsonIgnore] WasMigrated` flag (transient, pro UI signaling)
+- `Serialization/TemplateSerializer.cs` — `Deserialize(json)` parsuje do JsonNode, aplikuje migrator, pak deserialize do Template. `LoadAsync` delegate na `Deserialize`. `CacheTemplateService.LoadAsync` automaticky routes through migrator (volá `TemplateSerializer.Deserialize`)
+- `MainWindowViewModel.OpenTemplateFromFileAsync` + `OpenFromCacheAsync` — po loadu zavolá `NotifyMigrationIfNeeded()` → status bar warning `"⚠ Šablona migrována na nový formát (V x.y.z). Uložením přepíšete starou verzi."` + `IsDirty = true`
+
+**Skipped pro YAGNI (po diskusi):**
+- Per-template history (auto-snapshots) — duplicate templates pattern (Save As) už řeší explicit versioning use case
+- Konkrétní migrace V1→V2 — žádná breaking change zatím nepadla, framework je no-op
+
+**Architektonická rozhodnutí:**
+- **Semver** místo monotonic int — flexibilita pro budoucí distinction major/minor/patch
+- **Idempotentní migrace** — repeated apply = same result (safety při ladění)
+- **Defensive** — chybějící version v JSON → assume "1.0.0", neházet exception
+- **JsonNode pipeline** místo Object<->JSON ping-pong — performance + flexibility
+- **Wire-up v Serialize/Deserialize** — single point routing přes migrator, Caché i file path sdílí
+
 ## 2026-05-25 — Wave 2 uzavřena (W2-2 section templates skipnuto)
 
 Po diskusi vyhodnoceno, že W2-2 (section templates → Caché) je funkčně překryto Wave 3 Template starters (uživatel místo „section library" duplikuje full template přes „Open + Save As"). Pro aktuální use case TD customers (~3-5 templates per customer) starter pattern stačí; section templates feature zůstává jako file-based side-feature (`SectionTemplateManager` netknut), bez user requestu na migraci.

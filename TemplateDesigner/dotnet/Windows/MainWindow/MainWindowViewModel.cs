@@ -746,6 +746,7 @@ public class TemplateDesignerViewModel : EDViewModel
             await TryLoadInstanceDefaultsAsync();
             await LoadPrintParamsAndApplyAsync();
             if (Preferences is not null) await Preferences.AddRecentFileAsync(filePath);
+            NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
@@ -783,6 +784,19 @@ public class TemplateDesignerViewModel : EDViewModel
         catch
         {
             // Saved instances nejsou kompatibilní s aktuálním stavem DB — ignorujeme tiše
+        }
+    }
+
+    /// <summary>
+    /// Pokud byla aktuální šablona při loadu auto-migrována (Template.WasMigrated=true),
+    /// zobrazí warning ve status baru. Uložením se přepíše stará verze v souboru/Caché.
+    /// </summary>
+    private void NotifyMigrationIfNeeded()
+    {
+        if (State.CurrentTemplate.WasMigrated)
+        {
+            StatusText = $"⚠ Šablona migrována na nový formát (V{State.CurrentTemplate.Version}). Uložením přepíšete starou verzi.";
+            IsDirty = true; // user musí explicitně uložit, aby se nová verze propsala
         }
     }
 
@@ -910,6 +924,7 @@ public class TemplateDesignerViewModel : EDViewModel
             RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
             await LoadPrintParamsAndApplyAsync();
+            NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
