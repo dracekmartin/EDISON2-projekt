@@ -18,7 +18,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-**Caché Migration Wave 1 + 1.5 + 2 ✅ hotová** (per-user state + agenda registry). Wave 2 uzavřena s jen W2-1 (section templates skipnuto — funkčně překryto Wave 3 starters). Dál: **H-18/H-19 Template versioning + migrator** (prereq Wave 3 production), pak Wave 3 finishing (audit, thumbnails), pak Fáze A.2-D zákaznické tickety (TRANSDEV/KORID/DPKV — auto-poznámky bugs, KORID přípojové řádky).
+**Caché Migration Wave 1 + 1.5 + 2 + 3 ✅ hotová** (per-user state + agenda registry + template storage). Wave 3 uzavřena s CRUD + schema versioning framework (Fáze 1); auto-snapshots / audit / thumbnails skipnuté po diskusi (revisit on real request). Dál: **Fáze A.2-D zákaznické tickety** — TRANSDEV/KORID/DPKV suspended tickety (auto-poznámky bugs, KORID přípojové řádky, NZ bug).
 
 ### ✅ Co máme
 

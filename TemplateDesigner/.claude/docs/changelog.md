@@ -1,5 +1,32 @@
 # Changelog
 
+## 2026-05-25 — Wave 3 uzavřena (Fáze 2 auto-snapshots skipnuté)
+
+Po diskusi vyhodnoceno, že auto-snapshots (Fáze 2 původně plánované) nemají dost přidanou hodnotu pro TD scope. Argumentace:
+- **Within-session reverts** — pokryto undo/redo stack (existující)
+- **Cross-session „včera bylo lepší"** — rare scenario, navíc duplicate templates (Save As) řeší explicit user-controlled versioning
+- **Velké tools comparison** — profi tools (Adobe Illustrator, Sketch, AutoCAD) auto-snapshot taky nemají; jen masově-cloud tools (Figma, Canva) mají defense in depth pro broad audience
+- **Zero customer request** — žádná stížnost „ztratil jsem práci"
+
+**Wave 3 = ✅ HOTOVÁ** s:
+- CRUD ✅ (Caché Sablony API, 5 metod)
+- Schema versioning framework ✅ (TemplateMigrator + version field, Fáze 1)
+- Explicit user versions ✅ (Save As pattern, existing)
+- Within-session undo ✅ (UndoStack, existing)
+
+**Skipnuté Wave 3 položky** (revisit on real user request):
+- W3-4 Fáze 2 auto-snapshots history
+- W3-5 Server-side migration (.NET-side stačí pro single source of truth)
+- W3-6 Audit log
+- W3-7 Thumbnails
+- W3-8 Per-template named history
+- W3-9 Import wizard
+
+**Doc cleanup:**
+- Roadmap přepsán: Wave 3 detail přesunut do archivu (s decision rationale pro každou skipnutou položku)
+- Top focus → **Fáze A.2-D zákaznické tickety** (TRANSDEV/KORID/DPKV suspended tickety)
+- CLAUDE.md Aktuální focus aktualizován
+
 ## 2026-05-25 — Wave 3 Fáze 1: Template schema versioning + migrator framework
 
 První polovina Wave 3 finishing. Schema versioning foundation pro Template JSON — defensive infrastructure proti budoucím breaking changes.

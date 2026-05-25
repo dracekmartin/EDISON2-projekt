@@ -15,7 +15,7 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish (theme, implicit styles, perf, layout) uzavřen (2026-05-20). **Wave 1 + 1.5 + 2 — per-user preferences + agenda registry → Caché HOTOVY** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish uzavřen (2026-05-20). **Wave 1 + 1.5 + 2 + 3 (per-user preferences + agenda registry + template storage s versioning) HOTOVY** (2026-05-20 — 2026-05-25). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
 **Stav UI/theme** (po 2 dnech práce):
 - EDTheme design tokens (33 barev + typo + spacing) v EDControls — runtime swap přes DynamicResource
@@ -28,19 +28,18 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
+**Kde pokračovat dál — Caché Migration vlny dokončené, focus na business value:**
 
-1. **Wave 3 Fáze 1 — Template schema versioning + migrator** ✅ 2026-05-25 (Wave 1 + 1.5 + 2 hotové ✅ 2026-05-20)
-   H-18 hotov: `TemplateMigrator` framework + version field v Template JSON + status bar warning. Žádné konkrétní migrace zatím (framework je no-op, připraven). Detail v `template-schema-versions.md`.
+**Fáze A.2-D — Zákaznické tickety** ⬅️ AKTUÁLNÍ (Wave 1 + 1.5 + 2 + 3 hotové ✅ 2026-05-25)
 
-   **Wave 3 Fáze 2 — Auto-snapshots** ⬅️ AKTUÁLNÍ (TBD)
-   Cap-N auto-snapshot na každý Save, komprese, restore UI. Diskuse final detailů než spustit. Section templates skipnuto (W3-8 výslovně), per-template history s explicit names skipnuto (duplicate templates pattern stačí).
+TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` — auto-poznámky bugs, custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
-2. **Wave 3 finishing — produkční Template storage**
-   Wave 3 CRUD ✅ hotový; chybí audit log, thumbnails, advanced features.
-
-3. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-2)
-   TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+**Případné defer items pro budoucnost** (revisit on real user request):
+- Wave 3 auto-snapshots history — duplicate templates pattern stačí
+- Wave 3 audit log — bez requestu
+- Wave 3 thumbnails — nice-to-have
+- Wave 4 (EDInputForm migrace) — blokované chybějícím EDInputGrid komponentem
+- Wave 5 další agendy (knižní/meziměstský JŘ) — až bude business request
 
 **Mimo aktuální focus** (až bude potřeba):
 - Plná sada Filter polí (EDFilter rozšíření)
@@ -89,7 +88,7 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🟠 Fáze A.2-D: Caché business logic (po dokončení Wave 2 → 3)
+### 🔴 Fáze A.2-D: Caché business logic ⬅️ AKTUÁLNÍ PRIORITA
 
 Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
@@ -131,7 +130,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 |---|---|---|---|
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
 | 2 | Shared catalogs | ✅ Hotová (2026-05-20) | W2-1 ✅ Agenda registry (auto-discovery). W2-2 Section templates skipnuto — funkčně překryto Wave 3 Template starters. Element defaults + company palette skipnuté |
-| 3 | Template storage | 🟡 CRUD ✅, versioning framework ✅ (Fáze 1), auto-snapshots zbývají (Fáze 2) | Template Caché CRUD (✅), schema versioning + migrator framework (✅), auto-snapshots history (zbývá), audit/thumbnails (deferred) |
+| 3 | Template storage | ✅ Hotová (2026-05-25) | CRUD (✅), schema versioning + migrator framework (✅), explicit user versions via Save As (✅), undo within-session (✅). Auto-snapshots / audit / thumbnails skipnuté (revisit on real request) |
 | 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 
@@ -153,50 +152,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 
 ---
 
-#### 🟡 Wave 3 — Template storage
-
-**Základní CRUD hotový** (commit `5ac9dd0`, 2026-05-15). Šablony se ukládají do Caché přes `ALVA.TemplateDesigner.API.Sablony` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). UI v `CacheTemplatePickerDialog` (po L5 migraci přes EDList) + `SaveToCacheDialog`. JSON wire formát (R3), per-IDFa storage.
-
-**Reálný storage layout** (liší se od původního plánu — atomická Metadata/Data + sekundární index):
-```
-^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata") = $lb(Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version)
-^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")     = JSON šablony
-^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
-```
-
-**Zbývá pro plnou Wave 3:**
-- Versioning (R5 prerekvizita) — H-18 + H-19 (TemplateMigrator + version field v JSON)
-- Server-side migrace (`TemplateMigrationAPI` — migrace při Load)
-- Audit log (`TemplateAuditAPI`)
-- Thumbnails (100×140px PNG při Save → file picker s náhledem)
-- History (seznam verzí + restore)
-- Soft-delete místo hard delete
-- Import wizard (jednorázová migrace `*.json` z disku do Caché)
-
-**Pozn.:** dnešní stav postačuje pro **demo a běžné použití**. Versioning a audit budou potřeba před produkčním nasazením s reálnými zákaznickými šablonami — bez migrátoru breaking change zničí data.
-
-**Změny v kódu pro doplnění:**
-| Vrstva | Co |
-|---|---|
-| Caché | Rozšířit `Templates.cls` o versioning logic; nové třídy `TemplateMigrationAPI`, `TemplateAuditAPI` |
-| .NET migrace | `TemplateMigrator` (R5) jako .NET-side diagnostic helper; autoritativní je Caché |
-| .NET UI | `TemplateBrowserDialog` rozšířit o thumbnails, history, filter UI |
-
-**Risks:**
-- Conflict handling: uživatel A a B editují stejnou šablonu. MVP: last-write-wins + varování. V2: lock nebo merge.
-- Performance: load 50 šablon s thumbnails = 5 MB JSON. Mitigace: `ListTemplates` vrací jen metadata, thumbnails fetch-on-demand.
-
-| Krok | Co | Stav |
-|---|---|---|
-| W3-1 | Caché `ALVA.TemplateDesigner.API.Sablony` (CRUD: List, Load, Save, Delete, Rename) | ✅ 5ac9dd0 |
-| W3-2 | .NET `CacheTemplateService` async wrapper + `CacheTemplateException` | ✅ 5ac9dd0 |
-| W3-3 | `CacheTemplatePickerDialog` + `SaveToCacheDialog` UI | ✅ 5ac9dd0 (L5 migration na EDList: 9f5b165) |
-| W3-4 | H-18 + H-19 (versioning + migrator) — prerekvizita R5 | |
-| W3-5 | Caché `TemplateMigrationAPI` — server-side migrace jako source of truth | |
-| W3-6 | Caché `TemplateAuditAPI` — audit log | |
-| W3-7 | Thumbnails (100×140px PNG při uložení) | |
-| W3-8 | History (verze + restore UI) | |
-| W3-9 | Import wizard — jednorázová migrace existujících `*.json` souborů do Caché | |
+> **Wave 3 hotová ✅ 2026-05-25** — CRUD (`API.Sablony`) + schema versioning framework (`TemplateMigrator` Fáze 1). Auto-snapshots history, audit log, thumbnails, import wizard skipnuté (revisit on real request). Detail v [`roadmap-archive.md`](roadmap-archive.md).
 
 ---
 
