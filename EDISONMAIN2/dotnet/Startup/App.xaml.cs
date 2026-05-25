@@ -24,6 +24,10 @@ namespace EDISONMAIN2
             var services = new EDServices(null, nav, new PopupDisplayer());
             EDServices.Initialize(services);
 
+            // EDInputForm Color field — register simple WinForms ColorDialog as picker.
+            // Pro EDInputFormTestWindow + budoucí EDInputForm use cases v EDISONMAIN2 modulech.
+            EDControls.EDInputForm.EDInputForm.PickColorImpl = PickColorWithWinFormsDialog;
+
             LocalPrefs.Load();
 
             var config = SettingsLoader.Load();
@@ -123,6 +127,42 @@ namespace EDISONMAIN2
         {
             new PopupDisplayer().Error(e.Exception);
             e.Handled = true;
+        }
+
+        /// <summary>
+        /// Simple WinForms ColorDialog wrapper pro EDInputForm Color field.
+        /// EDISONMAIN2 nemá recent colors infrastrukturu (na rozdíl od TD) — používáme baseline dialog.
+        /// </summary>
+        private static string? PickColorWithWinFormsDialog(System.Windows.Window owner, string currentHex)
+        {
+            var dlg = new System.Windows.Forms.ColorDialog { FullOpen = true, AnyColor = true };
+
+            // Parse #AARRGGBB / #RRGGBB → R/G/B
+            string h = (currentHex ?? "").TrimStart('#');
+            try
+            {
+                if (h.Length == 8) h = h.Substring(2);
+                if (h.Length == 6)
+                {
+                    dlg.Color = System.Drawing.Color.FromArgb(
+                        Convert.ToByte(h.Substring(0, 2), 16),
+                        Convert.ToByte(h.Substring(2, 2), 16),
+                        Convert.ToByte(h.Substring(4, 2), 16));
+                }
+            }
+            catch { /* parse error → použij default barvu dialogu */ }
+
+            var handle = new System.Windows.Interop.WindowInteropHelper(owner).Handle;
+            if (dlg.ShowDialog(new Win32Window(handle)) != System.Windows.Forms.DialogResult.OK)
+                return null;
+
+            var c = dlg.Color;
+            return $"#FF{c.R:X2}{c.G:X2}{c.B:X2}";
+        }
+
+        private class Win32Window(nint handle) : System.Windows.Forms.IWin32Window
+        {
+            public nint Handle { get; } = handle;
         }
     }
 

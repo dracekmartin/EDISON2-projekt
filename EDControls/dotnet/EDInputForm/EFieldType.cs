@@ -9,7 +9,13 @@ namespace EDControls.EDInputForm
         Bool,
         Button,
         List,
-        File
+        File,
+        /// <summary>
+        /// Color picker — <see cref="Field.Value"/> drží hex string <c>"#AARRGGBB"</c>
+        /// (SkiaSharp formát, ARGB with alpha). UI zobrazuje barevný čtvereček +
+        /// hex TextBox + tlačítko otevírající color picker dialog.
+        /// </summary>
+        Color
     }
 
     public static class EFieldTypeWire
@@ -22,6 +28,7 @@ namespace EDControls.EDInputForm
         private const string ButtonWire = "BUTTON";
         private const string ListWire = "LIST";
         private const string FileWire = "FILE";
+        private const string ColorWire = "COLOR";
 
         public static string ToWire(this EFieldType type) => type switch
         {
@@ -32,6 +39,7 @@ namespace EDControls.EDInputForm
             EFieldType.Button  => ButtonWire,
             EFieldType.List    => ListWire,
             EFieldType.File    => FileWire,
+            EFieldType.Color   => ColorWire,
             _                  => TextWire
         };
 
@@ -44,6 +52,7 @@ namespace EDControls.EDInputForm
             ButtonWire  => EFieldType.Button,
             ListWire    => EFieldType.List,
             FileWire    => EFieldType.File,
+            ColorWire   => EFieldType.Color,
             _           => EFieldType.Text
         };
     }

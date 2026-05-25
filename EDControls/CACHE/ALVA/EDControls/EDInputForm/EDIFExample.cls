@@ -59,6 +59,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f = form.AddFieldToLastGroup("folder", "Složka", $$$FieldTypeFile, 0, 0)
 		s f.fileFilter = $$$FileFilterFolder
 
+		s f = form.AddFieldToLastGroup("color", "Barva", $$$FieldTypeColor, 0, 0)
+		s f.value = "#FF003366"
+
 		// ── Skupina 2: Povinná pole ──────────────────────────────────────────
 		// required=1 → červená hvězdička, BeforeSave validuje neprázdnost.
 

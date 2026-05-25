@@ -17,7 +17,8 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
 | `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `FileFilter`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
-| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`, `File`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`, `File`, `Color`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `HexToBrushConverter.cs` | IValueConverter pro Color field — parsuje `#AARRGGBB` / `#RRGGBB` string na `SolidColorBrush` pro swatch binding. |
 | `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
@@ -105,6 +106,23 @@ s f.fileFilter = "PDF (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"
 ; Folder selection
 s f = form.AddFieldToLastGroup("slozka", "Složka", $$$FieldTypeFile)
 s f.fileFilter = $$$FileFilterFolder
+```
+
+### Color field type
+
+`Field.Value` drží hex string `"#AARRGGBB"` (SkiaSharp formát, ARGB s alpha). UI zobrazí barevný čtvereček + monospace TextBox + tlačítko `...` otevírající color picker dialog.
+
+```objectscript
+s f = form.AddFieldToLastGroup("textColor", "Barva textu", $$$FieldTypeColor)
+s f.value = "#FF003366"   ; tmavě modrá s plnou alpha
+```
+
+**Picker implementace:** EDControls je WPF-only knihovna — color dialog **musí dodat host** přes `EDInputForm.PickColorImpl` (static `Func<Window, string, string?>`). Pokud null, tlačítko v Color field templatu nic neudělá (user může psát hex ručně do TextBoxu). Toto rozhodnutí odděluje EDControls od WinForms závislosti.
+
+```csharp
+// V App.xaml.cs nebo wiring (TD má UseWindowsForms a má ColorPickerHelper s recent colors):
+EDControls.EDInputForm.EDInputForm.PickColorImpl =
+    (owner, currentHex) => TemplateDesigner.Controls.ColorPickerHelper.PickColor(owner, currentHex);
 ```
 
 ### Struktura volání Validate

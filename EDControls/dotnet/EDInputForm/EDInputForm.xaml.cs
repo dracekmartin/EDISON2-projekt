@@ -385,6 +385,28 @@ namespace EDControls.EDInputForm
 
         internal const string FolderModeSentinel = "$FOLDER";
 
+        /// <summary>
+        /// Implementace color pickeru. Host (např. TemplateDesigner) musí nastavit
+        /// — EDControls je WPF-only, nemá vestavěný color dialog.
+        /// TD wire-up: <c>EDInputForm.PickColorImpl = (owner, hex) => ColorPickerHelper.PickColor(owner, hex);</c>
+        /// Když null, klik na color picker button nic neudělá (user může psát hex ručně).
+        /// </summary>
+        public static Func<Window, string, string?>? PickColorImpl { get; set; }
+
+        private void ColorField_PickClick(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            if (!field.Editable) return;
+            if (PickColorImpl is null) return; // No-op pokud host neregistroval
+
+            var owner = Window.GetWindow(this);
+            if (owner is null) return;
+
+            string currentHex = field.Value ?? "#FF000000";
+            string? newHex = PickColorImpl(owner, currentHex);
+            if (!string.IsNullOrEmpty(newHex)) field.Value = newHex;
+        }
+
         private void FileField_BrowseClick(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
