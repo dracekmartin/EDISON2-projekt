@@ -2,6 +2,46 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Wave 2 — Shared catalogs ✅ (2026-05-20)
+
+**Scope** po diskusi zúžen ze 4 položek na 1 implementovanou + 3 skipnuté:
+
+| # | Položka | Stav | Důvod |
+|---|---|---|---|
+| W2-1 | Agenda registry → Caché | ✅ Hotovo | Auto-discovery z `BaseAgenda` subclasses (commit `de0f872`) |
+| W2-2 | Section templates → Caché | ⛔ Skipnuto | Funkčně překryto Wave 3 Template starters (Open + Save As pattern). Bez user requestu. Existující file-based zůstává jako side-feature. |
+| W2-3 | Element defaults → Caché | ⛔ Skipnuto | Hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case |
+| W2-4 | Company palette → Caché | ⛔ Skipnuto | Wave 1.5 RecentColors pokrývá; brand palette není user request |
+
+### W2-1 Agenda registry — auto-discovery design
+
+**Princip:** „Třída JE registrace". Eliminuje drift mezi registrem a impl (vs JSON config list).
+
+**Caché:**
+- `BaseAgenda.cls` — 2 class parametry (`AgendaCode`, `AgendaLabel`); konvence `<TYP_SESTAVY>_<DATOVY_ZDROJ>`
+- `ZastavkoveJrMhd.cls` — `AgendaCode = "ZASTAVKOVY_JR_MHD"` (přejmenováno z `"MHD"` — MHD je datový modul, ne typ sestavy)
+- `Faktury.cls` — `AgendaCode = "FAKTURY"`
+- NEW `API/AgendyRegistr.cls` — `ListAgendy` přes `%Dictionary` SQL nad subclasses BaseAgenda, vrátí JSON pole `[{code, label, cacheClass}, ...]`
+
+**.NET:**
+- NEW `Serialization/IAgendaRegistry.cs` — interface + `AgendaRegistryEntry` record
+- NEW `Serialization/CacheAgendaRegistry.cs` — impl s Task.Run wrap (R1), synteticky prepend GENERAL agendy, fallback při chybě jen GENERAL
+- `Config/CacheSchemaWiring.cs` — `TryCreate(MLRest, IReadOnlyList<AgendaRegistryEntry>)`
+- `Config/AppSettings.cs` — odstraněna `Agendas` property + `SchemaAgendaSettings` třída
+- `App.xaml.cs` — sync load agendy ze Caché s 3s timeoutem
+- `MainWindow(MLRest?, prefs?, agendas?)` — 3. ctor param
+- `templatedesigner.appsettings.json` — smazáno `agendas[]`
+
+**Architektonická rozhodnutí:**
+- Per-customer kontrola odložena (YAGNI — všichni zákazníci mají stejný kód)
+- AgendaOrder parameter neřešen — alfabeticky podle code
+- AgendaEnabled neřešeno — pre-release work řešen git branches
+- Naming `<TYP_SESTAVY>_<DATOVY_ZDROJ>` — budoucí JŘ: `KNIZNI_JR_MHD`, `MEZIMESTSKY_JR_MHD`, `VOZOVY_JR_MHD`
+
+**Commits:** `7d6704a` (docs scope reduction), `de0f872` (impl).
+
+---
+
 ## Wave 1 + 1.5 — Per-user state přes Caché ✅ (2026-05-20)
 
 První dvě dávky Caché Migration — persistence per-user × IDFa state v `^ALVA.EDControls.UserData` přes `IUserPrefsService`. Žádné lokální JSON soubory (TD běží embedded z EDISONMAIN2). Detail dokumentace, registr scope ownerships a 3-typová taxonomie state v [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md).

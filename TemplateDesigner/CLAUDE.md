@@ -14,11 +14,11 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-05-20
+**Datum poslední aktualizace:** 2026-05-25
 
 ### 🎯 Aktuální focus
 
-**v1.0 demo balíček** — Release readiness pro testovací nasazení (R1 Agenda+Linka picker, R2 Template storage v Caché, R4 polish — vše hotovo); zákazníkovi lze ukázat funkční end-to-end workflow pro zastávkový JŘ MHD. Dál: A.2-D série (Caché business logic — auto-poznámky bugs, KORID přípojové řádky) + Wave 1 (LocalPrefs migrace).
+**Caché Migration Wave 1 + 1.5 + 2 ✅ hotová** (per-user state + agenda registry). Wave 2 uzavřena s jen W2-1 (section templates skipnuto — funkčně překryto Wave 3 starters). Dál: **H-18/H-19 Template versioning + migrator** (prereq Wave 3 production), pak Wave 3 finishing (audit, thumbnails), pak Fáze A.2-D zákaznické tickety (TRANSDEV/KORID/DPKV — auto-poznámky bugs, KORID přípojové řádky).
 
 ### ✅ Co máme
 

@@ -15,7 +15,7 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish (theme, implicit styles, perf, layout) uzavřen (2026-05-20). **Wave 1 — per-user preferences přes Caché HOTOVA** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish (theme, implicit styles, perf, layout) uzavřen (2026-05-20). **Wave 1 + 1.5 + 2 — per-user preferences + agenda registry → Caché HOTOVY** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
 **Stav UI/theme** (po 2 dnech práce):
 - EDTheme design tokens (33 barev + typo + spacing) v EDControls — runtime swap přes DynamicResource
@@ -30,17 +30,13 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 **Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
 
-1. **Wave 2 — Shared catalogs** ⬅️ AKTUÁLNÍ (W2-1 hotová ✅ 2026-05-20, W2-2 zbývá)
-   W2-1 ✅: Agenda registry — auto-discovery z `BaseAgenda` subclasses v Caché (eliminuje `appsettings.json agendas[]`). Konvence agenda code `<TYP_SESTAVY>_<DATOVY_ZDROJ>` (např. `ZASTAVKOVY_JR_MHD`).
-   W2-2 ⬜: Section templates → Caché backend (sdílení šablon sekcí mezi PC v rámci firmy). Detail v § Wave 2 níže.
+1. **H-18/H-19 — Template versioning + migrator** ⬅️ AKTUÁLNÍ (Wave 1 + 1.5 + 2 hotové ✅ 2026-05-20)
+   Prereq produkčního Wave 3. Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
 
-2. **H-18/H-19 — Template versioning + migrator** (prereq produkčního Wave 3)
-   Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
-
-3. **Wave 3 finishing — produkční Template storage**
+2. **Wave 3 finishing — produkční Template storage**
    Wave 3 CRUD ✅ hotový; chybí audit log, thumbnails, advanced features.
 
-4. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-3)
+3. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-2)
    TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
 
 **Mimo aktuální focus** (až bude potřeba):
@@ -131,7 +127,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | Vlna | Název | Stav | Cíl |
 |---|---|---|---|
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
-| 2 | Shared catalogs | 🟡 W2-1 ✅ hotová (2026-05-20), W2-2 zbývá | Agenda registry (auto-discovery ✅), section templates (Caché backend). Element defaults + company palette skipnuté |
+| 2 | Shared catalogs | ✅ Hotová (2026-05-20) | W2-1 ✅ Agenda registry (auto-discovery). W2-2 Section templates skipnuto — funkčně překryto Wave 3 Template starters. Element defaults + company palette skipnuté |
 | 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
 | 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
@@ -150,110 +146,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 
 ---
 
-#### 🟠 Wave 2 — Shared catalogs (2-item scope)
-
-Sdílený konfigurační obsah dnes žijící v .NET souborech / file-based storage. Přesun do Caché = jedno místo pravdy, sdílení mezi PC / uživateli firmy.
-
-**Scope po diskusi 2026-05-20** zúžen na 2 položky (původně 4):
-
-| # | Položka | Wave 2 akce | Dnes |
-|---|---|---|---|
-| W2-1 | Agenda registry | ✅ Migrovat — auto-discovery z `BaseAgenda` subclasses | `templatedesigner.appsettings.json` `agendas[]` |
-| W2-2 | Section templates | ✅ Migrovat — Caché backend s migration files | `section-templates/*.json` (per-machine, file-based) |
-| ~~W2-3~~ | ~~Element defaults~~ | ❌ SKIP — hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case | |
-| ~~W2-4~~ | ~~Company palette~~ | ❌ SKIP — Wave 1.5 RecentColors pokrývá; brand palette není user request | |
-
----
-
-##### W2-1 Agenda registry — auto-discovery design
-
-**Princip:** „Třída JE registrace". Místo separátního config listu (drift risk: registr ≠ impl) využijeme `%Dictionary` API — auto-discovery `BaseAgenda` subclasses + class parameter metadata.
-
-**Změny v `BaseAgenda`:**
-```objectscript
-Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [Abstract]
-{
-    Parameter AgendaCode    As %String  = "";       // "MHD", "FAKTURY"
-    Parameter AgendaLabel   As %String  = "";       // "Zastávkový JŘ MHD"
-    Parameter AgendaOrder   As %Integer = 999;      // sort order v UI
-    Parameter AgendaEnabled As %Boolean = 1;        // false → skryté (pre-release)
-    // ... existing abstract methods (GetSchema, GetData, ...) ...
-}
-```
-
-**Nová Caché class:**
-```objectscript
-Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
-{
-    ClassMethod ListAgendy(ByRef sys As %String) As %Status
-    {
-        // SQL nad %Dictionary najde subclasses BaseAgenda
-        // Pro každou: read AgendaCode/Label/Order/Enabled parametry
-        // Filter Enabled=1, sort by Order, vrátí JSON array
-    }
-}
-```
-
-**Wire formát (R3):**
-```json
-[
-  {"code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"},
-  {"code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury"}
-]
-```
-
-**Per-class metadata** zachovají self-documentation v Studiu (programátor vidí AgendaCode přímo u class declaration).
-
-**Edge case GENERAL:** `cacheClass=""` → žádná třída → auto-discovery ji nenajde. **.NET strana inject syntheticky** v `IAgendaRegistry`:
-```csharp
-public IReadOnlyList<AgendaInfo> GetAvailableAgendas() {
-    var fromCache = _cacheRegistry.ListAgendy();
-    return [GeneralAgenda, .. fromCache];  // GENERAL = static const
-}
-```
-
-**Změny v kódu (.NET):**
-| Vrstva | Co |
-|---|---|
-| Caché | `BaseAgenda` rozšířena o 4 parametry; nová `API.AgendyRegistr` class |
-| Agendy classes | `ZastavkoveJrMhd`, `Faktury` — declare AgendaCode/Label/Order parametry |
-| .NET service | `IAgendaRegistry` (interface) + `CacheAgendaRegistry` (impl); `EDServices` rozšíření |
-| .NET wiring | `CacheSchemaWiring` — místo čtení `AppSettings.Agendas[]` volá `IAgendaRegistry.GetAvailableAgendas` |
-| `appsettings.json` | **Smazat `agendas[]`** — registr v Caché |
-
-**Risks:**
-- Cold-start: registry call ~500ms-2s při studeném startu (jako Wave 1) — Mitigace: `IAgendaRegistry` cached after first load, refresh na user request (menu „Reload agendas")
-- Backward compat: starý JSON `agendas[]` se po W2-1 ignoruje — během rollout fáze ponechat dual-read (Caché primary + JSON fallback)
-
-##### W2-2 Section templates — Caché backend
-
-Mirror Wave 3 (Template CRUD) — pattern už existuje, jen klon.
-
-**Caché class:** `ALVA.TemplateDesigner.API.SekceSablon` — 5 metod (List / Load / Save / Delete / Rename) analogicky `Sablony`.
-
-**Storage:** `^ALVA.TemplateDesigner.SectionTemplates(IdFa, "DTA", id, "Metadata"|"Data")` + index — paralelně k `Templates` global.
-
-**Wire formát:** R3, JSON, per-IDFa.
-
-**Section template metadata:** Name + Category (např. „Hlavičky", „Patičky") pro budoucí filtraci.
-
-**Changes (.NET):**
-| Vrstva | Co |
-|---|---|
-| Caché | Nová `API.SekceSablon` + storage global |
-| .NET service | `ISectionTemplateCatalog` (interface) — refactor stávajícího `SectionTemplateManager` |
-| Impl | `CacheSectionTemplateCatalog` (Caché backend) — fallback `FileSectionTemplateCatalog` pro standalone |
-| Existing client | `SectionTemplateManager` → grep+replace na interface |
-| Migration | First-Caché-startup: popup „Nahrát X local section-templates do Caché?" + import |
-
-**Per-IDFa storage** — firma A nevidí KORID section templates (jako u Wave 3 Templates).
-
----
-
-| Krok | Co | Stav |
-|---|---|---|
-| W2-1 | Agenda registry — auto-discovery v `BaseAgenda` + Caché `API.AgendyRegistr` + .NET `IAgendaRegistry` | ✅ 2026-05-20 |
-| W2-2 | Section templates → Caché — `API.SekceSablon` + .NET `ISectionTemplateCatalog` + file migration | |
+> **Wave 2 hotová ✅ 2026-05-20** — W2-1 Agenda registry → Caché auto-discovery. W2-2 Section templates skipnuto (funkčně překryto Wave 3 Template starters; bez user requestu). Detail v [`roadmap-archive.md`](roadmap-archive.md).
 
 ---
 

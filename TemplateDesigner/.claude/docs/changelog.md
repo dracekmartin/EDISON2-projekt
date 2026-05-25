@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-25 — Wave 2 uzavřena (W2-2 section templates skipnuto)
+
+Po diskusi vyhodnoceno, že W2-2 (section templates → Caché) je funkčně překryto Wave 3 Template starters (uživatel místo „section library" duplikuje full template přes „Open + Save As"). Pro aktuální use case TD customers (~3-5 templates per customer) starter pattern stačí; section templates feature zůstává jako file-based side-feature (`SectionTemplateManager` netknut), bez user requestu na migraci.
+
+**Skipnuté Wave 2 položky** (decision rationale):
+- W2-2 Section templates → funkčně překryto Wave 3 Template starters
+- W2-3 Element defaults → hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case
+- W2-4 Company palette → Wave 1.5 RecentColors pokrývá; brand palette není user request
+
+Wave 2 = ✅ uzavřená, jen W2-1 implementováno. Pokračujeme H-18/H-19 (template versioning + migrator) — prerekvizita Wave 3 production.
+
+**Doc cleanup:**
+- Roadmap přepsán: Wave 2 detail přesunut do archivu, top fokus → H-18/H-19
+- Archive: Wave 2 sekce s plnou tabulkou implementace + decision rationale
+
 ## 2026-05-20 — Wave 2 W2-1: Agenda registry → Caché auto-discovery
 
 První polovina Wave 2 Caché migrace — seznam dostupných agend přesunut z `templatedesigner.appsettings.json agendas[]` do Caché auto-discovery z `BaseAgenda` subclasses. Druhá polovina (section templates) zbývá.
