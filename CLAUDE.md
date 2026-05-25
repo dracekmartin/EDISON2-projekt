@@ -31,7 +31,7 @@ DLL je odkazována přímo: `C:\Edison\MLRest.dll`.
 
 Instance `MLRest` se nikdy nevytváří přímo ve windows ani ViewModelech. Přístup jde přes
 abstrakci `IMLRest` (viz `EDControls/IMLRest.cs`) a sdílený kontejner `EDServices`
-(singleton `EDServices.Current`, inicializován v `App.xaml.cs`).
+(singleton `EDServices.Current`, inicializován v `AppBootstrapper`).
 
 - ViewModely: `MLRest` property z `EDViewModel` (čte z `EDServices.Current`)
 - Testy: vlastní `EDServices` s mock `IMLRest`
@@ -288,7 +288,7 @@ per-MLP × IDFa (server čte sys kontext z MLRest).
 **Aktivace**: VM dědí `EDViewModel` → `PersistedFormId` se odvozuje z názvu třídy
 (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`). Override v subclass
 na `null` pro opt-out. WindowNavigator zavolá `vm.AttachToWindow(window)`
-před `Show()` automaticky; pro shell okno volá App.xaml.cs ručně.
+před `Show()` automaticky; pro shell okno volá `AppBootstrapper.BuildShellWindow` ručně.
 
 Prefix `"EDISON2."` odděluje od starých numerických IDs z `EDISFormEnum` (tam
 VB moduly ukládají vlastní state).
