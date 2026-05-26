@@ -13,6 +13,8 @@ using EDControls;
 using EDControls.EDViewModel;
 using EDControls.UserFonts;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+// Alias — class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
+using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -80,9 +82,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _getActiveModules = getActiveModules;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
-            OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
-            OpenEDListTestCommand    = Command(() => WindowNavigator.Show("EDListTestWindow"));
-            OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog("EDComponentAndViewModelTestWindow"));
+            OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
+            OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
+            OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog(new EDCompTestWnd()));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             CloseAllCommand          = Command(closeAllWindows);
 

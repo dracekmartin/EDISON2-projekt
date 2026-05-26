@@ -7,9 +7,9 @@ using System.Windows;
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Otevírá WPF okna registrovaná v <see cref="Registry"/> + legacy WinForms formuláře z externích
-/// .exe (přes 10-arg kontrakt <c>EDISONMAIN2API.FormToRunGetter</c>). Trackuje child procesy,
-/// <see cref="CloseAll"/> kill při shell close.
+/// Otevírá WPF okna (caller předá instanci přes <c>new</c>) + legacy WinForms formuláře
+/// z externích .exe (přes 10-arg kontrakt <c>EDISONMAIN2API.FormToRunGetter</c>). Trackuje
+/// child procesy, <see cref="CloseAll"/> kill při shell close.
 /// </summary>
 public class WindowNavigator : IWindowNavigator
 {
@@ -27,23 +27,15 @@ public class WindowNavigator : IWindowNavigator
 
     private readonly List<LegacyProcessEntry> _legacyProcesses = [];
 
-    /// <summary>
-    /// Registr klíč → factory pro WPF okna. Naplňuje composition root při startupu;
-    /// agendy si registrují vlastní okna v rámci svého bootstrap hooku.
-    /// </summary>
-    public WindowRegistry Registry { get; } = new();
-
-    public void Show(string key, EDWindowInput? input = null)
+    public void Show(Window window)
     {
-        var window = CreateWindow(key, input);
-        window.Owner = Application.Current.MainWindow;
+        WireUp(window);
         window.Show();
     }
 
-    public bool? ShowDialog(string key, EDWindowInput? input = null)
+    public bool? ShowDialog(Window window)
     {
-        var window = CreateWindow(key, input);
-        window.Owner = Application.Current.MainWindow;
+        WireUp(window);
         return window.ShowDialog();
     }
 
@@ -211,19 +203,18 @@ public class WindowNavigator : IWindowNavigator
         return Path.Combine(EdisonDeployRoot, relativePath);
     }
 
-    private Window CreateWindow(string key, EDWindowInput? input)
+    // Sdílené wire-up před Show()/ShowDialog(): Owner, [Idfa] title suffix, AttachToWindow VM-if.
+    // SourceInitialized fíruje synchronně uvnitř Show() před prvním paintem, restore stavu okna
+    // tedy stihne aplikovat hodnoty.
+    private static void WireUp(Window window)
     {
-        var window = Registry.Create(key, input);
+        window.Owner = Application.Current.MainWindow;
 
         var idfa = EDServices.Current.MLRest?.Idfa;
         if (!string.IsNullOrEmpty(idfa))
             window.Title = $"{window.Title} [{idfa}]";
 
-        // Před Show() napojí klávesy + persistenci stavu okna (SourceInitialized se vyvolá
-        // synchronně uvnitř Show() ještě před prvním paintem — restore stihne aplikovat hodnoty).
         if (window.DataContext is EDViewModel vm)
             vm.AttachToWindow(window);
-
-        return window;
     }
 }

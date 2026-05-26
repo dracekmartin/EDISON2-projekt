@@ -189,17 +189,17 @@ Odpovídající čtení v .NET viz sekce „Volání Caché metody" výše (CVar
    ```
 
 5. Zaregistruj příkaz v `EdisonMainViewModel` přes `WindowNavigator.Show` (modeless)
-   nebo `WindowNavigator.ShowDialog` (modální) s názvem třídy okna jako string:
+   nebo `WindowNavigator.ShowDialog` (modální) — předej **instanci okna**:
 
    ```csharp
-   OpenMyWindowCommand = Command(() => WindowNavigator.Show("MyWindow"));
+   OpenMyWindowCommand = Command(() => WindowNavigator.Show(new MyWindow()));
    ```
 
    `Command(...)` je helper na `EDViewModel`, který vytvoří `RelayCommand` s automatickým
    error handlingem přes `PopupDisplayer`.
 
-   Pokud okno potřebuje vstupní data, předej `EDWindowInput` a přidej konstruktor
-   `public MyWindow(EDWindowInput input)`.
+   Pokud okno potřebuje vstupní data, předej je do konstruktoru:
+   `WindowNavigator.Show(new MyWindow(input))`.
 
 6. Přidej tlačítko na toolbar v `EdisonMainWindow.xaml` navázané na příkaz.
 

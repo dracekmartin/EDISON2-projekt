@@ -97,7 +97,6 @@ public class AppBootstrapper
     protected virtual (WindowNavigator Nav, PopupDisplayer Popup, EDServices Services) InitializeServices()
     {
         var nav = new WindowNavigator();
-        RegisterShellWindows(nav.Registry);
         var popup = new PopupDisplayer();
         var services = new EDServices(null, nav, popup);
         EDServices.Initialize(services);
@@ -224,18 +223,4 @@ public class AppBootstrapper
     }
 
     protected virtual void Shutdown() => _application.Shutdown();
-
-    // Klíče jsou ZÁMĚRNĚ literal stringy, ne nameof(). Pointa registry je decoupling
-    // klíče (veřejný kontrakt) od jména třídy (implementační detail) — když se třída
-    // přejmenuje, IDE updatuje `new XxxWindow()` ale callsity `Show("...")` ne; literal
-    // string v registraci proto zůstane stabilní s callsity. Při budoucím renamu lze
-    // dočasně registrovat oba klíče (starý i nový) než se callsity migrují.
-    // Konvence: pro shell-internal okna jméno třídy; pro cross-agenda preferovat
-    // namespacovaný klíč (např. "MZDY.ZamestnanecEdit") proti kolizím mezi agendami.
-    private static void RegisterShellWindows(WindowRegistry r)
-    {
-        r.Register("EDInputFormTestWindow", _ => new EDInputFormTestWindow());
-        r.Register("EDListTestWindow", _ => new EDListTestWindow());
-        r.Register("EDComponentAndViewModelTestWindow", _ => new Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow());
-    }
 }

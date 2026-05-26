@@ -868,7 +868,7 @@ Prázdné panely se nezobrazují (`If tvwNavBar.Nodes.Count > 0 Then mNavBar.Pan
 - Admin fallback s jasným pravidlem "jen do user-accessu, ne do licenčního rozsahu".
 - Atributy uzlů: `licensed`, `hidden`, `mlineOnly`, `icon`, `type` (skupina / form / CSP).
 - Spouštění hostovaných oken přes `WindowNavigator.Show` / `ShowDialog`
-  (ekvivalent `HandleShowFormDemand`), předávání parametrů přes `EDWindowInput`.
+  (ekvivalent `HandleShowFormDemand`), parametry přes ctor okna.
 - Perzistence layoutu / stavu oken per uživatel per databáze.
 - "Reset nastavení oken" akce (`MESSAGE_RESETFORMS`, `MESSAGE_RESETFORMS_IncludeParams`).
 - Oblíbené — uživatel může pinnout libovolný uzel z ostatních sekcí.

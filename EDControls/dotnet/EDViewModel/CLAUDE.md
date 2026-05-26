@@ -14,18 +14,16 @@ integrovaný s `EDFooter`.
 | `EDAction.cs` | Model jedné akce pro toolbar/menu/klávesovou zkratku (label, ikona, klávesa, příkaz). |
 | `EDServices.cs` | DI kontejner: `IMLRest`, `IWindowNavigator`, `IPopupDisplayer`, `ActiveLicence`, `IsAdmin`. Singleton `EDServices.Current`. |
 | `IWindowNavigator.cs` | Interface pro otevírání oken (WPF Show/ShowDialog + legacy WinForms ShowLegacy/ShowLegacyAndWait + CloseAllLegacy). |
-| `WindowNavigator.cs` | Implementace — WPF přes reflexi + `Activator.CreateInstance` (automaticky volá `vm.AttachToWindow(window)` před Show). Legacy přes `EDISONMAIN2API.FormToRunGetter` 10-arg kontrakt; trackuje child procesy, kill na `CloseAllLegacy`. |
+| `WindowNavigator.cs` | Implementace — WPF: `Show(Window)` / `ShowDialog(Window)` přijímá instanci (caller volá `new MyWindow()`), wire-up dělá Owner + `[Idfa]` title + `vm.AttachToWindow(window)`. Legacy přes `EDISONMAIN2API.FormToRunGetter` 10-arg kontrakt; trackuje child procesy, `KillOnExit.Bind` proti hard-kill, kill na `CloseAll`. |
 | `IPopupDisplayer.cs` | Interface pro dialogy (`Confirm`, `Info`, `ConfirmClose`, `Error`). |
 | `PopupDisplayer.cs` | Implementace — zobrazí `EDPopup` / `EDErrorPopup` s aktivním oknem jako owner. |
-| `EDWindowInput.cs` | Bázová třída pro vstupní data předávaná do modálních oken. |
-| `EDWindowOutput.cs` | Bázová třída pro výstupní data z dialogů. |
 
 ## EDViewModel API
 
 | Člen | Popis |
 | --- | --- |
 | `IMLRest? MLRest` | Property — čte z `_services.MLRest` (sdíleno přes `EDServices`). Použij přímo pro Caché volání: `MLRest!.QueryOrThrow(...)`. |
-| `IWindowNavigator WindowNavigator` | Protected — pro otevírání dalších oken: `WindowNavigator.Show("MyWindow")`. |
+| `IWindowNavigator WindowNavigator` | Protected — pro otevírání dalších oken: `WindowNavigator.Show(new MyWindow())`. |
 | `IPopupDisplayer PopupDisplayer` | Public — pro dialogy: `PopupDisplayer.Confirm("Opravdu?")`. |
 | `bool ConfirmOnCancel` | Protected set. Pokud `true`, EDFooter zobrazí potvrzení před zavřením. |
 | `event Action<bool?>? RequestClose` | Vyvolán pro zavření okna. `true` = potvrzeno, `false` = zrušeno, `null` = jen zavřít. `EDFooter` se přihlásí automaticky na `Loaded`. |
