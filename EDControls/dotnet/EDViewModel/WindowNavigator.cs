@@ -20,7 +20,12 @@ public class WindowNavigator : IWindowNavigator
     /// </summary>
     public const string EdisonDeployRoot = @"C:\Edison";
 
-    private readonly List<Process> _legacyProcesses = [];
+    /// <summary>Sledování legacy child procesů — Process + původní spawn args (exe, formFqn).
+    /// FormFqn slouží jako fallback display label, když <c>Process.MainWindowTitle</c> je prázdný
+    /// (typicky brzy po startu child procesu, než se vytvoří window).</summary>
+    internal record LegacyProcessEntry(Process Process, string ExeName, string FormFqn);
+
+    private readonly List<LegacyProcessEntry> _legacyProcesses = [];
 
     /// <summary>
     /// Registr klíč → factory pro WPF okna. Naplňuje composition root při startupu;
@@ -45,7 +50,7 @@ public class WindowNavigator : IWindowNavigator
     public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc != null) _legacyProcesses.Add(prc);
+        if (prc != null) _legacyProcesses.Add(new(prc, exeName, formFqn));
     }
 
     public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
@@ -58,7 +63,7 @@ public class WindowNavigator : IWindowNavigator
     {
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
-        _legacyProcesses.Add(prc);
+        _legacyProcesses.Add(new(prc, exeName, formFqn));
 
         var owner = Application.Current.MainWindow;
         if (owner != null) owner.IsEnabled = false;
@@ -105,11 +110,11 @@ public class WindowNavigator : IWindowNavigator
         foreach (var w in Application.Current.Windows.OfType<Window>().ToList())
             if (w != Application.Current.MainWindow) w.Close();
 
-        foreach (var process in _legacyProcesses)
+        foreach (var entry in _legacyProcesses)
         {
             try
             {
-                if (!process.HasExited) process.Kill();
+                if (!entry.Process.HasExited) entry.Process.Kill();
             }
             catch (Exception ex)
             {
@@ -117,6 +122,71 @@ public class WindowNavigator : IWindowNavigator
             }
         }
         _legacyProcesses.Clear();
+    }
+
+    /// <summary>
+    /// Snapshot právě běžících modulů — legacy child procesy + WPF okna (kromě shell
+    /// <c>MainWindow</c>). Pro menu "Spuštěné moduly" (binding přes refresh při open).
+    /// Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> — shell-only feature.
+    /// </summary>
+    public IReadOnlyList<RunningModuleInfo> GetActiveModules()
+    {
+        var legacy = _legacyProcesses
+            .Where(e => !e.Process.HasExited)
+            .Select(e => new RunningModuleInfo(
+                DisplayName: FormatLegacyLabel(e),
+                Activate: () =>
+                {
+                    if (e.Process.HasExited) return;
+                    var hwnd = e.Process.MainWindowHandle;
+                    if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
+                }));
+
+        var wpf = Application.Current.Windows
+            .OfType<Window>()
+            .Where(w => w != Application.Current.MainWindow
+                        && w.IsLoaded
+                        && !IsInternalWindow(w))
+            .Select(w => new RunningModuleInfo(
+                DisplayName: !string.IsNullOrEmpty(w.Title) ? w.Title : w.GetType().Name,
+                Activate: () =>
+                {
+                    if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+                    w.Activate();
+                    w.Focus();
+                }));
+
+        return [.. legacy, .. wpf];
+    }
+
+    /// <summary>Skip WPF/WebView2 interních oken (AdornerWindow atd.) — uživatelská okna nejsou v MS./System./Microsoft. namespace.</summary>
+    internal static bool IsInternalWindow(Window w)
+    {
+        var ns = w.GetType().Namespace ?? "";
+        return ns.StartsWith("MS.")
+            || ns.StartsWith("System.")
+            || ns.StartsWith("Microsoft.");
+    }
+
+    /// <summary>
+    /// Display label pro legacy proces: preferuje <c>MainWindowTitle</c> (text v záhlaví okna,
+    /// to co user vidí), fallback last segment z FormFqn (např. <c>formMHD2Main</c>), nebo
+    /// název EXE bez přípony, když ani jedno není dostupné.
+    /// </summary>
+    internal static string FormatLegacyLabel(LegacyProcessEntry entry)
+    {
+        var title = SafeGetTitle(entry.Process);
+        if (!string.IsNullOrEmpty(title)) return title;
+        var lastDot = entry.FormFqn.LastIndexOf('.');
+        if (lastDot >= 0 && lastDot < entry.FormFqn.Length - 1) return entry.FormFqn[(lastDot + 1)..];
+        if (!string.IsNullOrEmpty(entry.FormFqn)) return entry.FormFqn;
+        return Path.GetFileNameWithoutExtension(entry.ExeName);
+    }
+
+    private static string SafeGetTitle(Process process)
+    {
+        try { return process.MainWindowTitle ?? ""; }
+        catch { return ""; }
     }
 
     private static Process? LaunchLegacy(string exeName, string formFqn, bool shareShellSession, string inputParam)

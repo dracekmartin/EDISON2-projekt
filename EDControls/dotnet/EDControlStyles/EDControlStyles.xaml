@@ -295,6 +295,13 @@
         <Setter Property="SnapsToDevicePixels" Value="True"/>
     </Style>
 
+    <!-- TextBlock — sjednocuje typografii i mimo styled container (DP inheritance pokrývá jen TextBlocky uvnitř Menu/StatusBar/atd.). -->
+    <Style TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontFamily" Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Body}"/>
+    </Style>
+
     <!-- ContextMenu — popup pro right-click menus -->
     <Style TargetType="ContextMenu">
         <Setter Property="Background" Value="White"/>

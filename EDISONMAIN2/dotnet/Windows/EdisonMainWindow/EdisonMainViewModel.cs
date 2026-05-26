@@ -28,6 +28,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Func<Lic?> _licenceLoader;
         private readonly CompanySwitcher _switcher;
         private readonly ILocalPrefs _prefs;
+        private readonly Func<IReadOnlyList<RunningModuleInfo>> _getActiveModules;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -57,6 +58,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenHelpdeskWebCommand { get; }
         // Styl menu — SelectFont je akce, FontApplied je toggle (níže jako bool property).
         public ICommand SelectFontCommand { get; }
+        // Spuštěné moduly menu
+        public ICommand RefreshRunningModulesCommand { get; }
+        public ICommand ActivateModuleCommand { get; }
 
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
@@ -66,12 +70,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Lic? initialLicence,
             CompanySwitcher switcher,
             ILocalPrefs prefs,
+            Func<IReadOnlyList<RunningModuleInfo>> getActiveModules,
             Action closeAllWindows)
         {
             _treeGetter = treeService;
             _licenceLoader = licenceLoader;
             _switcher = switcher;
             _prefs = prefs;
+            _getActiveModules = getActiveModules;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show("EDInputFormTestWindow"));
@@ -105,6 +111,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Styl menu
             SelectFontCommand             = Command(SelectFont);
+
+            // Spuštěné moduly menu — dynamický seznam, refresh při SubmenuOpened.
+            RefreshRunningModulesCommand  = Command(RefreshRunningModules);
+            ActivateModuleCommand         = Command<RunningModuleInfo>(m => m.Activate());
 
             MainMenuTree = [];
             SystemAdminTree = [];
@@ -392,6 +402,36 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                        $"Firma: {MLRest!.Idfa}\n" +
                        $"Uživatel: {MLRest!.FullName} ({MLRest!.LoginName})";
             PopupDisplayer.Info(info);
+        }
+
+        // INFO label (vpravo v menu). Stálý text bez timer refreshe — typicky se shell
+        // znovu spustí denně, půlnoční rollover neřešíme. Pokud bude potřeba, přidá se
+        // DispatcherTimer naplánovaný na další půlnoc.
+        public string InformationText { get; } = BuildInformationText(DateOnly.FromDateTime(DateTime.Today));
+
+        internal static string BuildInformationText(DateOnly today)
+        {
+            var text = $"Dnes je {today:dd.MM.yyyy}";
+            var nameday = CzechNamedays.GetByDate(today);
+            if (!string.IsNullOrEmpty(nameday)) text += $", svátek má {nameday}";
+            return text;
+        }
+
+        // Initial = placeholder: WPF neotevře prázdný submenu, takže MouseEnter refresh by se nevyvolal.
+        private IReadOnlyList<RunningModuleInfo> _runningModules = [_emptyPlaceholder];
+        public IReadOnlyList<RunningModuleInfo> RunningModules
+        {
+            get => _runningModules;
+            private set => Set(ref _runningModules, value);
+        }
+
+        private static readonly RunningModuleInfo _emptyPlaceholder =
+            new("Žádné moduly nejsou spuštěné", () => { }, IsEnabled: false);
+
+        private void RefreshRunningModules()
+        {
+            var modules = _getActiveModules();
+            RunningModules = modules.Count == 0 ? [_emptyPlaceholder] : modules;
         }
 
         private void NotYetImplemented()

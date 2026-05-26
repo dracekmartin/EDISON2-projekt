@@ -212,7 +212,7 @@ public class AppBootstrapper
         var switcher = new CompanySwitcher(session.MLRest, session.LicenceLoader, services.IsAdmin,
                                            services.PopupDisplayer, nav, prefs, nav.CloseAll);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter, session.LicenceLoader,
-                                                licence, switcher, prefs, nav.CloseAll);
+                                                licence, switcher, prefs, nav.GetActiveModules, nav.CloseAll);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;
