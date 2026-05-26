@@ -24,13 +24,13 @@
             </Grid.RowDefinitions>
 
             <!-- Toolbar bar (Row 0): EDComponentToolbar — sdílená komponenta napříč
-                 EDInputForm / EDList / budoucí tabulkové komponenty. Search + standard ikony.
-                 SearchText, FindNext/Previous, Help/Settings commands wire later — zatím visual. -->
+                 EDInputForm / EDList / budoucí tabulkové komponenty.
+                 Help/Settings ikony vypnuté dokud nemáme reálné Commands (avoid placeholder noise). -->
             <edct:EDComponentToolbar Grid.Row="0"
                                      x:Name="Toolbar"
                                      ShowSearch="True"
-                                     ShowHelp="True"
-                                     ShowSettings="True"/>
+                                     ShowHelp="False"
+                                     ShowSettings="False"/>
 
             <!-- Column header bar: Položka | Hodnota | (spacer).
                  Modern PropertyGrid layout: jen 2 logické sloupce — label + input. Errors/help

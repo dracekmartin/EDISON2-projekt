@@ -38,13 +38,34 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
     /// Validuje s BeforeSave triggerem a pokud nejsou chyby, volá Caché <c>Save</c>.
     /// Vrátí true při úspěchu.
     /// </summary>
+    /// <remarks>
+    /// <para><b>Cache Save contract:</b> Caché Save může buď:</para>
+    /// <list type="bullet">
+    /// <item><b>Round-trip form</b> — ReadFromIn() + WriteToOut(). Pak Items se aktualizují
+    /// na server stav (např. po server-side persist).</item>
+    /// <item><b>No-op</b> — pouze vrátí <c>$$$OK</c>, žádný WriteToOut. Items zůstávají
+    /// po validaci (host řeší persist sám, např. TextElementEditDialog).</item>
+    /// </list>
+    /// <para>Detekce: hledáme číselné subscripty 1, 2, ... v OUT (= form items). Pokud
+    /// existují, Save round-tripoval → ApplyOutput; jinak preserve.</para>
+    /// </remarks>
     public bool Save()
     {
         if (!ExecuteValidate(EValidationTrigger.BeforeSave)) return false;
 
         CVar output = mlRest.QueryOrThrow(cacheClass, "Save", EDInputForm.SerializeItemsCVar(Items));
-        ApplyOutput(output);
+        if (HasFormItems(output)) ApplyOutput(output);
         return true;
+    }
+
+    /// <summary>True pokud OUT obsahuje form items na číselných subscriptech (1, 2, ...).
+    /// Metadata klíče (ERR, helpTextMode, ...) se ignorují automaticky díky whitelist
+    /// na číselné subscripty.</summary>
+    private static bool HasFormItems(CVar output)
+    {
+        foreach (var kvp in output)
+            if (int.TryParse(kvp.Key, out _)) return true;
+        return false;
     }
 
     private bool ExecuteValidate(EValidationTrigger trigger, string? changedKey = null)

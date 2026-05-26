@@ -14,7 +14,7 @@
         <edct:EDComponentToolbar DockPanel.Dock="Top"
                                  x:Name="headerToolbar"
                                  Visibility="Collapsed"
-                                 ShowHelp="False" ShowSettings="True"
+                                 ShowHelp="False" ShowSettings="False"
                                  Title="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                  SearchText="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"/>
         <DataGrid x:Name="dataGrid"

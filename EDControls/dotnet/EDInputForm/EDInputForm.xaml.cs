@@ -20,8 +20,11 @@ namespace EDControls.EDInputForm
 
         // ─── Configuration ────────────────────────────────────────────────────────
 
-        private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
-        private EDViewModel.IPopupDisplayer? PopupDisplayer => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.PopupDisplayer;
+        // MLRest a PopupDisplayer ze sdíleného EDServices.Current — nezávislé na Window.DataContext.
+        // Dialogy hostující EDInputForm tak nemusí mít VM dědící z EDViewModel jen kvůli těmto
+        // službám (mohou mít vlastní VM se svými properties, nebo žádný VM).
+        private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
+        private EDViewModel.IPopupDisplayer? PopupDisplayer => EDViewModel.EDServices.Current.PopupDisplayer;
 
         /// <summary>Caché třída implementující <c>Init</c> / <c>Validate</c> / <c>Save</c>.</summary>
         public string CacheClass { get; set; } = "";

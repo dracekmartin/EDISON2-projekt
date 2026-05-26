@@ -22,21 +22,38 @@ namespace EDControls.EDComponentToolbar;
 /// </summary>
 public partial class EDComponentToolbar : UserControl
 {
+    private KeyBinding? _ctrlFBinding;
+    private Window? _attachedWindow;
+
     public EDComponentToolbar()
     {
         InitializeComponent();
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Ctrl+F focusne search box (window-level binding, pokud parent Window existuje)
+        // Ctrl+F focusne search box (window-level binding, pokud parent Window existuje).
+        // Unsubscribe nutný v OnUnloaded — jinak při re-load akumulují binding kopie.
         var parentWindow = Window.GetWindow(this);
-        if (parentWindow is null) return;
+        if (parentWindow is null || _ctrlFBinding is not null) return;
 
-        parentWindow.InputBindings.Add(new KeyBinding(
+        _ctrlFBinding = new KeyBinding(
             new RelayCommand(FocusSearch),
-            new KeyGesture(Key.F, ModifierKeys.Control)));
+            new KeyGesture(Key.F, ModifierKeys.Control));
+        _attachedWindow = parentWindow;
+        parentWindow.InputBindings.Add(_ctrlFBinding);
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        if (_ctrlFBinding is not null && _attachedWindow is not null)
+        {
+            _attachedWindow.InputBindings.Remove(_ctrlFBinding);
+            _ctrlFBinding = null;
+            _attachedWindow = null;
+        }
     }
 
     private void FocusSearch()
