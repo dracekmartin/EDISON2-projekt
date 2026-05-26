@@ -16,6 +16,11 @@
             <b:InvokeCommandAction Command="{Binding CloseAllCommand}"/>
         </b:EventTrigger>
     </b:Interaction.Triggers>
+    <!-- Skryté klávesové zkratky (RESPONSIBILITIES §15.1). Ctrl+W+W chord řeší
+         PreviewKeyDown v code-behind (víc-krokový stav, nelze přes KeyBinding). -->
+    <Window.InputBindings>
+        <KeyBinding Key="B" Modifiers="Control+Shift" Command="{Binding ShowBgTasksCommand}"/>
+    </Window.InputBindings>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="20"/>
@@ -188,6 +193,8 @@
             <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
             <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
             <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
+            <!-- Chord hint pro Ctrl+W+W. Prázdný text = neaktivní stav. -->
+            <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"/>
         </StatusBar>
 
     </Grid>

@@ -440,5 +440,39 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             PopupDisplayer.Info("Tato funkce zatím není v EDISONu 2 dostupná.");
         }
+
+        // Ctrl+W+W chord — skrytá zkratka pro M-line utility (RESPONSIBILITIES §15.1).
+        // Stav perzistuje v UI threadu, není potřeba timeout — jakákoliv jiná klávesa chord resetuje.
+        private bool _isChordWaiting;
+        public bool IsChordWaiting
+        {
+            get => _isChordWaiting;
+            private set
+            {
+                if (Set(ref _isChordWaiting, value))
+                    OnPropertyChanged(nameof(ChordHintText));
+            }
+        }
+        public string ChordHintText => IsChordWaiting ? "Stisknuto Ctrl+W — čekám na druhý stisk…" : "";
+
+        public void HandleCtrlW()
+        {
+            if (IsChordWaiting)
+            {
+                IsChordWaiting = false;
+                // UTILITIES.exe ukáže vlastní FrmPassword (legacy date-dependent vzorec) —
+                // shell jen detekuje chord a spustí. Single source of truth pro formuli.
+                WindowNavigator.ShowLegacy("UTILITIES.exe", "ALVA.UTILITIES.formUTILITIESMain");
+            }
+            else
+            {
+                IsChordWaiting = true;
+            }
+        }
+
+        public void ResetChord()
+        {
+            if (IsChordWaiting) IsChordWaiting = false;
+        }
     }
 }
