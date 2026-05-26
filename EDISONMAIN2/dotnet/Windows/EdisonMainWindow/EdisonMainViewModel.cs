@@ -300,6 +300,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     OnPropertyChanged(nameof(UserName));
                     OnPropertyChanged(nameof(FullName));
                     OnPropertyChanged(nameof(Mlp));
+                    // Admin-gated commandy (ShowUsersLocks/Activity) re-vyhodnotí CanExecute hned,
+                    // ne až na první input event po switch.
+                    CommandManager.InvalidateRequerySuggested();
                     break;
             }
         }
