@@ -167,7 +167,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>
         /// 4-vrstvá filtrace stromu (viz RESPONSIBILITIES § 5.2):
         /// 1) licence — <see cref="ExecutableModule.IsLicensed"/> uzel musí být v <see cref="Lic.Elements"/>;
-        /// 2) hidden — TODO (zatím nemáme `hidden` ve wire formátu);
+        /// 2) hidden — <see cref="ExecutableModule.Hidden"/> uzly se vždy odfiltrují (legacy `hidden="1"`);
         /// 3) aplikační přístup — <c>AccessTable.Contains(ElementId)</c> pro každý EXE uzel;
         /// 4) admin fallback — řešen v <see cref="AccessLoader"/> už při loadu (přidá konkrétní IDs).
         /// FAMILY se auto-skryje, pokud všechny děti odfiltrované.
@@ -181,11 +181,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         internal static bool IsAllowed(ExecutableModule exe, Lic? licence, AccessTable? access = null)
         {
-            // Krok 1: licence gate
+            if (exe.Hidden) return false;
             if (exe.IsLicensed && !(licence?.Elements?.Contains(exe.ElementId) ?? false))
                 return false;
-            // Krok 3: aplikační přístup — pokud AccessTable je null (load nebyl proveden, např. testy),
-            // pasujeme všechno (degrade gracefully). V produkci je vždy non-null po App startup.
+            // AccessTable null = load nebyl proveden (typicky testy) → pass-through (graceful degradation).
             if (access != null && !access.Contains(exe.ElementId))
                 return false;
             return true;

@@ -201,6 +201,47 @@ public class ParseTreeTests
     }
 
     [Fact]
+    public void ParseTree_FullFormatWithInputParamHiddenColor()
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Úlohy", "EDISONMAIN.exe", "ALVA.EDISONMAIN.formTaskList",
+                              "2011", "0", "AdminMode=1", "0", "#FFA500");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal("AdminMode=1", mod.InputParam);
+        Assert.False(mod.Hidden);
+        Assert.Equal("#FFA500", mod.Color);
+    }
+
+    [Fact]
+    public void ParseTree_HiddenOne_SetsHiddenTrue()
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Skrytý", "x.exe", "X", "1", "0", "", "1");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.True(mod.Hidden);
+    }
+
+    [Fact]
+    public void ParseTree_LegacyFormat_HiddenAndColorDefault()
+    {
+        // 7-field row (před S8/S9) — Hidden/Color musí default na false / "".
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Legacy", "l.exe", "L", "1", "1", "input");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.False(mod.Hidden);
+        Assert.Equal("", mod.Color);
+    }
+
+    [Fact]
     public void ParseTree_UnknownType_IsSkipped()
     {
         var data = new CVar();

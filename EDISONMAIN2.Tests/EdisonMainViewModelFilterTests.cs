@@ -61,6 +61,24 @@ public class EdisonMainViewModelFilterTests
         Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence()));
     }
 
+    [Fact]
+    public void IsAllowed_Hidden_FalseEvenWithLicenceAndAccess()
+    {
+        // Hidden flag má přednost — modul se vyfiltruje bez ohledu na licenci či access.
+        var exe = new ExecutableModule { ElementId = "100", IsLicensed = true, Hidden = true };
+
+        Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence("100")));
+    }
+
+    [Fact]
+    public void IsAllowed_NotHidden_DefaultsToFalse_PassesThrough()
+    {
+        // Default Hidden=false → projde licenčním gate.
+        var exe = new ExecutableModule { ElementId = "100", IsLicensed = false, Hidden = false };
+
+        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null));
+    }
+
     // ---------- FilterFamily -----------------------------------------------
 
     [Fact]
