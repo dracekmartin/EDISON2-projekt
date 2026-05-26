@@ -194,12 +194,14 @@ public class WindowNavigator : IWindowNavigator
         var mlRest = EDServices.Current.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
         var shellGuid = shareShellSession ? mlRest.Guid : "";
-        return Process.Start(new ProcessStartInfo
+        var prc = Process.Start(new ProcessStartInfo
         {
             UseShellExecute = true,
             FileName = ResolveExecutablePath(exeName),
             Arguments = $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\"",
         });
+        if (prc != null) KillOnExit.Bind(prc);
+        return prc;
     }
 
     private static string ResolveExecutablePath(string relativePath)
