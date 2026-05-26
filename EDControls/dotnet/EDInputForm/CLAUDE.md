@@ -67,6 +67,48 @@ bool ok = controller.Save();
 List<Item> items = controller.Items;
 ```
 
+## Stavba formuláře v Caché — preferovaný pattern
+
+`Form.cls` nabízí dvě úrovně API:
+
+**1) Helpery pro simple typy** (one-liner per field) — preferovaný pro nejčastější case:
+
+```objectscript
+s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+d form.AddGroup("font", "Font")
+
+d form.AddText("text", "Obsah", initText)                                       ; Text field
+d form.AddBool("bold", "Tučně", 0)                                              ; Bool checkbox
+d form.AddNumber("count", "Počet", "10", "0", "999", "ks", 1)                   ; Integer s range/unit/required
+d form.AddDecimal("size", "Velikost", "10", "4", "200", "pt", "0.0#")           ; Decimal s range/unit/format
+
+; Helper vrací Field — caller může nastavit další properties:
+s f = form.AddBool("debug", "Debug log", 0)
+s f.helpText = "Uloží .import-debug.txt vedle PDF"
+```
+
+Helpery: `AddText`, `AddBool`, `AddNumber`, `AddDecimal`. Pokrývají 80% praktického použití.
+
+**2) AddFieldToLastGroup + property setters** — pro complex typy (List/ComboBox/Color/File/Date):
+
+```objectscript
+; List/ComboBox potřebuje AddListItem
+s f = form.AddFieldToLastGroup("stav", "Stav", $$$FieldTypeList, 0, 1)
+d f.AddListItem("A", "Aktivní")
+d f.AddListItem("N", "Neaktivní")
+s f.value = "A"
+
+; Color
+s f = form.AddFieldToLastGroup("barva", "Barva textu", $$$FieldTypeColor, 0, 0)
+s f.value = "#FF000000"
+
+; File s filtrem
+s f = form.AddFieldToLastGroup("soubor", "PDF soubor", $$$FieldTypeFile, 0, 0)
+s f.fileFilter = "PDF (*.pdf)|*.pdf"
+```
+
+Tento pattern je extensibilní — pro každou novou Field property stačí `s f.xxx = ...` řádek.
+
 ## Caché wire protokol (CVar/CList)
 
 ### Položky formuláře (oba směry)

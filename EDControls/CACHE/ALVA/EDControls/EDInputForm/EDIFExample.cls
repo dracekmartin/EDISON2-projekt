@@ -22,27 +22,21 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		// ── Skupina 1: Typy polí ─────────────────────────────────────────────
 		// Každý typ pole jednou, bez dalších featur — čistá ukázka typu.
+		// Helpery (AddText, AddBool, AddNumber, AddDecimal) pro simple fieldy;
+		// AddFieldToLastGroup + property setters pro komplex (Date, List, Color, File, ComboBox).
 
 		d form.AddGroup("types", "Typy polí")
 
-		d form.AddFieldToLastGroup("text", "Text", $$$FieldTypeText, 0, 0)
+		// Helpery — jeden řádek per field
+		d form.AddText("text", "Text")
+		d form.AddNumber("number", "Celé číslo", "", "0", "999", "ks")
+		d form.AddDecimal("decimal", "Velikost fontu", "10", "4", "200", "pt", "N2")
 
-		s f = form.AddFieldToLastGroup("number", "Celé číslo", $$$FieldTypeNumber, 0, 0)
-		s f.min  = "0"
-		s f.max  = "999"
-		s f.unit = "ks"
-
-		s f = form.AddFieldToLastGroup("decimal", "Velikost fontu", $$$FieldTypeDecimal, 0, 0)
-		s f.min    = "4"
-		s f.max    = "200"
-		s f.format = "N2"
-		s f.unit   = "pt"
-		s f.value  = "10"
-
+		// Verbose — AddFieldToLastGroup + post-setting (Date nemá vlastní helper)
 		s f = form.AddFieldToLastGroup("date", "Datum", $$$FieldTypeDate, 0, 0)
 		s f.value = "2025-01-15"
 
-		d form.AddFieldToLastGroup("bool", "Checkbox", $$$FieldTypeBool, 0, 0)
+		d form.AddBool("bool", "Checkbox")
 
 		s f = form.AddFieldToLastGroup("list", "Dropdown", $$$FieldTypeList, 0, 0)
 		d f.AddListItem("A", "Volba A")
@@ -75,7 +69,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 		d form.AddGroup("required", "Povinná pole")
 
-		d form.AddFieldToLastGroup("reqText", "Povinný text", $$$FieldTypeText, 0, 1)
+		d form.AddText("reqText", "Povinný text", "", 1)
 
 		s f = form.AddFieldToLastGroup("reqList", "Povinný dropdown", $$$FieldTypeList, 0, 1)
 		d f.AddListItem("X", "Možnost X")

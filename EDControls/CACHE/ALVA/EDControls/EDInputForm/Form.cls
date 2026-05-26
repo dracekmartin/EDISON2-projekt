@@ -57,6 +57,54 @@ Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {
 	q f
 }
 
+/// ─── Convenience helpers pro nejčastější field typy ─────────────────────────
+/// Vrací nový Field — caller může nastavit další properties (helpText, format,
+/// validationError, ...). Pro complex typy (List/ComboBox/Color/File) použij
+/// AddFieldToLastGroup + post-setting properties (viz EDIFExample.cls).
+///
+/// Pro skupinu — nejprve volej AddGroup(...), helpery přidají field do poslední.
+
+/// Text field. value=initial obsah, required=povinnost.
+Method AddText(key As %String, label As %String, value As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeText, 0, required)
+	s f.value = value
+	q f
+}
+
+/// Bool (checkbox) field. value=0/1.
+Method AddBool(key As %String, label As %String, value As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeBool, 0, 0)
+	s f.value = value
+	q f
+}
+
+/// Number (integer) field s volitelným rozsahem + jednotkou.
+/// min/max/unit prázdné = bez validace/displeje.
+Method AddNumber(key As %String, label As %String, value As %String = "", min As %String = "", max As %String = "", unit As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeNumber, 0, required)
+	s f.value = value
+	s:min'="" f.min = min
+	s:max'="" f.max = max
+	s:unit'="" f.unit = unit
+	q f
+}
+
+/// Decimal (float) field s volitelným rozsahem + jednotkou + formátem.
+/// format např. "0.0#", "N2", "0.00".
+Method AddDecimal(key As %String, label As %String, value As %String = "", min As %String = "", max As %String = "", unit As %String = "", format As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeDecimal, 0, required)
+	s f.value = value
+	s:min'="" f.min = min
+	s:max'="" f.max = max
+	s:unit'="" f.unit = unit
+	s:format'="" f.format = format
+	q f
+}
+
 /// Inserts a field into the group identified by groupKey (after its last field).
 /// If the group is not found, appends to the end.
 /// Returns the new field so the caller can set value / validationError.

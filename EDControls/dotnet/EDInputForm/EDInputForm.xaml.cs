@@ -120,9 +120,12 @@ namespace EDControls.EDInputForm
                 return;
             }
 
+            // Case + diacritics insensitive: "agen" matches "Ágen", "fontu" matches "Fontů" atd.
+            var needle = NormalizeForSearch(searchText);
+
             foreach (var f in Items.OfType<Field>())
             {
-                bool matches = (f.Label ?? "").Contains(searchText, StringComparison.OrdinalIgnoreCase);
+                bool matches = NormalizeForSearch(f.Label ?? "").Contains(needle);
                 f.IsFilteredBySearch = !matches;
                 if (matches) _searchMatches.Add(f);
             }
@@ -130,6 +133,20 @@ namespace EDControls.EDInputForm
             Toolbar.TotalMatches = _searchMatches.Count;
             Toolbar.CurrentMatchIndex = _searchMatches.Count > 0 ? 1 : 0;
             if (_searchMatches.Count > 0) ScrollFieldIntoView(_searchMatches[0]);
+        }
+
+        /// <summary>Normalize string for diacritics-insensitive matching:
+        /// "Pošta" → "posta". Lowercase + strip combining marks (NFD form).</summary>
+        private static string NormalizeForSearch(string s)
+        {
+            var normalized = s.ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder(normalized.Length);
+            foreach (var c in normalized)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                    sb.Append(c);
+            }
+            return sb.ToString();
         }
 
         private void FindNext()
