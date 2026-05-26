@@ -954,18 +954,16 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (TemplateStorage is null) return;
 
-        var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
         var vm = new SaveToCacheDialogViewModel(
             State.CurrentTemplate.Name,
-            State.CurrentTemplate.AgendaCode,
-            agendas);
+            State.CurrentTemplate.AgendaCode);
         var dlg = new SaveToCacheDialog(vm) { Owner = Application.Current.MainWindow };
         if (dlg.ShowDialog() != true) return;
 
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
         State.CurrentTemplate.Name = vm.Name;
-        State.CurrentTemplate.AgendaCode = vm.SelectedAgenda.Code;
+        State.CurrentTemplate.AgendaCode = vm.AgendaCode;
 
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
