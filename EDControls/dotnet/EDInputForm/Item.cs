@@ -25,12 +25,28 @@ namespace EDControls.EDInputForm
 
         /// <summary>Vypočtená WPF <see cref="WpfVisibility"/> pro XAML binding. Override v subclass pro dodatečnou logiku.</summary>
         public virtual WpfVisibility EffectiveVisibility =>
-            _visibility == EItemVisibility.Visible
+            !_isFilteredBySearch && _visibility == EItemVisibility.Visible
                 ? WpfVisibility.Visible
                 : WpfVisibility.Collapsed;
 
         /// <summary>Volá se po změně <see cref="Visibility"/>. Override pro notifikaci odvozených properties.</summary>
         protected virtual void OnVisibilityChanged() { }
+
+        private bool _isFilteredBySearch;
+        /// <summary>
+        /// True když položka neprošla aktuálním search filtrem (skryje ji v UI).
+        /// Nastavuje EDInputForm při změně toolbar SearchText. Nezávislé na <see cref="Visibility"/>.
+        /// </summary>
+        internal bool IsFilteredBySearch
+        {
+            get => _isFilteredBySearch;
+            set
+            {
+                if (_isFilteredBySearch == value) return;
+                _isFilteredBySearch = value;
+                OnPropertyChanged(nameof(EffectiveVisibility));
+            }
+        }
 
         private string? _helpText;
         /// <summary>

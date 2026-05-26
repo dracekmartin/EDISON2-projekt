@@ -196,11 +196,11 @@ namespace EDControls.EDInputForm
         }
 
         /// <summary>
-        /// Collapsed pokud pole je non-Visible NEBO parent group je non-Visible
-        /// (skrytá skupina skryje i pole; její header zůstává přes <c>Group.EffectiveVisibility</c>).
+        /// Collapsed pokud pole je non-Visible, parent group je non-Visible, nebo neprošlo search filtrem.
         /// </summary>
         public override WpfVisibility EffectiveVisibility =>
-            Visibility == EItemVisibility.Visible
+            !IsFilteredBySearch
+            && Visibility == EItemVisibility.Visible
             && (_parentGroup?.Visibility ?? EItemVisibility.Visible) == EItemVisibility.Visible
                 ? WpfVisibility.Visible
                 : WpfVisibility.Collapsed;

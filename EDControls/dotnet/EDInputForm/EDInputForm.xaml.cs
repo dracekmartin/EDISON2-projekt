@@ -75,36 +75,80 @@ namespace EDControls.EDInputForm
             set => SetValue(HelpTextModeProperty, value);
         }
 
-        /// <summary>
-        /// Volitelný obsah toolbar baru nahoře (search, settings, refresh, custom akce).
-        /// Host poskytuje vlastní UIElement (StackPanel, Grid, ...). Když null → bar
-        /// se nevykreslí. Příklad:
-        /// <code>
-        /// &lt;eif:EDInputForm.ToolbarContent&gt;
-        ///     &lt;StackPanel Orientation="Horizontal"&gt;
-        ///         &lt;TextBox Width="200" /&gt;
-        ///         &lt;Button Content="⚙" /&gt;
-        ///     &lt;/StackPanel&gt;
-        /// &lt;/eif:EDInputForm.ToolbarContent&gt;
-        /// </code>
-        /// </summary>
-        public static readonly DependencyProperty ToolbarContentProperty =
-            DependencyProperty.Register(
-                nameof(ToolbarContent),
-                typeof(object),
-                typeof(EDInputForm),
-                new PropertyMetadata(null));
-
-        public object? ToolbarContent
-        {
-            get => GetValue(ToolbarContentProperty);
-            set => SetValue(ToolbarContentProperty, value);
-        }
 
         public EDInputForm()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (!string.IsNullOrEmpty(CacheClass)) Init(); };
+            Loaded += (_, _) =>
+            {
+                if (!string.IsNullOrEmpty(CacheClass)) Init();
+                WireToolbarSearch();
+            };
+        }
+
+        // ─── Search filter & navigation ──────────────────────────────────────────
+
+        private readonly List<Field> _searchMatches = [];
+
+        private void WireToolbarSearch()
+        {
+            // Listen to SearchText changes
+            var dpd = DependencyPropertyDescriptor.FromProperty(
+                EDComponentToolbar.EDComponentToolbar.SearchTextProperty,
+                typeof(EDComponentToolbar.EDComponentToolbar));
+            dpd.AddValueChanged(Toolbar, (_, _) => ApplySearchFilter(Toolbar.SearchText));
+
+            // Wire find next/previous commands
+            Toolbar.FindNextCommand = new RelayCommand(FindNext);
+            Toolbar.FindPreviousCommand = new RelayCommand(FindPrevious);
+        }
+
+        private void ApplySearchFilter(string searchText)
+        {
+            _searchMatches.Clear();
+            if (Items == null) return;
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                foreach (var f in Items.OfType<Field>())
+                    f.IsFilteredBySearch = false;
+                Toolbar.TotalMatches = 0;
+                Toolbar.CurrentMatchIndex = 0;
+                return;
+            }
+
+            foreach (var f in Items.OfType<Field>())
+            {
+                bool matches = (f.Label ?? "").Contains(searchText, StringComparison.OrdinalIgnoreCase);
+                f.IsFilteredBySearch = !matches;
+                if (matches) _searchMatches.Add(f);
+            }
+
+            Toolbar.TotalMatches = _searchMatches.Count;
+            Toolbar.CurrentMatchIndex = _searchMatches.Count > 0 ? 1 : 0;
+            if (_searchMatches.Count > 0) ScrollFieldIntoView(_searchMatches[0]);
+        }
+
+        private void FindNext()
+        {
+            if (_searchMatches.Count == 0) return;
+            int next = Toolbar.CurrentMatchIndex >= _searchMatches.Count ? 1 : Toolbar.CurrentMatchIndex + 1;
+            Toolbar.CurrentMatchIndex = next;
+            ScrollFieldIntoView(_searchMatches[next - 1]);
+        }
+
+        private void FindPrevious()
+        {
+            if (_searchMatches.Count == 0) return;
+            int prev = Toolbar.CurrentMatchIndex <= 1 ? _searchMatches.Count : Toolbar.CurrentMatchIndex - 1;
+            Toolbar.CurrentMatchIndex = prev;
+            ScrollFieldIntoView(_searchMatches[prev - 1]);
+        }
+
+        private void ScrollFieldIntoView(Field field)
+        {
+            var container = TheItemsControl.ItemContainerGenerator.ContainerFromItem(field) as FrameworkElement;
+            container?.BringIntoView();
         }
 
         // ─── Public API ───────────────────────────────────────────────────────────

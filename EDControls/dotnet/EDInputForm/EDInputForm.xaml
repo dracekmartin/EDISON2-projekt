@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:EDControls.EDInputForm"
+             xmlns:edct="clr-namespace:EDControls.EDComponentToolbar"
              xmlns:designTime="clr-namespace:EDControls.EDInputForm.DesignTimeData"
              mc:Ignorable="d"
              d:DesignHeight="450" d:DesignWidth="420">
@@ -22,48 +23,24 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <!-- Toolbar bar (Row 0): vždy viditelný (standard ve všech EDInputForm).
-                 Default obsah: search box vlevo + standardní ikony (?/⚙) vpravo.
-                 ToolbarContent property → host-specific extra tlačítka (zobrazeno před ikonami). -->
-            <Border Grid.Row="0"
-                    Background="{DynamicResource EDTheme.Accent.BlueDark}"
-                    Padding="6,4">
-                <DockPanel LastChildFill="False">
-                    <!-- Right side: host extras + standardní toolbar ikony -->
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
-                                VerticalAlignment="Center">
-                        <ContentPresenter Content="{Binding ToolbarContent, RelativeSource={RelativeSource AncestorType={x:Type local:EDInputForm}}}"/>
-                        <TextBlock Text="?" Foreground="White" FontWeight="Bold" FontSize="14"
-                                   Margin="8,0,0,0" VerticalAlignment="Center"
-                                   Cursor="Hand" ToolTip="Nápověda"/>
-                        <TextBlock Text="⚙" Foreground="White" FontSize="14"
-                                   Margin="10,0,2,0" VerticalAlignment="Center"
-                                   Cursor="Hand" ToolTip="Nastavení"/>
-                    </StackPanel>
-                    <!-- Left side: search -->
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Hledat:" Foreground="White"
-                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
-                        <TextBox x:Name="ToolbarSearchBox" Width="220"
-                                 VerticalAlignment="Center"/>
-                        <TextBlock Text="?" Foreground="White" FontWeight="Bold" FontSize="14"
-                                   Margin="8,0,0,0" VerticalAlignment="Center"
-                                   Cursor="Hand" ToolTip="Nápověda k vyhledávání"/>
-                        <TextBlock Text="✓" Foreground="LightGreen" FontWeight="Bold" FontSize="14"
-                                   Margin="6,0,0,0" VerticalAlignment="Center"
-                                   Cursor="Hand" ToolTip="Aplikovat"/>
-                    </StackPanel>
-                </DockPanel>
-            </Border>
+            <!-- Toolbar bar (Row 0): EDComponentToolbar — sdílená komponenta napříč
+                 EDInputForm / EDList / budoucí tabulkové komponenty. Search + standard ikony.
+                 SearchText, FindNext/Previous, Help/Settings commands wire later — zatím visual. -->
+            <edct:EDComponentToolbar Grid.Row="0"
+                                     x:Name="Toolbar"
+                                     ShowSearch="True"
+                                     ShowHelp="True"
+                                     ShowSettings="True"/>
 
             <!-- Column header bar: Položka | Hodnota | (spacer).
                  Modern PropertyGrid layout: jen 2 logické sloupce — label + input. Errors/help
-                 inline pod inputem (Material Design pattern). Spacer absorbuje extra šířku. -->
+                 inline pod inputem (Material Design pattern). Spacer absorbuje extra šířku.
+                 Padding.Left=16 align s indented field rows pod skupinou. -->
             <Border Grid.Row="1"
                     Background="{DynamicResource EDTheme.Accent.BlueBg}"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}"
                     BorderThickness="0,0,0,1"
-                    Padding="2,5">
+                    Padding="16,5,2,5">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto" MinWidth="240" SharedSizeGroup="ItemLabel"/>
@@ -317,9 +294,10 @@
                 <!-- Field row: 3-column modern PropertyGrid layout (Položka | Hodnota | spacer).
                      Položka Auto SharedSize MinWidth=240 → konzistentní label width napříč rows.
                      Hodnota fixed 320 → konzistentní input width. Spacer * absorbuje extra šířku.
-                     Row 1 pod inputem zobrazí error/help inline (Material Design pattern). -->
+                     Row 1 pod inputem zobrazí error/help inline (Material Design pattern).
+                     Margin.Left=16 → fields indented pod group header pro vizuální hierarchii. -->
                 <DataTemplate DataType="{x:Type local:Field}">
-                    <Grid Margin="2,3" Visibility="{Binding EffectiveVisibility}">
+                    <Grid Margin="16,3,2,3" Visibility="{Binding EffectiveVisibility}">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" MinWidth="240" SharedSizeGroup="ItemLabel"/>
                             <ColumnDefinition Width="320"/>
@@ -410,12 +388,14 @@
                         </Grid>
                 </DataTemplate>
 
-                <!-- Group header: modern flat section header with subtle background.
-                     Margin 0 nahoře — skupiny touch column header bar i sebe navzájem,
-                     border rule mezi nimi je vizuální separator. -->
+                <!-- Group header: modern flat section header s 3px modrým accent vlevo.
+                     Outer Border = accent line (BorderThickness="3,0,0,0"), inner Border = bg + bottom rule.
+                     Vizuálně silnější hierarchie sekce → fields (které jsou indented pod skupinou). -->
                 <DataTemplate DataType="{x:Type local:Group}">
                     <Border Margin="0,0,0,0" Visibility="{Binding EffectiveVisibility}"
-                            Background="{DynamicResource EDTheme.Bg.Panel}"
+                            BorderBrush="{DynamicResource EDTheme.Accent.Blue}"
+                            BorderThickness="3,0,0,0">
+                    <Border Background="{DynamicResource EDTheme.Bg.Panel}"
                             BorderBrush="{DynamicResource EDTheme.Border.Light}"
                             BorderThickness="0,0,0,1"
                             Padding="6,5">
@@ -473,6 +453,7 @@
                                        MaxWidth="200"
                                        Style="{StaticResource HelpTextColumnStyle}"/>
                         </Grid>
+                    </Border>
                     </Border>
                 </DataTemplate>
             </ItemsControl.Resources>
