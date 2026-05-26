@@ -152,12 +152,12 @@ public class WindowNavigator : IWindowNavigator
     }
 
     /// <summary>Skip WPF/WebView2 interních oken (AdornerWindow atd.) — uživatelská okna nejsou v MS./System./Microsoft. namespace.</summary>
-    internal static bool IsInternalWindow(Window w)
+    internal static bool IsInternalWindow(Window w) => IsInternalNamespace(w.GetType().Namespace);
+
+    internal static bool IsInternalNamespace(string? ns)
     {
-        var ns = w.GetType().Namespace ?? "";
-        return ns.StartsWith("MS.")
-            || ns.StartsWith("System.")
-            || ns.StartsWith("Microsoft.");
+        ns ??= "";
+        return ns.StartsWith("MS.") || ns.StartsWith("System.") || ns.StartsWith("Microsoft.");
     }
 
     /// <summary>
@@ -196,7 +196,7 @@ public class WindowNavigator : IWindowNavigator
         return prc;
     }
 
-    private static string ResolveExecutablePath(string relativePath)
+    internal static string ResolveExecutablePath(string relativePath)
     {
         var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
         if (File.Exists(localPath)) return localPath;

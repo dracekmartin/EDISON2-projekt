@@ -1,3 +1,4 @@
+using System.IO;
 using System.Text.Json;
 using EDControls.UserFonts;
 
@@ -50,5 +51,32 @@ public class UserFontPreferenceTests
     {
         // Static singleton se inicializuje na new() — ne null, ne nevyplněný stav.
         Assert.NotNull(UserFontPreference.Current);
+    }
+
+    [Fact]
+    public void Load_MalformedJson_DoesNotThrow_KeepsCurrentNonNull()
+    {
+        // Filesystem corruption / partial write — Load catch blok drží Current jako default
+        // / poslední úspěšný stav, aby aplikace nepadla na startu kvůli rozbitému font.json.
+        var dir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+            "m-line", "common");
+        var path = Path.Combine(dir, "font.json");
+        var backup = File.Exists(path) ? File.ReadAllText(path) : null;
+        Directory.CreateDirectory(dir);
+        try
+        {
+            File.WriteAllText(path, "{ not valid json");
+
+            var ex = Record.Exception(UserFontPreference.Load);
+            Assert.Null(ex);
+            Assert.NotNull(UserFontPreference.Current);
+        }
+        finally
+        {
+            if (backup != null) File.WriteAllText(path, backup);
+            else File.Delete(path);
+            UserFontPreference.Load();
+        }
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.IO;
 using EDControls.EDViewModel;
 
 namespace EDControls.Tests;
@@ -55,5 +56,55 @@ public class WindowNavigatorTests
         var label = WindowNavigator.FormatLegacyLabel(entry);
 
         Assert.Equal("ALVA.", label);
+    }
+
+    // ---------- IsInternalNamespace ----------
+
+    [Fact]
+    public void IsInternalNamespace_MsPrefix_True()
+    {
+        Assert.True(WindowNavigator.IsInternalNamespace("MS.Win32"));
+    }
+
+    [Fact]
+    public void IsInternalNamespace_SystemPrefix_True()
+    {
+        Assert.True(WindowNavigator.IsInternalNamespace("System.Windows"));
+    }
+
+    [Fact]
+    public void IsInternalNamespace_MicrosoftPrefix_True()
+    {
+        // WebView2 + jiné Microsoft tooling pluginy.
+        Assert.True(WindowNavigator.IsInternalNamespace("Microsoft.Web.WebView2.Wpf"));
+    }
+
+    [Fact]
+    public void IsInternalNamespace_UserApp_False()
+    {
+        Assert.False(WindowNavigator.IsInternalNamespace("EDISONMAIN2.Windows.EdisonMainWindow"));
+    }
+
+    // ---------- ResolveExecutablePath ----------
+
+    [Fact]
+    public void ResolveExecutablePath_FileExistsLocally_ReturnsLocalPath()
+    {
+        // Test dll je v AppContext.BaseDirectory — File.Exists hit, vrátí local path.
+        var existing = Path.GetFileName(typeof(WindowNavigator).Assembly.Location);
+
+        var result = WindowNavigator.ResolveExecutablePath(existing);
+
+        Assert.Equal(Path.Combine(AppContext.BaseDirectory, existing), result);
+    }
+
+    [Fact]
+    public void ResolveExecutablePath_FileNotExists_FallsBackToEdisonDeployRoot()
+    {
+        var nonExistent = $"{Guid.NewGuid()}.exe";
+
+        var result = WindowNavigator.ResolveExecutablePath(nonExistent);
+
+        Assert.Equal(Path.Combine(WindowNavigator.EdisonDeployRoot, nonExistent), result);
     }
 }
