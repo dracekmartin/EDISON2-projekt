@@ -948,9 +948,8 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>PoC test EDInputForm na komplexnějším formuláři — TextElement editor.
-    /// Otevírá editor pro aktuálně vybraný TextElement (jeden, ne multi-select).
-    /// Změny jdou přes DesignerState.Execute → undo/redo stack.</summary>
+    /// <summary>Alternativa k dvojkliku — otevírá TextElement editor pro aktuálně vybraný
+    /// TextElement. Stejná cesta jako double-click přes OpenPropertiesForElement.</summary>
     private void MenuTestTextEdit_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
@@ -958,16 +957,10 @@ public partial class MainWindow : Window
         if (selected is null)
         {
             MessageBox.Show(this, "Vyber TextElement na canvasu, pak otevři tento dialog.",
-                "Test TextElement editor", MessageBoxButton.OK, MessageBoxImage.Information);
+                "TextElement editor", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        var dlg = new TextElementEditDialog(selected) { Owner = this };
-        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
-        {
-            _vm.State.Execute(dlg.ResultCommand);
-            _vm.RequestCanvasRefresh?.Invoke();
-            _vm.RequestPropertiesPanelUpdate?.Invoke();
-        }
+        OpenTextElementEditDialog(selected);
     }
 
     /// <summary>Aktualizuje strom pokud je viditelný (po změně výběru na canvasu).</summary>
@@ -1285,6 +1278,11 @@ public partial class MainWindow : Window
             OpenStopColumnsDialog(stopEl);
             return;
         }
+        if (element is Models.Elements.TextElement textEl)
+        {
+            OpenTextElementEditDialog(textEl);
+            return;
+        }
 
         _propsVm!.PrepareForElement(element, isNewSession: true);
         new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
@@ -1336,6 +1334,18 @@ public partial class MainWindow : Window
                 _vm.State.Undo();
         }
 
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
+    }
+
+    private void OpenTextElementEditDialog(Models.Elements.TextElement element)
+    {
+        var dlg = new TextElementEditDialog(element) { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+        {
+            _vm!.Execute(dlg.ResultCommand);
+        }
         InvalidateCanvas();
         InvalidatePreview();
         UpdatePropertiesPanel();

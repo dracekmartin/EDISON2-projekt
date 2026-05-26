@@ -33,6 +33,7 @@ public partial class TextElementEditDialog : Window
         var init = new CVar();
         init["text"]                 = new CVar(element.Text ?? "");
         init["wordWrap"]             = new CVar(element.WordWrap ? "1" : "0");
+        init["lineSpacing"]          = new CVar((element.Style.LineSpacing ?? 1.2f).ToString(Inv));
         init["fontFamily"]           = new CVar(element.Style.FontFamily ?? "Arial");
         init["fontSize"]             = new CVar((element.Style.FontSize ?? 9f).ToString(Inv));
         init["bold"]                 = new CVar(element.Style.Bold == true ? "1" : "0");
@@ -49,6 +50,8 @@ public partial class TextElementEditDialog : Window
         init["y"]                    = new CVar(element.Y.ToString(Inv));
         init["width"]                = new CVar(element.Width.ToString(Inv));
         init["height"]               = new CVar(element.Height?.ToString(Inv) ?? "");
+        init["rotation"]             = new CVar(element.Rotation.ToString(Inv));
+        init["zIndex"]               = new CVar(element.ZIndex.ToString(Inv));
         init["isLocked"]             = new CVar(element.IsLocked ? "1" : "0");
         init["visibilityExpression"] = new CVar(element.VisibilityExpression ?? "");
 
@@ -69,6 +72,8 @@ public partial class TextElementEditDialog : Window
         Add(commands, "Zalamování",
             _element.WordWrap, fields.GetValueOrDefault("wordWrap") == "1",
             v => _element.WordWrap = (bool)v!);
+        if (TryParseFloat(fields.GetValueOrDefault("lineSpacing"), out var ls))
+            Add(commands, "Řádkování", _element.Style.LineSpacing, ls, v => _element.Style.LineSpacing = (float?)v);
 
         // Font
         Add(commands, "Písmo",
@@ -120,6 +125,10 @@ public partial class TextElementEditDialog : Window
         var heightStr = fields.GetValueOrDefault("height", "");
         float? newHeight = TryParseFloat(heightStr, out var h) && h > 0 ? h : null;
         Add(commands, "Výška", _element.Height, newHeight, v => _element.Height = (float?)v);
+        if (TryParseFloat(fields.GetValueOrDefault("rotation"), out var rot))
+            Add(commands, "Rotace", _element.Rotation, rot, v => _element.Rotation = (float)v!);
+        if (int.TryParse(fields.GetValueOrDefault("zIndex"), out var z))
+            Add(commands, "ZIndex", _element.ZIndex, z, v => _element.ZIndex = (int)v!);
 
         // Pokročilé
         Add(commands, "Uzamčeno",

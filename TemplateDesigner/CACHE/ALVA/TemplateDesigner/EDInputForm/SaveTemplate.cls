@@ -30,8 +30,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
         d form.AddGroup("template", "Šablona")
 
-        s f = form.AddFieldToLastGroup("name", "Název šablony", $$$FieldTypeText, 0, 1)
-        s f.value = initialName
+        d form.AddText("name", "Název šablony", initialName, 1)
 
         s f = form.AddFieldToLastGroup("agendaCode", "Agenda", $$$FieldTypeList, 0, 1)
         d ..AddAgendyItems(f, agendyJson, initialAgenda)
