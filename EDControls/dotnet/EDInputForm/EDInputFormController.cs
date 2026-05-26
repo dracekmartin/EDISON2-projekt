@@ -20,11 +20,13 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     /// <summary>
     /// Volá Caché <c>Init</c> pro načtení definice formuláře, hned nato Init-trigger validaci
-    /// pro naplnění případných výchozích chyb.
+    /// pro naplnění případných výchozích chyb. Volitelně lze předat <paramref name="initParams"/>
+    /// — Caché Init je čte přes <c>^||ML("IN","key")</c> (např. pro pre-fill polí
+    /// initial hodnotami z hostitelského contextu).
     /// </summary>
-    public void Init()
+    public void Init(CVar? initParams = null)
     {
-        CVar output = mlRest.QueryOrThrow(cacheClass, "Init", new CVar());
+        CVar output = mlRest.QueryOrThrow(cacheClass, "Init", initParams ?? new CVar());
         ApplyOutput(output);
         ExecuteValidate(EValidationTrigger.Init);
     }

@@ -47,7 +47,8 @@ void Save_Click(...)     { bool ok = TheInputForm.Save();     }
 | Člen | Popis |
 | --- | --- |
 | `string CacheClass` | Musí být nastaveno před jakýmkoliv voláním. Caché třída implementující Init/Validate/Save. |
-| `void Init()` | Volá Caché `Init`, naplní Items, spustí `ExecuteValidate(Init)`. Volá se automaticky při `Loaded` pokud je `CacheClass` nastaveno. |
+| `CVar? InitParams` | Volitelné initial parametry předané do Caché `Init` (čte přes `^||ML("IN","key")`). Pro pre-fill polí z hostitelského contextu. Nastav před prvním `Loaded`. |
+| `void Init()` | Volá Caché `Init` (s `InitParams` pokud nastavené), naplní Items, spustí `ExecuteValidate(Init)`. Volá se automaticky při `Loaded` pokud je `CacheClass` nastaveno. |
 | `bool Validate()` | Volá Caché `Validate` s Change triggerem; vrací true pokud nejsou chyby. |
 | `bool Save()` | Validuje s BeforeSave triggerem, volá Caché `Save` pouze pokud je čistý stav; vrací true při úspěchu. |
 | `IEnumerable<Item>? Items` | DP — aktuální položky formuláře; aktualizuje se po každém Caché volání. |

@@ -75,6 +75,32 @@ namespace EDControls.EDInputForm
             set => SetValue(HelpTextModeProperty, value);
         }
 
+        /// <summary>
+        /// Volitelný obsah toolbar baru nahoře (search, settings, refresh, custom akce).
+        /// Host poskytuje vlastní UIElement (StackPanel, Grid, ...). Když null → bar
+        /// se nevykreslí. Příklad:
+        /// <code>
+        /// &lt;eif:EDInputForm.ToolbarContent&gt;
+        ///     &lt;StackPanel Orientation="Horizontal"&gt;
+        ///         &lt;TextBox Width="200" /&gt;
+        ///         &lt;Button Content="⚙" /&gt;
+        ///     &lt;/StackPanel&gt;
+        /// &lt;/eif:EDInputForm.ToolbarContent&gt;
+        /// </code>
+        /// </summary>
+        public static readonly DependencyProperty ToolbarContentProperty =
+            DependencyProperty.Register(
+                nameof(ToolbarContent),
+                typeof(object),
+                typeof(EDInputForm),
+                new PropertyMetadata(null));
+
+        public object? ToolbarContent
+        {
+            get => GetValue(ToolbarContentProperty);
+            set => SetValue(ToolbarContentProperty, value);
+        }
+
         public EDInputForm()
         {
             InitializeComponent();
@@ -84,13 +110,22 @@ namespace EDControls.EDInputForm
         // ─── Public API ───────────────────────────────────────────────────────────
 
         /// <summary>
+        /// Volitelné initial parametry předané do Caché <c>Init</c> (čtené přes
+        /// <c>^||ML("IN","key")</c>). Slouží pro pre-fill polí initial hodnotami
+        /// z hostitelského contextu. Host nastaví před prvním Loaded; auto-init pak
+        /// použije tyto params místo prázdné CVar.
+        /// </summary>
+        public CVar? InitParams { get; set; }
+
+        /// <summary>
         /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
-        /// validaci pro naplnění případných výchozích chyb.
+        /// validaci pro naplnění případných výchozích chyb. Použije <see cref="InitParams"/>
+        /// pokud nastaveny.
         /// </summary>
         public void Init()
         {
             EnsureConfigured();
-            Controller.Init();
+            Controller.Init(InitParams);
         }
 
         /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>

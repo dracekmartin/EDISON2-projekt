@@ -29,7 +29,8 @@ Property helpTextMode As %String [ InitialExpression = {$$$HelpTextModeTooltip} 
 
 /// Appends a group separator. Pass visibility to control display on the .NET side
 /// ($$$ItemVisibilityVisible, $$$ItemVisibilityCollapsed, etc.).
-/// number is assigned automatically (1-based, sequential across groups and fields).
+/// Groups don't get a visible number — number is 0. Fields are numbered sequentially
+/// across all groups (1, 2, 3, ...) — Renumber sets this after insert.
 Method AddGroup(key As %String, groupName As %String, visibility As %String = {$$$ItemVisibilityVisible})
 {
 	s g = ##class(ALVA.EDControls.EDInputForm.Group).%New()
@@ -37,11 +38,12 @@ Method AddGroup(key As %String, groupName As %String, visibility As %String = {$
 	s g.groupName = groupName
 	s g.visibility = visibility
 	d ..items.Insert(g)
-	s g.number = ..items.Count()
+	d ..Renumber()
 }
 
 /// Appends a field and returns it so the caller can set value / validationError.
-/// number is assigned automatically (1-based, sequential across groups and fields).
+/// Field number is assigned sequentially across all groups (1-based) — Renumber sets
+/// this after insert. Groups don't increment the field counter.
 Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {$$$FieldTypeText}, validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
 	s f = ##class(ALVA.EDControls.EDInputForm.Field).%New()
@@ -51,7 +53,7 @@ Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {
 	s f.validateOnChange = validateOnChange
 	s f.required = required
 	d ..items.Insert(f)
-	s f.number = ..items.Count()
+	d ..Renumber()
 	q f
 }
 
@@ -91,12 +93,20 @@ Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %St
 	q f
 }
 
-/// Re-assigns sequential numbers (1-based) to all items.
+/// Renumbers items: groups don't get a visible number (set to 0); fields are
+/// numbered sequentially across all groups (1, 2, 3, ...).
 Method Renumber() [ Private ]
 {
 	s cnt = ..items.Count()
+	s fieldIdx = 0
 	f idx=1:1:cnt {
-		s ..items.GetAt(idx).number = idx
+		s item = ..items.GetAt(idx)
+		i item.%IsA("ALVA.EDControls.EDInputForm.Group") {
+			s item.number = 0
+		} else {
+			s fieldIdx = fieldIdx + 1
+			s item.number = fieldIdx
+		}
 	}
 }
 
