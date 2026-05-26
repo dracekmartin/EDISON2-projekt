@@ -41,12 +41,20 @@ public class CompanySwitcherTests
         IPopupDisplayer? popup = null,
         IWindowNavigator? nav = null,
         ILocalPrefs? prefs = null,
-        Action? closeAllWindows = null) =>
-        new(mlRest, licenceLoader, isAdmin,
-            popup ?? Substitute.For<IPopupDisplayer>(),
+        Action? closeAllWindows = null)
+    {
+        var services = new EDServices(
+            mlRest,
             nav ?? Substitute.For<IWindowNavigator>(),
+            popup ?? Substitute.For<IPopupDisplayer>())
+        {
+            IsAdmin = isAdmin,
+            LicenceLoader = licenceLoader,
+        };
+        return new CompanySwitcher(services,
             prefs ?? Substitute.For<ILocalPrefs>(),
             closeAllWindows ?? (() => { }));
+    }
 
     // ---------- PickInitial ----------
 

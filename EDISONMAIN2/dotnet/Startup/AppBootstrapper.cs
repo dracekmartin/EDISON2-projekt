@@ -195,6 +195,7 @@ public class AppBootstrapper
         services.UserPrefs = new CacheUserPrefsService(mlRest);
 
         var licenceService = new LicenceService(mlRest.Inner);
+        services.LicenceLoader = licenceService.GetActiveLicence;
         return new SessionContext(mlRest, login, licenceService.GetActiveLicence);
     }
 
@@ -275,9 +276,8 @@ public class AppBootstrapper
         EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs)
     {
         var treeGetter = new ModuleTreeGetter();
-        var switcher = new CompanySwitcher(session.MLRest, session.LicenceLoader, services.IsAdmin,
-                                           services.PopupDisplayer, nav, prefs, nav.CloseAll);
-        var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter, session.LicenceLoader,
+        var switcher = new CompanySwitcher(services, prefs, nav.CloseAll);
+        var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, () => SwitchUser(services, nav.CloseAll),
                                                 prefs, nav.GetActiveModules, nav.CloseAll);
 

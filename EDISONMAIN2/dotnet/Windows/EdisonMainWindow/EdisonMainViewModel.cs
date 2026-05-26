@@ -27,7 +27,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
     class EdisonMainViewModel : EDViewModel
     {
         private readonly IModuleTreeGetter _treeGetter;
-        private readonly Func<Lic?> _licenceLoader;
         private readonly CompanySwitcher _switcher;
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
@@ -69,7 +68,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
             IModuleTreeGetter treeService,
-            Func<Lic?> licenceLoader,
             Lic? initialLicence,
             CompanySwitcher switcher,
             Func<SwitchUserOutcome> switchUser,
@@ -78,7 +76,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Action closeAllWindows)
         {
             _treeGetter = treeService;
-            _licenceLoader = licenceLoader;
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
@@ -335,7 +332,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         private void RefreshLicense()
         {
-            RebuildSessionState(_licenceLoader());
+            RebuildSessionState(_services.LicenceLoader?.Invoke());
             PopupDisplayer.Info("Licence byla aktualizována.");
         }
 

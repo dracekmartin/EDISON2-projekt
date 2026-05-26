@@ -46,16 +46,17 @@ public class EdisonMainViewModelTests
         var mockMLRest = MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var svc = services ?? MockServices(popup: popup);
+        // CompanySwitcher i VM čtou MLRest z services lazily — musí být v services před konstrukcí.
+        svc.MLRest = mockMLRest;
         var close = closeAllWindows ?? (() => { });
         var p = prefs ?? Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
-                                           svc.PopupDisplayer, svc.WindowNavigator, p, close);
+        var switcher = new CompanySwitcher(svc, p, close);
         Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
 
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, switcher, switchUser, p, () => [], close);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p, () => [], close);
         }
         finally
         {
@@ -133,21 +134,20 @@ public class EdisonMainViewModelTests
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
         var svc = MockServices(popup: mockPopup);
+        svc.MLRest = mockMLRest;
         var prefs = Substitute.For<ILocalPrefs>();
-        var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
-                                           svc.PopupDisplayer, svc.WindowNavigator, prefs, () => { });
+        var switcher = new CompanySwitcher(svc, prefs, () => { });
         Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
         EDServices.Initialize(svc);
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), () => null, null, switcher, switchUser, prefs, () => [], () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), null, switcher, switchUser, prefs, () => [], () => { });
         }
         finally
         {
             EDServices.Reset();
         }
-        svc.MLRest = mockMLRest;
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         vm.SelectedCompanyIndex = target;

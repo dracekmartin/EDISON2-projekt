@@ -19,14 +19,11 @@ public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
 /// Sdílená logika pro výběr a přepnutí firmy. <see cref="PickInitial"/> řeší startup
 /// (<see cref="AppBootstrapper"/>), <see cref="Switch"/> runtime přepnutí ve VM. Drift mezi oběma cestami
 /// (priorita firmy, ACTIVITY zámek, licenční retry, rollback) byl historicky zdrojem
-/// bugů — proto společný service.
+/// bugů — proto společný service. Čte MLRest/LicenceLoader/IsAdmin/Popup/Nav lazily z
+/// <see cref="EDServices"/>, takže po S2 user switch automaticky vidí novou session.
 /// </summary>
 public class CompanySwitcher(
-    IMLRest mlRest,
-    Func<Lic?> licenceLoader,
-    bool isAdmin,
-    IPopupDisplayer popup,
-    IWindowNavigator windowNavigator,
+    EDServices services,
     ILocalPrefs localPrefs,
     Action closeAllWindows)
 {
@@ -55,6 +52,7 @@ public class CompanySwitcher(
     /// <param name="currentLicence">Aktuální licence; null = bez verify (testy / pre-licence stav).</param>
     public SwitchOutcome Switch(string newIdfa, string newNamespace, Lic? currentLicence)
     {
+        var mlRest = services.MLRest!;
         var originalIdfa = mlRest.Idfa;
         var originalNamespace = mlRest.DataNamespace;
 
@@ -70,7 +68,8 @@ public class CompanySwitcher(
         var outcome = LicenceAcquireOutcome.Accepted;
         if (currentLicence != null)
             (outcome, newLicence) = LicenceVerifier.TryAcquireSession(
-                mlRest, licenceLoader, isAdmin, popup, windowNavigator);
+                mlRest, services.LicenceLoader!, services.IsAdmin,
+                services.PopupDisplayer, services.WindowNavigator);
 
         if (outcome == LicenceAcquireOutcome.Accepted)
         {
