@@ -18,6 +18,24 @@ using Application = System.Windows.Application;
 namespace EDISONMAIN2;
 
 /// <summary>
+/// Výsledek pokusu o přepnutí uživatele. <see cref="Outcome"/> rozlišuje úspěch, zrušení
+/// v login dialogu a selhání licence pro nového uživatele.
+/// </summary>
+public record SwitchUserOutcome(SwitchUserResult Outcome, Lic? Licence);
+
+public enum SwitchUserResult
+{
+    /// <summary>Uživatel zrušil login dialog. Shell pokračuje s původním session beze změny.</summary>
+    Cancelled,
+    /// <summary>Licence pro nového uživatele přesáhla limit (admin retry / non-admin). Caller obvykle ukončí app.</summary>
+    LicenceRefused,
+    /// <summary>Admin v LicenceVerifier retry loop zvolil Storno. Caller obvykle ukončí app.</summary>
+    LicenceCancelled,
+    /// <summary>Nový uživatel přihlášen, MLRest swapnut, licence platná.</summary>
+    Success,
+}
+
+/// <summary>
 /// Pojmenované kroky startup workflow vytažené z procedurálního <c>Application_Startup</c>.
 /// Cíl: čitelnost a jasné error/cancel exit pointy (login zrušený, licence Refused/Cancelled,
 /// connection error) místo skrytých <c>return;</c> uprostřed 100-řádkové metody. App.xaml.cs
@@ -64,7 +82,9 @@ public class AppBootstrapper
             return null;
         }
 
-        var session = EstablishSession(prep, login, services);
+        var session = EstablishSession(
+            new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
+            login, services);
 
         var (outcome, licence) = AcquireSession(session, services);
         if (outcome != LicenceAcquireOutcome.Accepted)
@@ -88,6 +108,9 @@ public class AppBootstrapper
         CompanyStruct StartCompany,
         string Server,
         int Port);
+
+    /// <summary>Connection info — vstup do <see cref="EstablishSession"/>. Sdílí initial bootstrap a S2 user switch.</summary>
+    protected record ConnectionInfo(string Server, int Port, string Database, string Idfa);
 
     /// <summary>Sdílený postlogin kontext (real MLRest + licence loader factory).</summary>
     protected record SessionContext(IMLRest MLRest, LoginResult Login, Func<Lic?> LicenceLoader);
@@ -156,9 +179,9 @@ public class AppBootstrapper
 #endif
     }
 
-    protected virtual SessionContext EstablishSession(PreLoginContext prep, LoginResult login, EDServices services)
+    protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
     {
-        var mlRest = new MLRestAdapter(new MLRest(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id)
+        var mlRest = new MLRestAdapter(new MLRest(conn.Server, conn.Port, conn.Database, conn.Idfa)
         {
             LoginName = login.UserName,
             FullName = login.FullName,
@@ -191,16 +214,60 @@ public class AppBootstrapper
     /// admin disconnect), graceful shutdown s informační hláškou.
     /// </summary>
     protected virtual void WireActivityFailedHandler(SessionContext session, EDServices services)
+        => BuildActivityFailedWire(services)(session.MLRest);
+
+    /// <summary>
+    /// Factory pro delegát který napojí EdisonActivityFailed handler na daný MLRest. Použito
+    /// pro initial bootstrap (<see cref="WireActivityFailedHandler"/>) i pro S2 user switch
+    /// (<see cref="SwitchUser"/> swapuje MLRest a musí napojit handler znovu).
+    /// </summary>
+    private Action<IMLRest> BuildActivityFailedWire(EDServices services) => mlRest =>
     {
-        // Cast je safe v produkci — EstablishSession vždy vrací MLRestAdapter. Test override
-        // metody přeskočí, takže mock IMLRest se sem nedostane.
-        var adapter = (MLRestAdapter)session.MLRest;
+        if (mlRest is not MLRestAdapter adapter) return;
         adapter.Inner.EdisonActivityFailed += (_, _) =>
             _application.Dispatcher.Invoke(() =>
             {
                 services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
                 _application.Shutdown();
             });
+    };
+
+    /// <summary>Login dialog pro S2 user switch — owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
+    protected virtual LoginResult? PromptLoginForReauth(MLRest loginRest)
+    {
+        var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest)
+        {
+            Owner = _application.MainWindow,
+        };
+        return loginWindow.ShowDialog() == true ? loginWindow.Result : null;
+    }
+
+    /// <summary>
+    /// Reauth flow ("Přihlásit jiného uživatele"): prompt → close all → reuse <see cref="EstablishSession"/>
+    /// (drží UserPrefs cache + LicenceService synchronně s MLRest) → wire activity → acquire licence.
+    /// Při zrušení v login dialogu nic neudělá; při selhání licence MLRest už je swapnut, caller
+    /// obvykle volí shutdown (rollback nelze: closeAllWindows už proběhlo).
+    /// </summary>
+    public SwitchUserOutcome SwitchUser(EDServices services, Action closeAllWindows)
+    {
+        var current = ((MLRestAdapter)services.MLRest!).Inner;
+        var login = PromptLoginForReauth(current);
+        if (login == null) return new(SwitchUserResult.Cancelled, null);
+
+        closeAllWindows();
+
+        var session = EstablishSession(
+            new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa),
+            login, services);
+        WireActivityFailedHandler(session, services);
+
+        var (outcome, licence) = AcquireSession(session, services);
+        return outcome switch
+        {
+            LicenceAcquireOutcome.Accepted => new(SwitchUserResult.Success, licence),
+            LicenceAcquireOutcome.Refused => new(SwitchUserResult.LicenceRefused, null),
+            _ => new(SwitchUserResult.LicenceCancelled, null),
+        };
     }
 
     protected virtual EdisonMainWindow BuildShellWindow(
@@ -211,7 +278,8 @@ public class AppBootstrapper
         var switcher = new CompanySwitcher(session.MLRest, session.LicenceLoader, services.IsAdmin,
                                            services.PopupDisplayer, nav, prefs, nav.CloseAll);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter, session.LicenceLoader,
-                                                licence, switcher, prefs, nav.GetActiveModules, nav.CloseAll);
+                                                licence, switcher, () => SwitchUser(services, nav.CloseAll),
+                                                prefs, nav.GetActiveModules, nav.CloseAll);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;

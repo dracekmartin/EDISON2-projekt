@@ -31,6 +31,14 @@ public class AppBootstrapperTests
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
         public IWindowNavigator Nav { get; set; } = Substitute.For<IWindowNavigator>();
         public IMLRest MLRest { get; set; } = MakeDefaultMLRest();
+        public LoginResult? ReauthLoginResult { get; set; }
+        public MLRest? CapturedPromptConnection { get; private set; }
+
+        protected override LoginResult? PromptLoginForReauth(MLRest loginRest)
+        {
+            CapturedPromptConnection = loginRest;
+            return ReauthLoginResult;
+        }
 
         private static IMLRest MakeDefaultMLRest()
         {
@@ -66,7 +74,7 @@ public class AppBootstrapperTests
             return LoginSucceeds;
         }
 
-        protected override SessionContext EstablishSession(PreLoginContext prep, LoginResult login, EDServices services)
+        protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
             => new(MLRest, login, () => null);
 
         protected override (LicenceAcquireOutcome Outcome, Lic? Licence) AcquireSession(SessionContext session, EDServices services)
@@ -229,5 +237,45 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.Null(b.SavedIdfa);
+    }
+
+    // ---------- SwitchUser ----------
+
+    private static EDServices ServicesWith(string server, int port, string db, string idfa, string loginName)
+    {
+        var inner = new MLRest(server, port, db, idfa) { LoginName = loginName };
+        var adapter = new MLRestAdapter(inner);
+        return new EDServices(adapter, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
+    }
+
+    [Fact]
+    public void SwitchUser_PromptReturnsNull_ReturnsCancelled_NoSideEffects()
+    {
+        var b = new TestableBootstrapper { ReauthLoginResult = null };
+        var services = ServicesWith("test-host", 9999, "DB_CB", "CB_DP", "alice");
+        var originalMLRest = services.MLRest;
+        var closeAll = Substitute.For<Action>();
+
+        var outcome = b.SwitchUser(services, closeAll);
+
+        Assert.Equal(SwitchUserResult.Cancelled, outcome.Outcome);
+        Assert.Null(outcome.Licence);
+        closeAll.DidNotReceiveWithAnyArgs().Invoke();
+        Assert.Same(originalMLRest, services.MLRest);
+    }
+
+    [Fact]
+    public void SwitchUser_PromptReceivesCurrentConnection()
+    {
+        var b = new TestableBootstrapper { ReauthLoginResult = null };
+        var services = ServicesWith("test-host", 9999, "DB_CB", "CB_DP", "alice");
+
+        b.SwitchUser(services, () => { });
+
+        Assert.NotNull(b.CapturedPromptConnection);
+        Assert.Equal("test-host", b.CapturedPromptConnection!.Server);
+        Assert.Equal(9999, b.CapturedPromptConnection.Port);
+        Assert.Equal("DB_CB", b.CapturedPromptConnection.DataNamespace);
+        Assert.Equal("CB_DP", b.CapturedPromptConnection.Idfa);
     }
 }

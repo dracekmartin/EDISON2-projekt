@@ -50,11 +50,12 @@ public class EdisonMainViewModelTests
         var p = prefs ?? Substitute.For<ILocalPrefs>();
         var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
                                            svc.PopupDisplayer, svc.WindowNavigator, p, close);
+        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
 
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, switcher, p, () => [], close);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, initialLicence: null, switcher, switchUser, p, () => [], close);
         }
         finally
         {
@@ -135,11 +136,12 @@ public class EdisonMainViewModelTests
         var prefs = Substitute.For<ILocalPrefs>();
         var switcher = new CompanySwitcher(mockMLRest, () => null, isAdmin: false,
                                            svc.PopupDisplayer, svc.WindowNavigator, prefs, () => { });
+        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
         EDServices.Initialize(svc);
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), () => null, null, switcher, prefs, () => [], () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), () => null, null, switcher, switchUser, prefs, () => [], () => { });
         }
         finally
         {

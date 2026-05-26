@@ -29,6 +29,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly IModuleTreeGetter _treeGetter;
         private readonly Func<Lic?> _licenceLoader;
         private readonly CompanySwitcher _switcher;
+        private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
         private readonly Func<IReadOnlyList<RunningModuleInfo>> _getActiveModules;
 
@@ -71,6 +72,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Func<Lic?> licenceLoader,
             Lic? initialLicence,
             CompanySwitcher switcher,
+            Func<SwitchUserOutcome> switchUser,
             ILocalPrefs prefs,
             Func<IReadOnlyList<RunningModuleInfo>> getActiveModules,
             Action closeAllWindows)
@@ -78,6 +80,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _treeGetter = treeService;
             _licenceLoader = licenceLoader;
             _switcher = switcher;
+            _switchUser = switchUser;
             _prefs = prefs;
             _getActiveModules = getActiveModules;
 
@@ -94,7 +97,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ExitCommand                   = Command(ExitApplication);
 
             // Uživatel menu
-            LoginAsAnotherUserCommand     = Command(NotYetImplemented);
+            LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
             ShowUserEditCommand           = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
             ShowBgTasksCommand            = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             ResetFormsCommand             = Command(ResetForms);
@@ -275,6 +278,33 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (PopupDisplayer.Confirm("Opravdu chcete ukončit aplikaci?"))
                 Application.Current.Shutdown();
+        }
+
+        private void LoginAsAnotherUser()
+        {
+            if (!PopupDisplayer.Confirm("Přihlásit jiného uživatele zavře všechna otevřená okna. Pokračovat?"))
+                return;
+
+            var outcome = _switchUser();
+            switch (outcome.Outcome)
+            {
+                case SwitchUserResult.Cancelled:
+                    return;
+                case SwitchUserResult.LicenceRefused:
+                    PopupDisplayer.Info("Pro nového uživatele byl překročen počet licencí. Aplikace bude ukončena.");
+                    Application.Current.Shutdown();
+                    return;
+                case SwitchUserResult.LicenceCancelled:
+                    Application.Current.Shutdown();
+                    return;
+                case SwitchUserResult.Success:
+                    RebuildSessionState(outcome.Licence);
+                    // StatusBar identity bindings refreshne na novém MLRest.
+                    OnPropertyChanged(nameof(UserName));
+                    OnPropertyChanged(nameof(FullName));
+                    OnPropertyChanged(nameof(Mlp));
+                    break;
+            }
         }
 
         private void ResetForms()
