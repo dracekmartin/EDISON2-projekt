@@ -1,0 +1,27 @@
+<Window x:Class="TemplateDesigner.TextElementEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
+        Title="Vlastnosti textu"
+        Width="720" Height="480"
+        MinWidth="640" MinHeight="360"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="10">
+        <Grid DockPanel.Dock="Bottom" Margin="0,10,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="1" Content="OK" IsDefault="True"
+                    Click="SaveButton_Click"
+                    Width="80" Margin="0,0,10,0"/>
+            <Button Grid.Column="2" Content="Storno" IsCancel="True" Width="80"/>
+        </Grid>
+
+        <eif:EDInputForm x:Name="TheForm"
+                         CacheClass="ALVA.TemplateDesigner.EDInputForm.TextElementEdit"/>
+    </DockPanel>
+</Window>

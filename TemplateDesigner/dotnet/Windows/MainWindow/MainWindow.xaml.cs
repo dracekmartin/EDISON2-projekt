@@ -948,6 +948,28 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>PoC test EDInputForm na komplexnějším formuláři — TextElement editor.
+    /// Otevírá editor pro aktuálně vybraný TextElement (jeden, ne multi-select).
+    /// Změny jdou přes DesignerState.Execute → undo/redo stack.</summary>
+    private void MenuTestTextEdit_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is null) return;
+        var selected = _vm.State.SelectedElements.OfType<Models.Elements.TextElement>().FirstOrDefault();
+        if (selected is null)
+        {
+            MessageBox.Show(this, "Vyber TextElement na canvasu, pak otevři tento dialog.",
+                "Test TextElement editor", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var dlg = new TextElementEditDialog(selected) { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+        {
+            _vm.State.Execute(dlg.ResultCommand);
+            _vm.RequestCanvasRefresh?.Invoke();
+            _vm.RequestPropertiesPanelUpdate?.Invoke();
+        }
+    }
+
     /// <summary>Aktualizuje strom pokud je viditelný (po změně výběru na canvasu).</summary>
     private void RefreshTreeIfVisible()
     {

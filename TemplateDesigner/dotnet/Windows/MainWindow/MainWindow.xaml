@@ -210,6 +210,8 @@
                 <Separator/>
                 <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon..." Click="MenuAiAssistant_Click"/>
                 <MenuItem x:Name="MenuImportPdf" Header="Import PDF..." Click="MenuImportPdf_Click"/>
+                <Separator/>
+                <MenuItem x:Name="MenuTestTextEdit" Header="Test: TextElement editor (EDInputForm)" Click="MenuTestTextEdit_Click"/>
             </MenuItem>
             <MenuItem Header="Nápověda">
                 <MenuItem x:Name="MenuHelp" Header="Klávesové zkratky a ovládání" InputGestureText="F1" Click="MenuHelp_Click"/>
