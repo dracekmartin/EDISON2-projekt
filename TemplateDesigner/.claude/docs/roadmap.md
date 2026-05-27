@@ -28,17 +28,30 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**Kde pokračovat dál — Caché Migration vlny dokončené, focus na business value:**
+**Kde pokračovat dál — 2 top priority NAD helpdesk tickety (dohodnuto 2026-05-27):**
 
-**Fáze A.2-D — Zákaznické tickety** ⬅️ AKTUÁLNÍ (Wave 1 + 1.5 + 2 + 3 hotové ✅ 2026-05-25)
+### ⬅️ PRIORITA 1 — Wave 4: dokončit EDInputForm migraci (🟡 rozpracováno)
 
-TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` — auto-poznámky bugs, custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputForm, ať JE EDInputForm** — logika na jednom místě, ne půl na půl mezi PropertyDescriptors a Caché schema.
+
+**Hotovo (2026-05-25 — 27):** EDInputForm visual upgrade + EDComponentToolbar (sdílený s EDList) + generický `ElementEditDialog` (reflexe přes property-path keys) + 5 elementů migrovaných (Text/Line/Rectangle/Barcode/NotesLegend) + SaveToCacheDialog. Detail Wave 4 sekce níže.
+
+**Zbývá projít VŠECHNO a předělat kde to dává smysl:**
+- **ImageElement** — potřebuje nový `Image` field type v EDInputForm (upload→base64+náhled)
+- **Section / Page properties** — generalizovat `ElementEditDialog` z `TemplateElement` na `object` (`ElementPropertyAccessor` už je generický)
+- **Simple dialogy** — SaveSectionTemplate, NormalizePositions
+- **Komplexní elementy (StopList / DepartureGrid / TableElement)** — rozdělit: **tab „Obecné" → EDInputForm**, tabulková / per-column část buď nechat custom (CellStyleEditor / grid) nebo vyřešit extra. Žádné půl-na-půl — obecné properties patří do EDInputForm.
+
+### ⬅️ PRIORITA 2 — Zastávkový JŘ pro data z linkových JŘ (ne jen MHD)
+
+Doladit zastávkový jízdní řád aby fungoval i pro data z **linkových jízdních řádů** místo jen MHD. Aktuálně `ZastavkoveJrMhd` agenda čte MHD data (`ALVA.MHD.LSO` atd.); rozšířit / adaptovat na linkový datový zdroj. Detail TBD — analýza datového zdroje linkových JŘ.
+
+### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
+
+TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky bugs, NZ bug, KORID přípojové řádky, …) — tabulka A.2.D níže. **Až po prioritě 1 + 2.**
 
 **Případné defer items pro budoucnost** (revisit on real user request):
-- Wave 3 auto-snapshots history — duplicate templates pattern stačí
-- Wave 3 audit log — bez requestu
-- Wave 3 thumbnails — nice-to-have
-- Wave 4 (EDInputForm migrace) — blokované chybějícím EDInputGrid komponentem
+- Wave 3 auto-snapshots history / audit log / thumbnails
 - Wave 5 další agendy (knižní/meziměstský JŘ) — až bude business request
 
 **Mimo aktuální focus** (až bude potřeba):
@@ -131,7 +144,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
 | 2 | Shared catalogs | ✅ Hotová (2026-05-20) | W2-1 ✅ Agenda registry (auto-discovery). W2-2 Section templates skipnuto — funkčně překryto Wave 3 Template starters. Element defaults + company palette skipnuté |
 | 3 | Template storage | ✅ Hotová (2026-05-25) | CRUD (✅), schema versioning + migrator framework (✅), explicit user versions via Save As (✅), undo within-session (✅). Auto-snapshots / audit / thumbnails skipnuté (revisit on real request) |
-| 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
+| 4 | Form-driven UI | 🟡 Rozpracováno (2026-05-27) | EDInputForm místo PropertiesPanel. 5 elementů hotovo přes generický `ElementEditDialog` (reflexe). Zbývá Image/Section/Page/komplexní elementy |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 
 **Graf závislostí:** Wave 1 → 2 → 3 → 4 (sekvenčně), Wave 5 běží paralelně nezávisle.
@@ -156,74 +169,45 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 
 ---
 
-#### 🟠 Wave 4 — Form-driven UI (EDInputForm)
+#### 🟠 Wave 4 — Form-driven UI (EDInputForm) — 🟡 ROZPRACOVÁNO
 
-Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInputForm` z EDControls. Každý element má Caché třídu `ALVA.TemplateDesigner.Elements.<Typ>` s metodami `Init/Validate/Save`.
+Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInputForm` z EDControls.
 
-**⚠️ Paralelní migrace:** `PropertyDescriptor` a `EDInputForm` **běží vedle sebe měsíce**. Nikdy ne cut-over all-at-once — per element gradual migration přes feature flag.
+**⚠️ Skutečný přístup (2026-05-27) se LIŠÍ od původního plánu** (ElementFormBridge + JSON envelope + feature flags). Implementovaná architektura je jednodušší:
 
-**Klíčové koncepty:**
+**Generický `ElementEditDialog` přes reflexi:**
+- **Jeden dialog** pro všechny elementy (`Windows/ElementEditDialog/`). Žádný per-element C# kód.
+- **Caché schema class per element** (`ALVA.TemplateDesigner.EDInputForm.<Typ>Edit`) definuje form layout. **Field key = property path** na C# elementu (dot notation, např. `Style.FontSize`, `HeaderStyle.BackgroundColor`).
+- **`ElementPropertyAccessor`** (reflexe) — Get/Set Field.Value ↔ typovaná property; traversal nested paths; type conversion string ↔ float/int/bool/enum/nullable.
+- Pre-fill po `EDInputForm.Initialized` eventu přes reflexi (ne IN params). Change detection proti pre-filled hodnotám → no-edit = žádný command.
+- Save → `CompositeCommand` ze `SetPropertyCommand`ů (reflexní apply) → `_vm.Execute` → undo/redo zachován.
+- **MainWindow `EDInputFormSchema(element)`** switch mapuje element type → (cacheClass, title). Fallback na legacy `ElementPropertiesWindow` pro nemigrované typy.
 
-```objectscript
-/// Init: pro daný element vrátí definici formuláře (EDInputForm format)
-ALVA.TemplateDesigner.Elements.TextElement.Init(ByRef sys)
-  IN["elementJson"] = aktuální JSON elementu
-  OUT["form"] = EDInputForm definice (pole, typy, validace, layout)
+**Přidání dalšího elementu = 1 Caché schema class + 1 řádek ve switchi.** Žádný dialog kód, žádný ElementFormBridge, žádný feature flag (paralelní běh řeší switch fallback).
 
-/// Save: uživatel submitne form → Caché vrátí updated values
-ALVA.TemplateDesigner.Elements.TextElement.Save(ByRef sys)
-  IN["elementJson"] = starý element
-  IN["formValues"] = změněné hodnoty
-  OUT["elementJson"] = nový element (validován)
-```
+**⚠️ Schema duplikace dluh:** Caché schema je manual mirror PropertyDescriptors v C# (data model). Akceptováno kvůli Caché patchovatelnosti (server-side změna labelů/validace bez .exe redeploy). Detail: memory `project_edinputform_schema_duplication.md`. Long-term: schema-as-data v Caché global → auto-gen.
 
-**Překladová vrstva (`ElementFormBridge`):**
-- .NET: element → JSON → Caché Init → EDInputForm definice → render ve WPF
-- User edituje → submit → Caché Save → nový JSON → .NET vytvoří `SetPropertyCommand(oldJson, newJson)` → Execute → undo/redo zachován
-
-**Feature flag per element type:**
-```csharp
-class ElementEditingConfig {
-    HashSet<string> UseEDInputFormFor;   // ["TextElement"] — zbytek PropertyDescriptor
-}
-```
-Uživatel může postupně přepnout element po elementu; při problémech rollback = flag odebrat.
-
-**Změny v kódu:**
-| Vrstva | Co |
-|---|---|
-| Caché | Nová třída per element type (`TextElement`, `ImageElement`, ...) — Init/Validate/Save |
-| .NET | `ElementFormBridge` — překlad JSON ↔ EDInputForm values |
-| .NET UI | `ElementPropertiesWindow` — pokud feature flag, použít EDInputForm; jinak PropertiesPanel |
-| .NET testy | Integrační test: editace elementu přes form → správný `SetPropertyCommand` → undo/redo |
-
-**Co zůstává v .NET:**
-- Všechny `TemplateElement` třídy (model, Render, Clone, JSON serializace)
-- `PageLayoutEngine`, `PageRenderer`, canvas interakce, drag & drop
-- Undo/redo systém
+**Co zůstává v .NET:** všechny `TemplateElement` třídy (model, Render, Clone, JSON), PageLayoutEngine, PageRenderer, canvas, undo/redo. Inline `PropertiesPanel` (levý panel) zatím PropertyDescriptors — live edit.
 
 **Risks:**
-- Undo/redo parity: EDInputForm musí generovat `SetPropertyCommand` pro každou změnu, ne batch. Mitigace: per-field commit místo form-level commit.
-- Latency: každé otevření properties = Caché round-trip. Mitigace: cache form definice per element type (Init = statická definice, Values = dynamická).
-- EDDataGrid pro TableEditorDialog — odložit do chvíle, kdy EDDataGrid bude produkčně zralý.
-
-**Kdy začít:** Wave 3 CRUD je stabilní, foundation pro Wave 4 (`MLRestJson.CallAsync`, wire formát standard, JSON envelope dokumentován jako Styl 4) je hotová. Není blocker teď — `PropertyDescriptor` funguje. Ale každá nová property v PropertyDescriptor = práce k přepsání později → zvažovat nové properties s vědomím, že budou dvakrát.
-
-**Wire formát Wave 4:** JSON envelope (Styl 4) — composite struktura formuláře (Tab → Group → Field s validacemi) přirozeně pasuje. Helper `MLRestJson.CallAsync<TReq, TResp>` v EDControls je připraven. Detail wire formátu v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md), architektonický plán v [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md).
+- Reflexe fragile — property path jako string, typo v Caché = runtime error (ne compile-time). Mitigace: optional CI test (path existuje na elementu).
+- Inline panel vs modal: dokud inline zůstává PropertyDescriptors, validace (Min/Max) je duplikovaná. Plný dedup = migrace inline panelu na EDInputForm (live mode — odloženo).
 
 | Krok | Co | Stav |
 |---|---|---|
-| W4-0 | `MLRestJson.CallAsync<TReq, TResp>` helper + JSON envelope wire formát | ✅ 22b9256 |
-| W4-1 | Caché `ALVA.TemplateDesigner.Forms.TextElement` — první element migrace | |
-| W4-2 | .NET `ElementFormBridge` — JSON ↔ element instance přes reflexi | |
-| W4-3 | Feature flag + fallback na PropertyDescriptor | |
-| W4-4 | Postupně: ImageElement, RectangleElement, LineElement, BarcodeElement | |
-| W4-5 | TableElement — composite case (tabs Obecné/Sloupce, nested CellStyleEditor) | |
-| W4-6 | Schedule elements (StopList, DepartureGrid, NotesLegend) | |
-| W4-7 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
-| W4-8 | EDInputForm rozšíření: chybějící typy polí (Color, Font, Suggest, Text+Picker, ActionId Button) | |
-| W4-9 | EDInputForm wire formát refactor `$lb()` OUT → JSON | |
-| W4-10 | **Collapsible groups** v EDInputForm — generický koncept (accordion, summary řádek u sbalené, stav per element type/scope do `IUserPrefsService`). Nahrazuje dříve plánovaný B0-10 v `PropertiesPanel` (zbytečné dělat v dočasném panelu). | |
+| W4-0 | EDComponentToolbar (sdílený toolbar EDInputForm + EDList) + search filter + diacritics | ✅ 2026-05-26 |
+| W4-1 | EDInputForm visual upgrade (3-col compact layout, group sectioned headers, font harmonizace) | ✅ 2026-05-25 |
+| W4-2 | Form helpery (AddText/AddBool/AddNumber/AddDecimal) — hybrid syntax | ✅ 2026-05-26 |
+| W4-3 | SaveToCacheDialog — první migrace (PoC, vlastní dispatch) | ✅ 2026-05-26 |
+| W4-4 | Generický `ElementEditDialog` + `ElementPropertyAccessor` (reflexe, property-path keys) | ✅ 2026-05-27 |
+| W4-5 | Elementy: Text, Line, Rectangle, Barcode, NotesLegend (+border parity audit) | ✅ 2026-05-27 |
+| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled) | ⬅️ |
+| W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + 2 Caché schemas | |
+| W4-8 | **Simple dialogy** — SaveSectionTemplate, NormalizePositions | |
+| W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část custom nebo extra řešení | |
+| W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor, odložené | |
+| W4-11 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
+| W4-12 | (volitelné) EDInputForm wire formát `$lb()` OUT → JSON envelope; collapsible groups | |
 
 ---
 
