@@ -1,18 +1,18 @@
+using System.Windows;
+
 namespace EDControls.EDViewModel;
 
 public interface IWindowNavigator
 {
-    /// <summary>Otevře okno modeless v entry assembly.</summary>
-    void Show(string windowTypeName, EDWindowInput? input = null);
+    /// <summary>
+    /// Otevře okno modeless. Okno se předává jako instance — caller vytvoří přes <c>new</c>
+    /// (compile-time type safety, Find Usages funguje). Navigator nastaví Owner, append
+    /// <c>[Idfa]</c> na Title a zavolá <c>AttachToWindow</c> na VM (pokud je <c>EDViewModel</c>).
+    /// </summary>
+    void Show(Window window);
 
-    /// <summary>Otevře okno modeless v zadané assembly.</summary>
-    void Show(string windowTypeName, string assemblyName, EDWindowInput? input = null);
-
-    /// <summary>Otevře okno jako modální dialog v entry assembly.</summary>
-    bool? ShowDialog(string windowTypeName, EDWindowInput? input = null);
-
-    /// <summary>Otevře okno jako modální dialog v zadané assembly.</summary>
-    bool? ShowDialog(string windowTypeName, string assemblyName, EDWindowInput? input = null);
+    /// <summary>Otevře okno jako modální dialog. Stejné wire-up jako <see cref="Show"/>.</summary>
+    bool? ShowDialog(Window window);
 
     /// <summary>
     /// Spustí legacy WinForms formu z jiného .exe přes EDISONMAIN2API.FormToRunGetter kontrakt.

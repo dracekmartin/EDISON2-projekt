@@ -1,24 +1,26 @@
 # EDISONMAIN2 — poznámky pro vývojáře
 
 Hlavní WPF shell — login, výběr firmy, strom modulů, spouštění legacy `.exe` agend.
-Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
-[MVP_PLAN.md](MVP_PLAN.md) a [RESPONSIBILITIES.md](RESPONSIBILITIES.md).
+Nahradí staré VB.NET WinForms `EDISONMAIN`. Aktuální stav + roadmap v
+[PLAN.md](PLAN.md); doménový kontext (legacy responsibilities + idea pool) v
+[RESPONSIBILITIES.md](RESPONSIBILITIES.md).
 
 ## Co je hotové
 
 - **Login** — `LoginWindow` + `UserAuthenticator` volá `ALVA.SYS.Login.Login`.
 - **Výběr firmy** — combobox v toolbaru s textovým názvem firmy + IDFa v `[]`,
   abecedně řazeno (server vrací řazené přes `SortedDictionary`).
-  `EdisonMainViewModel.SelectedCompanyIndex` setter mění `MLRest.Idfa` /
-  `DataNamespace`, refreshuje strom modulů, re-volá VerifyLic přes
-  `LicenceVerifier` (per-IdFa ACTIVITY zámek + cílové firmy licence). Při
-  rejection revert na původní IdFa.
+  `EdisonMainViewModel.SelectedCompanyIndex` setter deleguje na `CompanySwitcher.Switch`
+  (sdílená logika startup + runtime — výměna `MLRest.Idfa`/`DataNamespace`, re-volání
+  VerifyLic přes `LicenceVerifier`, rollback při rejection, persist `LastIdfa` po Accepted).
+  `CompanySwitcher.PickInitial` řeší startupní výběr (priorita: `LocalPrefs.LastIdfa` →
+  `IsDefault` → `companies[0]`).
 - **Licence** — `LicenceService` (wrapper kolem legacy `EDLicence.dll`); filtrace
   stromu modulů přes `EdisonMainViewModel.TryFilter` + `ExecutableModule.IsLicensed/ElementId`.
 - **`LicenceVerifier`** — sdílený retry loop pro `VerifyLic`. Když je při
   out-of-license uživatel admin, nabídne spawnout legacy `USERS.exe formUSERSActivity`
   (přes EDISONMAIN2API), retry po zavření. Non-admin / Cancel → caller revertuje
-  (App.xaml.cs Shutdown, VM revert). Outcome enum `Accepted` / `Cancelled` /
+  (AppBootstrapper vrátí null = no window shown → App.xaml.cs Shutdown, VM revert). Outcome enum `Accepted` / `Cancelled` /
   `Refused` umožňuje context-specifický popup.
 - **Strom modulů** — `ModuleTreeGetter` parsuje wire formát z
   `ALVA.EDISONMAIN2.API.Tree.GetTree` (FAMILY / EXE / FAMILY_END).
@@ -28,14 +30,19 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Pilot-ready MVP definovaný v
 - **ACTIVITY zámek** — vytvořen `VerifyLic` při loginu. `EdisonActivityFailed` event
   → graceful shutdown.
 - **Pamatuje poslední firmu** — `LocalPrefs` (JSON v `%APPDATA%\m-line\EDISONMAIN2\local.json`)
-  ukládá `LastIdfa` po loginu / přepnutí. App.xaml.cs ho čte při startu jako prioritu
-  před `IsDefault` flagem. Funguje i v `#if DEBUG` modu.
+  ukládá `LastIdfa` po loginu / přepnutí. `AppBootstrapper` ho čte při startu jako prioritu
+  před `IsDefault` flagem (přes `CompanySwitcher.PickInitial`). Funguje i v `#if DEBUG` modu.
+  Přístup přes injektovaný `ILocalPrefs` (composition root vytvoří jednu instanci v
+  `AppBootstrapper.LoadLocalPrefs`, propaguje do `CompanySwitcher` a `EdisonMainViewModel`
+  přes ctor — testy substituují mock).
 - **Persistence stavu oken** — automatická pro každý `EDViewModel`-derived VM
   (pozice, velikost, Maximized) přes existující legacy endpoint
   `ALVA.LIBRARY.Form.SaveParams` / `LoadParams`, per-MLP × IDFa. Default formID
   odvozen z názvu VM třídy (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`).
   Detaily v root [CLAUDE.md](../CLAUDE.md) (sekce "Persistence stavu").
-- **App startup** — `Startup/App.xaml(.cs)` orchestruje celý bootstrap.
+- **App startup** — `Startup/App.xaml(.cs)` jen dispatchne na `AppBootstrapper`, který
+  orchestruje celý bootstrap workflow (load prefs → login → MLRest → pick firmu → VerifyLic →
+  ModuleTree → font → return shell okno). Každý krok testovatelný v izolaci.
 
 ## Spouštění legacy modulů — EDISONMAIN2API
 
@@ -61,15 +68,22 @@ a úpravou entry pointu na `FormToRunGetter` pattern (referenční implementace:
 ## Mimo MVP (zatím)
 
 Setup wizard, reconnect UX, admin Activity list, update lock broadcast, LDAP UI,
-cooperative logout countdown. Detaily fází F1–F8 v [MVP_PLAN.md](MVP_PLAN.md).
+cooperative logout countdown. Detaily prioritizace v [PLAN.md](PLAN.md) sekci „Features
+v pořadí priority".
 
 ## Struktura
 
 ```text
 EDISONMAIN2/dotnet/
-├── Startup/                    bootstrap: App.xaml(.cs), SettingsLoader, LocalPrefs,
-│                               LicenceService (wrapper EDLicence.dll), LicenceVerifier
-│                               (VerifyLic retry loop + USERS.exe spawn)
+├── Startup/                    bootstrap workflow:
+│                               - App.xaml(.cs) (tenký dispatcher → AppBootstrapper)
+│                               - AppBootstrapper (template method s protected virtual hooky)
+│                               - SettingsLoader, ILocalPrefs/LocalPrefs (injected do consumerů)
+│                               - LicenceService (wrapper EDLicence.dll)
+│                               - LicenceVerifier (VerifyLic retry loop + USERS.exe spawn)
+│                               - CompanySwitcher (PickInitial + Switch — sdílená logika
+│                                 startup × runtime přepnutí firmy)
+│                               - AccessLoader (GetEdisonAccess + admin fallback)
 └── Windows/
     ├── LoginWindow/            login dialog + UserAuthenticator
     ├── EdisonMainWindow/       hlavní okno (toolbar, tree, status bar)
@@ -103,7 +117,7 @@ nebo RESPONSIBILITIES.md.
 **Příklad** — komentář popisuje neobvyklou invariantu:
 
 ```csharp
-// Index musí odpovídat MLRest.Idfa — tam má App.xaml.cs vytvořený ACTIVITY zámek.
+// Index musí odpovídat MLRest.Idfa — tam má AppBootstrapper vytvořený ACTIVITY zámek.
 _selectedCompanyIndex = VisibleIdfas.Select((c, i) => (c, i))
     .First(x => x.c.Id == mlRest.Idfa).i;
 ```

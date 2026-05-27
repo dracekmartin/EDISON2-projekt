@@ -2,7 +2,7 @@
 
 Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP (MLRest).
 
-Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se dostávají pouze přes `dotnet publish` s publish profilem „SingleFile C-Edison" (`Properties/PublishProfiles/`) — single-file výstup bez volných DLL.
+Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se dostávají pouze přes `dotnet publish` s publish profilem „SingleFileCEdison" (`Properties/PublishProfiles/`) — single-file výstup bez volných DLL.
 
 Nové features pokrývej xUnit testy (`EDControls.Tests/`, `EDISONMAIN2.Tests/`).
 
@@ -31,7 +31,7 @@ DLL je odkazována přímo: `C:\Edison\MLRest.dll`.
 
 Instance `MLRest` se nikdy nevytváří přímo ve windows ani ViewModelech. Přístup jde přes
 abstrakci `IMLRest` (viz `EDControls/IMLRest.cs`) a sdílený kontejner `EDServices`
-(singleton `EDServices.Current`, inicializován v `App.xaml.cs`).
+(singleton `EDServices.Current`, inicializován v `AppBootstrapper`).
 
 - ViewModely: `MLRest` property z `EDViewModel` (čte z `EDServices.Current`)
 - Testy: vlastní `EDServices` s mock `IMLRest`
@@ -189,17 +189,17 @@ Odpovídající čtení v .NET viz sekce „Volání Caché metody" výše (CVar
    ```
 
 5. Zaregistruj příkaz v `EdisonMainViewModel` přes `WindowNavigator.Show` (modeless)
-   nebo `WindowNavigator.ShowDialog` (modální) s názvem třídy okna jako string:
+   nebo `WindowNavigator.ShowDialog` (modální) — předej **instanci okna**:
 
    ```csharp
-   OpenMyWindowCommand = Command(() => WindowNavigator.Show("MyWindow"));
+   OpenMyWindowCommand = Command(() => WindowNavigator.Show(new MyWindow()));
    ```
 
    `Command(...)` je helper na `EDViewModel`, který vytvoří `RelayCommand` s automatickým
    error handlingem přes `PopupDisplayer`.
 
-   Pokud okno potřebuje vstupní data, předej `EDWindowInput` a přidej konstruktor
-   `public MyWindow(EDWindowInput input)`.
+   Pokud okno potřebuje vstupní data, předej je do konstruktoru:
+   `WindowNavigator.Show(new MyWindow(input))`.
 
 6. Přidej tlačítko na toolbar v `EdisonMainWindow.xaml` navázané na příkaz.
 
@@ -257,17 +257,25 @@ Dva čisté layery pro user preferences / state:
 
 `LocalPrefs` (`EDISONMAIN2/dotnet/Startup/LocalPrefs.cs`) — JSON soubor v
 `%APPDATA%\m-line\EDISONMAIN2\local.json`. Per Windows-user, sdílí mezi
-relacemi na stejné stanici.
+relacemi na stejné stanici. Přístup přes injektovaný `ILocalPrefs`
+(composition root v `AppBootstrapper` vytvoří jednu instanci, propaguje
+do consumerů — testy substituují mock).
 
-Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení).
+Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení) +
+3 toggly (`ShowWindowsAsDialogs`, `ShowMiniApps`, `LoadBoards`).
 Pro nové preference přidej nullable property; chybějící klíče v existujícím
 souboru zůstanou null (kompatibilní upgrade).
 
 ```csharp
-LocalPrefs.Load();                              // jednou v App.xaml.cs
-var idfa = LocalPrefs.Current.LastIdfa;          // čtení
-LocalPrefs.Current.LastIdfa = "CB_DP";           // zápis
-LocalPrefs.Current.Save();
+// AppBootstrapper (composition root):
+var prefs = LocalPrefs.Load();         // vrátí ILocalPrefs naplněný z disku
+// předá se dál do CompanySwitcher / EdisonMainViewModel přes ctor
+
+// Consumer (VM, switcher):
+private readonly ILocalPrefs _prefs;
+var idfa = _prefs.LastIdfa;             // čtení
+_prefs.LastIdfa = "CB_DP";              // zápis
+_prefs.Save();                          // persist
 ```
 
 ### Per-uživatel × IDFa (Caché server-side)
@@ -280,7 +288,7 @@ per-MLP × IDFa (server čte sys kontext z MLRest).
 **Aktivace**: VM dědí `EDViewModel` → `PersistedFormId` se odvozuje z názvu třídy
 (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`). Override v subclass
 na `null` pro opt-out. WindowNavigator zavolá `vm.AttachToWindow(window)`
-před `Show()` automaticky; pro shell okno volá App.xaml.cs ručně.
+před `Show()` automaticky; pro shell okno volá `AppBootstrapper.BuildShellWindow` ručně.
 
 Prefix `"EDISON2."` odděluje od starých numerických IDs z `EDISFormEnum` (tam
 VB moduly ukládají vlastní state).

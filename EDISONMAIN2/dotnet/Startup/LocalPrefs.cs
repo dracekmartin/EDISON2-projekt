@@ -1,15 +1,29 @@
-using System;
 using System.IO;
 using System.Text.Json;
 
 namespace EDISONMAIN2;
 
 /// <summary>
-/// Lokální preference per Windows-user, uložené v %APPDATA%\m-line\EDISONMAIN2\local.json.
-/// Pro nové preference přidávej nullable property — chybějící klíče v existujícím souboru
-/// zůstanou null, kompatibilita zachována. Změny se persistují přes <see cref="Save"/>.
+/// Lokální preference per Windows-user. Injectable abstrakce — produkce
+/// <see cref="LocalPrefs"/> persistuje do <c>%APPDATA%\m-line\EDISONMAIN2\local.json</c>,
+/// testy substituují in-memory implementaci.
 /// </summary>
-public class LocalPrefs
+public interface ILocalPrefs
+{
+    string? LastIdfa { get; set; }
+    bool ShowWindowsAsDialogs { get; set; }
+    bool ShowMiniApps { get; set; }
+    bool LoadBoards { get; set; }
+    void Save();
+}
+
+/// <summary>
+/// Diskové persistované preference. Pro nové preference přidávej nullable property
+/// (chybějící klíče v existujícím souboru zůstanou null). Composition root
+/// (<see cref="AppBootstrapper"/>) vytvoří jednu instanci přes <see cref="Load"/>
+/// a propaguje ji do consumerů (CompanySwitcher, EdisonMainViewModel).
+/// </summary>
+public class LocalPrefs : ILocalPrefs
 {
     public string? LastIdfa { get; set; }
 
@@ -19,10 +33,9 @@ public class LocalPrefs
     public bool ShowMiniApps { get; set; }
     public bool LoadBoards { get; set; } = true;
 
-    // Styl — user font. FontApplied=true → font se aplikuje na MainWindow při startu/apply.
-    public string? FontFamily { get; set; }
-    public double? FontSize { get; set; }
-    public bool FontApplied { get; set; }
+    // FontApplied/FontFamily/FontSize byly přesunuty do EDControls.UserFonts.UserFontPreference
+    // (shared %APPDATA%\m-line\common\font.json) aby je TemplateDesigner mohl sdílet a reagovat
+    // na změnu fontu v shellu přes FileSystemWatcher.
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -35,19 +48,18 @@ public class LocalPrefs
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "m-line", "EDISONMAIN2", "local.json");
 
-    public static LocalPrefs Current { get; private set; } = new();
-
-    public static void Load()
+    /// <summary>Načte preference z disku. Poškozený / chybějící soubor → defaultní instance.</summary>
+    public static LocalPrefs Load()
     {
         try
         {
-            if (!File.Exists(FilePath)) return;
+            if (!File.Exists(FilePath)) return new();
             var json = File.ReadAllText(FilePath);
-            Current = JsonSerializer.Deserialize<LocalPrefs>(json, JsonOptions) ?? new();
+            return JsonSerializer.Deserialize<LocalPrefs>(json, JsonOptions) ?? new();
         }
         catch
         {
-            // Poškozený soubor — držíme default instanci, příští Save() ji přepíše.
+            return new();
         }
     }
 

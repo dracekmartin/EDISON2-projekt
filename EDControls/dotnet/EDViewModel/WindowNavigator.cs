@@ -1,45 +1,48 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 
 namespace EDControls.EDViewModel;
 
 /// <summary>
-/// Otevírá WPF okna (reflexe v entry assembly) i legacy WinForms formuláře z externích
-/// .exe (přes 10-arg kontrakt <c>EDISONMAIN2API.FormToRunGetter</c>). Trackuje child procesy,
-/// <see cref="CloseAllLegacy"/> kill při shell close.
+/// Otevírá WPF okna (caller předá instanci přes <c>new</c>) + legacy WinForms formuláře
+/// z externích .exe (přes 10-arg kontrakt <c>EDISONMAIN2API.FormToRunGetter</c>). Trackuje
+/// child procesy, <see cref="CloseAll"/> kill při shell close.
 /// </summary>
 public class WindowNavigator : IWindowNavigator
 {
-    private readonly List<Process> _legacyProcesses = [];
+    /// <summary>
+    /// Cíl deploye legacy `.exe` agend (`USERS.exe`, `MHD2PlanDopravy.exe`, ...).
+    /// Single-file publish profiles tam zapisují, <see cref="ResolveExecutablePath"/>
+    /// odtud čte fallback, když relativní path nenajde v <see cref="AppContext.BaseDirectory"/>.
+    /// </summary>
+    public const string EdisonDeployRoot = @"C:\Edison";
 
-    public void Show(string typeName, EDWindowInput? input = null) =>
-        Show(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, input);
+    /// <summary>Sledování legacy child procesů — Process + původní spawn args (exe, formFqn).
+    /// FormFqn slouží jako fallback display label, když <c>Process.MainWindowTitle</c> je prázdný
+    /// (typicky brzy po startu child procesu, než se vytvoří window).</summary>
+    internal record LegacyProcessEntry(Process Process, string ExeName, string FormFqn);
 
-    public void Show(string typeName, string assemblyName, EDWindowInput? input = null)
+    private readonly List<LegacyProcessEntry> _legacyProcesses = [];
+
+    public void Show(Window window)
     {
-        var window = CreateWindow(typeName, assemblyName, input);
-        window.Owner = Application.Current.MainWindow;
+        WireUp(window);
         window.Show();
     }
 
-    public bool? ShowDialog(string typeName, EDWindowInput? input = null) =>
-        ShowDialog(typeName, Assembly.GetEntryAssembly()!.GetName().Name!, input);
-
-    public bool? ShowDialog(string typeName, string assemblyName, EDWindowInput? input = null)
+    public bool? ShowDialog(Window window)
     {
-        var window = CreateWindow(typeName, assemblyName, input);
-        window.Owner = Application.Current.MainWindow;
+        WireUp(window);
         return window.ShowDialog();
     }
 
     public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc != null) _legacyProcesses.Add(prc);
+        if (prc != null) _legacyProcesses.Add(new(prc, exeName, formFqn));
     }
 
     public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
@@ -52,7 +55,7 @@ public class WindowNavigator : IWindowNavigator
     {
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
-        _legacyProcesses.Add(prc);
+        _legacyProcesses.Add(new(prc, exeName, formFqn));
 
         var owner = Application.Current.MainWindow;
         if (owner != null) owner.IsEnabled = false;
@@ -99,11 +102,11 @@ public class WindowNavigator : IWindowNavigator
         foreach (var w in Application.Current.Windows.OfType<Window>().ToList())
             if (w != Application.Current.MainWindow) w.Close();
 
-        foreach (var process in _legacyProcesses)
+        foreach (var entry in _legacyProcesses)
         {
             try
             {
-                if (!process.HasExited) process.Kill();
+                if (!entry.Process.HasExited) entry.Process.Kill();
             }
             catch (Exception ex)
             {
@@ -113,62 +116,105 @@ public class WindowNavigator : IWindowNavigator
         _legacyProcesses.Clear();
     }
 
+    /// <summary>
+    /// Snapshot právě běžících modulů — legacy child procesy + WPF okna (kromě shell
+    /// <c>MainWindow</c>). Pro menu "Spuštěné moduly" (binding přes refresh při open).
+    /// Záměrně public na konkrétní třídě, ne na <see cref="IWindowNavigator"/> — shell-only feature.
+    /// </summary>
+    public IReadOnlyList<RunningModuleInfo> GetActiveModules()
+    {
+        var legacy = _legacyProcesses
+            .Where(e => !e.Process.HasExited)
+            .Select(e => new RunningModuleInfo(
+                DisplayName: FormatLegacyLabel(e),
+                Activate: () =>
+                {
+                    if (e.Process.HasExited) return;
+                    var hwnd = e.Process.MainWindowHandle;
+                    if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
+                }));
+
+        var wpf = Application.Current.Windows
+            .OfType<Window>()
+            .Where(w => w != Application.Current.MainWindow
+                        && w.IsLoaded
+                        && !IsInternalWindow(w))
+            .Select(w => new RunningModuleInfo(
+                DisplayName: !string.IsNullOrEmpty(w.Title) ? w.Title : w.GetType().Name,
+                Activate: () =>
+                {
+                    if (w.WindowState == WindowState.Minimized) w.WindowState = WindowState.Normal;
+                    w.Activate();
+                    w.Focus();
+                }));
+
+        return [.. legacy, .. wpf];
+    }
+
+    /// <summary>Skip WPF/WebView2 interních oken (AdornerWindow atd.) — uživatelská okna nejsou v MS./System./Microsoft. namespace.</summary>
+    internal static bool IsInternalWindow(Window w) => IsInternalNamespace(w.GetType().Namespace);
+
+    internal static bool IsInternalNamespace(string? ns)
+    {
+        ns ??= "";
+        return ns.StartsWith("MS.") || ns.StartsWith("System.") || ns.StartsWith("Microsoft.");
+    }
+
+    /// <summary>
+    /// Display label pro legacy proces: preferuje <c>MainWindowTitle</c> (text v záhlaví okna,
+    /// to co user vidí), fallback last segment z FormFqn (např. <c>formMHD2Main</c>), nebo
+    /// název EXE bez přípony, když ani jedno není dostupné.
+    /// </summary>
+    internal static string FormatLegacyLabel(LegacyProcessEntry entry)
+    {
+        var title = SafeGetTitle(entry.Process);
+        if (!string.IsNullOrEmpty(title)) return title;
+        var lastDot = entry.FormFqn.LastIndexOf('.');
+        if (lastDot >= 0 && lastDot < entry.FormFqn.Length - 1) return entry.FormFqn[(lastDot + 1)..];
+        if (!string.IsNullOrEmpty(entry.FormFqn)) return entry.FormFqn;
+        return Path.GetFileNameWithoutExtension(entry.ExeName);
+    }
+
+    private static string SafeGetTitle(Process process)
+    {
+        try { return process.MainWindowTitle ?? ""; }
+        catch { return ""; }
+    }
+
     private static Process? LaunchLegacy(string exeName, string formFqn, bool shareShellSession, string inputParam)
     {
         var mlRest = EDServices.Current.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
         var shellGuid = shareShellSession ? mlRest.Guid : "";
-        return Process.Start(new ProcessStartInfo
+        var prc = Process.Start(new ProcessStartInfo
         {
             UseShellExecute = true,
             FileName = ResolveExecutablePath(exeName),
             Arguments = $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\"",
         });
+        if (prc != null) KillOnExit.Bind(prc);
+        return prc;
     }
 
-    private static string ResolveExecutablePath(string relativePath)
+    internal static string ResolveExecutablePath(string relativePath)
     {
         var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
         if (File.Exists(localPath)) return localPath;
-        return Path.Combine(@"C:\Edison", relativePath);
+        return Path.Combine(EdisonDeployRoot, relativePath);
     }
 
-    private static Window CreateWindow(string typeName, string assemblyName, EDWindowInput? input)
+    // Sdílené wire-up před Show()/ShowDialog(): Owner, [Idfa] title suffix, AttachToWindow VM-if.
+    // SourceInitialized fíruje synchronně uvnitř Show() před prvním paintem, restore stavu okna
+    // tedy stihne aplikovat hodnoty.
+    private static void WireUp(Window window)
     {
-        var type = FindTypeInAssembly(typeName, assemblyName)
-            ?? throw new InvalidOperationException(
-                $"Window type '{typeName}' not found in assembly '{assemblyName}'.");
-        var window = input is null
-            ? (Window)Activator.CreateInstance(type)!
-            : (Window)Activator.CreateInstance(type, input)!;
+        window.Owner = Application.Current.MainWindow;
 
         var idfa = EDServices.Current.MLRest?.Idfa;
         if (!string.IsNullOrEmpty(idfa))
             window.Title = $"{window.Title} [{idfa}]";
 
-        // Před Show() napojí klávesy + persistenci stavu okna (SourceInitialized se vyvolá
-        // synchronně uvnitř Show() ještě před prvním paintem — restore stihne aplikovat hodnoty).
         if (window.DataContext is EDViewModel vm)
             vm.AttachToWindow(window);
-
-        return window;
-    }
-
-    private static Type? FindTypeInAssembly(string typeName, string assemblyName)
-    {
-        var loaded = AppDomain.CurrentDomain.GetAssemblies()
-            .FirstOrDefault(a => a.GetName().Name == assemblyName ||
-                                 Path.GetFileNameWithoutExtension(a.Location) == assemblyName);
-        if (loaded != null)
-            return loaded.GetTypes().FirstOrDefault(t => t.Name == typeName || t.FullName == typeName);
-
-        var fileName = Path.HasExtension(assemblyName) ? assemblyName : assemblyName + ".dll";
-        var fullPath = Path.Combine(AppContext.BaseDirectory, fileName);
-        if (!File.Exists(fullPath))
-            throw new InvalidOperationException(
-                $"Assembly '{assemblyName}' not found in '{AppContext.BaseDirectory}'.");
-
-        var asm = Assembly.LoadFrom(fullPath);
-        return asm.GetTypes().FirstOrDefault(t => t.Name == typeName || t.FullName == typeName);
     }
 }

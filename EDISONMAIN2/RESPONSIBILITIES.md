@@ -1,5 +1,14 @@
 # EDISONMAIN2 — odpovědnosti aplikace
 
+> **⚠️ DŮLEŽITÉ — tento dokument NENÍ kanonická specifikace.**
+>
+> Je to **studnice nápadů** vytažená z legacy systému. Obsahuje 1:1 port úvah z legacy
+> `EDISONMAIN` + aspirativní features bez ověřeného user story. **Spousta tam uvedených
+> věcí je irelevantní pro EDISONMAIN2 nebo nemá smysl.** Při čerpání z tohoto souboru
+> vždy ověř, jestli má daná věc reálnou hodnotu — neber ji jako automaticky validní.
+>
+> **Single source of truth** pro to, co reálně děláme, je [`PLAN.md`](PLAN.md).
+
 Tento dokument popisuje, za co je shell aplikace `EDISONMAIN2` (a její předchůdce
 `EDISONMAIN`) zodpovědná. Neměl by popisovat **business agendy hostovaných modulů**
 (ty mají své vlastní repo složky a dokumentace) — jen **infrastrukturu hostování**.
@@ -859,7 +868,7 @@ Prázdné panely se nezobrazují (`If tvwNavBar.Nodes.Count > 0 Then mNavBar.Pan
 - Admin fallback s jasným pravidlem "jen do user-accessu, ne do licenčního rozsahu".
 - Atributy uzlů: `licensed`, `hidden`, `mlineOnly`, `icon`, `type` (skupina / form / CSP).
 - Spouštění hostovaných oken přes `WindowNavigator.Show` / `ShowDialog`
-  (ekvivalent `HandleShowFormDemand`), předávání parametrů přes `EDWindowInput`.
+  (ekvivalent `HandleShowFormDemand`), parametry přes ctor okna.
 - Perzistence layoutu / stavu oken per uživatel per databáze.
 - "Reset nastavení oken" akce (`MESSAGE_RESETFORMS`, `MESSAGE_RESETFORMS_IncludeParams`).
 - Oblíbené — uživatel může pinnout libovolný uzel z ostatních sekcí.

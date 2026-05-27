@@ -151,8 +151,13 @@
     <SolidColorBrush x:Key="EDTheme.Semantic.Condition" Color="{StaticResource EDTheme.Semantic.Condition.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         TYPOGRAPHY — Font sizes
+         TYPOGRAPHY — Font family + sizes
+         FontFamily je single token (uživatel může runtime override; viz FontService
+         v EDISONMAIN2). FontSize tokeny jsou samostatné per UI rola (Small/Caption/...)
+         a EDISONMAIN2 FontService je škáluje proporcionálně k user-zvolenému Body size.
          ═══════════════════════════════════════════════════════════════════ -->
+    <FontFamily x:Key="EDTheme.FontFamily">Segoe UI</FontFamily>
+
     <!-- Drobné popisky — ruler ticks, badge texts, group labels v toolbaru -->
     <sys:Double x:Key="EDTheme.FontSize.Small">9</sys:Double>
 

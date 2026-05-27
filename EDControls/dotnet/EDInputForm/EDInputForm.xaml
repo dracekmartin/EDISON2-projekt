@@ -68,7 +68,7 @@
             </ItemsControl.ItemsPanel>
             <ItemsControl.Resources>
                 <!-- Shared error style for TextBox-based fields. BasedOn dědí implicitní
-                     EDStyles.xaml TextBox (modern flat look + focus accent). -->
+                     EDControlStyles.xaml TextBox (modern flat look + focus accent). -->
                 <Style x:Key="FieldTextBoxStyle" TargetType="TextBox"
                        BasedOn="{StaticResource {x:Type TextBox}}">
                     <Style.Triggers>
@@ -83,7 +83,7 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Shared error style for ComboBox-based fields. BasedOn dědí implicitní EDStyles ComboBox. -->
+                <!-- Shared error style for ComboBox-based fields. BasedOn dědí implicitní EDControlStyles ComboBox. -->
                 <Style x:Key="FieldComboBoxStyle" TargetType="ComboBox"
                        BasedOn="{StaticResource {x:Type ComboBox}}">
                     <Style.Triggers>

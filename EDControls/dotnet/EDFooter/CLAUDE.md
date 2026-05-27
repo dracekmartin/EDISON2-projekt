@@ -102,5 +102,5 @@ public partial class MyWindow : Window
 
 ```csharp
 // V EdisonMainViewModel:
-OpenMyWindowCommand = Command(() => WindowNavigator.ShowDialog("MyWindow"));
+OpenMyWindowCommand = Command(() => WindowNavigator.ShowDialog(new MyWindow()));
 ```

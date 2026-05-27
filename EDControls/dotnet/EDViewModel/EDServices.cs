@@ -24,6 +24,14 @@ public class EDServices(
     public IWindowNavigator WindowNavigator { get; } = windowNavigator;
     public IPopupDisplayer PopupDisplayer { get; } = popupDisplayer;
     public Lic? ActiveLicence { get; set; }
+    /// <summary>
+    /// Loader aktuální licence ze serveru. Composition-root nastavuje při <see cref="MLRest"/>
+    /// swapu (initial bootstrap, S2 user switch), takže consumeři čtou loader vázaný na current
+    /// MLRest — bez stale captures z ctoru.
+    /// </summary>
+    public Func<Lic?>? LicenceLoader { get; set; }
+    /// <summary>Aplikační přístup uživatele (per-IdFa). Načteno post-login, refresh při switch firmy.</summary>
+    public AccessTable? AccessTable { get; set; }
     public bool IsAdmin { get; set; }
 
     /// <summary>

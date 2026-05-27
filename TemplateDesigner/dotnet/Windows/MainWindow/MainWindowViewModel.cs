@@ -203,10 +203,10 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool HasMultiplePages => RealPreviewPageCount > 1;
 
     private RelayCommand? _prevPage, _nextPage;
-    public RelayCommand PreviousPageCommand => _prevPage ??= new(
+    public RelayCommand PreviousPageCommand => _prevPage ??= Command(
         () => RealPreviewIndex--,
         () => RealPreviewIndex > 0);
-    public RelayCommand NextPageCommand => _nextPage ??= new(
+    public RelayCommand NextPageCommand => _nextPage ??= Command(
         () => RealPreviewIndex++,
         () => RealPreviewIndex < RealPreviewPageCount - 1);
 
@@ -311,27 +311,27 @@ public class TemplateDesignerViewModel : EDViewModel
     private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda, _openInstancePicker, _prevInstance, _nextInstance;
     private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs;
 
-    public RelayCommand UndoCommand          => _undo      ??= new(Undo,          () => CanUndo);
-    public RelayCommand RedoCommand          => _redo      ??= new(Redo,          () => CanRedo);
+    public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
+    public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
     public AsyncRelayCommand SaveCommand     => _save      ??= CommandAsync(SaveTemplate);
     public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveAsTemplate);
-    public RelayCommand NewCommand           => _new       ??= new(NewTemplate);
+    public RelayCommand NewCommand           => _new       ??= Command(NewTemplate);
     public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
     public AsyncRelayCommand OpenFromCacheCommand  => _openFromCache  ??= CommandAsync(OpenFromCacheAsync,  () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
     public RelayCommand ChangeAgendaCommand        => _changeAgenda   ??= Command(ChangeAgenda);
     public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
-    public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= new(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
-    public RelayCommand NextInstanceCommand        => _nextInstance   ??= new(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
-    public RelayCommand ExportPdfCommand     => _exportPdf ??= new(ExportPreviewPdf);
-    public RelayCommand ExportPngCommand     => _exportPng ??= new(ExportPreviewPng);
-    public new RelayCommand DeleteCommand => _delete    ??= new(DeleteSelected);
-    public RelayCommand CopyCommand     => _copy      ??= new(CopySelected);
-    public RelayCommand CutCommand      => _cut       ??= new(CutSelected);
-    public RelayCommand PasteCommand    => _paste     ??= new(PasteClipboard);
-    public RelayCommand CopyStyleCommand  => _copyStyle  ??= new(CopyStyle);
-    public RelayCommand PasteStyleCommand => _pasteStyle ??= new(PasteStyle, () => State.StyleClipboard is not null);
+    public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
+    public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
+    public RelayCommand ExportPdfCommand     => _exportPdf ??= Command(ExportPreviewPdf);
+    public RelayCommand ExportPngCommand     => _exportPng ??= Command(ExportPreviewPng);
+    public new RelayCommand DeleteCommand => _delete    ??= Command(DeleteSelected);
+    public RelayCommand CopyCommand     => _copy      ??= Command(CopySelected);
+    public RelayCommand CutCommand      => _cut       ??= Command(CutSelected);
+    public RelayCommand PasteCommand    => _paste     ??= Command(PasteClipboard);
+    public RelayCommand CopyStyleCommand  => _copyStyle  ??= Command(CopyStyle);
+    public RelayCommand PasteStyleCommand => _pasteStyle ??= Command(PasteStyle, () => State.StyleClipboard is not null);
 
     // ── Constructor ───────────────────────────────────────────────────────────
     /// <summary>

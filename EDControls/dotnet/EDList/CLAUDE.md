@@ -938,7 +938,7 @@ Testovací okno je v projektu EDISONMAIN2 ve složce `Windows/EDListTestWindow/`
 
 ```csharp
 // Otevřeni přes WindowNavigator (MLRest z EDServices automaticky):
-WindowNavigator.Show("EDListTestWindow");
+WindowNavigator.Show(new EDListTestWindow());
 ```
 
 ### Funkce

@@ -6,7 +6,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDTheme.xaml"/>
-                <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDTheme/EDStyles.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDControlStyles/EDControlStyles.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDIcons/EDIcons.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDStrings/EDStrings.xaml"/>
                 <ResourceDictionary Source="Styles/ToolbarStyles.xaml"/>

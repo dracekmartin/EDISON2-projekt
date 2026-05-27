@@ -28,6 +28,11 @@ public class EdisonMainViewModelTests
     {
         var mock = Substitute.For<IMLRest>();
         mock.Idfa.Returns(idfa);
+        // AccessLoader volá GetEdisonAccess při initial / switch / refresh. Default mock
+        // vrátí apId=3 (admin, IsAllAccess=true) → access filter nepřebíjí ostatní testy.
+        // Specifické access testy si MockMLRest přepíší vlastním setupem.
+        mock.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
+            .Returns(new object[] { "", "3" });
         return mock;
     }
 
@@ -35,16 +40,23 @@ public class EdisonMainViewModelTests
         EDServices? services = null,
         IModuleTreeGetter? treeGetter = null,
         IPopupDisplayer? popup = null,
+        ILocalPrefs? prefs = null,
         Action? closeAllWindows = null)
     {
         var mockMLRest = MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var svc = services ?? MockServices(popup: popup);
+        // CompanySwitcher i VM čtou MLRest z services lazily — musí být v services před konstrukcí.
+        svc.MLRest = mockMLRest;
+        var close = closeAllWindows ?? (() => { });
+        var p = prefs ?? Substitute.For<ILocalPrefs>();
+        var switcher = new CompanySwitcher(svc, p, close);
+        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
 
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, closeAllWindows ?? (() => { }));
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p, () => [], close);
         }
         finally
         {
@@ -105,20 +117,7 @@ public class EdisonMainViewModelTests
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
-        var mockMLRest = MockMLRest();
-        var svc = MockServices(popup: mockPopup);
-        EDServices.Initialize(svc);
-        var mockTree = Substitute.For<IModuleTreeGetter>();
-        mockTree.GetModuleTree(Arg.Any<IMLRest>()).Returns([]);
-        EdisonMainViewModel vm;
-        try
-        {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, () => { });
-        }
-        finally
-        {
-            EDServices.Reset();
-        }
+        var vm = CreateVM(popup: mockPopup);
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         vm.SelectedCompanyIndex = target;
@@ -135,19 +134,20 @@ public class EdisonMainViewModelTests
         mockPopup.Confirm(Arg.Any<string>()).Returns(true);
         var mockMLRest = MockMLRest();
         var svc = MockServices(popup: mockPopup);
+        svc.MLRest = mockMLRest;
+        var prefs = Substitute.For<ILocalPrefs>();
+        var switcher = new CompanySwitcher(svc, prefs, () => { });
+        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
         EDServices.Initialize(svc);
-        var mockTree = Substitute.For<IModuleTreeGetter>();
-        mockTree.GetModuleTree(Arg.Any<IMLRest>()).Returns([]);
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, mockTree, () => null, () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), null, switcher, switchUser, prefs, () => [], () => { });
         }
         finally
         {
             EDServices.Reset();
         }
-        svc.MLRest = mockMLRest;
 
         int target = vm.SelectedCompanyIndex == 0 ? 1 : 0;
         vm.SelectedCompanyIndex = target;

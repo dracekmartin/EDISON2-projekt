@@ -8,6 +8,7 @@
         xmlns:local="clr-namespace:EDISONMAIN2"
         xmlns:designTime="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData"
         xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules"
+        xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" Height="800" Width="1200" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
@@ -16,6 +17,11 @@
             <b:InvokeCommandAction Command="{Binding CloseAllCommand}"/>
         </b:EventTrigger>
     </b:Interaction.Triggers>
+    <!-- Skryté klávesové zkratky (RESPONSIBILITIES §15.1). Ctrl+W+W chord řeší
+         PreviewKeyDown v code-behind (víc-krokový stav, nelze přes KeyBinding). -->
+    <Window.InputBindings>
+        <KeyBinding Key="B" Modifiers="Control+Shift" Command="{Binding ShowBgTasksCommand}"/>
+    </Window.InputBindings>
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="20"/>
@@ -29,13 +35,23 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
-            <RowDefinition Height="24" />
+            <!-- Auto — StatusBar musí růst se zvolenou velikostí fontu (user preference).
+                 Pevná výška by ořízla text při větším fontu. -->
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Top-level menu — replikuje pořadí a obsah legacy frmNoMDI.mnuMain.
              Combobox firem nahrazuje legacy "Firma" label (původně jen statický).
-             "Test funkcí" je dev-only nadstavba, v legacy je tam "Test funkcí (M-line)" s debug položkami. -->
-        <Menu Grid.Row="0" Grid.ColumnSpan="100">
+             "Test funkcí" je dev-only nadstavba, v legacy je tam "Test funkcí (M-line)" s debug položkami.
+             Border drží spodní 1px linku přes celou šířku; Menu lokálně potlačí svoji vlastní linku, ta by končila u TextBlocku. -->
+        <Border Grid.Row="0" Grid.ColumnSpan="100"
+                Background="{DynamicResource EDTheme.Bg.Footer}"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                BorderThickness="0,0,0,1">
+        <DockPanel>
+            <TextBlock Text="{Binding InformationText}" DockPanel.Dock="Right"
+                       VerticalAlignment="Center" Margin="8,0,8,0"/>
+            <Menu x:Name="TopMenu" BorderThickness="0">
             <MenuItem Header="EDISON">
                 <MenuItem Header="Připojit k databázi"   Command="{Binding ConnectToDatabaseCommand}"/>
                 <MenuItem Header="Spustit další EDISON"  Command="{Binding RunEdisonCopyCommand}"/>
@@ -60,8 +76,22 @@
                 </MenuItem>
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
-            <MenuItem Header="Spuštěné moduly">
-                <MenuItem Header="(prozatím nedostupné)" IsEnabled="False"/>
+            <MenuItem Header="Spuštěné moduly" ItemsSource="{Binding RunningModules}">
+                <!-- MouseEnter, ne SubmenuOpened — prázdný submenu by se neotevřel a chicken-and-egg by zablokoval refresh. -->
+                <b:Interaction.Triggers>
+                    <b:EventTrigger EventName="MouseEnter">
+                        <b:InvokeCommandAction Command="{Binding RefreshRunningModulesCommand}"/>
+                    </b:EventTrigger>
+                </b:Interaction.Triggers>
+                <MenuItem.ItemContainerStyle>
+                    <!-- ElementName ne AncestorType=Menu — submenu items jsou v Popup mimo Menu's visual tree. -->
+                    <Style TargetType="MenuItem">
+                        <Setter Property="Header" Value="{Binding DisplayName}"/>
+                        <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
+                        <Setter Property="Command" Value="{Binding DataContext.ActivateModuleCommand, ElementName=TopMenu}"/>
+                        <Setter Property="CommandParameter" Value="{Binding}"/>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
             </MenuItem>
             <MenuItem Header="Nástroje">
                 <MenuItem Header="Aktualizovat licenci"        Command="{Binding RefreshLicenseCommand}"/>
@@ -84,19 +114,25 @@
                 <MenuItem Header="Test InputForm"    Command="{Binding OpenInputFormTestCommand}"/>
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
+                <Separator/>
+                <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
             </MenuItem>
-            <MenuItem Header="INFO" IsEnabled="False"/>
-        </Menu>
+            </Menu>
+        </DockPanel>
+        </Border>
 
         <!-- Tři stromy odpovídají legacy edisonnavbar.xml: Hlavní nabídka (id=-2),
              Správa systému (id=-3), Partnerská řešení (id=-4). -->
         <Grid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
             <Grid.Resources>
+                <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
                     <TextBlock Text="{Binding DisplayedName}" />
                 </HierarchicalDataTemplate>
                 <DataTemplate DataType="{x:Type modules:ExecutableModule}">
-                    <TextBlock Text="{Binding DisplayedName}" />
+                    <!-- Color "" → UnsetValue → fallback na default TextBlock Foreground z EDTheme. -->
+                    <TextBlock Text="{Binding DisplayedName}"
+                               Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"/>
                 </DataTemplate>
                 <Style TargetType="{x:Type TreeViewItem}">
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded}"/>
@@ -161,6 +197,8 @@
             <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
             <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
             <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
+            <!-- Chord hint pro Ctrl+W+W. Prázdný text = neaktivní stav. -->
+            <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"/>
         </StatusBar>
 
     </Grid>

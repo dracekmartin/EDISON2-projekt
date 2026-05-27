@@ -4,7 +4,7 @@
 # Použití (z rootu TemplateDesigner/):
 #   .\publish.ps1
 #
-# Skript volá `dotnet publish` s profilem "SingleFile C-Edison".
+# Skript volá `dotnet publish` s profilem "SingleFileCEdison".
 # Po dokončení vypíše cestu, velikost a čas vytvořeného .exe.
 
 #requires -Version 5.1
@@ -32,7 +32,7 @@ if (Test-Path $targetExe) {
 Write-Host "Publishing TemplateDesigner -> C:\Edison\ ..." -ForegroundColor Cyan
 Push-Location $projectDir
 try {
-    & dotnet publish $csproj /p:PublishProfile="SingleFile C-Edison" -v:minimal
+    & dotnet publish $csproj /p:PublishProfile=SingleFileCEdison -v:minimal
     if ($LASTEXITCODE -ne 0) {
         Write-Error "dotnet publish selhal (exit code $LASTEXITCODE)."
         exit $LASTEXITCODE
