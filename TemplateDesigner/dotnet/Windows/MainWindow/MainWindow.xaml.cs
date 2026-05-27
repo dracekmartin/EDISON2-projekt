@@ -1283,6 +1283,11 @@ public partial class MainWindow : Window
             OpenTextElementEditDialog(textEl);
             return;
         }
+        if (element is Models.Elements.LineElement lineEl)
+        {
+            OpenLineElementEditDialog(lineEl);
+            return;
+        }
 
         _propsVm!.PrepareForElement(element, isNewSession: true);
         new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
@@ -1342,6 +1347,18 @@ public partial class MainWindow : Window
     private void OpenTextElementEditDialog(Models.Elements.TextElement element)
     {
         var dlg = new TextElementEditDialog(element) { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+        {
+            _vm!.Execute(dlg.ResultCommand);
+        }
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
+    }
+
+    private void OpenLineElementEditDialog(Models.Elements.LineElement element)
+    {
+        var dlg = new LineElementEditDialog(element) { Owner = this };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
