@@ -46,6 +46,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("CustomGapMm", "Délka mezery", "", 0.1, 20, "mm")
         s f.helpText = "Prázdné = výchozí (Dashed=2mm, Dotted=1.5mm)"
 
+        // ── Skupina "Rámeček elementu" ────────────────────────────────────
+        d form.AddGroup("border", "Rámeček elementu")
+        s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
+        s f.value = "#00FFFFFF"
+        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
+
         // ── Skupina "Pozice a velikost" ───────────────────────────────────
         d form.AddGroup("position", "Pozice a velikost")
         d form.AddDecimal("X", "X", 0, 0, "", "mm", "", 1)

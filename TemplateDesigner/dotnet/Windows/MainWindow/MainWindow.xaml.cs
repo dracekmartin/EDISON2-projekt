@@ -1348,8 +1348,9 @@ public partial class MainWindow : Window
     {
         Models.Elements.TextElement      => ("ALVA.TemplateDesigner.EDInputForm.TextElementEdit", "Vlastnosti textu"),
         Models.Elements.LineElement      => ("ALVA.TemplateDesigner.EDInputForm.LineElementEdit", "Vlastnosti čáry"),
-        Models.Elements.RectangleElement => ("ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit", "Vlastnosti obdélníku"),
-        Models.Elements.BarcodeElement   => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
+        Models.Elements.RectangleElement   => ("ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit", "Vlastnosti obdélníku"),
+        Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
+        Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
         _ => (null, null)
     };
 
