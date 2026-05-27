@@ -182,14 +182,23 @@ namespace EDControls.EDInputForm
         public CVar? InitParams { get; set; }
 
         /// <summary>
+        /// Vyvoláno po dokončení <see cref="Init"/> (Items naplněny z Caché schema).
+        /// Host může pre-fillnout Field.Value z vlastního kontextu (např. generický
+        /// ElementEditDialog čte hodnoty z elementu přes reflexi) a pak zavolat
+        /// <see cref="Validate"/> pro re-validaci s naplněnými hodnotami.
+        /// </summary>
+        public event Action? Initialized;
+
+        /// <summary>
         /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
         /// validaci pro naplnění případných výchozích chyb. Použije <see cref="InitParams"/>
-        /// pokud nastaveny.
+        /// pokud nastaveny. Po dokončení vyvolá <see cref="Initialized"/>.
         /// </summary>
         public void Init()
         {
             EnsureConfigured();
             Controller.Init(InitParams);
+            Initialized?.Invoke();
         }
 
         /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>

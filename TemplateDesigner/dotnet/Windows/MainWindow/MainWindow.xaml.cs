@@ -948,19 +948,19 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Alternativa k dvojkliku — otevírá TextElement editor pro aktuálně vybraný
-    /// TextElement. Stejná cesta jako double-click přes OpenPropertiesForElement.</summary>
+    /// <summary>Alternativa k dvojkliku — otevírá editor pro aktuálně vybraný element.
+    /// Stejná cesta jako double-click přes OpenPropertiesForElement.</summary>
     private void MenuTestTextEdit_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var selected = _vm.State.SelectedElements.OfType<Models.Elements.TextElement>().FirstOrDefault();
+        var selected = _vm.State.SelectedElements.FirstOrDefault();
         if (selected is null)
         {
-            MessageBox.Show(this, "Vyber TextElement na canvasu, pak otevři tento dialog.",
-                "TextElement editor", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(this, "Vyber element na canvasu, pak otevři tento dialog.",
+                "Editor vlastností", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
-        OpenTextElementEditDialog(selected);
+        OpenPropertiesForElement(selected);
     }
 
     /// <summary>Aktualizuje strom pokud je viditelný (po změně výběru na canvasu).</summary>
@@ -1278,14 +1278,12 @@ public partial class MainWindow : Window
             OpenStopColumnsDialog(stopEl);
             return;
         }
-        if (element is Models.Elements.TextElement textEl)
+        // Generický EDInputForm dialog pro elementy s Caché schema (key = property path).
+        // Mapping element type → (cacheClass, title). Ostatní typy fallback na legacy
+        // ElementPropertiesWindow (PropertyDescriptor panel).
+        if (EDInputFormSchema(element) is var (cacheClass, title) && cacheClass is not null)
         {
-            OpenTextElementEditDialog(textEl);
-            return;
-        }
-        if (element is Models.Elements.LineElement lineEl)
-        {
-            OpenLineElementEditDialog(lineEl);
+            OpenGenericElementEditDialog(element, cacheClass, title!);
             return;
         }
 
@@ -1344,21 +1342,18 @@ public partial class MainWindow : Window
         UpdatePropertiesPanel();
     }
 
-    private void OpenTextElementEditDialog(Models.Elements.TextElement element)
+    /// <summary>Mapping element type → (Caché schema class, titulek) pro generický
+    /// EDInputForm editor. Vrací (null, null) pro typy bez schema (fallback na legacy).</summary>
+    private static (string? cacheClass, string? title) EDInputFormSchema(TemplateElement element) => element switch
     {
-        var dlg = new TextElementEditDialog(element) { Owner = this };
-        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
-        {
-            _vm!.Execute(dlg.ResultCommand);
-        }
-        InvalidateCanvas();
-        InvalidatePreview();
-        UpdatePropertiesPanel();
-    }
+        Models.Elements.TextElement => ("ALVA.TemplateDesigner.EDInputForm.TextElementEdit", "Vlastnosti textu"),
+        Models.Elements.LineElement => ("ALVA.TemplateDesigner.EDInputForm.LineElementEdit", "Vlastnosti čáry"),
+        _ => (null, null)
+    };
 
-    private void OpenLineElementEditDialog(Models.Elements.LineElement element)
+    private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
-        var dlg = new LineElementEditDialog(element) { Owner = this };
+        var dlg = new ElementEditDialog(element, cacheClass, title) { Owner = this };
         if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
         {
             _vm!.Execute(dlg.ResultCommand);
