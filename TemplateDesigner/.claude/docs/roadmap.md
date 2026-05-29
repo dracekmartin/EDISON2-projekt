@@ -44,7 +44,11 @@ EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputF
 
 ### ⬅️ PRIORITA 2 — Zastávkový JŘ pro data z linkových JŘ (ne jen MHD)
 
-Doladit zastávkový jízdní řád aby fungoval i pro data z **linkových jízdních řádů** místo jen MHD. Aktuálně `ZastavkoveJrMhd` agenda čte MHD data (`ALVA.MHD.LSO` atd.); rozšířit / adaptovat na linkový datový zdroj. Detail TBD — analýza datového zdroje linkových JŘ.
+Doladit zastávkový jízdní řád aby fungoval i pro data z **linkových jízdních řádů** místo jen MHD. Aktuálně `ZastavkoveJrMhd` agenda čte MHD data (`ALVA.MHD.LSO` atd.); rozšířit / adaptovat na linkový datový zdroj.
+
+Legacy generátor `ALVA.TISKMHD` umí oba módy (město i linkový). V linkové variantě jsou „typy provozu" odvozené ze značek + NZ (jiný pattern než MHD).
+
+**Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — kompletní mapování legacy Caché generátorů (`ALVA.TISKMHD`/`ALVA.TISKJR`/`ALVA.TiskJRRELACE`/vozáky) na typy JŘ + business požadavky + open questions.
 
 ### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
 
