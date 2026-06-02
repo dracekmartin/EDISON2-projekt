@@ -241,6 +241,18 @@ public partial class MainWindow : Window
         // Subscribe-after-loaded case (warm cache) řeší Loaded event accessor — invoke immediately.
         if (_preferences is not null)
             _preferences.Loaded += OnPreferencesLoaded;
+
+#if DEBUG
+        // DEV (Fáze 2 — testování agendy AD): po startu auto-otevři testovací AD šablonu,
+        // ať ji nemusíme pokaždé otevírat ručně. Šablona má agendaCode=ZASTAVKOVY_JR_AD.
+        // TODO: odstranit po dokončení AD agendy.
+        Loaded += async (_, _) =>
+        {
+            const string devTemplate = @"C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner\templates\kv_ad_test.json";
+            if (File.Exists(devTemplate))
+                await _vm.OpenTemplateFromFileAsync(devTemplate);
+        };
+#endif
     }
 
     private void OnPreferencesLoaded()

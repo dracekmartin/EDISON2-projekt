@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "edison-cache": {
+      "command": "C:\\Edison\\EdisonCacheMcp\\EdisonCacheMcp.exe"
+    }
+  }
+}
