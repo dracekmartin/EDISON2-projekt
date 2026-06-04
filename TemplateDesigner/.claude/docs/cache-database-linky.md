@@ -347,21 +347,31 @@ je per-namespace, bez IdFa).**
     jen zastávky kde staví ≥1 spoj, přes `ObsluhovanePoradi`). Ověřeno: 0410101 → 17 zastávek (=legacy).
   - **Odjezdy** = Odjezd spoje + offset z trasy spoje "W"; **multi-group** (`SkupinyZPlk` — spoj může
     být ve více skupinách dnů, Plk "6+" → soboty i neděle). Ověřeno proti legacy SMO1/2/3.
-  - **Poznámky** = legenda z omezení `,22` ("nejede DD.MM…", `FormatOmezeniNejede`) + na-znamení.
+  - **Poznámky** = legenda z datumových omezení (omzId 11-15,22; `SestavTextOmezeni`+`PrefixOmezeni`
+    +`FormatDatumyOmezeni`, 1:1 s `txtNZ`/`TODDO^JRapiNZUtl`) + na-znamení.
   - **Multi-page**: stránka per zastávka × směr (Tam vzestupně / Zpět sestupně k pořadí 1);
     prázdné konečné se skipnou. Ověřeno 0410101: 17 Tam + 20 Zpět.
 - **Instance picker** (`GetAvailableInstances`) — seznam linek z ^JRL (první skupina); proklikávání
   stránek v preview. C# `InstanceParamName` AD→LINKA_ID; GetData přijímá i `INSTANCE_ID` alias.
 
-### ⬜ Zbývá do plného 1:1 s legacy (ověřeno diffem proti 0410101)
-1. **Názvy zastávek** — legacy drží obec + plný název ("Cheb,křižovatka", "Hazlov,žel.st.") z CIS/odbav
-   pole v `^JRZ`; teď bereme `$2` + `FormatNazev` (drop obec, zkrácené "křiž."). → najít správné ^JRZ pole.
-2. **Datumy v poznámkách s rokem** dle PATCH `TiskDtm` (legacy "1.1.2024", teď "1.1.").
-3. **"jede" omezení** (omzId 11/13 → "jede od…do…"); teď jen "nejede" (omzId 22).
-4. **POPIS_DOPRAVCE** z číselníku dopravce (legacy "Zajišťuje: …").
-5. **LOKALNI_OZNACENI_LINKY** (legacy "101" — zjistit zdroj, PATCH).
+### ✅ 1:1 drobnosti dokončené (2026-06-04, ověřeno proti legacy zdroji + datům 0410101)
+1. **Názvy zastávek** — `NazevZastavky` bere `^JRZ` `$7` (odbav/MHD název s obcí, "Cheb,aut.nádraží",
+   "Fr. Lázně,Krapice,Lužná"), fallback `$2`. Zahozeno `FormatNazev`/`FormatNazevPlny` (drop-obec).
+   `NazevLinky` join `–`→`-` (legacy pomlčka).
+2. **Datumy v poznámkách s rokem** — `FormatDatumyOmezeni` = 1:1 `TODDO^JRapiNZUtl`: verbatim s rokem,
+   `:`→rozsah `D1-D2`, položky čárkou bez mezery, `k@`/`L@` prefix se stripuje. (`DenMesic` smazán.)
+3. **"jede" omezení** — `SestavTextOmezeni` projde omzId 11,12,13,14,15,22, spojí do jedné poznámky;
+   `PrefixOmezeni` = mapování (11 "jede jen ", 12 "jede také ", 13 "jede ", 14/15 su/li, 22 "nejede ").
+4. **POPIS_DOPRAVCE** — `PopisDopravce` (distinct `fa:pr` z `#`-pole 2 spojů obou směrů, dedup názvů,
+   "Zajišťuje: …") + `NazevDopravce` chain z `^JRSET("DOP")`: per-provoz `$6` → firma `$14` → `$7` → `$1`.
+
+### ⬜ Zbývá do plného 1:1 s legacy
+5. **LOKALNI_OZNACENI_LINKY** (legacy "101" — zjistit zdroj; "tit" věta `$p2` = `$P(^JRL(...,"MhD","SeT_MhD"),CN,1)`
+   v `sTIT^JRapiLinPrtMhd1`, fallback `$E(Lin,5,7)`). Teď prázdné.
 6. **FTL 1-3 + CNZ** prázdninové dělení sloupců — čeká na linku s `MHD_TYP_R` (0410101/0320113 jsou FTL=0).
 7. (kosmetika) legacy číslování poznámek (39/70/32 vs 1/2/3 — funkčně shodné); TITULEK legacy default.
+8. (vizuál, na konec) šířka legendy POZNAMKY — datumy s rokem jsou široké; ladit zalamování/šířku/font
+   v jednom průchodu přes všechny poznámky (layout věc, ne data).
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).

@@ -236,7 +236,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("LOKALNI_OZNACENI_LINKY", "")
     d vals.%Set("TITULEK",                $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
-    d vals.%Set("POPIS_DOPRAVCE",         "")
+    d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
     s platiOd = $p(plati,"~",1)
     s platiDo = $p(plati,"~",2)
@@ -275,11 +275,11 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
         s cnt = cnt + 1
-        s z = ..BuildZastavka(poradi, ..FormatNazev(rawNazev), poradi, 0, cnt, jeAkt, naZnameni)
+        s z = ..BuildZastavka(poradi, rawNazev, poradi, 0, cnt, jeAkt, naZnameni)
         i zona '= "" d ..AddZona(z, zona)
         d zastavky.%Push(z)
-        i jeAkt s aktualniNazev = ..FormatNazevPlny(rawNazev), aktualniCzst = czst
-        s posledniNazev = ..FormatNazevPlny(rawNazev)
+        i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
+        s posledniNazev = rawNazev
     }
 
     d vals.%Set("POPIS_ZASTAVKA",  aktualniNazev)
@@ -345,13 +345,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s celkem = odjezd + offset
         s hod = (celkem\60)#24, min = celkem#60
 
-        // anotace z omezení "nejede" (omzId 22) — sdílená přes všechny skupiny spoje
+        // anotace z datumových omezení spoje (omzId 11-15, 22) — sdílená přes všechny skupiny spoje
         s znak = ""
-        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,22))
-        i omz '= "" {
-            s txt = ..FormatOmezeniNejede(omz)
-            i txt '= "" s znak = ..ZiskejMarker(.poznMap, txt)
-        }
+        s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
+        i txt '= "" s znak = ..ZiskejMarker(.poznMap, txt)
 
         // spoj může patřit do více skupin dnů (např. Plk "6+" → soboty i neděle/svátky)
         s skupiny = ..SkupinyZPlk(plk)
@@ -433,44 +430,44 @@ ClassMethod SestavPoznamky(ByRef poznMap, maNaZnameni As %Boolean) As %DynamicAr
     q poznamky
 }
 
-/// Naformátuje omezení "nejede" z `[k@]DD.MM.RRRR[:DD.MM.RRRR]#...` na čitelný text.
-/// `:` = rozsah ("od D1 do D2"), `#` = oddělovač položek, rok se zahazuje.
-ClassMethod FormatOmezeniNejede(omz As %String) As %String
+/// Sestaví text poznámky z datumových omezení spoje (omzId 11-15, 22), 1:1 s legacy `txtNZ^JRapiNZUtl`.
+/// Spoj může mít víc omezení → spojí je do jedné poznámky čárkou v pořadí 11,12,13,14,15,22.
+ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %String
+{
+    s txt = ""
+    f omzId = 11,12,13,14,15,22 {
+        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
+        i omz = "" continue
+        s datumy = ..FormatDatumyOmezeni(omz)
+        i datumy = "" continue
+        i txt '= "" s txt = txt_", "
+        s txt = txt_..PrefixOmezeni(omzId)_datumy
+    }
+    q txt
+}
+
+/// Prefix textu pro daný typ omezení (1:1 s `txtNZ^JRapiNZUtl`).
+ClassMethod PrefixOmezeni(omzId As %String) As %String
+{
+    q $case(omzId, 11:"jede jen ", 12:"jede také ", 13:"jede ", 14:"jede jen v su. ", 15:"jede jen v li. ", 22:"nejede ", :"")
+}
+
+/// Datumová část omezení (1:1 s `TODDO^JRapiNZUtl`): datumy verbatim VČETNĚ roku, `:`→rozsah `D1-D2`,
+/// jednotlivé datum = `D1`, položky (`#`) spojené čárkou bez mezery. Vedoucí prefix `k@`/`L@` se zahodí.
+ClassMethod FormatDatumyOmezeni(omz As %String) As %String
 {
     s data = $s(omz["@":$p(omz,"@",2), 1:omz)
     s casti = ""
     f i=1:1:$l(data,"#") {
         s item = $p(data,"#",i)
         i item = "" continue
-        i item [ ":" {
-            s cast = "od "_..DenMesic($p(item,":",1))_" do "_..DenMesic($p(item,":",2))
-        } else {
-            s cast = ..DenMesic(item)
-        }
-        i casti '= "" s casti = casti_", "
+        s od = $p(item,":",1), do = $p(item,":",2)
+        i do '= "" { s cast = od_"-"_do }
+        else       { s cast = od }
+        i casti '= "" s casti = casti_","
         s casti = casti_cast
     }
-    i casti = "" q ""
-    q "nejede "_casti
-}
-
-/// "DD.MM.RRRR" → "DD.MM." (zahodí rok).
-ClassMethod DenMesic(datum As %String) As %String
-{
-    q $p(datum,".",1)_"."_$p(datum,".",2)_"."
-}
-
-/// Lokální název zastávky (pro StopList) — z "obec,,místo" vezme místo; jinak ponechá.
-ClassMethod FormatNazev(nazev As %String) As %String
-{
-    i nazev [ ",," q $p(nazev, ",,", 2, $l(nazev,",,"))
-    q nazev
-}
-
-/// Plný název zastávky (pro hlavičku/směr) — jen sloučí ",," na ", " (zachová obec).
-ClassMethod FormatNazevPlny(nazev As %String) As %String
-{
-    q $replace(nazev, ",,", ", ")
+    q casti
 }
 
 /// Najde první linku v zadané firmě (první skupina × první linka s uzlem "I").
@@ -506,18 +503,79 @@ ClassMethod NazevLinky(dataDB As %String, sku As %String, lin As %String) As %St
         i i'>0 continue                  // přeskoč konfig uzel "0" (mapování spojek názvu)
         s cast = $g(^[dataDB]JRL(sku,lin,"I",i))
         i cast="" continue               // přeskoč prázdnou část, ale pokračuj
-        i nazev '= "" s nazev = nazev _ "–"
+        i nazev '= "" s nazev = nazev _ "-"
         s nazev = nazev _ cast
     }
     q nazev
 }
 
-/// Vrátí název zastávky z ^JRZ(czst). Zatím hlavní název ($2).
-/// TODO Fáze 2: ověřit proti gold oracle, který přesný název field se tiskne (odbav/MHD název).
+/// POPIS_DOPRAVCE = "Zajišťuje: <dopravci>" (1:1 s `sTIT`/`gDopMHD^JRapiLinPrtMhd`).
+/// Sesbírá distinct dopravce (fa:pr z `#`-pole 2 spoje) přes oba směry, resolvuje název, spojí čárkou.
+ClassMethod PopisDopravce(dataDB As %String, sku As %String, lin As %String) As %String
+{
+    k dop
+    f smer="T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+            q:sp=""
+            i '$isvalidnum(sp) continue
+            s carriers = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", 2)
+            f ci=1:1:$l(carriers,"~") {
+                s slot = $p(carriers,"~",ci)
+                i slot = "" continue
+                s fa = $p(slot,":",1)
+                i fa = "" continue
+                s dop(fa, $p(slot,":",2)) = ""
+            }
+        }
+    }
+    k seenName
+    s txt = "", fa = ""
+    f {
+        s fa = $o(dop(fa))
+        q:fa=""
+        s pr = ""
+        f {
+            s pr = $o(dop(fa,pr))
+            q:pr=""
+            s nazev = ..NazevDopravce(dataDB, fa, pr)
+            i nazev = "" continue
+            i $d(seenName(nazev)) continue
+            s seenName(nazev) = ""
+            i txt '= "" s txt = txt_", "
+            s txt = txt_nazev
+        }
+    }
+    i txt = "" q ""
+    q "Zajišťuje: "_txt
+}
+
+/// Název dopravce (fa,pr) z `^JRSET("DOP",...)` — fallback chain dle `gDopMHD`/`gDopFa^JRapiDop`:
+/// per-provoz zkrácený MHD ($6) → firemní zkrácený MHD ($14) → obchodní název ($7) → sídlo/název ($1).
+ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %String
+{
+    i pr '= "" {
+        s nazev = $p($g(^[dataDB]JRSET("DOP",fa,pr)),"~",6)
+        i $tr(nazev," ","") '= "" q nazev
+    }
+    s firma = $g(^[dataDB]JRSET("DOP",fa))
+    s nazev = $p(firma,"~",14)
+    i $tr(nazev," ","") '= "" q nazev
+    s nazev = $p(firma,"~",7)
+    i nazev '= "" q nazev
+    q $p(firma,"~",1)
+}
+
+/// Vrátí název zastávky z ^JRZ(czst) — odbav/MHD název s obcí ($7, formát "obec,místo").
+/// Legacy tiskne přesně toto pole (zkrácená obec "Fr. Lázně,..." místo plné "Františkovy Lázně,...").
+/// Fallback na $2, pokud $7 chybí (nevyplněný odbav název).
 ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 {
     s rec = $g(^[dataDB]JRZ(czst))
-    q $p(rec, "$", 2)
+    s nazev = $p(rec, "$", 7)
+    i nazev = "" s nazev = $p(rec, "$", 2)
+    q nazev
 }
 
 /// Vrátí ukázková data pro live preview v designeru.

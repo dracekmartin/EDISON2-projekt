@@ -42,13 +42,20 @@ EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputF
 - **Simple dialogy** — SaveSectionTemplate, NormalizePositions
 - **Komplexní elementy (StopList / DepartureGrid / TableElement)** — rozdělit: **tab „Obecné" → EDInputForm**, tabulková / per-column část buď nechat custom (CellStyleEditor / grid) nebo vyřešit extra. Žádné půl-na-půl — obecné properties patří do EDInputForm.
 
-### ⬅️ PRIORITA 2 — Zastávkový JŘ pro data z linkových JŘ (ne jen MHD)
+### ⬅️ PRIORITA 2 — Zastávkový JŘ pro data z linkových JŘ (ne jen MHD) — 🟡 ROZPRACOVÁNO
 
-Doladit zastávkový jízdní řád aby fungoval i pro data z **linkových jízdních řádů** místo jen MHD. Aktuálně `ZastavkoveJrMhd` agenda čte MHD data (`ALVA.MHD.LSO` atd.); rozšířit / adaptovat na linkový datový zdroj.
+Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") — reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN` (linková/meziměstská data z `^JRL`/`^JRZ`/`^JRSET`, per-namespace bez IdFa). Čistý refaktor, ne wrapper (analogicky k MHD migraci).
 
-Legacy generátor `ALVA.TISKMHD` umí oba módy (město i linkový). V linkové variantě jsou „typy provozu" odvozené ze značek + NZ (jiný pattern než MHD).
+**Hotovo (2026-06-02 — 06-04):** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti **body 1-4**: názvy zastávek (`^JRZ` `$7`), datumy v poznámkách s rokem (`TODDO` formát), všechna „jede/nejede" omezení (omzId 11-15,22), POPIS_DOPRAVCE (`^JRSET("DOP")` chain). Ověřeno proti gold oracle `ALVA.TISKMHD.Data` na lince 0410101 (KV_DP). Debug nástroj: MCP `cache_zwglobal`.
 
-**Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — kompletní mapování legacy Caché generátorů (`ALVA.TISKMHD`/`ALVA.TISKJR`/`ALVA.TiskJRRELACE`/vozáky) na typy JŘ + business požadavky + open questions.
+**Zbývá (detail v [`cache-database-linky.md`](cache-database-linky.md) §10):**
+- **bod 5** — LOKALNI_OZNACENI_LINKY (legacy "101"; zdroj = `^JRL(...,"MhD","SeT_MhD")` `$p1`, fallback `$E(Lin,5,7)`)
+- **bod 6** — FTL 1-3 + CNZ prázdninové dělení sloupců (čeká na linku s `MHD_TYP_R`; 0410101/0320113 jsou FTL=0)
+- **bod 7** — kosmetika (číslování poznámek, TITULEK default)
+- **bod 8** — vizuál (šířka legendy POZNAMKY s rokem) — až na konci, jeden layout průchod
+- **DEV cleanup před produkcí** — `#if DEBUG` auto-open `kv_ad_test.json`, zvážit statický `GetMockData`
+
+**Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
 
 ### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
 
