@@ -1,0 +1,126 @@
+Include %occInclude
+
+Class ALVA.EDISONMAIN2.Tests.TreeTest Extends %UnitTest.TestCase
+{
+
+/// %UnitTest pro ALVA.EDISONMAIN2.API.Tree.GetTree.
+/// Sys array struktura podle GENERAL.inc / $$$FillParams (case-sensitive subscripty).
+///
+/// Spuštění (jednou per namespace):
+///   set ^UnitTestRoot = "c:\temp\unittests\"   ; nebo libovolná existující složka na serveru
+///   do ##class(%UnitTest.Manager).RunTest(":ALVA.EDISONMAIN2.Tests.TreeTest", "/noload")
+
+/// Vyčistí process-private global před každým testem.
+Method OnBeforeOneTest(testname As %String) As %Status
+{
+	kill ^||ML
+	quit $$$OK
+}
+
+/// Naplní sys array povinnými poli pro $$$FillParams. Bez nich FillParams ztrapne
+/// a catch v GetTree odchytí výjimku bez populace OUT.
+ClassMethod SetupSys(ByRef sys)
+{
+	set sys("U","IdFa") = "CB_DP"
+	set sys("U","delimiter") = "~"
+	set sys("U","SystemDB") = $namespace
+	set sys("U","DATA") = $namespace
+	set sys("U","MLP") = "1"
+	set sys("U","loginName") = "test"
+	set sys("U","fullName") = "Test User"
+}
+
+/// Default input (tree="") -> main tree. První záznam je EXE (stub agendy v FillMain).
+Method TestDefaultInputReturnsMainTree()
+{
+	do ..SetupSys(.sys)
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	do $$$AssertNotTrue(($data(^||ML("OUT",1))=0), "OUT global must not be empty")
+
+	set firstRecord = ^||ML("OUT",1)
+	set firstType = $listget(firstRecord, 1)
+	do $$$AssertEquals(firstType, "EXE", "First record of main tree must be EXE node")
+}
+
+/// System tree má jiný obsah -- minimální sanity check.
+Method TestSystemTreeReturnsNonEmpty()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "system"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	do $$$AssertNotTrue(($data(^||ML("OUT",1))=0), "System tree must not be empty")
+}
+
+/// Partners tree může být prázdný (žádné 3rd-party řešení yet), ale GetTree nesmí nahlásit error.
+/// Error location dle GENERAL.inc $$$CatchErrRest: ^||ML("ERR"), ne ^||ML("OUT","ERR").
+Method TestPartnersTreeDoesNotError()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "partners"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set errMarker = $get(^||ML("ERR"))
+	do $$$AssertEquals(errMarker, "", "Partners tree must not set ERR marker")
+}
+
+/// Wire-format invariant: každý záznam má jako první element jeden ze tří validních typů.
+Method TestAllRecordsHaveValidType()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "main"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set i = "", validTypes = ",FAMILY,EXE,FAMILY_END,"
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		set type = $listget(record, 1)
+		do $$$AssertNotTrue((validTypes'[(","_type_",")), "Record #"_i_" has unknown type: "_type)
+	}
+}
+
+/// Strom musí být strukturálně balancovaný -- počet FAMILY = počet FAMILY_END.
+Method TestFamilyOpenCloseBalance()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "main"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set i = "", openCount = 0, closeCount = 0
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		set type = $listget(record, 1)
+		if (type = "FAMILY") { set openCount = openCount + 1 }
+		if (type = "FAMILY_END") { set closeCount = closeCount + 1 }
+	}
+
+	do $$$AssertEquals(openCount, closeCount, "FAMILY open ("_openCount_") must match FAMILY_END close ("_closeCount_")")
+}
+
+/// EXE záznamy musí mít 9 polí dle wire-format kontraktu.
+Method TestExeRecordsHaveNineFields()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "main"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set i = ""
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		if ($listget(record, 1) '= "EXE") { continue }
+		set fieldCount = $listlength(record)
+		do $$$AssertEquals(fieldCount, 9, "EXE record #"_i_" has "_fieldCount_" fields, expected 9")
+	}
+}
+
+}
