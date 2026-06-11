@@ -260,7 +260,8 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // ── trasa → zastávky (úsek od aktuální zastávky ve směru jízdy; zóny + na znamení) ──
     // Tam: vzestupně od aktuální k poslední. Zpět: sestupně od aktuální k první (pořadí 1).
     s zastavky = ##class(%DynamicArray).%New()
-    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = "", maNaZnameni = 0
+    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = ""
+    k atrSeen                                                   // atributy zastávek viděné na stránce (znak → text) pro legendu
     k servedPoradi
     d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .servedPoradi)   // filtr projížděných zastávek
     s jeTam = (smer = "T")
@@ -288,15 +289,22 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s czst = $p(veta,":",1)
         i czst="" continue
         i '$d(servedPoradi(poradi)) continue                // jen obsluhované zastávky (jako legacy)
-        s atributy  = $p($p(veta,":",2),"#",1)              // znaky před prvním "#"
+        s atributy  = $p($p(veta,":",2),"#",1)              // dta2 — atributy zastávky (znaky číselníku 16)
         s zona      = $p($p(veta,":",5),"#",2)               // "#zóna#..."
         s naZnameni = (atributy["x")
-        i naZnameni s maNaZnameni = 1
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
         s cnt = cnt + 1
         s z = ..BuildZastavka(poradi, rawNazev, poradi, 0, cnt, jeAkt, naZnameni)
         i zona '= "" d ..AddZona(z, zona)
+        // atributy zastávky → symbol u názvu + řádek legendy (jen významové znaky, ne formátovací)
+        f ai=1:1:$l(atributy) {
+            s znak = $e(atributy, ai)
+            i '..JeViditelnyAtribut(znak) continue
+            s txtAtr = ..TextAtributu(znak)
+            d ..AddAtribut(z, znak, txtAtr)
+            s atrSeen(znak) = txtAtr
+        }
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
         s posledniNazev = rawNazev, posledniCzst = czst
@@ -316,7 +324,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     k poznMap
     s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
-    s poznamky = ..SestavPoznamky(.poznMap, maNaZnameni)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen)
 
     // ── sestavení stránky ───────────────────────────────────────────
     s out = ##class(%DynamicObject).%New()
@@ -526,11 +534,18 @@ ClassMethod ZiskejMarker(ByRef poznMap, txt As %String) As %String
     q n
 }
 
-/// Sestaví legendu: na-znamení (× pokud nějaká zastávka) + nasbírané "nejede" poznámky (v pořadí).
-ClassMethod SestavPoznamky(ByRef poznMap, maNaZnameni As %Boolean) As %DynamicArray
+/// Sestaví legendu: atributy zastávek (na znamení, nástup/výstup, ikony…) + nasbírané "nejede/jede" poznámky.
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
-    i maNaZnameni d poznamky.%Push(..BuildPoznamka("specialni", "x", "zastávka pouze na znamení"))
+    // atributy zastávek — jeden řádek legendy na každý viděný znak (znak → text z číselníku)
+    s znak = ""
+    f {
+        s znak = $o(atrSeen(znak))
+        q:znak=""
+        d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak)))
+    }
+    // textové poznámky z datumových omezení (nejede/jede)
     s n = ""
     f {
         s n = $o(poznMap("byMarker", n))
@@ -538,6 +553,46 @@ ClassMethod SestavPoznamky(ByRef poznMap, maNaZnameni As %Boolean) As %DynamicAr
         d poznamky.%Push(..BuildPoznamka("text", n, poznMap("byMarker", n)))
     }
     q poznamky
+}
+
+/// Je atribut zastávky (znak číselníku 16) "viditelný" — tj. významový pro cestujícího (na znamení,
+/// nástup/výstup, ikona dopravy, paragraf), ne čistě formátovací (tučně/podtrženě) ani souhrnný (>/</E/H).
+ClassMethod JeViditelnyAtribut(znak As %String) As %Boolean
+{
+    q (znak '= "") && ("xyzNVALefgODCGabc" [ znak)
+}
+
+/// Text atributu zastávky dle znaku — 1:1 s číselníkem `arrCis(16)^JRapiCis`.
+ClassMethod TextAtributu(znak As %String) As %String
+{
+    s m("P") = "podtrženo s příjezdem a odjezdem"
+    s m("T") = "tučně"
+    s m("p") = "podtrženě"
+    s m("N") = "jen nástup"
+    s m("V") = "jen výstup"
+    s m("x") = "na znamení"
+    s m("y") = "na znamení od 20:00"
+    s m("z") = "na znamení v prac. dny od 22:00, o víkendech celodenně"
+    s m("A") = "autobus"
+    s m("L") = "vlak"
+    s m("e") = "Metro A"
+    s m("f") = "Metro B"
+    s m("g") = "Metro C"
+    s m("O") = "letadlo"
+    s m("D") = "loď"
+    s m("C") = "clo"
+    s m("J") = "s příjezdem a odjezdem"
+    s m("o") = "podtrženo nad i pod"
+    s m("S") = "tisk stanoviště"
+    s m("G") = "paragraf"
+    s m("a") = "paragraf 1"
+    s m("b") = "paragraf 2"
+    s m("c") = "paragraf 3"
+    s m(">") = "odjezdová zastávka"
+    s m("<") = "příjezdová zastávka"
+    s m("E") = "nácestná zastávka"
+    s m("H") = "cílová zastávka pro tablo"
+    q $g(m(znak))
 }
 
 /// Sestaví text poznámky z datumových omezení spoje (omzId 11-15, 22), 1:1 s legacy `txtNZ^JRapiNZUtl`.
