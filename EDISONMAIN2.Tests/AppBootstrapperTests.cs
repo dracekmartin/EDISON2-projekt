@@ -1,10 +1,11 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.LoginWindow;
+using EDTesting;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
 
@@ -30,7 +31,7 @@ public class AppBootstrapperTests
         public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
         public IWindowNavigator Nav { get; set; } = Substitute.For<IWindowNavigator>();
-        public IMLRest MLRest { get; set; } = MakeDefaultMLRest();
+        public IMLRest MLRest { get; set; } = MLRestMocks.Create();
         public LoginResult? ReauthLoginResult { get; set; }
         public MLRest? CapturedPromptConnection { get; private set; }
 
@@ -38,13 +39,6 @@ public class AppBootstrapperTests
         {
             CapturedPromptConnection = loginRest;
             return ReauthLoginResult;
-        }
-
-        private static IMLRest MakeDefaultMLRest()
-        {
-            var m = Substitute.For<IMLRest>();
-            m.Idfa.Returns("CB_DP");
-            return m;
         }
 
         protected override (WindowNavigator Nav, PopupDisplayer Popup, EDServices Services) InitializeServices()
@@ -213,8 +207,7 @@ public class AppBootstrapperTests
     [Fact]
     public void Run_Success_SavesIdfaFromMLRest()
     {
-        var mlRest = Substitute.For<IMLRest>();
-        mlRest.Idfa.Returns("JI_DP");
+        var mlRest = MLRestMocks.Create(idfa: "JI_DP", dataNamespace: "JI_DP");
         var b = new TestableBootstrapper
         {
             SessionOutcome = LicenceAcquireOutcome.Accepted,
@@ -252,7 +245,7 @@ public class AppBootstrapperTests
     public void SwitchUser_PromptReturnsNull_ReturnsCancelled_NoSideEffects()
     {
         var b = new TestableBootstrapper { ReauthLoginResult = null };
-        var services = ServicesWith("test-host", 9999, "DB_CB", "CB_DP", "alice");
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
         var originalMLRest = services.MLRest;
         var closeAll = Substitute.For<Action>();
 
@@ -268,14 +261,14 @@ public class AppBootstrapperTests
     public void SwitchUser_PromptReceivesCurrentConnection()
     {
         var b = new TestableBootstrapper { ReauthLoginResult = null };
-        var services = ServicesWith("test-host", 9999, "DB_CB", "CB_DP", "alice");
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
 
         b.SwitchUser(services, () => { });
 
         Assert.NotNull(b.CapturedPromptConnection);
         Assert.Equal("test-host", b.CapturedPromptConnection!.Server);
         Assert.Equal(9999, b.CapturedPromptConnection.Port);
-        Assert.Equal("DB_CB", b.CapturedPromptConnection.DataNamespace);
+        Assert.Equal("CB_DP", b.CapturedPromptConnection.DataNamespace);
         Assert.Equal("CB_DP", b.CapturedPromptConnection.Idfa);
     }
 }

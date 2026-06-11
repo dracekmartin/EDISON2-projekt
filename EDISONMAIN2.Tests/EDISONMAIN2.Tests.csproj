@@ -23,6 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\EDISONMAIN2\dotnet\EDISONMAIN2.csproj" />
     <ProjectReference Include="..\EDControls\dotnet\EDControls.csproj" />
+    <ProjectReference Include="..\EDTesting\dotnet\EDTesting.csproj" />
   </ItemGroup>
 
   <ItemGroup>

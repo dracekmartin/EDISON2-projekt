@@ -1,6 +1,7 @@
 using ALWA.SYS;
 using EDControls;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDTesting;
 using NSubstitute;
 
 namespace EDISONMAIN2.Tests;
@@ -9,7 +10,7 @@ public class ParseTreeTests
 {
     private static IMLRest MockTreeCall(CVar returnData)
     {
-        var mock = Substitute.For<IMLRest>();
+        var mock = MLRestMocks.Create();
         mock.QueryOrThrow("ALVA.EDISONMAIN2.API.Tree", "GetTree", Arg.Any<CVar>())
             .Returns(returnData);
         return mock;

@@ -1,32 +1,25 @@
-using ALVA.LICENCE.EDLicence;
+﻿using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
+using EDTesting;
 using NSubstitute;
 
 namespace EDISONMAIN2.Tests;
 
 public class LicenceVerifierTests
 {
-    private static IMLRest MockMLRest() => Substitute.For<IMLRest>();
-
     private static void SetupVerifyLic(IMLRest mlRest, params int[] results)
     {
-        var returns = new object[results.Length][];
+        var outputs = new object[results.Length][];
         for (int i = 0; i < results.Length; i++)
-            returns[i] = new object[] { "", results[i].ToString() };
-
-        if (returns.Length == 1)
-            mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
-                  .Returns(returns[0]);
-        else
-            mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
-                  .Returns(returns[0], returns[1..]);
+            outputs[i] = MLRestMocks.Output(results[i].ToString());
+        MLRestMocks.SetupQuerySequence(mlRest, "ALVA.SYS.Login", "VerifyLic", outputs);
     }
 
     [Fact]
     public void VerifyOk_ReturnsAccepted_WithLicence()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 1);
         var licence = new Lic { CountsLOGIN = 5 };
 
@@ -41,7 +34,7 @@ public class LicenceVerifierTests
     [Fact]
     public void NonAdmin_OverLimit_ReturnsRefused_NoConfirm()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var popup = Substitute.For<IPopupDisplayer>();
 
@@ -57,7 +50,7 @@ public class LicenceVerifierTests
     public void UnknownErrorCode_ReturnsRefused()
     {
         // Server vrátil neznámý non-1, non-(-1) kód → Refused bez retry.
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 99);
         var nav = Substitute.For<IWindowNavigator>();
 
@@ -72,7 +65,7 @@ public class LicenceVerifierTests
     [Fact]
     public void UnknownErrorCode_NonAdmin_ReturnsRefused()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 99);
 
         var (outcome, _) = LicenceVerifier.TryAcquireSession(
@@ -85,7 +78,7 @@ public class LicenceVerifierTests
     [Fact]
     public void AdminOverLimit_ConfirmDenied_ReturnsCancelled()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(false);
@@ -101,7 +94,7 @@ public class LicenceVerifierTests
     [Fact]
     public void AdminRetry_LaunchesUsersExe_WithoutShellSession()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(true);
@@ -118,7 +111,7 @@ public class LicenceVerifierTests
     [Fact]
     public void AdminRetry_MultipleIterations_LaunchesUsersExeEachTime()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, -1, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(true);
@@ -136,7 +129,7 @@ public class LicenceVerifierTests
     {
         // Důvod: mezi iteracemi mohl admin odhlásit jiného usera → CountsLOGIN se mohlo zvýšit,
         // chceme čerstvou hodnotu pro další VerifyLic call.
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, 1);
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(true);
@@ -152,7 +145,7 @@ public class LicenceVerifierTests
     [Fact]
     public void NullLicence_PassesZeroCountsLogin()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 1);
 
         LicenceVerifier.TryAcquireSession(
@@ -166,7 +159,7 @@ public class LicenceVerifierTests
     [Fact]
     public void LicenceLoaderResult_PassedAsCountsLogin()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 1);
 
         LicenceVerifier.TryAcquireSession(

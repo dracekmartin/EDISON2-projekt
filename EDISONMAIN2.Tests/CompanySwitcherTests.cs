@@ -1,6 +1,7 @@
-using ALVA.LICENCE.EDLicence;
+﻿using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
+using EDTesting;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
 
@@ -8,30 +9,12 @@ namespace EDISONMAIN2.Tests;
 
 public class CompanySwitcherTests
 {
-    private static IMLRest MockMLRest(string idfa = "CB_DP", string ns = "DB_CB")
-    {
-        var mock = Substitute.For<IMLRest>();
-        mock.Idfa.Returns(idfa);
-        mock.DataNamespace.Returns(ns);
-        return mock;
-    }
-
     private static void SetupVerifyLic(IMLRest mlRest, params int[] results)
     {
-        var returns = new object[results.Length][];
+        var outputs = new object[results.Length][];
         for (int i = 0; i < results.Length; i++)
-            returns[i] = new object[] { "", results[i].ToString() };
-
-        if (returns.Length == 1)
-        {
-            mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
-                  .Returns(returns[0]);
-        }
-        else
-        {
-            mlRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
-                  .Returns(returns[0], returns[1..]);
-        }
+            outputs[i] = MLRestMocks.Output(results[i].ToString());
+        MLRestMocks.SetupQuerySequence(mlRest, "ALVA.SYS.Login", "VerifyLic", outputs);
     }
 
     private static CompanySwitcher CreateSwitcher(
@@ -63,8 +46,8 @@ public class CompanySwitcherTests
     {
         var companies = new CompanyStruct[]
         {
-            new() { Id = "CB_DP", Database = "DB_CB", IsDefault = true },
-            new() { Id = "JI_DP", Database = "DB_JI" },
+            new() { Id = "CB_DP", Database = "CB_DP", IsDefault = true },
+            new() { Id = "JI_DP", Database = "JI_DP" },
         };
 
         var pick = CompanySwitcher.PickInitial(companies, preferredIdfa: "JI_DP");
@@ -77,8 +60,8 @@ public class CompanySwitcherTests
     {
         var companies = new CompanyStruct[]
         {
-            new() { Id = "CB_DP", Database = "DB_CB" },
-            new() { Id = "JI_DP", Database = "DB_JI", IsDefault = true },
+            new() { Id = "CB_DP", Database = "CB_DP" },
+            new() { Id = "JI_DP", Database = "JI_DP", IsDefault = true },
         };
 
         var pick = CompanySwitcher.PickInitial(companies, preferredIdfa: "GONE");
@@ -91,8 +74,8 @@ public class CompanySwitcherTests
     {
         var companies = new CompanyStruct[]
         {
-            new() { Id = "CB_DP", Database = "DB_CB" },
-            new() { Id = "JI_DP", Database = "DB_JI", IsDefault = true },
+            new() { Id = "CB_DP", Database = "CB_DP" },
+            new() { Id = "JI_DP", Database = "JI_DP", IsDefault = true },
         };
 
         var pick = CompanySwitcher.PickInitial(companies, preferredIdfa: null);
@@ -105,8 +88,8 @@ public class CompanySwitcherTests
     {
         var companies = new CompanyStruct[]
         {
-            new() { Id = "CB_DP", Database = "DB_CB" },
-            new() { Id = "JI_DP", Database = "DB_JI" },
+            new() { Id = "CB_DP", Database = "CB_DP" },
+            new() { Id = "JI_DP", Database = "JI_DP" },
         };
 
         var pick = CompanySwitcher.PickInitial(companies, preferredIdfa: null);
@@ -119,8 +102,8 @@ public class CompanySwitcherTests
     {
         var companies = new CompanyStruct[]
         {
-            new() { Id = "CB_DP", Database = "DB_CB", IsDefault = true },
-            new() { Id = "JI_DP", Database = "DB_JI" },
+            new() { Id = "CB_DP", Database = "CB_DP", IsDefault = true },
+            new() { Id = "JI_DP", Database = "JI_DP" },
         };
 
         var pick = CompanySwitcher.PickInitial(companies, preferredIdfa: "JI_DP");
@@ -133,10 +116,10 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_NullLicence_AutoAccepts_NoVerifyCall()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         var switcher = CreateSwitcher(mlRest, () => null);
 
-        var result = switcher.Switch("JI_DP", "DB_JI", currentLicence: null);
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
         Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
         mlRest.DidNotReceive().QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>());
@@ -145,13 +128,13 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_NullLicence_UpdatesMLRest()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         var switcher = CreateSwitcher(mlRest, () => null);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: null);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
         Assert.Equal("JI_DP", mlRest.Idfa);
-        Assert.Equal("DB_JI", mlRest.DataNamespace);
+        Assert.Equal("JI_DP", mlRest.DataNamespace);
     }
 
     // ---------- Switch — VerifyLic Accepted ----------
@@ -159,17 +142,17 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_VerifyAccepted_ReturnsAccepted()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 1);
         var licence = new Lic { CountsLOGIN = 5 };
         var switcher = CreateSwitcher(mlRest, () => licence);
 
-        var result = switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
         Assert.Same(licence, result.Licence);
         Assert.Equal("JI_DP", mlRest.Idfa);
-        Assert.Equal("DB_JI", mlRest.DataNamespace);
+        Assert.Equal("JI_DP", mlRest.DataNamespace);
     }
 
     // ---------- Switch — non-admin over-limit ----------
@@ -177,13 +160,13 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_NonAdminOverLimit_Refused()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false, popup: popup);
 
-        var result = switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal(LicenceAcquireOutcome.Refused, result.Outcome);
         popup.DidNotReceive().Confirm(Arg.Any<string>());
@@ -192,15 +175,15 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_NonAdminOverLimit_RollsBackMLRest()
     {
-        var mlRest = MockMLRest(idfa: "CB_DP", ns: "DB_CB");
+        var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal("CB_DP", mlRest.Idfa);
-        Assert.Equal("DB_CB", mlRest.DataNamespace);
+        Assert.Equal("CB_DP", mlRest.DataNamespace);
     }
 
     // ---------- Switch — admin retry path ----------
@@ -208,7 +191,7 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_AdminConfirmDenied_Cancelled()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
@@ -216,7 +199,7 @@ public class CompanySwitcherTests
         var nav = Substitute.For<IWindowNavigator>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup, nav: nav);
 
-        var result = switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal(LicenceAcquireOutcome.Cancelled, result.Outcome);
         nav.DidNotReceive().ShowLegacyAndWait(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<bool>());
@@ -225,23 +208,23 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_AdminConfirmDenied_RollsBackMLRest()
     {
-        var mlRest = MockMLRest(idfa: "CB_DP", ns: "DB_CB");
+        var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
         popup.Confirm(Arg.Any<string>()).Returns(false);
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal("CB_DP", mlRest.Idfa);
-        Assert.Equal("DB_CB", mlRest.DataNamespace);
+        Assert.Equal("CB_DP", mlRest.DataNamespace);
     }
 
     [Fact]
     public void Switch_AdminRetryAfterUsersDialog_Accepted()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1, 1);
         var licence = new Lic { CountsLOGIN = 5 };
         var popup = Substitute.For<IPopupDisplayer>();
@@ -249,7 +232,7 @@ public class CompanySwitcherTests
         var nav = Substitute.For<IWindowNavigator>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: true, popup: popup, nav: nav);
 
-        var result = switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
         nav.Received(1).ShowLegacyAndWait("USERS.exe", "ALVA.USERS.formUSERSActivity", shareShellSession: false);
@@ -261,11 +244,11 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_CallsCloseAllWindows_BeforeMLRestSwap()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         var closeAll = Substitute.For<Action>();
         var switcher = CreateSwitcher(mlRest, () => null, closeAllWindows: closeAll);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: null);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
         closeAll.Received(1).Invoke();
     }
@@ -273,13 +256,13 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_CallsCloseAllWindows_EvenOnRefused()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var closeAll = Substitute.For<Action>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false, closeAllWindows: closeAll);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         closeAll.Received(1).Invoke();
     }
@@ -289,11 +272,11 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_Accepted_SavesLastIdfaToPrefs()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         var prefs = Substitute.For<ILocalPrefs>();
         var switcher = CreateSwitcher(mlRest, () => null, prefs: prefs);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: null);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
 
         prefs.Received().LastIdfa = "JI_DP";
         prefs.Received(1).Save();
@@ -302,13 +285,13 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_Refused_DoesNotSavePrefs()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, -1);
         var licence = new Lic { CountsLOGIN = 5 };
         var prefs = Substitute.For<ILocalPrefs>();
         var switcher = CreateSwitcher(mlRest, () => licence, isAdmin: false, prefs: prefs);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: licence);
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
 
         prefs.DidNotReceive().Save();
     }
@@ -318,12 +301,12 @@ public class CompanySwitcherTests
     [Fact]
     public void Switch_VerifyAccepted_UsesLoaderResultForCountsLogin()
     {
-        var mlRest = MockMLRest();
+        var mlRest = MLRestMocks.Create();
         SetupVerifyLic(mlRest, 1);
         var freshLicence = new Lic { CountsLOGIN = 42 };
         var switcher = CreateSwitcher(mlRest, () => freshLicence);
 
-        switcher.Switch("JI_DP", "DB_JI", currentLicence: new Lic { CountsLOGIN = 5 });
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: new Lic { CountsLOGIN = 5 });
 
         mlRest.Received().QueryOrThrow("ALVA.SYS.Login", "VerifyLic",
             Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 42));

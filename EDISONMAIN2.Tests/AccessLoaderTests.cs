@@ -1,6 +1,7 @@
 using ALVA.LICENCE.EDLicence;
 using EDControls;
 using EDControls.EDViewModel;
+using EDTesting;
 using NSubstitute;
 
 namespace EDISONMAIN2.Tests;
@@ -9,14 +10,13 @@ public class AccessLoaderTests
 {
     private static IMLRest MockAccessCall(int apId, params string[] allowedIds)
     {
-        var mock = Substitute.For<IMLRest>();
-        var output = new object[allowedIds.Length + 2];
-        output[0] = ""; // index 0 — ERR (legacy convention)
-        output[1] = apId.ToString();
+        var payload = new object[allowedIds.Length + 1];
+        payload[0] = apId.ToString();
         for (int i = 0; i < allowedIds.Length; i++)
-            output[i + 2] = allowedIds[i];
+            payload[i + 1] = allowedIds[i];
+        var mock = MLRestMocks.Create();
         mock.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
-            .Returns(output);
+            .Returns(MLRestMocks.Output(payload));
         return mock;
     }
 
@@ -121,9 +121,9 @@ public class AccessLoaderTests
     {
         // Server občas vrátí null/empty entries (např. mezery v allowedIds). Loader je smaže
         // — nikdy by AccessTable.Contains("") neměl trefovat.
-        var mlRest = Substitute.For<IMLRest>();
+        var mlRest = MLRestMocks.Create();
         mlRest.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
-            .Returns(new object[] { "", "1", "8", null!, "", "12" });
+            .Returns(MLRestMocks.Output("1", "8", null, "", "12"));
         var access = AccessLoader.Load(mlRest, licence: null, isAdmin: false);
 
         Assert.True(access.Contains("8"));

@@ -1,8 +1,9 @@
-using ALWA.SYS;
+﻿using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
+using EDTesting;
 using NSubstitute;
 using static ALVA.EDISONAPI.Database;
 
@@ -12,8 +13,8 @@ public class EdisonMainViewModelTests
 {
     private static readonly CompanyStruct[] Companies =
     [
-        new() { Id = "CB_DP", Database = "DB_CB" },
-        new() { Id = "JI_DP", Database = "DB_JI" },
+        new() { Id = "CB_DP", Database = "CB_DP" },
+        new() { Id = "JI_DP", Database = "JI_DP" },
     ];
 
     private static EDServices MockServices(
@@ -26,13 +27,12 @@ public class EdisonMainViewModelTests
 
     private static IMLRest MockMLRest(string idfa = "CB_DP")
     {
-        var mock = Substitute.For<IMLRest>();
-        mock.Idfa.Returns(idfa);
+        var mock = MLRestMocks.Create(idfa);
         // AccessLoader volá GetEdisonAccess při initial / switch / refresh. Default mock
         // vrátí apId=3 (admin, IsAllAccess=true) → access filter nepřebíjí ostatní testy.
         // Specifické access testy si MockMLRest přepíší vlastním setupem.
         mock.QueryOrThrow("ALVA.SYS.Login", "GetEdisonAccess", Arg.Any<object[]>())
-            .Returns(new object[] { "", "3" });
+            .Returns(MLRestMocks.Output("3"));
         return mock;
     }
 
@@ -78,7 +78,7 @@ public class EdisonMainViewModelTests
 
         Assert.Equal(2, vm.VisibleIdfas.Count);
         Assert.Equal("CB_DP", vm.Idfa);
-        Assert.Equal("DB_CB", vm.Namespace);
+        Assert.Equal("CB_DP", vm.Namespace);
     }
 
     [Fact]
