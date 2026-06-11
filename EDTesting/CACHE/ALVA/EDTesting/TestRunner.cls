@@ -20,28 +20,40 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 		// %UnitTest.Manager vyžaduje ^UnitTestRoot na existující složku (i s /noload).
 		if ($get(^UnitTestRoot) = "") { set ^UnitTestRoot = $system.Util.ManagerDirectory() }
 
-		// Najdi všechny %UnitTest.TestCase subclasses pod daným package.
 		set classList = ..FindTestClasses(package)
 		if (classList = "") { throw ##class(%Exception.General).%New("RunPackage",,,"No %UnitTest.TestCase subclasses found under "_package) }
 
-		// Index před prvním spuštěním — všechno za tímhle indexem patří našemu batch.
 		set baseIndex = +$order(^UnitTest.Result(""),-1)
 
-		// Spustit každou třídu jednotlivě. /display=none je nutné, jinak log rozbije MCP response.
-		// RunTest scanuje ^UnitTestRoot subdirs (Locale/MLINE/Temp) → třída se odpaluje 3x.
-		// Řeším dedupem na (className, methodName) níže.
+		// %UnitTest.Manager.RunTest píše log do current device. V MLRest contextu by
+		// to skončilo v HTTP response streamu před naším OUT a polutovalo CVar parse.
+		// Redirekt $io na temp soubor po dobu běhu testů; soubor po skončení smažeme.
+		set tempFile = ##class(%File).TempFilename("husky")
+		set origIo = $io
+		open tempFile:("WNS"):3
+		use tempFile
+
+		// Spustit každou třídu jednotlivě (":ClassName" = compiled class only).
 		set ptr = 0
 		while $listnext(classList, ptr, className) {
 			do ##class(%UnitTest.Manager).RunTest(":"_className, "/noload/nodelete/display=none")
 		}
 
-		// RunTest stále nějaký output do ^||ML pošle → killneme celé a postavíme čisté.
+		// Restore device + cleanup
+		use origIo
+		close tempFile
+		do ##class(%File).Delete(tempFile)
+
+		// Pojistka: kdyby RunTest přesto něco do ^||ML zapsal.
 		kill ^||ML
 
 		set passed = 0, failed = 0, failIdx = 0
 		kill seen
 
-		// Iteruj všechny TestInstance indexy vytvořené naším batch (baseIndex+1 .. last).
+		// Iteruj všechny TestInstance indexy vytvořené naším batch.
+		// RunTest("ClassName") scanuje ^UnitTestRoot subdirs (Locale/MLINE/Temp),
+		// takže jeden run vytvoří TestInstance s víc suites se stejným obsahem.
+		// Dedupe na (className, methodName).
 		set idx = baseIndex
 		for {
 			set idx = $order(^UnitTest.Result(idx))
@@ -49,14 +61,11 @@ ClassMethod RunPackage(ByRef sys As %String) As %Status
 			set instance = ##class(%UnitTest.Result.TestInstance).%OpenId(idx)
 			if ('$isobject(instance)) { continue }
 
-			set suiteCount = instance.TestSuites.Count()
-			for s = 1:1:suiteCount {
+			for s = 1:1:instance.TestSuites.Count() {
 				set suite = instance.TestSuites.GetAt(s)
-				set caseCount = suite.TestCases.Count()
-				for c = 1:1:caseCount {
+				for c = 1:1:suite.TestCases.Count() {
 					set case = suite.TestCases.GetAt(c)
-					set methodCount = case.TestMethods.Count()
-					for m = 1:1:methodCount {
+					for m = 1:1:case.TestMethods.Count() {
 						set method = case.TestMethods.GetAt(m)
 						set key = case.Name_"|"_method.Name
 						continue:$data(seen(key))
