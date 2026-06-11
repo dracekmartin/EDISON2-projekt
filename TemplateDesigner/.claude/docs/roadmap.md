@@ -46,11 +46,11 @@ EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputF
 
 Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") — reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN` (linková/meziměstská data z `^JRL`/`^JRZ`/`^JRSET`, per-namespace bez IdFa). Čistý refaktor, ne wrapper (analogicky k MHD migraci).
 
-**Hotovo (2026-06-02 — 06-11):** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti **body 1-5, 7**: názvy zastávek (`^JRZ` `$7`), datumy v poznámkách s rokem (`TODDO` formát), všechna „jede/nejede" omezení (omzId 11-15,22), POPIS_DOPRAVCE (`^JRSET("DOP")` chain), LOKALNI_OZNACENI/TITULEK/INFORMACE (`SeT_MhD`), číslování poznámek (schéma shodné pro TYPPOZ=0). Ověřeno proti gold oracle `ALVA.TISKMHD.Data` na lince 0410101 (KV_DP). Debug nástroje: MCP `cache_zwglobal` + `ScanSubscript`.
+**Hotovo (2026-06-02 — 06-11):** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti **body 1-7**: názvy zastávek (`^JRZ` `$7`), datumy v poznámkách s rokem (`TODDO` formát), všechna „jede/nejede" omezení (omzId 11-15,22), POPIS_DOPRAVCE (`^JRSET("DOP")` chain), LOKALNI_OZNACENI/TITULEK/INFORMACE (`SeT_MhD`), číslování poznámek (schéma shodné pro TYPPOZ=0), **FTL 1-3 sloupcový model** (`ZarazeniSpoje` 1:1 s `JRapiLinPrtMhd1`; prázdninové dělení dle CNZ/NZ konfigurace). Ověřeno proti gold oracle `ALVA.TISKMHD.Data` na 0410101 (FTL=0) + 0425017 (FTL=1). Debug nástroje: MCP `cache_zwglobal` + `ScanSubscript`.
 
 **Zbývá (detail v [`cache-database-linky.md`](cache-database-linky.md) §10):**
-- **bod 6** — FTL 1-3 + CNZ prázdninové dělení sloupců = **poslední a nejsložitější datový kus**. ⏳ ODBLOKOVÁNO: test linka **`0425017`** (KV_DP, `MHD_TYP_R=1`=FTL1). FTL = formát sloupců mřížky (kolik sloupců dnů + prázdninové dělení prac. dnů dle CNZ spoje proti `MHD_NZ1_NZ2`/`MHD_NENZ`). Zobecnění `SkupinyZPlk`/`NacistSkupinyDnu`. V KV_DP jen FTL1 (FTL2/3 chtějí jinou firmu).
 - **bod 8** — vizuál (šířka legendy POZNAMKY s rokem) — až na konci, jeden layout průchod
+- **FTL 2/3** — implementováno per-legacy, neověřeno (v KV_DP jen FTL1; chce linku z jiné firmy)
 - **DEV cleanup před produkcí** — `#if DEBUG` auto-open `kv_ad_test.json`, zvážit statický `GetMockData`
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.

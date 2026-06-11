@@ -370,15 +370,16 @@ je per-namespace, bez IdFa).**
 7. **Číslování poznámek** — pro KV_DP (TYPPOZ=0 = `^JRSET("Definice","MHDnewOM")` prázdné) legacy používá
    sekvenční čísla = moje 1/2/3 (schéma shodné, hodnoty 39/70/32 byly artefakt jiného seedu). Bez změny.
    TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred (žádná test firma to nemá).
+6. **FTL 1-3 + CNZ prázdninové dělení sloupců** — `ZarazeniSpoje(ftl,plk,cnz,nzCfg)` staví `KamPrt` bitmapu
+   sloupců 1:1 s `JRapiLinPrtMhd1` ř.30-152 pro všechny 4 módy; `BitmapNaSkupiny` → comma-list indexů;
+   `NacistSkupinyDnu(ftl)` vrací sloupce per mód (FTL0 Prac/So/Ne+sv; FTL1 Prac-mimo/Prac-o-prázd/So+Ne+sv;
+   FTL2 Prac/So+Ne+sv; FTL3 4 sloupce). CNZ = `$p(spoj,"#",7)` (=gSpLin dta29); NZ config z `MHD_NZ1_NZ2`
+   (NZFTL1 nejede / NZFTL2 jede o prázd) + `MHD_NENZ1_NENZ2` filtr. Guard: KamPrt=0 → spoj se netiskne.
+   **Ověřeno** na 0425017/KV_DP (FTL=1): 3 sloupce se správnými popisky, odjezdy distribuované (bez NZ
+   config jdou prac. spoje do obou pracovních sloupců = 1:1 legacy). FTL=2/3 implementováno per-legacy,
+   ale v KV_DP není linka k ověření (jen FTL=1). FTL=0 beze změny chování (0410101 = identický výstup).
 
 ### ⬜ Zbývá do plného 1:1 s legacy
-6. **FTL 1-3 + CNZ prázdninové dělení sloupců** — ⏳ odblokováno (test linka **`0425017`** sku 42/429 v KV_DP,
-   `MHD_TYP_R=1` → FTL=1; v KV_DP jen FTL=1, ne 2/3). **FTL = formát sloupců mřížky** (`PATCH,"MHD_TYP_R"`):
-   FTL0 = Prac\|So\|Ne+sv (mám); FTL1 = Prac-mimo-prázd\|Prac-o-prázd\|So+Ne+sv; FTL2 = Prac\|So+Ne+sv;
-   FTL3 = Prac-mimo-prázd\|Prac-o-prázd\|So\|Ne+sv. Legacy logika `JRapiLinPrtMhd1` ř.30-152: per spoj
-   spočítá `KamPrt` bitmapu (do kterých sloupců patří) z `Plk` + **prázdninové dělení dle CNZ** (`arrsp dta29`)
-   proti config linky `MHD_NZ1_NZ2` (`NZFTL1`=nejede o prázd, `NZFTL2`=jede o prázd) + `MHD_NENZ1_NENZ2` filtr.
-   = zobecnění mého `SkupinyZPlk`/`NacistSkupinyDnu` na FTL-aware sloupcový model. **Nejsložitější zbývající kus.**
 8. (vizuál, na konec) šířka legendy POZNAMKY — datumy s rokem jsou široké; ladit zalamování/šířku/font
    v jednom průchodu přes všechny poznámky (layout věc, ne data).
 
