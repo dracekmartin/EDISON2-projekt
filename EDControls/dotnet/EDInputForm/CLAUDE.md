@@ -17,7 +17,9 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
 | `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `FileFilter`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
-| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List`, `File`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List` (strict dropdown), `ComboBox` (editable s autocomplete), `File`, `Color`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
+| `HexToBrushConverter.cs` | IValueConverter pro Color field — parsuje `#AARRGGBB` / `#RRGGBB` string na `SolidColorBrush` pro swatch binding. |
+| `SuggestComboBox.cs` | Custom ComboBox subclass pro Suggest field — editable, live filtering, custom string allowed mimo list. Event-ordering safeguards (PreviewKeyDown/Up flag) — viz implementační poznámka v třídě. |
 | `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |
@@ -45,7 +47,8 @@ void Save_Click(...)     { bool ok = TheInputForm.Save();     }
 | Člen | Popis |
 | --- | --- |
 | `string CacheClass` | Musí být nastaveno před jakýmkoliv voláním. Caché třída implementující Init/Validate/Save. |
-| `void Init()` | Volá Caché `Init`, naplní Items, spustí `ExecuteValidate(Init)`. Volá se automaticky při `Loaded` pokud je `CacheClass` nastaveno. |
+| `CVar? InitParams` | Volitelné initial parametry předané do Caché `Init` (čte přes `^||ML("IN","key")`). Pro pre-fill polí z hostitelského contextu. Nastav před prvním `Loaded`. |
+| `void Init()` | Volá Caché `Init` (s `InitParams` pokud nastavené), naplní Items, spustí `ExecuteValidate(Init)`. Volá se automaticky při `Loaded` pokud je `CacheClass` nastaveno. |
 | `bool Validate()` | Volá Caché `Validate` s Change triggerem; vrací true pokud nejsou chyby. |
 | `bool Save()` | Validuje s BeforeSave triggerem, volá Caché `Save` pouze pokud je čistý stav; vrací true při úspěchu. |
 | `IEnumerable<Item>? Items` | DP — aktuální položky formuláře; aktualizuje se po každém Caché volání. |
@@ -64,6 +67,48 @@ bool ok = controller.Save();
 List<Item> items = controller.Items;
 ```
 
+## Stavba formuláře v Caché — preferovaný pattern
+
+`Form.cls` nabízí dvě úrovně API:
+
+**1) Helpery pro simple typy** (one-liner per field) — preferovaný pro nejčastější case:
+
+```objectscript
+s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+d form.AddGroup("font", "Font")
+
+d form.AddText("text", "Obsah", initText)                                       ; Text field
+d form.AddBool("bold", "Tučně", 0)                                              ; Bool checkbox
+d form.AddNumber("count", "Počet", "10", "0", "999", "ks", 1)                   ; Integer s range/unit/required
+d form.AddDecimal("size", "Velikost", "10", "4", "200", "pt", "0.0#")           ; Decimal s range/unit/format
+
+; Helper vrací Field — caller může nastavit další properties:
+s f = form.AddBool("debug", "Debug log", 0)
+s f.helpText = "Uloží .import-debug.txt vedle PDF"
+```
+
+Helpery: `AddText`, `AddBool`, `AddNumber`, `AddDecimal`. Pokrývají 80% praktického použití.
+
+**2) AddFieldToLastGroup + property setters** — pro complex typy (List/ComboBox/Color/File/Date):
+
+```objectscript
+; List/ComboBox potřebuje AddListItem
+s f = form.AddFieldToLastGroup("stav", "Stav", $$$FieldTypeList, 0, 1)
+d f.AddListItem("A", "Aktivní")
+d f.AddListItem("N", "Neaktivní")
+s f.value = "A"
+
+; Color
+s f = form.AddFieldToLastGroup("barva", "Barva textu", $$$FieldTypeColor, 0, 0)
+s f.value = "#FF000000"
+
+; File s filtrem
+s f = form.AddFieldToLastGroup("soubor", "PDF soubor", $$$FieldTypeFile, 0, 0)
+s f.fileFilter = "PDF (*.pdf)|*.pdf"
+```
+
+Tento pattern je extensibilní — pro každou novou Field property stačí `s f.xxx = ...` řádek.
+
 ## Caché wire protokol (CVar/CList)
 
 ### Položky formuláře (oba směry)
@@ -72,9 +117,11 @@ Položky se serializují jako CList záznamy se string-indexovanými klíči:
 
 ```text
 CVar["1"] = CList("GROUP", number, key, groupName, visibility, helpText)
-CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
+CVar["2"] = CList("FIELD", number, key, label, fieldType, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter, min, max, format, unit)
 CVar["helpTextMode"] = "tooltip" | "column"   ; form-level setting, default "tooltip"
 ```
+
+Min/Max/Format/Unit (FIELD pozice 15-18): rozšíření pro Number/Decimal typy. `Min` a `Max` jako string formátovaný v InvariantCulture (validuje se klient i server). `Format` je standardní .NET format string (např. "N2", "0.##") — aplikován v UI. `Unit` je suffix label zobrazený vedle inputu (např. "mm", "pt") — pouze visualní, nemění Value.
 
 Visibility (GROUP pozice 5, FIELD pozice 11): `"0"` = Visible (výchozí), `"1"` = Collapsed, `"2"` = UserHidden, `"3"` = ProgrammerHidden. Pokud chybí, položka je viditelná.
 
@@ -103,6 +150,41 @@ s f.fileFilter = "PDF (*.pdf)|*.pdf|Všechny soubory (*.*)|*.*"
 ; Folder selection
 s f = form.AddFieldToLastGroup("slozka", "Složka", $$$FieldTypeFile)
 s f.fileFilter = $$$FileFilterFolder
+```
+
+### ComboBox field type (editable s autocomplete)
+
+Editable ComboBox s live filtrováním. Storage sdílí s `List` přes `Field.ListItems`, ale na rozdíl od List **user může napsat libovolný text** mimo list — items jsou nápověda (autocomplete), ne striktní enum. Analogie HTML `<select>` (= `List`) vs `<input list="...">` (= `ComboBox`).
+
+```objectscript
+s f = form.AddFieldToLastGroup("placeholder", "Pole agendy", $$$FieldTypeComboBox)
+d f.AddListItem("CISLO_LINKY", "Číslo linky")
+d f.AddListItem("NAZEV_LINKY", "Název linky")
+d f.AddListItem("DATUM_OD",    "Platnost od")
+; User si může napsat "MUJ_VLASTNI_KOD" — list je nápověda, ne enum
+```
+
+UI: zobrazí display string ve formátu `"KEY  —  Label"` v dropdownu, po výběru se `Field.Value` nastaví na samotný `Key`. Filter prochází key i label case-insensitive.
+
+**Rozdíl od List:**
+- `List` = strict (jen value z items, žádný custom string)
+- `ComboBox` = editable (custom value allowed, items jsou nápověda)
+
+### Color field type
+
+`Field.Value` drží hex string `"#AARRGGBB"` (SkiaSharp formát, ARGB s alpha). UI zobrazí barevný čtvereček + monospace TextBox + tlačítko `...` otevírající color picker dialog.
+
+```objectscript
+s f = form.AddFieldToLastGroup("textColor", "Barva textu", $$$FieldTypeColor)
+s f.value = "#FF003366"   ; tmavě modrá s plnou alpha
+```
+
+**Picker implementace:** EDControls je WPF-only knihovna — color dialog **musí dodat host** přes `EDInputForm.PickColorImpl` (static `Func<Window, string, string?>`). Pokud null, tlačítko v Color field templatu nic neudělá (user může psát hex ručně do TextBoxu). Toto rozhodnutí odděluje EDControls od WinForms závislosti.
+
+```csharp
+// V App.xaml.cs nebo wiring (TD má UseWindowsForms a má ColorPickerHelper s recent colors):
+EDControls.EDInputForm.EDInputForm.PickColorImpl =
+    (owner, currentHex) => TemplateDesigner.Controls.ColorPickerHelper.PickColor(owner, currentHex);
 ```
 
 ### Struktura volání Validate

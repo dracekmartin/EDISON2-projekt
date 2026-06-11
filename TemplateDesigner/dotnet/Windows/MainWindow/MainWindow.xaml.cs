@@ -241,6 +241,18 @@ public partial class MainWindow : Window
         // Subscribe-after-loaded case (warm cache) řeší Loaded event accessor — invoke immediately.
         if (_preferences is not null)
             _preferences.Loaded += OnPreferencesLoaded;
+
+#if DEBUG
+        // DEV (Fáze 2 — testování agendy AD): po startu auto-otevři testovací AD šablonu,
+        // ať ji nemusíme pokaždé otevírat ručně. Šablona má agendaCode=ZASTAVKOVY_JR_AD.
+        // TODO: odstranit po dokončení AD agendy.
+        Loaded += async (_, _) =>
+        {
+            const string devTemplate = @"C:\Users\miesb\source\EDISONMAIN2\TemplateDesigner\templates\kv_ad_test.json";
+            if (File.Exists(devTemplate))
+                await _vm.OpenTemplateFromFileAsync(devTemplate);
+        };
+#endif
     }
 
     private void OnPreferencesLoaded()
@@ -948,6 +960,21 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Alternativa k dvojkliku — otevírá editor pro aktuálně vybraný element.
+    /// Stejná cesta jako double-click přes OpenPropertiesForElement.</summary>
+    private void MenuTestTextEdit_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is null) return;
+        var selected = _vm.State.SelectedElements.FirstOrDefault();
+        if (selected is null)
+        {
+            MessageBox.Show(this, "Vyber element na canvasu, pak otevři tento dialog.",
+                "Editor vlastností", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        OpenPropertiesForElement(selected);
+    }
+
     /// <summary>Aktualizuje strom pokud je viditelný (po změně výběru na canvasu).</summary>
     private void RefreshTreeIfVisible()
     {
@@ -1263,6 +1290,14 @@ public partial class MainWindow : Window
             OpenStopColumnsDialog(stopEl);
             return;
         }
+        // Generický EDInputForm dialog pro elementy s Caché schema (key = property path).
+        // Mapping element type → (cacheClass, title). Ostatní typy fallback na legacy
+        // ElementPropertiesWindow (PropertyDescriptor panel).
+        if (EDInputFormSchema(element) is var (cacheClass, title) && cacheClass is not null)
+        {
+            OpenGenericElementEditDialog(element, cacheClass, title!);
+            return;
+        }
 
         _propsVm!.PrepareForElement(element, isNewSession: true);
         new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
@@ -1314,6 +1349,30 @@ public partial class MainWindow : Window
                 _vm.State.Undo();
         }
 
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
+    }
+
+    /// <summary>Mapping element type → (Caché schema class, titulek) pro generický
+    /// EDInputForm editor. Vrací (null, null) pro typy bez schema (fallback na legacy).</summary>
+    private static (string? cacheClass, string? title) EDInputFormSchema(TemplateElement element) => element switch
+    {
+        Models.Elements.TextElement      => ("ALVA.TemplateDesigner.EDInputForm.TextElementEdit", "Vlastnosti textu"),
+        Models.Elements.LineElement      => ("ALVA.TemplateDesigner.EDInputForm.LineElementEdit", "Vlastnosti čáry"),
+        Models.Elements.RectangleElement   => ("ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit", "Vlastnosti obdélníku"),
+        Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
+        Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
+        _ => (null, null)
+    };
+
+    private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
+    {
+        var dlg = new ElementEditDialog(element, cacheClass, title) { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+        {
+            _vm!.Execute(dlg.ResultCommand);
+        }
         InvalidateCanvas();
         InvalidatePreview();
         UpdatePropertiesPanel();

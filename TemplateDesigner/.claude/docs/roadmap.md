@@ -15,7 +15,7 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 
 ## 🎯 Aktuální focus
 
-**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish (theme, implicit styles, perf, layout) uzavřen (2026-05-20). **Wave 1 — per-user preferences přes Caché HOTOVA** (2026-05-20). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
+**v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish uzavřen (2026-05-20). **Wave 1 + 1.5 + 2 + 3 (per-user preferences + agenda registry + template storage s versioning) HOTOVY** (2026-05-20 — 2026-05-25). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
 
 **Stav UI/theme** (po 2 dnech práce):
 - EDTheme design tokens (33 barev + typo + spacing) v EDControls — runtime swap přes DynamicResource
@@ -28,20 +28,40 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**Kde pokračovat dál — Caché Migration priority** (před zákaznickými tickety):
+**Kde pokračovat dál — 2 top priority NAD helpdesk tickety (dohodnuto 2026-05-27):**
 
-1. **Wave 2 — Shared catalogs** ⬅️ AKTUÁLNÍ (W2-1 hotová ✅ 2026-05-20, W2-2 zbývá)
-   W2-1 ✅: Agenda registry — auto-discovery z `BaseAgenda` subclasses v Caché (eliminuje `appsettings.json agendas[]`). Konvence agenda code `<TYP_SESTAVY>_<DATOVY_ZDROJ>` (např. `ZASTAVKOVY_JR_MHD`).
-   W2-2 ⬜: Section templates → Caché backend (sdílení šablon sekcí mezi PC v rámci firmy). Detail v § Wave 2 níže.
+### ⬅️ PRIORITA 1 — Wave 4: dokončit EDInputForm migraci (🟡 rozpracováno)
 
-2. **H-18/H-19 — Template versioning + migrator** (prereq produkčního Wave 3)
-   Bez versioning breaking JSON change zničí existující šablony. Detail v § Fáze B → Template versioning.
+EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputForm, ať JE EDInputForm** — logika na jednom místě, ne půl na půl mezi PropertyDescriptors a Caché schema.
 
-3. **Wave 3 finishing — produkční Template storage**
-   Wave 3 CRUD ✅ hotový; chybí audit log, thumbnails, advanced features.
+**Hotovo (2026-05-25 — 27):** EDInputForm visual upgrade + EDComponentToolbar (sdílený s EDList) + generický `ElementEditDialog` (reflexe přes property-path keys) + 5 elementů migrovaných (Text/Line/Rectangle/Barcode/NotesLegend) + SaveToCacheDialog. Detail Wave 4 sekce níže.
 
-4. **Fáze A.2-D — Caché business logic** (zákaznické tickety, po dokončení 1-3)
-   TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd`: text template „spoj jede až do XY", custom komentář přebíjející auto-poznámku, NZ bug, skrytí atributů hidden sloupců, vypnutí auto-bezbariérovost, KORID přípojové řádky. Tabulka A.2.D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+**Zbývá projít VŠECHNO a předělat kde to dává smysl:**
+- **ImageElement** — potřebuje nový `Image` field type v EDInputForm (upload→base64+náhled)
+- **Section / Page properties** — generalizovat `ElementEditDialog` z `TemplateElement` na `object` (`ElementPropertyAccessor` už je generický)
+- **Simple dialogy** — SaveSectionTemplate, NormalizePositions
+- **Komplexní elementy (StopList / DepartureGrid / TableElement)** — rozdělit: **tab „Obecné" → EDInputForm**, tabulková / per-column část buď nechat custom (CellStyleEditor / grid) nebo vyřešit extra. Žádné půl-na-půl — obecné properties patří do EDInputForm.
+
+### ⬅️ PRIORITA 2 — Zastávkový JŘ pro data z linkových JŘ (ne jen MHD) — 🟡 ROZPRACOVÁNO
+
+Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") — reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN` (linková/meziměstská data z `^JRL`/`^JRZ`/`^JRSET`, per-namespace bez IdFa). Čistý refaktor, ne wrapper (analogicky k MHD migraci).
+
+**Hotovo (2026-06-02 — 06-11):** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti **body 1-5, 7**: názvy zastávek (`^JRZ` `$7`), datumy v poznámkách s rokem (`TODDO` formát), všechna „jede/nejede" omezení (omzId 11-15,22), POPIS_DOPRAVCE (`^JRSET("DOP")` chain), LOKALNI_OZNACENI/TITULEK/INFORMACE (`SeT_MhD`), číslování poznámek (schéma shodné pro TYPPOZ=0). Ověřeno proti gold oracle `ALVA.TISKMHD.Data` na lince 0410101 (KV_DP). Debug nástroje: MCP `cache_zwglobal` + `ScanSubscript`.
+
+**Zbývá (detail v [`cache-database-linky.md`](cache-database-linky.md) §10):**
+- **bod 6** — FTL 1-3 + CNZ prázdninové dělení sloupců = **poslední a nejsložitější datový kus**. ⏳ ODBLOKOVÁNO: test linka **`0425017`** (KV_DP, `MHD_TYP_R=1`=FTL1). FTL = formát sloupců mřížky (kolik sloupců dnů + prázdninové dělení prac. dnů dle CNZ spoje proti `MHD_NZ1_NZ2`/`MHD_NENZ`). Zobecnění `SkupinyZPlk`/`NacistSkupinyDnu`. V KV_DP jen FTL1 (FTL2/3 chtějí jinou firmu).
+- **bod 8** — vizuál (šířka legendy POZNAMKY s rokem) — až na konci, jeden layout průchod
+- **DEV cleanup před produkcí** — `#if DEBUG` auto-open `kv_ad_test.json`, zvážit statický `GetMockData`
+
+**Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
+
+### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
+
+TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky bugs, NZ bug, KORID přípojové řádky, …) — tabulka A.2.D níže. **Až po prioritě 1 + 2.**
+
+**Případné defer items pro budoucnost** (revisit on real user request):
+- Wave 3 auto-snapshots history / audit log / thumbnails
+- Wave 5 další agendy (knižní/meziměstský JŘ) — až bude business request
 
 **Mimo aktuální focus** (až bude potřeba):
 - Plná sada Filter polí (EDFilter rozšíření)
@@ -90,7 +110,7 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🟠 Fáze A.2-D: Caché business logic (po dokončení Wave 2 → 3)
+### 🔴 Fáze A.2-D: Caché business logic ⬅️ AKTUÁLNÍ PRIORITA
 
 Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
@@ -131,9 +151,9 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | Vlna | Název | Stav | Cíl |
 |---|---|---|---|
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
-| 2 | Shared catalogs | 🟡 W2-1 ✅ hotová (2026-05-20), W2-2 zbývá | Agenda registry (auto-discovery ✅), section templates (Caché backend). Element defaults + company palette skipnuté |
-| 3 | Template storage | 🟡 CRUD hotový, advanced features zbývají | Template Caché CRUD (✅), versioning/audit/thumbnails (zbývá) |
-| 4 | Form-driven UI | ⬜ Připraveno (helper `MLRestJson`), nezačato | EDInputForm místo vlastního PropertiesPanel; wire formát = JSON envelope (Styl 4) |
+| 2 | Shared catalogs | ✅ Hotová (2026-05-20) | W2-1 ✅ Agenda registry (auto-discovery). W2-2 Section templates skipnuto — funkčně překryto Wave 3 Template starters. Element defaults + company palette skipnuté |
+| 3 | Template storage | ✅ Hotová (2026-05-25) | CRUD (✅), schema versioning + migrator framework (✅), explicit user versions via Save As (✅), undo within-session (✅). Auto-snapshots / audit / thumbnails skipnuté (revisit on real request) |
+| 4 | Form-driven UI | 🟡 Rozpracováno (2026-05-27) | EDInputForm místo PropertiesPanel. 5 elementů hotovo přes generický `ElementEditDialog` (reflexe). Zbývá Image/Section/Page/komplexní elementy |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 
 **Graf závislostí:** Wave 1 → 2 → 3 → 4 (sekvenčně), Wave 5 běží paralelně nezávisle.
@@ -150,228 +170,53 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 
 ---
 
-#### 🟠 Wave 2 — Shared catalogs (2-item scope)
-
-Sdílený konfigurační obsah dnes žijící v .NET souborech / file-based storage. Přesun do Caché = jedno místo pravdy, sdílení mezi PC / uživateli firmy.
-
-**Scope po diskusi 2026-05-20** zúžen na 2 položky (původně 4):
-
-| # | Položka | Wave 2 akce | Dnes |
-|---|---|---|---|
-| W2-1 | Agenda registry | ✅ Migrovat — auto-discovery z `BaseAgenda` subclasses | `templatedesigner.appsettings.json` `agendas[]` |
-| W2-2 | Section templates | ✅ Migrovat — Caché backend s migration files | `section-templates/*.json` (per-machine, file-based) |
-| ~~W2-3~~ | ~~Element defaults~~ | ❌ SKIP — hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case | |
-| ~~W2-4~~ | ~~Company palette~~ | ❌ SKIP — Wave 1.5 RecentColors pokrývá; brand palette není user request | |
+> **Wave 2 hotová ✅ 2026-05-20** — W2-1 Agenda registry → Caché auto-discovery. W2-2 Section templates skipnuto (funkčně překryto Wave 3 Template starters; bez user requestu). Detail v [`roadmap-archive.md`](roadmap-archive.md).
 
 ---
 
-##### W2-1 Agenda registry — auto-discovery design
+> **Wave 3 hotová ✅ 2026-05-25** — CRUD (`API.Sablony`) + schema versioning framework (`TemplateMigrator` Fáze 1). Auto-snapshots history, audit log, thumbnails, import wizard skipnuté (revisit on real request). Detail v [`roadmap-archive.md`](roadmap-archive.md).
 
-**Princip:** „Třída JE registrace". Místo separátního config listu (drift risk: registr ≠ impl) využijeme `%Dictionary` API — auto-discovery `BaseAgenda` subclasses + class parameter metadata.
+---
 
-**Změny v `BaseAgenda`:**
-```objectscript
-Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [Abstract]
-{
-    Parameter AgendaCode    As %String  = "";       // "MHD", "FAKTURY"
-    Parameter AgendaLabel   As %String  = "";       // "Zastávkový JŘ MHD"
-    Parameter AgendaOrder   As %Integer = 999;      // sort order v UI
-    Parameter AgendaEnabled As %Boolean = 1;        // false → skryté (pre-release)
-    // ... existing abstract methods (GetSchema, GetData, ...) ...
-}
-```
+#### 🟠 Wave 4 — Form-driven UI (EDInputForm) — 🟡 ROZPRACOVÁNO
 
-**Nová Caché class:**
-```objectscript
-Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
-{
-    ClassMethod ListAgendy(ByRef sys As %String) As %Status
-    {
-        // SQL nad %Dictionary najde subclasses BaseAgenda
-        // Pro každou: read AgendaCode/Label/Order/Enabled parametry
-        // Filter Enabled=1, sort by Order, vrátí JSON array
-    }
-}
-```
+Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInputForm` z EDControls.
 
-**Wire formát (R3):**
-```json
-[
-  {"code": "MHD",     "label": "Zastávkový JŘ MHD", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"},
-  {"code": "FAKTURY", "label": "Faktury",            "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury"}
-]
-```
+**⚠️ Skutečný přístup (2026-05-27) se LIŠÍ od původního plánu** (ElementFormBridge + JSON envelope + feature flags). Implementovaná architektura je jednodušší:
 
-**Per-class metadata** zachovají self-documentation v Studiu (programátor vidí AgendaCode přímo u class declaration).
+**Generický `ElementEditDialog` přes reflexi:**
+- **Jeden dialog** pro všechny elementy (`Windows/ElementEditDialog/`). Žádný per-element C# kód.
+- **Caché schema class per element** (`ALVA.TemplateDesigner.EDInputForm.<Typ>Edit`) definuje form layout. **Field key = property path** na C# elementu (dot notation, např. `Style.FontSize`, `HeaderStyle.BackgroundColor`).
+- **`ElementPropertyAccessor`** (reflexe) — Get/Set Field.Value ↔ typovaná property; traversal nested paths; type conversion string ↔ float/int/bool/enum/nullable.
+- Pre-fill po `EDInputForm.Initialized` eventu přes reflexi (ne IN params). Change detection proti pre-filled hodnotám → no-edit = žádný command.
+- Save → `CompositeCommand` ze `SetPropertyCommand`ů (reflexní apply) → `_vm.Execute` → undo/redo zachován.
+- **MainWindow `EDInputFormSchema(element)`** switch mapuje element type → (cacheClass, title). Fallback na legacy `ElementPropertiesWindow` pro nemigrované typy.
 
-**Edge case GENERAL:** `cacheClass=""` → žádná třída → auto-discovery ji nenajde. **.NET strana inject syntheticky** v `IAgendaRegistry`:
-```csharp
-public IReadOnlyList<AgendaInfo> GetAvailableAgendas() {
-    var fromCache = _cacheRegistry.ListAgendy();
-    return [GeneralAgenda, .. fromCache];  // GENERAL = static const
-}
-```
+**Přidání dalšího elementu = 1 Caché schema class + 1 řádek ve switchi.** Žádný dialog kód, žádný ElementFormBridge, žádný feature flag (paralelní běh řeší switch fallback).
 
-**Změny v kódu (.NET):**
-| Vrstva | Co |
-|---|---|
-| Caché | `BaseAgenda` rozšířena o 4 parametry; nová `API.AgendyRegistr` class |
-| Agendy classes | `ZastavkoveJrMhd`, `Faktury` — declare AgendaCode/Label/Order parametry |
-| .NET service | `IAgendaRegistry` (interface) + `CacheAgendaRegistry` (impl); `EDServices` rozšíření |
-| .NET wiring | `CacheSchemaWiring` — místo čtení `AppSettings.Agendas[]` volá `IAgendaRegistry.GetAvailableAgendas` |
-| `appsettings.json` | **Smazat `agendas[]`** — registr v Caché |
+**⚠️ Schema duplikace dluh:** Caché schema je manual mirror PropertyDescriptors v C# (data model). Akceptováno kvůli Caché patchovatelnosti (server-side změna labelů/validace bez .exe redeploy). Detail: memory `project_edinputform_schema_duplication.md`. Long-term: schema-as-data v Caché global → auto-gen.
+
+**Co zůstává v .NET:** všechny `TemplateElement` třídy (model, Render, Clone, JSON), PageLayoutEngine, PageRenderer, canvas, undo/redo. Inline `PropertiesPanel` (levý panel) zatím PropertyDescriptors — live edit.
 
 **Risks:**
-- Cold-start: registry call ~500ms-2s při studeném startu (jako Wave 1) — Mitigace: `IAgendaRegistry` cached after first load, refresh na user request (menu „Reload agendas")
-- Backward compat: starý JSON `agendas[]` se po W2-1 ignoruje — během rollout fáze ponechat dual-read (Caché primary + JSON fallback)
-
-##### W2-2 Section templates — Caché backend
-
-Mirror Wave 3 (Template CRUD) — pattern už existuje, jen klon.
-
-**Caché class:** `ALVA.TemplateDesigner.API.SekceSablon` — 5 metod (List / Load / Save / Delete / Rename) analogicky `Sablony`.
-
-**Storage:** `^ALVA.TemplateDesigner.SectionTemplates(IdFa, "DTA", id, "Metadata"|"Data")` + index — paralelně k `Templates` global.
-
-**Wire formát:** R3, JSON, per-IDFa.
-
-**Section template metadata:** Name + Category (např. „Hlavičky", „Patičky") pro budoucí filtraci.
-
-**Changes (.NET):**
-| Vrstva | Co |
-|---|---|
-| Caché | Nová `API.SekceSablon` + storage global |
-| .NET service | `ISectionTemplateCatalog` (interface) — refactor stávajícího `SectionTemplateManager` |
-| Impl | `CacheSectionTemplateCatalog` (Caché backend) — fallback `FileSectionTemplateCatalog` pro standalone |
-| Existing client | `SectionTemplateManager` → grep+replace na interface |
-| Migration | First-Caché-startup: popup „Nahrát X local section-templates do Caché?" + import |
-
-**Per-IDFa storage** — firma A nevidí KORID section templates (jako u Wave 3 Templates).
-
----
+- Reflexe fragile — property path jako string, typo v Caché = runtime error (ne compile-time). Mitigace: optional CI test (path existuje na elementu).
+- Inline panel vs modal: dokud inline zůstává PropertyDescriptors, validace (Min/Max) je duplikovaná. Plný dedup = migrace inline panelu na EDInputForm (live mode — odloženo).
 
 | Krok | Co | Stav |
 |---|---|---|
-| W2-1 | Agenda registry — auto-discovery v `BaseAgenda` + Caché `API.AgendyRegistr` + .NET `IAgendaRegistry` | ✅ 2026-05-20 |
-| W2-2 | Section templates → Caché — `API.SekceSablon` + .NET `ISectionTemplateCatalog` + file migration | |
-
----
-
-#### 🟡 Wave 3 — Template storage
-
-**Základní CRUD hotový** (commit `5ac9dd0`, 2026-05-15). Šablony se ukládají do Caché přes `ALVA.TemplateDesigner.API.Sablony` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`). UI v `CacheTemplatePickerDialog` (po L5 migraci přes EDList) + `SaveToCacheDialog`. JSON wire formát (R3), per-IDFa storage.
-
-**Reálný storage layout** (liší se od původního plánu — atomická Metadata/Data + sekundární index):
-```
-^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata") = $lb(Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version)
-^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")     = JSON šablony
-^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
-```
-
-**Zbývá pro plnou Wave 3:**
-- Versioning (R5 prerekvizita) — H-18 + H-19 (TemplateMigrator + version field v JSON)
-- Server-side migrace (`TemplateMigrationAPI` — migrace při Load)
-- Audit log (`TemplateAuditAPI`)
-- Thumbnails (100×140px PNG při Save → file picker s náhledem)
-- History (seznam verzí + restore)
-- Soft-delete místo hard delete
-- Import wizard (jednorázová migrace `*.json` z disku do Caché)
-
-**Pozn.:** dnešní stav postačuje pro **demo a běžné použití**. Versioning a audit budou potřeba před produkčním nasazením s reálnými zákaznickými šablonami — bez migrátoru breaking change zničí data.
-
-**Změny v kódu pro doplnění:**
-| Vrstva | Co |
-|---|---|
-| Caché | Rozšířit `Templates.cls` o versioning logic; nové třídy `TemplateMigrationAPI`, `TemplateAuditAPI` |
-| .NET migrace | `TemplateMigrator` (R5) jako .NET-side diagnostic helper; autoritativní je Caché |
-| .NET UI | `TemplateBrowserDialog` rozšířit o thumbnails, history, filter UI |
-
-**Risks:**
-- Conflict handling: uživatel A a B editují stejnou šablonu. MVP: last-write-wins + varování. V2: lock nebo merge.
-- Performance: load 50 šablon s thumbnails = 5 MB JSON. Mitigace: `ListTemplates` vrací jen metadata, thumbnails fetch-on-demand.
-
-| Krok | Co | Stav |
-|---|---|---|
-| W3-1 | Caché `ALVA.TemplateDesigner.API.Sablony` (CRUD: List, Load, Save, Delete, Rename) | ✅ 5ac9dd0 |
-| W3-2 | .NET `CacheTemplateService` async wrapper + `CacheTemplateException` | ✅ 5ac9dd0 |
-| W3-3 | `CacheTemplatePickerDialog` + `SaveToCacheDialog` UI | ✅ 5ac9dd0 (L5 migration na EDList: 9f5b165) |
-| W3-4 | H-18 + H-19 (versioning + migrator) — prerekvizita R5 | |
-| W3-5 | Caché `TemplateMigrationAPI` — server-side migrace jako source of truth | |
-| W3-6 | Caché `TemplateAuditAPI` — audit log | |
-| W3-7 | Thumbnails (100×140px PNG při uložení) | |
-| W3-8 | History (verze + restore UI) | |
-| W3-9 | Import wizard — jednorázová migrace existujících `*.json` souborů do Caché | |
-
----
-
-#### 🟠 Wave 4 — Form-driven UI (EDInputForm)
-
-Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInputForm` z EDControls. Každý element má Caché třídu `ALVA.TemplateDesigner.Elements.<Typ>` s metodami `Init/Validate/Save`.
-
-**⚠️ Paralelní migrace:** `PropertyDescriptor` a `EDInputForm` **běží vedle sebe měsíce**. Nikdy ne cut-over all-at-once — per element gradual migration přes feature flag.
-
-**Klíčové koncepty:**
-
-```objectscript
-/// Init: pro daný element vrátí definici formuláře (EDInputForm format)
-ALVA.TemplateDesigner.Elements.TextElement.Init(ByRef sys)
-  IN["elementJson"] = aktuální JSON elementu
-  OUT["form"] = EDInputForm definice (pole, typy, validace, layout)
-
-/// Save: uživatel submitne form → Caché vrátí updated values
-ALVA.TemplateDesigner.Elements.TextElement.Save(ByRef sys)
-  IN["elementJson"] = starý element
-  IN["formValues"] = změněné hodnoty
-  OUT["elementJson"] = nový element (validován)
-```
-
-**Překladová vrstva (`ElementFormBridge`):**
-- .NET: element → JSON → Caché Init → EDInputForm definice → render ve WPF
-- User edituje → submit → Caché Save → nový JSON → .NET vytvoří `SetPropertyCommand(oldJson, newJson)` → Execute → undo/redo zachován
-
-**Feature flag per element type:**
-```csharp
-class ElementEditingConfig {
-    HashSet<string> UseEDInputFormFor;   // ["TextElement"] — zbytek PropertyDescriptor
-}
-```
-Uživatel může postupně přepnout element po elementu; při problémech rollback = flag odebrat.
-
-**Změny v kódu:**
-| Vrstva | Co |
-|---|---|
-| Caché | Nová třída per element type (`TextElement`, `ImageElement`, ...) — Init/Validate/Save |
-| .NET | `ElementFormBridge` — překlad JSON ↔ EDInputForm values |
-| .NET UI | `ElementPropertiesWindow` — pokud feature flag, použít EDInputForm; jinak PropertiesPanel |
-| .NET testy | Integrační test: editace elementu přes form → správný `SetPropertyCommand` → undo/redo |
-
-**Co zůstává v .NET:**
-- Všechny `TemplateElement` třídy (model, Render, Clone, JSON serializace)
-- `PageLayoutEngine`, `PageRenderer`, canvas interakce, drag & drop
-- Undo/redo systém
-
-**Risks:**
-- Undo/redo parity: EDInputForm musí generovat `SetPropertyCommand` pro každou změnu, ne batch. Mitigace: per-field commit místo form-level commit.
-- Latency: každé otevření properties = Caché round-trip. Mitigace: cache form definice per element type (Init = statická definice, Values = dynamická).
-- EDDataGrid pro TableEditorDialog — odložit do chvíle, kdy EDDataGrid bude produkčně zralý.
-
-**Kdy začít:** Wave 3 CRUD je stabilní, foundation pro Wave 4 (`MLRestJson.CallAsync`, wire formát standard, JSON envelope dokumentován jako Styl 4) je hotová. Není blocker teď — `PropertyDescriptor` funguje. Ale každá nová property v PropertyDescriptor = práce k přepsání později → zvažovat nové properties s vědomím, že budou dvakrát.
-
-**Wire formát Wave 4:** JSON envelope (Styl 4) — composite struktura formuláře (Tab → Group → Field s validacemi) přirozeně pasuje. Helper `MLRestJson.CallAsync<TReq, TResp>` v EDControls je připraven. Detail wire formátu v [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md), architektonický plán v [`td-editor-migration-plan.md`](../../../EDControls/.claude/docs/td-editor-migration-plan.md).
-
-| Krok | Co | Stav |
-|---|---|---|
-| W4-0 | `MLRestJson.CallAsync<TReq, TResp>` helper + JSON envelope wire formát | ✅ 22b9256 |
-| W4-1 | Caché `ALVA.TemplateDesigner.Forms.TextElement` — první element migrace | |
-| W4-2 | .NET `ElementFormBridge` — JSON ↔ element instance přes reflexi | |
-| W4-3 | Feature flag + fallback na PropertyDescriptor | |
-| W4-4 | Postupně: ImageElement, RectangleElement, LineElement, BarcodeElement | |
-| W4-5 | TableElement — composite case (tabs Obecné/Sloupce, nested CellStyleEditor) | |
-| W4-6 | Schedule elements (StopList, DepartureGrid, NotesLegend) | |
-| W4-7 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
-| W4-8 | EDInputForm rozšíření: chybějící typy polí (Color, Font, Suggest, Text+Picker, ActionId Button) | |
-| W4-9 | EDInputForm wire formát refactor `$lb()` OUT → JSON | |
-| W4-10 | **Collapsible groups** v EDInputForm — generický koncept (accordion, summary řádek u sbalené, stav per element type/scope do `IUserPrefsService`). Nahrazuje dříve plánovaný B0-10 v `PropertiesPanel` (zbytečné dělat v dočasném panelu). | |
+| W4-0 | EDComponentToolbar (sdílený toolbar EDInputForm + EDList) + search filter + diacritics | ✅ 2026-05-26 |
+| W4-1 | EDInputForm visual upgrade (3-col compact layout, group sectioned headers, font harmonizace) | ✅ 2026-05-25 |
+| W4-2 | Form helpery (AddText/AddBool/AddNumber/AddDecimal) — hybrid syntax | ✅ 2026-05-26 |
+| W4-3 | SaveToCacheDialog — první migrace (PoC, vlastní dispatch) | ✅ 2026-05-26 |
+| W4-4 | Generický `ElementEditDialog` + `ElementPropertyAccessor` (reflexe, property-path keys) | ✅ 2026-05-27 |
+| W4-5 | Elementy: Text, Line, Rectangle, Barcode, NotesLegend (+border parity audit) | ✅ 2026-05-27 |
+| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled) | ⬅️ |
+| W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + 2 Caché schemas | |
+| W4-8 | **Simple dialogy** — SaveSectionTemplate, NormalizePositions | |
+| W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část custom nebo extra řešení | |
+| W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor, odložené | |
+| W4-11 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
+| W4-12 | (volitelné) EDInputForm wire formát `$lb()` OUT → JSON envelope; collapsible groups | |
 
 ---
 

@@ -69,6 +69,10 @@ public partial class App : Application
         // Color picker recent colors integrace — static reference, žádný explicit DI.
         TemplateDesigner.Controls.ColorPickerHelper.Preferences = prefs;
 
+        // EDInputForm Color field — wire fancy color picker (s recent colors) místo žádného fallback.
+        EDControls.EDInputForm.EDInputForm.PickColorImpl =
+            (owner, hex) => TemplateDesigner.Controls.ColorPickerHelper.PickColor(owner, hex);
+
         // Wave 2 (W2-1): registr agend — Caché auto-discovery z BaseAgenda subclasses.
         // Sync wait do 3s — pokud propadne, MainWindow startuje jen s GENERAL agendou
         // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.

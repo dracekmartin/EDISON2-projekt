@@ -20,8 +20,11 @@ namespace EDControls.EDInputForm
 
         // ─── Configuration ────────────────────────────────────────────────────────
 
-        private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
-        private EDViewModel.IPopupDisplayer? PopupDisplayer => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.PopupDisplayer;
+        // MLRest a PopupDisplayer ze sdíleného EDServices.Current — nezávislé na Window.DataContext.
+        // Dialogy hostující EDInputForm tak nemusí mít VM dědící z EDViewModel jen kvůli těmto
+        // službám (mohou mít vlastní VM se svými properties, nebo žádný VM).
+        private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
+        private EDViewModel.IPopupDisplayer? PopupDisplayer => EDViewModel.EDServices.Current.PopupDisplayer;
 
         /// <summary>Caché třída implementující <c>Init</c> / <c>Validate</c> / <c>Save</c>.</summary>
         public string CacheClass { get; set; } = "";
@@ -75,22 +78,127 @@ namespace EDControls.EDInputForm
             set => SetValue(HelpTextModeProperty, value);
         }
 
+
         public EDInputForm()
         {
             InitializeComponent();
-            Loaded += (_, _) => { if (!string.IsNullOrEmpty(CacheClass)) Init(); };
+            Loaded += (_, _) =>
+            {
+                if (!string.IsNullOrEmpty(CacheClass)) Init();
+                WireToolbarSearch();
+            };
+        }
+
+        // ─── Search filter & navigation ──────────────────────────────────────────
+
+        private readonly List<Field> _searchMatches = [];
+
+        private void WireToolbarSearch()
+        {
+            // Listen to SearchText changes
+            var dpd = DependencyPropertyDescriptor.FromProperty(
+                EDComponentToolbar.EDComponentToolbar.SearchTextProperty,
+                typeof(EDComponentToolbar.EDComponentToolbar));
+            dpd.AddValueChanged(Toolbar, (_, _) => ApplySearchFilter(Toolbar.SearchText));
+
+            // Wire find next/previous commands
+            Toolbar.FindNextCommand = new RelayCommand(FindNext);
+            Toolbar.FindPreviousCommand = new RelayCommand(FindPrevious);
+        }
+
+        private void ApplySearchFilter(string searchText)
+        {
+            _searchMatches.Clear();
+            if (Items == null) return;
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                foreach (var f in Items.OfType<Field>())
+                    f.IsFilteredBySearch = false;
+                Toolbar.TotalMatches = 0;
+                Toolbar.CurrentMatchIndex = 0;
+                return;
+            }
+
+            // Case + diacritics insensitive: "agen" matches "Ágen", "fontu" matches "Fontů" atd.
+            var needle = NormalizeForSearch(searchText);
+
+            foreach (var f in Items.OfType<Field>())
+            {
+                bool matches = NormalizeForSearch(f.Label ?? "").Contains(needle);
+                f.IsFilteredBySearch = !matches;
+                if (matches) _searchMatches.Add(f);
+            }
+
+            Toolbar.TotalMatches = _searchMatches.Count;
+            Toolbar.CurrentMatchIndex = _searchMatches.Count > 0 ? 1 : 0;
+            if (_searchMatches.Count > 0) ScrollFieldIntoView(_searchMatches[0]);
+        }
+
+        /// <summary>Normalize string for diacritics-insensitive matching:
+        /// "Pošta" → "posta". Lowercase + strip combining marks (NFD form).</summary>
+        private static string NormalizeForSearch(string s)
+        {
+            var normalized = s.ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder(normalized.Length);
+            foreach (var c in normalized)
+            {
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                    sb.Append(c);
+            }
+            return sb.ToString();
+        }
+
+        private void FindNext()
+        {
+            if (_searchMatches.Count == 0) return;
+            int next = Toolbar.CurrentMatchIndex >= _searchMatches.Count ? 1 : Toolbar.CurrentMatchIndex + 1;
+            Toolbar.CurrentMatchIndex = next;
+            ScrollFieldIntoView(_searchMatches[next - 1]);
+        }
+
+        private void FindPrevious()
+        {
+            if (_searchMatches.Count == 0) return;
+            int prev = Toolbar.CurrentMatchIndex <= 1 ? _searchMatches.Count : Toolbar.CurrentMatchIndex - 1;
+            Toolbar.CurrentMatchIndex = prev;
+            ScrollFieldIntoView(_searchMatches[prev - 1]);
+        }
+
+        private void ScrollFieldIntoView(Field field)
+        {
+            var container = TheItemsControl.ItemContainerGenerator.ContainerFromItem(field) as FrameworkElement;
+            container?.BringIntoView();
         }
 
         // ─── Public API ───────────────────────────────────────────────────────────
 
         /// <summary>
+        /// Volitelné initial parametry předané do Caché <c>Init</c> (čtené přes
+        /// <c>^||ML("IN","key")</c>). Slouží pro pre-fill polí initial hodnotami
+        /// z hostitelského contextu. Host nastaví před prvním Loaded; auto-init pak
+        /// použije tyto params místo prázdné CVar.
+        /// </summary>
+        public CVar? InitParams { get; set; }
+
+        /// <summary>
+        /// Vyvoláno po dokončení <see cref="Init"/> (Items naplněny z Caché schema).
+        /// Host může pre-fillnout Field.Value z vlastního kontextu (např. generický
+        /// ElementEditDialog čte hodnoty z elementu přes reflexi) a pak zavolat
+        /// <see cref="Validate"/> pro re-validaci s naplněnými hodnotami.
+        /// </summary>
+        public event Action? Initialized;
+
+        /// <summary>
         /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
-        /// validaci pro naplnění případných výchozích chyb.
+        /// validaci pro naplnění případných výchozích chyb. Použije <see cref="InitParams"/>
+        /// pokud nastaveny. Po dokončení vyvolá <see cref="Initialized"/>.
         /// </summary>
         public void Init()
         {
             EnsureConfigured();
-            Controller.Init();
+            Controller.Init(InitParams);
+            Initialized?.Invoke();
         }
 
         /// <summary>Spustí Change-trigger validaci. Vrátí true pokud nejsou chyby.</summary>
@@ -137,7 +245,11 @@ namespace EDControls.EDInputForm
                         f.Visibility.ToWire(),
                         f.HelpText ?? "",
                         SerializeListItems(f.ListItems),
-                        f.FileFilter ?? ""),
+                        f.FileFilter ?? "",
+                        f.Min?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                        f.Max?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "",
+                        f.Format ?? "",
+                        f.Unit ?? ""),
                     _ => new CList()
                 };
                 cVar[i.ToString()] = entry;
@@ -184,10 +296,25 @@ namespace EDControls.EDInputForm
                         HelpText         = row.Length >= 12 && row.GetString(12) != "" ? row.GetString(12) : null,
                         ParentGroup      = currentGroup,
                     };
-                    if (field.FieldType == EFieldType.List && row.Length >= 13)
+                    // List + ComboBox sdílejí listItems storage v pozici 13
+                    if ((field.FieldType == EFieldType.List || field.FieldType == EFieldType.ComboBox)
+                        && row.Length >= 13)
                         field.ListItems = ParseListItems(row.GetString(13));
                     if (field.FieldType == EFieldType.File && row.Length >= 14)
                         field.FileFilter = row.GetString(14);
+                    // Positions 15-18: Decimal/Number extras (min, max, format, unit)
+                    if (row.Length >= 15 && decimal.TryParse(row.GetString(15),
+                            System.Globalization.NumberStyles.Number,
+                            System.Globalization.CultureInfo.InvariantCulture, out var minVal))
+                        field.Min = minVal;
+                    if (row.Length >= 16 && decimal.TryParse(row.GetString(16),
+                            System.Globalization.NumberStyles.Number,
+                            System.Globalization.CultureInfo.InvariantCulture, out var maxVal))
+                        field.Max = maxVal;
+                    if (row.Length >= 17 && row.GetString(17) != "")
+                        field.Format = row.GetString(17);
+                    if (row.Length >= 18 && row.GetString(18) != "")
+                        field.Unit = row.GetString(18);
                     items.Add(field);
                 }
             }
@@ -367,6 +494,28 @@ namespace EDControls.EDInputForm
         // ─── File browse ──────────────────────────────────────────────────────────
 
         internal const string FolderModeSentinel = "$FOLDER";
+
+        /// <summary>
+        /// Implementace color pickeru. Host (např. TemplateDesigner) musí nastavit
+        /// — EDControls je WPF-only, nemá vestavěný color dialog.
+        /// TD wire-up: <c>EDInputForm.PickColorImpl = (owner, hex) => ColorPickerHelper.PickColor(owner, hex);</c>
+        /// Když null, klik na color picker button nic neudělá (user může psát hex ručně).
+        /// </summary>
+        public static Func<Window, string, string?>? PickColorImpl { get; set; }
+
+        private void ColorField_PickClick(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            if (!field.Editable) return;
+            if (PickColorImpl is null) return; // No-op pokud host neregistroval
+
+            var owner = Window.GetWindow(this);
+            if (owner is null) return;
+
+            string currentHex = field.Value ?? "#FF000000";
+            string? newHex = PickColorImpl(owner, currentHex);
+            if (!string.IsNullOrEmpty(newHex)) field.Value = newHex;
+        }
 
         private void FileField_BrowseClick(object sender, RoutedEventArgs e)
         {

@@ -2,6 +2,96 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Wave 3 — Template storage ✅ (2026-05-25)
+
+Caché-driven persistent storage šablon s per-IDFa izolací + schema versioning framework pro defensive ochranu před budoucími breaking changes.
+
+**Implementováno** (3 commity):
+
+| Krok | Co | Commit |
+|---|---|---|
+| W3-1 | Caché `ALVA.TemplateDesigner.API.Sablony` — 5 CRUD metod (List, Load, Save, Delete, Rename) | `5ac9dd0` (2026-05-15) |
+| W3-2 | .NET `CacheTemplateService` async wrapper + `CacheTemplateException` | `5ac9dd0` |
+| W3-3 | `CacheTemplatePickerDialog` + `SaveToCacheDialog` UI | `5ac9dd0` (L5 migration na EDList: `9f5b165`) |
+| W3-4 Fáze 1 | Schema versioning + `TemplateMigrator` framework (H-18) | `174d169` (2026-05-25) |
+
+**Storage layout:**
+```
+^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata") = $lb(Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version)
+^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")     = <JSON blob šablony>
+^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
+```
+
+**Schema versioning framework** (Fáze 1):
+- Template JSON má top-level `version` (semver `"1.0.0"`)
+- `TemplateMigrator` pipeline aplikuje sekvenci migrací při loadu
+- Žádné konkrétní migrace zatím — framework no-op, připraven na budoucí breaking changes
+- Convention v [`template-schema-versions.md`](template-schema-versions.md)
+
+**Vědomě skipnuté** (decision rationale):
+
+| Item | Důvod skipu |
+|---|---|
+| Auto-snapshots history (Fáze 2) | Duplicate templates (Save As) + within-session undo pokrývají 90%+ use cases. Velké tools (Adobe, Sketch, AutoCAD) auto-snapshot taky nemají; jen massové cloud tools (Figma, Canva) ho mají jako defense in depth pro broad audience. TD scope (3-5 customers, 5-10 users/customer) tomu neodpovídá. |
+| Per-template named history (Fáze 2 β) | Save As pattern poskytuje stejnou hodnotu — verze viditelné v picker, lze porovnat paralelně |
+| Audit log (W3-6) | Bez user requestu. Revisit on real need (compliance, debugging) |
+| Thumbnails (W3-7) | Nice-to-have, low priority. Picker list zobrazí metadata (Name, Author, ModifiedAt) — stačí |
+| Soft-delete | Hard delete + Caché backup procedures stačí |
+| Import wizard (W3-9) | Málo legacy templates, manual Open + Save to Cache stačí |
+| Server-side migration | .NET-side migrátor v Fázi 1 stačí (single source of truth při loadu) |
+
+**Klíčová architektonická rozhodnutí:**
+- **Per-IDFa storage** — multi-tenant isolation
+- **Atomic Metadata + Data split** — list zobrazí jen metadata (rychlé), Data fetch on demand
+- **Per-agenda sekundární index** (`IDX/ByAgenda`) — efektivní filter v picker
+- **JSON wire formát (R3)** — typed records v .NET
+- **Semver versioning** — flexibilita pro budoucí major/minor distinction
+- **Idempotentní migrace** — repeated apply = same result
+- **Defensive load** — chybějící version v JSON → assume `1.0.0`, neházet exception
+- **Single-point wire-up** — `TemplateSerializer.Deserialize` routes through migrator pro file i Caché path
+
+---
+
+## Wave 2 — Shared catalogs ✅ (2026-05-20)
+
+**Scope** po diskusi zúžen ze 4 položek na 1 implementovanou + 3 skipnuté:
+
+| # | Položka | Stav | Důvod |
+|---|---|---|---|
+| W2-1 | Agenda registry → Caché | ✅ Hotovo | Auto-discovery z `BaseAgenda` subclasses (commit `de0f872`) |
+| W2-2 | Section templates → Caché | ⛔ Skipnuto | Funkčně překryto Wave 3 Template starters (Open + Save As pattern). Bez user requestu. Existující file-based zůstává jako side-feature. |
+| W2-3 | Element defaults → Caché | ⛔ Skipnuto | Hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case |
+| W2-4 | Company palette → Caché | ⛔ Skipnuto | Wave 1.5 RecentColors pokrývá; brand palette není user request |
+
+### W2-1 Agenda registry — auto-discovery design
+
+**Princip:** „Třída JE registrace". Eliminuje drift mezi registrem a impl (vs JSON config list).
+
+**Caché:**
+- `BaseAgenda.cls` — 2 class parametry (`AgendaCode`, `AgendaLabel`); konvence `<TYP_SESTAVY>_<DATOVY_ZDROJ>`
+- `ZastavkoveJrMhd.cls` — `AgendaCode = "ZASTAVKOVY_JR_MHD"` (přejmenováno z `"MHD"` — MHD je datový modul, ne typ sestavy)
+- `Faktury.cls` — `AgendaCode = "FAKTURY"`
+- NEW `API/AgendyRegistr.cls` — `ListAgendy` přes `%Dictionary` SQL nad subclasses BaseAgenda, vrátí JSON pole `[{code, label, cacheClass}, ...]`
+
+**.NET:**
+- NEW `Serialization/IAgendaRegistry.cs` — interface + `AgendaRegistryEntry` record
+- NEW `Serialization/CacheAgendaRegistry.cs` — impl s Task.Run wrap (R1), synteticky prepend GENERAL agendy, fallback při chybě jen GENERAL
+- `Config/CacheSchemaWiring.cs` — `TryCreate(MLRest, IReadOnlyList<AgendaRegistryEntry>)`
+- `Config/AppSettings.cs` — odstraněna `Agendas` property + `SchemaAgendaSettings` třída
+- `App.xaml.cs` — sync load agendy ze Caché s 3s timeoutem
+- `MainWindow(MLRest?, prefs?, agendas?)` — 3. ctor param
+- `templatedesigner.appsettings.json` — smazáno `agendas[]`
+
+**Architektonická rozhodnutí:**
+- Per-customer kontrola odložena (YAGNI — všichni zákazníci mají stejný kód)
+- AgendaOrder parameter neřešen — alfabeticky podle code
+- AgendaEnabled neřešeno — pre-release work řešen git branches
+- Naming `<TYP_SESTAVY>_<DATOVY_ZDROJ>` — budoucí JŘ: `KNIZNI_JR_MHD`, `MEZIMESTSKY_JR_MHD`, `VOZOVY_JR_MHD`
+
+**Commits:** `7d6704a` (docs scope reduction), `de0f872` (impl).
+
+---
+
 ## Wave 1 + 1.5 — Per-user state přes Caché ✅ (2026-05-20)
 
 První dvě dávky Caché Migration — persistence per-user × IDFa state v `^ALVA.EDControls.UserData` přes `IUserPrefsService`. Žádné lokální JSON soubory (TD běží embedded z EDISONMAIN2). Detail dokumentace, registr scope ownerships a 3-typová taxonomie state v [`EDControls/DOCS/05-userdata-scopes.md`](../../../EDControls/DOCS/05-userdata-scopes.md).

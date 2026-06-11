@@ -1,0 +1,125 @@
+<UserControl x:Class="EDControls.EDComponentToolbar.EDComponentToolbar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:local="clr-namespace:EDControls.EDComponentToolbar"
+             mc:Ignorable="d"
+             d:DesignHeight="32" d:DesignWidth="800">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:IntZeroToCollapsedConverter x:Key="IntNonZeroToVis"/>
+        <local:NonEmptyStringToVisibleConverter x:Key="NonEmptyToVis"/>
+
+        <!-- Toolbar button style — transparent BG, white FG, hover effect -->
+        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="6,2"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                CornerRadius="3"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#22FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#44FFFFFF"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Border Background="{DynamicResource EDTheme.Accent.BlueDark}" Padding="6,4">
+        <DockPanel LastChildFill="False">
+
+            <!-- Right side: standard action ikony (opt-in přes ShowX props) -->
+            <Button DockPanel.Dock="Right" Content="⚙" FontSize="14"
+                    Style="{StaticResource ToolbarButtonStyle}"
+                    ToolTip="Nastavení"
+                    Command="{Binding SettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Visibility="{Binding ShowSettings, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
+            <Button DockPanel.Dock="Right" Content="?" FontSize="14" FontWeight="Bold"
+                    Style="{StaticResource ToolbarButtonStyle}"
+                    ToolTip="Nápověda"
+                    Command="{Binding HelpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Visibility="{Binding ShowHelp, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
+            <Button DockPanel.Dock="Right" Content="🖨" FontSize="13"
+                    Style="{StaticResource ToolbarButtonStyle}"
+                    ToolTip="Tisk"
+                    Command="{Binding PrintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Visibility="{Binding ShowPrint, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
+            <Button DockPanel.Dock="Right" Content="📊" FontSize="13"
+                    Style="{StaticResource ToolbarButtonStyle}"
+                    ToolTip="Export"
+                    Command="{Binding ExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                    Visibility="{Binding ShowExport, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
+
+            <!-- Title — left edge, prominent. Anchor co je v komponentě. -->
+            <TextBlock DockPanel.Dock="Left"
+                       Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       Foreground="White" FontWeight="SemiBold" FontSize="14"
+                       VerticalAlignment="Center" Margin="2,0,12,0"
+                       Visibility="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
+
+            <!-- Search — docked Right, vedle standard ikon (toolbar tool feel).
+                 Když Title je set, vznikne přirozená mezera mezi Title (vlevo) a Search (vpravo). -->
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
+                        VerticalAlignment="Center" Margin="0,0,8,0"
+                        Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
+
+                <TextBlock Text="{Binding SearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                           Foreground="White"
+                           VerticalAlignment="Center" Margin="0,0,6,0"/>
+
+                <TextBox x:Name="SearchTextBox" Width="220" VerticalAlignment="Center"
+                         Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"/>
+
+                <!-- Clear (✕) — visible jen pokud SearchText není prázdné -->
+                <Button Content="✕" FontSize="12"
+                        Margin="2,0,0,0" Padding="6,2"
+                        Style="{StaticResource ToolbarButtonStyle}"
+                        ToolTip="Vyčistit (Esc)"
+                        Click="ClearSearch_Click"
+                        Visibility="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
+
+                <!-- Match nav (▲ ▼ counter) — visible jen pokud TotalMatches > 0 -->
+                <StackPanel Orientation="Horizontal"
+                            Visibility="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntNonZeroToVis}}">
+                    <Button Content="▲" FontSize="10"
+                            Margin="6,0,0,0" Padding="6,2"
+                            Style="{StaticResource ToolbarButtonStyle}"
+                            ToolTip="Předchozí výsledek (Shift+Enter)"
+                            Command="{Binding FindPreviousCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    <Button Content="▼" FontSize="10"
+                            Margin="2,0,0,0" Padding="6,2"
+                            Style="{StaticResource ToolbarButtonStyle}"
+                            ToolTip="Další výsledek (Enter)"
+                            Command="{Binding FindNextCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                    <TextBlock Foreground="White" VerticalAlignment="Center"
+                               Margin="6,0,0,0" FontSize="11">
+                        <Run Text="{Binding CurrentMatchIndex, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
+                        <Run Text="/"/>
+                        <Run Text="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
+                    </TextBlock>
+                </StackPanel>
+            </StackPanel>
+        </DockPanel>
+    </Border>
+</UserControl>

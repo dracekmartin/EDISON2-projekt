@@ -1,5 +1,73 @@
 # Changelog
 
+## 2026-05-25 — Wave 3 uzavřena (Fáze 2 auto-snapshots skipnuté)
+
+Po diskusi vyhodnoceno, že auto-snapshots (Fáze 2 původně plánované) nemají dost přidanou hodnotu pro TD scope. Argumentace:
+- **Within-session reverts** — pokryto undo/redo stack (existující)
+- **Cross-session „včera bylo lepší"** — rare scenario, navíc duplicate templates (Save As) řeší explicit user-controlled versioning
+- **Velké tools comparison** — profi tools (Adobe Illustrator, Sketch, AutoCAD) auto-snapshot taky nemají; jen masově-cloud tools (Figma, Canva) mají defense in depth pro broad audience
+- **Zero customer request** — žádná stížnost „ztratil jsem práci"
+
+**Wave 3 = ✅ HOTOVÁ** s:
+- CRUD ✅ (Caché Sablony API, 5 metod)
+- Schema versioning framework ✅ (TemplateMigrator + version field, Fáze 1)
+- Explicit user versions ✅ (Save As pattern, existing)
+- Within-session undo ✅ (UndoStack, existing)
+
+**Skipnuté Wave 3 položky** (revisit on real user request):
+- W3-4 Fáze 2 auto-snapshots history
+- W3-5 Server-side migration (.NET-side stačí pro single source of truth)
+- W3-6 Audit log
+- W3-7 Thumbnails
+- W3-8 Per-template named history
+- W3-9 Import wizard
+
+**Doc cleanup:**
+- Roadmap přepsán: Wave 3 detail přesunut do archivu (s decision rationale pro každou skipnutou položku)
+- Top focus → **Fáze A.2-D zákaznické tickety** (TRANSDEV/KORID/DPKV suspended tickety)
+- CLAUDE.md Aktuální focus aktualizován
+
+## 2026-05-25 — Wave 3 Fáze 1: Template schema versioning + migrator framework
+
+První polovina Wave 3 finishing. Schema versioning foundation pro Template JSON — defensive infrastructure proti budoucím breaking changes.
+
+**Princip:** Template JSON má top-level `version` field (semver, např. `"1.0.0"`). Při loadu `TemplateMigrator` detekuje verzi a aplikuje pipeline migrací do aktuální verze (`TemplateMigrator.CurrentVersion`). Migrace pipeline je v Fázi 1 prázdná (framework only); při budoucí breaking change se přidá `ITemplateMigration` impl.
+
+**Nové soubory:**
+- `Serialization/TemplateMigrator.cs` — `TemplateMigrator` + `ITemplateMigration` interface + `VersionComparer` (semver comparison, tolerantní k chybějícím komponentám)
+- `.claude/docs/template-schema-versions.md` — convention pro vývojáře: kdy bumpovat verzi, jak přidat migraci, safety rules (idempotentní + defensive)
+
+**Změny:**
+- `Models/Template.cs` — Version default `"1.0"` → `"1.0.0"` (semver) + nový `[JsonIgnore] WasMigrated` flag (transient, pro UI signaling)
+- `Serialization/TemplateSerializer.cs` — `Deserialize(json)` parsuje do JsonNode, aplikuje migrator, pak deserialize do Template. `LoadAsync` delegate na `Deserialize`. `CacheTemplateService.LoadAsync` automaticky routes through migrator (volá `TemplateSerializer.Deserialize`)
+- `MainWindowViewModel.OpenTemplateFromFileAsync` + `OpenFromCacheAsync` — po loadu zavolá `NotifyMigrationIfNeeded()` → status bar warning `"⚠ Šablona migrována na nový formát (V x.y.z). Uložením přepíšete starou verzi."` + `IsDirty = true`
+
+**Skipped pro YAGNI (po diskusi):**
+- Per-template history (auto-snapshots) — duplicate templates pattern (Save As) už řeší explicit versioning use case
+- Konkrétní migrace V1→V2 — žádná breaking change zatím nepadla, framework je no-op
+
+**Architektonická rozhodnutí:**
+- **Semver** místo monotonic int — flexibilita pro budoucí distinction major/minor/patch
+- **Idempotentní migrace** — repeated apply = same result (safety při ladění)
+- **Defensive** — chybějící version v JSON → assume "1.0.0", neházet exception
+- **JsonNode pipeline** místo Object<->JSON ping-pong — performance + flexibility
+- **Wire-up v Serialize/Deserialize** — single point routing přes migrator, Caché i file path sdílí
+
+## 2026-05-25 — Wave 2 uzavřena (W2-2 section templates skipnuto)
+
+Po diskusi vyhodnoceno, že W2-2 (section templates → Caché) je funkčně překryto Wave 3 Template starters (uživatel místo „section library" duplikuje full template přes „Open + Save As"). Pro aktuální use case TD customers (~3-5 templates per customer) starter pattern stačí; section templates feature zůstává jako file-based side-feature (`SectionTemplateManager` netknut), bez user requestu na migraci.
+
+**Skipnuté Wave 2 položky** (decision rationale):
+- W2-2 Section templates → funkčně překryto Wave 3 Template starters
+- W2-3 Element defaults → hardcoded v C# je rozumné; Wave 4 InputGrid persist do Template JSON pokrývá use case
+- W2-4 Company palette → Wave 1.5 RecentColors pokrývá; brand palette není user request
+
+Wave 2 = ✅ uzavřená, jen W2-1 implementováno. Pokračujeme H-18/H-19 (template versioning + migrator) — prerekvizita Wave 3 production.
+
+**Doc cleanup:**
+- Roadmap přepsán: Wave 2 detail přesunut do archivu, top fokus → H-18/H-19
+- Archive: Wave 2 sekce s plnou tabulkou implementace + decision rationale
+
 ## 2026-05-20 — Wave 2 W2-1: Agenda registry → Caché auto-discovery
 
 První polovina Wave 2 Caché migrace — seznam dostupných agend přesunut z `templatedesigner.appsettings.json agendas[]` do Caché auto-discovery z `BaseAgenda` subclasses. Druhá polovina (section templates) zbývá.

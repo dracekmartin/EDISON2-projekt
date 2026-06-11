@@ -8,6 +8,8 @@ ROUTINE EDInputForm [Type=INC]
 #define FieldTypeButton  "BUTTON"
 #define FieldTypeList    "LIST"
 #define FieldTypeFile    "FILE"
+#define FieldTypeColor   "COLOR"
+#define FieldTypeComboBox "COMBOBOX"
 #define FileFilterFolder "$FOLDER"
 
 #define ListItemSep      "|"

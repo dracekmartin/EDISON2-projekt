@@ -98,16 +98,15 @@ namespace EDControls.EDList
         {
             bool showTitle  = !string.IsNullOrEmpty(Title);
             bool showSearch = SearchVisible ?? !string.IsNullOrEmpty(Title);   // null = auto z Title
-            titleText.Visibility  = showTitle  ? Visibility.Visible : Visibility.Collapsed;
-            searchBox.Visibility  = showSearch ? Visibility.Visible : Visibility.Collapsed;
-            headerBar.Visibility  = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
+            headerToolbar.ShowSearch = showSearch;
+            headerToolbar.Visibility = (showTitle || showSearch) ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void RefreshFilter()
         {
             var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
             if (view is null) return;
-            var search = searchBox.Text;
+            var search = SearchText;
             // Filtruje napříč všemi viditelnými data sloupci (skipuje checkbox column, který nemá Tag=key)
             var searchableKeys = dataGrid.Columns
                 .Select(c => c.GetValue(FrameworkElement.TagProperty) as string)

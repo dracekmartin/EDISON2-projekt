@@ -169,7 +169,8 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Per-agenda mapování instance value → jméno parametru pro GetData.</summary>
     private static string InstanceParamName(string agendaCode) =>
-        agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
+        (agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase)
+         || agendaCode.Equals("ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)) ? "LINKA_ID" : "INSTANCE_ID";
 
     // ── Real preview data ────────────────────────────────────────────────────
     private List<DataContext>?                  _realPreviewData;
@@ -746,6 +747,7 @@ public class TemplateDesignerViewModel : EDViewModel
             await TryLoadInstanceDefaultsAsync();
             await LoadPrintParamsAndApplyAsync();
             if (Preferences is not null) await Preferences.AddRecentFileAsync(filePath);
+            NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
@@ -783,6 +785,19 @@ public class TemplateDesignerViewModel : EDViewModel
         catch
         {
             // Saved instances nejsou kompatibilní s aktuálním stavem DB — ignorujeme tiše
+        }
+    }
+
+    /// <summary>
+    /// Pokud byla aktuální šablona při loadu auto-migrována (Template.WasMigrated=true),
+    /// zobrazí warning ve status baru. Uložením se přepíše stará verze v souboru/Caché.
+    /// </summary>
+    private void NotifyMigrationIfNeeded()
+    {
+        if (State.CurrentTemplate.WasMigrated)
+        {
+            StatusText = $"⚠ Šablona migrována na nový formát (V{State.CurrentTemplate.Version}). Uložením přepíšete starou verzi.";
+            IsDirty = true; // user musí explicitně uložit, aby se nová verze propsala
         }
     }
 
@@ -910,6 +925,7 @@ public class TemplateDesignerViewModel : EDViewModel
             RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
             await LoadPrintParamsAndApplyAsync();
+            NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
             RequestPropertiesPanelUpdate?.Invoke();
@@ -939,18 +955,16 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (TemplateStorage is null) return;
 
-        var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
         var vm = new SaveToCacheDialogViewModel(
             State.CurrentTemplate.Name,
-            State.CurrentTemplate.AgendaCode,
-            agendas);
+            State.CurrentTemplate.AgendaCode);
         var dlg = new SaveToCacheDialog(vm) { Owner = Application.Current.MainWindow };
         if (dlg.ShowDialog() != true) return;
 
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
         State.CurrentTemplate.Name = vm.Name;
-        State.CurrentTemplate.AgendaCode = vm.SelectedAgenda.Code;
+        State.CurrentTemplate.AgendaCode = vm.AgendaCode;
 
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();

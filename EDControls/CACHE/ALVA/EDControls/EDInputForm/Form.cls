@@ -29,7 +29,8 @@ Property helpTextMode As %String [ InitialExpression = {$$$HelpTextModeTooltip} 
 
 /// Appends a group separator. Pass visibility to control display on the .NET side
 /// ($$$ItemVisibilityVisible, $$$ItemVisibilityCollapsed, etc.).
-/// number is assigned automatically (1-based, sequential across groups and fields).
+/// Groups don't get a visible number — number is 0. Fields are numbered sequentially
+/// across all groups (1, 2, 3, ...) — Renumber sets this after insert.
 Method AddGroup(key As %String, groupName As %String, visibility As %String = {$$$ItemVisibilityVisible})
 {
 	s g = ##class(ALVA.EDControls.EDInputForm.Group).%New()
@@ -37,11 +38,12 @@ Method AddGroup(key As %String, groupName As %String, visibility As %String = {$
 	s g.groupName = groupName
 	s g.visibility = visibility
 	d ..items.Insert(g)
-	s g.number = ..items.Count()
+	d ..Renumber()
 }
 
 /// Appends a field and returns it so the caller can set value / validationError.
-/// number is assigned automatically (1-based, sequential across groups and fields).
+/// Field number is assigned sequentially across all groups (1-based) — Renumber sets
+/// this after insert. Groups don't increment the field counter.
 Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {$$$FieldTypeText}, validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
 	s f = ##class(ALVA.EDControls.EDInputForm.Field).%New()
@@ -51,7 +53,55 @@ Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {
 	s f.validateOnChange = validateOnChange
 	s f.required = required
 	d ..items.Insert(f)
-	s f.number = ..items.Count()
+	d ..Renumber()
+	q f
+}
+
+/// ─── Convenience helpers pro nejčastější field typy ─────────────────────────
+/// Vrací nový Field — caller může nastavit další properties (helpText, format,
+/// validationError, ...). Pro complex typy (List/ComboBox/Color/File) použij
+/// AddFieldToLastGroup + post-setting properties (viz EDIFExample.cls).
+///
+/// Pro skupinu — nejprve volej AddGroup(...), helpery přidají field do poslední.
+
+/// Text field. value=initial obsah, required=povinnost.
+Method AddText(key As %String, label As %String, value As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeText, 0, required)
+	s f.value = value
+	q f
+}
+
+/// Bool (checkbox) field. value=0/1.
+Method AddBool(key As %String, label As %String, value As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeBool, 0, 0)
+	s f.value = value
+	q f
+}
+
+/// Number (integer) field s volitelným rozsahem + jednotkou.
+/// min/max/unit prázdné = bez validace/displeje.
+Method AddNumber(key As %String, label As %String, value As %String = "", min As %String = "", max As %String = "", unit As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeNumber, 0, required)
+	s f.value = value
+	s:min'="" f.min = min
+	s:max'="" f.max = max
+	s:unit'="" f.unit = unit
+	q f
+}
+
+/// Decimal (float) field s volitelným rozsahem + jednotkou + formátem.
+/// format např. "0.0#", "N2", "0.00".
+Method AddDecimal(key As %String, label As %String, value As %String = "", min As %String = "", max As %String = "", unit As %String = "", format As %String = "", required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
+{
+	s f = ..AddFieldToLastGroup(key, label, $$$FieldTypeDecimal, 0, required)
+	s f.value = value
+	s:min'="" f.min = min
+	s:max'="" f.max = max
+	s:unit'="" f.unit = unit
+	s:format'="" f.format = format
 	q f
 }
 
@@ -91,12 +141,20 @@ Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %St
 	q f
 }
 
-/// Re-assigns sequential numbers (1-based) to all items.
+/// Renumbers items: groups don't get a visible number (set to 0); fields are
+/// numbered sequentially across all groups (1, 2, 3, ...).
 Method Renumber() [ Private ]
 {
 	s cnt = ..items.Count()
+	s fieldIdx = 0
 	f idx=1:1:cnt {
-		s ..items.GetAt(idx).number = idx
+		s item = ..items.GetAt(idx)
+		i item.%IsA("ALVA.EDControls.EDInputForm.Group") {
+			s item.number = 0
+		} else {
+			s fieldIdx = fieldIdx + 1
+			s item.number = fieldIdx
+		}
 	}
 }
 
@@ -171,7 +229,9 @@ Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 /// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
 /// Format per item (number is always position 2):
 ///   GROUP → $lb("GROUP", number, key, groupName, visibility, helpText)
-///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
+///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required,
+///                validationError, editable, visibility, helpText, listItems, fileFilter,
+///                min, max, format, unit)
 /// Also writes helpTextMode at string subscript "helpTextMode".
 Method WriteToOut()
 {
@@ -230,6 +290,11 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 			}
 			// Position 14: file filter for File field type
 			i $ll(listVal)>=14 s f.fileFilter = $li(listVal,14)
+			// Positions 15-18: Decimal/Number extras (min, max, format, unit)
+			i $ll(listVal)>=15 s f.min    = $li(listVal,15)
+			i $ll(listVal)>=16 s f.max    = $li(listVal,16)
+			i $ll(listVal)>=17 s f.format = $li(listVal,17)
+			i $ll(listVal)>=18 s f.unit   = $li(listVal,18)
 		}
 	}
 	q form
