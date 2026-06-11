@@ -37,4 +37,13 @@
     </Reference>
   </ItemGroup>
 
+  <!--
+    Husky.NET auto-install: on `dotnet restore` ensures git hooks are wired up.
+    Override with HUSKY=0 env var (e.g. on CI runners that don't push from the runner).
+  -->
+  <Target Name="husky" BeforeTargets="Restore;CollectPackageReferences" Condition="'$(HUSKY)' != '0'">
+    <Exec Command="dotnet tool restore" StandardOutputImportance="Low" WorkingDirectory="$(MSBuildThisFileDirectory)\.." />
+    <Exec Command="dotnet husky install" StandardOutputImportance="Low" WorkingDirectory="$(MSBuildThisFileDirectory)\.." />
+  </Target>
+
 </Project>

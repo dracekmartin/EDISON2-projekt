@@ -1,0 +1,24 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+# Pre-push: run both .NET (xUnit) and Cache (%UnitTest) test suites.
+# Fail-fast: if .NET fails, skip Cache (saves time). Either failure aborts push.
+# Emergency bypass: git push --no-verify (don't make a habit).
+
+set -e
+
+echo ""
+echo "==> [1/2] Running .NET tests (dotnet test EDISON2.sln)"
+dotnet test EDISON2.sln --nologo --verbosity minimal
+
+echo ""
+echo "==> [2/2] Running Cache tests (tools/run-cache-tests.ps1)"
+# Prefer pwsh (PS 7+); fall back to Windows PowerShell 5.1.
+if command -v pwsh >/dev/null 2>&1; then
+    pwsh -NoProfile -File tools/run-cache-tests.ps1
+else
+    powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-cache-tests.ps1
+fi
+
+echo ""
+echo "==> All tests passed. Pushing."

@@ -4,7 +4,9 @@ Dvouvrstvá WPF aplikace: .NET UI ↔ Caché (InterSystems) back-end přes HTTP 
 
 Aplikační projekty buildí lokálně (`bin/Debug/`, `bin/Release/`). Do `C:\Edison\` se dostávají pouze přes `dotnet publish` s publish profilem „SingleFileCEdison" (`Properties/PublishProfiles/`) — single-file výstup bez volných DLL.
 
-Nové features pokrývej xUnit testy (`EDControls.Tests/`, `EDISONMAIN2.Tests/`).
+Nové features pokrývej xUnit testy (`EDControls.Tests/`, `EDISONMAIN2.Tests/`) a Caché
+`%UnitTest` testy s base classou `ALVA.EDTesting.MLTestCase`. Pre-push hook (Husky.NET)
+spouští oba sety před každým `git push` — viz sekce **Testy** níže.
 
 ## Struktura repozitáře
 
@@ -16,6 +18,9 @@ Nové features pokrývej xUnit testy (`EDControls.Tests/`, `EDISONMAIN2.Tests/`)
 | `ServiceGtfsRt/` | ASP.NET Core Windows Service — GTFS Realtime feed (vozidla, spoje). Vlastní `CLAUDE.md`. |
 | `EDControls.Tests/` | xUnit testy pro EDControls (EDViewModel, EDInputForm parsing, EDList formátování). |
 | `EDISONMAIN2.Tests/` | xUnit testy pro EDISONMAIN2 (parsování stromu modulů). |
+| `EDTesting/` | Sdílený Caché test framework — base class `MLTestCase` + programový `TestRunner` (volaný z pre-push hooku). |
+| `tools/` | Pomocné skripty (PowerShell). `run-cache-tests.ps1` volá `TestRunner.RunPackage` přes MLRest. |
+| `.husky/` | Husky.NET git hooks (auto-installed při `dotnet restore` přes target v `EDISONMAIN2.Tests.csproj`). |
 | `MLRest.md` | Kompletní referenční dokumentace Caché architektury (namespace, makra, komunikační protokol). |
 
 ---
@@ -315,6 +320,67 @@ Bez argů původní standalone chování. Reference: `MHD2PlanDopravy/Program.cs
 
 EDISONMAIN2 strana: `ProcessLauncher.Launch(module)` (moduly z module tree)
 a `LicenceVerifier.LaunchUsersFormAndWait` (admin override při out-of-license).
+
+---
+
+## Testy
+
+Dvě vrstvy testů, oba spouštěny pre-push hookem (Husky.NET).
+
+### .NET (xUnit)
+
+`EDControls.Tests/`, `EDISONMAIN2.Tests/`. Standardní xUnit + NSubstitute.
+Lokálně: `dotnet test EDISON2.sln`.
+
+### Caché (`%UnitTest`)
+
+Testovací třídy dědí z `ALVA.EDTesting.MLTestCase` (viz [EDTesting/CACHE/ALVA/EDTesting/MLTestCase.cls](EDTesting/CACHE/ALVA/EDTesting/MLTestCase.cls)).
+Base poskytuje `OnBeforeOneTest` (čistí `^||ML`) a `SetupSys(ByRef sys, idfa, mlp, loginName)`
+helper pro `$$$FillParams` boilerplate.
+
+```objectscript
+Class ALVA.MYPROJECT.Tests.MyTest Extends ALVA.EDTesting.MLTestCase
+{
+Method TestSomething()
+{
+    do ..SetupSys(.sys)
+    do ##class(ALVA.MYPROJECT.API.Foo).Bar(.sys)
+    do $$$AssertEquals(^||ML("OUT","result"), "expected")
+}
+}
+```
+
+`ALVA.EDTesting.TestRunner.RunPackage` spouští všechny test classes pod daným package
+přes MLRest a vrací strukturovaný výsledek (`passed`/`failed`/`total`/`failures`).
+Lokálně: `pwsh -File tools/run-cache-tests.ps1 [-Package "ALVA.MYPROJECT.Tests"]`.
+
+### Pre-push hook
+
+`.husky/pre-push` (Husky.NET) spouští před každým `git push`:
+
+1. `dotnet test EDISON2.sln`
+2. `tools/run-cache-tests.ps1`
+
+Selhání zablokuje push. Emergency bypass: `git push --no-verify` (nepoužívat jako návyk).
+
+**Onboarding kolegy:** `dotnet restore` v root repu — MSBuild target v
+[EDISONMAIN2.Tests.csproj](EDISONMAIN2.Tests/EDISONMAIN2.Tests.csproj) spustí
+`dotnet tool restore` + `dotnet husky install`, čímž se hooks aktivují bez extra kroků.
+
+**Caché tests potřebují přístup k dev serveru** (`192.168.16.1:57770`, namespace `MLINE`).
+Bez VPN / mimo M-line síť `run-cache-tests.ps1` selže. Hardcoded server a IdFa
+v parametrech skriptu; uživatel se odvozuje z `$env:USERNAME` (lze override
+`$env:CACHE_USER`).
+
+### Přidání nového Caché testu
+
+1. `extends ALVA.EDTesting.MLTestCase` — automaticky získáš cleanup + SetupSys
+2. Test methods `Method TestXxx()` (per %UnitTest konvence)
+3. `cache_compile` (MCP) → třída na serveru
+4. `pwsh -File tools/run-cache-tests.ps1 -Package "ALVA.MYPROJECT.Tests"` k ověření
+
+Pokud je nový package mimo `ALVA.EDISONMAIN2.Tests`, přidej ho do default `-Package`
+listu v `tools/run-cache-tests.ps1` (comma-separated), jinak pre-push hook ho nepokryje.
 
 ---
 
