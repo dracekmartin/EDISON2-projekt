@@ -1,34 +1,16 @@
 Include %occInclude
 
-Class ALVA.EDISONMAIN2.Tests.TreeTest Extends %UnitTest.TestCase
+Class ALVA.EDISONMAIN2.Tests.TreeTest Extends ALVA.EDTesting.MLTestCase
 {
 
 /// %UnitTest pro ALVA.EDISONMAIN2.API.Tree.GetTree.
-/// Sys array struktura podle GENERAL.inc / $$$FillParams (case-sensitive subscripty).
+/// OnBeforeOneTest (kill ^||ML) a SetupSys (sys array boilerplate) zděděny z MLTestCase.
 ///
 /// Spuštění (jednou per namespace):
-///   set ^UnitTestRoot = "c:\temp\unittests\"   ; nebo libovolná existující složka na serveru
+///   set ^UnitTestRoot = "c:\temp\unittests\"
 ///   do ##class(%UnitTest.Manager).RunTest(":ALVA.EDISONMAIN2.Tests.TreeTest", "/noload")
-
-/// Vyčistí process-private global před každým testem.
-Method OnBeforeOneTest(testname As %String) As %Status
-{
-	kill ^||ML
-	quit $$$OK
-}
-
-/// Naplní sys array povinnými poli pro $$$FillParams. Bez nich FillParams ztrapne
-/// a catch v GetTree odchytí výjimku bez populace OUT.
-ClassMethod SetupSys(ByRef sys)
-{
-	set sys("U","IdFa") = "CB_DP"
-	set sys("U","delimiter") = "~"
-	set sys("U","SystemDB") = $namespace
-	set sys("U","DATA") = $namespace
-	set sys("U","MLP") = "1"
-	set sys("U","loginName") = "test"
-	set sys("U","fullName") = "Test User"
-}
+/// Nebo programově:
+///   do ##class(ALVA.EDTesting.TestRunner).RunPackage(.sys)   ; package="ALVA.EDISONMAIN2.Tests"
 
 /// Default input (tree="") -> main tree. První záznam je EXE (stub agendy v FillMain).
 Method TestDefaultInputReturnsMainTree()
