@@ -231,10 +231,18 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     }
 
     // ── hlavička linky ──────────────────────────────────────────────
+    // SeT_MhD (delim "~"): $1 lokální označení, $2 titulek, $5 informace (1:1 sTIT^JRapiLinPrtMhd1).
+    s setMhd = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD"))
+    s lokalni = $p(setMhd,"~",1)
+    i lokalni = "" s lokalni = $e(lin,5,7)                       // fallback = znaky 5-7 čísla linky
+    s titulek = $p(setMhd,"~",2)
+    i titulek = "" s titulek = "Městská hromadná doprava..."     // legacy MHD default
+    s informace = $replace($p(setMhd,"~",5),"<br>",$c(13,10))    // cnvTxt: <br> → newline
+
     s vals = ##class(%DynamicObject).%New()
     d vals.%Set("CISLO_LINKY",            +lin)
-    d vals.%Set("LOKALNI_OZNACENI_LINKY", "")
-    d vals.%Set("TITULEK",                $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
+    d vals.%Set("LOKALNI_OZNACENI_LINKY", lokalni)
+    d vals.%Set("TITULEK",                titulek)
     d vals.%Set("POPIS_LINKY",            ..NazevLinky(dataDB, sku, lin))
     d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(dataDB, sku, lin))
     s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
@@ -246,7 +254,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("TYP_JR",                 "")
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
-    d vals.%Set("INFORMACE",              "")
+    d vals.%Set("INFORMACE",              informace)
     d vals.%Set("NEJEDOU_SPOJE",          "")
 
     // ── trasa → zastávky (úsek od aktuální zastávky ve směru jízdy; zóny + na znamení) ──

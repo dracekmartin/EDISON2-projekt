@@ -354,7 +354,7 @@ je per-namespace, bez IdFa).**
 - **Instance picker** (`GetAvailableInstances`) — seznam linek z ^JRL (první skupina); proklikávání
   stránek v preview. C# `InstanceParamName` AD→LINKA_ID; GetData přijímá i `INSTANCE_ID` alias.
 
-### ✅ 1:1 drobnosti dokončené (2026-06-04, ověřeno proti legacy zdroji + datům 0410101)
+### ✅ 1:1 drobnosti dokončené (2026-06-04 — 06-11, ověřeno proti legacy zdroji + datům 0410101)
 1. **Názvy zastávek** — `NazevZastavky` bere `^JRZ` `$7` (odbav/MHD název s obcí, "Cheb,aut.nádraží",
    "Fr. Lázně,Krapice,Lužná"), fallback `$2`. Zahozeno `FormatNazev`/`FormatNazevPlny` (drop-obec).
    `NazevLinky` join `–`→`-` (legacy pomlčka).
@@ -364,12 +364,21 @@ je per-namespace, bez IdFa).**
    `PrefixOmezeni` = mapování (11 "jede jen ", 12 "jede také ", 13 "jede ", 14/15 su/li, 22 "nejede ").
 4. **POPIS_DOPRAVCE** — `PopisDopravce` (distinct `fa:pr` z `#`-pole 2 spojů obou směrů, dedup názvů,
    "Zajišťuje: …") + `NazevDopravce` chain z `^JRSET("DOP")`: per-provoz `$6` → firma `$14` → `$7` → `$1`.
+5. **LOKALNI_OZNACENI_LINKY + TITULEK + INFORMACE** — všechny z `^JRL(...,"MhD","SeT_MhD")` (delim `~`,
+   1:1 `sTIT^JRapiLinPrtMhd1`): `$1` lokální označení (fallback `$E(Lin,5,7)`="101"), `$2` titulek
+   (fallback "Městská hromadná doprava..."), `$5` informace (`<br>`→newline). Inline v hlavičce, `LokalniOznaceni` helper zrušen.
+7. **Číslování poznámek** — pro KV_DP (TYPPOZ=0 = `^JRSET("Definice","MHDnewOM")` prázdné) legacy používá
+   sekvenční čísla = moje 1/2/3 (schéma shodné, hodnoty 39/70/32 byly artefakt jiného seedu). Bez změny.
+   TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred (žádná test firma to nemá).
 
 ### ⬜ Zbývá do plného 1:1 s legacy
-5. **LOKALNI_OZNACENI_LINKY** (legacy "101" — zjistit zdroj; "tit" věta `$p2` = `$P(^JRL(...,"MhD","SeT_MhD"),CN,1)`
-   v `sTIT^JRapiLinPrtMhd1`, fallback `$E(Lin,5,7)`). Teď prázdné.
-6. **FTL 1-3 + CNZ** prázdninové dělení sloupců — čeká na linku s `MHD_TYP_R` (0410101/0320113 jsou FTL=0).
-7. (kosmetika) legacy číslování poznámek (39/70/32 vs 1/2/3 — funkčně shodné); TITULEK legacy default.
+6. **FTL 1-3 + CNZ prázdninové dělení sloupců** — ⏳ odblokováno (test linka **`0425017`** sku 42/429 v KV_DP,
+   `MHD_TYP_R=1` → FTL=1; v KV_DP jen FTL=1, ne 2/3). **FTL = formát sloupců mřížky** (`PATCH,"MHD_TYP_R"`):
+   FTL0 = Prac\|So\|Ne+sv (mám); FTL1 = Prac-mimo-prázd\|Prac-o-prázd\|So+Ne+sv; FTL2 = Prac\|So+Ne+sv;
+   FTL3 = Prac-mimo-prázd\|Prac-o-prázd\|So\|Ne+sv. Legacy logika `JRapiLinPrtMhd1` ř.30-152: per spoj
+   spočítá `KamPrt` bitmapu (do kterých sloupců patří) z `Plk` + **prázdninové dělení dle CNZ** (`arrsp dta29`)
+   proti config linky `MHD_NZ1_NZ2` (`NZFTL1`=nejede o prázd, `NZFTL2`=jede o prázd) + `MHD_NENZ1_NENZ2` filtr.
+   = zobecnění mého `SkupinyZPlk`/`NacistSkupinyDnu` na FTL-aware sloupcový model. **Nejsložitější zbývající kus.**
 8. (vizuál, na konec) šířka legendy POZNAMKY — datumy s rokem jsou široké; ladit zalamování/šířku/font
    v jednom průchodu přes všechny poznámky (layout věc, ne data).
 
@@ -381,3 +390,6 @@ je per-namespace, bez IdFa).**
 - MCP `cache_zwglobal` (read-only `zw` globálu) — Caché `ALVA.EDISONAI.McpDebug.DumpGlobal` (EDISON repo)
   + C# tool v `EdisonCacheMcp/Tools/CacheTools.cs`. Gold oracle: `cache_query ALVA.TISKMHD.Data/LoadData`
   s `VOLANO_Z~JRMAIN` (viz §9). Kompilace .cls jde přes PostToolUse hook, ne přes MCP.
+- `ALVA.EDISONAI.McpDebug.ScanSubscript` (read-only) — najde záznamy 2-úrovňového globálu s daným pod-subscriptem.
+  Volá se přes `cache_query`, params `[globalRef, tail("~"-sep), ns, max]`. Použito pro hledání linek s FTL:
+  `cache_query ScanSubscript ["JRL","PATCH~MHD_TYP_R","KV_DP","2000"]` → seznam `sku~lin = hodnota`.
