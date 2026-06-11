@@ -48,9 +48,11 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 
 **Hotovo (2026-06-02 — 06-11):** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti **body 1-7**: názvy zastávek (`^JRZ` `$7`), datumy v poznámkách s rokem (`TODDO` formát), všechna „jede/nejede" omezení (omzId 11-15,22), POPIS_DOPRAVCE (`^JRSET("DOP")` chain), LOKALNI_OZNACENI/TITULEK/INFORMACE (`SeT_MhD`), číslování poznámek (schéma shodné pro TYPPOZ=0), **FTL 1-3 sloupcový model** (`ZarazeniSpoje` 1:1 s `JRapiLinPrtMhd1`; prázdninové dělení dle CNZ/NZ konfigurace). Ověřeno proti gold oracle `ALVA.TISKMHD.Data` na 0410101 (FTL=0) + 0425017 (FTL=1). Debug nástroje: MCP `cache_zwglobal` + `ScanSubscript`.
 
-**Zbývá (detail v [`cache-database-linky.md`](cache-database-linky.md) §10):**
-- **bod 8** — vizuál (šířka legendy POZNAMKY s rokem) — až na konci, jeden layout průchod
-- **FTL 2/3** — implementováno per-legacy, neověřeno (v KV_DP jen FTL1; chce linku z jiné firmy)
+**Hotovo navíc (2026-06-11):** FTL 2/3 ověřeno (CB_GWBUS/CB_CSADAD), **atributy zastávek** (číselník 16), prázdninové dělení (logika ověřena synteticky — NZ data nikde). **Zbývá JEDINÁ feature: rozdíly tras A/B/C** (alg 1002 / `OmTrasa`; MHD agenda = reference; test linky CB_CSADAD `0345061`/`0365001`, VS_CSAD `0945001`). Detail §10.
+
+**Ostatní (nice-to-have):**
+- TrasaMin varianty StopListu (vizuál), šířka legendy (vizuál) — na konec
+- značky platnosti spojů — v datech se nevyskytují (spoje X/6+)
 - **DEV cleanup před produkcí** — `#if DEBUG` auto-open `kv_ad_test.json`, zvážit statický `GetMockData`
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.

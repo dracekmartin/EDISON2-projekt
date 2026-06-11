@@ -391,11 +391,28 @@ LOKALNI=101, TITULEK fallback, platnost), StopList (názvy, pořadí, zóny), 3 
   `GetMockData` to maskovalo (auto-pick vždy obsluhované poradí). Init `posledniCzst` + guard prázdného czst.
 - **#2 anotace = falešný poplach** — markery na stejných časech jako legacy (subagent přečetl chybně).
 
-### ⬜ Zbývá do plného 1:1 s legacy
-7b. **TrasaMin varianty** (StopList `TrasaMin1..N` — kumulativní minuty per varianta trasy s `<` kde spoj
-   nestaví) — legacy je emituje, já ne. Reálný gap, ale spíš vizuální detail StopListu (nice-to-have).
-8. (vizuál, na konec) šířka legendy POZNAMKY — datumy s rokem jsou široké; ladit zalamování/šířku/font
-   v jednom průchodu přes všechny poznámky (layout věc, ne data).
+### ✅ Atributy zastávek (2026-06-11)
+`TextAtributu` = číselník `arrCis(16)^JRapiCis` (27 znaků); `JeViditelnyAtribut` filtruje významové
+(`xyzNVALefgODCGabc` — na znamení, nástup/výstup, ikony dopravy autobus/vlak/metro/loď/letadlo, paragraf)
+od formátovacích (T/p/P/J/o/S) a souhrnných (>/</E/H). StopList parsuje dta2 J věty → `AddAtribut` na
+zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/CB_GWBUS (A=autobus, x=na znamení, L=vlak).
+
+### Stav featur (2026-06-11, po scanu firem CB_GWBUS/KV_DP/CB_CSADAD/VS_CSAD)
+- **Prázdninové dělení (FTL1/3 NZ split)** — kód hotový, **logika ověřena synteticky** (cnz=NZFTL1→jen
+  „mimo prázdniny", cnz=NZFTL2→jen „o prázdninách"). `MHD_NZ1_NZ2` ale **prázdné ve všech firmách** → dormant.
+- **Značky platnosti spojů (ZnkSp/NCOME)** — spoje používají jen `X`/`6+`/prázdné Plk (žádné denně-specifické)
+  → v datech se nevyskytuje. NCOME registr = `^JRSET("NCOME",jazyk,N)` (jede v pondělí…). Neimplementováno (bez use-case).
+
+### ⬜ Zbývá — JEDINÁ neimplementovaná feature: Rozdíly tras A/B/C
+Spoje jedoucí různou trasou → písmeno A/B/C u minuty + legenda „A = jede přes/končí v zast. X".
+Legacy: `OmTrasa^JRapiLinPrtMhd` (AD), gated `AutoPozn` = `PATCH,"mhd","not"`; alg 1001/1002 (bitmapová
+analýza obsluhy). **Naše MHD agenda to už umí (alg 1002) = reference.** Číst z trasy spojů „W".
+**Test linky (nově nalezené):** CB_CSADAD `0345061` (FTL2+AutoPozn), `0365001`; VS_CSAD `0945001`, `0445102`.
+(CB_GWBUS/KV_DP AutoPozn nemají — jen vzorové sku 501.) **Velký kus — dedikovaný krok.**
+
+### Ostatní (nice-to-have / vizuál)
+- **TrasaMin varianty** StopListu (kumulativní minuty per varianta trasy s `<`) — legacy má, my ne; vizuální detail.
+- Šířka legendy POZNAMKY s rokem — layout, na konec.
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).
