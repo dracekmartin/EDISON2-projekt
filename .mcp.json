@@ -1,7 +1,10 @@
 {
   "mcpServers": {
     "edison-cache": {
-      "command": "C:\\Edison\\EdisonCacheMcp\\EdisonCacheMcp.exe"
+      "command": "C:\\Edison\\EdisonCacheMcp\\EdisonCacheMcp.exe",
+      "env": {
+        "EDISON_ROOT": "C:\\MLineRepos\\EDISON2"
+      }
     }
   }
 }
