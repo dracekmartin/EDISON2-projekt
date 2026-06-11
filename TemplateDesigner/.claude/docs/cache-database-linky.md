@@ -379,7 +379,21 @@ je per-namespace, bez IdFa).**
    config jdou prac. spoje do obou pracovních sloupců = 1:1 legacy). FTL=2/3 implementováno per-legacy,
    ale v KV_DP není linka k ověření (jen FTL=1). FTL=0 beze změny chování (0410101 = identický výstup).
 
+### ✅ Comprehensive test vs legacy (2026-06-11, page-by-page diff 0410101 proti `ALVA.TISKMHD.Data`)
+Potvrzeno **1:1**: počet stránek (**35** = Tam 16 + Zpět 19), všechny skaláry (POPIS_LINKY/ZASTAVKA/SMER/_CIS,
+LOKALNI=101, TITULEK fallback, platnost), StopList (názvy, pořadí, zóny), 3 sloupce dnů, **odjezdy
++ anotace** (markery na stejných časech), legenda. Doděláno z testu:
+- **POPIS_DOPRAVCE 1:1** — `<název>, <sídlo provozovny>,,tel:<tel>` (když není zkrácený MHD název $6/$14);
+  `NazevDopravce` rozšířeno. Ověřeno = legacy „Zajišťuje: DPKV, a.s., Sportovní…,,tel:353 504 518".
+- **Počet stránek 35** — terminus check v `BuildStrankaZastavky`: board na konečné zastávce směru
+  (za currentPoradi není obsluhovaná zastávka v servedPoradi) se netiskne (dřív 37 — 2 boardy navíc).
+- **KRITICKÝ fix** — `GetData` padal `<SUBSCRIPT>` od commitu #1 (`NazevZastavkyCis(czst="")` → `^JRZ("")`);
+  `GetMockData` to maskovalo (auto-pick vždy obsluhované poradí). Init `posledniCzst` + guard prázdného czst.
+- **#2 anotace = falešný poplach** — markery na stejných časech jako legacy (subagent přečetl chybně).
+
 ### ⬜ Zbývá do plného 1:1 s legacy
+7b. **TrasaMin varianty** (StopList `TrasaMin1..N` — kumulativní minuty per varianta trasy s `<` kde spoj
+   nestaví) — legacy je emituje, já ne. Reálný gap, ale spíš vizuální detail StopListu (nice-to-have).
 8. (vizuál, na konec) šířka legendy POZNAMKY — datumy s rokem jsou široké; ladit zalamování/šířku/font
    v jednom průchodu přes všechny poznámky (layout věc, ne data).
 
