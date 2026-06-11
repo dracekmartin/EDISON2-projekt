@@ -294,9 +294,13 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("CISLO_ZASTAVKA",  aktualniCzst)
     d vals.%Set("POPIS_SMER",      posledniNazev)
 
+    // FTL = formát sloupců mřížky (PATCH MHD_TYP_R); nzCfg = NZ konfig pro prázdninové dělení (MHD_NZ1_NZ2|MHD_NENZ1_NENZ2)
+    s ftl   = +$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_TYP_R"))
+    s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
+
     // ── odjezdy + poznámky (omezení "nejede" → anotace + legenda) ────
     k poznMap
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, .poznMap)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
     s poznamky = ..SestavPoznamky(.poznMap, maNaZnameni)
 
@@ -305,29 +309,45 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d out.%Set("values", vals)
     s rows = ##class(%DynamicObject).%New()
     d rows.%Set("ZASTAVKY", zastavky)
-    d rows.%Set("SKUPINY_DNU", ..NacistSkupinyDnu())
+    d rows.%Set("SKUPINY_DNU", ..NacistSkupinyDnu(ftl))
     d rows.%Set("ODJEZDY", odjezdy)
     d rows.%Set("POZNAMKY", poznamky)
     d out.%Set("rows", rows)
     q out
 }
 
-/// Vrátí výchozí skupiny dnů (FTL=0: Pracovní dny / Soboty / Neděle a svátky).
-/// Increment 3: odvození podle MHD_TYP_R (FTL módy) + NZ prázdninové dělení.
-ClassMethod NacistSkupinyDnu() As %DynamicArray
+/// Vrátí sloupce skupin dnů dle FTL (1:1 s rozvržením v `JRapiLinPrtMhd1` ř.30-34):
+///   FTL=0: Prac | So | Ne+svátky                         (3 sloupce)
+///   FTL=1: Prac mimo prázd | Prac o prázd | So+Ne+svátky  (3 sloupce)
+///   FTL=2: Prac | So+Ne+svátky                            (2 sloupce)
+///   FTL=3: Prac mimo prázd | Prac o prázd | So | Ne+svátky (4 sloupce)
+ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 {
     s skupiny = ##class(%DynamicArray).%New()
-    d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny", "", 1))
-    d skupiny.%Push(..BuildSkupinaDnu("2", "Soboty", "", 2))
-    d skupiny.%Push(..BuildSkupinaDnu("3", "Neděle a svátky", "", 3))
+    i ftl = 1 {
+        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny mimo prázdniny", "", 1))
+        d skupiny.%Push(..BuildSkupinaDnu("2", "Pracovní dny o prázdninách", "", 2))
+        d skupiny.%Push(..BuildSkupinaDnu("3", "Soboty, neděle a svátky", "", 3))
+    } elseif ftl = 2 {
+        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny", "", 1))
+        d skupiny.%Push(..BuildSkupinaDnu("2", "Soboty, neděle a svátky", "", 2))
+    } elseif ftl = 3 {
+        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny mimo prázdniny", "", 1))
+        d skupiny.%Push(..BuildSkupinaDnu("2", "Pracovní dny o prázdninách", "", 2))
+        d skupiny.%Push(..BuildSkupinaDnu("3", "Soboty", "", 3))
+        d skupiny.%Push(..BuildSkupinaDnu("4", "Neděle a svátky", "", 4))
+    } else {
+        d skupiny.%Push(..BuildSkupinaDnu("1", "Pracovní dny", "", 1))
+        d skupiny.%Push(..BuildSkupinaDnu("2", "Soboty", "", 2))
+        d skupiny.%Push(..BuildSkupinaDnu("3", "Neděle a svátky", "", 3))
+    }
     q skupiny
 }
 
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
-/// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do skupiny dnů dle Plk (FTL=0).
-/// Increment 3: plné FTL/Plk/CNZ odvození. Increment 4: anotace (NZ, omezení).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ByRef poznMap) As %DynamicArray
+/// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap) As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
@@ -338,10 +358,12 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         q:sp=""
         i '$isvalidnum(sp) continue
 
-        s hlava      = $p($g(^[dataDB]JRL(sku,lin,smer,sp)), "#", 1)
+        s spoj       = $g(^[dataDB]JRL(sku,lin,smer,sp))
+        s hlava      = $p(spoj, "#", 1)
         s cisloTrasy = $p(hlava, ":", 3)
         s odjezd     = +$p(hlava, ":", 4)
         s plk        = $p(hlava, ":", 7)
+        s cnz        = $p(spoj, "#", 7)        // negativní značka spoje (legacy arrsp dta29)
 
         // offset času na aktuální zastávce z trasy spoje
         s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
@@ -358,8 +380,9 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
         i txt '= "" s znak = ..ZiskejMarker(.poznMap, txt)
 
-        // spoj může patřit do více skupin dnů (např. Plk "6+" → soboty i neděle/svátky)
-        s skupiny = ..SkupinyZPlk(plk)
+        // spoj může patřit do více sloupců dnů (FTL layout + prázdninové dělení dle CNZ)
+        s skupiny = ..ZarazeniSpoje(ftl, plk, cnz, nzCfg)
+        i skupiny = "" continue           // KamPrt = 0 (nerozpoznané Plk) → spoj se netiskne (jako legacy)
         f gi=1:1:$l(skupiny,",") {
             s o = ..BuildOdjezd(currentPoradi, $p(skupiny,",",gi), hod, min)
             i znak '= "" d ..AddAnotace(o, "text", znak)
@@ -400,16 +423,81 @@ ClassMethod WCasNaZastavce(wTrasa As %String, poradi As %String) As %String
     q ""
 }
 
-/// Vrátí skupiny dnů (čárkou oddělené) pro spoj dle tarifní platnosti Plk (FTL=0).
-/// Spoj může patřit do VÍCE skupin: 1-5/X/prázdné → Pracovní(1); 6 → Soboty(2); 7/+ → Neděle a svátky(3).
-/// Plné FTL 1-3 + prázdninové dělení (MHD_TYP_R/CNZ) zatím neimplementováno (chybí grid-linka k ověření).
-ClassMethod SkupinyZPlk(plk As %String) As %String
+/// Vrátí sloupce dnů (1-based indexy, čárkou oddělené) pro spoj — 1:1 s `KamPrt` logikou
+/// `JRapiLinPrtMhd1` ř.30-152. Závisí na FTL módu, tarifní platnosti `plk`, negativní značce `cnz`
+/// a NZ konfiguraci linky `nzCfg` (= `MHD_NZ1_NZ2|MHD_NENZ1_NENZ2`).
+/// Prázdninové dělení (FTL 1/3): pracovní spoj → sloupec "mimo prázdniny"/"o prázdninách" dle CNZ
+/// porovnané s NZFTL1 (nejede o prázd) / NZFTL2 (jede o prázd); bez NZ konfigurace jdou do obou.
+ClassMethod ZarazeniSpoje(ftl As %String, plk As %String, cnz As %String, nzCfg As %String) As %String
+{
+    s nzftl1   = $p($p(nzCfg,"|",1),"~",2)              // NZ "nejede o prázdninách"
+    s nzftl2   = $p($p(nzCfg,"|",1),"~",1)              // NZ "jede o prázdninách"
+    s nenzftl1 = ","_$p($p(nzCfg,"|",2),"~",2)_","      // NZ nevypisovat ve sloupci "mimo"
+    s nenzftl2 = ","_$p($p(nzCfg,"|",2),"~",1)_","      // NZ nevypisovat ve sloupci "o prázd"
+    s prac     = (plk="")||(plk=".")
+    s p15x     = (plk["1")||(plk["2")||(plk["3")||(plk["4")||(plk["5")||(plk["X")
+
+    i ftl = 2 {
+        s kam = "0~0"
+        i prac { s kam = "1~1" }
+        else {
+            i p15x s $p(kam,"~",1) = 1
+            i (plk["6")||(plk["7")||(plk["+") s $p(kam,"~",2) = 1
+        }
+        q ..BitmapNaSkupiny(kam)
+    }
+    i (ftl = 1) || (ftl = 3) {
+        s kam = $s(ftl=3:"0~0~0~0", 1:"0~0~0")
+        i prac {
+            i cnz = nzftl1 { s $p(kam,"~",1) = 1 }
+            elseif cnz = nzftl2 { s $p(kam,"~",2) = 1 }
+            else {
+                s $p(kam,"~",1) = 1
+                s $p(kam,"~",2) = 1
+                i (cnz'="") && (nenzftl1[(","_cnz_",")) s $p(kam,"~",1) = 0
+                i (cnz'="") && (nenzftl2[(","_cnz_",")) s $p(kam,"~",2) = 0
+            }
+            // pracovní spoj jede i o víkendu (poslední sloupec/sloupce)
+            i ftl = 1 { s $p(kam,"~",3) = 1 }
+            else { s $p(kam,"~",3) = 1, $p(kam,"~",4) = 1 }
+        }
+        else {
+            i p15x {
+                i cnz = nzftl1 { s $p(kam,"~",1) = 1 }
+                elseif cnz = nzftl2 { s $p(kam,"~",2) = 1 }
+                else {
+                    s $p(kam,"~",1) = 1
+                    s $p(kam,"~",2) = 1
+                    i (cnz'="") && (nenzftl1[(","_cnz_",")) s $p(kam,"~",1) = 0
+                    i (cnz'="") && (nenzftl2[(","_cnz_",")) s $p(kam,"~",2) = 0
+                }
+            }
+            i ftl = 1 {
+                i (plk["6")||(plk["7")||(plk["+") s $p(kam,"~",3) = 1
+            }
+            else {
+                i plk["6" s $p(kam,"~",3) = 1
+                i (plk["7")||(plk["+") s $p(kam,"~",4) = 1
+            }
+        }
+        q ..BitmapNaSkupiny(kam)
+    }
+    // FTL = 0 (výchozí): Prac | So | Ne+svátky
+    s kam = "0~0~0"
+    i prac { s kam = "1~1~1" }
+    else {
+        i p15x s $p(kam,"~",1) = 1
+        i plk["6" s $p(kam,"~",2) = 1
+        i (plk["7")||(plk["+") s $p(kam,"~",3) = 1
+    }
+    q ..BitmapNaSkupiny(kam)
+}
+
+/// Převede `KamPrt` bitmapu ("1~0~1") na čárkou oddělené 1-based indexy nastavených sloupců ("1,3").
+ClassMethod BitmapNaSkupiny(kamPrt As %String) As %String
 {
     s g = ""
-    i (plk["1")||(plk["2")||(plk["3")||(plk["4")||(plk["5")||(plk["X")||(plk="")||(plk=".") s g = g_"1,"
-    i plk["6" s g = g_"2,"
-    i (plk["7")||(plk["+") s g = g_"3,"
-    i g = "" s g = "1,"
+    f i=1:1:$l(kamPrt,"~") i +$p(kamPrt,"~",i) s g = g_i_","
     q $e(g,1,*-1)
 }
 
