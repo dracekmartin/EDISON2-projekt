@@ -260,10 +260,22 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // ── trasa → zastávky (úsek od aktuální zastávky ve směru jízdy; zóny + na znamení) ──
     // Tam: vzestupně od aktuální k poslední. Zpět: sestupně od aktuální k první (pořadí 1).
     s zastavky = ##class(%DynamicArray).%New()
-    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", maNaZnameni = 0
+    s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = "", maNaZnameni = 0
     k servedPoradi
     d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .servedPoradi)   // filtr projížděných zastávek
     s jeTam = (smer = "T")
+
+    // Konečná směru = za currentPoradi není žádná obsluhovaná zastávka → jen příjezdy, board se netiskne
+    // (1:1 legacy — přeskakuje pouze poslední zastávku směru, ne per-spoj konečné).
+    s jeDal = 0, pp = ""
+    f {
+        s pp = $o(servedPoradi(pp))
+        q:pp=""
+        i jeTam, (pp > currentPoradi) s jeDal = 1 quit
+        i 'jeTam, (pp < currentPoradi) s jeDal = 1 quit
+    }
+    i 'jeDal q ""
+
     s poradi = $s(jeTam:"", 1:currentPoradi + 1)
     s cnt = 0
     f {
@@ -649,20 +661,33 @@ ClassMethod PopisDopravce(dataDB As %String, sku As %String, lin As %String) As 
     q "Zajišťuje: "_txt
 }
 
-/// Název dopravce (fa,pr) z `^JRSET("DOP",...)` — fallback chain dle `gDopMHD`/`gDopFa^JRapiDop`:
-/// per-provoz zkrácený MHD ($6) → firemní zkrácený MHD ($14) → obchodní název ($7) → sídlo/název ($1).
+/// Text dopravce (fa,pr) z `^JRSET("DOP",...)` — 1:1 s `gDopMHD`/PzaJ assembly `^JRapiLinPrtMhd`:
+/// 1) je-li nastaven zkrácený MHD název (per-provoz $6 → firemní $14), použij ho SAMOSTATNĚ.
+/// 2) jinak plný tvar `<obchodní název / sídlo firmy>, <sídlo provozovny>,,tel:<telefon provozovny>`.
 ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %String
 {
+    // 1) zkrácený MHD název (samostatně, bez adresy)
     i pr '= "" {
-        s nazev = $p($g(^[dataDB]JRSET("DOP",fa,pr)),"~",6)
-        i $tr(nazev," ","") '= "" q nazev
+        s mhd = $p($g(^[dataDB]JRSET("DOP",fa,pr)),"~",6)
+        i $tr(mhd," ","") '= "" q mhd
     }
     s firma = $g(^[dataDB]JRSET("DOP",fa))
-    s nazev = $p(firma,"~",14)
-    i $tr(nazev," ","") '= "" q nazev
-    s nazev = $p(firma,"~",7)
-    i nazev '= "" q nazev
-    q $p(firma,"~",1)
+    s mhd = $p(firma,"~",14)
+    i $tr(mhd," ","") '= "" q mhd
+
+    // 2) plný tvar: název firmy + sídlo provozovny + telefon
+    s jmeno = $p(firma,"~",7)
+    i jmeno = "" s jmeno = $p(firma,"~",1)
+    s sidlo = "", tel = ""
+    i pr '= "" {
+        s provoz = $g(^[dataDB]JRSET("DOP",fa,pr))
+        s sidlo = $p(provoz,"~",1)
+        s tel   = $p(provoz,"~",3)
+    }
+    s text = jmeno
+    i sidlo '= "" s text = text_", "_sidlo
+    i tel '= ""   s text = text_",,tel:"_tel
+    q text
 }
 
 /// Vrátí název zastávky z ^JRZ(czst) — odbav/MHD název s obcí ($7, formát "obec,místo").
@@ -679,6 +704,7 @@ ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
 /// "Číselníkový" (CIS) název zastávky z ^JRZ `$2` — zkrácený, s `,,` zachovaným (1:1 legacy POPIS_ZASTAVKA_CIS dta20).
 ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 {
+    i czst = "" q ""          // prázdný czst → prázdný subscript (^JRZ("")) = <SUBSCRIPT>; ošetřit
     q $p($g(^[dataDB]JRZ(czst)), "$", 2)
 }
 
