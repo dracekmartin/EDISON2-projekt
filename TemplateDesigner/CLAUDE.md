@@ -14,11 +14,13 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-05-25
+**Datum poslední aktualizace:** 2026-06-11
 
 ### 🎯 Aktuální focus
 
-**Caché Migration Wave 1 + 1.5 + 2 + 3 ✅ hotová** (per-user state + agenda registry + template storage). Wave 3 uzavřena s CRUD + schema versioning framework (Fáze 1); auto-snapshots / audit / thumbnails skipnuté po diskusi (revisit on real request). Dál: **Fáze A.2-D zákaznické tickety** — TRANSDEV/KORID/DPKV suspended tickety (auto-poznámky bugs, KORID přípojové řádky, NZ bug).
+**Zastávkový JŘ z AD dat (agenda `ZastavkoveJrAd`) ✅ datově hotová a 1:1 ověřená** proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN) — viz `.claude/docs/cache-database-linky.md §10`. Core + FTL 0-3 + omezení + dopravce + CIS názvy + multi-page hotové; zbývá jen rozdíl trasy A/B/C, atributy zastávek, NZ prázdninové dělení (podmíněné featury bez reálné test linky — řeší se s kolegy) + vizuál legendy.
+
+Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agenda registry + template storage). Pak **Fáze A.2-D zákaznické tickety** (TRANSDEV/KORID/DPKV suspended tickety).
 
 ### ✅ Co máme
 
@@ -41,6 +43,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 - ImageElement — SKImage rendering s SKSamplingOptions (kvalitnější škálování)
 - **Zastávkový JŘ** — 3 specializované elementy: `StopListElement` (tabulka zastávek), `DepartureGridElement` (mřížka minut per skupina dnů), `NotesLegendElement` (legenda poznámek); `ScheduleElementBase` abstraktní základ s Build helpery, cache a sdílenými font/paint helpery (`CreateCellFont`, `CreateCellTextPaint`, `CreateCellBgPaint`, `MakeFontStyle`); ~30+ konfigurovatelných properties; SkiaHeightCalculator integrace; DepartureGrid: redistribuce šířek sloupců na celou šířku, word-wrap záhlaví skupin, sloučený řádek záhlaví (Hod + názvy skupin); per-column nastavení (`DepartureGroupColumnStyle` + `ColumnVisualStyle`/`CellStyle`: viditelnost, barvy, font, zarovnání H+V, bold/italic, padding) přes `DepartureGroupEditorDialog`; StopList: per-column styling analogicky k DepartureGrid, šipka směru jízdy (┌─▼)
 - **Caché ZastavkoveJrMhd** — jedna třída `ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd` dědící přímo z `BaseAgenda`; kompletní 6-fázový tiskový engine MHD + všechny helpery (BuildZastavka, BuildOdjezd, BuildSkupinaDnu, BuildPoznamka, AddAnotace, AddAtribut, AddPoznamkaZastavky, ConvertSpecialniZnak) + GetSchema/GetData/GetMockData
+- **Caché ZastavkoveJrAd** — agenda zastávkového JŘ z dat **hlavního JŘ modulu** (AD/JRMAIN, čte `^JRL`/`^JRZ`/`^JRSET`); čistá reimplementace legacy `ALVA.TISKMHD.Data` větve VolanoZ=JRMAIN (nevolá legacy MAC routiny). FTL 0-3 sloupcové layouty (`ZarazeniSpoje`/`NacistSkupinyDnu`), datumová omezení jede/nejede (`SestavTextOmezeni`, 1:1 TODDO^JRapiNZUtl), POPIS_DOPRAVCE z `^JRSET("DOP")`, názvy zastávek + CIS pole, terminus-skip, multi-page (zastávka × směr). 1:1 ověřeno proti gold oracle na 0410101 (FTL0), 0425017 (FTL1), 0320144 (FTL3), 0320993 (FTL2). Detail: `.claude/docs/cache-database-linky.md §10`
 - **DataContext vnořená pole** — ParseMockData rozlišuje JsonArray/JsonObject vs skalární hodnoty; ScheduleElementBase parsuje vnořená pole (ZONY[], ATRIBUTY[], ANOTACE[], POZNAMKY_ZASTAVKY[])
 - **Multi-data PDF export + PrintDialog** — `RenderMultiDataToPdf` zpracovává více DataContextů (1 zastávka/směr = 1+ PDF stránek); PrintDialog s parametry a exportem reálných dat z Caché (`GetData`); tisk i mock preview v jednom dialogu
 - Word wrap + dynamická výška TextElementu — `WordWrap=true` + `Height=null` → text se zalamuje a výška se dopočítá z obsahu; `LineSpacing` property
