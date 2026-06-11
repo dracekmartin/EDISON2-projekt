@@ -287,12 +287,14 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         i zona '= "" d ..AddZona(z, zona)
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
-        s posledniNazev = rawNazev
+        s posledniNazev = rawNazev, posledniCzst = czst
     }
 
-    d vals.%Set("POPIS_ZASTAVKA",  aktualniNazev)
-    d vals.%Set("CISLO_ZASTAVKA",  aktualniCzst)
-    d vals.%Set("POPIS_SMER",      posledniNazev)
+    d vals.%Set("POPIS_ZASTAVKA",      aktualniNazev)
+    d vals.%Set("CISLO_ZASTAVKA",      aktualniCzst)
+    d vals.%Set("POPIS_ZASTAVKA_CIS",  ..NazevZastavkyCis(dataDB, aktualniCzst))
+    d vals.%Set("POPIS_SMER",          posledniNazev)
+    d vals.%Set("POPIS_SMER_CIS",      ..NazevZastavkyCis(dataDB, posledniCzst))
 
     // FTL = formát sloupců mřížky (PATCH MHD_TYP_R); nzCfg = NZ konfig pro prázdninové dělení (MHD_NZ1_NZ2|MHD_NENZ1_NENZ2)
     s ftl   = +$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_TYP_R"))
@@ -671,7 +673,13 @@ ClassMethod NazevZastavky(dataDB As %String, czst As %String) As %String
     s rec = $g(^[dataDB]JRZ(czst))
     s nazev = $p(rec, "$", 7)
     i nazev = "" s nazev = $p(rec, "$", 2)
-    q nazev
+    q $replace(nazev, ",,", ",")     // display název: "obec,,místo" → "obec,místo" (legacy collapse; _CIS pole ,, zachovává)
+}
+
+/// "Číselníkový" (CIS) název zastávky z ^JRZ `$2` — zkrácený, s `,,` zachovaným (1:1 legacy POPIS_ZASTAVKA_CIS dta20).
+ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
+{
+    q $p($g(^[dataDB]JRZ(czst)), "$", 2)
 }
 
 /// Vrátí ukázková data pro live preview v designeru.
