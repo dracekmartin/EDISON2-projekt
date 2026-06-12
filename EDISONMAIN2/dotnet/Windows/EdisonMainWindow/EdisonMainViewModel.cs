@@ -214,6 +214,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string UserName  => MLRest!.LoginName;
         public string FullName  => MLRest!.FullName;
         public string Mlp       => MLRest!.Mlp;
+        public string Version   => VerzeInf.Current;
 
         public ObservableCollection<IModule> MainMenuTree { get; }
         public ObservableCollection<IModule> SystemAdminTree { get; }

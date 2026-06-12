@@ -82,6 +82,9 @@ public class AppBootstrapperTests
         protected override void WireActivityFailedHandler(SessionContext session, EDServices services)
             => WireActivityCalled = true;
 
+        public bool UpdateTriggered { get; set; }
+        protected override bool CheckForUpdate(SessionContext session, EDServices services) => UpdateTriggered;
+
         protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep, SessionContext session, Lic? licence,
             EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs)
         {
@@ -232,6 +235,34 @@ public class AppBootstrapperTests
         Assert.Null(b.SavedIdfa);
     }
 
+    // ---------- CheckForUpdate ----------
+
+    [Fact]
+    public void Run_UpdateTriggered_CallsShutdown_DoesNotBuildShell()
+    {
+        var b = new TestableBootstrapper { UpdateTriggered = true };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_UpdateTriggered_RunsAfterSavePrefs()
+    {
+        // Update check je až po SavePostLoginState — LastIdfa musí být uložená
+        // i když shell hned skončí updatem (příští start ji načte).
+        var b = new TestableBootstrapper { UpdateTriggered = true };
+
+        b.Run();
+
+        Assert.True(b.AcquireSessionCalled);
+        Assert.NotNull(b.SavedIdfa);
+        Assert.True(b.WireActivityCalled);
+    }
+
     // ---------- SwitchUser ----------
 
     private static EDServices ServicesWith(string server, int port, string db, string idfa, string loginName)
@@ -270,5 +301,54 @@ public class AppBootstrapperTests
         Assert.Equal(9999, b.CapturedPromptConnection.Port);
         Assert.Equal("CB_DP", b.CapturedPromptConnection.DataNamespace);
         Assert.Equal("CB_DP", b.CapturedPromptConnection.Idfa);
+    }
+
+    private static LoginResult ReauthLogin() => new(7, "bob", "Bob", false, "", false, true, "");
+
+    [Fact]
+    public void SwitchUser_LoginAndLicenceAccepted_ReturnsSuccess_ClosesWindows()
+    {
+        var b = new TestableBootstrapper
+        {
+            ReauthLoginResult = ReauthLogin(),
+            SessionOutcome = LicenceAcquireOutcome.Accepted,
+        };
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var closeAll = Substitute.For<Action>();
+
+        var outcome = b.SwitchUser(services, closeAll);
+
+        Assert.Equal(SwitchUserResult.Success, outcome.Outcome);
+        closeAll.Received(1).Invoke();
+        Assert.True(b.WireActivityCalled);
+    }
+
+    [Fact]
+    public void SwitchUser_LicenceRefused_MapsToLicenceRefused()
+    {
+        var b = new TestableBootstrapper
+        {
+            ReauthLoginResult = ReauthLogin(),
+            SessionOutcome = LicenceAcquireOutcome.Refused,
+        };
+
+        var outcome = b.SwitchUser(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+
+        Assert.Equal(SwitchUserResult.LicenceRefused, outcome.Outcome);
+        Assert.Null(outcome.Licence);
+    }
+
+    [Fact]
+    public void SwitchUser_LicenceCancelled_MapsToLicenceCancelled()
+    {
+        var b = new TestableBootstrapper
+        {
+            ReauthLoginResult = ReauthLogin(),
+            SessionOutcome = LicenceAcquireOutcome.Cancelled,
+        };
+
+        var outcome = b.SwitchUser(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+
+        Assert.Equal(SwitchUserResult.LicenceCancelled, outcome.Outcome);
     }
 }

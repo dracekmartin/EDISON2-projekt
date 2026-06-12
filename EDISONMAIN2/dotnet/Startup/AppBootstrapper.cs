@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Windows;
 using ALVA.EDISONAPI;
@@ -98,7 +98,47 @@ public class AppBootstrapper
         SavePostLoginState(prefs, session.MLRest.Idfa);
         WireActivityFailedHandler(session, services);
 
+        // Až po SavePostLoginState — LastIdfa musí být uložená i když teď shell skončí updatem.
+        if (CheckForUpdate(session, services))
+        {
+            Shutdown();
+            return null;
+        }
+
         return BuildShellWindow(prep, session, licence, services, nav, popup, prefs);
+    }
+
+    /// <summary>
+    /// Klientský update check — mandatory, bez user volby (stanice nemá co rozhodovat).
+    /// Vrací true = shell se má ukončit (spawnutý EDUPDATE / rozbitý stav). Viz docs/UPDATE_FLOW.md §7.
+    /// </summary>
+    protected virtual bool CheckForUpdate(SessionContext session, EDServices services)
+    {
+        var updater = new Updater();
+        var settings = updater.LoadSettings(session.MLRest);
+        var result = updater.Check(settings);
+        switch (result.Outcome)
+        {
+            case UpdateOutcome.UpdateRequired:
+                services.PopupDisplayer.Info(
+                    $"K dispozici je nová verze programu [{result.Version}]. Aplikace se nyní zaktualizuje a bude ukončena.");
+                try
+                {
+                    updater.CopyUpdater(settings.SourceDir);
+                    updater.LaunchUpdate(settings.SourceDir, result.Version);
+                }
+                catch (Exception ex)
+                {
+                    services.PopupDisplayer.Info(
+                        $"Aktualizaci nelze spustit ({ex.Message}). Kontaktujte Vašeho správce IS.");
+                }
+                return true;
+            case UpdateOutcome.Broken:
+                services.PopupDisplayer.Info(result.Message);
+                return true;
+            default:
+                return false;
+        }
     }
 
     /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest).</summary>
@@ -226,7 +266,9 @@ public class AppBootstrapper
         {
             LoginName = login.UserName,
             FullName = login.FullName,
-            Mlp = login.Mlp.ToString()
+            Mlp = login.Mlp.ToString(),
+            // Aktivuje server-side per-request version gate (prázdná verze = gate neběží).
+            EdisonVersion = VerzeInf.Current
         });
 
         services.IsAdmin = login.IsAdmin;
@@ -270,6 +312,13 @@ public class AppBootstrapper
             _application.Dispatcher.Invoke(() =>
             {
                 services.PopupDisplayer.Info("Spojení se serverem bylo přerušeno. Aplikace bude ukončena.");
+                _application.Shutdown();
+            });
+        // Server per-request version gate (date+full segmenty) — viz docs/UPDATE_FLOW.md §5.
+        adapter.Inner.EdisonVersionFailed += (_, _) =>
+            _application.Dispatcher.Invoke(() =>
+            {
+                services.PopupDisplayer.Info("Rozdílná verze Caché a verze Edison, aplikace bude ukončena.");
                 _application.Shutdown();
             });
     };
