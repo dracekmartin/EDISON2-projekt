@@ -261,7 +261,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     d vals.%Set("INFORMACE",              informace)
-    d vals.%Set("NEJEDOU_SPOJE",          "")
+    // NEJEDOU_SPOJE je legacy misnomer — nese NÁSTUPIŠTĚ vývěskové zastávky (J-věta #3 = nastTam:nastZpet,
+    // dta23 v JRapiExp10). Per směr (T=tam, Z=zpět). 1:1 gold.
+    s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
+    d vals.%Set("NEJEDOU_SPOJE",          nastupiste)
 
     // ── trasa → zastávky (úsek od aktuální zastávky ve směru jízdy; zóny + na znamení) ──
     // Tam: vzestupně od aktuální k poslední. Zpět: sestupně od aktuální k první (pořadí 1).
