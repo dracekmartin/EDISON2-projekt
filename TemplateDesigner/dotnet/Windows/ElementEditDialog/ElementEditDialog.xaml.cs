@@ -9,17 +9,17 @@ using TemplateDesigner.Models;
 namespace TemplateDesigner;
 
 /// <summary>
-/// Generický editor properties pro libovolný <see cref="TemplateElement"/> přes EDInputForm.
+/// Generický editor properties pro libovolný objekt (element, sekce, stránka) přes EDInputForm.
 /// Form layout (pole, skupiny, labely, validace) je definovaný server-side v Caché schema
-/// classe; klíč pole = property path na elementu (dot notation, např. "Style.FontSize").
+/// classe; klíč pole = property path na cílovém objektu (dot notation, např. "Style.FontSize").
 ///
 /// Pre-fill i extract jdou přes <see cref="ElementPropertyAccessor"/> (reflexe) — žádný
-/// per-element kód. Změny se zabalí do <see cref="ResultCommand"/> (CompositeCommand
+/// per-typ kód. Změny se zabalí do <see cref="ResultCommand"/> (CompositeCommand
 /// ze SetPropertyCommandů) pro undo/redo. Caller vykoná přes DesignerState.Execute.
 /// </summary>
 public partial class ElementEditDialog : Window
 {
-    private readonly TemplateElement _element;
+    private readonly object _target;
 
     // Hodnoty nastavené při pre-fillu — change detection proti nim (ne proti raw property),
     // takže no-edit + OK nevytvoří žádný command (řeší nullable "inherit" props zobrazené
@@ -28,12 +28,12 @@ public partial class ElementEditDialog : Window
 
     public IDesignerCommand? ResultCommand { get; private set; }
 
-    /// <param name="element">Editovaný element (in-memory model).</param>
+    /// <param name="target">Editovaný objekt (element, sekce, stránka — in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>
-    public ElementEditDialog(TemplateElement element, string cacheClass, string title)
+    public ElementEditDialog(object target, string cacheClass, string title)
     {
-        _element = element;
+        _target = target;
         InitializeComponent();
         Title = title;
         TheForm.CacheClass = cacheClass;
@@ -47,7 +47,7 @@ public partial class ElementEditDialog : Window
     {
         foreach (var field in (TheForm.Items ?? []).OfType<Field>())
         {
-            var reflected = ElementPropertyAccessor.Get(_element, field.Key);
+            var reflected = ElementPropertyAccessor.Get(_target, field.Key);
             // Pokud property má hodnotu → zobraz ji. Pokud null/prázdná → nech Caché schema
             // default (řeší nullable "inherit" properties, např. Style.FontSize z loaded JSON).
             var display = !string.IsNullOrEmpty(reflected) ? reflected : (field.Value ?? "");
@@ -70,10 +70,10 @@ public partial class ElementEditDialog : Window
             if (newVal == _preFilled.GetValueOrDefault(path, "")) continue;
 
             // oldVal = aktuální raw hodnota property (pro undo — "" pokud byla null)
-            var oldVal = ElementPropertyAccessor.Get(_element, path);
+            var oldVal = ElementPropertyAccessor.Get(_target, path);
             commands.Add(new SetPropertyCommand(
                 field.Label, oldVal, newVal,
-                v => ElementPropertyAccessor.Set(_element, path, (string?)v)));
+                v => ElementPropertyAccessor.Set(_target, path, (string?)v)));
         }
 
         ResultCommand = commands.Count switch

@@ -1418,8 +1418,12 @@ public partial class MainWindow : Window
 
     private void OpenPropertiesForSection(Section section)
     {
-        _propsVm!.PrepareForSection(section);
-        new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
+        var dlg = new ElementEditDialog(
+            section,
+            "ALVA.TemplateDesigner.EDInputForm.SectionEdit",
+            "Vlastnosti sekce: " + section.Name) { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+            _vm!.Execute(dlg.ResultCommand);
         InvalidateCanvas();
         InvalidatePreview();
         _vm!.RebuildSections();
