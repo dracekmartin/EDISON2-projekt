@@ -220,8 +220,8 @@ Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInp
 | W4-3 | SaveToCacheDialog — první migrace (PoC, vlastní dispatch) | ✅ 2026-05-26 |
 | W4-4 | Generický `ElementEditDialog` + `ElementPropertyAccessor` (reflexe, property-path keys) | ✅ 2026-05-27 |
 | W4-5 | Elementy: Text, Line, Rectangle, Barcode, NotesLegend (+border parity audit) | ✅ 2026-05-27 |
-| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled) | ⬅️ |
-| W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + 2 Caché schemas | |
+| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled) | |
+| W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + 2 Caché schemas | 🟡 Section ✅ (2026-06-12, `SectionEdit.cls`); Page ⬅️ zbývá (formát/orientace + ScaleBodySections nelze přes čistou reflexi — chce hook nebo zjednodušení) |
 | W4-8 | **Simple dialogy** — SaveSectionTemplate, NormalizePositions | |
 | W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část custom nebo extra řešení | |
 | W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor, odložené | |

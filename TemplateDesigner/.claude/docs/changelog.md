@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-12 — Wave 4: „Vlastnosti sekce" přes EDInputForm + fix prázdného řádku v List
+
+- ✅ **Vlastnosti sekce → EDInputForm** (W4-7 část) — nová Caché schema `ALVA.TemplateDesigner.EDInputForm.SectionEdit`
+  (zrcadlí `BuildSectionDescriptors`: Název, Výška, Tisk/Umístění/Přetečení, rámeček, viditelnost).
+  `ElementEditDialog` generalizován z `TemplateElement` na `object` (umí teď i sekci/stránku);
+  `OpenPropertiesForSection` routuje na generický EDInputForm dialog místo `ElementPropertiesWindow`.
+  Vědomé odchylky od starého panelu: vynechané „Datový zdroj"/„Výška řádku" (jen legacy PerDataRow,
+  EDInputForm neumí conditional fields), bez clampu výšky, bez live validace výrazu viditelnosti.
+- ✅ **EDInputForm List bez prázdného řádku u povinných polí** (EDControls `Field.cs`) — `ListItemsForDisplay`
+  přidává implicitní prázdnou položku jen pro **nepovinná** pole (umožní vymazat na „nevybráno");
+  u povinných (enumy) ji vynechá. Předtím se prázdný řádek zobrazoval ve všech strict List dropdownech.
+
 ## 2026-06-12 — Preview: varování o přetečení stránky + cap roztažení DepartureGrid
 
 Dva nálezy z vizuálního testování na velkých linkách (0480202, 78 stránek):
