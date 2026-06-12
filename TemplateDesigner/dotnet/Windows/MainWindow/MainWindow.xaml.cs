@@ -897,6 +897,9 @@ public partial class MainWindow : Window
             };
         }
 
+        var tplAgendaCode = _vm.State.CurrentTemplate.AgendaCode;
+        var agendaClass = string.IsNullOrEmpty(tplAgendaCode) ? null : _vm.CacheProvider?.GetCacheClass(tplAgendaCode);
+
         var vm = new PrintDialogViewModel(
             _vm.State.CurrentTemplate,
             _vm.AgendaParameters,
@@ -904,7 +907,8 @@ public partial class MainWindow : Window
             paramValues => _vm.BuildPreviewMockData(paramValues),
             buildRealData,
             _preferences,
-            onParamsChanged: _vm.OnExternalParamsChanged);
+            onParamsChanged: _vm.OnExternalParamsChanged,
+            agendaClass: agendaClass);
 
         vm.RequestRenderPdf = (filePath, data) =>
             _previewCanvas!.RenderToPdf(filePath, data);

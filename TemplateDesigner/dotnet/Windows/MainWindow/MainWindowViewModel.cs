@@ -2437,21 +2437,7 @@ public class ParameterControlVM : INotifyPropertyChanged
     }
 
     /// <summary>Vyhodnotí VisibleWhen rule proti aktuálním hodnotám. Volá se po každé změně libovolného parametru.</summary>
-    public void UpdateVisibility()
-    {
-        if (string.IsNullOrEmpty(_param.VisibleWhen)) { IsVisible = true; return; }
-
-        var parts = _param.VisibleWhen.Split('=', 2);
-        if (parts.Length != 2) { IsVisible = true; return; }
-
-        var depName = parts[0].Trim();
-        var expectedValue = parts[1].Trim();
-
-        if (_values.TryGetValue(depName, out var actualValue))
-            IsVisible = string.Equals(actualValue?.ToString(), expectedValue, StringComparison.OrdinalIgnoreCase);
-        else
-            IsVisible = true;
-    }
+    public void UpdateVisibility() => IsVisible = _param.IsVisible(_values);
 
     /// <summary>Má se volat při potvrzení hodnoty (Enter/LostFocus) — spustí těžší operace (reload dat).</summary>
     public bool HasCommit => _onCommit is not null;

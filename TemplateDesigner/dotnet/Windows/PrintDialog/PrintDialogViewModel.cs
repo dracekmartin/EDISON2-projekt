@@ -1,6 +1,9 @@
-using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
+using ALWA.SYS;
 using EDControls.EDViewModel;
 using Microsoft.Win32;
 using TemplateDesigner.Models;
@@ -12,6 +15,9 @@ public class PrintDialogViewModel : EDViewModel
 {
     private readonly Template _template;
     private readonly Dictionary<string, object?> _paramValues;
+    private readonly IReadOnlyList<TemplateParameter> _parameters;
+    private readonly string? _agendaClass;
+    private readonly Action? _onParamsChanged;
     private readonly Func<Dictionary<string, object?>, DataContext?> _buildMockData;
     private readonly Func<Dictionary<string, object?>, List<DataContext>?>? _buildRealData;
     private readonly TdPreferencesService? _preferences;
@@ -19,10 +25,8 @@ public class PrintDialogViewModel : EDViewModel
     private string _statusText = "";
     private bool _hasParameters;
 
-    public ObservableCollection<ParameterControlVM> Parameters { get; } = [];
-
-    public string TemplateName => string.IsNullOrWhiteSpace(_template.Name)
-        ? "Bez názvu" : _template.Name;
+    /// <summary>FQN Caché agenda třídy pro EDInputForm AgendaParams (null = bez parametrů / GENERAL).</summary>
+    public string? AgendaClass => _agendaClass;
 
     public bool HasParameters { get => _hasParameters; private set => Set(ref _hasParameters, value); }
     public bool CanExportRealData => _buildRealData is not null;
@@ -50,10 +54,14 @@ public class PrintDialogViewModel : EDViewModel
         Func<Dictionary<string, object?>, DataContext?> buildMockData,
         Func<Dictionary<string, object?>, List<DataContext>?>? buildRealData = null,
         TdPreferencesService? preferences = null,
-        Action? onParamsChanged = null)
+        Action? onParamsChanged = null,
+        string? agendaClass = null)
     {
         _template = template;
         _paramValues = sharedParamValues;
+        _parameters = parameters;
+        _agendaClass = agendaClass;
+        _onParamsChanged = onParamsChanged;
         _buildMockData = buildMockData;
         _buildRealData = buildRealData;
         _preferences = preferences;
@@ -67,12 +75,54 @@ public class PrintDialogViewModel : EDViewModel
         foreach (var p in parameters)
             _paramValues.TryAdd(p.Name, p.GetDefaultTyped());
 
-        // ParameterControlVM.Init helper předá onChanged do každé VM — při změně value se notifikace
-        // propaguje do MainWindow (preview lišta + canvas refresh).
-        ParameterControlVM.Init(Parameters, parameters, _paramValues, onChanged: onParamsChanged);
-
-        HasParameters = Parameters.Count > 0;
+        // Parametry renderuje EDInputForm (CacheClass=AgendaParams) v code-behindu; VM jen drží
+        // definice + sdílený dict a poskytuje konverzní/visibility helpery (viz níže).
+        HasParameters = parameters.Count > 0;
     }
+
+    // ── EDInputForm integrace ─────────────────────────────────────────────────
+
+    /// <summary>IN params pro AgendaParams.Init — agendaClass + JSON aktuálních hodnot pro prefill.</summary>
+    public CVar BuildInitParams()
+    {
+        var init = new CVar();
+        init["agendaClass"] = new CVar(_agendaClass ?? "");
+
+        var vals = new Dictionary<string, string>();
+        foreach (var p in _parameters)
+        {
+            var v = _paramValues.TryGetValue(p.Name, out var o) ? o : p.GetDefaultTyped();
+            vals[p.Name] = ToFieldString(v, p.Type);
+        }
+        init["values"] = new CVar(JsonSerializer.Serialize(vals));
+        return init;
+    }
+
+    /// <summary>Zapíše hodnotu pole (string z EDInputFormu) do sdíleného dict s typovou konverzí
+    /// a spustí živý náhled (<c>onParamsChanged</c>). Typování zrcadlí <see cref="TemplateParameter.GetDefaultTyped"/>.</summary>
+    public void SetParamValue(string name, string fieldValue)
+    {
+        var type = _parameters.FirstOrDefault(p => p.Name == name)?.Type ?? "string";
+        _paramValues[name] = type switch
+        {
+            "bool"   => fieldValue == "1" || string.Equals(fieldValue, "true", StringComparison.OrdinalIgnoreCase),
+            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+            _        => (object)fieldValue
+        };
+        _onParamsChanged?.Invoke();
+    }
+
+    /// <summary>Vyhodnotí <c>visibleWhen</c> parametru proti aktuálním hodnotám (sdílený dict).
+    /// Logika v <see cref="TemplateParameter.IsVisible"/> — jeden zdroj pro preview lištu i tisk.</summary>
+    public bool IsParamVisible(string name) =>
+        _parameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_paramValues) ?? true;
+
+    private static string ToFieldString(object? v, string type) => type switch
+    {
+        "bool"   => v is true ? "true" : "false",
+        "number" => v is float f ? f.ToString(CultureInfo.InvariantCulture) : (v?.ToString() ?? ""),
+        _        => v?.ToString() ?? ""
+    };
 
     /// <summary>
     /// Uloží aktuální _paramValues (= shared dict s preview lištou) do prefs (fire-and-forget).
