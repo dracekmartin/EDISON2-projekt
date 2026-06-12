@@ -422,12 +422,13 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
 - ✅ **Filtr atributů zastávek — OPRAVENO** (2026-06-12). `JeViditelnyAtribut` zúžen na **jen „x" (na
   znamení)** — legacy `UVOD^JRapiLinPrtMhd` (ř.189-190) promítá z dta2 do StopListu jen „x", ostatní
   znaky (A=autobus, L=vlak, metro, nástup/výstup…) v tomto výstupu netiskne. A/L over-emise pryč.
-- ⬜ **Atributy spoje** (např. bezbariér „72") — legacy je má u minut + v legendě (`3#72#spoj má
-  bezbariérově přístupné vozidlo`). Máme jen atributy zastávek, ne atributy **spoje**.
-  Zdroj: `inv` = `$p(hlava,":",15)` gated `isinv` (`^JRSET("PS","LIMES")` obsahuje „invalida"),
-  `cbe` = `$p(hlava,":",22)` gated `iscbe` („invalidaspomoc"); `AllSpIsBBP` (všechny spoje bezbar.)
-  mění text. **POZOR:** reprezentace markeru „72" jde přes output-layer (`$$i`→„72") = nejasná,
-  ověřit ať se neopakuje MHD-vs-AD chyba u rozdílů tras. **Funkční mezera, střední.**
+- ✅ **Atributy spoje (bezbariér) — HOTOVO** (2026-06-12). `BezbarierKonfig` (isinv/iscbe z
+  `^JRSET("PS","LIMES")` „invalida"/„invalidaspomoc", allBBP = všechny spoje hlava:15) + per spoj
+  v `NacistOdjezdy`: `inv`=hlava:15→marker „H" (SpecZnak 72), `cbe`=hlava:22→„F" (70), anotace
+  „specialni" + legenda. Pořadí anotací/legendy 1:1 gold. Ověřeno 0365001: H = „spoj má
+  bezbariérově přístupné vozidlo", na minutách `[B, H]`. (allBBP → text „všechny spoje…", bez
+  markeru u minut.) Marker = `$char(SpecZnak)` jako MHD sourozenec (gold SEKCE ukazuje číslo „72",
+  vizuálně týž glyf vozíčku).
 - ⬜ **Časy jízdy ve StopListu (TrasaMin)** — `CAS_JIZDY=0` u všech; legacy má kumulativní minuty
   (`0,1,2,4,6,8,10,13,…`) + varianty trasy (`<`). Nepočítáme. **Větší kus.**
 - ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
