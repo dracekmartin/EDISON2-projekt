@@ -403,12 +403,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s plk        = $p(hlava, ":", 7)
         s cnz        = $p(spoj, "#", 7)        // negativní značka spoje (legacy arrsp dta29)
 
-        // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa)
+        // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa); pobytová zast. = příjezd+čekání
         d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
-        s offset = $g(wMap(currentPoradi))
-        i offset = "<" continue           // spoj zde nestaví (projíždí)
-        i offset = "" continue            // zastávka mimo trasu spoje
-        i '$isvalidnum(offset) continue
+        s offset = ..CasHodnota($g(wMap(currentPoradi)))
+        i offset = "" continue            // spoj zde nestaví (`<`) / zastávka mimo trasu spoje
 
         s celkem = odjezd + offset
         s hod = (celkem\60)#24, min = celkem#60
@@ -527,23 +525,41 @@ ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy 
     i $d(wMap) m ^||TiskAd("wmap",cisloTrasy) = wMap     // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
 }
 
-/// Vrátí `cisloTrasy` reprezentativního spoje, který staví na vývěskové zastávce (`currentPoradi`).
-/// Základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD; multi-varianta TrasaMin = budoucí krok).
-/// "" když žádný spoj na zastávce nestaví.
+/// Vrátí `cisloTrasy` **hlavní (nejčastější)** trasy mezi spoji stavícími na vývěskové zastávce
+/// (`currentPoradi`). Základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD `TrasaMin1`).
+/// Hlavní = nejvíc spojů (1:1 legacy „označím trasu s největším počtem spojů" `JRapiLinPrtMhd` ř.108-127)
+/// — vyhne se tomu, aby expresní spoj projíždějící uzly (`<`) určoval časy. "" když nikdo nestaví.
 ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String) As %String
 {
-    s baseCt = ""
+    k pocet
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
         q:sp=""
         i '$isvalidnum(sp) continue
         s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        i ct = "" continue
         d ..WMapa(dataDB, sku, lin, ct, .wMap)
         s c = $g(wMap(currentPoradi))
-        i (c '= "") && (c '= "<") && ($isvalidnum(c)) { s baseCt = ct  q }
+        i (c '= "") && (c '= "<") && ($isvalidnum(c)) s pocet(ct) = $g(pocet(ct)) + 1   // spoj této trasy staví na vývěsce
+    }
+    // nejčastější trasa = hlavní
+    s baseCt = "", maxN = 0, ct = ""
+    f {
+        s ct = $o(pocet(ct), 1, n)
+        q:ct=""
+        i n > maxN s maxN = n, baseCt = ct
     }
     q baseCt
+}
+
+/// Numerická hodnota času z W-segmentu. Pobytová zastávka má formát `příjezd/čekání` (např. `33/4`)
+/// → vrací **odjezd = příjezd + čekání** (1:1 legacy `Cas+Ceka` / `Cas+$P(Cas,"/",2)`). Běžná `27` → 27.
+/// "" když mimo trasu / projíždí (`<`).
+ClassMethod CasHodnota(cas As %String) As %String
+{
+    i (cas = "") || (cas = "<") q ""
+    q +$p(cas,"/",1) + +$p(cas,"/",2)        // "33/4"→37, "27"→27 (piece2 prázdné = +0)
 }
 
 /// Kumulativní doba jízdy (min) ze zastávky `fromPoradi` na `poradi` z W-mapy (`poradi → cas`).
@@ -551,10 +567,9 @@ ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String
 /// 0 když některá zastávka není na trase / spoj projíždí (`<`).
 ClassMethod CasJizdyZMapy(ByRef wMap, fromPoradi As %String, poradi As %String) As %Integer
 {
-    s cFrom = $g(wMap(fromPoradi))
-    s cTo   = $g(wMap(poradi))
-    i (cFrom = "") || (cFrom = "<") || ('$isvalidnum(cFrom)) q 0
-    i (cTo = "")   || (cTo = "<")   || ('$isvalidnum(cTo))   q 0
+    s cFrom = ..CasHodnota($g(wMap(fromPoradi)))
+    s cTo   = ..CasHodnota($g(wMap(poradi)))
+    i (cFrom = "") || (cTo = "") q 0
     q cTo - cFrom
 }
 
