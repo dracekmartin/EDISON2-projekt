@@ -282,6 +282,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     }
     i 'jeDal q ""
 
+    // základní trasa pro časy jízdy (TrasaMin) — reprezentativní trasa spoje stavícího na vývěskové zastávce
+    s zaklWTrasa = ..ZakladniWTrasa(dataDB, sku, lin, smer, currentPoradi)
+
     s poradi = $s(jeTam:"", 1:currentPoradi + 1)
     s cnt = 0
     f {
@@ -299,8 +302,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s naZnameni = (atributy["x")
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
+        s casJizdy = ..CasJizdyZTrasy(zaklWTrasa, currentPoradi, poradi)   // kumulativní min od vývěskové zastávky
         s cnt = cnt + 1
-        s z = ..BuildZastavka(poradi, rawNazev, poradi, 0, cnt, jeAkt, naZnameni)
+        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, naZnameni)
         i zona '= "" d ..AddZona(z, zona)
         // atributy zastávky → symbol u názvu + řádek legendy (jen významové znaky, ne formátovací)
         f ai=1:1:$l(atributy) {
@@ -497,6 +501,37 @@ ClassMethod WCasNaZastavce(wTrasa As %String, poradi As %String) As %String
         i $p(seg,":",1) = poradi ret $p(seg,":",2)
     }
     q ""
+}
+
+/// Vrátí trasu "W" reprezentativního spoje, který staví na vývěskové zastávce (`currentPoradi`).
+/// Slouží jako základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD; multi-varianta TrasaMin
+/// = budoucí krok). Vrací string trasy, nebo "" když žádný spoj na zastávce nestaví.
+ClassMethod ZakladniWTrasa(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String) As %String
+{
+    s baseTrasa = ""
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i '$isvalidnum(sp) continue
+        s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        s wt = $g(^[dataDB]JRL(sku,lin,"W",ct))
+        s c = ..WCasNaZastavce(wt, currentPoradi)
+        i (c '= "") && (c '= "<") && ($isvalidnum(c)) { s baseTrasa = wt  q }
+    }
+    q baseTrasa
+}
+
+/// Kumulativní doba jízdy (min) ze zastávky `fromPoradi` na zastávku `poradi` po dané trase "W".
+/// = `cas(poradi) - cas(fromPoradi)` (reference od vývěskové zastávky, 1:1 legacy TrasaMin / MHD).
+/// 0 když některá zastávka není na trase / spoj projíždí (`<`).
+ClassMethod CasJizdyZTrasy(wTrasa As %String, fromPoradi As %String, poradi As %String) As %Integer
+{
+    s cFrom = ..WCasNaZastavce(wTrasa, fromPoradi)
+    s cTo   = ..WCasNaZastavce(wTrasa, poradi)
+    i (cFrom = "") || (cFrom = "<") || ('$isvalidnum(cFrom)) q 0
+    i (cTo = "")   || (cTo = "<")   || ('$isvalidnum(cTo))   q 0
+    q cTo - cFrom
 }
 
 /// Vrátí sloupce dnů (1-based indexy, čárkou oddělené) pro spoj — 1:1 s `KamPrt` logikou

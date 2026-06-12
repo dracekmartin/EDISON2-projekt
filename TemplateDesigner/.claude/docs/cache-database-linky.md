@@ -429,8 +429,14 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   bezbariérově přístupné vozidlo", na minutách `[B, H]`. (allBBP → text „všechny spoje…", bez
   markeru u minut.) Marker = `$char(SpecZnak)` jako MHD sourozenec (gold SEKCE ukazuje číslo „72",
   vizuálně týž glyf vozíčku).
-- ⬜ **Časy jízdy ve StopListu (TrasaMin)** — `CAS_JIZDY=0` u všech; legacy má kumulativní minuty
-  (`0,1,2,4,6,8,10,13,…`) + varianty trasy (`<`). Nepočítáme. **Větší kus.**
+- ✅ **Časy jízdy ve StopListu (TrasaMin) — JEDEN sloupec HOTOVO** (2026-06-12). `ZakladniWTrasa`
+  (reprezentativní trasa spoje stavícího na vývěskové zastávce) + `CasJizdyZTrasy` (= `cas(poradi)
+  - cas(currentPoradi)`, reference od vývěskové zastávky jako MHD). `CAS_JIZDY` ve StopListu.
+  Ověřeno 0365001 str.1+2: kumulativní minuty = gold `TrasaMin1` (0,1,2,4,6,8,10,13,…). Renderer
+  `StopListElement.cs:469` blankuje `CasJizdy<=0` → vývěsková + přeskočené zastávky prázdné.
+  ⬜ **Multi-varianta (`TrasaMin1-15`)** = víc časových sloupců per varianta trasy + `<` u projetých
+  — odloženo (chce zásah do C# rendereru, který dnes umí jeden sloupec). Pro běžné linky (jedna
+  trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.
 - ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
 - ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
 
