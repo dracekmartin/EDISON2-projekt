@@ -113,6 +113,11 @@ public partial class MainWindow : Window
 
         _canvas        = new DesignerCanvas(_vm.State);
         _previewCanvas = new PreviewCanvas(_vm.State);
+        _previewCanvas.OverflowChanged = hasOverflow =>
+        {
+            if (_vm is not null && _vm.HasPreviewOverflow != hasOverflow)
+                _vm.HasPreviewOverflow = hasOverflow;
+        };
 
         // Wire SkiaSharp (must be code-behind — not in XAML for net9+)
         skCanvas.PaintSurface        += OnPaintSurface;

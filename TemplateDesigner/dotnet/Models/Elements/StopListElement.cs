@@ -440,7 +440,7 @@ public class StopListElement : ScheduleElementBase
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────
 
-    public float CalculateHeightFromData(DataContext? data)
+    public override float CalculateHeightFromData(DataContext? data)
     {
         var zastavky = BuildZastavky(data);
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;

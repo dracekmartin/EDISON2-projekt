@@ -239,6 +239,14 @@ public class TemplateDesignerViewModel : EDViewModel
         set => Set(ref _statusText, value);
     }
 
+    private bool _hasPreviewOverflow;
+    /// <summary>True = obsah některé stránky preview se nevejde. Status bar zobrazí červený blok.</summary>
+    public bool HasPreviewOverflow
+    {
+        get => _hasPreviewOverflow;
+        set => Set(ref _hasPreviewOverflow, value);
+    }
+
     private string _agendaNameText = "Agenda: —";
     public string AgendaNameText
     {
