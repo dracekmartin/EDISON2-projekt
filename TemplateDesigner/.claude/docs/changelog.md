@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-12 — Wave 4: parametry tisku přes EDInputForm (Caché-driven)
+
+- ✅ **Tiskový dialog → EDInputForm** — parametry sestavy se renderují přes EDInputForm, jehož schéma
+  řídí agenda v Caché (`GetParameters`). Generická dispatch třída `ALVA.TemplateDesigner.EDInputForm.AgendaParams`
+  (jedna pro všechny agendy) nested-callem získá param JSON a převede ho na `Form` (typy bool/number/enum/date/text);
+  prefill aktuálními hodnotami přes `IN["values"]`. Žádná per-agenda EDInputForm třída — `GetParameters` zůstává
+  jediný zdroj definic parametrů.
+- ✅ **visibleWhen v C#** — `TemplateParameter.IsVisible(values)` (nový, jediný zdroj logiky) sdílí preview lišta
+  i tiskový dialog; viditelnost (např. Hodiny od/do při „Vlastní rozsah") se přepíná živě na polích EDInputformu.
+  `ParameterControlVM.UpdateVisibility` zredukováno na delegaci.
+- ✅ **enum = required** v `AgendaParams` → List dropdown bez úvodního prázdného řádku (musí být vybráno).
+- Odstraněn `ParameterControlVM` z tiskového dialogu + duplicitní nadpis; `CacheAgendaProvider.GetCacheClass` accessor.
+
 ## 2026-06-12 — Wave 4: „Vlastnosti sekce" přes EDInputForm + fix prázdného řádku v List
 
 - ✅ **Vlastnosti sekce → EDInputForm** (W4-7 část) — nová Caché schema `ALVA.TemplateDesigner.EDInputForm.SectionEdit`

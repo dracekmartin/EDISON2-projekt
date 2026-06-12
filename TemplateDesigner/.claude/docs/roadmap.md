@@ -220,13 +220,21 @@ Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInp
 | W4-3 | SaveToCacheDialog — první migrace (PoC, vlastní dispatch) | ✅ 2026-05-26 |
 | W4-4 | Generický `ElementEditDialog` + `ElementPropertyAccessor` (reflexe, property-path keys) | ✅ 2026-05-27 |
 | W4-5 | Elementy: Text, Line, Rectangle, Barcode, NotesLegend (+border parity audit) | ✅ 2026-05-27 |
-| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled) | |
-| W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + 2 Caché schemas | 🟡 Section ✅ (2026-06-12, `SectionEdit.cls`); Page ⬅️ zbývá (formát/orientace + ScaleBodySections nelze přes čistou reflexi — chce hook nebo zjednodušení) |
-| W4-8 | **Simple dialogy** — SaveSectionTemplate, NormalizePositions | |
-| W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část custom nebo extra řešení | |
+| W4-5b | **Tiskový dialog — parametry sestavy přes EDInputForm** (`AgendaParams` generic dispatch z `GetParameters`; visibleWhen v C# přes `TemplateParameter.IsVisible`) | ✅ 2026-06-12 |
+| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled). ⬅️ DALŠÍ. Vyžaduje rozšíření sdílené komponenty EDControls (nový field type + WPF renderer náhledu), nebo obejít přes `BUTTON` + vlastní handler (vzor `SaveTemplate`). | ⬅️ |
+| W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + Caché schemas | 🟡 Section ✅ (2026-06-12, `SectionEdit.cls`); Page ⬅️ zbývá (formát/orientace + ScaleBodySections nelze přes čistou reflexi — chce hook nebo zjednodušení) |
+| W4-8 | **Simple dialogy** — SaveSectionTemplate, NormalizePositions | ⛔ **Záměrně neimigrováno** (rozhodnuto 2026-06-12): „Uložit jako šablonu sekce" = 1 pole, nulový dedup → plain dialog stačí; „Normalizovat pozice" = živě počítaný náhled „Bude upraveno: N" (client-side geometrie), EDInputForm to nepřepočítá → ponecháno custom. Tiskový dialog (původně zvažovaný zde) hotov jako W4-5b. |
+| W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část (editor sloupců/skupin) zůstane custom `CellStyleEditor` (EDInputForm neumí editovatelnou tabulku) → vždy částečná migrace + sešití dvou částí do okna. Po W4-6. | |
 | W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor, odložené | |
 | W4-11 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
 | W4-12 | (volitelné) EDInputForm wire formát `$lb()` OUT → JSON envelope; collapsible groups | |
+
+**Co je / není kandidát na EDInputForm** (rozhodovací pravidlo, dohodnuto 2026-06-12):
+- ✅ **Ano:** formuláře s **pevným, server-definovaným schématem** (vlastnosti elementu/sekce/stránky; parametry agendy z `GetParameters`). Cesta: `*Edit.cls` (reflexe přes property path) nebo generická `AgendaParams` (z param JSON).
+- ❌ **Ne:** (1) triviální confirm s 1 polem (nulový dedup, jen Caché round-trip navíc); (2) dialogy s **živě počítaným náhledem** z client-side dat (Normalizovat pozice); (3) plně dynamické/data-driven formy bez server schématu. visibleWhen (podmíněná viditelnost) jde, ale evaluuje se **v C#** (pravidlo definuje Caché v JSON) — `Validate` roundtrip nenese InitParams.
+- **Reusable pattern:** `AgendaParams` (jedna generická dispatch třída převádějící `GetParameters` JSON → EDInputForm Form) je vzor pro budoucí Caché-driven formy stavěné z existujícího JSON kontraktu (ne ručně psané `*Edit.cls`).
+
+**Pořadí dalších kroků:** W4-6 (Image — chce nový field type v EDControls) → W4-9 (komplexní vícetabové elementy) → W4-7 Page (formát/orientace hook) → W4-10/11 (inline panel + cleanup, velký refaktor, na konec).
 
 ---
 
