@@ -416,17 +416,22 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
 **Test linky:** CB_CSADAD `0345061` (FTL2+AutoPozn), `0365001`; VS_CSAD `0945001`, `0445102`.
 
 ### ⬜ Zbývá pro úplné 1:1 (zjištěno field-by-field diffem str.1 vs gold, 2026-06-11)
-- **Atributy spoje** (např. bezbariér „72") — legacy je má u minut + v legendě (`3#72#spoj má
-  bezbariérově přístupné vozidlo`). Máme jen atributy zastávek (dta2), ne atributy **spoje**.
-  Analogie MHD `AddAtribut` pro spoj. **Funkční mezera.**
-- **POPIS_DOPRAVCE — chybí adresa provozovny.** Naše `prov.Písek,,tel:` vs gold
-  `prov.Písek,Nádražní 2294,tel:`. Vypadává ulice/sídlo. **Funkční mezera (malá).**
-- **Časy jízdy ve StopListu (TrasaMin)** — `CAS_JIZDY=0` u všech; legacy má kumulativní minuty
+- ✅ **POPIS_DOPRAVCE — adresa provozovny DOPLNĚNA** (2026-06-12). `NazevDopravce` nyní čte i `$2`
+  (ulice,číslo) z `^JRSET("DOP",fa,pr)` (gDopFaPr: $1 sídlo, $2 ulice, $3 tel) → slot mezi sídlem a
+  telefonem. Ověřeno 1:1 na 0365001: `prov.Písek,Nádražní 2294,tel:601 319 673` = gold.
+- ✅ **Filtr atributů zastávek — OPRAVENO** (2026-06-12). `JeViditelnyAtribut` zúžen na **jen „x" (na
+  znamení)** — legacy `UVOD^JRapiLinPrtMhd` (ř.189-190) promítá z dta2 do StopListu jen „x", ostatní
+  znaky (A=autobus, L=vlak, metro, nástup/výstup…) v tomto výstupu netiskne. A/L over-emise pryč.
+- ⬜ **Atributy spoje** (např. bezbariér „72") — legacy je má u minut + v legendě (`3#72#spoj má
+  bezbariérově přístupné vozidlo`). Máme jen atributy zastávek, ne atributy **spoje**.
+  Zdroj: `inv` = `$p(hlava,":",15)` gated `isinv` (`^JRSET("PS","LIMES")` obsahuje „invalida"),
+  `cbe` = `$p(hlava,":",22)` gated `iscbe` („invalidaspomoc"); `AllSpIsBBP` (všechny spoje bezbar.)
+  mění text. **POZOR:** reprezentace markeru „72" jde přes output-layer (`$$i`→„72") = nejasná,
+  ověřit ať se neopakuje MHD-vs-AD chyba u rozdílů tras. **Funkční mezera, střední.**
+- ⬜ **Časy jízdy ve StopListu (TrasaMin)** — `CAS_JIZDY=0` u všech; legacy má kumulativní minuty
   (`0,1,2,4,6,8,10,13,…`) + varianty trasy (`<`). Nepočítáme. **Větší kus.**
-- **Ověřit filtr atributů zastávek A/L** — emitujeme `A`=autobus/`L`=vlak v legendě, legacy str.1 ne
-  (měl jen 72/B/29). Buď legacy filtruje (flag „tisknout v zastávkovém JŘ"), nebo patří jinam.
-- Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
-- Šířka/layout legendy POZNAMKY — vizuál, na konec.
+- ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
+- ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).

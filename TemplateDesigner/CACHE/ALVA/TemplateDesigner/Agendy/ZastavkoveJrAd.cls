@@ -741,11 +741,13 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda) As
     q poznamky
 }
 
-/// Je atribut zastávky (znak číselníku 16) "viditelný" — tj. významový pro cestujícího (na znamení,
-/// nástup/výstup, ikona dopravy, paragraf), ne čistě formátovací (tučně/podtrženě) ani souhrnný (>/</E/H).
+/// Atributy zastávky tištěné v zastávkovém JŘ. Legacy `UVOD^JRapiLinPrtMhd` (ř.189-190) promítá
+/// z dta2 do StopListu **jen „na znamení" (znak `x`)** — ostatní znaky číselníku 16 (A=autobus,
+/// L=vlak, metro, nástup/výstup, formátovací…) se v TOMTO výstupu NEtisknou (ověřeno gold 0365001:
+/// Vlakové nádraží má L=vlak, U autobusového nádraží A=autobus, ale gold je v zastávkách neukazuje).
 ClassMethod JeViditelnyAtribut(znak As %String) As %Boolean
 {
-    q (znak '= "") && ("xyzNVALefgODCGabc" [ znak)
+    q znak = "x"
 }
 
 /// Text atributu zastávky dle znaku — 1:1 s číselníkem `arrCis(16)^JRapiCis`.
@@ -916,18 +918,19 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
     s mhd = $p(firma,"~",14)
     i $tr(mhd," ","") '= "" q mhd
 
-    // 2) plný tvar: název firmy + sídlo provozovny + telefon
+    // 2) plný tvar: název firmy + sídlo provozovny + ulice + telefon (gDopFaPr: $1 sídlo, $2 ulice, $3 tel)
     s jmeno = $p(firma,"~",7)
     i jmeno = "" s jmeno = $p(firma,"~",1)
-    s sidlo = "", tel = ""
+    s sidlo = "", ulice = "", tel = ""
     i pr '= "" {
         s provoz = $g(^[dataDB]JRSET("DOP",fa,pr))
         s sidlo = $p(provoz,"~",1)
+        s ulice = $p(provoz,"~",2)
         s tel   = $p(provoz,"~",3)
     }
     s text = jmeno
     i sidlo '= "" s text = text_", "_sidlo
-    i tel '= ""   s text = text_",,tel:"_tel
+    i tel '= ""   s text = text_","_ulice_",tel:"_tel     // slot ulice mezi sídlem a telefonem (prázdná → ,,tel:)
     q text
 }
 
