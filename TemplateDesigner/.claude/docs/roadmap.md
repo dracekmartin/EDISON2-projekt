@@ -28,7 +28,7 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**Kde pokračovat dál — 2 top priority NAD helpdesk tickety (dohodnuto 2026-05-27):**
+**Kde pokračovat dál (dohodnuto 2026-05-27):** PRIORITA 2 (zastávkový JŘ z AD dat) je **datově 1:1 + výkonově hotová** (2026-06-12, viz níže) — zbývají z ní jen nice-to-have položky (multi-varianta TrasaMin přes renderer) + výkonový rest v MHD. Aktivní top priorita je tedy **PRIORITA 1 — Wave 4 EDInputForm**.
 
 ### ⬅️ PRIORITA 1 — Wave 4: dokončit EDInputForm migraci (🟡 rozpracováno)
 
@@ -42,18 +42,19 @@ EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputF
 - **Simple dialogy** — SaveSectionTemplate, NormalizePositions
 - **Komplexní elementy (StopList / DepartureGrid / TableElement)** — rozdělit: **tab „Obecné" → EDInputForm**, tabulková / per-column část buď nechat custom (CellStyleEditor / grid) nebo vyřešit extra. Žádné půl-na-půl — obecné properties patří do EDInputForm.
 
-### ⬅️ PRIORITA 2 — Zastávkový JŘ pro data z linkových JŘ (ne jen MHD) — 🟡 ROZPRACOVÁNO
+### PRIORITA 2 — Zastávkový JŘ pro data z linkových JŘ (ne jen MHD) — ✅ DATOVĚ 1:1 + VÝKONOVĚ HOTOVO (2026-06-12)
 
 Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") — reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN` (linková/meziměstská data z `^JRL`/`^JRZ`/`^JRSET`, per-namespace bez IdFa). Čistý refaktor, ne wrapper (analogicky k MHD migraci).
 
-**Hotovo (2026-06-02 — 06-11):** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti **body 1-7**: názvy zastávek (`^JRZ` `$7`), datumy v poznámkách s rokem (`TODDO` formát), všechna „jede/nejede" omezení (omzId 11-15,22), POPIS_DOPRAVCE (`^JRSET("DOP")` chain), LOKALNI_OZNACENI/TITULEK/INFORMACE (`SeT_MhD`), číslování poznámek (schéma shodné pro TYPPOZ=0), **FTL 1-3 sloupcový model** (`ZarazeniSpoje` 1:1 s `JRapiLinPrtMhd1`; prázdninové dělení dle CNZ/NZ konfigurace). Ověřeno proti gold oracle `ALVA.TISKMHD.Data` na 0410101 (FTL=0) + 0425017 (FTL=1). Debug nástroje: MCP `cache_zwglobal` + `ScanSubscript`.
+**Hotovo (2026-06-02 — 06-12), vše 1:1 ověřeno proti gold oracle:** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti (názvy zastávek, datumy s rokem, „jede/nejede" omezení, **POPIS_DOPRAVCE vč. adresy provozovny**, LOKALNI_OZNACENI/TITULEK/INFORMACE, FTL 0-3 sloupcový model, prázdninové dělení) + **rozdíly tras** (`RozdilyTras`, 1:1 `OmTrasa^JRapiLinPrtMhd`: „neobsluhuje zast. X", marker od „B" — NE MHD alg 1002, ten byl revertován) + **atributy zastávek** (filtr jen „na znamení", jako legacy UVOD) + **atributy spoje** (bezbariér H/F, `BezbarierKonfig`) + **časy jízdy StopList** (jeden sloupec = gold `TrasaMin1`). Ověřeno na 0410101/0425017/0320144/0320993/**0365001** (rozdíly tras + bezbariér + časy). **Performance:** per-linka invarianty + W-trasa cachovány do `^||TiskAd` (behavior-preserving, byte-identický výstup). Detail §10 + changelog 2026-06-12.
 
-**Hotovo navíc (2026-06-11):** FTL 2/3 ověřeno (CB_GWBUS/CB_CSADAD), **atributy zastávek** (číselník 16), prázdninové dělení (logika ověřena synteticky — NZ data nikde). **Zbývá JEDINÁ feature: rozdíly tras A/B/C** (alg 1002 / `OmTrasa`; MHD agenda = reference; test linky CB_CSADAD `0345061`/`0365001`, VS_CSAD `0945001`). Detail §10.
+**Zbývá k úplnému 1:1 (zdokumentováno §10, nice-to-have):**
+- **Multi-varianta TrasaMin** (`TrasaMin1-15` = víc časových sloupců per varianta trasy) — vyžaduje zásah do **C# StopListElement rendereru** (dnes jeden sloupec). Pro běžné linky s jednou trasou je jednosloupcová verze 1:1.
+- **Číslování omezení TYPPOZ=1** (legacy pevná čísla „29" vs naše sekvenční „1") — firm-config.
+- Šířka/layout legendy (vizuál) — na konec.
+- **DEV cleanup před produkcí** — `#if DEBUG` auto-open `kv_ad_test.json`, zvážit statický `GetMockData`.
 
-**Ostatní (nice-to-have):**
-- TrasaMin varianty StopListu (vizuál), šířka legendy (vizuál) — na konec
-- značky platnosti spojů — v datech se nevyskytují (spoje X/6+)
-- **DEV cleanup před produkcí** — `#if DEBUG` auto-open `kv_ad_test.json`, zvážit statický `GetMockData`
+**Performance rest (samostatný krok):** MHD agenda `VypocitatBitmapyObsluhy` má 3 průchody `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³). **Rizikový zásah do ověřeného MHD enginu** — udělat zvlášť s re-verifikací proti MHD gold oracle. (AD agenda už per-stránka neefektivnosti nemá.)
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
 

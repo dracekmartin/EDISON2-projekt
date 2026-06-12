@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-06-12 — ZastavkoveJrAd: dokončení 1:1 vůči legacy AD + performance
+
+Agenda zastávkového JŘ z dat hlavního JŘ modulu (AD/JRMAIN) dotažena na **datové 1:1**
+proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN) + pročištěna výkonově.
+
+**Funkční 1:1 (vše ověřeno proti gold oracle):**
+- ✅ **Rozdíly tras** — `RozdilyTras`, 1:1 `OmTrasa^JRapiLinPrtMhd`: „neobsluhuje zast. X" /
+  „jede přes…" / „jede jen do…" / „pokračuje…", marker z písmenné sady od „B", per zastávku.
+  (Nejdřív zkusil MHD alg 1002 — ověřením proti gold se ukázal jako špatný, revertován; AD
+  používá `OmTrasa`/NZ mechanismus.) Ověřeno 0365001.
+- ✅ **POPIS_DOPRAVCE — adresa provozovny** — `NazevDopravce` čte i `$2` (ulice) z `^JRSET("DOP")`.
+- ✅ **Filtr atributů zastávek** — `JeViditelnyAtribut` zúžen na jen „na znamení" (`x`); legacy
+  `UVOD^JRapiLinPrtMhd` jiné atributy (A=autobus/L=vlak…) do StopListu netiskne. Odstraněna over-emise.
+- ✅ **Atributy spoje (bezbariér)** — `BezbarierKonfig` (isinv/iscbe z `^JRSET("PS","LIMES")`, allBBP);
+  `inv`=hlava:15→„H" (SpecZnak 72), `cbe`=hlava:22→„F" (70); anotace „specialni" + legenda.
+- ✅ **Časy jízdy ve StopListu (TrasaMin)** — jeden sloupec = gold `TrasaMin1` (kumulativní min od
+  vývěskové zastávky, jako MHD). Multi-varianta (`TrasaMin1-15`) odložena — chce zásah do C# rendereru.
+
+**Performance (behavior-preserving, výstup byte-identický — 0365001: 680373 znaků, 39 stránek):**
+- ✅ Per-linka/per-směr invarianty (`ObsluhovanePoradi`, `BezbarierKonfig`) memoizovány do `^||TiskAd`
+  místo full-scanu spojů per stránka.
+- ✅ W-trasa cachovaná mapou `poradi→cas` per `cisloTrasy` (`WMapa`) — nahradila lineární `$p` sken
+  při každém lookupu; W-helpery (offset, časy, bitmapy, základní trasa) čtou z mapy.
+- ✅ Bug fix: prázdná `cisloTrasy` (spoj bez trasy) padala na `<SUBSCRIPT>` — `^||` globály neberou
+  prázdný subscript; přidán guard. Stejný `$d()` guard na `served` cache (merge z undef = `<UNDEFINED>`).
+
+**Zbývá k úplnému 1:1 (zdokumentováno §10):** multi-varianta TrasaMin (renderer), číslování omezení
+TYPPOZ=1 (firm-config), šířka/layout legendy. **Výkon:** MHD `VypocitatBitmapyObsluhy` (O(bodů³)) —
+rizikový, samostatný krok.
+
 ## 2026-05-25 — Wave 3 uzavřena (Fáze 2 auto-snapshots skipnuté)
 
 Po diskusi vyhodnoceno, že auto-snapshots (Fáze 2 původně plánované) nemají dost přidanou hodnotu pro TD scope. Argumentace:
