@@ -13,8 +13,13 @@ Include GENERAL
 /// (→ `WinTiskMhd^JRapiExp10`). Legacy výstup lze vygenerovat jako zlatou referenci přes
 /// `cache_query ALVA.TISKMHD.Data/LoadData` (viz `cache-database-linky.md` §9).
 ///
-/// **Stav: Fáze 1 (skeleton)** — GetSchema/GetMockData/GetTableTemplates/GetParameters hotové,
-/// GetData je stub (Fáze 2 = fázový engine čtoucí ^JRL).
+/// **Stav:** GetData fázový engine hotový — trasa, spoje, FTL sloupce (skupiny dnů), odjezdy,
+/// atributy zastávek, datumová omezení (jede/nejede), dopravce, titulek/informace, **rozdíly tras**
+/// (1:1 `OmTrasa^JRapiLinPrtMhd`: "neobsluhuje zast. X" / "jede přes…" / "pokračuje…", marker od "B").
+/// Ověřeno 1:1 proti zlaté referenci (0365001: marker "B" = "neobsluhuje zast. Lesní hřbitov").
+/// **Zbývá pro úplné 1:1:** atributy spoje (např. bezbariér "72") na minutách + legendě, adresa
+/// provozovny v POPIS_DOPRAVCE, časy jízdy ve StopListu (TrasaMin), ověřit filtr atributů zastávek
+/// A/L. Detail `cache-database-linky.md` §10.
 ///
 /// Sdílené Build*/AddStandard* helpery jsou zatím **duplikované** z `ZastavkoveJrMhd`
 /// (stejný výstupní formát). Extrakce do společného helperu/baseclass až podle výsledků
@@ -169,20 +174,21 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
     q $$$OK
 }
 
-/// Vrátí data pro tisk: 1 stránka per zastávka × směr.
+/// Vrátí data pro tisk: 1 stránka per zastávka × směr (reimpl. legacy `WinTiskMhd^JRapiExp10`).
 ///
-/// **Fáze 2 (TODO):** reimplementovat legacy `WinTiskMhd^JRapiExp10` — fázový engine:
-///   1. Načíst linku + trasu (^JRL(sku,lin,"J"), "I", PATCH)
-///   2. Načíst spoje (^JRL(sku,lin,"T"/"Z",sp)) + trasy spojů ("W") + omezení (,22 / ,32)
-///   3. Odvodit sloupce (skupiny dnů) z FTL (MHD_TYP_R) + Plk + CNZ
-///   4. Promítnout odjezdy per zastávka × sloupec, anotace + NZ
-///   5. Sestavit poznámky (legenda)
-///   6. Iterovat zastávky × směry → OUT[$i] = JSON stránka (values + rows ZASTAVKY/ODJEZDY/POZNAMKY)
+/// Fázový engine:
+///   1. Načte linku + trasu (^JRL(sku,lin,"J"), "I", PATCH)
+///   2. Načte spoje (^JRL(sku,lin,"T"/"Z",sp)) + trasy spojů ("W") + omezení (,22 / ,32)
+///   3. Odvodí sloupce (skupiny dnů) z FTL (MHD_TYP_R) + Plk + CNZ
+///   4. Promítne odjezdy per zastávka × sloupec, anotace + datumová omezení
+///   5. Sestaví poznámky (legenda: atributy + omezení)
+///   6. Iteruje zastávky × směry → OUT[$i] = JSON stránka (values + rows ZASTAVKY/ODJEZDY/POZNAMKY)
 /// Zlatá reference výstupu: `cache-database-linky.md` §9.
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
     try {
         $$$FillParams
+        k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) — fresh per request
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         i sku = "" s sku = 1
@@ -277,6 +283,11 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     }
     i 'jeDal q ""
 
+    // základní trasa pro časy jízdy (TrasaMin) — reprezentativní trasa spoje stavícího na vývěskové
+    // zastávce; W-mapu rozparsujeme jednou a v cyklu zastávek z ní jen čteme
+    s zaklCt = ..ZakladniCisloTrasy(dataDB, sku, lin, smer, currentPoradi)
+    d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
+
     s poradi = $s(jeTam:"", 1:currentPoradi + 1)
     s cnt = 0
     f {
@@ -294,8 +305,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s naZnameni = (atributy["x")
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
+        s casJizdy = ..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi)   // kumulativní min od vývěskové zastávky
         s cnt = cnt + 1
-        s z = ..BuildZastavka(poradi, rawNazev, poradi, 0, cnt, jeAkt, naZnameni)
+        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, naZnameni)
         i zona '= "" d ..AddZona(z, zona)
         // atributy zastávky → symbol u názvu + řádek legendy (jen významové znaky, ne formátovací)
         f ai=1:1:$l(atributy) {
@@ -320,11 +332,12 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s ftl   = +$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_TYP_R"))
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
 
-    // ── odjezdy + poznámky (omezení "nejede" → anotace + legenda) ────
-    k poznMap
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap)
+    // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
+    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda
+    d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
-    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda)
 
     // ── sestavení stránky ───────────────────────────────────────────
     s out = ##class(%DynamicObject).%New()
@@ -369,10 +382,13 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap) As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda) As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
+
+    // bezbariér konfig (per linka): isinv/iscbe = feature povolená, allBBP = všechny spoje bezbar.
+    d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)
 
     s sp = ""
     f {
@@ -387,9 +403,9 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s plk        = $p(hlava, ":", 7)
         s cnz        = $p(spoj, "#", 7)        // negativní značka spoje (legacy arrsp dta29)
 
-        // offset času na aktuální zastávce z trasy spoje
-        s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
-        s offset = ..WCasNaZastavce(wTrasa, currentPoradi)
+        // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa)
+        d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
+        s offset = $g(wMap(currentPoradi))
         i offset = "<" continue           // spoj zde nestaví (projíždí)
         i offset = "" continue            // zastávka mimo trasu spoje
         i '$isvalidnum(offset) continue
@@ -402,23 +418,82 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
         i txt '= "" s znak = ..ZiskejMarker(.poznMap, txt)
 
+        // marker rozdílu trasy (z RozdilyTras) — u minuty jako první, dle legacy ZnkOm=ZnkTc_…
+        s pismRT = $g(pismenoSpoj(sp))
+
+        // atributy spoje — bezbariér (inv = hlava:15) / částečně (cbe = hlava:22); SpecZnak 72=H / 70=F
+        s inv = (isinv && +$p(hlava,":",15))
+        s cbe = (iscbe && +$p(hlava,":",22))
+        i inv s bezbarLegenda("H") = $s(allBBP:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
+        i cbe s bezbarLegenda("F") = "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
+
         // spoj může patřit do více sloupců dnů (FTL layout + prázdninové dělení dle CNZ)
         s skupiny = ..ZarazeniSpoje(ftl, plk, cnz, nzCfg)
         i skupiny = "" continue           // KamPrt = 0 (nerozpoznané Plk) → spoj se netiskne (jako legacy)
         f gi=1:1:$l(skupiny,",") {
             s o = ..BuildOdjezd(currentPoradi, $p(skupiny,",",gi), hod, min)
-            i znak '= "" d ..AddAnotace(o, "text", znak)
+            // pořadí anotací 1:1 legacy ZnkOm: rozdíl trasy → omezení → bezbariér
+            i pismRT '= "" d ..AddAnotace(o, "text", pismRT)
+            i znak  '= "" d ..AddAnotace(o, "text", znak)
+            i inv && 'allBBP d ..AddAnotace(o, "specialni", "H")   // u allBBP se marker netiskne, jen legenda
+            i cbe d ..AddAnotace(o, "specialni", "F")
             d odjezdy.%Push(o)
         }
     }
     q odjezdy
 }
 
+/// Konfigurace bezbariérových atributů spoje (1:1 `JRapiLinPrtMhd` ř.317-318, `AllSpIsBBP` ř.953):
+///   isinv = feature „invalida" povolená (`^JRSET("PS","LIMES")` obsahuje „invalida")
+///   iscbe = feature „invalidaspomoc" (částečně bezbariér)
+///   allBBP = všechny spoje obou směrů mají příznak hlava:15 → legenda „všechny spoje…", bez markeru u minut
+ClassMethod BezbarierKonfig(dataDB As %String, sku As %String, lin As %String, ByRef isinv, ByRef iscbe, ByRef allBBP)
+{
+    // invariant per linka → cache (v GetData se NacistOdjezdy volá per stránka)
+    i $d(^||TiskAd("bezbar",dataDB,sku,lin)) {
+        s cfg = ^||TiskAd("bezbar",dataDB,sku,lin)
+        s isinv = $lg(cfg,1), iscbe = $lg(cfg,2), allBBP = $lg(cfg,3)
+        q
+    }
+
+    s isinv = 0, iscbe = 0
+    s cnt = ""
+    f {
+        s cnt = $o(^[dataDB]JRSET("PS","LIMES",cnt))
+        q:cnt=""
+        s val = $g(^[dataDB]JRSET("PS","LIMES",cnt))
+        i val [ "invalidaspomoc" s iscbe = 1
+        i val [ "invalida" s isinv = 1
+    }
+
+    // všechny spoje bezbariérové? (každý spoj obou směrů má hlava:15)
+    s allBBP = isinv, maSpoj = 0
+    f sm="T","Z" {
+        s sp = ""
+        f {
+            s sp = $o(^[dataDB]JRL(sku,lin,sm,sp))
+            q:sp=""
+            i '$isvalidnum(sp) continue
+            s maSpoj = 1
+            i '+$p($p($g(^[dataDB]JRL(sku,lin,sm,sp)),"#",1),":",15) s allBBP = 0  q
+        }
+        i 'allBBP q
+    }
+    i 'maSpoj s allBBP = 0
+
+    s ^||TiskAd("bezbar",dataDB,sku,lin) = $lb(isinv,iscbe,allBBP)
+}
+
 /// Naplní `served(poradi)` zastávkami, kde staví aspoň jeden spoj daného směru (W-offset != "<").
 /// Slouží k filtru projížděných zastávek ze StopListu (jako legacy).
+/// Invariant per (linka×směr) → cache `^||TiskAd("served",…)`; v GetData se volá per stránka.
 ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String, smer As %String, ByRef served)
 {
     k served
+    i $d(^||TiskAd("served",dataDB,sku,lin,smer)) {
+        m served = ^||TiskAd("served",dataDB,sku,lin,smer)
+        q
+    }
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
@@ -432,17 +507,55 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
             i (pp '= "") && (cas '= "<") && (cas '= "") s served(pp) = ""
         }
     }
+    i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
 }
 
-/// Vrátí čas (minuty od počátku spoje) na zastávce daného pořadí z trasy spoje "W".
-/// Formát "W": #-segmenty `poradi:cas:km:...`; `<` = spoj zde nestaví. "" = nenalezeno.
-ClassMethod WCasNaZastavce(wTrasa As %String, poradi As %String) As %String
+/// W-mapa `poradi → cas` pro danou trasu, cachovaná per `cisloTrasy` (`^||TiskAd("wmap",…)`).
+/// Trasa je sdílená napříč spoji i stránkami → parsuje se tak jen jednou (dřív lineární `$p` sken
+/// W-stringu při každém lookupu/spoji/stránce). `cas` může být číslo, `<` (projíždí) nebo "" (mimo).
+ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef wMap)
 {
+    k wMap
+    i cisloTrasy = "" q                                  // spoj bez trasy → prázdná mapa (^|| nebere prázdný subscript)
+    i $d(^||TiskAd("wmap",cisloTrasy)) { m wMap = ^||TiskAd("wmap",cisloTrasy)  q }
+    s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f i=1:1:$l(wTrasa,"#") {
         s seg = $p(wTrasa,"#",i)
-        i $p(seg,":",1) = poradi ret $p(seg,":",2)
+        s p = $p(seg,":",1)
+        i p '= "" s wMap(p) = $p(seg,":",2)
     }
-    q ""
+    i $d(wMap) m ^||TiskAd("wmap",cisloTrasy) = wMap     // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
+}
+
+/// Vrátí `cisloTrasy` reprezentativního spoje, který staví na vývěskové zastávce (`currentPoradi`).
+/// Základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD; multi-varianta TrasaMin = budoucí krok).
+/// "" když žádný spoj na zastávce nestaví.
+ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String) As %String
+{
+    s baseCt = ""
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i '$isvalidnum(sp) continue
+        s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        d ..WMapa(dataDB, sku, lin, ct, .wMap)
+        s c = $g(wMap(currentPoradi))
+        i (c '= "") && (c '= "<") && ($isvalidnum(c)) { s baseCt = ct  q }
+    }
+    q baseCt
+}
+
+/// Kumulativní doba jízdy (min) ze zastávky `fromPoradi` na `poradi` z W-mapy (`poradi → cas`).
+/// = `cas(poradi) - cas(fromPoradi)` (reference od vývěskové zastávky, 1:1 legacy TrasaMin / MHD).
+/// 0 když některá zastávka není na trase / spoj projíždí (`<`).
+ClassMethod CasJizdyZMapy(ByRef wMap, fromPoradi As %String, poradi As %String) As %Integer
+{
+    s cFrom = $g(wMap(fromPoradi))
+    s cTo   = $g(wMap(poradi))
+    i (cFrom = "") || (cFrom = "<") || ('$isvalidnum(cFrom)) q 0
+    i (cTo = "")   || (cTo = "<")   || ('$isvalidnum(cTo))   q 0
+    q cTo - cFrom
 }
 
 /// Vrátí sloupce dnů (1-based indexy, čárkou oddělené) pro spoj — 1:1 s `KamPrt` logikou
@@ -523,6 +636,176 @@ ClassMethod BitmapNaSkupiny(kamPrt As %String) As %String
     q $e(g,1,*-1)
 }
 
+/// Rozdíly tras — pro každý spoj daného směru porovná jeho trasu se vzorovou (základní) trasou
+/// a sestaví poznámku vyjmenovávající rozdílové zastávky. 1:1 reimplementace `OmTrasa^JRapiLinPrtMhd`
+/// (AD). Gated `AutoPozn` (PATCH,"mhd","not"). Markery z písmenné sady (default "BCEFGHIJOQRWeijqsvwxz"
+/// nebo PATCH,"mhd","notchar"), počítané **per aktuální zastávku** (legacy scope Smer×Tc), dedup textů.
+///   pismenoSpoj(sp) = písmeno přiřazené spoji (anotace u minuty)
+///   legenda(písmeno) = text do legendy ("neobsluhuje zast. X" / "jede přes…" / "jede jen do…" / "pokračuje…")
+ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ByRef pismenoSpoj, ByRef legenda)
+{
+    k pismenoSpoj, legenda
+    i currentPoradi = "" q
+    i '+$g(^[dataDB]JRL(sku,lin,"PATCH","mhd","not")) q     // AutoPozn vypnuto → bez rozdílů tras
+
+    s krok = $s(smer="Z":-1, 1:1)
+
+    // vzorová trasa = základní trasa (J-věta #10 dta12), fallback tištěná (#7 dta9), fallback union obsluhy
+    s vzor = ..TrasaBitmapaZPole(dataDB, sku, lin, smer, 10)
+    i vzor = "" s vzor = ..TrasaBitmapaZPole(dataDB, sku, lin, smer, 7)
+    i vzor = "" {
+        k served  d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .served)
+        s p = ""  f { s p = $o(served(p))  q:p=""  i $isvalidnum(p) s $e(vzor,p) = 1 }
+    }
+    i vzor = "" q
+
+    // MTarTr = poslední pozice vzorové trasy (T) / první (Z)
+    s mTarTr = ""
+    i smer = "T" s mTarTr = $l(vzor)
+    i smer = "Z" f tmp=1:1:$l(vzor) { i +$e(vzor,tmp) s mTarTr = tmp  q }
+
+    // písmenná sada — default začíná "B" (proto marker "B"); počítáno per zastávku, dedup textů
+    s oznTr = $g(^[dataDB]JRL(sku,lin,"PATCH","mhd","notchar"))
+    i oznTr = "" s oznTr = "BCEFGHIJOQRWeijqsvwxz"
+    s pocMarker = 0
+
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i '$isvalidnum(sp) continue
+
+        s cisloTrasy = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        s spojTr = ..SpojBitmapa(dataDB, sku, lin, cisloTrasy)
+        i spojTr = "" continue
+        i spojTr = vzor continue              // spoj jede vzorovou trasou → bez poznámky
+        i '+$e(spojTr, currentPoradi) continue // spoj zde nestaví → na této stránce neřešíme
+
+        // TcDo = konečná spoje ve směru jízdy (poslední obsluhovaná pozice)
+        s tcDo = ""
+        i smer = "T" s tcDo = $l(spojTr)
+        i smer = "Z" f tmp=1:1:$l(spojTr) { i +$e(spojTr,tmp) s tcDo = tmp  q }
+        i tcDo = "" continue
+
+        s (jede, nejede, jedeDo, pokrac) = ""
+
+        // "jede jen do" — spoj končí dříve než vzorová trasa
+        s tcDOk = ""
+        i ((tcDo < mTarTr) && (smer = "T")) || ((tcDo > mTarTr) && (smer = "Z")) {
+            s jedeDo = ..NazZPoradi(dataDB, sku, lin, tcDo)
+            s tcDOk = tcDo
+        }
+
+        f tmpTc=currentPoradi:krok:tcDo {
+            i tmpTc = currentPoradi continue
+            i tcDOk = tmpTc continue
+            i +$e(vzor,tmpTc) = +$e(spojTr,tmpTc) continue
+            s naz = ..NazZPoradi(dataDB, sku, lin, tmpTc)
+            i (smer = "T") && (tmpTc > mTarTr) && (+$e(spojTr,tmpTc)) {
+                s $p(pokrac,", ",$l(pokrac,", ")+1) = naz
+                continue
+            }
+            i (smer = "Z") && (tmpTc < mTarTr) && (+$e(spojTr,tmpTc)) {
+                s $p(pokrac,", ",$l(pokrac,", ")+1) = naz
+                continue
+            }
+            i +$e(spojTr,tmpTc)  s $p(jede,", ",$l(jede,", ")+1) = naz
+            i '+$e(spojTr,tmpTc) s $p(nejede,", ",$l(nejede,", ")+1) = naz
+        }
+
+        // strip vedoucího prázdného prvku (legacy $P(...,2,...))
+        s jede   = $p(jede,   ", ", 2, $l(jede,   ", "))
+        s nejede = $p(nejede, ", ", 2, $l(nejede, ", "))
+        s pokrac = $p(pokrac, ", ", 2, $l(pokrac, ", "))
+
+        // sestavení textu (pořadí 1:1 legacy: jede → neobsluhuje → jede jen do → pokračuje)
+        s txt = ""
+        i jede '= "" s txt = "jede přes zast. "_jede
+        i nejede '= "" {
+            i txt = "" {
+                s txt = "neobsluhuje zast. "_nejede
+            } else {
+                s $p(txt," , ",$l(txt," , ")+1) = "neobsluhuje zast. "_nejede
+            }
+        }
+        i jedeDo '= "" {
+            i txt = "" {
+                s txt = "jede jen do zast. "_jedeDo
+            } else {
+                s $p(txt,", ",$l(txt,", ")+1) = "jede jen do zast. "_jedeDo
+            }
+        }
+        i pokrac '= "" {
+            i txt = "" {
+                s txt = "pokračuje přes "_pokrac
+            } else {
+                s $p(txt,", ",$l(txt,", ")+1) = "pokračuje přes "_pokrac
+            }
+        }
+        i txt = "" continue
+
+        // marker — dedup stejných textů v rámci této zastávky, jinak další písmeno ze sady
+        i $d(markerProText(txt)) {
+            s znk = markerProText(txt)
+        } else {
+            s pocMarker = pocMarker + 1
+            s znk = ..GetZnk(oznTr, pocMarker)
+            s markerProText(txt) = znk
+            s legenda(znk) = txt
+        }
+        s pismenoSpoj(sp) = znk
+    }
+}
+
+/// Bitmapa obsluhovaných pozic spoje z jeho trasy (cachovaná W-mapa per `cisloTrasy`).
+/// `$e(bmp,poradi)=1` kde spoj staví (cas != "<" a != ""). "" = prázdná trasa.
+ClassMethod SpojBitmapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String) As %String
+{
+    d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
+    s bmp = "", p = ""
+    f {
+        s p = $o(wMap(p), 1, cas)
+        q:p=""
+        i ($isvalidnum(p)) && (cas '= "<") && (cas '= "") s $e(bmp,p) = 1
+    }
+    q bmp
+}
+
+/// Bitmapa trasy z předpisového pole J-věty (segIdx = 7 tištěná trasa / 10 základní trasa),
+/// per pozice, dle směru (`:`-piece 1 = Tam, 2 = Zpět). `$e(bmp,poradi)=1` kde je příznak nastaven.
+ClassMethod TrasaBitmapaZPole(dataDB As %String, sku As %String, lin As %String, smer As %String, segIdx As %Integer) As %String
+{
+    s dir = $s(smer="Z":2, 1:1)
+    s bmp = "", poradi = ""
+    f {
+        s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi))
+        q:poradi=""
+        i '$isvalidnum(poradi) continue
+        s flag = $p($p($g(^[dataDB]JRL(sku,lin,"J",poradi)),"#",segIdx),":",dir)
+        i +flag s $e(bmp,poradi) = 1
+    }
+    q bmp
+}
+
+/// Název zastávky podle pořadí v trase (přes czst z J-věty `#1:1`).
+ClassMethod NazZPoradi(dataDB As %String, sku As %String, lin As %String, poradi As %String) As %String
+{
+    s czst = $p($p($g(^[dataDB]JRL(sku,lin,"J",poradi)),"#",1),":",1)
+    i czst = "" q ""
+    q ..NazevZastavky(dataDB, czst)
+}
+
+/// Vygeneruje písmeno markeru z písmenné sady; když dojdou písmena (cnt > délka), zdvojí je
+/// (B…z, pak BB…zz). 1:1 `GetZnk^JRapiLinPrtMhd`.
+ClassMethod GetZnk(txt As %String, cnt As %Integer) As %String
+{
+    s len = $l(txt), ml = 0
+    f { q:cnt'>len  s cnt = cnt-len, ml = ml+1 }
+    s znk = $e(txt,cnt), one = znk
+    f i=1:1:ml s znk = znk_one
+    q znk
+}
+
 /// Vrátí marker (pořadové číslo) pro text poznámky; deduplikuje (stejný text → stejný marker).
 ClassMethod ZiskejMarker(ByRef poznMap, txt As %String) As %String
 {
@@ -534,8 +817,9 @@ ClassMethod ZiskejMarker(ByRef poznMap, txt As %String) As %String
     q n
 }
 
-/// Sestaví legendu: atributy zastávek (na znamení, nástup/výstup, ikony…) + nasbírané "nejede/jede" poznámky.
-ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen) As %DynamicArray
+/// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".
+/// Pořadí 1:1 gold (`ALVA.TISKMHD.Data`): speciální znaky → rozdíly/text → omezení.
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
     // atributy zastávek — jeden řádek legendy na každý viděný znak (znak → text z číselníku)
@@ -544,6 +828,20 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen) As %DynamicArray
         s znak = $o(atrSeen(znak))
         q:znak=""
         d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak)))
+    }
+    // atributy spoje — bezbariér (H) / částečně bezbariér (F)
+    s zb = ""
+    f {
+        s zb = $o(bezbarLegenda(zb))
+        q:zb=""
+        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb)))
+    }
+    // rozdíly tras — písmeno → text ("neobsluhuje zast. X" / "jede přes…" / "jede jen do…" / "pokračuje…")
+    s pism = ""
+    f {
+        s pism = $o(rozdilLegenda(pism))
+        q:pism=""
+        d poznamky.%Push(..BuildPoznamka("text", pism, rozdilLegenda(pism)))
     }
     // textové poznámky z datumových omezení (nejede/jede)
     s n = ""
@@ -555,11 +853,13 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen) As %DynamicArray
     q poznamky
 }
 
-/// Je atribut zastávky (znak číselníku 16) "viditelný" — tj. významový pro cestujícího (na znamení,
-/// nástup/výstup, ikona dopravy, paragraf), ne čistě formátovací (tučně/podtrženě) ani souhrnný (>/</E/H).
+/// Atributy zastávky tištěné v zastávkovém JŘ. Legacy `UVOD^JRapiLinPrtMhd` (ř.189-190) promítá
+/// z dta2 do StopListu **jen „na znamení" (znak `x`)** — ostatní znaky číselníku 16 (A=autobus,
+/// L=vlak, metro, nástup/výstup, formátovací…) se v TOMTO výstupu NEtisknou (ověřeno gold 0365001:
+/// Vlakové nádraží má L=vlak, U autobusového nádraží A=autobus, ale gold je v zastávkách neukazuje).
 ClassMethod JeViditelnyAtribut(znak As %String) As %Boolean
 {
-    q (znak '= "") && ("xyzNVALefgODCGabc" [ znak)
+    q znak = "x"
 }
 
 /// Text atributu zastávky dle znaku — 1:1 s číselníkem `arrCis(16)^JRapiCis`.
@@ -730,18 +1030,19 @@ ClassMethod NazevDopravce(dataDB As %String, fa As %String, pr As %String) As %S
     s mhd = $p(firma,"~",14)
     i $tr(mhd," ","") '= "" q mhd
 
-    // 2) plný tvar: název firmy + sídlo provozovny + telefon
+    // 2) plný tvar: název firmy + sídlo provozovny + ulice + telefon (gDopFaPr: $1 sídlo, $2 ulice, $3 tel)
     s jmeno = $p(firma,"~",7)
     i jmeno = "" s jmeno = $p(firma,"~",1)
-    s sidlo = "", tel = ""
+    s sidlo = "", ulice = "", tel = ""
     i pr '= "" {
         s provoz = $g(^[dataDB]JRSET("DOP",fa,pr))
         s sidlo = $p(provoz,"~",1)
+        s ulice = $p(provoz,"~",2)
         s tel   = $p(provoz,"~",3)
     }
     s text = jmeno
     i sidlo '= "" s text = text_", "_sidlo
-    i tel '= ""   s text = text_",,tel:"_tel
+    i tel '= ""   s text = text_","_ulice_",tel:"_tel     // slot ulice mezi sídlem a telefonem (prázdná → ,,tel:)
     q text
 }
 
@@ -772,6 +1073,7 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
     $$$FillParams
+    k ^||TiskAd                       // cache per-linka/per-směr invariantů — fresh per request
 
     // DEV: živý náhled z první linky aktuální firmy (session dataDB) — zrcadlí reálný GetData.
     d ..PrvniLinka(dataDB, .sku, .lin)

@@ -403,16 +403,57 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
 - **Značky platnosti spojů (ZnkSp/NCOME)** — spoje používají jen `X`/`6+`/prázdné Plk (žádné denně-specifické)
   → v datech se nevyskytuje. NCOME registr = `^JRSET("NCOME",jazyk,N)` (jede v pondělí…). Neimplementováno (bez use-case).
 
-### ⬜ Zbývá — JEDINÁ neimplementovaná feature: Rozdíly tras A/B/C
-Spoje jedoucí různou trasou → písmeno A/B/C u minuty + legenda „A = jede přes/končí v zast. X".
-Legacy: `OmTrasa^JRapiLinPrtMhd` (AD), gated `AutoPozn` = `PATCH,"mhd","not"`; alg 1001/1002 (bitmapová
-analýza obsluhy). **Naše MHD agenda to už umí (alg 1002) = reference.** Číst z trasy spojů „W".
-**Test linky (nově nalezené):** CB_CSADAD `0345061` (FTL2+AutoPozn), `0365001`; VS_CSAD `0945001`, `0445102`.
-(CB_GWBUS/KV_DP AutoPozn nemají — jen vzorové sku 501.) **Velký kus — dedikovaný krok.**
+### ✅ Rozdíly tras — HOTOVO (2026-06-11), ověřeno 1:1
+1:1 reimplementace `OmTrasa^JRapiLinPrtMhd` (AD) — metody `RozdilyTras` + helpery `SpojBitmapa`,
+`TrasaBitmapaZPole`, `NazZPoradi`, `GetZnk` v `ZastavkoveJrAd.cls`. Gated `AutoPozn` (`PATCH,"mhd","not"`).
+- Vzorová trasa = základní trasa (J-věta `#10` dta12), fallback tištěná (`#7`), fallback union obsluhy.
+- Per spoj porovná jeho bitmapu trasy se vzorovou → text **„neobsluhuje zast. X" / „jede přes…" /
+  „jede jen do…" / „pokračuje přes…"** (1:1 legacy).
+- Marker z písmenné sady **od „B"** (default `"BCEFGHIJOQRWeijqsvwxz"` nebo `PATCH,"mhd","notchar"`),
+  počítáno **per zastávku**, dedup textů, zdvojování když dojdou písmena.
+- **Ověřeno 1:1** na 0365001 CB_CSADAD: str.1 marker `B` = „neobsluhuje zast. Lesní hřbitov" (= gold),
+  multi-stop „Hradišťská, Lesní hřbitov", druhý marker `C`. Anotace u minut + legenda sedí.
+**Test linky:** CB_CSADAD `0345061` (FTL2+AutoPozn), `0365001`; VS_CSAD `0945001`, `0445102`.
 
-### Ostatní (nice-to-have / vizuál)
-- **TrasaMin varianty** StopListu (kumulativní minuty per varianta trasy s `<`) — legacy má, my ne; vizuální detail.
-- Šířka legendy POZNAMKY s rokem — layout, na konec.
+### ⬜ Zbývá pro úplné 1:1 (zjištěno field-by-field diffem str.1 vs gold, 2026-06-11)
+- ✅ **POPIS_DOPRAVCE — adresa provozovny DOPLNĚNA** (2026-06-12). `NazevDopravce` nyní čte i `$2`
+  (ulice,číslo) z `^JRSET("DOP",fa,pr)` (gDopFaPr: $1 sídlo, $2 ulice, $3 tel) → slot mezi sídlem a
+  telefonem. Ověřeno 1:1 na 0365001: `prov.Písek,Nádražní 2294,tel:601 319 673` = gold.
+- ✅ **Filtr atributů zastávek — OPRAVENO** (2026-06-12). `JeViditelnyAtribut` zúžen na **jen „x" (na
+  znamení)** — legacy `UVOD^JRapiLinPrtMhd` (ř.189-190) promítá z dta2 do StopListu jen „x", ostatní
+  znaky (A=autobus, L=vlak, metro, nástup/výstup…) v tomto výstupu netiskne. A/L over-emise pryč.
+- ✅ **Atributy spoje (bezbariér) — HOTOVO** (2026-06-12). `BezbarierKonfig` (isinv/iscbe z
+  `^JRSET("PS","LIMES")` „invalida"/„invalidaspomoc", allBBP = všechny spoje hlava:15) + per spoj
+  v `NacistOdjezdy`: `inv`=hlava:15→marker „H" (SpecZnak 72), `cbe`=hlava:22→„F" (70), anotace
+  „specialni" + legenda. Pořadí anotací/legendy 1:1 gold. Ověřeno 0365001: H = „spoj má
+  bezbariérově přístupné vozidlo", na minutách `[B, H]`. (allBBP → text „všechny spoje…", bez
+  markeru u minut.) Marker = `$char(SpecZnak)` jako MHD sourozenec (gold SEKCE ukazuje číslo „72",
+  vizuálně týž glyf vozíčku).
+- ✅ **Časy jízdy ve StopListu (TrasaMin) — JEDEN sloupec HOTOVO** (2026-06-12). `ZakladniWTrasa`
+  (reprezentativní trasa spoje stavícího na vývěskové zastávce) + `CasJizdyZTrasy` (= `cas(poradi)
+  - cas(currentPoradi)`, reference od vývěskové zastávky jako MHD). `CAS_JIZDY` ve StopListu.
+  Ověřeno 0365001 str.1+2: kumulativní minuty = gold `TrasaMin1` (0,1,2,4,6,8,10,13,…). Renderer
+  `StopListElement.cs:469` blankuje `CasJizdy<=0` → vývěsková + přeskočené zastávky prázdné.
+  ⬜ **Multi-varianta (`TrasaMin1-15`)** = víc časových sloupců per varianta trasy + `<` u projetých
+  — odloženo (chce zásah do C# rendereru, který dnes umí jeden sloupec). Pro běžné linky (jedna
+  trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.
+- ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
+- ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
+
+### ⚡ Performance (GetData se volá per stránka = zastávka×směr, ~desítky/linka)
+- ✅ **Per-linka/per-směr invarianty cachovány** (2026-06-12, behavior-preserving, výstup byte-identický):
+  `ObsluhovanePoradi` (per směr) + `BezbarierKonfig` (per linka) se dřív full-scanovaly per stránka →
+  teď cache `^||TiskAd("served"|"bezbar",…)`, čištěná na vstupu `GetData`/`GetMockData`. Eliminuje
+  ~39× full-scan všech spojů na lince 0365001.
+- ✅ **W-trasa cachovaná mapou `poradi→cas`** (2026-06-12, byte-identický): `WMapa` (cache
+  `^||TiskAd("wmap",cisloTrasy)`) nahradila lineární `$p` sken W-stringu per lookup. `WCasNaZastavce`/
+  `CasJizdyZTrasy`/`ZakladniWTrasa` → `WMapa`/`CasJizdyZMapy`/`ZakladniCisloTrasy`; `SpojBitmapa` +
+  `NacistOdjezdy` čtou z mapy. Trasa se parsuje jednou per `cisloTrasy` místo per stránka×spoj.
+  ⚠️ **Pozor — `^||` globály neberou prázdný subscript** (`<SUBSCRIPT>` na `^||TiskAd("wmap","")`);
+  WMapa guarduje `cisloTrasy=""` (spoj bez trasy) + prázdné mapy necachuje (merge z undef = `<UNDEFINED>`).
+- ⬜ **Zbývající hot spot (větší refaktor):** MHD `VypocitatBitmapyObsluhy` má 3 samostatné průchody
+  `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³), šlo by sloučit. (Rizikový zásah do ověřeného
+  MHD enginu — samostatný opatrný krok s re-verifikací proti MHD gold.) Detail v analýze 2026-06-12.
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).
