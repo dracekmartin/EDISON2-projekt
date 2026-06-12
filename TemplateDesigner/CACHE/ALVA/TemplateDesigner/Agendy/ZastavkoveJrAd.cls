@@ -932,8 +932,9 @@ ClassMethod PrefixOmezeni(omzId As %String) As %String
     q $case(omzId, 11:"jede jen ", 12:"jede také ", 13:"jede ", 14:"jede jen v su. ", 15:"jede jen v li. ", 22:"nejede ", :"")
 }
 
-/// Datumová část omezení (1:1 s `TODDO^JRapiNZUtl`): datumy verbatim VČETNĚ roku, `:`→rozsah `D1-D2`,
-/// jednotlivé datum = `D1`, položky (`#`) spojené čárkou bez mezery. Vedoucí prefix `k@`/`L@` se zahodí.
+/// Datumová část omezení — 1:1 formát zastávkového JŘ (gold `JRapiLinPrtPS3`): datumy přes `UpravDatum`
+/// (strip nul ze dne/měsíce, 2místný rok), rozsah `:` → `od D1 do D2`, jednotlivé datum = `D1`,
+/// položky (`#`) spojené `, `. Vedoucí prefix `k@`/`L@` se zahodí.
 ClassMethod FormatDatumyOmezeni(omz As %String) As %String
 {
     s data = $s(omz["@":$p(omz,"@",2), 1:omz)
@@ -941,13 +942,23 @@ ClassMethod FormatDatumyOmezeni(omz As %String) As %String
     f i=1:1:$l(data,"#") {
         s item = $p(data,"#",i)
         i item = "" continue
-        s od = $p(item,":",1), do = $p(item,":",2)
-        i do '= "" { s cast = od_"-"_do }
+        s od = ..UpravDatum($p(item,":",1)), do = ..UpravDatum($p(item,":",2))
+        i do '= "" { s cast = "od "_od_" do "_do }
         else       { s cast = od }
-        i casti '= "" s casti = casti_","
+        i casti '= "" s casti = casti_", "
         s casti = casti_cast
     }
     q casti
+}
+
+/// Úprava datumu pro tisk (1:1 `UprDat^JRapiLinPrtPS3`): strip vedoucích nul ze dne a měsíce; rok
+/// 2místně (zastávkový JŘ ukazuje „25.12.22", ne „25.12.2022"). "" → "".
+ClassMethod UpravDatum(dat As %String) As %String
+{
+    i dat = "" q ""
+    s dd = +$p(dat,".",1), mm = +$p(dat,".",2), rr = $p(dat,".",3)
+    i $l(rr) > 2 s rr = $e(rr,*-1,*)        // 2022 → 22
+    q dd_"."_mm_"."_rr
 }
 
 /// Najde první linku v zadané firmě (první skupina × první linka s uzlem "I").

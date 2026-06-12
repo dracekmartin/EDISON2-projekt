@@ -358,8 +358,10 @@ je per-namespace, bez IdFa).**
 1. **Názvy zastávek** — `NazevZastavky` bere `^JRZ` `$7` (odbav/MHD název s obcí, "Cheb,aut.nádraží",
    "Fr. Lázně,Krapice,Lužná"), fallback `$2`. Zahozeno `FormatNazev`/`FormatNazevPlny` (drop-obec).
    `NazevLinky` join `–`→`-` (legacy pomlčka).
-2. **Datumy v poznámkách s rokem** — `FormatDatumyOmezeni` = 1:1 `TODDO^JRapiNZUtl`: verbatim s rokem,
-   `:`→rozsah `D1-D2`, položky čárkou bez mezery, `k@`/`L@` prefix se stripuje. (`DenMesic` smazán.)
+2. **Datumy v poznámkách** — `FormatDatumyOmezeni` + `UpravDatum` = 1:1 formát zastávkového JŘ
+   (`JRapiLinPrtPS3`/`UprDat`): **2místný rok** (`25.12.22`, ne `25.12.2022`), strip nul ze dne/měsíce,
+   rozsah `:`→`od D1 do D2`, položky spojené `, `, `k@`/`L@` prefix se stripuje. **POZOR:** NE `TODDO`
+   (to dělá `D1-D2` + verbatim rok) — zastávkový JŘ používá PS3 formát; ověřeno gold 0340303/0365001.
 3. **"jede" omezení** — `SestavTextOmezeni` projde omzId 11,12,13,14,15,22, spojí do jedné poznámky;
    `PrefixOmezeni` = mapování (11 "jede jen ", 12 "jede také ", 13 "jede ", 14/15 su/li, 22 "nejede ").
 4. **POPIS_DOPRAVCE** — `PopisDopravce` (distinct `fa:pr` z `#`-pole 2 spojů obou směrů, dedup názvů,
