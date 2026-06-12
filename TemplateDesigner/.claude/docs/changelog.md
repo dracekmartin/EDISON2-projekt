@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-12 — Preview: varování o přetečení stránky + cap roztažení DepartureGrid
+
+Dva nálezy z vizuálního testování na velkých linkách (0480202, 78 stránek):
+
+- ✅ **Varování o přetečení v preview** — když se obsah stránky nevejde (přirozená výška obsahu >
+  pevná Height boxu), přetékající stránka dostane **červený rámeček** (2,5px) a status bar zobrazí
+  **červený blok** „⚠ Obsah se nevejde na stránku" (tooltip s radou zvětšit PageSize / zmenšit obsah).
+  Detekce přes novou abstract `ScheduleElementBase.CalculateHeightFromData` (3 JŘ elementy = `override`)
+  + `ContentOverflows` (`natural > Height + 0.5mm`, tj. **jakékoli** přetečení, ne práh). Běží v
+  `PreviewCanvas.PageOverflows` **před** renderem (pre-detekce) → `OverflowChanged` callback →
+  `HasPreviewOverflow` ve VM → status bar binding. Jen preview, ne v PDF/PNG exportu.
+  (Iterace na vzhledu: zkusili jsme nádech přes obsah → podbarvení okolí → celé pozadí → finálně
+  jen rámeček + blok v liště, což uživateli přišlo dostatečně výrazné a nejmíň rušivé.)
+- ✅ **Cap roztažení DepartureGrid** — `AutoExpandToFillHeight` dostal strop `MaxAutoExpandFactor=1.5`.
+  Řídká mřížka (např. linka s odjezdy jen v 1 hodinu) se jinak roztáhla na bizarně obří řádky;
+  teď se vyplní max 1,5× přirozené výšky, zbytek místa zůstane prázdný.
+
 ## 2026-06-12 — ZastavkoveJrAd: dokončení 1:1 vůči legacy AD + performance
 
 Agenda zastávkového JŘ z dat hlavního JŘ modulu (AD/JRMAIN) dotažena na **datové 1:1**
