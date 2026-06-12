@@ -445,11 +445,15 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   `ObsluhovanePoradi` (per směr) + `BezbarierKonfig` (per linka) se dřív full-scanovaly per stránka →
   teď cache `^||TiskAd("served"|"bezbar",…)`, čištěná na vstupu `GetData`/`GetMockData`. Eliminuje
   ~39× full-scan všech spojů na lince 0365001.
-- ⬜ **Zbývající hot spoty (větší refaktor, ne „easy win"):** (a) AD: per-stránka se 5-6× čte+parsuje
-  tentýž spoj `^JRL(…,smer,sp)` napříč metodami → pre-pass spojů do parsed struktury jednou per směr;
-  `WCasNaZastavce` lineární `$p` sken W-trasy per lookup → parse do mapy `poradi→cas`. (b) MHD:
-  `VypocitatBitmapyObsluhy` má 3 samostatné průchody `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³),
-  šlo by sloučit do jednoho průchodu. Detail v analýze 2026-06-12.
+- ✅ **W-trasa cachovaná mapou `poradi→cas`** (2026-06-12, byte-identický): `WMapa` (cache
+  `^||TiskAd("wmap",cisloTrasy)`) nahradila lineární `$p` sken W-stringu per lookup. `WCasNaZastavce`/
+  `CasJizdyZTrasy`/`ZakladniWTrasa` → `WMapa`/`CasJizdyZMapy`/`ZakladniCisloTrasy`; `SpojBitmapa` +
+  `NacistOdjezdy` čtou z mapy. Trasa se parsuje jednou per `cisloTrasy` místo per stránka×spoj.
+  ⚠️ **Pozor — `^||` globály neberou prázdný subscript** (`<SUBSCRIPT>` na `^||TiskAd("wmap","")`);
+  WMapa guarduje `cisloTrasy=""` (spoj bez trasy) + prázdné mapy necachuje (merge z undef = `<UNDEFINED>`).
+- ⬜ **Zbývající hot spot (větší refaktor):** MHD `VypocitatBitmapyObsluhy` má 3 samostatné průchody
+  `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³), šlo by sloučit. (Rizikový zásah do ověřeného
+  MHD enginu — samostatný opatrný krok s re-verifikací proti MHD gold.) Detail v analýze 2026-06-12.
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).

@@ -283,8 +283,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     }
     i 'jeDal q ""
 
-    // základní trasa pro časy jízdy (TrasaMin) — reprezentativní trasa spoje stavícího na vývěskové zastávce
-    s zaklWTrasa = ..ZakladniWTrasa(dataDB, sku, lin, smer, currentPoradi)
+    // základní trasa pro časy jízdy (TrasaMin) — reprezentativní trasa spoje stavícího na vývěskové
+    // zastávce; W-mapu rozparsujeme jednou a v cyklu zastávek z ní jen čteme
+    s zaklCt = ..ZakladniCisloTrasy(dataDB, sku, lin, smer, currentPoradi)
+    d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
 
     s poradi = $s(jeTam:"", 1:currentPoradi + 1)
     s cnt = 0
@@ -303,7 +305,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s naZnameni = (atributy["x")
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
-        s casJizdy = ..CasJizdyZTrasy(zaklWTrasa, currentPoradi, poradi)   // kumulativní min od vývěskové zastávky
+        s casJizdy = ..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi)   // kumulativní min od vývěskové zastávky
         s cnt = cnt + 1
         s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, naZnameni)
         i zona '= "" d ..AddZona(z, zona)
@@ -401,9 +403,9 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s plk        = $p(hlava, ":", 7)
         s cnz        = $p(spoj, "#", 7)        // negativní značka spoje (legacy arrsp dta29)
 
-        // offset času na aktuální zastávce z trasy spoje
-        s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
-        s offset = ..WCasNaZastavce(wTrasa, currentPoradi)
+        // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa)
+        d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
+        s offset = $g(wMap(currentPoradi))
         i offset = "<" continue           // spoj zde nestaví (projíždí)
         i offset = "" continue            // zastávka mimo trasu spoje
         i '$isvalidnum(offset) continue
@@ -505,46 +507,52 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
             i (pp '= "") && (cas '= "<") && (cas '= "") s served(pp) = ""
         }
     }
-    m ^||TiskAd("served",dataDB,sku,lin,smer) = served
+    i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
 }
 
-/// Vrátí čas (minuty od počátku spoje) na zastávce daného pořadí z trasy spoje "W".
-/// Formát "W": #-segmenty `poradi:cas:km:...`; `<` = spoj zde nestaví. "" = nenalezeno.
-ClassMethod WCasNaZastavce(wTrasa As %String, poradi As %String) As %String
+/// W-mapa `poradi → cas` pro danou trasu, cachovaná per `cisloTrasy` (`^||TiskAd("wmap",…)`).
+/// Trasa je sdílená napříč spoji i stránkami → parsuje se tak jen jednou (dřív lineární `$p` sken
+/// W-stringu při každém lookupu/spoji/stránce). `cas` může být číslo, `<` (projíždí) nebo "" (mimo).
+ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef wMap)
 {
+    k wMap
+    i cisloTrasy = "" q                                  // spoj bez trasy → prázdná mapa (^|| nebere prázdný subscript)
+    i $d(^||TiskAd("wmap",cisloTrasy)) { m wMap = ^||TiskAd("wmap",cisloTrasy)  q }
+    s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
     f i=1:1:$l(wTrasa,"#") {
         s seg = $p(wTrasa,"#",i)
-        i $p(seg,":",1) = poradi ret $p(seg,":",2)
+        s p = $p(seg,":",1)
+        i p '= "" s wMap(p) = $p(seg,":",2)
     }
-    q ""
+    i $d(wMap) m ^||TiskAd("wmap",cisloTrasy) = wMap     // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
 }
 
-/// Vrátí trasu "W" reprezentativního spoje, který staví na vývěskové zastávce (`currentPoradi`).
-/// Slouží jako základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD; multi-varianta TrasaMin
-/// = budoucí krok). Vrací string trasy, nebo "" když žádný spoj na zastávce nestaví.
-ClassMethod ZakladniWTrasa(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String) As %String
+/// Vrátí `cisloTrasy` reprezentativního spoje, který staví na vývěskové zastávce (`currentPoradi`).
+/// Základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD; multi-varianta TrasaMin = budoucí krok).
+/// "" když žádný spoj na zastávce nestaví.
+ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String) As %String
 {
-    s baseTrasa = ""
+    s baseCt = ""
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
         q:sp=""
         i '$isvalidnum(sp) continue
         s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
-        s wt = $g(^[dataDB]JRL(sku,lin,"W",ct))
-        s c = ..WCasNaZastavce(wt, currentPoradi)
-        i (c '= "") && (c '= "<") && ($isvalidnum(c)) { s baseTrasa = wt  q }
+        d ..WMapa(dataDB, sku, lin, ct, .wMap)
+        s c = $g(wMap(currentPoradi))
+        i (c '= "") && (c '= "<") && ($isvalidnum(c)) { s baseCt = ct  q }
     }
-    q baseTrasa
+    q baseCt
 }
 
-/// Kumulativní doba jízdy (min) ze zastávky `fromPoradi` na zastávku `poradi` po dané trase "W".
+/// Kumulativní doba jízdy (min) ze zastávky `fromPoradi` na `poradi` z W-mapy (`poradi → cas`).
 /// = `cas(poradi) - cas(fromPoradi)` (reference od vývěskové zastávky, 1:1 legacy TrasaMin / MHD).
 /// 0 když některá zastávka není na trase / spoj projíždí (`<`).
-ClassMethod CasJizdyZTrasy(wTrasa As %String, fromPoradi As %String, poradi As %String) As %Integer
+ClassMethod CasJizdyZMapy(ByRef wMap, fromPoradi As %String, poradi As %String) As %Integer
 {
-    s cFrom = ..WCasNaZastavce(wTrasa, fromPoradi)
-    s cTo   = ..WCasNaZastavce(wTrasa, poradi)
+    s cFrom = $g(wMap(fromPoradi))
+    s cTo   = $g(wMap(poradi))
     i (cFrom = "") || (cFrom = "<") || ('$isvalidnum(cFrom)) q 0
     i (cTo = "")   || (cTo = "<")   || ('$isvalidnum(cTo))   q 0
     q cTo - cFrom
@@ -668,7 +676,7 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         i '$isvalidnum(sp) continue
 
         s cisloTrasy = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
-        s spojTr = ..SpojBitmapa($g(^[dataDB]JRL(sku,lin,"W",cisloTrasy)))
+        s spojTr = ..SpojBitmapa(dataDB, sku, lin, cisloTrasy)
         i spojTr = "" continue
         i spojTr = vzor continue              // spoj jede vzorovou trasou → bez poznámky
         i '+$e(spojTr, currentPoradi) continue // spoj zde nestaví → na této stránce neřešíme
@@ -749,15 +757,16 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
     }
 }
 
-/// Bitmapa obsluhovaných pozic spoje z jeho trasy "W" (#-segmenty `poradi:cas:…`).
+/// Bitmapa obsluhovaných pozic spoje z jeho trasy (cachovaná W-mapa per `cisloTrasy`).
 /// `$e(bmp,poradi)=1` kde spoj staví (cas != "<" a != ""). "" = prázdná trasa.
-ClassMethod SpojBitmapa(wTrasa As %String) As %String
+ClassMethod SpojBitmapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String) As %String
 {
-    s bmp = ""
-    f i=1:1:$l(wTrasa,"#") {
-        s seg = $p(wTrasa,"#",i)
-        s p = $p(seg,":",1), cas = $p(seg,":",2)
-        i (p '= "") && ($isvalidnum(p)) && (cas '= "<") && (cas '= "") s $e(bmp,p) = 1
+    d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
+    s bmp = "", p = ""
+    f {
+        s p = $o(wMap(p), 1, cas)
+        q:p=""
+        i ($isvalidnum(p)) && (cas '= "<") && (cas '= "") s $e(bmp,p) = 1
     }
     q bmp
 }
