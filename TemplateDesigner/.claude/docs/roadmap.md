@@ -28,7 +28,14 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**Kde pokračovat dál (dohodnuto 2026-05-27):** PRIORITA 2 (zastávkový JŘ z AD dat) je **datově 1:1 + výkonově hotová** (2026-06-12, viz níže) — zbývají z ní jen nice-to-have položky (multi-varianta TrasaMin přes renderer) + výkonový rest v MHD. Aktivní top priorita je tedy **PRIORITA 1 — Wave 4 EDInputForm**.
+**🎯 Cíle s ohledem na prezentace (statická ~19. 6. 2026, živá pro zákazníka ~26. 6. 2026)** — pořadí priorit dohodnuto 2026-06-12:
+
+1. **Odladit zastávkový JŘ (AD)** — *hlavní věc k ukázání*. Datově 1:1 + výkonově **hotovo** (PRIORITA 2 níže). Zbývá průběžné ladění vzhledu/UX podle testování na velkých linkách (poslední kolo: varování o přetečení + cap roztažení DepartureGrid — viz changelog 2026-06-12) + odložené nice-to-have (multi-varianta TrasaMin přes C# renderer, číslování omezení TYPPOZ=1, vizuál legendy).
+2. **Navazující věci ohledně komponent** — EDInputForm (Wave 4) a další UI komponenty, jak vyplyne z ladění JŘ.
+3. **Helpdesk požadavky primárně pro AD, řešitelné bez kolegů** — Fáze A.2-D série: vlastní komentář spoje přebíjí auto-poznámku (#7955), skrýt „x — zastávka na znamení" když je sloupec hidden (#7161), vypnutí auto-poznámky bezbariér (#7161). Viz Fáze A.2-D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
+4. **AI pomocník (stretch, když zbude čas)** — validace PDF importu + AI asistent (pasivní → aktivní). Detail v sekci „🤖 AI integrace" níže.
+
+> **Pozn.:** PRIORITA 1/2 a ⬅️ markery v sekcích níže pocházejí z dřívějšího plánu (před prezentacemi) — autoritativní pořadí je tento číslovaný seznam. **Výkonový rest** (MHD `VypocitatBitmapyObsluhy`) zůstává rizikový samostatný krok mimo prezentační scope.
 
 ### ⬅️ PRIORITA 1 — Wave 4: dokončit EDInputForm migraci (🟡 rozpracováno)
 
