@@ -440,6 +440,17 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
 - ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
 - ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
 
+### ⚡ Performance (GetData se volá per stránka = zastávka×směr, ~desítky/linka)
+- ✅ **Per-linka/per-směr invarianty cachovány** (2026-06-12, behavior-preserving, výstup byte-identický):
+  `ObsluhovanePoradi` (per směr) + `BezbarierKonfig` (per linka) se dřív full-scanovaly per stránka →
+  teď cache `^||TiskAd("served"|"bezbar",…)`, čištěná na vstupu `GetData`/`GetMockData`. Eliminuje
+  ~39× full-scan všech spojů na lince 0365001.
+- ⬜ **Zbývající hot spoty (větší refaktor, ne „easy win"):** (a) AD: per-stránka se 5-6× čte+parsuje
+  tentýž spoj `^JRL(…,smer,sp)` napříč metodami → pre-pass spojů do parsed struktury jednou per směr;
+  `WCasNaZastavce` lineární `$p` sken W-trasy per lookup → parse do mapy `poradi→cas`. (b) MHD:
+  `VypocitatBitmapyObsluhy` má 3 samostatné průchody `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³),
+  šlo by sloučit do jednoho průchodu. Detail v analýze 2026-06-12.
+
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).
 - `GetMockData` čte živě z ^JRL (první linka firmy) — zvážit lehký statický vzorek.

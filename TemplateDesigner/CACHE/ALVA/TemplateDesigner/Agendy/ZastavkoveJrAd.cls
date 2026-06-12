@@ -188,6 +188,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 {
     try {
         $$$FillParams
+        k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) — fresh per request
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
         i sku = "" s sku = 1
@@ -446,6 +447,13 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
 ///   allBBP = všechny spoje obou směrů mají příznak hlava:15 → legenda „všechny spoje…", bez markeru u minut
 ClassMethod BezbarierKonfig(dataDB As %String, sku As %String, lin As %String, ByRef isinv, ByRef iscbe, ByRef allBBP)
 {
+    // invariant per linka → cache (v GetData se NacistOdjezdy volá per stránka)
+    i $d(^||TiskAd("bezbar",dataDB,sku,lin)) {
+        s cfg = ^||TiskAd("bezbar",dataDB,sku,lin)
+        s isinv = $lg(cfg,1), iscbe = $lg(cfg,2), allBBP = $lg(cfg,3)
+        q
+    }
+
     s isinv = 0, iscbe = 0
     s cnt = ""
     f {
@@ -470,13 +478,20 @@ ClassMethod BezbarierKonfig(dataDB As %String, sku As %String, lin As %String, B
         i 'allBBP q
     }
     i 'maSpoj s allBBP = 0
+
+    s ^||TiskAd("bezbar",dataDB,sku,lin) = $lb(isinv,iscbe,allBBP)
 }
 
 /// Naplní `served(poradi)` zastávkami, kde staví aspoň jeden spoj daného směru (W-offset != "<").
 /// Slouží k filtru projížděných zastávek ze StopListu (jako legacy).
+/// Invariant per (linka×směr) → cache `^||TiskAd("served",…)`; v GetData se volá per stránka.
 ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String, smer As %String, ByRef served)
 {
     k served
+    i $d(^||TiskAd("served",dataDB,sku,lin,smer)) {
+        m served = ^||TiskAd("served",dataDB,sku,lin,smer)
+        q
+    }
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
@@ -490,6 +505,7 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
             i (pp '= "") && (cas '= "<") && (cas '= "") s served(pp) = ""
         }
     }
+    m ^||TiskAd("served",dataDB,sku,lin,smer) = served
 }
 
 /// Vrátí čas (minuty od počátku spoje) na zastávce daného pořadí z trasy spoje "W".
@@ -1048,6 +1064,7 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
     $$$FillParams
+    k ^||TiskAd                       // cache per-linka/per-směr invariantů — fresh per request
 
     // DEV: živý náhled z první linky aktuální firmy (session dataDB) — zrcadlí reálný GetData.
     d ..PrvniLinka(dataDB, .sku, .lin)
