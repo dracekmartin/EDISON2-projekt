@@ -105,28 +105,33 @@ Funkční rozšíření, která EDISONMAIN2 ještě nemá. Pořadí podle priori
 
 ### 1. Updater
 
-**Stav:** Open
+**Stav:** Done — reuse legacy infrastruktury; kompletní popis flow + research v [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md).
 
-**CO:** Mechanismus, který aktualizuje EDISONMAIN2 klientskou binárku, když M-line vydá novou verzi. Dnes EDISONMAIN2 **nemá žádný update mechanismus**.
+**Co se udělalo:**
 
-**PROČ:** Není to jen UX convenience, je to **technický adoption blocker pro produkční nasazení**. Legacy `clsUpdate.vb` rozlišuje dva odlišné scénáře — totéž bude platit i pro EDISONMAIN2:
+- **Startup check (klientská větev)** — [Updater.cs](dotnet/Startup/Updater.cs) + [VerzeInf.cs](dotnet/Startup/VerzeInf.cs), hook `AppBootstrapper.CheckForUpdate` po loginu + licenci. Porovnání lokální `VERZE.INF` proti serverové instalaci (`localSourcePath`/`edisonPath` z `ALVA.SETUP.Main.LoadSettings`) + Caché verzi. Mandatory — info popup bez volby, kopie čerstvé `EDUPDATE.EXE`, spawn, shutdown.
+- **Runtime gate** — `EstablishSession` nastavuje `MLRest.EdisonVersion` z lokální `VERZE.INF` → server-side per-request kontrola (date+full segmenty, patch tolerován); `EdisonVersionFailed` handler → popup + shutdown. Na dev neaktivní (prázdný version global).
+- **Úprava EDUPDATE** (legacy repo `UPDATERCL`, zpětně kompatibilní) — nové args `WaitProcess=` (čekání na zánik EDISONMAIN2 procesu) a `RunExe=` (restart EDISONMAIN2.exe místo EDISON.exe).
+- **Verze ve status baru** (`Verze: X` jako legacy slbVersion) — `VerzeInf.Current`: DEBUG build = `999999.9` (dev verze, netriggeruje update — dev guard v `Updater.Check` přeskočí i Caché mismatch), RELEASE = `VERZE.INF` vedle exe.
 
-- **Mandatory** (`NesediVerzeCache` v [frmNoMDI.vb:4320-4324](../../EDISON/EDISONMAIN/Rozhrani%20(mainform)/frmNoMDI.vb#L4320)): klient detekuje, že lokální verze neodpovídá serverové Caché verzi. Bez updatu se nelze přihlásit — legacy klient zobrazí hlášku a sám se zavře, žádné "use anyway". Tento case se uplatní vždy, když M-line bumpne Caché backend (data dictionary, class hash, atd.). EDISONMAIN2 totéž — bez updateru by každý server-side bump znamenal manuální rozdistribuování binárky na každou stanici, pro >5 stanic neúnosné.
-- **Optional** (`NovaVerzeNaZdrojovemServeru`): nová verze dostupná, ale stará stále kompatibilní. Legacy ukáže dialog OK/Cancel, uživatel může odložit.
+**Vědomé divergence od legacy:** `Enabled` se honoruje vždy (legacy klient ho přes ForceYes ignoruje) — dev server má `update~0` a nedosažitelný `edisonPath`. Žádná optional větev (HTTP check release.m-line.cz je serverová/admin role, ne klientská).
 
-**Co je třeba pro EDISONMAIN2:**
+**Deployment prerekvizity (ops, ruční):** `EDISONMAIN2.exe` přidat do `FILES_DESCRIPTION.INF` na Cloud2; upravený `EDUPDATE.EXE` vyjde s příští verzí.
 
-- Detekce verze klient × server (existující `EdisonVersionFailed` event z MLRest signalizuje incompat).
-- Stažení nové binárky odněkud.
-- Mechanika přepisu single-file binárky (klient se musí zavřít, helper proces přepíše, restart).
+**Mimo scope (zatím):** `NucenyUpdate`/`CliUp.ini`, maSeUkoncit (= feature #2), save-and-exit integrace (= feature #3), server-side cokoliv.
 
-**Priorita #1 protože:** malé úsilí (~1-2 dny), nejvyšší leverage — bez něj nelze rozšířit pilot na další stanice, server-side bump shazuje všechny klienty.
+**Co NEPOTŘEBUJEME:** Server-coordinated `UpdateLock.cls`, optional HTTP větev na stanici, two-tier server/local rozlišení, XMLPatch granularita na klientu, AutoDownload/AutoInstall.
 
-**Volby k diskusi až při implementaci:** zdroj binárky, forma helper procesu, frekvence check, integrace s feature #3 (save-and-exit dialog).
+**Tests:** [VerzeInfTests](../EDISONMAIN2.Tests/VerzeInfTests.cs), [UpdaterTests](../EDISONMAIN2.Tests/UpdaterTests.cs), [AppBootstrapperTests](../EDISONMAIN2.Tests/AppBootstrapperTests.cs) (CheckForUpdate flow).
 
-**Co NEPOTŘEBUJEME:** Server-coordinated `UpdateLock.cls` z [RESPONSIBILITIES § 12.4](RESPONSIBILITIES.md). Mandatory character je zajištěn už klient-side compatibility checkem.
+**Stav ověření:**
 
-Reference: [RESPONSIBILITIES § 12, 18.2](RESPONSIBILITIES.md) (idea pool), legacy [clsUpdate.vb](../../EDISON/EDISONMAIN/clsUpdate.vb).
+- ✅ **Status bar (DEBUG)** — shell ukazuje `Verze: 999999.9`, start neblokován (dev `update~0`).
+- ✅ **EDUPDATE sandbox** — nové `WaitProcess=`/`RunExe=` ověřeny izolovaně proti temp adresářům: updater čeká na zánik procesu `EDISONMAIN2`, teprve pak kopíruje, a restartuje `EDISONMAIN2.exe` (ne `EDISON.exe`). Log potvrdil pořadí wait→copy→restart.
+- ⏳ **Plný E2E** (Release publish, stará verze na stanici × novější serverová instalace, dočasné `update~1` + `localSourcePath` na dev Caché) — neprovedeno; vyžaduje koordinaci s kolegou (sdílený dev server) + revert globálů.
+- ⏳ **Runtime gate E2E** (dočasné `^EDISON("System","Update",2)` ≠ klient → `EdisonVersionFailed`) — neprovedeno; nejrizikovější pro běžící legacy klienty, jen domluvené okno + okamžitý revert.
+
+Reference: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md) (kompletní legacy research s file:line refs), legacy [clsUpdate.vb](../../EDISON/EDISONMAIN/clsUpdate.vb), [UPDATERCL](../../EDISON/UPDATERCL/).
 
 ### 2. Cooperative logout countdown
 

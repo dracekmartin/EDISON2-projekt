@@ -197,6 +197,7 @@
             <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
             <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
             <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
+            <TextBlock Text="{Binding Version, StringFormat='Verze: {0}'}"/>
             <!-- Chord hint pro Ctrl+W+W. Prázdný text = neaktivní stav. -->
             <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"/>
         </StatusBar>

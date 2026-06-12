@@ -82,6 +82,9 @@ public class AppBootstrapperTests
         protected override void WireActivityFailedHandler(SessionContext session, EDServices services)
             => WireActivityCalled = true;
 
+        public bool UpdateTriggered { get; set; }
+        protected override bool CheckForUpdate(SessionContext session, EDServices services) => UpdateTriggered;
+
         protected override EdisonMainWindow BuildShellWindow(PreLoginContext prep, SessionContext session, Lic? licence,
             EDServices services, WindowNavigator nav, PopupDisplayer popup, ILocalPrefs prefs)
         {
@@ -230,6 +233,34 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.Null(b.SavedIdfa);
+    }
+
+    // ---------- CheckForUpdate ----------
+
+    [Fact]
+    public void Run_UpdateTriggered_CallsShutdown_DoesNotBuildShell()
+    {
+        var b = new TestableBootstrapper { UpdateTriggered = true };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_UpdateTriggered_RunsAfterSavePrefs()
+    {
+        // Update check je až po SavePostLoginState — LastIdfa musí být uložená
+        // i když shell hned skončí updatem (příští start ji načte).
+        var b = new TestableBootstrapper { UpdateTriggered = true };
+
+        b.Run();
+
+        Assert.True(b.AcquireSessionCalled);
+        Assert.NotNull(b.SavedIdfa);
+        Assert.True(b.WireActivityCalled);
     }
 
     // ---------- SwitchUser ----------
