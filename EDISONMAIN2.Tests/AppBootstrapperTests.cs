@@ -302,4 +302,53 @@ public class AppBootstrapperTests
         Assert.Equal("CB_DP", b.CapturedPromptConnection.DataNamespace);
         Assert.Equal("CB_DP", b.CapturedPromptConnection.Idfa);
     }
+
+    private static LoginResult ReauthLogin() => new(7, "bob", "Bob", false, "", false, true, "");
+
+    [Fact]
+    public void SwitchUser_LoginAndLicenceAccepted_ReturnsSuccess_ClosesWindows()
+    {
+        var b = new TestableBootstrapper
+        {
+            ReauthLoginResult = ReauthLogin(),
+            SessionOutcome = LicenceAcquireOutcome.Accepted,
+        };
+        var services = ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice");
+        var closeAll = Substitute.For<Action>();
+
+        var outcome = b.SwitchUser(services, closeAll);
+
+        Assert.Equal(SwitchUserResult.Success, outcome.Outcome);
+        closeAll.Received(1).Invoke();
+        Assert.True(b.WireActivityCalled);
+    }
+
+    [Fact]
+    public void SwitchUser_LicenceRefused_MapsToLicenceRefused()
+    {
+        var b = new TestableBootstrapper
+        {
+            ReauthLoginResult = ReauthLogin(),
+            SessionOutcome = LicenceAcquireOutcome.Refused,
+        };
+
+        var outcome = b.SwitchUser(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+
+        Assert.Equal(SwitchUserResult.LicenceRefused, outcome.Outcome);
+        Assert.Null(outcome.Licence);
+    }
+
+    [Fact]
+    public void SwitchUser_LicenceCancelled_MapsToLicenceCancelled()
+    {
+        var b = new TestableBootstrapper
+        {
+            ReauthLoginResult = ReauthLogin(),
+            SessionOutcome = LicenceAcquireOutcome.Cancelled,
+        };
+
+        var outcome = b.SwitchUser(ServicesWith("test-host", 9999, "CB_DP", "CB_DP", "alice"), () => { });
+
+        Assert.Equal(SwitchUserResult.LicenceCancelled, outcome.Outcome);
+    }
 }

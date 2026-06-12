@@ -1,4 +1,5 @@
 using ALVA.LICENCE.EDLicence;
+using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 
@@ -16,6 +17,9 @@ public class EdisonMainViewModelFilterTests
 
     private static ExecutableModule Exe(string id, bool licensed, string name = "M") =>
         new() { DisplayedName = name, ElementId = id, IsLicensed = licensed };
+
+    private static AccessTable Access(params string[] allowed) =>
+        new([.. allowed], isAllAccess: false);
 
     // ---------- IsAllowed ---------------------------------------------------
 
@@ -152,6 +156,62 @@ public class EdisonMainViewModelFilterTests
         Assert.Equal("Inner", preservedInner.DisplayedName);
         var preservedExe = Assert.IsType<ExecutableModule>(Assert.Single(preservedInner.NestedModules));
         Assert.Equal("200", preservedExe.ElementId);
+    }
+
+    // ---------- IsAllowed — aplikační access (3. vrstva) -------------------
+
+    [Fact]
+    public void IsAllowed_NotLicensed_ButElementNotInAccess_False()
+    {
+        // Access gate platí i pro nelicencované moduly — bez ElementId v AccessTable se nezobrazí.
+        var exe = Exe(id: "100", licensed: false);
+
+        Assert.False(EdisonMainViewModel.IsAllowed(exe, licence: null, Access("200", "300")));
+    }
+
+    [Fact]
+    public void IsAllowed_NotLicensed_AndElementInAccess_True()
+    {
+        var exe = Exe(id: "100", licensed: false);
+
+        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null, Access("100", "200")));
+    }
+
+    [Fact]
+    public void IsAllowed_LicensedAndInWhitelist_ButNotInAccess_False()
+    {
+        // Licence whitelist projde, ale aplikační access ho zařízne — obě vrstvy musí povolit.
+        var exe = Exe(id: "100", licensed: true);
+
+        Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence("100"), Access("200")));
+    }
+
+    [Fact]
+    public void IsAllowed_LicensedAndInWhitelist_AndInAccess_True()
+    {
+        var exe = Exe(id: "100", licensed: true);
+
+        Assert.True(EdisonMainViewModel.IsAllowed(exe, Licence("100"), Access("100")));
+    }
+
+    [Fact]
+    public void IsAllowed_AllAccess_BypassesAccessCheck()
+    {
+        // Admin (apId=3) → IsAllAccess → access vrstva propustí cokoliv (licence stále platí).
+        var allAccess = new AccessTable([], isAllAccess: true);
+        var exe = Exe(id: "100", licensed: false);
+
+        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null, allAccess));
+    }
+
+    [Fact]
+    public void FilterFamily_AccessHidesAllChildren_FamilyDropped()
+    {
+        var family = new ModuleFamily { DisplayedName = "F" };
+        family.NestedModules.Add(Exe("100", licensed: false));
+        family.NestedModules.Add(Exe("101", licensed: false));
+
+        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null, Access("999")));
     }
 
     // ---------- TryFilter (router) -----------------------------------------

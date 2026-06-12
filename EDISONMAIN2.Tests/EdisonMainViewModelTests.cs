@@ -1,4 +1,5 @@
-﻿using ALWA.SYS;
+﻿using ALVA.LICENCE.EDLicence;
+using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
@@ -179,5 +180,43 @@ public class EdisonMainViewModelTests
         vm.SelectedCompanyIndex = vm.SelectedCompanyIndex;
 
         mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void SelectedCompanyIndex_SwitchRefused_RollsBackIndex_ShowsPopup()
+    {
+        // Non-admin over-limit → CompanySwitcher vrátí Refused → VM musí vrátit index zpět
+        // a zobrazit hlášku (jinak UI ukazuje firmu, na kterou se reálně nepřepnulo).
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var mockMLRest = MockMLRest();
+        mockMLRest.QueryOrThrow("ALVA.SYS.Login", "VerifyLic", Arg.Any<object[]>())
+            .Returns(MLRestMocks.Output("-1"));
+        var licence = new Lic { CountsLOGIN = 5 };
+        var svc = MockServices(popup: mockPopup);
+        svc.MLRest = mockMLRest;
+        svc.ActiveLicence = licence;
+        svc.LicenceLoader = () => licence;
+        svc.IsAdmin = false;
+        var prefs = Substitute.For<ILocalPrefs>();
+        var switcher = new CompanySwitcher(svc, prefs, () => { });
+        Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
+        EDServices.Initialize(svc);
+        EdisonMainViewModel vm;
+        try
+        {
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), licence, switcher, switchUser, prefs, () => [], () => { });
+        }
+        finally
+        {
+            EDServices.Reset();
+        }
+
+        int original = vm.SelectedCompanyIndex;
+        vm.SelectedCompanyIndex = original == 0 ? 1 : 0;
+
+        Assert.Equal(original, vm.SelectedCompanyIndex);
+        Assert.Equal(Companies[original].Id, vm.Idfa);
+        mockPopup.Received(1).Info(Arg.Is<string>(s => s.Contains("překročen počet licencí")));
     }
 }

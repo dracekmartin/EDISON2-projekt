@@ -77,6 +77,16 @@ Po uzavření všech `Open` položek z refactoring backlogu (případně i stubs
 
 **Výstup:** krátký zápis (1-2 odstavce) v commitu / poznámkách: co projito, co opraveno, co odloženo s důvodem. Slouží jako audit trail před tím, než začneme stavět nové features na (předpokládaně) zdravé základně.
 
+### Provedeno (2026-06-12)
+
+Statická část review (vše kromě manuálního smoke-testu běžící app):
+
+- **Test coverage audit** — services/parsery/switchery projity proti test souborům. Plně pokryté: `CompanySwitcher`, `LicenceVerifier`, `AccessLoader`, `ModuleTreeGetter`, `Updater`, `VerzeInf`, `AppBootstrapper.Run` (4 exit pathy + update). Doplněno 10 testů na nalezené P1 díry: `AppBootstrapper.SwitchUser` mapování 3 outcome armů (Success/Refused/Cancelled), `EdisonMainViewModel.IsAllowed`/`FilterFamily` 3. vrstva (aplikační `AccessTable` — dřív netestováno), `SelectedCompanyIndex` Refused→rollback indexu + popup. Testy 139 → 149.
+- **Dead-code sweep** — 0 kritických nálezů. Žádný orphan, `[Obsolete]`, `#if false`, zakomentovaný kód. `NotYetImplemented` (S1) a `ShowMiniApps`/`ShowWindowsAsDialogs` bez consumera (S3) jsou vědomé stuby v tomto plánu. Odloženo s důvodem: `SettingsLoader` catch polyká i rozbitý `appsettings.json` (→ tichý fallback na dev default) a `WindowNavigator` kill-error jen do `Console.WriteLine` — obojí best-effort, oprava = vlastní rozhodnutí o vyústění chyby, ne checkpoint drive-by; pre-production bez reálných uživatelů.
+- **CLAUDE.md sync** — doplněn Updater do „Co je hotové" + `Updater`/`VerzeInf` do struktury; update check přidán do startup workflow popisu.
+
+Neprovedeno: **manuální smoke-test** existujících features proti běžícímu buildu (login, přepnutí firmy, spuštění legacy `.exe`, persistence oken, force-logout, font, menu) — vyžaduje běžící WPF app, na uživateli. Plný build zelený, 390 testů (149 EDISONMAIN2 + 241 EDControls).
+
 ---
 
 ## Doplnění chybějících části shellu (stuby)

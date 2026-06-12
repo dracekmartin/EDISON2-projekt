@@ -42,7 +42,13 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Aktuální stav + roadmap v
   Detaily v root [CLAUDE.md](../CLAUDE.md) (sekce "Persistence stavu").
 - **App startup** — `Startup/App.xaml(.cs)` jen dispatchne na `AppBootstrapper`, který
   orchestruje celý bootstrap workflow (load prefs → login → MLRest → pick firmu → VerifyLic →
-  ModuleTree → font → return shell okno). Každý krok testovatelný v izolaci.
+  ModuleTree → update check → font → return shell okno). Každý krok testovatelný v izolaci.
+- **Updater** — klientský update mechanismus. `AppBootstrapper.CheckForUpdate` po loginu
+  porovná lokální verzi (`VerzeInf`) proti serverové instalaci + Caché verzi (`Updater`,
+  `ALVA.SETUP.Main.LoadSettings`); při rozdílu spawnne legacy `EDUPDATE.EXE` a ukončí shell.
+  Runtime gate: `MLRest.EdisonVersion` z `VERZE.INF` → server-side per-request kontrola,
+  `EdisonVersionFailed` → graceful shutdown. DEBUG build = verze `999999.9` (netriggeruje
+  update). Status bar zobrazuje `Verze: X`. Detaily v [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md).
 
 ## Spouštění legacy modulů — EDISONMAIN2API
 
@@ -84,6 +90,7 @@ EDISONMAIN2/dotnet/
 │                               - CompanySwitcher (PickInitial + Switch — sdílená logika
 │                                 startup × runtime přepnutí firmy)
 │                               - AccessLoader (GetEdisonAccess + admin fallback)
+│                               - Updater + VerzeInf (klientský update check + verze)
 └── Windows/
     ├── LoginWindow/            login dialog + UserAuthenticator
     ├── EdisonMainWindow/       hlavní okno (toolbar, tree, status bar)
