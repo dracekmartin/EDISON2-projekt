@@ -290,6 +290,10 @@ Konkrétní strategie (deployment model, plugin DLL vs. sub-projekt v EDISONMAIN
 
 Pravidla, která musí port respektovat: shellův MLRest GUID, sdílený ACTIVITY zámek, stejný Caché backend, žádný breaking change pro paralelně běžící legacy `EDISONMAIN`. Plus všechny vůdčí principy.
 
+### Vědomý dluh: dva zdroje navigačního stromu během transition
+
+EDISONMAIN2 `Tree.cls` (Caché) **není migrace** legacy `EDCORE/Resources/edisontree.xml` — je to paralelní, ručně stavěný strom (S7 = 28 stub agend). Legacy plný XML strom dál existuje a čte ho legacy shell + **4 samostatné nástroje mimo shell**: USERS tiskové sestavy práv (`formUSERSUsersPrintPrehledPrav*.vb`), `EDUsers.GetLicensedForms`, a EDLicence `CTrees` → konzumují **Licence** a **LicenceInfo** app. Tyto nástroje čtou legacy XML (který zůstává, princip #7) → **dnes nejsou rozbité, žádné přepojení pro MVP netřeba**. Agenda `.exe` moduly strom nečtou vůbec; enumy (`EDISFormEnum` atd.) jsou nezávislý kontrakt. Reconnect těchto 4 konzumentů na Caché strom je relevantní teprve při (a) jejich portu do WPF, nebo (b) decommissionu legacy XML — obojí post-MVP. Pozor jen na drift: legacy plný strom × Caché stub strom se rozcházejí, ale slouží různým shellům.
+
 ---
 
 ## Co explicitně NEZAHRNOVAT (overengineering hlídka)
