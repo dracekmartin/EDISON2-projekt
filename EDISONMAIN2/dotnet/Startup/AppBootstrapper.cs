@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Windows;
 using ALVA.EDISONAPI;
 using ALVA.LICENCE.EDLicence;
@@ -262,14 +263,21 @@ public class AppBootstrapper
 
     protected virtual SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
     {
-        var mlRest = new MLRestAdapter(new MLRest(conn.Server, conn.Port, conn.Database, conn.Idfa)
+        var inner = new MLRest(conn.Server, conn.Port, conn.Database, conn.Idfa)
         {
             LoginName = login.UserName,
             FullName = login.FullName,
             Mlp = login.Mlp.ToString(),
             // Aktivuje server-side per-request version gate (prázdná verze = gate neběží).
             EdisonVersion = VerzeInf.Current
-        });
+        };
+#if DEBUG
+        // Deterministický GUID v dev: Stop Debugging (hard-kill) ACTIVITY zámek neuvolní, ale
+        // příští spuštění reusne stejný klíč (idfa~ip~guid) → zámek se přepíše, neakumuluje se
+        // (a neroste falešně licenční počet). V produkci náhodný GUID per session (default).
+        inner.GUID = $"DEV-{Environment.MachineName}-{Environment.UserName}";
+#endif
+        var mlRest = new MLRestAdapter(inner);
 
         services.IsAdmin = login.IsAdmin;
         // services.MLRest se musí nastavit už tady — admin override v LicenceVerifier spouští
@@ -382,11 +390,35 @@ public class AppBootstrapper
         var logoutWatcher = new LogoutWatcher(() => services.MLRest, ShowLogoutCountdown);
         logoutWatcher.Start();
         wnd.Closed += (_, _) => logoutWatcher.Stop();
+
+        // Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
+        // je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
+        _application.Exit += (_, _) => LogoutSession(services.MLRest);
         return wnd;
     }
 
     private void ShowLogoutCountdown(int seconds) =>
         new Windows.LogoutCountdownWindow.LogoutCountdownWindow(seconds, _application.Shutdown).Show();
+
+    /// <summary>
+    /// Best-effort odhlášení — <c>ALVA.SYS.Login.Logout</c> smaže ACTIVITY zámek pro session
+    /// (idfa/ip/guid ze sys kontextu). <c>CacheLocks=0</c> aby request nepadl na LockExist.
+    /// Selhání nesmí blokovat zánik aplikace. Hard-kill (VS Stop Debugging) Exit nevyvolá →
+    /// zámek uklidí server idle timeout; v dev to navíc tlumí deterministický GUID (EstablishSession).
+    /// </summary>
+    internal static void LogoutSession(IMLRest? mlRest)
+    {
+        if (mlRest is null) return;
+        try
+        {
+            mlRest.CacheLocks = 0;
+            mlRest.QueryOrThrow("ALVA.SYS.Login", "Logout", new object[] { });
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"LogoutSession failed: {ex.Message}");
+        }
+    }
 
     protected virtual void Shutdown() => _application.Shutdown();
 }

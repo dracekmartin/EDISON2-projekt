@@ -351,4 +351,37 @@ public class AppBootstrapperTests
 
         Assert.Equal(SwitchUserResult.LicenceCancelled, outcome.Outcome);
     }
+
+    // ---------- LogoutSession ----------
+
+    [Fact]
+    public void LogoutSession_CallsLoginLogout_WithCacheLocksZero()
+    {
+        var mlRest = MLRestMocks.Create();
+        mlRest.CacheLocks = 1;
+        int duringCall = -1;
+        mlRest.When(x => x.QueryOrThrow("ALVA.SYS.Login", "Logout", Arg.Any<object[]>()))
+              .Do(_ => duringCall = mlRest.CacheLocks);
+
+        AppBootstrapper.LogoutSession(mlRest);
+
+        mlRest.Received(1).QueryOrThrow("ALVA.SYS.Login", "Logout", Arg.Any<object[]>());
+        Assert.Equal(0, duringCall);   // request nesmí padnout na LockExist
+    }
+
+    [Fact]
+    public void LogoutSession_Null_NoThrow()
+    {
+        AppBootstrapper.LogoutSession(null);   // bez výjimky
+    }
+
+    [Fact]
+    public void LogoutSession_QueryThrows_Swallowed()
+    {
+        var mlRest = MLRestMocks.Create();
+        mlRest.QueryOrThrow("ALVA.SYS.Login", "Logout", Arg.Any<object[]>())
+              .Returns(_ => throw new InvalidOperationException("boom"));
+
+        AppBootstrapper.LogoutSession(mlRest);   // best-effort — výjimka se spolkne
+    }
 }
