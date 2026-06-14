@@ -293,6 +293,14 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .Where(vm => vm.SkupinaDnuId != HourColumnId)
             .Select(vm => vm.ToModel())
             .ToList();
+
+        // Element-level velikost písma záhlaví je autoritativní. Per-column font-size override
+        // záhlaví se u JŘ nepoužívá a v kaskádě by element font přebíjel (uživatel pak marně
+        // mění velikost a text neroste). Vyčistit ho na všech sloupcích; barvy/tučné/zarovnání zůstávají.
+        foreach (var gc in ResultGroupColumns)
+            if (gc.Style?.Header is { } h) h.FontSize = null;
+        if (ResultHourColumnStyle?.Header is { } hh) hh.FontSize = null;
+
         CloseDialog(true);
     }
 }

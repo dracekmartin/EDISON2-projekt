@@ -1191,6 +1191,20 @@ public class DepartureGridElement : ScheduleElementBase
     /// <summary>Lazy-init HeaderLine2Style při prvním nastavení libovolné jeho hodnoty z UI.</summary>
     private TextStyle EnsureHeaderLine2Style() => HeaderLine2Style ??= new TextStyle();
 
+    /// <summary>
+    /// Nastaví element-level velikost písma záhlaví. Protože jde o rychlý element-wide ovladač
+    /// v panelu, vyčistí i per-column font-size overridy záhlaví (group sloupce + sloupec hodin),
+    /// jinak by je kaskáda přebíjela a změna by se neprojevila. Barvy / tučné / zarovnání zůstávají.
+    /// </summary>
+    private void SetHeaderFontSize(float v)
+    {
+        HeaderStyle.FontSize = v;
+        foreach (var gc in GroupColumns)
+            if (gc.Style?.Header is { } h) h.FontSize = null;
+        if (HourColumnStyle?.Header is { } hh) hh.FontSize = null;
+        _cachedLayout = null;
+    }
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         // ── Výchozí styl (základ pro dědění — per-column nastavení ho přepisuje) ──
@@ -1200,7 +1214,10 @@ public class DepartureGridElement : ScheduleElementBase
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Odjezdy", ButtonLabel = "Upravit sloupce...", ActionId = ButtonPropertyDescriptor.ActionOpenDepartureGridEditor },
 
         new BoolPropertyDescriptor  { Label = "Záhlaví skupin",     Group = "Odjezdy", Get = () => ShowSkupinaDnuHeader,       Set = v => ShowSkupinaDnuHeader = v },
-        new FloatPropertyDescriptor { Label = "Výška řádku záhl.",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
+        // Velikost písma záhlaví — přímý ovladač HeaderStyle.FontSize. Bez něj šlo měnit jen
+        // „Výška řádku záhl." (mm), která ale text zvětší jen dokud je FontSize null (legacy derive).
+        new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 24, Unit = "pt" },
+        new FloatPropertyDescriptor { Label = "Min. výška řádku",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
         new EnumPropertyDescriptor  { Label = "Zarovnání záhlaví", Group = "Odjezdy",
             Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
             Options = EnumPropertyDescriptor.VAlignOptions },
