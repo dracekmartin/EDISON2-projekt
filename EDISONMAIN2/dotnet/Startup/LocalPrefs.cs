@@ -14,6 +14,13 @@ public interface ILocalPrefs
     bool ShowWindowsAsDialogs { get; set; }
     bool ShowMiniApps { get; set; }
     bool LoadBoards { get; set; }
+
+    /// <summary>
+    /// Per-stanice: zkusit při startu Windows SSO auto-login (jméno = <c>Environment.UserName</c>,
+    /// prázdné heslo) před zobrazením login dialogu. Zapnout na stanicích s LDAP-AUTO uživateli;
+    /// default false (EDISON/LDAP deploymenty → rovnou dialog, žádný zbytečný failed-login pokus).
+    /// </summary>
+    bool TryWindowsAutoLogin { get; set; }
     void Save();
 }
 
@@ -32,6 +39,7 @@ public class LocalPrefs : ILocalPrefs
     public bool ShowWindowsAsDialogs { get; set; }
     public bool ShowMiniApps { get; set; }
     public bool LoadBoards { get; set; } = true;
+    public bool TryWindowsAutoLogin { get; set; }
 
     // FontApplied/FontFamily/FontSize byly přesunuty do EDControls.UserFonts.UserFontPreference
     // (shared %APPDATA%\m-line\common\font.json) aby je TemplateDesigner mohl sdílet a reagovat

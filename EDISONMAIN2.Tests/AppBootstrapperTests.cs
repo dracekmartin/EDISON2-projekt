@@ -64,8 +64,23 @@ public class AppBootstrapperTests
 
         protected override bool TryLogin(MLRest loginRest, out LoginResult login)
         {
+            TryLoginCalled = true;
             login = new LoginResult(42, "test", "Test User", true, "", false, true, "");
             return LoginSucceeds;
+        }
+
+        public bool AutoLoginSucceeds { get; set; }
+        public bool TryLoginCalled { get; private set; }
+
+        protected override bool TryAutoLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
+        {
+            if (AutoLoginSucceeds)
+            {
+                login = new LoginResult(7, "auto", "Auto User", false, "", false, true, "");
+                return true;
+            }
+            login = null!;
+            return false;
         }
 
         protected override SessionContext EstablishSession(ConnectionInfo conn, LoginResult login, EDServices services)
@@ -93,6 +108,32 @@ public class AppBootstrapperTests
         }
 
         protected override void Shutdown() => ShutdownCalled = true;
+    }
+
+    // ---------- Auto-login (feature #7) ----------
+
+    [Fact]
+    public void Run_AutoLoginSucceeds_SkipsDialog_BuildsShell()
+    {
+        // Auto-login projde → TryLogin (dialog) se vůbec nevolá, i kdyby měl selhat.
+        var b = new TestableBootstrapper { AutoLoginSucceeds = true, LoginSucceeds = false };
+
+        var result = b.Run();
+
+        Assert.False(b.TryLoginCalled);
+        Assert.True(b.BuildShellCalled);
+        Assert.False(b.ShutdownCalled);
+    }
+
+    [Fact]
+    public void Run_AutoLoginFails_FallsBackToDialog()
+    {
+        var b = new TestableBootstrapper { AutoLoginSucceeds = false, LoginSucceeds = true };
+
+        b.Run();
+
+        Assert.True(b.TryLoginCalled);
+        Assert.True(b.BuildShellCalled);
     }
 
     // ---------- Path 1: Login cancelled ----------

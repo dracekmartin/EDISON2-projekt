@@ -240,21 +240,20 @@ Reference: [RESPONSIBILITIES § 3.5, 3.9](RESPONSIBILITIES.md) (idea pool).
 
 ### 7. LDAP UI / mode awareness
 
-**Stav:** Open
+**Stav:** Částečně Done (legacy-style). Login módy (EDISON/LDAP/LDAP-AUTO) **funkčně podporované**; admin LDAP UI + per-user mode-aware skrývání hesla zatím ne (customer-driven).
 
-**CO:** Když je uživatel konfigurovaný jako `LDAP` nebo `LDAP-AUTO` login mód (feature #23), UI musí adekvátně reagovat — `LDAP-AUTO` skryje pole pro heslo (jen jméno + auto-login z Windows username), `LDAP` ho zobrazí ale neumožní "změnit heslo" (heslo spravuje AD).
+**Zjištění z legacy:** `frmLoginEx` mód **nelookupuje** podle jména a **heslo nikdy neskrývá** — vždy ukáže obě pole a o módu rozhodne až server v `Authenticate()` (jméno+heslo najednou). „Skrytí hesla pro LDAP-AUTO" z §2.10 je idealizace, ne realita. LDAP-AUTO reálně jede přes **auto-login** (Windows jméno + prázdné heslo, mimo dialog); dialog je fallback. Pre-auth „GetLoginType(username)" na serveru neexistuje.
 
-**PROČ:** Dnešní pilot uživatelé jsou v módu `EDISON` (lokální heslo), takže LDAP UI není kritické. Až bude první zákazník s LDAP požadavkem, je to nutnost.
+**Co se udělalo (legacy-style):**
 
-**Co to obnáší (high-level):**
+- **Prázdné heslo povoleno** — [UserAuthenticator](dotnet/Windows/LoginWindow/UserAuthenticator.cs) zrušil klientský `if password empty → throw`. O přijatelnosti rozhoduje server dle feature #23 (EDISON/LDAP odmítnou -107, LDAP-AUTO přijme). Tím EDISON i LDAP i LDAP-AUTO fungují přes dialog/auto-login bez klientského blokování.
+- **Auto-login (Windows SSO)** — `AppBootstrapper.TryAutoLogin` (volaný v `Run` před dialogem): když je na stanici zapnutý `ILocalPrefs.TryWindowsAutoLogin`, zkusí login na `Environment.UserName` + prázdné heslo; server přihlásí jen LDAP-AUTO. Neúspěch → fallback na dialog. Flag default **false** (EDISON/LDAP deploymenty → rovnou dialog, žádný zbytečný failed-login pokus).
 
-- Login dialog se adaptuje podle login módu uživatele (z backend feature #23).
-- Auto-login pro `LDAP-AUTO` (Windows username match).
-- Admin UI pro správu LDAP konfigurace (legacy backend již existuje).
+**Mimo scope (customer-driven, až s konkrétním AD):** per-user mode-aware skrývání pole heslo (chce nový lightweight Caché endpoint `GetLoginType(username)` — v legacy neexistuje), potlačení „změna hesla" pro LDAP/LDAP-AUTO (changepassword UI zatím není), admin UI pro LDAP konfiguraci. Reálné LDAP/LDAP-AUTO **nejde ověřit bez AD prostředí** (dev server má jen EDISON uživatele) — proto až s prvním zákazníkem.
 
-**Priorita #7 protože:** customer-driven. Bez konkrétního požadavku není důvod začít.
+**Tests:** [AppBootstrapperTests](../EDISONMAIN2.Tests/AppBootstrapperTests.cs) — auto-login flow (success → skip dialog; fail → fallback). `UserAuthenticator` (konkrétní MLRest) je integration-only.
 
-Reference: [RESPONSIBILITIES § 2.1, 2.10](RESPONSIBILITIES.md) (idea pool).
+Reference: [RESPONSIBILITIES § 2.1, 2.4, 2.10](RESPONSIBILITIES.md), legacy `frmLoginEx.vb`, `EDUsers/CACHE/ALVA/SYS/Login.cls` (`Authenticate` ř. 1081+ — server-side mode).
 
 ### 8. Kick-and-login dialog v EDISONMAIN2 (nikoliv spawn USERS.exe)
 

@@ -24,7 +24,9 @@ namespace EDISONMAIN2.Windows.LoginWindow
         public static LoginResult Login(MLRest mlRest, string username, string password)
         {
             if (string.IsNullOrEmpty(username)) throw new LoginException("Prázdné jméno uživatele.");
-            if (string.IsNullOrEmpty(password)) throw new LoginException("Prázdné heslo.");
+            // Prázdné heslo se NEblokuje — pro LDAP-AUTO / Windows SSO je legitimní (jen jméno).
+            // O přijatelnosti rozhoduje server podle login módu uživatele (feature #23):
+            // EDISON/LDAP prázdné heslo odmítnou (-107), LDAP-AUTO ho přijme.
 
             var output = mlRest.Query("ALVA.SYS.Login", "Login", new object[] { username, password });
             mlRest.RestStatus.ThrowIfError();

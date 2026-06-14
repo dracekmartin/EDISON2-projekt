@@ -7,7 +7,10 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Aktuální stav + roadmap v
 
 ## Co je hotové
 
-- **Login** — `LoginWindow` + `UserAuthenticator` volá `ALVA.SYS.Login.Login`.
+- **Login** — `LoginWindow` + `UserAuthenticator` volá `ALVA.SYS.Login.Login`. Prázdné heslo
+  povolené (LDAP-AUTO / SSO) — o módu (EDISON/LDAP/LDAP-AUTO, feature #23) rozhoduje server.
+  Windows SSO auto-login: `AppBootstrapper.TryAutoLogin` (gated `ILocalPrefs.TryWindowsAutoLogin`,
+  default off) zkusí `Environment.UserName` + prázdné heslo před dialogem; fallback na dialog.
 - **Výběr firmy** — combobox v toolbaru s textovým názvem firmy + IDFa v `[]`,
   abecedně řazeno (server vrací řazené přes `SortedDictionary`).
   `EdisonMainViewModel.SelectedCompanyIndex` setter deleguje na `CompanySwitcher.Switch`
