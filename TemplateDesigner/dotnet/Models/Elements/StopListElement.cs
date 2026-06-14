@@ -107,11 +107,14 @@ public class StopListElement : ScheduleElementBase
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
         float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
         float baseFontSize = DataStyle.FontSize ?? 8f;
-        float baseHeaderFontSize = HeaderStyle.FontSize ?? 9f;
+        // Výška záhlaví/řádku musí odpovídat NEJVĚTŠÍMU reálně vykreslenému (per-column resolved)
+        // fontu, ne jen element-level fontu. Jinak vzniká asymetrie: per-column font glyf zvětší,
+        // ale výška se řídí element fontem (nebo naopak) → výška ≠ text.
+        float baseHeaderFontSize = MaxResolvedHeaderFontPt();
         float effectiveFontSize = baseFontSize * scale;
         float effectiveHeaderFontSize = baseHeaderFontSize * scale;
 
-        float rowH = DataRowHeight ?? ComputeRowH(effectiveFontSize);
+        float rowH = DataRowHeight ?? ComputeRowH(MaxResolvedDataFontPt() * scale);
         float headerH = ComputeHeaderH(effectiveHeaderFontSize);
 
         using var paints = CreateStandardPaints(ctx);
@@ -453,14 +456,30 @@ public class StopListElement : ScheduleElementBase
             if (currentIdx >= 0) visibleStops = zastavky.Count - currentIdx;
         }
 
-        float headerH = ShowHeader ? ComputeHeaderH(HeaderStyle.FontSize ?? 9f) : 0f;
-        float rowH = DataRowHeight ?? ComputeRowH(DataStyle.FontSize ?? 8f);
+        // Stejný zdroj fontu jako v Render() — max resolved per-column, ať scale/overflow sedí.
+        float headerH = ShowHeader ? ComputeHeaderH(MaxResolvedHeaderFontPt()) : 0f;
+        float rowH = DataRowHeight ?? ComputeRowH(MaxResolvedDataFontPt());
         return headerH + visibleStops * rowH;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     private List<StopColumn> GetVisibleColumns() => Columns.Where(c => c.Visible).ToList();
+
+    /// <summary>Největší resolved font záhlaví napříč viditelnými sloupci (pt) — vč. per-column overridů.
+    /// Výška záhlaví se počítá z této hodnoty, aby odpovídala reálně vykreslenému textu.</summary>
+    private float MaxResolvedHeaderFontPt()
+    {
+        var cols = GetVisibleColumns();
+        return cols.Count > 0 ? cols.Max(c => ResolveHeaderStyle(c).FontSize) : (HeaderStyle.FontSize ?? 9f);
+    }
+
+    /// <summary>Největší resolved font datové buňky napříč viditelnými sloupci (pt) — vč. per-column overridů.</summary>
+    private float MaxResolvedDataFontPt()
+    {
+        var cols = GetVisibleColumns();
+        return cols.Count > 0 ? cols.Max(c => ResolveDataStyle(c).FontSize) : (DataStyle.FontSize ?? 8f);
+    }
 
     private string GetCellText(ZastavkaData z, string columnKey) => columnKey switch
     {

@@ -238,6 +238,25 @@ if (MinuteStyle.Bold is null && DataStyle.Bold is null)
 
 **Výjimka — feature overrides (ne cascade fallbacky):** `ResolveRowStyle` u StopListElement zvýrazňuje aktuální zastávku přes unconditional overrides (`Bold = CurrentStopBold || resolved.Bold`). To je záměrné highlighting, ne fallback — user chce aby tato vlastnost přebila. Rozpoznávací znak: feature override **je aktivován runtime stavem** (isCurrent, isPassed), ne statickou konfigurací.
 
+### ⚠️ Anti-pattern: výška řádku z jiného fontu než glyf (asymetrie výška↔text)
+
+**Symptom:** uživatel mění velikost písma (záhlaví/buňky), ale **mění se jen výška řádku, ne text** (nebo naopak). Typicky když element má per-column font override (i zapečený ze starší verze).
+
+**Příčina:** layout **výšku** řádku počítá z **element-level** fontu (`ComputeHeaderH(HeaderStyle.FontSize)`), ale **glyf** se vykresluje z **resolved per-column** fontu (`ResolveHeaderStyle(col)` → `col.Style.Header.FontSize`). Když se ty dva zdroje liší (per-column override), výška a text se rozejdou.
+
+**✅ Správně:** výška řádku se počítá ze **stejného resolved fontu jako glyf** — typicky max přes viditelné sloupce:
+```csharp
+float MaxResolvedHeaderFontPt() {
+    var cols = GetVisibleColumns();
+    return cols.Count > 0 ? cols.Max(c => ResolveHeaderStyle(c).FontSize) : (HeaderStyle.FontSize ?? 9f);
+}
+// V Render() i CalculateHeightFromData() (musí být shodné, jinak nesedí scale/overflow):
+float headerH = ComputeHeaderH(MaxResolvedHeaderFontPt());
+```
+**Pravidlo:** kde se počítá výška z fontu, ber **resolved** font (per-column-aware), ne raw element property. A `Render()` + `CalculateHeightFromData()` musí použít **identický** výpočet.
+
+**Aplikováno:** DepartureGridElement (element font autoritativní — `SetHeaderFontSize` + dialog OnOk čistí per-column font, protože JŘ záhlaví je uniformní), StopListElement (výška z max resolved — per-column zůstává, protože sloupce mohou mít legitimně různý font). TableElement asymetrii nemá (výška = pevná `HeaderHeight` property).
+
 ## Sdílený `CellStyleEditor` (dialogy sloupců)
 
 `Controls/CellStyleEditor.xaml` — UserControl konzumovaný všemi třemi dialogy (`StopColumnsEditorDialog`, `DepartureGroupEditorDialog`, `TableEditorDialog`). DataContext = `CellStyleVM`. Converters v `CellStyleEditor.Converters.cs`.
