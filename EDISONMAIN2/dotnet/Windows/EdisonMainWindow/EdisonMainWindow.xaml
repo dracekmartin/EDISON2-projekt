@@ -128,7 +128,9 @@
             <Grid.Resources>
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
-                    <TextBlock Text="{Binding DisplayedName}" />
+                    <!-- Color "" → UnsetValue → default Foreground; v DEBUG nastaveno agregací (stub/broken). -->
+                    <TextBlock Text="{Binding DisplayedName}"
+                               Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"/>
                 </HierarchicalDataTemplate>
                 <DataTemplate DataType="{x:Type modules:ExecutableModule}">
                     <!-- Color "" → UnsetValue → fallback na default TextBlock Foreground z EDTheme. -->

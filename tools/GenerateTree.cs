@@ -20,7 +20,6 @@ using System.Xml.Linq;
 
 const string EdisonRoot = @"c:\MLineRepos\EDISON";
 const string Edison2Root = @"c:\MLineRepos\EDISON2";
-const string StubColor = "#FFA500";
 
 string navbarPath = Path.Combine(EdisonRoot, @"EDCORE\Resources\edisonnavbar.xml");
 string treePath = Path.Combine(EdisonRoot, @"EDCORE\Resources\edisontree.xml");
@@ -104,8 +103,9 @@ void EmitNode(XElement node, int depth)
         string exe = ov.exe ?? "";
         string fqn = ov.fqn ?? "";
         string input = ov.input is { Length: > 0 } ? ov.input : xmlInput;
-        // Neportovaný leaf (bez exe) = orange stub; portovaný = bez barvy.
-        string color = exe.Length == 0 ? StubColor : "";
+        // Barvu (stub/broken) NEautorujeme — odvozuje ji runtime ModuleLaunchabilityCheck (DEBUG)
+        // z exe/launchovatelnosti. Tree.cls = čistá data.
+        string color = "";
 
         sb.AppendLine($"{indent}d ..AddExe({Q(name)}, {Q(exe)}, {Q(fqn)}, {Q(id2)}, {(licensed ? 1 : 0)}, {Q(input)}, {(hidden ? 1 : 0)}, {Q(color)})");
     }

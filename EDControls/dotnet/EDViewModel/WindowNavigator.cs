@@ -196,7 +196,7 @@ public class WindowNavigator : IWindowNavigator
         return prc;
     }
 
-    internal static string ResolveExecutablePath(string relativePath)
+    public static string ResolveExecutablePath(string relativePath)
     {
         var localPath = Path.Combine(AppContext.BaseDirectory, relativePath);
         if (File.Exists(localPath)) return localPath;

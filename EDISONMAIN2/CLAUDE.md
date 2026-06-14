@@ -99,7 +99,9 @@ EDISONMAIN2/dotnet/
 └── Windows/
     ├── LoginWindow/            login dialog + UserAuthenticator
     ├── EdisonMainWindow/       hlavní okno (toolbar, tree, status bar)
-    │   └── Modules/            IModule, ExecutableModule, ModuleFamily, ModuleTreeGetter
+    │   └── Modules/            IModule, ExecutableModule, ModuleFamily, ModuleTreeGetter,
+    │                           ModuleLaunchabilityCheck (DEBUG — barva+suffix v názvu dle
+    │                           launchovatelnosti: stub / chybí exe / neretrofitnuto)
     ├── LogoutCountdownWindow/  non-modální odpočet před force-logoutem
     └── ED*TestWindow/          dema EDControls komponent
 ```

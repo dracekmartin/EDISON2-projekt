@@ -95,9 +95,11 @@ public class EdisonMainViewModelTests
 
         var vm = CreateVM(treeGetter: mockTree);
 
-        Assert.Equal("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
-        Assert.Equal("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
-        Assert.Equal("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
+        // StartsWith — v DEBUG buildu ModuleLaunchabilityCheck připojuje k názvu suffix
+        // (" — chybí exe" apod.); test ověřuje routing stromů do správných kolekcí, ne přesný label.
+        Assert.StartsWith("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
+        Assert.StartsWith("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
+        Assert.StartsWith("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
     }
 
     [Fact]
