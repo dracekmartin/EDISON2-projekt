@@ -294,12 +294,9 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .Select(vm => vm.ToModel())
             .ToList();
 
-        // Element-level velikost písma záhlaví je autoritativní. Per-column font-size override
-        // záhlaví se u JŘ nepoužívá a v kaskádě by element font přebíjel (uživatel pak marně
-        // mění velikost a text neroste). Vyčistit ho na všech sloupcích; barvy/tučné/zarovnání zůstávají.
-        foreach (var gc in ResultGroupColumns)
-            if (gc.Style?.Header is { } h) h.FontSize = null;
-        if (ResultHourColumnStyle?.Header is { } hh) hh.FontSize = null;
+        // Pozn.: per-column typografii záhlaví (font/velikost/řez) ignoruje render
+        // (DepartureGridElement.WithParentHeaderTypography) — element-level je autoritativní.
+        // Per-column nese jen barvy a zarovnání. Není potřeba nic mazat.
 
         CloseDialog(true);
     }
