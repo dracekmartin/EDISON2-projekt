@@ -73,8 +73,13 @@ namespace EDControls.EDInputForm
         public WpfVisibility UnitVisibility =>
             string.IsNullOrEmpty(Unit) ? WpfVisibility.Collapsed : WpfVisibility.Visible;
 
-        /// <summary>ListItems s implicitní prázdnou položkou na začátku — pro ComboBox binding.</summary>
-        public List<ListItem> ListItemsForDisplay => [new ListItem("", ""), .. ListItems];
+        /// <summary>
+        /// ListItems pro strict List dropdown. U nepovinných polí má na začátku
+        /// implicitní prázdnou položku (umožní hodnotu vymazat = "nevybráno");
+        /// u povinných polí se prázdná položka vynechá (uživatel musí zvolit reálnou volbu).
+        /// </summary>
+        public List<ListItem> ListItemsForDisplay =>
+            Required ? [.. ListItems] : [new ListItem("", ""), .. ListItems];
 
         private string? _value;
         public string? Value

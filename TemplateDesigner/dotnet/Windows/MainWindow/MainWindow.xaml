@@ -709,6 +709,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
@@ -765,6 +766,18 @@
                                VerticalAlignment="Center" Margin="10,0"
                                FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+
+                    <!-- 4) Varování o přetečení preview (červený blok, jen když obsah přetéká) -->
+                    <Border Grid.Column="5"
+                            Background="#D32F2F" Padding="10,3" Margin="6,0,0,0"
+                            VerticalAlignment="Stretch"
+                            Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"
+                            ToolTip="Obsah některé stránky se nevejde — zvětši stránku (PageSize) nebo zmenši obsah">
+                        <TextBlock Text="⚠ Obsah se nevejde na stránku"
+                                   Foreground="White" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
+                    </Border>
                 </Grid>
             </Border>
 

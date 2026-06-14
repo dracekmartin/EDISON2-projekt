@@ -261,7 +261,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
     d vals.%Set("INFORMACE",              informace)
-    d vals.%Set("NEJEDOU_SPOJE",          "")
+    // NEJEDOU_SPOJE je legacy misnomer — nese NÁSTUPIŠTĚ vývěskové zastávky (J-věta #3 = nastTam:nastZpet,
+    // dta23 v JRapiExp10). Per směr (T=tam, Z=zpět). 1:1 gold.
+    s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
+    d vals.%Set("NEJEDOU_SPOJE",          nastupiste)
 
     // ── trasa → zastávky (úsek od aktuální zastávky ve směru jízdy; zóny + na znamení) ──
     // Tam: vzestupně od aktuální k poslední. Zpět: sestupně od aktuální k první (pořadí 1).
@@ -403,12 +406,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s plk        = $p(hlava, ":", 7)
         s cnz        = $p(spoj, "#", 7)        // negativní značka spoje (legacy arrsp dta29)
 
-        // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa)
+        // offset času na aktuální zastávce z trasy spoje (cachovaná W-mapa); pobytová zast. = příjezd+čekání
         d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
-        s offset = $g(wMap(currentPoradi))
-        i offset = "<" continue           // spoj zde nestaví (projíždí)
-        i offset = "" continue            // zastávka mimo trasu spoje
-        i '$isvalidnum(offset) continue
+        s offset = ..CasHodnota($g(wMap(currentPoradi)))
+        i offset = "" continue            // spoj zde nestaví (`<`) / zastávka mimo trasu spoje
 
         s celkem = odjezd + offset
         s hod = (celkem\60)#24, min = celkem#60
@@ -527,23 +528,41 @@ ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy 
     i $d(wMap) m ^||TiskAd("wmap",cisloTrasy) = wMap     // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
 }
 
-/// Vrátí `cisloTrasy` reprezentativního spoje, který staví na vývěskové zastávce (`currentPoradi`).
-/// Základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD; multi-varianta TrasaMin = budoucí krok).
-/// "" když žádný spoj na zastávce nestaví.
+/// Vrátí `cisloTrasy` **hlavní (nejčastější)** trasy mezi spoji stavícími na vývěskové zastávce
+/// (`currentPoradi`). Základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD `TrasaMin1`).
+/// Hlavní = nejvíc spojů (1:1 legacy „označím trasu s největším počtem spojů" `JRapiLinPrtMhd` ř.108-127)
+/// — vyhne se tomu, aby expresní spoj projíždějící uzly (`<`) určoval časy. "" když nikdo nestaví.
 ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String) As %String
 {
-    s baseCt = ""
+    k pocet
     s sp = ""
     f {
         s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
         q:sp=""
         i '$isvalidnum(sp) continue
         s ct = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        i ct = "" continue
         d ..WMapa(dataDB, sku, lin, ct, .wMap)
         s c = $g(wMap(currentPoradi))
-        i (c '= "") && (c '= "<") && ($isvalidnum(c)) { s baseCt = ct  q }
+        i (c '= "") && (c '= "<") && ($isvalidnum(c)) s pocet(ct) = $g(pocet(ct)) + 1   // spoj této trasy staví na vývěsce
+    }
+    // nejčastější trasa = hlavní
+    s baseCt = "", maxN = 0, ct = ""
+    f {
+        s ct = $o(pocet(ct), 1, n)
+        q:ct=""
+        i n > maxN s maxN = n, baseCt = ct
     }
     q baseCt
+}
+
+/// Numerická hodnota času z W-segmentu. Pobytová zastávka má formát `příjezd/čekání` (např. `33/4`)
+/// → vrací **odjezd = příjezd + čekání** (1:1 legacy `Cas+Ceka` / `Cas+$P(Cas,"/",2)`). Běžná `27` → 27.
+/// "" když mimo trasu / projíždí (`<`).
+ClassMethod CasHodnota(cas As %String) As %String
+{
+    i (cas = "") || (cas = "<") q ""
+    q +$p(cas,"/",1) + +$p(cas,"/",2)        // "33/4"→37, "27"→27 (piece2 prázdné = +0)
 }
 
 /// Kumulativní doba jízdy (min) ze zastávky `fromPoradi` na `poradi` z W-mapy (`poradi → cas`).
@@ -551,10 +570,9 @@ ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String
 /// 0 když některá zastávka není na trase / spoj projíždí (`<`).
 ClassMethod CasJizdyZMapy(ByRef wMap, fromPoradi As %String, poradi As %String) As %Integer
 {
-    s cFrom = $g(wMap(fromPoradi))
-    s cTo   = $g(wMap(poradi))
-    i (cFrom = "") || (cFrom = "<") || ('$isvalidnum(cFrom)) q 0
-    i (cTo = "")   || (cTo = "<")   || ('$isvalidnum(cTo))   q 0
+    s cFrom = ..CasHodnota($g(wMap(fromPoradi)))
+    s cTo   = ..CasHodnota($g(wMap(poradi)))
+    i (cFrom = "") || (cTo = "") q 0
     q cTo - cFrom
 }
 
@@ -917,8 +935,9 @@ ClassMethod PrefixOmezeni(omzId As %String) As %String
     q $case(omzId, 11:"jede jen ", 12:"jede také ", 13:"jede ", 14:"jede jen v su. ", 15:"jede jen v li. ", 22:"nejede ", :"")
 }
 
-/// Datumová část omezení (1:1 s `TODDO^JRapiNZUtl`): datumy verbatim VČETNĚ roku, `:`→rozsah `D1-D2`,
-/// jednotlivé datum = `D1`, položky (`#`) spojené čárkou bez mezery. Vedoucí prefix `k@`/`L@` se zahodí.
+/// Datumová část omezení — 1:1 formát zastávkového JŘ (gold `JRapiLinPrtPS3`): datumy přes `UpravDatum`
+/// (strip nul ze dne/měsíce, 2místný rok), rozsah `:` → `od D1 do D2`, jednotlivé datum = `D1`,
+/// položky (`#`) spojené `, `. Vedoucí prefix `k@`/`L@` se zahodí.
 ClassMethod FormatDatumyOmezeni(omz As %String) As %String
 {
     s data = $s(omz["@":$p(omz,"@",2), 1:omz)
@@ -926,13 +945,23 @@ ClassMethod FormatDatumyOmezeni(omz As %String) As %String
     f i=1:1:$l(data,"#") {
         s item = $p(data,"#",i)
         i item = "" continue
-        s od = $p(item,":",1), do = $p(item,":",2)
-        i do '= "" { s cast = od_"-"_do }
+        s od = ..UpravDatum($p(item,":",1)), do = ..UpravDatum($p(item,":",2))
+        i do '= "" { s cast = "od "_od_" do "_do }
         else       { s cast = od }
-        i casti '= "" s casti = casti_","
+        i casti '= "" s casti = casti_", "
         s casti = casti_cast
     }
     q casti
+}
+
+/// Úprava datumu pro tisk (1:1 `UprDat^JRapiLinPrtPS3`): strip vedoucích nul ze dne a měsíce; rok
+/// 2místně (zastávkový JŘ ukazuje „25.12.22", ne „25.12.2022"). "" → "".
+ClassMethod UpravDatum(dat As %String) As %String
+{
+    i dat = "" q ""
+    s dd = +$p(dat,".",1), mm = +$p(dat,".",2), rr = $p(dat,".",3)
+    i $l(rr) > 2 s rr = $e(rr,*-1,*)        // 2022 → 22
+    q dd_"."_mm_"."_rr
 }
 
 /// Najde první linku v zadané firmě (první skupina × první linka s uzlem "I").

@@ -90,6 +90,21 @@ public abstract class ScheduleElementBase : TemplateElement
         return ratio >= 1f ? 1f : ratio;
     }
 
+    /// <summary>Přirozená (neořezaná) výška obsahu v mm — počítá konkrétní JŘ element.</summary>
+    public abstract float CalculateHeightFromData(DataContext? data);
+
+    /// <summary>
+    /// Přetéká obsah pevnou Height? Funguje i bez renderu (pre-detekce pro varování v preview).
+    /// Dynamické elementy (Height == null) se neořezávají → false (geometrickou kontrolu řeší PreviewCanvas).
+    /// </summary>
+    public bool ContentOverflows(DataContext? data)
+    {
+        if (!Height.HasValue) return false;
+        float natural = CalculateHeightFromData(data);
+        // Přetéká, jakmile je přirozený obsah vyšší než box (0.5mm tolerance proti float false-positive).
+        return natural > Height.Value + 0.5f;
+    }
+
     // ─── Cache ─────────────────────────────────────────────────────────────
     // Build helpery parsují vnořené JsonArray při každém volání.
     // Cache zajistí, že se parsuje jednou per DataContext reference.

@@ -358,8 +358,10 @@ je per-namespace, bez IdFa).**
 1. **Názvy zastávek** — `NazevZastavky` bere `^JRZ` `$7` (odbav/MHD název s obcí, "Cheb,aut.nádraží",
    "Fr. Lázně,Krapice,Lužná"), fallback `$2`. Zahozeno `FormatNazev`/`FormatNazevPlny` (drop-obec).
    `NazevLinky` join `–`→`-` (legacy pomlčka).
-2. **Datumy v poznámkách s rokem** — `FormatDatumyOmezeni` = 1:1 `TODDO^JRapiNZUtl`: verbatim s rokem,
-   `:`→rozsah `D1-D2`, položky čárkou bez mezery, `k@`/`L@` prefix se stripuje. (`DenMesic` smazán.)
+2. **Datumy v poznámkách** — `FormatDatumyOmezeni` + `UpravDatum` = 1:1 formát zastávkového JŘ
+   (`JRapiLinPrtPS3`/`UprDat`): **2místný rok** (`25.12.22`, ne `25.12.2022`), strip nul ze dne/měsíce,
+   rozsah `:`→`od D1 do D2`, položky spojené `, `, `k@`/`L@` prefix se stripuje. **POZOR:** NE `TODDO`
+   (to dělá `D1-D2` + verbatim rok) — zastávkový JŘ používá PS3 formát; ověřeno gold 0340303/0365001.
 3. **"jede" omezení** — `SestavTextOmezeni` projde omzId 11,12,13,14,15,22, spojí do jedné poznámky;
    `PrefixOmezeni` = mapování (11 "jede jen ", 12 "jede také ", 13 "jede ", 14/15 su/li, 22 "nejede ").
 4. **POPIS_DOPRAVCE** — `PopisDopravce` (distinct `fa:pr` z `#`-pole 2 spojů obou směrů, dedup názvů,
@@ -429,11 +431,16 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   bezbariérově přístupné vozidlo", na minutách `[B, H]`. (allBBP → text „všechny spoje…", bez
   markeru u minut.) Marker = `$char(SpecZnak)` jako MHD sourozenec (gold SEKCE ukazuje číslo „72",
   vizuálně týž glyf vozíčku).
-- ✅ **Časy jízdy ve StopListu (TrasaMin) — JEDEN sloupec HOTOVO** (2026-06-12). `ZakladniWTrasa`
-  (reprezentativní trasa spoje stavícího na vývěskové zastávce) + `CasJizdyZTrasy` (= `cas(poradi)
-  - cas(currentPoradi)`, reference od vývěskové zastávky jako MHD). `CAS_JIZDY` ve StopListu.
-  Ověřeno 0365001 str.1+2: kumulativní minuty = gold `TrasaMin1` (0,1,2,4,6,8,10,13,…). Renderer
-  `StopListElement.cs:469` blankuje `CasJizdy<=0` → vývěsková + přeskočené zastávky prázdné.
+- ✅ **Časy jízdy ve StopListu (TrasaMin) — JEDEN sloupec HOTOVO** (2026-06-12, 1:1 ověřeno na velké
+  lince 0340303 + 0365001). `ZakladniCisloTrasy` = **hlavní (nejčastější) trasa** mezi spoji stavícími
+  na vývěsce (1:1 legacy „trasa s největším počtem spojů" — vyhne se tomu, aby expres projíždějící uzly
+  určoval časy) + `CasJizdyZMapy` (= `cas(poradi)-cas(currentPoradi)`, reference od vývěskové zastávky).
+  `CAS_JIZDY` ve StopListu, renderer `StopListElement.cs:469` blankuje `<=0`.
+  ⚠️ **Pobytové zastávky (uzly)** mají W-cas formát `příjezd/čekání` (např. `33/4`) → `CasHodnota`
+  vrací **odjezd = příjezd+čekání** (1:1 legacy `Cas+Ceka`). Týž fix v `NacistOdjezdy` offsetu — jinak
+  se pobytová vývěsková zastávka přeskočila → **chybějící odjezdy na stránkách uzlů** (byl to latentní
+  bug i ve starém W-stringovém kódu). Ověřeno 0340303: uzly 37/72/127 = gold, stránky ČB/Třeboň/Písek
+  mají odjezdy.
   ⬜ **Multi-varianta (`TrasaMin1-15`)** = víc časových sloupců per varianta trasy + `<` u projetých
   — odloženo (chce zásah do C# rendereru, který dnes umí jeden sloupec). Pro běžné linky (jedna
   trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.

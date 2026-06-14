@@ -86,6 +86,12 @@ public class DepartureGridElement : ScheduleElementBase
     /// </summary>
     public bool AutoExpandToFillHeight { get; set; }
 
+    /// <summary>
+    /// Strop pro <see cref="AutoExpandToFillHeight"/> — datové řádky se roztáhnou max na tento násobek
+    /// přirozené výšky. Brání bizarně obřím řádkům u řídkých mřížek (např. linka jedoucí jen v 1 hodinu).
+    /// </summary>
+    private const float MaxAutoExpandFactor = 1.5f;
+
     // ═══════════════════════════════════════════
     // Řádky dat (DataRowHeight je na ScheduleElementBase)
     // ═══════════════════════════════════════════
@@ -470,6 +476,9 @@ public class DepartureGridElement : ScheduleElementBase
             float availableDataH = Height.Value - scaledCombinedH0;
             if (dataNaturalH > 0 && availableDataH > dataNaturalH)
                 dataGrow = availableDataH / dataNaturalH;
+            // Cap — řídká mřížka (např. jen 1 hodina s odjezdy) by se jinak roztáhla bizarně velká.
+            // Vyplníme jen rozumně; zbytek místa zůstane prázdný místo obřích řádků.
+            if (dataGrow > MaxAutoExpandFactor) dataGrow = MaxAutoExpandFactor;
         }
         float dataScale = scale * dataGrow;
 
@@ -1013,7 +1022,7 @@ public class DepartureGridElement : ScheduleElementBase
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────
 
-    public float CalculateHeightFromData(DataContext? data)
+    public override float CalculateHeightFromData(DataContext? data)
     {
         var layout = ComputeLayout(data);
         if (layout is null) return DesignerPlaceholderHeight;

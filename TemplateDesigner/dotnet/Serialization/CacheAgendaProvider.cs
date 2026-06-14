@@ -52,6 +52,11 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
     public IReadOnlyList<AgendaInfo> GetAvailableAgendas() => _agendas;
 
+    /// <summary>FQN Caché třídy agendy (např. pro EDInputForm AgendaParams).
+    /// Null pokud agenda nemá Caché vazbu (GENERAL) nebo není známá.</summary>
+    public string? GetCacheClass(string agendaCode) =>
+        _classMap.TryGetValue(agendaCode, out var c) && !string.IsNullOrWhiteSpace(c) ? c : null;
+
     public DataSchema? GetSchema(string agendaCode)
     {
         if (string.IsNullOrEmpty(agendaCode)) return null;

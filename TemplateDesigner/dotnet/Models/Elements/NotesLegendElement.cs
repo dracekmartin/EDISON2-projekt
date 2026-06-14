@@ -187,7 +187,7 @@ public class NotesLegendElement : ScheduleElementBase
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────
 
-    public float CalculateHeightFromData(DataContext? data)
+    public override float CalculateHeightFromData(DataContext? data)
     {
         var poznamky = BuildPoznamky(data);
         var filtered = FilterPoznamky(poznamky);

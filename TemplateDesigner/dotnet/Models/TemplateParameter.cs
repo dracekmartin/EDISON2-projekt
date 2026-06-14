@@ -35,4 +35,20 @@ public class TemplateParameter
         "number" => float.TryParse(DefaultValue, out var f) ? f : 0f,
         _        => DefaultValue ?? ""
     };
+
+    /// <summary>
+    /// Vyhodnotí <see cref="VisibleWhen"/> ("POLE=hodnota") proti aktuálním hodnotám parametrů.
+    /// Prázdné / neplatné pravidlo = vždy viditelný. Jediný zdroj pravdy pro viditelnost parametru
+    /// (preview lišta i tiskový dialog) — porovnání case-insensitive.
+    /// </summary>
+    public bool IsVisible(IReadOnlyDictionary<string, object?> values)
+    {
+        if (string.IsNullOrEmpty(VisibleWhen)) return true;
+
+        var parts = VisibleWhen.Split('=', 2);
+        if (parts.Length != 2) return true;
+
+        var actual = values.TryGetValue(parts[0].Trim(), out var v) ? v?.ToString() : null;
+        return string.Equals(actual, parts[1].Trim(), StringComparison.OrdinalIgnoreCase);
+    }
 }

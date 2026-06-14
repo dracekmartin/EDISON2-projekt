@@ -1,6 +1,7 @@
 using System.IO;
 using SkiaSharp;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Models.Layout;
 
@@ -19,10 +20,14 @@ public class PreviewCanvas
     private const float PageGapPx     = 16f;
     private const float BaseMmToPx   = 96f / 25.4f;   // px na mm při 96 DPI, zoom 1:1
 
-    private static readonly SKColor ClrBackground = new(0xFFE8E8E8);
-    private static readonly SKColor ClrPage       = SKColors.White;
-    private static readonly SKColor ClrPageBorder = new(0xFFAAAAAA);
-    private static readonly SKColor ClrSectionSep = new(0xFFDDDDDD);
+    private static readonly SKColor ClrBackground  = new(0xFFE8E8E8);
+    private static readonly SKColor ClrPage        = SKColors.White;
+    private static readonly SKColor ClrPageBorder  = new(0xFFAAAAAA);
+    private static readonly SKColor ClrOverflowBdr = new(0xFFD32F2F);   // rámeček přetékající stránky
+    private static readonly SKColor ClrSectionSep  = new(0xFFDDDDDD);
+
+    /// <summary>Volá se na konci každého renderu preview: true = obsah některé stránky přetéká. Wire-uje MainWindow na status bar.</summary>
+    public Action<bool>? OverflowChanged { get; set; }
 
     private readonly DesignerState _state;
     private readonly PageLayoutEngine _engine;
@@ -173,8 +178,6 @@ public class PreviewCanvas
 
     public void Render(SKCanvas canvas, float canvasWidth, float canvasHeight, DataContext? data)
     {
-        canvas.Clear(ClrBackground);
-
         float zoom   = ComputeFitZoom(canvasWidth);
         float mmToPx = BaseMmToPx * zoom;
         var   ps     = _state.CurrentTemplate.PageSize;
@@ -183,19 +186,47 @@ public class PreviewCanvas
         float pageX  = Math.Max(PagePaddingPx, (canvasWidth - pageW) / 2f);
 
         var layout = _engine.Layout(_state.CurrentTemplate, data);
+
+        // Pre-detekce přetečení per stránka (funguje bez renderu) → červený rámeček konkrétní
+        // přetékající stránky + hláška ve status baru (přes OverflowChanged).
+        var overflowPages = layout.Pages.Select(p => PageOverflows(p, ps)).ToList();
+        OverflowChanged?.Invoke(overflowPages.Any(x => x));
+
+        canvas.Clear(ClrBackground);
         if (layout.TotalPages == 0) return;
 
         float currentPageY = PagePaddingPx;
-
-        foreach (var page in layout.Pages)
+        for (int i = 0; i < layout.Pages.Count; i++)
         {
             DrawShadow(canvas, pageX, currentPageY, pageW, pageH);
             DrawPageBackground(canvas, pageX, currentPageY, pageW, pageH);
-            RenderPage(canvas, ps, mmToPx, pageX, currentPageY, page);
-            DrawPageBorder(canvas, pageX, currentPageY, pageW, pageH);
+            RenderPage(canvas, ps, mmToPx, pageX, currentPageY, layout.Pages[i]);
+            DrawPageBorder(canvas, pageX, currentPageY, pageW, pageH, overflowPages[i]);
 
             currentPageY += pageH + PageGapPx;
         }
+    }
+
+    /// <summary>
+    /// Vejde se obsah stránky? Detekuje (a) JŘ element s pevnou výškou, jehož přirozený obsah přesahuje
+    /// box (<see cref="ScheduleElementBase.ContentOverflows"/>), a (b) geometrické přetečení — element
+    /// přesahuje spodní hranu své sekce (typicky dynamický element, který narostl).
+    /// Funguje bez renderu (volá se v pre-detekci).
+    /// </summary>
+    private bool PageOverflows(Page page, PageSize ps)
+    {
+        const float tolMm = 0.5f;   // tolerance proti IEEE-754 false-positive na přesné hranici
+        foreach (var placed in page.Sections)
+        {
+            foreach (var el in placed.Source.Elements)
+            {
+                if (!ExpressionEvaluator.IsVisible(el.VisibilityExpression, placed.Data)) continue;
+                if (el is ScheduleElementBase sched && sched.ContentOverflows(placed.Data)) return true;
+                float h = el.Height ?? _heightCalc.CalculateHeight(el, ps.PrintableWidth, placed.Data);
+                if (el.Y + h > placed.Height + tolMm) return true;
+            }
+        }
+        return false;
     }
 
     // ─────────────────────────────────────────────────────────────────────
@@ -217,9 +248,11 @@ public class PreviewCanvas
         canvas.DrawRect(new SKRect(x, y, x + w, y + h), p);
     }
 
-    private static void DrawPageBorder(SKCanvas canvas, float x, float y, float w, float h)
+    private static void DrawPageBorder(SKCanvas canvas, float x, float y, float w, float h, bool overflow = false)
     {
-        using var p = new SKPaint { Color = ClrPageBorder, IsStroke = true, StrokeWidth = 1f };
+        using var p = overflow
+            ? new SKPaint { Color = ClrOverflowBdr, IsStroke = true, StrokeWidth = 2.5f, IsAntialias = true }
+            : new SKPaint { Color = ClrPageBorder, IsStroke = true, StrokeWidth = 1f };
         canvas.DrawRect(new SKRect(x, y, x + w, y + h), p);
     }
 
