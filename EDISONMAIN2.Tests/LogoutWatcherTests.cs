@@ -71,41 +71,26 @@ public class LogoutWatcherTests
 
     // ---------- Poll ----------
 
+    // Poll volá maSeUkoncit na klonu s CacheLocks=2 (mlRest.With(2)); shared instance se nemutuje.
     private static IMLRest MockPoll(params string[] rows)
     {
         var mock = MLRestMocks.Create();
         mock.Delimiter.Returns(Del);
-        mock.QueryOrThrow("ALVA.SYSTEM.Main", "maSeUkoncit", Arg.Any<object[]>())
-            .Returns(Rows(rows));
+        var clone = MLRestMocks.Create();
+        clone.QueryOrThrow("ALVA.SYSTEM.Main", "maSeUkoncit", Arg.Any<object[]>())
+             .Returns(Rows(rows));
+        mock.With(cacheLocks: 2, idfa: null, dataNamespace: null).Returns(clone);
         return mock;
     }
 
     [Fact]
-    public void Poll_SetsCacheLocks2DuringCall_RestoresAfter()
+    public void Poll_UsesCloneWithCacheLocks2()
     {
         var mock = MockPoll("ukoncit~0~60");
-        mock.CacheLocks = 1;
-        int duringCall = -1;
-        mock.When(x => x.QueryOrThrow("ALVA.SYSTEM.Main", "maSeUkoncit", Arg.Any<object[]>()))
-            .Do(_ => duringCall = mock.CacheLocks);
 
         LogoutWatcher.Poll(mock);
 
-        Assert.Equal(2, duringCall);    // poll nesmí obnovit ACTIVITY historii
-        Assert.Equal(1, mock.CacheLocks); // restore na původní hodnotu
-    }
-
-    [Fact]
-    public void Poll_RestoresCacheLocks_EvenOnException()
-    {
-        var mock = MLRestMocks.Create();
-        mock.Delimiter.Returns(Del);
-        mock.CacheLocks = 1;
-        mock.QueryOrThrow("ALVA.SYSTEM.Main", "maSeUkoncit", Arg.Any<object[]>())
-            .Returns(_ => throw new InvalidOperationException("boom"));
-
-        Assert.Throws<InvalidOperationException>(() => LogoutWatcher.Poll(mock));
-        Assert.Equal(1, mock.CacheLocks);
+        mock.Received().With(cacheLocks: 2, idfa: null, dataNamespace: null);
     }
 
     [Fact]

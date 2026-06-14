@@ -44,9 +44,25 @@ public class MLRestAdapter(MLRest inner) : IMLRest
     public string Guid      => Inner.GUID;
     public char   Delimiter => Inner.Delimiter;
 
-    public int CacheLocks
+    public IMLRest With(int? cacheLocks = null, string? idfa = null, string? dataNamespace = null)
     {
-        get => Inner.CacheLocks;
-        set => Inner.CacheLocks = value;
+        // Věrný klon identity přes konstruktor (ClientIP + SysNamespace se dopočítají) + zkopírování
+        // ostatních polí; přepíšeme jen požadované. Žádná mutace Inner → bez race se sdílenou instancí.
+        var clone = new MLRest(Inner.Server, Inner.Port, dataNamespace ?? Inner.DataNamespace, idfa ?? Inner.Idfa)
+        {
+            ClassNamespace = Inner.ClassNamespace,
+            UserID = Inner.UserID,
+            Passwd = Inner.Passwd,
+            Mlp = Inner.Mlp,
+            Delimiter = Inner.Delimiter,
+            LoginName = Inner.LoginName,
+            FullName = Inner.FullName,
+            ApplicationFullName = Inner.ApplicationFullName,
+            Locale = Inner.Locale,
+            EdisonVersion = Inner.EdisonVersion,
+            GUID = Inner.GUID,
+            CacheLocks = cacheLocks ?? Inner.CacheLocks,
+        };
+        return new MLRestAdapter(clone);
     }
 }

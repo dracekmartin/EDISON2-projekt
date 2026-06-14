@@ -155,6 +155,34 @@ public class CompanySwitcherTests
         Assert.Equal("JI_DP", mlRest.DataNamespace);
     }
 
+    [Fact]
+    public void Switch_Accepted_ReleasesOldFirmLock()
+    {
+        // Po úspěšném přepnutí se uvolní ACTIVITY zámek staré firmy (jinak drží její licenční slot).
+        // Logout běží na klonu se starou idfa/namespace — ověřujeme přes mlRest.With(...).
+        var mlRest = MLRestMocks.Create();   // start Idfa = CB_DP
+        SetupVerifyLic(mlRest, 1);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: licence);
+
+        mlRest.Received().With(cacheLocks: 0, idfa: "CB_DP", dataNamespace: "CB_DP");
+        Assert.Equal("JI_DP", mlRest.Idfa);   // sdílená session zůstala na nové firmě (klon ji nemění)
+    }
+
+    [Fact]
+    public void Switch_NullLicence_DoesNotLogout()
+    {
+        // Bez licence (testy / pre-licence stav) se neodhlašuje — žádný reálný zámek staré firmy.
+        var mlRest = MLRestMocks.Create();
+        var switcher = CreateSwitcher(mlRest, () => null);
+
+        switcher.Switch("JI_DP", "JI_DP", currentLicence: null);
+
+        mlRest.DidNotReceive().With(Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>());
+    }
+
     // ---------- Switch — non-admin over-limit ----------
 
     [Fact]

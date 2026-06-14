@@ -73,6 +73,13 @@ public class CompanySwitcher(
 
         if (outcome == LicenceAcquireOutcome.Accepted)
         {
+            // Uvolnit ACTIVITY zámek staré firmy (per-IdFa) — jinak drží licenční slot té firmy
+            // do server timeoutu. Až po Accepted (nová firma má zámek), aby rollback zůstal bezpečný.
+            // Logout běží na klonu se starou idfa/namespace — sdílený MLRest (už na nové firmě) se nemění.
+            // Skip při null licenci (testy / pre-licence stav) a při shodné firmě.
+            if (currentLicence != null && originalIdfa != newIdfa)
+                SessionLogout.Logout(mlRest, originalIdfa, originalNamespace);
+
             localPrefs.LastIdfa = newIdfa;
             localPrefs.Save();
             return new SwitchOutcome(outcome, newLicence);

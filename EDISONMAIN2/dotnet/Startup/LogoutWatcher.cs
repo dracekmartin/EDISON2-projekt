@@ -57,29 +57,14 @@ public class LogoutWatcher
     }
 
     /// <summary>
-    /// Jeden poll. <c>CacheLocks=2</c> po dobu volání — poll nesmí obnovit ACTIVITY historii,
-    /// jinak by se server-side idle timer resetoval a logout by nikdy nenastal.
+    /// Jeden poll na klonu s <c>CacheLocks=2</c> — poll nesmí obnovit ACTIVITY historii, jinak by
+    /// se server-side idle timer resetoval a logout by nikdy nenastal. Klon (ne mutace sdílené
+    /// instance) → žádný race se souběžnými voláními.
     /// </summary>
-    /// <remarks>
-    /// <c>CacheLocks</c> je per-instance mutable stav sdílené MLRest instance. Background volání
-    /// (např. <c>CacheUserPrefsService</c> přes <c>Task.Run</c>) se může s pollem překrýt a přečíst
-    /// <c>2</c> → to volání neobnoví ACTIVITY historii. Benigní: MLRest dělá HTTP per-call (žádná
-    /// korupce, vlastní <c>^||ML</c> per request), efekt = jedno vynechané obnovení, self-correcting
-    /// (idle = setrvalá nečinnost). Bulletproof varianta by chtěla dedikované spojení jen pro poll.
-    /// </remarks>
     public static LogoutSignal Poll(IMLRest mlRest)
     {
-        int previous = mlRest.CacheLocks;
-        mlRest.CacheLocks = 2;
-        try
-        {
-            var output = mlRest.QueryOrThrow(PollClass, PollMethod, new object[] { });
-            return Parse(output, mlRest.Delimiter);
-        }
-        finally
-        {
-            mlRest.CacheLocks = previous;
-        }
+        var output = mlRest.With(cacheLocks: 2).QueryOrThrow(PollClass, PollMethod, new object[] { });
+        return Parse(output, mlRest.Delimiter);
     }
 
     /// <summary>

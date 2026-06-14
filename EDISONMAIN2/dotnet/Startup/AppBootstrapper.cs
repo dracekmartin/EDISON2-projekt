@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Windows;
 using ALVA.EDISONAPI;
 using ALVA.LICENCE.EDLicence;
@@ -355,6 +354,10 @@ public class AppBootstrapper
 
         closeAllWindows();
 
+        // Odhlásit starého uživatele — jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
+        // do server-side timeoutu. Až po confirmu (login != null), před swapem session.
+        SessionLogout.Logout(services.MLRest);
+
         var session = EstablishSession(
             new ConnectionInfo(current.Server, current.Port, current.DataNamespace, current.Idfa),
             login, services);
@@ -393,32 +396,12 @@ public class AppBootstrapper
 
         // Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
         // je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
-        _application.Exit += (_, _) => LogoutSession(services.MLRest);
+        _application.Exit += (_, _) => SessionLogout.Logout(services.MLRest);
         return wnd;
     }
 
     private void ShowLogoutCountdown(int seconds) =>
         new Windows.LogoutCountdownWindow.LogoutCountdownWindow(seconds, _application.Shutdown).Show();
-
-    /// <summary>
-    /// Best-effort odhlášení — <c>ALVA.SYS.Login.Logout</c> smaže ACTIVITY zámek pro session
-    /// (idfa/ip/guid ze sys kontextu). <c>CacheLocks=0</c> aby request nepadl na LockExist.
-    /// Selhání nesmí blokovat zánik aplikace. Hard-kill (VS Stop Debugging) Exit nevyvolá →
-    /// zámek uklidí server idle timeout; v dev to navíc tlumí deterministický GUID (EstablishSession).
-    /// </summary>
-    internal static void LogoutSession(IMLRest? mlRest)
-    {
-        if (mlRest is null) return;
-        try
-        {
-            mlRest.CacheLocks = 0;
-            mlRest.QueryOrThrow("ALVA.SYS.Login", "Logout", new object[] { });
-        }
-        catch (Exception ex)
-        {
-            Debug.WriteLine($"LogoutSession failed: {ex.Message}");
-        }
-    }
 
     protected virtual void Shutdown() => _application.Shutdown();
 }

@@ -28,10 +28,12 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Aktuální stav + roadmap v
   10-arg payload z `EDServices.MLRest`, propaguje shellův GUID → moduly sdílejí
   ACTIVITY zámek. Trackuje child procesy, `CloseAllLegacy()` při shell close.
 - **ACTIVITY zámek** — vytvořen `VerifyLic` při loginu. `EdisonActivityFailed` event
-  → graceful shutdown. Při graceful close (`Application.Exit`) `AppBootstrapper.LogoutSession`
-  zavolá `ALVA.SYS.Login.Logout` (uvolní zámek — je v temp globálu, nezaniká se spojením),
-  best-effort. Hard-kill zámek neuvolní (uklidí server idle timeout); v dev to tlumí
-  deterministický session GUID (`#if DEBUG` v `EstablishSession`) → re-run přepíše týž klíč.
+  → graceful shutdown. Uvolnění zámku přes `SessionLogout.Logout` (`ALVA.SYS.Login.Logout`,
+  best-effort) — je v temp globálu, nezaniká se spojením. Volá se na **klonu** `IMLRest.With(...)`
+  (žádná mutace sdílené instance), takže lze odhlásit i jinou firmu (company switch) bez dotčení
+  běžící session. Místa: graceful close (`Application.Exit`), switch-user (stará session),
+  company switch (zámek staré firmy). Hard-kill zámek neuvolní (uklidí server idle timeout);
+  v dev to tlumí deterministický session GUID (`#if DEBUG` v `EstablishSession`) → re-run přepíše týž klíč.
 - **Cooperative logout** — `LogoutWatcher` (60 s `DispatcherTimer`) pollí
   `ALVA.SYSTEM.Main.maSeUkoncit` (`CacheLocks=2`, aby poll neobnovoval idle timer); při
   signálu ukáže `LogoutCountdownWindow` (non-modální odpočet) → po vypršení shutdown.

@@ -40,9 +40,12 @@ public interface IMLRest
     char Delimiter { get; }
 
     /// <summary>
-    /// Režim ACTIVITY zámku posílaný v sys kontextu (<c>U~Locks</c>). 1 = obnov historii +
-    /// LockExist (běžný shell request), 2 = neobnovuj historii (poll, který nesmí resetovat
-    /// server-side idle timer). Mění se per-call dle potřeby.
+    /// Vrátí **novou** instanci se stejnou identitou (server/port/login/mlp/GUID/verze/delimiter),
+    /// ale s přepsaným <paramref name="cacheLocks"/> / <paramref name="idfa"/> /
+    /// <paramref name="dataNamespace"/> (null = ponechat). Pro jednorázové requesty, které nesmí
+    /// měnit sdílenou instanci ani se prát se souběžnými voláními: poll bez obnovy aktivity
+    /// (<c>CacheLocks=2</c>), logout cizí firmy (<c>idfa</c>). MLRest dělá HTTP per-call, takže
+    /// samostatný klon (se stejným GUID = pro server tatáž session) je bezpečný.
     /// </summary>
-    int CacheLocks { get; set; }
+    IMLRest With(int? cacheLocks = null, string? idfa = null, string? dataNamespace = null);
 }
