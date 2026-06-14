@@ -114,6 +114,7 @@
                 <MenuItem Header="Test InputForm"    Command="{Binding OpenInputFormTestCommand}"/>
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
+                <MenuItem Header="Test odhlašovacího countdownu" Command="{Binding OpenLogoutCountdownTestCommand}"/>
                 <Separator/>
                 <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
             </MenuItem>

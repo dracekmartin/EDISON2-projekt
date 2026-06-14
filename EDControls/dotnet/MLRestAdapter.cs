@@ -43,4 +43,10 @@ public class MLRestAdapter(MLRest inner) : IMLRest
     public string Mlp       => Inner.Mlp;
     public string Guid      => Inner.GUID;
     public char   Delimiter => Inner.Delimiter;
+
+    public int CacheLocks
+    {
+        get => Inner.CacheLocks;
+        set => Inner.CacheLocks = value;
+    }
 }

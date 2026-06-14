@@ -377,8 +377,16 @@ public class AppBootstrapper
         // User font preference: load shared shell+TD storage, apply na EDTheme tokeny PŘED Show
         // (eliminuje flicker), spustit FileSystemWatcher pro cross-process propagaci změny.
         FontService.Initialize(_application);
+
+        // Cooperative logout — poll běží přes services.MLRest (následuje swap při switch user).
+        var logoutWatcher = new LogoutWatcher(() => services.MLRest, ShowLogoutCountdown);
+        logoutWatcher.Start();
+        wnd.Closed += (_, _) => logoutWatcher.Stop();
         return wnd;
     }
+
+    private void ShowLogoutCountdown(int seconds) =>
+        new Windows.LogoutCountdownWindow.LogoutCountdownWindow(seconds, _application.Shutdown).Show();
 
     protected virtual void Shutdown() => _application.Shutdown();
 }

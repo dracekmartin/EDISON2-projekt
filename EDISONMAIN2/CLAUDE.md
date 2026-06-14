@@ -29,6 +29,10 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Aktuální stav + roadmap v
   ACTIVITY zámek. Trackuje child procesy, `CloseAllLegacy()` při shell close.
 - **ACTIVITY zámek** — vytvořen `VerifyLic` při loginu. `EdisonActivityFailed` event
   → graceful shutdown.
+- **Cooperative logout** — `LogoutWatcher` (60 s `DispatcherTimer`) pollí
+  `ALVA.SYSTEM.Main.maSeUkoncit` (`CacheLocks=2`, aby poll neobnovoval idle timer); při
+  signálu ukáže `LogoutCountdownWindow` (non-modální odpočet) → po vypršení shutdown.
+  Pre-warning před tvrdým `EdisonActivityFailed`. Detekce idle je server-side.
 - **Pamatuje poslední firmu** — `LocalPrefs` (JSON v `%APPDATA%\m-line\EDISONMAIN2\local.json`)
   ukládá `LastIdfa` po loginu / přepnutí. `AppBootstrapper` ho čte při startu jako prioritu
   před `IsDefault` flagem (přes `CompanySwitcher.PickInitial`). Funguje i v `#if DEBUG` modu.
@@ -91,10 +95,12 @@ EDISONMAIN2/dotnet/
 │                                 startup × runtime přepnutí firmy)
 │                               - AccessLoader (GetEdisonAccess + admin fallback)
 │                               - Updater + VerzeInf (klientský update check + verze)
+│                               - LogoutWatcher (cooperative logout poll maSeUkoncit)
 └── Windows/
     ├── LoginWindow/            login dialog + UserAuthenticator
     ├── EdisonMainWindow/       hlavní okno (toolbar, tree, status bar)
     │   └── Modules/            IModule, ExecutableModule, ModuleFamily, ModuleTreeGetter
+    ├── LogoutCountdownWindow/  non-modální odpočet před force-logoutem
     └── ED*TestWindow/          dema EDControls komponent
 ```
 

@@ -15,6 +15,7 @@ using EDControls.UserFonts;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 // Alias — class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
+using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
 using static ALVA.EDISONAPI.Database;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow
@@ -36,6 +37,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenInputFormTestCommand { get; }
         public ICommand OpenEDListTestCommand { get; }
         public ICommand OpenEDComponentAndViewModelTestCommand { get; }
+        public ICommand OpenLogoutCountdownTestCommand { get; }
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand CloseAllCommand { get; }
 
@@ -85,6 +87,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog(new EDCompTestWnd()));
+            // Test trigger pro cooperative logout — countdown se po vypršení sám zavře (onExpired no-op).
+            OpenLogoutCountdownTestCommand = Command(() => WindowNavigator.Show(new LogoutCountdownWnd(15, () => { })));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             CloseAllCommand          = Command(closeAllWindows);
 

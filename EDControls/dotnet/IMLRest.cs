@@ -38,4 +38,11 @@ public interface IMLRest
 
     /// <summary>Oddělovač polí pro stará <c>object[]</c> Caché volání (typicky <c>'\0'</c>).</summary>
     char Delimiter { get; }
+
+    /// <summary>
+    /// Režim ACTIVITY zámku posílaný v sys kontextu (<c>U~Locks</c>). 1 = obnov historii +
+    /// LockExist (běžný shell request), 2 = neobnovuj historii (poll, který nesmí resetovat
+    /// server-side idle timer). Mění se per-call dle potřeby.
+    /// </summary>
+    int CacheLocks { get; set; }
 }

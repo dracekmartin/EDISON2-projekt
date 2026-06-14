@@ -145,22 +145,22 @@ Reference: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md) (kompletní legacy researc
 
 ### 2. Cooperative logout countdown
 
-**Stav:** Open
+**Stav:** Done — pre-warning countdown před server force-logoutem.
 
-**CO:** Polling `ALVA.EDISONAPI.Updater.maSeUkoncit` (cca 60 s interval), který signalizuje, že server admin / timeout chtějí klienta ukončit. Klient pak ukáže countdown notifikaci (balloon nebo dialog) a po vypršení se zavře gracefully.
+**Co se udělalo:**
 
-**PROČ:** Dnes EDISONMAIN2 detekuje force-logout až přes `EdisonActivityFailed` event (až server fyzicky smaže ACTIVITY zámek) — bez pre-warningu, instant shutdown. Legacy `EDISONMAIN` tohle dělá lépe — uživatel dostane ~60s na uložení.
+- **`LogoutWatcher`** ([Startup/LogoutWatcher.cs](dotnet/Startup/LogoutWatcher.cs)) — `DispatcherTimer` 60 s pollující `ALVA.SYSTEM.Main.maSeUkoncit` přes `IMLRest`. Při `CacheLocks=2` po dobu volání (poll nesmí obnovit ACTIVITY historii, jinak by se server-side idle timer resetoval a logout by nikdy nenastal). Parse `ukoncit~{0|1}~{sekundy}` (floor 60). `Poll`/`Parse` static = testovatelné přes mock `IMLRest`.
+- **`LogoutCountdownWindow`** ([Windows/LogoutCountdownWindow](dotnet/Windows/LogoutCountdownWindow/)) — non-modální top-most okno v rohu, odpočet po sekundách, po vypršení `Application.Shutdown`. Informativní (server rozhodl), bez možnosti zrušit — věrné legacy.
+- **Wiring** — `AppBootstrapper.BuildShellWindow` spustí watcher (poll přes `services.MLRest` → následuje swap při switch user), `wnd.Closed` → `Stop`.
+- **`IMLRest.CacheLocks`** — přidán na abstrakci (general MLRest property jako `Delimiter`) + `MLRestAdapter`.
 
-**Co to obnáší (high-level):**
+**Producent flagu:** server-side idle timeout (`Activity.cls` → `nastavUkonceniUzivatele`). Admin remote-logout cesta v Caché existuje, ale není volaná; pre-update ukončení je oddělený mechanismus.
 
-- Periodický poll legacy endpointu signalizujícího intent k ukončení.
-- Pre-warning UX (forma k diskusi — tray notifikace vs. modální dialog).
-- Volitelně: integrace s feature #3 (save-and-exit) — nabídnout save místo jen countdown.
-- Volitelné rozšíření: Windows idle detection — pokud uživatel je v PC, ale aplikace idle, prodloužit timeout.
+**Mimo scope (vědomě):** save-and-exit integrace (= feature #3), tlačítko „Pokračovat v práci" (extend přes real request), Windows idle detection na klientu (legacy ho nedělá — idle se počítá server-side), zobrazení `cerpani` (legacy ho taky nezobrazoval).
 
-**Priorita #2 protože:** malé úsilí, viditelné UX zlepšení, sdílí timer infrastrukturu která se hodí i jinde.
+**Tests:** [LogoutWatcherTests](../EDISONMAIN2.Tests/LogoutWatcherTests.cs) — Parse matrix + Poll (CacheLocks=2 během volání + restore i při výjimce).
 
-Reference: [RESPONSIBILITIES § 3.5, 3.9](RESPONSIBILITIES.md) (idea pool).
+Reference: [RESPONSIBILITIES § 3.5, 3.9](RESPONSIBILITIES.md), legacy `frmNoMDI.MainTimerProc`/`WaitFortimeToClose`, `EDSystem\CACHE\ALVA\SYSTEM\Main.cls:91-150`.
 
 ### 3. Reconnect UX + save-and-exit dialog + `OnBeforeLogout` event
 

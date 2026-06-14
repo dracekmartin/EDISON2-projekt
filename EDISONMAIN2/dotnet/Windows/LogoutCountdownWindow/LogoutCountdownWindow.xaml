@@ -1,0 +1,22 @@
+<Window x:Class="EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ukončení EDISON"
+        SizeToContent="WidthAndHeight"
+        WindowStyle="ToolWindow"
+        ResizeMode="NoResize"
+        Topmost="True"
+        ShowInTaskbar="False"
+        Icon="{StaticResource EDIcons.Molecule}">
+    <!-- MaxWidth a velikosti přes EDTheme tokeny → okno i text rostou s user font preferencí. -->
+    <Border Padding="20" MaxWidth="460">
+        <StackPanel>
+            <TextBlock Text="Vzdálené ukončení systému EDISON" TextWrapping="Wrap"
+                       FontWeight="Bold" FontSize="{DynamicResource EDTheme.FontSize.Large}"
+                       Margin="0,0,0,8"/>
+            <TextBlock TextWrapping="Wrap" Margin="0,0,0,12"
+                       Text="Server vyžaduje ukončení aplikace. Uložte prosím rozdělanou práci."/>
+            <TextBlock x:Name="CountdownText" FontSize="{DynamicResource EDTheme.FontSize.Large}"/>
+        </StackPanel>
+    </Border>
+</Window>
