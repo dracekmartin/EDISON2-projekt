@@ -12,7 +12,8 @@ Class ALVA.EDISONMAIN2.Tests.TreeTest Extends ALVA.EDTesting.MLTestCase
 /// Nebo programově:
 ///   do ##class(ALVA.EDTesting.TestRunner).RunPackage(.sys)   ; package="ALVA.EDISONMAIN2.Tests"
 
-/// Default input (tree="") -> main tree. První záznam je EXE (stub agendy v FillMain).
+/// Default input (tree="") -> main tree. První záznam je validní wire-format uzel
+/// (FAMILY nebo EXE — main začíná rozbalenou agendou-rodinou po materializaci z legacy XML).
 Method TestDefaultInputReturnsMainTree()
 {
 	do ..SetupSys(.sys)
@@ -22,7 +23,7 @@ Method TestDefaultInputReturnsMainTree()
 
 	set firstRecord = ^||ML("OUT",1)
 	set firstType = $listget(firstRecord, 1)
-	do $$$AssertEquals(firstType, "EXE", "First record of main tree must be EXE node")
+	do $$$AssertNotTrue((",FAMILY,EXE,"'[(","_firstType_",")), "First record of main tree must be FAMILY or EXE, got: "_firstType)
 }
 
 /// System tree má jiný obsah -- minimální sanity check.
