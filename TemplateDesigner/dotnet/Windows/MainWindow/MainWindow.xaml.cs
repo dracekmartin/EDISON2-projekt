@@ -1478,8 +1478,11 @@ public partial class MainWindow : Window
             InlinePropertiesPanel.ShowDescriptors(descriptors);
             FormatToolbar.ShowDescriptors(descriptors);
 
-            // Přepnout na záložku Vlastnosti pokud jsme na Sekce nebo Strom
-            if (LeftTabControl.SelectedItem != TabFields)
+            // Přepnout na záložku Vlastnosti pokud jsme na Sekce nebo Strom.
+            // Netaháme uživatele pryč z tabů, kde aktivně pracuje s něčím jiným
+            // (Pole agendy = drag polí, Průvodce = chat).
+            if (LeftTabControl.SelectedItem != TabFields
+                && LeftTabControl.SelectedItem != TabAiGuide)
                 LeftTabControl.SelectedItem = TabProperties;
         }
         else

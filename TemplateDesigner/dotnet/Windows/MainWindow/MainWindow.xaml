@@ -4,6 +4,7 @@
         xmlns:skia="clr-namespace:SkiaSharp.Views.WPF;assembly=SkiaSharp.Views.WPF"
         xmlns:local="clr-namespace:TemplateDesigner"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
+        xmlns:aiguide="clr-namespace:TemplateDesigner.Windows.AiGuideDialog"
         Title="Template Designer" Height="768" Width="1280"
         Icon="{StaticResource EDIcons.Molecule}"
         WindowState="Maximized"
@@ -583,6 +584,10 @@
                     <!-- ── Záložka Strom šablony ── -->
                     <TabItem Header="Strom" x:Name="TabTree">
                         <controls:TemplateTreePanel x:Name="TreePanel"/>
+                    </TabItem>
+                    <!-- ── Záložka AI průvodce ── -->
+                    <TabItem Header="Průvodce" x:Name="TabAiGuide">
+                        <aiguide:AiGuidePanel DataContext="{Binding AiGuide}"/>
                     </TabItem>
                 </TabControl>
             </Border>
