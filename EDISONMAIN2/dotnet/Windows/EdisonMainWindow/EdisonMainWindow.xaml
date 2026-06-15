@@ -116,6 +116,7 @@
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
                 <MenuItem Header="Test odhlašovacího countdownu" Command="{Binding OpenLogoutCountdownTestCommand}"/>
+                <MenuItem Header="Otevřít test miniapp"           Click="OpenTestMiniApp_Click"/>
                 <Separator/>
                 <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
             </MenuItem>
@@ -176,17 +177,11 @@
             </TabControl>
         </Grid>
         <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <!-- Hostitel miniaplikací. Skeleton (commit 3) — dočasný hardcoded panel pro ověření
-             dock/float + single-file publish. Obsah řídí MiniAppManager (commit 4+). -->
-        <avalonDock:DockingManager Grid.Column="2" Grid.Row="1">
+        <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
+             AvalonDockHost nad tímto DockingManagerem). -->
+        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1">
             <avalonDock:LayoutRoot>
-                <avalonDock:LayoutPanel Orientation="Horizontal">
-                    <avalonDock:LayoutAnchorablePane>
-                        <avalonDock:LayoutAnchorable Title="MiniApp skeleton" ContentId="skeleton">
-                            <TextBlock Text="AvalonDock skeleton — dock/float OK" Margin="8" TextWrapping="Wrap"/>
-                        </avalonDock:LayoutAnchorable>
-                    </avalonDock:LayoutAnchorablePane>
-                </avalonDock:LayoutPanel>
+                <avalonDock:LayoutPanel Orientation="Horizontal"/>
             </avalonDock:LayoutRoot>
         </avalonDock:DockingManager>
         <GridSplitter Grid.Column="3" Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>

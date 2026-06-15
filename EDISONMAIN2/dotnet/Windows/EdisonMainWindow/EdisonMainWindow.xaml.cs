@@ -1,5 +1,8 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
+using EDControls.MiniApps;
+using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
@@ -11,10 +14,22 @@ namespace EDISONMAIN2
     /// </summary>
     public partial class EdisonMainWindow : Window
     {
+        // MiniAppManager žije ve view vrstvě — pracuje s DockingManagerem (view element).
+        private MiniAppManager? _miniAppManager;
+
         public EdisonMainWindow()
         {
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
+            Loaded += (_, _) => _miniAppManager ??= new MiniAppManager(new AvalonDockHost(DockManager));
+        }
+
+        // Dočasný dev launcher (commit 4). Nahradí ho launcher z katalogu + ShowMiniApps (commit 5).
+        private void OpenTestMiniApp_Click(object sender, RoutedEventArgs e)
+        {
+            _miniAppManager?.Open(new MiniAppDescriptor("Dev.Sample",
+                () => new SimpleMiniAppViewModel("Test miniapp",
+                    () => new TextBlock { Text = "Ahoj z miniapp", Margin = new Thickness(8) })));
         }
 
         // Ctrl+W+W chord detection. PreviewKeyDown (ne KeyDown) — chytá klávesy předtím,
