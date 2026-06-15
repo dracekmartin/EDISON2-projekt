@@ -17,6 +17,21 @@ public class SettingsLoader
         AllowTrailingCommas         = true
     };
 
+    private static readonly JsonSerializerOptions WriteOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    };
+
+    private static string MainPath => Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+
+    /// <summary>
+    /// First-launch indikátor (feature #5): chybí <c>appsettings.json</c> → stanice není
+    /// nakonfigurovaná → ukázat setup wizard. Klíčuje na existenci souboru, ne na hodnotě
+    /// (<see cref="ServerSettings.Host"/> má dev default, takže „prázdný host" nikdy nenastane).
+    /// </summary>
+    public static bool Exists() => File.Exists(MainPath);
+
     public static SettingsLoader Load()
     {
         var baseDir = AppContext.BaseDirectory;
@@ -50,6 +65,13 @@ public class SettingsLoader
 
         Current = settings;
         return Current;
+    }
+
+    /// <summary>Zapíše <c>appsettings.json</c> vedle exe (setup wizard). UTF-8, bez BOM.</summary>
+    public void Save()
+    {
+        File.WriteAllText(MainPath, JsonSerializer.Serialize(this, WriteOptions), new System.Text.UTF8Encoding(false));
+        Current = this;
     }
 }
 

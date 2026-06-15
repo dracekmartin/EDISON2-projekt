@@ -74,6 +74,13 @@ public class AppBootstrapper
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
 
+        // First-launch setup (feature #5): chybí appsettings.json → wizard. Zrušení = konec.
+        if (!EnsureConfigured())
+        {
+            Shutdown();
+            return null;
+        }
+
         var prep = PrepareLogin(prefs);
 
         // Auto-login (Windows SSO) má přednost; když není zapnutý / neprojde, fallback na dialog.
@@ -209,6 +216,28 @@ public class AppBootstrapper
     }
 
     protected virtual ILocalPrefs LoadLocalPrefs() => LocalPrefs.Load();
+
+    /// <summary>
+    /// First-launch setup (feature #5): když chybí <c>appsettings.json</c>, zobrazí
+    /// <see cref="Windows.SetupWindow.SetupWindow"/> (jen připojení — server + REST port).
+    /// Vrací false = uživatel zrušil → shutdown. DEBUG má config v repu → wizard se přeskočí.
+    /// Greenfield server-init (firma/licence/admin) je mimo scope, viz PLAN.md #5.
+    /// </summary>
+    protected virtual bool EnsureConfigured()
+    {
+        if (SettingsLoader.Exists()) return true;
+
+        SettingsLoader.Load();   // naplní Current dev defaulty pro předvyplnění polí
+        _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        try
+        {
+            return new Windows.SetupWindow.SetupWindow().ShowDialog() == true;
+        }
+        finally
+        {
+            _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
+        }
+    }
 
     protected virtual PreLoginContext PrepareLogin(ILocalPrefs prefs)
     {

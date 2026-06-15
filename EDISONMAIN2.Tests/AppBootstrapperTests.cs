@@ -27,7 +27,15 @@ public class AppBootstrapperTests
         public bool AcquireSessionCalled { get; private set; }
 
         // Configurable
+        public bool Configured { get; set; } = true;
+        public bool EnsureConfiguredCalled { get; private set; }
         public bool LoginSucceeds { get; set; } = true;
+
+        protected override bool EnsureConfigured()
+        {
+            EnsureConfiguredCalled = true;
+            return Configured;
+        }
         public LicenceAcquireOutcome SessionOutcome { get; set; } = LicenceAcquireOutcome.Accepted;
         public IPopupDisplayer Popup { get; set; } = Substitute.For<IPopupDisplayer>();
         public IWindowNavigator Nav { get; set; } = Substitute.For<IWindowNavigator>();
@@ -108,6 +116,32 @@ public class AppBootstrapperTests
         }
 
         protected override void Shutdown() => ShutdownCalled = true;
+    }
+
+    // ---------- First-launch setup (feature #5) ----------
+
+    [Fact]
+    public void Run_NotConfigured_CallsShutdown_ReturnsNull()
+    {
+        var b = new TestableBootstrapper { Configured = false };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.TryLoginCalled);   // setup zrušen → ani login se nezkouší
+        Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_Configured_ProceedsToLogin()
+    {
+        var b = new TestableBootstrapper { Configured = true };
+
+        b.Run();
+
+        Assert.True(b.EnsureConfiguredCalled);
+        Assert.True(b.BuildShellCalled);
     }
 
     // ---------- Auto-login (feature #7) ----------

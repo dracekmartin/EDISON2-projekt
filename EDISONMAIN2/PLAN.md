@@ -201,24 +201,22 @@ Důsledek: nový kód se píše už správně (přes resource klíče místo str
 
 Reference: [RESPONSIBILITIES § 10](RESPONSIBILITIES.md) (idea pool).
 
-### 5. Setup wizard (first-launch detection + `EDISONini.xml` write)
+### 5. Setup wizard (first-launch detection + connection config)
 
-**Stav:** Open
+**Stav:** Done (connection-only). Greenfield server-init (firma/licence/admin) vědomě mimo — viz níže.
 
-**CO:** Při prvním spuštění (nebo na stanici bez konfigurace) zobrazit setup wizard, který vyplní `EDISONini.xml` (server, port, REST port, database, idfa, IRIS mode, secured mode, jazyk) a vytvoří první admin uživatele.
+**Zjištění z legacy:** `frmSetup` ([EDISONMAIN/frmSetup.vb](../EDISON/EDISONMAIN/frmSetup.vb)) **nevětví server vs. client** — je jeden, spouští se podle lokálního flagu `EDISONini.xml/initialized` vedle exe (EDLOADER → `reason=1`), tj. na první spuštění *každé* stanice. Slepuje do jednoho okna dvě nesouvisející věci: **(A) konfiguraci stanice** (kam se připojit — potřebuje každá stanice) a **(B) inicializaci serveru** (firma + licence + admin — dává smysl jednou, při zakládání Caché serveru). To, že (B) běží na každé stanici, je historický šlendrián, ne návrh k napodobení.
 
-**PROČ:** Adoption blocker pro produkční nasazení. Dnes konfiguruje technik M-line ručně přes `appsettings.json` — neúnosné pro hromadnější nasazení. Legacy `EDISONMAIN` má `frmSetup` wizard.
+**Co se udělalo (A — connection-only):**
 
-**Co to obnáší (high-level):**
+- **First-launch detekce** — `SettingsLoader.Exists()` (chybí `appsettings.json` vedle exe → stanice nenakonfigurovaná). Klíčuje na existenci souboru, ne na hodnotě (`ServerSettings.Host` má dev default). DEBUG má config v repu → wizard se přeskočí. `Initialized` flag vědomě vynechán — `File.Exists` stačí.
+- **`SetupWindow`** ([Windows/SetupWindow](dotnet/Windows/SetupWindow/SetupWindow.xaml.cs)) — WPF dialog (server + REST port), **Test připojení** (probe = `Database.GetCompanyList`, reuse, žádný nový endpoint), uložit aktivní až po úspěšném testu → `SettingsLoader.Save()` (zápis `appsettings.json`). Code-behind jako `LoginWindow` (běží před session).
+- **`AppBootstrapper.EnsureConfigured`** volaný v `Run` úplně první (před `PrepareLogin`); zrušení → `Shutdown`. Po uložení pokračuje **in-process** (re-load), ne legacy „ukonči a spusť znovu".
+- Tests: `SettingsLoaderTests` (round-trip + Exists), `AppBootstrapperTests` (not-configured → shutdown; configured → proceed). Connection-probe integration-only.
 
-- Detekce first-launch (legacy používá `EDISONini.xml` s `initialized` flagem; pro EDISONMAIN2 forma k diskusi).
-- Wizard formuláře pokrývající: connection / database / first user / activate license.
-- Validace inputů (test connectivity, formát IdFa, aktivace licence).
-- Re-vyvolání za běhu pro admina (přes menu).
+**Vědomě mimo scope (B — greenfield server-init, customer-driven):** výběr databáze, založení firmy (`Firma.Write`), aktivace licence (`Activation.Add`), vytvoření prvního admina (`CreateSuperUser`). Není to per-stanice věc — běží jednou při zakládání nového Caché serveru, což M-line dělá centrálně. **Prozatím se na to znovupoužije legacy `EDISONMAIN.exe` + `frmSetup`** (pořád funguje). Až přijde požadavek, přidá se jako samostatný admin-only „server-init" tok (kontrakty zmapované z `frmSetup`), ne do station setupu. Bridge (`ShowLegacy`) na to nejde — vyžaduje existující session, kterou setup teprve vytváří.
 
-**Priorita #5 protože:** adoption blocker pro >5 stanic, ale pro pilot fázi (~3-5 stanic) lze řešit manuální konfigurací. Záleží jak rychle pilot expanduje.
-
-Reference: [RESPONSIBILITIES § 1.1, 11.1](RESPONSIBILITIES.md) (idea pool).
+Reference: [RESPONSIBILITIES § 1.1, 11.1](RESPONSIBILITIES.md), legacy `frmSetup.vb`, `EDLOADER/clsStartup.vb`.
 
 ### 6. Per-user timeout UI (feature #30 editor)
 

@@ -53,8 +53,13 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Aktuální stav + roadmap v
   odvozen z názvu VM třídy (`EdisonMainViewModel` → `"EDISON2.EdisonMainWindow"`).
   Detaily v root [CLAUDE.md](../CLAUDE.md) (sekce "Persistence stavu").
 - **App startup** — `Startup/App.xaml(.cs)` jen dispatchne na `AppBootstrapper`, který
-  orchestruje celý bootstrap workflow (load prefs → login → MLRest → pick firmu → VerifyLic →
-  ModuleTree → update check → font → return shell okno). Každý krok testovatelný v izolaci.
+  orchestruje celý bootstrap workflow (setup wizard → load prefs → login → MLRest → pick firmu →
+  VerifyLic → ModuleTree → update check → font → return shell okno). Každý krok testovatelný v izolaci.
+- **Setup wizard** — `AppBootstrapper.EnsureConfigured` (volaný v `Run` první): chybí
+  `appsettings.json` (`SettingsLoader.Exists()`) → `SetupWindow` (server + REST port + test
+  připojení přes `Database.GetCompanyList`) → `SettingsLoader.Save()`, pak pokračuje in-process.
+  Jen konfigurace připojení (každá stanice); greenfield server-init (firma/licence/admin)
+  zůstává na legacy `frmSetup`. Viz PLAN.md #5.
 - **Updater** — klientský update mechanismus. `AppBootstrapper.CheckForUpdate` po loginu
   porovná lokální verzi (`VerzeInf`) proti serverové instalaci + Caché verzi (`Updater`,
   `ALVA.SETUP.Main.LoadSettings`); při rozdílu spawnne legacy `EDUPDATE.EXE` a ukončí shell.
@@ -85,9 +90,9 @@ a úpravou entry pointu na `FormToRunGetter` pattern (referenční implementace:
 
 ## Mimo MVP (zatím)
 
-Setup wizard, reconnect UX, admin Activity list, update lock broadcast, LDAP UI,
-cooperative logout countdown. Detaily prioritizace v [PLAN.md](PLAN.md) sekci „Features
-v pořadí priority".
+Reconnect UX (save-and-exit), admin Activity list, update lock broadcast, lokalizace,
+greenfield server-init (firma/licence/admin — zůstává na legacy `frmSetup`). Detaily
+prioritizace v [PLAN.md](PLAN.md) sekci „Features v pořadí priority".
 
 ## Struktura
 
@@ -110,6 +115,7 @@ EDISONMAIN2/dotnet/
     │   └── Modules/            IModule, ExecutableModule, ModuleFamily, ModuleTreeGetter,
     │                           ModuleLaunchabilityCheck (DEBUG — barva+suffix v názvu dle
     │                           launchovatelnosti: stub / chybí exe / neretrofitnuto)
+    ├── SetupWindow/            first-launch konfigurace připojení (server + REST port)
     ├── LogoutCountdownWindow/  non-modální odpočet před force-logoutem
     └── ED*TestWindow/          dema EDControls komponent
 ```
