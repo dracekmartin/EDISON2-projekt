@@ -165,10 +165,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             {
                 if (TryFilter(module, _services.ActiveLicence, _services.AccessTable) is { } filtered)
                 {
-#if DEBUG
-                    // Programátorská kontrola: obarvit moduly s exe, které není retrofitnuté pro EDISONMAIN2.
+                    // Obarvit moduly dle launchovatelnosti (stub/chybí exe/neretrofitnuto).
                     filtered = ModuleLaunchabilityCheck.Mark(filtered);
-#endif
                     target.Add(filtered);
                 }
             }

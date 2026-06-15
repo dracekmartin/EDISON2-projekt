@@ -113,7 +113,7 @@ EDISONMAIN2/dotnet/
     ├── LoginWindow/            login dialog + UserAuthenticator
     ├── EdisonMainWindow/       hlavní okno (toolbar, tree, status bar)
     │   └── Modules/            IModule, ExecutableModule, ModuleFamily, ModuleTreeGetter,
-    │                           ModuleLaunchabilityCheck (DEBUG — barva+suffix v názvu dle
+    │                           ModuleLaunchabilityCheck (barva+suffix v názvu dle
     │                           launchovatelnosti: stub / chybí exe / neretrofitnuto)
     ├── SetupWindow/            first-launch konfigurace připojení (server + REST port)
     ├── LogoutCountdownWindow/  non-modální odpočet před force-logoutem

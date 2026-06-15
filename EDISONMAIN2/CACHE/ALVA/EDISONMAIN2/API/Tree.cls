@@ -24,7 +24,7 @@ Class ALVA.EDISONMAIN2.API.Tree Extends %RegisteredObject
 ///       hidden     = "1" → modul se odfiltruje v UI (legacy `hidden="1"` atribut).
 ///       color      = hex "#RRGGBB" pro Foreground v stromu; "" = výchozí barva tématu.
 ///                    V autorovaných datech vždy "" — stub/launchability barvu odvozuje
-///                    runtime ModuleLaunchabilityCheck (DEBUG) z exe/reference na EDISONMAIN2API.
+///                    runtime ModuleLaunchabilityCheck z exe/reference na EDISONMAIN2API.
 ///   $lb("FAMILY_END")                                                       ... konec složky
 ///
 /// Tři stromy odpovídají top-level uzlům v původním edisonnavbar.xml

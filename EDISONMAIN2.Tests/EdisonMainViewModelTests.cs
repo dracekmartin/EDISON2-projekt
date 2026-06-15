@@ -95,8 +95,8 @@ public class EdisonMainViewModelTests
 
         var vm = CreateVM(treeGetter: mockTree);
 
-        // StartsWith — v DEBUG buildu ModuleLaunchabilityCheck připojuje k názvu suffix
-        // (" — chybí exe" apod.); test ověřuje routing stromů do správných kolekcí, ne přesný label.
+        // StartsWith — ModuleLaunchabilityCheck připojuje k názvu suffix (" — chybí exe" apod.);
+        // test ověřuje routing stromů do správných kolekcí, ne přesný label.
         Assert.StartsWith("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
         Assert.StartsWith("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
         Assert.StartsWith("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);

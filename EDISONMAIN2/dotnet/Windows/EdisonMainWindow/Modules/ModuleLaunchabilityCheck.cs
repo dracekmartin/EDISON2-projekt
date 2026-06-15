@@ -1,4 +1,3 @@
-#if DEBUG
 using System.Collections.Generic;
 using System.IO;
 using EDControls;
@@ -7,13 +6,13 @@ using EDControls.EDViewModel;
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
-    /// DEBUG-only programátorská kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu —
-    /// odvozuje se zde z exe + reference na EDISONMAIN2API a promítá do barvy + textového suffixu
-    /// v názvu. V Release buildu neexistuje (celý soubor za <c>#if DEBUG</c>), strom je tam čistý.
+    /// Kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu — odvozuje se zde z exe
+    /// + reference na EDISONMAIN2API a promítá do barvy + textového suffixu v názvu. Běží
+    /// v DEBUG i Release — kolegové validují stav stromu na Release buildu z testovacího procesu.
     ///
     /// Stavy: prázdné exe = autorský stub (oranžová); exe vyplněné ale soubor chybí / nereferencuje
     /// EDISONMAIN2API (= není retrofitnuté pro FormToRunGetter) = červená — to je rozchod, který
-    /// má programátor vidět; launchovatelné = beze změny.
+    /// má být vidět; launchovatelné = beze změny.
     /// </summary>
     internal static class ModuleLaunchabilityCheck
     {
@@ -97,4 +96,3 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         }
     }
 }
-#endif

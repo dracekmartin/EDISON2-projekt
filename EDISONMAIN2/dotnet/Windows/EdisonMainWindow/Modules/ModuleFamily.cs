@@ -12,7 +12,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         /// <summary>
         /// Hex barva (<c>"#RRGGBB"</c>) pro Foreground rodiny ve stromu; "" = výchozí barva tématu.
-        /// V autorovaných datech vždy "" — nastavuje ji runtime ModuleLaunchabilityCheck (DEBUG)
+        /// V autorovaných datech vždy "" — nastavuje ji runtime ModuleLaunchabilityCheck
         /// agregací stavu dětí (sbalená rodina pak signalizuje stub/broken bez rozbalení).
         /// </summary>
         public string Color { get; set; } = "";

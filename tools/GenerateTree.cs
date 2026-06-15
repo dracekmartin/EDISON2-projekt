@@ -103,7 +103,7 @@ void EmitNode(XElement node, int depth)
         string exe = ov.exe ?? "";
         string fqn = ov.fqn ?? "";
         string input = ov.input is { Length: > 0 } ? ov.input : xmlInput;
-        // Barvu (stub/broken) NEautorujeme — odvozuje ji runtime ModuleLaunchabilityCheck (DEBUG)
+        // Barvu (stub/broken) NEautorujeme — odvozuje ji runtime ModuleLaunchabilityCheck
         // z exe/launchovatelnosti. Tree.cls = čistá data.
         string color = "";
 
