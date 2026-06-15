@@ -1,0 +1,11 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ma="clr-namespace:EDControls.MiniApps">
+
+    <!-- DataTemplate pro lightweight mini-apps. Agendy si přidávají vlastní DataTemplate
+         (VM → View) do svých ResourceDictionary mergnutých v App.xaml. -->
+    <DataTemplate DataType="{x:Type ma:SimpleMiniAppViewModel}">
+        <ma:SimpleMiniAppView/>
+    </DataTemplate>
+
+</ResourceDictionary>
