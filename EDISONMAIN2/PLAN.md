@@ -164,24 +164,15 @@ Reference: [RESPONSIBILITIES § 3.5, 3.9](RESPONSIBILITIES.md), legacy `frmNoMDI
 
 ### 3. Reconnect UX + save-and-exit dialog + `OnBeforeLogout` event
 
-**Stav:** Open
+**Stav:** Nepotřebné (zrušeno 2026-06-15). Velká část (save-and-exit / drafts / `OnBeforeLogout` / resume) je aspirativní bez validovaného user story — neimplementovat. Malé reálné jádro viz níže.
 
-**CO:** Když server odhlásí klienta (force-logout od admina, timeout, výpadek spojení, expirace zámku), dnešní EDISONMAIN2 reaguje hláškou *"Spojení se serverem bylo přerušeno"* a okamžitě `Shutdown()`. Uživatel ztratí rozdělanou práci ve všech otevřených modulech.
+**Proč zrušeno:** Není to legacy parita ani uživatelský požadavek. Legacy `EDISONMAIN` **nemá nic** z toho — RESPONSIBILITIES §3.9 doslova: *„Ukládání rozdělané práce: NEEXISTUJE"*, *„Žádný `OnBeforeLogout` callback"*, *„Resume session: NEEXISTUJE"* (abrupt flow je ve starém shellu ještě brutálnější — `MessageBox` → zavři, bez uložení layoutu i bez uvolnění zámků). Požadavek vznikl z legacy-audit poznámky v RESPONSIBILITIES §3.10 („Musí vylepšit"), což je **studnice nápadů, ne kanonická spec** (PLAN principy #8 YAGNI + #10 předprodukce). PLAN dříve tvrdil *„první stížnostní bod po nasazení"* — to byla predikce, ne stížnost; EDISONMAIN2 zatím nikde neběží. Stavět 2-4 týdny infrastruktury (draft úložiště, cross-process `OnBeforeLogout` kontrakt pro legacy `.exe`, resume) pro predikovaný problém = přesně to, před čím YAGNI hlídka varuje.
 
-**PROČ:** Největší UX hole dnes. Legacy `EDISONMAIN` má sice tray countdown notifikaci u cooperative logoutu (viz feature #2), ale ztrátu rozdělané práce taky neřeší. Po reálném produkčním nasazení bude tohle jeden z prvních stížnostních bodů.
+**Malé reálné jádro (jediné, co je legitimní — řešit jen pokud se ukáže regrese):** ověřit, že EDISONMAIN2 při abrupt-logoutu (`EdisonActivityFailed`) uvolňuje business zámky (`LockClear`) a ukládá layout oken. Legacy to v abrupt větvi nedělá; pokud to neděláme my taky, je to konkrétní bod ke spravení **nezávislý** na celém draft/resume aparátu. Tohle je pár hodin, ne týdny.
 
-**Co to obnáší (high-level):**
+**Re-aktivace:** Velkou část otevřít jen když z pilotu přijde **reálná** stížnost na ztrátu rozdělané práce — pak teprve s konkrétním user story (které moduly, jaká práce, jak často).
 
-- Modální dialog při ztrátě spojení s volbami "uložit / prodloužit / zahodit".
-- Mechanismus, jakým moduly dostanou šanci uložit rozdělanou práci (forma kontraktu k diskusi).
-- Persistence drafts (kam — Caché global / lokální FS / per-modul, k diskusi).
-- Resume session — po re-loginu nabídnout obnovu otevřených oken a drafts.
-
-**Priorita #3 protože:** největší pilot user pain, ale velké úsilí (~2-4 týdny) — proto je až za #1/#2 (rychlé wins).
-
-**Otevřené otázky:** kontrakt `OnBeforeLogout` (sync vs. async)? Kam ukládat drafts? Jak detekovat ztrátu připojení proaktivně, ne až při dalším requestu? Vázáno na feature #2.
-
-Reference: [RESPONSIBILITIES § 2.6, 3.9-3.10](RESPONSIBILITIES.md) (idea pool).
+Reference: [RESPONSIBILITIES § 2.6, 3.9-3.10](RESPONSIBILITIES.md) (idea pool — neověřené).
 
 ### 4. Lokalizační infrastructure (Caché-driven)
 
@@ -195,7 +186,7 @@ Reference: [RESPONSIBILITIES § 2.6, 3.9-3.10](RESPONSIBILITIES.md) (idea pool).
 
 Důsledek: nový kód se píše už správně (přes resource klíče místo string literálů). Pokud zákazník přijde, je to "doplnit překlad", ne "refactorovat aplikaci".
 
-**Priorita #4 protože:** dělat dřív než se rozšíří hardcoded čeština víc. Po #3 (save-and-exit) hodně přibyde stringů (dialog texty, error messages atd.) — chceme aby se psaly už proti i18n infrastruktuře.
+**Priorita #4 protože:** dělat dřív než se rozšíří hardcoded čeština víc. Každá další featura přidá stringy (dialog texty, error messages atd.) — chceme aby se psaly už proti i18n infrastruktuře, ne aby se pak hromadně refactorovaly.
 
 **Volby k diskusi při implementaci:** konkrétní API tvar service, jak řešit `EDFooter` / `EDToolbar` / dynamic stringy v VM, jestli reuse legacy backendu nebo nový endpoint.
 
