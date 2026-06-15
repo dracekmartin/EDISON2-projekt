@@ -59,9 +59,16 @@ rm -f "$TMPFILE"
 
 [ "$HTTP" -lt 200 ] || [ "$HTTP" -ge 300 ] && { echo "Upload failed ${DOC_NAME}: HTTP ${HTTP}" >&2; exit 0; }
 
-# Compile
-curl -s -X POST -H "Content-Type: application/json" \
+# Compile — zachytit odpověď a vypsat compile chyby (Atelier status.errors[]).
+# Bez tohohle se syntax chyby tiše ztrácely (>/dev/null) a projevily se až za běhu.
+COMPILE_RESP=$(curl -s -X POST -H "Content-Type: application/json" \
   -u "${USER}:${PASS}" -d "[\"${DOC_NAME}\"]" \
-  "${API}/action/compile" > /dev/null
+  "${API}/action/compile?flags=cuk")
+
+case "$COMPILE_RESP" in
+  *'"errors":[]'*) ;;                                            # čistý compile
+  *'"status":{"errors":null'*) ;;                               # čistý compile (alt. tvar)
+  *) echo "Compile error ${DOC_NAME}: ${COMPILE_RESP}" >&2 ;;   # chyby → na stderr
+esac
 
 exit 0
