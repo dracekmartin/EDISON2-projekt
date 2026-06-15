@@ -10,6 +10,7 @@ ROUTINE EDInputForm [Type=INC]
 #define FieldTypeFile    "FILE"
 #define FieldTypeColor   "COLOR"
 #define FieldTypeComboBox "COMBOBOX"
+#define FieldTypeImage   "IMAGE"
 #define FileFilterFolder "$FOLDER"
 
 #define ListItemSep      "|"

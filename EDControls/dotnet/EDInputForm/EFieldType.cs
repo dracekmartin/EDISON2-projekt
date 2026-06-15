@@ -28,7 +28,14 @@ namespace EDControls.EDInputForm
         /// `&lt;input list="..."&gt;` nebo Material UI Select vs Autocomplete.
         /// </para>
         /// </summary>
-        ComboBox
+        ComboBox,
+        /// <summary>
+        /// Obrázek — <see cref="Field.Value"/> drží Base64 string (PNG/JPG). UI zobrazuje
+        /// náhled + tlačítko „Nahrát…" (otevře file dialog) + „×" (vymazat). Výběr souboru a
+        /// převod na Base64 (vč. downscale) řeší host přes <c>EDInputForm.PickImageImpl</c>
+        /// (analogie <c>PickColorImpl</c>) — EDControls nemá obrázkové zpracování.
+        /// </summary>
+        Image
     }
 
     public static class EFieldTypeWire
@@ -43,6 +50,7 @@ namespace EDControls.EDInputForm
         private const string FileWire = "FILE";
         private const string ColorWire = "COLOR";
         private const string ComboBoxWire = "COMBOBOX";
+        private const string ImageWire = "IMAGE";
 
         public static string ToWire(this EFieldType type) => type switch
         {
@@ -55,6 +63,7 @@ namespace EDControls.EDInputForm
             EFieldType.File     => FileWire,
             EFieldType.Color    => ColorWire,
             EFieldType.ComboBox => ComboBoxWire,
+            EFieldType.Image    => ImageWire,
             _                   => TextWire
         };
 
@@ -69,6 +78,7 @@ namespace EDControls.EDInputForm
             FileWire     => EFieldType.File,
             ColorWire    => EFieldType.Color,
             ComboBoxWire => EFieldType.ComboBox,
+            ImageWire    => EFieldType.Image,
             _            => EFieldType.Text
         };
     }

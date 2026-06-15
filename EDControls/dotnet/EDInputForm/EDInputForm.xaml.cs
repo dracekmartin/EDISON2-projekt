@@ -517,6 +517,35 @@ namespace EDControls.EDInputForm
             if (!string.IsNullOrEmpty(newHex)) field.Value = newHex;
         }
 
+        /// <summary>
+        /// Implementace výběru obrázku. Host (TemplateDesigner) musí nastavit — EDControls
+        /// nemá obrázkové zpracování (file dialog + downscale + Base64). Vrací Base64 string
+        /// nového obrázku, nebo null pokud uživatel zrušil. Analogie <see cref="PickColorImpl"/>.
+        /// TD wire-up: <c>EDInputForm.PickImageImpl = owner => ImageUploadHelper.PickBase64(owner);</c>
+        /// Když null, tlačítko „Nahrát…" nic neudělá.
+        /// </summary>
+        public static Func<Window, string?>? PickImageImpl { get; set; }
+
+        private void ImageField_PickClick(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            if (!field.Editable) return;
+            if (PickImageImpl is null) return; // No-op pokud host neregistroval
+
+            var owner = Window.GetWindow(this);
+            if (owner is null) return;
+
+            string? base64 = PickImageImpl(owner);
+            if (!string.IsNullOrEmpty(base64)) field.Value = base64;
+        }
+
+        private void ImageField_ClearClick(object sender, RoutedEventArgs e)
+        {
+            if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
+            if (!field.Editable) return;
+            field.Value = "";
+        }
+
         private void FileField_BrowseClick(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;

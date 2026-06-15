@@ -73,6 +73,23 @@ public partial class App : Application
         EDControls.EDInputForm.EDInputForm.PickColorImpl =
             (owner, hex) => TemplateDesigner.Controls.ColorPickerHelper.PickColor(owner, hex);
 
+        // EDInputForm Image field — file dialog + downscale → Base64. EDControls nemá obrázkové zpracování.
+        EDControls.EDInputForm.EDInputForm.PickImageImpl = owner =>
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = "Vybrat obrázek",
+                Filter = "Obrázky (*.png;*.jpg;*.jpeg;*.bmp;*.gif)|*.png;*.jpg;*.jpeg;*.bmp;*.gif|Všechny soubory (*.*)|*.*"
+            };
+            if (dlg.ShowDialog(owner) != true) return null;
+            try
+            {
+                var bytes = System.IO.File.ReadAllBytes(dlg.FileName);
+                return TemplateDesigner.Models.Elements.ImageElement.EncodeAndResize(bytes);
+            }
+            catch { return null; }
+        };
+
         // Wave 2 (W2-1): registr agend — Caché auto-discovery z BaseAgenda subclasses.
         // Sync wait do 3s — pokud propadne, MainWindow startuje jen s GENERAL agendou
         // (fallback v CacheAgendaRegistry). Cold-start Caché HTTP je dominantní, warm calls 50ms.
