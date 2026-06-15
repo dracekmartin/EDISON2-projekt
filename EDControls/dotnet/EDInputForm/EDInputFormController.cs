@@ -113,8 +113,20 @@ public class EDInputFormController(IMLRest mlRest, string cacheClass)
 
     private void ApplyOutput(CVar output)
     {
+        // Image pole se na server neposílají (viz SerializeItemsCVar) — server by je echem
+        // přepsal prázdnem. Zachovat jejich client-side hodnotu (Base64) přes round-trip.
+        var preservedImages = Items.OfType<Field>()
+            .Where(f => f.FieldType == EFieldType.Image && !string.IsNullOrEmpty(f.Value))
+            .ToDictionary(f => f.Key, f => f.Value!);
+
         Items = EDInputForm.ParseItems(output);
         HelpTextMode = EDInputForm.ParseHelpTextMode(output);
+
+        if (preservedImages.Count > 0)
+            foreach (var f in Items.OfType<Field>())
+                if (f.FieldType == EFieldType.Image && preservedImages.TryGetValue(f.Key, out var v))
+                    f.Value = v;
+
         StateChanged?.Invoke();
     }
 }

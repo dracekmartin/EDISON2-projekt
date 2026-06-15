@@ -237,7 +237,10 @@ namespace EDControls.EDInputForm
                     Field f => new CList(
                         "FIELD", f.Number, f.Key, f.Label,
                         f.FieldType.ToWire(),
-                        f.Value ?? "",
+                        // Image hodnota (velký Base64) se NIKDY neposílá na server — MLRest
+                        // StreamToGlobal to neukočíruje (<SYNTAX>/limit) a obrázek se server-side
+                        // nevaliduje. Drží se jen client-side (viz EDInputFormController.ApplyOutput).
+                        f.FieldType == EFieldType.Image ? "" : (f.Value ?? ""),
                         f.ValidateOnChange ? "1" : "0",
                         f.Required ? "1" : "0",
                         f.ValidationError ?? "",
