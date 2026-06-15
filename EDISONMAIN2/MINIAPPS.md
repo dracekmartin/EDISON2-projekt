@@ -60,10 +60,9 @@ public abstract class EDMiniAppViewModel : EDViewModel
     protected override string? PersistedFormId => null;   // layout drží AvalonDock
     public abstract string Title { get; }
     public virtual ImageSource? Icon => null;
-    public event Action? RequestClose;                     // VM si řekne o zavření v docku
-    protected void CloseSelf() => RequestClose?.Invoke();
-    protected internal virtual void OnOpened() { }         // shell volá po namountování
-    protected internal virtual void OnClosed() { }         // shell volá při zavření / switchi firmy
+    protected void CloseSelf() => CloseDialog();           // reuse base RequestClose (Action<bool?>)
+    public virtual void OnOpened() { }                     // MiniAppManager volá po namountování
+    public virtual void OnClosed() { }                     // MiniAppManager volá při zavření / switchi firmy
 }
 
 public sealed record MiniAppDescriptor(
