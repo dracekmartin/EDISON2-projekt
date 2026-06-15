@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:avalonDock="https://github.com/Dirkster99/AvalonDock"
         xmlns:local="clr-namespace:EDISONMAIN2"
         xmlns:designTime="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData"
         xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules"
@@ -175,14 +176,19 @@
             </TabControl>
         </Grid>
         <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <Grid Grid.Column="2" Grid.Row="1" >
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-        </Grid>
+        <!-- Hostitel miniaplikací. Skeleton (commit 3) — dočasný hardcoded panel pro ověření
+             dock/float + single-file publish. Obsah řídí MiniAppManager (commit 4+). -->
+        <avalonDock:DockingManager Grid.Column="2" Grid.Row="1">
+            <avalonDock:LayoutRoot>
+                <avalonDock:LayoutPanel Orientation="Horizontal">
+                    <avalonDock:LayoutAnchorablePane>
+                        <avalonDock:LayoutAnchorable Title="MiniApp skeleton" ContentId="skeleton">
+                            <TextBlock Text="AvalonDock skeleton — dock/float OK" Margin="8" TextWrapping="Wrap"/>
+                        </avalonDock:LayoutAnchorable>
+                    </avalonDock:LayoutAnchorablePane>
+                </avalonDock:LayoutPanel>
+            </avalonDock:LayoutRoot>
+        </avalonDock:DockingManager>
         <GridSplitter Grid.Column="3" Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <Grid Grid.Column="4" Grid.Row="1" Visibility="{Binding BoardsVisibility}">
             <wv2:WebView2 Source="https://www.m-line.cz/Nastenka1.html" />
