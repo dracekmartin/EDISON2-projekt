@@ -68,6 +68,9 @@ public partial class ElementEditDialog : Window
             var newVal = field.Value ?? "";
             // Change detection proti pre-filled hodnotě — user reálně editoval?
             if (newVal == _preFilled.GetValueOrDefault(path, "")) continue;
+            // Virtuální driver pole (klíč není property cíle, např. "Format"/"Orientation"
+            // řídící Validate) — neaplikovat, nevytvářet command.
+            if (!ElementPropertyAccessor.Exists(_target, path)) continue;
 
             // oldVal = aktuální raw hodnota property (pro undo — "" pokud byla null)
             var oldVal = ElementPropertyAccessor.Get(_target, path);

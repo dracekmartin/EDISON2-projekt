@@ -1444,8 +1444,12 @@ public partial class MainWindow : Window
 
     private void OpenPropertiesForPage(Template template)
     {
-        _propsVm!.PrepareForPage(template);
-        new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
+        var dlg = new ElementEditDialog(
+            template,
+            "ALVA.TemplateDesigner.EDInputForm.PageEdit",
+            "Vlastnosti stránky") { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+            _vm!.Execute(dlg.ResultCommand);
         UpdateCanvasSize();
         InvalidateCanvas();
         InvalidatePreview();
