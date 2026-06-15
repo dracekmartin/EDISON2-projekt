@@ -1,10 +1,7 @@
 using System.Collections.Generic;
-using System.Linq;
 using System.Windows;
-using EDControls.EDInputForm;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
-using TemplateDesigner.Models;
 
 namespace TemplateDesigner;
 
@@ -13,7 +10,7 @@ namespace TemplateDesigner;
 /// Form layout (pole, skupiny, labely, validace) je definovaný server-side v Caché schema
 /// classe; klíč pole = property path na cílovém objektu (dot notation, např. "Style.FontSize").
 ///
-/// Pre-fill i extract jdou přes <see cref="ElementPropertyAccessor"/> (reflexe) — žádný
+/// Pre-fill i extract jdou přes <see cref="ElementFormBinder"/> (reflexe) — žádný
 /// per-typ kód. Změny se zabalí do <see cref="ResultCommand"/> (CompositeCommand
 /// ze SetPropertyCommandů) pro undo/redo. Caller vykoná přes DesignerState.Execute.
 /// </summary>
@@ -24,7 +21,7 @@ public partial class ElementEditDialog : Window
     // Hodnoty nastavené při pre-fillu — change detection proti nim (ne proti raw property),
     // takže no-edit + OK nevytvoří žádný command (řeší nullable "inherit" props zobrazené
     // jako Caché schema default).
-    private readonly Dictionary<string, string> _preFilled = [];
+    private Dictionary<string, string> _preFilled = [];
 
     public IDesignerCommand? ResultCommand { get; private set; }
 
@@ -45,15 +42,7 @@ public partial class ElementEditDialog : Window
 
     private void OnFormInitialized()
     {
-        foreach (var field in (TheForm.Items ?? []).OfType<Field>())
-        {
-            var reflected = ElementPropertyAccessor.Get(_target, field.Key);
-            // Pokud property má hodnotu → zobraz ji. Pokud null/prázdná → nech Caché schema
-            // default (řeší nullable "inherit" properties, např. Style.FontSize z loaded JSON).
-            var display = !string.IsNullOrEmpty(reflected) ? reflected : (field.Value ?? "");
-            field.Value = display;
-            _preFilled[field.Key] = display;
-        }
+        _preFilled = ElementFormBinder.Prefill(TheForm, _target);
         TheForm.Validate();
     }
 
@@ -61,24 +50,7 @@ public partial class ElementEditDialog : Window
     {
         if (!TheForm.Save()) return;
 
-        var commands = new List<IDesignerCommand>();
-        foreach (var field in (TheForm.Items ?? []).OfType<Field>())
-        {
-            var path = field.Key;
-            var newVal = field.Value ?? "";
-            // Change detection proti pre-filled hodnotě — user reálně editoval?
-            if (newVal == _preFilled.GetValueOrDefault(path, "")) continue;
-            // Virtuální driver pole (klíč není property cíle, např. "Format"/"Orientation"
-            // řídící Validate) — neaplikovat, nevytvářet command.
-            if (!ElementPropertyAccessor.Exists(_target, path)) continue;
-
-            // oldVal = aktuální raw hodnota property (pro undo — "" pokud byla null)
-            var oldVal = ElementPropertyAccessor.Get(_target, path);
-            commands.Add(new SetPropertyCommand(
-                field.Label, oldVal, newVal,
-                v => ElementPropertyAccessor.Set(_target, path, (string?)v)));
-        }
-
+        var commands = ElementFormBinder.ExtractCommands(TheForm, _target, _preFilled);
         ResultCommand = commands.Count switch
         {
             0 => null,

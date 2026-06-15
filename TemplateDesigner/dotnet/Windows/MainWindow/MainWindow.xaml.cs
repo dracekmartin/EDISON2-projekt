@@ -1390,30 +1390,20 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var undoDepth = _vm!.State.UndoStack.Count;
-
-        var generalDescriptors = element.GetPropertyDescriptors()
-            .Where(d => d is not Models.ButtonPropertyDescriptor)
-            .ToList();
-
-        var dlg = new StopColumnsEditorDialog(
-            element,
-            generalDescriptors,
-            cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
-            { Owner = this };
+        var dlg = new StopColumnsEditorDialog(element) { Owner = this };
 
         if (dlg.ShowDialog() == true)
         {
-            _vm.Execute(new Commands.Implementations.SetPropertyCommand(
+            // Tab „Obecné" (EDInputForm) + sloupce — vykonat jako jeden undo krok.
+            var cmds = new List<Commands.IDesignerCommand>();
+            if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
+            cmds.Add(new Commands.Implementations.SetPropertyCommand(
                 "Sloupce zastávek", element.Columns, dlg.ResultColumns,
                 v => element.Columns = (List<StopColumn>)v!));
-        }
-        else
-        {
-            // Cancel — vrátit změny z obecného tabu
-            while (_vm.State.UndoStack.Count > undoDepth)
-                _vm.State.Undo();
+
+            _vm!.Execute(cmds.Count == 1
+                ? cmds[0]
+                : new Commands.Implementations.CompositeCommand("Nastavení zastávek", cmds));
         }
 
         InvalidateCanvas();

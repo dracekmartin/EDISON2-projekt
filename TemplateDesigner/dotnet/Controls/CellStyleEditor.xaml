@@ -201,7 +201,7 @@
              ← = push text left = PaddingRight (shrink z pravá) -->
         <StackPanel Orientation="Horizontal" Margin="0,0,0,4"
                     Visibility="{Binding EditOptions.AllowPadding, ElementName=Root, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="Padding (mm):" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBlock Text="Vnitřní okraj (mm):" VerticalAlignment="Center" Margin="0,0,6,0"/>
 
             <TextBlock Text="↑" VerticalAlignment="Center" Margin="0,0,2,0"
                        ToolTip="Posune text nahoru (padding zdola)"/>
