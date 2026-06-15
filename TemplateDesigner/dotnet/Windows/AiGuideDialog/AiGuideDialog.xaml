@@ -1,0 +1,114 @@
+<UserControl x:Class="TemplateDesigner.Windows.AiGuideDialog.AiGuidePanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DockPanel Margin="6">
+        <!-- Vstup + akce dole -->
+        <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                BorderThickness="0,1,0,0" Padding="0,6,0,0" Margin="0,6,0,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBox Grid.Row="0"
+                         x:Name="InputTextBox"
+                         Text="{Binding Input, UpdateSourceTrigger=PropertyChanged}"
+                         IsEnabled="{Binding IsNotBusy}"
+                         Padding="6" Margin="0,0,0,6"
+                         VerticalContentAlignment="Center"
+                         ToolTip="Napiš dotaz a stiskni Enter"/>
+
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Button Grid.Column="0"
+                            Content="Vyčistit"
+                            Command="{Binding ClearCommand}"
+                            Padding="10,4"/>
+
+                    <Button Grid.Column="2"
+                            Content="Odeslat"
+                            Command="{Binding AskCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            Padding="14,4"
+                            IsDefault="True"/>
+                </Grid>
+            </Grid>
+        </Border>
+
+        <!-- Indikátor práce -->
+        <ProgressBar DockPanel.Dock="Bottom" Height="3" IsIndeterminate="True" Margin="0,6,0,0">
+            <ProgressBar.Style>
+                <Style TargetType="ProgressBar">
+                    <Setter Property="Visibility" Value="Collapsed"/>
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                            <Setter Property="Visibility" Value="Visible"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </ProgressBar.Style>
+        </ProgressBar>
+
+        <!-- Konverzace -->
+        <ScrollViewer x:Name="ChatScroll" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding Messages}">
+                <ItemsControl.Template>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <Grid>
+                            <!-- Nápověda když je prázdno -->
+                            <TextBlock Text="Zeptej se na ovládání aplikace — např. „jak změním font textu“ nebo „kde nastavím sloupce tabulky“."
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                       FontSize="11" TextWrapping="Wrap" Margin="4">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Messages.Count}" Value="0">
+                                                <Setter Property="Visibility" Value="Visible"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <ItemsPresenter/>
+                        </Grid>
+                    </ControlTemplate>
+                </ItemsControl.Template>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,6" Padding="8" CornerRadius="6"
+                                Background="{DynamicResource EDTheme.Bg.InfoBanner}">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsUser}" Value="True">
+                                            <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Footer}"/>
+                                            <Setter Property="Margin" Value="20,0,0,6"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsUser}" Value="False">
+                                            <Setter Property="Margin" Value="0,0,20,6"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Sender}" FontSize="10" FontWeight="SemiBold"
+                                           Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,0,0,3"/>
+                                <TextBox Text="{Binding Text, Mode=OneWay}"
+                                         IsReadOnly="True" BorderThickness="0" Background="Transparent"
+                                         TextWrapping="Wrap" Padding="0"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

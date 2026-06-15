@@ -293,6 +293,11 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             .Where(vm => vm.SkupinaDnuId != HourColumnId)
             .Select(vm => vm.ToModel())
             .ToList();
+
+        // Pozn.: per-column typografii záhlaví (font/velikost/řez) ignoruje render
+        // (DepartureGridElement.WithParentHeaderTypography) — element-level je autoritativní.
+        // Per-column nese jen barvy a zarovnání. Není potřeba nic mazat.
+
         CloseDialog(true);
     }
 }

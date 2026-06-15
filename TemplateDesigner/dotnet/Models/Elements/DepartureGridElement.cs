@@ -199,9 +199,8 @@ public class DepartureGridElement : ScheduleElementBase
         // Font pro měření textu záhlaví (default, přepíše se per-column)
         float effectiveMmToPx = mmToPx > 0 ? mmToPx : 3.78f;
 
-        // Per-column header font lookup pro měření i wrapping (resolves __INDEX_ keys)
-        var groupIds = targetSkupiny.Select(s => s.Id).ToList();
-        var colFontLookup = GroupColumnIndexResolver.BuildHeaderFontLookup(GroupColumns, groupIds);
+        // Font záhlaví je element-uniformní (typografie se per-column nepřebíjí — viz
+        // WithParentHeaderTypography), proto měření i výšky řádků počítáme z element fontu.
         float defaultHeaderFontPt = HeaderStyle.FontSize ?? 9f;
 
         var groupLayouts = new List<GroupLayout>();
@@ -214,10 +213,8 @@ public class DepartureGridElement : ScheduleElementBase
             if (sk.Nadpis2.Length > 0) fullName += " " + sk.Nadpis2;
             var words = fullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
-            // Per-column font pro měření minimální šířky
-            colFontLookup.TryGetValue(sk.Id, out var colFontPt);
-            float fontPt = colFontPt ?? defaultHeaderFontPt;
-            float fontPx = fontPt * PtToMm * effectiveMmToPx;
+            // Element font pro měření minimální šířky
+            float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var measureFont = new SKFont(
                 GetTypeface(HeaderStyle.FontFamily, SKFontStyle.Bold), fontPx);
 
@@ -294,10 +291,8 @@ public class DepartureGridElement : ScheduleElementBase
                 return g with { HeaderLines = lines };
             }
 
-            // Single-nadpis: word-wrap přes celý text, všechny řádky Line 1
-            colFontLookup.TryGetValue(g.Skupina.Id, out var colFontPt);
-            float fontPt = colFontPt ?? defaultHeaderFontPt;
-            float fontPx = fontPt * PtToMm * effectiveMmToPx;
+            // Single-nadpis: word-wrap přes celý text, všechny řádky Line 1 (element font)
+            float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
                 GetTypeface(HeaderStyle.FontFamily, SKFontStyle.Bold), fontPx);
             var wrapped = WrapHeaderText(g.Skupina.Nadpis, g.GroupWidth, wrapFont, effectiveMmToPx);
@@ -312,17 +307,15 @@ public class DepartureGridElement : ScheduleElementBase
         float rowH = DataRowHeight ?? ComputeRowH(effFontSize);
         float headerH = ComputeHeaderH(effHeaderFontSize);
 
-        // Výška řádku záhlaví — Line 1 (HeaderStyle / per-column font), Line 2 (HeaderLine2Style, element-level).
+        // Výška řádku záhlaví — Line 1 (element font), Line 2 (HeaderLine2Style, element-level).
         // Per-group celková výška = součet výšek jeho řádků (různé výšky pro Line 1 a Line 2).
         float line2FontPt = HeaderLine2Style?.FontSize ?? defaultHeaderFontPt;
         float line2LineH = Math.Max(SkupinaDnuHeaderLineHeight, line2FontPt * PtToMm * 1.5f);
 
+        float line1LineH = Math.Max(SkupinaDnuHeaderLineHeight, defaultHeaderFontPt * PtToMm * 1.5f);
         float maxGroupBlockH = 0f;
         foreach (var g in finalGroups)
         {
-            colFontLookup.TryGetValue(g.Skupina.Id, out var colFontPt);
-            float line1FontPt = colFontPt ?? defaultHeaderFontPt;
-            float line1LineH = Math.Max(SkupinaDnuHeaderLineHeight, line1FontPt * PtToMm * 1.5f);
 
             float blockH = 0f;
             foreach (var hl in g.HeaderLines)
@@ -403,11 +396,29 @@ public class DepartureGridElement : ScheduleElementBase
         return p;
     }
 
-    /// <summary>Vyřeší styl záhlaví sloupce hodin.</summary>
+    /// <summary>
+    /// Typografie záhlaví odjezdů je element-uniformní — per-column sloupce nesou jen barvy
+    /// a zarovnání (per-skupina barva), ne font/velikost/řez. Vrátí resolved styl, kde
+    /// typografická pole jsou vždy z element-level rodiče. Tím element-level ovladače (velikost,
+    /// tučné, …) vždy fungují, i když má sloupec zapečený starý per-column typografický override.
+    /// </summary>
+    private static ResolvedTextStyle WithParentHeaderTypography(ResolvedTextStyle resolved, ResolvedTextStyle parent) =>
+        resolved with
+        {
+            FontFamily    = parent.FontFamily,
+            FontSize      = parent.FontSize,
+            Bold          = parent.Bold,
+            Italic        = parent.Italic,
+            Underline     = parent.Underline,
+            Strikethrough = parent.Strikethrough,
+        };
+
+    /// <summary>Vyřeší styl záhlaví sloupce hodin (typografie element-uniformní).</summary>
     private ResolvedTextStyle ResolveHourHeaderStyle()
     {
         var parent = ResolveHourHeaderParent();
-        return HourColumnStyle?.Header is { } h ? h.Resolve(parent) : parent;
+        var resolved = HourColumnStyle?.Header is { } h ? h.Resolve(parent) : parent;
+        return WithParentHeaderTypography(resolved, parent);
     }
 
     /// <summary>Vyřeší styl datové buňky sloupce hodin.</summary>
@@ -417,11 +428,12 @@ public class DepartureGridElement : ScheduleElementBase
         return HourColumnStyle?.Data is { } d ? d.Resolve(parent) : parent;
     }
 
-    /// <summary>Vyřeší styl záhlaví skupiny dnů.</summary>
+    /// <summary>Vyřeší styl záhlaví skupiny dnů (typografie element-uniformní, per-column jen barvy/zarovnání).</summary>
     private ResolvedTextStyle ResolveGroupHeaderStyle(DepartureGroupColumnStyle? cs)
     {
         var parent = ResolveGroupHeaderParent();
-        return cs?.Style.Header is { } h ? h.Resolve(parent) : parent;
+        var resolved = cs?.Style.Header is { } h ? h.Resolve(parent) : parent;
+        return WithParentHeaderTypography(resolved, parent);
     }
 
     /// <summary>Vyřeší styl minutové buňky (per-skupina).</summary>
@@ -1191,6 +1203,14 @@ public class DepartureGridElement : ScheduleElementBase
     /// <summary>Lazy-init HeaderLine2Style při prvním nastavení libovolné jeho hodnoty z UI.</summary>
     private TextStyle EnsureHeaderLine2Style() => HeaderLine2Style ??= new TextStyle();
 
+    /// <summary>Nastaví element-level velikost písma záhlaví. Typografie záhlaví je element-uniformní
+    /// (per-column se ignoruje v ResolveGroupHeaderStyle/ResolveHourHeaderStyle), takže stačí set + invalidace cache.</summary>
+    private void SetHeaderFontSize(float v)
+    {
+        HeaderStyle.FontSize = v;
+        _cachedLayout = null;
+    }
+
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         // ── Výchozí styl (základ pro dědění — per-column nastavení ho přepisuje) ──
@@ -1200,7 +1220,10 @@ public class DepartureGridElement : ScheduleElementBase
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Odjezdy", ButtonLabel = "Upravit sloupce...", ActionId = ButtonPropertyDescriptor.ActionOpenDepartureGridEditor },
 
         new BoolPropertyDescriptor  { Label = "Záhlaví skupin",     Group = "Odjezdy", Get = () => ShowSkupinaDnuHeader,       Set = v => ShowSkupinaDnuHeader = v },
-        new FloatPropertyDescriptor { Label = "Výška řádku záhl.",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
+        // Velikost písma záhlaví — přímý ovladač HeaderStyle.FontSize. Bez něj šlo měnit jen
+        // „Výška řádku záhl." (mm), která ale text zvětší jen dokud je FontSize null (legacy derive).
+        new FloatPropertyDescriptor { Label = "Velikost záhlaví",  Group = "Odjezdy", Get = () => HeaderStyle.FontSize ?? 9f,  Set = SetHeaderFontSize, Min = 3, Max = 24, Unit = "pt" },
+        new FloatPropertyDescriptor { Label = "Min. výška řádku",  Group = "Odjezdy", Get = () => SkupinaDnuHeaderLineHeight,  Set = v => SkupinaDnuHeaderLineHeight = v, Min = 2, Max = 10, Unit = "mm" },
         new EnumPropertyDescriptor  { Label = "Zarovnání záhlaví", Group = "Odjezdy",
             Get = () => HeaderVerticalAlignment, Set = v => HeaderVerticalAlignment = (TextVerticalAlignment)v,
             Options = EnumPropertyDescriptor.VAlignOptions },

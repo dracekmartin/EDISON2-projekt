@@ -50,6 +50,9 @@ public class TemplateDesignerViewModel : EDViewModel
     public  CacheAgendaProvider?   CacheProvider         { get; }
     public  ITableTemplateProvider? TableTemplateProvider => CacheProvider;
     public  Services.CacheTemplateService? TemplateStorage { get; }
+
+    /// <summary>Pasivní AI průvodce (záložka v levém panelu). Čte živý kontext při každém dotazu.</summary>
+    public  Windows.AiGuideDialog.AiGuidePanelViewModel AiGuide { get; }
     private readonly SectionTemplateManager _sectionTemplates;
 
     // ── Preview params ────────────────────────────────────────────────────────
@@ -377,6 +380,18 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
         RebuildSections();
+
+        AiGuide = new Windows.AiGuideDialog.AiGuidePanelViewModel(() =>
+        {
+            var code = State.CurrentTemplate.AgendaCode;
+            var name = code is null ? null
+                : SchemaProvider.GetAvailableAgendas()
+                      .FirstOrDefault(a => string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase))?.Name;
+            var selType = State.SelectedElements.Count == 1
+                ? State.SelectedElements[0].GetType().Name : null;
+            return new Windows.AiGuideDialog.AiGuideContext(
+                code, name, selType, State.CurrentTemplate.Sections.Count);
+        });
 
         // Aplikuj loaded MainState na State + VM properties. Volá se po inicializaci State,
         // aby loaded hodnoty přepsaly defaults z DesignerState ctoru.

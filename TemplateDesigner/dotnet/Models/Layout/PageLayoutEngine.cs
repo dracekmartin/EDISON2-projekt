@@ -260,15 +260,20 @@ public class PageLayoutEngine
             }
             else if (section.OverflowBehavior == SectionOverflowBehavior.KeepTogether)
             {
-                // Nová stránka
-                currentPageNum++;
-                currentPage = new Page { PageNumber = currentPageNum };
-                result.Pages.Add(currentPage);
+                // Posunout na novou stránku jen pokud aktuální stránka už něco obsahuje.
+                // Je-li prázdná, sekce se stejně nikam menšího nevejde (je vyšší než celá
+                // tisknutelná oblast) — umístit ji sem, ať nevzniká prázdná úvodní stránka.
+                if (currentPage.Sections.Count > 0)
+                {
+                    currentPageNum++;
+                    currentPage = new Page { PageNumber = currentPageNum };
+                    result.Pages.Add(currentPage);
 
-                headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
-                footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
-                availableHeight = printableHeight - headerH - footerH;
-                cursorY = headerH;
+                    headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
+                    footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
+                    availableHeight = printableHeight - headerH - footerH;
+                    cursorY = headerH;
+                }
 
                 currentPage.Sections.Add(new PlacedSection
                 {
