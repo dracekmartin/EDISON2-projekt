@@ -174,10 +174,11 @@ Záměrně **nerozšiřuje `WindowNavigator`** — ten zůstává v `EDControls`
 legacy procesy, bez docking dependency. Koordinace se shellem jde **explicitními voláními**:
 
 - **Open / Close / track** otevřených instancí mini-apps (multi-instance přes `ContentId`, §3).
-- `CloseAll()` — shell ho volá při zavření → zavolá `OnClosed()` na všech instancích.
-- `OnCompanySwitched()` — `EdisonMainViewModel.RebuildSessionState` ho volá při přepnutí firmy
-  (mění se `MLRest.Idfa`): mini-apps drží stará data → manager **zavře vše a znovuotevře z lokálně
-  uloženého layoutu nové firmy** (§7). Deterministické a čisté.
+- `CloseAll()` — shell ho volá při zavření okna (code-behind `Closed`) → `OnClosed()` na všech.
+- `OnSessionReplaced()` — `EdisonMainViewModel` vyvolá event `SessionReplaced` při **přepnutí
+  firmy i uživatele** (obojí mění `MLRest`/session); code-behind ho napojí na manager. Mini-apps
+  drží data staré session → manager je **zavře** (a od commitu 6 **znovuotevře z lokálně uloženého
+  layoutu** aktuální IDFa, §7). Deterministické a čisté.
 
 Mini-apps **se nezařazují do `WindowNavigator.GetActiveModules()`** (menu „Spuštěné moduly") —
 jsou vidět přímo v docku jako taby/panely, duplikovat je do menu by byl šum. Kdyby to někdy bylo
@@ -296,4 +297,8 @@ Commity 1–2 jdou případně spojit. Commit 3 musí předcházet 4–9 (zaklá
 
 ## 10. Poznámky
 
-> _(sekce pro poznámky během vývoje — doplňovat průběžně)_
+- **Launcher z katalogu + per-firma refresh katalogu** — odloženo z commitu 5. Zatím je v shellu
+  jen dočasný dev launcher v code-behind („Test funkcí → Otevřít test miniapp"), který otevře
+  `SimpleMiniApp`. Plný launcher (menu z `MiniAppCatalog`u stavěného v `AppBootstrapper` z reálných
+  providerů) + jeho gating/refresh podle dostupných modulů přijde s prvním reálným providerem
+  (commit 8 / reálná agenda). Do té doby se `MiniAppManager` vytváří v code-behind shellu.

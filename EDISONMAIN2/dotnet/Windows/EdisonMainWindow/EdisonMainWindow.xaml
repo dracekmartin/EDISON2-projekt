@@ -179,7 +179,8 @@
         <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
              AvalonDockHost nad tímto DockingManagerem). -->
-        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1">
+        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1"
+                                   Visibility="{Binding MiniAppsVisibility}">
             <avalonDock:LayoutRoot>
                 <avalonDock:LayoutPanel Orientation="Horizontal"/>
             </avalonDock:LayoutRoot>

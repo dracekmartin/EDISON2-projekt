@@ -101,6 +101,21 @@ public class MiniAppManagerTests
         Assert.All(host.Panes, p => Assert.True(p.IsClosed));
     }
 
+    [Fact]
+    public void OnSessionReplaced_ClosesAllOpenMiniApps()
+    {
+        var host = new FakeHost();
+        var mgr = new MiniAppManager(host);
+        var d = SampleDescriptor(MockServices());
+        var vm = (TestMiniApp)mgr.Open(d).ViewModel;
+        mgr.Open(d);
+
+        mgr.OnSessionReplaced();
+
+        Assert.Empty(mgr.OpenInstances);
+        Assert.Equal(1, vm.Closed);
+    }
+
     private sealed class TestMiniApp(EDServices services) : EDMiniAppViewModel(services)
     {
         public override string Title => "test";

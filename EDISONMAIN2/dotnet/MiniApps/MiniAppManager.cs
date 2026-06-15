@@ -37,10 +37,16 @@ public sealed class MiniAppManager(IMiniAppHost host)
         return instance;
     }
 
-    /// <summary>Zavře všechny otevřené mini-apps (zavření shellu, přepnutí firmy).</summary>
+    /// <summary>Zavře všechny otevřené mini-apps (zavření shellu).</summary>
     public void CloseAll()
     {
         foreach (var instance in _open.ToList())
             instance.Pane.Close();
     }
+
+    /// <summary>
+    /// Session byla nahrazena (přepnutí firmy/uživatele) — mini-apps drží data staré session,
+    /// tak je zavřeme. Commit 6 sem doplní reopen z lokálně uloženého layoutu nové IDFa.
+    /// </summary>
+    public void OnSessionReplaced() => CloseAll();
 }

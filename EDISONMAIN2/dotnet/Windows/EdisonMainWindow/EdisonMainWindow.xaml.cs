@@ -15,13 +15,24 @@ namespace EDISONMAIN2
     public partial class EdisonMainWindow : Window
     {
         // MiniAppManager žije ve view vrstvě — pracuje s DockingManagerem (view element).
-        private MiniAppManager? _miniAppManager;
+        private readonly MiniAppManager _miniAppManager;
 
         public EdisonMainWindow()
         {
             InitializeComponent();
+            _miniAppManager = new MiniAppManager(new AvalonDockHost(DockManager));
             PreviewKeyDown += OnPreviewKeyDown;
-            Loaded += (_, _) => _miniAppManager ??= new MiniAppManager(new AvalonDockHost(DockManager));
+            Closed += (_, _) => _miniAppManager.CloseAll();
+            Loaded += WireMiniAppSession;
+        }
+
+        // SessionReplaced lze napojit až po nastavení DataContextu (BuildShellWindow ho nastaví
+        // po konstruktoru) — proto na Loaded, a jen jednou.
+        private void WireMiniAppSession(object sender, RoutedEventArgs e)
+        {
+            Loaded -= WireMiniAppSession;
+            if (DataContext is EdisonMainViewModel vm)
+                vm.SessionReplaced += _miniAppManager.OnSessionReplaced;
         }
 
         // Dočasný dev launcher (commit 4). Nahradí ho launcher z katalogu + ShowMiniApps (commit 5).

@@ -66,6 +66,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
 
+        /// <summary>
+        /// Session byla nahrazena (přepnutí firmy nebo uživatele) — MLRest/Idfa se změnily.
+        /// Shell (code-behind) na to zavírá mini-apps, které drží data staré session.
+        /// </summary>
+        public event Action? SessionReplaced;
+
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
             IMLRest mlRest,
@@ -253,6 +259,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 if (result.Outcome == LicenceAcquireOutcome.Accepted)
                 {
                     RebuildSessionState(result.Licence);
+                    SessionReplaced?.Invoke();
                 }
                 else
                 {
@@ -305,6 +312,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
                 case SwitchUserResult.Success:
                     RebuildSessionState(outcome.Licence);
+                    SessionReplaced?.Invoke();
                     // StatusBar identity bindings refreshne na novém MLRest.
                     OnPropertyChanged(nameof(UserName));
                     OnPropertyChanged(nameof(FullName));
@@ -349,8 +357,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
         // Uživatel → Možnosti — toggles uložené do LocalPrefs. Setter persistuje a notifikuje.
-        // ShowWindowsAsDialogs a ShowMiniApps zatím bez behaviorálního efektu (EDISONMAIN2
-        // nemá miniaplikace, dialog mode nikdo nečte) — flagy se ukládají pro budoucnost.
+        // ShowWindowsAsDialogs zatím bez behaviorálního efektu (dialog mode nikdo nečte) — flag
+        // se ukládá pro budoucnost. ShowMiniApps řídí viditelnost dock regionu (MiniAppsVisibility).
         public bool ShowWindowsAsDialogs
         {
             get => _prefs.ShowWindowsAsDialogs;
@@ -372,8 +380,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 _prefs.ShowMiniApps = value;
                 _prefs.Save();
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(MiniAppsVisibility));
             }
         }
+
+        public Visibility MiniAppsVisibility => ShowMiniApps ? Visibility.Visible : Visibility.Collapsed;
 
         public bool LoadBoards
         {
