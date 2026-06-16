@@ -24,7 +24,7 @@
                            FontWeight="Bold"
                            Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                 <TextBlock Text="Popište šablonu, kterou chcete vytvořit, a AI vygeneruje kompletní JSON strukturu."
-                           FontSize="11"
+                           FontSize="12"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap"/>
@@ -85,7 +85,7 @@
                     <ComboBoxItem Content="Faktury" Tag="FAKTURY"/>
                 </ComboBox>
                 <TextBlock Text="Vyberte agendu, pokud chcete použít specifická datová pole."
-                           FontSize="10"
+                           FontSize="11"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap"/>
@@ -100,7 +100,7 @@
                          VerticalScrollBarVisibility="Auto"
                          FontFamily="Segoe UI"
                          Padding="8"/>
-                <TextBlock FontSize="10"
+                <TextBlock FontSize="11"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap">
@@ -115,7 +115,7 @@
                          x:Name="ApiKeyTextBox"
                          FontFamily="Consolas"
                          Padding="8"/>
-                <TextBlock FontSize="10"
+                <TextBlock FontSize="11"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap">

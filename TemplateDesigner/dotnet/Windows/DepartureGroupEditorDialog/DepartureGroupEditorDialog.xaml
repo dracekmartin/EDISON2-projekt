@@ -22,7 +22,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="6">
                         <TextBlock Text="Výchozí styl pro všechny sloupce. V tabu Sloupce můžete nastavení jednotlivých sloupců přepsat."
-                                   FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,0,0,10"
+                                   FontStyle="Italic" Foreground="#888" FontSize="12" Margin="0,0,0,10"
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -112,7 +112,7 @@
                         <StackPanel>
 
                             <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
-                                       FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,0,0,8"/>
+                                       FontStyle="Italic" Foreground="#888" FontSize="12" Margin="0,0,0,8"/>
 
                             <!-- ── Záhlaví ──────────────────── -->
                             <TextBlock Text="Záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>

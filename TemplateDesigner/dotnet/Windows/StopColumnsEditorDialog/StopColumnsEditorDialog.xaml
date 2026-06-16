@@ -64,14 +64,14 @@
                                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Header}" FontWeight="SemiBold"/>
-                                            <TextBlock Text="{Binding Key}" Foreground="#888888" FontSize="10"/>
+                                            <TextBlock Text="{Binding Key}" Foreground="#888888" FontSize="11"/>
                                         </StackPanel>
                                         <Ellipse Grid.Column="2" Width="7" Height="7" Fill="#2196F3"
                                                  Margin="6,0,0,0" VerticalAlignment="Center"
                                                  ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
                                                  Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
                                         <TextBlock Grid.Column="3" VerticalAlignment="Center"
-                                                   Foreground="#888888" FontSize="10" Margin="4,0,0,0"
+                                                   Foreground="#888888" FontSize="11" Margin="4,0,0,0"
                                                    Text="{Binding Width, StringFormat='{}{0} mm'}"/>
                                     </Grid>
                                 </DataTemplate>
@@ -90,7 +90,7 @@
 
                             <!-- Warning při přesahu šířky -->
                             <TextBlock Text="{Binding ColumnOverflowText}"
-                                       Foreground="#C62828" FontSize="11" Margin="0,8,0,0"
+                                       Foreground="#C62828" FontSize="12" Margin="0,8,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
 
@@ -126,7 +126,7 @@
                             <Separator Margin="0,8,0,8"/>
 
                             <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
-                                       FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,0,0,8"/>
+                                       FontStyle="Italic" Foreground="#888" FontSize="12" Margin="0,0,0,8"/>
 
                             <!-- ── Styl záhlaví ──────────────── -->
                             <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>

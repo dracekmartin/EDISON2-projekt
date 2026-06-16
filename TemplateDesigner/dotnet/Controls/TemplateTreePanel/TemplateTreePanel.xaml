@@ -6,7 +6,7 @@
                 BorderBrush="#DDDDDD" BorderThickness="0,0,0,1"
                 Background="#F0F0F0" Padding="8,5">
             <TextBlock Text="Strom šablony — klik = výběr, dvojklik = vlastnosti"
-                       FontSize="10" Foreground="#555555"/>
+                       FontSize="11" Foreground="#555555"/>
         </Border>
         <TreeView x:Name="Tree"
                   BorderThickness="0"
@@ -15,7 +15,7 @@
                   SelectedItemChanged="Tree_SelectedItemChanged"
                   MouseDoubleClick="Tree_MouseDoubleClick"
                   PreviewKeyDown="Tree_PreviewKeyDown"
-                  FontSize="11">
+                  FontSize="12">
             <TreeView.ItemContainerStyle>
                 <Style TargetType="TreeViewItem">
                     <Setter Property="IsExpanded" Value="True"/>
