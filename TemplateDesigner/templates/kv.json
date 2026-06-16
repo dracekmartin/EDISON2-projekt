@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "1.0.0",
   "id": "aa272696-0eaa-4224-85f1-edf235c8817b",
   "name": "kv_zastavkovy",
   "description": "",
@@ -277,9 +277,9 @@
           "gridColor": "#FFD0D0D0",
           "dataRowHeight": 4.8258,
           "id": "d2abbda1-b66b-46ea-ab4d-52b28499ced4",
-          "x": 41.5,
+          "x": 41,
           "y": 18.4,
-          "width": 123,
+          "width": 123.5,
           "height": 113.2,
           "zIndex": 1,
           "isLocked": false,
@@ -496,14 +496,8 @@
       ]
     }
   ],
-  "agendaCode": "MHD",
+  "agendaCode": "ZASTAVKOVY_JR_MHD",
   "parameters": [
-    {
-      "name": "LINKA_ID",
-      "label": "ID linky",
-      "type": "string",
-      "defaultValue": "1230"
-    },
     {
       "name": "TISK_SIPKY",
       "label": "Tisknout \u0161ipky sm\u011Bru",
@@ -555,5 +549,5 @@
     "showGrid": false
   },
   "createdAt": "2026-04-03T12:45:25.4699471Z",
-  "modifiedAt": "2026-05-18T12:37:49.112109Z"
+  "modifiedAt": "2026-06-16T08:30:05.7991983Z"
 }
