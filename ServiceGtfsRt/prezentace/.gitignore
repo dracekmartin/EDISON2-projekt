@@ -1,0 +1,9 @@
+# Python cache
+__pycache__/
+*.pyc
+
+# PowerPoint lock soubory
+~$*.pptx
+
+# Docasne soubory
+*.tmp
