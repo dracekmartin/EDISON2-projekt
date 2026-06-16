@@ -98,14 +98,8 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
     s arr = ##class(%DynamicArray).%New()
 
-    // Vstupní parametr — ID linky (povinný pro GetData)
-    s param = ##class(%DynamicObject).%New()
-    s param.name = "LINKA_ID"
-    s param.label = "ID linky"
-    s param.type = "string"
-    s param.defaultValue = "1230"
-    d arr.%Push(param)
-
+    // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) — viz GetAvailableInstances.
+    // GetData dostává LINKA_ID z pickeru, ne z těchto parametrů.
     d ..AddStandardJRParameters(arr)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()

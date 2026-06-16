@@ -885,8 +885,10 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    // Fallback — manuálně zadaný LINKA_ID v parametrech (legacy chování)
-                    pages = provider.GetData(agendaCode, paramValues);
+                    // Bez vybrané instance nelze tisknout reálná data — linku určuje výhradně
+                    // Instance Picker (parametry sestavy už LINKA_ID neobsahují). Dialog na null
+                    // ukáže "Caché nevrátila žádná data".
+                    pages = null;
                 }
 
                 if (pages is null) return null;

@@ -115,6 +115,7 @@ ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String) As %Dyna
 ClassMethod GetClassForAgenda(agendaCode As %String) As %String
 {
     if agendaCode = "ZASTAVKOVY_JR_MHD" q "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd"
+    if agendaCode = "ZASTAVKOVY_JR_AD"  q "ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd"
     if agendaCode = "FAKTURY"           q "ALVA.TemplateDesigner.Agendy.Faktury"
     q ""
 }

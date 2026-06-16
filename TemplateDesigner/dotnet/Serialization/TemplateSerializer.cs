@@ -73,6 +73,17 @@ public static class TemplateSerializer
     private static readonly TemplateMigrator Migrator = new();
 
     /// <summary>
+    /// Přejmenované agenda kódy: starý kód → aktuální kód v registru.
+    /// Wave 2 (2026-05-20) zavedla konvenci <c>&lt;TYP_SESTAVY&gt;_&lt;ZDROJ&gt;</c> — staré
+    /// šablony uložené s původním <c>"MHD"</c> jinak po loadu nesedí s registrem
+    /// (prázdné instance, prázdná pole agendy, nefunkční data). FAKTURY se neměnilo.
+    /// </summary>
+    private static readonly Dictionary<string, string> LegacyAgendaCodes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["MHD"] = "ZASTAVKOVY_JR_MHD",
+    };
+
+    /// <summary>
     /// Načte šablonu z JSON stringu. Před deserializací aplikuje <see cref="TemplateMigrator"/>
     /// pokud verze v JSON je nižší než <see cref="TemplateMigrator.CurrentVersion"/>.
     /// </summary>
@@ -86,6 +97,16 @@ public static class TemplateSerializer
             var (migrated, wasMigrated, _) = Migrator.Migrate(root);
             var template = migrated.Deserialize<Template>(Options)
                 ?? throw new TemplateDeserializationException("JSON deserializace vrátila null.");
+
+            // Přemapuj přejmenované agenda kódy (legacy "MHD" → "ZASTAVKOVY_JR_MHD").
+            // Mimo verzový pipeline — rename není verzová breaking change v JSON, ale
+            // staré šablony s ním nesedí s registrem. Uložením se canonical kód propíše.
+            if (template.AgendaCode is { } code && LegacyAgendaCodes.TryGetValue(code, out var canonical))
+            {
+                template.AgendaCode = canonical;
+                wasMigrated = true;
+            }
+
             template.WasMigrated = wasMigrated;
             return template;
         }
