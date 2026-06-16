@@ -1712,21 +1712,15 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         SchemaGroups.Clear();
 
+        // Paleta zobrazuje JEN skalární pole (draggable jako {POLE}). Kolekce (Zastávky,
+        // Odjezdy, …) konzumují dedikované elementy (StopList/DepartureGrid/NotesLegend),
+        // ne ad-hoc tabulky — jako draggable pole jen matou. Parametry se nastavují
+        // v preview liště / tiskovém dialogu, ne přetažením. (Rozhodnuto 2026-06-16.)
         var fields = schema?.Fields ?? [];
         if (fields.Count > 0)
             SchemaGroups.Add(new SchemaGroupVM(
-                $"📋 Skalární pole ({fields.Count})",
+                $"📋 Pole agendy ({fields.Count})",
                 fields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
-
-        foreach (var coll in schema?.FieldCollections ?? [])
-            SchemaGroups.Add(new SchemaGroupVM(
-                $"📊 {coll.Name} [{coll.CollectionKey}]",
-                coll.Fields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
-
-        if (_agendaParameters.Count > 0)
-            SchemaGroups.Add(new SchemaGroupVM(
-                $"⚙ Parametry ({_agendaParameters.Count})",
-                _agendaParameters.Select(p => new SchemaFieldVM(p.Name, p.Label + " (parametr)"))));
     }
 
     public void LoadAgendaParameters(string? agendaCode)

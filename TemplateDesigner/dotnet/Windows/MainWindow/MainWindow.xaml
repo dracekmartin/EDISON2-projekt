@@ -576,18 +576,18 @@
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Vlastnosti (inline properties panel) ── -->
-                    <TabItem Header="Vlastnosti" x:Name="TabProperties">
+                    <TabItem Header="✎ Vlastnosti" x:Name="TabProperties">
                         <DockPanel>
                             <controls:FormatToolbar x:Name="FormatToolbar" DockPanel.Dock="Top"/>
                             <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Strom šablony ── -->
-                    <TabItem Header="Strom" x:Name="TabTree">
+                    <TabItem Header="≣ Strom" x:Name="TabTree">
                         <controls:TemplateTreePanel x:Name="TreePanel"/>
                     </TabItem>
                     <!-- ── Záložka AI průvodce ── -->
-                    <TabItem Header="Průvodce" x:Name="TabAiGuide">
+                    <TabItem Header="✦ Průvodce" x:Name="TabAiGuide">
                         <aiguide:AiGuidePanel DataContext="{Binding AiGuide}"/>
                     </TabItem>
                 </TabControl>

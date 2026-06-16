@@ -64,7 +64,6 @@
                                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
                                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                                             <TextBlock Text="{Binding Header}" FontWeight="SemiBold"/>
-                                            <TextBlock Text="{Binding Key}" Foreground="#888888" FontSize="11"/>
                                         </StackPanel>
                                         <Ellipse Grid.Column="2" Width="7" Height="7" Fill="#2196F3"
                                                  Margin="6,0,0,0" VerticalAlignment="Center"
@@ -83,9 +82,7 @@
                                 <Button Content="▲" Width="28" Padding="2,1"
                                         Command="{Binding MoveUpCommand}" Margin="0,0,4,0"/>
                                 <Button Content="▼" Width="28" Padding="2,1"
-                                        Command="{Binding MoveDownCommand}" Margin="0,0,12,0"/>
-                                <Button Content="Výchozí" Padding="6,1"
-                                        Command="{Binding ResetCommand}"/>
+                                        Command="{Binding MoveDownCommand}"/>
                             </StackPanel>
 
                             <!-- Warning při přesahu šířky -->

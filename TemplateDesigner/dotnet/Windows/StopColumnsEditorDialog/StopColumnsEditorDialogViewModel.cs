@@ -151,7 +151,6 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public RelayCommand MoveUpCommand   { get; }
     public RelayCommand MoveDownCommand { get; }
-    public RelayCommand ResetCommand    { get; }
 
     // Color picker commands — záhlaví
     public RelayCommand PickHeaderTextColorCommand { get; }
@@ -185,11 +184,21 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         foreach (var col in columns)
             ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
 
+        // Doplň chybějící známé sloupce (uložená šablona může mít jen podmnožinu) — ať uživatel
+        // vidí VŠECHNY dostupné sloupce a může je zapnout checkboxem, místo aby zmizely z nabídky
+        // a daly se vrátit jen přes "Výchozí". Doplněné jsou skryté (nezmění render, dokud je nezapne).
+        var presentKeys = columns.Select(c => c.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var def in StopListElement.GetDefaultColumns())
+            if (!presentKeys.Contains(def.Key))
+            {
+                def.Visible = false;
+                ColumnVMs.Add(StopColumnVM.FromModel(def, headerInherited, dataInherited));
+            }
+
         if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
 
         MoveUpCommand   = Command(MoveUp);
         MoveDownCommand = Command(MoveDown);
-        ResetCommand    = Command(Reset);
 
         // Color picker commands — záhlaví
         PickHeaderTextColorCommand  = Command(() => PickColor(g => g.HeaderStyle.TextColor, (g, c) => g.HeaderStyle.TextColor = c));
@@ -264,25 +273,6 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         if (SelectedColumnVM is null) return;
         int idx = ColumnVMs.IndexOf(SelectedColumnVM);
         if (idx >= 0 && idx < ColumnVMs.Count - 1) ColumnVMs.Move(idx, idx + 1);
-    }
-
-    private void Reset()
-    {
-        var headerInherited = _element.ResolveColumnHeaderParent();
-        var dataInherited   = _element.ResolveColumnDataParent();
-
-        ColumnVMs.Clear();
-        foreach (var col in StopListElement.GetDefaultColumns())
-        {
-            var vm = StopColumnVM.FromModel(col, headerInherited, dataInherited);
-            vm.PropertyChanged += OnColumnChanged;
-            ColumnVMs.Add(vm);
-        }
-        if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
-
-        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
-        OnPropertyChanged(nameof(HasColumnOverflow));
-        OnPropertyChanged(nameof(ColumnOverflowText));
     }
 
     private void PickColor(Func<StopColumnVM, string?> getter, Action<StopColumnVM, string?> setter)
