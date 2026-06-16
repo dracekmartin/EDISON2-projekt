@@ -587,7 +587,7 @@
                         <controls:TemplateTreePanel x:Name="TreePanel"/>
                     </TabItem>
                     <!-- ── Záložka AI průvodce ── -->
-                    <TabItem Header="✦ Průvodce" x:Name="TabAiGuide">
+                    <TabItem Header="✦ Pomocník" x:Name="TabAiGuide">
                         <aiguide:AiGuidePanel DataContext="{Binding AiGuide}"/>
                     </TabItem>
                 </TabControl>

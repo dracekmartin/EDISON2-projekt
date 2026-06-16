@@ -15,7 +15,7 @@ public class AiGuideMessage
 {
     public required bool IsUser { get; init; }
     public required string Text { get; init; }
-    public string Sender => IsUser ? "Vy" : "Průvodce";
+    public string Sender => IsUser ? "Vy" : "Pomocník";
 }
 
 /// <summary>
