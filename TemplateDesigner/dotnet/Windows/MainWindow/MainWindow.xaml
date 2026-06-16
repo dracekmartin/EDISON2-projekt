@@ -442,12 +442,16 @@
                 <!-- ── 9. Panely ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ToggleButton x:Name="BtnToggleLeftPanel" Style="{StaticResource ToolbarToggle}"
+                                      ToolTip="Skrýt/zobrazit panel sekcí (Ctrl+B)"
+                                      IsChecked="True" Checked="BtnToggleLeftPanel_Changed" Unchecked="BtnToggleLeftPanel_Changed"
+                                      Content="☰" FontSize="14"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
                                       IsChecked="True" Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed">
                             <Image Source="{StaticResource EDIcons.Eye}" Width="16" Height="16"/>
                         </ToggleButton>
                     </StackPanel>
-                    <TextBlock Text="Náhled" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Panely" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
 
             </StackPanel>
@@ -458,7 +462,7 @@
             <Grid.ColumnDefinitions>
                 <!-- Panel sekcí -->
                 <ColumnDefinition x:Name="SectionsColumn" Width="200" MinWidth="120"/>
-                <ColumnDefinition Width="4"/>
+                <ColumnDefinition x:Name="SectionsSplitterColumn" Width="4"/>
                 <!-- Canvas -->
                 <ColumnDefinition x:Name="CanvasColumn" Width="*" MinWidth="300"/>
                 <ColumnDefinition Width="4"/>

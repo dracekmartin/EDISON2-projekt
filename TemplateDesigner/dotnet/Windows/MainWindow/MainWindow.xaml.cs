@@ -304,6 +304,25 @@ public partial class MainWindow : Window
 
         if (pref.ActiveLeftTabIndex >= 0 && pref.ActiveLeftTabIndex < LeftTabControl.Items.Count)
             LeftTabControl.SelectedIndex = pref.ActiveLeftTabIndex;
+
+        // Zoom combo musí odrážet načtený State.Zoom — jinak combo ukazuje 100 %, ale plátno
+        // rendruje na uloženém zoomu (a "1:1" to neopraví, protože index se nezmění).
+        SyncZoomComboBox(_vm?.State.Zoom ?? 1f);
+    }
+
+    /// <summary>Srovná zoom combo na nejbližší úroveň k danému zoomu (a tím i State.Zoom přes SelectionChanged).</summary>
+    private void SyncZoomComboBox(float zoom)
+    {
+        if (CmbZoom is null) return;
+        int best = 2; // 100 %
+        float bestDiff = float.MaxValue;
+        for (int i = 0; i < ZoomLevels.Length; i++)
+        {
+            float d = Math.Abs(ZoomLevels[i] - zoom);
+            if (d < bestDiff) { bestDiff = d; best = i; }
+        }
+        if (CmbZoom.SelectedIndex != best)
+            CmbZoom.SelectedIndex = best;   // SelectionChanged srovná State.Zoom + překreslí
     }
 
     private void OnWindowClosing(object? sender, CancelEventArgs e)
@@ -478,6 +497,29 @@ public partial class MainWindow : Window
             if (ZoomLevels[i] <= idealZoom + 0.01f) { bestIdx = i; break; }
         }
         CmbZoom.SelectedIndex = bestIdx;
+    }
+
+    // ── Layout: sbalení levého panelu (uvolní místo na malém monitoru) ─────────
+
+    private double _savedLeftWidth = 200;
+
+    /// <summary>Sbalí/rozbalí levý panel (sekce / pole agendy) — uvolní místo na malém monitoru.</summary>
+    private void BtnToggleLeftPanel_Changed(object sender, RoutedEventArgs e)
+    {
+        if (SectionsColumn is null) return;
+        if (BtnToggleLeftPanel.IsChecked == true)
+        {
+            SectionsColumn.MinWidth = 120;
+            SectionsColumn.Width = new GridLength(_savedLeftWidth);
+            SectionsSplitterColumn.Width = new GridLength(4);
+        }
+        else
+        {
+            if (SectionsColumn.ActualWidth > 0) _savedLeftWidth = SectionsColumn.ActualWidth;
+            SectionsColumn.MinWidth = 0;                 // jinak by Width=0 byla zaclampovaná na 120
+            SectionsColumn.Width = new GridLength(0);
+            SectionsSplitterColumn.Width = new GridLength(0);
+        }
     }
 
     // ── Preview ───────────────────────────────────────────────────────────────
@@ -1702,6 +1744,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.D0 && ctrl)
         {
             FitToPage();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.B && ctrl)
+        {
+            BtnToggleLeftPanel.IsChecked = !(BtnToggleLeftPanel.IsChecked == true);
             e.Handled = true;
         }
         else if (e.Key == Key.N && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
