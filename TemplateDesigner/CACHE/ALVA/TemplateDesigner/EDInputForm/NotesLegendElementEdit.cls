@@ -41,7 +41,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         d form.AddText("NoteSeparator", "Oddělovač", " — ")
-        d form.AddNumber("NoteFontSize", "Velikost písma pozn.", 7, 4, 20, "pt")
+        d form.AddDecimal("NoteFontSize", "Velikost písma pozn.", 7, 4, 20, "pt", "0.#")
         d form.AddDecimal("NoteLineHeight", "Výška řádku", 4, 2, 15, "mm")
 
         // ── Skupina "Filtrování" ──────────────────────────────────────────
