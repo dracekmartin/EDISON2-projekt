@@ -43,6 +43,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenEDListTestCommand { get; }
         public ICommand OpenEDComponentAndViewModelTestCommand { get; }
         public ICommand OpenLogoutCountdownTestCommand { get; }
+        public ICommand TriggerErrorCommand { get; }
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand CloseAllCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
@@ -133,6 +134,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog(new EDCompTestWnd()));
             // Test trigger pro cooperative logout — countdown se po vypršení sám zavře (onExpired no-op).
             OpenLogoutCountdownTestCommand = Command(() => WindowNavigator.Show(new LogoutCountdownWnd(15, () => { })));
+            // Test trigger pro error popup — výjimka projde RelayCommand handlerem do EDErrorPopup.
+            TriggerErrorCommand = Command(() => throw new InvalidOperationException("Testovací výjimka z toolbaru."));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));

@@ -31,12 +31,15 @@
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button x:Name="ReportBtn"
                         Content="Poslat hlášení"
-                        Width="110"
-                        Padding="0,4" Margin="0,0,6,0"
+                        Padding="14,4" Margin="0,0,6,0"
                         Visibility="Collapsed"/>
+                <Button x:Name="SaveBtn"
+                        Content="Uložit do souboru"
+                        Padding="14,4" Margin="0,0,6,0"
+                        Click="SaveBtn_Click"/>
                 <Button Content="{StaticResource EDStrings.Ok}"
-                        Width="80"
-                        Padding="0,4"
+                        Padding="14,4"
+                        MinWidth="80"
                         IsDefault="True" IsCancel="True"
                         Click="OkBtn_Click"/>
             </StackPanel>

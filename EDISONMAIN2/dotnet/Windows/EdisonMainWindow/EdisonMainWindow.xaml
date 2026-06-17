@@ -125,6 +125,7 @@
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
                 <MenuItem Header="Test odhlašovacího countdownu" Command="{Binding OpenLogoutCountdownTestCommand}"/>
+                <MenuItem Header="Vyvolat chybu" Command="{Binding TriggerErrorCommand}"/>
                 <Separator/>
                 <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
             </MenuItem>
