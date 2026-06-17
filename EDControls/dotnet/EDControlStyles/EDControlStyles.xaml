@@ -584,8 +584,19 @@
                                                   ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
                                                   Margin="6,4,26,4"
                                                   VerticalAlignment="Center"
-                                                  HorizontalAlignment="Left"
-                                                  TextElement.Foreground="{TemplateBinding Foreground}"/>
+                                                  HorizontalAlignment="Stretch"
+                                                  TextElement.Foreground="{TemplateBinding Foreground}">
+                                    <!-- Stretch + ellipsis: při zvětšeném fontu se dlouhý text neořízne natvrdo,
+                                         ale zkrátí na "…". Platí pro string položky (auto-generovaný TextBlock);
+                                         combo s vlastním ItemTemplate si trimming řeší samo. ToolTip-on-trim
+                                         nelze deklarativně (WPF nemá IsTextTrimmed + ContentSite je hit-test
+                                         invisible) — řešitelné jen attached behaviorem, zatím vynecháno. -->
+                                    <ContentPresenter.Resources>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+                                        </Style>
+                                    </ContentPresenter.Resources>
+                                </ContentPresenter>
 
                                 <!-- Editable TextBox — pro IsEditable=True ComboBox -->
                                 <TextBox x:Name="PART_EditableTextBox"
