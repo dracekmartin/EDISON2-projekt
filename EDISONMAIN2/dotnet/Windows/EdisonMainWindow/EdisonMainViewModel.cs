@@ -228,7 +228,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             {
                 if (TryFilter(module, _services.ActiveLicence, _services.AccessTable) is { } filtered)
                 {
-                    // Obarvit moduly dle launchovatelnosti (stub/chybí exe/neretrofitnuto).
+                    // Obarvit moduly dle launchovatelnosti (stub / chybí exe).
                     filtered = ModuleLaunchabilityCheck.Mark(filtered);
                     target.Add(filtered);
                 }

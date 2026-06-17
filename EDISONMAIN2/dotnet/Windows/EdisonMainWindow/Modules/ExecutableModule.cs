@@ -25,8 +25,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         /// <summary>
         /// Hex barva (<c>"#RRGGBB"</c>) pro Foreground položky ve stromu. Prázdný / null = výchozí
-        /// barva tématu. Konvence: <c>"#FFA500"</c> (oranžová) = modul je stub bez retrofitnuté
-        /// <c>.exe</c> s <c>EDISONMAIN2API.FormToRunGetter</c>.
+        /// barva tématu. Konvence: <c>"#FFA500"</c> (oranžová) = autorský stub bez vyplněné
+        /// <c>.exe</c>; <c>"#FF0000"</c> (červená) = exe vyplněné, ale soubor chybí.
         /// </summary>
         public string Color { get; init; } = "";
     }

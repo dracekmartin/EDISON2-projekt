@@ -1,31 +1,26 @@
-using System.Collections.Generic;
 using System.IO;
-using EDControls;
 using EDControls.EDViewModel;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
     /// Kontrola launchovatelnosti modulů. Tree.cls neautoruje barvu — odvozuje se zde z exe
-    /// + reference na EDISONMAIN2API a promítá do barvy + textového suffixu v názvu. Běží
-    /// v DEBUG i Release — kolegové validují stav stromu na Release buildu z testovacího procesu.
+    /// a promítá do barvy + textového suffixu v názvu. Běží v DEBUG i Release — kolegové
+    /// validují stav stromu na Release buildu z testovacího procesu.
     ///
-    /// Stavy: prázdné exe = autorský stub (oranžová); exe vyplněné ale soubor chybí / nereferencuje
-    /// EDISONMAIN2API (= není retrofitnuté pro FormToRunGetter) = červená — to je rozchod, který
-    /// má být vidět; launchovatelné = beze změny.
+    /// Stavy: prázdné exe = autorský stub (oranžová); exe vyplněné ale soubor chybí = červená
+    /// (rozchod, který má být vidět); existující exe = launchovatelné (generický host
+    /// EDISONMAIN2API.exe spustí libovolnou agendu bez retrofitu).
     /// </summary>
     internal static class ModuleLaunchabilityCheck
     {
-        private const string RequiredRef = "EDISONMAIN2API";
         private const string StubColor = "#FFA500";    // oranžová — záměrný stub bez exe
-        private const string BrokenColor = "#FF0000";  // červená — tvrdí launchovatelný, ale není
+        private const string BrokenColor = "#FF0000";  // červená — tvrdí launchovatelný, ale exe chybí
 
-        private enum State { Launchable, Stub, MissingExe, NotRetrofitted }
+        private enum State { Launchable, Stub, MissingExe }
 
         /// <summary>Agregovaná kategorie uzlu (pro obarvení sbalené rodiny dle obsahu).</summary>
         private enum Category { Launchable, Stub, Broken }
-
-        private static readonly Dictionary<string, bool> ProbeCache = [];
 
         /// <summary>Rekurzivně projde uzel a obarví / olabeluje moduly dle launchovatelnosti.</summary>
         public static IModule Mark(IModule module) => MarkNode(module).node;
@@ -71,8 +66,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         {
             State.Launchable => (exe, Category.Launchable),
             State.Stub => (exe with { Color = StubColor, DisplayedName = exe.DisplayedName + " — stub" }, Category.Stub),
-            State.MissingExe => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + " — chybí exe" }, Category.Broken),
-            _ => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + " — neretrofitnuto" }, Category.Broken),
+            _ => (exe with { Color = BrokenColor, DisplayedName = exe.DisplayedName + " — chybí exe" }, Category.Broken),
         };
 
         private static State Evaluate(ExecutableModule exe)
@@ -80,19 +74,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             if (exe.ExecutablePath.Length == 0) return State.Stub;
 
             var resolved = WindowNavigator.ResolveExecutablePath(exe.ExecutablePath);
-            if (!File.Exists(resolved)) return State.MissingExe;
-            return ReferencesApi(resolved) ? State.Launchable : State.NotRetrofitted;
-        }
-
-        private static bool ReferencesApi(string resolvedPath)
-        {
-            var key = resolvedPath + "|" + File.GetLastWriteTimeUtc(resolvedPath).Ticks;
-            if (!ProbeCache.TryGetValue(key, out bool ok))
-            {
-                ok = AssemblyReferences.References(resolvedPath, RequiredRef);
-                ProbeCache[key] = ok;
-            }
-            return ok;
+            return File.Exists(resolved) ? State.Launchable : State.MissingExe;
         }
     }
 }
