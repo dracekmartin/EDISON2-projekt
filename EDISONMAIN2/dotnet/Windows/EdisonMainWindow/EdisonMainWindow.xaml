@@ -187,7 +187,12 @@
         <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
              AvalonDockHost nad tímto DockingManagerem). -->
-        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1">
+        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1"
+                                   Background="{DynamicResource EDTheme.Bg.Panel}"
+                                   Foreground="{DynamicResource EDTheme.Text.Primary}"
+                                   BorderBrush="{DynamicResource EDTheme.Border.Light}"
+                                   FontFamily="{DynamicResource EDTheme.FontFamily}"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}">
             <avalonDock:LayoutRoot>
                 <avalonDock:LayoutPanel Orientation="Horizontal"/>
             </avalonDock:LayoutRoot>
