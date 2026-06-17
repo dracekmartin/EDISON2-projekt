@@ -208,10 +208,11 @@ public class PreviewCanvas
     }
 
     /// <summary>
-    /// Vejde se obsah stránky? Detekuje (a) JŘ element s pevnou výškou, jehož přirozený obsah přesahuje
-    /// box (<see cref="ScheduleElementBase.ContentOverflows"/>), a (b) geometrické přetečení — element
-    /// přesahuje spodní hranu své sekce (typicky dynamický element, který narostl).
-    /// Funguje bez renderu (volá se v pre-detekci).
+    /// Vejde se obsah stránky? Hlásí **jen reálné geometrické přetečení** — element přesahuje spodní hranu
+    /// své sekce (dynamický element, který narostl, nebo pevný box větší než sekce). NEhlásí situaci, kdy
+    /// JŘ element s pevnou výškou musel auto-scalem zmenšit písmo: ten se do svého boxu vejde, takže stránka
+    /// nepřetéká (viz <see cref="ScheduleElementBase.ContentOverflows"/> = „box je menší než obsah", což není
+    /// přetečení stránky). Funguje bez renderu (volá se v pre-detekci).
     /// </summary>
     private bool PageOverflows(Page page, PageSize ps)
     {
@@ -221,7 +222,6 @@ public class PreviewCanvas
             foreach (var el in placed.Source.Elements)
             {
                 if (!ExpressionEvaluator.IsVisible(el.VisibilityExpression, placed.Data)) continue;
-                if (el is ScheduleElementBase sched && sched.ContentOverflows(placed.Data)) return true;
                 float h = el.Height ?? _heightCalc.CalculateHeight(el, ps.PrintableWidth, placed.Data);
                 if (el.Y + h > placed.Height + tolMm) return true;
             }
