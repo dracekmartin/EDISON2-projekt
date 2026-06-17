@@ -59,7 +59,7 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 - **Multi-varianta TrasaMin** (`TrasaMin1-15` = víc časových sloupců per varianta trasy) — vyžaduje zásah do **C# StopListElement rendereru** (dnes jeden sloupec). Pro běžné linky s jednou trasou je jednosloupcová verze 1:1.
 - **Číslování omezení TYPPOZ=1** (legacy pevná čísla „29" vs naše sekvenční „1") — firm-config.
 - Šířka/layout legendy (vizuál) — na konec.
-- **DEV cleanup před produkcí** — `#if DEBUG` auto-open `kv_ad_test.json`, zvážit statický `GetMockData`.
+- **DEV cleanup před produkcí** — ✅ odstraněn `#if DEBUG` auto-open `kv_ad_test.json` + `--test-detector` blok (2026-06-17). Zbývá: zvážit statický `GetMockData`.
 
 **Performance rest (samostatný krok):** MHD agenda `VypocitatBitmapyObsluhy` má 3 průchody `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³). **Rizikový zásah do ověřeného MHD enginu** — udělat zvlášť s re-verifikací proti MHD gold oracle. (AD agenda už per-stránka neefektivnosti nemá.)
 

@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-17 — Preview: oprava falešného varování o přetečení
+
+- 🐛 **Fix falešného červeného varování o přetečení** — `PreviewCanvas.PageOverflows` přestal hlásit
+  přetečení pro JŘ element s pevnou výškou, který se do svého boxu vejde **auto-scalem** (zmenšením písma).
+  Dřív: nový StopList (pevných 60 mm) na MHD mock datech (>~12 zastávek) → přirozená výška > box →
+  `ContentOverflows=true` → červený rámeček celé stránky + „nevejde na stránku", i když element vizuálně
+  sedl (auto-scale bez spodní meze ho vždy zmenší na box). Teď se hlásí **jen reálné geometrické
+  přetečení** (element přesahuje spodní hranu sekce/stránky). `ContentOverflows` zůstává jako helper
+  („box < obsah"), ale neřídí varování.
+- ✅ **Agregovaná kontrola přetečení v tisku** — `PreviewCanvas.CountOverflowingPages(dataPages)` (layout-only,
+  bez renderu) projede stránky všech instancí; `PrintDialog` při exportu reálných dat (data už fetchnutá
+  z Caché → levné) vypíše „⚠ PDF uloženo, ale X z N stránek přetéká". Žádný fetch navíc, žádné nové UI.
+  Ad-hoc kontrola bez generování PDF se případně doplní později na žádost zákazníků.
+
+## 2026-06-17 — UI: font tokeny (škálování přes shell) + auto-width comboboxy + DEV cleanup
+
+- ✅ **UI fonty na EDTheme tokeny** — natvrdo zadané `FontSize`/`FontFamily` v XAML (12 souborů) nahrazeny
+  `{DynamicResource EDTheme.FontSize.*}` / `EDTheme.FontFamily`. TD nyní respektuje sdílenou user font
+  preferenci z EDISONMAIN2 (FontService už TD inicializuje) a proporcionálně škáluje. Mapování
+  9,10→Small · 11→Caption · 12→Body · 13,14→Header · 16,18→Large; `Consolas` (výrazy/glyfy) ponecháno.
+- ✅ **Comboboxy v hlavním okně na `Width="Auto"`** (CmbGridSize/CmbSnapGap/CmbZoom/CmbPreviewZoom) +
+  `MinWidth="64"` — text se neuřízne a roztáhne se i při zvětšeném fontu.
+- ✅ **DEV cleanup** — odstraněn `#if DEBUG` auto-open `kv_ad_test.json` po startu (hardcoded osobní cesta;
+  AD agenda hotová) v `MainWindow.xaml.cs` + `--test-detector` blok v `App.xaml.cs` (hardcoded `Downloads\*.PDF`).
+  `PdfImport.ScheduleDetectorTest` zůstává jako ruční debug utilita (mimo app flow).
+
 ## 2026-06-12 — Wave 4: parametry tisku přes EDInputForm (Caché-driven)
 
 - ✅ **Tiskový dialog → EDInputForm** — parametry sestavy se renderují přes EDInputForm, jehož schéma
