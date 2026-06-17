@@ -24,6 +24,13 @@
             </Style>
             <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
+            <!-- Rozměr ikon v toolbaru/paletě — FontService škáluje token spolu s user fontem. -->
+            <Style x:Key="ToolbarIconStyle" TargetType="Image">
+                <Setter Property="Width"  Value="{DynamicResource EDTheme.IconSize.Default}"/>
+                <Setter Property="Height" Value="{DynamicResource EDTheme.IconSize.Default}"/>
+                <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
+            </Style>
+
             <!-- ── Section item DataTemplate ── -->
             <DataTemplate x:Key="SectionItemTemplate" DataType="{x:Type local:SectionVM}">
                 <Border Margin="0,2,0,0"
@@ -227,16 +234,16 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="BtnNew" Style="{StaticResource ToolbarButton}" ToolTip="Nová šablona (Ctrl+N)" Click="MenuNew_Click">
-                            <Image Source="{StaticResource EDIcons.New}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.New}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnOpen" Style="{StaticResource ToolbarButton}" ToolTip="Otevřít (Ctrl+O)" Click="MenuOpen_Click">
-                            <Image Source="{StaticResource EDIcons.Open}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.Open}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="Uložit (Ctrl+S)" Click="MenuSave_Click">
-                            <Image Source="{StaticResource EDIcons.Save}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.Save}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk (Ctrl+P)" Click="MenuPrint_Click">
-                            <Image Source="{StaticResource EDIcons.Print}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Soubor" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -247,10 +254,10 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="BtnUndo" Style="{StaticResource ToolbarButton}" ToolTip="Zpět (Ctrl+Z)" Command="{Binding UndoCommand}">
-                            <Image Source="{StaticResource EDIcons.Undo}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.Undo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnRedo" Style="{StaticResource ToolbarButton}" ToolTip="Vpřed (Ctrl+Y)" Command="{Binding RedoCommand}">
-                            <Image Source="{StaticResource EDIcons.Redo}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.Redo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Upravit" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -261,7 +268,7 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="BtnAddSection" Style="{StaticResource ToolbarButton}" ToolTip="Přidat sekci" Click="BtnAddSection_Click">
-                            <Image Source="{StaticResource EDIcons.AddSection}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.AddSection}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Sekce" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -273,40 +280,40 @@
                     <StackPanel Orientation="Horizontal">
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Text" Tag="TextElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.TextElement}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.TextElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Obdélník" Tag="RectangleElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.RectElement}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.RectElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Čára" Tag="LineElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.LineElement}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.LineElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Obrázek" Tag="ImageElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.ImageElement}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.ImageElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka" Tag="TableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.TableElement}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, EAN, ...)" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.QrCode}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.StopList}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů" Tag="DepartureGridElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.DepartureGrid}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.DepartureGrid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek" Tag="NotesLegendElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.NotesLegend}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Elementy" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -317,16 +324,16 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="BtnZForward" Style="{StaticResource ToolbarButton}" ToolTip="Přenést dopředu (Ctrl+PgUp)" Click="BtnZForward_Click">
-                            <Image Source="{StaticResource EDIcons.ZForward}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.ZForward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnZBackward" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat dozadu (Ctrl+PgDn)" Click="BtnZBackward_Click">
-                            <Image Source="{StaticResource EDIcons.ZBackward}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.ZBackward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnZFront" Style="{StaticResource ToolbarButton}" ToolTip="Přenést zcela dopředu (Ctrl+Shift+PgUp)" Click="BtnZFront_Click">
-                            <Image Source="{StaticResource EDIcons.ZFront}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.ZFront}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button x:Name="BtnZBack" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat zcela dozadu (Ctrl+Shift+PgDn)" Click="BtnZBack_Click">
-                            <Image Source="{StaticResource EDIcons.ZBack}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.ZBack}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Vrstva" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -337,29 +344,29 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Zarovnat vlevo" Click="BtnAlignLeft_Click">
-                            <Image Source="{StaticResource EDIcons.AlignLeft}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.AlignLeft}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Zarovnat na střed (vodorovně)" Click="BtnAlignCenterH_Click">
-                            <Image Source="{StaticResource EDIcons.AlignCenterH}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.AlignCenterH}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Zarovnat vpravo" Click="BtnAlignRight_Click">
-                            <Image Source="{StaticResource EDIcons.AlignRight}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.AlignRight}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Zarovnat nahoru" Click="BtnAlignTop_Click">
-                            <Image Source="{StaticResource EDIcons.AlignTop}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.AlignTop}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Zarovnat na střed (svisle)" Click="BtnAlignMiddleV_Click">
-                            <Image Source="{StaticResource EDIcons.AlignCenterV}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.AlignCenterV}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Zarovnat dolů" Click="BtnAlignBottom_Click">
-                            <Image Source="{StaticResource EDIcons.AlignBottom}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.AlignBottom}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Rozložit rovnoměrně vodorovně (min 3)" Click="BtnDistributeH_Click">
-                            <Image Source="{StaticResource EDIcons.DistributeH}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.DistributeH}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Button Style="{StaticResource ToolbarButton}" ToolTip="Rozložit rovnoměrně svisle (min 3)" Click="BtnDistributeV_Click">
-                            <Image Source="{StaticResource EDIcons.DistributeV}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.DistributeV}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Zarovnat" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -372,7 +379,7 @@
                         <!-- Mřížka: zobrazit + velikost -->
                         <ToggleButton x:Name="BtnGrid" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit mřížku"
                                       IsChecked="{Binding ShowGrid, Mode=TwoWay}">
-                            <Image Source="{StaticResource EDIcons.Grid}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </ToggleButton>
                         <ComboBox x:Name="CmbGridSize" Width="70" VerticalAlignment="Center" Margin="2,0"
                                   ToolTip="Velikost mřížky" SelectedIndex="4"
@@ -445,7 +452,7 @@
                                       Content="☰" FontSize="14"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
                                       IsChecked="True" Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed">
-                            <Image Source="{StaticResource EDIcons.Eye}" Width="16" Height="16"/>
+                            <Image Source="{StaticResource EDIcons.Eye}" Style="{StaticResource ToolbarIconStyle}"/>
                         </ToggleButton>
                     </StackPanel>
                     <TextBlock Text="Panely" Style="{StaticResource ToolbarGroupLabel}"/>

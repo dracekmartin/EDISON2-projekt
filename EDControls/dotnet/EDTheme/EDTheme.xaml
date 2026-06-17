@@ -174,6 +174,12 @@
     <sys:Double x:Key="EDTheme.FontSize.Large">15</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         ICON SIZE — rozměr ikon v toolbarech a menu. FontService škáluje
+         proporcionálně k user Body size (stejný poměr jako FontSize.*).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <sys:Double x:Key="EDTheme.IconSize.Default">16</sys:Double>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          SPACING — Padding / Margin tokens
          (Thickness pro Padding/Margin atributy. Pro symetrické hodnoty.)
          ═══════════════════════════════════════════════════════════════════ -->

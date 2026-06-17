@@ -16,7 +16,10 @@
                 <Button Command="{Binding Command}"
                         ToolTip="{Binding ToolTipText}"
                         Margin="1,0">
-                    <Image Source="{Binding Icon}" Width="16" Height="16"/>
+                    <Image Source="{Binding Icon}"
+                           Width="{DynamicResource EDTheme.IconSize.Default}"
+                           Height="{DynamicResource EDTheme.IconSize.Default}"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Button>
             </DataTemplate>
         </ItemsControl.ItemTemplate>

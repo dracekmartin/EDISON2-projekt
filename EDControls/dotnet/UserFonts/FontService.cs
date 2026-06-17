@@ -33,12 +33,15 @@ public static class FontService
     };
 
     private const string FontSizePrefix = "EDTheme.FontSize.";
+    private const string IconSizePrefix = "EDTheme.IconSize.";
 
-    // Odvozeno z EDTheme.xaml (jediný zdroj pravdy) — nová velikost EDTheme.FontSize.* se
-    // propíše bez ruční editace tady. Pořadí nehraje roli: každý klíč se škáluje nezávisle vůči Body.
-    private static readonly string[] FontSizeKeys = ThemeDefaults.Keys
+    // Tokeny škálované proporcionálně k user Body size — font velikosti i rozměry ikon.
+    // Odvozeno z EDTheme.xaml (jediný zdroj pravdy): nový FontSize.* / IconSize.* se propíše
+    // bez ruční editace tady. Pořadí nehraje roli: každý klíč se škáluje nezávisle vůči Body.
+    private static readonly string[] ScaledSizeKeys = ThemeDefaults.Keys
         .OfType<string>()
-        .Where(k => k.StartsWith(FontSizePrefix, StringComparison.Ordinal))
+        .Where(k => k.StartsWith(FontSizePrefix, StringComparison.Ordinal)
+                 || k.StartsWith(IconSizePrefix, StringComparison.Ordinal))
         .ToArray();
 
     /// <summary>
@@ -70,15 +73,15 @@ public static class FontService
 
         if (settings.FontSize is { } body)
         {
-            // Scaling: user dává Body, ostatní proporcionálně (zachová UI ratio Small:Caption:...:Large)
-            // dle defaultů v EDTheme.xaml — žádná duplicita konstant.
+            // Scaling: user dává Body, ostatní fonty i ikony proporcionálně (zachová UI ratio
+            // dle defaultů v EDTheme.xaml — žádná duplicita konstant).
             var defaultBody = (double)ThemeDefaults["EDTheme.FontSize.Body"];
-            foreach (var key in FontSizeKeys)
+            foreach (var key in ScaledSizeKeys)
                 resources[key] = body * (double)ThemeDefaults[key] / defaultBody;
         }
         else
         {
-            foreach (var key in FontSizeKeys)
+            foreach (var key in ScaledSizeKeys)
                 resources.Remove(key);
         }
     }

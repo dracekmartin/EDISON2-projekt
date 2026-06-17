@@ -147,7 +147,7 @@
 
                 <!-- Icon area: IsCheckable checkmark nebo IconSource -->
                 <Border x:Name="IconArea" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <ContentPresenter ContentSource="Icon" Width="16" Height="16"/>
+                    <ContentPresenter ContentSource="Icon" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
                 </Border>
                 <Path x:Name="CheckMark"
                       Grid.Column="0"
@@ -209,7 +209,7 @@
                     </Grid.ColumnDefinitions>
 
                     <Border x:Name="IconArea" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center">
-                        <ContentPresenter ContentSource="Icon" Width="16" Height="16"/>
+                        <ContentPresenter ContentSource="Icon" Width="{DynamicResource EDTheme.IconSize.Default}" Height="{DynamicResource EDTheme.IconSize.Default}" RenderOptions.BitmapScalingMode="HighQuality"/>
                     </Border>
 
                     <ContentPresenter Grid.Column="1"
