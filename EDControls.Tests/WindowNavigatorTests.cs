@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.IO;
+using EDControls;
 using EDControls.EDViewModel;
+using NSubstitute;
 
 namespace EDControls.Tests;
 
@@ -56,6 +58,44 @@ public class WindowNavigatorTests
         var label = WindowNavigator.FormatLegacyLabel(entry);
 
         Assert.Equal("ALVA.", label);
+    }
+
+    // ---------- BuildLauncherArguments ----------
+
+    private static IMLRest MakeMlRest()
+    {
+        var m = Substitute.For<IMLRest>();
+        m.Server.Returns("192.168.16.1");
+        m.Port.Returns(57770);
+        m.DataNamespace.Returns("MLINE");
+        m.Idfa.Returns("CB_DP");
+        m.LoginName.Returns("jan.novak");
+        m.FullName.Returns("Jan Novák");
+        m.Mlp.Returns("157");
+        m.Guid.Returns("SHELLGUID");
+        return m;
+    }
+
+    [Fact]
+    public void BuildLauncherArguments_HasSentinelAndAgendaPathLast()
+    {
+        var args = WindowNavigator.BuildLauncherArguments(
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe");
+
+        // Sentinel první, agenda path poslední (host ji čte pro Assembly.LoadFrom).
+        Assert.StartsWith("EDISONMAIN2 ", args);
+        Assert.EndsWith("\"C:\\Edison\\X.exe\"", args);
+    }
+
+    [Fact]
+    public void BuildLauncherArguments_OrderingMatchesContract()
+    {
+        var args = WindowNavigator.BuildLauncherArguments(
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe");
+
+        Assert.Equal(
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\"",
+            args);
     }
 
     // ---------- IsInternalNamespace ----------

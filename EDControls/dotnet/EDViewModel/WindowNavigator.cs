@@ -8,8 +8,9 @@ namespace EDControls.EDViewModel;
 
 /// <summary>
 /// Otevírá WPF okna (caller předá instanci přes <c>new</c>) + legacy WinForms formuláře
-/// z externích .exe (přes 10-arg kontrakt <c>EDISONMAIN2API.FormToRunGetter</c>). Trackuje
-/// child procesy, <see cref="CloseAll"/> kill při shell close.
+/// z externích .exe přes generický host <c>EDISONMAIN2API.exe</c> (12-arg kontrakt:
+/// host agendu načte přes <c>Assembly.LoadFrom</c> a roztočí formu — agenda nepotřebuje
+/// žádný retrofit). Trackuje child procesy, <see cref="CloseAll"/> kill při shell close.
 /// </summary>
 public class WindowNavigator : IWindowNavigator
 {
@@ -19,6 +20,10 @@ public class WindowNavigator : IWindowNavigator
     /// odtud čte fallback, když relativní path nenajde v <see cref="AppContext.BaseDirectory"/>.
     /// </summary>
     public const string EdisonDeployRoot = @"C:\Edison";
+
+    /// <summary>Generický host, který agendu načte a spustí (viz EDISONMAIN2API). Spouští se
+    /// místo agenda .exe; cesta k agendě jde do argů, takže agenda nemusí být retrofitnutá.</summary>
+    private const string LauncherExe = "EDISONMAIN2API.exe";
 
     /// <summary>Sledování legacy child procesů — Process + původní spawn args (exe, formFqn).
     /// FormFqn slouží jako fallback display label, když <c>Process.MainWindowTitle</c> je prázdný
@@ -186,15 +191,26 @@ public class WindowNavigator : IWindowNavigator
         var mlRest = EDServices.Current.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
         var shellGuid = shareShellSession ? mlRest.Guid : "";
+        var agendaPath = ResolveExecutablePath(exeName);
         var prc = Process.Start(new ProcessStartInfo
         {
             UseShellExecute = true,
-            FileName = ResolveExecutablePath(exeName),
-            Arguments = $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\"",
+            FileName = ResolveExecutablePath(LauncherExe),
+            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, agendaPath),
         });
         if (prc != null) KillOnExit.Bind(prc);
         return prc;
     }
+
+    /// <summary>
+    /// Složí 12-arg payload pro generický host: sentinel + sys kontext + formFqn + shellGuid +
+    /// inputParam + cesta k agendě (poslední — host ji čte pro <c>Assembly.LoadFrom</c>).
+    /// Pozice 1–11 jsou shodné s legacy kontraktem, takže `FormToRunGetter.TryGetFormFromArgs`
+    /// (retrofitnuté agendy spuštěné napřímo) zůstává kompatibilní.
+    /// </summary>
+    internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
+        string inputParam, string agendaPath) =>
+        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\"";
 
     public static string ResolveExecutablePath(string relativePath)
     {
