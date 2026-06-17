@@ -10,22 +10,22 @@
             <ToggleButton x:Name="BtnBold" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Tučné" MinWidth="24" MinHeight="24"
                           Click="BtnBold_Click">
-                <TextBlock Text="B" FontWeight="Bold" FontSize="12"/>
+                <TextBlock Text="B" FontWeight="Bold" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnItalic" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Kurzíva" MinWidth="24" MinHeight="24"
                           Click="BtnItalic_Click">
-                <TextBlock Text="I" FontStyle="Italic" FontSize="12"/>
+                <TextBlock Text="I" FontStyle="Italic" FontSize="{DynamicResource EDTheme.FontSize.Body}"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnUnderline" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Podtržení" MinWidth="24" MinHeight="24"
                           Click="BtnUnderline_Click">
-                <TextBlock Text="U" FontSize="12" TextDecorations="Underline"/>
+                <TextBlock Text="U" FontSize="{DynamicResource EDTheme.FontSize.Body}" TextDecorations="Underline"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnStrikethrough" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Přeškrtnuté" MinWidth="24" MinHeight="24"
                           Click="BtnStrikethrough_Click">
-                <TextBlock Text="S" FontSize="12">
+                <TextBlock Text="S" FontSize="{DynamicResource EDTheme.FontSize.Body}">
                     <TextBlock.TextDecorations>
                         <TextDecoration Location="Strikethrough"/>
                     </TextBlock.TextDecorations>
@@ -38,22 +38,22 @@
             <ToggleButton x:Name="BtnAlignLeft" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Vlevo" MinWidth="24" MinHeight="24"
                           Click="BtnAlignLeft_Click">
-                <TextBlock Text="L" FontSize="11" FontFamily="Consolas"/>
+                <TextBlock Text="L" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnAlignCenter" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Na střed" MinWidth="24" MinHeight="24"
                           Click="BtnAlignCenter_Click">
-                <TextBlock Text="C" FontSize="11" FontFamily="Consolas"/>
+                <TextBlock Text="C" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnAlignRight" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Vpravo" MinWidth="24" MinHeight="24"
                           Click="BtnAlignRight_Click">
-                <TextBlock Text="R" FontSize="11" FontFamily="Consolas"/>
+                <TextBlock Text="R" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnAlignJustify" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Do bloku" MinWidth="24" MinHeight="24"
                           Click="BtnAlignJustify_Click">
-                <TextBlock Text="J" FontSize="11" FontFamily="Consolas"/>
+                <TextBlock Text="J" FontSize="{DynamicResource EDTheme.FontSize.Caption}" FontFamily="Consolas"/>
             </ToggleButton>
 
             <Rectangle Width="1" Height="16" Fill="#CCCCCC" Margin="3,0" VerticalAlignment="Center"/>
@@ -62,17 +62,17 @@
             <ToggleButton x:Name="BtnVAlignTop" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Nahoře" MinWidth="24" MinHeight="24"
                           Click="BtnVAlignTop_Click">
-                <TextBlock Text="▲" FontSize="10"/>
+                <TextBlock Text="▲" FontSize="{DynamicResource EDTheme.FontSize.Small}"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnVAlignMiddle" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Na střed (svisle)" MinWidth="24" MinHeight="24"
                           Click="BtnVAlignMiddle_Click">
-                <TextBlock Text="▬" FontSize="10"/>
+                <TextBlock Text="▬" FontSize="{DynamicResource EDTheme.FontSize.Small}"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnVAlignBottom" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Dole" MinWidth="24" MinHeight="24"
                           Click="BtnVAlignBottom_Click">
-                <TextBlock Text="▼" FontSize="10"/>
+                <TextBlock Text="▼" FontSize="{DynamicResource EDTheme.FontSize.Small}"/>
             </ToggleButton>
 
         </StackPanel>

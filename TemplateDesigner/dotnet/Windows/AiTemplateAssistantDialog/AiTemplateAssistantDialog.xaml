@@ -9,7 +9,7 @@
 
     <Window.Resources>
         <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Header}"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Margin" Value="0,12,0,6"/>
         </Style>
@@ -20,11 +20,11 @@
         <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="12" Margin="-16,-16,-16,0" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
             <StackPanel>
                 <TextBlock Text="🤖 AI Asistent pro generování šablon"
-                           FontSize="16"
+                           FontSize="{DynamicResource EDTheme.FontSize.Large}"
                            FontWeight="Bold"
                            Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                 <TextBlock Text="Popište šablonu, kterou chcete vytvořit, a AI vygeneruje kompletní JSON strukturu."
-                           FontSize="12"
+                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap"/>
@@ -85,7 +85,7 @@
                     <ComboBoxItem Content="Faktury" Tag="FAKTURY"/>
                 </ComboBox>
                 <TextBlock Text="Vyberte agendu, pokud chcete použít specifická datová pole."
-                           FontSize="11"
+                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap"/>
@@ -98,9 +98,9 @@
                          AcceptsReturn="True"
                          TextWrapping="Wrap"
                          VerticalScrollBarVisibility="Auto"
-                         FontFamily="Segoe UI"
+                         FontFamily="{DynamicResource EDTheme.FontFamily}"
                          Padding="8"/>
-                <TextBlock FontSize="11"
+                <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Caption}"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap">
@@ -115,7 +115,7 @@
                          x:Name="ApiKeyTextBox"
                          FontFamily="Consolas"
                          Padding="8"/>
-                <TextBlock FontSize="11"
+                <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Caption}"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
                            TextWrapping="Wrap">
