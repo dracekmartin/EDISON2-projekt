@@ -41,7 +41,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("Consolas", "Consolas")
         s f.value = "Arial"
 
-        d form.AddNumber("Style.FontSize", "Velikost", 10, 4, 200, "pt", 1)
+        d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
         d form.AddBool("Style.Bold", "Tučně", 0)
         d form.AddBool("Style.Italic", "Kurzíva", 0)
         d form.AddBool("Style.Underline", "Podtržené", 0)

@@ -16,8 +16,9 @@ public enum ResizeHandle
 /// </summary>
 public class DesignerCanvas
 {
-    /// <summary>Šířka levého štítku sekce v px (vlevo od stránky).</summary>
-    public const float SectionTabWidthPx = 80f;
+    /// <summary>Šířka levého štítku sekce v px (vlevo od stránky). Úzký pruh —
+    /// název sekce je otočený o 90° (svisle), takže šetří horizontální místo.</summary>
+    public const float SectionTabWidthPx = 26f;
     /// <summary>Minimální výška štítku aby se vešlo textové označení.</summary>
     private const float SectionTabMinLabelPx = 28f;
     private const float PagePaddingPx  = 40f;
@@ -565,26 +566,31 @@ public class DesignerCanvas
             using var font    = new SKFont(SKTypeface.Default, 11f);
             using var txtPaint = new SKPaint { Color = ClrSectionHeaderText, IsAntialias = true };
 
-            // Název sekce — zkrátíme pokud nesedí
+            // Název sekce svisle — otočený o 90° po směru hod. ručiček. Délka textu jede
+            // podél výšky sekce (ne šířky úzkého pruhu), takže se vejde i delší název.
             string name = section.Name ?? "";
-            float maxTextW = SectionTabWidthPx - 12f;
-            string drawn = TruncateToWidth(name, font, maxTextW);
+            float maxTextH = sectionH - 16f;
+            string drawn = TruncateToWidth(name, font, maxTextH);
 
-            // Text nahoře v štítku, s malým odsazením
-            canvas.DrawText(drawn, tabLeft + 6f, contentOy + 14f, font, txtPaint);
+            float cx     = (tabLeft + tabRight) / 2f;
+            float startY = contentOy + 8f;
+            canvas.Save();
+            canvas.RotateDegrees(90f, cx, startY);                       // pivot u horního okraje pruhu
+            canvas.DrawText(drawn, cx, startY + font.Size * 0.34f, font, txtPaint);  // baseline ~ vystředěná na šířku pruhu
+            canvas.Restore();
 
-            // Indikátor Role a dynamické výšky na pravém okraji štítku
+            // Indikátor Role / dynamické výšky — dole, vodorovně vystředěný (1–2 znaky se vejdou)
             string badge = "";
             if (section.Role == SectionRole.Header) badge = "H";
             else if (section.Role == SectionRole.Footer) badge = "F";
-            if (dynamic) badge = badge.Length > 0 ? badge + " ∞" : "∞";
+            if (dynamic) badge = badge.Length > 0 ? badge + "∞" : "∞";
 
             if (badge.Length > 0)
             {
                 using var badgeFont  = new SKFont(SKTypeface.Default, 9f);
                 using var badgePaint = new SKPaint { Color = ClrSectionHeaderText.WithAlpha(200), IsAntialias = true };
                 float badgeW = badgeFont.MeasureText(badge);
-                canvas.DrawText(badge, tabRight - badgeW - 4f, contentOy + sectionH - 4f, badgeFont, badgePaint);
+                canvas.DrawText(badge, cx - badgeW / 2f, contentOy + sectionH - 5f, badgeFont, badgePaint);
             }
         }
     }

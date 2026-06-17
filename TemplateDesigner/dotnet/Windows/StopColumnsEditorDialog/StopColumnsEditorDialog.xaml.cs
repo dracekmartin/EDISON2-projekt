@@ -1,32 +1,63 @@
+using System.Collections.Generic;
 using System.Windows;
 using TemplateDesigner.Commands;
+using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Controls;
 using TemplateDesigner.Models.Elements;
-using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
 namespace TemplateDesigner;
 
 public partial class StopColumnsEditorDialog : Window
 {
+    private const string GeneralSchemaClass = "ALVA.TemplateDesigner.EDInputForm.StopListElementEdit";
+
     private readonly StopColumnsEditorDialogViewModel _vm;
+    private readonly StopListElement _element;
+    private Dictionary<string, string> _preFilled = [];
 
     /// <summary>Výsledné sloupce po OK — pass-through z VM.</summary>
     public List<StopColumn> ResultColumns => _vm.ResultColumns;
 
-    public StopColumnsEditorDialog(
-        StopListElement element,
-        IReadOnlyList<PropertyDescriptor> generalDescriptors,
-        Action<IDesignerCommand> executeCommand,
-        Action invalidate)
+    /// <summary>Command z tabu „Obecné" (EDInputForm) — null pokud se nic nezměnilo.
+    /// Caller vykoná spolu se ResultColumns.</summary>
+    public IDesignerCommand? GeneralCommand { get; private set; }
+
+    public StopColumnsEditorDialog(StopListElement element)
     {
-        _vm = new StopColumnsEditorDialogViewModel(element, element.Columns, generalDescriptors);
+        _element = element;
+        _vm = new StopColumnsEditorDialogViewModel(element, element.Columns);
         DataContext = _vm;
         InitializeComponent();
 
-        GeneralPanel.SetContext(executeCommand, invalidate);
-        GeneralPanel.ShowDescriptors(generalDescriptors);
+        // Tab „Obecné": EDInputForm (general properties přes reflexi). Styl záhlaví/buněk
+        // řeší CellStyleEditor v témže tabu, sloupce tab „Sloupce".
+        GeneralForm.CacheClass = GeneralSchemaClass;
+        GeneralForm.Initialized += OnGeneralFormInitialized;
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
+    }
+
+    private void OnGeneralFormInitialized()
+    {
+        _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
+        GeneralForm.Validate();
+    }
+
+    private void OkButton_Click(object sender, RoutedEventArgs e)
+    {
+        // EDInputForm validace „Obecné" — při chybě zůstat v dialogu.
+        if (!GeneralForm.Save()) return;
+
+        var cmds = ElementFormBinder.ExtractCommands(GeneralForm, _element, _preFilled);
+        GeneralCommand = cmds.Count switch
+        {
+            0 => null,
+            1 => cmds[0],
+            _ => new CompositeCommand("Nastavení zastávek", cmds)
+        };
+
+        // VM dokončí (CellStyle → element, ResultColumns, zavření).
+        _vm.OkCommand.Execute(null);
     }
 }

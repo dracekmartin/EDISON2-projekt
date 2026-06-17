@@ -74,13 +74,13 @@
                     </Border.ContextMenu>
                     <DockPanel LastChildFill="True">
                         <Button DockPanel.Dock="Right"
-                                Content="▼" Width="18" Height="16" FontSize="8"
+                                Content="▼" Width="18" Height="16" FontSize="9"
                                 Padding="0" Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveDownCommand}"
                                 ToolTip="Přesunout dolů (Ctrl+Shift+↓)"/>
                         <Button DockPanel.Dock="Right"
-                                Content="▲" Width="18" Height="16" FontSize="8"
+                                Content="▲" Width="18" Height="16" FontSize="9"
                                 Padding="0" Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveUpCommand}"
@@ -257,17 +257,14 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
-                <!-- ── 3. Přidat ── -->
+                <!-- ── 3. Sekce ── (elementy se přetahují z palety, ne přes seznam) -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
                         <Button x:Name="BtnAddSection" Style="{StaticResource ToolbarButton}" ToolTip="Přidat sekci" Click="BtnAddSection_Click">
                             <Image Source="{StaticResource EDIcons.AddSection}" Width="16" Height="16"/>
                         </Button>
-                        <Button x:Name="BtnAddElement" Style="{StaticResource ToolbarButton}" ToolTip="Přidat element" Click="BtnAddElement_Click">
-                            <Image Source="{StaticResource EDIcons.AddElement}" Width="16" Height="16"/>
-                        </Button>
                     </StackPanel>
-                    <TextBlock Text="Přidat" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Sekce" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
@@ -394,12 +391,12 @@
                         <!-- Snap k mřížce -->
                         <ToggleButton x:Name="BtnSnap" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytit k mřížce"
                                       IsChecked="{Binding SnapToGrid, Mode=TwoWay}"
-                                      Content="M" FontSize="11" FontWeight="SemiBold"/>
+                                      Content="M" FontSize="12" FontWeight="SemiBold"/>
 
                         <!-- Snap k objektům + mezera -->
                         <ToggleButton x:Name="BtnSnapElements" Style="{StaticResource ToolbarToggle}" ToolTip="Přichytávat k objektům (elementy + okraje sekce)"
                                       IsChecked="{Binding SnapToElements, Mode=TwoWay}"
-                                      Content="O" FontSize="11" FontWeight="SemiBold"/>
+                                      Content="O" FontSize="12" FontWeight="SemiBold"/>
                         <ComboBox x:Name="CmbSnapGap" Width="90" VerticalAlignment="Center" Margin="2,0"
                                   ToolTip="Mezera mezi objekty při snapu a duplikaci"
                                   SelectedIndex="2"
@@ -433,7 +430,7 @@
                         </ComboBox>
                         <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
                                 ToolTip="Resetovat zoom designeru i náhledu na 100 %"
-                                Click="BtnResetView_Click" Content="1:1" FontSize="11" FontWeight="SemiBold"/>
+                                Click="BtnResetView_Click" Content="1:1" FontSize="12" FontWeight="SemiBold"/>
                     </StackPanel>
                     <TextBlock Text="Zoom" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
@@ -442,12 +439,16 @@
                 <!-- ── 9. Panely ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <ToggleButton x:Name="BtnToggleLeftPanel" Style="{StaticResource ToolbarToggle}"
+                                      ToolTip="Skrýt/zobrazit panel sekcí (Ctrl+B)"
+                                      IsChecked="True" Checked="BtnToggleLeftPanel_Changed" Unchecked="BtnToggleLeftPanel_Changed"
+                                      Content="☰" FontSize="14"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
                                       IsChecked="True" Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed">
                             <Image Source="{StaticResource EDIcons.Eye}" Width="16" Height="16"/>
                         </ToggleButton>
                     </StackPanel>
-                    <TextBlock Text="Náhled" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Panely" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
 
             </StackPanel>
@@ -458,7 +459,7 @@
             <Grid.ColumnDefinitions>
                 <!-- Panel sekcí -->
                 <ColumnDefinition x:Name="SectionsColumn" Width="200" MinWidth="120"/>
-                <ColumnDefinition Width="4"/>
+                <ColumnDefinition x:Name="SectionsSplitterColumn" Width="4"/>
                 <!-- Canvas -->
                 <ColumnDefinition x:Name="CanvasColumn" Width="*" MinWidth="300"/>
                 <ColumnDefinition Width="4"/>
@@ -530,7 +531,7 @@
                                 </Border.InputBindings>
                                 <TextBlock x:Name="AgendaNameTextBlock"
                                            Text="{Binding AgendaNameText}"
-                                           FontSize="11" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                           FontSize="12" Foreground="{DynamicResource EDTheme.Text.Secondary}"
                                            TextTrimming="CharacterEllipsis"/>
                             </Border>
                             <!-- Tip dole -->
@@ -538,7 +539,7 @@
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
                                     Background="{DynamicResource EDTheme.Bg.Footer}" Padding="6,4">
                                 <TextBlock Text="💡 Dvojklik = vložit {POLE}"
-                                           FontSize="10" Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                           FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                            TextWrapping="Wrap"/>
                             </Border>
                             <!-- Data-bound schema tree -->
@@ -552,17 +553,17 @@
                                     <HierarchicalDataTemplate DataType="{x:Type local:SchemaGroupVM}"
                                                               ItemsSource="{Binding Fields}">
                                         <TextBlock Text="{Binding Header}"
-                                                   FontWeight="SemiBold" FontSize="11"
+                                                   FontWeight="SemiBold" FontSize="12"
                                                    Foreground="{DynamicResource EDTheme.Text.Header}"/>
                                     </HierarchicalDataTemplate>
                                     <!-- SchemaFieldVM: leaf field -->
                                     <DataTemplate DataType="{x:Type local:SchemaFieldVM}">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="{Binding FieldName}"
-                                                       FontFamily="Consolas" FontSize="11"
+                                                       FontFamily="Consolas" FontSize="12"
                                                        Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                                             <TextBlock Text="{Binding LabelDisplay}"
-                                                       FontSize="10" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                                                       FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                                         </StackPanel>
                                     </DataTemplate>
                                 </TreeView.Resources>
@@ -575,18 +576,18 @@
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Vlastnosti (inline properties panel) ── -->
-                    <TabItem Header="Vlastnosti" x:Name="TabProperties">
+                    <TabItem Header="✎ Vlastnosti" x:Name="TabProperties">
                         <DockPanel>
                             <controls:FormatToolbar x:Name="FormatToolbar" DockPanel.Dock="Top"/>
                             <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Strom šablony ── -->
-                    <TabItem Header="Strom" x:Name="TabTree">
+                    <TabItem Header="≣ Strom" x:Name="TabTree">
                         <controls:TemplateTreePanel x:Name="TreePanel"/>
                     </TabItem>
                     <!-- ── Záložka AI průvodce ── -->
-                    <TabItem Header="Průvodce" x:Name="TabAiGuide">
+                    <TabItem Header="✦ Pomocník" x:Name="TabAiGuide">
                         <aiguide:AiGuidePanel DataContext="{Binding AiGuide}"/>
                     </TabItem>
                 </TabControl>
@@ -654,7 +655,7 @@
                                 <ComboBoxItem Content="500 %"/>
                             </ComboBox>
                             <TextBlock Text="Náhled  ·  vzorová data ze schématu"
-                                       FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                       FontSize="12" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                        VerticalAlignment="Center"/>
                         </DockPanel>
                     </Border>
@@ -682,13 +683,13 @@
                             Padding="8,3">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button Content="◀" Command="{Binding PreviousPageCommand}"
-                                    FontSize="11" Padding="8,1" MinWidth="28"/>
+                                    FontSize="12" Padding="8,1" MinWidth="28"/>
                             <TextBlock Text="{Binding PageNavigationText}"
-                                       FontSize="11" Foreground="{DynamicResource EDTheme.Text.Header}"
+                                       FontSize="12" Foreground="{DynamicResource EDTheme.Text.Header}"
                                        VerticalAlignment="Center" Margin="8,0"
                                        MinWidth="40" TextAlignment="Center"/>
                             <Button Content="▶" Command="{Binding NextPageCommand}"
-                                    FontSize="11" Padding="8,1" MinWidth="28"/>
+                                    FontSize="12" Padding="8,1" MinWidth="28"/>
                         </StackPanel>
                     </Border>
 

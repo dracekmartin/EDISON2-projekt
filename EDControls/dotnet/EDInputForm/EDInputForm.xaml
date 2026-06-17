@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
         <local:HexToBrushConverter x:Key="HexToBrush"/>
+        <local:Base64ToImageSourceConverter x:Key="Base64ToImage"/>
     </UserControl.Resources>
     <ScrollViewer VerticalScrollBarVisibility="Auto" Background="White">
         <!-- IsSharedSizeScope na outer Grid → column header bar a všechny field rows
@@ -291,6 +292,34 @@
                     </Grid>
                 </DataTemplate>
 
+                <!-- Image: náhled + Nahrát + vymazat. Value = Base64 string. -->
+                <DataTemplate x:Key="ImageFieldTemplate">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <!-- Náhled (prázdný rámeček když není obrázek) -->
+                        <Border Grid.Column="0" Width="44" Height="44" BorderBrush="Gray"
+                                BorderThickness="1" CornerRadius="2" Background="#FFF8F8F8">
+                            <Image Source="{Binding Value, Converter={StaticResource Base64ToImage}}"
+                                   Stretch="Uniform" Margin="2"/>
+                        </Border>
+                        <Button Grid.Column="1" Content="Nahrát…"
+                                Click="ImageField_PickClick"
+                                Margin="6,0,0,0" Padding="8,2" HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                IsEnabled="{Binding Editable}"
+                                ToolTip="Vybrat obrázek ze souboru"/>
+                        <Button Grid.Column="2" Content="×"
+                                Click="ImageField_ClearClick"
+                                Width="24" Margin="4,0,0,0" VerticalAlignment="Center"
+                                IsEnabled="{Binding Editable}"
+                                ToolTip="Vymazat obrázek"/>
+                    </Grid>
+                </DataTemplate>
+
                 <!-- Field row: 3-column modern PropertyGrid layout (Položka | Hodnota | spacer).
                      Položka Auto SharedSize MinWidth=240 → konzistentní label width napříč rows.
                      Hodnota fixed 320 → konzistentní input width. Spacer * absorbuje extra šířku.
@@ -363,6 +392,9 @@
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.ComboBox}">
                                                 <Setter Property="ContentTemplate" Value="{StaticResource ComboBoxFieldTemplate}"/>
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding FieldType}" Value="{x:Static local:EFieldType.Image}">
+                                                <Setter Property="ContentTemplate" Value="{StaticResource ImageFieldTemplate}"/>
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>

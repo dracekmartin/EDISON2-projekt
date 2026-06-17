@@ -97,27 +97,11 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
     $$$FillParams
 
-    // Výchozí linka = první v aktuální firmě → auto-load preview funguje bez ohledu na firmu.
-    d ..PrvniLinka(dataDB, .defSku, .defLin)
-    i defSku = "" s defSku = 1
-
     s arr = ##class(%DynamicArray).%New()
 
-    // Vstupní parametry — identifikace linky v ^JRL (povinné pro GetData)
-    s pSku = ##class(%DynamicObject).%New()
-    s pSku.name = "SKUPINA_LINEK_ID"
-    s pSku.label = "Skupina linek"
-    s pSku.type = "string"
-    s pSku.defaultValue = defSku
-    d arr.%Push(pSku)
-
-    s pLin = ##class(%DynamicObject).%New()
-    s pLin.name = "LINKA_ID"
-    s pLin.label = "Linka"
-    s pLin.type = "string"
-    s pLin.defaultValue = defLin
-    d arr.%Push(pLin)
-
+    // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) — viz GetAvailableInstances.
+    // SKUPINA_LINEK_ID je zatím fixní (default = první skupina v ^JRL, shodně s pickerem i GetData);
+    // až bude Návrhář spouštěn z JŘ/MHD, pošle se skupina (příp. výchozí linka) jako launch kontext.
     d ..AddStandardJRParameters(arr)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
@@ -191,7 +175,9 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) — fresh per request
 
         s sku = $g(^||ML("IN","SKUPINA_LINEK_ID"))
-        i sku = "" s sku = 1
+        // Default = první skupina v ^JRL — shodně s GetAvailableInstances. Picker posílá jen
+        // LINKA_ID, takže GetData musí číst tutéž skupinu, kterou picker listoval.
+        i sku = "" s sku = $o(^[dataDB]JRL(""))
         // LINKA_ID nebo INSTANCE_ID (alias z Instance Pickeru) — co přijde
         s lin = ..NormalizLinku($g(^||ML("IN","LINKA_ID")))
         i lin = "" s lin = ..NormalizLinku($g(^||ML("IN","INSTANCE_ID")))

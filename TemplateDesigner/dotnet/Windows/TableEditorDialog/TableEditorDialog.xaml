@@ -30,7 +30,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="6">
                         <TextBlock Text="Výchozí styl pro všechny sloupce. V tabu Styl sloupců můžete nastavení jednotlivých sloupců přepsat."
-                                   FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,0,0,10"
+                                   FontStyle="Italic" Foreground="#888" FontSize="12" Margin="0,0,0,10"
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -57,7 +57,7 @@
                                 HorizontalAlignment="Left" Padding="10,3" Margin="0,12,0,12"/>
 
                         <TextBlock Text="Ostatní nastavení elementu (režim, rámeček, zebra, ...) najdete v panelu Vlastnosti po zavření dialogu."
-                                   FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,8,0,0"
+                                   FontStyle="Italic" Foreground="#888" FontSize="12" Margin="0,8,0,0"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </ScrollViewer>
@@ -165,12 +165,12 @@
                                     Margin="16,0,0,0"
                                     Visibility="{Binding ShowLoadTemplate, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
-                        <TextBlock Margin="0,4,0,0" FontSize="11" Foreground="#888888"
+                        <TextBlock Margin="0,4,0,0" FontSize="12" Foreground="#888888"
                                    Text="Pole: název ze schématu bez závorek (nebo s závorkami — {ZASTAVKA} i ZASTAVKA je přijato)."/>
 
                         <!-- Warning při přesahu šířky -->
                         <TextBlock Text="{Binding ColumnOverflowText}"
-                                   Foreground="#C62828" FontSize="11" Margin="0,8,0,0"
+                                   Foreground="#C62828" FontSize="12" Margin="0,8,0,0"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
                         <Button Content="Přizpůsobit sloupce k šířce elementu"
@@ -233,7 +233,7 @@
                                      Text="{Binding SelectedRowVM.VisibilityExpression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="Výraz podmíněné viditelnosti. Prázdné = vždy viditelný."/>
                             <TextBlock Text="Výraz — prázdné = vždy viditelný  |  dostupné: {POLE}, &gt;, &lt;, ==, !=, &amp;&amp;, ||, !"
-                                       FontSize="10" Foreground="#888888" Margin="0,2,0,0"/>
+                                       FontSize="11" Foreground="#888888" Margin="0,2,0,0"/>
                         </StackPanel>
 
                         <TextBlock Grid.Row="1" Text="Buňky vybraného řádku:" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -299,7 +299,7 @@
                                   VerticalScrollBarVisibility="Auto">
                         <StackPanel>
                             <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
-                                       FontStyle="Italic" Foreground="#888" FontSize="11" Margin="0,0,0,8"/>
+                                       FontStyle="Italic" Foreground="#888" FontSize="12" Margin="0,0,0,8"/>
 
                             <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <controls:CellStyleEditor
@@ -396,7 +396,7 @@
                         </DataGrid>
 
                         <TextBlock Grid.Row="2" Margin="0,4,0,0"
-                                   FontSize="11" Foreground="#888888"
+                                   FontSize="12" Foreground="#888888"
                                    Text="Agregace: SUM({POLE}), COUNT(), AVG({POLE}), MIN({POLE}), MAX({POLE})"/>
                     </Grid>
                 </Grid>

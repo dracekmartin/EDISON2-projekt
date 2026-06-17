@@ -104,14 +104,22 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Vyčistí aktivní instance — volá se při změně agendy / načtení šablony s jinou agendou.</summary>
     private void ClearActiveInstances()
     {
-        if (_activeInstances.Count == 0) return;
         _activeInstances = [];
         _activeInstanceIndex = 0;
-        OnActiveInstancesChanged(reloadData: false);
+        // reloadData:true záměrně i když instance byly prázdné: vyčistí i _realPreviewData
+        // (vázaná na starou instanci/agendu — jinak se stará data renderují přes novou
+        // šablonu = "zmizelé" preview) a bumpne generaci → invaliduje in-flight refresh.
+        // RefreshDataForCurrentInstanceAsync sám hned vrátí (žádná aktivní instance).
+        OnActiveInstancesChanged(reloadData: true);
     }
+
+    /// <summary>Generace preview dat — chrání proti dosednutí zastaralého async GetData
+    /// (přepnu agendu/instanci, zatímco běží předchozí fetch staré). Bump při každé změně.</summary>
+    private int _previewDataGeneration;
 
     private void OnActiveInstancesChanged(bool reloadData)
     {
+        _previewDataGeneration++;
         OnPropertyChanged(nameof(ActiveInstanceText));
         OnPropertyChanged(nameof(CurrentActiveInstance));
         OnPropertyChanged(nameof(HasMultipleActiveInstances));
@@ -138,6 +146,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode)) return;
 
+        int gen = _previewDataGeneration;
         try
         {
             StatusText = $"Načítám data: {instance.Display}…";
@@ -145,6 +154,10 @@ public class TemplateDesignerViewModel : EDViewModel
             var pages = await Task.Run(() => CacheProvider.GetData(
                 agendaCode,
                 new Dictionary<string, object?> { [paramName] = instance.Value }));
+
+            // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
+            // zastaralý a nesmí dosednout do nové šablony.
+            if (gen != _previewDataGeneration) return;
 
             if (pages is null || pages.Count == 0)
             {
@@ -166,6 +179,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
         catch (Exception ex)
         {
+            if (gen != _previewDataGeneration) return;
             StatusText = $"Chyba načítání: {ex.Message}";
         }
     }
@@ -1698,21 +1712,15 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         SchemaGroups.Clear();
 
+        // Paleta zobrazuje JEN skalární pole (draggable jako {POLE}). Kolekce (Zastávky,
+        // Odjezdy, …) konzumují dedikované elementy (StopList/DepartureGrid/NotesLegend),
+        // ne ad-hoc tabulky — jako draggable pole jen matou. Parametry se nastavují
+        // v preview liště / tiskovém dialogu, ne přetažením. (Rozhodnuto 2026-06-16.)
         var fields = schema?.Fields ?? [];
         if (fields.Count > 0)
             SchemaGroups.Add(new SchemaGroupVM(
-                $"📋 Skalární pole ({fields.Count})",
+                $"📋 Pole agendy ({fields.Count})",
                 fields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
-
-        foreach (var coll in schema?.FieldCollections ?? [])
-            SchemaGroups.Add(new SchemaGroupVM(
-                $"📊 {coll.Name} [{coll.CollectionKey}]",
-                coll.Fields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
-
-        if (_agendaParameters.Count > 0)
-            SchemaGroups.Add(new SchemaGroupVM(
-                $"⚙ Parametry ({_agendaParameters.Count})",
-                _agendaParameters.Select(p => new SchemaFieldVM(p.Name, p.Label + " (parametr)"))));
     }
 
     public void LoadAgendaParameters(string? agendaCode)
@@ -1731,7 +1739,8 @@ public class TemplateDesignerViewModel : EDViewModel
             _previewParams[p.Name] = p.GetDefaultTyped();
 
         RebuildParametersPanel();
-        LoadRealPreviewData();
+        // Reálná data řídí výhradně Instance Picker (RefreshDataForCurrentInstanceAsync).
+        // Bez vybrané instance preview používá mock data — parametry sestavy už linku neurčují.
         RequestPreviewRefresh?.Invoke();
     }
 
@@ -1796,61 +1805,6 @@ public class TemplateDesignerViewModel : EDViewModel
         return Preferences.SavePrintParamsAsync(agendaCode, _previewParams);
     }
 
-    /// <summary>
-    /// Načte reálná data z Caché pro live preview. Parametry se berou z _previewParams
-    /// (včetně LINKA_ID). Pokud GetData selže nebo vrátí prázdný výsledek,
-    /// _realPreviewData zůstane null → fallback na mock data.
-    /// </summary>
-    public void LoadRealPreviewData()
-    {
-        _realPreviewData = null;
-        _realPreviewIndex = 0;
-        OnPropertyChanged(nameof(RealPreviewPageCount));
-        OnPropertyChanged(nameof(RealPreviewIndex));
-        OnPropertyChanged(nameof(PageNavigationText));
-        OnPropertyChanged(nameof(HasMultiplePages));
-
-        var agendaCode = State.CurrentTemplate.AgendaCode;
-        if (string.IsNullOrEmpty(agendaCode) || CacheProvider is null) return;
-
-        try
-        {
-            var callParams = _previewParams.ToDictionary(
-                kv => kv.Key,
-                kv => (object?)kv.Value?.ToString(),
-                StringComparer.OrdinalIgnoreCase);
-
-            var data = CacheProvider.GetData(agendaCode, callParams);
-            if (data is { Count: > 0 })
-            {
-                _realPreviewData = data;
-                var linkaId = _previewParams.TryGetValue("LINKA_ID", out var v) ? v?.ToString() : null;
-                StatusText = linkaId is not null
-                    ? $"Načteno {data.Count} stránek dat (linka {linkaId})"
-                    : $"Načteno {data.Count} stránek dat";
-            }
-            else
-            {
-                StatusText = "Žádná data z Caché.";
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusText = $"Chyba načítání dat: {ex.Message}";
-            System.Diagnostics.Debug.WriteLine($"[Preview] LoadRealPreviewData failed: {ex.Message}");
-        }
-
-        OnPropertyChanged(nameof(RealPreviewPageCount));
-        OnPropertyChanged(nameof(RealPreviewIndex));
-        OnPropertyChanged(nameof(PageNavigationText));
-        OnPropertyChanged(nameof(HasMultiplePages));
-        System.Windows.Input.CommandManager.InvalidateRequerySuggested();
-    }
-
-    /// <summary>Názvy parametrů, jejichž změna vyžaduje přenačtení dat z Caché (ne jen překreslení).</summary>
-    private static readonly HashSet<string> DataReloadParams = new(StringComparer.OrdinalIgnoreCase)
-        { "LINKA_ID" };
-
     public void RebuildParametersPanel()
     {
         ParameterControlVM.Init(
@@ -1862,11 +1816,9 @@ public class TemplateDesignerViewModel : EDViewModel
                 _cachedParamValues = null;
                 RequestPreviewRefresh?.Invoke();
             },
-            commitFactory: p => DataReloadParams.Contains(p.Name) ? () =>
-            {
-                LoadRealPreviewData();
-                RequestPreviewRefresh?.Invoke();
-            } : null);
+            // Žádný parametr sestavy už neurčuje načítaná data (linku řídí Instance Picker) —
+            // změna parametru jen překreslí preview, nepřenačítá z Caché.
+            commitFactory: _ => null);
 
         HasParameters = PreviewParameters.Count > 0;
     }
@@ -1894,7 +1846,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>
     /// Sestaví DataContext pro preview. Priorita:
-    /// 1. Reálná data z Caché (pokud LoadRealPreviewData uspělo)
+    /// 1. Reálná data z Caché pro vybranou instanci (Instance Picker → _realPreviewData)
     /// 2. Mock data z Caché GetMockData
     /// 3. Syntetická mock data ze schématu
     /// Volitelný parametr overrideParams nahrazuje interní _previewParams (pro PrintDialog).

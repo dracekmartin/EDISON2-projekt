@@ -15,7 +15,7 @@
                 <TextBlock Text="Import PDF do šablony"
                            FontSize="16" FontWeight="Bold" Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                 <TextBlock Text="Vyberte PDF soubor a převeďte ho na editovatelnou šablonu."
-                           FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                           FontSize="12" Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
 
@@ -229,7 +229,7 @@
             <!-- Debug -->
             <CheckBox Content="Debug log (uloží .import-debug.txt vedle PDF)"
                       IsChecked="{Binding EnableDebug}"
-                      Margin="0,4,0,0" FontSize="11" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                      Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
 
             <!-- Status -->
             <TextBlock Text="{Binding StatusText}" Margin="0,8,0,0"

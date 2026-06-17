@@ -12,7 +12,7 @@
                     Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
             <CheckBox Content="{Binding Label}"
                       IsChecked="{Binding Value, Mode=TwoWay}"
-                      VerticalAlignment="Center" FontSize="11"/>
+                      VerticalAlignment="Center" FontSize="12"/>
         </StackPanel>
     </DataTemplate>
 
@@ -20,8 +20,8 @@
         <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center"
                     Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
             <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
-            <ComboBox MinWidth="220" FontSize="11"
+                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="12"/>
+            <ComboBox MinWidth="220" FontSize="12"
                       ItemsSource="{Binding Options}"
                       SelectedItem="{Binding Value, Mode=TwoWay}"/>
         </StackPanel>
@@ -31,8 +31,8 @@
         <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center"
                     Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
             <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
-            <TextBox MinWidth="60" FontSize="11"
+                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="12"/>
+            <TextBox MinWidth="60" FontSize="12"
                      Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      VerticalAlignment="Center"/>
         </StackPanel>
@@ -42,12 +42,12 @@
         <StackPanel Orientation="Horizontal" Margin="0,0,16,0" VerticalAlignment="Center"
                     Visibility="{Binding IsVisible, Converter={StaticResource ParamBoolToVis}}">
             <TextBlock Text="{Binding Label, StringFormat='{}{0}:'}"
-                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="11"/>
-            <TextBox MinWidth="60" FontSize="11"
+                       VerticalAlignment="Center" Margin="0,0,4,0" FontSize="12"/>
+            <TextBox MinWidth="60" FontSize="12"
                      Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=LostFocus}"
                      VerticalAlignment="Center"/>
             <Button Content="Načíst" Command="{Binding CommitCommand}"
-                    FontSize="10" Padding="6,1" Margin="4,0,0,0"
+                    FontSize="11" Padding="6,1" Margin="4,0,0,0"
                     VerticalAlignment="Center"/>
         </StackPanel>
     </DataTemplate>

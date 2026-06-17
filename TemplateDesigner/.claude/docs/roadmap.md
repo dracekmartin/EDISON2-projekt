@@ -375,7 +375,12 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ### 🟢 Menší priorita — UX polish
 
-*(prázdné — všechny zachycené QoF body jsou hotové, viz changelog)*
+- **Sjednotit API editoru sloupců** (po demu) — StopList / DepartureGrid / TableElement mají
+  každý vlastní column VM (`StopColumnVM` / `DepartureGroupColumnVM` / `ColumnVM`, jen
+  `INotifyPropertyChanged`, bez společného základu) a vlastní list XAML → drift (mm/tečka se
+  zobrazují nekonzistentně). Stylová část už sdílená je (`CellStyleEditor`). Cíl: `IColumnRowVM`
+  (`DisplayName`/`Visible`/`HasAnyOverride`/`Width?`) + sdílený `ColumnListEditor` UserControl
+  (mm jen když `Width != null`). Element-specifika (Field/Format, group) zůstanou v detail panelu.
 
 ---
 

@@ -1,9 +1,8 @@
 {
-  "version": "1.0",
+  "version": "1.0.0",
   "id": "ad000000-0000-4000-8000-000000000001",
   "name": "AD test (zastavkovy)",
-  "description": "Jednoduchá testovací šablona pro agendu ZASTAVKOVY_JR_AD — dynamické elementy (StopList, DepartureGrid, NotesLegend) + dynamické placeholdery. Mock data = linka 320113.",
-  "agendaCode": "ZASTAVKOVY_JR_AD",
+  "description": "Jednoduch\u00E1 testovac\u00ED \u0161ablona pro agendu ZASTAVKOVY_JR_AD \u2014 dynamick\u00E9 elementy (StopList, DepartureGrid, NotesLegend) \u002B dynamick\u00E9 placeholdery. Mock data = linka 320113.",
   "pageSize": {
     "width": 210,
     "height": 148,
@@ -21,6 +20,8 @@
       "overflowBehavior": "KeepTogether",
       "role": "Body",
       "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
       "elements": [
         {
           "type": "TextElement",
@@ -70,7 +71,7 @@
         },
         {
           "type": "TextElement",
-          "text": "Směr: {POPIS_SMER}    •    {POPIS_PLATNOSTI}",
+          "text": "Sm\u011Br: {POPIS_SMER}    \u2022    {POPIS_PLATNOSTI}",
           "style": {
             "fontFamily": "Arial",
             "fontSize": 7,
@@ -94,30 +95,52 @@
         {
           "type": "StopListElement",
           "columns": [
-            { "key": "TravelTime", "header": "min.",     "width": 8,  "visible": true, "alignment": "Right" },
-            { "key": "StopName",   "header": "Zastávky", "width": 37, "visible": true, "alignment": "Left" }
+            {
+              "key": "TravelTime",
+              "header": "min.",
+              "width": 8,
+              "visible": true,
+              "alignment": "Right"
+            },
+            {
+              "key": "StopName",
+              "header": "Zast\u00E1vky",
+              "width": 37,
+              "visible": true,
+              "alignment": "Left"
+            }
           ],
           "showRowSeparators": false,
           "showStopIndentation": true,
           "showSignalStopIndicator": true,
-          "signalStopSymbol": "×",
+          "signalStopSymbol": "\u00D7",
           "showStopAttributes": true,
           "showStopNotes": true,
           "markersPosition": "AfterName",
           "showDirectionArrow": true,
           "directionArrowColor": "#FF000000",
+          "directionArrowBold": false,
           "directionArrowPosition": "Right",
           "showHeader": true,
           "currentStopUnderline": true,
           "currentStopBold": true,
           "showPassedStops": false,
+          "passedStopsForeColor": "#FF999999",
           "excludedAttributeIds": [],
           "zastavkyDataSource": "ZASTAVKY",
           "skupinyDnuDataSource": "SKUPINY_DNU",
           "odjezdyDataSource": "ODJEZDY",
           "poznamkyDataSource": "POZNAMKY",
-          "dataStyle": { "fontFamily": "Arial", "fontSize": 7.5 },
-          "headerStyle": { "fontFamily": "Arial", "fontSize": 8, "bold": true, "backgroundColor": "#FFE0E0E0" },
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7.5
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true,
+            "backgroundColor": "#FFE0E0E0"
+          },
           "gridColor": "#FFD0D0D0",
           "dataRowHeight": 4,
           "id": "ad000000-0000-4000-8000-0000000000c1",
@@ -144,6 +167,9 @@
           "minuteStyle": {},
           "anotaceSymbolStyle": {},
           "anotaceTextStyle": {},
+          "anotaceGap": 0,
+          "anotaceInterGap": 0,
+          "odjezdGap": 0,
           "groupSeparatorWidth": 0.4,
           "hourColumnPerGroup": true,
           "maxGroupCount": 3,
@@ -152,30 +178,81 @@
           "timeAxisRangeTo": 19,
           "autoExpandToFillHeight": false,
           "minuteBold": true,
+          "alternatingRowColor": "#FFF5F5F5",
           "showAnotace": true,
           "anotaceFontSize": 5,
           "hourColumnStyle": {
-            "header": { "fontFamily": "Arial", "fontSize": 6, "bold": true },
-            "data": { "fontFamily": "Arial", "fontSize": 9 }
+            "header": {
+              "fontFamily": "Arial",
+              "fontSize": 6,
+              "bold": true
+            },
+            "data": {
+              "fontFamily": "Arial",
+              "fontSize": 9
+            }
           },
           "groupColumns": [
-            { "skupinaDnuId": "1", "isVisible": true, "style": { "header": { "fontFamily": "Arial", "fontSize": 6, "bold": true, "backgroundColor": "#FFD8EFD8" }, "data": {} } },
-            { "skupinaDnuId": "2", "isVisible": true, "style": { "header": { "fontFamily": "Arial", "fontSize": 6, "bold": true, "backgroundColor": "#FFDFDFDF" }, "data": {} } },
-            { "skupinaDnuId": "3", "isVisible": true, "style": { "header": { "fontFamily": "Arial", "fontSize": 6, "bold": true, "backgroundColor": "#FFD8D8EF" }, "data": {} } }
+            {
+              "skupinaDnuId": "1",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFD8EFD8"
+                },
+                "data": {}
+              }
+            },
+            {
+              "skupinaDnuId": "2",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFDFDFDF"
+                },
+                "data": {}
+              }
+            },
+            {
+              "skupinaDnuId": "3",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFD8D8EF"
+                },
+                "data": {}
+              }
+            }
           ],
           "colorRules": [],
           "zastavkyDataSource": "ZASTAVKY",
           "skupinyDnuDataSource": "SKUPINY_DNU",
           "odjezdyDataSource": "ODJEZDY",
           "poznamkyDataSource": "POZNAMKY",
-          "dataStyle": { "fontFamily": "Arial", "fontSize": 9 },
-          "headerStyle": { "fontFamily": "Arial", "fontSize": 6, "bold": true },
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 9
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 6,
+            "bold": true
+          },
           "gridColor": "#FFD0D0D0",
           "dataRowHeight": 5,
           "id": "ad000000-0000-4000-8000-0000000000c2",
           "x": 48,
           "y": 18,
-          "width": 117,
+          "width": 98.7,
           "height": 128,
           "zIndex": 4,
           "isLocked": false,
@@ -186,9 +263,9 @@
         },
         {
           "type": "NotesLegendElement",
-          "headerText": "Poznámky",
-          "noteSeparator": " — ",
-          "noteFontSize": 6,
+          "headerText": "Pozn\u00E1mky",
+          "noteSeparator": " \u2014 ",
+          "noteFontSize": 7,
           "noteLineHeight": 3,
           "negativniZnackaBackColor": "#FF000000",
           "negativniZnackaForeColor": "#FFFFFFFF",
@@ -199,13 +276,20 @@
           "skupinyDnuDataSource": "SKUPINY_DNU",
           "odjezdyDataSource": "ODJEZDY",
           "poznamkyDataSource": "POZNAMKY",
-          "dataStyle": { "fontFamily": "Arial", "fontSize": 7 },
-          "headerStyle": { "fontFamily": "Arial", "fontSize": 8, "bold": true },
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true
+          },
           "gridColor": "#FFD0D0D0",
           "id": "ad000000-0000-4000-8000-0000000000c3",
-          "x": 166,
+          "x": 146.7,
           "y": 18,
-          "width": 43,
+          "width": 62.3,
           "zIndex": 5,
           "isLocked": false,
           "backgroundColor": "#00FFFFFF",
@@ -215,5 +299,71 @@
         }
       ]
     }
-  ]
+  ],
+  "agendaCode": "ZASTAVKOVY_JR_AD",
+  "parameters": [
+    {
+      "name": "SKUPINA_LINEK_ID",
+      "label": "Skupina linek",
+      "type": "string",
+      "defaultValue": "1"
+    },
+    {
+      "name": "LINKA_ID",
+      "label": "Linka",
+      "type": "string",
+      "defaultValue": "0410101"
+    },
+    {
+      "name": "TISK_SIPKY",
+      "label": "Tisknout \u0161ipky sm\u011Bru",
+      "type": "bool",
+      "defaultValue": "false"
+    },
+    {
+      "name": "TISK_PROJETYCH_ZAST",
+      "label": "Tisknout projet\u00E9 zast\u00E1vky",
+      "type": "bool",
+      "defaultValue": "false"
+    },
+    {
+      "name": "CASOVA_OSA",
+      "label": "\u010Casov\u00E1 osa odjezd\u016F",
+      "type": "enum",
+      "defaultValue": "Jen hodiny s odjezdy",
+      "options": [
+        "Jen hodiny s odjezdy",
+        "Souvisl\u00E1 od prvn\u00ED do posledn\u00ED",
+        "Vlastn\u00ED rozsah"
+      ]
+    },
+    {
+      "name": "HODINY_OD",
+      "label": "Hodiny od",
+      "type": "number",
+      "defaultValue": "4",
+      "visibleWhen": "CASOVA_OSA=Vlastn\u00ED rozsah"
+    },
+    {
+      "name": "HODINY_DO",
+      "label": "Hodiny do",
+      "type": "number",
+      "defaultValue": "23",
+      "visibleWhen": "CASOVA_OSA=Vlastn\u00ED rozsah"
+    },
+    {
+      "name": "ROZTAHNOUT_NA_VYSKU",
+      "label": "Rozt\u00E1hnout na v\u00FD\u0161ku",
+      "type": "bool",
+      "defaultValue": "false"
+    }
+  ],
+  "editorPreferences": {
+    "gridSize": 1,
+    "snapToGrid": true,
+    "snapToElements": true,
+    "showGrid": false
+  },
+  "createdAt": "2026-06-16T07:18:50.8390906Z",
+  "modifiedAt": "2026-06-16T07:22:04.6867941Z"
 }

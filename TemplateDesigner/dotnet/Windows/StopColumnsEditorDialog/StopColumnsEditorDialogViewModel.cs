@@ -98,15 +98,8 @@ public class StopColumnVM : INotifyPropertyChanged
 
 class StopColumnsEditorDialogViewModel : EDViewModel
 {
-    // ── Tab 1: Obecné — element-level styly + property descriptors ───────
-
-    /// <summary>Výchozí styl záhlaví elementu (kaskáda: per-column → tento → ScheduleHeaderDefaults).</summary>
-    public CellStyleVM ElementHeaderStyle { get; }
-
-    /// <summary>Výchozí styl dat elementu (kaskáda: per-column → tento → ScheduleDataDefaults).</summary>
-    public CellStyleVM ElementDataStyle { get; }
-
-    public IReadOnlyList<PropertyDescriptor> GeneralDescriptors { get; }
+    // Tab 1 „Obecné" = embedded EDInputForm (StopListElementEdit.cls) — řeší code-behind
+    // přes ElementFormBinder. VM drží jen per-sloupec editaci (tab 2).
 
     // ── Tab 2: Sloupce ──────────────────────────────────────────────────
 
@@ -158,7 +151,6 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public RelayCommand MoveUpCommand   { get; }
     public RelayCommand MoveDownCommand { get; }
-    public RelayCommand ResetCommand    { get; }
 
     // Color picker commands — záhlaví
     public RelayCommand PickHeaderTextColorCommand { get; }
@@ -176,32 +168,15 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     public RelayCommand ResetAllColumnStylesCommand { get; }
     public RelayCommand FitColumnsToWidthCommand { get; }
 
-    // Element-level (Obecné tab)
-    public RelayCommand PickElementHeaderTextColorCommand { get; }
-    public RelayCommand PickElementHeaderBgColorCommand { get; }
-    public RelayCommand PickElementDataTextColorCommand { get; }
-    public RelayCommand PickElementDataBgColorCommand { get; }
-    public RelayCommand ClearElementHeaderTextColorCommand { get; }
-    public RelayCommand ClearElementHeaderBgColorCommand { get; }
-    public RelayCommand ClearElementDataTextColorCommand { get; }
-    public RelayCommand ClearElementDataBgColorCommand { get; }
-    public RelayCommand ResetElementStyleCommand { get; }
-
     // ── Konstruktor ─────────────────────────────────────────────────────────
 
     private readonly StopListElement _element;
 
     public StopColumnsEditorDialogViewModel(
         StopListElement element,
-        List<StopColumn> columns,
-        IReadOnlyList<PropertyDescriptor> generalDescriptors)
+        List<StopColumn> columns)
     {
         _element           = element;
-        GeneralDescriptors = generalDescriptors;
-
-        // Element-level CellStyleVM (Obecné tab) — parent je ScheduleHeaderDefaults/ScheduleDataDefaults
-        ElementHeaderStyle = CellStyleVM.FromModel(element.HeaderStyle, element.ResolveElementHeaderParent());
-        ElementDataStyle   = CellStyleVM.FromModel(element.DataStyle,   element.ResolveElementDataParent());
 
         var headerInherited = element.ResolveColumnHeaderParent();
         var dataInherited   = element.ResolveColumnDataParent();
@@ -209,11 +184,21 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         foreach (var col in columns)
             ColumnVMs.Add(StopColumnVM.FromModel(col, headerInherited, dataInherited));
 
+        // Doplň chybějící známé sloupce (uložená šablona může mít jen podmnožinu) — ať uživatel
+        // vidí VŠECHNY dostupné sloupce a může je zapnout checkboxem, místo aby zmizely z nabídky
+        // a daly se vrátit jen přes "Výchozí". Doplněné jsou skryté (nezmění render, dokud je nezapne).
+        var presentKeys = columns.Select(c => c.Key).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        foreach (var def in StopListElement.GetDefaultColumns())
+            if (!presentKeys.Contains(def.Key))
+            {
+                def.Visible = false;
+                ColumnVMs.Add(StopColumnVM.FromModel(def, headerInherited, dataInherited));
+            }
+
         if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
 
         MoveUpCommand   = Command(MoveUp);
         MoveDownCommand = Command(MoveDown);
-        ResetCommand    = Command(Reset);
 
         // Color picker commands — záhlaví
         PickHeaderTextColorCommand  = Command(() => PickColor(g => g.HeaderStyle.TextColor, (g, c) => g.HeaderStyle.TextColor = c));
@@ -261,29 +246,6 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         foreach (var vm in ColumnVMs)
             vm.PropertyChanged += OnColumnChanged;
 
-        // Element-level color picker commands (Obecné tab)
-        PickElementHeaderTextColorCommand  = Command(() => PickElementColor(ElementHeaderStyle, s => s.TextColor, (s, c) => s.TextColor = c));
-        PickElementHeaderBgColorCommand    = Command(() => PickElementColor(ElementHeaderStyle, s => s.BgColor,   (s, c) => s.BgColor   = c));
-        PickElementDataTextColorCommand    = Command(() => PickElementColor(ElementDataStyle,   s => s.TextColor, (s, c) => s.TextColor = c));
-        PickElementDataBgColorCommand      = Command(() => PickElementColor(ElementDataStyle,   s => s.BgColor,   (s, c) => s.BgColor   = c));
-        ClearElementHeaderTextColorCommand = Command(() => ElementHeaderStyle.TextColor = null);
-        ClearElementHeaderBgColorCommand   = Command(() => ElementHeaderStyle.BgColor   = null);
-        ClearElementDataTextColorCommand   = Command(() => ElementDataStyle.TextColor   = null);
-        ClearElementDataBgColorCommand     = Command(() => ElementDataStyle.BgColor     = null);
-
-        ResetElementStyleCommand = Command(() =>
-        {
-            ElementHeaderStyle.Reset();
-            ElementDataStyle.Reset();
-        });
-    }
-
-    private void PickElementColor(CellStyleVM vm, Func<CellStyleVM, string?> getter, Action<CellStyleVM, string?> setter)
-    {
-        if (RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(vm) ?? "");
-        if (result is not null)
-            setter(vm, result);
     }
 
     private void OnColumnChanged(object? sender, PropertyChangedEventArgs e)
@@ -313,25 +275,6 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         if (idx >= 0 && idx < ColumnVMs.Count - 1) ColumnVMs.Move(idx, idx + 1);
     }
 
-    private void Reset()
-    {
-        var headerInherited = _element.ResolveColumnHeaderParent();
-        var dataInherited   = _element.ResolveColumnDataParent();
-
-        ColumnVMs.Clear();
-        foreach (var col in StopListElement.GetDefaultColumns())
-        {
-            var vm = StopColumnVM.FromModel(col, headerInherited, dataInherited);
-            vm.PropertyChanged += OnColumnChanged;
-            ColumnVMs.Add(vm);
-        }
-        if (ColumnVMs.Count > 0) SelectedColumnVM = ColumnVMs[0];
-
-        OnPropertyChanged(nameof(TotalVisibleColumnWidth));
-        OnPropertyChanged(nameof(HasColumnOverflow));
-        OnPropertyChanged(nameof(ColumnOverflowText));
-    }
-
     private void PickColor(Func<StopColumnVM, string?> getter, Action<StopColumnVM, string?> setter)
     {
         if (SelectedColumnVM is null || RequestColorPicker is null) return;
@@ -346,10 +289,7 @@ class StopColumnsEditorDialogViewModel : EDViewModel
     {
         RequestCommitEdits?.Invoke();
 
-        // Element-level styl — zápis zpět do elementu (ScheduleElementBase.HeaderStyle/DataStyle)
-        _element.HeaderStyle = ElementHeaderStyle.ToModel() ?? new TextStyle();
-        _element.DataStyle   = ElementDataStyle.ToModel()   ?? new TextStyle();
-
+        // Element-level styl + ostatní general props řeší embedded EDInputForm (code-behind).
         ResultColumns = ColumnVMs.Select(vm => vm.ToModel()).ToList();
         CloseDialog(true);
     }

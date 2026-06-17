@@ -24,6 +24,18 @@ public static class ElementPropertyAccessor
         return ToStringValue(prop.GetValue(parent));
     }
 
+    /// <summary>
+    /// True pokud path ukazuje na reálnou zapisovatelnou property. False pro „virtuální"
+    /// pole, která nemají property na cílovém objektu (např. driver pole „Format"/„Orientation",
+    /// jejichž jediným účelem je řídit Validate logiku server-side). Volající je pak přeskočí
+    /// — neaplikují se ani nevytvoří command.
+    /// </summary>
+    public static bool Exists(object root, string path)
+    {
+        var (parent, prop) = Resolve(root, path);
+        return parent is not null && prop is not null && prop.CanWrite;
+    }
+
     /// <summary>Zapíše string hodnotu do property elementu přes path (s type conversion).</summary>
     public static void Set(object root, string path, string? stringValue)
     {

@@ -304,6 +304,25 @@ public partial class MainWindow : Window
 
         if (pref.ActiveLeftTabIndex >= 0 && pref.ActiveLeftTabIndex < LeftTabControl.Items.Count)
             LeftTabControl.SelectedIndex = pref.ActiveLeftTabIndex;
+
+        // Zoom combo musí odrážet načtený State.Zoom — jinak combo ukazuje 100 %, ale plátno
+        // rendruje na uloženém zoomu (a "1:1" to neopraví, protože index se nezmění).
+        SyncZoomComboBox(_vm?.State.Zoom ?? 1f);
+    }
+
+    /// <summary>Srovná zoom combo na nejbližší úroveň k danému zoomu (a tím i State.Zoom přes SelectionChanged).</summary>
+    private void SyncZoomComboBox(float zoom)
+    {
+        if (CmbZoom is null) return;
+        int best = 2; // 100 %
+        float bestDiff = float.MaxValue;
+        for (int i = 0; i < ZoomLevels.Length; i++)
+        {
+            float d = Math.Abs(ZoomLevels[i] - zoom);
+            if (d < bestDiff) { bestDiff = d; best = i; }
+        }
+        if (CmbZoom.SelectedIndex != best)
+            CmbZoom.SelectedIndex = best;   // SelectionChanged srovná State.Zoom + překreslí
     }
 
     private void OnWindowClosing(object? sender, CancelEventArgs e)
@@ -478,6 +497,29 @@ public partial class MainWindow : Window
             if (ZoomLevels[i] <= idealZoom + 0.01f) { bestIdx = i; break; }
         }
         CmbZoom.SelectedIndex = bestIdx;
+    }
+
+    // ── Layout: sbalení levého panelu (uvolní místo na malém monitoru) ─────────
+
+    private double _savedLeftWidth = 200;
+
+    /// <summary>Sbalí/rozbalí levý panel (sekce / pole agendy) — uvolní místo na malém monitoru.</summary>
+    private void BtnToggleLeftPanel_Changed(object sender, RoutedEventArgs e)
+    {
+        if (SectionsColumn is null) return;
+        if (BtnToggleLeftPanel.IsChecked == true)
+        {
+            SectionsColumn.MinWidth = 120;
+            SectionsColumn.Width = new GridLength(_savedLeftWidth);
+            SectionsSplitterColumn.Width = new GridLength(4);
+        }
+        else
+        {
+            if (SectionsColumn.ActualWidth > 0) _savedLeftWidth = SectionsColumn.ActualWidth;
+            SectionsColumn.MinWidth = 0;                 // jinak by Width=0 byla zaclampovaná na 120
+            SectionsColumn.Width = new GridLength(0);
+            SectionsSplitterColumn.Width = new GridLength(0);
+        }
     }
 
     // ── Preview ───────────────────────────────────────────────────────────────
@@ -885,8 +927,10 @@ public partial class MainWindow : Window
                 }
                 else
                 {
-                    // Fallback — manuálně zadaný LINKA_ID v parametrech (legacy chování)
-                    pages = provider.GetData(agendaCode, paramValues);
+                    // Bez vybrané instance nelze tisknout reálná data — linku určuje výhradně
+                    // Instance Picker (parametry sestavy už LINKA_ID neobsahují). Dialog na null
+                    // ukáže "Caché nevrátila žádná data".
+                    pages = null;
                 }
 
                 if (pages is null) return null;
@@ -1372,6 +1416,7 @@ public partial class MainWindow : Window
         Models.Elements.RectangleElement   => ("ALVA.TemplateDesigner.EDInputForm.RectangleElementEdit", "Vlastnosti obdélníku"),
         Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
         Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
+        Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
         _ => (null, null)
     };
 
@@ -1389,30 +1434,20 @@ public partial class MainWindow : Window
 
     private void OpenStopColumnsDialog(StopListElement element)
     {
-        var undoDepth = _vm!.State.UndoStack.Count;
-
-        var generalDescriptors = element.GetPropertyDescriptors()
-            .Where(d => d is not Models.ButtonPropertyDescriptor)
-            .ToList();
-
-        var dlg = new StopColumnsEditorDialog(
-            element,
-            generalDescriptors,
-            cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
-            { Owner = this };
+        var dlg = new StopColumnsEditorDialog(element) { Owner = this };
 
         if (dlg.ShowDialog() == true)
         {
-            _vm.Execute(new Commands.Implementations.SetPropertyCommand(
+            // Tab „Obecné" (EDInputForm) + sloupce — vykonat jako jeden undo krok.
+            var cmds = new List<Commands.IDesignerCommand>();
+            if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
+            cmds.Add(new Commands.Implementations.SetPropertyCommand(
                 "Sloupce zastávek", element.Columns, dlg.ResultColumns,
                 v => element.Columns = (List<StopColumn>)v!));
-        }
-        else
-        {
-            // Cancel — vrátit změny z obecného tabu
-            while (_vm.State.UndoStack.Count > undoDepth)
-                _vm.State.Undo();
+
+            _vm!.Execute(cmds.Count == 1
+                ? cmds[0]
+                : new Commands.Implementations.CompositeCommand("Nastavení zastávek", cmds));
         }
 
         InvalidateCanvas();
@@ -1443,8 +1478,12 @@ public partial class MainWindow : Window
 
     private void OpenPropertiesForPage(Template template)
     {
-        _propsVm!.PrepareForPage(template);
-        new ElementPropertiesWindow(_propsVm) { Owner = this }.ShowDialog();
+        var dlg = new ElementEditDialog(
+            template,
+            "ALVA.TemplateDesigner.EDInputForm.PageEdit",
+            "Vlastnosti stránky") { Owner = this };
+        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
+            _vm!.Execute(dlg.ResultCommand);
         UpdateCanvasSize();
         InvalidateCanvas();
         InvalidatePreview();
@@ -1705,6 +1744,11 @@ public partial class MainWindow : Window
         else if (e.Key == Key.D0 && ctrl)
         {
             FitToPage();
+            e.Handled = true;
+        }
+        else if (e.Key == Key.B && ctrl)
+        {
+            BtnToggleLeftPanel.IsChecked = !(BtnToggleLeftPanel.IsChecked == true);
             e.Handled = true;
         }
         else if (e.Key == Key.N && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))

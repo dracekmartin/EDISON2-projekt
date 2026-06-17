@@ -159,19 +159,19 @@
     <FontFamily x:Key="EDTheme.FontFamily">Segoe UI</FontFamily>
 
     <!-- Drobné popisky — ruler ticks, badge texts, group labels v toolbaru -->
-    <sys:Double x:Key="EDTheme.FontSize.Small">9</sys:Double>
+    <sys:Double x:Key="EDTheme.FontSize.Small">10</sys:Double>
 
     <!-- Caption — tipy, hints, sekundární popisky -->
-    <sys:Double x:Key="EDTheme.FontSize.Caption">10</sys:Double>
+    <sys:Double x:Key="EDTheme.FontSize.Caption">11</sys:Double>
 
-    <!-- Body — defaultní velikost textu UI -->
-    <sys:Double x:Key="EDTheme.FontSize.Body">11</sys:Double>
+    <!-- Body — defaultní velikost textu UI (12 = Windows standard) -->
+    <sys:Double x:Key="EDTheme.FontSize.Body">12</sys:Double>
 
     <!-- Header — nadpisy panelů, dialog titulky -->
-    <sys:Double x:Key="EDTheme.FontSize.Header">12</sys:Double>
+    <sys:Double x:Key="EDTheme.FontSize.Header">13</sys:Double>
 
     <!-- Large — emphasis (rare) -->
-    <sys:Double x:Key="EDTheme.FontSize.Large">14</sys:Double>
+    <sys:Double x:Key="EDTheme.FontSize.Large">15</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          SPACING — Padding / Margin tokens
