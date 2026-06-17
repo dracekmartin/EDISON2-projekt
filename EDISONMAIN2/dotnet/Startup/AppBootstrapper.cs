@@ -9,6 +9,7 @@ using EDControls.EDViewModel;
 using EDControls.MiniApps;
 using EDControls.UserFonts;
 using EDControls.UserPrefs;
+using EDISONMAIN2.LegacyMiniApps;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
@@ -431,7 +432,7 @@ public class AppBootstrapper
     {
         var treeGetter = new ModuleTreeGetter();
         var switcher = new CompanySwitcher(services, prefs, nav.CloseAll);
-        var miniAppCatalog = MiniAppCatalog.Build([new CoreMiniApps(), new DevSampleMiniApps()]);
+        var miniAppCatalog = MiniAppCatalog.Build([new CoreMiniApps(), new LegacyMiniAppProvider(), new DevSampleMiniApps()]);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, () => SwitchUser(services, nav.CloseAll),
                                                 prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog);

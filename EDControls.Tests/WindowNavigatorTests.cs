@@ -60,6 +60,19 @@ public class WindowNavigatorTests
         Assert.Equal("ALVA.", label);
     }
 
+    // ---------- LaunchesDirectly ----------
+
+    [Theory]
+    [InlineData("EDISONMAIN.exe", true)]
+    [InlineData(@"C:\Edison\EDISONMAIN.exe", true)]
+    [InlineData("edisonmain.exe", true)]
+    [InlineData("USERS.exe", false)]
+    [InlineData("MHD2PlanDopravy.exe", false)]
+    public void LaunchesDirectly_OnlyEdisonMain(string exeName, bool expected)
+    {
+        Assert.Equal(expected, WindowNavigator.LaunchesDirectly(exeName));
+    }
+
     // ---------- BuildLauncherArguments ----------
 
     private static IMLRest MakeMlRest()

@@ -33,6 +33,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\EDControls\dotnet\EDControls.csproj" />
+    <ProjectReference Include="..\..\EDISONMAIN2.LegacyMiniApps\dotnet\EDISONMAIN2.LegacyMiniApps.csproj" />
   </ItemGroup>
 
   <ItemGroup>

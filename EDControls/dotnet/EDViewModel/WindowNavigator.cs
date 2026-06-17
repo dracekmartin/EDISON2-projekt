@@ -192,15 +192,25 @@ public class WindowNavigator : IWindowNavigator
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
         var shellGuid = shareShellSession ? mlRest.Guid : "";
         var agendaPath = ResolveExecutablePath(exeName);
+
+        // EDISONMAIN se spouští napřímo (ne přes host): jeho ApplicationEvents.OnRun nastavuje
+        // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
+        // Ostatní agendy jdou přes host, takže nepotřebují retrofit.
+        bool direct = LaunchesDirectly(exeName);
         var prc = Process.Start(new ProcessStartInfo
         {
             UseShellExecute = true,
-            FileName = ResolveExecutablePath(LauncherExe),
-            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, agendaPath),
+            FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
+            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath),
         });
         if (prc != null) KillOnExit.Bind(prc);
         return prc;
     }
+
+    /// <summary>Agendy, které se spouští napřímo místo přes generický host (drží si vlastní
+    /// retrofit s logikou, kterou host nereplikuje). Zatím jen legacy shell EDISONMAIN.</summary>
+    internal static bool LaunchesDirectly(string exeName) =>
+        string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// Složí 12-arg payload pro generický host: sentinel + sys kontext + formFqn + shellGuid +
