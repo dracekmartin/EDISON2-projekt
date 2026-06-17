@@ -237,10 +237,17 @@ AvalonDock `XmlLayoutSerializer` serializuje rozložení do XML; obnova páruje 
 odřízne suffix, podle prefixu najde descriptor v katalogu a vyrobí novou instanci VM
 (s **výchozím stavem** — per-instance stav se neukládá, §3).
 
-**Uložení zatím lokálně** v `LocalPrefs` (JSON v `%APPDATA%\m-line\EDISONMAIN2\local.json`).
-Layout držíme **per IDFa** (slovník `idfa → layoutXml`), aby přepnutí firmy mělo vlastní rozložení
-a sedělo na close/reopen chování z §5. Přidá se jako nullable property (chybějící klíč =
-prázdný layout = výchozí docking), kompatibilní upgrade dle vzoru v `CLAUDE.md`.
+**Uložení zatím lokálně** v `LocalPrefs.MiniAppLayouts` (JSON v `%APPDATA%\m-line\EDISONMAIN2\local.json`),
+**per IDFa** (slovník `idfa → layoutXml`), aby přepnutí firmy mělo vlastní rozložení. Nullable
+property (chybějící klíč = prázdný layout = výchozí docking), kompatibilní upgrade dle `CLAUDE.md`.
+
+Orchestruje `EdisonMainViewModel`:
+
+- **uloží** layout při zavření shellu (`CloseAllCommand`) a před přepnutím session (uloží se layout
+  *staré* IDFa, pak `CloseAll`, pak restore *nové*),
+- **obnoví** při napojení hostu (`AttachMiniAppHost`, po loginu) a po přepnutí session.
+- Po restore `MiniAppManager` posune instance counter za nejvyšší obnovený suffix, ať nově otevřená
+  mini-app nekoliduje s `ContentId` (`X#3` po obnově `X#1`, `X#2`).
 
 > Trade-off: lokální = per-stanice, nepřenáší se mezi počítači. Pokud to bude vadit, pozdější
 > migrace na server-side (per-user × IDFa, dedikovaný Caché endpoint nebo `MLRest.BinarySave`)

@@ -14,6 +14,9 @@ public interface ILocalPrefs
     bool ShowWindowsAsDialogs { get; set; }
     bool LoadBoards { get; set; }
 
+    /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
+    Dictionary<string, string>? MiniAppLayouts { get; set; }
+
     /// <summary>
     /// Per-stanice: zkusit při startu Windows SSO auto-login (jméno = <c>Environment.UserName</c>,
     /// prázdné heslo) před zobrazením login dialogu. Zapnout na stanicích s LDAP-AUTO uživateli;
@@ -38,6 +41,8 @@ public class LocalPrefs : ILocalPrefs
     public bool ShowWindowsAsDialogs { get; set; }
     public bool LoadBoards { get; set; } = true;
     public bool TryWindowsAutoLogin { get; set; }
+
+    public Dictionary<string, string>? MiniAppLayouts { get; set; }
 
     // FontApplied/FontFamily/FontSize byly přesunuty do EDControls.UserFonts.UserFontPreference
     // (shared %APPDATA%\m-line\common\font.json) aby je TemplateDesigner mohl sdílet a reagovat

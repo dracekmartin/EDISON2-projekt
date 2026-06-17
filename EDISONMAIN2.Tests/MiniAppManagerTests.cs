@@ -8,23 +8,40 @@ namespace EDISONMAIN2.Tests;
 
 /// <summary>
 /// Testy <see cref="MiniAppManager"/> přes fake host — manager je tak testovatelný mimo STA
-/// vlákno (AvalonDock-specifika jsou v <c>AvalonDockHost</c>, ten se neтestuje unit testy).
+/// vlákno (AvalonDock-specifika jsou v <c>AvalonDockHost</c>, ten se netestuje unit testy).
 /// </summary>
 public class MiniAppManagerTests
 {
     private static EDServices MockServices() =>
         new(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
 
-    private static MiniAppDescriptor SampleDescriptor(EDServices services) =>
-        new("X", "test", () => new TestMiniApp(services));
+    /// <summary>Sdílený katalog + descriptor „X" (factory dělá <see cref="TestMiniApp"/>).</summary>
+    private sealed class Fixture
+    {
+        public MiniAppDescriptor Descriptor { get; }
+        public MiniAppCatalog Catalog { get; }
+
+        public Fixture()
+        {
+            var services = MockServices();
+            Descriptor = new("X", "test", () => new TestMiniApp(services));
+            Catalog = MiniAppCatalog.Build([new SingleProvider(Descriptor)]);
+        }
+
+        public (MiniAppManager mgr, FakeHost host) NewManager()
+        {
+            var host = new FakeHost();
+            return (new MiniAppManager(host, Catalog), host);
+        }
+    }
 
     [Fact]
     public void Open_TracksInstance_AndCallsOnOpened()
     {
-        var host = new FakeHost();
-        var mgr = new MiniAppManager(host);
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
 
-        var inst = mgr.Open(SampleDescriptor(MockServices()));
+        var inst = mgr.Open(fx.Descriptor);
 
         Assert.Single(mgr.OpenInstances);
         Assert.Single(host.Panes);
@@ -34,25 +51,22 @@ public class MiniAppManagerTests
     [Fact]
     public void Open_MultiInstance_UniqueContentIds()
     {
-        var host = new FakeHost();
-        var mgr = new MiniAppManager(host);
-        var d = SampleDescriptor(MockServices());
+        var fx = new Fixture();
+        var (mgr, _) = fx.NewManager();
 
-        mgr.Open(d);
-        mgr.Open(d);
+        mgr.Open(fx.Descriptor);
+        mgr.Open(fx.Descriptor);
 
-        Assert.Equal(2, mgr.OpenInstances.Count);
-        Assert.Equal("X#1", mgr.OpenInstances[0].ContentId);
-        Assert.Equal("X#2", mgr.OpenInstances[1].ContentId);
+        Assert.Equal(["X#1", "X#2"], mgr.OpenInstances.Select(i => i.ContentId));
     }
 
     [Fact]
     public void Open_PassesVmAsContent_WithTitleAndContentId()
     {
-        var host = new FakeHost();
-        var mgr = new MiniAppManager(host);
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
 
-        var inst = mgr.Open(SampleDescriptor(MockServices()));
+        var inst = mgr.Open(fx.Descriptor);
 
         Assert.Same(inst.ViewModel, host.Panes[0].Content);
         Assert.Equal("test", host.Panes[0].Title);
@@ -62,9 +76,9 @@ public class MiniAppManagerTests
     [Fact]
     public void CloseSelf_ClosesPane_Untracks_AndCallsOnClosed()
     {
-        var host = new FakeHost();
-        var mgr = new MiniAppManager(host);
-        var vm = (TestMiniApp)mgr.Open(SampleDescriptor(MockServices())).ViewModel;
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+        var vm = (TestMiniApp)mgr.Open(fx.Descriptor).ViewModel;
 
         vm.TriggerCloseSelf();
 
@@ -76,9 +90,9 @@ public class MiniAppManagerTests
     [Fact]
     public void PaneClosedByUser_Untracks_AndCallsOnClosed()
     {
-        var host = new FakeHost();
-        var mgr = new MiniAppManager(host);
-        var vm = (TestMiniApp)mgr.Open(SampleDescriptor(MockServices())).ViewModel;
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+        var vm = (TestMiniApp)mgr.Open(fx.Descriptor).ViewModel;
 
         host.Panes[0].Close();   // simuluje uživatelské zavření (křížek)
 
@@ -89,11 +103,10 @@ public class MiniAppManagerTests
     [Fact]
     public void CloseAll_ClosesAndUntracksEverything()
     {
-        var host = new FakeHost();
-        var mgr = new MiniAppManager(host);
-        var d = SampleDescriptor(MockServices());
-        mgr.Open(d);
-        mgr.Open(d);
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+        mgr.Open(fx.Descriptor);
+        mgr.Open(fx.Descriptor);
 
         mgr.CloseAll();
 
@@ -102,18 +115,42 @@ public class MiniAppManagerTests
     }
 
     [Fact]
-    public void OnSessionReplaced_ClosesAllOpenMiniApps()
+    public void RestoreLayout_ReinstantiatesPanesByContentId()
     {
-        var host = new FakeHost();
-        var mgr = new MiniAppManager(host);
-        var d = SampleDescriptor(MockServices());
-        var vm = (TestMiniApp)mgr.Open(d).ViewModel;
-        mgr.Open(d);
+        var fx = new Fixture();
+        var (mgr1, _) = fx.NewManager();
+        mgr1.Open(fx.Descriptor);
+        mgr1.Open(fx.Descriptor);
+        var layout = mgr1.SaveLayout();
 
-        mgr.OnSessionReplaced();
+        var (mgr2, _) = fx.NewManager();
+        mgr2.RestoreLayout(layout);
 
-        Assert.Empty(mgr.OpenInstances);
-        Assert.Equal(1, vm.Closed);
+        Assert.Equal(["X#1", "X#2"], mgr2.OpenInstances.Select(i => i.ContentId));
+        Assert.All(mgr2.OpenInstances, i => Assert.Equal(1, ((TestMiniApp)i.ViewModel).Opened));
+    }
+
+    [Fact]
+    public void RestoreLayout_BumpsCounter_SoNewOpenDoesNotCollide()
+    {
+        var fx = new Fixture();
+        var (mgr, _) = fx.NewManager();
+        mgr.RestoreLayout("X#1,X#2");
+
+        var inst = mgr.Open(fx.Descriptor);
+
+        Assert.Equal("X#3", inst.ContentId);
+    }
+
+    [Fact]
+    public void RestoreLayout_DropsUnknownDescriptor()
+    {
+        var fx = new Fixture();
+        var (mgr, _) = fx.NewManager();
+
+        mgr.RestoreLayout("Unknown#1,X#1");
+
+        Assert.Equal("X#1", Assert.Single(mgr.OpenInstances).ContentId);
     }
 
     private sealed class TestMiniApp(EDServices services) : EDMiniAppViewModel(services)
@@ -126,30 +163,51 @@ public class MiniAppManagerTests
         public void TriggerCloseSelf() => CloseSelf();
     }
 
+    private sealed class SingleProvider(MiniAppDescriptor descriptor) : IMiniAppProvider
+    {
+        public IEnumerable<MiniAppDescriptor> GetMiniApps() => [descriptor];
+    }
+
     private sealed class FakeHost : IMiniAppHost
     {
         public List<FakePane> Panes { get; } = [];
 
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed)
         {
-            var pane = new FakePane(contentId, title, content, onClosed);
+            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed };
             Panes.Add(pane);
             return pane;
         }
+
+        public string SaveLayout() =>
+            string.Join(",", Panes.Where(p => !p.IsClosed).Select(p => p.ContentId));
+
+        public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve)
+        {
+            foreach (var contentId in layoutXml.Split(',', StringSplitOptions.RemoveEmptyEntries))
+            {
+                var pane = new FakePane(contentId);
+                if (resolve(contentId, pane) is not { } rc) continue;
+                pane.Content = rc.Content;
+                pane.OnClosed = rc.OnClosed;
+                Panes.Add(pane);
+            }
+        }
     }
 
-    private sealed class FakePane(string contentId, string title, object content, Action onClosed) : IMiniAppPane
+    private sealed class FakePane(string contentId) : IMiniAppPane
     {
         public string ContentId => contentId;
-        public string Title => title;
-        public object Content => content;
+        public string? Title { get; set; }
+        public object? Content { get; set; }
+        public Action? OnClosed { get; set; }
         public bool IsClosed { get; private set; }
 
         public void Close()
         {
             if (IsClosed) return;
             IsClosed = true;
-            onClosed();
+            OnClosed?.Invoke();
         }
     }
 }

@@ -76,10 +76,37 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public IReadOnlyCollection<MiniAppDescriptor> MiniApps => _miniAppCatalog.All;
 
         /// <summary>
-        /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/>. Volá
-        /// code-behind shellu po načtení okna (manager potřebuje DockingManager).
+        /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/> a obnoví
+        /// uložený layout aktuální firmy. Volá code-behind shellu po načtení okna.
         /// </summary>
-        public void AttachMiniAppHost(IMiniAppHost host) => _miniAppManager = new MiniAppManager(host);
+        public void AttachMiniAppHost(IMiniAppHost host)
+        {
+            _miniAppManager = new MiniAppManager(host, _miniAppCatalog);
+            RestoreMiniAppLayout(Idfa);
+        }
+
+        private void PersistMiniAppLayout(string idfa)
+        {
+            if (_miniAppManager is null) return;
+            (_prefs.MiniAppLayouts ??= new())[idfa] = _miniAppManager.SaveLayout();
+            _prefs.Save();
+        }
+
+        private void RestoreMiniAppLayout(string idfa)
+        {
+            if (_miniAppManager is null) return;
+            if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) == true && !string.IsNullOrWhiteSpace(xml))
+                _miniAppManager.RestoreLayout(xml);
+        }
+
+        // Přepnutí session (firma/uživatel): ulož layout staré IDFa, zavři vše, obnov layout nové.
+        private void ReplaceMiniAppSession(string oldIdfa)
+        {
+            if (_miniAppManager is null) return;
+            PersistMiniAppLayout(oldIdfa);
+            _miniAppManager.CloseAll();
+            RestoreMiniAppLayout(Idfa);
+        }
 
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
@@ -107,7 +134,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Test trigger pro cooperative logout — countdown se po vypršení sám zavře (onExpired no-op).
             OpenLogoutCountdownTestCommand = Command(() => WindowNavigator.Show(new LogoutCountdownWnd(15, () => { })));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
-            CloseAllCommand          = Command(() => { closeAllWindows(); _miniAppManager?.CloseAll(); });
+            CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
 
             // EDISON menu
@@ -260,6 +287,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
 
                 int originalIndex = _selectedCompanyIndex;
+                var oldIdfa = Idfa;
 
                 Set(ref _selectedCompanyIndex, value);
                 OnPropertyChanged(nameof(Namespace));
@@ -271,7 +299,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 if (result.Outcome == LicenceAcquireOutcome.Accepted)
                 {
                     RebuildSessionState(result.Licence);
-                    _miniAppManager?.OnSessionReplaced();
+                    ReplaceMiniAppSession(oldIdfa);
                 }
                 else
                 {
@@ -324,7 +352,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
                 case SwitchUserResult.Success:
                     RebuildSessionState(outcome.Licence);
-                    _miniAppManager?.OnSessionReplaced();
+                    ReplaceMiniAppSession(Idfa);   // přihlášení jiného uživatele: stejná firma, jiná data
                     // StatusBar identity bindings refreshne na novém MLRest.
                     OnPropertyChanged(nameof(UserName));
                     OnPropertyChanged(nameof(FullName));
