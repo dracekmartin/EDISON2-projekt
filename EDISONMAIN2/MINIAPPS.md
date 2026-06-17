@@ -67,6 +67,7 @@ public abstract class EDMiniAppViewModel : EDViewModel
 
 public sealed record MiniAppDescriptor(
     string Id,                              // stabilní typový identifikátor mini-app (ne ContentId)
+    string Title,                           // název v launcheru/katalogu (statický; ≠ živý vm.Title)
     Func<EDMiniAppViewModel> CreateViewModel);
 
 // Každý API projekt agendy implementuje a vrací své mini-apps.
@@ -160,10 +161,11 @@ konzistenci, ale je to **změna UX oproti dnešku**. Pokud má být nástěnka p
 defaultně otevřená, řeší to **výchozí layout v `MiniAppManager`u** (použije se, když uživatel
 nemá uložený layout pro danou IDFa). Otevřená otázka: které mini-apps patří do výchozího layoutu.
 
-### Toggle `ShowMiniApps`
+### Žádný toggle — mini-apps vždy zobrazené
 
-Dnes existuje (`LocalPrefs.ShowMiniApps` + menu „Zobrazit miniaplikace"), ale **ukládá se
-bez konzumenta**. Touto featurou konečně dostane konzumenta — řídí viditelnost dock regionu.
+Mini-apps jsou **vždy dostupné** — dock region i launcher menu „Miniaplikace" jsou vidět pořád.
+Původní toggle `ShowMiniApps` (menu „Zobrazit miniaplikace" + `LocalPrefs.ShowMiniApps`) byl
+**odstraněn** — zbytečná volba navíc.
 
 ---
 
@@ -297,8 +299,10 @@ Commity 1–2 jdou případně spojit. Commit 3 musí předcházet 4–9 (zaklá
 
 ## 10. Poznámky
 
-- **Launcher z katalogu + per-firma refresh katalogu** — odloženo z commitu 5. Zatím je v shellu
-  jen dočasný dev launcher v code-behind („Test funkcí → Otevřít test miniapp"), který otevře
-  `SimpleMiniApp`. Plný launcher (menu z `MiniAppCatalog`u stavěného v `AppBootstrapper` z reálných
-  providerů) + jeho gating/refresh podle dostupných modulů přijde s prvním reálným providerem
-  (commit 8 / reálná agenda). Do té doby se `MiniAppManager` vytváří v code-behind shellu.
+- **Launcher z katalogu** — hotovo. `AppBootstrapper` staví `MiniAppCatalog` z provider listu,
+  `EdisonMainViewModel` vlastní `MiniAppManager` (host injektuje code-behind na `Loaded`) a vystavuje
+  `MiniApps` + `OpenMiniAppCommand`; menu „Miniaplikace" je vždy zobrazené (žádný toggle). Manager
+  se zavírá přes `CloseAllCommand` (shell close) a `OnSessionReplaced` (switch firmy/uživatele).
+- **Per-firma refresh katalogu** `[odloženo]` — katalog je zatím statický (jediný `DevSampleMiniApps`
+  placeholder). Re-filtrace podle dostupných modulů má smysl až s reálnými providery; doplní se s
+  první reálnou agendou (a smaže se dev placeholder).

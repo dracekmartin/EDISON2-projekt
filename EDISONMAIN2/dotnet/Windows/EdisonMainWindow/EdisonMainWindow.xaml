@@ -72,7 +72,6 @@
                 <MenuItem Header="Úlohy na pozadí"                Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Možnosti">
                     <MenuItem Header="Spouštět okna jako dialogy" IsCheckable="True" IsChecked="{Binding ShowWindowsAsDialogs}"/>
-                    <MenuItem Header="Zobrazit miniaplikace"      IsCheckable="True" IsChecked="{Binding ShowMiniApps}"/>
                     <MenuItem Header="Načítat nástěnky"           IsCheckable="True" IsChecked="{Binding LoadBoards}"/>
                 </MenuItem>
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
@@ -90,6 +89,16 @@
                         <Setter Property="Header" Value="{Binding DisplayName}"/>
                         <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
                         <Setter Property="Command" Value="{Binding DataContext.ActivateModuleCommand, ElementName=TopMenu}"/>
+                        <Setter Property="CommandParameter" Value="{Binding}"/>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+            </MenuItem>
+            <MenuItem Header="Miniaplikace" ItemsSource="{Binding MiniApps}">
+                <MenuItem.ItemContainerStyle>
+                    <!-- ElementName=TopMenu — položky jsou v Popup mimo Menu's visual tree (jako Spuštěné moduly). -->
+                    <Style TargetType="MenuItem">
+                        <Setter Property="Header" Value="{Binding Title}"/>
+                        <Setter Property="Command" Value="{Binding DataContext.OpenMiniAppCommand, ElementName=TopMenu}"/>
                         <Setter Property="CommandParameter" Value="{Binding}"/>
                     </Style>
                 </MenuItem.ItemContainerStyle>
@@ -116,7 +125,6 @@
                 <MenuItem Header="Test EDList"       Command="{Binding OpenEDListTestCommand}"/>
                 <MenuItem Header="Test EDViewModel"  Command="{Binding OpenEDComponentAndViewModelTestCommand}"/>
                 <MenuItem Header="Test odhlašovacího countdownu" Command="{Binding OpenLogoutCountdownTestCommand}"/>
-                <MenuItem Header="Otevřít test miniapp"           Click="OpenTestMiniApp_Click"/>
                 <Separator/>
                 <MenuItem Header="TemplateDesigner"  Command="{Binding OpenTemplateDesignerCommand}"/>
             </MenuItem>
@@ -179,8 +187,7 @@
         <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
         <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
              AvalonDockHost nad tímto DockingManagerem). -->
-        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1"
-                                   Visibility="{Binding MiniAppsVisibility}">
+        <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1">
             <avalonDock:LayoutRoot>
                 <avalonDock:LayoutPanel Orientation="Horizontal"/>
             </avalonDock:LayoutRoot>

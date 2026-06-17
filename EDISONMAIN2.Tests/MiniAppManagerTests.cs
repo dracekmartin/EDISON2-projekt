@@ -16,7 +16,7 @@ public class MiniAppManagerTests
         new(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
 
     private static MiniAppDescriptor SampleDescriptor(EDServices services) =>
-        new("X", () => new TestMiniApp(services));
+        new("X", "test", () => new TestMiniApp(services));
 
     [Fact]
     public void Open_TracksInstance_AndCallsOnOpened()

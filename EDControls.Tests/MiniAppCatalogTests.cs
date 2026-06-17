@@ -8,7 +8,7 @@ namespace EDControls.Tests;
 /// </summary>
 public class MiniAppCatalogTests
 {
-    private static MiniAppDescriptor Descriptor(string id) => new(id, () => null!);
+    private static MiniAppDescriptor Descriptor(string id) => new(id, id, () => null!);
 
     private sealed class FakeProvider(params MiniAppDescriptor[] apps) : IMiniAppProvider
     {

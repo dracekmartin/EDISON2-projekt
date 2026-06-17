@@ -2,6 +2,7 @@
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDTesting;
@@ -42,7 +43,8 @@ public class EdisonMainViewModelTests
         IModuleTreeGetter? treeGetter = null,
         IPopupDisplayer? popup = null,
         ILocalPrefs? prefs = null,
-        Action? closeAllWindows = null)
+        Action? closeAllWindows = null,
+        MiniAppCatalog? miniAppCatalog = null)
     {
         var mockMLRest = MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
@@ -53,11 +55,12 @@ public class EdisonMainViewModelTests
         var p = prefs ?? Substitute.For<ILocalPrefs>();
         var switcher = new CompanySwitcher(svc, p, close);
         Func<SwitchUserOutcome> switchUser = () => new(SwitchUserResult.Cancelled, null);
+        var catalog = miniAppCatalog ?? MiniAppCatalog.Build([]);
 
         EDServices.Initialize(svc);
         try
         {
-            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p, () => [], close);
+            return new EdisonMainViewModel(Companies, mockMLRest, mockTree, initialLicence: null, switcher, switchUser, p, () => [], close, catalog);
         }
         finally
         {
@@ -145,7 +148,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), null, switcher, switchUser, prefs, () => [], () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), null, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]));
         }
         finally
         {
@@ -207,7 +210,7 @@ public class EdisonMainViewModelTests
         EdisonMainViewModel vm;
         try
         {
-            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), licence, switcher, switchUser, prefs, () => [], () => { });
+            vm = new EdisonMainViewModel(Companies, mockMLRest, EmptyTreeGetter(), licence, switcher, switchUser, prefs, () => [], () => { }, MiniAppCatalog.Build([]));
         }
         finally
         {
@@ -220,5 +223,18 @@ public class EdisonMainViewModelTests
         Assert.Equal(original, vm.SelectedCompanyIndex);
         Assert.Equal(Companies[original].Id, vm.Idfa);
         mockPopup.Received(1).Info(Arg.Is<string>(s => s.Contains("překročen počet licencí")));
+    }
+
+    [Fact]
+    public void MiniApps_ExposesCatalogDescriptors()
+    {
+        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new TestMiniAppProvider()]));
+
+        Assert.Equal("Title A", Assert.Single(vm.MiniApps).Title);
+    }
+
+    private sealed class TestMiniAppProvider : IMiniAppProvider
+    {
+        public IEnumerable<MiniAppDescriptor> GetMiniApps() => [new("A", "Title A", () => null!)];
     }
 }

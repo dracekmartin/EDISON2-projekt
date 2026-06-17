@@ -267,7 +267,7 @@ relacemi na stejné stanici. Přístup přes injektovaný `ILocalPrefs`
 do consumerů — testy substituují mock).
 
 Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení) +
-3 toggly (`ShowWindowsAsDialogs`, `ShowMiniApps`, `LoadBoards`).
+2 toggly (`ShowWindowsAsDialogs`, `LoadBoards`).
 Pro nové preference přidej nullable property; chybějící klíče v existujícím
 souboru zůstanou null (kompatibilní upgrade).
 

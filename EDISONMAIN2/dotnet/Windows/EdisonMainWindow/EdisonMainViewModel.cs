@@ -11,7 +11,9 @@ using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.MiniApps;
 using EDControls.UserFonts;
+using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 // Alias — class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
@@ -32,6 +34,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly Func<SwitchUserOutcome> _switchUser;
         private readonly ILocalPrefs _prefs;
         private readonly Func<IReadOnlyList<RunningModuleInfo>> _getActiveModules;
+        private readonly MiniAppCatalog _miniAppCatalog;
+        // Manager žije až po AttachMiniAppHost (potřebuje DockingManager z view) — do té doby null.
+        private MiniAppManager? _miniAppManager;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
@@ -40,6 +45,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenLogoutCountdownTestCommand { get; }
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand CloseAllCommand { get; }
+        public ICommand OpenMiniAppCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
         // EDISON menu
@@ -66,11 +72,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
 
+        /// <summary>Dostupné mini-apps pro launcher (menu „Miniaplikace").</summary>
+        public IReadOnlyCollection<MiniAppDescriptor> MiniApps => _miniAppCatalog.All;
+
         /// <summary>
-        /// Session byla nahrazena (přepnutí firmy nebo uživatele) — MLRest/Idfa se změnily.
-        /// Shell (code-behind) na to zavírá mini-apps, které drží data staré session.
+        /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/>. Volá
+        /// code-behind shellu po načtení okna (manager potřebuje DockingManager).
         /// </summary>
-        public event Action? SessionReplaced;
+        public void AttachMiniAppHost(IMiniAppHost host) => _miniAppManager = new MiniAppManager(host);
 
         public EdisonMainViewModel(
             IReadOnlyList<CompanyStruct> companies,
@@ -81,13 +90,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             Func<SwitchUserOutcome> switchUser,
             ILocalPrefs prefs,
             Func<IReadOnlyList<RunningModuleInfo>> getActiveModules,
-            Action closeAllWindows)
+            Action closeAllWindows,
+            MiniAppCatalog miniAppCatalog)
         {
             _treeGetter = treeService;
             _switcher = switcher;
             _switchUser = switchUser;
             _prefs = prefs;
             _getActiveModules = getActiveModules;
+            _miniAppCatalog = miniAppCatalog;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
@@ -96,7 +107,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Test trigger pro cooperative logout — countdown se po vypršení sám zavře (onExpired no-op).
             OpenLogoutCountdownTestCommand = Command(() => WindowNavigator.Show(new LogoutCountdownWnd(15, () => { })));
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
-            CloseAllCommand          = Command(closeAllWindows);
+            CloseAllCommand          = Command(() => { closeAllWindows(); _miniAppManager?.CloseAll(); });
+            OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);
@@ -259,7 +271,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 if (result.Outcome == LicenceAcquireOutcome.Accepted)
                 {
                     RebuildSessionState(result.Licence);
-                    SessionReplaced?.Invoke();
+                    _miniAppManager?.OnSessionReplaced();
                 }
                 else
                 {
@@ -312,7 +324,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     return;
                 case SwitchUserResult.Success:
                     RebuildSessionState(outcome.Licence);
-                    SessionReplaced?.Invoke();
+                    _miniAppManager?.OnSessionReplaced();
                     // StatusBar identity bindings refreshne na novém MLRest.
                     OnPropertyChanged(nameof(UserName));
                     OnPropertyChanged(nameof(FullName));
@@ -358,7 +370,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         // Uživatel → Možnosti — toggles uložené do LocalPrefs. Setter persistuje a notifikuje.
         // ShowWindowsAsDialogs zatím bez behaviorálního efektu (dialog mode nikdo nečte) — flag
-        // se ukládá pro budoucnost. ShowMiniApps řídí viditelnost dock regionu (MiniAppsVisibility).
+        // se ukládá pro budoucnost.
         public bool ShowWindowsAsDialogs
         {
             get => _prefs.ShowWindowsAsDialogs;
@@ -370,21 +382,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 OnPropertyChanged();
             }
         }
-
-        public bool ShowMiniApps
-        {
-            get => _prefs.ShowMiniApps;
-            set
-            {
-                if (_prefs.ShowMiniApps == value) return;
-                _prefs.ShowMiniApps = value;
-                _prefs.Save();
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(MiniAppsVisibility));
-            }
-        }
-
-        public Visibility MiniAppsVisibility => ShowMiniApps ? Visibility.Visible : Visibility.Collapsed;
 
         public bool LoadBoards
         {

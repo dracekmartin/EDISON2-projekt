@@ -6,8 +6,10 @@ using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
+using EDControls.MiniApps;
 using EDControls.UserFonts;
 using EDControls.UserPrefs;
+using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.LoginWindow;
@@ -429,9 +431,10 @@ public class AppBootstrapper
     {
         var treeGetter = new ModuleTreeGetter();
         var switcher = new CompanySwitcher(services, prefs, nav.CloseAll);
+        var miniAppCatalog = MiniAppCatalog.Build([new DevSampleMiniApps()]);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, () => SwitchUser(services, nav.CloseAll),
-                                                prefs, nav.GetActiveModules, nav.CloseAll);
+                                                prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;

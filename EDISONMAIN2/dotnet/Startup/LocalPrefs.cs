@@ -12,7 +12,6 @@ public interface ILocalPrefs
 {
     string? LastIdfa { get; set; }
     bool ShowWindowsAsDialogs { get; set; }
-    bool ShowMiniApps { get; set; }
     bool LoadBoards { get; set; }
 
     /// <summary>
@@ -37,7 +36,6 @@ public class LocalPrefs : ILocalPrefs
     // Uživatel → Možnosti (replikuje legacy frmNoMDI checkboxy). Pro EDISONMAIN2 zatím
     // bez behaviorálního efektu kromě LoadBoards (řídí viditelnost WebView2 s nástěnkou).
     public bool ShowWindowsAsDialogs { get; set; }
-    public bool ShowMiniApps { get; set; }
     public bool LoadBoards { get; set; } = true;
     public bool TryWindowsAutoLogin { get; set; }
 
