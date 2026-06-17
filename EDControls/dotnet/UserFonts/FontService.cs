@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Windows;
 using System.Windows.Threading;
 using FontFamily = System.Windows.Media.FontFamily;
@@ -31,9 +32,14 @@ public static class FontService
         Source = new Uri("pack://application:,,,/EDControls;component/EDTheme/EDTheme.xaml"),
     };
 
-    private static readonly string[] FontSizeKeys =
-        ["EDTheme.FontSize.Small", "EDTheme.FontSize.Caption", "EDTheme.FontSize.Body",
-         "EDTheme.FontSize.Header", "EDTheme.FontSize.Large"];
+    private const string FontSizePrefix = "EDTheme.FontSize.";
+
+    // Odvozeno z EDTheme.xaml (jediný zdroj pravdy) — nová velikost EDTheme.FontSize.* se
+    // propíše bez ruční editace tady. Pořadí nehraje roli: každý klíč se škáluje nezávisle vůči Body.
+    private static readonly string[] FontSizeKeys = ThemeDefaults.Keys
+        .OfType<string>()
+        .Where(k => k.StartsWith(FontSizePrefix, StringComparison.Ordinal))
+        .ToArray();
 
     /// <summary>
     /// Vypočte settings z prefs. <c>FontApplied=true</c> a non-empty <see cref="UserFontPreference.FontFamily"/>
