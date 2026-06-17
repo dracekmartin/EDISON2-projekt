@@ -1,8 +1,10 @@
-﻿using ALVA.LICENCE.EDLicence;
+﻿using System.Windows.Media;
+using ALVA.LICENCE.EDLicence;
 using ALWA.SYS;
 using EDControls;
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
+using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDTesting;
@@ -236,5 +238,31 @@ public class EdisonMainViewModelTests
     private sealed class TestMiniAppProvider : IMiniAppProvider
     {
         public IEnumerable<MiniAppDescriptor> GetMiniApps() => [new("A", "Title A", () => null!)];
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_CorruptLayout_DoesNotThrow_AndDiscardsEntry()
+    {
+        // Poškozený uložený layout (kolegův pád: AvalonDock Deserialize hodí výjimku) nesmí
+        // shodit start a má se zahodit, ať se to neopakuje.
+        var layouts = new Dictionary<string, string> { ["CB_DP"] = "bad-xml" };
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.MiniAppLayouts.Returns(layouts);
+        var vm = CreateVM(prefs: prefs);
+
+        var ex = Record.Exception(() => vm.AttachMiniAppHost(new ThrowingHost()));
+
+        Assert.Null(ex);
+        Assert.False(layouts.ContainsKey("CB_DP"));
+        prefs.Received().Save();
+    }
+
+    private sealed class ThrowingHost : IMiniAppHost
+    {
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed)
+            => throw new NotSupportedException();
+        public string SaveLayout() => "";
+        public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve)
+            => throw new InvalidOperationException("simulovaný rozbitý layout");
     }
 }

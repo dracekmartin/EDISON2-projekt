@@ -89,15 +89,31 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void PersistMiniAppLayout(string idfa)
         {
             if (_miniAppManager is null) return;
-            (_prefs.MiniAppLayouts ??= new())[idfa] = _miniAppManager.SaveLayout();
-            _prefs.Save();
+            // Best-effort: serializace layoutu nesmí zablokovat zavření shellu / přepnutí firmy.
+            try
+            {
+                (_prefs.MiniAppLayouts ??= new())[idfa] = _miniAppManager.SaveLayout();
+                _prefs.Save();
+            }
+            catch { }
         }
 
         private void RestoreMiniAppLayout(string idfa)
         {
             if (_miniAppManager is null) return;
-            if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) == true && !string.IsNullOrWhiteSpace(xml))
+            if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) != true || string.IsNullOrWhiteSpace(xml))
+                return;
+            try
+            {
                 _miniAppManager.RestoreLayout(xml);
+            }
+            catch
+            {
+                // Poškozený / nekompatibilní uložený layout nesmí shodit start shellu (letí z Loaded).
+                // Zahodíme ho; dock zůstane prázdný, další uložení (close/switch) zapíše čistý.
+                _prefs.MiniAppLayouts?.Remove(idfa);
+                _prefs.Save();
+            }
         }
 
         // Přepnutí session (firma/uživatel): ulož layout staré IDFa, zavři vše, obnov layout nové.
