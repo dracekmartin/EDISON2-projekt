@@ -18,6 +18,10 @@ public partial class SimpleMiniAppView : UserControl
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
         if (Host.Content is null && e.NewValue is SimpleMiniAppViewModel vm)
-            Host.Content = vm.ContentFactory();
+        {
+            var content = vm.ContentFactory();
+            Host.Content = content;
+            vm.OnContentCreated(content);
+        }
     }
 }

@@ -266,8 +266,8 @@ relacemi na stejné stanici. Přístup přes injektovaný `ILocalPrefs`
 (composition root v `AppBootstrapper` vytvoří jednu instanci, propaguje
 do consumerů — testy substituují mock).
 
-Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení) +
-2 toggly (`ShowWindowsAsDialogs`, `LoadBoards`).
+Aktuálně ukládá: `LastIdfa` (pre-fill firmy při dalším přihlášení),
+toggle `ShowWindowsAsDialogs` a `MiniAppLayouts` (layout miniaplikací per IDFa).
 Pro nové preference přidej nullable property; chybějící klíče v existujícím
 souboru zůstanou null (kompatibilní upgrade).
 

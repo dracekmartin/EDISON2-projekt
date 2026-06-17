@@ -143,23 +143,22 @@ V `EdisonMainWindow.xaml` se prázdný střední region (dnes sloupec 2 + okolí
 ### Konzervativní hosting
 
 - **Strom modulů vlevo zůstává fixní** — je to launcher, ne mini-app.
-- `DockingManager` vyplní zbytek centrální plochy. Mini-apps jsou defaultně **anchorable**
-  panely (dockovatelné / plovoucí / auto-hide); výchozí umístění řeší `MiniAppManager` napevno
-  (bez per-mini-app konfigurace).
-- **Nástěnka** (dnes WebView2 v sloupci 4, řízená `LoadBoards`) se **předělá na mini-app**
-  přes `SimpleMiniAppViewModel` (viz §3). Tím odpadá zvláštní sloupec 4 i toggle `LoadBoards`.
-- **Stub „Přehled"** (sloupec 6) se **zahodí**.
+- `DockingManager` vyplní **celou plochu napravo od stromu** (grid: `*` strom | `Auto` splitter |
+  `3*` dock). Mini-apps jsou defaultně **anchorable** panely (dockovatelné / plovoucí / auto-hide);
+  výchozí umístění řeší `MiniAppManager` napevno.
+- **Nástěnka** je mini-app (provider `CoreMiniApps`, descriptor `Core.Nastenka`) přes
+  `SimpleMiniAppViewModel` + WebView2. Odpadl zvláštní sloupec, toggle `LoadBoards` i stub „Přehled".
+  WebView2 se při zavření panelu disposne (`SimpleMiniApp` uklízí IDisposable obsah v `OnClosed`).
 
 Alternativa (plně IDE-like): dockovat i strom modulů. Větší změna shellu — zatím odloženo,
 dokud nebude konkrétní potřeba.
 
-### Výchozí layout (first-run) `[OTEVŘENO]`
+### Výchozí layout (first-run) — prázdný `[ROZHODNUTO]`
 
-Až nástěnka přejde na mini-app, dnešní „nástěnka vždy viditelná přes `LoadBoards`" se změní na
-„panel v docku jako každý jiný" — uživatel si ji může zavřít / oddockovat. To je žádoucí kvůli
-konzistenci, ale je to **změna UX oproti dnešku**. Pokud má být nástěnka pro nové uživatele
-defaultně otevřená, řeší to **výchozí layout v `MiniAppManager`u** (použije se, když uživatel
-nemá uložený layout pro danou IDFa). Otevřená otázka: které mini-apps patří do výchozího layoutu.
+Bez uloženého layoutu (první spuštění / nová firma) je dock **prázdný**; uživatel si nástěnku (a
+další mini-apps) otevře z menu „Miniaplikace". Je to drobná změna UX oproti dřívější „nástěnka
+vždy viditelná", ale konzistentní (nástěnka = panel jako každý jiný). Auto-otevírání výchozí sady
+mini-apps se nedělá; kdyby bylo potřeba, doplní se do `MiniAppManager`u.
 
 ### Žádný toggle — mini-apps vždy zobrazené
 

@@ -12,7 +12,6 @@ public interface ILocalPrefs
 {
     string? LastIdfa { get; set; }
     bool ShowWindowsAsDialogs { get; set; }
-    bool LoadBoards { get; set; }
 
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
     Dictionary<string, string>? MiniAppLayouts { get; set; }
@@ -36,10 +35,8 @@ public class LocalPrefs : ILocalPrefs
 {
     public string? LastIdfa { get; set; }
 
-    // Uživatel → Možnosti (replikuje legacy frmNoMDI checkboxy). Pro EDISONMAIN2 zatím
-    // bez behaviorálního efektu kromě LoadBoards (řídí viditelnost WebView2 s nástěnkou).
+    // Uživatel → Možnosti — ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
     public bool ShowWindowsAsDialogs { get; set; }
-    public bool LoadBoards { get; set; } = true;
     public bool TryWindowsAutoLogin { get; set; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }

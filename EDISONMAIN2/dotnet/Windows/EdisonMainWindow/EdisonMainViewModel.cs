@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Windows;
 using System.Windows.Input;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
 using Application = System.Windows.Application;
@@ -430,20 +429,6 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        public bool LoadBoards
-        {
-            get => _prefs.LoadBoards;
-            set
-            {
-                if (_prefs.LoadBoards == value) return;
-                _prefs.LoadBoards = value;
-                _prefs.Save();
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(BoardsVisibility));
-            }
-        }
-
-        public Visibility BoardsVisibility => LoadBoards ? Visibility.Visible : Visibility.Collapsed;
 
         // Styl → Použít — aplikuje uložený font (FontFamily + FontSize) na celou aplikaci.
         // Storage je shared font.json (EDControls.UserFonts.UserFontPreference), takže ostatní

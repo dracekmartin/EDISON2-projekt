@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
-        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
         xmlns:avalonDock="https://github.com/Dirkster99/AvalonDock"
         xmlns:local="clr-namespace:EDISONMAIN2"
         xmlns:designTime="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData"
@@ -25,13 +24,10 @@
     </Window.InputBindings>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="20"/>
-            <ColumnDefinition Width="2" />
-            <ColumnDefinition Width="*" MinWidth="20"/>
-            <ColumnDefinition Width="2" />
-            <ColumnDefinition Width="*" MinWidth="20"/>
-            <ColumnDefinition Width="2" />
-            <ColumnDefinition Width="*" MinWidth="20"/>
+            <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager). -->
+            <ColumnDefinition Width="*" MinWidth="150"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -72,7 +68,6 @@
                 <MenuItem Header="Úlohy na pozadí"                Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Možnosti">
                     <MenuItem Header="Spouštět okna jako dialogy" IsCheckable="True" IsChecked="{Binding ShowWindowsAsDialogs}"/>
-                    <MenuItem Header="Načítat nástěnky"           IsCheckable="True" IsChecked="{Binding LoadBoards}"/>
                 </MenuItem>
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
@@ -135,7 +130,7 @@
 
         <!-- Tři stromy odpovídají legacy edisonnavbar.xml: Hlavní nabídka (id=-2),
              Správa systému (id=-3), Partnerská řešení (id=-4). -->
-        <Grid Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2">
+        <Grid Grid.Column="0" Grid.Row="1">
             <Grid.Resources>
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
@@ -198,14 +193,6 @@
                 <avalonDock:LayoutPanel Orientation="Horizontal"/>
             </avalonDock:LayoutRoot>
         </avalonDock:DockingManager>
-        <GridSplitter Grid.Column="3" Grid.Row="1" Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <Grid Grid.Column="4" Grid.Row="1" Visibility="{Binding BoardsVisibility}">
-            <wv2:WebView2 Source="https://www.m-line.cz/Nastenka1.html" />
-        </Grid>
-        <GridSplitter Grid.Column="5" Grid.Row="1" Width="2" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-        <Grid Grid.Column="6" Grid.Row="1" >
-            <TextBlock Text="Přehled"/>
-        </Grid>
 
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
             <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>

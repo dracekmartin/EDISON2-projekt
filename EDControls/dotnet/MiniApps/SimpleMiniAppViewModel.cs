@@ -30,4 +30,15 @@ public sealed class SimpleMiniAppViewModel : EDMiniAppViewModel
     public override string Title { get; }
 
     public Func<FrameworkElement> ContentFactory { get; }
+
+    private IDisposable? _disposableContent;
+
+    /// <summary>
+    /// View předá vytvořený obsah, ať ho při zavření panelu můžeme uklidit (je-li IDisposable —
+    /// např. WebView2 drží browser proces). Nelze vázat na <c>Unloaded</c>, to padá i při
+    /// dock/float re-parentingu (AvalonDock přesouvá tutéž instanci).
+    /// </summary>
+    internal void OnContentCreated(FrameworkElement content) => _disposableContent = content as IDisposable;
+
+    public override void OnClosed() => _disposableContent?.Dispose();
 }

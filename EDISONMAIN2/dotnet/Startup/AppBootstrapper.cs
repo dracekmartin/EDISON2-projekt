@@ -431,7 +431,7 @@ public class AppBootstrapper
     {
         var treeGetter = new ModuleTreeGetter();
         var switcher = new CompanySwitcher(services, prefs, nav.CloseAll);
-        var miniAppCatalog = MiniAppCatalog.Build([new DevSampleMiniApps()]);
+        var miniAppCatalog = MiniAppCatalog.Build([new CoreMiniApps(), new DevSampleMiniApps()]);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, () => SwitchUser(services, nav.CloseAll),
                                                 prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog);
