@@ -173,6 +173,27 @@ public class PreviewCanvas
         return renderedPages.Count;
     }
 
+    /// <summary>
+    /// Spočítá přetékající stránky napříč všemi dodanými datovými sadami — **layout-only, bez renderu**.
+    /// Použito v tisku pro agregovanou kontrolu přes všechny instance: data už jsou fetchnutá z Caché,
+    /// takže projetí layoutem + <see cref="PageOverflows"/> je levné. Vrací počet přetékajících a celkový
+    /// počet stránek.
+    /// </summary>
+    public (int Overflowing, int Total) CountOverflowingPages(IReadOnlyList<DataContext> dataPages)
+    {
+        var ps = _state.CurrentTemplate.PageSize;
+        int overflowing = 0, total = 0;
+        foreach (var data in dataPages)
+        {
+            foreach (var page in _engine.Layout(_state.CurrentTemplate, data).Pages)
+            {
+                total++;
+                if (PageOverflows(page, ps)) overflowing++;
+            }
+        }
+        return (overflowing, total);
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Renderování
 

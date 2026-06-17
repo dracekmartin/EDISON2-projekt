@@ -41,6 +41,10 @@ public class PrintDialogViewModel : EDViewModel
     /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf.</summary>
     public Action<string, IReadOnlyList<DataContext>>? RequestRenderMultiPdf { get; set; }
 
+    /// <summary>Code-behind napojí na PreviewCanvas.CountOverflowingPages — layout-only kontrola přetečení
+    /// napříč všemi instancemi (data už fetchnutá → levné). Vrací (počet přetékajících, celkem stránek).</summary>
+    public Func<IReadOnlyList<DataContext>, (int Overflowing, int Total)>? RequestOverflowCheck { get; set; }
+
     /// <summary>
     /// PrintDialog operuje nad **sdíleným** dictionary parametrů (typicky <c>MainWindowViewModel.PreviewParamValues</c>).
     /// Tím je zaručeno že preview lišta a PrintDialog ukazují stejné hodnoty — když user změní
@@ -174,9 +178,14 @@ public class PrintDialogViewModel : EDViewModel
                 return;
             }
 
+            // Agregovaná kontrola přetečení přes všechny instance — layout-only, levné (data už máme).
+            var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
+
             RequestRenderMultiPdf?.Invoke(filePath, dataPages);
             OpenPdf(filePath);
-            StatusText = $"PDF uloženo ({dataPages.Count} stránek dat): {Path.GetFileName(filePath)}";
+            StatusText = overflow > 0
+                ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(filePath)}"
+                : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(filePath)}";
         }
         catch (Exception ex)
         {

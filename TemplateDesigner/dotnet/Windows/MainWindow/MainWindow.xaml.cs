@@ -948,6 +948,9 @@ public partial class MainWindow : Window
         vm.RequestRenderMultiPdf = (filePath, dataPages) =>
             _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages);
 
+        vm.RequestOverflowCheck = dataPages =>
+            _previewCanvas!.CountOverflowingPages(dataPages);
+
         var dlg = new PrintDialog(vm) { Owner = this };
         dlg.ShowDialog();
     }

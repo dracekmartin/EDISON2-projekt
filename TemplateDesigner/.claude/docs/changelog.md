@@ -8,8 +8,11 @@
   `ContentOverflows=true` → červený rámeček celé stránky + „nevejde na stránku", i když element vizuálně
   sedl (auto-scale bez spodní meze ho vždy zmenší na box). Teď se hlásí **jen reálné geometrické
   přetečení** (element přesahuje spodní hranu sekce/stránky). `ContentOverflows` zůstává jako helper
-  („box < obsah"), ale neřídí varování. Plán pro tisk (krok 2): agregovaná kontrola přes všechny instance
-  až při exportu reálných dat (data už fetchnutá → levné).
+  („box < obsah"), ale neřídí varování.
+- ✅ **Agregovaná kontrola přetečení v tisku** — `PreviewCanvas.CountOverflowingPages(dataPages)` (layout-only,
+  bez renderu) projede stránky všech instancí; `PrintDialog` při exportu reálných dat (data už fetchnutá
+  z Caché → levné) vypíše „⚠ PDF uloženo, ale X z N stránek přetéká". Žádný fetch navíc, žádné nové UI.
+  Ad-hoc kontrola bez generování PDF se případně doplní později na žádost zákazníků.
 
 ## 2026-06-17 — UI: font tokeny (škálování přes shell) + auto-width comboboxy + DEV cleanup
 
