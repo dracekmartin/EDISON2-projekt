@@ -13,9 +13,9 @@
                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
             <StackPanel>
                 <TextBlock Text="Import PDF do šablony"
-                           FontSize="16" FontWeight="Bold" Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
+                           FontSize="{DynamicResource EDTheme.FontSize.Large}" FontWeight="Bold" Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
                 <TextBlock Text="Vyberte PDF soubor a převeďte ho na editovatelnou šablonu."
-                           FontSize="12" Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap"/>
+                           FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,4,0,0" TextWrapping="Wrap"/>
             </StackPanel>
         </Border>
 
@@ -229,7 +229,7 @@
             <!-- Debug -->
             <CheckBox Content="Debug log (uloží .import-debug.txt vedle PDF)"
                       IsChecked="{Binding EnableDebug}"
-                      Margin="0,4,0,0" FontSize="12" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                      Margin="0,4,0,0" FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
 
             <!-- Status -->
             <TextBlock Text="{Binding StatusText}" Margin="0,8,0,0"

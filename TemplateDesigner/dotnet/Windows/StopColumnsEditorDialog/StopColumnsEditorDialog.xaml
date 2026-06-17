@@ -70,7 +70,7 @@
                                                  ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
                                                  Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
                                         <TextBlock Grid.Column="3" VerticalAlignment="Center"
-                                                   Foreground="#888888" FontSize="11" Margin="4,0,0,0"
+                                                   Foreground="#888888" FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="4,0,0,0"
                                                    Text="{Binding Width, StringFormat='{}{0} mm'}"/>
                                     </Grid>
                                 </DataTemplate>
@@ -87,7 +87,7 @@
 
                             <!-- Warning při přesahu šířky -->
                             <TextBlock Text="{Binding ColumnOverflowText}"
-                                       Foreground="#C62828" FontSize="12" Margin="0,8,0,0"
+                                       Foreground="#C62828" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
                                        TextWrapping="Wrap"
                                        Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
 
@@ -123,7 +123,7 @@
                             <Separator Margin="0,8,0,8"/>
 
                             <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
-                                       FontStyle="Italic" Foreground="#888" FontSize="12" Margin="0,0,0,8"/>
+                                       FontStyle="Italic" Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Styl záhlaví ──────────────── -->
                             <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
