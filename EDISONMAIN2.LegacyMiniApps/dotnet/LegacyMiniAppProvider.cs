@@ -10,6 +10,7 @@ public sealed class LegacyMiniAppProvider : IMiniAppProvider
 {
     public IEnumerable<MiniAppDescriptor> GetMiniApps() =>
     [
+        new("Mhd.Dispecink", "MHD dispečink", () => new DispecinkMiniAppViewModel()),
         new("Mhd.Sample", "MHD (ukázka)", () => new MhdSampleMiniAppViewModel()),
     ];
 }

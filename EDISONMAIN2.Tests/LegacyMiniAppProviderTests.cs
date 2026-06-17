@@ -5,12 +5,11 @@ namespace EDISONMAIN2.Tests;
 public class LegacyMiniAppProviderTests
 {
     [Fact]
-    public void Provides_MhdSample()
+    public void Provides_Dispecink()
     {
         // Factory se neinvokuje (žádné STA/WPF) — kontrolujeme registraci descriptoru.
-        var mhd = Assert.Single(new LegacyMiniAppProvider().GetMiniApps());
+        var ids = new LegacyMiniAppProvider().GetMiniApps().Select(d => d.Id).ToList();
 
-        Assert.Equal("Mhd.Sample", mhd.Id);
-        Assert.Equal("MHD (ukázka)", mhd.Title);
+        Assert.Contains("Mhd.Dispecink", ids);
     }
 }

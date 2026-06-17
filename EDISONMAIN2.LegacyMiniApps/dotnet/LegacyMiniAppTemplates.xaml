@@ -6,4 +6,8 @@
         <lma:MhdSampleMiniAppView/>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type lma:DispecinkMiniAppViewModel}">
+        <lma:DispecinkMiniAppView/>
+    </DataTemplate>
+
 </ResourceDictionary>
