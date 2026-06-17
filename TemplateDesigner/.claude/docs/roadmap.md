@@ -375,6 +375,10 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ### 🟢 Menší priorita — UX polish
 
+- **Ad-hoc kontrola přetečení v tisku** (na žádost zákazníků) — dnes se přetečení přes všechny instance
+  počítá až při exportu reálných dat (`PreviewCanvas.CountOverflowingPages` → hláška „⚠ X z N stránek
+  přetéká"). Kdyby zákazníci chtěli, přidat samostatné tlačítko „Zkontrolovat přetečení" v `PrintDialog`,
+  které fetchne data a vypíše počet bez generování PDF. Zatím YAGNI.
 - **Sjednotit API editoru sloupců** (po demu) — StopList / DepartureGrid / TableElement mají
   každý vlastní column VM (`StopColumnVM` / `DepartureGroupColumnVM` / `ColumnVM`, jen
   `INotifyPropertyChanged`, bez společného základu) a vlastní list XAML → drift (mm/tečka se
