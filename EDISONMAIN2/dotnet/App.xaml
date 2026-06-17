@@ -13,6 +13,7 @@
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDIcons/EDIcons.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/EDStrings/EDStrings.xaml"/>
                 <ResourceDictionary Source="pack://application:,,,/EDControls;component/MiniApps/MiniApps.xaml"/>
+                <ResourceDictionary Source="pack://application:,,,/EDISONMAIN2;component/MiniApps/DevMiniAppTemplates.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

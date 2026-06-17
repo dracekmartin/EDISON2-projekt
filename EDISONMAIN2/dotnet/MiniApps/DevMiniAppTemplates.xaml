@@ -1,0 +1,11 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:ma="clr-namespace:EDISONMAIN2.MiniApps">
+
+    <!-- DataTemplate pro full-MVVM mini-apps shellu. Agendy registrují vlastní obdobně
+         (VM → View) ve svém ResourceDictionary mergnutém v App.xaml. -->
+    <DataTemplate DataType="{x:Type ma:DevCounterMiniAppViewModel}">
+        <ma:DevCounterMiniAppView/>
+    </DataTemplate>
+
+</ResourceDictionary>

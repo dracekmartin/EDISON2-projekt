@@ -5,8 +5,8 @@ using EDControls.MiniApps;
 namespace EDISONMAIN2.MiniApps;
 
 /// <summary>
-/// Dočasná dev mini-app (placeholder, než přijdou reálné agendové providery). Lightweight
-/// <see cref="SimpleMiniAppViewModel"/> — ověřuje launcher + manager + persistenci end-to-end.
+/// Dočasné dev mini-apps (placeholder, než přijdou reálné agendové providery). Ukazují obě cesty:
+/// lightweight <see cref="SimpleMiniAppViewModel"/> a full-MVVM <see cref="DevCounterMiniAppViewModel"/>.
 /// </summary>
 public sealed class DevSampleMiniApps : IMiniAppProvider
 {
@@ -15,5 +15,6 @@ public sealed class DevSampleMiniApps : IMiniAppProvider
         new("Dev.Sample", "Test miniapp", () => new SimpleMiniAppViewModel(
             "Test miniapp",
             () => new TextBlock { Text = "Ahoj z miniapp", Margin = new Thickness(8) })),
+        new("Dev.Counter", "Počítadlo", () => new DevCounterMiniAppViewModel()),
     ];
 }
