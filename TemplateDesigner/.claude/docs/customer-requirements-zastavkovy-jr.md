@@ -135,13 +135,23 @@ Mimo scope zastávkového JŘ:
 - **Citace:** *„Měl jsem za to, že když mám zapnuté automatické poznámkování, u vybraných spojů si v Komentářích zapnu vlastní poznámkování, a zadám do Spoje, nepoznámkovat stejné spoje a rozpětí Tč, budu mít u těchto spojů pouze svůj komentář. Toto mi ale teď nefunguje a je používána automatika a potlačen ruční komentář."*
 - **Co máme dnes:** Auto-poznámka (rozdíly tras) a vlastní komentář se generují nezávisle ve fázi 6. Funkce „nepoznámkovat" má aktuálně sémantiku „vypnout vše kromě auto-rozdílů".
 - **Co klient chce:** Pokud má spoj **vlastní komentář**, auto-poznámka rozdílů se pro tento spoj **NEgeneruje**. (Plus překlopit sémantiku „nepoznámkovat" — viz M-line interní odpověď: aktuální chování je dokumentované, ale neintuitivní.)
-- **Gap:** V `BuildOdjezd` v `ZastavkoveJrMhdAPI` přidat větvení: pokud `spojPoznamky` obsahuje custom text → suppress auto-rozdíl pro tento spoj.
+- **✅ VYŘEŠENO PRO AD agendu** (2026-06-20, commit `0b5838d`) — nový parametr sestavy
+  **`SCHOVAT_V_ROZSAHU`** (Ruční komentáře [default] / Automatické (rozdíly tras) / Obojí). V rozsahu
+  „Spoje, nepoznámkovat" volba „Automatické" schová auto-rozdíl trasy a nechá ruční komentář = přesně
+  klientův požadavek. Řešeno **modelem nadmnožina + render-time TD filtr** (`NoteVisibilityFilter`),
+  ne auto-suppress v Caché — legacy sémantika „nepoznámkovat" zachovaná (default), flip je opt-in volba.
+  Viz `ad-jr-nastaveni-linky-analyza.md §5` + `feature-design-principles.md §5.2`.
+- **⬜ Zbývá pro MHD agendu** (`ZastavkoveJrMhd`) — stejný mechanismus se zatím **neportoval do MHD**
+  (model je připravený, stačí zopakovat: tagy v `NacistOdjezdy` + parametr). Až bude potřeba pro MHD.
 
 ### D3. Bug — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ)
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
 - **Citace:** *„obecně Spoje, nepoznámkovat ruší i označení inverzním znaménkem, což nevím, zda je záměr."*
 - **Co máme dnes:** Funkce „nepoznámkovat" patrně omylem maže i `spojNZ` přidělení.
 - **Gap:** Bug — NZ je v jiném datovém toku než ostatní poznámky, „nepoznámkovat" se ho dotýkat nemá. Opravit v 6. fázi `ZastavkoveJrMhdAPI`.
+- **✅ V AD agendě bug NEvzniká** (2026-06-20) — `NepoznamkovatSpoj` + filtr se dotýká jen kategorie
+  `rucni-komentar` / `rozdil-trasy` (dle volby); `omezeni`/`bezbarier` (kam patří NZ-style značky)
+  filtr nikdy neschovává. Zůstává relevantní jen pro MHD agendu (legacy datový tok).
 
 ### D4. Bug — výběr spoje jen prvním číslem
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955

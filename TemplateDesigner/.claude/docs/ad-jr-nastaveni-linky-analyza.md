@@ -156,15 +156,15 @@ Potlačení automatické poznámky pro spoj `sp` v rozsahu tarifních čísel od
 
 | Feature | Business význam | Legacy: storage | Máme? | Ve starém? |
 |---|---|---|---|---|
-| Komentáře (znak+text+spoje) | Ruční vlastní poznámka přiřazená spojům | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | ⬜ **nečteme** | ✅ (`gPrpLinMhd`) |
-| Spoje, nepoznámkovat | Potlačit auto-poznámku pro spoje v rozsahu TČ | `PATCH,"MHDSPNPZN"` = `odTC~doTC` | ⬜ **nečteme** | ✅ (`gPrpLinMhd`) |
-| Poznámky tam/zpět/vše | Volné textové poznámky per směr | `MhD,"SeT_MhD",id,cnt` | ⬜ **nečteme** | ✅ |
-| Vlastní komentář přebíjí auto-poznámku | Spoj s ruč. komentářem → auto-rozdíl se NEgeneruje | (chování) | ⬜ → **#7955** | ❓ (i v legacy buggy) |
-| Bug: „nepoznámkovat" maže i NZ | Inverzní znaménko se nemá mazat | (chování) | ⬜ → **#7955 D3** | ❓ |
+| Komentáře (znak+text+spoje) | Ruční vlastní poznámka přiřazená spojům | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | ✅ Fáze 1 | ✅ (`gPrpLinMhd`) |
+| Spoje, nepoznámkovat | Potlačit poznámku pro spoje v rozsahu TČ | `PATCH,"MHDSPNPZN"` = `odTC~doTC` | ✅ Fáze 1 (`NepoznamkovatSpoj`) | ✅ (`gPrpLinMhd`) |
+| Poznámky tam/zpět/vše | Volné textové poznámky per směr | `MhD,"SeT_MhD",id,cnt` | ✅ Fáze 1 | ✅ |
+| Co schovat v rozsahu nepoznámkovat (#7955) | Ruční / Automatické (rozdíly tras) / Obojí | param `SCHOVAT_V_ROZSAHU` + TD filtr | ✅ Fáze 2 (`0b5838d`) | ❓ (legacy uměl jen „ruční") |
+| Bug: „nepoznámkovat" maže i NZ | Inverzní znaménko se nemá mazat | (chování) | ✅ v AD bug nevzniká (filtr nesahá na `omezeni`/`bezbarier`) | ❓ (jen MHD) |
 
-> **Vazba na helpdesk:** #7955 a #7161 přímo o tomto. Klient TRANSDEV očekává: zapnu *Komentáře* +
-> zapíšu spoj do *Spoje, nepoznámkovat* → u spoje bude **jen můj komentář**. Dnes to neumíme ani číst.
-> Úložiště je ale teď zmapované → implementace není blokovaná.
+> **Vazba na helpdesk:** #7955 **vyřešeno pro AD** (Fáze 1 + 2) — viz `customer-requirements §D2/D3`.
+> Klientův scénář („zapnu Komentáře + nepoznámkovat → jen můj komentář") pokryt přes parametr
+> `SCHOVAT_V_ROZSAHU=Automatické`. Detail mechanismu §0 + `feature-design-principles.md §5.2`.
 
 ---
 
@@ -228,14 +228,19 @@ NZ prázdninové dělení (`MHD_NZ1_NZ2`/`MHD_NENZ1_NENZ2` — kód hotový, dat
 dopravce (závisí na šabloně), zóny vs km (`linIDS` — zóny ano, km ne), časové průběhy (`mhd,"par"` —
 1 sloupec).
 
-### ⬜ Vůbec nečteme (doménové mezery)
-- **Tab MHD — Komentáře** (`MhD,"SeT_SpeC"` + `MhD_SpeC`) ⭐
-- **Tab MHD — Spoje, nepoznámkovat** (`PATCH,"MHDSPNPZN"`) ⭐
-- **Tab MHD — poznámky tam/zpět/vše** (`SeT_MhD,id,cnt`)
+### ✅ Tab MHD — ruční poznámky (HOTOVO Fáze 1+2, 2026-06-20)
+- Komentáře (`SeT_SpeC`+`MhD_SpeC`), Spoje-nepoznámkovat (`MHDSPNPZN`), směrové poznámky (`SeT_MhD`),
+  #7955 přepínač co schovat v rozsahu (`SCHOVAT_V_ROZSAHU`).
+
+### ⬜ Vůbec nečteme (zbývající doménové mezery)
 - `MHD_NEZNZ123` (potlačení NZ v legendě per sloupec), `ISY_LinkyTiskMHDNadpisy` (override nadpisů)
-- Text „spoj jede až do XY" (#7947), vypínače agreg. poznámek (#7161)
+- Text „spoj jede až do XY" (#7947), vypínače agreg. poznámek bezbariér (#7161 D6)
+- Skrýt „x na znamení" když je sloupec hidden (#7161 D5 — řešit v TD)
 - Návaznosti/přípoje + `NavaznostiZpusobVypisu` (#11300)
-- Ruční poznámkové bloky `("C",1-4)`, uspořádání legendy (`Trid_delK`, `NegZnNR`), cizojazyčné, `ZLOM`
+- Ruční poznámkové bloky `("C",1-4)` (tarifní/místenk./všeob./radiobus), uspořádání legendy
+  (`Trid_delK`, `NegZnNR`), cizojazyčné (`prtCzjPzn`), rozdělení linky (`ZLOM`)
+- Multi-varianta časů jízdy (`TrasaMin1-15`), km sloupce (`linIDS`/`Kms`), odsazení zastávky (#7937)
+- Vizuál legendy (2 sloupce), umístění směrových poznámek (legacy nahoru), číslování omezení (TYPPOZ=1)
 
 ### ➖ Mimo agendu (řeší šablona TD nebo starý engine)
 Měřítka, okraje, fonty, šíře, celý Win tisk A4/A5, kniha, HTML, odbavení/TELMAX/mikroelektronika.
