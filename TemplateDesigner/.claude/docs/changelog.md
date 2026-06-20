@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-20 — AD ruční poznámky linky z tabu MHD (Fáze 1)
+
+- ✅ **AD-N7 Komentáře** — `ZastavkoveJrAd` čte ruční komentáře spoje (`MhD,"SeT_SpeC"` přiřazené přes
+  per-spoj `MhD_SpeC`) → znak jako anotace u minuty + znak+text do legendy. 1:1 `JRapiLinPrtMhd1` ř.211-216.
+- ✅ **AD-N8 Spoje, nepoznámkovat** — helper `NepoznamkovatSpoj` (1:1 `noPoz`): `MHDSPNPZN`=odTČ~doTČ,
+  směrová logika dle parity spoje, fallback na konec trasy. Potlačí **ruční komentář** v rozsahu TČ
+  (auto-poznámky běží dál — legacy sémantika; flip = Fáze 2 / #7955).
+- ✅ **AD-N9 Směrové poznámky** — `MhD,"SeT_MhD"` tam/zpět/vše filtrované dle směru stránky
+  (tam→`>`+`<>`, zpět→`<`+`<>`) → legenda. 1:1 ř.440-447.
+- Caché-only (C# renderer beze změny — anotace + POZNAMKY existující cestou). Čitelné názvy proměnných
+  (ne legacy zkratky). Zbývá: umístění směrových poznámek (legacy nahoru jako směrové záhlaví vs dole),
+  Fáze 2 (#7955 opt-in přepínač).
+
 ## 2026-06-20 — AD nastavení linky 1:1 (track PRIORITA 2b)
 
 - 📄 **Business analýza nastavení tisku na úrovni linky** — `ad-jr-nastaveni-linky-analyza.md`:
