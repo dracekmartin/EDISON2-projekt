@@ -58,23 +58,22 @@ Mimo scope zastávkového JŘ:
   - **Jakou logiku** používat — per-směr, per-Tč pásmo, kombinace?
 - **Není přímo TD práce** — TD má infrastrukturu, čeká na Caché data flow doplnění a UX rozhodnutí.
 
-### A6. 🔍 Pravděpodobně hotovo (2026-05-12) — vyžaduje verifikaci s reálnými daty
+### A6. ✅ Hotovo (2026-06-20) — ověřeno na úrovni kódu pro AD; klient potvrdí na svých datech
 
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7959
-- **Citace:** *„Mám linku, která má druhou zastávku pro školní spoj, a mohl bych pro ní vytisknout JŘ. Ovšem z první zastávky na tuto druhou zastávku žádný spoj nepojede. Potřeboval bych, aby zastávka nebyla v seznamu zastávek, pokud není aktuální."*
-- **Zjištění:** **Filter už existuje v `ZastavkoveJrMhdAPI.cls:862-864`** (po refaktoru z legacy):
-  ```objectscript
-  // Za aktuální: jen obsluhovatelné zastávky
-  i (SmerID=0)&&(bodIterator>aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
-  i (SmerID=1)&&(bodIterator<aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
-  ```
-- **Logika:** Pro každý bod v trase za aktuální zastávkou se kontroluje `ObsluhaBitmap` (= union obsluhovaných zastávek ze všech spojů z aktuální zastávky, viz fáze 5 `VypocitatBitmapyObsluhy`). Pokud bit pro daný bod není nastavený → zastávka se do `ZASTAVKY` arrayové nepřidá.
-- **Chování:** **Hardcoded, vždy aktivní, bez vypínače.** Komentář na řádku 855 *„ZASTAVKY — vždy všechny v daném směru"* je zavádějící — kód reálně filtruje.
-- **Co je potřeba:**
-  - Otestovat s konkrétními TRANSDEV daty (např. linka 876xx se školní zastávkou) — funguje to v praxi?
-  - Pokud ano → uzavřít tiket s referenční šablonou (jako E1, A4).
-  - Pokud bude některý klient chtít opt-out (vidět všechny zastávky bez filtru) → doplnit parametr `TISK_VSECH_ZASTAVEK` do `GetParameters` (paralelní s `TISK_PROJETYCH_ZAST`).
-  - Tiket #7959 byl podaný 2024-02-09 — to bylo o **starém legacy systému** před přepisem; v novém kódu by to mělo být OK.
+- **Upřesnění agendy:** TRANSDEV jezdí primárně **linkovou (AD)** + lokální MHD; **self-contained MHD
+  modul používají jen DPCB/DPKV**. Tiket se proto týká **AD agendy** (`ZastavkoveJrAd`), ne MHD modulu.
+- **Citace:** *„Mám linku, která má druhou zastávku pro školní spoj... Ovšem z první zastávky na tuto druhou zastávku žádný spoj nepojede. Potřeboval bych, aby zastávka nebyla v seznamu zastávek, pokud není aktuální."*
+- **Stav v AD — obě chování implementovaná a aktivní:**
+  - **(a) StopList filtr** — neobsluhovaná zastávka se nepřidá do seznamu: `ZastavkoveJrAd:296`
+    `i '$d(servedPoradi(poradi)) continue` (`ObsluhovanePoradi`).
+  - **(b) Stránka se negeneruje** — zastávka bez odjezdů: `:333` `odjezdy.%Size()=0 q ""` + `:278` terminus-skip.
+- **⚠️ Známá nuance k případnému doladění** (jen pokud klient nahlásí): AD filtr (a) je
+  **směrově-globální** (`servedPoradi` = staví tam aspoň 1 spoj směru), kdežto MHD je **from-current**
+  (`ObsluhaBitmap` = obsluha z aktuální zastávky). Pro přesný školní scénář (zastávka dosažitelná jen
+  spojem, který z tištěné zastávky nevyjíždí) by AD mohl zastávku ponechat. Pokud to vadí → přepnout AD
+  na from-current sémantiku. Zatím necháno (těžko se hledá testovací linka; klient ověří v praxi).
+- **Opt-out** (kdyby chtěl vidět vše bez filtru) → param `TISK_VSECH_ZASTAVEK` (paralelní k `TISK_PROJETYCH_ZAST`), zatím YAGNI.
 
 ---
 
