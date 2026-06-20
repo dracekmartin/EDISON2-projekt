@@ -141,8 +141,10 @@ Mimo scope zastávkového JŘ:
   klientův požadavek. Řešeno **modelem nadmnožina + render-time TD filtr** (`NoteVisibilityFilter`),
   ne auto-suppress v Caché — legacy sémantika „nepoznámkovat" zachovaná (default), flip je opt-in volba.
   Viz `ad-jr-nastaveni-linky-analyza.md §5` + `feature-design-principles.md §5.2`.
-- **⬜ Zbývá pro MHD agendu** (`ZastavkoveJrMhd`) — stejný mechanismus se zatím **neportoval do MHD**
-  (model je připravený, stačí zopakovat: tagy v `NacistOdjezdy` + parametr). Až bude potřeba pro MHD.
+- **Pozn. k MHD agendě:** tyto ruční poznámky jsou **AD-only** — `^JRL` konstrukty (`SeT_SpeC`/
+  `MHDSPNPZN`/`SeT_MhD`). MHD agenda (`ZastavkoveJrMhd`) čte jiný zdroj (`^ALVA.MHD.*`) a tyto pole
+  **nemá** (ověřeno 2026-06-20). Není co portovat, dokud se nepotvrdí, že MHD modul má vlastní
+  ekvivalentní úložiště (dle kolegy pravděpodobně ne — nastavuje se jen v AD).
 
 ### D3. Bug — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ)
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
