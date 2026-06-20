@@ -65,6 +65,40 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
 
+### 🟢 PRIORITA 2b — AD nastavení linky 1:1 (mapováno na analýzu) ⬅️ NOVÝ TRACK
+
+Cíl: postupně dotáhnout, aby `ZastavkoveJrAd` bral v potaz **nastavení tisku na úrovni linky** (taby
+*MHD* / *MHD – další* / dialog *Nastavení pro tisk linky*), které legacy čte z `^JRL` PATCH / `MhD`.
+**Autoritativní podklad:** [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md) — každá
+položka níže odkazuje na § analýzy a nese přesný legacy storage + reader.
+
+**Postup per položka** (dle pracovního cyklu nahoře): *projít → validovat (máme/nemáme, dává smysl teď?)
+→ implementovat NEBO odložit s důvodem → otestovat proti gold oraclu → docs*. Pořadí = **přímočaré v
+legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer/nová struktura na konec.
+
+| ID | Analýza § | Co | Legacy storage | Složitost | Stav |
+|---|---|---|---|---|---|
+| AD-N1 | §2 | Poznámka nad linku → placeholder `POZNAMKA_NAD_LINKU` | `PATCH,"Head"` (gPrpLin dta4) | XS | ✅ 2026-06-20 |
+| AD-N2 | §2 | Typ JR → `TYP_JR` placeholder (volitelný; zastávkový legacy razítko z OBJ nestaví) | `PATCH,"OBJ"` (gPrpLin dta3) | S | ✅ 2026-06-20 |
+| AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ⬜ ⬅️ DALŠÍ |
+| AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ |
+| AD-N5 | §3 | `MHD_NEZNZ123` — potlačit NZ v legendě per sloupec | `PATCH,"MHD_NEZNZ123"` | M (váže na NZ legend, dnes dormant) | ⬜ |
+| AD-N6 | §3 | Override nadpisů sloupců | `PATCH,"ISY_LinkyTiskMHDNadpisy"` → `^JRSET` | M (nutno ověřit JRSET node) | ⬜ |
+| AD-N7 | §5 | **Komentáře** (ruční poznámka linky + přiřazené spoje) | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | M-L | ⬜ |
+| AD-N8 | §5 | **Spoje, nepoznámkovat** + komentář přebíjí auto-poznámku | `PATCH,"MHDSPNPZN"` (`odTC~doTC`) | M | ⬜ |
+| AD-N9 | §5 | Směrové poznámky tam/zpět/vše | `MhD,"SeT_MhD",id,cnt` | S-M | ⬜ |
+| AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ⬜ |
+| AD-N11 | §7 | Cizojazyčné poznámky | `PATCH,"prtCzjPzn"` + `("C")` arr6 | M | ⬜ |
+| AD-N12 | §7 | Zóny vs km sloupce (km část) | `PATCH,"linIDS"` (dta20) + `Kms` | L (renderer) | ⬜ odložit |
+| AD-N13 | §7 | Multi-varianta TrasaMin (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ⬜ odložit |
+| AD-N14 | §7 | Návaznosti / přípoje + skrýt prázdné řádky | `("T",sp,32)`, `NavaznostiZpusobVypisu` | XL | ⬜ odložit (nová struktura + element) |
+| AD-N15 | §3 | NZ prázdninové dělení — ověřit na reálné lince | `MHD_NZ1_NZ2`/`MHD_NENZ1_NENZ2` | — | 🟡 kód hotový, čeká data |
+
+> **Pozn. k odloženým:** AD-N12/13/14 jsou „ne přímočaré" (zásah do C# rendereru / nová doménová
+> struktura) — necháváme až po jednoduchých PATCH-read položkách. AD-N15 nelze ověřit bez firmy s
+> prázdninovým FTL JŘ (`MHD_NZ1_NZ2` prázdné všude). AD-N7/N8/N9 jsou doménově nejcennější (tab MHD
+> ruční poznámky) — úložiště zmapováno, takže nejsou blokované.
+
 ### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
 
 TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky bugs, NZ bug, KORID přípojové řádky, …) — tabulka A.2.D níže. **Až po prioritě 1 + 2.**

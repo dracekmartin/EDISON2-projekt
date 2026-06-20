@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-20 — AD nastavení linky 1:1 (track PRIORITA 2b)
+
+- 📄 **Business analýza nastavení tisku na úrovni linky** — `ad-jr-nastaveni-linky-analyza.md`:
+  podchyceno, jak legacy čte nastavení linky (taby MHD / MHD-další / dialog Nastavení tisku) přes 3
+  readery (`gPrpLin`/`gPrpLinMhd`/`gSetLinPrt^JRapiLin*`), per-feature business význam + storage v
+  `^JRL` + zda to máme/nemáme. Klíč: `ALVA.TISKMHD.Data` je jen formátovač, logika je v MAC `JRapi*`.
+  Roadmap track **PRIORITA 2b (AD-N1..N15)** namapován 1:1 na §-čísla analýzy.
+- ✅ **AD-N1 — Poznámka nad linku** — `ZastavkoveJrAd` nově čte `PATCH,"Head"` → placeholder
+  `POZNAMKA_NAD_LINKU` (+ ve schématu). Legacy gPrpLin dta4.
+- ✅ **AD-N2 — Typ JR** — `TYP_JR` (dosud prázdné) naplněno z `PATCH,"OBJ"` (1→„VÝLUKOVÝ", 2→„návrh
+  jízdního řádu", znění 1:1 `JRapiLinPrtPS3`). Pozn.: zastávková větev OBJ nečte → volitelný
+  placeholder, ne automatické razítko.
+
 ## 2026-06-17 — Preview: oprava falešného varování o přetečení
 
 - 🐛 **Fix falešného červeného varování o přetečení** — `PreviewCanvas.PageOverflows` přestal hlásit
