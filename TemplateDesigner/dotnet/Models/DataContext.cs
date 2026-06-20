@@ -37,6 +37,12 @@ public class DataContext
     public IReadOnlyList<DataContext> GetRows(string dataSource) =>
         _rows.TryGetValue(dataSource, out var rows) ? rows : [];
 
+    /// <summary>Skalární hodnoty (read-only) — pro transformace nad kontextem (např. filtr poznámek).</summary>
+    public IReadOnlyDictionary<string, object?> Values => _values;
+
+    /// <summary>Tabulkové zdroje (read-only) — pro transformace nad kontextem.</summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<DataContext>> Rows => _rows;
+
     /// <summary>
     /// Nahradí placeholdery ve tvaru {NAZEV_POLE} nebo {NAZEV_POLE:format} hodnotami z kontextu.
     /// Příklad: "Řidič: {JMENO}" → "Řidič: Jan Novák"

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-20 — AD #7955: co schovat v rozsahu „nepoznámkovat" (Fáze 2)
+
+- ✅ **Parametr sestavy `SCHOVAT_V_ROZSAHU`** (enum: Ruční komentáře [default] / Automatické (rozdíly
+  tras) / Obojí) — řeší #7955 (klient chce u spojů s vlastním komentářem schovat auto, ne komentář).
+  Nad preview i v Ctrl+P (nativní param infra).
+- **Model nadmnožina + TD filtr** (viz `feature-design-principles.md §5.2`): Caché už **nedropuje**,
+  emituje všechny anotace/legendu otagované `KATEGORIE` + `SPOJ` + `V_ROZSAHU_NEPOZNAMKOVAT`. Schování
+  je render-time `NoteVisibilityFilter` v TD → změna se projeví překreslením, bez Caché re-fetch.
+- **Filtr** schová jen anotace v rozsahu „nepoznámkovat" (`V_ROZSAHU=1`) dané kategorie; legendu prořeže
+  podle kategorie + přítomnosti znaku (sdílený znak mimo rozsah zůstane; „x na znamení" se neprořezává).
+  Napojeno na všechny 3 datové cesty (preview, export, tisk reálných dat). Default = legacy (bez regrese).
+- Caché legacy chování zachované (nepřeklopena sémantika „nepoznámkovat") — flip je čistě TD volba.
+
 ## 2026-06-20 — AD ruční poznámky linky z tabu MHD (Fáze 1)
 
 - ✅ **AD-N7 Komentáře** — `ZastavkoveJrAd` čte ruční komentáře spoje (`MhD,"SeT_SpeC"` přiřazené přes

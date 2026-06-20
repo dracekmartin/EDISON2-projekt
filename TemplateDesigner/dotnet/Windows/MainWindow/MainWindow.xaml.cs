@@ -925,7 +925,10 @@ public partial class MainWindow : Window
                 if (stringParams.Count > 0)
                     pages = pages.Select(p => p.WithExtraValues(stringParams)).ToList();
 
-                return pages;
+                return TemplateDesigner.Models.NoteVisibilityFilter.Apply(
+                    pages,
+                    TemplateDesigner.Models.NoteVisibilityFilter.ParseMode(
+                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)));
             };
         }
 

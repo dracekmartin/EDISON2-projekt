@@ -1875,11 +1875,13 @@ public class TemplateDesignerViewModel : EDViewModel
                 if (pages is null) continue;
                 foreach (var p in pages) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return all;
+            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, CurrentNoteSuppression());
         }
 
         if (_realPreviewData is { Count: > 0 })
-            return _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList();
+            return NoteVisibilityFilter.Apply(
+                _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
+                CurrentNoteSuppression());
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
@@ -1956,8 +1958,14 @@ public class TemplateDesignerViewModel : EDViewModel
                 : new DataContext(stringParams, culture: culture);
         }
 
-        return mockData;
+        var suppressionMode = NoteVisibilityFilter.ParseMode(
+            (overrideParams ?? _previewParams).GetValueOrDefault(NoteVisibilityFilter.ParamName));
+        return mockData is null ? null : NoteVisibilityFilter.Apply(mockData, suppressionMode);
     }
+
+    /// <summary>Režim schování poznámek v rozsahu „nepoznámkovat" z aktuálního parametru sestavy.</summary>
+    private NoteRangeSuppression CurrentNoteSuppression() =>
+        NoteVisibilityFilter.ParseMode(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamName));
 
     /// <summary>Výchozí mock hodnota podle typu pole — použije se když Example chybí.</summary>
     private static string MockDefault(DataField f) => f.DataType switch

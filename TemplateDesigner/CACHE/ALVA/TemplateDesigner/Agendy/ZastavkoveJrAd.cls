@@ -343,7 +343,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             s pozicePoznamky = $o(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD",smerovyKlic,pozicePoznamky))
             q:pozicePoznamky=""
             s textPoznamky = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD",smerovyKlic,pozicePoznamky))
-            i textPoznamky '= "" d poznamky.%Push(..BuildPoznamka("text", "", textPoznamky))
+            i textPoznamky '= "" d poznamky.%Push(..BuildPoznamka("text", "", textPoznamky, "", "", "smerove"))
         }
     }
 
@@ -434,9 +434,11 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         i cbe s bezbarLegenda("F") = "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
 
         // ruční komentáře spoje (tab MHD: Komentáře = SeT_SpeC přiřazené spoji přes MhD_SpeC).
-        // Gated „Spoje, nepoznámkovat" (MHDSPNPZN) — 1:1 legacy JRapiLinPrtMhd1 ř.211-216.
+        // V rozsahu „Spoje, nepoznámkovat" (MHDSPNPZN) se anotace jen OZNAČÍ (vRozsahu) — co se reálně
+        // schová (ruční / rozdíly tras / obojí) rozhoduje TD filtr dle nastavení šablony. Caché emituje
+        // nadmnožinu (nedropuje), aby šly volit všechny varianty.
+        s vRozsahu = +..NepoznamkovatSpoj(dataDB, sku, lin, sp, currentPoradi)
         s komentarZnaky = $g(^[dataDB]JRL(sku,lin,smer,sp,"MhD_SpeC"))
-        i (komentarZnaky '= "") && ..NepoznamkovatSpoj(dataDB, sku, lin, sp, currentPoradi) s komentarZnaky = ""
         f indexZnaku=1:1:$l(komentarZnaky) {
             s komentarZnak = $e(komentarZnaky, indexZnaku)
             i komentarZnak '= "" s komentareLegenda(komentarZnak) = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_SpeC",komentarZnak))
@@ -447,12 +449,13 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         i skupiny = "" continue           // KamPrt = 0 (nerozpoznané Plk) → spoj se netiskne (jako legacy)
         f gi=1:1:$l(skupiny,",") {
             s o = ..BuildOdjezd(currentPoradi, $p(skupiny,",",gi), hod, min)
-            // pořadí anotací 1:1 legacy ZnkOm: rozdíl trasy → omezení → bezbariér → ruční komentář
-            i pismRT '= "" d ..AddAnotace(o, "text", pismRT)
-            i znak  '= "" d ..AddAnotace(o, "text", znak)
-            i inv && 'allBBP d ..AddAnotace(o, "specialni", "H")   // u allBBP se marker netiskne, jen legenda
-            i cbe d ..AddAnotace(o, "specialni", "F")
-            f indexZnaku=1:1:$l(komentarZnaky) { s komentarZnak = $e(komentarZnaky, indexZnaku)  i komentarZnak '= "" d ..AddAnotace(o, "text", komentarZnak) }
+            // pořadí anotací 1:1 legacy ZnkOm: rozdíl trasy → omezení → bezbariér → ruční komentář.
+            // KATEGORIE + spoj = pro TD filtr viditelnosti (#7955) — Caché generuje nadmnožinu.
+            i pismRT '= "" d ..AddAnotace(o, "text", pismRT, "", "", "rozdil-trasy", sp, vRozsahu)
+            i znak  '= "" d ..AddAnotace(o, "text", znak, "", "", "omezeni", sp, vRozsahu)
+            i inv && 'allBBP d ..AddAnotace(o, "specialni", "H", "", "", "bezbarier", sp, vRozsahu)   // u allBBP se marker netiskne, jen legenda
+            i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
+            f indexZnaku=1:1:$l(komentarZnaky) { s komentarZnak = $e(komentarZnaky, indexZnaku)  i komentarZnak '= "" d ..AddAnotace(o, "text", komentarZnak, "", "", "rucni-komentar", sp, vRozsahu) }
             d odjezdy.%Push(o)
         }
     }
@@ -860,35 +863,35 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
     f {
         s znak = $o(atrSeen(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak)))
+        d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak), "", "", "atribut-zastavky"))
     }
     // atributy spoje — bezbariér (H) / částečně bezbariér (F)
     s zb = ""
     f {
         s zb = $o(bezbarLegenda(zb))
         q:zb=""
-        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb)))
+        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb), "", "", "bezbarier"))
     }
     // rozdíly tras — písmeno → text ("neobsluhuje zast. X" / "jede přes…" / "jede jen do…" / "pokračuje…")
     s pism = ""
     f {
         s pism = $o(rozdilLegenda(pism))
         q:pism=""
-        d poznamky.%Push(..BuildPoznamka("text", pism, rozdilLegenda(pism)))
+        d poznamky.%Push(..BuildPoznamka("text", pism, rozdilLegenda(pism), "", "", "rozdil-trasy"))
     }
     // ruční komentáře spoje (tab MHD: Komentáře) — znak → text z SeT_SpeC
     s komentarZnak = ""
     f {
         s komentarZnak = $o(komentareLegenda(komentarZnak))
         q:komentarZnak=""
-        d poznamky.%Push(..BuildPoznamka("text", komentarZnak, komentareLegenda(komentarZnak)))
+        d poznamky.%Push(..BuildPoznamka("text", komentarZnak, komentareLegenda(komentarZnak), "", "", "rucni-komentar"))
     }
     // textové poznámky z datumových omezení (nejede/jede)
     s n = ""
     f {
         s n = $o(poznMap("byMarker", n))
         q:n=""
-        d poznamky.%Push(..BuildPoznamka("text", n, poznMap("byMarker", n)))
+        d poznamky.%Push(..BuildPoznamka("text", n, poznMap("byMarker", n), "", "", "omezeni"))
     }
     q poznamky
 }
@@ -1274,6 +1277,20 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d arr.%Push(pDo)
 
     d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false")
+
+    // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
+    // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.
+    s pNepoz = ##class(%DynamicObject).%New()
+    s pNepoz.name         = "SCHOVAT_V_ROZSAHU"
+    s pNepoz.label        = "V rozsahu nepoznámkovat schovat"
+    s pNepoz.type         = "enum"
+    s pNepoz.defaultValue = "Ruční komentáře"
+    s optsNepoz = ##class(%DynamicArray).%New()
+    d optsNepoz.%Push("Ruční komentáře")
+    d optsNepoz.%Push("Automatické (rozdíly tras)")
+    d optsNepoz.%Push("Obojí")
+    s pNepoz.options = optsNepoz
+    d arr.%Push(pNepoz)
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -1349,17 +1366,27 @@ ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina A
     q odjezd
 }
 
-ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "")
+/// Přidá anotaci (horní index) k odjezdu. `kategorie` + `spoj` + `vRozsahu` slouží TD filtru
+/// viditelnosti (#7955): TD podle nich rozhodne, co schovat. Caché generuje vždy nadmnožinu, filtr je
+/// render-time v TD. Kategorie: rozdil-trasy / omezeni / bezbarier / rucni-komentar.
+/// vRozsahu = anotace spadá do rozsahu „Spoje, nepoznámkovat" (jen tam se schování aplikuje).
+ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "", spoj As %String = "", vRozsahu As %Boolean = 0)
 {
     s anotace = ##class(%DynamicObject).%New()
     d anotace.%Set("TYP", typ)
     d anotace.%Set("ZNAK", znak)
     d anotace.%Set("FORE_COLOR", foreColor)
     d anotace.%Set("BACK_COLOR", backColor)
+    d anotace.%Set("KATEGORIE", kategorie)
+    d anotace.%Set("SPOJ", spoj)
+    d anotace.%Set("V_ROZSAHU_NEPOZNAMKOVAT", vRozsahu)
     d odjezd.%Get("ANOTACE").%Push(anotace)
 }
 
-ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "") As %DynamicObject
+/// `kategorie` (atribut-zastavky / bezbarier / rozdil-trasy / rucni-komentar / omezeni / smerove)
+/// umožní TD filtru prořezat legendu jen v relevantní kategorii (např. „x — na znamení" se nesmí
+/// smazat jen proto, že nemá anotaci u minut).
+ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "") As %DynamicObject
 {
     s poznamka = ##class(%DynamicObject).%New()
     d poznamka.%Set("TYP", typ)
@@ -1367,6 +1394,7 @@ ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, fore
     d poznamka.%Set("TEXT", text)
     d poznamka.%Set("FORE_COLOR", foreColor)
     d poznamka.%Set("BACK_COLOR", backColor)
+    d poznamka.%Set("KATEGORIE", kategorie)
     q poznamka
 }
 

@@ -87,7 +87,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 | AD-N7 | §5 | **Komentáře** (ruční poznámka linky + přiřazené spoje) | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | M-L | ✅ 2026-06-20 (Fáze 1) |
 | AD-N8 | §5 | **Spoje, nepoznámkovat** (gate ručního komentáře, 1:1 legacy) | `PATCH,"MHDSPNPZN"` (`odTC~doTC`) | M | ✅ 2026-06-20 (Fáze 1) |
 | AD-N9 | §5 | Směrové poznámky tam/zpět/vše | `MhD,"SeT_MhD",id,cnt` | S-M | ✅ 2026-06-20 (Fáze 1) |
-| AD-N8b | §5 | **Fáze 2** — komentář přebíjí auto-poznámku (#7955) = opt-in tiskový parametr „u spojů s vlastním komentářem nevypisovat auto" | (logika generování) | M | ⬜ ⬅️ rozhodnout umístění/bloat |
+| AD-N8b | §5 | **Fáze 2** — co schovat v rozsahu „nepoznámkovat" (#7955) = parametr sestavy `SCHOVAT_V_ROZSAHU` (Ruční/Automatické/Obojí) + TD render-filtr nad nadmnožinou z Caché | param + `NoteVisibilityFilter` | M | ✅ 2026-06-20 (Fáze 2) |
 | AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ⬜ |
 | AD-N11 | §7 | Cizojazyčné poznámky | `PATCH,"prtCzjPzn"` + `("C")` arr6 | M | ⬜ |
 | AD-N12 | §7 | Zóny vs km sloupce (km část) | `PATCH,"linIDS"` (dta20) + `Kms` | L (renderer) | ⬜ odložit |
