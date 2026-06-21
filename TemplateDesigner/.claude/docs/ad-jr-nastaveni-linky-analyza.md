@@ -194,8 +194,9 @@ Tyto se v zastávkovém (vývěskovém) JŘ neřeší — patří do **linkovýc
 
 **Hotovo a ověřeno 1:1:** hlavička + dopravce, FTL 0-3 sloupce, datumová omezení, **rozdíly tras
 (anotace A — neobsluhuje/jede přes/jede jen do/jede až do)**, na znamení, bezbariér, časy jízdy (1
-sloupec), zóny, ruční poznámky (Komentáře/nepoznámkovat/směrové), #7955 přepínač, multi-page.
-**Helpdesk zavřeno:** #7955, #7959, #7947.
+sloupec), zóny, ruční poznámky (Komentáře/nepoznámkovat/směrové), #7955 přepínač, multi-page,
+poznámka nad linku, typ JR, skrytí agregátu bezbariér (#7161 D6 — latentní).
+**Helpdesk zavřeno:** #7955, #7959, #7947, #7161 D6 (D5 zbývá).
 
 ---
 
