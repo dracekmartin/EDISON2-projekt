@@ -1875,13 +1875,13 @@ public class TemplateDesignerViewModel : EDViewModel
                 if (pages is null) continue;
                 foreach (var p in pages) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, CurrentNoteSuppression());
+            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, CurrentNoteSuppression(), CurrentHideAggBezbarier());
         }
 
         if (_realPreviewData is { Count: > 0 })
             return NoteVisibilityFilter.Apply(
                 _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
-                CurrentNoteSuppression());
+                CurrentNoteSuppression(), CurrentHideAggBezbarier());
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
@@ -1958,14 +1958,19 @@ public class TemplateDesignerViewModel : EDViewModel
                 : new DataContext(stringParams, culture: culture);
         }
 
-        var suppressionMode = NoteVisibilityFilter.ParseMode(
-            (overrideParams ?? _previewParams).GetValueOrDefault(NoteVisibilityFilter.ParamName));
-        return mockData is null ? null : NoteVisibilityFilter.Apply(mockData, suppressionMode);
+        var src = overrideParams ?? _previewParams;
+        var suppressionMode = NoteVisibilityFilter.ParseMode(src.GetValueOrDefault(NoteVisibilityFilter.ParamName));
+        var hideAgg = NoteVisibilityFilter.ParseBool(src.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
+        return mockData is null ? null : NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg);
     }
 
     /// <summary>Režim schování poznámek v rozsahu „nepoznámkovat" z aktuálního parametru sestavy.</summary>
     private NoteRangeSuppression CurrentNoteSuppression() =>
         NoteVisibilityFilter.ParseMode(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamName));
+
+    /// <summary>Skrýt agregátní bezbariér poznámku (#7161 D6) z aktuálního parametru sestavy.</summary>
+    private bool CurrentHideAggBezbarier() =>
+        NoteVisibilityFilter.ParseBool(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
 
     /// <summary>Výchozí mock hodnota podle typu pole — použije se když Example chybí.</summary>
     private static string MockDefault(DataField f) => f.DataType switch
@@ -2213,28 +2218,17 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Sample template ───────────────────────────────────────────────────────
+    // DEV (test AD nastavení linky): výchozí agenda = Zastávkový JŘ (AD) + jedna sekce přes
+    // celou A4, ať se nemusí setup opakovat při testování. TODO: vrátit na produkční starter
+    // (MHD, Záhlaví/Obsah/Patička) před releasem.
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_MHD" };
-        const float headerH = 25f;
-        const float footerH = 15f;
-        float bodyH = Math.Max(0f, t.PageSize.PrintableHeight - headerH - footerH);
-        t.Sections.Add(new Section
-        {
-            Name = "Záhlaví", PrintBehavior = SectionPrintBehavior.OnEveryPage,
-            Role = SectionRole.Header,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = headerH
-        });
+        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
         t.Sections.Add(new Section
         {
             Name = "Obsah", PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = bodyH
-        });
-        t.Sections.Add(new Section
-        {
-            Name = "Patička", PrintBehavior = SectionPrintBehavior.OnEveryPage,
-            Role = SectionRole.Footer,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = footerH
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+            DesignerHeight = t.PageSize.PrintableHeight
         });
         return t;
     }

@@ -331,7 +331,8 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
     s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
-    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda)
+    d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, allBBP)
 
     // směrové poznámky linky (tab MHD: poznámky tam/zpět/vše) — 1:1 legacy JRapiLinPrtMhd1 ř.440-447.
     // Tam → klíče ">" + "<>"; Zpět → "<" + "<>". Plain text bez znaku.
@@ -859,7 +860,7 @@ ClassMethod ZiskejMarker(ByRef poznMap, txt As %String) As %String
 
 /// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".
 /// Pořadí 1:1 gold (`ALVA.TISKMHD.Data`): speciální znaky → rozdíly/text → omezení.
-ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda) As %DynamicArray
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, allBBP As %Boolean = 0) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
     // atributy zastávek — jeden řádek legendy na každý viděný znak (znak → text z číselníku)
@@ -869,12 +870,14 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         q:znak=""
         d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak), "", "", "atribut-zastavky"))
     }
-    // atributy spoje — bezbariér (H) / částečně bezbariér (F)
+    // atributy spoje — bezbariér (H) / částečně bezbariér (F). Při allBBP je „H" agregátní řádek
+    // („všechny spoje…") → kategorie „bezbarier-agregat" (TD filtr ho umí skrýt, #7161 D6).
     s zb = ""
     f {
         s zb = $o(bezbarLegenda(zb))
         q:zb=""
-        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb), "", "", "bezbarier"))
+        s katBezbar = $s((zb="H") && allBBP : "bezbarier-agregat", 1 : "bezbarier")
+        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb), "", "", katBezbar))
     }
     // rozdíly tras — písmeno → text ("neobsluhuje zast. X" / "jede přes…" / "jede jen do…" / "pokračuje…")
     s pism = ""
@@ -1295,6 +1298,10 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d optsNepoz.%Push("Obojí")
     s pNepoz.options = optsNepoz
     d arr.%Push(pNepoz)
+
+    // Skrýt agregátní poznámku „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
+    // TD-aplikované (filtr skryje legendu kategorie bezbarier-agregat). Default = zobrazit (legacy).
+    d ..AddBoolParam(arr, "SCHOVAT_AGREGAT_BEZBARIER", "Skrýt souhrn ""všechny spoje bezbariérové""", "false")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

@@ -179,7 +179,13 @@ Mimo scope zastávkového JŘ:
 - **Citace:** *„Možnosť používateľsky nastaviť, aby sa automaticky negenerovala poznámka »všetky spoje s bezbariérovým vstupom do vozidla«."*
 - **Co máme dnes:** `AddAtribut` v `ZastavkoveJrMhdAPI` zřejmě generuje shrnující text, když 100% spojů má daný atribut (např. bezbariérovost). Vypínání není.
 - **Co klient chce:** User option v parametrech tisku — „negenerovat agregovanou poznámku" / per-atribut switch.
-- **Gap:** Doplnit parametr do `GetParameters` (např. `SkipAggregatedAttributeNotes: true/false`) + checkbox v PrintDialog. V Caché v `AddAtribut` před zápisem do legendy ověřit.
+- **✅ VYŘEŠENO PRO AD** (2026-06-21) — parametr sestavy **`SCHOVAT_AGREGAT_BEZBARIER`** (bool). Agregát
+  „všechny spoje mají bezbariérově přístupné vozidlo" (vzniká při `allBBP` = 100 % spojů bezbariér) je
+  v legendě tagován kategorií `bezbarier-agregat`; TD `NoteVisibilityFilter` ho při zapnutém parametru
+  skryje. Per-spoj „spoj má bezbariérově…" zůstává. Filtr-model jako #7955.
+  **⚠️ Neověřeno na našich datech** — agregát se v KV_DP ani CB_CSADAD nevyskytuje (žádná linka není
+  100 % bezbariérová; ověřeno na 0365001/0365003/0365005 = jen per-spoj). Objevuje se na TRANSDEV datech
+  (žadatel, 100% nízkopodlažní flotila) — tam přístup nemáme. Latentní jako AD-N15; klient ověří po nasazení.
 
 ### D7. Skrýt prázdné přípojové řádky
 - **Zákazník:** KORID (Jaroslav Smištík), #11300

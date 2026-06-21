@@ -124,7 +124,7 @@ legacy PATCH flagů. Tj. místo čtení `Trid_delK`/`NegZnNR` z Caché je vystav
 | Uspořádat poznámky dle délky | `PATCH,"Trid_delK"` | vlastnost `NotesLegendElement` | ⬜ AD-N3 |
 | NZ na nový řádek | `PATCH,"NegZnNR"` | vlastnost elementu | ⬜ AD-N4 |
 | Layout legendy (1 vs 2 sloupce) | (vizuál) | vlastnost elementu | ⬜ |
-| Skrýt agreg. „bezbariér" poznámku | — | parametr (filtr-model) | ⬜ #7161 D6 |
+| Skrýt agreg. „bezbariér" poznámku | — | parametr `SCHOVAT_AGREGAT_BEZBARIER` (filtr-model) | ✅ #7161 D6 (latentní) |
 | Skrýt „x na znamení" když sloupec hidden | — | TD (viditelnost StopList) | ⬜ #7161 D5 |
 | Číslování poznámek (TYPPOZ=1 pevná čísla) | firm-config | — | ⬜ deferred |
 
@@ -153,7 +153,7 @@ TD render-filtr (`NoteVisibilityFilter`) schová dle volby. Caché už nedropuje
 |---|---|---|
 | Na znamení (×) | data trasy „x" / `UVOD` | ✅ (filtr jen „x") |
 | Bezbariér spoj (H/F) | `gSetLinPrt` dta35 `TZPA,"BBP"` + `^JRSET("PS","LIMES")` | ✅ |
-| Agreg. „všechny spoje bezbariérové" | (allBBP) | ✅ (vypínač = #7161 D6 ⬜) |
+| Agreg. „všechny spoje bezbariérové" | (allBBP) | ✅ (vypínač `SCHOVAT_AGREGAT_BEZBARIER` = #7161 D6) |
 | Rok v omezeních (2místně) | `gSetLinPrt` dta36 `TiskDtm` | ✅ (PS3 formát) |
 | Ruční názvy zastávek | `gSetLinPrt` dta18 `nazMHD` → `^JRZ` $7 | ✅ |
 | Zóny | data | ✅ |
@@ -174,8 +174,8 @@ Tyto se v zastávkovém (vývěskovém) JŘ neřeší — patří do **linkovýc
 ## 9. Prioritizace zbývajícího
 
 ### 🟢 Malé (helpdesk, čistě v našem kódu)
-- **#7161 D6** — vypnout agreg. bezbariér (parametr, filtr-model). Nejmenší.
-- **#7161 D5** — skrýt „x" když je sloupec hidden (TD-side viditelnost).
+- ✅ **#7161 D6** — vypnout agreg. bezbariér (`SCHOVAT_AGREGAT_BEZBARIER`, filtr-model). Hotovo (latentní).
+- **#7161 D5** — skrýt „x" když je sloupec hidden (TD-side viditelnost). ⬜ zbývá
 
 ### 🟡 Střední (layout legendy → vlastnosti `NotesLegendElement`)
 - **AD-N3/N4** — řazení poznámek dle délky, NZ na nový řádek, layout legendy (1/2 sloupce).

@@ -928,7 +928,9 @@ public partial class MainWindow : Window
                 return TemplateDesigner.Models.NoteVisibilityFilter.Apply(
                     pages,
                     TemplateDesigner.Models.NoteVisibilityFilter.ParseMode(
-                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)));
+                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)),
+                    TemplateDesigner.Models.NoteVisibilityFilter.ParseBool(
+                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamAggBezbarier)));
             };
         }
 

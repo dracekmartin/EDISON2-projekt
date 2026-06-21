@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-21 — AD #7947 + #7161 D6 (rozdíly tras + bezbariér agregát)
+
+- ✅ **#7947 „jede až do XY"** — `RozdilyTras` větev prodloužení vypisuje „jede až do zast. <konečná>"
+  místo matoucího legacy „pokračuje přes". Záměrná odchylka (klient), kód analogický k „jede jen do".
+- ✅ **#7161 D6 — skrýt agregát bezbariér** — parametr `SCHOVAT_AGREGAT_BEZBARIER` (bool). Caché taguje
+  agregátní legendu (`allBBP` → kat. `bezbarier-agregat`), `NoteVisibilityFilter` ji skryje. Filtr-model
+  jako #7955. Neověřeno na datech (žádná linka 100% bezbariér v KV_DP/CB_CSADAD — latentní).
+- 🔧 **MCP `edison-cache` opraven** — deployovaný exe byl neúplný (chyběl runtime); rebuild +
+  `.mcp.json` cesta na podsložku `C:\Edison\EdisonCacheMcp\`. Ověřeno proti gold oraclu (CB_CSADAD).
+- 📄 **AD analýzy sloučeny** do `ad-jr-nastaveni-linky-analyza.md`; přípoje/km přesunuty do linkových JŘ.
+
 ## 2026-06-20 — AD #7955: co schovat v rozsahu „nepoznámkovat" (Fáze 2)
 
 - ✅ **Parametr sestavy `SCHOVAT_V_ROZSAHU`** (enum: Ruční komentáře [default] / Automatické (rozdíly

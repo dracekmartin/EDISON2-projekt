@@ -20,8 +20,14 @@ public static class NoteVisibilityFilter
     private const string OdjezdyKey  = "ODJEZDY";
     private const string PoznamkyKey = "POZNAMKY";
 
-    /// <summary>Název parametru sestavy (GetParameters), který řídí filtr.</summary>
+    /// <summary>Název parametru sestavy (GetParameters), který řídí filtr rozsahu „nepoznámkovat".</summary>
     public const string ParamName = "SCHOVAT_V_ROZSAHU";
+
+    /// <summary>Parametr — skrýt agregátní poznámku „všechny spoje bezbariérové" (#7161 D6).</summary>
+    public const string ParamAggBezbarier = "SCHOVAT_AGREGAT_BEZBARIER";
+
+    /// <summary>Kategorie legendy pro agregátní bezbariér poznámku (Caché tag).</summary>
+    private const string AggBezbarierKat = "bezbarier-agregat";
 
     /// <summary>Převede hodnotu parametru sestavy na režim. Neznámé / „Ruční komentáře" = default (legacy).</summary>
     public static NoteRangeSuppression ParseMode(object? paramValue) => paramValue?.ToString() switch
@@ -31,18 +37,22 @@ public static class NoteVisibilityFilter
         _                            => NoteRangeSuppression.ManualComment,
     };
 
-    public static List<DataContext> Apply(IReadOnlyList<DataContext> pages, NoteRangeSuppression mode)
+    /// <summary>Parse bool parametru sestavy (hodnota „true"/„false").</summary>
+    public static bool ParseBool(object? paramValue) =>
+        paramValue?.ToString()?.Equals("true", StringComparison.OrdinalIgnoreCase) == true;
+
+    public static List<DataContext> Apply(IReadOnlyList<DataContext> pages, NoteRangeSuppression mode, bool hideAggregateBezbarier = false)
     {
         var hide = HideCategories(mode);
-        return pages.Select(p => Apply(p, hide)).ToList();
+        return pages.Select(p => Apply(p, hide, hideAggregateBezbarier)).ToList();
     }
 
-    public static DataContext Apply(DataContext page, NoteRangeSuppression mode) =>
-        Apply(page, HideCategories(mode));
+    public static DataContext Apply(DataContext page, NoteRangeSuppression mode, bool hideAggregateBezbarier = false) =>
+        Apply(page, HideCategories(mode), hideAggregateBezbarier);
 
-    private static DataContext Apply(DataContext page, HashSet<string> hide)
+    private static DataContext Apply(DataContext page, HashSet<string> hide, bool hideAggBezbarier)
     {
-        if (hide.Count == 0) return page;
+        if (hide.Count == 0 && !hideAggBezbarier) return page;
 
         var surviving = new HashSet<string>(StringComparer.Ordinal);
         var newRows = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);
@@ -55,7 +65,7 @@ public static class NoteVisibilityFilter
         // 2) POZNAMKY — prořež legendu (potřebuje surviving z kroku 1).
         foreach (var (key, rows) in page.Rows)
             if (key.Equals(PoznamkyKey, StringComparison.OrdinalIgnoreCase))
-                newRows[key] = rows.Where(r => KeepPoznamka(r, hide, surviving)).ToList();
+                newRows[key] = rows.Where(r => KeepPoznamka(r, hide, surviving, hideAggBezbarier)).ToList();
 
         // 3) ostatní zdroje beze změny.
         foreach (var (key, rows) in page.Rows)
@@ -85,9 +95,10 @@ public static class NoteVisibilityFilter
         return odjezd.WithExtraValues(new Dictionary<string, object?> { ["ANOTACE"] = kept });
     }
 
-    private static bool KeepPoznamka(DataContext poznamka, HashSet<string> hide, HashSet<string> surviving)
+    private static bool KeepPoznamka(DataContext poznamka, HashSet<string> hide, HashSet<string> surviving, bool hideAggBezbarier)
     {
         var kategorie = poznamka.GetString("KATEGORIE");
+        if (hideAggBezbarier && kategorie == AggBezbarierKat) return false;   // #7161 D6 — skrýt agregát bezbariér
         if (!hide.Contains(kategorie)) return true;        // jiná kategorie — nech být
         var znak = poznamka.GetString("ZNAK");
         if (znak == "") return true;                        // text bez znaku (směrové) — nech být
