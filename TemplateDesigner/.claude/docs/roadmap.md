@@ -88,7 +88,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 | AD-N8 | §5 | **Spoje, nepoznámkovat** (gate ručního komentáře, 1:1 legacy) | `PATCH,"MHDSPNPZN"` (`odTC~doTC`) | M | ✅ 2026-06-20 (Fáze 1) |
 | AD-N9 | §5 | Směrové poznámky tam/zpět/vše | `MhD,"SeT_MhD",id,cnt` | S-M | ✅ 2026-06-20 (Fáze 1) |
 | AD-N8b | §5 | **Fáze 2** — co schovat v rozsahu „nepoznámkovat" (#7955) = parametr sestavy `SCHOVAT_V_ROZSAHU` (Ruční/Automatické/Obojí) + TD render-filtr nad nadmnožinou z Caché | param + `NoteVisibilityFilter` | M | ✅ 2026-06-20 (Fáze 2) |
-| AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ⬜ |
+| AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ✅ 2026-06-21 (#7947) |
 | AD-N11 | §7 | Cizojazyčné poznámky | `PATCH,"prtCzjPzn"` + `("C")` arr6 | M | ⬜ |
 | AD-N12 | §7 | Zóny vs km sloupce (km část) | `PATCH,"linIDS"` (dta20) + `Kms` | L (renderer) | ⬜ odložit |
 | AD-N13 | §7 | Multi-varianta TrasaMin (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ⬜ odložit |
