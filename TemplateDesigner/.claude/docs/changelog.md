@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-21 — AD #7161 D5 (skrýt legendu „× na znamení") + D6 ověřeno
+
+- ✅ **#7161 D5** — `NoteVisibilityFilter.ShouldHideNaZnameniLegend(template)`: když šablona má StopList,
+  ale žádný nemá zapnuté `ShowSignalStopIndicator` („Na znamení"), skryje se z legendy kategorie
+  `atribut-zastavky` („× na znamení"). Legenda následuje viditelnost značky, žádné nové ovládání,
+  žádná Caché změna. Test: CB_GWBUS 0320144. **#7161 uzavřen (D5+D6).**
+- ✅ **#7161 D6 ověřeno** na CB_CSADAD 0365004 (agregát „všechny spoje bezbariérové" se parametrem skryje).
+
 ## 2026-06-21 — AD #7947 + #7161 D6 (rozdíly tras + bezbariér agregát)
 
 - ✅ **#7947 „jede až do XY"** — `RozdilyTras` větev prodloužení vypisuje „jede až do zast. <konečná>"

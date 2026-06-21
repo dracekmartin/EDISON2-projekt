@@ -1875,13 +1875,13 @@ public class TemplateDesignerViewModel : EDViewModel
                 if (pages is null) continue;
                 foreach (var p in pages) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, CurrentNoteSuppression(), CurrentHideAggBezbarier());
+            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, CurrentNoteSuppression(), CurrentHideAggBezbarier(), CurrentHideNaZnameniLegend());
         }
 
         if (_realPreviewData is { Count: > 0 })
             return NoteVisibilityFilter.Apply(
                 _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
-                CurrentNoteSuppression(), CurrentHideAggBezbarier());
+                CurrentNoteSuppression(), CurrentHideAggBezbarier(), CurrentHideNaZnameniLegend());
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
@@ -1961,7 +1961,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var src = overrideParams ?? _previewParams;
         var suppressionMode = NoteVisibilityFilter.ParseMode(src.GetValueOrDefault(NoteVisibilityFilter.ParamName));
         var hideAgg = NoteVisibilityFilter.ParseBool(src.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
-        return mockData is null ? null : NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg);
+        return mockData is null ? null : NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend());
     }
 
     /// <summary>Režim schování poznámek v rozsahu „nepoznámkovat" z aktuálního parametru sestavy.</summary>
@@ -1971,6 +1971,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Skrýt agregátní bezbariér poznámku (#7161 D6) z aktuálního parametru sestavy.</summary>
     private bool CurrentHideAggBezbarier() =>
         NoteVisibilityFilter.ParseBool(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
+
+    /// <summary>Skrýt legendu „× na znamení" když StopList netiskne značku (#7161 D5) — ze šablony.</summary>
+    private bool CurrentHideNaZnameniLegend() =>
+        NoteVisibilityFilter.ShouldHideNaZnameniLegend(State.CurrentTemplate);
 
     /// <summary>Výchozí mock hodnota podle typu pole — použije se když Example chybí.</summary>
     private static string MockDefault(DataField f) => f.DataType switch

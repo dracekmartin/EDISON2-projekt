@@ -930,7 +930,8 @@ public partial class MainWindow : Window
                     TemplateDesigner.Models.NoteVisibilityFilter.ParseMode(
                         paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)),
                     TemplateDesigner.Models.NoteVisibilityFilter.ParseBool(
-                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamAggBezbarier)));
+                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamAggBezbarier)),
+                    TemplateDesigner.Models.NoteVisibilityFilter.ShouldHideNaZnameniLegend(_vm.State.CurrentTemplate));
             };
         }
 

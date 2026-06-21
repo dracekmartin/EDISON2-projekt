@@ -171,8 +171,14 @@ Mimo scope zastávkového JŘ:
 - **Zákazník:** TRANSDEV (Vladimír Šimko), #7161
 - **Citace:** *„aby sa negenerovala poznámka »x — zastávka je na znamenie«, ak je v zostave zakázané zobrazenie stĺpca »Pracovní 2« (zaisťuje zobrazovanie značky »x« pred názvami príslušných zastávok)"*
 - **Co máme dnes:** Atribut zastávek se vždy přidá do legendy přes `AddAtribut` ve fázi 6 — bez ohledu na to, zda je sloupec s atributem v šabloně viditelný.
-- **Co klient chce:** Pokud sloupec, který zobrazuje značku `x` (v TD ekvivalent: column visibility v `StopColumnsEditorDialog`), je vypnutý → vynechat odpovídající popis z legendy.
-- **Gap:** Caché nezná stav viditelnosti v šabloně. **Cleaner řešení:** legenda atributů se nebude generovat v Caché vůbec a TD si sám sestaví legendu z viditelných sloupců StopList + DepartureGrid. Alternativně: TD posílá Caché při tisku seznam aktivních column klíčů.
+- **Co klient chce:** Pokud sloupec, který zobrazuje značku `x` (v TD ekvivalent: `ShowSignalStopIndicator` na StopListu), je vypnutý → vynechat odpovídající popis z legendy.
+- **✅ VYŘEŠENO PRO AD** (2026-06-21) — `NoteVisibilityFilter.ShouldHideNaZnameniLegend(template)`:
+  když šablona má StopList, ale **žádný** nemá zapnuté `ShowSignalStopIndicator` („Na znamení"),
+  filtr skryje řádky legendy kategorie `atribut-zastavky` („× na znamení"). Legenda automaticky
+  následuje viditelnost značky — žádné nové ovládání (uživatel jen odškrtne „Na znamení" na StopListu).
+  Žádná Caché změna (legenda už je tagovaná). **Test:** CB_GWBUS **0320144** (má „x — zastávka pouze
+  na znamení") — odškrtnout „Na znamení" na StopListu → značky „×" i řádek legendy zmizí.
+- **⬜ MHD agenda** neportováno (až bude potřeba).
 
 ### D6. Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem"
 - **Zákazník:** TRANSDEV (Vladimír Šimko), #7161
@@ -183,9 +189,8 @@ Mimo scope zastávkového JŘ:
   „všechny spoje mají bezbariérově přístupné vozidlo" (vzniká při `allBBP` = 100 % spojů bezbariér) je
   v legendě tagován kategorií `bezbarier-agregat`; TD `NoteVisibilityFilter` ho při zapnutém parametru
   skryje. Per-spoj „spoj má bezbariérově…" zůstává. Filtr-model jako #7955.
-  **⚠️ Neověřeno na našich datech** — agregát se v KV_DP ani CB_CSADAD nevyskytuje (žádná linka není
-  100 % bezbariérová; ověřeno na 0365001/0365003/0365005 = jen per-spoj). Objevuje se na TRANSDEV datech
-  (žadatel, 100% nízkopodlažní flotila) — tam přístup nemáme. Latentní jako AD-N15; klient ověří po nasazení.
+  **✅ Ověřeno na CB_CSADAD 0365004** (2026-06-21) — má agregát „všechny spoje mají bezbariérově přístupné
+  vozidlo"; zapnutí parametru řádek korektně skryje, per-spoj bezbariér (0365001/0365005) zůstává.
 
 ### D7. Skrýt prázdné přípojové řádky
 - **Zákazník:** KORID (Jaroslav Smištík), #11300

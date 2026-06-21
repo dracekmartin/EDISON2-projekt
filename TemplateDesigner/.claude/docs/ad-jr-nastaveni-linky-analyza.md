@@ -176,13 +176,12 @@ Tyto se v zastávkovém (vývěskovém) JŘ neřeší — patří do **linkovýc
 Popsáno srozumitelně bez legacy zkratek (technický klíč v závorce jako reference). Seřazeno dle
 doporučeného pořadí.
 
-### 🟢 #7161 D5 — Skrýt vysvětlivku „× na znamení", když značka není zobrazená — ⬅️ DALŠÍ
-- **Co to dělá:** Když si uživatel ve vývěsce **vypne** zobrazování značky „×" u zastávek na znamení,
-  má z **legendy** zmizet i řádek „× — zastávka je na znamení". Jinak legenda vysvětluje značku, která
-  nikde v JŘ není.
+### ✅ #7161 D5 — Skrýt vysvětlivku „× na znamení", když značka není zobrazená — HOTOVO (2026-06-21)
+- **Co to dělá:** Když uživatel ve vývěsce **odškrtne „Na znamení"** na StopListu, zmizí z **legendy**
+  i řádek „× — zastávka na znamení". Legenda automaticky následuje viditelnost značky.
 - **Kde to uvidí:** legenda poznámek pod jízdním řádem.
-- **Proč teď:** malé, **testovatelné** (na jakékoli lince se zastávkou na znamení), uzavře celý #7161
-  (D6 už hotové). Čistě TD práce (viditelnost značky ve `StopListElement`).
+- **Jak:** `NoteVisibilityFilter.ShouldHideNaZnameniLegend(template)` — skryje kategorii `atribut-zastavky`,
+  když žádný StopList nemá `ShowSignalStopIndicator`. Čistě TD, žádná Caché změna. Test: CB_GWBUS 0320144.
 
 ### 🟡 Layout a uspořádání legendy poznámek
 Vše se týká **legendy pod jízdním řádem** — jak se poznámky uspořádají, aby se vešly a byly přehledné.
@@ -223,8 +222,8 @@ nastavení linky jako v legacy.
 **Hotovo a ověřeno 1:1:** hlavička + dopravce, FTL 0-3 sloupce, datumová omezení, **rozdíly tras
 (anotace A — neobsluhuje/jede přes/jede jen do/jede až do)**, na znamení, bezbariér, časy jízdy (1
 sloupec), zóny, ruční poznámky (Komentáře/nepoznámkovat/směrové), #7955 přepínač, multi-page,
-poznámka nad linku, typ JR, skrytí agregátu bezbariér (#7161 D6 — latentní).
-**Helpdesk zavřeno:** #7955, #7959, #7947, #7161 D6 (D5 zbývá).
+poznámka nad linku, typ JR, skrytí agregátu bezbariér (#7161 D6), skrytí legendy na znamení (#7161 D5).
+**Helpdesk zavřeno:** #7955, #7959, #7947, **#7161 (D5+D6)**.
 
 ---
 
