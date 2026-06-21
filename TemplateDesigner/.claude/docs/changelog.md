@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-21 — Legenda poznámek: layout (sloupce / řazení / zarovnaný marker)
+
+- ✅ **Víc-sloupcová legenda** — `NotesLegendElement.Columns` (1-4) + `WrapSmer` (po sloupcích / po
+  řádcích). Render distribuuje poznámky do sloupců, výška = záhlaví + `ceil(N/Columns)` × řádek.
+  Dorovnává legacy „Počet sloupců" (`stPOZ_PocetSloupcu`), bez 1/2 stropu.
+- ✅ **Zarovnaný marker** — `MarkerSirka` (0 = inline jako dnes, >0 = pevná levá buňka se znakem →
+  svisle zarovnané markery). Dorovnává legacy `stPOZ_SirkaSloupceTextVlevo`.
+- ✅ **Řazení poznámek** — `Razeni` (výchozí / podle délky). Dorovnává legacy „Trid_delK".
+- Vystaveno v EDInputformu (`NotesLegendElementEdit.cls`, skupina „Rozložení") i inline panelu.
+  Default (1 sloupec, inline, výchozí řazení) = beze změny existujících šablon. Reference:
+  legacy návrhář `formTISKMHDSekcePoznamkyEdit` (viz `ad-jr-typy-poznamek-layout-analyza.md §1b`).
+
 ## 2026-06-21 — AD #7161 D5 (skrýt legendu „× na znamení") + D6 ověřeno
 
 - ✅ **#7161 D5** — `NoteVisibilityFilter.ShouldHideNaZnameniLegend(template)`: když šablona má StopList,

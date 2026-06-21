@@ -19,6 +19,18 @@ public class NotesLegendElement : ScheduleElementBase
     public float NoteLineHeight { get; set; } = 4f;
 
     // ═══════════════════════════════════════════
+    // Rozložení legendy (sloupce / řazení / zarovnání markeru)
+    // ═══════════════════════════════════════════
+    /// <summary>Počet sloupců legendy (1 = jednosloupcová, výchozí). Legacy „Počet sloupců".</summary>
+    public int Columns { get; set; } = 1;
+    /// <summary>Směr plnění při >1 sloupci: po sloupcích (výchozí, jako noviny) / po řádcích.</summary>
+    public LegendWrap WrapSmer { get; set; } = LegendWrap.PoSloupcich;
+    /// <summary>Pevná šířka levé buňky se znakem (mm) → svisle zarovnané markery. 0 = inline (výchozí, jako dnes).</summary>
+    public float MarkerSirka { get; set; } = 0f;
+    /// <summary>Řazení poznámek: výchozí (pořadí z dat) / podle délky textu. Legacy „Uspořádat dle délky".</summary>
+    public LegendRazeni Razeni { get; set; } = LegendRazeni.Vychozi;
+
+    // ═══════════════════════════════════════════
     // Negativní značky
     // ═══════════════════════════════════════════
     public string NegativniZnackaBackColor { get; set; } = "#FF000000";
@@ -83,20 +95,38 @@ public class NotesLegendElement : ScheduleElementBase
         }
         else
         {
-            foreach (var pozn in filtered)
+            var ordered = OrderNotes(filtered);
+            int cols = Math.Max(1, Columns);
+            int rowsPerCol = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)cols));
+            float colW = Width / cols;
+            float markerCell = MarkerSirka * scale;   // 0 = inline (jako dnes)
+            float headerBottom = currentY;
+
+            for (int i = 0; i < ordered.Count; i++)
             {
-                float lineX = X + 1f;
+                var pozn = ordered[i];
+
+                // Pozice ve mřížce sloupců dle směru wrapování.
+                int col, row;
+                if (WrapSmer == LegendWrap.PoSloupcich) { col = i / rowsPerCol; row = i % rowsPerCol; }
+                else                                    { col = i % cols;       row = i / cols; }
+
+                float colX  = X + col * colW;
+                float noteY = headerBottom + row * scaledNoteLineH;
+                float lineX = colX + 1f;
+                // Pevná marker buňka → text všech řádků zarovnán na colX+markerCell; jinak inline.
+                float? textStartX = markerCell > 0 ? colX + markerCell : null;
 
                 switch (pozn.Typ)
                 {
                     case TypPoznamky.NegativniZnacka:
-                        RenderNegativniZnacka(ctx, pozn, ref lineX, currentY, scaledNoteLineH, noteFont, boldFont, paints.Text);
+                        RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, textStartX);
                         break;
 
                     case TypPoznamky.SpecialniZnak:
                         // Symbol v pozn.ForeColor (pokud z DB), tělo poznámky default barvou.
-                        RenderSymbolWithText(ctx, pozn, ref lineX, currentY, scaledNoteLineH,
-                            boldFont, noteFont, paints.Text, suffixSeparator: false);
+                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
+                            boldFont, noteFont, paints.Text, suffixSeparator: false, textStartX);
                         break;
 
                     default:
@@ -104,18 +134,16 @@ public class NotesLegendElement : ScheduleElementBase
                         // Bez znaku → jen tělo poznámky default barvou.
                         if (pozn.Znak.Length > 0)
                         {
-                            RenderSymbolWithText(ctx, pozn, ref lineX, currentY, scaledNoteLineH,
-                                noteFont, noteFont, paints.Text, suffixSeparator: true);
+                            RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
+                                noteFont, noteFont, paints.Text, suffixSeparator: true, textStartX);
                         }
                         else
                         {
-                            var pt = ctx.ToCanvas(lineX, currentY + scaledNoteLineH * 0.75f);
+                            var pt = ctx.ToCanvas(textStartX ?? lineX, noteY + scaledNoteLineH * 0.75f);
                             ctx.Canvas.DrawText(pozn.Text, pt.X, pt.Y, noteFont, paints.Text);
                         }
                         break;
                 }
-
-                currentY += scaledNoteLineH;
             }
         }
 
@@ -124,7 +152,8 @@ public class NotesLegendElement : ScheduleElementBase
     }
 
     private void RenderNegativniZnacka(RenderContext ctx, PoznamkaData pozn,
-        ref float lineX, float currentY, float lineH, SKFont noteFont, SKFont boldFont, SKPaint textPaint)
+        ref float lineX, float currentY, float lineH, SKFont noteFont, SKFont boldFont, SKPaint textPaint,
+        float? textStartX = null)
     {
         var nzBgColor = SKColor.Parse(NegativniZnackaBackColor);
         var nzFgColor = SKColor.Parse(NegativniZnackaForeColor);
@@ -144,8 +173,9 @@ public class NotesLegendElement : ScheduleElementBase
 
         lineX += znakW + 1f;
 
-        // Text za značkou
-        var textPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
+        // Text za značkou — buď zarovnaný na pevnou marker buňku (textStartX), nebo hned za znakem.
+        float textX = textStartX ?? lineX;
+        var textPt = ctx.ToCanvas(textX, currentY + lineH * 0.75f);
         ctx.Canvas.DrawText(pozn.Text, textPt.X, textPt.Y, noteFont, textPaint);
     }
 
@@ -157,7 +187,8 @@ public class NotesLegendElement : ScheduleElementBase
     /// </summary>
     private void RenderSymbolWithText(RenderContext ctx, PoznamkaData pozn,
         ref float lineX, float currentY, float lineH,
-        SKFont symbolFont, SKFont textFont, SKPaint textPaint, bool suffixSeparator)
+        SKFont symbolFont, SKFont textFont, SKPaint textPaint, bool suffixSeparator,
+        float? textStartX = null)
     {
         // Symbol — pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
         SKPaint symbolPaint = textPaint;
@@ -174,9 +205,11 @@ public class NotesLegendElement : ScheduleElementBase
             ctx.Canvas.DrawText(pozn.Znak, znakPt.X, znakPt.Y, symbolFont, symbolPaint);
             lineX += symbolFont.MeasureText(pozn.Znak) / ctx.MmToPx + 1.5f;
 
-            // Text — vždy default barva (klient výslovně chce barvit jen znak)
-            string displayText = suffixSeparator ? $"{NoteSeparator}{pozn.Text}" : pozn.Text;
-            var textPt = ctx.ToCanvas(lineX, currentY + lineH * 0.75f);
+            // Text — vždy default barva (klient výslovně chce barvit jen znak).
+            // Při pevné marker buňce (textStartX) text zarovnán; jinak hned za znakem (bez separátoru).
+            float textX = textStartX ?? lineX;
+            string displayText = (suffixSeparator && textStartX is null) ? $"{NoteSeparator}{pozn.Text}" : pozn.Text;
+            var textPt = ctx.ToCanvas(textX, currentY + lineH * 0.75f);
             ctx.Canvas.DrawText(displayText, textPt.X, textPt.Y, textFont, textPaint);
         }
         finally
@@ -193,7 +226,10 @@ public class NotesLegendElement : ScheduleElementBase
         var filtered = FilterPoznamky(poznamky);
         if (filtered.Count == 0) return DesignerPlaceholderHeight;
 
-        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + filtered.Count * NoteLineHeight;
+        // Výška = záhlaví + počet řádků na sloupec (při víc sloupcích je řádků méně).
+        int cols = Math.Max(1, Columns);
+        int rowsPerCol = Math.Max(1, (int)Math.Ceiling(filtered.Count / (double)cols));
+        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + rowsPerCol * NoteLineHeight;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────
@@ -207,6 +243,12 @@ public class NotesLegendElement : ScheduleElementBase
         ).ToList();
     }
 
+    /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní — výchozí zachová pořadí z dat).</summary>
+    private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) =>
+        Razeni == LegendRazeni.DleDelky
+            ? notes.OrderBy(p => p.Text.Length).ToList()
+            : notes;
+
     // ─── PropertyDescriptors ────────────────────────────────────────────────
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
@@ -219,6 +261,13 @@ public class NotesLegendElement : ScheduleElementBase
         new StringPropertyDescriptor { Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
         new FloatPropertyDescriptor  { Label = "Velikost písma pozn.", Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
         new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky", Get = () => NoteLineHeight, Set = v => NoteLineHeight = v, Min = 2, Max = 15, Unit = "mm" },
+
+        new FloatPropertyDescriptor  { Label = "Počet sloupců",       Group = "Rozložení", Get = () => Columns,     Set = v => Columns = (int)v, Min = 1, Max = 4, Format = "0" },
+        new EnumPropertyDescriptor   { Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
+            Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
+        new EnumPropertyDescriptor   { Label = "Řazení",             Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
+            Options = [("Výchozí", (object)LegendRazeni.Vychozi), ("Podle délky", (object)LegendRazeni.DleDelky)] },
+        new FloatPropertyDescriptor  { Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },
         new BoolPropertyDescriptor  { Label = "Speciální znaky",     Group = "Filtrování", Get = () => ShowSpecialniZnaky,  Set = v => ShowSpecialniZnaky = v },
@@ -237,6 +286,7 @@ public class NotesLegendElement : ScheduleElementBase
         base.ApplyScale(scale);
         NoteFontSize *= scale;
         NoteLineHeight *= scale;
+        MarkerSirka *= scale;
     }
 
     // ─── Clone ──────────────────────────────────────────────────────────────
@@ -249,6 +299,10 @@ public class NotesLegendElement : ScheduleElementBase
             NoteSeparator            = NoteSeparator,
             NoteFontSize             = NoteFontSize,
             NoteLineHeight           = NoteLineHeight,
+            Columns                  = Columns,
+            WrapSmer                 = WrapSmer,
+            MarkerSirka              = MarkerSirka,
+            Razeni                   = Razeni,
             NegativniZnackaBackColor = NegativniZnackaBackColor,
             NegativniZnackaForeColor = NegativniZnackaForeColor,
             ShowNegativniZnacky      = ShowNegativniZnacky,

@@ -95,7 +95,11 @@ Legacy „Trid_delK"/„NegZnNR" (řazení dle délky / NZ na nový řádek) jso
 Princip (dohodnuto): **layout legendy = vlastnosti `NotesLegendElement`** (uživatel v designeru),
 ne skryté nastavení linky. Reálné požadavky:
 
-### 3.1 Počet sloupců + směr wrapování (1 / 2 / N)
+### 3.1 Počet sloupců + směr wrapování (1 / 2 / N) — ✅ HOTOVO (2026-06-21)
+**Implementováno:** `NotesLegendElement.Columns` (1-4) + `WrapSmer` (PoSloupcich/PoRadcich) +
+`MarkerSirka` (0=inline, >0=zarovnaná buňka značky). Render distribuuje poznámky do sloupců,
+výška = `headerH + ceil(N/Columns) × řádek`. V EDInputFormu i inline panelu (skupina „Rozložení").
+Default 1 sloupec = beze změny. (Hybrid „dlouhé full-width" z legacy nepřevzat — jednodušší model.)
 - **Co:** dlouhá legenda zabírá moc výšky; rozdělit do 2+ sloupců = úspora místa.
 - **Směr wrapování (důležité rozhodnutí):**
   - **Po sloupcích (column-major)** — naplní se sloupec 1 shora dolů, pak sloupec 2… (jako noviny).
@@ -113,7 +117,9 @@ ne skryté nastavení linky. Reálné požadavky:
   (`SirkaSloupceTextVlevo`) → markery svisle zarovnané. Náš render dnes kreslí marker+text inline
   (nezarovnané). Vlastnost `SirkaMarkeru: float` (0 = inline jako dnes, >0 = pevná buňka) by to dorovnala.
 
-### 3.2 Řazení poznámek
+### 3.2 Řazení poznámek — ✅ HOTOVO (2026-06-21)
+**Implementováno:** `NotesLegendElement.Razeni` (Vychozi/DleDelky). Default Vychozi = beze změny.
+(DleKategorie/DleZnaku zatím ne — YAGNI, snadné doplnit.)
 - **Co:** dnes pořadí dle Caché. Možnosti: dle délky textu (krátké/dlouhé k sobě), dle kategorie,
   abecedně dle znaku, nebo zachovat.
 - **Jak přidat:** vlastnost `Razeni: enum { Vychozi, DleDelky, DleKategorie, DleZnaku }`. Seřadit
@@ -154,7 +160,8 @@ ne skryté nastavení linky. Reálné požadavky:
 | Viditelnost per TYP | ✅ máme (hrubé) |
 | Barvy (záhlaví, data, NZ, symbol z DB) | ✅ máme |
 | Skrytí na znamení / agregát bezbariér | ✅ máme (#7161 D5/D6) |
-| **Počet sloupců** | ⬜ přidat (3.1) |
-| **Řazení poznámek** | ⬜ přidat (3.2) |
+| **Počet sloupců + směr wrapu** | ✅ hotovo (3.1) — `Columns`, `WrapSmer` |
+| **Zarovnaný marker** (pevná buňka značky) | ✅ hotovo (3.1) — `MarkerSirka` |
+| **Řazení poznámek** | ✅ hotovo (3.2) — `Razeni` |
 | **Viditelnost per KATEGORIE** | ⬜ přidat (3.3, řeší překryv s D5/D6) |
 | Styl per typ | ⬜ odložit (3.4) |

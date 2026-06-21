@@ -7,6 +7,12 @@ namespace TemplateDesigner.Models.Elements;
 public enum TypPoznamky { Text, NegativniZnacka, SpecialniZnak }
 public enum TypAnotace  { Text, NegativniZnacka, SpecialniZnak }
 
+/// <summary>Směr plnění víc-sloupcové legendy poznámek.</summary>
+public enum LegendWrap { PoSloupcich, PoRadcich }
+
+/// <summary>Řazení poznámek v legendě.</summary>
+public enum LegendRazeni { Vychozi, DleDelky }
+
 /// <summary>
 /// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
 /// </summary>
