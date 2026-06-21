@@ -2,8 +2,8 @@
   "cache": {
     "Server": "192.168.16.1",
     "Port": 57770,
-    "Namespace": "KV_DP",
-    "Idfa": "KV_DP",
+    "Namespace": "CB_GWBUS",
+    "Idfa": "CB_GWBUS",
     "LoginName": "martin.hubata",
     "FullName": "martin.hubata",
     "Mlp": "167"
