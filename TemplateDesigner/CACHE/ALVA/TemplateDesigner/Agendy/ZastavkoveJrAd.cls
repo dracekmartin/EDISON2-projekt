@@ -754,7 +754,7 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         s nejede = $p(nejede, ", ", 2, $l(nejede, ", "))
         s pokrac = $p(pokrac, ", ", 2, $l(pokrac, ", "))
 
-        // sestavení textu (pořadí 1:1 legacy: jede → neobsluhuje → jede jen do → pokračuje)
+        // sestavení textu (pořadí: jede → neobsluhuje → jede jen do → jede až do)
         s txt = ""
         i jede '= "" s txt = "jede přes zast. "_jede
         i nejede '= "" {
@@ -771,11 +771,15 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
                 s $p(txt,", ",$l(txt,", ")+1) = "jede jen do zast. "_jedeDo
             }
         }
+        // Prodloužení za základní trasu (#7947): místo legacy „pokračuje přes <mezizastávky>"
+        // vypíšeme cíl spoje „jede až do zast. <konečná>" (klient chce vědět KAM dojede, ne kudy).
+        // Záměrná odchylka od legacy znění — legacy „pokračuje" bylo matoucí.
         i pokrac '= "" {
+            s cilNaz = ..NazZPoradi(dataDB, sku, lin, tcDo)
             i txt = "" {
-                s txt = "pokračuje přes "_pokrac
+                s txt = "jede až do zast. "_cilNaz
             } else {
-                s $p(txt,", ",$l(txt,", ")+1) = "pokračuje přes "_pokrac
+                s $p(txt,", ",$l(txt,", ")+1) = "jede až do zast. "_cilNaz
             }
         }
         i txt = "" continue

@@ -169,7 +169,7 @@ přehledně), a **multi-variantu časů (B) přidat moderně a volitelně**, ne 
 |---|---|---|
 | Anotace „spoj jede jinudy" (A/B/C + legenda) | ✅ | ✅ 1:1 |
 | „neobsluhuje / jede přes / jede jen do / pokračuje" | ✅ | ✅ |
-| „jede až do XY" (prodloužení) | 🟡 slabé (#7947) | ⬜ (#7947) |
+| „jede až do XY" (prodloužení) | 🟡 slabé „pokračuje" | ✅ „jede až do zast. X" (#7947, 2026-06-21) |
 | Jeden časový sloupec (hlavní trasa) | ✅ | ✅ |
 | Multi-variantní časové sloupce (Trasa min. 2-15) | ✅ (15 hardcoded) | ⬜ |
 | Sloupec Průběhy (která varianta kde) | ✅ | ⬜ |
@@ -179,15 +179,30 @@ přehledně), a **multi-variantu časů (B) přidat moderně a volitelně**, ne 
 
 ## 9. Doporučení / fázování
 
-1. **#7947 „jede až do XY"** (🟢 malé-střední) — rozšířit `RozdilyTras`, nezávislé. Hned udělatelné.
+1. **#7947 „jede až do XY"** ✅ **HOTOVO (2026-06-21)** — `RozdilyTras` větev prodloužení vypisuje
+   „jede až do zast. <konečná>" místo „pokračuje přes". Pozn.: prodloužení vzácné (vzor=nejdelší trasa).
 2. **Multi-varianta časů (7.1-7.3)** (🔴 velké) — datový + rendererový zásah. Udělat, **až přijde
-   reálný zákazník** s variantní linkou (uživatel očekává, že přijde). Navrhnout **moderně** (dynamický
-   počet sloupců + strop + fallback na anotace), ne 15 hardcoded.
+   reálný zákazník** s variantní linkou. Navrhnout **moderně** (dynamický počet sloupců + strop +
+   fallback na anotace), ne 15 hardcoded.
 3. **Sjednocení písmen + Průběhy** — součást bodu 2, ne zvlášť.
 
 **Mezitím:** držet mechanismus A (anotace) jako primární — pokrývá „kdo jede jinudy" přehledně i bez
 sloupců. Pro běžné linky (jedna trasa) jsme 1:1; variantní linky ukážou hlavní variantu + anotace.
 
-> **Pozn. k prioritě:** než se pustíme do bodu 2 (velký redesign), je rozumné mít reálnou variantní
-> linku jako referenci (gold oracle) — stejně jako u zbytku AD agendy. Bez ní hrozí, že navrhneme
-> systém, který nesedí na reálná data.
+## 10. Ověřeno na reálných datech (2026-06-21, MCP gold oracle CB_CSADAD)
+
+- **KV_DP:** AutoPozn (`mhd,"not"`) **vypnuté na všech linkách** → rozdíly tras se nepoužívají. Mřížka
+  FTL (`MHD_TYP_R`) jen ve skupinách 42/429/tmp (0425017), i tam bez AutoPozn.
+- **CB_CSADAD má AutoPozn zapnuté** (0365001, 0345061, …). Reálné příklady:
+  - **0345061** (J.Hradec): **8 variant tras** (markery B-J), texty „neobsluhuje zast. …" + „jede jen
+    do zast. …". Multi-varianta (B): TrasaMin1-9 sloupce, sdílené zastávky různé časy + `<`.
+  - **0365001** (Písek): 2 varianty — TrasaMin1 přeskakuje „Lesní hřbitov" (`<`) s posunutými časy
+    (16/18/…) vs TrasaMin2 staví (15/19/…). Marker B = „neobsluhuje zast. Lesní hřbitov".
+- **Potvrzeno §0:** přeskočení zastávky **posune i následující časy** → mechanismus B (časové sloupce)
+  nese reálnou kvantitativní informaci, ne jen vizuál. My ukazujeme jen hlavní variantu (časy vedlejší
+  varianty jsou ±pár min nepřesné). Anotace (A) topologii ukazuje správně.
+- **„pokračuje"/prodloužení nenalezeno** v 0365001 ani 0345061 — potvrzuje, že prodloužení za vzor je
+  vzácné (vzor = nejdelší trasa). #7947 je tedy latentní oprava znění, projeví se na lince s prodloužením.
+
+> **Pozn. k prioritě bodu 2:** gold oracle pro variantní linky **máme** (0345061 = 8 variant, 0365001
+> = 2). Až se rozhodneme dělat multi-variantu časů, je 0345061 ideální referenční linka.

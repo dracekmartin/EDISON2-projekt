@@ -124,7 +124,14 @@ Mimo scope zastávkového JŘ:
   - Pokud obě poslední mimo základní trasu → ještě horší.
 - **Co klient chce:** *„Asi bych potřeboval, aby program uměl vypsat u poslední zastávky poznámku, že spoj jede až do."*
 - **Co máme dnes:** `MakeOmezTrasaTxMH...` legacy helper + algoritmy 1001 (písmenková: a, b, c) a 1002 (písmena rozdílů tras: A, B, C) v `ZastavkoveJrMhdAPI`. Texty popisují, **kde spoj končí** (zkracuje trasu), ne **kam pokračuje** (prodlužuje).
-- **Gap:** Nový text template pro spoje **prodlužující** základní trasu — symetrický k aktuálnímu „končí v zast. X". Detekce: spoj má v bitmapě obsluhy zastávky, které **jsou ZA** koncovou základní trasy.
+- **✅ VYŘEŠENO PRO AD** (2026-06-21) — `ZastavkoveJrAd.RozdilyTras` větev prodloužení za vzor nově
+  vypisuje **„jede až do zast. <konečná spoje>"** místo legacy matoucího „pokračuje přes <mezizastávky>"
+  (znění A dle dohody — klient chce vědět KAM dojede). Záměrná odchylka od legacy (legacy „pokračuje"
+  bylo špatné — to je důvod ticketu, proto bez gold oracle; kód analogický k ověřené větvi „jede jen do").
+  **Pozn.:** prodloužení za základní trasu je v datech **vzácné** (J-věta #10 = obvykle nejdelší trasa);
+  ověřeno proti CB_CSADAD 0345061/0365001 že běžné rozdíly (neobsluhuje/jede jen do) fungují 1:1 a změna
+  je nedotkla. „jede až do" se projeví na lince, kde spoj reálně jede za vzor.
+- **⬜ Zbývá pro MHD agendu** (`ZastavkoveJrMhd`) — stejná úprava neportována (až bude potřeba).
 
 ### D2. Vlastní komentář spoje musí přebít auto-poznámku (ne paralelně tisknout)
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
