@@ -1,5 +1,28 @@
 # Roadmap
 
+## 📋 Handoff — rozpracováno (stav k 2026-06-21, pokračování i z druhého PC)
+
+**Hotovo tuto session (commitnuto + pushnuto):** AD nastavení linky + ruční poznámky (Komentáře/
+nepoznámkovat/směrové), #7955 přepínač, „jede až do" (#7947), skrytí na znamení + agregát bezbariér
+(#7161 D5/D6), **layout legendy** (sloupce 1-4 + směr wrapu + zarovnaný marker + řazení). Helpdesk
+zavřeno: **#7955, #7959, #7947, #7161**. Detail: `changelog.md`, `ad-jr-nastaveni-linky-analyza.md`,
+`ad-jr-typy-poznamek-layout-analyza.md`. Cache MCP opraven (`C:\Edison\EdisonCacheMcp\`).
+
+**⚠️ DEV tweaky v repu — VRÁTIT před produkcí:**
+- `dotnet/templatedesigner.appsettings.json` → firma **CB_GWBUS** (produkce = KV_DP)
+- `MainWindowViewModel.CreateSampleTemplate` → **AD + 1 sekce** (produkce = MHD + Záhlaví/Obsah/Patička)
+
+**⬜ Rozpracovaný úklid docs (dohodnuto, NEPROVEDENO — udělat příště):**
+1. **Ořezat `cache-database-linky.md`** — smazat §6 (vyřešené otázky) + §10 (status, datum 2026-06-02 zastaralé → odkaz sem/changelog); nechat §2-5 (globály `^JRL`), §8 (nálezy), §9 (gold oracle); přerámovat na „referenční datový model". Pak opravit odkazy na §10 v `CLAUDE.md` + tomto roadmap.
+2. **Hlavičkové poznámky** (ať nematou „je aktuální?"): `legacy-schedule-generators.md` (Fáze A hotová), `schedule-elements-architecture.md` (konceptuální, kód viz rules/architecture), `architecture-diagrams.md` (diagramy k aktualizaci — NEMAZAT, pro školení cenné).
+3. **Cross-refs** AD analýza ↔ datový model (vyjasnit role: analýza=CO umíme, linky=JAK data; bez duplikace FTL/PATCH).
+4. **changelog archivace** (volitelné) — květnové Wave 1-3 → `changelog-archive-2026-05.md` (129k → ~30k).
+5. **`prezentace/osnova-skoleni.md`** — vytvořit osnovu technického školení (přidat výjimku do `prezentace/.gitignore`). Survey docs hotový.
+
+**Zbývající featury** (z analýz): 🟡 viditelnost legendy per kategorie (3.3, překryv s D5/D6), 🔴 multi-varianta časů tras (AD-N13, gold oracle 0345061), drobnosti (uppercase, NEZNZ123, override nadpisů sloupců, dormant NZ dělení).
+
+---
+
 ## 🔁 Pracovní postup (krok po kroku)
 
 Každá položka projde tímto cyklem — nevynechat ani jeden krok:
