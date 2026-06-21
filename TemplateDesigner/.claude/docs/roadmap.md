@@ -90,9 +90,9 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 | AD-N8b | §5 | **Fáze 2** — co schovat v rozsahu „nepoznámkovat" (#7955) = parametr sestavy `SCHOVAT_V_ROZSAHU` (Ruční/Automatické/Obojí) + TD render-filtr nad nadmnožinou z Caché | param + `NoteVisibilityFilter` | M | ✅ 2026-06-20 (Fáze 2) |
 | AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ✅ 2026-06-21 (#7947) |
 | AD-N11 | §7 | Cizojazyčné poznámky | `PATCH,"prtCzjPzn"` + `("C")` arr6 | M | ⬜ |
-| AD-N12 | §7 | Zóny vs km sloupce (km část) | `PATCH,"linIDS"` (dta20) + `Kms` | L (renderer) | ⬜ odložit |
-| AD-N13 | §7 | Multi-varianta TrasaMin (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ⬜ odložit |
-| AD-N14 | §7 | Návaznosti / přípoje + skrýt prázdné řádky | `("T",sp,32)`, `NavaznostiZpusobVypisu` | XL | ⬜ odložit (nová struktura + element) |
+| AD-N12 | — | ~~Km sloupce~~ → **patří do linkových JŘ** (tarif dle km), ne zastávkové | — | — | ➖ přesunuto |
+| AD-N13 | §4 | Multi-varianta časů tras (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ⬜ odložit (gold oracle: 0345061) |
+| AD-N14 | — | ~~Návaznosti / přípoje~~ → **patří do linkových/knižních JŘ**, ne zastávkové | — | — | ➖ přesunuto |
 | AD-N15 | §3 | NZ prázdninové dělení — ověřit na reálné lince | `MHD_NZ1_NZ2`/`MHD_NENZ1_NENZ2` | — | 🟡 kód hotový, čeká data |
 
 > **Pozn. k odloženým:** AD-N12/13/14 jsou „ne přímočaré" (zásah do C# rendereru / nová doménová
