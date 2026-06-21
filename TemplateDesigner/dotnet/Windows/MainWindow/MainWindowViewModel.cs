@@ -2218,17 +2218,28 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Sample template ───────────────────────────────────────────────────────
-    // DEV (test AD nastavení linky): výchozí agenda = Zastávkový JŘ (AD) + jedna sekce přes
-    // celou A4, ať se nemusí setup opakovat při testování. TODO: vrátit na produkční starter
-    // (MHD, Záhlaví/Obsah/Patička) před releasem.
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
+        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_MHD" };
+        const float headerH = 25f;
+        const float footerH = 15f;
+        float bodyH = Math.Max(0f, t.PageSize.PrintableHeight - headerH - footerH);
+        t.Sections.Add(new Section
+        {
+            Name = "Záhlaví", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Role = SectionRole.Header,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = headerH
+        });
         t.Sections.Add(new Section
         {
             Name = "Obsah", PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-            DesignerHeight = t.PageSize.PrintableHeight
+            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = bodyH
+        });
+        t.Sections.Add(new Section
+        {
+            Name = "Patička", PrintBehavior = SectionPrintBehavior.OnEveryPage,
+            Role = SectionRole.Footer,
+            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = footerH
         });
         return t;
     }
