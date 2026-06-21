@@ -244,10 +244,12 @@ public class NotesLegendElement : ScheduleElementBase
     }
 
     /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní — výchozí zachová pořadí z dat).</summary>
-    private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) =>
-        Razeni == LegendRazeni.DleDelky
-            ? notes.OrderBy(p => p.Text.Length).ToList()
-            : notes;
+    private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
+    {
+        LegendRazeni.DleDelkyVzestupne => notes.OrderBy(p => p.Text.Length).ToList(),
+        LegendRazeni.DleDelkySestupne  => notes.OrderByDescending(p => p.Text.Length).ToList(),
+        _                              => notes,
+    };
 
     // ─── PropertyDescriptors ────────────────────────────────────────────────
 
@@ -266,7 +268,7 @@ public class NotesLegendElement : ScheduleElementBase
         new EnumPropertyDescriptor   { Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
             Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
         new EnumPropertyDescriptor   { Label = "Řazení",             Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
-            Options = [("Výchozí", (object)LegendRazeni.Vychozi), ("Podle délky", (object)LegendRazeni.DleDelky)] },
+            Options = [("Výchozí", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
         new FloatPropertyDescriptor  { Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },

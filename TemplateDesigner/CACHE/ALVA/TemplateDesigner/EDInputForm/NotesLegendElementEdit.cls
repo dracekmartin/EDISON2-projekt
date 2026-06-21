@@ -51,7 +51,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")
         s f.value = "PoSloupcich"
         s f = form.AddFieldToLastGroup("Razeni", "Řazení poznámek", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Vychozi", "Výchozí"), f.AddListItem("DleDelky", "Podle délky")
+        d f.AddListItem("Vychozi", "Výchozí"), f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
         s f.value = "Vychozi"
         d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
 
