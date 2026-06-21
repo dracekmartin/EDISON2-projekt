@@ -171,22 +171,50 @@ Tyto se v zastávkovém (vývěskovém) JŘ neřeší — patří do **linkovýc
 
 ---
 
-## 9. Prioritizace zbývajícího
+## 9. Co zbývá — business pohled (co to dělá / kde to uvidím)
 
-### 🟢 Malé (helpdesk, čistě v našem kódu)
-- ✅ **#7161 D6** — vypnout agreg. bezbariér (`SCHOVAT_AGREGAT_BEZBARIER`, filtr-model). Hotovo (latentní).
-- **#7161 D5** — skrýt „x" když je sloupec hidden (TD-side viditelnost). ⬜ zbývá
+Popsáno srozumitelně bez legacy zkratek (technický klíč v závorce jako reference). Seřazeno dle
+doporučeného pořadí.
 
-### 🟡 Střední (layout legendy → vlastnosti `NotesLegendElement`)
-- **AD-N3/N4** — řazení poznámek dle délky, NZ na nový řádek, layout legendy (1/2 sloupce).
-- **AD-N6** — override nadpisů sloupců. **AD-N5** — `MHD_NEZNZ123` (dnes dormant). **AD-N11** — cizojazyčné.
+### 🟢 #7161 D5 — Skrýt vysvětlivku „× na znamení", když značka není zobrazená — ⬅️ DALŠÍ
+- **Co to dělá:** Když si uživatel ve vývěsce **vypne** zobrazování značky „×" u zastávek na znamení,
+  má z **legendy** zmizet i řádek „× — zastávka je na znamení". Jinak legenda vysvětluje značku, která
+  nikde v JŘ není.
+- **Kde to uvidí:** legenda poznámek pod jízdním řádem.
+- **Proč teď:** malé, **testovatelné** (na jakékoli lince se zastávkou na znamení), uzavře celý #7161
+  (D6 už hotové). Čistě TD práce (viditelnost značky ve `StopListElement`).
 
-### 🔴 Velké (čeká na reálnou potřebu)
-- **AD-N13 multi-varianta časů tras** (§4.2/4.4) — jediná velká doménová věc. Gold oracle máme (0345061).
-  Navrhnout moderně (dynamické sloupce + strop), ne 15 hardcoded.
+### 🟡 Layout a uspořádání legendy poznámek
+Vše se týká **legendy pod jízdním řádem** — jak se poznámky uspořádají, aby se vešly a byly přehledné.
+V novém světě to mají být **vlastnosti elementu legendy** (uživatel si nastaví v designeru), ne skryté
+nastavení linky jako v legacy.
 
-### 🟢 Dormant / bez dat
-- **AD-N15** NZ prázdninové dělení (kód hotový, `MHD_NZ1_NZ2` prázdné všude).
+- **Legenda na 1 nebo 2 sloupce** — dlouhá legenda zabírá moc výšky; možnost dvou sloupců šetří místo.
+- **Řazení poznámek podle délky** (AD-N3, legacy `Trid_delK`) — krátké poznámky k sobě, dlouhé k sobě → úhlednější.
+- **Omezení („nejede…") na nový řádek** (AD-N4, legacy `NegZnNR`) — každé datové omezení začne na novém řádku.
+
+### 🟡 Vlastní názvy sloupců skupin dnů
+- **Co to dělá:** přepsat výchozí nadpisy sloupců odjezdů („Pracovní dny" / „Soboty" / „Neděle a svátky")
+  vlastními texty (AD-N6, legacy `ISY_LinkyTiskMHDNadpisy`).
+- **Kde to uvidí:** záhlaví mřížky odjezdů (`DepartureGridElement`).
+
+### 🟡 Cizojazyčné poznámky
+- **Co to dělá:** tisknout poznámky i v cizím jazyce (AD-N11, legacy `prtCzjPzn`) — pro pohraniční /
+  mezinárodní linky. **Kde:** legenda pod JŘ.
+
+### 🔴 Více variant jízdních časů (jediná velká věc)
+- **Co to dělá:** když část spojů jede **jinou trasou / jinak rychle**, dnes ukazujeme v seznamu
+  zastávek **jeden** sloupec časů (hlavní trasa). Legacy uměl víc sloupců — každá varianta své časy
+  (a „×" u zastávek, které varianta projíždí). U variantních linek tak naše časy nesedí přesně pro
+  vedlejší spoje (±pár minut); rozdíl v trase ale popisuje textová anotace (AD-N13, §4).
+- **Kde to uvidí:** seznam zastávek vlevo (`StopListElement`).
+- **Stav:** velký zásah (data + renderer). Navrhnout moderně (dynamický počet sloupců + strop přehlednosti,
+  ne 15 napevno). Čeká na reálnou potřebu; testovací linka připravená (CB_CSADAD 0345061 = 8 variant).
+
+### 🟢 Dormant (umíme, ale nemáme testovací data)
+- **Potlačit negativní značku v některých sloupcích** (AD-N5, legacy `MHD_NEZNZ123`) — vázané na NZ, dnes
+  prázdné ve všech firmách.
+- **Prázdninové dělení sloupců** (AD-N15) — kód hotový, data prázdná.
 
 ---
 
