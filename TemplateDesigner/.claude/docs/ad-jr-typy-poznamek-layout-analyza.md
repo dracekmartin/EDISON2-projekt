@@ -41,6 +41,25 @@ znak" (TYP), ale jiná kategorie. Dnešní filtrování v elementu jede podle **
 
 ---
 
+## 1b. Co uměl starý návrhář (srovnání) — částečně známé
+
+⚠️ **Plný legacy stav nemáme zdokumentovaný.** Layout poznámkové sekce (sloupce, wrapping) byl v
+**samostatném návrháři „Tisk MHD"** (WinForms appka, kterou TD nahrazuje — viz screenshoty „Sekce …
+vlastnosti [SKNI_MHDNITRA]"). Její layout-definice **nejsou v JRMAIN kódu**, který máme → konkrétní
+schopnosti (kolik sloupců poznámek, jaké wrapování) z kódu nevyčteme.
+
+**Co doložené máme** (legacy nastavení linky ovlivňující legendu, viz `ad-jr-nastaveni-linky-analyza.md`):
+| Legacy volba | Význam | Náš stav |
+|---|---|---|
+| `Trid_delK` (Uspořádat poznámky dle délky) | řazení poznámek dle délky textu | ⬜ → 3.2 |
+| `NegZnNR` (Negativní značky na nový řádek) | NZ začínají na novém řádku | ⬜ → 3.2 |
+| (sloupce / wrapping poznámek) | layout poznámkové sekce | ❓ legacy návrhář, nemáme zdroj → navrhnout nově (3.1) |
+
+→ Pro sloupce/wrapping tedy **nejde o 1:1 port** (legacy zdroj nemáme), ale o **nový čistý návrh**
+v `NotesLegendElement` (3.1). Cíl: dorovnat/překonat starý návrhář.
+
+---
+
 ## 2. Co dnes umíme nastavit (NotesLegendElement)
 
 | Nastavení | Co dělá | Vlastnost |
@@ -64,10 +83,18 @@ znak" (TYP), ale jiná kategorie. Dnešní filtrování v elementu jede podle **
 Princip (dohodnuto): **layout legendy = vlastnosti `NotesLegendElement`** (uživatel v designeru),
 ne skryté nastavení linky. Reálné požadavky:
 
-### 3.1 Počet sloupců (1 / 2 / N)
-- **Co:** dlouhá legenda zabírá moc výšky; rozdělit do 2 sloupců = úspora místa.
-- **Jak přidat:** vlastnost `Columns: int` (default 1). Render rozloží řádky do N sloupců (výška =
-  ceil(počet/N) × řádek). Střední velikost (úprava render smyčky + výpočtu výšky).
+### 3.1 Počet sloupců + směr wrapování (1 / 2 / N)
+- **Co:** dlouhá legenda zabírá moc výšky; rozdělit do 2+ sloupců = úspora místa.
+- **Směr wrapování (důležité rozhodnutí):**
+  - **Po sloupcích (column-major)** — naplní se sloupec 1 shora dolů, pak sloupec 2… (jako noviny).
+    Čte se „dolů, pak vpravo". Pro legendu obvykle přirozenější.
+  - **Po řádcích (row-major)** — naplní se řádek 1 přes všechny sloupce, pak řádek 2… Čte se
+    „vpravo, pak dolů".
+- **Auto rozšiřování:** počet řádků na sloupec = `ceil(počet poznámek / Columns)`; volitelně „nalít
+  do N sloupců jen když se nevejde na výšku" (auto-wrap při přetečení, jinak 1 sloupec).
+- **Jak přidat:** vlastnosti `Columns: int` (default 1) + `WrapSměr: enum { PoSloupcich, PoRadcich }`
+  (default PoSloupcich). Render: rozdělit `filtered` do sloupců dle směru, kreslit per-sloupec s offsetem
+  X = `Width/Columns × i`. Výška = `headerH + ceil(N/Columns) × řádek`. Střední velikost (render + výpočet výšky).
 
 ### 3.2 Řazení poznámek
 - **Co:** dnes pořadí dle Caché. Možnosti: dle délky textu (krátké/dlouhé k sobě), dle kategorie,
