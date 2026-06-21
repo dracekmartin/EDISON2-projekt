@@ -41,22 +41,34 @@ znak" (TYP), ale jiná kategorie. Dnešní filtrování v elementu jede podle **
 
 ---
 
-## 1b. Co uměl starý návrhář (srovnání) — částečně známé
+## 1b. Co uměl starý návrhář (NALEZENO ve zdroji)
 
-⚠️ **Plný legacy stav nemáme zdokumentovaný.** Layout poznámkové sekce (sloupce, wrapping) byl v
-**samostatném návrháři „Tisk MHD"** (WinForms appka, kterou TD nahrazuje — viz screenshoty „Sekce …
-vlastnosti [SKNI_MHDNITRA]"). Její layout-definice **nejsou v JRMAIN kódu**, který máme → konkrétní
-schopnosti (kolik sloupců poznámek, jaké wrapování) z kódu nevyčteme.
+Legacy návrhář „Tisk MHD" (VB.NET WinForms, `C:\DEV\EDISON\TiskMHD`) měl pro sekci poznámek dialog
+**`formTISKMHDSekcePoznamkyEdit`** (tab „Sekce Poznámky — vlastnosti"). Layout pole (struktura `SSekce`,
+prefix `stPOZ_`):
 
-**Co doložené máme** (legacy nastavení linky ovlivňující legendu, viz `ad-jr-nastaveni-linky-analyza.md`):
-| Legacy volba | Význam | Náš stav |
+| Legacy pole | Co dělá | Náš stav |
 |---|---|---|
-| `Trid_delK` (Uspořádat poznámky dle délky) | řazení poznámek dle délky textu | ⬜ → 3.2 |
-| `NegZnNR` (Negativní značky na nový řádek) | NZ začínají na novém řádku | ⬜ → 3.2 |
-| (sloupce / wrapping poznámek) | layout poznámkové sekce | ❓ legacy návrhář, nemáme zdroj → navrhnout nově (3.1) |
+| **`stPOZ_PocetSloupcu`** | **počet sloupců** legendy (render umí 1 a 2; „else" neimplementováno) | ⬜ → 3.1 |
+| **`stPOZ_SirkaSloupceTextVlevo`** | šířka **levé buňky se znakem/markerem** (pevná); text vyplní zbytek | ⬜ (my renderujeme marker+text inline, ne pevná buňka) |
+| **`stPOZ_VyskaRadku`** | výška řádku | ✅ `NoteLineHeight` |
+| **`stPOZ_NadesignovanaVyskaSekceJeVyskouMinimalni`** | nadesignovaná výška = **minimální** (sekce se roztáhne dolů dle obsahu) | 🟡 máme dynamickou výšku / auto-scale, jiný model |
+| font: `stPOZ_FontTyp/Bold/Podtrzene/Italic/Uppercase/Size/Color` | písmo vč. **VERZÁLEK** | ✅ kromě uppercase ⬜ |
+| rámeček (per strana), pozadí | border + background | ✅ |
+| `PrichytitZdola/ZpravaKSekci` | přichytit sekci k jiné (zdola/zprava) | ➖ (v TD jiný model umístění) |
 
-→ Pro sloupce/wrapping tedy **nejde o 1:1 port** (legacy zdroj nemáme), ale o **nový čistý návrh**
-v `NotesLegendElement` (3.1). Cíl: dorovnat/překonat starý návrhář.
+**Layout chování (z rendereru `Render_SekcePoznamky_Data`):**
+- **Řádek = [levá buňka se znakem (pevná šířka `SirkaSloupceTextVlevo`)] + [text vpravo].** Markery
+  jsou tak svisle zarovnané (náš inline render je nezarovnává).
+- **2 sloupce = chytrý wrap:** krátké poznámky (text ≤ šířka úzkého sloupce) se skládají **vedle sebe**
+  do sloupců; **dlouhá** poznámka se roztáhne **přes celou šířku** (`SirkaSloupceValuePrezVsechnySloupce`).
+  Tj. ne striktně column-major/row-major — hybrid „pakuj krátké do sloupců, dlouhé full-width".
+- Skutečně podporuje **jen 1 a 2 sloupce** (3+ neimplementováno).
+
+→ **Závěr:** sloupce/wrapping **nejde 1:1 portovat** (legacy je VB renderer s vlastní logikou), ale teď
+**víme přesně, co uměl** a můžeme to v `NotesLegendElement` navrhnout čistě a klidně lépe (viz 3.1).
+Legacy „Trid_delK"/„NegZnNR" (řazení dle délky / NZ na nový řádek) jsou line-flagy mimo tento dialog
+(viz `ad-jr-nastaveni-linky-analyza.md`).
 
 ---
 
@@ -92,9 +104,14 @@ ne skryté nastavení linky. Reálné požadavky:
     „vpravo, pak dolů".
 - **Auto rozšiřování:** počet řádků na sloupec = `ceil(počet poznámek / Columns)`; volitelně „nalít
   do N sloupců jen když se nevejde na výšku" (auto-wrap při přetečení, jinak 1 sloupec).
-- **Jak přidat:** vlastnosti `Columns: int` (default 1) + `WrapSměr: enum { PoSloupcich, PoRadcich }`
-  (default PoSloupcich). Render: rozdělit `filtered` do sloupců dle směru, kreslit per-sloupec s offsetem
-  X = `Width/Columns × i`. Výška = `headerH + ceil(N/Columns) × řádek`. Střední velikost (render + výpočet výšky).
+- **Legacy chování (reference):** 2 sloupce s **hybridním wrapem** — krátké poznámky se skládají vedle
+  sebe do úzkých sloupců, dlouhá poznámka se roztáhne přes celou šířku. Můžeme převzít, nebo nabídnout
+  jednodušší `WrapSměr { PoSloupcich, PoRadcich }` + volitelně „dlouhé full-width".
+- **Jak přidat:** vlastnosti `Columns: int` (default 1) + `WrapSměr: enum`. Render: rozdělit `filtered`
+  do sloupců, kreslit per-sloupec s offsetem X = `Width/Columns × i`. Výška = `headerH + ceil(N/Columns) × řádek`.
+- **Bonus z legacy — zarovnaný marker:** legacy měl **levou buňku se znakem o pevné šířce**
+  (`SirkaSloupceTextVlevo`) → markery svisle zarovnané. Náš render dnes kreslí marker+text inline
+  (nezarovnané). Vlastnost `SirkaMarkeru: float` (0 = inline jako dnes, >0 = pevná buňka) by to dorovnala.
 
 ### 3.2 Řazení poznámek
 - **Co:** dnes pořadí dle Caché. Možnosti: dle délky textu (krátké/dlouhé k sobě), dle kategorie,
