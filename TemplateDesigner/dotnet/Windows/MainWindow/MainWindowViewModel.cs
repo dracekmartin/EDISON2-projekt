@@ -679,6 +679,8 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         State.CurrentTemplate = new Template();
         if (agendaCode is not null) State.CurrentTemplate.AgendaCode = agendaCode;
+        // Výchozí sekce, ať uživatel nezačíná na prázdné šabloně bez plochy k editaci.
+        State.CurrentTemplate.Sections.Add(CreateDefaultSection(State.CurrentTemplate.PageSize));
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
@@ -2236,14 +2238,18 @@ public class TemplateDesignerViewModel : EDViewModel
     public static Template CreateSampleTemplate()
     {
         var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
-        t.Sections.Add(new Section
-        {
-            Name = "Obsah", PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
-            DesignerHeight = t.PageSize.PrintableHeight
-        });
+        t.Sections.Add(CreateDefaultSection(t.PageSize));
         return t;
     }
+
+    /// <summary>Výchozí sekce „Obsah" přes celou tiskovou plochu stránky — sdílená novou i sample šablonou.</summary>
+    private static Section CreateDefaultSection(PageSize pageSize) => new()
+    {
+        Name = "Obsah",
+        PrintBehavior = SectionPrintBehavior.Once,
+        OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+        DesignerHeight = pageSize.PrintableHeight
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
