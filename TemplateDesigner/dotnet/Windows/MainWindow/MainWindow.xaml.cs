@@ -2288,19 +2288,18 @@ public partial class MainWindow : Window
         if (commit && !_dragHasMoved) commit = false;
         if (commit && _vm is not null)
         {
-            // Soft-snap na aktuální GridSize krok pro osy, kde se neuplatnil smart-snap ani grid snap.
-            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají přesně alignovat
-            // klávesami. Snap-to-grid má prioritu, pokud je zapnutý. Bez grid snapu respektujeme
-            // user-vybraný GridSize (0.1 / 0.5 / 1 / 2 / 5 / 10 mm) místo hardcoded 1 mm.
+            // Při vypnutém grid snapu jen očistíme zlomkové mm z draggu (3.247… → 3.2 mm) na osách,
+            // kde se neuplatnil smart-snap. Kvantizace na 0.1 mm je nepostřehnutelná, ale drží čisté
+            // souřadnice pro zarovnávání klávesami — shodně s EndResize. NEsnapujeme na celý GridSize,
+            // jinak by vypnuté tlačítko mřížky reálně grid snapping nevyplo (jen by ho odložilo na puštění).
             bool applySoftX = !_lastSnapActiveX && !_vm.State.SnapToGrid;
             bool applySoftY = !_lastSnapActiveY && !_vm.State.SnapToGrid;
             if ((applySoftX || applySoftY) && _dragInitPositions.Count > 0)
             {
-                float softStep = _vm.State.GridSize;
                 foreach (var el in _dragInitPositions.Keys)
                 {
-                    if (applySoftX) el.X = MathF.Round(el.X / softStep) * softStep;
-                    if (applySoftY) el.Y = MathF.Round(el.Y / softStep) * softStep;
+                    if (applySoftX) el.X = MmMath.Round(el.X);
+                    if (applySoftY) el.Y = MmMath.Round(el.Y);
                 }
             }
 
