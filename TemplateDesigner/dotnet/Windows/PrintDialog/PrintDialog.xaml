@@ -25,25 +25,29 @@
                        Foreground="{DynamicResource EDTheme.Text.Muted}" TextTrimming="CharacterEllipsis"/>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal">
-                <Button Content="Tisk s daty" Padding="16,6"
+                <Button Content="Tisk všech vybraných" Padding="16,6"
                         Command="{Binding ExportRealDataPdfCommand}"
                         Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
+                        ToolTip="Stáhne reálná data všech vybraných linek z Caché a vyexportuje dle nastavení Exportu (členění + název souboru)"
                         Margin="0,0,8,0"/>
-                <Button Content="Exportovat PDF" Padding="16,6"
-                        Command="{Binding ExportPdfCommand}" Margin="0,0,8,0"/>
+                <Button Content="Export náhledu" Padding="16,6"
+                        Command="{Binding ExportPdfCommand}"
+                        ToolTip="Vyexportuje aktuální náhled (jedna zastávka/směr, nebo vzorek u nové šablony) do jednoho PDF"
+                        Margin="0,0,8,0"/>
                 <Button Content="Zavřít" Padding="16,6" IsCancel="True"/>
             </StackPanel>
         </Grid>
 
-        <!-- Obsah — parametry (formulář řízený z Caché přes EDInputForm / AgendaParams) -->
+        <!-- Obsah — parametry + export (formulář řízený z Caché přes EDInputForm / AgendaParams;
+             AgendaParams přidává universální skupinu „Export" s členěním výstupu + názvem souboru) -->
         <Border BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1"
                 CornerRadius="4" Padding="12" Background="{DynamicResource EDTheme.Bg.Footer}">
             <Grid>
-                <!-- Stav: má parametry — formulář se staví v code-behindu (CacheClass + InitParams) -->
+                <!-- Stav: je agenda — formulář se staví v code-behindu (CacheClass + InitParams) -->
                 <eif:EDInputForm x:Name="ParamForm"
-                                 Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}"/>
+                                 Visibility="{Binding HasForm, Converter={StaticResource BoolToVis}}"/>
 
-                <!-- Stav: nemá parametry -->
+                <!-- Stav: bez agendy (GENERAL) -->
                 <TextBlock Text="Šablona nemá žádné parametry."
                            FontSize="{DynamicResource EDTheme.FontSize.Header}"
                            Foreground="{DynamicResource EDTheme.Border.Strong}"
@@ -52,7 +56,7 @@
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding HasParameters}" Value="False">
+                                <DataTrigger Binding="{Binding HasForm}" Value="False">
                                     <Setter Property="Visibility" Value="Visible"/>
                                 </DataTrigger>
                             </Style.Triggers>

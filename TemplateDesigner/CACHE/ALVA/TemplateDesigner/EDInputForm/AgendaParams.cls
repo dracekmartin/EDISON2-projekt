@@ -43,9 +43,33 @@ ClassMethod Init(ByRef sys As %String) As %Status
             }
         }
 
+        // Universální export pole (členění výstupu + název souboru) — platí pro všechny agendy.
+        // NEjsou součástí GetParameters → neukáží se v preview liště, jen v tiskovém dialogu.
+        d ..AddExportFields(form, vals)
+
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
+}
+
+/// Universální export pole pro tiskový dialog (společné všem agendám): členění výstupu při tisku
+/// s daty (více instancí) + pattern názvu souboru s {POLE} tokeny. Klíče stabilní (parsuje C#),
+/// popisky české. Viditelnost pole názvu (jen pro split) řeší C# host (PrintDialog.ApplyVisibility).
+ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %DynamicObject)
+{
+    d form.AddGroup("export", "Export (tisk s daty)")
+
+    s split = "SINGLE"
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_SPLIT") { s split = vals.%Get("__EXPORT_SPLIT") }
+    s f = form.AddFieldToLastGroup("__EXPORT_SPLIT", "Členění výstupu", $$$FieldTypeList, 1, 1)
+    d f.AddListItem("SINGLE",   "Vše do jednoho PDF")
+    d f.AddListItem("PER_LINE", "Jeden PDF na linku")
+    d f.AddListItem("PER_STOP", "Jeden PDF na zastávku/směr")
+    s:split'="" f.value = split
+
+    s fname = ""
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_FILENAME") { s fname = vals.%Get("__EXPORT_FILENAME") }
+    d form.AddText("__EXPORT_FILENAME", "Název souboru (tokeny {POLE})", fname)
 }
 
 ClassMethod Validate(ByRef sys As %String) As %Status

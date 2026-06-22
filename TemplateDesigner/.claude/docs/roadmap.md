@@ -433,6 +433,11 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ### 🟢 Menší priorita — UX polish
 
+- **Export: extrahovat členění + název souboru výš** — `__EXPORT_SPLIT` + `__EXPORT_FILENAME` jsou
+  zatím export pole v tiskovém EDInputformu (`AgendaParams`, persistence per-agenda přes `PrintParams`,
+  ✅ 2026-06-22). Do budoucna zvážit přesun na úroveň **`Template`** (perzistuje se šablonou jako
+  `CultureCode`) nebo **agenda-config** (firemní default, jak to měl legacy v „Tisk → Linky-MHD").
+  Pattern používá `{POLE}` tokeny — případně do UI doplnit picker dostupných polí agendy.
 - **Ad-hoc kontrola přetečení v tisku** (na žádost zákazníků) — dnes se přetečení přes všechny instance
   počítá až při exportu reálných dat (`PreviewCanvas.CountOverflowingPages` → hláška „⚠ X z N stránek
   přetéká"). Kdyby zákazníci chtěli, přidat samostatné tlačítko „Zkontrolovat přetečení" v `PrintDialog`,

@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-06-22 — Tisk s daty: členění výstupu + název souboru z dat
+
+- ✅ **Členění výstupu** (`__EXPORT_SPLIT`) — při tisku s daty (více instancí zastávka × směr) volba:
+  **Vše do jednoho PDF** (default, dnešní chování) / **Jeden PDF na linku** / **Jeden PDF na
+  zastávku × směr** (legacy vývěska per zastávka). Single → `SaveFileDialog`; split →
+  `OpenFolderDialog` + N souborů do složky přes existující `RenderMultiDataToPdf` (1 volání per
+  skupina, žádná nová PreviewCanvas metoda). Seskupení `GroupBy("CISLO_LINKY")` (zachovává pořadí
+  z Caché). Bez ZIP (volné soubory ve složce = přímo použitelné pro tisk vývěsek).
+- ✅ **Název souboru z dat** (`__EXPORT_FILENAME`) — pattern s `{POLE}` tokeny vyhodnocený nad první
+  instancí skupiny přes `DataContext.ResolvePlaceholders` (konzistentní s `{POLE}` všude jinde).
+  Default `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}` (= legacy „NázevZastávky_ČísloLinky_…",
+  funguje pro AD i MHD). Sanitizace neplatných znaků + kolize → přípona `_2`, `_3`. Pole viditelné
+  jen ve split režimu (`PrintDialog.ApplyVisibility`).
+- ✅ **Jako EDInputForm pole, ne bespoke WPF** — obě volby přidává **`AgendaParams.cls`** jako
+  universální skupinu „Export" (společná všem agendám, NEjsou v `GetParameters` → neukáží se
+  v preview liště). Hodnoty tečou přes sdílený `_paramValues` → **persistence per-agenda zadarmo**
+  (přes existující `PrintParams`, líp než per-session). PrintDialog se nově staví i pro agendu bez
+  `GetParameters` (`HasForm`, ne `HasParameters` — kvůli export skupině).
+- **TODO** (roadmap): extrahovat na úroveň `Template`/agenda-config (firemní default jako legacy
+  „Tisk → Linky-MHD"). Dorovnává legacy firemní „Název souboru pro export do pdf" + per-linka split.
+
 ## 2026-06-21 — Legenda poznámek: layout (sloupce / řazení / zarovnaný marker)
 
 - ✅ **Víc-sloupcová legenda** — `NotesLegendElement.Columns` (1-4) + `WrapSmer` (po sloupcích / po

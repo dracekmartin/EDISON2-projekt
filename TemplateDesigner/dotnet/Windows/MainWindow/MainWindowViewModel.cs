@@ -1752,7 +1752,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     public async Task LoadPrintParamsAndApplyAsync()
     {
-        if (Preferences is null || _agendaParameters.Count == 0) return;
+        if (Preferences is null) return;
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode)) return;
 
@@ -1778,6 +1778,15 @@ public class TemplateDesignerViewModel : EDViewModel
                 }
             }
             catch { /* malformed value pro tento param — ponecháme default */ }
+        }
+
+        // Export pole (členění/název souboru) nejsou agenda parametry → obnovit zvlášť (string).
+        // Bez tohoto by se uložená volba po reopenu šablony ztratila (write-only).
+        foreach (var key in PrintDialogViewModel.ExportKeys)
+        {
+            if (!saved.TryGetValue(key, out var node) || node is null) continue;
+            try { _previewParams[key] = node.GetValue<string>(); }
+            catch { /* malformed — ponecháme default */ }
         }
 
         if (changed) OnExternalParamsChanged();
