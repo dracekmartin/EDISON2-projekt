@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
+        xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
         Title="Odjezdy — nastavení"
         Width="680" Height="640"
         MinWidth="560" MinHeight="520"
@@ -17,43 +18,9 @@
 
         <TabControl>
 
-            <!-- ── Tab 1: Obecné ──────────────────────────────────── -->
+            <!-- ── Tab 1: Obecné (EDInputForm — schéma z Caché DepartureGridElementEdit) ── -->
             <TabItem Header="Obecné">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="6">
-                        <TextBlock Text="Výchozí styl pro všechny sloupce. V tabu Sloupce můžete nastavení jednotlivých sloupců přepsat."
-                                   FontStyle="Italic" Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,10"
-                                   TextWrapping="Wrap"/>
-
-                        <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <controls:CellStyleEditor
-                            DataContext="{Binding ElementHeaderStyle}"
-                            EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                            PickTextColorCommand="{Binding DataContext.PickElementHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            ClearTextColorCommand="{Binding DataContext.ClearElementHeaderTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            PickBgColorCommand="{Binding DataContext.PickElementHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            ClearBgColorCommand="{Binding DataContext.ClearElementHeaderBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                        <Separator Margin="0,8,0,8"/>
-
-                        <TextBlock Text="Styl datových buněk" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <controls:CellStyleEditor
-                            DataContext="{Binding ElementDataStyle}"
-                            EditOptions="{Binding DataContext.DataEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                            PickTextColorCommand="{Binding DataContext.PickElementDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            ClearTextColorCommand="{Binding DataContext.ClearElementDataTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            PickBgColorCommand="{Binding DataContext.PickElementDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                            ClearBgColorCommand="{Binding DataContext.ClearElementDataBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-
-                        <Button Content="Resetovat výchozí styl" Command="{Binding ResetElementStyleCommand}"
-                                HorizontalAlignment="Left" Padding="10,3" Margin="0,12,0,12"/>
-
-                        <Separator Margin="0,4,0,8"/>
-
-                        <TextBlock Text="Ostatní nastavení elementu" FontWeight="SemiBold" Margin="0,0,0,6"/>
-                        <controls:PropertiesPanel x:Name="GeneralPanel"/>
-                    </StackPanel>
-                </ScrollViewer>
+                <eif:EDInputForm x:Name="GeneralForm"/>
             </TabItem>
 
             <!-- ── Tab 2: Sloupce ─────────────────────────────────── -->
@@ -145,7 +112,7 @@
         <!-- ── OK / Storno ───────────────────────────────────── -->
         <StackPanel Grid.Row="1" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Content="{StaticResource EDStrings.Ok}"     Width="80" IsDefault="True" Command="{Binding OkCommand}" Padding="10,3" Margin="0,0,6,0"/>
+            <Button Content="{StaticResource EDStrings.Ok}"     Width="80" IsDefault="True" Click="OkButton_Click" Padding="10,3" Margin="0,0,6,0"/>
             <Button Content="{StaticResource EDStrings.Cancel}" Width="80" IsCancel="True"  Padding="10,3" Margin="0"/>
         </StackPanel>
     </Grid>

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-22 — Odjezdy „Obecné" → EDInputForm (Fáze 1, krok 4 — C# rewire) ✅ Fáze 1 hotová
+
+- ✅ **Tab „Obecné" dialogu Odjezdů → `<eif:EDInputForm>`** (schéma `DepartureGridElementEdit`) místo
+  ručních CellStyleEditorů + PropertiesPanel. Flow změněn z **live** (PropertiesPanel + executeCommand
+  + undo na cancel) na **batch na OK** (jako StopList): code-behind `OkButton_Click` → `GeneralForm.Save()`
+  → `ElementFormBinder.ExtractCommands` → `GeneralCommand`. Cancel = nic se neaplikuje.
+- ✅ **VM odlehčen** — odebrány `ElementHeaderStyle`/`ElementDataStyle` + 9 element-level commandů +
+  `PickElementColor` + `GeneralDescriptors` + ctor param; OnOk už nezapisuje HeaderStyle/DataStyle.
+- ✅ **`ElementPropertyAccessor.Set` lazy-alokuje null mezičlánky** na cestě (generické) — pro nullable
+  zóny jako `HeaderLine2Style`; jen při zápisu (Get/Exists nealokují → Cancel element nemutuje).
+- ✅ **MainWindow** — undoDepth/cancel-undo zahozen; OK aplikuje GeneralCommand + GroupColumns +
+  HourColumnStyle jako **jeden `CompositeCommand`** (single undo, jako StopList).
+- Fix: `HourColumnWidth` jen v tabu Sloupce (řádek Hodiny) — odebráno z Obecné, ať nekoliduje (dvojí zdroj).
+- **Fáze 1 (sjednocení tabulkových editorů) HOTOVÁ:** Zastávky i Odjezdy mají kostru Obecné(EDInputForm) /
+  Styl záhlaví / Styl datových buněk / [element]-specifické. Známé low: hour header/width direct-write
+  není undo; lazy-alloc po undo nechá prázdný `HeaderLine2Style`. **Navazuje:** extrahovat stylový balíček
+  do pod-formuláře (StyleEdit + StyleEditDialog) — odlehčí oba editory (5 zón × 15 polí inline).
+
 ## 2026-06-22 — EDInputForm 4-skupinová kostra + sdílený StyleFields helper (Fáze 1, krok 4 — Caché část)
 
 - ✅ **Sdílený `ALVA.TemplateDesigner.EDInputForm.StyleFields.Add`** — jediný zdroj „balíčku" polí

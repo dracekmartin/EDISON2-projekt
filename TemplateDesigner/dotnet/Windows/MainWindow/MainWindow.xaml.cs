@@ -1357,47 +1357,30 @@ public partial class MainWindow : Window
 
     private void OpenDepartureGridDialog(DepartureGridElement element)
     {
-        var undoDepth = _vm!.State.UndoStack.Count;
-
-        var generalDescriptors = element.GetPropertyDescriptors()
-            .Where(d => d is not Models.ButtonPropertyDescriptor)
-            .ToList();
-
         // Dostupné skupiny z preview dat
-        var previewData = _vm.State.CurrentPreviewData;
+        var previewData = _vm!.State.CurrentPreviewData;
         var availableGroups = element.GetAvailableSkupinyDnu(previewData);
 
         var dlg = new DepartureGroupEditorDialog(
-            element,
-            availableGroups,
-            element.GroupColumns,
-            element.HourColumnStyle,
-            generalDescriptors,
-            cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
+            element, availableGroups, element.GroupColumns, element.HourColumnStyle)
             { Owner = this };
 
-        if (dlg.ShowDialog() == true)
-        {
-            // Uložit per-column styles
-            if (availableGroups.Count > 0)
-            {
-                _vm.Execute(new Commands.Implementations.SetPropertyCommand(
-                    "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
-                    v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
-            }
+        if (dlg.ShowDialog() != true) return;   // Cancel — nic se neaplikovalo (Obecné batchuje na OK)
 
-            // Uložit hour column style
-            _vm.Execute(new Commands.Implementations.SetPropertyCommand(
-                "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
-                v => element.HourColumnStyle = (ColumnVisualStyle?)v));
-        }
-        else
-        {
-            // Cancel — vrátit změny z obecného tabu
-            while (_vm.State.UndoStack.Count > undoDepth)
-                _vm.State.Undo();
-        }
+        // Tab „Obecné" (EDInputForm) + per-column styly + hour style — jako jeden undo krok.
+        var cmds = new List<Commands.IDesignerCommand>();
+        if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
+        if (availableGroups.Count > 0)
+            cmds.Add(new Commands.Implementations.SetPropertyCommand(
+                "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
+                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
+        cmds.Add(new Commands.Implementations.SetPropertyCommand(
+            "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
+            v => element.HourColumnStyle = (ColumnVisualStyle?)v));
+
+        _vm.Execute(cmds.Count == 1
+            ? cmds[0]
+            : new Commands.Implementations.CompositeCommand("Nastavení odjezdů", cmds));
 
         InvalidateCanvas();
         InvalidatePreview();

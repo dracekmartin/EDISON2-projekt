@@ -29,7 +29,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         d form.AddDecimal("BorderWidth", "Šířka rámečku", 0, 0, 5, "mm")
         d form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
-        d form.AddDecimal("HourColumnWidth", "Šířka sloupce hodin", 8, 4, 20, "mm")
+        // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) — jediný zdroj, ať nekoliduje.
         d form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
         s f = form.AddNumber("MaxGroupCount", "Max skupin (0 = ∞)", 0, 0, 10)
         d form.AddDecimal("MinuteWidth", "Šířka minuty", 6, 3, 15, "mm")
@@ -51,7 +51,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderLine2Style", "", "", "", "", 0, "2. řádek: ")
 
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "dstyle", "Styl datových buněk (minuty)", "#FF000000", "")
+        // Styl datových buněk: DataStyle = báze (minuty i hodinová čísla z ní dědí),
+        // MinuteStyle = minutový override navrch (prefix „Minuta:").
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "MinuteStyle", "", "", "", "", 0, "Minuta: ")
 
         // ── Odjezdy — specifické (anotace = horní indexy/značky u minut) ──
         d form.AddGroup("departure", "Odjezdy — specifické")

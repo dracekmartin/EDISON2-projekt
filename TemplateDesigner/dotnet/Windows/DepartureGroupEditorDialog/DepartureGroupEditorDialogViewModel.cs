@@ -4,7 +4,6 @@ using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Rendering;
-using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
 namespace TemplateDesigner;
 
@@ -109,15 +108,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 {
     private readonly DepartureGridElement _element;
 
-    // ── Tab 1: Obecné — element-level styly + property descriptors ───────
-
-    /// <summary>Výchozí styl záhlaví elementu (kaskáda: per-column → tento → ScheduleHeaderDefaults).</summary>
-    public CellStyleVM ElementHeaderStyle { get; }
-
-    /// <summary>Výchozí styl dat elementu (kaskáda: per-column → tento → ScheduleDataDefaults).</summary>
-    public CellStyleVM ElementDataStyle { get; }
-
-    public IReadOnlyList<PropertyDescriptor> GeneralDescriptors { get; }
+    // Tab „Obecné" = embedded EDInputForm (DepartureGridElementEdit.cls) — řeší code-behind přes
+    // ElementFormBinder (reflexe). VM drží jen Tab „Sloupce" (per-skupina/sloupec styly).
 
     // ── Tab 2: Sloupce ──────────────────────────────────────────────────
 
@@ -164,32 +156,15 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     public RelayCommand MoveUpCommand { get; }
     public RelayCommand MoveDownCommand { get; }
 
-    // Element-level (Obecné tab)
-    public RelayCommand PickElementHeaderTextColorCommand { get; }
-    public RelayCommand PickElementHeaderBgColorCommand { get; }
-    public RelayCommand PickElementDataTextColorCommand { get; }
-    public RelayCommand PickElementDataBgColorCommand { get; }
-    public RelayCommand ClearElementHeaderTextColorCommand { get; }
-    public RelayCommand ClearElementHeaderBgColorCommand { get; }
-    public RelayCommand ClearElementDataTextColorCommand { get; }
-    public RelayCommand ClearElementDataBgColorCommand { get; }
-    public RelayCommand ResetElementStyleCommand { get; }
-
     // ── Konstruktor ──────────────────────────────────────────────────
 
     public DepartureGroupEditorDialogViewModel(
         DepartureGridElement element,
         List<SkupinaDnuData> availableGroups,
         List<DepartureGroupColumnStyle> currentStyles,
-        ColumnVisualStyle? hourColumnStyle,
-        IReadOnlyList<PropertyDescriptor> generalDescriptors)
+        ColumnVisualStyle? hourColumnStyle)
     {
         _element = element;
-        GeneralDescriptors = generalDescriptors;
-
-        // Element-level CellStyleVM (Obecné tab) — parent je ScheduleHeaderDefaults/ScheduleDataDefaults
-        ElementHeaderStyle = CellStyleVM.FromModel(element.HeaderStyle, element.ResolveElementHeaderParent());
-        ElementDataStyle   = CellStyleVM.FromModel(element.DataStyle,   element.ResolveElementDataParent());
 
         // Vyřešené rodičovské styly pro kaskádu (element-level → column override)
         var hourHeaderInherited  = element.ResolveHourHeaderParent();
@@ -262,22 +237,6 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             }
         });
 
-        // Element-level color picker commands (Obecné tab)
-        PickElementHeaderTextColorCommand  = Command(() => PickElementColor(ElementHeaderStyle, s => s.TextColor, (s, c) => s.TextColor = c));
-        PickElementHeaderBgColorCommand    = Command(() => PickElementColor(ElementHeaderStyle, s => s.BgColor,   (s, c) => s.BgColor   = c));
-        PickElementDataTextColorCommand    = Command(() => PickElementColor(ElementDataStyle,   s => s.TextColor, (s, c) => s.TextColor = c));
-        PickElementDataBgColorCommand      = Command(() => PickElementColor(ElementDataStyle,   s => s.BgColor,   (s, c) => s.BgColor   = c));
-        ClearElementHeaderTextColorCommand = Command(() => ElementHeaderStyle.TextColor = null);
-        ClearElementHeaderBgColorCommand   = Command(() => ElementHeaderStyle.BgColor   = null);
-        ClearElementDataTextColorCommand   = Command(() => ElementDataStyle.TextColor   = null);
-        ClearElementDataBgColorCommand     = Command(() => ElementDataStyle.BgColor     = null);
-
-        ResetElementStyleCommand = Command(() =>
-        {
-            ElementHeaderStyle.Reset();
-            ElementDataStyle.Reset();
-        });
-
         // Move up/down (sloupec Hodiny zůstává vždy na indexu 0)
         MoveUpCommand = Command(() =>
         {
@@ -304,22 +263,12 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             setter(SelectedGroupVM, result);
     }
 
-    private void PickElementColor(CellStyleVM vm, Func<CellStyleVM, string?> getter, Action<CellStyleVM, string?> setter)
-    {
-        if (RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(vm) ?? "");
-        if (result is not null)
-            setter(vm, result);
-    }
-
     // ── OK ──────────────────────────────────────────────────────────
 
     protected override void OnOk()
     {
-        // Element-level styl — zápis zpět do elementu (ScheduleElementBase.HeaderStyle/DataStyle)
-        _element.HeaderStyle = ElementHeaderStyle.ToModel() ?? new TextStyle();
-        _element.DataStyle   = ElementDataStyle.ToModel()   ?? new TextStyle();
-
+        // Element-level styl (HeaderStyle/DataStyle/MinuteStyle/…) řeší EDInputForm v tabu Obecné
+        // (code-behind přes ElementFormBinder). Zde jen per-skupina/sloupec + hour.
         var hourVm = GroupVMs.FirstOrDefault(vm => vm.SkupinaDnuId == HourColumnId);
         if (hourVm is not null)
         {
