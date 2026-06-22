@@ -14,15 +14,22 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 {
     private string _key = "";
     private string _header = "";
-    private float  _width = 10f;
+    private float? _width = 10f;
     private bool   _visible = true;
     private string _alignmentLabel = "Vlevo";
 
     public string Key            { get => _key;            set { _key = value;            OnChanged(); } }
     public string Header         { get => _header;         set { _header = value;         OnChanged(); OnChanged(nameof(DisplayName)); } }
-    public float  Width          { get => _width;          set { _width = value;          OnChanged(); OnChanged(nameof(ColumnWidth)); } }
+    public float? Width          { get => _width;          set { _width = value;          OnChanged(); OnChanged(nameof(WidthText)); OnChanged(nameof(ColumnWidth)); } }
     public bool   Visible        { get => _visible;        set { _visible = value;        OnChanged(); } }
     public string AlignmentLabel { get => _alignmentLabel; set { _alignmentLabel = value; OnChanged(); } }
+
+    /// <summary>Šířka jako text pro editor (prázdné = auto). Parsuje na <see cref="Width"/>.</summary>
+    public string WidthText
+    {
+        get => Controls.ColumnWidthText.Format(_width);
+        set => Width = Controls.ColumnWidthText.Parse(value);
+    }
 
     // IColumnRowVM — sdílený seznam sloupců
     public string  DisplayName => Header;
@@ -119,9 +126,9 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public float ElementWidth => _element.Width;
 
-    /// <summary>Součet šířek viditelných sloupců (mm).</summary>
+    /// <summary>Součet pevných šířek viditelných sloupců (mm); auto (null) se nepočítá.</summary>
     public float TotalVisibleColumnWidth =>
-        ColumnVMs.Where(c => c.Visible).Sum(c => c.Width);
+        ColumnVMs.Where(c => c.Visible).Sum(c => c.Width ?? 0f);
 
     /// <summary>True pokud sloupce přesahují šířku elementu (ořízne se content).</summary>
     public bool HasColumnOverflow =>
@@ -238,11 +245,12 @@ class StopColumnsEditorDialogViewModel : EDViewModel
         {
             var visible = ColumnVMs.Where(c => c.Visible).ToList();
             if (visible.Count == 0) return;
-            float total = visible.Sum(c => c.Width);
+            float total = visible.Sum(c => c.Width ?? 0f);
             if (total <= 0.01f) return;
             float scale = ElementWidth / total;
+            // Škáluje jen pevné šířky; auto (null) zůstává auto.
             foreach (var vm in visible)
-                vm.Width = (float)Math.Round(vm.Width * scale, 2);
+                if (vm.Width is float w) vm.Width = (float)Math.Round(w * scale, 2);
         });
 
         // Subscribe na Width / Visible změny každého sloupce → refresh overflow warning

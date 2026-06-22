@@ -133,9 +133,10 @@ public class StopListElement : ScheduleElementBase
         // Fallback (žádný StopName sloupec): poslední sloupec.
         int stopNameIdx = columns.FindIndex(c => c.Key == "StopName");
         if (stopNameIdx < 0) stopNameIdx = columns.Count - 1;
+        var colW = ResolveColumnWidths(columns);
         float stopNameLeftMm = X;
-        for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameLeftMm += columns[i].Width;
-        float stopNameRightMm = stopNameLeftMm + (stopNameIdx >= 0 && stopNameIdx < columns.Count ? columns[stopNameIdx].Width : 0f);
+        for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameLeftMm += colW[columns[i]];
+        float stopNameRightMm = stopNameLeftMm + (stopNameIdx >= 0 && stopNameIdx < columns.Count ? colW[columns[stopNameIdx]] : 0f);
 
         // Šířka sub-cell pro značky (BeforeName) — auto-fit podle nejširšího marker textu v datech.
         float markersSubCellWidth = MarkersPosition == StopMarkersSide.BeforeName
@@ -162,7 +163,7 @@ public class StopListElement : ScheduleElementBase
         {
             // Záhlaví sloupců
             float currentY = ShowHeader
-                ? RenderColumnHeaders(ctx, columns, stopNameIdx, markersSubCellWidth, headerH, paints, scale)
+                ? RenderColumnHeaders(ctx, columns, stopNameIdx, markersSubCellWidth, colW, headerH, paints, scale)
                 : Y;
 
             if (hasData)
@@ -193,7 +194,7 @@ public class StopListElement : ScheduleElementBase
                         ctx.Canvas.DrawRect(bgRect, bgPaint);
                     }
 
-                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth);
+                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW);
                     ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
 
                     if (ShowRowSeparators)
@@ -230,14 +231,14 @@ public class StopListElement : ScheduleElementBase
     /// <summary>Vykreslí záhlaví sloupců přes ColumnRenderer.</summary>
     private float RenderColumnHeaders(
         RenderContext ctx, List<StopColumn> columns, int stopNameIdx, float markersSubCellWidth,
-        float headerH, SchedulePaints paints, float scale)
+        Dictionary<StopColumn, float> widths, float headerH, SchedulePaints paints, float scale)
     {
         // Výchozí pozadí záhlaví (přes celou šířku elementu).
         // Per-column header bg z kaskády to lokálně přepíše.
         var headerRect = ctx.ToCanvasRect(X, Y, Width, headerH);
         ctx.Canvas.DrawRect(headerRect, paints.HeaderBg);
 
-        var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth);
+        var specs = BuildHeaderRowSpecs(columns, stopNameIdx, markersSubCellWidth, widths);
         ColumnRenderer.DrawRow(ctx, X, Y, headerH, specs, fontScale: scale);
 
         // Čára pod záhlavím
@@ -316,11 +317,11 @@ public class StopListElement : ScheduleElementBase
     /// </summary>
     private ColumnRenderer.CellSpec[] BuildDataRowSpecs(
         List<StopColumn> columns, ZastavkaData z, bool isCurrent, bool isPassed,
-        int stopNameIdx, float markersSubCellWidth)
+        int stopNameIdx, float markersSubCellWidth, Dictionary<StopColumn, float> widths)
     {
         bool split = markersSubCellWidth > 0
                      && stopNameIdx >= 0 && stopNameIdx < columns.Count
-                     && columns[stopNameIdx].Width > markersSubCellWidth;
+                     && widths[columns[stopNameIdx]] > markersSubCellWidth;
 
         if (!split)
         {
@@ -329,7 +330,7 @@ public class StopListElement : ScheduleElementBase
             {
                 var col = columns[i];
                 specs[i] = new ColumnRenderer.CellSpec(
-                    col.Width,
+                    widths[col],
                     GetCellText(z, col.Key),
                     ResolveRowStyle(col, isCurrent, isPassed));
             }
@@ -346,12 +347,12 @@ public class StopListElement : ScheduleElementBase
                 var nameStyle = ResolveRowStyle(col, isCurrent, isPassed);
                 var markerStyle = nameStyle with { HAlign = TextHorizontalAlignment.Right };
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, GetStopMarkersText(z), markerStyle);
-                result[idx++] = new ColumnRenderer.CellSpec(col.Width - markersSubCellWidth, GetCellText(z, col.Key), nameStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle);
             }
             else
             {
                 result[idx++] = new ColumnRenderer.CellSpec(
-                    col.Width,
+                    widths[col],
                     GetCellText(z, col.Key),
                     ResolveRowStyle(col, isCurrent, isPassed));
             }
@@ -360,11 +361,11 @@ public class StopListElement : ScheduleElementBase
     }
 
     /// <summary>Sestaví CellSpec[] pro řádek záhlaví. Pokud BeforeName a markersSubCellWidth > 0, rozdělí stop name sloupec stejně jako datové řádky.</summary>
-    private ColumnRenderer.CellSpec[] BuildHeaderRowSpecs(List<StopColumn> columns, int stopNameIdx, float markersSubCellWidth)
+    private ColumnRenderer.CellSpec[] BuildHeaderRowSpecs(List<StopColumn> columns, int stopNameIdx, float markersSubCellWidth, Dictionary<StopColumn, float> widths)
     {
         bool split = markersSubCellWidth > 0
                      && stopNameIdx >= 0 && stopNameIdx < columns.Count
-                     && columns[stopNameIdx].Width > markersSubCellWidth;
+                     && widths[columns[stopNameIdx]] > markersSubCellWidth;
 
         if (!split)
         {
@@ -372,7 +373,7 @@ public class StopListElement : ScheduleElementBase
             for (int i = 0; i < columns.Count; i++)
             {
                 var col = columns[i];
-                specs[i] = new ColumnRenderer.CellSpec(col.Width, Rendering.ColumnHeader.Resolve(col.Header, ""), ResolveHeaderStyle(col));
+                specs[i] = new ColumnRenderer.CellSpec(widths[col], Rendering.ColumnHeader.Resolve(col.Header, ""), ResolveHeaderStyle(col));
             }
             return specs;
         }
@@ -386,11 +387,11 @@ public class StopListElement : ScheduleElementBase
             {
                 var headerStyle = ResolveHeaderStyle(col);
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", headerStyle);
-                result[idx++] = new ColumnRenderer.CellSpec(col.Width - markersSubCellWidth, Rendering.ColumnHeader.Resolve(col.Header, ""), headerStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, Rendering.ColumnHeader.Resolve(col.Header, ""), headerStyle);
             }
             else
             {
-                result[idx++] = new ColumnRenderer.CellSpec(col.Width, Rendering.ColumnHeader.Resolve(col.Header, ""), ResolveHeaderStyle(col));
+                result[idx++] = new ColumnRenderer.CellSpec(widths[col], Rendering.ColumnHeader.Resolve(col.Header, ""), ResolveHeaderStyle(col));
             }
         }
         return result;
@@ -465,6 +466,16 @@ public class StopListElement : ScheduleElementBase
     // ─── Helpers ────────────────────────────────────────────────────────────
 
     private List<StopColumn> GetVisibleColumns() => Columns.Where(c => c.Visible).ToList();
+
+    /// <summary>Vyřeší efektivní šířky sloupců: pevné (Width != null) zůstanou, sloupce s auto
+    /// (Width == null) si rovnoměrně rozdělí zbývající šířku elementu po pevných sloupcích.</summary>
+    private Dictionary<StopColumn, float> ResolveColumnWidths(List<StopColumn> visible)
+    {
+        float sumFixed = visible.Where(c => c.Width.HasValue).Sum(c => c.Width!.Value);
+        int autoCount = visible.Count(c => !c.Width.HasValue);
+        float autoEach = autoCount > 0 ? Math.Max(0f, (Width - sumFixed) / autoCount) : 0f;
+        return visible.ToDictionary(c => c, c => c.Width ?? autoEach);
+    }
 
     /// <summary>Největší resolved font záhlaví napříč viditelnými sloupci (pt) — vč. per-column overridů.
     /// Výška záhlaví se počítá z této hodnoty, aby odpovídala reálně vykreslenému textu.</summary>
@@ -635,7 +646,7 @@ public class StopListElement : ScheduleElementBase
         if (DataRowHeight is not null) DataRowHeight *= scale;
         if (CurrentStopFontSize is not null) CurrentStopFontSize *= scale;
         foreach (var col in Columns)
-            col.Width *= scale;
+            if (col.Width is float w) col.Width = w * scale;   // auto (null) se neškáluje
     }
 
     // ─── Clone ──────────────────────────────────────────────────────────────

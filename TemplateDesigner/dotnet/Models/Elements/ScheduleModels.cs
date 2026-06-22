@@ -155,7 +155,10 @@ public class StopColumn
 {
     public string Key { get; set; } = "";
     public string Header { get; set; } = "";
-    public float Width { get; set; } = 10f;
+    /// <summary>Pevná šířka v mm. Null = auto (rovnoměrně sdílí zbývající šířku elementu po pevných sloupcích).
+    /// Default null (ne 10f) — jinak by se auto (null) po uložení ztratilo (serializer WhenWritingNull
+    /// vynechá klíč → po reloadu by initializer vrátil 10f). Výchozí sloupce nastavují Width explicitně.</summary>
+    public float? Width { get; set; }
     public bool Visible { get; set; } = true;
     public TextHorizontalAlignment Alignment { get; set; } = TextHorizontalAlignment.Left;
 
@@ -188,13 +191,18 @@ public class DepartureGroupColumnStyle
     /// <see cref="Rendering.ColumnHeader.Resolve"/> jednotně s ostatními tabulkovými komponentami.</summary>
     public string? HeaderOverride { get; set; }
 
+    /// <summary>Pevná šířka skupiny v mm (override). Null = auto (z obsahu minut + proporční dofill).
+    /// Pinnutá skupina se nezahrnuje do proporčního přerozdělení zbývající šířky.</summary>
+    public float? WidthOverride { get; set; }
+
     public DepartureGroupColumnStyle Clone() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
         IsVisible = IsVisible,
         Style = Style.Clone(),
         AlternatingRowColor = AlternatingRowColor,
-        HeaderOverride = HeaderOverride
+        HeaderOverride = HeaderOverride,
+        WidthOverride = WidthOverride
     };
 }
 

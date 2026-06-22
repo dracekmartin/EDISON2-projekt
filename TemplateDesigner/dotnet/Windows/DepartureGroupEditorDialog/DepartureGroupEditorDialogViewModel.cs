@@ -17,6 +17,7 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRo
     private bool   _visible = true;
 
     private string _headerOverride = "";
+    private float? _widthOverride;
 
     public string SkupinaDnuId { get => _skupinaDnuId; set { _skupinaDnuId = value; OnChanged(); } }
     public string Name         { get => _name;         set { _name = value;         OnChanged(); OnChanged(nameof(DisplayName)); } }
@@ -25,9 +26,19 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRo
     /// <summary>Override nadpisu sloupce v šabloně. Prázdné = výchozí (nadpis z dat / „Hod").</summary>
     public string HeaderOverride { get => _headerOverride; set { _headerOverride = value; OnChanged(); OnChanged(nameof(DisplayName)); } }
 
-    // IColumnRowVM — sdílený seznam sloupců (efektivní záhlaví = override, jinak zdroj; šířka auto)
+    /// <summary>Pevná šířka skupiny v mm (override). Null = auto (z obsahu + proporční dofill).</summary>
+    public float? WidthOverride { get => _widthOverride; set { _widthOverride = value; OnChanged(); OnChanged(nameof(WidthText)); OnChanged(nameof(ColumnWidth)); } }
+
+    /// <summary>Šířka jako text pro editor (prázdné = auto). Parsuje na <see cref="WidthOverride"/>.</summary>
+    public string WidthText
+    {
+        get => Controls.ColumnWidthText.Format(_widthOverride);
+        set => WidthOverride = Controls.ColumnWidthText.Parse(value);
+    }
+
+    // IColumnRowVM — sdílený seznam sloupců (efektivní záhlaví = override, jinak zdroj; šířka pin/auto)
     public string DisplayName => string.IsNullOrWhiteSpace(HeaderOverride) ? Name : HeaderOverride;
-    public float? ColumnWidth => null;
+    public float? ColumnWidth => WidthOverride;
 
     private CellStyleVM _header = null!;
     public CellStyleVM Header
@@ -69,6 +80,7 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRo
         IsVisible = Visible,
         AlternatingRowColor = string.IsNullOrWhiteSpace(AlternatingRowColor) ? null : AlternatingRowColor,
         HeaderOverride = string.IsNullOrWhiteSpace(HeaderOverride) ? null : HeaderOverride,
+        WidthOverride = WidthOverride,
         Style = new ColumnVisualStyle
         {
             Header = Header.ToModel(),
@@ -85,6 +97,7 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRo
         Visible = s?.IsVisible ?? true,
         AlternatingRowColor = s?.AlternatingRowColor ?? "",
         HeaderOverride = s?.HeaderOverride ?? "",
+        WidthOverride = s?.WidthOverride,
         Header = CellStyleVM.FromModel(s?.Style.Header, headerInherited),
         Data   = CellStyleVM.FromModel(s?.Style.Data,   dataInherited),
     };
@@ -190,6 +203,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             SkupinaDnuId = HourColumnId,
             Name = "Hodiny",
             HeaderOverride = element.HourColumnHeader,   // override z elementu (prázdné = „Hod")
+            WidthOverride = element.HourColumnWidth,      // sloupec hodin má vždy pevnou šířku (element-level)
             Visible = true,
             Header = CellStyleVM.FromModel(hourColumnStyle?.Header, hourHeaderInherited),
             Data   = CellStyleVM.FromModel(hourColumnStyle?.Data,   hourDataInherited),
@@ -312,6 +326,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             var style = new ColumnVisualStyle { Header = hourVm.Header.ToModel(), Data = hourVm.Data.ToModel() };
             ResultHourColumnStyle = style.IsEmpty ? null : style;
             _element.HourColumnHeader = hourVm.HeaderOverride?.Trim() ?? "";
+            // Sloupec hodin má pevnou šířku (element-level); prázdné pole ponechá stávající.
+            if (hourVm.WidthOverride is float hw && hw > 0) _element.HourColumnWidth = hw;
         }
 
         ResultGroupColumns = GroupVMs

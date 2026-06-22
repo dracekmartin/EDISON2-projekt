@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-22 — Auto + override šířka sloupců (Fáze 1, krok 2b)
+
+- ✅ **StopList — nullable šířka (`StopColumn.Width` → `float?`)** — prázdné = **auto** (rovnoměrně
+  rozdělí zbývající šířku elementu po pevných sloupcích), hodnota = pevná. Jediné místo:
+  `StopListElement.ResolveColumnWidths` (Dictionary<StopColumn,float>); napojeno do layoutu
+  (pozice šipky, BuildDataRowSpecs/BuildHeaderRowSpecs/RenderColumnHeaders), ApplyScale (škáluje
+  jen pevné). Editor: `WidthText` (prázdné = auto), fit-to-width + overflow ošetřeno na null.
+  **Default `Width = null`** (ne 10f) — jinak by se auto po uložení ztratilo (serializer WhenWritingNull).
+- ✅ **DepartureGrid — per-group `WidthOverride`** (float?) — prázdné = auto (z obsahu + proporční
+  dofill, jako dosud), hodnota = **pin** (vyloučen z přerozdělení zbytku). Sloupec Hodin edituje
+  `HourColumnWidth`. Layout cache hashuje `WidthOverride`.
+- ✅ **Sdílený `Controls.ColumnWidthText.Parse/Format`** — locale-robustní (přijímá tečku i čárku,
+  InvariantCulture); použito oběma editory (odstraňuje duplikaci + tichý fail při desetinné čárce).
+- Oba editory mají detail „Záhlaví + Šířka" se **stejným modelem** (prázdné = auto, hodnota = pevná).
+  Existující šablony beze změny (mají šířky vyplněné = pevné). **Zbývá (krok 4):** Odjezdy
+  „Obecné" → EDInputForm. **Později (krok 5):** content-aware auto šířka (dle délky dat).
+
 ## 2026-06-22 — Override nadpisu sloupce (AD-N6) + sdílený editor sloupců (Fáze 1, krok 1+2a)
 
 - ✅ **Override nadpisu sloupce/skupiny** — `Rendering/ColumnHeader.Resolve(override, source)` = jediné

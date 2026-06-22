@@ -54,6 +54,17 @@ public partial class ColumnListEditor : UserControl
     }
 }
 
+/// <summary>Parse/format šířky sloupce pro editory (sdílené StopList i DepartureGrid).
+/// Přijímá tečku i čárku, InvariantCulture; prázdné/nevalidní/≤0 → null (auto).</summary>
+public static class ColumnWidthText
+{
+    public static float? Parse(string? text) =>
+        float.TryParse((text ?? "").Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) && v > 0 ? v : null;
+
+    public static string Format(float? width) =>
+        width is float w ? w.ToString("0.#", CultureInfo.InvariantCulture) : "";
+}
+
 /// <summary>Šířka mm → text „X mm" pro seznam; null/prázdné = „" (sloupec bez pevné šířky = auto).</summary>
 public class NullableMmToTextConverter : IValueConverter
 {

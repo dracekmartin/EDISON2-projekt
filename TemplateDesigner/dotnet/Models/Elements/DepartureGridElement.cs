@@ -181,8 +181,9 @@ public class DepartureGridElement : ScheduleElementBase
         HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight),
         GroupHeaderOverridesHash());
 
-    /// <summary>Hash override nadpisů skupin — override mění šířku/wrap záhlaví, takže musí
-    /// invalidovat layout cache (Count v hlavním fingerprintu to nezachytí).</summary>
+    /// <summary>Hash layout-affecting per-group nastavení (nadpis override, šířka override, pořadí) —
+    /// mění šířku/wrap/pořadí, musí invalidovat layout cache (Count v hlavním fingerprintu to nezachytí).
+    /// Order-sensitive (přeskládání skupin mění hash).</summary>
     private int GroupHeaderOverridesHash()
     {
         var h = new HashCode();
@@ -190,6 +191,7 @@ public class DepartureGridElement : ScheduleElementBase
         {
             h.Add(gc.SkupinaDnuId);
             h.Add(gc.HeaderOverride);
+            h.Add(gc.WidthOverride);
         }
         return h.ToHashCode();
     }
@@ -268,7 +270,13 @@ public class DepartureGridElement : ScheduleElementBase
         var allHourKeys = groupLayouts.SelectMany(g => g.ByHour.Keys).ToHashSet();
         var hours = GetVisibleHoursFromSet(allHourKeys, effectiveTimeAxis, effectiveRangeFrom, effectiveRangeTo);
 
-        // Šířky skupin: max(minuty, min. pro text záhlaví)
+        // Pevná šířka skupiny (override) přebíjí auto výpočet; pinnuté se neúčastní přerozdělení.
+        var widthLookup = GroupColumnIndexResolver.BuildStyleLookup(
+            GroupColumns, targetSkupiny.Select(s => s.Id).ToList());
+        float? PinnedWidth(GroupLayout g) =>
+            widthLookup.TryGetValue(g.Skupina.Id, out var cs) && cs.WidthOverride is float p && p > 0 ? p : null;
+
+        // Šířky skupin: pin (override), jinak max(minuty, min. pro text záhlaví)
         var finalGroups = new List<GroupLayout>();
         foreach (var g in groupLayouts)
         {
@@ -276,11 +284,12 @@ public class DepartureGridElement : ScheduleElementBase
             if (maxMin < 1) maxMin = 1;
             float effectiveSlotW = MinuteWidth + AnotaceGap;
             float minuteBasedW = maxMin * effectiveSlotW + Math.Max(0, maxMin - 1) * OdjezdGap;
-            float groupW = Math.Max(minuteBasedW, g.MinWidthForText);
+            float autoW = Math.Max(minuteBasedW, g.MinWidthForText);
+            float groupW = PinnedWidth(g) ?? autoW;
             finalGroups.Add(g with { MaxMinutesPerHour = maxMin, GroupWidth = groupW });
         }
 
-        // Redistribuce extra prostoru — sloupce skupin zaplní celou šířku elementu
+        // Redistribuce extra prostoru — jen auto (nepinnuté) skupiny zaplní zbytek šířky elementu
         float separatorTotal = Math.Max(0, finalGroups.Count - 1) * GroupSeparatorWidth;
         int hourColumnCount = HourColumnPerGroup ? finalGroups.Count : 1;
         float minTotal = hourColumnCount * HourColumnWidth + finalGroups.Sum(g => g.GroupWidth) + separatorTotal;
@@ -288,11 +297,13 @@ public class DepartureGridElement : ScheduleElementBase
         if (minTotal < Width)
         {
             float extraSpace = Width - minTotal;
-            float sumGroupW = finalGroups.Sum(g => g.GroupWidth);
-            if (sumGroupW > 0)
+            float sumAutoW = finalGroups.Where(g => PinnedWidth(g) is null).Sum(g => g.GroupWidth);
+            if (sumAutoW > 0)
             {
                 finalGroups = finalGroups.Select(g =>
-                    g with { GroupWidth = g.GroupWidth + extraSpace * (g.GroupWidth / sumGroupW) }
+                    PinnedWidth(g) is not null
+                        ? g
+                        : g with { GroupWidth = g.GroupWidth + extraSpace * (g.GroupWidth / sumAutoW) }
                 ).ToList();
             }
         }

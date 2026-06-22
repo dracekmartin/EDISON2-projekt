@@ -81,8 +81,10 @@
                                 <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 <TextBox Width="160" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
                                 <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="50" Text="{Binding SelectedColumnVM.Width, UpdateSourceTrigger=LostFocus}"/>
+                                <TextBox Width="50" Text="{Binding SelectedColumnVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
                             </StackPanel>
+                            <TextBlock Text="Šířka prázdná = automaticky (rozdělí zbývající šířku elementu)." FontStyle="Italic"
+                                       Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Oddělovač ──────────────────── -->
                             <Separator Margin="0,8,0,8"/>
