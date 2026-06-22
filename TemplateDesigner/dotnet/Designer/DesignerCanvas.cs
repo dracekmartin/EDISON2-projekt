@@ -51,6 +51,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrSelection          = new(0xFF2196F3);
     private static readonly SKColor ClrLocked             = new(0xFFFF8C00); // jantarová pro zamčené elementy
     private static readonly SKColor ClrCondition         = new(0xFF7B1FA2); // fialová pro podmíněné elementy
+    private static readonly SKColor ClrConditionInvalid  = new(0xFFD32F2F); // červená pro nevalidní výraz
     private static readonly SKColor ClrRulerBg           = new(0xFFF2F2F2);
     private static readonly SKColor ClrRulerBorder       = new(0xFF999999);
     private static readonly SKColor ClrRulerTick         = new(0xFF555555);
@@ -513,7 +514,11 @@ public class DesignerCanvas
                 float eh = (el.Height ?? el.EffectiveDesignerHeight) * MmToPx;
                 var rect = new SKRect(ex, ey, ex + ew, ey + eh);
 
-                if (hasCondition) DrawConditionBadge(canvas, rect);
+                if (hasCondition)
+                {
+                    bool invalid = Models.Expressions.ExpressionEvaluator.Validate(el.VisibilityExpression) is not null;
+                    DrawConditionBadge(canvas, rect, invalid);
+                }
                 if (hasGroup) DrawGroupBadge(canvas, rect, el.GroupId!);
             }
             canvas.Restore();
@@ -986,11 +991,11 @@ public class DesignerCanvas
     }
 
     /// <summary>
-    /// Kreslí malý fialový badge "?" v levém horním rohu elementu.
-    /// Zobrazuje se vždy pro elementy s nastavenou podmínkou tisku (VisibilityExpression).
+    /// Kreslí malý badge v levém horním rohu elementu s nastavenou podmínkou tisku.
+    /// Fialový "?" = validní podmínka; červený "!" = nevalidní výraz (upozornění uživateli).
     /// V designeru se podmínka nevyhodnocuje — element je vždy viditelný.
     /// </summary>
-    private static void DrawConditionBadge(SKCanvas canvas, SKRect elementRect)
+    private static void DrawConditionBadge(SKCanvas canvas, SKRect elementRect, bool invalid)
     {
         const float sz = 14f;
         float bx = elementRect.Left + 2f;
@@ -998,11 +1003,13 @@ public class DesignerCanvas
 
         if (elementRect.Width < sz + 6 || elementRect.Height < sz + 6) return;
 
-        using var bg = new SKPaint { Color = ClrCondition, IsAntialias = true };
+        using var bg = new SKPaint { Color = invalid ? ClrConditionInvalid : ClrCondition, IsAntialias = true };
         canvas.DrawRoundRect(bx, by, sz, sz, 2f, 2f, bg);
 
         using var font = new SKFont(SKTypeface.Default, 9f);
         using var tp   = new SKPaint { Color = SKColors.White, IsAntialias = true };
-        canvas.DrawText("?", bx + 4f, by + sz - 3.5f, font, tp);
+        string glyph = invalid ? "!" : "?";
+        float textW = font.MeasureText(glyph, tp);
+        canvas.DrawText(glyph, bx + (sz - textW) / 2f, by + sz - 3.5f, font, tp);
     }
 }
