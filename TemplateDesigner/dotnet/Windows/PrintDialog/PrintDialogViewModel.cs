@@ -197,12 +197,12 @@ public class PrintDialogViewModel : EDViewModel
         try
         {
             PersistParams();
-            StatusText = "Načítání dat z Caché...";
+            StatusText = "Načítání dat z databáze...";
             var dataPages = _buildRealData(_paramValues);
 
             if (dataPages is null or { Count: 0 })
             {
-                StatusText = "Caché nevrátila žádná data.";
+                StatusText = "Databáze nevrátila žádná data.";
                 return;
             }
 

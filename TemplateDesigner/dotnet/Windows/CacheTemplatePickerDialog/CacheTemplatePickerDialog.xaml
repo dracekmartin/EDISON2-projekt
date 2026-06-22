@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:el="clr-namespace:EDControls.EDList;assembly=EDControls"
         xmlns:edf="clr-namespace:EDControls.EDFilter;assembly=EDControls"
-        Title="Šablony v Caché"
+        Title="Šablony v databázi"
         Width="720" Height="480"
         MinWidth="500" MinHeight="320"
         WindowStartupLocation="CenterOwner"
@@ -44,7 +44,7 @@
         <el:EDList x:Name="TheList"
                    CacheClass="ALVA.TemplateDesigner.EDList.Sablony"
                    HostId="TemplateDesigner.TemplatePicker"
-                   Title="Šablony v Caché"/>
+                   Title="Šablony v databázi"/>
 
     </DockPanel>
 </Window>

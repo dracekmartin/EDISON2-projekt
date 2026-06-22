@@ -704,7 +704,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (CacheProvider is null)
         {
-            PopupDisplayer.Info("Caché není nakonfigurováno — výběr instancí není dostupný.");
+            PopupDisplayer.Info("Databáze není nakonfigurována — výběr instancí není dostupný.");
             return;
         }
         var agendaCode = State.CurrentTemplate.AgendaCode;
@@ -985,7 +985,7 @@ public class TemplateDesignerViewModel : EDViewModel
             await TemplateStorage.SaveAsync(State.CurrentTemplate);
             IsDirty = false;
             RequestTitleUpdate?.Invoke();
-            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do databáze.");
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
@@ -1014,7 +1014,7 @@ public class TemplateDesignerViewModel : EDViewModel
             CurrentFilePath = null;
             IsDirty = false;
             RequestTitleUpdate?.Invoke();
-            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do databáze.");
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
@@ -1837,14 +1837,14 @@ public class TemplateDesignerViewModel : EDViewModel
     private void UpdateCacheStatus(string? agendaCode, DataSchema? cacheSchema)
     {
         if (CacheProvider is null)
-        { StatusText = "Caché: není nakonfigurováno — pole načtena z JSON"; return; }
+        { StatusText = "Databáze: není nakonfigurována — pole načtena z JSON"; return; }
 
         if (agendaCode is null)
-        { StatusText = "Caché: nakonfigurováno"; return; }
+        { StatusText = "Databáze: nakonfigurována"; return; }
 
         StatusText = cacheSchema is not null
-            ? $"● Caché: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
-            : $"○ Caché: nedostupné — záloha JSON ({agendaCode})";
+            ? $"● Databáze: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
+            : $"○ Databáze: nedostupná — záloha JSON ({agendaCode})";
     }
 
     public CultureInfo GetTemplateCulture()

@@ -114,7 +114,7 @@
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="6. Náhled a tisk:" FontWeight="SemiBold"/>
-                    <Run Text=" Live náhled vpravo se aktualizuje. Pro tisk reálných dat: menu Soubor → Tisk z Caché (parametry + multi-page PDF). Export: PDF nebo PNG." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                    <Run Text=" Live náhled vpravo se aktualizuje. Pro tisk reálných dat: menu Soubor → Tisk (parametry + multi-page PDF). Export: PDF nebo PNG." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="💡 Strom šablony:" FontWeight="SemiBold"/>
@@ -220,7 +220,7 @@
                     <TextBlock Grid.Row="6" Grid.Column="0" Text="Export náhledu jako PNG" Style="{StaticResource ActionText}"/>
                     <TextBlock Grid.Row="6" Grid.Column="1" Text="Menu Soubor" Style="{StaticResource ShortcutText}"/>
 
-                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Tisk reálných dat z Caché (multi-page)" Style="{StaticResource ActionText}"/>
+                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Tisk reálných dat z databáze (multi-page)" Style="{StaticResource ActionText}"/>
                     <TextBlock Grid.Row="7" Grid.Column="1" Text="Menu Soubor" Style="{StaticResource ShortcutText}"/>
                 </Grid>
 
@@ -478,7 +478,7 @@
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• Tabulky ze šablony:" FontWeight="SemiBold"/>
-                    <Run Text=" V editoru tabulky (Fixed mód) použijte tlačítko 'Ze šablony...' pro načtení předdefinovaných layoutů z Caché" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                    <Run Text=" V editoru tabulky (Fixed mód) použijte tlačítko 'Ze šablony...' pro načtení předdefinovaných layoutů z databáze" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
                 </TextBlock>
                 <TextBlock Margin="0,4,0,4">
                     <Run Text="• PDF export:" FontWeight="SemiBold"/>
