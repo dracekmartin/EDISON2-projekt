@@ -133,21 +133,71 @@
         <Grid Grid.Column="0" Grid.Row="1">
             <Grid.Resources>
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
+                <BooleanToVisibilityConverter x:Key="BoolToVis"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
-                    <!-- Color "" → UnsetValue → default Foreground; v DEBUG nastaveno agregací (stub/broken). -->
+                    <!-- Color "" → UnsetValue → default Foreground; v DEBUG nastaveno agregací (stub/broken).
+                         Tag = VM (z TabControl) — most pro ContextMenu mimo visual tree. -->
                     <TextBlock Text="{Binding DisplayedName}"
-                               Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                               Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"
+                               Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
+                        <TextBlock.ContextMenu>
+                            <ContextMenu>
+                                <!-- Hromadné přepnutí celé rodiny (např. MHD). Header dle IsFavorite
+                                     (= všechny moduly v ní oblíbené). Sem mohou přibýt další akce. -->
+                                <MenuItem Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Style>
+                                        <Style TargetType="MenuItem">
+                                            <Setter Property="Header" Value="Přidat vše do oblíbených"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                    <Setter Property="Header" Value="Odebrat vše z oblíbených"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </MenuItem.Style>
+                                </MenuItem>
+                            </ContextMenu>
+                        </TextBlock.ContextMenu>
+                    </TextBlock>
                 </HierarchicalDataTemplate>
                 <DataTemplate DataType="{x:Type modules:ExecutableModule}">
-                    <!-- Color "" → UnsetValue → fallback na default TextBlock Foreground z EDTheme. -->
-                    <TextBlock Text="{Binding DisplayedName}"
-                               Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                    <!-- Tag = VM (z TabControl DataContext) — most pro ContextMenu, který není ve visual tree. -->
+                    <StackPanel Orientation="Horizontal"
+                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
+                        <!-- Color "" → UnsetValue → fallback na default TextBlock Foreground z EDTheme. -->
+                        <TextBlock Text="{Binding DisplayedName}"
+                                   Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                        <!-- Zlatá ★ na konci názvu, jen u oblíbených (prázdná se nezobrazuje). -->
+                        <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="#FFC107" VerticalAlignment="Center"
+                                   Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVis}}"/>
+                        <StackPanel.ContextMenu>
+                            <ContextMenu>
+                                <!-- Toggle oblíbeného. Header dle IsFavorite (ContextMenu dědí DataContext = modul).
+                                     Command jde na VM přes PlacementTarget.Tag. Sem přibydou další akce nad modulem. -->
+                                <MenuItem Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
+                                    <MenuItem.Style>
+                                        <Style TargetType="MenuItem">
+                                            <Setter Property="Header" Value="Přidat do oblíbených"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFavorite}" Value="True">
+                                                    <Setter Property="Header" Value="Odebrat z oblíbených"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </MenuItem.Style>
+                                </MenuItem>
+                            </ContextMenu>
+                        </StackPanel.ContextMenu>
+                    </StackPanel>
                 </DataTemplate>
                 <Style TargetType="{x:Type TreeViewItem}">
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded}"/>
                 </Style>
             </Grid.Resources>
-            <TabControl>
+            <!-- Výchozí záložka: Oblíbené pokud nějaké jsou (kurátorství se vyplatí hned), jinak Hlavní nabídka. -->
+            <TabControl SelectedIndex="{Binding InitialTreeTabIndex, Mode=OneTime}">
                 <TabItem Header="Hlavní nabídka">
                     <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0">
                         <b:Interaction.Triggers>
@@ -177,6 +227,34 @@
                             </b:EventTrigger>
                         </b:Interaction.Triggers>
                     </TreeView>
+                </TabItem>
+                <TabItem Header="Oblíbené">
+                    <Grid>
+                        <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0">
+                            <b:Interaction.Triggers>
+                                <b:EventTrigger EventName="MouseDoubleClick">
+                                    <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
+                                                           CommandParameter="{Binding SelectedItem, ElementName=FavoritesTreeView}"/>
+                                </b:EventTrigger>
+                            </b:Interaction.Triggers>
+                        </TreeView>
+                        <!-- Empty-state coaching — nenucená pobídka k používání oblíbených. -->
+                        <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
+                                   Margin="16" TextWrapping="Wrap" VerticalAlignment="Top"
+                                   Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                   Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“ (nebo ho připněte v záložce Používané) — zobrazí se jen ty, které opravdu potřebujete."/>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Používané">
+                    <ListBox x:Name="UsedModulesList" ItemsSource="{Binding UsedModules}" BorderThickness="0"
+                             HorizontalContentAlignment="Stretch">
+                        <b:Interaction.Triggers>
+                            <b:EventTrigger EventName="MouseDoubleClick">
+                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
+                                                       CommandParameter="{Binding SelectedItem, ElementName=UsedModulesList}"/>
+                            </b:EventTrigger>
+                        </b:Interaction.Triggers>
+                    </ListBox>
                 </TabItem>
             </TabControl>
         </Grid>

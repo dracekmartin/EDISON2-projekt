@@ -38,6 +38,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private MiniAppManager? _miniAppManager;
 
         public ICommand OpenModuleCommand { get; }
+        public ICommand ToggleFavoriteCommand { get; }
         public ICommand OpenInputFormTestCommand { get; }
         public ICommand OpenEDListTestCommand { get; }
         public ICommand OpenEDComponentAndViewModelTestCommand { get; }
@@ -144,6 +145,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _miniAppCatalog = miniAppCatalog;
 
             OpenModuleCommand        = Command<IModule>(OpenModule);
+            ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
             OpenEDComponentAndViewModelTestCommand = Command(() => WindowNavigator.ShowDialog(new EDCompTestWnd()));
@@ -188,6 +190,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             MainMenuTree = [];
             SystemAdminTree = [];
             PartnerSolutionsTree = [];
+            FavoritesTree = [];
+            UsedModules = [];
 
             // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
@@ -210,6 +214,38 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _services.ActiveLicence = licence;
             _services.AccessTable = AccessLoader.Load(MLRest!, licence, _services.IsAdmin);
             LoadAndFilterTrees();
+            LoadPersonalization();
+        }
+
+        // Oblíbené + používanost jsou per-user × IDFa → načítají se po (pře)stavbě stromů.
+        // _modulePrefs se vytváří tady (ne v ctoru), aby reflektoval případnou výměnu UserPrefs po switch-user.
+        private void LoadPersonalization()
+        {
+            _modulePrefs = new ModulePreferencesService(UserPrefs);
+            _favoriteIds = [.. _modulePrefs.LoadFavorites()];
+            _usage = _modulePrefs.LoadUsage();
+
+            foreach (var exe in AllExecutables())
+                exe.IsFavorite = _favoriteIds.Contains(exe.ElementId);
+
+            RefreshFamilyFavoriteFlags();
+            RebuildFavoritesTree();
+            RebuildUsedList();
+        }
+
+        private void RebuildFavoritesTree()
+        {
+            FavoritesTree.Clear();
+            foreach (var root in BuildFavoritesTree([MainMenuTree, SystemAdminTree, PartnerSolutionsTree], _favoriteIds))
+                FavoritesTree.Add(root);
+            OnPropertyChanged(nameof(HasNoFavorites));
+        }
+
+        private void RebuildUsedList()
+        {
+            UsedModules.Clear();
+            foreach (var module in BuildUsedList([MainMenuTree, SystemAdminTree, PartnerSolutionsTree], _usage, UsedModulesCap))
+                UsedModules.Add(module);
         }
 
         // Stromy i licenční gating jsou per-IdFa, takže po přepnutí firmy refresh všech tří.
@@ -291,6 +327,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ObservableCollection<IModule> SystemAdminTree { get; }
         public ObservableCollection<IModule> PartnerSolutionsTree { get; }
 
+        /// <summary>Ořezaný strom jen s oblíbenými (ruční ★) — zachovává hierarchii hlavních stromů.</summary>
+        public ObservableCollection<IModule> FavoritesTree { get; }
+
+        /// <summary>Žebříček nejpoužívanějších modulů (automaticky dle počtu spuštění × recency).</summary>
+        public ObservableCollection<ExecutableModule> UsedModules { get; }
+
+        /// <summary>Pro empty-state coaching v záložce Oblíbené.</summary>
+        public bool HasNoFavorites => FavoritesTree.Count == 0;
+
+        // Pořadí záložek: 0 Hlavní nabídka, 1 Správa systému, 2 Partnerská řešení, 3 Oblíbené, 4 Používané.
+        /// <summary>Výchozí záložka: Oblíbené (3) pokud nějaké jsou, jinak Hlavní nabídka (0). OneTime binding.</summary>
+        public int InitialTreeTabIndex => HasNoFavorites ? 0 : 3;
+
+        // Per-user × IDFa stav (oblíbené + používanost). _modulePrefs se re-vytváří v RebuildSessionState
+        // (UserPrefs se může po switch-user vyměnit). Stromové leaf instance se sdílí napříč kolekcemi.
+        private ModulePreferencesService _modulePrefs = null!;
+        private HashSet<string> _favoriteIds = [];
+        private Dictionary<string, UsageEntry> _usage = [];
+        private const int UsedModulesCap = 20;
+
         public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 
         private int _selectedCompanyIndex;
@@ -342,7 +398,159 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void OpenModule(IModule module)
         {
             if (module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em)
+            {
                 WindowNavigator.ShowLegacy(path, em.FormName, inputParam: em.InputParam);
+                RecordUsage(em);
+            }
+        }
+
+        // Přepnutí oblíbeného. EXE = toggle jednoho ElementId; FAMILY = hromadně všechny moduly v ní
+        // (přidá vše, pokud nejsou všechny oblíbené; jinak vše odebere). Hlavní stromy se nepřestavují
+        // (jen flip IsFavorite) → rozbalení/výběr zůstávají; přestaví se jen záložka Oblíbené.
+        private void ToggleFavorite(IModule module)
+        {
+            switch (module)
+            {
+                case ExecutableModule { ElementId: { Length: > 0 } id }:
+                    SetFavorites([id], add: !_favoriteIds.Contains(id));
+                    break;
+
+                case ModuleFamily family:
+                    var ids = Flatten(family).Select(e => e.ElementId).Where(x => x.Length > 0).Distinct().ToList();
+                    if (ids.Count == 0) return;
+                    SetFavorites(ids, add: !ids.All(_favoriteIds.Contains));
+                    break;
+            }
+        }
+
+        private void SetFavorites(IReadOnlyCollection<string> ids, bool add)
+        {
+            foreach (var id in ids)
+                if (add) _favoriteIds.Add(id);
+                else _favoriteIds.Remove(id);
+
+            var changed = ids.ToHashSet();
+            foreach (var exe in AllExecutables().Where(e => changed.Contains(e.ElementId)))
+                exe.IsFavorite = add;
+
+            RefreshFamilyFavoriteFlags();
+            RebuildFavoritesTree();
+            _ = _modulePrefs.SaveFavoritesAsync(_favoriteIds);
+        }
+
+        // Nastaví ModuleFamily.IsFavorite = "všichni potomci oblíbení" napříč hlavními stromy (řídí text
+        // kontextového menu rodiny). Vrací, zda je uzel plně oblíbený (rekurzivní agregace).
+        private void RefreshFamilyFavoriteFlags()
+        {
+            foreach (var tree in new[] { MainMenuTree, SystemAdminTree, PartnerSolutionsTree })
+                foreach (var node in tree)
+                    UpdateFamilyFavorite(node);
+        }
+
+        private static bool UpdateFamilyFavorite(IModule module)
+        {
+            switch (module)
+            {
+                case ExecutableModule exe:
+                    return exe.IsFavorite;
+                case ModuleFamily family:
+                    bool any = false, all = true;
+                    foreach (var child in family.NestedModules)
+                    {
+                        any = true;
+                        if (!UpdateFamilyFavorite(child)) all = false;
+                    }
+                    family.IsFavorite = any && all;
+                    return family.IsFavorite;
+                default:
+                    return false;
+            }
+        }
+
+        private void RecordUsage(ExecutableModule module)
+        {
+            if (module.ElementId.Length == 0) return;
+
+            var entry = _usage.TryGetValue(module.ElementId, out var prev) ? prev : new UsageEntry();
+            _usage[module.ElementId] = entry with { Count = entry.Count + 1, LastUsedUtc = DateTime.UtcNow };
+
+            RebuildUsedList();
+            _ = _modulePrefs.SaveUsageAsync(_usage);
+        }
+
+        // Všechny EXE instance napříč hlavními stromy. FavoritesTree i UsedModules sdílí tytéž instance,
+        // takže stačí projít hlavní tři stromy (flip IsFavorite se projeví všude).
+        private IEnumerable<ExecutableModule> AllExecutables() =>
+            new[] { MainMenuTree, SystemAdminTree, PartnerSolutionsTree }.SelectMany(t => t).SelectMany(Flatten);
+
+        private static IEnumerable<ExecutableModule> Flatten(IModule module) => module switch
+        {
+            ExecutableModule exe => [exe],
+            ModuleFamily family  => family.NestedModules.SelectMany(Flatten),
+            _                    => [],
+        };
+
+        /// <summary>
+        /// Ořezané stromy jen s oblíbenými listy (predikát <c>favoriteIds.Contains(ElementId)</c>).
+        /// Zachovává hierarchii, prázdné rodiny se vynechají. Listy se SDÍLEJÍ (ne kopírují) s hlavními
+        /// stromy — přepnutí IsFavorite se projeví v obou. Rodiny jsou nové (rozbalené pro přehled).
+        /// </summary>
+        internal static List<IModule> BuildFavoritesTree(
+            IEnumerable<IEnumerable<IModule>> sourceTrees, ISet<string> favoriteIds)
+        {
+            var roots = new List<IModule>();
+            foreach (var tree in sourceTrees)
+                foreach (var node in tree)
+                    if (PruneToFavorites(node, favoriteIds) is { } kept)
+                        roots.Add(kept);
+            return roots;
+        }
+
+        private static IModule? PruneToFavorites(IModule module, ISet<string> favoriteIds) => module switch
+        {
+            ExecutableModule exe => favoriteIds.Contains(exe.ElementId) ? exe : null,
+            ModuleFamily family  => PruneFamily(family, favoriteIds),
+            _                    => null,
+        };
+
+        private static ModuleFamily? PruneFamily(ModuleFamily family, ISet<string> favoriteIds)
+        {
+            var kept = family.NestedModules
+                .Select(child => PruneToFavorites(child, favoriteIds))
+                .Where(child => child != null)
+                .ToList();
+
+            if (kept.Count == 0) return null;
+
+            // V záložce Oblíbené rodina zobrazuje jen oblíbené potomky → je „plně oblíbená" (řídí text menu).
+            var pruned = new ModuleFamily { DisplayedName = family.DisplayedName, IsExpanded = true, Color = family.Color, IsFavorite = true };
+            foreach (var child in kept) pruned.NestedModules.Add(child!);
+            return pruned;
+        }
+
+        /// <summary>
+        /// Plochý žebříček nejpoužívanějších modulů: řazení dle počtu spuštění (desc), tie-break dle
+        /// posledního použití (desc), cap na <paramref name="cap"/>. Mapuje na EXISTUJÍCÍ leaf instance
+        /// z hlavních stromů — tím respektuje aktuální licenci/přístup (nezobrazený modul se přeskočí)
+        /// a sdílí IsFavorite. Každý ElementId právě jednou.
+        /// </summary>
+        internal static List<ExecutableModule> BuildUsedList(
+            IEnumerable<IEnumerable<IModule>> sourceTrees, IReadOnlyDictionary<string, UsageEntry> usage, int cap)
+        {
+            var byElementId = new Dictionary<string, ExecutableModule>();
+            foreach (var tree in sourceTrees)
+                foreach (var node in tree)
+                    foreach (var exe in Flatten(node))
+                        if (exe.ElementId.Length > 0)
+                            byElementId.TryAdd(exe.ElementId, exe);
+
+            return usage
+                .Where(kv => byElementId.ContainsKey(kv.Key))
+                .OrderByDescending(kv => kv.Value.Count)
+                .ThenByDescending(kv => kv.Value.LastUsedUtc)
+                .Take(cap)
+                .Select(kv => byElementId[kv.Key])
+                .ToList();
         }
 
         private void ExitApplication()

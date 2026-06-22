@@ -1,8 +1,9 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
-    class ModuleFamily : IModule
+    class ModuleFamily : IModule, INotifyPropertyChanged
     {
         public string DisplayedName { get; set; } = "";
 
@@ -16,5 +17,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// agregací stavu dětí (sbalená rodina pak signalizuje stub/broken bez rozbalení).
         /// </summary>
         public string Color { get; set; } = "";
+
+        private bool _isFavorite;
+
+        /// <summary>
+        /// True když jsou VŠECHNY podřízené moduly oblíbené (agreguje VM přes RefreshFamilyFavoriteFlags).
+        /// Řídí text kontextového menu rodiny (Přidat/Odebrat vše). Observable kvůli live aktualizaci.
+        /// </summary>
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            set
+            {
+                if (_isFavorite == value) return;
+                _isFavorite = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFavorite)));
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

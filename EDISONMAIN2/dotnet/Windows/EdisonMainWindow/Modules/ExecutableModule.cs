@@ -1,6 +1,8 @@
+using System.ComponentModel;
+
 namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
-    public record ExecutableModule : IModule
+    public record ExecutableModule : IModule, INotifyPropertyChanged
     {
         public string DisplayedName { get; init; } = "";
 
@@ -29,5 +31,25 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <c>.exe</c>; <c>"#FF0000"</c> (červená) = exe vyplněné, ale soubor chybí.
         /// </summary>
         public string Color { get; init; } = "";
+
+        private bool _isFavorite;
+
+        /// <summary>
+        /// Jediná mutable/observable property — uživatelovo „oblíbené" označení. Přepíná se in-place
+        /// (hvězdička), takže nevyžaduje rebuild stromu. Instance se sdílí mezi hlavním stromem,
+        /// záložkou Oblíbené a žebříčkem Používané → přepnutí jednou se projeví všude.
+        /// </summary>
+        public bool IsFavorite
+        {
+            get => _isFavorite;
+            set
+            {
+                if (_isFavorite == value) return;
+                _isFavorite = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsFavorite)));
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
     }
 }

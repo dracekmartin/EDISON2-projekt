@@ -281,6 +281,18 @@ if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
 
 **Stav:** ✅ Wave 1.5 (2026-05-20).
 
+### `EDISONMAIN2` — Typ 2 (oblíbené + používanost stromu modulů)
+
+| Key | Typ | Schema | Owner |
+|---|---|---|---|
+| `"Favorites"` | 2 | `List<string>` — ElementId oblíbených modulů (ruční ★) v pořadí připnutí | `EDISONMAIN2.Windows.EdisonMainWindow.Modules.ModulePreferencesService` |
+| `"ModuleUsage"` | 2 | `Dictionary<string, UsageEntry>` — ElementId → `{ Count, LastUsedUtc }` (automaticky při spuštění modulu) | `ModulePreferencesService` |
+
+Záložky „Oblíbené" (ořezaný strom dle Favorites) a „Používané" (žebříček dle ModuleUsage)
+v hlavním shellu. ElementId = numerické ID z EDISFormEnum (string).
+
+**Stav:** ✅ Implementováno (2026-06-22).
+
 ### Záměrně skipnuté
 
 | Scope/key | Důvod skipu |
