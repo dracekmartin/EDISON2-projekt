@@ -1370,6 +1370,7 @@ public partial class MainWindow : Window
         // Tab „Obecné" (EDInputForm) + per-column styly + hour style — jako jeden undo krok.
         var cmds = new List<Commands.IDesignerCommand>();
         if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
+        cmds.AddRange(dlg.StyleCommands);   // pod-formuláře stylu (tlačítka „Styl…")
         if (availableGroups.Count > 0)
             cmds.Add(new Commands.Implementations.SetPropertyCommand(
                 "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-06-22 — Stylový pod-formulář přes CellStyleEditor (Fáze 2 — prototyp, 1 zóna)
+
+- ✅ **`StyleEditDialog` + `StyleEditDialogViewModel`** — znovupoužitelný pod-formulář pro editaci
+  JEDNOHO TextStyle (zóny) libovolného elementu přes sdílený **`CellStyleEditor`** (tri-state →
+  zděděné hodnoty jako **šedý placeholder**, rozlišuje dědí/explicit, reset). VM čte/zapisuje styl
+  reflexí dle prefixu; OnOk → `SetPropertyCommand` (undo). **Nikdy nezapíše null** (nenullovatelný
+  HeaderStyle by spadl) — prázdná zóna = nový prázdný TextStyle / žádný command.
+- ✅ **EDInputForm `ButtonClicked` event** (EDControls, aditivní) — klik na BUTTON pole dá hostu klíč
+  → client-side akce (otevřít pod-formulář). Doplňuje server-side Validate.
+- ✅ **Odjezdy „Styl záhlaví" → tlačítka** — HeaderStyle + 2. řádek balíčky (~30 polí) nahrazeny
+  tlačítky „Upravit styl…" → pod-formulář. Hlavní „Obecné" se odlehčí. Commandy keyované prefixem
+  (opakované otevření zóny nahradí) → aplikují se v parent OK jako jeden undo krok.
+- **Prototyp:** jen zóna Styl záhlaví u Odjezdů; ostatní zóny + StopList zatím inline. `StyleEdit.cls`
+  (Caché varianta A) ponechán jako nepoužitý server-side fallback. **Dál:** rozšířit na všechny zóny
+  + StopList, pak uklidit. Detaily v roadmap (Fáze 2 — stylový pod-formulář).
+
 ## 2026-06-22 — Odjezdy „Obecné" → EDInputForm (Fáze 1, krok 4 — C# rewire) ✅ Fáze 1 hotová
 
 - ✅ **Tab „Obecné" dialogu Odjezdů → `<eif:EDInputForm>`** (schéma `DepartureGridElementEdit`) místo

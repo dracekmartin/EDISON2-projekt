@@ -46,10 +46,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddNumber("TimeAxisRangeFrom", "Hodiny od", 0, 0, 23)
         s f = form.AddNumber("TimeAxisRangeTo", "Hodiny do", 23, 0, 23)
 
-        // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "")
+        // ── Styl záhlaví ──────────────────────────────────────────────────
+        // PROTOTYP: styl jako tlačítko → pod-formulář (StyleEditDialog). Klíč „style:<prefix>"
+        // (ne property path) → ElementFormBinder ho ignoruje; C# host z něj vytáhne prefix.
+        d form.AddGroup("hstyle", "Styl záhlaví")
+        s f = form.AddFieldToLastGroup("style:HeaderStyle", "Styl záhlaví", $$$FieldTypeButton, 0, 0)
+        s f.value = "Upravit styl…"
         d form.AddDecimal("SkupinaDnuHeaderLineHeight", "Min. výška řádku záhlaví", 4, 2, 10, "mm")
-        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderLine2Style", "", "", "", "", 0, "2. řádek: ")
+        s f = form.AddFieldToLastGroup("style:HeaderLine2Style", "Styl 2. řádku nadpisu", $$$FieldTypeButton, 0, 0)
+        s f.value = "Upravit styl…"
 
         // Styl datových buněk: DataStyle = báze (minuty i hodinová čísla z ní dědí),
         // MinuteStyle = minutový override navrch (prefix „Minuta:").

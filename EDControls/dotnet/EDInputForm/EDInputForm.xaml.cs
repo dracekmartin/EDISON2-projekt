@@ -189,6 +189,10 @@ namespace EDControls.EDInputForm
         /// </summary>
         public event Action? Initialized;
 
+        /// <summary>Klik na BUTTON pole — host dostane klíč pole a může spustit client-side akci
+        /// (např. otevřít sub-dialog). Doplňuje server-side Validate (ValidateOnChange).</summary>
+        public event Action<string>? ButtonClicked;
+
         /// <summary>
         /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
         /// validaci pro naplnění případných výchozích chyb. Použije <see cref="InitParams"/>
@@ -490,8 +494,8 @@ namespace EDControls.EDInputForm
         private void ButtonField_Click(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
-            if (!field.ValidateOnChange) return;
-            Controller.Validate(field.Key);
+            ButtonClicked?.Invoke(field.Key);                 // client-side akce (host)
+            if (field.ValidateOnChange) Controller.Validate(field.Key);   // server-side akce
         }
 
         // ─── File browse ──────────────────────────────────────────────────────────

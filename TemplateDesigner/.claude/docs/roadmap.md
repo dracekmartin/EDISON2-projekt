@@ -433,6 +433,14 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ### 🟢 Menší priorita — UX polish
 
+- **Fáze 2 — stylový pod-formulář (rozšířit + uklidit)** — 🟡 prototyp 2026-06-22 (1 zóna). Hotovo:
+  `StyleEditDialog` + `StyleEditDialogViewModel` (generický pod-formulář pro 1 TextStyle přes sdílený
+  `CellStyleEditor` — tri-state zděděné placeholdery), EDInputform `ButtonClicked` event (EDControls),
+  Odjezdy „Styl záhlaví" → tlačítka „Upravit styl…". **Zbývá:** (1) rozšířit na všechny zóny Odjezdů
+  (DataStyle/MinuteStyle/Anotace symboly+text) + **StopList** (HeaderStyle/DataStyle) → hlavní „Obecné"
+  všude = scaláry + tlačítka „Styl…"; (2) uklidit — `StyleEdit.cls` (nepoužitá Caché varianta A),
+  zvážit zda `StyleFields` helper zůstane (inline zóny) nebo se styl celý přesune na CellStyleEditor;
+  (3) drobnost: pod-formulář aplikuje na parent OK (akumulace keyovaná prefixem) — OK.
 - **Export: extrahovat členění + název souboru výš** — `__EXPORT_SPLIT` + `__EXPORT_FILENAME` jsou
   zatím export pole v tiskovém EDInputformu (`AgendaParams`, persistence per-agenda přes `PrintParams`,
   ✅ 2026-06-22). Do budoucna zvážit přesun na úroveň **`Template`** (perzistuje se šablonou jako
@@ -442,12 +450,10 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
   počítá až při exportu reálných dat (`PreviewCanvas.CountOverflowingPages` → hláška „⚠ X z N stránek
   přetéká"). Kdyby zákazníci chtěli, přidat samostatné tlačítko „Zkontrolovat přetečení" v `PrintDialog`,
   které fetchne data a vypíše počet bez generování PDF. Zatím YAGNI.
-- **Sjednotit API editoru sloupců** (po demu) — StopList / DepartureGrid / TableElement mají
-  každý vlastní column VM (`StopColumnVM` / `DepartureGroupColumnVM` / `ColumnVM`, jen
-  `INotifyPropertyChanged`, bez společného základu) a vlastní list XAML → drift (mm/tečka se
-  zobrazují nekonzistentně). Stylová část už sdílená je (`CellStyleEditor`). Cíl: `IColumnRowVM`
-  (`DisplayName`/`Visible`/`HasAnyOverride`/`Width?`) + sdílený `ColumnListEditor` UserControl
-  (mm jen když `Width != null`). Element-specifika (Field/Format, group) zůstanou v detail panelu.
+- **Sjednotit API editoru sloupců** — ✅ **HOTOVO (Fáze 1, 2026-06-22)** pro StopList + DepartureGrid:
+  `IColumnRowVM` (`DisplayName`/`Visible`/`HasAnyOverride`/`ColumnWidth?`) + sdílený `ColumnListEditor`.
+  **Zbývá:** TableElement (má vlastní DataGrid editor sloupců — záměrná výjimka, sjednotit jen pokud
+  bude potřeba).
 
 ---
 
