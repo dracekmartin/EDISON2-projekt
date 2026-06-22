@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-22 — EDInputForm 4-skupinová kostra + sdílený StyleFields helper (Fáze 1, krok 4 — Caché část)
+
+- ✅ **Sdílený `ALVA.TemplateDesigner.EDInputForm.StyleFields.Add`** — jediný zdroj „balíčku" polí
+  stylu textu (Font/Velikost/Tučné/Kurzíva/Podtržení/Přeškrtnutí/Zarovnání H+V/Barvy/Padding/Řádkování)
+  pro daný property-path prefix. Volitelně append do poslední skupiny + prefix labelů (víc zón
+  v jedné skupině). Nové pole stylu stačí přidat zde → propíše se do všech zón i elementů.
+- ✅ **`StopListElementEdit` přeskupeno** do 4-skupinové kostry: **Obecné · Styl záhlaví · Styl
+  datových buněk · [Element]-specifické** (+ Pozice/Podmínky). Stylové skupiny přes helper.
+  Stejné property-path klíče → chování zachované (jen seskupení); „Řádky" sloučeno do Obecné,
+  „Zastávky/Směr/Zvýraznění" do „Zastávky — specifické".
+- ✅ **`DepartureGridElementEdit`** — nové schéma ve stejné kostře (Obecné / Styl záhlaví +2.řádek /
+  Styl datových buněk = minuty / Odjezdy — specifické = anotace symboly+text přes prefix labelů).
+  `HeaderStyle.VAlign` primární (HeaderVerticalAlignment fallback), `TimeAxisMode` = enum názvy.
+  **Zatím nenapojené** na dialog — čeká na C# rewire (lazy HeaderLine2 alloc, collapse legacy
+  scalárů, SetHeaderFontSize cleanup v Init/OnOk).
+- Standard: „Obecné = EDInputForm" pro jednoduché elementy; TableElement (DataGrid) je výjimka.
+
 ## 2026-06-22 — Auto + override šířka sloupců (Fáze 1, krok 2b)
 
 - ✅ **StopList — nullable šířka (`StopColumn.Width` → `float?`)** — prázdné = **auto** (rovnoměrně

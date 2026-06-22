@@ -26,58 +26,15 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         d form.AddDecimal("BorderWidth", "Šířka rámečku", 0, 0, 5, "mm")
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
-
-        // ── Styl záhlaví ──────────────────────────────────────────────────
-        d form.AddGroup("hstyle", "Styl záhlaví")
-        d form.AddText("HeaderStyle.FontFamily", "Font")
-        s f = form.AddDecimal("HeaderStyle.FontSize", "Velikost", "", 4, 200, "pt")
-        d form.AddBool("HeaderStyle.Bold", "Tučné", 0)
-        d form.AddBool("HeaderStyle.Italic", "Kurzíva", 0)
-        d form.AddBool("HeaderStyle.Underline", "Podtržení", 0)
-        d form.AddBool("HeaderStyle.Strikethrough", "Přeškrtnutí", 0)
-        s f = form.AddFieldToLastGroup("HeaderStyle.HAlign", "Zarovnání", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Left", "Vlevo"), f.AddListItem("Center", "Na střed"), f.AddListItem("Right", "Vpravo")
-        s f = form.AddFieldToLastGroup("HeaderStyle.VAlign", "Svisle", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
-        s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF000000"
-        s f = form.AddFieldToLastGroup("HeaderStyle.BackgroundColor", "Pozadí", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FFE0E0E0"
-        d form.AddDecimal("HeaderStyle.PaddingTop", "Vnitřní okraj nahoře", "", 0, 20, "mm")
-        d form.AddDecimal("HeaderStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
-        d form.AddDecimal("HeaderStyle.PaddingBottom", "Vnitřní okraj dole", "", 0, 20, "mm")
-        d form.AddDecimal("HeaderStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
-        d form.AddDecimal("HeaderStyle.LineSpacing", "Řádkování", "", 0.5, 3, "")
-
-        // ── Styl datových buněk ───────────────────────────────────────────
-        d form.AddGroup("dstyle", "Styl datových buněk")
-        d form.AddText("DataStyle.FontFamily", "Font")
-        s f = form.AddDecimal("DataStyle.FontSize", "Velikost", "", 4, 200, "pt")
-        d form.AddBool("DataStyle.Bold", "Tučné", 0)
-        d form.AddBool("DataStyle.Italic", "Kurzíva", 0)
-        d form.AddBool("DataStyle.Underline", "Podtržení", 0)
-        d form.AddBool("DataStyle.Strikethrough", "Přeškrtnutí", 0)
-        s f = form.AddFieldToLastGroup("DataStyle.HAlign", "Zarovnání", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Left", "Vlevo"), f.AddListItem("Center", "Na střed"), f.AddListItem("Right", "Vpravo")
-        s f = form.AddFieldToLastGroup("DataStyle.VAlign", "Svisle", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Top", "Nahoře"), f.AddListItem("Middle", "Na střed"), f.AddListItem("Bottom", "Dole")
-        s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu", $$$FieldTypeColor, 0, 0)
-        s f.value = "#FF000000"
-        s f = form.AddFieldToLastGroup("DataStyle.BackgroundColor", "Pozadí", $$$FieldTypeColor, 0, 0)
-        s f.value = "#00FFFFFF"
-        d form.AddDecimal("DataStyle.PaddingTop", "Vnitřní okraj nahoře", "", 0, 20, "mm")
-        d form.AddDecimal("DataStyle.PaddingRight", "Vnitřní okraj vpravo", "", 0, 20, "mm")
-        d form.AddDecimal("DataStyle.PaddingBottom", "Vnitřní okraj dole", "", 0, 20, "mm")
-        d form.AddDecimal("DataStyle.PaddingLeft", "Vnitřní okraj vlevo", "", 0, 20, "mm")
-        d form.AddDecimal("DataStyle.LineSpacing", "Řádkování", "", 0.5, 3, "")
-
-        // ── Datové buňky ──────────────────────────────────────────────────
-        d form.AddGroup("data", "Řádky")
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
         d form.AddBool("ShowRowSeparators", "Oddělovací čáry", 0)
 
-        // ── Zastávky ──────────────────────────────────────────────────────
-        d form.AddGroup("stops", "Zastávky")
+        // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF000000", "#FFE0E0E0")
+        d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "DataStyle", "dstyle", "Styl datových buněk", "#FF000000", "#00FFFFFF")
+
+        // ── Zastávky — specifické (značky, směr, zvýraznění) ──────────────
+        d form.AddGroup("stops", "Zastávky — specifické")
         d form.AddBool("ShowStopIndentation", "Odsazení", 1)
         d form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
@@ -85,20 +42,14 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
-
-        // ── Směr jízdy ────────────────────────────────────────────────────
-        d form.AddGroup("direction", "Směr jízdy")
         d form.AddBool("ShowDirectionArrow", "Šipka směru", 0)
         s f = form.AddFieldToLastGroup("DirectionArrowPosition", "Pozice šipky", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Right", "Vpravo"), f.AddListItem("Left", "Vlevo")
         s f = form.AddFieldToLastGroup("DirectionArrowColor", "Barva šipky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         d form.AddBool("DirectionArrowBold", "Tučná šipka", 0)
-
-        // ── Zvýraznění aktuální zastávky ──────────────────────────────────
-        d form.AddGroup("highlight", "Zvýraznění aktuální zastávky")
-        d form.AddBool("CurrentStopUnderline", "Podtržení aktuální", 1)
-        d form.AddBool("CurrentStopBold", "Tučně aktuální", 1)
+        d form.AddBool("CurrentStopUnderline", "Podtržení aktuální zast.", 1)
+        d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
         s f = form.AddDecimal("CurrentStopFontSize", "Font aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
         s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         d form.AddBool("ShowPassedStops", "Projeté zastávky", 0)
