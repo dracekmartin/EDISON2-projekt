@@ -22,10 +22,10 @@ namespace EDControls.EDInputForm
 
         /// <summary>
         /// Header skupiny je viditelný pro Visible i Collapsed (zachová možnost rozbalení).
-        /// Skrytý jen pro UserHidden / ProgrammerHidden.
+        /// Skrytý pro UserHidden / ProgrammerHidden nebo když skupina neprošla search filtrem.
         /// </summary>
         public override WpfVisibility EffectiveVisibility =>
-            Visibility is EItemVisibility.Visible or EItemVisibility.Collapsed
+            !IsFilteredBySearch && Visibility is EItemVisibility.Visible or EItemVisibility.Collapsed
                 ? WpfVisibility.Visible
                 : WpfVisibility.Collapsed;
     }

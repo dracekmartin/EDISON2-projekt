@@ -847,4 +847,82 @@ public class EDInputFormParsingTests
         var field = new Field { Required = true, FieldType = EFieldType.Bool, Value = value };
         Assert.Null(field.GetRequiredError());
     }
+
+    // ─── ComputeSearchMatches tests (hledání podle pole i názvu sekce) ────────
+
+    private static (List<Group> groups, List<Field> fields) BuildTwoGroupForm()
+    {
+        var g1 = new Group { Number = 1, Key = "params", GroupName = "Parametry" };
+        var g2 = new Group { Number = 4, Key = "export", GroupName = "Export" };
+        var f1 = new Field { Number = 2, Key = "datum",  Label = "Datum platnosti", ParentGroup = g1 };
+        var f2 = new Field { Number = 3, Key = "linka",  Label = "Číslo linky",     ParentGroup = g1 };
+        var f3 = new Field { Number = 5, Key = "soubor", Label = "Název souboru",   ParentGroup = g2 };
+        return ([g1, g2], [f1, f2, f3]);
+    }
+
+    [Fact]
+    public void ComputeSearchMatches_FieldLabelMatch_ShowsOnlyMatchingField()
+    {
+        var (groups, fields) = BuildTwoGroupForm();
+
+        var matches = EDInputForm.EDInputForm.ComputeSearchMatches(groups, fields, "linky");
+
+        Assert.Equal("Číslo linky", Assert.Single(matches).Label);
+        Assert.False(fields[1].IsFilteredBySearch);          // Číslo linky prošlo
+        Assert.True(fields[0].IsFilteredBySearch);           // Datum platnosti odfiltrováno
+        Assert.True(fields[2].IsFilteredBySearch);           // Název souboru odfiltrováno
+        Assert.False(groups[0].IsFilteredBySearch);          // Parametry zůstávají (mají match)
+        Assert.True(groups[1].IsFilteredBySearch);           // Export zmizí
+    }
+
+    [Fact]
+    public void ComputeSearchMatches_GroupNameMatch_ShowsAllFieldsOfThatGroup()
+    {
+        var (groups, fields) = BuildTwoGroupForm();
+
+        var matches = EDInputForm.EDInputForm.ComputeSearchMatches(groups, fields, "parametry");
+
+        Assert.Equal(2, matches.Count);                      // obě pole skupiny Parametry
+        Assert.False(fields[0].IsFilteredBySearch);
+        Assert.False(fields[1].IsFilteredBySearch);
+        Assert.True(fields[2].IsFilteredBySearch);           // Export pole skryto
+        Assert.False(groups[0].IsFilteredBySearch);
+        Assert.True(groups[0].IsExpanded);                   // matchnutá skupina se rozbalí
+        Assert.True(groups[1].IsFilteredBySearch);
+    }
+
+    [Fact]
+    public void ComputeSearchMatches_GroupNameMatch_ExpandsCollapsedGroup()
+    {
+        var (groups, fields) = BuildTwoGroupForm();
+        groups[1].IsExpanded = false;                        // Export sbalený
+
+        EDInputForm.EDInputForm.ComputeSearchMatches(groups, fields, "export");
+
+        Assert.False(groups[1].IsFilteredBySearch);
+        Assert.True(groups[1].IsExpanded);                   // rozbalí se, ať je nalezené pole vidět
+        Assert.False(fields[2].IsFilteredBySearch);
+    }
+
+    [Fact]
+    public void ComputeSearchMatches_DiacriticsInsensitive()
+    {
+        var (groups, fields) = BuildTwoGroupForm();
+
+        var matches = EDInputForm.EDInputForm.ComputeSearchMatches(groups, fields, "cislo");
+
+        Assert.Equal("Číslo linky", Assert.Single(matches).Label);
+    }
+
+    [Fact]
+    public void ComputeSearchMatches_NoMatch_FiltersEverything()
+    {
+        var (groups, fields) = BuildTwoGroupForm();
+
+        var matches = EDInputForm.EDInputForm.ComputeSearchMatches(groups, fields, "xyzzy");
+
+        Assert.Empty(matches);
+        Assert.All(fields, f => Assert.True(f.IsFilteredBySearch));
+        Assert.All(groups, g => Assert.True(g.IsFilteredBySearch));
+    }
 }
