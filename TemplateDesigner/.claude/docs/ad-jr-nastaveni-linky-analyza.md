@@ -69,7 +69,7 @@ AD počítá sloupce z FTL + Plk + CNZ (MHD má `TypProvozuID` přímo). Čteno 
 | FTL rozvržení (0-3 sloupce) | `PATCH,"MHD_TYP_R"` | ✅ FTL 0-3 | ✅ FTL0/1 ověřeno |
 | NZ prázdninové dělení | `MHD_NZ1_NZ2`/`MHD_NENZ1_NENZ2` | 🟡 kód hotový, **dormant** (data prázdná) | 📄 |
 | Nevypisovat NZ ve sloupci (legenda) | `MHD_NEZNZ123` | ⬜ AD-N5 | 📄 |
-| Override nadpisů sloupců | `ISY_LinkyTiskMHDNadpisy` → `^JRSET` | ⬜ AD-N6 | 📄 |
+| Override nadpisů sloupců | `ISY_LinkyTiskMHDNadpisy` → `^JRSET` | ✅ AD-N6 (vlastnost elementu, `HeaderOverride`) | 📄 |
 | Jednosměrná linka | `linJEDNOSMERNA` | 🟡 ❓ | 📄 |
 
 ---

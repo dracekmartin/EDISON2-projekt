@@ -183,12 +183,18 @@ public class DepartureGroupColumnStyle
     /// <summary>Per-group zebra barva (alternating rows). Null = použít globální AlternatingRowColor.</summary>
     public string? AlternatingRowColor { get; set; }
 
+    /// <summary>Override nadpisu skupiny dnů v šabloně. Prázdné/null = nadpis z dat
+    /// (<see cref="SkupinaDnuData.Nadpis"/>); neprázdné → přebije ho. Řeší
+    /// <see cref="Rendering.ColumnHeader.Resolve"/> jednotně s ostatními tabulkovými komponentami.</summary>
+    public string? HeaderOverride { get; set; }
+
     public DepartureGroupColumnStyle Clone() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
         IsVisible = IsVisible,
         Style = Style.Clone(),
-        AlternatingRowColor = AlternatingRowColor
+        AlternatingRowColor = AlternatingRowColor,
+        HeaderOverride = HeaderOverride
     };
 }
 

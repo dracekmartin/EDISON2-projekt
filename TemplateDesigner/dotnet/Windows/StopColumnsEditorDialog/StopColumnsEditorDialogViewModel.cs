@@ -10,7 +10,7 @@ namespace TemplateDesigner;
 
 // ─── ViewModel pro řádek sloupce ────────────────────────────────────────────
 
-public class StopColumnVM : INotifyPropertyChanged
+public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 {
     private string _key = "";
     private string _header = "";
@@ -19,10 +19,14 @@ public class StopColumnVM : INotifyPropertyChanged
     private string _alignmentLabel = "Vlevo";
 
     public string Key            { get => _key;            set { _key = value;            OnChanged(); } }
-    public string Header         { get => _header;         set { _header = value;         OnChanged(); } }
-    public float  Width          { get => _width;          set { _width = value;          OnChanged(); } }
+    public string Header         { get => _header;         set { _header = value;         OnChanged(); OnChanged(nameof(DisplayName)); } }
+    public float  Width          { get => _width;          set { _width = value;          OnChanged(); OnChanged(nameof(ColumnWidth)); } }
     public bool   Visible        { get => _visible;        set { _visible = value;        OnChanged(); } }
     public string AlignmentLabel { get => _alignmentLabel; set { _alignmentLabel = value; OnChanged(); } }
+
+    // IColumnRowVM — sdílený seznam sloupců
+    public string  DisplayName => Header;
+    public float?  ColumnWidth => Width;
 
     private CellStyleVM _headerStyle = null!;
     public CellStyleVM HeaderStyle
@@ -105,7 +109,6 @@ class StopColumnsEditorDialogViewModel : EDViewModel
 
     public ObservableCollection<StopColumnVM> ColumnVMs { get; } = [];
 
-    public string[] AlignmentOptions { get; } = ["Vlevo", "Střed", "Vpravo"];
     public float[] FontSizeOptions { get; } = [4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 24];
 
     // ── UI omezení editace — co CellStyleEditor zobrazí per zóna ─────────

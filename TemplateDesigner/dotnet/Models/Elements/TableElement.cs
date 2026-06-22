@@ -314,7 +314,7 @@ public class TableElement : TemplateElement
         {
             float colW = colWidths[i];
             var cellRect = new SKRect(colX, startY, colX + colW, startY + HeaderHeight);
-            CellRenderer.DrawCell(ctx, cellRect, cols[i].Header, headerStyles[i]);
+            CellRenderer.DrawCell(ctx, cellRect, Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i]);
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
             {

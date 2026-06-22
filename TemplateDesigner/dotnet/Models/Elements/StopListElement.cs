@@ -372,7 +372,7 @@ public class StopListElement : ScheduleElementBase
             for (int i = 0; i < columns.Count; i++)
             {
                 var col = columns[i];
-                specs[i] = new ColumnRenderer.CellSpec(col.Width, col.Header, ResolveHeaderStyle(col));
+                specs[i] = new ColumnRenderer.CellSpec(col.Width, Rendering.ColumnHeader.Resolve(col.Header, ""), ResolveHeaderStyle(col));
             }
             return specs;
         }
@@ -386,11 +386,11 @@ public class StopListElement : ScheduleElementBase
             {
                 var headerStyle = ResolveHeaderStyle(col);
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", headerStyle);
-                result[idx++] = new ColumnRenderer.CellSpec(col.Width - markersSubCellWidth, col.Header, headerStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(col.Width - markersSubCellWidth, Rendering.ColumnHeader.Resolve(col.Header, ""), headerStyle);
             }
             else
             {
-                result[idx++] = new ColumnRenderer.CellSpec(col.Width, col.Header, ResolveHeaderStyle(col));
+                result[idx++] = new ColumnRenderer.CellSpec(col.Width, Rendering.ColumnHeader.Resolve(col.Header, ""), ResolveHeaderStyle(col));
             }
         }
         return result;

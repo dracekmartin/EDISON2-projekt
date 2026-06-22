@@ -120,6 +120,10 @@ public class DepartureGridElement : ScheduleElementBase
     }
     private ColumnVisualStyle? _hourColumnStyle;
 
+    /// <summary>Override nadpisu sloupce hodin v šabloně. Prázdné = výchozí „Hod"
+    /// (přes <see cref="Rendering.ColumnHeader.Resolve"/>, jednotně se skupinami i ostatními komponentami).</summary>
+    public string HourColumnHeader { get; set; } = "";
+
     public List<DepartureGroupColumnStyle> GroupColumns
     {
         get => _groupColumns;
@@ -174,7 +178,21 @@ public class DepartureGridElement : ScheduleElementBase
     private int ComputeLayoutFingerprint() => HashCode.Combine(
         HashCode.Combine(HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
             MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
-        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight));
+        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight),
+        GroupHeaderOverridesHash());
+
+    /// <summary>Hash override nadpisů skupin — override mění šířku/wrap záhlaví, takže musí
+    /// invalidovat layout cache (Count v hlavním fingerprintu to nezachytí).</summary>
+    private int GroupHeaderOverridesHash()
+    {
+        var h = new HashCode();
+        foreach (var gc in GroupColumns)
+        {
+            h.Add(gc.SkupinaDnuId);
+            h.Add(gc.HeaderOverride);
+        }
+        return h.ToHashCode();
+    }
 
     private GridLayout? ComputeLayout(DataContext? data, float mmToPx = 0f)
     {
@@ -195,6 +213,10 @@ public class DepartureGridElement : ScheduleElementBase
             _cachedLayoutDataRef = data;
             return null;
         }
+
+        // Override nadpisů skupin ze šablony (jednotně přes ColumnHeader.Resolve s ostatními
+        // tabulkovými komponentami). Aplikuje se PŘED měřením šířky a wrapem záhlaví.
+        targetSkupiny = ApplyHeaderOverrides(targetSkupiny);
 
         // Font pro měření textu záhlaví (default, přepíše se per-column)
         float effectiveMmToPx = mmToPx > 0 ? mmToPx : 3.78f;
@@ -636,7 +658,7 @@ public class DepartureGridElement : ScheduleElementBase
                 ? hourHeaderStyle with { BackgroundColor = bgColorOverride }
                 : hourHeaderStyle;
             var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledCombinedHeaderH);
-            CellRenderer.DrawCell(ctx, rect, "Hod", style, scale);
+            CellRenderer.DrawCell(ctx, rect, Rendering.ColumnHeader.Resolve(HourColumnHeader, "Hod"), style, scale);
         }
 
         // Nakreslí datovou buňku sloupce hodin přes CellRenderer.
@@ -1051,7 +1073,7 @@ public class DepartureGridElement : ScheduleElementBase
     {
         if (all.Count == 0) return [];
 
-        // GroupColumns má přednost — filtrovat podle IsVisible
+        // GroupColumns má přednost — filtruje podle IsVisible a určuje pořadí (přeskládání ▲▼ v editoru).
         if (GroupColumns.Count > 0)
         {
             var hidden = GroupColumns
@@ -1059,7 +1081,18 @@ public class DepartureGridElement : ScheduleElementBase
                 .Select(gc => gc.SkupinaDnuId)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var result = all.Where(s => !hidden.Contains(s.Id)).ToList();
+            // Pořadí dle GroupColumns; skupiny mimo seznam zachovají datové pořadí na konci.
+            var order = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < GroupColumns.Count; i++)
+                if (!order.ContainsKey(GroupColumns[i].SkupinaDnuId))
+                    order[GroupColumns[i].SkupinaDnuId] = i;
+
+            var result = all
+                .Where(s => !hidden.Contains(s.Id))
+                .Select((s, dataIdx) => (s, key: order.TryGetValue(s.Id, out var oi) ? oi : int.MaxValue, dataIdx))
+                .OrderBy(t => t.key).ThenBy(t => t.dataIdx)
+                .Select(t => t.s)
+                .ToList();
             return result.Count > 0 ? result : [all[0]];
         }
 
@@ -1076,6 +1109,31 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         return filtered.Count > 0 ? filtered : [all[0]];
+    }
+
+    /// <summary>Aplikuje per-group override nadpisu (<see cref="DepartureGroupColumnStyle.HeaderOverride"/>)
+    /// přes sdílený <see cref="Rendering.ColumnHeader.Resolve"/>. Když je override neprázdný, nahradí
+    /// celý nadpis skupiny (jeden text — dvouřádek z dat se použije jen bez override). Vrací stejný
+    /// seznam pokud žádný override není (žádná alokace navíc).</summary>
+    private List<SkupinaDnuData> ApplyHeaderOverrides(List<SkupinaDnuData> skupiny)
+    {
+        if (GroupColumns.Count == 0) return skupiny;
+        var lookup = GroupColumnIndexResolver.BuildStyleLookup(
+            GroupColumns, skupiny.Select(s => s.Id).ToList());
+        if (lookup.Count == 0) return skupiny;
+
+        List<SkupinaDnuData>? result = null;
+        for (int i = 0; i < skupiny.Count; i++)
+        {
+            var sk = skupiny[i];
+            lookup.TryGetValue(sk.Id, out var cs);
+            var effective = Rendering.ColumnHeader.Resolve(cs?.HeaderOverride, sk.Nadpis);
+            if (ReferenceEquals(effective, sk.Nadpis)) continue;   // bez override
+
+            result ??= new List<SkupinaDnuData>(skupiny);
+            result[i] = new SkupinaDnuData { Id = sk.Id, Nadpis = effective, Nadpis2 = "", Poradi = sk.Poradi };
+        }
+        return result ?? skupiny;
     }
 
     /// <summary>Vrátí dostupné skupiny dnů z naposledy zpracovaných dat (pro dialog).</summary>
@@ -1359,6 +1417,7 @@ public class DepartureGridElement : ScheduleElementBase
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
             HourColumnStyle            = HourColumnStyle?.Clone(),
+            HourColumnHeader           = HourColumnHeader,
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
             ColorRules                 = ColorRules.Select(r => r.Clone()).ToList(),
         };

@@ -106,7 +106,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 | AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ⬜ ⬅️ DALŠÍ |
 | AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ |
 | AD-N5 | §3 | `MHD_NEZNZ123` — potlačit NZ v legendě per sloupec | `PATCH,"MHD_NEZNZ123"` | M (váže na NZ legend, dnes dormant) | ⬜ |
-| AD-N6 | §3 | Override nadpisů sloupců | `PATCH,"ISY_LinkyTiskMHDNadpisy"` → `^JRSET` | M (nutno ověřit JRSET node) | ⬜ |
+| AD-N6 | §3 | Override nadpisů sloupců (skupin dnů) → TD vlastnost `HeaderOverride` (ne port `^JRSET`) | (TD vlastnost elementu) | S | ✅ 2026-06-22 |
 | AD-N7 | §5 | **Komentáře** (ruční poznámka linky + přiřazené spoje) | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | M-L | ✅ 2026-06-20 (Fáze 1) |
 | AD-N8 | §5 | **Spoje, nepoznámkovat** (gate ručního komentáře, 1:1 legacy) | `PATCH,"MHDSPNPZN"` (`odTC~doTC`) | M | ✅ 2026-06-20 (Fáze 1) |
 | AD-N9 | §5 | Směrové poznámky tam/zpět/vše | `MhD,"SeT_MhD",id,cnt` | S-M | ✅ 2026-06-20 (Fáze 1) |

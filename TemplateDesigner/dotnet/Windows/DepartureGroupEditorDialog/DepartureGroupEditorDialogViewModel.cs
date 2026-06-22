@@ -10,15 +10,24 @@ namespace TemplateDesigner;
 
 // ─── DepartureGroupColumnVM — per-column ViewModel ──────────────────────────
 
-public class DepartureGroupColumnVM : INotifyPropertyChanged
+public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 {
     private string _skupinaDnuId = "";
     private string _name = "";
-    private bool   _isVisible = true;
+    private bool   _visible = true;
+
+    private string _headerOverride = "";
 
     public string SkupinaDnuId { get => _skupinaDnuId; set { _skupinaDnuId = value; OnChanged(); } }
-    public string Name         { get => _name;         set { _name = value;         OnChanged(); } }
-    public bool   IsVisible    { get => _isVisible;    set { _isVisible = value;    OnChanged(); } }
+    public string Name         { get => _name;         set { _name = value;         OnChanged(); OnChanged(nameof(DisplayName)); } }
+    public bool   Visible      { get => _visible;      set { _visible = value;      OnChanged(); } }
+
+    /// <summary>Override nadpisu sloupce v šabloně. Prázdné = výchozí (nadpis z dat / „Hod").</summary>
+    public string HeaderOverride { get => _headerOverride; set { _headerOverride = value; OnChanged(); OnChanged(nameof(DisplayName)); } }
+
+    // IColumnRowVM — sdílený seznam sloupců (efektivní záhlaví = override, jinak zdroj; šířka auto)
+    public string DisplayName => string.IsNullOrWhiteSpace(HeaderOverride) ? Name : HeaderOverride;
+    public float? ColumnWidth => null;
 
     private CellStyleVM _header = null!;
     public CellStyleVM Header
@@ -57,8 +66,9 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     public DepartureGroupColumnStyle ToModel() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
-        IsVisible = IsVisible,
+        IsVisible = Visible,
         AlternatingRowColor = string.IsNullOrWhiteSpace(AlternatingRowColor) ? null : AlternatingRowColor,
+        HeaderOverride = string.IsNullOrWhiteSpace(HeaderOverride) ? null : HeaderOverride,
         Style = new ColumnVisualStyle
         {
             Header = Header.ToModel(),
@@ -72,8 +82,9 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     {
         SkupinaDnuId = skupina.Id,
         Name = skupina.Nadpis + (skupina.Nadpis2.Length > 0 ? " " + skupina.Nadpis2 : ""),
-        IsVisible = s?.IsVisible ?? true,
+        Visible = s?.IsVisible ?? true,
         AlternatingRowColor = s?.AlternatingRowColor ?? "",
+        HeaderOverride = s?.HeaderOverride ?? "",
         Header = CellStyleVM.FromModel(s?.Style.Header, headerInherited),
         Data   = CellStyleVM.FromModel(s?.Style.Data,   dataInherited),
     };
@@ -178,7 +189,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         {
             SkupinaDnuId = HourColumnId,
             Name = "Hodiny",
-            IsVisible = true,
+            HeaderOverride = element.HourColumnHeader,   // override z elementu (prázdné = „Hod")
+            Visible = true,
             Header = CellStyleVM.FromModel(hourColumnStyle?.Header, hourHeaderInherited),
             Data   = CellStyleVM.FromModel(hourColumnStyle?.Data,   hourDataInherited),
         });
@@ -186,7 +198,19 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         var groupIds = availableGroups.Select(g => g.Id).ToList();
         var styleMap = GroupColumnIndexResolver.BuildStyleLookup(currentStyles, groupIds);
 
-        foreach (var skupina in availableGroups)
+        // Pořadí skupin dle uloženého GroupColumns (uživatelské ▲▼ přežije reopen dialogu);
+        // skupiny mimo seznam zachovají datové pořadí na konci. Zrcadlí DepartureGridElement.ResolveSkupiny.
+        var orderMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < currentStyles.Count; i++)
+            if (!orderMap.ContainsKey(currentStyles[i].SkupinaDnuId))
+                orderMap[currentStyles[i].SkupinaDnuId] = i;
+
+        var orderedGroups = availableGroups
+            .Select((g, dataIdx) => (g, key: orderMap.TryGetValue(g.Id, out var oi) ? oi : int.MaxValue, dataIdx))
+            .OrderBy(t => t.key).ThenBy(t => t.dataIdx)
+            .Select(t => t.g);
+
+        foreach (var skupina in orderedGroups)
         {
             styleMap.TryGetValue(skupina.Id, out var existing);
             GroupVMs.Add(DepartureGroupColumnVM.FromData(skupina, existing, groupHeaderInherited, groupDataInherited));
@@ -287,6 +311,7 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         {
             var style = new ColumnVisualStyle { Header = hourVm.Header.ToModel(), Data = hourVm.Data.ToModel() };
             ResultHourColumnStyle = style.IsEmpty ? null : style;
+            _element.HourColumnHeader = hourVm.HeaderOverride?.Trim() ?? "";
         }
 
         ResultGroupColumns = GroupVMs

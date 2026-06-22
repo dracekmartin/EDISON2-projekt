@@ -60,49 +60,24 @@
             <TabItem Header="Sloupce">
                 <Grid Margin="6">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="160" MinWidth="120"/>
+                        <ColumnDefinition Width="200" MinWidth="150"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Vlevo: seznam skupin -->
+                    <!-- Vlevo: sdílený seznam sloupců (ColumnListEditor) -->
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <TextBlock Text="Skupiny dnů:" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
-                        <ListBox Grid.Row="1"
-                                 ItemsSource="{Binding GroupVMs}"
-                                 SelectedItem="{Binding SelectedGroupVM, Mode=TwoWay}"
-                                 BorderThickness="1" BorderBrush="#CCCCCC">
-                            <ListBox.Resources>
-                                <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-                            </ListBox.Resources>
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal" Margin="2">
-                                        <CheckBox IsChecked="{Binding IsVisible, UpdateSourceTrigger=PropertyChanged}"
-                                                  VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
-                                        <Ellipse Width="7" Height="7" Fill="#2196F3" Margin="6,0,0,0"
-                                                 VerticalAlignment="Center"
-                                                 ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
-                                                 Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
-                            <Button Content="▲" Width="28" Padding="2,1"
-                                    Command="{Binding DataContext.MoveUpCommand, RelativeSource={RelativeSource AncestorType=Window}}"
-                                    Margin="0,0,4,0"/>
-                            <Button Content="▼" Width="28" Padding="2,1"
-                                    Command="{Binding DataContext.MoveDownCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
-                        </StackPanel>
+                        <controls:ColumnListEditor Grid.Row="1"
+                            ItemsSource="{Binding GroupVMs}"
+                            SelectedItem="{Binding SelectedGroupVM, Mode=TwoWay}"
+                            MoveUpCommand="{Binding MoveUpCommand}"
+                            MoveDownCommand="{Binding MoveDownCommand}"/>
                     </Grid>
 
                     <!-- Vpravo: detail vybraného sloupce -->
@@ -111,11 +86,20 @@
                                   IsEnabled="{Binding HasSelection}">
                         <StackPanel>
 
+                            <!-- ── Struktura sloupce — nadpis (override výchozí hodnoty) ──────────────────── -->
+                            <TextBlock Text="Struktura sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBox Width="160" Text="{Binding SelectedGroupVM.HeaderOverride, UpdateSourceTrigger=LostFocus}"/>
+                            </StackPanel>
+
+                            <Separator Margin="0,8,0,8"/>
+
                             <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
                                        FontStyle="Italic" Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Záhlaví ──────────────────── -->
-                            <TextBlock Text="Záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                            <TextBlock Text="Styl záhlaví sloupce" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <controls:CellStyleEditor
                                 DataContext="{Binding SelectedGroupVM.Header}"
                                 EditOptions="{Binding DataContext.HeaderEditOptions, RelativeSource={RelativeSource AncestorType=Window}}"

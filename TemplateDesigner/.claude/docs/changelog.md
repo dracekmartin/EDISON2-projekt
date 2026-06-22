@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-06-22 — Override nadpisu sloupce (AD-N6) + sdílený editor sloupců (Fáze 1, krok 1+2a)
+
+- ✅ **Override nadpisu sloupce/skupiny** — `Rendering/ColumnHeader.Resolve(override, source)` = jediné
+  místo sémantiky „override přebíjí zdroj, prázdné → zdroj". Napojeny **všechny tabulkové komponenty**:
+  StopList + TableElement (zdroj = autorský `Header`) i DepartureGrid (`DepartureGroupColumnStyle.HeaderOverride`
+  přebíjí nadpis skupiny dnů z dat). Koncept se neimplementuje per komponenta — liší se jen ČÍM je zdroj.
+- ✅ **Sloupec Hodin přepisovatelný** — `DepartureGridElement.HourColumnHeader` (prázdné → „Hod"); render
+  přes `ColumnHeader.Resolve`, Clone. Editor: override jde nastavit pro **všechny** sloupce vč. Hodin.
+  Uzavírá legacy AD-N6 („Nadpisy sekcí pro rozvržení").
+- ✅ **Sdílený seznam sloupců** `Controls/ColumnListEditor` + `Controls/IColumnRowVM`
+  (`DisplayName`/`Visible`/`HasAnyOverride`/`ColumnWidth?`) — levý seznam jednotně pro Zastávky i Odjezdy
+  (checkbox + název + override-tečka + „X mm" jen u pevné šířky + ▲▼). `StopColumnVM` i
+  `DepartureGroupColumnVM` implementují rozhraní (v DepartureGroup přejmenováno `IsVisible`→`Visible`).
+- ✅ **Pořadí skupin dle dialogu** — `ResolveSkupiny` (render) i ctor editoru řadí skupiny dle
+  `GroupColumns` (dřív datové pořadí) → přeskládání ▲▼ se projeví ve výstupu a přežije reopen dialogu.
+- ✅ **Zarovnání jednotně ve stylu** — odebráno duplicitní inline „Zarovnání" combo ze Zastávek
+  (HAlign v `CellStyleEditor` mají oba). Detail „Struktura sloupce" sjednocen (Záhlaví; Šířka jen u Zastávek).
+- Layout cache DepartureGridu hashuje override + pořadí (`GroupHeaderOverridesHash`, order-sensitive).
+  JSON zpětně kompatibilní (chybějící = null = z dat). **Zbývá (krok 2b):** proporční auto šířka v obou
+  (sjednotí i poslední rozdíl „X mm"); pak Obecné→EDInputForm u Odjezdů (krok 4).
+
 ## 2026-06-22 — Tisk s daty: členění výstupu + název souboru z dat
 
 - ✅ **Členění výstupu** (`__EXPORT_SPLIT`) — při tisku s daty (více instancí zastávka × směr) volba:
