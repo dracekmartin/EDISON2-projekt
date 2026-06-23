@@ -449,6 +449,13 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   — odloženo (chce zásah do C# rendereru, který dnes umí jeden sloupec). Pro běžné linky (jedna
   trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.
 - ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
+  **ZDROJ NALEZEN 2026-06-23:** „29" = **`cnz`** spoje (`$p(spoj,"#",7)`, dta29) = klíč do číselníku
+  **`^JRSET("Cis","InPlatDef",1,<nz>)`**. Ověřeno: `(1,29)="CK"`, `(1,29,22)="24.12.#31.12.#…"` (omzId
+  22 = nejede), `(1,29,"DPL")=1` → NZ #29 = „nejede 24.12.,31.12.". Legacy TYPPOZ=1 vykreslí číslo cnz
+  inverzně + legenda z InPlatDef. **Náš kód** cnz čte (ř. 418) jen pro `ZarazeniSpoje`; omezení bere
+  per-spoj z `^JRL(…,sp,omzId)` (`SestavTextOmezeni`) → cnz-based omezení (uložená jen v InPlatDef)
+  **mineme** (proto chybějící poznámka na CB_CSADAD; TYPPOZ=0 firmy to mají per-spoj, tam 1:1 sedí).
+  **Fix:** číst i `^JRSET("Cis","InPlatDef",1,cnz,omzId)` + v TYPPOZ=1 render cnz inverzně místo `ZiskejMarker`.
 - ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
 
 ### ⚡ Performance (GetData se volá per stránka = zastávka×směr, ~desítky/linka)
