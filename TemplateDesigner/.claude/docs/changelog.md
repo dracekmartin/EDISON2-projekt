@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-23 — AD StopList: projeté zastávky + oprava dvojitého „na znamení" + názvy sloupců
+
+- ✅ **AD: tisk projetých zastávek** (`ZastavkoveJrAd.BuildStrankaZastavky`) — agenda nyní emituje
+  **celou trasu** ve směru (vč. projetých, analogicky MHD): `JE_AKTUALNI` na aktuální, projeté mají
+  `casJizdy=0` a bez atributů. StopList je defaultně skryje (`ShowPassedStops=false` → výchozí výstup
+  1:1 zachován); „tisk projetých zastávek" je zobrazí ztlumeně. Dřív AD emitovalo jen úsek od aktuální
+  → toggle byl inertní (na rozdíl od MHD).
+- ✅ **AD: oprava dvojitého „na znamení" (× x)** — agenda nastavovala `NA_ZNAMENI=true` (→ syntetický
+  `SignalStopSymbol` „×") **i** přidávala atribut „x" → znak se tiskl dvakrát. Nyní `NaZnameni=0`,
+  „na znamení" jde jen přes atribut „x" (1:1 legacy `UVOD^JRapiLinPrtMhd`).
+- ✅ **Editor sloupců StopListu: čitelné názvy** — `StopColumnVM.DisplayName` odvozen z `Key`
+  („Tarifní číslo (TČ)", „Základní trasa (ZT)", „Čas jízdy", „Průběhy trasy"…); tištěná zkratka
+  v poli „Nadpis" zůstává. Uživatel už nemusí luštit „TČ"/„ZT".
+
 ## 2026-06-23 — Genuine page-overflow detekce (dokončení P0-2)
 
 - ✅ **`PreviewCanvas.PageOverflows`: detekce sekce vyšší než stránka** — u `KeepTogether` sekcí

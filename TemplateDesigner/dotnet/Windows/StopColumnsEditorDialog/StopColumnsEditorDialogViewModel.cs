@@ -31,9 +31,21 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         set => Width = Controls.ColumnWidthText.Parse(value);
     }
 
-    // IColumnRowVM — sdílený seznam sloupců
-    public string  DisplayName => Header;
+    // IColumnRowVM — sdílený seznam sloupců. Srozumitelný název dle Key (Header zůstává tištěná zkratka).
+    public string  DisplayName => FriendlyName(_key, _header);
     public float?  ColumnWidth => Width;
+
+    /// <summary>Čitelný název sloupce do editoru — odvozený z Key, ať uživatel nemusí luštit „TČ"/„ZT".</summary>
+    private static string FriendlyName(string key, string header) => key switch
+    {
+        "TravelTime"   => "Čas jízdy",
+        "Tc"           => "Tarifní číslo (TČ)",
+        "StopName"     => "Název zastávky",
+        "Zone"         => "Zóna",
+        "RouteLetters" => "Průběhy trasy",
+        "BaseRoute"    => "Základní trasa (ZT)",
+        _              => string.IsNullOrWhiteSpace(header) ? key : header,
+    };
 
     private CellStyleVM _headerStyle = null!;
     public CellStyleVM HeaderStyle

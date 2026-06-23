@@ -257,8 +257,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
     d vals.%Set("NEJEDOU_SPOJE",          nastupiste)
 
-    // ── trasa → zastávky (úsek od aktuální zastávky ve směru jízdy; zóny + na znamení) ──
-    // Tam: vzestupně od aktuální k poslední. Zpět: sestupně od aktuální k první (pořadí 1).
+    // ── trasa → zastávky (CELÁ trasa ve směru jízdy, vč. projetých; zóny + na znamení) ──
+    // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
+    // atributů (jako MHD). StopList je defaultně skryje; „tisk projetých" je zobrazí ztlumeně.
     s zastavky = ##class(%DynamicArray).%New()
     s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = ""
     k atrSeen                                                   // atributy zastávek viděné na stránce (znak → text) pro legendu
@@ -282,34 +283,38 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s zaklCt = ..ZakladniCisloTrasy(dataDB, sku, lin, smer, currentPoradi)
     d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
 
-    s poradi = $s(jeTam:"", 1:currentPoradi + 1)
+    // Emituj VŠECHNY zastávky směru (vč. projetých, jako MHD) — StopList je filtruje dle „tisk projetých".
+    s poradi = ""
     s cnt = 0
     f {
         i jeTam { s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi)) }
         else    { s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi), -1) }
         q:poradi=""
         i '$isvalidnum(poradi) continue
-        i jeTam,(poradi < currentPoradi) continue           // Tam: jen od aktuální zastávky nahoru
+        s jeProjeta = $s(jeTam:(poradi < currentPoradi), 1:(poradi > currentPoradi))   // projetá = před aktuální ve směru
         s veta = $g(^[dataDB]JRL(sku,lin,"J",poradi))
         s czst = $p(veta,":",1)
         i czst="" continue
         i '$d(servedPoradi(poradi)) continue                // jen obsluhované zastávky (jako legacy)
         s atributy  = $p($p(veta,":",2),"#",1)              // dta2 — atributy zastávky (znaky číselníku 16)
         s zona      = $p($p(veta,":",5),"#",2)               // "#zóna#..."
-        s naZnameni = (atributy["x")
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
-        s casJizdy = ..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi)   // kumulativní min od vývěskové zastávky
+        s casJizdy = $s(jeProjeta:0, 1:..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi))   // projetá → 0 (StopList ji ztlumí); jinak kumulativní min od vývěskové
         s cnt = cnt + 1
-        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, naZnameni)
+        // „na znamení" se tiskne přes atribut „x" (níže) — legacy UVOD tiskne jen „x". NaZnameni=0,
+        // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
+        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0)
         i zona '= "" d ..AddZona(z, zona)
-        // atributy zastávky → symbol u názvu + řádek legendy (jen významové znaky, ne formátovací)
-        f ai=1:1:$l(atributy) {
-            s znak = $e(atributy, ai)
-            i '..JeViditelnyAtribut(znak) continue
-            s txtAtr = ..TextAtributu(znak)
-            d ..AddAtribut(z, znak, txtAtr)
-            s atrSeen(znak) = txtAtr
+        // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD)
+        i 'jeProjeta {
+            f ai=1:1:$l(atributy) {
+                s znak = $e(atributy, ai)
+                i '..JeViditelnyAtribut(znak) continue
+                s txtAtr = ..TextAtributu(znak)
+                d ..AddAtribut(z, znak, txtAtr)
+                s atrSeen(znak) = txtAtr
+            }
         }
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
