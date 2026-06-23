@@ -371,7 +371,11 @@ je per-namespace, bez IdFa).**
    (fallback "Městská hromadná doprava..."), `$5` informace (`<br>`→newline). Inline v hlavičce, `LokalniOznaceni` helper zrušen.
 7. **Číslování poznámek** — pro KV_DP (TYPPOZ=0 = `^JRSET("Definice","MHDnewOM")` prázdné) legacy používá
    sekvenční čísla = moje 1/2/3 (schéma shodné, hodnoty 39/70/32 byly artefakt jiného seedu). Bez změny.
-   TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred (žádná test firma to nemá).
+   TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred. **KOREKCE 2026-06-23:
+   CB_CSADAD tento režim MÁ** — 0365001 ukazuje u „nejede" **inverzní číslo „29"** (NZ číselník / `cnz`
+   dta29 renderované inverzně), ne sekvenční. Máme tedy test firmu. Implementace: číst NZ číslo +
+   render inverzně (jako NZ marker), místo `ZiskejMarker` sekvence. + bezbariér „H"/„F" je SpecZnak
+   speciálního fontu (72=vozíček/70=částečně) — legacy GDI+ font; my ASCII glyf (vizuální 1:1 nuance).
 6. **FTL 1-3 + CNZ prázdninové dělení sloupců** — `ZarazeniSpoje(ftl,plk,cnz,nzCfg)` staví `KamPrt` bitmapu
    sloupců 1:1 s `JRapiLinPrtMhd1` ř.30-152 pro všechny 4 módy; `BitmapNaSkupiny` → comma-list indexů;
    `NacistSkupinyDnu(ftl)` vrací sloupce per mód (FTL0 Prac/So/Ne+sv; FTL1 Prac-mimo/Prac-o-prázd/So+Ne+sv;
