@@ -329,6 +329,10 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 
     // FTL = formát sloupců mřížky (PATCH MHD_TYP_R); nzCfg = NZ konfig pro prázdninové dělení (MHD_NZ1_NZ2|MHD_NENZ1_NENZ2)
     s ftl   = +$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_TYP_R"))
+    // Override FTL z parametru „Rozdělení sloupců" (prázdné/auto = dle linky). Mapuje label → FTL mód;
+    // engine (NacistSkupinyDnu + ZarazeniSpoje) zůstává beze změny.
+    s rozdSl = $g(^||ML("IN","ROZDELENI_SLOUPCU"))
+    s ftl = $case(rozdSl, "Pracovní / Sobota / Neděle+svátky":0, "Pracovní / víkend (So+Ne+svátky)":2, "Prázdniny: Prac. mimo+o prázd. / víkend":1, "Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky":3, :ftl)
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
@@ -1259,6 +1263,22 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
+
+    // Rozdělení sloupců typů provozu — override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace
+    // {prázdninový split prac. dnů} × {sloučení víkendu}; reuse existujícího NacistSkupinyDnu/ZarazeniSpoje.
+    s pRozd = ##class(%DynamicObject).%New()
+    s pRozd.name         = "ROZDELENI_SLOUPCU"
+    s pRozd.label        = "Rozdělení sloupců (typy provozu)"
+    s pRozd.type         = "enum"
+    s pRozd.defaultValue = "Automaticky (dle linky)"
+    s optsR = ##class(%DynamicArray).%New()
+    d optsR.%Push("Automaticky (dle linky)")
+    d optsR.%Push("Pracovní / Sobota / Neděle+svátky")
+    d optsR.%Push("Pracovní / víkend (So+Ne+svátky)")
+    d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / víkend")
+    d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky")
+    s pRozd.options = optsR
+    d arr.%Push(pRozd)
 
     s param = ##class(%DynamicObject).%New()
     s param.name         = "CASOVA_OSA"

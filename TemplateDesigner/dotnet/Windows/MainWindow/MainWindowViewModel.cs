@@ -59,6 +59,9 @@ public class TemplateDesignerViewModel : EDViewModel
     private List<TemplateParameter>             _agendaParameters    = [];
     private readonly Dictionary<string,object?> _previewParams       = new();
     private Dictionary<string,object?>?         _cachedParamValues;
+    // Poslední hodnota server-side parametru rozdělení sloupců — změna vyžaduje re-fetch dat z Caché
+    // (grouping počítá server), na rozdíl od client-side parametrů, které jen překreslí.
+    private string?                             _lastServerParamRozdeleni;
     private string?                             _lastParamsAgendaCode;
 
     // ── Active instances (linky pro MHD, faktury pro FAKTURY, ...) ────────────
@@ -151,9 +154,12 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             StatusText = $"Načítám data: {instance.Display}…";
             var paramName = InstanceParamName(agendaCode);
-            var pages = await Task.Run(() => CacheProvider.GetData(
-                agendaCode,
-                new Dictionary<string, object?> { [paramName] = instance.Value }));
+            // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
+            var getDataParams = new Dictionary<string, object?>(_previewParams, StringComparer.OrdinalIgnoreCase)
+            {
+                [paramName] = instance.Value
+            };
+            var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
@@ -1825,12 +1831,23 @@ public class TemplateDesignerViewModel : EDViewModel
             onChanged:  () =>
             {
                 _cachedParamValues = null;
-                RequestPreviewRefresh?.Invoke();
+                // Server-side param „rozdělení sloupců" (grouping počítá Caché) → změna vyžaduje re-fetch dat.
+                // Ostatní (client-side) parametry jen překreslí. (Zatím jediný server param — hardcoded.)
+                var rozd = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv) ? rv?.ToString() : null;
+                if (CurrentActiveInstance is not null && rozd != _lastServerParamRozdeleni)
+                {
+                    _lastServerParamRozdeleni = rozd;
+                    _ = RefreshDataForCurrentInstanceAsync();
+                }
+                else
+                {
+                    RequestPreviewRefresh?.Invoke();
+                }
             },
-            // Žádný parametr sestavy už neurčuje načítaná data (linku řídí Instance Picker) —
-            // změna parametru jen překreslí preview, nepřenačítá z Caché.
             commitFactory: _ => null);
 
+        // Výchozí hodnota server-paramu, ať první změna client-paramu nespustí falešný re-fetch.
+        _lastServerParamRozdeleni = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv0) ? rv0?.ToString() : null;
         HasParameters = PreviewParameters.Count > 0;
     }
 

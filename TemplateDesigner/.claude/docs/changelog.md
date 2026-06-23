@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-23 — AD: konfigurovatelné rozdělení sloupců (typy provozu / FTL override)
+
+- ✅ **Nový parametr „Rozdělení sloupců (typy provozu)"** v AD agendě — override FTL (default
+  „Automaticky (dle linky)" = `MHD_TYP_R`) se 4 módy pokrývajícími FTL0-3 (= kombinace
+  prázdninový split prac. dnů × sloučení víkendu). **Reuse existujícího `NacistSkupinyDnu` +
+  `ZarazeniSpoje`** (engine beze změny, jen `$case` override `ftl`). Uživatel si tak může zvolit
+  rozdělení/sloučení sloupců místo napevno dle dat linky.
+- ✅ **Server-side param flow** — `RefreshDataForCurrentInstanceAsync` posílá print params do
+  `GetData` (dřív jen instanci); změna server-paramu spustí **re-fetch** dat z Caché (client-side
+  params jen překreslí, beze změny perf).
+- **Datově:** víkend merge/split jede z Plk dat (funkční vždy); prázdninový split potřebuje NZ
+  konfig (`MHD_NZ1_NZ2`, dormant ve všech firmách) → sloupec „o prázdninách" prázdný (očekávané).
+- **Follow-up:** (1) generalizovat „server-side" flag parametru (zatím hardcoded
+  `ROZDELENI_SLOUPCU` v C# re-fetch checku); (2) poznámka „jede v neděli" chybí u jednoho spoje
+  0365005 (date-based omezení vs dateless denní note) — k dohledání; (3) jemné custom rozdělení
+  (libovolné dny → sloupec) + multi-varianta tras ve StopListu = větší redesign.
+
 ## 2026-06-23 — DepartureGrid: adaptivní rozteč minut s anotacemi
 
 - ✅ **Minuta s anotacemi se už nepřekrývá s další minutou** — slot odjezdu v `DrawMinuteCell` je
