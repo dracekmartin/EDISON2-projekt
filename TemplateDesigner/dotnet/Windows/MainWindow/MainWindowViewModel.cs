@@ -2180,8 +2180,11 @@ public class TemplateDesignerViewModel : EDViewModel
         TemplateElement element;
         if (fieldName is not null)
         {
-            string placeholder = $"{{{fieldName}}}";
-            element = new TextElement { X = mmX, Y = mmY, Width = defW, Height = defH, Text = placeholder };
+            // Přes CreateElementByType, ať DB-pole dostane stejné defaulty jako element z palety
+            // (výchozí rámeček, rozměry) — dřív se tvořil holý TextElement bez rámečku.
+            var textEl = (TextElement)CreateElementByType(ElementTypes.Text, mmX, mmY);
+            textEl.Text = $"{{{fieldName}}}";
+            element = textEl;
         }
         else
         {

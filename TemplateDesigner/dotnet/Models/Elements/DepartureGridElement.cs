@@ -108,9 +108,6 @@ public class DepartureGridElement : ScheduleElementBase
     public bool ShowAnotace { get; set; } = true;
     public float AnotaceFontSize { get; set; } = 5f;
 
-    /// <summary>Invertovat negativní značky u minut (černý box + bílý znak, jako legacy). Default zapnuto.</summary>
-    public bool InvertovatNegativniZnacky { get; set; } = true;
-
     /// <summary>Pozadí invertované NZ u minuty (#AARRGGBB). Default černá.</summary>
     public string NegativniZnackaBackColor { get; set; } = "#FF000000";
 
@@ -912,7 +909,7 @@ public class DepartureGridElement : ScheduleElementBase
                     foreach (var a in o.Anotace)
                     {
                         SKFont af = a.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
-                        bool nzBox = a.Typ == TypAnotace.NegativniZnacka && InvertovatNegativniZnacky;
+                        bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
                         extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
                     }
                 }
@@ -966,8 +963,8 @@ public class DepartureGridElement : ScheduleElementBase
                         {
                             SKFont aFont = anot.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
 
-                            // Negativní značka invertovaně — černý box + bílý znak (jako legacy).
-                            if (anot.Typ == TypAnotace.NegativniZnacka && InvertovatNegativniZnacky)
+                            // Negativní značka invertovaně — černý box + bílý znak (jako legacy). Vždy zapnuto.
+                            if (anot.Typ == TypAnotace.NegativniZnacka)
                             {
                                 nzBgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaBackColor), IsAntialias = true };
                                 nzFgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaForeColor), IsAntialias = true };
@@ -1398,7 +1395,6 @@ public class DepartureGridElement : ScheduleElementBase
         new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
-        new BoolPropertyDescriptor   { Label = "NZ invertovaně", Group = "Anotace — symboly", Get = () => InvertovatNegativniZnacky, Set = v => InvertovatNegativniZnacky = v },
         new ColorPropertyDescriptor  { Label = "NZ pozadí",     Group = "Anotace — symboly", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
         new ColorPropertyDescriptor  { Label = "NZ znak",       Group = "Anotace — symboly", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
@@ -1467,7 +1463,6 @@ public class DepartureGridElement : ScheduleElementBase
             AutoExpandToFillHeight     = AutoExpandToFillHeight,
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
-            InvertovatNegativniZnacky  = InvertovatNegativniZnacky,
             NegativniZnackaBackColor   = NegativniZnackaBackColor,
             NegativniZnackaForeColor   = NegativniZnackaForeColor,
             HourColumnStyle            = HourColumnStyle?.Clone(),

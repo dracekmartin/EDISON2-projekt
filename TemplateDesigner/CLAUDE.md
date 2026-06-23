@@ -20,7 +20,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 **Zastávkový JŘ z AD dat (agenda `ZastavkoveJrAd`) ✅ datově 1:1 + výkonově pročištěná** — ověřeno proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN), viz `.claude/docs/cache-database-linky.md §10`. Hotové: core, FTL 0-3, omezení, dopravce (vč. adresy), CIS názvy, multi-page, **rozdíly tras** (1:1 OmTrasa), **atributy zastávek** (jen „na znamení", jako legacy), **atributy spoje** (bezbariér H/F), **časy jízdy ve StopListu** (jeden sloupec = gold TrasaMin1), + **performance** (memoizace per-linka invariantů + W-trasa cache, behavior-preserving byte-identický).
 
-**Zbývá k úplnému 1:1 (zdokumentováno v §10):** multi-varianta TrasaMin (víc časových sloupců — chce zásah do C# rendereru), číslování omezení TYPPOZ=1 (firm-config), šířka/layout legendy (vizuál). **Výkon:** zbývá 1 hot spot v **MHD** agendě (`VypocitatBitmapyObsluhy` O(bodů³)) — rizikový, samostatný krok.
+**Zbývá k úplnému 1:1 (zdokumentováno v §10):** multi-varianta TrasaMin (víc časových sloupců — chce zásah do C# rendereru), šířka/layout/pořadí legendy (vizuál + drobný Caché reorder na pořadí typ1→2→3). **Hotovo 2026-06-23:** číslování omezení = číslo NZ (`cnz`) invertovaně (1:1, žádný firm gate). **Výkon:** zbývá 1 hot spot v **MHD** agendě (`VypocitatBitmapyObsluhy` O(bodů³)) — rizikový, samostatný krok.
 
 Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agenda registry + template storage). Pak **Fáze A.2-D zákaznické tickety** (TRANSDEV/KORID/DPKV suspended tickety).
 

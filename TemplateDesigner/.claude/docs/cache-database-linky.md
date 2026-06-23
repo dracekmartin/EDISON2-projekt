@@ -448,14 +448,20 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   ⬜ **Multi-varianta (`TrasaMin1-15`)** = víc časových sloupců per varianta trasy + `<` u projetých
   — odloženo (chce zásah do C# rendereru, který dnes umí jeden sloupec). Pro běžné linky (jedna
   trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.
-- ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
-  **ZDROJ NALEZEN 2026-06-23:** „29" = **`cnz`** spoje (`$p(spoj,"#",7)`, dta29) = klíč do číselníku
-  **`^JRSET("Cis","InPlatDef",1,<nz>)`**. Ověřeno: `(1,29)="CK"`, `(1,29,22)="24.12.#31.12.#…"` (omzId
-  22 = nejede), `(1,29,"DPL")=1` → NZ #29 = „nejede 24.12.,31.12.". Legacy TYPPOZ=1 vykreslí číslo cnz
-  inverzně + legenda z InPlatDef. **Náš kód** cnz čte (ř. 418) jen pro `ZarazeniSpoje`; omezení bere
-  per-spoj z `^JRL(…,sp,omzId)` (`SestavTextOmezeni`) → cnz-based omezení (uložená jen v InPlatDef)
-  **mineme** (proto chybějící poznámka na CB_CSADAD; TYPPOZ=0 firmy to mají per-spoj, tam 1:1 sedí).
-  **Fix:** číst i `^JRSET("Cis","InPlatDef",1,cnz,omzId)` + v TYPPOZ=1 render cnz inverzně místo `ZiskejMarker`.
+- ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (HOTOVO 2026-06-23). Marker omezení je
+  **`cnz` spoje** (`$p(spoj,"#",7)`, dta29) renderovaný jako typ `nz` (invertovaný box), text z per-spoj
+  `^JRL(…,sp,omzId)` (`SestavTextOmezeni`). **Žádný firemní gate, žádné čtení InPlatDef** — ověřeno gold
+  oracle (`ALVA.TISKMHD.Data`) na **obou** firmách: legenda `2#<cnz>#<text>`, anotace `2$<cnz>`.
+  - **Korekce dřívějších domněnek:** (1) `MHDnewOM` (= údajný TYPPOZ gate) je prázdný u GWBUS i CSADAD →
+    není to gate; chování je **univerzální**. (2) KV_DP spoje mají `cnz` taky (28/30/31/40) a legacy je
+    renderuje jako čísla — naše dřívější sekvenční „1/2/3" tedy **nebylo 1:1 ani na KV_DP** (dřívější
+    „1:1 ověřeno" tvrzení bylo chybné). (3) Text bere legacy z **per-spoj** datumů (aktuální 2022/2023),
+    ne ze zastaralého InPlatDef seedu (2018/2019) → InPlatDef se nečte.
+  - **Implementace:** `NacistOdjezdy` — `i cnz '= "" { znak=cnz, typOmez="nz", poznMap("typ",cnz)="nz" }`
+    else fallback `ZiskejMarker` (typ „text", spoj bez NZ). `SestavPoznamky` čte `poznMap("typ",n)`.
+    `cnz` prázdné → zachová staré sekvenční chování.
+  - **Render:** přepínač `InvertovatNegativniZnacky` na `DepartureGridElement` odstraněn — inverze NZ je
+    teď napevno vždy zapnutá (AD i MHD), barvy `NegativniZnacka{Back,Fore}Color` ponechány.
 - ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
 
 ### ⚡ Performance (GetData se volá per stránka = zastávka×směr, ~desítky/linka)

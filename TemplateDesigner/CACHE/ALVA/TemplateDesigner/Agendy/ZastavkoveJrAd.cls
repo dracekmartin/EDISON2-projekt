@@ -429,10 +429,21 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s celkem = odjezd + offset
         s hod = (celkem\60)#24, min = celkem#60
 
-        // anotace z datumových omezení spoje (omzId 11-15, 22) — sdílená přes všechny skupiny spoje
-        s znak = ""
+        // anotace z datumových omezení spoje (omzId 11-15, 22) — sdílená přes všechny skupiny spoje.
+        // Marker = číslo negativní značky (cnz) + typ „nz" (invertovaně), 1:1 legacy gold (anotace
+        // „2$<cnz>", legenda „2#<cnz>#<text>"; ověřeno KV_DP i CB_CSADAD). Text bere per-spoj omzId
+        // (SestavTextOmezeni) — InPlatDef se nečte (drží zastaralý seed datumů). cnz prázdné → fallback
+        // na sekvenční číslo + typ „text" (zachová staré chování pro spoj bez NZ).
+        s znak = "", typOmez = "text"
         s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
-        i txt '= "" s znak = ..ZiskejMarker(.poznMap, txt)
+        i txt '= "" {
+            i cnz '= "" {
+                s znak = cnz, typOmez = "nz"
+                s poznMap("byMarker", cnz) = txt, poznMap("typ", cnz) = "nz"
+            } else {
+                s znak = ..ZiskejMarker(.poznMap, txt)
+            }
+        }
 
         // marker rozdílu trasy (z RozdilyTras) — u minuty jako první, dle legacy ZnkOm=ZnkTc_…
         s pismRT = $g(pismenoSpoj(sp))
@@ -462,7 +473,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             // pořadí anotací 1:1 legacy ZnkOm: rozdíl trasy → omezení → bezbariér → ruční komentář.
             // KATEGORIE + spoj = pro TD filtr viditelnosti (#7955) — Caché generuje nadmnožinu.
             i pismRT '= "" d ..AddAnotace(o, "text", pismRT, "", "", "rozdil-trasy", sp, vRozsahu)
-            i znak  '= "" d ..AddAnotace(o, "text", znak, "", "", "omezeni", sp, vRozsahu)
+            i znak  '= "" d ..AddAnotace(o, typOmez, znak, "", "", "omezeni", sp, vRozsahu)
             i inv && 'allBBP d ..AddAnotace(o, "specialni", "H", "", "", "bezbarier", sp, vRozsahu)   // u allBBP se marker netiskne, jen legenda
             i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
             f indexZnaku=1:1:$l(komentarZnaky) { s komentarZnak = $e(komentarZnaky, indexZnaku)  i komentarZnak '= "" d ..AddAnotace(o, "text", komentarZnak, "", "", "rucni-komentar", sp, vRozsahu) }
@@ -902,12 +913,14 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
         q:komentarZnak=""
         d poznamky.%Push(..BuildPoznamka("text", komentarZnak, komentareLegenda(komentarZnak), "", "", "rucni-komentar"))
     }
-    // textové poznámky z datumových omezení (nejede/jede)
+    // datumová omezení (nejede/jede) — marker = číslo NZ (cnz), typ „nz" (invertovaně) pokud pochází
+    // z cnz, jinak „text" (sekvenční fallback). Text per-spoj (SestavTextOmezeni).
     s n = ""
     f {
         s n = $o(poznMap("byMarker", n))
         q:n=""
-        d poznamky.%Push(..BuildPoznamka("text", n, poznMap("byMarker", n), "", "", "omezeni"))
+        s typPozn = $g(poznMap("typ", n), "text")
+        d poznamky.%Push(..BuildPoznamka(typPozn, n, poznMap("byMarker", n), "", "", "omezeni"))
     }
     q poznamky
 }

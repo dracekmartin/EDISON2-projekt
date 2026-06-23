@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-23 — AD: datumová omezení jako negativní značky (cnz) + drobné opravy
+
+- ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (1:1 legacy). Marker datumového omezení je
+  nově `cnz` spoje (`$p(spoj,"#",7)`) renderovaný jako typ `nz` (invertovaný box), ne sekvenční „1".
+  Text dál z per-spoj `SestavTextOmezeni`. Dedup per-cnz. `cnz` prázdné → fallback na staré sekvenční.
+  Ověřeno gold oracle (`ALVA.TISKMHD.Data`) na **obou** firmách (CB_CSADAD „29", KV_DP 28/30/31/40).
+  **Korekce dřívějších domněnek:** žádný firemní TYPPOZ gate (`MHDnewOM` prázdné u obou firem),
+  KV_DP nebyl 1:1 ani předtím, text jde z per-spoj (ne ze zastaralého InPlatDef seedu). Detail §10.
+- ✅ **Toggle `InvertovatNegativniZnacky` odstraněn** z `DepartureGridElement` — inverze NZ je teď
+  napevno vždy zapnutá (AD i MHD, jako legacy); barvy `NegativniZnacka{Back,Fore}Color` ponechány.
+- 🐛 **Drag DB pole nemělo výchozí rámeček** — `AddElementAtPosition` tvořil holý `TextElement` mimo
+  `CreateElementByType`. Nově jde přes `CreateElementByType(Text)` → stejné defaulty (rámeček, rozměry)
+  jako element z palety.
+
 ## 2026-06-23 — AD: konfigurovatelné rozdělení sloupců (typy provozu / FTL override)
 
 - ✅ **Nový parametr „Rozdělení sloupců (typy provozu)"** v AD agendě — override FTL (default
