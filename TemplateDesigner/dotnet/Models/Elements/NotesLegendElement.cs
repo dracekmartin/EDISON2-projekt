@@ -102,48 +102,40 @@ public class NotesLegendElement : ScheduleElementBase
             float markerCell = MarkerSirka * scale;   // 0 = inline (jako dnes)
             float headerBottom = currentY;
 
+            // Y kurzor per sloupec — poznámky mohou být víceřádkové (text se zalamuje na šířku
+            // sloupce), proto výšku akumulujeme místo pevné mřížky řádků.
+            var colY = new float[cols];
+            for (int c = 0; c < cols; c++) colY[c] = headerBottom;
+
             for (int i = 0; i < ordered.Count; i++)
             {
                 var pozn = ordered[i];
 
-                // Pozice ve mřížce sloupců dle směru wrapování.
-                int col, row;
-                if (WrapSmer == LegendWrap.PoSloupcich) { col = i / rowsPerCol; row = i % rowsPerCol; }
-                else                                    { col = i % cols;       row = i / cols; }
+                // Přiřazení do sloupce dle směru plnění.
+                int col = WrapSmer == LegendWrap.PoSloupcich
+                    ? Math.Min(cols - 1, i / rowsPerCol)
+                    : i % cols;
 
-                float colX  = X + col * colW;
-                float noteY = headerBottom + row * scaledNoteLineH;
-                float lineX = colX + 1f;
+                float colX     = X + col * colW;
+                float colRight = colX + colW;
+                float noteY    = colY[col];
+                float lineX    = colX + 1f;
                 // Pevná marker buňka → text všech řádků zarovnán na colX+markerCell; jinak inline.
                 float? textStartX = markerCell > 0 ? colX + markerCell : null;
 
-                switch (pozn.Typ)
+                int lines = pozn.Typ switch
                 {
-                    case TypPoznamky.NegativniZnacka:
-                        RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, textStartX);
-                        break;
+                    TypPoznamky.NegativniZnacka =>
+                        RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, colRight, textStartX),
+                    TypPoznamky.SpecialniZnak =>
+                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, boldFont, noteFont, paints.Text, false, colRight, textStartX),
+                    _ when pozn.Znak.Length > 0 =>
+                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX),
+                    _ =>
+                        DrawWrappedBody(ctx, pozn.Text, textStartX ?? lineX, noteY, colRight, noteFont, paints.Text, scaledNoteLineH),
+                };
 
-                    case TypPoznamky.SpecialniZnak:
-                        // Symbol v pozn.ForeColor (pokud z DB), tělo poznámky default barvou.
-                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
-                            boldFont, noteFont, paints.Text, suffixSeparator: false, textStartX);
-                        break;
-
-                    default:
-                        // Text větev: pokud má znak, vyrenderuj samostatně barevně + separator + tělo.
-                        // Bez znaku → jen tělo poznámky default barvou.
-                        if (pozn.Znak.Length > 0)
-                        {
-                            RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
-                                noteFont, noteFont, paints.Text, suffixSeparator: true, textStartX);
-                        }
-                        else
-                        {
-                            var pt = ctx.ToCanvas(textStartX ?? lineX, noteY + scaledNoteLineH * 0.75f);
-                            ctx.Canvas.DrawText(pozn.Text, pt.X, pt.Y, noteFont, paints.Text);
-                        }
-                        break;
-                }
+                colY[col] = noteY + Math.Max(1, lines) * scaledNoteLineH;
             }
         }
 
@@ -151,9 +143,9 @@ public class NotesLegendElement : ScheduleElementBase
         // sjednocená cesta s ostatními elementy.
     }
 
-    private void RenderNegativniZnacka(RenderContext ctx, PoznamkaData pozn,
+    private int RenderNegativniZnacka(RenderContext ctx, PoznamkaData pozn,
         ref float lineX, float currentY, float lineH, SKFont noteFont, SKFont boldFont, SKPaint textPaint,
-        float? textStartX = null)
+        float colRight, float? textStartX = null)
     {
         var nzBgColor = SKColor.Parse(NegativniZnackaBackColor);
         var nzFgColor = SKColor.Parse(NegativniZnackaForeColor);
@@ -173,10 +165,9 @@ public class NotesLegendElement : ScheduleElementBase
 
         lineX += znakW + 1f;
 
-        // Text za značkou — buď zarovnaný na pevnou marker buňku (textStartX), nebo hned za znakem.
+        // Text za značkou — zalomený na šířku sloupce; zarovnaný na marker buňku (textStartX) nebo za znakem.
         float textX = textStartX ?? lineX;
-        var textPt = ctx.ToCanvas(textX, currentY + lineH * 0.75f);
-        ctx.Canvas.DrawText(pozn.Text, textPt.X, textPt.Y, noteFont, textPaint);
+        return DrawWrappedBody(ctx, pozn.Text, textX, currentY, colRight, noteFont, textPaint, lineH);
     }
 
     /// <summary>
@@ -185,10 +176,10 @@ public class NotesLegendElement : ScheduleElementBase
     /// <paramref name="suffixSeparator"/>=true → mezi symbolem a textem se vloží <c>NoteSeparator</c>.
     /// BackColor zatím **ignorován** — rezervováno pro budoucí rozšíření (klient zatím chce jen barvu znaku).
     /// </summary>
-    private void RenderSymbolWithText(RenderContext ctx, PoznamkaData pozn,
+    private int RenderSymbolWithText(RenderContext ctx, PoznamkaData pozn,
         ref float lineX, float currentY, float lineH,
         SKFont symbolFont, SKFont textFont, SKPaint textPaint, bool suffixSeparator,
-        float? textStartX = null)
+        float colRight, float? textStartX = null)
     {
         // Symbol — pokud má pozn.ForeColor z DB, použij ji; jinak default textPaint barva.
         SKPaint symbolPaint = textPaint;
@@ -209,13 +200,32 @@ public class NotesLegendElement : ScheduleElementBase
             // Při pevné marker buňce (textStartX) text zarovnán; jinak hned za znakem (bez separátoru).
             float textX = textStartX ?? lineX;
             string displayText = (suffixSeparator && textStartX is null) ? $"{NoteSeparator}{pozn.Text}" : pozn.Text;
-            var textPt = ctx.ToCanvas(textX, currentY + lineH * 0.75f);
-            ctx.Canvas.DrawText(displayText, textPt.X, textPt.Y, textFont, textPaint);
+            return DrawWrappedBody(ctx, displayText, textX, currentY, colRight, textFont, textPaint, lineH);
         }
         finally
         {
             customSymbolPaint?.Dispose();
         }
+    }
+
+    /// <summary>
+    /// Vykreslí tělo poznámky zalomené na šířku sloupce (od xMm po colRightMm). Pokračovací řádky
+    /// začínají na stejném xMm (visutý odsazený blok). Vrací počet vykreslených řádků (min 1).
+    /// </summary>
+    private static int DrawWrappedBody(RenderContext ctx, string text, float xMm, float yMm, float colRightMm,
+        SKFont font, SKPaint paint, float lineH)
+    {
+        if (string.IsNullOrEmpty(text)) return 1;
+        float availMm = colRightMm - xMm - 0.5f;
+        System.Collections.Generic.List<string> lines = availMm > 1f
+            ? TextWrapHelper.WrapText(text, font, availMm * ctx.MmToPx)
+            : [text];
+        for (int k = 0; k < lines.Count; k++)
+        {
+            var pt = ctx.ToCanvas(xMm, yMm + lineH * 0.75f + k * lineH);
+            ctx.Canvas.DrawText(lines[k], pt.X, pt.Y, font, paint);
+        }
+        return Math.Max(1, lines.Count);
     }
 
     // ─── Výpočet výšky ──────────────────────────────────────────────────────
@@ -226,10 +236,30 @@ public class NotesLegendElement : ScheduleElementBase
         var filtered = FilterPoznamky(poznamky);
         if (filtered.Count == 0) return DesignerPlaceholderHeight;
 
-        // Výška = záhlaví + počet řádků na sloupec (při víc sloupcích je řádků méně).
+        // Výška = záhlaví + nejvyšší sloupec (poznámky se zalamují → akumulujeme řádky per sloupec).
+        var ordered = OrderNotes(filtered);
         int cols = Math.Max(1, Columns);
-        int rowsPerCol = Math.Max(1, (int)Math.Ceiling(filtered.Count / (double)cols));
-        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + rowsPerCol * NoteLineHeight;
+        int rowsPerCol = Math.Max(1, (int)Math.Ceiling(ordered.Count / (double)cols));
+        float colW = Width / cols;
+
+        const float refMmToPx = 96f / 25.4f;
+        var typeface = SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial") ?? SKTypeface.Default;
+        using var font = new SKFont(typeface, NoteFontSize * ResolvedTextStyle.PtToMm * refMmToPx);
+        float availMm = colW - (MarkerSirka > 0 ? MarkerSirka : 2f) - 0.5f;
+
+        var colLines = new int[cols];
+        for (int i = 0; i < ordered.Count; i++)
+        {
+            int col = WrapSmer == LegendWrap.PoSloupcich ? Math.Min(cols - 1, i / rowsPerCol) : i % cols;
+            int lines = 1;
+            var txt = ordered[i].Text;
+            if (!string.IsNullOrEmpty(txt) && availMm > 1f)
+                lines = Math.Max(1, TextWrapHelper.WrapText(txt, font, availMm * refMmToPx).Count);
+            colLines[col] += lines;
+        }
+        int maxLines = 1;
+        foreach (var n in colLines) if (n > maxLines) maxLines = n;
+        return ComputeHeaderH(HeaderStyle.FontSize ?? 9f) + maxLines * NoteLineHeight;
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────

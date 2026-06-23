@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-23 — NotesLegend: zalamování dlouhých poznámek
+
+- ✅ **NotesLegend wrapuje text poznámek** na šířku sloupce (`DrawWrappedBody` přes `TextWrapHelper`)
+  — dlouhá poznámka už nepřetéká doprava, ale zalomí se na další řádky (visutý odsazený blok pod
+  tělem). Layout přešel z pevné mřížky řádků na **akumulaci Y per sloupec** (víceřádková poznámka
+  posune další dolů). `CalculateHeightFromData` zrcadlí (výška = nejvyšší sloupec dle zalomených
+  řádků → auto-scale u pevné výšky). Wrap je vždy zapnutý (overflow nikdy nechceme).
+
 ## 2026-06-23 — AD StopList: projeté zastávky + oprava dvojitého „na znamení" + názvy sloupců
 
 - ✅ **AD: tisk projetých zastávek** (`ZastavkoveJrAd.BuildStrankaZastavky`) — agenda nyní emituje
