@@ -305,14 +305,3 @@ Zdůraznit, že tohle uživatel **nemusí ručně psát** — vypočítá se z d
 - [ ] Zkontrolovat alespoň jednu linku s **bezbariérem + rozdíly tras + omezeními** najednou.
 
 ### Nálezy (sem zapisuj bugy k opravě před prezentací)
-- EDINputForm neumi vyhledavat sekce - davalo by mi smysl kdyz najdu nazev sekce, ze to necha otevrene jenom polozky z dane sekce (skupiny)
-- Prijde mi, ze pokud povolim prichytit k mrizce, tak to potom nejak nevypne v pripade, ze to zase odkliknu a snapuje to na mrizku uz porad, je to mozne?
-- do podminene viditelnosti jsem dal neco jako dnewuf e> 5a zobrazila se ikonka otazniku a nic se nestalo, to je v poradku?
-- Jak funguji tabulky? Staticka vs dynamicka - dynamicka ma mit to aktualni api na kterem delame, staticka se ma chovat nejak jinak?
-- Jak otestovat ty multipage sekce
-- Zlepsi chovani a nastavovani sekci, aktualne komplikovane, dam novou sablonu, je to ciste, musim nejdriv pridat sekci, je to otravne - udelat jednu vychozi? Jak se to ma chovat rozumne? 
-- Co ma delat normalizace pozic Ctrl+Shift+N?
-- Na cervene sekce bylo nekdy false positive varovani - zkusit zjistit jeste kdy, bylo to na novou sablonu a pridat nejaky zaklad
-- Ulozeni do cache - asi funguje, zmenit popis na ulozit do databaze, v jakem globalu to je ulozene? 
-- Nacitani instanci funguji, co se bere, pokud nemam vybranou zadnou - default je prvni instance se bere jako aktivni?
-- Zastavky - zvetsim a text se nejak roztahuje, ale od nejakeho momentu nejde zvetsit, pride mi, ze kdyz nastavim vetsi font u zahlavi - ok, zvetsi se, u dat se zvetsi pouze, pokud je element dost velky? POkud to vlastne funguje takto, tak je to spravne.
