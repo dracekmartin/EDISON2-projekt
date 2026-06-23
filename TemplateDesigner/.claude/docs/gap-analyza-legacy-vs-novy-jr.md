@@ -173,6 +173,7 @@ poznámky, sloupce), ne pixely. Místa nejnáchylnější k odlišnosti, která 
 
 ### Potvrzeno jako pokryté (druhé kolo)
 - **Marker legendy 3 typy** (normální / bílé-na-černém / pictografický znak) → máme inverzní barvy NZ + spec. znaky. ✅
+- **NZ invertovaně u minut v mřížce** (černý box + bílý znak) → ✅ 2026-06-23 (DepartureGrid, MHD). AD záměrně bez NZ u minut (CNZ jen klasifikuje sloupce dnů — ověřeno 1:1 gold).
 - **Zebra liché/sudé řádky** (hodiny i minuty) → `AlternatingRowColor` + per-group. ✅
 - **Pořadí sloupců** (`PoradiSloupcu`) → `Columns` order. ✅
 - **Samostatná sekce „Hodina odjezdu" + NegZnacka/SpecZnak** → sloučeno do DepartureGrid/anotací (jiný, čistší model). ✅

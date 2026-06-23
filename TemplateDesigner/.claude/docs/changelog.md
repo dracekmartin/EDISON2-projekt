@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-23 — Negativní značky invertovaně v mřížce odjezdů (legacy shoda)
+
+- ✅ **DepartureGrid: NZ u minuty invertovaně** — negativní značka (`TypAnotace.NegativniZnacka`) se
+  v mřížce kreslí jako **černý box + bílý znak**, jako legacy (`formTISKMHDReportDotNet_Module.vb`
+  `FillRectangle(Color.Black)` + bílý text). Dřív se kreslila plain. Tři nové property:
+  `InvertovatNegativniZnacky` (default zap), `NegativniZnackaBackColor` (černá), `NegativniZnackaForeColor`
+  (bílá) — editovatelné v panelu (skupina „Anotace — symboly"). Backward-compat: staré šablony dostanou
+  invert default = legacy shoda.
+- **Ověřeno** na MHD agendě (mock NZ „22" v 6:45 → invertované). **AD záměrně bez NZ u minut** —
+  v JRMAIN je CNZ jen klasifikátor sloupců dnů (omezení = textové anotace), ověřeno 1:1 proti gold
+  oracle; přidání by AD od legacy odchýlilo.
+
 ## 2026-06-22 — Stylový pod-formulář přes CellStyleEditor (Fáze 2 — prototyp, 1 zóna)
 
 - ✅ **`StyleEditDialog` + `StyleEditDialogViewModel`** — znovupoužitelný pod-formulář pro editaci

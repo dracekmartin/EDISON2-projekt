@@ -108,6 +108,15 @@ public class DepartureGridElement : ScheduleElementBase
     public bool ShowAnotace { get; set; } = true;
     public float AnotaceFontSize { get; set; } = 5f;
 
+    /// <summary>Invertovat negativní značky u minut (černý box + bílý znak, jako legacy). Default zapnuto.</summary>
+    public bool InvertovatNegativniZnacky { get; set; } = true;
+
+    /// <summary>Pozadí invertované NZ u minuty (#AARRGGBB). Default černá.</summary>
+    public string NegativniZnackaBackColor { get; set; } = "#FF000000";
+
+    /// <summary>Barva znaku invertované NZ u minuty (#AARRGGBB). Default bílá.</summary>
+    public string NegativniZnackaForeColor { get; set; } = "#FFFFFFFF";
+
     // ═══════════════════════════════════════════
     // Nastavení sloupců
     // ═══════════════════════════════════════════
@@ -904,6 +913,8 @@ public class DepartureGridElement : ScheduleElementBase
             float minX = gx + alignOffset;
             SKPaint? customMinutePaint = null;
             SKPaint? customAnotPaint = null;
+            SKPaint? nzBgPaint = null;
+            SKPaint? nzFgPaint = null;
             try
             {
                 foreach (var odj in odjezdy)
@@ -933,22 +944,26 @@ public class DepartureGridElement : ScheduleElementBase
 
                         foreach (var anot in odj.Anotace)
                         {
-                            SKFont aFont;
-                            SKPaint aPaint;
-                            if (anot.Typ == TypAnotace.Text)
+                            SKFont aFont = anot.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
+
+                            // Negativní značka invertovaně — černý box + bílý znak (jako legacy).
+                            if (anot.Typ == TypAnotace.NegativniZnacka && InvertovatNegativniZnacky)
                             {
-                                aFont = anotTextFont;
-                                aPaint = anotTextPaint;
-                            }
-                            else
-                            {
-                                aFont = anotSymFont;
-                                aPaint = anotSymPaint;
+                                nzBgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaBackColor), IsAntialias = true };
+                                nzFgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaForeColor), IsAntialias = true };
+                                float hpad  = aFont.Size * 0.12f;
+                                float znakW = aFont.MeasureText(anot.Znak);
+                                var m = aFont.Metrics;
+                                ctx.Canvas.DrawRect(new SKRect(anotX, minPt.Y + m.Ascent, anotX + znakW + hpad * 2, minPt.Y + m.Descent), nzBgPaint);
+                                ctx.Canvas.DrawText(anot.Znak, anotX + hpad, minPt.Y, aFont, nzFgPaint);
+                                anotX += znakW + hpad * 2 + anotInterGapPx;
+                                continue;
                             }
 
+                            SKPaint aPaint = anot.Typ == TypAnotace.Text ? anotTextPaint : anotSymPaint;
+
                             // Per-anotace barva z DB (konzistence s legendou poznámek).
-                            // NZ anotace zachová default styl — má vlastní invertovaný render v NotesLegend.
-                            if (anot.ForeColor is not null && anot.Typ != TypAnotace.NegativniZnacka)
+                            if (anot.ForeColor is not null)
                             {
                                 customAnotPaint ??= new SKPaint { IsAntialias = true };
                                 customAnotPaint.Color = SKColor.Parse(anot.ForeColor);
@@ -967,6 +982,8 @@ public class DepartureGridElement : ScheduleElementBase
             {
                 customMinutePaint?.Dispose();
                 customAnotPaint?.Dispose();
+                nzBgPaint?.Dispose();
+                nzFgPaint?.Dispose();
             }
         }
 
@@ -1361,6 +1378,9 @@ public class DepartureGridElement : ScheduleElementBase
         new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
+        new BoolPropertyDescriptor   { Label = "NZ invertovaně", Group = "Anotace — symboly", Get = () => InvertovatNegativniZnacky, Set = v => InvertovatNegativniZnacky = v },
+        new ColorPropertyDescriptor  { Label = "NZ pozadí",     Group = "Anotace — symboly", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor  { Label = "NZ znak",       Group = "Anotace — symboly", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         // ── Styl anotací — text (písmena, dny) ──
         new StringPropertyDescriptor { Label = "Font",         Group = "Anotace — text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
@@ -1427,6 +1447,9 @@ public class DepartureGridElement : ScheduleElementBase
             AutoExpandToFillHeight     = AutoExpandToFillHeight,
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
+            InvertovatNegativniZnacky  = InvertovatNegativniZnacky,
+            NegativniZnackaBackColor   = NegativniZnackaBackColor,
+            NegativniZnackaForeColor   = NegativniZnackaForeColor,
             HourColumnStyle            = HourColumnStyle?.Clone(),
             HourColumnHeader           = HourColumnHeader,
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
