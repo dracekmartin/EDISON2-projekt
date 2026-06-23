@@ -75,6 +75,19 @@ Nezahajovat L/M položku na poslední chvíli před demem.
 > Detail #8: oprava varianty A — pro `SplitAcrossPages` sekce přetečení nehlásit (obsah se nikdy
 > neztratí, jen přeteče), hlásit jen u `KeepTogether` proti plné výšce sekce. ~30 řádků v
 > `PreviewCanvas.cs` + regresní test v `PageLayoutEngine`.
+>
+> **✅ Vyřešeno 2026-06-23 (minimální fix):** `PreviewCanvas.PageOverflows` přeskakuje
+> ne-`KeepTogether` sekce (jeden guard). Ověřeno: `SplitAcrossPages` 400 mm → 2 stránky bez
+> červené. **Nález při testu:** engine si `KeepTogether` sekci sám roztáhne na obsah
+> (`CalculateSectionHeight = max(DesignerHeight, maxBottom)`), takže element-vs-sekce kontrola
+> v praxi nikdy nenaskočí → červené varování je teď fakticky dormantní. To je pro demo OK
+> (žádné falešné poplachy), ale **genuine detekce chybí** → viz follow-up níže.
+>
+> **⏭️ Follow-up (po demu): genuine page-overflow detekce.** Současná kontrola je element-vs-sekce,
+> ale sekce vždy doroste obsah → nikdy nechytí reálný případ „`KeepTogether` sekce je vyšší než
+> tisková plocha stránky → obsah se ořízne". Správně: u `KeepTogether` hlásit
+> `placed.Y + placed.Height > PrintableHeight + tol`. ~S, mění sémantiku → chce sadu testů
+> (header/footer pozice, sekce přesně na hraně).
 
 ---
 
@@ -156,6 +169,7 @@ poznámky, sloupce), ne pixely. Místa nejnáchylnější k odlišnosti, která 
 | **P2-7** | **Režimy výšky řádku** + „nadesignovaná výška = minimum, sekce roste" | máme `DataRowHeight` (null=auto) + auto-scale; explicitní „výška je minimum a roste" model částečně | S–M |
 | **P4-x** | **Zarovnání textu do bloku (justify)** v textovém prvku | `TextElement` justify nemá | S, nízká |
 | **P4-x** | **Per-strana styl rámečku (Solid/Dot/Dash) + zaoblené rohy** sekce/prvku | jednoduchý border (barva+šířka), bez per-strana dash a bez zaoblení | S–M, nízká |
+| **P4-x** | **Sekce vyšší než stránka v designeru** — canvas má napevno výšku jedné A4 (`CalculatePageHeightPx => PageSize.Height`), property panel klamp výšky sekce obchází (na rozdíl od resize). Sekce > stránka přeteče na šedé pozadí mimo bílý list. Preview stránkuje korektně. ⏭️ odloženo 2026-06-23. Možnosti: (A) clamp v property panelu na tisknutelnou výšku (S, konzistentní s CLAUDE.md), (B) canvas roste přes víc stránek + vodítka A4 hranic (M) | jednostránkový canvas | S–M, nízká |
 
 ### Potvrzeno jako pokryté (druhé kolo)
 - **Marker legendy 3 typy** (normální / bílé-na-černém / pictografický znak) → máme inverzní barvy NZ + spec. znaky. ✅

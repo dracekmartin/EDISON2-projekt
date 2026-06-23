@@ -240,6 +240,10 @@ public class PreviewCanvas
         const float tolMm = 0.5f;   // tolerance proti IEEE-754 false-positive na přesné hranici
         foreach (var placed in page.Sections)
         {
+            // Jen KeepTogether sekce mohou obsah reálně oříznout. SplitAcrossPages i AllowSplit
+            // engine chunkuje přes stránky (ClipTop/ClipBottom) → obsah se nikdy neztratí, nehlásit.
+            if (placed.Source.OverflowBehavior != SectionOverflowBehavior.KeepTogether) continue;
+
             foreach (var el in placed.Source.Elements)
             {
                 if (!ExpressionEvaluator.IsVisible(el.VisibilityExpression, placed.Data)) continue;
