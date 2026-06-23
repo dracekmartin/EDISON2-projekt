@@ -899,9 +899,28 @@ public class DepartureGridElement : ScheduleElementBase
             float padR = ms.PaddingRight * dataScale;
             float padT = ms.PaddingTop * dataScale;
 
-            // Zarovnání bloku minut ve sloupci
+            // Adaptivní šířka slotu každého odjezdu: nominální (scaledMinuteW) + šířka anotací,
+            // aby se minuta s poznámkami nepřekrývala s další minutou (zachová nominální mezeru).
             float availW = g.GroupWidth - padL - padR;
-            float blockW = odjezdy.Count * (scaledMinuteW + scaledOdjezdGap) - scaledOdjezdGap;
+
+            float SlotWidthMm(OdjezdData o)
+            {
+                float extraPx = 0f;
+                if (ShowAnotace && o.Anotace.Count > 0)
+                {
+                    extraPx = anotGapPx;
+                    foreach (var a in o.Anotace)
+                    {
+                        SKFont af = a.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
+                        bool nzBox = a.Typ == TypAnotace.NegativniZnacka && InvertovatNegativniZnacky;
+                        extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
+                    }
+                }
+                return scaledMinuteW + extraPx / ctx.MmToPx;
+            }
+
+            var slotW = odjezdy.Select(SlotWidthMm).ToList();
+            float blockW = slotW.Sum() + Math.Max(0, odjezdy.Count - 1) * scaledOdjezdGap;
             float alignOffset = padL + ms.HAlign switch
             {
                 TextHorizontalAlignment.Center => (availW - blockW) / 2f,
@@ -917,8 +936,9 @@ public class DepartureGridElement : ScheduleElementBase
             SKPaint? nzFgPaint = null;
             try
             {
-                foreach (var odj in odjezdy)
+                for (int oi = 0; oi < odjezdy.Count; oi++)
                 {
+                    var odj = odjezdy[oi];
                     var minuteText = odj.Minuta.ToString("D2");
 
                     SKPaint minutePaint;
@@ -975,7 +995,7 @@ public class DepartureGridElement : ScheduleElementBase
                         }
                     }
 
-                    minX += scaledMinuteW + scaledOdjezdGap;
+                    minX += slotW[oi] + scaledOdjezdGap;
                 }
             }
             finally

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-23 — DepartureGrid: adaptivní rozteč minut s anotacemi
+
+- ✅ **Minuta s anotacemi se už nepřekrývá s další minutou** — slot odjezdu v `DrawMinuteCell` je
+  nově adaptivní: nominální `scaledMinuteW` + naměřená šířka anotací (zachová nominální mezeru).
+  Blok minut se zarovnává ze součtu adaptivních šířek (správný center/right align). Dřív se
+  posouvalo o pevnou `MinuteWidth` → husté buňky s poznámkami se slévaly. Šířka sloupce
+  (ComputeLayout) zatím beze změny — s redistribucí na šířku elementu bývá slack; měření šířky
+  sloupce dle anotací = follow-up, pokud by dense buňka přetékala do sousedního sloupce.
+
 ## 2026-06-23 — NotesLegend: zalamování dlouhých poznámek
 
 - ✅ **NotesLegend wrapuje text poznámek** na šířku sloupce (`DrawWrappedBody` přes `TextWrapHelper`)
