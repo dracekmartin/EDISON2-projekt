@@ -51,7 +51,7 @@ zajistit, aby demo nevypadalo rozbitě (P0) a mít připravené poctivé odpově
 | P1-1 | Uppercase jako font-flag | S | ⚪ nízká | ⏭️ 2026-06-23 odloženo: UPPERCASE už jde přes `{POLE:UPPER}`; font-flag jen na TextElementu = nekonzistentní polotvar. Udělat později cross-component (vč. malých písmen) |
 | P1-3 | NZ na nový řádek v legendě (AD-N4) | S–M | 🟡 quick win | |
 | P2-1 | **Multi-varianta časů tras (TrasaMin)** — *jediná velká věc* | **L** | 🟠 mezera | |
-| P2-2 | Barevně odlišit časy (6 pásem dle minut) na StopListu | M | 🟠 mezera | |
+| P2-2 | Barevně odlišit časy (6 pásem dle minut) na StopListu | M | 🟠 mezera | ⏭️ 2026-06-23 po demu: NENÍ kopie — `ColorRule`/`DepartureGrid.ColorRules` je mrtvý kód (nikdy se nevyhodnocuje). M od nuly + rozhodnutí client vs Caché |
 | P2-3 | NZ (3 ř.) + spec. znak (3×) v záhlaví mřížky | M | 🟠 mezera | |
 | P2-7 | Režimy výšky řádku + „nadesignovaná výška = minimum" | S–M | 🟠 mezera | |
 | P2-6 | Governance šablon (systémové/zamčené vs uživatelské) | M | 🟠 strategické | |
@@ -110,7 +110,7 @@ Co legacy uměl a my (zatím) ne. Pro seminář připravit poctivou odpověď �
 | # | Legacy funkce | Náš stav | Effort | Poznámka |
 |---|---|---|---|---|
 | **P2-1** | **15× sloupec „TrasaMin" + 4× „Pracovní"** ve seznamu zastávek (multi-varianta časů jízdy vedle sebe) | máme **1** sloupec časů (gold `TrasaMin1`) | **L** (3–5h) | Největší položka. Caché emituje flat seznam variant, renderer musí dynamicky vytvořit sloupce + strop přehlednosti. Gold: **0345061** (8 variant), 0365001 (2). Odloženo na reálný request |
-| **P2-2** | **6 pravidel „barevně odlišit ceny"** podle počtu minut ve seznamu zastávek | `StopListElement` **nemá** ColorRules (DepartureGrid je má) | M | Podmíněné barvení časů jízdy dle prahu. Pattern existuje na DepartureGrid → přenést na StopList |
+| **P2-2** | **6 pravidel „barevně odlišit ceny"** (`stSSZ_BarevneOdlisitCeny1..6`: práh `PocetMinut` + ForeColor + BackColor + on/off) — obarví buňky časů jízdy dle prahu minut | ⬜ chybí úplně | M | ⚠️ *Korekce 2026-06-23:* `ColorRule` třída + `DepartureGrid.ColorRules` existují, ale jsou **mrtvý kód** — nikde se nevyhodnocují (potvrzeno grepem). Skutečné barvení mřížky jede přes per-buňku `FORE_COLOR`/`BACK_COLOR` z **Caché**. Legacy pravidla vyhodnocoval taky **server-side** (Caché) → emitoval hotové barvy. **Rozhodnutí:** client-side (oživit ColorRule + eval při renderu) vs Caché-side (jako legacy). M od nuly, ne kopie |
 | **P2-3** | **Negativní značka (3 řádky) + spec. znak (3×) v záhlaví mřížky** odjezdů | DepartureGrid záhlaví = jen nadpis skupiny dnů | M | Blok NZ/spec-znak v hlavičce sloupce skupiny dnů. Ověřit, jestli to zákazníci reálně používají |
 | **P2-4** | **Cizojazyčné poznámky** (AD-N11, `prtCzjPzn`) | ⬜ chybí | S–M | Meziměstské/pohraniční linky. Caché rozšíření + toggle v legendě |
 | **P2-5** | **Potlačit NZ v některých sloupcích** skupin dnů (AD-N5) | ⬜ dormant | M–L | Data prázdná všude, čeká na reálný případ |
@@ -193,7 +193,7 @@ poznámky, sloupce), ne pixely. Místa nejnáchylnější k odlišnosti, která 
 | Zvýraznění aktuální zastávky (font + pozadí) | `CurrentStopBold/Underline/FontSize/BackgroundColor` | ✅ |
 | Šipka vlevo (barva) | `ShowDirectionArrow` + `DirectionArrowPosition(Left/Right)` + barva | ✅ |
 | Trojúhelník na pozadí (3 typy) | — | 🟡 P4 |
-| Barevně odlišit ceny (6× práh minut) | — (StopList nemá ColorRules) | 🟡 P2-2 |
+| Barevně odlišit ceny (6× práh minut) | — (ColorRule je mrtvý kód i na DepartureGridu; barvení jede přes Caché FORE/BACK_COLOR) | 🟠 P2-2 (M od nuly) |
 | Uppercase font-flag | jen `{POLE:UPPER}` | 🟡 P1-1 |
 | Atributy/poznámky zastávky, „na znamení" | `ShowStopAttributes/Notes/SignalStopIndicator` + filtr | ✅ |
 | Výška řádku pevná/dynamická | `DataRowHeight` (null=auto) + auto-scale | ✅ |
