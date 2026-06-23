@@ -44,11 +44,11 @@ zajistit, aby demo nevypadalo rozbitě (P0) a mít připravené poctivé odpově
 
 | Pol. | Co | Velikost | Priorita | Rozhodnutí |
 |---|---|---|---|---|
-| P0-1 | Vrátit DEV tweaky (CB_GWBUS→KV_DP, startup šablona) | S | 🔴 blocker | |
-| P0-2 | Opravit #8 false-positive přetečení | S–M | 🔴 blocker | |
-| P0-3 | Smoke test gold linek v PDF (obsah, ne pixely) | M | 🔴 blocker | |
-| P1-2 | Zkrácené označení linky u minut (data hotová, render chybí) | S–M | 🟡 quick win | |
-| P1-1 | Uppercase jako font-flag | S | 🟡 quick win | |
+| P0-1 | Vrátit DEV tweaky (CB_GWBUS→firma, startup šablonu necháváme AD) | S | 🔴 blocker | ⏭️ firmu vyřešit později; startup AD ponechán |
+| P0-2 | Opravit #8 false-positive přetečení | S–M | 🔴 blocker | ✅ hotovo 2026-06-23 (879489e) — minimální fix |
+| P0-3 | Smoke test gold linek v PDF (obsah, ne pixely) | M | 🔴 blocker | ✅ 2026-06-23 — 0320144 (FTL3) base OK, jako smoke test postačuje |
+| P1-2 | ~~Zkrácené označení linky u minut~~ — **NENÍ quick win** | L | 🟠 mezera | ❌ 2026-06-23: pole `ZKRACENE_OZNACENI_LINKY` obě agendy (AD i MHD) emitují **vždy prázdné** (`BuildOdjezd` voláno bez `zkrOznLinky`). Render bez dat nemá co ukázat → vyžaduje celý sdružený JŘ (L), překlasifikováno na P2 |
+| P1-1 | Uppercase jako font-flag | S | ⚪ nízká | ⏭️ 2026-06-23 odloženo: UPPERCASE už jde přes `{POLE:UPPER}`; font-flag jen na TextElementu = nekonzistentní polotvar. Udělat později cross-component (vč. malých písmen) |
 | P1-3 | NZ na nový řádek v legendě (AD-N4) | S–M | 🟡 quick win | |
 | P2-1 | **Multi-varianta časů tras (TrasaMin)** — *jediná velká věc* | **L** | 🟠 mezera | |
 | P2-2 | Barevně odlišit časy (6 pásem dle minut) na StopListu | M | 🟠 mezera | |
@@ -97,8 +97,8 @@ Drobnosti s viditelnou hodnotou, malý zásah. **Žádná není blokující.**
 
 | # | Co | Stav | Effort |
 |---|---|---|---|
-| **P1-1** | **Uppercase jako font-flag** v stylu buňky/textu | dnes jen přes `{POLE:UPPER}`; legacy měl checkbox „Velká písmena" v písmu. Doplnit `Uppercase` do `TextStyle` + render | S |
-| **P1-2** | **Zkrácené označení linky u minut** (sdružený JŘ víc linek) | **data už parsujeme** (`OdjezdData.ZkraceneOznaceniLinky`), ale `DepartureGridElement` to **nerenderuje**. Dorenderovat jako prefix/anotaci u minuty | S–M |
+| ~~**P1-1**~~ | **Uppercase jako font-flag** → **odloženo** | ⏭️ *2026-06-23:* UPPERCASE už pokrývá výrazový jazyk (`{POLE:UPPER}`). Font-flag jen na `TextElement` (jedno místo, jen velká, ne malá) = nekonzistentní s kaskádou. Prototyp navrhnut (`TextStyle.Uppercase` + `ApplyCasing` v `CellRenderer`/`TextElement`) a **vrácen** — udělat až jako cross-component style-flag (vč. malých písmen), aby fungoval všude stejně | S→M |
+| ~~**P1-2**~~ | **Zkrácené označení linky u minut** → **přesunuto na P2** | ⚠️ *Korekce 2026-06-23:* C# pole `OdjezdData.ZkraceneOznaceniLinky` se parsuje, ale **obě Caché agendy (AD i MHD) ho emitují vždy prázdné** — `BuildOdjezd` se volá bez `zkrOznLinky` (AD ř. 452, MHD ř. 1041). Render bez dat = nic. Vyžaduje celý sdružený JŘ (sloučení víc linek do mřížky + výpočet zkr. označení) = **L**, ne quick win | L |
 | **P1-3** | **Negativní značky na nový řádek v legendě** (AD-N4) | legacy `PATCH,"NegZnNR"`; návrh existuje, chybí property + render v `NotesLegendElement` | S–M |
 
 ---
