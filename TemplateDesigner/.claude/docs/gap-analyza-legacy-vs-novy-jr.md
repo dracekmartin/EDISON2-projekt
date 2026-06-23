@@ -83,11 +83,10 @@ Nezahajovat L/M položku na poslední chvíli před demem.
 > v praxi nikdy nenaskočí → červené varování je teď fakticky dormantní. To je pro demo OK
 > (žádné falešné poplachy), ale **genuine detekce chybí** → viz follow-up níže.
 >
-> **⏭️ Follow-up (po demu): genuine page-overflow detekce.** Současná kontrola je element-vs-sekce,
-> ale sekce vždy doroste obsah → nikdy nechytí reálný případ „`KeepTogether` sekce je vyšší než
-> tisková plocha stránky → obsah se ořízne". Správně: u `KeepTogether` hlásit
-> `placed.Y + placed.Height > PrintableHeight + tol`. ~S, mění sémantiku → chce sadu testů
-> (header/footer pozice, sekce přesně na hraně).
+> **✅ Genuine page-overflow detekce — hotovo 2026-06-23.** `PageOverflows` u `KeepTogether` sekcí
+> hlásí `placed.Y + placed.Height > PrintableHeight + tol` (sekce se nevejde a nejde rozdělit →
+> obsah se ořízne). Ověřeno live: KeepTogether 400 mm → červená; SplitAcrossPages → bez červené;
+> KeepTogether 100 mm + čistá šablona → bez false-positive.
 
 ---
 

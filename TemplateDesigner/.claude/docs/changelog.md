@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-23 — Genuine page-overflow detekce (dokončení P0-2)
+
+- ✅ **`PreviewCanvas.PageOverflows`: detekce sekce vyšší než stránka** — u `KeepTogether` sekcí
+  (nelze rozdělit) hlásí přetečení, když `placed.Y + placed.Height > PrintableHeight` → obsah pod
+  spodní hranou tiskové plochy se ořízne. Doplňuje dnešní #8 fix: ten odstranil false-positive u
+  dělitelných sekcí, ale tím se ukázalo, že element-vs-sekce kontrola fakticky nikdy nenaskočí
+  (sekce se sama roztáhne na obsah) → varování bylo dormantní. Teď chytá reálný případ.
+- **Ověřeno live:** KeepTogether 400 mm → červená; přepnutí na SplitAcrossPages → bez červené
+  (fix #8 drží); KeepTogether 100 mm + čistá šablona → bez false-positive.
+
 ## 2026-06-23 — Negativní značky invertovaně v mřížce odjezdů (legacy shoda)
 
 - ✅ **DepartureGrid: NZ u minuty invertovaně** — negativní značka (`TypAnotace.NegativniZnacka`) se
