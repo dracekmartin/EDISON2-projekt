@@ -7,7 +7,22 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     {
         public string DisplayedName { get; set; } = "";
 
-        public bool IsExpanded { get; set; } = false;
+        private bool _isExpanded;
+
+        /// <summary>
+        /// Rozbalení uzlu ve stromu. TwoWay-bound na <c>TreeViewItem.IsExpanded</c> → odráží akci
+        /// uživatele; observable, aby VM mohl persistovat změnu (per-user × IDFa).
+        /// </summary>
+        public bool IsExpanded
+        {
+            get => _isExpanded;
+            set
+            {
+                if (_isExpanded == value) return;
+                _isExpanded = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsExpanded)));
+            }
+        }
 
         public ObservableCollection<IModule> NestedModules { get; set; } = [];
 

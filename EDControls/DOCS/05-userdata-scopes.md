@@ -287,9 +287,12 @@ if (node["Version"] is null && node["GridSize"] is { } oldGridSize)
 |---|---|---|---|
 | `"Favorites"` | 2 | `List<string>` — ElementId oblíbených modulů (ruční ★) v pořadí připnutí | `EDISONMAIN2.Windows.EdisonMainWindow.Modules.ModulePreferencesService` |
 | `"ModuleUsage"` | 2 | `Dictionary<string, UsageEntry>` — ElementId → `{ Count, LastUsedUtc }` (automaticky při spuštění modulu) | `ModulePreferencesService` |
+| `"TreeExpansion"` | 1 | `List<string>` — klíče rozbalených uzlů `"<tree>:<index-cesta>"` (např. `"main:5.2"`, `"favorites:0"`); `null`/chybí = serverové výchozí | `ModulePreferencesService` |
+| `"SelectedTab"` | 1 | `int` — index naposledy otevřené záložky stromu; `null`/chybí = výchozí dle oblíbených | `ModulePreferencesService` |
 
 Záložky „Oblíbené" (ořezaný strom dle Favorites) a „Používané" (žebříček dle ModuleUsage)
-v hlavním shellu. ElementId = numerické ID z EDISFormEnum (string).
+v hlavním shellu. ElementId = numerické ID z EDISFormEnum (string). TreeExpansion drží
+rozbalení stromu modulů mezi relacemi (save na každou změnu rozbalení).
 
 **Stav:** ✅ Implementováno (2026-06-22).
 

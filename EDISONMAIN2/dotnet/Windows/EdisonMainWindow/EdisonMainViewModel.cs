@@ -192,6 +192,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             PartnerSolutionsTree = [];
             FavoritesTree = [];
             UsedModules = [];
+            _sourceTrees = [("main", MainMenuTree), ("system", SystemAdminTree), ("partners", PartnerSolutionsTree)];
 
             // GetCompanyList už vrací řazené podle Name & Id (SortedDictionary v ALVA.EDISONAPI.Database).
             VisibleIdfas = [.. companies.Select(c => new CompanyItem(c.Id, c.Name ?? "", c.Database))];
@@ -224,6 +225,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _modulePrefs = new ModulePreferencesService(UserPrefs);
             _favoriteIds = [.. _modulePrefs.LoadFavorites()];
             _usage = _modulePrefs.LoadUsage();
+            _expansion = _modulePrefs.LoadExpansion();
 
             foreach (var exe in AllExecutables())
                 exe.IsFavorite = _favoriteIds.Contains(exe.ElementId);
@@ -231,29 +233,109 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
             RebuildUsedList();
+
+            // Obnoví uložené rozbalení a napojí persistenci na VŠECH stromech (vč. Oblíbených).
+            // Suppress brání zápisu během programového apply.
+            _suppressExpansionSave = true;
+            ApplyTreeExpansion();
+            _suppressExpansionSave = false;
+
+            // Poslední otevřená záložka (per-user × IDFa); bez uložené volby výchozí dle oblíbených.
+            _suppressTabSave = true;
+            SelectedTreeTabIndex = _modulePrefs.LoadSelectedTab() ?? DefaultTreeTab();
+            _suppressTabSave = false;
         }
 
         private void RebuildFavoritesTree()
         {
             FavoritesTree.Clear();
-            foreach (var root in BuildFavoritesTree([MainMenuTree, SystemAdminTree, PartnerSolutionsTree], _favoriteIds))
+            foreach (var root in BuildFavoritesTree(_sourceTrees.Select(t => t.Tree), _favoriteIds))
                 FavoritesTree.Add(root);
+
+            // Po přestavbě (i mimo load — po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
+            bool prev = _suppressExpansionSave;
+            _suppressExpansionSave = true;
+            ApplyExpansion(FavoritesTree, "favorites");
+            _suppressExpansionSave = prev;
+
             OnPropertyChanged(nameof(HasNoFavorites));
         }
 
         private void RebuildUsedList()
         {
             UsedModules.Clear();
-            foreach (var module in BuildUsedList([MainMenuTree, SystemAdminTree, PartnerSolutionsTree], _usage, UsedModulesCap))
+            foreach (var module in BuildUsedList(_sourceTrees.Select(t => t.Tree), _usage, UsedModulesCap))
                 UsedModules.Add(module);
         }
+
+        // ---- persistence rozbalení stromu ------------------------------------
+        // Klíč uzlu = "<tree>:<index-cesta>" (např. "main:5.2") — stabilní vůči přejmenování i suffixům
+        // z ModuleLaunchabilityCheck, na rozdíl od cesty přes DisplayedName. Save běží na každou změnu
+        // rozbalení (IDFa je tehdy stabilní), proto switch/close nepotřebují zvláštní obsluhu.
+
+        private void ApplyTreeExpansion()
+        {
+            foreach (var (name, tree) in ExpandableTrees)
+                ApplyExpansion(tree, name);
+        }
+
+        private void ApplyExpansion(IList<IModule> tree, string treeName)
+        {
+            for (int i = 0; i < tree.Count; i++)
+                ApplyExpansionNode(tree[i], treeName, [i]);
+        }
+
+        private void ApplyExpansionNode(IModule module, string treeName, List<int> path)
+        {
+            if (module is not ModuleFamily family) return;
+
+            // _expansion == null → první spuštění, ponech serverové výchozí rozbalení.
+            if (_expansion is { } saved)
+                family.IsExpanded = saved.Contains(ExpansionPathKey(treeName, path));
+
+            family.PropertyChanged -= OnFamilyPropertyChanged;
+            family.PropertyChanged += OnFamilyPropertyChanged;
+
+            for (int i = 0; i < family.NestedModules.Count; i++)
+                ApplyExpansionNode(family.NestedModules[i], treeName, [.. path, i]);
+        }
+
+        private void OnFamilyPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(ModuleFamily.IsExpanded) && !_suppressExpansionSave)
+                _ = _modulePrefs.SaveExpansionAsync(CollectExpandedKeys());
+        }
+
+        private List<string> CollectExpandedKeys()
+        {
+            var keys = new List<string>();
+            foreach (var (name, tree) in ExpandableTrees)
+                CollectExpanded(tree, name, keys);
+            return keys;
+        }
+
+        private static void CollectExpanded(IList<IModule> tree, string treeName, List<string> keys)
+        {
+            for (int i = 0; i < tree.Count; i++)
+                CollectExpandedNode(tree[i], treeName, [i], keys);
+        }
+
+        private static void CollectExpandedNode(IModule module, string treeName, List<int> path, List<string> keys)
+        {
+            if (module is not ModuleFamily family) return;
+            if (family.IsExpanded) keys.Add(ExpansionPathKey(treeName, path));
+            for (int i = 0; i < family.NestedModules.Count; i++)
+                CollectExpandedNode(family.NestedModules[i], treeName, [.. path, i], keys);
+        }
+
+        private static string ExpansionPathKey(string treeName, IReadOnlyList<int> path) =>
+            treeName + ":" + string.Join(".", path);
 
         // Stromy i licenční gating jsou per-IdFa, takže po přepnutí firmy refresh všech tří.
         private void LoadAndFilterTrees()
         {
-            LoadAndFilterTree(MainMenuTree, "main");
-            LoadAndFilterTree(SystemAdminTree, "system");
-            LoadAndFilterTree(PartnerSolutionsTree, "partners");
+            foreach (var (name, tree) in _sourceTrees)
+                LoadAndFilterTree(tree, name);
         }
 
         private void LoadAndFilterTree(ObservableCollection<IModule> target, string treeName)
@@ -337,15 +419,40 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public bool HasNoFavorites => FavoritesTree.Count == 0;
 
         // Pořadí záložek: 0 Hlavní nabídka, 1 Správa systému, 2 Partnerská řešení, 3 Oblíbené, 4 Používané.
-        /// <summary>Výchozí záložka: Oblíbené (3) pokud nějaké jsou, jinak Hlavní nabídka (0). OneTime binding.</summary>
-        public int InitialTreeTabIndex => HasNoFavorites ? 0 : 3;
+        private int _selectedTreeTabIndex;
+        private bool _suppressTabSave;
+
+        /// <summary>Aktuální záložka stromu. TwoWay-bound; persistuje se per-user × IDFa (poslední otevřená).</summary>
+        public int SelectedTreeTabIndex
+        {
+            get => _selectedTreeTabIndex;
+            set
+            {
+                if (Set(ref _selectedTreeTabIndex, value) && !_suppressTabSave)
+                    _ = _modulePrefs.SaveSelectedTabAsync(value);
+            }
+        }
+
+        // Výchozí záložka při prvním spuštění (bez uložené volby): Oblíbené (3) když nějaké jsou, jinak Hlavní nabídka (0).
+        private int DefaultTreeTab() => HasNoFavorites ? 0 : 3;
 
         // Per-user × IDFa stav (oblíbené + používanost). _modulePrefs se re-vytváří v RebuildSessionState
         // (UserPrefs se může po switch-user vyměnit). Stromové leaf instance se sdílí napříč kolekcemi.
         private ModulePreferencesService _modulePrefs = null!;
         private HashSet<string> _favoriteIds = [];
         private Dictionary<string, UsageEntry> _usage = [];
+        // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
+        private List<string>? _expansion;
+        private bool _suppressExpansionSave;
         private const int UsedModulesCap = 20;
+
+        // Zdrojové stromy plněné ze serveru (per-IdFa). Jedna kolekce pro společné operace (load, filtrace,
+        // oblíbené/používané, family flagy) místo opakování literálů. Inicializuje ctor po vytvoření kolekcí.
+        private readonly (string Name, ObservableCollection<IModule> Tree)[] _sourceTrees;
+
+        // Všechny rozbalovatelné stromy = zdrojové + odvozený Oblíbené (persistence rozbalení i nad Oblíbenými).
+        private IEnumerable<(string Name, ObservableCollection<IModule> Tree)> ExpandableTrees =>
+            [.. _sourceTrees, ("favorites", FavoritesTree)];
 
         public ObservableCollection<CompanyItem> VisibleIdfas { get; }
 
@@ -442,7 +549,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // kontextového menu rodiny). Vrací, zda je uzel plně oblíbený (rekurzivní agregace).
         private void RefreshFamilyFavoriteFlags()
         {
-            foreach (var tree in new[] { MainMenuTree, SystemAdminTree, PartnerSolutionsTree })
+            foreach (var (_, tree) in _sourceTrees)
                 foreach (var node in tree)
                     UpdateFamilyFavorite(node);
         }
@@ -481,7 +588,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Všechny EXE instance napříč hlavními stromy. FavoritesTree i UsedModules sdílí tytéž instance,
         // takže stačí projít hlavní tři stromy (flip IsFavorite se projeví všude).
         private IEnumerable<ExecutableModule> AllExecutables() =>
-            new[] { MainMenuTree, SystemAdminTree, PartnerSolutionsTree }.SelectMany(t => t).SelectMany(Flatten);
+            _sourceTrees.SelectMany(t => t.Tree).SelectMany(Flatten);
 
         private static IEnumerable<ExecutableModule> Flatten(IModule module) => module switch
         {

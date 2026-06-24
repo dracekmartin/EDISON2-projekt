@@ -17,9 +17,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// </summary>
     public class ModulePreferencesService
     {
-        private const string Scope        = "EDISONMAIN2";
-        private const string FavoritesKey = "Favorites";
-        private const string UsageKey     = "ModuleUsage";
+        private const string Scope          = "EDISONMAIN2";
+        private const string FavoritesKey   = "Favorites";
+        private const string UsageKey       = "ModuleUsage";
+        private const string ExpansionKey   = "TreeExpansion";
+        private const string SelectedTabKey = "SelectedTab";
 
         private readonly IUserPrefsService _prefs;
 
@@ -37,6 +39,32 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         public Task SaveUsageAsync(IReadOnlyDictionary<string, UsageEntry> usage) =>
             SaveBlobAsync(UsageKey, usage);
+
+        /// <summary>
+        /// Klíče rozbalených uzlů stromu (index-cesta per strom, viz EdisonMainViewModel).
+        /// Vrací <c>null</c> když nebylo nikdy uloženo → caller ponechá serverové výchozí rozbalení.
+        /// </summary>
+        public List<string>? LoadExpansion() => LoadBlob<List<string>>(ExpansionKey);
+
+        public Task SaveExpansionAsync(IEnumerable<string> expandedKeys) =>
+            SaveBlobAsync(ExpansionKey, expandedKeys.ToList());
+
+        /// <summary>Index naposledy otevřené záložky stromu, nebo <c>null</c> když nebylo uloženo.</summary>
+        public int? LoadSelectedTab()
+        {
+            try
+            {
+                var node = _prefs.LoadAsync(Scope, SelectedTabKey).GetAwaiter().GetResult();
+                return node?.GetValue<int>();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[ModulePrefs] LoadSelectedTab failed: {ex.Message}");
+                return null;
+            }
+        }
+
+        public Task SaveSelectedTabAsync(int index) => SaveBlobAsync(SelectedTabKey, index);
 
         private T? LoadBlob<T>(string key) where T : class
         {

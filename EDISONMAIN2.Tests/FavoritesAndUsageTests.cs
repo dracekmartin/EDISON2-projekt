@@ -274,6 +274,31 @@ public class FavoritesAndUsageTests
     }
 
     [Fact]
+    public void TreeExpansion_RestoredFromPrefs()
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "TreeExpansion")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""["main:0"]""")));
+        var vm = CreateVM(prefs, tree: [Family("MHD", Exe("1"))]);
+
+        var family = vm.MainMenuTree.OfType<ModuleFamily>().Single();
+        Assert.True(family.IsExpanded);   // index 0 v "main" → rozbaleno z uložených prefs
+    }
+
+    [Fact]
+    public void TreeExpansion_UserExpand_Persists()
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        var vm = CreateVM(prefs, tree: [Family("MHD", Exe("1"))]);
+        var family = vm.MainMenuTree.OfType<ModuleFamily>().Single();
+        prefs.ClearReceivedCalls();   // ignoruj načítání během konstrukce
+
+        family.IsExpanded = true;     // simuluje TwoWay zápis z TreeViewItem při rozbalení
+
+        prefs.Received().SaveAsync("EDISONMAIN2", "TreeExpansion", Arg.Any<JsonNode>());
+    }
+
+    [Fact]
     public void FavoritesLoadedAtStartup_PrebuildsFavoritesTree()
     {
         var prefs = Substitute.For<IUserPrefsService>();
@@ -284,7 +309,29 @@ public class FavoritesAndUsageTests
         var fav = Assert.IsType<ExecutableModule>(Assert.Single(vm.FavoritesTree));
         Assert.Equal("100", fav.ElementId);
         Assert.False(vm.HasNoFavorites);
-        Assert.Equal(3, vm.InitialTreeTabIndex);   // Oblíbené je výchozí když nějaké jsou
+        Assert.Equal(3, vm.SelectedTreeTabIndex);   // bez uložené volby výchozí Oblíbené (3) když nějaké jsou
+    }
+
+    [Fact]
+    public void SelectedTab_RestoredFromPrefs()
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "SelectedTab").Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("2")));
+        var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
+
+        Assert.Equal(2, vm.SelectedTreeTabIndex);   // uložená volba má přednost před výchozí
+    }
+
+    [Fact]
+    public void SelectedTab_UserChange_Persists()
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        var vm = CreateVM(prefs, tree: [Exe("100", "App")]);
+        prefs.ClearReceivedCalls();
+
+        vm.SelectedTreeTabIndex = 4;
+
+        prefs.Received().SaveAsync("EDISONMAIN2", "SelectedTab", Arg.Any<JsonNode>());
     }
 
     // ---------- harness (mirror EdisonMainViewModelTests) -----------------

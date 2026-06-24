@@ -193,11 +193,12 @@
                     </StackPanel>
                 </DataTemplate>
                 <Style TargetType="{x:Type TreeViewItem}">
-                    <Setter Property="IsExpanded" Value="{Binding IsExpanded}"/>
+                    <!-- TwoWay → rozbalení/sbalení uživatelem se propíše do modelu (VM ho persistuje). -->
+                    <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                 </Style>
             </Grid.Resources>
-            <!-- Výchozí záložka: Oblíbené pokud nějaké jsou (kurátorství se vyplatí hned), jinak Hlavní nabídka. -->
-            <TabControl SelectedIndex="{Binding InitialTreeTabIndex, Mode=OneTime}">
+            <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených. -->
+            <TabControl SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}">
                 <TabItem Header="Hlavní nabídka">
                     <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0">
                         <b:Interaction.Triggers>
@@ -228,7 +229,13 @@
                         </b:Interaction.Triggers>
                     </TreeView>
                 </TabItem>
-                <TabItem Header="Oblíbené">
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="Oblíbené"/>
+                            <TextBlock Text="&#x2605;" Foreground="#FFC107" Margin="5,0,0,0"/>
+                        </StackPanel>
+                    </TabItem.Header>
                     <Grid>
                         <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0">
                             <b:Interaction.Triggers>
