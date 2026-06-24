@@ -59,6 +59,9 @@ public class TemplateDesignerViewModel : EDViewModel
     private List<TemplateParameter>             _agendaParameters    = [];
     private readonly Dictionary<string,object?> _previewParams       = new();
     private Dictionary<string,object?>?         _cachedParamValues;
+    // Poslední hodnota server-side parametru rozdělení sloupců — změna vyžaduje re-fetch dat z Caché
+    // (grouping počítá server), na rozdíl od client-side parametrů, které jen překreslí.
+    private string?                             _lastServerParamRozdeleni;
     private string?                             _lastParamsAgendaCode;
 
     // ── Active instances (linky pro MHD, faktury pro FAKTURY, ...) ────────────
@@ -151,9 +154,12 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             StatusText = $"Načítám data: {instance.Display}…";
             var paramName = InstanceParamName(agendaCode);
-            var pages = await Task.Run(() => CacheProvider.GetData(
-                agendaCode,
-                new Dictionary<string, object?> { [paramName] = instance.Value }));
+            // Print params (vč. server-side, např. ROZDELENI_SLOUPCU) → GetData; instance přebíjí klíč linky.
+            var getDataParams = new Dictionary<string, object?>(_previewParams, StringComparer.OrdinalIgnoreCase)
+            {
+                [paramName] = instance.Value
+            };
+            var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
             // zastaralý a nesmí dosednout do nové šablony.
@@ -679,6 +685,8 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         State.CurrentTemplate = new Template();
         if (agendaCode is not null) State.CurrentTemplate.AgendaCode = agendaCode;
+        // Výchozí sekce, ať uživatel nezačíná na prázdné šabloně bez plochy k editaci.
+        State.CurrentTemplate.Sections.Add(CreateDefaultSection(State.CurrentTemplate.PageSize));
         CurrentFilePath = null;
         _loadedFromCache = false;
         IsDirty = false;
@@ -702,7 +710,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         if (CacheProvider is null)
         {
-            PopupDisplayer.Info("Caché není nakonfigurováno — výběr instancí není dostupný.");
+            PopupDisplayer.Info("Databáze není nakonfigurována — výběr instancí není dostupný.");
             return;
         }
         var agendaCode = State.CurrentTemplate.AgendaCode;
@@ -983,7 +991,7 @@ public class TemplateDesignerViewModel : EDViewModel
             await TemplateStorage.SaveAsync(State.CurrentTemplate);
             IsDirty = false;
             RequestTitleUpdate?.Invoke();
-            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do databáze.");
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
@@ -1012,7 +1020,7 @@ public class TemplateDesignerViewModel : EDViewModel
             CurrentFilePath = null;
             IsDirty = false;
             RequestTitleUpdate?.Invoke();
-            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do Caché.");
+            PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do databáze.");
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
@@ -1752,7 +1760,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     public async Task LoadPrintParamsAndApplyAsync()
     {
-        if (Preferences is null || _agendaParameters.Count == 0) return;
+        if (Preferences is null) return;
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode)) return;
 
@@ -1778,6 +1786,15 @@ public class TemplateDesignerViewModel : EDViewModel
                 }
             }
             catch { /* malformed value pro tento param — ponecháme default */ }
+        }
+
+        // Export pole (členění/název souboru) nejsou agenda parametry → obnovit zvlášť (string).
+        // Bez tohoto by se uložená volba po reopenu šablony ztratila (write-only).
+        foreach (var key in PrintDialogViewModel.ExportKeys)
+        {
+            if (!saved.TryGetValue(key, out var node) || node is null) continue;
+            try { _previewParams[key] = node.GetValue<string>(); }
+            catch { /* malformed — ponecháme default */ }
         }
 
         if (changed) OnExternalParamsChanged();
@@ -1814,26 +1831,37 @@ public class TemplateDesignerViewModel : EDViewModel
             onChanged:  () =>
             {
                 _cachedParamValues = null;
-                RequestPreviewRefresh?.Invoke();
+                // Server-side param „rozdělení sloupců" (grouping počítá Caché) → změna vyžaduje re-fetch dat.
+                // Ostatní (client-side) parametry jen překreslí. (Zatím jediný server param — hardcoded.)
+                var rozd = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv) ? rv?.ToString() : null;
+                if (CurrentActiveInstance is not null && rozd != _lastServerParamRozdeleni)
+                {
+                    _lastServerParamRozdeleni = rozd;
+                    _ = RefreshDataForCurrentInstanceAsync();
+                }
+                else
+                {
+                    RequestPreviewRefresh?.Invoke();
+                }
             },
-            // Žádný parametr sestavy už neurčuje načítaná data (linku řídí Instance Picker) —
-            // změna parametru jen překreslí preview, nepřenačítá z Caché.
             commitFactory: _ => null);
 
+        // Výchozí hodnota server-paramu, ať první změna client-paramu nespustí falešný re-fetch.
+        _lastServerParamRozdeleni = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv0) ? rv0?.ToString() : null;
         HasParameters = PreviewParameters.Count > 0;
     }
 
     private void UpdateCacheStatus(string? agendaCode, DataSchema? cacheSchema)
     {
         if (CacheProvider is null)
-        { StatusText = "Caché: není nakonfigurováno — pole načtena z JSON"; return; }
+        { StatusText = "Databáze: není nakonfigurována — pole načtena z JSON"; return; }
 
         if (agendaCode is null)
-        { StatusText = "Caché: nakonfigurováno"; return; }
+        { StatusText = "Databáze: nakonfigurována"; return; }
 
         StatusText = cacheSchema is not null
-            ? $"● Caché: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
-            : $"○ Caché: nedostupné — záloha JSON ({agendaCode})";
+            ? $"● Databáze: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
+            : $"○ Databáze: nedostupná — záloha JSON ({agendaCode})";
     }
 
     public CultureInfo GetTemplateCulture()
@@ -1875,11 +1903,13 @@ public class TemplateDesignerViewModel : EDViewModel
                 if (pages is null) continue;
                 foreach (var p in pages) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return all;
+            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, CurrentNoteSuppression(), CurrentHideAggBezbarier(), CurrentHideNaZnameniLegend());
         }
 
         if (_realPreviewData is { Count: > 0 })
-            return _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList();
+            return NoteVisibilityFilter.Apply(
+                _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
+                CurrentNoteSuppression(), CurrentHideAggBezbarier(), CurrentHideNaZnameniLegend());
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
@@ -1956,8 +1986,23 @@ public class TemplateDesignerViewModel : EDViewModel
                 : new DataContext(stringParams, culture: culture);
         }
 
-        return mockData;
+        var src = overrideParams ?? _previewParams;
+        var suppressionMode = NoteVisibilityFilter.ParseMode(src.GetValueOrDefault(NoteVisibilityFilter.ParamName));
+        var hideAgg = NoteVisibilityFilter.ParseBool(src.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
+        return mockData is null ? null : NoteVisibilityFilter.Apply(mockData, suppressionMode, hideAgg, CurrentHideNaZnameniLegend());
     }
+
+    /// <summary>Režim schování poznámek v rozsahu „nepoznámkovat" z aktuálního parametru sestavy.</summary>
+    private NoteRangeSuppression CurrentNoteSuppression() =>
+        NoteVisibilityFilter.ParseMode(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamName));
+
+    /// <summary>Skrýt agregátní bezbariér poznámku (#7161 D6) z aktuálního parametru sestavy.</summary>
+    private bool CurrentHideAggBezbarier() =>
+        NoteVisibilityFilter.ParseBool(_previewParams.GetValueOrDefault(NoteVisibilityFilter.ParamAggBezbarier));
+
+    /// <summary>Skrýt legendu „× na znamení" když StopList netiskne značku (#7161 D5) — ze šablony.</summary>
+    private bool CurrentHideNaZnameniLegend() =>
+        NoteVisibilityFilter.ShouldHideNaZnameniLegend(State.CurrentTemplate);
 
     /// <summary>Výchozí mock hodnota podle typu pole — použije se když Example chybí.</summary>
     private static string MockDefault(DataField f) => f.DataType switch
@@ -2135,8 +2180,11 @@ public class TemplateDesignerViewModel : EDViewModel
         TemplateElement element;
         if (fieldName is not null)
         {
-            string placeholder = $"{{{fieldName}}}";
-            element = new TextElement { X = mmX, Y = mmY, Width = defW, Height = defH, Text = placeholder };
+            // Přes CreateElementByType, ať DB-pole dostane stejné defaulty jako element z palety
+            // (výchozí rámeček, rozměry) — dřív se tvořil holý TextElement bez rámečku.
+            var textEl = (TextElement)CreateElementByType(ElementTypes.Text, mmX, mmY);
+            textEl.Text = $"{{{fieldName}}}";
+            element = textEl;
         }
         else
         {
@@ -2205,31 +2253,23 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Sample template ───────────────────────────────────────────────────────
+    // DEV (test AD): výchozí agenda = Zastávkový JŘ (AD) + jedna sekce přes celou A4. NECOMMITOVAT —
+    // produkční starter je MHD + Záhlaví/Obsah/Patička (viz git). Lokální testovací tweak.
     public static Template CreateSampleTemplate()
     {
-        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_MHD" };
-        const float headerH = 25f;
-        const float footerH = 15f;
-        float bodyH = Math.Max(0f, t.PageSize.PrintableHeight - headerH - footerH);
-        t.Sections.Add(new Section
-        {
-            Name = "Záhlaví", PrintBehavior = SectionPrintBehavior.OnEveryPage,
-            Role = SectionRole.Header,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = headerH
-        });
-        t.Sections.Add(new Section
-        {
-            Name = "Obsah", PrintBehavior = SectionPrintBehavior.Once,
-            OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages, DesignerHeight = bodyH
-        });
-        t.Sections.Add(new Section
-        {
-            Name = "Patička", PrintBehavior = SectionPrintBehavior.OnEveryPage,
-            Role = SectionRole.Footer,
-            OverflowBehavior = SectionOverflowBehavior.KeepTogether, DesignerHeight = footerH
-        });
+        var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
+        t.Sections.Add(CreateDefaultSection(t.PageSize));
         return t;
     }
+
+    /// <summary>Výchozí sekce „Obsah" přes celou tiskovou plochu stránky — sdílená novou i sample šablonou.</summary>
+    private static Section CreateDefaultSection(PageSize pageSize) => new()
+    {
+        Name = "Obsah",
+        PrintBehavior = SectionPrintBehavior.Once,
+        OverflowBehavior = SectionOverflowBehavior.SplitAcrossPages,
+        DesignerHeight = pageSize.PrintableHeight
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

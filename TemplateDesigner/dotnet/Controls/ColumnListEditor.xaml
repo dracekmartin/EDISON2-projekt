@@ -1,0 +1,52 @@
+<UserControl x:Class="TemplateDesigner.Controls.ColumnListEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:TemplateDesigner.Controls">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <local:NullableMmToTextConverter x:Key="MmToText"/>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <ListBox Grid.Row="0"
+                 ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                 SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
+                 BorderThickness="1" BorderBrush="#CCCCCC">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid Margin="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox IsChecked="{Binding Visible, UpdateSourceTrigger=PropertyChanged}"
+                                  VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        <Ellipse Grid.Column="2" Width="7" Height="7" Fill="#2196F3" Margin="6,0,0,0"
+                                 VerticalAlignment="Center"
+                                 ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
+                                 Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
+                        <TextBlock Grid.Column="3" VerticalAlignment="Center" Foreground="#888888"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="4,0,0,0"
+                                   Text="{Binding ColumnWidth, Converter={StaticResource MmToText}}"/>
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,4,0,0">
+            <Button Content="▲" Width="28" Padding="2,1" Margin="0,0,4,0"
+                    Command="{Binding MoveUpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+            <Button Content="▼" Width="28" Padding="2,1"
+                    Command="{Binding MoveDownCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+        </StackPanel>
+    </Grid>
+</UserControl>

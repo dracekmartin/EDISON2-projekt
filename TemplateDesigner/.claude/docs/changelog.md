@@ -1,5 +1,269 @@
 # Changelog
 
+## 2026-06-23 — AD: datumová omezení jako negativní značky (cnz) + drobné opravy
+
+- ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (1:1 legacy). Marker datumového omezení je
+  nově `cnz` spoje (`$p(spoj,"#",7)`) renderovaný jako typ `nz` (invertovaný box), ne sekvenční „1".
+  Text dál z per-spoj `SestavTextOmezeni`. Dedup per-cnz. `cnz` prázdné → fallback na staré sekvenční.
+  Ověřeno gold oracle (`ALVA.TISKMHD.Data`) na **obou** firmách (CB_CSADAD „29", KV_DP 28/30/31/40).
+  **Korekce dřívějších domněnek:** žádný firemní TYPPOZ gate (`MHDnewOM` prázdné u obou firem),
+  KV_DP nebyl 1:1 ani předtím, text jde z per-spoj (ne ze zastaralého InPlatDef seedu). Detail §10.
+- ✅ **Toggle `InvertovatNegativniZnacky` odstraněn** z `DepartureGridElement` — inverze NZ je teď
+  napevno vždy zapnutá (AD i MHD, jako legacy); barvy `NegativniZnacka{Back,Fore}Color` ponechány.
+- 🐛 **Drag DB pole nemělo výchozí rámeček** — `AddElementAtPosition` tvořil holý `TextElement` mimo
+  `CreateElementByType`. Nově jde přes `CreateElementByType(Text)` → stejné defaulty (rámeček, rozměry)
+  jako element z palety.
+
+## 2026-06-23 — AD: konfigurovatelné rozdělení sloupců (typy provozu / FTL override)
+
+- ✅ **Nový parametr „Rozdělení sloupců (typy provozu)"** v AD agendě — override FTL (default
+  „Automaticky (dle linky)" = `MHD_TYP_R`) se 4 módy pokrývajícími FTL0-3 (= kombinace
+  prázdninový split prac. dnů × sloučení víkendu). **Reuse existujícího `NacistSkupinyDnu` +
+  `ZarazeniSpoje`** (engine beze změny, jen `$case` override `ftl`). Uživatel si tak může zvolit
+  rozdělení/sloučení sloupců místo napevno dle dat linky.
+- ✅ **Server-side param flow** — `RefreshDataForCurrentInstanceAsync` posílá print params do
+  `GetData` (dřív jen instanci); změna server-paramu spustí **re-fetch** dat z Caché (client-side
+  params jen překreslí, beze změny perf).
+- **Datově:** víkend merge/split jede z Plk dat (funkční vždy); prázdninový split potřebuje NZ
+  konfig (`MHD_NZ1_NZ2`, dormant ve všech firmách) → sloupec „o prázdninách" prázdný (očekávané).
+- **Follow-up:** (1) generalizovat „server-side" flag parametru (zatím hardcoded
+  `ROZDELENI_SLOUPCU` v C# re-fetch checku); (2) poznámka „jede v neděli" chybí u jednoho spoje
+  0365005 (date-based omezení vs dateless denní note) — k dohledání; (3) jemné custom rozdělení
+  (libovolné dny → sloupec) + multi-varianta tras ve StopListu = větší redesign.
+
+## 2026-06-23 — DepartureGrid: adaptivní rozteč minut s anotacemi
+
+- ✅ **Minuta s anotacemi se už nepřekrývá s další minutou** — slot odjezdu v `DrawMinuteCell` je
+  nově adaptivní: nominální `scaledMinuteW` + naměřená šířka anotací (zachová nominální mezeru).
+  Blok minut se zarovnává ze součtu adaptivních šířek (správný center/right align). Dřív se
+  posouvalo o pevnou `MinuteWidth` → husté buňky s poznámkami se slévaly. Šířka sloupce
+  (ComputeLayout) zatím beze změny — s redistribucí na šířku elementu bývá slack; měření šířky
+  sloupce dle anotací = follow-up, pokud by dense buňka přetékala do sousedního sloupce.
+
+## 2026-06-23 — NotesLegend: zalamování dlouhých poznámek
+
+- ✅ **NotesLegend wrapuje text poznámek** na šířku sloupce (`DrawWrappedBody` přes `TextWrapHelper`)
+  — dlouhá poznámka už nepřetéká doprava, ale zalomí se na další řádky (visutý odsazený blok pod
+  tělem). Layout přešel z pevné mřížky řádků na **akumulaci Y per sloupec** (víceřádková poznámka
+  posune další dolů). `CalculateHeightFromData` zrcadlí (výška = nejvyšší sloupec dle zalomených
+  řádků → auto-scale u pevné výšky). Wrap je vždy zapnutý (overflow nikdy nechceme).
+
+## 2026-06-23 — AD StopList: projeté zastávky + oprava dvojitého „na znamení" + názvy sloupců
+
+- ✅ **AD: tisk projetých zastávek** (`ZastavkoveJrAd.BuildStrankaZastavky`) — agenda nyní emituje
+  **celou trasu** ve směru (vč. projetých, analogicky MHD): `JE_AKTUALNI` na aktuální, projeté mají
+  `casJizdy=0` a bez atributů. StopList je defaultně skryje (`ShowPassedStops=false` → výchozí výstup
+  1:1 zachován); „tisk projetých zastávek" je zobrazí ztlumeně. Dřív AD emitovalo jen úsek od aktuální
+  → toggle byl inertní (na rozdíl od MHD).
+- ✅ **AD: oprava dvojitého „na znamení" (× x)** — agenda nastavovala `NA_ZNAMENI=true` (→ syntetický
+  `SignalStopSymbol` „×") **i** přidávala atribut „x" → znak se tiskl dvakrát. Nyní `NaZnameni=0`,
+  „na znamení" jde jen přes atribut „x" (1:1 legacy `UVOD^JRapiLinPrtMhd`).
+- ✅ **Editor sloupců StopListu: čitelné názvy** — `StopColumnVM.DisplayName` odvozen z `Key`
+  („Tarifní číslo (TČ)", „Základní trasa (ZT)", „Čas jízdy", „Průběhy trasy"…); tištěná zkratka
+  v poli „Nadpis" zůstává. Uživatel už nemusí luštit „TČ"/„ZT".
+
+## 2026-06-23 — Genuine page-overflow detekce (dokončení P0-2)
+
+- ✅ **`PreviewCanvas.PageOverflows`: detekce sekce vyšší než stránka** — u `KeepTogether` sekcí
+  (nelze rozdělit) hlásí přetečení, když `placed.Y + placed.Height > PrintableHeight` → obsah pod
+  spodní hranou tiskové plochy se ořízne. Doplňuje dnešní #8 fix: ten odstranil false-positive u
+  dělitelných sekcí, ale tím se ukázalo, že element-vs-sekce kontrola fakticky nikdy nenaskočí
+  (sekce se sama roztáhne na obsah) → varování bylo dormantní. Teď chytá reálný případ.
+- **Ověřeno live:** KeepTogether 400 mm → červená; přepnutí na SplitAcrossPages → bez červené
+  (fix #8 drží); KeepTogether 100 mm + čistá šablona → bez false-positive.
+
+## 2026-06-23 — Negativní značky invertovaně v mřížce odjezdů (legacy shoda)
+
+- ✅ **DepartureGrid: NZ u minuty invertovaně** — negativní značka (`TypAnotace.NegativniZnacka`) se
+  v mřížce kreslí jako **černý box + bílý znak**, jako legacy (`formTISKMHDReportDotNet_Module.vb`
+  `FillRectangle(Color.Black)` + bílý text). Dřív se kreslila plain. Tři nové property:
+  `InvertovatNegativniZnacky` (default zap), `NegativniZnackaBackColor` (černá), `NegativniZnackaForeColor`
+  (bílá) — editovatelné v panelu (skupina „Anotace — symboly"). Backward-compat: staré šablony dostanou
+  invert default = legacy shoda.
+- **Ověřeno** na MHD agendě (mock NZ „22" v 6:45 → invertované). **AD záměrně bez NZ u minut** —
+  v JRMAIN je CNZ jen klasifikátor sloupců dnů (omezení = textové anotace), ověřeno 1:1 proti gold
+  oracle; přidání by AD od legacy odchýlilo.
+
+## 2026-06-22 — Stylový pod-formulář přes CellStyleEditor (Fáze 2 — prototyp, 1 zóna)
+
+- ✅ **`StyleEditDialog` + `StyleEditDialogViewModel`** — znovupoužitelný pod-formulář pro editaci
+  JEDNOHO TextStyle (zóny) libovolného elementu přes sdílený **`CellStyleEditor`** (tri-state →
+  zděděné hodnoty jako **šedý placeholder**, rozlišuje dědí/explicit, reset). VM čte/zapisuje styl
+  reflexí dle prefixu; OnOk → `SetPropertyCommand` (undo). **Nikdy nezapíše null** (nenullovatelný
+  HeaderStyle by spadl) — prázdná zóna = nový prázdný TextStyle / žádný command.
+- ✅ **EDInputForm `ButtonClicked` event** (EDControls, aditivní) — klik na BUTTON pole dá hostu klíč
+  → client-side akce (otevřít pod-formulář). Doplňuje server-side Validate.
+- ✅ **Odjezdy „Styl záhlaví" → tlačítka** — HeaderStyle + 2. řádek balíčky (~30 polí) nahrazeny
+  tlačítky „Upravit styl…" → pod-formulář. Hlavní „Obecné" se odlehčí. Commandy keyované prefixem
+  (opakované otevření zóny nahradí) → aplikují se v parent OK jako jeden undo krok.
+- **Prototyp:** jen zóna Styl záhlaví u Odjezdů; ostatní zóny + StopList zatím inline. `StyleEdit.cls`
+  (Caché varianta A) ponechán jako nepoužitý server-side fallback. **Dál:** rozšířit na všechny zóny
+  + StopList, pak uklidit. Detaily v roadmap (Fáze 2 — stylový pod-formulář).
+
+## 2026-06-22 — Odjezdy „Obecné" → EDInputForm (Fáze 1, krok 4 — C# rewire) ✅ Fáze 1 hotová
+
+- ✅ **Tab „Obecné" dialogu Odjezdů → `<eif:EDInputForm>`** (schéma `DepartureGridElementEdit`) místo
+  ručních CellStyleEditorů + PropertiesPanel. Flow změněn z **live** (PropertiesPanel + executeCommand
+  + undo na cancel) na **batch na OK** (jako StopList): code-behind `OkButton_Click` → `GeneralForm.Save()`
+  → `ElementFormBinder.ExtractCommands` → `GeneralCommand`. Cancel = nic se neaplikuje.
+- ✅ **VM odlehčen** — odebrány `ElementHeaderStyle`/`ElementDataStyle` + 9 element-level commandů +
+  `PickElementColor` + `GeneralDescriptors` + ctor param; OnOk už nezapisuje HeaderStyle/DataStyle.
+- ✅ **`ElementPropertyAccessor.Set` lazy-alokuje null mezičlánky** na cestě (generické) — pro nullable
+  zóny jako `HeaderLine2Style`; jen při zápisu (Get/Exists nealokují → Cancel element nemutuje).
+- ✅ **MainWindow** — undoDepth/cancel-undo zahozen; OK aplikuje GeneralCommand + GroupColumns +
+  HourColumnStyle jako **jeden `CompositeCommand`** (single undo, jako StopList).
+- Fix: `HourColumnWidth` jen v tabu Sloupce (řádek Hodiny) — odebráno z Obecné, ať nekoliduje (dvojí zdroj).
+- **Fáze 1 (sjednocení tabulkových editorů) HOTOVÁ:** Zastávky i Odjezdy mají kostru Obecné(EDInputForm) /
+  Styl záhlaví / Styl datových buněk / [element]-specifické. Známé low: hour header/width direct-write
+  není undo; lazy-alloc po undo nechá prázdný `HeaderLine2Style`. **Navazuje:** extrahovat stylový balíček
+  do pod-formuláře (StyleEdit + StyleEditDialog) — odlehčí oba editory (5 zón × 15 polí inline).
+
+## 2026-06-22 — EDInputForm 4-skupinová kostra + sdílený StyleFields helper (Fáze 1, krok 4 — Caché část)
+
+- ✅ **Sdílený `ALVA.TemplateDesigner.EDInputForm.StyleFields.Add`** — jediný zdroj „balíčku" polí
+  stylu textu (Font/Velikost/Tučné/Kurzíva/Podtržení/Přeškrtnutí/Zarovnání H+V/Barvy/Padding/Řádkování)
+  pro daný property-path prefix. Volitelně append do poslední skupiny + prefix labelů (víc zón
+  v jedné skupině). Nové pole stylu stačí přidat zde → propíše se do všech zón i elementů.
+- ✅ **`StopListElementEdit` přeskupeno** do 4-skupinové kostry: **Obecné · Styl záhlaví · Styl
+  datových buněk · [Element]-specifické** (+ Pozice/Podmínky). Stylové skupiny přes helper.
+  Stejné property-path klíče → chování zachované (jen seskupení); „Řádky" sloučeno do Obecné,
+  „Zastávky/Směr/Zvýraznění" do „Zastávky — specifické".
+- ✅ **`DepartureGridElementEdit`** — nové schéma ve stejné kostře (Obecné / Styl záhlaví +2.řádek /
+  Styl datových buněk = minuty / Odjezdy — specifické = anotace symboly+text přes prefix labelů).
+  `HeaderStyle.VAlign` primární (HeaderVerticalAlignment fallback), `TimeAxisMode` = enum názvy.
+  **Zatím nenapojené** na dialog — čeká na C# rewire (lazy HeaderLine2 alloc, collapse legacy
+  scalárů, SetHeaderFontSize cleanup v Init/OnOk).
+- Standard: „Obecné = EDInputForm" pro jednoduché elementy; TableElement (DataGrid) je výjimka.
+
+## 2026-06-22 — Auto + override šířka sloupců (Fáze 1, krok 2b)
+
+- ✅ **StopList — nullable šířka (`StopColumn.Width` → `float?`)** — prázdné = **auto** (rovnoměrně
+  rozdělí zbývající šířku elementu po pevných sloupcích), hodnota = pevná. Jediné místo:
+  `StopListElement.ResolveColumnWidths` (Dictionary<StopColumn,float>); napojeno do layoutu
+  (pozice šipky, BuildDataRowSpecs/BuildHeaderRowSpecs/RenderColumnHeaders), ApplyScale (škáluje
+  jen pevné). Editor: `WidthText` (prázdné = auto), fit-to-width + overflow ošetřeno na null.
+  **Default `Width = null`** (ne 10f) — jinak by se auto po uložení ztratilo (serializer WhenWritingNull).
+- ✅ **DepartureGrid — per-group `WidthOverride`** (float?) — prázdné = auto (z obsahu + proporční
+  dofill, jako dosud), hodnota = **pin** (vyloučen z přerozdělení zbytku). Sloupec Hodin edituje
+  `HourColumnWidth`. Layout cache hashuje `WidthOverride`.
+- ✅ **Sdílený `Controls.ColumnWidthText.Parse/Format`** — locale-robustní (přijímá tečku i čárku,
+  InvariantCulture); použito oběma editory (odstraňuje duplikaci + tichý fail při desetinné čárce).
+- Oba editory mají detail „Záhlaví + Šířka" se **stejným modelem** (prázdné = auto, hodnota = pevná).
+  Existující šablony beze změny (mají šířky vyplněné = pevné). **Zbývá (krok 4):** Odjezdy
+  „Obecné" → EDInputForm. **Později (krok 5):** content-aware auto šířka (dle délky dat).
+
+## 2026-06-22 — Override nadpisu sloupce (AD-N6) + sdílený editor sloupců (Fáze 1, krok 1+2a)
+
+- ✅ **Override nadpisu sloupce/skupiny** — `Rendering/ColumnHeader.Resolve(override, source)` = jediné
+  místo sémantiky „override přebíjí zdroj, prázdné → zdroj". Napojeny **všechny tabulkové komponenty**:
+  StopList + TableElement (zdroj = autorský `Header`) i DepartureGrid (`DepartureGroupColumnStyle.HeaderOverride`
+  přebíjí nadpis skupiny dnů z dat). Koncept se neimplementuje per komponenta — liší se jen ČÍM je zdroj.
+- ✅ **Sloupec Hodin přepisovatelný** — `DepartureGridElement.HourColumnHeader` (prázdné → „Hod"); render
+  přes `ColumnHeader.Resolve`, Clone. Editor: override jde nastavit pro **všechny** sloupce vč. Hodin.
+  Uzavírá legacy AD-N6 („Nadpisy sekcí pro rozvržení").
+- ✅ **Sdílený seznam sloupců** `Controls/ColumnListEditor` + `Controls/IColumnRowVM`
+  (`DisplayName`/`Visible`/`HasAnyOverride`/`ColumnWidth?`) — levý seznam jednotně pro Zastávky i Odjezdy
+  (checkbox + název + override-tečka + „X mm" jen u pevné šířky + ▲▼). `StopColumnVM` i
+  `DepartureGroupColumnVM` implementují rozhraní (v DepartureGroup přejmenováno `IsVisible`→`Visible`).
+- ✅ **Pořadí skupin dle dialogu** — `ResolveSkupiny` (render) i ctor editoru řadí skupiny dle
+  `GroupColumns` (dřív datové pořadí) → přeskládání ▲▼ se projeví ve výstupu a přežije reopen dialogu.
+- ✅ **Zarovnání jednotně ve stylu** — odebráno duplicitní inline „Zarovnání" combo ze Zastávek
+  (HAlign v `CellStyleEditor` mají oba). Detail „Struktura sloupce" sjednocen (Záhlaví; Šířka jen u Zastávek).
+- Layout cache DepartureGridu hashuje override + pořadí (`GroupHeaderOverridesHash`, order-sensitive).
+  JSON zpětně kompatibilní (chybějící = null = z dat). **Zbývá (krok 2b):** proporční auto šířka v obou
+  (sjednotí i poslední rozdíl „X mm"); pak Obecné→EDInputForm u Odjezdů (krok 4).
+
+## 2026-06-22 — Tisk s daty: členění výstupu + název souboru z dat
+
+- ✅ **Členění výstupu** (`__EXPORT_SPLIT`) — při tisku s daty (více instancí zastávka × směr) volba:
+  **Vše do jednoho PDF** (default, dnešní chování) / **Jeden PDF na linku** / **Jeden PDF na
+  zastávku × směr** (legacy vývěska per zastávka). Single → `SaveFileDialog`; split →
+  `OpenFolderDialog` + N souborů do složky přes existující `RenderMultiDataToPdf` (1 volání per
+  skupina, žádná nová PreviewCanvas metoda). Seskupení `GroupBy("CISLO_LINKY")` (zachovává pořadí
+  z Caché). Bez ZIP (volné soubory ve složce = přímo použitelné pro tisk vývěsek).
+- ✅ **Název souboru z dat** (`__EXPORT_FILENAME`) — pattern s `{POLE}` tokeny vyhodnocený nad první
+  instancí skupiny přes `DataContext.ResolvePlaceholders` (konzistentní s `{POLE}` všude jinde).
+  Default `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}` (= legacy „NázevZastávky_ČísloLinky_…",
+  funguje pro AD i MHD). Sanitizace neplatných znaků + kolize → přípona `_2`, `_3`. Pole viditelné
+  jen ve split režimu (`PrintDialog.ApplyVisibility`).
+- ✅ **Jako EDInputForm pole, ne bespoke WPF** — obě volby přidává **`AgendaParams.cls`** jako
+  universální skupinu „Export" (společná všem agendám, NEjsou v `GetParameters` → neukáží se
+  v preview liště). Hodnoty tečou přes sdílený `_paramValues` → **persistence per-agenda zadarmo**
+  (přes existující `PrintParams`, líp než per-session). PrintDialog se nově staví i pro agendu bez
+  `GetParameters` (`HasForm`, ne `HasParameters` — kvůli export skupině).
+- **TODO** (roadmap): extrahovat na úroveň `Template`/agenda-config (firemní default jako legacy
+  „Tisk → Linky-MHD"). Dorovnává legacy firemní „Název souboru pro export do pdf" + per-linka split.
+
+## 2026-06-21 — Legenda poznámek: layout (sloupce / řazení / zarovnaný marker)
+
+- ✅ **Víc-sloupcová legenda** — `NotesLegendElement.Columns` (1-4) + `WrapSmer` (po sloupcích / po
+  řádcích). Render distribuuje poznámky do sloupců, výška = záhlaví + `ceil(N/Columns)` × řádek.
+  Dorovnává legacy „Počet sloupců" (`stPOZ_PocetSloupcu`), bez 1/2 stropu.
+- ✅ **Zarovnaný marker** — `MarkerSirka` (0 = inline jako dnes, >0 = pevná levá buňka se znakem →
+  svisle zarovnané markery). Dorovnává legacy `stPOZ_SirkaSloupceTextVlevo`.
+- ✅ **Řazení poznámek** — `Razeni` (výchozí / podle délky). Dorovnává legacy „Trid_delK".
+- Vystaveno v EDInputformu (`NotesLegendElementEdit.cls`, skupina „Rozložení") i inline panelu.
+  Default (1 sloupec, inline, výchozí řazení) = beze změny existujících šablon. Reference:
+  legacy návrhář `formTISKMHDSekcePoznamkyEdit` (viz `ad-jr-typy-poznamek-layout-analyza.md §1b`).
+
+## 2026-06-21 — AD #7161 D5 (skrýt legendu „× na znamení") + D6 ověřeno
+
+- ✅ **#7161 D5** — `NoteVisibilityFilter.ShouldHideNaZnameniLegend(template)`: když šablona má StopList,
+  ale žádný nemá zapnuté `ShowSignalStopIndicator` („Na znamení"), skryje se z legendy kategorie
+  `atribut-zastavky` („× na znamení"). Legenda následuje viditelnost značky, žádné nové ovládání,
+  žádná Caché změna. Test: CB_GWBUS 0320144. **#7161 uzavřen (D5+D6).**
+- ✅ **#7161 D6 ověřeno** na CB_CSADAD 0365004 (agregát „všechny spoje bezbariérové" se parametrem skryje).
+
+## 2026-06-21 — AD #7947 + #7161 D6 (rozdíly tras + bezbariér agregát)
+
+- ✅ **#7947 „jede až do XY"** — `RozdilyTras` větev prodloužení vypisuje „jede až do zast. <konečná>"
+  místo matoucího legacy „pokračuje přes". Záměrná odchylka (klient), kód analogický k „jede jen do".
+- ✅ **#7161 D6 — skrýt agregát bezbariér** — parametr `SCHOVAT_AGREGAT_BEZBARIER` (bool). Caché taguje
+  agregátní legendu (`allBBP` → kat. `bezbarier-agregat`), `NoteVisibilityFilter` ji skryje. Filtr-model
+  jako #7955. Neověřeno na datech (žádná linka 100% bezbariér v KV_DP/CB_CSADAD — latentní).
+- 🔧 **MCP `edison-cache` opraven** — deployovaný exe byl neúplný (chyběl runtime); rebuild +
+  `.mcp.json` cesta na podsložku `C:\Edison\EdisonCacheMcp\`. Ověřeno proti gold oraclu (CB_CSADAD).
+- 📄 **AD analýzy sloučeny** do `ad-jr-nastaveni-linky-analyza.md`; přípoje/km přesunuty do linkových JŘ.
+
+## 2026-06-20 — AD #7955: co schovat v rozsahu „nepoznámkovat" (Fáze 2)
+
+- ✅ **Parametr sestavy `SCHOVAT_V_ROZSAHU`** (enum: Ruční komentáře [default] / Automatické (rozdíly
+  tras) / Obojí) — řeší #7955 (klient chce u spojů s vlastním komentářem schovat auto, ne komentář).
+  Nad preview i v Ctrl+P (nativní param infra).
+- **Model nadmnožina + TD filtr** (viz `feature-design-principles.md §5.2`): Caché už **nedropuje**,
+  emituje všechny anotace/legendu otagované `KATEGORIE` + `SPOJ` + `V_ROZSAHU_NEPOZNAMKOVAT`. Schování
+  je render-time `NoteVisibilityFilter` v TD → změna se projeví překreslením, bez Caché re-fetch.
+- **Filtr** schová jen anotace v rozsahu „nepoznámkovat" (`V_ROZSAHU=1`) dané kategorie; legendu prořeže
+  podle kategorie + přítomnosti znaku (sdílený znak mimo rozsah zůstane; „x na znamení" se neprořezává).
+  Napojeno na všechny 3 datové cesty (preview, export, tisk reálných dat). Default = legacy (bez regrese).
+- Caché legacy chování zachované (nepřeklopena sémantika „nepoznámkovat") — flip je čistě TD volba.
+
+## 2026-06-20 — AD ruční poznámky linky z tabu MHD (Fáze 1)
+
+- ✅ **AD-N7 Komentáře** — `ZastavkoveJrAd` čte ruční komentáře spoje (`MhD,"SeT_SpeC"` přiřazené přes
+  per-spoj `MhD_SpeC`) → znak jako anotace u minuty + znak+text do legendy. 1:1 `JRapiLinPrtMhd1` ř.211-216.
+- ✅ **AD-N8 Spoje, nepoznámkovat** — helper `NepoznamkovatSpoj` (1:1 `noPoz`): `MHDSPNPZN`=odTČ~doTČ,
+  směrová logika dle parity spoje, fallback na konec trasy. Potlačí **ruční komentář** v rozsahu TČ
+  (auto-poznámky běží dál — legacy sémantika; flip = Fáze 2 / #7955).
+- ✅ **AD-N9 Směrové poznámky** — `MhD,"SeT_MhD"` tam/zpět/vše filtrované dle směru stránky
+  (tam→`>`+`<>`, zpět→`<`+`<>`) → legenda. 1:1 ř.440-447.
+- Caché-only (C# renderer beze změny — anotace + POZNAMKY existující cestou). Čitelné názvy proměnných
+  (ne legacy zkratky). Zbývá: umístění směrových poznámek (legacy nahoru jako směrové záhlaví vs dole),
+  Fáze 2 (#7955 opt-in přepínač).
+
+## 2026-06-20 — AD nastavení linky 1:1 (track PRIORITA 2b)
+
+- 📄 **Business analýza nastavení tisku na úrovni linky** — `ad-jr-nastaveni-linky-analyza.md`:
+  podchyceno, jak legacy čte nastavení linky (taby MHD / MHD-další / dialog Nastavení tisku) přes 3
+  readery (`gPrpLin`/`gPrpLinMhd`/`gSetLinPrt^JRapiLin*`), per-feature business význam + storage v
+  `^JRL` + zda to máme/nemáme. Klíč: `ALVA.TISKMHD.Data` je jen formátovač, logika je v MAC `JRapi*`.
+  Roadmap track **PRIORITA 2b (AD-N1..N15)** namapován 1:1 na §-čísla analýzy.
+- ✅ **AD-N1 — Poznámka nad linku** — `ZastavkoveJrAd` nově čte `PATCH,"Head"` → placeholder
+  `POZNAMKA_NAD_LINKU` (+ ve schématu). Legacy gPrpLin dta4.
+- ✅ **AD-N2 — Typ JR** — `TYP_JR` (dosud prázdné) naplněno z `PATCH,"OBJ"` (1→„VÝLUKOVÝ", 2→„návrh
+  jízdního řádu", znění 1:1 `JRapiLinPrtPS3`). Pozn.: zastávková větev OBJ nečte → volitelný
+  placeholder, ne automatické razítko.
+
 ## 2026-06-17 — Preview: oprava falešného varování o přetečení
 
 - 🐛 **Fix falešného červeného varování o přetečení** — `PreviewCanvas.PageOverflows` přestal hlásit

@@ -200,6 +200,39 @@ Když dva klienti chtějí výrazně jiný vzhled, **necpe se to do jedné šabl
 - Per-customer **celé šablony** (DPKV-zastavkovy.json, TRANSDEV-zastavkovy.json) jako shipped defaults.
 - `CustomProperties` UI editor — aby klient mohl per-element custom data nastavit z editoru.
 
+### 5.1 Kam patří nastavení — osa SCOPE (ne vizuál/generace)
+
+**Rozhodující osa NENÍ „vizuál vs generace"** (vizuální věc může být klidně parametr, např. časová
+osa). Rozhodující je **scope = jak stabilní nastavení je:**
+
+| Scope | Domov | Proč |
+|---|---|---|
+| **Fixní pro daného zákazníka** (pokaždé stejné) | **šablona** (vlastnost elementu/sekce/šablony) | šablona JE zákazníkova fixní konfigurace |
+| **Mění se napříč šablonami / per tisk** | **parametr** | jeden šablona + N voleb místo N skoro stejných šablon (proti exponenciálnímu množení) |
+
+Vizuál ↔ generace určuje jen **mechanické doručení**, ne kde to uživatel zadá:
+- **Rendering** nastavení → TD renderer čte přímo z elementu/šablony (Caché se neúčastní).
+- **Generační** nastavení → musí dojít do Caché `GetData` jako IN parametr (Caché nevidí šablonu).
+
+### 5.2 Uživatelské přepínače poznámek = nadmnožina + TD filtr (NE Caché parametr)
+
+Pro **show/hide přepínače** (např. #7955 „ruční komentář přebíjí auto") platí preferovaný model:
+
+- **Caché emituje nadmnožinu** — všechny poznámky/anotace, každou **otagovanou** (`KATEGORIE`
+  rozdíl-trasy/omezení/bezbariér/ruční, + `SPOJ`). Generuje vždy stejně, parametr-agnosticky.
+- **Přepínač = render-time filtr v TD** (jako `VisibilityExpression`) → schová/zobrazí. Změna =
+  překreslení, **žádný Caché re-fetch**. Filtr po sobě **prořeže + přečísluje legendu**.
+- Přepínač pak může bydlet ve **šabloně** (fixní zákazník) i **parametru** (proměnné) jednotně —
+  obojí jen krmí filtr. Tím odpadá generační parametr a PrintDialog nebobtná o zákaznické konstanty.
+
+**Hranice modelu (kde NEplatí):**
+- **Mění strukturu dat** (FTL sloupce dnů, které zastávky/stránky vzniknou) → zůstává v Caché generování.
+- **Deterministické z dat, bez volby** (nepoznámkovat `MHDSPNPZN`, texty omezení) → zůstává v Caché
+  (není to přepínač).
+
+Doplňuje §6 „Caché ↔ TD kontrakt o legendě": pokud TD potřebuje filtrovat → Caché posílá **raw
+otagovaná data**, ne hotový předfiltrovaný text.
+
 ---
 
 ## 6. Existující debt — kontext při rozhodování

@@ -170,7 +170,7 @@ public class CacheTemplateService
         if (_mlRest.RestStatus.State != MLRStatus.EState.Error) return;
         var msg = _mlRest.RestStatus.Message;
         Debug.WriteLine($"[CacheTemplateService] {operation} error: {msg}");
-        throw new CacheTemplateException($"Operace „{operation}\" v Caché selhala: {msg}");
+        throw new CacheTemplateException($"Operace „{operation}\" v databázi selhala: {msg}");
     }
 
     private static CacheTemplateMetadata? ParseMetadata(JsonNode? node)

@@ -62,3 +62,18 @@ public class Template
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 }
+
+/// <summary>
+/// Co se schová u spoje v rozsahu „Spoje, nepoznámkovat" (zastávkový JŘ AD).
+/// </summary>
+public enum NoteRangeSuppression
+{
+    /// <summary>Schovat ruční komentáře spoje (výchozí = legacy chování).</summary>
+    ManualComment,
+
+    /// <summary>Schovat automatické poznámky o rozdílech tras (zůstane jen ruční komentář) — #7955.</summary>
+    AutoRouteNote,
+
+    /// <summary>Schovat ruční komentáře i automatické rozdíly tras.</summary>
+    Both,
+}

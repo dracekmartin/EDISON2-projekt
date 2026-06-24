@@ -58,23 +58,22 @@ Mimo scope zastávkového JŘ:
   - **Jakou logiku** používat — per-směr, per-Tč pásmo, kombinace?
 - **Není přímo TD práce** — TD má infrastrukturu, čeká na Caché data flow doplnění a UX rozhodnutí.
 
-### A6. 🔍 Pravděpodobně hotovo (2026-05-12) — vyžaduje verifikaci s reálnými daty
+### A6. ✅ Hotovo (2026-06-20) — ověřeno na úrovni kódu pro AD; klient potvrdí na svých datech
 
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7959
-- **Citace:** *„Mám linku, která má druhou zastávku pro školní spoj, a mohl bych pro ní vytisknout JŘ. Ovšem z první zastávky na tuto druhou zastávku žádný spoj nepojede. Potřeboval bych, aby zastávka nebyla v seznamu zastávek, pokud není aktuální."*
-- **Zjištění:** **Filter už existuje v `ZastavkoveJrMhdAPI.cls:862-864`** (po refaktoru z legacy):
-  ```objectscript
-  // Za aktuální: jen obsluhovatelné zastávky
-  i (SmerID=0)&&(bodIterator>aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
-  i (SmerID=1)&&(bodIterator<aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
-  ```
-- **Logika:** Pro každý bod v trase za aktuální zastávkou se kontroluje `ObsluhaBitmap` (= union obsluhovaných zastávek ze všech spojů z aktuální zastávky, viz fáze 5 `VypocitatBitmapyObsluhy`). Pokud bit pro daný bod není nastavený → zastávka se do `ZASTAVKY` arrayové nepřidá.
-- **Chování:** **Hardcoded, vždy aktivní, bez vypínače.** Komentář na řádku 855 *„ZASTAVKY — vždy všechny v daném směru"* je zavádějící — kód reálně filtruje.
-- **Co je potřeba:**
-  - Otestovat s konkrétními TRANSDEV daty (např. linka 876xx se školní zastávkou) — funguje to v praxi?
-  - Pokud ano → uzavřít tiket s referenční šablonou (jako E1, A4).
-  - Pokud bude některý klient chtít opt-out (vidět všechny zastávky bez filtru) → doplnit parametr `TISK_VSECH_ZASTAVEK` do `GetParameters` (paralelní s `TISK_PROJETYCH_ZAST`).
-  - Tiket #7959 byl podaný 2024-02-09 — to bylo o **starém legacy systému** před přepisem; v novém kódu by to mělo být OK.
+- **Upřesnění agendy:** TRANSDEV jezdí primárně **linkovou (AD)** + lokální MHD; **self-contained MHD
+  modul používají jen DPCB/DPKV**. Tiket se proto týká **AD agendy** (`ZastavkoveJrAd`), ne MHD modulu.
+- **Citace:** *„Mám linku, která má druhou zastávku pro školní spoj... Ovšem z první zastávky na tuto druhou zastávku žádný spoj nepojede. Potřeboval bych, aby zastávka nebyla v seznamu zastávek, pokud není aktuální."*
+- **Stav v AD — obě chování implementovaná a aktivní:**
+  - **(a) StopList filtr** — neobsluhovaná zastávka se nepřidá do seznamu: `ZastavkoveJrAd:296`
+    `i '$d(servedPoradi(poradi)) continue` (`ObsluhovanePoradi`).
+  - **(b) Stránka se negeneruje** — zastávka bez odjezdů: `:333` `odjezdy.%Size()=0 q ""` + `:278` terminus-skip.
+- **⚠️ Známá nuance k případnému doladění** (jen pokud klient nahlásí): AD filtr (a) je
+  **směrově-globální** (`servedPoradi` = staví tam aspoň 1 spoj směru), kdežto MHD je **from-current**
+  (`ObsluhaBitmap` = obsluha z aktuální zastávky). Pro přesný školní scénář (zastávka dosažitelná jen
+  spojem, který z tištěné zastávky nevyjíždí) by AD mohl zastávku ponechat. Pokud to vadí → přepnout AD
+  na from-current sémantiku. Zatím necháno (těžko se hledá testovací linka; klient ověří v praxi).
+- **Opt-out** (kdyby chtěl vidět vše bez filtru) → param `TISK_VSECH_ZASTAVEK` (paralelní k `TISK_PROJETYCH_ZAST`), zatím YAGNI.
 
 ---
 
@@ -125,7 +124,14 @@ Mimo scope zastávkového JŘ:
   - Pokud obě poslední mimo základní trasu → ještě horší.
 - **Co klient chce:** *„Asi bych potřeboval, aby program uměl vypsat u poslední zastávky poznámku, že spoj jede až do."*
 - **Co máme dnes:** `MakeOmezTrasaTxMH...` legacy helper + algoritmy 1001 (písmenková: a, b, c) a 1002 (písmena rozdílů tras: A, B, C) v `ZastavkoveJrMhdAPI`. Texty popisují, **kde spoj končí** (zkracuje trasu), ne **kam pokračuje** (prodlužuje).
-- **Gap:** Nový text template pro spoje **prodlužující** základní trasu — symetrický k aktuálnímu „končí v zast. X". Detekce: spoj má v bitmapě obsluhy zastávky, které **jsou ZA** koncovou základní trasy.
+- **✅ VYŘEŠENO PRO AD** (2026-06-21) — `ZastavkoveJrAd.RozdilyTras` větev prodloužení za vzor nově
+  vypisuje **„jede až do zast. <konečná spoje>"** místo legacy matoucího „pokračuje přes <mezizastávky>"
+  (znění A dle dohody — klient chce vědět KAM dojede). Záměrná odchylka od legacy (legacy „pokračuje"
+  bylo špatné — to je důvod ticketu, proto bez gold oracle; kód analogický k ověřené větvi „jede jen do").
+  **Pozn.:** prodloužení za základní trasu je v datech **vzácné** (J-věta #10 = obvykle nejdelší trasa);
+  ověřeno proti CB_CSADAD 0345061/0365001 že běžné rozdíly (neobsluhuje/jede jen do) fungují 1:1 a změna
+  je nedotkla. „jede až do" se projeví na lince, kde spoj reálně jede za vzor.
+- **⬜ Zbývá pro MHD agendu** (`ZastavkoveJrMhd`) — stejná úprava neportována (až bude potřeba).
 
 ### D2. Vlastní komentář spoje musí přebít auto-poznámku (ne paralelně tisknout)
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
@@ -135,13 +141,25 @@ Mimo scope zastávkového JŘ:
 - **Citace:** *„Měl jsem za to, že když mám zapnuté automatické poznámkování, u vybraných spojů si v Komentářích zapnu vlastní poznámkování, a zadám do Spoje, nepoznámkovat stejné spoje a rozpětí Tč, budu mít u těchto spojů pouze svůj komentář. Toto mi ale teď nefunguje a je používána automatika a potlačen ruční komentář."*
 - **Co máme dnes:** Auto-poznámka (rozdíly tras) a vlastní komentář se generují nezávisle ve fázi 6. Funkce „nepoznámkovat" má aktuálně sémantiku „vypnout vše kromě auto-rozdílů".
 - **Co klient chce:** Pokud má spoj **vlastní komentář**, auto-poznámka rozdílů se pro tento spoj **NEgeneruje**. (Plus překlopit sémantiku „nepoznámkovat" — viz M-line interní odpověď: aktuální chování je dokumentované, ale neintuitivní.)
-- **Gap:** V `BuildOdjezd` v `ZastavkoveJrMhdAPI` přidat větvení: pokud `spojPoznamky` obsahuje custom text → suppress auto-rozdíl pro tento spoj.
+- **✅ VYŘEŠENO PRO AD agendu** (2026-06-20, commit `0b5838d`) — nový parametr sestavy
+  **`SCHOVAT_V_ROZSAHU`** (Ruční komentáře [default] / Automatické (rozdíly tras) / Obojí). V rozsahu
+  „Spoje, nepoznámkovat" volba „Automatické" schová auto-rozdíl trasy a nechá ruční komentář = přesně
+  klientův požadavek. Řešeno **modelem nadmnožina + render-time TD filtr** (`NoteVisibilityFilter`),
+  ne auto-suppress v Caché — legacy sémantika „nepoznámkovat" zachovaná (default), flip je opt-in volba.
+  Viz `ad-jr-nastaveni-linky-analyza.md §5` + `feature-design-principles.md §5.2`.
+- **Pozn. k MHD agendě:** tyto ruční poznámky jsou **AD-only** — `^JRL` konstrukty (`SeT_SpeC`/
+  `MHDSPNPZN`/`SeT_MhD`). MHD agenda (`ZastavkoveJrMhd`) čte jiný zdroj (`^ALVA.MHD.*`) a tyto pole
+  **nemá** (ověřeno 2026-06-20). Není co portovat, dokud se nepotvrdí, že MHD modul má vlastní
+  ekvivalentní úložiště (dle kolegy pravděpodobně ne — nastavuje se jen v AD).
 
 ### D3. Bug — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ)
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
 - **Citace:** *„obecně Spoje, nepoznámkovat ruší i označení inverzním znaménkem, což nevím, zda je záměr."*
 - **Co máme dnes:** Funkce „nepoznámkovat" patrně omylem maže i `spojNZ` přidělení.
 - **Gap:** Bug — NZ je v jiném datovém toku než ostatní poznámky, „nepoznámkovat" se ho dotýkat nemá. Opravit v 6. fázi `ZastavkoveJrMhdAPI`.
+- **✅ V AD agendě bug NEvzniká** (2026-06-20) — `NepoznamkovatSpoj` + filtr se dotýká jen kategorie
+  `rucni-komentar` / `rozdil-trasy` (dle volby); `omezeni`/`bezbarier` (kam patří NZ-style značky)
+  filtr nikdy neschovává. Zůstává relevantní jen pro MHD agendu (legacy datový tok).
 
 ### D4. Bug — výběr spoje jen prvním číslem
 - **Zákazník:** TRANSDEV (Michal Podloučka), #7955
@@ -153,15 +171,26 @@ Mimo scope zastávkového JŘ:
 - **Zákazník:** TRANSDEV (Vladimír Šimko), #7161
 - **Citace:** *„aby sa negenerovala poznámka »x — zastávka je na znamenie«, ak je v zostave zakázané zobrazenie stĺpca »Pracovní 2« (zaisťuje zobrazovanie značky »x« pred názvami príslušných zastávok)"*
 - **Co máme dnes:** Atribut zastávek se vždy přidá do legendy přes `AddAtribut` ve fázi 6 — bez ohledu na to, zda je sloupec s atributem v šabloně viditelný.
-- **Co klient chce:** Pokud sloupec, který zobrazuje značku `x` (v TD ekvivalent: column visibility v `StopColumnsEditorDialog`), je vypnutý → vynechat odpovídající popis z legendy.
-- **Gap:** Caché nezná stav viditelnosti v šabloně. **Cleaner řešení:** legenda atributů se nebude generovat v Caché vůbec a TD si sám sestaví legendu z viditelných sloupců StopList + DepartureGrid. Alternativně: TD posílá Caché při tisku seznam aktivních column klíčů.
+- **Co klient chce:** Pokud sloupec, který zobrazuje značku `x` (v TD ekvivalent: `ShowSignalStopIndicator` na StopListu), je vypnutý → vynechat odpovídající popis z legendy.
+- **✅ VYŘEŠENO PRO AD** (2026-06-21) — `NoteVisibilityFilter.ShouldHideNaZnameniLegend(template)`:
+  když šablona má StopList, ale **žádný** nemá zapnuté `ShowSignalStopIndicator` („Na znamení"),
+  filtr skryje řádky legendy kategorie `atribut-zastavky` („× na znamení"). Legenda automaticky
+  následuje viditelnost značky — žádné nové ovládání (uživatel jen odškrtne „Na znamení" na StopListu).
+  Žádná Caché změna (legenda už je tagovaná). **Test:** CB_GWBUS **0320144** (má „x — zastávka pouze
+  na znamení") — odškrtnout „Na znamení" na StopListu → značky „×" i řádek legendy zmizí.
+- **⬜ MHD agenda** neportováno (až bude potřeba).
 
 ### D6. Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem"
 - **Zákazník:** TRANSDEV (Vladimír Šimko), #7161
 - **Citace:** *„Možnosť používateľsky nastaviť, aby sa automaticky negenerovala poznámka »všetky spoje s bezbariérovým vstupom do vozidla«."*
 - **Co máme dnes:** `AddAtribut` v `ZastavkoveJrMhdAPI` zřejmě generuje shrnující text, když 100% spojů má daný atribut (např. bezbariérovost). Vypínání není.
 - **Co klient chce:** User option v parametrech tisku — „negenerovat agregovanou poznámku" / per-atribut switch.
-- **Gap:** Doplnit parametr do `GetParameters` (např. `SkipAggregatedAttributeNotes: true/false`) + checkbox v PrintDialog. V Caché v `AddAtribut` před zápisem do legendy ověřit.
+- **✅ VYŘEŠENO PRO AD** (2026-06-21) — parametr sestavy **`SCHOVAT_AGREGAT_BEZBARIER`** (bool). Agregát
+  „všechny spoje mají bezbariérově přístupné vozidlo" (vzniká při `allBBP` = 100 % spojů bezbariér) je
+  v legendě tagován kategorií `bezbarier-agregat`; TD `NoteVisibilityFilter` ho při zapnutém parametru
+  skryje. Per-spoj „spoj má bezbariérově…" zůstává. Filtr-model jako #7955.
+  **✅ Ověřeno na CB_CSADAD 0365004** (2026-06-21) — má agregát „všechny spoje mají bezbariérově přístupné
+  vozidlo"; zapnutí parametru řádek korektně skryje, per-spoj bezbariér (0365001/0365005) zůstává.
 
 ### D7. Skrýt prázdné přípojové řádky
 - **Zákazník:** KORID (Jaroslav Smištík), #11300

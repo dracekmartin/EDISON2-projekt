@@ -1,0 +1,34 @@
+<Window x:Class="TemplateDesigner.StyleEditDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="clr-namespace:TemplateDesigner.Controls"
+        Title="Styl"
+        Width="420" Height="560"
+        MinWidth="340" MinHeight="380"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip">
+
+    <DockPanel Margin="12">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Resetovat styl" Command="{Binding ResetStyleCommand}" Padding="10,3" Margin="0,0,12,0"/>
+            <Button Content="{StaticResource EDStrings.Ok}"     Width="80" IsDefault="True" Command="{Binding OkCommand}" Padding="10,3" Margin="0,0,6,0"/>
+            <Button Content="{StaticResource EDStrings.Cancel}" Width="80" IsCancel="True"  Padding="10,3" Margin="0"/>
+        </StackPanel>
+
+        <TextBlock DockPanel.Dock="Top" Text="Prázdné pole = dědí výchozí (šedě). Vyplněním přepíšeš."
+                   FontStyle="Italic" Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                   TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <controls:CellStyleEditor
+                DataContext="{Binding Style}"
+                EditOptions="{Binding DataContext.EditOptions, RelativeSource={RelativeSource AncestorType=Window}}"
+                PickTextColorCommand="{Binding DataContext.PickTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                ClearTextColorCommand="{Binding DataContext.ClearTextColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                PickBgColorCommand="{Binding DataContext.PickBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                ClearBgColorCommand="{Binding DataContext.ClearBgColorCommand, RelativeSource={RelativeSource AncestorType=Window}}"/>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

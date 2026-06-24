@@ -7,6 +7,12 @@ namespace TemplateDesigner.Models.Elements;
 public enum TypPoznamky { Text, NegativniZnacka, SpecialniZnak }
 public enum TypAnotace  { Text, NegativniZnacka, SpecialniZnak }
 
+/// <summary>Směr plnění víc-sloupcové legendy poznámek.</summary>
+public enum LegendWrap { PoSloupcich, PoRadcich }
+
+/// <summary>Řazení poznámek v legendě.</summary>
+public enum LegendRazeni { Vychozi, DleDelkyVzestupne, DleDelkySestupne }
+
 /// <summary>
 /// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
 /// </summary>
@@ -149,7 +155,10 @@ public class StopColumn
 {
     public string Key { get; set; } = "";
     public string Header { get; set; } = "";
-    public float Width { get; set; } = 10f;
+    /// <summary>Pevná šířka v mm. Null = auto (rovnoměrně sdílí zbývající šířku elementu po pevných sloupcích).
+    /// Default null (ne 10f) — jinak by se auto (null) po uložení ztratilo (serializer WhenWritingNull
+    /// vynechá klíč → po reloadu by initializer vrátil 10f). Výchozí sloupce nastavují Width explicitně.</summary>
+    public float? Width { get; set; }
     public bool Visible { get; set; } = true;
     public TextHorizontalAlignment Alignment { get; set; } = TextHorizontalAlignment.Left;
 
@@ -177,12 +186,23 @@ public class DepartureGroupColumnStyle
     /// <summary>Per-group zebra barva (alternating rows). Null = použít globální AlternatingRowColor.</summary>
     public string? AlternatingRowColor { get; set; }
 
+    /// <summary>Override nadpisu skupiny dnů v šabloně. Prázdné/null = nadpis z dat
+    /// (<see cref="SkupinaDnuData.Nadpis"/>); neprázdné → přebije ho. Řeší
+    /// <see cref="Rendering.ColumnHeader.Resolve"/> jednotně s ostatními tabulkovými komponentami.</summary>
+    public string? HeaderOverride { get; set; }
+
+    /// <summary>Pevná šířka skupiny v mm (override). Null = auto (z obsahu minut + proporční dofill).
+    /// Pinnutá skupina se nezahrnuje do proporčního přerozdělení zbývající šířky.</summary>
+    public float? WidthOverride { get; set; }
+
     public DepartureGroupColumnStyle Clone() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
         IsVisible = IsVisible,
         Style = Style.Clone(),
-        AlternatingRowColor = AlternatingRowColor
+        AlternatingRowColor = AlternatingRowColor,
+        HeaderOverride = HeaderOverride,
+        WidthOverride = WidthOverride
     };
 }
 

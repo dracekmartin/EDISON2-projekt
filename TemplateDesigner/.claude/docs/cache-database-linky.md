@@ -371,7 +371,11 @@ je per-namespace, bez IdFa).**
    (fallback "Městská hromadná doprava..."), `$5` informace (`<br>`→newline). Inline v hlavičce, `LokalniOznaceni` helper zrušen.
 7. **Číslování poznámek** — pro KV_DP (TYPPOZ=0 = `^JRSET("Definice","MHDnewOM")` prázdné) legacy používá
    sekvenční čísla = moje 1/2/3 (schéma shodné, hodnoty 39/70/32 byly artefakt jiného seedu). Bez změny.
-   TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred (žádná test firma to nemá).
+   TYPPOZ=1 (písmenka a/b/c) / NZ-symbol režim = firm-config feature, deferred. **KOREKCE 2026-06-23:
+   CB_CSADAD tento režim MÁ** — 0365001 ukazuje u „nejede" **inverzní číslo „29"** (NZ číselník / `cnz`
+   dta29 renderované inverzně), ne sekvenční. Máme tedy test firmu. Implementace: číst NZ číslo +
+   render inverzně (jako NZ marker), místo `ZiskejMarker` sekvence. + bezbariér „H"/„F" je SpecZnak
+   speciálního fontu (72=vozíček/70=částečně) — legacy GDI+ font; my ASCII glyf (vizuální 1:1 nuance).
 6. **FTL 1-3 + CNZ prázdninové dělení sloupců** — `ZarazeniSpoje(ftl,plk,cnz,nzCfg)` staví `KamPrt` bitmapu
    sloupců 1:1 s `JRapiLinPrtMhd1` ř.30-152 pro všechny 4 módy; `BitmapNaSkupiny` → comma-list indexů;
    `NacistSkupinyDnu(ftl)` vrací sloupce per mód (FTL0 Prac/So/Ne+sv; FTL1 Prac-mimo/Prac-o-prázd/So+Ne+sv;
@@ -444,7 +448,20 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   ⬜ **Multi-varianta (`TrasaMin1-15`)** = víc časových sloupců per varianta trasy + `<` u projetých
   — odloženo (chce zásah do C# rendereru, který dnes umí jeden sloupec). Pro běžné linky (jedna
   trasa) je jednosloupcová verze 1:1; u variantních linek se ukáže jen jedna varianta.
-- ⬜ Číslování omezení (TYPPOZ=1 pevná čísla „29" vs naše sekvenční „1") — firm-config, dřív odložené.
+- ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (HOTOVO 2026-06-23). Marker omezení je
+  **`cnz` spoje** (`$p(spoj,"#",7)`, dta29) renderovaný jako typ `nz` (invertovaný box), text z per-spoj
+  `^JRL(…,sp,omzId)` (`SestavTextOmezeni`). **Žádný firemní gate, žádné čtení InPlatDef** — ověřeno gold
+  oracle (`ALVA.TISKMHD.Data`) na **obou** firmách: legenda `2#<cnz>#<text>`, anotace `2$<cnz>`.
+  - **Korekce dřívějších domněnek:** (1) `MHDnewOM` (= údajný TYPPOZ gate) je prázdný u GWBUS i CSADAD →
+    není to gate; chování je **univerzální**. (2) KV_DP spoje mají `cnz` taky (28/30/31/40) a legacy je
+    renderuje jako čísla — naše dřívější sekvenční „1/2/3" tedy **nebylo 1:1 ani na KV_DP** (dřívější
+    „1:1 ověřeno" tvrzení bylo chybné). (3) Text bere legacy z **per-spoj** datumů (aktuální 2022/2023),
+    ne ze zastaralého InPlatDef seedu (2018/2019) → InPlatDef se nečte.
+  - **Implementace:** `NacistOdjezdy` — `i cnz '= "" { znak=cnz, typOmez="nz", poznMap("typ",cnz)="nz" }`
+    else fallback `ZiskejMarker` (typ „text", spoj bez NZ). `SestavPoznamky` čte `poznMap("typ",n)`.
+    `cnz` prázdné → zachová staré sekvenční chování.
+  - **Render:** přepínač `InvertovatNegativniZnacky` na `DepartureGridElement` odstraněn — inverze NZ je
+    teď napevno vždy zapnutá (AD i MHD), barvy `NegativniZnacka{Back,Fore}Color` ponechány.
 - ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
 
 ### ⚡ Performance (GetData se volá per stránka = zastávka×směr, ~desítky/linka)

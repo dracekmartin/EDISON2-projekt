@@ -1,5 +1,28 @@
 # Roadmap
 
+## 📋 Handoff — rozpracováno (stav k 2026-06-21, pokračování i z druhého PC)
+
+**Hotovo tuto session (commitnuto + pushnuto):** AD nastavení linky + ruční poznámky (Komentáře/
+nepoznámkovat/směrové), #7955 přepínač, „jede až do" (#7947), skrytí na znamení + agregát bezbariér
+(#7161 D5/D6), **layout legendy** (sloupce 1-4 + směr wrapu + zarovnaný marker + řazení). Helpdesk
+zavřeno: **#7955, #7959, #7947, #7161**. Detail: `changelog.md`, `ad-jr-nastaveni-linky-analyza.md`,
+`ad-jr-typy-poznamek-layout-analyza.md`. Cache MCP opraven (`C:\Edison\EdisonCacheMcp\`).
+
+**⚠️ DEV tweaky v repu — VRÁTIT před produkcí:**
+- `dotnet/templatedesigner.appsettings.json` → firma **CB_GWBUS** (produkce = KV_DP)
+- `MainWindowViewModel.CreateSampleTemplate` → **AD + 1 sekce** (produkce = MHD + Záhlaví/Obsah/Patička)
+
+**⬜ Rozpracovaný úklid docs (dohodnuto, NEPROVEDENO — udělat příště):**
+1. **Ořezat `cache-database-linky.md`** — smazat §6 (vyřešené otázky) + §10 (status, datum 2026-06-02 zastaralé → odkaz sem/changelog); nechat §2-5 (globály `^JRL`), §8 (nálezy), §9 (gold oracle); přerámovat na „referenční datový model". Pak opravit odkazy na §10 v `CLAUDE.md` + tomto roadmap.
+2. **Hlavičkové poznámky** (ať nematou „je aktuální?"): `legacy-schedule-generators.md` (Fáze A hotová), `schedule-elements-architecture.md` (konceptuální, kód viz rules/architecture), `architecture-diagrams.md` (diagramy k aktualizaci — NEMAZAT, pro školení cenné).
+3. **Cross-refs** AD analýza ↔ datový model (vyjasnit role: analýza=CO umíme, linky=JAK data; bez duplikace FTL/PATCH).
+4. **changelog archivace** (volitelné) — květnové Wave 1-3 → `changelog-archive-2026-05.md` (129k → ~30k).
+5. **`prezentace/osnova-skoleni.md`** — vytvořit osnovu technického školení (přidat výjimku do `prezentace/.gitignore`). Survey docs hotový.
+
+**Zbývající featury** (z analýz): 🟡 viditelnost legendy per kategorie (3.3, překryv s D5/D6), 🔴 multi-varianta časů tras (AD-N13, gold oracle 0345061), drobnosti (uppercase, NEZNZ123, override nadpisů sloupců, dormant NZ dělení).
+
+---
+
 ## 🔁 Pracovní postup (krok po kroku)
 
 Každá položka projde tímto cyklem — nevynechat ani jeden krok:
@@ -64,6 +87,41 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 **Performance rest (samostatný krok):** MHD agenda `VypocitatBitmapyObsluhy` má 3 průchody `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³). **Rizikový zásah do ověřeného MHD enginu** — udělat zvlášť s re-verifikací proti MHD gold oracle. (AD agenda už per-stránka neefektivnosti nemá.)
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
+
+### 🟢 PRIORITA 2b — AD nastavení linky 1:1 (mapováno na analýzu) ⬅️ NOVÝ TRACK
+
+Cíl: postupně dotáhnout, aby `ZastavkoveJrAd` bral v potaz **nastavení tisku na úrovni linky** (taby
+*MHD* / *MHD – další* / dialog *Nastavení pro tisk linky*), které legacy čte z `^JRL` PATCH / `MhD`.
+**Autoritativní podklad:** [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md) — každá
+položka níže odkazuje na § analýzy a nese přesný legacy storage + reader.
+
+**Postup per položka** (dle pracovního cyklu nahoře): *projít → validovat (máme/nemáme, dává smysl teď?)
+→ implementovat NEBO odložit s důvodem → otestovat proti gold oraclu → docs*. Pořadí = **přímočaré v
+legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer/nová struktura na konec.
+
+| ID | Analýza § | Co | Legacy storage | Složitost | Stav |
+|---|---|---|---|---|---|
+| AD-N1 | §2 | Poznámka nad linku → placeholder `POZNAMKA_NAD_LINKU` | `PATCH,"Head"` (gPrpLin dta4) | XS | ✅ 2026-06-20 |
+| AD-N2 | §2 | Typ JR → `TYP_JR` placeholder (volitelný; zastávkový legacy razítko z OBJ nestaví) | `PATCH,"OBJ"` (gPrpLin dta3) | S | ✅ 2026-06-20 |
+| AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ⬜ ⬅️ DALŠÍ |
+| AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ |
+| AD-N5 | §3 | `MHD_NEZNZ123` — potlačit NZ v legendě per sloupec | `PATCH,"MHD_NEZNZ123"` | M (váže na NZ legend, dnes dormant) | ⬜ |
+| AD-N6 | §3 | Override nadpisů sloupců (skupin dnů) → TD vlastnost `HeaderOverride` (ne port `^JRSET`) | (TD vlastnost elementu) | S | ✅ 2026-06-22 |
+| AD-N7 | §5 | **Komentáře** (ruční poznámka linky + přiřazené spoje) | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | M-L | ✅ 2026-06-20 (Fáze 1) |
+| AD-N8 | §5 | **Spoje, nepoznámkovat** (gate ručního komentáře, 1:1 legacy) | `PATCH,"MHDSPNPZN"` (`odTC~doTC`) | M | ✅ 2026-06-20 (Fáze 1) |
+| AD-N9 | §5 | Směrové poznámky tam/zpět/vše | `MhD,"SeT_MhD",id,cnt` | S-M | ✅ 2026-06-20 (Fáze 1) |
+| AD-N8b | §5 | **Fáze 2** — co schovat v rozsahu „nepoznámkovat" (#7955) = parametr sestavy `SCHOVAT_V_ROZSAHU` (Ruční/Automatické/Obojí) + TD render-filtr nad nadmnožinou z Caché | param + `NoteVisibilityFilter` | M | ✅ 2026-06-20 (Fáze 2) |
+| AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ✅ 2026-06-21 (#7947) |
+| AD-N11 | §7 | Cizojazyčné poznámky | `PATCH,"prtCzjPzn"` + `("C")` arr6 | M | ⬜ |
+| AD-N12 | — | ~~Km sloupce~~ → **patří do linkových JŘ** (tarif dle km), ne zastávkové | — | — | ➖ přesunuto |
+| AD-N13 | §4 | Multi-varianta časů tras (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ⬜ odložit (gold oracle: 0345061) |
+| AD-N14 | — | ~~Návaznosti / přípoje~~ → **patří do linkových/knižních JŘ**, ne zastávkové | — | — | ➖ přesunuto |
+| AD-N15 | §3 | NZ prázdninové dělení — ověřit na reálné lince | `MHD_NZ1_NZ2`/`MHD_NENZ1_NENZ2` | — | 🟡 kód hotový, čeká data |
+
+> **Pozn. k odloženým:** AD-N12/13/14 jsou „ne přímočaré" (zásah do C# rendereru / nová doménová
+> struktura) — necháváme až po jednoduchých PATCH-read položkách. AD-N15 nelze ověřit bez firmy s
+> prázdninovým FTL JŘ (`MHD_NZ1_NZ2` prázdné všude). AD-N7/N8/N9 jsou doménově nejcennější (tab MHD
+> ruční poznámky) — úložiště zmapováno, takže nejsou blokované.
 
 ### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
 
@@ -375,12 +433,27 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ### 🟢 Menší priorita — UX polish
 
-- **Sjednotit API editoru sloupců** (po demu) — StopList / DepartureGrid / TableElement mají
-  každý vlastní column VM (`StopColumnVM` / `DepartureGroupColumnVM` / `ColumnVM`, jen
-  `INotifyPropertyChanged`, bez společného základu) a vlastní list XAML → drift (mm/tečka se
-  zobrazují nekonzistentně). Stylová část už sdílená je (`CellStyleEditor`). Cíl: `IColumnRowVM`
-  (`DisplayName`/`Visible`/`HasAnyOverride`/`Width?`) + sdílený `ColumnListEditor` UserControl
-  (mm jen když `Width != null`). Element-specifika (Field/Format, group) zůstanou v detail panelu.
+- **Fáze 2 — stylový pod-formulář (rozšířit + uklidit)** — 🟡 prototyp 2026-06-22 (1 zóna). Hotovo:
+  `StyleEditDialog` + `StyleEditDialogViewModel` (generický pod-formulář pro 1 TextStyle přes sdílený
+  `CellStyleEditor` — tri-state zděděné placeholdery), EDInputform `ButtonClicked` event (EDControls),
+  Odjezdy „Styl záhlaví" → tlačítka „Upravit styl…". **Zbývá:** (1) rozšířit na všechny zóny Odjezdů
+  (DataStyle/MinuteStyle/Anotace symboly+text) + **StopList** (HeaderStyle/DataStyle) → hlavní „Obecné"
+  všude = scaláry + tlačítka „Styl…"; (2) uklidit — `StyleEdit.cls` (nepoužitá Caché varianta A),
+  zvážit zda `StyleFields` helper zůstane (inline zóny) nebo se styl celý přesune na CellStyleEditor;
+  (3) drobnost: pod-formulář aplikuje na parent OK (akumulace keyovaná prefixem) — OK.
+- **Export: extrahovat členění + název souboru výš** — `__EXPORT_SPLIT` + `__EXPORT_FILENAME` jsou
+  zatím export pole v tiskovém EDInputformu (`AgendaParams`, persistence per-agenda přes `PrintParams`,
+  ✅ 2026-06-22). Do budoucna zvážit přesun na úroveň **`Template`** (perzistuje se šablonou jako
+  `CultureCode`) nebo **agenda-config** (firemní default, jak to měl legacy v „Tisk → Linky-MHD").
+  Pattern používá `{POLE}` tokeny — případně do UI doplnit picker dostupných polí agendy.
+- **Ad-hoc kontrola přetečení v tisku** (na žádost zákazníků) — dnes se přetečení přes všechny instance
+  počítá až při exportu reálných dat (`PreviewCanvas.CountOverflowingPages` → hláška „⚠ X z N stránek
+  přetéká"). Kdyby zákazníci chtěli, přidat samostatné tlačítko „Zkontrolovat přetečení" v `PrintDialog`,
+  které fetchne data a vypíše počet bez generování PDF. Zatím YAGNI.
+- **Sjednotit API editoru sloupců** — ✅ **HOTOVO (Fáze 1, 2026-06-22)** pro StopList + DepartureGrid:
+  `IColumnRowVM` (`DisplayName`/`Visible`/`HasAnyOverride`/`ColumnWidth?`) + sdílený `ColumnListEditor`.
+  **Zbývá:** TableElement (má vlastní DataGrid editor sloupců — záměrná výjimka, sjednotit jen pokud
+  bude potřeba).
 
 ---
 

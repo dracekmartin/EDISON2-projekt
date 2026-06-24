@@ -1010,7 +1010,7 @@ public static class AiGuidedScheduleBuilder
             });
         }
 
-        float remainingWidth = totalWidthMm - columns.Sum(c => c.Width);
+        float remainingWidth = totalWidthMm - columns.Sum(c => c.Width ?? 0f);
 
         if (stopListAi.Columns.Contains("Zone"))
         {

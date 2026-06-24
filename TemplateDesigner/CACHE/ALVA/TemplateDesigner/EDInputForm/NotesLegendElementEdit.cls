@@ -44,6 +44,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddDecimal("NoteFontSize", "Velikost písma pozn.", 7, 4, 20, "pt", "0.#")
         d form.AddDecimal("NoteLineHeight", "Výška řádku", 4, 2, 15, "mm")
 
+        // ── Skupina "Rozložení" (sloupce / řazení / zarovnání markeru) ────
+        d form.AddGroup("layout", "Rozložení")
+        d form.AddNumber("Columns", "Počet sloupců", 1, 1, 4)
+        s f = form.AddFieldToLastGroup("WrapSmer", "Směr plnění", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")
+        s f.value = "PoSloupcich"
+        s f = form.AddFieldToLastGroup("Razeni", "Řazení poznámek", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("Vychozi", "Výchozí"), f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
+        s f.value = "Vychozi"
+        d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
+
         // ── Skupina "Filtrování" ──────────────────────────────────────────
         d form.AddGroup("filter", "Filtrování")
         d form.AddBool("ShowNegativniZnacky", "Negativní značky", 1)

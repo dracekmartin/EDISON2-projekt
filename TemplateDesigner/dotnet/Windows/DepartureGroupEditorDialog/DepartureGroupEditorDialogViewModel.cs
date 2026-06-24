@@ -4,21 +4,40 @@ using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Rendering;
-using PropertyDescriptor = TemplateDesigner.Models.PropertyDescriptor;
 
 namespace TemplateDesigner;
 
 // ─── DepartureGroupColumnVM — per-column ViewModel ──────────────────────────
 
-public class DepartureGroupColumnVM : INotifyPropertyChanged
+public class DepartureGroupColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 {
     private string _skupinaDnuId = "";
     private string _name = "";
-    private bool   _isVisible = true;
+    private bool   _visible = true;
+
+    private string _headerOverride = "";
+    private float? _widthOverride;
 
     public string SkupinaDnuId { get => _skupinaDnuId; set { _skupinaDnuId = value; OnChanged(); } }
-    public string Name         { get => _name;         set { _name = value;         OnChanged(); } }
-    public bool   IsVisible    { get => _isVisible;    set { _isVisible = value;    OnChanged(); } }
+    public string Name         { get => _name;         set { _name = value;         OnChanged(); OnChanged(nameof(DisplayName)); } }
+    public bool   Visible      { get => _visible;      set { _visible = value;      OnChanged(); } }
+
+    /// <summary>Override nadpisu sloupce v šabloně. Prázdné = výchozí (nadpis z dat / „Hod").</summary>
+    public string HeaderOverride { get => _headerOverride; set { _headerOverride = value; OnChanged(); OnChanged(nameof(DisplayName)); } }
+
+    /// <summary>Pevná šířka skupiny v mm (override). Null = auto (z obsahu + proporční dofill).</summary>
+    public float? WidthOverride { get => _widthOverride; set { _widthOverride = value; OnChanged(); OnChanged(nameof(WidthText)); OnChanged(nameof(ColumnWidth)); } }
+
+    /// <summary>Šířka jako text pro editor (prázdné = auto). Parsuje na <see cref="WidthOverride"/>.</summary>
+    public string WidthText
+    {
+        get => Controls.ColumnWidthText.Format(_widthOverride);
+        set => WidthOverride = Controls.ColumnWidthText.Parse(value);
+    }
+
+    // IColumnRowVM — sdílený seznam sloupců (efektivní záhlaví = override, jinak zdroj; šířka pin/auto)
+    public string DisplayName => string.IsNullOrWhiteSpace(HeaderOverride) ? Name : HeaderOverride;
+    public float? ColumnWidth => WidthOverride;
 
     private CellStyleVM _header = null!;
     public CellStyleVM Header
@@ -57,8 +76,10 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     public DepartureGroupColumnStyle ToModel() => new()
     {
         SkupinaDnuId = SkupinaDnuId,
-        IsVisible = IsVisible,
+        IsVisible = Visible,
         AlternatingRowColor = string.IsNullOrWhiteSpace(AlternatingRowColor) ? null : AlternatingRowColor,
+        HeaderOverride = string.IsNullOrWhiteSpace(HeaderOverride) ? null : HeaderOverride,
+        WidthOverride = WidthOverride,
         Style = new ColumnVisualStyle
         {
             Header = Header.ToModel(),
@@ -72,8 +93,10 @@ public class DepartureGroupColumnVM : INotifyPropertyChanged
     {
         SkupinaDnuId = skupina.Id,
         Name = skupina.Nadpis + (skupina.Nadpis2.Length > 0 ? " " + skupina.Nadpis2 : ""),
-        IsVisible = s?.IsVisible ?? true,
+        Visible = s?.IsVisible ?? true,
         AlternatingRowColor = s?.AlternatingRowColor ?? "",
+        HeaderOverride = s?.HeaderOverride ?? "",
+        WidthOverride = s?.WidthOverride,
         Header = CellStyleVM.FromModel(s?.Style.Header, headerInherited),
         Data   = CellStyleVM.FromModel(s?.Style.Data,   dataInherited),
     };
@@ -85,15 +108,8 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
 {
     private readonly DepartureGridElement _element;
 
-    // ── Tab 1: Obecné — element-level styly + property descriptors ───────
-
-    /// <summary>Výchozí styl záhlaví elementu (kaskáda: per-column → tento → ScheduleHeaderDefaults).</summary>
-    public CellStyleVM ElementHeaderStyle { get; }
-
-    /// <summary>Výchozí styl dat elementu (kaskáda: per-column → tento → ScheduleDataDefaults).</summary>
-    public CellStyleVM ElementDataStyle { get; }
-
-    public IReadOnlyList<PropertyDescriptor> GeneralDescriptors { get; }
+    // Tab „Obecné" = embedded EDInputForm (DepartureGridElementEdit.cls) — řeší code-behind přes
+    // ElementFormBinder (reflexe). VM drží jen Tab „Sloupce" (per-skupina/sloupec styly).
 
     // ── Tab 2: Sloupce ──────────────────────────────────────────────────
 
@@ -140,32 +156,15 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
     public RelayCommand MoveUpCommand { get; }
     public RelayCommand MoveDownCommand { get; }
 
-    // Element-level (Obecné tab)
-    public RelayCommand PickElementHeaderTextColorCommand { get; }
-    public RelayCommand PickElementHeaderBgColorCommand { get; }
-    public RelayCommand PickElementDataTextColorCommand { get; }
-    public RelayCommand PickElementDataBgColorCommand { get; }
-    public RelayCommand ClearElementHeaderTextColorCommand { get; }
-    public RelayCommand ClearElementHeaderBgColorCommand { get; }
-    public RelayCommand ClearElementDataTextColorCommand { get; }
-    public RelayCommand ClearElementDataBgColorCommand { get; }
-    public RelayCommand ResetElementStyleCommand { get; }
-
     // ── Konstruktor ──────────────────────────────────────────────────
 
     public DepartureGroupEditorDialogViewModel(
         DepartureGridElement element,
         List<SkupinaDnuData> availableGroups,
         List<DepartureGroupColumnStyle> currentStyles,
-        ColumnVisualStyle? hourColumnStyle,
-        IReadOnlyList<PropertyDescriptor> generalDescriptors)
+        ColumnVisualStyle? hourColumnStyle)
     {
         _element = element;
-        GeneralDescriptors = generalDescriptors;
-
-        // Element-level CellStyleVM (Obecné tab) — parent je ScheduleHeaderDefaults/ScheduleDataDefaults
-        ElementHeaderStyle = CellStyleVM.FromModel(element.HeaderStyle, element.ResolveElementHeaderParent());
-        ElementDataStyle   = CellStyleVM.FromModel(element.DataStyle,   element.ResolveElementDataParent());
 
         // Vyřešené rodičovské styly pro kaskádu (element-level → column override)
         var hourHeaderInherited  = element.ResolveHourHeaderParent();
@@ -178,7 +177,9 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         {
             SkupinaDnuId = HourColumnId,
             Name = "Hodiny",
-            IsVisible = true,
+            HeaderOverride = element.HourColumnHeader,   // override z elementu (prázdné = „Hod")
+            WidthOverride = element.HourColumnWidth,      // sloupec hodin má vždy pevnou šířku (element-level)
+            Visible = true,
             Header = CellStyleVM.FromModel(hourColumnStyle?.Header, hourHeaderInherited),
             Data   = CellStyleVM.FromModel(hourColumnStyle?.Data,   hourDataInherited),
         });
@@ -186,7 +187,19 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
         var groupIds = availableGroups.Select(g => g.Id).ToList();
         var styleMap = GroupColumnIndexResolver.BuildStyleLookup(currentStyles, groupIds);
 
-        foreach (var skupina in availableGroups)
+        // Pořadí skupin dle uloženého GroupColumns (uživatelské ▲▼ přežije reopen dialogu);
+        // skupiny mimo seznam zachovají datové pořadí na konci. Zrcadlí DepartureGridElement.ResolveSkupiny.
+        var orderMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < currentStyles.Count; i++)
+            if (!orderMap.ContainsKey(currentStyles[i].SkupinaDnuId))
+                orderMap[currentStyles[i].SkupinaDnuId] = i;
+
+        var orderedGroups = availableGroups
+            .Select((g, dataIdx) => (g, key: orderMap.TryGetValue(g.Id, out var oi) ? oi : int.MaxValue, dataIdx))
+            .OrderBy(t => t.key).ThenBy(t => t.dataIdx)
+            .Select(t => t.g);
+
+        foreach (var skupina in orderedGroups)
         {
             styleMap.TryGetValue(skupina.Id, out var existing);
             GroupVMs.Add(DepartureGroupColumnVM.FromData(skupina, existing, groupHeaderInherited, groupDataInherited));
@@ -224,22 +237,6 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             }
         });
 
-        // Element-level color picker commands (Obecné tab)
-        PickElementHeaderTextColorCommand  = Command(() => PickElementColor(ElementHeaderStyle, s => s.TextColor, (s, c) => s.TextColor = c));
-        PickElementHeaderBgColorCommand    = Command(() => PickElementColor(ElementHeaderStyle, s => s.BgColor,   (s, c) => s.BgColor   = c));
-        PickElementDataTextColorCommand    = Command(() => PickElementColor(ElementDataStyle,   s => s.TextColor, (s, c) => s.TextColor = c));
-        PickElementDataBgColorCommand      = Command(() => PickElementColor(ElementDataStyle,   s => s.BgColor,   (s, c) => s.BgColor   = c));
-        ClearElementHeaderTextColorCommand = Command(() => ElementHeaderStyle.TextColor = null);
-        ClearElementHeaderBgColorCommand   = Command(() => ElementHeaderStyle.BgColor   = null);
-        ClearElementDataTextColorCommand   = Command(() => ElementDataStyle.TextColor   = null);
-        ClearElementDataBgColorCommand     = Command(() => ElementDataStyle.BgColor     = null);
-
-        ResetElementStyleCommand = Command(() =>
-        {
-            ElementHeaderStyle.Reset();
-            ElementDataStyle.Reset();
-        });
-
         // Move up/down (sloupec Hodiny zůstává vždy na indexu 0)
         MoveUpCommand = Command(() =>
         {
@@ -266,27 +263,20 @@ class DepartureGroupEditorDialogViewModel : EDViewModel
             setter(SelectedGroupVM, result);
     }
 
-    private void PickElementColor(CellStyleVM vm, Func<CellStyleVM, string?> getter, Action<CellStyleVM, string?> setter)
-    {
-        if (RequestColorPicker is null) return;
-        var result = RequestColorPicker(getter(vm) ?? "");
-        if (result is not null)
-            setter(vm, result);
-    }
-
     // ── OK ──────────────────────────────────────────────────────────
 
     protected override void OnOk()
     {
-        // Element-level styl — zápis zpět do elementu (ScheduleElementBase.HeaderStyle/DataStyle)
-        _element.HeaderStyle = ElementHeaderStyle.ToModel() ?? new TextStyle();
-        _element.DataStyle   = ElementDataStyle.ToModel()   ?? new TextStyle();
-
+        // Element-level styl (HeaderStyle/DataStyle/MinuteStyle/…) řeší EDInputForm v tabu Obecné
+        // (code-behind přes ElementFormBinder). Zde jen per-skupina/sloupec + hour.
         var hourVm = GroupVMs.FirstOrDefault(vm => vm.SkupinaDnuId == HourColumnId);
         if (hourVm is not null)
         {
             var style = new ColumnVisualStyle { Header = hourVm.Header.ToModel(), Data = hourVm.Data.ToModel() };
             ResultHourColumnStyle = style.IsEmpty ? null : style;
+            _element.HourColumnHeader = hourVm.HeaderOverride?.Trim() ?? "";
+            // Sloupec hodin má pevnou šířku (element-level); prázdné pole ponechá stávající.
+            if (hourVm.WidthOverride is float hw && hw > 0) _element.HourColumnWidth = hw;
         }
 
         ResultGroupColumns = GroupVMs

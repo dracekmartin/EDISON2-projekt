@@ -138,13 +138,13 @@
             <MenuItem Header="Soubor">
                 <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="Ctrl+N" Click="MenuNew_Click"/>
                 <MenuItem x:Name="MenuOpen"   Header="Otevřít ze souboru..."  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
-                <MenuItem x:Name="MenuOpenFromCache" Header="Otevřít z Caché..." Command="{Binding OpenFromCacheCommand}"/>
+                <MenuItem x:Name="MenuOpenFromCache" Header="Otevřít z databáze..." Command="{Binding OpenFromCacheCommand}"/>
                 <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSave"   Header="Uložit"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
                 <MenuItem x:Name="MenuSaveAs" Header="Uložit jako soubor..."                  Click="MenuSaveAs_Click"/>
-                <MenuItem x:Name="MenuSaveToCache"   Header="Uložit do Caché"          Command="{Binding SaveToCacheCommand}"/>
-                <MenuItem x:Name="MenuSaveToCacheAs" Header="Uložit do Caché jako..." Command="{Binding SaveToCacheAsCommand}"/>
+                <MenuItem x:Name="MenuSaveToCache"   Header="Uložit do databáze"          Command="{Binding SaveToCacheCommand}"/>
+                <MenuItem x:Name="MenuSaveToCacheAs" Header="Uložit do databáze jako..." Command="{Binding SaveToCacheAsCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF..." Click="MenuExportPdf_Click"/>
                 <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG..." Click="MenuExportPng_Click"/>
@@ -213,7 +213,7 @@
             <MenuItem Header="Nástroje">
                 <MenuItem x:Name="MenuChangeAgenda" Header="Změnit agendu..." InputGestureText="Ctrl+Shift+A"
                           Command="{Binding ChangeAgendaCommand}"/>
-                <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v Caché..."
+                <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v databázi..."
                           Command="{Binding OpenFromCacheCommand}"/>
                 <Separator/>
                 <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon..." Click="MenuAiAssistant_Click"/>

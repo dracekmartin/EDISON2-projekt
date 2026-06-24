@@ -243,17 +243,23 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("POPIS_PLATNOSTI",        $s(platiOd'="":"Platí od "_platiOd, 1:""))
     d vals.%Set("DATUM_PLATNOSTI_OD",     platiOd)
     d vals.%Set("DATUM_PLATNOSTI_DO",     platiDo)
-    d vals.%Set("TYP_JR",                 "")
+    // Typ JR (AD-N2) — PATCH,"OBJ" (gPrpLin dta3). Znění razítka 1:1 legacy JRapiLinPrtPS3.
+    // Pozn.: zastávková větev (JRapiLinPrtMhd) OBJ nečte → razítko nestaví automaticky;
+    // TYP_JR je volitelný placeholder pro autora šablony (PS/knižní feature).
+    d vals.%Set("TYP_JR", $case(+$g(^[dataDB]JRL(sku,lin,"PATCH","OBJ")),1:"VÝLUKOVÝ",2:"návrh jízdního řádu",:""))
     d vals.%Set("QR_KOD",                 $g(^[dataDB]JRL(sku,lin,"PATCH","QR_CODE")))
     d vals.%Set("POZNAMKA_POD_DOPRAVCE",  $g(^[dataDB]JRL(sku,lin,"PATCH","PoznPodDopr")))
+    // Poznámka nad linku (AD-N1) — legacy gPrpLin dta4 = PATCH,"Head"
+    d vals.%Set("POZNAMKA_NAD_LINKU",     $g(^[dataDB]JRL(sku,lin,"PATCH","Head")))
     d vals.%Set("INFORMACE",              informace)
     // NEJEDOU_SPOJE je legacy misnomer — nese NÁSTUPIŠTĚ vývěskové zastávky (J-věta #3 = nastTam:nastZpet,
     // dta23 v JRapiExp10). Per směr (T=tam, Z=zpět). 1:1 gold.
     s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
     d vals.%Set("NEJEDOU_SPOJE",          nastupiste)
 
-    // ── trasa → zastávky (úsek od aktuální zastávky ve směru jízdy; zóny + na znamení) ──
-    // Tam: vzestupně od aktuální k poslední. Zpět: sestupně od aktuální k první (pořadí 1).
+    // ── trasa → zastávky (CELÁ trasa ve směru jízdy, vč. projetých; zóny + na znamení) ──
+    // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
+    // atributů (jako MHD). StopList je defaultně skryje; „tisk projetých" je zobrazí ztlumeně.
     s zastavky = ##class(%DynamicArray).%New()
     s aktualniNazev = "", aktualniCzst = "", posledniNazev = "", posledniCzst = ""
     k atrSeen                                                   // atributy zastávek viděné na stránce (znak → text) pro legendu
@@ -277,34 +283,38 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s zaklCt = ..ZakladniCisloTrasy(dataDB, sku, lin, smer, currentPoradi)
     d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
 
-    s poradi = $s(jeTam:"", 1:currentPoradi + 1)
+    // Emituj VŠECHNY zastávky směru (vč. projetých, jako MHD) — StopList je filtruje dle „tisk projetých".
+    s poradi = ""
     s cnt = 0
     f {
         i jeTam { s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi)) }
         else    { s poradi = $o(^[dataDB]JRL(sku,lin,"J",poradi), -1) }
         q:poradi=""
         i '$isvalidnum(poradi) continue
-        i jeTam,(poradi < currentPoradi) continue           // Tam: jen od aktuální zastávky nahoru
+        s jeProjeta = $s(jeTam:(poradi < currentPoradi), 1:(poradi > currentPoradi))   // projetá = před aktuální ve směru
         s veta = $g(^[dataDB]JRL(sku,lin,"J",poradi))
         s czst = $p(veta,":",1)
         i czst="" continue
         i '$d(servedPoradi(poradi)) continue                // jen obsluhované zastávky (jako legacy)
         s atributy  = $p($p(veta,":",2),"#",1)              // dta2 — atributy zastávky (znaky číselníku 16)
         s zona      = $p($p(veta,":",5),"#",2)               // "#zóna#..."
-        s naZnameni = (atributy["x")
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
-        s casJizdy = ..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi)   // kumulativní min od vývěskové zastávky
+        s casJizdy = $s(jeProjeta:0, 1:..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi))   // projetá → 0 (StopList ji ztlumí); jinak kumulativní min od vývěskové
         s cnt = cnt + 1
-        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, naZnameni)
+        // „na znamení" se tiskne přes atribut „x" (níže) — legacy UVOD tiskne jen „x". NaZnameni=0,
+        // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
+        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0)
         i zona '= "" d ..AddZona(z, zona)
-        // atributy zastávky → symbol u názvu + řádek legendy (jen významové znaky, ne formátovací)
-        f ai=1:1:$l(atributy) {
-            s znak = $e(atributy, ai)
-            i '..JeViditelnyAtribut(znak) continue
-            s txtAtr = ..TextAtributu(znak)
-            d ..AddAtribut(z, znak, txtAtr)
-            s atrSeen(znak) = txtAtr
+        // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD)
+        i 'jeProjeta {
+            f ai=1:1:$l(atributy) {
+                s znak = $e(atributy, ai)
+                i '..JeViditelnyAtribut(znak) continue
+                s txtAtr = ..TextAtributu(znak)
+                d ..AddAtribut(z, znak, txtAtr)
+                s atrSeen(znak) = txtAtr
+            }
         }
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
@@ -319,14 +329,33 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
 
     // FTL = formát sloupců mřížky (PATCH MHD_TYP_R); nzCfg = NZ konfig pro prázdninové dělení (MHD_NZ1_NZ2|MHD_NENZ1_NENZ2)
     s ftl   = +$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_TYP_R"))
+    // Override FTL z parametru „Rozdělení sloupců" (prázdné/auto = dle linky). Mapuje label → FTL mód;
+    // engine (NacistSkupinyDnu + ZarazeniSpoje) zůstává beze změny.
+    s rozdSl = $g(^||ML("IN","ROZDELENI_SLOUPCU"))
+    s ftl = $case(rozdSl, "Pracovní / Sobota / Neděle+svátky":0, "Pracovní / víkend (So+Ne+svátky)":2, "Prázdniny: Prac. mimo+o prázd. / víkend":1, "Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky":3, :ftl)
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
-    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda
+    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda
     d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
-    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda)
+    d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
+    s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, allBBP)
+
+    // směrové poznámky linky (tab MHD: poznámky tam/zpět/vše) — 1:1 legacy JRapiLinPrtMhd1 ř.440-447.
+    // Tam → klíče ">" + "<>"; Zpět → "<" + "<>". Plain text bez znaku.
+    s smeroveKlice = $s(smer="Z":"<,<>", 1:">,<>")
+    f indexKlice=1:1:2 {
+        s smerovyKlic = $p(smeroveKlice, ",", indexKlice)
+        s pozicePoznamky = ""
+        f {
+            s pozicePoznamky = $o(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD",smerovyKlic,pozicePoznamky))
+            q:pozicePoznamky=""
+            s textPoznamky = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_MhD",smerovyKlic,pozicePoznamky))
+            i textPoznamky '= "" d poznamky.%Push(..BuildPoznamka("text", "", textPoznamky, "", "", "smerove"))
+        }
+    }
 
     // ── sestavení stránky ───────────────────────────────────────────
     s out = ##class(%DynamicObject).%New()
@@ -371,7 +400,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda) As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda) As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
@@ -400,10 +429,21 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         s celkem = odjezd + offset
         s hod = (celkem\60)#24, min = celkem#60
 
-        // anotace z datumových omezení spoje (omzId 11-15, 22) — sdílená přes všechny skupiny spoje
-        s znak = ""
+        // anotace z datumových omezení spoje (omzId 11-15, 22) — sdílená přes všechny skupiny spoje.
+        // Marker = číslo negativní značky (cnz) + typ „nz" (invertovaně), 1:1 legacy gold (anotace
+        // „2$<cnz>", legenda „2#<cnz>#<text>"; ověřeno KV_DP i CB_CSADAD). Text bere per-spoj omzId
+        // (SestavTextOmezeni) — InPlatDef se nečte (drží zastaralý seed datumů). cnz prázdné → fallback
+        // na sekvenční číslo + typ „text" (zachová staré chování pro spoj bez NZ).
+        s znak = "", typOmez = "text"
         s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
-        i txt '= "" s znak = ..ZiskejMarker(.poznMap, txt)
+        i txt '= "" {
+            i cnz '= "" {
+                s znak = cnz, typOmez = "nz"
+                s poznMap("byMarker", cnz) = txt, poznMap("typ", cnz) = "nz"
+            } else {
+                s znak = ..ZiskejMarker(.poznMap, txt)
+            }
+        }
 
         // marker rozdílu trasy (z RozdilyTras) — u minuty jako první, dle legacy ZnkOm=ZnkTc_…
         s pismRT = $g(pismenoSpoj(sp))
@@ -414,16 +454,29 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         i inv s bezbarLegenda("H") = $s(allBBP:"všechny spoje mají bezbariérově přístupné vozidlo", 1:"spoj má bezbariérově přístupné vozidlo")
         i cbe s bezbarLegenda("F") = "spoj má částečne bezbariérově přístupné vozidlo, nutná dopomoc průvodce"
 
+        // ruční komentáře spoje (tab MHD: Komentáře = SeT_SpeC přiřazené spoji přes MhD_SpeC).
+        // V rozsahu „Spoje, nepoznámkovat" (MHDSPNPZN) se anotace jen OZNAČÍ (vRozsahu) — co se reálně
+        // schová (ruční / rozdíly tras / obojí) rozhoduje TD filtr dle nastavení šablony. Caché emituje
+        // nadmnožinu (nedropuje), aby šly volit všechny varianty.
+        s vRozsahu = +..NepoznamkovatSpoj(dataDB, sku, lin, sp, currentPoradi)
+        s komentarZnaky = $g(^[dataDB]JRL(sku,lin,smer,sp,"MhD_SpeC"))
+        f indexZnaku=1:1:$l(komentarZnaky) {
+            s komentarZnak = $e(komentarZnaky, indexZnaku)
+            i komentarZnak '= "" s komentareLegenda(komentarZnak) = $g(^[dataDB]JRL(sku,lin,"MhD","SeT_SpeC",komentarZnak))
+        }
+
         // spoj může patřit do více sloupců dnů (FTL layout + prázdninové dělení dle CNZ)
         s skupiny = ..ZarazeniSpoje(ftl, plk, cnz, nzCfg)
         i skupiny = "" continue           // KamPrt = 0 (nerozpoznané Plk) → spoj se netiskne (jako legacy)
         f gi=1:1:$l(skupiny,",") {
             s o = ..BuildOdjezd(currentPoradi, $p(skupiny,",",gi), hod, min)
-            // pořadí anotací 1:1 legacy ZnkOm: rozdíl trasy → omezení → bezbariér
-            i pismRT '= "" d ..AddAnotace(o, "text", pismRT)
-            i znak  '= "" d ..AddAnotace(o, "text", znak)
-            i inv && 'allBBP d ..AddAnotace(o, "specialni", "H")   // u allBBP se marker netiskne, jen legenda
-            i cbe d ..AddAnotace(o, "specialni", "F")
+            // pořadí anotací 1:1 legacy ZnkOm: rozdíl trasy → omezení → bezbariér → ruční komentář.
+            // KATEGORIE + spoj = pro TD filtr viditelnosti (#7955) — Caché generuje nadmnožinu.
+            i pismRT '= "" d ..AddAnotace(o, "text", pismRT, "", "", "rozdil-trasy", sp, vRozsahu)
+            i znak  '= "" d ..AddAnotace(o, typOmez, znak, "", "", "omezeni", sp, vRozsahu)
+            i inv && 'allBBP d ..AddAnotace(o, "specialni", "H", "", "", "bezbarier", sp, vRozsahu)   // u allBBP se marker netiskne, jen legenda
+            i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
+            f indexZnaku=1:1:$l(komentarZnaky) { s komentarZnak = $e(komentarZnaky, indexZnaku)  i komentarZnak '= "" d ..AddAnotace(o, "text", komentarZnak, "", "", "rucni-komentar", sp, vRozsahu) }
             d odjezdy.%Push(o)
         }
     }
@@ -722,7 +775,7 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
         s nejede = $p(nejede, ", ", 2, $l(nejede, ", "))
         s pokrac = $p(pokrac, ", ", 2, $l(pokrac, ", "))
 
-        // sestavení textu (pořadí 1:1 legacy: jede → neobsluhuje → jede jen do → pokračuje)
+        // sestavení textu (pořadí: jede → neobsluhuje → jede jen do → jede až do)
         s txt = ""
         i jede '= "" s txt = "jede přes zast. "_jede
         i nejede '= "" {
@@ -739,11 +792,15 @@ ClassMethod RozdilyTras(dataDB As %String, sku As %String, lin As %String, smer 
                 s $p(txt,", ",$l(txt,", ")+1) = "jede jen do zast. "_jedeDo
             }
         }
+        // Prodloužení za základní trasu (#7947): místo legacy „pokračuje přes <mezizastávky>"
+        // vypíšeme cíl spoje „jede až do zast. <konečná>" (klient chce vědět KAM dojede, ne kudy).
+        // Záměrná odchylka od legacy znění — legacy „pokračuje" bylo matoucí.
         i pokrac '= "" {
+            s cilNaz = ..NazZPoradi(dataDB, sku, lin, tcDo)
             i txt = "" {
-                s txt = "pokračuje přes "_pokrac
+                s txt = "jede až do zast. "_cilNaz
             } else {
-                s $p(txt,", ",$l(txt,", ")+1) = "pokračuje přes "_pokrac
+                s $p(txt,", ",$l(txt,", ")+1) = "jede až do zast. "_cilNaz
             }
         }
         i txt = "" continue
@@ -823,7 +880,7 @@ ClassMethod ZiskejMarker(ByRef poznMap, txt As %String) As %String
 
 /// Sestaví legendu: atributy zastávek + atributy spoje (bezbariér) + rozdíly tras + "nejede/jede".
 /// Pořadí 1:1 gold (`ALVA.TISKMHD.Data`): speciální znaky → rozdíly/text → omezení.
-ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda) As %DynamicArray
+ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, ByRef bezbarLegenda, ByRef komentareLegenda, allBBP As %Boolean = 0) As %DynamicArray
 {
     s poznamky = ##class(%DynamicArray).%New()
     // atributy zastávek — jeden řádek legendy na každý viděný znak (znak → text z číselníku)
@@ -831,30 +888,59 @@ ClassMethod SestavPoznamky(ByRef poznMap, ByRef atrSeen, ByRef rozdilLegenda, By
     f {
         s znak = $o(atrSeen(znak))
         q:znak=""
-        d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak)))
+        d poznamky.%Push(..BuildPoznamka("specialni", znak, atrSeen(znak), "", "", "atribut-zastavky"))
     }
-    // atributy spoje — bezbariér (H) / částečně bezbariér (F)
+    // atributy spoje — bezbariér (H) / částečně bezbariér (F). Při allBBP je „H" agregátní řádek
+    // („všechny spoje…") → kategorie „bezbarier-agregat" (TD filtr ho umí skrýt, #7161 D6).
     s zb = ""
     f {
         s zb = $o(bezbarLegenda(zb))
         q:zb=""
-        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb)))
+        s katBezbar = $s((zb="H") && allBBP : "bezbarier-agregat", 1 : "bezbarier")
+        d poznamky.%Push(..BuildPoznamka("specialni", zb, bezbarLegenda(zb), "", "", katBezbar))
     }
     // rozdíly tras — písmeno → text ("neobsluhuje zast. X" / "jede přes…" / "jede jen do…" / "pokračuje…")
     s pism = ""
     f {
         s pism = $o(rozdilLegenda(pism))
         q:pism=""
-        d poznamky.%Push(..BuildPoznamka("text", pism, rozdilLegenda(pism)))
+        d poznamky.%Push(..BuildPoznamka("text", pism, rozdilLegenda(pism), "", "", "rozdil-trasy"))
     }
-    // textové poznámky z datumových omezení (nejede/jede)
+    // ruční komentáře spoje (tab MHD: Komentáře) — znak → text z SeT_SpeC
+    s komentarZnak = ""
+    f {
+        s komentarZnak = $o(komentareLegenda(komentarZnak))
+        q:komentarZnak=""
+        d poznamky.%Push(..BuildPoznamka("text", komentarZnak, komentareLegenda(komentarZnak), "", "", "rucni-komentar"))
+    }
+    // datumová omezení (nejede/jede) — marker = číslo NZ (cnz), typ „nz" (invertovaně) pokud pochází
+    // z cnz, jinak „text" (sekvenční fallback). Text per-spoj (SestavTextOmezeni).
     s n = ""
     f {
         s n = $o(poznMap("byMarker", n))
         q:n=""
-        d poznamky.%Push(..BuildPoznamka("text", n, poznMap("byMarker", n)))
+        s typPozn = $g(poznMap("typ", n), "text")
+        d poznamky.%Push(..BuildPoznamka(typPozn, n, poznMap("byMarker", n), "", "", "omezeni"))
     }
     q poznamky
+}
+
+/// „Spoje, nepoznámkovat" (tab MHD) — potlačí ruční komentář spoje v zadaném rozsahu tarifních čísel.
+/// 1:1 legacy `noPoz^JRapiLinPrtMhd1` (ř.371-381): rozsah = odTarifniCislo~doTarifniCislo; směr dle
+/// parity spoje (lichý = tam, vzestupně; sudý = zpět, sestupně); prázdné doTarifniCislo → konec trasy spoje.
+ClassMethod NepoznamkovatSpoj(dataDB As %String, sku As %String, lin As %String, spojId As %String, tarifniCislo As %String) As %Boolean
+{
+    s zaznam = $g(^[dataDB]JRL(sku,lin,"PATCH","MHDSPNPZN",spojId))
+    i zaznam = "" q 0
+    s odTarifniCislo = +$p(zaznam,"~",1)
+    s doTarifniCislo = +$p(zaznam,"~",2)
+    i 'doTarifniCislo {
+        s smerSpoje = $s(spojId#2:"T", 1:"Z")
+        s doTarifniCislo = $p($p($g(^[dataDB]JRL(sku,lin,smerSpoje,spojId)),"#",1),":",2)
+    }
+    i (spojId#2)  i ('(tarifniCislo<odTarifniCislo)) && ('(tarifniCislo>doTarifniCislo)) q 1
+    i '(spojId#2) i ('(tarifniCislo>odTarifniCislo)) && ('(tarifniCislo<doTarifniCislo)) q 1
+    q 0
 }
 
 /// Atributy zastávky tištěné v zastávkovém JŘ. Legacy `UVOD^JRapiLinPrtMhd` (ř.189-190) promítá
@@ -1131,6 +1217,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
+    d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "NEJEDOU_SPOJE",          "Nejedou spoje",          "text")
 }
@@ -1190,6 +1277,22 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
 
+    // Rozdělení sloupců typů provozu — override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace
+    // {prázdninový split prac. dnů} × {sloučení víkendu}; reuse existujícího NacistSkupinyDnu/ZarazeniSpoje.
+    s pRozd = ##class(%DynamicObject).%New()
+    s pRozd.name         = "ROZDELENI_SLOUPCU"
+    s pRozd.label        = "Rozdělení sloupců (typy provozu)"
+    s pRozd.type         = "enum"
+    s pRozd.defaultValue = "Automaticky (dle linky)"
+    s optsR = ##class(%DynamicArray).%New()
+    d optsR.%Push("Automaticky (dle linky)")
+    d optsR.%Push("Pracovní / Sobota / Neděle+svátky")
+    d optsR.%Push("Pracovní / víkend (So+Ne+svátky)")
+    d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / víkend")
+    d optsR.%Push("Prázdniny: Prac. mimo+o prázd. / Sobota / Neděle+svátky")
+    s pRozd.options = optsR
+    d arr.%Push(pRozd)
+
     s param = ##class(%DynamicObject).%New()
     s param.name         = "CASOVA_OSA"
     s param.label        = "Časová osa odjezdů"
@@ -1219,6 +1322,24 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d arr.%Push(pDo)
 
     d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false")
+
+    // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
+    // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.
+    s pNepoz = ##class(%DynamicObject).%New()
+    s pNepoz.name         = "SCHOVAT_V_ROZSAHU"
+    s pNepoz.label        = "V rozsahu nepoznámkovat schovat"
+    s pNepoz.type         = "enum"
+    s pNepoz.defaultValue = "Ruční komentáře"
+    s optsNepoz = ##class(%DynamicArray).%New()
+    d optsNepoz.%Push("Ruční komentáře")
+    d optsNepoz.%Push("Automatické (rozdíly tras)")
+    d optsNepoz.%Push("Obojí")
+    s pNepoz.options = optsNepoz
+    d arr.%Push(pNepoz)
+
+    // Skrýt agregátní poznámku „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
+    // TD-aplikované (filtr skryje legendu kategorie bezbarier-agregat). Default = zobrazit (legacy).
+    d ..AddBoolParam(arr, "SCHOVAT_AGREGAT_BEZBARIER", "Skrýt souhrn ""všechny spoje bezbariérové""", "false")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -1294,17 +1415,27 @@ ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina A
     q odjezd
 }
 
-ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "")
+/// Přidá anotaci (horní index) k odjezdu. `kategorie` + `spoj` + `vRozsahu` slouží TD filtru
+/// viditelnosti (#7955): TD podle nich rozhodne, co schovat. Caché generuje vždy nadmnožinu, filtr je
+/// render-time v TD. Kategorie: rozdil-trasy / omezeni / bezbarier / rucni-komentar.
+/// vRozsahu = anotace spadá do rozsahu „Spoje, nepoznámkovat" (jen tam se schování aplikuje).
+ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "", spoj As %String = "", vRozsahu As %Boolean = 0)
 {
     s anotace = ##class(%DynamicObject).%New()
     d anotace.%Set("TYP", typ)
     d anotace.%Set("ZNAK", znak)
     d anotace.%Set("FORE_COLOR", foreColor)
     d anotace.%Set("BACK_COLOR", backColor)
+    d anotace.%Set("KATEGORIE", kategorie)
+    d anotace.%Set("SPOJ", spoj)
+    d anotace.%Set("V_ROZSAHU_NEPOZNAMKOVAT", vRozsahu)
     d odjezd.%Get("ANOTACE").%Push(anotace)
 }
 
-ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "") As %DynamicObject
+/// `kategorie` (atribut-zastavky / bezbarier / rozdil-trasy / rucni-komentar / omezeni / smerove)
+/// umožní TD filtru prořezat legendu jen v relevantní kategorii (např. „x — na znamení" se nesmí
+/// smazat jen proto, že nemá anotaci u minut).
+ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "") As %DynamicObject
 {
     s poznamka = ##class(%DynamicObject).%New()
     d poznamka.%Set("TYP", typ)
@@ -1312,6 +1443,7 @@ ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, fore
     d poznamka.%Set("TEXT", text)
     d poznamka.%Set("FORE_COLOR", foreColor)
     d poznamka.%Set("BACK_COLOR", backColor)
+    d poznamka.%Set("KATEGORIE", kategorie)
     q poznamka
 }
 

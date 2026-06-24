@@ -37,7 +37,7 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
 
-                    <!-- Vlevo: seznam sloupců -->
+                    <!-- Vlevo: sdílený seznam sloupců (ColumnListEditor) + warning/fit -->
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
@@ -47,44 +47,13 @@
 
                         <TextBlock Text="Sloupce:" FontWeight="SemiBold" Margin="0,0,0,4"/>
 
-                        <ListBox Grid.Row="1"
-                                 ItemsSource="{Binding ColumnVMs}"
-                                 SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
-                                 BorderThickness="1" BorderBrush="#CCCCCC">
-                            <ListBox.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="Auto"/>
-                                        </Grid.ColumnDefinitions>
-                                        <CheckBox IsChecked="{Binding Visible, UpdateSourceTrigger=PropertyChanged}"
-                                                  VerticalAlignment="Center" Margin="0,0,6,0"/>
-                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Header}" FontWeight="SemiBold"/>
-                                        </StackPanel>
-                                        <Ellipse Grid.Column="2" Width="7" Height="7" Fill="#2196F3"
-                                                 Margin="6,0,0,0" VerticalAlignment="Center"
-                                                 ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
-                                                 Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
-                                        <TextBlock Grid.Column="3" VerticalAlignment="Center"
-                                                   Foreground="#888888" FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="4,0,0,0"
-                                                   Text="{Binding Width, StringFormat='{}{0} mm'}"/>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListBox.ItemTemplate>
-                        </ListBox>
+                        <controls:ColumnListEditor Grid.Row="1"
+                            ItemsSource="{Binding ColumnVMs}"
+                            SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
+                            MoveUpCommand="{Binding MoveUpCommand}"
+                            MoveDownCommand="{Binding MoveDownCommand}"/>
 
                         <StackPanel Grid.Row="2" Margin="0,4,0,0">
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                <Button Content="▲" Width="28" Padding="2,1"
-                                        Command="{Binding MoveUpCommand}" Margin="0,0,4,0"/>
-                                <Button Content="▼" Width="28" Padding="2,1"
-                                        Command="{Binding MoveDownCommand}"/>
-                            </StackPanel>
-
                             <!-- Warning při přesahu šířky -->
                             <TextBlock Text="{Binding ColumnOverflowText}"
                                        Foreground="#C62828" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
@@ -110,14 +79,12 @@
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                 <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="100" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
+                                <TextBox Width="160" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
                                 <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="50" Text="{Binding SelectedColumnVM.Width, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
-                                <TextBlock Text="Zarovnání:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <ComboBox Width="80"
-                                          ItemsSource="{Binding DataContext.AlignmentOptions, RelativeSource={RelativeSource AncestorType=Window}}"
-                                          SelectedItem="{Binding SelectedColumnVM.AlignmentLabel, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBox Width="50" Text="{Binding SelectedColumnVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
                             </StackPanel>
+                            <TextBlock Text="Šířka prázdná = automaticky (rozdělí zbývající šířku elementu)." FontStyle="Italic"
+                                       Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <!-- ── Oddělovač ──────────────────── -->
                             <Separator Margin="0,8,0,8"/>

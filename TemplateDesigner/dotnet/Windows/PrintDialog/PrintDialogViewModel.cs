@@ -23,12 +23,28 @@ public class PrintDialogViewModel : EDViewModel
     private readonly TdPreferencesService? _preferences;
 
     private string _statusText = "";
-    private bool _hasParameters;
 
-    /// <summary>FQN Caché agenda třídy pro EDInputForm AgendaParams (null = bez parametrů / GENERAL).</summary>
+    /// <summary>Výchozí pattern názvu souboru (tokeny {POLE} z dat) — odpovídá legacy
+    /// „NázevZastávky_ČísloLinky_…". Funguje pro AD i MHD (obě emitují tato pole).</summary>
+    public const string DefaultFileNamePattern = "{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}";
+
+    /// <summary>Klíče universálních export polí v EDInputformu (AgendaParams) — NEjsou agenda
+    /// parametry, jsou společné všem agendám. Hodnoty tečou přes sdílený <c>_paramValues</c>
+    /// (→ persistence per-agenda zadarmo).</summary>
+    public const string ExportSplitKey = "__EXPORT_SPLIT";
+    public const string ExportFileNameKey = "__EXPORT_FILENAME";
+
+    /// <summary>Klíče export polí — pro restore v <c>LoadPrintParamsAndApplyAsync</c> (nejsou
+    /// v <c>_agendaParameters</c>, takže by se jinak nenačetly).</summary>
+    public static readonly string[] ExportKeys = [ExportSplitKey, ExportFileNameKey];
+
+    /// <summary>FQN Caché agenda třídy pro EDInputForm AgendaParams (null = bez agendy / GENERAL).</summary>
     public string? AgendaClass => _agendaClass;
 
-    public bool HasParameters { get => _hasParameters; private set => Set(ref _hasParameters, value); }
+    /// <summary>True = je agenda (Caché class) → staví se AgendaParams formulář (vč. export polí).
+    /// I agenda bez GetParameters má formulář (jen export skupinu).</summary>
+    public bool HasForm => !string.IsNullOrEmpty(_agendaClass);
+
     public bool CanExportRealData => _buildRealData is not null;
     public string StatusText { get => _statusText; set => Set(ref _statusText, value); }
 
@@ -76,12 +92,10 @@ public class PrintDialogViewModel : EDViewModel
         // _paramValues přichází už naplněný (preview lišta defaults + případně saved PrintParams
         // aplikované při openu šablony). Pro chybějící klíče (nový parametr přidaný po předchozím
         // savu) doplníme defaults — nepřepisuje existing values.
+        // Parametry + export pole renderuje EDInputForm (CacheClass=AgendaParams) v code-behindu;
+        // VM jen drží definice + sdílený dict a poskytuje konverzní/visibility helpery (viz níže).
         foreach (var p in parameters)
             _paramValues.TryAdd(p.Name, p.GetDefaultTyped());
-
-        // Parametry renderuje EDInputForm (CacheClass=AgendaParams) v code-behindu; VM jen drží
-        // definice + sdílený dict a poskytuje konverzní/visibility helpery (viz níže).
-        HasParameters = parameters.Count > 0;
     }
 
     // ── EDInputForm integrace ─────────────────────────────────────────────────
@@ -98,6 +112,11 @@ public class PrintDialogViewModel : EDViewModel
             var v = _paramValues.TryGetValue(p.Name, out var o) ? o : p.GetDefaultTyped();
             vals[p.Name] = ToFieldString(v, p.Type);
         }
+
+        // Export pole (universální, ne agenda parametry) — prefill posledně použitými / defaulty.
+        vals[ExportSplitKey] = CurrentSplitKey();
+        vals[ExportFileNameKey] = CurrentFileNamePattern();
+
         init["values"] = new CVar(JsonSerializer.Serialize(vals));
         return init;
     }
@@ -113,7 +132,10 @@ public class PrintDialogViewModel : EDViewModel
             "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
             _        => (object)fieldValue
         };
-        _onParamsChanged?.Invoke();
+
+        // Export pole neovlivňují obsah sestavy → zbytečně neobnovovat náhled.
+        if (name != ExportSplitKey && name != ExportFileNameKey)
+            _onParamsChanged?.Invoke();
     }
 
     /// <summary>Vyhodnotí <c>visibleWhen</c> parametru proti aktuálním hodnotám (sdílený dict).
@@ -142,7 +164,7 @@ public class PrintDialogViewModel : EDViewModel
 
     private void ExportPdf()
     {
-        var filePath = ShowSaveDialog("Exportovat PDF (mock data)");
+        var filePath = ShowSaveDialog("Export náhledu do PDF");
         if (filePath is null) return;
 
         try
@@ -163,29 +185,55 @@ public class PrintDialogViewModel : EDViewModel
     {
         if (_buildRealData is null) return;
 
-        var filePath = ShowSaveDialog("Exportovat PDF (reálná data z Caché)");
-        if (filePath is null) return;
+        var splitMode = CurrentSplitMode();
+        var pattern   = CurrentFileNamePattern();
+
+        // Single = vyber soubor (jako dnes); split = vyber složku, vznikne N souborů.
+        string? target = splitMode == ExportSplitMode.Single
+            ? ShowSaveDialog("Tisk všech vybraných do PDF")
+            : ShowFolderDialog("Tisk všech vybraných — vyber složku");
+        if (target is null) return;
 
         try
         {
             PersistParams();
-            StatusText = "Načítání dat z Caché...";
+            StatusText = "Načítání dat z databáze...";
             var dataPages = _buildRealData(_paramValues);
 
             if (dataPages is null or { Count: 0 })
             {
-                StatusText = "Caché nevrátila žádná data.";
+                StatusText = "Databáze nevrátila žádná data.";
                 return;
             }
 
             // Agregovaná kontrola přetečení přes všechny instance — layout-only, levné (data už máme).
             var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
 
-            RequestRenderMultiPdf?.Invoke(filePath, dataPages);
-            OpenPdf(filePath);
+            if (splitMode == ExportSplitMode.Single)
+            {
+                RequestRenderMultiPdf?.Invoke(target, dataPages);
+                OpenPdf(target);
+                StatusText = overflow > 0
+                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}"
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}";
+                return;
+            }
+
+            // Split — seskup instance a vyrenderuj jedno PDF per skupina (existující multi-render
+            // per cesta). Název každého souboru = pattern {POLE} vyhodnocený nad první instancí skupiny.
+            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            int fileCount = 0;
+            foreach (var group in GroupForExport(dataPages, splitMode))
+            {
+                var name = BuildFileName(group[0], pattern, usedNames);
+                RequestRenderMultiPdf?.Invoke(Path.Combine(target, name + ".pdf"), group);
+                fileCount++;
+            }
+
+            OpenFolder(target);
             StatusText = overflow > 0
-                ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(filePath)}"
-                : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(filePath)}";
+                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká"
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem)";
         }
         catch (Exception ex)
         {
@@ -193,10 +241,67 @@ public class PrintDialogViewModel : EDViewModel
         }
     }
 
+    /// <summary>Aktuální klíč členění z formuláře (sdílený dict). Default "SINGLE".</summary>
+    private string CurrentSplitKey()
+    {
+        var s = _paramValues.GetValueOrDefault(ExportSplitKey) as string;
+        return string.IsNullOrWhiteSpace(s) ? "SINGLE" : s;
+    }
+
+    private ExportSplitMode CurrentSplitMode() => CurrentSplitKey() switch
+    {
+        "PER_LINE" => ExportSplitMode.PerLine,
+        "PER_STOP" => ExportSplitMode.PerStop,
+        _          => ExportSplitMode.Single,
+    };
+
+    private string CurrentFileNamePattern()
+    {
+        var p = _paramValues.GetValueOrDefault(ExportFileNameKey) as string;
+        return string.IsNullOrWhiteSpace(p) ? DefaultFileNamePattern : p;
+    }
+
+    /// <summary>Seskupí stránky dat dle režimu členění. Pořadí skupin i stránek v nich
+    /// odpovídá pořadí z Caché (LINQ GroupBy zachovává first-seen pořadí).</summary>
+    private static IEnumerable<List<DataContext>> GroupForExport(IReadOnlyList<DataContext> pages, ExportSplitMode mode) =>
+        mode switch
+        {
+            ExportSplitMode.PerLine => pages.GroupBy(p => p.GetString("CISLO_LINKY")).Select(g => g.ToList()),
+            ExportSplitMode.PerStop => pages.Select(p => new List<DataContext> { p }),
+            _                       => [pages.ToList()],
+        };
+
+    /// <summary>Vyhodnotí pattern nad daty, ošetří neplatné znaky a kolize (přípona _2, _3, …).</summary>
+    private static string BuildFileName(DataContext page, string pattern, HashSet<string> used)
+    {
+        var resolved = string.IsNullOrWhiteSpace(pattern) ? "export" : page.ResolvePlaceholders(pattern);
+        var name = Sanitize(resolved);
+        if (string.IsNullOrWhiteSpace(name)) name = "export";
+
+        var unique = name;
+        for (int n = 2; !used.Add(unique); n++)
+            unique = $"{name}_{n}";
+        return unique;
+    }
+
+    /// <summary>Odstraní znaky neplatné v názvu souboru (Windows) + zbytky nevyřešených {POLE}.</summary>
+    private static string Sanitize(string s)
+    {
+        foreach (var c in Path.GetInvalidFileNameChars())
+            s = s.Replace(c, '_');
+        return s.Replace("{", "").Replace("}", "").Trim();
+    }
+
     private static void OpenPdf(string filePath)
     {
         try { Process.Start(new ProcessStartInfo(filePath) { UseShellExecute = true }); }
         catch { /* PDF viewer nemusí být nainstalován */ }
+    }
+
+    private static void OpenFolder(string folderPath)
+    {
+        try { Process.Start(new ProcessStartInfo(folderPath) { UseShellExecute = true }); }
+        catch { /* průzkumník nemusí být dostupný */ }
     }
 
     private string? ShowSaveDialog(string title)
@@ -211,4 +316,21 @@ public class PrintDialogViewModel : EDViewModel
         };
         return dlg.ShowDialog() == true ? dlg.FileName : null;
     }
+
+    private static string? ShowFolderDialog(string title)
+    {
+        var dlg = new OpenFolderDialog { Title = title };
+        return dlg.ShowDialog() == true ? dlg.FolderName : null;
+    }
+}
+
+/// <summary>Členění výstupu při tisku s daty (více instancí = zastávka × směr).</summary>
+public enum ExportSplitMode
+{
+    /// <summary>Vše do jednoho PDF (dnešní chování).</summary>
+    Single,
+    /// <summary>Jeden PDF na linku (všechny zastávky linky pohromadě).</summary>
+    PerLine,
+    /// <summary>Jeden PDF na zastávku × směr (legacy vývěska per zastávka).</summary>
+    PerStop,
 }

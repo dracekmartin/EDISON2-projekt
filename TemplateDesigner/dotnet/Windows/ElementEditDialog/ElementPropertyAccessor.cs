@@ -36,16 +36,19 @@ public static class ElementPropertyAccessor
         return parent is not null && prop is not null && prop.CanWrite;
     }
 
-    /// <summary>Zapíše string hodnotu do property elementu přes path (s type conversion).</summary>
+    /// <summary>Zapíše string hodnotu do property elementu přes path (s type conversion).
+    /// Null mezičlánky na cestě se lazy alokují (např. nullable <c>HeaderLine2Style</c>) — jen při
+    /// zápisu (Get/Exists nealokují → otevření dialogu / Cancel element nemutuje).</summary>
     public static void Set(object root, string path, string? stringValue)
     {
-        var (parent, prop) = Resolve(root, path);
+        var (parent, prop) = Resolve(root, path, allocate: true);
         if (parent is null || prop is null || !prop.CanWrite) return;
         prop.SetValue(parent, FromStringValue(stringValue ?? "", prop.PropertyType));
     }
 
-    /// <summary>Traverzuje path (všechny segmenty kromě posledního) → vrátí finální parent objekt + PropertyInfo.</summary>
-    private static (object? parent, PropertyInfo? prop) Resolve(object root, string path)
+    /// <summary>Traverzuje path (všechny segmenty kromě posledního) → vrátí finální parent objekt + PropertyInfo.
+    /// <paramref name="allocate"/>=true → null mezičlánek se vytvoří (parameterless ctor) a zapíše zpět.</summary>
+    private static (object? parent, PropertyInfo? prop) Resolve(object root, string path, bool allocate = false)
     {
         var parts = path.Split('.');
         object? current = root;
@@ -54,7 +57,13 @@ public static class ElementPropertyAccessor
             if (current is null) return (null, null);
             var p = current.GetType().GetProperty(parts[i]);
             if (p is null) return (null, null);
-            current = p.GetValue(current);
+            var next = p.GetValue(current);
+            if (next is null && allocate && p.CanWrite)
+            {
+                try { next = Activator.CreateInstance(p.PropertyType); p.SetValue(current, next); }
+                catch { return (null, null); }
+            }
+            current = next;
         }
         if (current is null) return (null, null);
         return (current, current.GetType().GetProperty(parts[^1]));

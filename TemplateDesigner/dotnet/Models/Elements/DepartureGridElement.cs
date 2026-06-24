@@ -108,6 +108,12 @@ public class DepartureGridElement : ScheduleElementBase
     public bool ShowAnotace { get; set; } = true;
     public float AnotaceFontSize { get; set; } = 5f;
 
+    /// <summary>Pozadí invertované NZ u minuty (#AARRGGBB). Default černá.</summary>
+    public string NegativniZnackaBackColor { get; set; } = "#FF000000";
+
+    /// <summary>Barva znaku invertované NZ u minuty (#AARRGGBB). Default bílá.</summary>
+    public string NegativniZnackaForeColor { get; set; } = "#FFFFFFFF";
+
     // ═══════════════════════════════════════════
     // Nastavení sloupců
     // ═══════════════════════════════════════════
@@ -119,6 +125,10 @@ public class DepartureGridElement : ScheduleElementBase
         set { _hourColumnStyle = value; _cachedLayout = null; }
     }
     private ColumnVisualStyle? _hourColumnStyle;
+
+    /// <summary>Override nadpisu sloupce hodin v šabloně. Prázdné = výchozí „Hod"
+    /// (přes <see cref="Rendering.ColumnHeader.Resolve"/>, jednotně se skupinami i ostatními komponentami).</summary>
+    public string HourColumnHeader { get; set; } = "";
 
     public List<DepartureGroupColumnStyle> GroupColumns
     {
@@ -174,7 +184,23 @@ public class DepartureGridElement : ScheduleElementBase
     private int ComputeLayoutFingerprint() => HashCode.Combine(
         HashCode.Combine(HeaderStyle.FontSize, DataStyle.FontSize, SkupinaDnuHeaderLineHeight,
             MinuteFontSize, MinuteWidth, HourColumnWidth, MaxGroupCount, GroupColumns.Count),
-        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight));
+        HashCode.Combine(TimeAxisMode, TimeAxisRangeFrom, TimeAxisRangeTo, HeaderLine2Style, AutoExpandToFillHeight),
+        GroupHeaderOverridesHash());
+
+    /// <summary>Hash layout-affecting per-group nastavení (nadpis override, šířka override, pořadí) —
+    /// mění šířku/wrap/pořadí, musí invalidovat layout cache (Count v hlavním fingerprintu to nezachytí).
+    /// Order-sensitive (přeskládání skupin mění hash).</summary>
+    private int GroupHeaderOverridesHash()
+    {
+        var h = new HashCode();
+        foreach (var gc in GroupColumns)
+        {
+            h.Add(gc.SkupinaDnuId);
+            h.Add(gc.HeaderOverride);
+            h.Add(gc.WidthOverride);
+        }
+        return h.ToHashCode();
+    }
 
     private GridLayout? ComputeLayout(DataContext? data, float mmToPx = 0f)
     {
@@ -195,6 +221,10 @@ public class DepartureGridElement : ScheduleElementBase
             _cachedLayoutDataRef = data;
             return null;
         }
+
+        // Override nadpisů skupin ze šablony (jednotně přes ColumnHeader.Resolve s ostatními
+        // tabulkovými komponentami). Aplikuje se PŘED měřením šířky a wrapem záhlaví.
+        targetSkupiny = ApplyHeaderOverrides(targetSkupiny);
 
         // Font pro měření textu záhlaví (default, přepíše se per-column)
         float effectiveMmToPx = mmToPx > 0 ? mmToPx : 3.78f;
@@ -246,7 +276,13 @@ public class DepartureGridElement : ScheduleElementBase
         var allHourKeys = groupLayouts.SelectMany(g => g.ByHour.Keys).ToHashSet();
         var hours = GetVisibleHoursFromSet(allHourKeys, effectiveTimeAxis, effectiveRangeFrom, effectiveRangeTo);
 
-        // Šířky skupin: max(minuty, min. pro text záhlaví)
+        // Pevná šířka skupiny (override) přebíjí auto výpočet; pinnuté se neúčastní přerozdělení.
+        var widthLookup = GroupColumnIndexResolver.BuildStyleLookup(
+            GroupColumns, targetSkupiny.Select(s => s.Id).ToList());
+        float? PinnedWidth(GroupLayout g) =>
+            widthLookup.TryGetValue(g.Skupina.Id, out var cs) && cs.WidthOverride is float p && p > 0 ? p : null;
+
+        // Šířky skupin: pin (override), jinak max(minuty, min. pro text záhlaví)
         var finalGroups = new List<GroupLayout>();
         foreach (var g in groupLayouts)
         {
@@ -254,11 +290,12 @@ public class DepartureGridElement : ScheduleElementBase
             if (maxMin < 1) maxMin = 1;
             float effectiveSlotW = MinuteWidth + AnotaceGap;
             float minuteBasedW = maxMin * effectiveSlotW + Math.Max(0, maxMin - 1) * OdjezdGap;
-            float groupW = Math.Max(minuteBasedW, g.MinWidthForText);
+            float autoW = Math.Max(minuteBasedW, g.MinWidthForText);
+            float groupW = PinnedWidth(g) ?? autoW;
             finalGroups.Add(g with { MaxMinutesPerHour = maxMin, GroupWidth = groupW });
         }
 
-        // Redistribuce extra prostoru — sloupce skupin zaplní celou šířku elementu
+        // Redistribuce extra prostoru — jen auto (nepinnuté) skupiny zaplní zbytek šířky elementu
         float separatorTotal = Math.Max(0, finalGroups.Count - 1) * GroupSeparatorWidth;
         int hourColumnCount = HourColumnPerGroup ? finalGroups.Count : 1;
         float minTotal = hourColumnCount * HourColumnWidth + finalGroups.Sum(g => g.GroupWidth) + separatorTotal;
@@ -266,11 +303,13 @@ public class DepartureGridElement : ScheduleElementBase
         if (minTotal < Width)
         {
             float extraSpace = Width - minTotal;
-            float sumGroupW = finalGroups.Sum(g => g.GroupWidth);
-            if (sumGroupW > 0)
+            float sumAutoW = finalGroups.Where(g => PinnedWidth(g) is null).Sum(g => g.GroupWidth);
+            if (sumAutoW > 0)
             {
                 finalGroups = finalGroups.Select(g =>
-                    g with { GroupWidth = g.GroupWidth + extraSpace * (g.GroupWidth / sumGroupW) }
+                    PinnedWidth(g) is not null
+                        ? g
+                        : g with { GroupWidth = g.GroupWidth + extraSpace * (g.GroupWidth / sumAutoW) }
                 ).ToList();
             }
         }
@@ -636,7 +675,7 @@ public class DepartureGridElement : ScheduleElementBase
                 ? hourHeaderStyle with { BackgroundColor = bgColorOverride }
                 : hourHeaderStyle;
             var rect = new SKRect(hx, currentY, hx + HourColumnWidth, currentY + scaledCombinedHeaderH);
-            CellRenderer.DrawCell(ctx, rect, "Hod", style, scale);
+            CellRenderer.DrawCell(ctx, rect, Rendering.ColumnHeader.Resolve(HourColumnHeader, "Hod"), style, scale);
         }
 
         // Nakreslí datovou buňku sloupce hodin přes CellRenderer.
@@ -857,9 +896,28 @@ public class DepartureGridElement : ScheduleElementBase
             float padR = ms.PaddingRight * dataScale;
             float padT = ms.PaddingTop * dataScale;
 
-            // Zarovnání bloku minut ve sloupci
+            // Adaptivní šířka slotu každého odjezdu: nominální (scaledMinuteW) + šířka anotací,
+            // aby se minuta s poznámkami nepřekrývala s další minutou (zachová nominální mezeru).
             float availW = g.GroupWidth - padL - padR;
-            float blockW = odjezdy.Count * (scaledMinuteW + scaledOdjezdGap) - scaledOdjezdGap;
+
+            float SlotWidthMm(OdjezdData o)
+            {
+                float extraPx = 0f;
+                if (ShowAnotace && o.Anotace.Count > 0)
+                {
+                    extraPx = anotGapPx;
+                    foreach (var a in o.Anotace)
+                    {
+                        SKFont af = a.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
+                        bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
+                        extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
+                    }
+                }
+                return scaledMinuteW + extraPx / ctx.MmToPx;
+            }
+
+            var slotW = odjezdy.Select(SlotWidthMm).ToList();
+            float blockW = slotW.Sum() + Math.Max(0, odjezdy.Count - 1) * scaledOdjezdGap;
             float alignOffset = padL + ms.HAlign switch
             {
                 TextHorizontalAlignment.Center => (availW - blockW) / 2f,
@@ -871,10 +929,13 @@ public class DepartureGridElement : ScheduleElementBase
             float minX = gx + alignOffset;
             SKPaint? customMinutePaint = null;
             SKPaint? customAnotPaint = null;
+            SKPaint? nzBgPaint = null;
+            SKPaint? nzFgPaint = null;
             try
             {
-                foreach (var odj in odjezdy)
+                for (int oi = 0; oi < odjezdy.Count; oi++)
                 {
+                    var odj = odjezdy[oi];
                     var minuteText = odj.Minuta.ToString("D2");
 
                     SKPaint minutePaint;
@@ -900,22 +961,26 @@ public class DepartureGridElement : ScheduleElementBase
 
                         foreach (var anot in odj.Anotace)
                         {
-                            SKFont aFont;
-                            SKPaint aPaint;
-                            if (anot.Typ == TypAnotace.Text)
+                            SKFont aFont = anot.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
+
+                            // Negativní značka invertovaně — černý box + bílý znak (jako legacy). Vždy zapnuto.
+                            if (anot.Typ == TypAnotace.NegativniZnacka)
                             {
-                                aFont = anotTextFont;
-                                aPaint = anotTextPaint;
-                            }
-                            else
-                            {
-                                aFont = anotSymFont;
-                                aPaint = anotSymPaint;
+                                nzBgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaBackColor), IsAntialias = true };
+                                nzFgPaint ??= new SKPaint { Color = SKColor.Parse(NegativniZnackaForeColor), IsAntialias = true };
+                                float hpad  = aFont.Size * 0.12f;
+                                float znakW = aFont.MeasureText(anot.Znak);
+                                var m = aFont.Metrics;
+                                ctx.Canvas.DrawRect(new SKRect(anotX, minPt.Y + m.Ascent, anotX + znakW + hpad * 2, minPt.Y + m.Descent), nzBgPaint);
+                                ctx.Canvas.DrawText(anot.Znak, anotX + hpad, minPt.Y, aFont, nzFgPaint);
+                                anotX += znakW + hpad * 2 + anotInterGapPx;
+                                continue;
                             }
 
+                            SKPaint aPaint = anot.Typ == TypAnotace.Text ? anotTextPaint : anotSymPaint;
+
                             // Per-anotace barva z DB (konzistence s legendou poznámek).
-                            // NZ anotace zachová default styl — má vlastní invertovaný render v NotesLegend.
-                            if (anot.ForeColor is not null && anot.Typ != TypAnotace.NegativniZnacka)
+                            if (anot.ForeColor is not null)
                             {
                                 customAnotPaint ??= new SKPaint { IsAntialias = true };
                                 customAnotPaint.Color = SKColor.Parse(anot.ForeColor);
@@ -927,13 +992,15 @@ public class DepartureGridElement : ScheduleElementBase
                         }
                     }
 
-                    minX += scaledMinuteW + scaledOdjezdGap;
+                    minX += slotW[oi] + scaledOdjezdGap;
                 }
             }
             finally
             {
                 customMinutePaint?.Dispose();
                 customAnotPaint?.Dispose();
+                nzBgPaint?.Dispose();
+                nzFgPaint?.Dispose();
             }
         }
 
@@ -1051,7 +1118,7 @@ public class DepartureGridElement : ScheduleElementBase
     {
         if (all.Count == 0) return [];
 
-        // GroupColumns má přednost — filtrovat podle IsVisible
+        // GroupColumns má přednost — filtruje podle IsVisible a určuje pořadí (přeskládání ▲▼ v editoru).
         if (GroupColumns.Count > 0)
         {
             var hidden = GroupColumns
@@ -1059,7 +1126,18 @@ public class DepartureGridElement : ScheduleElementBase
                 .Select(gc => gc.SkupinaDnuId)
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var result = all.Where(s => !hidden.Contains(s.Id)).ToList();
+            // Pořadí dle GroupColumns; skupiny mimo seznam zachovají datové pořadí na konci.
+            var order = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < GroupColumns.Count; i++)
+                if (!order.ContainsKey(GroupColumns[i].SkupinaDnuId))
+                    order[GroupColumns[i].SkupinaDnuId] = i;
+
+            var result = all
+                .Where(s => !hidden.Contains(s.Id))
+                .Select((s, dataIdx) => (s, key: order.TryGetValue(s.Id, out var oi) ? oi : int.MaxValue, dataIdx))
+                .OrderBy(t => t.key).ThenBy(t => t.dataIdx)
+                .Select(t => t.s)
+                .ToList();
             return result.Count > 0 ? result : [all[0]];
         }
 
@@ -1076,6 +1154,31 @@ public class DepartureGridElement : ScheduleElementBase
         }
 
         return filtered.Count > 0 ? filtered : [all[0]];
+    }
+
+    /// <summary>Aplikuje per-group override nadpisu (<see cref="DepartureGroupColumnStyle.HeaderOverride"/>)
+    /// přes sdílený <see cref="Rendering.ColumnHeader.Resolve"/>. Když je override neprázdný, nahradí
+    /// celý nadpis skupiny (jeden text — dvouřádek z dat se použije jen bez override). Vrací stejný
+    /// seznam pokud žádný override není (žádná alokace navíc).</summary>
+    private List<SkupinaDnuData> ApplyHeaderOverrides(List<SkupinaDnuData> skupiny)
+    {
+        if (GroupColumns.Count == 0) return skupiny;
+        var lookup = GroupColumnIndexResolver.BuildStyleLookup(
+            GroupColumns, skupiny.Select(s => s.Id).ToList());
+        if (lookup.Count == 0) return skupiny;
+
+        List<SkupinaDnuData>? result = null;
+        for (int i = 0; i < skupiny.Count; i++)
+        {
+            var sk = skupiny[i];
+            lookup.TryGetValue(sk.Id, out var cs);
+            var effective = Rendering.ColumnHeader.Resolve(cs?.HeaderOverride, sk.Nadpis);
+            if (ReferenceEquals(effective, sk.Nadpis)) continue;   // bez override
+
+            result ??= new List<SkupinaDnuData>(skupiny);
+            result[i] = new SkupinaDnuData { Id = sk.Id, Nadpis = effective, Nadpis2 = "", Poradi = sk.Poradi };
+        }
+        return result ?? skupiny;
     }
 
     /// <summary>Vrátí dostupné skupiny dnů z naposledy zpracovaných dat (pro dialog).</summary>
@@ -1292,6 +1395,8 @@ public class DepartureGridElement : ScheduleElementBase
         new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Bold ?? false,   Set = v => AnotaceSymbolStyle.Bold = v ? true : null },
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.Italic ?? false, Set = v => AnotaceSymbolStyle.Italic = v ? true : null },
         new ColorPropertyDescriptor  { Label = "Barva textu",  Group = "Anotace — symboly", Get = () => AnotaceSymbolStyle.TextColor ?? "", Set = v => AnotaceSymbolStyle.TextColor = string.IsNullOrEmpty(v) ? null : v },
+        new ColorPropertyDescriptor  { Label = "NZ pozadí",     Group = "Anotace — symboly", Get = () => NegativniZnackaBackColor, Set = v => NegativniZnackaBackColor = v },
+        new ColorPropertyDescriptor  { Label = "NZ znak",       Group = "Anotace — symboly", Get = () => NegativniZnackaForeColor, Set = v => NegativniZnackaForeColor = v },
 
         // ── Styl anotací — text (písmena, dny) ──
         new StringPropertyDescriptor { Label = "Font",         Group = "Anotace — text", Get = () => AnotaceTextStyle.FontFamily ?? "", Set = v => AnotaceTextStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
@@ -1358,7 +1463,10 @@ public class DepartureGridElement : ScheduleElementBase
             AutoExpandToFillHeight     = AutoExpandToFillHeight,
             ShowAnotace                = ShowAnotace,
             AnotaceFontSize            = AnotaceFontSize,
+            NegativniZnackaBackColor   = NegativniZnackaBackColor,
+            NegativniZnackaForeColor   = NegativniZnackaForeColor,
             HourColumnStyle            = HourColumnStyle?.Clone(),
+            HourColumnHeader           = HourColumnHeader,
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
             ColorRules                 = ColorRules.Select(r => r.Clone()).ToList(),
         };

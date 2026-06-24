@@ -93,6 +93,9 @@ namespace EDControls.EDInputForm
 
         private readonly List<Field> _searchMatches = [];
 
+        /// <summary>Stav rozbalení skupin před začátkem hledání — pro obnovení po smazání dotazu.</summary>
+        private Dictionary<Group, bool>? _expandStateBeforeSearch;
+
         private void WireToolbarSearch()
         {
             // Listen to SearchText changes
@@ -111,28 +114,67 @@ namespace EDControls.EDInputForm
             _searchMatches.Clear();
             if (Items == null) return;
 
+            var groups = Items.OfType<Group>().ToList();
+            var fields = Items.OfType<Field>().ToList();
+
             if (string.IsNullOrWhiteSpace(searchText))
             {
-                foreach (var f in Items.OfType<Field>())
-                    f.IsFilteredBySearch = false;
+                foreach (var f in fields) f.IsFilteredBySearch = false;
+                foreach (var g in groups) g.IsFilteredBySearch = false;
+                // Obnovit stav rozbalení skupin z doby před hledáním.
+                if (_expandStateBeforeSearch is not null)
+                {
+                    foreach (var kvp in _expandStateBeforeSearch)
+                        kvp.Key.IsExpanded = kvp.Value;
+                    _expandStateBeforeSearch = null;
+                }
                 Toolbar.TotalMatches = 0;
                 Toolbar.CurrentMatchIndex = 0;
                 return;
             }
 
-            // Case + diacritics insensitive: "agen" matches "Ágen", "fontu" matches "Fontů" atd.
-            var needle = NormalizeForSearch(searchText);
+            // Při prvním hledání si zapamatovat rozbalení skupin, ať ho po smazání dotazu obnovíme.
+            _expandStateBeforeSearch ??= groups.ToDictionary(g => g, g => g.IsExpanded);
 
-            foreach (var f in Items.OfType<Field>())
-            {
-                bool matches = NormalizeForSearch(f.Label ?? "").Contains(needle);
-                f.IsFilteredBySearch = !matches;
-                if (matches) _searchMatches.Add(f);
-            }
+            _searchMatches.AddRange(ComputeSearchMatches(groups, fields, searchText));
 
             Toolbar.TotalMatches = _searchMatches.Count;
             Toolbar.CurrentMatchIndex = _searchMatches.Count > 0 ? 1 : 0;
             if (_searchMatches.Count > 0) ScrollFieldIntoView(_searchMatches[0]);
+        }
+
+        /// <summary>
+        /// Nastaví <see cref="Item.IsFilteredBySearch"/> na polích i skupinách podle hledaného textu
+        /// a vrátí nalezená pole. Pole projde, pokud matchne jeho label NEBO název jeho skupiny
+        /// (pak ukážeme celou skupinu). Skupina je viditelná, pokud matchne její název nebo obsahuje
+        /// aspoň jedno zobrazené pole; zobrazenou skupinu rozbalíme, ať jsou nalezená pole vidět.
+        /// Case + diacritics insensitive ("agen" matchne "Ágen").
+        /// </summary>
+        internal static List<Field> ComputeSearchMatches(
+            IReadOnlyList<Group> groups, IReadOnlyList<Field> fields, string searchText)
+        {
+            var matches = new List<Field>();
+            var needle = NormalizeForSearch(searchText);
+
+            foreach (var f in fields)
+            {
+                bool fieldMatches = NormalizeForSearch(f.Label ?? "").Contains(needle);
+                bool groupMatches = f.ParentGroup is { } pg && NormalizeForSearch(pg.GroupName).Contains(needle);
+                bool pass = fieldMatches || groupMatches;
+                f.IsFilteredBySearch = !pass;
+                if (pass) matches.Add(f);
+            }
+
+            foreach (var g in groups)
+            {
+                bool groupMatches = NormalizeForSearch(g.GroupName).Contains(needle);
+                bool hasVisibleField = fields.Any(f => f.ParentGroup == g && !f.IsFilteredBySearch);
+                bool show = groupMatches || hasVisibleField;
+                g.IsFilteredBySearch = !show;
+                if (show) g.IsExpanded = true;
+            }
+
+            return matches;
         }
 
         /// <summary>Normalize string for diacritics-insensitive matching:
@@ -188,6 +230,10 @@ namespace EDControls.EDInputForm
         /// <see cref="Validate"/> pro re-validaci s naplněnými hodnotami.
         /// </summary>
         public event Action? Initialized;
+
+        /// <summary>Klik na BUTTON pole — host dostane klíč pole a může spustit client-side akci
+        /// (např. otevřít sub-dialog). Doplňuje server-side Validate (ValidateOnChange).</summary>
+        public event Action<string>? ButtonClicked;
 
         /// <summary>
         /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
@@ -490,8 +536,8 @@ namespace EDControls.EDInputForm
         private void ButtonField_Click(object sender, RoutedEventArgs e)
         {
             if (((System.Windows.Controls.Button)sender).DataContext is not Field field) return;
-            if (!field.ValidateOnChange) return;
-            Controller.Validate(field.Key);
+            ButtonClicked?.Invoke(field.Key);                 // client-side akce (host)
+            if (field.ValidateOnChange) Controller.Validate(field.Key);   // server-side akce
         }
 
         // ─── File browse ──────────────────────────────────────────────────────────

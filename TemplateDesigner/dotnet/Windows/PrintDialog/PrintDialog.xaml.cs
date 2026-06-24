@@ -16,9 +16,11 @@ public partial class PrintDialog : Window
         InitializeComponent();
         vm.RequestClose += result => { DialogResult = result; Close(); };
 
-        // Parametry sestavy renderuje EDInputForm z Caché (AgendaParams) — schéma řídí agenda
-        // přes GetParameters. CacheClass + InitParams se musí nastavit před Loaded (Init běží tam).
-        if (vm.HasParameters && !string.IsNullOrEmpty(vm.AgendaClass))
+        // Parametry sestavy + export pole renderuje EDInputForm z Caché (AgendaParams) — schéma
+        // řídí agenda přes GetParameters, AgendaParams přidává universální skupinu „Export".
+        // CacheClass + InitParams se musí nastavit před Loaded (Init běží tam). Staví se i pro agendu
+        // bez GetParameters (jen export skupina) — proto HasForm, ne HasParameters.
+        if (vm.HasForm)
         {
             ParamForm.InitParams = vm.BuildInitParams();
             ParamForm.Initialized += OnParamFormInitialized;
@@ -46,11 +48,18 @@ public partial class PrintDialog : Window
 
     private void ApplyVisibility()
     {
-        foreach (var field in (ParamForm.Items ?? []).OfType<Field>())
+        var fields = (ParamForm.Items ?? []).OfType<Field>().ToList();
+
+        // Název souboru má smysl jen při členění na víc souborů (split != Single).
+        var split = fields.FirstOrDefault(f => f.Key == PrintDialogViewModel.ExportSplitKey)?.Value ?? "SINGLE";
+        bool isSplit = split != "SINGLE";
+
+        foreach (var field in fields)
         {
-            var target = _vm.IsParamVisible(field.Key)
-                ? EItemVisibility.Visible
-                : EItemVisibility.Collapsed;
+            bool visible = field.Key == PrintDialogViewModel.ExportFileNameKey
+                ? isSplit
+                : _vm.IsParamVisible(field.Key);
+            var target = visible ? EItemVisibility.Visible : EItemVisibility.Collapsed;
             // Guard — Item.Visibility setter nemá early-return, vyhneme se zbytečným notifikacím při každém stisku.
             if (field.Visibility != target) field.Visibility = target;
         }

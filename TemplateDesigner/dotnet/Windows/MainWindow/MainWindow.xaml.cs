@@ -925,7 +925,13 @@ public partial class MainWindow : Window
                 if (stringParams.Count > 0)
                     pages = pages.Select(p => p.WithExtraValues(stringParams)).ToList();
 
-                return pages;
+                return TemplateDesigner.Models.NoteVisibilityFilter.Apply(
+                    pages,
+                    TemplateDesigner.Models.NoteVisibilityFilter.ParseMode(
+                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamName)),
+                    TemplateDesigner.Models.NoteVisibilityFilter.ParseBool(
+                        paramValues.GetValueOrDefault(TemplateDesigner.Models.NoteVisibilityFilter.ParamAggBezbarier)),
+                    TemplateDesigner.Models.NoteVisibilityFilter.ShouldHideNaZnameniLegend(_vm.State.CurrentTemplate));
             };
         }
 
@@ -1351,47 +1357,31 @@ public partial class MainWindow : Window
 
     private void OpenDepartureGridDialog(DepartureGridElement element)
     {
-        var undoDepth = _vm!.State.UndoStack.Count;
-
-        var generalDescriptors = element.GetPropertyDescriptors()
-            .Where(d => d is not Models.ButtonPropertyDescriptor)
-            .ToList();
-
         // Dostupné skupiny z preview dat
-        var previewData = _vm.State.CurrentPreviewData;
+        var previewData = _vm!.State.CurrentPreviewData;
         var availableGroups = element.GetAvailableSkupinyDnu(previewData);
 
         var dlg = new DepartureGroupEditorDialog(
-            element,
-            availableGroups,
-            element.GroupColumns,
-            element.HourColumnStyle,
-            generalDescriptors,
-            cmd => _vm.Execute(cmd),
-            () => { skCanvas.InvalidateVisual(); InvalidatePreview(); })
+            element, availableGroups, element.GroupColumns, element.HourColumnStyle)
             { Owner = this };
 
-        if (dlg.ShowDialog() == true)
-        {
-            // Uložit per-column styles
-            if (availableGroups.Count > 0)
-            {
-                _vm.Execute(new Commands.Implementations.SetPropertyCommand(
-                    "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
-                    v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
-            }
+        if (dlg.ShowDialog() != true) return;   // Cancel — nic se neaplikovalo (Obecné batchuje na OK)
 
-            // Uložit hour column style
-            _vm.Execute(new Commands.Implementations.SetPropertyCommand(
-                "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
-                v => element.HourColumnStyle = (ColumnVisualStyle?)v));
-        }
-        else
-        {
-            // Cancel — vrátit změny z obecného tabu
-            while (_vm.State.UndoStack.Count > undoDepth)
-                _vm.State.Undo();
-        }
+        // Tab „Obecné" (EDInputForm) + per-column styly + hour style — jako jeden undo krok.
+        var cmds = new List<Commands.IDesignerCommand>();
+        if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
+        cmds.AddRange(dlg.StyleCommands);   // pod-formuláře stylu (tlačítka „Styl…")
+        if (availableGroups.Count > 0)
+            cmds.Add(new Commands.Implementations.SetPropertyCommand(
+                "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
+                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
+        cmds.Add(new Commands.Implementations.SetPropertyCommand(
+            "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
+            v => element.HourColumnStyle = (ColumnVisualStyle?)v));
+
+        _vm.Execute(cmds.Count == 1
+            ? cmds[0]
+            : new Commands.Implementations.CompositeCommand("Nastavení odjezdů", cmds));
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -2298,19 +2288,18 @@ public partial class MainWindow : Window
         if (commit && !_dragHasMoved) commit = false;
         if (commit && _vm is not null)
         {
-            // Soft-snap na aktuální GridSize krok pro osy, kde se neuplatnil smart-snap ani grid snap.
-            // Drag produkuje zlomkové mm (3.247…); bez kvantizace se elementy nedají přesně alignovat
-            // klávesami. Snap-to-grid má prioritu, pokud je zapnutý. Bez grid snapu respektujeme
-            // user-vybraný GridSize (0.1 / 0.5 / 1 / 2 / 5 / 10 mm) místo hardcoded 1 mm.
+            // Při vypnutém grid snapu jen očistíme zlomkové mm z draggu (3.247… → 3.2 mm) na osách,
+            // kde se neuplatnil smart-snap. Kvantizace na 0.1 mm je nepostřehnutelná, ale drží čisté
+            // souřadnice pro zarovnávání klávesami — shodně s EndResize. NEsnapujeme na celý GridSize,
+            // jinak by vypnuté tlačítko mřížky reálně grid snapping nevyplo (jen by ho odložilo na puštění).
             bool applySoftX = !_lastSnapActiveX && !_vm.State.SnapToGrid;
             bool applySoftY = !_lastSnapActiveY && !_vm.State.SnapToGrid;
             if ((applySoftX || applySoftY) && _dragInitPositions.Count > 0)
             {
-                float softStep = _vm.State.GridSize;
                 foreach (var el in _dragInitPositions.Keys)
                 {
-                    if (applySoftX) el.X = MathF.Round(el.X / softStep) * softStep;
-                    if (applySoftY) el.Y = MathF.Round(el.Y / softStep) * softStep;
+                    if (applySoftX) el.X = MmMath.Round(el.X);
+                    if (applySoftY) el.Y = MmMath.Round(el.Y);
                 }
             }
 
