@@ -23,6 +23,8 @@ public class AppBootstrapperTests
         public bool ShutdownCalled { get; private set; }
         public bool BuildShellCalled { get; private set; }
         public string? SavedIdfa { get; private set; }
+        public string? SavedLoginName { get; private set; }
+        public string? LoginDialogPrefill { get; private set; }
         public bool WireActivityCalled { get; private set; }
         public bool AcquireSessionCalled { get; private set; }
 
@@ -70,9 +72,10 @@ public class AppBootstrapperTests
             new(LoginRest: null!, Companies: new List<CompanyStruct>(), StartCompany: default,
                 Server: "test-host", Port: 9999);
 
-        protected override bool TryLogin(MLRest loginRest, out LoginResult login)
+        protected override bool TryLogin(MLRest loginRest, string? lastLoginName, out LoginResult login)
         {
             TryLoginCalled = true;
+            LoginDialogPrefill = lastLoginName;
             login = new LoginResult(42, "test", "Test User", true, "", false, true, "");
             return LoginSucceeds;
         }
@@ -100,7 +103,11 @@ public class AppBootstrapperTests
             return (SessionOutcome, null);
         }
 
-        protected override void SavePostLoginState(ILocalPrefs prefs, string idfa) { SavedIdfa = idfa; }
+        protected override void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
+        {
+            SavedIdfa = idfa;
+            SavedLoginName = loginName;
+        }
 
         protected override void WireActivityFailedHandler(SessionContext session, EDServices services)
             => WireActivityCalled = true;
@@ -295,6 +302,18 @@ public class AppBootstrapperTests
         b.Run();
 
         Assert.Equal("JI_DP", b.SavedIdfa);
+        Assert.Equal("test", b.SavedLoginName);   // jméno z úspěšného loginu
+    }
+
+    [Fact]
+    public void Run_PrefillsLoginDialogWithLastLoginName()
+    {
+        var b = new TestableBootstrapper { LoginSucceeds = true };
+        b.Prefs.LastLoginName.Returns("alice");
+
+        b.Run();
+
+        Assert.Equal("alice", b.LoginDialogPrefill);
     }
 
     // ---------- Step ordering ----------
