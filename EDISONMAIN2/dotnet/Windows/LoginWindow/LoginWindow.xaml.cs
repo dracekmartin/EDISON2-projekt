@@ -10,10 +10,16 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
         public LoginResult? Result { get; private set; }
 
-        public LoginWindow(MLRest mlRest)
+        public LoginWindow(MLRest mlRest, string? initialUsername = null)
         {
             _mlRest = mlRest;
             InitializeComponent();
+
+            if (!string.IsNullOrEmpty(initialUsername))
+            {
+                UsernameBox.Text = initialUsername;
+                PasswordBox.Focus();   // jméno už je vyplněné → rovnou na heslo
+            }
         }
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)

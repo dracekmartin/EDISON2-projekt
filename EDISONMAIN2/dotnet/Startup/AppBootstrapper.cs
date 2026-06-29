@@ -87,7 +87,7 @@ public class AppBootstrapper
         var prep = PrepareLogin(prefs);
 
         // Auto-login (Windows SSO) má přednost; když není zapnutý / neprojde, fallback na dialog.
-        if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, out login))
+        if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, prefs.LastLoginName, out login))
         {
             Shutdown();
             return null;
@@ -106,7 +106,7 @@ public class AppBootstrapper
             return null;
         }
 
-        SavePostLoginState(prefs, session.MLRest.Idfa);
+        SavePostLoginState(prefs, session.MLRest.Idfa, login.UserName);
         WireActivityFailedHandler(session, services);
 
         // Až po SavePostLoginState — LastIdfa musí být uložená i když teď shell skončí updatem.
@@ -268,7 +268,7 @@ public class AppBootstrapper
     /// dialogu přepne <c>ShutdownMode</c> na <c>OnExplicitShutdown</c> aby zavření dialogu
     /// nevypnulo aplikaci (žádné jiné okno ještě není otevřené).
     /// </summary>
-    protected virtual bool TryLogin(MLRest loginRest, out LoginResult login)
+    protected virtual bool TryLogin(MLRest loginRest, string? lastLoginName, out LoginResult login)
     {
 #if DEBUG
         login = new LoginResult(201, "martin.hubata", "martin.hubata", true, "", false, true, "");
@@ -277,7 +277,7 @@ public class AppBootstrapper
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {
-            var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest);
+            var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, lastLoginName);
             if (loginWindow.ShowDialog() != true)
             {
                 login = null!;
@@ -348,9 +348,10 @@ public class AppBootstrapper
             session.MLRest, session.LicenceLoader, services.IsAdmin,
             services.PopupDisplayer, services.WindowNavigator);
 
-    protected virtual void SavePostLoginState(ILocalPrefs prefs, string idfa)
+    protected virtual void SavePostLoginState(ILocalPrefs prefs, string idfa, string? loginName)
     {
         prefs.LastIdfa = idfa;
+        prefs.LastLoginName = loginName;
         prefs.Save();
     }
 

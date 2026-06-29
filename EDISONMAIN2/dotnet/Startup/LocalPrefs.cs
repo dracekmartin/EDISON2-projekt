@@ -11,6 +11,10 @@ namespace EDISONMAIN2;
 public interface ILocalPrefs
 {
     string? LastIdfa { get; set; }
+
+    /// <summary>Poslední přihlašovací jméno — předvyplní se v login dialogu. Null = žádné.</summary>
+    string? LastLoginName { get; set; }
+
     bool ShowWindowsAsDialogs { get; set; }
 
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
@@ -34,6 +38,7 @@ public interface ILocalPrefs
 public class LocalPrefs : ILocalPrefs
 {
     public string? LastIdfa { get; set; }
+    public string? LastLoginName { get; set; }
 
     // Uživatel → Možnosti — ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
     public bool ShowWindowsAsDialogs { get; set; }
