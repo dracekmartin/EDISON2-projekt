@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:EDControls.EDInputForm"
+             xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox"
              xmlns:edct="clr-namespace:EDControls.EDComponentToolbar"
              xmlns:designTime="clr-namespace:EDControls.EDInputForm.DesignTimeData"
              mc:Ignorable="d"
@@ -249,7 +250,7 @@
 
                 <!-- ComboBox: editable s autocomplete; user can type custom value not in list -->
                 <DataTemplate x:Key="ComboBoxFieldTemplate">
-                    <local:SuggestComboBox
+                    <edfc:EDFilterComboBox
                         Suggestions="{Binding ListItems}"
                         Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
                         IsEnabled="{Binding Editable}"

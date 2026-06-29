@@ -474,6 +474,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 OnPropertyChanged(nameof(Namespace));
                 OnPropertyChanged(nameof(Idfa));
                 OnPropertyChanged(nameof(WindowTitle));
+                OnPropertyChanged(nameof(SelectedCompanyId));
 
                 var result = _switcher.Switch(Idfa, Namespace, _services.ActiveLicence);
 
@@ -501,6 +502,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string Idfa => SelectedCompany.Id;
 
         public string WindowTitle => $"M-line EDISON [{Idfa}]";
+
+        /// <summary>
+        /// IDFa aktuální firmy pro filtrovatelný přepínač (SuggestComboBox.SelectedKey, TwoWay).
+        /// Setter najde firmu a deleguje na <see cref="SelectedCompanyIndex"/> (potvrzení + switch + rollback);
+        /// závěrečné OnPropertyChanged vrátí combobox na původní firmu, když se index nezměnil (cancel/reject).
+        /// </summary>
+        public string SelectedCompanyId
+        {
+            get => SelectedCompany.Id;
+            set
+            {
+                int index = VisibleIdfas.ToList().FindIndex(c => c.Id == value);
+                if (index >= 0) SelectedCompanyIndex = index;
+                OnPropertyChanged(nameof(SelectedCompanyId));
+            }
+        }
+
+        /// <summary>Firmy jako nápověda pro filtrovatelný přepínač (Key = IDFa, Label = název).</summary>
+        public IEnumerable<ListItem> CompanySuggestions =>
+            VisibleIdfas.Select(c => new ListItem(c.Id, c.Name));
 
         private void OpenModule(IModule module)
         {

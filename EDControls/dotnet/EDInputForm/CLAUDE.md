@@ -16,10 +16,10 @@ okna. Veškerá Caché komunikace a serializace je řešena interně.
 | `Item.cs` | Abstraktní báze pro všechny položky formuláře. Property `Number`, `Visibility` (`EItemVisibility`), `EffectiveVisibility` (virtuální), `HelpText`, `HelpTextVisibility`. Implementuje `INotifyPropertyChanged`. |
 | `EHelpTextMode.cs` | Enum: `Tooltip`, `Column`. Pomocná třída `EHelpTextModeWire` — konverze `ToWire()` / `FromWire()`. |
 | `Group.cs` | Hlavička sekce: `GroupName`, `IsExpanded` (computed z `Visibility`: Visible=expanded, Collapsed=collapsed). `Visibility` zděděna z `Item`. |
-| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `FileFilter`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. Record `ListItem(Key, Label)` — volba pro List pole. |
+| `Field.cs` | Editovatelné pole: `Key`, `Label`, `FieldType`, `Value`, `BoolValue`, `DateValue`, `ListItems`, `FileFilter`, `ValidationError`, `HasError`, `Required`, `ValidateOnChange`, `Editable`, `ParentGroup`, `EffectiveVisibility` (override). Metoda `GetTypeError()` — klientská typová validace. `Visibility` zděděna z `Item`. (Volba `ListItem(Key, Label)` žije v root namespace `EDControls` — sdílená, viz `EDControls/dotnet/ListItem.cs`.) |
 | `EFieldType.cs` | Enum: `Text`, `Number`, `Date`, `Decimal`, `Bool`, `Button`, `List` (strict dropdown), `ComboBox` (editable s autocomplete), `File`, `Color`. Pomocná třída `EFieldTypeWire` — konverze `ToWire()` / `FromWire()`. |
 | `HexToBrushConverter.cs` | IValueConverter pro Color field — parsuje `#AARRGGBB` / `#RRGGBB` string na `SolidColorBrush` pro swatch binding. |
-| `SuggestComboBox.cs` | Custom ComboBox subclass pro Suggest field — editable, live filtering, custom string allowed mimo list. Event-ordering safeguards (PreviewKeyDown/Up flag) — viz implementační poznámka v třídě. |
+| _(ComboBox field)_ | Renderuje se sdíleným controlem `EDControls.EDFilterComboBox` (volný režim) — viz `EDControls/dotnet/EDFilterComboBox/`. Dřív lokální `SuggestComboBox`, přesunut jako obecná kontrolka. |
 | `EItemVisibility.cs` | Enum: `Visible`, `Collapsed`, `UserHidden`, `ProgrammerHidden`. Pomocná třída `EItemVisibilityWire` — konverze `ToWire()` / `FromWire()`. |
 | `EValidationTrigger.cs` | Enum: `Init`, `Change`, `BeforeSave`. |
 | `ValidationContext.cs` | Datový objekt — trigger + `ChangedKey` (klíč pole, které vyvolalo validaci). |

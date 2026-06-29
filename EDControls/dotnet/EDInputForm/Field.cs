@@ -6,7 +6,7 @@ using WpfVisibility = System.Windows.Visibility;
 
 namespace EDControls.EDInputForm
 {
-    public record ListItem(string Key, string Label);
+    // ListItem (Key, Label) přesunut do root namespace EDControls (sdílený typ) — viz ListItem.cs.
 
     public class Field : Item
     {

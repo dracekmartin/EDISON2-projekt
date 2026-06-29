@@ -228,6 +228,61 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
+    public void SelectedCompanyId_Get_ReturnsCurrentCompany()
+    {
+        var vm = CreateVM();
+
+        Assert.Equal("CB_DP", vm.SelectedCompanyId);
+    }
+
+    [Fact]
+    public void SelectedCompanyId_SetConfirmed_SwitchesCompany()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var vm = CreateVM(popup: mockPopup);
+
+        vm.SelectedCompanyId = "JI_DP";
+
+        Assert.Equal("JI_DP", vm.SelectedCompanyId);
+        Assert.Equal(1, vm.SelectedCompanyIndex);
+    }
+
+    [Fact]
+    public void SelectedCompanyId_SetConfirmDenied_Reverts()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(false);
+        var vm = CreateVM(popup: mockPopup);
+
+        vm.SelectedCompanyId = "JI_DP";
+
+        Assert.Equal("CB_DP", vm.SelectedCompanyId);   // nezměněno → combobox se vrátí na původní
+    }
+
+    [Fact]
+    public void SelectedCompanyId_SetUnknownId_DoesNothing()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        var vm = CreateVM(popup: mockPopup);
+
+        vm.SelectedCompanyId = "NEEXISTUJE";
+
+        Assert.Equal("CB_DP", vm.SelectedCompanyId);
+        mockPopup.DidNotReceive().Confirm(Arg.Any<string>());
+    }
+
+    [Fact]
+    public void CompanySuggestions_ExposeIdAndName()
+    {
+        var vm = CreateVM();
+
+        var ids = vm.CompanySuggestions.Select(s => s.Key).ToList();
+        Assert.Contains("CB_DP", ids);
+        Assert.Contains("JI_DP", ids);
+    }
+
+    [Fact]
     public void MiniApps_ExposesCatalogDescriptors()
     {
         var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new TestMiniAppProvider()]));

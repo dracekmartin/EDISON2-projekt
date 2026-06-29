@@ -9,6 +9,7 @@
         xmlns:designTime="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.DesignTimeData"
         xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules"
         xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls"
+        xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" Height="800" Width="1200" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
@@ -48,6 +49,12 @@
         <DockPanel>
             <TextBlock Text="{Binding InformationText}" DockPanel.Dock="Right"
                        VerticalAlignment="Center" Margin="8,0,8,0"/>
+            <!-- Přepínač firem MUSÍ být mimo <Menu>: Menu si přebírá fokus/myš pro navigaci a
+                 editovatelnému comboboxu uvnitř kradlo fokus (klik do textu "odkliknul"). -->
+            <edfc:EDFilterComboBox DockPanel.Dock="Left" StrictSelection="True"
+                                   Suggestions="{Binding CompanySuggestions}"
+                                   SelectedKey="{Binding SelectedCompanyId, Mode=TwoWay}"
+                                   MinWidth="220" VerticalAlignment="Center" Margin="4,0,8,0"/>
             <Menu x:Name="TopMenu" BorderThickness="0">
             <MenuItem Header="EDISON">
                 <MenuItem Header="Připojit k databázi"   Command="{Binding ConnectToDatabaseCommand}"/>
@@ -55,13 +62,6 @@
                 <Separator/>
                 <MenuItem Header="Konec"                 Command="{Binding ExitCommand}"/>
             </MenuItem>
-            <ComboBox ItemsSource="{Binding VisibleIdfas}" SelectedIndex="{Binding SelectedCompanyIndex}" MinWidth="220" VerticalAlignment="Center" Margin="4,0">
-                <ComboBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding DisplayName}" />
-                    </DataTemplate>
-                </ComboBox.ItemTemplate>
-            </ComboBox>
             <MenuItem Header="Uživatel">
                 <MenuItem Header="Přihlásit jiného uživatele"     Command="{Binding LoginAsAnotherUserCommand}"/>
                 <MenuItem Header="Aktuální uživatel"              Command="{Binding ShowUserEditCommand}"/>

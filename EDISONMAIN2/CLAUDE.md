@@ -11,8 +11,10 @@ Nahradí staré VB.NET WinForms `EDISONMAIN`. Aktuální stav + roadmap v
   povolené (LDAP-AUTO / SSO) — o módu (EDISON/LDAP/LDAP-AUTO, feature #23) rozhoduje server.
   Windows SSO auto-login: `AppBootstrapper.TryAutoLogin` (gated `ILocalPrefs.TryWindowsAutoLogin`,
   default off) zkusí `Environment.UserName` + prázdné heslo před dialogem; fallback na dialog.
-- **Výběr firmy** — combobox v toolbaru s textovým názvem firmy + IDFa v `[]`,
-  abecedně řazeno (server vrací řazené přes `SortedDictionary`).
+- **Výběr firmy** — filtrovatelný `EDControls.EDFilterComboBox` (striktní režim) v toolbaru;
+  psaní filtruje dle IDFa i názvu, `SelectedKey` ↔ `EdisonMainViewModel.SelectedCompanyId`.
+  **Musí být mimo `<Menu>`** — WPF Menu krade fokus editovatelnému poli uvnitř (klik „odklikne");
+  proto je v `DockPanel` vedle Menu, ne jako jeho dítě.
   `EdisonMainViewModel.SelectedCompanyIndex` setter deleguje na `CompanySwitcher.Switch`
   (sdílená logika startup + runtime — výměna `MLRest.Idfa`/`DataNamespace`, re-volání
   VerifyLic přes `LicenceVerifier`, rollback při rejection, persist `LastIdfa` po Accepted).

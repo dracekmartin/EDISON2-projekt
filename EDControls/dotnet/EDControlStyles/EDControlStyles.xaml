@@ -1,5 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox">
 
     <!--
         EDControlStyles — implicitní styly pro WPF kontrolky.
@@ -654,6 +655,10 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <!-- EDFilterComboBox je podtřída ComboBox → implicitní styl ComboBoxu se na ni neaplikuje.
+         BasedOn ji napojí na stejný vzhled i font tokeny (template má PART_EditableTextBox). -->
+    <Style TargetType="{x:Type edfc:EDFilterComboBox}" BasedOn="{StaticResource {x:Type ComboBox}}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
          TextBox — flat input s focus accent
