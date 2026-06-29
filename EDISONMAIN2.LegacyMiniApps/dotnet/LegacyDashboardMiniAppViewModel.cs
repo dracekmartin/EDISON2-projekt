@@ -13,7 +13,7 @@ namespace EDISONMAIN2.LegacyMiniApps;
 /// (object[] = dokumentovaně povolené pro integraci s legacy delimited metodou; parsing v
 /// <see cref="DashboardData.Parse"/>).
 /// </summary>
-public sealed class LegacyDashboardMiniAppViewModel : EDMiniAppViewModel
+public sealed class LegacyDashboardMiniAppViewModel : EDMiniAppViewModel, IRefreshableMiniApp
 {
     private const string CacheClass = "ALVA.EDISON.MiniAplikaceAPI";
 
@@ -47,6 +47,9 @@ public sealed class LegacyDashboardMiniAppViewModel : EDMiniAppViewModel
     public ICommand RefreshCommand { get; }
 
     public override void OnOpened() => Load();
+
+    /// <summary>Hromadný refresh ze shellu (<see cref="IRefreshableMiniApp"/>) — stejná cesta jako „Načíst".</summary>
+    public void Refresh() => Load();
 
     private void Load()
     {

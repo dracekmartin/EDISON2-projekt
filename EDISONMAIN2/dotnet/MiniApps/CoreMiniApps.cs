@@ -15,5 +15,6 @@ public sealed class CoreMiniApps : IMiniAppProvider
         new("Core.Nastenka", "Nástěnka", () => new SimpleMiniAppViewModel(
             "Nástěnka",
             () => new WebView2 { Source = new Uri("https://www.m-line.cz/Nastenka1.html") })),
+        new("Core.AutoRefresh", "Automatický refresh", () => new PeriodicRefreshMiniAppViewModel()),
     ];
 }

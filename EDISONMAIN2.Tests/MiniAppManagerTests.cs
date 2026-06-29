@@ -153,6 +153,25 @@ public class MiniAppManagerTests
         Assert.Equal("X#1", Assert.Single(mgr.OpenInstances).ContentId);
     }
 
+    [Fact]
+    public void RefreshAll_RefreshesOnlyRefreshableInstances()
+    {
+        var services = MockServices();
+        var plain = new MiniAppDescriptor("X", "plain", () => new TestMiniApp(services));
+        var refreshable = new MiniAppDescriptor("R", "refreshable", () => new RefreshableMiniApp(services));
+        var catalog = MiniAppCatalog.Build([new SingleProvider(plain), new SingleProvider(refreshable)]);
+        var mgr = new MiniAppManager(new FakeHost(), catalog);
+
+        mgr.Open(plain);
+        var r1 = (RefreshableMiniApp)mgr.Open(refreshable).ViewModel;
+        var r2 = (RefreshableMiniApp)mgr.Open(refreshable).ViewModel;
+
+        var refreshed = mgr.RefreshAll();
+        Assert.Equal(["refreshable", "refreshable"], refreshed);
+        Assert.Equal(1, r1.Refreshed);
+        Assert.Equal(1, r2.Refreshed);
+    }
+
     private sealed class TestMiniApp(EDServices services) : EDMiniAppViewModel(services)
     {
         public override string Title => "test";
@@ -161,6 +180,13 @@ public class MiniAppManagerTests
         public override void OnOpened() => Opened++;
         public override void OnClosed() => Closed++;
         public void TriggerCloseSelf() => CloseSelf();
+    }
+
+    private sealed class RefreshableMiniApp(EDServices services) : EDMiniAppViewModel(services), IRefreshableMiniApp
+    {
+        public override string Title => "refreshable";
+        public int Refreshed { get; private set; }
+        public void Refresh() => Refreshed++;
     }
 
     private sealed class SingleProvider(MiniAppDescriptor descriptor) : IMiniAppProvider

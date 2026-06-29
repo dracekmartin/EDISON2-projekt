@@ -14,6 +14,19 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 
     public IReadOnlyList<MiniAppInstance> OpenInstances => _open;
 
+    /// <summary>Obnoví všechny otevřené obnovitelné mini-apps. Vrací názvy (titulky) obnovených.</summary>
+    public IReadOnlyList<string> RefreshAll()
+    {
+        var refreshed = new List<string>();
+        foreach (var instance in _open.ToList())
+            if (instance.ViewModel is IRefreshableMiniApp refreshable)
+            {
+                refreshable.Refresh();
+                refreshed.Add(instance.ViewModel.Title);
+            }
+        return refreshed;
+    }
+
     /// <summary>Vyrobí VM z deskriptoru, vloží panel do docku a začne ho trackovat.</summary>
     public MiniAppInstance Open(MiniAppDescriptor descriptor)
     {
@@ -69,6 +82,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         instance = new MiniAppInstance(descriptorId, contentId, vm, pane);
         vm.RequestClose += OnRequestClose;
         _open.Add(instance);
+        if (vm is IMiniAppRefreshController controller) controller.AttachRefresher(RefreshAll);
         vm.OnOpened();
         return instance;
     }
@@ -86,4 +100,13 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         if (hash >= 0 && int.TryParse(contentId[(hash + 1)..], out int n) && n >= _nextInstance)
             _nextInstance = n + 1;
     }
+}
+
+/// <summary>
+/// Řídicí mini-app, která ovládá hromadný refresh ostatních. <see cref="MiniAppManager"/> jí při
+/// mountu předá svůj <c>RefreshAll</c> (vrací počet obnovených) — žádná závislost na EDServices.
+/// </summary>
+public interface IMiniAppRefreshController
+{
+    void AttachRefresher(Func<IReadOnlyList<string>> refreshAll);
 }
