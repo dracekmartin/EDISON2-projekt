@@ -10,4 +10,8 @@
         <lma:DispecinkMiniAppView/>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type lma:LegacyDashboardMiniAppViewModel}">
+        <lma:LegacyDashboardMiniAppView/>
+    </DataTemplate>
+
 </ResourceDictionary>
