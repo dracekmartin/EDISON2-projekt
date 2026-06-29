@@ -464,7 +464,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             {
                 if (_selectedCompanyIndex == value) return;
 
-                if (!PopupDisplayer.Confirm("Změna společnosti zavře všechna otevřená okna. Pokračovat?"))
+                if (!PopupDisplayer.Confirm($"Přepnout na firmu {VisibleIdfas[value].DisplayName}? Zavřou se všechna otevřená okna."))
                     return;
 
                 int originalIndex = _selectedCompanyIndex;
