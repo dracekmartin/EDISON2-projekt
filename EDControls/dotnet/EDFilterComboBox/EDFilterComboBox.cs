@@ -30,9 +30,6 @@ namespace EDControls.EDFilterComboBox;
 /// </remarks>
 public class EDFilterComboBox : ComboBox
 {
-    // Oddělovač "Key — Label" (em dash s mezerami) — sdílený dropdownem i klidovým zobrazením.
-    private const string DisplaySeparator = "  —  ";
-
     // ---- Dependency properties -------------------------------------------
 
     public static readonly DependencyProperty SuggestionsProperty = DependencyProperty.Register(
@@ -216,14 +213,8 @@ public class EDFilterComboBox : ComboBox
     {
         if (string.IsNullOrEmpty(key)) return "";
         var item = Suggestions?.FirstOrDefault(i => i.Key == key);
-        return item is null ? key : Display(item);
+        return item is null ? key : EDFilterComboBoxLogic.Display(item);
     }
-
-    // Zobrazovaný řetězec položky: „Key — Label", nebo jen Key když Label chybí / je shodný.
-    private static string Display(ListItem item) =>
-        string.IsNullOrEmpty(item.Label) || item.Label == item.Key
-            ? item.Key
-            : item.Key + DisplaySeparator + item.Label;
 
     // Přestaví obsah dropdownu na položky odpovídající psanému textu (prázdný text = vše).
     // Každá položka je ComboBoxItem: Content = čitelný „Key — Label", ale Tag nese čistý Key —
@@ -233,12 +224,8 @@ public class EDFilterComboBox : ComboBox
         Items.Clear();
         if (Suggestions is null) return;
         foreach (var item in Suggestions)
-        {
-            bool match = string.IsNullOrEmpty(text)
-                || item.Key.Contains(text, StringComparison.OrdinalIgnoreCase)
-                || item.Label.Contains(text, StringComparison.OrdinalIgnoreCase);
-            if (match) Items.Add(new ComboBoxItem { Content = Display(item), Tag = item.Key });
-        }
+            if (EDFilterComboBoxLogic.Matches(item, text))
+                Items.Add(new ComboBoxItem { Content = EDFilterComboBoxLogic.Display(item), Tag = item.Key });
     }
 
     // Změna SelectedKey zvenčí (binding) → obnov klidové zobrazení na novou hodnotu.
