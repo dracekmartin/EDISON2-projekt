@@ -480,9 +480,6 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   `NacistOdjezdy` čtou z mapy. Trasa se parsuje jednou per `cisloTrasy` místo per stránka×spoj.
   ⚠️ **Pozor — `^||` globály neberou prázdný subscript** (`<SUBSCRIPT>` na `^||TiskAd("wmap","")`);
   WMapa guarduje `cisloTrasy=""` (spoj bez trasy) + prázdné mapy necachuje (merge z undef = `<UNDEFINED>`).
-- ⬜ **Zbývající hot spot (větší refaktor):** MHD `VypocitatBitmapyObsluhy` má 3 samostatné průchody
-  `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³), šlo by sloučit. (Rizikový zásah do ověřeného
-  MHD enginu — samostatný opatrný krok s re-verifikací proti MHD gold.) Detail v analýze 2026-06-12.
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).

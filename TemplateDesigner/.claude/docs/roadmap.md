@@ -59,7 +59,7 @@ stejným trojčíslím / více dopravců, P3 logická imposice 2×A5→A4 — de
 5. **AI pomocník (stretch)** — funkční (generování šablony, PDF import, vision pipeline), další rozšíření low-prio.
 
 > **Pozn.:** ⬅️ markery v sekcích níže pocházejí z dřívějšího plánu — autoritativní pořadí je tento
-> seznam. **Výkonový rest** (MHD `VypocitatBitmapyObsluhy`) zůstává rizikový samostatný krok.
+> seznam.
 
 ### ⬅️ PRIORITA 1 — Wave 4: dokončit EDInputForm migraci (🟡 rozpracováno)
 
@@ -84,8 +84,6 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 - ~~Číslování omezení TYPPOZ=1~~ ✅ **hotovo 2026-06-23** — marker = číslo NZ (`cnz`) invertovaně, žádný firm gate (changelog / §10).
 - Šířka/layout legendy POZNAMKY (**vizuál** proti gold — počet sloupců, šířky, mezery) — na konec. Pozn.: **pořadí** poznámek už ✅ ověřeno 1:1 (2026-06-30), tady jde jen o vzhled.
 - **DEV cleanup před produkcí** — ✅ odstraněn `#if DEBUG` auto-open `kv_ad_test.json` + `--test-detector` blok (2026-06-17). Zbývá: zvážit statický `GetMockData`.
-
-**Performance rest (samostatný krok):** MHD agenda `VypocitatBitmapyObsluhy` (3 průchody `obsluhaKonec` + vnořené smyčky). **Analýza hotová** → [`perf-vypocitatbitmapyobsluhy-analyza.md`](perf-vypocitatbitmapyobsluhy-analyza.md): reálně **O(S·B²)** (NE B³), bitmapy ohraničené délkou trasy (BodID sekvenční 1..N ověřeno) → na běžných linkách ~jednotky až desítky ms. **Doporučení: změřit první, pravděpodobně zavřít jako YAGNI**; teprve při reálném problému refaktor (4 konkrétní behavior-preserving optimalizace + verifikace připravené v analýze). (AD agenda per-stránka neefektivnosti nemá.)
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
 

@@ -428,8 +428,7 @@ proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN) + pročištěna v�
   prázdný subscript; přidán guard. Stejný `$d()` guard na `served` cache (merge z undef = `<UNDEFINED>`).
 
 **Zbývá k úplnému 1:1 (zdokumentováno §10):** multi-varianta TrasaMin (renderer), číslování omezení
-TYPPOZ=1 (firm-config), šířka/layout legendy. **Výkon:** MHD `VypocitatBitmapyObsluhy` (O(bodů³)) —
-rizikový, samostatný krok.
+TYPPOZ=1 (firm-config), šířka/layout legendy.
 
 ## 2026-05-25 — Wave 3 uzavřena (Fáze 2 auto-snapshots skipnuté)
 
