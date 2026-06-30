@@ -68,15 +68,7 @@ public static class WindowStatePersistence
                 : window.RestoreBounds;
             var stateInt = window.WindowState == WindowState.Maximized ? 1 : 0;
 
-            var input = new object[]
-            {
-                $"formID{del}{formId}",
-                $"clear{del}1",
-                $"param{del}location{del}{bounds.Left:0};{bounds.Top:0}",
-                $"param{del}size{del}{bounds.Width:0};{bounds.Height:0}",
-                $"param{del}state{del}{stateInt}",
-            };
-            mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", input);
+            mlRest.QueryOrThrow("ALVA.LIBRARY.Form", "SaveParams", BuildSaveParams(formId, bounds, stateInt, del));
         }
         catch
         {
@@ -84,7 +76,16 @@ public static class WindowStatePersistence
         }
     }
 
-    private static Dictionary<string, string> ParseOutput(object[] output, char del)
+    internal static object[] BuildSaveParams(string formId, Rect bounds, int stateInt, char del) =>
+    [
+        $"formID{del}{formId}",
+        $"clear{del}1",
+        $"param{del}location{del}{bounds.Left:0};{bounds.Top:0}",
+        $"param{del}size{del}{bounds.Width:0};{bounds.Height:0}",
+        $"param{del}state{del}{stateInt}",
+    ];
+
+    internal static Dictionary<string, string> ParseOutput(object[] output, char del)
     {
         var dict = new Dictionary<string, string>();
         for (int i = 1; i < output.Length; i++)
@@ -115,7 +116,7 @@ public static class WindowStatePersistence
             window.WindowState = state == "1" ? WindowState.Maximized : WindowState.Normal;
     }
 
-    private static bool TryParsePair(string s, out double a, out double b)
+    internal static bool TryParsePair(string s, out double a, out double b)
     {
         a = b = 0;
         var parts = s.Split(';');

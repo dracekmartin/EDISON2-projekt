@@ -35,7 +35,7 @@ public class LogoutWatcher
     public void Start() => _timer.Start();
     public void Stop() => _timer.Stop();
 
-    private void Tick()
+    internal void Tick()
     {
         var mlRest = _mlRestProvider();
         if (mlRest is null) return;

@@ -19,6 +19,7 @@ Class ALVA.EDControls.UserData Extends %RegisteredObject
 /// IN["data"]  = JSON string (libovolná struktura podle komponenty)
 ClassMethod Save(ByRef sys As %String) As %Status
 {
+    $$$Init
     try {
         $$$FillParams
 
@@ -31,7 +32,7 @@ ClassMethod Save(ByRef sys As %String) As %Status
 
         s ^ALVA.EDControls.UserData(IdFa, userID, scope, key) = data
     } catch (ex) { $$$CatchErrRest }
-    ret $$$OK
+    ret ret
 }
 
 /// Načte JSON blob. Neexistující klíč → prázdný OUT (caller dostane null v .NET).
@@ -40,6 +41,7 @@ ClassMethod Save(ByRef sys As %String) As %Status
 /// OUT["data"] = JSON string (nebo neexistuje pokud klíč není uložený)
 ClassMethod Load(ByRef sys As %String) As %Status
 {
+    $$$Init
     try {
         $$$FillParams
 
@@ -53,12 +55,13 @@ ClassMethod Load(ByRef sys As %String) As %Status
             s ^||ML("OUT","data") = ^ALVA.EDControls.UserData(IdFa, userID, scope, key)
         }
     } catch (ex) { $$$CatchErrRest }
-    ret $$$OK
+    ret ret
 }
 
 /// Smaže klíč. No-op pokud neexistoval.
 ClassMethod Delete(ByRef sys As %String) As %Status
 {
+    $$$Init
     try {
         $$$FillParams
 
@@ -70,7 +73,7 @@ ClassMethod Delete(ByRef sys As %String) As %Status
 
         k ^ALVA.EDControls.UserData(IdFa, userID, scope, key)
     } catch (ex) { $$$CatchErrRest }
-    ret $$$OK
+    ret ret
 }
 
 }

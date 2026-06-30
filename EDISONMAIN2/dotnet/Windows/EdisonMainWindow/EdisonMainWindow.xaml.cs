@@ -8,7 +8,7 @@ using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 namespace EDISONMAIN2
 {
     /// <summary>
-    /// Interaction logic for EdisonWindow.xaml
+    /// Interaction logic for EdisonMainWindow.xaml
     /// </summary>
     public partial class EdisonMainWindow : Window
     {

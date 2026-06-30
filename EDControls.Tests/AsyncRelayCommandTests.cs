@@ -48,7 +48,7 @@ public class AsyncRelayCommandTests
     [Fact]
     public async Task CanExecute_FalseWhileRunning_PreventsDoubleClick()
     {
-        // M2 motivace: _isRunning flag blokuje druhé spuštění během běžícího tasku.
+        // _isRunning flag blokuje druhé spuštění během běžícího tasku.
         var gate = new TaskCompletionSource();
         var cmd = new AsyncRelayCommand(() => gate.Task);
 

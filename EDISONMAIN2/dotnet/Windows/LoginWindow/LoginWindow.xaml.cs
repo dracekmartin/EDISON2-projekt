@@ -1,5 +1,6 @@
 using System.Windows;
 using ALWA.SYS;
+using EDControls;
 using EDISONMAIN2;
 
 namespace EDISONMAIN2.Windows.LoginWindow
@@ -27,7 +28,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
             try
             {
                 ErrorText.Visibility = Visibility.Collapsed;
-                Result = UserAuthenticator.Login(_mlRest, UsernameBox.Text, PasswordBox.Password);
+                Result = UserAuthenticator.Login(new MLRestAdapter(_mlRest), UsernameBox.Text, PasswordBox.Password);
                 DialogResult = true;
             }
             catch (LoginException ex)

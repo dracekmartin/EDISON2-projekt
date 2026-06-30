@@ -254,6 +254,9 @@ public class EDInputFormParsingTests
     [InlineData("BUTTON", EFieldType.Button)]
     [InlineData("LIST", EFieldType.List)]
     [InlineData("FILE", EFieldType.File)]
+    [InlineData("COLOR", EFieldType.Color)]
+    [InlineData("COMBOBOX", EFieldType.ComboBox)]
+    [InlineData("IMAGE", EFieldType.Image)]
     [InlineData("UNKNOWN", EFieldType.Text)]
     public void EFieldTypeWire_RoundTrips(string wire, EFieldType expected)
     {

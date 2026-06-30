@@ -57,9 +57,8 @@ public class RelayCommandTests
     [Fact]
     public void Execute_Exception_NullPopup_FallsBackToEDServicesCurrent()
     {
-        // M1 refactor: fallback z `new PopupDisplayer()` (orphan) na composition root
-        // přes EDServices.Current.PopupDisplayer. Tady ověřujeme, že fallback skutečně
-        // sahá na Current — ne na vlastní instanci.
+        // Fallback z `new PopupDisplayer()` (orphan) na composition root přes
+        // EDServices.Current.PopupDisplayer — ověřujeme, že sahá na Current, ne na vlastní instanci.
         var popup = Substitute.For<IPopupDisplayer>();
         EDServices.Initialize(ServicesWith(popup));
         try

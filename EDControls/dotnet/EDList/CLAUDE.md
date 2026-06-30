@@ -11,7 +11,7 @@
 - ✅ isLink sloupce — klikatelný podtržený text s `CellLinkClicked` eventem
 - ✅ Testovací okno EDListTestWindow s mock daty
 - ✅ JSON komunikace přes MLRest
-- ✅ MLRest se čte automaticky z DataContext rodičovského okna (EDViewModel)
+- ✅ MLRest + UserPrefs se čtou z `EDServices.Current` (nezávislé na Window.DataContext)
 
 **Co chybí:**
 
@@ -44,9 +44,9 @@
 
 `EDList` je samostatný WPF `UserControl` zobrazující read-only seznam (tabulka se sloupci
 a řádky) řízený z Caché backendu. Host nastaví `CacheClass` a zavolá `InitializeList()`
-pro definici sloupců a `LoadList()` pro načtení dat. `MLRest` se čte automaticky
-z `DataContext` rodičovského okna (`EDViewModel`). Výběr řádku a standardní interakce
-(dvojklik, kontextové menu) jsou vystaveny jako eventy.
+pro definici sloupců a `LoadList()` pro načtení dat. `MLRest` (a `UserPrefs`) se čtou
+z `EDServices.Current` — host tedy nemusí mít VM dědící z `EDViewModel` (shodně s EDInputForm).
+Výběr řádku a standardní interakce (dvojklik, kontextové menu) jsou vystaveny jako eventy.
 
 Více instancí v jednom okně je standardní scénář — každá instance je samostatný objekt
 se svým `CacheClass` a voláními:
@@ -73,7 +73,7 @@ ListVozidla.SelectionChanged += (_, id) => ListSpoje.LoadList();
 | `ListColumn.cs` | ✅ | Definice sloupce: `Key`, `Label`, `Type`, `Format`, `Width`, `Align`, `Sortable`, `Visible`, `IsLink`. |
 | `EListColumnType.cs` | ✅ | Enum datových typů sloupce — viz sekce níže. |
 | `EListColumnAlign.cs` | ✅ | Enum: `Auto`, `Left`, `Center`, `Right`. |
-| `ColumnLayout.cs` | ❌ | Record pro ukládání uživatelského nastavení sloupců (pořadí + šířka). Zatím neimplementováno. |
+| `ColumnLayout.cs` | ✅ | Record pro ukládání uživatelského nastavení sloupců (šířky + pořadí + sort). Persist přes `IUserPrefsService` (L2). |
 
 ### Caché ObjectScript  (`CACHE/ALVA/EDControls/EDList/`)
 
