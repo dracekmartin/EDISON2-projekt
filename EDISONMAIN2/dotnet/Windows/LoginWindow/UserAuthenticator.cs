@@ -1,5 +1,5 @@
 using System;
-using ALWA.SYS;
+using EDControls;
 
 namespace EDISONMAIN2.Windows.LoginWindow
 {
@@ -21,15 +21,14 @@ namespace EDISONMAIN2.Windows.LoginWindow
         /// Volá <c>ALVA.SYS.Login.Login</c> na Caché. Používá <c>object[]</c> protože server
         /// metoda čte přes numerické subscripty <c>^||ML("IN", N)</c>.
         /// </summary>
-        public static LoginResult Login(MLRest mlRest, string username, string password)
+        public static LoginResult Login(IMLRest mlRest, string username, string password)
         {
             if (string.IsNullOrEmpty(username)) throw new LoginException("Prázdné jméno uživatele.");
             // Prázdné heslo se NEblokuje — pro LDAP-AUTO / Windows SSO je legitimní (jen jméno).
             // O přijatelnosti rozhoduje server podle login módu uživatele (feature #23):
             // EDISON/LDAP prázdné heslo odmítnou (-107), LDAP-AUTO ho přijme.
 
-            var output = mlRest.Query("ALVA.SYS.Login", "Login", new object[] { username, password });
-            mlRest.RestStatus.ThrowIfError();
+            var output = mlRest.QueryOrThrow("ALVA.SYS.Login", "Login", new object[] { username, password });
 
             var data = output[1]?.ToString() ?? "";
             var parts = data.Split(mlRest.Delimiter);

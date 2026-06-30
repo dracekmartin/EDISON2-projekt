@@ -305,7 +305,7 @@ public class AppBootstrapper
         if (!prefs.TryWindowsAutoLogin) return false;
         try
         {
-            login = Windows.LoginWindow.UserAuthenticator.Login(loginRest, Environment.UserName, "");
+            login = Windows.LoginWindow.UserAuthenticator.Login(new MLRestAdapter(loginRest), Environment.UserName, "");
             return true;
         }
         catch (Windows.LoginWindow.LoginException)
