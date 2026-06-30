@@ -23,10 +23,11 @@ namespace EDControls.EDList
     {
         // ─── Konfigurace (DependencyProperties pro XAML attribute setování) ──────
 
-        private IMLRest? MLRest => (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.MLRest;
-        private IUserPrefsService UserPrefs =>
-            (Window.GetWindow(this)?.DataContext as EDViewModel.EDViewModel)?.UserPrefs
-            ?? new NullUserPrefsService();
+        // MLRest + UserPrefs ze sdíleného EDServices.Current — nezávislé na Window.DataContext.
+        // Host hostující EDList tak nemusí mít VM dědící z EDViewModel jen kvůli těmto službám
+        // (shodný pattern jako EDInputForm). EDServices.UserPrefs defaultuje na NullUserPrefsService.
+        private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
+        private IUserPrefsService UserPrefs => EDViewModel.EDServices.Current.UserPrefs;
 
         public static readonly DependencyProperty CacheClassProperty =
             DependencyProperty.Register(nameof(CacheClass), typeof(string), typeof(EDList),
