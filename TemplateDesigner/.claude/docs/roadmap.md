@@ -81,11 +81,11 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 
 **Zbývá k úplnému 1:1 (zdokumentováno §10, nice-to-have):**
 - **Multi-varianta TrasaMin** (`TrasaMin1-15` = víc časových sloupců per varianta trasy) — vyžaduje zásah do **C# StopListElement rendereru** (dnes jeden sloupec). Pro běžné linky s jednou trasou je jednosloupcová verze 1:1.
-- **Číslování omezení TYPPOZ=1** (legacy pevná čísla „29" vs naše sekvenční „1") — firm-config.
-- Šířka/layout legendy (vizuál) — na konec.
+- ~~Číslování omezení TYPPOZ=1~~ ✅ **hotovo 2026-06-23** — marker = číslo NZ (`cnz`) invertovaně, žádný firm gate (changelog / §10).
+- Šířka/layout legendy POZNAMKY (**vizuál** proti gold — počet sloupců, šířky, mezery) — na konec. Pozn.: **pořadí** poznámek už ✅ ověřeno 1:1 (2026-06-30), tady jde jen o vzhled.
 - **DEV cleanup před produkcí** — ✅ odstraněn `#if DEBUG` auto-open `kv_ad_test.json` + `--test-detector` blok (2026-06-17). Zbývá: zvážit statický `GetMockData`.
 
-**Performance rest (samostatný krok):** MHD agenda `VypocitatBitmapyObsluhy` má 3 průchody `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³). **Rizikový zásah do ověřeného MHD enginu** — udělat zvlášť s re-verifikací proti MHD gold oracle. (AD agenda už per-stránka neefektivnosti nemá.)
+**Performance rest (samostatný krok):** MHD agenda `VypocitatBitmapyObsluhy` (3 průchody `obsluhaKonec` + vnořené smyčky). **Analýza hotová** → [`perf-vypocitatbitmapyobsluhy-analyza.md`](perf-vypocitatbitmapyobsluhy-analyza.md): reálně **O(S·B²)** (NE B³), bitmapy ohraničené délkou trasy (BodID sekvenční 1..N ověřeno) → na běžných linkách ~jednotky až desítky ms. **Doporučení: změřit první, pravděpodobně zavřít jako YAGNI**; teprve při reálném problému refaktor (4 konkrétní behavior-preserving optimalizace + verifikace připravené v analýze). (AD agenda per-stránka neefektivnosti nemá.)
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
 
@@ -419,7 +419,10 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
   všude = scaláry + tlačítka „Styl…"; (2) uklidit — `StyleEdit.cls` (nepoužitá Caché varianta A),
   zvážit zda `StyleFields` helper zůstane (inline zóny) nebo se styl celý přesune na CellStyleEditor;
   (3) drobnost: pod-formulář aplikuje na parent OK (akumulace keyovaná prefixem) — OK.
-- **Export: extrahovat členění + název souboru výš** — `__EXPORT_SPLIT` + `__EXPORT_FILENAME` jsou
+- **Font follow-ups** (navazuje na „Výchozí font na úrovni šablony", 2026-06-30): (1) **live varování
+  „nenainstalovaný font"** — dnes `FontResolver` tiše fallbackuje na Arial; chce **warning kanál
+  v EDInputformu** (zobrazit uživateli, že font není k dispozici); (2) **rozšířit `Template.DefaultTextStyle`**
+  z „jen font" i na size / barvu / rámeček — **„jen když budou chtít"** (YAGNI, model už pole má, chybí UI).
   zatím export pole v tiskovém EDInputformu (`AgendaParams`, persistence per-agenda přes `PrintParams`,
   ✅ 2026-06-22). Do budoucna zvážit přesun na úroveň **`Template`** (perzistuje se šablonou jako
   `CultureCode`) nebo **agenda-config** (firemní default, jak to měl legacy v „Tisk → Linky-MHD").

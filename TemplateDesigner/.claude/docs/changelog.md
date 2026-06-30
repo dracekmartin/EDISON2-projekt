@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-30 — Ověření: pořadí poznámek v legendě 1:1 s legacy (živý gold oracle)
+
+- ✅ **Default řazení legendy potvrzeno 1:1** proti gold oracle (`ALVA.TISKMHD.Data`, VOLANO_Z=JRMAIN)
+  na CB_CSADAD lince **0365005** (page 1, Smrkovice → Dobešice). Pořadí **bezbariér → rozdíly tras
+  (B,C,E,F,G,H) → omezení (29,68)** se shoduje včetně sub-pořadí a textů. `NotesLegendElement.Razeni
+  = Vychozi` zachová Caché emit order → **žádný reorder není potřeba**.
+- Vyvrací dřívější (retraktovanou) domněnku o nutném reorderu „typ1→2→3" — ta by pořadí naopak
+  rozbila. **Neprověřeno na této lince:** pozice `atributy-zastavky` / `ruční-komentáře` / `směrové`
+  vůči těmto třem (na stránce nebyly); emit order je dle kódu atributy → bezbariér → rozdíly →
+  komentáře → omezení → směrové.
+
 ## 2026-06-30 — Font combobox plošně (sjednocení výběru fontu)
 
 - ✅ **Jednotný font picker všude** — editovatelný ComboBox s nainstalovanými fonty (`SKFontManager`
