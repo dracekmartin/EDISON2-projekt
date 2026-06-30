@@ -116,6 +116,29 @@ odlišnost) = matoucí. **Neportovat 1:1.** Návrh, až přijde reálná potřeb
   fallback na anotace A). Jedna sada písmen.
 - **Gold oracle máme:** CB_CSADAD **0345061** (8 variant) + **0365001** (2 varianty).
 
+### 4.5 Legacy logika rozřazení (z kódu) + dynamický návrh (2026-06-30)
+
+**Co dělá legacy (ověřeno ve zdroji):**
+- **`TrasaMin1-15` = časové sloupce.** `JRapiLinPrtMhd1.mac` (ř. 266-300): per spoj se sestaví `prutm`
+  (časy per zastávka) + `prutmbmp` (bitmapa obsluhy). **Dedup podle `prutmbmp`** — spoj se shodnou
+  bitmapou = stejná varianta (ponechá se delší čas, ř. 292); nová bitmapa → nový sloupec + písmeno
+  z `ZnkMinSlp`. Strop 15.
+- **`Pracovni2-5` = mrtvé.** `Data.cls` (ř. 342-367) je čte jako markerové sloupce (`znaky^val^znaky^NZ`),
+  ale **na žádné reálné AD lince se neplní** (0365001/0410101/0365005 → vždy prázdné `^^^&&`); linkový
+  producer je needituje. Legacy strukturní pozůstatek → **ignorovat**.
+- **Závěr:** existuje **jeden** reálný mechanismus variant = TrasaMin časy. „15 vs 5" byl falešný poplach.
+
+**Dynamický návrh (bez 15 checkboxů):**
+- **Caché:** AD agenda detekuje N *reálných* variant (dedup dle bitmapy obsluhy) a emituje **pole**
+  proměnné délky (např. `TRASY[]` = `{písmeno, časy_per_zastávka}`); zpětně kompat. `CAS_JIZDY` = varianta 1.
+- **StopList render:** uživatel má v sloupcích pořád **jeden** „Čas jízdy"; při renderu se slot
+  **rozvine na N pod-sloupců** dle dat (1 varianta = jako dnes; N variant = N sloupců s písmeny).
+- **Strop přehlednosti:** „max variantních sloupců" (default ~2-3); víc variant → fallback na 1 sloupec
+  + anotace (mechanismus A, máme). **UI = 1 číslo + sdílený styl, 0 per-varianta checkboxů.**
+- **Pracovni neportovat** (mrtvé + redundantní s anotací A).
+- **Rozhodnutí (čeká):** implementovat capped TrasaMin NEBO zavřít (anotace stačí) — dle reálné potřeby
+  přesných časů vedlejších variant.
+
 ---
 
 ## 5. Layout a viditelnost legendy/poznámek
