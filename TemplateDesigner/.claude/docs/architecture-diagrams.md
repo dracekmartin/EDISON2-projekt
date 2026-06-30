@@ -1,5 +1,9 @@
 # Architektonické diagramy — TemplateDesigner
 
+> **Konceptuální diagramy** (vrstvy, datový tok, hierarchie). Cenné pro onboarding a školení.
+> Autoritativní zdroj struktury kódu je vždy `.claude/rules/architecture.md` + samotný kód — diagramy
+> mohou mírně zaostávat za detaily. Při rozporu vyhrává kód/rules.
+
 ## 1. Vrstvy systému
 
 ```mermaid

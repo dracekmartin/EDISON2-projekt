@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-30 — Databáze jako primární úložiště šablon (JSON = import/export)
+
+- ✅ **Sjednocení modelu ukládání** — Otevřít (Ctrl+O) / Uložit (Ctrl+S) / Uložit jako míří do
+  **databáze**. Soubor degradován na **Importovat z JSON** / **Exportovat do JSON** (export nemění
+  původ — kopie ven, obdoba PDF/PNG). Odstraněny duplicitní menu položky „Otevřít/Uložit do databáze".
+- ✅ **Titulek ukazuje původ** `[DB]` / `[neuloženo]` (kam míří Uložit). Nová/importovaná šablona →
+  Ctrl+S ji založí do DB (SaveAs formulář s jménem); existující → tichý update (bez confirm).
+- **Pohlcuje S2** (asymetrie file/DB původu) — export už původ nemění, problém zaniká. Správce
+  „Nástroje → Šablony v databázi" beze změny. Versioning prerekvizita (R5) splněna `TemplateMigrator`em.
+
+## 2026-06-24 — Evidence nových zákaznických požadavků z prezentací (sekce P)
+
+- 📝 **Zaznamenány 3 nové požadavky** z živých prezentací 2026-06-24 do
+  `customer-requirements-zastavkovy-jr.md §P` (evidence, neanalyzováno; před implementací založit ticket):
+  **P1** ruční poznámky do patičky, **P2** sloučení linek se stejným posledním trojčíslím (i různá Tč /
+  více dopravců) do jednoho výstupu, **P3** logická imposice 2×A5 oboustranně na A4.
+
 ## 2026-06-23 — AD: datumová omezení jako negativní značky (cnz) + drobné opravy
 
 - ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (1:1 legacy). Marker datumového omezení je

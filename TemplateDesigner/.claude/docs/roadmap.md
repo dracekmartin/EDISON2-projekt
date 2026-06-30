@@ -1,25 +1,34 @@
 # Roadmap
 
-## 📋 Handoff — rozpracováno (stav k 2026-06-21, pokračování i z druhého PC)
+## 📋 Aktuálně rozpracováno / nejbližší kroky (stav k 2026-06-30)
 
-**Hotovo tuto session (commitnuto + pushnuto):** AD nastavení linky + ruční poznámky (Komentáře/
-nepoznámkovat/směrové), #7955 přepínač, „jede až do" (#7947), skrytí na znamení + agregát bezbariér
-(#7161 D5/D6), **layout legendy** (sloupce 1-4 + směr wrapu + zarovnaný marker + řazení). Helpdesk
-zavřeno: **#7955, #7959, #7947, #7161**. Detail: `changelog.md`, `ad-jr-nastaveni-linky-analyza.md`,
-`ad-jr-typy-poznamek-layout-analyza.md`. Cache MCP opraven (`C:\Edison\EdisonCacheMcp\`).
+> Obě zákaznické prezentace proběhly (statická ~19.6., živá 26.6.). Handoff blok 2026-06-21
+> archivován do [`roadmap-archive.md`](roadmap-archive.md). Zastávkový JŘ (AD) je datově 1:1 +
+> výkonově hotový. Nově (30.6.) je **databáze primární úložiště šablon** (Ctrl+S → DB, soubor =
+> import/export).
 
-**⚠️ DEV tweaky v repu — VRÁTIT před produkcí:**
-- `dotnet/templatedesigner.appsettings.json` → firma **CB_GWBUS** (produkce = KV_DP)
-- `MainWindowViewModel.CreateSampleTemplate` → **AD + 1 sekce** (produkce = MHD + Záhlaví/Obsah/Patička)
+**Aktivní rozpracované tracky:**
+- **Wave 4 EDInputForm** — Fáze 1 (sjednocení tabulkových editorů) hotová; **další = W4-6 ImageElement**
+  (nový `Image` field type v EDControls), pak W4-9 komplexní vícetabové elementy. Stylový pod-formulář
+  zatím prototyp (1 zóna) — rozšířit na všechny zóny + StopList.
+- **AD nastavení linky (PRIORITA 2b)** — zbývají přímočaré PATCH-read položky: **AD-N4** (NZ na nový
+  řádek), **AD-N11** (cizojazyčné poznámky); AD-N5/N13/N15 odložené (dormant data / renderer).
 
-**⬜ Rozpracovaný úklid docs (dohodnuto, NEPROVEDENO — udělat příště):**
-1. **Ořezat `cache-database-linky.md`** — smazat §6 (vyřešené otázky) + §10 (status, datum 2026-06-02 zastaralé → odkaz sem/changelog); nechat §2-5 (globály `^JRL`), §8 (nálezy), §9 (gold oracle); přerámovat na „referenční datový model". Pak opravit odkazy na §10 v `CLAUDE.md` + tomto roadmap.
-2. **Hlavičkové poznámky** (ať nematou „je aktuální?"): `legacy-schedule-generators.md` (Fáze A hotová), `schedule-elements-architecture.md` (konceptuální, kód viz rules/architecture), `architecture-diagrams.md` (diagramy k aktualizaci — NEMAZAT, pro školení cenné).
-3. **Cross-refs** AD analýza ↔ datový model (vyjasnit role: analýza=CO umíme, linky=JAK data; bez duplikace FTL/PATCH).
-4. **changelog archivace** (volitelné) — květnové Wave 1-3 → `changelog-archive-2026-05.md` (129k → ~30k).
-5. **`prezentace/osnova-skoleni.md`** — vytvořit osnovu technického školení (přidat výjimku do `prezentace/.gitignore`). Survey docs hotový.
+**Úklid docs — stav 2026-06-30:**
+- ✅ **Prezentační prep docs konsolidovány** — osnova + režie demo → jeden
+  [`prezentace-a-gap-2026.md`](prezentace-a-gap-2026.md) (sdělení + FAQ + zpětná vazba); jednorázové
+  artefakty smazány. **Gap analýza legacy vs nový ponechána** jako samostatná evergreen reference
+  (`gap-analyza-legacy-vs-novy-jr.md`) — analýza udělaná jednou, plná mapovací matice se nemaže.
+- ✅ **Hlavičkové freshness/status poznámky** — `architecture-diagrams.md` (konceptuální, kód autoritativní),
+  `cache-database-linky.md §10` (snapshot 2026-06-02 → odkaz na changelog), obě AD analýzy (status → roadmap).
+- 🟡 **Ořez `cache-database-linky.md §6`** — ponecháno: §6 stále obsahuje **otevřené** otázky (FTL/Plk/CNZ,
+  skupina linek, vícezónový tarif). Přerámování na čistý „referenční datový model" zbývá až po jejich uzavření.
+- ⬜ **changelog archivace** — changelog má ~1600 řádků; květnové Wave 1-3 → `changelog-archive-2026-05.md`
+  (mechanické, čistě o velikosti — žádná staleness, low priorita).
 
-**Zbývající featury** (z analýz): 🟡 viditelnost legendy per kategorie (3.3, překryv s D5/D6), 🔴 multi-varianta časů tras (AD-N13, gold oracle 0345061), drobnosti (uppercase, NEZNZ123, override nadpisů sloupců, dormant NZ dělení).
+**Nové z prezentací (24.6., neanalyzováno):** P1 ruční poznámky do patičky, P2 sloučení linek se
+stejným trojčíslím / více dopravců, P3 logická imposice 2×A5→A4 — detail viz
+[`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md) + backlog níže.
 
 ---
 
@@ -51,14 +60,19 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**🎯 Cíle s ohledem na prezentace (statická ~19. 6. 2026, živá pro zákazníka ~26. 6. 2026)** — pořadí priorit dohodnuto 2026-06-12:
+**🎯 Pořadí priorit po prezentacích (statická ~19.6., živá 26.6. — obě proběhly):**
 
-1. **Odladit zastávkový JŘ (AD)** — *hlavní věc k ukázání*. Datově 1:1 + výkonově **hotovo** (PRIORITA 2 níže). Zbývá průběžné ladění vzhledu/UX podle testování na velkých linkách (poslední kolo: varování o přetečení + cap roztažení DepartureGrid — viz changelog 2026-06-12) + odložené nice-to-have (multi-varianta TrasaMin přes C# renderer, číslování omezení TYPPOZ=1, vizuál legendy).
-2. **Navazující věci ohledně komponent** — EDInputForm (Wave 4) a další UI komponenty, jak vyplyne z ladění JŘ.
-3. **Helpdesk požadavky primárně pro AD, řešitelné bez kolegů** — Fáze A.2-D série: vlastní komentář spoje přebíjí auto-poznámku (#7955), skrýt „x — zastávka na znamení" když je sloupec hidden (#7161), vypnutí auto-poznámky bezbariér (#7161). Viz Fáze A.2-D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-4. **AI pomocník (stretch, když zbude čas)** — validace PDF importu + AI asistent (pasivní → aktivní). Detail v sekci „🤖 AI integrace" níže.
+1. **Zastávkový JŘ (AD)** — *hlavní deliverable*. Datově 1:1 + výkonově **hotovo**. Zbývají odložené
+   nice-to-have (multi-varianta TrasaMin přes C# renderer = AD-N13; vizuál legendy) + přímočaré
+   PATCH-read položky nastavení linky (AD-N4, AD-N11). Číslování omezení (cnz) ✅ hotovo 2026-06-23.
+2. **Wave 4 EDInputForm** — další UI komponenty: W4-6 ImageElement → W4-9 komplexní elementy.
+3. **Helpdesk pro AD** — Fáze A.2-D: hlavní série (#7955/#7947/#7161 D5/D6) ✅ zavřeno. Zbývá D6
+   (#11300 KORID přípoje — nová doménová struktura) + odložené A2-A5/A6/B4 (datový průzkum / kolegové).
+4. **Nové z prezentací (P1-P3)** — backlog, neanalyzováno; před implementací založit ticket.
+5. **AI pomocník (stretch)** — funkční (generování šablony, PDF import, vision pipeline), další rozšíření low-prio.
 
-> **Pozn.:** PRIORITA 1/2 a ⬅️ markery v sekcích níže pocházejí z dřívějšího plánu (před prezentacemi) — autoritativní pořadí je tento číslovaný seznam. **Výkonový rest** (MHD `VypocitatBitmapyObsluhy`) zůstává rizikový samostatný krok mimo prezentační scope.
+> **Pozn.:** ⬅️ markery v sekcích níže pocházejí z dřívějšího plánu — autoritativní pořadí je tento
+> seznam. **Výkonový rest** (MHD `VypocitatBitmapyObsluhy`) zůstává rizikový samostatný krok.
 
 ### ⬅️ PRIORITA 1 — Wave 4: dokončit EDInputForm migraci (🟡 rozpracováno)
 
@@ -103,8 +117,8 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 |---|---|---|---|---|---|
 | AD-N1 | §2 | Poznámka nad linku → placeholder `POZNAMKA_NAD_LINKU` | `PATCH,"Head"` (gPrpLin dta4) | XS | ✅ 2026-06-20 |
 | AD-N2 | §2 | Typ JR → `TYP_JR` placeholder (volitelný; zastávkový legacy razítko z OBJ nestaví) | `PATCH,"OBJ"` (gPrpLin dta3) | S | ✅ 2026-06-20 |
-| AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ⬜ ⬅️ DALŠÍ |
-| AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ |
+| AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ✅ 2026-06-21 (řazení vzestupně i sestupně) |
+| AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ ⬅️ DALŠÍ |
 | AD-N5 | §3 | `MHD_NEZNZ123` — potlačit NZ v legendě per sloupec | `PATCH,"MHD_NEZNZ123"` | M (váže na NZ legend, dnes dormant) | ⬜ |
 | AD-N6 | §3 | Override nadpisů sloupců (skupin dnů) → TD vlastnost `HeaderOverride` (ne port `^JRSET`) | (TD vlastnost elementu) | S | ✅ 2026-06-22 |
 | AD-N7 | §5 | **Komentáře** (ruční poznámka linky + přiřazené spoje) | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | M-L | ✅ 2026-06-20 (Fáze 1) |
@@ -178,7 +192,20 @@ Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Cac
 
 ## 📋 Co je potřeba dělat
 
-### 🔴 Fáze A.2-D: Caché business logic ⬅️ AKTUÁLNÍ PRIORITA
+### 🆕 Nové požadavky z prezentací (P1-P3) — backlog, neanalyzováno
+
+Zaznamenáno z živých prezentací 2026-06-24 (ne helpdesk). Před implementací založit/dohledat ticket a
+ověřit přesné zadání. Detail + odhady viz [`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md).
+
+| # | Co | Odhad | Pozn. |
+|---|---|---|---|
+| P1 | Ruční poznámky do patičky JŘ (volný text nebo dedikované pole „Poznámky") | XS–M | `TextElement` v patičce už funguje; M jen pokud param-driven |
+| P2 | Sloučení linek se stejným posledním trojčíslím (i různá Tč / více dopravců) → 1 výstup | L | Dotýká se agendy + InstancePicker + agregace `POPIS_DOPRAVCE`; chce analýzu legacy |
+| P3 | Logická imposice 2×A5 oboustranně na A4 (N-up + duplex/brožura) | M–L | Samostatná „sheet layout" vrstva nad PageLayoutEngine; `RenderPage` už bere offset |
+
+---
+
+### 🔴 Fáze A.2-D: Caché business logic (zbývá A2-D6)
 
 Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
@@ -188,14 +215,17 @@ Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika sp
 
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
 
+> **Stav (2026-06-30):** A2-D1..D5 ✅ vyřešeno **pro AD agendu** (`ZastavkoveJrAd`); helpdesk #7947/
+> #7955/#7161 zavřeno. Port na MHD agendu (D1, D4) neproveden — až bude potřeba. Zbývá **A2-D6**.
+
 | Krok | Tiket | Zákazník | Co | Stav |
 |---|---|---|---|---|
-| A2-D1 | #7947 | TRANSDEV | Nový text template „spoj jede až do XY" pro spoje **prodlužující** základní trasu (symetrické k existujícímu „končí v zast. X") | |
-| A2-D2 | #7955 | TRANSDEV | Vlastní komentář spoje musí přebít auto-poznámku rozdílů (suppress auto pokud má spoj custom text) | |
-| A2-D3 | #7955 | TRANSDEV | **Bug** — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ); izolovat NZ od ostatních poznámek | |
-| A2-D4 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | |
-| A2-D5 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | |
-| A2-D6 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | |
+| A2-D1 | #7947 | TRANSDEV | Nový text template „spoj jede až do XY" pro spoje **prodlužující** základní trasu (symetrické k existujícímu „končí v zast. X") | ✅ AD 2026-06-21 |
+| A2-D2 | #7955 | TRANSDEV | Vlastní komentář spoje musí přebít auto-poznámku rozdílů (suppress auto pokud má spoj custom text) | ✅ AD 2026-06-20 |
+| A2-D3 | #7955 | TRANSDEV | **Bug** — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ); izolovat NZ od ostatních poznámek | ✅ AD 2026-06-20 (bug nevzniká) |
+| A2-D4 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | ✅ AD 2026-06-21 |
+| A2-D5 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | ✅ AD 2026-06-21 |
+| A2-D6 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | ⬜ ⬅️ DALŠÍ |
 
 #### Odložené z A.2 (na rozhodnutí s kolegy)
 
@@ -347,14 +377,17 @@ Konkrétní situace, které Caché migrace musí předejít. Kontrolní seznam p
 
 Vychází z gap analýzy oproti komerčním report generátorům (Crystal Reports, Stimulsoft, DevExpress). Nezávislé na JŘ — platí pro fakturační i obecné šablony. Může běžet paralelně s Caché migrací (neblokuje a není blokované).
 
-#### Template versioning (prerekvizita produkčního Wave 3)
+#### Template versioning (prerekvizita produkčního Wave 3) — ✅ FRAMEWORK HOTOVÝ
 
-Wave 3 CRUD už běží bez versioning, ale **před produkčním nasazením s reálnými zákaznickými šablonami** musí být H-18/H-19 hotové — jinak breaking JSON change zničí existující data.
+H-18 framework hotový (Wave 3 W3-4, `TemplateMigrator` + `version` field, archiv). Od 2026-06-30 je
+databáze **primární** úložiště šablon (Ctrl+S → DB) — versioning prerekvizita (R5 / „must-not-happen #3")
+je tím splněna. H-19 (konkrétní migrace) zůstává no-op: nové i DB šablony jsou V2+, takže V1→V2 migrace
+není akutní; doplnit při prvním reálném breaking change nebo pokud se objeví staré V1 soubory.
 
-| # | Co | Proč | Velikost |
+| # | Co | Stav | Velikost |
 |---|---|---|---|
-| H-18 | `TemplateMigrator.Migrate(JsonDocument)` — detekce verze v JSON, pipeline migrací, spouští se před deserializací | Ochrana existujících šablon před breaking changes | S |
-| H-19 | Migrace V1→V2: `TextStyle` flat→nested (breaking change 2026-03-24) + varování v UI | Konkrétní existující breaking change | S |
+| H-18 | `TemplateMigrator.Migrate(JsonDocument)` — detekce verze v JSON, pipeline migrací, spouští se před deserializací | ✅ 2026-05-25 (W3-4 framework) | S |
+| H-19 | Migrace V1→V2: `TextStyle` flat→nested (breaking change 2026-03-24) + varování v UI | 🟡 framework připraven, konkrétní migrace nenapsaná (YAGNI — žádné V1 šablony) | S |
 
 #### Merged cells v TableElement
 
@@ -470,7 +503,8 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 | Co | Popis |
 |---|---|
-| Full migration pipeline | Po H-18/H-19 rozšířit na každou breaking change (ne jen 2 verze) |
+| **Dev firma v appsettings** | `templatedesigner.appsettings.json` má dev `CB_CSADAD` (demo gold linka 0365001) — před produkcí ověřit cílovou firmu (`KV_DP` apod.). Startup šablona už revertována na produkční MHD+3 sekce (2026-06-21). |
+| Full migration pipeline | Po H-19 rozšířit na každou breaking change (ne jen 2 verze) |
 | CI/CD linting šablon | Ověřit šablony před deployem (Caché job) |
 | Kategorie + popis šablony v UI | Wave 3 dnes drží Author/CreatedAt/ModifiedAt/Version v metadatech; chybí kategorie + popis v UI |
 

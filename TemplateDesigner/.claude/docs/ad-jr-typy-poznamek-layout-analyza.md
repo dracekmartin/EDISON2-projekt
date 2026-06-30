@@ -1,5 +1,9 @@
 # Typy poznámek a layout legendy — analýza pro konfigurovatelnost
 
+> **Status (2026-06-30):** layout legendy (1–4 sloupce, řazení dle délky, směr wrapu, zarovnaný
+> marker, filtr per typ) je **z velké části implementován** v `NotesLegendElement` — viz changelog
+> 2026-06-21/23. Tento dokument = analytický podklad, ne status.
+
 > **Účel.** Srozumitelně (bez legacy zkratek) popsat: jaké **typy poznámek** v zastávkovém JŘ máme,
 > jak se dnes zobrazují a nastavují, a **jak umožnit uživateli nastavit layout legendy** (sloupce,
 > řazení, viditelnost per kategorie). Podklad pro rozhodnutí, co a jak doplnit do `NotesLegendElement`.

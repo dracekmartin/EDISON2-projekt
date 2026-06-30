@@ -331,7 +331,12 @@ do sloupce není čistě „Plk znak → sloupec" — promítají se i datová o
 
 ---
 
-## 10. Stav implementace agendy `ZastavkoveJrAd` (2026-06-02)
+## 10. Stav implementace agendy `ZastavkoveJrAd` (snapshot 2026-06-02)
+
+> ⚠️ **Datum snapshotu zastaralý.** Tato sekce je historický záznam stavu k 2026-06-02; agenda je
+> dnes datově 1:1 + výkonově hotová. **Aktuální stav** viz [`changelog.md`](changelog.md) +
+> [`roadmap.md`](roadmap.md) (sekce „Co máme" / AD-N tabulka). Níže ponecháno jako referenční mapa
+> implementace (co engine dělá a kde), ne jako status.
 
 Třída `ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd` (code `ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)").
 Reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN`. **Pozn.: TD běží ve firmě dle

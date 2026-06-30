@@ -1,5 +1,9 @@
 # Zastávkový JŘ (AD) — analýza nastavení linky a rozdílů tras
 
+> **Status (2026-06-30):** autoritativní podklad pro AD-N položky (legacy storage + readery). Většina
+> AD-N je hotová — **aktuální stav** vždy v [`roadmap.md`](roadmap.md) tabulce „PRIORITA 2b". Tento
+> dokument = mapa *kde* data jsou, ne status implementace.
+
 > **Jedna ucelená analýza** zastávkového jízdního řádu z **linkových/meziměstských dat** (agenda
 > `ZastavkoveJrAd`, větev `VolanoZ=JRMAIN`, data `^JRL`/`^JRZ`/`^JRSET` per-namespace = per-firma).
 > Pokrývá: jak legacy čte nastavení tisku na úrovni linky (taby *MHD* / *MHD – další* / dialog
