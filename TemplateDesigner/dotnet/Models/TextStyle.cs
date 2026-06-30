@@ -65,7 +65,10 @@ public class TextStyle
 
         return new ResolvedTextStyle
         {
-            FontFamily = FontFamily ?? parent.FontFamily,
+            // Trim — uživatel může do free-text font pole napsat mezeru navíc / jiný case;
+            // SKTypeface.FromFamilyName je case-insensitive, ale mezery na okrajích by tiše spadly
+            // na default font. Ořez to udělá shovívavé.
+            FontFamily = (FontFamily ?? parent.FontFamily).Trim(),
             FontSize = FontSize ?? parent.FontSize,
             Bold = Bold ?? parent.Bold,
             Italic = Italic ?? parent.Italic,
@@ -85,10 +88,10 @@ public class TextStyle
 
     public TextStyle Clone() => (TextStyle)MemberwiseClone();
 
-    /// <summary>Vytvoří TextStyle s výchozími hodnotami pro hlavní text elementu.</summary>
+    /// <summary>Vytvoří TextStyle s výchozími hodnotami pro hlavní text elementu.
+    /// FontFamily záměrně null → nový text dědí výchozí font šablony (DocumentDefaults), fallback Arial.</summary>
     public static TextStyle CreateDefault() => new()
     {
-        FontFamily = "Arial",
         FontSize = 10f,
         Bold = false,
         Italic = false,
@@ -127,7 +130,8 @@ public struct ResolvedTextStyle
     /// <summary>Konverze bodů (pt) na milimetry: 1pt = 25.4/72 mm.</summary>
     public const float PtToMm = 0.3528f;
 
-    public static ResolvedTextStyle Default => new()
+    // Kořen kaskády — přes DocumentDefaults.Apply se sem propíše výchozí styl šablony (font…).
+    public static ResolvedTextStyle Default => DocumentDefaults.Apply(new()
     {
         FontFamily = "Arial",
         FontSize = 10f,
@@ -141,7 +145,7 @@ public struct ResolvedTextStyle
         VAlign = TextVerticalAlignment.Top,
         PaddingTop = 0, PaddingRight = 0, PaddingBottom = 0, PaddingLeft = 0,
         LineSpacing = 1.2f,
-    };
+    });
 
     // ── SkiaSharp helpers ─────────────────────────────────────────────────────
 
@@ -157,7 +161,7 @@ public struct ResolvedTextStyle
     public readonly SKFont CreateFont(float scale = 1f, float mmToPx = 1f)
     {
         float sizePx = FontSize * PtToMm * scale * mmToPx;
-        var typeface = SKTypeface.FromFamilyName(FontFamily, ToSKFontStyle()) ?? SKTypeface.Default;
+        var typeface = FontResolver.Resolve(FontFamily, ToSKFontStyle());
         return new SKFont(typeface, sizePx);
     }
 

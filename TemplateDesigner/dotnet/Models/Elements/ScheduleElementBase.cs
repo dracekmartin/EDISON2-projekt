@@ -44,16 +44,18 @@ public abstract class ScheduleElementBase : TemplateElement
     /// Poslední vrstva kaskády před CellDefaults — user může kterýkoli atribut přepsat v
     /// element.HeaderStyle nebo per-column, nebo kliknout „×" a vrátit se sem.
     /// </summary>
-    public static readonly ResolvedTextStyle ScheduleHeaderDefaults = CellDefaults.Default with
+    // Getter (ne static readonly) + bez explicitního FontFamily → font dědí z CellDefaults.Default,
+    // do kterého se přes DocumentDefaults propíše výchozí font šablony. FontSize zůstává baked (9pt).
+    public static ResolvedTextStyle ScheduleHeaderDefaults => CellDefaults.Default with
     {
-        FontFamily = "Arial", FontSize = 9f, Bold = true,
+        FontSize = 9f, Bold = true,
         BackgroundColor = "#FFE0E0E0", TextColor = "#FF000000",
     };
 
-    /// <summary>Výchozí baked-in styl datových buněk pro JŘ elementy (Arial 8pt).</summary>
-    public static readonly ResolvedTextStyle ScheduleDataDefaults = CellDefaults.Default with
+    /// <summary>Výchozí baked-in styl datových buněk pro JŘ elementy (8pt; font z dokumentového defaultu).</summary>
+    public static ResolvedTextStyle ScheduleDataDefaults => CellDefaults.Default with
     {
-        FontFamily = "Arial", FontSize = 8f,
+        FontSize = 8f,
     };
 
     /// <summary>Výchozí styl datových buněk (font, velikost). Per-column TextStyle cascaduje od tohoto.</summary>
@@ -184,8 +186,7 @@ public abstract class ScheduleElementBase : TemplateElement
         var st = style ?? SKFontStyle.Normal;
         var key = (fam, st.Weight, st.Width, st.Slant);
         return _typefaceCache.GetOrAdd(key, k =>
-            SKTypeface.FromFamilyName(k.Family, new SKFontStyle(k.Weight, k.Width, k.Slant))
-            ?? SKTypeface.Default);
+            FontResolver.Resolve(k.Family, new SKFontStyle(k.Weight, k.Width, k.Slant)));
     }
 
     // ─── Render helpery ─────────────────────────────────────────────────────

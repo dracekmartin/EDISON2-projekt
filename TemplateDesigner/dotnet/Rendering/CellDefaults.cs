@@ -10,7 +10,9 @@ namespace TemplateDesigner.Rendering;
 /// </summary>
 public static class CellDefaults
 {
-    public static readonly ResolvedTextStyle Default = new()
+    // Getter (ne static readonly) — aby se přes DocumentDefaults.Apply propsal výchozí styl
+    // šablony (font…) i do tabulkové kaskády. Hodnota = zapečené defaulty overlaynuté ambientem.
+    public static ResolvedTextStyle Default => DocumentDefaults.Apply(new()
     {
         FontFamily      = "Arial",
         FontSize        = 9f,
@@ -27,5 +29,5 @@ public static class CellDefaults
         PaddingBottom   = 0.5f,
         PaddingLeft     = 0.5f,
         LineSpacing     = 1.2f,
-    };
+    });
 }

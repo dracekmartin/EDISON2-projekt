@@ -1,5 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
+using EDControls;
+using EDControls.EDInputForm;
+using SkiaSharp;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 
@@ -42,8 +47,26 @@ public partial class ElementEditDialog : Window
 
     private void OnFormInitialized()
     {
+        PopulateFontFields();
         _preFilled = ElementFormBinder.Prefill(TheForm, _target);
         TheForm.Validate();
+    }
+
+    // Nainstalované fonty (z téhož zdroje, který renderer používá → co nabídnu = co se vyrenderuje).
+    // Spočítá se jednou, sdílí napříč dialogy.
+    private static List<ListItem>? _fontItems;
+    private static List<ListItem> FontItems => _fontItems ??=
+        Models.FontResolver.InstalledFamilies.Select(s => new ListItem(s, s)).ToList();
+
+    /// <summary>Klientsky naplní seznam fontů do ComboBox polí (klíč končí "FontFamily") po načtení
+    /// schématu — Caché ten seznam nezná (je to OS věc). Set proběhne dřív, než WPF realizuje
+    /// kontejner ComboBoxu, takže se binding chytí i bez change-notifikace na ListItems.</summary>
+    private void PopulateFontFields()
+    {
+        foreach (var field in (TheForm.Items ?? []).OfType<Field>())
+            if (field.FieldType == EFieldType.ComboBox
+                && field.Key.EndsWith("FontFamily", StringComparison.Ordinal))
+                field.ListItems = FontItems;
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)

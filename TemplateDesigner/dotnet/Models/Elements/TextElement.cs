@@ -47,7 +47,7 @@ public class TextElement : TemplateElement
         float effectiveFontSize = ctx.Data is null ? Math.Min(rs.FontSize, 10f) : rs.FontSize;
         float fontSizePx = ctx.Px(effectiveFontSize * ResolvedTextStyle.PtToMm);
 
-        var typeface = SKTypeface.FromFamilyName(rs.FontFamily, rs.ToSKFontStyle()) ?? SKTypeface.Default;
+        var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
         using var font = new SKFont(typeface, fontSizePx);
         using var paint = rs.CreateTextPaint();
 
@@ -159,7 +159,7 @@ public class TextElement : TemplateElement
 
         var rs = Style.Resolve();
 
-        var typeface = SKTypeface.FromFamilyName(rs.FontFamily, rs.ToSKFontStyle()) ?? SKTypeface.Default;
+        var typeface = FontResolver.Resolve(rs.FontFamily, rs.ToSKFontStyle());
 
         float fontSizeMm = rs.FontSize * ResolvedTextStyle.PtToMm;
         float refMmToPx = 96f / 25.4f;

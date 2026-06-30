@@ -246,7 +246,8 @@ public class DepartureGridElement : ScheduleElementBase
             // Element font pro měření minimální šířky
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var measureFont = new SKFont(
-                GetTypeface(HeaderStyle.FontFamily, SKFontStyle.Bold), fontPx);
+                // resolved font (vč. dokumentového defaultu) — měření musí trefit stejný font jako render (ř. ~1066)
+                GetTypeface(ResolveElementHeaderParent().FontFamily, SKFontStyle.Bold), fontPx);
 
             // Minimální šířka = nejdelší slovo záhlaví + 2mm padding
             float maxWordW = 0;
@@ -333,7 +334,8 @@ public class DepartureGridElement : ScheduleElementBase
             // Single-nadpis: word-wrap přes celý text, všechny řádky Line 1 (element font)
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
-                GetTypeface(HeaderStyle.FontFamily, SKFontStyle.Bold), fontPx);
+                // resolved font (vč. dokumentového defaultu) — měření musí trefit stejný font jako render (ř. ~1066)
+                GetTypeface(ResolveElementHeaderParent().FontFamily, SKFontStyle.Bold), fontPx);
             var wrapped = WrapHeaderText(g.Skupina.Nadpis, g.GroupWidth, wrapFont, effectiveMmToPx);
             return g with { HeaderLines = wrapped.Select(w => new HeaderLine(w, IsSecondary: false)).ToArray() };
         }).ToList();

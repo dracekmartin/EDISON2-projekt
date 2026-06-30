@@ -526,6 +526,10 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Sections ──────────────────────────────────────────────────────────────
     public void RebuildSections()
     {
+        // Sync ambientního dokumentového defaultu (font…) na aktuální šablonu. RebuildSections se volá
+        // po každém (re)loadu šablony → ambient vždy odpovídá aktuální šabloně (i reset na null u nové).
+        DocumentDefaults.Style = State.CurrentTemplate.DefaultTextStyle;
+
         Sections.Clear();
         foreach (var s in State.CurrentTemplate.Sections)
             Sections.Add(new SectionVM(s, this));

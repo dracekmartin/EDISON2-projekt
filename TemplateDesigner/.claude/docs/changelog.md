@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-30 — Výchozí font na úrovni šablony (dokumentový default + font combobox)
+
+- ✅ **`Template.DefaultTextStyle: TextStyle?`** — dokumentový výchozí styl (UI zatím jen font, model
+  rozšiřitelný o velikost/barvu). Kořen kaskády: elementy bez vlastního fontu ho zdědí.
+- ✅ **Ambient `DocumentDefaults`** — `Apply()` overlayuje výchozí styl na zapečené dno kaskády
+  (`ResolvedTextStyle.Default`, `CellDefaults.Default` + schedule/table rodiče převedeni na gettery;
+  ze schedule rodičů odstraněn natvrdo `FontFamily="Arial"`; `CreateDefault` už font nenastavuje).
+  Sync přes `PreviewCanvas.Layout()` wrapper (chokepoint před každým layoutem — pokrývá preview,
+  PDF/PNG export, tisk i měření přetečení) + `DesignerCanvas.Render` + `RebuildSections`.
+- ✅ **UI font combobox** — `PageEdit.cls` font pole = editovatelný ComboBox; klient ho po načtení
+  schématu naplní nainstalovanými fonty z `SKFontManager` (`ElementEditDialog.OnFormInitialized`).
+- ✅ **`FontResolver`** — jediný zdroj fontů (`SKFontManager`) + Arial fallback: neznámý/nenainstalovaný
+  font → **Arial** (≈ Helvetica), ne náhodný systémový default. Vstup shovívavý (trim mezer, prázdné=default).
+- 🐛 **Fix `ElementPropertyAccessor.Exists`** — traverzace podle typu (ne hodnoty) → zápis přes EDInputForm
+  s null mezičlánkem (`DefaultTextStyle.FontFamily`) se už nezahazuje. (Týkalo se obecně vnořených cest.)
+- 🐛 **Fix měření↔glyf asymetrie** — měření šířky v `DepartureGridElement`/`StopListElement` používá
+  resolved font (vč. dokumentového defaultu), ne raw → sloupce se neořezávají při custom fontu.
+
 ## 2026-06-30 — Databáze jako primární úložiště šablon (JSON = import/export)
 
 - ✅ **Sjednocení modelu ukládání** — Otevřít (Ctrl+O) / Uložit (Ctrl+S) / Uložit jako míří do
@@ -306,6 +324,15 @@
 - ✅ **DEV cleanup** — odstraněn `#if DEBUG` auto-open `kv_ad_test.json` po startu (hardcoded osobní cesta;
   AD agenda hotová) v `MainWindow.xaml.cs` + `--test-detector` blok v `App.xaml.cs` (hardcoded `Downloads\*.PDF`).
   `PdfImport.ScheduleDetectorTest` zůstává jako ruční debug utilita (mimo app flow).
+
+## 2026-06-15 — Wave 4: EDInputForm Image field type + migrace ImageElement (W4-6)
+
+- ✅ **Nový `EFieldType.Image`** v EDControls EDInputForm — upload → base64 + náhled přes
+  `Base64ToImageSourceConverter`. Image hodnota se **nikdy neposílá na server** (velký base64;
+  `EDInputFormController` ji drží client-side a po Validate echu obnoví).
+- ✅ **ImageElement migrován** do generického `ElementEditDialog` — Caché schema `ImageElementEdit.cls`;
+  `EDInputFormSchema` switch v MainWindow mapuje `ImageElement → ImageElementEdit`. Uzavírá W4-6.
+- Předtím (samostatné commity): EDInputForm Color field type + ComboBox field type (editable + autocomplete).
 
 ## 2026-06-12 — Wave 4: parametry tisku přes EDInputForm (Caché-driven)
 

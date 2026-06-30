@@ -32,8 +32,20 @@ public static class ElementPropertyAccessor
     /// </summary>
     public static bool Exists(object root, string path)
     {
-        var (parent, prop) = Resolve(root, path);
-        return parent is not null && prop is not null && prop.CanWrite;
+        // Traverzace podle TYPU, ne podle hodnoty — jinak by cesta s null mezičlánkem
+        // (např. DefaultTextStyle == null) vrátila false a změna by se zahodila, i když je
+        // property reálně zapisovatelná (Set ji při zápisu lazy alokuje). Virtuální driver pole
+        // (klíč není property typu) tak dál správně vrací false.
+        var parts = path.Split('.');
+        var type = root.GetType();
+        for (int i = 0; i < parts.Length - 1; i++)
+        {
+            var p = type.GetProperty(parts[i]);
+            if (p is null) return false;
+            type = Nullable.GetUnderlyingType(p.PropertyType) ?? p.PropertyType;
+        }
+        var final = type.GetProperty(parts[^1]);
+        return final is not null && final.CanWrite;
     }
 
     /// <summary>Zapíše string hodnotu do property elementu přes path (s type conversion).

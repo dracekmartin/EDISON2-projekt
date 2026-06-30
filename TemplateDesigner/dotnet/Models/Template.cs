@@ -54,6 +54,14 @@ public class Template
     public string? CultureCode { get; set; }
 
     /// <summary>
+    /// Výchozí styl textu pro celou šablonu — kořen kaskády (dědí ho všechny elementy/buňky,
+    /// které styl nepřepíší). Null = zapečené defaulty (Arial). Aktuálně se z UI nastavuje jen
+    /// font (rodina); ostatní property jsou připravené pro budoucí rozšíření (velikost, barva…).
+    /// Aplikuje se přes <see cref="DocumentDefaults"/> jako ambient při změně šablony.
+    /// </summary>
+    public TextStyle? DefaultTextStyle { get; set; }
+
+    /// <summary>
     /// Designer kontext (grid, snap) — zachová se prostředí, ve kterém byla šablona laděná.
     /// Null = applikace použije globální default při otevření.
     /// </summary>
