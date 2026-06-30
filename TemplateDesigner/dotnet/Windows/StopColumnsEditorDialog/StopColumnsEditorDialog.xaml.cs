@@ -40,6 +40,7 @@ public partial class StopColumnsEditorDialog : Window
 
     private void OnGeneralFormInitialized()
     {
+        ElementFormBinder.PopulateFontFields(GeneralForm);
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
         GeneralForm.Validate();
     }

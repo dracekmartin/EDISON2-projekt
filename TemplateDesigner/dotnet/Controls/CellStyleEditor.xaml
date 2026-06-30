@@ -44,11 +44,14 @@
                         Visibility="{Binding EditOptions.AllowFontFamily, ElementName=Root, Converter={StaticResource BoolToVis}}">
                 <TextBlock Text="Font:" VerticalAlignment="Center" Margin="0,0,4,0"/>
                 <Grid Width="120">
-                    <TextBox x:Name="FontFamilyBox"
-                             ToolTip="Prázdné pole = dědit od rodiče"
-                             Text="{Binding FontFamily, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
+                    <ComboBox x:Name="FontFamilyBox"
+                              IsEditable="True" IsTextSearchEnabled="True" StaysOpenOnEdit="True"
+                              ItemsSource="{Binding FontFamilyOptions, ElementName=Root}"
+                              ToolTip="Prázdné = dědit od rodiče; vyber nebo napiš font"
+                              Text="{Binding FontFamily, UpdateSourceTrigger=LostFocus, TargetNullValue=''}"/>
                     <TextBlock Style="{StaticResource InheritedPlaceholder}"
                                Text="{Binding Inherited.FontFamily}"
+                               IsHitTestVisible="False"
                                Visibility="{Binding Text, ElementName=FontFamilyBox, Converter={StaticResource NullToVis}}"/>
                 </Grid>
             </StackPanel>

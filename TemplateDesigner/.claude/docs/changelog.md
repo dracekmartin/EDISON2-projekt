@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-30 — Font combobox plošně (sjednocení výběru fontu)
+
+- ✅ **Jednotný font picker všude** — editovatelný ComboBox s nainstalovanými fonty (`SKFontManager`
+  přes `FontResolver`) napříč všemi místy výběru fontu, ne jen v PageEdit:
+  - `ElementFormBinder.PopulateFontFields` (sdílené, přesun z ElementEditDialog) — voláno ze **3 hostů**
+    EDInputformu: `ElementEditDialog` + embedded form v `StopColumnsEditorDialog` / `DepartureGroupEditorDialog`.
+  - `TextElementEdit.cls`: font List se 6 natvrdo hodnotami → **ComboBox** (všechny nainstalované,
+    editovatelný, volitelný → prázdné dědí dokumentový default).
+  - `StyleFields.cls`: font `AddText` → **ComboBox** (propíše se do všech tabulkových/JŘ style zón).
+  - `CellStyleEditor` (per-column C#): font TextBox → **editovatelný ComboBox** (`FontFamilyOptions` DP,
+    default `FontResolver.InstalledFamilies`); tri-state placeholder „dědit" zachován.
+- Filtrování/omezení na podmnožinu fontů půjde později (změna jednoho seznamu). Varování „font není
+  nainstalovaný" stále odložené (Arial fallback to mitiguje).
+
 ## 2026-06-30 — Výchozí font na úrovni šablony (dokumentový default + font combobox)
 
 - ✅ **`Template.DefaultTextStyle: TextStyle?`** — dokumentový výchozí styl (UI zatím jen font, model
