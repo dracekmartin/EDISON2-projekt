@@ -113,7 +113,7 @@ public partial class EDComponentToolbar : UserControl
         DependencyProperty.Register(nameof(CurrentMatchIndex), typeof(int), typeof(EDComponentToolbar),
             new PropertyMetadata(0));
 
-    /// <summary>0-based index aktuálního matche. Host updates jak iteruje.</summary>
+    /// <summary>1-based index aktuálního matche (0 = žádný). Host updates jak iteruje.</summary>
     public int CurrentMatchIndex
     {
         get => (int)GetValue(CurrentMatchIndexProperty);
