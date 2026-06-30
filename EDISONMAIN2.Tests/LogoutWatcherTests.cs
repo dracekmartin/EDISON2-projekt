@@ -101,4 +101,49 @@ public class LogoutWatcherTests
         Assert.True(signal.ShouldClose);
         Assert.Equal(90, signal.Seconds);
     }
+
+    // ---------- Tick (glue: provider null / swallow / signal → callback) ----------
+
+    [Fact]
+    public void Tick_NullProvider_DoesNotInvokeCallback()
+    {
+        int? got = null;
+        new LogoutWatcher(() => null, s => got = s).Tick();
+
+        Assert.Null(got);
+    }
+
+    [Fact]
+    public void Tick_PollThrows_SwallowedNoCallback()
+    {
+        var mock = MLRestMocks.Create();
+        mock.Delimiter.Returns(Del);
+        var clone = MLRestMocks.Create();
+        clone.QueryOrThrow("ALVA.SYSTEM.Main", "maSeUkoncit", Arg.Any<object[]>())
+             .Returns(_ => throw new Exception("transient"));
+        mock.With(cacheLocks: 2, idfa: null, dataNamespace: null).Returns(clone);
+
+        int? got = null;
+        new LogoutWatcher(() => mock, s => got = s).Tick();   // nesmí propagovat výjimku
+
+        Assert.Null(got);
+    }
+
+    [Fact]
+    public void Tick_ShouldClose_InvokesCallbackWithSeconds()
+    {
+        int? got = null;
+        new LogoutWatcher(() => MockPoll("ukoncit~1~120"), s => got = s).Tick();
+
+        Assert.Equal(120, got);
+    }
+
+    [Fact]
+    public void Tick_ShouldNotClose_NoCallback()
+    {
+        int? got = null;
+        new LogoutWatcher(() => MockPoll("ukoncit~0~60"), s => got = s).Tick();
+
+        Assert.Null(got);
+    }
 }
