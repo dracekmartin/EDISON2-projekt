@@ -7,6 +7,12 @@
 
 set -e
 
+# A running EDISONMAIN2.exe locks its bin\Debug DLLs -> dotnet build fails (MSB3027).
+# Auto-close it before building so a forgotten instance doesn't block the push.
+echo ""
+echo "==> Checking for a running EDISONMAIN2 (locks build DLLs)"
+powershell -NoProfile -Command "\$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 was running - closed it.' } else { Write-Host '    not running - OK.' }" || true
+
 echo ""
 echo "==> [1/2] Running .NET tests (dotnet test EDISON2.sln)"
 dotnet test EDISON2.sln --nologo --verbosity minimal
