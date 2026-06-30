@@ -192,7 +192,10 @@ Mimo scope zastávkového JŘ:
   **✅ Ověřeno na CB_CSADAD 0365004** (2026-06-21) — má agregát „všechny spoje mají bezbariérově přístupné
   vozidlo"; zapnutí parametru řádek korektně skryje, per-spoj bezbariér (0365001/0365005) zůstává.
 
-### D7. Skrýt prázdné přípojové řádky
+### D7. Skrýt prázdné přípojové řádky ➖ přeřazeno k linkovým JŘ
+> **Stav (2026-06-30):** přípoje/návaznosti **nejsou koncept zastávkového JŘ** — patří k linkovým
+> JŘ (konzistentní s AD-N14). Řeší se až s agendou linkových JŘ, ne v zastávkovém. Ponecháno zde
+> jen jako evidence tiketu #11300.
 - **Zákazník:** KORID (Jaroslav Smištík), #11300
 - **Citace:** *„zobrazujeme přípoje v příbojových řádcích, občas jsou uzly, kde je provoz celotýdenní, ale přípoje jsou jen v PD nebo naopak jen o víkendech, uvítali bychom, kdyby byla možnost prázdný přípojový řádek (v situacích kdy je PD a víkend na zvláštní tabulce/listu) netiskl a šetřil místo."*
 - **Z M-line reply:** „Aktuálně není možné skrývat prázdné přípojové řádky. Pro tuto možnost bude nutné upravit tisk JŘ (...) jeho řešení pravděpodobně spojíme s novým tiskovým modulem pro JŘ" (2025-12-08, Jiří Bžoch).

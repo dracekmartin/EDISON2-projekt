@@ -8,9 +8,9 @@
 > import/export).
 
 **Aktivní rozpracované tracky:**
-- **Wave 4 EDInputForm** — Fáze 1 (sjednocení tabulkových editorů) hotová; **další = W4-6 ImageElement**
-  (nový `Image` field type v EDControls), pak W4-9 komplexní vícetabové elementy. Stylový pod-formulář
-  zatím prototyp (1 zóna) — rozšířit na všechny zóny + StopList.
+- **Wave 4 EDInputForm** — Fáze 1 + W4-6 ImageElement (Image field type v EDControls) ✅ hotové;
+  **další = W4-9** komplexní vícetabové elementy (StopList/DepartureGrid/Table → tab „Obecné" do
+  EDInputForm). Stylový pod-formulář zatím prototyp (1 zóna) — rozšířit na všechny zóny + StopList.
 - **AD nastavení linky (PRIORITA 2b)** — zbývají přímočaré PATCH-read položky: **AD-N4** (NZ na nový
   řádek), **AD-N11** (cizojazyčné poznámky); AD-N5/N13/N15 odložené (dormant data / renderer).
 
@@ -52,9 +52,9 @@ stejným trojčíslím / více dopravců, P3 logická imposice 2×A5→A4 — de
 1. **Zastávkový JŘ (AD)** — *hlavní deliverable*. Datově 1:1 + výkonově **hotovo**. Zbývají odložené
    nice-to-have (multi-varianta TrasaMin přes C# renderer = AD-N13; vizuál legendy) + přímočaré
    PATCH-read položky nastavení linky (AD-N4, AD-N11). Číslování omezení (cnz) ✅ hotovo 2026-06-23.
-2. **Wave 4 EDInputForm** — další UI komponenty: W4-6 ImageElement → W4-9 komplexní elementy.
-3. **Helpdesk pro AD** — Fáze A.2-D: hlavní série (#7955/#7947/#7161 D5/D6) ✅ zavřeno. Zbývá D6
-   (#11300 KORID přípoje — nová doménová struktura) + odložené A2-A5/A6/B4 (datový průzkum / kolegové).
+2. **Wave 4 EDInputForm** — W4-6 ImageElement ✅ hotovo (commit 72b724d); **další = W4-9** komplexní vícetabové elementy.
+3. **Helpdesk pro AD** — Fáze A.2-D hotová (#7955/#7947/#7161 zavřeno). #11300 KORID přípoje přeřazeno
+   k linkovým JŘ (není zastávkový koncept). Zbývá jen odložené A2-A5/A6/B4 (datový průzkum / kolegové).
 4. **Nové z prezentací (P1-P3)** — backlog, neanalyzováno; před implementací založit ticket.
 5. **AI pomocník (stretch)** — funkční (generování šablony, PDF import, vision pipeline), další rozšíření low-prio.
 
@@ -68,7 +68,7 @@ EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputF
 **Hotovo (2026-05-25 — 27):** EDInputForm visual upgrade + EDComponentToolbar (sdílený s EDList) + generický `ElementEditDialog` (reflexe přes property-path keys) + 5 elementů migrovaných (Text/Line/Rectangle/Barcode/NotesLegend) + SaveToCacheDialog. Detail Wave 4 sekce níže.
 
 **Zbývá projít VŠECHNO a předělat kde to dává smysl:**
-- **ImageElement** — potřebuje nový `Image` field type v EDInputForm (upload→base64+náhled)
+- ~~**ImageElement**~~ — ✅ hotovo (Image field type v EDControls + `ImageElementEdit.cls`, commit 72b724d)
 - **Section / Page properties** — generalizovat `ElementEditDialog` z `TemplateElement` na `object` (`ElementPropertyAccessor` už je generický)
 - **Simple dialogy** — SaveSectionTemplate, NormalizePositions
 - **Komplexní elementy (StopList / DepartureGrid / TableElement)** — rozdělit: **tab „Obecné" → EDInputForm**, tabulková / per-column část buď nechat custom (CellStyleEditor / grid) nebo vyřešit extra. Žádné půl-na-půl — obecné properties patří do EDInputForm.
@@ -126,7 +126,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 
 ### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
 
-TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky bugs, NZ bug, KORID přípojové řádky, …) — tabulka A.2.D níže. **Až po prioritě 1 + 2.**
+TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky bugs, NZ bug, …) — tabulka A.2.D níže. **Až po prioritě 1 + 2.** (KORID přípojové řádky #11300 přeřazeno k linkovým JŘ.)
 
 **Případné defer items pro budoucnost** (revisit on real user request):
 - Wave 3 auto-snapshots history / audit log / thumbnails
@@ -157,7 +157,7 @@ ověřit přesné zadání. Detail + odhady viz [`customer-requirements-zastavko
 
 ---
 
-### 🔴 Fáze A.2-D: Caché business logic (zbývá A2-D6)
+### 🟢 Fáze A.2-D: Caché business logic (A2-D1..D5 ✅ hotovo)
 
 Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
@@ -168,7 +168,8 @@ Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika sp
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
 
 > **Stav (2026-06-30):** A2-D1..D5 ✅ vyřešeno **pro AD agendu** (`ZastavkoveJrAd`); helpdesk #7947/
-> #7955/#7161 zavřeno. Port na MHD agendu (D1, D4) neproveden — až bude potřeba. Zbývá **A2-D6**.
+> #7955/#7161 zavřeno. Port na MHD agendu (D1, D4) neproveden — až bude potřeba. **Série A.2-D je
+> hotová** (A2-D6 přeřazeno mimo zastávkový JŘ — viz níže).
 
 | Krok | Tiket | Zákazník | Co | Stav |
 |---|---|---|---|---|
@@ -177,7 +178,10 @@ Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika sp
 | A2-D3 | #7955 | TRANSDEV | **Bug** — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ); izolovat NZ od ostatních poznámek | ✅ AD 2026-06-20 (bug nevzniká) |
 | A2-D4 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | ✅ AD 2026-06-21 |
 | A2-D5 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | ✅ AD 2026-06-21 |
-| A2-D6 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | ⬜ ⬅️ DALŠÍ |
+
+> ➖ **#11300 (KORID) — přípojové řádky přeřazeno k linkovým JŘ.** Přípoje/návaznosti nejsou
+> koncept zastávkového JŘ (konzistentní s AD-N14). Řeší se až s agendou linkových JŘ (`Pripoj`
+> struktura + `ConnectionsListElement`), ne zde.
 
 #### Odložené z A.2 (na rozhodnutí s kolegy)
 
@@ -203,7 +207,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
 | 2 | Shared catalogs | ✅ Hotová (2026-05-20) | W2-1 ✅ Agenda registry (auto-discovery). W2-2 Section templates skipnuto — funkčně překryto Wave 3 Template starters. Element defaults + company palette skipnuté |
 | 3 | Template storage | ✅ Hotová (2026-05-25) | CRUD (✅), schema versioning + migrator framework (✅), explicit user versions via Save As (✅), undo within-session (✅). Auto-snapshots / audit / thumbnails skipnuté (revisit on real request) |
-| 4 | Form-driven UI | 🟡 Rozpracováno (2026-05-27) | EDInputForm místo PropertiesPanel. 5 elementů hotovo přes generický `ElementEditDialog` (reflexe). Zbývá Image/Section/Page/komplexní elementy |
+| 4 | Form-driven UI | 🟡 Rozpracováno | EDInputForm místo PropertiesPanel. Elementy + Image (W4-6) + Section + parametry tisku ✅. Zbývá komplexní elementy (W4-9) + Page + inline panel cleanup |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 
 **Graf závislostí:** Wave 1 → 2 → 3 → 4 (sekvenčně), Wave 5 běží paralelně nezávisle.
@@ -261,10 +265,10 @@ Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInp
 | W4-4 | Generický `ElementEditDialog` + `ElementPropertyAccessor` (reflexe, property-path keys) | ✅ 2026-05-27 |
 | W4-5 | Elementy: Text, Line, Rectangle, Barcode, NotesLegend (+border parity audit) | ✅ 2026-05-27 |
 | W4-5b | **Tiskový dialog — parametry sestavy přes EDInputForm** (`AgendaParams` generic dispatch z `GetParameters`; visibleWhen v C# přes `TemplateParameter.IsVisible`) | ✅ 2026-06-12 |
-| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled). ⬅️ DALŠÍ. Vyžaduje rozšíření sdílené komponenty EDControls (nový field type + WPF renderer náhledu), nebo obejít přes `BUTTON` + vlastní handler (vzor `SaveTemplate`). | ⬅️ |
+| W4-6 | **ImageElement** — nový `Image` field type v EDControls (upload→base64+náhled přes `Base64ToImageSourceConverter`) + `ImageElementEdit.cls`; Image hodnota se neposílá na server (jen client-side). | ✅ 2026 (commit 72b724d) |
 | W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + Caché schemas | 🟡 Section ✅ (2026-06-12, `SectionEdit.cls`); Page ⬅️ zbývá (formát/orientace + ScaleBodySections nelze přes čistou reflexi — chce hook nebo zjednodušení) |
 | W4-8 | **Simple dialogy** — SaveSectionTemplate, NormalizePositions | ⛔ **Záměrně neimigrováno** (rozhodnuto 2026-06-12): „Uložit jako šablonu sekce" = 1 pole, nulový dedup → plain dialog stačí; „Normalizovat pozice" = živě počítaný náhled „Bude upraveno: N" (client-side geometrie), EDInputForm to nepřepočítá → ponecháno custom. Tiskový dialog (původně zvažovaný zde) hotov jako W4-5b. |
-| W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část (editor sloupců/skupin) zůstane custom `CellStyleEditor` (EDInputForm neumí editovatelnou tabulku) → vždy částečná migrace + sešití dvou částí do okna. Po W4-6. | |
+| W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část (editor sloupců/skupin) zůstane custom `CellStyleEditor` (EDInputForm neumí editovatelnou tabulku) → vždy částečná migrace + sešití dvou částí do okna. | ⬅️ DALŠÍ |
 | W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor, odložené | |
 | W4-11 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
 | W4-12 | (volitelné) EDInputForm wire formát `$lb()` OUT → JSON envelope; collapsible groups | |
@@ -274,7 +278,7 @@ Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInp
 - ❌ **Ne:** (1) triviální confirm s 1 polem (nulový dedup, jen Caché round-trip navíc); (2) dialogy s **živě počítaným náhledem** z client-side dat (Normalizovat pozice); (3) plně dynamické/data-driven formy bez server schématu. visibleWhen (podmíněná viditelnost) jde, ale evaluuje se **v C#** (pravidlo definuje Caché v JSON) — `Validate` roundtrip nenese InitParams.
 - **Reusable pattern:** `AgendaParams` (jedna generická dispatch třída převádějící `GetParameters` JSON → EDInputForm Form) je vzor pro budoucí Caché-driven formy stavěné z existujícího JSON kontraktu (ne ručně psané `*Edit.cls`).
 
-**Pořadí dalších kroků:** W4-6 (Image — chce nový field type v EDControls) → W4-9 (komplexní vícetabové elementy) → W4-7 Page (formát/orientace hook) → W4-10/11 (inline panel + cleanup, velký refaktor, na konec).
+**Pořadí dalších kroků:** W4-6 (Image) ✅ → **W4-9 (komplexní vícetabové elementy)** ⬅️ → W4-7 Page (formát/orientace hook) → W4-10/11 (inline panel + cleanup, velký refaktor, na konec).
 
 ---
 
