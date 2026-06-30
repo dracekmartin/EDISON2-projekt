@@ -32,19 +32,6 @@ stejným trojčíslím / více dopravců, P3 logická imposice 2×A5→A4 — de
 
 ---
 
-## 🔁 Pracovní postup (krok po kroku)
-
-Každá položka projde tímto cyklem — nevynechat ani jeden krok:
-
-1. **Projít** — připomenout co přesně má krok dělat, kontext a závislosti
-2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
-3. **Implementovat** — kód, Caché, XAML — dle pravidel v CLAUDE.md
-4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
-5. **Aktualizovat docs** — changelog + roadmap (přesun do archivu) + CLAUDE.md pokud se mění architektura
-6. **Další krok** — posunout `⬅️` na následující položku
-
----
-
 ## 🎯 Aktuální focus
 
 **v1.0 demo balíček HOTOV** (2026-05-15). EDList + EDFilter v1 uzavřen (2026-05-19). Caché namespace refactor hotov (2026-05-19). UI polish uzavřen (2026-05-20). **Wave 1 + 1.5 + 2 + 3 (per-user preferences + agenda registry + template storage s versioning) HOTOVY** (2026-05-20 — 2026-05-25). Detaily v [`changelog.md`](changelog.md) a [`roadmap-archive.md`](roadmap-archive.md).
@@ -109,7 +96,7 @@ Cíl: postupně dotáhnout, aby `ZastavkoveJrAd` bral v potaz **nastavení tisku
 **Autoritativní podklad:** [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md) — každá
 položka níže odkazuje na § analýzy a nese přesný legacy storage + reader.
 
-**Postup per položka** (dle pracovního cyklu nahoře): *projít → validovat (máme/nemáme, dává smysl teď?)
+**Postup per položka** (dle pracovního cyklu — viz `CLAUDE.md §Pracovní postup`): *projít → validovat (máme/nemáme, dává smysl teď?)
 → implementovat NEBO odložit s důvodem → otestovat proti gold oraclu → docs*. Pořadí = **přímočaré v
 legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer/nová struktura na konec.
 
@@ -152,41 +139,6 @@ TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky
 - Virtualized canvas rendering (zoom >500%)
 
 **Reference docs:** [`EDControls/DOCS/`](../../../EDControls/DOCS/) — `00-overview`, `01-wire-formats`, `02-EDList`, `03-EDFilter`, `04-EDTheme`.
-
----
-
-## 📖 Závazné reference před implementací
-
-| Doc | Kdy číst |
-|---|---|
-| [`feature-design-principles.md`](feature-design-principles.md) | **Před každým novým requestem** — kódová + UX rozhodovací mřížka, klasifikace requestu (typ 1/2/3), per-customer divergence, anti-patterns |
-| [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md) | Při práci na zastávkovém JŘ — konkrétní požadavky zákazníků s citacemi a gap analýzou |
-| `.claude/rules/mvvm-patterns.md` | Při dotyku stylingu / dialogů / per-column editorů |
-| `.claude/rules/ux-conventions.md` | Při přidávání nového dialogu / okna / keyboardové zkratky |
-| `.claude/rules/new-element-checklist.md` | Při přidání nového typu elementu |
-| §5 Architektonických pravidel níže | R1–R5 (async, errors, JSON, MVVM, versioning) — závazné pro Caché migraci |
-
----
-
-## 📐 5 Architektonických pravidel
-
-Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Caché migraci. Jsou záměrně obecnější než code style, protože mají chránit proti drahým rework cyklům pozdě v projektu.
-
-| # | Pravidlo | Proč |
-|---|---|---|
-| R1 | **Async Caché volání pro očekávaně pomalé operace** — pro Caché volání kde očekávaná doba >500ms (velké listy, složité queries, batch operace, nahrávání) vždy `async Task` + `await Task.Run(() => mlRest.Query(...))`. Pro typické fast operations (foundational komponenty s 50–300ms loady jako EDList, jednoduché lookupy) sync OK — async by přinesl spíš flicker než benefit. Při neznámé velikosti pesimisticky async. | Legacy BIL/BDG bylo 20 let synchronní a fungovalo — důkaz že je to akceptovatelné pro typické workflow. Naopak sync pro 1s+ operaci zamrzne UI a Windows zobrazí „Not Responding". Pravidlo chrání proti druhému; první je validní výjimka. |
-| R2 | **Chyby přes `IPopupDisplayer` z EDControls** — žádný `MessageBox.Show` ani silent catch. Používat existující `EDControls.EDViewModel.IPopupDisplayer` (metody `Error(ex)`, `Confirm`, `Info`, `ConfirmClose`) přes DI nebo `EDViewModel` base. | Bez jednotné cesty se chyby v distribuci ztratí. `IPopupDisplayer` je firemní standard — už ho používá `EDViewModel.Command(...)` automaticky. |
-| R3 | **CVar named IN + 4 OUT styly podle obsahu** — IN vždy CVar pojmenované klíče; OUT podle typu: CVar scalars (triviální), JSON v slotu (entita), JSON multi-slot (list), JSON envelope (composite, opt-in pro Tier 3). Plný standard, decision tree, příklady a checklist: [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md). | CVar je nativní zrcadlo Caché globálů (1 řádek per parametr), JSON pro strukturovaná data dává typovou bezpečnost přes `record` typy v .NET. Asymetrie není kompromis — odráží přirozenost obou stran. |
-| R4 | **ViewModely bez WPF referencí** — žádný `using System.Windows` ani `MessageBox.Show` v `*ViewModel.cs` | MVVM princip, testovatelnost, možnost pozdějšího portu/unit testů. Dialogy přes `IPopupDisplayer` (R2). |
-| R5 | **Template versioning je prerekvizita persistence** — dokud není `TemplateMigrator` + version field v JSON, neukládá se nic do Caché | Bez migrace se nové šablony nespustí na starším buildu → zničené ranní otevření souboru. Nelze to retro-fit po nasazení. |
-
-**Předpoklad:** aplikace poběží nad Caché — není cíl fungovat offline, ne každá API potřebuje in-memory fallback. Fallback se řeší jen tam, kde to má konkrétní business smysl (např. poslední otevřené soubory v paměti během session).
-
-**Kde jsou pravidla ověřitelná:**
-- R1: review PR → `grep "MLRest\." *ViewModel*.cs` najde synchronní volání. U každého ověřit očekávanou dobu — fast operace OK, slow musí být async.
-- R2/R4: `grep "MessageBox\." **/*ViewModel.cs` musí vracet 0 hitů
-- R3: nové API metody: IN `$g(^||ML("IN","klic"))`, OUT podle obsahu (decision tree) — viz [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md)
-- R5: Wave 3 nemůže začít bez hotového H-18/H-19 (versioning a migrator)
 
 ---
 
@@ -359,17 +311,6 @@ Každá implementuje:
 | W5-3 | Fáze D (Knižní) — využije pattern | |
 | W5-4 | Fáze E (Vozový) — využije pattern | |
 | W5-5 | Refaktor: extract `AgendaAPIBase` helpery až budou 2+ konzumenti | |
-
----
-
-#### 🚫 "Must not happen" scénáře
-
-Konkrétní situace, které Caché migrace musí předejít. Kontrolní seznam při code review.
-
-1. **Synchronní Caché volání v UI thread** → zamrznutí aplikace. Kontrola: `grep "MLRest\." *ViewModel*.cs` hledá synchronní volání.
-2. **Silent fail při Caché chybě** → UserPreferences se nenačetly, uživatel neví proč. Kontrola: chyba jde přes `IPopupDisplayer.Error(ex)`.
-3. **Breaking JSON change bez migrátoru** → staré šablony nejdou otevřít. Kontrola: před produkčním nasazením s reálnými šablonami musí být H-18/H-19 hotové (versioning + migrator). Wave 3 CRUD už běží, ale versioning chybí.
-4. **Všechno naráz** (big bang migration) → nelze vrátit. Kontrola: feature flags per element (Wave 4), paralelní běh starého a nového systému.
 
 ---
 
@@ -548,16 +489,6 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 **Pokročilé use cases (dlouhodobě):** onboarding průvodce, "přidej patičku s číslem stránky" (modifikace existující šablony), smart suggestions (TableElement → AI navrhne sloupce z DataSchema), migrace starých Caché sestav, template linting v CI/CD, batch generování šablon pro novou agendu.
 
 **Proč to neblokuje:** JSON šablona je stabilní kontrakt mezi designerem a AI. Dokud AI umí číst a psát JSON v definovaném formátu, integrace funguje bez ohledu na to, jestli je to prompt, MCP, nebo REST API.
-
----
-
-## ✅ Záměrně jinak — neřešit
-
-- **Caché jako source of truth pro konfiguraci a šablony** — dává smysl pro doménovou logiku (Wave 1–3 to provádí)
-- **Univerzální Section třída** — jednodušší než pevná hierarchie (Crystal Reports)
-- **Absolutní pozicování jako default** — správné pro tiskové sestavy s pevným layoutem
-- **PropertyDescriptor a EDInputForm paralelně** — ne cut-over, per element migrace (Wave 4)
-- **Server-side migrace šablon** — autoritativní, ne klientská (Wave 3)
 
 ---
 

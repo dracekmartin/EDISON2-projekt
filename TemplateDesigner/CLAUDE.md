@@ -143,6 +143,19 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ---
 
+## Pracovní postup (krok po kroku)
+
+Každá položka (z roadmapy / requestu) projde tímto cyklem — nevynechat ani jeden krok:
+
+1. **Projít** — připomenout co přesně má krok dělat, kontext a závislosti
+2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
+3. **Implementovat** — kód, Caché, XAML — dle pravidel (`.claude/rules/`)
+4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
+5. **Aktualizovat docs** — changelog + roadmap (hotové → archiv) + CLAUDE.md pokud se mění architektura
+6. **Další krok** — posunout `⬅️` marker na následující položku v roadmapě
+
+---
+
 ## Architektura — vrstvy systému
 
 ```
@@ -170,6 +183,16 @@ Preview v designeru = plný engine s mock daty. "Tisk" = tentýž engine s reál
 - Sekce jsou povinné — ne free-form canvas bez struktury
 - V1 nepodporuje import starých šablon z InterSystems Globals
 
+### Záměrně jinak — neřešit
+
+Vědomá rozhodnutí, která se znovu neotevírají (ne mezery):
+
+- **Databáze jako source of truth pro konfiguraci a šablony** — dává smysl pro doménovou logiku (Wave 1–3)
+- **Univerzální Section třída** — jednodušší než pevná hierarchie (Crystal Reports)
+- **Absolutní pozicování jako default** — správné pro tiskové sestavy s pevným layoutem
+- **PropertyDescriptor a EDInputForm paralelně** — ne cut-over, per element migrace (Wave 4)
+- **Server-side migrace šablon** — autoritativní, ne klientská (Wave 3)
+
 ---
 
 ## Publish — distribuce build .exe
@@ -196,6 +219,7 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 | Soubor | Obsah | Načítá se pro |
 |---|---|---|
 | `architecture.md` | Struktura projektu, zodpovědnosti, MVVM hranice, souřadnice, DesignerState | `dotnet/**` |
+| `architecture-rules.md` | **Závazná pravidla R1-R5** (async Caché, IPopupDisplayer, CVar wire, MVVM bez WPF, versioning) + „must-not-happen" scénáře | `dotnet/**` |
 | `data-model.md` | C# datové třídy, JSON formáty, renderovací pipeline, interakční model | `dotnet/Models/**` |
 | `mvvm-patterns.md` | PropertyDescriptor, TableElement architektura, jak přidat element/okno | `dotnet/Windows/**` |
 | `cache-api.md` | AgendaAPI architektura, wire formáty, Caché skeleton, nová agenda checklist | `CACHE/**` |
