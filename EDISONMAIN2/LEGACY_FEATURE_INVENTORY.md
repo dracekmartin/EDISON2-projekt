@@ -43,11 +43,10 @@ nebo odloženo post-MVP.
 1. **Změna hesla** (`frmChangePassword`) — flag `ChangePasswordNeeded` se parsuje, ale dialog ani vynucený-reset cyklus (-108) neexistuje.
 2. **Runtime přepnutí připojení** (`mnuPrgConnect` / multi-connection list) — stub `NotYetImplemented` (S1).
 3. **Plocha se zástupci** (EDDesktop: drag-drop, persist, uspořádat) + **startup formulář** (auto-otevření po loginu).
-4. **Vyhledávání ve stromu modulů** (legacy měl per-panel filtr).
-5. **Per-firma barevné schéma** shellu (`RefreshMainformScheme`).
-6. **Mini-app rendering detaily** — ikony řádků (parsují se, nerenderují), číselné formátování buněk, typové třídění, tisk.
-7. **Lokalizační infrastruktura** (feature #4, Open) — dnes bridge na legacy `formEDISONMAINLanguageList`.
-8. **Remember-me s heslem** (AES) — EDISONMAIN2 pamatuje jen jméno + firmu.
+4. **Per-firma barevné schéma** shellu (`RefreshMainformScheme`).
+5. **Mini-app rendering detaily** — ikony řádků (parsují se, nerenderují), číselné formátování buněk, typové třídění, tisk.
+6. **Lokalizační infrastruktura** (feature #4, Open) — dnes bridge na legacy `formEDISONMAINLanguageList`.
+7. **Remember-me s heslem** (AES) — EDISONMAIN2 pamatuje jen jméno + firmu.
 
 **Vědomě NEportujeme:** secured-login/reconnect (#3 zrušeno), cmdline login (nahrazeno `FormToRunGetter`),
 klientská idle detekce (server-side), TRAY ikona, sezónní okna `frmW8*`, Debug menu, MDI specifika,
@@ -147,12 +146,12 @@ Legacy: `frmMain.vb` (~2948 ř.), `EDDesktop.vb`, `EDDockingPanel.vb`, navigace/
 
 | Feature | Legacy | Co dělá | Stav | Ref |
 |---|---|---|---|---|
-| 5 sekcí stromu | `frmMain.CreateNavBar` | Oblíbené(-1) / Hlavní nabídka(-2) / Správa systému(-3) / Partnerská řešení(-4) / skrytý Systém(-101). | 🟡 `Tree.cls` má **3 stromy** (Main/System/Partners). **Oblíbené a skrytý Systém chybí.** Samostatné WPF TreeView, ne C1NavBar. | PLAN H1, S7 |
-| Zdroj stromu | `frmMain.LoadTreeFromXML` | XML (`edisonnavbar.xml` + `edisontree.xml`), větvení dle verze licence (`ToXML`/`ToXmlEx`). | 🟡 Přesunuto do Caché `Tree.cls` (wire FAMILY/EXE/FAMILY_END), `ModuleTreeGetter`. **Není 1:1 migrace** XML (paralelní ručně stavěný). | PLAN „dva zdroje stromu" |
+| 5 sekcí stromu | `frmMain.CreateNavBar` | Oblíbené(-1) / Hlavní nabídka(-2) / Správa systému(-3) / Partnerská řešení(-4) / skrytý Systém(-101). | 🟡 Záložky: **Hlavní nabídka / Správa systému / Partnerská řešení + Oblíbené (★) + Používané** (poslední dvě nad rámec legacy). Skrytý Systém(-101) není. WPF TreeView, ne C1NavBar. | PLAN H1, S7 |
+| Zdroj + úplnost stromu | `frmMain.LoadTreeFromXML` | XML (`edisonnavbar.xml` + `edisontree.xml`), větvení dle verze licence. | ✅ Přesunuto do Caché `Tree.cls` (wire FAMILY/EXE/FAMILY_END), `ModuleTreeGetter`. Strom je **plně zmaterializovaný** (~520 EXE / 98 rodin, všechny s exe+FQN+elementId), ne stuby. Caché-authored (ne auto-migrace z XML). | PLAN „dva zdroje stromu"; `Tree.cls` |
 | 4-vrstvá filtrace uzlů | `frmMain.BuildTreeXML` | (1) licence (whitelist ≥1.003 / blacklist <1.003), (2) hidden, (2b) mlineOnly, (3) access table, (4) admin fallback. | 🟡 3 vrstvy (licence + hidden + AccessTable) + admin fallback. Blacklist (<1.003) a mlineOnly vědomě vynechány. | PLAN S8, C3; RESP §5.2 |
 | Admin fallback (anti-lockout) | `frmMain.AddAdminRights` | Admin vždy dostane SettingsShow + (s licencí) USERS/TMList — doplňuje jen accessTable, ne licenseRights. | ✅ `AccessLoader` (GetEdisonAccess + admin fallback). | PLAN C3 |
 | Licenční práva z licence | `frmMain.GetLicenseRights` | Z `license.Elements` postaví whitelist/blacklist. | ✅ `LicenceService` (wrapper EDLicence.dll) + `ExecutableModule.IsLicensed/ElementId`. | CLAUDE „Licence" |
-| Vyhledávání ve stromu (per panel) | `frmMain` `txtSearch` + `HyperTreeView.Filter` | Textové pole „Hledat formulář…", filtr uzlů (text contains), expand při filtru, šipka/Enter → fokus do stromu. | ❌ **Žádné vyhledávání ve stromu modulů.** | — |
+| Vyhledávání ve stromu | `frmMain` `txtSearch` + `HyperTreeView.Filter` | Textové pole „Hledat formulář…", filtr uzlů (text contains), expand při filtru, šipka/Enter → fokus do stromu. | ✅ Search box nad TabControlem (`TreeSearchText`) filtruje **všechny** stromy: uzel viditelný když název matchne NEBO má viditelného potomka; nalezená rodina se rozbalí. | `EdisonMainViewModel.ApplySearchToModule`, `EdisonMainWindow.xaml` |
 | Hyperlink hover styl uzlů | `frmMain.HyperTreeView` | Hover → podtržení + modrá + kurzor Hand. | ❌ Chybí (WPF má vlastní hover/selection). | — |
 | Barvy uzlů stromu | `frmMain.BuildTreeXML` color | XML `color="R,G,B"` → ForeColor. | ✅ `Tree.cls` `color="#RRGGBB"` + `HexToBrushConverter`; `#FFA500` = stub. | PLAN S9 |
 
@@ -323,10 +322,9 @@ Položky ⏭️ (vědomě neportovat) zde nejsou — viz Executive summary.
 1. **Změna hesla** (`frmChangePassword` ekvivalent) — vynucený reset (-108) i dobrovolná změna. Login dnes flag ignoruje. *(§2)*
 2. **Runtime přepnutí připojení + multi-connection list** — S1 stub `NotYetImplemented`. *(§3)*
 3. **Startup formulář** — nastavit „domovský" modul + auto-otevření po loginu. *(§5.3)*
-4. **Vyhledávání ve stromu modulů** — per-strom filtr (legacy měl). *(§5.1)*
-5. **Mini-app rendering parita** — ikony řádků (parsují se, nerenderují), číselné formátování + pravé zarovnání, typové třídění. *(§6)*
-6. **Per-firma barevné schéma shellu** (`RefreshMainformScheme`). *(§5.4)*
-7. **Lokalizační infrastruktura** (feature #4) — dnes bridge na legacy. *(§8)*
+4. **Mini-app rendering parita** — ikony řádků (parsují se, nerenderují), číselné formátování + pravé zarovnání, typové třídění. *(§6)*
+5. **Per-firma barevné schéma shellu** (`RefreshMainformScheme`). *(§5.4)*
+6. **Lokalizační infrastruktura** (feature #4) — dnes bridge na legacy. *(§8)*
 
 ### Střední hodnota
 

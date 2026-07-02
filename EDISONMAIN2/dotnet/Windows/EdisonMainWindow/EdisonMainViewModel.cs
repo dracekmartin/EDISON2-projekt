@@ -331,6 +331,47 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private static string ExpansionPathKey(string treeName, IReadOnlyList<int> path) =>
             treeName + ":" + string.Join(".", path);
 
+        // Filtruje VŠECHNY stromy (vč. Oblíbených) dle TreeSearchText. Rozbalení vynucené hledáním
+        // se NEpersistuje (suppress flag); po vymazání textu se obnoví persistované rozbalení.
+        private void ApplySearch()
+        {
+            var text = _treeSearchText.Trim();
+            _suppressExpansionSave = true;
+            try
+            {
+                foreach (var (_, tree) in ExpandableTrees)
+                    foreach (var root in tree)
+                        ApplySearchToModule(root, text);
+            }
+            finally { _suppressExpansionSave = false; }
+
+            if (text.Length == 0) ApplyTreeExpansion();
+        }
+
+        /// <summary>
+        /// Nastaví <see cref="IModule.IsVisibleBySearch"/> rekurzivně. Uzel je viditelný, když jeho
+        /// název obsahuje <paramref name="text"/> (case-insensitive) NEBO má viditelného potomka
+        /// (prázdný text = vše viditelné). Rodina s nalezeným potomkem se při aktivním hledání rozbalí.
+        /// Vrací, zda je modul viditelný.
+        /// </summary>
+        internal static bool ApplySearchToModule(IModule module, string text)
+        {
+            bool match = text.Length == 0
+                || module.DisplayedName.Contains(text, StringComparison.OrdinalIgnoreCase);
+
+            if (module is ModuleFamily family)
+            {
+                bool anyChildVisible = false;
+                foreach (var child in family.NestedModules)
+                    if (ApplySearchToModule(child, text)) anyChildVisible = true;
+                match = match || anyChildVisible;
+                if (text.Length > 0 && anyChildVisible) family.IsExpanded = true;
+            }
+
+            module.IsVisibleBySearch = match;
+            return match;
+        }
+
         // Stromy i licenční gating jsou per-IdFa, takže po přepnutí firmy refresh všech tří.
         private void LoadAndFilterTrees()
         {
@@ -417,6 +458,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>Pro empty-state coaching v záložce Oblíbené.</summary>
         public bool HasNoFavorites => FavoritesTree.Count == 0;
+
+        private string _treeSearchText = "";
+
+        /// <summary>Hledaný text pro filtrování stromů (napříč všemi záložkami). Prázdný = bez filtru.</summary>
+        public string TreeSearchText
+        {
+            get => _treeSearchText;
+            set { if (Set(ref _treeSearchText, value)) ApplySearch(); }
+        }
 
         // Pořadí záložek: 0 Hlavní nabídka, 1 Správa systému, 2 Partnerská řešení, 3 Oblíbené, 4 Používané.
         private int _selectedTreeTabIndex;

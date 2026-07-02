@@ -195,10 +195,37 @@
                 <Style TargetType="{x:Type TreeViewItem}">
                     <!-- TwoWay → rozbalení/sbalení uživatelem se propíše do modelu (VM ho persistuje). -->
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                    <!-- Skryje uzly nevyhovující vyhledávání (VM nastaví IsVisibleBySearch). -->
+                    <Setter Property="Visibility" Value="{Binding IsVisibleBySearch, Converter={StaticResource BoolToVis}}"/>
                 </Style>
             </Grid.Resources>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- Vyhledávání napříč všemi stromy — filtruje uzly dle názvu (VM.TreeSearchText). -->
+            <Grid Grid.Row="0" Margin="4,4,4,2">
+                <TextBox x:Name="TreeSearchBox"
+                         Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
+                <TextBlock Text="Hledat modul…" Margin="6,0,0,0" VerticalAlignment="Center"
+                           IsHitTestVisible="False"
+                           Foreground="{DynamicResource EDTheme.Text.Secondary}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding TreeSearchText}" Value="">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+
             <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených. -->
-            <TabControl SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}">
+            <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}">
                 <TabItem Header="Hlavní nabídka">
                     <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0">
                         <b:Interaction.Triggers>

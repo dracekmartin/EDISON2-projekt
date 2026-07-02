@@ -50,6 +50,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             }
         }
 
+        private bool _isVisibleBySearch = true;
+
+        /// <summary>Viditelnost při vyhledávání ve stromu — nastavuje VM podle shody názvu.</summary>
+        public bool IsVisibleBySearch
+        {
+            get => _isVisibleBySearch;
+            set
+            {
+                if (_isVisibleBySearch == value) return;
+                _isVisibleBySearch = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsVisibleBySearch)));
+            }
+        }
+
         public event PropertyChangedEventHandler? PropertyChanged;
     }
 }
