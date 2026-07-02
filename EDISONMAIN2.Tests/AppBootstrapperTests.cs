@@ -76,8 +76,19 @@ public class AppBootstrapperTests
         {
             TryLoginCalled = true;
             LoginDialogPrefill = lastLoginName;
-            login = new LoginResult(42, "test", "Test User", true, "", false, true, "");
+            login = new LoginResult(42, "test", "Test User", true, "",
+                ChangePasswordNeeded: LoginRequiresPasswordChange, MayUpdate: true, Email: "");
             return LoginSucceeds;
+        }
+
+        public bool LoginRequiresPasswordChange { get; set; }
+        public bool ForcePasswordChangeResult { get; set; } = true;
+        public bool ForcePasswordChangeCalled { get; private set; }
+
+        protected override bool ForcePasswordChange(MLRest loginRest, string username)
+        {
+            ForcePasswordChangeCalled = true;
+            return ForcePasswordChangeResult;
         }
 
         public bool AutoLoginSucceeds { get; set; }
@@ -175,6 +186,58 @@ public class AppBootstrapperTests
 
         Assert.True(b.TryLoginCalled);
         Assert.True(b.BuildShellCalled);
+    }
+
+    // ---------- Vynucená změna hesla (feature #17) ----------
+
+    [Fact]
+    public void Run_ChangePasswordNeeded_ForcesChange_ThenProceeds()
+    {
+        var b = new TestableBootstrapper
+        {
+            LoginSucceeds = true,
+            LoginRequiresPasswordChange = true,
+            ForcePasswordChangeResult = true,
+            SessionOutcome = LicenceAcquireOutcome.Accepted,
+            MLRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP"),
+        };
+
+        b.Run();
+
+        Assert.True(b.ForcePasswordChangeCalled);
+        Assert.True(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_ChangePasswordCancelled_ShutsDown_NoShell()
+    {
+        var b = new TestableBootstrapper
+        {
+            LoginSucceeds = true,
+            LoginRequiresPasswordChange = true,
+            ForcePasswordChangeResult = false,
+        };
+
+        var result = b.Run();
+
+        Assert.Null(result);
+        Assert.True(b.ShutdownCalled);
+        Assert.False(b.BuildShellCalled);
+    }
+
+    [Fact]
+    public void Run_NoPasswordChangeNeeded_SkipsForce()
+    {
+        var b = new TestableBootstrapper
+        {
+            LoginSucceeds = true,
+            SessionOutcome = LicenceAcquireOutcome.Accepted,
+            MLRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP"),
+        };
+
+        b.Run();
+
+        Assert.False(b.ForcePasswordChangeCalled);
     }
 
     // ---------- Path 1: Login cancelled ----------
