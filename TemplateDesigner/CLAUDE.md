@@ -235,3 +235,4 @@ Ruční reference:
 - `.claude/docs/customer-requirements-zastavkovy-jr.md` — konkrétní požadavky zákazníků z helpdesku Podpory M-line (zastávkový JŘ — DPKV, TRANSDEV, KORID)
 - `.claude/docs/prezentace-a-gap-2026.md` — shrnutí prezentací 2026 (produktové sdělení, FAQ, zpětná vazba)
 - `.claude/docs/gap-analyza-legacy-vs-novy-jr.md` — evergreen gap analýza legacy TiskMHD vs nový JŘ (element-po-elementu mapovací matice, zbývající mezery)
+- `.claude/docs/analyza-stav-a-legacy-nahrada-2026-07.md` — komplexní analýza 2026-07: technický audit TD (rizika T1–T6) + hloubkové čtení legacy REPORTGENERATOR/TiskMHD/TiskJR + etapizovaná roadmapa plné náhrady
