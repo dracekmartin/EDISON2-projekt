@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-02 — Převzetí session shellu přes EDISONMAIN2 launch kontrakt
+
+- ✅ **`App.OnStartup` parsuje EDISONMAIN2 argumentový kontrakt** (`EDControls.EdisonLaunchArgs`,
+  zrcadlí `EDISONMAIN2API.FormToRunGetter`): sentinel `EDISONMAIN2` + server, restPort, namespace,
+  idfa, login, fullName, mlp [, formName, shellGuid, inputParam]. Při spuštění ze shellu (starý
+  EDISON přes wrapper formu `ALVA.TISKJR.formTISKJRTemplateDesigner`, MHD2 „Linky a oběhy") se
+  MLRest staví ze session shellu (`CacheSchemaWiring.CreateMlRest`) místo z appsettings — TD běží
+  pod správnou firmou a uživatelem.
+- Bez argů beze změny (standalone z appsettings). Sentinel s nevalidními argy → varování + fallback
+  standalone. `shellGuid` se záměrně nepřebírá — TD má vlastní session GUID, neváže se na ACTIVITY
+  zámek shellu.
+
 ## 2026-06-30 — Ověření: pořadí poznámek v legendě 1:1 s legacy (živý gold oracle)
 
 - ✅ **Default řazení legendy potvrzeno 1:1** proti gold oracle (`ALVA.TISKMHD.Data`, VOLANO_Z=JRMAIN)

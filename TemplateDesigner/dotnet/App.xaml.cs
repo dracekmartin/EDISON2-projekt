@@ -31,9 +31,25 @@ public partial class App : Application
         FontService.Initialize(this);
 
         var settings = AppSettings.Load();
-        var mlRest   = CacheSchemaWiring.TryCreateMlRest(settings);
 
-        WarnIfCacheMisconfigured(settings, mlRest);
+        // Spuštění ze shellu (starý EDISON / EDISONMAIN2): session přijde v argumentech
+        // EDISONMAIN2 kontraktu a přebije appsettings. Bez argů běží standalone režim.
+        var launch = EdisonLaunchArgs.TryParse(e.Args);
+        var mlRest = launch is not null
+            ? CacheSchemaWiring.CreateMlRest(launch)
+            : CacheSchemaWiring.TryCreateMlRest(settings);
+
+        if (launch is null)
+        {
+            if (EdisonLaunchArgs.IsEdisonLaunch(e.Args))
+                MessageBox.Show(
+                    "Aplikace byla spuštěna s nevalidními argumenty EDISONMAIN2 kontraktu — " +
+                    "session shellu se nepřevzala. Pokračuji ve standalone režimu (appsettings).",
+                    "Caché — neplatné argumenty spuštění",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+
+            WarnIfCacheMisconfigured(settings, mlRest);
+        }
 
         if (mlRest is not null)
             EDServices.Current.UserPrefs = new EDControls.UserPrefs.CacheUserPrefsService(new MLRestAdapter(mlRest));
