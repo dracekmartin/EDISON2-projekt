@@ -236,3 +236,4 @@ Ruční reference:
 - `.claude/docs/prezentace-a-gap-2026.md` — shrnutí prezentací 2026 (produktové sdělení, FAQ, zpětná vazba)
 - `.claude/docs/gap-analyza-legacy-vs-novy-jr.md` — evergreen gap analýza legacy TiskMHD vs nový JŘ (element-po-elementu mapovací matice, zbývající mezery)
 - `.claude/docs/analyza-stav-a-legacy-nahrada-2026-07.md` — komplexní analýza 2026-07: technický audit TD (rizika T1–T6) + hloubkové čtení legacy REPORTGENERATOR/TiskMHD/TiskJR + etapizovaná roadmapa plné náhrady
+- **`.claude/docs/architektonicka-rozhodnuti-agendy.md`** — **závazná rozhodnutí R1–R7 pro škálování agend** (sdílené tabulkové jádro, layout zodpovědnosti, prezentační nápovědy v kontraktu, headless tisk, fonty, distribuce šablon, pilot-first) — číst před startem každé nové fáze (C+D, F, blok A/B)

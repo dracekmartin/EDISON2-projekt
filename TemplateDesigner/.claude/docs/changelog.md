@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-02 — Architektonická rozhodnutí R1–R7 pro škálování agend (nový doc)
+
+- ✅ **`architektonicka-rozhodnuti-agendy.md`** — plain-text zápis 7 rozhodnutí, která drží
+  model „stabilní tiskový engine + postupně přidávané agendy": R1 sdílené tabulkové jádro
+  (gate u LineTableElementu), R2 rozdělení layout zodpovědností engine×element, R3 prezentační
+  nápovědy v datovém kontraktu + aditivní evoluce, R4 kde běží headless tisk + PrintEngine
+  fasáda, R5 fonty embedded v aplikaci (Timetable = sémantika), R6 systémové šablony s release
+  (ne DB → žádná verzní matice), R7 pilot-first. Každé: co znamená / jaký problém řeší /
+  co se rozhoduje / doporučení / nejpozději kdy. Úvodní slovník „co je engine, co je agenda".
+- Roadmap: ⚠️ gate odkazy na R1/R2/R5 (Fáze C+D), R4/R7 (blok A), R6 (blok B), R3 (Fáze F);
+  CLAUDE.md reference („číst před startem každé nové fáze").
+
 ## 2026-07-02 — T1b (část 1): Caché testy — SablonyTest + Mhd helpery (8 testů, pre-push)
 
 - ✅ **Nový package `ALVA.TemplateDesigner.Tests`** (`CACHE/ALVA/TemplateDesigner/Tests/`,

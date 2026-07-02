@@ -390,6 +390,10 @@ Aktuálně když element potřebuje rezervovat místo pro volitelný vizuální 
 
 ### 🟠 Fáze C + D: Výlepový/knižní JŘ linky (náhrada TiskJR) — pravděpodobně JEDEN track
 
+> ⚠️ **Gate před startem: rozhodnutí R1 (sdílené tabulkové jádro), R2 (layout zodpovědnosti),
+> R5 (embedded fonty)** — viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
+> Krok 43 začíná designem sdíleného jádra (StopList + DynamicTable + LineTable), ne kódem elementu.
+
 > **Poznatek z hloubkového čtení legacy (analýza 2026-07 §3.3):** legacy `TiskJR` generuje
 > **vývěsní i knižní JŘ z téhož enginu** — Fáze C (meziměstský/výlepový) a D (knižní) jsou tedy
 > nejspíš jeden track, ne dva. Formát: sloupcová tabulka celé linky — svislý seznam zastávek
@@ -437,6 +441,10 @@ zda je to živý use case** (otevřená otázka Q3 níže) — pak vlastní agen
 ---
 
 ### 🟠 Fáze F: Náhrada REPORTGENERATOR (univerzální sestavy) — NOVÉ (analýza 2026-07)
+
+> ⚠️ **Gate před F2: rozhodnutí R3 (prezentační nápovědy v datovém kontraktu + aditivní
+> evoluce)** — viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
+> RG kontrakt je prezentační; věrnost bridge stojí na tom, kolik prezentace umí náš kontrakt nést.
 
 > Největší kus náhrady legacy — ne kvůli featurám (TD je ve výrazech/undo/kódech už napřed), ale
 > kvůli **ekosystému ~28 agend**, které implementují RG datový kontrakt (`GetSeznamSad`/`GetSadu`/
@@ -556,6 +564,9 @@ zda je to živý use case** (otevřená otázka Q3 níže) — pak vlastní agen
 
 #### 🔴 A. EDISON integrace (dnes prakticky chybí — největší kus, NENÍ rozepsaný)
 
+> ⚠️ **Gate: rozhodnutí R4 (kde běží headless tisk + PrintEngine fasáda) a R7 (pilot-first)** —
+> viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
+>
 > **Legacy vzory (analýza 2026-07):** všechny 3 legacy systémy se volají z EDISONu přes EDForm
 > s `PoleSestavaValue`; REPORTGENERATOR navíc **headless CLI** `AUTOEXPORT=1` / `AUTOPRINT=1`
 > volané přímo z Caché agend (`MainRun.vb:17-184`) — vzor pro A3. Vrstvy 1–4 TD to architektonicky
@@ -570,6 +581,10 @@ zda je to živý use case** (otevřená otázka Q3 níže) — pak vlastní agen
 
 #### 🟠 B. Šablony pro zákazníky (governance + distribuce)
 
+> ⚠️ **Gate: rozhodnutí R6 (systémové šablony s release, DB jen zákaznické — eliminuje verzní
+> matici)** — viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md);
+> může zásadně zmenšit B1/B2.
+>
 > **Legacy vzor (analýza 2026-07, sdílený všemi 3 systémy):** dvouvrstvý model „MlineSestava"
 > (vendor šablony ID ≥ 1000 read-only × zákaznické < 1000), release pipeline
 > `ExportReportToGlb` → `ImportTransferGlobal` → `AktualizujAgendu` (rozkopíruje do všech IdFa
