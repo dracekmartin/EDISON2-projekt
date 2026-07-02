@@ -114,6 +114,8 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
   z appsettings. Bez argů standalone beze změny; nevalidní argy → varování + fallback. `shellGuid`
   se nepřebírá (vlastní session GUID, bez vazby na ACTIVITY zámek shellu). Spouštěcí místa: strom
   starého shellu (wrapper `ALVA.TISKJR.formTISKJRTemplateDesigner`), MHD2 „Linky a oběhy".
+  `inputParam` kontraktu ve tvaru `Agenda=<kód>` předvolí startovní agendu šablony (JŘ uzel stromu
+  → `ZASTAVKOVY_JR_AD`, MHD uzel + MHD2 tlačítko → `ZASTAVKOVY_JR_MHD`); neznámý kód → default.
 
 ### 🐛 Známé problémy
 

@@ -103,7 +103,13 @@ public partial class App : Application
             agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez databáze)", "")];
         }
 
-        new MainWindow(mlRest, prefs, agendas).Show();
+        // inputParam kontraktu "Agenda=<kód>" → startovní agenda šablony. Uzel stromu legacy
+        // shellu nese kód v atributu input (JŘ vs MHD místo), MHD2 tlačítko ho posílá natvrdo.
+        string? startupAgendaCode = null;
+        if (launch?.InputParam.StartsWith("Agenda=", StringComparison.OrdinalIgnoreCase) == true)
+            startupAgendaCode = launch.InputParam["Agenda=".Length..].Trim();
+
+        new MainWindow(mlRest, prefs, agendas, startupAgendaCode).Show();
     }
 
     /// <summary>

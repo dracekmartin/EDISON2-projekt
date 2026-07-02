@@ -378,7 +378,8 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public TemplateDesignerViewModel(MLRest? mlRest = null,
                                      TdPreferencesService? preferences = null,
-                                     IReadOnlyList<AgendaRegistryEntry>? agendas = null)
+                                     IReadOnlyList<AgendaRegistryEntry>? agendas = null,
+                                     string? startupAgendaCode = null)
     {
         if (mlRest is not null) _services.MLRest = new MLRestAdapter(mlRest);
 
@@ -402,6 +403,16 @@ public class TemplateDesignerViewModel : EDViewModel
             : (IDataSchemaProvider)new JsonFileDataSchemaProvider(schemasDir);
 
         State.CurrentTemplate = CreateSampleTemplate();
+
+        // Startovní agenda z EDISONMAIN2 kontraktu (inputParam "Agenda=<kód>" — podle uzlu
+        // stromu legacy shellu / MHD2 tlačítka). Neznámý kód → default ze CreateSampleTemplate.
+        if (startupAgendaCode is not null)
+        {
+            var match = resolvedAgendas.FirstOrDefault(a =>
+                string.Equals(a.Code, startupAgendaCode, StringComparison.OrdinalIgnoreCase));
+            if (match is not null) State.CurrentTemplate.AgendaCode = match.Code;
+        }
+
         RebuildSections();
 
         AiGuide = new Windows.AiGuideDialog.AiGuidePanelViewModel(() =>

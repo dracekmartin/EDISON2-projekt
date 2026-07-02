@@ -101,10 +101,11 @@ public partial class MainWindow : Window
     /// <summary>Runtime constructor. mlRest = null for standalone mode; preferences = null disables persist.</summary>
     public MainWindow(MLRest? mlRest,
                       Services.TdPreferencesService? preferences = null,
-                      IReadOnlyList<Serialization.AgendaRegistryEntry>? agendas = null)
+                      IReadOnlyList<Serialization.AgendaRegistryEntry>? agendas = null,
+                      string? startupAgendaCode = null)
     {
         _preferences = preferences;
-        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas);
+        _vm         = new TemplateDesignerViewModel(mlRest, preferences, agendas, startupAgendaCode);
         DataContext = _vm;
         InitializeComponent();
 

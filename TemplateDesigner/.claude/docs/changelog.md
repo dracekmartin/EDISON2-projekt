@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-02 — Startovní agenda z inputParam kontraktu
+
+- ✅ **`inputParam` "Agenda=<kód>" → startovní agenda šablony.** `App.OnStartup` vytáhne kód
+  z `EdisonLaunchArgs.InputParam`, `TemplateDesignerViewModel` ho ověří proti registru agend
+  (case-insensitive) a nová šablona startuje rovnou s ní. Zdroj: atribut `input` uzlu stromu
+  legacy shellu (JŘ uzel = `Agenda=ZASTAVKOVY_JR_AD`, MHD uzel = `Agenda=ZASTAVKOVY_JR_MHD`)
+  a MHD2 tlačítko „Linky a oběhy". Neznámý/chybějící kód → dosavadní default.
+
 ## 2026-07-02 — Převzetí session shellu přes EDISONMAIN2 launch kontrakt
 
 - ✅ **`App.OnStartup` parsuje EDISONMAIN2 argumentový kontrakt** (`EDControls.EdisonLaunchArgs`,
