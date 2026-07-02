@@ -1270,50 +1270,64 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
 
 ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 {
-    // ZASTAVKY
+    // Pole = skalární klíče, které reálně produkují Build* metody v GetData (1:1 s ostrými daty).
+    // Vnořená pole (ZONY, PRUBEHY, ATRIBUTY, POZNAMKY_ZASTAVKY, ANOTACE) se ZÁMĚRNĚ nevystavují —
+    // plochá tabulka je neumí vykreslit; spotřebovávají je specializované elementy (StopList/DepartureGrid).
+
+    // ZASTAVKY (BuildZastavka)
     s colZastavky = ##class(%DynamicObject).%New()
     s colZastavky.name          = "Zastávky"
     s colZastavky.collectionKey = "ZASTAVKY"
     s colZastavkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colZastavkyFields, "ID",                "ID zastávky",         "text")
-    d ..AddField(colZastavkyFields, "POPIS",             "Název zastávky",      "text")
-    d ..AddField(colZastavkyFields, "TC",                "Tarifní číslo",       "text")
-    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",           "number")
-    d ..AddField(colZastavkyFields, "NA_ZNAMENI",        "Na znamení",          "boolean")
+    d ..AddField(colZastavkyFields, "ID",             "ID zastávky",          "text")
+    d ..AddField(colZastavkyFields, "POPIS",          "Název zastávky",       "text")
+    d ..AddField(colZastavkyFields, "TC",             "Tarifní číslo",        "text")
+    d ..AddField(colZastavkyFields, "CAS_JIZDY",      "Čas jízdy",            "number")
+    d ..AddField(colZastavkyFields, "PORADI",         "Pořadí",               "number")
+    d ..AddField(colZastavkyFields, "NA_ZNAMENI",     "Na znamení",           "boolean")
+    d ..AddField(colZastavkyFields, "JE_AKTUALNI",    "Aktuální zastávka",    "boolean")
+    d ..AddField(colZastavkyFields, "ODSAZENI",       "Odsazení",             "number")
+    d ..AddField(colZastavkyFields, "ZAKLADNI_TRASA", "Základní trasa",       "boolean")
     s colZastavky.fields = colZastavkyFields
     d collections.%Push(colZastavky)
 
-    // SKUPINY_DNU
+    // SKUPINY_DNU (BuildSkupinaDnu)
     s colSkupiny = ##class(%DynamicObject).%New()
     s colSkupiny.name          = "Skupiny dnů"
     s colSkupiny.collectionKey = "SKUPINY_DNU"
     s colSkupinyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colSkupinyFields, "ID",      "ID skupiny",     "text")
-    d ..AddField(colSkupinyFields, "NADPIS",  "Nadpis skupiny", "text")
-    d ..AddField(colSkupinyFields, "NADPIS2", "Nadpis 2",       "text")
+    d ..AddField(colSkupinyFields, "ID",     "ID skupiny",     "text")
+    d ..AddField(colSkupinyFields, "NADPIS", "Nadpis skupiny", "text")
+    d ..AddField(colSkupinyFields, "PORADI", "Pořadí",         "number")
     s colSkupiny.fields = colSkupinyFields
     d collections.%Push(colSkupiny)
 
-    // ODJEZDY
+    // ODJEZDY (BuildOdjezd)
     s colOdjezdy = ##class(%DynamicObject).%New()
     s colOdjezdy.name          = "Odjezdy"
     s colOdjezdy.collectionKey = "ODJEZDY"
     s colOdjezdyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colOdjezdyFields, "ZASTAVKA_ID",     "ID zastávky",       "text")
-    d ..AddField(colOdjezdyFields, "SKUPINA_DNU_ID",  "ID skupiny dnů",    "text")
-    d ..AddField(colOdjezdyFields, "HODINA",          "Hodina",            "number")
-    d ..AddField(colOdjezdyFields, "MINUTA",          "Minuta",            "number")
+    d ..AddField(colOdjezdyFields, "ZASTAVKA_ID",             "ID zastávky",          "text")
+    d ..AddField(colOdjezdyFields, "SKUPINA_DNU_ID",          "ID skupiny dnů",       "text")
+    d ..AddField(colOdjezdyFields, "HODINA",                  "Hodina",               "number")
+    d ..AddField(colOdjezdyFields, "MINUTA",                  "Minuta",               "number")
+    d ..AddField(colOdjezdyFields, "ZKRACENE_OZNACENI_LINKY", "Zkrácené ozn. linky",  "text")
+    d ..AddField(colOdjezdyFields, "FORE_COLOR",              "Barva textu",          "text")
+    d ..AddField(colOdjezdyFields, "BACK_COLOR",              "Barva pozadí",         "text")
     s colOdjezdy.fields = colOdjezdyFields
     d collections.%Push(colOdjezdy)
 
-    // POZNAMKY
+    // POZNAMKY (BuildPoznamka)
     s colPoznamky = ##class(%DynamicObject).%New()
     s colPoznamky.name          = "Poznámky"
     s colPoznamky.collectionKey = "POZNAMKY"
     s colPoznamkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky", "text")
-    d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
-    d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky",  "text")
+    d ..AddField(colPoznamkyFields, "TYP",        "Typ poznámky", "text")
+    d ..AddField(colPoznamkyFields, "KATEGORIE",  "Kategorie",    "text")
+    d ..AddField(colPoznamkyFields, "ZNAK",       "Znak",         "text")
+    d ..AddField(colPoznamkyFields, "TEXT",       "Text poznámky", "text")
+    d ..AddField(colPoznamkyFields, "FORE_COLOR", "Barva textu",  "text")
+    d ..AddField(colPoznamkyFields, "BACK_COLOR", "Barva pozadí", "text")
     s colPoznamky.fields = colPoznamkyFields
     d collections.%Push(colPoznamky)
 }

@@ -166,6 +166,7 @@ public partial class MainWindow : Window
         // Callback: otevření DepartureGroupEditorDialog z inline panelu i modálního dialogu
         _propsVm.RequestOpenDepartureGridDialog = el => OpenDepartureGridDialog(el);
         _propsVm.RequestOpenStopColumnsDialog = el => OpenStopColumnsDialog(el);
+        _propsVm.RequestOpenDynamicTableDialog = el => OpenDynamicTableDialog(el);
 
         // Inline properties panel — SetContext s execute + invalidate callbacky
         InlinePropertiesPanel.SetContext(
@@ -1136,7 +1137,7 @@ public partial class MainWindow : Window
         Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Rectangle, 5, 5));
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
-        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Table, 0, 0));
+        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
         menu.Items.Add(new Separator());
         Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
@@ -1312,6 +1313,11 @@ public partial class MainWindow : Window
             OpenStopColumnsDialog(stopEl);
             return;
         }
+        if (element is DynamicTableElement dynTable)
+        {
+            OpenDynamicTableDialog(dynTable);
+            return;
+        }
         // Generický EDInputForm dialog pro elementy s Caché schema (key = property path).
         // Mapping element type → (cacheClass, title). Ostatní typy fallback na legacy
         // ElementPropertiesWindow (PropertyDescriptor panel).
@@ -1401,6 +1407,30 @@ public partial class MainWindow : Window
             _vm!.Execute(cmds.Count == 1
                 ? cmds[0]
                 : new Commands.Implementations.CompositeCommand("Nastavení zastávek", cmds));
+        }
+
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
+    }
+
+    private void OpenDynamicTableDialog(DynamicTableElement element)
+    {
+        var collections = _vm!.GetAvailableGroups();
+        var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this };
+
+        if (dlg.ShowDialog() == true)
+        {
+            // Tab „Obecné" (EDInputForm) + sloupce — vykonat jako jeden undo krok.
+            var cmds = new List<Commands.IDesignerCommand>();
+            if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
+            cmds.Add(new Commands.Implementations.SetPropertyCommand(
+                "Sloupce tabulky", element.Columns, dlg.ResultColumns,
+                v => element.Columns = (List<TableColumn>)v!));
+
+            _vm!.Execute(cmds.Count == 1
+                ? cmds[0]
+                : new Commands.Implementations.CompositeCommand("Nastavení tabulky", cmds));
         }
 
         InvalidateCanvas();

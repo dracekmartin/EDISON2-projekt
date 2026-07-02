@@ -10,6 +10,7 @@ namespace TemplateDesigner.Models;
 [JsonDerivedType(typeof(LineElement),          ElementTypes.Line)]
 [JsonDerivedType(typeof(ImageElement),         ElementTypes.Image)]
 [JsonDerivedType(typeof(TableElement),         ElementTypes.Table)]
+[JsonDerivedType(typeof(DynamicTableElement),  ElementTypes.DynamicTable)]
 [JsonDerivedType(typeof(BarcodeElement),       ElementTypes.Barcode)]
 [JsonDerivedType(typeof(StopListElement),      ElementTypes.StopList)]
 [JsonDerivedType(typeof(DepartureGridElement), ElementTypes.DepartureGrid)]
@@ -244,6 +245,7 @@ public abstract class TemplateElement
         ImageElement       => "Image",
         BarcodeElement b   => $"{b.BarcodeType}",
         TableElement t     => $"{t.Mode} cols={t.Columns.Count}",
+        DynamicTableElement dt => $"Dynamická tabulka [{dt.DataSource}] cols={dt.Columns.Count}",
         StopListElement      => "Seznam zastávek",
         DepartureGridElement d => $"Odjezdy {(d.SkupinaDnuId.Length > 0 ? d.SkupinaDnuId : "auto")}",
         NotesLegendElement   => "Legenda poznámek",

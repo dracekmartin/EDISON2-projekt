@@ -61,6 +61,12 @@ public class ElementPropertiesWindowViewModel : EDViewModel
     /// </summary>
     public Action<StopListElement>? RequestOpenStopColumnsDialog { get; set; }
 
+    /// <summary>
+    /// Callback pro otevření DynamicTableEditorDialog z inline panelu i modálního dialogu.
+    /// Sdílí logiku s MainWindow.OpenDynamicTableDialog — jedna cesta, žádná duplikace.
+    /// </summary>
+    public Action<DynamicTableElement>? RequestOpenDynamicTableDialog { get; set; }
+
     /// <summary>Zruší změny a zavře dialog (DialogResult = false).</summary>
     public RelayCommand CancelCommand { get; }
 
@@ -116,6 +122,9 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         if (element is TableElement tableElement)
             descriptors = EnhanceTableEditor(descriptors, tableElement);
+
+        if (element is DynamicTableElement dynamicTable)
+            descriptors = EnhanceDynamicTableEditor(descriptors, dynamicTable);
 
         if (element is StopListElement stopListElement)
             descriptors = EnhanceStopListEditor(descriptors, stopListElement);
@@ -257,6 +266,46 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                         RequestShowDescriptors?.Invoke(
                             EnhanceTableEditor(element.GetPropertyDescriptors(), element));
                     }
+                });
+            }
+            else
+            {
+                list.Add(d);
+            }
+        }
+        return list;
+    }
+
+    private IReadOnlyList<Models.PropertyDescriptor> EnhanceDynamicTableEditor(
+        IReadOnlyList<Models.PropertyDescriptor> descriptors,
+        DynamicTableElement element)
+    {
+        var collections = _getAvailableGroups?.Invoke() ?? [];
+
+        var list = new List<Models.PropertyDescriptor>(descriptors.Count);
+        foreach (var d in descriptors)
+        {
+            if (d is Models.StringPropertyDescriptor strD && strD.Label == "Zdroj dat" && collections.Count > 0)
+            {
+                // Panel jen nabídne dropdown zdrojů + nastaví ho. Generování sloupců z polí kolekce
+                // řeší editor sloupců (DynamicTableEditorDialog) — jedno místo, undoable přes příkaz.
+                list.Add(new Models.SuggestStringPropertyDescriptor
+                {
+                    Label          = strD.Label,
+                    Group          = strD.Group,
+                    Get            = strD.Get,
+                    Set            = strD.Set,
+                    GetSuggestions = () => collections.Select(c => (c.CollectionKey, c.Name))
+                });
+            }
+            else if (d is Models.ButtonPropertyDescriptor btn && btn.ActionId == Models.ButtonPropertyDescriptor.ActionOpenTableEditor)
+            {
+                list.Add(new Models.ButtonPropertyDescriptor
+                {
+                    Label       = btn.Label,
+                    Group       = btn.Group,
+                    ButtonLabel = btn.ButtonLabel,
+                    OnClick     = () => RequestOpenDynamicTableDialog?.Invoke(element)
                 });
             }
             else

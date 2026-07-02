@@ -19,6 +19,7 @@ public class SkiaHeightCalculator : IElementHeightCalculator
         {
             TextElement te => CalculateTextElementHeight(te, data),
             TableElement table => CalculateTableElementHeight(table, data),
+            DynamicTableElement dynTable => dynTable.CalculateHeightFromData(data),
             StopListElement stopList => stopList.CalculateHeightFromData(data),
             DepartureGridElement grid => grid.CalculateHeightFromData(data),
             NotesLegendElement notes => notes.CalculateHeightFromData(data),

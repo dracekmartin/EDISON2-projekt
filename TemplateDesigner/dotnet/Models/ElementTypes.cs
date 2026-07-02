@@ -12,6 +12,7 @@ public static class ElementTypes
     public const string Line          = "LineElement";
     public const string Image         = "ImageElement";
     public const string Table         = "TableElement";
+    public const string DynamicTable  = "DynamicTableElement";
     public const string Barcode       = "BarcodeElement";
     public const string StopList      = "StopListElement";
     public const string DepartureGrid = "DepartureGridElement";

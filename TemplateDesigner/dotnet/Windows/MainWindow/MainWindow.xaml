@@ -294,7 +294,7 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.ImageElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka" Tag="TableElement"
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická — řádky z dat)" Tag="DynamicTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
