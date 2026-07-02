@@ -1,5 +1,65 @@
 # Changelog
 
+## 2026-07-02 — T2: Async export PDF/PNG nad snapshotem šablony (UI zůstává plně použitelné)
+
+- ✅ **Export PDF/PNG neblokuje UI (R1) a uživatel může dál editovat** — dřív sync fetch +
+  render na UI threadu (~9 s „Not Responding" u 600 stránek). Nově orchestrace ve VM
+  (`ExportPreviewPdfAsync`/`PngAsync` přes `CommandAsync`): fetch (`BuildAllPreviewDataPagesAsync`,
+  `Task.Run` + `IProgress<string>`) i render na threadpoolu.
+- ✅ **Snapshot šablony** — `TemplateSerializer.DeepClone` (JSON round-trip, bez razítkování
+  ModifiedAt, bez migratoru) při kliknutí na export; `PreviewCanvas.RenderMultiDataToPdf/Png`
+  dostaly `Template?` parametr → renderují snapshot, ne živý stav. **Editace během exportu
+  výstup neovlivní** (exportuje se stav v okamžiku kliknutí). Žádný blokující overlay —
+  jen `_exportRunning` guard (canExecute obou export commandů) proti souběžnému exportu.
+  Pokryto testem (`DeepClone_JeNezavislaKopieANemeniModifiedAt`).
+- ✅ **Progress ve status baru ve dvou fázích** — „Načítám data X/N: {instance}…" (per instance
+  při fetchi) → „Generuji PDF: X/N datových stránek…" / „Generuji PNG: X/N stránek…"
+  (`IProgress<(done,total)>` z render smyčky).
+- ✅ **První řez god-object úklidu (T4)** — export logika z code-behind do VM; view wiring
+  = 2 callbacky (`RenderPdfToFile`/`RenderPngToFile`, nahrazují `RequestExportPdf/Png`);
+  `OpenExportedFile` (Process.Start) ve VM — bez WPF, R4 OK.
+- Známý krajní případ: ambientní `DocumentDefaults.Style` se při renderu nastavuje ze snapshot
+  šablony, ale je procesně-globální — změna *výchozího fontu šablony* přesně během běžícího
+  exportu by mohla prosáknout do části stránek. Ostatní editace jsou plně izolované snapshotem.
+  Follow-up mimo scope: první `GetSchema` hit v `RefreshFieldsList` zůstává sync (mitigováno cache).
+
+## 2026-07-02 — Roadmap: merge akčních položek z analýzy legacy náhrady
+
+- ✅ **Akční položky z `analyza-stav-a-legacy-nahrada-2026-07.md` zamergovány do `roadmap.md`**
+  (jedno místo pravdy, analýza zůstává jako evergreen referenční detail se status poznámkou):
+  - Nová sekce **„Architektonický track T1–T6"** (T1a testy ✅, T3 ✅, T2 async export ⬅️ další,
+    T1b Caché testy, T4 strangler, T5 duplikace, T6 drobnosti) + 3. aktivní track nahoře.
+  - **Blok A** doplněn o legacy vzory (RG headless CLI AUTOEXPORT/AUTOPRINT pro A3) + **A4**
+    (merge PDF + e-mail — společný požadavek všech 3 legacy systémů).
+  - **Blok B** doplněn o legacy „MlineSestava" vzor + **B4** (per-instance přiřazení šablony,
+    linka → šablona A4/A5) + **B5** (audit log + ECL právo na designer).
+  - **Fáze C + D sloučeny** (legacy TiskJR generuje vývěsní i knižní z téhož enginu; oracle
+    `mkPLinWin`, prerekvizity: Timetable font → agenda → LineTableElement + layout rozšíření).
+  - **Fáze E** rozšířena o Relace (TiskJRRELACE, čeká validace use case).
+  - **Nová Fáze F: Náhrada REPORTGENERATOR** (F1 usage statistika, F2 bridge vs čisté agendy,
+    F3 TableElement dorovnání, F4 výstupní kanály, F5 jazykové varianty, F6 neportovat bez poptávky).
+  - **Otevřené otázky Q1–Q6** (Epson, bridge, Relace, grafy/AZTEC, jazykové varianty, V1 soubory).
+
+## 2026-07-02 — T3: TemplateMigrator guardy (forward-compat + hlášení chyb migrace)
+
+- ✅ **Forward-compat guard (R5)** — šablona s verzí novější než `CurrentVersion` se odmítne
+  `TemplateDeserializationException` („aktualizujte TemplateDesigner") místo tichého přerazítkování
+  dolů (= ztráta dat novější verze při následném uložení). Chyba doteče uživateli existujícími
+  kanály (soubor: `PopupDisplayer.Error`, DB: `CacheTemplateException`) — žádná změna UI.
+- ✅ **Selhání migrace = chyba, ne tiché pokračování** — dřívější `Debug.WriteLine + continue`
+  („partial migration") nahrazeno výjimkou s popisem migrace; částečně zmigrovaná šablona se
+  neotevře (a tedy ani neuloží poškozená).
+- ✅ **Sémantické porovnání verzí** — early-out přes `VersionComparer` místo string equality;
+  „1.0" == „1.0.0" už nehlásí falešnou migraci.
+- ✅ **Testovatelnost pipeline** — `TemplateMigrator(IEnumerable<ITemplateMigration>?)` ctor;
+  testy s fake migracemi (transformace, pořadí, skip novějších, propagace chyby). Skip test
+  `NovejsiVerze_SeOdmitne` odskipnut → **164 testů, 0 skipů**.
+- **H-19 (V1→V2 migrace) — ověřeno v DB:** šablony v `^ALVA.TemplateDesigner.Templates`
+  (CB_CSADAD, CB_GWBUS) mají `version: 1.0.0`; DB úložiště (Wave 3, 2026-05-25) vzniklo až po
+  TextStyle breaking change (2026-03-24) → V1 v DB neexistují. Zbytkové riziko: staré JSON
+  soubory na disku z éry před 2026-03-24 (bez `version` pole = nerozlišitelné od aktuálních);
+  pokud se objeví, dopsat migraci + heuristiku detekce flat-TextStyle.
+
 ## 2026-07-02 — AD: multi-varianta časů tras (dynamické TrasaMin) — L1
 
 - ✅ **Dynamické variantní časové sloupce ve StopListu** (nahrazuje legacy fixních 15 slotů TrasaMin).

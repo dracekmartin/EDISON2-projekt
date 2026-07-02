@@ -8,6 +8,12 @@
 >
 > **Cíl (zadání):** plně pokrýt a nahradit REPORTGENERATOR + TiskMHD + TiskJR jedním
 > novým návrhářem, kde se jednotlivé agendy jen kontextově přepnou.
+>
+> **⚠️ Status (2026-07-02): akční položky zamergovány do [`roadmap.md`](roadmap.md)** —
+> architektonický track (T1–T6), blok A (A4 výstupní kanály), blok B (B4/B5 governance detaily),
+> Fáze C+D (sloučeno, TiskJR náhrada), Fáze E (Relace), **Fáze F (REPORTGENERATOR)** a otevřené
+> otázky Q1–Q6. **Aktuální stav položek = roadmap; tento dokument = evergreen referenční detail**
+> (legacy inventář §3, průřezová témata §4, zdůvodnění etapizace §5) — neaktualizuje se per položka.
 
 ---
 
@@ -78,8 +84,8 @@ Největší soubory: `MainWindow.xaml.cs` 2 671, `MainWindowViewModel.cs` 2 471 
 | # | Riziko | Detail | Doporučení |
 |---|---|---|---|
 | T1 | **Žádné testy** | Žádný `TemplateDesigner.Tests`, žádný TD Caché `Tests` package; pre-push hook TD nekryje (`tools/run-cache-tests.ps1:15`). Nejlevněji testovatelné vrstvy (PageLayoutEngine, ExpressionEvaluator, TemplateMigrator, TextStyle kaskáda) jsou přesně pure-logic. Gold-oracle 1:1 ověření není opakovatelné. | Založit xUnit projekt: PageLayoutEngine (stránkování, patičky, split), ExpressionEvaluator, TemplateMigrator round-trip, TextStyle Resolve. Caché: `ALVA.TemplateDesigner.Tests` s gold snapshot testy `ZastavkoveJrAd` (JSON výstup pro 5 gold linek) + přidat do pre-push. |
-| T2 | **Sync export na UI threadu** | `MainWindow.xaml.cs:146,161` → `BuildAllPreviewDataPages()` volá `GetData` pro N instancí synchronně; ~9 s „Not Responding" u 600 stránek. Porušení R1. | `async` + `EDActionInProgress` overlay; totéž zkontrolovat u prvního `GetSchema` hitu (`MainWindowViewModel.cs:1712`). |
-| T3 | **Versioning bez obsahu** | `TemplateMigrator._migrations` prázdný (`TemplateMigrator.cs:33-35`); TextStyle breaking change (flat→nested) proběhla bez migrace; migrace failuje tiše (`:65-69`, jen `Debug.WriteLine`); šablona s verzí **vyšší** než CurrentVersion se neodmítne (`:75`). | (a) ověřit, že neexistují V1 šablony u uživatelů (pokud ano → napsat H-19); (b) forward-compat guard (verze > current → odmítnout s hláškou); (c) chybu migrace hlásit přes `IPopupDisplayer`. |
+| T2 | **Sync export na UI threadu** — ✅ **opraveno 2026-07-02** | Fetch + render na threadpoolu nad snapshotem šablony (`DeepClone` — editace během exportu výstup neovlivní), dvoufázový progress ve status baru, orchestrace z code-behind → VM (první řez T4). | Zbývá jen: první `GetSchema` hit sync (mitigován `_schemaCache`); cancel až na reálnou potřebu. |
+| T3 | **Versioning bez obsahu** — ✅ **guardy opraveny 2026-07-02** | Forward-compat guard (verze > current → odmítnout), selhání migrace → výjimka (ne tichý `Debug.WriteLine`), sémantické porovnání verzí, ctor pro test injection. V1 v DB neexistují (ověřeno: DB storage vznikl po TextStyle breaking change). | Zbývá jen: potvrdit neexistenci starých JSON souborů z éry před 2026-03-24 (bez `version` pole); pokud se objeví → H-19 migrace + heuristika detekce. |
 | T4 | **God objects** | `MainWindow.xaml.cs` (2 671, 167 členů) + `TemplateDesignerViewModel` (2 471, bez vnitřního členění). R4 porušení: `TableEditorDialogViewModel.cs:609-643` staví WPF UI ve VM; VM vytváří dialogy s `Owner=Application.Current.MainWindow` a sahá na `Clipboard`. | Postupný rozpad VM na služby (InstanceCoordinator, TemplatePersistence — shluky už de facto existují); nové featury nepřidávat do těchto dvou souborů. `TableEditorDialogViewModel` UI konstrukci přesunout do view. |
 | T5 | **Živé duplikace bez pojistky** | PropertyDescriptor (C#) × EDInputForm (Caché) ~1,1k LOC mirror (akceptovaný Wave 4 dluh, ale bez driftového testu); `EDList/Instance.cls:113` hardcoded kopie agend registru; `ZastavkoveJrAd.GetMockData:1174` čte živá firemní data. | Driftový test (reflexe: property path z *Edit.cls existuje na elementu); `Instance.cls` napojit na `AgendyRegistr`; statický mock pro AD. |
 | T6 | Drobnosti | `architecture.md` nezná `PdfImport/` (4,3k LOC) ani `Services/` (2,6k); `MessageBox.Show` v `MainWindow.xaml.cs:1021`; 96× `new SKPaint/SKFont` per-frame v Render() běžných elementů (schedule elementy to řeší, zbytek ne); `ScheduleDetectorTest.cs` kompilovaný do produkční assembly. | Úklid při příležitosti. |

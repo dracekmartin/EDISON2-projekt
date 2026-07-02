@@ -12,8 +12,13 @@
   části hotové** (StopList ✅ + DepartureGrid ✅ mají „Obecné" přes EDInputForm); **zbývá už jen
   TableElement** — plán „Dynamic-first, Fixed odložen" viz Wave 4 sekce níže. Stylový pod-formulář
   zatím prototyp (1 zóna). **Priorita:** spíš později, za aktuálními provozními věcmi.
-- **AD nastavení linky (PRIORITA 2b)** — zbývají přímočaré PATCH-read položky: **AD-N4** (NZ na nový
-  řádek), **AD-N11** (cizojazyčné poznámky); AD-N5/N13/N15 odložené (dormant data / renderer).
+- **AD nastavení linky (PRIORITA 2b)** — **zastávkový JŘ je 1:1 kompletní** (2026-07-02). AD-N4 (NZ na
+  nový řádek) + AD-N11 (cizojazyčné) **přeřazeny do linkových JŘ** (legacy zastávkový je nepoužívá).
+  Zbývá jen vizuál legendy + AD-N5/N15 (blokované dormant daty).
+- **Architektonický track (z analýzy 2026-07)** — T1a C# testy ✅ (164 testů, pre-push) + T3 migrator
+  guardy ✅ + T2 async export ✅ (vše 2026-07-02). Zbývá T1b Caché testy (po dokončení AD WIP),
+  T4/T5 průběžně — viz sekce „Architektonický track" níže +
+  [`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md).
 
 **Úklid docs — stav 2026-06-30:**
 - ✅ **Prezentační prep docs konsolidovány** — osnova + režie demo → jeden
@@ -51,8 +56,8 @@ stejným trojčíslím / více dopravců, P3 logická imposice 2×A5→A4 — de
 **🎯 Pořadí priorit po prezentacích (statická ~19.6., živá 26.6. — obě proběhly):**
 
 1. **Zastávkový JŘ (AD)** — *hlavní deliverable*. Datově 1:1 + výkonově **hotovo**. **Multi-varianta
-   TrasaMin (AD-N13) ✅ hotovo 2026-07-02 (L1).** Zbývá vizuál legendy + přímočaré PATCH-read položky
-   nastavení linky (AD-N4, AD-N11). Číslování omezení (cnz) ✅ hotovo 2026-06-23.
+   TrasaMin (AD-N13) ✅ hotovo 2026-07-02 (L1).** **Zastávkový JŘ je tím 1:1 kompletní.** AD-N4/N11
+   přeřazeny do linkových JŘ (legacy zastávkový je nepoužívá). Zbývá jen vizuál legendy. Číslování omezení (cnz) ✅ 2026-06-23.
 2. **Wave 4 EDInputForm** — W4-6 ImageElement ✅; W4-9 StopList ✅ + DepartureGrid ✅; **zbývá TableElement** (Dynamic-first, Fixed odložen — viz Wave 4 sekce). Spíš později, za provozními věcmi.
 3. **Helpdesk pro AD** — Fáze A.2-D hotová (#7955/#7947/#7161 zavřeno). #11300 KORID přípoje přeřazeno
    k linkovým JŘ (není zastávkový koncept). Zbývá jen odložené A2-A5/A6/B4 (datový průzkum / kolegové).
@@ -104,7 +109,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 | AD-N1 | §2 | Poznámka nad linku → placeholder `POZNAMKA_NAD_LINKU` | `PATCH,"Head"` (gPrpLin dta4) | XS | ✅ 2026-06-20 |
 | AD-N2 | §2 | Typ JR → `TYP_JR` placeholder (volitelný; zastávkový legacy razítko z OBJ nestaví) | `PATCH,"OBJ"` (gPrpLin dta3) | S | ✅ 2026-06-20 |
 | AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ✅ 2026-06-21 (řazení vzestupně i sestupně) |
-| AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ ⬅️ DALŠÍ |
+| AD-N4 | — | ~~Negativní značky na nový řádek~~ → **linkové/PS JŘ** (legacy `NegZnNR` jen v `JRapiLinPrtPScm`, zastávkový `JRapiLinPrtMhd` ho NEpoužívá; v zastávkové legendě je navíc každé omezení už na vlastním řádku) | — | ➖ přeřazeno (2026-07-02) |
 | AD-N5 | §3 | `MHD_NEZNZ123` — potlačit NZ v legendě per sloupec | `PATCH,"MHD_NEZNZ123"` | M (váže na NZ legend, dnes dormant) | ⬜ |
 | AD-N6 | §3 | Override nadpisů sloupců (skupin dnů) → TD vlastnost `HeaderOverride` (ne port `^JRSET`) | (TD vlastnost elementu) | S | ✅ 2026-06-22 |
 | AD-N7 | §5 | **Komentáře** (ruční poznámka linky + přiřazené spoje) | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | M-L | ✅ 2026-06-20 (Fáze 1) |
@@ -112,7 +117,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 | AD-N9 | §5 | Směrové poznámky tam/zpět/vše | `MhD,"SeT_MhD",id,cnt` | S-M | ✅ 2026-06-20 (Fáze 1) |
 | AD-N8b | §5 | **Fáze 2** — co schovat v rozsahu „nepoznámkovat" (#7955) = parametr sestavy `SCHOVAT_V_ROZSAHU` (Ruční/Automatické/Obojí) + TD render-filtr nad nadmnožinou z Caché | param + `NoteVisibilityFilter` | M | ✅ 2026-06-20 (Fáze 2) |
 | AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ✅ 2026-06-21 (#7947) |
-| AD-N11 | §7 | Cizojazyčné poznámky | `PATCH,"prtCzjPzn"` + `("C")` arr6 | M | ⬜ |
+| AD-N11 | — | ~~Cizojazyčné poznámky~~ → **linkové/PS JŘ** (legacy `prtCzjPzn`/`TxT_MezI` jen v `JRapiLinPrtPScm`, zastávkový `JRapiLinPrtMhd` je NEpoužívá) | — | ➖ přeřazeno (2026-07-02) |
 | AD-N12 | — | ~~Km sloupce~~ → **patří do linkových JŘ** (tarif dle km), ne zastávkové | — | — | ➖ přesunuto |
 | AD-N13 | §4 | Multi-varianta časů tras (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ✅ 2026-07-02 (L1) — dynamické variantní sloupce, 1:1 gold 0365005, přepínač `ShowAllRouteVariants` |
 | AD-N14 | — | ~~Návaznosti / přípoje~~ → **patří do linkových/knižních JŘ**, ne zastávkové | — | — | ➖ přesunuto |
@@ -357,8 +362,8 @@ není akutní; doplnit při prvním reálném breaking change nebo pokud se obje
 
 | # | Co | Stav | Velikost |
 |---|---|---|---|
-| H-18 | `TemplateMigrator.Migrate(JsonDocument)` — detekce verze v JSON, pipeline migrací, spouští se před deserializací | ✅ 2026-05-25 (W3-4 framework) | S |
-| H-19 | Migrace V1→V2: `TextStyle` flat→nested (breaking change 2026-03-24) + varování v UI | 🟡 framework připraven, konkrétní migrace nenapsaná (YAGNI — žádné V1 šablony) | S |
+| H-18 | `TemplateMigrator.Migrate(JsonDocument)` — detekce verze v JSON, pipeline migrací, spouští se před deserializací | ✅ 2026-05-25 (W3-4 framework) + ✅ **2026-07-02 T3 guardy** (forward-compat R5: novější verze → odmítnout; selhání migrace → výjimka; sémantické porovnání verzí; pokryto `TemplateMigratorTests`) | S |
+| H-19 | Migrace V1→V2: `TextStyle` flat→nested (breaking change 2026-03-24) + varování v UI | 🟡 framework připraven, konkrétní migrace nenapsaná. **V1 v DB neexistují** (ověřeno 2026-07-02, DB storage vznikl po breaking change); zbytkové riziko jen staré JSON soubory na disku (bez `version` pole) | S |
 
 #### Merged cells v TableElement
 
@@ -383,39 +388,83 @@ Analogie `ColorRules` z `DepartureGrid` — generalizovat na `TableColumn`.
 Aktuálně když element potřebuje rezervovat místo pro volitelný vizuální prvek (šipka směru u `StopListElement`), řeší se to ad-hoc. Do budoucna zvážit deklarativní mapu "pokud property X=true → rezervuj Y mm vlevo/vpravo". Vyřeší konzistentně napříč všemi elementy.
 
 
-### 🟠 Fáze C: Meziměstský JŘ
+### 🟠 Fáze C + D: Výlepový/knižní JŘ linky (náhrada TiskJR) — pravděpodobně JEDEN track
 
-Konceptuálně podobné MHD — zastávky + odjezdy spojů + poznámky. Rozdíl: sloupce odjezdů nejsou typy provozu (jako MHD), ale mají jiný koncept specifický pro meziměsto. Layout je pivot tabulka (zastávky × spoje). Pravděpodobně bude potřeba samostatný element (ne rozšíření DepartureGridElement).
+> **Poznatek z hloubkového čtení legacy (analýza 2026-07 §3.3):** legacy `TiskJR` generuje
+> **vývěsní i knižní JŘ z téhož enginu** — Fáze C (meziměstský/výlepový) a D (knižní) jsou tedy
+> nejspíš jeden track, ne dva. Formát: sloupcová tabulka celé linky — svislý seznam zastávek
+> (Zóna/Km/Tč/Název/Šipky) × sloupce spojů s časy; řádek platností se symboly/NZ pod čísly spojů;
+> řádky Vyčká/Navazuje; skupinová záhlaví PD/So/Ne (3 režimy dělení); poznámky 10 druhů.
+> **Gold oracle je `mkPLinWin` (ALVA.JRMAIN.MLAPI)** — ne `ALVA.TISKMHD.Data`; metodika = čistá
+> reimplementace à la `ZastavkoveJrAd`. Velikost ≈ zastávkový JŘ (~1 měsíc).
+>
+> **Prerekvizity / nové schopnosti (pořadí):**
+> 1. **Symbolový font Timetable_nove (+SK)** do SkiaSharp renderingu + převodní tabulka
+>    (`ConvertSpecialniZnak` mapování 66+ symbolů známe z obou legacy systémů; TTF sada
+>    v `C:\DEV\EDISON\TiskJR\_ruzne`). Prerekvizita jakéhokoli knižního/výlepového JŘ.
+> 2. **Agenda `KnizniJrAd`** — čistá reimplementace, oracle `mkPLinWin`.
+> 3. **`LineTableElement`** (zastávky × spoje) + layout rozšíření: flow skládání datových paketů
+>    (N směrů vedle sebe/pod sebe dle místa), „dotisk poznámek z minulé stránky",
+>    **auto-fit fontu na šířku** se zpětným přepočtem sloupců (ComputeFontScale je dnes jen výškový).
+>    Legacy „měřicí řetězce" ping-pong odpadá — Skia měří lokálně.
+> 4. Per-linka šablony (viz B4) — legacy `LoadNastaveniProTisk` (šablona per A4/A5).
 
 | Krok | Co | Stav |
 |---|---|---|
-| 42 | Definovat meziměstský layout — analýza referenčních PDF, wire formát dat | |
-| 43 | Implementace meziměstského JŘ elementu | |
-| 44 | Caché `MeziMestskyJrAPI` — GetData/GetMockData (Wave 5 pattern) | |
+| 42 | Analýza referenčních výstupů (vývěsní + knižní PDF) + wire formát — nad rámec analýzy §3.3 | |
+| 42b | Symbolový font Timetable do Skia + převodní tabulka | |
+| 43 | `LineTableElement` + layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy) | |
+| 44 | Caché `KnizniJrAd` — GetData/GetMockData (Wave 5 pattern), oracle `mkPLinWin` | |
 
 ---
 
-### 🟠 Fáze D: Knižní JŘ
-
-Layout TBD — pravděpodobně kompaktní formát pro knižní publikaci. Definovat layout před implementací.
-
-| Krok | Co | Stav |
-|---|---|---|
-| 45 | Analýza referenčních knižních JŘ — definice layoutu a wire formátu | |
-| 46 | `BookScheduleElement` — implementace (pravděpodobně víc elementů, viz poučení z MHD) | |
-| 47 | Caché `KnizniJrAPI` — GetData/GetMockData (Wave 5 pattern) | |
-
----
-
-### 🟠 Fáze E: Vozový JŘ
+### 🟠 Fáze E: Vozový JŘ + Relace
 
 Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc elementů (viz poučení z MHD).
+Legacy generátory: `ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky) — viz
+[`legacy-schedule-generators.md`](legacy-schedule-generators.md).
+
+**Relace (TiskJRRELACE)** — třetí typ výstupu (vývěsky nádraží: řádky = odjezdy, sloupce =
+linka/čas/směr/nástupiště; slovenský zákazník, copy-paste fork TiskJR ~50k LOC). **Nejdřív ověřit,
+zda je to živý use case** (otevřená otázka Q3 níže) — pak vlastní agenda + element.
 
 | Krok | Co | Stav |
 |---|---|---|
 | 48 | Analýza referenčních vozových JŘ — definice layoutu a wire formátu | |
 | 49 | `VehicleScheduleElement` — implementace (pravděpodobně víc nezávislých elementů) | |
 | 50 | Caché `VozovyJrAPI` — GetData/GetMockData + async loading (R1, velký objem dat) | |
+
+---
+
+### 🟠 Fáze F: Náhrada REPORTGENERATOR (univerzální sestavy) — NOVÉ (analýza 2026-07)
+
+> Největší kus náhrady legacy — ne kvůli featurám (TD je ve výrazech/undo/kódech už napřed), ale
+> kvůli **ekosystému ~28 agend**, které implementují RG datový kontrakt (`GetSeznamSad`/`GetSadu`/
+> `GetData`, `~`-tokenový stream; dispatch `Data.cls:627-654`). Reálné nasazení: 33k textových
+> elementů, 774 tabulek napříč zákazníky. **Ne big-bang** (must-not-happen #4) — etapizovat.
+> Detail: [`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md) §3.1 + §5 etapa 4.
+
+| Krok | Co | Stav |
+|---|---|---|
+| F1 | **Prioritizace podle usage statistiky** — legacy `Main.cls:161-188` drží reálná čísla použití per zákazník; vytáhnout, seřadit agendy podle hodnoty | ⬜ první krok (levný) |
+| F2 | **Rozhodnutí bridge vs čisté agendy** (otázka Q2) — bridge = jedna `LegacyRgAgenda` překládající `~`-tokenový protokol na TD JSON DataContext → všech 28 agend najednou s omezenou věrností; čisté reimplementace (vzor Faktury) tam, kde se vyplatí. Doporučení analýzy: **bridge nejdřív** | ⬜ rozhodnutí |
+| F3 | **TableElement dorovnání na RG úroveň** (navazuje na W4-9 Dynamic-first + Fáze B): per-řádek zvýraznění 0-5 z dat, per-řádek/buňka custom barvy, overflow módy buňky (vč. zalamování → klonování řádků), opakování mezisoučtového řádku na další stránce, text přes celou šířku, datové typy sloupců (datum/minuty/záporné červeně/netisknout nuly), řádek-jako-designový-layout (koncepčně PerDataRow) | ⬜ L |
+| F4 | **Výstupní kanály fáze 2** — Excel export tabulek, PDF heslo + el. podpis (PDFSIGNER), **Epson znakový tisk** (otázka Q1 — možná zůstane v legacy TISK) | ⬜ dle poptávky |
+| F5 | **Jazykové varianty šablon** — per-jazyk kopie provázaná na CS zdroj (kaskádový delete/copy, auto-volba dle JazykId); souvisí i s AD-N11 (otázka Q5) | ⬜ |
+| F6 | **Vědomě neportovat bez poptávky** — grafy (12 použití), AZTEC (2), calculated pole (2 — výrazový jazyk TD je nadmnožina), checkbox (8); ověřit se zákazníky a škrtnout (otázka Q4) | ⬜ validace |
+
+---
+
+### ❓ Otevřené otázky z analýzy 2026-07 (k rozhodnutí s týmem)
+
+| # | Otázka | Dopad |
+|---|---|---|
+| Q1 | **Epson znakový tisk** — migruje do TD, nebo zůstane navždy v legacy TISK? | Určuje, zda TD potřebuje ne-grafický výstupní kanál (architektonicky cizí prvek) — F4 |
+| Q2 | **RG bridge vs čisté agendy** — je akceptovatelná dočasná věrnost bridge překladu? | F2, tvar celé Fáze F |
+| Q3 | **Relace (SK zákazník)** — živý use case? | Fáze E scope |
+| Q4 | **Grafy/AZTEC/checkbox/calculated** — má někdo tvrdou závislost? (usage: 12/2/8/2) | F6 škrtnutí |
+| Q5 | **Jazykové varianty šablon** — potřebné i pro JŘ (pohraniční vývěsky, AD-N11), nebo jen RG doména? | F5 priorita |
+| Q6 | ~~V1 šablony v terénu~~ — **v DB neexistují** (ověřeno 2026-07-02); zbývá potvrdit staré JSON soubory na disku z éry před 2026-03-24 | H-19 uzavření |
 
 ---
 
@@ -473,6 +522,25 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ---
 
+### 🔧 Architektonický track — technické dluhy T1–T6 (z analýzy 2026-07)
+
+> Zdroj: [`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md) §2.3
+> (technický audit). Optika: regresní pojistky + zdraví kódu před růstem plochy (knižní JŘ, RG).
+> Běží paralelně s business trackem — položky vybírat tak, aby nekolidovaly s rozpracovanými soubory.
+
+| ID | Co | Stav |
+|---|---|---|
+| T1a | **C# testy** — `TemplateDesigner.Tests` (PageLayoutEngine, výrazy, serializace round-trip, migrator, TextStyle kaskáda + DepartureGrid anti-pattern regrese, helpery, EDInputForm drift test) v pre-push | ✅ 2026-07-02 (164 testů) |
+| T1b | **Caché testy** — `ALVA.TemplateDesigner.Tests` (deterministické helpery: `ConvertSpecialniZnak`, `SestavTextOmezeni`, `ZarazeniSpoje`… + strukturální smoke `GetData`) + package do `run-cache-tests.ps1`; **`tools/compare-gold.ps1`** = skriptované 1:1 porovnání proti legacy oracle (opakovatelné, mimo hook) | ⬜ až po dokončení AD WIP (netestovat rozpracovaný engine) |
+| T2 | **Async multi-instance export** — fetch + render na threadpoolu (R1) nad **snapshotem šablony** (`TemplateSerializer.DeepClone` → editace během exportu výstup neovlivní, UI zůstává plně použitelné, bez blokujícího overlay), dvoufázový progress ve status baru (fetch per instance + render per stránka), orchestrace z code-behind → VM (= první řez T4). Cancel vynechán (až na reálnou potřebu); sync zůstává první `GetSchema` hit (mitigován `_schemaCache`) | ✅ 2026-07-02 |
+| T3 | **Migrator guardy** — forward-compat (R5), selhání migrace → výjimka, sémantické porovnání verzí | ✅ 2026-07-02 |
+| T4 | **God objects strangler** — `MainWindow.xaml.cs` (2,7k) + `TemplateDesignerViewModel` (2,5k): pravidlo „nové featury = nová služba/soubor" + postupné řezy (Export ✅ s T2, Instance, TemplatePersistence); R4 fix `TableEditorDialogViewModel:609` (WPF UI ve VM); rename `MainWindowViewModel.cs` → název třídy | ⬜ průběžně |
+| T5 | **Zbylé duplikace** — `EDList/Instance.cls:113` hardcoded mirror agend registru → napojit na `AgendyRegistr`; `ZastavkoveJrAd.GetMockData` → statický mock (nezávislý na firemních datech). Drift test schémat ✅ (T1a) | ⬜ malé |
+| T6 | Drobnosti — `architecture.md` nezná `PdfImport/`+`Services/` (7k LOC); `MessageBox` v `MainWindow.xaml.cs:1021`; per-frame `new SKPaint` v Render() běžných elementů; `ScheduleDetectorTest.cs` v produkční assembly | ⬜ nízká, při příležitosti |
+| — | **StopList kaskáda testy** (analogie DepartureGridCascadeTests) | ⬜ po dokončení StopList WIP |
+
+---
+
 ### 🔵 Produkční / integrační připravenost (co musíme udělat pro nasazení k zákazníkům)
 
 > **Optika:** ne featury, ale „aby to šlo nasadit a integrovat pro zákazníky". **Klíčové zjištění
@@ -487,18 +555,35 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 5. **D — produkční config + deploy proces**.
 
 #### 🔴 A. EDISON integrace (dnes prakticky chybí — největší kus, NENÍ rozepsaný)
+
+> **Legacy vzory (analýza 2026-07):** všechny 3 legacy systémy se volají z EDISONu přes EDForm
+> s `PoleSestavaValue`; REPORTGENERATOR navíc **headless CLI** `AUTOEXPORT=1` / `AUTOPRINT=1`
+> volané přímo z Caché agend (`MainRun.vb:17-184`) — vzor pro A3. Vrstvy 1–4 TD to architektonicky
+> umí, chybí jen entrypoint.
+
 | ID | Co | Stav |
 |---|---|---|
 | A1 | **Předání Caché session kontextu** (server / firma / uživatel / mlp) z EDISONu místo hardcoded appsettings. Vzor: legacy `EDISONMAIN2API.FormToRunGetter` (sentinel + ~10 args). Bez toho TD jede jen proti 1 nakonfigurované firmě. | ⬜ blocker |
 | A2 | **Launch nad konkrétní linkou** — otevřít TD z modulu JŘ/MHD s předvybranou agendou + instancí. Startup dnes args nečte. | ⬜ |
-| A3 | **End-user tiskový vstup** — zákazník hlavně *tiskne*, nenavrhuje. Headless tisk (vrstvy 1-4) z modulu nebo „vytiskni linku X". Dnes je print jen v designeru. | 🟡 |
+| A3 | **End-user tiskový vstup** — zákazník hlavně *tiskne*, nenavrhuje. Headless tisk (vrstvy 1-4) z modulu nebo „vytiskni linku X". Dnes je print jen v designeru. Legacy vzor: RG CLI AUTOEXPORT/AUTOPRINT. | 🟡 |
+| A4 | **Výstupní kanály fáze 1** — sloučení hromadného exportu do **1 PDF** (legacy `MergePDFFiles`) + **odeslání PDF e-mailem** — společný požadavek všech 3 legacy systémů (TiskMHD/TiskJR/RG je mají všechny) | ⬜ M |
 
 #### 🟠 B. Šablony pro zákazníky (governance + distribuce)
+
+> **Legacy vzor (analýza 2026-07, sdílený všemi 3 systémy):** dvouvrstvý model „MlineSestava"
+> (vendor šablony ID ≥ 1000 read-only × zákaznické < 1000), release pipeline
+> `ExportReportToGlb` → `ImportTransferGlobal` → `AktualizujAgendu` (rozkopíruje do všech IdFa
+> při instalaci verze), audit log změn (`^Alva*Log`), právo „pouštět designer" (ECL).
+> **Jedna sdílená infrastruktura k postavení jednou** — bez ní nejde žádnou náhradu legacy
+> nasadit „jako produkt". Detail: analýza §4.
+
 | ID | Co | Stav |
 |---|---|---|
-| B1 | **Systémové/zamčené šablony** (M-line tvoří + distribuuje, zákazník read-only) — dnes jen per-IDfa storage bez „zamčené" (gap P2-6) | ⬜ |
-| B2 | **Výchozí sady šablon per agenda** (MHD / AD JŘ / faktury) k nasazení | ⬜ |
+| B1 | **Systémové/zamčené šablony** (M-line tvoří + distribuuje, zákazník read-only) — dnes jen per-IDfa storage bez „zamčené" (gap P2-6). Legacy: `MlineSestava` flag + ID práh | ⬜ |
+| B2 | **Výchozí sady šablon per agenda** (MHD / AD JŘ / faktury) k nasazení + distribuční pipeline v release (ekvivalent `AktualizujAgendu`, formát JSON místo GOF) | ⬜ |
 | B3 | Kategorie + popis šablony v UI (metadata už drží Author/Created/Modified/Version) | ⬜ |
+| B4 | **Per-instance přiřazení šablony** — linka → výchozí šablona (legacy: jiná pro A4 a jiná pro A5 + ~17 vlastností per formát, `LoadNastaveniProTisk`). `InstanceDefaults` (Wave 1) rozšířit o šablonu; potřebné pro JŘ produkci (A2/A3 launch „vytiskni linku X") | ⬜ |
+| B5 | Audit log změn šablon + právo „pouštět designer" (ECL) — legacy parita, malé | ⬜ |
 
 #### 🟠 C. Bezpečnost dat (než zákazníci ukládají šablony)
 | ID | Co | Stav |
