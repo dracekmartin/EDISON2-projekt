@@ -65,6 +65,7 @@
             <MenuItem Header="Uživatel">
                 <MenuItem Header="Přihlásit jiného uživatele"     Command="{Binding LoginAsAnotherUserCommand}"/>
                 <MenuItem Header="Aktuální uživatel"              Command="{Binding ShowUserEditCommand}"/>
+                <MenuItem Header="Změnit heslo"                   Command="{Binding ChangePasswordCommand}"/>
                 <MenuItem Header="Úlohy na pozadí"                Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Možnosti">
                     <MenuItem Header="Spouštět okna jako dialogy" IsCheckable="True" IsChecked="{Binding ShowWindowsAsDialogs}"/>

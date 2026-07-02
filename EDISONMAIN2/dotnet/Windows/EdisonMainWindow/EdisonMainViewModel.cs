@@ -56,6 +56,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Uživatel menu
         public ICommand LoginAsAnotherUserCommand { get; }
         public ICommand ShowUserEditCommand { get; }
+        public ICommand ChangePasswordCommand { get; }
         public ICommand ShowBgTasksCommand { get; }
         public ICommand ResetFormsCommand { get; }
         // Nástroje menu
@@ -165,6 +166,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Uživatel menu
             LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
             ShowUserEditCommand           = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
+            ChangePasswordCommand         = Command(() => WindowNavigator.ShowDialog(new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(MLRest!, UserName)));
             ShowBgTasksCommand            = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             ResetFormsCommand             = Command(ResetForms);
 
