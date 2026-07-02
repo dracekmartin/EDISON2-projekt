@@ -1,5 +1,49 @@
 # Changelog
 
+## 2026-07-02 — TemplateDesigner.Tests: první sada automatizovaných testů (krok 0–1 arch. tracku)
+
+- ✅ **Nový projekt `TemplateDesigner.Tests/`** (xUnit, zrcadlo EDControls.Tests) přidán do
+  `EDISON2.sln` → pre-push hook TD od teď kryje automaticky. **104 testů (103 ✅ / 1 skip)**:
+  - `Layout/PageLayoutEngineTests` (15) — stránkování, KeepTogether/SplitAcrossPages + ClipTop/Bottom,
+    PrintBehavior matice (OnEveryPage/OnFirstPageOnly/OnLastPageOnly dvouprůchod/ExceptFirst),
+    patička od spodu, PAGE/TOTAL_PAGES injekce, PerDataRow expanze, VisibilityExpression,
+    dynamická výška elementu, propagace CultureCode. `FixedHeightCalculator` test double (bez SkiaSharp).
+  - `Expressions/*Tests` (~60) — ExpressionEvaluator (porovnání numericky vs. lexikograficky,
+    logické operátory, truthiness, fail-open, Validate), PlaceholderFormatter (string funkce,
+    N2 cs-CZ×en-US, datum, TimeSpan, fail-safe), AggregationResolver (SUM/COUNT/AVG/MIN/MAX, prázdné řádky).
+  - `Serialization/TemplateSerializerRoundTripTests` — round-trip idempotence pro všech 9 typů
+    elementů (Serialize→Deserialize→Serialize, `modifiedAt` neutralizován — Serialize razítkuje UtcNow),
+    tolerance neznámé property, RoundedFloatConverter, legacy „MHD"→„ZASTAVKOVY_JR_MHD" remap.
+  - `Serialization/TemplateMigratorTests` — charakterizace současného chování + 1 Skip test
+    (žádoucí forward-compat guard, odskipovat s T3 opravou).
+- **Nálezy z psaní testů:** (a) early-out v `TemplateMigrator.Migrate` porovnává verze string
+  equality, ne VersionComparerem → „1.0" se hlásí jako migrovaná (neškodné, zvážit při T3);
+  (b) `dotnet sln add` vygeneroval kolizní solution folder „TemplateDesigner" → ručně odstraněn ze sln.
+- Kontext + celý plán: [`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md)
+  (technický audit T1–T6 + legacy REPORTGENERATOR/TiskMHD/TiskJR + roadmapa náhrady).
+- **Druhá vlna (tentýž den): TextStyle kaskáda + helpery → celkem 150 testů (149 ✅ / 1 skip):**
+  - `Models/TextStyleTests` — CSS-like cascade (dědění, override, 3vrstvá kaskáda, trim fontu,
+    idempotence, IsEmpty, Clone); `Models/DocumentDefaultsTests` — dokumentový default (overlay,
+    prázdný font = no-override, propagace do Resolve), vždy s finally reset globálního stavu.
+  - `Models/DepartureGridCascadeTests` — **regresní testy na anti-pattern „scalar přebíjí kaskádu"**
+    (2× opravený bug, mvvm-patterns.md): `ResolveGroupMinuteParent` (MinuteFontSize/MinuteBold jen
+    když MinuteStyle+DataStyle mlčí), `ResolveGroupHeaderParent` (SkupinaDnuHeaderLineHeight fallback,
+    VAlign), padding 0 u minut, HourData dědění.
+  - `Models/MmMathTests` (Round 0.1mm AwayFromZero, nullable, Snap), `Rendering/ColumnHeaderTests`
+    (override vs. zdroj), `Elements/TextWrapHelperTests` (headless SkiaSharp — normalizace \r\n,
+    extrémní šířky, prázdné řádky; bez assertů na pixelové metriky).
+  - Testy stylů sdílejí xUnit kolekci `StyleCascade` — `DocumentDefaults.Style` je procesně-globální
+    stav, kolekce vynucuje sekvenční běh (žádné vzájemné ovlivnění).
+- **Třetí vlna (tentýž den): driftová pojistka EDInputForm schémat → celkem 161 testů (160 ✅ / 1 skip):**
+  - `Serialization/EDInputFormSchemaDriftTests` — parsuje `CACHE/.../EDInputForm/*Edit.cls` přímo
+    z repa (offline, bez serveru), vytáhne field keys (= property paths pro ElementFormBinder
+    reflexi) a reflexí ověří existenci na cílovém C# typu. Mapa 10 schémat (8 elementů + Section
+    + Page/Template). `StyleFields.Add` bloky expanduje podle suffixů čtených ze `StyleFields.cls`
+    (self-updating). Virtuální klíče: `Format`/`Orientation` (PageEdit), `style:<prefix>` tlačítka
+    pod-formuláře → validuje se path za prefixem. Uzavírá driftové riziko Wave 4 duplikace
+    (memory `project_edinputform_schema_duplication.md`) — přejmenování property bez úpravy .cls
+    od teď zablokuje push.
+
 ## 2026-06-30 — Ověření: pořadí poznámek v legendě 1:1 s legacy (živý gold oracle)
 
 - ✅ **Default řazení legendy potvrzeno 1:1** proti gold oracle (`ALVA.TISKMHD.Data`, VOLANO_Z=JRMAIN)
