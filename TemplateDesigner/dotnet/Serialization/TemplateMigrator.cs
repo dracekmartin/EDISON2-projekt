@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 
 namespace TemplateDesigner.Serialization;
@@ -30,28 +29,50 @@ public class TemplateMigrator
     /// Registrované migrace, sortovány podle FromVersion vzestupně.
     /// Prázdný seznam = žádná breaking change zatím; framework je no-op.
     /// </summary>
-    private readonly List<ITemplateMigration> _migrations = [
-        // new MigrationFrom1To2(),  // až přijde první breaking change
-    ];
+    private readonly List<ITemplateMigration> _migrations;
+
+    public TemplateMigrator() : this(null) { }
+
+    /// <summary>Explicitní seznam migrací — pro testy pipeline; produkce používá default.</summary>
+    public TemplateMigrator(IEnumerable<ITemplateMigration>? migrations)
+    {
+        _migrations = migrations?.ToList() ?? [
+            // new MigrationFrom1To2(),  // až přijde první breaking change
+        ];
+    }
 
     /// <summary>
     /// Spustí migraci nad JSON dokumentem. Vrátí (migrovaný JSON, wasMigrated flag,
     /// detekovaná původní verze).
     ///
     /// <para>
-    /// wasMigrated = true znamená, že verze v souboru byla starší a alespoň jedna
-    /// migrace proběhla. UI by mělo zobrazit warning ("uložením přepíšeš starou verzi").
+    /// wasMigrated = true znamená, že verze v souboru byla starší a šablona byla
+    /// transformována/přerazítkována. UI by mělo zobrazit warning
+    /// ("uložením přepíšeš starou verzi").
     /// </para>
     /// </summary>
+    /// <exception cref="TemplateDeserializationException">
+    /// Verze šablony je novější než <see cref="CurrentVersion"/> (forward-compat guard, R5 —
+    /// tiché přerazítkování dolů by ztratilo data novější verze), nebo některá migrace selhala
+    /// (částečně zmigrovaná šablona se nesmí tiše otevřít).
+    /// </exception>
     public (JsonNode Migrated, bool WasMigrated, string OriginalVersion) Migrate(JsonNode root)
     {
         string fromVersion = ReadVersion(root);
         string targetVersion = CurrentVersion;
 
-        if (fromVersion == targetVersion)
+        // Sémantické porovnání (VersionComparer): "1.0" == "1.0.0" — string equality by
+        // kosmeticky odlišnou verzi zbytečně hnala přes pipeline a hlásila migraci.
+        int cmp = VersionComparer.Instance.Compare(fromVersion, targetVersion);
+
+        if (cmp == 0)
             return (root, WasMigrated: false, OriginalVersion: fromVersion);
 
-        bool applied = false;
+        if (cmp > 0)
+            throw new TemplateDeserializationException(
+                $"Šablona byla uložena v novější verzi aplikace (formát {fromVersion}, " +
+                $"tato verze podporuje {targetVersion}). Aktualizujte TemplateDesigner.");
+
         foreach (var migration in _migrations.OrderBy(m => m.FromVersion, VersionComparer.Instance))
         {
             // Aplikuj migraci pokud její FromVersion je ≥ aktuální verze v JSON
@@ -60,21 +81,21 @@ public class TemplateMigrator
                 try
                 {
                     root = migration.Migrate(root);
-                    applied = true;
                 }
                 catch (Exception ex)
                 {
-                    Debug.WriteLine($"[TemplateMigrator] Migration {migration.GetType().Name} failed: {ex.Message}");
-                    // Pokračujeme s dalšími migracemi — partial migration je lepší než žádná
+                    throw new TemplateDeserializationException(
+                        $"Migraci šablony ze starší verze {fromVersion} se nepodařilo dokončit " +
+                        $"({migration.Description}). Šablona nebyla otevřena, aby nedošlo " +
+                        $"k poškození dat: {ex.Message}", ex);
                 }
             }
         }
 
-        // Po pipeline nastav target version, i když nebyla aplikována žádná migrace
-        // (zachová original version v případě že _migrations je prázdný a fromVersion < target).
+        // Starší verze → přerazítkovat na aktuální (i bez registrovaných migrací)
         root["version"] = targetVersion;
 
-        return (root, WasMigrated: applied || fromVersion != targetVersion, OriginalVersion: fromVersion);
+        return (root, WasMigrated: true, OriginalVersion: fromVersion);
     }
 
     /// <summary>
