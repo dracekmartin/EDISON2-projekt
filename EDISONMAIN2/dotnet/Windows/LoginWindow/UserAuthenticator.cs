@@ -15,6 +15,9 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
     public class LoginException(string message) : Exception(message);
 
+    /// <summary>Výsledek změny hesla — úspěch, nebo chybová hláška k zobrazení uživateli.</summary>
+    public record ChangePasswordResult(bool Success, string Message);
+
     public static class UserAuthenticator
     {
         /// <summary>
@@ -46,6 +49,34 @@ namespace EDISONMAIN2.Windows.LoginWindow
                 MayUpdate: parts.Length > 5 && parts[5] == "1",
                 Email: parts.Length > 7 ? parts[7] : "");
         }
+
+        /// <summary>
+        /// Volá <c>ALVA.SYS.Login.ChangePassword</c> (IN: jméno, staré heslo, nové heslo).
+        /// Výstup <c>OUT(1)="status'text"</c> — status 1 = OK, jinak chyba (server dodá text).
+        /// </summary>
+        public static ChangePasswordResult ChangePassword(IMLRest mlRest, string username, string oldPassword, string newPassword)
+        {
+            var output = mlRest.QueryOrThrow("ALVA.SYS.Login", "ChangePassword",
+                new object[] { username, oldPassword, newPassword });
+
+            var parts = (output[1]?.ToString() ?? "").Split(mlRest.Delimiter);
+            int status = parts.Length > 0 && int.TryParse(parts[0], out var s) ? s : 99;
+            string serverText = parts.Length > 1 ? parts[1] : "";
+
+            return status == 1
+                ? new ChangePasswordResult(true, "")
+                : new ChangePasswordResult(false, ChangePasswordMessage(status, serverText));
+        }
+
+        // Statusy z ALVA.SYS.Login.ChangePassword: 2=staré neplatné, 3=nové nesplňuje formát,
+        // 4=nemožné (uživatel neexistuje), 99=chyba. Server u 2/3 posílá vlastní text — preferuj ho.
+        private static string ChangePasswordMessage(int status, string serverText) => status switch
+        {
+            2 => serverText.Length > 0 ? serverText : "Původní heslo je neplatné.",
+            3 => serverText.Length > 0 ? serverText : "Nové heslo nesplňuje požadavky.",
+            4 => "Změna hesla není možná (uživatel neexistuje).",
+            _ => serverText.Length > 0 ? serverText : "Změna hesla selhala.",
+        };
 
         private static string GetErrorMessage(int code) => code switch
         {

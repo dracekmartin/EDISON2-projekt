@@ -85,4 +85,55 @@ public class UserAuthenticatorTests
         ml.Received().QueryOrThrow("ALVA.SYS.Login", "Login",
             Arg.Is<object[]>(a => a.Length == 2 && (string)a[0] == "jan" && (string)a[1] == "secret"));
     }
+
+    private static IMLRest MockChangePassword(string statusResponse)
+    {
+        var ml = Substitute.For<IMLRest>();
+        ml.Delimiter.Returns(D);
+        ml.QueryOrThrow("ALVA.SYS.Login", "ChangePassword", Arg.Any<object[]>())
+            .Returns(new object[] { "", statusResponse });
+        return ml;
+    }
+
+    [Fact]
+    public void ChangePassword_Status1_Succeeds()
+    {
+        var r = UserAuthenticator.ChangePassword(MockChangePassword("1"), "jan", "old", "new");
+
+        Assert.True(r.Success);
+    }
+
+    [Theory]
+    [InlineData("2", "Původní heslo")]                 // fallback text (server prázdný)
+    [InlineData("3", "nesplňuje")]
+    [InlineData("4", "neexistuje")]
+    [InlineData("99", "selhala")]
+    public void ChangePassword_NonOkStatus_ReturnsMessage(string status, string fragment)
+    {
+        var r = UserAuthenticator.ChangePassword(MockChangePassword(status), "jan", "old", "new");
+
+        Assert.False(r.Success);
+        Assert.Contains(fragment, r.Message);
+    }
+
+    [Fact]
+    public void ChangePassword_ServerText_PreferredOverFallback()
+    {
+        var r = UserAuthenticator.ChangePassword(MockChangePassword($"2{D}Heslo vyprselo pred 3 dny"), "jan", "old", "new");
+
+        Assert.False(r.Success);
+        Assert.Equal("Heslo vyprselo pred 3 dny", r.Message);
+    }
+
+    [Fact]
+    public void ChangePassword_SendsUsernameOldNewToServer()
+    {
+        var ml = MockChangePassword("1");
+
+        UserAuthenticator.ChangePassword(ml, "jan", "staré", "nové");
+
+        ml.Received().QueryOrThrow("ALVA.SYS.Login", "ChangePassword",
+            Arg.Is<object[]>(a => a.Length == 3
+                && (string)a[0] == "jan" && (string)a[1] == "staré" && (string)a[2] == "nové"));
+    }
 }
