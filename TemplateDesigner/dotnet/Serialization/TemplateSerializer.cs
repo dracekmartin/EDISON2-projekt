@@ -25,6 +25,16 @@ public static class TemplateSerializer
         return JsonSerializer.Serialize(template, Options);
     }
 
+    /// <summary>
+    /// Hluboká kopie šablony přes JSON round-trip — snapshot pro export na pozadí
+    /// (uživatel může dál editovat živou šablonu, běžící export se nezmění).
+    /// Na rozdíl od <see cref="Serialize"/> nemodifikuje ModifiedAt; přeskakuje migrator
+    /// (in-memory šablona je vždy aktuální verze).
+    /// </summary>
+    public static Template DeepClone(Template template) =>
+        JsonSerializer.Deserialize<Template>(JsonSerializer.Serialize(template, Options), Options)
+            ?? throw new InvalidOperationException("Snapshot šablony selhal (deserializace vrátila null).");
+
     // --- Serializace Section (pro custom šablony) ---
 
     /// <summary>Serializuje sekci do JSON (pro uložení jako custom šablona).</summary>

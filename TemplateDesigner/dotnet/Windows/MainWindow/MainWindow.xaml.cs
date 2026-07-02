@@ -139,41 +139,13 @@ public partial class MainWindow : Window
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
         _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
-        _vm.RequestExportPdf             = filePath =>
-        {
-            try
-            {
-                var allPages = _vm.BuildAllPreviewDataPages();
-                _previewCanvas!.RenderMultiDataToPdf(filePath, allPages);
-                _vm.StatusText = $"PDF uloženo: {Path.GetFileName(filePath)} ({allPages.Count} datových stránek)";
-                try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true }); }
-                catch { /* PDF viewer nemusí být nainstalován */ }
-            }
-            catch (Exception ex)
-            {
-                _vm!.PopupDisplayer.Error(ex);
-            }
-        };
-        _vm.RequestExportPng             = filePath =>
-        {
-            try
-            {
-                var allPages = _vm.BuildAllPreviewDataPages();
-                int count = _previewCanvas!.RenderMultiDataToPng(filePath, allPages);
-                _vm.StatusText = count == 1
-                    ? $"PNG uloženo: {Path.GetFileName(filePath)}"
-                    : $"PNG uloženo: {count} souborů ({Path.GetFileNameWithoutExtension(filePath)}_001.png …)";
-                if (count == 1)
-                {
-                    try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true }); }
-                    catch { /* image viewer nemusí být nainstalován */ }
-                }
-            }
-            catch (Exception ex)
-            {
-                _vm!.PopupDisplayer.Error(ex);
-            }
-        };
+        // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
+        // Callbacky běží na background threadu nad snapshot šablonou — PreviewCanvas render
+        // je čistý SkiaSharp bez WPF a živá šablona se může mezitím editovat.
+        _vm.RenderPdfToFile = (filePath, pages, template, progress) =>
+            _previewCanvas!.RenderMultiDataToPdf(filePath, pages, template, progress);
+        _vm.RenderPngToFile = (filePath, pages, template, progress) =>
+            _previewCanvas!.RenderMultiDataToPng(filePath, pages, template: template, progress: progress);
 
         // Wire section events
         _vm.SectionsRebuilt += RestoreSectionSelection;

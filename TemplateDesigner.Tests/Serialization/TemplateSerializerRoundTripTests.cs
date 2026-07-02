@@ -103,6 +103,23 @@ public class TemplateSerializerRoundTripTests
     }
 
     [Fact]
+    public void DeepClone_JeNezavislaKopieANemeniModifiedAt()
+    {
+        var original = TemplateWith(new TextElement { Text = "původní" });
+        var modifiedAt = original.ModifiedAt;
+
+        var clone = TemplateSerializer.DeepClone(original);
+        ((TextElement)clone.Sections[0].Elements[0]).Text = "změněný";
+        clone.Sections[0].Name = "jiná sekce";
+
+        // Snapshot je nezávislý — editace klonu (= živé šablony při exportu) originál nemění
+        Assert.Equal("původní", ((TextElement)original.Sections[0].Elements[0]).Text);
+        Assert.Equal("Test", original.Sections[0].Name);
+        Assert.Equal(original.Id, clone.Id);
+        Assert.Equal(modifiedAt, original.ModifiedAt);   // DeepClone nerazítkuje (na rozdíl od Serialize)
+    }
+
+    [Fact]
     public void NevalidniJson_VyhodiTemplateDeserializationException()
     {
         Assert.Throws<TemplateDeserializationException>(

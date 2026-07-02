@@ -64,10 +64,12 @@ public class PreviewCanvas
     /// šablonu. Tím všechny font-resolve cesty (preview render, PDF/PNG export, měření přetečení/výšky)
     /// používají správný font i bez předchozího paintu — font se mění přes EDInputForm reflexí, takže se
     /// na něj nedá spolehnout přes RebuildSections/Render. Jediný chokepoint místo per-metoda syncu.</summary>
-    private LayoutResult Layout(DataContext? data)
+    private LayoutResult Layout(DataContext? data) => Layout(data, _state.CurrentTemplate);
+
+    private LayoutResult Layout(DataContext? data, Template template)
     {
-        DocumentDefaults.Style = _state.CurrentTemplate.DefaultTextStyle;
-        return _engine.Layout(_state.CurrentTemplate, data);
+        DocumentDefaults.Style = template.DefaultTextStyle;
+        return _engine.Layout(template, data);
     }
 
     /// <summary>Výška všech stránek v px při daném zoomu — pro nastavení výšky SKElement.</summary>
@@ -105,19 +107,24 @@ public class PreviewCanvas
     /// Exportuje šablonu s více sadami dat do PDF — každý DataContext = kompletní průchod šablonou.
     /// Pro JŘ: každý DataContext = jedna zastávka/směr → 1+ PDF stránek.
     /// </summary>
-    public void RenderMultiDataToPdf(string filePath, IReadOnlyList<DataContext> dataPages)
+    /// <param name="template">Šablona k renderování — snapshot pro export na pozadí
+    /// (uživatel může mezitím editovat živou šablonu). Null = aktuální šablona ze State.</param>
+    /// <param name="progress">Per datová stránka: (hotovo, celkem).</param>
+    public void RenderMultiDataToPdf(string filePath, IReadOnlyList<DataContext> dataPages,
+        Template? template = null, IProgress<(int done, int total)>? progress = null)
     {
+        var tpl = template ?? _state.CurrentTemplate;
         const float pointsPerMm = 72f / 25.4f;
-        var   ps    = _state.CurrentTemplate.PageSize;
+        var   ps    = tpl.PageSize;
         float pageW = ps.Width  * pointsPerMm;
         float pageH = ps.Height * pointsPerMm;
 
         using var stream = new FileStream(filePath, FileMode.Create);
         using var doc    = SKDocument.CreatePdf(stream);
 
-        foreach (var data in dataPages)
+        for (int i = 0; i < dataPages.Count; i++)
         {
-            var layout = Layout(data);
+            var layout = Layout(dataPages[i], tpl);
 
             foreach (var page in layout.Pages)
             {
@@ -130,6 +137,8 @@ public class PreviewCanvas
 
                 doc.EndPage();
             }
+
+            progress?.Report((i + 1, dataPages.Count));
         }
 
         doc.Close();
@@ -143,17 +152,21 @@ public class PreviewCanvas
     /// <param name="filePath">Cílová cesta. Při více stránkách se před příponu vloží "_NNN".</param>
     /// <param name="dataPages">Datové sady pro renderování.</param>
     /// <param name="dpi">Rozlišení (default 150 = print quality, 96 = screen).</param>
-    public int RenderMultiDataToPng(string filePath, IReadOnlyList<DataContext> dataPages, float dpi = 150f)
+    /// <param name="template">Šablona k renderování — snapshot pro export na pozadí. Null = aktuální ze State.</param>
+    /// <param name="progress">Per výstupní stránka: (hotovo, celkem).</param>
+    public int RenderMultiDataToPng(string filePath, IReadOnlyList<DataContext> dataPages, float dpi = 150f,
+        Template? template = null, IProgress<(int done, int total)>? progress = null)
     {
+        var tpl = template ?? _state.CurrentTemplate;
         float mmToPx = dpi / 25.4f;
-        var   ps     = _state.CurrentTemplate.PageSize;
+        var   ps     = tpl.PageSize;
         int   wPx    = (int)MathF.Round(ps.Width  * mmToPx);
         int   hPx    = (int)MathF.Round(ps.Height * mmToPx);
 
         // Posbírat všechny renderované stránky napříč DataContexty
         var renderedPages = new List<Page>();
         foreach (var data in dataPages)
-            renderedPages.AddRange(Layout(data).Pages);
+            renderedPages.AddRange(Layout(data, tpl).Pages);
 
         if (renderedPages.Count == 0) return 0;
 
@@ -178,6 +191,8 @@ public class PreviewCanvas
             using var encoded = image.Encode(SKEncodedImageFormat.Png, 100);
             using var fs = new FileStream(outPath, FileMode.Create);
             encoded.SaveTo(fs);
+
+            progress?.Report((i + 1, renderedPages.Count));
         }
 
         return renderedPages.Count;

@@ -340,8 +340,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda, _openInstancePicker, _prevInstance, _nextInstance;
-    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson;
+    private RelayCommand? _undo, _redo, _new, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda, _openInstancePicker, _prevInstance, _nextInstance;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
@@ -359,8 +359,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
     public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
-    public RelayCommand ExportPdfCommand     => _exportPdf ??= Command(ExportPreviewPdf);
-    public RelayCommand ExportPngCommand     => _exportPng ??= Command(ExportPreviewPng);
+    public AsyncRelayCommand ExportPdfCommand => _exportPdf ??= CommandAsync(ExportPreviewPdfAsync, () => !_exportRunning);
+    public AsyncRelayCommand ExportPngCommand => _exportPng ??= CommandAsync(ExportPreviewPngAsync, () => !_exportRunning);
     public new RelayCommand DeleteCommand => _delete    ??= Command(DeleteSelected);
     public RelayCommand CopyCommand     => _copy      ??= Command(CopySelected);
     public RelayCommand CutCommand      => _cut       ??= Command(CutSelected);
@@ -1041,7 +1041,11 @@ public class TemplateDesignerViewModel : EDViewModel
         State.CurrentTemplate.Parameters = _agendaParameters.Count > 0 ? [.. _agendaParameters] : null;
     }
 
-    private void ExportPreviewPdf()
+    /// <summary>True během běžícího exportu — blokuje druhý souběžný export (PDF i PNG),
+    /// jinak uživatel může dál normálně pracovat (export renderuje snapshot šablony).</summary>
+    private bool _exportRunning;
+
+    private async Task ExportPreviewPdfAsync()
     {
         var dlg = new SaveFileDialog
         {
@@ -1053,13 +1057,33 @@ public class TemplateDesignerViewModel : EDViewModel
                              ? "sablona" : State.CurrentTemplate.Name)) + ".pdf"
         };
         if (dlg.ShowDialog() != true) return;
-        RequestExportPdf?.Invoke(dlg.FileName);
+        if (RenderPdfToFile is null) return;
+
+        // Fetch (N× GetData přes MLRest) i render běží mimo UI thread (R1). UI zůstává
+        // plně interaktivní — render jede nad SNAPSHOTEM šablony (stav v okamžiku kliknutí),
+        // takže editace během exportu výstup neovlivní. Progress jde do status baru.
+        _exportRunning = true;
+        try
+        {
+            var snapshot = TemplateSerializer.DeepClone(State.CurrentTemplate);
+            var fetchProgress = new Progress<string>(s => StatusText = s);
+            var pages = await BuildAllPreviewDataPagesAsync(fetchProgress);
+
+            var renderProgress = new Progress<(int done, int total)>(p =>
+                StatusText = $"Generuji PDF: {p.done}/{p.total} datových stránek…");
+            await Task.Run(() => RenderPdfToFile(dlg.FileName, pages, snapshot, renderProgress));
+
+            StatusText = $"PDF uloženo: {Path.GetFileName(dlg.FileName)} ({pages.Count} datových stránek)";
+            OpenExportedFile(dlg.FileName);
+        }
+        finally { _exportRunning = false; }
     }
 
-    /// <summary>Code-behind wires this to actually call PreviewCanvas.RenderToPdf.</summary>
-    public Action<string>? RequestExportPdf { get; set; }
+    /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf. Voláno z background threadu
+    /// se snapshot šablonou (živá se může mezitím editovat).</summary>
+    public Action<string, IReadOnlyList<DataContext>, Template, IProgress<(int done, int total)>>? RenderPdfToFile { get; set; }
 
-    private void ExportPreviewPng()
+    private async Task ExportPreviewPngAsync()
     {
         var dlg = new SaveFileDialog
         {
@@ -1071,11 +1095,36 @@ public class TemplateDesignerViewModel : EDViewModel
                              ? "sablona" : State.CurrentTemplate.Name)) + ".png"
         };
         if (dlg.ShowDialog() != true) return;
-        RequestExportPng?.Invoke(dlg.FileName);
+        if (RenderPngToFile is null) return;
+
+        _exportRunning = true;
+        try
+        {
+            var snapshot = TemplateSerializer.DeepClone(State.CurrentTemplate);
+            var fetchProgress = new Progress<string>(s => StatusText = s);
+            var pages = await BuildAllPreviewDataPagesAsync(fetchProgress);
+
+            var renderProgress = new Progress<(int done, int total)>(p =>
+                StatusText = $"Generuji PNG: {p.done}/{p.total} stránek…");
+            int count = await Task.Run(() => RenderPngToFile(dlg.FileName, pages, snapshot, renderProgress));
+
+            StatusText = count == 1
+                ? $"PNG uloženo: {Path.GetFileName(dlg.FileName)}"
+                : $"PNG uloženo: {count} souborů ({Path.GetFileNameWithoutExtension(dlg.FileName)}_001.png …)";
+            if (count == 1) OpenExportedFile(dlg.FileName);
+        }
+        finally { _exportRunning = false; }
     }
 
-    /// <summary>Code-behind wires this to actually call PreviewCanvas.RenderMultiDataToPng.</summary>
-    public Action<string>? RequestExportPng { get; set; }
+    /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPng. Voláno z background threadu
+    /// se snapshot šablonou (živá se může mezitím editovat).</summary>
+    public Func<string, IReadOnlyList<DataContext>, Template, IProgress<(int done, int total)>, int>? RenderPngToFile { get; set; }
+
+    private static void OpenExportedFile(string filePath)
+    {
+        try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(filePath) { UseShellExecute = true }); }
+        catch { /* viewer nemusí být nainstalován */ }
+    }
 
     public bool ConfirmUnsavedChanges()
     {
@@ -1893,34 +1942,55 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>
     /// Vrátí všechny dostupné DataContexty pro export — všechny reálné stránky pokud jsou
     /// načtené, jinak jeden mock context. Použito pro PDF/PNG export, aby se exportovaly
-    /// všechny zastávky/směry, ne jen aktuálně zobrazená.
+    /// všechny zastávky/směry, ne jen aktuálně zobrazená. Fetch (N× GetData přes MLRest)
+    /// běží na threadpoolu (R1 — u velkých batchů jednotky sekund).
     /// </summary>
-    public IReadOnlyList<DataContext> BuildAllPreviewDataPages()
+    public async Task<IReadOnlyList<DataContext>> BuildAllPreviewDataPagesAsync(IProgress<string>? progress = null)
     {
-        var culture = GetTemplateCulture();
-        var agendaCode = State.CurrentTemplate.AgendaCode;
+        // VEŠKERÝ UI stav zachytit na UI threadu před přechodem na threadpool — uživatel může
+        // během exportu dál pracovat (měnit instance v pickeru, parametry, přepnout preview data),
+        // background smyčka proto nesmí číst živé VM kolekce/pole.
+        var culture         = GetTemplateCulture();
+        var agendaCode      = State.CurrentTemplate.AgendaCode;
+        var instances       = _activeInstances.ToList();
+        var realPreviewData = _realPreviewData;   // reference swap-only pole — lokální kopie reference stačí
+        var suppression     = CurrentNoteSuppression();
+        var hideAgg         = CurrentHideAggBezbarier();
+        var hideNaZnameni   = CurrentHideNaZnameniLegend();
 
+        return await Task.Run(() => BuildAllPreviewDataPagesCore(
+            culture, agendaCode, instances, realPreviewData, suppression, hideAgg, hideNaZnameni, progress));
+    }
+
+    private IReadOnlyList<DataContext> BuildAllPreviewDataPagesCore(
+        CultureInfo culture, string? agendaCode, List<AgendaInstance> instances,
+        IReadOnlyList<DataContext?>? realPreviewData,
+        NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni,
+        IProgress<string>? progress)
+    {
         // Multi-instance batch: pro každou aktivní instanci fetch GetData a sloučit do flat seznamu.
         // PDF export tak vygeneruje N×K stránek (N instancí × K stránek per instance, např. zastávka×směr).
-        if (_activeInstances.Count > 0 && CacheProvider is not null && !string.IsNullOrEmpty(agendaCode))
+        if (instances.Count > 0 && CacheProvider is not null && !string.IsNullOrEmpty(agendaCode))
         {
             var paramName = InstanceParamName(agendaCode);
-            var all = new List<DataContext>(_activeInstances.Count * 4);
-            foreach (var inst in _activeInstances)
+            var all = new List<DataContext>(instances.Count * 4);
+            for (int i = 0; i < instances.Count; i++)
             {
+                var inst = instances[i];
+                progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
                 var pages = CacheProvider.GetData(
                     agendaCode,
                     new Dictionary<string, object?> { [paramName] = inst.Value });
                 if (pages is null) continue;
                 foreach (var p in pages) all.Add(p.WithCulture(culture));
             }
-            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, CurrentNoteSuppression(), CurrentHideAggBezbarier(), CurrentHideNaZnameniLegend());
+            if (all.Count > 0) return NoteVisibilityFilter.Apply(all, suppression, hideAgg, hideNaZnameni);
         }
 
-        if (_realPreviewData is { Count: > 0 })
+        if (realPreviewData is { Count: > 0 })
             return NoteVisibilityFilter.Apply(
-                _realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
-                CurrentNoteSuppression(), CurrentHideAggBezbarier(), CurrentHideNaZnameniLegend());
+                realPreviewData.Select(d => d?.WithCulture(culture) ?? new DataContext()).ToList(),
+                suppression, hideAgg, hideNaZnameni);
 
         // Pro šablony bez DB vazby (GENERAL / nová bez agendy) BuildPreviewMockData vrátí null;
         // export musí přesto projít — vrátíme prázdný DataContext, aby se vyrenderovala
