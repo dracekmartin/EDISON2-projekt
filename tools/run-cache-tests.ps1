@@ -12,7 +12,7 @@
 param(
     # Comma-separated list of Cache package prefixes where %UnitTest.TestCase subclasses live.
     # Default = all current test packages. Add new ones as more test projects appear.
-    [string]$Package = "ALVA.EDISONMAIN2.Tests,ALVA.EDControls.Tests",
+    [string]$Package = "ALVA.EDISONMAIN2.Tests,ALVA.EDControls.Tests,ALVA.TemplateDesigner.Tests",
     [string]$Server = "192.168.16.1",
     [int]$Port = 57770,
     [string]$Idfa = "CB_DP",

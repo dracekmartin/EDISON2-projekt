@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-07-02 — T1b (část 1): Caché testy — SablonyTest + Mhd helpery (8 testů, pre-push)
+
+- ✅ **Nový package `ALVA.TemplateDesigner.Tests`** (`CACHE/ALVA/TemplateDesigner/Tests/`,
+  extends `ALVA.EDTesting.MLTestCase`) — přidán do default listu `tools/run-cache-tests.ps1`
+  → pre-push hook kryje i TD Caché stranu. Celá Caché sada: 23/23.
+- ✅ **`SablonyTest`** (5 testů) — CRUD primárního úložiště šablon, vzor „round-trip nad
+  vlastními daty": izolovaná IdFa větev `EDTESTING` globálu (žádná závislost na živých
+  firemních datech, cleanup v OnBeforeOneTest). Save→Load byte-identický blob + metadata,
+  Delete + prázdný List + Load smazané, update zachová CreatedAt + přeindexuje ByAgenda,
+  Rename, validace povinných polí (nevalidní Save nic nezapíše).
+- ✅ **`ZastavkoveJrMhdHelperyTest`** (3 testy) — deterministický `ConvertSpecialniZnak`
+  (dny 1–7, ASCII >31: 72→H/70→F/120→x/123→{, ≤31 beze změny). Mhd třída — mimo AD WIP.
+- **Poznatek o kontraktu (zdokumentován v testu):** Sablony metody vrací `$$$OK` i po chybě —
+  `$$$CatchErrRest` plní `ret`, který zvedá až MLRest HTTP vrstva; in-process se chyba
+  detekuje přes observable stav (chybějící OUT klíče, nezměněný globál).
+- **Kompilace:** root hook `compile-objectscript.sh` (Atelier PUT + compile) — v TD session
+  volán ručně (hook je vázaný na root project dir). MCP `cache_compile` hledá zdroje pod
+  `C:\DEV\EDISON` → pro TD soubory nepoužitelný (pozor: hlásí „up-to-date" i bez uploadu).
+- **Část 2 (tentýž den — AD engine je commitnutý, WIP blocker pominul): +17 testů → 25/25
+  (celá Caché sada 40/40):**
+  - `ZastavkoveJrAdHelperyTest` (12) — čisté helpery se syntetickými vstupy: `ZarazeniSpoje`
+    (FTL 0/1/2/3 vč. prázdninového dělení dle NZ konfigurace), `BitmapNaSkupiny`, `CasHodnota` +
+    `CasJizdyZMapy` (W-mapa, čekání, projíždí), `PrefixOmezeni`/`FormatDatumyOmezeni`/`UpravDatum`
+    (1:1 txtNZ/UprDat), `JeViditelnyAtribut`/`TextAtributu`, `GetZnk` (zdvojení po vyčerpání),
+    `ZiskejMarker` (dedup), `NormalizLinku`.
+  - `ZastavkoveJrAdSmokeTest` (3) — strukturální smoke `GetData` nad živými daty: linka hledaná
+    dynamicky přes `PrvniLinka` (žádná hardcoded gold linka → přežije editace dat), asserty na
+    strukturu wire formátu (values/rows, ZASTAVKY/SKUPINY_DNU neprázdné, HODINA/MINUTA rozsahy,
+    vazby odjezdů); chybové cesty (bez LINKA_ID, neexistující linka) → žádné stránky.
+  - **Nález zdokumentovaný testem:** `ZarazeniSpoje` s PRÁZDNOU NZ konfigurací řadí pracovní
+    spoj jen do sloupce „mimo prázdniny" (prázdné cnz == prázdné nzftl1) — gold-ověřené chování
+    (0320144, AD-N15: `MHD_NZ1_NZ2` v praxi prázdné), ne bug.
+- **Zbývá z T1b:** už jen `tools/compare-gold.ps1` (1:1 vs legacy jako skript mimo hook).
+
 ## 2026-07-02 — T2: Async export PDF/PNG nad snapshotem šablony (UI zůstává plně použitelné)
 
 - ✅ **Export PDF/PNG neblokuje UI (R1) a uživatel může dál editovat** — dřív sync fetch +
