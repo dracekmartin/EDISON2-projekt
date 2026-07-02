@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-02 — AD: multi-varianta časů tras (dynamické TrasaMin) — L1
+
+- ✅ **Dynamické variantní časové sloupce ve StopListu** (nahrazuje legacy fixních 15 slotů TrasaMin).
+  Agenda `ZastavkoveJrAd` seskupí obsluhující spoje **podle časového profilu W-mapy** (prutmbmp) →
+  emituje `TRASA_MIN[]` per zastávka + `VARIANTY_TRAS[]` (hlavičky = písmena rozdílů tras / „ZT").
+  N = skutečný počet variant (ne fixních 15, bez capu). StopList rozvine kolonku „Čas" na N sub-sloupců.
+- ✅ **1:1 ověřeno proti gold** (`ALVA.TISKMHD.Data`, 0365005): 6 variant B,C,E,F,G,H, časy + `<`
+  (projíždí) / prázdno (konec varianty) přesně jako legacy. Grupování 12 `cisloTrasy` → 6 profilů.
+- ✅ **Přepínač `ShowAllRouteVariants`** (default zap) — vyp = jeden sloupec = výchozí trasa
+  (`ZakladniCisloTrasy`, nejvíc spojů). V panelu i v Caché schématu `StopListElementEdit`.
+- ✅ **Fix `CacheAgendaProvider`** — page-level pole/objekty (VARIANTY_TRAS) se zachovají jako JsonNode
+  (dřív stringifikovány → zahozeny). Řádkové pole (ZONY…) fungovaly už dřív.
+- **Ověřeno 1:1 s legacy i koncepčně:** „2 báze" (nejvíc-spojů pro časy / dta12 `W_POZ` pro odchylky-
+  poznámky) odpovídá starému `JRapiLinPrtMhd` (ř.108-127 vs `OmTrasa` VzorTr). Zbývá: šířka variantních
+  sloupců je zatím pevná (`VariantColumnWidthMm`), jemnější výběr variant (per-písmeno) = budoucí v2b.
+
 ## 2026-07-02 — TemplateDesigner.Tests: první sada automatizovaných testů (krok 0–1 arch. tracku)
 
 - ✅ **Nový projekt `TemplateDesigner.Tests/`** (xUnit, zrcadlo EDControls.Tests) přidán do

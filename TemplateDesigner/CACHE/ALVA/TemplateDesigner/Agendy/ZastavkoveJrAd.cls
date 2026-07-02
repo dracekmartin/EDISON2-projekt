@@ -283,6 +283,36 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s zaklCt = ..ZakladniCisloTrasy(dataDB, sku, lin, smer, currentPoradi)
     d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
 
+    // ── varianty časů tras (dynamické „TrasaMin") ─────────────────────────────
+    // Seskup spoje obsluhující vývěskovou zastávku podle časového profilu W-mapy (prutmbmp:
+    // shodný profil = jeden sloupec). N = počet distinct profilů — NE fixních 15 jako legacy.
+    // Signatura = per-zastávka kumulativní čas / „<" (projíždí) / prázdno (mimo trasu).
+    k variantSig, variantCt, variantRepSpoj
+    s poradiVar = 0, spV = ""
+    f {
+        s spV = $o(^[dataDB]JRL(sku,lin,smer,spV))
+        q:spV=""
+        i '$isvalidnum(spV) continue
+        s ctV = $p($p($g(^[dataDB]JRL(sku,lin,smer,spV)),"#",1),":",3)
+        i ctV = "" continue
+        d ..WMapa(dataDB, sku, lin, ctV, .wMapV)
+        s cAktV = $g(wMapV(currentPoradi))
+        i (cAktV = "") || (cAktV = "<") continue     // spoj zde nestaví → nedává časový sloupec
+        s sigV = "", ppV = ""
+        f {
+            s ppV = $o(wMapV(ppV))  q:ppV=""
+            i '$isvalidnum(ppV) continue
+            s vv = $g(wMapV(ppV))
+            s $p(sigV,"~",ppV) = $s((vv="")||(vv="<"):vv, 1:..CasJizdyZMapy(.wMapV, currentPoradi, ppV))
+        }
+        i '$d(variantSig(sigV)) {
+            s poradiVar = poradiVar + 1
+            s variantSig(sigV) = poradiVar
+            s variantCt(poradiVar) = ctV
+            s variantRepSpoj(poradiVar) = spV
+        }
+    }
+
     // Emituj VŠECHNY zastávky směru (vč. projetých, jako MHD) — StopList je filtruje dle „tisk projetých".
     s poradi = ""
     s cnt = 0
@@ -316,6 +346,15 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
                 s atrSeen(znak) = txtAtr
             }
         }
+        // varianty časů (dynamické TrasaMin) — hodnota per varianta pro tuto zastávku
+        s trasaMin = ##class(%DynamicArray).%New()
+        f viX=1:1:poradiVar {
+            d ..WMapa(dataDB, sku, lin, $g(variantCt(viX)), .wMapX)
+            s vvX = $g(wMapX(poradi))
+            i (vvX = "") || (vvX = "<") { d trasaMin.%Push(vvX) }
+            else { d trasaMin.%Push(..CasJizdyZMapy(.wMapX, currentPoradi, poradi)) }
+        }
+        d z.%Set("TRASA_MIN", trasaMin)
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
         s posledniNazev = rawNazev, posledniCzst = czst
@@ -338,6 +377,13 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
     k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda
     d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
+    // hlavičky variantních časových sloupců — písmeno z RozdilyTras (reprezentativní spoj), „ZT" = základní trasa bez písmene
+    s variantyTras = ##class(%DynamicArray).%New()
+    f viY=1:1:poradiVar {
+        s pismV = $g(pismenoSpoj($g(variantRepSpoj(viY))))
+        d variantyTras.%Push($s(pismV'="":pismV, 1:"ZT"))
+    }
+    d vals.%Set("VARIANTY_TRAS", variantyTras)
     s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)

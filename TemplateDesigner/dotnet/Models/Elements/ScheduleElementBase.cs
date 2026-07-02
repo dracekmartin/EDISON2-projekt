@@ -313,6 +313,10 @@ public abstract class ScheduleElementBase : TemplateElement
                         Text = n!["TEXT"]?.ToString() ?? ""
                     }).ToList();
 
+            // časy per varianta trasy (dynamické TrasaMin) — číslo / „<" / "" jako string
+            if (row.GetValue("TRASA_MIN") is JsonArray tmArr)
+                z.TrasaMin = tmArr.Select(n => n?.ToString() ?? "").ToList();
+
             result.Add(z);
         }
 

@@ -383,11 +383,16 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// </summary>
     private static DataContext? ParseSinglePageData(JsonNode node)
     {
-        // Skalární hodnoty
+        // Skalární hodnoty (+ vnořená pole/objekty jako JsonNode — např. VARIANTY_TRAS[])
         var values = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
         if (node["values"]?.AsObject() is { } valObj)
             foreach (var kv in valObj)
-                values[kv.Key] = GetScalarAsString(kv.Value);
+            {
+                if (kv.Value is JsonArray or JsonObject)
+                    values[kv.Key] = kv.Value;  // page-level pole/objekt (VARIANTY_TRAS) — zachovat jako JsonNode
+                else
+                    values[kv.Key] = GetScalarAsString(kv.Value);
+            }
 
         // Tabulkové kolekce
         var rowsDict = new Dictionary<string, IReadOnlyList<DataContext>>(StringComparer.OrdinalIgnoreCase);

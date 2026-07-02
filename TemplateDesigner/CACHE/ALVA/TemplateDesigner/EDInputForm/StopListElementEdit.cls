@@ -40,6 +40,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
         d form.AddBool("ShowStopAttributes", "Atributy", 1)
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
+        d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
         d form.AddBool("ShowDirectionArrow", "Šipka směru", 0)

@@ -73,6 +73,10 @@ public class StopListElement : ScheduleElementBase
     public bool ShowPassedStops { get; set; }
     public string PassedStopsForeColor { get; set; } = "#FF999999";
 
+    /// <summary>Multi-varianta časů tras: true = zobrazit všechny varianty (N sloupců dle dat, hlavičky = písmena),
+    /// false = jen výchozí trasa (jeden sloupec „Čas jízdy" = ZakladniCisloTrasy). Default všechny (= legacy).</summary>
+    public bool ShowAllRouteVariants { get; set; } = true;
+
     // ═══════════════════════════════════════════
     // Vyloučené atributy
     // ═══════════════════════════════════════════
@@ -120,6 +124,12 @@ public class StopListElement : ScheduleElementBase
         using var paints = CreateStandardPaints(ctx);
 
         var columns = GetVisibleColumns();
+
+        // Multi-varianta časů tras: rozvine sloupec „TravelTime" na N variantních sub-sloupců
+        // (dynamicky dle dat, hlavičky = písmena z VARIANTY_TRAS). < 2 varianty → beze změny (jeden sloupec).
+        var variantHeaders = GetVariantHeaders(ctx.Data);
+        if (ShowAllRouteVariants && variantHeaders.Count >= 2)
+            columns = ExpandTravelTimeColumns(columns, variantHeaders);
 
         // Parametry z tiskového dialogu přepíší element properties
         bool showPassed = GetBoolParam(ctx.Data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
@@ -492,16 +502,52 @@ public class StopListElement : ScheduleElementBase
         return cols.Count > 0 ? cols.Max(c => ResolveDataStyle(c).FontSize) : (DataStyle.FontSize ?? 8f);
     }
 
-    private string GetCellText(ZastavkaData z, string columnKey) => columnKey switch
+    private string GetCellText(ZastavkaData z, string columnKey)
     {
-        "Tc"           => z.TarifniCislo,
-        "StopName"     => BuildStopDisplayText(z),
-        "TravelTime"   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
-        "Zone"         => string.Join("/", z.Zony),
-        "RouteLetters" => string.Join("", z.Prubehy),
-        "BaseRoute"    => z.ZakladniTrasa ? "1" : "",
-        _              => ""
-    };
+        // Variantní časový sub-sloupec „TravelTime#i" → z.TrasaMin[i] (číslo / „<" / "" jak přišlo z Caché)
+        if (columnKey.StartsWith("TravelTime#", System.StringComparison.Ordinal))
+        {
+            return int.TryParse(columnKey.AsSpan("TravelTime#".Length), out int vi)
+                   && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
+        }
+        return columnKey switch
+        {
+            "Tc"           => z.TarifniCislo,
+            "StopName"     => BuildStopDisplayText(z),
+            "TravelTime"   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
+            "Zone"         => string.Join("/", z.Zony),
+            "RouteLetters" => string.Join("", z.Prubehy),
+            "BaseRoute"    => z.ZakladniTrasa ? "1" : "",
+            _              => ""
+        };
+    }
+
+    private const float VariantColumnWidthMm = 6f;
+
+    /// <summary>Hlavičky variantních časových sloupců z page values (VARIANTY_TRAS). Prázdné = jedna varianta.</summary>
+    private static List<string> GetVariantHeaders(DataContext? data)
+    {
+        if (data?.GetValue("VARIANTY_TRAS") is System.Text.Json.Nodes.JsonArray arr)
+            return arr.Select(n => n?.ToString() ?? "").ToList();
+        return [];
+    }
+
+    /// <summary>Rozvine sloupec „TravelTime" na N variantních sub-sloupců (Key „TravelTime#i", Header = písmeno,
+    /// pevná šířka). Ostatní sloupce beze změny. Volá se jen při >= 2 variantách.</summary>
+    private static List<StopColumn> ExpandTravelTimeColumns(List<StopColumn> cols, List<string> headers)
+    {
+        var result = new List<StopColumn>(cols.Count + headers.Count);
+        foreach (var col in cols)
+        {
+            if (col.Key == "TravelTime")
+            {
+                for (int i = 0; i < headers.Count; i++)
+                    result.Add(new StopColumn { Key = $"TravelTime#{i}", Header = headers[i], Width = VariantColumnWidthMm, Visible = true });
+            }
+            else result.Add(col);
+        }
+        return result;
+    }
 
     /// <summary>Cached excluded set — vytvořen jednou per render pass.</summary>
     [System.Text.Json.Serialization.JsonIgnore]
@@ -590,6 +636,7 @@ public class StopListElement : ScheduleElementBase
         .. GetCellZoneBaseColorDescriptors(),
 
         new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce...", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
+        new BoolPropertyDescriptor  { Label = "Všechny varianty tras", Group = "Zastávky", Get = () => ShowAllRouteVariants, Set = v => ShowAllRouteVariants = v },
 
         GetDataRowHeightDescriptor(),
         new BoolPropertyDescriptor { Label = "Oddělovací čáry",   Group = "Řádky",    Get = () => ShowRowSeparators, Set = v => ShowRowSeparators = v },
@@ -671,6 +718,7 @@ public class StopListElement : ScheduleElementBase
             CurrentStopUnderline    = CurrentStopUnderline,
             ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
+            ShowAllRouteVariants    = ShowAllRouteVariants,
             ExcludedAttributeIds    = [.. ExcludedAttributeIds],
             ShowHeader              = ShowHeader,
             CurrentStopBold         = CurrentStopBold,

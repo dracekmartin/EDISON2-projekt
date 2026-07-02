@@ -50,9 +50,9 @@ stejným trojčíslím / více dopravců, P3 logická imposice 2×A5→A4 — de
 
 **🎯 Pořadí priorit po prezentacích (statická ~19.6., živá 26.6. — obě proběhly):**
 
-1. **Zastávkový JŘ (AD)** — *hlavní deliverable*. Datově 1:1 + výkonově **hotovo**. Zbývají odložené
-   nice-to-have (multi-varianta TrasaMin přes C# renderer = AD-N13; vizuál legendy) + přímočaré
-   PATCH-read položky nastavení linky (AD-N4, AD-N11). Číslování omezení (cnz) ✅ hotovo 2026-06-23.
+1. **Zastávkový JŘ (AD)** — *hlavní deliverable*. Datově 1:1 + výkonově **hotovo**. **Multi-varianta
+   TrasaMin (AD-N13) ✅ hotovo 2026-07-02 (L1).** Zbývá vizuál legendy + přímočaré PATCH-read položky
+   nastavení linky (AD-N4, AD-N11). Číslování omezení (cnz) ✅ hotovo 2026-06-23.
 2. **Wave 4 EDInputForm** — W4-6 ImageElement ✅; W4-9 StopList ✅ + DepartureGrid ✅; **zbývá TableElement** (Dynamic-first, Fixed odložen — viz Wave 4 sekce). Spíš později, za provozními věcmi.
 3. **Helpdesk pro AD** — Fáze A.2-D hotová (#7955/#7947/#7161 zavřeno). #11300 KORID přípoje přeřazeno
    k linkovým JŘ (není zastávkový koncept). Zbývá jen odložené A2-A5/A6/B4 (datový průzkum / kolegové).
@@ -81,7 +81,7 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 **Hotovo (2026-06-02 — 06-12), vše 1:1 ověřeno proti gold oracle:** Fáze 0-2 (data model, skeleton, GetData fázový engine) + 1:1 drobnosti (názvy zastávek, datumy s rokem, „jede/nejede" omezení, **POPIS_DOPRAVCE vč. adresy provozovny**, LOKALNI_OZNACENI/TITULEK/INFORMACE, FTL 0-3 sloupcový model, prázdninové dělení) + **rozdíly tras** (`RozdilyTras`, 1:1 `OmTrasa^JRapiLinPrtMhd`: „neobsluhuje zast. X", marker od „B" — NE MHD alg 1002, ten byl revertován) + **atributy zastávek** (filtr jen „na znamení", jako legacy UVOD) + **atributy spoje** (bezbariér H/F, `BezbarierKonfig`) + **časy jízdy StopList** (jeden sloupec = gold `TrasaMin1`). Ověřeno na 0410101/0425017/0320144/0320993/**0365001** (rozdíly tras + bezbariér + časy). **Performance:** per-linka invarianty + W-trasa cachovány do `^||TiskAd` (behavior-preserving, byte-identický výstup). Detail §10 + changelog 2026-06-12.
 
 **Zbývá k úplnému 1:1 (zdokumentováno §10, nice-to-have):**
-- **Multi-varianta TrasaMin** (`TrasaMin1-15` = víc časových sloupců per varianta trasy) — vyžaduje zásah do **C# StopListElement rendereru** (dnes jeden sloupec). Pro běžné linky s jednou trasou je jednosloupcová verze 1:1.
+- ~~**Multi-varianta TrasaMin**~~ ✅ **hotovo 2026-07-02 (L1)** — dynamické variantní časové sloupce (N dle časového profilu W-mapy, ne fixních 15), `TRASA_MIN[]`/`VARIANTY_TRAS[]`, StopList rozvine „Čas" na N sub-sloupců, přepínač `ShowAllRouteVariants`. 1:1 ověřeno gold 0365005.
 - ~~Číslování omezení TYPPOZ=1~~ ✅ **hotovo 2026-06-23** — marker = číslo NZ (`cnz`) invertovaně, žádný firm gate (changelog / §10).
 - Šířka/layout legendy POZNAMKY (**vizuál** proti gold — počet sloupců, šířky, mezery) — na konec. Pozn.: **pořadí** poznámek už ✅ ověřeno 1:1 (2026-06-30), tady jde jen o vzhled.
 - **DEV cleanup před produkcí** — ✅ odstraněn `#if DEBUG` auto-open `kv_ad_test.json` + `--test-detector` blok (2026-06-17). Zbývá: zvážit statický `GetMockData`.
@@ -114,7 +114,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 | AD-N10 | §4 | Text „spoj jede až do XY" (prodloužení trasy) | rozšíření `RozdilyTras` | M | ✅ 2026-06-21 (#7947) |
 | AD-N11 | §7 | Cizojazyčné poznámky | `PATCH,"prtCzjPzn"` + `("C")` arr6 | M | ⬜ |
 | AD-N12 | — | ~~Km sloupce~~ → **patří do linkových JŘ** (tarif dle km), ne zastávkové | — | — | ➖ přesunuto |
-| AD-N13 | §4 | Multi-varianta časů tras (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ⬜ odložit (gold oracle: 0345061) |
+| AD-N13 | §4 | Multi-varianta časů tras (víc časových sloupců) | `mhd,"par",2` + C# renderer | L | ✅ 2026-07-02 (L1) — dynamické variantní sloupce, 1:1 gold 0365005, přepínač `ShowAllRouteVariants` |
 | AD-N14 | — | ~~Návaznosti / přípoje~~ → **patří do linkových/knižních JŘ**, ne zastávkové | — | — | ➖ přesunuto |
 | AD-N15 | §3 | NZ prázdninové dělení — ověřit na reálné lince | `MHD_NZ1_NZ2`/`MHD_NENZ1_NENZ2` | — | 🟡 kód hotový, čeká data |
 

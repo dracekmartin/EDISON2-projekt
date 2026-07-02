@@ -48,6 +48,9 @@ public class ZastavkaData
     public bool NaZnameni { get; set; }
     public List<AtributData> Atributy { get; set; } = [];
     public List<PoznamkaZastavkyData> PoznamkyZastavky { get; set; } = [];
+    /// <summary>Časy jízdy per varianta trasy (dynamické „TrasaMin"): číslo, „&lt;" (projíždí) nebo "" (mimo trasu).
+    /// Prázdné = jednovariantní linka (použije se skalární <see cref="CasJizdy"/>).</summary>
+    public List<string> TrasaMin { get; set; } = [];
 }
 
 /// <summary>Atribut zastávky (ikona/symbol).</summary>
