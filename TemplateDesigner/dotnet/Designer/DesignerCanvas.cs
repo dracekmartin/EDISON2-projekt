@@ -77,6 +77,9 @@ public class DesignerCanvas
 
     public void Render(SKCanvas canvas, float canvasWidth, float canvasHeight)
     {
+        // Ambient výchozí styl šablony (font) — kořen kaskády; sync na každý render (viz PreviewCanvas).
+        DocumentDefaults.Style = _state.CurrentTemplate.DefaultTextStyle;
+
         // Viewport clip — při vyšším zoomu je SKElement velký (5000+ px), ale viditelná je
         // jen malá část. ClipRect umožní Skia přeskočit draw operace mimo viewport
         // (canvas.Clear, page shadow s blur, sekce atd.). Nepomáhá s alokací a uploadem

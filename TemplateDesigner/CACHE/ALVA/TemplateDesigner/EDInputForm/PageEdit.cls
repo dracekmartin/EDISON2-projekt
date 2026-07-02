@@ -56,6 +56,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("sk-SK", "Slovenština"), f.AddListItem("en-US", "Angličtina")
         d f.AddListItem("de-DE", "Němčina")
 
+        // ── Skupina "Výchozí styl" ────────────────────────────────────────
+        // Výchozí font celé šablony — kořen kaskády (dědí ho elementy bez vlastního fontu).
+        // Prázdné = zapečený default (Arial). Key = property path → Template.DefaultTextStyle.FontFamily
+        // (accessor lazy alokuje DefaultTextStyle). Ostatní style property zatím vědomě nevystaveny.
+        //
+        // ComboBox (editovatelný + autocomplete) s PRÁZDNÝM seznamem — Caché fonty klienta nezná.
+        // Seznam nainstalovaných fontů naplní C# klient po načtení schématu (ElementEditDialog
+        // .OnFormInitialized z SKFontManager). Editovatelný = uživatel může i napsat vlastní font.
+        d form.AddGroup("style", "Výchozí styl")
+        d form.AddFieldToLastGroup("DefaultTextStyle.FontFamily", "Výchozí font", $$$FieldTypeComboBox, 0, 0)
+
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK

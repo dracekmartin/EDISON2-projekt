@@ -16,7 +16,9 @@ Class ALVA.TemplateDesigner.EDInputForm.StyleFields
 ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, groupKey As %String, groupLabel As %String, defTextColor As %String = "", defBgColor As %String = "", newGroup As %Boolean = 1, labelPrefix As %String = "")
 {
     i newGroup d form.AddGroup(groupKey, groupLabel)
-    d form.AddText(prefix_".FontFamily", labelPrefix_"Font")
+    // ComboBox (editovatelný) s prázdným seznamem — klient naplní nainstalovanými fonty
+    // (ElementFormBinder.PopulateFontFields). Prázdné = dědit z rodiče kaskády.
+    d form.AddFieldToLastGroup(prefix_".FontFamily", labelPrefix_"Font", $$$FieldTypeComboBox, 0, 0)
     d form.AddDecimal(prefix_".FontSize", labelPrefix_"Velikost", "", 4, 200, "pt")
     d form.AddBool(prefix_".Bold", labelPrefix_"Tučné", 0)
     d form.AddBool(prefix_".Italic", labelPrefix_"Kurzíva", 0)

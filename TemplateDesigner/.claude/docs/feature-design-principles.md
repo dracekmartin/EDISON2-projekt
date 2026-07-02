@@ -296,7 +296,7 @@ Neprimární, ale na radaru. Drž si je v hlavě při implementaci, neoptimalizu
 - [`schedule-elements-architecture.md`](schedule-elements-architecture.md) — architektura specializovaných JŘ elementů.
 - `.claude/rules/mvvm-patterns.md` — Pattern 1 (single-zone) / Pattern 2 (dual-zone) styling.
 - `.claude/rules/new-element-checklist.md` — 10-kroková reference pro přidání nového typu elementu.
-- [`roadmap.md`](roadmap.md) §5 Architektonických pravidel — R1–R5 (async, errors, JSON, MVVM, versioning).
+- `.claude/rules/architecture-rules.md` — závazná pravidla R1–R5 (async, errors, JSON, MVVM, versioning) + „must-not-happen" scénáře.
 
 ---
 

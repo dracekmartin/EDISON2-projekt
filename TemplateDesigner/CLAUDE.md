@@ -14,13 +14,17 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-06-17
+**Datum poslední aktualizace:** 2026-06-30
+
+> **Prezentace proběhly** (statická ~19.6., živá 26.6.). Od 2026-06-30 je **databáze primární úložiště
+> šablon** (Otevřít/Uložit/Uložit jako → DB; soubor = Import/Export JSON, obdoba PDF/PNG). Aktivní
+> tracky a priority po prezentacích viz [`.claude/docs/roadmap.md`](.claude/docs/roadmap.md) (vršek).
 
 ### 🎯 Aktuální focus
 
 **Zastávkový JŘ z AD dat (agenda `ZastavkoveJrAd`) ✅ datově 1:1 + výkonově pročištěná** — ověřeno proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN), viz `.claude/docs/cache-database-linky.md §10`. Hotové: core, FTL 0-3, omezení, dopravce (vč. adresy), CIS názvy, multi-page, **rozdíly tras** (1:1 OmTrasa), **atributy zastávek** (jen „na znamení", jako legacy), **atributy spoje** (bezbariér H/F), **časy jízdy ve StopListu** (jeden sloupec = gold TrasaMin1), + **performance** (memoizace per-linka invariantů + W-trasa cache, behavior-preserving byte-identický).
 
-**Zbývá k úplnému 1:1 (zdokumentováno v §10):** multi-varianta TrasaMin (víc časových sloupců — chce zásah do C# rendereru), šířka/layout/pořadí legendy (vizuál + drobný Caché reorder na pořadí typ1→2→3). **Hotovo 2026-06-23:** číslování omezení = číslo NZ (`cnz`) invertovaně (1:1, žádný firm gate). **Výkon:** zbývá 1 hot spot v **MHD** agendě (`VypocitatBitmapyObsluhy` O(bodů³)) — rizikový, samostatný krok.
+**Zbývá k úplnému 1:1 (zdokumentováno v §10):** multi-varianta TrasaMin (víc časových sloupců — chce zásah do C# rendereru), šířka/layout legendy (vizuál). **Hotovo 2026-06-23:** číslování omezení = číslo NZ (`cnz`) invertovaně (1:1, žádný firm gate). **Pořadí legendy** ✅ živě ověřeno 2026-06-30 proti gold oracle (`ALVA.TISKMHD.Data`) na 0365005: bezbariér → rozdíly tras (B,C,E,F,G,H) → omezení (29,68) 1:1 vč. sub-pořadí; default `Razeni=Vychozi` správné, reorder není potřeba (dřívější domněnka „typ1→2→3" byla chybná).
 
 Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agenda registry + template storage). Pak **Fáze A.2-D zákaznické tickety** (TRANSDEV/KORID/DPKV suspended tickety).
 
@@ -94,7 +98,7 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 - **Click-vs-drag threshold** — pouhý klik na element (selekce, otevření properties) nespustí soft-snap; element se začne hýbat až po překročení 4px myší. `_dragHasMoved` flag v `MainWindow.xaml.cs`; `EndDrag` necommituje, pokud myš nepřekročila threshold. Reason: před fixem klik při GridSize=5mm „strhnul" 0.1mm pozici elementu na 5mm grid
 - **Per-template editor preferences** — `Models/TemplateEditorPreferences.cs` (nullable `GridSize`/`SnapToGrid`/`SnapToElements`/`ShowGrid`); `Template.EditorPreferences` property (vedle `Parameters`, `SampleData`, `CultureCode`); apply on Open / capture on Save → designové prostředí (jemný grid pro precizní šablonu) přežije reload. `RequestGridSizeUiSync` callback synchronizuje nebindovaný `CmbGridSize` ComboBox
 - **Sjednocené Header/Data zóny v panelu** — princip „rychlý přístup × cascade": 4 base barvy (Header bg/text + Data bg/text) v properties panelu napříč všemi tabulkovými elementy (StopList/DepartureGrid/NotesLegend/TableElement); detailní cascade (font/align/padding/per-column overridy) zůstává v dialogu sloupců. Helper `ScheduleElementBase.GetCellZoneBaseColorDescriptors()`; TableElement parallel implementation (jiná hierarchie). Skupiny „Záhlaví"/„Datové buňky" konzistentně. Round-trip safe (panel↔dialog editují totéž pole)
-- **Caché Template Storage** — třída `ALVA.TemplateDesigner.API.Sablony` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`); per-IDFa storage v `^ALVA.TemplateDesigner.Templates(IdFa,"DTA",TemplateID,"Metadata"|"Data")` + index `ByAgenda`; JSON wire formát; metadata Name/AgendaCode/Author/CreatedAt/ModifiedAt/Version. .NET strana: `CacheTemplateService` (async wrapper přes Task.Run + `CacheTemplateException`), `CacheTemplatePickerDialog` (správce: list + filtr agendy + search + Open/Rename/Delete), `SaveToCacheDialog`. Menu „Soubor → Otevřít z Caché... / Uložit do Caché [jako...]" + „Nástroje → Šablony v Caché..." (dva entry pointy, sdílí dialog). `_loadedFromCache` flag + SaveCommand routing (Caché → save zpět; disk → file; nová → SaveAs)
+- **Caché Template Storage** — třída `ALVA.TemplateDesigner.API.Sablony` s 5 metodami (`ListTemplates`, `LoadTemplate`, `SaveTemplate`, `DeleteTemplate`, `RenameTemplate`); per-IDFa storage v `^ALVA.TemplateDesigner.Templates(IdFa,"DTA",TemplateID,"Metadata"|"Data")` + index `ByAgenda`; JSON wire formát; metadata Name/AgendaCode/Author/CreatedAt/ModifiedAt/Version. .NET strana: `CacheTemplateService` (async wrapper přes Task.Run + `CacheTemplateException`), `CacheTemplatePickerDialog` (správce: list + filtr agendy + search + Open/Rename/Delete), `SaveToCacheDialog`. **Databáze = primární úložiště** (2026-06-30): Otevřít (Ctrl+O) / Uložit (Ctrl+S) / Uložit jako → databáze; **soubor degradován na Importovat z JSON / Exportovat do JSON** (export nemění původ). Titulek ukazuje `[DB]` / `[neuloženo]`. Nová/importovaná → Ctrl+S založí do DB (SaveAs s jménem); existující → tichý update. „Nástroje → Šablony v databázi" = správce. `_loadedFromCache` flag + SaveCommand routing
 - **Caché namespace struktura** — separace **podle role třídy**: `ALVA.TemplateDesigner.API.*` (obecná business logika TD, např. `Sablony` CRUD), `ALVA.TemplateDesigner.Agendy.*` (agenda implementations: `BaseAgenda` abstract + `ZastavkoveJrMhd`, `Faktury`), `ALVA.TemplateDesigner.EDList.*` (dispatch tridy pro EDList komponentu: `Sablony`, `Instance`). Folder/namespace 1:1 mapuje na roli, doménový název může opakovat napříč rolemi (`API.Sablony` vs `EDList.Sablony` jsou jasně rozlišené). Budoucí komponenty: `EDInputForm.*`, `EDInputGrid.*` (Wave 4+).
 - **GENERAL agenda fallback** — `cacheClass = ""` → šablona bez DB vazby (statický obsah); CacheAgendaProvider short-circuit ve všech metodách; BuildAllPreviewDataPages vrací `[new DataContext()]` místo `[]` → PDF/PNG export funguje i bez agendy. Po Wave 2 W2-1 je GENERAL syntheticky injektován v `CacheAgendaRegistry` (auto-discovery ji nenajde — nemá Caché class).
 - **Wave 2 W2-1 — Agenda registry v Caché** — auto-discovery z `BaseAgenda` subclasses. `BaseAgenda` deklaruje class parametry `AgendaCode` + `AgendaLabel`; konkrétní agendy (`ZastavkoveJrMhd`, `Faktury`) je override. Caché `ALVA.TemplateDesigner.API.AgendyRegistr.ListAgendy` přes `%Dictionary` SQL najde subclasses + jejich metadata → JSON pole. Eliminuje `appsettings.json agendas[]` (smazáno). Konvence agenda code: `<TYP_SESTAVY>_<DATOVY_ZDROJ>` (např. `ZASTAVKOVY_JR_MHD`, future `KNIZNI_JR_MHD`, `MEZIMESTSKY_JR_MHD`). .NET: `IAgendaRegistry` + `CacheAgendaRegistry` + `AgendaRegistryEntry` POCO; App.OnStartup sync load s 3s timeoutem, GENERAL agenda syntheticky prepended. Per-customer kontrola (AgendaEnabled, per-IDfa override) odložena — YAGNI.
@@ -139,6 +143,19 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ---
 
+## Pracovní postup (krok po kroku)
+
+Každá položka (z roadmapy / requestu) projde tímto cyklem — nevynechat ani jeden krok:
+
+1. **Projít** — připomenout co přesně má krok dělat, kontext a závislosti
+2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
+3. **Implementovat** — kód, Caché, XAML — dle pravidel (`.claude/rules/`)
+4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
+5. **Aktualizovat docs** — changelog + roadmap (hotové → archiv) + CLAUDE.md pokud se mění architektura
+6. **Další krok** — posunout `⬅️` marker na následující položku v roadmapě
+
+---
+
 ## Architektura — vrstvy systému
 
 ```
@@ -166,6 +183,16 @@ Preview v designeru = plný engine s mock daty. "Tisk" = tentýž engine s reál
 - Sekce jsou povinné — ne free-form canvas bez struktury
 - V1 nepodporuje import starých šablon z InterSystems Globals
 
+### Záměrně jinak — neřešit
+
+Vědomá rozhodnutí, která se znovu neotevírají (ne mezery):
+
+- **Databáze jako source of truth pro konfiguraci a šablony** — dává smysl pro doménovou logiku (Wave 1–3)
+- **Univerzální Section třída** — jednodušší než pevná hierarchie (Crystal Reports)
+- **Absolutní pozicování jako default** — správné pro tiskové sestavy s pevným layoutem
+- **PropertyDescriptor a EDInputForm paralelně** — ne cut-over, per element migrace (Wave 4)
+- **Server-side migrace šablon** — autoritativní, ne klientská (Wave 3)
+
 ---
 
 ## Publish — distribuce build .exe
@@ -192,6 +219,7 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 | Soubor | Obsah | Načítá se pro |
 |---|---|---|
 | `architecture.md` | Struktura projektu, zodpovědnosti, MVVM hranice, souřadnice, DesignerState | `dotnet/**` |
+| `architecture-rules.md` | **Závazná pravidla R1-R5** (async Caché, IPopupDisplayer, CVar wire, MVVM bez WPF, versioning) + „must-not-happen" scénáře | `dotnet/**` |
 | `data-model.md` | C# datové třídy, JSON formáty, renderovací pipeline, interakční model | `dotnet/Models/**` |
 | `mvvm-patterns.md` | PropertyDescriptor, TableElement architektura, jak přidat element/okno | `dotnet/Windows/**` |
 | `cache-api.md` | AgendaAPI architektura, wire formáty, Caché skeleton, nová agenda checklist | `CACHE/**` |
@@ -205,3 +233,5 @@ Ruční reference:
 - `.claude/docs/schedule-elements-architecture.md` — architektura specializovaných JŘ elementů (Caché wire formát, hierarchie elementů, matice zodpovědností)
 - **`.claude/docs/feature-design-principles.md`** — **závazná reference před každým novým requestem**: kódová + UX rozhodovací mřížka, klasifikace typu variace (1/2/3), per-customer divergence, anti-patterns
 - `.claude/docs/customer-requirements-zastavkovy-jr.md` — konkrétní požadavky zákazníků z helpdesku Podpory M-line (zastávkový JŘ — DPKV, TRANSDEV, KORID)
+- `.claude/docs/prezentace-a-gap-2026.md` — shrnutí prezentací 2026 (produktové sdělení, FAQ, zpětná vazba)
+- `.claude/docs/gap-analyza-legacy-vs-novy-jr.md` — evergreen gap analýza legacy TiskMHD vs nový JŘ (element-po-elementu mapovací matice, zbývající mezery)

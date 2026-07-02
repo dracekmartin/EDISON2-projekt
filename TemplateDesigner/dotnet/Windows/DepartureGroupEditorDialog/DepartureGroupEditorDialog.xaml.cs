@@ -54,6 +54,7 @@ public partial class DepartureGroupEditorDialog : Window
 
     private void OnGeneralFormInitialized()
     {
+        ElementFormBinder.PopulateFontFields(GeneralForm);
         // Prefill přes reflexi. HeaderLine2Style (nullable) zůstává null → jeho pole se předvyplní
         // prázdná (= dědí z HeaderStyle); při OK ElementPropertyAccessor.Set lazy alokuje.
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);

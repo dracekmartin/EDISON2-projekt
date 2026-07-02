@@ -168,8 +168,10 @@ public class TableElement : TemplateElement
 
     // ─── Style resolution (kaskáda column → element → table defaults → CellDefaults) ──
 
+    // Gettery (ne static readonly) — aby font dědily z aktuálního CellDefaults.Default (ambient
+    // = výchozí font šablony). Tyhle rodiče font nepřebíjejí, jen Bold/barvy.
     /// <summary>Výchozí parent styl pro záhlaví tabulky. Bold + šedé pozadí (#FFE8E8E8) + tmavě šedý text (#FF333333).</summary>
-    private static readonly ResolvedTextStyle TableHeaderParent = CellDefaults.Default with
+    private static ResolvedTextStyle TableHeaderParent => CellDefaults.Default with
     {
         Bold = true,
         TextColor = "#FF333333",
@@ -177,13 +179,13 @@ public class TableElement : TemplateElement
     };
 
     /// <summary>Výchozí parent styl pro datové buňky. Tmavě šedý text (#FF222222) na průhledném pozadí.</summary>
-    private static readonly ResolvedTextStyle TableDataParent = CellDefaults.Default with
+    private static ResolvedTextStyle TableDataParent => CellDefaults.Default with
     {
         TextColor = "#FF222222",
     };
 
     /// <summary>Výchozí parent styl pro souhrnné řádky. Bold + světle šedé pozadí (#FFF0F0F0).</summary>
-    private static readonly ResolvedTextStyle TableSummaryParent = CellDefaults.Default with
+    private static ResolvedTextStyle TableSummaryParent => CellDefaults.Default with
     {
         Bold = true,
         TextColor = "#FF222222",

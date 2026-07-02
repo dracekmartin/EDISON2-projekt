@@ -1,5 +1,11 @@
 # Gap analýza: legacy TiskMHD vs. nový zastávkový JŘ
 
+> **Status (2026-06-30):** trvalá reference „co legacy umí a my (ne)máme". Analýza udělaná jednou,
+> nedělat znovu. Sekce **„kompletní mapovací matice" (prvek po prvku) + P2/P3/P4 mezery** jsou
+> evergreen. Den-D části (P0 ranní checklist, „plán na zítřek") jsou historické — seminář 24.6.
+> proběhl. **Aktuální stav mezer** = roadmap (AD-N tabulka). Prezentační shrnutí (sdělení, FAQ,
+> zpětná vazba) viz [`prezentace-a-gap-2026.md`](prezentace-a-gap-2026.md).
+
 > **Účel:** porovnání plochy funkcí starého návrháře (`C:\DEV\EDISON\TiskMHD\`, VB.NET + Caché
 > `ALVA.TISKMHD`) proti současné implementaci v TemplateDesigneru. Cíl: zjistit, co reálně chybí
 > před **uživatelským seminářem 24.6.2026**, a stanovit priority na dodělání během zítřka.

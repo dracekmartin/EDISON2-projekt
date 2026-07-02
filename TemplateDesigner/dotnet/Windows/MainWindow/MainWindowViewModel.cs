@@ -341,14 +341,17 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Commands ──────────────────────────────────────────────────────────────
     private RelayCommand? _undo, _redo, _new, _exportPdf, _exportPng, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda, _openInstancePicker, _prevInstance, _nextInstance;
-    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
+    // DB je primární úložiště: Uložit / Otevřít / Uložit jako jdou do databáze. JSON = import/export.
     public AsyncRelayCommand SaveCommand     => _save      ??= CommandAsync(SaveTemplate);
-    public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveAsTemplate);
+    public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveToCacheAsAsync, () => TemplateStorage is not null);
     public RelayCommand NewCommand           => _new       ??= Command(NewTemplate);
-    public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenTemplateAsync);
+    public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenFromCacheAsync, () => TemplateStorage is not null);
+    public AsyncRelayCommand ImportJsonCommand => _importJson ??= CommandAsync(ImportFromJsonAsync);
+    public AsyncRelayCommand ExportJsonCommand => _exportJson ??= CommandAsync(ExportToJsonAsync);
     public AsyncRelayCommand OpenFromCacheCommand  => _openFromCache  ??= CommandAsync(OpenFromCacheAsync,  () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
@@ -523,6 +526,10 @@ public class TemplateDesignerViewModel : EDViewModel
     // ── Sections ──────────────────────────────────────────────────────────────
     public void RebuildSections()
     {
+        // Sync ambientního dokumentového defaultu (font…) na aktuální šablonu. RebuildSections se volá
+        // po každém (re)loadu šablony → ambient vždy odpovídá aktuální šabloně (i reset na null u nové).
+        DocumentDefaults.Style = State.CurrentTemplate.DefaultTextStyle;
+
         Sections.Clear();
         foreach (var s in State.CurrentTemplate.Sections)
             Sections.Add(new SectionVM(s, this));
@@ -757,10 +764,12 @@ public class TemplateDesignerViewModel : EDViewModel
         ReplaceWithBlankTemplate(vm.ChosenCode);
     }
 
-    private async Task OpenTemplateAsync()
+    /// <summary>Import šablony z JSON souboru. Načtená šablona se chová jako nová neuložená (původ
+    /// = není v DB), takže následný Uložit ji založí do databáze.</summary>
+    private async Task ImportFromJsonAsync()
     {
         if (!ConfirmUnsavedChanges()) return;
-        var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Otevřít šablonu" };
+        var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Importovat šablonu z JSON" };
         if (dlg.ShowDialog() != true) return;
         await OpenTemplateFromFileAsync(dlg.FileName);
     }
@@ -901,39 +910,41 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task SaveTemplate()
     {
-        // Šablona z Caché → update v Caché. Šablona ze souboru → save do souboru. Nová → SaveAs.
-        if (_loadedFromCache)          { await SaveToCacheAsync(); return; }
-        if (CurrentFilePath is null)   { await SaveAsTemplate();   return; }
-
-        SyncParametersToTemplate();
-        CaptureEditorPreferencesToTemplate();
-        await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
-        IsDirty = false;
-        RequestTitleUpdate?.Invoke();
+        // DB je primární úložiště. DB šablona → update; nová/importovaná → SaveAs do DB
+        // (SaveToCacheAsync interně řeší new→SaveAs). Bez Caché nelze uložit → Export do JSON.
+        if (TemplateStorage is null)
+        {
+            StatusText = "Databáze není dostupná — použij Soubor → Exportovat do JSON.";
+            return;
+        }
+        await SaveToCacheAsync();
     }
 
-    private async Task SaveAsTemplate()
+    /// <summary>Export šablony do JSON souboru. NEmění původ (šablona dál patří do DB) — je to
+    /// kopie ven, obdoba PDF/PNG exportu, ne „save target".</summary>
+    private async Task ExportToJsonAsync()
     {
         var dlg = new SaveFileDialog
         {
             Filter   = TemplateSerializer.FileFilter,
-            Title    = "Uložit šablonu",
+            Title    = "Exportovat šablonu do JSON",
             FileName = State.CurrentTemplate.Name
         };
         if (dlg.ShowDialog() != true) return;
-        CurrentFilePath = dlg.FileName;
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
-        await TemplateSerializer.SaveAsync(State.CurrentTemplate, CurrentFilePath);
-        IsDirty = false;
-        if (Preferences is not null) await Preferences.AddRecentFileAsync(CurrentFilePath);
-        RequestTitleUpdate?.Invoke();
+        await TemplateSerializer.SaveAsync(State.CurrentTemplate, dlg.FileName);
+        StatusText = $"Vyexportováno do {System.IO.Path.GetFileName(dlg.FileName)}";
     }
 
     // ── Caché storage ─────────────────────────────────────────────────────────
 
     /// <summary>True pokud aktuální šablona byla naposledy načtená/uložená do Caché.</summary>
     private bool _loadedFromCache;
+
+    /// <summary>True = šablona je uložená v databázi (Ctrl+S ji aktualizuje). False = nová/importovaná,
+    /// ještě není v DB (Ctrl+S ji založí). Pro indikátor původu v titulku.</summary>
+    public bool IsCacheBacked => _loadedFromCache;
 
     private async Task OpenFromCacheAsync()
     {

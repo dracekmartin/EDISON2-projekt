@@ -1,38 +1,35 @@
 # Roadmap
 
-## 📋 Handoff — rozpracováno (stav k 2026-06-21, pokračování i z druhého PC)
+## 📋 Aktuálně rozpracováno / nejbližší kroky (stav k 2026-06-30)
 
-**Hotovo tuto session (commitnuto + pushnuto):** AD nastavení linky + ruční poznámky (Komentáře/
-nepoznámkovat/směrové), #7955 přepínač, „jede až do" (#7947), skrytí na znamení + agregát bezbariér
-(#7161 D5/D6), **layout legendy** (sloupce 1-4 + směr wrapu + zarovnaný marker + řazení). Helpdesk
-zavřeno: **#7955, #7959, #7947, #7161**. Detail: `changelog.md`, `ad-jr-nastaveni-linky-analyza.md`,
-`ad-jr-typy-poznamek-layout-analyza.md`. Cache MCP opraven (`C:\Edison\EdisonCacheMcp\`).
+> Obě zákaznické prezentace proběhly (statická ~19.6., živá 26.6.). Handoff blok 2026-06-21
+> archivován do [`roadmap-archive.md`](roadmap-archive.md). Zastávkový JŘ (AD) je datově 1:1 +
+> výkonově hotový. Nově (30.6.) je **databáze primární úložiště šablon** (Ctrl+S → DB, soubor =
+> import/export).
 
-**⚠️ DEV tweaky v repu — VRÁTIT před produkcí:**
-- `dotnet/templatedesigner.appsettings.json` → firma **CB_GWBUS** (produkce = KV_DP)
-- `MainWindowViewModel.CreateSampleTemplate` → **AD + 1 sekce** (produkce = MHD + Záhlaví/Obsah/Patička)
+**Aktivní rozpracované tracky:**
+- **Wave 4 EDInputForm** — Fáze 1 + W4-6 ImageElement ✅ hotové. **W4-9 komplexní elementy z větší
+  části hotové** (StopList ✅ + DepartureGrid ✅ mají „Obecné" přes EDInputForm); **zbývá už jen
+  TableElement** — plán „Dynamic-first, Fixed odložen" viz Wave 4 sekce níže. Stylový pod-formulář
+  zatím prototyp (1 zóna). **Priorita:** spíš později, za aktuálními provozními věcmi.
+- **AD nastavení linky (PRIORITA 2b)** — zbývají přímočaré PATCH-read položky: **AD-N4** (NZ na nový
+  řádek), **AD-N11** (cizojazyčné poznámky); AD-N5/N13/N15 odložené (dormant data / renderer).
 
-**⬜ Rozpracovaný úklid docs (dohodnuto, NEPROVEDENO — udělat příště):**
-1. **Ořezat `cache-database-linky.md`** — smazat §6 (vyřešené otázky) + §10 (status, datum 2026-06-02 zastaralé → odkaz sem/changelog); nechat §2-5 (globály `^JRL`), §8 (nálezy), §9 (gold oracle); přerámovat na „referenční datový model". Pak opravit odkazy na §10 v `CLAUDE.md` + tomto roadmap.
-2. **Hlavičkové poznámky** (ať nematou „je aktuální?"): `legacy-schedule-generators.md` (Fáze A hotová), `schedule-elements-architecture.md` (konceptuální, kód viz rules/architecture), `architecture-diagrams.md` (diagramy k aktualizaci — NEMAZAT, pro školení cenné).
-3. **Cross-refs** AD analýza ↔ datový model (vyjasnit role: analýza=CO umíme, linky=JAK data; bez duplikace FTL/PATCH).
-4. **changelog archivace** (volitelné) — květnové Wave 1-3 → `changelog-archive-2026-05.md` (129k → ~30k).
-5. **`prezentace/osnova-skoleni.md`** — vytvořit osnovu technického školení (přidat výjimku do `prezentace/.gitignore`). Survey docs hotový.
+**Úklid docs — stav 2026-06-30:**
+- ✅ **Prezentační prep docs konsolidovány** — osnova + režie demo → jeden
+  [`prezentace-a-gap-2026.md`](prezentace-a-gap-2026.md) (sdělení + FAQ + zpětná vazba); jednorázové
+  artefakty smazány. **Gap analýza legacy vs nový ponechána** jako samostatná evergreen reference
+  (`gap-analyza-legacy-vs-novy-jr.md`) — analýza udělaná jednou, plná mapovací matice se nemaže.
+- ✅ **Hlavičkové freshness/status poznámky** — `architecture-diagrams.md` (konceptuální, kód autoritativní),
+  `cache-database-linky.md §10` (snapshot 2026-06-02 → odkaz na changelog), obě AD analýzy (status → roadmap).
+- 🟡 **Ořez `cache-database-linky.md §6`** — ponecháno: §6 stále obsahuje **otevřené** otázky (FTL/Plk/CNZ,
+  skupina linek, vícezónový tarif). Přerámování na čistý „referenční datový model" zbývá až po jejich uzavření.
+- ⬜ **changelog archivace** — changelog má ~1600 řádků; květnové Wave 1-3 → `changelog-archive-2026-05.md`
+  (mechanické, čistě o velikosti — žádná staleness, low priorita).
 
-**Zbývající featury** (z analýz): 🟡 viditelnost legendy per kategorie (3.3, překryv s D5/D6), 🔴 multi-varianta časů tras (AD-N13, gold oracle 0345061), drobnosti (uppercase, NEZNZ123, override nadpisů sloupců, dormant NZ dělení).
-
----
-
-## 🔁 Pracovní postup (krok po kroku)
-
-Každá položka projde tímto cyklem — nevynechat ani jeden krok:
-
-1. **Projít** — připomenout co přesně má krok dělat, kontext a závislosti
-2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
-3. **Implementovat** — kód, Caché, XAML — dle pravidel v CLAUDE.md
-4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
-5. **Aktualizovat docs** — changelog + roadmap (přesun do archivu) + CLAUDE.md pokud se mění architektura
-6. **Další krok** — posunout `⬅️` na následující položku
+**Nové z prezentací (24.6., neanalyzováno):** P1 ruční poznámky do patičky, P2 sloučení linek se
+stejným trojčíslím / více dopravců, P3 logická imposice 2×A5→A4 — detail viz
+[`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md) + backlog níže.
 
 ---
 
@@ -51,14 +48,19 @@ Každá položka projde tímto cyklem — nevynechat ani jeden krok:
 - Canvas perf: ClipRect + viewport culling pro grid + cached shadow paint
 - Zoom limit 500% (vyšší vyžaduje virtualized rendering — viz roadmap)
 
-**🎯 Cíle s ohledem na prezentace (statická ~19. 6. 2026, živá pro zákazníka ~26. 6. 2026)** — pořadí priorit dohodnuto 2026-06-12:
+**🎯 Pořadí priorit po prezentacích (statická ~19.6., živá 26.6. — obě proběhly):**
 
-1. **Odladit zastávkový JŘ (AD)** — *hlavní věc k ukázání*. Datově 1:1 + výkonově **hotovo** (PRIORITA 2 níže). Zbývá průběžné ladění vzhledu/UX podle testování na velkých linkách (poslední kolo: varování o přetečení + cap roztažení DepartureGrid — viz changelog 2026-06-12) + odložené nice-to-have (multi-varianta TrasaMin přes C# renderer, číslování omezení TYPPOZ=1, vizuál legendy).
-2. **Navazující věci ohledně komponent** — EDInputForm (Wave 4) a další UI komponenty, jak vyplyne z ladění JŘ.
-3. **Helpdesk požadavky primárně pro AD, řešitelné bez kolegů** — Fáze A.2-D série: vlastní komentář spoje přebíjí auto-poznámku (#7955), skrýt „x — zastávka na znamení" když je sloupec hidden (#7161), vypnutí auto-poznámky bezbariér (#7161). Viz Fáze A.2-D níže + [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md).
-4. **AI pomocník (stretch, když zbude čas)** — validace PDF importu + AI asistent (pasivní → aktivní). Detail v sekci „🤖 AI integrace" níže.
+1. **Zastávkový JŘ (AD)** — *hlavní deliverable*. Datově 1:1 + výkonově **hotovo**. Zbývají odložené
+   nice-to-have (multi-varianta TrasaMin přes C# renderer = AD-N13; vizuál legendy) + přímočaré
+   PATCH-read položky nastavení linky (AD-N4, AD-N11). Číslování omezení (cnz) ✅ hotovo 2026-06-23.
+2. **Wave 4 EDInputForm** — W4-6 ImageElement ✅; W4-9 StopList ✅ + DepartureGrid ✅; **zbývá TableElement** (Dynamic-first, Fixed odložen — viz Wave 4 sekce). Spíš později, za provozními věcmi.
+3. **Helpdesk pro AD** — Fáze A.2-D hotová (#7955/#7947/#7161 zavřeno). #11300 KORID přípoje přeřazeno
+   k linkovým JŘ (není zastávkový koncept). Zbývá jen odložené A2-A5/A6/B4 (datový průzkum / kolegové).
+4. **Nové z prezentací (P1-P3)** — backlog, neanalyzováno; před implementací založit ticket.
+5. **AI pomocník (stretch)** — funkční (generování šablony, PDF import, vision pipeline), další rozšíření low-prio.
 
-> **Pozn.:** PRIORITA 1/2 a ⬅️ markery v sekcích níže pocházejí z dřívějšího plánu (před prezentacemi) — autoritativní pořadí je tento číslovaný seznam. **Výkonový rest** (MHD `VypocitatBitmapyObsluhy`) zůstává rizikový samostatný krok mimo prezentační scope.
+> **Pozn.:** ⬅️ markery v sekcích níže pocházejí z dřívějšího plánu — autoritativní pořadí je tento
+> seznam.
 
 ### ⬅️ PRIORITA 1 — Wave 4: dokončit EDInputForm migraci (🟡 rozpracováno)
 
@@ -67,7 +69,7 @@ EDInputForm je živý a generický základ funguje. Cíl: **co má být EDInputF
 **Hotovo (2026-05-25 — 27):** EDInputForm visual upgrade + EDComponentToolbar (sdílený s EDList) + generický `ElementEditDialog` (reflexe přes property-path keys) + 5 elementů migrovaných (Text/Line/Rectangle/Barcode/NotesLegend) + SaveToCacheDialog. Detail Wave 4 sekce níže.
 
 **Zbývá projít VŠECHNO a předělat kde to dává smysl:**
-- **ImageElement** — potřebuje nový `Image` field type v EDInputForm (upload→base64+náhled)
+- ~~**ImageElement**~~ — ✅ hotovo (Image field type v EDControls + `ImageElementEdit.cls`, commit 72b724d)
 - **Section / Page properties** — generalizovat `ElementEditDialog` z `TemplateElement` na `object` (`ElementPropertyAccessor` už je generický)
 - **Simple dialogy** — SaveSectionTemplate, NormalizePositions
 - **Komplexní elementy (StopList / DepartureGrid / TableElement)** — rozdělit: **tab „Obecné" → EDInputForm**, tabulková / per-column část buď nechat custom (CellStyleEditor / grid) nebo vyřešit extra. Žádné půl-na-půl — obecné properties patří do EDInputForm.
@@ -80,11 +82,9 @@ Nová agenda `ZastavkoveJrAd` (`ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)") �
 
 **Zbývá k úplnému 1:1 (zdokumentováno §10, nice-to-have):**
 - **Multi-varianta TrasaMin** (`TrasaMin1-15` = víc časových sloupců per varianta trasy) — vyžaduje zásah do **C# StopListElement rendereru** (dnes jeden sloupec). Pro běžné linky s jednou trasou je jednosloupcová verze 1:1.
-- **Číslování omezení TYPPOZ=1** (legacy pevná čísla „29" vs naše sekvenční „1") — firm-config.
-- Šířka/layout legendy (vizuál) — na konec.
+- ~~Číslování omezení TYPPOZ=1~~ ✅ **hotovo 2026-06-23** — marker = číslo NZ (`cnz`) invertovaně, žádný firm gate (changelog / §10).
+- Šířka/layout legendy POZNAMKY (**vizuál** proti gold — počet sloupců, šířky, mezery) — na konec. Pozn.: **pořadí** poznámek už ✅ ověřeno 1:1 (2026-06-30), tady jde jen o vzhled.
 - **DEV cleanup před produkcí** — ✅ odstraněn `#if DEBUG` auto-open `kv_ad_test.json` + `--test-detector` blok (2026-06-17). Zbývá: zvážit statický `GetMockData`.
-
-**Performance rest (samostatný krok):** MHD agenda `VypocitatBitmapyObsluhy` má 3 průchody `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³). **Rizikový zásah do ověřeného MHD enginu** — udělat zvlášť s re-verifikací proti MHD gold oracle. (AD agenda už per-stránka neefektivnosti nemá.)
 
 **Reference:** [`legacy-schedule-generators.md`](legacy-schedule-generators.md) — mapování legacy Caché generátorů na typy JŘ.
 
@@ -95,7 +95,7 @@ Cíl: postupně dotáhnout, aby `ZastavkoveJrAd` bral v potaz **nastavení tisku
 **Autoritativní podklad:** [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md) — každá
 položka níže odkazuje na § analýzy a nese přesný legacy storage + reader.
 
-**Postup per položka** (dle pracovního cyklu nahoře): *projít → validovat (máme/nemáme, dává smysl teď?)
+**Postup per položka** (dle pracovního cyklu — viz `CLAUDE.md §Pracovní postup`): *projít → validovat (máme/nemáme, dává smysl teď?)
 → implementovat NEBO odložit s důvodem → otestovat proti gold oraclu → docs*. Pořadí = **přímočaré v
 legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer/nová struktura na konec.
 
@@ -103,8 +103,8 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 |---|---|---|---|---|---|
 | AD-N1 | §2 | Poznámka nad linku → placeholder `POZNAMKA_NAD_LINKU` | `PATCH,"Head"` (gPrpLin dta4) | XS | ✅ 2026-06-20 |
 | AD-N2 | §2 | Typ JR → `TYP_JR` placeholder (volitelný; zastávkový legacy razítko z OBJ nestaví) | `PATCH,"OBJ"` (gPrpLin dta3) | S | ✅ 2026-06-20 |
-| AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ⬜ ⬅️ DALŠÍ |
-| AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ |
+| AD-N3 | §7 | Uspořádat poznámky v legendě podle délky | `PATCH,"Trid_delK"` (gSetLinPrt dta26) | S | ✅ 2026-06-21 (řazení vzestupně i sestupně) |
+| AD-N4 | §7 | Negativní značky na nový řádek (layout legendy) | `PATCH,"NegZnNR"` (dta27) | S | ⬜ ⬅️ DALŠÍ |
 | AD-N5 | §3 | `MHD_NEZNZ123` — potlačit NZ v legendě per sloupec | `PATCH,"MHD_NEZNZ123"` | M (váže na NZ legend, dnes dormant) | ⬜ |
 | AD-N6 | §3 | Override nadpisů sloupců (skupin dnů) → TD vlastnost `HeaderOverride` (ne port `^JRSET`) | (TD vlastnost elementu) | S | ✅ 2026-06-22 |
 | AD-N7 | §5 | **Komentáře** (ruční poznámka linky + přiřazené spoje) | `MhD,"SeT_SpeC"` + per-spoj `MhD_SpeC` | M-L | ✅ 2026-06-20 (Fáze 1) |
@@ -125,7 +125,7 @@ legacy nejdřív** (čistý PATCH read → placeholder/flag), složité/renderer
 
 ### Helpdesk tickety (Fáze A.2-D) — NIŽŠÍ priorita
 
-TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky bugs, NZ bug, KORID přípojové řádky, …) — tabulka A.2.D níže. **Až po prioritě 1 + 2.**
+TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky bugs, NZ bug, …) — tabulka A.2.D níže. **Až po prioritě 1 + 2.** (KORID přípojové řádky #11300 přeřazeno k linkovým JŘ.)
 
 **Případné defer items pro budoucnost** (revisit on real user request):
 - Wave 3 auto-snapshots history / audit log / thumbnails
@@ -141,44 +141,22 @@ TRANSDEV/KORID/DPKV suspended tickety v `Agendy/ZastavkoveJrMhd` (auto-poznámky
 
 ---
 
-## 📖 Závazné reference před implementací
-
-| Doc | Kdy číst |
-|---|---|
-| [`feature-design-principles.md`](feature-design-principles.md) | **Před každým novým requestem** — kódová + UX rozhodovací mřížka, klasifikace requestu (typ 1/2/3), per-customer divergence, anti-patterns |
-| [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md) | Při práci na zastávkovém JŘ — konkrétní požadavky zákazníků s citacemi a gap analýzou |
-| `.claude/rules/mvvm-patterns.md` | Při dotyku stylingu / dialogů / per-column editorů |
-| `.claude/rules/ux-conventions.md` | Při přidávání nového dialogu / okna / keyboardové zkratky |
-| `.claude/rules/new-element-checklist.md` | Při přidání nového typu elementu |
-| §5 Architektonických pravidel níže | R1–R5 (async, errors, JSON, MVVM, versioning) — závazné pro Caché migraci |
-
----
-
-## 📐 5 Architektonických pravidel
-
-Tato pravidla jsou závazná pro **veškerou novou práci** — zejména pro Caché migraci. Jsou záměrně obecnější než code style, protože mají chránit proti drahým rework cyklům pozdě v projektu.
-
-| # | Pravidlo | Proč |
-|---|---|---|
-| R1 | **Async Caché volání pro očekávaně pomalé operace** — pro Caché volání kde očekávaná doba >500ms (velké listy, složité queries, batch operace, nahrávání) vždy `async Task` + `await Task.Run(() => mlRest.Query(...))`. Pro typické fast operations (foundational komponenty s 50–300ms loady jako EDList, jednoduché lookupy) sync OK — async by přinesl spíš flicker než benefit. Při neznámé velikosti pesimisticky async. | Legacy BIL/BDG bylo 20 let synchronní a fungovalo — důkaz že je to akceptovatelné pro typické workflow. Naopak sync pro 1s+ operaci zamrzne UI a Windows zobrazí „Not Responding". Pravidlo chrání proti druhému; první je validní výjimka. |
-| R2 | **Chyby přes `IPopupDisplayer` z EDControls** — žádný `MessageBox.Show` ani silent catch. Používat existující `EDControls.EDViewModel.IPopupDisplayer` (metody `Error(ex)`, `Confirm`, `Info`, `ConfirmClose`) přes DI nebo `EDViewModel` base. | Bez jednotné cesty se chyby v distribuci ztratí. `IPopupDisplayer` je firemní standard — už ho používá `EDViewModel.Command(...)` automaticky. |
-| R3 | **CVar named IN + 4 OUT styly podle obsahu** — IN vždy CVar pojmenované klíče; OUT podle typu: CVar scalars (triviální), JSON v slotu (entita), JSON multi-slot (list), JSON envelope (composite, opt-in pro Tier 3). Plný standard, decision tree, příklady a checklist: [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md). | CVar je nativní zrcadlo Caché globálů (1 řádek per parametr), JSON pro strukturovaná data dává typovou bezpečnost přes `record` typy v .NET. Asymetrie není kompromis — odráží přirozenost obou stran. |
-| R4 | **ViewModely bez WPF referencí** — žádný `using System.Windows` ani `MessageBox.Show` v `*ViewModel.cs` | MVVM princip, testovatelnost, možnost pozdějšího portu/unit testů. Dialogy přes `IPopupDisplayer` (R2). |
-| R5 | **Template versioning je prerekvizita persistence** — dokud není `TemplateMigrator` + version field v JSON, neukládá se nic do Caché | Bez migrace se nové šablony nespustí na starším buildu → zničené ranní otevření souboru. Nelze to retro-fit po nasazení. |
-
-**Předpoklad:** aplikace poběží nad Caché — není cíl fungovat offline, ne každá API potřebuje in-memory fallback. Fallback se řeší jen tam, kde to má konkrétní business smysl (např. poslední otevřené soubory v paměti během session).
-
-**Kde jsou pravidla ověřitelná:**
-- R1: review PR → `grep "MLRest\." *ViewModel*.cs` najde synchronní volání. U každého ověřit očekávanou dobu — fast operace OK, slow musí být async.
-- R2/R4: `grep "MessageBox\." **/*ViewModel.cs` musí vracet 0 hitů
-- R3: nové API metody: IN `$g(^||ML("IN","klic"))`, OUT podle obsahu (decision tree) — viz [`EDControls/DOCS/01-wire-formats.md`](../../../EDControls/DOCS/01-wire-formats.md)
-- R5: Wave 3 nemůže začít bez hotového H-18/H-19 (versioning a migrator)
-
----
-
 ## 📋 Co je potřeba dělat
 
-### 🔴 Fáze A.2-D: Caché business logic ⬅️ AKTUÁLNÍ PRIORITA
+### 🆕 Nové požadavky z prezentací (P1-P3) — backlog, neanalyzováno
+
+Zaznamenáno z živých prezentací 2026-06-24 (ne helpdesk). Před implementací založit/dohledat ticket a
+ověřit přesné zadání. Detail + odhady viz [`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md).
+
+| # | Co | Odhad | Pozn. |
+|---|---|---|---|
+| P1 | Ruční poznámky do patičky JŘ (volný text nebo dedikované pole „Poznámky") | XS–M | `TextElement` v patičce už funguje; M jen pokud param-driven |
+| P2 | Sloučení linek se stejným posledním trojčíslím (i různá Tč / více dopravců) → 1 výstup | L | Dotýká se agendy + InstancePicker + agregace `POPIS_DOPRAVCE`; chce analýzu legacy |
+| P3 | Logická imposice 2×A5 oboustranně na A4 (N-up + duplex/brožura) | M–L | Samostatná „sheet layout" vrstva nad PageLayoutEngine; `RenderPage` už bere offset |
+
+---
+
+### 🟢 Fáze A.2-D: Caché business logic (A2-D1..D5 ✅ hotovo)
 
 Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika spojů v `ZastavkoveJrMhdAPI`. Plný kontext, citace a gap analýza viz **[`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md)**.
 
@@ -188,14 +166,21 @@ Suspended tickety TRANSDEV/KORID/DPKV — Caché-side auto-poznámky a logika sp
 
 #### A.2.D — Caché `ZastavkoveJrMhdAPI` úpravy
 
+> **Stav (2026-06-30):** A2-D1..D5 ✅ vyřešeno **pro AD agendu** (`ZastavkoveJrAd`); helpdesk #7947/
+> #7955/#7161 zavřeno. Port na MHD agendu (D1, D4) neproveden — až bude potřeba. **Série A.2-D je
+> hotová** (A2-D6 přeřazeno mimo zastávkový JŘ — viz níže).
+
 | Krok | Tiket | Zákazník | Co | Stav |
 |---|---|---|---|---|
-| A2-D1 | #7947 | TRANSDEV | Nový text template „spoj jede až do XY" pro spoje **prodlužující** základní trasu (symetrické k existujícímu „končí v zast. X") | |
-| A2-D2 | #7955 | TRANSDEV | Vlastní komentář spoje musí přebít auto-poznámku rozdílů (suppress auto pokud má spoj custom text) | |
-| A2-D3 | #7955 | TRANSDEV | **Bug** — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ); izolovat NZ od ostatních poznámek | |
-| A2-D4 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | |
-| A2-D5 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | |
-| A2-D6 | #11300 | KORID | Skrýt prázdné přípojové řádky — vyžaduje **novou** doménovou strukturu `Pripoj` v `GetData` + nový element `ConnectionsListElement` | |
+| A2-D1 | #7947 | TRANSDEV | Nový text template „spoj jede až do XY" pro spoje **prodlužující** základní trasu (symetrické k existujícímu „končí v zast. X") | ✅ AD 2026-06-21 |
+| A2-D2 | #7955 | TRANSDEV | Vlastní komentář spoje musí přebít auto-poznámku rozdílů (suppress auto pokud má spoj custom text) | ✅ AD 2026-06-20 |
+| A2-D3 | #7955 | TRANSDEV | **Bug** — „Spoje, nepoznámkovat" maže i inverzní znaménko (NZ); izolovat NZ od ostatních poznámek | ✅ AD 2026-06-20 (bug nevzniká) |
+| A2-D4 | #7161 | TRANSDEV | Skrýt „x — zastávka na znamení" pokud sloupec s `x` je hidden (kontrakt TD ↔ Caché — rozhodnutí kde se filtruje) | ✅ AD 2026-06-21 |
+| A2-D5 | #7161 | TRANSDEV | Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem" — parametr v `GetParameters` + checkbox v PrintDialog | ✅ AD 2026-06-21 |
+
+> ➖ **#11300 (KORID) — přípojové řádky přeřazeno k linkovým JŘ.** Přípoje/návaznosti nejsou
+> koncept zastávkového JŘ (konzistentní s AD-N14). Řeší se až s agendou linkových JŘ (`Pripoj`
+> struktura + `ConnectionsListElement`), ne zde.
 
 #### Odložené z A.2 (na rozhodnutí s kolegy)
 
@@ -221,7 +206,7 @@ Postupný přesun state a logiky z .NET na Caché. Cíl: žádné „zjistili js
 | 1 | Per-user state | ✅ Hotová (2026-05-20) | MainState (zoom/grid/snap/splittery/tab/preview), RecentFiles, InstanceDefaults per šablona |
 | 2 | Shared catalogs | ✅ Hotová (2026-05-20) | W2-1 ✅ Agenda registry (auto-discovery). W2-2 Section templates skipnuto — funkčně překryto Wave 3 Template starters. Element defaults + company palette skipnuté |
 | 3 | Template storage | ✅ Hotová (2026-05-25) | CRUD (✅), schema versioning + migrator framework (✅), explicit user versions via Save As (✅), undo within-session (✅). Auto-snapshots / audit / thumbnails skipnuté (revisit on real request) |
-| 4 | Form-driven UI | 🟡 Rozpracováno (2026-05-27) | EDInputForm místo PropertiesPanel. 5 elementů hotovo přes generický `ElementEditDialog` (reflexe). Zbývá Image/Section/Page/komplexní elementy |
+| 4 | Form-driven UI | 🟡 Rozpracováno | EDInputForm místo PropertiesPanel. Elementy + Image (W4-6) + Section + parametry tisku + W4-9 StopList/DepartureGrid ✅. Zbývá **TableElement** (Dynamic-first, Fixed odložen) + Page + inline panel cleanup |
 | 5 | Business logic per agenda | 🟡 Pattern hotový pro MHD + FAKTURY, čeká na další agendy | Čisté rozdělení agenda-specific logiky |
 
 **Graf závislostí:** Wave 1 → 2 → 3 → 4 (sekvenčně), Wave 5 běží paralelně nezávisle.
@@ -279,10 +264,10 @@ Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInp
 | W4-4 | Generický `ElementEditDialog` + `ElementPropertyAccessor` (reflexe, property-path keys) | ✅ 2026-05-27 |
 | W4-5 | Elementy: Text, Line, Rectangle, Barcode, NotesLegend (+border parity audit) | ✅ 2026-05-27 |
 | W4-5b | **Tiskový dialog — parametry sestavy přes EDInputForm** (`AgendaParams` generic dispatch z `GetParameters`; visibleWhen v C# přes `TemplateParameter.IsVisible`) | ✅ 2026-06-12 |
-| W4-6 | **ImageElement** — nový `Image` field type v EDInputForm (upload→base64+náhled). ⬅️ DALŠÍ. Vyžaduje rozšíření sdílené komponenty EDControls (nový field type + WPF renderer náhledu), nebo obejít přes `BUTTON` + vlastní handler (vzor `SaveTemplate`). | ⬅️ |
+| W4-6 | **ImageElement** — nový `Image` field type v EDControls (upload→base64+náhled přes `Base64ToImageSourceConverter`) + `ImageElementEdit.cls`; Image hodnota se neposílá na server (jen client-side). | ✅ 2026 (commit 72b724d) |
 | W4-7 | **Section / Page** — generalizace `ElementEditDialog` na `object` + Caché schemas | 🟡 Section ✅ (2026-06-12, `SectionEdit.cls`); Page ⬅️ zbývá (formát/orientace + ScaleBodySections nelze přes čistou reflexi — chce hook nebo zjednodušení) |
 | W4-8 | **Simple dialogy** — SaveSectionTemplate, NormalizePositions | ⛔ **Záměrně neimigrováno** (rozhodnuto 2026-06-12): „Uložit jako šablonu sekce" = 1 pole, nulový dedup → plain dialog stačí; „Normalizovat pozice" = živě počítaný náhled „Bude upraveno: N" (client-side geometrie), EDInputForm to nepřepočítá → ponecháno custom. Tiskový dialog (původně zvažovaný zde) hotov jako W4-5b. |
-| W4-9 | **Komplexní elementy** — StopList/DepartureGrid/TableElement: tab „Obecné" → EDInputForm, tabulková/per-column část (editor sloupců/skupin) zůstane custom `CellStyleEditor` (EDInputForm neumí editovatelnou tabulku) → vždy částečná migrace + sešití dvou částí do okna. Po W4-6. | |
+| W4-9 | **Komplexní elementy** — tab „Obecné" → EDInputForm, sloupce/per-column část zůstává custom (`ColumnListEditor` + `CellStyleEditor`, EDInputForm neumí editovatelnou tabulku). **StopList ✅ + DepartureGrid ✅ hotové** (`StopListElementEdit.cls` / `DepartureGridElementEdit.cls`). **Zbývá TableElement** — viz plán níže. | 🟡 zbývá Table |
 | W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor, odložené | |
 | W4-11 | Cleanup: PropertyDescriptor systém smazat až po 100% migraci | |
 | W4-12 | (volitelné) EDInputForm wire formát `$lb()` OUT → JSON envelope; collapsible groups | |
@@ -292,7 +277,34 @@ Nahrazení `PropertiesPanel` + `PropertyDescriptor` systému standardním `EDInp
 - ❌ **Ne:** (1) triviální confirm s 1 polem (nulový dedup, jen Caché round-trip navíc); (2) dialogy s **živě počítaným náhledem** z client-side dat (Normalizovat pozice); (3) plně dynamické/data-driven formy bez server schématu. visibleWhen (podmíněná viditelnost) jde, ale evaluuje se **v C#** (pravidlo definuje Caché v JSON) — `Validate` roundtrip nenese InitParams.
 - **Reusable pattern:** `AgendaParams` (jedna generická dispatch třída převádějící `GetParameters` JSON → EDInputForm Form) je vzor pro budoucí Caché-driven formy stavěné z existujícího JSON kontraktu (ne ručně psané `*Edit.cls`).
 
-**Pořadí dalších kroků:** W4-6 (Image — chce nový field type v EDControls) → W4-9 (komplexní vícetabové elementy) → W4-7 Page (formát/orientace hook) → W4-10/11 (inline panel + cleanup, velký refaktor, na konec).
+**Pořadí dalších kroků:** W4-6 (Image) ✅ → W4-9 StopList ✅ + DepartureGrid ✅ → **zbývá TableElement** (plán níže) → W4-7 Page → W4-10/11 (inline panel + cleanup, na konec).
+
+##### W4-9 zbytek — TableElement (plán, spíš později za provozními věcmi)
+
+**Rozhodnutí (2026-06-30, diskuze):** TableElement dotáhnout na stejný vzor jako StopList/DepartureGrid,
+ale **po částech a Dynamic napřed** (autor preferuje rozdělit a případně zase sloučit, až bude v dobrém stavu).
+
+**Architektura — sdílený základ + render per element** (NE dědičnost z TableElementu; pivot by nesměl dědit row-render):
+```
+Sdílený základ:  DataSource vazba + definice sloupců + per-sloupec styl (CellStyleEditor) + Obecné (EDInputForm)
+   → Dynamic Table (render: řádky)  |  StopList (řádky + dekorace)  |  DepartureGrid (PIVOT) + extra
+```
+„Dynamická tabulka + extra" platí na úrovni **nastavení/dat** (sdílené už dnes přes `ColumnListEditor`/`CellStyleEditor`),
+**ne na úrovni renderu** (DepartureGrid je pivot, ne row-tabulka).
+
+**Kroky:**
+1. **Dynamic tabulka jako standard (první)** — 2 taby: „Obecné" → EDInputForm (`TableElementEdit.cls`:
+   `DataSource` picker z `collectionKey` agendy, header/default styl, border/bg, pozice) + „Sloupce" →
+   sdílený `ColumnListEditor` + `CellStyleEditor`. Žádný cell grid (řádky z dat). **Unblockne faktury (POLOZKY).**
+2. **Fixed odložit** — nechat běžet na **stávajícím editoru** (nemodernizovat, ale **nerozbít** — Fixed
+   je nositel Caché table-templates `GetTableTemplate`: ZAHLAVI_LINKY / PLATNOST_DOPRAVCE). Dodělat eventuálně později
+   (komplikovaná část = editovatelná 2D cell grid).
+3. **Sjednocení gridů na `EDInputGrid`** (až bude víc konzumentů: Table + oba JŘ editory) — sdílený
+   `ColumnListEditor` je předstupeň; swap naráz, contained refaktor.
+
+**Otevřené rozhodnutí (až u implementace):** formální split Fixed/Dynamic na 2 elementy vs jeden
+element s `Mode` + podmíněný editor. Lehčí cesta (bez JSON migrace) = nechat 1 `TableElement`, postavit
+moderní editor na Dynamic módu, Fixed mód na starém editoru. Split jen pokud `Mode` v praxi překáží.
 
 ---
 
@@ -332,29 +344,21 @@ Každá implementuje:
 
 ---
 
-#### 🚫 "Must not happen" scénáře
-
-Konkrétní situace, které Caché migrace musí předejít. Kontrolní seznam při code review.
-
-1. **Synchronní Caché volání v UI thread** → zamrznutí aplikace. Kontrola: `grep "MLRest\." *ViewModel*.cs` hledá synchronní volání.
-2. **Silent fail při Caché chybě** → UserPreferences se nenačetly, uživatel neví proč. Kontrola: chyba jde přes `IPopupDisplayer.Error(ex)`.
-3. **Breaking JSON change bez migrátoru** → staré šablony nejdou otevřít. Kontrola: před produkčním nasazením s reálnými šablonami musí být H-18/H-19 hotové (versioning + migrator). Wave 3 CRUD už běží, ale versioning chybí.
-4. **Všechno naráz** (big bang migration) → nelze vrátit. Kontrola: feature flags per element (Wave 4), paralelní běh starého a nového systému.
-
----
-
 ### 🟠 Fáze B: Element flexibility — rozšíření možností elementů
 
 Vychází z gap analýzy oproti komerčním report generátorům (Crystal Reports, Stimulsoft, DevExpress). Nezávislé na JŘ — platí pro fakturační i obecné šablony. Může běžet paralelně s Caché migrací (neblokuje a není blokované).
 
-#### Template versioning (prerekvizita produkčního Wave 3)
+#### Template versioning (prerekvizita produkčního Wave 3) — ✅ FRAMEWORK HOTOVÝ
 
-Wave 3 CRUD už běží bez versioning, ale **před produkčním nasazením s reálnými zákaznickými šablonami** musí být H-18/H-19 hotové — jinak breaking JSON change zničí existující data.
+H-18 framework hotový (Wave 3 W3-4, `TemplateMigrator` + `version` field, archiv). Od 2026-06-30 je
+databáze **primární** úložiště šablon (Ctrl+S → DB) — versioning prerekvizita (R5 / „must-not-happen #3")
+je tím splněna. H-19 (konkrétní migrace) zůstává no-op: nové i DB šablony jsou V2+, takže V1→V2 migrace
+není akutní; doplnit při prvním reálném breaking change nebo pokud se objeví staré V1 soubory.
 
-| # | Co | Proč | Velikost |
+| # | Co | Stav | Velikost |
 |---|---|---|---|
-| H-18 | `TemplateMigrator.Migrate(JsonDocument)` — detekce verze v JSON, pipeline migrací, spouští se před deserializací | Ochrana existujících šablon před breaking changes | S |
-| H-19 | Migrace V1→V2: `TextStyle` flat→nested (breaking change 2026-03-24) + varování v UI | Konkrétní existující breaking change | S |
+| H-18 | `TemplateMigrator.Migrate(JsonDocument)` — detekce verze v JSON, pipeline migrací, spouští se před deserializací | ✅ 2026-05-25 (W3-4 framework) | S |
+| H-19 | Migrace V1→V2: `TextStyle` flat→nested (breaking change 2026-03-24) + varování v UI | 🟡 framework připraven, konkrétní migrace nenapsaná (YAGNI — žádné V1 šablony) | S |
 
 #### Merged cells v TableElement
 
@@ -441,7 +445,10 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
   všude = scaláry + tlačítka „Styl…"; (2) uklidit — `StyleEdit.cls` (nepoužitá Caché varianta A),
   zvážit zda `StyleFields` helper zůstane (inline zóny) nebo se styl celý přesune na CellStyleEditor;
   (3) drobnost: pod-formulář aplikuje na parent OK (akumulace keyovaná prefixem) — OK.
-- **Export: extrahovat členění + název souboru výš** — `__EXPORT_SPLIT` + `__EXPORT_FILENAME` jsou
+- **Font follow-ups** (navazuje na „Výchozí font na úrovni šablony", 2026-06-30): (1) **live varování
+  „nenainstalovaný font"** — dnes `FontResolver` tiše fallbackuje na Arial; chce **warning kanál
+  v EDInputformu** (zobrazit uživateli, že font není k dispozici); (2) **rozšířit `Template.DefaultTextStyle`**
+  z „jen font" i na size / barvu / rámeček — **„jen když budou chtít"** (YAGNI, model už pole má, chybí UI).
   zatím export pole v tiskovém EDInputformu (`AgendaParams`, persistence per-agenda přes `PrintParams`,
   ✅ 2026-06-22). Do budoucna zvážit přesun na úroveň **`Template`** (perzistuje se šablonou jako
   `CultureCode`) nebo **agenda-config** (firemní default, jak to měl legacy v „Tisk → Linky-MHD").
@@ -466,13 +473,61 @@ Layout TBD — hlavička oběhu, tabulka spojů, poznámky. Pravděpodobně víc
 
 ---
 
-### 🔵 Před produkcí (odloženo)
+### 🔵 Produkční / integrační připravenost (co musíme udělat pro nasazení k zákazníkům)
 
-| Co | Popis |
-|---|---|
-| Full migration pipeline | Po H-18/H-19 rozšířit na každou breaking change (ne jen 2 verze) |
-| CI/CD linting šablon | Ověřit šablony před deployem (Caché job) |
-| Kategorie + popis šablony v UI | Wave 3 dnes drží Author/CreatedAt/ModifiedAt/Version v metadatech; chybí kategorie + popis v UI |
+> **Optika:** ne featury, ale „aby to šlo nasadit a integrovat pro zákazníky". **Klíčové zjištění
+> (2026-06-30):** startup se připojuje k **jedné firmě z `templatedesigner.appsettings.json`** a
+> **nebere žádný kontext z EDISONu** (`App.OnStartup` nečte cmdline args) → blok A je největší kus.
+
+#### Kritická cesta (pořadí must → should)
+1. **A1 — Caché session kontext z EDISONu** (blocker pro multi-zákazníka).
+2. **A2/A3 — launch nad linkou + end-user tisk** (aby zákazník produkoval výstup z EDISONu).
+3. **B — systémové šablony + default sady** (aby měl co tisknout, aniž by navrhoval).
+4. **C — H-19 migrace** (než se uloží reálné šablony).
+5. **D — produkční config + deploy proces**.
+
+#### 🔴 A. EDISON integrace (dnes prakticky chybí — největší kus, NENÍ rozepsaný)
+| ID | Co | Stav |
+|---|---|---|
+| A1 | **Předání Caché session kontextu** (server / firma / uživatel / mlp) z EDISONu místo hardcoded appsettings. Vzor: legacy `EDISONMAIN2API.FormToRunGetter` (sentinel + ~10 args). Bez toho TD jede jen proti 1 nakonfigurované firmě. | ⬜ blocker |
+| A2 | **Launch nad konkrétní linkou** — otevřít TD z modulu JŘ/MHD s předvybranou agendou + instancí. Startup dnes args nečte. | ⬜ |
+| A3 | **End-user tiskový vstup** — zákazník hlavně *tiskne*, nenavrhuje. Headless tisk (vrstvy 1-4) z modulu nebo „vytiskni linku X". Dnes je print jen v designeru. | 🟡 |
+
+#### 🟠 B. Šablony pro zákazníky (governance + distribuce)
+| ID | Co | Stav |
+|---|---|---|
+| B1 | **Systémové/zamčené šablony** (M-line tvoří + distribuuje, zákazník read-only) — dnes jen per-IDfa storage bez „zamčené" (gap P2-6) | ⬜ |
+| B2 | **Výchozí sady šablon per agenda** (MHD / AD JŘ / faktury) k nasazení | ⬜ |
+| B3 | Kategorie + popis šablony v UI (metadata už drží Author/Created/Modified/Version) | ⬜ |
+
+#### 🟠 C. Bezpečnost dat (než zákazníci ukládají šablony)
+| ID | Co | Stav |
+|---|---|---|
+| C1 | **H-19 konkrétní migrace** (V1→V2) — `TemplateMigrator` framework ✅, migrace nenapsaná (no-op) | 🟡 |
+| C2 | **Full migration pipeline** pro každou breaking change | ⬜ |
+
+#### 🟡 D. Konfigurace / deployment
+| ID | Co | Stav |
+|---|---|---|
+| D1 | **Dev firma `CB_CSADAD` → produkční** (nebo z EDISON kontextu, viz A1) | ⬜ |
+| D2 | Anthropic API klíč prázdný/managed v produkci (AI graceful bez něj) | ✅ |
+| D3 | **Distribuce .exe** — `publish.ps1` → `C:\Edison\TemplateDesigner.exe`; jak na zákaznické stanice (EDISON deploy?) | 🟡 build ✅, deploy proces nedefinován |
+| D4 | **Nasazení Caché tříd** (agendy, `API.Sablony`, …) na zákaznický Caché server | ⬜ proces ověřit |
+
+#### 🟢 E. Multi-tenant
+| ID | Co | Stav |
+|---|---|---|
+| E1 | Per-IDfa template storage + per-user prefs | ✅ (Wave 1+3) |
+| E2 | Per-zákazník enablement agend (vidí jen své) | ⬜ odloženo (Wave 2 YAGNI) |
+
+#### 🟢 F. Provoz / podpora / kvalita
+| ID | Co | Stav |
+|---|---|---|
+| F1 | Error handling přes `IPopupDisplayer` | ✅ |
+| F2 | Testy (pre-push: xUnit + Caché) | ✅ |
+| F3 | **Logging / telemetrie pro podporu** | ⬜ ověřit |
+| F4 | CI/CD linting šablon (Caché job před deployem) | ⬜ odloženo |
+| F5 | Výkon (batch 600/9s, overflow check, MHD perf analýza) | ✅ |
 
 > Versioning, audit, thumbnails, history → viz Wave 3 (W3-4 až W3-9).
 
@@ -514,16 +569,6 @@ Architektonické rozhodnutí (2026-03-17): **žádné zásadní rozhodnutí teď
 **Pokročilé use cases (dlouhodobě):** onboarding průvodce, "přidej patičku s číslem stránky" (modifikace existující šablony), smart suggestions (TableElement → AI navrhne sloupce z DataSchema), migrace starých Caché sestav, template linting v CI/CD, batch generování šablon pro novou agendu.
 
 **Proč to neblokuje:** JSON šablona je stabilní kontrakt mezi designerem a AI. Dokud AI umí číst a psát JSON v definovaném formátu, integrace funguje bez ohledu na to, jestli je to prompt, MCP, nebo REST API.
-
----
-
-## ✅ Záměrně jinak — neřešit
-
-- **Caché jako source of truth pro konfiguraci a šablony** — dává smysl pro doménovou logiku (Wave 1–3 to provádí)
-- **Univerzální Section třída** — jednodušší než pevná hierarchie (Crystal Reports)
-- **Absolutní pozicování jako default** — správné pro tiskové sestavy s pevným layoutem
-- **PropertyDescriptor a EDInputForm paralelně** — ne cut-over, per element migrace (Wave 4)
-- **Server-side migrace šablon** — autoritativní, ne klientská (Wave 3)
 
 ---
 

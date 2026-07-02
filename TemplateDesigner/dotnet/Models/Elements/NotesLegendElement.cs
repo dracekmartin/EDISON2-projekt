@@ -243,7 +243,7 @@ public class NotesLegendElement : ScheduleElementBase
         float colW = Width / cols;
 
         const float refMmToPx = 96f / 25.4f;
-        var typeface = SKTypeface.FromFamilyName(DataStyle.FontFamily ?? "Arial") ?? SKTypeface.Default;
+        var typeface = FontResolver.Resolve(DataStyle.FontFamily, SKFontStyle.Normal);
         using var font = new SKFont(typeface, NoteFontSize * ResolvedTextStyle.PtToMm * refMmToPx);
         float availMm = colW - (MarkerSirka > 0 ? MarkerSirka : 2f) - 0.5f;
 

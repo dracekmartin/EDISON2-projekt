@@ -2,6 +2,26 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Handoff session 2026-06-21 (historický záznam) ✅
+
+> Archivováno 2026-06-30. Tento blok byl původně živý na vršku roadmapy jako handoff pro pokračování
+> z druhého PC. Většina je dnes hotová nebo překonaná; ponecháno jako historický kontext.
+
+**Hotovo v session 2026-06-21:** AD nastavení linky + ruční poznámky (Komentáře / nepoznámkovat /
+směrové), #7955 přepínač, „jede až do" (#7947), skrytí na znamení + agregát bezbariér (#7161 D5/D6),
+layout legendy (sloupce 1-4 + směr wrapu + zarovnaný marker + řazení). Helpdesk zavřeno: **#7955,
+#7959, #7947, #7161**.
+
+**DEV tweaky session** (vyřešeno): AD startup šablona revertována zpět na produkční MHD+3 sekce
+(commit „revert DEV startup tweak"). Dev firma později přepnuta na **CB_CSADAD** (demo / gold linka
+0365001, commit 9ac5577) — aktivní stav viz živá roadmap „Před produkcí".
+
+**Doc-cleanup body z handoffu** (1 = ořez `cache-database-linky.md §6/§10`, 2 = hlavičkové poznámky,
+3 = cross-refs, 4 = changelog archivace) — řešeno průběžně v živé roadmapě. Prezentační prep docs
+(osnova, režie demo) konsolidovány 2026-06-30 do
+[`prezentace-a-gap-2026.md`](prezentace-a-gap-2026.md), zdrojové artefakty smazány. **Gap analýza
+legacy vs nový ponechána** jako samostatná evergreen reference (`gap-analyza-legacy-vs-novy-jr.md`).
+
 ## Wave 3 — Template storage ✅ (2026-05-25)
 
 Caché-driven persistent storage šablon s per-IDFa izolací + schema versioning framework pro defensive ochranu před budoucími breaking changes.

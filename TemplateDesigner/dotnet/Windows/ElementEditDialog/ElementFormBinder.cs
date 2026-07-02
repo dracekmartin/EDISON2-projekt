@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using EDControls;
 using EDControls.EDInputForm;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
@@ -21,6 +23,23 @@ public static class ElementFormBinder
     /// pro pozdější change detection. Volat po EDInputForm.Initialized (schema načteno).
     /// Pokud property nemá hodnotu, nechá Caché schema default (řeší nullable „inherit" props).
     /// </summary>
+    // Nainstalované fonty (z FontResolver = SKFontManager, tentýž zdroj jako renderer). Cachované.
+    private static List<ListItem>? _fontItems;
+    private static List<ListItem> FontItems => _fontItems ??=
+        Models.FontResolver.InstalledFamilies.Select(s => new ListItem(s, s)).ToList();
+
+    /// <summary>Klientsky naplní seznam nainstalovaných fontů do ComboBox polí (klíč končí "FontFamily").
+    /// Caché ten seznam nezná (OS věc). Volat po EDInputForm.Initialized (před/spolu s Prefill) — set
+    /// proběhne dřív, než WPF realizuje kontejner ComboBoxu, takže se binding chytí i bez change-notifikace.
+    /// Sdílené napříč všemi hosty EDInputFormu (ElementEditDialog + embedded v komplexních dialozích).</summary>
+    public static void PopulateFontFields(EDInputForm form)
+    {
+        foreach (var field in (form.Items ?? []).OfType<Field>())
+            if (field.FieldType == EFieldType.ComboBox
+                && field.Key.EndsWith("FontFamily", StringComparison.Ordinal))
+                field.ListItems = FontItems;
+    }
+
     public static Dictionary<string, string> Prefill(EDInputForm form, object target)
     {
         var preFilled = new Dictionary<string, string>();

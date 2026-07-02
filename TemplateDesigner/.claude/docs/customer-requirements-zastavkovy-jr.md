@@ -192,7 +192,10 @@ Mimo scope zastávkového JŘ:
   **✅ Ověřeno na CB_CSADAD 0365004** (2026-06-21) — má agregát „všechny spoje mají bezbariérově přístupné
   vozidlo"; zapnutí parametru řádek korektně skryje, per-spoj bezbariér (0365001/0365005) zůstává.
 
-### D7. Skrýt prázdné přípojové řádky
+### D7. Skrýt prázdné přípojové řádky ➖ přeřazeno k linkovým JŘ
+> **Stav (2026-06-30):** přípoje/návaznosti **nejsou koncept zastávkového JŘ** — patří k linkovým
+> JŘ (konzistentní s AD-N14). Řeší se až s agendou linkových JŘ, ne v zastávkovém. Ponecháno zde
+> jen jako evidence tiketu #11300.
 - **Zákazník:** KORID (Jaroslav Smištík), #11300
 - **Citace:** *„zobrazujeme přípoje v příbojových řádcích, občas jsou uzly, kde je provoz celotýdenní, ale přípoje jsou jen v PD nebo naopak jen o víkendech, uvítali bychom, kdyby byla možnost prázdný přípojový řádek (v situacích kdy je PD a víkend na zvláštní tabulce/listu) netiskl a šetřil místo."*
 - **Z M-line reply:** „Aktuálně není možné skrývat prázdné přípojové řádky. Pro tuto možnost bude nutné upravit tisk JŘ (...) jeho řešení pravděpodobně spojíme s novým tiskovým modulem pro JŘ" (2025-12-08, Jiří Bžoch).
@@ -207,6 +210,38 @@ Mimo scope zastávkového JŘ:
 ## E. Návrhář sestav (TemplateDesigner UI)
 
 *(Žádné aktivní položky — E1 přesunuto do §G Hotovo.)*
+
+---
+
+## P. Nové požadavky z prezentací zákazníkům
+
+> Zaznamenáno z živých prezentací/seminářů (ne z helpdesk tiketů). Neanalyzováno — evidence, že se na to zákazníci ptali. Před implementací založit/dohledat ticket a ověřit přesné zadání.
+
+### P1. Poznámky umět zadat ručně do patičky ⬜ Nové (2026-06-24)
+
+- **Zdroj:** prezentace zákazníkům 2026-06-24.
+- **Požadavek:** možnost ručně vepsat volné poznámky do patičky JŘ (ne jen auto-generovaná legenda).
+- **Stav infrastruktury (k ověření):** TD už umí přidat `TextElement` s libovolným textem do libovolné sekce vč. patičky (`SectionRole=Footer`). Otázka, jestli zákazníkovi stačí volný TextElement, nebo chce **dedikované pole „Poznámky"** (např. vstup v tiskovém dialogu / parametr sestavy, který se promítne do patičky).
+- **Odhad:** malé, pokud stačí volný text (už funguje); střední, pokud chce parametr-driven poznámku do patičky (nové pole v EDInputForm + propsání do DataContextu).
+
+### P2. Sloučení více linek se stejným posledním trojčíslím (i různá Tč / více dopravců) ⬜ Nové (2026-06-24)
+
+- **Zdroj:** prezentace zákazníkům 2026-06-24.
+- **Požadavek:** *„Dokáže šablona sloučit více linek se stejným posledním trojčíslím — a to i v případě rozdílných tarifních čísel (více dopravců)?"* → jeden výstup zastávkového JŘ složený z více linek.
+- **Stav:** **nové, datově náročné.** Dnes platí 1 linka = 1 sada stránek (zastávka × směr). Sloučení více linek do jednoho výstupu se dotýká **úrovně agendy / výběru instancí** (`GetData`, InstancePicker), ne jen vizuálu:
+  - identifikace „stejné poslední trojčíslí" napříč linkami,
+  - sloučení spojů z více linek do jedné mřížky odjezdů (různá Tč → mapování zastávek),
+  - **více dopravců** v jednom výstupu (pole `POPIS_DOPRAVCE` dnes jedna hodnota — nutná agregace).
+- **Odhad:** větší feature (agenda + instance picker + handling dopravců). Vyžaduje analýzu legacy chování (jak to řeší starý nástroj) + UX rozhodnutí o výběru linek.
+
+### P3. Logická imposice — 2× A5 oboustranně na jednu A4 ⬜ Nové (2026-06-24)
+
+- **Zdroj:** prezentace zákazníkům 2026-06-24.
+- **Požadavek:** logicky vytisknout dvě A5 (oboustranně) na jednu A4 — tj. N-up imposice + duplex/brožura.
+- **Stav dnes:** `RenderMultiDataToPdf` generuje PDF = sekvence stránek v rozměru `PageSize` šablony (1 logická stránka = 1 PDF stránka, kreslená od `(0,0)`). **Žádná imposice ani duplex** — dnes to řeší výhradně ovladač tiskárny / Windows dialog („2 stránky na list" + „oboustranně" + „brožura"). PDF duplex nekóduje (přední/zadní = nastavení tiskárny).
+- **Háček pro implementaci:** `RenderPage(canvas, ps, ppm, xOffset, yOffset, page)` už bere offset → 2 logické A5 lze umístit na 1 fyzický A4 canvas.
+- **Možnosti:** (A) nechat na ovladači (0 práce, nekonzistentní); (B) imposice v našem PDF; (C) „sheet layout" vrstva nad PageLayoutEngine (logické stránky → fyzické archy) — nejčistší, sedí na vrstvenou architekturu.
+- **Odhad:** netriviální, hlavně pořadí stran pro brožuru (skládání). Samostatná imposiční vrstva, mimo per-element práci.
 
 ---
 

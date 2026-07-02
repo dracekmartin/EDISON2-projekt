@@ -137,14 +137,14 @@
         <Menu DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.Footer}">
             <MenuItem Header="Soubor">
                 <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="Ctrl+N" Click="MenuNew_Click"/>
-                <MenuItem x:Name="MenuOpen"   Header="Otevřít ze souboru..."  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
-                <MenuItem x:Name="MenuOpenFromCache" Header="Otevřít z databáze..." Command="{Binding OpenFromCacheCommand}"/>
-                <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední"/>
+                <MenuItem x:Name="MenuOpen"   Header="Otevřít z databáze..."  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
                 <Separator/>
-                <MenuItem x:Name="MenuSave"   Header="Uložit"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
-                <MenuItem x:Name="MenuSaveAs" Header="Uložit jako soubor..."                  Click="MenuSaveAs_Click"/>
-                <MenuItem x:Name="MenuSaveToCache"   Header="Uložit do databáze"          Command="{Binding SaveToCacheCommand}"/>
-                <MenuItem x:Name="MenuSaveToCacheAs" Header="Uložit do databáze jako..." Command="{Binding SaveToCacheAsCommand}"/>
+                <MenuItem x:Name="MenuSave"   Header="Uložit do databáze"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
+                <MenuItem x:Name="MenuSaveAs" Header="Uložit do databáze jako..."                  Click="MenuSaveAs_Click"/>
+                <Separator/>
+                <MenuItem x:Name="MenuImportJson" Header="Importovat z JSON souboru..." Command="{Binding ImportJsonCommand}"/>
+                <MenuItem x:Name="MenuExportJson" Header="Exportovat do JSON souboru..." Command="{Binding ExportJsonCommand}"/>
+                <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední JSON"/>
                 <Separator/>
                 <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF..." Click="MenuExportPdf_Click"/>
                 <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG..." Click="MenuExportPng_Click"/>

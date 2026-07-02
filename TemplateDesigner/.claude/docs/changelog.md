@@ -1,5 +1,65 @@
 # Changelog
 
+## 2026-06-30 — Ověření: pořadí poznámek v legendě 1:1 s legacy (živý gold oracle)
+
+- ✅ **Default řazení legendy potvrzeno 1:1** proti gold oracle (`ALVA.TISKMHD.Data`, VOLANO_Z=JRMAIN)
+  na CB_CSADAD lince **0365005** (page 1, Smrkovice → Dobešice). Pořadí **bezbariér → rozdíly tras
+  (B,C,E,F,G,H) → omezení (29,68)** se shoduje včetně sub-pořadí a textů. `NotesLegendElement.Razeni
+  = Vychozi` zachová Caché emit order → **žádný reorder není potřeba**.
+- Vyvrací dřívější (retraktovanou) domněnku o nutném reorderu „typ1→2→3" — ta by pořadí naopak
+  rozbila. **Neprověřeno na této lince:** pozice `atributy-zastavky` / `ruční-komentáře` / `směrové`
+  vůči těmto třem (na stránce nebyly); emit order je dle kódu atributy → bezbariér → rozdíly →
+  komentáře → omezení → směrové.
+
+## 2026-06-30 — Font combobox plošně (sjednocení výběru fontu)
+
+- ✅ **Jednotný font picker všude** — editovatelný ComboBox s nainstalovanými fonty (`SKFontManager`
+  přes `FontResolver`) napříč všemi místy výběru fontu, ne jen v PageEdit:
+  - `ElementFormBinder.PopulateFontFields` (sdílené, přesun z ElementEditDialog) — voláno ze **3 hostů**
+    EDInputformu: `ElementEditDialog` + embedded form v `StopColumnsEditorDialog` / `DepartureGroupEditorDialog`.
+  - `TextElementEdit.cls`: font List se 6 natvrdo hodnotami → **ComboBox** (všechny nainstalované,
+    editovatelný, volitelný → prázdné dědí dokumentový default).
+  - `StyleFields.cls`: font `AddText` → **ComboBox** (propíše se do všech tabulkových/JŘ style zón).
+  - `CellStyleEditor` (per-column C#): font TextBox → **editovatelný ComboBox** (`FontFamilyOptions` DP,
+    default `FontResolver.InstalledFamilies`); tri-state placeholder „dědit" zachován.
+- Filtrování/omezení na podmnožinu fontů půjde později (změna jednoho seznamu). Varování „font není
+  nainstalovaný" stále odložené (Arial fallback to mitiguje).
+
+## 2026-06-30 — Výchozí font na úrovni šablony (dokumentový default + font combobox)
+
+- ✅ **`Template.DefaultTextStyle: TextStyle?`** — dokumentový výchozí styl (UI zatím jen font, model
+  rozšiřitelný o velikost/barvu). Kořen kaskády: elementy bez vlastního fontu ho zdědí.
+- ✅ **Ambient `DocumentDefaults`** — `Apply()` overlayuje výchozí styl na zapečené dno kaskády
+  (`ResolvedTextStyle.Default`, `CellDefaults.Default` + schedule/table rodiče převedeni na gettery;
+  ze schedule rodičů odstraněn natvrdo `FontFamily="Arial"`; `CreateDefault` už font nenastavuje).
+  Sync přes `PreviewCanvas.Layout()` wrapper (chokepoint před každým layoutem — pokrývá preview,
+  PDF/PNG export, tisk i měření přetečení) + `DesignerCanvas.Render` + `RebuildSections`.
+- ✅ **UI font combobox** — `PageEdit.cls` font pole = editovatelný ComboBox; klient ho po načtení
+  schématu naplní nainstalovanými fonty z `SKFontManager` (`ElementEditDialog.OnFormInitialized`).
+- ✅ **`FontResolver`** — jediný zdroj fontů (`SKFontManager`) + Arial fallback: neznámý/nenainstalovaný
+  font → **Arial** (≈ Helvetica), ne náhodný systémový default. Vstup shovívavý (trim mezer, prázdné=default).
+- 🐛 **Fix `ElementPropertyAccessor.Exists`** — traverzace podle typu (ne hodnoty) → zápis přes EDInputForm
+  s null mezičlánkem (`DefaultTextStyle.FontFamily`) se už nezahazuje. (Týkalo se obecně vnořených cest.)
+- 🐛 **Fix měření↔glyf asymetrie** — měření šířky v `DepartureGridElement`/`StopListElement` používá
+  resolved font (vč. dokumentového defaultu), ne raw → sloupce se neořezávají při custom fontu.
+
+## 2026-06-30 — Databáze jako primární úložiště šablon (JSON = import/export)
+
+- ✅ **Sjednocení modelu ukládání** — Otevřít (Ctrl+O) / Uložit (Ctrl+S) / Uložit jako míří do
+  **databáze**. Soubor degradován na **Importovat z JSON** / **Exportovat do JSON** (export nemění
+  původ — kopie ven, obdoba PDF/PNG). Odstraněny duplicitní menu položky „Otevřít/Uložit do databáze".
+- ✅ **Titulek ukazuje původ** `[DB]` / `[neuloženo]` (kam míří Uložit). Nová/importovaná šablona →
+  Ctrl+S ji založí do DB (SaveAs formulář s jménem); existující → tichý update (bez confirm).
+- **Pohlcuje S2** (asymetrie file/DB původu) — export už původ nemění, problém zaniká. Správce
+  „Nástroje → Šablony v databázi" beze změny. Versioning prerekvizita (R5) splněna `TemplateMigrator`em.
+
+## 2026-06-24 — Evidence nových zákaznických požadavků z prezentací (sekce P)
+
+- 📝 **Zaznamenány 3 nové požadavky** z živých prezentací 2026-06-24 do
+  `customer-requirements-zastavkovy-jr.md §P` (evidence, neanalyzováno; před implementací založit ticket):
+  **P1** ruční poznámky do patičky, **P2** sloučení linek se stejným posledním trojčíslím (i různá Tč /
+  více dopravců) do jednoho výstupu, **P3** logická imposice 2×A5 oboustranně na A4.
+
 ## 2026-06-23 — AD: datumová omezení jako negativní značky (cnz) + drobné opravy
 
 - ✅ **Číslování omezení = číslo NZ (`cnz`) invertovaně** (1:1 legacy). Marker datumového omezení je
@@ -290,6 +350,15 @@
   AD agenda hotová) v `MainWindow.xaml.cs` + `--test-detector` blok v `App.xaml.cs` (hardcoded `Downloads\*.PDF`).
   `PdfImport.ScheduleDetectorTest` zůstává jako ruční debug utilita (mimo app flow).
 
+## 2026-06-15 — Wave 4: EDInputForm Image field type + migrace ImageElement (W4-6)
+
+- ✅ **Nový `EFieldType.Image`** v EDControls EDInputForm — upload → base64 + náhled přes
+  `Base64ToImageSourceConverter`. Image hodnota se **nikdy neposílá na server** (velký base64;
+  `EDInputFormController` ji drží client-side a po Validate echu obnoví).
+- ✅ **ImageElement migrován** do generického `ElementEditDialog` — Caché schema `ImageElementEdit.cls`;
+  `EDInputFormSchema` switch v MainWindow mapuje `ImageElement → ImageElementEdit`. Uzavírá W4-6.
+- Předtím (samostatné commity): EDInputForm Color field type + ComboBox field type (editable + autocomplete).
+
 ## 2026-06-12 — Wave 4: parametry tisku přes EDInputForm (Caché-driven)
 
 - ✅ **Tiskový dialog → EDInputForm** — parametry sestavy se renderují přes EDInputForm, jehož schéma
@@ -359,8 +428,7 @@ proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN) + pročištěna v�
   prázdný subscript; přidán guard. Stejný `$d()` guard na `served` cache (merge z undef = `<UNDEFINED>`).
 
 **Zbývá k úplnému 1:1 (zdokumentováno §10):** multi-varianta TrasaMin (renderer), číslování omezení
-TYPPOZ=1 (firm-config), šířka/layout legendy. **Výkon:** MHD `VypocitatBitmapyObsluhy` (O(bodů³)) —
-rizikový, samostatný krok.
+TYPPOZ=1 (firm-config), šířka/layout legendy.
 
 ## 2026-05-25 — Wave 3 uzavřena (Fáze 2 auto-snapshots skipnuté)
 

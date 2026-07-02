@@ -60,10 +60,20 @@ public class PreviewCanvas
         return 2 * PagePaddingPx + pageW * BaseMmToPx * zoom;
     }
 
+    /// <summary>Spustí layout engine a zároveň synchronizuje ambient výchozí styl (font) na aktuální
+    /// šablonu. Tím všechny font-resolve cesty (preview render, PDF/PNG export, měření přetečení/výšky)
+    /// používají správný font i bez předchozího paintu — font se mění přes EDInputForm reflexí, takže se
+    /// na něj nedá spolehnout přes RebuildSections/Render. Jediný chokepoint místo per-metoda syncu.</summary>
+    private LayoutResult Layout(DataContext? data)
+    {
+        DocumentDefaults.Style = _state.CurrentTemplate.DefaultTextStyle;
+        return _engine.Layout(_state.CurrentTemplate, data);
+    }
+
     /// <summary>Výška všech stránek v px při daném zoomu — pro nastavení výšky SKElement.</summary>
     public float CalculatePageHeightPx(float zoom, DataContext? data = null)
     {
-        var layout = _engine.Layout(_state.CurrentTemplate, data);
+        var layout = Layout(data);
         int pageCount = Math.Max(1, layout.TotalPages);
         float pageH = _state.CurrentTemplate.PageSize.Height * BaseMmToPx * zoom;
         return PagePaddingPx + pageCount * pageH + (pageCount - 1) * PageGapPx + PagePaddingPx;
@@ -107,7 +117,7 @@ public class PreviewCanvas
 
         foreach (var data in dataPages)
         {
-            var layout = _engine.Layout(_state.CurrentTemplate, data);
+            var layout = Layout(data);
 
             foreach (var page in layout.Pages)
             {
@@ -143,7 +153,7 @@ public class PreviewCanvas
         // Posbírat všechny renderované stránky napříč DataContexty
         var renderedPages = new List<Page>();
         foreach (var data in dataPages)
-            renderedPages.AddRange(_engine.Layout(_state.CurrentTemplate, data).Pages);
+            renderedPages.AddRange(Layout(data).Pages);
 
         if (renderedPages.Count == 0) return 0;
 
@@ -185,7 +195,7 @@ public class PreviewCanvas
         int overflowing = 0, total = 0;
         foreach (var data in dataPages)
         {
-            foreach (var page in _engine.Layout(_state.CurrentTemplate, data).Pages)
+            foreach (var page in Layout(data).Pages)
             {
                 total++;
                 if (PageOverflows(page, ps)) overflowing++;
@@ -206,7 +216,7 @@ public class PreviewCanvas
         float pageH  = ps.Height * mmToPx;
         float pageX  = Math.Max(PagePaddingPx, (canvasWidth - pageW) / 2f);
 
-        var layout = _engine.Layout(_state.CurrentTemplate, data);
+        var layout = Layout(data);
 
         // Pre-detekce přetečení per stránka (funguje bez renderu) → červený rámeček konkrétní
         // přetékající stránky + hláška ve status baru (přes OverflowChanged).

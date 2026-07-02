@@ -1,6 +1,8 @@
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Rendering;
 
@@ -66,6 +68,16 @@ public partial class CellStyleEditor : UserControl
     public static readonly DependencyProperty FontSizeOptionsProperty =
         DependencyProperty.Register(nameof(FontSizeOptions), typeof(float[]), typeof(CellStyleEditor),
             new PropertyMetadata(new[] { 4f, 5f, 6f, 7f, 8f, 9f, 10f, 11f, 12f, 14f, 16f, 18f, 20f, 24f }));
+
+    // Nainstalované fonty pro editovatelný font ComboBox (default = SKFontManager přes FontResolver).
+    public IReadOnlyList<string> FontFamilyOptions
+    {
+        get => (IReadOnlyList<string>)GetValue(FontFamilyOptionsProperty);
+        set => SetValue(FontFamilyOptionsProperty, value);
+    }
+    public static readonly DependencyProperty FontFamilyOptionsProperty =
+        DependencyProperty.Register(nameof(FontFamilyOptions), typeof(IReadOnlyList<string>), typeof(CellStyleEditor),
+            new PropertyMetadata(FontResolver.InstalledFamilies));
 
     // ── Options (co zobrazit / skrýt) ─────────────────────────────────────
 

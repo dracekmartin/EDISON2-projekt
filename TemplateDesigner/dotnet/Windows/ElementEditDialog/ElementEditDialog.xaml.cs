@@ -1,5 +1,10 @@
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
+using EDControls;
+using EDControls.EDInputForm;
+using SkiaSharp;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 
@@ -42,6 +47,7 @@ public partial class ElementEditDialog : Window
 
     private void OnFormInitialized()
     {
+        ElementFormBinder.PopulateFontFields(TheForm);
         _preFilled = ElementFormBinder.Prefill(TheForm, _target);
         TheForm.Validate();
     }

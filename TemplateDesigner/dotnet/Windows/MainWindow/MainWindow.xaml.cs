@@ -1517,10 +1517,12 @@ public partial class MainWindow : Window
         if (_vm is null) return;
         string agenda = !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode)
             ? $"[{_vm.State.CurrentTemplate.AgendaCode}] " : "";
+        // Indikátor původu: kam míří Uložit. [DB] = uložená v databázi (Ctrl+S aktualizuje),
+        // [neuloženo] = nová/importovaná, ještě není v DB (Ctrl+S ji založí).
+        string origin = _vm.IsCacheBacked ? "[DB] " : "[neuloženo] ";
         string name = _vm.State.CurrentTemplate.Name;
-        string file = _vm.CurrentFilePath is not null ? $" — {Path.GetFileName(_vm.CurrentFilePath)}" : "";
         string dirty = _vm.IsDirty ? " *" : "";
-        Title = $"{agenda}{name}{file}{dirty} — Template Designer";
+        Title = $"{agenda}{origin}{name}{dirty} — Template Designer";
     }
 
     private void ShowHelp()

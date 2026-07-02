@@ -331,7 +331,12 @@ do sloupce není čistě „Plk znak → sloupec" — promítají se i datová o
 
 ---
 
-## 10. Stav implementace agendy `ZastavkoveJrAd` (2026-06-02)
+## 10. Stav implementace agendy `ZastavkoveJrAd` (snapshot 2026-06-02)
+
+> ⚠️ **Datum snapshotu zastaralý.** Tato sekce je historický záznam stavu k 2026-06-02; agenda je
+> dnes datově 1:1 + výkonově hotová. **Aktuální stav** viz [`changelog.md`](changelog.md) +
+> [`roadmap.md`](roadmap.md) (sekce „Co máme" / AD-N tabulka). Níže ponecháno jako referenční mapa
+> implementace (co engine dělá a kde), ne jako status.
 
 Třída `ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd` (code `ZASTAVKOVY_JR_AD`, „Zastávkový JŘ (AD)").
 Reimplementace legacy `ALVA.TISKMHD.Data` větve `VolanoZ=JRMAIN`. **Pozn.: TD běží ve firmě dle
@@ -475,9 +480,6 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
   `NacistOdjezdy` čtou z mapy. Trasa se parsuje jednou per `cisloTrasy` místo per stránka×spoj.
   ⚠️ **Pozor — `^||` globály neberou prázdný subscript** (`<SUBSCRIPT>` na `^||TiskAd("wmap","")`);
   WMapa guarduje `cisloTrasy=""` (spoj bez trasy) + prázdné mapy necachuje (merge z undef = `<UNDEFINED>`).
-- ⬜ **Zbývající hot spot (větší refaktor):** MHD `VypocitatBitmapyObsluhy` má 3 samostatné průchody
-  `obsluhaKonec` + vnořené smyčky → potenc. O(bodů³), šlo by sloučit. (Rizikový zásah do ověřeného
-  MHD enginu — samostatný opatrný krok s re-verifikací proti MHD gold.) Detail v analýze 2026-06-12.
 
 ### 🔧 DEV tweaky k odstranění před produkcí (označené TODO v kódu)
 - `MainWindow.xaml.cs` `#if DEBUG` Loaded handler → auto-otevře `kv_ad_test.json` (hardcoded cesta).

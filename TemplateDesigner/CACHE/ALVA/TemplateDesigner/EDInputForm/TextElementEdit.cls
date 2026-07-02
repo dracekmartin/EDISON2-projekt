@@ -32,14 +32,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Font" ────────────────────────────────────────────────
         d form.AddGroup("font", "Font")
 
-        s f = form.AddFieldToLastGroup("Style.FontFamily", "Písmo", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Arial", "Arial")
-        d f.AddListItem("Calibri", "Calibri")
-        d f.AddListItem("Times New Roman", "Times New Roman")
-        d f.AddListItem("Verdana", "Verdana")
-        d f.AddListItem("Courier New", "Courier New")
-        d f.AddListItem("Consolas", "Consolas")
-        s f.value = "Arial"
+        // ComboBox (editovatelný + autocomplete) s prázdným seznamem — klient ho naplní nainstalovanými
+        // fonty (ElementFormBinder.PopulateFontFields z SKFontManager). Prázdné = dědí výchozí font šablony.
+        d form.AddFieldToLastGroup("Style.FontFamily", "Písmo", $$$FieldTypeComboBox, 0, 0)
 
         d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
         d form.AddBool("Style.Bold", "Tučně", 0)
