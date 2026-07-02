@@ -2,6 +2,36 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-02 ✅ — DynamicTableElement + AD 1:1 uzávěrka + architektonický track
+
+**DynamicTableElement** — rozdělení tabulek: dynamická (řádky z `DataSource` kolekce) samostatný
+element + 2-tab editor (Obecné EDInputForm `DynamicTableElementEdit.cls` + Sloupce přes
+`ColumnListEditor`/`CellStyleEditor`); statická `TableElement` uspána (JsonDerivedType jen pro
+legacy načtení, z UI pryč). Auto-scale do pevné Height, auto-distribuce šířky, seed sloupců z polí
+kolekce centralizovaný v dialogu, dvojklik otevře dialog. **Uzavírá Wave 4 W4-9** (komplexní
+elementy: StopList ✅ + DepartureGrid ✅ + dynamická tabulka ✅). Detail changelog 2026-07-02.
+
+**AD zastávkový JŘ = 1:1 kompletní.** Hotové AD-N: N1, N2, N3, N6, N7, N8, N8b, N9, N10, **N13
+(multi-varianta TrasaMin / L1, 1:1 gold 0365005)**; číslování omezení `cnz` ✅; pořadí legendy
+ověřeno ✅. **AD-N4/N11/N12/N14 přeřazeny do linkových JŘ** (legacy zastávkový je nepoužívá).
+`GetSchema` kolekce (ZASTAVKY/SKUPINY_DNU/ODJEZDY/POZNAMKY) synced 1:1 s reálnými `Build*` daty
+(doplněna skutečná skalární pole, phantom NADPIS2 odstraněn). Zbývá jen vizuál legendy + N5/N15
+(blokované dormant daty).
+
+**Helpdesk A.2-D ✅** — #7947 („jede až do XY"), #7955 (custom komentář přebíjí auto + NZ bug),
+#7161 (skrytí „na znamení" + vypnutí agregátu bezbariér) zavřeno pro AD agendu. #11300 (KORID
+přípoje) přeřazeno k linkovým JŘ (není zastávkový koncept). Port na MHD agendu neproveden (až bude
+potřeba). Odložené A2-A5/A6/B4 zůstávají (datový průzkum / diskuze).
+
+**Architektonický track** — T1a C# testy (164, pre-push) ✅, T1b Caché testy (25/40) ✅ částečně
+(zbývá compare-gold skript), T2 async multi-instance export nad snapshotem ✅, T3 migrator guardy
+(forward-compat R5) ✅. Rozhodnutí **R1–R7** pro škálování agend zdokumentována
+([`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md)).
+
+**Caché Migrace** — Wave 1/2/3 ✅; Wave 4 kroky W4-0..W4-6 + W4-8 + W4-9 (StopList/DepartureGrid/
+dynamická tabulka) ✅. Zbývá jen W4-7 Page + W4-10/11 (inline panel migrace + PropertyDescriptor
+cleanup — velký refaktor, na konec).
+
 ## Handoff session 2026-06-21 (historický záznam) ✅
 
 > Archivováno 2026-06-30. Tento blok byl původně živý na vršku roadmapy jako handoff pro pokračování
