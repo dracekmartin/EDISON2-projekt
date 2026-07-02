@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-02 — DynamicTableElement: samostatná dynamická tabulka + 2-tab editor
+
+- ✅ **Rozdělení tabulek** — dynamická tabulka (řádky z `DataSource` kolekce) je samostatný
+  element `DynamicTableElement`; statická `TableElement` **uspána** (`JsonDerivedType` zůstává
+  pro načtení legacy šablon, z palety/menu odstraněna). Ztráta zpětné kompatibility akceptována.
+- ✅ **`DynamicTableEditorDialog`** (2-tab, konzistentní se StopList/DepartureGrid): tab Obecné =
+  EDInputForm (`ALVA.TemplateDesigner.EDInputForm.DynamicTableElementEdit`) + tab Sloupce
+  (`ColumnListEditor` + `CellStyleEditor`, Add/Remove, mapování `Field`). Dvojklik na element
+  otevře dialog rovnou (jako StopList).
+- ✅ **Auto-scale do pevné Height** (jako JŘ elementy) + auto-distribuce šířky sloupců (`Width≤0`
+  = rozdělí zbývající šířku); `BuildColumnsFromFields` helper; placeholder u prázdné tabulky.
+- ✅ **Zdroj dat = EDInputForm List** plněný klientsky (kolekce agendy); seed sloupců
+  **centralizovaný v dialogu** (undoable přes příkaz) + seed při otevření. Reapply výběru po
+  re-Initu (EDInputForm auto-Init na `Loaded` = re-Init při návratu na tab). **Nemíchat
+  EDInputForm + nativní WPF** — transient stav držet stranou (memory / temp global).
+- ✅ **`ZastavkoveJrAd.GetSchema` synced 1:1 s reálnými `Build*` daty** — kolekce
+  ZASTAVKY/SKUPINY_DNU/ODJEZDY/POZNAMKY doplněny o skutečná skalární pole (PORADI, JE_AKTUALNI,
+  ODSAZENI, ZAKLADNI_TRASA, ZKRACENE_OZNACENI_LINKY, KATEGORIE, FORE/BACK_COLOR); phantom
+  NADPIS2 odstraněn. (Vnořená pole ZONY/PRUBEHY/ATRIBUTY/… zůstávají doménou StopListu.)
+
 ## 2026-07-02 — Architektonická rozhodnutí R1–R7 pro škálování agend (nový doc)
 
 - ✅ **`architektonicka-rozhodnuti-agendy.md`** — plain-text zápis 7 rozhodnutí, která drží
