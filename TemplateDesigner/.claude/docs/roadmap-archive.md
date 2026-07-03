@@ -2,6 +2,38 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-03 ✅ — Pre-pilot UX polish (Fable audit, celý blok)
+
+Audit 19 oken proti produktové filozofii („srozumitelnost nad úplností"). **Celý P0 + akční střední/malé
+položky hotové**; detail v [`changelog.md`](changelog.md) 2026-07-03.
+
+**🔴 P0 (U1–U7) — vše hotovo:**
+- **U1** BUG: „Ano = uložit" v confirm neuložených změn ukládalo do JSON souboru místo DB → teď DB
+  (stejná cesta jako Ctrl+S). Celý confirm/close flow převeden na async (`ConfirmUnsavedChangesAsync`,
+  `SaveAndContinueAsync`) + fix pádu při zavření čistého okna (Close přes `Dispatcher.BeginInvoke`).
+- **U2** context menu „Vlastnosti elementu…" → otevře dialog (dřív jen přepnulo panel).
+- **U3** klik na paletu (bez tažení) vloží element do aktivní sekce (fallback v `EndAddingElement`).
+- **U4** dvojklik do prázdna už neotevírá vlastnosti stránky — zruší výběr.
+- **U5** Ctrl+S bez DB → popup s nabídkou JSON exportu (dřív tiché do status baru).
+- **U6** cancel sjednocen na „Storno" přes `{StaticResource EDStrings.Cancel}` (7 dialogů) + pravidlo do `ux-conventions §1`.
+- **U7** M/O snap tooltipy — už existovaly (audit stale).
+
+**🟠 Střední — akční hotové:**
+- **Skryté featury do context menu** — Seskupit/Rozeskupit (Ctrl+G/Ctrl+Shift+G), „Rozdělit → Vodorovně/Svisle" (Ctrl+Shift+H/J), „Upravit text (F2)".
+- **Drift tabulky zkratek** — `ux-conventions §3` přepsáno 1:1 dle KeyDown handleru (Ctrl+Shift+S smazán; doplněno ~10 chybějících).
+- **Zoom tlačítko × zkratka konzistentní** — „Fit"+Ctrl+0 = přizpůsobit; „1:1"+Ctrl+1 = 100 %.
+- **StatusText segmentace** — status bar rozdělen na „stav výběru" (`SelectionStatusText`, klid) + „akce/progres" (`StatusText`, transient) → nepřepisují se.
+- **Escape ruší probíhající drag/resize/rubber band** (restore z init).
+
+**Vědomě odloženo / parkováno:**
+- **Ikonový jazyk** (Fluent + glyfy) — necháváme, není zásadní.
+- **Rubber band napříč sekcemi** — nepotřebujeme; sahá do selection sémantiky, pilot potvrdí.
+- **Dvojí vizuální jazyk = left-panel refaktor** (PropertyDescriptor → EDInputForm, W4-10/11) — vyčleněno
+  do backlogu jako samostatný velký track (chceme do budoucna).
+- **Layout robustnost (pilot-gated):** „sekce vyšší než stránka" (var B, největší koncepční layout dluh),
+  „element drag mezi sekcemi" (tvrdý clamp) — po pilotu.
+- **🧭 Filozofie:** rozšířit UX mřížku o vrstvu menu/toolbar/zkratka (`feature-design-principles`) — doc, low-prio.
+
 ## Session 2026-07-03 ✅ — EDISON launch integrace + úklidy
 
 **EDISON → TD launch integrace (A1 + A2, Martin Hubata, merged do main).** TD se spouští ze stromu

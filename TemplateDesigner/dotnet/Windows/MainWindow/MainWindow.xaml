@@ -724,6 +724,7 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
@@ -774,15 +775,24 @@
 
                     <Border Grid.Column="3" Width="1" Background="{DynamicResource EDTheme.Border.Light}"/>
 
-                    <!-- 3) Dynamický kontextový status -->
-                    <TextBlock x:Name="StatusText" Grid.Column="4"
-                               Text="{Binding StatusText}"
+                    <!-- 3a) Stav výběru (klidová zóna — element / sekce) -->
+                    <TextBlock x:Name="SelectionStatusText" Grid.Column="4"
+                               Text="{Binding SelectionStatusText}"
                                VerticalAlignment="Center" Margin="10,0"
+                               TextTrimming="CharacterEllipsis"
                                FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
 
+                    <!-- 3b) Akce / progres (transientní zóna — uloženo / chyba / export N/N; nepřepíše se výběrem) -->
+                    <TextBlock x:Name="StatusText" Grid.Column="5"
+                               Text="{Binding StatusText}"
+                               VerticalAlignment="Center" Margin="10,0"
+                               FontWeight="SemiBold"
+                               FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                               Foreground="{DynamicResource EDTheme.Text.Primary}"/>
+
                     <!-- 4) Varování o přetečení preview (červený blok, jen když obsah přetéká) -->
-                    <Border Grid.Column="5"
+                    <Border Grid.Column="6"
                             Background="#D32F2F" Padding="10,3" Margin="6,0,0,0"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"

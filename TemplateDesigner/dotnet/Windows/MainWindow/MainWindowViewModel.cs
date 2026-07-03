@@ -256,10 +256,22 @@ public class TemplateDesignerViewModel : EDViewModel
     public bool CanRedo => State.CanRedo;
 
     private string _statusText = "";
+    /// <summary>Transientní „akce/progres" zóna status baru (uloženo / chyba / export N/N / migrace).
+    /// Odděleno od <see cref="SelectionStatusText"/>, aby se navzájem nepřepisovaly — akční hláška
+    /// zůstane viditelná i když uživatel mezitím klikne jinam a změní se stav výběru.</summary>
     public string StatusText
     {
         get => _statusText;
         set => Set(ref _statusText, value);
+    }
+
+    private string _selectionStatusText = "";
+    /// <summary>Klidová „stav výběru" zóna status baru (aktuální element / sekce). Píše ji jen
+    /// <see cref="UpdateStatusForSelection"/>; mění se volně s výběrem, nepřepíše akční hlášku.</summary>
+    public string SelectionStatusText
+    {
+        get => _selectionStatusText;
+        set => Set(ref _selectionStatusText, value);
     }
 
     private bool _hasPreviewOverflow;
@@ -2140,30 +2152,30 @@ public class TemplateDesignerViewModel : EDViewModel
 
     // ── Status text for selection ──────────────────────────────────────────────
 
-    /// <summary>Aktualizuje StatusText podle aktuálního výběru (dříve v code-behind UpdatePropertiesPanel).</summary>
+    /// <summary>Aktualizuje SelectionStatusText podle aktuálního výběru (klidová zóna status baru).</summary>
     public void UpdateStatusForSelection()
     {
         if (State.SelectedElements.Count == 1)
         {
             var el = State.SelectedElements[0];
             string type = el.GetType().Name.Replace("Element", "");
-            StatusText = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
+            SelectionStatusText = $"{type}  |  X: {el.X:0.#}  Y: {el.Y:0.#}  |  Šířka: {el.Width:0.#} mm" +
                          (el.IsLocked ? "  [ZAMČENO]" : "") +
                          "  |  2× klik nebo Enter = vlastnosti";
         }
         else if (State.SelectedElements.Count > 1)
         {
-            StatusText = $"Vybráno {State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru";
+            SelectionStatusText = $"Vybráno {State.SelectedElements.Count} elementů  |  Ctrl+klik pro odebrání z výběru";
         }
         else if (State.ActiveSection is not null)
         {
-            StatusText = $"Sekce: {State.ActiveSection.Name}  |  " +
+            SelectionStatusText = $"Sekce: {State.ActiveSection.Name}  |  " +
                          $"Výška: {State.ActiveSection.DesignerHeight?.ToString("0.#") ?? "dynamická"} mm  |  " +
                          $"Elementy: {State.ActiveSection.Elements.Count}";
         }
         else
         {
-            StatusText = "Vyberte element nebo sekci.";
+            SelectionStatusText = "Vyberte element nebo sekci.";
         }
     }
 

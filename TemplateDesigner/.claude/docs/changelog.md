@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-03 — StatusText segmentace: „stav výběru" × „akce/progres"
+
+- ✅ **Status bar rozdělen na dvě zóny**, aby se nepřepisovaly. Dřív jeden `StatusText` míchal stav
+  výběru (element/sekce), transientní feedback (uloženo/chyba) i progres (export N/N) — akční hláška se
+  ztratila hned, jak uživatel klikl jinam. Nově: nová property **`SelectionStatusText`** (klidová zóna,
+  píše ji jen `UpdateStatusForSelection`) + stávající **`StatusText`** repurposed jako transientní
+  „akce/progres" zóna (~14 zápisů: export, uložení, chyby, načítání dat, migrace, schránka). XAML:
+  levý `*` sloupec = výběr (šedý, ellipsis), pravý Auto sloupec = akce (tučný, primární barva),
+  overflow blok posunut. Akční hláška zůstává viditelná i po změně výběru.
+
 ## 2026-07-03 — Escape ruší probíhající operaci (drag / resize / rubber band)
 
 - ✅ **Escape během tažení / změny velikosti vrátí element na začátek** (`EndDrag`/`EndResize` s

@@ -13,10 +13,10 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **🎯 Pre-pilot UX polish — AKTIVNÍ VÝVOJOVÝ FOCUS.** Doladit designer core do nejlepšího stavu před
-   pilotem (audit s Fablem 2026-07-03, sekce „UX/UX audit" níže). **P0 (U1–U7) ✅ VŠE HOTOVO 2026-07-03.**
-   Další na řadě: 🟠 střední položky (skryté featury do context menu, drift tabulky zkratek, ikonový jazyk).
-   Vše „obecná vylepšení jádra" + zastávkové — žádné linkové/knižní.
+1. **🎯 Pre-pilot UX polish — ✅ HOTOVO 2026-07-03.** Celý akční blok (P0 U1–U7 + střední/malé: context
+   menu discoverability, drift zkratek, zoom konzistence, StatusText segmentace, Escape ruší operaci)
+   uzavřen → archiv. Zbývá jen pilot-gated layout (var B) + vyčleněný left-panel refaktor (backlog).
+   **Další focus zvolit** (viz návrhy směrů níže / diskuze).
 2. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
    TD.exe z main → `C:\Edison` (D3) + Caché třídy na zákaznický server (D4). A1/A2 launch ✅ (Martin, v main).
    Tisk (`A3`) + systémové šablony (`B`) odloženo. Cesta k pilotu (R7).
@@ -26,6 +26,9 @@
    hotová (zbývá jen `W4-10/11` inline panel — velký refaktor, na konec).
 
 **Backlog / budoucí velké tracky:**
+- **Left-panel inline editace: PropertyDescriptor → EDInputForm** (W4-10/11) — velký refaktor, sjednotí
+  „dvojí vizuální jazyk" editace (levý panel dnes používá staré PropertyDescriptor okno místo EDInputFormu).
+  Vyčleněno 2026-07-03 z UX polish bloku jako samostatná položka. **Chceme do budoucna.**
 - Nové z prezentací **P1–P3** (neanalyzováno, před implementací ticket)
 - Helpdesk odložené **A2-A5 / A6 / B4** (datový průzkum / diskuze s kolegy)
 - **Fáze B** element flexibility (merged cells, conditional formatting)
@@ -284,41 +287,21 @@ Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{
 
 ---
 
-## 🎯 UX/UX audit — pre-pilot polish (Fable 2026-07-03) — AKTIVNÍ
+## 🎯 UX/UX audit — pre-pilot polish (Fable 2026-07-03) — ✅ HOTOVO
 
-> Audit 19 oken proti produktové filozofii („srozumitelnost nad úplností"). Základ hodnocen nadprůměrně;
-> problémy průřezové: (1) dvojí vizuální jazyk / „too many ways", (2) tichá/přetížená zpětná vazba,
-> (3) nekonzistence (1 fakt. bug). **Cíl: designer v nejlepším stavu před pilotem.** Každou položku před
-> implementací ověřit proti kódu (audit je z jiné session — může být lokálně stale).
+> Audit 19 oken proti produktové filozofii („srozumitelnost nad úplností"). **Celý akční blok hotový
+> 2026-07-03** (P0 U1–U7 + střední/malé: context menu discoverability, drift zkratek, zoom konzistence,
+> StatusText segmentace, Escape ruší operaci). Detail → [`roadmap-archive.md`](roadmap-archive.md) +
+> [`changelog.md`](changelog.md).
 
-**🔴 P0 — opravit před pilotem (~1–2 dny, aditivní):** *(✅ VŠE HOTOVO 2026-07-03 — U1–U7)*
+**Zbývá z tohoto tématu (mimo blok):**
+- **Left-panel refaktor** (PropertyDescriptor → EDInputForm) — velký track, viz „Backlog" nahoře.
+- **Layout robustnost (pilot-gated):** „sekce vyšší než stránka" (var B — největší koncepční layout dluh),
+  „element drag mezi sekcemi" (tvrdý clamp). **Po pilotu.**
+- **Vědomě odloženo:** ikonový jazyk (písmenka OK), rubber band napříč sekcemi (nepotřebujeme).
+- **🧭 doc:** rozšířit UX mřížku (`feature-design-principles`) o vrstvu menu/toolbar/zkratka — low-prio.
 
-| # | Co | Proč |
-|---|---|---|
-| ~~U1~~ ✅ | **BUG opraveno:** „Ano = uložit" v confirm neuložených změn teď ukládá do **DB** (stejná cesta jako Ctrl+S), ne do JSON. Celý confirm/close flow převeden na async (`ConfirmUnsavedChangesAsync`, `SaveAndContinueAsync`). | Hotovo 2026-07-03 |
-| ~~U2~~ ✅ | **Hotovo:** context menu „Vlastnosti elementu…" teď otevře dialog (jako dvojklik i „Vlastnosti sekce…"), ne jen přepne inline panel. | Hotovo 2026-07-03 |
-| ~~U3~~ ✅ | **Hotovo:** klik na paletu (bez tažení) vloží element do aktivní sekce (fallback v `EndAddingElement`, 5×5 mm). Drag beze změny. | Hotovo 2026-07-03 |
-| ~~U4~~ ✅ | **Hotovo:** dvojklik do prázdna už neotevírá vlastnosti stránky — zruší výběr. Vlastnosti stránky přes Ctrl+Shift+P / menu. | Hotovo 2026-07-03 |
-| ~~U5~~ ✅ | **Opraveno:** Ctrl+S bez DB už netiše nepíše do status baru — popup s nabídkou exportu do JSON (`OfferJsonExportFallbackAsync`). | Hotovo 2026-07-03 |
-| ~~U6~~ ✅ | **Hotovo:** cancel sjednocen na „Storno" přes `{StaticResource EDStrings.Cancel}` (7 dialogů), OK/Uložit na `EDStrings.Ok`/`EDStrings.Save`; pravidlo zapsáno do `ux-conventions.md §1`. | Hotovo 2026-07-03 |
-| ~~U7~~ ✅ | **Už hotové (audit stale):** M/O snap toggly tooltipy mají („Přichytit k mřížce" / „Přichytávat k objektům"). Obecné glyfy-bez-tooltipu řešit v rámci U6/ikonového jazyka. | Ověřeno 2026-07-03 |
-
-**🟠 Střední — průběžně:**
-- **Dvojí vizuální jazyk editace** = Wave 4 zbytek (multi-edit + TableElement PD okno vs EDInputForm). Dotáhnout → zmizí „dvě aplikace".
-- **Ikonový jazyk** míchaný (Fluent + textové glyfy + unicode + emoji) — sjednotit.
-- ~~**Skryté featury jen na zkratce**~~ ✅ 2026-07-03: context menu má Seskupit/Rozeskupit (Ctrl+G/Ctrl+Shift+G, dle výběru), „Rozdělit → Vodorovně/Svisle" (Ctrl+Shift+H/J), „Upravit text (F2)" u TextElementu.
-- ~~**Drift tabulky zkratek**~~ ✅ 2026-07-03: `ux-conventions §3` přepsáno 1:1 dle KeyDown handleru (Ctrl+Shift+S smazán = neexistuje; doplněno F2, Ctrl+P, Ctrl+Shift+P/A, Ctrl+B, Ctrl+PgUp/PgDn, šipky, Escape, Ctrl+0/1).
-- ~~**Zoom: tlačítko × zkratka konzistentní**~~ ✅ 2026-07-03: „Fit" tlačítko + Ctrl+0 = přizpůsobit; „1:1" tlačítko + Ctrl+1 = 100 %. (Dva nezávislé combo-zoomy designer/preview ponechány — jsou to různé pohledy, nezávislý zoom je záměr.)
-
-**🟡 Layout robustnost (většinu nechat pilot ukázat):**
-- **Sekce vyšší než stránka** — designer = model „jedna pevná A4", přetečení jen červený rámeček v preview. Největší koncepční layout dluh; fix = „canvas roste + dělící čáry" (var B, M práce). **Po pilotu zvednout výš.**
-- Element nejde přetáhnout mezi sekcemi (tvrdý clamp; jen cut+paste) · rubber band jen v aktivní sekci · ~~Escape neruší drag~~ ✅ 2026-07-03 (drag/resize vrátí pozice, rubber band zahodí) · StatusText přepisuje stav×progres×chyby (chce nepřepisovatelný progres segment).
-
-**🧭 Filozofie (pravidlo teď):** rozšířit UX mřížku z `feature-design-principles` o vrstvu **menu/toolbar/zkratka** (dnes řeší jen properties; toolbar/menu rostou mimo ni — ~43 menu položek, ~34 tlačítek).
-
-**⛔ Nedělat teď:** plynulý zoom (až virtualizace), dark mode / hardcoded barvy (~15 míst, až theming požadavek), onboarding overlay.
-
-**Pořadí:** P0 (U1–U7) před pilotem → layout věci nechat pilot ukázat (var B až podle) → průběžně Wave 4 zbytek + skryté featury do context menu + tabulka zkratek.
+**⛔ Nedělat teď:** plynulý zoom (až virtualizace), dark mode / theming, onboarding overlay.
 
 ---
 
