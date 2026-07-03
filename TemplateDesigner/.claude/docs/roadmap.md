@@ -13,8 +13,8 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Architektonický track** — zbývá `T1b` compare-gold skript (1:1 vs legacy mimo hook), `T4`
-   god-objects strangler (průběžně), `T5`/`T6` drobnosti. Detail níže.
+1. **Architektonický track** — `T1b` základní gold regrese ✅ (2 linky, pevně CB_CSADAD, v pre-push;
+   robustní verze odložena). Zbývá `T4` god-objects (průběžně), `T5`/`T6` drobnosti. Detail níže.
 2. **AD dokončení** — zbývá jen **vizuál legendy POZNAMKY** (šířky/mezery proti gold) + `AD-N5`/`AD-N15`
    (blokované dormant daty). Zastávkový JŘ je jinak 1:1 hotový.
 3. **Wave 4 EDInputForm** — **funkčně hotová** (elementy/sekce/**stránka**/parametry mají EDInputForm
@@ -60,7 +60,7 @@ Z živých prezentací 2026-06-24. Před implementací dohledat ticket + přesn�
 
 | ID | Co | Stav |
 |---|---|---|
-| T1b | **Caché testy** — zbývá `tools/compare-gold.ps1` (1:1 vs legacy jako skript mimo pre-push hook) + volitelně AgendyRegistr/EDInputForm Init smoke | 🟡 zbývá compare-gold |
+| T1b | **Caché testy** — **základní gold regrese ✅ 2026-07-03** (`ZastavkoveJrAdGoldTest`: 2 gold linky 0365001+0365005, digest = hrubé počty + MD5 celého GetData výstupu, v pre-push). ⚠️ pevně vůči **CB_CSADAD** datům (per-firma namespace) — data drift = falešný pád (přegeneruj digest), jiný server bez CB_CSADAD → skip. **Robustní verze** (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do izolovaného namespace, data-drift-proof) odložena. | 🟡 základ hotový, robustní odloženo |
 | T4 | **God objects strangler** — `MainWindow.xaml.cs` (~2,7k) + `TemplateDesignerViewModel` (~2,5k): pravidlo „nové featury = nová služba/soubor" + postupné řezy (Export ✅, Instance, TemplatePersistence); R4 fix `TableEditorDialogViewModel:609` (WPF UI ve VM); rename `MainWindowViewModel.cs` → název třídy | ⬜ průběžně |
 | T5 | **Zbylé duplikace** — `EDList/Instance.cls:113` hardcoded mirror agend → napojit na `AgendyRegistr`; `ZastavkoveJrAd.GetMockData` → statický mock (nezávislý na firemních datech) | ⬜ malé |
 | T6 | Drobnosti — `architecture.md` nezná `PdfImport/`+`Services/` (~7k LOC); `MessageBox` v `MainWindow.xaml.cs:1021`; per-frame `new SKPaint` v Render() běžných elementů; `ScheduleDetectorTest.cs` v produkční assembly | ⬜ nízká |

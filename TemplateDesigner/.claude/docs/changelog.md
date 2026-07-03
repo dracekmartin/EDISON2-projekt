@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-03 — Gold regresní test AD zastávkového JŘ (T1b základ)
+
+- ✅ **`ALVA.TemplateDesigner.Tests.ZastavkoveJrAdGoldTest`** — základní 1:1 regresní pojistka:
+  `GetData` na gold linkách **0365001 + 0365005**, digest = hrubé počty (ZASTAVKY/ODJEZDY/POZNAMKY)
+  + MD5 celého spojeného výstupu, zmrazený jako baseline. Běží v pre-push Caché sadě (**27/27**).
+  Smysl: zachytit, že se kódem nerozbil datový výstup.
+- ⚠️ **Záměrně pevně vůči CB_CSADAD datům** (AD je per-firma namespace): drift JŘ dat = falešný pád
+  (přegeneruj digest z hlášky „aktuální: …"), jiný server bez CB_CSADAD → test se přeskočí. Robustní
+  verze (zmrazit vstupní `^JRL`/`^JRZ`/`^JRSET` do izolovaného namespace, data-drift-proof) odložena —
+  viz roadmap T1b.
+
 ## 2026-07-03 — Architektonická rozhodnutí: R1 rozhodnuto, R2/R3 upřesněno, stav do roadmapy
 
 - ✅ **Nová roadmap sekce „🧭 Architektonická rozhodnutí R1–R7 — stav a nejbližší akce"** —
