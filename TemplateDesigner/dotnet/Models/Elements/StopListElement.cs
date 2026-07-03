@@ -268,7 +268,8 @@ public class StopListElement : ScheduleElementBase
     public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
     /// <summary>Vyřeší styl záhlaví sloupce. Legacy StopColumn.Alignment je fallback pokud HAlign není v cascade.</summary>
-    private ResolvedTextStyle ResolveHeaderStyle(StopColumn col)
+    // public kvůli testovatelnosti kaskády (StopListCascadeTests) — stejný vzor jako DepartureGrid Resolve*.
+    public ResolvedTextStyle ResolveHeaderStyle(StopColumn col)
     {
         var elementResolved = ResolveColumnHeaderParent();
         var resolved = col.Style?.Header is { } h ? h.Resolve(elementResolved) : elementResolved;
@@ -281,7 +282,7 @@ public class StopListElement : ScheduleElementBase
     }
 
     /// <summary>Vyřeší styl datové buňky sloupce. Legacy Alignment fallback stejně jako pro header.</summary>
-    private ResolvedTextStyle ResolveDataStyle(StopColumn col)
+    public ResolvedTextStyle ResolveDataStyle(StopColumn col)
     {
         var elementResolved = ResolveColumnDataParent();
         var resolved = col.Style?.Data is { } d ? d.Resolve(elementResolved) : elementResolved;
@@ -297,7 +298,7 @@ public class StopListElement : ScheduleElementBase
     /// Current stop: override Bold (CurrentStopBold), FontSize (CurrentStopFontSize), Underline (CurrentStopUnderline).
     /// Passed stop: override TextColor (PassedStopsForeColor).
     /// </summary>
-    private ResolvedTextStyle ResolveRowStyle(StopColumn col, bool isCurrent, bool isPassed)
+    public ResolvedTextStyle ResolveRowStyle(StopColumn col, bool isCurrent, bool isPassed)
     {
         var resolved = ResolveDataStyle(col);
 

@@ -37,7 +37,62 @@ public partial class TableEditorDialog : Window
         };
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
+        _vm.RequestPickTableTemplate = PickTableTemplate;
         _vm.RequestClose += result => { DialogResult = result; Close(); };
+    }
+
+    /// <summary>View-only picker šablon tabulky (WPF dialog) — VM ho volá přes callback (R4:
+    /// ViewModel nesmí stavět WPF). Vrací klíč zvolené šablony, nebo null při Storno.</summary>
+    private string? PickTableTemplate(IReadOnlyList<TableTemplateInfo> templates)
+    {
+        var picker = new Window
+        {
+            Title                 = "Vyberte šablonu tabulky",
+            Width                 = 340,
+            Height                = 260,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner                 = this,
+            ResizeMode            = ResizeMode.NoResize,
+            ShowInTaskbar         = false
+        };
+
+        // Plná kvalifikace typů: code-behind má v scope i System.Windows.Forms (ColorDialog) → jinak
+        // jsou ListBox/Orientation/HorizontalAlignment nejednoznačné.
+        var list = new System.Windows.Controls.ListBox { Margin = new Thickness(10, 10, 10, 0) };
+        foreach (var t in templates)
+            list.Items.Add(new System.Windows.Controls.ListBoxItem { Content = t.Label, Tag = t.Key });
+        list.SelectedIndex = 0;
+
+        var btnOk     = new System.Windows.Controls.Button { Content = "Použít", Width = 80, IsDefault = true,
+                                     Margin = new Thickness(0, 8, 8, 10),
+                                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+        var btnCancel = new System.Windows.Controls.Button { Content = "Storno", Width = 80, IsCancel = true,
+                                     Margin = new Thickness(0, 8, 0, 10),
+                                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right };
+        btnOk.Click     += (_, _) => picker.DialogResult = true;
+        btnCancel.Click += (_, _) => picker.DialogResult = false;
+
+        var btnPanel = new System.Windows.Controls.StackPanel
+        {
+            Orientation = System.Windows.Controls.Orientation.Horizontal,
+            HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
+            Margin = new Thickness(10, 0, 10, 0)
+        };
+        btnPanel.Children.Add(btnOk);
+        btnPanel.Children.Add(btnCancel);
+
+        var root = new Grid();
+        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Grid.SetRow(list,     0);
+        Grid.SetRow(btnPanel, 1);
+        root.Children.Add(list);
+        root.Children.Add(btnPanel);
+        picker.Content = root;
+
+        if (picker.ShowDialog() != true) return null;
+        if (list.SelectedItem is not System.Windows.Controls.ListBoxItem selected) return null;
+        return (string)selected.Tag!;
     }
 
     // Klávesová navigace v DataGridu — Enter=BeginEdit, Tab=CommitEdit

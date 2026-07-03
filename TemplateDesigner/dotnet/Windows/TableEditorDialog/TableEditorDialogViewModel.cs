@@ -1,7 +1,5 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Windows;
-using System.Windows.Controls;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
@@ -277,6 +275,10 @@ class TableEditorDialogViewModel : EDViewModel
 
     /// <summary>Callback: zobraz color picker, vrať zvolenou barvu (nebo null při Storno).</summary>
     public Func<string, string?>? RequestColorPicker { get; set; }
+
+    /// <summary>Callback: zobraz picker šablon tabulky, vrať klíč zvolené šablony (nebo null při Storno).
+    /// View-only operace (WPF dialog) — drží ji code-behind, VM zná jen výsledek (R4).</summary>
+    public Func<IReadOnlyList<TableTemplateInfo>, string?>? RequestPickTableTemplate { get; set; }
 
     // ── Commands ──────────────────────────────────────────────────────────────
 
@@ -594,55 +596,10 @@ class TableEditorDialogViewModel : EDViewModel
             return;
         }
 
-        // Picker — jednoduchý inline dialog s ListBoxem
-        var picker = new Window
-        {
-            Title                 = "Vyberte šablonu tabulky",
-            Width                 = 340,
-            Height                = 260,
-            WindowStartupLocation = WindowStartupLocation.CenterOwner,
-            Owner                 = Application.Current.MainWindow,
-            ResizeMode            = ResizeMode.NoResize,
-            ShowInTaskbar         = false
-        };
+        // Picker je View operace (WPF dialog) → drží ji code-behind přes callback (R4: VM bez WPF).
+        var key = RequestPickTableTemplate?.Invoke(templates);
+        if (key is null) return;
 
-        var list = new System.Windows.Controls.ListBox { Margin = new Thickness(10, 10, 10, 0) };
-        foreach (var t in templates)
-            list.Items.Add(new System.Windows.Controls.ListBoxItem { Content = t.Label, Tag = t.Key });
-        list.SelectedIndex = 0;
-
-        var btnOk     = new Button { Content = "Použít", Width = 80, IsDefault = true,
-                                     Margin = new Thickness(0, 8, 8, 10),
-                                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right};
-        var btnCancel = new Button { Content = "Storno", Width = 80, IsCancel = true,
-                                     Margin = new Thickness(0, 8, 0, 10),
-                                     HorizontalAlignment = System.Windows.HorizontalAlignment.Right};
-
-        btnOk.Click     += (_, _) => picker.DialogResult = true;
-        btnCancel.Click += (_, _) => picker.DialogResult = false;
-
-        var btnPanel = new System.Windows.Controls.StackPanel
-        {
-            Orientation = System.Windows.Controls.Orientation.Horizontal,
-            HorizontalAlignment = System.Windows.HorizontalAlignment.Right,
-            Margin = new Thickness(10, 0, 10, 0)
-        };
-        btnPanel.Children.Add(btnOk);
-        btnPanel.Children.Add(btnCancel);
-
-        var root = new Grid();
-        root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-        root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Grid.SetRow(list,     0);
-        Grid.SetRow(btnPanel, 1);
-        root.Children.Add(list);
-        root.Children.Add(btnPanel);
-        picker.Content = root;
-
-        if (picker.ShowDialog() != true) return;
-        if (list.SelectedItem is not System.Windows.Controls.ListBoxItem selected) return;
-
-        var key = (string)selected.Tag!;
         var def = _templateProvider.GetTemplate(key);
         if (def is null)
         {

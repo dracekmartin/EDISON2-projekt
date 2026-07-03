@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-03 — T4 malé kousky (R4 fix + rename) + StopList kaskáda testy
+
+- ✅ **R4 fix — `TableEditorDialogViewModel` bez WPF.** Inline WPF picker šablon tabulky (Window + ListBox
+  + Buttons stavěný ve ViewModelu) přesunut do code-behind `TableEditorDialog.xaml.cs` přes callback
+  `RequestPickTableTemplate` (VM zná jen výsledný klíč). VM je teď 0× `System.Windows` (R4). Behavior-preserving.
+- ✅ **Rename `MainWindowViewModel.cs` → `TemplateDesignerViewModel.cs`** — soubor teď odpovídá názvu třídy
+  (`git mv`, obsah beze změny, SDK globbing).
+- ✅ **`StopListCascadeTests` (9 testů)** — regresní pokrytí StopList-specifického cascade wiring: feature
+  override aktuální/projeté zastávky (`ResolveRowStyle`), legacy `col.Alignment` fallback jen když kaskáda
+  HAlign nenastaví, per-column `Style` priorita, element-level `HeaderStyle`. `ResolveHeaderStyle/DataStyle/
+  RowStyle` zpřístupněny `public` (stejný vzor jako DepartureGrid Resolve*). Tím je uzavřen **malý T track**
+  (T5a, T6, T4 R4+rename, StopList testy); velké T1b-robustní + plný T4 strangler zůstávají záměrně.
+
 ## 2026-07-03 — T5a: agenda kód→třída lookup bez hardcoded mirroru
 
 - ✅ **`AgendyRegistr.GetClassForCode(agendaCode)`** — nový sdílený lookup (auto-discovery z `%Dictionary`,
