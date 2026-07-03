@@ -23,8 +23,7 @@
   červený rámeček v preview. Fix = „canvas roste + dělící čáry". Největší koncepční layout dluh. **Pilot-gated.**
 
 **Backlog / budoucí velké tracky:**
-- Nové z prezentací **P1–P3** (neanalyzováno, před implementací ticket)
-- Helpdesk odložené **A2-A5 / A6 / B4** (datový průzkum / diskuze s kolegy)
+- **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Tech dluh (ne blocker, průběžně):** T1b-robustní gold test (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do
   izolovaného namespace — data-drift-proof) · T4 god-objects strangler (postupné řezy `MainWindow.xaml.cs`
   + `TemplateDesignerViewModel` na služby). Malé T kousky ✅ (archiv 2026-07-03).
@@ -39,19 +38,6 @@
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
 v [`analyza-stav-a-legacy-nahrada-2026-07.md §7`](analyza-stav-a-legacy-nahrada-2026-07.md); vyřeší se
 při scope té fáze, ne teď.
-
----
-
-## 🆕 Nové požadavky z prezentací (P1–P3) — backlog, neanalyzováno
-
-Z živých prezentací 2026-06-24. Před implementací dohledat ticket + přesné zadání. Detail:
-[`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md).
-
-| # | Co | Odhad | Pozn. |
-|---|---|---|---|
-| P1 | Ruční poznámky do patičky JŘ (volný text / pole „Poznámky") | XS–M | `TextElement` v patičce funguje; M jen pokud param-driven |
-| P2 | Sloučení linek se stejným posledním trojčíslím (i různá Tč / více dopravců) → 1 výstup | L | Agenda + InstancePicker + agregace `POPIS_DOPRAVCE`; chce analýzu legacy |
-| P3 | Logická imposice 2×A5 oboustranně na A4 (N-up + duplex/brožura) | M–L | „Sheet layout" vrstva nad PageLayoutEngine; `RenderPage` už bere offset |
 
 ---
 
@@ -73,13 +59,25 @@ Z živých prezentací 2026-06-24. Před implementací dohledat ticket + přesn�
 
 ---
 
-## 🅿️ AD zastávkový JŘ — uzavřeno, zbytek parkován na pilot
+## 🅿️ Zastávkový JŘ — business logika (parkováno na pilot + nové požadavky)
 
-1:1 hotový; **track uzavřen 2026-07-03** (detail → [archiv](roadmap-archive.md) session 2026-07-03).
+> Vše k business logice zastávkového JŘ na jednom místě: uzavřený AD track (zbytek gated na pilot)
+> + nové zákaznické požadavky z prezentací.
+
+**AD 1:1 hotový, track uzavřen 2026-07-03** (detail → [archiv](roadmap-archive.md) session 2026-07-03).
 Zbytek **odemyká reálný pilot** (konkrétní zákaznická konfigurace/data): vizuál legendy POZNAMKY,
 AD-N5 (`MHD_NEZNZ123`), AD-N15 (prázdninové NZ, kód hotový/čeká data) + odložené helpdesk **A2-A5**
 (#7937 indent), **A2-A6** (#7959 filtr neobsluhovaných), **A2-B4** (#8828 per-sloupek) — datový
 průzkum / diskuze s kolegy. Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md), [`cache-database-linky.md §10`](cache-database-linky.md).
+
+**Nové požadavky z prezentací (P1–P3)** — z živých prezentací 2026-06-24, **neanalyzováno**; před
+implementací dohledat ticket + přesné zadání. Detail: [`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md).
+
+| # | Co | Odhad | Pozn. |
+|---|---|---|---|
+| P1 | Ruční poznámky do patičky JŘ (volný text / pole „Poznámky") | XS–M | `TextElement` v patičce funguje; M jen pokud param-driven |
+| P2 | Sloučení linek se stejným posledním trojčíslím (i různá Tč / více dopravců) → 1 výstup | L | Agenda + InstancePicker + agregace `POPIS_DOPRAVCE`; chce analýzu legacy |
+| P3 | Logická imposice 2×A5 oboustranně na A4 (N-up + duplex/brožura) | M–L | „Sheet layout" vrstva nad PageLayoutEngine; `RenderPage` už bere offset |
 
 ---
 
