@@ -63,6 +63,20 @@ TemplateDesigner/
   ColumnRenderer.cs         — DrawRow: orchestruje řádek sloupců + volitelné svislé mřížkové čáry
   CellStyleEditOptions.cs   — record s Allow<X> flagy pro per-kontextové skrývání UI editace stylu
 
+/Services                   — aplikační služby (async wrappery nad Caché + AI)
+  CacheTemplateService.cs   — async CRUD šablon přes ALVA.TemplateDesigner.API.Sablony (Task.Run wrapper)
+  TdPreferencesService.cs   — typed wrapper nad IUserPrefsService (per IdFa×user state, viz Persistence stavu)
+  CapabilityCatalog.cs      — katalog schopností designeru (pro AI kontext)
+  AnthropicApiClient.cs     — sdílený HTTP klient k Anthropic API (statický HttpClient, per-request headers)
+  AiImportEnricher.cs       — sémantické obohacení PDF importu (heuristiky → AI enrichment)
+  AiVisionImportService.cs  — Claude Vision rozpoznání JŘ struktury (AgendaPromptContext prompt systém)
+
+/PdfImport                  — PDF → šablona pipeline (PdfPig extrakce + AI vision)
+  PdfPageExtractor.cs / PdfPageRasterizer.cs / PdfTextGrouper.cs / PdfCoordinateConverter.cs / PdfFontMapper.cs — extrakce textu, čar, obrázků, geometrie
+  PdfToTemplateConverter.cs — heuristická konverze extrahovaných dat → elementy
+  AiGuidedScheduleBuilder.cs / AiVisionImportPipeline.cs — AI-řízený import JŘ (rasterizace → Vision → přesné elementy z PdfPig)
+  ExtractedData.cs / EnrichedImportResult.cs — mezistruktury pipeline
+
 /schemas
   *.schema.json             — schémata agend (offline fallback); kopírováno do output dir
 

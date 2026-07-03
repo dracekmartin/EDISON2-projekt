@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-03 — T6 dokončeno (architektonický track drobnosti)
+
+- ✅ **`architecture.md` doplněn o `/Services` (6 souborů) a `/PdfImport` (12 souborů)** — dřív v mapě
+  složek chyběly (~7k LOC neviditelných v doc). Doplněn stručný popis každého souboru.
+- ✅ **Per-frame `new SKPaint` v Render() běžných elementů — posouzeno a zavřeno** (nebude se dělat):
+  painty jsou disposované (`using var`), per-element (ne per-buňka, jen 1–5/element/repaint), a závislé
+  na měnitelných barvách elementu → cache by vyžadovala invalidaci za zanedbatelný zisk. Schedule elementy
+  s 100+ buňkami painty pre-createují už dnes. Tím je **T6 celé hotové**.
+
 ## 2026-07-03 — StatusText segmentace: „stav výběru" × „akce/progres"
 
 - ✅ **Status bar rozdělen na dvě zóny**, aby se nepřepisovaly. Dřív jeden `StatusText` míchal stav
