@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-03 — Discoverability: skryté featury do context menu
+
+- ✅ **Context menu (pravý klik na element)** dostal položky, které dřív šly jen zkratkou:
+  **Seskupit (Ctrl+G)** — jen při 2+ vybraných; **Rozeskupit (Ctrl+Shift+G)** — jen když je výběr
+  ve skupině; **Rozdělit → Vodorovně (Ctrl+Shift+H) / Svisle (Ctrl+Shift+J)**; **Upravit text (F2)** —
+  jen u TextElementu. Umístění: za „Z-pořadí", před „Vlastnosti elementu…", obklopeno separátory.
+  Zviditelňuje featury bez nutnosti znát zkratku.
+
 ## 2026-07-03 — Zoom: tlačítko × zkratka konzistentní + přepis tabulky zkratek
 
 - ✅ **Zoom — tlačítko a zkratka se shodují.** Dřív „1:1" tlačítko dělalo reset na 100 %, ale Ctrl+0

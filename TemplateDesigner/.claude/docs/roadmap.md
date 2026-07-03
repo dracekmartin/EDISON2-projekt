@@ -306,7 +306,7 @@ Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{
 **🟠 Střední — průběžně:**
 - **Dvojí vizuální jazyk editace** = Wave 4 zbytek (multi-edit + TableElement PD okno vs EDInputForm). Dotáhnout → zmizí „dvě aplikace".
 - **Ikonový jazyk** míchaný (Fluent + textové glyfy + unicode + emoji) — sjednotit.
-- **Skryté featury jen na zkratce** (Ctrl+G seskupení, Ctrl+Shift+H/J split, F2) → přidat do context menu (zviditelnit zadarmo).
+- ~~**Skryté featury jen na zkratce**~~ ✅ 2026-07-03: context menu má Seskupit/Rozeskupit (Ctrl+G/Ctrl+Shift+G, dle výběru), „Rozdělit → Vodorovně/Svisle" (Ctrl+Shift+H/J), „Upravit text (F2)" u TextElementu.
 - ~~**Drift tabulky zkratek**~~ ✅ 2026-07-03: `ux-conventions §3` přepsáno 1:1 dle KeyDown handleru (Ctrl+Shift+S smazán = neexistuje; doplněno F2, Ctrl+P, Ctrl+Shift+P/A, Ctrl+B, Ctrl+PgUp/PgDn, šipky, Escape, Ctrl+0/1).
 - ~~**Zoom: tlačítko × zkratka konzistentní**~~ ✅ 2026-07-03: „Fit" tlačítko + Ctrl+0 = přizpůsobit; „1:1" tlačítko + Ctrl+1 = 100 %. (Dva nezávislé combo-zoomy designer/preview ponechány — jsou to různé pohledy, nezávislý zoom je záměr.)
 

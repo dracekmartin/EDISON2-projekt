@@ -2164,6 +2164,21 @@ public partial class MainWindow : Window
             zMenu.Items.Add(new MenuItem { Header = "Úplně dozadu", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.ChangeZIndex(-1, true); InvalidateCanvas(); }) });
             menu.Items.Add(zMenu);
 
+            // Seskupení / rozdělení / editace textu — dřív jen na zkratkách, teď viditelné v menu.
+            menu.Items.Add(new Separator());
+            if (_vm.State.SelectedElements.Count >= 2)
+                menu.Items.Add(new MenuItem { Header = "Seskupit (Ctrl+G)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.GroupSelected(); InvalidateCanvas(); }) });
+            if (_vm.State.SelectedElements.Any(x => x.GroupId is not null))
+                menu.Items.Add(new MenuItem { Header = "Rozeskupit (Ctrl+Shift+G)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.UngroupSelected(); InvalidateCanvas(); }) });
+
+            var splitMenu = new MenuItem { Header = "Rozdělit" };
+            splitMenu.Items.Add(new MenuItem { Header = "Vodorovně (Ctrl+Shift+H)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SplitSelected(horizontal: true); InvalidateCanvas(); }) });
+            splitMenu.Items.Add(new MenuItem { Header = "Svisle (Ctrl+Shift+J)", Command = new EDControls.EDViewModel.RelayCommand(() => { _vm.SplitSelected(horizontal: false); InvalidateCanvas(); }) });
+            menu.Items.Add(splitMenu);
+
+            if (el is TextElement te)
+                menu.Items.Add(new MenuItem { Header = "Upravit text (F2)", Command = new EDControls.EDViewModel.RelayCommand(() => EnterInlineEdit(te)) });
+
             menu.Items.Add(new Separator());
             menu.Items.Add(new MenuItem
             {
