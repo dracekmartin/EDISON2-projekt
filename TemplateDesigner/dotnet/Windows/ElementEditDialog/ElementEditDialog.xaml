@@ -15,10 +15,10 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="1" Content="OK" IsDefault="True"
+            <Button Grid.Column="1" Content="{StaticResource EDStrings.Ok}" IsDefault="True"
                     Click="SaveButton_Click"
                     Width="80" Margin="0,0,10,0"/>
-            <Button Grid.Column="2" Content="Storno" IsCancel="True" Width="80"/>
+            <Button Grid.Column="2" Content="{StaticResource EDStrings.Cancel}" IsCancel="True" Width="80"/>
         </Grid>
 
         <eif:EDInputForm x:Name="TheForm"/>

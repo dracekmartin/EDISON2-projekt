@@ -41,9 +41,9 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="1" Content="OK" IsDefault="True" Command="{Binding OkCommand}"
+            <Button Grid.Column="1" Content="{StaticResource EDStrings.Ok}" IsDefault="True" Command="{Binding OkCommand}"
                     Width="75" Margin="0,0,8,0"/>
-            <Button Grid.Column="2" Content="Storno" IsCancel="True" Width="75"/>
+            <Button Grid.Column="2" Content="{StaticResource EDStrings.Cancel}" IsCancel="True" Width="75"/>
         </Grid>
     </Grid>
 </Window>

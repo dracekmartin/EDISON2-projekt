@@ -2160,10 +2160,13 @@ public partial class MainWindow : Window
                 Header = "Vlastnosti elementu...",
                 Command = new EDControls.EDViewModel.RelayCommand(() =>
                 {
+                    // U2: otevřít dialog (jako dvojklik a „Vlastnosti sekce…") — dřív jen přepínalo
+                    // inline panel, což u stejně pojmenované akce se sekcí bylo nekonzistentní.
                     _vm.State.SelectedElements.Clear();
                     _vm.State.SelectedElements.Add(el);
                     UpdatePropertiesPanel();
                     InvalidateCanvas();
+                    OpenPropertiesForElement(el);
                 })
             });
         }

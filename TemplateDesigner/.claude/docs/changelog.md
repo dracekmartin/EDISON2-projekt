@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-03 — Pre-pilot UX P0 dokončeno: U2 (context menu) + U6 (labely tlačítek)
+
+- ✅ **U2 — context menu „Vlastnosti elementu…" otevře dialog.** Dřív jen vybralo element + přepnulo
+  inline panel — u stejně pojmenované akce „Vlastnosti sekce…" (dialog) nekonzistentní, a „…" v názvu
+  dialog implikuje. Nově volá `OpenPropertiesForElement(el)` (stejná cesta jako dvojklik).
+- ✅ **U6 — sjednocení labelů tlačítek.** Cancel byl v TD rozjetý („Zrušit" 5× vs „Storno" 2×). Vše
+  převedeno na `{StaticResource EDStrings.Cancel}` = „Storno" (firemní standard — EDStrings + EDFooter);
+  „OK"/„Uložit" literály na `EDStrings.Ok`/`EDStrings.Save` (7 dialogů: CacheTemplatePicker, ChangeAgenda,
+  InstancePicker, SaveSectionTemplate, SaveToCache, ElementEdit, NormalizePositions). Pravidlo (cancel =
+  „Storno" přes EDStrings, primární = `EDStrings.Ok`/akční sloveso) zapsáno do `ux-conventions.md §1`.
+- 🏁 **Tím je celé pre-pilot P0 (U1–U7) hotové.**
+
 ## 2026-07-03 — Pre-pilot UX P0: U3 (klik na paletu) + U4 (dvojklik do prázdna) + U7 ověřeno
 
 - ✅ **U3 — klik na paletu vkládá element.** Dřív palette tlačítko jen zahájilo drag-to-canvas;

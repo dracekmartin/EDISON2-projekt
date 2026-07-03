@@ -25,10 +25,10 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="1" Content="Uložit" IsDefault="True"
+            <Button Grid.Column="1" Content="{StaticResource EDStrings.Save}" IsDefault="True"
                     Command="{Binding OkCommand}"
                     Width="80" Margin="0,0,10,0"/>
-            <Button Grid.Column="2" Content="Zrušit" IsCancel="True" Width="80"/>
+            <Button Grid.Column="2" Content="{StaticResource EDStrings.Cancel}" IsCancel="True" Width="80"/>
         </Grid>
     </Grid>
 </Window>

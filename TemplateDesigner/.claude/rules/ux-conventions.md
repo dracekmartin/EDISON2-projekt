@@ -14,7 +14,11 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 
 **Co doplňuje tento doc** (UX-specifické konvence, ne kódový template):
 
-- Tlačítka v dialogu **akčně pojmenovaná**, ne „Ano/Ne" — např. „Smazat" / „Zrušit", „Uložit" / „Zahodit", ne „Yes" / „No".
+- **Labely standardních tlačítek přes `{StaticResource EDStrings.*}`** — jediný zdroj pravdy (EDStrings.xaml je mergnutý v App.xaml). Nepoužívej literály:
+  - `EDStrings.Cancel` = **„Storno"** (firemní standard — EDFooter i EDStrings; NE „Zrušit")
+  - `EDStrings.Ok` = „OK", `EDStrings.Save` = „Uložit", `EDStrings.Close` = „Zavřít"
+  - IsCancel tlačítko = vždy `EDStrings.Cancel`. IsDefault (primární) = buď `EDStrings.Ok`, nebo **akční sloveso** k obsahu dialogu („Otevřít", „Použít", „Přidat") — akční sloveso je vhodnější, když je jasnější než generické OK.
+- Tlačítka **akčně pojmenovaná**, ne „Ano/Ne" — např. „Smazat" / „Storno", „Uložit" / „Zahodit", ne „Yes" / „No".
 - Destruktivní akce a confirmation → vždy přes `IPopupDisplayer.Confirm` z EDControls (R2), nikdy `MessageBox.Show`.
 - Multi-tab dialog: **max 3 taby**. Pokud potřebuješ víc, rozděl do samostatných dialogů nebo restrukturuj.
 

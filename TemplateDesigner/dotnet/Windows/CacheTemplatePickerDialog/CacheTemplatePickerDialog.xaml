@@ -28,7 +28,7 @@
             <Button Grid.Column="3" Content="Otevřít" IsDefault="True"
                     Command="{Binding OpenCommand}"
                     Padding="14,4" Width="90" Margin="0,0,8,0"/>
-            <Button Grid.Column="4" Content="Zrušit"  IsCancel="True" Width="80"/>
+            <Button Grid.Column="4" Content="{StaticResource EDStrings.Cancel}"  IsCancel="True" Width="80"/>
         </Grid>
 
         <!-- Filter — deklarativní přes EDFilter komponentu -->

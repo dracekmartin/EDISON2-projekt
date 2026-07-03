@@ -58,7 +58,7 @@
             <Button Grid.Column="1" Content="Použít" IsDefault="True"
                     Command="{Binding OkCommand}"
                     Width="90" Padding="14,4" Margin="0,0,8,0"/>
-            <Button Grid.Column="2" Content="Zrušit" IsCancel="True" Width="80"/>
+            <Button Grid.Column="2" Content="{StaticResource EDStrings.Cancel}" IsCancel="True" Width="80"/>
         </Grid>
     </Grid>
 </Window>
