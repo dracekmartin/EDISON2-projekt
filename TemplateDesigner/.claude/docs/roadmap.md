@@ -13,17 +13,16 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **🟢 Produkční připravenost — launch integrace HOTOVÁ, zbývá RUČNÍ release deploy.** EDISON→TD
-   launch (`A1` session z EDISONMAIN2 kontraktu + `A2` startup agenda dle uzlu stromu) **✅ hotové
-   (Martin, v main)**. **Zbývá už jen ruční nasazení do verze/release:** build TD.exe z main →
-   `C:\Edison` (D3) + Caché třídy na zákaznický server jako součást verze (D4). Tisk (`A3`) +
-   systémové šablony (`B`) odloženo. Cesta k pilotu (R7) → odemkne i parkovaný AD zbytek.
-2. **Architektonický track** — `T1b` gold regrese ✅ · `T6` 2/4 ✅ (ScheduleDetectorTest, MessageBox).
-   Zbývá `T4` god-objects (průběžně), `T5`/`T6` drobnosti. Nízká priorita, průběžně.
-3. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen** (2026-07-03). Zbytek (vizuál legendy, N5/N15)
-   navázán na pilot — odemyká reálná zákaznická konfigurace. Jan projde s kolegou.
-4. **Wave 4 EDInputForm** — **funkčně hotová** (elementy/sekce/stránka/parametry). Zbývá jen `W4-10/11`
-   (inline panel migrace + cleanup — velký refaktor, záměrně na konec, low-prio).
+1. **🎯 Pre-pilot UX polish — AKTIVNÍ VÝVOJOVÝ FOCUS.** Doladit designer core do nejlepšího stavu před
+   pilotem (audit s Fablem 2026-07-03, sekce „UX/UX audit" níže). Nejdřív **P0: U1 (bug ukládání do JSON
+   místo DB) → U2–U7** (~1–2 dny, aditivní). Vše „obecná vylepšení jádra" + zastávkové — žádné linkové/knižní.
+2. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
+   TD.exe z main → `C:\Edison` (D3) + Caché třídy na zákaznický server (D4). A1/A2 launch ✅ (Martin, v main).
+   Tisk (`A3`) + systémové šablony (`B`) odloženo. Cesta k pilotu (R7).
+3. **Architektonický track (filler, průběžně)** — `T1b` gold ✅ · `T6` 2/4 ✅. Zbývá `T4` god-objects,
+   `T5`/`T6` drobnosti + `R1a` (DynamicTable render → `ColumnRenderer.DrawRow`). Nízká priorita.
+4. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot. · **Wave 4** funkčně
+   hotová (zbývá jen `W4-10/11` inline panel — velký refaktor, na konec).
 
 **Backlog / budoucí velké tracky:**
 - Nové z prezentací **P1–P3** (neanalyzováno, před implementací ticket)
@@ -281,6 +280,44 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 | 33 | JŘ-aware mód (3d) — AI Vision pipeline + `AiGuidedScheduleBuilder` fungují, **ladění na širší sadě JŘ** | 🟡 |
 
 Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{PLACEHOLDER}`). 3b křivky/Bézier low-prio.
+
+---
+
+## 🎯 UX/UX audit — pre-pilot polish (Fable 2026-07-03) — AKTIVNÍ
+
+> Audit 19 oken proti produktové filozofii („srozumitelnost nad úplností"). Základ hodnocen nadprůměrně;
+> problémy průřezové: (1) dvojí vizuální jazyk / „too many ways", (2) tichá/přetížená zpětná vazba,
+> (3) nekonzistence (1 fakt. bug). **Cíl: designer v nejlepším stavu před pilotem.** Každou položku před
+> implementací ověřit proti kódu (audit je z jiné session — může být lokálně stale).
+
+**🔴 P0 — opravit před pilotem (~1–2 dny, aditivní):**
+
+| # | Co | Proč |
+|---|---|---|
+| U1 | **BUG:** „Ano = uložit" v confirm neuložených změn ukládá do **JSON souboru** (SaveAndContinue), ne do DB jako Ctrl+S | Ztráta dat z pohledu uživatele (šablona není v DB, kde ji čeká). Fix = stejná DB cesta jako Ctrl+S |
+| U2 | Context menu „Vlastnosti elementu…" jen přepne inline panel; „Vlastnosti sekce…" otevře dialog | Stejně pojmenované akce, různé chování → sjednotit (obě dialog) |
+| U3 | Klik na paletu elementů nedělá nic (jen drag; klikací fallback = mrtvý kód) | Drag-only neobjevitelné pro nové uživatele. Klik = vlož do aktivní sekce (kód existoval) |
+| U4 | Dvojklik do prázdna otevře vlastnosti stránky | Dvojklik do prázdna = „zrušit výběr"; dialog je překvapení. Nechat na Ctrl+Shift+P/menu |
+| U5 | Ctrl+S bez DB jen tiše píše do status baru | Uživatel myslí, že uložil. Musí být popup (nabídnout export do JSON) |
+| U6 | Sjednotit labely tlačítek („Storno"×„Zrušit", OK/Uložit/Použít bez pravidla) + pravidlo do `ux-conventions` | Rozjetý slovník; půlhodinový průchod |
+| U7 | Tooltipy na „M"/„O" snap toggly (+ obecně nerozklíčovatelné textové glyfy) | Bez tooltipu nikdo nerozklíčuje |
+
+**🟠 Střední — průběžně:**
+- **Dvojí vizuální jazyk editace** = Wave 4 zbytek (multi-edit + TableElement PD okno vs EDInputForm). Dotáhnout → zmizí „dvě aplikace".
+- **Ikonový jazyk** míchaný (Fluent + textové glyfy + unicode + emoji) — sjednotit.
+- **Skryté featury jen na zkratce** (Ctrl+G seskupení, Ctrl+Shift+H/J split, F2) → přidat do context menu (zviditelnit zadarmo).
+- **Drift tabulky zkratek** (`ux-conventions`): Ctrl+Shift+S neexistuje, ~10 implementovaných chybí. Aktualizovat.
+- **Dva nezávislé zoomy** (designer/preview) — sjednotit chování „1:1"/Ctrl+0.
+
+**🟡 Layout robustnost (většinu nechat pilot ukázat):**
+- **Sekce vyšší než stránka** — designer = model „jedna pevná A4", přetečení jen červený rámeček v preview. Největší koncepční layout dluh; fix = „canvas roste + dělící čáry" (var B, M práce). **Po pilotu zvednout výš.**
+- Element nejde přetáhnout mezi sekcemi (tvrdý clamp; jen cut+paste) · rubber band jen v aktivní sekci · Escape neruší drag · StatusText přepisuje stav×progres×chyby (chce nepřepisovatelný progres segment).
+
+**🧭 Filozofie (pravidlo teď):** rozšířit UX mřížku z `feature-design-principles` o vrstvu **menu/toolbar/zkratka** (dnes řeší jen properties; toolbar/menu rostou mimo ni — ~43 menu položek, ~34 tlačítek).
+
+**⛔ Nedělat teď:** plynulý zoom (až virtualizace), dark mode / hardcoded barvy (~15 míst, až theming požadavek), onboarding overlay.
+
+**Pořadí:** P0 (U1–U7) před pilotem → layout věci nechat pilot ukázat (var B až podle) → průběžně Wave 4 zbytek + skryté featury do context menu + tabulka zkratek.
 
 ---
 
