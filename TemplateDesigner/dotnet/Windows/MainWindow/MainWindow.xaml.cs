@@ -1802,7 +1802,11 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 return;
             }
-            OpenPropertiesForPage(_vm.State.CurrentTemplate);
+            // U4: dvojklik do prázdna = zrušit výběr (ne otevřít vlastnosti stránky — ty jsou
+            // na Ctrl+Shift+P / menu Zobrazení). Dialog do prázdna je pro uživatele překvapení.
+            _vm.State.SelectedElements.Clear();
+            UpdatePropertiesPanel();
+            InvalidateCanvas();
             e.Handled = true;
             return;
         }
@@ -2237,6 +2241,14 @@ public partial class MainWindow : Window
         // ── Potřebujeme sekci (pro vytvoření nového elementu) ────────────────
         if (_addingTargetSection is null || (_addingElementType is null && _addingFieldName is null))
         {
+            // U3: prostý klik na paletu (bez tažení na sekci) → vlož element do aktivní sekce
+            // na výchozí pozici. Bez tohoto by klik jen zrušil přidávání (drag-only = neobjevitelné).
+            if (_addingElementType is not null && _vm.State.ActiveSection is not null)
+            {
+                _vm.AddElementAtPosition(_vm.State.ActiveSection, 5f, 5f, _addingElementType, null);
+                FinishAddingElement();
+                return;
+            }
             CancelAddingElement();
             return;
         }

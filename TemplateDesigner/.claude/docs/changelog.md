@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-03 — Pre-pilot UX P0: U3 (klik na paletu) + U4 (dvojklik do prázdna) + U7 ověřeno
+
+- ✅ **U3 — klik na paletu vkládá element.** Dřív palette tlačítko jen zahájilo drag-to-canvas;
+  prostý klik (bez tažení) nic nevložil (drag-only = neobjevitelné). Fallback v `EndAddingElement`:
+  když se pustí bez cílové sekce (`_addingTargetSection == null`) a jde o element z palety, vloží se
+  do `State.ActiveSection` na výchozí pozici 5×5 mm. Drag-to-canvas beze změny.
+- ✅ **U4 — dvojklik do prázdna neotevírá vlastnosti stránky.** Fallback dvojkliku na prázdnou plochu
+  (`OpenPropertiesForPage`) nahrazen zrušením výběru — dialog do prázdna byl překvapení. Vlastnosti
+  stránky zůstávají na Ctrl+Shift+P / menu. Dvojklik na element / záhlaví sekce beze změny.
+- ✅ **U7 ověřeno jako hotové** (audit byl stale): M/O snap toggly už tooltipy mají.
+
 ## 2026-07-03 — Pre-pilot UX P0: U1 (bug ukládání) + U5 + async confirm/close
 
 - ✅ **U1 — BUG opraveno:** volba **„Ano = uložit"** v potvrzení neuložených změn (Nový / Otevřít /
