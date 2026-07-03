@@ -93,6 +93,14 @@ public class AppBootstrapper
             return null;
         }
 
+        // Feature #17 (vynucená změna hesla): server přihlásí, ale s příznakem změnit heslo.
+        // Nezměněné → zrušení loginu (uživatel nemá jak dovnitř bez změny).
+        if (login.ChangePasswordNeeded && !ForcePasswordChange(prep.LoginRest, login.UserName))
+        {
+            Shutdown();
+            return null;
+        }
+
         var session = EstablishSession(
             new ConnectionInfo(prep.Server, prep.Port, prep.StartCompany.Database, prep.StartCompany.Id),
             login, services);
@@ -291,6 +299,25 @@ public class AppBootstrapper
             _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
         }
 #endif
+    }
+
+    /// <summary>
+    /// Vynucená změna hesla (feature #17). Dialog si sám ověří změnu proti serveru a zavře se
+    /// jen při úspěchu; vrací true = změněno, false = uživatel zrušil (→ abort loginu).
+    /// ShutdownMode toggle jako u <see cref="TryLogin"/> — dialog běží před existencí shell okna.
+    /// </summary>
+    protected virtual bool ForcePasswordChange(MLRest loginRest, string username)
+    {
+        _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
+        try
+        {
+            return new Windows.LoginWindow.ChangePasswordWindow(new MLRestAdapter(loginRest), username)
+                .ShowDialog() == true;
+        }
+        finally
+        {
+            _application.ShutdownMode = ShutdownMode.OnMainWindowClose;
+        }
     }
 
     /// <summary>

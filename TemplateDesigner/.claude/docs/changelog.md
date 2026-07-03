@@ -223,6 +223,26 @@
     (memory `project_edinputform_schema_duplication.md`) — přejmenování property bez úpravy .cls
     od teď zablokuje push.
 
+## 2026-07-02 — Startovní agenda z inputParam kontraktu
+
+- ✅ **`inputParam` "Agenda=<kód>" → startovní agenda šablony.** `App.OnStartup` vytáhne kód
+  z `EdisonLaunchArgs.InputParam`, `TemplateDesignerViewModel` ho ověří proti registru agend
+  (case-insensitive) a nová šablona startuje rovnou s ní. Zdroj: atribut `input` uzlu stromu
+  legacy shellu (JŘ uzel = `Agenda=ZASTAVKOVY_JR_AD`, MHD uzel = `Agenda=ZASTAVKOVY_JR_MHD`)
+  a MHD2 tlačítko „Linky a oběhy". Neznámý/chybějící kód → dosavadní default.
+
+## 2026-07-02 — Převzetí session shellu přes EDISONMAIN2 launch kontrakt
+
+- ✅ **`App.OnStartup` parsuje EDISONMAIN2 argumentový kontrakt** (`EDControls.EdisonLaunchArgs`,
+  zrcadlí `EDISONMAIN2API.FormToRunGetter`): sentinel `EDISONMAIN2` + server, restPort, namespace,
+  idfa, login, fullName, mlp [, formName, shellGuid, inputParam]. Při spuštění ze shellu (starý
+  EDISON přes wrapper formu `ALVA.TISKJR.formTISKJRTemplateDesigner`, MHD2 „Linky a oběhy") se
+  MLRest staví ze session shellu (`CacheSchemaWiring.CreateMlRest`) místo z appsettings — TD běží
+  pod správnou firmou a uživatelem.
+- Bez argů beze změny (standalone z appsettings). Sentinel s nevalidními argy → varování + fallback
+  standalone. `shellGuid` se záměrně nepřebírá — TD má vlastní session GUID, neváže se na ACTIVITY
+  zámek shellu.
+
 ## 2026-06-30 — Ověření: pořadí poznámek v legendě 1:1 s legacy (živý gold oracle)
 
 - ✅ **Default řazení legendy potvrzeno 1:1** proti gold oracle (`ALVA.TISKMHD.Data`, VOLANO_Z=JRMAIN)

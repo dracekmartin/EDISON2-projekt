@@ -11,6 +11,19 @@ namespace TemplateDesigner.Config;
 internal static class CacheSchemaWiring
 {
     /// <summary>
+    /// Vytvoří MLRest ze session shellu (EDISONMAIN2 launch kontrakt) — přebírá server,
+    /// rest port, namespace, IdFa i identitu uživatele. ShellGuid se záměrně nepřebírá:
+    /// TD si drží vlastní session GUID a neváže se na ACTIVITY zámek shellu.
+    /// </summary>
+    public static MLRest CreateMlRest(EDControls.EdisonLaunchArgs launch) =>
+        new(launch.Server, launch.RestPort, launch.Namespace, launch.Idfa)
+        {
+            LoginName = launch.LoginName,
+            FullName  = launch.FullName,
+            Mlp       = launch.Mlp
+        };
+
+    /// <summary>
     /// Vytvoří MLRest instanci z nastavení. Vrátí null pokud připojení není nakonfigurováno.
     /// </summary>
     public static MLRest? TryCreateMlRest(AppSettings settings)

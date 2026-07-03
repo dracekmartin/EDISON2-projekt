@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-06-30
+**Datum poslední aktualizace:** 2026-07-02
 
 > **Prezentace proběhly** (statická ~19.6., živá 26.6.). Od 2026-06-30 je **databáze primární úložiště
 > šablon** (Otevřít/Uložit/Uložit jako → DB; soubor = Import/Export JSON, obdoba PDF/PNG). Aktivní
@@ -108,6 +108,15 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 - **Instance Picker (multi-výběr linek)** — `InstancePickerDialog` se search boxem (Enter), checkboxy multi-select, Vybrat vše / Odznačit vše. Caché `AgendaAPI.GetAvailableInstances` (abstract default empty) + impl v `ZastavkoveJrMhdAPI` iteruje `^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID)` — pouze linky aktivní skupiny linek (default první nezblokovaná z ENUMS, optional IN parametr `SKUPINA_LINEK_ID` pro Edison-driven kontext); TrasaID filter pro orphan linky; case-insensitive substring search server-side; limit 50. POCO `AgendaInstance(Value, Display, Subtitle?)`. `ActiveInstances` state v VM (mimo Template — session scope), `ActiveInstanceIndex`, `CurrentActiveInstance`. Status bar 2. modrý chip „Instance: X — Y (N/M)" s ◀▶ tlačítky; klik otevře picker. `RefreshDataForCurrentInstanceAsync` async GetData při změně instance, status feedback. Multi-instance batch v `BuildAllPreviewDataPages` (PDF/PNG) i `PrintDialog buildRealData` — 600 stránek za ~9s (5s fetch + 3.6s render, ~15ms/stránka, top decile vs commercial reporting). Reset instancí při změně agendy
 - **UI font škálování přes EDTheme/FontService** — UI fonty TD na `{DynamicResource EDTheme.FontSize.*}` / `EDTheme.FontFamily` (Small/Caption/Body/Header/Large); TD respektuje sdílenou user font preferenci z EDISONMAIN2 (`FontService` už TD inicializuje v `App.OnStartup`) a proporcionálně škáluje bez restartu. `Consolas` (výrazy/glyfy) záměrně ponecháno. Comboboxy v hlavním okně na `Width="Auto"` + `MinWidth=64` (neuřízne text, roste s fontem)
 - **Detekce přetečení = jen reálné geometrické přetečení** — `PreviewCanvas.PageOverflows` hlásí jen u **`KeepTogether`** sekcí (dělitelné `SplitAcrossPages`/`AllowSplit` engine chunkuje přes stránky → obsah se neztratí, nevaruje): (a) element přesahující spodní hranu sekce, (b) **sekce vyšší než tisková plocha** (`placed.Y + placed.Height > PrintableHeight` → nejde rozdělit, obsah se ořízne). JŘ element s pevnou výškou, který se do boxu vejde auto-scalem, nevaruje (`ScheduleElementBase.ContentOverflows` zůstává jako helper „box < obsah", neřídí varování). Tisk: `PreviewCanvas.CountOverflowingPages` (layout-only) projede všechny instance a `PrintDialog` při exportu reálných dat vypíše „⚠ X z N stránek přetéká"
+
+- **EDISONMAIN2 launch kontrakt** — `App.OnStartup` parsuje argumenty kontraktu
+  (`EDControls.EdisonLaunchArgs`, zrcadlí `EDISONMAIN2API.FormToRunGetter`); při spuštění ze shellu
+  se MLRest staví ze session shellu (server, rest port, namespace, IdFa, login, fullName, mlp) místo
+  z appsettings. Bez argů standalone beze změny; nevalidní argy → varování + fallback. `shellGuid`
+  se nepřebírá (vlastní session GUID, bez vazby na ACTIVITY zámek shellu). Spouštěcí místa: strom
+  starého shellu (wrapper `ALVA.TISKJR.formTISKJRTemplateDesigner`), MHD2 „Linky a oběhy".
+  `inputParam` kontraktu ve tvaru `Agenda=<kód>` předvolí startovní agendu šablony (JŘ uzel stromu
+  → `ZASTAVKOVY_JR_AD`, MHD uzel + MHD2 tlačítko → `ZASTAVKOVY_JR_MHD`); neznámý kód → default.
 
 ### 🐛 Známé problémy
 
