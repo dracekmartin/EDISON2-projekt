@@ -13,9 +13,11 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **🔴 Produkční připravenost (blok A–D) — AKTIVNÍ FOCUS.** Největší nerozepsaný kus: EDISON integrace
-   (`A1` session kontext = blocker pro multi-zákazníka), systémové šablony (`B`), H-19 migrace (`C`),
-   deploy (`D`). Cesta k pilotu (R7) → odemkne i parkovaný AD zbytek.
+1. **🟢 Produkční připravenost — launch integrace HOTOVÁ, zbývá RUČNÍ release deploy.** EDISON→TD
+   launch (`A1` session z EDISONMAIN2 kontraktu + `A2` startup agenda dle uzlu stromu) **✅ hotové
+   (Martin, v main)**. **Zbývá už jen ruční nasazení do verze/release:** build TD.exe z main →
+   `C:\Edison` (D3) + Caché třídy na zákaznický server jako součást verze (D4). Tisk (`A3`) +
+   systémové šablony (`B`) odloženo. Cesta k pilotu (R7) → odemkne i parkovaný AD zbytek.
 2. **Architektonický track** — `T1b` gold regrese ✅ · `T6` 2/4 ✅ (ScheduleDetectorTest, MessageBox).
    Zbývá `T4` god-objects (průběžně), `T5`/`T6` drobnosti. Nízká priorita, průběžně.
 3. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen** (2026-07-03). Zbytek (vizuál legendy, N5/N15)
@@ -242,23 +244,22 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 
 ## 🔵 Produkční / integrační připravenost (pro nasazení k zákazníkům)
 
-> **Optika:** ne featury, ale „aby to šlo nasadit a integrovat". **Klíčové (2026-06-30):** startup se
-> připojuje k **jedné firmě z appsettings** a nebere kontext z EDISONu → blok A je největší kus.
+> **Optika:** ne featury, ale „aby to šlo nasadit a integrovat". **Launch integrace HOTOVÁ
+> (2026-07-02, Martin):** TD bere session + agendu z EDISONMAIN2 launch kontraktu, fallback appsettings.
 >
-> **Kritická cesta:** A1 session kontext → A2/A3 launch + end-user tisk → B systémové šablony →
-> C H-19 migrace → D deploy.
+> **Kritická cesta:** ~~A1/A2 launch~~ ✅ → **D deploy (ruční release, jediné co reálně zbývá pro v1)**
+> → pak B systémové šablony · C H-19 migrace · A3 end-user tisk.
 
-### 🔴 A. EDISON integrace (dnes prakticky chybí — největší nerozepsaný kus)
+### 🟢 A. EDISON integrace — launch HOTOVÝ (Martin, v main), zbývá deploy + (později) tisk
 
-> ⚠️ **Gate: R4 (kde běží headless tisk + PrintEngine fasáda), R7 (pilot-first).** Legacy vzor: všechny
-> 3 systémy se volají z EDISONu přes EDForm; RG má headless CLI `AUTOEXPORT/AUTOPRINT` (`MainRun.vb`).
-> Vrstvy 1-4 TD to architektonicky umí, chybí entrypoint.
+> ⚠️ **Gate pro A3/A4: R4 (headless tisk + PrintEngine fasáda), R7 (pilot-first).** Legacy vzor: RG má
+> headless CLI `AUTOEXPORT/AUTOPRINT` (`MainRun.vb`). Vrstvy 1-4 TD to umí, chybí jen entrypoint.
 
 | ID | Co | Stav |
 |---|---|---|
-| A1 | **Předání Caché session kontextu** (server/firma/uživatel/mlp) z EDISONu místo hardcoded appsettings. Vzor: `EDISONMAIN2API.FormToRunGetter`. Bez toho TD jede jen proti 1 firmě | ⬜ blocker |
-| A2 | **Launch nad konkrétní linkou** — TD z modulu JŘ/MHD s předvybranou agendou + instancí | ⬜ |
-| A3 | **End-user tiskový vstup** — headless tisk (vrstvy 1-4) z modulu / „vytiskni linku X"; dnes print jen v designeru. Legacy: RG CLI | 🟡 |
+| A1 | **Předání Caché session kontextu** z EDISONu (server/firma/user/mlp) — `EDControls.EdisonLaunchArgs` parsuje EDISONMAIN2 kontrakt, `App.OnStartup` staví MLRest ze session (fallback appsettings). Launcher `formTISKJRTemplateDesigner` (starý EDISON) + MHD2 „Linky a oběhy". | ✅ 2026-07-02 (Martin) |
+| A2 | **Launch nad agendou** — startup agenda z `Agenda=<kód>` (inputParam uzlu stromu: JŘ→`ZASTAVKOVY_JR_AD`, MHD→`ZASTAVKOVY_JR_MHD`). Předvybraná konkrétní **instance/linka** ⬜ — v1 nepotřebuje (uživatel vybere z instance pickeru, který ukazuje firmu ze session). | 🟡 agenda ✅, instance ⬜ (v1 OK) |
+| A3 | **End-user tiskový vstup** — headless tisk (vrstvy 1-4) z modulu / „vytiskni linku X"; dnes print jen v designeru. Legacy: RG CLI. **Záměrně odloženo** (dle plánu, v1 = jen návrhář). | ⬜ odloženo |
 | A4 | **Výstup fáze 1** — sloučení hromadného exportu do 1 PDF (`MergePDFFiles`) + odeslání e-mailem (společné všem 3 legacy) | ⬜ M |
 
 ### 🟠 B. Šablony pro zákazníky (governance + distribuce)
@@ -281,9 +282,9 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 |---|---|---|
 | C1 | **H-19 konkrétní migrace** (V1→V2) — framework ✅, migrace nenapsaná (no-op) | 🟡 |
 | C2 | Full migration pipeline pro každou breaking change | ⬜ |
-| D1 | Dev firma `CB_CSADAD` → produkční (nebo z EDISON kontextu, A1) | ⬜ |
-| D3 | **Distribuce .exe** — `publish.ps1` ✅; jak na zákaznické stanice (EDISON deploy?) | 🟡 deploy proces nedefinován |
-| D4 | **Nasazení Caché tříd** na zákaznický server — proces ověřit | ⬜ |
+| D1 | Embedded `CB_CSADAD` = jen **standalone-dev fallback**; při launchi z EDISONu firma jde ze session (A1 ✅), embedded default se přebíjí | ✅ řeší A1 |
+| D3 | **← RUČNÍ RELEASE KROK:** build TD.exe z `main` (má A1/A2) přes `publish.ps1` → `C:\Edison\TemplateDesigner.exe` → **přidat do verze/release**. Zbývá zapojit do release pipeline. | ⬜ ruční nasazení |
+| D4 | **← RUČNÍ RELEASE KROK:** nasadit Caché třídy (agendy, `API.Sablony`, EDInputForm schémata) na zákaznický server **jako součást verze** — proces/pipeline ověřit. | ⬜ ruční nasazení |
 | E2 | Per-zákazník enablement agend (vidí jen své) | ⬜ odloženo (YAGNI) |
 | F3 | Logging / telemetrie pro podporu | ⬜ ověřit |
 | F4 | CI/CD linting šablon (Caché job před deployem) | ⬜ odloženo |
