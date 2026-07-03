@@ -39,7 +39,9 @@
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
 - Import PDF doladění · virtualized canvas (zoom >500%) · AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
-**Otevřené otázky k rozhodnutí s týmem:** Q1–Q6 (viz sekce níže).
+**Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
+v [`analyza-stav-a-legacy-nahrada-2026-07.md §7`](analyza-stav-a-legacy-nahrada-2026-07.md); vyřeší se
+při scope té fáze, ne teď.
 
 ---
 
@@ -193,19 +195,6 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 | F4 | **Výstupní kanály fáze 2** — Excel export, PDF heslo + el. podpis (PDFSIGNER), Epson znakový tisk (Q1) | ⬜ dle poptávky |
 | F5 | **Jazykové varianty šablon** — per-jazyk kopie provázaná na CS zdroj (Q5) | ⬜ |
 | F6 | **Vědomě neportovat bez poptávky** — grafy (12×), AZTEC (2×), calculated (2× — výrazy TD nadmnožina), checkbox (8×); ověřit + škrtnout (Q4) | ⬜ validace |
-
----
-
-## ❓ Otevřené otázky z analýzy 2026-07 (k rozhodnutí s týmem)
-
-| # | Otázka | Dopad |
-|---|---|---|
-| Q1 | **Epson znakový tisk** — migruje do TD, nebo zůstane v legacy TISK? | Ne-grafický výstupní kanál — F4 |
-| Q2 | **RG bridge vs čisté agendy** — akceptovatelná dočasná věrnost bridge? | F2, tvar celé Fáze F |
-| Q3 | **Relace (SK zákazník)** — živý use case? | Fáze E scope |
-| Q4 | **Grafy/AZTEC/checkbox/calculated** — tvrdá závislost? (usage 12/2/8/2) | F6 škrtnutí |
-| Q5 | **Jazykové varianty šablon** — i pro JŘ (pohraniční vývěsky), nebo jen RG? | F5 priorita |
-| Q6 | ~~V1 šablony~~ — v DB neexistují (2026-07-02); zbývá potvrdit staré JSON soubory na disku | H-19 uzávěrka |
 
 ---
 
