@@ -935,10 +935,22 @@ public partial class MainWindow : Window
         dlg.ShowDialog();
     }
 
-    private void Window_Closing(object sender, CancelEventArgs e)
+    private bool _closeConfirmed;
+
+    private async void Window_Closing(object sender, CancelEventArgs e)
     {
-        if (_vm is not null && !_vm.ConfirmUnsavedChanges())
-            e.Cancel = true;
+        if (_closeConfirmed || _vm is null) return;
+        if (!_vm.IsDirty) return;   // čisté okno → nech zavřít normálně (žádný cancel, žádný async)
+
+        // Dirty: uložení do DB je async → zrušit toto zavření, počkat na potvrzení, pak zavřít
+        // programově. Close() PŘES Dispatcher — až po doběhnutí Closing eventu; jinak WPF hodí
+        // „nelze volat Close při zavírání" i když confirm skončí synchronně (volba „Ne").
+        e.Cancel = true;
+        if (await _vm.ConfirmUnsavedChangesAsync())
+        {
+            _closeConfirmed = true;
+            Dispatcher.BeginInvoke(new Action(Close));
+        }
     }
 
     private void MenuExit_Click(object sender, RoutedEventArgs e)
@@ -956,7 +968,7 @@ public partial class MainWindow : Window
     private void MenuDelete_Click(object sender, RoutedEventArgs e) => _vm!.DeleteCommand.Execute(null);
     private void MenuHelp_Click(object sender, RoutedEventArgs e)  => ShowHelp();
 
-    private void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
+    private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
         var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
@@ -965,12 +977,12 @@ public partial class MainWindow : Window
 
         if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
         {
-            if (!_vm.ConfirmUnsavedChanges()) return;
+            if (!await _vm.ConfirmUnsavedChangesAsync()) return;
             _vm.LoadGeneratedTemplate(aiVm.GeneratedTemplate);
         }
     }
 
-    private void MenuImportPdf_Click(object sender, RoutedEventArgs e)
+    private async void MenuImportPdf_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
         var apiKey = Config.AppSettings.Current?.AiAssistant.AnthropicApiKey;
@@ -979,7 +991,7 @@ public partial class MainWindow : Window
 
         if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)
         {
-            if (!_vm.ConfirmUnsavedChanges()) return;
+            if (!await _vm.ConfirmUnsavedChangesAsync()) return;
             _vm.LoadGeneratedTemplate(vm.ImportedTemplate);
         }
     }

@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-03 — Pre-pilot UX P0: U1 (bug ukládání) + U5 + async confirm/close
+
+- ✅ **U1 — BUG opraveno:** volba **„Ano = uložit"** v potvrzení neuložených změn (Nový / Otevřít /
+  změna agendy / zavření okna) dřív ukládala do **JSON souboru** (`SaveAndContinue` → `SaveFileDialog` +
+  `TemplateSerializer.Save`), ne do DB. Z pohledu uživatele ztráta dat — šablona nebyla v DB, kde ji čeká.
+  Teď `SaveAndContinueAsync` volá **stejnou DB cestu jako Ctrl+S** (`SaveToCacheAsync`).
+- ✅ **U5 — Ctrl+S bez DB** už netiše nepíše do status baru — `OfferJsonExportFallbackAsync` zobrazí
+  popup („Databáze není dostupná — uložit jako JSON?") a na potvrzení spustí export.
+- ✅ **Celý confirm/close flow async** (uložení do DB je async přes MLRest): `ConfirmUnsavedChanges()` →
+  `ConfirmUnsavedChangesAsync()`, `SaveAndContinue()` → `SaveAndContinueAsync()`; `SaveToCacheAsync`/
+  `SaveToCacheAsAsync`/`ExportToJsonAsync`/`OfferJsonExportFallbackAsync` vrací `Task<bool>` (true = reálně
+  uloženo → volající pokračuje). `NewCommand`/`ChangeAgendaCommand` převedeny na `CommandAsync`;
+  `MenuAiAssistant_Click`/`MenuImportPdf_Click` na `async void`.
+- ✅ **Fix pádu při zavření okna** (`InvalidOperationException: nelze volat Close při zavírání`):
+  nové async `Window_Closing` u čistého (nedirty) okna zavíralo synchronně uvnitř běžícího Closing eventu.
+  Fix: nedirty okno → zavřít normálně (žádný cancel); dirty → `e.Cancel=true` + async potvrzení + `Close()`
+  odložený přes `Dispatcher.BeginInvoke` (až po doběhnutí eventu).
+
 ## 2026-07-03 — Úklid T6: odstranění vestigiálního menu + MessageBox
 
 - ✅ Odstraněno skryté menu **„Nástroje → Vlastnosti textu… (alternativa k dvojkliku)"** (+ handler

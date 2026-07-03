@@ -340,22 +340,22 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _new, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _changeAgenda, _openInstancePicker, _prevInstance, _nextInstance;
-    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng;
+    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _openInstancePicker, _prevInstance, _nextInstance;
+    private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
     public RelayCommand RedoCommand          => _redo      ??= Command(Redo,          () => CanRedo);
     // DB je primární úložiště: Uložit / Otevřít / Uložit jako jdou do databáze. JSON = import/export.
     public AsyncRelayCommand SaveCommand     => _save      ??= CommandAsync(SaveTemplate);
     public AsyncRelayCommand SaveAsCommand   => _saveAs    ??= CommandAsync(SaveToCacheAsAsync, () => TemplateStorage is not null);
-    public RelayCommand NewCommand           => _new       ??= Command(NewTemplate);
+    public AsyncRelayCommand NewCommand      => _new       ??= CommandAsync(NewTemplateAsync);
     public AsyncRelayCommand OpenCommand     => _open      ??= CommandAsync(OpenFromCacheAsync, () => TemplateStorage is not null);
     public AsyncRelayCommand ImportJsonCommand => _importJson ??= CommandAsync(ImportFromJsonAsync);
     public AsyncRelayCommand ExportJsonCommand => _exportJson ??= CommandAsync(ExportToJsonAsync);
     public AsyncRelayCommand OpenFromCacheCommand  => _openFromCache  ??= CommandAsync(OpenFromCacheAsync,  () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheCommand    => _saveToCache    ??= CommandAsync(SaveToCacheAsync,    () => TemplateStorage is not null);
     public AsyncRelayCommand SaveToCacheAsCommand  => _saveToCacheAs  ??= CommandAsync(SaveToCacheAsAsync,  () => TemplateStorage is not null);
-    public RelayCommand ChangeAgendaCommand        => _changeAgenda   ??= Command(ChangeAgenda);
+    public AsyncRelayCommand ChangeAgendaCommand   => _changeAgenda   ??= CommandAsync(ChangeAgendaAsync);
     public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
     public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
@@ -688,9 +688,9 @@ public class TemplateDesignerViewModel : EDViewModel
         _sectionTemplates.Load(name)?.Clone();
 
     // ── File operations ───────────────────────────────────────────────────────
-    private void NewTemplate()
+    private async Task NewTemplateAsync()
     {
-        if (!ConfirmUnsavedChanges()) return;
+        if (!await ConfirmUnsavedChangesAsync()) return;
         ReplaceWithBlankTemplate(agendaCode: null);
     }
 
@@ -754,7 +754,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
     }
 
-    private void ChangeAgenda()
+    private async Task ChangeAgendaAsync()
     {
         var agendas = SchemaProvider.GetAvailableAgendas();
         if (agendas.Count == 0)
@@ -771,7 +771,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (string.Equals(State.CurrentTemplate.AgendaCode, vm.ChosenCode, StringComparison.OrdinalIgnoreCase))
             return;
 
-        if (!ConfirmUnsavedChanges()) return;
+        if (!await ConfirmUnsavedChangesAsync()) return;
         ReplaceWithBlankTemplate(vm.ChosenCode);
     }
 
@@ -779,7 +779,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// = není v DB), takže následný Uložit ji založí do databáze.</summary>
     private async Task ImportFromJsonAsync()
     {
-        if (!ConfirmUnsavedChanges()) return;
+        if (!await ConfirmUnsavedChangesAsync()) return;
         var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Importovat šablonu z JSON" };
         if (dlg.ShowDialog() != true) return;
         await OpenTemplateFromFileAsync(dlg.FileName);
@@ -922,18 +922,24 @@ public class TemplateDesignerViewModel : EDViewModel
     private async Task SaveTemplate()
     {
         // DB je primární úložiště. DB šablona → update; nová/importovaná → SaveAs do DB
-        // (SaveToCacheAsync interně řeší new→SaveAs). Bez Caché nelze uložit → Export do JSON.
-        if (TemplateStorage is null)
-        {
-            StatusText = "Databáze není dostupná — použij Soubor → Exportovat do JSON.";
-            return;
-        }
+        // (SaveToCacheAsync interně řeší new→SaveAs). Bez Caché → popup s nabídkou JSON exportu (U5).
+        if (TemplateStorage is null) { await OfferJsonExportFallbackAsync(); return; }
         await SaveToCacheAsync();
     }
 
+    /// <summary>Fallback když DB není dostupná (U5): explicitní popup s nabídkou uložit jako JSON,
+    /// místo tichého status baru. Vrátí true pokud se reálně exportovalo.</summary>
+    private async Task<bool> OfferJsonExportFallbackAsync()
+    {
+        if (!PopupDisplayer.Confirm(
+                "Databáze není dostupná — nelze uložit do ní. Uložit šablonu jako soubor JSON?"))
+            return false;
+        return await ExportToJsonAsync();
+    }
+
     /// <summary>Export šablony do JSON souboru. NEmění původ (šablona dál patří do DB) — je to
-    /// kopie ven, obdoba PDF/PNG exportu, ne „save target".</summary>
-    private async Task ExportToJsonAsync()
+    /// kopie ven, obdoba PDF/PNG exportu, ne „save target". Vrátí true pokud se soubor uložil.</summary>
+    private async Task<bool> ExportToJsonAsync()
     {
         var dlg = new SaveFileDialog
         {
@@ -941,11 +947,12 @@ public class TemplateDesignerViewModel : EDViewModel
             Title    = "Exportovat šablonu do JSON",
             FileName = State.CurrentTemplate.Name
         };
-        if (dlg.ShowDialog() != true) return;
+        if (dlg.ShowDialog() != true) return false;
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
         await TemplateSerializer.SaveAsync(State.CurrentTemplate, dlg.FileName);
         StatusText = $"Vyexportováno do {System.IO.Path.GetFileName(dlg.FileName)}";
+        return true;
     }
 
     // ── Caché storage ─────────────────────────────────────────────────────────
@@ -968,7 +975,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var dlg = new CacheTemplatePickerDialog(vm) { Owner = Application.Current.MainWindow };
         if (dlg.ShowDialog() != true || vm.SelectedTemplateId is null) return;
 
-        if (!ConfirmUnsavedChanges()) return;
+        if (!await ConfirmUnsavedChangesAsync()) return;
 
         try
         {
@@ -1000,11 +1007,13 @@ public class TemplateDesignerViewModel : EDViewModel
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
     }
 
-    private async Task SaveToCacheAsync()
+    /// <summary>Uloží do DB (nová/z disku → Save As dialog). Vrátí true při úspěchu, false při
+    /// zrušení (Save As dialog) nebo chybě — volající (confirm neuložených změn) podle toho pokračuje.</summary>
+    private async Task<bool> SaveToCacheAsync()
     {
-        if (TemplateStorage is null) return;
+        if (TemplateStorage is null) return false;
         // Pokud šablona ještě v Caché není (z disku nebo nová) → spustit Save As
-        if (!_loadedFromCache) { await SaveToCacheAsAsync(); return; }
+        if (!_loadedFromCache) return await SaveToCacheAsAsync();
 
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
@@ -1014,19 +1023,20 @@ public class TemplateDesignerViewModel : EDViewModel
             IsDirty = false;
             RequestTitleUpdate?.Invoke();
             PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do databáze.");
+            return true;
         }
-        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); return false; }
     }
 
-    private async Task SaveToCacheAsAsync()
+    private async Task<bool> SaveToCacheAsAsync()
     {
-        if (TemplateStorage is null) return;
+        if (TemplateStorage is null) return false;
 
         var vm = new SaveToCacheDialogViewModel(
             State.CurrentTemplate.Name,
             State.CurrentTemplate.AgendaCode);
         var dlg = new SaveToCacheDialog(vm) { Owner = Application.Current.MainWindow };
-        if (dlg.ShowDialog() != true) return;
+        if (dlg.ShowDialog() != true) return false;
 
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
@@ -1043,8 +1053,9 @@ public class TemplateDesignerViewModel : EDViewModel
             IsDirty = false;
             RequestTitleUpdate?.Invoke();
             PopupDisplayer.Info($"Šablona „{State.CurrentTemplate.Name}\" byla uložena do databáze.");
+            return true;
         }
-        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }
+        catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); return false; }
     }
 
     private void SyncParametersToTemplate()
@@ -1137,7 +1148,10 @@ public class TemplateDesignerViewModel : EDViewModel
         catch { /* viewer nemusí být nainstalován */ }
     }
 
-    public bool ConfirmUnsavedChanges()
+    /// <summary>Potvrzení neuložených změn před destruktivní akcí (Nový/Otevřít/změna agendy/zavření).
+    /// Ano → uloží do DB (stejná cesta jako Ctrl+S), Ne → pokračovat bez uložení, Storno → zrušit.
+    /// Async, protože uložení do DB je async (MLRest). Vrátí true = lze pokračovat.</summary>
+    public async Task<bool> ConfirmUnsavedChangesAsync()
     {
         if (!IsDirty) return true;
 
@@ -1147,30 +1161,18 @@ public class TemplateDesignerViewModel : EDViewModel
 
         return result switch
         {
-            true  => SaveAndContinue(),  // Ano = uložit a pokračovat
-            false => true,                // Ne = pokračovat bez uložení (zahodit změny)
-            null  => false                // Storno = zrušit zavírání
+            true  => await SaveAndContinueAsync(),  // Ano = uložit (do DB) a pokračovat
+            false => true,                           // Ne = pokračovat bez uložení (zahodit změny)
+            null  => false                           // Storno = zrušit
         };
     }
 
-    private bool SaveAndContinue()
+    /// <summary>Uloží do DB (jako Ctrl+S), ne do JSON souboru — DB je primární úložiště. Bez DB →
+    /// popup s nabídkou JSON exportu (U5). Vrátí true pokud se reálně uložilo (jinak nepokračovat).</summary>
+    private async Task<bool> SaveAndContinueAsync()
     {
-        if (CurrentFilePath is null)
-        {
-            var dlg = new SaveFileDialog
-            {
-                Filter   = TemplateSerializer.FileFilter,
-                Title    = "Uložit šablonu",
-                FileName = State.CurrentTemplate.Name
-            };
-            if (dlg.ShowDialog() != true) return false;
-            CurrentFilePath = dlg.FileName;
-        }
-        SyncParametersToTemplate();
-        CaptureEditorPreferencesToTemplate();
-        TemplateSerializer.Save(State.CurrentTemplate, CurrentFilePath);
-        IsDirty = false;
-        return true;
+        if (TemplateStorage is null) return await OfferJsonExportFallbackAsync();
+        return await SaveToCacheAsync();
     }
 
     // ── Clipboard ─────────────────────────────────────────────────────────────

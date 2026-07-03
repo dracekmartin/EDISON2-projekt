@@ -14,8 +14,8 @@
 **Co reálně čeká (pořadí = priorita):**
 
 1. **🎯 Pre-pilot UX polish — AKTIVNÍ VÝVOJOVÝ FOCUS.** Doladit designer core do nejlepšího stavu před
-   pilotem (audit s Fablem 2026-07-03, sekce „UX/UX audit" níže). Nejdřív **P0: U1 (bug ukládání do JSON
-   místo DB) → U2–U7** (~1–2 dny, aditivní). Vše „obecná vylepšení jádra" + zastávkové — žádné linkové/knižní.
+   pilotem (audit s Fablem 2026-07-03, sekce „UX/UX audit" níže). **P0: U1 (bug ukládání do JSON místo DB)
+   + U5 hotovo 2026-07-03; zbývá U2–U4, U6, U7** (~1 den, aditivní). Vše „obecná vylepšení jádra" + zastávkové — žádné linkové/knižní.
 2. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
    TD.exe z main → `C:\Edison` (D3) + Caché třídy na zákaznický server (D4). A1/A2 launch ✅ (Martin, v main).
    Tisk (`A3`) + systémové šablony (`B`) odloženo. Cesta k pilotu (R7).
@@ -290,15 +290,15 @@ Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{
 > (3) nekonzistence (1 fakt. bug). **Cíl: designer v nejlepším stavu před pilotem.** Každou položku před
 > implementací ověřit proti kódu (audit je z jiné session — může být lokálně stale).
 
-**🔴 P0 — opravit před pilotem (~1–2 dny, aditivní):**
+**🔴 P0 — opravit před pilotem (~1–2 dny, aditivní):** *(U1 + U5 hotovo 2026-07-03; zbývá U2, U3, U4, U6, U7)*
 
 | # | Co | Proč |
 |---|---|---|
-| U1 | **BUG:** „Ano = uložit" v confirm neuložených změn ukládá do **JSON souboru** (SaveAndContinue), ne do DB jako Ctrl+S | Ztráta dat z pohledu uživatele (šablona není v DB, kde ji čeká). Fix = stejná DB cesta jako Ctrl+S |
+| ~~U1~~ ✅ | **BUG opraveno:** „Ano = uložit" v confirm neuložených změn teď ukládá do **DB** (stejná cesta jako Ctrl+S), ne do JSON. Celý confirm/close flow převeden na async (`ConfirmUnsavedChangesAsync`, `SaveAndContinueAsync`). | Hotovo 2026-07-03 |
 | U2 | Context menu „Vlastnosti elementu…" jen přepne inline panel; „Vlastnosti sekce…" otevře dialog | Stejně pojmenované akce, různé chování → sjednotit (obě dialog) |
 | U3 | Klik na paletu elementů nedělá nic (jen drag; klikací fallback = mrtvý kód) | Drag-only neobjevitelné pro nové uživatele. Klik = vlož do aktivní sekce (kód existoval) |
 | U4 | Dvojklik do prázdna otevře vlastnosti stránky | Dvojklik do prázdna = „zrušit výběr"; dialog je překvapení. Nechat na Ctrl+Shift+P/menu |
-| U5 | Ctrl+S bez DB jen tiše píše do status baru | Uživatel myslí, že uložil. Musí být popup (nabídnout export do JSON) |
+| ~~U5~~ ✅ | **Opraveno:** Ctrl+S bez DB už netiše nepíše do status baru — popup s nabídkou exportu do JSON (`OfferJsonExportFallbackAsync`). | Hotovo 2026-07-03 |
 | U6 | Sjednotit labely tlačítek („Storno"×„Zrušit", OK/Uložit/Použít bez pravidla) + pravidlo do `ux-conventions` | Rozjetý slovník; půlhodinový průchod |
 | U7 | Tooltipy na „M"/„O" snap toggly (+ obecně nerozklíčovatelné textové glyfy) | Bez tooltipu nikdo nerozklíčuje |
 
