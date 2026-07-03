@@ -32,9 +32,12 @@
 - Nové z prezentací **P1–P3** (neanalyzováno, před implementací ticket)
 - Helpdesk odložené **A2-A5 / A6 / B4** (datový průzkum / diskuze s kolegy)
 - **Fáze B** element flexibility (merged cells, conditional formatting)
+- **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
+  computed fields (`CELKOVA_CENA = CENA * MNOZSTVI`) · vnořené datasource (`_rows` v `_rows`) ·
+  min/max počet řádků dynamic tabulky. (Přesunuto z „UX polish" 2026-07-03.)
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
-- Import PDF doladění · UX polish · virtualized canvas (zoom >500%) · AI (v pozadí)
+- Import PDF doladění · virtualized canvas (zoom >500%) · AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k rozhodnutí s týmem:** Q1–Q6 (viz sekce níže).
 
@@ -287,42 +290,16 @@ Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{
 
 ---
 
-## 🎯 UX/UX audit — pre-pilot polish (Fable 2026-07-03) — ✅ HOTOVO
+## 🎯 UX/UX audit + polish (Fable 2026-07-03) — ✅ UZAVŘENO
 
-> Audit 19 oken proti produktové filozofii („srozumitelnost nad úplností"). **Celý akční blok hotový
-> 2026-07-03** (P0 U1–U7 + střední/malé: context menu discoverability, drift zkratek, zoom konzistence,
-> StatusText segmentace, Escape ruší operaci). Detail → [`roadmap-archive.md`](roadmap-archive.md) +
-> [`changelog.md`](changelog.md).
-
-**Zbývá z tohoto tématu (mimo blok):**
-- **Left-panel refaktor** (PropertyDescriptor → EDInputForm) — velký track, viz „Backlog" nahoře.
-- **Layout robustnost (pilot-gated):** „sekce vyšší než stránka" (var B — největší koncepční layout dluh),
-  „element drag mezi sekcemi" (tvrdý clamp). **Po pilotu.**
-- **Vědomě odloženo:** ikonový jazyk (písmenka OK), rubber band napříč sekcemi (nepotřebujeme).
-- **🧭 doc:** rozšířit UX mřížku (`feature-design-principles`) o vrstvu menu/toolbar/zkratka — low-prio.
-
-**⛔ Nedělat teď:** plynulý zoom (až virtualizace), dark mode / theming, onboarding overlay.
-
----
-
-## 🟢 UX polish (otevřené)
-
-- **Stylový pod-formulář (rozšířit + uklidit)** — 🟡 prototyp 2026-06-22 (1 zóna: `StyleEditDialog` +
-  EDInputform `ButtonClicked` event, Odjezdy „Styl záhlaví" → „Upravit styl…"). **Zbývá:** (1) rozšířit
-  na všechny zóny Odjezdů (DataStyle/MinuteStyle/Anotace) + StopList → hlavní „Obecné" = scaláry + tlačítka
-  „Styl…"; (2) uklidit `StyleEdit.cls` (nepoužitá varianta A) + zvážit budoucnost `StyleFields`.
-- **Font follow-ups** — (1) live varování „nenainstalovaný font" (dnes `FontResolver` tiše fallbackuje na
-  Arial → chce warning kanál v EDInputformu); (2) rozšířit `Template.DefaultTextStyle` z „jen font" na
-  size/barvu/rámeček — jen na vyžádání (YAGNI, model pole má, chybí UI).
-- **Ad-hoc kontrola přetečení v tisku** — samostatné tlačítko „Zkontrolovat přetečení" v `PrintDialog`
-  (fetch dat + počet bez generování PDF). Zatím YAGNI.
-- **Sjednotit editor sloupců** — `IColumnRowVM` + `ColumnListEditor` sdílí StopList/DepartureGrid/dynamická
-  tabulka. TableElement (Fixed, dormant) má vlastní DataGrid editor — sjednotit jen pokud bude potřeba.
-
-### Tabulkové featury (backlog, bez customer demand)
-
-Grouping v tabulce (`GroupHeader`/`GroupFooter`/`Summary`) · Computed fields (`CELKOVA_CENA = CENA * MNOZSTVI`) ·
-Vnořené datasource (`_rows` v `_rows` — faktura → položky → daně) · Min/max počet řádků dynamic tabulky.
+> Celý akční blok hotový 2026-07-03 (P0 U1–U7 + discoverability do context menu, drift zkratek, zoom
+> konzistence, StatusText segmentace, Escape ruší operaci) → detail [`roadmap-archive.md`](roadmap-archive.md)
+> + [`changelog.md`](changelog.md). Souběžně ověřeno, že **🟢 UX polish** je hotové/YAGNI: stylový
+> pod-formulář ✅ (`StyleFields` napříč zónami + `StyleEditDialog`/`CellStyleEditor`), sjednocený editor
+> sloupců ✅ (`ColumnListEditor`), font warning + ad-hoc overflow tlačítko = YAGNI.
+>
+> **Genuine zbytek tématu (jinde):** left-panel refaktor (viz Backlog nahoře) · layout „sekce vyšší než
+> stránka" (var B) + „element drag mezi sekcemi" — **pilot-gated, po pilotu**.
 
 ---
 

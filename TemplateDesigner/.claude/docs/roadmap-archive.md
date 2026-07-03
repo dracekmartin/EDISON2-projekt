@@ -25,6 +25,17 @@ položky hotové**; detail v [`changelog.md`](changelog.md) 2026-07-03.
 - **StatusText segmentace** — status bar rozdělen na „stav výběru" (`SelectionStatusText`, klid) + „akce/progres" (`StatusText`, transient) → nepřepisují se.
 - **Escape ruší probíhající drag/resize/rubber band** (restore z init).
 
+**🟢 UX polish (otevřené) — prošlo 2026-07-03, ověřeno proti kódu:**
+- **Stylový pod-formulář** ✅ hotové — `StyleFields.cls` (sdílený balíček) pohání stylové zóny ve všech
+  EDInputForm „Obecné" tabech (DepartureGrid Data/Minuta/Symbol/Text, DynamicTable + StopList Header/Data);
+  `StyleEditDialog` používá sdílený `CellStyleEditor` (tri-state). `StyleEdit.cls` = záměrně parkovaná
+  server-side varianta A (dokumentováno v hlavičce, ne mrtvý kód).
+- **Sjednotit editor sloupců** ✅ hotové — `ColumnListEditor`/`IColumnRowVM` sdílí DepartureGroup,
+  DynamicTable, StopColumns; dormant TableElement vyňat záměrně.
+- **Font warning** + **ad-hoc overflow tlačítko** = YAGNI (přetečení se hlásí při exportu; font se vybírá
+  z InstalledFamilies) → přesunuto do backlogu.
+- **Tabulkové featury** (grouping / computed fields / nested datasource) → backlog (bez customer demand).
+
 **Vědomě odloženo / parkováno:**
 - **Ikonový jazyk** (Fluent + glyfy) — necháváme, není zásadní.
 - **Rubber band napříč sekcemi** — nepotřebujeme; sahá do selection sémantiky, pilot potvrdí.
