@@ -392,6 +392,39 @@ Při komunikaci se zákazníky uvádět jako benefity nového řešení:
 
 ---
 
+## TR. TRANSDEV — konsolidovaná sada požadavků (2026-07-03, k analýze)
+
+Souhrnný wishlist k zastávkovému CP (SK legislativa + praxe MHD Trenčín). **Neanalyzováno** — před
+implementací dohledat/založit tikety + upřesnit. U každého poznámka o stavu/infra na TD straně:
+
+1. **Časová os cez polnoc** (noční linky 22→5h) nebo aspoň manuální přeuspořádání hodin.
+   → ✅ **Už hotové (B3, #9036)**: `TimeAxisMode=Range`, `HODINY_OD=22`/`HODINY_DO=5` → wrap přes půlnoc
+   (extended hours). **Klient nejspíš netestoval na své verzi** — ověřit u něj, netřeba implementovat.
+2. **Zastávky na znamení — „všechny"**: když jsou VŠECHNY zastávky na znamení, místo značek u každé
+   vygenerovat souhrn „× všechny zastávky linky jsou na znamení" (analogie k bezbariér souhrnu). Konfigurovatelné
+   (CZ legislativa může chtít značky). → **Pattern existuje** (AD bezbariér `allBBP` agregát); relates #7161. NEW, S–M.
+3. **Zobrazení nástupiště**: nový sloupec vedle názvu zastávky (SK legislativa). → **Data existují** (`Oznacnik`
+   v `ALVA.MHD.ZST`); přidat sloupec do StopListu + AD GetData pole. NEW, S.
+4. **Výška řádku „zastávka" — auto (3. režim)**: pevná výška, při nedostatku místa se začne zmenšovat.
+   → **Částečně**: StopList má auto-scale fontu při přetečení pevné Height (`ComputeFontScale`). Chce explicitní
+   „fixed-then-shrink" režim výšky řádku. S–M.
+5. **Definice směru/cíle** — položka „cíl" odkazovatelná v šabloně. 3 varianty: (min) univerzální cíl per směr;
+   (střední) cíl textem per zastávka × směr v trase (jako nástupiště/sloupík); (ideál) DB cílů + id per zastávka×směr.
+   Dnes hackují přes `informace`/`titulek`. NEW, datový model, M–L. *(Odbourá i speciální cíle pro tabule.)*
+6. **Barva linky**: ve vlastnostech linky bg + text barva; v šabloně u objektu volba „farba linky" místo pevné
+   z palety → aplikuje se při tisku. Šetří hodiny u grafických změn (MHD Trenčín). NEW, M.
+7. **Jízdní doby — výběr sloupců variant**: víc variant trasy → víc sloupců jízdních dob; číslování dnes odráží
+   pořadí výskytu variantu v seznamu spojů (nestabilní — Sloupec 3 na začátku = Sloupec 2 uprostřed). Chce
+   explicitní kontrolu (které spoje / úsek řídí generování). → **Relates L1 multi-varianta TrasaMin** (`VARIANTY_TRAS`
+   + `ShowAllRouteVariants`); je to ta „jemnější výběr variant (per-písmeno)" z `cache-database-linky §10`. M.
+8. **Jízdní doby — „<1" místo „0"**: nulová jízdní doba mezi zastávkami → zobrazit „<1" (méně než minuta) místo „0".
+   Konfigurovatelné. NEW, S.
+9. **Poznámkování spojů — obrácená logika**: dnes horní tabulka (značka/text/spoje) + spodní tabulka (kde
+   NEpoznámkovat). Chce: rozsah TČ přímo v první tabulce vedle značky/spojů. Legacy-input workflow (tab „MHD").
+   Zjednodušení, méně chyb. M (Caché-input strana).
+10. **Zobrazování spojů — skrýt v So/Ne/svátky**: dnes „spoje s NZ se nezobrazí" jen pro sloupce školní
+    výuka/prázdniny; chtějí i skrýt spoje o So/Ne/svátcích. → rozšíření filtru (`MHD - další`). NEW, S–M (Caché).
+
 ## H. Status komunikace s klienty
 
 M-line zákazníkům slíbil:
