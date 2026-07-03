@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-03 — T5a: agenda kód→třída lookup bez hardcoded mirroru
+
+- ✅ **`AgendyRegistr.GetClassForCode(agendaCode)`** — nový sdílený lookup (auto-discovery z `%Dictionary`,
+  stejná cesta jako `ListAgendy`). `EDList/Instance.GetClassForAgenda` dřív hardcoduje mapování kód→FQN
+  třídy (mirror Wave 2) → teď deleguje na `GetClassForCode`. Přidání nové agendy = jen nová `BaseAgenda`
+  subclass, žádný druhý seznam k údržbě. Ověřeno: `ListAgendy` (stejný mechanismus) vrací správné mapování
+  pro AD/MHD/FAKTURY.
+- ⏭️ **T5b (`ZastavkoveJrAd.GetMockData` → statický mock) přeskočeno** — živý náhled z reálné linky
+  ponechán záměrně (není zásadní; na rozdíl od MHD/Faktury zůstává AD design-time preview z živých dat).
+
 ## 2026-07-03 — T6 dokončeno (architektonický track drobnosti)
 
 - ✅ **`architecture.md` doplněn o `/Services` (6 souborů) a `/PdfImport` (12 souborů)** — dřív v mapě

@@ -61,4 +61,25 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
     q $$$OK
 }
 
+/// Vrátí FQN třídy BaseAgenda subclass s daným AgendaCode (auto-discovery z %Dictionary),
+/// nebo "" když nenalezeno. Sdílený lookup — jediný zdroj mapování kód→třída (konzumuje
+/// EDList.Instance; žádný hardcoded mirror). Stejná discovery cesta jako ListAgendy.
+ClassMethod GetClassForCode(agendaCode As %String) As %String
+{
+    q:agendaCode="" ""
+    s result = ""
+    s baseClass = "ALVA.TemplateDesigner.Agendy.BaseAgenda"
+    s sql = "SELECT ID FROM %Dictionary.ClassDefinition WHERE Super = ? AND ID <> ?"
+    s rs = ##class(%SQL.Statement).%ExecDirect(, sql, baseClass, baseClass)
+    q:rs.%SQLCODE<0 ""
+    while rs.%Next() {
+        s className = rs.%Get("ID")
+        if $parameter(className, "AgendaCode") = agendaCode {
+            s result = className
+            q
+        }
+    }
+    q result
+}
+
 }
