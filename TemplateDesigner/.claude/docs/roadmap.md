@@ -37,7 +37,7 @@
   min/max počet řádků dynamic tabulky. (Přesunuto z „UX polish" 2026-07-03.)
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
-- Import PDF doladění · virtualized canvas (zoom >500%) · AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
+- Import PDF doladění · AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
 v [`analyza-stav-a-legacy-nahrada-2026-07.md §7`](analyza-stav-a-legacy-nahrada-2026-07.md); vyřeší se
@@ -256,15 +256,6 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 | 33 | JŘ-aware mód (3d) — AI Vision pipeline + `AiGuidedScheduleBuilder` fungují, **ladění na širší sadě JŘ** | 🟡 |
 
 Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{PLACEHOLDER}`). 3b křivky/Bézier low-prio.
-
----
-
-## 🟡 Virtualized canvas rendering (zoom >500%)
-
-`SKElement` alokuje byte buffer celé plochy per repaint (zoom 1000% A4 ≈ 365 MB/frame — hardware-bound
-bottleneck SkiaSharp Views.WPF). **Workaround:** zoom max 500% (~93 MB). **Proper (~4-6h, až bude potřeba):**
-virtualizace — SKElement ve velikosti viewport (~1600×900), custom scroll + hit-test coordinate transform.
-**Risk:** mouse coord transformace napříč všemi interakcemi (drag, rubber band).
 
 ---
 

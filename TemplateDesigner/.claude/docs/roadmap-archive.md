@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Parked known-limitation — canvas perf při vysokém zoomu (2026-07-03)
+
+Vyřazeno z aktivní roadmapy — na stropu 500 % funguje svižně (ověřeno). Vrátit se k tomu jen když se
+ukáže reálný problém na uživatelských PC (poptávka).
+
+- **Podstata:** `SKElement` drží byte buffer celé plochy (`pageW × MmToPx`). Zoom 500 % A4 ≈ 3969×5615 px
+  ≈ 89 MB; 1000 % ≈ 365 MB. Hardware-bound bottleneck SkiaSharp.Views.WPF.
+- **Workaround (aktivní):** zoom zastropován na 500 % (`ZoomLevels` max 5.0).
+- **Proper fix (~4–6 h, rizikové):** virtualizace — SKElement jen ve velikosti viewportu, obsah posouvat
+  scroll offsetem, kreslit jen viditelnou část. Riziko: `e.GetPosition(skCanvas)` je dnes absolutní px
+  celé stránky → každá interakce (drag/resize/rubber band/ghost/hit-test) by potřebovala scroll-offset
+  transformaci. Dělat jako samostatnou session, ne mezi cleanupy.
+
 ## Session 2026-07-03 ✅ — Architektonický track: malé T kousky
 
 Prošli jsme T1–T6 a odbavili všechny **malé self-contained** kusy (detail v [`changelog.md`](changelog.md)):
