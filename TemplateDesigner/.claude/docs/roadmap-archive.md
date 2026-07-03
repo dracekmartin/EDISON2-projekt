@@ -2,6 +2,22 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-03 ✅ — Architektonický track: malé T kousky
+
+Prošli jsme T1–T6 a odbavili všechny **malé self-contained** kusy (detail v [`changelog.md`](changelog.md)):
+- **T5a** — `EDList/Instance.GetClassForAgenda` deleguje na nový `AgendyRegistr.GetClassForCode`
+  (auto-discovery z `%Dictionary`, žádný hardcoded mirror). Ověřeno přes `ListAgendy`. **T5b přeskočeno**
+  (živý AD mock ponechán záměrně).
+- **T6** — `architecture.md` doplněn o `/Services`+`/PdfImport`; per-frame `new SKPaint` posouzeno = zavřeno
+  (nevyplatí se). Celé T6 hotové.
+- **T4 malé kousky** — R4 fix `TableEditorDialogViewModel` (inline WPF picker → code-behind přes callback,
+  VM 0× System.Windows) + rename `MainWindowViewModel.cs` → `TemplateDesignerViewModel.cs`.
+- **StopList kaskáda testy** — `StopListCascadeTests` (9 testů): feature override aktuální/projeté zastávky,
+  legacy `col.Alignment` fallback, per-column Style priorita, element-level HeaderStyle.
+
+**Záměrně otevřené (velké, ne blocker):** T1b-robustní (zmrazit vstup do izolovaného namespace) · plný
+T4 god-objects strangler (postupné řezy velkých tříd).
+
 ## Session 2026-07-03 ✅ — Pre-pilot UX polish (Fable audit, celý blok)
 
 Audit 19 oken proti produktové filozofii („srozumitelnost nad úplností"). **Celý P0 + akční střední/malé

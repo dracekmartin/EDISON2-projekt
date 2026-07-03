@@ -16,9 +16,7 @@
 1. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
    TD.exe z main → `C:\Edison` (D3) + Caché třídy na zákaznický server (D4). A1/A2 launch ✅ (Martin, v main).
    Tisk (`A3`) + systémové šablony (`B`) odloženo. Cesta k pilotu (R7).
-2. **Architektonický track (filler, průběžně)** — `T1b` gold ✅ · `T6` 2/4 ✅. Zbývá `T4` god-objects,
-   `T5`/`T6` drobnosti + `R1a` (DynamicTable render → `ColumnRenderer.DrawRow`). Nízká priorita.
-3. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot.
+2. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot.
 
 **Větší dedikované tracky (vlastní session):**
 - **Left-panel inline editace: PropertyDescriptor → EDInputForm** (W4-10/11) — velký refaktor, sjednotí
@@ -30,6 +28,9 @@
 **Backlog / budoucí velké tracky:**
 - Nové z prezentací **P1–P3** (neanalyzováno, před implementací ticket)
 - Helpdesk odložené **A2-A5 / A6 / B4** (datový průzkum / diskuze s kolegy)
+- **Tech dluh (ne blocker, průběžně):** T1b-robustní gold test (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do
+  izolovaného namespace — data-drift-proof) · T4 god-objects strangler (postupné řezy `MainWindow.xaml.cs`
+  + `TemplateDesignerViewModel` na služby). Malé T kousky ✅ (archiv 2026-07-03).
 - **Fáze B** element flexibility (merged cells, conditional formatting)
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
   computed fields (`CELKOVA_CENA = CENA * MNOZSTVI`) · vnořené datasource (`_rows` v `_rows`) ·
@@ -56,22 +57,6 @@ Z živých prezentací 2026-06-24. Před implementací dohledat ticket + přesn�
 | P1 | Ruční poznámky do patičky JŘ (volný text / pole „Poznámky") | XS–M | `TextElement` v patičce funguje; M jen pokud param-driven |
 | P2 | Sloučení linek se stejným posledním trojčíslím (i různá Tč / více dopravců) → 1 výstup | L | Agenda + InstancePicker + agregace `POPIS_DOPRAVCE`; chce analýzu legacy |
 | P3 | Logická imposice 2×A5 oboustranně na A4 (N-up + duplex/brožura) | M–L | „Sheet layout" vrstva nad PageLayoutEngine; `RenderPage` už bere offset |
-
----
-
-## 🔧 Architektonický track — technické dluhy T1–T6 (z analýzy 2026-07)
-
-> Zdroj: [`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md) §2.3.
-> Optika: regresní pojistky + zdraví kódu před růstem plochy. Běží paralelně; vybírat tak, aby
-> nekolidovaly s rozpracovanými soubory. **T1a/T2/T3 ✅, T1b částečně ✅** (archiv 2026-07-02).
-
-| ID | Co | Stav |
-|---|---|---|
-| T1b | **Caché testy** — **základní gold regrese ✅ 2026-07-03** (`ZastavkoveJrAdGoldTest`: 2 gold linky 0365001+0365005, digest = hrubé počty + MD5 celého GetData výstupu, v pre-push). ⚠️ pevně vůči **CB_CSADAD** datům (per-firma namespace) — data drift = falešný pád (přegeneruj digest), jiný server bez CB_CSADAD → skip. **Robustní verze** (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do izolovaného namespace, data-drift-proof) odložena. | 🟡 základ hotový, robustní odloženo |
-| T4 | **God objects strangler** — `MainWindow.xaml.cs` (~2,7k) + `TemplateDesignerViewModel` (~2,5k): pravidlo „nové featury = nová služba/soubor" + postupné řezy (Export ✅, Instance, TemplatePersistence). ✅ **R4 fix** `TableEditorDialogViewModel` (inline WPF picker → code-behind přes `RequestPickTableTemplate` callback; VM 0× System.Windows) · ✅ **rename** `MainWindowViewModel.cs` → `TemplateDesignerViewModel.cs` (2026-07-03). Zbývá: samotný strangler velkých tříd (velké, průběžně). | 🟡 malé kousky ✅, strangler ⬜ |
-| T5 | **Zbylé duplikace** — ✅ `EDList/Instance.GetClassForAgenda` deleguje na nový `AgendyRegistr.GetClassForCode` (auto-discovery z `%Dictionary`, žádný hardcoded mirror; 2026-07-03). `ZastavkoveJrAd.GetMockData` → statický mock = **přeskočeno** (živý náhled z reálné linky ponechán záměrně, není zásadní). | ✅ hotovo (T5b skip) |
-| T6 | Drobnosti — ✅ `ScheduleDetectorTest.cs` odstraněn · ✅ `MessageBox` v MainWindow odstraněn · ✅ **`architecture.md` doplněn o `PdfImport/`+`Services/`** (2026-07-03) · ✅ **per-frame `new SKPaint` posouzeno = zavřeno** (disposované `using var`, per-element ne per-buňka, závislé na měnitelných barvách → cache by chtěla invalidaci, nevyplatí se; schedule elementy s 100+ buňkami už painty pre-createují). | ✅ hotovo |
-| — | ✅ **StopList kaskáda testy** — `StopListCascadeTests` (9 testů, 2026-07-03): feature override aktuální/projeté zastávky, legacy `col.Alignment` fallback jen bez kaskády, per-column Style priorita, element-level HeaderStyle. `ResolveHeaderStyle/DataStyle/RowStyle` zpřístupněny public (jako DepartureGrid). | ✅ hotovo |
 
 ---
 
