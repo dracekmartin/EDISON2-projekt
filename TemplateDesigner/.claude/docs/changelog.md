@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-03 — Zoom: tlačítko × zkratka konzistentní + přepis tabulky zkratek
+
+- ✅ **Zoom — tlačítko a zkratka se shodují.** Dřív „1:1" tlačítko dělalo reset na 100 %, ale Ctrl+0
+  dělal fit-to-page → nekonzistentní. Nově dvě konzistentní dvojice: **„Fit" tlačítko + Ctrl+0** =
+  přizpůsobit stránce; **„1:1" tlačítko + Ctrl+1** = skutečná velikost 100 %. `ResetZoomTo100()` sdílený
+  helper, `BtnFitPage_Click` → `FitToPage()`. (Dva nezávislé combo-zoomy designer/náhled ponechány —
+  jsou to různé pohledy.)
+- ✅ **`ux-conventions.md §3` přepsáno 1:1 dle KeyDown handleru** (byl drift). Smazán neexistující
+  Ctrl+Shift+S (Uložit jako nemá zkratku); doplněno ~10 chybějících: F2 (inline text), Ctrl+P (tisk),
+  Ctrl+Shift+P (vlastnosti stránky), Ctrl+Shift+A (změna agendy), Ctrl+B (levý panel),
+  Ctrl+PageUp/PageDown (Z-order), šipky (posun elementu / sekce), Escape, Ctrl+0/Ctrl+1 (zoom).
+
 ## 2026-07-03 — Pre-pilot UX P0 dokončeno: U2 (context menu) + U6 (labely tlačítek)
 
 - ✅ **U2 — context menu „Vlastnosti elementu…" otevře dialog.** Dřív jen vybralo element + přepnulo

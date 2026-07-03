@@ -514,8 +514,13 @@ public partial class MainWindow : Window
         InvalidatePreview();
     }
 
-    /// <summary>Reset obou zoomů (designeru i náhledu) na 100 %.</summary>
-    private void BtnResetView_Click(object sender, RoutedEventArgs e)
+    /// <summary>„1:1" — skutečná velikost 100 % (designer i náhled). Tlačítko i Ctrl+1.</summary>
+    private void BtnResetView_Click(object sender, RoutedEventArgs e) => ResetZoomTo100();
+
+    /// <summary>„Fit" — přizpůsobit designer stránce. Tlačítko i Ctrl+0.</summary>
+    private void BtnFitPage_Click(object sender, RoutedEventArgs e) => FitToPage();
+
+    private void ResetZoomTo100()
     {
         const int defaultIdx = 2; // 100 %
         if (CmbZoom is not null)        CmbZoom.SelectedIndex        = defaultIdx;
@@ -1726,7 +1731,12 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.D0 && ctrl)
         {
-            FitToPage();
+            FitToPage();       // Ctrl+0 = Přizpůsobit stránce (== tlačítko „Fit")
+            e.Handled = true;
+        }
+        else if (e.Key == Key.D1 && ctrl)
+        {
+            ResetZoomTo100();  // Ctrl+1 = Skutečná velikost 100 % (== tlačítko „1:1")
             e.Handled = true;
         }
         else if (e.Key == Key.B && ctrl)

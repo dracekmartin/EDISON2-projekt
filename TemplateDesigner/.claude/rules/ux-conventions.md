@@ -34,6 +34,10 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 
 ## 3. Keyboardové zkratky — autoritativní tabulka
 
+> Autoritativní = odpovídá `MainWindow.xaml.cs` KeyDown handleru (ověřeno 2026-07-03). Při změně
+> zkratky v kódu aktualizuj i tuto tabulku. Save As **nemá** zkratku (jen menu/příkaz) — dřívější
+> „Ctrl+Shift+S" byl drift, neexistuje.
+
 ### Edit operace
 
 | Zkratka | Akce |
@@ -45,8 +49,9 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 | Ctrl+Shift+C / Ctrl+Shift+V | Copy / Paste **stylu** (TextStyle + Border + Background) |
 | Delete | Smazat výběr |
 | Ctrl+A | Vybrat vše (v aktivní sekci) |
-| Enter | Otevřít dialog vlastností výběru |
-| Dvojklik | Otevřít dialog vlastností elementu |
+| Enter | Vlastnosti výběru (1 element = dialog; víc = dialog společných vlastností) |
+| F2 | Inline editace textu (jen TextElement, 1 vybraný) |
+| Dvojklik | Vlastnosti elementu (dvojklik do prázdna = zrušit výběr) |
 
 ### Grouping / layout
 
@@ -56,23 +61,32 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 | Alt+klik | Vybrat jen jeden element ze skupiny |
 | Ctrl+Shift+H / Ctrl+Shift+J | Split element horizontálně / vertikálně |
 | Ctrl+Shift+N | Normalizovat pozice (snap na grid) |
+| Šipky | Posun vybraného elementu o krok |
+| Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
+| Šipka ↑/↓ (aktivní sekce, bez výběru elementu) | Přesun sekce nahoru / dolů |
 
 ### Soubory a view
 
 | Zkratka | Akce |
 |---|---|
-| Ctrl+S / Ctrl+Shift+S | Uložit / Uložit jako |
-| Ctrl+O | Otevřít šablonu |
 | Ctrl+N | Nová šablona |
-| Ctrl+0 | Fit-to-Page (zoom) |
+| Ctrl+O | Otevřít z databáze |
+| Ctrl+S | Uložit (do databáze) |
+| Ctrl+P | Tisk |
+| Ctrl+Shift+P | Vlastnosti stránky |
+| Ctrl+Shift+A | Změnit agendu |
+| Ctrl+0 | Přizpůsobit stránce (Fit) — == tlačítko „Fit" |
+| Ctrl+1 | Skutečná velikost 100 % (1:1) — == tlačítko „1:1" |
+| Ctrl+B | Sbalit / rozbalit levý panel |
 | F1 | Nápověda |
+| Escape | Zrušit přidávání elementu / probíhající operaci |
 
 ### Pravidla pro nové zkratky
 
 - **Nepřebíjet** standardní Windows zkratky (Ctrl+S, Ctrl+Z, Ctrl+C, Alt+F4, F1, Esc).
-- **Ctrl+Shift+X** prostor je pro „advanced" varianty (Save As, Copy Style).
+- **Ctrl+Shift+X** prostor je pro „advanced" varianty (Copy Style, Normalize).
 - **Alt+X** prostor je pro alternativní výběr (Alt+klik).
-- Při přidání nové zkratky — **doplnit ji do této tabulky**.
+- **Tlačítko a jeho zkratka musí dělat totéž** (Fit ↔ Ctrl+0, 1:1 ↔ Ctrl+1). Při přidání nové zkratky — **doplnit ji do této tabulky**.
 
 ---
 

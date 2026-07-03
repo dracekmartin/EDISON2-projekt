@@ -433,8 +433,11 @@
                             <ComboBoxItem Content="400 %"/>
                             <ComboBoxItem Content="500 %"/>
                         </ComboBox>
+                        <Button x:Name="BtnFitPage" Style="{StaticResource ToolbarButton}"
+                                ToolTip="Přizpůsobit stránce — Ctrl+0"
+                                Click="BtnFitPage_Click" Content="Fit" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
-                                ToolTip="Resetovat zoom designeru i náhledu na 100 %"
+                                ToolTip="Skutečná velikost 100 % (designer i náhled) — Ctrl+1"
                                 Click="BtnResetView_Click" Content="1:1" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                     </StackPanel>
                     <TextBlock Text="Zoom" Style="{StaticResource ToolbarGroupLabel}"/>

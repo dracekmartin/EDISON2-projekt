@@ -307,8 +307,8 @@ Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{
 - **Dvojí vizuální jazyk editace** = Wave 4 zbytek (multi-edit + TableElement PD okno vs EDInputForm). Dotáhnout → zmizí „dvě aplikace".
 - **Ikonový jazyk** míchaný (Fluent + textové glyfy + unicode + emoji) — sjednotit.
 - **Skryté featury jen na zkratce** (Ctrl+G seskupení, Ctrl+Shift+H/J split, F2) → přidat do context menu (zviditelnit zadarmo).
-- **Drift tabulky zkratek** (`ux-conventions`): Ctrl+Shift+S neexistuje, ~10 implementovaných chybí. Aktualizovat.
-- **Dva nezávislé zoomy** (designer/preview) — sjednotit chování „1:1"/Ctrl+0.
+- ~~**Drift tabulky zkratek**~~ ✅ 2026-07-03: `ux-conventions §3` přepsáno 1:1 dle KeyDown handleru (Ctrl+Shift+S smazán = neexistuje; doplněno F2, Ctrl+P, Ctrl+Shift+P/A, Ctrl+B, Ctrl+PgUp/PgDn, šipky, Escape, Ctrl+0/1).
+- ~~**Zoom: tlačítko × zkratka konzistentní**~~ ✅ 2026-07-03: „Fit" tlačítko + Ctrl+0 = přizpůsobit; „1:1" tlačítko + Ctrl+1 = 100 %. (Dva nezávislé combo-zoomy designer/preview ponechány — jsou to různé pohledy, nezávislý zoom je záměr.)
 
 **🟡 Layout robustnost (většinu nechat pilot ukázat):**
 - **Sekce vyšší než stránka** — designer = model „jedna pevná A4", přetečení jen červený rámeček v preview. Největší koncepční layout dluh; fix = „canvas roste + dělící čáry" (var B, M práce). **Po pilotu zvednout výš.**
