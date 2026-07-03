@@ -2,6 +2,34 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-03 ✅ — EDISON launch integrace + úklidy
+
+**EDISON → TD launch integrace (A1 + A2, Martin Hubata, merged do main).** TD se spouští ze stromu
+starého EDISONu (uzel „Návrhář sestav (nový)" 76016 v MHD + JŘ; launcher `formTISKJRTemplateDesigner`
++ MHD2 „Linky a oběhy") přes `Process.Start TemplateDesigner.exe` s **EDISONMAIN2 arg kontraktem**:
+- **A1 session** — `EDControls.EdisonLaunchArgs` parsuje kontrakt (sentinel `EDISONMAIN2` + server,
+  restPort, namespace, idfa, login, fullName, mlp [, formName, shellGuid, inputParam]); `App.OnStartup`
+  staví MLRest ze session shellu (`CacheSchemaWiring.CreateMlRest`) místo z appsettings → TD běží pod
+  **správnou firmou/uživatelem**. Bez argů = standalone z appsettings (fallback). `shellGuid` se
+  nepřebírá (TD má vlastní session, neváže se na ACTIVITY zámek).
+- **A2 startup agenda** — `inputParam "Agenda=<kód>"` (JŘ→`ZASTAVKOVY_JR_AD`, MHD→`ZASTAVKOVY_JR_MHD`)
+  → nová šablona startuje rovnou nad tou agendou. Ověřeno na devu: DPKV → linky DPKV, CB_CSADAD → linky
+  CB_CSADAD. **Open-designer flow per-zákazník funguje**; pro v1 zbývá už jen ruční release deploy (D3/D4).
+
+**T1b gold regrese base** — `ZastavkoveJrAdGoldTest` (2 gold linky 0365001+0365005, digest = počty +
+MD5 celého GetData výstupu), v pre-push (27/27). Pevně vůči CB_CSADAD; robustní verze (zmrazit vstup)
+odložena.
+
+**Úklidy:** T6 `ScheduleDetectorTest.cs` odstraněn z prod assembly; poslední `MessageBox` v MainWindow
+odstraněn spolu s vestigiálním menu „Vlastnosti textu…" (dvojklik/Enter dělá totéž). W4-7 Page potvrzeno
+hotové (`PageEdit.cls` přes generický `ElementEditDialog`). DynamicTable unit testy (6). R1a průchod
+(vnitřek čistě rozvrstvený; jediný nález = zarovnat render na sdílený `ColumnRenderer.DrawRow`, odloženo).
+
+**AD zastávkový JŘ track uzavřen** — 1:1 hotový; zbytek (vizuál legendy POZNAMKY, AD-N5 `MHD_NEZNZ123`,
+AD-N15 prázdninové NZ) záměrně navázán na reálný pilot (odemyká je konkrétní zákaznická konfigurace/data,
+kterou teď nemáme). Odložené helpdesk: A2-A5 (#7937 indent), A2-A6 (#7959 filtr neobsluhovaných), A2-B4
+(#8828 per-sloupek) — datový průzkum / diskuze.
+
 ## Session 2026-07-02 ✅ — DynamicTableElement + AD 1:1 uzávěrka + architektonický track
 
 **DynamicTableElement** — rozdělení tabulek: dynamická (řádky z `DataSource` kolekce) samostatný

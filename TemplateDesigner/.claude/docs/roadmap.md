@@ -1,11 +1,11 @@
 # Roadmap
 
-> **Stav k 2026-07-02.** Jen otevřená práce. Hotové etapy → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-03.** Jen otevřená práce. Hotové etapy → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md).
 >
-> **Hotovo (nejnovější):** zastávkový JŘ (AD) **1:1 kompletní** · **DynamicTableElement** (dynamická
-> tabulka + 2-tab editor, uzavírá Wave 4 W4-9) · architektonický track T1a/T1b/T2/T3 · rozhodnutí
-> R1–R7. Detail v archivu (session 2026-07-02).
+> **Hotovo (nejnovější, detail archiv):** **EDISON→TD launch integrace** (A1 session + A2 startup agenda
+> z kontraktu, Martin) · zastávkový JŘ (AD) **1:1 kompletní** (track uzavřen) · **DynamicTableElement** ·
+> Wave 4 funkčně hotová · architektonický track T1a/T1b/T2/T3 · rozhodnutí R1–R7.
 
 ---
 
@@ -88,33 +88,13 @@ Z živých prezentací 2026-06-24. Před implementací dohledat ticket + přesn�
 
 ---
 
-## ✅ AD zastávkový JŘ — 1:1 hotový; zbytek navázán na pilot
+## 🅿️ AD zastávkový JŘ — uzavřeno, zbytek parkován na pilot
 
-Zastávkový JŘ je datově i výkonově **1:1 hotový** (archiv 2026-07-02). **Track uzavřen 2026-07-03** —
-zbylé položky **záměrně navázány na reálný pilot** (odemyká je konkrétní zákaznická konfigurace/data,
-kterou teď nemáme; bez ní nejde ani doladit naslepo, ani ověřit). Jan projde s kolegou.
-
-- **Šířka/layout legendy POZNAMKY** — vizuál proti gold (počet sloupců, šířky, mezery). Obsah i pořadí
-  už 1:1 ověřeno. `NotesLegendElement` je schopný (Columns/WrapSmer/šířky) → jde o **doladění na reálném
-  výstupu pilota**, ne chybějící kód. Bez gold reference netrefit naslepo.
-- **AD-N5** (§3) — `MHD_NEZNZ123` potlačit NZ v legendě per sloupec. Blokováno daty (prázdné všude) +
-  váže na dormantní NZ legendu. Odemkne pilot s touto konfigurací.
-- **AD-N15** (§3) — NZ prázdninové dělení; **kód hotový**, čeká reálná data (`MHD_NZ1_NZ2` prázdné) —
-  ověřit u pilota s prázdninovým FTL JŘ.
-- **DEV cleanup** — statický `GetMockData` = dev/T5 věc (ne 1:1), řešeno v T-tracku.
-
-Autoritativní podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md),
-gold ověření [`cache-database-linky.md §10`](cache-database-linky.md).
-
-### Helpdesk — odložené (na datový průzkum / diskuzi s kolegy)
-
-| Krok | Tiket | Co | Důvod odložení |
-|---|---|---|---|
-| A2-A5 | #7937 | StopList per-row indent per směr / per Tč | Caché vrací stub `odsazeni=0`; chybí datový tok z `ALVA.MHD.ZST`. Není přímo TD práce. |
-| A2-A6 | #7959 | Filtr neobsluhovaných zastávek | Pravděpodobně hotovo v Caché — verifikace s reálnými TRANSDEV daty (linka 876xx se školní zast.) |
-| A2-B4 | #8828 | Per-sloupek zastávky — samostatná vývěska | (a) datový průzkum kde v `^ALVA.MHD` leží info o sloupcích, (b) business decision. ~100 % Caché. |
-
-> Při zavírání tiketů odkazovat na konkrétní TD featuru + verzi releasu.
+1:1 hotový; **track uzavřen 2026-07-03** (detail → [archiv](roadmap-archive.md) session 2026-07-03).
+Zbytek **odemyká reálný pilot** (konkrétní zákaznická konfigurace/data): vizuál legendy POZNAMKY,
+AD-N5 (`MHD_NEZNZ123`), AD-N15 (prázdninové NZ, kód hotový/čeká data) + odložené helpdesk **A2-A5**
+(#7937 indent), **A2-A6** (#7959 filtr neobsluhovaných), **A2-B4** (#8828 per-sloupek) — datový
+průzkum / diskuze s kolegy. Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md), [`cache-database-linky.md §10`](cache-database-linky.md).
 
 ---
 
@@ -133,9 +113,10 @@ akceptováno kvůli patchovatelnosti; memory `project_edinputform_schema_duplica
 (vlastnosti elementu/sekce/stránky, parametry agendy); ❌ triviální 1-pole confirm, dialogy s živě
 počítaným náhledem (Normalizovat pozice), plně dynamické formy bez schématu.
 
+Elementy/sekce/**stránka** (`PageEdit.cls`)/parametry ✅ hotové. Zbývá jen:
+
 | Krok | Co | Stav |
 |---|---|---|
-| W4-7 | **Page** — `PageEdit.cls` přes generický `ElementEditDialog` (PageSize/okraje/locale/výchozí styl). `ScaleBodySections` do dialogu záměrně nezahrnuto (řeší separátní PageSize editor) | ✅ hotovo |
 | W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor | ⬜ odložené |
 | W4-11 | Cleanup: smazat PropertyDescriptor systém až po 100% migraci | ⬜ na konec |
 | W4-12 | (volitelné) EDInputForm wire `$lb()` OUT → JSON envelope; collapsible groups | ⬜ |
@@ -257,9 +238,8 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 
 | ID | Co | Stav |
 |---|---|---|
-| A1 | **Předání Caché session kontextu** z EDISONu (server/firma/user/mlp) — `EDControls.EdisonLaunchArgs` parsuje EDISONMAIN2 kontrakt, `App.OnStartup` staví MLRest ze session (fallback appsettings). Launcher `formTISKJRTemplateDesigner` (starý EDISON) + MHD2 „Linky a oběhy". | ✅ 2026-07-02 (Martin) |
-| A2 | **Launch nad agendou** — startup agenda z `Agenda=<kód>` (inputParam uzlu stromu: JŘ→`ZASTAVKOVY_JR_AD`, MHD→`ZASTAVKOVY_JR_MHD`). Předvybraná konkrétní **instance/linka** ⬜ — v1 nepotřebuje (uživatel vybere z instance pickeru, který ukazuje firmu ze session). | 🟡 agenda ✅, instance ⬜ (v1 OK) |
-| A3 | **End-user tiskový vstup** — headless tisk (vrstvy 1-4) z modulu / „vytiskni linku X"; dnes print jen v designeru. Legacy: RG CLI. **Záměrně odloženo** (dle plánu, v1 = jen návrhář). | ⬜ odloženo |
+| A1+A2 | **EDISON launch — session + startup agenda z kontraktu** ✅ (Martin, detail archiv 2026-07-03). Předvybraná konkrétní **instance/linka** ⬜ — v1 nepotřebuje (uživatel vybere z pickeru, který ukazuje firmu ze session). | ✅ hotovo |
+| A3 | **End-user tiskový vstup** — headless tisk (vrstvy 1-4) z modulu / „vytiskni linku X"; dnes print jen v designeru. Legacy: RG CLI. **Záměrně odloženo** (v1 = jen návrhář). | ⬜ odloženo |
 | A4 | **Výstup fáze 1** — sloučení hromadného exportu do 1 PDF (`MergePDFFiles`) + odeslání e-mailem (společné všem 3 legacy) | ⬜ M |
 
 ### 🟠 B. Šablony pro zákazníky (governance + distribuce)
