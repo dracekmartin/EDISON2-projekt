@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-03 — Escape ruší probíhající operaci (drag / resize / rubber band)
+
+- ✅ **Escape během tažení / změny velikosti vrátí element na začátek** (`EndDrag`/`EndResize` s
+  `commit: false` — už existující restore-z-init cesty). **Escape během rubber bandu** ho zahodí bez
+  změny výběru. Bez operace = zruší výběr (beze změny), během přidávání z palety = zruší přidávání
+  (beze změny). `OnWindowKeyDown` je na `PreviewKeyDown` okna → Escape dorazí i při mouse-capture dragu.
+
 ## 2026-07-03 — Discoverability: skryté featury do context menu
 
 - ✅ **Context menu (pravý klik na element)** dostal položky, které dřív šly jen zkratkou:

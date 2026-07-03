@@ -312,7 +312,7 @@ Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{
 
 **🟡 Layout robustnost (většinu nechat pilot ukázat):**
 - **Sekce vyšší než stránka** — designer = model „jedna pevná A4", přetečení jen červený rámeček v preview. Největší koncepční layout dluh; fix = „canvas roste + dělící čáry" (var B, M práce). **Po pilotu zvednout výš.**
-- Element nejde přetáhnout mezi sekcemi (tvrdý clamp; jen cut+paste) · rubber band jen v aktivní sekci · Escape neruší drag · StatusText přepisuje stav×progres×chyby (chce nepřepisovatelný progres segment).
+- Element nejde přetáhnout mezi sekcemi (tvrdý clamp; jen cut+paste) · rubber band jen v aktivní sekci · ~~Escape neruší drag~~ ✅ 2026-07-03 (drag/resize vrátí pozice, rubber band zahodí) · StatusText přepisuje stav×progres×chyby (chce nepřepisovatelný progres segment).
 
 **🧭 Filozofie (pravidlo teď):** rozšířit UX mřížku z `feature-design-principles` o vrstvu **menu/toolbar/zkratka** (dnes řeší jen properties; toolbar/menu rostou mimo ni — ~43 menu položek, ~34 tlačítek).
 

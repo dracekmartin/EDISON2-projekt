@@ -1751,9 +1751,17 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.Escape)
         {
-            if (_mouseMode == MouseMode.AddingElement)
+            // Escape ruší probíhající operaci: drag/resize vrátí pozice na začátek (commit: false),
+            // rubber band se zahodí bez výběru. Bez operace = zrušit výběr.
+            if (_mouseMode == MouseMode.AddingElement)   CancelAddingElement();
+            else if (_mouseMode == MouseMode.Dragging)   EndDrag(commit: false);
+            else if (_mouseMode == MouseMode.Resizing)   EndResize(commit: false);
+            else if (_mouseMode == MouseMode.RubberBand)
             {
-                CancelAddingElement();
+                _rubberBandRect = null;
+                _mouseMode = MouseMode.Idle;
+                skCanvas.ReleaseMouseCapture();
+                InvalidateCanvas();
             }
             else
             {
