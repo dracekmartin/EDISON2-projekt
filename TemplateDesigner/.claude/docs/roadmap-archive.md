@@ -28,9 +28,9 @@ potřeba). Odložené A2-A5/A6/B4 zůstávají (datový průzkum / diskuze).
 (forward-compat R5) ✅. Rozhodnutí **R1–R7** pro škálování agend zdokumentována
 ([`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md)).
 
-**Caché Migrace** — Wave 1/2/3 ✅; Wave 4 kroky W4-0..W4-6 + W4-8 + W4-9 (StopList/DepartureGrid/
-dynamická tabulka) ✅. Zbývá jen W4-7 Page + W4-10/11 (inline panel migrace + PropertyDescriptor
-cleanup — velký refaktor, na konec).
+**Caché Migrace** — Wave 1/2/3 ✅; Wave 4 kroky W4-0..W4-9 ✅ (elementy + Image + Section + **Page**
+`PageEdit.cls` + parametry + StopList/DepartureGrid/dynamická tabulka). Zbývá jen W4-10/11 (inline
+panel migrace + PropertyDescriptor cleanup — velký refaktor, záměrně na konec).
 
 ## Handoff session 2026-06-21 (historický záznam) ✅
 

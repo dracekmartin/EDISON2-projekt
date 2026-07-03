@@ -17,8 +17,9 @@
    god-objects strangler (průběžně), `T5`/`T6` drobnosti. Detail níže.
 2. **AD dokončení** — zbývá jen **vizuál legendy POZNAMKY** (šířky/mezery proti gold) + `AD-N5`/`AD-N15`
    (blokované dormant daty). Zastávkový JŘ je jinak 1:1 hotový.
-3. **Wave 4 EDInputForm** — zbývá `W4-7` Page properties + `W4-10/11` (inline panel migrace +
-   PropertyDescriptor cleanup — velký refaktor, na konec).
+3. **Wave 4 EDInputForm** — **funkčně hotová** (elementy/sekce/**stránka**/parametry mají EDInputForm
+   cestu). Zbývá jen `W4-10/11` (inline panel migrace + PropertyDescriptor cleanup — velký refaktor,
+   záměrně na konec, low-prio).
 4. **Produkční připravenost (blok A–D)** — největší nerozepsaný kus: EDISON integrace (`A1` session
    kontext = blocker pro multi-zákazníka), systémové šablony (`B`), H-19 migrace (`C`), deploy (`D`).
 
@@ -111,7 +112,7 @@ počítaným náhledem (Normalizovat pozice), plně dynamické formy bez schéma
 
 | Krok | Co | Stav |
 |---|---|---|
-| W4-7 | **Page** — generalizace `ElementEditDialog` na formát/orientaci; `ScaleBodySections` nejde přes čistou reflexi → chce hook nebo zjednodušení (Section ✅ hotová) | ⬜ zbývá |
+| W4-7 | **Page** — `PageEdit.cls` přes generický `ElementEditDialog` (PageSize/okraje/locale/výchozí styl). `ScaleBodySections` do dialogu záměrně nezahrnuto (řeší separátní PageSize editor) | ✅ hotovo |
 | W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor | ⬜ odložené |
 | W4-11 | Cleanup: smazat PropertyDescriptor systém až po 100% migraci | ⬜ na konec |
 | W4-12 | (volitelné) EDInputForm wire `$lb()` OUT → JSON envelope; collapsible groups | ⬜ |
