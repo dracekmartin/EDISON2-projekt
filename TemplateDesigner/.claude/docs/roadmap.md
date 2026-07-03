@@ -13,22 +13,21 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **🎯 Pre-pilot UX polish — ✅ HOTOVO 2026-07-03.** Celý akční blok (P0 U1–U7 + střední/malé: context
-   menu discoverability, drift zkratek, zoom konzistence, StatusText segmentace, Escape ruší operaci)
-   uzavřen → archiv. Zbývá jen pilot-gated layout (var B) + vyčleněný left-panel refaktor (backlog).
-   **Další focus zvolit** (viz návrhy směrů níže / diskuze).
-2. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
+1. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
    TD.exe z main → `C:\Edison` (D3) + Caché třídy na zákaznický server (D4). A1/A2 launch ✅ (Martin, v main).
    Tisk (`A3`) + systémové šablony (`B`) odloženo. Cesta k pilotu (R7).
-3. **Architektonický track (filler, průběžně)** — `T1b` gold ✅ · `T6` 2/4 ✅. Zbývá `T4` god-objects,
+2. **Architektonický track (filler, průběžně)** — `T1b` gold ✅ · `T6` 2/4 ✅. Zbývá `T4` god-objects,
    `T5`/`T6` drobnosti + `R1a` (DynamicTable render → `ColumnRenderer.DrawRow`). Nízká priorita.
-4. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot. · **Wave 4** funkčně
-   hotová (zbývá jen `W4-10/11` inline panel — velký refaktor, na konec).
+3. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot.
 
-**Backlog / budoucí velké tracky:**
+**Větší dedikované tracky (vlastní session):**
 - **Left-panel inline editace: PropertyDescriptor → EDInputForm** (W4-10/11) — velký refaktor, sjednotí
   „dvojí vizuální jazyk" editace (levý panel dnes používá staré PropertyDescriptor okno místo EDInputFormu).
-  Vyčleněno 2026-07-03 z UX polish bloku jako samostatná položka. **Chceme do budoucna.**
+  **Chceme do budoucna.**
+- **Layout „sekce vyšší než stránka" (var B)** — designer je dnes model „jedna pevná A4", přetečení jen
+  červený rámeček v preview. Fix = „canvas roste + dělící čáry". Největší koncepční layout dluh. **Pilot-gated.**
+
+**Backlog / budoucí velké tracky:**
 - Nové z prezentací **P1–P3** (neanalyzováno, před implementací ticket)
 - Helpdesk odložené **A2-A5 / A6 / B4** (datový průzkum / diskuze s kolegy)
 - **Fáze B** element flexibility (merged cells, conditional formatting)
@@ -287,19 +286,6 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 | 33 | JŘ-aware mód (3d) — AI Vision pipeline + `AiGuidedScheduleBuilder` fungují, **ladění na širší sadě JŘ** | 🟡 |
 
 Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{PLACEHOLDER}`). 3b křivky/Bézier low-prio.
-
----
-
-## 🎯 UX/UX audit + polish (Fable 2026-07-03) — ✅ UZAVŘENO
-
-> Celý akční blok hotový 2026-07-03 (P0 U1–U7 + discoverability do context menu, drift zkratek, zoom
-> konzistence, StatusText segmentace, Escape ruší operaci) → detail [`roadmap-archive.md`](roadmap-archive.md)
-> + [`changelog.md`](changelog.md). Souběžně ověřeno, že **🟢 UX polish** je hotové/YAGNI: stylový
-> pod-formulář ✅ (`StyleFields` napříč zónami + `StyleEditDialog`/`CellStyleEditor`), sjednocený editor
-> sloupců ✅ (`ColumnListEditor`), font warning + ad-hoc overflow tlačítko = YAGNI.
->
-> **Genuine zbytek tématu (jinde):** left-panel refaktor (viz Backlog nahoře) · layout „sekce vyšší než
-> stránka" (var B) + „element drag mezi sekcemi" — **pilot-gated, po pilotu**.
 
 ---
 

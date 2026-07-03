@@ -41,8 +41,9 @@ položky hotové**; detail v [`changelog.md`](changelog.md) 2026-07-03.
 - **Rubber band napříč sekcemi** — nepotřebujeme; sahá do selection sémantiky, pilot potvrdí.
 - **Dvojí vizuální jazyk = left-panel refaktor** (PropertyDescriptor → EDInputForm, W4-10/11) — vyčleněno
   do backlogu jako samostatný velký track (chceme do budoucna).
-- **Layout robustnost (pilot-gated):** „sekce vyšší než stránka" (var B, největší koncepční layout dluh),
-  „element drag mezi sekcemi" (tvrdý clamp) — po pilotu.
+- **Layout robustnost:** „sekce vyšší než stránka" (var B, největší koncepční layout dluh) — pilot-gated,
+  vytaženo do „Větší dedikované tracky" v roadmapě. „Element drag mezi sekcemi" — **zamítnuto 2026-07-03
+  (nepotřebujeme; cut+paste stačí).**
 - **🧭 Filozofie:** rozšířit UX mřížku o vrstvu menu/toolbar/zkratka (`feature-design-principles`) — doc, low-prio.
 
 ## Session 2026-07-03 ✅ — EDISON launch integrace + úklidy
