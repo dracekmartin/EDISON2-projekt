@@ -213,6 +213,10 @@ Pro čistou reimplementaci je otázka, zda číst `^JRL`/`^JRZ` přímo, nebo p�
 
 ## 6. Otevřené otázky (ověřit před implementací)
 
+> **Úklid:** tato sekce se ořeže/přepíše až po vyřešení otázek — typicky během Fáze C+D
+> (linkové/knižní JŘ), kde se tyto otázky (FTL/Plk/CNZ, skupina linek, tarif) reálně řeší.
+> Do té doby zůstává jako referenční poznámky.
+
 - ❓ **Číst `^JRL` přímo, nebo přes JRapi helpery?** MHD jsme reimplementovali přímo nad
   globály + jemné `Fce` třídy. JRMAIN helpery jsou složitější (working global `^CacheTempJB`).
   Pro čistou reimplementaci pravděpodobně číst přímo `^JRL`/`^JRZ` a logiku sloupců napsat

@@ -41,10 +41,6 @@
 
 **Otevřené otázky k rozhodnutí s týmem:** Q1–Q6 (viz sekce níže).
 
-**Docs úklid (drobné, low-prio):**
-- ⬜ **changelog archivace** — ~1600 řádků; květnové Wave 1-3 → `changelog-archive-2026-05.md` (mechanické).
-- 🟡 **ořez `cache-database-linky.md §6`** — až po uzavření otevřených otázek (FTL/Plk/CNZ, skupina linek, tarif).
-
 ---
 
 ## 🆕 Nové požadavky z prezentací (P1–P3) — backlog, neanalyzováno
