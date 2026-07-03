@@ -1409,6 +1409,7 @@ public class TemplateDesignerViewModel : EDViewModel
         ElementTypes.StopList      => (60f, 60f),
         ElementTypes.DepartureGrid => (120f, 60f),
         ElementTypes.NotesLegend   => (190f, 25f),
+        ElementTypes.LineTable     => (190f, 100f),
         _                          => (80f, 8f)
     };
 
@@ -1427,6 +1428,7 @@ public class TemplateDesignerViewModel : EDViewModel
             ElementTypes.StopList      => new StopListElement      { X = x, Y = y, Width = w, Height = h },
             ElementTypes.DepartureGrid => new DepartureGridElement { X = x, Y = y, Width = w, Height = h },
             ElementTypes.NotesLegend   => new NotesLegendElement   { X = x, Y = y, Width = w, Height = h },
+            ElementTypes.LineTable     => new LineTableElement     { X = x, Y = y, Width = w },   // Height null = dynamická
             _                          => (TemplateElement)new TextElement      { X = x, Y = y, Width = w, Height = h }
         };
         // Výchozí rámeček pro nové elementy (na modelu je default bez rámečku kvůli zpětné kompatibilitě)

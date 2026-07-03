@@ -23,6 +23,7 @@ public class SkiaHeightCalculator : IElementHeightCalculator
             StopListElement stopList => stopList.CalculateHeightFromData(data),
             DepartureGridElement grid => grid.CalculateHeightFromData(data),
             NotesLegendElement notes => notes.CalculateHeightFromData(data),
+            LineTableElement lineTable => lineTable.CalculateHeightFromData(data),
             _ => element.EffectiveDesignerHeight
         };
     }

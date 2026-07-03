@@ -1146,6 +1146,7 @@ public partial class MainWindow : Window
         Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
         Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
         Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+        Add("Knižní JŘ (linka)",  () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;

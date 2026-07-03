@@ -17,4 +17,5 @@ public static class ElementTypes
     public const string StopList      = "StopListElement";
     public const string DepartureGrid = "DepartureGridElement";
     public const string NotesLegend   = "NotesLegendElement";
+    public const string LineTable     = "LineTableElement";
 }
