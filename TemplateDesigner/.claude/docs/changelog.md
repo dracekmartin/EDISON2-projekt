@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-03 — Úklid T6: odstranění vestigiálního menu + MessageBox
+
+- ✅ Odstraněno skryté menu **„Nástroje → Vlastnosti textu… (alternativa k dvojkliku)"** (+ handler
+  `MenuTestTextEdit_Click`) — redundantní leftover z vývoje editoru; dvojklik i Enter dělají totéž
+  (`OpenPropertiesForElement`). Tím zmizel i poslední `MessageBox` v `MainWindow.xaml.cs` (R2).
+  `MessageBox` v `App.xaml.cs` (startup config warning + `OnUnhandledException`) ponechány — legitimní
+  bootstrap/crash fallbacky (popup infra tam nemusí být dostupná). Dřív (t.d.) odstraněn i
+  `ScheduleDetectorTest.cs` z produkční assembly.
+
 ## 2026-07-03 — Gold regresní test AD zastávkového JŘ (T1b základ)
 
 - ✅ **`ALVA.TemplateDesigner.Tests.ZastavkoveJrAdGoldTest`** — základní 1:1 regresní pojistka:

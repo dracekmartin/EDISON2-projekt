@@ -983,21 +983,6 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>Alternativa k dvojkliku — otevírá editor pro aktuálně vybraný element.
-    /// Stejná cesta jako double-click přes OpenPropertiesForElement.</summary>
-    private void MenuTestTextEdit_Click(object sender, RoutedEventArgs e)
-    {
-        if (_vm is null) return;
-        var selected = _vm.State.SelectedElements.FirstOrDefault();
-        if (selected is null)
-        {
-            MessageBox.Show(this, "Vyber element na canvasu, pak otevři tento dialog.",
-                "Editor vlastností", MessageBoxButton.OK, MessageBoxImage.Information);
-            return;
-        }
-        OpenPropertiesForElement(selected);
-    }
-
     /// <summary>Aktualizuje strom pokud je viditelný (po změně výběru na canvasu).</summary>
     private void RefreshTreeIfVisible()
     {
