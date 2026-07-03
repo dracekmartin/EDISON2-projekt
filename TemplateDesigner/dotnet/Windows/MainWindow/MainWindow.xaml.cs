@@ -1382,6 +1382,22 @@ public partial class MainWindow : Window
         _ => (null, null)
     };
 
+    /// <summary>Caché *Edit.cls schéma pro inline panel (W4-10) — pokrývá i komplexní elementy
+    /// (StopList/DepartureGrid/Dynamic), jejichž „Obecné" tab modálu jede na tomtéž schématu.
+    /// Sloupce komplexních zůstávají jen v dvojkliku (plný 2-tab dialog).</summary>
+    private static string? PanelCacheClass(TemplateElement element)
+    {
+        var (cc, _) = EDInputFormSchema(element);
+        if (cc is not null) return cc;
+        return element switch
+        {
+            Models.Elements.StopListElement      => "ALVA.TemplateDesigner.EDInputForm.StopListElementEdit",
+            Models.Elements.DepartureGridElement => "ALVA.TemplateDesigner.EDInputForm.DepartureGridElementEdit",
+            Models.Elements.DynamicTableElement  => "ALVA.TemplateDesigner.EDInputForm.DynamicTableElementEdit",
+            _ => null
+        };
+    }
+
     private void OpenGenericElementEditDialog(TemplateElement element, string cacheClass, string title)
     {
         var dlg = new ElementEditDialog(element, cacheClass, title) { Owner = this };
@@ -1491,17 +1507,32 @@ public partial class MainWindow : Window
         Action<IDesignerCommand> execute  = cmd => _vm!.Execute(cmd);
         Action                   invalidate = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
         InlinePropertiesPanel.SetContext(execute, invalidate);
+        InlineElementForm.SetContext(execute, invalidate);
         FormatToolbar.SetContext(execute, invalidate);
 
         var selected = _vm!.State.SelectedElements;
+
+        // Jeden element se schématem → EDInputForm panel (W4-10). Descriptory se pořád počítají
+        // pro FormatToolbar. Více / žádný / bez schématu → starý PropertyDescriptor panel.
+        string? panelSchema = selected.Count == 1 ? PanelCacheClass(selected[0]) : null;
+
         if (selected.Count >= 1)
         {
             var descriptors = selected.Count == 1
                 ? _propsVm.PrepareForElement(selected[0], isNewSession: false)
                 : _propsVm.PrepareForMultipleElements(selected);
-
-            InlinePropertiesPanel.ShowDescriptors(descriptors);
             FormatToolbar.ShowDescriptors(descriptors);
+
+            if (panelSchema is not null)
+            {
+                InlineElementForm.ShowElement(selected[0], panelSchema);
+                ShowInlineFormPanel(true);
+            }
+            else
+            {
+                InlinePropertiesPanel.ShowDescriptors(descriptors);
+                ShowInlineFormPanel(false);
+            }
 
             // Přepnout na záložku Vlastnosti pokud jsme na Sekce nebo Strom.
             // Netaháme uživatele pryč z tabů, kde aktivně pracuje s něčím jiným
@@ -1514,7 +1545,16 @@ public partial class MainWindow : Window
         {
             InlinePropertiesPanel.ShowMessage("Vyberte element na canvasu");
             FormatToolbar.ShowDescriptors(null);
+            ShowInlineFormPanel(false);
         }
+    }
+
+    /// <summary>Přepne viditelnost mezi EDInputForm panelem (jeden element) a starým PropertyDescriptor
+    /// panelem (0 / více / bez schématu).</summary>
+    private void ShowInlineFormPanel(bool useForm)
+    {
+        InlineElementForm.Visibility     = useForm ? Visibility.Visible : Visibility.Collapsed;
+        InlinePropertiesPanel.Visibility = useForm ? Visibility.Collapsed : Visibility.Visible;
     }
 
     private void UpdateTitle()
@@ -1561,6 +1601,21 @@ public partial class MainWindow : Window
         // Bez tohoto by PreviewKeyDown odchytil Enter dřív než TextBox a otevřel dialog místo commitu.
         if (_inlineEditElement is not null) return;
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+
+        // Psaní v textovém poli (inline panel EDInputForm, filtr stromu, …): Enter potvrdí pole
+        // (push LostFocus binding → živý write-back), ne otevře dialog vlastností. Ostatní bare
+        // klávesy (Delete/šipky/písmena/F2) patří poli, ne globálním zkratkám — jinak by Delete
+        // v poli smazal vybraný element. Ctrl/Alt zkratky (Ctrl+Z/S/…) procházejí dál.
+        if (Keyboard.FocusedElement is System.Windows.Controls.TextBox focusedField)
+        {
+            if (e.Key == Key.Enter)
+            {
+                focusedField.GetBindingExpression(System.Windows.Controls.TextBox.TextProperty)?.UpdateSource();
+                e.Handled = true;
+                return;
+            }
+            if (!ctrl && !Keyboard.Modifiers.HasFlag(ModifierKeys.Alt)) return;
+        }
 
         if (e.Key == Key.Z && ctrl)
         {

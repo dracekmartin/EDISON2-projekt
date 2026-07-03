@@ -587,7 +587,11 @@
                     <TabItem Header="✎ Vlastnosti" x:Name="TabProperties">
                         <DockPanel>
                             <controls:FormatToolbar x:Name="FormatToolbar" DockPanel.Dock="Top"/>
-                            <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
+                            <!-- Jeden element = EDInputForm (W4-10); 0/více = starý PropertyDescriptor panel (message/multi). -->
+                            <Grid>
+                                <controls:InlinePropertiesForm x:Name="InlineElementForm" Visibility="Collapsed"/>
+                                <controls:PropertiesPanel x:Name="InlinePropertiesPanel"/>
+                            </Grid>
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Strom šablony ── -->

@@ -26,8 +26,20 @@ namespace EDControls.EDInputForm
         private IMLRest? MLRest => EDViewModel.EDServices.Current.MLRest;
         private EDViewModel.IPopupDisplayer? PopupDisplayer => EDViewModel.EDServices.Current.PopupDisplayer;
 
-        /// <summary>Caché třída implementující <c>Init</c> / <c>Validate</c> / <c>Save</c>.</summary>
-        public string CacheClass { get; set; } = "";
+        /// <summary>Caché třída implementující <c>Init</c> / <c>Validate</c> / <c>Save</c>.
+        /// Změna za běhu (např. inline panel přepne typ elementu) zahodí controller → příští
+        /// <see cref="Init"/> ho vytvoří s novou třídou (jinak by reloadoval staré schema).</summary>
+        public string CacheClass
+        {
+            get => _cacheClass;
+            set
+            {
+                if (_cacheClass == value) return;
+                _cacheClass = value;
+                _controller = null;
+            }
+        }
+        private string _cacheClass = "";
 
         private EDInputFormController? _controller;
 
@@ -234,6 +246,11 @@ namespace EDControls.EDInputForm
         /// <summary>Klik na BUTTON pole — host dostane klíč pole a může spustit client-side akci
         /// (např. otevřít sub-dialog). Doplňuje server-side Validate (ValidateOnChange).</summary>
         public event Action<string>? ButtonClicked;
+
+        /// <summary>Změna hodnoty libovolného pole (klíč pole) — host může aplikovat živě (např.
+        /// inline properties panel zapisuje do elementu per změnu, ne až na OK). Nezávislé na
+        /// ValidateOnChange (fire vždy při změně Field.Value).</summary>
+        public event Action<string>? FieldChanged;
 
         /// <summary>
         /// Volá Caché <c>Init</c> pro načtení definice formuláře a hned poté Init-trigger
@@ -651,8 +668,11 @@ namespace EDControls.EDInputForm
         {
             if (e.PropertyName != nameof(Field.Value)) return;
             if (sender is not Field field) return;
-            if (!field.ValidateOnChange) return;
 
+            // Živý write-back pro host (inline panel) — nezávislé na server-side validaci.
+            FieldChanged?.Invoke(field.Key);
+
+            if (!field.ValidateOnChange) return;
             Dispatcher.BeginInvoke(new Action(() => Controller.Validate(field.Key)));
         }
     }

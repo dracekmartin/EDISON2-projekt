@@ -40,6 +40,16 @@ public static class ElementFormBinder
                 field.ListItems = FontItems;
     }
 
+    /// <summary>Snapshot aktuálních hodnot polí formuláře (bez zápisu do cíle) — pro update
+    /// change-detection baseline po živém write-backu v inline panelu.</summary>
+    public static Dictionary<string, string> Snapshot(EDInputForm form)
+    {
+        var snap = new Dictionary<string, string>();
+        foreach (var field in (form.Items ?? []).OfType<Field>())
+            snap[field.Key] = field.Value ?? "";
+        return snap;
+    }
+
     public static Dictionary<string, string> Prefill(EDInputForm form, object target)
     {
         var preFilled = new Dictionary<string, string>();

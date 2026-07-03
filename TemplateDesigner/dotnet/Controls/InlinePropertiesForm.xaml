@@ -1,0 +1,8 @@
+<UserControl x:Class="TemplateDesigner.Controls.InlinePropertiesForm"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls">
+    <!-- Embedded EDInputForm pro inline editaci elementu (živý write-back, W4-10).
+         Sdílí *Edit.cls schéma + ElementFormBinder s modálním ElementEditDialogem. -->
+    <eif:EDInputForm x:Name="TheForm"/>
+</UserControl>
