@@ -13,15 +13,15 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Architektonický track** — `T1b` základní gold regrese ✅ (2 linky, pevně CB_CSADAD, v pre-push;
-   robustní verze odložena). Zbývá `T4` god-objects (průběžně), `T5`/`T6` drobnosti. Detail níže.
-2. **AD dokončení** — zbývá jen **vizuál legendy POZNAMKY** (šířky/mezery proti gold) + `AD-N5`/`AD-N15`
-   (blokované dormant daty). Zastávkový JŘ je jinak 1:1 hotový.
-3. **Wave 4 EDInputForm** — **funkčně hotová** (elementy/sekce/**stránka**/parametry mají EDInputForm
-   cestu). Zbývá jen `W4-10/11` (inline panel migrace + PropertyDescriptor cleanup — velký refaktor,
-   záměrně na konec, low-prio).
-4. **Produkční připravenost (blok A–D)** — největší nerozepsaný kus: EDISON integrace (`A1` session
-   kontext = blocker pro multi-zákazníka), systémové šablony (`B`), H-19 migrace (`C`), deploy (`D`).
+1. **🔴 Produkční připravenost (blok A–D) — AKTIVNÍ FOCUS.** Největší nerozepsaný kus: EDISON integrace
+   (`A1` session kontext = blocker pro multi-zákazníka), systémové šablony (`B`), H-19 migrace (`C`),
+   deploy (`D`). Cesta k pilotu (R7) → odemkne i parkovaný AD zbytek.
+2. **Architektonický track** — `T1b` gold regrese ✅ · `T6` 2/4 ✅ (ScheduleDetectorTest, MessageBox).
+   Zbývá `T4` god-objects (průběžně), `T5`/`T6` drobnosti. Nízká priorita, průběžně.
+3. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen** (2026-07-03). Zbytek (vizuál legendy, N5/N15)
+   navázán na pilot — odemyká reálná zákaznická konfigurace. Jan projde s kolegou.
+4. **Wave 4 EDInputForm** — **funkčně hotová** (elementy/sekce/stránka/parametry). Zbývá jen `W4-10/11`
+   (inline panel migrace + cleanup — velký refaktor, záměrně na konec, low-prio).
 
 **Backlog / budoucí velké tracky:**
 - Nové z prezentací **P1–P3** (neanalyzováno, před implementací ticket)
@@ -86,19 +86,22 @@ Z živých prezentací 2026-06-24. Před implementací dohledat ticket + přesn�
 
 ---
 
-## 🟡 AD zastávkový JŘ — zbytek do úplného 1:1
+## ✅ AD zastávkový JŘ — 1:1 hotový; zbytek navázán na pilot
 
-Zastávkový JŘ je datově i výkonově **1:1 hotový** (archiv 2026-07-02). Zbývá:
+Zastávkový JŘ je datově i výkonově **1:1 hotový** (archiv 2026-07-02). **Track uzavřen 2026-07-03** —
+zbylé položky **záměrně navázány na reálný pilot** (odemyká je konkrétní zákaznická konfigurace/data,
+kterou teď nemáme; bez ní nejde ani doladit naslepo, ani ověřit). Jan projde s kolegou.
 
-- **Šířka/layout legendy POZNAMKY** — vizuál proti gold (počet sloupců, šířky, mezery). Pořadí i obsah
-  poznámek už 1:1 ověřeno; tady jde jen o vzhled. Na konec.
-- **AD-N5** (§3) — `MHD_NEZNZ123` potlačit NZ v legendě per sloupec. Blokováno: váže na NZ legendu,
-  dnes dormant. `PATCH,"MHD_NEZNZ123"`.
-- **AD-N15** (§3) — NZ prázdninové dělení; kód hotový, **čeká reálná data** (`MHD_NZ1_NZ2` prázdné
-  všude — nelze ověřit bez firmy s prázdninovým FTL JŘ).
-- **DEV cleanup** — zvážit statický `GetMockData` (viz T5).
+- **Šířka/layout legendy POZNAMKY** — vizuál proti gold (počet sloupců, šířky, mezery). Obsah i pořadí
+  už 1:1 ověřeno. `NotesLegendElement` je schopný (Columns/WrapSmer/šířky) → jde o **doladění na reálném
+  výstupu pilota**, ne chybějící kód. Bez gold reference netrefit naslepo.
+- **AD-N5** (§3) — `MHD_NEZNZ123` potlačit NZ v legendě per sloupec. Blokováno daty (prázdné všude) +
+  váže na dormantní NZ legendu. Odemkne pilot s touto konfigurací.
+- **AD-N15** (§3) — NZ prázdninové dělení; **kód hotový**, čeká reálná data (`MHD_NZ1_NZ2` prázdné) —
+  ověřit u pilota s prázdninovým FTL JŘ.
+- **DEV cleanup** — statický `GetMockData` = dev/T5 věc (ne 1:1), řešeno v T-tracku.
 
-Autoritativní podklad per položka: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md),
+Autoritativní podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md),
 gold ověření [`cache-database-linky.md §10`](cache-database-linky.md).
 
 ### Helpdesk — odložené (na datový průzkum / diskuzi s kolegy)
