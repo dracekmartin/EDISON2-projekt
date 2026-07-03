@@ -5,7 +5,7 @@
 >
 > **Hotovo (nejnovější, detail archiv):** **EDISON→TD launch integrace** (A1 session + A2 startup agenda
 > z kontraktu, Martin) · zastávkový JŘ (AD) **1:1 kompletní** (track uzavřen) · **DynamicTableElement** ·
-> Wave 4 funkčně hotová · architektonický track T1a/T1b/T2/T3 · rozhodnutí R1–R7.
+> **Wave 4 uzavřena** (W4-10 inline panel na EDInputForm 2026-07-03) · architektonický track (malé T ✅) · rozhodnutí R1–R7.
 
 ---
 
@@ -19,9 +19,6 @@
 2. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot.
 
 **Větší dedikované tracky (vlastní session):**
-- **Left-panel inline editace: PropertyDescriptor → EDInputForm** (W4-10/11) — velký refaktor, sjednotí
-  „dvojí vizuální jazyk" editace (levý panel dnes používá staré PropertyDescriptor okno místo EDInputFormu).
-  **Chceme do budoucna.**
 - **Layout „sekce vyšší než stránka" (var B)** — designer je dnes model „jedna pevná A4", přetečení jen
   červený rámeček v preview. Fix = „canvas roste + dělící čáry". Největší koncepční layout dluh. **Pilot-gated.**
 
@@ -88,26 +85,16 @@ průzkum / diskuze s kolegy. Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr
 
 ## 🔵 Caché Migrace — zbývající vlny
 
-**Wave 1/2/3 ✅** (archiv). **Wave 4 W4-9 ✅** (StopList/DepartureGrid/dynamická tabulka — archiv 2026-07-02).
+**Wave 1/2/3/4 ✅** (archiv). Form-driven UI (EDInputForm) všude, kde uživatel přímo edituje — elementy,
+sekce, stránka, parametry (modály) i **inline panel** (W4-10, 2026-07-03).
 
-### Wave 4 — Form-driven UI (EDInputForm) — 🟡 zbytek
+**Pravidlo — kandidát na EDInputForm** (evergreen): ✅ formuláře s pevným server-definovaným schématem;
+❌ triviální 1-pole confirm, dialogy s živě počítaným náhledem, plně dynamické formy bez schématu.
+⚠️ Schema-duplikace dluh (Caché schema = manuální mirror) akceptován, memory `project_edinputform_schema_duplication.md`.
 
-Generický `ElementEditDialog` přes reflexi (field key = property path na C# elementu) + Caché schema
-class per element (`ALVA.TemplateDesigner.EDInputForm.<Typ>Edit`). **Přidání elementu = 1 schema class +
-1 řádek ve switchi.** ⚠️ **Schema-duplikace dluh** (Caché schema = manuální mirror PropertyDescriptors) —
-akceptováno kvůli patchovatelnosti; memory `project_edinputform_schema_duplication.md`.
-
-**Kandidát na EDInputForm** (pravidlo, 2026-06-12): ✅ formuláře s pevným server-definovaným schématem
-(vlastnosti elementu/sekce/stránky, parametry agendy); ❌ triviální 1-pole confirm, dialogy s živě
-počítaným náhledem (Normalizovat pozice), plně dynamické formy bez schématu.
-
-Elementy/sekce/**stránka** (`PageEdit.cls`)/parametry ✅ hotové. Zbývá jen:
-
-| Krok | Co | Stav |
-|---|---|---|
-| W4-10 | Inline `PropertiesPanel` → EDInputForm (live mode) — plný dedup PropertyDescriptors. Velký refaktor | ⬜ odložené |
-| W4-11 | Cleanup: smazat PropertyDescriptor systém až po 100% migraci | ⬜ na konec |
-| W4-12 | (volitelné) EDInputForm wire `$lb()` OUT → JSON envelope; collapsible groups | ⬜ |
+Nedokončeno **záměrně** (mimo aktivní práci): **W4-11** smazat PropertyDescriptory = neproveditelné
+(drží je FormatToolbar + multi-edit + fallback modál + AI catalog → paralelní systém); **W4-12** wire
+`$lb()`→JSON + collapsible groups = volitelný EDControls concern.
 
 ### Wave 5 — Business logic per agenda (paralelně)
 

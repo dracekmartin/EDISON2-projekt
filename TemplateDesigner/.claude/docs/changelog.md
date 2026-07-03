@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-03 — Wave 4 W4-10: inline panel na EDInputForm (Wave 4 uzavřena)
+
+- ✅ **Levý panel „Vlastnosti" hostuje EDInputForm** pro jeden vybraný element (všech 9 typů přes
+  `*Edit.cls` schema + `ElementFormBinder`) místo PropertyDescriptorů. Sjednocuje „dvojí vizuální jazyk"
+  — panel i modály jedou na stejném form-driven UI. Nový `Controls/InlinePropertiesForm` (embedded host).
+- ✅ **Živý write-back:** nový `EDInputForm.FieldChanged` event / Enter → `ElementFormBinder.ExtractCommands`
+  → `SetPropertyCommand` (undo) → canvas. Enter v poli commitne pole (ne otevře dialog); bare klávesy
+  (Delete/šipky) patří poli (+ fix latentního bugu: Delete v poli mazal vybraný element).
+- ✅ **EDControls (additivní):** `FieldChanged` event; `CacheClass` setter zahodí controller při změně →
+  runtime přepnutí schématu naloadí správnou třídu (dřív držel první → StopList ukazoval textová pole).
+- **Wave 4 tím funkčně uzavřena** (form-driven UI všude, kde uživatel přímo edituje). Záměrně nedokončeno:
+  W4-11 (smazat PropertyDescriptory) neproveditelné — drží je FormatToolbar + multi-edit + fallback modál
+  + AI CapabilityCatalog (paralelní systém); W4-12 (wire `$lb()`→JSON, collapsible groups) volitelné.
+- Multi-select + FormatToolbar + AI catalog beze změny (na PropertyDescriptorech). Testy: TD 180/180, EDControls 331/331.
+
 ## 2026-07-03 — T4 malé kousky (R4 fix + rename) + StopList kaskáda testy
 
 - ✅ **R4 fix — `TableEditorDialogViewModel` bez WPF.** Inline WPF picker šablon tabulky (Window + ListBox

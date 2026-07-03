@@ -2,6 +2,26 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-03 ✅ — Wave 4 W4-10: inline panel na EDInputForm
+
+Levý panel „Vlastnosti" nově hostuje **EDInputForm pro jeden element** (všech 9 typů přes `*Edit.cls`
+schema + `ElementFormBinder`) místo PropertyDescriptorů → sjednocený „dvojí vizuální jazyk" (panel i
+modály jedou na stejném form-driven UI). Detail: [`changelog.md`](changelog.md).
+
+- **Živý write-back:** `EDInputForm.FieldChanged` (nový event) / Enter → `ExtractCommands` → SetPropertyCommand
+  (undo) → canvas. Enter v poli commitne (ne otevře dialog); bare klávesy patří poli.
+- **EDControls (additivní):** `FieldChanged` event + `CacheClass` setter zahodí controller (runtime
+  přepnutí schématu — dřív držel první třídu → StopList ukazoval text pole).
+- **Nový `Controls/InlinePropertiesForm`** (embedded host + live state machine: re-Prefill na výběr,
+  guard proti rekurzi, ošetřený `Loaded` re-init).
+
+**Wave 4 tím funkčně uzavřena.** Zbytek NE-hotový, ale záměrně:
+- **W4-11** (smazat PropertyDescriptory) — neproveditelné: drží je FormatToolbar + multi-element edit +
+  fallback modál + AI `CapabilityCatalog`. PropertyDescriptory zůstávají jako paralelní systém.
+- **W4-12** (EDInputForm wire `$lb()`→JSON, collapsible groups) — volitelné, EDControls-framework concern.
+- **Polish (later):** undo/redo nerefreshne zobrazené hodnoty v panelu (display staleness do reselectu);
+  přepnutí typu = 1 Caché reload schématu (cache per typ, když bude lagovat).
+
 ## Parked known-limitation — canvas perf při vysokém zoomu (2026-07-03)
 
 Vyřazeno z aktivní roadmapy — na stropu 500 % funguje svižně (ověřeno). Vrátit se k tomu jen když se
