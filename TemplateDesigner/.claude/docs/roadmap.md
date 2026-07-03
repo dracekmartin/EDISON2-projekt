@@ -68,6 +68,24 @@ Z živých prezentací 2026-06-24. Před implementací dohledat ticket + přesn�
 
 ---
 
+## 🧭 Architektonická rozhodnutí R1–R7 — stav a nejbližší akce
+
+> Plný text (co znamená / proč / možnosti): [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
+> Tady jen stav + co z toho aktuálně plyne. Diskuze 2026-07-03 upřesnila R1–R3.
+
+| # | Rozhodnutí | Stav | Kdy nejpozději |
+|---|---|---|---|
+| R1 | **Sdílené řádkové jádro** (šířky sloupců / měření / render řádek-po-řádku jednou, v `Rendering/` vedle CellRenderer; elementy dodávají jen odlišnosti). **Rozhodnuto 2026-07-03: zárodek jádra = DynamicTableElement** (nejčistší řádková tabulka); **extrakce až u LineTable** (3. konzument ukáže, co je opravdu společné — ne dřív, přepis gold-ověřeného StopListu by do té doby nesl jen riziko). Pozn.: jádro ≠ PageLayoutEngine — jsou to dvě patra (sekce/stránky × vnitřek elementu) | ✅ rozhodnuto (extract-at-LineTable) | design LineTable (Fáze C+D) |
+| R1a | **Akce hned:** kontrolní průchod DynamicTableElement — je vnitřek čistě rozvrstvený (model sloupců / měření / render zvlášť, bez zkratek provázaných s dialogem), aby extrakce jádra byla mechanická? | ⬜ ~1 h | před dalším tabulkovým elementem |
+| R2 | **Layout zodpovědnosti**: engine = sekce/stránky (+ imposice jako vrstva NAD ním), element = jen svůj vnitřek, nahoru hlásí výsledek. **Model potvrzen 2026-07-03 (= dnešní stav, nic se nemění).** Zbývá jediné: navrhnout rozšíření hlášení z „jsem vysoký X mm" na „vykreslil jsem řádky 1–40, zbývá 12" (partial-fit) — jednou, pro všechny tabulkové elementy stejně | 🟡 model ✅, partial-fit rozhraní ⬜ | před Fází C+D |
+| R3 | **Datový kontrakt agend**: základ už existuje (`cache-api.md` + `EDControls/DOCS/01-wire-formats.md` — tvary metod, čistý JSON, konvence). **Chybí 2 sekce**: (a) povolený seznam **prezentačních nápověd** — princip „volitelné + sémantické kde to jde" (`ZVYRAZNENI: 0–5`, typ řádku, opakuj-na-další-straně, přes-celou-šířku; přímé `FORE_COLOR`/`BACK_COLOR` legalizovat jen pro legacy paritu), v1 krátký + rozšíření při F1 dle RG usage; (b) **pravidlo evoluce**: kontrakt se mění jen přidáváním klíčů, změna významu zakázána | ⬜ ~0,5 dne do cache-api.md | před F2 (RG bridge) |
+| R4 | **Headless tisk**: pilot = .exe na stanici, ale render oddělit **PrintEngine fasádou** (šablona+data→PDF bez DesignerState; T2 udělalo půlku) → později serverová služba = zabalení, ne přepis | ⬜ | návrh bloku A |
+| R5 | **Fonty embedded v aplikaci** (`SKTypeface.FromStream`), nikdy spoléhat na instalaci ve Windows — u Timetable fontu je chybějící font věcná chyba JŘ, ne kosmetika | ⬜ | start Fáze C+D |
+| R6 | **Systémové šablony distribuovat s release** (read-only, verzované s buildem), DB jen zákaznické → verzní matice šablona×exe nevznikne | ⬜ | návrh bloku B |
+| R7 | **Pilot-first**: zastávkový JŘ k reálnému zákazníkovi (TRANSDEV) přes celou trubku (A1–A3 + min. B + deploy) dřív, než se migrují další agendy; slíbený termín „polovina 2026" nastal | ⬜ = další velký blok | teď |
+
+---
+
 ## 🟡 AD zastávkový JŘ — zbytek do úplného 1:1
 
 Zastávkový JŘ je datově i výkonově **1:1 hotový** (archiv 2026-07-02). Zbývá:

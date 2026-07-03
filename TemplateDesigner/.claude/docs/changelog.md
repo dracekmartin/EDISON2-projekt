@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-03 — Architektonická rozhodnutí: R1 rozhodnuto, R2/R3 upřesněno, stav do roadmapy
+
+- ✅ **Nová roadmap sekce „🧭 Architektonická rozhodnutí R1–R7 — stav a nejbližší akce"** —
+  stavová tabulka všech rozhodnutí na jednom místě (plný text zůstává
+  v `architektonicka-rozhodnuti-agendy.md`, kam doplněny poznámky z diskuze).
+- ✅ **R1 rozhodnuto (diskuze):** zárodek sdíleného řádkového jádra = `DynamicTableElement`;
+  extrakce až u LineTable (3 konzumenti ukážou, co je společné — dřívější extrakce nad dvěma
+  by abstrakci tvarovala podle StopList domény). Nová akce **R1a**: hodinový kontrolní průchod
+  DynamicTable (čisté rozvrstvení model sloupců / měření / render). Ujasněno: jádro ≠
+  PageLayoutEngine (vnitřek elementu × sekce/stránky); domov `Rendering/` vedle CellRendereru.
+- ✅ **R2 model potvrzen** (= dnešní architektura, nic se nemění); zbývá jen návrh partial-fit
+  rozhraní („vykreslil jsem řádky 1–40, zbývá 12, pokračuj odtud") před Fází C+D.
+- ✅ **R3 upřesněno:** základ kontraktu už existuje (`cache-api.md` + `01-wire-formats.md`);
+  doplnit (a) prezentační nápovědy v1 (sémantické: `ZVYRAZNENI` 0–5, typ řádku,
+  opakuj-na-další-straně, přes-celou-šířku; `FORE_COLOR`/`BACK_COLOR` legalizovat jen pro
+  legacy paritu) + (b) pravidlo jen-aditivní evoluce kontraktu. Do `cache-api.md` před F2.
+
 ## 2026-07-02 — DynamicTableElement: samostatná dynamická tabulka + 2-tab editor
 
 - ✅ **Rozdělení tabulek** — dynamická tabulka (řádky z `DataSource` kolekce) je samostatný

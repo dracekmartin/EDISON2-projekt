@@ -76,6 +76,15 @@ v roadmapě: sdílení na úrovni nastavení/dat, ne renderu).
 **vše, co teď vzniká v DynamicTableElement, psát s vědomím, že se to do jádra přesune**
 (žádné privátní zkratky provázané s dialogem, čisté oddělení model sloupců ↔ render).
 
+> **✅ Rozhodnuto 2026-07-03 (diskuze):** zárodkem jádra bude **DynamicTableElement** (nejčistší
+> řádková tabulka — sloupce × řádky z dat, bez doménových dekorací); extrakce proběhne **až u
+> LineTable** — tři konzumenti (DynamicTable + StopList + LineTable) ukážou, co je opravdu
+> společné; dřívější extrakce nad dvěma by tvarovala abstrakci podle StopList domény a nesla
+> riziko přepisu gold-ověřeného kódu bez okamžitého přínosu. **Akce hned (R1a):** hodinový
+> kontrolní průchod DynamicTableElement — čisté rozvrstvení model sloupců / měření / render,
+> aby budoucí extrakce byla mechanická. Ujasněno: jádro ≠ PageLayoutEngine (dvě patra —
+> sekce/stránky × vnitřek elementu); jádro bydlí v `Rendering/` vedle `CellRenderer`.
+
 ---
 
 ## R2. Rozdělení layoutových zodpovědností (dřív „layout kompetence")
@@ -112,6 +121,12 @@ vyžadovat znát oba.
 **Doporučení + termín.** Napsat před začátkem Fáze C+D (půl dne). Do té doby: žádné nové
 layoutové chování nepřidávat do elementů, pokud koncepčně patří enginu (a naopak).
 
+> **✅ Model potvrzen 2026-07-03 (diskuze):** „engine skládá celek (elementy/sekce/stránky),
+> element rozhoduje jen lokálně o svém vnitřku a výsledek hlásí nahoru" = přesně dnešní
+> architektura, nic se nemění. Z R2 zbývá jediná otevřená věc: **návrh partial-fit rozhraní**
+> (rozšíření hlášení z „jsem vysoký X mm" na „vykreslil jsem řádky 1–40, zbývá 12, pokračuj
+> odtud") — jednou, jednotně pro všechny tabulkové elementy, před Fází C+D.
+
 ---
 
 ## R3. Datový kontrakt agend: stabilita + „prezentační nápovědy" (dřív „presentation hints")
@@ -146,6 +161,15 @@ vymyslí vlastní klíče a za rok budeme mít pět dialektů téhož.
 **Doporučení + termín.** Zapsat do `cache-api.md` jako závaznou sekci. Nejpozději před
 rozhodnutím F2 (bridge vs. čisté agendy) — bez toho nejde F2 rozhodnout poučeně, protože
 věrnost bridge stojí přesně na tom, kolik prezentace umíme přenést.
+
+> **Upřesněno 2026-07-03 (diskuze):** základ kontraktu UŽ existuje (`cache-api.md` — tvary
+> metod, čistý JSON, konvence klíčů; + `EDControls/DOCS/01-wire-formats.md`). Doplnit se mají
+> právě dvě sekce: **(a) prezentační nápovědy v1** — princip „volitelný klíč + sémantický kde
+> to jde": `ZVYRAZNENI` 0–5 (šablona určí vzhled úrovní), typ řádku (data / mezisoučet /
+> nadpis skupiny), „opakuj řádek na další stránce", „text přes celou šířku"; přímé
+> `FORE_COLOR`/`BACK_COLOR` legalizovat jako výjimku pro legacy paritu (JŘ je už používá).
+> Seznam v1 držet krátký, rozšířit při F1 podle RG usage statistiky. **(b) pravidlo evoluce** —
+> kontrakt se mění jen přidáváním klíčů; změna významu / odebrání = zakázáno bez migrace.
 
 ---
 
