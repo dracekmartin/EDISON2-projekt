@@ -25,9 +25,13 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 **Knižní/linkový JŘ (Fáze C+D) — první implementace hotová a ověřená (2026-07-04):** agenda
 `KnizniJrAd` (`KNIZNI_JR_AD`, reimplementace jádra `mkPLinWin` — spoje jako sloupce, zdvojené řádky
 příjezd/odjezd, plný řádek platnosti, návaznosti, 10 druhů poznámek z NCOME/STALCOME, mkPoradiSp
-řazení) + standalone `LineTableElement` + výchozí šablona `templates/knizni-jr-ad-vychozi.json`.
-**22/24 linek napříč 4 firmami 1:1 vs gold oracle** (`ALVA.TISKJR.Data/LoadData`); detail + zbylé
-mezery (font 42b, Strih, turnusy…) viz `.claude/docs/linkovy-knizni-jr-implementace-analyza.md` §11-12.
+řazení) + **`KnizniJrMhd`** (`KNIZNI_JR_MHD`, MHD analogie legacy `LinkyPrintFormatJR.MakeData` —
+stejný wire, skupiny = TypProvozu, zóny přes IDSID, odjezd/příjezd atribut 1011) + standalone
+`LineTableElement` s kontextovou paletou (KNIZNI_* ↔ ZASTAVKOVY_*) + výchozí šablona
+`templates/knizni-jr-ad-vychozi.json`. **AD: 22/24 linek napříč 4 firmami 1:1 vs gold oracle**
+(`ALVA.TISKJR.Data/LoadData`); MHD zatím strukturálně (legacy MHD větev na dev padá). Detail +
+zbylé mezery (font 42b, Strih/bin-packing, turnusy…) viz
+`.claude/docs/linkovy-knizni-jr-implementace-analyza.md` §11-12.
 
 **Zastávkový JŘ z AD dat (agenda `ZastavkoveJrAd`) ✅ datově 1:1 + výkonově pročištěná** — ověřeno proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN), viz `.claude/docs/cache-database-linky.md §10`. Hotové: core, FTL 0-3, omezení, dopravce (vč. adresy), CIS názvy, multi-page, **rozdíly tras** (1:1 OmTrasa), **atributy zastávek** (jen „na znamení", jako legacy), **atributy spoje** (bezbariér H/F), **časy jízdy ve StopListu** (jeden sloupec = gold TrasaMin1), + **performance** (memoizace per-linka invariantů + W-trasa cache, behavior-preserving byte-identický).
 

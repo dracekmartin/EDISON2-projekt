@@ -152,6 +152,7 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 | 43 | `LineTableElement` + layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy) | 🟡 element hotový (standalone, R1 extrakce jádra až při ostré verzi); layout rozšíření ⬜ |
 | 44 | Caché `KnizniJrAd` — GetData/GetMockData (Wave 5), oracle `mkPLinWin` | ✅ 2026-07-04 — 22/24 linek 1:1 vs gold (multi-firm diff); zbylé odchylky viz analýza §12 |
 | 44b | Výchozí šablona `templates/knizni-jr-ad-vychozi.json` → zapojit do distribuce (B2/R6) | 🟡 šablona v repu, zapojení ⬜ |
+| 44c | Caché `KnizniJrMhd` — MHD analogie (legacy `LinkyPrintFormatJR.MakeData`), stejný wire | ✅ 2026-07-04 datové jádro (CB_DP 1001 ověřeno strukturálně); gold diff ⬜ (legacy MHD větev na dev padá — nutný dump wrapper) |
 
 ---
 

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-04 — Knižní JŘ z MHD dat: agenda KnizniJrMhd
+
+- ✅ **`ALVA.TemplateDesigner.Agendy.KnizniJrMhd`** (`KNIZNI_JR_MHD`) — MHD analogie `KnizniJrAd`
+  (legacy větev `VolanoZ="MHD"` = `ALVA.MHD.LinkyPrintFormatJR.MakeData`): stejný knižní wire
+  formát → konzumuje tentýž `LineTableElement` (kontextová paleta `KNIZNI_*` už platí). Data z
+  `ALVA.MHD.LSO/ZST/ENUMS` + helpery `*Fce` (MakeTableSpoj, GetNazevHrl, GetPoznamkySpoj…):
+  trasa s filtrem kategorie 1001 + slučování sousedních shodných zastávek, zdvojené řádky
+  odjezd/příjezd (atribut trasy 1011), zóny přes IDSID match, skupiny = TypProvozu (nadpisy
+  z ENUMS NadpisSMOPrvni/Druhy, řazení dle Poradi), markery `|` projíždí / `<` jede jinudy,
+  NZ + auto-poznámkování rozdílů platností (GetJede/MakeOmezeniTXT), spec. znaky a atributy
+  B→BEV/C→CBE v řádku platnosti. Bez Km/Tč/MHD sloupců a vyčká/navazuje (MHD zdroj nemá, 1:1).
+  Ověřeno na CB_DP lince 1001 (29 zastávek × 159 spojů × 3 typy provozu, oba směry + render PNG).
+- Pozn.: gold-oracle diff pro MHD odložen — legacy `LoadData` MHD větev na dev serveru padá
+  (ztrap po MakeData); ověření zatím strukturální + vizuální. Bin-packing (159 sloupců → bloky)
+  = krok 43 layout rozšíření.
+
 ## 2026-07-04 — Knižní/linkový JŘ: agenda KnizniJrAd + LineTableElement (roadmap kroky 42/43/44 — první implementace)
 
 - ✅ **Caché agenda `ALVA.TemplateDesigner.Agendy.KnizniJrAd`** (`KNIZNI_JR_AD`) — čistá reimplementace
