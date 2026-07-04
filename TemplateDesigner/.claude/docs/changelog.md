@@ -15,6 +15,12 @@
 - Pozn.: gold-oracle diff pro MHD odložen — legacy `LoadData` MHD větev na dev serveru padá
   (ztrap po MakeData); ověření zatím strukturální + vizuální. Bin-packing (159 sloupců → bloky)
   = krok 43 layout rozšíření.
+- ✅ **EDInputForm pro LineTableElement** — `ALVA.TemplateDesigner.EDInputForm.LineTableElementEdit`
+  (skupiny Sloupce/Řádky/Záhlaví/Datové buňky/Rámeček/Pozice/Pokročilé) + registrace v
+  `EDInputFormSchema` → Enter/dvojklik otevře standardní form-driven dialog „Vlastnosti knižního JŘ"
+  a inline panel jede na tomtéž schématu (konzistentní s ostatními elementy). Per-column tab
+  „Sloupce" (ColumnListEditor) přijde až s R1 extrakcí jádra, až element dostane column kolekci
+  (per-spoj overridy) — v prvním řezu jsou popisové sloupce pevné properties (vzor NotesLegend).
 
 ## 2026-07-04 — Knižní/linkový JŘ: agenda KnizniJrAd + LineTableElement (roadmap kroky 42/43/44 — první implementace)
 
