@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-04 — R1: sdílené tabulkové jádro `TableLayout` (extrakce hotová)
+
+- ✅ **`Rendering/TableLayout.cs`** — sdílené algoritmy řádkových tabulek nad `CellRenderer`/
+  `ColumnRenderer`: `ResolveWidths` (pevné + auto-split zbytku + mm/%) a `ResolveCascade`
+  (kaskáda column→element→baked + legacy alignment fallback). **Záměrně nesjednocuje datovou
+  třídu sloupce** — StopColumn i TableColumn zůstávají, elementy jen promítnou neutrální tvar
+  (`ColWidth`, per-column TextStyle) → nulové riziko pro uložené šablony.
+- ✅ **Napojeno do DynamicTable, LineTable, StopList** — kaskádový vzorec 3 kopie → 1, výpočet
+  šířek 2 kopie → 1 (StopList mm-only, DynamicTable mm/%; LineTable šířky ponechány — Km-expanze +
+  trip-pool jsou element-specifické, migrovaná jen kaskáda). Pátá tabulková sestava dostane
+  šířky+kaskádu zdarma.
+- **DepartureGrid mimo jádro** (potvrzeno analýzou — je pivot hodina × skupina dnů, ne řádková
+  tabulka; sdílí jen datovou/nastavovací vrstvu).
+- Behavior-preserving: **180/180 testů** (vč. StopListCascadeTests/DepartureGridCascadeTests) +
+  render diff LineTable AD (0320680) i MHD identický. Analýza + návrh:
+  `.claude/docs/r1-sdilene-tabulkove-jadro-navrh.md`.
+- Zbývá volitelně (R1a): render-loop orchestrátor (header+řádky+separátory jako 1 metoda) —
+  DynamicTable dnes kreslí vlastní per-buňka smyčkou; nízká hodnota / vyšší riziko, odloženo.
+
 ## 2026-07-04 — LineTableElement: kolekce sloupců + 2-tab dialog (Obecné + Sloupce)
 
 - ✅ **`LineTableElement.Columns : List<StopColumn>`** — element přešel z pevných `Show*Column`/
