@@ -360,6 +360,45 @@ CB_CSADAD), rozhodnutí o commitnutí tohoto řezu.
 
 ---
 
+## 12. Druhá vlna — „1:1" push (2026-07-04, autonomní pokračování)
+
+Commit prvního řezu = `47e5be4`. Následně **multi-linkový diff harness** (scratchpad
+`LineTableHarness`, režim `diff`): stáhne legacy `ALVA.TISKJR.Data/LoadData` stream i náš JSON pro
+6 linek × 4 firmy a porovná spoje/pořadí/NZ/časy/km/zóny/MHD/poznámky. Výsledek po iteracích:
+**22/24 linek zcela beze změn** (CB_CSADAD, CB_GWBUS, KV_DP, VS_CSAD).
+
+**Doplněno do agendy (dle verbatim spec agentů z JRapiLinPrtWin.mac + JRapiNZUtl2/3 + JRapiSp):**
+- prázdná buňka = mimo trasu; W-věta markery `<`/`|` 1:1 (symbolová mapa diffu: 74=`|`, 75=`<`)
+- řazení spojů 1:1 mkPoradiSp (odjezd z výchozí + bublinové doseřazení přes TcOd/TcDo tč)
+- zdvojené řádky příjezd/odjezd (J-atributy P/J; wire `ZASTAVKY.TYP="prijezd"`; ořez krajů per spoj)
+- plný řádek platnosti: X..+ → místenka R/þ/&/Ü (hlava:6+11) → u/p (omz34/41/42) → atributy spoje
+  (hlava:12-26 dle gSpLin mapy: POS/IDS/BEV/SAO/PCZ/OBC/PJI/NKA/RBU/CBE/RBP/wifi/zasu), pevné pořadí Spoj2Tb
+- klasifikace do skupin dnů: Plk; bez Plk odvození z datumů omezení (víkend/svátek vč. Velikonoc
+  — computus; den = číslice i „+" současně) — aproximace mkStaLinSp kalendáře
+- poznámky druhů 1-10: NCOME/STALCOME texty (rec=CZ/*SK), TiskDtm režimy datumů (0/1/2/3),
+  pořadí omezení 13,12,11,SU,LI,22; sudé/liché týdny (hlava:8); návaznosti agregované per (spoj×tc)
+  s AVL slovníkem (A=autobus, V=vlak, L=loď) a gate typVýstupu/typZobrazení (omz31 :4/:7, omz32 :4/:9);
+  pokračuje (omz34); atributy generická věta; místenkování; stálé značky z J-atributů + ^JRZ $8
+  + W piece5 (trasové značky V/N/x/G/a/b/c); poznámky linky s `#`-odstavci (prázdný → mezera)
+- zóna jen u IDS linek (PATCH linIDS), prázdná → „-"; MHD sloupec z J-věty `#`-pole 4
+  (gTrsLinDta2ToText mapování) s auto-remove
+
+**Element:** MHD sloupec (auto-hide), příjezdové podřádky, přípojné řádky jen s RADEK=1.
+
+**Výchozí šablona:** `TemplateDesigner/templates/knizni-jr-ad-vychozi.json` (hlavička s placeholdery,
+LineTableElement, legenda přes DynamicTable POZNAMKY) — generovaná harness režimem `template`,
+vizuálně ověřená na 0320680 (2 strany, zdvojené řádky, skupiny dnů, legenda). Zapojení do
+distribuce šablon = blok B2/R6 (zatím ruční Import JSON).
+
+**Zbývající známé odchylky (dokumentované, nekritické):**
+- pořadí časově identických „dvojčat" spojů (0945001) — obsah 1:1, jen pořadí sloupců
+- názvy zastávek v návaznostech u městských linek (0945001: legacy zkrácený místní tvar bez obce)
+- počet přípojných řádků 0330510 Z (legacy 5 vs my 8 — legacy zřejmě slučuje conn do jednoho řádku)
+- druh 7: symbol 108 „jen pro vystupování" na 0320113/118 (zdroj per-spoj V značky nedohledán)
+- gating atributů nastavením PAtrSp/TZPA (legacy umí BEV ap. potlačit konfigurací)
+
+---
+
 ## Zdrojové soubory citované v této analýze
 
 ```

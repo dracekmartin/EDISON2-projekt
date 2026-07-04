@@ -147,10 +147,11 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 
 | Krok | Co | Stav |
 |---|---|---|
-| 42 | Analýza referenčních výstupů (vývěsní + knižní PDF) + wire formát | ⬜ |
-| 42b | Symbolový font Timetable do Skia + převodní tabulka | ⬜ |
-| 43 | `LineTableElement` + layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy) | ⬜ |
-| 44 | Caché `KnizniJrAd` — GetData/GetMockData (Wave 5), oracle `mkPLinWin` | ⬜ |
+| 42 | Analýza referenčních výstupů (vývěsní + knižní PDF) + wire formát | ✅ 2026-07-04 (`linkovy-knizni-jr-implementace-analyza.md`) |
+| 42b | Symbolový font Timetable do Skia + převodní tabulka | ⬜ (ZNAK hodnoty ve wire = legacy klíče, fallback text) |
+| 43 | `LineTableElement` + layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy) | 🟡 element hotový (standalone, R1 extrakce jádra až při ostré verzi); layout rozšíření ⬜ |
+| 44 | Caché `KnizniJrAd` — GetData/GetMockData (Wave 5), oracle `mkPLinWin` | ✅ 2026-07-04 — 22/24 linek 1:1 vs gold (multi-firm diff); zbylé odchylky viz analýza §12 |
+| 44b | Výchozí šablona `templates/knizni-jr-ad-vychozi.json` → zapojit do distribuce (B2/R6) | 🟡 šablona v repu, zapojení ⬜ |
 
 ---
 

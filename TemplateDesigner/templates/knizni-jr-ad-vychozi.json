@@ -1,0 +1,271 @@
+{
+  "version": "1.0.0",
+  "id": "c22b6860-ebf2-43e2-a00d-f3e387a835b2",
+  "name": "Kni\u017En\u00ED J\u0158 (AD) \u2014 v\u00FDchoz\u00ED",
+  "description": "",
+  "pageSize": {
+    "width": 210,
+    "height": 297,
+    "marginTop": 10,
+    "marginBottom": 10,
+    "marginLeft": 10,
+    "marginRight": 10
+  },
+  "sections": [
+    {
+      "id": "bc16504b-d1b3-4494-84f8-176e6496229c",
+      "name": "Hlavi\u010Dka",
+      "designerHeight": 24,
+      "printBehavior": "OnEveryPage",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{CISLO_LINKY}",
+          "style": {
+            "fontSize": 16,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "0319a88a-0fe4-4b75-b34d-b4fe86889040",
+          "x": 0,
+          "y": 1,
+          "width": 28,
+          "height": 10,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POPIS_LINKY}",
+          "style": {
+            "fontSize": 11,
+            "bold": true,
+            "hAlign": "Center"
+          },
+          "wordWrap": true,
+          "id": "11d609e1-1804-43d9-889d-1bcc4649e108",
+          "x": 30,
+          "y": 1,
+          "width": 130,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Plat\u00ED od {PLATNOST_OD}",
+          "style": {
+            "fontSize": 7,
+            "hAlign": "Right"
+          },
+          "wordWrap": true,
+          "id": "3ac8cf83-7aea-4ac1-b0d6-8e0f99e907c1",
+          "x": 160,
+          "y": 1,
+          "width": 30,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "do {PLATNOST_DO}",
+          "style": {
+            "fontSize": 7,
+            "hAlign": "Right"
+          },
+          "wordWrap": true,
+          "id": "9888a70e-d5a2-4b16-aa43-ef259869d831",
+          "x": 160,
+          "y": 5,
+          "width": 30,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POZNAMKA_NAD_LINKU}",
+          "style": {
+            "fontSize": 8,
+            "hAlign": "Center"
+          },
+          "wordWrap": true,
+          "id": "776b2a36-1670-4375-9e6c-2367255a832f",
+          "x": 30,
+          "y": 9,
+          "width": 130,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{POPIS_DOPRAVCE}",
+          "style": {
+            "fontSize": 7
+          },
+          "wordWrap": true,
+          "id": "50401ecd-c14b-4292-be3a-1c565f777de2",
+          "x": 0,
+          "y": 14,
+          "width": 190,
+          "height": 4,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "{VYCHOZI_ZASTAVKA}  \u2192  {POPIS_SMER}",
+          "style": {
+            "fontSize": 9,
+            "bold": true
+          },
+          "wordWrap": true,
+          "id": "b4639178-2ed0-420e-a939-86db0b50f7b0",
+          "x": 0,
+          "y": 19,
+          "width": 190,
+          "height": 5,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "a2d1d1c7-eb8c-486a-9c7e-3333a40614af",
+      "name": "J\u00EDzdn\u00ED \u0159\u00E1d",
+      "designerHeight": 30,
+      "printBehavior": "Once",
+      "overflowBehavior": "SplitAcrossPages",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "LineTableElement",
+          "spojeDataSource": "SPOJE",
+          "showZonaColumn": true,
+          "showKmColumns": true,
+          "showTcColumn": true,
+          "showMhdColumn": true,
+          "showPlatnostRow": true,
+          "showNzRow": true,
+          "showPripojeRows": true,
+          "showGroupHeaders": true,
+          "zonaColumnWidth": 8,
+          "kmColumnWidth": 6,
+          "tcColumnWidth": 6,
+          "mhdColumnWidth": 8,
+          "stopNameColumnWidth": 42,
+          "tripColumnWidth": 0,
+          "highlightOddTc": true,
+          "oddTcBackColor": "#FFEEEEEE",
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {},
+          "headerStyle": {},
+          "gridColor": "#FFD0D0D0",
+          "id": "0f30e86e-12e7-40cc-9d72-bad5831e28cf",
+          "x": 0,
+          "y": 0,
+          "width": 190,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        }
+      ]
+    },
+    {
+      "id": "7fca115d-c78a-4bac-91c6-bb061ee0faaf",
+      "name": "Pozn\u00E1mky",
+      "designerHeight": 30,
+      "printBehavior": "Once",
+      "overflowBehavior": "SplitAcrossPages",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "DynamicTableElement",
+          "dataSource": "POZNAMKY",
+          "columns": [
+            {
+              "header": "",
+              "width": 10,
+              "widthMode": "Mm",
+              "field": "ZNAK",
+              "alignment": "Left",
+              "visible": true
+            },
+            {
+              "header": "",
+              "width": 0,
+              "widthMode": "Mm",
+              "field": "TEXT",
+              "alignment": "Left",
+              "visible": true
+            }
+          ],
+          "rowHeight": 6,
+          "showHeader": true,
+          "headerHeight": 8,
+          "borderStyle": "Outer",
+          "id": "aa34430e-e23f-40f0-ad37-a6d9e92ce8e7",
+          "x": 0,
+          "y": 2,
+          "width": 190,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        }
+      ]
+    }
+  ],
+  "agendaCode": "KNIZNI_JR_AD",
+  "createdAt": "2026-07-04T00:18:03.9460944Z",
+  "modifiedAt": "2026-07-04T00:18:03.9462867Z"
+}

@@ -24,6 +24,8 @@ public class LineTableElement : ScheduleElementBase
     public bool ShowZonaColumn { get; set; } = true;
     public bool ShowKmColumns { get; set; } = true;
     public bool ShowTcColumn { get; set; } = true;
+    /// <summary>MHD/IDS sloupec; automaticky se skryje, když je pro celou linku prázdný (legacy).</summary>
+    public bool ShowMhdColumn { get; set; } = true;
     /// <summary>Řádek znaků týdenní platnosti (X, 6, 7, +) nad časy spojů.</summary>
     public bool ShowPlatnostRow { get; set; } = true;
     /// <summary>Řádek negativních značek (NZ) nad časy spojů.</summary>
@@ -38,6 +40,7 @@ public class LineTableElement : ScheduleElementBase
     public float ZonaColumnWidth { get; set; } = 8f;
     public float KmColumnWidth { get; set; } = 6f;
     public float TcColumnWidth { get; set; } = 6f;
+    public float MhdColumnWidth { get; set; } = 8f;
     public float StopNameColumnWidth { get; set; } = 42f;
     /// <summary>Šířka sloupce spoje v mm; 0 = auto (zbytek šířky rovnoměrně mezi spoje).</summary>
     public float TripColumnWidth { get; set; } = 0f;
@@ -55,12 +58,16 @@ public class LineTableElement : ScheduleElementBase
     public sealed class LineStopData
     {
         public int Poradi;
+        public string Typ = "";        // "zastavka" (hlavní/odjezdový) | "prijezd" (vložený příjezdový)
         public string Popis = "";
         public string Tc = "";
         public string Zona = "";
+        public string Mhd = "";
         public string Nastupiste = "";
         public List<string> Atributy = [];
         public List<string> Km = [];
+
+        public bool JePrijezdovy => Typ == "prijezd";
     }
 
     public sealed class LinePripojData
@@ -71,6 +78,7 @@ public class LineTableElement : ScheduleElementBase
         public string Cas = "";
         public string Linka = "";
         public string Spoj = "";
+        public bool Radek;           // legacy „typ zobrazení": tisknout jako vložený řádek matice
     }
 
     public sealed class LineTripData
@@ -103,9 +111,11 @@ public class LineTableElement : ScheduleElementBase
         _cachedStops = [.. data.GetRows(ZastavkyDataSource).Select(row => new LineStopData
         {
             Poradi = ParseInt(row.GetString("PORADI")),
+            Typ = row.GetString("TYP"),
             Popis = row.GetString("POPIS"),
             Tc = row.GetString("TC"),
             Zona = row.GetString("ZONA"),
+            Mhd = row.GetString("MHD"),
             Nastupiste = row.GetString("NASTUPISTE"),
             Atributy = ParseStringArray(row.GetValue("ATRIBUTY")),
             Km = ParseStringArray(row.GetValue("KM")),
@@ -142,6 +152,7 @@ public class LineTableElement : ScheduleElementBase
             Cas = o["CAS"]?.ToString() ?? "",
             Linka = o["LINKA"]?.ToString() ?? "",
             Spoj = o["SPOJ"]?.ToString() ?? "",
+            Radek = o["RADEK"]?.ToString() == "1",
         })];
     }
 
@@ -149,20 +160,23 @@ public class LineTableElement : ScheduleElementBase
 
     private sealed record FixedCol(float Width, string Header, Func<LineStopData, string> Value);
 
-    private List<FixedCol> BuildFixedColumns(int kmCount)
+    private List<FixedCol> BuildFixedColumns(int kmCount, bool anyMhd)
     {
         var cols = new List<FixedCol>();
-        if (ShowZonaColumn) cols.Add(new(ZonaColumnWidth, "Zóna", s => s.Zona));
+        if (ShowZonaColumn) cols.Add(new(ZonaColumnWidth, "Zóna", s => s.JePrijezdovy ? "" : s.Zona));
         if (ShowKmColumns)
             for (int k = 0; k < kmCount; k++)
             {
                 int kk = k;
-                cols.Add(new(KmColumnWidth, "km", s => kk < s.Km.Count ? s.Km[kk] : ""));
+                cols.Add(new(KmColumnWidth, "km", s => s.JePrijezdovy || kk >= s.Km.Count ? "" : s.Km[kk]));
             }
-        if (ShowTcColumn) cols.Add(new(TcColumnWidth, "Tč", s => s.Tc));
-        // atributy zastávky (fallback znaky, např. "x" = na znamení) před názvem
+        if (ShowTcColumn) cols.Add(new(TcColumnWidth, "Tč", s => s.JePrijezdovy ? "" : s.Tc));
+        // název zastávky (příjezdový podřádek název netiskne); atributy (x = na znamení) před názvem
         cols.Add(new(StopNameColumnWidth, "Zastávka", s =>
+            s.JePrijezdovy ? "" :
             s.Atributy.Count > 0 ? string.Join("", s.Atributy.Where(IsDisplayableStopAttribute)) + " " + s.Popis : s.Popis));
+        // MHD sloupec se automaticky odstraní, když je pro celou linku prázdný (legacy pravidlo)
+        if (ShowMhdColumn && anyMhd) cols.Add(new(MhdColumnWidth, "MHD", s => s.JePrijezdovy ? "" : s.Mhd));
         return cols;
     }
 
@@ -187,7 +201,7 @@ public class LineTableElement : ScheduleElementBase
         && groups.Any(g => g.Nadpis.Length > 0);
 
     private int PripojeRowCount(List<LineTripData> trips) =>
-        ShowPripojeRows ? trips.Sum(t => t.Pripoje.Count) : 0;
+        ShowPripojeRows ? trips.Sum(t => t.Pripoje.Count(p => p.Radek)) : 0;
 
     public override float CalculateHeightFromData(DataContext? data)
     {
@@ -246,7 +260,8 @@ public class LineTableElement : ScheduleElementBase
         float rowH = (DataRowHeight ?? ComputeRowH(dataResolved.FontSize)) * scale;
 
         int kmCount = MaxKmCount(stops);
-        var fixedCols = BuildFixedColumns(kmCount);
+        bool anyMhd = stops.Any(s => s.Mhd.Length > 0);
+        var fixedCols = BuildFixedColumns(kmCount, anyMhd);
         float fixedSum = fixedCols.Sum(c => c.Width);
         float tripW = ComputeTripColumnWidth(fixedSum, trips.Count);
 
@@ -337,7 +352,7 @@ public class LineTableElement : ScheduleElementBase
                 {
                     foreach (var t in trips)
                     {
-                        foreach (var pr in t.Pripoje.Where(p => p.Poradi == stop.Poradi))
+                        foreach (var pr in t.Pripoje.Where(p => p.Radek && p.Poradi == stop.Poradi))
                         {
                             var prSpecs = new List<ColumnRenderer.CellSpec>();
                             for (int ci = 0; ci < fixedCols.Count; ci++)
@@ -407,6 +422,8 @@ public class LineTableElement : ScheduleElementBase
             ShowNzRow = ShowNzRow,
             ShowPripojeRows = ShowPripojeRows,
             ShowGroupHeaders = ShowGroupHeaders,
+            ShowMhdColumn = ShowMhdColumn,
+            MhdColumnWidth = MhdColumnWidth,
             ZonaColumnWidth = ZonaColumnWidth,
             KmColumnWidth = KmColumnWidth,
             TcColumnWidth = TcColumnWidth,
@@ -424,6 +441,7 @@ public class LineTableElement : ScheduleElementBase
     {
         base.ApplyScale(scale);
         ZonaColumnWidth *= scale;
+        MhdColumnWidth *= scale;
         KmColumnWidth *= scale;
         TcColumnWidth *= scale;
         StopNameColumnWidth *= scale;
@@ -438,6 +456,8 @@ public class LineTableElement : ScheduleElementBase
         new FloatPropertyDescriptor { Label = "Šířka zóny", Group = "Sloupce", Get = () => ZonaColumnWidth, Set = v => ZonaColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Šířka km", Group = "Sloupce", Get = () => KmColumnWidth, Set = v => KmColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Šířka Tč", Group = "Sloupce", Get = () => TcColumnWidth, Set = v => TcColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
+        new BoolPropertyDescriptor { Label = "Sloupec MHD", Group = "Sloupce", Get = () => ShowMhdColumn, Set = v => ShowMhdColumn = v },
+        new FloatPropertyDescriptor { Label = "Šířka MHD", Group = "Sloupce", Get = () => MhdColumnWidth, Set = v => MhdColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Šířka zastávek", Group = "Sloupce", Get = () => StopNameColumnWidth, Set = v => StopNameColumnWidth = v, Min = 10, Max = 120, Unit = "mm" },
         new FloatPropertyDescriptor { Label = "Šířka spoje (0=auto)", Group = "Sloupce", Get = () => TripColumnWidth, Set = v => TripColumnWidth = v, Min = 0, Max = 40, Unit = "mm" },
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },

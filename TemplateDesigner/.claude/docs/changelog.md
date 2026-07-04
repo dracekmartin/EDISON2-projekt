@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-04 — Knižní/linkový JŘ: agenda KnizniJrAd + LineTableElement (roadmap kroky 42/43/44 — první implementace)
+
+- ✅ **Caché agenda `ALVA.TemplateDesigner.Agendy.KnizniJrAd`** (`KNIZNI_JR_AD`) — čistá reimplementace
+  datového jádra legacy `mkPLinWin^JRapiLinPrtWin` nad `^JRL`/`^JRZ`/`^JRSET`: 1 stránka per linka×směr,
+  sémantický JSON wire (ZASTAVKY svislá osa vč. zdvojených řádků příjezd/odjezd, SPOJE sloupce s CASY
+  markery `|`/`<`, plný řádek platnosti X..+/místenka/u/p/atributy, PRIPOJE s gate typVýstupu/typZobrazení,
+  SKUPINY_DNU z WinMHD DSC, POZNAMKY druhů 1-10 z NCOME/STALCOME, TiskDtm režimy datumů, mkPoradiSp
+  řazení, zóny jen u IDS linek, MHD sloupec s auto-remove).
+- ✅ **`LineTableElement`** — nový standalone element (ScheduleElementBase): matice zastávky × spoje,
+  pás skupin dnů, řádky platnosti/NZ, přípojné řádky (RADEK=1), zdvojené podřádky, MHD/zóna/km/Tč
+  sloupce s auto šířkou spojů, podbarvení lichých Tč.
+- ✅ **Ověření 1:1 proti gold oracle** (`ALVA.TISKJR.Data/LoadData`, `VOLANO_Z~JRMAIN`): multi-linkový
+  diff harness — **22/24 linek napříč CB_CSADAD/CB_GWBUS/KV_DP/VS_CSAD zcela beze změn**; zbylé
+  odchylky kosmetické a zdokumentované (`linkovy-knizni-jr-implementace-analyza.md` §11-12).
+- ✅ **Výchozí šablona** `templates/knizni-jr-ad-vychozi.json` (hlavička, JŘ tabulka, legenda poznámek).
+- Vědomě odloženo: symbolový font Timetable (krok 42b), 2D bin-packing/Strih (layout řeší TD),
+  turnusy, obousměrný tisk, konfigurovatelné pořadí poznámek.
+
 ## 2026-07-03 — Wave 4 W4-10: inline panel na EDInputForm (Wave 4 uzavřena)
 
 - ✅ **Levý panel „Vlastnosti" hostuje EDInputForm** pro jeden vybraný element (všech 9 typů přes

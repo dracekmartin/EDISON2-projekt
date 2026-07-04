@@ -14,13 +14,20 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-07-02
+**Datum poslední aktualizace:** 2026-07-04
 
 > **Prezentace proběhly** (statická ~19.6., živá 26.6.). Od 2026-06-30 je **databáze primární úložiště
 > šablon** (Otevřít/Uložit/Uložit jako → DB; soubor = Import/Export JSON, obdoba PDF/PNG). Aktivní
 > tracky a priority po prezentacích viz [`.claude/docs/roadmap.md`](.claude/docs/roadmap.md) (vršek).
 
 ### 🎯 Aktuální focus
+
+**Knižní/linkový JŘ (Fáze C+D) — první implementace hotová a ověřená (2026-07-04):** agenda
+`KnizniJrAd` (`KNIZNI_JR_AD`, reimplementace jádra `mkPLinWin` — spoje jako sloupce, zdvojené řádky
+příjezd/odjezd, plný řádek platnosti, návaznosti, 10 druhů poznámek z NCOME/STALCOME, mkPoradiSp
+řazení) + standalone `LineTableElement` + výchozí šablona `templates/knizni-jr-ad-vychozi.json`.
+**22/24 linek napříč 4 firmami 1:1 vs gold oracle** (`ALVA.TISKJR.Data/LoadData`); detail + zbylé
+mezery (font 42b, Strih, turnusy…) viz `.claude/docs/linkovy-knizni-jr-implementace-analyza.md` §11-12.
 
 **Zastávkový JŘ z AD dat (agenda `ZastavkoveJrAd`) ✅ datově 1:1 + výkonově pročištěná** — ověřeno proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN), viz `.claude/docs/cache-database-linky.md §10`. Hotové: core, FTL 0-3, omezení, dopravce (vč. adresy), CIS názvy, multi-page, **rozdíly tras** (1:1 OmTrasa), **atributy zastávek** (jen „na znamení", jako legacy), **atributy spoje** (bezbariér H/F), **časy jízdy ve StopListu** (jeden sloupec = gold TrasaMin1), + **performance** (memoizace per-linka invariantů + W-trasa cache, behavior-preserving byte-identický).
 
