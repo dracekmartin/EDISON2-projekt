@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "id": "c22b6860-ebf2-43e2-a00d-f3e387a835b2",
+  "id": "9f9d3d98-461d-40d5-86f5-9bfb191c180e",
   "name": "Kni\u017En\u00ED J\u0158 (AD) \u2014 v\u00FDchoz\u00ED",
   "description": "",
   "pageSize": {
@@ -13,7 +13,7 @@
   },
   "sections": [
     {
-      "id": "bc16504b-d1b3-4494-84f8-176e6496229c",
+      "id": "e2454e56-e772-4a6a-9ea7-913aa277f451",
       "name": "Hlavi\u010Dka",
       "designerHeight": 24,
       "printBehavior": "OnEveryPage",
@@ -31,7 +31,7 @@
             "bold": true
           },
           "wordWrap": true,
-          "id": "0319a88a-0fe4-4b75-b34d-b4fe86889040",
+          "id": "f96cd200-c197-4847-a320-66b8f93867f7",
           "x": 0,
           "y": 1,
           "width": 28,
@@ -52,7 +52,7 @@
             "hAlign": "Center"
           },
           "wordWrap": true,
-          "id": "11d609e1-1804-43d9-889d-1bcc4649e108",
+          "id": "2dd3443f-c883-4ad2-916f-e9daecd64d94",
           "x": 30,
           "y": 1,
           "width": 130,
@@ -72,7 +72,7 @@
             "hAlign": "Right"
           },
           "wordWrap": true,
-          "id": "3ac8cf83-7aea-4ac1-b0d6-8e0f99e907c1",
+          "id": "eeb63323-1683-477c-a739-3de34c69794f",
           "x": 160,
           "y": 1,
           "width": 30,
@@ -92,7 +92,7 @@
             "hAlign": "Right"
           },
           "wordWrap": true,
-          "id": "9888a70e-d5a2-4b16-aa43-ef259869d831",
+          "id": "2d5452d1-47b3-4825-a11c-e7a44c376639",
           "x": 160,
           "y": 5,
           "width": 30,
@@ -112,7 +112,7 @@
             "hAlign": "Center"
           },
           "wordWrap": true,
-          "id": "776b2a36-1670-4375-9e6c-2367255a832f",
+          "id": "5841053c-ba84-44cc-9cc9-dab8f1934995",
           "x": 30,
           "y": 9,
           "width": 130,
@@ -131,7 +131,7 @@
             "fontSize": 7
           },
           "wordWrap": true,
-          "id": "50401ecd-c14b-4292-be3a-1c565f777de2",
+          "id": "36c3fe37-3948-4510-8a2c-4b169759d473",
           "x": 0,
           "y": 14,
           "width": 190,
@@ -151,7 +151,7 @@
             "bold": true
           },
           "wordWrap": true,
-          "id": "b4639178-2ed0-420e-a939-86db0b50f7b0",
+          "id": "fbbb5a73-2556-4b26-beeb-552f4a6fa882",
           "x": 0,
           "y": 19,
           "width": 190,
@@ -166,7 +166,7 @@
       ]
     },
     {
-      "id": "a2d1d1c7-eb8c-486a-9c7e-3333a40614af",
+      "id": "b11d0282-abe8-42bd-a3b2-b8e0de91d140",
       "name": "J\u00EDzdn\u00ED \u0159\u00E1d",
       "designerHeight": 30,
       "printBehavior": "Once",
@@ -179,20 +179,53 @@
         {
           "type": "LineTableElement",
           "spojeDataSource": "SPOJE",
-          "showZonaColumn": true,
-          "showKmColumns": true,
-          "showTcColumn": true,
-          "showMhdColumn": true,
+          "columns": [
+            {
+              "key": "Zone",
+              "header": "Z\u00F3na",
+              "width": 8,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Km",
+              "header": "km",
+              "width": 6,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Tc",
+              "header": "T\u010D",
+              "width": 6,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "StopName",
+              "header": "Zast\u00E1vka",
+              "width": 42,
+              "visible": true,
+              "alignment": "Left"
+            },
+            {
+              "key": "Mhd",
+              "header": "MHD",
+              "width": 8,
+              "visible": true,
+              "alignment": "Center"
+            },
+            {
+              "key": "Trip",
+              "header": "Spoj",
+              "visible": true,
+              "alignment": "Center"
+            }
+          ],
           "showPlatnostRow": true,
           "showNzRow": true,
           "showPripojeRows": true,
           "showGroupHeaders": true,
-          "zonaColumnWidth": 8,
-          "kmColumnWidth": 6,
-          "tcColumnWidth": 6,
-          "mhdColumnWidth": 8,
-          "stopNameColumnWidth": 42,
-          "tripColumnWidth": 0,
           "highlightOddTc": true,
           "oddTcBackColor": "#FFEEEEEE",
           "zastavkyDataSource": "ZASTAVKY",
@@ -202,7 +235,7 @@
           "dataStyle": {},
           "headerStyle": {},
           "gridColor": "#FFD0D0D0",
-          "id": "0f30e86e-12e7-40cc-9d72-bad5831e28cf",
+          "id": "ac415d69-d90f-4c6e-8592-e1ebc23c76f4",
           "x": 0,
           "y": 0,
           "width": 190,
@@ -216,7 +249,7 @@
       ]
     },
     {
-      "id": "7fca115d-c78a-4bac-91c6-bb061ee0faaf",
+      "id": "0ac9f965-8fe1-4368-a6a5-5e587df80fdd",
       "name": "Pozn\u00E1mky",
       "designerHeight": 30,
       "printBehavior": "Once",
@@ -251,7 +284,7 @@
           "showHeader": true,
           "headerHeight": 8,
           "borderStyle": "Outer",
-          "id": "aa34430e-e23f-40f0-ad37-a6d9e92ce8e7",
+          "id": "bccadccd-f74f-431d-95d3-d36fff88d9c4",
           "x": 0,
           "y": 2,
           "width": 190,
@@ -266,6 +299,6 @@
     }
   ],
   "agendaCode": "KNIZNI_JR_AD",
-  "createdAt": "2026-07-04T00:18:03.9460944Z",
-  "modifiedAt": "2026-07-04T00:18:03.9462867Z"
+  "createdAt": "2026-07-04T11:06:02.9525214Z",
+  "modifiedAt": "2026-07-04T11:06:02.9528786Z"
 }

@@ -1334,6 +1334,11 @@ public partial class MainWindow : Window
             OpenDynamicTableDialog(dynTable);
             return;
         }
+        if (element is LineTableElement lineEl)
+        {
+            OpenLineTableColumnsDialog(lineEl);
+            return;
+        }
         // Generický EDInputForm dialog pro elementy s Caché schema (key = property path).
         // Mapping element type → (cacheClass, title). Ostatní typy fallback na legacy
         // ElementPropertiesWindow (PropertyDescriptor panel).
@@ -1392,7 +1397,7 @@ public partial class MainWindow : Window
         Models.Elements.BarcodeElement     => ("ALVA.TemplateDesigner.EDInputForm.BarcodeElementEdit", "Vlastnosti kódu"),
         Models.Elements.NotesLegendElement => ("ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit", "Vlastnosti legendy poznámek"),
         Models.Elements.ImageElement       => ("ALVA.TemplateDesigner.EDInputForm.ImageElementEdit", "Vlastnosti obrázku"),
-        Models.Elements.LineTableElement   => ("ALVA.TemplateDesigner.EDInputForm.LineTableElementEdit", "Vlastnosti knižního JŘ"),
+        // LineTable NENÍ zde — má vlastní 2-tab dialog (Obecné + Sloupce), viz OpenLineTableColumnsDialog.
         _ => (null, null)
     };
 
@@ -1408,6 +1413,7 @@ public partial class MainWindow : Window
             Models.Elements.StopListElement      => "ALVA.TemplateDesigner.EDInputForm.StopListElementEdit",
             Models.Elements.DepartureGridElement => "ALVA.TemplateDesigner.EDInputForm.DepartureGridElementEdit",
             Models.Elements.DynamicTableElement  => "ALVA.TemplateDesigner.EDInputForm.DynamicTableElementEdit",
+            Models.Elements.LineTableElement     => "ALVA.TemplateDesigner.EDInputForm.LineTableElementEdit",
             _ => null
         };
     }
@@ -1440,6 +1446,29 @@ public partial class MainWindow : Window
             _vm!.Execute(cmds.Count == 1
                 ? cmds[0]
                 : new Commands.Implementations.CompositeCommand("Nastavení zastávek", cmds));
+        }
+
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
+    }
+
+    private void OpenLineTableColumnsDialog(LineTableElement element)
+    {
+        var dlg = new LineTableColumnsEditorDialog(element) { Owner = this };
+
+        if (dlg.ShowDialog() == true)
+        {
+            // Tab „Obecné" (EDInputForm) + sloupce — jeden undo krok.
+            var cmds = new List<Commands.IDesignerCommand>();
+            if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
+            cmds.Add(new Commands.Implementations.SetPropertyCommand(
+                "Sloupce knižního JŘ", element.Columns, dlg.ResultColumns,
+                v => element.Columns = (List<StopColumn>)v!));
+
+            _vm!.Execute(cmds.Count == 1
+                ? cmds[0]
+                : new Commands.Implementations.CompositeCommand("Nastavení knižního JŘ", cmds));
         }
 
         InvalidateCanvas();

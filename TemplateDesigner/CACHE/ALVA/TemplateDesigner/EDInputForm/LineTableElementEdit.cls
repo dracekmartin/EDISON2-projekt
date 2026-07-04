@@ -23,19 +23,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
 
-        // ── Skupina "Sloupce" ─────────────────────────────────────────────
-        d form.AddGroup("columns", "Sloupce")
-        d form.AddBool("ShowZonaColumn", "Sloupec zóny", 1)
-        d form.AddDecimal("ZonaColumnWidth", "Šířka zóny", 8, 3, 30, "mm")
-        d form.AddBool("ShowKmColumns", "Sloupce km", 1)
-        d form.AddDecimal("KmColumnWidth", "Šířka km", 6, 3, 30, "mm")
-        d form.AddBool("ShowTcColumn", "Sloupec Tč", 1)
-        d form.AddDecimal("TcColumnWidth", "Šířka Tč", 6, 3, 30, "mm")
-        d form.AddBool("ShowMhdColumn", "Sloupec MHD", 1)
-        d form.AddDecimal("MhdColumnWidth", "Šířka MHD", 8, 3, 30, "mm")
-        d form.AddDecimal("StopNameColumnWidth", "Šířka zastávek", 42, 10, 120, "mm")
-        s f = form.AddDecimal("TripColumnWidth", "Šířka sloupce spoje", 0, 0, 40, "mm")
-        s f.helpText = "0 = auto (zbytek šířky rovnoměrně mezi spoje)"
+        // Pozn.: viditelnost / šířky / pořadí / per-column styl jednotlivých sloupců
+        // (Zóna, km, Tč, Zastávka, MHD, Spoj) se editují v tabu „Sloupce" (ColumnListEditor),
+        // konzistentně se StopList/DepartureGrid. Tady jen element-wide vlastnosti.
 
         // ── Skupina "Řádky" ───────────────────────────────────────────────
         d form.AddGroup("rows", "Řádky")

@@ -8,7 +8,13 @@ namespace TemplateDesigner.Models.Elements;
 /// <summary>
 /// Knižní / linkový jízdní řád — celá linka v jedné tabulce: svislý seznam zastávek
 /// (tarifní čísla) × vodorovné sloupce jednotlivých spojů s časy v buňkách.
-/// Datový zdroj: agenda KNIZNI_JR_AD (kolekce ZASTAVKY + SPOJE + SKUPINY_DNU).
+/// Datový zdroj: agenda KNIZNI_JR_AD / KNIZNI_JR_MHD (kolekce ZASTAVKY + SPOJE + SKUPINY_DNU).
+///
+/// Sloupce (`Columns`, model <see cref="StopColumn"/> — sdílený se StopList) definují popisové
+/// sloupce: Zóna, Km, Tč, Zastávka, MHD + „Spoj" (řídí šířku/styl časových sloupců spojů, které
+/// vznikají z dat). Editace přes 2-tab dialog (Obecné = EDInputForm, Sloupce = sdílený
+/// `ColumnListEditor` + `CellStyleEditor`) — konzistentní se StopList/DepartureGrid.
+///
 /// První řez: bez 2D bin-packingu přes stránky (stránkuje PageLayoutEngine per sekce),
 /// symboly jako textový fallback (Timetable font = roadmap 42b).
 /// </summary>
@@ -16,16 +22,28 @@ public class LineTableElement : ScheduleElementBase
 {
     // ─── DataSource ──────────────────────────────────────────────────────────
 
-    /// <summary>Klíč kolekce spojů (sloupce matice).</summary>
+    /// <summary>Klíč kolekce spojů (časové sloupce matice).</summary>
     public string SpojeDataSource { get; set; } = "SPOJE";
 
-    // ─── Viditelnost částí ──────────────────────────────────────────────────
+    // ─── Sloupce (pořadí, šířky, viditelnost, per-column styl) — sdílený StopColumn model ──
 
-    public bool ShowZonaColumn { get; set; } = true;
-    public bool ShowKmColumns { get; set; } = true;
-    public bool ShowTcColumn { get; set; } = true;
-    /// <summary>MHD/IDS sloupec; automaticky se skryje, když je pro celou linku prázdný (legacy).</summary>
-    public bool ShowMhdColumn { get; set; } = true;
+    public List<StopColumn> Columns { get; set; } = GetDefaultColumns();
+
+    /// <summary>Klíč sloupce časů spojů — řídí šířku/styl všech spojových sloupců (vznikají z dat).</summary>
+    public const string TripKey = "Trip";
+
+    public static List<StopColumn> GetDefaultColumns() =>
+    [
+        new() { Key = "Zone",     Header = "Zóna",     Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = "Km",       Header = "km",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = "Tc",       Header = "Tč",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = "StopName", Header = "Zastávka", Width = 42f, Visible = true, Alignment = TextHorizontalAlignment.Left },
+        new() { Key = "Mhd",      Header = "MHD",      Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = TripKey,    Header = "Spoj",     Width = null, Visible = true, Alignment = TextHorizontalAlignment.Center },
+    ];
+
+    // ─── Řádky ──────────────────────────────────────────────────────────────
+
     /// <summary>Řádek znaků týdenní platnosti (X, 6, 7, +) nad časy spojů.</summary>
     public bool ShowPlatnostRow { get; set; } = true;
     /// <summary>Řádek negativních značek (NZ) nad časy spojů.</summary>
@@ -34,16 +52,6 @@ public class LineTableElement : ScheduleElementBase
     public bool ShowPripojeRows { get; set; } = true;
     /// <summary>Pás názvů skupin dnů (Pracovní dny / Soboty / …) nad čísly spojů.</summary>
     public bool ShowGroupHeaders { get; set; } = true;
-
-    // ─── Šířky sloupců (mm) ─────────────────────────────────────────────────
-
-    public float ZonaColumnWidth { get; set; } = 8f;
-    public float KmColumnWidth { get; set; } = 6f;
-    public float TcColumnWidth { get; set; } = 6f;
-    public float MhdColumnWidth { get; set; } = 8f;
-    public float StopNameColumnWidth { get; set; } = 42f;
-    /// <summary>Šířka sloupce spoje v mm; 0 = auto (zbytek šířky rovnoměrně mezi spoje).</summary>
-    public float TripColumnWidth { get; set; } = 0f;
 
     // ─── Vzhled ─────────────────────────────────────────────────────────────
 
@@ -156,43 +164,112 @@ public class LineTableElement : ScheduleElementBase
         })];
     }
 
+    // ─── Style resolution (kaskáda column → element → CellDefaults; vzor StopList) ─────────
+
+    /// <summary>Parent kaskády pro per-column header override (co sloupec dědí bez vlastního stylu).</summary>
+    public ResolvedTextStyle ResolveColumnHeaderParent() => HeaderStyle.Resolve(ScheduleHeaderDefaults);
+
+    /// <summary>Parent kaskády pro per-column data override.</summary>
+    public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
+
+    private ResolvedTextStyle ResolveHeaderStyle(StopColumn col)
+    {
+        var elementResolved = ResolveColumnHeaderParent();
+        var resolved = col.Style?.Header is { } h ? h.Resolve(elementResolved) : elementResolved;
+        if (col.Style?.Header?.HAlign is null && HeaderStyle.HAlign is null)
+            resolved = resolved with { HAlign = col.Alignment };
+        return resolved;
+    }
+
+    private ResolvedTextStyle ResolveDataStyle(StopColumn col)
+    {
+        var elementResolved = ResolveColumnDataParent();
+        var resolved = col.Style?.Data is { } d ? d.Resolve(elementResolved) : elementResolved;
+        if (col.Style?.Data?.HAlign is null && DataStyle.HAlign is null)
+            resolved = resolved with { HAlign = col.Alignment };
+        return resolved;
+    }
+
     // ─── Layout ─────────────────────────────────────────────────────────────
 
-    private sealed record FixedCol(float Width, string Header, Func<LineStopData, string> Value);
+    /// <summary>Vyřešený popisový sloupec připravený k renderu (šířka + styly + hodnota z dat).</summary>
+    private sealed record RenderCol(float Width, string Header, ResolvedTextStyle HeaderStyle,
+        ResolvedTextStyle DataStyle, Func<LineStopData, string> Value);
 
-    private List<FixedCol> BuildFixedColumns(int kmCount, bool anyMhd)
+    private List<StopColumn> StructuralColumns() =>
+        Columns.Where(c => c.Visible && c.Key != TripKey).ToList();
+
+    private StopColumn TripColumn() =>
+        Columns.FirstOrDefault(c => c.Key == TripKey) ?? new StopColumn { Key = TripKey, Width = null };
+
+    private static string DefaultHeaderFor(string key) => key switch
     {
-        var cols = new List<FixedCol>();
-        if (ShowZonaColumn) cols.Add(new(ZonaColumnWidth, "Zóna", s => s.JePrijezdovy ? "" : s.Zona));
-        if (ShowKmColumns)
-            for (int k = 0; k < kmCount; k++)
+        "Zone" => "Zóna", "Km" => "km", "Tc" => "Tč", "StopName" => "Zastávka", "Mhd" => "MHD", _ => ""
+    };
+
+    /// <summary>Hodnota buňky popisového sloupce dle klíče (kmIndex jen pro Km sub-sloupce).</summary>
+    private Func<LineStopData, string> ValueFor(string key, int kmIndex) => key switch
+    {
+        "Zone"     => s => s.JePrijezdovy ? "" : s.Zona,
+        "Km"       => s => s.JePrijezdovy || kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
+        "Tc"       => s => s.JePrijezdovy ? "" : s.Tc,
+        "Mhd"      => s => s.JePrijezdovy ? "" : s.Mhd,
+        "StopName" => s => s.JePrijezdovy ? "" :
+                           s.Atributy.Count > 0
+                               ? string.Join("", s.Atributy.Where(IsDisplayableStopAttribute)) + " " + s.Popis
+                               : s.Popis,
+        _          => _ => ""
+    };
+
+    /// <summary>
+    /// Sestaví vyřešené popisové sloupce (Km expandované na kmCount sub-sloupců, MHD auto-remove když
+    /// prázdné) + spočítá šířku spojového sloupce. Auto (Width==null) sdílí zbytek šířky s auto-spoji.
+    /// </summary>
+    private (List<RenderCol> Fixed, float TripWidth, int NameIndex) BuildColumns(int kmCount, bool anyMhd, int tripCount)
+    {
+        var structural = StructuralColumns();
+        var trip = TripColumn();
+
+        // km auto-remove když žádná zastávka nemá km; MHD auto-remove když prázdné (legacy)
+        structural = structural.Where(c =>
+            (c.Key != "Km" || kmCount > 0) &&
+            (c.Key != "Mhd" || anyMhd)).ToList();
+
+        // šířky: pevné (Width != null) honorovány; auto (null) sdílí zbytek se spoji
+        float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == "Km" ? c.Width!.Value * kmCount : c.Width!.Value);
+        int autoStructural = structural.Count(c => !c.Width.HasValue);
+        int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
+        float autoEach = autoUnits > 0 ? MathF.Max(3f, (Width - fixedSum) / autoUnits) : 8f;
+
+        var result = new List<RenderCol>();
+        int nameIndex = -1;
+        foreach (var col in structural)
+        {
+            var hs = ResolveHeaderStyle(col);
+            var ds = ResolveDataStyle(col);
+            string header = col.Header != "" ? col.Header : DefaultHeaderFor(col.Key);
+            float w = col.Width ?? autoEach;
+            if (col.Key == "Km")
             {
-                int kk = k;
-                cols.Add(new(KmColumnWidth, "km", s => s.JePrijezdovy || kk >= s.Km.Count ? "" : s.Km[kk]));
+                for (int k = 0; k < kmCount; k++)
+                    result.Add(new RenderCol(w, header, hs, ds, ValueFor("Km", k)));
             }
-        if (ShowTcColumn) cols.Add(new(TcColumnWidth, "Tč", s => s.JePrijezdovy ? "" : s.Tc));
-        // název zastávky (příjezdový podřádek název netiskne); atributy (x = na znamení) před názvem
-        cols.Add(new(StopNameColumnWidth, "Zastávka", s =>
-            s.JePrijezdovy ? "" :
-            s.Atributy.Count > 0 ? string.Join("", s.Atributy.Where(IsDisplayableStopAttribute)) + " " + s.Popis : s.Popis));
-        // MHD sloupec se automaticky odstraní, když je pro celou linku prázdný (legacy pravidlo)
-        if (ShowMhdColumn && anyMhd) cols.Add(new(MhdColumnWidth, "MHD", s => s.JePrijezdovy ? "" : s.Mhd));
-        return cols;
+            else
+            {
+                if (col.Key == "StopName") nameIndex = result.Count;
+                result.Add(new RenderCol(w, header, hs, ds, ValueFor(col.Key, 0)));
+            }
+        }
+        float tripW = trip.Width ?? autoEach;
+        return (result, tripW, nameIndex);
     }
 
     /// <summary>Atributy trasy k zobrazení před názvem — jen významové značky pro cestujícího
     /// (x = na znamení). Řídicí atributy (T/P/S/E/…) se v prvním řezu netisknou.</summary>
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
 
-    private float ComputeTripColumnWidth(float fixedSum, int tripCount)
-    {
-        if (TripColumnWidth > 0f) return TripColumnWidth;
-        if (tripCount <= 0) return 8f;
-        return MathF.Max(5f, (Width - fixedSum) / tripCount);
-    }
-
     private int MaxKmCount(List<LineStopData> stops) =>
-        ShowKmColumns && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
+        Columns.Any(c => c.Visible && c.Key == "Km") && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
 
     private bool HasPlatnostRow(List<LineTripData> trips) => ShowPlatnostRow && trips.Any(t => t.Platnost.Count > 0);
     private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);
@@ -203,6 +280,16 @@ public class LineTableElement : ScheduleElementBase
     private int PripojeRowCount(List<LineTripData> trips) =>
         ShowPripojeRows ? trips.Sum(t => t.Pripoje.Count(p => p.Radek)) : 0;
 
+    /// <summary>Největší resolved font záhlaví/dat napříč viditelnými sloupci (vč. spoje) — pro výšky.</summary>
+    private float MaxHeaderFontPt() => MaxFontPt(ResolveHeaderStyle, HeaderStyle.FontSize ?? 9f);
+    private float MaxDataFontPt() => MaxFontPt(ResolveDataStyle, DataStyle.FontSize ?? 8f);
+
+    private float MaxFontPt(Func<StopColumn, ResolvedTextStyle> resolve, float fallback)
+    {
+        var cols = Columns.Where(c => c.Visible).ToList();
+        return cols.Count > 0 ? cols.Max(c => resolve(c).FontSize) : fallback;
+    }
+
     public override float CalculateHeightFromData(DataContext? data)
     {
         if (data is null) return EffectiveDesignerHeight;
@@ -211,10 +298,8 @@ public class LineTableElement : ScheduleElementBase
         var trips = _cachedTrips!;
         if (stops.Count == 0 || trips.Count == 0) return EffectiveDesignerHeight;
 
-        float headerFontPt = HeaderStyle.Resolve(ScheduleHeaderDefaults).FontSize;
-        float dataFontPt = DataStyle.Resolve(ScheduleDataDefaults).FontSize;
-        float headerH = ComputeHeaderH(headerFontPt);
-        float rowH = DataRowHeight ?? ComputeRowH(dataFontPt);
+        float headerH = ComputeHeaderH(MaxHeaderFontPt());
+        float rowH = DataRowHeight ?? ComputeRowH(MaxDataFontPt());
 
         float h = headerH;                                            // řádek čísel spojů
         if (HasGroupHeaderBand(trips, _cachedGroups!)) h += headerH;  // pás skupin dnů
@@ -251,19 +336,22 @@ public class LineTableElement : ScheduleElementBase
 
         float scale = ComputeFontScale(CalculateHeightFromData(ctx.Data));
 
-        var headerResolved = HeaderStyle.Resolve(ScheduleHeaderDefaults);
-        var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
-        var dataCentered = dataResolved with { HAlign = TextHorizontalAlignment.Center };
+        // element-level styly pro pás skupin / řádek platnosti / NZ (nejsou vázané na sloupec)
+        var headerResolved = ResolveColumnHeaderParent();
+        var dataResolved = ResolveColumnDataParent();
         var headerCentered = headerResolved with { HAlign = TextHorizontalAlignment.Center };
+        var dataCentered = dataResolved with { HAlign = TextHorizontalAlignment.Center };
 
-        float headerH = ComputeHeaderH(headerResolved.FontSize) * scale;
-        float rowH = (DataRowHeight ?? ComputeRowH(dataResolved.FontSize)) * scale;
+        float headerH = ComputeHeaderH(MaxHeaderFontPt()) * scale;
+        float rowH = (DataRowHeight ?? ComputeRowH(MaxDataFontPt())) * scale;
 
         int kmCount = MaxKmCount(stops);
         bool anyMhd = stops.Any(s => s.Mhd.Length > 0);
-        var fixedCols = BuildFixedColumns(kmCount, anyMhd);
+        var (fixedCols, tripW, nameIndex) = BuildColumns(kmCount, anyMhd, trips.Count);
+        var tripCol = TripColumn();
+        var tripHeaderStyle = ResolveHeaderStyle(tripCol);
+        var tripDataStyle = ResolveDataStyle(tripCol);
         float fixedSum = fixedCols.Sum(c => c.Width);
-        float tripW = ComputeTripColumnWidth(fixedSum, trips.Count);
 
         var clipRect = ctx.ToCanvasRect(X, Y, Width, Height ?? CalculateHeightFromData(ctx.Data));
         ctx.Canvas.Save();
@@ -275,7 +363,6 @@ public class LineTableElement : ScheduleElementBase
             // pás názvů skupin dnů — spojité úseky sloupců spojů stejné skupiny
             if (HasGroupHeaderBand(trips, groups))
             {
-                // prázdná buňka přes fixní sloupce
                 CellRenderer.DrawCell(ctx, new SKRect(X, currentY, X + fixedSum, currentY + headerH), "", headerResolved, scale);
                 float gx = X + fixedSum;
                 int i = 0;
@@ -293,10 +380,10 @@ public class LineTableElement : ScheduleElementBase
                 currentY += headerH;
             }
 
-            // řádek čísel spojů
+            // řádek čísel spojů — popisové sloupce per-column styl, spoje z Trip sloupce
             var headerSpecs = new List<ColumnRenderer.CellSpec>();
-            foreach (var c in fixedCols) headerSpecs.Add(new(c.Width, c.Header, headerResolved));
-            foreach (var t in trips) headerSpecs.Add(new(tripW, t.CisloSpoje, headerCentered));
+            foreach (var c in fixedCols) headerSpecs.Add(new(c.Width, c.Header, c.HeaderStyle));
+            foreach (var t in trips) headerSpecs.Add(new(tripW, t.CisloSpoje, tripHeaderStyle));
             ColumnRenderer.DrawRow(ctx, X, currentY, headerH, headerSpecs, paints.Grid, scale);
             DrawRowLine(ctx, currentY + headerH, paints);
             currentY += headerH;
@@ -305,8 +392,8 @@ public class LineTableElement : ScheduleElementBase
             if (HasPlatnostRow(trips))
             {
                 var specs = new List<ColumnRenderer.CellSpec>();
-                foreach (var c in fixedCols) specs.Add(new(c.Width, "", dataResolved));
-                foreach (var t in trips) specs.Add(new(tripW, string.Join(" ", t.Platnost), dataCentered));
+                foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
+                foreach (var t in trips) specs.Add(new(tripW, string.Join(" ", t.Platnost), tripDataStyle));
                 ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, paints.Grid, scale);
                 currentY += rowH;
             }
@@ -315,8 +402,8 @@ public class LineTableElement : ScheduleElementBase
             if (HasNzRow(trips))
             {
                 var specs = new List<ColumnRenderer.CellSpec>();
-                foreach (var c in fixedCols) specs.Add(new(c.Width, "", dataResolved));
-                foreach (var t in trips) specs.Add(new(tripW, t.Nz, dataCentered));
+                foreach (var c in fixedCols) specs.Add(new(c.Width, "", c.DataStyle));
+                foreach (var t in trips) specs.Add(new(tripW, t.Nz, tripDataStyle));
                 ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, paints.Grid, scale);
                 DrawRowLine(ctx, currentY + rowH, paints);
                 currentY += rowH;
@@ -328,22 +415,12 @@ public class LineTableElement : ScheduleElementBase
                 var stop = stops[si];
                 bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
 
-                var rowStyle = dataResolved;
-                var rowStyleCentered = dataCentered;
-                if (oddTc)
-                {
-                    rowStyle = rowStyle with { BackgroundColor = OddTcBackColor };
-                    rowStyleCentered = rowStyleCentered with { BackgroundColor = OddTcBackColor };
-                }
-
                 var specs = new List<ColumnRenderer.CellSpec>();
-                for (int ci = 0; ci < fixedCols.Count; ci++)
-                {
-                    bool isName = ci == fixedCols.Count - 1;
-                    specs.Add(new(fixedCols[ci].Width, fixedCols[ci].Value(stop), isName ? rowStyle : rowStyleCentered));
-                }
+                foreach (var c in fixedCols)
+                    specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
+                var tripCellStyle = OddTc(tripDataStyle, oddTc);
                 foreach (var t in trips)
-                    specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", rowStyleCentered));
+                    specs.Add(new(tripW, si < t.Casy.Count ? t.Casy[si] : "", tripCellStyle));
                 ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, paints.Grid, scale);
                 currentY += rowH;
 
@@ -357,12 +434,11 @@ public class LineTableElement : ScheduleElementBase
                             var prSpecs = new List<ColumnRenderer.CellSpec>();
                             for (int ci = 0; ci < fixedCols.Count; ci++)
                             {
-                                bool isName = ci == fixedCols.Count - 1;
-                                string txt = isName ? PripojText(pr) : "";
-                                prSpecs.Add(new(fixedCols[ci].Width, txt, dataResolved));
+                                string txt = ci == nameIndex ? PripojText(pr) : "";
+                                prSpecs.Add(new(fixedCols[ci].Width, txt, fixedCols[ci].DataStyle));
                             }
                             foreach (var t2 in trips)
-                                prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", dataCentered));
+                                prSpecs.Add(new(tripW, ReferenceEquals(t2, t) ? pr.Cas : "", tripDataStyle));
                             ColumnRenderer.DrawRow(ctx, X, currentY, rowH, prSpecs, paints.Grid, scale);
                             DrawRowLine(ctx, currentY, paints);
                             DrawRowLine(ctx, currentY + rowH, paints);
@@ -377,6 +453,9 @@ public class LineTableElement : ScheduleElementBase
             ctx.Canvas.Restore();
         }
     }
+
+    private ResolvedTextStyle OddTc(ResolvedTextStyle style, bool odd) =>
+        odd ? style with { BackgroundColor = OddTcBackColor } : style;
 
     private static string PripojText(LinePripojData pr)
     {
@@ -393,8 +472,8 @@ public class LineTableElement : ScheduleElementBase
 
     private void RenderPlaceholder(RenderContext ctx, SchedulePaints paints)
     {
-        var headerResolved = HeaderStyle.Resolve(ScheduleHeaderDefaults);
-        var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
+        var headerResolved = ResolveColumnHeaderParent();
+        var dataResolved = ResolveColumnDataParent();
         float headerH = ComputeHeaderH(headerResolved.FontSize);
         float rowH = DataRowHeight ?? ComputeRowH(dataResolved.FontSize);
 
@@ -415,20 +494,11 @@ public class LineTableElement : ScheduleElementBase
         var clone = new LineTableElement
         {
             SpojeDataSource = SpojeDataSource,
-            ShowZonaColumn = ShowZonaColumn,
-            ShowKmColumns = ShowKmColumns,
-            ShowTcColumn = ShowTcColumn,
+            Columns = Columns.Select(c => c.Clone()).ToList(),
             ShowPlatnostRow = ShowPlatnostRow,
             ShowNzRow = ShowNzRow,
             ShowPripojeRows = ShowPripojeRows,
             ShowGroupHeaders = ShowGroupHeaders,
-            ShowMhdColumn = ShowMhdColumn,
-            MhdColumnWidth = MhdColumnWidth,
-            ZonaColumnWidth = ZonaColumnWidth,
-            KmColumnWidth = KmColumnWidth,
-            TcColumnWidth = TcColumnWidth,
-            StopNameColumnWidth = StopNameColumnWidth,
-            TripColumnWidth = TripColumnWidth,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
         };
@@ -440,26 +510,12 @@ public class LineTableElement : ScheduleElementBase
     public override void ApplyScale(float scale)
     {
         base.ApplyScale(scale);
-        ZonaColumnWidth *= scale;
-        MhdColumnWidth *= scale;
-        KmColumnWidth *= scale;
-        TcColumnWidth *= scale;
-        StopNameColumnWidth *= scale;
-        if (TripColumnWidth > 0f) TripColumnWidth *= scale;
+        foreach (var c in Columns)
+            if (c.Width is float w) c.Width = w * scale;
     }
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
-        new BoolPropertyDescriptor { Label = "Sloupec zóny", Group = "Sloupce", Get = () => ShowZonaColumn, Set = v => ShowZonaColumn = v },
-        new BoolPropertyDescriptor { Label = "Sloupce km", Group = "Sloupce", Get = () => ShowKmColumns, Set = v => ShowKmColumns = v },
-        new BoolPropertyDescriptor { Label = "Sloupec Tč", Group = "Sloupce", Get = () => ShowTcColumn, Set = v => ShowTcColumn = v },
-        new FloatPropertyDescriptor { Label = "Šířka zóny", Group = "Sloupce", Get = () => ZonaColumnWidth, Set = v => ZonaColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Šířka km", Group = "Sloupce", Get = () => KmColumnWidth, Set = v => KmColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Šířka Tč", Group = "Sloupce", Get = () => TcColumnWidth, Set = v => TcColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
-        new BoolPropertyDescriptor { Label = "Sloupec MHD", Group = "Sloupce", Get = () => ShowMhdColumn, Set = v => ShowMhdColumn = v },
-        new FloatPropertyDescriptor { Label = "Šířka MHD", Group = "Sloupce", Get = () => MhdColumnWidth, Set = v => MhdColumnWidth = v, Min = 3, Max = 30, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Šířka zastávek", Group = "Sloupce", Get = () => StopNameColumnWidth, Set = v => StopNameColumnWidth = v, Min = 10, Max = 120, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Šířka spoje (0=auto)", Group = "Sloupce", Get = () => TripColumnWidth, Set = v => TripColumnWidth = v, Min = 0, Max = 40, Unit = "mm" },
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
         new BoolPropertyDescriptor { Label = "Řádek NZ", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },

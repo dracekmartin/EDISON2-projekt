@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-04 — LineTableElement: kolekce sloupců + 2-tab dialog (Obecné + Sloupce)
+
+- ✅ **`LineTableElement.Columns : List<StopColumn>`** — element přešel z pevných `Show*Column`/
+  `*ColumnWidth` properties na sdílený `StopColumn` model (klíče Zone/Km/Tč/StopName/Mhd + „Trip"
+  pro časové sloupce spojů). Render iteruje viditelné sloupce v pořadí, resolvuje per-column
+  header/data styl přes kaskádu `column.Style → element → CellDefaults` (`ResolveHeaderStyle`/
+  `ResolveDataStyle`, vzor StopList), Km auto-expand na N sub-sloupců, MHD auto-remove když prázdné,
+  auto šířky (null) sdílí zbytek se spoji. Render výstup beze změny (ověřeno na 0320680 i CB_DP 1001).
+- ✅ **2-tab dialog `LineTableColumnsEditorDialog`** (Obecné = EDInputForm `LineTableElementEdit`,
+  Sloupce = sdílený `ColumnListEditor` + `CellStyleEditor` + `LineTableColumnVM`) — dvojklik/Enter
+  na LineTable teď otevře stejný dvoutabový editor jako StopList/DepartureGrid: reorder ▲▼,
+  viditelnost, šířky, per-column styl záhlaví/dat, overflow warning. Konzistentní se sloupcovým API
+  ostatních tabulkových elementů. EDInputForm schéma zbaveno sloupcových polí (přesunuta do tabu).
+- Pozn.: přesně na architektuře R1 — sdílený column model + `ColumnListEditor`/`CellStyleEditor` je
+  ta část, která je společná; extrahuje se až samotný layout algoritmus (později).
+
 ## 2026-07-04 — Knižní JŘ z MHD dat: agenda KnizniJrMhd
 
 - ✅ **`ALVA.TemplateDesigner.Agendy.KnizniJrMhd`** (`KNIZNI_JR_MHD`) — MHD analogie `KnizniJrAd`
