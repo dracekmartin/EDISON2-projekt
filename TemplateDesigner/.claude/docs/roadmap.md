@@ -153,6 +153,29 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 | 44 | Caché `KnizniJrAd` — GetData/GetMockData (Wave 5), oracle `mkPLinWin` | ✅ 2026-07-04 — 22/24 linek 1:1 vs gold (multi-firm diff); zbylé odchylky viz analýza §12 |
 | 44b | Výchozí šablona `templates/knizni-jr-ad-vychozi.json` → zapojit do distribuce (B2/R6) | 🟡 šablona v repu, zapojení ⬜ |
 | 44c | Caché `KnizniJrMhd` — MHD analogie (legacy `LinkyPrintFormatJR.MakeData`), stejný wire | ✅ 2026-07-04 datové jádro (CB_DP 1001 ověřeno strukturálně); gold diff ⬜ (legacy MHD větev na dev padá — nutný dump wrapper) |
+| 45 | EDInputForm + 2-tab dialog (Obecné + Sloupce) pro `LineTableElement` — sdílený `ColumnListEditor`/`CellStyleEditor` | ✅ 2026-07-04 (`LineTableColumnsEditorDialog`, kolekce `Columns : List<StopColumn>`) |
+| 46 | Kontextová paleta JŘ elementů dle agendy (KNIZNI_* ↔ ZASTAVKOVY_*) | ✅ 2026-07-04 |
+
+### 🧪 Pilot uzavřen 2026-07-04 — „testovací v1" knižního/linkového JŘ
+
+**Stav:** AD i MHD knižní JŘ mají hotové datové jádro + element + editor, funkčně a datově ověřené
+(AD 22/24 linek 1:1 vs gold přes 4 firmy; MHD strukturálně na CB_DP 1001). Konzistentní se
+zastávkovými elementy (stejné sloupcové API, EDInputForm, 2-tab dialog, kontextová paleta).
+**Uzavřeno jako pilot** — dál se postupuje dle priorit, ne nutně hned tady.
+
+**Vědomě odložené body (z pilotu vyplynulé, seřazené dle hodnoty pro ostré nasazení):**
+
+| # | Co | Proč odloženo / dopad | Odhad |
+|---|---|---|---|
+| C1 | **MHD gold-oracle diff** — dump wrapper okolo `MakeData` (legacy `LoadData` MHD větev na dev padá kvůli neúplnému `in()`), pak stejný multi-linkový diff jako u AD | MHD je zatím jen strukturálně ověřené; nejlevnější krok k plné důvěře v datovou paritu | S |
+| C2 | **Symbolový font Timetable_nove(+SK)** do Skia (krok 42b, gate R5) — embed TTF + převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Dnes se `ZNAK` kreslí jako textový klíč (bezbariér, projíždí, dny…) | vizuální parita; bez něj JŘ „tiše lže" u dopravních symbolů (viz R5) | M |
+| C3 | **2D bin-packing / `Strih`** (krok 43 + gate R1/R2) — široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků. Součást: **auto-fit fontu na šířku** (dnes jen výškový `ComputeFontScale`), flow paketů, „dotisk zbytku legendy na další stránce". **Zde proběhne R1 extrakce sdíleného řádkového jádra** (StopList + DynamicTable + LineTable) | nutné pro reálný tisk MHD linek; největší kus, dělá se jednou pořádně | L |
+| C4 | **Zapojení výchozích šablon do distribuce** (B2/R6) — dnes ruční Import JSON; + výchozí šablona pro MHD (zatím jen AD) | provozní; malý | S |
+| C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) — legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
+| C6 | **Turnusy, obousměrný tisk, souhrnné JŘ (řádek zdrojové linky)** — legacy volby `in(arr,6/7)`, MHD `MakeData` je nemá | mimo scope pilotu; validovat, zda je zákazník chce, než portovat | — |
+| C7 | **Rozdvojení příjezd/odjezd — jemný layout** + fixed-width padding sloupce (legacy `arr,13`) | kosmetika; TD řeší podřádky, ne padding | S |
+
+Detail datových odchylek a mezer viz [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §11–12.
 
 ---
 

@@ -22,16 +22,15 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-**Knižní/linkový JŘ (Fáze C+D) — první implementace hotová a ověřená (2026-07-04):** agenda
-`KnizniJrAd` (`KNIZNI_JR_AD`, reimplementace jádra `mkPLinWin` — spoje jako sloupce, zdvojené řádky
-příjezd/odjezd, plný řádek platnosti, návaznosti, 10 druhů poznámek z NCOME/STALCOME, mkPoradiSp
-řazení) + **`KnizniJrMhd`** (`KNIZNI_JR_MHD`, MHD analogie legacy `LinkyPrintFormatJR.MakeData` —
-stejný wire, skupiny = TypProvozu, zóny přes IDSID, odjezd/příjezd atribut 1011) + standalone
-`LineTableElement` s kontextovou paletou (KNIZNI_* ↔ ZASTAVKOVY_*) + výchozí šablona
-`templates/knizni-jr-ad-vychozi.json`. **AD: 22/24 linek napříč 4 firmami 1:1 vs gold oracle**
-(`ALVA.TISKJR.Data/LoadData`); MHD zatím strukturálně (legacy MHD větev na dev padá). Detail +
-zbylé mezery (font 42b, Strih/bin-packing, turnusy…) viz
-`.claude/docs/linkovy-knizni-jr-implementace-analyza.md` §11-12.
+**Knižní/linkový JŘ (Fáze C+D) — pilot uzavřen 2026-07-04 jako testovací v1.** Agenda
+`KnizniJrAd` (`KNIZNI_JR_AD`, reimplementace jádra `mkPLinWin`) + `KnizniJrMhd` (`KNIZNI_JR_MHD`,
+MHD analogie `LinkyPrintFormatJR.MakeData`) + standalone `LineTableElement` (kolekce sloupců
+`StopColumn`, 2-tab dialog Obecné+Sloupce přes sdílený `ColumnListEditor`/`CellStyleEditor`,
+EDInputForm, kontextová paleta KNIZNI_* ↔ ZASTAVKOVY_*). AD 22/24 linek 1:1 vs gold přes 4 firmy,
+MHD strukturálně (CB_DP 1001). **Vědomě odložené body C1–C7** (MHD gold diff, font Timetable 42b,
+2D bin-packing + R1 extrakce jádra, distribuce šablon, konfigurovatelné pořadí poznámek, turnusy)
+viz `.claude/docs/roadmap.md` Fáze C+D „🧪 Pilot uzavřen" + `linkovy-knizni-jr-implementace-analyza.md` §11-12.
+Dál se postupuje dle priorit (zastávkové tickety / roadmapa), ne nutně hned zde.
 
 **Zastávkový JŘ z AD dat (agenda `ZastavkoveJrAd`) ✅ datově 1:1 + výkonově pročištěná** — ověřeno proti legacy gold oracle (`ALVA.TISKMHD.Data` VolanoZ=JRMAIN), viz `.claude/docs/cache-database-linky.md §10`. Hotové: core, FTL 0-3, omezení, dopravce (vč. adresy), CIS názvy, multi-page, **rozdíly tras** (1:1 OmTrasa), **atributy zastávek** (jen „na znamení", jako legacy), **atributy spoje** (bezbariér H/F), **časy jízdy ve StopListu** (jeden sloupec = gold TrasaMin1), + **performance** (memoizace per-linka invariantů + W-trasa cache, behavior-preserving byte-identický).
 
