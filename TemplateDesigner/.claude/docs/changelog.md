@@ -17,6 +17,11 @@
 - ✅ **Výchozí šablona** `templates/knizni-jr-ad-vychozi.json` (hlavička, JŘ tabulka, legenda poznámek).
 - Vědomě odloženo: symbolový font Timetable (krok 42b), 2D bin-packing/Strih (layout řeší TD),
   turnusy, obousměrný tisk, konfigurovatelné pořadí poznámek.
+- ✅ **Kontextová paleta JŘ elementů dle agendy** — `UpdatePaletteForAgenda()` (napojené na
+  RequestTitleUpdate, který se volá při každé změně agendy/šablony): agendy `ZASTAVKOVY_*` ukazují
+  StopList/DepartureGrid/NotesLegend, `KNIZNI_*` ukazuje LineTable (nové tlačítko palety
+  `BtnPalLineTable`), agenda bez JŘ kontextu (FAKTURY/GENERAL) ukáže vše. Stejný filtr v menu
+  „Přidat element". Instance picker pro `KNIZNI_JR_AD` posílá `LINKA_ID` (InstanceParamName).
 
 ## 2026-07-03 — Wave 4 W4-10: inline panel na EDInputForm (Wave 4 uzavřena)
 

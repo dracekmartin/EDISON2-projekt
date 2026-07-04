@@ -301,17 +301,22 @@
                             <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
+                        <!-- JŘ elementy — viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
+                        <Button x:Name="BtnPalStopList" Style="{StaticResource PaletteButton}" ToolTip="Seznam zastávek" Tag="StopListElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů" Tag="DepartureGridElement"
+                        <Button x:Name="BtnPalDepartureGrid" Style="{StaticResource PaletteButton}" ToolTip="Mřížka odjezdů" Tag="DepartureGridElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.DepartureGrid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek" Tag="NotesLegendElement"
+                        <Button x:Name="BtnPalNotesLegend" Style="{StaticResource PaletteButton}" ToolTip="Legenda poznámek" Tag="NotesLegendElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
+                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Knižní JŘ (zastávky × spoje)" Tag="LineTableElement"
+                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
+                            <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
                     <TextBlock Text="Elementy" Style="{StaticResource ToolbarGroupLabel}"/>

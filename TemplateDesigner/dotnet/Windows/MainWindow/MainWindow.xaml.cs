@@ -136,8 +136,9 @@ public partial class MainWindow : Window
         // Wire VM callbacks
         _vm.RequestCanvasRefresh         = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
         _vm.RequestPreviewRefresh        = InvalidatePreview;
-        _vm.RequestTitleUpdate           = UpdateTitle;
-        _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); };
+        // Titulek se mění mj. při změně agendy → stejný signál řídí i kontextovou paletu JŘ elementů
+        _vm.RequestTitleUpdate           = () => { UpdateTitle(); UpdatePaletteForAgenda(); };
+        _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
         _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
@@ -185,6 +186,7 @@ public partial class MainWindow : Window
         // Initial state
         _vm.RefreshFieldsList();
         UpdateTitle();
+        UpdatePaletteForAgenda();
         UpdateCanvasSize();
         UpdatePropertiesPanel();
 
@@ -1142,11 +1144,21 @@ public partial class MainWindow : Window
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
         Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
+
+        // JŘ elementy dle agendy šablony (stejný kontext jako paleta — UpdatePaletteForAgenda)
+        var agendaCode = _vm.State.CurrentTemplate.AgendaCode ?? "";
+        bool jeZastavkova = agendaCode.StartsWith("ZASTAVKOVY", StringComparison.OrdinalIgnoreCase);
+        bool jeKnizni     = agendaCode.StartsWith("KNIZNI", StringComparison.OrdinalIgnoreCase);
+        bool bezKontextu  = !jeZastavkova && !jeKnizni;
         menu.Items.Add(new Separator());
-        Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
-        Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
-        Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
-        Add("Knižní JŘ (linka)",  () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
+        if (bezKontextu || jeZastavkova)
+        {
+            Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
+            Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
+            Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
+        }
+        if (bezKontextu || jeKnizni)
+            Add("Knižní JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;
@@ -1569,6 +1581,26 @@ public partial class MainWindow : Window
         string name = _vm.State.CurrentTemplate.Name;
         string dirty = _vm.IsDirty ? " *" : "";
         Title = $"{agenda}{origin}{name}{dirty} — Template Designer";
+    }
+
+    /// <summary>
+    /// Kontextová paleta JŘ elementů dle agendy šablony: zastávkové agendy ukazují
+    /// StopList/DepartureGrid/NotesLegend, knižní LineTable; agenda bez JŘ kontextu ukáže vše.
+    /// </summary>
+    private void UpdatePaletteForAgenda()
+    {
+        if (_vm is null) return;
+        var code = _vm.State.CurrentTemplate.AgendaCode ?? "";
+        bool jeZastavkova = code.StartsWith("ZASTAVKOVY", StringComparison.OrdinalIgnoreCase);
+        bool jeKnizni     = code.StartsWith("KNIZNI", StringComparison.OrdinalIgnoreCase);
+        bool bezKontextu  = !jeZastavkova && !jeKnizni;
+
+        var zastavkove = bezKontextu || jeZastavkova ? Visibility.Visible : Visibility.Collapsed;
+        var knizni     = bezKontextu || jeKnizni     ? Visibility.Visible : Visibility.Collapsed;
+        BtnPalStopList.Visibility      = zastavkove;
+        BtnPalDepartureGrid.Visibility = zastavkove;
+        BtnPalNotesLegend.Visibility   = zastavkove;
+        BtnPalLineTable.Visibility     = knizni;
     }
 
     private void ShowHelp()

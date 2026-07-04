@@ -193,7 +193,8 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Per-agenda mapování instance value → jméno parametru pro GetData.</summary>
     private static string InstanceParamName(string agendaCode) =>
         (agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase)
-         || agendaCode.Equals("ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)) ? "LINKA_ID" : "INSTANCE_ID";
+         || agendaCode.Equals("ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
+         || agendaCode.Equals("KNIZNI_JR_AD", StringComparison.OrdinalIgnoreCase)) ? "LINKA_ID" : "INSTANCE_ID";
 
     // ── Real preview data ────────────────────────────────────────────────────
     private List<DataContext>?                  _realPreviewData;
