@@ -93,23 +93,14 @@ public class DynamicTableElement : TemplateElement
     public ResolvedTextStyle ResolveColumnDataParent() =>
         (DataStyle ?? new TextStyle()).Resolve(TableDataParent);
 
-    private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col)
-    {
-        var elementResolved = ResolveColumnHeaderParent();
-        var resolved = col.HeaderStyle is { } h ? h.Resolve(elementResolved) : elementResolved;
-        if (col.HeaderStyle?.HAlign is null && HeaderStyle?.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-        return resolved;
-    }
+    // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade).
+    private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) =>
+        TableLayout.ResolveCascade(col.HeaderStyle, ResolveColumnHeaderParent(), col.Alignment,
+            elementDefinesHAlign: HeaderStyle?.HAlign is not null);
 
-    private ResolvedTextStyle ResolveColumnDataStyle(TableColumn col)
-    {
-        var elementResolved = ResolveColumnDataParent();
-        var resolved = col.DataStyle is { } d ? d.Resolve(elementResolved) : elementResolved;
-        if (col.DataStyle?.HAlign is null && DataStyle?.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-        return resolved;
-    }
+    private ResolvedTextStyle ResolveColumnDataStyle(TableColumn col) =>
+        TableLayout.ResolveCascade(col.DataStyle, ResolveColumnDataParent(), col.Alignment,
+            elementDefinesHAlign: DataStyle?.HAlign is not null);
 
     // ─── Render ──────────────────────────────────────────────────────
 
@@ -181,17 +172,13 @@ public class DynamicTableElement : TemplateElement
     }
 
     /// <summary>
-    /// Šířky sloupců v mm. Sloupec s Width &lt;= 0 = „auto" — rovnoměrně si rozdělí zbývající
-    /// šířku elementu po odečtení pevných sloupců (mm i %). Stejný princip jako StopList.
+    /// Šířky sloupců v mm přes sdílené jádro (<see cref="TableLayout.ResolveWidths"/>). Sloupec
+    /// s Width &lt;= 0 = „auto" (promítne se na null = rovnoměrné rozdělení zbytku), jinak pevná mm/%.
     /// </summary>
-    private float[] ComputeColumnWidths(List<TableColumn> cols)
-    {
-        float Fixed(TableColumn c) => c.WidthMode == ColumnWidthMode.Percent ? Width * c.Width / 100f : c.Width;
-        float fixedSum = cols.Where(c => c.Width > 0).Sum(Fixed);
-        int autoCount = cols.Count(c => c.Width <= 0);
-        float autoW = autoCount > 0 ? MathF.Max(0f, (Width - fixedSum) / autoCount) : 0f;
-        return cols.Select(c => c.Width <= 0 ? autoW : Fixed(c)).ToArray();
-    }
+    private float[] ComputeColumnWidths(List<TableColumn> cols) =>
+        TableLayout.ResolveWidths(
+            cols.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList(),
+            Width);
 
     /// <summary>
     /// Vytvoří sloupce z datových polí kolekce (Header = label, Field = název pole, auto šířka).
