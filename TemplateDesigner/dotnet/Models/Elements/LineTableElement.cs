@@ -172,23 +172,14 @@ public class LineTableElement : ScheduleElementBase
     /// <summary>Parent kaskády pro per-column data override.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
-    private ResolvedTextStyle ResolveHeaderStyle(StopColumn col)
-    {
-        var elementResolved = ResolveColumnHeaderParent();
-        var resolved = col.Style?.Header is { } h ? h.Resolve(elementResolved) : elementResolved;
-        if (col.Style?.Header?.HAlign is null && HeaderStyle.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-        return resolved;
-    }
+    // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade).
+    private ResolvedTextStyle ResolveHeaderStyle(StopColumn col) =>
+        TableLayout.ResolveCascade(col.Style?.Header, ResolveColumnHeaderParent(), col.Alignment,
+            elementDefinesHAlign: HeaderStyle.HAlign is not null);
 
-    private ResolvedTextStyle ResolveDataStyle(StopColumn col)
-    {
-        var elementResolved = ResolveColumnDataParent();
-        var resolved = col.Style?.Data is { } d ? d.Resolve(elementResolved) : elementResolved;
-        if (col.Style?.Data?.HAlign is null && DataStyle.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-        return resolved;
-    }
+    private ResolvedTextStyle ResolveDataStyle(StopColumn col) =>
+        TableLayout.ResolveCascade(col.Style?.Data, ResolveColumnDataParent(), col.Alignment,
+            elementDefinesHAlign: DataStyle.HAlign is not null);
 
     // ─── Layout ─────────────────────────────────────────────────────────────
 

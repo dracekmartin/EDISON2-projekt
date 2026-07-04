@@ -267,31 +267,16 @@ public class StopListElement : ScheduleElementBase
     /// <summary>Parent kaskády pro per-column data override — co sloupec dědí, když vlastní styl nemá.</summary>
     public ResolvedTextStyle ResolveColumnDataParent() => DataStyle.Resolve(ScheduleDataDefaults);
 
-    /// <summary>Vyřeší styl záhlaví sloupce. Legacy StopColumn.Alignment je fallback pokud HAlign není v cascade.</summary>
-    // public kvůli testovatelnosti kaskády (StopListCascadeTests) — stejný vzor jako DepartureGrid Resolve*.
-    public ResolvedTextStyle ResolveHeaderStyle(StopColumn col)
-    {
-        var elementResolved = ResolveColumnHeaderParent();
-        var resolved = col.Style?.Header is { } h ? h.Resolve(elementResolved) : elementResolved;
+    /// <summary>Vyřeší styl záhlaví sloupce přes sdílené jádro (kaskáda column → element → baked +
+    /// legacy StopColumn.Alignment fallback). Public kvůli testovatelnosti (StopListCascadeTests).</summary>
+    public ResolvedTextStyle ResolveHeaderStyle(StopColumn col) =>
+        TableLayout.ResolveCascade(col.Style?.Header, ResolveColumnHeaderParent(), col.Alignment,
+            elementDefinesHAlign: HeaderStyle.HAlign is not null);
 
-        // Legacy Alignment fallback: pokud ani sloupec, ani element HAlign nedefinuje, vezmi col.Alignment
-        if (col.Style?.Header?.HAlign is null && HeaderStyle.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-
-        return resolved;
-    }
-
-    /// <summary>Vyřeší styl datové buňky sloupce. Legacy Alignment fallback stejně jako pro header.</summary>
-    public ResolvedTextStyle ResolveDataStyle(StopColumn col)
-    {
-        var elementResolved = ResolveColumnDataParent();
-        var resolved = col.Style?.Data is { } d ? d.Resolve(elementResolved) : elementResolved;
-
-        if (col.Style?.Data?.HAlign is null && DataStyle.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-
-        return resolved;
-    }
+    /// <summary>Vyřeší styl datové buňky sloupce (stejná kaskáda + legacy Alignment fallback).</summary>
+    public ResolvedTextStyle ResolveDataStyle(StopColumn col) =>
+        TableLayout.ResolveCascade(col.Style?.Data, ResolveColumnDataParent(), col.Alignment,
+            elementDefinesHAlign: DataStyle.HAlign is not null);
 
     /// <summary>
     /// Vyřeší styl řádku s overridy pro aktuální / projetou zastávku.
@@ -478,14 +463,15 @@ public class StopListElement : ScheduleElementBase
 
     private List<StopColumn> GetVisibleColumns() => Columns.Where(c => c.Visible).ToList();
 
-    /// <summary>Vyřeší efektivní šířky sloupců: pevné (Width != null) zůstanou, sloupce s auto
-    /// (Width == null) si rovnoměrně rozdělí zbývající šířku elementu po pevných sloupcích.</summary>
+    /// <summary>Vyřeší efektivní šířky sloupců přes sdílené jádro (<see cref="TableLayout.ResolveWidths"/>):
+    /// pevné (Width != null) zůstanou, auto (null) si rovnoměrně rozdělí zbytek. StopList je mm-only.</summary>
     private Dictionary<StopColumn, float> ResolveColumnWidths(List<StopColumn> visible)
     {
-        float sumFixed = visible.Where(c => c.Width.HasValue).Sum(c => c.Width!.Value);
-        int autoCount = visible.Count(c => !c.Width.HasValue);
-        float autoEach = autoCount > 0 ? Math.Max(0f, (Width - sumFixed) / autoCount) : 0f;
-        return visible.ToDictionary(c => c, c => c.Width ?? autoEach);
+        var widths = TableLayout.ResolveWidths(
+            visible.Select(c => new TableLayout.ColWidth(c.Width)).ToList(), Width);
+        var result = new Dictionary<StopColumn, float>(visible.Count);
+        for (int i = 0; i < visible.Count; i++) result[visible[i]] = widths[i];
+        return result;
     }
 
     /// <summary>Největší resolved font záhlaví napříč viditelnými sloupci (pt) — vč. per-column overridů.
