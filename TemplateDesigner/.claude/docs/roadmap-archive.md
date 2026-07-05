@@ -567,3 +567,21 @@ Edison.PrintService.csproj        ← vrstva 5 headless tisk z EDISONu
 | REST API | 1–4 | HTTP POST šablona + data → PDF response |
 | Web preview | 1–4 | ASP.NET endpoint → PNG/PDF → iframe |
 | Email příloha | 1–4 | Auto-generování PDF a připojení k emailu |
+
+---
+
+## Session 2026-07-04/05 ✅ — Architektonická rozhodnutí R1–R7 vyřešena
+
+Celá rozhodovací tabulka R1–R7 uzavřena (přesunuto z aktivní roadmapy). Plný text principů:
+[`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
+
+| # | Rozhodnutí | Výsledek |
+|---|---|---|
+| R1 | Sdílené řádkové jádro | ✅ **implementováno** `Rendering/TableLayout.cs` (ResolveWidths + ResolveCascade), napojeno DynamicTable/LineTable/StopList. StopColumn/TableColumn NEsjednoceny (nulové riziko šablon), DepartureGrid mimo (pivot). 180/180 testů + render. Referenční doc `tabulkove-elementy-jadro.md`, návrh `r1-sdilene-tabulkove-jadro-navrh.md`. |
+| R1a | Render-loop sjednocení | ✅ **implementováno** — DynamicTable tři ruční smyčky → `ColumnRenderer.DrawRow`. Vyšší orchestrátor záměrně NE (LineTable pásy/přípoje se nevejdou, nízká hodnota). |
+| R2 | Partial-fit kontrakt (svislá osa) | ✅ **kontrakt rozhodnut** `r2-partial-fit-kontrakt.md` (`IRowPaginatedElement`); implementace až s paginačním/bin-packing trackem (svislá+vodorovná C3 spolu). |
+| R3 | Datový kontrakt / prezentační nápovědy | ✅ **rozhodnuto** `cache-api.md` — v1 = `FORE_COLOR`/`BACK_COLOR` + princip + evoluce jen-aditivně; širší seznam (ZVYRAZNENI…) na F1 dle RG usage. |
+| R4 | Headless tisk | ✅ **rozhodnuto** → akční krok „tisk = shortcut z agendy bez návrháře přes PrintEngine fasádu"; impl s pilotem (blok A). |
+| R5 | Fonty embedded v .exe | ✅ **rozhodnuto** (jde: `SKTypeface.FromStream`) → akční krok/TODO (základní Helvetica/PostScript s licenční poznámkou + JŘ Timetable symboly = C2); impl s pilotem/C2. |
+| R6 | Systémové šablony s buildem | 🟡 rozhodnuto (read-only s releasem, DB jen zákaznické); impl v bloku B. **Navázaný otevřený bod:** koncept centrální správy šablon napříč agendami (viz aktivní kroky). |
+| R7 | Pilot-first | obecný track = spustit pilot k zákazníkovi; žije v „Aktivní / nejbližší kroky", ne architektonické rozhodnutí. |

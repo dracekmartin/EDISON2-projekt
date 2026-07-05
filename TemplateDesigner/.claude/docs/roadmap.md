@@ -31,6 +31,12 @@
   (Liberation/Nimbus Sans)*; (2) JŘ symbolové fonty **Timetable_nove(+SK)** pro speciální dopravní
   znaky (= bod **C2** knižního JŘ — bez nich JŘ „tiše lže" u symbolů vozíčkáře, projíždí apod.).
   Kritické pro knižní/výlepové JŘ.
+- **Koncept centrální správy šablon (chybí — navrhnout).** Dnes žijí šablony per-IDfa v Caché
+  (`^ALVA.TemplateDesigner.Templates`, picker + filtr agendy). Chybí **přehled/správa napříč všemi
+  agendami a firmami** — zejména pro M-line: jak udržovat systémové šablony centrálně, verzovat je,
+  vidět „co kde je". Souvisí s R6 (systémové vs zákaznické) i s distribucí (blok B). Navázat: centrální
+  registr/přehled (nejspíš DB-backed) + jasné oddělení systémové (M-line, read-only u zákazníka) vs
+  zákaznické. **Nejdřív koncept, pak implementace** — teď jen zapsat jako otevřený návrhový bod.
 
 **Větší dedikované tracky (vlastní session):**
 - **Layout „sekce vyšší než stránka" (var B)** — designer je dnes model „jedna pevná A4", přetečení jen
@@ -55,21 +61,15 @@ při scope té fáze, ne teď.
 
 ---
 
-## 🧭 Architektonická rozhodnutí R1–R7 — stav a nejbližší akce
+## 🧭 Architektonická rozhodnutí R1–R7 — ✅ vyřešeno (→ archiv)
 
-> Plný text (co znamená / proč / možnosti): [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
-> Tady jen stav + co z toho aktuálně plyne. Diskuze 2026-07-03 upřesnila R1–R3.
-
-| # | Rozhodnutí | Stav | Kdy nejpozději |
-|---|---|---|---|
-| R1 | **Sdílené řádkové jádro** — ✅ **EXTRAHOVÁNO 2026-07-04.** `Rendering/TableLayout.cs` (nad CellRenderer/ColumnRenderer): `ResolveWidths` (pevné + auto-split + mm/%) + `ResolveCascade` (column→element→baked + legacy alignment). Napojeno do **DynamicTable, LineTable, StopList** (kaskáda 3 kopie → 1, šířky 2 kopie → 1). Záměrně NEsjednocuje datovou třídu sloupce (StopColumn/TableColumn zůstávají — nulové riziko šablon). DepartureGrid mimo (pivot). Behavior-preserving: 180/180 testů + render diff. Návrh: `r1-sdilene-tabulkove-jadro-navrh.md`. **Zbývá (volitelné, nižší hodnota):** render-loop orchestrátor (header+řádky+separátory jako 1 metoda) — viz R1a. | ✅ jádro hotové | — |
-| R1a | ✅ **HOTOVO 2026-07-05.** DynamicTable tři ruční per-buňka smyčky (header/data/summary) → sdílený `ColumnRenderer.DrawRow`. Všechny řádkové tabulky teď kreslí řádek jednou cestou. Behavior-preserving (180/180 + render). Vyšší orchestrátor „header+řádky jako 1 metoda" NEudělán — LineTable s pásy/přípojnými řádky se do něj čistě nevejde, hodnota nízká. | ✅ hotové | — |
-| R2 | **Layout zodpovědnosti**: engine = sekce/stránky, element = svůj vnitřek, hlásí nahoru. Model potvrzen. **Partial-fit kontrakt ROZHODNUT 2026-07-05** (`r2-partial-fit-kontrakt.md`): rozhraní `IRowPaginatedElement` (RowUnitCount/HeaderBandHeightMm/RowUnitHeightMm/RenderRowWindow), element řídí nedělitelné jednotky + opakované záhlaví, engine plní okna místo pixel-ořezu, fallback = dnešní clip. **Řeší JEN svislou osu** (řádky); vodorovná (sloupce, `Strih`) je C3. **Implementace NEteď** — patří k paginačnímu/bin-packing tracku (svislá+vodorovná spolu na knižním JŘ). | ✅ kontrakt rozhodnut, impl s C3 | s bin-packing trackem |
-| R3 | **Datový kontrakt agend** — ✅ **ROZHODNUTO 2026-07-05** (`cache-api.md §Prezentační nápovědy + §Evoluce kontraktu`): (a) v1 nápovědy = legalizované `FORE_COLOR`/`BACK_COLOR` (živé, JŘ je už produkuje/konzumuje) + princip „volitelné, sémantické, vizuál úrovně vlastní šablona" + konvence pojmenování; širší seznam (`ZVYRAZNENI` 0–5, typ řádku, opakuj-na-další-straně, přes-celou-šířku) vědomě odložen na **F1 dle reálného RG usage** (rezervován princip, ne klíče). (b) pravidlo evoluce = jen aditivně (přidat klíč OK, změnit význam/odebrat zakázáno bez migrace). | ✅ rozhodnuto | — (rozšíření hintů při F1) |
-| R6 | **Systémové šablony distribuovat s release** (read-only, verzované s buildem), DB jen zákaznické → verzní matice šablona×exe nevznikne. Rozhodnutí zaznamenané; implementace = blok systémových šablon (B). | 🟡 rozhodnuto, impl v bloku B | návrh bloku B |
-
-> **R4, R5, R7 — rozhodnuto, přesunuto do „Aktivní / nejbližší kroky" jako akční položky** (R4 tisk-shortcut,
-> R5 embedded fonty) resp. do produkčního pilotu (R7). V této tabulce už nejsou otevřené rozhodnutí.
+Celá rozhodovací tabulka R1–R7 uzavřena 2026-07-04/05 — detail v
+[`roadmap-archive.md`](roadmap-archive.md) (session 2026-07-04/05). Shrnutí: R1+R1a **implementováno**
+(sdílené tabulkové jádro `Rendering/TableLayout`), R2 (partial-fit) + R3 (prezentační nápovědy)
+**kontrakty rozhodnuty** (impl s příslušným trackem), R4/R5 **akční kroky** (tisk-shortcut, embedded
+fonty — viz výše), R7 = pilot (aktivní kroky). **Zbývá jen R6** — systémové šablony s buildem
+(rozhodnuto, impl v bloku B) + navázaný otevřený bod „koncept centrální správy šablon" (viz akční kroky).
+Plný text principů: [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md).
 
 ---
 
