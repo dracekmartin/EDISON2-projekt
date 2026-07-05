@@ -24,13 +24,12 @@
   instance) → PDF. NE plný návrhář. Technicky přes **PrintEngine fasádu** (šablona+data→PDF bez
   stavu editoru; T2 udělalo půlku render-na-snapshotu). Pilot = render na stanici; server později
   = zabalení fasády do služby, ne přepis.
-- **Fonty embedded přímo v .exe (dříve R5).** Přibalit fonty jako resource + `FontResolver` je načte
-  přes `SKTypeface.FromStream` → **uživatel nic neinstaluje, render vypadá vždy stejně** (nezávisí na
-  Windows fontech). TODO fonty: (1) základní bezpatkový — Helvetica / PostScript ⚠️ *Helvetica je
-  licencovaná, redistribuce v .exe vyžaduje licenci; jinak metric-kompatibilní free ekvivalent
-  (Liberation/Nimbus Sans)*; (2) JŘ symbolové fonty **Timetable_nove(+SK)** pro speciální dopravní
-  znaky (= bod **C2** knižního JŘ — bez nich JŘ „tiše lže" u symbolů vozíčkáře, projíždí apod.).
-  Kritické pro knižní/výlepové JŘ.
+- **Fonty embedded v .exe (dříve R5) — ✅ mechanismus hotový** (B1, archiv 2026-07-05): stačí hodit
+  `.ttf`/`.otf` do `dotnet/Fonts/`, `FontResolver` je auto-načte. **Do budoucna už jen dropnout
+  konkrétní font, až bude potřeba** — základní bezpatkový (metric-kompatibilní free: Arimo/Liberation,
+  NE licencovaná Helvetica) a hlavně **JŘ symbolový `Timetable_nove(+SK)`** = bod **C2** knižního JŘ
+  (bez něj JŘ „tiše lže" u symbolů vozíčkáře/projíždí; TTF v `C:\DEV\EDISON\TiskJR\_ruzne`, nutná
+  převodní tabulka + vyjasnit licenci k redistribuci).
 - **Koncept centrální správy šablon (chybí — navrhnout).** Dnes žijí šablony per-IDfa v Caché
   (`^ALVA.TemplateDesigner.Templates`, picker + filtr agendy). Chybí **přehled/správa napříč všemi
   agendami a firmami** — zejména pro M-line: jak udržovat systémové šablony centrálně, verzovat je,

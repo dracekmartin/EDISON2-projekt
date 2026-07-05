@@ -605,3 +605,18 @@ schema. Commity: `ce2fffc`, `3d279c5`, `c1b878d`, `0402c39`, `9313105`, `be873c6
   až dle reálné produkce (rozhodnutí uživatele 2026-07-05: „ted bych to nechal takto").
 - **A4 sloučené buňky** (`ColSpan`/`RowSpan`) — větší layout kus, zůstává v aktivní Fázi B.
 - **Grouping** (`GroupHeader`/`GroupFooter`) + **vnořené datasource** — backlog bez customer demand.
+
+---
+
+## Session 2026-07-05 ✅ — B1: embedding fontů do .exe (mechanismus, R5)
+
+Commit `fd7b267`. `FontResolver` refaktorován na sdílené cachované typefacy + auto-discovery embedded
+fontů z manifest resources pod `Fonts/` (glob `<EmbeddedResource>` v .csproj → single-file .exe).
+Priorita `embedded → OS → Arial → Skia default`; embedded = deterministický výstup nezávislý na
+nainstalovaných fontech. Varianty Bold/Italic = samostatné soubory. Všechny cesty renderu
+(text/buňky/JŘ/legenda) už tečou přes `FontResolver.Resolve` → embedding platí všude. Testy 213/213
+(4 nové). `dotnet/Fonts/README.md` dokumentuje konvenci + licence.
+
+**Zbývá jen (až bude potřeba):** dropnout konkrétní `.ttf` do `Fonts/` — základní free bezpatkový
+(Arimo/Liberation, NE Helvetica/Arial) a **JŘ symbolový Timetable_nove(+SK)** = C2 knižního JŘ
+(vyjasnit zdroj/licenci). Mechanismus je připraven, kód se už nemění.
