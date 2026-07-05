@@ -30,7 +30,7 @@ Vše v `dotnet/Rendering/`:
 | `TableLayout.ResolveCascade` | kaskáda stylu buňky `column → element → baked` + legacy alignment fallback | StopList, DynamicTable, LineTable |
 | `CellDefaults.Default` | poslední vrstva kaskády (Arial 9pt, padding 0.5mm, VAlign Middle…) | všechny |
 | `ColumnHeader.Resolve` | sémantika „override přebíjí zdroj, prázdné → zdroj" u nadpisů | všechny |
-| `Models/Expressions/RowConditions` | řádková podmínka: výraz nad daty řádku → viditelnost / barva zvýraznění pozadí (fail-open) | DynamicTable (vis+highlight), StopList + LineTable (highlight); DepartureGrid mimo = pivot |
+| `Models/Expressions/RowConditions` | řádková podmínka: výraz nad daty řádku → viditelnost / barva zvýraznění pozadí (fail-open) | DynamicTable + StopList + LineTable (vis+highlight); DepartureGrid mimo = pivot. Element potřebuje per-řádek DataContext (`SourceRow`); default-off = behavior-preserving |
 
 **Editory (UI vrstva, `dotnet/Controls/` + `Windows/*EditorDialog/`):**
 

@@ -69,10 +69,12 @@ public class StopListElement : ScheduleElementBase
     public string? CurrentStopBackgroundColor { get; set; }
 
     // ═══════════════════════════════════════════
-    // Podmíněné zvýraznění řádku (jedno pravidlo, jen pozadí) — sdílené s DynamicTable/LineTable
-    // přes RowConditions. Řádek splňující výraz nad daty zastávky dostane pozadí RowHighlightColor.
-    // Priorita nad podbarvením aktuální zastávky. Prázdné = vypnuto.
+    // Podmíněné řádkové featury (sdílené s DynamicTable/LineTable přes RowConditions).
+    // Vyhodnocují výraz nad daty zastávky (z.SourceRow). Prázdný výraz = vypnuto (nulová změna).
     // ═══════════════════════════════════════════
+    /// <summary>Zastávka, kde výraz neplatí, se nevykreslí (a nezapočítá do výšky). Prázdné = všechny.</summary>
+    public string? RowVisibilityExpression { get; set; }
+    /// <summary>Zastávka splňující výraz dostane pozadí <see cref="RowHighlightColor"/>. Priorita nad podbarvením aktuální.</summary>
     public string? RowHighlightExpression { get; set; }
     public string? RowHighlightColor { get; set; }
 
@@ -199,6 +201,9 @@ public class StopListElement : ScheduleElementBase
 
                     bool isCurrent = z.JeAktualni;
                     bool isPassed = !foundCurrent && !z.JeAktualni;
+
+                    // Podmíněné skrytí řádku (po určení current/passed, ať se nerozbije sledování current).
+                    if (!RowConditions.IsVisible(RowVisibilityExpression, z.SourceRow)) continue;
 
                     // Sledovat Y pro šipku směru
                     if (isCurrent) arrowStartY = currentY;
@@ -459,11 +464,29 @@ public class StopListElement : ScheduleElementBase
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;
 
         bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
-        int visibleStops = zastavky.Count;
-        if (!showPassed)
+        int visibleStops;
+        if (string.IsNullOrWhiteSpace(RowVisibilityExpression))
         {
-            int currentIdx = zastavky.FindIndex(z => z.JeAktualni);
-            if (currentIdx >= 0) visibleStops = zastavky.Count - currentIdx;
+            // Beze změny (behavior-preserving): počet dle logiky projetých zastávek.
+            visibleStops = zastavky.Count;
+            if (!showPassed)
+            {
+                int currentIdx = zastavky.FindIndex(z => z.JeAktualni);
+                if (currentIdx >= 0) visibleStops = zastavky.Count - currentIdx;
+            }
+        }
+        else
+        {
+            // Aktivní podmínka viditelnosti — spočítat řádky přesně jako v Render (parita výška↔render).
+            visibleStops = 0;
+            bool foundCurrent = false;
+            foreach (var z in zastavky)
+            {
+                if (!showPassed && !foundCurrent && !z.JeAktualni) continue;
+                if (z.JeAktualni) foundCurrent = true;
+                if (!RowConditions.IsVisible(RowVisibilityExpression, z.SourceRow)) continue;
+                visibleStops++;
+            }
         }
 
         // Stejný zdroj fontu jako v Render() — max resolved per-column, ať scale/overflow sedí.
@@ -684,6 +707,13 @@ public class StopListElement : ScheduleElementBase
 
         new StringPropertyDescriptor
         {
+            Label = "Viditelnost řádku", Group = "Podmínky",
+            Get = () => RowVisibilityExpression ?? "",
+            Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = ExpressionEvaluator.Validate
+        },
+        new StringPropertyDescriptor
+        {
             Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",
             Get = () => RowHighlightExpression ?? "",
             Set = v  => RowHighlightExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
@@ -738,6 +768,7 @@ public class StopListElement : ScheduleElementBase
             CurrentStopBold         = CurrentStopBold,
             CurrentStopFontSize     = CurrentStopFontSize,
             CurrentStopBackgroundColor = CurrentStopBackgroundColor,
+            RowVisibilityExpression = RowVisibilityExpression,
             RowHighlightExpression  = RowHighlightExpression,
             RowHighlightColor       = RowHighlightColor,
         };

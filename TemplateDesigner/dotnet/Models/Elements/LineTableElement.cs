@@ -60,7 +60,10 @@ public class LineTableElement : ScheduleElementBase
     public bool HighlightOddTc { get; set; } = true;
     public string OddTcBackColor { get; set; } = "#FFEEEEEE";
 
-    // Podmíněné zvýraznění řádku zastávky (jedno pravidlo, jen pozadí) — sdílené přes RowConditions.
+    // Podmíněné řádkové featury (sdílené přes RowConditions, výraz nad daty zastávky = stop.SourceRow).
+    // Prázdný výraz = vypnuto (nulová změna chování).
+    /// <summary>Zastávka, kde výraz neplatí, se nevykreslí (řádek + její přípojné řádky; nezapočítá do výšky).</summary>
+    public string? RowVisibilityExpression { get; set; }
     public string? RowHighlightExpression { get; set; }
     public string? RowHighlightColor { get; set; }
 
@@ -305,8 +308,20 @@ public class LineTableElement : ScheduleElementBase
         if (HasGroupHeaderBand(trips, _cachedGroups!)) h += headerH;  // pás skupin dnů
         if (HasPlatnostRow(trips)) h += rowH;
         if (HasNzRow(trips)) h += rowH;
-        h += stops.Count * rowH;
-        h += PripojeRowCount(trips) * rowH;
+        if (string.IsNullOrWhiteSpace(RowVisibilityExpression))
+        {
+            // Beze změny (behavior-preserving).
+            h += stops.Count * rowH;
+            h += PripojeRowCount(trips) * rowH;
+        }
+        else
+        {
+            // Aktivní viditelnost — započítat jen viditelné zastávky a jejich přípojné řádky (parita s Render).
+            var visibleStops = stops.Where(s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow)).ToList();
+            h += visibleStops.Count * rowH;
+            if (ShowPripojeRows)
+                h += visibleStops.Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * rowH;
+        }
         return h;
     }
 
@@ -413,6 +428,11 @@ public class LineTableElement : ScheduleElementBase
             for (int si = 0; si < stops.Count; si++)
             {
                 var stop = stops[si];
+
+                // Podmíněné skrytí řádku zastávky (i s jejími přípojnými řádky). Iterujeme přes plný
+                // index si → zarovnání časů spojů (Casy[si]) zůstane zachováno; jen tuto zastávku nekreslíme.
+                if (!RowConditions.IsVisible(RowVisibilityExpression, stop.SourceRow)) continue;
+
                 bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
 
                 // Podmíněné zvýraznění řádku zastávky (celá šířka, za sloupci) — sdílené s DynamicTable/StopList.
@@ -509,6 +529,7 @@ public class LineTableElement : ScheduleElementBase
             ShowGroupHeaders = ShowGroupHeaders,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
+            RowVisibilityExpression = RowVisibilityExpression,
             RowHighlightExpression = RowHighlightExpression,
             RowHighlightColor = RowHighlightColor,
         };
@@ -532,6 +553,13 @@ public class LineTableElement : ScheduleElementBase
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
+        new StringPropertyDescriptor
+        {
+            Label = "Viditelnost řádku", Group = "Podmínky",
+            Get = () => RowVisibilityExpression ?? "",
+            Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = ExpressionEvaluator.Validate
+        },
         new StringPropertyDescriptor
         {
             Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",

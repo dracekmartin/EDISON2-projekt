@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-05 — Viditelnost řádku na StopList + LineTable + discoverability polí
+
+- ✅ **Viditelnost řádku rozšířena na StopList + LineTable** (`RowVisibilityExpression`) přes sdílený
+  `RowConditions`. StopList: skrytá zastávka se nevykreslí (skip po určení current/passed, ať se
+  nerozbije sledování). LineTable: skip **in-place** (iterace přes plný index `si` → zarovnání časů
+  spojů `Casy[si]` zůstává; skryje se řádek zastávky i její přípojné řádky).
+- **Výška je guarded** — při prázdném výrazu původní kód beze změny (behavior-preserving pro gold-1:1
+  StopList i pilot LineTable); při aktivním výrazu se počet řádků spočítá **přesně jako v Render**
+  (parita výška↔render): StopList mirror logiky projetých zastávek, LineTable jen viditelné zastávky
+  + jejich přípojné řádky.
+- **Discoverability polí (dotaz uživatele):** helpText podmínkových polí teď vypisuje dostupné názvy
+  polí řádku — StopList (POPIS, TC, PORADI, NA_ZNAMENI…), LineTable (POPIS, TC, ZONA, MHD, TYP…),
+  DynamicTable („názvy = mapování Field ze sloupců"). Panel „Pole agendy" nadále ukazuje jen skalární
+  pole (kolekční řádková pole tam vědomě nejsou — draggable by mátla).
+- Testy 193/193 (beze změny — nová logika default-off). Caché StopList/LineTable/DynamicTable schema
+  zkompilováno.
+
 ## 2026-07-05 — Podmíněné zvýraznění řádku: sdílený `RowConditions` + rozšíření na StopList + LineTable
 
 - ✅ **`Models/Expressions/RowConditions.cs`** — sdílená řádková podmínková logika (výraz nad daty

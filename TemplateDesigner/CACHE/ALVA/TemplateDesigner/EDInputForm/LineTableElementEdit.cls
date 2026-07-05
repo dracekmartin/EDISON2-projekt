@@ -81,8 +81,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Uzamčený element nelze přesunout ani změnit jeho velikost"
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
         s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
+        s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí (i s přípojnými řádky). Pole řádku: POPIS, TC, ZONA, MHD, TYP, PORADI, NASTUPISTE. Např. {ZONA} == ""1"""
         s f = form.AddText("RowHighlightExpression", "Zvýraznit řádek (podmínka)")
-        s f.helpText = "Zastávka splňující podmínku (např. {ZONA} == ""1"") dostane pozadí ""Barva zvýraznění"""
+        s f.helpText = "Zastávka splňující podmínku dostane pozadí ""Barva zvýraznění"". Pole řádku: POPIS, TC, ZONA, MHD, TYP, PORADI, NASTUPISTE. Např. {ZONA} == ""1"""
         s f = form.AddFieldToLastGroup("RowHighlightColor", "Barva zvýraznění (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
 
         d form.WriteToOut()
