@@ -211,6 +211,48 @@ Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `Cac
 
 ---
 
+### Prezentační nápovědy (R3) — kolik vzhledu smějí nést data
+
+**Princip:** data říkají CO (odjezd 14:35), šablona říká JAK (font, barva). **Prezentační nápověda** je
+úzká výjimka: klíč, kterým data legitimně nesou kus VZHLEDU, protože z nich vyplývá (nízkopodlažní spoj
+zelený, mezisoučet tučný). Pravidla:
+
+- **Vždy volitelná, nikdy povinná.** Element ji *smí* respektovat; element, který ji nezná, ji ignoruje
+  (nesmí kvůli ní spadnout ani vyžadovat její přítomnost).
+- **Vizuální význam sémantické úrovně vlastní ŠABLONA, ne data.** Data řeknou „zvýraznění úrovně 3",
+  šablona určí, jak úroveň 3 vypadá. (Výjimka: přímé barvy níže — legacy parita.)
+
+**Povolený seznam v1** (schválené, produkované/konzumované dnes):
+
+| Klíč | Kde | Hodnota | Sémantika |
+|---|---|---|---|
+| `FORE_COLOR` | řádek kolekce / položka (odjezd, anotace, poznámka) | `#AARRGGBB`, prázdné = dědit | barva textu buňky/značky; přímá barva (legacy parita — JŘ ji už používá pro barevné spoje/poznámky) |
+| `BACK_COLOR` | dtto | `#AARRGGBB`, prázdné = dědit | barva pozadí |
+
+Prázdná hodnota = „element/šablona rozhodne" (nepřebíjí kaskádu stylů). Dnes je čte `ScheduleElementBase`
+(→ DepartureGrid minuty/anotace, NotesLegend značky).
+
+**Vědomě odložené na F1** (rozšíří se dle reálného RG usage — REPORTGENERATOR je hlavní konzument,
+zatím nemigrovaný; navrhovat teď naslepo = špatný tvar): sémantická úroveň zvýraznění (`ZVYRAZNENI` 0–5,
+šablona určí vzhled úrovní), typ řádku (data / mezisoučet / nadpis skupiny), „opakuj tento řádek na další
+straně" (mezisoučty), „text přes celou šířku". Rezervujeme **princip + konvenci** (viz níže), ne konkrétní klíče.
+
+**Konvence pro budoucí nápovědy:** klíč VELKÝMI písmeny (jako pole); **sémantické před syrovým vzhledem**
+(radši „typ řádku = mezisoučet" než napevno barva); přímé barvy (`*_COLOR`) jen tam, kde to legacy vyžaduje.
+
+### Evoluce kontraktu (R3) — jen aditivně
+
+Datový kontrakt agend (schema, řádkové kolekce, prezentační nápovědy) se smí měnit **výhradně přidáváním**:
+
+- **Přidat nový klíč / pole / nápovědu = OK.** Starší klient/element ho ignoruje (dopředná kompatibilita).
+- **Změnit význam existujícího klíče nebo ho odebrat = ZAKÁZÁNO** bez migrace. (Stejná filozofie jako
+  JSON šablony + `TemplateMigrator`.)
+
+Důsledek: agenda může kdykoli obohatit výstup, aniž rozbije existující šablony a elementy. Migrovaný RG
+(F1/F2) přidává prezentační nápovědy podle tohoto pravidla, ne ad hoc vlastními dialekty.
+
+---
+
 ### Názvosloví — přehled pojmů API agendy
 
 | Anglický název v kódu | Český ekvivalent | Business význam | Příklad |
