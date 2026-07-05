@@ -131,6 +131,42 @@ public class DynamicTableElementTests
         Assert.Equal(0f, el.CalculateHeightFromData(DataWithCena(10, 20, 30)));
     }
 
+    // ── MinRows / MaxRows ─────────────────────────────────────────────────
+
+    [Fact]
+    public void MinRows_DoplniPrazdneRadkyDoMinima()
+    {
+        var el = new DynamicTableElement { DataSource = "POLOZKY", ShowHeader = false, RowHeight = 6f, MinRows = 5 };
+        // 2 datové řádky doplněné na 5 → 5*6 = 30
+        Assert.Equal(30f, el.CalculateHeightFromData(DataWithCena(10, 20)));
+    }
+
+    [Fact]
+    public void MinRows_ViceDatNezMinimum_Neomezuje()
+    {
+        var el = new DynamicTableElement { DataSource = "POLOZKY", ShowHeader = false, RowHeight = 6f, MinRows = 2 };
+        Assert.Equal(24f, el.CalculateHeightFromData(DataWithCena(10, 20, 30, 40)));   // 4 > 2 → 4*6
+    }
+
+    [Fact]
+    public void MaxRows_OrizneNaMaximum()
+    {
+        var el = new DynamicTableElement { DataSource = "POLOZKY", ShowHeader = false, RowHeight = 6f, MaxRows = 3 };
+        Assert.Equal(18f, el.CalculateHeightFromData(DataWithCena(10, 20, 30, 40, 50)));   // 5 → ořez na 3 → 18
+    }
+
+    [Fact]
+    public void MinMax_KombinaceSFiltrem_Viditelnosti()
+    {
+        // 4 řádky, filtr {CENA} > 0 skryje 2 (0, -5) → 2 viditelné, MinRows 5 → doplní na 5
+        var el = new DynamicTableElement
+        {
+            DataSource = "POLOZKY", ShowHeader = false, RowHeight = 6f,
+            RowVisibilityExpression = "{CENA} > 0", MinRows = 5,
+        };
+        Assert.Equal(30f, el.CalculateHeightFromData(DataWithCena(10, 0, 20, -5)));
+    }
+
     // ── ResolveRowHighlight (podmíněné pozadí, 1 pravidlo) ───────────────
 
     private static DataContext RowWithCena(double cena) =>

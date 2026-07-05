@@ -18,6 +18,35 @@ plně konzistentní z jeho pohledu), a přitom mít vlastní render, když je je
 
 ---
 
+## 0b. Klasifikace featur — kam nová tabulková featura patří (rozhodovací pravidlo)
+
+> **Vzniklo z diskuze 2026-07-05.** Chrání proti dvěma extrémům: (a) duplikaci téže featury ručně
+> v každém elementu, (b) cpaní generických featur do specializovaných elementů, kam nepatří.
+
+Když přidáváš tabulkovou featuru, zařaď ji do jedné ze tří kategorií — tím je rozhodnuto, kam patří:
+
+| Kategorie | Poznávací znak | Kam patří | Příklady |
+|---|---|---|---|
+| **1. Nad daty řádku** | čte jen hodnoty jednoho řádku (`DataContext`), nezávisí na způsobu renderu | **sdílený helper** (à la `RowConditions`), zapoj do **všech** řádkových tabulek | viditelnost řádku, zvýraznění řádku, (budoucí) styl řádku dle podmínky |
+| **2. Struktura sloupce / počet řádků** | definuje, CO je sloupec nebo KOLIK řádků; předpokládá uživatelsky definované datové sloupce | **jen generická `DynamicTable`** (`TableColumn`) | počítaná pole (`Expression`), mapování `Field`, `Format`, min/max řádků |
+| **3. Doménové renderování** | opinionated vzhled konkrétní sestavy | **element-specifické, nikdy nesdílet** | šipka směru, podbarvení aktuální zastávky, pivot časů spojů, terminus-skip |
+
+**Proč kategorie 2 nepatří do StopList/LineTable:** jejich sloupce jsou *doménové sloty*
+(`StopColumn.Key` = Název/TČ/Zóna/Km…), ne uživatelsky mapovaná data. „Počítaný sloupec" ani
+„doplň prázdné řádky" na seznamu konkrétních zastávek nedává smysl.
+
+**Únikový východ pro data, ne pro element:** generické featury (kat. 2) jsou pro daná data
+dostupné vždy přes **`DynamicTable` napojenou na tutéž kolekci** (např. `ZASTAVKY`). Specializovaný
+element je volba „chci doménový vzhled", ne „tady featura nejde". Dva nástroje na stejná data,
+různý účel — jako Table vs Matrix v reportovacích nástrojích. Featury se **needuplikují**, žijí tam,
+kam podle účelu patří.
+
+**NEslučovat** `StopColumn` a `TableColumn` do jedné třídy ani pod společné `IColumn` rozhraní
+(zamítnuto v R1: migrace JSON gold-ověřených šablon, děravá abstrakce). Sdílíme **chování**
+(`TableLayout`, `CellRenderer`, `RowConditions`), ne datovou třídu.
+
+---
+
 ## 1. Co je SDÍLENÉ — používej, neduplikuj
 
 Vše v `dotnet/Rendering/`:

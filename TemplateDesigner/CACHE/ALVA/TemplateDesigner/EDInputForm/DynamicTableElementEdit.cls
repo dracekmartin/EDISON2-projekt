@@ -33,6 +33,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("None", "Žádný"), f.AddListItem("Outer", "Vnější"), f.AddListItem("All", "Vše")
         d f.AddListItem("RowsOnly", "Řádky"), f.AddListItem("ColumnsOnly", "Sloupce")
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
+        s f = form.AddNumber("MinRows", "Min. řádků (0 = ne)", 0, 0, 200)
+        s f.helpText = "Doplní prázdné řádky do tohoto počtu — pevná výška boxu (např. faktura). 0 = bez minima"
+        s f = form.AddNumber("MaxRows", "Max. řádků (0 = bez limitu)", 0, 0, 500)
+        s f.helpText = "Ořízne přebytečné datové řádky. 0 = bez omezení"
 
         // ── Styl záhlaví / dat (sdílený balíček polí) ─────────────────────
         d ##class(ALVA.TemplateDesigner.EDInputForm.StyleFields).Add(form, "HeaderStyle", "hstyle", "Styl záhlaví", "#FF333333", "#FFE8E8E8")

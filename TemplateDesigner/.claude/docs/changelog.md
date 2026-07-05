@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-05 — A3: min/max řádků DynamicTable + klasifikační pravidlo featur
+
+- ✅ **`DynamicTableElement.MinRows` / `MaxRows`** — `MinRows` doplní prázdné řádky do minima (pevná
+  výška boxu položek, např. faktura — součet/patička sedí na stejném místě bez ohledu na počet
+  položek); `MaxRows` ořízne přebytečné datové řádky. 0 = vypnuto. Render rozlišuje 3 typy řádků
+  (návrhový `{POLE}` placeholder / datový / prázdný padding); prázdné padding řádky drží mřížku,
+  rámeček i zebru, bez zvýraznění. Výška↔render parita (`EffectiveRowCount` = Max ořez + Min padding),
+  kombinuje se s filtrem viditelnosti. DynamicTable-only (kategorie 2, viz níže).
+- 📐 **Klasifikační pravidlo featur** zapsáno do `tabulkove-elementy-jadro.md §0b` — rozhodnutí z
+  diskuze 2026-07-05: (1) featury nad daty řádku → sdílený helper do všech tabulek; (2) struktura
+  sloupce / počet řádků → jen generická DynamicTable (počítaná pole, min/max); (3) doménové
+  renderování → element-specifické. Generické featury jsou pro daná data dostupné přes DynamicTable
+  napojenou na tutéž kolekci (StopList = volba „doménový vzhled", ne „featura nejde"). NEslučovat
+  StopColumn/TableColumn (R1).
+- Testy 209/209 (4 nové — min padding, max ořez, kombinace s filtrem). Caché schema zkompilováno.
+
 ## 2026-07-05 — A2 review fixes
 
 - **MAJOR:** `EvaluateToString` číslo teď přes `FormatNumber` — zaokrouhlení na 10 des. míst

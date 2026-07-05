@@ -62,6 +62,15 @@ public class DynamicTableElement : TemplateElement
     /// <summary>Barva pozadí zvýrazněného řádku (#AARRGGBB). Null = bez zvýraznění.</summary>
     public string? RowHighlightColor { get; set; }
 
+    /// <summary>
+    /// Minimální počet řádků — je-li reálných datových řádků méně, tabulka se doplní prázdnými řádky
+    /// do tohoto počtu (pevná výška boxu položek, např. faktura). 0 = bez minima.
+    /// </summary>
+    public int MinRows { get; set; }
+
+    /// <summary>Maximální počet datových řádků (ořez přebytečných). 0 = bez omezení.</summary>
+    public int MaxRows { get; set; }
+
     // ─── Designer helpers ────────────────────────────────────────────
 
     private int DesignerPreviewRows => 3;
@@ -159,7 +168,8 @@ public class DynamicTableElement : TemplateElement
 
         // Auto-scale: při pevné Height a přetékajícím obsahu se font + výšky řádků
         // proporcionálně zmenší (stejně jako StopList/DepartureGrid). Height == null → beze scale.
-        float naturalH = NaturalHeight(dataRows.Count > 0 ? dataRows.Count : DesignerPreviewRows);
+        int scaleRowCount = ctx.Data is null ? DesignerPreviewRows : EffectiveRowCount(dataRows.Count);
+        float naturalH = NaturalHeight(scaleRowCount);
         float scale    = (Height.HasValue && naturalH > Height.Value && naturalH > 0)
             ? Height.Value / naturalH : 1f;
         float headerH  = HeaderHeight * scale;
@@ -216,6 +226,16 @@ public class DynamicTableElement : TemplateElement
     /// beze změny. Používá se jednotně pro render, výpočet výšky i agregace v souhrnných řádcích
     /// (skryté řádky se nesčítají).
     /// </summary>
+    /// <summary>Počet reálných datových řádků po ořezu <see cref="MaxRows"/> (bez Min paddingu).</summary>
+    private int ClampMax(int dataCount) => MaxRows > 0 ? Math.Min(dataCount, MaxRows) : dataCount;
+
+    /// <summary>Celkový počet vykreslených řádků s daty = Max ořez + doplnění na <see cref="MinRows"/>.</summary>
+    private int EffectiveRowCount(int dataCount)
+    {
+        int n = ClampMax(dataCount);
+        return MinRows > 0 ? Math.Max(n, MinRows) : n;
+    }
+
     private IReadOnlyList<DataContext> VisibleDataRows(IReadOnlyList<DataContext> rows) =>
         string.IsNullOrWhiteSpace(RowVisibilityExpression)
             ? rows
@@ -239,8 +259,8 @@ public class DynamicTableElement : TemplateElement
     public float CalculateHeightFromData(DataContext? data)
     {
         var rows = VisibleDataRows(data?.GetRows(DataSource ?? "") ?? []);
-        // S DataContextem (layout/tisk) skutečný počet (0 = prázdná tabulka); bez něj náhledové řádky.
-        int rowCount = data is null ? DesignerPreviewRows : rows.Count;
+        // S DataContextem (layout/tisk) efektivní počet (Max ořez + Min padding); bez něj náhledové řádky.
+        int rowCount = data is null ? DesignerPreviewRows : EffectiveRowCount(rows.Count);
         return NaturalHeight(rowCount);
     }
 
@@ -278,24 +298,28 @@ public class DynamicTableElement : TemplateElement
         ResolvedTextStyle[] dataStyles, float startY, SKPaint sepPaint, IReadOnlyList<DataContext> rows,
         float rowH, float fontScale)
     {
-        bool hasRows = rows.Count > 0;
-        // Placeholder řádky ({POLE}) jsou návrhová pomůcka — jen když není DataContext (canvas návrháře).
-        // S daty (i když je vše odfiltrované / kolekce prázdná) → reálně prázdná tabulka, ne fake řádky v tisku.
-        int renderCount = hasRows ? rows.Count : (ctx.Data is null ? DesignerPreviewRows : 0);
+        bool isDesigner = ctx.Data is null;
+        // Datové řádky po ořezu Max; celkem = + doplnění na Min (prázdné řádky). Placeholder ({POLE})
+        // jen v návrháři (bez DataContextu); s daty prázdná/nadbytečná → prázdné řádky, ne fake data.
+        int dataN       = isDesigner ? 0 : ClampMax(rows.Count);
+        int renderCount = isDesigner ? DesignerPreviewRows : (MinRows > 0 ? Math.Max(dataN, MinRows) : dataN);
 
         SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
-        ResolvedTextStyle[] effectiveStyles = hasRows
-            ? dataStyles
-            : dataStyles.Select(s => s with { TextColor = "#FF999999" }).ToArray();
+        // Šedivý placeholder styl jen pro návrhové {POLE} řádky; datové i prázdné padding = normální styl.
+        ResolvedTextStyle[] effectiveStyles = isDesigner
+            ? dataStyles.Select(s => s with { TextColor = "#FF999999" }).ToArray()
+            : dataStyles;
 
         var gridPaint = ColumnGridPaint(sepPaint);
         float currentY = startY;
         for (int i = 0; i < renderCount; i++)
         {
+            bool isDataRow = i < dataN;   // false = prázdný padding řádek (doplnění na Min)
+
             // Podmíněné zvýraznění (jen reálná data) přebíjí střídání řádků; jinak zebra.
-            string? hlColor = hasRows ? ResolveRowHighlight(rows[i]) : null;
+            string? hlColor = isDataRow ? ResolveRowHighlight(rows[i]) : null;
             if (hlColor is not null)
             {
                 using var hlPaint = new SKPaint { Color = SKColor.Parse(hlColor) };
@@ -309,7 +333,7 @@ public class DynamicTableElement : TemplateElement
             {
                 var col = cols[ci];
                 string sample;
-                if (hasRows)
+                if (isDataRow)
                 {
                     // Počítaný sloupec (Expression) má přednost před Field; výsledek lze formátovat (Format).
                     sample = !string.IsNullOrWhiteSpace(col.Expression)
@@ -318,11 +342,15 @@ public class DynamicTableElement : TemplateElement
                     if (col.Format is not null)
                         sample = DataContext.FormatValue(sample, col.Format, ctx.Data?.Culture);
                 }
-                else
+                else if (isDesigner)
                 {
                     sample = !string.IsNullOrWhiteSpace(col.Expression)
                         ? col.Expression!
                         : $"{{{col.Field ?? col.Header}}}";
+                }
+                else
+                {
+                    sample = "";   // prázdný padding řádek (doplnění na MinRows)
                 }
                 specs[ci] = new(colWidths[ci], sample, effectiveStyles[ci]);
             }
@@ -454,6 +482,18 @@ public class DynamicTableElement : TemplateElement
             Get   = () => AlternatingRowColor ?? "#00FFFFFF",
             Set   = v => AlternatingRowColor = v == "#00FFFFFF" ? null : v
         },
+        new FloatPropertyDescriptor
+        {
+            Label = "Min. řádků (0 = ne)", Group = "Tabulka",
+            Get   = () => MinRows, Set = v => MinRows = (int)Math.Max(0, v),
+            Min   = 0, Max = 200, Format = "0"
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Max. řádků (0 = bez limitu)", Group = "Tabulka",
+            Get   = () => MaxRows, Set = v => MaxRows = (int)Math.Max(0, v),
+            Min   = 0, Max = 500, Format = "0"
+        },
 
         new BoolPropertyDescriptor  { Label = "Tučné záhlaví",       Group = "Záhlaví",      Get = () => HeaderStyle?.Bold ?? true,                    Set = v => Header().Bold = v },
         new ColorPropertyDescriptor { Label = "Pozadí záhlaví",      Group = "Záhlaví",      Get = () => HeaderStyle?.BackgroundColor ?? "#FFE8E8E8",  Set = v => Header().BackgroundColor = v },
@@ -517,6 +557,8 @@ public class DynamicTableElement : TemplateElement
             RowVisibilityExpression = RowVisibilityExpression,
             RowHighlightExpression  = RowHighlightExpression,
             RowHighlightColor       = RowHighlightColor,
+            MinRows                 = MinRows,
+            MaxRows                 = MaxRows,
         };
         CopyBaseTo(clone);
         return clone;
