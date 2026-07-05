@@ -25,11 +25,12 @@ Vše v `dotnet/Rendering/`:
 | Prvek | Co dělá | Používá |
 |---|---|---|
 | `CellRenderer.DrawCell` | jedna buňka: bg → padding → HAlign/VAlign → decorations. **Jediné místo pozicování textu buňky.** | všechny 4 (i DepartureGrid na hodinové buňky) |
-| `ColumnRenderer.DrawRow` + `CellSpec` | jeden vodorovný řádek = sekvence buněk + volitelné svislé čáry | StopList, LineTable (DynamicTable zatím ne — R1a) |
+| `ColumnRenderer.DrawRow` + `CellSpec` | jeden vodorovný řádek = sekvence buněk + volitelné svislé čáry | StopList, LineTable, DynamicTable (R1a) |
 | `TableLayout.ResolveWidths` | šířky: pevné (mm/%) + auto-split zbytku rovným dílem | StopList, DynamicTable |
 | `TableLayout.ResolveCascade` | kaskáda stylu buňky `column → element → baked` + legacy alignment fallback | StopList, DynamicTable, LineTable |
 | `CellDefaults.Default` | poslední vrstva kaskády (Arial 9pt, padding 0.5mm, VAlign Middle…) | všechny |
 | `ColumnHeader.Resolve` | sémantika „override přebíjí zdroj, prázdné → zdroj" u nadpisů | všechny |
+| `Models/Expressions/RowConditions` | řádková podmínka: výraz nad daty řádku → viditelnost / barva zvýraznění pozadí (fail-open) | DynamicTable (vis+highlight), StopList + LineTable (highlight); DepartureGrid mimo = pivot |
 
 **Editory (UI vrstva, `dotnet/Controls/` + `Windows/*EditorDialog/`):**
 

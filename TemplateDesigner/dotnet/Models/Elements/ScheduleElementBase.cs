@@ -285,6 +285,7 @@ public abstract class ScheduleElementBase : TemplateElement
                 Odsazeni      = ParseInt(row.GetString("ODSAZENI")),
                 ZakladniTrasa = ParseBool(row.GetString("ZAKLADNI_TRASA", "true")),
                 NaZnameni     = ParseBool(row.GetString("NA_ZNAMENI")),
+                SourceRow     = row,
             };
 
             // Vnořená pole — z JsonArray

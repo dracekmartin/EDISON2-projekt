@@ -52,6 +52,16 @@ public class DynamicTableElement : TemplateElement
     /// </summary>
     public string? RowVisibilityExpression { get; set; }
 
+    /// <summary>
+    /// Podmíněné formátování (ukázka, 1 pravidlo, jen pozadí): řádek splňující tento výraz dostane
+    /// pozadí <see cref="RowHighlightColor"/>. Null/prázdné = bez zvýraznění. Do budoucna rozšířitelné
+    /// na seznam pravidel + barvu textu / další zóny.
+    /// </summary>
+    public string? RowHighlightExpression { get; set; }
+
+    /// <summary>Barva pozadí zvýrazněného řádku (#AARRGGBB). Null = bez zvýraznění.</summary>
+    public string? RowHighlightColor { get; set; }
+
     // ─── Designer helpers ────────────────────────────────────────────
 
     private int DesignerPreviewRows => 3;
@@ -209,7 +219,11 @@ public class DynamicTableElement : TemplateElement
     private IReadOnlyList<DataContext> VisibleDataRows(IReadOnlyList<DataContext> rows) =>
         string.IsNullOrWhiteSpace(RowVisibilityExpression)
             ? rows
-            : rows.Where(r => ExpressionEvaluator.IsVisible(RowVisibilityExpression, r)).ToList();
+            : rows.Where(r => RowConditions.IsVisible(RowVisibilityExpression, r)).ToList();
+
+    /// <summary>Barva pozadí zvýraznění řádku (sdílený <see cref="RowConditions"/>); null = bez zvýraznění.</summary>
+    public string? ResolveRowHighlight(DataContext row) =>
+        RowConditions.HighlightColor(RowHighlightExpression, RowHighlightColor, row);
 
     /// <summary>Přirozená (neškálovaná) výška obsahu v mm pro daný počet datových řádků.</summary>
     private float NaturalHeight(int dataRowCount)
@@ -276,7 +290,14 @@ public class DynamicTableElement : TemplateElement
         float currentY = startY;
         for (int i = 0; i < renderCount; i++)
         {
-            if (altBgPaint is not null && i % 2 == 1)
+            // Podmíněné zvýraznění (jen reálná data) přebíjí střídání řádků; jinak zebra.
+            string? hlColor = hasRows ? ResolveRowHighlight(rows[i]) : null;
+            if (hlColor is not null)
+            {
+                using var hlPaint = new SKPaint { Color = SKColor.Parse(hlColor) };
+                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), hlPaint);
+            }
+            else if (altBgPaint is not null && i % 2 == 1)
                 ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), altBgPaint);
 
             var specs = new ColumnRenderer.CellSpec[cols.Count];
@@ -439,6 +460,20 @@ public class DynamicTableElement : TemplateElement
             Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
             Validate = ExpressionEvaluator.Validate
         },
+        new StringPropertyDescriptor
+        {
+            Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",
+            // Řádek splňující podmínku dostane pozadí „Barva zvýraznění". Prázdné = bez zvýraznění.
+            Get = () => RowHighlightExpression ?? "",
+            Set = v  => RowHighlightExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = ExpressionEvaluator.Validate
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Barva zvýraznění", Group = "Podmínky",
+            Get   = () => RowHighlightColor ?? "#00FFFFFF",
+            Set   = v => RowHighlightColor = v == "#00FFFFFF" ? null : v
+        },
 
         .. GetPositionDescriptors()
     ];
@@ -471,6 +506,8 @@ public class DynamicTableElement : TemplateElement
             BorderStyle         = BorderStyle,
             AlternatingRowColor = AlternatingRowColor,
             RowVisibilityExpression = RowVisibilityExpression,
+            RowHighlightExpression  = RowHighlightExpression,
+            RowHighlightColor       = RowHighlightColor,
         };
         CopyBaseTo(clone);
         return clone;

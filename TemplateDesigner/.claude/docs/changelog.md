@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-05 — Podmíněné zvýraznění řádku: sdílený `RowConditions` + rozšíření na StopList + LineTable
+
+- ✅ **`Models/Expressions/RowConditions.cs`** — sdílená řádková podmínková logika (výraz nad daty
+  jednoho řádku → viditelnost / barva zvýraznění pozadí) nad `ExpressionEvaluator` (fail-open).
+  R1 filozofie: sdílíme **algoritmus**, ne datovou třídu — každý element drží svá 2 pole
+  (`RowHighlightExpression` + `RowHighlightColor`) i svůj řádkový POCO, do helperu posílá jen
+  DataContext řádku.
+- ✅ **Zvýraznění (podbarvení) rozšířeno na StopList + LineTable** — řádek/zastávka splňující podmínku
+  dostane pozadí. StopList: priorita nad podbarvením aktuální zastávky. LineTable: celá šířka řádku
+  zastávky. Per-řádek DataContext nese nové `[JsonIgnore] SourceRow` na `ZastavkaData`/`LineStopData`.
+- **Zvýraznění je aditivní (jen pozadí) → žádná interakce s výškou** → default vypnuto = **nulová změna**
+  → bezpečné pro gold-1:1 StopList i pilot LineTable (behavior-preserving při prázdném výrazu).
+- DynamicTable přepnut na sdílený helper (dřív měl vlastní inline logiku). UI: pole ve skupině
+  „Podmínky" (EDInputForm) u všech tří + zrcadlící PropertyDescriptory.
+- **DepartureGrid vědomě mimo** — je pivot (hodina × skupina dnů), „řádek" = agregace odjezdů, ne
+  jeden záznam; per-odjezd barvu řeší prezentační nápovědy `FORE_COLOR`/`BACK_COLOR` z dat.
+- **Viditelnost řádku** zůstává zatím jen v DynamicTable (na StopListu se proplétá s logikou projetých
+  zastávek a výškou — vědomý další krok, ne teď).
+- Testy: 193/193 (7 nových — RowConditions helper). Caché StopList/LineTable schema zkompilováno.
+
 ## 2026-07-05 — DynamicTable: viditelnost řádku (`RowVisibilityExpression`) — PoC podmíněného renderingu
 
 - ✅ **`DynamicTableElement.RowVisibilityExpression`** — výraz nad daty řádku (`{CENA} > 0`);

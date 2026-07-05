@@ -51,6 +51,10 @@ public class ZastavkaData
     /// <summary>Časy jízdy per varianta trasy (dynamické „TrasaMin"): číslo, „&lt;" (projíždí) nebo "" (mimo trasu).
     /// Prázdné = jednovariantní linka (použije se skalární <see cref="CasJizdy"/>).</summary>
     public List<string> TrasaMin { get; set; } = [];
+
+    /// <summary>Zdrojový řádek dat této zastávky — pro vyhodnocení řádkových podmínek (zvýraznění)
+    /// nad poli řádku. Neserializuje se.</summary>
+    [JsonIgnore] public DataContext? SourceRow { get; set; }
 }
 
 /// <summary>Atribut zastávky (ikona/symbol).</summary>

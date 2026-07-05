@@ -71,6 +71,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
         s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f = form.AddText("RowHighlightExpression", "Zvýraznit řádek (podmínka)")
+        s f.helpText = "Zastávka splňující podmínku (např. {NA_ZNAMENI} == 1) dostane pozadí ""Barva zvýraznění"""
+        s f = form.AddFieldToLastGroup("RowHighlightColor", "Barva zvýraznění (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

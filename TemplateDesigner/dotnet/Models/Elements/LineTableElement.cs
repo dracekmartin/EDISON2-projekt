@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using SkiaSharp;
+using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models.Elements;
@@ -59,6 +60,10 @@ public class LineTableElement : ScheduleElementBase
     public bool HighlightOddTc { get; set; } = true;
     public string OddTcBackColor { get; set; } = "#FFEEEEEE";
 
+    // Podmíněné zvýraznění řádku zastávky (jedno pravidlo, jen pozadí) — sdílené přes RowConditions.
+    public string? RowHighlightExpression { get; set; }
+    public string? RowHighlightColor { get; set; }
+
     protected override float DesignerPlaceholderHeight => 60f;
 
     // ─── Runtime data (neserializují se) ────────────────────────────────────
@@ -74,6 +79,9 @@ public class LineTableElement : ScheduleElementBase
         public string Nastupiste = "";
         public List<string> Atributy = [];
         public List<string> Km = [];
+
+        /// <summary>Zdrojový řádek dat zastávky — pro vyhodnocení řádkových podmínek (zvýraznění). Neserializuje se.</summary>
+        public DataContext? SourceRow;
 
         public bool JePrijezdovy => Typ == "prijezd";
     }
@@ -127,6 +135,7 @@ public class LineTableElement : ScheduleElementBase
             Nastupiste = row.GetString("NASTUPISTE"),
             Atributy = ParseStringArray(row.GetValue("ATRIBUTY")),
             Km = ParseStringArray(row.GetValue("KM")),
+            SourceRow = row,
         })];
 
         _cachedTrips = [.. data.GetRows(SpojeDataSource).Select(row => new LineTripData
@@ -406,6 +415,14 @@ public class LineTableElement : ScheduleElementBase
                 var stop = stops[si];
                 bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
 
+                // Podmíněné zvýraznění řádku zastávky (celá šířka, za sloupci) — sdílené s DynamicTable/StopList.
+                string? rowHl = RowConditions.HighlightColor(RowHighlightExpression, RowHighlightColor, stop.SourceRow);
+                if (rowHl is not null)
+                {
+                    using var hlPaint = new SKPaint { Color = SKColor.Parse(rowHl) };
+                    ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), hlPaint);
+                }
+
                 var specs = new List<ColumnRenderer.CellSpec>();
                 foreach (var c in fixedCols)
                     specs.Add(new(c.Width, c.Value(stop), OddTc(c.DataStyle, oddTc)));
@@ -492,6 +509,8 @@ public class LineTableElement : ScheduleElementBase
             ShowGroupHeaders = ShowGroupHeaders,
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
+            RowHighlightExpression = RowHighlightExpression,
+            RowHighlightColor = RowHighlightColor,
         };
         CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);
@@ -513,6 +532,19 @@ public class LineTableElement : ScheduleElementBase
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
+        new StringPropertyDescriptor
+        {
+            Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",
+            Get = () => RowHighlightExpression ?? "",
+            Set = v  => RowHighlightExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = ExpressionEvaluator.Validate
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Barva zvýraznění", Group = "Podmínky",
+            Get   = () => RowHighlightColor ?? "#00FFFFFF",
+            Set   = v => RowHighlightColor = v == "#00FFFFFF" ? null : v
+        },
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
         GetDataRowHeightDescriptor(),

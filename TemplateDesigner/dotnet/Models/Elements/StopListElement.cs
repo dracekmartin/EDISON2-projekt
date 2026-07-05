@@ -1,5 +1,6 @@
 using SkiaSharp;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models.Elements;
@@ -66,6 +67,14 @@ public class StopListElement : ScheduleElementBase
     public bool CurrentStopBold { get; set; } = true;
     public float? CurrentStopFontSize { get; set; }
     public string? CurrentStopBackgroundColor { get; set; }
+
+    // ═══════════════════════════════════════════
+    // Podmíněné zvýraznění řádku (jedno pravidlo, jen pozadí) — sdílené s DynamicTable/LineTable
+    // přes RowConditions. Řádek splňující výraz nad daty zastávky dostane pozadí RowHighlightColor.
+    // Priorita nad podbarvením aktuální zastávky. Prázdné = vypnuto.
+    // ═══════════════════════════════════════════
+    public string? RowHighlightExpression { get; set; }
+    public string? RowHighlightColor { get; set; }
 
     // ═══════════════════════════════════════════
     // Projeté zastávky
@@ -195,12 +204,16 @@ public class StopListElement : ScheduleElementBase
                     if (isCurrent) arrowStartY = currentY;
                     arrowEndY = currentY;
 
-                    // Podbarvení aktuálního řádku přes celou šířku elementu (za sloupci i v gap za posledním).
+                    // Podbarvení řádku přes celou šířku elementu (za sloupci i v gap za posledním).
+                    // Priorita: podmíněné zvýraznění (uživatelský záměr) > podbarvení aktuální zastávky.
                     // Per-column Style.Data.BackgroundColor (pokud je neprůhledná) toto lokálně přepíše.
-                    if (isCurrent && CurrentStopBackgroundColor is not null)
+                    string? rowBg =
+                        RowConditions.HighlightColor(RowHighlightExpression, RowHighlightColor, z.SourceRow)
+                        ?? (isCurrent ? CurrentStopBackgroundColor : null);
+                    if (rowBg is not null)
                     {
                         var bgRect = ctx.ToCanvasRect(X, currentY, Width, rowH);
-                        using var bgPaint = new SKPaint { Color = SKColor.Parse(CurrentStopBackgroundColor) };
+                        using var bgPaint = new SKPaint { Color = SKColor.Parse(rowBg) };
                         ctx.Canvas.DrawRect(bgRect, bgPaint);
                     }
 
@@ -669,6 +682,20 @@ public class StopListElement : ScheduleElementBase
         new BoolPropertyDescriptor  { Label = "Projeté zastávky",    Group = "Zvýraznění", Get = () => ShowPassedStops,      Set = v => ShowPassedStops = v },
         new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
 
+        new StringPropertyDescriptor
+        {
+            Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",
+            Get = () => RowHighlightExpression ?? "",
+            Set = v  => RowHighlightExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = ExpressionEvaluator.Validate
+        },
+        new ColorPropertyDescriptor
+        {
+            Label = "Barva zvýraznění", Group = "Podmínky",
+            Get   = () => RowHighlightColor ?? "#00FFFFFF",
+            Set   = v => RowHighlightColor = v == "#00FFFFFF" ? null : v
+        },
+
         .. GetPositionDescriptors()
     ];
 
@@ -711,6 +738,8 @@ public class StopListElement : ScheduleElementBase
             CurrentStopBold         = CurrentStopBold,
             CurrentStopFontSize     = CurrentStopFontSize,
             CurrentStopBackgroundColor = CurrentStopBackgroundColor,
+            RowHighlightExpression  = RowHighlightExpression,
+            RowHighlightColor       = RowHighlightColor,
         };
         CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);
