@@ -47,10 +47,10 @@
 - **Tech dluh (ne blocker, průběžně):** T1b-robustní gold test (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do
   izolovaného namespace — data-drift-proof) · T4 god-objects strangler (postupné řezy `MainWindow.xaml.cs`
   + `TemplateDesignerViewModel` na služby). Malé T kousky ✅ (archiv 2026-07-03).
-- **Fáze B** element flexibility (merged cells, conditional formatting)
+- **Fáze B** element flexibility (merged cells; conditional formatting + počítaná pole + min/max ✅
+  archiv 2026-07-05)
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
-  computed fields (`CELKOVA_CENA = CENA * MNOZSTVI`) · vnořené datasource (`_rows` v `_rows`) ·
-  min/max počet řádků dynamic tabulky. (Přesunuto z „UX polish" 2026-07-03.)
+  vnořené datasource (`_rows` v `_rows`). (Computed fields + min/max ✅ hotovo, archiv 2026-07-05.)
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
 - Import PDF doladění · AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
@@ -138,8 +138,11 @@ zůstává no-op: V1 v DB neexistují (ověřeno 2026-07-02), zbytkové riziko j
 | Oblast | Krok | Co |
 |---|---|---|
 | Merged cells | 35/36 | `ColSpan`/`RowSpan` na `TableCell` (JSON + render skip) + merge editor v dialogu |
-| Conditional formatting | 37/38 | `ColorRules` na `TableColumn` (`{expression, foreColor, backColor}`) + vyhodnocení v print engine |
 | Layout-reservation | — | Deklarativní „pokud property X=true → rezervuj Y mm" (dnes ad-hoc u šipky StopListu) |
+
+> **Conditional formatting ✅ hotovo** (archiv 2026-07-05) — řádková viditelnost + zvýraznění přes
+> sdílený `RowConditions` (DynamicTable/StopList/LineTable). **Rozšíření odloženo na produkci:** seznam
+> pravidel místo jednoho, barva textu, per-sloupec/buňka. **Počítaná pole + min/max řádků** rovněž ✅.
 
 ---
 
