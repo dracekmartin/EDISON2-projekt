@@ -44,6 +44,23 @@ public class ExpressionEvaluatorTests
         Assert.Equal("30", ExpressionEvaluator.EvaluateToString("{CENA} * {POCET}", Data(("CENA", "10"), ("POCET", "3"))));
 
     [Fact]
+    public void Aritmetika_BezFormatu_ZadneFloatArtefakty()
+    {
+        // 0.1 * 3 = 0.30000000000000004 v IEEE-754 → nesmí prosáknout do buňky
+        Assert.Equal("0.3", ExpressionEvaluator.EvaluateToString("{A} * {B}", Data(("A", "0.1"), ("B", "3"))));
+        // 1 / 3 → zaokrouhleno na 10 des. míst, ne 17
+        Assert.Equal("0.3333333333", ExpressionEvaluator.EvaluateToString("{A} / {B}", Data(("A", "1"), ("B", "3"))));
+    }
+
+    [Fact]
+    public void Aritmetika_NaN_Infinity_PrazdnyVysledek()
+    {
+        // Pole s „NaN"/„Infinity" se nešíří do buňky jako text
+        Assert.Equal("", ExpressionEvaluator.EvaluateToString("{A} + {B}", Data(("A", "NaN"), ("B", "1"))));
+        Assert.Equal("", ExpressionEvaluator.EvaluateToString("{A} * {B}", Data(("A", "Infinity"), ("B", "2"))));
+    }
+
+    [Fact]
     public void Aritmetika_UnarniMinus()
     {
         Assert.Equal("-5", ExpressionEvaluator.EvaluateToString("-{X}", Data(("X", "5"))));

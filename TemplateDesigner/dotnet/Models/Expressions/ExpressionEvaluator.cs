@@ -53,7 +53,7 @@ public static class ExpressionEvaluator
             {
                 null     => "",
                 bool b   => b ? "true" : "false",
-                double d => d.ToString(CultureInfo.InvariantCulture),
+                double d => FormatNumber(d),
                 var v    => v.ToString() ?? ""
             };
         }
@@ -135,13 +135,29 @@ public static class ExpressionEvaluator
 
     // ── Aritmetika (počítaná pole) ──────────────────────────────────────────────
 
-    /// <summary>„+": obě čísla → součet; jinak konkatenace stringů (flexibilní pro text i čísla).</summary>
+    /// <summary>
+    /// Serializace čísla pro počítanou buňku: invariantně (tečka), zaokrouhleno na 10 des. míst
+    /// (odstraní IEEE-754 artefakty typu 0.30000000000000004) s oříznutými koncovými nulami.
+    /// NaN/±Infinity → prázdno (nešíří „NaN"/„Infinity" do buňky).
+    /// </summary>
+    private static string FormatNumber(double d) =>
+        double.IsFinite(d) ? d.ToString("0.##########", CultureInfo.InvariantCulture) : "";
+
+    /// <summary>„+": obě čísla → součet; jinak konkatenace stringů (double invariantně, kvůli kultuře).</summary>
     private static object? Add(object? a, object? b)
     {
         var (da, db) = (ToDouble(a), ToDouble(b));
         if (da is not null && db is not null) return da.Value + db.Value;
-        return (a?.ToString() ?? "") + (b?.ToString() ?? "");
+        return Str(a) + Str(b);
     }
+
+    /// <summary>Stringová reprezentace operandu pro konkatenaci — double vždy invariantně (ne CurrentCulture).</summary>
+    private static string Str(object? v) => v switch
+    {
+        null     => "",
+        double d => FormatNumber(d),
+        _        => v.ToString() ?? ""
+    };
 
     /// <summary>„− * ": obě strany musí být čísla, jinak null (nečíselný operand → prázdná buňka).</summary>
     private static object? Arith(object? a, object? b, Func<double, double, double> op)

@@ -83,6 +83,10 @@ public class ColumnVM : INotifyPropertyChanged
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(p));
 
+    // Zatím needitovatelné v tomto (uspaném) dialogu, ale round-trip zachováváme, ať se
+    // počítaný sloupec tiše neztratí (konzistence s DynamicTableEditorDialog).
+    public string? Expression { get; set; }
+
     public TableColumn ToModel() => new()
     {
         Header      = Header,
@@ -96,6 +100,7 @@ public class ColumnVM : INotifyPropertyChanged
             _        => TextHorizontalAlignment.Left
         },
         Format      = string.IsNullOrWhiteSpace(Format) ? null : Format,
+        Expression  = string.IsNullOrWhiteSpace(Expression) ? null : Expression,
         Visible     = Visible,
         HeaderStyle = HeaderStyle.ToModel(),
         DataStyle   = DataStyle.ToModel(),
@@ -115,6 +120,7 @@ public class ColumnVM : INotifyPropertyChanged
             _                              => "Vlevo"
         },
         Format      = c.Format,
+        Expression  = c.Expression,
         Visible     = c.Visible,
         HeaderStyle = CellStyleVM.FromModel(c.HeaderStyle, headerInherited),
         DataStyle   = CellStyleVM.FromModel(c.DataStyle,   dataInherited),

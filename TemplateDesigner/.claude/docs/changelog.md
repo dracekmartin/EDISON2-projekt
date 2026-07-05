@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-05 — A2 review fixes
+
+- **MAJOR:** `EvaluateToString` číslo teď přes `FormatNumber` — zaokrouhlení na 10 des. míst
+  (odstraní IEEE-754 artefakty `0.1*3 → 0.30000000000000004`), oříznuté koncové nuly, invariantně.
+  `NaN`/`±Infinity` → prázdno (nešíří „NaN" do buňky). Bez `Format` tak počítaný sloupec neukáže
+  plovoucí smetí — důležité pro peníze/množství.
+- Konkatenace v `+` (nečíselné) formátuje případný double invariantně (ne CurrentCulture).
+- NIT: statický `TableEditorDialog` round-trip zachovává `Expression` (konzistence, dormant dialog).
+- Nezávislý review: žádná regrese existující viditelnosti, priorita/asociativita/fail-soft ověřeny.
+  Ponecháno vědomě: `ToDouble` = `NumberStyles.Any` (pre-existing, sdílené s Compare — tightening
+  by riskoval regresi viditelnosti; data jsou invariantní). Testy 205/205 (2 nové — FP, NaN/Inf).
+
 ## 2026-07-05 — A2: počítaná pole (aritmetika ve výrazovém jádru + počítaný sloupec DynamicTable)
 
 - ✅ **Aritmetika ve výrazovém jádru** — `ExpressionParser` rozšířen o `+ - * /`, unární minus,
