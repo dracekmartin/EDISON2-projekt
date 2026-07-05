@@ -171,8 +171,13 @@ Každá položka (z roadmapy / requestu) projde tímto cyklem — nevynechat ani
 2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
 3. **Implementovat** — kód, Caché, XAML — dle pravidel (`.claude/rules/`)
 4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
-5. **Aktualizovat docs** — changelog + roadmap (hotové → archiv) + CLAUDE.md pokud se mění architektura
+5. **Aktualizovat docs** — changelog + roadmap + CLAUDE.md pokud se mění architektura
 6. **Další krok** — posunout `⬅️` marker na následující položku v roadmapě
+
+> ⚠️ **`roadmap.md` drž ČISTOU — jen aktivní úkoly.** Když je něco hotové (i rozhodnutí), **přesuň
+> to KOMPLETNĚ do [`roadmap-archive.md`](.claude/docs/roadmap-archive.md)** — nenechávej to v roadmapě
+> jako odškrtnuté „✅ hotovo" řádky. V aktivní roadmapě nesmí viset starý nepořádek; zůstává jen to,
+> co se má dělat (+ krátký pointer do archivu, kde detaily jsou). Platí i pro rozhodovací tabulky.
 
 ---
 
