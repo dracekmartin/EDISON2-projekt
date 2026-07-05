@@ -69,11 +69,19 @@ public class DynamicTableElementTests
     }
 
     [Fact]
-    public void CalculateHeightFromData_BezDat_PouzijeNahledoveRadky()
+    public void CalculateHeightFromData_BezDataContextu_PouzijeNahledoveRadky()
     {
         var el = new DynamicTableElement { DataSource = "ZASTAVKY", ShowHeader = true, HeaderHeight = 8f, RowHeight = 6f };
-        // Prázdná data → 3 náhledové řádky: 8 + 3*6 = 26
-        Assert.Equal(26f, el.CalculateHeightFromData(new DataContext()));
+        // Bez DataContextu (návrhový canvas) → 3 náhledové řádky: 8 + 3*6 = 26
+        Assert.Equal(26f, el.CalculateHeightFromData(null));
+    }
+
+    [Fact]
+    public void CalculateHeightFromData_PrazdnaKolekceSDaty_JenZahlavi()
+    {
+        var el = new DynamicTableElement { DataSource = "ZASTAVKY", ShowHeader = true, HeaderHeight = 8f, RowHeight = 6f };
+        // S DataContextem, ale prázdná kolekce → reálně prázdná tabulka (jen záhlaví), ne fake řádky: 8
+        Assert.Equal(8f, el.CalculateHeightFromData(new DataContext()));
     }
 
     // ── RowVisibilityExpression (viditelnost řádku) ──────────────────────
@@ -112,16 +120,41 @@ public class DynamicTableElementTests
     }
 
     [Fact]
-    public void RowVisibility_ZadnyRadekNesplni_SpadneNaNahledoveRadky()
+    public void RowVisibility_ZadnyRadekNesplni_VyskaNula()
     {
         var el = new DynamicTableElement
         {
             DataSource = "POLOZKY", ShowHeader = false, RowHeight = 6f,
             RowVisibilityExpression = "{CENA} > 100",
         };
-        // 0 viditelných = stejná větev jako prázdná kolekce → 3 náhledové řádky (existující chování,
-        // ne row-visibility specifikum): 3*6 = 18.
-        Assert.Equal(18f, el.CalculateHeightFromData(DataWithCena(10, 20, 30)));
+        // S daty, ale vše odfiltrované → reálně prázdná tabulka (žádné náhledové/fake řádky v tisku): 0.
+        Assert.Equal(0f, el.CalculateHeightFromData(DataWithCena(10, 20, 30)));
+    }
+
+    // ── ResolveRowHighlight (podmíněné pozadí, 1 pravidlo) ───────────────
+
+    private static DataContext RowWithCena(double cena) =>
+        new(new Dictionary<string, object?> { ["CENA"] = cena });
+
+    [Fact]
+    public void RowHighlight_PodminkaSplnena_VratiBarvu()
+    {
+        var el = new DynamicTableElement { RowHighlightExpression = "{CENA} < 0", RowHighlightColor = "#FFFFCCCC" };
+        Assert.Equal("#FFFFCCCC", el.ResolveRowHighlight(RowWithCena(-5)));
+    }
+
+    [Fact]
+    public void RowHighlight_PodminkaNesplnena_Null()
+    {
+        var el = new DynamicTableElement { RowHighlightExpression = "{CENA} < 0", RowHighlightColor = "#FFFFCCCC" };
+        Assert.Null(el.ResolveRowHighlight(RowWithCena(10)));
+    }
+
+    [Fact]
+    public void RowHighlight_ChybiBarvaNeboVyraz_Null()
+    {
+        Assert.Null(new DynamicTableElement { RowHighlightExpression = "{CENA} < 0" }.ResolveRowHighlight(RowWithCena(-5)));
+        Assert.Null(new DynamicTableElement { RowHighlightColor = "#FFFFCCCC" }.ResolveRowHighlight(RowWithCena(-5)));
     }
 
     // ── Clone (deep) ──────────────────────────────────────────────────────
@@ -135,6 +168,8 @@ public class DynamicTableElementTests
             Columns = [new TableColumn { Header = "A", Field = "POPIS", Width = 20f }],
             HeaderStyle = new TextStyle { Bold = true },
             RowVisibilityExpression = "{CENA} > 0",
+            RowHighlightExpression = "{CENA} < 0",
+            RowHighlightColor = "#FFFFCCCC",
         };
 
         var clone = (DynamicTableElement)el.Clone();
@@ -142,6 +177,8 @@ public class DynamicTableElementTests
         Assert.NotEqual(el.Id, clone.Id);                       // CopyBaseTo dává nové Guid
         Assert.Equal("ZASTAVKY", clone.DataSource);
         Assert.Equal("{CENA} > 0", clone.RowVisibilityExpression);
+        Assert.Equal("{CENA} < 0", clone.RowHighlightExpression);
+        Assert.Equal("#FFFFCCCC", clone.RowHighlightColor);
         Assert.NotSame(el.Columns[0], clone.Columns[0]);        // sloupec je vlastní instance
         clone.Columns[0].Header = "B";
         Assert.Equal("A", el.Columns[0].Header);                // změna klonu neovlivní originál

@@ -280,9 +280,6 @@ public class LineTableElement : ScheduleElementBase
         ShowGroupHeaders && trips.Select(t => t.Skupina).Distinct().Count() > 1
         && groups.Any(g => g.Nadpis.Length > 0);
 
-    private int PripojeRowCount(List<LineTripData> trips) =>
-        ShowPripojeRows ? trips.Sum(t => t.Pripoje.Count(p => p.Radek)) : 0;
-
     /// <summary>Největší resolved font záhlaví/dat napříč viditelnými sloupci (vč. spoje) — pro výšky.</summary>
     private float MaxHeaderFontPt() => MaxFontPt(ResolveHeaderStyle, HeaderStyle.FontSize ?? 9f);
     private float MaxDataFontPt() => MaxFontPt(ResolveDataStyle, DataStyle.FontSize ?? 8f);
@@ -308,20 +305,14 @@ public class LineTableElement : ScheduleElementBase
         if (HasGroupHeaderBand(trips, _cachedGroups!)) h += headerH;  // pás skupin dnů
         if (HasPlatnostRow(trips)) h += rowH;
         if (HasNzRow(trips)) h += rowH;
-        if (string.IsNullOrWhiteSpace(RowVisibilityExpression))
-        {
-            // Beze změny (behavior-preserving).
-            h += stops.Count * rowH;
-            h += PripojeRowCount(trips) * rowH;
-        }
-        else
-        {
-            // Aktivní viditelnost — započítat jen viditelné zastávky a jejich přípojné řádky (parita s Render).
-            var visibleStops = stops.Where(s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow)).ToList();
-            h += visibleStops.Count * rowH;
-            if (ShowPripojeRows)
-                h += visibleStops.Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * rowH;
-        }
+        // Počítá se přesně jako v Render (parita výška↔render): jen viditelné zastávky a jejich
+        // přípojné řádky (matched na Poradi zastávky — jako render). Prázdný výraz → všechny zastávky.
+        var visibleStops = string.IsNullOrWhiteSpace(RowVisibilityExpression)
+            ? stops
+            : stops.Where(s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow)).ToList();
+        h += visibleStops.Count * rowH;
+        if (ShowPripojeRows)
+            h += visibleStops.Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * rowH;
         return h;
     }
 

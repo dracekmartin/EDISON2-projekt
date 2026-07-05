@@ -239,7 +239,9 @@ public class DynamicTableElement : TemplateElement
     public float CalculateHeightFromData(DataContext? data)
     {
         var rows = VisibleDataRows(data?.GetRows(DataSource ?? "") ?? []);
-        return NaturalHeight(rows.Count > 0 ? rows.Count : DesignerPreviewRows);
+        // S DataContextem (layout/tisk) skutečný počet (0 = prázdná tabulka); bez něj náhledové řádky.
+        int rowCount = data is null ? DesignerPreviewRows : rows.Count;
+        return NaturalHeight(rowCount);
     }
 
     private float RenderHeader(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
@@ -277,7 +279,9 @@ public class DynamicTableElement : TemplateElement
         float rowH, float fontScale)
     {
         bool hasRows = rows.Count > 0;
-        int renderCount = hasRows ? rows.Count : DesignerPreviewRows;
+        // Placeholder řádky ({POLE}) jsou návrhová pomůcka — jen když není DataContext (canvas návrháře).
+        // S daty (i když je vše odfiltrované / kolekce prázdná) → reálně prázdná tabulka, ne fake řádky v tisku.
+        int renderCount = hasRows ? rows.Count : (ctx.Data is null ? DesignerPreviewRows : 0);
 
         SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;

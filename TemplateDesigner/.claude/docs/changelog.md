@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-05 — Review fixes podmíněných řádkových featur
+
+- **DynamicTable:** placeholder `{POLE}` řádky se kreslí **jen v návrháři** (`ctx.Data is null`);
+  s DataContextem (preview/tisk) — i když je vše odfiltrované nebo kolekce prázdná — se vykreslí
+  reálně prázdná tabulka, ne fake řádky v tiskovém výstupu. Výška konzistentní (0 řádků). Opravuje
+  pre-existing kvartét, který row-visibility filtr zpřístupnil.
+- **LineTable:** sjednocen výpočet přípojných řádků ve výšce (prázdná i aktivní větev teď počítají
+  jen pripoje matched na `Poradi` viditelné zastávky — přesně jako Render); odstraněna asymetrie
+  a nepoužitá `PripojeRowCount`. Výška↔render parita ve všech případech.
+- Review (nezávislý): žádný BLOCKER/MAJOR, invarianty (behavior-preserving, parita, index zarovnání,
+  cache/SourceRow, precedence, fail-open) ověřeny. Zbývá NIT: `SKColor.Parse` na nevalidní barvě =
+  latentní cross-cutting risk (sdílený s OddTcBackColor/AlternatingRowColor/…), řešit případně
+  sdíleným TryParseColor napříč elementy. Testy 194/194.
+
 ## 2026-07-05 — Viditelnost řádku na StopList + LineTable + discoverability polí
 
 - ✅ **Viditelnost řádku rozšířena na StopList + LineTable** (`RowVisibilityExpression`) přes sdílený
