@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-05 — DynamicTable: viditelnost řádku (`RowVisibilityExpression`) — PoC podmíněného renderingu
+
+- ✅ **`DynamicTableElement.RowVisibilityExpression`** — výraz nad daty řádku (`{CENA} > 0`);
+  nesplněné datové řádky se nevykreslí a **nezapočítají** (výška i agregace v souhrnných řádcích).
+  Analogie element-level `VisibilityExpression`, jen per řádek. Prázdné = všechny řádky.
+- Vyhodnocení přes sdílený `ExpressionEvaluator.IsVisible` proti DataContextu řádku (fail-open).
+  Jednotný helper `VisibleDataRows` filtruje před render/výška/souhrn → skryté řádky se nesčítají.
+- UI: pole v tabu „Obecné" (EDInputForm `DynamicTableElementEdit.cls`, skupina „Podmínky", pod
+  viditelností elementu) + zrcadlící PropertyDescriptor. Binder = reflexe (žádná extra vazba).
+- Testy: 183/183 (3 nové — filtr do výšky, prázdný výraz, vše skryté → náhledová fallback větev).
+- **PoC pro navazující podmíněné formátování** (obarvení řádku dle podmínky) — to bude seznam
+  pravidel (podmínka→barva) přes sdílený helper, ať ho vezme i StopList/LineTable.
+
 ## 2026-07-04 — R1: sdílené tabulkové jádro `TableLayout` (extrakce hotová)
 
 - ✅ **`Rendering/TableLayout.cs`** — sdílené algoritmy řádkových tabulek nad `CellRenderer`/

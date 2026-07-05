@@ -76,6 +76,54 @@ public class DynamicTableElementTests
         Assert.Equal(26f, el.CalculateHeightFromData(new DataContext()));
     }
 
+    // ── RowVisibilityExpression (viditelnost řádku) ──────────────────────
+
+    private static DataContext DataWithCena(params double[] ceny)
+    {
+        var rows = ceny.Select(c => new DataContext(new Dictionary<string, object?> { ["CENA"] = c })).ToList();
+        return new DataContext(rows: new Dictionary<string, IReadOnlyList<DataContext>>
+        {
+            ["POLOZKY"] = rows
+        });
+    }
+
+    [Fact]
+    public void RowVisibility_FiltrujeRadkyDoVysky()
+    {
+        var el = new DynamicTableElement
+        {
+            DataSource = "POLOZKY", ShowHeader = false, HeaderHeight = 8f, RowHeight = 6f,
+            RowVisibilityExpression = "{CENA} > 0",
+        };
+
+        // 4 řádky, 2 nesplní podmínku (0, -5) → započítají se jen 2: 2*6 = 12
+        Assert.Equal(12f, el.CalculateHeightFromData(DataWithCena(10, 0, 20, -5)));
+    }
+
+    [Fact]
+    public void RowVisibility_PrazdnyVyraz_VsechnyRadky()
+    {
+        var el = new DynamicTableElement
+        {
+            DataSource = "POLOZKY", ShowHeader = false, RowHeight = 6f,
+            RowVisibilityExpression = null,
+        };
+        Assert.Equal(18f, el.CalculateHeightFromData(DataWithCena(10, 0, -5)));   // 3*6, žádný filtr
+    }
+
+    [Fact]
+    public void RowVisibility_ZadnyRadekNesplni_SpadneNaNahledoveRadky()
+    {
+        var el = new DynamicTableElement
+        {
+            DataSource = "POLOZKY", ShowHeader = false, RowHeight = 6f,
+            RowVisibilityExpression = "{CENA} > 100",
+        };
+        // 0 viditelných = stejná větev jako prázdná kolekce → 3 náhledové řádky (existující chování,
+        // ne row-visibility specifikum): 3*6 = 18.
+        Assert.Equal(18f, el.CalculateHeightFromData(DataWithCena(10, 20, 30)));
+    }
+
     // ── Clone (deep) ──────────────────────────────────────────────────────
 
     [Fact]
@@ -86,12 +134,14 @@ public class DynamicTableElementTests
             DataSource = "ZASTAVKY",
             Columns = [new TableColumn { Header = "A", Field = "POPIS", Width = 20f }],
             HeaderStyle = new TextStyle { Bold = true },
+            RowVisibilityExpression = "{CENA} > 0",
         };
 
         var clone = (DynamicTableElement)el.Clone();
 
         Assert.NotEqual(el.Id, clone.Id);                       // CopyBaseTo dává nové Guid
         Assert.Equal("ZASTAVKY", clone.DataSource);
+        Assert.Equal("{CENA} > 0", clone.RowVisibilityExpression);
         Assert.NotSame(el.Columns[0], clone.Columns[0]);        // sloupec je vlastní instance
         clone.Columns[0].Header = "B";
         Assert.Equal("A", el.Columns[0].Header);                // změna klonu neovlivní originál

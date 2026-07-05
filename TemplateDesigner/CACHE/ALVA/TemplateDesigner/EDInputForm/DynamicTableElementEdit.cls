@@ -52,6 +52,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddGroup("advanced", "Podmínky")
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
         s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
+        s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
+        s f.helpText = "Podmínka nad daty řádku, např. {CENA} > 0 — řádky, kde neplatí, se nevykreslí"
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

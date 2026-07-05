@@ -45,6 +45,13 @@ public class DynamicTableElement : TemplateElement
     /// <summary>Souhrnné řádky (zápatí) — buňky mohou obsahovat agregace SUM/COUNT/AVG/MIN/MAX. Null = žádné.</summary>
     public List<TableRow>? SummaryRows { get; set; }
 
+    /// <summary>
+    /// Podmínka viditelnosti řádku (výraz nad daty řádku, např. {POCET} &gt; 0). Vyhodnocuje se
+    /// pro každý datový řádek zvlášť; nesplněné řádky se nevykreslí a nezapočítají (výška, agregace).
+    /// Null/prázdné = všechny řádky viditelné. Analogie element-level VisibilityExpression, jen per řádek.
+    /// </summary>
+    public string? RowVisibilityExpression { get; set; }
+
     // ─── Designer helpers ────────────────────────────────────────────
 
     private int DesignerPreviewRows => 3;
@@ -138,7 +145,7 @@ public class DynamicTableElement : TemplateElement
         var headerStyles = visibleColumns.Select(ResolveColumnHeaderStyle).ToArray();
         var dataStyles   = visibleColumns.Select(ResolveColumnDataStyle).ToArray();
 
-        var dataRows = ctx.Data?.GetRows(DataSource ?? "") ?? [];
+        var dataRows = VisibleDataRows(ctx.Data?.GetRows(DataSource ?? "") ?? []);
 
         // Auto-scale: při pevné Height a přetékajícím obsahu se font + výšky řádků
         // proporcionálně zmenší (stejně jako StopList/DepartureGrid). Height == null → beze scale.
@@ -194,6 +201,16 @@ public class DynamicTableElement : TemplateElement
             Visible   = true
         }).ToList();
 
+    /// <summary>
+    /// Datové řádky po aplikaci <see cref="RowVisibilityExpression"/> (per řádek). Prázdný výraz =
+    /// beze změny. Používá se jednotně pro render, výpočet výšky i agregace v souhrnných řádcích
+    /// (skryté řádky se nesčítají).
+    /// </summary>
+    private IReadOnlyList<DataContext> VisibleDataRows(IReadOnlyList<DataContext> rows) =>
+        string.IsNullOrWhiteSpace(RowVisibilityExpression)
+            ? rows
+            : rows.Where(r => ExpressionEvaluator.IsVisible(RowVisibilityExpression, r)).ToList();
+
     /// <summary>Přirozená (neškálovaná) výška obsahu v mm pro daný počet datových řádků.</summary>
     private float NaturalHeight(int dataRowCount)
     {
@@ -207,7 +224,7 @@ public class DynamicTableElement : TemplateElement
     /// </summary>
     public float CalculateHeightFromData(DataContext? data)
     {
-        var rows = data?.GetRows(DataSource ?? "") ?? [];
+        var rows = VisibleDataRows(data?.GetRows(DataSource ?? "") ?? []);
         return NaturalHeight(rows.Count > 0 ? rows.Count : DesignerPreviewRows);
     }
 
@@ -414,6 +431,15 @@ public class DynamicTableElement : TemplateElement
         new ColorPropertyDescriptor { Label = "Pozadí buněk",        Group = "Datové buňky", Get = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",    Set = v => Data().BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva textu buněk",   Group = "Datové buňky", Get = () => DataStyle?.TextColor ?? "#FF222222",          Set = v => Data().TextColor = v },
 
+        new StringPropertyDescriptor
+        {
+            Label = "Viditelnost řádku", Group = "Podmínky",
+            // Podmínka nad daty řádku — nesplněné řádky se nevykreslí. Prázdné = všechny.
+            Get = () => RowVisibilityExpression ?? "",
+            Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
+            Validate = ExpressionEvaluator.Validate
+        },
+
         .. GetPositionDescriptors()
     ];
 
@@ -444,6 +470,7 @@ public class DynamicTableElement : TemplateElement
             DataStyle           = DataStyle?.Clone(),
             BorderStyle         = BorderStyle,
             AlternatingRowColor = AlternatingRowColor,
+            RowVisibilityExpression = RowVisibilityExpression,
         };
         CopyBaseTo(clone);
         return clone;
