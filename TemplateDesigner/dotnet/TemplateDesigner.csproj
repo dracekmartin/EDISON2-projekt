@@ -50,6 +50,13 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
+
+    <!-- Embedded fonty: stačí hodit .ttf/.otf do složky Fonts/ — glob je zabalí do assembly
+         (a single-file .exe), FontResolver je auto-načte podle názvu rodiny (bez úpravy kódu).
+         POZOR na licenci: jen fonty s právem redistribuce (OFL/Apache — Arimo, Liberation Sans),
+         NE komerční (Helvetica/Arial). -->
+    <EmbeddedResource Include="Fonts\**\*.ttf" />
+    <EmbeddedResource Include="Fonts\**\*.otf" />
   </ItemGroup>
 
 </Project>

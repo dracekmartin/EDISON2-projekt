@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-05 — B1: embedding fontů do .exe (mechanismus, R5)
+
+- ✅ **`FontResolver` embedding mechanismus** — `.ttf`/`.otf` hozené do `dotnet/Fonts/` se glob-em
+  v .csproj zabalí jako `<EmbeddedResource>` do assembly (a single-file .exe), `FontResolver` je
+  **auto-načte** z manifest resources podle názvu rodiny (bez úpravy kódu). Priorita
+  `embedded → OS → Arial → Skia default`; embedded má přednost = deterministický výstup nezávislý
+  na nainstalovaných fontech (důležité pro headless/server). Varianty (Bold/Italic) = samostatné
+  soubory, vybírá se nejbližší dle stylu.
+- Refaktor `FontResolver.Resolve` na **sdílené cachované typefacy** (app-lifetime, nedisposovat) —
+  všechny cesty renderu (text/buňky/JŘ) přes něj už tečou, takže embedding platí všude. Bonus: mizí
+  dřívější re-`FromFamilyName` per volání. `InstalledFamilies` = OS ∪ embedded (i v UI výběru fontu).
+- `dotnet/Fonts/README.md` + `.csproj` komentář: **licence** — jen redistribuovatelné fonty
+  (OFL/Apache — Arimo, Liberation Sans), NE komerční (Helvetica/Arial). Základní text je nepotřebuje
+  (OS Arial). **Fonty samotné nepřidány** — mechanismus je připravený, uživatel dropne font do Fonts/.
+- JŘ symbolový font (Timetable, C2) až po vyjasnění zdroje/licence. Testy 213/213 (4 nové — resolve/cache/fallback).
+
 ## 2026-07-05 — A3: min/max řádků DynamicTable + klasifikační pravidlo featur
 
 - ✅ **`DynamicTableElement.MinRows` / `MaxRows`** — `MinRows` doplní prázdné řádky do minima (pevná
