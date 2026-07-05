@@ -37,6 +37,30 @@ public static class ExpressionEvaluator
     }
 
     /// <summary>
+    /// Vyhodnotí výraz jako HODNOTU (počítaná pole) a vrátí ji jako string. Číslo se serializuje
+    /// invariantně (tečka), ať ho může navazující formátování (např. „N2") přeparsovat dle kultury.
+    /// Prázdný výraz / chyba parsování / evaluace → prázdný string (fail-soft).
+    /// </summary>
+    public static string EvaluateToString(string? expression, DataContext? data)
+    {
+        if (string.IsNullOrWhiteSpace(expression)) return "";
+        var ast = _cache.GetOrAdd(expression, TryParse);
+        if (ast is null) return "";
+
+        try
+        {
+            return Evaluate(ast, data) switch
+            {
+                null     => "",
+                bool b   => b ? "true" : "false",
+                double d => d.ToString(CultureInfo.InvariantCulture),
+                var v    => v.ToString() ?? ""
+            };
+        }
+        catch { return ""; }
+    }
+
+    /// <summary>
     /// Pokusí se parsovat výraz a vrátí chybovou zprávu pokud selže.
     /// Null = výraz je validní.
     /// </summary>
@@ -69,7 +93,12 @@ public static class ExpressionEvaluator
     private static object? EvalUnary(UnaryNode un, DataContext? data)
     {
         var val = Evaluate(un.Operand, data);
-        return un.Op == "!" ? (object)!ToBool(val) : null;
+        return un.Op switch
+        {
+            "!" => (object)!ToBool(val),
+            "-" => ToDouble(val) is { } d ? -d : null,   // nečíselné → null (prázdná buňka)
+            _   => null
+        };
     }
 
     private static object? EvalBinary(BinaryNode bin, DataContext? data)
@@ -96,8 +125,36 @@ public static class ExpressionEvaluator
             "<"  => Compare(left, right) <  0,
             ">=" => Compare(left, right) >= 0,
             "<=" => Compare(left, right) <= 0,
+            "+"  => Add(left, right),
+            "-"  => Arith(left, right, static (a, b) => a - b),
+            "*"  => Arith(left, right, static (a, b) => a * b),
+            "/"  => Divide(left, right),
             _    => null
         };
+    }
+
+    // ── Aritmetika (počítaná pole) ──────────────────────────────────────────────
+
+    /// <summary>„+": obě čísla → součet; jinak konkatenace stringů (flexibilní pro text i čísla).</summary>
+    private static object? Add(object? a, object? b)
+    {
+        var (da, db) = (ToDouble(a), ToDouble(b));
+        if (da is not null && db is not null) return da.Value + db.Value;
+        return (a?.ToString() ?? "") + (b?.ToString() ?? "");
+    }
+
+    /// <summary>„− * ": obě strany musí být čísla, jinak null (nečíselný operand → prázdná buňka).</summary>
+    private static object? Arith(object? a, object? b, Func<double, double, double> op)
+    {
+        var (da, db) = (ToDouble(a), ToDouble(b));
+        return da is not null && db is not null ? op(da.Value, db.Value) : null;
+    }
+
+    /// <summary>Dělení — dělitel 0 nebo nečíselný operand → null (žádná výjimka, prázdná buňka).</summary>
+    private static object? Divide(object? a, object? b)
+    {
+        var (da, db) = (ToDouble(a), ToDouble(b));
+        return da is not null && db is { } d && d != 0 ? da.Value / d : null;
     }
 
     /// <summary>

@@ -10,6 +10,7 @@ internal enum TK
     Variable, StringLit, NumberLit, BoolLit,
     And, Or, Not,
     Eq, Neq, Gt, Lt, Gte, Lte,
+    Plus, Minus, Star, Slash,
     LParen, RParen
 }
 
@@ -84,6 +85,10 @@ internal static class Tokenizer
                 case '>': tokens.Add(new Token(TK.Gt));     i++; continue;
                 case '<': tokens.Add(new Token(TK.Lt));     i++; continue;
                 case '!': tokens.Add(new Token(TK.Not));    i++; continue;
+                case '+': tokens.Add(new Token(TK.Plus));   i++; continue;
+                case '-': tokens.Add(new Token(TK.Minus));  i++; continue;
+                case '*': tokens.Add(new Token(TK.Star));   i++; continue;
+                case '/': tokens.Add(new Token(TK.Slash));  i++; continue;
                 case '(': tokens.Add(new Token(TK.LParen)); i++; continue;
                 case ')': tokens.Add(new Token(TK.RParen)); i++; continue;
             }
@@ -114,13 +119,16 @@ internal static class Tokenizer
 // ── Recursive-descent parser ─────────────────────────────────────────────────
 
 /// <summary>
-/// Parsuje výrazy VisibilityExpression do AST.
+/// Parsuje výrazy VisibilityExpression i počítaná pole (aritmetika) do AST.
 /// Gramatika (sestupně dle priority):
 ///   or_expr      = and_expr ('||' and_expr)*
 ///   and_expr     = not_expr ('&&' not_expr)*
 ///   not_expr     = '!' not_expr | compare_expr
-///   compare_expr = primary (op primary)?
-///   op           = '==' | '!=' | '>' | '&lt;' | '>=' | '&lt;='
+///   compare_expr = additive (cmp_op additive)?
+///   cmp_op       = '==' | '!=' | '>' | '&lt;' | '>=' | '&lt;='
+///   additive     = mult (('+' | '-') mult)*
+///   mult         = unary (('*' | '/') unary)*
+///   unary        = '-' unary | primary
 ///   primary      = '{IDENT}' | STRING | NUMBER | 'true' | 'false' | '(' expr ')'
 /// </summary>
 internal sealed class ExpressionParser
@@ -178,10 +186,10 @@ internal sealed class ExpressionParser
         return ParseCompare();
     }
 
-    // compare_expr = primary (cmp_op primary)?
+    // compare_expr = additive (cmp_op additive)?
     private ExpressionNode ParseCompare()
     {
-        var left = ParsePrimary();
+        var left = ParseAdditive();
         var op = Current.Kind switch
         {
             TK.Eq  => "==", TK.Neq => "!=",
@@ -191,7 +199,42 @@ internal sealed class ExpressionParser
         };
         if (op is null) return left;
         Consume();
-        return new BinaryNode(op, left, ParsePrimary());
+        return new BinaryNode(op, left, ParseAdditive());
+    }
+
+    // additive = mult (('+' | '-') mult)*
+    private ExpressionNode ParseAdditive()
+    {
+        var left = ParseMultiplicative();
+        while (Current.Kind is TK.Plus or TK.Minus)
+        {
+            var op = Consume().Kind == TK.Plus ? "+" : "-";
+            left = new BinaryNode(op, left, ParseMultiplicative());
+        }
+        return left;
+    }
+
+    // mult = unary (('*' | '/') unary)*
+    private ExpressionNode ParseMultiplicative()
+    {
+        var left = ParseUnary();
+        while (Current.Kind is TK.Star or TK.Slash)
+        {
+            var op = Consume().Kind == TK.Star ? "*" : "/";
+            left = new BinaryNode(op, left, ParseUnary());
+        }
+        return left;
+    }
+
+    // unary = '-' unary | primary
+    private ExpressionNode ParseUnary()
+    {
+        if (Current.Kind == TK.Minus)
+        {
+            Consume();
+            return new UnaryNode("-", ParseUnary());
+        }
+        return ParsePrimary();
     }
 
     // primary = variable | literal | '(' expr ')'

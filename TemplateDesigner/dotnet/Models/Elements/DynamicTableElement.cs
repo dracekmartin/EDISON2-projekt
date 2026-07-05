@@ -311,13 +311,18 @@ public class DynamicTableElement : TemplateElement
                 string sample;
                 if (hasRows)
                 {
-                    sample = rows[i].GetString(col.Field ?? "");
+                    // Počítaný sloupec (Expression) má přednost před Field; výsledek lze formátovat (Format).
+                    sample = !string.IsNullOrWhiteSpace(col.Expression)
+                        ? ExpressionEvaluator.EvaluateToString(col.Expression, rows[i])
+                        : rows[i].GetString(col.Field ?? "");
                     if (col.Format is not null)
                         sample = DataContext.FormatValue(sample, col.Format, ctx.Data?.Culture);
                 }
                 else
                 {
-                    sample = $"{{{col.Field ?? col.Header}}}";
+                    sample = !string.IsNullOrWhiteSpace(col.Expression)
+                        ? col.Expression!
+                        : $"{{{col.Field ?? col.Header}}}";
                 }
                 specs[ci] = new(colWidths[ci], sample, effectiveStyles[ci]);
             }

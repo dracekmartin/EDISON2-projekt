@@ -165,7 +165,11 @@ public class DynamicTableElementTests
         var el = new DynamicTableElement
         {
             DataSource = "ZASTAVKY",
-            Columns = [new TableColumn { Header = "A", Field = "POPIS", Width = 20f }],
+            Columns =
+            [
+                new TableColumn { Header = "A", Field = "POPIS", Width = 20f },
+                new TableColumn { Header = "Celkem", Expression = "{CENA} * {POCET}", Format = "N2", Width = 20f },
+            ],
             HeaderStyle = new TextStyle { Bold = true },
             RowVisibilityExpression = "{CENA} > 0",
             RowHighlightExpression = "{CENA} < 0",
@@ -183,6 +187,8 @@ public class DynamicTableElementTests
         clone.Columns[0].Header = "B";
         Assert.Equal("A", el.Columns[0].Header);                // změna klonu neovlivní originál
         Assert.NotSame(el.HeaderStyle, clone.HeaderStyle);
+        Assert.Equal("{CENA} * {POCET}", clone.Columns[1].Expression);   // počítaný sloupec
+        Assert.Equal("N2", clone.Columns[1].Format);                     // Format se neztrácí
     }
 
     // ── ApplyScale ────────────────────────────────────────────────────────

@@ -17,11 +17,15 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
 {
     private string _header = "";
     private string _field = "";
+    private string _expression = "";
+    private string _format = "";
     private float? _width;              // null = auto (rozdělí zbývající šířku)
     private bool   _visible = true;
 
     public string Header  { get => _header;  set { _header = value;  OnChanged(); OnChanged(nameof(DisplayName)); } }
     public string Field   { get => _field;   set { _field = value;   OnChanged(); OnChanged(nameof(DisplayName)); } }
+    public string Expression { get => _expression; set { _expression = value; OnChanged(); OnChanged(nameof(DisplayName)); } }
+    public string Format  { get => _format;  set { _format = value;  OnChanged(); } }
     public float? Width   { get => _width;   set { _width = value;   OnChanged(); OnChanged(nameof(WidthText)); OnChanged(nameof(ColumnWidth)); } }
     public bool   Visible { get => _visible; set { _visible = value; OnChanged(); } }
 
@@ -34,7 +38,9 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
 
     // IColumnRowVM — sdílený seznam sloupců
     public string DisplayName => !string.IsNullOrWhiteSpace(_header) ? _header
-                               : (!string.IsNullOrWhiteSpace(_field) ? "{" + _field + "}" : "(nový sloupec)");
+                               : !string.IsNullOrWhiteSpace(_field) ? "{" + _field + "}"
+                               : !string.IsNullOrWhiteSpace(_expression) ? "= " + _expression
+                               : "(nový sloupec)";
     public float? ColumnWidth => Width;
 
     private CellStyleVM _headerStyle = null!;
@@ -67,6 +73,8 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
     {
         Header      = Header,
         Field       = string.IsNullOrWhiteSpace(Field) ? null : Field,
+        Expression  = string.IsNullOrWhiteSpace(Expression) ? null : Expression.Trim(),
+        Format      = string.IsNullOrWhiteSpace(Format) ? null : Format.Trim(),
         Width       = Width ?? 0f,               // 0 = auto (rozdělí šířku elementu)
         WidthMode   = ColumnWidthMode.Mm,
         Visible     = Visible,
@@ -79,6 +87,8 @@ public class DynamicTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowV
     {
         Header      = c.Header,
         Field       = c.Field ?? "",
+        Expression  = c.Expression ?? "",
+        Format      = c.Format ?? "",
         Width       = c.Width > 0f ? c.Width : (float?)null,   // 0 → auto
         Visible     = c.Visible,
         HeaderStyle = CellStyleVM.FromModel(c.HeaderStyle, headerInherited),

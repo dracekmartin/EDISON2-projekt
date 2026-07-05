@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-05 — A2: počítaná pole (aritmetika ve výrazovém jádru + počítaný sloupec DynamicTable)
+
+- ✅ **Aritmetika ve výrazovém jádru** — `ExpressionParser` rozšířen o `+ - * /`, unární minus,
+  prioritu (`* /` > `+ -` > porovnání) a závorky (už byly). Nové gramatické úrovně additive/mult/unary.
+  `ExpressionEvaluator`: `+` (čísla → součet, jinak konkatenace), `- * /` (nečíselný operand nebo
+  dělení nulou → null = prázdná buňka), unární `-`. Funguje i v podmínkách (`{A}*2 > 10`).
+- ✅ **`ExpressionEvaluator.EvaluateToString`** — hodnotové vyhodnocení výrazu (číslo invariantně,
+  ať navazující `Format` přeparsuje dle kultury); prázdný/chybný výraz → prázdno (fail-soft).
+- ✅ **`TableColumn.Expression`** — počítaný sloupec DynamicTable: výraz nad poli řádku
+  (`{CENA} * {POCET}`), přebíjí `Field`, výsledek formátovatelný přes `Format` (např. „N2").
+  Editace ve Sloupce tabu (nové pole „Výraz" + „Formát").
+- 🐛 **Fix při této příležitosti:** editor sloupců DynamicTable dosud `Format` vůbec neukládal
+  (ToModel/FromModel ho vynechávaly → při editaci sloupce se ztrácel). Teď round-trip včetně Format.
+- Testy 203/203 (9 nových — aritmetika, priorita, dělení nulou, konkatenace, round-trip sloupce).
+  Bez Caché změny (sloupce = WPF dialog, ne EDInputForm).
+
 ## 2026-07-05 — Review fixes podmíněných řádkových featur
 
 - **DynamicTable:** placeholder `{POLE}` řádky se kreslí **jen v návrháři** (`ctx.Data is null`);

@@ -35,6 +35,13 @@ public class TableColumn
     /// <summary>Formátovací řetězec — "dd.MM.yyyy", "N2", "HH:mm" apod. Null = výchozí.</summary>
     public string? Format { get; set; }
 
+    /// <summary>
+    /// Počítané pole — výraz nad daty řádku (aritmetika, např. "{CENA} * {POCET}"). Má-li hodnotu,
+    /// buňka se počítá z výrazu místo <see cref="Field"/> (Field se ignoruje). Číselný výsledek lze
+    /// naformátovat přes <see cref="Format"/> (např. "N2"). Null/prázdné = běžný datový sloupec.
+    /// </summary>
+    public string? Expression { get; set; }
+
     public TextHorizontalAlignment Alignment { get; set; } = TextHorizontalAlignment.Left;
 
     public bool Visible { get; set; } = true;
@@ -52,6 +59,7 @@ public class TableColumn
         WidthMode   = WidthMode,
         Field       = Field,
         Format      = Format,
+        Expression  = Expression,
         Alignment   = Alignment,
         Visible     = Visible,
         HeaderStyle = HeaderStyle?.Clone(),

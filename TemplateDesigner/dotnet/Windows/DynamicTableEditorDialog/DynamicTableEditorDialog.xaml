@@ -97,7 +97,18 @@
                                           ItemsSource="{Binding AvailableFields}"
                                           ToolTip="Datové pole kolekce, ze kterého se plní buňky sloupce (např. POPIS)."/>
                             </StackPanel>
-                            <TextBlock Text="Šířka prázdná = automaticky (rozdělí zbývající šířku elementu)." FontStyle="Italic"
+                            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                <TextBlock Text="Výraz:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                                <TextBox Width="200"
+                                         Text="{Binding SelectedColumnVM.Expression, UpdateSourceTrigger=LostFocus}"
+                                         ToolTip="Počítané pole — aritmetika nad poli řádku, např. {CENA} * {POCET}. Má-li hodnotu, přebíjí Pole."/>
+                                <TextBlock Text="Formát:" VerticalAlignment="Center" Margin="12,0,4,0"/>
+                                <TextBox Width="80"
+                                         Text="{Binding SelectedColumnVM.Format, UpdateSourceTrigger=LostFocus}"
+                                         ToolTip="Formát hodnoty, např. N2 (2 desetinná místa), dd.MM.yyyy. Prázdné = beze změny."/>
+                            </StackPanel>
+                            <TextBlock Text="Výraz (počítané pole) přebíjí Pole. Číselný výsledek zformátuj přes Formát (např. N2). Šířka prázdná = automaticky."
+                                       FontStyle="Italic" TextWrapping="Wrap"
                                        Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <Separator Margin="0,8,0,8"/>

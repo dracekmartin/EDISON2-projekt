@@ -19,6 +19,61 @@ public class ExpressionEvaluatorTests
         Assert.True(ExpressionEvaluator.IsVisible(expression, null));
     }
 
+    // ── Aritmetika (počítaná pole) — EvaluateToString ────────────────────────
+
+    [Fact]
+    public void Aritmetika_ZakladniOperace()
+    {
+        var d = Data(("A", "2"), ("B", "3"), ("C", "4"));
+        Assert.Equal("6",  ExpressionEvaluator.EvaluateToString("{A} * {B}", d));
+        Assert.Equal("5",  ExpressionEvaluator.EvaluateToString("{A} + {B}", d));
+        Assert.Equal("-1", ExpressionEvaluator.EvaluateToString("{A} - {B}", d));
+        Assert.Equal("2",  ExpressionEvaluator.EvaluateToString("{C} / {A}", d));
+    }
+
+    [Fact]
+    public void Aritmetika_PrioritaAZavorky()
+    {
+        var d = Data(("A", "2"), ("B", "3"), ("C", "4"));
+        Assert.Equal("14", ExpressionEvaluator.EvaluateToString("{A} + {B} * {C}", d));   // * před +
+        Assert.Equal("20", ExpressionEvaluator.EvaluateToString("({A} + {B}) * {C}", d)); // závorky
+    }
+
+    [Fact]
+    public void Aritmetika_CenaKratPocet_TypickeUziti() =>
+        Assert.Equal("30", ExpressionEvaluator.EvaluateToString("{CENA} * {POCET}", Data(("CENA", "10"), ("POCET", "3"))));
+
+    [Fact]
+    public void Aritmetika_UnarniMinus()
+    {
+        Assert.Equal("-5", ExpressionEvaluator.EvaluateToString("-{X}", Data(("X", "5"))));
+        Assert.Equal("2", ExpressionEvaluator.EvaluateToString("{A} - -{B}", Data(("A", "-1"), ("B", "3"))));
+    }
+
+    [Fact]
+    public void Aritmetika_DeleniNulou_PrazdnyVysledek() =>
+        Assert.Equal("", ExpressionEvaluator.EvaluateToString("{A} / {B}", Data(("A", "10"), ("B", "0"))));
+
+    [Fact]
+    public void Aritmetika_NeciselnyOperand_PrazdnyVysledek() =>
+        Assert.Equal("", ExpressionEvaluator.EvaluateToString("{A} * {B}", Data(("A", "text"), ("B", "3"))));
+
+    [Fact]
+    public void Aritmetika_PlusNaText_Konkatenace() =>
+        Assert.Equal("abcdef", ExpressionEvaluator.EvaluateToString("{A} + {B}", Data(("A", "abc"), ("B", "def"))));
+
+    [Fact]
+    public void EvaluateToString_PrazdnyNeboChybnyVyraz_Prazdno()
+    {
+        Assert.Equal("", ExpressionEvaluator.EvaluateToString(null, null));
+        Assert.Equal("", ExpressionEvaluator.EvaluateToString("{A} *", Data(("A", "5"))));   // chyba parse → fail-soft
+    }
+
+    [Fact]
+    public void Aritmetika_LzeKombinovatSPorovnanim() =>
+        // porovnání má nižší prioritu než aritmetika
+        Assert.True(ExpressionEvaluator.IsVisible("{A} * 2 > 10", Data(("A", "6"))));
+
     // ── Porovnání ────────────────────────────────────────────────────────────
 
     [Theory]
