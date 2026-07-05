@@ -1,5 +1,9 @@
 # R1 — Sdílené tabulkové jádro: návrh (podklad ke schválení před implementací)
 
+> **✅ IMPLEMENTOVÁNO 2026-07-04.** Tento dokument je návrh/rozhodovací proces (historie).
+> Evergreen referenci „co sdílet / co je element-specifické / co nesjednocovat" po implementaci
+> drží **`tabulkove-elementy-jadro.md`** — čti ten při další práci.
+
 > **Datum:** 2026-07-04. Vznikl z analýzy anatomie 4 tabulkových elementů (StopList, DynamicTable,
 > LineTable, DepartureGrid) + sdílené `Rendering/` vrstvy. Gate: architektonické rozhodnutí R1.
 > **Cíl:** aby další tabulková sestava stála co nejmíň — layout se píše jednou, elementy dodávají

@@ -161,6 +161,12 @@ DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (D
 
 ## Jednotná kaskáda stylů buněk (tabulkové elementy)
 
+> **Přehled celé architektury tabulkových elementů** (co je sdílené jádro `Rendering/TableLayout`
+> + `CellRenderer`/`ColumnRenderer`, co drží každý element sám a proč, co vědomě NEsjednocovat,
+> triggery pro budoucí extrakci): **`.claude/docs/tabulkove-elementy-jadro.md`** — číst před přidáním
+> nebo úpravou tabulkového elementu. Kaskáda níže + výpočet šířek jsou sdílené v `TableLayout`
+> (`ResolveCascade` / `ResolveWidths`).
+
 Všechny tabulkové elementy (StopList, DepartureGrid, TableElement) sdílejí jednu 4-vrstvou kaskádu:
 
 ```
