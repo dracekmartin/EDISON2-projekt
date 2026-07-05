@@ -223,21 +223,11 @@ public class DynamicTableElement : TemplateElement
             ctx.Canvas.DrawRect(headerBgRect, headerBgPaint);
         }
 
-        float colX = X;
+        // Sdílená řádková orchestrace — svislé separátory přebírá DrawRow (gridPaint).
+        var specs = new ColumnRenderer.CellSpec[cols.Count];
         for (int i = 0; i < cols.Count; i++)
-        {
-            float colW = colWidths[i];
-            var cellRect = new SKRect(colX, startY, colX + colW, startY + headerH);
-            CellRenderer.DrawCell(ctx, cellRect, Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i], fontScale);
-
-            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
-            {
-                var top = ctx.ToCanvas(colX + colW, startY);
-                var bot = ctx.ToCanvas(colX + colW, startY + headerH);
-                ctx.Canvas.DrawLine(top, bot, sepPaint);
-            }
-            colX += colW;
-        }
+            specs[i] = new(colWidths[i], Rendering.ColumnHeader.Resolve(cols[i].Header, ""), headerStyles[i]);
+        ColumnRenderer.DrawRow(ctx, X, startY, headerH, specs, ColumnGridPaint(sepPaint), fontScale);
 
         var lineStart = ctx.ToCanvas(X, startY + headerH);
         var lineEnd   = ctx.ToCanvas(X + Width, startY + headerH);
@@ -245,6 +235,11 @@ public class DynamicTableElement : TemplateElement
 
         return startY + headerH;
     }
+
+    /// <summary>Pero svislých mřížkových čar mezi sloupci — jen u All/ColumnsOnly, jinak null (bez čar).
+    /// Poslední (vnější) čáru DrawRow nekreslí; překryje ji vnější rámeček (kreslen jako poslední).</summary>
+    private SKPaint? ColumnGridPaint(SKPaint sepPaint) =>
+        BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly ? sepPaint : null;
 
     private float RenderDynamicRows(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
         ResolvedTextStyle[] dataStyles, float startY, SKPaint sepPaint, IReadOnlyList<DataContext> rows,
@@ -260,18 +255,17 @@ public class DynamicTableElement : TemplateElement
             ? dataStyles
             : dataStyles.Select(s => s with { TextColor = "#FF999999" }).ToArray();
 
+        var gridPaint = ColumnGridPaint(sepPaint);
         float currentY = startY;
         for (int i = 0; i < renderCount; i++)
         {
             if (altBgPaint is not null && i % 2 == 1)
                 ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), altBgPaint);
 
-            float colX = X;
+            var specs = new ColumnRenderer.CellSpec[cols.Count];
             for (int ci = 0; ci < cols.Count; ci++)
             {
                 var col = cols[ci];
-                float colW = colWidths[ci];
-
                 string sample;
                 if (hasRows)
                 {
@@ -283,18 +277,9 @@ public class DynamicTableElement : TemplateElement
                 {
                     sample = $"{{{col.Field ?? col.Header}}}";
                 }
-
-                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + rowH);
-                CellRenderer.DrawCell(ctx, cellRect, sample, effectiveStyles[ci], fontScale);
-
-                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
-                {
-                    var top = ctx.ToCanvas(colX + colW, currentY);
-                    var bot = ctx.ToCanvas(colX + colW, currentY + rowH);
-                    ctx.Canvas.DrawLine(top, bot, sepPaint);
-                }
-                colX += colW;
+                specs[ci] = new(colWidths[ci], sample, effectiveStyles[ci]);
             }
+            ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, gridPaint, fontScale);
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
             {
@@ -330,12 +315,10 @@ public class DynamicTableElement : TemplateElement
                 ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), sbg);
             }
 
-            float colX = X;
+            var specs = new ColumnRenderer.CellSpec[cols.Count];
             for (int colIdx = 0; colIdx < cols.Count; colIdx++)
             {
                 var col = cols[colIdx];
-                float colW = colWidths[colIdx];
-
                 var cellStyle = TableSummaryParent;
                 string content = "";
 
@@ -358,17 +341,9 @@ public class DynamicTableElement : TemplateElement
                     cellStyle = cellStyle with { HAlign = col.Alignment };
                 }
 
-                var cellRect = new SKRect(colX, currentY, colX + colW, currentY + rowH);
-                CellRenderer.DrawCell(ctx, cellRect, content, cellStyle, fontScale);
-
-                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.ColumnsOnly)
-                {
-                    var top = ctx.ToCanvas(colX + colW, currentY);
-                    var bot = ctx.ToCanvas(colX + colW, currentY + rowH);
-                    ctx.Canvas.DrawLine(top, bot, sepPaint);
-                }
-                colX += colW;
+                specs[colIdx] = new(colWidths[colIdx], content, cellStyle);
             }
+            ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, ColumnGridPaint(sepPaint), fontScale);
 
             if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
             {
