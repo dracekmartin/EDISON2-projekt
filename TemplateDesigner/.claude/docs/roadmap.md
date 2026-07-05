@@ -18,6 +18,20 @@
    Tisk (`A3`) + systémové šablony (`B`) odloženo. Cesta k pilotu (R7).
 2. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot.
 
+**Rozhodnuté akční kroky (rozhodnutí padlo, implementace čeká na blok/pilot):**
+- **Tisk = „shortcut" z konkrétní agendy bez plného návrháře (A3, dříve R4).** Uživatel v EDISONu
+  u agendy/linky klikne „Tisk" → otevře se lehký tiskový formulář (parametry sestavy + výběr
+  instance) → PDF. NE plný návrhář. Technicky přes **PrintEngine fasádu** (šablona+data→PDF bez
+  stavu editoru; T2 udělalo půlku render-na-snapshotu). Pilot = render na stanici; server později
+  = zabalení fasády do služby, ne přepis.
+- **Fonty embedded přímo v .exe (dříve R5).** Přibalit fonty jako resource + `FontResolver` je načte
+  přes `SKTypeface.FromStream` → **uživatel nic neinstaluje, render vypadá vždy stejně** (nezávisí na
+  Windows fontech). TODO fonty: (1) základní bezpatkový — Helvetica / PostScript ⚠️ *Helvetica je
+  licencovaná, redistribuce v .exe vyžaduje licenci; jinak metric-kompatibilní free ekvivalent
+  (Liberation/Nimbus Sans)*; (2) JŘ symbolové fonty **Timetable_nove(+SK)** pro speciální dopravní
+  znaky (= bod **C2** knižního JŘ — bez nich JŘ „tiše lže" u symbolů vozíčkáře, projíždí apod.).
+  Kritické pro knižní/výlepové JŘ.
+
 **Větší dedikované tracky (vlastní session):**
 - **Layout „sekce vyšší než stránka" (var B)** — designer je dnes model „jedna pevná A4", přetečení jen
   červený rámeček v preview. Fix = „canvas roste + dělící čáry". Největší koncepční layout dluh. **Pilot-gated.**
@@ -52,10 +66,10 @@ při scope té fáze, ne teď.
 | R1a | ✅ **HOTOVO 2026-07-05.** DynamicTable tři ruční per-buňka smyčky (header/data/summary) → sdílený `ColumnRenderer.DrawRow`. Všechny řádkové tabulky teď kreslí řádek jednou cestou. Behavior-preserving (180/180 + render). Vyšší orchestrátor „header+řádky jako 1 metoda" NEudělán — LineTable s pásy/přípojnými řádky se do něj čistě nevejde, hodnota nízká. | ✅ hotové | — |
 | R2 | **Layout zodpovědnosti**: engine = sekce/stránky, element = svůj vnitřek, hlásí nahoru. Model potvrzen. **Partial-fit kontrakt ROZHODNUT 2026-07-05** (`r2-partial-fit-kontrakt.md`): rozhraní `IRowPaginatedElement` (RowUnitCount/HeaderBandHeightMm/RowUnitHeightMm/RenderRowWindow), element řídí nedělitelné jednotky + opakované záhlaví, engine plní okna místo pixel-ořezu, fallback = dnešní clip. **Řeší JEN svislou osu** (řádky); vodorovná (sloupce, `Strih`) je C3. **Implementace NEteď** — patří k paginačnímu/bin-packing tracku (svislá+vodorovná spolu na knižním JŘ). | ✅ kontrakt rozhodnut, impl s C3 | s bin-packing trackem |
 | R3 | **Datový kontrakt agend** — ✅ **ROZHODNUTO 2026-07-05** (`cache-api.md §Prezentační nápovědy + §Evoluce kontraktu`): (a) v1 nápovědy = legalizované `FORE_COLOR`/`BACK_COLOR` (živé, JŘ je už produkuje/konzumuje) + princip „volitelné, sémantické, vizuál úrovně vlastní šablona" + konvence pojmenování; širší seznam (`ZVYRAZNENI` 0–5, typ řádku, opakuj-na-další-straně, přes-celou-šířku) vědomě odložen na **F1 dle reálného RG usage** (rezervován princip, ne klíče). (b) pravidlo evoluce = jen aditivně (přidat klíč OK, změnit význam/odebrat zakázáno bez migrace). | ✅ rozhodnuto | — (rozšíření hintů při F1) |
-| R4 | **Headless tisk**: pilot = .exe na stanici, ale render oddělit **PrintEngine fasádou** (šablona+data→PDF bez DesignerState; T2 udělalo půlku) → později serverová služba = zabalení, ne přepis | ⬜ | návrh bloku A |
-| R5 | **Fonty embedded v aplikaci** (`SKTypeface.FromStream`), nikdy spoléhat na instalaci ve Windows — u Timetable fontu je chybějící font věcná chyba JŘ, ne kosmetika | ⬜ | start Fáze C+D |
-| R6 | **Systémové šablony distribuovat s release** (read-only, verzované s buildem), DB jen zákaznické → verzní matice šablona×exe nevznikne | ⬜ | návrh bloku B |
-| R7 | **Pilot-first**: zastávkový JŘ k reálnému zákazníkovi (TRANSDEV) přes celou trubku (A1–A3 + min. B + deploy) dřív, než se migrují další agendy; slíbený termín „polovina 2026" nastal | ⬜ = další velký blok | teď |
+| R6 | **Systémové šablony distribuovat s release** (read-only, verzované s buildem), DB jen zákaznické → verzní matice šablona×exe nevznikne. Rozhodnutí zaznamenané; implementace = blok systémových šablon (B). | 🟡 rozhodnuto, impl v bloku B | návrh bloku B |
+
+> **R4, R5, R7 — rozhodnuto, přesunuto do „Aktivní / nejbližší kroky" jako akční položky** (R4 tisk-shortcut,
+> R5 embedded fonty) resp. do produkčního pilotu (R7). V této tabulce už nejsou otevřené rozhodnutí.
 
 ---
 
