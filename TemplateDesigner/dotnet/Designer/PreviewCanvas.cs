@@ -379,9 +379,15 @@ public class PreviewCanvas
 
             canvas.Restore();
 
-            // Druhý průchod — rámečky MIMO clip, aby byly vidět i na hranici sekce
+            // Druhý průchod — rámečky mimo TĚSNÝ section-clip (ať jsou vidět i na hranici sekce),
+            // ale stále v rámci STRÁNKY. Bez toho by se u rozdělené (split) sekce rámečky elementů
+            // z jiného chunku vykreslily i sem: posun originu o ClipTop je odsune mimo stránku, ale
+            // bez clipu by přesto prosákly (viz „dvojité vykreslení" u sekce vyšší než stránka).
+            canvas.Save();
+            canvas.ClipRect(new SKRect(pageX, pageY, pageX + ps.Width * mmToPx, pageY + ps.Height * mmToPx));
             foreach (var el in visibleElements)
                 el.RenderBorderPass(ctx);
+            canvas.Restore();
 
             // Jemná čára mezi sekcemi (orientační pomůcka)
             if (i < sortedSections.Count - 1)

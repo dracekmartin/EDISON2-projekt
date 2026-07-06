@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-06 — Fix: dvojité vykreslení rámečku u split sekce (preview/PDF/PNG)
+
+- 🐛 **Sekce vyšší než stránka (SplitAcrossPages) kreslila rámeček elementu i na druhé straně.** Kořen:
+  `PreviewCanvas.RenderPage` druhý průchod „rámečky mimo clip" běžel **zcela bez clipu**, takže u split
+  chunku (kde má `ctx` origin posunutý o `ClipTop`) prosákl rámeček elementu z jiného chunku na tuto
+  stránku. Nové elementy mají default rámeček → „dvojité vykreslení". Engine dělil správně (ověřeno).
+- **Fix:** border-pass ořezán na **rámec stránky** (ne úplně bez clipu) — rámečky na hranici sekce
+  zůstávají vidět, ale elementy z jiného chunku (posunuté mimo stránku) se ořežou. Jeden `RenderPage`
+  = sdílený preview + PDF (`RenderMultiDataToPdf`) + PNG → opraveno všude. Pre-existing bug (Slice 1
+  ho jen zpřístupnil). Testy 214/214 (nový `SplitSectionPaginationTest` na strukturu splitu).
+
 ## 2026-07-06 — Layout track / „sekce vyšší než stránka" — Slice 2: dělící čáry stránek
 
 - ✅ **`DesignerCanvas.DrawPageBreakLines`** — přerušované modré čáry + popisek „Strana N" přes souvislé
