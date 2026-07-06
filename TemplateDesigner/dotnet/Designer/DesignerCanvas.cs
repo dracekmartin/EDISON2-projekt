@@ -57,6 +57,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrRulerTick         = new(0xFF555555);
     private static readonly SKColor ClrRulerText         = new(0xFF333333);
     private static readonly SKColor ClrRulerHighlight    = new(0x602196F3); // poloprůhledná modrá
+    private static readonly SKColor ClrPageBreak         = new(0xFF2D7DD2); // modrá dělící čára stránek (návrhář)
 
 
     private readonly DesignerState _state;
@@ -104,6 +105,7 @@ public class DesignerCanvas
         // Grid — kreslen po sekcích, aby byl vidět přes jejich pozadí (v printable area, kde se pozicují elementy).
         if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, paperH, template.PageSize);
         DrawPageBorder(canvas, pageX, pageY, pageW, paperH);
+        DrawPageBreakLines(canvas, pageX, pageY, pageW, paperH, template.PageSize);
 
         // Selection handles kreslíme naposled — vždy nad elementy
         DrawSnapTargetHighlights(canvas, canvasWidth);
@@ -385,6 +387,38 @@ public class DesignerCanvas
         Color = new SKColor(0x35000000),
         MaskFilter = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 6f)
     };
+
+    /// <summary>
+    /// Přerušované dělící čáry stránek přes souvislé plátno — orientační vodítko „kudy půjde zlom"
+    /// (varianta 1: geometrické, po výšce tisknutelné oblasti). NENÍ pixel-přesné vůči preview
+    /// (nezná opakování hlaviček/patiček ani KeepTogether) — přesný stránkovaný výsledek je v preview.
+    /// Kreslí se jen když obsah přesahuje jednu stránku.
+    /// </summary>
+    private void DrawPageBreakLines(SKCanvas canvas, float pageX, float pageY, float pageW, float paperH, PageSize ps)
+    {
+        float printableHpx = (ps.Height - ps.MarginTop - ps.MarginBottom) * MmToPx;
+        if (printableHpx <= 0.5f) return;
+
+        float contentTop    = pageY + ps.MarginTop * MmToPx;
+        float contentBottom = pageY + paperH - ps.MarginBottom * MmToPx;
+
+        using var linePaint = new SKPaint
+        {
+            Color = ClrPageBreak, StrokeWidth = 1f, IsAntialias = true,
+            PathEffect = SKPathEffect.CreateDash([8f, 4f], 0)
+        };
+        using var labelFont  = new SKFont(SKTypeface.Default, 11f);
+        using var labelPaint = new SKPaint { Color = ClrPageBreak, IsAntialias = true };
+
+        int page = 2;
+        for (float y = contentTop + printableHpx; y < contentBottom - 0.5f; y += printableHpx, page++)
+        {
+            canvas.DrawLine(pageX, y, pageX + pageW, y, linePaint);
+            string label = $"Strana {page}";
+            float tw = labelFont.MeasureText(label);
+            canvas.DrawText(label, pageX + pageW - tw - 4f, y - 3f, labelFont, labelPaint);
+        }
+    }
 
     private static void DrawPageShadow(SKCanvas canvas, float x, float y, float w, float h)
     {

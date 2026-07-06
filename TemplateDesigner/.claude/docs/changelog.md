@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-06 — Layout track / „sekce vyšší než stránka" — Slice 2: dělící čáry stránek
+
+- ✅ **`DesignerCanvas.DrawPageBreakLines`** — přerušované modré čáry + popisek „Strana N" přes souvislé
+  plátno, po výšce tisknutelné oblasti (`PageSize.Height − okraje`). Kreslí se jen když obsah přesahuje
+  jednu stránku. Orientační vodítko „kudy půjde zlom" při editaci.
+- **Varianta 1 (geometrické), vědomě NE pixel-přesné** vůči preview — nezná opakování hlaviček/patiček
+  ani `KeepTogether`. Přesný stránkovaný výsledek je a zůstává v preview/PDF. (Varianta 2 „přesně dle
+  enginu" zamítnuta — návrhář ukazuje autorské výšky, engine datové → stejně by neseděly.)
+- Build 0 chyb (canvas = UI, ověřuje se vizuálně). Tím je track „sekce vyšší než stránka" hotový;
+  navazuje R2 (svislé stránkování řádků — zpřesní i tyto zlomy).
+
 ## 2026-07-06 — Layout track / „sekce vyšší než stránka" — Slice 1: plátno roste
 
 - ✅ **Návrhové plátno už není omezené na jednu A4.** `DesignerCanvas.GetSectionOrigins` skládá sekce
