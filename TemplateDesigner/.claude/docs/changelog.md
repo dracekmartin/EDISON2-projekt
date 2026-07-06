@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-06 — Review fixes layout tracku (footer WYSIWYG + mrtvý kód)
+
+- **Footer kotven ke spodku rostoucího papíru** (`GetSectionOrigins`) místo „za tělem" — u jednostránkové
+  šablony tak patička v návrháři sedí s preview/tiskem (dole), u vysokého obsahu vyjde hned za tělem.
+  Opravuje WYSIWYG regresi z Slice 1 (krátké tělo → patička dřív plavala uprostřed). Render i hit-test
+  konzistentní (obojí přes GetSectionOrigins).
+- Odstraněn mrtvý `DesignerCanvas.CalculatePageHeightPx(Template)` (nahradilo `TotalPaperHeightPx`).
+- Nezávislý review tracku „sekce vyšší": žádný BLOCKER/MAJOR; ověřeno bez regrese jednostránkových
+  šablon, hit-testing konzistentní, border-fix správný i pro PDF/PNG, bez rekurze v refreshi. Testy 214/214.
+
 ## 2026-07-06 — Fix: dvojité vykreslení rámečku u split sekce (preview/PDF/PNG)
 
 - 🐛 **Sekce vyšší než stránka (SplitAcrossPages) kreslila rámeček elementu i na druhé straně.** Kořen:

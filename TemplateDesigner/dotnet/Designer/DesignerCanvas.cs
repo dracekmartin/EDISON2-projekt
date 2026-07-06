@@ -338,30 +338,31 @@ public class DesignerCanvas
 
         var sections = _state.CurrentTemplate.Sections;
 
-        // Souvislé plátno: sekce se skládají shora dolů ve své PRAVÉ (neclampnuté) výšce a plátno
-        // poroste (viz TotalPaperHeightPx). Žádné zahazování za přehybem — zlomy stránek se vyznačí
-        // overlayem (Slice 2). Nejdřív hlavička+tělo v pořadí, pak patičky za tělem (autorský pohled;
-        // jejich per-stránkové opakování řeší preview/engine, ne návrhář).
+        // Souvislé plátno: hlavička+tělo se skládají shora dolů ve své PRAVÉ (neclampnuté) výšce a
+        // plátno poroste (viz TotalPaperHeightPx). Žádné zahazování za přehybem — zlomy vyznačí overlay.
         foreach (var section in sections)
         {
             if (section.Role == SectionRole.Footer) continue;
             yield return (section, ox, currentY);
             currentY += SectionHeightPx(section);
         }
+
+        // Patičky kotvené ke SPODKU rostoucího papíru — u jednostránkové šablony tak sedí s preview/tiskem
+        // (WYSIWYG), u vysokého obsahu vyjdou hned za tělem. Per-stránkové opakování řeší preview/engine.
+        float totalFooterH = 0f;
+        foreach (var s in sections)
+            if (s.Role == SectionRole.Footer) totalFooterH += SectionHeightPx(s);
+        float footerY = pageY + TotalPaperHeightPx() - ps.MarginBottom * MmToPx - totalFooterH;
         foreach (var section in sections)
         {
             if (section.Role != SectionRole.Footer) continue;
-            yield return (section, ox, currentY);
-            currentY += SectionHeightPx(section);
+            yield return (section, ox, footerY);
+            footerY += SectionHeightPx(section);
         }
     }
 
     /// <summary>Výška sekce v px = její pravá (neclampnutá) designer-výška.</summary>
     public float SectionHeightPx(Section section) => section.EffectiveDesignerHeight * MmToPx;
-
-    /// <summary>Výška jedné stránky v px (pro overlay dělících čar / referenci).</summary>
-    public float CalculatePageHeightPx(Template template) =>
-        template.PageSize.Height * MmToPx;
 
     /// <summary>
     /// Celková výška „papíru" v px — roste s obsahem: horní okraj + součet výšek všech sekcí +
