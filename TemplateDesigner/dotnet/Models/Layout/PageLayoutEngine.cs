@@ -362,8 +362,8 @@ public class PageLayoutEngine
         if (section.Elements.Count != 1) return null;
         var el = section.Elements[0];
         if (el is not IRowPaginatedElement rp) return null;
-        if (el.Y > 20f) return null;                    // musí začínat blízko vrchu sekce
-        // Rozhoduje SKUTEČNÝ řádkový obsah (z rozhraní, nezávisle na Height/kalkulátoru): když řádky
+        // Y offset elementu se pro stránkování ignoruje — paginující tabulka plní stránky od vrchu sekce
+        // (RenderRowWindow kreslí od 0). Rozhoduje SKUTEČNÝ řádkový obsah: když řádky
         // přesáhnou stránku, stránkuj je — ať je tabulka dynamická NEBO pevně roztažená. Vejdou-li se
         // na stránku, R2 nemá co dělat (malá tabulka → pixel-ořez / auto-scale do boxu).
         float content = rp.HeaderBandHeightMm(data);

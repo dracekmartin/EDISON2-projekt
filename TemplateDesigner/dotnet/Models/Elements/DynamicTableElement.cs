@@ -470,8 +470,10 @@ public class DynamicTableElement : TemplateElement, IRowPaginatedElement
         SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
         using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
 
-        float startY  = Y;
-        float currentY = Y;
+        // Kreslíme od vrchu sekce (ne od element.Y) — paginující tabulka plní stránky odshora;
+        // engine chunky pozicuje na vrch stránky. Y offset se pro stránkování ignoruje.
+        float startY  = 0f;
+        float currentY = 0f;
 
         if (drawHeader && ShowHeader)
             currentY = RenderHeader(ctx, cols, colWidths, headerStyles, currentY, borderPaint, sepPaint, HeaderHeight, 1f);

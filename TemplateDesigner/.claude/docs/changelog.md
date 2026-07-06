@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-06 — Fix(R2): stránkování i pro odsazenou tabulku (Y > 0)
+
+- 🐛 **R2 se nespouštělo, když byla tabulka odsazená od vrchu sekce** (uživatel ji posunul na
+  Y=160.7 „aby přetékala"). Trigger vyžadoval `Y ≤ 20`. Ověřeno proti reálně uloženému JSONu.
+- **Fix:** Y offset se pro řádkové stránkování **ignoruje** — paginující tabulka plní stránky od
+  vrchu sekce (`RenderRowWindow` kreslí od 0, ne od `element.Y`). R2 tak funguje bez ohledu na pozici.
+- Ověřeno render-do-PNG na přesné uživatelově konfiguraci (Y=160.7, výška prázdná, řádek 10, 36 zastávek):
+  strana 2 = **zopakované záhlaví + řádky 29–36**. R2 potvrzeno end-to-end. Testy 218/218.
+
 ## 2026-07-06 — Fix: dynamická DynamicTable se v renderu ořezávala na ~40mm placeholder
 
 - 🐛 **Dynamická (Height=null) DynamicTable ukazovala v preview/PDF jen ~5 řádků, zbytek uříznutý.**
