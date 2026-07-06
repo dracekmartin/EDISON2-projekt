@@ -31,17 +31,23 @@
   registr/přehled (nejspíš DB-backed) + jasné oddělení systémové (M-line, read-only u zákazníka) vs
   zákaznické. **Nejdřív koncept, pak implementace** — teď jen zapsat jako otevřený návrhový bod.
 
-**Větší dedikované tracky (vlastní session):**
-- **Layout „sekce vyšší než stránka" (var B)** — designer je dnes model „jedna pevná A4", přetečení jen
-  červený rámeček v preview. Fix = „canvas roste + dělící čáry". Největší koncepční layout dluh. **Pilot-gated.**
+**🎯 Aktivní track — Layout tabulek (rozhodnuto 2026-07-06, bereme postupně po slicích):**
+1. **„Sekce vyšší než stránka"** ⬅️ **první** — designer je dnes „jedna pevná A4", přetečení jen červený
+   rámeček. Fix = **plátno roste + dělící čáry stránek** (návrhář čte zlomy z layout enginu; roste
+   z obsahu i ručně). Uživatel navrhuje přes celou multi-page výšku a vidí, kam padnou zlomy; preview
+   i PDF se dělí podle nich. Největší koncepční layout dluh (mění předpoklad „pevná A4"). Odgatováno
+   z pilotu vědomě (čistý git, stejně to musíme vyřešit).
+2. **R2 — svislé stránkování řádků** (kontrakt `r2-partial-fit-kontrakt.md`, dnes pixel-ořez uřízne řádek)
+   — zpřesní zlomy na celé řádky + opakování záhlaví. Návrhář z bodu 1 jen čte nové pozice → **žádný rework**.
+3. **C3 — vodorovný `Strih` / 2D bin-packing** (Fáze C, krok 43) — široká MHD linka; nejtěžší, vlastní kontrakt.
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Tech dluh (ne blocker, průběžně):** T1b-robustní gold test (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do
   izolovaného namespace — data-drift-proof) · T4 god-objects strangler (postupné řezy `MainWindow.xaml.cs`
   + `TemplateDesignerViewModel` na služby). Malé T kousky ✅ (archiv 2026-07-03).
-- **Fáze B** element flexibility (merged cells; conditional formatting + počítaná pole + min/max ✅
-  archiv 2026-07-05)
+- **Fáze B** — z větší části ✅ (conditional formatting + počítaná pole + min/max, archiv 2026-07-05).
+  Odloženo: **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI) — viz sekce Fáze B.
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
   vnořené datasource (`_rows` v `_rows`). (Computed fields + min/max ✅ hotovo, archiv 2026-07-05.)
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
@@ -121,21 +127,23 @@ agendy (Fáze C/D/E) pattern využijí. Shared helpery extrahovat do base až bu
 
 ---
 
-## 🟠 Fáze B: Element flexibility
+## 🟠 Fáze B: Element flexibility — z větší části hotová
 
-Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony). Může běžet paralelně.
+Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
 
-**Template versioning — ✅ framework hotový** (H-18, Wave 3 + T3 guardy). H-19 (konkrétní V1→V2 migrace)
-zůstává no-op: V1 v DB neexistují (ověřeno 2026-07-02), zbytkové riziko jen staré JSON soubory na disku.
+**Hotovo ✅ (archiv 2026-07-05):** conditional formatting (řádková viditelnost + zvýraznění přes sdílený
+`RowConditions`, DynamicTable/StopList/LineTable) · počítaná pole (aritmetika + `TableColumn.Expression`)
+· min/max řádků. **Template versioning** framework hotový (H-18); H-19 no-op (V1 v DB neexistují).
 
-| Oblast | Krok | Co |
-|---|---|---|
-| Merged cells | 35/36 | `ColSpan`/`RowSpan` na `TableCell` (JSON + render skip) + merge editor v dialogu |
-| Layout-reservation | — | Deklarativní „pokud property X=true → rezervuj Y mm" (dnes ad-hoc u šipky StopListu) |
+**Odloženo (backlog, ne blocker):**
+- **Merged cells** (`ColSpan`/`RowSpan` + merge editor) — **gated na oživení Fixed tabulky**: slučování
+  patří strukturovaným tabulkám, DynamicTable má uniformní datové řádky (dává smysl jen skupinové
+  záhlaví / souhrn). Vrátit se, až se budou dělat Fixed tabulky.
+- **Layout-reservation** (deklarativní „když X → rezervuj Y mm") — **YAGNI**: dnes jediný konzument
+  (šipka StopListu má ad-hoc gutter). Udělat, až vzniknou 2–3 konzumenti; interní hygiena, ne user featura.
 
-> **Conditional formatting ✅ hotovo** (archiv 2026-07-05) — řádková viditelnost + zvýraznění přes
-> sdílený `RowConditions` (DynamicTable/StopList/LineTable). **Rozšíření odloženo na produkci:** seznam
-> pravidel místo jednoho, barva textu, per-sloupec/buňka. **Počítaná pole + min/max řádků** rovněž ✅.
+- **Rozšíření conditional formatting** (seznam pravidel místo 1, barva textu, per-sloupec/buňka) —
+  odloženo na produkci (rozhodnutí 2026-07-05).
 
 ---
 
