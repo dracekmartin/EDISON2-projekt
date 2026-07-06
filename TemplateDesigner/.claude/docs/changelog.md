@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-06 — Fix: dynamická DynamicTable se v renderu ořezávala na ~40mm placeholder
+
+- 🐛 **Dynamická (Height=null) DynamicTable ukazovala v preview/PDF jen ~5 řádků, zbytek uříznutý.**
+  Kořen: `Render` používal pro clip `EffectiveDesignerHeight` (= placeholder ~40mm), místo skutečné
+  výšky z dat. Ověřeno render-do-PNG: 36 řádků → viditelných jen 5.
+- **Fix:** `tableHeight = Height ?? (ctx.Data is not null ? CalculateHeightFromData(ctx.Data) :
+  EffectiveDesignerHeight)` — dynamická tabulka s daty se kreslí na plnou výšku obsahu. Po opravě
+  render ukáže všech 36 řádků.
+- Souvisí s R2: kvůli tomuto bugu nešlo R2 vyzkoušet (dynamická výška se ořízla, pevná výška ≤ stránka
+  zase blokovala trigger — viz předchozí fix). Teď: dynamická tabulka s obsahem &gt; stránka → R2
+  (row-break + opakované záhlaví, ověřeno render-do-PNG); s obsahem ≤ stránka → celá na jedné stránce.
+
 ## 2026-07-06 — R2: svislé stránkování řádků (DynamicTable) — láme po řádcích + opakuje záhlaví
 
 - ✅ **Dlouhá tabulka se láme mezi celými řádky (nikdy vejpůl) a záhlaví se opakuje na každé stránce.**

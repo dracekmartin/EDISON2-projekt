@@ -136,7 +136,9 @@ public class DynamicTableElement : TemplateElement, IRowPaginatedElement
     {
         if (Width <= 0) return;
 
-        float tableHeight = EffectiveDesignerHeight;
+        // Výška boxu pro clip: pevná Height, jinak (dynamická) skutečná výška z dat — NE placeholder
+        // (EffectiveDesignerHeight ~40mm), který by ořízl většinu řádků. V návrháři (bez dat) placeholder.
+        float tableHeight = Height ?? (ctx.Data is not null ? CalculateHeightFromData(ctx.Data) : EffectiveDesignerHeight);
         var tableRect = ctx.ToCanvasRect(X, Y, Width, tableHeight);
 
         using var bgPaint     = new SKPaint { Color = SKColors.White };
