@@ -91,17 +91,19 @@ public class DesignerCanvas
 
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;
-        float pageH  = template.PageSize.Height * MmToPx;
+        // „Papír" roste s obsahem (součet výšek sekcí) — návrhář už není omezen na jednu A4.
+        // Zlomy stránek se vyznačí overlayem (Slice 2); tady jen souvislý papír na plnou výšku.
+        float paperH = TotalPaperHeightPx();
         float pageX  = CalculatePageX(canvasWidth);
         float pageY  = PagePaddingPx + TopBufferPx;
 
-        DrawPageShadow(canvas, pageX, pageY, pageW, pageH);
-        DrawPageBackground(canvas, pageX, pageY, pageW, pageH);
-        DrawMarginGuides(canvas, pageX, pageY, template.PageSize);
+        DrawPageShadow(canvas, pageX, pageY, pageW, paperH);
+        DrawPageBackground(canvas, pageX, pageY, pageW, paperH);
+        DrawMarginGuides(canvas, pageX, pageY, template.PageSize, paperH);
         DrawSections(canvas, template, pageX, pageY, canvasWidth);
         // Grid — kreslen po sekcích, aby byl vidět přes jejich pozadí (v printable area, kde se pozicují elementy).
-        if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, template.PageSize);
-        DrawPageBorder(canvas, pageX, pageY, pageW, pageH);
+        if (_state.ShowGrid) DrawGrid(canvas, pageX, pageY, pageW, paperH, template.PageSize);
+        DrawPageBorder(canvas, pageX, pageY, pageW, paperH);
 
         // Selection handles kreslíme naposled — vždy nad elementy
         DrawSnapTargetHighlights(canvas, canvasWidth);
@@ -109,8 +111,8 @@ public class DesignerCanvas
         DrawSnapLines(canvas, canvasWidth);
         DrawSectionCenterGuide(canvas, canvasWidth);
 
-        // Pravítka — nad stránkou a vpravo, v existujícím PagePaddingPx prostoru
-        if (_state.ShowRuler) DrawRulers(canvas, pageX, pageY, pageW, pageH, canvasWidth);
+        // Pravítka — nad stránkou a vpravo, v existujícím PagePaddingPx prostoru (svislé přes celý papír)
+        if (_state.ShowRuler) DrawRulers(canvas, pageX, pageY, pageW, paperH, canvasWidth);
 
         // Měřící badge během dragu/resize — zcela nahoře
         DrawDragBadge(canvas);
@@ -145,10 +147,9 @@ public class DesignerCanvas
     public Section? HitTestSectionHeader(float canvasX, float canvasY, float canvasWidth)
     {
         if (!_state.ShowSectionHeaders) return null;
-        float bottomY = GetPageBottomY(canvasWidth);
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
-            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
+            float sectionH = SectionHeightPx(section);
             float tabLeft  = ox - _state.CurrentTemplate.PageSize.MarginLeft * MmToPx - SectionTabWidthPx;
             float tabRight = ox - _state.CurrentTemplate.PageSize.MarginLeft * MmToPx;
 
@@ -162,10 +163,9 @@ public class DesignerCanvas
     /// <summary>Vrátí sekci pod px pozicí na canvasu, nebo null.</summary>
     public Section? HitTestSection(float canvasX, float canvasY, float canvasWidth)
     {
-        float bottomY = GetPageBottomY(canvasWidth);
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
-            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
+            float sectionH = SectionHeightPx(section);
             float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
 
             if (canvasX >= ox && canvasX <= ox + sectionW &&
@@ -178,11 +178,10 @@ public class DesignerCanvas
     /// <summary>Vrátí element a jeho sekci pod px pozicí na canvasu, nebo null.</summary>
     public (Section Section, TemplateElement Element)? HitTestElement(float canvasX, float canvasY, float canvasWidth)
     {
-        float bottomY = GetPageBottomY(canvasWidth);
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
             float sectionW = _state.CurrentTemplate.PageSize.PrintableWidth * MmToPx;
-            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
+            float sectionH = SectionHeightPx(section);
 
             if (canvasX < ox || canvasX > ox + sectionW) continue;
             if (canvasY < oy || canvasY > oy + sectionH) continue;
@@ -333,60 +332,49 @@ public class DesignerCanvas
         float pageY = PagePaddingPx + TopBufferPx;
 
         float ox       = pageX + ps.MarginLeft * MmToPx;
-        float topY     = pageY + ps.MarginTop  * MmToPx;
-        float bottomY  = pageY + ps.Height * MmToPx - ps.MarginBottom * MmToPx;
+        float currentY = pageY + ps.MarginTop  * MmToPx;
 
         var sections = _state.CurrentTemplate.Sections;
 
-        // Spočítat celkovou výšku footer sekcí (umisťují se od spodu)
-        float totalFooterH = 0f;
-        foreach (var s in sections)
-        {
-            if (s.Role == SectionRole.Footer)
-                totalFooterH += s.EffectiveDesignerHeight * MmToPx;
-        }
-
-        // Body limit = bottomY mínus footery
-        float bodyBottomY = bottomY - totalFooterH;
-
-        // Header + Body sekce shora dolů — obsah začíná přímo na topY, bez header offsetu
-        float currentY = topY;
+        // Souvislé plátno: sekce se skládají shora dolů ve své PRAVÉ (neclampnuté) výšce a plátno
+        // poroste (viz TotalPaperHeightPx). Žádné zahazování za přehybem — zlomy stránek se vyznačí
+        // overlayem (Slice 2). Nejdřív hlavička+tělo v pořadí, pak patičky za tělem (autorský pohled;
+        // jejich per-stránkové opakování řeší preview/engine, ne návrhář).
         foreach (var section in sections)
         {
             if (section.Role == SectionRole.Footer) continue;
-            if (currentY >= bodyBottomY) break;
             yield return (section, ox, currentY);
-            currentY += GetClampedSectionHeightPx(section, currentY, bodyBottomY);
+            currentY += SectionHeightPx(section);
         }
-
-        // Footer sekce od spodu nahoru
-        float footerY = bottomY - totalFooterH;
         foreach (var section in sections)
         {
             if (section.Role != SectionRole.Footer) continue;
-            yield return (section, ox, footerY);
-            footerY += section.EffectiveDesignerHeight * MmToPx;
+            yield return (section, ox, currentY);
+            currentY += SectionHeightPx(section);
         }
     }
 
-    /// <summary>Spodní okraj tisknutelné oblasti stránky v px.</summary>
-    private float GetPageBottomY(float canvasWidth)
-    {
-        _ = canvasWidth; // parametr zachován pro konzistenci API
-        var ps = _state.CurrentTemplate.PageSize;
-        return PagePaddingPx + TopBufferPx + (ps.Height - ps.MarginBottom) * MmToPx;
-    }
+    /// <summary>Výška sekce v px = její pravá (neclampnutá) designer-výška.</summary>
+    public float SectionHeightPx(Section section) => section.EffectiveDesignerHeight * MmToPx;
 
-    /// <summary>Výška sekce v px omezená tak, aby nepřesáhla spodní okraj stránky.</summary>
-    public float GetClampedSectionHeightPx(Section section, float sectionContentY, float bottomY)
-    {
-        float rawH = section.EffectiveDesignerHeight * MmToPx;
-        float available = bottomY - sectionContentY;
-        return Math.Max(0f, Math.Min(rawH, available));
-    }
-
+    /// <summary>Výška jedné stránky v px (pro overlay dělících čar / referenci).</summary>
     public float CalculatePageHeightPx(Template template) =>
         template.PageSize.Height * MmToPx;
+
+    /// <summary>
+    /// Celková výška „papíru" v px — roste s obsahem: horní okraj + součet výšek všech sekcí +
+    /// spodní okraj. Minimum = jedna stránka (malá šablona ukáže plnou A4). Návrhář tím přestává
+    /// být omezen na jednu stránku; plátno se přizpůsobí (viz UpdateCanvasSize).
+    /// </summary>
+    public float TotalPaperHeightPx()
+    {
+        var ps = _state.CurrentTemplate.PageSize;
+        float sectionsMm = 0f;
+        foreach (var s in _state.CurrentTemplate.Sections)
+            sectionsMm += s.EffectiveDesignerHeight;
+        float paperMm = ps.MarginTop + sectionsMm + ps.MarginBottom;
+        return Math.Max(ps.Height, paperMm) * MmToPx;
+    }
 
     // ─────────────────────────────────────────────────────────────────────
     // Interní renderovací metody
@@ -415,7 +403,7 @@ public class DesignerCanvas
         canvas.DrawRect(new SKRect(x, y, x + w, y + h), p);
     }
 
-    private void DrawGrid(SKCanvas canvas, float pageX, float pageY, float pageW, PageSize ps)
+    private void DrawGrid(SKCanvas canvas, float pageX, float pageY, float pageW, float paperH, PageSize ps)
     {
         // Grid jen v printable area (kde se pozicují elementy), ne v margins. Slabě modrá, aby nerušila obsah.
         float step   = _state.GridSize * MmToPx;
@@ -424,7 +412,7 @@ public class DesignerCanvas
         float startX = pageX + ps.MarginLeft  * MmToPx;
         float startY = pageY + ps.MarginTop   * MmToPx;
         float endX   = pageX + (ps.Width  - ps.MarginRight)  * MmToPx;
-        float endY   = pageY + (ps.Height - ps.MarginBottom) * MmToPx;
+        float endY   = pageY + paperH - ps.MarginBottom * MmToPx;   // grid přes celý (rostoucí) papír
 
         // Viewport culling — vykresli jen linky uvnitř viditelné oblasti.
         // Při vysokém zoomu jsou tisíce linek mimo viewport (uživatel je nevidí),
@@ -457,11 +445,11 @@ public class DesignerCanvas
             canvas.DrawLine(startX, gy, endX, gy, p);
     }
 
-    private void DrawMarginGuides(SKCanvas canvas, float pageX, float pageY, PageSize ps)
+    private void DrawMarginGuides(SKCanvas canvas, float pageX, float pageY, PageSize ps, float paperH)
     {
         float ml = ps.MarginLeft * MmToPx, mr = ps.MarginRight  * MmToPx;
         float mt = ps.MarginTop  * MmToPx, mb = ps.MarginBottom * MmToPx;
-        float pw = ps.Width * MmToPx, ph = ps.Height * MmToPx;
+        float pw = ps.Width * MmToPx, ph = paperH;   // spodní okraj sleduje rostoucí papír
         using var p = new SKPaint { Color = ClrMarginGuide, StrokeWidth = 0.5f, PathEffect = SKPathEffect.CreateDash([4f, 3f], 0) };
         canvas.DrawLine(pageX + ml,      pageY + mt,      pageX + ml,      pageY + ph - mb, p);
         canvas.DrawLine(pageX + pw - mr, pageY + mt,      pageX + pw - mr, pageY + ph - mb, p);
@@ -472,11 +460,10 @@ public class DesignerCanvas
     private void DrawSections(SKCanvas canvas, Template template, float pageX, float pageY, float canvasWidth)
     {
         float contentW = template.PageSize.PrintableWidth * MmToPx;
-        float bottomY  = pageY + template.PageSize.Height * MmToPx - template.PageSize.MarginBottom * MmToPx;
 
         foreach (var (section, ox, oy) in GetSectionOrigins(canvasWidth))
         {
-            float sectionH = GetClampedSectionHeightPx(section, oy, bottomY);
+            float sectionH = SectionHeightPx(section);
             bool  dynamic  = section.DesignerHeight is null;
             bool  isActive = section == _state.ActiveSection;
 

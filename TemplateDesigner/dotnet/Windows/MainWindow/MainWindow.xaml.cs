@@ -134,7 +134,9 @@ public partial class MainWindow : Window
         CanvasScrollViewer.ScrollChanged += (_, _) => skCanvas.InvalidateVisual();
 
         // Wire VM callbacks
-        _vm.RequestCanvasRefresh         = () => { skCanvas.InvalidateVisual(); InvalidatePreview(); };
+        // UpdateCanvasSize (ne jen InvalidateVisual) — výška plátna roste s obsahem, takže po každé
+        // změně (přidání/smazání/resize sekce či elementu) je třeba přepočítat velikost plátna.
+        _vm.RequestCanvasRefresh         = () => { UpdateCanvasSize(); InvalidatePreview(); };
         _vm.RequestPreviewRefresh        = InvalidatePreview;
         // Titulek se mění mj. při změně agendy → stejný signál řídí i kontextovou paletu JŘ elementů
         _vm.RequestTitleUpdate           = () => { UpdateTitle(); UpdatePaletteForAgenda(); };
@@ -424,9 +426,10 @@ public partial class MainWindow : Window
         const float padding   = 80f;  // 40 top + 40 bottom standardní okraj kolem stránky
         const float topBuffer = 60f;  // extra prostor nahoře — kompenzuje preview chrome (Y-zarovnání)
         float pageW   = _vm.State.CurrentTemplate.PageSize.Width * _canvas.MmToPx;
-        float pageH   = _canvas.CalculatePageHeightPx(_vm.State.CurrentTemplate);
+        // Výška plátna roste s obsahem (souvislé multi-page plátno), ne pevná A4.
+        float paperH  = _canvas.TotalPaperHeightPx();
         skCanvas.Width  = pageW + padding + _canvas.ExtraLeftPx;
-        skCanvas.Height = pageH + padding + topBuffer;
+        skCanvas.Height = paperH + padding + topBuffer;
         skCanvas.InvalidateVisual();
         UpdatePreviewSize();
     }

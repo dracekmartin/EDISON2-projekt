@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-06 — Layout track / „sekce vyšší než stránka" — Slice 1: plátno roste
+
+- ✅ **Návrhové plátno už není omezené na jednu A4.** `DesignerCanvas.GetSectionOrigins` skládá sekce
+  souvisle shora dolů v jejich **pravé (neclampnuté) výšce**, bez zahazování za přehybem; hlavička+tělo
+  v pořadí, patičky za tělem (autorský pohled — per-stránkové opakování řeší preview/engine).
+- Nové `TotalPaperHeightPx` (horní okraj + Σ výšek sekcí + spodní okraj, min = 1 stránka); `Render`
+  kreslí papír/rámeček/okraje/grid/pravítka na tuto rostoucí výšku. `UpdateCanvasSize` + `RequestCanvasRefresh`
+  přepočítávají velikost plátna po každé změně (sekce/element).
+- `GetClampedSectionHeightPx` → `SectionHeightPx` (pravá výška); hit-testing i render jedou přes tentýž
+  zdroj → automaticky konzistentní. Odstraněn single-page strop `GetPageBottomY`.
+- **Zatím bez dělících čar** (Slice 2) — plátno roste souvisle. **Preview/PDF beze změny** (už multi-page).
+  Build 0 chyb, testy 213/213 (canvas = UI, ověřuje se vizuálně).
+
 ## 2026-07-05 — B1: embedding fontů do .exe (mechanismus, R5)
 
 - ✅ **`FontResolver` embedding mechanismus** — `.ttf`/`.otf` hozené do `dotnet/Fonts/` se glob-em
