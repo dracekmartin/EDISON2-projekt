@@ -259,7 +259,7 @@ public class PageLayoutEngine
                 cursorY += sectionH;
             }
             else if (section.OverflowBehavior != SectionOverflowBehavior.KeepTogether
-                     && RowPaginatedElement(section) is { } rp)
+                     && RowPaginatedElement(section, printableHeight, sectionData ?? data) is { } rp)
             {
                 // R2 — svislé stránkování po řádcích: zlom mezi celými jednotkami + opakované záhlaví.
                 cursorY = LayoutRowPaginated(result, section, rp, sectionData ?? data,
@@ -350,9 +350,28 @@ public class PageLayoutEngine
     // ─────────────────────────────────────────────────────────────────────
     // R2 — svislé stránkování po řádcích (IRowPaginatedElement)
 
-    /// <summary>Sekce s právě jedním řádkově-stránkovatelným elementem (jinak null).</summary>
-    private static IRowPaginatedElement? RowPaginatedElement(Section section) =>
-        section.Elements.Count == 1 && section.Elements[0] is IRowPaginatedElement rp ? rp : null;
+    /// <summary>
+    /// Vrátí řádkově-stránkovatelný element, jen když ho má smysl stránkovat po řádcích (contract R2):
+    /// právě 1 element, dynamický (Height=null → roste s obsahem), na vrchu sekce (Y≈0), a jeho
+    /// <b>vlastní obsah přesáhne stránku</b> (potřebuje rozdělit). Když se tabulka vejde na stránku,
+    /// vrací null → engine použije pixel-ořez (malá tabulka ve vysoké sekci → zachová „sekce vyšší
+    /// než stránka"; odsazená/fixní tabulka → beze změny).
+    /// </summary>
+    private static IRowPaginatedElement? RowPaginatedElement(Section section, float printableHeight, DataContext? data)
+    {
+        if (section.Elements.Count != 1) return null;
+        var el = section.Elements[0];
+        if (el is not IRowPaginatedElement rp) return null;
+        if (el.Y > 20f) return null;                    // musí začínat blízko vrchu sekce
+        // Rozhoduje SKUTEČNÝ řádkový obsah (z rozhraní, nezávisle na Height/kalkulátoru): když řádky
+        // přesáhnou stránku, stránkuj je — ať je tabulka dynamická NEBO pevně roztažená. Vejdou-li se
+        // na stránku, R2 nemá co dělat (malá tabulka → pixel-ořez / auto-scale do boxu).
+        float content = rp.HeaderBandHeightMm(data);
+        int units = rp.RowUnitCount(data);
+        for (int i = 0; i < units; i++) content += rp.RowUnitHeightMm(data, i);
+        if (content <= printableHeight + 0.5f) return null;
+        return rp;
+    }
 
     /// <summary>
     /// Naplní řádkové jednotky do oken stránek: greedy po celých jednotkách (zlom nikdy uprostřed
