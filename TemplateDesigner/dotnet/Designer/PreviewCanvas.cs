@@ -333,6 +333,28 @@ public class PreviewCanvas
             canvas.Save();
             canvas.ClipRect(clipRect);
 
+            // R2 — řádkové stránkování: element si kreslí okno jednotek sám (záhlaví + řádky + rámeček),
+            // zlom po celých řádcích + opakované záhlaví. Origin = vrch sekce na stránce (bez ClipTop posunu).
+            if (placed.StartRowUnit is int startUnit && placed.Source.Elements.Count > 0
+                && placed.Source.Elements[0] is IRowPaginatedElement rowElement)
+            {
+                var rowCtx = new RenderContext(canvas, mmToPx, placed.Data)
+                {
+                    SectionOriginX = ox,
+                    SectionOriginY = sectionTopPx
+                };
+                rowElement.RenderRowWindow(rowCtx, startUnit, placed.EndRowUnit ?? startUnit, placed.RepeatHeader);
+                canvas.Restore();
+
+                if (i < sortedSections.Count - 1)
+                {
+                    using var sepLine = new SKPaint { Color = ClrSectionSep, StrokeWidth = 0.5f };
+                    float sy = sectionTopPx + sectionHeightPx;
+                    canvas.DrawLine(ox, sy, ox + contentW, sy, sepLine);
+                }
+                continue;
+            }
+
             // Pro split sekce: posunout origin nahoru o ClipTop
             float originYOffset = placed.ClipTop.HasValue ? -placed.ClipTop.Value * mmToPx : 0f;
 

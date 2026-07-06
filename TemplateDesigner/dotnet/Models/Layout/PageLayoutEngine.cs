@@ -258,6 +258,14 @@ public class PageLayoutEngine
                 });
                 cursorY += sectionH;
             }
+            else if (section.OverflowBehavior != SectionOverflowBehavior.KeepTogether
+                     && RowPaginatedElement(section) is { } rp)
+            {
+                // R2 — svislé stránkování po řádcích: zlom mezi celými jednotkami + opakované záhlaví.
+                cursorY = LayoutRowPaginated(result, section, rp, sectionData ?? data,
+                    ref currentPage, ref currentPageNum, ref headerH, ref footerH, ref availableHeight,
+                    headers, footers, sectionHeights, estTotal, printableHeight, cursorY);
+            }
             else if (section.OverflowBehavior == SectionOverflowBehavior.KeepTogether)
             {
                 // Posunout na novou stránku jen pokud aktuální stránka už něco obsahuje.
@@ -337,6 +345,84 @@ public class PageLayoutEngine
         }
 
         return result;
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // R2 — svislé stránkování po řádcích (IRowPaginatedElement)
+
+    /// <summary>Sekce s právě jedním řádkově-stránkovatelným elementem (jinak null).</summary>
+    private static IRowPaginatedElement? RowPaginatedElement(Section section) =>
+        section.Elements.Count == 1 && section.Elements[0] is IRowPaginatedElement rp ? rp : null;
+
+    /// <summary>
+    /// Naplní řádkové jednotky do oken stránek: greedy po celých jednotkách (zlom nikdy uprostřed
+    /// jednotky), na každé stránce navrch záhlaví. Zakládá nové stránky dle potřeby (aktualizuje
+    /// currentPage/currentPageNum/headerH/footerH/availableHeight přes ref). Vrací nové cursorY.
+    /// </summary>
+    private float LayoutRowPaginated(LayoutResult result, Section section, IRowPaginatedElement rp,
+        DataContext? data, ref Page currentPage, ref int currentPageNum,
+        ref float headerH, ref float footerH, ref float availableHeight,
+        List<Section> headers, List<Section> footers, Dictionary<Guid, float> sectionHeights,
+        int estTotal, float printableHeight, float cursorY)
+    {
+        int unitCount = rp.RowUnitCount(data);
+        float headerBand = rp.HeaderBandHeightMm(data);
+
+        int unit = 0;
+        do
+        {
+            float spaceOnPage = headerH + availableHeight - cursorY;
+            // Nová stránka, když se sem nevejde ani záhlaví + kousek (a aktuální stránka už něco má).
+            if (spaceOnPage <= headerBand + 0.01f && currentPage.Sections.Count > 0)
+            {
+                currentPageNum++;
+                currentPage = new Page { PageNumber = currentPageNum };
+                result.Pages.Add(currentPage);
+                headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
+                footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
+                availableHeight = printableHeight - headerH - footerH;
+                cursorY = headerH;
+                spaceOnPage = availableHeight;
+            }
+
+            float availForRows = spaceOnPage - headerBand;
+            int start = unit;
+            float used = 0f;
+            while (unit < unitCount)
+            {
+                float uh = rp.RowUnitHeightMm(data, unit);
+                if (used + uh > availForRows + 0.01f && unit > start) break;  // aspoň 1 jednotka na stránku
+                used += uh;
+                unit++;
+            }
+
+            float chunkH = headerBand + used;
+            currentPage.Sections.Add(new PlacedSection
+            {
+                Source = section,
+                Y = cursorY,
+                Height = chunkH,
+                StartRowUnit = start,
+                EndRowUnit = unit,
+                RepeatHeader = true,   // záhlaví na každé stránce (i pokračovací)
+                Data = data
+            });
+            cursorY += chunkH;
+
+            if (unit < unitCount)
+            {
+                currentPageNum++;
+                currentPage = new Page { PageNumber = currentPageNum };
+                result.Pages.Add(currentPage);
+                headerH = GetHeaderHeight(currentPageNum, estTotal, headers, sectionHeights);
+                footerH = GetFooterHeight(currentPageNum, estTotal, footers, sectionHeights);
+                availableHeight = printableHeight - headerH - footerH;
+                cursorY = headerH;
+            }
+        }
+        while (unit < unitCount);
+
+        return cursorY;
     }
 
     // ─────────────────────────────────────────────────────────────────────

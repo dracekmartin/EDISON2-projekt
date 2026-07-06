@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-06 — R2: svislé stránkování řádků (DynamicTable) — láme po řádcích + opakuje záhlaví
+
+- ✅ **Dlouhá tabulka se láme mezi celými řádky (nikdy vejpůl) a záhlaví se opakuje na každé stránce.**
+  Nahrazuje dřívější pixel-ořez sekce (uřízl řádek + hlavička jen na 1. straně).
+- **Rozhraní `IRowPaginatedElement`** (`Models/Layout/`): `RowUnitCount` / `HeaderBandHeightMm` /
+  `RowUnitHeightMm` (mm, čistá logika) + `RenderRowWindow`. Implementuje **DynamicTable** (jednotka =
+  datový řádek; souhrnné řádky = koncové jednotky; záhlaví = opakovaný band).
+- **Engine** (`PageLayoutEngine.LayoutRowPaginated`): pro Split/AllowSplit sekci s jedním
+  `IRowPaginatedElement` greedy plní jednotky do oken stránek (aspoň 1/stránku), `PlacedSection` nese
+  `StartRowUnit`/`EndRowUnit`/`RepeatHeader` místo pixel-clipu. Fallback = dnešní pixel-ořez (nic nerozbito).
+- **Renderer** (`PreviewCanvas.RenderPage`): u row-window PlacedSection volá `RenderRowWindow` (header +
+  okno řádků + vlastní rámeček) místo clip-offsetu. Sdílený `RenderPage` → platí i pro PDF/PNG export.
+- Trigger v reálné appce: **dynamická** (Height=null) DynamicTable naroste s obsahem → sekce přesáhne
+  stránku (i výchozí SplitAcrossPages) → stránkuje po řádcích. Zebra/zvýraznění dle absolutního indexu
+  řádku (spojité přes stránky). StopList/LineTable navážou (zatím jen DynamicTable).
+- Testy 215/215 (`RowPaginationTest` — 50 řádků → souvislá okna, opakované záhlaví, chunky se vejdou).
+
 ## 2026-07-06 — Review fixes layout tracku (footer WYSIWYG + mrtvý kód)
 
 - **Footer kotven ke spodku rostoucího papíru** (`GetSectionOrigins`) místo „za tělem" — u jednostránkové

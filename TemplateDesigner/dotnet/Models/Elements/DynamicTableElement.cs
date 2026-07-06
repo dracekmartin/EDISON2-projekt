@@ -1,5 +1,7 @@
+using System.Globalization;
 using SkiaSharp;
 using TemplateDesigner.Models.Expressions;
+using TemplateDesigner.Models.Layout;
 using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner.Models.Elements;
@@ -16,7 +18,7 @@ namespace TemplateDesigner.Models.Elements;
 /// Statická (Fixed) tabulka je dočasně mimo (třída <see cref="TableElement"/> zůstala dormant) —
 /// doděláme ji jako samostatný element až podle poptávky.
 /// </summary>
-public class DynamicTableElement : TemplateElement
+public class DynamicTableElement : TemplateElement, IRowPaginatedElement
 {
     /// <summary>Klíč datové kolekce v DataContext._rows (= DataFieldCollection.CollectionKey).</summary>
     public string? DataSource { get; set; }
@@ -335,12 +337,7 @@ public class DynamicTableElement : TemplateElement
                 string sample;
                 if (isDataRow)
                 {
-                    // Počítaný sloupec (Expression) má přednost před Field; výsledek lze formátovat (Format).
-                    sample = !string.IsNullOrWhiteSpace(col.Expression)
-                        ? ExpressionEvaluator.EvaluateToString(col.Expression, rows[i])
-                        : rows[i].GetString(col.Field ?? "");
-                    if (col.Format is not null)
-                        sample = DataContext.FormatValue(sample, col.Format, ctx.Data?.Culture);
+                    sample = DataCellText(col, rows[i], ctx.Data?.Culture);
                 }
                 else if (isDesigner)
                 {
@@ -381,54 +378,134 @@ public class DynamicTableElement : TemplateElement
         float currentY = startY;
         foreach (var row in SummaryRows)
         {
-            var rowBgColor = row.BackgroundColor is not null
-                ? SKColor.Parse(row.BackgroundColor)
-                : TableSummaryParent.ParsedBackgroundColor;
-            if (rowBgColor.Alpha > 0)
-            {
-                using var sbg = new SKPaint { Color = rowBgColor };
-                ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, rowH), sbg);
-            }
-
-            var specs = new ColumnRenderer.CellSpec[cols.Count];
-            for (int colIdx = 0; colIdx < cols.Count; colIdx++)
-            {
-                var col = cols[colIdx];
-                var cellStyle = TableSummaryParent;
-                string content = "";
-
-                if (colIdx < row.Cells.Count)
-                {
-                    var cell = row.Cells[colIdx];
-                    content = AggregationResolver.Resolve(cell.Content, dataRows);
-                    content = ctx.Data?.ResolvePlaceholders(content) ?? content;
-                    var cellFormat = cell.Format ?? col.Format;
-                    if (cellFormat is not null)
-                        content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
-
-                    if (cell.Style is { } cs) cellStyle = cs.Resolve(TableSummaryParent);
-
-                    if (cell.Style?.HAlign is null)
-                        cellStyle = cellStyle with { HAlign = col.Alignment };
-                }
-                else
-                {
-                    cellStyle = cellStyle with { HAlign = col.Alignment };
-                }
-
-                specs[colIdx] = new(colWidths[colIdx], content, cellStyle);
-            }
-            ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, ColumnGridPaint(sepPaint), fontScale);
-
-            if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
-            {
-                var a = ctx.ToCanvas(X, currentY + rowH);
-                var b = ctx.ToCanvas(X + Width, currentY + rowH);
-                ctx.Canvas.DrawLine(a, b, sepPaint);
-            }
-
+            DrawSummaryRowAt(ctx, cols, colWidths, row, dataRows, currentY, rowH, sepPaint, fontScale);
             currentY += rowH;
         }
+    }
+
+    /// <summary>Vykreslí jeden souhrnný řádek na dané Y (sdílené plným renderem i řádkovým oknem R2).</summary>
+    private void DrawSummaryRowAt(RenderContext ctx, List<TableColumn> cols, float[] colWidths,
+        TableRow row, IReadOnlyList<DataContext> dataRows, float y, float rowH, SKPaint sepPaint, float fontScale)
+    {
+        var rowBgColor = row.BackgroundColor is not null
+            ? SKColor.Parse(row.BackgroundColor)
+            : TableSummaryParent.ParsedBackgroundColor;
+        if (rowBgColor.Alpha > 0)
+        {
+            using var sbg = new SKPaint { Color = rowBgColor };
+            ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, y, Width, rowH), sbg);
+        }
+
+        var specs = new ColumnRenderer.CellSpec[cols.Count];
+        for (int colIdx = 0; colIdx < cols.Count; colIdx++)
+        {
+            var col = cols[colIdx];
+            var cellStyle = TableSummaryParent;
+            string content = "";
+
+            if (colIdx < row.Cells.Count)
+            {
+                var cell = row.Cells[colIdx];
+                content = AggregationResolver.Resolve(cell.Content, dataRows);
+                content = ctx.Data?.ResolvePlaceholders(content) ?? content;
+                var cellFormat = cell.Format ?? col.Format;
+                if (cellFormat is not null)
+                    content = DataContext.FormatValue(content, cellFormat, ctx.Data?.Culture);
+
+                if (cell.Style is { } cs) cellStyle = cs.Resolve(TableSummaryParent);
+                if (cell.Style?.HAlign is null)
+                    cellStyle = cellStyle with { HAlign = col.Alignment };
+            }
+            else
+            {
+                cellStyle = cellStyle with { HAlign = col.Alignment };
+            }
+
+            specs[colIdx] = new(colWidths[colIdx], content, cellStyle);
+        }
+        ColumnRenderer.DrawRow(ctx, X, y, rowH, specs, ColumnGridPaint(sepPaint), fontScale);
+
+        if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
+            ctx.Canvas.DrawLine(ctx.ToCanvas(X, y + rowH), ctx.ToCanvas(X + Width, y + rowH), sepPaint);
+    }
+
+    /// <summary>Text buňky datového řádku: Expression přebíjí Field, volitelný Format. Sdílené render cesty.</summary>
+    private static string DataCellText(TableColumn col, DataContext row, CultureInfo? culture)
+    {
+        string s = !string.IsNullOrWhiteSpace(col.Expression)
+            ? ExpressionEvaluator.EvaluateToString(col.Expression, row)
+            : row.GetString(col.Field ?? "");
+        return col.Format is not null ? DataContext.FormatValue(s, col.Format, culture) : s;
+    }
+
+    // ─── IRowPaginatedElement (R2 — svislé stránkování řádků) ────────────────────
+
+    /// <summary>Datové řádky ke stránkování: viditelné (po filtru) + ořez Max. Bez Min paddingu
+    /// — paginující tabulka nedoplňuje prázdné řádky (to je jen pro fixní-výškový box).</summary>
+    private int PaginatedDataCount(DataContext? data) =>
+        ClampMax(VisibleDataRows(data?.GetRows(DataSource ?? "") ?? []).Count);
+
+    // Jednotky: datové řádky (0..D-1) + souhrnné řádky (D..D+S-1). Záhlaví = samostatný opakovaný band.
+    public int RowUnitCount(DataContext? data) => PaginatedDataCount(data) + (SummaryRows?.Count ?? 0);
+    public float HeaderBandHeightMm(DataContext? data) => ShowHeader ? HeaderHeight : 0f;
+    public float RowUnitHeightMm(DataContext? data, int unitIndex) => RowHeight;
+
+    public void RenderRowWindow(RenderContext ctx, int startUnit, int endUnitExclusive, bool drawHeader)
+    {
+        var cols = Columns.Where(c => c.Visible).ToList();
+        if (cols.Count == 0 || Width <= 0) return;
+
+        float[] colWidths = ComputeColumnWidths(cols);
+        var headerStyles = cols.Select(ResolveColumnHeaderStyle).ToArray();
+        var dataStyles   = cols.Select(ResolveColumnDataStyle).ToArray();
+        var dataRows = VisibleDataRows(ctx.Data?.GetRows(DataSource ?? "") ?? []);
+        int dataN = ClampMax(dataRows.Count);
+
+        using var borderPaint = new SKPaint { Color = new SKColor(0xFF999999), IsStroke = true, StrokeWidth = 0.7f };
+        using var sepPaint    = new SKPaint { Color = new SKColor(0xFFCCCCCC), IsStroke = true, StrokeWidth = 0.5f };
+        var gridPaint = ColumnGridPaint(sepPaint);
+
+        SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
+        using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
+
+        float startY  = Y;
+        float currentY = Y;
+
+        if (drawHeader && ShowHeader)
+            currentY = RenderHeader(ctx, cols, colWidths, headerStyles, currentY, borderPaint, sepPaint, HeaderHeight, 1f);
+
+        for (int u = startUnit; u < endUnitExclusive; u++)
+        {
+            if (u < dataN)
+            {
+                var row = dataRows[u];
+                // Zvýraznění (dle absolutního indexu u) přebíjí zebru; jinak střídání řádků.
+                string? hl = ResolveRowHighlight(row);
+                if (hl is not null)
+                {
+                    using var p = new SKPaint { Color = SKColor.Parse(hl) };
+                    ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), p);
+                }
+                else if (altBgPaint is not null && u % 2 == 1)
+                    ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), altBgPaint);
+
+                var specs = new ColumnRenderer.CellSpec[cols.Count];
+                for (int ci = 0; ci < cols.Count; ci++)
+                    specs[ci] = new(colWidths[ci], DataCellText(cols[ci], row, ctx.Data?.Culture), dataStyles[ci]);
+                ColumnRenderer.DrawRow(ctx, X, currentY, RowHeight, specs, gridPaint, 1f);
+
+                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
+                    ctx.Canvas.DrawLine(ctx.ToCanvas(X, currentY + RowHeight), ctx.ToCanvas(X + Width, currentY + RowHeight), sepPaint);
+            }
+            else if (SummaryRows is not null && u - dataN < SummaryRows.Count)
+            {
+                DrawSummaryRowAt(ctx, cols, colWidths, SummaryRows[u - dataN], dataRows, currentY, RowHeight, sepPaint, 1f);
+            }
+            currentY += RowHeight;
+        }
+
+        if (BorderStyle != TableBorderStyle.None)
+            ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, startY, Width, currentY - startY), borderPaint);
     }
 
     // ─── PropertyDescriptors ─────────────────────────────────────────
