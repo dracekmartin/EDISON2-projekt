@@ -620,3 +620,26 @@ nainstalovaných fontech. Varianty Bold/Italic = samostatné soubory. Všechny c
 **Zbývá jen (až bude potřeba):** dropnout konkrétní `.ttf` do `Fonts/` — základní free bezpatkový
 (Arimo/Liberation, NE Helvetica/Arial) a **JŘ symbolový Timetable_nove(+SK)** = C2 knižního JŘ
 (vyjasnit zdroj/licenci). Mechanismus je připraven, kód se už nemění.
+
+---
+
+## Session 2026-07-06 ✅ — Layout: „sekce vyšší než stránka" (Slice 1+2 + fix)
+
+Návrhové plátno už není omezené na jednu A4. Commity: `a88763a` (Slice 1), `56c1837` (Slice 2),
+`12fc8d9` (fix dvojitého rámečku), `da198f3` (review fix footer WYSIWYG + mrtvý kód).
+
+- **Slice 1 — plátno roste:** `DesignerCanvas.GetSectionOrigins` skládá sekce souvisle v pravé
+  (neclampnuté) výšce; `TotalPaperHeightPx` (okraje + Σ výšek sekcí, min 1 stránka); `Render` +
+  `UpdateCanvasSize` + `RequestCanvasRefresh` na rostoucí výšku; `SectionHeightPx` místo clampu,
+  `GetClampedSectionHeightPx`/`GetPageBottomY` odstraněny.
+- **Slice 2 — dělící čáry:** `DrawPageBreakLines` — přerušované modré čáry + „Strana N" po výšce
+  tisknutelné oblasti, jen když obsah > 1 stránka. Varianta 1 (geometrické vodítko) — vědomě ne
+  pixel-přesné vůči preview; přesný stránkovaný výsledek zůstává v preview/PDF.
+- **Footer** kotven ke spodku rostoucího papíru (WYSIWYG s preview u 1 stránky).
+- **Fix (pre-existing):** split sekce (SplitAcrossPages) kreslila rámeček elementu i na 2. straně —
+  `PreviewCanvas.RenderPage` border-pass běžel bez clipu → ořezán na rámec stránky (opraveno i pro
+  PDF/PNG, sdílený `RenderPage`). Regres test `SplitSectionPaginationTest`.
+- Nezávislý review: bez BLOCKER/MAJOR, bez regrese jednostránkových šablon, hit-testing konzistentní.
+  Testy 214/214.
+
+**Navazuje (aktivní track):** R2 (svislé stránkování řádků — zpřesní zlomy na celé řádky) → C3 (vodorovný Strih).

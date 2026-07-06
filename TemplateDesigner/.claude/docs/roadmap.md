@@ -32,14 +32,11 @@
   zákaznické. **Nejdřív koncept, pak implementace** — teď jen zapsat jako otevřený návrhový bod.
 
 **🎯 Aktivní track — Layout tabulek (rozhodnuto 2026-07-06, bereme postupně po slicích):**
-1. **„Sekce vyšší než stránka"** ⬅️ **první** — designer je dnes „jedna pevná A4", přetečení jen červený
-   rámeček. Fix = **plátno roste + dělící čáry stránek** (návrhář čte zlomy z layout enginu; roste
-   z obsahu i ručně). Uživatel navrhuje přes celou multi-page výšku a vidí, kam padnou zlomy; preview
-   i PDF se dělí podle nich. Největší koncepční layout dluh (mění předpoklad „pevná A4"). Odgatováno
-   z pilotu vědomě (čistý git, stejně to musíme vyřešit).
-2. **R2 — svislé stránkování řádků** (kontrakt `r2-partial-fit-kontrakt.md`, dnes pixel-ořez uřízne řádek)
-   — zpřesní zlomy na celé řádky + opakování záhlaví. Návrhář z bodu 1 jen čte nové pozice → **žádný rework**.
-3. **C3 — vodorovný `Strih` / 2D bin-packing** (Fáze C, krok 43) — široká MHD linka; nejtěžší, vlastní kontrakt.
+> „Sekce vyšší než stránka" ✅ **hotovo** (Slice 1 plátno roste + Slice 2 dělící čáry + fix dvojitého
+> rámečku u split sekce; archiv 2026-07-06). Zbývá:
+1. **R2 — svislé stránkování řádků** ⬅️ **další** (kontrakt `r2-partial-fit-kontrakt.md`, dnes pixel-ořez
+   uřízne řádek) — zlom po celých řádcích + opakování záhlaví. Návrhář zlomy jen čte → žádný rework.
+2. **C3 — vodorovný `Strih` / 2D bin-packing** (Fáze C, krok 43) — široká MHD linka; nejtěžší, vlastní kontrakt.
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
