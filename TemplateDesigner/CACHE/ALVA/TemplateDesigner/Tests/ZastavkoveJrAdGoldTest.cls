@@ -23,7 +23,7 @@ Method TestGold0365001()
 		do $$$AssertTrue(1, "gold 0365001 není v "_..#GOLDDB_" na tomto serveru — přeskočeno")
 		quit
 	}
-	do $$$AssertEquals(digest, "pages=39 zast=800 odj=844 pozn=96 md5=pX2NNrkdE9sGH/TMw7DV+Q==", "gold 0365001 digest (aktuální: "_digest_")")
+	do $$$AssertEquals(digest, "pages=39 zast=800 odj=844 pozn=96 md5=UsAVrZWRXvneYfARPoydpA==", "gold 0365001 digest (aktuální: "_digest_")")
 }
 
 Method TestGold0365005()
@@ -33,7 +33,7 @@ Method TestGold0365005()
 		do $$$AssertTrue(1, "gold 0365005 není v "_..#GOLDDB_" na tomto serveru — přeskočeno")
 		quit
 	}
-	do $$$AssertEquals(digest, "pages=38 zast=762 odj=498 pozn=168 md5=v4khAof5UfsTYtXSZgkLCw==", "gold 0365005 digest (aktuální: "_digest_")")
+	do $$$AssertEquals(digest, "pages=38 zast=762 odj=498 pozn=168 md5=sO6R+761nXv09KBGQar8pQ==", "gold 0365005 digest (aktuální: "_digest_")")
 }
 
 /// Spustí GetData pro danou linku nad GOLDDB daty a vrátí digest. "" = linka není (skip).

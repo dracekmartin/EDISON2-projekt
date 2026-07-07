@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-07 — AD zastávkový JŘ: oprava hlaviček variantních časových sloupců
+
+Fix tří anomálií ve variantních časových sloupcích (`TRASA_MIN`) zastávkového JŘ z AD dat
+(`ZastavkoveJrAd.cls`), nalezených při testování na lince 0365005:
+
+- **Fallback hlavičky „ZT" → „T1"/„T2"…** — varianta bez písmene rozdílu trasy dřív spadla na „ZT"
+  (základní trasa); víc takových variant → „ZT ZT ZT" (kolize). Teď inkrementální „T1"/„T2".
+- **Dedup identických sloupců** — signatura varianty se počítá jen přes **zobrazené zastávky**
+  (`servedPoradi`) místo celé W-mapy. Dvě varianty lišící se MIMO tuto vývěsku dřív daly dva
+  identicky vypadající sloupce („C C", „E E"); teď se sloučí.
+- **Unikátní hlavičky při kolizi písmene** — dvě různé varianty se stejným písmenem rozdílu trasy
+  (liší se jen časy) dřív obě „B" s jinými hodnotami; teď „B1"/„B2". Unikátní písmeno zůstává „B".
+- Gold `TestGold0365001`/`TestGold0365005` re-pinnuté (změnil se jen md5 — pages/zast/odj/pozn
+  identické). Caché testy 27/27. Ověřeno v preview (0365005: `B B C C E E` → `B1 B2 C E`).
+
 ## 2026-07-07 — DynamicTable = varianta A (jako zastávky); R2 (řádkové stránkování) odstraněno
 
 Po revizi konzistence (viz níže „⚠️ zjištění"): DynamicTable se má chovat **stejně jako zastávky**

@@ -284,9 +284,11 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
 
     // ── varianty časů tras (dynamické „TrasaMin") ─────────────────────────────
-    // Seskup spoje obsluhující vývěskovou zastávku podle časového profilu W-mapy (prutmbmp:
-    // shodný profil = jeden sloupec). N = počet distinct profilů — NE fixních 15 jako legacy.
-    // Signatura = per-zastávka kumulativní čas / „<" (projíždí) / prázdno (mimo trasu).
+    // Seskup spoje obsluhující vývěskovou zastávku podle časového profilu (shodný profil = jeden
+    // sloupec). N = počet distinct profilů — NE fixních 15 jako legacy.
+    // Signatura = jen ZOBRAZENÉ zastávky (servedPoradi): per-zastávka kumulativní čas / „<" (projíždí) /
+    // prázdno (mimo trasu). Přes celou W-mapu by dvě varianty lišící se MIMO tuto vývěsku daly dva
+    // identicky vypadající sloupce — signatura přes servedPoradi je sloučí (na vývěsce nerozlišitelné).
     k variantSig, variantCt, variantRepSpoj
     s poradiVar = 0, spV = ""
     f {
@@ -300,7 +302,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         i (cAktV = "") || (cAktV = "<") continue     // spoj zde nestaví → nedává časový sloupec
         s sigV = "", ppV = ""
         f {
-            s ppV = $o(wMapV(ppV))  q:ppV=""
+            s ppV = $o(servedPoradi(ppV))  q:ppV=""
             i '$isvalidnum(ppV) continue
             s vv = $g(wMapV(ppV))
             s $p(sigV,"~",ppV) = $s((vv="")||(vv="<"):vv, 1:..CasJizdyZMapy(.wMapV, currentPoradi, ppV))
@@ -377,11 +379,29 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
     k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda
     d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
-    // hlavičky variantních časových sloupců — písmeno z RozdilyTras (reprezentativní spoj), „ZT" = základní trasa bez písmene
-    s variantyTras = ##class(%DynamicArray).%New()
+    // hlavičky variantních časových sloupců:
+    //   písmeno rozdílu trasy (RozdilyTras, reprezentativní spoj); stejné písmeno u víc variant
+    //   (liší se jen časem, ne zastávkami) → rozlišit „B1"/„B2"; varianta bez písmene → „T1"/„T2"…
+    // 1. průchod: spočítej výskyty každého písmene (kolize → číslovat)
+    k pismCount, pismSeq
     f viY=1:1:poradiVar {
         s pismV = $g(pismenoSpoj($g(variantRepSpoj(viY))))
-        d variantyTras.%Push($s(pismV'="":pismV, 1:"ZT"))
+        i pismV '= "" s pismCount(pismV) = $g(pismCount(pismV)) + 1
+    }
+    s variantyTras = ##class(%DynamicArray).%New()
+    s fallbackVar = 0
+    f viY=1:1:poradiVar {
+        s pismV = $g(pismenoSpoj($g(variantRepSpoj(viY))))
+        i pismV = "" {
+            s fallbackVar = fallbackVar + 1
+            s hdr = "T" _ fallbackVar
+        } elseif $g(pismCount(pismV)) > 1 {
+            s pismSeq(pismV) = $g(pismSeq(pismV)) + 1
+            s hdr = pismV _ pismSeq(pismV)
+        } else {
+            s hdr = pismV
+        }
+        d variantyTras.%Push(hdr)
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
     s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda)
@@ -1219,29 +1239,32 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 /// TODO: před produkčním nasazením vrátit lehký statický vzorek nezávislý na firmě/datech.
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
-    $$$FillParams
-    k ^||TiskAd                       // cache per-linka/per-směr invariantů — fresh per request
+    try {
+        $$$FillParams
+        k ^||TiskAd                       // cache per-linka/per-směr invariantů — fresh per request
 
-    // DEV: živý náhled z první linky aktuální firmy (session dataDB) — zrcadlí reálný GetData.
-    d ..PrvniLinka(dataDB, .sku, .lin)
-    s page = $s(lin'="":..BuildStrankaZastavky(dataDB, sku, lin), 1:"")
+        // DEV: živý náhled z první linky aktuální firmy (session dataDB) — zrcadlí reálný GetData.
+        d ..PrvniLinka(dataDB, .sku, .lin)
+        s page = $s(lin'="":..BuildStrankaZastavky(dataDB, sku, lin), 1:"")
 
-    // Fallback — když firma nemá v ^JRL žádnou linku, ať designer nespadne.
-    i page = "" {
-        s page = ##class(%DynamicObject).%New()
-        s v = ##class(%DynamicObject).%New()
-        d v.%Set("POPIS_LINKY", "(žádná linka v ^JRL pro firmu "_dataDB_")")
-        d page.%Set("values", v)
-        s r = ##class(%DynamicObject).%New()
-        d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
-        d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
-        d r.%Set("ODJEZDY", ##class(%DynamicArray).%New())
-        d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
-        d page.%Set("rows", r)
+        // Fallback — když firma nemá v ^JRL žádnou linku, ať designer nespadne.
+        i page = "" {
+            s page = ##class(%DynamicObject).%New()
+            s v = ##class(%DynamicObject).%New()
+            d v.%Set("POPIS_LINKY", "(žádná linka v ^JRL pro firmu "_dataDB_")")
+            d page.%Set("values", v)
+            s r = ##class(%DynamicObject).%New()
+            d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
+            d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
+            d r.%Set("ODJEZDY", ##class(%DynamicArray).%New())
+            d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
+            d page.%Set("rows", r)
+        }
+
+        s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
     }
-
-    s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
-    q $$$OK
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
