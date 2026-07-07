@@ -768,3 +768,23 @@ už byla dávno smazaná (jen stará bin/obj artefakta), smazány mrtvé rozbit�
 `test-detector.csproj`/`test-detector-main.cs`/`RunDetectorTest.csx`; PB1 — vyprázdněn tracked
 `templatedesigner.appsettings.json` (dev creds martin.hubata/MLP 167/interní IP se zapékaly do .exe),
 přesunuto do gitignored `local.json`; produkce session stejně bere z launch args, standalone dev z local.json.
+
+
+---
+
+## Audit 2026-07-07 — Blokery (B1–B3) vyřešeny
+
+Všechny tři produkční blokery z auditu hotové (přesunuto z aktivní audit sekce).
+
+- **B1 — KV hardcode v MHD tiskové cestě.** `POPIS_DOPRAVCE` místo natvrdo „…Karlovy Vary, a.s.……."
+  čte reálného dopravce linky z `ALVA.MHD.LSO` (helper `PopisDopravce`: `DruhDopravceID` → vlastní firma
+  `$$gIdFa^MlJFapi` / cizí `$$gDopFa^JRapi`, defensivní). `NEJEDOU_SPOJE` napojen na generátor `TiskyFce`
+  (gated flagem linky). `TITULEK`/`POZNAMKA_POD_DOPRAVCE`/`INFORMACE` (MHD nemá zdroj) odstraněny ze
+  schématu i GetData (AD si je nechává). Schéma ověřeno živě. Commit `ddb1dfa`. Zbývá eyeball: reálné
+  jméno dopravce na MHD firmě (defensivní → nejhůř prázdno). Součástí i M1 guard + oprava MHD picker crashe.
+- **B2 — export tiše nahrazoval reálná data mock daty při selhání Caché.** `GetData` na `RestStatus.Error`
+  /výjimku hází `CacheAgendaException` místo `null`; `null` = jen „legitimně žádná data". Chyba propadne
+  přes export/preview/PrintDialog (žádné false-success PDF). 252/252 testů. (Řešeno v paralelní session.)
+- **B3 — mrtvý secret + rotace klíče.** Bludný `dotnet/appsettings.local.json` (špatný název, TD ho nečte —
+  čte prefixovaný; untracked/gitignored) smazán ručně (bez git změny). Pozor: generický `appsettings.local.json`
+  je LEGIT pro EDISONMAIN2 (SettingsLoader ho čte) — nemazat tam. Rotace API klíče = na uživateli.

@@ -17,23 +17,23 @@
 > `IPopupDisplayer`, DepartureGrid cascade anti-pattern NENÍ přítomen, typeface caching správně, vrstvy
 > výrazů/layoutu/serializace dobře otestované.
 
-### 🔴 Blokery (před nasazením)
+### 🔴 Blokery — ✅ všechny vyřešeny 2026-07-07 (→ archiv)
+
+B1 (KV hardcode v MHD tiskové cestě → dopravce z DB, mrtvá pole pryč), B2 (export nezamlčí chybu Caché
+→ `CacheAgendaException` místo mock), B3 (mrtvý secret `appsettings.local.json` smazán; rotace klíče na
+uživateli). Detail → [`roadmap-archive.md`](roadmap-archive.md) (Audit 2026-07-07 — blokery).
+
+### 🟠 Vysoká priorita (H3–H6) — ⬜ otevřené (řeší se v paralelní audit session)
+
+> **H1** (dedup Caché enginů → `BaseAgenda`/`JrShared`) + **H2** (testy enginů + bezpodmínečný gold gate)
+> přesunuty do **Fáze C+D** — dávají smysl až s ostrým knižním/linkovým JŘ (H1 = Caché analog R1
+> extrakce jádra z C3). Zde zůstává H3–H6.
 
 | # | Co | Kde | Akce |
 |---|---|---|---|
-| ✅ B1 | Natvrdo „Karlovy Vary" v produkční tiskové cestě MHD (`TITULEK`/`POPIS_DOPRAVCE` + leftover `"........"` pro každého zákazníka). | `Agendy/ZastavkoveJrMhd.cls` | **HOTOVO 2026-07-07** — `POPIS_DOPRAVCE` čte reálného dopravce linky z `ALVA.MHD.LSO` (helper `PopisDopravce`: vlastní firma `$$gIdFa^MlJFapi` / cizí `$$gDopFa^JRapi`, defensivní). `NEJEDOU_SPOJE` napojen na generátor `TiskyFce` (gated flagem linky). `TITULEK`/`POZNAMKA_POD_DOPRAVCE`/`INFORMACE` (MHD nemá zdroj) **odstraněny ze schématu i GetData** (AD si je nechává). Schéma ověřeno živě. **Zbývá eyeball:** reálné jméno dopravce na MHD firmě (CB_CSADAD je AD-only). Carrier je defensivní → nejhůř prázdno, ne KV/crash. |
-| ✅ B2 | Export/tisk tiše nahradí reálná data mock daty při selhání Caché — výstup „úspěch" plný placeholderů, bez varování | `CacheAgendaProvider.GetData` + `TemplateDesignerViewModel.cs:2011-2028` | **HOTOVO 2026-07-07** — `GetData` na `RestStatus.Error`/výjimku **hází `CacheAgendaException`** (nový typ) místo `null`; `null` = výhradně „legitimně žádná data". Chyba tak propadne přes export (`CommandAsync`→`PopupDisplayer.Error`, žádné PDF/false success), live preview (`RefreshData…` catch → „Chyba načítání") i PrintDialog (`ExportRealDataPdf` catch → „Chyba"). Mock fallback se dosáhne jen bez chyby (GENERAL/prázdno). Build + 252/252 testů zelené. **Zbývá (volitelné):** case „0 stránek bez chyby" u vybraných instancí pořád propadne na mock — sekundární zpřísnění, edge. Runtime ověření = dev flow (nelze unit-testovat bez mock MLRest) |
-| ⬜ B3 | Rotovat odhalený Anthropic API klíč (živý `sk-ant-…` přečten mimo trezor, kopíruje se i do `bin/Debug/`) + smazat bludný `appsettings.local.json` (špatný název = mrtvý secret) | `templatedesigner.appsettings.local.json` | Rotace klíče + smazat druhou kopii |
-
-### 🟠 Vysoká priorita
-
-| # | Co | Kde | Akce |
-|---|---|---|---|
-| ⬜ H1 | Duplikace Caché tiskových enginů se už rozjíždí do korektnostního rizika (`CasHodnota` bere `"|"` jinak v `KnizniJrAd` vs `ZastavkoveJrAd`; různé signatury `AddAnotace`/`BuildPoznamka`; různá datová logika) | ~15 helperů MHD↔AD + AD `^JRL` readery AD-zast↔AD-kniž | Vyextrahovat sdílené `^JRL` readery + `Build*` helpery do `BaseAgenda`/`JrShared` |
-| ⬜ H2 | Caché tiskové enginy prakticky neotestované: `KnizniJr*` (~1975 ř.) 0 testů, `ZastavkoveJrMhd` (1697 ř.) 1 helper; AD gold gate **tiše projde** když chybí namespace `CB_CSADAD`, je to křehký digest nad živými daty, pinuje 2 z ~22 linek; `tools/compare-gold.ps1` neexistuje | `Tests/ZastavkoveJrAdGoldTest.cls`, `Agendy/KnizniJr*.cls`, `ZastavkoveJrMhd.cls` | Smoke + frozen-input gold testy pro enginy; AD gold gate bezpodmínečný (zmrazit vstup do izolovaného ns) — **splývá s tech-dluhem T1b** |
 | ⬜ H3 | Hlavní VM řídí View přímo (porušení R4) — instancuje dialogy a volá `.ShowDialog()`, `Clipboard.SetText`; neunit-testovatelné | `TemplateDesignerViewModel.cs:754,780,988,1051,796,957,1085,1123,2240` | `IDialogService` / rozšířit `RequestXxx` callbacky — **splývá s T4 god-object strangler** |
-| ⬜ H4 | Statický `DocumentDefaults.Style` se během async exportu zapisuje ze 2 vláken → ničí izolaci snapshotu (exportní stránka se může vyresolvit s živým defaultem) | `PreviewCanvas.cs:71` + export `Task.Run` v `TemplateDesignerViewModel.cs:1109,1144` | Protáhnout doc-default přes `RenderContext` v exportní cestě (ne přes statiku) |
-| 🟡 H5 | Provider polyká Caché chyby **a cachuje selhání** — po zotavení servíruje prázdno až do restartu; nic nejde přes `IPopupDisplayer` | `CacheAgendaProvider.cs` + `CacheAgendaRegistry.ListSync:52-56` | **Cachování chyb HOTOVO 2026-07-07** — `GetParameters` už NEcachuje na error/exception (retry bez restartu); ověřeno že `GetSchema`/`GetMockData` cachují jen success (audit přestřelil). Build 0 chyb / 0 nových warningů. **Zbývá:** viditelné varování při chybě čtení přes `IPopupDisplayer` (chce plumbing do provideru — ne quick win); minor: `GetTemplate` negativní cache po erroru (Fixed tabulky spící) |
+| ✅ H4 | Statický `DocumentDefaults.Style` se během async exportu zapisuje ze 2 vláken → ničí izolaci snapshotu (exportní stránka se může vyresolvit s živým defaultem) | `Models/DocumentDefaults.cs` | **HOTOVO 2026-07-07** — backing field `AsyncLocal<TextStyle?>`: export na `Task.Run` má vlastní izolovanou hodnotu, UI live-preview svou → race pryč, ambient návrh zachován (bez threadingu přes `RenderContext`, ta by šla proti záměru). Regresní test `DocumentDefaultsTests.AsyncFlow_ExportNeprepiseUiHodnotu` (s prostým statikem spadne). Build + 253/253 testů zelené |
+| ✅ H5 | Provider polyká Caché chyby **a cachuje selhání** — po zotavení servíruje prázdno až do restartu; nic se nedávalo najevo | `CacheAgendaProvider.cs` | **HOTOVO 2026-07-07** — (1) cachování chyb: `GetParameters` už NEcachuje na error/exception; `GetSchema`/`GetMockData` cachují jen success. (2) **viditelnost:** `OnReadError` callback → invoke jen na RestStatus.Error/výjimku (ne legit-prázdno) v GetSchema/GetParameters/GetMockData/GetAvailableInstances → VM `RequestReadErrorStatus` → code-behind `Dispatcher.Invoke` → nemodální „⚠ Databáze — … selhalo" ve status baru (thread-safe, R4-safe). Build + 253/253 testů. Minor ponecháno: `GetTemplate` negativní cache (Fixed tabulky spící) |
 | 🟡 H6 | **Latentní `<UNDEFINED>err` v catch napříč agenda metodami** — vzor `try { $$$FillParams … } catch { $$$CatchErrRest }` bez `$$$Init` (dle cache-api pravidla 14): `$$$FillParams` nenastavuje `err`, `$$$CatchErrRest` ho **čte** → když se catch reálně spustí (chyba/throw na firmě bez dat), sekundární `<UNDEFINED>err` místo čisté hlášky. Vylezlo na `ZastavkoveJrMhd.GetAvailableInstances` (AD-only firma + MHD agenda). | všechny agenda metody MHD/AD/KnizniJr* s tímto catch vzorem | **Částečně 2026-07-07** — `GetAvailableInstances` opraveno (`s err=""` + „no data" → prázdný picker místo throw). **Zbývá:** konzistentně napříč ostatními metodami (init `err`, nebo opravit vzor/`$$$CatchErrRest`). Konflikt docs: MLRest.md skeleton má `$$$Init`, cache-api pravidlo 14 ho zakazuje → sjednotit. |
 
 ### 🟡 Střední priorita — ✅ vyřešeno / rozhodnuto (2026-07-07)
@@ -53,8 +53,13 @@ hotové; závislosti akceptovány (won't-do) → **detail v [`roadmap-archive.md
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Governance šablon — implementace** ⬅️ model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
-2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+1. **🔴 Výběr skupiny linek uživatelem (AD + MHD) — DO PRODUKCE** ⬅️ InstancePicker dnes bere jen
+   **jednu** skupinu (default první nezablokovaná — `GetDefaultSkupinaLinekID`). Server už `SKUPINA_LINEK_ID`
+   param přijímá (`GetAvailableInstances`/`GetData`), chybí **UI pro výběr skupiny** — musí být pro
+   zastávkový JŘ (AD) **i** MHD. Bez toho uživatel nevidí linky z ostatních skupin. Přidat výběr skupiny
+   do výběru instancí (dropdown/picker) + propagovat `SKUPINA_LINEK_ID`.
+2. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
+3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
@@ -219,6 +224,8 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 | C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) — legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
 | C6 | **Turnusy, obousměrný tisk, souhrnné JŘ (řádek zdrojové linky)** — legacy volby `in(arr,6/7)`, MHD `MakeData` je nemá | mimo scope pilotu; validovat, zda je zákazník chce, než portovat | — |
 | C7 | **Rozdvojení příjezd/odjezd — jemný layout** + fixed-width padding sloupce (legacy `arr,13`) | kosmetika; TD řeší podřádky, ne padding | S |
+| C8 | **Dedup Caché tiskových enginů** (*z auditu H1*) — `CasHodnota` bere `"|"` jinak v `KnizniJrAd` vs `ZastavkoveJrAd`, různé signatury `AddAnotace`/`BuildPoznamka`, ~15 helperů MHD↔AD + AD `^JRL` readery. Vyextrahovat sdílené `^JRL` readery + `Build*` do `BaseAgenda`/`JrShared`. **Caché analog R1 extrakce jádra** (C3 řeší .NET render-side, C8 Caché data-side). | korektnostní riziko; dělat s ostrým knižním JŘ, ne dopředu | L |
+| C9 | **Testy Caché tiskových enginů** (*z auditu H2*) — `KnizniJr*` (~1975 ř.) 0 testů, `ZastavkoveJrMhd` 1 helper; AD gold gate tiše projde bez `CB_CSADAD`, křehký digest nad živými daty (pinuje 2/22 linek), `tools/compare-gold.ps1` neexistuje. Smoke + frozen-input gold testy; bezpodmínečný gold gate (zmrazit vstup do izolovaného ns). **= T1b.** | důvěra v datovou paritu; s ostrým knižním JŘ | M |
 
 Detail datových odchylek a mezer viz [`linkovy-knizni-jr-implementace-analyza.md`](linkovy-knizni-jr-implementace-analyza.md) §11–12.
 

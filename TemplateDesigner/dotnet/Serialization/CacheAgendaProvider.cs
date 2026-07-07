@@ -48,6 +48,21 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Nemodální oznámení chyby ČTENÍ z Caché (schema/parametry/mock/instance) — provider chybu
+    /// nechá „prázdno" (null/[]), ale zavolá tento callback, aby UI ukázalo, že data chybí kvůli
+    /// selhání (typicky VPN/Caché nedostupná), ne že jsou legitimně prázdná. Volá se JEN na
+    /// RestStatus.Error / výjimku, ne na legitimní prázdný výsledek. Může fírnout z background
+    /// threadu (Task.Run) — konzument si marshalne na UI thread. `GetData` chybu naopak HÁZÍ (B2).
+    /// </summary>
+    public Action<string>? OnReadError { get; set; }
+
+    private void NotifyReadError(string context, string detail)
+    {
+        Debug.WriteLine($"[AgendaProvider] {context}: {detail}");
+        OnReadError?.Invoke($"⚠ Databáze — {context} selhalo: {detail}");
+    }
+
     // ─── IDataSchemaProvider ──────────────────────────────────────────────────
 
     public IReadOnlyList<AgendaInfo> GetAvailableAgendas() => _agendas;
@@ -80,7 +95,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             {
-                Debug.WriteLine($"[AgendaProvider] GetSchema error: {_mlRest.RestStatus.Message}");
+                NotifyReadError("načtení schématu", _mlRest.RestStatus.Message);
                 return null;
             }
 
@@ -96,7 +111,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AgendaProvider] GetSchema exception: {ex.Message}");
+            NotifyReadError("načtení schématu", ex.Message);
             return null;
         }
     }
@@ -209,7 +224,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             {
-                Debug.WriteLine($"[AgendaProvider] GetParameters error: {_mlRest.RestStatus.Message}");
+                NotifyReadError("načtení parametrů", _mlRest.RestStatus.Message);
                 return []; // chybu NEcachovat — příští volání zkusí znovu (po zotavení Caché se params objeví bez restartu)
             }
 
@@ -226,7 +241,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AgendaProvider] GetParameters exception: {ex.Message}");
+            NotifyReadError("načtení parametrů", ex.Message);
             return []; // chybu NEcachovat — příští volání zkusí znovu
         }
     }
@@ -292,7 +307,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             CVar result = _mlRest.Query(cacheClass, "GetAvailableInstances", inVar);
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             {
-                Debug.WriteLine($"[AgendaProvider] GetAvailableInstances error: {_mlRest.RestStatus.Message}");
+                NotifyReadError("načtení instancí", _mlRest.RestStatus.Message);
                 return [];
             }
 
@@ -316,7 +331,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AgendaProvider] GetAvailableInstances exception: {ex.Message}");
+            NotifyReadError("načtení instancí", ex.Message);
             return [];
         }
     }
@@ -447,7 +462,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         try
         {
             CVar result = _mlRest.Query(cacheClass, "GetMockData", new CVar());
-            if (_mlRest.RestStatus.State == MLRStatus.EState.Error) return null;
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error) { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); return null; }
 
             string? json = result["1"]?.Value?.ToString();
             if (string.IsNullOrEmpty(json)) return null;
@@ -459,7 +474,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[AgendaProvider] GetMockData exception: {ex.Message}");
+            NotifyReadError("načtení mock dat", ex.Message);
             return null;
         }
     }

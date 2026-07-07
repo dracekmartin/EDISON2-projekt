@@ -7,17 +7,27 @@ namespace TemplateDesigner.Models;
 /// se template default propíše do všech elementů, které styl nepřepíší — bez threadingu přes
 /// desítky <c>Resolve()</c> call-sites.
 ///
-/// <para><b>Pozor:</b> jde o procesně-globální stav. Je to bezpečné, protože WPF render je
-/// jednovláknový a TemplateDesigner pracuje s jednou šablonou naráz. Při přepnutí šablony se
-/// MUSÍ přenastavit (i na null), jinak by font z předchozí šablony „přetekl".</para>
+/// <para><b>Vlákna:</b> hodnota je <see cref="AsyncLocal{T}"/>, ne prostý statik. Async PDF/PNG
+/// export běží na threadpoolu (<c>Task.Run</c>) nad snapshotem šablony, zatímco UI thread může
+/// dál live-preview renderovat živou šablonu. Každý async flow (i export) tak má vlastní hodnotu
+/// a paralelní rendery se navzájem nepřepíšou (dřív = race → export mohl vykreslit s živým
+/// defaultem). Ambient návrh (kořen kaskády bez threadingu přes Resolve) zůstává. Při přepnutí
+/// šablony se MUSÍ přenastavit (i na null), jinak by font z předchozí šablony „přetekl".</para>
 ///
 /// <para>Drží celý <see cref="TextStyle"/> (ne jen font) — rozšíření o velikost/barvu/… je pak
 /// jen přidání pole do UI, bez změny této infrastruktury.</para>
 /// </summary>
 public static class DocumentDefaults
 {
-    /// <summary>Výchozí styl aktuální šablony. Null = žádný override (zapečené defaulty).</summary>
-    public static TextStyle? Style { get; set; }
+    private static readonly AsyncLocal<TextStyle?> _style = new();
+
+    /// <summary>Výchozí styl aktuální šablony. Null = žádný override (zapečené defaulty).
+    /// Per async-flow (AsyncLocal) — export na threadpoolu má vlastní izolovanou hodnotu.</summary>
+    public static TextStyle? Style
+    {
+        get => _style.Value;
+        set => _style.Value = value;
+    }
 
     /// <summary>
     /// Overlay vyplněných hodnot dokumentového defaultu na zapečený základ kaskády.

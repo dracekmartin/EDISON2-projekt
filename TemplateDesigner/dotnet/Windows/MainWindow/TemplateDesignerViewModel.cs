@@ -348,6 +348,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Sync GridSize ComboBox v toolbaru po načtení šablony (ComboBox není bindovaný).</summary>
     public Action<float>? RequestGridSizeUiSync { get; set; }
 
+    /// <summary>Nemodální hláška při chybě čtení z Caché (schema/params/mock/instance). Code-behind
+    /// ji marshalne na UI thread (může fírnout z background Task.Run) a zobrazí ve status baru.</summary>
+    public Action<string>? RequestReadErrorStatus { get; set; }
+
     // ── Events ────────────────────────────────────────────────────────────────
     /// <summary>Fired after Sections is rebuilt so code-behind can restore ListBox selection.</summary>
     public event Action? SectionsRebuilt;
@@ -407,6 +411,9 @@ public class TemplateDesignerViewModel : EDViewModel
         CacheProvider = resolvedMlRest is not null && resolvedAgendas.Count > 0
             ? CacheSchemaWiring.TryCreate(resolvedMlRest, resolvedAgendas)
             : null;
+        // Chyba čtení z Caché → nemodální hláška ve status baru (code-behind marshalne na UI thread).
+        if (CacheProvider is not null)
+            CacheProvider.OnReadError = msg => RequestReadErrorStatus?.Invoke(msg);
         TemplateStorage = resolvedMlRest is not null
             ? new Services.CacheTemplateService(resolvedMlRest)
             : null;

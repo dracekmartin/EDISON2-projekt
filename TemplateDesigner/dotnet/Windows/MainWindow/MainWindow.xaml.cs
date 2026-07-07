@@ -143,6 +143,8 @@ public partial class MainWindow : Window
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
         _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
+        // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
+        _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
         // Callbacky běží na background threadu nad snapshot šablonou — PreviewCanvas render
         // je čistý SkiaSharp bez WPF a živá šablona se může mezitím editovat.

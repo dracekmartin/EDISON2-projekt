@@ -77,4 +77,28 @@ public class DocumentDefaultsTests
         }
         finally { DocumentDefaults.Style = null; }
     }
+
+    /// <summary>
+    /// H4: Style je AsyncLocal — export na Task.Run threadpoolu si nastaví vlastní hodnotu, která
+    /// se NESMÍ propsat zpět do UI flow (jinak by živý preview a export sdílely jeden statik → race,
+    /// export by mohl vykreslit s živým defaultem). S prostým statikem by tento test spadl.
+    /// </summary>
+    [Fact]
+    public async Task AsyncFlow_ExportNeprepiseUiHodnotu()
+    {
+        try
+        {
+            DocumentDefaults.Style = new TextStyle { FontFamily = "UiFont" };
+
+            await Task.Run(() =>
+            {
+                DocumentDefaults.Style = new TextStyle { FontFamily = "ExportFont" };
+                Assert.Equal("ExportFont", DocumentDefaults.Style?.FontFamily);   // izolovaně v export flow
+            });
+
+            // UI flow po návratu vidí pořád svou hodnotu (AsyncLocal copy-on-write).
+            Assert.Equal("UiFont", DocumentDefaults.Style?.FontFamily);
+        }
+        finally { DocumentDefaults.Style = null; }
+    }
 }
