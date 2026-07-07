@@ -18,7 +18,7 @@ namespace TemplateDesigner.Models.Elements;
 /// Statická (Fixed) tabulka je dočasně mimo (třída <see cref="TableElement"/> zůstala dormant) —
 /// doděláme ji jako samostatný element až podle poptávky.
 /// </summary>
-public class DynamicTableElement : TemplateElement, IRowPaginatedElement
+public class DynamicTableElement : TemplateElement
 {
     /// <summary>Klíč datové kolekce v DataContext._rows (= DataFieldCollection.CollectionKey).</summary>
     public string? DataSource { get; set; }
@@ -194,7 +194,7 @@ public class DynamicTableElement : TemplateElement, IRowPaginatedElement
                 RenderSummaryRows(ctx, visibleColumns, colWidths, currentY, borderPaint, sepPaint, dataRows, rowH, scale);
 
             if (BorderStyle != TableBorderStyle.None)
-                ctx.Canvas.DrawRect(tableRect, borderPaint);
+                ctx.Canvas.DrawRect(InsetForStroke(tableRect, borderPaint.StrokeWidth), borderPaint);
         }
         finally
         {
@@ -440,76 +440,14 @@ public class DynamicTableElement : TemplateElement, IRowPaginatedElement
         return col.Format is not null ? DataContext.FormatValue(s, col.Format, culture) : s;
     }
 
-    // ─── IRowPaginatedElement (R2 — svislé stránkování řádků) ────────────────────
+    // ─── Rendering helpers ───────────────────────────────────────────
 
-    /// <summary>Datové řádky ke stránkování: viditelné (po filtru) + ořez Max. Bez Min paddingu
-    /// — paginující tabulka nedoplňuje prázdné řádky (to je jen pro fixní-výškový box).</summary>
-    private int PaginatedDataCount(DataContext? data) =>
-        ClampMax(VisibleDataRows(data?.GetRows(DataSource ?? "") ?? []).Count);
-
-    // Jednotky: datové řádky (0..D-1) + souhrnné řádky (D..D+S-1). Záhlaví = samostatný opakovaný band.
-    public int RowUnitCount(DataContext? data) => PaginatedDataCount(data) + (SummaryRows?.Count ?? 0);
-    public float HeaderBandHeightMm(DataContext? data) => ShowHeader ? HeaderHeight : 0f;
-    public float RowUnitHeightMm(DataContext? data, int unitIndex) => RowHeight;
-
-    public void RenderRowWindow(RenderContext ctx, int startUnit, int endUnitExclusive, bool drawHeader)
+    /// <summary>Vsadí obdélník rámečku dovnitř o půl tahu, aby ho těsný clip sekce neukrojil na hraně
+    /// (tah je vystředěný na čáře → bez insetu půlka padne mimo clip = poloviční/neviditelná hrana).</summary>
+    private static SKRect InsetForStroke(SKRect r, float strokeWidthPx)
     {
-        var cols = Columns.Where(c => c.Visible).ToList();
-        if (cols.Count == 0 || Width <= 0) return;
-
-        float[] colWidths = ComputeColumnWidths(cols);
-        var headerStyles = cols.Select(ResolveColumnHeaderStyle).ToArray();
-        var dataStyles   = cols.Select(ResolveColumnDataStyle).ToArray();
-        var dataRows = VisibleDataRows(ctx.Data?.GetRows(DataSource ?? "") ?? []);
-        int dataN = ClampMax(dataRows.Count);
-
-        using var borderPaint = new SKPaint { Color = new SKColor(0xFF999999), IsStroke = true, StrokeWidth = 0.7f };
-        using var sepPaint    = new SKPaint { Color = new SKColor(0xFFCCCCCC), IsStroke = true, StrokeWidth = 0.5f };
-        var gridPaint = ColumnGridPaint(sepPaint);
-
-        SKColor? altColor = AlternatingRowColor is not null ? SKColor.Parse(AlternatingRowColor) : null;
-        using var altBgPaint = altColor.HasValue ? new SKPaint { Color = altColor.Value } : null;
-
-        // Kreslíme od vrchu sekce (ne od element.Y) — paginující tabulka plní stránky odshora;
-        // engine chunky pozicuje na vrch stránky. Y offset se pro stránkování ignoruje.
-        float startY  = 0f;
-        float currentY = 0f;
-
-        if (drawHeader && ShowHeader)
-            currentY = RenderHeader(ctx, cols, colWidths, headerStyles, currentY, borderPaint, sepPaint, HeaderHeight, 1f);
-
-        for (int u = startUnit; u < endUnitExclusive; u++)
-        {
-            if (u < dataN)
-            {
-                var row = dataRows[u];
-                // Zvýraznění (dle absolutního indexu u) přebíjí zebru; jinak střídání řádků.
-                string? hl = ResolveRowHighlight(row);
-                if (hl is not null)
-                {
-                    using var p = new SKPaint { Color = SKColor.Parse(hl) };
-                    ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), p);
-                }
-                else if (altBgPaint is not null && u % 2 == 1)
-                    ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, currentY, Width, RowHeight), altBgPaint);
-
-                var specs = new ColumnRenderer.CellSpec[cols.Count];
-                for (int ci = 0; ci < cols.Count; ci++)
-                    specs[ci] = new(colWidths[ci], DataCellText(cols[ci], row, ctx.Data?.Culture), dataStyles[ci]);
-                ColumnRenderer.DrawRow(ctx, X, currentY, RowHeight, specs, gridPaint, 1f);
-
-                if (BorderStyle is TableBorderStyle.All or TableBorderStyle.RowsOnly)
-                    ctx.Canvas.DrawLine(ctx.ToCanvas(X, currentY + RowHeight), ctx.ToCanvas(X + Width, currentY + RowHeight), sepPaint);
-            }
-            else if (SummaryRows is not null && u - dataN < SummaryRows.Count)
-            {
-                DrawSummaryRowAt(ctx, cols, colWidths, SummaryRows[u - dataN], dataRows, currentY, RowHeight, sepPaint, 1f);
-            }
-            currentY += RowHeight;
-        }
-
-        if (BorderStyle != TableBorderStyle.None)
-            ctx.Canvas.DrawRect(ctx.ToCanvasRect(X, startY, Width, currentY - startY), borderPaint);
+        float half = strokeWidthPx / 2f;
+        return new SKRect(r.Left + half, r.Top + half, r.Right - half, r.Bottom - half);
     }
 
     // ─── PropertyDescriptors ─────────────────────────────────────────

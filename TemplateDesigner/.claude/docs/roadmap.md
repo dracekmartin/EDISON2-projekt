@@ -31,12 +31,13 @@
   registr/přehled (nejspíš DB-backed) + jasné oddělení systémové (M-line, read-only u zákazníka) vs
   zákaznické. **Nejdřív koncept, pak implementace** — teď jen zapsat jako otevřený návrhový bod.
 
-**🎯 Aktivní track — Layout tabulek (rozhodnuto 2026-07-06, bereme postupně po slicích):**
-> „Sekce vyšší než stránka" ✅ **hotovo** (Slice 1 plátno roste + Slice 2 dělící čáry + fix dvojitého
-> rámečku u split sekce; archiv 2026-07-06). Zbývá:
-1. **R2 — svislé stránkování řádků** ⬅️ **další** (kontrakt `r2-partial-fit-kontrakt.md`, dnes pixel-ořez
-   uřízne řádek) — zlom po celých řádcích + opakování záhlaví. Návrhář zlomy jen čte → žádný rework.
-2. **C3 — vodorovný `Strih` / 2D bin-packing** (Fáze C, krok 43) — široká MHD linka; nejtěžší, vlastní kontrakt.
+**🎯 Aktivní track — Layout tabulek:**
+> „Sekce vyšší než stránka" ✅ + **DynamicTable = varianta A** (jako zastávky: `Height` = strop,
+> auto-scale, bez řádkového stránkování). **R2 (svislé stránkování + opakované záhlaví) po revizi
+> konzistence vědomě odloženo a odstraněno** — přidá se zpět jen na konkrétní poptávku, čistě
+> (spec zůstává v `r2-partial-fit-kontrakt.md`). Detail → archiv 2026-07-06/07. Zbývá:
+1. **C3 — vodorovný `Strih` / 2D bin-packing** ⬅️ **další** (Fáze C, krok 43) — široká MHD linka
+   se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; nejtěžší, vlastní kontrakt.
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže

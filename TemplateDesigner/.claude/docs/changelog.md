@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-07 — DynamicTable = varianta A (jako zastávky); R2 (řádkové stránkování) odstraněno
+
+Po revizi konzistence (viz níže „⚠️ zjištění"): DynamicTable se má chovat **stejně jako zastávky**
+(`ScheduleElementBase`) — **`Height` je strop**, obsah se do něj vejde auto-scalem, prvek se
+NErozrůstá přes stránky. Vícestránkové řádkové stránkování s opakovaným záhlavím (R2) se ukázalo
+jako nekonzistentní se zbytkem návrháře (statické prvky mají výšku = strop) a **vědomě odloženo** —
+přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční řešení.
+
+- **Odstraněno kompletně (žádný mrtvý kód):** `IRowPaginatedElement`, `PageLayoutEngine.LayoutRowPaginated`
+  + `RowPaginatedElement`, `PlacedSection.StartRowUnit/EndRowUnit/RepeatHeader`, R2 větev v `PreviewCanvas`,
+  `DynamicTableElement.RenderRowWindow` + `RowUnitCount/HeaderBandHeightMm/RowUnitHeightMm`, testy R2.
+- **Zůstává:** auto-scale do pevné Height (jako zastávky), dynamická výška (`Height=null`),
+  pixel-ořez u „sekce vyšší než stránka" (beze změny).
+- **Oprava rámečku:** vnější rámeček tabulky se vsazuje dovnitř o půl tahu (`InsetForStroke`), aby ho
+  těsný clip sekce neukrojil na hraně (dřív poloviční/neviditelná horní/pravá/dolní hrana).
+- Testy 214/214.
+
+> Předchozí R2 záznamy (2026-07-06 níže) jsou tímto **superseded** — feature byla přidána a po
+> validaci konzistence zase odstraněna, aby kód šel do produkce čistě.
+
 ## 2026-07-06 — Fix(R2): stránkování i pro odsazenou tabulku (Y > 0)
 
 - 🐛 **R2 se nespouštělo, když byla tabulka odsazená od vrchu sekce** (uživatel ji posunul na

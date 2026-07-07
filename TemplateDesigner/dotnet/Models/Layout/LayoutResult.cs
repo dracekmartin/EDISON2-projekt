@@ -38,19 +38,6 @@ public class PlacedSection
     /// <summary>Pro SplitAcrossPages: ořez zdola v mm.</summary>
     public float? ClipBottom { get; set; }
 
-    // ── Řádkové stránkování (R2) — sekce s jedním IRowPaginatedElement ──
-    // Když má hodnotu, renderer volá element.RenderRowWindow(StartRowUnit, EndRowUnit, RepeatHeader)
-    // místo pixel-ořezu (ClipTop/ClipBottom). Zlom po celých řádcích + opakované záhlaví.
-
-    /// <summary>První řádková jednotka na této stránce (včetně). Null = klasický pixel-ořez.</summary>
-    public int? StartRowUnit { get; set; }
-
-    /// <summary>Poslední řádková jednotka na této stránce (exkluzivně).</summary>
-    public int? EndRowUnit { get; set; }
-
-    /// <summary>Zopakovat záhlaví navrch (na pokračovacích stránkách true).</summary>
-    public bool RepeatHeader { get; set; }
-
     /// <summary>Data pro resolvování placeholderů (obohacená o PAGE/TOTAL_PAGES).</summary>
     public DataContext? Data { get; set; }
 }

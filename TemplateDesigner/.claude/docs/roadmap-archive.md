@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-06/07 ✅ — Layout tabulek: „sekce vyšší" + DynamicTable varianta A (R2 zrušeno)
+
+**„Sekce vyšší než stránka" ✅** — designové plátno roste přes víc A4 (Slice 1) + dělící čáry stránek
+(Slice 2) + fix dvojitého vykreslení rámečku u split sekce. Preview i PDF/PNG dělí přes stránky pixel-ořezem.
+
+**DynamicTable — rozhodnuto: varianta A (chová se jako zastávky).** `Height` = strop, obsah se vejde
+auto-scalem, prvek se nerozrůstá přes stránky. Dynamická výška (`Height=null`) roste s obsahem. Sekce
+vyšší než stránka → pixel-ořez (jako StopList). Oprava: vnější rámeček tabulky vsazen dovnitř o půl
+tahu (`InsetForStroke`) — dřív se hrana ořezávala těsným clipem sekce.
+
+**R2 (svislé řádkové stránkování + opakované záhlaví) — přidáno a zase odstraněno.** Během session
+vyzkoušeno (zlom po celých řádcích, opakované záhlaví, respekt Y pozice), funkčně ověřeno renderem.
+Po revizi konzistence ale **vědomě zrušeno**: „rostoucí tabulka přes stránky" je nekonzistentní se
+zbytkem návrháře (statické prvky i zastávky mají výšku = strop) a čisté „opakované záhlaví na multipagi"
+jde jen s rostoucí tabulkou. Rozhodnutí: raději čistě do produkce, R2 přidat zpět jen na **konkrétní
+poptávku**. Kód odstraněn kompletně (žádný mrtvý kód): `IRowPaginatedElement`, `LayoutRowPaginated`,
+`PlacedSection.StartRowUnit/EndRowUnit/RepeatHeader`, `RenderRowWindow`, R2 větev v `PreviewCanvas`, testy.
+**Spec pro budoucí re-implementaci zůstává** v `r2-partial-fit-kontrakt.md`. Detail: [`changelog.md`](changelog.md).
+
 ## Session 2026-07-03 ✅ — Wave 4 W4-10: inline panel na EDInputForm
 
 Levý panel „Vlastnosti" nově hostuje **EDInputForm pro jeden element** (všech 9 typů přes `*Edit.cls`
