@@ -9,7 +9,7 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Governance šablon** ⬅️ **rozhodnout scope pro v1** — systémové vs zákaznické, distribuce (viz produkční sekce níže).
+1. **Governance šablon — implementace** ⬅️ model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
 2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 **Backlog / budoucí velké tracky:**
@@ -44,19 +44,22 @@ při scope té fáze, ne teď.
 - **Logging/telemetrie pro podporu (F3)**.
 - **CI/CD linting šablon (F4)** — Caché job validující šablony před deployem (nice-to-have).
 
-### Governance šablon — rozhodnout scope pro v1 (gate R6)
+### Governance šablon — hybrid (M-line distribuuje + zákazníci vlastní)
 
-> **Klíčové rozhodnutí:** bude M-line ve v1 distribuovat a udržovat vlastní **systémové** šablony
-> u zákazníků? **Ano** → potřeba minimum governance PŘED tím, než u zákazníků vzniknou úpravy (jinak je
-> nelze bezpečně aktualizovat — dnes per-IDfa storage bez zámků). **Ne** (zákazník si tvoří jen vlastní)
-> → per-IDfa + ruční Import JSON stačí, governance počká. Pořadí = nejdřív model, pak distribuce, pak jemné featury.
+> **Model rozhodnut** (2026-07-07): dvě zásuvky v `^ALVA.TemplateDesigner.Templates` — IdFa `MLINE`
+> (naše systémové, sdílené, read-only) + per-firma (zákaznické). Distribuce sáhne jen na větev MLINE,
+> zákaznické se nikdy nepřepíšou; zákazník „Uložit jako" → vlastní editovatelná kopie. Master = dev/release,
+> verzování zatím ne. Plný koncept: [`governance-sablon-koncept.md`](governance-sablon-koncept.md).
 
-1. **Model governance** — koncept centrální správy (přehled „co kde je" napříč firmami+agendami,
-   verzování) + rozlišení **systémové vs zákaznické** (R6: vendor read-only × zákaznické). *(PC3+PC1)*
-2. **Distribuce výchozích šablon** — sady per agenda + release pipeline; dnes jen ruční Import JSON.
-   Váže knižní JŘ (výchozí šablona v repu, zapojení chybí). *(PC2)*
-3. **Navazující featury** — per-instance přiřazení šablony (linka → výchozí, `InstanceDefaults`) ·
-   kategorie + popis šablony v UI · audit log změn + právo „pouštět designer" (ECL). *(PC4/PC5/PC6)*
+**Otevřená implementace (pořadí):**
+1. **Picker ukáže obě zásuvky + otevření MLINE** — `ListTemplates` sjednotit session IdFa + `MLINE`;
+   `LoadTemplate` umět zdrojovou IdFa. Odznak „systémová" u MLINE.
+2. **Zámek MLINE (server-side)** — `SaveTemplate`/`DeleteTemplate` odmítne zápis do `MLINE` mimo
+   distribuční cestu; Ctrl+S na otevřené MLINE šabloně → vynutí „Uložit jako" (nová kopie pod firmou).
+3. **Distribuce** — export/import MLINE šablon jako JSON v release (ne GOF). Váže výchozí šablony
+   per agenda (knižní JŘ šablona v repu, zapojení chybí).
+4. **Navazující featury** — per-instance přiřazení (linka → výchozí, `InstanceDefaults`) · kategorie +
+   popis v UI · audit log změn + ECL právo „pouštět designer".
 
 ---
 
