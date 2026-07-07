@@ -19,13 +19,6 @@
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
-- **Tech dluh (ne blocker, průběžně):** T1b-robustní gold test (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do
-  izolovaného namespace — data-drift-proof, **= H2, přesunuto do Fáze C+D / C9**) · T4 god-objects strangler
-  (postupné řezy `MainWindow.xaml.cs` + `TemplateDesignerViewModel` na služby; **H3 dialogová/schránková vrstva
-  ✅ hotová** — zbývá zbytek `MainWindow.xaml.cs` + M4). Audit před produkcí uzavřen → archiv (Session 2026-07-07).
-  - **M7 perf (parkováno, až s pomalou velkou linkou):** `WMapa` kopíruje celou W-mapu (`k`+`m`) per lookup,
-    vč. uvnitř smyčky zastávek×variant (`ZastavkoveJrAd.cls:354`). Recept: (1) předpočítat variantní mapy jednou
-    před smyčkou zastávek; (2) číst `^||TiskAd("wmap",ct,poradi)` přímo místo `k`+`m` (`CasJizdyZMapy` čte 2 uzly).
 - **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI),
   rozšíření conditional formatting (seznam pravidel) — viz sekce Fáze B.
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·

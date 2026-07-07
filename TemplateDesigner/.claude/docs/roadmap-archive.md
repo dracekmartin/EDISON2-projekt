@@ -2,6 +2,21 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Parkovaný tech dluh (2026-07-07) — YAGNI / oportunistické, mimo aktivní roadmapu
+
+Vyřazeno z aktivní roadmapy (nic z toho není „udělat teď"). Revisit až se spustí konkrétní trigger:
+
+- **T4 — god-object strangler** (`MainWindow.xaml.cs` ~2800 ř. + `TemplateDesignerViewModel` ~2600 ř.).
+  Řezy **H3** (dialogy/schránka → `IDesignerDialogService`) a **M4** (undo příkazy do VM) ✅ hotové.
+  Zbytek je inkrementální — **řeže se oportunisticky při práci v daném místě**, ne jako plánovaný big-bang
+  (např. další řez se přirozeně veze s „výběr skupiny linek", který sahá do instance-picker části).
+- **M7 — perf `WMapa`** (`ZastavkoveJrAd.cls:354`): W-mapa se kopíruje celá (`k`+`m`) per lookup, vč. uvnitř
+  smyčky zastávek×variant. Čistý YAGNI — AD je už výkonově pročištěná (memoizace), žádná naměřená pomalost.
+  **Recept** (až s reálně pomalou velkou linkou): (1) předpočítat variantní mapy jednou před smyčkou zastávek;
+  (2) číst `^||TiskAd("wmap",ct,poradi)` přímo místo `k`+`m` (`CasJizdyZMapy` čte 2 uzly).
+- **T1b / H2 — robustní gold test** (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do izolovaného ns): **žije v Fázi C+D
+  jako C9** — má smysl až s ostrým knižním/linkovým JŘ, ne dřív.
+
 ## Session 2026-07-07 ✅ — Audit před produkcí UZAVŘEN (blokery + H3–H6 + M + nízká)
 
 **Celý audit před produkcí hotový.** Blokery B1–B3 ✅, vysoká priorita H3–H6 ✅, střední M1–M5 ✅
