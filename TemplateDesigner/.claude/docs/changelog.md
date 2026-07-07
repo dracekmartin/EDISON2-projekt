@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-07 — MHD zastávkový JŘ: B1 (dopravce z DB) + oprava crashe pickeru
+
+**B1 (blocker) — pryč s KV hardcode v MHD tiskové cestě** (`ZastavkoveJrMhd.cls`):
+- `POPIS_DOPRAVCE` — místo natvrdo „…Karlovy Vary, a.s.……." čte **reálného dopravce linky** z
+  `ALVA.MHD.LSO` (helper `PopisDopravce`: `DruhDopravceID` → vlastní firma `$$gIdFa^MlJFapi` /
+  cizí `$$gDopFa^JRapi`, 1:1 vzor MHD2 Export; defensivní try/catch → prázdno při selhání).
+- `NEJEDOU_SPOJE` — napojen na generátor `TiskyFce.CalculatePrvniAndPosledniSpojeText` (gated flagem
+  linky `GenerovatNEJEDOU_SPOJE`).
+- `TITULEK` / `POZNAMKA_POD_DOPRAVCE` / `INFORMACE` — MHD pro ně nemá zdroj → **odstraněny ze
+  schématu i GetData** (per-agenda poctivé schéma; AD si je nechává, tam data jsou). Schéma ověřeno živě.
+
+**Oprava crashe MHD instance pickeru** (pre-existující, nesouvisí s B1):
+- `<UNDEFINED>err` — `GetAvailableInstances` catch bez inicializovaného `err` (`$$$CatchErrRest` ho čte).
+  Init `s err=""`. Širší latentní vzor napříč agendami → finding H6.
+- Throw „Žádná aktivní skupina linek" i pro legitimní „firma bez MHD dat" → error popup. Teď **prázdný
+  picker** místo chyby (přepnutí na MHD u AD-only firmy nevyhazuje popup). Ověřeno (`[]`, ok:true).
+
+Součástí commitu i M1 (guard prázdného `TypProvozuID`/`SmerID` v `PromitnutSpoje`, z auditu).
+
 ## 2026-07-07 — AD zastávkový JŘ: oprava hlaviček variantních časových sloupců
 
 Fix tří anomálií ve variantních časových sloupcích (`TRASA_MIN`) zastávkového JŘ z AD dat

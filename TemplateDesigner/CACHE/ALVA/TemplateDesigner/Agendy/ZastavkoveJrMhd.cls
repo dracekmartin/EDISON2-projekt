@@ -114,6 +114,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 /// OUT["1"] = JSON pole { "value": LinkaID, "display": "Cislo — Nazev", "subtitle": "Platnost ..." }
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
+    s err = ""   // $$$CatchErrRest čte err; bez init by catch (např. firma bez MHD dat → throw) padl na <UNDEFINED>err
     try {
         $$$FillParams
 
@@ -125,12 +126,13 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
         // zatím default první nezblokovaná skupina v ENUMS.
         s SkupinaLinekID = +$g(^||ML("IN","SKUPINA_LINEK_ID"))
         if 'SkupinaLinekID s SkupinaLinekID = ..GetDefaultSkupinaLinekID(IdFa, dataDB)
-        if 'SkupinaLinekID $$$ThrowStatus($$$ERROR($$$GeneralError, "Žádná aktivní skupina linek v ENUMS"))
 
         s arr = ##class(%DynamicArray).%New()
         s count = 0
-        // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID)
-        // — pouze linky patřící do dané skupiny.
+        // Bez aktivní skupiny linek (typicky firma bez MHD dat, např. čistě AD firma) → prázdný
+        // picker, NE chyba: přepnutí na agendu MHD u takové firmy nemá vyhazovat popup. Smyčka níže
+        // se SkupinaLinekID=0 nenajde v indexu žádnou linku a vrátí prázdné pole.
+        // Iterace přes index ^ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID) — jen linky skupiny.
         s LinkaID = ""
         for {
             s LinkaID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,SkupinaLinekID,LinkaID))
@@ -557,6 +559,9 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         s SpojID = $o(^[dataDB]ALVA.MHD.LSO(IdFa,2,"IDX",1,1,1,LinkaID,SpojID)) q:SpojID=""
         s SmerID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",SpojID,"DTA",1,"SmerID"))
         s TypProvozuID = $g(^[dataDB]ALVA.MHD.LSO(IdFa,2,"DTA",SpojID,"DTA",1,"TypProvozuID"))
+        // Spoj bez skupiny dnů / směru nelze zařadit do mřížky — přeskoč. Prázdný subscript
+        // v ^|| working globálu = <SUBSCRIPT> a shodil by tisk celé linky.
+        i (TypProvozuID="")||(SmerID="") continue
         s ^||TiskMHD("typyProvozu",TypProvozuID) = ""
 
         s smerKrok = 1 i SmerID s smerKrok = -1
@@ -897,6 +902,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s platnostOd = $g(^||TiskMHD("config","platnostOdHrl"))
     s platnostDo = $g(^||TiskMHD("config","platnostDoHrl"))
     s CisloLinky = $g(^||TiskMHD("config","CisloLinky"))
+    s LinkaID = $g(^||TiskMHD("config","LinkaID"))
     s LokalniOznaceni = $g(^||TiskMHD("config","LokalniOznaceni"))
     s NazevLinky = $g(^||TiskMHD("config","NazevLinky"))
     s QRKod = $g(^||TiskMHD("config","QRKod"))
@@ -918,9 +924,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     s vals = ##class(%DynamicObject).%New()
     d vals.%Set("CISLO_LINKY",            CisloLinky)
     d vals.%Set("LOKALNI_OZNACENI_LINKY", LokalniOznaceni)
-    d vals.%Set("TITULEK",                "Městská doprava Karlovy Vary")
     d vals.%Set("POPIS_LINKY",            NazevLinky)
-    d vals.%Set("POPIS_DOPRAVCE",         "Dopravce: Dopravni podnik Karlovy Vary, a.s.........." )
+    d vals.%Set("POPIS_DOPRAVCE",         ..PopisDopravce(.sys, dataDB, IdFa, LinkaID))
     d vals.%Set("POPIS_PLATNOSTI",        $zd(platnostOd,4)_" - "_$zd(platnostDo,4))
     d vals.%Set("DATUM_PLATNOSTI_OD",     $zd(platnostOd,4))
     d vals.%Set("DATUM_PLATNOSTI_DO",     $zd(platnostDo,4))
@@ -929,9 +934,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("QR_KOD",                 QRKod)
     d vals.%Set("POPIS_ZASTAVKA",         NazevZastavky)
     d vals.%Set("CISLO_ZASTAVKA",         CisloZastavky_"-"_Oznacnik)
-    d vals.%Set("POZNAMKA_POD_DOPRAVCE",  "")
-    d vals.%Set("INFORMACE",              "")
-    d vals.%Set("NEJEDOU_SPOJE",          "")
+    // TITULEK / POZNAMKA_POD_DOPRAVCE / INFORMACE: MHD pro ně nemá zdroj → nejsou ve schématu (viz AD, které je má z JRMAIN)
+    d vals.%Set("NEJEDOU_SPOJE",          ..NejedouSpoje(.sys, dataDB, IdFa, LinkaID, aktualniZastBodID, SmerID))
     d page.%Set("values", vals)
 
     // ── Kolekce ──────────────────────────────────────────────────────────
@@ -1444,7 +1448,6 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
 {
     d ..AddField(fields, "CISLO_LINKY",            "Číslo linky",            "number")
     d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Označení linky",         "text")
-    d ..AddField(fields, "TITULEK",                "Titulek sestavy",        "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
@@ -1455,8 +1458,6 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
-    d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
-    d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "NEJEDOU_SPOJE",          "Nejedou spoje",          "text")
 }
 
@@ -1555,6 +1556,45 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// GetMockData — ukázková data pro preview
 /// ═══════════════════════════════════════════════════════════════════════════════
+/// Reálný dopravce linky (1:1 vzor MHD2 `Export.cls`): `DruhDopravceID` → vlastní firma
+/// (`$$gIdFa^MlJFapi`, obchodní jméno) / cizí dopravce (`$$gDopFa^JRapi`). Firemní data žijí v
+/// systémovém NS (`sys("U","SystemDB")`), ne v datovém. Defensivní — selhání legacy volání → prázdno.
+ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String) As %String
+{
+    s nazev = ""
+    try {
+        s sysnmsp = $g(sys("U","SystemDB"))
+        s druh = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DruhDopravceID"))
+        i druh = 0 {
+            k tmpArr  s err = $$gIdFa^MlJFapi(IdFa, sysnmsp, "", .tmpArr)
+            i 'err {
+                s nazev = $g(tmpArr("dta",2))
+                i $g(tmpArr("dta",3)) '= "" s nazev = nazev _ $g(tmpArr("dta",3))
+            }
+        } elseif druh = 1 {
+            s ciziFa = $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"DopravceCiziFirmaID"))
+            i ciziFa '= "" {
+                k tmpArr  s err = $$gDopFa^JRapi(IdFa, dataDB, ciziFa, "", .tmpArr)
+                i 'err s nazev = $g(tmpArr("dta",7))
+            }
+        }
+    } catch ex { s nazev = "" }
+    ret $s(nazev'="":"Dopravce: " _ nazev, 1:"")
+}
+
+/// Text „nejedou spoje" z generátoru MHD2 (`TiskyFce`), jen když je na lince zapnutý flag
+/// `GenerovatNEJEDOU_SPOJE`. Defensivní — chybějící třída / chyba → prázdno.
+ClassMethod NejedouSpoje(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, aktualniZastBodID As %String, SmerID As %Integer) As %String
+{
+    s txt = ""
+    try {
+        i $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"GenerovatNEJEDOU_SPOJE")) {
+            s txt = ##class(ALVA.MHD2.Linky.API.TiskyFce).CalculatePrvniAndPosledniSpojeText(.sys, LinkaID, aktualniZastBodID, SmerID)
+        }
+    } catch ex { s txt = "" }
+    ret txt
+}
+
 /// Vrátí ukázková data pro live preview v designeru.
 /// Kompletní struktura se všemi kolekcemi a vnořenými poli.
 ClassMethod GetMockData(ByRef sys As %String) As %Status
@@ -1565,9 +1605,8 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     s vals = ##class(%DynamicObject).%New()
     d vals.%Set("CISLO_LINKY",            "42")
     d vals.%Set("LOKALNI_OZNACENI_LINKY", "A42")
-    d vals.%Set("TITULEK",                "MHD v Brně")
     d vals.%Set("POPIS_LINKY",            "Líšeň–Bystrc")
-    d vals.%Set("POPIS_DOPRAVCE",         "DPmB")
+    d vals.%Set("POPIS_DOPRAVCE",         "Dopravce: Dopravní podnik města Brna, a.s.")
     d vals.%Set("POPIS_PLATNOSTI",        "01.01.2026 - 31.12.2026")
     d vals.%Set("DATUM_PLATNOSTI_OD",     "01.01.2026")
     d vals.%Set("DATUM_PLATNOSTI_DO",     "31.12.2026")
@@ -1576,8 +1615,6 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d vals.%Set("QR_KOD",                 "https://jr.example.com/42")
     d vals.%Set("POPIS_ZASTAVKA",         "Líšeň, Novolíšeňská")
     d vals.%Set("CISLO_ZASTAVKA",         "101-A")
-    d vals.%Set("POZNAMKA_POD_DOPRAVCE",  "")
-    d vals.%Set("INFORMACE",              "")
     d vals.%Set("NEJEDOU_SPOJE",          "První spoj v 5:15, poslední v 23:30")
     d out.%Set("values", vals)
 
