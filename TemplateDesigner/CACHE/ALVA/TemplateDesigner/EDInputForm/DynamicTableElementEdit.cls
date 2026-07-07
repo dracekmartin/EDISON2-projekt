@@ -15,6 +15,7 @@ Class ALVA.TemplateDesigner.EDInputForm.DynamicTableElementEdit Extends %Registe
 
 ClassMethod Init(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
@@ -69,6 +70,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 ClassMethod Validate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()

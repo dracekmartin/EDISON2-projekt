@@ -114,6 +114,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 /// OUT["1"] = JSON pole { "value": lin, "display": "číslo — název", "subtitle": "Platnost ..." }.
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -170,6 +171,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 /// Zlatá reference výstupu: `cache-database-linky.md` §9.
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů (served, bezbariér) — fresh per request
@@ -1239,6 +1241,7 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 /// TODO: před produkčním nasazením vrátit lehký statický vzorek nezávislý na firmě/datech.
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů — fresh per request

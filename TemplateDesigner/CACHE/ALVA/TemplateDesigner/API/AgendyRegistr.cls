@@ -26,6 +26,7 @@ Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
 /// validně registrovány (abstraktní BaseAgenda samotná má AgendaCode = "").
 ClassMethod ListAgendy(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 

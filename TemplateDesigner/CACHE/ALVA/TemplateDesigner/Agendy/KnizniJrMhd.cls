@@ -118,6 +118,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 /// Vrátí seznam linek pro Instance Picker — linky aktivní skupiny linek (vzor ZastavkoveJrMhd).
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -168,6 +169,7 @@ ClassMethod DefaultSkupinaLinek(IdFa As %String, dataDB As %String) As %Integer
 /// Vrátí data pro tisk: 1 stránka per (linka × směr) — směr 0 (T), pak 1 (Z).
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         k ^||TiskKnizniMhd
@@ -189,6 +191,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// Ukázková data pro live preview — první linka výchozí skupiny (DEV vzor).
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         k ^||TiskKnizniMhd

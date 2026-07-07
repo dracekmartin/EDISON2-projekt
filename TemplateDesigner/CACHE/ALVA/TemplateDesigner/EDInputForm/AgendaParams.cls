@@ -20,6 +20,7 @@ Class ALVA.TemplateDesigner.EDInputForm.AgendaParams Extends %RegisteredObject
 
 ClassMethod Init(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -74,6 +75,7 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
 
 ClassMethod Validate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()

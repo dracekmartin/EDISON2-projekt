@@ -230,6 +230,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 ///   ("rozdilTrasyPism",SmerID,BodID,Typ,Bitmap)                = písmeno
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 

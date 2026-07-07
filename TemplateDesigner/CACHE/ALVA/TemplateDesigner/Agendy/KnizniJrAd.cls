@@ -163,6 +163,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 /// Vrátí seznam linek pro Instance Picker (shodné se ZastavkoveJrAd — stejný zdroj ^JRL).
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -210,6 +211,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 /// Vrátí data pro tisk: 1 stránka per (linka × směr) — Tam, pak Zpět.
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         k ^||TiskKnizni                    // per-request cache (W-mapy)
@@ -235,6 +237,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// Ukázková data pro live preview — živě z první linky aktuální firmy (DEV vzor).
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         k ^||TiskKnizni

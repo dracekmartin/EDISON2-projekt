@@ -13,6 +13,7 @@ Class ALVA.TemplateDesigner.EDInputForm.StyleEdit Extends %RegisteredObject
 
 ClassMethod Init(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         s prefix = $g(^||ML("IN","prefix"))
@@ -27,6 +28,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 ClassMethod Validate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()

@@ -35,6 +35,7 @@ Class ALVA.TemplateDesigner.API.Sablony Extends %RegisteredObject
 ///   ]
 ClassMethod ListTemplates(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -71,6 +72,7 @@ ClassMethod ListTemplates(ByRef sys As %String) As %Status
 /// Neexistující šablona → $$$ERROR
 ClassMethod LoadTemplate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -96,6 +98,7 @@ ClassMethod LoadTemplate(ByRef sys As %String) As %Status
 /// OUT["templateId"] = uložený TemplateID (echo)
 ClassMethod SaveTemplate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -144,6 +147,7 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
 /// OUT["deleted"]   = "1" pokud existovala, "0" pokud ne
 ClassMethod DeleteTemplate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -170,6 +174,7 @@ ClassMethod DeleteTemplate(ByRef sys As %String) As %Status
 /// OUT["renamed"]   = "1"
 ClassMethod RenameTemplate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 

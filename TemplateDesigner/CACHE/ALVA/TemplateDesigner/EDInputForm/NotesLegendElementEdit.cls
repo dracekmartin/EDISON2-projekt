@@ -16,6 +16,7 @@ Class ALVA.TemplateDesigner.EDInputForm.NotesLegendElementEdit Extends %Register
 
 ClassMethod Init(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
 
@@ -99,6 +100,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
 ClassMethod Validate(ByRef sys As %String) As %Status
 {
+    s err = ""
     try {
         $$$FillParams
         s form = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
