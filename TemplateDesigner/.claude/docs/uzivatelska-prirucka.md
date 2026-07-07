@@ -40,9 +40,18 @@ Systém má dvě vrstvy:
 systém z databáze až při tisku. Živý náhled v Návrháři používá tentýž tiskový engine jako reálný
 tisk, takže náhled odpovídá výslednému výstupu.
 
-Návrhář není Word ani Excel — pracuje se strukturou stránky (sekce), ne s volným plátnem. Staré
-šablony se do této verze neimportují jedna ku jedné; nové šablony se navrhují znovu, k čemuž může
-pomoct import z existujícího PDF (kap. 10).
+### Základní pojmy
+
+Pár termínů, které se v příručce opakují a mají tu konkrétní, ne úplně samozřejmý význam:
+
+| Pojem | Význam |
+|---|---|
+| **Šablona** | Popis vzhledu sestavy (rozložení, texty, tabulky) uložený v databázi. Bez dat — ta se doplní až při tisku. |
+| **Sekce** | Vodorovný pruh stránky, do kterého se umisťují prvky; má nastavené chování, kdy a jak často se tiskne (kap. 4). |
+| **Prvek (element)** | Jednotlivý objekt na plátně — text, obrázek, tabulka, čára, kód nebo specializovaný prvek jízdního řádu (kap. 5). |
+| **Agenda** | Zdroj dat, nad kterým šablona pracuje — např. zastávkový jízdní řád nebo faktury. Určuje, jaká datová pole a prvky máte k dispozici (kap. 3). |
+| **Datové pole / placeholder** | Zápis `{POLE}` v textu, který se při tisku nahradí skutečnou hodnotou z databáze (kap. 8). |
+| **Instance** | Konkrétní položka dat k vytištění v rámci agendy — např. jedna linka (kap. 9, 13). |
 
 ---
 
@@ -58,21 +67,17 @@ a **náhled** vpravo.
 | Soubor | Nová šablona, Otevřít, Uložit, Tisk |
 | Upravit | Zpět, Vpřed |
 | Sekce | Přidat sekci (nabídka připravených typů) |
-| Přidat | paleta prvků — Text, Obdélník, Čára, Obrázek, Tabulka, Kód; u jízdních řádů navíc
-  specializované prvky JŘ (nabídka se přizpůsobí zvolené agendě, viz kap. 13–14) |
+| Přidat | paleta prvků — Text, Obdélník, Čára, Obrázek, Tabulka, Kód; u jízdních řádů navíc specializované prvky JŘ (nabídka se přizpůsobí zvolené agendě, viz kap. 13–14) |
 | Vrstva | Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu |
-| Zarovnat | zarovnání vlevo/na střed/vpravo, nahoru/na střed/dolů, rovnoměrné rozložení (min. 3
-  vybrané prvky) |
-| Zobrazení | mřížka, přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání,
-  zoom, tlačítka Fit a 1:1, skrytí panelu sekcí, přepínač živého náhledu |
+| Zarovnat | zarovnání vlevo/na střed/vpravo, nahoru/na střed/dolů, rovnoměrné rozložení (min. 3 vybrané prvky) |
+| Zobrazení | mřížka, přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání, zoom, tlačítka Fit a 1:1, skrytí panelu sekcí, přepínač živého náhledu |
 
 ### Levý panel — záložky
 
 | Záložka | K čemu |
 |---|---|
 | Sekce | seznam sekcí šablony — přidávání, řazení, mazání |
-| Pole agendy | dostupná datová pole pro aktuální agendu; dvojklik nebo přetažení vloží pole na
-  plátno; hlavička zobrazuje název agendy a klikem otevře její přepnutí |
+| Pole agendy | dostupná datová pole pro aktuální agendu; dvojklik nebo přetažení vloží pole na plátno; hlavička zobrazuje název agendy a klikem otevře její přepnutí |
 | Vlastnosti | nastavení právě vybraného prvku nebo sekce s okamžitou editací |
 | Strom | přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci |
 | Pomocník | asistent, který pomáhá s návrhem šablony |
@@ -181,10 +186,8 @@ Sekce s opakujícím se řádkem dat má navíc pole **Datový zdroj** a **Výš
 
 | Prvek | Hlavní vlastnosti |
 |---|---|
-| Text | text (i víceřádkový), rodina a velikost písma, tučné/kurzíva/podtržení/přeškrtnutí,
-  zalamování, řádkování, zarovnání vodorovně i svisle, barva textu a pozadí |
-| Obrázek | nahrání souboru (limit 5 MB, větší se automaticky zmenší), volitelné načtení
-  z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy |
+| Text | text (i víceřádkový), rodina a velikost písma, tučné/kurzíva/podtržení/přeškrtnutí, zalamování, řádkování, zarovnání vodorovně i svisle, barva textu a pozadí |
+| Obrázek | nahrání souboru (limit 5 MB, větší se automaticky zmenší), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy |
 | Obdélník | výplň, barva a tloušťka okraje, zaoblení rohů |
 | Čára | orientace, barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery |
 | Kód | obsah a typ — QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix — barva kódu a pozadí |
@@ -221,7 +224,7 @@ každý sloupec záhlaví, šířku, mapované pole a plný editor stylu (viz ka
 
 ### Výběr, přesun, velikost
 - Klik prvek vybere, tažení ho přesune, úchyty na okrajích mění velikost.
-- Víc prvků vyberete tažením rámečku (rubber band) nebo Ctrl+klikem.
+- Víc prvků vyberete tažením výběrového rámečku nebo Ctrl+klikem.
 - Prvek se nepřesune ani nezvětší mimo hranice své sekce.
 
 ### Seskupování
@@ -446,25 +449,34 @@ Speciálně u zdroje AD je navíc k dispozici:
   název.
 
 ### Tabulka zastávek
-Levý sloupec sestavy — seznam zastávek s časy a atributy. Nastavuje se v ní mimo jiné: pořadí a
-vzhled sloupců (tlačítko „Upravit sloupce…"), zobrazení variant tras, oddělovací čáry mezi řádky,
-odsazení názvu podle pozice v trase, značka „na znamení", zobrazení atributů a poznámek zastávky
-a jejich umístění před nebo za názvem, grafická šipka směru jízdy, zvýraznění aktuální zastávky
-(tučně, podtržením, vlastní velikostí písma, podbarvením celého řádku), a volba, zda tisknout i
-zastávky, které vozidlo od aktuální zastávky už projelo.
+Levý sloupec sestavy — seznam zastávek s časy a atributy. Nastavuje se v ní mimo jiné:
+- pořadí a vzhled sloupců (tlačítko „Upravit sloupce…"), zobrazení variant tras,
+- oddělovací čáry mezi řádky, odsazení názvu podle pozice v trase,
+- značka „na znamení", zobrazení atributů a poznámek zastávky a jejich umístění před nebo za
+  názvem,
+- grafická šipka směru jízdy,
+- zvýraznění aktuální zastávky (tučně, podtržením, vlastní velikostí písma, podbarvením celého
+  řádku),
+- volba, zda tisknout i zastávky, které vozidlo od aktuální zastávky už projelo,
+- **podmíněná viditelnost** a **podmíněné zvýraznění** řádku zastávky podle výrazu nad jejími
+  daty — stejný princip jako u obecné tabulky (kap. 5).
 
 ### Mřížka odjezdů
 Minuty odjezdů rozdělené do sloupců podle skupiny dnů (pracovní den, sobota, neděle…). Nastavuje
-se v ní: pořadí a vzhled sloupců, zobrazení a zarovnání záhlaví skupin, opakování sloupce hodin
-u každé skupiny, časová osa (jen hodiny s odjezdy / souvislý rozsah / vlastní rozsah hodin),
-volitelné proporční zvětšení, pokud je dat méně, než odpovídá výšce mřížky, střídavé podbarvení
-řádků a samostatný styl pro horní indexy u minut (týdenní platnost, speciální značky, negativní
-značky, rozdíly tras).
+se v ní:
+- pořadí a vzhled sloupců,
+- zobrazení a zarovnání záhlaví skupin, opakování sloupce hodin u každé skupiny,
+- časová osa (jen hodiny s odjezdy / souvislý rozsah / vlastní rozsah hodin),
+- volitelné proporční zvětšení, pokud je dat méně, než odpovídá výšce mřížky,
+- střídavé podbarvení řádků,
+- samostatný styl pro horní indexy u minut (týdenní platnost, speciální značky, negativní
+  značky, rozdíly tras).
 
 ### Legenda poznámek
-Vysvětlivky pod mřížkou — nastavuje se nadpis, oddělovač mezi značkou a textem, počet sloupců a
-směr jejich plnění, řazení poznámek, a které typy poznámek se vůbec zobrazí (negativní značky,
-speciální znaky, textové poznámky).
+Vysvětlivky pod mřížkou — nastavuje se:
+- nadpis, oddělovač mezi značkou a textem,
+- počet sloupců a směr jejich plnění, řazení poznámek,
+- které typy poznámek se vůbec zobrazí (negativní značky, speciální znaky, textové poznámky).
 
 Všechny tři prvky mohou mít pevnou nebo automatickou výšku; při pevné výšce se písmo v případě
 potřeby přiměřeně zmenší, aby se obsah vešel.
@@ -517,6 +529,9 @@ Prvek nabízí zapnutí/vypnutí jednotlivých typů řádků a vzhledových dop
 - přípojné řádky (informace o návaznosti na jiné spoje),
 - nadpisy skupin dnů,
 - podbarvení sloupců s lichým tarifním číslem.
+
+Stejně jako u zastávek (kap. 13) lze i tady nastavit **podmíněnou viditelnost** a **podmíněné
+zvýraznění** celého řádku zastávky podle výrazu nad jejími daty.
 
 Sloupce (jednotlivé spoje) se nastavují obdobně jako u ostatních tabulkových prvků — přes editor
 sloupců s možností nastavit pořadí, šířky a styl zvlášť pro záhlaví a data.
