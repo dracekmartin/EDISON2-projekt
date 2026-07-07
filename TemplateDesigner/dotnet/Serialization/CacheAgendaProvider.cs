@@ -210,8 +210,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
             {
                 Debug.WriteLine($"[AgendaProvider] GetParameters error: {_mlRest.RestStatus.Message}");
-                _parametersCache[agendaCode] = []; // záměrně cachujeme chybu — konzistentní s GetSchema/GetMockData; restart app = retry
-                return [];
+                return []; // chybu NEcachovat — příští volání zkusí znovu (po zotavení Caché se params objeví bez restartu)
             }
 
             string? json = result["1"]?.Value?.ToString();
@@ -228,8 +227,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         catch (Exception ex)
         {
             Debug.WriteLine($"[AgendaProvider] GetParameters exception: {ex.Message}");
-            _parametersCache[agendaCode] = [];
-            return [];
+            return []; // chybu NEcachovat — příští volání zkusí znovu
         }
     }
 
@@ -346,8 +344,11 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 
             CVar result = _mlRest.Query(cacheClass, "GetData", inVar);
 
+            // Chyba Caché NENÍ „prázdno" — vyhodit, ať ji volající (export/tisk) pozná a nespadne
+            // tiše na mock data. `null` níže znamená výhradně „legitimně žádná data", ne selhání.
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
-                return null;
+                throw new CacheAgendaException(
+                    $"Načtení dat agendy '{agendaCode}' z databáze selhalo: {_mlRest.RestStatus.Message}");
 
             // Každý OUT node = jedna stránka (JSON objekt { "values": {...}, "rows": {...} })
             var pages = new List<DataContext>();
@@ -371,9 +372,15 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             }
             return pages.Count > 0 ? pages : null;
         }
-        catch
+        catch (CacheAgendaException)
         {
-            return null;
+            throw;   // už je to naše doménová chyba — nepřebalovat
+        }
+        catch (Exception ex)
+        {
+            // .NET výjimka (spojení, parsování wire) = také selhání, ne „prázdno".
+            throw new CacheAgendaException(
+                $"Chyba při načítání dat agendy '{agendaCode}' z databáze: {ex.Message}", ex);
         }
     }
 
@@ -666,4 +673,15 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         "right"  => TextHorizontalAlignment.Right,
         _        => TextHorizontalAlignment.Left
     };
+}
+
+/// <summary>
+/// Selhání načtení dat agendy z Caché (chyba RestStatus nebo výjimka). Odlišuje skutečnou chybu
+/// od „legitimně žádná data" (to `GetData` signalizuje <c>null</c>) — export/tisk pak na chybu
+/// hlasitě upozorní místo tichého propadnutí na mock data. Zrcadlí `CacheTemplateException`.
+/// </summary>
+public class CacheAgendaException : Exception
+{
+    public CacheAgendaException(string message) : base(message) { }
+    public CacheAgendaException(string message, Exception inner) : base(message, inner) { }
 }

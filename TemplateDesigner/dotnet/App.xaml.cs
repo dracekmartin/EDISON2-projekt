@@ -146,8 +146,11 @@ public partial class App : Application
 
     private void OnUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
     {
+        // Plný detail (stack trace) do diagnostiky; uživateli jen srozumitelná hláška, ne syrový dump.
+        System.Diagnostics.Debug.WriteLine($"[Unhandled] {e.Exception}");
         MessageBox.Show(
-            $"Neošetřená výjimka:\n\n{e.Exception}",
+            $"Došlo k neočekávané chybě:\n\n{e.Exception.Message}\n\n" +
+            "Aplikace pokračuje dál; pokud problém přetrvává, restartujte ji.",
             "Chyba aplikace",
             MessageBoxButton.OK,
             MessageBoxImage.Error);

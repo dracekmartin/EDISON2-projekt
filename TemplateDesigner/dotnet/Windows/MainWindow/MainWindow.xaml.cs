@@ -232,15 +232,25 @@ public partial class MainWindow : Window
         Dispatcher.BeginInvoke(async () =>
         {
             if (_vm is null || _preferences is null) return;
-            _vm.ApplyLoadedPreferences();
-            ApplyUiPreferences();
-            SyncGridSizeComboBox(_vm.State.GridSize);
-            RebuildRecentFilesMenu();
-            // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány —
-            // dohnat to teď.
-            await _vm.LoadPrintParamsAndApplyAsync();
-            skCanvas.InvalidateVisual();
-            InvalidatePreview();
+            try
+            {
+                _vm.ApplyLoadedPreferences();
+                ApplyUiPreferences();
+                SyncGridSizeComboBox(_vm.State.GridSize);
+                RebuildRecentFilesMenu();
+                // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány —
+                // dohnat to teď.
+                await _vm.LoadPrintParamsAndApplyAsync();
+                skCanvas.InvalidateVisual();
+                InvalidatePreview();
+            }
+            catch (Exception ex)
+            {
+                // Načtení preferencí/print-params je nekritické — nespadnout přes globální handler,
+                // jen nenápadně dát vědět (typicky Caché nedostupná).
+                System.Diagnostics.Debug.WriteLine($"[OnPreferencesLoaded] {ex}");
+                _vm.StatusText = "⚠ Nepodařilo se načíst uložené parametry (Caché nedostupná?)";
+            }
         });
     }
 
@@ -1369,21 +1379,8 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() != true) return;   // Cancel — nic se neaplikovalo (Obecné batchuje na OK)
 
-        // Tab „Obecné" (EDInputForm) + per-column styly + hour style — jako jeden undo krok.
-        var cmds = new List<Commands.IDesignerCommand>();
-        if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
-        cmds.AddRange(dlg.StyleCommands);   // pod-formuláře stylu (tlačítka „Styl…")
-        if (availableGroups.Count > 0)
-            cmds.Add(new Commands.Implementations.SetPropertyCommand(
-                "Skupiny dnů", element.GroupColumns, dlg.ResultGroupColumns,
-                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
-        cmds.Add(new Commands.Implementations.SetPropertyCommand(
-            "Styl sloupce hodin", element.HourColumnStyle, dlg.ResultHourColumnStyle,
-            v => element.HourColumnStyle = (ColumnVisualStyle?)v));
-
-        _vm.Execute(cmds.Count == 1
-            ? cmds[0]
-            : new Commands.Implementations.CompositeCommand("Nastavení odjezdů", cmds));
+        _vm.ApplyDepartureGridEdit(element, dlg.GeneralCommand, dlg.StyleCommands,
+            dlg.ResultGroupColumns, availableGroups.Count > 0, dlg.ResultHourColumnStyle);
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1438,18 +1435,7 @@ public partial class MainWindow : Window
         var dlg = new StopColumnsEditorDialog(element) { Owner = this };
 
         if (dlg.ShowDialog() == true)
-        {
-            // Tab „Obecné" (EDInputForm) + sloupce — vykonat jako jeden undo krok.
-            var cmds = new List<Commands.IDesignerCommand>();
-            if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
-            cmds.Add(new Commands.Implementations.SetPropertyCommand(
-                "Sloupce zastávek", element.Columns, dlg.ResultColumns,
-                v => element.Columns = (List<StopColumn>)v!));
-
-            _vm!.Execute(cmds.Count == 1
-                ? cmds[0]
-                : new Commands.Implementations.CompositeCommand("Nastavení zastávek", cmds));
-        }
+            _vm!.ApplyStopColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1461,18 +1447,7 @@ public partial class MainWindow : Window
         var dlg = new LineTableColumnsEditorDialog(element) { Owner = this };
 
         if (dlg.ShowDialog() == true)
-        {
-            // Tab „Obecné" (EDInputForm) + sloupce — jeden undo krok.
-            var cmds = new List<Commands.IDesignerCommand>();
-            if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
-            cmds.Add(new Commands.Implementations.SetPropertyCommand(
-                "Sloupce knižního JŘ", element.Columns, dlg.ResultColumns,
-                v => element.Columns = (List<StopColumn>)v!));
-
-            _vm!.Execute(cmds.Count == 1
-                ? cmds[0]
-                : new Commands.Implementations.CompositeCommand("Nastavení knižního JŘ", cmds));
-        }
+            _vm!.ApplyLineTableColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1485,18 +1460,7 @@ public partial class MainWindow : Window
         var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this };
 
         if (dlg.ShowDialog() == true)
-        {
-            // Tab „Obecné" (EDInputForm) + sloupce — vykonat jako jeden undo krok.
-            var cmds = new List<Commands.IDesignerCommand>();
-            if (dlg.GeneralCommand is not null) cmds.Add(dlg.GeneralCommand);
-            cmds.Add(new Commands.Implementations.SetPropertyCommand(
-                "Sloupce tabulky", element.Columns, dlg.ResultColumns,
-                v => element.Columns = (List<TableColumn>)v!));
-
-            _vm!.Execute(cmds.Count == 1
-                ? cmds[0]
-                : new Commands.Implementations.CompositeCommand("Nastavení tabulky", cmds));
-        }
+            _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
 
         InvalidateCanvas();
         InvalidatePreview();

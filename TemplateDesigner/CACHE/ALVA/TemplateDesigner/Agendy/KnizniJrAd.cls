@@ -235,28 +235,31 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// Ukázková data pro live preview — živě z první linky aktuální firmy (DEV vzor).
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
-    $$$FillParams
-    k ^||TiskKnizni
+    try {
+        $$$FillParams
+        k ^||TiskKnizni
 
-    d ..PrvniLinka(dataDB, .sku, .lin)
-    s page = ""
-    i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2)
+        d ..PrvniLinka(dataDB, .sku, .lin)
+        s page = ""
+        i lin '= "" s page = ..BuildStrankaLinky(dataDB, sku, lin, "T", 2)
 
-    i page = "" {
-        s page = ##class(%DynamicObject).%New()
-        s v = ##class(%DynamicObject).%New()
-        d v.%Set("POPIS_LINKY", "(žádná linka v ^JRL pro firmu "_dataDB_")")
-        d page.%Set("values", v)
-        s r = ##class(%DynamicObject).%New()
-        d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
-        d r.%Set("SPOJE", ##class(%DynamicArray).%New())
-        d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
-        d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
-        d page.%Set("rows", r)
+        i page = "" {
+            s page = ##class(%DynamicObject).%New()
+            s v = ##class(%DynamicObject).%New()
+            d v.%Set("POPIS_LINKY", "(žádná linka v ^JRL pro firmu "_dataDB_")")
+            d page.%Set("values", v)
+            s r = ##class(%DynamicObject).%New()
+            d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
+            d r.%Set("SPOJE", ##class(%DynamicArray).%New())
+            d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
+            d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
+            d page.%Set("rows", r)
+        }
+
+        s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
     }
-
-    s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
-    q $$$OK
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Mapování labelu parametru „Dělení spojů dle platnosti" na legacy mód 0/1/2.

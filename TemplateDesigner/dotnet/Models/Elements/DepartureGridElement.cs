@@ -571,7 +571,10 @@ public class DepartureGridElement : ScheduleElementBase
         if (AnotaceTextStyle.FontSize is null)
             anotTextStyle = anotTextStyle with { FontSize = AnotaceFontSize };
 
-        // ── Pre-create per-group fonts + paints (perf: 100+ buněk/frame) ────
+        // ── Deklarace zdrojů (perf: 100+ buněk/frame) — plnění až uvnitř try ────
+        // Deklarace musí být před try, aby na ně viděl finally i lokální helpery níže;
+        // samotná alokace fontů/paintů (a SKColor.Parse nad uživatelskými barvami, které
+        // mohou vyhodit) je uvnitř try, aby finally uvolnil i částečně vytvořené zdroje + clip.
         var groupHeaderFonts       = new Dictionary<string, SKFont>();
         var groupHeaderTextPaints  = new Dictionary<string, SKPaint>();
         var groupHeaderBgPaints    = new Dictionary<string, SKPaint?>();
@@ -585,60 +588,67 @@ public class DepartureGridElement : ScheduleElementBase
         var groupHeaderFonts2      = new Dictionary<string, SKFont>();
         var groupHeaderTextPaints2 = new Dictionary<string, SKPaint>();
 
-        foreach (var g in layout.Groups)
-        {
-            var id = g.Skupina.Id;
-            var hs = groupHeaderStyles[id];
-            var ms = groupMinuteStyles[id];
+        // Anotace fonty/painty — element-level, sdílené pro všechny buňky (nullable = alokace v try).
+        SKFont?  anotSymFont   = null;
+        SKPaint? anotSymPaint  = null;
+        SKFont?  anotTextFont  = null;
+        SKPaint? anotTextPaint = null;
 
-            // Header fonty: použít base scale (růst se neaplikuje na header).
-            groupHeaderFonts[id]      = hs.CreateFont(scale, ctx.MmToPx);
-            groupHeaderTextPaints[id] = hs.CreateTextPaint();
-            groupHeaderBgPaints[id]   = hs.CreateBgPaint();
-
-            if (hasLine2Override)
-            {
-                var hs2 = HeaderLine2Style!.Resolve(hs);
-                groupHeaderStyles2[id]     = hs2;
-                groupHeaderFonts2[id]      = hs2.CreateFont(scale, ctx.MmToPx);
-                groupHeaderTextPaints2[id] = hs2.CreateTextPaint();
-            }
-
-            // Minutové fonty: použít dataScale (růst se aplikuje, header ne).
-            groupMinuteFonts[id]      = ms.CreateFont(dataScale, ctx.MmToPx);
-            groupMinuteTextPaints[id] = ms.CreateTextPaint();
-            groupMinuteBgPaints[id]   = ms.CreateBgPaint();
-        }
-
-        // Anotace fonty/painty — element-level, sdílené pro všechny buňky. Anotace patří k datovým buňkám → dataScale.
-        var anotSymFont   = anotSymStyle.CreateFont(dataScale, ctx.MmToPx);
-        var anotSymPaint  = anotSymStyle.CreateTextPaint();
-        var anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
-        var anotTextPaint = anotTextStyle.CreateTextPaint();
+        // Zebra — globální + per-group override (alokace v try kvůli SKColor.Parse).
+        SKPaint? zebraPaint = null;
+        var perGroupZebraPaints = new Dictionary<string, SKPaint>();
+        bool hasPerGroupZebra = false;
 
         float anotGapPx      = AnotaceGap * dataScale * ctx.MmToPx;
         float anotInterGapPx = AnotaceInterGap * dataScale * ctx.MmToPx;
         float scaledOdjezdGap = OdjezdGap * dataScale; // v mm (model space), ne v px
-
-        // Zebra — globální + per-group override
-        SKPaint? zebraPaint = null;
-        if (AlternatingRowColor is not null)
-            zebraPaint = new SKPaint { Color = SKColor.Parse(AlternatingRowColor) };
-
-        var perGroupZebraPaints = new Dictionary<string, SKPaint>();
-        foreach (var g in layout.Groups)
-        {
-            if (colStyles.TryGetValue(g.Skupina.Id, out var cs) && cs.AlternatingRowColor is not null)
-                perGroupZebraPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(cs.AlternatingRowColor) };
-        }
-        bool hasPerGroupZebra = perGroupZebraPaints.Count > 0;
-
         float usedWidth = Width;
         float currentY = Y;
         float scaledMinuteW = (MinuteWidth + AnotaceGap) * dataScale;
 
         try
         {
+            foreach (var g in layout.Groups)
+            {
+                var id = g.Skupina.Id;
+                var hs = groupHeaderStyles[id];
+                var ms = groupMinuteStyles[id];
+
+                // Header fonty: použít base scale (růst se neaplikuje na header).
+                groupHeaderFonts[id]      = hs.CreateFont(scale, ctx.MmToPx);
+                groupHeaderTextPaints[id] = hs.CreateTextPaint();
+                groupHeaderBgPaints[id]   = hs.CreateBgPaint();
+
+                if (hasLine2Override)
+                {
+                    var hs2 = HeaderLine2Style!.Resolve(hs);
+                    groupHeaderStyles2[id]     = hs2;
+                    groupHeaderFonts2[id]      = hs2.CreateFont(scale, ctx.MmToPx);
+                    groupHeaderTextPaints2[id] = hs2.CreateTextPaint();
+                }
+
+                // Minutové fonty: použít dataScale (růst se aplikuje, header ne).
+                groupMinuteFonts[id]      = ms.CreateFont(dataScale, ctx.MmToPx);
+                groupMinuteTextPaints[id] = ms.CreateTextPaint();
+                groupMinuteBgPaints[id]   = ms.CreateBgPaint();
+            }
+
+            // Anotace patří k datovým buňkám → dataScale.
+            anotSymFont   = anotSymStyle.CreateFont(dataScale, ctx.MmToPx);
+            anotSymPaint  = anotSymStyle.CreateTextPaint();
+            anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
+            anotTextPaint = anotTextStyle.CreateTextPaint();
+
+            if (AlternatingRowColor is not null)
+                zebraPaint = new SKPaint { Color = SKColor.Parse(AlternatingRowColor) };
+
+            foreach (var g in layout.Groups)
+            {
+                if (colStyles.TryGetValue(g.Skupina.Id, out var cs) && cs.AlternatingRowColor is not null)
+                    perGroupZebraPaints[g.Skupina.Id] = new SKPaint { Color = SKColor.Parse(cs.AlternatingRowColor) };
+            }
+            hasPerGroupZebra = perGroupZebraPaints.Count > 0;
+
             RenderGridHeader();
             RenderGridRows();
             RenderGridVerticalSeparators();
@@ -654,8 +664,8 @@ public class DepartureGridElement : ScheduleElementBase
             foreach (var f in groupMinuteFonts.Values)      f.Dispose();
             foreach (var p in groupMinuteTextPaints.Values) p.Dispose();
             foreach (var p in groupMinuteBgPaints.Values)   p?.Dispose();
-            anotSymFont.Dispose();   anotSymPaint.Dispose();
-            anotTextFont.Dispose();  anotTextPaint.Dispose();
+            anotSymFont?.Dispose();   anotSymPaint?.Dispose();
+            anotTextFont?.Dispose();  anotTextPaint?.Dispose();
             zebraPaint?.Dispose();
             foreach (var p in perGroupZebraPaints.Values)   p.Dispose();
 
@@ -905,7 +915,7 @@ public class DepartureGridElement : ScheduleElementBase
                     extraPx = anotGapPx;
                     foreach (var a in o.Anotace)
                     {
-                        SKFont af = a.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
+                        SKFont af = a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!;
                         bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
                         extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
                     }
@@ -958,7 +968,7 @@ public class DepartureGridElement : ScheduleElementBase
 
                         foreach (var anot in odj.Anotace)
                         {
-                            SKFont aFont = anot.Typ == TypAnotace.Text ? anotTextFont : anotSymFont;
+                            SKFont aFont = anot.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!;
 
                             // Negativní značka invertovaně — černý box + bílý znak (jako legacy). Vždy zapnuto.
                             if (anot.Typ == TypAnotace.NegativniZnacka)
@@ -974,7 +984,7 @@ public class DepartureGridElement : ScheduleElementBase
                                 continue;
                             }
 
-                            SKPaint aPaint = anot.Typ == TypAnotace.Text ? anotTextPaint : anotSymPaint;
+                            SKPaint aPaint = anot.Typ == TypAnotace.Text ? anotTextPaint! : anotSymPaint!;
 
                             // Per-anotace barva z DB (konzistence s legendou poznámek).
                             if (anot.ForeColor is not null)

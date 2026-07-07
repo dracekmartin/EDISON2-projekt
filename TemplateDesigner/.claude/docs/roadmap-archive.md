@@ -2,6 +2,66 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-07 ✅ — Audit před produkcí: nízká priorita (2. dávka)
+
+Pokračování auditu — nízko-prioritní body. Blokery **B1/B2** a vysoká priorita **H1–H5** zůstávají
+otevřené v aktivní roadmapě.
+
+- **Renderer (vrstva 4) — testy geometrie ✅.** Pozicovací matematika buňky (padding shrink, H/V
+  zarovnání, clamp) vytažena z `CellRenderer.DrawCell` do čistého `Rendering/CellLayout` (behavior-preserving
+  refaktor) + `TemplateDesigner.Tests/Rendering/CellLayoutTests.cs` (9 testů). Kreslení na SKCanvas se
+  netestuje (SkiaSharp), ale výpočet kotvy ano — deterministicky, bez fontů. **Plný běh: 252/252 zelených.**
+- **`App.xaml.cs OnUnhandledException` ✅.** Uživateli už jen `Exception.Message` (ne syrový stack trace),
+  plný detail do `Debug.WriteLine`. `MessageBox.Show` v composition-root ponechán záměrně (last-resort net
+  nesmí záviset na app službách, které můžou být tou padající věcí).
+- **`MainWindow.OnPreferencesLoaded` ✅.** Async tělo obaleno try/catch → výpadek Caché při načítání prefs
+  = nenápadný status „⚠ Nepodařilo se načíst uložené parametry" místo propadnutí do globálního handleru.
+- **`EDInputForm/PageEdit.cls` deprecated `$$$Init` ✅.** Odstraněn z `Init`+`Validate` (jediný výskyt v TD;
+  sladěno se sourozeneckými EDInputForm třídami). Caché → čeká compile v dev flow.
+- **Zranitelné závislosti ⛔ akceptováno (mimo TD scope).** Jediná *zranitelná* `Newtonsoft.Json 7.0.1`
+  (NU1903 HIGH) je pinnutá kvůli MLRest ABI (bind 7.0.0.0) → nejde bumpnout bez rebuildu MLRest; warning
+  NEpotlačovat (memory `project_mlrest_newtonsoft_debt`). `ZXing.Net 0.16.9`/`PdfPig 0.1.13` jsou staré,
+  ale ne zranitelné → bump nízká hodnota + riziko API churn. Reálná náprava = rebuild MLRest (EDControls task).
+
+## Session 2026-07-07 ✅ — Audit před produkcí: střední-prioritní tech dluh (M1–M5) + rozhodnutí M6/M7
+
+Z komplexního auditu kvality kódu (4 dimenze: .NET architektura, Caché/ObjectScript, produkční
+připravenost, test coverage). Blokery **B1/B2/B3** a vysoká priorita **H1–H5** zůstávají otevřené
+v aktivní roadmapě (viz „🔴 Audit před produkcí"). Střední priorita hotová/rozhodnuta:
+
+- **M1 ✅ — prázdný subscript v MHD.** Guard `i (TypProvozuID="")||(SmerID="") continue` v
+  `ZastavkoveJrMhd.PromitnutSpoje` — spoj s prázdnou skupinou dnů / směrem se přeskočí místo pádu
+  celé linky (`^||TiskMHD(…,"")` = `<SUBSCRIPT>`). Behavior-preserving pro validní data (0/1).
+- **M2 ✅ — try/catch kolem 3 živých `GetMockData`.** `ZastavkoveJrAd` (commit 876ada3),
+  `KnizniJrAd`, `KnizniJrMhd` — obaleno `try { $$$FillParams … } catch (ex) { $$$CatchErrRest } ret $$$OK`.
+  Vadná data na první lince firmy → čistá hláška v preview místo syrového pádu. (Odložený drobný
+  follow-up: statický vzorek nezávislý na datech, `ZastavkoveJrAd.cls:1219` — nízká hodnota.)
+- **M3 ✅ — únik Skia handles v `DepartureGridElement.Render`.** Alokace fontů/paintů/zebra
+  (`CreateFont`/`SKColor.Parse` nad uživatelskými barvami mohou vyhodit) přesunuta dovnitř `try`;
+  deklarace zůstaly na method scope (helpery je zachytávají), 4 anotace fonty nullable + `?.Dispose()`.
+  Řeší i neuvolněný clip při chybě setupu. Build 0 chyb / 0 nových warningů.
+- **M4 ✅ — konstrukce undo příkazů z code-behind do VM.** 4 metody
+  `Apply{DepartureGrid,StopColumns,LineTableColumns,DynamicTable}Edit` + helper `ExecuteAsComposite`
+  v `TemplateDesignerViewModel` (WPF-free, testovatelné); `OpenXxxDialog` v code-behind už jen otevírá
+  dialog + volá VM. Sémantika příkazů identická. (Otevírání dialogu zůstává v code-behind → dořeší H3.)
+- **M5 ✅ — unit testy undo/redo.** `TemplateDesigner.Tests/Commands/UndoRedoCommandTests.cs` (14 testů:
+  Set/Move/Resize/Add/Delete element+sekce, Move/Reorder sekce, Group/Ungroup, **Composite undo v opačném
+  pořadí**, **ScaleTemplate inverzní round-trip**). Všech 14 zelených.
+- **M6 ⛔ akceptováno (won't-do).** Import legacy (předrefaktorového) JSON tiše zahodí styling
+  (flat text props → `Style` default, `WasMigrated=false` → bez varování). Reálná expozice ≈ nulová:
+  DB je primární úložiště od 2026-06-30 a všechny DB šablony jsou už composable; plochý JSON = mrtvý
+  dev-era artefakt. Není to pád ani poškození dat (import = nová neuložená šablona, špatný font hned
+  vidět). Spolehlivá detekce by false-positivila. YAGNI → neřešit.
+- **M7 ⏸️ odloženo (parkovaný perf-item).** `WMapa` kopíruje celou W-mapu (`k`+`m`) při každém lookupu,
+  vč. uvnitř smyčky zastávek×variant (`ZastavkoveJrAd.cls:354`), ač `CasJizdyZMapy` čte jen 2 uzly.
+  Čistě latence, ne korektnost — výstup gold-ověřený 1:1, engine „výkonově pročištěný", žádná nahlášená
+  pomalost. Zásah = riziko parity. Recept (až se objeví pomalá velká linka): (1) předpočítat variantní
+  mapy jednou před smyčkou zastávek; (2) číst `^||TiskAd("wmap",ct,poradi)` přímo místo `k`+`m`.
+  Zapsáno v backlogu „Tech dluh".
+
+⚠️ **Poznámka:** Caché edity (M1, M2/KnizniJr*) čekají na compile v dev flow — MCP `cache_compile`
+míří na `C:\DEV\EDISON`, ne na tento repo. Syntaxe standardní, shodná s `GetData` ve stejných souborech.
+
 ## Session 2026-07-06/07 ✅ — Layout tabulek: „sekce vyšší" + DynamicTable varianta A (R2 zrušeno)
 
 **„Sekce vyšší než stránka" ✅** — designové plátno roste přes víc A4 (Slice 1) + dělící čáry stránek

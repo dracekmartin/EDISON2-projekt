@@ -36,13 +36,8 @@ public static class CellRenderer
 
         if (string.IsNullOrEmpty(text)) return;
 
-        // 2. Padding — zmenšit content box. Pokud padding sežral celou dimenzi, rozbalit zpět.
-        float contentLeft   = rectMm.Left   + style.PaddingLeft;
-        float contentTop    = rectMm.Top    + style.PaddingTop;
-        float contentRight  = rectMm.Right  - style.PaddingRight;
-        float contentBottom = rectMm.Bottom - style.PaddingBottom;
-        if (contentRight  <= contentLeft) { contentLeft = rectMm.Left; contentRight  = rectMm.Right;  }
-        if (contentBottom <= contentTop)  { contentTop  = rectMm.Top;  contentBottom = rectMm.Bottom; }
+        // 2. Padding — zmenšit content box (mm). Čistá geometrie viz CellLayout.
+        SKRect contentMm = CellLayout.ApplyPadding(rectMm, style);
 
         // 3. Font + paint
         using var font = style.CreateFont(fontScale, ctx.MmToPx);
@@ -54,25 +49,12 @@ public static class CellRenderer
         float ascent  = -metrics.Ascent;   // Ascent je záporný (směr nahoru)
         float descent = metrics.Descent;
 
-        var tl = ctx.ToCanvas(contentLeft,  contentTop);
-        var br = ctx.ToCanvas(contentRight, contentBottom);
+        var tl = ctx.ToCanvas(contentMm.Left,  contentMm.Top);
+        var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
 
-        // 5. Horizontální zarovnání
-        float xTextPx = style.HAlign switch
-        {
-            TextHorizontalAlignment.Center => tl.X + (br.X - tl.X - textWidthPx) / 2f,
-            TextHorizontalAlignment.Right  => br.X - textWidthPx,
-            _                              => tl.X,  // Left
-        };
-        if (xTextPx < tl.X) xTextPx = tl.X;  // chrání před ořezem u dlouhého textu
-
-        // 6. Vertikální zarovnání — výpočet baseline Y v px
-        float yBaselinePx = style.VAlign switch
-        {
-            TextVerticalAlignment.Middle => tl.Y + (br.Y - tl.Y + ascent - descent) / 2f,
-            TextVerticalAlignment.Bottom => br.Y - descent,
-            _                            => tl.Y + ascent,  // Top
-        };
+        // 5+6. Zarovnání H+V → kotva textu (px)
+        var (xTextPx, yBaselinePx) = CellLayout.TextAnchorPx(
+            tl, br, textWidthPx, ascent, descent, style.HAlign, style.VAlign);
 
         // 7. Text
         ctx.Canvas.DrawText(text, xTextPx, yBaselinePx, font, textPaint);

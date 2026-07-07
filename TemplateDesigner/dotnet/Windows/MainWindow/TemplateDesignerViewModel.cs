@@ -509,6 +509,64 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
     }
 
+    /// <summary>Vykoná seznam příkazů jako jeden undo krok (1 příkaz → přímo, víc → CompositeCommand).
+    /// Prázdný seznam = no-op.</summary>
+    private void ExecuteAsComposite(string label, List<IDesignerCommand> cmds)
+    {
+        if (cmds.Count == 0) return;
+        Execute(cmds.Count == 1 ? cmds[0] : new CompositeCommand(label, cmds));
+    }
+
+    // ── Aplikace výsledků editorů sloupců (dialog otevírá code-behind; sestavení
+    //    a vykonání příkazů = business logika, patří sem do VM). Metody neznají WPF. ──
+
+    /// <summary>Odjezdová mřížka: tab „Obecné" (EDInputForm) + per-column styly + styl sloupce hodin
+    /// jako jeden undo krok.</summary>
+    public void ApplyDepartureGridEdit(DepartureGridElement element, IDesignerCommand? generalCommand,
+        IEnumerable<IDesignerCommand> styleCommands, List<DepartureGroupColumnStyle> resultGroupColumns,
+        bool hasGroups, ColumnVisualStyle? resultHourColumnStyle)
+    {
+        var cmds = new List<IDesignerCommand>();
+        if (generalCommand is not null) cmds.Add(generalCommand);
+        cmds.AddRange(styleCommands);
+        if (hasGroups)
+            cmds.Add(new SetPropertyCommand("Skupiny dnů", element.GroupColumns, resultGroupColumns,
+                v => element.GroupColumns = (List<DepartureGroupColumnStyle>)v!));
+        cmds.Add(new SetPropertyCommand("Styl sloupce hodin", element.HourColumnStyle, resultHourColumnStyle,
+            v => element.HourColumnStyle = (ColumnVisualStyle?)v));
+        ExecuteAsComposite("Nastavení odjezdů", cmds);
+    }
+
+    /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
+    public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
+    {
+        var cmds = new List<IDesignerCommand>();
+        if (generalCommand is not null) cmds.Add(generalCommand);
+        cmds.Add(new SetPropertyCommand("Sloupce zastávek", element.Columns, resultColumns,
+            v => element.Columns = (List<StopColumn>)v!));
+        ExecuteAsComposite("Nastavení zastávek", cmds);
+    }
+
+    /// <summary>Knižní JŘ LineTable: tab „Obecné" + sloupce jako jeden undo krok.</summary>
+    public void ApplyLineTableColumnsEdit(LineTableElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
+    {
+        var cmds = new List<IDesignerCommand>();
+        if (generalCommand is not null) cmds.Add(generalCommand);
+        cmds.Add(new SetPropertyCommand("Sloupce knižního JŘ", element.Columns, resultColumns,
+            v => element.Columns = (List<StopColumn>)v!));
+        ExecuteAsComposite("Nastavení knižního JŘ", cmds);
+    }
+
+    /// <summary>Dynamická tabulka: tab „Obecné" + sloupce jako jeden undo krok.</summary>
+    public void ApplyDynamicTableEdit(DynamicTableElement element, IDesignerCommand? generalCommand, List<TableColumn> resultColumns)
+    {
+        var cmds = new List<IDesignerCommand>();
+        if (generalCommand is not null) cmds.Add(generalCommand);
+        cmds.Add(new SetPropertyCommand("Sloupce tabulky", element.Columns, resultColumns,
+            v => element.Columns = (List<TableColumn>)v!));
+        ExecuteAsComposite("Nastavení tabulky", cmds);
+    }
+
     private void Undo()
     {
         State.Undo();

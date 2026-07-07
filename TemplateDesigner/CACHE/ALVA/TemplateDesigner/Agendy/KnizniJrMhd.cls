@@ -189,29 +189,32 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// Ukázková data pro live preview — první linka výchozí skupiny (DEV vzor).
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
-    $$$FillParams
-    k ^||TiskKnizniMhd
+    try {
+        $$$FillParams
+        k ^||TiskKnizniMhd
 
-    s skupinaLinek = ..DefaultSkupinaLinek(IdFa, dataDB)
-    s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
-    s page = ""
-    i linkaId '= "" s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, 0)
+        s skupinaLinek = ..DefaultSkupinaLinek(IdFa, dataDB)
+        s linkaId = $o(^[dataDB]ALVA.MHD.LSO(IdFa,1,"IDX",1,1,1,skupinaLinek,""))
+        s page = ""
+        i linkaId '= "" s page = ..BuildStrankaLinky(.sys, IdFa, dataDB, linkaId, 0)
 
-    i page = "" {
-        s page = ##class(%DynamicObject).%New()
-        s v = ##class(%DynamicObject).%New()
-        d v.%Set("POPIS_LINKY", "(žádná MHD linka pro firmu "_IdFa_")")
-        d page.%Set("values", v)
-        s r = ##class(%DynamicObject).%New()
-        d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
-        d r.%Set("SPOJE", ##class(%DynamicArray).%New())
-        d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
-        d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
-        d page.%Set("rows", r)
+        i page = "" {
+            s page = ##class(%DynamicObject).%New()
+            s v = ##class(%DynamicObject).%New()
+            d v.%Set("POPIS_LINKY", "(žádná MHD linka pro firmu "_IdFa_")")
+            d page.%Set("values", v)
+            s r = ##class(%DynamicObject).%New()
+            d r.%Set("ZASTAVKY", ##class(%DynamicArray).%New())
+            d r.%Set("SPOJE", ##class(%DynamicArray).%New())
+            d r.%Set("SKUPINY_DNU", ##class(%DynamicArray).%New())
+            d r.%Set("POZNAMKY", ##class(%DynamicArray).%New())
+            d page.%Set("rows", r)
+        }
+
+        s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
     }
-
-    s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
-    q $$$OK
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
 }
 
 /// Sestaví JSON stránku knižního MHD JŘ pro jednu linku a směr (0=T, 1=Z).
