@@ -2,6 +2,42 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-07 ✅ — Audit před produkcí UZAVŘEN (blokery + H3–H6 + M + nízká)
+
+**Celý audit před produkcí hotový.** Blokery B1–B3 ✅, vysoká priorita H3–H6 ✅, střední M1–M5 ✅
+(M6 won't-do, M7 parkováno), nízká priorita ✅. **H1** (dedup Caché enginů) + **H2** (testy enginů +
+gold gate) přesunuty do **Fáze C+D** (dávají smysl až s ostrým knižním/linkovým JŘ). Detaily M/nízká
+viz sesterské archivní záznamy níže; H3–H6 zde:
+
+> **Pozitivní baseline auditu (co bylo OK, neřešit):** čistý build (0 chyb), R3 wire formát čistý,
+> R1 async čistý, secret gitignore/publish-exclusion OK, start degraduje na GENERAL-only bez Caché,
+> Template CRUD chyby jdou přes `IPopupDisplayer`, DepartureGrid cascade anti-pattern NENÍ přítomen,
+> typeface caching správně, vrstvy výrazů/layoutu/serializace dobře otestované.
+
+- **H4** ✅ — statický `DocumentDefaults.Style` race při async exportu → backing field `AsyncLocal<TextStyle?>`
+  (export na `Task.Run` má izolovanou hodnotu, UI live-preview svou). Regresní test.
+- **H5** ✅ — `CacheAgendaProvider` polykal + cachoval chyby → už NEcachuje na error; `OnReadError` callback →
+  nemodální „⚠ Databáze … selhalo" ve status baru (thread-safe, R4-safe).
+- **H6** ✅ — latentní `<UNDEFINED>err` v catch napříč agenda/dispatch metodami → `s err=""` před `try`
+  do všech metod s `$$$CatchErrRest` (21 souborů).
+
+### H3 — ViewModel bez WPF (R4), dialogy přes službu
+
+`TemplateDesignerViewModel`
+přímo instancoval WPF okna + `.ShowDialog()` + `OpenFileDialog`/`SaveFileDialog` + systémovou `Clipboard`
+(porušení R4, neunit-testovatelný).
+
+- **`Services/IDesignerDialogService`** (nová abstrakce View vrstvy): `ShowInstancePicker`/`ShowChangeAgenda`/
+  `ShowCacheTemplatePicker`/`ShowSaveToCache` (dialog dostane hotový dialogový VM), `PickOpenFile`/`PickSaveFile`
+  (→ cesta nebo null), `SetClipboardText`.
+- **`WpfDesignerDialogService`** (code-behind vedle `MainWindow`, drží owner okno) mapuje VM → konkrétní okno;
+  `_vm.Dialogs = new WpfDesignerDialogService(this)` v `MainWindow` konstruktoru.
+- VM staví dialogové **ViewModely** (VM→VM, žádné WPF) a jen je nechá zobrazit; výstup čte z dialog VM
+  (`SelectedInstances`/`ChosenCode`/`SelectedTemplateId`). Souborové dialogy + clipboard přes službu.
+- `using System.Windows` z VM odstraněn (zbývá `System.Windows.Input` kvůli `Key` enum v `MoveByKey` —
+  vstupní enum, mimo scope H3). VM je nyní testovatelný přes mock služby.
+- Build 0 chyb, 253/253 testů. Plný VM unit-test harness (EDServices/MLRest mock) = širší → T4 strangler.
+
 ## Session 2026-07-07 ✅ — Audit před produkcí: nízká priorita (2. dávka)
 
 Pokračování auditu — nízko-prioritní body. Blokery **B1/B2** a vysoká priorita **H1–H5** zůstávají

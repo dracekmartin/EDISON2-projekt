@@ -153,6 +153,9 @@ public partial class MainWindow : Window
         _vm.RenderPngToFile = (filePath, pages, template, progress) =>
             _previewCanvas!.RenderMultiDataToPng(filePath, pages, template: template, progress: progress);
 
+        // Modální/souborové dialogy + schránka — WPF drží tato služba, ne VM (R4)
+        _vm.Dialogs = new WpfDesignerDialogService(this);
+
         // Wire section events
         _vm.SectionsRebuilt += RestoreSectionSelection;
         SectionVM.ShowPropertiesGlobal = s => OpenPropertiesForSection(s);

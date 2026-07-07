@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-07 — Audit H3: ViewModel bez WPF (R4) — dialogy přes `IDesignerDialogService`
+
+Poslední otevřený vysoko-prioritní audit bod. `TemplateDesignerViewModel` přímo instancoval WPF okna
+(`new *Dialog(...) { Owner = Application.Current.MainWindow }` + `.ShowDialog()`), souborové dialogy
+(`OpenFileDialog`/`SaveFileDialog`) a systémovou `Clipboard` → porušení R4, VM neunit-testovatelný.
+
+- **Nový `Services/IDesignerDialogService`** — abstrakce View vrstvy: `ShowInstancePicker`/`ShowChangeAgenda`/
+  `ShowCacheTemplatePicker`/`ShowSaveToCache` (nad dialogovým VM) + `PickOpenFile`/`PickSaveFile` + `SetClipboardText`.
+- **`WpfDesignerDialogService`** (code-behind, drží owner okno) mapuje na konkrétní okna; napojeno v `MainWindow`.
+- VM staví dialogové **ViewModely** (VM→VM, žádné WPF) a jen je nechá zobrazit; výsledek čte z dialogového VM.
+- `using System.Windows` z VM pryč (zůstal jen `System.Windows.Input` kvůli `Key` enum v `MoveByKey`).
+- VM je nyní testovatelný přes mock služby. Build + 253/253 testů. Detail → [`roadmap-archive.md`](roadmap-archive.md).
+
+**Tím jsou všechny audit body H3–H6 + blokery hotové** — audit před produkcí uzavřen (H1/H2 přesunuty do Fáze C+D).
+
 ## 2026-07-07 — MHD zastávkový JŘ: B1 (dopravce z DB) + oprava crashe pickeru
 
 **B1 (blocker) — pryč s KV hardcode v MHD tiskové cestě** (`ZastavkoveJrMhd.cls`):

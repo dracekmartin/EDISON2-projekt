@@ -5,50 +5,6 @@
 
 ---
 
-## 🔴 Audit před produkcí (2026-07-07) — nalezený tech / produkční dluh
-
-> Výsledek komplexního auditu kvality kódu, architektury, tech i produkčního dluhu (4 dimenze:
-> .NET architektura, Caché/ObjectScript, produkční připravenost, test coverage). **Procházet jeden po
-> druhém**, odškrtávat hotové (→ přesunout do archivu). Pořadí = doporučená priorita. Detailní rozbor
-> každého bodu proběhl v chatu 2026-07-07.
->
-> **Pozitivní baseline (neřešit):** čistý build (0 chyb), R3 wire formát čistý, R1 async čistý, secret
-> gitignore/publish-exclusion OK, start degraduje na GENERAL-only bez Caché, Template CRUD chyby jdou přes
-> `IPopupDisplayer`, DepartureGrid cascade anti-pattern NENÍ přítomen, typeface caching správně, vrstvy
-> výrazů/layoutu/serializace dobře otestované.
-
-### 🔴 Blokery — ✅ všechny vyřešeny 2026-07-07 (→ archiv)
-
-B1 (KV hardcode v MHD tiskové cestě → dopravce z DB, mrtvá pole pryč), B2 (export nezamlčí chybu Caché
-→ `CacheAgendaException` místo mock), B3 (mrtvý secret `appsettings.local.json` smazán; rotace klíče na
-uživateli). Detail → [`roadmap-archive.md`](roadmap-archive.md) (Audit 2026-07-07 — blokery).
-
-### 🟠 Vysoká priorita (H3–H6) — ⬜ otevřené (řeší se v paralelní audit session)
-
-> **H1** (dedup Caché enginů → `BaseAgenda`/`JrShared`) + **H2** (testy enginů + bezpodmínečný gold gate)
-> přesunuty do **Fáze C+D** — dávají smysl až s ostrým knižním/linkovým JŘ (H1 = Caché analog R1
-> extrakce jádra z C3). Zde zůstává H3–H6.
-
-| # | Co | Kde | Akce |
-|---|---|---|---|
-| ⬜ H3 | Hlavní VM řídí View přímo (porušení R4) — instancuje dialogy a volá `.ShowDialog()`, `Clipboard.SetText`; neunit-testovatelné | `TemplateDesignerViewModel.cs:754,780,988,1051,796,957,1085,1123,2240` | `IDialogService` / rozšířit `RequestXxx` callbacky — **splývá s T4 god-object strangler** |
-| ✅ H4 | Statický `DocumentDefaults.Style` se během async exportu zapisuje ze 2 vláken → ničí izolaci snapshotu (exportní stránka se může vyresolvit s živým defaultem) | `Models/DocumentDefaults.cs` | **HOTOVO 2026-07-07** — backing field `AsyncLocal<TextStyle?>`: export na `Task.Run` má vlastní izolovanou hodnotu, UI live-preview svou → race pryč, ambient návrh zachován (bez threadingu přes `RenderContext`, ta by šla proti záměru). Regresní test `DocumentDefaultsTests.AsyncFlow_ExportNeprepiseUiHodnotu` (s prostým statikem spadne). Build + 253/253 testů zelené |
-| ✅ H5 | Provider polyká Caché chyby **a cachuje selhání** — po zotavení servíruje prázdno až do restartu; nic se nedávalo najevo | `CacheAgendaProvider.cs` | **HOTOVO 2026-07-07** — (1) cachování chyb: `GetParameters` už NEcachuje na error/exception; `GetSchema`/`GetMockData` cachují jen success. (2) **viditelnost:** `OnReadError` callback → invoke jen na RestStatus.Error/výjimku (ne legit-prázdno) v GetSchema/GetParameters/GetMockData/GetAvailableInstances → VM `RequestReadErrorStatus` → code-behind `Dispatcher.Invoke` → nemodální „⚠ Databáze — … selhalo" ve status baru (thread-safe, R4-safe). Build + 253/253 testů. Minor ponecháno: `GetTemplate` negativní cache (Fixed tabulky spící) |
-| ✅ H6 | **Latentní `<UNDEFINED>err` v catch napříč agenda metodami** — vzor `try { $$$FillParams … } catch { $$$CatchErrRest }` bez `$$$Init`: `$$$FillParams` nenastavuje `err`, `$$$CatchErrRest` ho **čte** → když se catch reálně spustí, sekundární `<UNDEFINED>err` místo čisté hlášky. | všechny agenda + EDInputForm + API metody s tímto catch vzorem | **HOTOVO 2026-07-07** — `s err = ""` doplněno před `try` do **všech** metod s `$$$CatchErrRest` (21 souborů: 4 agenda, API/Sablony+AgendyRegistr, 15 EDInputForm dispatch). Bez komentářů (standardní idiom). `EDList/*` + `GetAvailableInstances` už `err` měly. Ověřeno: žádná metoda neotvírá `try {` bez initu; compile hook per-edit bez chyb. **Konflikt docs zbývá dořešit** (MLRest.md skeleton `$$$Init` × cache-api pravidlo 14) — směr zvolen `s err=""` bez `$$$Init`. |
-
-### 🟡 Střední priorita — ✅ vyřešeno / rozhodnuto (2026-07-07)
-
-M1–M5 hotové, M6 akceptováno (won't-do), M7 odloženo → **detail v [`roadmap-archive.md`](roadmap-archive.md)**
-(Session 2026-07-07). M7 recept parkovaný v backlogu „Tech dluh" níže.
-
-### 🟢 Nízká priorita / poznámky — ✅ vyřešeno / rozhodnuto (2026-07-07)
-
-Renderer geometrie testy, `App.xaml.cs` stack trace, `OnPreferencesLoaded` try/catch, `PageEdit` `$$$Init`
-hotové; závislosti akceptovány (won't-do) → **detail v [`roadmap-archive.md`](roadmap-archive.md)**
-(Session 2026-07-07 — nízká priorita).
-
----
-
 ## 📋 Aktivní / nejbližší kroky
 
 **Co reálně čeká (pořadí = priorita):**
@@ -64,9 +20,9 @@ hotové; závislosti akceptovány (won't-do) → **detail v [`roadmap-archive.md
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Tech dluh (ne blocker, průběžně):** T1b-robustní gold test (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do
-  izolovaného namespace — data-drift-proof, **= H2 v audit sekci nahoře**) · T4 god-objects strangler (postupné řezy
-  `MainWindow.xaml.cs` + `TemplateDesignerViewModel` na služby, **= H3/M4 v audit sekci nahoře**). Ostatní nálezy
-  auditu 2026-07-07 → viz sekce „🔴 Audit před produkcí" nahoře.
+  izolovaného namespace — data-drift-proof, **= H2, přesunuto do Fáze C+D / C9**) · T4 god-objects strangler
+  (postupné řezy `MainWindow.xaml.cs` + `TemplateDesignerViewModel` na služby; **H3 dialogová/schránková vrstva
+  ✅ hotová** — zbývá zbytek `MainWindow.xaml.cs` + M4). Audit před produkcí uzavřen → archiv (Session 2026-07-07).
   - **M7 perf (parkováno, až s pomalou velkou linkou):** `WMapa` kopíruje celou W-mapu (`k`+`m`) per lookup,
     vč. uvnitř smyčky zastávek×variant (`ZastavkoveJrAd.cls:354`). Recept: (1) předpočítat variantní mapy jednou
     před smyčkou zastávek; (2) číst `^||TiskAd("wmap",ct,poradi)` přímo místo `k`+`m` (`CasJizdyZMapy` čte 2 uzly).

@@ -3,11 +3,9 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Windows;
 using System.Windows.Input;
 using EDControls;
 using EDControls.EDViewModel;
-using Microsoft.Win32;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Config;
@@ -817,8 +815,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
 
         var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances);
-        var dlg = new InstancePickerDialog(vm) { Owner = Application.Current.MainWindow };
-        if (dlg.ShowDialog() != true) return;
+        if (Dialogs?.ShowInstancePicker(vm) != true) return;
 
         _activeInstances = vm.SelectedInstances.ToList();
         _activeInstanceIndex = 0;
@@ -842,8 +839,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
 
         var vm = new ChangeAgendaDialogViewModel(agendas, State.CurrentTemplate.AgendaCode);
-        var dlg = new ChangeAgendaDialog(vm) { Owner = Application.Current.MainWindow };
-        if (dlg.ShowDialog() != true || vm.ChosenCode is null) return;
+        if (Dialogs?.ShowChangeAgenda(vm) != true || vm.ChosenCode is null) return;
 
         // Stejná agenda — nic neměním (vyhne se zbytečnému potvrzování neuložených změn).
         if (string.Equals(State.CurrentTemplate.AgendaCode, vm.ChosenCode, StringComparison.OrdinalIgnoreCase))
@@ -858,9 +854,9 @@ public class TemplateDesignerViewModel : EDViewModel
     private async Task ImportFromJsonAsync()
     {
         if (!await ConfirmUnsavedChangesAsync()) return;
-        var dlg = new OpenFileDialog { Filter = TemplateSerializer.FileFilter, Title = "Importovat šablonu z JSON" };
-        if (dlg.ShowDialog() != true) return;
-        await OpenTemplateFromFileAsync(dlg.FileName);
+        var path = Dialogs?.PickOpenFile("Importovat šablonu z JSON", TemplateSerializer.FileFilter);
+        if (path is null) return;
+        await OpenTemplateFromFileAsync(path);
     }
 
     /// <summary>
@@ -1019,17 +1015,13 @@ public class TemplateDesignerViewModel : EDViewModel
     /// kopie ven, obdoba PDF/PNG exportu, ne „save target". Vrátí true pokud se soubor uložil.</summary>
     private async Task<bool> ExportToJsonAsync()
     {
-        var dlg = new SaveFileDialog
-        {
-            Filter   = TemplateSerializer.FileFilter,
-            Title    = "Exportovat šablonu do JSON",
-            FileName = State.CurrentTemplate.Name
-        };
-        if (dlg.ShowDialog() != true) return false;
+        var path = Dialogs?.PickSaveFile("Exportovat šablonu do JSON", TemplateSerializer.FileFilter,
+            State.CurrentTemplate.Name);
+        if (path is null) return false;
         SyncParametersToTemplate();
         CaptureEditorPreferencesToTemplate();
-        await TemplateSerializer.SaveAsync(State.CurrentTemplate, dlg.FileName);
-        StatusText = $"Vyexportováno do {System.IO.Path.GetFileName(dlg.FileName)}";
+        await TemplateSerializer.SaveAsync(State.CurrentTemplate, path);
+        StatusText = $"Vyexportováno do {System.IO.Path.GetFileName(path)}";
         return true;
     }
 
@@ -1050,8 +1042,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // správce (smazat / přejmenovat) bez intent načíst do editoru.
         var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
         var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, agendas);
-        var dlg = new CacheTemplatePickerDialog(vm) { Owner = Application.Current.MainWindow };
-        if (dlg.ShowDialog() != true || vm.SelectedTemplateId is null) return;
+        if (Dialogs?.ShowCacheTemplatePicker(vm) != true || vm.SelectedTemplateId is null) return;
 
         if (!await ConfirmUnsavedChangesAsync()) return;
 
@@ -1113,8 +1104,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var vm = new SaveToCacheDialogViewModel(
             State.CurrentTemplate.Name,
             State.CurrentTemplate.AgendaCode);
-        var dlg = new SaveToCacheDialog(vm) { Owner = Application.Current.MainWindow };
-        if (dlg.ShowDialog() != true) return false;
+        if (Dialogs?.ShowSaveToCache(vm) != true) return false;
 
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
@@ -1147,16 +1137,11 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task ExportPreviewPdfAsync()
     {
-        var dlg = new SaveFileDialog
-        {
-            Title      = "Exportovat náhled jako PDF",
-            Filter     = "PDF soubory (*.pdf)|*.pdf",
-            DefaultExt = "pdf",
-            FileName   = (Path.GetFileNameWithoutExtension(CurrentFilePath)
+        var defaultName = (Path.GetFileNameWithoutExtension(CurrentFilePath)
                          ?? (string.IsNullOrWhiteSpace(State.CurrentTemplate.Name)
-                             ? "sablona" : State.CurrentTemplate.Name)) + ".pdf"
-        };
-        if (dlg.ShowDialog() != true) return;
+                             ? "sablona" : State.CurrentTemplate.Name)) + ".pdf";
+        var path = Dialogs?.PickSaveFile("Exportovat náhled jako PDF", "PDF soubory (*.pdf)|*.pdf", defaultName, "pdf");
+        if (path is null) return;
         if (RenderPdfToFile is null) return;
 
         // Fetch (N× GetData přes MLRest) i render běží mimo UI thread (R1). UI zůstává
@@ -1171,13 +1156,17 @@ public class TemplateDesignerViewModel : EDViewModel
 
             var renderProgress = new Progress<(int done, int total)>(p =>
                 StatusText = $"Generuji PDF: {p.done}/{p.total} datových stránek…");
-            await Task.Run(() => RenderPdfToFile(dlg.FileName, pages, snapshot, renderProgress));
+            await Task.Run(() => RenderPdfToFile(path, pages, snapshot, renderProgress));
 
-            StatusText = $"PDF uloženo: {Path.GetFileName(dlg.FileName)} ({pages.Count} datových stránek)";
-            OpenExportedFile(dlg.FileName);
+            StatusText = $"PDF uloženo: {Path.GetFileName(path)} ({pages.Count} datových stránek)";
+            OpenExportedFile(path);
         }
         finally { _exportRunning = false; }
     }
+
+    /// <summary>View vrstva (code-behind) napojí WPF implementaci — modální/souborové dialogy + schránka.
+    /// Přes tuto abstrakci VM nereferencuje WPF (R4). Null v testech → dialogové akce se tiše přeskočí.</summary>
+    public IDesignerDialogService? Dialogs { get; set; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf. Voláno z background threadu
     /// se snapshot šablonou (živá se může mezitím editovat).</summary>
@@ -1185,16 +1174,11 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task ExportPreviewPngAsync()
     {
-        var dlg = new SaveFileDialog
-        {
-            Title      = "Exportovat náhled jako PNG",
-            Filter     = "PNG soubory (*.png)|*.png",
-            DefaultExt = "png",
-            FileName   = (Path.GetFileNameWithoutExtension(CurrentFilePath)
+        var defaultName = (Path.GetFileNameWithoutExtension(CurrentFilePath)
                          ?? (string.IsNullOrWhiteSpace(State.CurrentTemplate.Name)
-                             ? "sablona" : State.CurrentTemplate.Name)) + ".png"
-        };
-        if (dlg.ShowDialog() != true) return;
+                             ? "sablona" : State.CurrentTemplate.Name)) + ".png";
+        var path = Dialogs?.PickSaveFile("Exportovat náhled jako PNG", "PNG soubory (*.png)|*.png", defaultName, "png");
+        if (path is null) return;
         if (RenderPngToFile is null) return;
 
         _exportRunning = true;
@@ -1206,12 +1190,12 @@ public class TemplateDesignerViewModel : EDViewModel
 
             var renderProgress = new Progress<(int done, int total)>(p =>
                 StatusText = $"Generuji PNG: {p.done}/{p.total} stránek…");
-            int count = await Task.Run(() => RenderPngToFile(dlg.FileName, pages, snapshot, renderProgress));
+            int count = await Task.Run(() => RenderPngToFile(path, pages, snapshot, renderProgress));
 
             StatusText = count == 1
-                ? $"PNG uloženo: {Path.GetFileName(dlg.FileName)}"
-                : $"PNG uloženo: {count} souborů ({Path.GetFileNameWithoutExtension(dlg.FileName)}_001.png …)";
-            if (count == 1) OpenExportedFile(dlg.FileName);
+                ? $"PNG uloženo: {Path.GetFileName(path)}"
+                : $"PNG uloženo: {count} souborů ({Path.GetFileNameWithoutExtension(path)}_001.png …)";
+            if (count == 1) OpenExportedFile(path);
         }
         finally { _exportRunning = false; }
     }
@@ -2302,7 +2286,7 @@ public class TemplateDesignerViewModel : EDViewModel
         }
         else
         {
-            System.Windows.Clipboard.SetText(placeholder);
+            Dialogs?.SetClipboardText(placeholder);
             StatusText = $"Zkopírováno do schránky: {placeholder}";
         }
     }
