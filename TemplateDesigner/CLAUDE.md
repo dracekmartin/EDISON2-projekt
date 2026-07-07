@@ -139,13 +139,13 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 | Technologie | Použití |
 |---|---|
-| .NET 9, WPF | UI framework |
+| .NET 10, WPF | UI framework |
 | SkiaSharp 3.119.2 | Renderování canvasu i PDF |
 | SkiaSharp.Views.WPF 3.119.2 | SKElement WPF kontrola |
 | System.Text.Json | Serializace šablon |
 | EDControls (ProjectReference) | EDViewModel, RelayCommand |
 | ZXing.Net 0.16.9 | BarcodeElement |
-| PdfPig 0.1.9 | PDF import (extrakce textu, čar, obrázků) |
+| PdfPig 0.1.13 | PDF import (extrakce textu, čar, obrázků) |
 
 ---
 

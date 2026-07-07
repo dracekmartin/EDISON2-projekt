@@ -698,3 +698,13 @@ Blok PA vyřešen, vše behavior-preserving (uživatel nepozná, jen zamčená s
 **Úklid roadmapy 2026-07-07:** C3 (2D bin-packing) přesunut z layout tracku do Fáze C+D. Dvě
 překrývající se produkční sekce sloučeny do jedné (PB provoz / PC governance). Sekce R1–R7 (dořešena
 2026-07-04/05) a produkční done-items (A1+A2 launch, D1 embedded fallback, D2/E1/F1/F2/F5) přesunuty sem.
+
+**PB triáž 2026-07-07 (produkční provoz):** release deploy (build .exe + Caché třídy) uznán jako
+**standardní EDISON release proces**, ne TD-specifický úkol → bývalé D3/D4/PB-D1/PB-D2 odstraněny.
+`SelfContained=false` / .NET 10 (PB3) neřešíme — runtime je prerekvizita celé suity (EDISONMAIN2 taky
+`net10`). Build-vázaný-na-stroj (PB4) — kdo dělá release, má `C:\Edison`; CI je budoucí nice-to-have.
+**Hotová drobná hygiena:** PB7 doc drift (CLAUDE.md .NET 9→10, PdfPig 0.1.9→0.1.13); PB6 — `ScheduleDetectorTest.cs`
+už byla dávno smazaná (jen stará bin/obj artefakta), smazány mrtvé rozbité scratch soubory
+`test-detector.csproj`/`test-detector-main.cs`/`RunDetectorTest.csx`; PB1 — vyprázdněn tracked
+`templatedesigner.appsettings.json` (dev creds martin.hubata/MLP 167/interní IP se zapékaly do .exe),
+přesunuto do gitignored `local.json`; produkce session stejně bere z launch args, standalone dev z local.json.

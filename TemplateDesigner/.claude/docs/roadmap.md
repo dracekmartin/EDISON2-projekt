@@ -9,9 +9,9 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **🟢 Release deploy do produkce (blok PB níže)** ⬅️ **kritická cesta v1** — build TD.exe z `main` →
-   `C:\Edison` + nasazení Caché tříd na zákaznický server. Jediné, co pro v1 reálně zbývá.
-2. **Governance šablon (blok PC níže)** — rozhodnout scope pro v1 (systémové vs zákaznické, distribuce).
+1. **v1 je kódově připravená k vydání** — vydání = standardní EDISON release (build TD.exe → `C:\Edison`
+   + kompilace Caché tříd na server), ne roadmap úkol. Viz blok PB.
+2. **Governance šablon (blok PC níže)** ⬅️ **rozhodnout scope pro v1** — systémové vs zákaznické, distribuce.
 3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 **Backlog / budoucí velké tracky:**
@@ -39,26 +39,19 @@ při scope té fáze, ne teď.
 > Do produkce jde nejdřív **zastávkový JŘ (AD)**. **Kritická cesta v1 = PB release deploy** (PC odloženo).
 > (Blok PA — zámek struktury šablony — vyřešen, viz archiv.)
 
-### 🟠 PB. Provozní nasazení + release deploy (strukturu NEzamyká) — kritická cesta v1
+### 🟠 PB. Provoz / nasazení — jen odložené (release = standardní EDISON ops)
 
-> Launch integrace už hotová (Martin) — TD bere session + startup agendu z EDISONMAIN2 kontraktu; PB je jen deploy.
+> **Release deploy není TD-specifická práce:** build TD.exe → `C:\Edison` + kompilace Caché tříd na
+> server jde po stejné trati jako zbytek EDISON suity. Launch integrace hotová (Martin); .NET 10 runtime
+> je prerekvizita celé suity (EDISONMAIN2/EDControls taky `net10`). Drobná hygiena (dev creds z baseline
+> → `local.json`, mrtvé detector-scratch soubory, doc drift .NET 10 / PdfPig) hotová 2026-07-07 → archiv.
 
-| ID | Co | Stav |
-|---|---|---|
-| PB-D1 | **RUČNÍ RELEASE:** build TD.exe z `main` přes `publish.ps1` → `C:\Edison\TemplateDesigner.exe` → zapojit do verze/release (bývalé D3) | ⬜ |
-| PB-D2 | **RUČNÍ RELEASE:** nasadit Caché třídy (agendy, `API.Sablony`, EDInputForm schémata) na zákaznický server jako součást verze — ověřený/dokumentovaný postup (dnes ruční, MCP `cache_compile` na TD zdroje lže „up-to-date") (bývalé D4 + PB2) | ⬜ |
-| PB1 | **Commitnuté dev credentials + MLP token** (`Mlp "167"`, `martin.hubata`, interní IP) v trackovaném `templatedesigner.appsettings.json`, zapékají se do .exe → vyprázdnit baseline (session jde z launch args) | ⬜ triviální |
-| PB3 | **`SelfContained=false`** → produkce vyžaduje předinstalovaný .NET 10 runtime; rozhodnout self-contained vs runtime jako prerekvizita | ⬜ |
-| PB4 | Build vázaný na stroj (`HintPath C:\Edison\*.dll`, žádná CI) → dokumentovat prerekvizity | ⬜ |
-| PB6 | Test třídy v produkční assembly (`ScheduleDetectorTest` = T6) — úklid | ⬜ |
-| PB7 | **Doc drift:** CLAUDE.md říká .NET 9 (reálně **.NET 10**), PdfPig 0.1.9 (reálně **0.1.13**) | ⬜ triviální |
+**Odloženo (v1 nepotřebuje, dle poptávky):** end-user tisk (A3 — headless „vytiskni linku X" přes
+**PrintEngine fasádu** šablona+data→PDF bez editoru; gate R4/R7) · hromadný výstup (A4 — merge do 1 PDF
+`MergePDFFiles` + e-mail) · logging/telemetrie pro podporu (F3) · CI/CD linting šablon (F4) · per-zákazník
+enablement agend (E2, YAGNI).
 
-> Akceptovaný dluh (neakční, evidence): Newtonsoft.Json 7.0.1 (NU1903) vynuceno legacy MLRest — memory `project_mlrest_newtonsoft_debt.md`.
-
-**Odloženo (v1 nepotřebuje, dle poptávky):** end-user tisk (A3 — headless „vytiskni linku X" z modulu
-přes **PrintEngine fasádu** šablona+data→PDF bez editoru; gate R4/R7) · hromadný výstup (A4 — merge do
-1 PDF `MergePDFFiles` + e-mail) · logging/telemetrie pro podporu (F3) · CI/CD linting šablon (F4) ·
-per-zákazník enablement agend (E2, YAGNI).
+> Akceptovaný dluh (neakční): Newtonsoft.Json 7.0.1 (NU1903) vynuceno legacy MLRest — memory `project_mlrest_newtonsoft_debt.md`.
 
 ### 🟡 PC. Governance a distribuce šablon (odloženo — jde do Caché metadat, NEzamyká JSON)
 
