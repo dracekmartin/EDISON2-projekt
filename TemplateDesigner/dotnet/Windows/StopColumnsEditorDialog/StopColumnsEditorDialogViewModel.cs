@@ -38,13 +38,13 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
     /// <summary>Čitelný název sloupce do editoru — odvozený z Key, ať uživatel nemusí luštit „TČ"/„ZT".</summary>
     private static string FriendlyName(string key, string header) => key switch
     {
-        "TravelTime"   => "Čas jízdy",
-        "Tc"           => "Tarifní číslo (TČ)",
-        "StopName"     => "Název zastávky",
-        "Zone"         => "Zóna",
-        "RouteLetters" => "Průběhy trasy",
-        "BaseRoute"    => "Základní trasa (ZT)",
-        _              => string.IsNullOrWhiteSpace(header) ? key : header,
+        ColumnKeys.TravelTime   => "Čas jízdy",
+        ColumnKeys.Tc           => "Tarifní číslo (TČ)",
+        ColumnKeys.StopName     => "Název zastávky",
+        ColumnKeys.Zone         => "Zóna",
+        ColumnKeys.RouteLetters => "Průběhy trasy",
+        ColumnKeys.BaseRoute    => "Základní trasa (ZT)",
+        _                       => string.IsNullOrWhiteSpace(header) ? key : header,
     };
 
     private CellStyleVM _headerStyle = null!;

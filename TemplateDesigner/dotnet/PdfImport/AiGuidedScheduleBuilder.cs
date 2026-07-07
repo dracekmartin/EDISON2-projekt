@@ -990,7 +990,7 @@ public static class AiGuidedScheduleBuilder
         {
             columns.Add(new StopColumn
             {
-                Key = "TravelTime",
+                Key = ColumnKeys.TravelTime,
                 Header = "min.",
                 Width = Math.Min(totalWidthMm * 0.2f, 10f),
                 Visible = true,
@@ -1018,7 +1018,7 @@ public static class AiGuidedScheduleBuilder
             remainingWidth -= zoneWidth;
             columns.Add(new StopColumn
             {
-                Key = "StopName",
+                Key = ColumnKeys.StopName,
                 Header = "Zastávky",
                 Width = Math.Max(remainingWidth, 15f),
                 Visible = true,
@@ -1026,7 +1026,7 @@ public static class AiGuidedScheduleBuilder
             });
             columns.Add(new StopColumn
             {
-                Key = "Zone",
+                Key = ColumnKeys.Zone,
                 Header = "Zóna",
                 Width = zoneWidth,
                 Visible = true,
@@ -1037,7 +1037,7 @@ public static class AiGuidedScheduleBuilder
         {
             columns.Add(new StopColumn
             {
-                Key = "StopName",
+                Key = ColumnKeys.StopName,
                 Header = "Zastávky",
                 Width = Math.Max(remainingWidth, 15f),
                 Visible = true,

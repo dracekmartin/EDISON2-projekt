@@ -31,16 +31,16 @@ public class LineTableElement : ScheduleElementBase
     public List<StopColumn> Columns { get; set; } = GetDefaultColumns();
 
     /// <summary>Klíč sloupce časů spojů — řídí šířku/styl všech spojových sloupců (vznikají z dat).</summary>
-    public const string TripKey = "Trip";
+    public const string TripKey = ColumnKeys.Trip;
 
     public static List<StopColumn> GetDefaultColumns() =>
     [
-        new() { Key = "Zone",     Header = "Zóna",     Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
-        new() { Key = "Km",       Header = "km",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
-        new() { Key = "Tc",       Header = "Tč",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
-        new() { Key = "StopName", Header = "Zastávka", Width = 42f, Visible = true, Alignment = TextHorizontalAlignment.Left },
-        new() { Key = "Mhd",      Header = "MHD",      Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
-        new() { Key = TripKey,    Header = "Spoj",     Width = null, Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = ColumnKeys.Zone,     Header = "Zóna",     Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = ColumnKeys.Km,       Header = "km",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = ColumnKeys.Tc,       Header = "Tč",       Width = 6f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = ColumnKeys.StopName, Header = "Zastávka", Width = 42f, Visible = true, Alignment = TextHorizontalAlignment.Left },
+        new() { Key = ColumnKeys.Mhd,      Header = "MHD",      Width = 8f,  Visible = true, Alignment = TextHorizontalAlignment.Center },
+        new() { Key = TripKey,             Header = "Spoj",     Width = null, Visible = true, Alignment = TextHorizontalAlignment.Center },
     ];
 
     // ─── Řádky ──────────────────────────────────────────────────────────────
@@ -207,17 +207,18 @@ public class LineTableElement : ScheduleElementBase
 
     private static string DefaultHeaderFor(string key) => key switch
     {
-        "Zone" => "Zóna", "Km" => "km", "Tc" => "Tč", "StopName" => "Zastávka", "Mhd" => "MHD", _ => ""
+        ColumnKeys.Zone => "Zóna", ColumnKeys.Km => "km", ColumnKeys.Tc => "Tč",
+        ColumnKeys.StopName => "Zastávka", ColumnKeys.Mhd => "MHD", _ => ""
     };
 
     /// <summary>Hodnota buňky popisového sloupce dle klíče (kmIndex jen pro Km sub-sloupce).</summary>
     private Func<LineStopData, string> ValueFor(string key, int kmIndex) => key switch
     {
-        "Zone"     => s => s.JePrijezdovy ? "" : s.Zona,
-        "Km"       => s => s.JePrijezdovy || kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
-        "Tc"       => s => s.JePrijezdovy ? "" : s.Tc,
-        "Mhd"      => s => s.JePrijezdovy ? "" : s.Mhd,
-        "StopName" => s => s.JePrijezdovy ? "" :
+        ColumnKeys.Zone     => s => s.JePrijezdovy ? "" : s.Zona,
+        ColumnKeys.Km       => s => s.JePrijezdovy || kmIndex >= s.Km.Count ? "" : s.Km[kmIndex],
+        ColumnKeys.Tc       => s => s.JePrijezdovy ? "" : s.Tc,
+        ColumnKeys.Mhd      => s => s.JePrijezdovy ? "" : s.Mhd,
+        ColumnKeys.StopName => s => s.JePrijezdovy ? "" :
                            s.Atributy.Count > 0
                                ? string.Join("", s.Atributy.Where(IsDisplayableStopAttribute)) + " " + s.Popis
                                : s.Popis,
@@ -235,11 +236,11 @@ public class LineTableElement : ScheduleElementBase
 
         // km auto-remove když žádná zastávka nemá km; MHD auto-remove když prázdné (legacy)
         structural = structural.Where(c =>
-            (c.Key != "Km" || kmCount > 0) &&
-            (c.Key != "Mhd" || anyMhd)).ToList();
+            (c.Key != ColumnKeys.Km || kmCount > 0) &&
+            (c.Key != ColumnKeys.Mhd || anyMhd)).ToList();
 
         // šířky: pevné (Width != null) honorovány; auto (null) sdílí zbytek se spoji
-        float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == "Km" ? c.Width!.Value * kmCount : c.Width!.Value);
+        float fixedSum = structural.Where(c => c.Width.HasValue).Sum(c => c.Key == ColumnKeys.Km ? c.Width!.Value * kmCount : c.Width!.Value);
         int autoStructural = structural.Count(c => !c.Width.HasValue);
         int autoUnits = autoStructural + (trip.Width.HasValue ? 0 : tripCount);
         float autoEach = autoUnits > 0 ? MathF.Max(3f, (Width - fixedSum) / autoUnits) : 8f;
@@ -252,14 +253,14 @@ public class LineTableElement : ScheduleElementBase
             var ds = ResolveDataStyle(col);
             string header = col.Header != "" ? col.Header : DefaultHeaderFor(col.Key);
             float w = col.Width ?? autoEach;
-            if (col.Key == "Km")
+            if (col.Key == ColumnKeys.Km)
             {
                 for (int k = 0; k < kmCount; k++)
-                    result.Add(new RenderCol(w, header, hs, ds, ValueFor("Km", k)));
+                    result.Add(new RenderCol(w, header, hs, ds, ValueFor(ColumnKeys.Km, k)));
             }
             else
             {
-                if (col.Key == "StopName") nameIndex = result.Count;
+                if (col.Key == ColumnKeys.StopName) nameIndex = result.Count;
                 result.Add(new RenderCol(w, header, hs, ds, ValueFor(col.Key, 0)));
             }
         }
@@ -272,7 +273,7 @@ public class LineTableElement : ScheduleElementBase
     private static bool IsDisplayableStopAttribute(string znak) => znak == "x";
 
     private int MaxKmCount(List<LineStopData> stops) =>
-        Columns.Any(c => c.Visible && c.Key == "Km") && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
+        Columns.Any(c => c.Visible && c.Key == ColumnKeys.Km) && stops.Count > 0 ? stops.Max(s => s.Km.Count) : 0;
 
     private bool HasPlatnostRow(List<LineTripData> trips) => ShowPlatnostRow && trips.Any(t => t.Platnost.Count > 0);
     private bool HasNzRow(List<LineTripData> trips) => ShowNzRow && trips.Any(t => t.Nz.Length > 0);

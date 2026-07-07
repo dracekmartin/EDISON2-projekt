@@ -262,7 +262,7 @@ public static class ScheduleElementBuilder
             // Dva sloupce: číslo (jízdní doba) + název zastávky
             columns.Add(new StopColumn
             {
-                Key = "TravelTime",
+                Key = ColumnKeys.TravelTime,
                 Header = "min.",
                 Width = detection.StopColumnWidths[0],
                 Visible = true,
@@ -270,7 +270,7 @@ public static class ScheduleElementBuilder
             });
             columns.Add(new StopColumn
             {
-                Key = "StopName",
+                Key = ColumnKeys.StopName,
                 Header = "Zastávky",
                 Width = detection.StopColumnWidths[1],
                 Visible = true,
@@ -282,7 +282,7 @@ public static class ScheduleElementBuilder
             // Jeden sloupec: jen název zastávky
             columns.Add(new StopColumn
             {
-                Key = "StopName",
+                Key = ColumnKeys.StopName,
                 Header = "Zastávky",
                 Width = detection.StopColumnWidths.FirstOrDefault(50f),
                 Visible = true,

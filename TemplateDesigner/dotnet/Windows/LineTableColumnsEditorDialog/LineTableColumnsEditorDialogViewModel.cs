@@ -41,13 +41,13 @@ public class LineTableColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
 
     private static string FriendlyName(string key, string header) => key switch
     {
-        "Zone"     => "Zóna",
-        "Km"       => "Kilometry",
-        "Tc"       => "Tarifní číslo (TČ)",
-        "StopName" => "Zastávka",
-        "Mhd"      => "MHD / IDS",
-        LineTableElement.TripKey => "Spoje (časové sloupce)",
-        _          => string.IsNullOrWhiteSpace(header) ? key : header,
+        ColumnKeys.Zone     => "Zóna",
+        ColumnKeys.Km       => "Kilometry",
+        ColumnKeys.Tc       => "Tarifní číslo (TČ)",
+        ColumnKeys.StopName => "Zastávka",
+        ColumnKeys.Mhd      => "MHD / IDS",
+        ColumnKeys.Trip     => "Spoje (časové sloupce)",
+        _                   => string.IsNullOrWhiteSpace(header) ? key : header,
     };
 
     private CellStyleVM _headerStyle = null!;

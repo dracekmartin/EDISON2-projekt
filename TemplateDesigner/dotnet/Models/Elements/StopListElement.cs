@@ -20,12 +20,12 @@ public class StopListElement : ScheduleElementBase
 
     public static List<StopColumn> GetDefaultColumns() =>
     [
-        new() { Key = "TravelTime",   Header = "Čas",       Width = 8f,  Visible = true },
-        new() { Key = "Tc",           Header = "TČ",       Width = 8f,  Visible = false },
-        new() { Key = "StopName",     Header = "Zastávka",  Width = 50f, Visible = true },
-        new() { Key = "Zone",         Header = "Zóna",      Width = 12f, Visible = false },
-        new() { Key = "RouteLetters", Header = "Trasa",     Width = 8f,  Visible = false },
-        new() { Key = "BaseRoute",    Header = "ZT",        Width = 6f,  Visible = false },
+        new() { Key = ColumnKeys.TravelTime,   Header = "Čas",       Width = 8f,  Visible = true },
+        new() { Key = ColumnKeys.Tc,           Header = "TČ",       Width = 8f,  Visible = false },
+        new() { Key = ColumnKeys.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
+        new() { Key = ColumnKeys.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
+        new() { Key = ColumnKeys.RouteLetters, Header = "Trasa",     Width = 8f,  Visible = false },
+        new() { Key = ColumnKeys.BaseRoute,    Header = "ZT",        Width = 6f,  Visible = false },
     ];
 
     // ═══════════════════════════════════════════
@@ -152,7 +152,7 @@ public class StopListElement : ScheduleElementBase
         // Nepřičítá se nic k šířce layoutu → element a sloupce zachovávají Width.
         // Pro běžně krátké názvy zastávek se text se šipkou nepřekrývá.
         // Fallback (žádný StopName sloupec): poslední sloupec.
-        int stopNameIdx = columns.FindIndex(c => c.Key == "StopName");
+        int stopNameIdx = columns.FindIndex(c => c.Key == ColumnKeys.StopName);
         if (stopNameIdx < 0) stopNameIdx = columns.Count - 1;
         var colW = ResolveColumnWidths(columns);
         float stopNameLeftMm = X;
@@ -528,20 +528,20 @@ public class StopListElement : ScheduleElementBase
     private string GetCellText(ZastavkaData z, string columnKey)
     {
         // Variantní časový sub-sloupec „TravelTime#i" → z.TrasaMin[i] (číslo / „<" / "" jak přišlo z Caché)
-        if (columnKey.StartsWith("TravelTime#", System.StringComparison.Ordinal))
+        if (columnKey.StartsWith(ColumnKeys.TravelTimeVariantPrefix, System.StringComparison.Ordinal))
         {
-            return int.TryParse(columnKey.AsSpan("TravelTime#".Length), out int vi)
+            return int.TryParse(columnKey.AsSpan(ColumnKeys.TravelTimeVariantPrefix.Length), out int vi)
                    && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
         }
         return columnKey switch
         {
-            "Tc"           => z.TarifniCislo,
-            "StopName"     => BuildStopDisplayText(z),
-            "TravelTime"   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
-            "Zone"         => string.Join("/", z.Zony),
-            "RouteLetters" => string.Join("", z.Prubehy),
-            "BaseRoute"    => z.ZakladniTrasa ? "1" : "",
-            _              => ""
+            ColumnKeys.Tc           => z.TarifniCislo,
+            ColumnKeys.StopName     => BuildStopDisplayText(z),
+            ColumnKeys.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
+            ColumnKeys.Zone         => string.Join("/", z.Zony),
+            ColumnKeys.RouteLetters => string.Join("", z.Prubehy),
+            ColumnKeys.BaseRoute    => z.ZakladniTrasa ? "1" : "",
+            _                       => ""
         };
     }
 
@@ -562,10 +562,10 @@ public class StopListElement : ScheduleElementBase
         var result = new List<StopColumn>(cols.Count + headers.Count);
         foreach (var col in cols)
         {
-            if (col.Key == "TravelTime")
+            if (col.Key == ColumnKeys.TravelTime)
             {
                 for (int i = 0; i < headers.Count; i++)
-                    result.Add(new StopColumn { Key = $"TravelTime#{i}", Header = headers[i], Width = VariantColumnWidthMm, Visible = true });
+                    result.Add(new StopColumn { Key = $"{ColumnKeys.TravelTimeVariantPrefix}{i}", Header = headers[i], Width = VariantColumnWidthMm, Visible = true });
             }
             else result.Add(col);
         }
