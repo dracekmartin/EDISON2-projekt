@@ -1,12 +1,7 @@
 # Roadmap
 
-> **Stav k 2026-07-07.** Jen otevřená práce. Hotové etapy → [`roadmap-archive.md`](roadmap-archive.md),
-> průběžný changelog → [`changelog.md`](changelog.md).
->
-> **Hotovo (nejnovější, detail archiv):** **pre-produkční zámek struktury šablony (blok PA, 2026-07-07)** —
-> klíče sloupců→konstanty, mrtvý ColorRules pryč, Fixed TableElement zmražen, verzování zdokumentováno ·
-> **EDISON→TD launch integrace** (session + startup agenda, Martin) · zastávkový JŘ (AD) **1:1 kompletní** ·
-> **DynamicTableElement** · **Wave 4 uzavřena** · architektonický track (malé T ✅) · rozhodnutí R1–R7 · knižní/linkový JŘ **pilot**.
+> **Stav k 2026-07-07.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet — patří do archivu.
 
 ---
 
@@ -15,23 +10,19 @@
 **Co reálně čeká (pořadí = priorita):**
 
 1. **🟢 Release deploy do produkce (blok PB níže)** ⬅️ **kritická cesta v1** — build TD.exe z `main` →
-   `C:\Edison` + nasazení Caché tříd na zákaznický server. Launch integrace ✅ (Martin). Vše ostatní
-   pro v1 je hotové (zámek struktury PA ✅, zastávkový JŘ AD 1:1 ✅).
+   `C:\Edison` + nasazení Caché tříd na zákaznický server. Jediné, co pro v1 reálně zbývá.
 2. **Governance šablon (blok PC níže)** — rozhodnout scope pro v1 (systémové vs zákaznické, distribuce).
 3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
-
-**Blok PA (zámek struktury šablony) ✅ hotovo 2026-07-07** — detail → archiv. Nesměl chybět před
-prvním produkčním uložením; hotovo, produkce může jít bez rizika breaking změny JSON.
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Tech dluh (ne blocker, průběžně):** T1b-robustní gold test (zmrazit vstup `^JRL`/`^JRZ`/`^JRSET` do
   izolovaného namespace — data-drift-proof) · T4 god-objects strangler (postupné řezy `MainWindow.xaml.cs`
-  + `TemplateDesignerViewModel` na služby). Malé T kousky ✅ (archiv 2026-07-03).
-- **Fáze B** — z větší části ✅ (conditional formatting + počítaná pole + min/max, archiv 2026-07-05).
-  Odloženo: **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI) — viz sekce Fáze B.
+  + `TemplateDesignerViewModel` na služby).
+- **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI),
+  rozšíření conditional formatting (seznam pravidel) — viz sekce Fáze B.
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
-  vnořené datasource (`_rows` v `_rows`). (Computed fields + min/max ✅ hotovo, archiv 2026-07-05.)
+  vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
 - Import PDF doladění · AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
@@ -42,21 +33,15 @@ při scope té fáze, ne teď.
 
 ---
 
-## 🚀 Produkční připravenost — PA/PB/PC (jedno místo)
+## 🚀 Produkční připravenost — PB/PC (jedno místo)
 
-> Grounded analýza (4 průzkumy kódu, 2026-07-07): [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
-> Do produkce jde nejdřív **zastávkový JŘ (AD)**. **Kritická cesta v1 = PB release deploy** (PA hotové,
-> PC odloženo). Postupně odbavovat, hotové → archiv.
-
-### ✅ PA. Zámek struktury šablony — HOTOVO 2026-07-07 (→ archiv)
-
-Klíče sloupců→konstanty (PA1), mrtvý `ColorRules` pryč (PA2), Fixed `TableElement` zmražen (PA3),
-verzování zdokumentováno + rozhodnutí nebumpovat (PA4), logování neznámých polí = YAGNI (PA5). Vše
-behavior-preserving → **produkce může jít bez rizika breaking změny JSON.** Detail → archiv session 2026-07-07.
+> Grounded analýza: [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
+> Do produkce jde nejdřív **zastávkový JŘ (AD)**. **Kritická cesta v1 = PB release deploy** (PC odloženo).
+> (Blok PA — zámek struktury šablony — vyřešen, viz archiv.)
 
 ### 🟠 PB. Provozní nasazení + release deploy (strukturu NEzamyká) — kritická cesta v1
 
-> Launch integrace ✅ (Martin) — TD bere session + startup agendu z EDISONMAIN2 kontraktu, fallback appsettings.
+> Launch integrace už hotová (Martin) — TD bere session + startup agendu z EDISONMAIN2 kontraktu; PB je jen deploy.
 
 | ID | Co | Stav |
 |---|---|---|
@@ -67,15 +52,13 @@ behavior-preserving → **produkce může jít bez rizika breaking změny JSON.*
 | PB4 | Build vázaný na stroj (`HintPath C:\Edison\*.dll`, žádná CI) → dokumentovat prerekvizity | ⬜ |
 | PB6 | Test třídy v produkční assembly (`ScheduleDetectorTest` = T6) — úklid | ⬜ |
 | PB7 | **Doc drift:** CLAUDE.md říká .NET 9 (reálně **.NET 10**), PdfPig 0.1.9 (reálně **0.1.13**) | ⬜ triviální |
-| PB5 | Newtonsoft.Json 7.0.1 (NU1903) vynuceno legacy MLRest — akceptovaný dluh (memory `project_mlrest_newtonsoft_debt.md`) | ✅ evidováno |
+
+> Akceptovaný dluh (neakční, evidence): Newtonsoft.Json 7.0.1 (NU1903) vynuceno legacy MLRest — memory `project_mlrest_newtonsoft_debt.md`.
 
 **Odloženo (v1 nepotřebuje, dle poptávky):** end-user tisk (A3 — headless „vytiskni linku X" z modulu
-přes **PrintEngine fasádu** šablona+data→PDF bez editoru, T2 udělalo půlku; gate R4/R7) · hromadný výstup
-(A4 — merge do 1 PDF `MergePDFFiles` + e-mail) · logging/telemetrie pro podporu (F3) · CI/CD linting
-šablon (F4) · per-zákazník enablement agend (E2, YAGNI).
-
-**Hotovo (→ archiv):** launch session+agenda (A1/A2), embedded `CB_CSADAD` fallback (D1), API klíč (D2),
-per-IDfa storage (E1), error handling (F1), testy (F2), výkon (F5).
+přes **PrintEngine fasádu** šablona+data→PDF bez editoru; gate R4/R7) · hromadný výstup (A4 — merge do
+1 PDF `MergePDFFiles` + e-mail) · logging/telemetrie pro podporu (F3) · CI/CD linting šablon (F4) ·
+per-zákazník enablement agend (E2, YAGNI).
 
 ### 🟡 PC. Governance a distribuce šablon (odloženo — jde do Caché metadat, NEzamyká JSON)
 
@@ -93,18 +76,14 @@ per-IDfa storage (E1), error handling (F1), testy (F2), výkon (F5).
 | PC5 | Kategorie + popis šablony v UI (metadata už drží Author/Created/Modified/Version; bývalé B3) | ⬜ |
 | PC6 | Audit log změn šablon + právo „pouštět designer" ECL (bývalé B5) | ⬜ |
 
-**Verzování/migrace** (bývalé C1/C2): framework hotový **i otestovaný** (PA4); konkrétní migrace se
-píše až s reálnou breaking změnou — dnes žádná otevřená práce (H-19 no-op, žádné V1 šablony v DB).
-
 ---
 
 ## 🅿️ Zastávkový JŘ — business logika (parkováno na pilot + nové požadavky)
 
-> Vše k business logice zastávkového JŘ na jednom místě: uzavřený AD track (zbytek gated na pilot)
-> + nové zákaznické požadavky z prezentací.
+> Otevřená business logika zastávkového JŘ na jednom místě (AD datové jádro už hotové → archiv):
+> zbytek gated na pilot + nové zákaznické požadavky z prezentací.
 
-**AD 1:1 hotový, track uzavřen 2026-07-03** (detail → [archiv](roadmap-archive.md) session 2026-07-03).
-Zbytek **odemyká reálný pilot** (konkrétní zákaznická konfigurace/data): vizuál legendy POZNAMKY,
+**Odemyká reálný pilot** (konkrétní zákaznická konfigurace/data): vizuál legendy POZNAMKY,
 AD-N5 (`MHD_NEZNZ123`), AD-N15 (prázdninové NZ, kód hotový/čeká data) + odložené helpdesk **A2-A5**
 (#7937 indent), **A2-A6** (#7959 filtr neobsluhovaných), **A2-B4** (#8828 per-sloupek) — datový
 průzkum / diskuze s kolegy. Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md), [`cache-database-linky.md §10`](cache-database-linky.md).
@@ -120,7 +99,7 @@ implementací dohledat ticket + přesné zadání. Detail: [`customer-requiremen
 
 **TRANSDEV konsolidovaná sada (2026-07-03, k analýze)** — 10 požadavků (SK legislativa + MHD Trenčín);
 detail + TD-stav [`customer-requirements-zastavkovy-jr.md §TR`](customer-requirements-zastavkovy-jr.md):
-časová os cez polnoc (**✅ hotové B3, ověřit u klienta**) · na-znamení-„všechny" souhrn (pattern jako bezbariér) ·
+časová os cez polnoc (jen ověřit u klienta) · na-znamení-„všechny" souhrn (pattern jako bezbariér) ·
 nástupiště (data `Oznacnik` existují) · auto výška řádku (částečně = auto-scale) · **definice cíle** (datový model, M–L) ·
 **barva linky** (bg/text ve vlastnostech linky → volba v šabloně, M) · výběr sloupců jízdních dob (relates L1 multi-varianta) ·
 „<1" místo „0" (S) · obrácené poznámkování spojů (M) · skrýt spoje So/Ne/svátky (S–M).
@@ -129,8 +108,7 @@ nástupiště (data `Oznacnik` existují) · auto výška řádku (částečně 
 
 ## 🔵 Caché Migrace — zbývající vlny
 
-**Wave 1/2/3/4 ✅** (archiv). Form-driven UI (EDInputForm) všude, kde uživatel přímo edituje — elementy,
-sekce, stránka, parametry (modály) i **inline panel** (W4-10, 2026-07-03).
+> Wave 1–4 hotové (form-driven UI všude) → archiv. Otevřená je jen Wave 5 (business logic per agenda).
 
 **Pravidlo — kandidát na EDInputForm** (evergreen): ✅ formuláře s pevným server-definovaným schématem;
 ❌ triviální 1-pole confirm, dialogy s živě počítaným náhledem, plně dynamické formy bez schématu.
@@ -143,8 +121,8 @@ Nedokončeno **záměrně** (mimo aktivní práci): **W4-11** smazat PropertyDes
 ### Wave 5 — Business logic per agenda (paralelně)
 
 Čisté rozdělení agenda-specific logiky do Caché tříd (`AgendaAPI` base + per-agenda impl:
-`GetSchema/GetData/GetMockData/GetTableTemplates/GetTableTemplate`). Base + MHD + FAKTURY ✅. Nové
-agendy (Fáze C/D/E) pattern využijí. Shared helpery extrahovat do base až budou 2+ konzumenti (ne dopředu).
+`GetSchema/GetData/GetMockData/GetTableTemplates/GetTableTemplate`). Nové agendy (Fáze C/D/E) pattern
+využijí. Shared helpery extrahovat do base až budou 2+ konzumenti (ne dopředu).
 
 | Krok | Co | Stav |
 |---|---|---|
@@ -153,13 +131,10 @@ agendy (Fáze C/D/E) pattern využijí. Shared helpery extrahovat do base až bu
 
 ---
 
-## 🟠 Fáze B: Element flexibility — z větší části hotová
+## 🟠 Fáze B: Element flexibility — jen odložené body
 
-Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony).
-
-**Hotovo ✅ (archiv 2026-07-05):** conditional formatting (řádková viditelnost + zvýraznění přes sdílený
-`RowConditions`, DynamicTable/StopList/LineTable) · počítaná pole (aritmetika + `TableColumn.Expression`)
-· min/max řádků. **Template versioning** framework hotový (H-18); H-19 no-op (V1 v DB neexistují).
+Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony). Hotová část
+(conditional formatting, počítaná pole, min/max, versioning framework) → archiv.
 
 **Odloženo (backlog, ne blocker):**
 - **Merged cells** (`ColSpan`/`RowSpan` + merge editor) — **gated na oživení Fixed tabulky**: slučování
@@ -189,11 +164,8 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 `KnizniJrAd`; (3) `LineTableElement` + layout rozšíření (flow paketů, „dotisk poznámek z minulé stránky",
 **auto-fit fontu na šířku** — dnes je ComputeFontScale jen výškový); (4) per-linka šablony (viz B4).
 
-**Hotovo v pilotu ✅ (→ archiv 2026-07-04, detail `linkovy-knizni-jr-implementace-analyza.md` §11-12):**
-kroky 42 (analýza+wire), 44 (`KnizniJrAd` 22/24 linek 1:1 vs gold), 44c (`KnizniJrMhd` datové jádro),
-45 (EDInputForm + 2-tab dialog), 46 (kontextová paleta).
-
-**Otevřené kroky:**
+> Pilotní část hotová (`KnizniJrAd`/`KnizniJrMhd` datové jádro, element, editor, paleta) → archiv
+> 2026-07-04 + detail `linkovy-knizni-jr-implementace-analyza.md` §11-12. Otevřené kroky:
 
 | Krok | Co | Stav |
 |---|---|---|
@@ -201,14 +173,9 @@ kroky 42 (analýza+wire), 44 (`KnizniJrAd` 22/24 linek 1:1 vs gold), 44c (`Knizn
 | 43 | `LineTableElement` layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy = C3 níže) | 🟡 element hotový (standalone); layout rozšíření ⬜ |
 | 44b | Výchozí šablona `templates/knizni-jr-ad-vychozi.json` → zapojit do distribuce (PC2/R6) | 🟡 šablona v repu, zapojení ⬜ |
 
-### 🧪 Pilot uzavřen 2026-07-04 — „testovací v1" knižního/linkového JŘ
+### Odložené body knižního/linkového JŘ (z pilotu, seřazené dle hodnoty pro ostré nasazení)
 
-**Stav:** AD i MHD knižní JŘ mají hotové datové jádro + element + editor, funkčně a datově ověřené
-(AD 22/24 linek 1:1 vs gold přes 4 firmy; MHD strukturálně na CB_DP 1001). Konzistentní se
-zastávkovými elementy (stejné sloupcové API, EDInputForm, 2-tab dialog, kontextová paleta).
-**Uzavřeno jako pilot** — dál se postupuje dle priorit, ne nutně hned tady.
-
-**Vědomě odložené body (z pilotu vyplynulé, seřazené dle hodnoty pro ostré nasazení):**
+> Pilot uzavřen 2026-07-04 jako „testovací v1" (detail → archiv). Dál dle priorit, ne nutně hned zde.
 
 | # | Co | Proč odloženo / dopad | Odhad |
 |---|---|---|---|
@@ -267,7 +234,7 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 | 32 | Detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | ⬜ |
 | 33 | JŘ-aware mód (3d) — AI Vision pipeline + `AiGuidedScheduleBuilder` fungují, **ladění na širší sadě JŘ** | 🟡 |
 
-Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{PLACEHOLDER}`). 3b křivky/Bézier low-prio.
+3b křivky/Bézier — low-prio.
 
 ---
 
@@ -276,8 +243,6 @@ Hotovo: režim 1 (1:1 import) ✅, 3c AI post-processing (statické texty → `{
 > **Sekundární, ne core.** Aktuální funkce (generování šablony, PDF import enrichment, vision pipeline)
 > zůstávají funkční; další rozšíření až budou reální uživatelé s potřebou. JSON šablona + DataSchema jsou
 > stabilní kontrakt pro AI — rozšíření kdykoli bez breaking changes. **Princip: copilot, ne autopilot.**
-
-**Hotovo:** AI Assistant (generování šablony z popisu) · schema injection · AI Vision pipeline (JŘ z PDF obrázku).
 
 **Budoucí:** MCP server (`get_template`/`apply_template`/`add_element`/… tenká vrstva nad ViewModelem, každý
 tool → `_vm.Execute(command)`) · onboarding průvodce · smart suggestions (TableElement → sloupce z DataSchema) ·
