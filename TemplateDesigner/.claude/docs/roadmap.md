@@ -13,10 +13,13 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
+1. **🔴 Zámek struktury šablony před produkcí (blok PA níže)** ⬅️ **aktivní** — věci, které pokud
+   neuděláme teď, vynutí breaking změnu JSON + migraci v příští verzi. Levné, jednorázové. Detail +
+   grounded analýza: [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
+2. **🟢 Produkční připravenost — launch HOTOVÁ, zbývá RUČNÍ release deploy** (tým/proces, ne kód): build
    TD.exe z main → `C:\Edison` (D3) + Caché třídy na zákaznický server (D4). A1/A2 launch ✅ (Martin, v main).
    Tisk (`A3`) + systémové šablony (`B`) odloženo. Cesta k pilotu (R7).
-2. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot.
+3. **AD zastávkový JŘ** — ✅ **1:1 hotový, track uzavřen**; zbytek parkován na pilot.
 
 **Rozhodnuté akční kroky (rozhodnutí padlo, implementace čeká na blok/pilot):**
 - **Tisk = „shortcut" z konkrétní agendy bez plného návrháře (A3, dříve R4).** Uživatel v EDISONu
@@ -31,13 +34,11 @@
   registr/přehled (nejspíš DB-backed) + jasné oddělení systémové (M-line, read-only u zákazníka) vs
   zákaznické. **Nejdřív koncept, pak implementace** — teď jen zapsat jako otevřený návrhový bod.
 
-**🎯 Aktivní track — Layout tabulek:**
-> „Sekce vyšší než stránka" ✅ + **DynamicTable = varianta A** (jako zastávky: `Height` = strop,
-> auto-scale, bez řádkového stránkování). **R2 (svislé stránkování + opakované záhlaví) po revizi
-> konzistence vědomě odloženo a odstraněno** — přidá se zpět jen na konkrétní poptávku, čistě
-> (spec zůstává v `r2-partial-fit-kontrakt.md`). Detail → archiv 2026-07-06/07. Zbývá:
-1. **C3 — vodorovný `Strih` / 2D bin-packing** ⬅️ **další** (Fáze C, krok 43) — široká MHD linka
-   se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; nejtěžší, vlastní kontrakt.
+**Layout tabulek — track uzavřen** (detail → archiv 2026-07-06/07): „Sekce vyšší než stránka" ✅
++ **DynamicTable = varianta A** (jako zastávky: `Height` = strop, auto-scale, bez řádkového
+stránkování); **R2 (svislé stránkování) vědomě odstraněno** (spec zůstává v `r2-partial-fit-kontrakt.md`).
+Zbývající **C3 (vodorovný `Strih` / 2D bin-packing)** přesunut k linkovému JŘ → viz Fáze C+D
+(potřebné až pro ostrý knižní/linkový JŘ, ne pro zastávkový).
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
@@ -55,6 +56,45 @@
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
 v [`analyza-stav-a-legacy-nahrada-2026-07.md §7`](analyza-stav-a-legacy-nahrada-2026-07.md); vyřeší se
 při scope té fáze, ne teď.
+
+---
+
+## 🚀 Produkční připravenost — pre-produkční checklist
+
+> Grounded analýza (4 průzkumy kódu, 2026-07-07): [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
+> Do produkce jde nejdřív **zastávkový JŘ (AD)**. **Blok PA zamyká strukturu šablony** — priorita
+> #1; ostatní strukturu nezamykají (dohnatelné kdykoli). Postupně odbavovat, hotové → archiv.
+
+### 🔴 PA. Zámek struktury šablony (PŘED prvním produkčním uložením)
+
+Pokud se odloží a natečou reálné šablony do DB → budoucí breaking change + (někdy neproveditelná) migrace.
+
+| ID | Co | Náprava | Cena | Stav |
+|---|---|---|---|---|
+| PA1 | **Klíče sloupců (`StopColumn.Key`) = magic-string literály** ve switchích, ale persistují se do JSON (`LineTableElement.cs:38-43,208,214`, `StopListElement.cs:22-28,531`). Přejmenování → uložená šablona se **tiše rozbije**. NEJVYŠŠÍ konkrétní riziko. | povýšit na konstanty (vzor `ElementTypes`) + zamykací unit test klíč→význam | nízká | ⬜ ⬅️ |
+| PA2 | **Dva modely téhož konceptu:** `RowHighlightExpression` (single string „ukázka", `DynamicTableElement.cs:57`) vs `List<ColorRule>` (DepartureGrid). string→list je breaking. | rozhodnout finální tvar teď (sjednotit na `List<ColorRule>`, nebo zmrazit single a smazat příslib rozšíření) | nízká–stř. | ⬜ |
+| PA3 | **`TableElement` (dormant) × `DynamicTableElement`** — překrývající se schémata; riziko šablon s „mrtvým" typem. | pro v1 vyřadit `TableElement` ze serializace/palety (jen `JsonDerivedType` pro legacy read) nebo jasně demarkovat | nízká | ⬜ |
+| PA4 | **Verzní baseline:** C#=`"1.0.0"` vs Caché=`"1.0"`; migrator pipeline prázdná; historická flat→style změna nemigrovatelná (staré `.json` tiše ztratí styling; DB šablony OK). | sjednotit default verzi napříč vrstvami + **bumpnout `CurrentVersion` na `1.1.0` teď** + zdokumentovat flat→style jako akceptované riziko | nízká | ⬜ |
+| PA5 | **Deserializace tiše polyká neznámá pole** (`UnmappedMemberHandling` nenastaveno, `TemplateSerializer.cs:154-168`) → silent corruption. | aspoň **logovat** neznámá pole při loadu (nefailovat) | nízká | ⬜ |
+
+### 🟠 PB. Provozní nasazení (strukturu NEzamyká — dohnatelné kdykoli)
+
+| ID | Co | Stav |
+|---|---|---|
+| PB1 | **Commitnuté dev credentials + MLP token** (`Mlp "167"`, login `martin.hubata`, interní IP) v trackovaném `templatedesigner.appsettings.json`, zapékají se do .exe → vyprázdnit/neutralizovat baseline (session jde z launch args) | ⬜ triviální |
+| PB2 | **Neexistuje ověřený Caché deploy proces** — jen ruční import; MCP `cache_compile` na TD zdroje lže „up-to-date" → aspoň dokumentovaný manuální checklist (které třídy, pořadí, ověření). Souvisí s D4. | ⬜ |
+| PB3 | **`SelfContained=false`** → produkce vyžaduje předinstalovaný .NET 10 runtime; rozhodnout self-contained vs runtime jako prerekvizita. Souvisí s D3. | ⬜ |
+| PB4 | Build vázaný na stroj (`HintPath C:\Edison\*.dll`, ruční `publish.ps1`, žádná CI) → dokumentovat prerekvizity | ⬜ |
+| PB5 | Newtonsoft.Json 7.0.1 (NU1903) vynuceno legacy MLRest — akceptovaný dluh, jen evidovat (memory `project_mlrest_newtonsoft_debt.md`) | ✅ evidováno |
+| PB6 | Test třídy v produkční assembly (`ScheduleDetectorTest`) — úklid (= T6) | ⬜ |
+| PB7 | **Doc drift:** CLAUDE.md říká .NET 9 (reálně **.NET 10**), PdfPig 0.1.9 (reálně **0.1.13**) → sjednotit stack tabulku | ⬜ triviální |
+
+### 🟡 PC. Governance šablon (odloženo — nezamyká JSON strukturu, jde do Caché metadat)
+
+M-line dnes **nemůže bezpečně aktualizovat systémovou šablonu u zákazníka** (per-IDfa storage, žádné
+systémové/zákaznické rozlišení, žádné zámky). Pro v1: pokud M-line nedistribuuje udržované šablony,
+ruční Import JSON stačí. Jinak minimum z B1/R6 před vznikem zákaznických úprav. Mapuje na blok B (B1/B2/B5)
++ R6 + „koncept centrální správy šablon" (viz akční kroky výše). Vše ⬜.
 
 ---
 
@@ -185,7 +225,7 @@ zastávkovými elementy (stejné sloupcové API, EDInputForm, 2-tab dialog, kont
 |---|---|---|---|
 | C1 | **MHD gold-oracle diff** — dump wrapper okolo `MakeData` (legacy `LoadData` MHD větev na dev padá kvůli neúplnému `in()`), pak stejný multi-linkový diff jako u AD | MHD je zatím jen strukturálně ověřené; nejlevnější krok k plné důvěře v datovou paritu | S |
 | C2 | **Symbolový font Timetable_nove(+SK)** do Skia (krok 42b, gate R5) — embed TTF + převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Dnes se `ZNAK` kreslí jako textový klíč (bezbariér, projíždí, dny…) | vizuální parita; bez něj JŘ „tiše lže" u dopravních symbolů (viz R5) | M |
-| C3 | **2D bin-packing / `Strih`** (krok 43 + gate R1/R2) — široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků. Součást: **auto-fit fontu na šířku** (dnes jen výškový `ComputeFontScale`), flow paketů, „dotisk zbytku legendy na další stránce". **Zde proběhne R1 extrakce sdíleného řádkového jádra** (StopList + DynamicTable + LineTable) | nutné pro reálný tisk MHD linek; největší kus, dělá se jednou pořádně | L |
+| C3 | **2D bin-packing / `Strih`** (krok 43 + gate R1/R2, *přesunuto z layout tracku 2026-07-07*) — široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků. Součást: **auto-fit fontu na šířku** (dnes jen výškový `ComputeFontScale`), flow paketů, „dotisk zbytku legendy na další stránce". **Zde proběhne R1 extrakce sdíleného řádkového jádra** (StopList + DynamicTable + LineTable). Zastávkový JŘ to nepotřebuje (DepartureGrid = málo sloupců). | nutné pro reálný tisk MHD linek; největší kus, dělá se jednou pořádně | L |
 | C4 | **Zapojení výchozích šablon do distribuce** (B2/R6) — dnes ruční Import JSON; + výchozí šablona pro MHD (zatím jen AD) | provozní; malý | S |
 | C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) — legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
 | C6 | **Turnusy, obousměrný tisk, souhrnné JŘ (řádek zdrojové linky)** — legacy volby `in(arr,6/7)`, MHD `MakeData` je nemá | mimo scope pilotu; validovat, zda je zákazník chce, než portovat | — |
