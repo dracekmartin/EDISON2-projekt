@@ -45,6 +45,29 @@ pod tím vlastní (editovatelné).
 | **Zámek** MLINE — server odmítne zápis/mazání v MLINE mimo distribuční cestu; Ctrl+S na MLINE → vynutí „Uložit jako" | 🔧 nová kontrola server-side |
 | **Distribuce** — export/import MLINE šablon jako JSON v release | 🔧 nová (malá) |
 
+## Přehled / UI komponenta (EDList + EDFilter)
+
+Picker („Šablony v databázi") **už je** `EDList` + `EDFilter` (data přes `ALVA.TemplateDesigner.EDList.Sablony`,
+čte `^ALVA.TemplateDesigner.Templates(IdFa,...)` s filtrem agendy + hledáním) — ne monolit v TD. Díky tomu
+je to **jedna komponenta, tři použití** dle scope/filtru:
+
+| Použití | Scope | Kde běží |
+|---|---|---|
+| Zákaznický picker | firma + MLINE | dnes TD dialog; **vložitelné i do EDISON shellu** (bez spuštění celého návrháře) |
+| M-line autorování systémových | session = `MLINE` | náš dev — stejný EDList, přihlášeni „jako MLINE" |
+| M-line cross-firma admin přehled *(odloženo)* | celý globál + filtr firmy | admin nástroj — **tentýž EDList**, širší scope + sloupec/filtr firmy |
+
+**Extrahovatelnost:** vytažení z TD dialogu do jiného hostu = obalit stejný `EDList`+`EDFilter` jiným
+oknem, ne psát znovu (list + filtr + data jsou už oddělené od návrháře). Není to „headless" (pořád UI
+seznam), ale reuse mimo celý TD. Řádek → klik otevře návrhář nad šablonou (stejná UX jako legacy list sestavy).
+
+**Flat list vs strom (rozhodnutí):** legacy měl **strom** (USER/MLINE → oblasti → sestavy) — oblasti byly
+uživatelské složky na organizaci **stovek** sestav. My máme **flat list** a horní osy stromu pokrýváme
+filtry: firma/MLINE = scope+odznak, modul = AgendaCode. **Flat stačí pro v1** (pár šablon per agenda).
+Funkci legacy „oblastí" nahrazuje **filtr + kategorie** (roadmap PC5 „Kategorie + popis" = pole v metadatech,
+podle něj EDList grupuje/filtruje) — aditivní, nerozbije nic. **Full folder-tree = YAGNI**, do budoucna lze
+z listu udělat složitější hierarchii, až to objem vyžádá.
+
 ## Rozhodnutí 2026-07-07
 
 - **Master autorování** = náš dev/release, žádný separátní master systém (zatím).
@@ -52,6 +75,8 @@ pod tím vlastní (editovatelné).
   „Přišla novější, aktualizovat?" + verze/otisk = až bude potřeba.
 - **Read-only** = **vynutit server-side** (na rozdíl od legacy, kde `MlineReadOnly` flag backend nikdy
   nekontroloval — byla to jen klientská iluze).
+- **Přehled = flat `EDList`** (ne legacy strom); firma/MLINE + agenda = filtry, legacy „oblasti" →
+  kategorie (PC5). Složitější hierarchie později, až to objem vyžádá.
 
 ## Vědomě NEkopírovat z legacy
 
