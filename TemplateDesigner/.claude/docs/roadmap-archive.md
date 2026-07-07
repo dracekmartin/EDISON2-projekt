@@ -2,6 +2,23 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Datová parita zastávkového JŘ — P-A + C1 uzavřeno (2026-07-07)
+
+Z auditu stavu v1 (P-A) + spike C1. Detail → changelog. `ALVA.TemplateDesigner.Tests` 33/33.
+
+- **Gold regrese (P-A)** — `ZastavkoveJrMhdGoldTest` (MHD dřív 0 gold testů; CB_DP 1001/1003/1006),
+  sdílený `GoldUtil.Digest` (anti-drift AD↔MHD), AD gold zpřísněn (namespace je + linka chybí → FAIL,
+  ne tichá zelená). Chrání vlastní výstup před tichou regresí.
+- **Legacy 1:1 parita (C1)** — `MhdLegacyOracle` + pre-push `ZastavkoveJrMhdLegacyParityTest`: **poziční**
+  porovnání (odjezdy zastávka×skupina-dnů×HH:MM + zastávky + poznámky) proti skutečnému legacy
+  `ALVA.MHD.LinkyPrintFormatMHD.MakeData` (obchází padající `TISKMHD.Data.LoadData`). CB_DP 1001/1003/1006
+  1:1, 0 rozdílů. Skip-if-legacy-absent.
+- **Zjištění:** (1) náš engine = legacy s `TiskProjetychZast=1` (projeté zastávky) → vazba na helpdesk
+  A2-A6 #7959 „filtr neobsluhovaných" (legacy feature, ne bug); (2) legacy ukládá spec. znaky jako surový
+  ASCII kód, konvertuje při renderu — sjednoceno přes `ConvertSpecialniZnak` (ověřilo i náš převod = legacy).
+- **Zbývá nice-to-have:** víc linek do gate; AD analog (legacy oracle `$$WinTiskMhd^JRapi`, VolanoZ=JRMAIN)
+  — AD už bylo ručně 1:1 ověřené, jen by to zopakovatelnilo (≈ C9).
+
 ## Caché Migrace — track uzavřen (2026-07-07)
 
 Sekce odebrána z aktivní roadmapy — nic v ní nebylo nezávisle akční:

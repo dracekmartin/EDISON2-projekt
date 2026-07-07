@@ -169,13 +169,18 @@ public partial class MainWindow : Window
             UpdateCanvasSize,
             _vm.RefreshFieldsList,
             getAvailableFields:    _vm.GetAvailableFields,
-            getAvailableGroups:    _vm.GetAvailableGroups,
-            tableTemplateProvider: _vm.TableTemplateProvider);
+            getAvailableGroups:    _vm.GetAvailableGroups);
 
         // Callback: otevření DepartureGroupEditorDialog z inline panelu i modálního dialogu
         _propsVm.RequestOpenDepartureGridDialog = el => OpenDepartureGridDialog(el);
         _propsVm.RequestOpenStopColumnsDialog = el => OpenStopColumnsDialog(el);
         _propsVm.RequestOpenDynamicTableDialog = el => OpenDynamicTableDialog(el);
+        _propsVm.RequestOpenTableEditorDialog = el => OpenTableEditorDialog(el);
+        _propsVm.RequestPickFile = (title, filter) =>
+        {
+            var dlg = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter };
+            return dlg.ShowDialog() == true ? dlg.FileName : null;
+        };
 
         // Inline properties panel — SetContext s execute + invalidate callbacky
         InlinePropertiesPanel.SetContext(
@@ -1466,6 +1471,23 @@ public partial class MainWindow : Window
 
         if (dlg.ShowDialog() == true)
             _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
+
+        InvalidateCanvas();
+        InvalidatePreview();
+        UpdatePropertiesPanel();
+    }
+
+    private void OpenTableEditorDialog(TableElement element)
+    {
+        var collections = _vm!.GetAvailableGroups();
+        IReadOnlyList<TemplateDesigner.Models.Schema.DataField>? collectionFields = collections.Count > 0
+            ? (collections.FirstOrDefault(c => c.CollectionKey == element.DataSource)?.Fields
+                   ?? collections.SelectMany(c => c.Fields).ToList())
+            : null;
+
+        var dlg = new TableEditorDialog(element, collectionFields, _vm.TableTemplateProvider) { Owner = this };
+        if (dlg.ShowDialog() == true)
+            _vm!.ApplyTableEdit(element, dlg.ResultColumns, dlg.ResultRows, dlg.ResultSummaryRows);
 
         InvalidateCanvas();
         InvalidatePreview();

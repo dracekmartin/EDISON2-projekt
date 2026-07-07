@@ -40,6 +40,9 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Code-behind napojí — VM žádá o reload EDListu (po Delete / Rename). EDFilter sebere current filter.</summary>
     public Action? RequestReload { get; set; }
 
+    /// <summary>Code-behind napojí — VM žádá o nový název (rename dialog). Vrátí název nebo null (zrušeno). VM nezná WPF.</summary>
+    public Func<string, string?>? RequestRenameInput { get; set; }
+
     public CacheTemplatePickerDialogViewModel(CacheTemplateService service, IReadOnlyList<AgendaInfo> agendas)
     {
         _service = service;
@@ -81,14 +84,11 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         if (!Guid.TryParse(Selected.Id, out var id)) return;
         var oldName = Selected["name"] ?? "";
 
-        var dlg = new SaveSectionTemplateDialogViewModel(oldName);
-        var win = new SaveSectionTemplateDialog(dlg);
-        if (win.ShowDialog() != true) return;
-
-        if (dlg.Name == oldName) return;
+        var newName = RequestRenameInput?.Invoke(oldName);
+        if (newName is null || newName == oldName) return;
         try
         {
-            await _service.RenameAsync(id, dlg.Name);
+            await _service.RenameAsync(id, newName);
             RequestReload?.Invoke();
         }
         catch (CacheTemplateException ex) { PopupDisplayer.Error(ex); }

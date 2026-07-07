@@ -18,6 +18,14 @@ public partial class CacheTemplatePickerDialog : Window
         // VM žádá reload (po Delete / Rename) — sebere current filter a znovu načte
         _vm.RequestReload = () => TheFilter.Refresh();
 
+        // VM žádá nový název pro rename — otevře dialog (WPF drží View)
+        _vm.RequestRenameInput = oldName =>
+        {
+            var dvm = new SaveSectionTemplateDialogViewModel(oldName);
+            var win = new SaveSectionTemplateDialog(dvm) { Owner = this };
+            return win.ShowDialog() == true ? dvm.Name : null;
+        };
+
         // Close
         _vm.RequestClose += result => { DialogResult = result; Close(); };
 

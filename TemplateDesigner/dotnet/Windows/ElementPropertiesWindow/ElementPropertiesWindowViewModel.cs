@@ -1,4 +1,3 @@
-using System.Windows;
 using EDControls.EDViewModel;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
@@ -20,7 +19,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
     private readonly Func<IReadOnlyList<DataField>?>?           _getAvailableFields;
     private readonly Func<IReadOnlyList<DataFieldCollection>?>? _getAvailableGroups;
-    private readonly ITableTemplateProvider?                    _tableTemplateProvider;
 
     private int    _undoDepthAtOpen;
     private Action _currentInvalidate;
@@ -67,6 +65,15 @@ public class ElementPropertiesWindowViewModel : EDViewModel
     /// </summary>
     public Action<DynamicTableElement>? RequestOpenDynamicTableDialog { get; set; }
 
+    /// <summary>
+    /// Callback pro otevření TableEditorDialog (statická tabulka) — otevření + apply řeší View
+    /// (MainWindow.OpenTableEditorDialog), stejně jako ostatní tabulkové editory. VM nezná WPF.
+    /// </summary>
+    public Action<TableElement>? RequestOpenTableEditorDialog { get; set; }
+
+    /// <summary>Callback pro výběr souboru (title, filter → cesta / null). View drží OpenFileDialog.</summary>
+    public Func<string, string, string?>? RequestPickFile { get; set; }
+
     /// <summary>Zruší změny a zavře dialog (DialogResult = false).</summary>
     public RelayCommand CancelCommand { get; }
 
@@ -79,8 +86,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         Action updateCanvasSize,
         Action refreshFields,
         Func<IReadOnlyList<DataField>?>? getAvailableFields = null,
-        Func<IReadOnlyList<DataFieldCollection>?>? getAvailableGroups = null,
-        ITableTemplateProvider? tableTemplateProvider = null)
+        Func<IReadOnlyList<DataFieldCollection>?>? getAvailableGroups = null)
     {
         _state                 = state;
         _invalidate            = invalidate;
@@ -89,7 +95,6 @@ public class ElementPropertiesWindowViewModel : EDViewModel
         _refreshFields         = refreshFields;
         _getAvailableFields    = getAvailableFields;
         _getAvailableGroups    = getAvailableGroups;
-        _tableTemplateProvider = tableTemplateProvider;
         _currentInvalidate     = invalidate;
 
         // OkCommand je zděděn z EDViewModel — base.OnOk() volá CloseDialog(true), což je správně
@@ -231,41 +236,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                     Label       = btn.Label,
                     Group       = btn.Group,
                     ButtonLabel = btn.ButtonLabel,
-                    OnClick     = () =>
-                    {
-                        var collectionFields = collections.Count > 0
-                            ? (collections.FirstOrDefault(c => c.CollectionKey == element.DataSource)?.Fields
-                                   as IReadOnlyList<DataField>
-                               ?? collections.SelectMany(c => c.Fields).ToList())
-                            : null;
-
-                        var dlg = new TableEditorDialog(element, collectionFields, _tableTemplateProvider)
-                            { Owner = Application.Current.MainWindow };
-                        if (dlg.ShowDialog() != true) return;
-
-                        var cmds = new List<IDesignerCommand>();
-
-                        cmds.Add(new SetPropertyCommand(
-                            "Sloupce tabulky", element.Columns, dlg.ResultColumns,
-                            v => element.Columns = (List<TableColumn>)v!));
-
-                        if (element.Mode == TableMode.Fixed)
-                        {
-                            cmds.Add(new SetPropertyCommand(
-                                "Řádky tabulky", element.Rows, dlg.ResultRows,
-                                v => element.Rows = (List<TableRow>?)v));
-                        }
-
-                        cmds.Add(new SetPropertyCommand(
-                            "Souhrnné řádky", element.SummaryRows, dlg.ResultSummaryRows,
-                            v => element.SummaryRows = (List<TableRow>?)v));
-
-                        _state.Execute(new CompositeCommand("Upravit tabulku", cmds));
-                        _currentInvalidate();
-
-                        RequestShowDescriptors?.Invoke(
-                            EnhanceTableEditor(element.GetPropertyDescriptors(), element));
-                    }
+                    OnClick     = () => RequestOpenTableEditorDialog?.Invoke(element)
                 });
             }
             else
@@ -357,15 +328,13 @@ public class ElementPropertiesWindowViewModel : EDViewModel
                     ButtonLabel = btn.ButtonLabel,
                     OnClick     = () =>
                     {
-                        var dlg = new OpenFileDialog
-                        {
-                            Filter = "Obrázky|*.png;*.jpg;*.jpeg;*.bmp;*.gif|Všechny soubory|*.*",
-                            Title  = "Nahrát obrázek"
-                        };
-                        if (dlg.ShowDialog() != true) return;
+                        var path = RequestPickFile?.Invoke(
+                            "Nahrát obrázek",
+                            "Obrázky|*.png;*.jpg;*.jpeg;*.bmp;*.gif|Všechny soubory|*.*");
+                        if (path is null) return;
 
                         byte[] data;
-                        try { data = System.IO.File.ReadAllBytes(dlg.FileName); }
+                        try { data = System.IO.File.ReadAllBytes(path); }
                         catch (Exception ex)
                         {
                             PopupDisplayer.Error(ex);

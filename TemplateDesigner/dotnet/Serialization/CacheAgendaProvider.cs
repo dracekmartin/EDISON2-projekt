@@ -14,6 +14,11 @@ namespace TemplateDesigner.Serialization;
 ///
 /// Každá agenda má vlastní Caché třídu dědící z ALVA.TemplateDesigner.Agendy.BaseAgenda,
 /// nakonfigurovanou v templatedesigner.appsettings.json jako "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd".
+///
+/// ⚠️ Metody jsou ZÁMĚRNĚ SYNCHRONNÍ (`_mlRest.Query`). Pomalé operace (`GetData`, `GetAvailableInstances`,
+/// první `GetSchema`) musí volající obalit `await Task.Run(...)` — R1, jinak zamrzne UI thread.
+/// Rychlé/cachované lookupy (`GetParameters`, opakované `GetSchema`) sync OK. Nová agenda: neplánuj
+/// `GetData` přímo z UI threadu.
 /// </summary>
 public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 {

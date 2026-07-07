@@ -12,6 +12,41 @@
 1. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
 2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
+---
+
+### 🔎 Audit stavu v1 (scan 2026-07-07) — konsolidace jádra před růstem plochy
+
+> Scan stavu s produkčním pohledem (zastávkové AD+MHD). **Žádná položka není tvrdý blocker vydání** —
+> jde o seřazený backlog: zmrazení čistého jádra, než přijdou další agendy. Řešit dle priority, ne najednou.
+> Opravy zastaralých bodů: testy `TemplateDesigner.Tests` **existují** (v pre-push), EDISON launch je **hotový**.
+> **P-A (datová parita) + C1 (legacy 1:1) hotovo 2026-07-07 → archiv/changelog.**
+
+**P-B — Zmrazení čistého jádra (udělat PŘED Fází C/D/F — jinak každá agenda dál rozmazává jádro):**
+- **B0 (první krok) — drift test EDInputForm `*Edit.cls` ↔ C# property** (dřív C-b): field key = C# property path,
+  čtený reflexí přes `ElementPropertyAccessor`; přejmenování/smazání property build nezachytí, projeví se až runtime.
+  Test pro každý pár (element ↔ `*Edit.cls`) ověří, že klíče forem resolvují na reálné property (poběží proti Caché
+  jako gold testy). **Dělá se JAKO PRVNÍ v P-B** — je to pojistka během B1/B3, které properties přesouvají.
+  Accepted debt (memory `project_edinputform_schema_duplication`).
+- **B1** — `ScheduleElementBase` je god base svázaný se zastávkovým JŘ (DataSource klíče `ZASTAVKY/
+  SKUPINY_DNU/ODJEZDY/POZNAMKY` + `Build*` helpery + typované cache v base, `:18-21,114-118,265-426`;
+  `LineTableElement` je dědí a nevolá). Rozdělit: generická vrstva (typeface cache, `ComputeFontScale`,
+  Header/DataStyle kaskáda) vs. zastávkový mixin (`Build*` + POCO parsing).
+- **B2** — Agenda-specifické větvení stringovým prefixem na ≥5 místech (`MainWindow.xaml.cs:1168-1179`
+  menu dle `StartsWith("ZASTAVKOVY"/"KNIZNI")`, `:1592-1606` paleta, `:904` + `TemplateDesignerViewModel.cs:214-216`
+  `LINKA_ID`/`INSTANCE_ID`, `:2448` default natvrdo). Přesunout capability metadata na `AgendaRegistryEntry`
+  (instanceParamName, kompatibilní typy elementů) → okno data-driven. **Nejvíc rozhoduje, jestli „nová
+  agenda = jen business logika".**
+- **B3** — `TableElement` nemigrovaný na sdílené `TableLayout` jádro: duplikuje `ResolveCascade`
+  (`TableElement.cs:231-252`) + šířky inline (`:278-279`) místo `TableLayout.ResolveWidths`. Jediný outlier.
+
+**P-C — Hygiena / drift.** ✅ Vyřešeno 2026-07-07: jasné body hotové (C-a R4 dva VM, C-c sync-guard
+komentář, C-d dangling ref, C-f docs → changelog); C-e (`agendaCode "MHD"` v dev artefaktech) = **won't-do**
+(bezcenná dev data); C-b (drift test) **přesunut do P-B jako B0** (pojistka během refaktorů jádra).
+
+**P-D — Provozní (na poptávku, fázově — nic z toho blocker v1):** governance šablon + kurátorovaná výchozí
+zastávková šablona (dnes jen dev artefakty `kv.json`/`kv_ad_test.json`) → viz produkční sekce · headless
+tisk (A3) · merge PDF do 1 souboru + e-mail · fyzický tisk na tiskárnu.
+
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI),
@@ -136,7 +171,6 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 
 | # | Co | Proč odloženo / dopad | Odhad |
 |---|---|---|---|
-| C1 | **MHD gold-oracle diff** — dump wrapper okolo `MakeData` (legacy `LoadData` MHD větev na dev padá kvůli neúplnému `in()`), pak stejný multi-linkový diff jako u AD | MHD je zatím jen strukturálně ověřené; nejlevnější krok k plné důvěře v datovou paritu | S |
 | C2 | **Symbolový font Timetable_nove(+SK)** do Skia (krok 42b, gate R5) — embed TTF + převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Dnes se `ZNAK` kreslí jako textový klíč (bezbariér, projíždí, dny…) | vizuální parita; bez něj JŘ „tiše lže" u dopravních symbolů (viz R5) | M |
 | C3 | **2D bin-packing / `Strih`** (krok 43 + gate R1/R2, *přesunuto z layout tracku 2026-07-07*) — široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků. Součást: **auto-fit fontu na šířku** (dnes jen výškový `ComputeFontScale`), flow paketů, „dotisk zbytku legendy na další stránce". **Zde proběhne R1 extrakce sdíleného řádkového jádra** (StopList + DynamicTable + LineTable). Zastávkový JŘ to nepotřebuje (DepartureGrid = málo sloupců). | nutné pro reálný tisk MHD linek; největší kus, dělá se jednou pořádně | L |
 | C4 | **Zapojení výchozích šablon do distribuce** (PC2/R6) — dnes ruční Import JSON; + výchozí šablona pro MHD (zatím jen AD) | provozní; malý | S |

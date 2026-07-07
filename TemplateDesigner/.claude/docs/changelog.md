@@ -1,5 +1,58 @@
 # Changelog
 
+## 2026-07-07 — Úklid z auditu v1 (P-C: R4 dluh + drobnosti)
+
+Jasné (bezrozhodovací) hygienické body z auditu. Build 0 chyb, test projekt 0 chyb.
+
+- **C-a — dokončení H3 (R4): 2 zapomenuté ViewModely bez WPF.** `ElementPropertiesWindowViewModel`
+  už nekonstruuje `TableEditorDialog` (přes `Application.Current.MainWindow`) ani `OpenFileDialog` —
+  nově callbacky `RequestOpenTableEditorDialog` + `RequestPickFile`, View je drátuje (MainWindow
+  `OpenTableEditorDialog` + `_vm.ApplyTableEdit`, stejný vzor jako ostatní tabulkové editory). Odstraněn
+  `using System.Windows` + nepoužitý `_tableTemplateProvider` (code-behind bere `_vm.TableTemplateProvider`).
+  `CacheTemplatePickerDialogViewModel` už nekonstruuje `SaveSectionTemplateDialog` pro rename — callback
+  `RequestRenameInput`.
+- **C-c** — `CacheAgendaProvider` doplněn explicitní komentář-guard: metody jsou záměrně sync, pomalé
+  operace (`GetData`, `GetAvailableInstances`) musí volající obalit `Task.Run` (R1).
+- **C-d** — dangling odkaz na `tools/compare-gold.ps1` v smoke testu → odkaz na gold testy. Mrtvý stub
+  `TemplateDesigner.Tests/Layout/RenderR2ToPngTest.cs` (untracked) k ručnímu smazání.
+- **C-f** — `new-element-checklist.md` opraven odkaz `MainWindow/MainWindowViewModel.cs` → `TemplateDesignerViewModel.cs`.
+- **Zbývá (vyžaduje rozhodnutí):** C-b (drift test PropertyDescriptor↔`*Edit.cls`), C-e (`agendaCode` „MHD" alias/migrace).
+
+## 2026-07-07 — Gold regresní testy zastávkového JŘ (P-A z auditu v1)
+
+Datová parita zastávkového JŘ nově krytá zmrazenými gold digest testy — pojistka „nerozbili jsme
+vlastní výstup GetData". (Legacy-oracle parita = jiná věc, zůstává otevřená C1/C9.)
+
+- **`ZastavkoveJrMhdGoldTest`** (nový) — MHD engine (dřív **0** gold testů) pokryt na CB_DP linkách
+  1001/1003/1006. MHD data jsou multi-tenant (`^[dataDB]ALVA.MHD.LSO(IdFa,...)`) → gold přibitý na
+  IdFa×NS CB_DP; pre-push runner jede právě pod CB_DP → gold reálně běží. Digesty vygenerovány z živých
+  dat, determinismus ověřen (2× identický md5).
+- **`GoldUtil.Digest()`** (nový, sdílený) — jedno místo výpočtu digestu (pages/zast/odj/pozn/md5) pro
+  AD i MHD → nemohou divergovat (anti-drift, roadmap C8). AD gold přepojen z vlastní kopie `GoldDigest`.
+- **AD gold zpřísněn** — dřív `digest=""` → `AssertTrue(1)` (tichá zelená i když gold linka zmizí).
+  Nově: namespace chybí → legitimní skip; namespace **je** ale linka chybí → **FAIL** (rozbitý fixture).
+- Úklid: dangling odkaz na neexistující `tools/compare-gold.ps1` v smoke testu → odkaz na gold testy;
+  mrtvý stub `TemplateDesigner.Tests/Layout/RenderR2ToPngTest.cs` (untracked) k smazání.
+- Ověřeno: `ALVA.TemplateDesigner.Tests` 30/30 green (vč. AD gold po refactoru — byte-identický).
+
+**C1 — MHD 1:1 vůči legacy oracle ✅ HOTOVO (posun z „regrese" na „legacy parita", vč. pre-push gate).**
+`ALVA.TemplateDesigner.Tests.MhdLegacyOracle` volá **skutečný legacy producent**
+`ALVA.MHD.LinkyPrintFormatMHD.MakeData` (obchází padající formátovač `TISKMHD.Data.LoadData`) a **pozičně**
+porovnává proti našemu `GetData`. `ZastavkoveJrMhdLegacyParityTest` = pre-push gate (skip jen když legacy
+třída/namespace na serveru chybí).
+
+- **CB_DP 1001/1003/1006: odjezdy + zastávky + poznámky 1:1** (poziční, 0 rozdílů). `ALVA.TemplateDesigner.Tests` 33/33.
+- **Poziční klíče:** odjezd = zastávka × skupina-dnů (nadpis) × HH:MM; zastávka = název; poznámka = typ × znak × text.
+  Ne line-global multiset — pins každý odjezd na správnou buňku.
+- **Kontrakt `MakeData in`** minimální: `in("par",1)`=TiskProjetychZast, zbytek volitelný. „Neúplné `in()`"
+  bylo o `LoadData`, ne producentovi.
+- **Zjištění 1:** náš engine = legacy s **TiskProjetychZast=1** (tiskne projeté zastávky). `projete=0` legacy
+  filtruje (832 vs 1543 na 1001) — náš engine ten toggle nemá (vazba na helpdesk A2-A6 #7959 „filtr neobsluhovaných").
+- **Zjištění 2:** legacy ukládá speciální znaky jako surový ASCII kód (120/123), konvertuje až při renderu;
+  náš engine v datech. Sjednoceno přes `ConvertSpecialniZnak` → shoda finálního glyfu zároveň ověřuje, že
+  náš převod = legacy převod.
+- **Zbývá (nice-to-have):** víc linek; AD analog (legacy oracle `$$WinTiskMhd^JRapi`, VolanoZ=JRMAIN).
+
 ## 2026-07-07 — Výběr skupiny linek v Instance Pickeru (AD + MHD)
 
 InstancePicker dřív bral jen **default** skupinu (první nezablokovaná) → uživatel neviděl linky

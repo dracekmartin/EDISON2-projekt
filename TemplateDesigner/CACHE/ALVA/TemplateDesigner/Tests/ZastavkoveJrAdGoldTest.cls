@@ -18,29 +18,29 @@ Parameter GOLDDB = "CB_CSADAD";
 
 Method TestGold0365001()
 {
-	set digest = ..RunLine(1, "0365001")
-	if digest = "" {
-		do $$$AssertTrue(1, "gold 0365001 není v "_..#GOLDDB_" na tomto serveru — přeskočeno")
-		quit
-	}
-	do $$$AssertEquals(digest, "pages=39 zast=800 odj=844 pozn=96 md5=UsAVrZWRXvneYfARPoydpA==", "gold 0365001 digest (aktuální: "_digest_")")
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=96 md5=UsAVrZWRXvneYfARPoydpA==")
 }
 
 Method TestGold0365005()
 {
-	set digest = ..RunLine(1, "0365005")
-	if digest = "" {
-		do $$$AssertTrue(1, "gold 0365005 není v "_..#GOLDDB_" na tomto serveru — přeskočeno")
-		quit
-	}
-	do $$$AssertEquals(digest, "pages=38 zast=762 odj=498 pozn=168 md5=sO6R+761nXv09KBGQar8pQ==", "gold 0365005 digest (aktuální: "_digest_")")
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=168 md5=sO6R+761nXv09KBGQar8pQ==")
 }
 
-/// Spustí GetData pro danou linku nad GOLDDB daty a vrátí digest. "" = linka není (skip).
-ClassMethod RunLine(sku As %String, lin As %String) As %String
+/// Ověří digest linky proti očekávané hodnotě. Rozlišuje:
+///   namespace chybí        → skip (jiný server, legitimní)
+///   namespace je, linka ne  → FAIL (gold data zmizela / rozbitý fixture)
+///   jinak                   → 1:1 digest assert
+Method AssertLine(sku As %String, lin As %String, expected As %String)
 {
 	set db = ..#GOLDDB
-	quit:'$data(^[db]JRL(sku, lin, "I")) ""
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na tomto serveru — gold "_lin_" přeskočen")
+		quit
+	}
+	if '$data(^[db]JRL(sku, lin, "I")) {
+		do $$$AssertTrue(0, "gold linka "_lin_" chybí v "_db_" (namespace je, data ne) — rozbitý fixture?")
+		quit
+	}
 
 	do ..SetupSys(.sys)
 	set sys("U","DATA") = db
@@ -48,25 +48,9 @@ ClassMethod RunLine(sku As %String, lin As %String) As %String
 	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
 	set ^||ML("IN","LINKA_ID") = lin
 	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
-	quit ..GoldDigest()
-}
 
-/// Kompaktní deterministický digest výstupu: hrubé počty (čitelné, rychlá diagnóza) + MD5 celého
-/// spojeného JSON (chytí i jemný posun hodnot). Deterministický, protože GetData je byte-identický.
-ClassMethod GoldDigest() As %String
-{
-	set n = +$get(^||ML("OUT"))
-	set all = "", tz = 0, to = 0, tp = 0
-	for p = 1:1:n {
-		set json = $get(^||ML("OUT",p))
-		set all = all_json
-		set obj = ##class(%DynamicObject).%FromJSON(json)
-		set tz = tz + obj.rows.%Get("ZASTAVKY").%Size()
-		set to = to + obj.rows.%Get("ODJEZDY").%Size()
-		set tp = tp + obj.rows.%Get("POZNAMKY").%Size()
-	}
-	set md5 = $system.Encryption.Base64Encode($system.Encryption.MD5Hash(all))
-	quit "pages="_n_" zast="_tz_" odj="_to_" pozn="_tp_" md5="_md5
+	set digest = ##class(ALVA.TemplateDesigner.Tests.GoldUtil).Digest()
+	do $$$AssertEquals(digest, expected, "gold "_lin_" digest (aktuální: "_digest_")")
 }
 
 }

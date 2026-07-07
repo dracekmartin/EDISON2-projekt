@@ -593,6 +593,22 @@ public class TemplateDesignerViewModel : EDViewModel
         ExecuteAsComposite("Nastavení tabulky", cmds);
     }
 
+    /// <summary>Statická tabulka (Fixed/Dynamic): sloupce + řádky (Fixed) + souhrnné řádky jako jeden undo krok.</summary>
+    public void ApplyTableEdit(TableElement element, List<TableColumn> resultColumns, List<TableRow>? resultRows, List<TableRow>? resultSummaryRows)
+    {
+        var cmds = new List<IDesignerCommand>
+        {
+            new SetPropertyCommand("Sloupce tabulky", element.Columns, resultColumns,
+                v => element.Columns = (List<TableColumn>)v!)
+        };
+        if (element.Mode == TableMode.Fixed)
+            cmds.Add(new SetPropertyCommand("Řádky tabulky", element.Rows, resultRows,
+                v => element.Rows = (List<TableRow>?)v));
+        cmds.Add(new SetPropertyCommand("Souhrnné řádky", element.SummaryRows, resultSummaryRows,
+            v => element.SummaryRows = (List<TableRow>?)v));
+        ExecuteAsComposite("Upravit tabulku", cmds);
+    }
+
     private void Undo()
     {
         State.Undo();
