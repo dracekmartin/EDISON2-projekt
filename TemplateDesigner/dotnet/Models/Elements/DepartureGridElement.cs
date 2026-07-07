@@ -137,11 +137,6 @@ public class DepartureGridElement : ScheduleElementBase
     }
     private List<DepartureGroupColumnStyle> _groupColumns = [];
 
-    // ═══════════════════════════════════════════
-    // Barvy (data-driven)
-    // ═══════════════════════════════════════════
-    public List<ColorRule> ColorRules { get; set; } = [];
-
     // ─── Designer ───────────────────────────────────────────────────────────
 
     protected override float DesignerPlaceholderHeight => 60f;
@@ -1470,7 +1465,6 @@ public class DepartureGridElement : ScheduleElementBase
             HourColumnStyle            = HourColumnStyle?.Clone(),
             HourColumnHeader           = HourColumnHeader,
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
-            ColorRules                 = ColorRules.Select(r => r.Clone()).ToList(),
         };
         CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);

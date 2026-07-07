@@ -17,7 +17,7 @@ Tyto věci **nejsou** v roadmapě a jsou hlavním přínosem této analýzy. Pok
 zákaznické šablony do DB, jejich odložení = budoucí breaking change + nutná (a v některých
 případech neproveditelná) migrace.
 
-### A1. Klíče sloupců (`StopColumn.Key`) jsou magic-string literály — NEJVYŠŠÍ konkrétní riziko
+### A1. Klíče sloupců (`StopColumn.Key`) jsou magic-string literály — ✅ VYŘEŠENO 2026-07-07
 - `StopColumn.Key` se **persistuje do JSON** šablony, ale hodnoty (`"Zone"`, `"Km"`, `"Tc"`,
   `"StopName"`, `"Mhd"`, `"TravelTime"`, `"RouteLetters"`, `"BaseRoute"`, `"TravelTime#i"`) jsou
   literály roztroušené ve `switch` (`LineTableElement.cs:38-43,208,214,237-259`,
@@ -27,15 +27,16 @@ případech neproveditelná) migrace.
 - **Náprava (levná, teď):** povýšit klíče na konstanty (vzor `ElementTypes.cs`) + krátký unit test,
   který zamkne mapu klíč→význam. Tím se klíče stanou stabilním kontraktem.
 
-### A2. Dva různé modely téhož konceptu — podmíněné zvýraznění
-- `DynamicTableElement.RowHighlightExpression` (`:57-62`) je **single-rule „ukázka"** (`string?`
-  výraz + `string? RowHighlightColor`), s komentářem „do budoucna rozšířitelné na seznam pravidel".
-  `StopListElement`/`LineTableElement` mají tentýž pár zduplikovaný ručně.
-- Přitom `DepartureGridElement` už používá `List<ColorRule> ColorRules` (`ColorRule` model existuje,
-  `ScheduleModels.cs:266`). **Dva různé serializační tvary téhož konceptu v jednom modelu.**
-- **Dopad:** přechod `string → List<ColorRule>` je breaking, pokud se nedrží paralelní staré pole.
-- **Náprava (teď):** rozhodnout finální tvar. Buď (a) sjednotit na `List<ColorRule>` všude teď,
-  nebo (b) vědomě zmrazit single-rule jako finální a smazat příslib „rozšíření" z komentáře.
+### A2. Domnělé dva modely zvýraznění — ✅ VYŘEŠENO 2026-07-07 (byl to mrtvý kód)
+- **Nález po průzkumu:** `DepartureGridElement.ColorRules` (`List<ColorRule>`) byl **mrtvý kód** —
+  deklarovaný a klonovaný, ale **nikde nekonzumovaný** (žádný render, žádný editor). Nebyl to živý
+  konkurenční model, jen pozůstatek. Odstraněno (pole + Clone řádek).
+- Živý je jen **jednopravidlový** `RowHighlightExpression` + `RowHighlightColor` (DynamicTable/StopList/
+  LineTable). Ten **strukturu nezamyká**: multi-pravidlo lze přidat **aditivně** jako budoucí
+  `List<ColorRule> RowColorRules` vedle stávajících polí → staré šablony se nerozbijí.
+- **Provedeno:** dead-field cleanup + docstringy fixnuté (jedno pravidlo = dodávaný kontrakt,
+  multi = budoucí aditivní, odloženo 2026-07-05); `ColorRule` třída ponechána jako rezervovaný
+  budoucí model. Žádná migrace nutná.
 
 ### A3. `TableElement` (dormant) × `DynamicTableElement` — překrývající se schémata
 - `TableElement` je „dočasně mimo, dormant" (`DynamicTableElement.cs:18`), ale drží skoro identickou

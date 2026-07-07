@@ -74,7 +74,9 @@ public class StopListElement : ScheduleElementBase
     // ═══════════════════════════════════════════
     /// <summary>Zastávka, kde výraz neplatí, se nevykreslí (a nezapočítá do výšky). Prázdné = všechny.</summary>
     public string? RowVisibilityExpression { get; set; }
-    /// <summary>Zastávka splňující výraz dostane pozadí <see cref="RowHighlightColor"/>. Priorita nad podbarvením aktuální.</summary>
+    /// <summary>Zastávka splňující výraz dostane pozadí <see cref="RowHighlightColor"/>. Priorita nad
+    /// podbarvením aktuální. 1 pravidlo; multi-pravidlo (<see cref="ColorRule"/> seznam) přijde aditivně,
+    /// bez rozbití šablon — vědomě odloženo (2026-07-05).</summary>
     public string? RowHighlightExpression { get; set; }
     public string? RowHighlightColor { get; set; }
 

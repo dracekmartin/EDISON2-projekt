@@ -64,6 +64,8 @@ public class LineTableElement : ScheduleElementBase
     // Prázdný výraz = vypnuto (nulová změna chování).
     /// <summary>Zastávka, kde výraz neplatí, se nevykreslí (řádek + její přípojné řádky; nezapočítá do výšky).</summary>
     public string? RowVisibilityExpression { get; set; }
+    /// <summary>1 pravidlo, jen pozadí. Multi-pravidlo (<see cref="ColorRule"/> seznam) přijde aditivně,
+    /// bez rozbití šablon — vědomě odloženo (2026-07-05).</summary>
     public string? RowHighlightExpression { get; set; }
     public string? RowHighlightColor { get; set; }
 

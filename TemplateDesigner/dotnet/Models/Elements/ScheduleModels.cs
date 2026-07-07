@@ -262,7 +262,13 @@ public static class GroupColumnIndexResolver
     }
 }
 
-/// <summary>Barevné pravidlo vyhodnocované přes ExpressionEvaluator.</summary>
+/// <summary>
+/// Barevné pravidlo (podmínka → barva textu/pozadí) vyhodnocované přes ExpressionEvaluator.
+/// <b>Rezervovaný budoucí model</b> pro multi-pravidlové podmíněné formátování tabulkových elementů —
+/// až přijde poptávka, přidá se aditivně jako <c>List&lt;ColorRule&gt; RowColorRules</c> vedle stávajícího
+/// jednopravidlového <c>RowHighlightExpression</c>/<c>RowHighlightColor</c> (staré šablony se nerozbijí).
+/// Dnes nikde nekonzumováno. Multi-pravidlo vědomě odloženo (rozhodnutí 2026-07-05).
+/// </summary>
 public class ColorRule
 {
     public string Condition { get; set; } = "";

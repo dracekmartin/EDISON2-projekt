@@ -71,9 +71,9 @@ Pokud se odloží a natečou reálné šablony do DB → budoucí breaking chang
 
 | ID | Co | Náprava | Cena | Stav |
 |---|---|---|---|---|
-| PA1 | **Klíče sloupců (`StopColumn.Key`) = magic-string literály** ve switchích, ale persistují se do JSON (`LineTableElement.cs:38-43,208,214`, `StopListElement.cs:22-28,531`). Přejmenování → uložená šablona se **tiše rozbije**. NEJVYŠŠÍ konkrétní riziko. | povýšit na konstanty (vzor `ElementTypes`) + zamykací unit test klíč→význam | nízká | ⬜ ⬅️ |
-| PA2 | **Dva modely téhož konceptu:** `RowHighlightExpression` (single string „ukázka", `DynamicTableElement.cs:57`) vs `List<ColorRule>` (DepartureGrid). string→list je breaking. | rozhodnout finální tvar teď (sjednotit na `List<ColorRule>`, nebo zmrazit single a smazat příslib rozšíření) | nízká–stř. | ⬜ |
-| PA3 | **`TableElement` (dormant) × `DynamicTableElement`** — překrývající se schémata; riziko šablon s „mrtvým" typem. | pro v1 vyřadit `TableElement` ze serializace/palety (jen `JsonDerivedType` pro legacy read) nebo jasně demarkovat | nízká | ⬜ |
+| PA1 | **Klíče sloupců (`StopColumn.Key`) = magic-string literály** ve switchích, ale persistují se do JSON. Přejmenování → uložená šablona se **tiše rozbije**. | povýšeno do `Models/ColumnKeys.cs` (vzor `ElementTypes`) + `ColumnKeysTests` zamyká wire hodnoty | nízká | ✅ 2026-07-07 |
+| PA2 | **Domnělé dva modely** zvýraznění řádku. **Nález:** `List<ColorRule>` na DepartureGrid byl **mrtvý kód** (nikde nekonzumován) — odstraněno. Živý je jen 1-pravidlový `RowHighlightExpression`; multi-pravidlo půjde **aditivně** (budoucí `RowColorRules`), strukturu nezamyká. | dead-field cleanup + docstringy fixnuté; `ColorRule` ponechán jako rezervovaný budoucí model | nízká | ✅ 2026-07-07 |
+| PA3 | **`TableElement` (dormant) × `DynamicTableElement`** — překrývající se schémata; riziko šablon s „mrtvým" typem. | pro v1 vyřadit `TableElement` ze serializace/palety (jen `JsonDerivedType` pro legacy read) nebo jasně demarkovat | nízká | ⬜ ⬅️ |
 | PA4 | **Verzní baseline:** C#=`"1.0.0"` vs Caché=`"1.0"`; migrator pipeline prázdná; historická flat→style změna nemigrovatelná (staré `.json` tiše ztratí styling; DB šablony OK). | sjednotit default verzi napříč vrstvami + **bumpnout `CurrentVersion` na `1.1.0` teď** + zdokumentovat flat→style jako akceptované riziko | nízká | ⬜ |
 | PA5 | **Deserializace tiše polyká neznámá pole** (`UnmappedMemberHandling` nenastaveno, `TemplateSerializer.cs:154-168`) → silent corruption. | aspoň **logovat** neznámá pole při loadu (nefailovat) | nízká | ⬜ |
 

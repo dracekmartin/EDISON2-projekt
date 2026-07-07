@@ -55,9 +55,10 @@ public class DynamicTableElement : TemplateElement
     public string? RowVisibilityExpression { get; set; }
 
     /// <summary>
-    /// Podmíněné formátování (ukázka, 1 pravidlo, jen pozadí): řádek splňující tento výraz dostane
-    /// pozadí <see cref="RowHighlightColor"/>. Null/prázdné = bez zvýraznění. Do budoucna rozšířitelné
-    /// na seznam pravidel + barvu textu / další zóny.
+    /// Podmíněné formátování (1 pravidlo, jen pozadí): řádek splňující tento výraz dostane pozadí
+    /// <see cref="RowHighlightColor"/>. Null/prázdné = bez zvýraznění. Jedno pravidlo je dodávaný
+    /// kontrakt; multi-pravidlo (seznam + barva textu) přijde aditivně jako budoucí <c>RowColorRules</c>
+    /// (<see cref="ColorRule"/>) bez rozbití šablon — vědomě odloženo (2026-07-05).
     /// </summary>
     public string? RowHighlightExpression { get; set; }
 
