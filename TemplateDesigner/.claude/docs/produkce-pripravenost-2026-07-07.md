@@ -50,7 +50,17 @@ případech neproveditelná) migrace.
   **Zachováno:** třída, `JsonDerivedType` (legacy read), `TableEditorDialog` (legacy edit) + budoucí
   oživení Fixed tabulky = pár řádků zpět. Behavior-preserving, bez migrace.
 
-### A4. Verzní baseline — sjednotit a bumpnout PŘED prvními produkčními daty
+### A4. Verzování šablon — ✅ VYŘEŠENO 2026-07-07 (jen dokumentace; NEbumpovat)
+
+> **Korekce po průzkumu:** migrátor je hotový **i důkladně otestovaný** (9 testů: transformace,
+> přerazítkování, řazení verzí, forward-compat guard, selhání→výjimka). Doporučení „bumpnout na
+> 1.1.0 teď" **zamítnuto** — jde proti vlastní konvenci projektu (*bump jen pro breaking change +
+> migrace*) a bez migrace by falešně označilo každou „1.0.0" šablonu jako migrovanou. Kosmetický
+> rozdíl „1.0"/„1.0.0" je funkčně irelevantní (VersionComparer je srovnává jako rovné). Jediná reálná
+> mezera = dokumentace flat→style jako nemigrovatelné → zapsáno v `template-schema-versions.md`.
+> Původní analýza (níže) ponechána jako záznam; závěr viz tento box.
+
+
 - `TemplateMigrator` framework existuje, ale **pipeline je prázdná** (žádná reálná migrace;
   `CurrentVersion = "1.0.0"`, `TemplateMigrator.cs:26,39-41`). Migrator se **volá při každém loadu**
   (`TemplateSerializer.cs:107`, souborová i Caché cesta), ale pro `"1.0.0"` skončí hned na `cmp==0`.

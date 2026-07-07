@@ -107,6 +107,32 @@ Baseline schema. Současný tvar Template.cs k 2026-05-25:
 
 Žádné migrace zatím — framework je no-op.
 
+#### ⚠️ Pre-baseline breaking change: flat text props → composable `style` (03/2026, NEMIGROVATELNÁ)
+
+Refaktor `TextStyle` (03/2026) přesunul ploché text properties (`fontSize`, `textColor`, `fontWeight`…)
+do kompozitního `style`/`headerStyle`/`dataStyle` objektu. Proběhl **před** baseline V1.0.0 a **bez
+bumpu verze** → hodnota `"1.0.0"` je **dvojznačná**: může jít o pre-refactor plochou šablonu i o
+současnou composable. Proto tato změna **není a nebude retroaktivně migrovatelná** — nešlo by
+spolehlivě poznat, které schéma šablona má, a migrace by druhé poškodila.
+
+**Přijaté riziko + mitigace:** DB je primární úložiště až od 2026-06-30 (dlouho po refaktoru), takže
+**všechny šablony v produkční DB jsou composable**. Riziko se týká jen starých souborových `.json`
+z doby před refaktorem — ty se do produkce nedostávají. Stará plochá šablona by se načetla „tiše
+ochuzená o styling" (`System.Text.Json` neznámá pole ignoruje) — viz [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md) A4.
+
+**Důsledek pro budoucí migrace:** jakákoli migrace `1.0.0 → x` MUSÍ předpokládat **composable**
+schéma (produkční realita). Ploché pre-refactor soubory nejsou podporovaný vstup.
+
+#### Rozhodnutí 2026-07-07: NEbumpovat na „1.1.0" jako baseline
+
+Zvažováno preventivní bumpnutí `CurrentVersion` na „1.1.0" pro „čistý produkční mezník". **Zamítnuto**
+— jde proti pravidlu výše (*bump jen pro breaking change + migrace*): žádný breaking change nenastal,
+a bez migrace by se navíc **každá existující „1.0.0" šablona při načtení označila jako migrovaná**
+(WasMigrated=true → zbytečné varování). Baseline zůstává „1.0.0"; příští **skutečná** breaking změna
+bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.0" ve fallback defaultech
+Caché metadat vs „1.0.0" v C# je funkčně irelevantní — `VersionComparer` je srovnává jako rovné a
+metadata verze se k migraci nepoužívá; neřešeno záměrně.)
+
 ---
 
 ## Operational notes
