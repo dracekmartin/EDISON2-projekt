@@ -38,15 +38,17 @@ případech neproveditelná) migrace.
   multi = budoucí aditivní, odloženo 2026-07-05); `ColorRule` třída ponechána jako rezervovaný
   budoucí model. Žádná migrace nutná.
 
-### A3. `TableElement` (dormant) × `DynamicTableElement` — překrývající se schémata
+### A3. `TableElement` (dormant) × `DynamicTableElement` — ✅ VYŘEŠENO 2026-07-07
 - `TableElement` je „dočasně mimo, dormant" (`DynamicTableElement.cs:18`), ale drží skoro identickou
   JSON tvář (`RowHeight/ShowHeader/HeaderHeight/HeaderStyle/DataStyle/Columns/SummaryRows/…`).
   `DynamicTableElement` má navíc `MinRows/MaxRows/RowVisibilityExpression/RowHighlightExpression`.
 - **Dopad:** až se Fixed tabulka „oživí", buď dvě schémata divergují, nebo se slučují = breaking.
   Riziko, že vzniknou produkční šablony s „mrtvým" typem `TableElement`.
-- **Náprava (teď):** rozhodnout — buď `TableElement` úplně vyřadit ze serializace/palety pro v1
-  (zůstane jen `JsonDerivedType` pro legacy read), nebo jasně demarkovat, že jejich schémata se
-  nikdy nesloučí. (V paletě už dnes není — ověřit, že ho nejde vytvořit.)
+- **Provedeno (varianta demarkace):** z UI už `TableElement` nešel (paleta i menu = dynamická);
+  navíc odebrány mrtvé větve `ElementTypes.Table` z továrny (`CreateElementByType`/`GetDefaultElementSize`)
+  → nově ho nic nevyrobí. Tripwire test (`ElementFactoryTests`) + docstring označující spící stav.
+  **Zachováno:** třída, `JsonDerivedType` (legacy read), `TableEditorDialog` (legacy edit) + budoucí
+  oživení Fixed tabulky = pár řádků zpět. Behavior-preserving, bez migrace.
 
 ### A4. Verzní baseline — sjednotit a bumpnout PŘED prvními produkčními daty
 - `TemplateMigrator` framework existuje, ale **pipeline je prázdná** (žádná reálná migrace;

@@ -113,6 +113,13 @@ public class TableCell
 ///
 /// Height je vždy null u Dynamic módu — výšku vypočítá print engine.
 /// U Fixed módu je výška odvozena automaticky z počtu řádků.
+///
+/// <b>SPÍCÍ element (jen legacy read).</b> Živá tabulka je <see cref="DynamicTableElement"/> — tuto
+/// třídu nelze z UI vytvořit (paleta ani „+Přidat" menu ji nenabízí, továrna <c>CreateElementByType</c>
+/// ji nevyrábí; zamčeno testem). Zůstává registrovaná (<c>JsonDerivedType</c>) + editovatelná
+/// (TableEditorDialog) jen kvůli otevření starých šablon. Oživení Fixed tabulky (roadmap, gated na
+/// merged cells): vrátit větev <c>ElementTypes.Table</c> do <c>CreateElementByType</c>/<c>GetDefaultElementSize</c>
+/// + položku do palety/menu. Neodstraňovat třídu ani JsonDerivedType — rozbilo by načtení legacy šablon.
 /// </summary>
 public class TableElement : TemplateElement
 {
