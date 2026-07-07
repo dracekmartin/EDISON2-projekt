@@ -12,10 +12,6 @@
 1. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
 2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
-> **Výběr skupiny linek (AD + MHD) ✅ hotovo** (2026-07-07 → archiv): searchable filtr skupin v Instance
-> Pickeru, „číslo — název", propagace `SKUPINA_LINEK_ID` do EDlistu i GetData. Zbývá jen (follow-up,
-> ne blocker): skupiny pro **knižní JŘ** agendy (Fáze C+D) + persistence zvolené skupiny per šablona.
-
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI),
@@ -89,31 +85,6 @@ detail + TD-stav [`customer-requirements-zastavkovy-jr.md §TR`](customer-requir
 nástupiště (data `Oznacnik` existují) · auto výška řádku (částečně = auto-scale) · **definice cíle** (datový model, M–L) ·
 **barva linky** (bg/text ve vlastnostech linky → volba v šabloně, M) · výběr sloupců jízdních dob (relates L1 multi-varianta) ·
 „<1" místo „0" (S) · obrácené poznámkování spojů (M) · skrýt spoje So/Ne/svátky (S–M).
-
----
-
-## 🔵 Caché Migrace — zbývající vlny
-
-> Wave 1–4 hotové (form-driven UI všude) → archiv. Otevřená je jen Wave 5 (business logic per agenda).
-
-**Pravidlo — kandidát na EDInputForm** (evergreen): ✅ formuláře s pevným server-definovaným schématem;
-❌ triviální 1-pole confirm, dialogy s živě počítaným náhledem, plně dynamické formy bez schématu.
-⚠️ Schema-duplikace dluh (Caché schema = manuální mirror) akceptován, memory `project_edinputform_schema_duplication.md`.
-
-Nedokončeno **záměrně** (mimo aktivní práci): **W4-11** smazat PropertyDescriptory = neproveditelné
-(drží je FormatToolbar + multi-edit + fallback modál + AI catalog → paralelní systém); **W4-12** wire
-`$lb()`→JSON + collapsible groups = volitelný EDControls concern.
-
-### Wave 5 — Business logic per agenda (paralelně)
-
-Čisté rozdělení agenda-specific logiky do Caché tříd (`AgendaAPI` base + per-agenda impl:
-`GetSchema/GetData/GetMockData/GetTableTemplates/GetTableTemplate`). Nové agendy (Fáze C/D/E) pattern
-využijí. Shared helpery extrahovat do base až budou 2+ konzumenti (ne dopředu).
-
-| Krok | Co | Stav |
-|---|---|---|
-| W5-2/3/4 | Fáze C (meziměstský) / D (knižní) / E (vozový) — využijí pattern | ⬜ (viz Fáze C-E níže) |
-| W5-5 | Refaktor: extract `AgendaAPIBase` helpery až budou 2+ konzumenti | ⬜ |
 
 ---
 

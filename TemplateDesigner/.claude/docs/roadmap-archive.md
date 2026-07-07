@@ -2,6 +2,20 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Caché Migrace — track uzavřen (2026-07-07)
+
+Sekce odebrána z aktivní roadmapy — nic v ní nebylo nezávisle akční:
+- **Wave 1–4** ✅ hotové (per-user state, agenda registry, template storage, form-driven UI všude) — dřívější archiv.
+- **Wave 5 (business logic per agenda)** = **absorbováno do Fáze C–E** (nové agendy použijí `AgendaAPI` pattern —
+  `GetSchema/GetData/GetMockData/GetTableTemplates/GetTableTemplate`, zdokumentováno v `cache-api.md`).
+  W5-5 (extract `AgendaAPIBase` helpery až 2+ konzumenti) = totéž co **C8** (dedup Caché enginů) ve Fázi C+D.
+- **W4-11** (smazat PropertyDescriptory) = **neproveditelné/won't-do** — drží je FormatToolbar + multi-edit +
+  fallback modál + AI catalog (paralelní systém). **W4-12** (wire `$lb()`→JSON, collapsible groups) = volitelný
+  EDControls concern, jen na poptávku.
+- **Evergreen pravidlo — kandidát na EDInputForm** (zachováno): ✅ formuláře s pevným server-definovaným
+  schématem; ❌ triviální 1-pole confirm, dialogy s živě počítaným náhledem, plně dynamické formy bez schématu.
+  Schema-duplikace dluh (Caché schema = manuální mirror) akceptován — memory `project_edinputform_schema_duplication`.
+
 ## Session 2026-07-07 ✅ — Výběr skupiny linek v Instance Pickeru (AD + MHD)
 
 Uživatel může vybrat konkrétní skupinu linek (dřív jen default první nezablokovaná → neviděl linky
