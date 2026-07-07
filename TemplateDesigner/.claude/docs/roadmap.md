@@ -9,10 +9,8 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **v1 je kódově připravená k vydání** — vydání = standardní EDISON release (build TD.exe → `C:\Edison`
-   + kompilace Caché tříd na server), ne roadmap úkol. Viz blok PB.
-2. **Governance šablon (blok PC níže)** ⬅️ **rozhodnout scope pro v1** — systémové vs zákaznické, distribuce.
-3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+1. **Governance šablon** ⬅️ **rozhodnout scope pro v1** — systémové vs zákaznické, distribuce (viz produkční sekce níže).
+2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
@@ -33,41 +31,32 @@ při scope té fáze, ne teď.
 
 ---
 
-## 🚀 Produkční připravenost — PB/PC (jedno místo)
+## 🚀 Produkční / provozní — otevřené (na poptávku + rozhodnutí governance)
 
-> Grounded analýza: [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
-> Do produkce jde nejdřív **zastávkový JŘ (AD)**. **Kritická cesta v1 = PB release deploy** (PC odloženo).
-> (Blok PA — zámek struktury šablony — vyřešen, viz archiv.)
+> Zámek struktury šablony i provozní hygiena hotové → archiv. Vydání v1 = standardní EDISON release
+> (deploy není roadmap úkol). Zbývají jen provozní featury na poptávku + rozhodnutí governance šablon.
 
-### 🟠 PB. Provoz / nasazení — jen odložené (release = standardní EDISON ops)
+### Provozní featury (odložené, až s reálnou poptávkou)
 
-> **Release deploy není TD-specifická práce:** build TD.exe → `C:\Edison` + kompilace Caché tříd na
-> server jde po stejné trati jako zbytek EDISON suity. Launch integrace hotová (Martin); .NET 10 runtime
-> je prerekvizita celé suity (EDISONMAIN2/EDControls taky `net10`). Drobná hygiena (dev creds z baseline
-> → `local.json`, mrtvé detector-scratch soubory, doc drift .NET 10 / PdfPig) hotová 2026-07-07 → archiv.
+- **Headless tisk (A3)** — „vytiskni linku X" z modulu přes **PrintEngine fasádu** (šablona+data→PDF
+  bez stavu editoru; T2 udělalo půlku render-na-snapshotu). Dnes tisk jen v designeru. Gate R4/R7.
+- **Hromadný výstup + e-mail (A4)** — sloučení hromadného exportu do 1 PDF (`MergePDFFiles`) + odeslání e-mailem.
+- **Logging/telemetrie pro podporu (F3)**.
+- **CI/CD linting šablon (F4)** — Caché job validující šablony před deployem (nice-to-have).
 
-**Odloženo (v1 nepotřebuje, dle poptávky):** end-user tisk (A3 — headless „vytiskni linku X" přes
-**PrintEngine fasádu** šablona+data→PDF bez editoru; gate R4/R7) · hromadný výstup (A4 — merge do 1 PDF
-`MergePDFFiles` + e-mail) · logging/telemetrie pro podporu (F3) · CI/CD linting šablon (F4) · per-zákazník
-enablement agend (E2, YAGNI).
+### Governance šablon — rozhodnout scope pro v1 (gate R6)
 
-> Akceptovaný dluh (neakční): Newtonsoft.Json 7.0.1 (NU1903) vynuceno legacy MLRest — memory `project_mlrest_newtonsoft_debt.md`.
+> **Klíčové rozhodnutí:** bude M-line ve v1 distribuovat a udržovat vlastní **systémové** šablony
+> u zákazníků? **Ano** → potřeba minimum governance PŘED tím, než u zákazníků vzniknou úpravy (jinak je
+> nelze bezpečně aktualizovat — dnes per-IDfa storage bez zámků). **Ne** (zákazník si tvoří jen vlastní)
+> → per-IDfa + ruční Import JSON stačí, governance počká. Pořadí = nejdřív model, pak distribuce, pak jemné featury.
 
-### 🟡 PC. Governance a distribuce šablon (odloženo — jde do Caché metadat, NEzamyká JSON)
-
-> M-line dnes **nemůže bezpečně aktualizovat systémovou šablonu u zákazníka** (per-IDfa storage, žádné
-> systémové/zákaznické rozlišení, žádné zámky). Pro v1: pokud M-line nedistribuuje udržované šablony,
-> ruční Import JSON stačí. Gate **R6** (vendor ID ≥ 1000 read-only × zákaznické < 1000, legacy vzor
-> „MlineSestava" + release pipeline) může PC1/PC2 zásadně zmenšit.
-
-| ID | Co | Stav |
-|---|---|---|
-| PC1 | **Systémové/zamčené šablony** (M-line tvoří+distribuuje, zákazník read-only) — dnes jen per-IDfa bez zámku (bývalé B1) | ⬜ |
-| PC2 | **Výchozí sady šablon per agenda** + distribuční pipeline v release (bývalé B2; váže C4 knižní JŘ — dnes jen ruční Import JSON) | ⬜ |
-| PC3 | **Koncept centrální správy šablon** — přehled/správa napříč firmami+agendami pro M-line („co kde je", verzovat). Nejdřív koncept, pak impl | ⬜ návrh |
-| PC4 | **Per-instance přiřazení šablony** — linka → výchozí šablona (`InstanceDefaults` rozšířit; bývalé B4) | ⬜ |
-| PC5 | Kategorie + popis šablony v UI (metadata už drží Author/Created/Modified/Version; bývalé B3) | ⬜ |
-| PC6 | Audit log změn šablon + právo „pouštět designer" ECL (bývalé B5) | ⬜ |
+1. **Model governance** — koncept centrální správy (přehled „co kde je" napříč firmami+agendami,
+   verzování) + rozlišení **systémové vs zákaznické** (R6: vendor read-only × zákaznické). *(PC3+PC1)*
+2. **Distribuce výchozích šablon** — sady per agenda + release pipeline; dnes jen ruční Import JSON.
+   Váže knižní JŘ (výchozí šablona v repu, zapojení chybí). *(PC2)*
+3. **Navazující featury** — per-instance přiřazení šablony (linka → výchozí, `InstanceDefaults`) ·
+   kategorie + popis šablony v UI · audit log změn + právo „pouštět designer" (ECL). *(PC4/PC5/PC6)*
 
 ---
 
