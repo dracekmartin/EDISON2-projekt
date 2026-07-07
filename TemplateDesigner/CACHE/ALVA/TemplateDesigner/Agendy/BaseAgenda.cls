@@ -114,6 +114,15 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
     q 1
 }
 
+/// Vrátí seznam skupin linek pro filtr v Instance Pickeru (vybere se právě jedna → načtou se její
+/// instance přes GetAvailableInstances(SKUPINA_LINEK_ID)). OUT[1] = JSON [{ "value": id, "label": název }].
+/// Default = prázdné pole → agenda nemá koncept skupin (picker filtr skryje). JR agendy override.
+ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
+{
+    s ^||ML("OUT","1") = "[]"
+    q 1
+}
+
 /// Vrátí ukázková (mock) data pro live preview v designeru.
 /// OUT[1] = JSON objekt:
 ///   {

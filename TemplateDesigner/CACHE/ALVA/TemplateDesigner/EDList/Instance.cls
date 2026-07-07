@@ -35,7 +35,8 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
 }
 
 /// Filter (sub-subscript pod "filter"):
-///   IN["filter","agendaCode"] = kód agendy (např. "MHD")
+///   IN["filter","agendaCode"]      = kód agendy (např. "MHD")
+///   IN["filter","SKUPINA_LINEK_ID"] = zvolená skupina linek (volitelné; prázdné = default první)
 /// OUT[1..N] = JSON objekt per řádek
 ClassMethod LoadList(ByRef sys As %String) As %Status
 {
@@ -43,7 +44,8 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         s agendaCode = $g(^||ML("IN","filter","agendaCode"))
-        s instances = ..FetchInstances(.sys, agendaCode)
+        s skupina    = $g(^||ML("IN","filter","SKUPINA_LINEK_ID"))
+        s instances = ..FetchInstances(.sys, agendaCode, skupina)
 
         s list = ##class(ALVA.EDControls.EDList.List).%New()
         s count = instances.%Size()
@@ -65,7 +67,7 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
 
 /// Sdílený fetch — routuje na agenda-specifickou GetAvailableInstances přes $classmethod.
 /// Vrací %DynamicArray objektů {value, display, subtitle}.
-ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String) As %DynamicArray
+ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String, skupina As %String = "") As %DynamicArray
 {
     s arr = ##class(%DynamicArray).%New()
     s cacheClass = ..GetClassForAgenda(agendaCode)
@@ -76,6 +78,7 @@ ClassMethod FetchInstances(ByRef sys As %String, agendaCode As %String) As %Dyna
     s json = ""
     s ^||ML("IN","search") = ""
     s ^||ML("IN","limit") = 200
+    s ^||ML("IN","SKUPINA_LINEK_ID") = skupina
 
     ; Cleanup OUT before nested call (klíče "1".."N")
     s key = ""

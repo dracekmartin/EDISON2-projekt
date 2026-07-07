@@ -9,13 +9,12 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **🔴 Výběr skupiny linek uživatelem (AD + MHD) — DO PRODUKCE** ⬅️ InstancePicker dnes bere jen
-   **jednu** skupinu (default první nezablokovaná — `GetDefaultSkupinaLinekID`). Server už `SKUPINA_LINEK_ID`
-   param přijímá (`GetAvailableInstances`/`GetData`), chybí **UI pro výběr skupiny** — musí být pro
-   zastávkový JŘ (AD) **i** MHD. Bez toho uživatel nevidí linky z ostatních skupin. Přidat výběr skupiny
-   do výběru instancí (dropdown/picker) + propagovat `SKUPINA_LINEK_ID`.
-2. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
-3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+1. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
+2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+
+> **Výběr skupiny linek (AD + MHD) ✅ hotovo** (2026-07-07 → archiv): searchable filtr skupin v Instance
+> Pickeru, „číslo — název", propagace `SKUPINA_LINEK_ID` do EDlistu i GetData. Zbývá jen (follow-up,
+> ne blocker): skupiny pro **knižní JŘ** agendy (Fáze C+D) + persistence zvolené skupiny per šablona.
 
 **Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže

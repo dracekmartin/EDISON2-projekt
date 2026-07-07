@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-07 ✅ — Výběr skupiny linek v Instance Pickeru (AD + MHD)
+
+Uživatel může vybrat konkrétní skupinu linek (dřív jen default první nezablokovaná → neviděl linky
+z ostatních skupin; u MHD default často prázdná testovací). Full stack:
+
+- **Caché `GetAvailableSkupiny`** (nová abstraktní metoda na `BaseAgenda`, vzor `GetAvailableInstances`,
+  JSON `[{value,label}]`): AD ze subscriptů `^JRL(sku)`, label = 1. `~`-piece („Vertikála k 1.1. - ŘÁDNÉ");
+  MHD z `^ALVA.MHD.ENUMS(IdFa,"SkupinyLinek")` (název `Nazev`, mimo `Blocked`); default prázdné → picker filtr skryje.
+- **`EDList.Instance`** — `LoadList`/`FetchInstances` čtou `^||ML("IN","filter","SKUPINA_LINEK_ID")` a předají
+  do `GetAvailableInstances` (stejný filter-dict bod jako `agendaCode`; žádný nový mechanismus).
+- **.NET:** `AgendaSkupina(Value, Label)` + `Display` „číslo — název" (dvojí search client-side);
+  `CacheAgendaProvider.GetAvailableSkupiny`; Instance Picker searchable combobox (filtr přes `ICollectionView`
+  → SelectedItem přežije, žádný Items.Clear gotcha); výběr přenačte EDList s filtrem. `_activeSkupinaId`
+  v `TemplateDesignerViewModel` (session scope, reset při změně agendy), propagace `SKUPINA_LINEK_ID` do
+  GetData (preview i export). Status chip „Skupina: …" v hlavním okně.
+- Review: architektura konzistentní (wire formát R3, BaseAgenda override, EDList filter bod, R4 VM bez WPF);
+  odstraněn probe + nepoužitý `.NET skupinaId` param. Build + 253/253. Ověřeno na KV_DP (AD i MHD).
+- **Follow-up (ne blocker):** skupiny pro knižní JŘ agendy (Fáze C+D); persistence zvolené skupiny per šablona.
+
 ## Parkovaný tech dluh (2026-07-07) — YAGNI / oportunistické, mimo aktivní roadmapu
 
 Vyřazeno z aktivní roadmapy (nic z toho není „udělat teď"). Revisit až se spustí konkrétní trigger:

@@ -86,3 +86,13 @@ public record AgendaInfo(string Code, string Name);
 /// Vrací Caché GetAvailableInstances; Value se předává do GetData(LINKA_ID=Value).
 /// </summary>
 public record AgendaInstance(string Value, string Display, string? Subtitle);
+
+/// <summary>
+/// Skupina linek — organizační filtr nad instancemi (AD: subscript ^JRL; MHD: ENUMS "SkupinyLinek").
+/// Vrací Caché GetAvailableSkupiny; Value se předává jako SKUPINA_LINEK_ID do GetAvailableInstances i GetData.
+/// </summary>
+public record AgendaSkupina(string Value, string Label)
+{
+    /// <summary>Zobrazení ve filtru „číslo — název" — hledání pak najde podle ID i názvu.</summary>
+    public string Display => $"{Value} — {Label}";
+}

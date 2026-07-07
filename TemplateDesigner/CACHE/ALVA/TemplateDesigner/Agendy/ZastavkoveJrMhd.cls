@@ -107,6 +107,33 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 }
 
 /// Vrátí seznam linek pro Instance Picker.
+/// Skupiny linek pro filtr Instance Pickeru — ENUMS "SkupinyLinek" mimo Blocked.
+/// OUT["1"] = JSON pole [{ "value": id, "label": název }].
+ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s arr = ##class(%DynamicArray).%New()
+        s id = ""
+        f {
+            s id = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id))
+            q:id=""
+            i +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Blocked")) continue
+
+            s nazev = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"SkupinyLinek","DTA",id,"Nazev"))
+            s obj = ##class(%DynamicObject).%New()
+            d obj.%Set("value", id)
+            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_id))
+            d arr.%Push(obj)
+        }
+        s ^||ML("OUT","1") = arr.%ToJSON()
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// IN["search"] = volitelný substring filtr (case-insensitive na display = "Cislo — Nazev")
 /// IN["limit"]  = max počet řádků (default 50)
 /// IN["SKUPINA_LINEK_ID"] = ID skupiny linek (volitelné; default = první nezblokovaná);

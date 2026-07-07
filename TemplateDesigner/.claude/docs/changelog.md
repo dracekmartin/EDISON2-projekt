@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-07 — Výběr skupiny linek v Instance Pickeru (AD + MHD)
+
+InstancePicker dřív bral jen **default** skupinu (první nezablokovaná) → uživatel neviděl linky
+z ostatních skupin (u MHD default často prázdná „pokusná"). Nově **searchable filtr skupin**.
+
+- **Caché `GetAvailableSkupiny`** (nová metoda, vzor GetAvailableInstances): AD ze subscriptů `^JRL(sku)`,
+  název = 1. `~`-piece hodnoty (např. „Vertikála k 1.1. - ŘÁDNÉ"); MHD z `ENUMS "SkupinyLinek"` (název
+  `Nazev`, mimo `Blocked`); BaseAgenda default prázdné → agendy bez skupin (GENERAL/faktury) filtr skryjí.
+- **`EDList.Instance`** (`LoadList`/`FetchInstances`) čte `filter","SKUPINA_LINEK_ID"` a předá do
+  GetAvailableInstances — stejný rozšiřovací bod jako stávající `agendaCode` (žádný nový wire mechanismus).
+- **.NET:** `AgendaSkupina(Value, Label)` POCO + `Display` = „číslo — název" (search najde podle ID i názvu,
+  client-side); `CacheAgendaProvider.GetAvailableSkupiny`; Instance Picker dostal **searchable combobox**
+  (filtr přes `ICollectionView`, ne Items.Clear → SelectedItem přežije) → výběr přenačte EDList s filtrem.
+- **Propagace zvolené skupiny do GetData** (preview i export/tisk) — u AD je linka klíčovaná (skupina, linka),
+  jinak by se fetchla z jiné skupiny. Status chip v hlavním okně „Skupina: číslo — název".
+- **Vědomě odloženo (ne blocker):** skupiny pro knižní JŘ agendy (Fáze C+D); persistence zvolené skupiny
+  per šablona (dnes session scope — `TryLoadInstanceDefaults` obnovuje z default skupiny).
+- Build + 253/253 testů. Ověřeno na KV_DP (AD i MHD na jedné firmě).
+
 ## 2026-07-07 — Audit H3: ViewModel bez WPF (R4) — dialogy přes `IDesignerDialogService`
 
 Poslední otevřený vysoko-prioritní audit bod. `TemplateDesignerViewModel` přímo instancoval WPF okna

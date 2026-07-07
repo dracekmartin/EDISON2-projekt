@@ -110,6 +110,33 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
 
 /// Vrátí seznam linek pro Instance Picker (umožní proklikávání stránek v preview).
 /// IN["search"] = substring filtr (case-insensitive), IN["limit"] = max (default 50),
+/// Skupiny linek pro filtr Instance Pickeru — první subscript ^JRL(sku). Název skupiny je 1. `~`-piece
+/// hodnoty ^JRL(sku) (např. "Vertikála k 1.1. - ŘÁDNÉ~01.01.2024~..."). OUT["1"] = [{ value, label }].
+ClassMethod GetAvailableSkupiny(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+
+        s arr = ##class(%DynamicArray).%New()
+        s sku = ""
+        f {
+            s sku = $o(^[dataDB]JRL(sku))
+            q:sku=""
+            i 'sku continue                  // přeskoč nenumerický / konfig uzel
+
+            s nazev = $p($g(^[dataDB]JRL(sku)), "~", 1)
+            s obj = ##class(%DynamicObject).%New()
+            d obj.%Set("value", sku)
+            d obj.%Set("label", $s(nazev'="":nazev, 1:"Skupina "_sku))
+            d arr.%Push(obj)
+        }
+        s ^||ML("OUT","1") = arr.%ToJSON()
+    }
+    catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// IN["SKUPINA_LINEK_ID"] = skupina linek (default první v ^JRL).
 /// OUT["1"] = JSON pole { "value": lin, "display": "číslo — název", "subtitle": "Platnost ..." }.
 ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status

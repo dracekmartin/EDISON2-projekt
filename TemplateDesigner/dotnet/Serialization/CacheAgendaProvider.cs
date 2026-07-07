@@ -303,6 +303,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
             var inVar = new CVar();
             inVar["search"] = new CVar(search ?? "");
             inVar["limit"]  = new CVar(limit.ToString());
+            // Pozn.: filtr skupiny linek (SKUPINA_LINEK_ID) teče přes EDList dispatch (Instance.LoadList),
+            // ne přes tuto metodu — Instance Picker načítá řádky EDListem. Tady zůstává default skupina.
 
             CVar result = _mlRest.Query(cacheClass, "GetAvailableInstances", inVar);
             if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
@@ -332,6 +334,49 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         catch (Exception ex)
         {
             NotifyReadError("načtení instancí", ex.Message);
+            return [];
+        }
+    }
+
+    /// <summary>
+    /// Volá GetAvailableSkupiny na Caché třídě a vrátí seznam skupin linek pro filtr Instance Pickeru.
+    /// Prázdný seznam = agenda nemá koncept skupin (GENERAL, faktury) → picker filtr skryje.
+    /// </summary>
+    public IReadOnlyList<AgendaSkupina> GetAvailableSkupiny(string agendaCode)
+    {
+        if (string.IsNullOrEmpty(agendaCode)) return [];
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
+        if (string.IsNullOrWhiteSpace(cacheClass)) return [];
+
+        try
+        {
+            CVar result = _mlRest.Query(cacheClass, "GetAvailableSkupiny", new CVar());
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+            {
+                NotifyReadError("načtení skupin linek", _mlRest.RestStatus.Message);
+                return [];
+            }
+
+            string? json = result["1"]?.Value?.ToString();
+            if (string.IsNullOrEmpty(json)) return [];
+
+            var node = JsonNode.Parse(json);
+            if (node is not JsonArray arr) return [];
+
+            var list = new List<AgendaSkupina>(arr.Count);
+            foreach (var item in arr)
+            {
+                if (item is null) continue;
+                var value = item["value"]?.GetValue<string>();
+                var label = item["label"]?.GetValue<string>();
+                if (string.IsNullOrWhiteSpace(value)) continue;
+                list.Add(new AgendaSkupina(value, string.IsNullOrWhiteSpace(label) ? value : label));
+            }
+            return list;
+        }
+        catch (Exception ex)
+        {
+            NotifyReadError("načtení skupin linek", ex.Message);
             return [];
         }
     }

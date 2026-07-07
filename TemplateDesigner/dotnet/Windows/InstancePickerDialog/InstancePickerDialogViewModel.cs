@@ -16,6 +16,18 @@ public class InstancePickerDialogViewModel : EDViewModel
     /// <summary>Po OK obsahuje finální seznam vybraných instancí.</summary>
     public IReadOnlyList<AgendaInstance> SelectedInstances { get; private set; } = [];
 
+    /// <summary>Skupiny linek pro filtr (searchable combobox). Prázdné = agenda nemá skupiny → filtr skrytý.</summary>
+    public IReadOnlyList<AgendaSkupina> Skupiny { get; }
+
+    public bool HasSkupiny => Skupiny.Count > 0;
+
+    /// <summary>Aktuálně zvolená skupina (SKUPINA_LINEK_ID). Nastavuje code-behind při výběru v comboboxu;
+    /// po OK ji čte hostitelský VM a propaguje do GetData. Null = default (server první nezablokovaná).</summary>
+    public string? SelectedSkupinaId { get; set; }
+
+    /// <summary>Popisek zvolené skupiny (pro status v hlavním okně). Nastavuje code-behind.</summary>
+    public string? SelectedSkupinaLabel { get; set; }
+
     private string _statusText = "";
     public string StatusText
     {
@@ -35,10 +47,14 @@ public class InstancePickerDialogViewModel : EDViewModel
 
     public InstancePickerDialogViewModel(
         string agendaCode,
-        IReadOnlyList<AgendaInstance> initiallySelected)
+        IReadOnlyList<AgendaInstance> initiallySelected,
+        IReadOnlyList<AgendaSkupina>? skupiny = null,
+        string? initialSkupinaId = null)
     {
         _agendaCode = agendaCode;
         _initiallySelectedValues = initiallySelected.Select(i => i.Value).ToHashSet(StringComparer.Ordinal);
+        Skupiny = skupiny ?? [];
+        SelectedSkupinaId = initialSkupinaId;
     }
 
     public string AgendaCode => _agendaCode;

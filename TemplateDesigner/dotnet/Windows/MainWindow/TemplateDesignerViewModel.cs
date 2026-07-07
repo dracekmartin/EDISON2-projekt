@@ -68,6 +68,11 @@ public class TemplateDesignerViewModel : EDViewModel
     private List<AgendaInstance> _activeInstances = [];
     public IReadOnlyList<AgendaInstance> ActiveInstances => _activeInstances;
 
+    /// <summary>Zvolená skupina linek (SKUPINA_LINEK_ID) — filtr instancí. Null = server default
+    /// (první nezablokovaná). Session scope (mimo Template), reset při změně agendy. Propaguje se
+    /// do pickeru i do GetData (aby se linka fetchla ze správné skupiny).</summary>
+    private string? _activeSkupinaId;
+
     private int _activeInstanceIndex;
     public int ActiveInstanceIndex
     {
@@ -102,10 +107,23 @@ public class TemplateDesignerViewModel : EDViewModel
 
     public bool HasMultipleActiveInstances => _activeInstances.Count > 1;
 
+    /// <summary>Popisek zvolené skupiny linek pro status (prázdné = default/žádná skupina).</summary>
+    private string? _activeSkupinaLabel;
+
+    /// <summary>Status chip skupiny — viditelný jen když je skupina zvolená.</summary>
+    public string ActiveSkupinaText => string.IsNullOrEmpty(_activeSkupinaLabel)
+        ? "" : $"Skupina: {_activeSkupinaLabel}";
+
+    public bool HasActiveSkupina => !string.IsNullOrEmpty(_activeSkupinaLabel);
+
     /// <summary>Vyčistí aktivní instance — volá se při změně agendy / načtení šablony s jinou agendou.</summary>
     private void ClearActiveInstances()
     {
         _activeInstances = [];
+        _activeSkupinaId = null;
+        _activeSkupinaLabel = null;
+        OnPropertyChanged(nameof(ActiveSkupinaText));
+        OnPropertyChanged(nameof(HasActiveSkupina));
         _activeInstanceIndex = 0;
         // reloadData:true záměrně i když instance byly prázdné: vyčistí i _realPreviewData
         // (vázaná na starou instanci/agendu — jinak se stará data renderují přes novou
@@ -157,6 +175,9 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 [paramName] = instance.Value
             };
+            // Skupina linek musí do GetData — u AD je linka klíčovaná (skupina, linka), jinak by se
+            // fetchla z jiné/default skupiny než z které byla vybraná.
+            if (!string.IsNullOrEmpty(_activeSkupinaId)) getDataParams["SKUPINA_LINEK_ID"] = _activeSkupinaId;
             var pages = await Task.Run(() => CacheProvider.GetData(agendaCode, getDataParams));
 
             // Mezitím se přepnula agenda/instance (nebo se vyčistilo) → tento výsledek je
@@ -814,12 +835,18 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances);
+        // Skupiny linek pro filtr v pickeru (prázdné = agenda bez skupin → filtr skrytý). Rychlý lookup.
+        var skupiny = CacheProvider.GetAvailableSkupiny(agendaCode);
+        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances, skupiny, _activeSkupinaId);
         if (Dialogs?.ShowInstancePicker(vm) != true) return;
 
+        _activeSkupinaId = vm.SelectedSkupinaId;
+        _activeSkupinaLabel = vm.SelectedSkupinaLabel;
         _activeInstances = vm.SelectedInstances.ToList();
         _activeInstanceIndex = 0;
         OnActiveInstancesChanged(reloadData: true);
+        OnPropertyChanged(nameof(ActiveSkupinaText));
+        OnPropertyChanged(nameof(HasActiveSkupina));
 
         // Persist výběr pro tuto šablonu — při příštím otevření se předvyplní.
         if (Preferences is not null)
@@ -2032,17 +2059,18 @@ public class TemplateDesignerViewModel : EDViewModel
         var culture         = GetTemplateCulture();
         var agendaCode      = State.CurrentTemplate.AgendaCode;
         var instances       = _activeInstances.ToList();
+        var skupinaId       = _activeSkupinaId;
         var realPreviewData = _realPreviewData;   // reference swap-only pole — lokální kopie reference stačí
         var suppression     = CurrentNoteSuppression();
         var hideAgg         = CurrentHideAggBezbarier();
         var hideNaZnameni   = CurrentHideNaZnameniLegend();
 
         return await Task.Run(() => BuildAllPreviewDataPagesCore(
-            culture, agendaCode, instances, realPreviewData, suppression, hideAgg, hideNaZnameni, progress));
+            culture, agendaCode, instances, skupinaId, realPreviewData, suppression, hideAgg, hideNaZnameni, progress));
     }
 
     private IReadOnlyList<DataContext> BuildAllPreviewDataPagesCore(
-        CultureInfo culture, string? agendaCode, List<AgendaInstance> instances,
+        CultureInfo culture, string? agendaCode, List<AgendaInstance> instances, string? skupinaId,
         IReadOnlyList<DataContext?>? realPreviewData,
         NoteRangeSuppression suppression, bool hideAgg, bool hideNaZnameni,
         IProgress<string>? progress)
@@ -2057,9 +2085,9 @@ public class TemplateDesignerViewModel : EDViewModel
             {
                 var inst = instances[i];
                 progress?.Report($"Načítám data {i + 1}/{instances.Count}: {inst.Display}…");
-                var pages = CacheProvider.GetData(
-                    agendaCode,
-                    new Dictionary<string, object?> { [paramName] = inst.Value });
+                var getParams = new Dictionary<string, object?> { [paramName] = inst.Value };
+                if (!string.IsNullOrEmpty(skupinaId)) getParams["SKUPINA_LINEK_ID"] = skupinaId;
+                var pages = CacheProvider.GetData(agendaCode, getParams);
                 if (pages is null) continue;
                 foreach (var p in pages) all.Add(p.WithCulture(culture));
             }

@@ -779,6 +779,12 @@
                                     Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="4,0,0,0"
                                     ToolTip="Další instance"/>
+                            <!-- Zvolená skupina linek (filtr) — viditelná jen když je zvolená -->
+                            <TextBlock Text="{Binding ActiveSkupinaText}"
+                                       Visibility="{Binding HasActiveSkupina, Converter={StaticResource BoolToVis}}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                       Margin="12,0,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
 
