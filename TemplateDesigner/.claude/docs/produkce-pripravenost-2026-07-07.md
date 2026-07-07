@@ -78,11 +78,14 @@ případech neproveditelná) migrace.
   nesly odlišitelnou verzi → příští breaking změna má čistý výchozí bod pro migraci;
   (3) zdokumentovat, že flat→style je nemigrovatelná (akceptované riziko).
 
-### A5. Deserializace tiše polyká neznámá pole
+### A5. Deserializace tiše polyká neznámá pole — ❎ ZAVŘENO 2026-07-07 jako YAGNI
 - `JsonSerializerOptions` (`TemplateSerializer.cs:154-168`) nemá `UnmappedMemberHandling` →
   neznámé/odstraněné property zmizí bez chyby (silent corruption).
-- **Náprava (levná):** aspoň **logovat** neznámá pole při loadu (přes `OnDeserialized` / custom
-  handling). Změní tichou ztrátu na detekovatelný signál. Nemusí failovat, stačí zaznamenat.
+- **Rozhodnutí: neřešit teď.** Scénář je z větší části pokrytý jinde: novější verze → hlídá výjimka
+  migrátoru (forward-compat guard, ke koreně se nedostane); budoucí breaking změny → mají migrace;
+  drift při vývoji → chytají round-trip testy + zamykací testy (PA1/PA3). Zbývá jen ručně editovaný
+  JSON (okrajové). Cena (`[JsonExtensionData]` = trvalá změna 3 model tříd + kód + test) > přínos;
+  jde proti „čistému produkčnímu základu". Přídavek je ~20 min kdykoli, když vznikne reálná potřeba.
 
 > **Poznámka k extensibility bagu:** `TemplateElement.CustomProperties` a `Section.CustomProperties`
 > existují (`TemplateElement.cs:51`, `Section.cs:73`), ale fakticky se nepoužívají — nové featury

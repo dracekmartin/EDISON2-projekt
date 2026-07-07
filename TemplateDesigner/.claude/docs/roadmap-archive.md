@@ -662,3 +662,39 @@ Návrhové plátno už není omezené na jednu A4. Commity: `a88763a` (Slice 1),
   Testy 214/214.
 
 **Navazuje (aktivní track):** R2 (svislé stránkování řádků — zpřesní zlomy na celé řádky) → C3 (vodorovný Strih).
+
+---
+
+## Session 2026-07-07 ✅ — Pre-produkční zámek struktury šablony (blok PA) + úklid roadmapy
+
+Cíl: připravit v1 do produkce tak, aby se **nemusela měnit struktura šablony** (breaking JSON) v příští
+verzi. Grounded analýza (4 průzkumy kódu) → [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
+Blok PA vyřešen, vše behavior-preserving (uživatel nepozná, jen zamčená struktura). Commity `23e6a90`
+(analýza+checklist), `6dadb66`, `484881c`, `f1e01e9`, `cf43a56`. Testy 218 → 229.
+
+- **PA1 — klíče sloupců → konstanty.** `StopColumn.Key` (`"Zone"`/`"StopName"`/`"Trip"`…) byly
+  magic-string literály roztroušené ve switchích, ale persistují se do JSON → přejmenování by tiše
+  rozbilo uložené šablony. Centralizováno do `Models/ColumnKeys.cs` (vzor `ElementTypes`) +
+  `ColumnKeysTests` zamyká wire hodnoty. Klíč = interní směrovací identifikátor renderu (C#), ne
+  datové pole (kontrakt Caché) → proto C#.
+- **PA2 — mrtvý `ColorRules`.** Domnělé „dva modely" zvýraznění řádku: `List<ColorRule>` na
+  DepartureGrid byl mrtvý kód (nikde nekonzumován) → odstraněn. Živý zůstává 1-pravidlový
+  `RowHighlightExpression`, který strukturu nezamyká (multi-pravidlo lze přidat aditivně jako budoucí
+  `RowColorRules`). `ColorRule` třída ponechána jako rezervovaný budoucí model.
+- **PA3 — Fixed `TableElement` zmražen.** Šel z UI vytvořit jen zdánlivě (paleta/menu = dynamická),
+  ale továrna měla mrtvou větev → odebrána; nově ho nic nevyrobí. Tripwire test (`ElementFactoryTests`)
+  + docstring. Zachováno: třída, `JsonDerivedType` (legacy read), `TableEditorDialog` (legacy edit) →
+  staré šablony se otevřou, Fixed tabulka připravená k oživení (pár řádků zpět).
+- **PA4 — verzování dokumentováno.** Nález: migrátor je hotový **i otestovaný** (9 testů) — obava
+  „pipeline neběžela" neopodstatněná. „Bump na 1.1.0 teď" **zamítnuto** (proti konvenci *bump jen pro
+  breaking change*; navíc falešné WasMigrated). Zapsáno: historická flat→style změna jako
+  nemigrovatelná + rozhodnutí NEbumpovat (`template-schema-versions.md`). Kosmetika „1.0"/„1.0.0"
+  funkčně irelevantní, neřešena.
+- **PA5 — logování neznámých polí = YAGNI (zavřeno).** Zvažováno `[JsonExtensionData]` + `Debug.WriteLine`.
+  Zamítnuto jako okrajové: forward-compat už hlídá výjimka migrátoru, budoucí breaking změny mají
+  migrace, drift chytají round-trip testy. Cena (trvalá změna 3 model tříd) > přínos. Přídavek je
+  ~20 min kdykoli, když vznikne reálná potřeba.
+
+**Úklid roadmapy 2026-07-07:** C3 (2D bin-packing) přesunut z layout tracku do Fáze C+D. Dvě
+překrývající se produkční sekce sloučeny do jedné (PB provoz / PC governance). Sekce R1–R7 (dořešena
+2026-07-04/05) a produkční done-items (A1+A2 launch, D1 embedded fallback, D2/E1/F1/F2/F5) přesunuty sem.
