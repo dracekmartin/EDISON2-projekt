@@ -82,5 +82,9 @@
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/snap.png"/>
     <BitmapImage x:Key="EDIcons.Eye"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/eye.png"/>
+    <BitmapImage x:Key="EDIcons.PageProperties"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/page_properties.png"/>
+    <BitmapImage x:Key="EDIcons.Document"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/document.png"/>
 
 </ResourceDictionary>

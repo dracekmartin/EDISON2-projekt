@@ -262,6 +262,17 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
+                <!-- ── Stránka (nastavení dokumentu) ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                        <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="Vlastnosti stránky (Ctrl+Shift+P)" Click="MenuPageProps_Click">
+                            <Image Source="{StaticResource EDIcons.Document}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="Stránka" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
                 <!-- ── 3. Sekce ── (elementy se přetahují z palety, ne přes seznam) -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">

@@ -62,6 +62,8 @@
     <Resource Include="EDIcons\png\snap.png"/>
     <Resource Include="EDIcons\png\eye.png"/>
     <Resource Include="EDIcons\png\help.png"/>
+    <Resource Include="EDIcons\png\page_properties.png"/>
+    <Resource Include="EDIcons\png\document.png"/>
   </ItemGroup>
 
 </Project>
