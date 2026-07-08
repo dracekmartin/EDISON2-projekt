@@ -221,35 +221,16 @@ public class TableElement : TemplateElement
     public ResolvedTextStyle ResolveColumnDataParent() =>
         (DataStyle ?? new TextStyle()).Resolve(TableDataParent);
 
-    /// <summary>Vyřeší styl záhlaví tabulky (element → defaults).</summary>
-    private ResolvedTextStyle ResolveTableHeaderStyle() => ResolveColumnHeaderParent();
+    // Kaskáda column → element → baked delegována do sdíleného jádra (TableLayout.ResolveCascade) —
+    // stejně jako DynamicTable/StopList. Legacy col.Alignment = HAlign fallback jen když ho
+    // nedefinuje sloupec ani element.
+    private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col) =>
+        TableLayout.ResolveCascade(col.HeaderStyle, ResolveColumnHeaderParent(), col.Alignment,
+            elementDefinesHAlign: HeaderStyle?.HAlign is not null);
 
-    /// <summary>Vyřeší styl datových buněk tabulky (element → defaults).</summary>
-    private ResolvedTextStyle ResolveTableDataStyle() => ResolveColumnDataParent();
-
-    /// <summary>Vyřeší styl záhlaví sloupce. Legacy col.Alignment je fallback pokud HAlign není v kaskádě.</summary>
-    private ResolvedTextStyle ResolveColumnHeaderStyle(TableColumn col)
-    {
-        var elementResolved = ResolveTableHeaderStyle();
-        var resolved = col.HeaderStyle is { } h ? h.Resolve(elementResolved) : elementResolved;
-
-        if (col.HeaderStyle?.HAlign is null && HeaderStyle?.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-
-        return resolved;
-    }
-
-    /// <summary>Vyřeší styl datové buňky sloupce. Legacy col.Alignment fallback stejně jako pro header.</summary>
-    private ResolvedTextStyle ResolveColumnDataStyle(TableColumn col)
-    {
-        var elementResolved = ResolveTableDataStyle();
-        var resolved = col.DataStyle is { } d ? d.Resolve(elementResolved) : elementResolved;
-
-        if (col.DataStyle?.HAlign is null && DataStyle?.HAlign is null)
-            resolved = resolved with { HAlign = col.Alignment };
-
-        return resolved;
-    }
+    private ResolvedTextStyle ResolveColumnDataStyle(TableColumn col) =>
+        TableLayout.ResolveCascade(col.DataStyle, ResolveColumnDataParent(), col.Alignment,
+            elementDefinesHAlign: DataStyle?.HAlign is not null);
 
     // ─── Render ──────────────────────────────────────────────────────
 
@@ -274,9 +255,11 @@ public class TableElement : TemplateElement
             return;
         }
 
-        // Šířky sloupců v mm — CellRenderer pracuje v mm, přepočítá si sám na px
-        float[] colWidths = visibleColumns.Select(c =>
-            c.WidthMode == ColumnWidthMode.Percent ? Width * c.Width / 100f : c.Width).ToArray();
+        // Šířky sloupců v mm přes sdílené jádro (TableLayout.ResolveWidths) — sjednoceno s
+        // DynamicTable/StopList. Width <= 0 = „auto" (rovnoměrné rozdělení zbytku), jinak pevná mm/%.
+        float[] colWidths = TableLayout.ResolveWidths(
+            visibleColumns.Select(c => new TableLayout.ColWidth(c.Width <= 0 ? null : c.Width, c.WidthMode)).ToList(),
+            Width);
 
         // Pre-resolve styly (kaskáda je deterministická)
         var headerStyles = visibleColumns.Select(ResolveColumnHeaderStyle).ToArray();
@@ -318,7 +301,7 @@ public class TableElement : TemplateElement
         ResolvedTextStyle[] headerStyles, float startY, SKPaint borderPaint, SKPaint sepPaint)
     {
         // Full-width pozadí z table-level stylu — pokryje případný přesah nebo mezery
-        var tableHeaderStyle = ResolveTableHeaderStyle();
+        var tableHeaderStyle = ResolveColumnHeaderParent();
         using var headerBgPaint = tableHeaderStyle.CreateBgPaint();
         if (headerBgPaint is not null)
         {

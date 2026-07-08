@@ -42,8 +42,12 @@
   `ElementKind→ElementTypes[]` (jediné UI mapování), VM `CurrentInstanceParamName`/`CurrentAgendaElementKind`;
   menu/paleta/PrintDialog čtou z registru. **Nová agenda existujícího druhu = 0 změn v UI** (jen Caché class
   s params). Build 0 chyb / 256 testů. (Deploy: Caché + C# spolu; hook už dev zkompiloval.)
-- **B3** — `TableElement` nemigrovaný na sdílené `TableLayout` jádro: duplikuje `ResolveCascade`
-  (`TableElement.cs:231-252`) + šířky inline (`:278-279`) místo `TableLayout.ResolveWidths`. Jediný outlier.
+- ✅ **B3 — `TableElement` → sdílené `TableLayout` jádro** — **HOTOVO 2026-07-08**. Header/Data kaskáda
+  přes `TableLayout.ResolveCascade` + šířky přes `TableLayout.ResolveWidths` (`Width<=0`=auto, jako
+  DynamicTable/StopList/LineTable). Odstraněny duplicitní `ResolveTableHeaderStyle/DataStyle`. Summary zóna
+  ponechána (čistý `cell.Style.Resolve(SummaryParent)`, ne duplikace cascade helperu). **Všechny 4 řádkové
+  tabulkové elementy teď sdílí low-level jádro (kaskáda + šířky)** — liší se jen daty + nádstavbami. Build
+  0 chyb / 256 testů (round-trip potvrdil behavior-preserving; `Width<=0`→auto sjednocuje edge s ostatními).
 
 **P-C — Hygiena / drift.** ✅ Vyřešeno 2026-07-07: jasné body hotové (C-a R4 dva VM, C-c sync-guard
 komentář, C-d dangling ref, C-f docs → changelog); C-e (`agendaCode "MHD"` v dev artefaktech) = **won't-do**
