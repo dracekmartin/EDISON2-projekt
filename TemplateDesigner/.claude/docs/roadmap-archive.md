@@ -2,6 +2,30 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-08 ✅ — Audit stavu v1 (scan 2026-07-07) uzavřen — konsolidace jádra (P-A..P-D)
+
+Scan stavu v1 (produkční pohled na zastávkové AD+MHD) — konsolidace čistého jádra před růstem plochy
+(další agendy). Žádná položka nebyla tvrdý blocker. Celý track vyřešen/rozhodnut:
+
+- **P-A (datová parita) + C1 (legacy 1:1)** — hotovo 2026-07-07 (MHD gold + legacy parita testy; viz
+  sesterský archivní záznam / changelog).
+- **P-B — zmrazení čistého jádra ✅** (4 commity, 2026-07-08, každý build + 256 testů):
+  - **B0** (`a559689`) — drift test EDInputForm `*Edit.cls` ↔ C# property: doplněny páry DynamicTable +
+    LineTable (12 párů) + completeness pojistka (nový element neproklouzne bez testu).
+  - **B1** (`1177ccd`) — split `ScheduleElementBase` na generickou vrstvu (styly/kaskáda/typeface/render,
+    dědí všechny) + `StopScheduleElementBase` zastávkový mixin (DataSource klíče, cache, `Build*`); LineTable
+    dědí jen generickou + vlastní klíče → netahá zastávkový balast.
+  - **B2** (`d8c3ddb`) — agenda capability metadata (`BaseAgenda` params `InstanceParamName`+`ElementKind` →
+    `AgendyRegistr` JSON → `AgendaRegistryEntry` → `AgendaCapabilities` mapa) místo `StartsWith` větvení;
+    nová agenda existujícího druhu = 0 změn v UI. (Deploy: Caché + C# spolu.)
+  - **B3** (`164a04f`) — `TableElement` → sdílené `TableLayout` jádro (kaskáda + šířky); všechny 4 řádkové
+    tabulkové elementy sdílí low-level jádro, liší se jen daty + nádstavbami.
+- **P-C — hygiena/drift ✅** — C-a/C-c/C-d/C-f hotové (R4 dva VM, sync-guard komentář, dangling ref, docs);
+  C-e (dev artefakt `agendaCode "MHD"`) won't-do; C-b drift test → přesunut do B0.
+- **P-D — provozní (na poptávku) → rehomed** do „🚀 Produkční / provozní" v aktivní roadmapě: governance
+  šablon + kurátorovaná výchozí šablona (governance Distribuce), headless tisk (A3), merge PDF + e-mail (A4),
+  **fyzický tisk na tiskárnu** (nově doplněn do Provozní featury). Nic se archivací neztratilo.
+
 ## Datová parita zastávkového JŘ — P-A + C1 uzavřeno (2026-07-07)
 
 Z auditu stavu v1 (P-A) + spike C1. Detail → changelog. `ALVA.TemplateDesigner.Tests` 33/33.

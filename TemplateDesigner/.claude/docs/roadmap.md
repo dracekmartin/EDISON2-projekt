@@ -14,50 +14,12 @@
 
 ---
 
-### 🔎 Audit stavu v1 (scan 2026-07-07) — konsolidace jádra před růstem plochy
+### 📥 Backlog / budoucí velké tracky
 
-> Scan stavu s produkčním pohledem (zastávkové AD+MHD). **Žádná položka není tvrdý blocker vydání** —
-> jde o seřazený backlog: zmrazení čistého jádra, než přijdou další agendy. Řešit dle priority, ne najednou.
-> Opravy zastaralých bodů: testy `TemplateDesigner.Tests` **existují** (v pre-push), EDISON launch je **hotový**.
-> **P-A (datová parita) + C1 (legacy 1:1) hotovo 2026-07-07 → archiv/changelog.**
+> Audit stavu v1 (scan 2026-07-07) — P-A/P-B/P-C hotové, P-D rehomed do produkční sekce →
+> **detail v [`roadmap-archive.md`](roadmap-archive.md)** (Session 2026-07-08). Konsolidace jádra
+> hotová, plocha může růst.
 
-**P-B — Zmrazení čistého jádra (udělat PŘED Fází C/D/F — jinak každá agenda dál rozmazává jádro):**
-- ✅ **B0 — drift test EDInputForm `*Edit.cls` ↔ C# property** — **HOTOVO 2026-07-08**. Jádro už
-  existovalo (`EDInputFormSchemaDriftTests.cs`, offline: parsuje `.cls` z repa + reflexí ověří každý field
-  key na cílovém C# typu — lepší než „proti Caché", běží v pre-push bez serveru). Doplněno: (1) chybějící
-  páry `DynamicTableElement` + `LineTableElement` do SchemaMap (12 párů, vše resolvuje → žádný drift),
-  (2) **completeness pojistka** `VsechnyEditClsFormy_JsouPokryteNeboVyjimka` — nový element s `*Edit.cls`
-  neproklouzne bez drift testu (musí být v SchemaMap nebo ve `excluded`). 256/256 testů zelené.
-- ✅ **B1 — split `ScheduleElementBase`** — **HOTOVO 2026-07-08**. Dvě vrstvy: `ScheduleElementBase`
-  (generická — styly + kaskáda, typeface cache, `ComputeFontScale`/overflow, render helpery, `ApplyScale`,
-  descriptory, `ParseInt/Bool`) dědí všechny 4 elementy; nová `StopScheduleElementBase` (zastávkový mixin —
-  4 DataSource klíče, typované cache, `Build{Zastavky,SkupinyDnu,OdjezdyBySkupina,Poznamky}`,
-  `ParseTypPoznamky/Anotace`) dědí jen StopList/DepartureGrid/NotesLegend. `LineTableElement` dědí jen
-  generickou vrstvu + vlastní DataSource klíče (Zastavky/Spoje/SkupinyDnu) → **netahá zastávkový balast**.
-  JSON kompatibilní (property jen přesunuty). 256/256 testů (vč. drift B0 + round-trip).
-- ✅ **B2 — agenda capability metadata** — **HOTOVO 2026-07-08**. Zrušeno větvení `StartsWith("ZASTAVKOVY"/
-  "KNIZNI")` + hardcoded `LINKA_ID` (vč. latentní nekonzistence dialog vs VM). Caché: `BaseAgenda` +2 params
-  `InstanceParamName` + `ElementKind`, override v JŘ agendách (STOP/LINE + LINKA_ID); `AgendyRegistr.ListAgendy`
-  je vrací v JSON. C#: `AgendaRegistryEntry` +2 pole (aditivní, defaulty), `AgendaCapabilities` mapa
-  `ElementKind→ElementTypes[]` (jediné UI mapování), VM `CurrentInstanceParamName`/`CurrentAgendaElementKind`;
-  menu/paleta/PrintDialog čtou z registru. **Nová agenda existujícího druhu = 0 změn v UI** (jen Caché class
-  s params). Build 0 chyb / 256 testů. (Deploy: Caché + C# spolu; hook už dev zkompiloval.)
-- ✅ **B3 — `TableElement` → sdílené `TableLayout` jádro** — **HOTOVO 2026-07-08**. Header/Data kaskáda
-  přes `TableLayout.ResolveCascade` + šířky přes `TableLayout.ResolveWidths` (`Width<=0`=auto, jako
-  DynamicTable/StopList/LineTable). Odstraněny duplicitní `ResolveTableHeaderStyle/DataStyle`. Summary zóna
-  ponechána (čistý `cell.Style.Resolve(SummaryParent)`, ne duplikace cascade helperu). **Všechny 4 řádkové
-  tabulkové elementy teď sdílí low-level jádro (kaskáda + šířky)** — liší se jen daty + nádstavbami. Build
-  0 chyb / 256 testů (round-trip potvrdil behavior-preserving; `Width<=0`→auto sjednocuje edge s ostatními).
-
-**P-C — Hygiena / drift.** ✅ Vyřešeno 2026-07-07: jasné body hotové (C-a R4 dva VM, C-c sync-guard
-komentář, C-d dangling ref, C-f docs → changelog); C-e (`agendaCode "MHD"` v dev artefaktech) = **won't-do**
-(bezcenná dev data); C-b (drift test) **přesunut do P-B jako B0** (pojistka během refaktorů jádra).
-
-**P-D — Provozní (na poptávku, fázově — nic z toho blocker v1):** governance šablon + kurátorovaná výchozí
-zastávková šablona (dnes jen dev artefakty `kv.json`/`kv_ad_test.json`) → viz produkční sekce · headless
-tisk (A3) · merge PDF do 1 souboru + e-mail · fyzický tisk na tiskárnu.
-
-**Backlog / budoucí velké tracky:**
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI),
   rozšíření conditional formatting (seznam pravidel) — viz sekce Fáze B.
@@ -83,6 +45,7 @@ při scope té fáze, ne teď.
 - **Headless tisk (A3)** — „vytiskni linku X" z modulu přes **PrintEngine fasádu** (šablona+data→PDF
   bez stavu editoru; T2 udělalo půlku render-na-snapshotu). Dnes tisk jen v designeru. Gate R4/R7.
 - **Hromadný výstup + e-mail (A4)** — sloučení hromadného exportu do 1 PDF (`MergePDFFiles`) + odeslání e-mailem.
+- **Fyzický tisk na tiskárnu** — přímý výstup na tiskárnu (dnes jen PDF/PNG export). Na poptávku.
 - **Logging/telemetrie pro podporu (F3)**.
 - **CI/CD linting šablon (F4)** — Caché job validující šablony před deployem (nice-to-have).
 
@@ -99,7 +62,8 @@ při scope té fáze, ne teď.
 2. **Zámek MLINE (server-side)** — `SaveTemplate`/`DeleteTemplate` odmítne zápis do `MLINE` mimo
    distribuční cestu; Ctrl+S na otevřené MLINE šabloně → vynutí „Uložit jako" (nová kopie pod firmou).
 3. **Distribuce** — export/import MLINE šablon jako JSON v release (ne GOF). Váže výchozí šablony
-   per agenda (knižní JŘ šablona v repu, zapojení chybí).
+   per agenda: knižní JŘ šablona v repu (zapojení chybí); **zastávková zatím jen dev artefakty
+   (`kv.json`/`kv_ad_test.json`) → chce kurátorovanou výchozí šablonu**.
 4. **Navazující featury** — per-instance přiřazení (linka → výchozí, `InstanceDefaults`) · kategorie +
    popis v UI · audit log změn + ECL právo „pouštět designer".
 
