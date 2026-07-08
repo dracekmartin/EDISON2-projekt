@@ -748,7 +748,6 @@ public class StopListElement : StopScheduleElementBase
     {
         var clone = new StopListElement
         {
-            DataRowHeight           = DataRowHeight,
             ShowRowSeparators       = ShowRowSeparators,
             Columns                 = Columns.Select(c => c.Clone()).ToList(),
             ShowDirectionArrow      = ShowDirectionArrow,

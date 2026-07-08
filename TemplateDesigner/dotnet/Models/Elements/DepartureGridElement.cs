@@ -1461,7 +1461,6 @@ public class DepartureGridElement : StopScheduleElementBase
             AnotaceInterGap            = AnotaceInterGap,
             OdjezdGap                  = OdjezdGap,
             GroupSeparatorWidth        = GroupSeparatorWidth,
-            DataRowHeight              = DataRowHeight,
             MinuteBold                 = MinuteBold,
             AlternatingRowColor        = AlternatingRowColor,
             TimeAxisMode               = TimeAxisMode,

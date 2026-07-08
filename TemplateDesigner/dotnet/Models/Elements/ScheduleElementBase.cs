@@ -315,9 +315,10 @@ public abstract class ScheduleElementBase : TemplateElement
     /// kopíruje <c>StopScheduleElementBase.CopyStopScheduleProperties</c>.</summary>
     protected void CopyScheduleBaseProperties(ScheduleElementBase target)
     {
-        target.DataStyle   = DataStyle.Clone();
-        target.HeaderStyle = HeaderStyle.Clone();
-        target.GridColor   = GridColor;
+        target.DataStyle     = DataStyle.Clone();
+        target.HeaderStyle   = HeaderStyle.Clone();
+        target.GridColor     = GridColor;
+        target.DataRowHeight = DataRowHeight;
     }
 }
 

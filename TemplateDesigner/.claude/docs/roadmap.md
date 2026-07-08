@@ -9,8 +9,16 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
-2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+1. **Tabulkové jádro — levné švy před v1** — z analýzy připravenosti jádra (2026-07-08). Zavřít teď,
+   ať každý další tabulkový element/featura neplatí daň znovu. Detail analýzy → archiv session 2026-07-08.
+   - [x] **#3 Reflexní test úplnosti `Clone()`** — hotovo 2026-07-08, chytil reálný bug `DataRowHeight`
+     (viz changelog).
+   - [ ] **#5 `SkiaHeightCalculator`: `TableElement` deleguje** na `CalculateHeightFromData` (zrušit inline special-case).
+   - [ ] **#4 `AggregationResolver` nad výrazem** — `SUM({A}*{B})`, ne jen bare `{FIELD}` (regex + route přes `ExpressionEvaluator`). Prerekvizita per-group subtotalů počítaných sloupců.
+   - [ ] **#1 `HighlightRule` list + migrátor** — conditional formatting z jednoho pravidla (jen pozadí) na seznam + barva textu + per-cell. **Breaking JSON (R5 migrátor)** — udělat, dokud šablony ten single-rule prop skoro nepoužívají. Největší z pětice, ne „technický krok".
+   - [ ] **#2 Extrakce středního švu** — resolve-wrappery + trojice `RowVisibility/Highlight` copy-pasted přes 4 elementy → mixin/helper. **Až po #1** (přepisuje `RowHighlight*` tvar).
+2. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
+3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 ---
 

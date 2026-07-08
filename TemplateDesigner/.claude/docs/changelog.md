@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-08 — Tabulkové jádro: levné švy před v1 (z analýzy architektury)
+
+Navazuje na analýzu připravenosti tabulkového jádra (4 agentní dimenze). Postupně se zavírají levné
+seamy, které jinak platí daň při každém dalším tabulkovém elementu / featuře.
+
+- **Krok 3 — reflexní test úplnosti `Clone()` (`CloneCompletenessTests`).** Enumeruje **všechny**
+  konkrétní `TemplateElement` potomky přes `[JsonDerivedType]`, každou perzistentní property zmutuje na
+  ne-default a porovná `serialize(original)` vs `serialize(clone)` (mimo přegenerované `Id`). Jeden test
+  pokryje i budoucí elementy + meta-test hlídá, že enumerace = přesně konkrétní potomci.
+  **Chytil reálný bug:** `CopyScheduleBaseProperties` nekopírovala `DataRowHeight` → při `Clone()`
+  (Ctrl+D / undo) se ztrácela u `LineTableElement` a `NotesLegendElement` (StopList/DepartureGrid ji měly
+  vypsanou explicitně, proto neselhaly). Fix: doplněna do base helperu, redundantní explicitní výpisy ve
+  StopList/DepartureGrid odstraněny (base vlastní base property).
+
 ## 2026-07-07 — Úklid z auditu v1 (P-C: R4 dluh + drobnosti)
 
 Jasné (bezrozhodovací) hygienické body z auditu. Build 0 chyb, test projekt 0 chyb.
