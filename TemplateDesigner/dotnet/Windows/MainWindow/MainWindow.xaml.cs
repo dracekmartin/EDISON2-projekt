@@ -1443,10 +1443,12 @@ public partial class MainWindow : Window
     private void OpenStopColumnsDialog(StopListElement element)
     {
         var dlg = new StopColumnsEditorDialog(element) { Owner = this };
-        dlg.RequestApplyHighlight = rules => { _vm!.ApplyHighlightRulesEdit(element, rules); InvalidateCanvas(); InvalidatePreview(); };
 
         if (dlg.ShowDialog() == true)
+        {
             _vm!.ApplyStopColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
+            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+        }
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1476,10 +1478,12 @@ public partial class MainWindow : Window
     private void OpenLineTableColumnsDialog(LineTableElement element)
     {
         var dlg = new LineTableColumnsEditorDialog(element) { Owner = this };
-        dlg.RequestApplyHighlight = rules => { _vm!.ApplyHighlightRulesEdit(element, rules); InvalidateCanvas(); InvalidatePreview(); };
 
         if (dlg.ShowDialog() == true)
+        {
             _vm!.ApplyLineTableColumnsEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
+            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+        }
 
         InvalidateCanvas();
         InvalidatePreview();
@@ -1490,10 +1494,12 @@ public partial class MainWindow : Window
     {
         var collections = _vm!.GetAvailableGroups();
         var dlg = new DynamicTableEditorDialog(element, collections) { Owner = this };
-        dlg.RequestApplyHighlight = rules => { _vm!.ApplyHighlightRulesEdit(element, rules); InvalidateCanvas(); InvalidatePreview(); };
 
         if (dlg.ShowDialog() == true)
+        {
             _vm!.ApplyDynamicTableEdit(element, dlg.GeneralCommand, dlg.ResultColumns);
+            if (dlg.HighlightEdited) _vm!.ApplyHighlightRulesEdit(element, dlg.ResultHighlightRules ?? []);
+        }
 
         InvalidateCanvas();
         InvalidatePreview();

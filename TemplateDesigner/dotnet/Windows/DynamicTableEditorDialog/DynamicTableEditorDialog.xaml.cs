@@ -36,8 +36,10 @@ public partial class DynamicTableEditorDialog : Window
     /// Caller vykoná spolu se ResultColumns.</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
-    /// <summary>Aplikace pravidel zvýraznění (button „Zvýraznění řádků…") — wire MainWindow (undoable).</summary>
-    public Action<List<HighlightRule>>? RequestApplyHighlight { get; set; }
+    /// <summary>Pravidla zvýraznění po editaci (button „Zvýraznění řádků…"). Aplikuje caller až na OK
+    /// dialogu (deferred — Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
+    public List<HighlightRule>? ResultHighlightRules { get; private set; }
+    public bool HighlightEdited { get; private set; }
 
     public DynamicTableEditorDialog(DynamicTableElement element, IReadOnlyList<DataFieldCollection>? collections)
     {
@@ -70,9 +72,13 @@ public partial class DynamicTableEditorDialog : Window
     private void OnGeneralButtonClicked(string key)
     {
         if (key != "__highlightRules") return;
-        var dlg = new HighlightRulesEditorDialog(_element.HighlightRules) { Owner = this };
+        var current = ResultHighlightRules ?? _element.HighlightRules;   // reopen ukáže rozeditovaná pravidla
+        var dlg = new HighlightRulesEditorDialog(current) { Owner = this };
         if (dlg.ShowDialog() == true)
-            RequestApplyHighlight?.Invoke(dlg.ResultRules);
+        {
+            ResultHighlightRules = dlg.ResultRules;
+            HighlightEdited = true;
+        }
     }
 
     // Běží při KAŽDÉM (re-)Initu formuláře — tj. i po návratu na tab Obecné (Loaded auto-Init).

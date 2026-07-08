@@ -20,6 +20,14 @@
   `GeneralForm.ButtonClicked` → `RequestApplyHighlight`). Apply přes `ApplyHighlightRulesEdit` (undoable
   `SetPropertyCommand`, prázdný seznam → null). Úzké rozhraní `IRowHighlightable` drží dialog + apply
   generické nad 3 elementy. `__`-prefix klíče drift test přeskakuje. **#1 hotové.**
+- **Krok 1 (review fixy).** Z adversariálního review commitů #1: **(H1)** `TemplateSerializer.DeserializeSection`
+  protažen migrátorem (obalí sekci do mini-šablony 1.0.0) — cesta šablon sekcí byla trvale migrátor-slepá,
+  tiše by ztrácela data při každé budoucí breaking migraci; **(M2)** highlight z columns dialogů (StopColumns/
+  DynamicTable/LineTable) se aplikuje až na OK dialogu (deferred `ResultHighlightRules`/`HighlightEdited`),
+  ne okamžitě — Storno teď změnu zahodí, konzistentní se vzorem `style:` (inline panel zůstává okamžitý,
+  tam je to správně); **(L5)** migrace nevytvoří bezbarevné pravidlo (staré zvýraznění vyžadovalo podmínku
+  i barvu); **button** dostal `f.value = "Upravit pravidla…"` (jinak prázdný/úzký — `FieldTypeButton` renderuje
+  `Value`, ne `Label`). Kryto 2 novými testy (DeserializeSection migrace, bezbarevné pravidlo).
 
 
 Navazuje na analýzu připravenosti tabulkového jádra (4 agentní dimenze). Postupně se zavírají levné

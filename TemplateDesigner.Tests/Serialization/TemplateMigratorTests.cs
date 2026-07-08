@@ -94,6 +94,24 @@ public class TemplateMigratorTests
         Assert.Null(migrated["sections"]![0]!["elements"]![0]!["highlightRules"]);
     }
 
+    [Fact]
+    public void HighlightRules_PodminkaBezBarvy_NevytvoriPravidlo()
+    {
+        // Staré zvýraznění vyžadovalo podmínku I barvu → bez barvy nic nebarvilo; migrace nevytvoří
+        // „dangling" bezbarevné pravidlo, jen odstraní staré pole.
+        var json = JsonNode.Parse("""
+        { "version": "1.0.0", "sections": [ { "elements": [
+          { "type": "DynamicTableElement", "rowHighlightExpression": "{CENA} < 0" }
+        ] } ] }
+        """)!;
+
+        var (migrated, _, _) = new TemplateMigrator().Migrate(json);
+
+        var el = migrated["sections"]![0]!["elements"]![0]!;
+        Assert.Null(el["highlightRules"]);
+        Assert.Null(el["rowHighlightExpression"]);
+    }
+
     // ── Forward-compat guard (R5) ────────────────────────────────────────────
 
     [Fact]

@@ -22,8 +22,10 @@ public partial class LineTableColumnsEditorDialog : Window
     /// <summary>Command z tabu „Obecné" (EDInputForm) — null pokud se nic nezměnilo.</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
-    /// <summary>Aplikace pravidel zvýraznění (button „Zvýraznění řádků…") — wire MainWindow (undoable).</summary>
-    public Action<List<HighlightRule>>? RequestApplyHighlight { get; set; }
+    /// <summary>Pravidla zvýraznění po editaci (button „Zvýraznění řádků…"). Aplikuje caller až na OK
+    /// dialogu (deferred — Storno columns dialogu změnu zahodí). <see cref="HighlightEdited"/> = bylo upraveno.</summary>
+    public List<HighlightRule>? ResultHighlightRules { get; private set; }
+    public bool HighlightEdited { get; private set; }
 
     public LineTableColumnsEditorDialog(LineTableElement element)
     {
@@ -43,9 +45,13 @@ public partial class LineTableColumnsEditorDialog : Window
     private void OnGeneralButtonClicked(string key)
     {
         if (key != "__highlightRules") return;
-        var dlg = new HighlightRulesEditorDialog(_element.HighlightRules) { Owner = this };
+        var current = ResultHighlightRules ?? _element.HighlightRules;   // reopen ukáže rozeditovaná pravidla
+        var dlg = new HighlightRulesEditorDialog(current) { Owner = this };
         if (dlg.ShowDialog() == true)
-            RequestApplyHighlight?.Invoke(dlg.ResultRules);
+        {
+            ResultHighlightRules = dlg.ResultRules;
+            HighlightEdited = true;
+        }
     }
 
     private void OnGeneralFormInitialized()

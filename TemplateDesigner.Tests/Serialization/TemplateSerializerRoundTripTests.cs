@@ -120,6 +120,25 @@ public class TemplateSerializerRoundTripTests
     }
 
     [Fact]
+    public void DeserializeSection_ProtahujeMigratorem_StareZvyrazneniNaSeznam()
+    {
+        // Šablony sekcí nemají verzi → DeserializeSection je musí protáhnout migrátorem (jinak by
+        // stará pole rowHighlight* tiše zmizela). Ověřuje, že cesta není migrátor-slepá (H1).
+        var json = """
+        { "name": "Sekce", "elements": [
+          { "type": "DynamicTableElement", "rowHighlightExpression": "{CENA} < 0", "rowHighlightColor": "#FFFFCCCC" }
+        ] }
+        """;
+
+        var section = TemplateSerializer.DeserializeSection(json);
+
+        var el = Assert.IsType<DynamicTableElement>(Assert.Single(section!.Elements));
+        Assert.NotNull(el.HighlightRules);
+        Assert.Equal("{CENA} < 0", el.HighlightRules![0].Condition);
+        Assert.Equal("#FFFFCCCC", el.HighlightRules[0].BackgroundColor);
+    }
+
+    [Fact]
     public void NevalidniJson_VyhodiTemplateDeserializationException()
     {
         Assert.Throws<TemplateDeserializationException>(

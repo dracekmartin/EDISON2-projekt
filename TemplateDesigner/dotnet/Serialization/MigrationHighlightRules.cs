@@ -39,13 +39,17 @@ public class MigrationHighlightRules : ITemplateMigration
         el.Remove("rowHighlightExpression");
         el.Remove("rowHighlightColor");
 
-        // Prázdná podmínka = žádné pravidlo; existující seznam nepřepisovat (idempotence)
-        if (string.IsNullOrWhiteSpace(expr)) return;
+        // Staré zvýraznění vyžadovalo podmínku I barvu (jinak nic nebarvilo) — bez obojího
+        // pravidlo nevytvářet (žádný „dangling" bezbarevný záznam v editoru). Idempotence:
+        // existující seznam nepřepisovat.
+        if (string.IsNullOrWhiteSpace(expr) || string.IsNullOrWhiteSpace(color)) return;
         if (el["highlightRules"] is JsonArray) return;
 
-        var rule = new JsonObject { ["condition"] = expr };
-        if (!string.IsNullOrWhiteSpace(color)) rule["backgroundColor"] = color;
-        el["highlightRules"] = new JsonArray(rule);
+        el["highlightRules"] = new JsonArray(new JsonObject
+        {
+            ["condition"] = expr,
+            ["backgroundColor"] = color,
+        });
     }
 
     private static string? Str(JsonNode? node) =>

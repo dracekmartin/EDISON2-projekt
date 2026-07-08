@@ -51,15 +51,36 @@ public static class TemplateSerializer
         return JsonSerializer.Serialize(section, Options);
     }
 
-    /// <summary>Deserializuje sekci z JSON.</summary>
+    /// <summary>
+    /// Deserializuje sekci z JSON (custom šablona sekce). Šablony sekcí nemají vlastní verzi →
+    /// obalí se do mini-šablony <c>1.0.0</c> a protáhnou <see cref="Migrator"/>, aby se aplikovaly
+    /// stejné migrace jako na plnou šablonu. Bez toho by byla tahle cesta trvale migrátor-slepá
+    /// a tiše ztrácela data při každé budoucí breaking změně JSON formátu.
+    /// </summary>
     public static Section? DeserializeSection(string json)
     {
         try
         {
-            return JsonSerializer.Deserialize<Section>(json, Options);
+            var node = JsonNode.Parse(json);
+            if (node is null) return null;
+
+            var wrapper = new JsonObject
+            {
+                ["version"] = "1.0.0",
+                ["sections"] = new JsonArray(node),
+            };
+            var (migrated, _, _) = Migrator.Migrate(wrapper);
+
+            if (migrated["sections"] is not JsonArray { Count: > 0 } sections) return null;
+            return sections[0]?.Deserialize<Section>(Options);
         }
         catch (JsonException)
         {
+            return null;
+        }
+        catch (TemplateDeserializationException)
+        {
+            // Vadná šablona sekce se přeskočí (nezabíjí načtení ostatních)
             return null;
         }
     }
