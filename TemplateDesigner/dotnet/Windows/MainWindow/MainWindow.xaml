@@ -434,11 +434,11 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
-                <!-- ── 8. Zoom ── -->
+                <!-- ── 8. Zoom (návrhové plátno + náhled) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ComboBox x:Name="CmbZoom" Width="Auto" MinWidth="64" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
-                                  ToolTip="Zoom designeru"
+                                  ToolTip="Zoom návrháře"
                                   SelectionChanged="CmbZoom_SelectionChanged">
                             <ComboBoxItem Content=" 50 %"/>
                             <ComboBoxItem Content=" 75 %"/>
@@ -455,8 +455,48 @@
                         <Button x:Name="BtnResetView" Style="{StaticResource ToolbarButton}"
                                 ToolTip="Skutečná velikost 100 % (designer i náhled) — Ctrl+1"
                                 Click="BtnResetView_Click" Content="1:1" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
+                        <ComboBox x:Name="CmbPreviewZoom" Width="Auto" MinWidth="64" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
+                                  ToolTip="Zoom náhledu"
+                                  SelectionChanged="CmbPreviewZoom_SelectionChanged">
+                            <ComboBoxItem Content=" 50 %"/>
+                            <ComboBoxItem Content=" 75 %"/>
+                            <ComboBoxItem Content="100 %"/>
+                            <ComboBoxItem Content="150 %"/>
+                            <ComboBoxItem Content="200 %"/>
+                            <ComboBoxItem Content="300 %"/>
+                            <ComboBoxItem Content="400 %"/>
+                            <ComboBoxItem Content="500 %"/>
+                        </ComboBox>
                     </StackPanel>
                     <TextBlock Text="Zoom" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── 8b. Data (obnovit data náhledu) ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnRefreshData" Style="{StaticResource ToolbarButton}"
+                                Command="{Binding RefreshDataCommand}"
+                                ToolTip="Obnovit data náhledu (F5)"
+                                Content="↻" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
+                    </StackPanel>
+                    <TextBlock Text="Data" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── 8c. Export ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnExportPdf" Style="{StaticResource ToolbarButton}"
+                                Click="MenuExportPdf_Click"
+                                ToolTip="Exportovat náhled jako PDF..."
+                                Content="PDF" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
+                        <Button x:Name="BtnExportPng" Style="{StaticResource ToolbarButton}"
+                                Click="MenuExportPng_Click"
+                                ToolTip="Exportovat náhled jako PNG..."
+                                Content="PNG" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Text="Export" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
@@ -664,36 +704,6 @@
             <Border Grid.Column="4" Grid.Row="0"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,0,0">
                 <DockPanel>
-                    <!-- Záhlaví preview panelu -->
-                    <Border DockPanel.Dock="Top"
-                            Background="{DynamicResource EDTheme.Bg.Panel}"
-                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
-                            Padding="8,4">
-                        <DockPanel>
-                            <Button DockPanel.Dock="Right" Content="PNG"
-                                    Click="MenuExportPng_Click" Padding="8,2" Margin="4,0,0,0"
-                                    ToolTip="Exportovat náhled jako PNG..."/>
-                            <Button DockPanel.Dock="Right" Content="PDF"
-                                    Click="MenuExportPdf_Click" Padding="8,2"
-                                    ToolTip="Exportovat náhled jako PDF..."/>
-                            <ComboBox x:Name="CmbPreviewZoom" DockPanel.Dock="Right"
-                                      Width="Auto" MinWidth="64" SelectedIndex="2" VerticalAlignment="Center" Margin="4,0"
-                                      ToolTip="Zoom náhledu (Ctrl+Scroll)"
-                                      SelectionChanged="CmbPreviewZoom_SelectionChanged">
-                                <ComboBoxItem Content=" 50 %"/>
-                                <ComboBoxItem Content=" 75 %"/>
-                                <ComboBoxItem Content="100 %"/>
-                                <ComboBoxItem Content="150 %"/>
-                                <ComboBoxItem Content="200 %"/>
-                                <ComboBoxItem Content="300 %"/>
-                                <ComboBoxItem Content="400 %"/>
-                                <ComboBoxItem Content="500 %"/>
-                            </ComboBox>
-                            <TextBlock Text="Náhled  ·  vzorová data ze schématu"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}"
-                                       VerticalAlignment="Center"/>
-                        </DockPanel>
-                    </Border>
                     <!-- Parametry sestavy -->
                     <Border x:Name="PreviewParamsBorder" DockPanel.Dock="Top"
                             Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}"
@@ -803,13 +813,6 @@
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                        Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                        Margin="12,0,0,0" VerticalAlignment="Center"/>
-                            <!-- Obnovit data aktuální instance (refetch GetData) — F5 -->
-                            <Button Content="↻" Command="{Binding RefreshDataCommand}"
-                                    Background="Transparent" BorderThickness="0" Padding="4,0"
-                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
-                                    Cursor="Hand" Margin="12,0,0,0"
-                                    ToolTip="Obnovit data (F5)"/>
                         </StackPanel>
                     </Border>
 
