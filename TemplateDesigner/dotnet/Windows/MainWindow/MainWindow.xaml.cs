@@ -1606,7 +1606,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Kontextová paleta JŘ elementů dle agendy šablony: zastávkové agendy ukazují
-    /// StopList/DepartureGrid/NotesLegend, knižní LineTable; agenda bez JŘ kontextu ukáže vše.
+    /// StopList/DepartureGrid/NotesLegend, knižní LineTable; agenda bez JŘ kontextu (GENERAL,
+    /// fakturace) žádné — JŘ elementy patří jen ke své agendě.
     /// </summary>
     private void UpdatePaletteForAgenda()
     {

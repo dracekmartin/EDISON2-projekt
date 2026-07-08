@@ -11,16 +11,15 @@ public static class AgendaCapabilities
     private static readonly string[] StopTypes =
         [ElementTypes.StopList, ElementTypes.DepartureGrid, ElementTypes.NotesLegend];
     private static readonly string[] LineTypes = [ElementTypes.LineTable];
-    private static readonly string[] AllScheduleTypes = [.. StopTypes, .. LineTypes];
 
     /// <summary>JŘ typy elementů podporované daným druhem agendy. Prázdný/neznámý druh
-    /// (GENERAL / bez JŘ kontextu) → všechny JŘ typy.</summary>
+    /// (GENERAL / fakturace / bez JŘ kontextu) → žádné JŘ elementy — ty patří jen ke své agendě.</summary>
     public static IReadOnlyList<string> ScheduleElementTypes(string? elementKind) =>
         elementKind?.ToUpperInvariant() switch
         {
             "STOP" => StopTypes,
             "LINE" => LineTypes,
-            _      => AllScheduleTypes,
+            _      => [],
         };
 
     /// <summary>Podporuje daný druh agendy tento typ elementu? (řízení menu/palety).</summary>
