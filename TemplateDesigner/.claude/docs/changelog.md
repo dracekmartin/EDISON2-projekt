@@ -10,9 +10,16 @@
   **Breaking JSON → migrátor** (`MigrationHighlightRules`, 1.0.0 → 1.1.0): staré pole každého elementu
   se překlopí na `highlightRules:[{…}]` a odstraní; `TemplateMigrator.CurrentVersion` bump na `1.1.0`.
   `TemplateSerializer` nově razítkuje verzi při uložení (uložení = zápis aktuálního formátu). Odstraněn
-  mrtvý rezervovaný `ColorRule` (nahrazen `HighlightRule`). **Zbývá commit 2:** editor (dialog + button +
-  `*Edit.cls`) — zatím se pravidla editují jen migrací/JSON. Kryto testy (RowConditions, migrátor,
+  mrtvý rezervovaný `ColorRule` (nahrazen `HighlightRule`). Kryto testy (RowConditions, migrátor,
   round-trip, Clone completeness).
+- **Krok 1 (editor) — `HighlightRulesEditorDialog` (varianta 3).** Custom dialog (DataGrid Add/Remove/▲▼,
+  podmínka + swatch barvy, barva pozadí vybraného pravidla přes color picker) — konzistentní se vzorem
+  editoru sloupců. Launch přes `FieldTypeButton "__highlightRules"` v `*Edit.cls` (EDInputForm), zapojený
+  na **dvou plochách**: inline panel „Vlastnosti" (`InlinePropertiesForm.ButtonClicked` passthrough →
+  `MainWindow.OpenHighlightRulesDialog`) i tab „Obecné" columns dialogů (StopColumns/DynamicTable/LineTable
+  `GeneralForm.ButtonClicked` → `RequestApplyHighlight`). Apply přes `ApplyHighlightRulesEdit` (undoable
+  `SetPropertyCommand`, prázdný seznam → null). Úzké rozhraní `IRowHighlightable` drží dialog + apply
+  generické nad 3 elementy. `__`-prefix klíče drift test přeskakuje. **#1 hotové.**
 
 
 Navazuje na analýzu připravenosti tabulkového jádra (4 agentní dimenze). Postupně se zavírají levné

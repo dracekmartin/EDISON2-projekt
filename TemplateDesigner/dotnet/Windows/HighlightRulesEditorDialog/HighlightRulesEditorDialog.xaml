@@ -1,0 +1,84 @@
+<Window x:Class="TemplateDesigner.HighlightRulesEditorDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:TemplateDesigner"
+        Title="Zvýraznění řádků"
+        Width="560" Height="440"
+        MinWidth="460" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip">
+
+    <Window.Resources>
+        <local:HexToBrushConverter x:Key="HexToBrush"/>
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="#555">
+            Pravidla se vyhodnocují shora dolů — <Bold>první splněné vyhrává</Bold>. Podmínka je výraz nad poli
+            řádku, např. <Run FontFamily="Consolas">{STAV}=="STORNO"</Run> nebo <Run FontFamily="Consolas">{CENA} &gt; 1000</Run>.
+        </TextBlock>
+
+        <!-- Seznam pravidel + boční tlačítka -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <DataGrid Grid.Column="0"
+                      ItemsSource="{Binding Rules}"
+                      SelectedItem="{Binding SelectedRule}"
+                      AutoGenerateColumns="False"
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      HeadersVisibility="Column"
+                      GridLinesVisibility="Horizontal"
+                      SelectionMode="Single">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Podmínka" Width="*"
+                                        Binding="{Binding Condition, UpdateSourceTrigger=PropertyChanged}"/>
+                    <DataGridTemplateColumn Header="Barva" Width="80" IsReadOnly="True">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border Height="18" Margin="4,2" CornerRadius="2"
+                                        BorderBrush="#888" BorderThickness="1"
+                                        Background="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+
+            <StackPanel Grid.Column="1" Margin="8,0,0,0" Width="96">
+                <Button Content="Přidat"  Command="{Binding AddCommand}"    Padding="6,3" Margin="0,0,0,4"/>
+                <Button Content="Odebrat" Command="{Binding RemoveCommand}" Padding="6,3" Margin="0,0,0,4"/>
+                <Button Content="▲ Nahoru" Command="{Binding MoveUpCommand}"   Padding="6,3" Margin="0,0,0,4"/>
+                <Button Content="▼ Dolů"   Command="{Binding MoveDownCommand}" Padding="6,3"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- Barva vybraného pravidla -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+            <TextBlock Text="Barva pozadí:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+            <Border Width="40" Height="18" CornerRadius="2" BorderBrush="#888" BorderThickness="1"
+                    VerticalAlignment="Center" Margin="0,0,8,0"
+                    Background="{Binding SelectedRule.BackgroundColor, Converter={StaticResource HexToBrush}}"/>
+            <Button Content="Vybrat…"  Command="{Binding PickColorCommand}"  Padding="10,3" Margin="0,0,6,0"/>
+            <Button Content="Vymazat"  Command="{Binding ClearColorCommand}" Padding="10,3"/>
+        </StackPanel>
+
+        <!-- OK / Storno -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="{StaticResource EDStrings.Ok}"     Width="80" IsDefault="True" Command="{Binding OkCommand}" Padding="10,3" Margin="0,0,6,0"/>
+            <Button Content="{StaticResource EDStrings.Cancel}" Width="80" IsCancel="True"  Padding="10,3"/>
+        </StackPanel>
+    </Grid>
+</Window>

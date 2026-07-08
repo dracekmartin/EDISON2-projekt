@@ -25,11 +25,15 @@ public partial class InlinePropertiesForm : UserControl
     private Action<IDesignerCommand>? _execute;
     private Action? _invalidate;
 
+    /// <summary>Probublává EDInputForm button (akční pole, např. „__highlightRules") k hostovi.</summary>
+    public event Action<string>? ButtonClicked;
+
     public InlinePropertiesForm()
     {
         InitializeComponent();
         TheForm.Initialized  += OnInitialized;
         TheForm.FieldChanged += OnFieldChanged;
+        TheForm.ButtonClicked += key => ButtonClicked?.Invoke(key);
     }
 
     /// <summary>Napojí undo executor + canvas invalidaci (volá host jednou).</summary>

@@ -12,6 +12,7 @@ using TemplateDesigner.Config;
 using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
@@ -587,6 +588,14 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>Zastávkový StopList: tab „Obecné" + sloupce jako jeden undo krok.</summary>
+    /// <summary>Zvýraznění řádků (seznam pravidel) — jeden undoable krok. Prázdný seznam → null (čistý JSON).</summary>
+    public void ApplyHighlightRulesEdit(IRowHighlightable element, List<HighlightRule> resultRules)
+    {
+        List<HighlightRule>? newVal = resultRules.Count > 0 ? resultRules : null;
+        Execute(new SetPropertyCommand("Zvýraznění řádků", element.HighlightRules, newVal,
+            v => element.HighlightRules = (List<HighlightRule>?)v));
+    }
+
     public void ApplyStopColumnsEdit(StopListElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
     {
         var cmds = new List<IDesignerCommand>();

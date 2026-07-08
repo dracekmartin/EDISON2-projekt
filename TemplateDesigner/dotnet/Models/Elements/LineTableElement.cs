@@ -19,7 +19,7 @@ namespace TemplateDesigner.Models.Elements;
 /// První řez: bez 2D bin-packingu přes stránky (stránkuje PageLayoutEngine per sekce),
 /// symboly jako textový fallback (Timetable font = roadmap 42b).
 /// </summary>
-public class LineTableElement : ScheduleElementBase
+public class LineTableElement : ScheduleElementBase, IRowHighlightable
 {
     // ─── DataSource ──────────────────────────────────────────────────────────
     // Vlastní DataSource klíče (linkový formát) — NE zastávkové z base. LineTable dědí jen

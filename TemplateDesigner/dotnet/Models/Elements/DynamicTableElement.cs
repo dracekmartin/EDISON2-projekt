@@ -18,7 +18,7 @@ namespace TemplateDesigner.Models.Elements;
 /// Statická (Fixed) tabulka je dočasně mimo (třída <see cref="TableElement"/> zůstala dormant) —
 /// doděláme ji jako samostatný element až podle poptávky.
 /// </summary>
-public class DynamicTableElement : TemplateElement
+public class DynamicTableElement : TemplateElement, IRowHighlightable
 {
     /// <summary>Klíč datové kolekce v DataContext._rows (= DataFieldCollection.CollectionKey).</summary>
     public string? DataSource { get; set; }

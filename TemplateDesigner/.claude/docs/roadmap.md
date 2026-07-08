@@ -17,11 +17,11 @@
      2026-07-08 (behavior-preserving, inline `CalculateTableElementHeight` zrušen).
    - [x] **#4 `AggregationResolver` nad výrazem** — hotovo 2026-07-08. `SUM({CENA}*{POCET})` (argument =
      výraz per řádek). Zpětně kompat., zaevidováno v CLAUDE.md. Odemyká per-group subtotaly počítaných sloupců.
-   - [~] **#1 `HighlightRule` list + migrátor** — z jednoho pravidla na **seznam pravidel** (jen pozadí;
-     barva textu/kurzíva odloženo). **Jádro hotové 2026-07-08** (model + migrátor 1.0.0→1.1.0 + render +
-     Clone + testy). **Zbývá commit 2:** editor varianta 3 = `HighlightRulesEditorDialog` (DataGrid Add/Remove,
-     podmínka + barva picker + cílový sloupec) + `ButtonPropertyDescriptor` + `*Edit.cls` button. `TargetColumn`
-     v modelu rezervovaný, per-sloupec **render** až #2.
+   - [x] **#1 `HighlightRule` list + migrátor + editor** — hotovo 2026-07-08. Seznam pravidel (jen pozadí),
+     migrátor 1.0.0→1.1.0, editor varianta 3 (`HighlightRulesEditorDialog`, launch přes `__highlightRules`
+     button v `*Edit.cls` na inline panelu i v columns dialozích). Odložené (aditivně, bez migrace):
+     **per-sloupec render** `TargetColumn` (jde s #2 — dnes model nese, render barví celý řádek) + editace
+     `TargetColumn` v dialogu; barva textu/kurzíva.
    - [ ] **#2 Extrakce středního švu** — resolve-wrappery + trojice `RowVisibility/Highlight` copy-pasted přes 4 elementy → mixin/helper. **Až po #1** (přepisuje `RowHighlight*` tvar).
 2. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
 3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).

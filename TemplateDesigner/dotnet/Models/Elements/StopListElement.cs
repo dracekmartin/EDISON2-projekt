@@ -11,7 +11,7 @@ namespace TemplateDesigner.Models.Elements;
 /// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// Uživatel umístí na canvas vedle DepartureGridElement(ů).
 /// </summary>
-public class StopListElement : StopScheduleElementBase
+public class StopListElement : StopScheduleElementBase, IRowHighlightable
 {
     // ═══════════════════════════════════════════
     // Sloupce — konfigurovatelné pořadí, šířky, záhlaví

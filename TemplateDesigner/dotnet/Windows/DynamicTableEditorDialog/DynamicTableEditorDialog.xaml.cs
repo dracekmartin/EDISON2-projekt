@@ -9,6 +9,7 @@ using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Controls;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Models.Schema;
 
 namespace TemplateDesigner;
@@ -35,6 +36,9 @@ public partial class DynamicTableEditorDialog : Window
     /// Caller vykoná spolu se ResultColumns.</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
+    /// <summary>Aplikace pravidel zvýraznění (button „Zvýraznění řádků…") — wire MainWindow (undoable).</summary>
+    public Action<List<HighlightRule>>? RequestApplyHighlight { get; set; }
+
     public DynamicTableEditorDialog(DynamicTableElement element, IReadOnlyList<DataFieldCollection>? collections)
     {
         _element     = element;
@@ -51,6 +55,7 @@ public partial class DynamicTableEditorDialog : Window
         // Tab „Obecné": EDInputForm (general properties přes reflexi). Sloupce → tab „Sloupce".
         GeneralForm.CacheClass = GeneralSchemaClass;
         GeneralForm.Initialized += OnGeneralFormInitialized;
+        GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 
         // Zdroj dat je EDInputForm List pole (SelectedValue není TwoWay by default → Field.Value se
         // propíše až při Save). Napojíme se přímo na SelectionChanged toho ComboBoxu, ať máme hodnotu
@@ -60,6 +65,14 @@ public partial class DynamicTableEditorDialog : Window
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
+    }
+
+    private void OnGeneralButtonClicked(string key)
+    {
+        if (key != "__highlightRules") return;
+        var dlg = new HighlightRulesEditorDialog(_element.HighlightRules) { Owner = this };
+        if (dlg.ShowDialog() == true)
+            RequestApplyHighlight?.Invoke(dlg.ResultRules);
     }
 
     // Běží při KAŽDÉM (re-)Initu formuláře — tj. i po návratu na tab Obecné (Loaded auto-Init).

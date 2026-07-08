@@ -4,6 +4,7 @@ using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Controls;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Expressions;
 
 namespace TemplateDesigner;
 
@@ -21,6 +22,9 @@ public partial class LineTableColumnsEditorDialog : Window
     /// <summary>Command z tabu „Obecné" (EDInputForm) — null pokud se nic nezměnilo.</summary>
     public IDesignerCommand? GeneralCommand { get; private set; }
 
+    /// <summary>Aplikace pravidel zvýraznění (button „Zvýraznění řádků…") — wire MainWindow (undoable).</summary>
+    public Action<List<HighlightRule>>? RequestApplyHighlight { get; set; }
+
     public LineTableColumnsEditorDialog(LineTableElement element)
     {
         _element = element;
@@ -30,9 +34,18 @@ public partial class LineTableColumnsEditorDialog : Window
 
         GeneralForm.CacheClass = GeneralSchemaClass;
         GeneralForm.Initialized += OnGeneralFormInitialized;
+        GeneralForm.ButtonClicked += OnGeneralButtonClicked;
 
         _vm.RequestColorPicker = hex => ColorPickerHelper.PickColor(this, hex);
         _vm.RequestClose += result => { DialogResult = result; Close(); };
+    }
+
+    private void OnGeneralButtonClicked(string key)
+    {
+        if (key != "__highlightRules") return;
+        var dlg = new HighlightRulesEditorDialog(_element.HighlightRules) { Owner = this };
+        if (dlg.ShowDialog() == true)
+            RequestApplyHighlight?.Invoke(dlg.ResultRules);
     }
 
     private void OnGeneralFormInitialized()
