@@ -199,9 +199,12 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             }
 
             s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value",    LinkaID)
-            d obj.%Set("display",  display)
-            if subtitle '= "" d obj.%Set("subtitle", subtitle)
+            // "string" type — .NET čte přes GetString(); bez toho číselné cislo/LinkaID → JSON number → chyba
+            d obj.%Set("value",    LinkaID, "string")
+            d obj.%Set("cislo",    cislo, "string")
+            d obj.%Set("nazev",    nazev, "string")
+            d obj.%Set("display",  display, "string")
+            if subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
             d arr.%Push(obj)
 
             s count = count + 1

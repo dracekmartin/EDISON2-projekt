@@ -164,8 +164,9 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             i '$d(^[dataDB]JRL(sku,lin,"I")) continue
 
             s nazev   = ..NazevLinky(dataDB, sku, lin)
-            s display = +lin
-            i nazev '= "" s display = (+lin)_" — "_nazev
+            s cislo   = +lin                          // bez vedoucí nuly (subscript ^JRL ji drží)
+            s display = cislo
+            i nazev '= "" s display = cislo_" — "_nazev
             i (search '= "") && ('$f($zcvt(display,"L"), search)) continue
 
             s plati = $g(^[dataDB]JRL(sku,lin,"PATCH","Plati"))
@@ -176,9 +177,12 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
             }
 
             s obj = ##class(%DynamicObject).%New()
-            d obj.%Set("value", lin)
-            d obj.%Set("display", display)
-            i subtitle '= "" d obj.%Set("subtitle", subtitle)
+            // "string" type — .NET čte přes GetString(); bez toho číselné cislo/value → JSON number → chyba
+            d obj.%Set("value", lin, "string")
+            d obj.%Set("cislo", cislo, "string")
+            d obj.%Set("nazev", nazev, "string")
+            d obj.%Set("display", display, "string")
+            i subtitle '= "" d obj.%Set("subtitle", subtitle, "string")
             d arr.%Push(obj)
 
             s count = count + 1

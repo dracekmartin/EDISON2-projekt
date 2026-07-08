@@ -106,7 +106,12 @@ public partial class InstancePickerDialog : Window
         {
             var row = TheList.Rows.FirstOrDefault(r => r.Id == id);
             if (row is null) continue;
-            var display = row["display"] ?? id;
+            // Chip ukazuje „číslo — název"; sloupce v pickeru jsou oddělené (cislo/nazev).
+            var cislo = row["cislo"];
+            var nazev = row["nazev"];
+            var display = !string.IsNullOrEmpty(nazev)
+                ? (string.IsNullOrEmpty(cislo) ? nazev : $"{cislo} — {nazev}")
+                : (string.IsNullOrEmpty(cislo) ? id : cislo);
             var subtitle = row["subtitle"];
             result.Add(new AgendaInstance(id, display, subtitle));
         }

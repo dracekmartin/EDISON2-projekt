@@ -9,7 +9,8 @@ Include GENERAL
 /// - **Meziměstský JŘ**       → linky meziměstské dopravy (až bude implementováno)
 /// - **Vozový JŘ**            → oběhy vozidel (až bude implementováno)
 ///
-/// Sloupce seznamu: value (opaque ID předaný do GetData), display (hlavní popis), subtitle (volitelný detail).
+/// Sloupce seznamu: cislo, nazev, subtitle (vše viditelné). value = opaque ID předaný do GetData
+/// (= Id řádku, ne sloupec). Status chip skládá „číslo — název" na .NET z cislo+nazev (BuildSelectedInstances).
 ///
 /// Data: routuje přes $classmethod na agenda-specifickou GetAvailableInstances
 ///       v ALVA.TemplateDesigner.Agendy.<konkrétní> (každá agenda iteruje vlastní doménovou strukturu —
@@ -26,8 +27,8 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     try {
         $$$FillParams
         s list = ##class(ALVA.EDControls.EDList.List).%New()
-        d list.AddColumn("value",    "ID",     "TEXT",  80, "",  1)
-        d list.AddColumn("display",  "Název",  "TEXT", 250, "",  1)
+        d list.AddColumn("cislo",    "Číslo",  "TEXT",  70, "",  1)
+        d list.AddColumn("nazev",    "Název",  "TEXT", 260, "",  1)
         d list.AddColumn("subtitle", "Detail", "TEXT", 220, "",  0)
         d list.WriteColumnsToOut()
     } catch (ex) { $$$CatchErrRest }
@@ -53,12 +54,14 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
             s inst = instances.%Get(i)
             if '$isobject(inst) continue
             s value    = inst.%Get("value")
-            s display  = inst.%Get("display")
+            s cislo    = inst.%Get("cislo")
+            s nazev    = inst.%Get("nazev")
             s subtitle = inst.%Get("subtitle")
-            s row = list.AddRow(value)
-            d row.%Set("value",    value)
-            d row.%Set("display",  display)
-            d row.%Set("subtitle", subtitle)
+            s row = list.AddRow(value)              // value = Id řádku (→ .NET AgendaInstance.Value)
+            // "string" type — %Get vrací kanonicky-číselné cislo → bez toho by row.%Set znovu emitoval JSON number
+            d row.%Set("cislo",    cislo, "string")
+            d row.%Set("nazev",    nazev, "string")
+            d row.%Set("subtitle", subtitle, "string")
         }
         d list.WriteRowsToOut()
     } catch (ex) { $$$CatchErrRest }
