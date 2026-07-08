@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-08 — Víceřádkové záhlaví buňky přes `\n` (dvojjazyčné záhlaví sloupce)
+
+Buňka/záhlaví tabulky může mít víc řádků — typicky dvouřádkové (CZ/EN) záhlaví sloupce.
+Dřív šlo jen u DepartureGrid (datově z `Nadpis`/`Nadpis2`), autorské záhlaví sloupce ne.
+
+- **`CellRenderer.DrawCell`** — multi-line větev: rozdělí text (`CellLayout.SplitLines`), blok N řádků,
+  VAlign umístí blok, HAlign zarovná každý řádek zvlášť + decorations. Jednořádkový = rychlá cesta.
+  **Jedno místo → všechny tabulkové elementy** (StopList, TableElement, LineTable, DepartureGrid) i header/data buňky.
+- **Syntaxe:** literální token `\n` (autorská zkratka, `CellLayout` ho normalizuje na skutečný zlom)
+  **nebo** Enter v poli (`AcceptsReturn` na poli „Záhlaví" v editoru sloupců zastávek + hint).
+- **`StopListElement`** — výška záhlaví line-aware (`× MaxHeaderLines()`) v Render i CalculateHeightFromData (parita).
+- TextElement `\n` už uměl (`TextWrapHelper`) — beze změny. TableElement pevná `HeaderHeight` (multi-line se vykreslí, výšku řídí uživatel); DepartureGrid/LineTable datově řízená záhlaví — bez změny výšky.
+- Bez změny JSON schématu / migrace (`Header` je string s `\n`), zpětně kompatibilní. +9 testů `CellLayoutTests`, 295/295.
+- Dokumentace: uživatelská příručka (obecná §8 + zastávkový JŘ §4).
+
 ## 2026-07-08 — Tabulkové jádro: levné švy před v1 (z analýzy architektury)
 
 - **Krok 2 — extrakce středního švu (row-feature).** Po #1 už byla highlight logika sdílená přes

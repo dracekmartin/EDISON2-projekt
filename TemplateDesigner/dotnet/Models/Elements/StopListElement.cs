@@ -130,7 +130,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         float effectiveHeaderFontSize = baseHeaderFontSize * scale;
 
         float rowH = DataRowHeight ?? ComputeRowH(MaxResolvedDataFontPt() * scale);
-        float headerH = ComputeHeaderH(effectiveHeaderFontSize);
+        float headerH = ComputeHeaderH(effectiveHeaderFontSize) * MaxHeaderLines();
 
         using var paints = CreateStandardPaints(ctx);
 
@@ -490,7 +490,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         }
 
         // Stejný zdroj fontu jako v Render() — max resolved per-column, ať scale/overflow sedí.
-        float headerH = ShowHeader ? ComputeHeaderH(MaxResolvedHeaderFontPt()) : 0f;
+        float headerH = ShowHeader ? ComputeHeaderH(MaxResolvedHeaderFontPt()) * MaxHeaderLines() : 0f;
         float rowH = DataRowHeight ?? ComputeRowH(MaxResolvedDataFontPt());
         return headerH + visibleStops * rowH;
     }
@@ -516,6 +516,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         var cols = GetVisibleColumns();
         return cols.Count > 0 ? cols.Max(c => ResolveHeaderStyle(c).FontSize) : (HeaderStyle.FontSize ?? 9f);
+    }
+
+    /// <summary>Nejvyšší počet řádků záhlaví napříč viditelnými sloupci — dvouřádkové záhlaví přes \n
+    /// (např. „Zastávka" / „Stop"). Výška záhlaví se násobí tímto počtem, ať se text vejde.</summary>
+    private int MaxHeaderLines()
+    {
+        var cols = GetVisibleColumns();
+        int max = 1;
+        foreach (var c in cols)
+            max = Math.Max(max, Rendering.CellLayout.LineCount(Rendering.ColumnHeader.Resolve(c.Header, "")));
+        return max;
     }
 
     /// <summary>Největší resolved font datové buňky napříč viditelnými sloupci (pt) — vč. per-column overridů.</summary>

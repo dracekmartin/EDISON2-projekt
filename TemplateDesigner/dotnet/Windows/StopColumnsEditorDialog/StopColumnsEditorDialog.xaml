@@ -79,7 +79,9 @@
 
                             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                 <TextBlock Text="Záhlaví:" VerticalAlignment="Center" Margin="0,0,4,0"/>
-                                <TextBox Width="160" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"/>
+                                <TextBox Width="160" Text="{Binding SelectedColumnVM.Header, UpdateSourceTrigger=LostFocus}" Margin="0,0,10,0"
+                                         AcceptsReturn="True" MaxLines="3" VerticalScrollBarVisibility="Auto"
+                                         ToolTip="Nový řádek: napiš &quot;\n&quot; nebo stiskni Enter — dvojjazyčné záhlaví (Zastávka\nStop)"/>
                                 <TextBlock Text="Šířka (mm):" VerticalAlignment="Center" Margin="0,0,4,0"/>
                                 <TextBox Width="50" Text="{Binding SelectedColumnVM.WidthText, UpdateSourceTrigger=LostFocus}"/>
                             </StackPanel>

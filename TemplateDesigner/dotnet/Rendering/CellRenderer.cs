@@ -43,8 +43,6 @@ public static class CellRenderer
         using var font = style.CreateFont(fontScale, ctx.MmToPx);
         using var textPaint = style.CreateTextPaint();
 
-        // 4. Měření textu a převod boxu na px
-        float textWidthPx = font.MeasureText(text);
         var metrics = font.Metrics;
         float ascent  = -metrics.Ascent;   // Ascent je záporný (směr nahoru)
         float descent = metrics.Descent;
@@ -52,14 +50,46 @@ public static class CellRenderer
         var tl = ctx.ToCanvas(contentMm.Left,  contentMm.Top);
         var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
 
-        // 5+6. Zarovnání H+V → kotva textu (px)
-        var (xTextPx, yBaselinePx) = CellLayout.TextAnchorPx(
-            tl, br, textWidthPx, ascent, descent, style.HAlign, style.VAlign);
+        // Víceřádkový text přes \n (např. dvojjazyčné záhlaví „Zastávka" / „Stop").
+        // Jednořádkový = rychlá cesta (bez alokace pole).
+        string[] lines = CellLayout.SplitLines(text);
 
-        // 7. Text
-        ctx.Canvas.DrawText(text, xTextPx, yBaselinePx, font, textPaint);
+        if (lines.Length == 1)
+        {
+            float textWidthPx = font.MeasureText(text);
+            var (xPx, yBaselinePx) = CellLayout.TextAnchorPx(
+                tl, br, textWidthPx, ascent, descent, style.HAlign, style.VAlign);
+            ctx.Canvas.DrawText(text, xPx, yBaselinePx, font, textPaint);
+            style.DrawTextDecorations(ctx.Canvas, xPx, yBaselinePx, textWidthPx, font, textPaint);
+            return;
+        }
 
-        // 8. Decorations (Underline / Strikethrough)
-        style.DrawTextDecorations(ctx.Canvas, xTextPx, yBaselinePx, textWidthPx, font, textPaint);
+        // Multi-line: blok N řádků. VAlign umístí celý blok, HAlign zarovná každý řádek zvlášť.
+        float lineHeight  = ascent + descent;
+        float blockHeight = lines.Length * lineHeight;
+        float blockTopY = style.VAlign switch
+        {
+            TextVerticalAlignment.Middle => tl.Y + (br.Y - tl.Y - blockHeight) / 2f,
+            TextVerticalAlignment.Bottom => br.Y - blockHeight,
+            _                            => tl.Y,   // Top
+        };
+        if (blockTopY < tl.Y) blockTopY = tl.Y;   // nevytékat nahoru z content boxu
+
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i];
+            if (string.IsNullOrEmpty(line)) continue;   // prázdný řádek jen posune baseline
+            float lineWidthPx = font.MeasureText(line);
+            float xPx = style.HAlign switch
+            {
+                TextHorizontalAlignment.Center => tl.X + (br.X - tl.X - lineWidthPx) / 2f,
+                TextHorizontalAlignment.Right  => br.X - lineWidthPx,
+                _                              => tl.X,   // Left
+            };
+            if (xPx < tl.X) xPx = tl.X;
+            float baselineY = blockTopY + i * lineHeight + ascent;
+            ctx.Canvas.DrawText(line, xPx, baselineY, font, textPaint);
+            style.DrawTextDecorations(ctx.Canvas, xPx, baselineY, lineWidthPx, font, textPaint);
+        }
     }
 }

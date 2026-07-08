@@ -74,4 +74,31 @@ public class CellLayoutTests
         var (_, y) = CellLayout.TextAnchorPx(Tl, Br, TextW, Ascent, Descent, TextHorizontalAlignment.Left, v);
         Assert.Equal(expectedY, y, 3);
     }
+
+    // ── SplitLines / LineCount — víceřádkové záhlaví (\n, např. CZ/EN) ──────────
+    [Theory]
+    [InlineData("Zastávka", 1)]
+    [InlineData("Zastávka\nStop", 2)]
+    [InlineData("Zastávka\\nStop", 2)]       // literální \n token (autorská inline zkratka)
+    [InlineData("Zastávka\r\nStop", 2)]     // WPF TextBox posílá \r\n
+    [InlineData("Zastávka\rStop", 2)]        // samotné \r
+    [InlineData("A\nB\nC", 3)]
+    [InlineData("", 1)]                       // prázdný = 1 řádek (má výšku)
+    public void LineCount_PocitaRadky(string text, int expected)
+    {
+        Assert.Equal(expected, CellLayout.LineCount(text));
+    }
+
+    [Fact]
+    public void LineCount_Null_JeJeden()
+    {
+        Assert.Equal(1, CellLayout.LineCount(null));
+    }
+
+    [Fact]
+    public void SplitLines_NormalizujeZlomyAZachovaPrazdneRadky()
+    {
+        var lines = CellLayout.SplitLines("Zastávka\r\nStop\n\nHalt");
+        Assert.Equal(new[] { "Zastávka", "Stop", "", "Halt" }, lines);
+    }
 }

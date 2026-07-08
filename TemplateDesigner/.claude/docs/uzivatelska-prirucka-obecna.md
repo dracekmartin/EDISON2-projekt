@@ -1,0 +1,490 @@
+# Návrhář šablon — uživatelská příručka (obecná část)
+
+> Vizuální editor tiskových sestav v EDISONu. Navrhnete vzhled šablony, systém k ní doplní
+> data a vytiskne PDF. Tato příručka pokrývá **obecné ovládání** aplikace — práci se
+> šablonou, sekcemi, prvky, styly, daty a exportem — bez ohledu na to, jaký typ sestavy
+> tvoříte. Postup pro konkrétní agendy (např. zastávkový jízdní řád) je v samostatných
+> dokumentech — viz [`uzivatelska-prirucka-zastavkovy-jr.md`](uzivatelska-prirucka-zastavkovy-jr.md).
+
+---
+
+## Obsah
+
+1. [Co je Návrhář šablon](#1-co-je-návrhář-šablon)
+2. [Orientace v aplikaci](#2-orientace-v-aplikaci)
+3. [Práce se šablonou](#3-práce-se-šablonou)
+4. [Sekce a struktura stránky](#4-sekce-a-struktura-stránky)
+5. [Práce s prvky (elementy)](#5-práce-s-prvky-elementy)
+6. [Editační nástroje](#6-editační-nástroje)
+7. [Vlastnosti a styly](#7-vlastnosti-a-styly)
+8. [Datová pole a výrazový jazyk](#8-datová-pole-a-výrazový-jazyk)
+9. [Náhled, export a tisk](#9-náhled-export-a-tisk)
+10. [Import z PDF (experimentální pomůcka)](#10-import-z-pdf-experimentální-pomůcka)
+11. [Uložená nastavení](#11-uložená-nastavení)
+12. [Klávesové zkratky](#12-klávesové-zkratky)
+13. [Časté otázky](#13-časté-otázky)
+
+---
+
+## 1. Co je Návrhář šablon
+
+Návrhář šablon je **vizuální editor tiskových sestav** typu WYSIWYG („co vidíte, to dostanete").
+Nahrazuje starší nástroj, kde se sestavy nastavovaly přes formuláře a číselné parametry bez
+náhledu — výsledek byl vidět až po vytištění.
+
+Systém má dvě vrstvy:
+
+1. **Návrhář** — zde vizuálně navrhnete šablonu (rozložení stránky, texty, tabulky, jízdní řády).
+2. **Tiskový engine** — vezme šablonu a reálná data a vytvoří PDF.
+
+Klíčová myšlenka: **šablona popisuje jen vzhled**. Konkrétní hodnoty (čísla linek, časy, názvy
+zastávek) doplní systém z databáze až při tisku. Stejný engine se používá pro živý náhled
+v Návrháři i pro reálný tisk — proto náhled odpovídá výslednému výstupu.
+
+**Co Návrhář není:**
+- Není to Word ani Excel — pracuje se strukturou stránky (sekce), ne s volným plátnem.
+- Stránka je vždy rozdělená na **sekce** — to je povinná struktura, ne volitelná.
+- Staré šablony se v této verzi neimportují 1:1 — nové šablony se navrhnou znovu (díky
+  vizuálnímu editoru rychle), případně s pomocí experimentálního importu z PDF (kap. 10).
+
+---
+
+## 2. Orientace v aplikaci
+
+Okno Návrháře má čtyři hlavní části: **toolbar** nahoře, **levý panel** se záložkami, **plátno**
+uprostřed a **náhled** vpravo.
+
+### Toolbar
+
+Tlačítka jsou seskupená a oddělená svislými čarami:
+
+| Skupina | Obsah |
+|---|---|
+| **Soubor** | Nová šablona, Otevřít, Uložit, Tisk |
+| **Upravit** | Zpět, Vpřed |
+| **Sekce** | Přidat sekci (rozbalovací nabídka presetů) |
+| **Přidat / Elementy** | paleta prvků — Text, Obdélník, Čára, Obrázek, Tabulka, Kód (u agend jízdních řádů se navíc objeví specializované JŘ prvky) |
+| **Vrstva** | Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu |
+| **Zarovnat** | Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky) |
+| **Zobrazení** | přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání, zoom, tlačítka „Fit" a „1:1", skrytí panelu sekcí, přepínač živého náhledu |
+
+### Levý panel — 5 záložek
+
+| Záložka | K čemu |
+|---|---|
+| **Sekce** | seznam sekcí šablony, přidávání, řazení, mazání |
+| **Pole agendy** | databázová pole dostupná pro aktuální agendu (dvojklik nebo tažení vloží `{POLE}` na plátno); hlavička zobrazuje název aktuální agendy a je klikatelná — otevře přepnutí agendy |
+| **Vlastnosti** | nastavení právě vybraného prvku nebo sekce — okamžitá editace bez nutnosti otevírat dialog |
+| **Strom** | hierarchický přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci |
+| **Pomocník** | panel AI asistenta |
+
+### Status bar (dole)
+
+Zleva doprava:
+- zelený štítek s aktuální **agendou** — klik otevře dialog přepnutí agendy,
+- modrý štítek **aktivní instance** (např. vybrané linky) s tlačítky ◀ / ▶ pro přepínání mezi
+  vybranými instancemi a formátem „Instance: X — Y (N/M)",
+- informace o aktuálním výběru,
+- obecné stavové hlášky,
+- při přetečení obsahu stránky červené upozornění „⚠ Obsah se nevejde na stránku".
+
+### Hlavní menu
+
+- **Soubor** — Nová šablona · Otevřít z databáze… · Uložit do databáze · Uložit do databáze
+  jako… · Importovat z JSON souboru… · Exportovat do JSON souboru… · Otevřít poslední JSON
+  (submenu) · Exportovat náhled jako PDF… · Exportovat náhled jako PNG… · Tisk… · Vlastnosti
+  stránky… · Konec
+- **Úpravy** — Zpět · Vpřed · Smazat · Z-order (podnabídka) · Zarovnat (podnabídka) · Rozložit
+  (podnabídka) · Normalizovat pozice… · Škálovat šablonu (podnabídka procent) · Kopírovat styl ·
+  Vložit styl
+- **Zobrazit** — Mřížka, Přichytit na mřížku, Přichytit k elementům, Záhlaví sekcí, Pravítka,
+  Panel sekcí, Live náhled (zaškrtávací položky)
+- **Nástroje** — Změnit agendu… · Šablony v databázi… · AI Asistent šablon… · Import PDF…
+- **Nápověda** — Klávesové zkratky a ovládání
+
+Titulek okna má formát `[KÓD_AGENDY] [DB nebo neuloženo] Název šablony [*]` — hvězdička značí
+neuložené změny.
+
+---
+
+## 3. Práce se šablonou
+
+### Nová šablona
+`Soubor → Nová` (Ctrl+N). Nová šablona obsahuje jednu výchozí sekci přes celou tiskovou plochu;
+sekce a prvky pak přidáváte podle potřeby.
+
+### Agenda — nad jakými daty šablona běží
+Každá šablona je vázaná na **agendu** — zdroj dat (např. zastávkový JŘ z MHD modulu, zastávkový
+JŘ z hlavního JŘ modulu, faktury). Agenda určuje, jaká **databázová pole** a jaké **specializované
+prvky** máte k dispozici.
+
+- Aktuální agenda je vidět jako **zelený štítek** ve status baru, v titulku okna a v hlavičce
+  panelu „Pole agendy".
+- Změna agendy: `Nástroje → Změnit agendu…`, klávesa **Ctrl+Shift+A**, nebo klik na zelený štítek.
+- **Přepnutí agendy vždy založí novou prázdnou šablonu** pro zvolenou agendu — nejde o konverzi
+  obsahu stávající šablony. Rozdělanou práci vás systém před přepnutím vyzve uložit nebo zahodit.
+
+### Otevření a uložení
+Šablony se ukládají **do databáze** (centrálně, podle firmy), ne do lokálních souborů na stanici:
+
+- `Soubor → Otevřít z databáze…` — dialog „Šablony v databázi": filtr podle agendy, seznam
+  šablon, tlačítka Přejmenovat…, Smazat, Otevřít.
+- `Soubor → Uložit do databáze` — u šablony již uložené v databázi provede tichý update.
+- `Soubor → Uložit do databáze jako…` — dialog s polem pro název a popis; nová/importovaná
+  šablona se takto poprvé zařadí do databáze.
+- Výhoda oproti lokálním souborům: šablony jsou sdílené, centrální a dohledatelné — ne
+  roztroušené po jednotlivých počítačích.
+
+### Import a export do souboru
+Šablonu lze také uložit jako **soubor JSON** — obdoba exportu do PDF/PNG, ne náhrada
+databázového úložiště:
+
+- `Soubor → Importovat z JSON souboru…` — otevře soubor; šablona se pak chová jako nová
+  neuložená.
+- `Soubor → Exportovat do JSON souboru…` — uloží aktuální stav do souboru, ale **nemění**
+  původ šablony (pořád zůstává vázaná na databázi, pokud odtamtud byla otevřená).
+- Hodí se pro poslání šablony e-mailem kolegovi nebo dopravci.
+
+---
+
+## 4. Sekce a struktura stránky
+
+Stránka se skládá ze **sekcí**. Sekce je vodorovný pruh, do kterého umisťujete prvky. Každá
+sekce má nastavené chování, které určuje **kdy a jak často** se tiskne a **co se stane při
+přetečení** obsahu.
+
+### Přidání sekce
+Tlačítko `+ Přidat sekci` nabízí presety:
+
+| Preset | Chování | Výchozí výška |
+|---|---|---|
+| Hlavička stránky | každá stránka | 25 mm |
+| Patička stránky | každá stránka | 15 mm |
+| Oddělovač | jednou | 5 mm |
+| Hlavička sestavy — jen 1. str. | jen první stránka | 30 mm |
+| Patička sestavy — jen posl. str. | jen poslední stránka | 20 mm |
+| Hlavička kromě 1. str. | všechny kromě první | 25 mm |
+| Prázdná sekce | jednou | 30 mm |
+| *(vlastní uložené šablony sekcí, značené 💾)* | podle uložené šablony | podle uložené šablony |
+
+### Vlastnosti sekce (dialog)
+Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Tisk**, **Umístění**, **Přetečení**,
+**Rámeček**, **Barva rámečku**, **Tloušťka rámečku**, **Viditelnost**. Volby v rozbalovacích
+seznamech:
+
+- **Tisk**: Jednou · Každá stránka · Jen první · Jen poslední · Kromě první
+- **Umístění**: Obsah · Hlavička · Patička (patičky se umisťují od spodního okraje stránky)
+- **Přetečení**: Nepřerušovat · Přes stránky · Povolit split
+
+Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole **Datový zdroj** a
+**Výška řádku**.
+
+### Práce se sekcemi
+- **Mazání** — poslední zbývající sekci nelze smazat; sekce s prvky vyžaduje potvrzení. Uvolněná
+  výška se proporcionálně rozdělí mezi zbývající sekce (a naopak při přidání nové).
+- **Řazení** — přetažením v levém panelu, nebo šipkami v kontextovém menu.
+- **Vlastní šablony sekcí** — pravý klik na sekci → „Uložit jako šablonu…", zadáte název. Sekce
+  se pak nabízí v menu „+ Přidat sekci" (💾) a lze ji opakovaně vkládat do dalších šablon —
+  vkládá se vždy jako nezávislá kopie.
+
+---
+
+## 5. Práce s prvky (elementy)
+
+Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
+
+| Prvek | Hlavní vlastnosti |
+|---|---|
+| **Text** | text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování, řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí |
+| **Obrázek** | nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy |
+| **Obdélník** | výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm) |
+| **Čára** | orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery |
+| **Kód** | obsah, typ kódu — **QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix** — barva kódu a pozadí |
+| **Tabulka (dynamická)** | řádky se generují automaticky z datové kolekce (viz níže); nabízí se jako jediná varianta tabulky v paletě |
+| **Prvky jízdního řádu** | specializované prvky pro tisk JŘ — objeví se v paletě jen u agend jízdních řádů; viz samostatný dokument pro danou agendu |
+
+### Dynamická tabulka
+Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
+od dat). Vlastnosti: **Upravit sloupce…**, **Zdroj dat**, **Výška řádku**, **Záhlaví**, **Výška
+záhlaví**, **Rámeček** (Žádný/Vnější/Vše/Řádky/Sloupce), **Střídání řádků**, **Tučné záhlaví**,
+barvy pozadí a textu záhlaví i dat. Buňka může obsahovat souhrnný výraz — viz kap. 8.
+
+Editor sloupců (dialog „Tabulka — nastavení") má záložky **Obecné** a **Sloupce**: přidání/
+odebrání sloupce, varování při přesahu šířky + tlačítko „Přizpůsobit sloupce k šířce elementu",
+a pro každý sloupec záhlaví, šířku, mapované datové pole a plný editor stylu (viz kap. 7).
+
+### Přidání prvku
+- Klik na tlačítko v paletě vloží prvek do aktivní sekce (souřadnice 5, 5 mm).
+- **Tažení z palety** přímo na plátno — během tažení vidíte náhled a zvýrazní se cílová sekce.
+- **Tažení databázového pole** z panelu „Pole agendy" — tažení do prázdna vytvoří nový textový
+  prvek s `{POLE}`; tažení na existující text pole připojí k jeho obsahu. Dvojklik na pole
+  funguje jako alternativa k tažení.
+
+### Výběr, přesun, velikost
+- Klik vybere prvek, tažení ho přesune, úchyty na okrajích mění velikost.
+- Výběr více prvků: tažení rámečku (rubber band), nebo Ctrl+klik.
+- Prvek se nevejde mimo hranice své sekce — automatické oříznutí.
+- Klik bez pohybu myší nespustí přesun — teprve po překročení malého prahu (pár pixelů) se prvek
+  začne hýbat, takže omylem nedojde k drobnému posunu při pouhé selekci.
+
+### Seskupování
+Ctrl+G spojí vybrané prvky do skupiny; Ctrl+Shift+G skupinu zruší. Klik vybere celou skupinu,
+Alt+klik jen jeden prvek uvnitř. Skupina má vizuální odznak a ohraničující rámeček, ve stromu se
+zobrazí jako samostatná úroveň. Import z PDF prvky automaticky seskupuje.
+
+---
+
+## 6. Editační nástroje
+
+### Přichytávání (snap)
+Tři nezávislé vrstvy, ovládané z toolbaru:
+- **Mřížka** — zapínatelná tlačítkem „M", velikost 0,2–10 mm (výchozí 5 mm).
+- **Přichytávání k objektům** — tlačítko „O" (výchozí zapnuto); prvek se přichytává k hranám a
+  středům jiných prvků i k okrajům sekce, s vizuálními vodítky.
+- **Mezera pro přichytávání (gap snap)** — 0–10 mm (výchozí 2 mm); prvek se umí přichytit
+  i v definované mezeře od souseda, se zobrazením indikátoru mezery.
+
+### Duplikování
+- **Ctrl+D** bez směru — kopie s malým posunem (+5 mm v obou osách).
+- **Ctrl+D + šipka** — kopie umístěná ve zvoleném směru s mezerou rovnou aktuálnímu nastavení
+  gap snapu (výchozí 2 mm).
+- Duplikování neovlivňuje schránku (clipboard).
+
+### Kopírování stylu
+**Ctrl+Shift+C** zkopíruje styl (font, rámeček, pozadí) z prvního vybraného prvku, **Ctrl+Shift+V**
+ho aplikuje na vybrané prvky.
+
+### Hromadné úpravy
+Výběr více prvků + **Enter** otevře dialog společných vlastností: Barva rámečku, Šířka rámečku,
+Pořadí vrstvy (ZIndex), Zamčeno — změna se aplikuje na všechny vybrané najednou.
+
+### Normalizace pozic
+**Ctrl+Shift+N** — dialog s volbou kroku zaokrouhlení (0,1 / 0,5 / 1 / 2 / 5 mm) a živým náhledem
+počtu prvků, které se změnou upraví. Opravuje drobné nepřesnosti pozic vzniklé např. přesným
+tažením myší.
+
+### Škálování šablony
+Dropdown v toolbaru (50–200 %) nebo menu `Úpravy → Škálovat šablonu` (50/75/90/100/110/125/150/
+200 %). Přepočítá rozměr stránky, okraje, výšky sekcí, pozice a rozměry prvků i jejich
+font/padding vlastnosti — proporcionálně zvětší nebo zmenší celou šablonu najednou.
+
+### Vrátit / opakovat akci
+**Ctrl+Z** / **Ctrl+Y** — každá akce (přesun, změna vlastnosti, přidání/smazání prvku či sekce…)
+je vratná.
+
+---
+
+## 7. Vlastnosti a styly
+
+Vybraný prvek nastavíte v záložce **Vlastnosti** levého panelu (okamžitá editace) nebo v dialogu
+po stisku **Enter** či dvojkliku na prvek — obsah je stejný, panel je jen rychlejší cesta.
+
+### Rámeček a pozadí
+Každý prvek může mít rámeček (barva + tloušťka) a barvu pozadí. Když dva prvky sdílejí hranu,
+vykreslí se jako **jeden** společný rámeček, ne zdvojeně.
+
+### Kaskáda stylů u tabulkových prvků
+U tabulek a specializovaných prvků jízdního řádu funguje **kaskáda stylů**: nejčastěji měněné
+barvy (pozadí a text záhlaví/dat) nastavíte rychle přímo v panelu Vlastnosti; detailní styl po
+jednotlivých sloupcích (font, velikost, řez, zarovnání, odsazení, dekorace) se nastavuje
+v dialogu sloupců.
+
+- Co v dialogu sloupce nenastavíte, se **zdědí** z nastavení celého prvku — v dialogu se to
+  zobrazí jako šedý kurzívou psaný náznak zděděné hodnoty.
+- Pokud hodnotu explicitně přepíšete, objeví se u pole tlačítko „×" pro rychlý návrat ke
+  zděděné hodnotě.
+- Tlačítka „Resetovat styl" (jeden sloupec) a „Resetovat všechny styly" v dialogu vrátí
+  nastavení do výchozího stavu.
+
+---
+
+## 8. Datová pole a výrazový jazyk
+
+### Placeholdery (databázová pole)
+Kdekoli v textu napíšete pole ve složených závorkách, např. `Linka {CISLO_LINKY}`. Při tisku se
+`{CISLO_LINKY}` nahradí skutečnou hodnotou. Dostupná pole pro aktuální agendu vidíte v panelu
+„Pole agendy" a můžete je přetáhnout přímo na plátno.
+
+### Formátování hodnot
+V placeholderu lze hodnotu naformátovat zápisem `{POLE:FORMÁT}`:
+
+| Formát | Význam |
+|---|---|
+| `UPPER` | velká písmena |
+| `LOWER` | malá písmena |
+| `TRIM` | oříznutí mezer |
+| `LEFT(n)` | prvních n znaků |
+| `RIGHT(n)` | posledních n znaků |
+| `PADLEFT(n)` / `PADLEFT(n,'znak')` | doplnění zleva na délku n (výchozí mezerou) |
+| `PADRIGHT(n)` / `PADRIGHT(n,'znak')` | doplnění zprava na délku n |
+| `N2`, `C2`, `P1` | standardní číselné formáty (2 des. místa, měna, procenta…) |
+| `dd.MM.yyyy`, `HH:mm` | formát data / času |
+
+Formátování čísel a datumů respektuje **jazyk nastavený v šabloně** (viz níže), ne systémové
+nastavení Windows dané stanice. Chybný formát se tiše ignoruje — vypíše se nezformátovaná
+hodnota, tisk tedy kvůli překlepu ve formátu nespadne.
+
+### Zalomení řádku v textu (`\n`) — víceřádkové záhlaví
+Text prvku i buňky/záhlaví tabulky může mít **víc řádků**. Nový řádek zapíšete dvěma způsoby:
+
+- napíšete `\n` (zpětné lomítko + písmeno n) přímo do textu, např. `Zastávka\nStation`,
+- nebo stisknete **Enter** v příslušném poli.
+
+Typické využití je **dvouřádkové (dvojjazyčné) záhlaví sloupce** — první řádek česky, druhý
+cizojazyčně (např. „Zastávka" / „Station"). U tabulkových prvků se **výška řádku záhlaví
+automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. Funguje v textových prvcích
+i v záhlaví a buňkách tabulek a specializovaných prvků jízdního řádu.
+
+### Podmíněná viditelnost
+Prvek nebo sekci lze zobrazit jen za podmínky — pole **Podmíněná viditelnost**, např.:
+- `{POCET} > 0` — zobrazit jen když je počet kladný,
+- `{PAGE} > 1` — jen od druhé stránky.
+
+Podporované operátory: `&&` (a zároveň), `||` (nebo), `!` (negace), `==`, `!=`, `>`, `<`, `>=`,
+`<=`, závorky, textové literály, čísla, `true`/`false`. Prázdný nebo neplatný výraz znamená
+„vždy zobrazit" (bezpečné chování) — pokud je zápis chybný, zobrazí se u pole červené
+upozornění, ať víte, že to potřebuje opravit.
+
+### Agregace v tabulkách
+V obsahu buňky dynamické tabulky lze počítat souhrny: `SUM({POLE})`, `COUNT()`, `AVG({POLE})`,
+`MIN({POLE})`, `MAX({POLE})`.
+
+### Jazyk šablony (lokalizace)
+Šablona má nastavený **jazyk** — dialog `Vlastnosti stránky…` (Ctrl+Shift+P), pole „Formát čísel
+a datumů": Čeština (cs-CZ), Slovenština (sk-SK), Angličtina (en-US), Němčina (de-DE). Formát
+čísel a datumů se řídí tímto nastavením nezávisle na tom, na jakém počítači se tiskne — tisk tak
+vypadá stejně na každé stanici.
+
+---
+
+## 9. Náhled, export a tisk
+
+### Živý náhled
+Pravý panel ukazuje **výsledný tisk** s ukázkovými daty agendy — stejným enginem, jaký se použije
+při reálném tisku. Na rozdíl od plátna respektuje podmíněnou viditelnost, takže vidíte přesně to,
+co se vytiskne.
+
+### Vícestránkové sestavy
+Stránkování řeší systém automaticky: hlavičky/patičky se opakují podle nastaveného chování sekcí,
+dlouhé tabulky se dělí přes stránky, v náhledu jsou stránky zobrazené pod sebou se stíny a
+rámečky.
+
+### Varování o přetečení
+Pokud se obsah nevejde na stránku, dostane stránka v náhledu **červený rámeček** a status bar
+zobrazí „⚠ Obsah se nevejde na stránku" (tooltip navrhne zvětšit stránku nebo zmenšit obsah).
+Varování se týká jen sekcí nastavených jako „Nepřerušovat" — sekce, které lze rozdělit přes
+stránky, se prostě rozdělí a nic se neztratí, takže tam varování nedává smysl.
+
+### Export
+- `Soubor → Exportovat náhled jako PDF…` / `…jako PNG…` — export aktuálního náhledu
+  (víceřánkově), běží asynchronně nad snímkem šablony pořízeným v okamžiku kliknutí (další
+  editace mezitím výsledek neovlivní).
+
+### Tisk
+`Soubor → Tisk…` (Ctrl+P) otevře dialog „Tisk šablony" s parametry, které se generují dynamicky
+podle zvolené agendy (bez agendy: „Šablona nemá žádné parametry."). Dialog obsahuje i výběr
+instancí (např. linek) k tisku a tlačítka „Tisk všech vybraných", „Export náhledu", „Zavřít".
+
+Nastavení výstupu je univerzální napříč agendami:
+- **Členění výstupu** — Vše do jednoho PDF / Jeden PDF na instanci / (u agend s více úrovní dat
+  i jemnější dělení, viz dokument dané agendy).
+- **Název souboru (tokeny {POLE})** — vlastní kombinace datových polí pro pojmenování
+  výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
+  se řeší automaticky příponou `_2`, `_3`…
+
+---
+
+## 10. Import z PDF (experimentální pomůcka)
+
+`Nástroje → Import PDF…` otevře dialog „Import PDF do šablony": volba typu importu (obecný
+layout, nebo — u podporovaných agend — specializovaný import), volba sloučení grafiky
+(„Žádné" / „Pouze čáry" / „Vše"), volitelné funkce **AI Vision import** a **AI obohacení textem**,
+a přepínač debug logu.
+
+Systém z existujícího PDF vytáhne texty, čáry a obrázky jako prvky a předpřipraví základ šablony
+(volitelně s pomocí umělé inteligence pro lepší rozpoznání struktury). **Berte to zatím jako
+pomůcku pro rychlý start, ne jako záruku přesné shody s originálem** — jde o rozpracovanou,
+experimentální funkci, ne finální hotovou featuru.
+
+---
+
+## 11. Uložená nastavení
+
+Následující se ukládá centrálně (podle firmy a přihlášeného uživatele), ne jen lokálně na
+stanici — po přihlášení na jiném počítači je nastavení stejné:
+
+- **Naposledy otevřené soubory** (import JSON) — až 10 položek, submenu „Otevřít poslední JSON".
+- **Naposledy použité barvy** — až 8 položek, sdílené napříč všemi barevnými výběry v aplikaci.
+- **Nastavení editoru** — velikost mřížky, zapnuté přichytávání, viditelnost panelů, zoom, aktivní
+  záložka levého panelu — obnoví se při příštím spuštění.
+- **Výchozí hodnoty instance** — naposledy zvolené parametry/instance se pamatují per šablona a
+  předvyplní se při dalším otevření stejné šablony.
+- **Parametry tisku** — pamatují se per agenda (sdílené napříč šablonami stejné agendy).
+
+Ukládání běží na pozadí; případná chyba uložení se uživateli aktivně nehlásí (nejde o kritickou
+operaci).
+
+---
+
+## 12. Klávesové zkratky
+
+| Zkratka | Akce |
+|---|---|
+| Ctrl+N | Nová šablona |
+| Ctrl+O | Otevřít z databáze |
+| Ctrl+S | Uložit (do databáze) |
+| Ctrl+Z / Ctrl+Y | Zpět / Vpřed |
+| Ctrl+X / Ctrl+C / Ctrl+V | Vyjmout / Kopírovat / Vložit |
+| Ctrl+D | Duplikovat (kopie s malým posunem) |
+| Ctrl+D + šipka | Duplikovat vedle (s mezerou) |
+| Ctrl+Shift+C / Ctrl+Shift+V | Kopírovat / Vložit styl |
+| Delete | Smazat výběr |
+| Ctrl+A | Vybrat vše v aktivní sekci |
+| Enter / dvojklik | Vlastnosti výběru (1 prvek = dialog; víc prvků = dialog společných vlastností) |
+| F2 | Rychlá editace textu (jen textový prvek, jeden vybraný) |
+| Ctrl+G / Ctrl+Shift+G | Seskupit / Rozeskupit |
+| Alt+klik | Vybrat jeden prvek ze skupiny |
+| Ctrl+Shift+H / Ctrl+Shift+J | Rozdělit prvek vodorovně / svisle |
+| Ctrl+Shift+N | Normalizovat pozice |
+| Šipky | Posun vybraného prvku o krok |
+| Ctrl+PageUp / Ctrl+PageDown | Vrstva dopředu / dozadu (+Shift = zcela na kraj) |
+| Šipka ↑/↓ (bez výběru prvku) | Přesun aktivní sekce nahoru / dolů |
+| Ctrl+0 | Přizpůsobit zobrazení stránce („Fit") |
+| Ctrl+1 | Skutečná velikost 100 % („1:1") |
+| Ctrl + kolečko myši | Plynulý zoom |
+| Ctrl+B | Sbalit/rozbalit levý panel |
+| Ctrl+P | Tisk |
+| Ctrl+Shift+P | Vlastnosti stránky |
+| Ctrl+Shift+A | Změnit agendu |
+| F1 | Nápověda |
+| Escape | Zrušit probíhající operaci (např. přidávání prvku) |
+
+Poznámka: „Uložit jako" (do databáze) je dostupné jen z menu `Soubor → Uložit do databáze jako…`,
+bez vlastní klávesové zkratky.
+
+---
+
+## 13. Časté otázky
+
+**Můžeme si šablonu upravit sami?**
+Ano — to je hlavní smysl Návrháře. Vizuálně upravíte a uložíte do databáze, změna je hned vidět
+v náhledu.
+
+**Co se starými šablonami?**
+Tato verze je neimportuje 1:1. Nové šablony se navrhnou znovu — díky vizuálnímu editoru rychle;
+pomůckou může být experimentální import z existujícího PDF (kap. 10).
+
+**Liší se formát čísel/datumů podle počítače?**
+Ne. Řídí se jazykem nastaveným v šabloně, ne nastavením Windows dané stanice.
+
+**Kam se ukládají šablony?**
+Do centrální databáze, sdílené v rámci firmy — ne na jednotlivé počítače. Export do souboru JSON
+je jen doplňková možnost (např. pro poslání e-mailem), ne hlavní úložiště.
+
+**Co když omylem smažu sekci nebo prvek?**
+Ctrl+Z vrátí prakticky jakoukoli akci. Mazání celé sekce s obsahem navíc vyžaduje potvrzení,
+takže k němu nedojde omylem jedním kliknutím.
+
+**Jak poznám, že se obsah nevejde na stránku?**
+Náhled zobrazí červený rámeček stránky a status bar hlášku „⚠ Obsah se nevejde na stránku" —
+řešením je buď zvětšit prostor (stránku/sekci), nebo zmenšit obsah (méně sloupců, menší písmo).
