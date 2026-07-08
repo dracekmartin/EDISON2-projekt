@@ -45,7 +45,7 @@ Projdi kód systematicky a aplikuj každý bod:
 - [ ] Ověřit že jednoduché `obj.name = v` bez podtržítka zůstávají (ty fungují)
 
 ### Struktura metod
-- [ ] API metody (s `ByRef sys`): `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` (ne `ret 1`, ne `$$$Init`)
+- [ ] API metody (s `ByRef sys`): `s err = ""` + `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` (bez `$$$Init`, ne `ret 1`; `s err = ""` na prvním řádku je povinné — `$$$CatchErrRest` čte `err`, `$$$FillParams` ho nenastavuje)
 - [ ] Vstup přes `$g(^||ML("IN","key"))` — ne přes parametry metody
 - [ ] Výstup přes `^||ML("OUT",...)` — pojmenované klíče nebo indexované řádky
 - [ ] `$$$FillParams` místo předávání IdFa/dataDB mezi metodami
@@ -113,7 +113,7 @@ Cílem refaktoringu je **maximální čitelnost a udržitelnost**. Vše ostatní
 4. **Proveď refaktor** — aplikuj změny
 5. **Finální validace** — po provedení změn přečti výsledný soubor a projdi KAŽDÝ bod checklistu znovu. Ověř zejména:
    - Žádné komentáře mimo `Class ... { }` (ani `///` před Class, ani `//` za uzavírací `}`)
-   - Žádný `$$$Init` — vracet `$$$OK`
+   - Žádný `$$$Init` — místo něj `s err = ""` na prvním řádku + vracet `$$$OK`
    - Žádné `IdFa`/`dataDB` v parametrech helper metod (mají mít `ByRef sys` + `$$$FillParams`)
    - Žádné mrtvé proměnné (přiřazené ale nepřečtené)
    Pokud najdeš problém, oprav ho PŘED shrnutím.

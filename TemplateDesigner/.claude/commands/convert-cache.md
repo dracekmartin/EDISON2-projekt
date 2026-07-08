@@ -55,7 +55,7 @@ Použij `Glob("CACHE/**/$ARGUMENTS")` nebo `Glob("CACHE/**/*.cls")` pro nalezen�
 
 #### Struktura
 - [ ] Routiny, makra, legacy konstrukty → třídy + ClassMethody
-- [ ] API metody (s `ByRef sys`): `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` (ne `ret 1`, ne `$$$Init`)
+- [ ] API metody (s `ByRef sys`): `s err = ""` + `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` (bez `$$$Init`, ne `ret 1`; `s err = ""` na prvním řádku je povinné — `$$$CatchErrRest` čte `err`, `$$$FillParams` ho nenastavuje)
 - [ ] Vstup přes `$g(^||ML("IN","key"))`, výstup přes `^||ML("OUT",...)`
 - [ ] `$$$FillParams` místo předávání IdFa/dataDB mezi metodami
 - [ ] Logicky členěný do metod — ne jedna mega-metoda
@@ -113,7 +113,7 @@ Cílem konverze je **maximální čitelnost a udržitelnost**. Vše ostatní (pe
 4. **Vytvoř novou třídu** — kompletní .cls soubor
 5. **Finální validace** — po vytvoření přečti výsledný soubor a projdi KAŽDÝ bod checklistu. Ověř zejména:
    - Žádné komentáře mimo `Class ... { }` (ani `///` před Class, ani `//` za `}`)
-   - Žádný `$$$Init` — vracet `$$$OK`
+   - Žádný `$$$Init` — místo něj `s err = ""` na prvním řádku + vracet `$$$OK`
    - Žádné `IdFa`/`dataDB` v parametrech helper metod
    - Žádné mrtvé proměnné
    Pokud najdeš problém, oprav ho PŘED shrnutím.

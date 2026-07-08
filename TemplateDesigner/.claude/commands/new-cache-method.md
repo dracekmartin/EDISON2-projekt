@@ -23,7 +23,7 @@ CacheAgendaProvider (C# strana): !`cat dotnet/Serialization/CacheAgendaProvider.
 /// Popis co metoda dělá
 ClassMethod $ARGUMENTS(ByRef sys As %String) As %Status
 {
-    $$$Init
+    s err = ""
     try {
         $$$FillParams
 
@@ -43,7 +43,7 @@ ClassMethod $ARGUMENTS(ByRef sys As %String) As %Status
         // s ^||ML("OUT",$i(i)) = $lb("ROW","a","b")
     }
     catch (ex) { $$$CatchErrRest }
-    ret ret
+    ret $$$OK
 }
 ```
 
@@ -98,7 +98,7 @@ public List<SomeType> $ARGUMENTS(string paramA)
 
 - **CVar** pro input i output — nikdy `object[]` v novém kódu
 - `$g(^||ML("IN","key"))` pro čtení vstupu (bezpečné i když klíč chybí)
-- `$$$Init` + `$$$FillParams` + `$$$CatchErrRest` — povinná kostra
+- `s err = ""` + `$$$FillParams` + `$$$CatchErrRest` + `ret $$$OK` — povinná kostra. **Bez `$$$Init`** (TD konvence, cache-api rule 14); `s err = ""` na prvním řádku je povinné, protože `$$$CatchErrRest` čte `err` a `$$$FillParams` ho nenastavuje
 - **ObjectScript**: nikdy `_` v dot-notation — `_` je operátor konkatenace!
   - ❌ `obj.KEY_NAME = v`  → způsobí chybu (concatenates KEY, NAME)
   - ✅ `obj.%Set("KEY_NAME", v)` → správně

@@ -343,6 +343,6 @@ class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
 13. **`$$$FillParams` místo předávání IdFa/dataDB** — pokud třída Include GENERAL a metoda má `ByRef sys`, makro `$$$FillParams` zpřístupní `IdFa`, `dataDB`, `del`, `userID`, `GUID` atd. jako lokální proměnné. Nepředávat je jako parametry mezi metodami — každá metoda si zavolá `$$$FillParams` sama.
 
 ### Návratové hodnoty a error handling
-14. **Nepoužívat `$$$Init`** — zastaralé makro. Metody vracejí `$$$OK` (úspěch) nebo `$$$ERROR(...)` (chyba).
-15. **Návratový vzor pro API metody** (s `ByRef sys`): `try { $$$FillParams ... } catch (ex) { $$$CatchErrRest } ret $$$OK`
+14. **Nepoužívat `$$$Init`** — TD konvence. ⚠️ **Pozor na odchylku:** EDISON-wide skeleton (`MLRest.md §2.2.4` + root `CLAUDE.md`) `$$$Init` **standardně má** (inicializuje `ret`+`err`, konec `ret ret`); TD ho vědomě NEpoužívá a končí `ret $$$OK`. Pokud kopíruješ skeleton z MLRest.md, `$$$Init` vynech. **Důsledek:** protože `$$$Init` odpadá, `err` (které čte `$$$CatchErrRest`) si musí inicializovat metoda sama — viz rule 15.
+15. **Návratový vzor pro API metody** (s `ByRef sys`): `s err = ""` na prvním řádku, pak `try { $$$FillParams ... } catch (ex) { $$$CatchErrRest } ret $$$OK`. **`s err = ""` je POVINNÉ** — `$$$FillParams` `err` nenastavuje, `$$$CatchErrRest` ho čte; bez initu spadne catch při reálné chybě na sekundární `<UNDEFINED>err` místo čisté hlášky. (Nahrazuje to, co dřív dělal `$$$Init`.)
 16. **Helper metody bez `ByRef sys`** — nemusí mít try/catch ani vracet %Status, pokud jsou volány jen z API metod které catch mají.
