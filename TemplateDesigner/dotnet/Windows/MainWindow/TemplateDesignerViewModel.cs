@@ -98,11 +98,12 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         get
         {
-            if (_activeInstances.Count == 0) return "Instance: — (klikni pro výběr)";
+            var lbl = CapitalizeFirst(CurrentInstanceLabel);
+            if (_activeInstances.Count == 0) return $"{lbl}: — (klikni pro výběr)";
             var cur = CurrentActiveInstance;
             return _activeInstances.Count == 1
-                ? $"Instance: {cur?.Display}"
-                : $"Instance: {cur?.Display} ({_activeInstanceIndex + 1}/{_activeInstances.Count})";
+                ? $"{lbl}: {cur?.Display}"
+                : $"{lbl}: {cur?.Display} ({_activeInstanceIndex + 1}/{_activeInstances.Count})";
         }
     }
 
@@ -236,6 +237,29 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Druh JŘ elementů aktuální agendy (STOP/LINE/"") — řídí kontextové menu + paletu okna.</summary>
     public string CurrentAgendaElementKind => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind ?? "";
+
+    /// <summary>User-facing název „instance" aktuální agendy (JŘ = „linka", faktury = „faktura",
+    /// jinak „instance") — z registru agend. Okno ho zobrazí místo obecného „instance".</summary>
+    public string CurrentInstanceLabel       => AgendaEntry(State.CurrentTemplate.AgendaCode)?.InstanceLabel ?? "instance";
+    public string CurrentInstanceLabelPlural => AgendaEntry(State.CurrentTemplate.AgendaCode)?.InstanceLabelPlural ?? "instance";
+
+    /// <summary>Tooltipy navigace/výběru s doménovým názvem (např. „Předchozí linka", „…výběr — linky").</summary>
+    public string PreviousInstanceTooltip => $"Předchozí {CurrentInstanceLabel}";
+    public string NextInstanceTooltip     => $"Další {CurrentInstanceLabel}";
+    public string InstancePickerHint      => $"Klikni pro výběr — {CurrentInstanceLabelPlural}";
+
+    private static string CapitalizeFirst(string s) =>
+        string.IsNullOrEmpty(s) ? s : char.ToUpper(s[0]) + s[1..];
+
+    private void NotifyInstanceLabelsChanged()
+    {
+        OnPropertyChanged(nameof(CurrentInstanceLabel));
+        OnPropertyChanged(nameof(CurrentInstanceLabelPlural));
+        OnPropertyChanged(nameof(ActiveInstanceText));
+        OnPropertyChanged(nameof(PreviousInstanceTooltip));
+        OnPropertyChanged(nameof(NextInstanceTooltip));
+        OnPropertyChanged(nameof(InstancePickerHint));
+    }
 
     // ── Real preview data ────────────────────────────────────────────────────
     private List<DataContext>?                  _realPreviewData;
@@ -885,7 +909,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         // Skupiny linek pro filtr v pickeru (prázdné = agenda bez skupin → filtr skrytý). Rychlý lookup.
         var skupiny = CacheProvider.GetAvailableSkupiny(agendaCode);
-        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances, skupiny, _activeSkupinaId);
+        var vm = new InstancePickerDialogViewModel(agendaCode, _activeInstances, skupiny, _activeSkupinaId, CurrentInstanceLabelPlural);
         if (Dialogs?.ShowInstancePicker(vm) != true) return;
 
         _activeSkupinaId = vm.SelectedSkupinaId;
@@ -1902,6 +1926,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public void RefreshFieldsList()
     {
         var agendaCode = State.CurrentTemplate.AgendaCode;
+        NotifyInstanceLabelsChanged();   // agenda se mohla změnit → přepočítat „linka/faktura" v chipu + tooltipech
 
         if (string.IsNullOrWhiteSpace(agendaCode))
         {

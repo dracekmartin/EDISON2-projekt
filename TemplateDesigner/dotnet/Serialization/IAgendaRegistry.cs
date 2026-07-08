@@ -13,7 +13,9 @@ public record AgendaRegistryEntry(
     string Label,
     string CacheClass,
     string InstanceParamName = "INSTANCE_ID",
-    string ElementKind = "");
+    string ElementKind = "",
+    string InstanceLabel = "instance",
+    string InstanceLabelPlural = "instance");
 
 /// <summary>
 /// Per-firma registr dostupných agend v TemplateDesigneru. Wave 2 nahradil

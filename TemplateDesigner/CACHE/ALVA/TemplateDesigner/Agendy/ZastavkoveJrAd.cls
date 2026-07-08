@@ -35,6 +35,10 @@ Parameter InstanceParamName = "LINKA_ID";
 
 Parameter ElementKind = "STOP";
 
+Parameter InstanceLabel = "linka";
+
+Parameter InstanceLabelPlural = "linky";
+
 /// Vrátí DataSchema — shodné se zastávkovým JŘ MHD (stejný výstupní formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

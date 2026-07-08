@@ -56,6 +56,8 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
             s entry.cacheClass = className
             s entry.instanceParamName = $parameter(className, "InstanceParamName")
             s entry.elementKind = $parameter(className, "ElementKind")
+            s entry.instanceLabel = $parameter(className, "InstanceLabel")
+            s entry.instanceLabelPlural = $parameter(className, "InstanceLabelPlural")
             d arr.%Push(entry)
         }
 

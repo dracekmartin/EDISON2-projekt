@@ -32,6 +32,10 @@ Parameter InstanceParamName As %String = "LINKA_ID";
 
 Parameter ElementKind As %String = "LINE";
 
+Parameter InstanceLabel As %String = "linka";
+
+Parameter InstanceLabelPlural As %String = "linky";
+
 /// Vrátí DataSchema — shodné s KnizniJrAd (stejný wire formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

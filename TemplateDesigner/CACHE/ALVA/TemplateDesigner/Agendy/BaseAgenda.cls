@@ -48,6 +48,13 @@ Parameter InstanceParamName As %String = "INSTANCE_ID";
 /// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.
 Parameter ElementKind As %String = "";
 
+/// User-facing název „instance" agendy (jedn./mn. č., 1. pád) — okno ho zobrazí místo
+/// obecného „instance" (JŘ = „linka"/„linky", faktury = „faktura"/„faktury"). Override
+/// v subclass. Default „instance" pro agendu bez doménového pojmu.
+Parameter InstanceLabel As %String = "instance";
+
+Parameter InstanceLabelPlural As %String = "instance";
+
 /// Vrátí DataSchema pro agendu: skalární pole (fields) + tabulkové kolekce (fieldCollections).
 /// OUT[1] = JSON objekt:
 ///   { "fields": [...], "fieldCollections": [...] }

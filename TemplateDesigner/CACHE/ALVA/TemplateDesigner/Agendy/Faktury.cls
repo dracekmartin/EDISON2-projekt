@@ -18,6 +18,10 @@ Parameter AgendaCode = "FAKTURY";
 
 Parameter AgendaLabel = "Faktury";
 
+Parameter InstanceLabel = "faktura";
+
+Parameter InstanceLabelPlural = "faktury";
+
 /// Vrátí schéma polí FAKTURY agendy: skalární pole + položky faktury.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

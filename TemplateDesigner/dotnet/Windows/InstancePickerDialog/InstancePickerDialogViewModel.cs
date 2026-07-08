@@ -12,6 +12,10 @@ public class InstancePickerDialogViewModel : EDViewModel
 {
     private readonly string _agendaCode;
     private readonly HashSet<string> _initiallySelectedValues;
+    private readonly string _instanceLabelPlural;
+
+    /// <summary>Titulek okna s doménovým názvem instance (např. „Výběr — linky").</summary>
+    public string WindowTitle => $"Výběr — {_instanceLabelPlural}";
 
     /// <summary>Po OK obsahuje finální seznam vybraných instancí.</summary>
     public IReadOnlyList<AgendaInstance> SelectedInstances { get; private set; } = [];
@@ -49,12 +53,14 @@ public class InstancePickerDialogViewModel : EDViewModel
         string agendaCode,
         IReadOnlyList<AgendaInstance> initiallySelected,
         IReadOnlyList<AgendaSkupina>? skupiny = null,
-        string? initialSkupinaId = null)
+        string? initialSkupinaId = null,
+        string instanceLabelPlural = "instance")
     {
         _agendaCode = agendaCode;
         _initiallySelectedValues = initiallySelected.Select(i => i.Value).ToHashSet(StringComparer.Ordinal);
         Skupiny = skupiny ?? [];
         SelectedSkupinaId = initialSkupinaId;
+        _instanceLabelPlural = instanceLabelPlural;
     }
 
     public string AgendaCode => _agendaCode;
@@ -65,7 +71,7 @@ public class InstancePickerDialogViewModel : EDViewModel
     {
         SelectedCount = checkedCount;
         StatusText = totalCount == 0
-            ? "Žádné instance"
+            ? $"Žádné {_instanceLabelPlural}"
             : $"Zobrazeno: {totalCount}";
     }
 
