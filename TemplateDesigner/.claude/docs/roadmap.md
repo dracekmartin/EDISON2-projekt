@@ -35,11 +35,13 @@
   `ParseTypPoznamky/Anotace`) dědí jen StopList/DepartureGrid/NotesLegend. `LineTableElement` dědí jen
   generickou vrstvu + vlastní DataSource klíče (Zastavky/Spoje/SkupinyDnu) → **netahá zastávkový balast**.
   JSON kompatibilní (property jen přesunuty). 256/256 testů (vč. drift B0 + round-trip).
-- **B2** — Agenda-specifické větvení stringovým prefixem na ≥5 místech (`MainWindow.xaml.cs:1168-1179`
-  menu dle `StartsWith("ZASTAVKOVY"/"KNIZNI")`, `:1592-1606` paleta, `:904` + `TemplateDesignerViewModel.cs:214-216`
-  `LINKA_ID`/`INSTANCE_ID`, `:2448` default natvrdo). Přesunout capability metadata na `AgendaRegistryEntry`
-  (instanceParamName, kompatibilní typy elementů) → okno data-driven. **Nejvíc rozhoduje, jestli „nová
-  agenda = jen business logika".**
+- ✅ **B2 — agenda capability metadata** — **HOTOVO 2026-07-08**. Zrušeno větvení `StartsWith("ZASTAVKOVY"/
+  "KNIZNI")` + hardcoded `LINKA_ID` (vč. latentní nekonzistence dialog vs VM). Caché: `BaseAgenda` +2 params
+  `InstanceParamName` + `ElementKind`, override v JŘ agendách (STOP/LINE + LINKA_ID); `AgendyRegistr.ListAgendy`
+  je vrací v JSON. C#: `AgendaRegistryEntry` +2 pole (aditivní, defaulty), `AgendaCapabilities` mapa
+  `ElementKind→ElementTypes[]` (jediné UI mapování), VM `CurrentInstanceParamName`/`CurrentAgendaElementKind`;
+  menu/paleta/PrintDialog čtou z registru. **Nová agenda existujícího druhu = 0 změn v UI** (jen Caché class
+  s params). Build 0 chyb / 256 testů. (Deploy: Caché + C# spolu; hook už dev zkompiloval.)
 - **B3** — `TableElement` nemigrovaný na sdílené `TableLayout` jádro: duplikuje `ResolveCascade`
   (`TableElement.cs:231-252`) + šířky inline (`:278-279`) místo `TableLayout.ResolveWidths`. Jediný outlier.
 

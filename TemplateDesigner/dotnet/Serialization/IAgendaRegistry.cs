@@ -3,8 +3,17 @@ namespace TemplateDesigner.Serialization;
 /// <summary>
 /// Jedna položka v registru agend — vrácená z Caché auto-discovery (`ListAgendy`) nebo
 /// synteticky doplněná v .NET vrstvě (GENERAL).
+///
+/// <para><see cref="InstanceParamName"/> + <see cref="ElementKind"/> jsou capability metadata
+/// (deklarovaná v Caché agenda class jako parametry) — okno je čte data-driven místo větvení
+/// podle názvu agendy. Aditivní: starší Caché bez těchto klíčů → defaulty.</para>
 /// </summary>
-public record AgendaRegistryEntry(string Code, string Label, string CacheClass);
+public record AgendaRegistryEntry(
+    string Code,
+    string Label,
+    string CacheClass,
+    string InstanceParamName = "INSTANCE_ID",
+    string ElementKind = "");
 
 /// <summary>
 /// Per-firma registr dostupných agend v TemplateDesigneru. Wave 2 nahradil

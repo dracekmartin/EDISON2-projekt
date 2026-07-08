@@ -50,6 +50,10 @@ Parameter AgendaCode As %String = "KNIZNI_JR_AD";
 
 Parameter AgendaLabel As %String = "Knižní JŘ (AD)";
 
+Parameter InstanceParamName As %String = "LINKA_ID";
+
+Parameter ElementKind As %String = "LINE";
+
 /// Vrátí DataSchema — skaláry hlavičky linky + kolekce ZASTAVKY/SPOJE/SKUPINY_DNU/POZNAMKY.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

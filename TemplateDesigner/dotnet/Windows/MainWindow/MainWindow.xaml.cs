@@ -906,7 +906,7 @@ public partial class MainWindow : Window
                 // a vygeneruj batch napříč všemi — ignoruje LINKA_ID z parametrů dialogu.
                 if (_vm.ActiveInstances.Count > 0)
                 {
-                    var paramName = agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase) ? "LINKA_ID" : "INSTANCE_ID";
+                    var paramName = _vm.CurrentInstanceParamName;
                     var all = new List<DataContext>(_vm.ActiveInstances.Count * 4);
                     foreach (var inst in _vm.ActiveInstances)
                     {
@@ -1168,19 +1168,16 @@ public partial class MainWindow : Window
         Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
 
-        // JŘ elementy dle agendy šablony (stejný kontext jako paleta — UpdatePaletteForAgenda)
-        var agendaCode = _vm.State.CurrentTemplate.AgendaCode ?? "";
-        bool jeZastavkova = agendaCode.StartsWith("ZASTAVKOVY", StringComparison.OrdinalIgnoreCase);
-        bool jeKnizni     = agendaCode.StartsWith("KNIZNI", StringComparison.OrdinalIgnoreCase);
-        bool bezKontextu  = !jeZastavkova && !jeKnizni;
+        // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
+        var kind = _vm.CurrentAgendaElementKind;
         menu.Items.Add(new Separator());
-        if (bezKontextu || jeZastavkova)
-        {
+        if (AgendaCapabilities.Supports(kind, ElementTypes.StopList))
             Add("Seznam zastávek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.StopList, 0, 0));
+        if (AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid))
             Add("Mřížka odjezdů",     () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DepartureGrid, 0, 0));
+        if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
             Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
-        }
-        if (bezKontextu || jeKnizni)
+        if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
             Add("Knižní JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
@@ -1614,17 +1611,12 @@ public partial class MainWindow : Window
     private void UpdatePaletteForAgenda()
     {
         if (_vm is null) return;
-        var code = _vm.State.CurrentTemplate.AgendaCode ?? "";
-        bool jeZastavkova = code.StartsWith("ZASTAVKOVY", StringComparison.OrdinalIgnoreCase);
-        bool jeKnizni     = code.StartsWith("KNIZNI", StringComparison.OrdinalIgnoreCase);
-        bool bezKontextu  = !jeZastavkova && !jeKnizni;
-
-        var zastavkove = bezKontextu || jeZastavkova ? Visibility.Visible : Visibility.Collapsed;
-        var knizni     = bezKontextu || jeKnizni     ? Visibility.Visible : Visibility.Collapsed;
-        BtnPalStopList.Visibility      = zastavkove;
-        BtnPalDepartureGrid.Visibility = zastavkove;
-        BtnPalNotesLegend.Visibility   = zastavkove;
-        BtnPalLineTable.Visibility     = knizni;
+        var kind = _vm.CurrentAgendaElementKind;
+        static Visibility Vis(bool b) => b ? Visibility.Visible : Visibility.Collapsed;
+        BtnPalStopList.Visibility      = Vis(AgendaCapabilities.Supports(kind, ElementTypes.StopList));
+        BtnPalDepartureGrid.Visibility = Vis(AgendaCapabilities.Supports(kind, ElementTypes.DepartureGrid));
+        BtnPalNotesLegend.Visibility   = Vis(AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend));
+        BtnPalLineTable.Visibility     = Vis(AgendaCapabilities.Supports(kind, ElementTypes.LineTable));
     }
 
     private void ShowHelp()

@@ -30,6 +30,10 @@ Parameter AgendaCode = "ZASTAVKOVY_JR_MHD";
 
 Parameter AgendaLabel = "Zastávkový JŘ (MHD)";
 
+Parameter InstanceParamName = "LINKA_ID";
+
+Parameter ElementKind = "STOP";
+
 /// Vrátí schéma polí MHD agendy.
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

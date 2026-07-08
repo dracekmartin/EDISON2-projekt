@@ -209,11 +209,22 @@ public class TemplateDesignerViewModel : EDViewModel
         }
     }
 
-    /// <summary>Per-agenda mapování instance value → jméno parametru pro GetData.</summary>
-    private static string InstanceParamName(string agendaCode) =>
-        (agendaCode.Equals("ZASTAVKOVY_JR_MHD", StringComparison.OrdinalIgnoreCase)
-         || agendaCode.Equals("ZASTAVKOVY_JR_AD", StringComparison.OrdinalIgnoreCase)
-         || agendaCode.Equals("KNIZNI_JR_AD", StringComparison.OrdinalIgnoreCase)) ? "LINKA_ID" : "INSTANCE_ID";
+    /// <summary>Registr agend (capability metadata z Caché) — lookup InstanceParamName / ElementKind dle kódu.</summary>
+    private readonly IReadOnlyList<AgendaRegistryEntry> _agendaEntries;
+
+    private AgendaRegistryEntry? AgendaEntry(string? agendaCode) =>
+        string.IsNullOrEmpty(agendaCode) ? null
+        : _agendaEntries.FirstOrDefault(a => a.Code.Equals(agendaCode, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Jméno IN parametru GetData pro danou agendu (z registru; default INSTANCE_ID) —
+    /// místo hardcoded větvení podle názvu agendy.</summary>
+    private string InstanceParamName(string agendaCode) => AgendaEntry(agendaCode)?.InstanceParamName ?? "INSTANCE_ID";
+
+    /// <summary>Instance-param aktuální agendy (LINKA_ID / INSTANCE_ID) — čte code-behind (PrintDialog).</summary>
+    public string CurrentInstanceParamName => InstanceParamName(State.CurrentTemplate.AgendaCode ?? "");
+
+    /// <summary>Druh JŘ elementů aktuální agendy (STOP/LINE/"") — řídí kontextové menu + paletu okna.</summary>
+    public string CurrentAgendaElementKind => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind ?? "";
 
     // ── Real preview data ────────────────────────────────────────────────────
     private List<DataContext>?                  _realPreviewData;
@@ -427,6 +438,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         var resolvedMlRest = mlRest ?? CacheSchemaWiring.TryCreateMlRest(settings);
         var resolvedAgendas = agendas ?? [];
+        _agendaEntries = resolvedAgendas;
         CacheProvider = resolvedMlRest is not null && resolvedAgendas.Count > 0
             ? CacheSchemaWiring.TryCreate(resolvedMlRest, resolvedAgendas)
             : null;

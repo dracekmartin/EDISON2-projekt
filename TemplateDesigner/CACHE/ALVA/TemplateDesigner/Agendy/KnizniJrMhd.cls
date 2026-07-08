@@ -28,6 +28,10 @@ Parameter AgendaCode As %String = "KNIZNI_JR_MHD";
 
 Parameter AgendaLabel As %String = "Knižní JŘ (MHD)";
 
+Parameter InstanceParamName As %String = "LINKA_ID";
+
+Parameter ElementKind As %String = "LINE";
+
 /// Vrátí DataSchema — shodné s KnizniJrAd (stejný wire formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {

@@ -38,6 +38,16 @@ Parameter AgendaCode As %String = "";
 /// User-facing label zobrazený v ChangeAgendaDialog. Override v každé subclass.
 Parameter AgendaLabel As %String = "";
 
+/// Jméno IN parametru GetData, kterým se předává vybraná instance (linka/faktura).
+/// Zastávkové a knižní JŘ = "LINKA_ID", ostatní default "INSTANCE_ID". Okno ho čte
+/// z registru (AgendaRegistryEntry) → žádné hardcoded větvení dle kódu agendy.
+Parameter InstanceParamName As %String = "INSTANCE_ID";
+
+/// Druh JŘ elementů, které agenda podporuje — řídí kontextové menu/paletu okna.
+/// "STOP" = zastávkové (StopList/DepartureGrid/NotesLegend), "LINE" = knižní/linkové
+/// (LineTable), "" = bez JŘ kontextu (okno ukáže všechny). C# vlastní mapování druh→typy.
+Parameter ElementKind As %String = "";
+
 /// Vrátí DataSchema pro agendu: skalární pole (fields) + tabulkové kolekce (fieldCollections).
 /// OUT[1] = JSON objekt:
 ///   { "fields": [...], "fieldCollections": [...] }

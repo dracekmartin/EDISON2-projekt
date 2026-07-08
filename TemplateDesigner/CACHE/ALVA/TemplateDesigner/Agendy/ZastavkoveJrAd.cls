@@ -31,6 +31,10 @@ Parameter AgendaCode = "ZASTAVKOVY_JR_AD";
 
 Parameter AgendaLabel = "Zastávkový JŘ (AD)";
 
+Parameter InstanceParamName = "LINKA_ID";
+
+Parameter ElementKind = "STOP";
+
 /// Vrátí DataSchema — shodné se zastávkovým JŘ MHD (stejný výstupní formát).
 ClassMethod GetSchema(ByRef sys As %String) As %Status
 {
