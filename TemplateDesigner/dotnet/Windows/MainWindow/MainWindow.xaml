@@ -569,9 +569,16 @@
                                                    FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                                    Foreground="{DynamicResource EDTheme.Text.Header}"/>
                                     </HierarchicalDataTemplate>
-                                    <!-- SchemaFieldVM: leaf field -->
+                                    <!-- SchemaFieldVM: leaf field. Tooltip ukáže plný název + label
+                                         (řádek se při úzkém panelu ořízne clipem, „…" TreeView nedělá). -->
                                     <DataTemplate DataType="{x:Type local:SchemaFieldVM}">
                                         <StackPanel Orientation="Horizontal">
+                                            <StackPanel.ToolTip>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding FieldName}" FontFamily="Consolas" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding Label}"/>
+                                                </StackPanel>
+                                            </StackPanel.ToolTip>
                                             <TextBlock Text="{Binding FieldName}"
                                                        FontFamily="Consolas" FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                                        Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
