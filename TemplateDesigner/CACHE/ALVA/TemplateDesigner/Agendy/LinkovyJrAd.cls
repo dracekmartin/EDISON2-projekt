@@ -1,20 +1,20 @@
 Include GENERAL
 
-/// Agenda: **Knižní / linkový JŘ z dat autobusové dopravy (AD)** — celá linka v jednom tisku:
+/// Agenda: **Linkový JŘ z dat autobusové dopravy (AD)** — celá linka v jednom tisku:
 /// svislý seznam zastávek (tarifní čísla) × vodorovné sloupce jednotlivých SPOJŮ s časy v buňkách.
 /// Legacy ekvivalent `ALVA.TISKJR` (klient) + `mkPLinWin^JRapiLinPrtWin` (JRMAIN, skutečný engine).
-///
+/// 
 /// Datový zdroj (stejný jako `ZastavkoveJrAd`):
 /// - `^[dataDB]JRL(sku,lin,...)` — linka ("I"), trasa ("J"), spoje ("T"/"Z"), trasy spojů ("W"),
 ///   km sloupce (PATCH,"KmsSmer"), návaznosti (spoj,31/32), omezení (spoj,11-15/22), PATCH metadata
 /// - `^[dataDB]JRZ(czst,...)`    — zastávky (názvy)
 /// - `^[dataDB]JRSET(...)`       — dopravci ("DOP"), texty legend ("NCOME"/"STALCOME"),
 ///   nadpisy skupin dnů ("Definice","WinMHD",rec,"DSC"), formát datumů ("Definice","TiskDtm")
-///
+/// 
 /// ── Wire formát (čistě JSON, R3) — 1 stránka per (linka × směr) ──────────────────
 /// **Sémantický tvar** (data = CO, element = JAK): element `LineTableElement` si matici
 /// [zastávka × spoj] skládá sám; Caché neposílá layout (žádný legacy `idobj` model).
-///
+/// 
 ///   values: CISLO_LINKY, POPIS_LINKY, POZNAMKA_NAD_LINKU, POZNAMKA_POD_DOPRAVCE, POPIS_DOPRAVCE,
 ///           PLATNOST_OD/DO, POPIS_PLATNOSTI, TYP_JR, QR_KOD, SMER ("T"/"Z"), POPIS_SMER,
 ///           VYCHOZI_ZASTAVKA
@@ -31,7 +31,7 @@ Include GENERAL
 ///   rows.SKUPINY_DNU: [{ ID, NADPIS }] dle parametru DELENI_SLOUPCU (texty WinMHD DSC číselník)
 ///   rows.POZNAMKY:    [{ DRUH (1-10 legacy číselník druhů), TYP ("text"/"znak"/"nz"), ZNAK, TEXT }]
 ///                     — pořadí druhů pevné (1,2,3,7,8,9,10; 4/5/6 zatím neemitovány)
-///
+/// 
 /// ── Vědomé mezery vůči mkPLinWin (viz analýza linkovy-knizni-jr-implementace §11) ──
 /// - bez 2D bin-packingu (`Strih`), měřicích řetězců a padding sloupců — layout řeší TD
 /// - bez turnusů, obousměrného tisku, souhrnných JŘ (řádek zdrojové linky)
@@ -40,15 +40,15 @@ Include GENERAL
 /// - dělení do skupin dnů jen dle Plk znaků (legacy u spojů „jede vždy" ověřuje kalendář
 ///   mkStaLinSp — spoj bez týdenní platnosti jde do všech skupin, jako legacy fallback HD 10183)
 /// - symbolový font (roadmap 42b): ZNAK hodnoty jsou legacy klíče (X, |, <, m, u…), ne glyfy
-///
+/// 
 /// Gold oracle: `ALVA.TISKJR.Data/LoadData` s `VOLANO_Z~JRMAIN`; multi-linkový diff harness
 /// (scratchpad LineTableHarness, režim diff) porovnává spoje/časy/km/zóny/poznámky napříč firmami.
-Class ALVA.TemplateDesigner.Agendy.KnizniJrAd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
+Class ALVA.TemplateDesigner.Agendy.LinkovyJrAd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
-Parameter AgendaCode As %String = "KNIZNI_JR_AD";
+Parameter AgendaCode As %String = "LINKOVY_JR_AD";
 
-Parameter AgendaLabel As %String = "Knižní JŘ (AD)";
+Parameter AgendaLabel As %String = "Linkový JŘ (AD)";
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 
@@ -1127,7 +1127,6 @@ ClassMethod NazevZastavkyPoradi(dataDB As %String, sku As %String, lin As %Strin
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Helpery sdílené se ZastavkoveJrAd vzorem (duplikované; extrakce až podle výsledků)
 /// ═══════════════════════════════════════════════════════════════════════════════
-
 /// W-mapa `poradi → cas`, cachovaná per `cisloTrasy`. `cas` = číslo | "<" jede jinudy |
 /// "|" projíždí | "" mimo trasu (chybějící segment).
 ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef wMap)

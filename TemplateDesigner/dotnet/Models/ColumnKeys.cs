@@ -17,7 +17,7 @@ public static class ColumnKeys
     public const string Tc       = "Tc";         // tarifní číslo
     public const string Zone     = "Zone";       // tarifní zóna/zóny
 
-    // ─── LineTableElement (knižní/linkový JŘ) ───
+    // ─── LineTableElement (linkový JŘ) ───
     public const string Km   = "Km";     // kilometráž (expanduje se na N sub-sloupců)
     public const string Mhd  = "Mhd";    // MHD/IDS sloupec (auto-hide když prázdné)
     public const string Trip = "Trip";   // sloupce časů spojů (vznikají z dat, řídí šířku/styl)

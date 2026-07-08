@@ -50,10 +50,31 @@ public class TemplateMigratorTests
     [Fact]
     public void VerzeBezPatchSegmentu_JeEkvivalentniAktualni()
     {
-        // Sémantické porovnání (VersionComparer): "1.1" == "1.1.0" → žádná migrace ani warning
-        var (_, wasMigrated, _) = new TemplateMigrator().Migrate(Json("1.1"));
+        // Sémantické porovnání (VersionComparer): "1.2" == "1.2.0" (CurrentVersion) → žádná migrace ani warning
+        var (_, wasMigrated, _) = new TemplateMigrator().Migrate(Json("1.2"));
 
         Assert.False(wasMigrated);
+    }
+
+    // ── Přejmenování agendy KNIZNI_JR_* → LINKOVY_JR_* (1.1.0 → 1.2.0) ───────
+
+    [Fact]
+    public void KnizniAgenda_SePremapujeNaLinkovou()
+    {
+        var root = JsonNode.Parse("""{ "version": "1.1.0", "agendaCode": "KNIZNI_JR_MHD" }""")!;
+        var (migrated, wasMigrated, _) = new TemplateMigrator().Migrate(root);
+
+        Assert.True(wasMigrated);
+        Assert.Equal("LINKOVY_JR_MHD", migrated["agendaCode"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void NelinkovaAgenda_ZustavaBezeZmeny()
+    {
+        var root = JsonNode.Parse("""{ "version": "1.1.0", "agendaCode": "ZASTAVKOVY_JR_AD" }""")!;
+        var (migrated, _, _) = new TemplateMigrator().Migrate(root);
+
+        Assert.Equal("ZASTAVKOVY_JR_AD", migrated["agendaCode"]!.GetValue<string>());
     }
 
     // ── Highlight rules migrace (1.0.0 → 1.1.0) ──────────────────────────────

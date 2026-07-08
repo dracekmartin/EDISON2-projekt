@@ -629,14 +629,14 @@ public class TemplateDesignerViewModel : EDViewModel
         ExecuteAsComposite("Nastavení zastávek", cmds);
     }
 
-    /// <summary>Knižní JŘ LineTable: tab „Obecné" + sloupce jako jeden undo krok.</summary>
+    /// <summary>Linkový JŘ LineTable: tab „Obecné" + sloupce jako jeden undo krok.</summary>
     public void ApplyLineTableColumnsEdit(LineTableElement element, IDesignerCommand? generalCommand, List<StopColumn> resultColumns)
     {
         var cmds = new List<IDesignerCommand>();
         if (generalCommand is not null) cmds.Add(generalCommand);
-        cmds.Add(new SetPropertyCommand("Sloupce knižního JŘ", element.Columns, resultColumns,
+        cmds.Add(new SetPropertyCommand("Sloupce linkového JŘ", element.Columns, resultColumns,
             v => element.Columns = (List<StopColumn>)v!));
-        ExecuteAsComposite("Nastavení knižního JŘ", cmds);
+        ExecuteAsComposite("Nastavení linkového JŘ", cmds);
     }
 
     /// <summary>Dynamická tabulka: tab „Obecné" + sloupce jako jeden undo krok.</summary>

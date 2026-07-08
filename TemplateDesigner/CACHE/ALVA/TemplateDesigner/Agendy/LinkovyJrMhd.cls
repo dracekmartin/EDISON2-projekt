@@ -1,32 +1,32 @@
 Include GENERAL
 
-/// Agenda: **Knižní / linkový JŘ z MHD dat** — celá linka v jednom tisku (svislý seznam zastávek
-/// × sloupce spojů), sourozenec `KnizniJrAd`. Legacy ekvivalent: `ALVA.MHD.LinkyPrintFormatJR.MakeData`
+/// Agenda: **Linkový JŘ z MHD dat** — celá linka v jednom tisku (svislý seznam zastávek
+/// × sloupce spojů), sourozenec `LinkovyJrAd`. Legacy ekvivalent: `ALVA.MHD.LinkyPrintFormatJR.MakeData`
 /// (větev `VolanoZ="MHD"` v `ALVA.TISKJR.Data.LoadData`); stejný výstupní kontrakt jako mkPLinWin.
-///
+/// 
 /// Datový zdroj (stejný jako `ZastavkoveJrMhd`):
 /// - `^ALVA.MHD.LSO(IdFa,1/2/4,...)` — linka / spoje / trasa (ModelTrasaBodDetail)
 /// - `^ALVA.MHD.ZST(IdFa,...)`       — zastávky (Cislo, ZonyID, Atributy)
 /// - `^ALVA.MHD.ENUMS(IdFa,...)`     — číselníky (Zony, Atribut, PoznamkaSpoj, TypyProvozu)
 /// - helpery `ALVA.MHD.*Fce` (GetTrasaId, GetNazevHrl, MakeTableSpoj, GetPoznamkySpoj,
 ///   GetAtributySpoj, GetJede, MakeRozpisTplProTypProvozuID, MakeOmezeniTXT)
-///
-/// Wire formát = shodný s `KnizniJrAd` (konzumuje tentýž `LineTableElement`):
+/// 
+/// Wire formát = shodný s `LinkovyJrAd` (konzumuje tentýž `LineTableElement`):
 /// 1 stránka per (linka × směr); SPOJE.SKUPINA = TypProvozu (řazený dle ENUMS Poradi),
 /// SKUPINY_DNU.NADPIS z TypyProvozu NadpisSMOPrvni/Druhy. Bez sloupců Km/Tč/MHD a bez
 /// vyčká/navazuje (MHD zdroj je nemá — 1:1 s legacy MakeData).
-///
+/// 
 /// ── Rozdíly/mezery vůči legacy MakeData (první řez) ──
 /// - sloupec „OdjezdPříjezd" (typ 5, texty př/od) nahrazen ZASTAVKY.TYP="prijezd" podřádky
 /// - výběr TypProvozu/Směru (arr,11) zatím bez parametru — tiskne vše
 /// - NZ auto-poznámkování rozdílů platností (GetJede vs ProvozBitMapa → MakeOmezeniTXT) 1:1;
 ///   speciální znaky spoje (SpecZnak dny) a atributy B/C v řádku platnosti
-Class ALVA.TemplateDesigner.Agendy.KnizniJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
+Class ALVA.TemplateDesigner.Agendy.LinkovyJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
-Parameter AgendaCode As %String = "KNIZNI_JR_MHD";
+Parameter AgendaCode As %String = "LINKOVY_JR_MHD";
 
-Parameter AgendaLabel As %String = "Knižní JŘ (MHD)";
+Parameter AgendaLabel As %String = "Linkový JŘ (MHD)";
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 

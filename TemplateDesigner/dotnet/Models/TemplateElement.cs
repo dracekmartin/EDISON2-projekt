@@ -250,7 +250,7 @@ public abstract class TemplateElement
         StopListElement      => "Seznam zastávek",
         DepartureGridElement d => $"Odjezdy {(d.SkupinaDnuId.Length > 0 ? d.SkupinaDnuId : "auto")}",
         NotesLegendElement   => "Legenda poznámek",
-        LineTableElement     => "Knižní JŘ (zastávky × spoje)",
+        LineTableElement     => "Linkový JŘ (zastávky × spoje)",
         _                  => $"({el.X:0.#}, {el.Y:0.#}) {el.Width:0.#}x{(el.Height?.ToString("0.#") ?? "auto")}"
     };
 

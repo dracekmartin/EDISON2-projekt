@@ -7,9 +7,9 @@ using TemplateDesigner.Rendering;
 namespace TemplateDesigner.Models.Elements;
 
 /// <summary>
-/// Knižní / linkový jízdní řád — celá linka v jedné tabulce: svislý seznam zastávek
+/// Linkový jízdní řád — celá linka v jedné tabulce: svislý seznam zastávek
 /// (tarifní čísla) × vodorovné sloupce jednotlivých spojů s časy v buňkách.
-/// Datový zdroj: agenda KNIZNI_JR_AD / KNIZNI_JR_MHD (kolekce ZASTAVKY + SPOJE + SKUPINY_DNU).
+/// Datový zdroj: agenda LINKOVY_JR_AD / LINKOVY_JR_MHD (kolekce ZASTAVKY + SPOJE + SKUPINY_DNU).
 ///
 /// Sloupce (`Columns`, model <see cref="StopColumn"/> — sdílený se StopList) definují popisové
 /// sloupce: Zóna, Km, Tč, Zastávka, MHD + „Spoj" (řídí šířku/styl časových sloupců spojů, které
@@ -506,7 +506,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
         float headerFontPx = headerResolved.FontSize * PtToMm * ctx.MmToPx;
         using var headerFont = new SKFont(GetTypeface(headerResolved.FontFamily, SKFontStyle.Bold), headerFontPx);
-        float currentY = RenderSectionHeader(ctx, "Knižní JŘ — zastávky × spoje", X, Y, Width, headerH,
+        float currentY = RenderSectionHeader(ctx, "Linkový JŘ — zastávky × spoje", X, Y, Width, headerH,
             headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
 
         float dataFontPx = dataResolved.FontSize * PtToMm * ctx.MmToPx;

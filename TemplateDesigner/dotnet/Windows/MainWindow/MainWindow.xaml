@@ -325,7 +325,7 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.NotesLegend}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Knižní JŘ (zastávky × spoje)" Tag="LineTableElement"
+                        <Button x:Name="BtnPalLineTable" Style="{StaticResource PaletteButton}" ToolTip="Linkový JŘ (zastávky × spoje)" Tag="LineTableElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.StopList}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>

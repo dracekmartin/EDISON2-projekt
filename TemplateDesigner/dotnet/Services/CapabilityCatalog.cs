@@ -199,7 +199,7 @@ Pravidla obsahu:
 
     /// <summary>
     /// Jízdněřádová agenda? Heuristika z kódu agendy (konvence: ZASTAVKOVY_JR_*, MHD, …).
-    /// Až přibudou další JŘ typy (linkový, knižní…) s vlastními elementy, rozšíří se zde mapování.
+    /// Až přibudou další JŘ typy (meziměstský, vozový…) s vlastními elementy, rozšíří se zde mapování.
     /// </summary>
     private static bool IsScheduleAgenda(string? agendaCode)
     {

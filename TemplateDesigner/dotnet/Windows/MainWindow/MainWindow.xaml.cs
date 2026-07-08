@@ -1181,7 +1181,7 @@ public partial class MainWindow : Window
         if (AgendaCapabilities.Supports(kind, ElementTypes.NotesLegend))
             Add("Legenda poznámek",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.NotesLegend, 0, 0));
         if (AgendaCapabilities.Supports(kind, ElementTypes.LineTable))
-            Add("Knižní JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
+            Add("Linkový JŘ (zastávky × spoje)", () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.LineTable, 0, 0));
 
         menu.PlacementTarget = (UIElement)sender;
         menu.IsOpen = true;

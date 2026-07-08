@@ -7,10 +7,10 @@ using TemplateDesigner.Rendering;
 
 namespace TemplateDesigner;
 
-// ─── ViewModel pro řádek sloupce knižního JŘ ────────────────────────────────
+// ─── ViewModel pro řádek sloupce linkového JŘ ────────────────────────────────
 
 /// <summary>
-/// Řádek sloupce v editoru knižního JŘ — sdílí model <see cref="StopColumn"/> i UI infrastrukturu
+/// Řádek sloupce v editoru linkového JŘ — sdílí model <see cref="StopColumn"/> i UI infrastrukturu
 /// (<see cref="Controls.ColumnListEditor"/> + <see cref="Controls.CellStyleEditor"/>) se StopList.
 /// Zarovnání se prosazuje přes HAlign v CellStyleEditor; <see cref="Alignment"/> je jen passthrough
 /// per-column default (StopName vlevo, ostatní na střed).

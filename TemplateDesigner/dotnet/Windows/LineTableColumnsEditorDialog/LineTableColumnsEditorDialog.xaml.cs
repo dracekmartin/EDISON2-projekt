@@ -70,7 +70,7 @@ public partial class LineTableColumnsEditorDialog : Window
         {
             0 => null,
             1 => cmds[0],
-            _ => new CompositeCommand("Nastavení knižního JŘ", cmds)
+            _ => new CompositeCommand("Nastavení linkového JŘ", cmds)
         };
 
         _vm.OkCommand.Execute(null);
