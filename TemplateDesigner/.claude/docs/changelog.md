@@ -18,6 +18,11 @@ seamy, které jinak platí daň při každém dalším tabulkovém elementu / fe
   vystavuje `CalculateHeightFromData(data)` jako ostatní tabulkové elementy a kalkulátor jen deleguje.
   Behavior-preserving (logika 1:1, jen přesunutá; magic „3 ukázkové řádky" → existující `DesignerPreviewRows`).
   Nový tabulkový element už nepřidává větev do switche kalkulátoru.
+- **Krok 4 — agregace nad výrazem (uživatelská featura).** Souhrnné řádky tabulky uměly jen
+  `SUM({POLE})` (holé pole); nově `SUM({CENA}*{POCET})` — argument je **výraz** vyhodnocený per řádek
+  přes `ExpressionEvaluator`, takže lze sečíst i počítaný sloupec (dřív šel počítaný sloupec vytvořit,
+  ale ne agregovat). Zpětně kompatibilní (holé pole beze změny), aditivní. Omezení: bez vnořených
+  závorek v argumentu. Zaevidováno v CLAUDE.md (výrazový jazyk).
 
 ## 2026-07-07 — Úklid z auditu v1 (P-C: R4 dluh + drobnosti)
 

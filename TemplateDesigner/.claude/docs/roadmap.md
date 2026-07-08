@@ -15,7 +15,8 @@
      (viz changelog).
    - [x] **#5 `SkiaHeightCalculator`: `TableElement` deleguje** na `CalculateHeightFromData` — hotovo
      2026-07-08 (behavior-preserving, inline `CalculateTableElementHeight` zrušen).
-   - [ ] **#4 `AggregationResolver` nad výrazem** — `SUM({A}*{B})`, ne jen bare `{FIELD}` (regex + route přes `ExpressionEvaluator`). Prerekvizita per-group subtotalů počítaných sloupců.
+   - [x] **#4 `AggregationResolver` nad výrazem** — hotovo 2026-07-08. `SUM({CENA}*{POCET})` (argument =
+     výraz per řádek). Zpětně kompat., zaevidováno v CLAUDE.md. Odemyká per-group subtotaly počítaných sloupců.
    - [ ] **#1 `HighlightRule` list + migrátor** — conditional formatting z jednoho pravidla (jen pozadí) na seznam + barva textu + per-cell. **Breaking JSON (R5 migrátor)** — udělat, dokud šablony ten single-rule prop skoro nepoužívají. Největší z pětice, ne „technický krok".
    - [ ] **#2 Extrakce středního švu** — resolve-wrappery + trojice `RowVisibility/Highlight` copy-pasted přes 4 elementy → mixin/helper. **Až po #1** (přepisuje `RowHighlight*` tvar).
 2. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).

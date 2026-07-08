@@ -5,19 +5,23 @@ namespace TemplateDesigner.Models.Expressions;
 
 /// <summary>
 /// Vyhodnocuje agregační funkce v textu buňky nad kolekcí řádků.
-/// Podporované funkce: SUM({POLE}), COUNT(), AVG({POLE}), MIN({POLE}), MAX({POLE}).
+/// Podporované funkce: SUM(výraz), COUNT(), AVG(výraz), MIN(výraz), MAX(výraz).
 ///
-/// Příklady:
-///   "SUM({CENA})"                → "60000"
+/// Argument agregace je <b>výraz</b> vyhodnocený per řádek přes <see cref="ExpressionEvaluator"/> —
+/// nejen holé pole, ale i aritmetika nad poli řádku (počítaný sloupec):
+///   "SUM({CENA})"                → "60000"          (holé pole)
+///   "SUM({CENA}*{POCET})"        → "72000"          (výraz nad poli řádku)
 ///   "Celkem: SUM({CENA})"       → "Celkem: 60000"
 ///   "Řádků: COUNT()"             → "Řádků: 4"
 ///   "Průměr: AVG({CENA})"       → "Průměr: 15000"
+///
+/// Omezení: argument nesmí obsahovat vnořené závorky (regex bere obsah po první „)").
 /// </summary>
 public static class AggregationResolver
 {
-    // Pattern: SUM({FIELD}), COUNT(), AVG({FIELD}), MIN({FIELD}), MAX({FIELD})
+    // Pattern: FUNC( <výraz nebo prázdno> ) — argument = vše po první „)"
     private static readonly Regex AggregationPattern = new(
-        @"(SUM|COUNT|AVG|MIN|MAX)\((?:\{(\w+)\})?\)",
+        @"(SUM|COUNT|AVG|MIN|MAX)\(([^)]*)\)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     /// <summary>
@@ -31,22 +35,23 @@ public static class AggregationResolver
         return AggregationPattern.Replace(template, m =>
         {
             var func = m.Groups[1].Value.ToUpperInvariant();
-            var field = m.Groups[2].Success ? m.Groups[2].Value : null;
-            return Evaluate(func, field, rows ?? []);
+            var arg = m.Groups[2].Value.Trim();   // výraz (s {poli}) nebo prázdno u COUNT()
+            return Evaluate(func, arg, rows ?? []);
         });
     }
 
-    private static string Evaluate(string func, string? field, IReadOnlyList<DataContext> rows)
+    private static string Evaluate(string func, string arg, IReadOnlyList<DataContext> rows)
     {
         if (func == "COUNT")
             return rows.Count.ToString(CultureInfo.InvariantCulture);
 
-        if (field is null) return "";
+        if (string.IsNullOrEmpty(arg)) return "";
 
         var values = new List<double>();
         foreach (var row in rows)
         {
-            var raw = row.GetString(field);
+            // Argument je výraz nad poli řádku — vyhodnotí ho evaluator (holé {POLE} = jen jeho hodnota)
+            var raw = ExpressionEvaluator.EvaluateToString(arg, row);
             if (!string.IsNullOrEmpty(raw) &&
                 double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out double num))
             {
