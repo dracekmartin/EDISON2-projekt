@@ -72,10 +72,9 @@ public class LineTableElement : ScheduleElementBase
     // Prázdný výraz = vypnuto (nulová změna chování).
     /// <summary>Zastávka, kde výraz neplatí, se nevykreslí (řádek + její přípojné řádky; nezapočítá do výšky).</summary>
     public string? RowVisibilityExpression { get; set; }
-    /// <summary>1 pravidlo, jen pozadí. Multi-pravidlo (<see cref="ColorRule"/> seznam) přijde aditivně,
-    /// bez rozbití šablon — vědomě odloženo (2026-07-05).</summary>
-    public string? RowHighlightExpression { get; set; }
-    public string? RowHighlightColor { get; set; }
+    /// <summary>Podmíněné zvýraznění: seznam pravidel (výraz → barva pozadí), první splněné vyhrává.
+    /// Null/prázdné = bez zvýraznění.</summary>
+    public List<HighlightRule>? HighlightRules { get; set; }
 
     protected override float DesignerPlaceholderHeight => 60f;
 
@@ -438,7 +437,7 @@ public class LineTableElement : ScheduleElementBase
                 bool oddTc = HighlightOddTc && int.TryParse(stop.Tc, out var tcNum) && tcNum % 2 == 1;
 
                 // Podmíněné zvýraznění řádku zastávky (celá šířka, za sloupci) — sdílené s DynamicTable/StopList.
-                string? rowHl = RowConditions.HighlightColor(RowHighlightExpression, RowHighlightColor, stop.SourceRow);
+                string? rowHl = RowConditions.HighlightColor(HighlightRules, stop.SourceRow);
                 if (rowHl is not null)
                 {
                     using var hlPaint = new SKPaint { Color = SKColor.Parse(rowHl) };
@@ -534,8 +533,7 @@ public class LineTableElement : ScheduleElementBase
             HighlightOddTc = HighlightOddTc,
             OddTcBackColor = OddTcBackColor,
             RowVisibilityExpression = RowVisibilityExpression,
-            RowHighlightExpression = RowHighlightExpression,
-            RowHighlightColor = RowHighlightColor,
+            HighlightRules = HighlightRules?.Select(r => r.Clone()).ToList(),
         };
         CopyBaseTo(clone);
         CopyScheduleBaseProperties(clone);
@@ -563,19 +561,6 @@ public class LineTableElement : ScheduleElementBase
             Get = () => RowVisibilityExpression ?? "",
             Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
             Validate = ExpressionEvaluator.Validate
-        },
-        new StringPropertyDescriptor
-        {
-            Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",
-            Get = () => RowHighlightExpression ?? "",
-            Set = v  => RowHighlightExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
-            Validate = ExpressionEvaluator.Validate
-        },
-        new ColorPropertyDescriptor
-        {
-            Label = "Barva zvýraznění", Group = "Podmínky",
-            Get   = () => RowHighlightColor ?? "#00FFFFFF",
-            Set   = v => RowHighlightColor = v == "#00FFFFFF" ? null : v
         },
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),

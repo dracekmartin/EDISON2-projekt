@@ -21,8 +21,16 @@ public static class TemplateSerializer
 
     public static string Serialize(Template template)
     {
-        template.ModifiedAt = DateTime.UtcNow;
+        StampForSave(template);
         return JsonSerializer.Serialize(template, Options);
+    }
+
+    /// <summary>Razítko při uložení: čas změny + aktuální verze formátu (uložením se šablona
+    /// zapisuje v aktuálním schématu, ne v tom, ze kterého byla načtena).</summary>
+    private static void StampForSave(Template template)
+    {
+        template.ModifiedAt = DateTime.UtcNow;
+        template.Version = TemplateMigrator.CurrentVersion;
     }
 
     /// <summary>
@@ -58,7 +66,7 @@ public static class TemplateSerializer
 
     public static async Task SaveAsync(Template template, string filePath, CancellationToken ct = default)
     {
-        template.ModifiedAt = DateTime.UtcNow;
+        StampForSave(template);
         // Serializace běží na threadpoolu — JsonSerializer.SerializeAsync dělá
         // reflection walk synchronně na volajícím threadu. Velké šablony
         // (schedule elementy, base64 obrázky) jinak zamrazí UI.
@@ -69,7 +77,7 @@ public static class TemplateSerializer
     /// <summary>Synchronní varianta pro volající kteří nemohou await (např. ConfirmUnsavedChanges při zavírání okna).</summary>
     public static void Save(Template template, string filePath)
     {
-        template.ModifiedAt = DateTime.UtcNow;
+        StampForSave(template);
         var bytes = JsonSerializer.SerializeToUtf8Bytes(template, Options);
         File.WriteAllBytes(filePath, bytes);
     }

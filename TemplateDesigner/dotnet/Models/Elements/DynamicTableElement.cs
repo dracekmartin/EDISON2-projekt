@@ -55,15 +55,10 @@ public class DynamicTableElement : TemplateElement
     public string? RowVisibilityExpression { get; set; }
 
     /// <summary>
-    /// Podmíněné formátování (1 pravidlo, jen pozadí): řádek splňující tento výraz dostane pozadí
-    /// <see cref="RowHighlightColor"/>. Null/prázdné = bez zvýraznění. Jedno pravidlo je dodávaný
-    /// kontrakt; multi-pravidlo (seznam + barva textu) přijde aditivně jako budoucí <c>RowColorRules</c>
-    /// (<see cref="ColorRule"/>) bez rozbití šablon — vědomě odloženo (2026-07-05).
+    /// Podmíněné formátování řádku: seznam pravidel (výraz → barva pozadí), první splněné vyhrává.
+    /// Null/prázdné = bez zvýraznění. Vyhodnocuje <see cref="RowConditions.HighlightColor(IReadOnlyList{HighlightRule}, DataContext)"/>.
     /// </summary>
-    public string? RowHighlightExpression { get; set; }
-
-    /// <summary>Barva pozadí zvýrazněného řádku (#AARRGGBB). Null = bez zvýraznění.</summary>
-    public string? RowHighlightColor { get; set; }
+    public List<HighlightRule>? HighlightRules { get; set; }
 
     /// <summary>
     /// Minimální počet řádků — je-li reálných datových řádků méně, tabulka se doplní prázdnými řádky
@@ -248,7 +243,7 @@ public class DynamicTableElement : TemplateElement
 
     /// <summary>Barva pozadí zvýraznění řádku (sdílený <see cref="RowConditions"/>); null = bez zvýraznění.</summary>
     public string? ResolveRowHighlight(DataContext row) =>
-        RowConditions.HighlightColor(RowHighlightExpression, RowHighlightColor, row);
+        RowConditions.HighlightColor(HighlightRules, row);
 
     /// <summary>Přirozená (neškálovaná) výška obsahu v mm pro daný počet datových řádků.</summary>
     private float NaturalHeight(int dataRowCount)
@@ -529,20 +524,6 @@ public class DynamicTableElement : TemplateElement
             Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
             Validate = ExpressionEvaluator.Validate
         },
-        new StringPropertyDescriptor
-        {
-            Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",
-            // Řádek splňující podmínku dostane pozadí „Barva zvýraznění". Prázdné = bez zvýraznění.
-            Get = () => RowHighlightExpression ?? "",
-            Set = v  => RowHighlightExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
-            Validate = ExpressionEvaluator.Validate
-        },
-        new ColorPropertyDescriptor
-        {
-            Label = "Barva zvýraznění", Group = "Podmínky",
-            Get   = () => RowHighlightColor ?? "#00FFFFFF",
-            Set   = v => RowHighlightColor = v == "#00FFFFFF" ? null : v
-        },
 
         .. GetPositionDescriptors()
     ];
@@ -575,8 +556,7 @@ public class DynamicTableElement : TemplateElement
             BorderStyle         = BorderStyle,
             AlternatingRowColor = AlternatingRowColor,
             RowVisibilityExpression = RowVisibilityExpression,
-            RowHighlightExpression  = RowHighlightExpression,
-            RowHighlightColor       = RowHighlightColor,
+            HighlightRules          = HighlightRules?.Select(r => r.Clone()).ToList(),
             MinRows                 = MinRows,
             MaxRows                 = MaxRows,
         };

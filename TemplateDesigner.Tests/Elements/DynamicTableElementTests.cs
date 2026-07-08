@@ -1,5 +1,6 @@
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
+using TemplateDesigner.Models.Expressions;
 using TemplateDesigner.Models.Schema;
 
 namespace TemplateDesigner.Tests.Elements;
@@ -167,31 +168,30 @@ public class DynamicTableElementTests
         Assert.Equal(30f, el.CalculateHeightFromData(DataWithCena(10, 0, 20, -5)));
     }
 
-    // ── ResolveRowHighlight (podmíněné pozadí, 1 pravidlo) ───────────────
+    // ── ResolveRowHighlight (podmíněné pozadí, seznam pravidel) ───────────
 
     private static DataContext RowWithCena(double cena) =>
         new(new Dictionary<string, object?> { ["CENA"] = cena });
 
-    [Fact]
-    public void RowHighlight_PodminkaSplnena_VratiBarvu()
-    {
-        var el = new DynamicTableElement { RowHighlightExpression = "{CENA} < 0", RowHighlightColor = "#FFFFCCCC" };
-        Assert.Equal("#FFFFCCCC", el.ResolveRowHighlight(RowWithCena(-5)));
-    }
+    private static DynamicTableElement WithRules(params (string cond, string color)[] r) =>
+        new() { HighlightRules = r.Select(x => new HighlightRule { Condition = x.cond, BackgroundColor = x.color }).ToList() };
 
     [Fact]
-    public void RowHighlight_PodminkaNesplnena_Null()
-    {
-        var el = new DynamicTableElement { RowHighlightExpression = "{CENA} < 0", RowHighlightColor = "#FFFFCCCC" };
-        Assert.Null(el.ResolveRowHighlight(RowWithCena(10)));
-    }
+    public void RowHighlight_PodminkaSplnena_VratiBarvu() =>
+        Assert.Equal("#FFFFCCCC", WithRules(("{CENA} < 0", "#FFFFCCCC")).ResolveRowHighlight(RowWithCena(-5)));
 
     [Fact]
-    public void RowHighlight_ChybiBarvaNeboVyraz_Null()
-    {
-        Assert.Null(new DynamicTableElement { RowHighlightExpression = "{CENA} < 0" }.ResolveRowHighlight(RowWithCena(-5)));
-        Assert.Null(new DynamicTableElement { RowHighlightColor = "#FFFFCCCC" }.ResolveRowHighlight(RowWithCena(-5)));
-    }
+    public void RowHighlight_PodminkaNesplnena_Null() =>
+        Assert.Null(WithRules(("{CENA} < 0", "#FFFFCCCC")).ResolveRowHighlight(RowWithCena(10)));
+
+    [Fact]
+    public void RowHighlight_PrvniSplnenaVyhrava() =>
+        Assert.Equal("#FF111111",
+            WithRules(("{CENA} < 0", "#FF111111"), ("{CENA} < 100", "#FF222222")).ResolveRowHighlight(RowWithCena(-5)));
+
+    [Fact]
+    public void RowHighlight_ZadnaPravidla_Null() =>
+        Assert.Null(new DynamicTableElement().ResolveRowHighlight(RowWithCena(-5)));
 
     // ── Clone (deep) ──────────────────────────────────────────────────────
 
@@ -208,8 +208,7 @@ public class DynamicTableElementTests
             ],
             HeaderStyle = new TextStyle { Bold = true },
             RowVisibilityExpression = "{CENA} > 0",
-            RowHighlightExpression = "{CENA} < 0",
-            RowHighlightColor = "#FFFFCCCC",
+            HighlightRules = [new HighlightRule { Condition = "{CENA} < 0", BackgroundColor = "#FFFFCCCC" }],
         };
 
         var clone = (DynamicTableElement)el.Clone();
@@ -217,8 +216,9 @@ public class DynamicTableElementTests
         Assert.NotEqual(el.Id, clone.Id);                       // CopyBaseTo dává nové Guid
         Assert.Equal("ZASTAVKY", clone.DataSource);
         Assert.Equal("{CENA} > 0", clone.RowVisibilityExpression);
-        Assert.Equal("{CENA} < 0", clone.RowHighlightExpression);
-        Assert.Equal("#FFFFCCCC", clone.RowHighlightColor);
+        Assert.Equal("{CENA} < 0", clone.HighlightRules![0].Condition);
+        Assert.Equal("#FFFFCCCC", clone.HighlightRules[0].BackgroundColor);
+        Assert.NotSame(el.HighlightRules![0], clone.HighlightRules[0]);  // pravidlo je vlastní instance (deep clone)
         Assert.NotSame(el.Columns[0], clone.Columns[0]);        // sloupec je vlastní instance
         clone.Columns[0].Header = "B";
         Assert.Equal("A", el.Columns[0].Header);                // změna klonu neovlivní originál

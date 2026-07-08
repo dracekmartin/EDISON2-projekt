@@ -74,11 +74,9 @@ public class StopListElement : StopScheduleElementBase
     // ═══════════════════════════════════════════
     /// <summary>Zastávka, kde výraz neplatí, se nevykreslí (a nezapočítá do výšky). Prázdné = všechny.</summary>
     public string? RowVisibilityExpression { get; set; }
-    /// <summary>Zastávka splňující výraz dostane pozadí <see cref="RowHighlightColor"/>. Priorita nad
-    /// podbarvením aktuální. 1 pravidlo; multi-pravidlo (<see cref="ColorRule"/> seznam) přijde aditivně,
-    /// bez rozbití šablon — vědomě odloženo (2026-07-05).</summary>
-    public string? RowHighlightExpression { get; set; }
-    public string? RowHighlightColor { get; set; }
+    /// <summary>Podmíněné zvýraznění: seznam pravidel (výraz → barva pozadí), první splněné vyhrává.
+    /// Priorita nad podbarvením aktuální zastávky. Null/prázdné = bez zvýraznění.</summary>
+    public List<HighlightRule>? HighlightRules { get; set; }
 
     // ═══════════════════════════════════════════
     // Projeté zastávky
@@ -215,7 +213,7 @@ public class StopListElement : StopScheduleElementBase
                     // Priorita: podmíněné zvýraznění (uživatelský záměr) > podbarvení aktuální zastávky.
                     // Per-column Style.Data.BackgroundColor (pokud je neprůhledná) toto lokálně přepíše.
                     string? rowBg =
-                        RowConditions.HighlightColor(RowHighlightExpression, RowHighlightColor, z.SourceRow)
+                        RowConditions.HighlightColor(HighlightRules, z.SourceRow)
                         ?? (isCurrent ? CurrentStopBackgroundColor : null);
                     if (rowBg is not null)
                     {
@@ -714,19 +712,6 @@ public class StopListElement : StopScheduleElementBase
             Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
             Validate = ExpressionEvaluator.Validate
         },
-        new StringPropertyDescriptor
-        {
-            Label = "Zvýraznit řádek (podmínka)", Group = "Podmínky",
-            Get = () => RowHighlightExpression ?? "",
-            Set = v  => RowHighlightExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
-            Validate = ExpressionEvaluator.Validate
-        },
-        new ColorPropertyDescriptor
-        {
-            Label = "Barva zvýraznění", Group = "Podmínky",
-            Get   = () => RowHighlightColor ?? "#00FFFFFF",
-            Set   = v => RowHighlightColor = v == "#00FFFFFF" ? null : v
-        },
 
         .. GetPositionDescriptors()
     ];
@@ -770,8 +755,7 @@ public class StopListElement : StopScheduleElementBase
             CurrentStopFontSize     = CurrentStopFontSize,
             CurrentStopBackgroundColor = CurrentStopBackgroundColor,
             RowVisibilityExpression = RowVisibilityExpression,
-            RowHighlightExpression  = RowHighlightExpression,
-            RowHighlightColor       = RowHighlightColor,
+            HighlightRules          = HighlightRules?.Select(r => r.Clone()).ToList(),
         };
         CopyBaseTo(clone);
         CopyStopScheduleProperties(clone);

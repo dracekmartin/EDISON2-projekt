@@ -29,13 +29,12 @@ public class TemplateMigratorTests
     [Fact]
     public void ChybejiciVerze_SePovazujeZa100()
     {
-        // ⚠️ Dokumentované chování: šablony bez "version" (před-versioningová éra,
-        // vč. flat-TextStyle formátu) jsou nerozlišitelné od aktuálních — případná budoucí
-        // migrace V0→V1 by na ně nedosáhla. Viz T3 bod „rozhodnutí o V1" (H-19).
+        // Šablony bez "version" (před-versioningová éra) se čtou jako "1.0.0". Od bumpu na 1.1.0
+        // (highlightRules migrace) jsou starší než aktuální → přerazítkují se a hlásí migraci.
         var (_, wasMigrated, original) = new TemplateMigrator().Migrate(Json(null));
 
         Assert.Equal("1.0.0", original);
-        Assert.False(wasMigrated);
+        Assert.True(wasMigrated);
     }
 
     [Fact]
@@ -51,10 +50,48 @@ public class TemplateMigratorTests
     [Fact]
     public void VerzeBezPatchSegmentu_JeEkvivalentniAktualni()
     {
-        // Sémantické porovnání (VersionComparer): "1.0" == "1.0.0" → žádná migrace ani warning
-        var (_, wasMigrated, _) = new TemplateMigrator().Migrate(Json("1.0"));
+        // Sémantické porovnání (VersionComparer): "1.1" == "1.1.0" → žádná migrace ani warning
+        var (_, wasMigrated, _) = new TemplateMigrator().Migrate(Json("1.1"));
 
         Assert.False(wasMigrated);
+    }
+
+    // ── Highlight rules migrace (1.0.0 → 1.1.0) ──────────────────────────────
+
+    [Fact]
+    public void HighlightRules_StaraPoleSePreklopiNaSeznam()
+    {
+        var json = JsonNode.Parse("""
+        {
+          "version": "1.0.0",
+          "sections": [ { "elements": [
+            { "type": "DynamicTableElement", "rowHighlightExpression": "{CENA} < 0", "rowHighlightColor": "#FFFFCCCC" }
+          ] } ]
+        }
+        """)!;
+
+        var (migrated, wasMigrated, _) = new TemplateMigrator().Migrate(json);
+
+        Assert.True(wasMigrated);
+        var el = migrated["sections"]![0]!["elements"]![0]!;
+        Assert.Null(el["rowHighlightExpression"]);   // stará pole odstraněna
+        Assert.Null(el["rowHighlightColor"]);
+        var rules = el["highlightRules"]!.AsArray();
+        Assert.Single(rules);
+        Assert.Equal("{CENA} < 0", rules[0]!["condition"]!.GetValue<string>());
+        Assert.Equal("#FFFFCCCC", rules[0]!["backgroundColor"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void HighlightRules_PrazdnaPodminka_ZadnySeznam()
+    {
+        var json = JsonNode.Parse("""
+        { "version": "1.0.0", "sections": [ { "elements": [ { "type": "TextElement" } ] } ] }
+        """)!;
+
+        var (migrated, _, _) = new TemplateMigrator().Migrate(json);
+
+        Assert.Null(migrated["sections"]![0]!["elements"]![0]!["highlightRules"]);
     }
 
     // ── Forward-compat guard (R5) ────────────────────────────────────────────

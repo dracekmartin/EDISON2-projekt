@@ -28,21 +28,49 @@ public class RowConditionsTests
         Assert.True(RowConditions.IsVisible("", Row("CENA", -5)));
     }
 
-    // ── HighlightColor ────────────────────────────────────────────────────
+    // ── HighlightColor (seznam pravidel, první splněné vyhrává) ────────────
+
+    private static List<HighlightRule> Rules(params (string cond, string color)[] r) =>
+        r.Select(x => new HighlightRule { Condition = x.cond, BackgroundColor = x.color }).ToList();
 
     [Fact]
     public void HighlightColor_PodminkaSplnena_VratiBarvu() =>
-        Assert.Equal("#FFFFCCCC", RowConditions.HighlightColor("{CENA} < 0", "#FFFFCCCC", Row("CENA", -5)));
+        Assert.Equal("#FFFFCCCC",
+            RowConditions.HighlightColor(Rules(("{CENA} < 0", "#FFFFCCCC")), Row("CENA", -5)));
 
     [Fact]
     public void HighlightColor_PodminkaNesplnena_Null() =>
-        Assert.Null(RowConditions.HighlightColor("{CENA} < 0", "#FFFFCCCC", Row("CENA", 10)));
+        Assert.Null(RowConditions.HighlightColor(Rules(("{CENA} < 0", "#FFFFCCCC")), Row("CENA", 10)));
 
     [Fact]
-    public void HighlightColor_ChybiVyrazNeboBarva_Null()
+    public void HighlightColor_PrvniSplnenaVyhrava()
     {
-        Assert.Null(RowConditions.HighlightColor(null, "#FFFFCCCC", Row("CENA", -5)));
-        Assert.Null(RowConditions.HighlightColor("{CENA} < 0", null, Row("CENA", -5)));
-        Assert.Null(RowConditions.HighlightColor("{CENA} < 0", "", Row("CENA", -5)));
+        // Obě podmínky platí (cena -5) → vrátí barvu PRVNÍHO pravidla
+        var rules = Rules(("{CENA} < 0", "#FF111111"), ("{CENA} < 100", "#FF222222"));
+        Assert.Equal("#FF111111", RowConditions.HighlightColor(rules, Row("CENA", -5)));
+    }
+
+    [Fact]
+    public void HighlightColor_PreskociNesplnena_VezmeDalsi()
+    {
+        // První neplatí (cena 10 není < 0), druhé platí → barva druhého
+        var rules = Rules(("{CENA} < 0", "#FF111111"), ("{CENA} < 100", "#FF222222"));
+        Assert.Equal("#FF222222", RowConditions.HighlightColor(rules, Row("CENA", 10)));
+    }
+
+    [Fact]
+    public void HighlightColor_ZadnaPravidla_Null()
+    {
+        Assert.Null(RowConditions.HighlightColor(null, Row("CENA", -5)));
+        Assert.Null(RowConditions.HighlightColor([], Row("CENA", -5)));
+    }
+
+    [Fact]
+    public void HighlightColor_PraviloBezVyrazuNeboBarvy_Preskoci()
+    {
+        Assert.Null(RowConditions.HighlightColor(
+            [new HighlightRule { Condition = null, BackgroundColor = "#FFFFCCCC" }], Row("CENA", -5)));
+        Assert.Null(RowConditions.HighlightColor(
+            [new HighlightRule { Condition = "{CENA} < 0", BackgroundColor = "" }], Row("CENA", -5)));
     }
 }

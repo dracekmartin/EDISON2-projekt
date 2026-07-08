@@ -19,12 +19,20 @@ public static class RowConditions
         ExpressionEvaluator.IsVisible(expression, row);
 
     /// <summary>
-    /// Barva pozadí zvýraznění, pokud řádek splní <paramref name="expression"/> a je zadaná
-    /// <paramref name="color"/>; jinak null (bez zvýraznění). Jedno pravidlo, jen pozadí.
+    /// Barva pozadí zvýraznění řádku — <b>první splněné pravidlo vyhrává</b>. Vrátí barvu prvního
+    /// pravidla, jehož <see cref="HighlightRule.Condition"/> platí a má vyplněnou barvu; jinak null
+    /// (bez zvýraznění). Jen pozadí; <see cref="HighlightRule.TargetColumn"/> render zatím neřeší.
     /// </summary>
-    public static string? HighlightColor(string? expression, string? color, DataContext? row) =>
-        !string.IsNullOrWhiteSpace(expression)
-        && !string.IsNullOrWhiteSpace(color)
-        && ExpressionEvaluator.IsVisible(expression, row)
-            ? color : null;
+    public static string? HighlightColor(IReadOnlyList<HighlightRule>? rules, DataContext? row)
+    {
+        if (rules is null) return null;
+        foreach (var rule in rules)
+        {
+            if (!string.IsNullOrWhiteSpace(rule.Condition)
+                && !string.IsNullOrWhiteSpace(rule.BackgroundColor)
+                && ExpressionEvaluator.IsVisible(rule.Condition, row))
+                return rule.BackgroundColor;
+        }
+        return null;
+    }
 }

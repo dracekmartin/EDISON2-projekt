@@ -14,16 +14,15 @@ namespace TemplateDesigner.Serialization;
 /// </para>
 ///
 /// <para>
-/// V Fázi 1 (2026-05-25) je migrations list **prázdný** — žádná konkrétní breaking
-/// change zatím nepadla. Framework je připraven; při budoucí breaking change přidej
-/// novou <c>ITemplateMigration</c> impl + bumpni <see cref="CurrentVersion"/>.
-/// Detail convention: <c>docs/template-schema-versions.md</c>.
+/// První migrace = <see cref="MigrationHighlightRules"/> (1.0.0 → 1.1.0). Při další breaking
+/// change přidej novou <c>ITemplateMigration</c> impl do default listu + bumpni
+/// <see cref="CurrentVersion"/>. Detail convention: <c>docs/template-schema-versions.md</c>.
 /// </para>
 /// </summary>
 public class TemplateMigrator
 {
     /// <summary>Aktuální nejvyšší podporovaná verze Template JSON.</summary>
-    public const string CurrentVersion = "1.0.0";
+    public const string CurrentVersion = "1.1.0";
 
     /// <summary>
     /// Registrované migrace, sortovány podle FromVersion vzestupně.
@@ -37,7 +36,7 @@ public class TemplateMigrator
     public TemplateMigrator(IEnumerable<ITemplateMigration>? migrations)
     {
         _migrations = migrations?.ToList() ?? [
-            // new MigrationFrom1To2(),  // až přijde první breaking change
+            new MigrationHighlightRules(),   // 1.0.0 → 1.1.0
         ];
     }
 
