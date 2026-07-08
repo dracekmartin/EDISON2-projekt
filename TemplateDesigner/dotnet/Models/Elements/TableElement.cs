@@ -181,6 +181,30 @@ public class TableElement : TemplateElement
         }
     }
 
+    /// <summary>
+    /// Dynamická výška v mm z dat — pro print engine (přes <c>SkiaHeightCalculator</c>, stejně jako
+    /// ostatní tabulkové elementy). Fixed = počet viditelných řádků, Dynamic = řádky z <see cref="DataSource"/>
+    /// (bez dat ukázkové řádky jako v designeru).
+    /// </summary>
+    public float CalculateHeightFromData(DataContext? data)
+    {
+        float headerH = ShowHeader ? HeaderHeight : 0f;
+        float summaryH = SummaryRows is { Count: > 0 } ? SummaryRows.Count * RowHeight : 0f;
+
+        int rowCount;
+        if (Mode == TableMode.Fixed)
+        {
+            rowCount = Rows?.Count(r => ExpressionEvaluator.IsVisible(r.VisibilityExpression, data)) ?? 0;
+        }
+        else
+        {
+            var rows = data?.GetRows(DataSource ?? "") ?? [];
+            rowCount = rows.Count > 0 ? rows.Count : DesignerPreviewRows;
+        }
+
+        return headerH + rowCount * RowHeight + summaryH;
+    }
+
     // ─── Style resolution (kaskáda column → element → table defaults → CellDefaults) ──
 
     // Gettery (ne static readonly) — aby font dědily z aktuálního CellDefaults.Default (ambient

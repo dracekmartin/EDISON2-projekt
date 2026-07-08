@@ -13,6 +13,11 @@ seamy, které jinak platí daň při každém dalším tabulkovém elementu / fe
   (Ctrl+D / undo) se ztrácela u `LineTableElement` a `NotesLegendElement` (StopList/DepartureGrid ji měly
   vypsanou explicitně, proto neselhaly). Fix: doplněna do base helperu, redundantní explicitní výpisy ve
   StopList/DepartureGrid odstraněny (base vlastní base property).
+- **Krok 5 — `SkiaHeightCalculator` deleguje výšku `TableElement` na element.** Kalkulátor už
+  nemá inline `CalculateTableElementHeight` (znal interní strukturu tabulky) — nově `TableElement`
+  vystavuje `CalculateHeightFromData(data)` jako ostatní tabulkové elementy a kalkulátor jen deleguje.
+  Behavior-preserving (logika 1:1, jen přesunutá; magic „3 ukázkové řádky" → existující `DesignerPreviewRows`).
+  Nový tabulkový element už nepřidává větev do switche kalkulátoru.
 
 ## 2026-07-07 — Úklid z auditu v1 (P-C: R4 dluh + drobnosti)
 

@@ -1,6 +1,5 @@
 using SkiaSharp;
 using TemplateDesigner.Models.Elements;
-using TemplateDesigner.Models.Expressions;
 
 namespace TemplateDesigner.Models.Layout;
 
@@ -18,7 +17,7 @@ public class SkiaHeightCalculator : IElementHeightCalculator
         return element switch
         {
             TextElement te => CalculateTextElementHeight(te, data),
-            TableElement table => CalculateTableElementHeight(table, data),
+            TableElement table => table.CalculateHeightFromData(data),
             DynamicTableElement dynTable => dynTable.CalculateHeightFromData(data),
             StopListElement stopList => stopList.CalculateHeightFromData(data),
             DepartureGridElement grid => grid.CalculateHeightFromData(data),
@@ -36,25 +35,4 @@ public class SkiaHeightCalculator : IElementHeightCalculator
         var resolvedText = data?.ResolvePlaceholders(te.Text) ?? te.Text;
         return te.CalculateTextHeight(resolvedText);
     }
-
-    private static float CalculateTableElementHeight(TableElement table, DataContext? data)
-    {
-        float headerH = table.ShowHeader ? table.HeaderHeight : 0f;
-        float summaryH = table.SummaryRows is { Count: > 0 } ? table.SummaryRows.Count * table.RowHeight : 0f;
-
-        if (table.Mode == TableMode.Fixed)
-        {
-            int visibleRowCount = table.Rows?.Count(r =>
-                ExpressionEvaluator.IsVisible(r.VisibilityExpression, data)) ?? 0;
-            return headerH + visibleRowCount * table.RowHeight + summaryH;
-        }
-        else
-        {
-            // Dynamic — počet řádků z dat
-            var rows = data?.GetRows(table.DataSource ?? "") ?? [];
-            int rowCount = rows.Count > 0 ? rows.Count : 3; // 3 ukázkových řádků v designeru
-            return headerH + rowCount * table.RowHeight + summaryH;
-        }
-    }
-
 }
