@@ -792,6 +792,13 @@
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                        Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                        Margin="12,0,0,0" VerticalAlignment="Center"/>
+                            <!-- Obnovit data aktuální instance (refetch GetData) — F5 -->
+                            <Button Content="↻" Command="{Binding RefreshDataCommand}"
+                                    Background="Transparent" BorderThickness="0" Padding="4,0"
+                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                    Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
+                                    Cursor="Hand" Margin="12,0,0,0"
+                                    ToolTip="Obnovit data (F5)"/>
                         </StackPanel>
                     </Border>
 

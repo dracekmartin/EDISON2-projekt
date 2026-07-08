@@ -78,6 +78,7 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 | Ctrl+0 | Přizpůsobit stránce (Fit) — == tlačítko „Fit" |
 | Ctrl+1 | Skutečná velikost 100 % (1:1) — == tlačítko „1:1" |
 | Ctrl+B | Sbalit / rozbalit levý panel |
+| F5 | Obnovit data — refetch GetData aktuální instance + invalidace cache (== tlačítko ↻ u instance chipu) |
 | F1 | Nápověda |
 | Escape | Zrušit přidávání elementu / probíhající operaci |
 

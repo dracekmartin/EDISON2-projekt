@@ -1834,6 +1834,11 @@ public partial class MainWindow : Window
             ShowHelp();
             e.Handled = true;
         }
+        else if (e.Key == Key.F5)
+        {
+            if (_vm.RefreshDataCommand.CanExecute(null)) _vm.RefreshDataCommand.Execute(null);
+            e.Handled = true;
+        }
         else if (e.Key == Key.D0 && ctrl)
         {
             FitToPage();       // Ctrl+0 = Přizpůsobit stránce (== tlačítko „Fit")

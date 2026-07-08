@@ -68,6 +68,18 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         OnReadError?.Invoke($"⚠ Databáze — {context} selhalo: {detail}");
     }
 
+    /// <summary>Vyčistí všechny cache — příští čtení (schema/parametry/mock/šablony) půjde znovu
+    /// na Caché. Pro „Obnovit data": data změněná na serveru se projeví bez restartu aplikace.
+    /// (GetData cachovaný není — refetch řídí ViewModel voláním GetData znovu.)</summary>
+    public void InvalidateCaches()
+    {
+        _schemaCache.Clear();
+        _templateCache.Clear();
+        _templatesCache.Clear();
+        _mockDataCache.Clear();
+        _parametersCache.Clear();
+    }
+
     // ─── IDataSchemaProvider ──────────────────────────────────────────────────
 
     public IReadOnlyList<AgendaInfo> GetAvailableAgendas() => _agendas;

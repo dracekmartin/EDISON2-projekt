@@ -158,6 +158,16 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     /// <summary>Caché GetData pro aktuální instanci → _realPreviewData. Async, fire-and-forget.</summary>
+    /// <summary>„Obnovit data" (F5 / tlačítko ↻ u instance chipu): vyčistí cache provideru a znovu
+    /// načte schéma, parametry i tisková data aktuální instance — data změněná na serveru (značky,
+    /// poznámky) se projeví bez restartu.</summary>
+    private void RefreshData()
+    {
+        CacheProvider?.InvalidateCaches();
+        RefreshFieldsList();                    // schéma polí + parametry (teď fresh)
+        _ = RefreshDataForCurrentInstanceAsync(); // re-fetch GetData pro aktuální linku
+    }
+
     private async Task RefreshDataForCurrentInstanceAsync()
     {
         var instance = CurrentActiveInstance;
@@ -387,7 +397,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _openInstancePicker, _prevInstance, _nextInstance;
+    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _openInstancePicker, _prevInstance, _nextInstance, _refreshData;
     private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
@@ -406,6 +416,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand OpenInstancePickerCommand  => _openInstancePicker ??= Command(OpenInstancePicker);
     public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
+    public RelayCommand RefreshDataCommand         => _refreshData    ??= Command(RefreshData);
     public AsyncRelayCommand ExportPdfCommand => _exportPdf ??= CommandAsync(ExportPreviewPdfAsync, () => !_exportRunning);
     public AsyncRelayCommand ExportPngCommand => _exportPng ??= CommandAsync(ExportPreviewPngAsync, () => !_exportRunning);
     public new RelayCommand DeleteCommand => _delete    ??= Command(DeleteSelected);
