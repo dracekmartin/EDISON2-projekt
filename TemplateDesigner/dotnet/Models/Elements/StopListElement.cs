@@ -705,13 +705,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor  { Label = "Projeté zastávky",    Group = "Zvýraznění", Get = () => ShowPassedStops,      Set = v => ShowPassedStops = v },
         new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },
 
-        new StringPropertyDescriptor
-        {
-            Label = "Viditelnost řádku", Group = "Podmínky",
-            Get = () => RowVisibilityExpression ?? "",
-            Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
-            Validate = ExpressionEvaluator.Validate
-        },
+        RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
 
         .. GetPositionDescriptors()
     ];

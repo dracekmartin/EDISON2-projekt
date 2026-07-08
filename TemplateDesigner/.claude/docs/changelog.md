@@ -2,6 +2,15 @@
 
 ## 2026-07-08 — Tabulkové jádro: levné švy před v1 (z analýzy architektury)
 
+- **Krok 2 — extrakce středního švu (row-feature).** Po #1 už byla highlight logika sdílená přes
+  `RowConditions` + `HighlightRules`; zbývala duplikovaná visibility trojice. Vytaženo: sdílený filtr
+  `RowConditions.VisibleRows` (generický `<T>` přes `rowOf` selektor + `DataContext` overload, bez
+  alokace při prázdném výrazu) — používá DynamicTable i LineTable; sdílený descriptor
+  `RowConditionDescriptors.RowVisibility(get, set)` — nahradil 3× kopii 6řádkového `StringPropertyDescriptor`.
+  **Resolve-wrappery (3a) vědomě NEextrahovány** — sdílené jádro je už `TableLayout.ResolveCascade`; per-element
+  metody jsou jen tenké adaptéry na různé typy sloupců (TableColumn vs StopColumn) a baked parenty, genericky
+  by to stálo víc než ušetří. **Pětice levných švů uzavřena** (#1,#3,#4,#5 + #2). +3 testy (VisibleRows).
+
 - **Krok 1 (jádro) — řádkové zvýraznění: 1 pravidlo → seznam `HighlightRule[]`.** Model `HighlightRule`
   `{ Condition, BackgroundColor, TargetColumn? }`, sdílený DynamicTable/StopList/LineTable jako
   `List<HighlightRule>?` (nahradil skalární `RowHighlightExpression`/`RowHighlightColor`). Sémantika

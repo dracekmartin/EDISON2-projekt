@@ -237,9 +237,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
     }
 
     private IReadOnlyList<DataContext> VisibleDataRows(IReadOnlyList<DataContext> rows) =>
-        string.IsNullOrWhiteSpace(RowVisibilityExpression)
-            ? rows
-            : rows.Where(r => RowConditions.IsVisible(RowVisibilityExpression, r)).ToList();
+        RowConditions.VisibleRows(rows, RowVisibilityExpression);
 
     /// <summary>Barva pozadí zvýraznění řádku (sdílený <see cref="RowConditions"/>); null = bez zvýraznění.</summary>
     public string? ResolveRowHighlight(DataContext row) =>
@@ -516,14 +514,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         new ColorPropertyDescriptor { Label = "Pozadí buněk",        Group = "Datové buňky", Get = () => DataStyle?.BackgroundColor ?? "#00FFFFFF",    Set = v => Data().BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva textu buněk",   Group = "Datové buňky", Get = () => DataStyle?.TextColor ?? "#FF222222",          Set = v => Data().TextColor = v },
 
-        new StringPropertyDescriptor
-        {
-            Label = "Viditelnost řádku", Group = "Podmínky",
-            // Podmínka nad daty řádku — nesplněné řádky se nevykreslí. Prázdné = všechny.
-            Get = () => RowVisibilityExpression ?? "",
-            Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
-            Validate = ExpressionEvaluator.Validate
-        },
+        RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
 
         .. GetPositionDescriptors()
     ];

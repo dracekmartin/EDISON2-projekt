@@ -18,6 +18,20 @@ public static class RowConditions
     public static bool IsVisible(string? expression, DataContext? row) =>
         ExpressionEvaluator.IsVisible(expression, row);
 
+    /// <summary>Odfiltruje neviditelné položky dle <paramref name="expression"/> nad jejich řádkovým
+    /// <see cref="DataContext"/> (<paramref name="rowOf"/>). Prázdný výraz = vrátí vstup beze změny
+    /// (bez alokace). Generické kvůli různým řádkovým POCO (LineStopData přes SourceRow apod.).</summary>
+    public static IReadOnlyList<T> VisibleRows<T>(
+        IReadOnlyList<T> items, Func<T, DataContext?> rowOf, string? expression) =>
+        string.IsNullOrWhiteSpace(expression)
+            ? items
+            : items.Where(i => ExpressionEvaluator.IsVisible(expression, rowOf(i))).ToList();
+
+    /// <summary>Overload pro přímý seznam řádkových <see cref="DataContext"/> (identita).</summary>
+    public static IReadOnlyList<DataContext> VisibleRows(
+        IReadOnlyList<DataContext> rows, string? expression) =>
+        VisibleRows(rows, static r => r, expression);
+
     /// <summary>
     /// Barva pozadí zvýraznění řádku — <b>první splněné pravidlo vyhrává</b>. Vrátí barvu prvního
     /// pravidla, jehož <see cref="HighlightRule.Condition"/> platí a má vyplněnou barvu; jinak null

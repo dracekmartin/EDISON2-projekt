@@ -28,6 +28,31 @@ public class RowConditionsTests
         Assert.True(RowConditions.IsVisible("", Row("CENA", -5)));
     }
 
+    // ── VisibleRows (sdílený filtr) ───────────────────────────────────────
+
+    [Fact]
+    public void VisibleRows_FiltrujeDleVyrazu()
+    {
+        var rows = new List<DataContext> { Row("CENA", 10), Row("CENA", -5), Row("CENA", 20) };
+        Assert.Equal(2, RowConditions.VisibleRows(rows, "{CENA} > 0").Count);
+    }
+
+    [Fact]
+    public void VisibleRows_PrazdnyVyraz_VratiVstupBezAlokace()
+    {
+        var rows = new List<DataContext> { Row("CENA", 10) };
+        Assert.Same(rows, RowConditions.VisibleRows(rows, null));
+        Assert.Same(rows, RowConditions.VisibleRows(rows, ""));
+    }
+
+    [Fact]
+    public void VisibleRows_Genericke_FiltrujePresRowOf()
+    {
+        var items = new[] { (name: "a", row: Row("V", 1)), (name: "b", row: Row("V", 0)) };
+        var visible = RowConditions.VisibleRows(items, x => x.row, "{V} > 0");
+        Assert.Equal("a", Assert.Single(visible).name);
+    }
+
     // ── HighlightColor (seznam pravidel, první splněné vyhrává) ────────────
 
     private static List<HighlightRule> Rules(params (string cond, string color)[] r) =>

@@ -2,6 +2,29 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-08 ✅ — Tabulkové jádro: levné švy před v1 (pětice #1–#5)
+
+Z analýzy připravenosti tabulkového jádra (4 agentní dimenze) — zavřít levné seamy, ať další tabulkový
+element/featura neplatí daň znovu. Detail v changelogu (2026-07-08).
+
+- **#3** (`cc11285`) — reflexní test úplnosti `Clone()` napříč všemi `TemplateElement` potomky (mutace →
+  serialize-compare; nový element pokrytý automaticky). **Chytil reálný bug:** `CopyScheduleBaseProperties`
+  nekopírovala `DataRowHeight` → ztráta při Ctrl+D/undo u LineTable/NotesLegend. Fix v base helperu.
+- **#5** (`4c3ed73`) — `SkiaHeightCalculator` deleguje výšku `TableElement` na `CalculateHeightFromData`
+  (zrušen inline special-case; nový tabulkový element už nepřidává větev do switche). Behavior-preserving.
+- **#4** (`3beee54`) — `AggregationResolver` agreguje nad **výrazem** (`SUM({CENA}*{POCET})`), ne jen holým
+  polem. Zpětně kompat.; odemyká per-group subtotaly počítaných sloupců. Zaevidováno v CLAUDE.md.
+- **#1** (`655f9d1` jádro + `23b1da3` editor + `bb1d908` review fixy) — řádkové zvýraznění z 1 pravidla na
+  **seznam** `HighlightRule[]` („první splněné vyhrává"), migrátor `1.0.0→1.1.0`, editor varianta 3
+  (`HighlightRulesEditorDialog`, launch přes `__highlightRules` button v `*Edit.cls` na inline panelu i
+  columns dialozích), rozhraní `IRowHighlightable`. Review fixy: section-template migrátor (H1), deferred
+  apply v columns dialozích (M2), bezbarevné pravidlo (L5). `TemplateSerializer` nově razítkuje verzi při uložení.
+- **#2** (2026-07-08) — extrakce středního švu: sdílený `RowConditions.VisibleRows` (generický + DataContext
+  overload) + `RowConditionDescriptors.RowVisibility`. Resolve-wrappery (3a) vědomě NEextrahovány (jádro už je
+  `TableLayout.ResolveCascade`, per-element metody jsou jen tenké type-adaptéry).
+- **Navazující (aktivní backlog):** per-sloupec render `HighlightRule.TargetColumn` + barva textu/kurzíva
+  (aditivní, bez migrace, na poptávku).
+
 ## Session 2026-07-08 ✅ — Audit stavu v1 (scan 2026-07-07) uzavřen — konsolidace jádra (P-A..P-D)
 
 Scan stavu v1 (produkční pohled na zastávkové AD+MHD) — konsolidace čistého jádra před růstem plochy

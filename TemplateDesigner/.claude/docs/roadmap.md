@@ -9,22 +9,11 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Tabulkové jádro — levné švy před v1** — z analýzy připravenosti jádra (2026-07-08). Zavřít teď,
-   ať každý další tabulkový element/featura neplatí daň znovu. Detail analýzy → archiv session 2026-07-08.
-   - [x] **#3 Reflexní test úplnosti `Clone()`** — hotovo 2026-07-08, chytil reálný bug `DataRowHeight`
-     (viz changelog).
-   - [x] **#5 `SkiaHeightCalculator`: `TableElement` deleguje** na `CalculateHeightFromData` — hotovo
-     2026-07-08 (behavior-preserving, inline `CalculateTableElementHeight` zrušen).
-   - [x] **#4 `AggregationResolver` nad výrazem** — hotovo 2026-07-08. `SUM({CENA}*{POCET})` (argument =
-     výraz per řádek). Zpětně kompat., zaevidováno v CLAUDE.md. Odemyká per-group subtotaly počítaných sloupců.
-   - [x] **#1 `HighlightRule` list + migrátor + editor** — hotovo 2026-07-08. Seznam pravidel (jen pozadí),
-     migrátor 1.0.0→1.1.0, editor varianta 3 (`HighlightRulesEditorDialog`, launch přes `__highlightRules`
-     button v `*Edit.cls` na inline panelu i v columns dialozích). Odložené (aditivně, bez migrace):
-     **per-sloupec render** `TargetColumn` (jde s #2 — dnes model nese, render barví celý řádek) + editace
-     `TargetColumn` v dialogu; barva textu/kurzíva.
-   - [ ] **#2 Extrakce středního švu** — resolve-wrappery + trojice `RowVisibility/Highlight` copy-pasted přes 4 elementy → mixin/helper. **Až po #1** (přepisuje `RowHighlight*` tvar).
-2. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
-3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+> **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
+> [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
+
+1. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
+2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 ---
 
@@ -35,8 +24,11 @@
 > hotová, plocha může růst.
 
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
-- **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI),
-  rozšíření conditional formatting (seznam pravidel) — viz sekce Fáze B.
+- **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI).
+  (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
+- **Zvýraznění řádků — navazující (aditivní, bez migrace):** **per-sloupec render** `HighlightRule.TargetColumn`
+  (model už pole nese, dnes render barví celý řádek) + editace `TargetColumn` v dialogu · barva textu / kurzíva
+  pravidla. Na poptávku.
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
   vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké

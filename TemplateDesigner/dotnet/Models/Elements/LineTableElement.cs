@@ -317,9 +317,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         if (HasNzRow(trips)) h += rowH;
         // Počítá se přesně jako v Render (parita výška↔render): jen viditelné zastávky a jejich
         // přípojné řádky (matched na Poradi zastávky — jako render). Prázdný výraz → všechny zastávky.
-        var visibleStops = string.IsNullOrWhiteSpace(RowVisibilityExpression)
-            ? stops
-            : stops.Where(s => RowConditions.IsVisible(RowVisibilityExpression, s.SourceRow)).ToList();
+        var visibleStops = RowConditions.VisibleRows(stops, s => s.SourceRow, RowVisibilityExpression);
         h += visibleStops.Count * rowH;
         if (ShowPripojeRows)
             h += visibleStops.Sum(s => trips.Sum(t => t.Pripoje.Count(p => p.Radek && p.Poradi == s.Poradi))) * rowH;
@@ -555,13 +553,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },
         new ColorPropertyDescriptor { Label = "Barva lichých Tč", Group = "Vzhled", Get = () => OddTcBackColor, Set = v => OddTcBackColor = v },
-        new StringPropertyDescriptor
-        {
-            Label = "Viditelnost řádku", Group = "Podmínky",
-            Get = () => RowVisibilityExpression ?? "",
-            Set = v  => RowVisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
-            Validate = ExpressionEvaluator.Validate
-        },
+        RowConditionDescriptors.RowVisibility(() => RowVisibilityExpression, v => RowVisibilityExpression = v),
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
         GetDataRowHeightDescriptor(),
