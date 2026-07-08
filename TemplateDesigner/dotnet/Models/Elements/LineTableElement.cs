@@ -22,9 +22,17 @@ namespace TemplateDesigner.Models.Elements;
 public class LineTableElement : ScheduleElementBase
 {
     // ─── DataSource ──────────────────────────────────────────────────────────
+    // Vlastní DataSource klíče (linkový formát) — NE zastávkové z base. LineTable dědí jen
+    // generickou vrstvu ScheduleElementBase, zastávkový balast (StopScheduleElementBase) netahá.
+
+    /// <summary>Klíč kolekce zastávek (řádky matice).</summary>
+    public string ZastavkyDataSource { get; set; } = "ZASTAVKY";
 
     /// <summary>Klíč kolekce spojů (časové sloupce matice).</summary>
     public string SpojeDataSource { get; set; } = "SPOJE";
+
+    /// <summary>Klíč kolekce skupin dnů.</summary>
+    public string SkupinyDnuDataSource { get; set; } = "SKUPINY_DNU";
 
     // ─── Sloupce (pořadí, šířky, viditelnost, per-column styl) — sdílený StopColumn model ──
 
@@ -515,7 +523,9 @@ public class LineTableElement : ScheduleElementBase
     {
         var clone = new LineTableElement
         {
+            ZastavkyDataSource = ZastavkyDataSource,
             SpojeDataSource = SpojeDataSource,
+            SkupinyDnuDataSource = SkupinyDnuDataSource,
             Columns = Columns.Select(c => c.Clone()).ToList(),
             ShowPlatnostRow = ShowPlatnostRow,
             ShowNzRow = ShowNzRow,

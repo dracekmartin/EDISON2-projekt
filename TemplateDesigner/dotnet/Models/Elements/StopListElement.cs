@@ -11,7 +11,7 @@ namespace TemplateDesigner.Models.Elements;
 /// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// Uživatel umístí na canvas vedle DepartureGridElement(ů).
 /// </summary>
-public class StopListElement : ScheduleElementBase
+public class StopListElement : StopScheduleElementBase
 {
     // ═══════════════════════════════════════════
     // Sloupce — konfigurovatelné pořadí, šířky, záhlaví
@@ -775,7 +775,7 @@ public class StopListElement : ScheduleElementBase
             RowHighlightColor       = RowHighlightColor,
         };
         CopyBaseTo(clone);
-        CopyScheduleBaseProperties(clone);
+        CopyStopScheduleProperties(clone);
         return clone;
     }
 }

@@ -28,10 +28,13 @@
   páry `DynamicTableElement` + `LineTableElement` do SchemaMap (12 párů, vše resolvuje → žádný drift),
   (2) **completeness pojistka** `VsechnyEditClsFormy_JsouPokryteNeboVyjimka` — nový element s `*Edit.cls`
   neproklouzne bez drift testu (musí být v SchemaMap nebo ve `excluded`). 256/256 testů zelené.
-- **B1** — `ScheduleElementBase` je god base svázaný se zastávkovým JŘ (DataSource klíče `ZASTAVKY/
-  SKUPINY_DNU/ODJEZDY/POZNAMKY` + `Build*` helpery + typované cache v base, `:18-21,114-118,265-426`;
-  `LineTableElement` je dědí a nevolá). Rozdělit: generická vrstva (typeface cache, `ComputeFontScale`,
-  Header/DataStyle kaskáda) vs. zastávkový mixin (`Build*` + POCO parsing).
+- ✅ **B1 — split `ScheduleElementBase`** — **HOTOVO 2026-07-08**. Dvě vrstvy: `ScheduleElementBase`
+  (generická — styly + kaskáda, typeface cache, `ComputeFontScale`/overflow, render helpery, `ApplyScale`,
+  descriptory, `ParseInt/Bool`) dědí všechny 4 elementy; nová `StopScheduleElementBase` (zastávkový mixin —
+  4 DataSource klíče, typované cache, `Build{Zastavky,SkupinyDnu,OdjezdyBySkupina,Poznamky}`,
+  `ParseTypPoznamky/Anotace`) dědí jen StopList/DepartureGrid/NotesLegend. `LineTableElement` dědí jen
+  generickou vrstvu + vlastní DataSource klíče (Zastavky/Spoje/SkupinyDnu) → **netahá zastávkový balast**.
+  JSON kompatibilní (property jen přesunuty). 256/256 testů (vč. drift B0 + round-trip).
 - **B2** — Agenda-specifické větvení stringovým prefixem na ≥5 místech (`MainWindow.xaml.cs:1168-1179`
   menu dle `StartsWith("ZASTAVKOVY"/"KNIZNI")`, `:1592-1606` paleta, `:904` + `TemplateDesignerViewModel.cs:214-216`
   `LINKA_ID`/`INSTANCE_ID`, `:2448` default natvrdo). Přesunout capability metadata na `AgendaRegistryEntry`

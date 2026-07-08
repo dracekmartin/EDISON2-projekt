@@ -10,7 +10,7 @@ namespace TemplateDesigner.Models.Elements;
 /// SkupinaDnuId = "SMO1,SMO2" → zobrazí vybrané skupiny.
 /// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// </summary>
-public class DepartureGridElement : ScheduleElementBase
+public class DepartureGridElement : StopScheduleElementBase
 {
     // ═══════════════════════════════════════════
     // Filtr skupin dnů
@@ -1477,7 +1477,7 @@ public class DepartureGridElement : ScheduleElementBase
             GroupColumns               = GroupColumns.Select(gc => gc.Clone()).ToList(),
         };
         CopyBaseTo(clone);
-        CopyScheduleBaseProperties(clone);
+        CopyStopScheduleProperties(clone);
         return clone;
     }
 }

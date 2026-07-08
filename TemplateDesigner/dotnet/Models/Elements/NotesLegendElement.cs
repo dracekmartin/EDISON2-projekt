@@ -8,7 +8,7 @@ namespace TemplateDesigner.Models.Elements;
 /// Height = null → dynamická výška; Height = pevná → auto-scale fontu při přetečení.
 /// Uživatel umístí na canvas pod StopListElement/DepartureGridElement.
 /// </summary>
-public class NotesLegendElement : ScheduleElementBase
+public class NotesLegendElement : StopScheduleElementBase
 {
     // ═══════════════════════════════════════════
     // Vizuální vlastnosti
@@ -342,7 +342,7 @@ public class NotesLegendElement : ScheduleElementBase
             ShowTextovePoznamky      = ShowTextovePoznamky,
         };
         CopyBaseTo(clone);
-        CopyScheduleBaseProperties(clone);
+        CopyStopScheduleProperties(clone);
         return clone;
     }
 }
