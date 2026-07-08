@@ -30,6 +30,8 @@ public class EDInputFormSchemaDriftTests
         { "NotesLegendElementEdit.cls",   typeof(NotesLegendElement) },
         { "StopListElementEdit.cls",      typeof(StopListElement) },
         { "DepartureGridElementEdit.cls", typeof(DepartureGridElement) },
+        { "DynamicTableElementEdit.cls",  typeof(DynamicTableElement) },
+        { "LineTableElementEdit.cls",     typeof(LineTableElement) },
         { "SectionEdit.cls",              typeof(Section) },
         { "PageEdit.cls",                 typeof(Template) },
     };
@@ -85,6 +87,30 @@ public class EDInputFormSchemaDriftTests
         Assert.True(suffixes.Count >= 10, $"Načteno jen {suffixes.Count} suffixů — regex nesedí na StyleFields.cls?");
         Assert.Contains("FontSize", suffixes);
         Assert.Contains("TextColor", suffixes);
+    }
+
+    /// <summary>Pojistka pokrytí: každý EDInputForm `*Edit.cls` musí být buď v SchemaMap
+    /// (drift-testovaný), nebo ve výjimkách (ne-elementové formy). Nový element se svým
+    /// `*Edit.cls` se tak nemůže proklouznout bez drift testu.</summary>
+    [Fact]
+    public void VsechnyEditClsFormy_JsouPokryteNeboVyjimka()
+    {
+        // Ne-elementové formy — needitují property elementu/sekce/šablony:
+        //   StyleEdit = pod-formulář stylu (jeho pole ověřuje StyleFields expanze v rodičích).
+        var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "StyleEdit.cls" };
+
+        var covered = SchemaMap.Select(row => (string)row[0]!)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var uncovered = Directory.GetFiles(EDInputFormDir(), "*Edit.cls")
+            .Select(Path.GetFileName)
+            .Cast<string>()
+            .Where(f => !covered.Contains(f) && !excluded.Contains(f))
+            .ToList();
+
+        Assert.True(uncovered.Count == 0,
+            $"EDInputForm `*Edit.cls` bez drift testu: {string.Join(", ", uncovered)}. " +
+            "Přidej do SchemaMap (element ↔ C# typ), nebo do `excluded` (ne-elementová forma).");
     }
 
     // ── Parsování .cls ────────────────────────────────────────────────────────

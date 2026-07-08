@@ -22,11 +22,12 @@
 > **P-A (datová parita) + C1 (legacy 1:1) hotovo 2026-07-07 → archiv/changelog.**
 
 **P-B — Zmrazení čistého jádra (udělat PŘED Fází C/D/F — jinak každá agenda dál rozmazává jádro):**
-- **B0 (první krok) — drift test EDInputForm `*Edit.cls` ↔ C# property** (dřív C-b): field key = C# property path,
-  čtený reflexí přes `ElementPropertyAccessor`; přejmenování/smazání property build nezachytí, projeví se až runtime.
-  Test pro každý pár (element ↔ `*Edit.cls`) ověří, že klíče forem resolvují na reálné property (poběží proti Caché
-  jako gold testy). **Dělá se JAKO PRVNÍ v P-B** — je to pojistka během B1/B3, které properties přesouvají.
-  Accepted debt (memory `project_edinputform_schema_duplication`).
+- ✅ **B0 — drift test EDInputForm `*Edit.cls` ↔ C# property** — **HOTOVO 2026-07-08**. Jádro už
+  existovalo (`EDInputFormSchemaDriftTests.cs`, offline: parsuje `.cls` z repa + reflexí ověří každý field
+  key na cílovém C# typu — lepší než „proti Caché", běží v pre-push bez serveru). Doplněno: (1) chybějící
+  páry `DynamicTableElement` + `LineTableElement` do SchemaMap (12 párů, vše resolvuje → žádný drift),
+  (2) **completeness pojistka** `VsechnyEditClsFormy_JsouPokryteNeboVyjimka` — nový element s `*Edit.cls`
+  neproklouzne bez drift testu (musí být v SchemaMap nebo ve `excluded`). 256/256 testů zelené.
 - **B1** — `ScheduleElementBase` je god base svázaný se zastávkovým JŘ (DataSource klíče `ZASTAVKY/
   SKUPINY_DNU/ODJEZDY/POZNAMKY` + `Build*` helpery + typované cache v base, `:18-21,114-118,265-426`;
   `LineTableElement` je dědí a nevolá). Rozdělit: generická vrstva (typeface cache, `ComputeFontScale`,
