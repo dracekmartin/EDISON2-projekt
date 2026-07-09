@@ -11,7 +11,19 @@ public record StyleClipboard(
 
 public class DesignerState
 {
-    public Template CurrentTemplate { get; set; } = new();
+    private Template _currentTemplate = new();
+    public Template CurrentTemplate
+    {
+        get => _currentTemplate;
+        set
+        {
+            _currentTemplate = value;
+            // Cache seřazených elementů je klíčovaná Guid sekce a invaliduje se jen při editaci.
+            // Při swapu šablony (Open/New/Import) by přežila → nová šablona se stejným Guid sekce
+            // (systémová šablona má pevné Guidy) by dostala stará data předchozí. Invalidovat na swapu.
+            InvalidateElementCache();
+        }
+    }
 
     /// <summary>Aktuálně aktivní sekce (do které se přidávají elementy). Null = žádná.</summary>
     public Section? ActiveSection { get; set; }
