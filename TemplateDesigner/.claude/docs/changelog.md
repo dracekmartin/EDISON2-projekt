@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: gold re-baseline po sjednocení kontraktu
+
+Přegenerování zmrazených digestů po záměrné změně `GetData` (fáze 1 + úklid):
+
+- **Gold digesty přepsány** (AD 0365001/0365005, MHD 1001/1003/1006) — změnil se **jen `md5`**, počty řádků (`pages/zast/odj/pozn`) **beze změny** → potvrzení, že šlo čistě o přejmenování klíčů + zmizení `TC`/`ZAKLADNI_TRASA`/`PRUBEHY`, ne o datovou regresi.
+- **`MhdLegacyOracle`** čte název zastávky z našeho výstupu nově přes `NAZEV_ZASTAVKY` (byl `POPIS`) → legacy parita zpět 1:1.
+- Ověřeno na živém serveru: **48/48** Caché testů zelených (vč. 33 TD: gold + parita).
+
 ## 2026-07-09 — Zastávkový JŘ: úklid mrtvých polí zastávek (wire + .NET)
 
 Dočištění po sjednocení kontraktu — odstranění write-only mrtvých polí, která se nikde nečetla:

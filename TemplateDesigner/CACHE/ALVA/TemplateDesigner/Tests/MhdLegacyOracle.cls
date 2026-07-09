@@ -122,7 +122,7 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 		if $isobject(zas) {
 			set iz = zas.%GetIterator()
 			while iz.%GetNext(.zk, .z) {
-				set nz = ..Norm(z.%Get("POPIS"))
+				set nz = ..Norm(z.%Get("NAZEV_ZASTAVKY"))
 				continue:nz=""
 				set oz(nz) = $get(oz(nz)) + 1
 			}
