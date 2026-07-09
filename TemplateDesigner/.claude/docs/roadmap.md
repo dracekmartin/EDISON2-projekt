@@ -24,7 +24,7 @@
 > hotová, plocha může růst.
 
 - **Zastávkový JŘ business** (P1–P3 nové požadavky + parkované helpdesk A2-A5/A6/B4) → viz sekce „Zastávkový JŘ — business logika" níže
-- **Fáze B — odložené:** **merged cells** (gated na Fixed tabulky), **layout-reservation** (YAGNI).
+- **Fáze B — odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
   (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
 - **Zvýraznění řádků — navazující (aditivní, bez migrace):** **per-sloupec render** `HighlightRule.TargetColumn`
   (model už pole nese, dnes render barví celý řádek) + editace `TargetColumn` v dialogu · barva textu / kurzíva
@@ -83,14 +83,11 @@ Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i o
 (conditional formatting, počítaná pole, min/max, versioning framework) → archiv.
 
 **Odloženo (backlog, ne blocker):**
-- **Merged cells** (`ColSpan`/`RowSpan` + merge editor) — **gated na oživení Fixed tabulky**: slučování
-  patří strukturovaným tabulkám, DynamicTable má uniformní datové řádky (dává smysl jen skupinové
-  záhlaví / souhrn). Vrátit se, až se budou dělat Fixed tabulky.
-- **Layout-reservation** (deklarativní „když X → rezervuj Y mm") — **YAGNI**: dnes jediný konzument
-  (šipka StopListu má ad-hoc gutter). Udělat, až vzniknou 2–3 konzumenti; interní hygiena, ne user featura.
-
-- **Rozšíření conditional formatting** (seznam pravidel místo 1, barva textu, per-sloupec/buňka) —
-  odloženo na produkci (rozhodnutí 2026-07-05).
+- **Fixní (statická) tabulka — oživení v UI** — `TableElement` Fixed mód existuje v modelu, ale je uspaný
+  (`JsonDerivedType` jen pro legacy načtení, není v paletě/UI). Vzkřísit: paleta + Fixed editor (sloupce + řádky
+  s `{PLACEHOLDER}` ze skalárů). Užitečné pro strukturované sestavy (faktury, bloky záhlaví/platnost).
+- **Merged cells** (`ColSpan`/`RowSpan` + merge editor) — **gated na fixní tabulku**: slučování patří
+  strukturovaným tabulkám (DynamicTable má uniformní datové řádky). Vrátit se spolu s fixní tabulkou.
 
 ---
 
