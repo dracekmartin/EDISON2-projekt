@@ -121,6 +121,13 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         s targetIdFa = $g(^||ML("IN","targetIdFa"))
         i targetIdFa = "" s targetIdFa = IdFa
 
+        // Zámek MLINE: systémová (M-line) větev je read-only, zápis jen distribuční cestou
+        // (seed nastaví "distribution"=1). Normální UI systémové needituje — jen kopíruje
+        // („Uložit jako" do firmy). Vynuceno server-side, ne jen klientská iluze (governance bod 2).
+        i (targetIdFa = "MLINE") && ($g(^||ML("IN","distribution")) '= "1") {
+            $$$ThrowStatus($$$ERROR($$$GeneralError, "MLINE je systémová (read-only) větev — zápis jen přes distribuci."))
+        }
+
         s nowIso = $zdt($h, 3)
         s existed = $d(^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId))
 

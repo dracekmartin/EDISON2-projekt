@@ -36,7 +36,8 @@ public static class SystemTemplateSeeder
 
                 // Deserialize spustí TemplateMigrator → šablona je při seedu vždy v aktuální verzi.
                 var template = TemplateSerializer.Deserialize(json);
-                await storage.SaveAsync(template, CacheTemplateService.MlineIdFa);
+                // distribution: true → jediná cesta, jak server povolí zápis do read-only MLINE větve.
+                await storage.SaveAsync(template, CacheTemplateService.MlineIdFa, distribution: true);
             }
             catch (Exception ex)
             {

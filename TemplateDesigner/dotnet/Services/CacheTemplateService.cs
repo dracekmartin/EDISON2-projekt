@@ -109,10 +109,10 @@ public class CacheTemplateService
     /// Uloží šablonu (insert nebo update podle Template.Id).
     /// Před uloženim aktualizuje Template.ModifiedAt na UTC now.
     /// </summary>
-    public Task SaveAsync(Template template, string? targetIdFa = null)
-        => Task.Run(() => SaveSync(template, targetIdFa));
+    public Task SaveAsync(Template template, string? targetIdFa = null, bool distribution = false)
+        => Task.Run(() => SaveSync(template, targetIdFa, distribution));
 
-    private void SaveSync(Template template, string? targetIdFa)
+    private void SaveSync(Template template, string? targetIdFa, bool distribution)
     {
         if (template.Id == Guid.Empty)
             template.Id = Guid.NewGuid();
@@ -132,6 +132,8 @@ public class CacheTemplateService
         inVar["data"]       = new CVar(dataJson);
         // Prázdné = session firma; "MLINE" pro seed systémové šablony.
         inVar["targetIdFa"] = new CVar(targetIdFa ?? "");
+        // Distribuční zápis (seed) — jen tak server povolí zápis do read-only MLINE větve.
+        inVar["distribution"] = new CVar(distribution ? "1" : "");
 
         _mlRest.Query(CacheClass, "SaveTemplate", inVar);
         ThrowOnError("SaveTemplate");
