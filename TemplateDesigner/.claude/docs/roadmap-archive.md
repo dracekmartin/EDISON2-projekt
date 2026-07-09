@@ -17,9 +17,15 @@ aniž se sáhne na jeho vlastní. UX skořápka finální (nepřeučovat), backe
 - **Krok 4** (`78af151`) — **embed + seed**: `SystemTemplates\**\*.json` `<EmbeddedResource>` do .exe;
   `SystemTemplateSeeder` při startu nalije do MLINE (fire-and-forget, idempotentní přes stabilní `Template.Id`,
   deserialize projde migratorem → aktuální verze). „Poslat šablonu ve v1" = přidat JSON + rebuild/publish .exe.
+- **Zámek MLINE server-side** (`8573547`, governance bod 2) — `SaveTemplate` odmítne zápis do MLINE bez
+  `distribution=1` (seed ho nastaví, UI ne). Read-only vynuceno serverem, ne jen klientská iluze. V1 seed běží
+  klientsky → příznak je guard proti normálnímu/omylnému zápisu, ne krypto auth (to až s kanálem mimo .exe).
+- **Bugfix** (`7bde94c`) — `DesignerState` element cache (klíč = Guid sekce) se invalidovala jen při editaci;
+  systémová šablona s pevnými Guidy → po Uložit jako + reopen MLINE stará cache prosákla (posunutý element,
+  maskováno restartem). Setter `CurrentTemplate` teď invaliduje cache na každý Open/New/Import.
 
-**Vědomě odloženo** (zůstává v roadmapě): server-side zámek MLINE (bod 2), samostatný distribuční kanál mimo .exe
-(bod 3), další agendy MHD/linkový (C4/44b), navazující — přiřazení k tisku / kategorie / audit (bod 4), strom/kategorie (PC5).
+**Vědomě odloženo** (zůstává v roadmapě): samostatný distribuční kanál mimo .exe (bod 3), další agendy
+MHD/linkový (C4/44b), navazující — přiřazení k tisku / kategorie / audit (bod 4), strom/kategorie (PC5).
 
 ## Session 2026-07-08 ✅ — Tabulkové jádro: levné švy před v1 (pětice #1–#5)
 

@@ -12,7 +12,7 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **Governance šablon** — v1 doručení HOTOVO (embed → MLINE → picker 2 sekce, kurátorovaná zastávková AD). Zbývá server-side zámek MLINE + samostatný distribuční kanál + navazující (viz produkční sekce níže).
+1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, kurátorovaná zastávková AD, server-side zámek MLINE). Zbývá samostatný distribuční kanál + další šablony (MHD/linkový) + navazující (viz produkční sekce níže).
 2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 ---
@@ -64,15 +64,13 @@ při scope té fáze, ne teď.
 > Plný koncept: [`governance-sablon-koncept.md`](governance-sablon-koncept.md).
 
 **Hotovo v1** (embed → MLINE → picker, kurátorovaná zastávková AD): picker obě zásuvky + odznak Zdroj,
-otevření MLINE, „kopie → úprava", embed+seed. → archiv.
+otevření MLINE, „kopie → úprava", embed+seed, **server-side zámek MLINE** (bod 2). → archiv.
 
 **Zbývá (až s reálným provozem / jiným distribučním kanálem):**
-1. **Zámek MLINE (server-side)** — dnes read-only jen klientsky (picker + „Uložit jako"); `SaveTemplate`/`DeleteTemplate`
-   má odmítnout zápis do `MLINE` mimo distribuci. (governance bod 2)
-2. **Samostatný distribuční kanál** mimo .exe — v1 doručuje embed+seed; „trochu jiný kanál" (server push /
+1. **Samostatný distribuční kanál** mimo .exe — v1 doručuje embed+seed; „trochu jiný kanál" (server push /
    admin) jen vymění zdroj systémových, picker/UX beze změny. (governance bod 3 mechanismus)
-3. **Další výchozí šablony** — zatím jen zastávková AD; MHD + linkový = přidat JSON do `SystemTemplates/` (viz C4, 44b).
-4. **Navazující** — per-instance přiřazení (linka → výchozí, `InstanceDefaults`) · kategorie + popis v UI ·
+2. **Další výchozí šablony** — zatím jen zastávková AD; MHD + linkový = přidat JSON do `SystemTemplates/` (viz C4, 44b).
+3. **Navazující** — per-instance přiřazení (linka → výchozí, `InstanceDefaults`) · kategorie + popis v UI ·
    audit log změn + ECL právo „pouštět designer". (governance bod 4)
 
 ---
