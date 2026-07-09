@@ -73,6 +73,8 @@ public class NotesLegendElement : StopScheduleElementBase
         using var noteFont = new SKFont(GetTypeface(effFontFamily), noteFontPx);
         using var headerFont = new SKFont(GetTypeface(effFontFamily, SKFontStyle.Bold), headerFontPx);
         using var boldFont = new SKFont(GetTypeface(effFontFamily, SKFontStyle.Bold), noteFontPx);
+        // Symbolový JŘ font pro jednoznakové piktogramy (H=vozíček, F, x, {…) — dle jazyka šablony.
+        using var symbolFont = new SKFont(GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), noteFontPx);
 
         // Záhlaví
         float currentY = RenderSectionHeader(ctx, HeaderText,
@@ -128,7 +130,8 @@ public class NotesLegendElement : StopScheduleElementBase
                     TypPoznamky.NegativniZnacka =>
                         RenderNegativniZnacka(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, boldFont, paints.Text, colRight, textStartX),
                     TypPoznamky.SpecialniZnak =>
-                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, boldFont, noteFont, paints.Text, false, colRight, textStartX),
+                        RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH,
+                            (pozn.Znak.Length == 1 && !SymbolJeText(pozn.Znak)) ? symbolFont : boldFont, noteFont, paints.Text, false, colRight, textStartX),
                     _ when pozn.Znak.Length > 0 =>
                         RenderSymbolWithText(ctx, pozn, ref lineX, noteY, scaledNoteLineH, noteFont, noteFont, paints.Text, true, colRight, textStartX),
                     _ =>

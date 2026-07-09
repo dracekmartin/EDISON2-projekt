@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: symbolový font značek (Timetable, locale-aware) + katalog
+
+Speciální symboly (bezbariér, na znamení…) se tiskly jako holé písmeno „H"/„x" místo piktogramu —
+chyběl symbolový JŘ font (dlouho odložený bod „C2"). Odblokováno dodáním fontu.
+
+- **Embedded `TimeTable2.ttf` (CZ) + `TimeTable2SK.ttf` (SK)** do `Fonts/` (M-line vlastní EDISON font;
+  csproj glob je zabalí). Rodiny `Timetable_nove` / `TimeTable_nove_SK`.
+- **`FontResolver.SymbolFontFamily(culture)`** — locale→font dle `Template.CultureCode` (`sk-*` → SK),
+  1:1 s legacy `formTISKJRReportDotNet_Module` (ř. 1197).
+- **Symbolový font pro jednoznakové `SpecialniZnak`** v legendě (NotesLegend) i u minut (DepartureGrid
+  `anotGlyphFont`) — `H`/`F` → piktogram (vozíček). Uživatelský `AnotaceSymbolStyle` font má přednost.
+- **Na znamení `x`/`y`/`z` = prostý text**, ne piktogram (helper `SymbolJeText`, dle konvence) — jinak
+  font na pozici `x` kreslí vláček. Bezbariér zůstává piktogram.
+- **NZ** (negativní) beze změny — ruční inverzní box (už bylo správně).
+- **Katalog symbolů** (`.claude/docs/symboly-jr-katalog.md`) — převzatá mapa z legacy `GSId` (66 symbolů:
+  id·znak·význam·render-mód) + zdroje, jako reference pro další dotažení (text-multichar, kompozity).
+- Čistě render vrstva → gold netknuté, 305/305 .NET. Živě ověřen render (vozíček, na-znamení x, SK přepnutí).
+
+**Známý zbytek (samostatný Caché track):** pozitivní datová omezení („jede jen/také") se dnes slepují
+s negativními do jedné NZ značky (box) — ve starém jsou pozitivní **kroužkovaná**. Fix = rozdělit
+pozitivní/negativní značky + kroužek v renderu + gold re-baseline. Plus kroužkové dny v týdnu (emise dat).
+
 ## 2026-07-09 — Zastávkový JŘ: konzistentní řazení legendy poznámek dle typu (nový default)
 
 Legenda poznámek se dřív vypisovala v pořadí, v jakém ji stavěla agenda („náhodně"; legacy stejně).

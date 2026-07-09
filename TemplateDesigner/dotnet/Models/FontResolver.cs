@@ -109,6 +109,16 @@ public static class FontResolver
         return _cache.GetOrAdd((f, style.Weight, style.Width, style.Slant), _ => ResolveUncached(f, style));
     }
 
+    /// <summary>
+    /// Rodina symbolového JŘ fontu (piktogramy dopravy: vozíček = „H", bezbariér částečně = „F",
+    /// na znamení, automat = „{"…) podle jazyka šablony. Znaky (drátové kódy z Caché) jsou pro CZ i SK
+    /// stejné, liší se jen tvary glyfů — SK má vlastní variantu. Embedded font (<c>Fonts/TimeTable2*.ttf</c>).
+    /// </summary>
+    public static string SymbolFontFamily(System.Globalization.CultureInfo? culture) =>
+        string.Equals(culture?.TwoLetterISOLanguageName, "sk", StringComparison.OrdinalIgnoreCase)
+            ? "TimeTable_nove_SK"
+            : "Timetable_nove";
+
     private static SKTypeface ResolveUncached(string family, SKFontStyle style)
     {
         // Embedded má přednost — deterministický výstup nezávislý na tom, co je na stroji nainstalované.

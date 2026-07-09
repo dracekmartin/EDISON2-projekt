@@ -14,6 +14,14 @@ namespace TemplateDesigner.Models.Elements;
 /// </summary>
 public abstract class StopScheduleElementBase : ScheduleElementBase
 {
+    /// <summary>
+    /// Symboly, které se dle konvence JŘ tisknou jako <b>prostý text</b>, ne jako piktogram
+    /// ze symbolového Timetable fontu — „na znamení" (`x` a časové varianty `y`/`z`). Ostatní
+    /// jednoznakové symboly (bezbariér `H`/`F`…) jdou přes symbolový font.
+    /// Viz <c>.claude/docs/symboly-jr-katalog.md</c> (render-mód „text" vs „font-glyf").
+    /// </summary>
+    protected static bool SymbolJeText(string znak) => znak is "x" or "y" or "z";
+
     // ─── DataSource klíče (editovatelné v šabloně) ──────────────────────────
 
     public string ZastavkyDataSource { get; set; } = "ZASTAVKY";

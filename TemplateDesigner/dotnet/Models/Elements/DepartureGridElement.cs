@@ -483,6 +483,11 @@ public class DepartureGridElement : StopScheduleElementBase
     // Render
     // ═══════════════════════════════════════════════════════════════════════════
 
+    /// <summary>Jednoznakový speciální symbol (piktogram) → kreslí se symbolovým JŘ fontem.
+    /// Víceznakové SpecialniZnak (dny „Po"…) i NZ (čísla) zůstávají v normálním fontu.</summary>
+    private static bool JeGlyfSymbol(AnotaceData a) =>
+        a.Typ == TypAnotace.SpecialniZnak && a.Znak.Length == 1 && !SymbolJeText(a.Znak);
+
     public override void Render(RenderContext ctx)
     {
         if (Width <= 0) return;
@@ -570,6 +575,11 @@ public class DepartureGridElement : StopScheduleElementBase
         var anotTextStyle = AnotaceTextStyle.Resolve(dataBase);
         if (AnotaceTextStyle.FontSize is null)
             anotTextStyle = anotTextStyle with { FontSize = AnotaceFontSize };
+        // Symbolový JŘ font (piktogramy) pro jednoznakové SpecialniZnak — dle jazyka šablony.
+        // Uživatelský font v AnotaceSymbolStyle (pokud zvolen) má přednost; jinak embedded TimeTable2.
+        var anotGlyphStyle = AnotaceSymbolStyle.FontFamily is null
+            ? anotSymStyle with { FontFamily = FontResolver.SymbolFontFamily(ctx.Data?.Culture) }
+            : anotSymStyle;
 
         // ── Deklarace zdrojů (perf: 100+ buněk/frame) — plnění až uvnitř try ────
         // Deklarace musí být před try, aby na ně viděl finally i lokální helpery níže;
@@ -590,6 +600,7 @@ public class DepartureGridElement : StopScheduleElementBase
 
         // Anotace fonty/painty — element-level, sdílené pro všechny buňky (nullable = alokace v try).
         SKFont?  anotSymFont   = null;
+        SKFont?  anotGlyphFont = null;
         SKPaint? anotSymPaint  = null;
         SKFont?  anotTextFont  = null;
         SKPaint? anotTextPaint = null;
@@ -635,6 +646,7 @@ public class DepartureGridElement : StopScheduleElementBase
 
             // Anotace patří k datovým buňkám → dataScale.
             anotSymFont   = anotSymStyle.CreateFont(dataScale, ctx.MmToPx);
+            anotGlyphFont = anotGlyphStyle.CreateFont(dataScale, ctx.MmToPx);
             anotSymPaint  = anotSymStyle.CreateTextPaint();
             anotTextFont  = anotTextStyle.CreateFont(dataScale, ctx.MmToPx);
             anotTextPaint = anotTextStyle.CreateTextPaint();
@@ -664,7 +676,7 @@ public class DepartureGridElement : StopScheduleElementBase
             foreach (var f in groupMinuteFonts.Values)      f.Dispose();
             foreach (var p in groupMinuteTextPaints.Values) p.Dispose();
             foreach (var p in groupMinuteBgPaints.Values)   p?.Dispose();
-            anotSymFont?.Dispose();   anotSymPaint?.Dispose();
+            anotSymFont?.Dispose();   anotGlyphFont?.Dispose();   anotSymPaint?.Dispose();
             anotTextFont?.Dispose();  anotTextPaint?.Dispose();
             zebraPaint?.Dispose();
             foreach (var p in perGroupZebraPaints.Values)   p.Dispose();
@@ -915,7 +927,7 @@ public class DepartureGridElement : StopScheduleElementBase
                     extraPx = anotGapPx;
                     foreach (var a in o.Anotace)
                     {
-                        SKFont af = a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!;
+                        SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
                         bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
                         extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
                     }
@@ -968,7 +980,7 @@ public class DepartureGridElement : StopScheduleElementBase
 
                         foreach (var anot in odj.Anotace)
                         {
-                            SKFont aFont = anot.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!;
+                            SKFont aFont = JeGlyfSymbol(anot) ? anotGlyphFont! : (anot.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
 
                             // Negativní značka invertovaně — černý box + bílý znak (jako legacy). Vždy zapnuto.
                             if (anot.Typ == TypAnotace.NegativniZnacka)
