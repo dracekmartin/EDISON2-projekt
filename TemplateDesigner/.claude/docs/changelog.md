@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: revize kontraktu SKUPINY_DNU (schéma) — trojice+1 uzavřena
+
+Čtvrtá (poslední) řádková kolekce zastávkového JŘ. Wire konzistentní (AD i MHD `ID, NADPIS, NADPIS2,
+PORADI`), ale schéma se rozcházelo: AD `ID, NADPIS, PORADI` (bez NADPIS2), MHD `ID, NADPIS, NADPIS2`
+(bez PORADI), obě navíc vystavovaly `ID` (join/pivot klíč).
+
+- **Schéma SKUPINY_DNU sjednoceno na `NADPIS, NADPIS2, PORADI`** (AD i MHD). `ID` skryto (zůstává ve
+  wire jako pivot klíč, konzistentní se skrytým ZASTAVKY.ID / ODJEZDY join klíči). **Jen GetSchema →
+  gold netknuté** (33/33 TD).
+
+Tím je zrevidovaný **kompletní datový kontrakt zastávkového JŘ**: skalární pole + všechny 4 řádkové
+kolekce (ZASTAVKY, SKUPINY_DNU, ODJEZDY, POZNAMKY). Princip všude: honest flat kontrakt (jen
+user-facing pole), join/pivot klíče + prezentační nápovědy zůstávají ve wire ale nejsou sloupce,
+AD ≡ MHD, mrtvá pole pryč.
+
 ## 2026-07-09 — Zastávkový JŘ: revize kontraktu POZNAMKY (schéma) + zaflagovaná MHD KATEGORIE mezera
 
 Poslední z trojice (ZASTAVKY/ODJEZDY/POZNAMKY). Názvy čitelné, žádné mrtvé pole ve wire (vše se

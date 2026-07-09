@@ -1360,9 +1360,10 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colSkupiny.name          = "Skupiny dnů"
     s colSkupiny.collectionKey = "SKUPINY_DNU"
     s colSkupinyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colSkupinyFields, "ID",     "ID skupiny",     "text")
-    d ..AddField(colSkupinyFields, "NADPIS", "Nadpis skupiny", "text")
-    d ..AddField(colSkupinyFields, "PORADI", "Pořadí",         "number")
+    // ID (join/pivot klíč) zůstává ve wire, ale NEvystavuje se jako sloupec.
+    d ..AddField(colSkupinyFields, "NADPIS",  "Nadpis skupiny",   "text")
+    d ..AddField(colSkupinyFields, "NADPIS2", "Nadpis skupiny 2", "text")
+    d ..AddField(colSkupinyFields, "PORADI",  "Pořadí",           "number")
     s colSkupiny.fields = colSkupinyFields
     d collections.%Push(colSkupiny)
 
