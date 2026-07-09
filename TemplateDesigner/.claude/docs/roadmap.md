@@ -14,8 +14,9 @@
 
 1. **Bug — přepnutí stránky za běhu návrháře** — uživatel narazil; přednostně opravit (přesný projev + repro TBD).
 2. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
-3. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-4. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+3. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
+4. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+5. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
 
 ---
 
@@ -35,7 +36,7 @@
   vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
-- Import PDF doladění · AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
+- AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
 v [`analyza-stav-a-legacy-nahrada-2026-07.md §7`](analyza-stav-a-legacy-nahrada-2026-07.md); vyřeší se
