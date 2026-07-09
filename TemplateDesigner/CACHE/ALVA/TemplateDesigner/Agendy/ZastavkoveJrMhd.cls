@@ -1485,8 +1485,8 @@ ClassMethod ConvertSpecialniZnak(cislo As %String) As %String
 /// Přidá standardní skalární pole JŘ agendy do pole fields.
 ClassMethod AddStandardJRFields(fields As %DynamicArray)
 {
-    d ..AddField(fields, "CISLO_LINKY",            "Číslo linky",            "number")
-    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Označení linky",         "text")
+    d ..AddField(fields, "CISLO_LINKY",            "Číslo linky (dle licence)", "number")
+    d ..AddField(fields, "LOKALNI_OZNACENI_LINKY", "Veřejné označení linky",    "text")
     d ..AddField(fields, "POPIS_LINKY",            "Popis linky",            "text")
     d ..AddField(fields, "POPIS_DOPRAVCE",         "Popis dopravce",         "text")
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")

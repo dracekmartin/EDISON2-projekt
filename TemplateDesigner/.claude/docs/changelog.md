@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: poctivější labely skalárních polí agendy (per-agenda)
+
+Validace „název pole ↔ co reálně vrací z Caché" (levý panel „Pole agendy"). Jen **labely** (zobrazení),
+klíče beze změny → **nerozbíjí datový kontrakt** (R3). Labely smí divergovat AD↔MHD, ať každý vidí svou
+doménovou terminologii.
+
+- **AD `NEJEDOU_SPOJE`** „Nejedou spoje" → **„Nástupiště"** — v AD to pole reálně nese nástupiště vývěskové
+  zastávky (zdokumentovaný legacy misnomer), ne „nejedou spoje". (MHD label ponechán — tam skutečně nese
+  text „nejedou spoje".)
+- **MHD `CISLO_LINKY`** „Číslo linky" → **„Číslo linky (dle licence)"** + **`LOKALNI_OZNACENI_LINKY`**
+  „Označení linky" → **„Veřejné označení linky"** — v MHD je `CISLO_LINKY` = `CisloLinkyDleLicence`
+  (licenční), veřejné číslo je v `LOKALNI_OZNACENI_LINKY` (`CisloVerejne`); labely to teď rozlišují.
+  (AD ponecháno — `CISLO_LINKY` = `lin` z `^JRL` je tam prostě číslo linky, nemá licenční/veřejný rozštěp.)
+- **Pozn.:** stejný `CISLO_LINKY` label mají i linkové agendy (`LinkovyJr*`) — sjednotit až při jejich
+  review (jiná agenda + aktivně se na ní pracuje). Klíč `NEJEDOU_SPOJE` zůstává (rename = breaking) —
+  label-key nesoulad v AD je vědomý; čistý fix (samostatný `NASTUPISTE` klíč, aditivní) je možný pozdější krok.
+
 ## 2026-07-08 — Víceřádkové záhlaví buňky přes `\n` (dvojjazyčné záhlaví sloupce)
 
 Buňka/záhlaví tabulky může mít víc řádků — typicky dvouřádkové (CZ/EN) záhlaví sloupce.

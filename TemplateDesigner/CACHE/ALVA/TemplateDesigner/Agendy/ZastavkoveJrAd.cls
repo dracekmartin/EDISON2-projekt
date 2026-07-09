@@ -1330,7 +1330,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
-    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nejedou spoje",          "text")
+    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nástupiště",             "text")
 }
 
 ClassMethod AddStandardJRCollections(collections As %DynamicArray)
