@@ -28,7 +28,7 @@ public class NotesLegendElement : StopScheduleElementBase
     /// <summary>Pevná šířka levé buňky se znakem (mm) → svisle zarovnané markery. 0 = inline (výchozí, jako dnes).</summary>
     public float MarkerSirka { get; set; } = 0f;
     /// <summary>Řazení poznámek: výchozí (pořadí z dat) / podle délky textu. Legacy „Uspořádat dle délky".</summary>
-    public LegendRazeni Razeni { get; set; } = LegendRazeni.Vychozi;
+    public LegendRazeni Razeni { get; set; } = LegendRazeni.DleTypu;
 
     // ═══════════════════════════════════════════
     // Negativní značky
@@ -273,12 +273,21 @@ public class NotesLegendElement : StopScheduleElementBase
         ).ToList();
     }
 
-    /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní — výchozí zachová pořadí z dat).</summary>
+    /// <summary>Řazení poznámek dle <see cref="Razeni"/> (stabilní — v rámci tieru/pořadí zachová pořadí z dat).</summary>
     private List<PoznamkaData> OrderNotes(List<PoznamkaData> notes) => Razeni switch
     {
+        LegendRazeni.DleTypu           => notes.OrderBy(TypPriorita).ToList(),
         LegendRazeni.DleDelkyVzestupne => notes.OrderBy(p => p.Text.Length).ToList(),
         LegendRazeni.DleDelkySestupne  => notes.OrderByDescending(p => p.Text.Length).ToList(),
         _                              => notes,
+    };
+
+    /// <summary>Priorita typu poznámky pro řazení „Dle typu": značky → atributy → text.</summary>
+    private static int TypPriorita(PoznamkaData p) => p.Typ switch
+    {
+        TypPoznamky.NegativniZnacka => 0,   // 1. negativní značky
+        TypPoznamky.SpecialniZnak   => 1,   // 2. atributy (na znamení, bezbariér)
+        _                           => 2,   // 3. text / ruční / zbytek
     };
 
     // ─── PropertyDescriptors ────────────────────────────────────────────────
@@ -298,7 +307,7 @@ public class NotesLegendElement : StopScheduleElementBase
         new EnumPropertyDescriptor   { Label = "Směr plnění",         Group = "Rozložení", Get = () => WrapSmer,    Set = v => WrapSmer = (LegendWrap)v,
             Options = [("Po sloupcích", (object)LegendWrap.PoSloupcich), ("Po řádcích", (object)LegendWrap.PoRadcich)] },
         new EnumPropertyDescriptor   { Label = "Řazení",             Group = "Rozložení", Get = () => Razeni,      Set = v => Razeni = (LegendRazeni)v,
-            Options = [("Výchozí", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
+            Options = [("Dle typu (značky → atributy → text)", (object)LegendRazeni.DleTypu), ("Výchozí (dle dat)", (object)LegendRazeni.Vychozi), ("Délka vzestupně", (object)LegendRazeni.DleDelkyVzestupne), ("Délka sestupně", (object)LegendRazeni.DleDelkySestupne)] },
         new FloatPropertyDescriptor  { Label = "Šířka buňky značky",  Group = "Rozložení", Get = () => MarkerSirka, Set = v => MarkerSirka = v, Min = 0, Max = 30, Unit = "mm" },
 
         new BoolPropertyDescriptor  { Label = "Negativní značky",    Group = "Filtrování", Get = () => ShowNegativniZnacky, Set = v => ShowNegativniZnacky = v },

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: konzistentní řazení legendy poznámek dle typu (nový default)
+
+Legenda poznámek se dřív vypisovala v pořadí, v jakém ji stavěla agenda („náhodně"; legacy stejně).
+Helpdesk námět kolegy: seřadit konzistentně. Element už měl hook `LegendRazeni`, tak přidán mód:
+
+- **`LegendRazeni.DleTypu`** — stabilní priorita `NegativniZnacka → SpecialniZnak → Text`
+  (= značky → atributy → text). Uvnitř tieru zachová pořadí z dat.
+- **Nový default** elementu (`Razeni = DleTypu`, dřív `Vychozi`). „Výchozí (dle dat)" zůstává jako opt-out.
+- Dropdown „Řazení" rozšířen; sloupce / směr plnění beze změny — typ jen řídí lineární pořadí,
+  které se pak zalomí do sloupců (seřaď → naplň, stávající architektura).
+- Čistě .NET (render vrstva, „šablona říká JAK") → žádný Caché/gold dopad. Používá `PoznamkaData.Typ`
+  (už v POCO). 305/305 .NET. Additivní enum + default → bez migrace (staré explicitní `Vychozi` se ctí).
+
 ## 2026-07-09 — Zastávkový JŘ (AD): dotažení odsazení názvu zastávky z ^JRL
 
 Element odsazení názvu zastávky uměl vždy (`z.Odsazeni` → N mezer přes `ShowStopIndentation`), ale AD

@@ -11,7 +11,7 @@ public enum TypAnotace  { Text, NegativniZnacka, SpecialniZnak }
 public enum LegendWrap { PoSloupcich, PoRadcich }
 
 /// <summary>Řazení poznámek v legendě.</summary>
-public enum LegendRazeni { Vychozi, DleDelkyVzestupne, DleDelkySestupne }
+public enum LegendRazeni { Vychozi, DleTypu, DleDelkyVzestupne, DleDelkySestupne }
 
 /// <summary>
 /// Režim časové osy odjezdů v DepartureGrid. Paralelní s legacy „Časová osa odjezdů" comboboxem.
