@@ -371,13 +371,14 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         i '$d(servedPoradi(poradi)) continue                // jen obsluhované zastávky (jako legacy)
         s atributy  = $p($p(veta,":",2),"#",1)              // dta2 — atributy zastávky (znaky číselníku 16)
         s zona      = $p($p(veta,":",5),"#",2)               // "#zóna#..."
+        s odsazeni  = +$p(veta,"#",5)                        // dta7 „odrazeni" — odsazení názvu o N znaků (legacy mkPLinWin/JRapiLin: 5. #-segment)
         s rawNazev = ..NazevZastavky(dataDB, czst)
         s jeAkt = (poradi = currentPoradi)
         s casJizdy = $s(jeProjeta:0, 1:..CasJizdyZMapy(.zaklWMap, currentPoradi, poradi))   // projetá → 0 (StopList ji ztlumí); jinak kumulativní min od vývěskové
         s cnt = cnt + 1
         // „na znamení" se tiskne přes atribut „x" (níže) — legacy UVOD tiskne jen „x". NaZnameni=0,
         // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
-        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0)
+        s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0, odsazeni)
         i zona '= "" d ..AddZona(z, zona)
         // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD)
         i 'jeProjeta {

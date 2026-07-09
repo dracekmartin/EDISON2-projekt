@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ (AD): dotažení odsazení názvu zastávky z ^JRL
+
+Element odsazení názvu zastávky uměl vždy (`z.Odsazeni` → N mezer přes `ShowStopIndentation`), ale AD
+posílalo natvrdo `ODSAZENI=0`. Dotaženo z legacy dat:
+
+- **Zdroj:** `^JRL(sku,lin,"J",poradi)` — **5. `#`-segment** = počet znaků odsazení (legacy `mkPLinWin`
+  „odrazeni nazvu zastavky" = `gTrsLin dta 7`, ověřeno v `JRapiLin.mac` parseru + `JRapiLinPrtWin.mac`).
+- **Fix (1 řádek):** `ZastavkoveJrAd` stop-loop čte `s odsazeni = +$p(veta,"#",5)` a předá do `BuildZastavka`
+  místo hardcoded `0`. C# strana beze změny (parse + render byly připravené).
+- Behavior-preserving pro linky bez odsazení (0 = beze změny) → **gold netknuté** (33/33 TD zelené).
+  Živě ověřen render odsazených podzastávek.
+
 ## 2026-07-09 — Zastávkový JŘ: revize kontraktu SKUPINY_DNU (schéma) — trojice+1 uzavřena
 
 Čtvrtá (poslední) řádková kolekce zastávkového JŘ. Wire konzistentní (AD i MHD `ID, NADPIS, NADPIS2,
