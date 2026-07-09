@@ -57,6 +57,10 @@
          NE komerční (Helvetica/Arial). -->
     <EmbeddedResource Include="Fonts\**\*.ttf" />
     <EmbeddedResource Include="Fonts\**\*.otf" />
+
+    <!-- Systémové (M-line) výchozí šablony: JSON ze složky SystemTemplates/ se zabalí do .exe;
+         SystemTemplateSeeder je při startu nalije do MLINE větve DB (governance v1 distribuce). -->
+    <EmbeddedResource Include="SystemTemplates\**\*.json" />
   </ItemGroup>
 
 </Project>

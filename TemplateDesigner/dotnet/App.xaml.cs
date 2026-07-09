@@ -103,6 +103,12 @@ public partial class App : Application
             agendas = [new TemplateDesigner.Serialization.AgendaRegistryEntry("GENERAL", "Obecná (bez databáze)", "")];
         }
 
+        // Seed systémových (M-line) šablon z embedded JSON → MLINE větev (governance krok 4).
+        // Fire-and-forget: neblokuje start; picker je ukáže v sekci „M-line" po dokončení seedu.
+        if (mlRest is not null)
+            _ = TemplateDesigner.Services.SystemTemplateSeeder.SeedAsync(
+                new TemplateDesigner.Services.CacheTemplateService(mlRest));
+
         // inputParam kontraktu "Agenda=<kód>" → startovní agenda šablony. Uzel stromu legacy
         // shellu nese kód v atributu input (JŘ vs MHD místo), MHD2 tlačítko ho posílá natvrdo.
         string? startupAgendaCode = null;
