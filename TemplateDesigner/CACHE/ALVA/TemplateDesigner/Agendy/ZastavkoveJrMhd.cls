@@ -1366,9 +1366,7 @@ ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", c
     d zastavka.%Set("AKTUALNI_ZASTAVKA", $s(jeAktualni:"true", 1:"false"))
     d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
     d zastavka.%Set("ODSAZENI", odsazeni)
-    d zastavka.%Set("ZAKLADNI_TRASA", "true")
     d zastavka.%Set("ZONY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("PRUBEHY", ##class(%DynamicArray).%New())
     d zastavka.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
     d zastavka.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
     q zastavka
@@ -1377,11 +1375,6 @@ ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", c
 ClassMethod AddZona(zastavka As %DynamicObject, zona As %String)
 {
     d zastavka.%Get("ZONY").%Push(zona)
-}
-
-ClassMethod AddPrubeh(zastavka As %DynamicObject, prubeh As %String)
-{
-    d zastavka.%Get("PRUBEHY").%Push(prubeh)
 }
 
 ClassMethod AddAtribut(zastavka As %DynamicObject, znak As %String, popis As %String = "")
@@ -1664,14 +1657,14 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     // ZASTAVKY
     s zastavky = ##class(%DynamicArray).%New()
     s z1 = ..BuildZastavka("1", "Líšeň, Novolíšeňská", "101", 0, 1, 1, 0)
-    d ..AddZona(z1, "A1") d ..AddPrubeh(z1, "a") d ..AddPrubeh(z1, "b")
+    d ..AddZona(z1, "A1")
     d ..AddAtribut(z1, "♿", "Bezbariérový přístup")
     d zastavky.%Push(z1)
     s z2 = ..BuildZastavka("2", "Líšeň, Mifkova", "102", 3, 2, 0, 1)
     d ..AddZona(z2, "A1") d ..AddPoznamkaZastavky(z2, "A", "text", "Končí v zast. Rudolfov")
     d zastavky.%Push(z2)
     s z3 = ..BuildZastavka("3", "Šlapanice", "103", 8, 3, 0, 0, 2)
-    d ..AddZona(z3, "A2") d ..AddPrubeh(z3, "a")
+    d ..AddZona(z3, "A2")
     d zastavky.%Push(z3)
     s z4 = ..BuildZastavka("4", "Královo Pole, nádraží", "104", 14, 4, 0, 0)
     d ..AddZona(z4, "A2") d ..AddAtribut(z4, "P", "Parkoviště P+R")

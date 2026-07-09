@@ -75,7 +75,6 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                 Poradi        = ParseInt(row.GetString(StopFields.Poradi)),
                 JeAktualni    = ParseBool(row.GetString(StopFields.JeAktualni)),
                 Odsazeni      = ParseInt(row.GetString("ODSAZENI")),
-                ZakladniTrasa = ParseBool(row.GetString("ZAKLADNI_TRASA", "true")),
                 NaZnameni     = ParseBool(row.GetString("NA_ZNAMENI")),
                 SourceRow     = row,
             };
@@ -83,9 +82,6 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             // Vnořená pole — z JsonArray
             if (row.GetValue(StopFields.Zone) is JsonArray zonyArr)
                 z.Zony = zonyArr.Select(n => n?.ToString() ?? "").Where(s => s.Length > 0).ToList();
-
-            if (row.GetValue("PRUBEHY") is JsonArray prubehyArr)
-                z.Prubehy = prubehyArr.Select(n => n?.ToString() ?? "").Where(s => s.Length > 0).ToList();
 
             if (row.GetValue("ATRIBUTY") is JsonArray attrArr)
                 z.Atributy = attrArr

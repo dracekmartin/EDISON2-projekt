@@ -37,14 +37,11 @@ public class ZastavkaData
 {
     public string Id { get; set; } = "";
     public string Popis { get; set; } = "";
-    public string TarifniCislo { get; set; } = "";
     public int CasJizdy { get; set; }
     public int Poradi { get; set; }
     public bool JeAktualni { get; set; }
     public int Odsazeni { get; set; }
     public List<string> Zony { get; set; } = [];
-    public List<string> Prubehy { get; set; } = [];
-    public bool ZakladniTrasa { get; set; } = true;
     public bool NaZnameni { get; set; }
     public List<AtributData> Atributy { get; set; } = [];
     public List<PoznamkaZastavkyData> PoznamkyZastavky { get; set; } = [];

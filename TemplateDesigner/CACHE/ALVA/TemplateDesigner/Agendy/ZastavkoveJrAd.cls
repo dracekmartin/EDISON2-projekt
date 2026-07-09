@@ -1337,8 +1337,8 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 {
     // Pole = skalární klíče, které reálně produkují Build* metody v GetData (1:1 s ostrými daty).
     // ZONY (skalární pole) se vystavuje — plochá buňka ho zobrazí spojené („1/2", GetString join).
-    // Objektová/dead vnořená pole (ATRIBUTY {ZNAK,POPIS}, PRUBEHY, POZNAMKY_ZASTAVKY, ANOTACE) se
-    // NEvystavují — plochá tabulka je neumí; spotřebovávají je specializované elementy (StopList/DepartureGrid).
+    // Objektová vnořená pole (ATRIBUTY {ZNAK,POPIS}, POZNAMKY_ZASTAVKY, ANOTACE) se NEvystavují —
+    // plochá tabulka je neumí; spotřebovávají je specializované elementy (StopList/DepartureGrid).
 
     // ZASTAVKY (BuildZastavka)
     s colZastavky = ##class(%DynamicObject).%New()
@@ -1481,9 +1481,7 @@ ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", c
     d zastavka.%Set("AKTUALNI_ZASTAVKA", $s(jeAktualni:"true", 1:"false"))
     d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
     d zastavka.%Set("ODSAZENI", odsazeni)
-    d zastavka.%Set("ZAKLADNI_TRASA", "true")
     d zastavka.%Set("ZONY", ##class(%DynamicArray).%New())
-    d zastavka.%Set("PRUBEHY", ##class(%DynamicArray).%New())
     d zastavka.%Set("ATRIBUTY", ##class(%DynamicArray).%New())
     d zastavka.%Set("POZNAMKY_ZASTAVKY", ##class(%DynamicArray).%New())
     q zastavka
@@ -1492,11 +1490,6 @@ ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", c
 ClassMethod AddZona(zastavka As %DynamicObject, zona As %String)
 {
     d zastavka.%Get("ZONY").%Push(zona)
-}
-
-ClassMethod AddPrubeh(zastavka As %DynamicObject, prubeh As %String)
-{
-    d zastavka.%Get("PRUBEHY").%Push(prubeh)
 }
 
 ClassMethod AddAtribut(zastavka As %DynamicObject, znak As %String, popis As %String = "")

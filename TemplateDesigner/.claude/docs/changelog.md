@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: úklid mrtvých polí zastávek (wire + .NET)
+
+Dočištění po sjednocení kontraktu — odstranění write-only mrtvých polí, která se nikde nečetla:
+
+- **`ZAKLADNI_TRASA`** (bool „na základní trase") — v `BuildZastavka` napevno `"true"` u každé zastávky → nulová informace; skutečná logika žije v `ZakladniCisloTrasy` (řídí variantní časové sloupce). Emit + POCO `z.ZakladniTrasa` pryč (AD+MHD).
+- **`PRUBEHY`** (písmena rozdílů tras u zastávky) — v ostrém `GetData` **nikdy** neplněné (jen MHD mock); účel pokrývají anotace rozdílů tras v DepartureGridu + multi-variantní časové sloupce. Emit + `AddPrubeh` + POCO `z.Prubehy` pryč (AD+MHD).
+- **`TarifniCislo`** POCO — osiřelé po odebrání TČ (fáze 1), pryč.
+- ⚠️ Mění `GetData` výstup (2 klíče pryč) → součást téže gold re-baseline jako fáze 1/2. Testy 305/305, Caché kompiluje čistě.
+
 ## 2026-07-09 — Zastávkový JŘ: StopList sloupce field-based 1:1 s DynamicTable (sjednocení kontraktu, fáze 2/2)
 
 Dokončení sjednocení — **identita sloupce StopListu = field ID kolekce ZASTAVKY**, takže je 1:1 s poli, která nabízí DynamicTable nad stejným zdrojem. Uživatel už nemusí luštit, proč jedna cesta zná `POPIS` a druhá `NAZEV_ZASTAVKY`.
