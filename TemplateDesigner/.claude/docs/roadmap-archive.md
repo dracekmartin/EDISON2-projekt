@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-09 ✅ — Governance šablon v1: doručení systémové šablony (embed → MLINE → picker)
+
+Hybrid model (systémové M-line + zákaznické per-firma) — v1 způsob, jak zákazníkovi dodat výchozí šablonu,
+aniž se sáhne na jeho vlastní. UX skořápka finální (nepřeučovat), backend (embed) vyměnitelný za budoucí kanál.
+
+- **Krok 1** (`4770a58`) — kurátorovaná výchozí **zastávková AD** šablona (`dotnet/SystemTemplates/zastavkovy-jr-ad.json`),
+  základ z dev artefaktu, pročištěno (název/popis, stabilní id, vyprázdněné test defaulty).
+- **Krok 2** (`0a885af`) — `Sablony` API podpora větve **MLINE**: `EDList.Sablony.LoadList` sjednotí firma + MLINE
+  (sloupec „Zdroj"), `API.Sablony.LoadTemplate` bere `sourceIdFa`, `SaveTemplate` `targetIdFa`; `CacheTemplateService`
+  přetížení + konstanta `MlineIdFa`.
+- **Krok 3** (`fddcea7`) — picker **2 sekce** (Zdroj = M-line/vlastní), systémové **read-only** (Přejmenovat/Smazat
+  zakázáno); otevřít systémovou → načte z MLINE + `_loadedFromCache=false` → `Ctrl+S` = „Uložit jako" do firmy (nový GUID).
+- **Krok 4** (`78af151`) — **embed + seed**: `SystemTemplates\**\*.json` `<EmbeddedResource>` do .exe;
+  `SystemTemplateSeeder` při startu nalije do MLINE (fire-and-forget, idempotentní přes stabilní `Template.Id`,
+  deserialize projde migratorem → aktuální verze). „Poslat šablonu ve v1" = přidat JSON + rebuild/publish .exe.
+
+**Vědomě odloženo** (zůstává v roadmapě): server-side zámek MLINE (bod 2), samostatný distribuční kanál mimo .exe
+(bod 3), další agendy MHD/linkový (C4/44b), navazující — přiřazení k tisku / kategorie / audit (bod 4), strom/kategorie (PC5).
+
 ## Session 2026-07-08 ✅ — Tabulkové jádro: levné švy před v1 (pětice #1–#5)
 
 Z analýzy připravenosti tabulkového jádra (4 agentní dimenze) — zavřít levné seamy, ať další tabulkový

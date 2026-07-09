@@ -12,7 +12,7 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **Governance šablon — implementace** — model rozhodnut (hybrid MLINE + per-firma), zbývá picker obou zásuvek + zámek MLINE + distribuce (viz produkční sekce níže).
+1. **Governance šablon** — v1 doručení HOTOVO (embed → MLINE → picker 2 sekce, kurátorovaná zastávková AD). Zbývá server-side zámek MLINE + samostatný distribuční kanál + navazující (viz produkční sekce níže).
 2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 ---
@@ -57,21 +57,23 @@ při scope té fáze, ne teď.
 
 ### Governance šablon — hybrid (M-line distribuuje + zákazníci vlastní)
 
-> **Model rozhodnut** (2026-07-07): dvě zásuvky v `^ALVA.TemplateDesigner.Templates` — IdFa `MLINE`
-> (naše systémové, sdílené, read-only) + per-firma (zákaznické). Distribuce sáhne jen na větev MLINE,
-> zákaznické se nikdy nepřepíšou; zákazník „Uložit jako" → vlastní editovatelná kopie. Master = dev/release,
-> verzování zatím ne. Plný koncept: [`governance-sablon-koncept.md`](governance-sablon-koncept.md).
+> **Model rozhodnut** (2026-07-07), **v1 doručení HOTOVO 2026-07-09** → detail v
+> [`roadmap-archive.md`](roadmap-archive.md). Dvě zásuvky v `^ALVA.TemplateDesigner.Templates`: IdFa
+> `MLINE` (systémové, read-only) + per-firma (zákaznické). V1 doručuje systémové **embedem do .exe →
+> seedem do MLINE**; picker je ukáže v sekci „M-line" (read-only), „Uložit jako" → vlastní kopie.
+> Plný koncept: [`governance-sablon-koncept.md`](governance-sablon-koncept.md).
 
-**Otevřená implementace (pořadí):**
-1. **Picker ukáže obě zásuvky + otevření MLINE** — `ListTemplates` sjednotit session IdFa + `MLINE`;
-   `LoadTemplate` umět zdrojovou IdFa. Odznak „systémová" u MLINE.
-2. **Zámek MLINE (server-side)** — `SaveTemplate`/`DeleteTemplate` odmítne zápis do `MLINE` mimo
-   distribuční cestu; Ctrl+S na otevřené MLINE šabloně → vynutí „Uložit jako" (nová kopie pod firmou).
-3. **Distribuce** — export/import MLINE šablon jako JSON v release (ne GOF). Váže výchozí šablony
-   per agenda: knižní JŘ šablona v repu (zapojení chybí); **zastávková zatím jen dev artefakty
-   (`kv.json`/`kv_ad_test.json`) → chce kurátorovanou výchozí šablonu**.
-4. **Navazující featury** — per-instance přiřazení (linka → výchozí, `InstanceDefaults`) · kategorie +
-   popis v UI · audit log změn + ECL právo „pouštět designer".
+**Hotovo v1** (embed → MLINE → picker, kurátorovaná zastávková AD): picker obě zásuvky + odznak Zdroj,
+otevření MLINE, „kopie → úprava", embed+seed. → archiv.
+
+**Zbývá (až s reálným provozem / jiným distribučním kanálem):**
+1. **Zámek MLINE (server-side)** — dnes read-only jen klientsky (picker + „Uložit jako"); `SaveTemplate`/`DeleteTemplate`
+   má odmítnout zápis do `MLINE` mimo distribuci. (governance bod 2)
+2. **Samostatný distribuční kanál** mimo .exe — v1 doručuje embed+seed; „trochu jiný kanál" (server push /
+   admin) jen vymění zdroj systémových, picker/UX beze změny. (governance bod 3 mechanismus)
+3. **Další výchozí šablony** — zatím jen zastávková AD; MHD + linkový = přidat JSON do `SystemTemplates/` (viz C4, 44b).
+4. **Navazující** — per-instance přiřazení (linka → výchozí, `InstanceDefaults`) · kategorie + popis v UI ·
+   audit log změn + ECL právo „pouštět designer". (governance bod 4)
 
 ---
 
@@ -143,7 +145,7 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 |---|---|---|
 | 42b | Symbolový font Timetable do Skia + převodní tabulka (= C2 níže) | ⬜ (ZNAK ve wire = legacy klíče, fallback text) |
 | 43 | `LineTableElement` layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy = C3 níže) | 🟡 element hotový (standalone); layout rozšíření ⬜ |
-| 44b | Výchozí šablona `templates/knizni-jr-ad-vychozi.json` → zapojit do distribuce (PC2/R6) | 🟡 šablona v repu, zapojení ⬜ |
+| 44b | Výchozí **linková** šablona do distribuce — mechanismus embed→MLINE hotový (governance v1); zbývá kurátorovat + přesunout `linkovy-jr-ad-vychozi.json` do `SystemTemplates/` | 🟡 mechanismus ✅, linkový JSON ⬜ |
 
 ### Odložené body knižního/linkového JŘ (z pilotu, seřazené dle hodnoty pro ostré nasazení)
 
@@ -153,7 +155,7 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 |---|---|---|---|
 | C2 | **Symbolový font Timetable_nove(+SK)** do Skia (krok 42b, gate R5) — embed TTF + převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Dnes se `ZNAK` kreslí jako textový klíč (bezbariér, projíždí, dny…) | vizuální parita; bez něj JŘ „tiše lže" u dopravních symbolů (viz R5) | M |
 | C3 | **2D bin-packing / `Strih`** (krok 43 + gate R1/R2, *přesunuto z layout tracku 2026-07-07*) — široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků. Součást: **auto-fit fontu na šířku** (dnes jen výškový `ComputeFontScale`), flow paketů, „dotisk zbytku legendy na další stránce". **Zde proběhne R1 extrakce sdíleného řádkového jádra** = zavedení **row-plan vrstvy** (`List<RowSpec>`: druh řádku data/header/groupHeader/groupFooter/subrow + buňky → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow`), ať „řádkový layout" (grouping, page-spanning, per-typ-řádku, merged) přestane být per-element `Render` smyčka (dnes N míst → pak 1 datové tvarování). **LineTable = prototyp** — už heterogenní řádky skládá inline. Pozn.: sdílené low-level (buňka/sloupec/kaskáda/šířky) i řádkové podmínky (viditelnost/zvýraznění) jsou **hotové** (pětice levných švů 2026-07-08); row-plan je poslední zbývající řádková vrstva. Zastávkový JŘ to nepotřebuje (DepartureGrid = málo sloupců). | nutné pro reálný tisk MHD linek; největší kus, dělá se jednou pořádně | L |
-| C4 | **Zapojení výchozích šablon do distribuce** (PC2/R6) — dnes ruční Import JSON; + výchozí šablona pro MHD (zatím jen AD) | provozní; malý | S |
+| C4 | **Rozšíření výchozích šablon na další agendy** — mechanismus embed→MLINE hotový (governance v1, zastávková AD); přidat MHD + linkový JSON do `SystemTemplates/` | provozní; malý | S |
 | C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) — legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
 | C6 | **Turnusy, obousměrný tisk, souhrnné JŘ (řádek zdrojové linky)** — legacy volby `in(arr,6/7)`, MHD `MakeData` je nemá | mimo scope pilotu; validovat, zda je zákazník chce, než portovat | — |
 | C7 | **Rozdvojení příjezd/odjezd — jemný layout** + fixed-width padding sloupce (legacy `arr,13`) | kosmetika; TD řeší podřádky, ne padding | S |
