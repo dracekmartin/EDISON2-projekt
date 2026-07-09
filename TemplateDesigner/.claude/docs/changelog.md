@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: AD TČ odebráno + ZONY vystaveno (plné 1:1, gold-safe)
+
+Dokončení 1:1 ZASTAVKY mezi StopList a DynamicTable.
+
+- **AD `TC` odebráno ze schématu** — v AD `TC` nese jen J-klíč (= interní `ID`), ne reálné tarifní
+  číslo (`PORADI` = zobrazovací čítač je to smysluplné). MHD `TC` (skutečné číslo zastávky) zůstává →
+  schéma se AD↔MHD vědomě rozchází podle reálného významu dat.
+- **`ZONY` vystaveno ve schématu** (AD+MHD, „Zóny") — bez změny `GetData` (**gold digesty netknuté**):
+  `ZONY` zůstává v datech vnořené pole, ale `DataContext.GetString` skalární pole **spojí „/"** (např.
+  „1/2"), takže ho zobrazí i plochá buňka DynamicTable. StopList beze změny (parsuje si pole sám).
+  Objektová pole (ATRIBUTY {ZNAK,POPIS}) join přeskočí → do schématu se nevystavují.
+- **Výsledek:** ploché pole ZASTAVKY jsou teď **1:1** — StopList i DynamicTable nabízí `POPIS, CAS_JIZDY,
+  PORADI, JE_AKTUALNI, ZONY` (+ MHD `TC`). Jediný doménový rozdíl = StopListové značky/šipka/aktuální
+  (inline render, ne sloupce) — inherentní specializovanému elementu.
+- +4 testy `DataContextTests` (GetString: skalár / fallback / skalární array join / objektový array skip).
+
 ## 2026-07-09 — Zastávkový JŘ: pole ZASTAVKY co nejvíc 1:1 mezi StopList a DynamicTable
 
 Pokračování „jeden zdroj = schéma ZASTAVKY". Cíl: uživatele nemate, že jedna cesta (StopList element)

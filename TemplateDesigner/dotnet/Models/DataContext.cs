@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using TemplateDesigner.Models.Expressions;
 
@@ -29,9 +30,16 @@ public class DataContext
     public object? GetValue(string key) =>
         _values.TryGetValue(key, out var v) ? v : null;
 
-    /// <summary>Vrátí hodnotu pole jako string, nebo fallback.</summary>
+    /// <summary>Vrátí hodnotu pole jako string, nebo fallback. Vnořené skalární pole (např. ZONY)
+    /// se spojí „/" — ať ho umí zobrazit i plochá buňka (DynamicTable); objektová pole (ATRIBUTY)
+    /// se přeskočí. Specializované elementy si vnořená pole i tak parsují samy.</summary>
     public string GetString(string key, string fallback = "") =>
-        GetValue(key)?.ToString() ?? fallback;
+        GetValue(key) switch
+        {
+            null => fallback,
+            JsonArray arr => string.Join("/", arr.Where(n => n is JsonValue).Select(n => n!.ToString())),
+            var v => v.ToString() ?? fallback
+        };
 
     /// <summary>Vrátí řádky tabulkového zdroje, nebo prázdný seznam.</summary>
     public IReadOnlyList<DataContext> GetRows(string dataSource) =>

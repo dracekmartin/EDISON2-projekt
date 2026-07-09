@@ -1513,6 +1513,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",           "number")
     d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",              "number")
     d ..AddField(colZastavkyFields, "JE_AKTUALNI",       "Aktuální zastávka",   "boolean")
+    d ..AddField(colZastavkyFields, "ZONY",              "Zóny",                "text")
     s colZastavky.fields = colZastavkyFields
     d collections.%Push(colZastavky)
 
