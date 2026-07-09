@@ -42,21 +42,24 @@ Mimo scope zastávkového JŘ:
 
 ### A4. ✅ HOTOVO (2026-05-12) — viz §G
 
-### A5. ⏸️ Odloženo (2026-05-12) — diskuze s kolegy potřeba
+### A5. 🟡 Základ hotový pro AD (2026-07-09) — per-směr / per-Tč otevřené
 
-- **Zákazník:** TRANSDEV (Michal Podloučka), #7937
+- **Zákazník:** TRANSDEV (Michal Podloučka), #7937 — TRANSDEV jede primárně **AD** (viz A6), takže cílová agenda = `ZastavkoveJrAd`.
 - **Citace:** *„potřebuji mít možnost odstadit/odrazit zastávku o určitý počet bodů, ale pouze pro zastávkové JŘ a pro jednotlivé směry (v jednom směru ano, v druhém ne)"*
 - **Dodatek:** *„zda by šlo odražení nastavit tak, že se bude odrážet zastávka v nastavených Tč vývěsu"* (per časové pásmo)
-- **Stav infrastruktury:**
-  - ✅ TD model: `ZastavkaData.Odsazeni: int` + `ShowStopIndentation` toggle
-  - ✅ TD render: prefix spaces (primitivní, potřebuje vylepšit na proper padding)
-  - ✅ Caché schema: `ODSAZENI` field v `BuildZastavka` (default 0)
-  - ❌ Caché data flow: `ZastavkoveJrMhdAPI.cls:881` má hardcoded `s odsazeni = 0` s komentářem „(legacy: dta 10)" — kdysi se to načítalo z legacy DB pole, v novém kódu nedotaženo
-- **Důvod odložení:** potřeba domluvit s kolegy:
-  - **Kde brát data** o odsazení per zastávka per směr (legacy field „dta 10" v `ALVA.MHD.ZST`? jiný?)
-  - **Jak se v EDISONu konfiguruje** odsazení per zastávku (UI?)
-  - **Jakou logiku** používat — per-směr, per-Tč pásmo, kombinace?
-- **Není přímo TD práce** — TD má infrastrukturu, čeká na Caché data flow doplnění a UX rozhodnutí.
+- **✅ Hotovo — základní odsazení (AD):** datový flow dotažen. `ZastavkoveJrAd` čte odsazení z
+  `^JRL(sku,lin,"J",poradi)` **5. `#`-segment** (legacy `mkPLinWin` „odrazeni nazvu zastavky" = `gTrsLin dta 7`,
+  ověřeno `JRapiLin.mac`/`JRapiLinPrtWin.mac`) → `BuildZastavka ODSAZENI` → element `z.Odsazeni` → N mezer.
+  Živě ověřen render. Behavior-preserving (gold netknuté). Commit `62852f2`.
+  - ✅ TD model `ZastavkaData.Odsazeni` + `ShowStopIndentation` toggle + render (prefix spaces).
+- **⚠️ Otevřené (rozšíření nad legacy — potřebují datový model + UI rozhodnutí):**
+  - **Per-směr** („v jednom směru ano, v druhém ne") — `^JRL` dta7 je **jedna hodnota per bod trasy**,
+    sdílená pro tam i zpět (i legacy má single-per-point). Odsazení se teď projeví v **obou** směrech.
+    Per-směr = nutná změna zdroje (per-směr pole) + editor.
+  - **Per-Tč pásmo vývěsu** — neřešeno.
+  - **MHD strana** — `ZastavkoveJrMhdAPI` má pořád hardcoded `s odsazeni = 0` („legacy: dta 10" v `ALVA.MHD.ZST`).
+    Relevantní jen pro self-contained MHD (DPCB/DPKV), ne TRANSDEV.
+- **Render caveat:** mezery jsou proporcionální (počet mezer = počet znaků); kdyby vizuál nesedel s legacy, přepočet na pevnou šířku.
 
 ### A6. ✅ Hotovo (2026-06-20) — ověřeno na úrovni kódu pro AD; klient potvrdí na svých datech
 
