@@ -44,6 +44,8 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
         ColumnKeys.Zone         => "Zóna",
         ColumnKeys.RouteLetters => "Průběhy trasy",
         ColumnKeys.BaseRoute    => "Základní trasa (ZT)",
+        ColumnKeys.Poradi       => "Pořadí",
+        ColumnKeys.JeAktualni   => "Aktuální zastávka",
         _                       => string.IsNullOrWhiteSpace(header) ? key : header,
     };
 

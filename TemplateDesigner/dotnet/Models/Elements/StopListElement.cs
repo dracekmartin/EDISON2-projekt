@@ -24,6 +24,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new() { Key = ColumnKeys.Tc,           Header = "TČ",       Width = 8f,  Visible = false },
         new() { Key = ColumnKeys.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
         new() { Key = ColumnKeys.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
+        new() { Key = ColumnKeys.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
+        new() { Key = ColumnKeys.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
     ];
 
     // ═══════════════════════════════════════════
@@ -550,6 +552,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ColumnKeys.Zone         => string.Join("/", z.Zony),
             ColumnKeys.RouteLetters => string.Join("", z.Prubehy),
             ColumnKeys.BaseRoute    => z.ZakladniTrasa ? "1" : "",
+            ColumnKeys.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
+            ColumnKeys.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""
         };
     }

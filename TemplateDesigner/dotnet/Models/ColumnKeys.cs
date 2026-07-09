@@ -24,8 +24,10 @@ public static class ColumnKeys
 
     // ─── StopListElement (zastávkový JŘ) ───
     public const string TravelTime   = "TravelTime";   // čas jízdy (příp. rozvinut na varianty)
-    public const string RouteLetters = "RouteLetters"; // průběhy trasy (písmena rozdílů)
-    public const string BaseRoute    = "BaseRoute";    // základní trasa (ZT)
+    public const string RouteLetters = "RouteLetters"; // průběhy trasy (písmena rozdílů) — legacy, dnes nenabízeno
+    public const string BaseRoute    = "BaseRoute";    // základní trasa (ZT) — legacy, dnes nenabízeno
+    public const string Poradi       = "Poradi";       // pořadí zastávky (řádkový čítač) — pole PORADI
+    public const string JeAktualni   = "JeAktualni";   // příznak aktuální (nástupní) zastávky — pole JE_AKTUALNI
 
     /// <summary>Prefix variantních časových sub-sloupců (<c>"TravelTime#0"</c>, <c>"TravelTime#1"</c>, …),
     /// generovaných za běhu při více variantách jízdních dob. Nepersistuje se v default sloupcích.</summary>

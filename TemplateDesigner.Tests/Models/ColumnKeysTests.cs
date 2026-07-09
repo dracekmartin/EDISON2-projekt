@@ -23,6 +23,8 @@ public class ColumnKeysTests
         Assert.Equal("TravelTime", ColumnKeys.TravelTime);
         Assert.Equal("RouteLetters", ColumnKeys.RouteLetters);
         Assert.Equal("BaseRoute", ColumnKeys.BaseRoute);
+        Assert.Equal("Poradi", ColumnKeys.Poradi);
+        Assert.Equal("JeAktualni", ColumnKeys.JeAktualni);
         Assert.Equal("TravelTime#", ColumnKeys.TravelTimeVariantPrefix);
     }
 
@@ -36,7 +38,8 @@ public class ColumnKeysTests
     public void VychoziSloupce_StopList_PouzivajiJenZnameKlice()
     {
         string[] known = [ColumnKeys.TravelTime, ColumnKeys.Tc, ColumnKeys.StopName,
-                           ColumnKeys.Zone, ColumnKeys.RouteLetters, ColumnKeys.BaseRoute];
+                           ColumnKeys.Zone, ColumnKeys.RouteLetters, ColumnKeys.BaseRoute,
+                           ColumnKeys.Poradi, ColumnKeys.JeAktualni];
         Assert.All(StopListElement.GetDefaultColumns(), c => Assert.Contains(c.Key, known));
     }
 

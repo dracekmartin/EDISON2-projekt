@@ -1344,7 +1344,6 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colZastavky.name          = "Zastávky"
     s colZastavky.collectionKey = "ZASTAVKY"
     s colZastavkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colZastavkyFields, "ID",             "ID zastávky",          "text")
     d ..AddField(colZastavkyFields, "POPIS",          "Název zastávky",       "text")
     d ..AddField(colZastavkyFields, "TC",             "Tarifní číslo",        "text")
     d ..AddField(colZastavkyFields, "CAS_JIZDY",      "Čas jízdy",            "number")

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: pole ZASTAVKY co nejvíc 1:1 mezi StopList a DynamicTable
+
+Pokračování „jeden zdroj = schéma ZASTAVKY". Cíl: uživatele nemate, že jedna cesta (StopList element)
+nabízí jiná pole než druhá (DynamicTable nad zdrojem ZASTAVKY).
+
+- **Schéma AD↔MHD sjednoceno** — obě agendy vystavují stejnou plochou sadu: `POPIS, TC, CAS_JIZDY,
+  PORADI, JE_AKTUALNI`. MHD doplněno o `PORADI`+`JE_AKTUALNI` (data je emitují). `ID` odebráno z obou
+  (interní join klíč `ODJEZDY.ZASTAVKA_ID`→`ZASTAVKY.ID`, uživatele mátl; data se emitovat nechají).
+- **StopList doplněn o skryté sloupce `Pořadí` + `Aktuální zastávka`** (`ColumnKeys.Poradi`/`JeAktualni`,
+  default `Visible=false`) — data v `ZastavkaData` už byla. StopList tak nabízí stejná plochá pole jako
+  DynamicTable (+ navíc `Zóna`).
+- **Výsledek:** ploché sloupce/pole jsou 1:1 (StopList i DynamicTable: POPIS/TC/CAS_JIZDY/PORADI/JE_AKTUALNI).
+  Jediný zbylý rozdíl = **`Zóna` (vnořené `ZONY`)** má jen StopList — plochá DynamicTable vnořené pole neumí.
+  Úplné sjednocení `ZONY` = zploštit na string (koordinovaná Caché+.NET změna + re-baseline gold digestů),
+  vědomě odloženo (nízké ROI — DynamicTable nad ZASTAVKY je fallback, ostrý nástroj je StopList).
+
 ## 2026-07-09 — Zastávkový JŘ: jeden zdroj pravdy = schéma ZASTAVKY (úklid mrtvých polí)
 
 Odstranění mrtvých / hardcoded polí, ať schéma ZASTAVKY = jediný zdroj pravdy sdílený DynamicTable
