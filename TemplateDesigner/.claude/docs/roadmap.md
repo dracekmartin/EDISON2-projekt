@@ -12,8 +12,10 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
+1. **Bug — přepnutí stránky za běhu návrháře** — uživatel narazil; přednostně opravit (přesný projev + repro TBD).
+2. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
+3. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+4. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 ---
 
@@ -58,15 +60,6 @@ při scope té fáze, ne teď.
 AD-N5 (`MHD_NEZNZ123`), AD-N15 (prázdninové NZ, kód hotový/čeká data) + odložené helpdesk **A2-A5**
 (#7937 indent), **A2-A6** (#7959 filtr neobsluhovaných), **A2-B4** (#8828 per-sloupek) — datový
 průzkum / diskuze s kolegy. Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md), [`cache-database-linky.md §10`](cache-database-linky.md).
-
-**Nové požadavky z prezentací (P1–P3)** — z živých prezentací 2026-06-24, **neanalyzováno**; před
-implementací dohledat ticket + přesné zadání. Detail: [`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md).
-
-| # | Co | Odhad | Pozn. |
-|---|---|---|---|
-| P1 | Ruční poznámky do patičky JŘ (volný text / pole „Poznámky") | XS–M | `TextElement` v patičce funguje; M jen pokud param-driven |
-| P2 | Sloučení linek se stejným posledním trojčíslím (i různá Tč / více dopravců) → 1 výstup | L | Agenda + InstancePicker + agregace `POPIS_DOPRAVCE`; chce analýzu legacy |
-| P3 | Logická imposice 2×A5 oboustranně na A4 (N-up + duplex/brožura) | M–L | „Sheet layout" vrstva nad PageLayoutEngine; `RenderPage` už bere offset |
 
 **TRANSDEV konsolidovaná sada (2026-07-03, k analýze)** — 10 požadavků (SK legislativa + MHD Trenčín);
 detail + TD-stav [`customer-requirements-zastavkovy-jr.md §TR`](customer-requirements-zastavkovy-jr.md):
