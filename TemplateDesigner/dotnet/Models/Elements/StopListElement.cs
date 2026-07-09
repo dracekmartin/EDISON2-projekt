@@ -21,7 +21,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public static List<StopColumn> GetDefaultColumns() =>
     [
         new() { Key = ColumnKeys.TravelTime,   Header = "Čas",       Width = 8f,  Visible = true },
-        new() { Key = ColumnKeys.Tc,           Header = "TČ",       Width = 8f,  Visible = false },
         new() { Key = ColumnKeys.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
         new() { Key = ColumnKeys.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
         new() { Key = ColumnKeys.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
@@ -546,7 +545,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         }
         return columnKey switch
         {
-            ColumnKeys.Tc           => z.TarifniCislo,
             ColumnKeys.StopName     => BuildStopDisplayText(z),
             ColumnKeys.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
             ColumnKeys.Zone         => string.Join("/", z.Zony),

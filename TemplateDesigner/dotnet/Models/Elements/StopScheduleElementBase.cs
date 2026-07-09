@@ -70,11 +70,10 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             var z = new ZastavkaData
             {
                 Id            = row.GetString("ID"),
-                Popis         = row.GetString("POPIS"),
-                TarifniCislo  = row.GetString("TC"),
+                Popis         = row.GetString("NAZEV_ZASTAVKY"),
                 CasJizdy      = ParseInt(row.GetString("CAS_JIZDY")),
                 Poradi        = ParseInt(row.GetString("PORADI")),
-                JeAktualni    = ParseBool(row.GetString("JE_AKTUALNI")),
+                JeAktualni    = ParseBool(row.GetString("AKTUALNI_ZASTAVKA")),
                 Odsazeni      = ParseInt(row.GetString("ODSAZENI")),
                 ZakladniTrasa = ParseBool(row.GetString("ZAKLADNI_TRASA", "true")),
                 NaZnameni     = ParseBool(row.GetString("NA_ZNAMENI")),

@@ -39,7 +39,6 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
     private static string FriendlyName(string key, string header) => key switch
     {
         ColumnKeys.TravelTime   => "Čas jízdy",
-        ColumnKeys.Tc           => "Tarifní číslo (TČ)",
         ColumnKeys.StopName     => "Název zastávky",
         ColumnKeys.Zone         => "Zóna",
         ColumnKeys.RouteLetters => "Průběhy trasy",

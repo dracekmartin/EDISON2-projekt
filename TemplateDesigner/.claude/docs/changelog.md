@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: čitelná ID polí + TČ pryč všude (sjednocení kontraktu, fáze 1/2)
+
+Sjednocení datového/sloupcového kontraktu ZASTAVKY mezi StopList elementem a DynamicTable — **čistá varianta A**: přejmenování drátových klíčů všude tak, aby ID odpovídalo labelu (`SLOVO1_SLOVO2`), ne kryptickému Caché klíči. Cíl: uživatel v podmíněném renderu / počítaných polích píše `{NAZEV_ZASTAVKY}`, ne `{POPIS}`.
+
+- **Přejmenování klíčů (AD+MHD, wire + schéma + .NET parse):** `POPIS → NAZEV_ZASTAVKY`, `JE_AKTUALNI → AKTUALNI_ZASTAVKA`. `BuildZastavka` emituje nové klíče, `GetSchema` je vystavuje, `StopScheduleElementBase.BuildZastavky` je čte.
+- **`TC` odebráno úplně (AD i MHD)** — v AD nesl jen J-klíč (= interní `ID`), v MHD `ZST.Cislo` (interní CIS číslo, pletlo by se uživateli). Poziční potřebu pokrývá `PORADI`. StopList sloupec „TČ" odebrán (`ColumnKeys.Tc` konstanta zůstává — sdílí LineTable).
+- **Finální plochý kontrakt (AD ≡ MHD, identický):** `NAZEV_ZASTAVKY, CAS_JIZDY, PORADI, AKTUALNI_ZASTAVKA, ZONY`. `ID` zůstává v datech jako interní join-klíč (`ODJEZDY.ZASTAVKA_ID`), ne ve schématu.
+- ⚠️ **Gold digesty se mění** (změněn `GetData` výstup — klíče přejmenované, TČ pryč) → nutná re-baseline na živém serveru (`ZastavkoveJrAdGoldTest`/`ZastavkoveJrMhdGoldTest`). .NET testy 299/299 zelené.
+- **Zbývá (fáze 2):** StopList sloupce plně field-based (identita sloupce = field ID, jako DynamicTable) + oba editory čerpají dostupné sloupce ze schématu + migrace uložených šablon (`{POPIS}→{NAZEV_ZASTAVKY}` atd.).
+
 ## 2026-07-09 — Zastávkový JŘ: AD TČ odebráno + ZONY vystaveno (plné 1:1, gold-safe)
 
 Dokončení 1:1 ZASTAVKY mezi StopList a DynamicTable.

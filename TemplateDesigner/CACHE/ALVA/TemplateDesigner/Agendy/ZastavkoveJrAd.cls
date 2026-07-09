@@ -1345,11 +1345,11 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colZastavky.name          = "Zastávky"
     s colZastavky.collectionKey = "ZASTAVKY"
     s colZastavkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colZastavkyFields, "POPIS",          "Název zastávky",       "text")
-    d ..AddField(colZastavkyFields, "CAS_JIZDY",      "Čas jízdy",            "number")
-    d ..AddField(colZastavkyFields, "PORADI",         "Pořadí",               "number")
-    d ..AddField(colZastavkyFields, "JE_AKTUALNI",    "Aktuální zastávka",    "boolean")
-    d ..AddField(colZastavkyFields, "ZONY",           "Zóny",                 "text")
+    d ..AddField(colZastavkyFields, "NAZEV_ZASTAVKY",    "Název zastávky",    "text")
+    d ..AddField(colZastavkyFields, "CAS_JIZDY",         "Čas jízdy",         "number")
+    d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
+    d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
+    d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno — nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
     s colZastavky.fields = colZastavkyFields
@@ -1472,12 +1472,13 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 ClassMethod BuildZastavka(id As %String, popis As %String, tc As %String = "", casJizdy As %Integer = 0, poradi As %Integer = 1, jeAktualni As %Boolean = 0, naZnameni As %Boolean = 0, odsazeni As %Integer = 0) As %DynamicObject
 {
     s zastavka = ##class(%DynamicObject).%New()
-    d zastavka.%Set("ID", id)
-    d zastavka.%Set("POPIS", popis)
-    d zastavka.%Set("TC", tc)
+    // Čitelná field ID (SLOVO_SLOVO) — sdílený kontrakt sloupců StopList↔DynamicTable.
+    // TC (tarifní/interní číslo) vědomě nevystaveno; poziční potřebu pokrývá PORADI.
+    d zastavka.%Set("ID", id)                          // interní join klíč (ODJEZDY.ZASTAVKA_ID), ne ve schématu
+    d zastavka.%Set("NAZEV_ZASTAVKY", popis)
     d zastavka.%Set("CAS_JIZDY", casJizdy)
     d zastavka.%Set("PORADI", poradi)
-    d zastavka.%Set("JE_AKTUALNI", $s(jeAktualni:"true", 1:"false"))
+    d zastavka.%Set("AKTUALNI_ZASTAVKA", $s(jeAktualni:"true", 1:"false"))
     d zastavka.%Set("NA_ZNAMENI", $s(naZnameni:"true", 1:"false"))
     d zastavka.%Set("ODSAZENI", odsazeni)
     d zastavka.%Set("ZAKLADNI_TRASA", "true")
