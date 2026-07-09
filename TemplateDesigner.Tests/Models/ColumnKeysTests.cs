@@ -4,14 +4,15 @@ using TemplateDesigner.Models.Elements;
 namespace TemplateDesigner.Tests.Models;
 
 /// <summary>
-/// Zámek wire hodnot klíčů sloupců (<see cref="ColumnKeys"/>). Hodnoty se persistují do JSON šablony
-/// (<c>StopColumn.Key</c>) — přejmenování tiše rozbije uložené šablony. Když někdo změní konstantu,
-/// tento test spadne a donutí ho napsat migraci místo tiché koroze.
+/// Zámek wire hodnot klíčů sloupců (<see cref="ColumnKeys"/> = linkový JŘ, <see cref="StopFields"/> =
+/// zastávkový JŘ). Hodnoty se persistují do JSON šablony (<c>StopColumn.Key</c>) — přejmenování tiše
+/// rozbije uložené šablony. Když někdo změní konstantu, tento test spadne a donutí ho napsat migraci
+/// místo tiché koroze.
 /// </summary>
 public class ColumnKeysTests
 {
     [Fact]
-    public void WireHodnoty_JsouZamcene()
+    public void WireHodnoty_LineTable_JsouZamcene()
     {
         // NEMĚNIT bez migrace šablon — viz ColumnKeys docstring.
         Assert.Equal("StopName", ColumnKeys.StopName);
@@ -20,12 +21,19 @@ public class ColumnKeysTests
         Assert.Equal("Km", ColumnKeys.Km);
         Assert.Equal("Mhd", ColumnKeys.Mhd);
         Assert.Equal("Trip", ColumnKeys.Trip);
-        Assert.Equal("TravelTime", ColumnKeys.TravelTime);
-        Assert.Equal("RouteLetters", ColumnKeys.RouteLetters);
-        Assert.Equal("BaseRoute", ColumnKeys.BaseRoute);
-        Assert.Equal("Poradi", ColumnKeys.Poradi);
-        Assert.Equal("JeAktualni", ColumnKeys.JeAktualni);
-        Assert.Equal("TravelTime#", ColumnKeys.TravelTimeVariantPrefix);
+    }
+
+    [Fact]
+    public void WireHodnoty_StopFields_JsouZamcene()
+    {
+        // StopList sloupce = field ID kolekce ZASTAVKY (1:1 s DynamicTable). NEMĚNIT bez migrace.
+        Assert.Equal("NAZEV_ZASTAVKY", StopFields.StopName);
+        Assert.Equal("CAS_JIZDY", StopFields.TravelTime);
+        Assert.Equal("PORADI", StopFields.Poradi);
+        Assert.Equal("AKTUALNI_ZASTAVKA", StopFields.JeAktualni);
+        Assert.Equal("ZONY", StopFields.Zone);
+        Assert.Equal("ID", StopFields.Id);
+        Assert.Equal("CAS_JIZDY#", StopFields.TravelTimeVariantPrefix);
     }
 
     [Fact]
@@ -35,11 +43,10 @@ public class ColumnKeysTests
     }
 
     [Fact]
-    public void VychoziSloupce_StopList_PouzivajiJenZnameKlice()
+    public void VychoziSloupce_StopList_PouzivajiFieldId()
     {
-        string[] known = [ColumnKeys.TravelTime, ColumnKeys.Tc, ColumnKeys.StopName,
-                           ColumnKeys.Zone, ColumnKeys.RouteLetters, ColumnKeys.BaseRoute,
-                           ColumnKeys.Poradi, ColumnKeys.JeAktualni];
+        string[] known = [StopFields.TravelTime, StopFields.StopName, StopFields.Zone,
+                          StopFields.Poradi, StopFields.JeAktualni];
         Assert.All(StopListElement.GetDefaultColumns(), c => Assert.Contains(c.Key, known));
     }
 

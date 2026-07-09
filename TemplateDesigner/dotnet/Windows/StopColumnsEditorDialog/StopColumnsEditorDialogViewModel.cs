@@ -35,17 +35,15 @@ public class StopColumnVM : INotifyPropertyChanged, Controls.IColumnRowVM
     public string  DisplayName => FriendlyName(_key, _header);
     public float?  ColumnWidth => Width;
 
-    /// <summary>Čitelný název sloupce do editoru — odvozený z Key, ať uživatel nemusí luštit „TČ"/„ZT".</summary>
+    /// <summary>Čitelný název sloupce do editoru — odvozený z field ID, ať uživatel nemusí luštit zkratku záhlaví.</summary>
     private static string FriendlyName(string key, string header) => key switch
     {
-        ColumnKeys.TravelTime   => "Čas jízdy",
-        ColumnKeys.StopName     => "Název zastávky",
-        ColumnKeys.Zone         => "Zóna",
-        ColumnKeys.RouteLetters => "Průběhy trasy",
-        ColumnKeys.BaseRoute    => "Základní trasa (ZT)",
-        ColumnKeys.Poradi       => "Pořadí",
-        ColumnKeys.JeAktualni   => "Aktuální zastávka",
-        _                       => string.IsNullOrWhiteSpace(header) ? key : header,
+        StopFields.TravelTime => "Čas jízdy",
+        StopFields.StopName   => "Název zastávky",
+        StopFields.Zone       => "Zóny",
+        StopFields.Poradi     => "Pořadí",
+        StopFields.JeAktualni => "Aktuální zastávka",
+        _                     => string.IsNullOrWhiteSpace(header) ? key : header,
     };
 
     private CellStyleVM _headerStyle = null!;

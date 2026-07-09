@@ -20,11 +20,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     public static List<StopColumn> GetDefaultColumns() =>
     [
-        new() { Key = ColumnKeys.TravelTime,   Header = "Čas",       Width = 8f,  Visible = true },
-        new() { Key = ColumnKeys.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
-        new() { Key = ColumnKeys.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
-        new() { Key = ColumnKeys.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
-        new() { Key = ColumnKeys.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
+        new() { Key = StopFields.TravelTime,   Header = "Čas",       Width = 8f,  Visible = true },
+        new() { Key = StopFields.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
+        new() { Key = StopFields.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
+        new() { Key = StopFields.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
+        new() { Key = StopFields.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
     ];
 
     // ═══════════════════════════════════════════
@@ -135,7 +135,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         var columns = GetVisibleColumns();
 
-        // Multi-varianta časů tras: rozvine sloupec „TravelTime" na N variantních sub-sloupců
+        // Multi-varianta časů tras: rozvine sloupec „CAS_JIZDY" na N variantních sub-sloupců
         // (dynamicky dle dat, hlavičky = písmena z VARIANTY_TRAS). < 2 varianty → beze změny (jeden sloupec).
         var variantHeaders = GetVariantHeaders(ctx.Data);
         if (ShowAllRouteVariants && variantHeaders.Count >= 2)
@@ -146,12 +146,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         bool showArrow = GetBoolParam(ctx.Data, "TISK_SIPKY", ShowDirectionArrow);
         bool arrowLeft = showArrow && DirectionArrowPosition == DirectionArrowSide.Left;
 
-        // Šipka se vykresluje UVNITŘ sloupce zastávek (Key = "StopName") — vertikální čára je
+        // Šipka se vykresluje UVNITŘ sloupce zastávek (Key = NAZEV_ZASTAVKY) — vertikální čára je
         // kousek od vnitřního okraje sloupce, bracket horizontálně směřuje do sloupce.
         // Nepřičítá se nic k šířce layoutu → element a sloupce zachovávají Width.
         // Pro běžně krátké názvy zastávek se text se šipkou nepřekrývá.
         // Fallback (žádný StopName sloupec): poslední sloupec.
-        int stopNameIdx = columns.FindIndex(c => c.Key == ColumnKeys.StopName);
+        int stopNameIdx = columns.FindIndex(c => c.Key == StopFields.StopName);
         if (stopNameIdx < 0) stopNameIdx = columns.Count - 1;
         var colW = ResolveColumnWidths(columns);
         float stopNameLeftMm = X;
@@ -537,21 +537,19 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     private string GetCellText(ZastavkaData z, string columnKey)
     {
-        // Variantní časový sub-sloupec „TravelTime#i" → z.TrasaMin[i] (číslo / „<" / "" jak přišlo z Caché)
-        if (columnKey.StartsWith(ColumnKeys.TravelTimeVariantPrefix, System.StringComparison.Ordinal))
+        // Variantní časový sub-sloupec „CAS_JIZDY#i" → z.TrasaMin[i] (číslo / „<" / "" jak přišlo z Caché)
+        if (columnKey.StartsWith(StopFields.TravelTimeVariantPrefix, System.StringComparison.Ordinal))
         {
-            return int.TryParse(columnKey.AsSpan(ColumnKeys.TravelTimeVariantPrefix.Length), out int vi)
+            return int.TryParse(columnKey.AsSpan(StopFields.TravelTimeVariantPrefix.Length), out int vi)
                    && vi >= 0 && vi < z.TrasaMin.Count ? z.TrasaMin[vi] : "";
         }
         return columnKey switch
         {
-            ColumnKeys.StopName     => BuildStopDisplayText(z),
-            ColumnKeys.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
-            ColumnKeys.Zone         => string.Join("/", z.Zony),
-            ColumnKeys.RouteLetters => string.Join("", z.Prubehy),
-            ColumnKeys.BaseRoute    => z.ZakladniTrasa ? "1" : "",
-            ColumnKeys.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
-            ColumnKeys.JeAktualni   => z.JeAktualni ? "1" : "",
+            StopFields.StopName     => BuildStopDisplayText(z),
+            StopFields.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
+            StopFields.Zone         => string.Join("/", z.Zony),
+            StopFields.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
+            StopFields.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""
         };
     }
@@ -566,17 +564,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return [];
     }
 
-    /// <summary>Rozvine sloupec „TravelTime" na N variantních sub-sloupců (Key „TravelTime#i", Header = písmeno,
+    /// <summary>Rozvine sloupec „CAS_JIZDY" na N variantních sub-sloupců (Key „CAS_JIZDY#i", Header = písmeno,
     /// pevná šířka). Ostatní sloupce beze změny. Volá se jen při >= 2 variantách.</summary>
     private static List<StopColumn> ExpandTravelTimeColumns(List<StopColumn> cols, List<string> headers)
     {
         var result = new List<StopColumn>(cols.Count + headers.Count);
         foreach (var col in cols)
         {
-            if (col.Key == ColumnKeys.TravelTime)
+            if (col.Key == StopFields.TravelTime)
             {
                 for (int i = 0; i < headers.Count; i++)
-                    result.Add(new StopColumn { Key = $"{ColumnKeys.TravelTimeVariantPrefix}{i}", Header = headers[i], Width = VariantColumnWidthMm, Visible = true });
+                    result.Add(new StopColumn { Key = $"{StopFields.TravelTimeVariantPrefix}{i}", Header = headers[i], Width = VariantColumnWidthMm, Visible = true });
             }
             else result.Add(col);
         }

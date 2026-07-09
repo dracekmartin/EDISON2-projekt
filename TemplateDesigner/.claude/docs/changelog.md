@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: StopList sloupce field-based 1:1 s DynamicTable (sjednocení kontraktu, fáze 2/2)
+
+Dokončení sjednocení — **identita sloupce StopListu = field ID kolekce ZASTAVKY**, takže je 1:1 s poli, která nabízí DynamicTable nad stejným zdrojem. Uživatel už nemusí luštit, proč jedna cesta zná `POPIS` a druhá `NAZEV_ZASTAVKY`.
+
+- **`StopFields`** (`Models/StopFields.cs`) — nový jednotný field-ID kontrakt (`NAZEV_ZASTAVKY, CAS_JIZDY, PORADI, AKTUALNI_ZASTAVKA, ZONY` + interní `ID`, variant prefix `CAS_JIZDY#`). Sdílený mezi StopList render (`GetCellText`/anchory/varianty), `.NET` parse (`BuildZastavky`) a PDF import buildery.
+- **StopList sloupce překlíčované** ze směrovacích kódů (`StopName`/`TravelTime`/…) na field ID. `GetDefaultColumns`, `GetCellText`, editor `FriendlyName` → `StopFields`. **Mrtvé sloupce `RouteLetters`/`BaseRoute` (průběhy/ZT) odstraněny** (uživatel je označil jako mrtvé).
+- **`ColumnKeys` zúženo na linkový JŘ** — obsahuje už jen klíče `LineTableElement` (`StopName/Tc/Zone/Km/Mhd/Trip`). Zastávkový a linkový JŘ mají různý datový tvar → kontrakt nesdílí (vědomě).
+- **Migrace `1.2.0 → 1.3.0`** (`MigrationUnifyStopColumns`): StopList `columns[].key` staré→field ID + drop `Tc`/`RouteLetters`/`BaseRoute`; DynamicTable/Table `columns[].field` `POPIS`→`NAZEV_ZASTAVKY`, `JE_AKTUALNI`→`AKTUALNI_ZASTAVKA`; placeholder tokeny ve všech textech/výrazech (`{POPIS}`→`{NAZEV_ZASTAVKY}`, `{JE_AKTUALNI}`→`{AKTUALNI_ZASTAVKA}`, `{TC}` pryč) — hranice tokenu chrání skalární `{POPIS_DOPRAVCE}`.
+- Testy 305/305 (+6: `StopFields` lock, StopList default = field ID, 5× migrace vč. idempotence a ochrany hranice tokenu).
+- **Specials zůstávají StopList-only** (šipka směru, inline značky/na-znamení, zvýraznění aktuální, rozvinutí variant tras) — nejsou součástí sdíleného sloupcového kontraktu, jak bylo zadáno.
+
 ## 2026-07-09 — Zastávkový JŘ: čitelná ID polí + TČ pryč všude (sjednocení kontraktu, fáze 1/2)
 
 Sjednocení datového/sloupcového kontraktu ZASTAVKY mezi StopList elementem a DynamicTable — **čistá varianta A**: přejmenování drátových klíčů všude tak, aby ID odpovídalo labelu (`SLOVO1_SLOVO2`), ne kryptickému Caché klíči. Cíl: uživatel v podmíněném renderu / počítaných polích píše `{NAZEV_ZASTAVKY}`, ne `{POPIS}`.

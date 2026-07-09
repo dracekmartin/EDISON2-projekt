@@ -69,11 +69,11 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
         {
             var z = new ZastavkaData
             {
-                Id            = row.GetString("ID"),
-                Popis         = row.GetString("NAZEV_ZASTAVKY"),
-                CasJizdy      = ParseInt(row.GetString("CAS_JIZDY")),
-                Poradi        = ParseInt(row.GetString("PORADI")),
-                JeAktualni    = ParseBool(row.GetString("AKTUALNI_ZASTAVKA")),
+                Id            = row.GetString(StopFields.Id),
+                Popis         = row.GetString(StopFields.StopName),
+                CasJizdy      = ParseInt(row.GetString(StopFields.TravelTime)),
+                Poradi        = ParseInt(row.GetString(StopFields.Poradi)),
+                JeAktualni    = ParseBool(row.GetString(StopFields.JeAktualni)),
                 Odsazeni      = ParseInt(row.GetString("ODSAZENI")),
                 ZakladniTrasa = ParseBool(row.GetString("ZAKLADNI_TRASA", "true")),
                 NaZnameni     = ParseBool(row.GetString("NA_ZNAMENI")),
@@ -81,7 +81,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             };
 
             // Vnořená pole — z JsonArray
-            if (row.GetValue("ZONY") is JsonArray zonyArr)
+            if (row.GetValue(StopFields.Zone) is JsonArray zonyArr)
                 z.Zony = zonyArr.Select(n => n?.ToString() ?? "").Where(s => s.Length > 0).ToList();
 
             if (row.GetValue("PRUBEHY") is JsonArray prubehyArr)
