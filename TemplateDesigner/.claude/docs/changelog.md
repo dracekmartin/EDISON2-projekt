@@ -1,6 +1,19 @@
 # Changelog
 
-## 2026-07-09 — Vlastnosti stránky: změna velikosti/orientace = reset s potvrzením (fix bug)
+## 2026-07-09 — Komplexní audit před produkcí (architektura + agendy + UI/UX)
+
+Tři paralelní průzkumy kódu (.NET architektura/extenzibilita, Caché agendy MHD↔AD, UI/UX +
+pravidla R1–R5) + revize dokumentace. Výstup:
+
+- **[`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md)** — detail všech
+  nálezů (file:line + lidské vysvětlení + doporučený fix).
+- **Roadmap sekce „🔍 Audit před produkcí"** — rozhodovací checklist (bloky A–D) k projití.
+- Nejzávažnější: **kontraktní rozkol skalárů zastávkového JŘ** (`POPIS_SMER` = „T/Z" v MHD vs
+  název konečné v AD; `NEJEDOU_SPOJE` = první/poslední spoje v MHD vs nástupiště v AD; MHD mock
+  drift). Dále DepartureGrid stale layout-cache, CapabilityCatalog drift (nezná LineTable),
+  první `GetSchema` sync na UI threadu (R1), Caché hygiena (working global kill, ERR polykání).
+- Pozitivní: vrstvy drží, wire čistý JSON, versioning s guardy, dirty-flag kompletní, žádný
+  MessageBox ve VM, API klíč mimo git. Žádný kód neměněn — jen analýza + zápis.
 
 Změna velikosti/orientace stránky se dřív snažila obsah „zachovat", ale jen napůl — přeškálovala jen
 výšky body sekcí (`ScaleBodySections`), pozice a šířky elementů nechala být. Výsledek po A4→A5 / otočení:

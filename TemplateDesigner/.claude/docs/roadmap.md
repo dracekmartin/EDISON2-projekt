@@ -12,10 +12,71 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
-2. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
-3. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-4. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+1. **🔍 Audit před produkcí — projít checklist a odbavit** (sekce níže) — nálezy z komplexního
+   auditu 2026-07-09; nejdřív blok A (datový kontrakt zastávkového JŘ).
+2. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
+3. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
+4. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+5. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+
+---
+
+## 🔍 Audit před produkcí (2026-07-09) — rozhodovací checklist
+
+> Komplexní audit architektury + agend + UI/UX (3 paralelní průzkumy kódu). **Detail každého
+> bodu (file:line, lidské vysvětlení, doporučený fix) →
+> [`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md).** Projít, do
+> sloupce Rozhodnutí dopsat ✅ udělat / ⏭️ později / ❌ ne; hotové řádky přesouvat do archivu.
+> Velikost: S = do hodiny, M = půl dne, L = víc dní.
+
+**Blok A — datový kontrakt zastávkového JŘ, skaláry (🔴 před produkcí).** Kolekce prošly
+revizí (POZNAMKY/SKUPINY_DNU), skaláry ne — šablona sdílená mezi MHD a AD tiskne u těchto
+polí různé věci. Bolí zpětně: šablony si na špatné klíče zvyknou.
+
+| # | Co | Lidsky | Vel. | Rozhodnutí |
+|---|---|---|---|---|
+| A1 | `POPIS_SMER`: MHD „T/Z" vs AD název konečné → zarovnat MHD na AD/Linkovy (+ doplnit `SMER`) | pole „Popis směru" u MHD vytiskne písmeno místo konečné | S–M | |
+| A2 | `NEJEDOU_SPOJE`: MHD text prvních/posledních spojů vs AD nástupiště → rozdělit na `PRVNI_POSLEDNI_SPOJ` + `NASTUPISTE` (aditivně, R3) | jedno pole = dvě různá data podle agendy | S–M | |
+| A3 | MHD mock `POPIS_SMER="Bystrc, zoo"` ≠ ostrá data „T" | preview ukazuje jiný obsah než tisk | S (s A1) | |
+| A4 | AD emituje pole mimo schéma (`*_CIS`, `VARIANTY_TRAS`, `TRASA_MIN`) → deklarovat/zdokumentovat | agenda posílá data, která autor šablony nemůže objevit | S | |
+
+**Blok B — .NET: viditelné bugy editace + rizika (🟠).**
+
+| # | Co | Lidsky | Vel. | Rozhodnutí |
+|---|---|---|---|---|
+| B1 | DepartureGrid layout-fingerprint nezahrnuje 7 layout properties (`DataRowHeight`, gapy, separator…) | změna vlastnosti v panelu se v náhledu neprojeví — vypadá rozbité | S–M | |
+| B2 | DepartureGrid: overflow varování vs auto-scale počítají jinou přirozenou výšku | varování a zmenšování si můžou protiřečit | S | |
+| B3 | `CapabilityCatalog` (AI průvodce) — string heuristika, nezná LineTable → napojit na registr/`AgendaCapabilities` | AI radí jiné elementy, než nabízí paleta | S | |
+| B4 | Nový element = ~8 ručně synchronizovaných míst bez strážce → drift test „každý JsonDerivedType má záznam všude" | zapomenuté místo nic nehlásí (B3 je přesně tento drift) | S–M | |
+| B5 | F5 fetch bez generation guardu → souběh s přepnutím instance = možná stale data | vzácný okamžik starých dat v náhledu | S | |
+| B6 | Reset stránky: string klíč `"PageSize.Width"` bez pojistky + `async void` | přejmenování pole formuláře reset tiše vypne | S | |
+| B7 | R1: první `GetSchema` sync na UI threadu (`RefreshFieldsList`); + `GetAvailableSkupiny` bez cache | otevření šablony cizí agendy na pomalé síti zamrzne UI | M | |
+
+**Blok C — Caché hygiena + výkon (🟠/🟡).**
+
+| # | Co | Lidsky | Vel. | Rozhodnutí |
+|---|---|---|---|---|
+| C-a | Working global kill nesymetrický (MHD v try, AD na konci vůbec) → kill po try/catch v obou | pracovní paměť tisku se po chybě neuklízí | S | |
+| C-b | MHD bez memoizace (`GetNazevHrl` ~O(n²), `PopisDopravce` per stránka, ENUMS barvy per anotace) — AD vzor existuje | export velkých MHD firem zbytečně pomalý | M | |
+| C-c | `AgendaParams.FetchParamsJson` maže i `ERR` → nested chyba se ztratí (vzor správně v `Instance.cls`) | selhání parametrů = tichý prázdný seznam místo chyby | S | |
+| C-d | `GetParameters`: `$$$FillParams` mimo try/catch (AD/Linkovy), MHD nevolá — sjednotit | pád mimo chybovou konvenci | S | |
+| C-e | AD `GetMockData` čte živá firemní data (vlastní TODO) → statický vzorek | preview u zákazníka závislé na jeho datech; pomalé | S–M | |
+| C-f | Nízké: `q` vs `ret $$$OK` · export `PER_STOP` nefiltrován dle ElementKind · `AgendyRegistr` jen přímé subclassy | kosmetika / vědět o tom | S | |
+
+**Blok D — UI/UX + dokumentace (🟡 rychlé).**
+
+| # | Co | Lidsky | Vel. | Rozhodnutí |
+|---|---|---|---|---|
+| D1 | Zkratky drift: doc „↑/↓ přesun sekce" vs kód `Ctrl+Shift+↑/↓`; + nedokumentované Shift/Ctrl krokování | tabulka zkratek lže | S | |
+| D2 | 6 dialogů OK/Save přes code-behind `Click` místo VM Command — sjednotit postupně | proti závaznému vzoru oken | S/dialog | |
+| D3 | Drobné: „Zavřít" literál v PrintDialog · API klíč v plaintext TextBox · AI debug JSON do instalační složky · prázdný `catch {}` · dvojí mechanismus renamu agendy | úklid | S | |
+| D4 | Docs drift: roadmap 42b (symbolový font zastávkový = hotový 9.7., zbývá linková část) · T1 „nula testů" už neplatí | dokumentace neodráží realitu | S | |
+
+**Doporučené pořadí:** A1–A4 (kontrakt — jediné, co po nasazení bolí zpětně) → B1+B2 (viditelné
+UX bugy) → B7+B5 (zamrzání/stale) → C-a/c/d (mechanická hygiena) → C-e (před nasazením
+k zákazníkům) → B3+B4 (než poroste plocha agend) → D průběžně. Mimo checklist (dlouhodobé,
+bez akce): god objects (T4), sjednocení cache patternů elementů (při R1 extrakci jádra),
+MHD legacy MAC volání (patří do C8) — detail v auditním dokumentu.
 
 ---
 
