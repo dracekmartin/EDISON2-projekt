@@ -12,7 +12,7 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, kurátorovaná zastávková AD, server-side zámek MLINE). Zbývá samostatný distribuční kanál + další šablony (MHD/linkový) + navazující (viz produkční sekce níže).
+1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, kurátorovaná zastávková AD, server-side zámek MLINE). Budoucnost: samostatný distribuční kanál + další šablony (MHD/linkový). Zvážit teď: kategorie/popis v pickeru (viz produkční sekce).
 2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 ---
@@ -50,10 +50,9 @@ při scope té fáze, ne teď.
 
 - **Headless tisk (A3)** — „vytiskni linku X" z modulu přes **PrintEngine fasádu** (šablona+data→PDF
   bez stavu editoru; T2 udělalo půlku render-na-snapshotu). Dnes tisk jen v designeru. Gate R4/R7.
-- **Hromadný výstup + e-mail (A4)** — sloučení hromadného exportu do 1 PDF (`MergePDFFiles`) + odeslání e-mailem.
-- **Fyzický tisk na tiskárnu** — přímý výstup na tiskárnu (dnes jen PDF/PNG export). Na poptávku.
-- **Logging/telemetrie pro podporu (F3)**.
-- **CI/CD linting šablon (F4)** — Caché job validující šablony před deployem (nice-to-have).
+
+> E-mail PDF (odeslání) i tisk na tiskárnu = **ad-hoc na poptávku**, nezávisí na ničem — přidat, až to
+> někdo bude chtít (legacy `formTISKMHDReportDotNet` měl mail; merge do 1 PDF už máme). Neevidováno jako úkol.
 
 ### Governance šablon — hybrid (M-line distribuuje + zákazníci vlastní)
 
@@ -66,12 +65,13 @@ při scope té fáze, ne teď.
 **Hotovo v1** (embed → MLINE → picker, kurátorovaná zastávková AD): picker obě zásuvky + odznak Zdroj,
 otevření MLINE, „kopie → úprava", embed+seed, **server-side zámek MLINE** (bod 2). → archiv.
 
-**Zbývá (až s reálným provozem / jiným distribučním kanálem):**
+**Zbývá (budoucnost):**
 1. **Samostatný distribuční kanál** mimo .exe — v1 doručuje embed+seed; „trochu jiný kanál" (server push /
    admin) jen vymění zdroj systémových, picker/UX beze změny. (governance bod 3 mechanismus)
-2. **Další výchozí šablony** — zatím jen zastávková AD; MHD + linkový = přidat JSON do `SystemTemplates/` (viz C4, 44b).
-3. **Navazující** — per-instance přiřazení (linka → výchozí, `InstanceDefaults`) · kategorie + popis v UI ·
-   audit log změn + ECL právo „pouštět designer". (governance bod 4)
+2. **Další výchozí šablony** — zatím jen zastávková AD; MHD + linkový = kurátorovat + přidat JSON do `SystemTemplates/` (viz C4, 44b).
+
+**Zvážit teď:** kategorie + popis šablony v pickeru — aditivní, malé (popis šablona už má, jen ho picker
+nezobrazuje). Per-instance přiřazení „linka → šablona" a ECL právo „pouštět designer" se řeší jinde (mimo TD) → neevidováno.
 
 ---
 

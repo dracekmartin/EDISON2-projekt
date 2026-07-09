@@ -25,7 +25,8 @@ aniž se sáhne na jeho vlastní. UX skořápka finální (nepřeučovat), backe
   maskováno restartem). Setter `CurrentTemplate` teď invaliduje cache na každý Open/New/Import.
 
 **Vědomě odloženo** (zůstává v roadmapě): samostatný distribuční kanál mimo .exe (bod 3), další agendy
-MHD/linkový (C4/44b), navazující — přiřazení k tisku / kategorie / audit (bod 4), strom/kategorie (PC5).
+MHD/linkový (C4/44b), kategorie/popis šablony v pickeru. Per-instance přiřazení + ECL právo „pouštět
+designer" se řeší jinde (mimo TD); e-mail/tisk = ad-hoc na poptávku → neevidováno.
 
 ## Session 2026-07-08 ✅ — Tabulkové jádro: levné švy před v1 (pětice #1–#5)
 
