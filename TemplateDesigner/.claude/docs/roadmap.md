@@ -41,28 +41,11 @@ při scope té fáze, ne teď.
 
 ---
 
-## 🚀 Produkční / provozní — otevřené (na poptávku + rozhodnutí governance)
+## 🚀 Produkční / provozní — otevřené
 
-> Zámek struktury šablony i provozní hygiena hotové → archiv. Vydání v1 = standardní EDISON release
-> (deploy není roadmap úkol). Zbývají jen provozní featury na poptávku + rozhodnutí governance šablon.
-
-### Provozní featury (odložené, až s reálnou poptávkou)
-
-- **Headless tisk (A3)** — „vytiskni linku X" z modulu přes **PrintEngine fasádu** (šablona+data→PDF
-  bez stavu editoru; T2 udělalo půlku render-na-snapshotu). Dnes tisk jen v designeru. Gate R4/R7.
-
-> E-mail PDF (odeslání) i tisk na tiskárnu = **ad-hoc na poptávku**, nezávisí na ničem — přidat, až to
-> někdo bude chtít (legacy `formTISKMHDReportDotNet` měl mail; merge do 1 PDF už máme). Neevidováno jako úkol.
-
-### Governance šablon — hybrid (M-line distribuuje + zákazníci vlastní)
-
-> **v1 doručení HOTOVO 2026-07-09** (embed → MLINE → picker 2 sekce, read-only, zámek MLINE, kurátorovaná
-> zastávková AD) → detail [`roadmap-archive.md`](roadmap-archive.md). Model + koncept: [`governance-sablon-koncept.md`](governance-sablon-koncept.md).
-
-**Zbývá (budoucnost):**
-1. **Samostatný distribuční kanál** mimo .exe — v1 doručuje embed+seed; „trochu jiný kanál" (server push /
-   admin) jen vymění zdroj systémových, picker/UX beze změny. (governance bod 3 mechanismus)
-2. **Další výchozí šablony** — zatím jen zastávková AD; MHD + linkový = kurátorovat + přidat JSON do `SystemTemplates/` (viz C4, 44b).
+1. **Headless tisk (A3)** — „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
+2. **Samostatný distribuční kanál** systémových šablon mimo .exe — v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
+3. **Další výchozí šablony** (MHD + linkový) — mechanismus embed→MLINE hotový, jen kurátorovat + přidat JSON do `SystemTemplates/`.
 
 ---
 
