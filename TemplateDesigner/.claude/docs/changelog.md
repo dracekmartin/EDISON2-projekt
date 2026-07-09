@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: jeden zdroj pravdy = schéma ZASTAVKY (úklid mrtvých polí)
+
+Odstranění mrtvých / hardcoded polí, ať schéma ZASTAVKY = jediný zdroj pravdy sdílený DynamicTable
+(nabídka sloupců) i StopList/výrazy. Dřív matoucí: DynamicTable nad zdrojem ZASTAVKY nabízel pole,
+která vždy vracela konstantu (uživatel jimi nemohl nic rozumného udělat).
+
+- **Schéma agendy (GetSchema, ZASTAVKY):** odebrána mrtvá pole — AD: `NA_ZNAMENI` (natvrdo 0),
+  `ODSAZENI` (0), `ZAKLADNI_TRASA` (true); MHD: `NA_ZNAMENI`. Živá zůstala: `ID, POPIS, TC, CAS_JIZDY,
+  PORADI, JE_AKTUALNI` (AD) / `ID, POPIS, TC, CAS_JIZDY` (MHD). DynamicTable je tak už nenabízí.
+- **StopListElement:** z výchozích sloupců vyhozeny mrtvé sloty `Trasa` (`RouteLetters` → `PRUBEHY`,
+  v živých datech prázdné) + `ZT` (`BaseRoute` → `ZAKLADNI_TRASA`, vždy „1"). Zbyly živé: Čas, TČ,
+  Zastávka, Zóna. (Klíče v `ColumnKeys` ponechány kvůli zpětné kompat. uložených šablon.)
+- **StopList helptext viditelnosti řádku:** vypisoval mrtvá pole a měl nefunkční příklad `{NA_ZNAMENI}==1`
+  → nově živá pole (`POPIS, TC, CAS_JIZDY, PORADI, JE_AKTUALNI`) + příklad `{JE_AKTUALNI} == 1`.
+- **Pozn.:** pro výrazy (highlight/viditelnost) je zdroj polí už sdílený (StopList i DynamicTable čtou
+  celý řádek dat). Doplnění živých plochých polí (`PORADI`/`JE_AKTUALNI`) jako *sloupců* i do StopListu
+  (default skryté) je možný navazující krok — dnes jsou dostupné ve výrazech, ne jako sloupce.
+
 ## 2026-07-09 — Zastávkový JŘ: poctivější labely skalárních polí agendy (per-agenda)
 
 Validace „název pole ↔ co reálně vrací z Caché" (levý panel „Pole agendy"). Jen **labely** (zobrazení),

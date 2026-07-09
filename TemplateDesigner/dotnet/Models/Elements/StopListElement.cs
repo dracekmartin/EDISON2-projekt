@@ -24,8 +24,6 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new() { Key = ColumnKeys.Tc,           Header = "TČ",       Width = 8f,  Visible = false },
         new() { Key = ColumnKeys.StopName,     Header = "Zastávka",  Width = 50f, Visible = true },
         new() { Key = ColumnKeys.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
-        new() { Key = ColumnKeys.RouteLetters, Header = "Trasa",     Width = 8f,  Visible = false },
-        new() { Key = ColumnKeys.BaseRoute,    Header = "ZT",        Width = 6f,  Visible = false },
     ];
 
     // ═══════════════════════════════════════════

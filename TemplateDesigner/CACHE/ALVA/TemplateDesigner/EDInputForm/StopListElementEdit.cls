@@ -73,7 +73,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
         s f.helpText = "Např. {POCET} > 0 — element se zobrazí jen když podmínka platí"
         s f = form.AddText("RowVisibilityExpression", "Viditelnost řádku")
-        s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí. Pole řádku: POPIS, TC, PORADI, NA_ZNAMENI, JE_AKTUALNI, ZAKLADNI_TRASA. Např. {NA_ZNAMENI} == 1"
+        s f.helpText = "Zastávka, kde výraz neplatí, se nezobrazí. Pole řádku: POPIS, TC, CAS_JIZDY, PORADI, JE_AKTUALNI. Např. {JE_AKTUALNI} == 1"
         s f = form.AddFieldToLastGroup("__highlightRules", "Zvýraznění řádků", $$$FieldTypeButton, 0, 0)
         s f.value = "Upravit pravidla…"
         s f.helpText = "Seznam pravidel: podmínka → barva pozadí řádku. První splněné vyhrává."
