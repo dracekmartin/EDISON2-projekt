@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: revize kontraktu POZNAMKY (schéma) + zaflagovaná MHD KATEGORIE mezera
+
+Poslední z trojice (ZASTAVKY/ODJEZDY/POZNAMKY). Názvy čitelné, žádné mrtvé pole ve wire (vše se
+konzumuje: TYP/ZNAK/TEXT render, FORE_COLOR barví znak, KATEGORIE čte filtr viditelnosti, BACK_COLOR
+rezervováno). Řešena jen schéma-nekonzistence:
+
+- **Ploché schéma POZNAMKY sjednoceno na `TYP, ZNAK, TEXT`** — AD dřív vystavovalo 6 (vč. interní
+  `KATEGORIE` + hintů `FORE/BACK_COLOR`), MHD 3. AD strimováno na 3 (MHD už mělo). `KATEGORIE`
+  (filtr-tag, jako join klíč) + barevné hinty zůstávají ve wire, jen se nenabízejí jako sloupce.
+  **Jen GetSchema → gold netknuté** (33/33 TD zelené beze změny digestů).
+
+**Zaflagováno (samostatný ticket, ne úklid):** MHD poznámky nenesou `KATEGORIE` → kategorie-logika
+`NoteVisibilityFilter` (#7161 D5 „× na znamení", D6 agregát bezbariér, rozsahové skrytí) je fakticky
+**jen AD**. Fix není triviální tag: AD má atributovou legendu jen „na znamení", MHD emituje všechny
+atributy (`ZastavkoveJrMhd` ř. 1219) → nutná doménová klasifikace + gold re-baseline + test filtru.
+
 ## 2026-07-09 — Zastávkový JŘ: revize kontraktu ODJEZDY (mrtvé pole + schéma)
 
 Analogická revize jako u ZASTAVKY, teď pro ODJEZDY (zdroj DepartureGridu). ODJEZDY je čistě

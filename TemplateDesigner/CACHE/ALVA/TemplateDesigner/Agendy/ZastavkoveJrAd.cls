@@ -1383,12 +1383,11 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colPoznamky.name          = "Poznámky"
     s colPoznamky.collectionKey = "POZNAMKY"
     s colPoznamkyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colPoznamkyFields, "TYP",        "Typ poznámky", "text")
-    d ..AddField(colPoznamkyFields, "KATEGORIE",  "Kategorie",    "text")
-    d ..AddField(colPoznamkyFields, "ZNAK",       "Znak",         "text")
-    d ..AddField(colPoznamkyFields, "TEXT",       "Text poznámky", "text")
-    d ..AddField(colPoznamkyFields, "FORE_COLOR", "Barva textu",  "text")
-    d ..AddField(colPoznamkyFields, "BACK_COLOR", "Barva pozadí", "text")
+    // Ploché user-facing pole (legenda = znak + text). KATEGORIE (interní filtr-tag) + FORE_COLOR/
+    // BACK_COLOR (prezentační nápovědy) zůstávají ve wire, ale NEvystavují se jako sloupce.
+    d ..AddField(colPoznamkyFields, "TYP",  "Typ poznámky",  "text")
+    d ..AddField(colPoznamkyFields, "ZNAK", "Znak",          "text")
+    d ..AddField(colPoznamkyFields, "TEXT", "Text poznámky", "text")
     s colPoznamky.fields = colPoznamkyFields
     d collections.%Push(colPoznamky)
 }
