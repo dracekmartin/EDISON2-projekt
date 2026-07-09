@@ -12,7 +12,7 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, kurátorovaná zastávková AD, server-side zámek MLINE). Budoucnost: samostatný distribuční kanál + další šablony (MHD/linkový). Zvážit teď: kategorie/popis v pickeru (viz produkční sekce).
+1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
 2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F / import PDF (viz backlog).
 
 ---
@@ -56,22 +56,13 @@ při scope té fáze, ne teď.
 
 ### Governance šablon — hybrid (M-line distribuuje + zákazníci vlastní)
 
-> **Model rozhodnut** (2026-07-07), **v1 doručení HOTOVO 2026-07-09** → detail v
-> [`roadmap-archive.md`](roadmap-archive.md). Dvě zásuvky v `^ALVA.TemplateDesigner.Templates`: IdFa
-> `MLINE` (systémové, read-only) + per-firma (zákaznické). V1 doručuje systémové **embedem do .exe →
-> seedem do MLINE**; picker je ukáže v sekci „M-line" (read-only), „Uložit jako" → vlastní kopie.
-> Plný koncept: [`governance-sablon-koncept.md`](governance-sablon-koncept.md).
-
-**Hotovo v1** (embed → MLINE → picker, kurátorovaná zastávková AD): picker obě zásuvky + odznak Zdroj,
-otevření MLINE, „kopie → úprava", embed+seed, **server-side zámek MLINE** (bod 2). → archiv.
+> **v1 doručení HOTOVO 2026-07-09** (embed → MLINE → picker 2 sekce, read-only, zámek MLINE, kurátorovaná
+> zastávková AD) → detail [`roadmap-archive.md`](roadmap-archive.md). Model + koncept: [`governance-sablon-koncept.md`](governance-sablon-koncept.md).
 
 **Zbývá (budoucnost):**
 1. **Samostatný distribuční kanál** mimo .exe — v1 doručuje embed+seed; „trochu jiný kanál" (server push /
    admin) jen vymění zdroj systémových, picker/UX beze změny. (governance bod 3 mechanismus)
 2. **Další výchozí šablony** — zatím jen zastávková AD; MHD + linkový = kurátorovat + přidat JSON do `SystemTemplates/` (viz C4, 44b).
-
-**Zvážit teď:** kategorie + popis šablony v pickeru — aditivní, malé (popis šablona už má, jen ho picker
-nezobrazuje). Per-instance přiřazení „linka → šablona" a ECL právo „pouštět designer" se řeší jinde (mimo TD) → neevidováno.
 
 ---
 
