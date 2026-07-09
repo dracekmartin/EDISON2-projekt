@@ -1404,14 +1404,13 @@ ClassMethod BuildSkupinaDnu(id As %String, nadpis As %String, nadpis2 As %String
     q skupina
 }
 
-ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina As %Integer, minuta As %Integer, zkrOznLinky As %String = "") As %DynamicObject
+ClassMethod BuildOdjezd(zastavkaId As %String, skupinaDnuId As %String, hodina As %Integer, minuta As %Integer) As %DynamicObject
 {
     s odjezd = ##class(%DynamicObject).%New()
     d odjezd.%Set("ZASTAVKA_ID", zastavkaId)
     d odjezd.%Set("SKUPINA_DNU_ID", skupinaDnuId)
     d odjezd.%Set("HODINA", hodina)
     d odjezd.%Set("MINUTA", minuta)
-    d odjezd.%Set("ZKRACENE_OZNACENI_LINKY", zkrOznLinky)
     d odjezd.%Set("FORE_COLOR", "")
     d odjezd.%Set("BACK_COLOR", "")
     d odjezd.%Set("ANOTACE", ##class(%DynamicArray).%New())
@@ -1526,10 +1525,10 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     s colOdjezdy.name          = "Odjezdy"
     s colOdjezdy.collectionKey = "ODJEZDY"
     s colOdjezdyFields = ##class(%DynamicArray).%New()
-    d ..AddField(colOdjezdyFields, "ZASTAVKA_ID",     "ID zastávky",       "text")
-    d ..AddField(colOdjezdyFields, "SKUPINA_DNU_ID",  "ID skupiny dnů",    "text")
-    d ..AddField(colOdjezdyFields, "HODINA",          "Hodina",            "number")
-    d ..AddField(colOdjezdyFields, "MINUTA",          "Minuta",            "number")
+    // Ploché user-facing pole. ZASTAVKA_ID/SKUPINA_DNU_ID (join/pivot klíče) + FORE_COLOR/BACK_COLOR
+    // (prezentační nápovědy, čte je jen render) zůstávají ve wire, ale NEvystavují se jako sloupce.
+    d ..AddField(colOdjezdyFields, "HODINA", "Hodina", "number")
+    d ..AddField(colOdjezdyFields, "MINUTA", "Minuta", "number")
     s colOdjezdy.fields = colOdjezdyFields
     d collections.%Push(colOdjezdy)
 

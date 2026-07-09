@@ -85,7 +85,6 @@ public class OdjezdData
     public string SkupinaDnuId { get; set; } = "";
     public int Hodina { get; set; }
     public int Minuta { get; set; }
-    public string ZkraceneOznaceniLinky { get; set; } = "";
     public string? ForeColor { get; set; }
     public string? BackColor { get; set; }
     public List<AnotaceData> Anotace { get; set; } = [];

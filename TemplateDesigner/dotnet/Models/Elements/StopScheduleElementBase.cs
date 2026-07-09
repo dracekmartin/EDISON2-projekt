@@ -151,7 +151,6 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                 SkupinaDnuId            = row.GetString("SKUPINA_DNU_ID"),
                 Hodina                  = ParseInt(row.GetString("HODINA")),
                 Minuta                  = ParseInt(row.GetString("MINUTA")),
-                ZkraceneOznaceniLinky   = row.GetString("ZKRACENE_OZNACENI_LINKY"),
                 ForeColor               = NullIfEmpty(row.GetString("FORE_COLOR")),
                 BackColor               = NullIfEmpty(row.GetString("BACK_COLOR")),
             };

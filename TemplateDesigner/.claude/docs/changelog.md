@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-09 — Zastávkový JŘ: revize kontraktu ODJEZDY (mrtvé pole + schéma)
+
+Analogická revize jako u ZASTAVKY, teď pro ODJEZDY (zdroj DepartureGridu). ODJEZDY je čistě
+**pivot-zdroj** (sloupce mřížky = skupiny dnů, ne pole) → žádné „sloupec = field" sjednocení jako
+u StopListu; AD ≡ MHD navíc už bylo symetrické a názvy čitelné. Řešily se jen mrtvé/nekonzistentní pole:
+
+- **`ZKRACENE_OZNACENI_LINKY` odstraněno** — v obou agendách vždy `""` (call sites posílaly jen 4 argy) a .NET ho nikde nerenderoval (doubly-dead, analog `TarifniCislo`). Pryč z wire (`BuildOdjezd` + param), schématu i POCO `OdjezdData.ZkraceneOznaceniLinky`.
+- **Ploché schéma ODJEZDY sjednoceno na `HODINA, MINUTA`** (AD i MHD). Skryté ze schématu (zůstávají ve wire): `ZASTAVKA_ID`/`SKUPINA_DNU_ID` (join/pivot klíče — konzistentní se skrytým `ZASTAVKY.ID`) + `FORE_COLOR`/`BACK_COLOR` (prezentační nápovědy, čte je jen render, hex nedává smysl jako sloupec). Dřív AD vystavovalo 7 polí, MHD 4 → teď obě 2.
+- **Ponecháno vědomě:** odjezdové `FORE_COLOR`/`BACK_COLOR` (R3 hint, renderer je čte — dormant, ne dead) a anotační `SPOJ` (AD plní reálné ID spoje z DB — rezerva pro budoucí per-spoj filtr, ne hardcoded test).
+- ⚠️ Gold re-baseline (ZKRACENE odebrání změnilo `GetData` — jen `md5`, počty řádků beze změny). Ověřeno na serveru: **48/48** Caché, 305/305 .NET.
+
 ## 2026-07-09 — Zastávkový JŘ: gold re-baseline po sjednocení kontraktu
 
 Přegenerování zmrazených digestů po záměrné změně `GetData` (fáze 1 + úklid):
