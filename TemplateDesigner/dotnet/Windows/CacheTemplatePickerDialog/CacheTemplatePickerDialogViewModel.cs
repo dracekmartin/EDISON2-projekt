@@ -33,6 +33,13 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Vybraná šablona po stisku Otevřít. Null = dialog zrušen.</summary>
     public Guid? SelectedTemplateId { get; private set; }
 
+    /// <summary>Po Otevřít: byla vybraná šablona systémová (M-line)? Řídí načtení z MLINE větve
+    /// + otevření jako „kopie" (Ctrl+S → Uložit jako do firmy).</summary>
+    public bool SelectedIsSystem { get; private set; }
+
+    /// <summary>Aktuálně vybraný řádek je systémová (M-line) šablona → read-only (nejde mazat/přejmenovat).</summary>
+    private bool IsSelectedSystem => string.Equals(Selected?["zdroj"], "M-line", StringComparison.Ordinal);
+
     public RelayCommand      OpenCommand   { get; }
     public AsyncRelayCommand DeleteCommand { get; }
     public AsyncRelayCommand RenameCommand { get; }
@@ -51,9 +58,10 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         foreach (var a in agendas)
             AgendaFilters.Add(new AgendaFilterVM(a.Code, $"{a.Code} — {a.Name}"));
 
+        // Systémové (M-line) jsou read-only — otevřít lze, mazat/přejmenovat ne.
         OpenCommand    = Command(Open,                () => Selected is not null);
-        DeleteCommand  = CommandAsync(DeleteAsync,    () => Selected is not null);
-        RenameCommand  = CommandAsync(RenameAsync,    () => Selected is not null);
+        DeleteCommand  = CommandAsync(DeleteAsync,    () => Selected is not null && !IsSelectedSystem);
+        RenameCommand  = CommandAsync(RenameAsync,    () => Selected is not null && !IsSelectedSystem);
     }
 
     private void Open()
@@ -61,6 +69,7 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         if (Selected is null) return;
         if (!Guid.TryParse(Selected.Id, out var id)) return;
         SelectedTemplateId = id;
+        SelectedIsSystem = IsSelectedSystem;
         CloseDialog(true);
     }
 

@@ -1148,14 +1148,18 @@ public class TemplateDesignerViewModel : EDViewModel
         try
         {
             var oldAgenda = State.CurrentTemplate.AgendaCode;
-            var (_, template) = await TemplateStorage.LoadAsync(vm.SelectedTemplateId.Value);
+            // Systémová (M-line) šablona se čte z MLINE větve; jinak z firmy (default).
+            var sourceIdFa = vm.SelectedIsSystem ? Services.CacheTemplateService.MlineIdFa : null;
+            var (_, template) = await TemplateStorage.LoadAsync(vm.SelectedTemplateId.Value, sourceIdFa);
             State.CurrentTemplate = template;
             // Pokud nová šablona má jinou agendu, vyčistit aktivní instance — jejich
             // IDs patří staré agendě a v nové by GetData padl.
             if (!string.Equals(oldAgenda, State.CurrentTemplate.AgendaCode, StringComparison.OrdinalIgnoreCase))
                 ClearActiveInstances();
             CurrentFilePath = null;
-            _loadedFromCache = true;
+            // Systémová = read-only originál → otevřít jako „kopie": Ctrl+S vynutí „Uložit jako"
+            // do firmy (nový GUID). Vlastní firma šablona → normální update.
+            _loadedFromCache = !vm.SelectedIsSystem;
             IsDirty = false;
             State.SelectedElements.Clear();
             State.UndoStack.Clear();
