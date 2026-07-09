@@ -21,6 +21,7 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
 
         s list = ##class(ALVA.EDControls.EDList.List).%New()
         d list.AddColumn("name",       "Název",        "TEXT",     200, "", 1)
+        d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
         d list.AddColumn("agenda",     "Agenda",       "TEXT",      90, "", 1)
         d list.AddColumn("modifiedAt", "Změněno",      "DATETIME", 130, "", 1, "dd.MM.yyyy HH:mm")
         d list.AddColumn("modifiedBy", "Kým",          "TEXT",      70, "", 1)
@@ -41,30 +42,39 @@ ClassMethod LoadList(ByRef sys As %String) As %Status
         s filterAgenda = $g(^||ML("IN","filter","agendaCode"))
         s list = ##class(ALVA.EDControls.EDList.List).%New()
 
-        // Pokud je filter, použij sekundární index, jinak iteruj všechny TemplateID.
-        if filterAgenda '= "" {
-            s templateId = ""
-            for {
-                s templateId = $o(^ALVA.TemplateDesigner.Templates(IdFa,"IDX","ByAgenda",filterAgenda,templateId))
-                q:templateId=""
-                d ..AddTemplateRow(list, IdFa, templateId)
-            }
-        } else {
-            s templateId = ""
-            for {
-                s templateId = $o(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId))
-                q:templateId=""
-                d ..AddTemplateRow(list, IdFa, templateId)
-            }
-        }
+        // Systémové (MLINE) první — sdílené šablony od M-line, na klientovi read-only.
+        // Nezdvojovat, když session firma sama je MLINE (autorování systémových).
+        if IdFa '= "MLINE" d ..AddBranchRows(list, "MLINE", filterAgenda, 1)
+        // Vlastní (firma)
+        d ..AddBranchRows(list, IdFa, filterAgenda, 0)
 
         d list.WriteRowsToOut()
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
 
-/// Sestaví jeden řádek z metadat šablony.
-ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, IdFa As %String, templateId As %String)
+/// Přidá řádky jedné větve (firma nebo MLINE), s volitelným filtrem agendy.
+ClassMethod AddBranchRows(list As ALVA.EDControls.EDList.List, sourceIdFa As %String, filterAgenda As %String, isSystem As %Boolean)
+{
+    if filterAgenda '= "" {
+        s templateId = ""
+        for {
+            s templateId = $o(^ALVA.TemplateDesigner.Templates(sourceIdFa,"IDX","ByAgenda",filterAgenda,templateId))
+            q:templateId=""
+            d ..AddTemplateRow(list, sourceIdFa, templateId, isSystem)
+        }
+    } else {
+        s templateId = ""
+        for {
+            s templateId = $o(^ALVA.TemplateDesigner.Templates(sourceIdFa,"DTA",templateId))
+            q:templateId=""
+            d ..AddTemplateRow(list, sourceIdFa, templateId, isSystem)
+        }
+    }
+}
+
+/// Sestaví jeden řádek z metadat šablony. isSystem=1 → systémová (MLINE) větev.
+ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, IdFa As %String, templateId As %String, isSystem As %Boolean = 0)
 {
     if '$d(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId)) q
     s base = $name(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata"))
@@ -75,6 +85,7 @@ ClassMethod AddTemplateRow(list As ALVA.EDControls.EDList.List, IdFa As %String,
     s row.modifiedAt = $g(@base@("ModifiedAt"))
     s row.modifiedBy = $g(@base@("ModifiedBy"))
     s row.author     = $g(@base@("Author"))
+    s row.zdroj      = $s(isSystem:"M-line", 1:"vlastní")
 }
 
 }

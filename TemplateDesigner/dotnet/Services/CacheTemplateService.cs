@@ -19,6 +19,9 @@ public class CacheTemplateService
     /// <summary>Speciální AgendaCode pro šablony bez vazby na konkrétní agendu.</summary>
     public const string GeneralAgendaCode = "GENERAL";
 
+    /// <summary>IdFa systémové (M-line) zásuvky — sdílené read-only šablony, cíl seedu.</summary>
+    public const string MlineIdFa = "MLINE";
+
     private readonly MLRest _mlRest;
 
     public CacheTemplateService(MLRest mlRest) => _mlRest = mlRest;
@@ -65,13 +68,15 @@ public class CacheTemplateService
     /// <summary>
     /// Načte šablonu (metadata + obsah) podle ID.
     /// </summary>
-    public Task<(CacheTemplateMetadata Metadata, Template Template)> LoadAsync(Guid templateId)
-        => Task.Run(() => LoadSync(templateId));
+    public Task<(CacheTemplateMetadata Metadata, Template Template)> LoadAsync(Guid templateId, string? sourceIdFa = null)
+        => Task.Run(() => LoadSync(templateId, sourceIdFa));
 
-    private (CacheTemplateMetadata, Template) LoadSync(Guid templateId)
+    private (CacheTemplateMetadata, Template) LoadSync(Guid templateId, string? sourceIdFa)
     {
         var inVar = new CVar();
         inVar["templateId"] = new CVar(templateId.ToString());
+        // Prázdné = session firma; "MLINE" pro otevření systémové šablony.
+        inVar["sourceIdFa"] = new CVar(sourceIdFa ?? "");
 
         CVar result = _mlRest.Query(CacheClass, "LoadTemplate", inVar);
         ThrowOnError("LoadTemplate");
@@ -104,10 +109,10 @@ public class CacheTemplateService
     /// Uloží šablonu (insert nebo update podle Template.Id).
     /// Před uloženim aktualizuje Template.ModifiedAt na UTC now.
     /// </summary>
-    public Task SaveAsync(Template template)
-        => Task.Run(() => SaveSync(template));
+    public Task SaveAsync(Template template, string? targetIdFa = null)
+        => Task.Run(() => SaveSync(template, targetIdFa));
 
-    private void SaveSync(Template template)
+    private void SaveSync(Template template, string? targetIdFa)
     {
         if (template.Id == Guid.Empty)
             template.Id = Guid.NewGuid();
@@ -125,6 +130,8 @@ public class CacheTemplateService
         inVar["agendaCode"] = new CVar(agendaCode);
         inVar["version"]    = new CVar(template.Version);
         inVar["data"]       = new CVar(dataJson);
+        // Prázdné = session firma; "MLINE" pro seed systémové šablony.
+        inVar["targetIdFa"] = new CVar(targetIdFa ?? "");
 
         _mlRest.Query(CacheClass, "SaveTemplate", inVar);
         ThrowOnError("SaveTemplate");

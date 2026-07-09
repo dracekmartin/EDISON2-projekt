@@ -77,14 +77,17 @@ ClassMethod LoadTemplate(ByRef sys As %String) As %Status
         $$$FillParams
 
         s templateId = $g(^||ML("IN","templateId"))
+        // Zdrojová větev: default session firma; "MLINE" pro otevření systémové šablony.
+        s sourceIdFa = $g(^||ML("IN","sourceIdFa"))
+        i sourceIdFa = "" s sourceIdFa = IdFa
         if templateId = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "templateId is required"))
-        if '$d(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId)) {
+        if '$d(^ALVA.TemplateDesigner.Templates(sourceIdFa,"DTA",templateId)) {
             $$$ThrowStatus($$$ERROR($$$GeneralError, "Template not found: "_templateId))
         }
 
-        s meta = ..BuildMetadataObject(IdFa, templateId)
+        s meta = ..BuildMetadataObject(sourceIdFa, templateId)
         s ^||ML("OUT","metadata") = meta.%ToJSON()
-        s ^||ML("OUT","data") = $g(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Data"))
+        s ^||ML("OUT","data") = $g(^ALVA.TemplateDesigner.Templates(sourceIdFa,"DTA",templateId,"Data"))
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
@@ -114,28 +117,32 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         if data       = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "data is required"))
         if version    = "" s version = "1.0"
 
+        // Cílová větev: default session firma; "MLINE" pro seed systémových šablon (distribuce).
+        s targetIdFa = $g(^||ML("IN","targetIdFa"))
+        i targetIdFa = "" s targetIdFa = IdFa
+
         s nowIso = $zdt($h, 3)
-        s existed = $d(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId))
+        s existed = $d(^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId))
 
         // Při update: udržet původní CreatedAt + Author; při novém: nastavit aktuální
         if existed {
-            s oldAgenda = $g(^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","AgendaCode"))
+            s oldAgenda = $g(^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","AgendaCode"))
             if (oldAgenda '= "") && (oldAgenda '= agendaCode) {
-                k ^ALVA.TemplateDesigner.Templates(IdFa,"IDX","ByAgenda",oldAgenda,templateId)
+                k ^ALVA.TemplateDesigner.Templates(targetIdFa,"IDX","ByAgenda",oldAgenda,templateId)
             }
         } else {
-            s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","CreatedAt") = nowIso
-            s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","Author")    = userID
+            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","CreatedAt") = nowIso
+            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","Author")    = userID
         }
 
-        s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","Name")       = name
-        s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","AgendaCode") = agendaCode
-        s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","Version")    = version
-        s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","ModifiedAt") = nowIso
-        s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Metadata","ModifiedBy") = userID
-        s ^ALVA.TemplateDesigner.Templates(IdFa,"DTA",templateId,"Data")                  = data
+        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","Name")       = name
+        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","AgendaCode") = agendaCode
+        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","Version")    = version
+        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedAt") = nowIso
+        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedBy") = userID
+        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data")                  = data
 
-        s ^ALVA.TemplateDesigner.Templates(IdFa,"IDX","ByAgenda",agendaCode,templateId) = ""
+        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"IDX","ByAgenda",agendaCode,templateId) = ""
 
         s ^||ML("OUT","templateId") = templateId
     } catch (ex) { $$$CatchErrRest }
