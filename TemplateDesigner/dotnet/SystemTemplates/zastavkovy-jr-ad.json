@@ -1,0 +1,369 @@
+{
+  "version": "1.2.0",
+  "id": "5b1e0000-0000-4000-8000-000000000001",
+  "name": "Zastávkový JŘ (AD) — výchozí",
+  "description": "Výchozí systémová šablona zastávkového jízdního řádu (AD): hlavička linky, seznam zastávek, mřížka odjezdů a legenda poznámek. Formát A5 na šířku.",
+  "pageSize": {
+    "width": 210,
+    "height": 148,
+    "marginTop": 1,
+    "marginBottom": 1,
+    "marginLeft": 0.5,
+    "marginRight": 0.5
+  },
+  "sections": [
+    {
+      "id": "ad000000-0000-4000-8000-0000000000a0",
+      "name": "JR zastavkovy AD",
+      "designerHeight": 146,
+      "printBehavior": "Once",
+      "overflowBehavior": "KeepTogether",
+      "role": "Body",
+      "showBorder": false,
+      "borderColor": "#FF000000",
+      "borderWidth": 0.3,
+      "elements": [
+        {
+          "type": "TextElement",
+          "text": "{POPIS_ZASTAVKA}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 11,
+            "bold": true,
+            "hAlign": "Left",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "ad000000-0000-4000-8000-0000000000b1",
+          "x": 0.5,
+          "y": 0.5,
+          "width": 90,
+          "height": 7,
+          "zIndex": 0,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Linka {CISLO_LINKY}: {POPIS_LINKY}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": false,
+            "hAlign": "Left",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "ad000000-0000-4000-8000-0000000000b2",
+          "x": 0.5,
+          "y": 8,
+          "width": 140,
+          "height": 5,
+          "zIndex": 1,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "TextElement",
+          "text": "Směr: {POPIS_SMER}    •    {POPIS_PLATNOSTI}",
+          "style": {
+            "fontFamily": "Arial",
+            "fontSize": 7,
+            "italic": true,
+            "hAlign": "Left",
+            "vAlign": "Middle"
+          },
+          "wordWrap": false,
+          "id": "ad000000-0000-4000-8000-0000000000b3",
+          "x": 0.5,
+          "y": 13,
+          "width": 200,
+          "height": 4,
+          "zIndex": 2,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "StopListElement",
+          "columns": [
+            {
+              "key": "TravelTime",
+              "header": "min.",
+              "width": 8,
+              "visible": true,
+              "alignment": "Right"
+            },
+            {
+              "key": "StopName",
+              "header": "Zastávky",
+              "width": 37,
+              "visible": true,
+              "alignment": "Left"
+            }
+          ],
+          "showRowSeparators": false,
+          "showStopIndentation": true,
+          "showSignalStopIndicator": true,
+          "signalStopSymbol": "×",
+          "showStopAttributes": true,
+          "showStopNotes": true,
+          "markersPosition": "AfterName",
+          "showDirectionArrow": true,
+          "directionArrowColor": "#FF000000",
+          "directionArrowBold": false,
+          "directionArrowPosition": "Right",
+          "showHeader": true,
+          "currentStopUnderline": true,
+          "currentStopBold": true,
+          "showPassedStops": false,
+          "passedStopsForeColor": "#FF999999",
+          "excludedAttributeIds": [],
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7.5
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true,
+            "backgroundColor": "#FFE0E0E0"
+          },
+          "gridColor": "#FFD0D0D0",
+          "dataRowHeight": 4,
+          "id": "ad000000-0000-4000-8000-0000000000c1",
+          "x": 0.5,
+          "y": 18,
+          "width": 47,
+          "height": 128,
+          "zIndex": 3,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "DepartureGridElement",
+          "skupinaDnuId": "",
+          "showSkupinaDnuHeader": true,
+          "skupinaDnuHeaderLineHeight": 3,
+          "headerVerticalAlignment": "Bottom",
+          "hourColumnWidth": 7,
+          "minuteWidth": 7,
+          "minuteFontSize": 9,
+          "minuteStyle": {},
+          "anotaceSymbolStyle": {},
+          "anotaceTextStyle": {},
+          "anotaceGap": 0,
+          "anotaceInterGap": 0,
+          "odjezdGap": 0,
+          "groupSeparatorWidth": 0.4,
+          "hourColumnPerGroup": true,
+          "maxGroupCount": 3,
+          "timeAxisMode": "Range",
+          "timeAxisRangeFrom": 5,
+          "timeAxisRangeTo": 19,
+          "autoExpandToFillHeight": false,
+          "minuteBold": true,
+          "alternatingRowColor": "#FFF5F5F5",
+          "showAnotace": true,
+          "anotaceFontSize": 5,
+          "hourColumnStyle": {
+            "header": {
+              "fontFamily": "Arial",
+              "fontSize": 6,
+              "bold": true
+            },
+            "data": {
+              "fontFamily": "Arial",
+              "fontSize": 9
+            }
+          },
+          "groupColumns": [
+            {
+              "skupinaDnuId": "1",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFD8EFD8"
+                },
+                "data": {}
+              }
+            },
+            {
+              "skupinaDnuId": "2",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFDFDFDF"
+                },
+                "data": {}
+              }
+            },
+            {
+              "skupinaDnuId": "3",
+              "isVisible": true,
+              "style": {
+                "header": {
+                  "fontFamily": "Arial",
+                  "fontSize": 6,
+                  "bold": true,
+                  "backgroundColor": "#FFD8D8EF"
+                },
+                "data": {}
+              }
+            }
+          ],
+          "colorRules": [],
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 9
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 6,
+            "bold": true
+          },
+          "gridColor": "#FFD0D0D0",
+          "dataRowHeight": 5,
+          "id": "ad000000-0000-4000-8000-0000000000c2",
+          "x": 48,
+          "y": 18,
+          "width": 98.7,
+          "height": 128,
+          "zIndex": 4,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        },
+        {
+          "type": "NotesLegendElement",
+          "headerText": "Poznámky",
+          "noteSeparator": " — ",
+          "noteFontSize": 7,
+          "noteLineHeight": 3,
+          "negativniZnackaBackColor": "#FF000000",
+          "negativniZnackaForeColor": "#FFFFFFFF",
+          "showNegativniZnacky": true,
+          "showSpecialniZnaky": true,
+          "showTextovePoznamky": true,
+          "zastavkyDataSource": "ZASTAVKY",
+          "skupinyDnuDataSource": "SKUPINY_DNU",
+          "odjezdyDataSource": "ODJEZDY",
+          "poznamkyDataSource": "POZNAMKY",
+          "dataStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 7
+          },
+          "headerStyle": {
+            "fontFamily": "Arial",
+            "fontSize": 8,
+            "bold": true
+          },
+          "gridColor": "#FFD0D0D0",
+          "id": "ad000000-0000-4000-8000-0000000000c3",
+          "x": 146.7,
+          "y": 18,
+          "width": 62.3,
+          "zIndex": 5,
+          "isLocked": false,
+          "backgroundColor": "#00FFFFFF",
+          "borderColor": "#00FFFFFF",
+          "borderWidth": 0,
+          "rotation": 0
+        }
+      ]
+    }
+  ],
+  "agendaCode": "ZASTAVKOVY_JR_AD",
+  "parameters": [
+    {
+      "name": "SKUPINA_LINEK_ID",
+      "label": "Skupina linek",
+      "type": "string",
+      "defaultValue": ""
+    },
+    {
+      "name": "LINKA_ID",
+      "label": "Linka",
+      "type": "string",
+      "defaultValue": ""
+    },
+    {
+      "name": "TISK_SIPKY",
+      "label": "Tisknout šipky směru",
+      "type": "bool",
+      "defaultValue": "false"
+    },
+    {
+      "name": "TISK_PROJETYCH_ZAST",
+      "label": "Tisknout projeté zastávky",
+      "type": "bool",
+      "defaultValue": "false"
+    },
+    {
+      "name": "CASOVA_OSA",
+      "label": "Časová osa odjezdů",
+      "type": "enum",
+      "defaultValue": "Jen hodiny s odjezdy",
+      "options": [
+        "Jen hodiny s odjezdy",
+        "Souvislá od první do poslední",
+        "Vlastní rozsah"
+      ]
+    },
+    {
+      "name": "HODINY_OD",
+      "label": "Hodiny od",
+      "type": "number",
+      "defaultValue": "4",
+      "visibleWhen": "CASOVA_OSA=Vlastní rozsah"
+    },
+    {
+      "name": "HODINY_DO",
+      "label": "Hodiny do",
+      "type": "number",
+      "defaultValue": "23",
+      "visibleWhen": "CASOVA_OSA=Vlastní rozsah"
+    },
+    {
+      "name": "ROZTAHNOUT_NA_VYSKU",
+      "label": "Roztáhnout na výšku",
+      "type": "bool",
+      "defaultValue": "false"
+    }
+  ],
+  "editorPreferences": {
+    "gridSize": 1,
+    "snapToGrid": true,
+    "snapToElements": true,
+    "showGrid": false
+  },
+  "createdAt": "2026-06-16T07:18:50.8390906Z",
+  "modifiedAt": "2026-06-16T07:22:04.6867941Z"
+}
