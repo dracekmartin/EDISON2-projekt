@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-09 ✅ — Bug: změna velikosti/orientace stránky = reset s potvrzením
+
+Změna velikosti/orientace stránky se dřív snažila obsah „zachovat", ale jen napůl — přeškálovala
+jen výšky body sekcí, pozice/šířky elementů nechala být → elementy visely mimo stránku, překrývaly se.
+UX rozhodnutí (potvrzeno s uživatelem, živě ověřeno): změna rozměrů = **čistý reset**, konzistentní
+se změnou agendy. Detail → changelog 2026-07-09.
+
+- `ElementEditDialog.FinalValues` — snapshot hodnot polí po OK (čtení zamýšlených rozměrů bez vykonání commandu).
+- `OpenPropertiesForPage` detekuje změnu `PageSize.Width/Height` (epsilon 0.1 mm) → reset; jinak běžná undoable změna (okraje/kultura/font).
+- `ConfirmPageResetAsync` — vždy se ptá (i u uložené šablony → řeší tichý wipe); dirty = Save/Discard/Cancel. Confirm **před** mutací → Storno = šablona netknutá.
+- `ResetForPageChangeAsync` — čisté plátno s novou velikostí, zachová agendu, převezme velikost/okraje/kulturu/font z dialogu. `ReplaceWithBlankTemplate` + `configure` callback.
+
 ## Session 2026-07-09 ✅ — Governance šablon v1: doručení systémové šablony (embed → MLINE → picker)
 
 Hybrid model (systémové M-line + zákaznické per-firma) — v1 způsob, jak zákazníkovi dodat výchozí šablonu,

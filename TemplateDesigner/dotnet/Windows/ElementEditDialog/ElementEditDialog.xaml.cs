@@ -30,6 +30,11 @@ public partial class ElementEditDialog : Window
 
     public IDesignerCommand? ResultCommand { get; private set; }
 
+    /// <summary>Snapshot finálních hodnot polí po OK (klíč = property path). Umožní volajícímu
+    /// přečíst zamýšlené hodnoty bez vykonání commandu (např. detekce změny rozměrů stránky).
+    /// Null dokud nebyl dialog potvrzen.</summary>
+    public IReadOnlyDictionary<string, string>? FinalValues { get; private set; }
+
     /// <param name="target">Editovaný objekt (element, sekce, stránka — in-memory model).</param>
     /// <param name="cacheClass">Caché schema class (např. "ALVA.TemplateDesigner.EDInputForm.TextElementEdit").</param>
     /// <param name="title">Titulek okna.</param>
@@ -56,6 +61,7 @@ public partial class ElementEditDialog : Window
     {
         if (!TheForm.Save()) return;
 
+        FinalValues = ElementFormBinder.Snapshot(TheForm);
         var commands = ElementFormBinder.ExtractCommands(TheForm, _target, _preFilled);
         ResultCommand = commands.Count switch
         {

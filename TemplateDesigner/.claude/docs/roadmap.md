@@ -12,11 +12,10 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **Bug — přepnutí stránky za běhu návrháře** — uživatel narazil; přednostně opravit (přesný projev + repro TBD).
-2. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
-3. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
-4. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-5. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+1. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
+2. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
+3. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+4. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
 
 ---
 

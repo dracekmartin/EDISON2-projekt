@@ -1544,18 +1544,43 @@ public partial class MainWindow : Window
         InvalidatePreview();
     }
 
-    private void OpenPropertiesForPage(Template template)
+    private async void OpenPropertiesForPage(Template template)
     {
+        float oldW = template.PageSize.Width, oldH = template.PageSize.Height;
+
         var dlg = new ElementEditDialog(
             template,
             "ALVA.TemplateDesigner.EDInputForm.PageEdit",
             "Vlastnosti stránky") { Owner = this };
-        if (dlg.ShowDialog() == true && dlg.ResultCommand is not null)
-            _vm!.Execute(dlg.ResultCommand);
+        if (dlg.ShowDialog() != true) return;
+
+        // Změna velikosti / orientace stránky = reset (potvrzení → čisté plátno s novou velikostí).
+        // Zachovávat elementy přes změnu rozměrů se chovalo nepředvídatelně (elementy visely mimo
+        // stránku); reset je konzistentní se změnou agendy. Ostatní změny (okraje, kultura, font)
+        // se aplikují jako běžná undoable změna.
+        var fv = dlg.FinalValues;
+        bool dimsChanged = fv is not null
+            && (DiffMm(oldW, ParseMm(fv, "PageSize.Width", oldW))
+                || DiffMm(oldH, ParseMm(fv, "PageSize.Height", oldH)));
+
+        if (dimsChanged)
+        {
+            await _vm!.ResetForPageChangeAsync(fv!);   // reset si sám vyžádá refresh plátna/velikosti
+            return;
+        }
+
+        if (dlg.ResultCommand is not null) _vm!.Execute(dlg.ResultCommand);
         UpdateCanvasSize();
         InvalidateCanvas();
         InvalidatePreview();
     }
+
+    private static float ParseMm(IReadOnlyDictionary<string, string> fields, string key, float fallback) =>
+        fields.TryGetValue(key, out var s)
+        && float.TryParse(s, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var v)
+            ? v : fallback;
+
+    private static bool DiffMm(float a, float b) => Math.Abs(a - b) > 0.1f;
 
     private void UpdatePropertiesPanel()
     {

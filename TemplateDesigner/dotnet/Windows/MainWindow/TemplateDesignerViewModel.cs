@@ -868,10 +868,14 @@ public class TemplateDesignerViewModel : EDViewModel
     /// (volitelně se zadanou agendou) a resetuje veškerý designový stav.
     /// Volající MUSÍ předtím zavolat <see cref="ConfirmUnsavedChanges"/>.
     /// </summary>
-    private void ReplaceWithBlankTemplate(string? agendaCode)
+    private void ReplaceWithBlankTemplate(string? agendaCode, Action<Template>? configure = null)
     {
-        State.CurrentTemplate = new Template();
-        if (agendaCode is not null) State.CurrentTemplate.AgendaCode = agendaCode;
+        var t = new Template();
+        if (agendaCode is not null) t.AgendaCode = agendaCode;
+        // Volitelná konfigurace před přidáním výchozí sekce (např. převzetí velikosti/okrajů
+        // stránky při resetu z editoru vlastností stránky) — sekce se přidá až s finální PageSize.
+        configure?.Invoke(t);
+        State.CurrentTemplate = t;
         // Výchozí sekce, ať uživatel nezačíná na prázdné šabloně bez plochy k editaci.
         State.CurrentTemplate.Sections.Add(CreateDefaultSection(State.CurrentTemplate.PageSize));
         CurrentFilePath = null;
@@ -891,6 +895,38 @@ public class TemplateDesignerViewModel : EDViewModel
         RequestPropertiesPanelUpdate?.Invoke();
         RequestCanvasRefresh?.Invoke();
         RequestPreviewRefresh?.Invoke();
+    }
+
+    /// <summary>
+    /// Potvrzení destruktivní změny velikosti/orientace stránky. Změna vždy vymaže obsah a založí
+    /// čisté plátno, proto se ptáme i u uložené šablony (jinak by ConfirmUnsavedChanges u čisté
+    /// šablony vrátil true bez ptaní → tichá ztráta obsahu). Neuložené změny → Save/Discard/Cancel.
+    /// </summary>
+    public async Task<bool> ConfirmPageResetAsync()
+    {
+        if (IsDirty)
+            return await ConfirmUnsavedChangesAsync();
+        return PopupDisplayer.Confirm(
+            "Změna velikosti nebo orientace stránky vymaže obsah šablony a založí čisté plátno. Pokračovat?");
+    }
+
+    /// <summary>
+    /// Reset šablony po změně velikosti/orientace stránky: potvrzení → čisté plátno s novou
+    /// velikostí. Zachová agendu (PageEdit ji needituje); převezme velikost/okraje/kulturu/font
+    /// z hodnot dialogu (klíč = property path na Template). Vrátí false pokud uživatel reset zrušil.
+    /// </summary>
+    public async Task<bool> ResetForPageChangeAsync(IReadOnlyDictionary<string, string> pageFields)
+    {
+        if (!await ConfirmPageResetAsync()) return false;
+
+        var agenda = State.CurrentTemplate.AgendaCode;
+        ReplaceWithBlankTemplate(agenda, configure: t =>
+        {
+            foreach (var (key, val) in pageFields)
+                if (ElementPropertyAccessor.Exists(t, key))
+                    ElementPropertyAccessor.Set(t, key, val);
+        });
+        return true;
     }
 
     private void OpenInstancePicker()

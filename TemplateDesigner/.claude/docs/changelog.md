@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-09 — Vlastnosti stránky: změna velikosti/orientace = reset s potvrzením (fix bug)
+
+Změna velikosti/orientace stránky se dřív snažila obsah „zachovat", ale jen napůl — přeškálovala jen
+výšky body sekcí (`ScaleBodySections`), pozice a šířky elementů nechala být. Výsledek po A4→A5 / otočení:
+elementy visely mimo stránku, překrývaly se, sekce squeezené. UX rozhodnutí (potvrzeno s uživatelem):
+změna rozměrů = **čistý reset**, konzistentní se změnou agendy.
+
+- **`ElementEditDialog.FinalValues`** — snapshot finálních hodnot polí po OK (klíč = property path).
+  Volající přečte zamýšlené rozměry **bez** vykonání commandu (obecné, i pro jiné editory).
+- **`OpenPropertiesForPage` detekuje změnu `PageSize.Width/Height`** (epsilon 0.1 mm). Změna →
+  `ResetForPageChangeAsync`; jinak běžná undoable změna (okraje, kultura, font) přes `Execute`.
+- **`TemplateDesignerViewModel.ConfirmPageResetAsync`** — vždy se ptá (i u uložené šablony): dirty →
+  Save/Discard/Cancel, čistá → prosté potvrzení. Řeší tichý wipe (dřív by `ConfirmUnsavedChanges`
+  u čisté šablony vrátil true bez ptaní).
+- **`ResetForPageChangeAsync`** — čisté plátno s novou velikostí; zachová agendu (PageEdit ji needituje),
+  převezme velikost/okraje/kulturu/font z dialogu přes `ElementPropertyAccessor` (reflexe, klíč = path).
+  `ReplaceWithBlankTemplate` rozšířen o `configure` callback (PageSize nastaven před přidáním sekce).
+- Odstraněna půlka řešení (`ScaleBodySections` v deskriptorové cestě už není use-site — descriptor
+  editor stránky je legacy fallback). 305/305 .NET, build čistý. Živě ověřeno (reset / okraje bez wipe / Storno).
+
 ## 2026-07-09 — Zastávkový JŘ: symbolový font značek (Timetable, locale-aware) + katalog
 
 Speciální symboly (bezbariér, na znamení…) se tiskly jako holé písmeno „H"/„x" místo piktogramu —
