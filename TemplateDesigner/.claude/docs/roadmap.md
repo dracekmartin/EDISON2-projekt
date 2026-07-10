@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Stav k 2026-07-09.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-10.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet — patří do archivu.
 
 ---
@@ -12,35 +12,27 @@
 > **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
 
-1. **🔍 Audit před produkcí — projít checklist a odbavit** (sekce níže) — nálezy z komplexního
-   auditu 2026-07-09; nejdřív blok A (datový kontrakt zastávkového JŘ).
-2. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
-3. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
-4. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-5. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+> **Audit před produkcí (2026-07-09) uzavřen 2026-07-10** — sekce níže; zbyly 2 vědomě odložené (C-e, C-b).
+
+1. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
+2. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
+3. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+4. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
 
 ---
 
-## 🔍 Audit před produkcí (2026-07-09) — rozhodovacně uzavřen 2026-07-10
+## 🔍 Audit před produkcí (2026-07-09) — uzavřen 2026-07-10
 
-> Komplexní audit architektury + agend + UI/UX. Detail nálezů (file:line, fix) →
-> [`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md). **Odbaveno →
-> [`roadmap-archive.md`](roadmap-archive.md):** bezpečný sweep (C-a/C-c/C-d, C-f q→ret, B1, B5, D1,
-> D3-drobné, D4), blok A **celý** (A1–A4 MHD + A-AD), infra batch (B3, B4, B6, B7), **B2**. Níže jen zbytek.
+> Kompletně odbaveno → [`roadmap-archive.md`](roadmap-archive.md); detail nálezů (file:line, fix) →
+> [`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md). Vědomě nedělané
+> (kosmetika/dlouhodobé — C-f export filtr, D3 rename, D2 dialogy oportunisticky, T4 god objects, C8,
+> NotesLegend DPI, CISLO_LINKY) = viz auditní dokument, bez akce.
 
-**⏸️ Parkováno — konkrétní spouštěč (ne zapomenuto):**
-- **C-e** (AD `GetMockData` → statický vzorek místo živých dat) — **těsně před nasazením k zákazníkům** (T5).
-- **C-b** (MHD memoizace — `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru) — **až výkon reálně bolí**
-  (velcí dopravci). Behavior-preserving, gold-safe → kdykoli.
-
-**🔧 Oportunisticky (ne batch):**
-- **D2** (6 dialogů OK/Save code-behind → VM Command) — sjednotit vždy při zásahu do daného dialogu.
-
-**❌ Won't-do teď (vědomě):**
-- **C-f zbytek** (export split filtr dle ElementKind — plumbing do AgendaParams; `AgendyRegistr` jen přímé subclassy) — kosmetika, malá hodnota.
-- **D3 zbytek** (sjednocení mechanismu renamu agendy) — spustí příští rename.
-- **Mimo checklist / dlouhodobé:** god objects (T4), sjednocení cache patternů (s R1/C3), C8 dedup Caché enginů,
-  NotesLegend DPI wrap, CISLO_LINKY string/number — sledované, bez akce (viz auditní dokument).
+**Zbývají 2 vědomě odložené (mají spouštěč, ne zapomenuto):**
+- **C-e** — AD `GetMockData` čte živá firemní data → zmrazit statický vzorek. **Gate před nasazením
+  k zákazníkům** (T5): jinak se preview u zákazníka bez vhodné 1. linky rozbije / je pomalé.
+- **C-b** — MHD memoizace (`GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru). **Až výkon reálně
+  bolí** (velcí dopravci); behavior-preserving, gold-safe → kdykoli.
 
 ---
 
