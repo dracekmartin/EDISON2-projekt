@@ -77,7 +77,7 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | 🟠 nový datový model |
 | TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | M | 🟠 relates L1 multi-varianta (`VARIANTY_TRAS`) |
-| TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | S | 🟢 |
+| TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | ? | ⏸️ **park — premisa nejasná** (viz níže §TR/8): naše časy jsou kumulativní → 0-segment se tiskne jako opakované číslo (1,1), ne „0"; per-segment sloupec TD nemá. Ověřit u TRANSDEV, který sloupec (legacy „Průběhy"?) |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | 🟠 Caché-input (Studio JŘ) |
 | TR10 | Skrýt spoje o So/Ne/svátcích | S–M | 🟠 Caché filtr |
 
@@ -476,7 +476,14 @@ implementací dohledat/založit tikety + upřesnit. U každého poznámka o stav
    explicitní kontrolu (které spoje / úsek řídí generování). → **Relates L1 multi-varianta TrasaMin** (`VARIANTY_TRAS`
    + `ShowAllRouteVariants`); je to ta „jemnější výběr variant (per-písmeno)" z `cache-database-linky §10`. M.
 8. **Jízdní doby — „<1" místo „0"**: nulová jízdní doba mezi zastávkami → zobrazit „<1" (méně než minuta) místo „0".
-   Konfigurovatelné. NEW, S.
+   Konfigurovatelné. ⏸️ **PARK — premisa nejasná (analýza 2026-07-10):**
+   - TD (i legacy „Časy"/„Trasa min.") zobrazuje **kumulativní** čas od nástupní zastávky. 0-minutový úsek
+     (dvě sousední zastávky stejný kumulativ, ověřeno na `CB_CSADAD` lin **0380520** var. T3: 1→1) se tiskne
+     jako **opakované číslo** (1,1), **ne jako „0"**. Jediná „0" = řádek nástupní zastávky (ta zůstává 0).
+   - **Per-segment sloupec** (Δ z předchozí zastávky, kde by 0-úsek dal „0") **TD nemá**. V legacy je kandidát
+     sloupec **„Průběhy"** (název napovídá per-segment) — neověřeno.
+   - **Blokuje:** potvrzení od TRANSDEV — screenshot, ve kterém sloupci „0" vidí. Bez per-segment sloupce není
+     TR8 co implementovat (není kde „0" tisknout). Pokud chtějí per-segment sloupec → nová funkce (sloupec + „<1").
 9. **Poznámkování spojů — obrácená logika**: dnes horní tabulka (značka/text/spoje) + spodní tabulka (kde
    NEpoznámkovat). Chce: rozsah TČ přímo v první tabulce vedle značky/spojů. Legacy-input workflow (tab „MHD").
    Zjednodušení, méně chyb. M (Caché-input strana).
