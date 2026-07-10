@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-10 — TR2: souhrn „všechny zastávky na znamení" (AD, opt-in) — čeká na SK ověření
+
+TRANSDEV požadavek — když jsou všechny zastávky na znamení, místo × u každé jeden souhrn.
+Implementováno, ověřeno gold-safe; verifikace triggeru čeká na potvrzení SK kódování (kolega).
+
+- **AD-only, opt-in** param `SOUHRN_NA_ZNAMENI` (default off = per-zastávka × jako dnes). Když všechny
+  obsluhované neprojeté zastávky mají „x" (na znamení) → potlačí per-zastávka × + agregátní řádek legendy
+  „× všechny zastávky linky jsou na znamení". Mechanika 1:1 analogická bezbariér agregátu (`allBBP`).
+  **Čistě Caché** (žádná .NET změna — potlačení = absence atributu v datech, agregát přes POZNAMKY legendu).
+- **Gold-safe:** Caché 33/33 (default off → gold beze změny). Scan potvrdil no-op na CB_CSADAD i SKNI
+  (ani jedna linka není all-„x").
+- ⚠️ **Čeká ověření (kolega):** `SKNI_MHDNITRA` (1308 linek) **nepoužívá „x"** pro na-znamení
+  (dta2 znaky = A/E/L/P/T/o/p). Nutno potvrdit, jestli SK data používají „x" (pak feature funguje) nebo
+  jiné kódování (pak rozšířit detekci `JeViditelnyAtribut` + scan). Do té doby na SK datech netriggeruje.
+
 ## 2026-07-10 — TR3: nástupiště jako sloupec zastávky (AD + MHD)
 
 Zákaznický požadavek TRANSDEV (SK legislativa) — zobrazit nástupiště/označník u zastávek. Ověřeno:

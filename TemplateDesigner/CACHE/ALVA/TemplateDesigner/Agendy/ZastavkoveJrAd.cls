@@ -309,6 +309,24 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d ..ObsluhovanePoradi(dataDB, sku, lin, smer, .servedPoradi)   // filtr projížděných zastávek
     s jeTam = (smer = "T")
 
+    // TR2 (opt-in SOUHRN_NA_ZNAMENI): když jsou VŠECHNY obsluhované neprojeté zastávky „na znamení" („x"),
+    // vytiskne se jeden agregátní řádek legendy místo × u každé. Default off = per-zastávka (gold/CZ beze změny).
+    s souhrnNaZn = 0
+    i $g(^||ML("IN","SOUHRN_NA_ZNAMENI")) = "true" {
+        s souhrnNaZn = 1, naZnCnt = 0, ppNZ = ""
+        f {
+            s ppNZ = $o(servedPoradi(ppNZ))
+            q:ppNZ=""
+            i jeTam,(ppNZ<currentPoradi) continue        // projetá se do souhrnu nepočítají
+            i 'jeTam,(ppNZ>currentPoradi) continue
+            s vNZ = $g(^[dataDB]JRL(sku,lin,"J",ppNZ))
+            i $p(vNZ,":",1)="" continue                  // bod bez zastávky
+            s naZnCnt = naZnCnt + 1
+            i '($p($p(vNZ,":",2),"#",1)["x") s souhrnNaZn = 0  q
+        }
+        i 'naZnCnt s souhrnNaZn = 0
+    }
+
     // Konečná směru = za currentPoradi není žádná obsluhovaná zastávka → jen příjezdy, board se netiskne
     // (1:1 legacy — přeskakuje pouze poslední zastávku směru, ne per-spoj konečné).
     s jeDal = 0, pp = ""
@@ -386,6 +404,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             f ai=1:1:$l(atributy) {
                 s znak = $e(atributy, ai)
                 i '..JeViditelnyAtribut(znak) continue
+                i souhrnNaZn && (znak = "x") continue    // TR2: souhrn místo per-zastávka ×
                 s txtAtr = ..TextAtributu(znak)
                 d ..AddAtribut(z, znak, txtAtr)
                 s atrSeen(znak) = txtAtr
@@ -451,6 +470,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("VARIANTY_TRAS", variantyTras)
     s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
+    i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
     s poznamky = ..SestavPoznamky(.poznMap, .atrSeen, .rozdilLegenda, .bezbarLegenda, .komentareLegenda, .dnyLegenda, allBBP)
 
@@ -1436,6 +1456,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
+    d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI",   "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false")
 
     // Rozdělení sloupců typů provozu — override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace
     // {prázdninový split prac. dnů} × {sloučení víkendu}; reuse existujícího NacistSkupinyDnu/ZarazeniSpoje.

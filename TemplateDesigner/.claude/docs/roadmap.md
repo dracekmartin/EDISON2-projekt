@@ -66,8 +66,12 @@ při scope té fáze, ne teď.
 
 | # | Co | Vel. | Pozn. |
 |---|---|---|---|
-| TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | pattern = bezbariér `allBBP` agregát (#7161) |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | auto-scale částečně; relates B2 |
+
+> **TR2 (souhrn „všechny na znamení") IMPLEMENTOVÁNO 2026-07-10 (AD, opt-in `SOUHRN_NA_ZNAMENI`), čeká na
+> SK ověření.** Kód hotový + gold-safe. ⚠️ `SKNI_MHDNITRA` (1308 linek) nepoužívá „x" pro na-znamení
+> (dta2 = A/E/L/P/T/o/p) → na SK datech zatím netriggeruje. **Kolega prověřuje**, jestli SK data používají „x"
+> (pak funguje) nebo jiné kódování (pak rozšířit detekci). Detail → changelog + `customer-requirements §TR/2`.
 
 > **TR3 (sloupec nástupiště) HOTOVO 2026-07-10** → archiv/changelog (AD J-věta #3 + MHD Oznacnik, StopList sloupec „Nástupiště", opt-in). Ověřeno reálně na 0320680.
 

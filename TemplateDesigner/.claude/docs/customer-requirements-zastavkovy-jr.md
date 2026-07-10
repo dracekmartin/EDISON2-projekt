@@ -71,7 +71,7 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 | # | Co | Vel. | Stav (2026-07-10) |
 |---|---|---|---|
 | TR1 | Časová osa přes půlnoc | — | 🧪 = #9036 (jen ověřit u klienta) |
-| TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | 🟢 pattern = bezbariér `allBBP` agregát; relates #7161 |
+| TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | 🟡 **IMPLEMENTOVÁNO 2026-07-10** (AD, opt-in `SOUHRN_NA_ZNAMENI`, gold-safe) · ⚠️ **čeká SK ověření**: SKNI nepoužívá „x" pro na-znamení → kolega prověřuje kódování |
 | TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | ✅ **HOTOVO 2026-07-10** (AD J-věta #3 + MHD Oznacnik; StopList sloupec „Nástupiště" opt-in). Ověřeno 0320680. |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | 🟢 auto-scale částečně; relates B2 (2026-07-10, DepartureGrid) |
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
@@ -460,7 +460,14 @@ implementací dohledat/založit tikety + upřesnit. U každého poznámka o stav
    (extended hours). **Klient nejspíš netestoval na své verzi** — ověřit u něj, netřeba implementovat.
 2. **Zastávky na znamení — „všechny"**: když jsou VŠECHNY zastávky na znamení, místo značek u každé
    vygenerovat souhrn „× všechny zastávky linky jsou na znamení" (analogie k bezbariér souhrnu). Konfigurovatelné
-   (CZ legislativa může chtít značky). → **Pattern existuje** (AD bezbariér `allBBP` agregát); relates #7161. NEW, S–M.
+   (CZ legislativa může chtít značky). 🟡 **IMPLEMENTOVÁNO 2026-07-10 (AD, opt-in), čeká SK ověření:**
+   - Opt-in param `SOUHRN_NA_ZNAMENI` (default off = per-zastávka × jako dnes). Když všechny obsluhované
+     neprojeté zastávky mají „x" → potlačí per-zastávka × + agregátní řádek legendy. Mechanika 1:1 jako
+     bezbariér `allBBP`. Čistě Caché (AD-only; MHD-port později, bezbariér agregát je taky jen AD). Gold-safe (33/33).
+   - ⚠️ **Blokuje verifikaci:** `SKNI_MHDNITRA` (1308 linek) **nepoužívá „x"** pro na-znamení (dta2 znaky =
+     A/E/L/P/T/o/p, žádné x/y/z) → na SK datech zatím netriggeruje. **Kolega prověřuje**, jestli SK data
+     používají „x" (feature pak funguje) nebo jiné kódování (rozšířit `JeViditelnyAtribut` + detekci).
+     Možné vysvětlení: stará/nekompletní data v SKNI. Vrátit se po výstupu od kolegy.
 3. **Zobrazení nástupiště**: nový sloupec vedle názvu zastávky (SK legislativa). ✅ **HOTOVO 2026-07-10:**
    per-zastávka `NASTUPISTE` v kolekci ZASTAVKY — **AD** z J-věty `#3` (`nastTam:nastZpet` dle směru),
    **MHD** z `Oznacnik` (`ALVA.MHD.ZST`). Nový `StopFields.Nastupiste` + StopList sloupec „Nástupiště"
