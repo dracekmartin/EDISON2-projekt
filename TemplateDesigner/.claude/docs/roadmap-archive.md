@@ -2,6 +2,15 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — TR3: nástupiště jako sloupec zastávky (AD + MHD)
+
+TRANSDEV požadavek (SK legislativa). Detail → changelog 2026-07-10. Caché 33/33, .NET 316/316.
+
+- Per-zastávka `NASTUPISTE` do ZASTAVKY: AD z J-věty #3 (nastTam:nastZpet dle směru), MHD z `Oznacnik`.
+- `StopFields.Nastupiste` + StopList sloupec „Nástupiště" (opt-in, default skrytý); parse + GetCellText; zámek v ColumnKeysTests.
+- Bez mocku/hardcoded dat — prázdné kde označník není (standardně jen terminály). Ověřeno reálně 0320680 (6 zastávek).
+- Gold re-baseline AD 2 + MHD 3 (counts identické, jen md5).
+
 ## Session 2026-07-10 ✅ — Audit A-AD + B2 (uzavření kontraktu skalárů + overflow)
 
 Dokončení bloku A (AD strana) + B2. Detail → changelog 2026-07-10. Caché 33/33, .NET 316/316.

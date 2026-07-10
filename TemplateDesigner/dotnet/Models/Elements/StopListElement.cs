@@ -25,6 +25,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new() { Key = StopFields.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
         new() { Key = StopFields.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
         new() { Key = StopFields.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
+        new() { Key = StopFields.Nastupiste,   Header = "Nástupiště", Width = 12f, Visible = false },
     ];
 
     // ═══════════════════════════════════════════
@@ -548,6 +549,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             StopFields.StopName     => BuildStopDisplayText(z),
             StopFields.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
             StopFields.Zone         => string.Join("/", z.Zony),
+            StopFields.Nastupiste   => z.Nastupiste,
             StopFields.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
             StopFields.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""

@@ -400,6 +400,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             else { d trasaMin.%Push(..CasJizdyZMapy(.wMapX, currentPoradi, poradi)) }
         }
         d z.%Set("TRASA_MIN", trasaMin)
+        d z.%Set("NASTUPISTE", $p($p(veta,"#",3),":",$s(jeTam:1,1:2)))   // TR3: nástupiště per zastávka (J-věta #3, dle směru)
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
         s posledniNazev = rawNazev, posledniCzst = czst
@@ -1385,6 +1386,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
     d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
+    d ..AddField(colZastavkyFields, "NASTUPISTE",        "Nástupiště",        "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno — nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
     // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only — pole (ne skalár),

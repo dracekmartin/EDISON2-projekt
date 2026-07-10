@@ -66,9 +66,10 @@ při scope té fáze, ne teď.
 
 | # | Co | Vel. | Pozn. |
 |---|---|---|---|
-| TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | data `Oznacnik` existují; ≠ dnešní skalár `NASTUPISTE` (jen tištěná zast.) |
 | TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | pattern = bezbariér `allBBP` agregát (#7161) |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | auto-scale částečně; relates B2 |
+
+> **TR3 (sloupec nástupiště) HOTOVO 2026-07-10** → archiv/changelog (AD J-věta #3 + MHD Oznacnik, StopList sloupec „Nástupiště", opt-in). Ověřeno reálně na 0320680.
 
 > **TR8 („<1" místo „0") vyřazeno z dispatchu → park** (analýza 2026-07-10): naše časy jsou kumulativní,
 > 0-segment se tiskne jako opakované číslo (1,1), ne „0" (ověřeno `CB_CSADAD` 0380520 var. T3). Per-segment

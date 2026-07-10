@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-10 — TR3: nástupiště jako sloupec zastávky (AD + MHD)
+
+Zákaznický požadavek TRANSDEV (SK legislativa) — zobrazit nástupiště/označník u zastávek. Ověřeno:
+Caché TD 33/33, TemplateDesigner.Tests 316/316, build 0 chyb.
+
+- **Caché:** per-zastávka `NASTUPISTE` do kolekce ZASTAVKY — **AD** z J-věty `#3` (`nastTam:nastZpet` dle
+  směru), **MHD** z `Oznacnik` (`ALVA.MHD.ZST`). Bez mocku/hardcoded dat — kde označník není zadaný,
+  zůstává prázdné (standardně jen terminály/uzly). Gold re-baseline AD 2 + MHD 3 (counts identické, jen md5).
+- **TD:** nový `StopFields.Nastupiste = "NASTUPISTE"` (sdílený kontrakt AD≡MHD zachován, zámek v
+  `ColumnKeysTests`), parse do `ZastavkaData`, **nový StopList sloupec „Nástupiště"** (default skrytý = opt-in),
+  `GetCellText`.
+- **Reálná data ověřena:** CB_CSADAD linka **0320680** má nástupiště na 6 zastávkách (por 1/8/12/15/18/20,
+  hodnoty 11, 1:4, 5:6, 1:1, 10:10, 9:9) — formule `#3` funguje. Většina zastávek prázdná (normální).
+
 ## 2026-07-10 — Audit A-AD + B2 (uzavření kontraktu skalárů + overflow konzistence)
 
 Dokončení bloku A (AD strana, odblokováno po dojezdu paralelní font/značky práce) + B2.

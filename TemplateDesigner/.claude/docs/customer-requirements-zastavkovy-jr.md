@@ -72,7 +72,7 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 |---|---|---|---|
 | TR1 | Časová osa přes půlnoc | — | 🧪 = #9036 (jen ověřit u klienta) |
 | TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | 🟢 pattern = bezbariér `allBBP` agregát; relates #7161 |
-| TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | 🟢 data `Oznacnik` existují · ⚠️ **≠** dnešní skalár `NASTUPISTE` (ten = jen tištěná zast.) |
+| TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | ✅ **HOTOVO 2026-07-10** (AD J-věta #3 + MHD Oznacnik; StopList sloupec „Nástupiště" opt-in). Ověřeno 0320680. |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | 🟢 auto-scale částečně; relates B2 (2026-07-10, DepartureGrid) |
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | 🟠 nový datový model |
@@ -461,8 +461,11 @@ implementací dohledat/založit tikety + upřesnit. U každého poznámka o stav
 2. **Zastávky na znamení — „všechny"**: když jsou VŠECHNY zastávky na znamení, místo značek u každé
    vygenerovat souhrn „× všechny zastávky linky jsou na znamení" (analogie k bezbariér souhrnu). Konfigurovatelné
    (CZ legislativa může chtít značky). → **Pattern existuje** (AD bezbariér `allBBP` agregát); relates #7161. NEW, S–M.
-3. **Zobrazení nástupiště**: nový sloupec vedle názvu zastávky (SK legislativa). → **Data existují** (`Oznacnik`
-   v `ALVA.MHD.ZST`); přidat sloupec do StopListu + AD GetData pole. NEW, S.
+3. **Zobrazení nástupiště**: nový sloupec vedle názvu zastávky (SK legislativa). ✅ **HOTOVO 2026-07-10:**
+   per-zastávka `NASTUPISTE` v kolekci ZASTAVKY — **AD** z J-věty `#3` (`nastTam:nastZpet` dle směru),
+   **MHD** z `Oznacnik` (`ALVA.MHD.ZST`). Nový `StopFields.Nastupiste` + StopList sloupec „Nástupiště"
+   (default skrytý = opt-in). Bez mocku — kde označník není, prázdné (standardně jen terminály/uzly).
+   Ověřeno reálně na CB_CSADAD **0320680** (nástupiště na 6 zastávkách). Gold re-baseline AD 2 + MHD 3.
 4. **Výška řádku „zastávka" — auto (3. režim)**: pevná výška, při nedostatku místa se začne zmenšovat.
    → **Částečně**: StopList má auto-scale fontu při přetečení pevné Height (`ComputeFontScale`). Chce explicitní
    „fixed-then-shrink" režim výšky řádku. S–M.

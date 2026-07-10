@@ -18,6 +18,7 @@ public static class StopFields
     public const string Poradi     = "PORADI";            // pořadí zastávky (zobrazovací čítač)
     public const string JeAktualni = "AKTUALNI_ZASTAVKA"; // příznak aktuální (nástupní) zastávky
     public const string Zone       = "ZONY";              // tarifní zóny (ploché „1/2")
+    public const string Nastupiste = "NASTUPISTE";        // nástupiště/označník zastávky (AD: J-věta #3; MHD: Oznacnik)
 
     /// <summary>Interní join-klíč zastávky (<c>ODJEZDY.ZASTAVKA_ID</c>) — je v datech, ale NE ve schématu
     /// ani jako sloupec (uživatel s ním nepracuje).</summary>
