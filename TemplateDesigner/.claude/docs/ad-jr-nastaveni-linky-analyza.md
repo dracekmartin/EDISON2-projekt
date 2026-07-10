@@ -215,7 +215,7 @@ Vše se týká **legendy pod jízdním řádem** — jak se poznámky uspořáda
 V novém světě to mají být **vlastnosti elementu legendy** (uživatel si nastaví v designeru), ne skryté
 nastavení linky jako v legacy.
 
-- **Legenda na 1 nebo 2 sloupce** — dlouhá legenda zabírá moc výšky; možnost dvou sloupců šetří místo.
+- **Legenda na 1 nebo 2 sloupce** — ✅ **HOTOVO** (`NotesLegend.Columns` 1–4 + `WrapSmer` po sloupcích/řádcích; ověřeno 2026-07-10).
 - **Řazení poznámek podle délky** (AD-N3, legacy `Trid_delK`) — krátké poznámky k sobě, dlouhé k sobě → úhlednější.
 - **Omezení („nejede…") na nový řádek** (AD-N4, legacy `NegZnNR`) — každé datové omezení začne na novém řádku.
 
