@@ -968,13 +968,17 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("POPIS_PLATNOSTI",        $zd(platnostOd,4)_" - "_$zd(platnostDo,4))
     d vals.%Set("DATUM_PLATNOSTI_OD",     $zd(platnostOd,4))
     d vals.%Set("DATUM_PLATNOSTI_DO",     $zd(platnostDo,4))
-    d vals.%Set("POPIS_SMER",             smerPopis)
+    d vals.%Set("SMER",                   smerPopis)   // T/Z (A1); POPIS_SMER = konečná se nastaví po sestavení trasy
     d vals.%Set("TYP_JR",                 TypJR)
     d vals.%Set("QR_KOD",                 QRKod)
     d vals.%Set("POPIS_ZASTAVKA",         NazevZastavky)
     d vals.%Set("CISLO_ZASTAVKA",         CisloZastavky_"-"_Oznacnik)
     // TITULEK / POZNAMKA_POD_DOPRAVCE / INFORMACE: MHD pro ně nemá zdroj → nejsou ve schématu (viz AD, které je má z JRMAIN)
-    d vals.%Set("NEJEDOU_SPOJE",          ..NejedouSpoje(.sys, dataDB, IdFa, LinkaID, aktualniZastBodID, SmerID))
+    // A2: NEJEDOU_SPOJE je legacy misnomer (u MHD = text prvního/posledního spoje) → nový klíč
+    // PRVNI_POSLEDNI_SPOJ; NEJEDOU_SPOJE ponecháno duplicitně pro kompatibilitu existujících šablon.
+    s prvniPosledniSpoj = ..NejedouSpoje(.sys, dataDB, IdFa, LinkaID, aktualniZastBodID, SmerID)
+    d vals.%Set("PRVNI_POSLEDNI_SPOJ",    prvniPosledniSpoj)
+    d vals.%Set("NEJEDOU_SPOJE",          prvniPosledniSpoj)
     d page.%Set("values", vals)
 
     // ── Kolekce ──────────────────────────────────────────────────────────
@@ -983,6 +987,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // ZASTAVKY — vždy všechny v daném směru, s příznakem JE_AKTUALNI
     s zastavky = ##class(%DynamicArray).%New()
     s poradiZast = 0
+    s konecnaNazev = ""                       // poslední zastávka ve směru = konečná (→ POPIS_SMER, A1)
     s bodIterator = ""
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator), smerKrok) q:bodIterator=""
@@ -1045,9 +1050,11 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             }
         }
 
+        s konecnaNazev = zastNazev
         d zastavky.%Push(z)
     }
     d rows.%Set("ZASTAVKY", zastavky)
+    d vals.%Set("POPIS_SMER", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
 
     // SKUPINY_DNU — z typů provozu
     s skupiny = ##class(%DynamicArray).%New()
@@ -1485,12 +1492,14 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
-    d ..AddField(fields, "POPIS_SMER",             "Popis směru",            "text")
+    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
+    d ..AddField(fields, "POPIS_SMER",             "Konečná směru",          "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
     d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
-    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nejedou spoje",          "text")
+    d ..AddField(fields, "PRVNI_POSLEDNI_SPOJ",    "První/poslední spoj",    "text")
+    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nejedou spoje (zastaralé → PRVNI_POSLEDNI_SPOJ)", "text")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
@@ -1643,11 +1652,13 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d vals.%Set("POPIS_PLATNOSTI",        "01.01.2026 - 31.12.2026")
     d vals.%Set("DATUM_PLATNOSTI_OD",     "01.01.2026")
     d vals.%Set("DATUM_PLATNOSTI_DO",     "31.12.2026")
+    d vals.%Set("SMER",                   "T")
     d vals.%Set("POPIS_SMER",             "Bystrc, zoo")
     d vals.%Set("TYP_JR",                 "")
     d vals.%Set("QR_KOD",                 "https://jr.example.com/42")
     d vals.%Set("POPIS_ZASTAVKA",         "Líšeň, Novolíšeňská")
     d vals.%Set("CISLO_ZASTAVKA",         "101-A")
+    d vals.%Set("PRVNI_POSLEDNI_SPOJ",    "První spoj v 5:15, poslední v 23:30")
     d vals.%Set("NEJEDOU_SPOJE",          "První spoj v 5:15, poslední v 23:30")
     d out.%Set("values", vals)
 

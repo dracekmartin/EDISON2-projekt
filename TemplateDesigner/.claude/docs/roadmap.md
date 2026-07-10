@@ -29,16 +29,18 @@
 > sloupce Rozhodnutí dopsat ✅ udělat / ⏭️ později / ❌ ne; hotové řádky přesouvat do archivu.
 > Velikost: S = do hodiny, M = půl dne, L = víc dní.
 
-**Blok A — datový kontrakt zastávkového JŘ, skaláry (🔴 před produkcí).** Kolekce prošly
-revizí (POZNAMKY/SKUPINY_DNU), skaláry ne — šablona sdílená mezi MHD a AD tiskne u těchto
-polí různé věci. Bolí zpětně: šablony si na špatné klíče zvyknou.
+**Blok A — datový kontrakt zastávkového JŘ, skaláry (🔴 před produkcí).** MHD strana + schéma
++ mock **hotové 2026-07-10** (A1/A2/A3/A4 → archiv). **Zbývá AD strana** — čeká na commit paralelní
+`PozitivniZnacka` práce (dotýká se AD gold testu, aby se neklobrovala re-baseline).
 
 | # | Co | Lidsky | Vel. | Rozhodnutí |
 |---|---|---|---|---|
-| A1 | `POPIS_SMER`: MHD „T/Z" vs AD název konečné → zarovnat MHD na AD/Linkovy (+ doplnit `SMER`) | pole „Popis směru" u MHD vytiskne písmeno místo konečné | S–M | |
-| A2 | `NEJEDOU_SPOJE`: MHD text prvních/posledních spojů vs AD nástupiště → rozdělit na `PRVNI_POSLEDNI_SPOJ` + `NASTUPISTE` (aditivně, R3) | jedno pole = dvě různá data podle agendy | S–M | |
-| A3 | MHD mock `POPIS_SMER="Bystrc, zoo"` ≠ ostrá data „T" | preview ukazuje jiný obsah než tisk | S (s A1) | |
-| A4 | AD emituje pole mimo schéma (`*_CIS`, `VARIANTY_TRAS`, `TRASA_MIN`) → deklarovat/zdokumentovat | agenda posílá data, která autor šablony nemůže objevit | S | |
+| A1-AD | Přidat skalár `SMER` (T/Z) do `ZastavkoveJrAd` GetData + schéma (AD už má `POPIS_SMER`=konečná) | AD zatím nemá čisté T/Z jako samostatné pole | S | ✅ udělat (po PozitivniZnacka) |
+| A2-AD | Přidat `NASTUPISTE` (= dnešní `NEJEDOU_SPOJE` hodnota) do AD GetData + schéma; `NEJEDOU_SPOJE` označit deprecated | AD `NEJEDOU_SPOJE` je misnomer pro nástupiště | S | ✅ udělat (po PozitivniZnacka) |
+
+> ⚠️ **AD gold 0365005** je ve working-tree přebaselinovaný paralelní prací na `gi4sI…`, ale žádný kód
+> v repu ten digest neprodukuje (server = `YrAna4…` = HEAD; `PozitivniZnacka` je čistě .NET, bez Caché
+> emise). AD-strana A + tento nesoulad se vyřeší, až `PozitivniZnacka` doveze svou Caché emisi / opraví digest.
 
 **Blok B — .NET: viditelné bugy editace + rizika (🟠).**
 
@@ -68,9 +70,9 @@ polí různé věci. Bolí zpětně: šablony si na špatné klíče zvyknou.
 > **Bezpečný sweep odbaven 2026-07-10** (C-a/C-c/C-d, C-f q→ret, B1, B5, D1, D3-drobné, D4) →
 > [`roadmap-archive.md`](roadmap-archive.md). Zbývá viz níže.
 
-**Doporučené pořadí (zbytek):** A1–A4 (kontrakt — jediné, co po nasazení bolí zpětně) → B2 (rozhodnout
-UX tenzi) + B7 (zamrzání) → C-e (před nasazením k zákazníkům) → B3+B4 (než poroste plocha agend) →
-C-b (výkon MHD) → B6 + D2 + C-f/D3 zbytky průběžně. Mimo checklist (dlouhodobé, bez akce): god
+**Doporučené pořadí (zbytek):** A-AD (po commitu `PozitivniZnacka`) → B2 (rozhodnout UX tenzi) + B7
+(zamrzání) → C-e (před nasazením k zákazníkům) → B3+B4 (než poroste plocha agend) → C-b (výkon MHD) →
+B6 + D2 + C-f/D3 zbytky průběžně. Mimo checklist (dlouhodobé, bez akce): god
 objects (T4), sjednocení cache patternů elementů (při R1 extrakci jádra), MHD legacy MAC volání
 (patří do C8) — detail v auditním dokumentu.
 

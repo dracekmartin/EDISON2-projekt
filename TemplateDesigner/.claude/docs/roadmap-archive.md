@@ -2,6 +2,17 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — Audit blok A: kontrakt skalárů (MHD strana)
+
+Sjednocení skalárního kontraktu zastávkového JŘ dle vzoru linkové agendy. Detail → changelog 2026-07-10.
+MHD strana + schéma + mock hotové; AD strana (SMER, NASTUPISTE) odložená (roadmap, po `PozitivniZnacka`).
+
+- **A1 (MHD)** — `POPIS_SMER` = název konečné (dřív T/Z); nové pole `SMER` = T/Z. Konečná = poslední zastávka směru.
+- **A2 (MHD)** — nový `PRVNI_POSLEDNI_SPOJ`; `NEJEDOU_SPOJE` ponecháno duplicitně (deprecated ve schématu).
+- **A3** — MHD mock doplněn (SMER, PRVNI_POSLEDNI_SPOJ); POPIS_SMER mock je nyní pravdivý.
+- **A4** — schéma: AD deklaruje `POPIS_ZASTAVKA_CIS`/`POPIS_SMER_CIS` (AD-only); `VARIANTY_TRAS`/`TRASA_MIN` wire-only doc.
+- **MHD gold re-baseline** 3 linky (counts identické, jen md5 — struktura zachovaná). Determinismus ověřen.
+
 ## Session 2026-07-10 ✅ — Audit před produkcí: bezpečný sweep (bloky B/C/D)
 
 Nízkorizikové nálezy auditu 2026-07-09 (behavior-preserving / aditivní / docs). Ověřeno: build 0 chyb,

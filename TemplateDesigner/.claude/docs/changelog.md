@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-10 — Audit blok A: kontrakt skalárů zastávkového JŘ (MHD strana)
+
+Sjednocení skalárního kontraktu podle vzoru linkové agendy (SMER = T/Z, POPIS_SMER = konečná).
+Aditivní (R3). MHD strana + schéma + mock hotové; AD strana (přidat SMER, NASTUPISTE) odložená až
+po commitu paralelní `PozitivniZnacka` práce (dotýká se AD gold testu → aby se neklobrovala).
+
+- **A1 (MHD)** — `POPIS_SMER` už netiskne „T"/„Z", ale **název konečné** zastávky směru (jako AD/Linkový).
+  T/Z je nově v samostatném poli **`SMER`**. Konečná = poslední zastávka ve směru (zachyceno ve smyčce
+  ZASTAVKY, `konecnaNazev`). ⚠️ Breaking pro pilotní MHD šablony s `{POPIS_SMER}` pro T/Z → přejít na `{SMER}`.
+- **A2 (MHD)** — `NEJEDOU_SPOJE` (legacy misnomer, u MHD = text prvního/posledního spoje) → nový klíč
+  **`PRVNI_POSLEDNI_SPOJ`**; `NEJEDOU_SPOJE` ponecháno duplicitně pro kompatibilitu, ve schématu označeno „(zastaralé)".
+- **A3 (MHD mock)** — mock doplněn o `SMER`=„T", `PRVNI_POSLEDNI_SPOJ`; `POPIS_SMER`=„Bystrc, zoo" je nyní
+  pravdivý (dřív mock ukazoval konečnou, ostrý tisk „T").
+- **A4 (schéma)** — AD deklaruje dříve nedeklarovaná pole: `POPIS_ZASTAVKA_CIS`, `POPIS_SMER_CIS`
+  (AD-specifické, MHD je zatím neprodukuje); `VARIANTY_TRAS` + `TRASA_MIN` zdokumentovány jako wire-only
+  (pole, ne skalár → plochý binding je nekonzumuje). AD `POPIS_SMER` label sjednocen na „Konečná směru".
+- **MHD gold re-baseline** (3 linky) — `pages/zast/odj/pozn` **identické**, změnil se jen md5 (= jen skalární
+  hodnoty, struktura zachovaná). Ověřeno determinismem (2. běh = shodný digest). MHD 32/33 (1 fail = AD 0365005
+  je pre-existing z paralelní WIP, ne z této změny).
+
+**Odloženo:** A1/A2 **AD strana** (přidat `SMER`, `NASTUPISTE`) — po commitu `PozitivniZnacka`; MHD `_CIS`
+varianty (až bude potřeba, dohledat zdroj).
+
 ## 2026-07-10 — Audit před produkcí: bezpečný sweep (bloky B/C/D)
 
 Odbaveny nízkorizikové nálezy auditu 2026-07-09 (behavior-preserving / aditivní / docs). Blok A

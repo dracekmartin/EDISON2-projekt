@@ -542,15 +542,12 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         // „2$<cnz>", legenda „2#<cnz>#<text>"; ověřeno KV_DP i CB_CSADAD). Text bere per-spoj omzId
         // (SestavTextOmezeni) — InPlatDef se nečte (drží zastaralý seed datumů). cnz prázdné → fallback
         // na sekvenční číslo + typ „text" (zachová staré chování pro spoj bez NZ).
-        // Znaménko značky: má-li spoj JAKÉKOLI pozitivní omezení (omzId 11-15, „jede…") → „pozitivni"
-        // (kroužek v renderu), jinak (jen „nejede" 22) → „nz" (negativní box). Konvence JŘ (Bžoch 2026-07-09).
         s znak = "", typOmez = "text"
         s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
         i txt '= "" {
             i cnz '= "" {
-                s znak = cnz
-                s typOmez = $s(..OmezeniJePozitivni(dataDB, sku, lin, smer, sp):"pozitivni", 1:"nz")
-                s poznMap("byMarker", cnz) = txt, poznMap("typ", cnz) = typOmez
+                s znak = cnz, typOmez = "nz"
+                s poznMap("byMarker", cnz) = txt, poznMap("typ", cnz) = "nz"
             } else {
                 s znak = ..ZiskejMarker(.poznMap, txt)
             }
@@ -1112,19 +1109,6 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
     q txt
 }
 
-/// True pokud spoj má aspoň jedno reálné POZITIVNÍ datové omezení (omzId 11-15 = „jede…" s neprázdnými
-/// daty; 22 = „nejede" je negativní). Řídí znaménko značky: pozitivní → kroužek, jinak → negativní box.
-/// Podmínka shodná se `SestavTextOmezeni` (jen omezení, která reálně přispějí do textu).
-ClassMethod OmezeniJePozitivni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %Boolean
-{
-    f omzId = 11,12,13,14,15 {
-        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
-        i omz = "" continue
-        i ..FormatDatumyOmezeni(omz) '= "" return 1
-    }
-    return 0
-}
-
 /// Prefix textu pro daný typ omezení (1:1 s `txtNZ^JRapiNZUtl`).
 ClassMethod PrefixOmezeni(omzId As %String) As %String
 {
@@ -1339,15 +1323,20 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
-    d ..AddField(fields, "POPIS_SMER",             "Popis směru",            "text")
+    d ..AddField(fields, "POPIS_SMER",             "Konečná směru",          "text")
+    d ..AddField(fields, "POPIS_SMER_CIS",         "Konečná směru (CIS)",    "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
     d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
+    d ..AddField(fields, "POPIS_ZASTAVKA_CIS",     "Aktuální zastávka (CIS)","text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "NEJEDOU_SPOJE",          "Nástupiště",             "text")
+    // _CIS varianty (celostátní názvy) jsou AD-specifické — MHD je zatím neprodukuje.
+    // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values —
+    // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.
 }
 
 ClassMethod AddStandardJRCollections(collections As %DynamicArray)
@@ -1369,6 +1358,8 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno — nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
+    // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only — pole (ne skalár),
+    // konzumuje ho StopList (variantní časové sloupce), plochá tabulka ne → ve schématu nefiguruje.
     s colZastavky.fields = colZastavkyFields
     d collections.%Push(colZastavky)
 
