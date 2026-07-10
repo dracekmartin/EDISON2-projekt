@@ -69,10 +69,10 @@ při scope té fáze, ne teď.
 > se nově zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList +
 > DepartureGrid, jedno místo pravidla). Plná unifikace řádkového layoutu = krok C.
 
-> **TR2 (souhrn „všechny na znamení") IMPLEMENTOVÁNO 2026-07-10 (AD, opt-in `SOUHRN_NA_ZNAMENI`), čeká na
-> SK ověření.** Kód hotový + gold-safe. ⚠️ `SKNI_MHDNITRA` (1308 linek) nepoužívá „x" pro na-znamení
-> (dta2 = A/E/L/P/T/o/p) → na SK datech zatím netriggeruje. **Kolega prověřuje**, jestli SK data používají „x"
-> (pak funguje) nebo jiné kódování (pak rozšířit detekci). Detail → changelog + `customer-requirements §TR/2`.
+> **TR2 (souhrn „všechny na znamení") IMPLEMENTOVÁNO 2026-07-10 (AD, opt-in `SOUHRN_NA_ZNAMENI`), gold-safe.**
+> ✅ Kódování „x" **potvrzeno** (kolega + CB_CSADAD) → detekce správná. `SKNI_MHDNITRA` má 0× „x" ve 27985
+> záznamech = stará/nekompletní data (ne jiné kódování). ⏳ Zbývá jen ukázka spuštění agregátu (linka se VŠEMI
+> zastávkami „x" — vzácné; ověří se u zákazníka). Detail → changelog + `customer-requirements §TR/2`.
 
 > **TR3 (sloupec nástupiště) HOTOVO 2026-07-10** → archiv/changelog (AD J-věta #3 + MHD Oznacnik, StopList sloupec „Nástupiště", opt-in). Ověřeno reálně na 0320680.
 

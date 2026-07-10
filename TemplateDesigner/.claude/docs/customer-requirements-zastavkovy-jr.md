@@ -464,10 +464,12 @@ implementací dohledat/založit tikety + upřesnit. U každého poznámka o stav
    - Opt-in param `SOUHRN_NA_ZNAMENI` (default off = per-zastávka × jako dnes). Když všechny obsluhované
      neprojeté zastávky mají „x" → potlačí per-zastávka × + agregátní řádek legendy. Mechanika 1:1 jako
      bezbariér `allBBP`. Čistě Caché (AD-only; MHD-port později, bezbariér agregát je taky jen AD). Gold-safe (33/33).
-   - ⚠️ **Blokuje verifikaci:** `SKNI_MHDNITRA` (1308 linek) **nepoužívá „x"** pro na-znamení (dta2 znaky =
-     A/E/L/P/T/o/p, žádné x/y/z) → na SK datech zatím netriggeruje. **Kolega prověřuje**, jestli SK data
-     používají „x" (feature pak funguje) nebo jiné kódování (rozšířit `JeViditelnyAtribut` + detekci).
-     Možné vysvětlení: stará/nekompletní data v SKNI. Vrátit se po výstupu od kolegy.
+   - ✅ **Kódování potvrzeno „x"** (kolega 2026-07-10 + naše CB_CSADAD data) → detekce je **správná**,
+     feature na reálných SK datech bude fungovat. `SKNI_MHDNITRA` má ale **0× „x" ve 27985 záznamech**
+     (prohledána celá J-věta, ne jen dta2) = **stará/nekompletní data** (žádné na-znamení nastavené), NE jiné kódování.
+   - ⏳ **Zbývá jen ukázka spuštění agregátu:** potřebuje linku, kde jsou VŠECHNY zastávky „x" (vzácné —
+     ani CB_CSADAD nemá all-„x" linku). Stejná datová řídkost jako TR3; ověří se na reálné all-request-stop
+     lince u zákazníka. Feature je jinak korektní a opt-in gold-safe.
 3. **Zobrazení nástupiště**: nový sloupec vedle názvu zastávky (SK legislativa). ✅ **HOTOVO 2026-07-10:**
    per-zastávka `NASTUPISTE` v kolekci ZASTAVKY — **AD** z J-věty `#3` (`nastTam:nastZpet` dle směru),
    **MHD** z `Oznacnik` (`ALVA.MHD.ZST`). Nový `StopFields.Nastupiste` + StopList sloupec „Nástupiště"
