@@ -73,7 +73,7 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 | TR1 | Časová osa přes půlnoc | — | 🧪 = #9036 (jen ověřit u klienta) |
 | TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | 🟡 **IMPLEMENTOVÁNO 2026-07-10** (AD, opt-in `SOUHRN_NA_ZNAMENI`, gold-safe) · ⚠️ **čeká SK ověření**: SKNI nepoužívá „x" pro na-znamení → kolega prověřuje kódování |
 | TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | ✅ **HOTOVO 2026-07-10** (AD J-věta #3 + MHD Oznacnik; StopList sloupec „Nástupiště" opt-in). Ověřeno 0320680. |
-| TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | 🟢 auto-scale částečně; relates B2 (2026-07-10, DepartureGrid) |
+| TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | ✅ **HOTOVO 2026-07-10** — pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList + DepartureGrid). |
 | TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | 🟠 nový datový model |
 | TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | M | 🟠 relates L1 multi-varianta (`VARIANTY_TRAS`) |
@@ -474,8 +474,11 @@ implementací dohledat/založit tikety + upřesnit. U každého poznámka o stav
    (default skrytý = opt-in). Bez mocku — kde označník není, prázdné (standardně jen terminály/uzly).
    Ověřeno reálně na CB_CSADAD **0320680** (nástupiště na 6 zastávkách). Gold re-baseline AD 2 + MHD 3.
 4. **Výška řádku „zastávka" — auto (3. režim)**: pevná výška, při nedostatku místa se začne zmenšovat.
-   → **Částečně**: StopList má auto-scale fontu při přetečení pevné Height (`ComputeFontScale`). Chce explicitní
-   „fixed-then-shrink" režim výšky řádku. S–M.
+   ✅ **HOTOVO 2026-07-10:** StopList pevná `DataRowHeight` se nově zmenší při přetečení pevné Height
+   (dřív zůstala → přeteklo/ořízlo). Default (auto, `DataRowHeight` prázdné) beze změny. Realizováno
+   sdíleným helperem `ScheduleElementBase.ScaledDataRowHeight(fontPt, factor)` (fixed-then-shrink pravidlo
+   v jednom místě; sdílí StopList + DepartureGrid — dřív se rozešly, B2 vs StopList). Rendering-only, .NET 316/316.
+   Plná unifikace řádkového layoutu (row-plan) = krok C.
 5. **Definice směru/cíle** — položka „cíl" odkazovatelná v šabloně. 3 varianty: (min) univerzální cíl per směr;
    (střední) cíl textem per zastávka × směr v trase (jako nástupiště/sloupík); (ideál) DB cílů + id per zastávka×směr.
    Dnes hackují přes `informace`/`titulek`. NEW, datový model, M–L. *(Odbourá i speciální cíle pro tabule.)*

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-10 — TR4: fixed-then-shrink výška řádku StopListu + sdílený helper
+
+TRANSDEV požadavek (3. režim výšky řádku „zastávka"). Ověřeno: .NET 316/316, build 0 chyb. Rendering-only.
+
+- **StopList:** pevná `DataRowHeight` se nově **zmenší při přetečení** pevné Height (dřív zůstala → obsah
+  přetekl/ořízl). **Default (auto) beze změny** — mění se jen chování ručně nastavené pevné výšky při
+  nedostatku místa (přeteče → zmenší). = přesně „fixed-then-shrink", který TRANSDEV chce.
+- **Sdílený helper** `ScheduleElementBase.ScaledDataRowHeight(fontPt, factor)` — pravidlo fixed-then-shrink
+  v **jednom místě**; StopList i DepartureGrid ho sdílí. (Dřív se rozešly: B2 opravil DepartureGrid, StopList
+  lagoval — přesně ten drift.) DepartureGrid přepnut na helper (behavior-preserving). Malý extrakt; **plná
+  unifikace řádkového layoutu = krok C** (R1/row-plan, gated).
+
 ## 2026-07-10 — TR2: souhrn „všechny zastávky na znamení" (AD, opt-in) — čeká na SK ověření
 
 TRANSDEV požadavek — když jsou všechny zastávky na znamení, místo × u každé jeden souhrn.

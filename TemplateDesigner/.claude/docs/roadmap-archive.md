@@ -2,6 +2,15 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — TR4: fixed-then-shrink výška řádku StopListu + sdílený helper
+
+TRANSDEV 3. režim výšky řádku. Detail → changelog 2026-07-10. .NET 316/316, rendering-only.
+
+- StopList: pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny) = fixed-then-shrink.
+- Sdílený helper `ScheduleElementBase.ScaledDataRowHeight(fontPt, factor)` — pravidlo v jednom místě;
+  StopList + DepartureGrid ho sdílí (dřív drift: B2 opravil DepartureGrid, StopList lagoval). DepartureGrid
+  přepnut na helper (behavior-preserving). Malý extrakt; plná row-layout unifikace = krok C.
+
 ## Session 2026-07-10 ✅ — TR3: nástupiště jako sloupec zastávky (AD + MHD)
 
 TRANSDEV požadavek (SK legislativa). Detail → changelog 2026-07-10. Caché 33/33, .NET 316/316.

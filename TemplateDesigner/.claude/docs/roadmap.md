@@ -62,11 +62,12 @@ při scope té fáze, ne teď.
 
 ### Malé — dispatch kandidáti (TD/AD, bez velkého průzkumu)
 
-> Před dispatchem každého **rychle ověřit stav v kódu** (ať se nedělá už hotové).
+> **Všechny malé kandidáti odbaveni 2026-07-10** (TR3 hotovo, TR4 hotovo, TR2 implementováno/čeká SK,
+> TR8 park). Stavy níže; dál pokračovat s většími (TR5/6/7/9/10, B4, P2) nebo jiné priority.
 
-| # | Co | Vel. | Pozn. |
-|---|---|---|---|
-| TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | auto-scale částečně; relates B2 |
+> **TR4 (fixed-then-shrink výška řádku StopListu) HOTOVO 2026-07-10** → changelog. Pevná `DataRowHeight`
+> se nově zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList +
+> DepartureGrid, jedno místo pravidla). Plná unifikace řádkového layoutu = krok C.
 
 > **TR2 (souhrn „všechny na znamení") IMPLEMENTOVÁNO 2026-07-10 (AD, opt-in `SOUHRN_NA_ZNAMENI`), čeká na
 > SK ověření.** Kód hotový + gold-safe. ⚠️ `SKNI_MHDNITRA` (1308 linek) nepoužívá „x" pro na-znamení

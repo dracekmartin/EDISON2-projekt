@@ -129,7 +129,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         float effectiveFontSize = baseFontSize * scale;
         float effectiveHeaderFontSize = baseHeaderFontSize * scale;
 
-        float rowH = DataRowHeight ?? ComputeRowH(MaxResolvedDataFontPt() * scale);
+        // TR4: fixed-then-shrink — pevná DataRowHeight se taky zmenší při přetečení (sdílený helper, jako DepartureGrid).
+        float rowH = ScaledDataRowHeight(MaxResolvedDataFontPt(), scale);
         float headerH = ComputeHeaderH(effectiveHeaderFontSize) * MaxHeaderLines();
 
         using var paints = CreateStandardPaints(ctx);

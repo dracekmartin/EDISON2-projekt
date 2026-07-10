@@ -83,6 +83,14 @@ public abstract class ScheduleElementBase : TemplateElement
         return ratio >= 1f ? 1f : ratio;
     }
 
+    /// <summary>Výška datového řádku v mm po aplikaci scale — pravidlo „fixed-then-shrink": pevná
+    /// <see cref="DataRowHeight"/> (jinak font-driven auto) je VŽDY násobená <paramref name="factor"/>,
+    /// takže se při přetečení pevné výšky elementu <b>zmenší do fitu</b> (ne přeteče/ořízne). Jediné místo
+    /// pravidla — sdíleno StopListem i DepartureGridem, ať se render výšky řádku nerozejde (drift z B2).
+    /// <paramref name="factor"/> = scale (u DepartureGridu scale × grow). Full row-layout unifikace = krok C.</summary>
+    protected float ScaledDataRowHeight(float dataFontPt, float factor)
+        => (DataRowHeight ?? ComputeRowH(dataFontPt)) * factor;
+
     /// <summary>Přirozená (neořezaná) výška obsahu v mm — počítá konkrétní JŘ element.</summary>
     public abstract float CalculateHeightFromData(DataContext? data);
 

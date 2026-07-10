@@ -538,9 +538,9 @@ public class DepartureGridElement : StopScheduleElementBase
         }
         float dataScale = scale * dataGrow;
 
-        // B2: výška řádku škáluje konzistentně (shrink i grow) přes dataScale — i explicitní
-        // DataRowHeight se zmenší, když se obsah nevejde (auto-shrink do fit jako ostatní JŘ elementy).
-        float scaledRowH = layout.RowH * dataScale;
+        // B2/TR4: výška řádku škáluje konzistentně (shrink i grow) — i explicitní DataRowHeight se zmenší,
+        // když se obsah nevejde. Sdílený helper `ScaledDataRowHeight` = jediné místo pravidla (viz StopList).
+        float scaledRowH = ScaledDataRowHeight(DataStyle.FontSize ?? 8f, dataScale);
         float scaledGroupHeaderH = layout.GroupHeaderH * scale;
         float scaledCombinedHeaderH = combinedHeaderH * scale;
 
