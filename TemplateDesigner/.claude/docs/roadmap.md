@@ -54,23 +54,45 @@ při scope té fáze, ne teď.
 
 ---
 
-## 🅿️ Zastávkový JŘ — business logika (parkováno na pilot + nové požadavky)
+## 🅿️ Zastávkový JŘ — business logika (otevřené body)
 
-> Otevřená business logika zastávkového JŘ na jednom místě (AD datové jádro už hotové → archiv):
-> zbytek gated na pilot + nové zákaznické požadavky z prezentací.
-> **Konsolidovaný stav pro uzavírání tiketů + dispatch:** [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md).
+> **Plný stav** (hotové featury + co otestovat pro uzavření helpdesk tiketů) →
+> [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md). Zde jen **otevřená
+> akční práce**, seřazená pro postupné odbavování. Vel.: S = do hodiny, M = půl dne, L = víc dní.
 
-**Odemyká reálný pilot** (konkrétní zákaznická konfigurace/data): vizuál legendy POZNAMKY,
-AD-N5 (`MHD_NEZNZ123`), AD-N15 (prázdninové NZ, kód hotový/čeká data) + odložené helpdesk **A2-A5**
-(#7937 indent), **A2-A6** (#7959 filtr neobsluhovaných), **A2-B4** (#8828 per-sloupek) — datový
-průzkum / diskuze s kolegy. Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md), [`cache-database-linky.md §10`](cache-database-linky.md).
+### Malé — dispatch kandidáti (TD/AD, bez velkého průzkumu)
 
-**TRANSDEV konsolidovaná sada (2026-07-03, k analýze)** — 10 požadavků (SK legislativa + MHD Trenčín);
-detail + TD-stav [`customer-requirements-zastavkovy-jr.md §TR`](customer-requirements-zastavkovy-jr.md):
-časová os cez polnoc (jen ověřit u klienta) · na-znamení-„všechny" souhrn (pattern jako bezbariér) ·
-nástupiště (data `Oznacnik` existují) · auto výška řádku (částečně = auto-scale) · **definice cíle** (datový model, M–L) ·
-**barva linky** (bg/text ve vlastnostech linky → volba v šabloně, M) · výběr sloupců jízdních dob (relates L1 multi-varianta) ·
-„<1" místo „0" (S) · obrácené poznámkování spojů (M) · skrýt spoje So/Ne/svátky (S–M).
+> Před dispatchem každého **rychle ověřit stav v kódu** (ať se nedělá už hotové).
+
+| # | Co | Vel. | Pozn. |
+|---|---|---|---|
+| TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | S | AD render/data |
+| P1 | Poznámky ručně do patičky | S | možná už jde přes `TextElement` v Footer; příp. dedikované pole |
+| TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | data `Oznacnik` existují; ≠ dnešní skalár `NASTUPISTE` (jen tištěná zast.) |
+| TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | pattern = bezbariér `allBBP` agregát (#7161) |
+| TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | auto-scale částečně; relates B2 |
+
+### Větší — chce analýzu / datový model / business rozhodnutí
+
+| # | Co | Vel. | Co potřebuje |
+|---|---|---|---|
+| TR10 | Skrýt spoje o So/Ne/svátcích | S–M | Caché filtr |
+| TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | M | relates L1 multi-varianta (`VARIANTY_TRAS`) |
+| TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | nový datový model |
+| TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
+| TR5 | Definice cíle — střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
+| A5+ | Odsazení zastávky per-směr / per-Tč pásmo (#7937) | M | `^JRL` dta7 je single-per-point → změna zdroje + editor (base AD hotový) |
+| B4 | Per-sloupek zastávky → samostatná vývěska (#8828) | ~0.5–1d | datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; 100 % Caché |
+| P2 | Sloučit více linek stejného trojčíslí (i více dopravců) | L | agenda + instance picker + agregace dopravců |
+
+### AD-interní, gated na reálný pilot (data/konfigurace zákazníka)
+
+- Vizuál legendy POZNAMKY (šířka/layout) · AD-N5 (`MHD_NEZNZ123`) · AD-N15 (prázdninové NZ — kód hotový,
+  čeká data). Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md), [`cache-database-linky.md §10`](cache-database-linky.md).
+
+### MHD-port zbytky (AD hotové, MHD ne — jen na reálnou potřebu DPCB/DPKV)
+
+- D1 „jede až do", D5 skrýt na-znamení legendu (+ D2/D3 kdyby MHD modul dostal vlastní úložiště poznámek).
 
 ---
 
