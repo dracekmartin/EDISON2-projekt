@@ -471,7 +471,7 @@ zastávku + sběr do legendy (`SestavPoznamky` s `atrSeen`). Ověřeno 0320144/C
     `cnz` prázdné → zachová staré sekvenční chování.
   - **Render:** přepínač `InvertovatNegativniZnacky` na `DepartureGridElement` odstraněn — inverze NZ je
     teď napevno vždy zapnutá (AD i MHD), barvy `NegativniZnacka{Back,Fore}Color` ponechány.
-- ⬜ Šířka/layout legendy POZNAMKY — vizuál, na konec.
+- ✅ Legenda POZNAMKY: víc sloupců (`NotesLegend.Columns` + `WrapSmer`) + šířka/layout — hotové.
 
 ### ⚡ Performance (GetData se volá per stránka = zastávka×směr, ~desítky/linka)
 - ✅ **Per-linka/per-směr invarianty cachovány** (2026-06-12, behavior-preserving, výstup byte-identický):

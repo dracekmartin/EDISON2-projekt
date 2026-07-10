@@ -99,7 +99,6 @@ při scope té fáze, ne teď.
 
 - **AD-N5** (`MHD_NEZNZ123` — potlačit NZ značku v některých sloupcích) — **dormant**, pole prázdné ve všech
   firmách → bez dat neimplementovatelné/neověřitelné. Nedělat, dokud nebude reálný případ.
-- **Vizuál legendy POZNAMKY (šířka/layout)** — drobná vizuální parita s legacy; **na poptávku**.
 - **AD-N3** (řazení poznámek dle délky) · **AD-N4** (omezení „nejede" na nový řádek) — malé element properties
   `NotesLegend`, čistě TD, ale **bez zákaznického driveru** → nice-to-have na poptávku.
 - **AD-N11** (cizojazyčné poznámky) · **AD-N13** (víc variant jízdních časů = velký, §4) — na poptávku.
