@@ -21,55 +21,31 @@
 
 ---
 
-## 🔍 Audit před produkcí (2026-07-09) — rozhodovací checklist
+## 🔍 Audit před produkcí (2026-07-09) — rozhodovacně uzavřen 2026-07-10
 
-> Komplexní audit architektury + agend + UI/UX (3 paralelní průzkumy kódu). **Detail každého
-> bodu (file:line, lidské vysvětlení, doporučený fix) →
-> [`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md).** Projít, do
-> sloupce Rozhodnutí dopsat ✅ udělat / ⏭️ později / ❌ ne; hotové řádky přesouvat do archivu.
-> Velikost: S = do hodiny, M = půl dne, L = víc dní.
+> Komplexní audit architektury + agend + UI/UX. Detail nálezů (file:line, fix) →
+> [`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md). **Odbaveno →
+> [`roadmap-archive.md`](roadmap-archive.md):** bezpečný sweep (C-a/C-c/C-d, C-f q→ret, B1, B5, D1,
+> D3-drobné, D4), blok A MHD strana (A1–A4), infra batch (B3, B4, B6, B7). Níže jen zbytek s rozhodnutím.
 
-**Blok A — datový kontrakt zastávkového JŘ, skaláry (🔴 před produkcí).** MHD strana + schéma
-+ mock **hotové 2026-07-10** (A1/A2/A3/A4 → archiv). **Zbývá AD strana** — čeká na commit paralelní
-`PozitivniZnacka` práce (dotýká se AD gold testu, aby se neklobrovala re-baseline).
+**⏸️ Parkováno — konkrétní spouštěč (ne zapomenuto):**
+- **A-AD** (`SMER` + `NASTUPISTE` do `ZastavkoveJrAd` GetData+schéma, aditivně; MHD stranu už má) — **po commitu
+  paralelní `PozitivniZnacka`** (dotýká se AD gold testu). ⚠️ AD gold 0365005 je ve working-tree přebaselinovaný
+  na `gi4sI…`, ale server = `YrAna4…` (HEAD; PozitivniZnacka je čistě .NET) — vyřeší se s Caché emisí kolegy.
+- **B2** (DepartureGrid overflow vs auto-scale) — **nese UX rozhodnutí** (co u velké `DataRowHeight` vyhraje:
+  shrink fontů vs. varování; komentář `DepartureGridElement.cs:514`) **+ kolegova zóna** → počkat na `PozitivniZnacka`.
+- **C-e** (AD `GetMockData` → statický vzorek místo živých dat) — **těsně před nasazením k zákazníkům** (T5).
+- **C-b** (MHD memoizace — `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru) — **až výkon reálně bolí**
+  (velcí dopravci). Behavior-preserving, gold-safe → kdykoli.
 
-| # | Co | Lidsky | Vel. | Rozhodnutí |
-|---|---|---|---|---|
-| A1-AD | Přidat skalár `SMER` (T/Z) do `ZastavkoveJrAd` GetData + schéma (AD už má `POPIS_SMER`=konečná) | AD zatím nemá čisté T/Z jako samostatné pole | S | ✅ udělat (po PozitivniZnacka) |
-| A2-AD | Přidat `NASTUPISTE` (= dnešní `NEJEDOU_SPOJE` hodnota) do AD GetData + schéma; `NEJEDOU_SPOJE` označit deprecated | AD `NEJEDOU_SPOJE` je misnomer pro nástupiště | S | ✅ udělat (po PozitivniZnacka) |
+**🔧 Oportunisticky (ne batch):**
+- **D2** (6 dialogů OK/Save code-behind → VM Command) — sjednotit vždy při zásahu do daného dialogu.
 
-> ⚠️ **AD gold 0365005** je ve working-tree přebaselinovaný paralelní prací na `gi4sI…`, ale žádný kód
-> v repu ten digest neprodukuje (server = `YrAna4…` = HEAD; `PozitivniZnacka` je čistě .NET, bez Caché
-> emise). AD-strana A + tento nesoulad se vyřeší, až `PozitivniZnacka` doveze svou Caché emisi / opraví digest.
-
-**Blok B — .NET: viditelné bugy editace + rizika (🟠).** B3/B4/B6/B7 hotové 2026-07-10 → archiv.
-
-| # | Co | Lidsky | Vel. | Rozhodnutí |
-|---|---|---|---|---|
-| B2 | DepartureGrid: overflow varování vs auto-scale počítají jinou přirozenou výšku. **⚠️ NE mechanický fix — nese UX rozhodnutí:** Render záměrně bere scale z font-driven výšky (komentář `DepartureGridElement.cs:514`), aby velká `DataRowHeight` nezmenšovala fonty; overflow detekce bere `layout.RowH`. Sjednocení musí rozhodnout, co u velké `DataRowHeight` vyhraje (shrink fontů vs. varování). **Kolegova zóna (DepartureGrid) — počkat.** | varování a zmenšování si můžou protiřečit | S→M | |
-
-**Blok C — Caché hygiena + výkon (🟠/🟡).**
-
-| # | Co | Lidsky | Vel. | Rozhodnutí |
-|---|---|---|---|---|
-| C-b | MHD bez memoizace (`GetNazevHrl` ~O(n²), `PopisDopravce` per stránka, ENUMS barvy per anotace) — AD vzor existuje | export velkých MHD firem zbytečně pomalý | M | |
-| C-e | AD `GetMockData` čte živá firemní data (vlastní TODO) → statický vzorek | preview u zákazníka závislé na jeho datech; pomalé | S–M | |
-| C-f (zbytek) | export `PER_STOP`/`PER_LINE` nefiltrován dle ElementKind (chce plumbing ElementKind do AgendaParams) · `AgendyRegistr` jen přímé subclassy (vědět při C8) | kosmetika / vědět o tom | S | |
-
-**Blok D — UI/UX + dokumentace (🟡 rychlé).**
-
-| # | Co | Lidsky | Vel. | Rozhodnutí |
-|---|---|---|---|---|
-| D2 | 6 dialogů OK/Save přes code-behind `Click` místo VM Command — sjednotit postupně | proti závaznému vzoru oken | S/dialog | |
-| D3 (zbytek) | Dvojí mechanismus renamu agendy (`"MHD"→"ZASTAVKOVY_JR_MHD"` post-deserializační remap vs `KNIZNI→LINKOVY` verzová migrace) — příští rename sjednotit do migračního pipeline | úklid, spustí až další rename | S | |
-
-> **Odbaveno 2026-07-10** → [`roadmap-archive.md`](roadmap-archive.md): bezpečný sweep (C-a/C-c/C-d,
-> C-f q→ret, B1, B5, D1, D3-drobné, D4), blok A MHD strana, infra batch (B3, B4, B6, B7). Zbývá viz níže.
-
-**Doporučené pořadí (zbytek):** C-e (před nasazením k zákazníkům) → C-b (výkon MHD) → A-AD + B2
-(kolegova zóna — po `PozitivniZnacka`) → D2 + C-f/D3 zbytky průběžně. Mimo checklist (dlouhodobé, bez akce): god
-objects (T4), sjednocení cache patternů elementů (při R1 extrakci jádra), MHD legacy MAC volání
-(patří do C8) — detail v auditním dokumentu.
+**❌ Won't-do teď (vědomě):**
+- **C-f zbytek** (export split filtr dle ElementKind — plumbing do AgendaParams; `AgendyRegistr` jen přímé subclassy) — kosmetika, malá hodnota.
+- **D3 zbytek** (sjednocení mechanismu renamu agendy) — spustí příští rename.
+- **Mimo checklist / dlouhodobé:** god objects (T4), sjednocení cache patternů (s R1/C3), C8 dedup Caché enginů,
+  NotesLegend DPI wrap, CISLO_LINKY string/number — sledované, bez akce (viz auditní dokument).
 
 ---
 
