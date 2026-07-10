@@ -14,6 +14,26 @@
 | **Výběr fontu dle locale** | tamtéž ř. 1197-1201: `"Timetable"` → `Timetable_nove_SK` (SK) / `Timetable_nove` (CZ) |
 | **NZ box (ruční)** | tamtéž `Render_SekceNegZnacka_Data` ř. 4518 (`FillRectangle(Black)` + `DrawString(White)`) |
 
+## ⭐ Autoritativní model (Jiří Bžoch, 2026-07-09)
+
+Rozhodl kolega (doménový vlastník legacy JR tisku). Tři kategorie značek u spoje:
+
+1. **Týdenní omezení = POZITIVNÍ, kroužkované** — `1`-`7` (dny) v kroužku + `+` („kladiva" = pracovní
+   dny) + `X` („kříž" = neděle/svátky). GSId id 8-16. Render = **kroužek** (číslice `1`-`9` přes
+   kroužkové glyfy fontu; vícemístné/`+`/`X` viz font).
+2. **NZ = NEGATIVNÍ číslo** — číslo v **černém boxu** (invertovaně). GSId typ 3.
+3. **Atributy = značky** — piktogram ve **speciálním fontu** (vozíček, na znamení…).
+
+Legacy do tisku posílal **značku + příznak, JAK ji tisknout** (text / speciální font + kód) — to je
+přesně `GSId` (převod) + render-dispatch níže. **Zdroj pravdy = `GSId` v `JRapiLinPrtWin`** (konvence
+odvozená z úpravy JŘ; kolega ověří aktuálnost).
+
+> ⚠️ **Potvrzený bug (kolega):** current TD renderuje pozitivní „jede…" značky **negativně (box)**,
+> ale mají být **zakroužkované**. Fix = správný render-mód dle příznaku (pozitivní → kroužek,
+> negativní → box). AD dnes chybně slepuje pozitivní+negativní do jedné „nz" značky (viz níže).
+> **Čeká se na kolegův detail:** přesné kódování příznaku ve zdrojových datech (`^JRL`) — jak se pozná
+> pozitivní vs negativní a jak se čísluje/renderuje smíšený spoj (jede aj. + nejede).
+
 ## Render-módy (jak se symbol kreslí)
 
 1. **Font-glyf** — znak vykreslený v **Timetable fontu** (piktogram). Legacy: `ToChar(ID)` v `iFont1TimeTable`.
