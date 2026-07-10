@@ -62,20 +62,6 @@ při scope té fáze, ne teď.
 
 ### Malé — dispatch kandidáti (TD/AD, bez velkého průzkumu)
 
-> **Všechny malé kandidáti odbaveni 2026-07-10** (TR3 hotovo, TR4 hotovo, TR2 implementováno/čeká SK,
-> TR8 park). Stavy níže; dál pokračovat s většími (TR5/6/7/9/10, B4, P2) nebo jiné priority.
-
-> **TR4 (fixed-then-shrink výška řádku StopListu) HOTOVO 2026-07-10** → changelog. Pevná `DataRowHeight`
-> se nově zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList +
-> DepartureGrid, jedno místo pravidla). Plná unifikace řádkového layoutu = krok C.
-
-> **TR2 (souhrn „všechny na znamení") IMPLEMENTOVÁNO 2026-07-10 (AD, opt-in `SOUHRN_NA_ZNAMENI`), gold-safe.**
-> ✅ Kódování „x" **potvrzeno** (kolega + CB_CSADAD) → detekce správná. `SKNI_MHDNITRA` má 0× „x" ve 27985
-> záznamech = stará/nekompletní data (ne jiné kódování). ⏳ Zbývá jen ukázka spuštění agregátu (linka se VŠEMI
-> zastávkami „x" — vzácné; ověří se u zákazníka). Detail → changelog + `customer-requirements §TR/2`.
-
-> **TR3 (sloupec nástupiště) HOTOVO 2026-07-10** → archiv/changelog (AD J-věta #3 + MHD Oznacnik, StopList sloupec „Nástupiště", opt-in). Ověřeno reálně na 0320680.
-
 > **TR8 („<1" místo „0") vyřazeno z dispatchu → park** (analýza 2026-07-10): naše časy jsou kumulativní,
 > 0-segment se tiskne jako opakované číslo (1,1), ne „0" (ověřeno `CB_CSADAD` 0380520 var. T3). Per-segment
 > sloupec TD nemá. Blokuje potvrzení od TRANSDEV (který sloupec — legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
