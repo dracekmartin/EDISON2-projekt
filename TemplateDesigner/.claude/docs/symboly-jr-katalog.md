@@ -18,21 +18,25 @@
 
 Rozhodl kolega (doménový vlastník legacy JR tisku). Tři kategorie značek u spoje:
 
-1. **Týdenní omezení = POZITIVNÍ, kroužkované** — `1`-`7` (dny) v kroužku + `+` („kladiva" = pracovní
-   dny) + `X` („kříž" = neděle/svátky). GSId id 8-16. Render = **kroužek** (číslice `1`-`9` přes
-   kroužkové glyfy fontu; vícemístné/`+`/`X` viz font).
-2. **NZ = NEGATIVNÍ číslo** — číslo v **černém boxu** (invertovaně). GSId typ 3.
+1. **Kroužkované jen `1`-`7` + `+` + `X`** — kroužek dělá **speciální font**, který kroužkové glyfy má
+   POUZE pro tyto hodnoty (`1`-`7` dny, `+` „kladiva"=pracovní dny, `X` „kříž"=neděle/svátky). GSId id 8-16.
+   Jednoznakové → kroužkový glyf fontu.
+2. **NZ / datová omezení = číslo v boxu** — VŠECHNA datová omezení (i pozitivní „jede také", i „nejede"),
+   typicky vícemístná čísla, se tisknou jako **číslo v černém boxu** (invertovaně). Font pro ně kroužek
+   NEMÁ (jen 1-7) → box. GSId typ 3.
 3. **Atributy = značky** — piktogram ve **speciálním fontu** (vozíček, na znamení…).
 
 Legacy do tisku posílal **značku + příznak, JAK ji tisknout** (text / speciální font + kód) — to je
 přesně `GSId` (převod) + render-dispatch níže. **Zdroj pravdy = `GSId` v `JRapiLinPrtWin`** (konvence
-odvozená z úpravy JŘ; kolega ověří aktuálnost).
+odvozená z úpravy JŘ).
 
-> ⚠️ **Potvrzený bug (kolega):** current TD renderuje pozitivní „jede…" značky **negativně (box)**,
-> ale mají být **zakroužkované**. Fix = správný render-mód dle příznaku (pozitivní → kroužek,
-> negativní → box). AD dnes chybně slepuje pozitivní+negativní do jedné „nz" značky (viz níže).
-> **Čeká se na kolegův detail:** přesné kódování příznaku ve zdrojových datech (`^JRL`) — jak se pozná
-> pozitivní vs negativní a jak se čísluje/renderuje smíšený spoj (jede aj. + nejede).
+> **Upřesnění (Jiří Bžoch, 2026-07-10):** vícemístné datové značky („36 jede také… nejede…") jsou
+> ve starém tisku TAKÉ **box**, ne kroužek. Kroužek dělá jen font pro hodnoty `1`-`7`. Dřívější domněnka,
+> že pozitivní „jede" datové omezení má být kroužkované, byla **mylná** — proto se pokus o „pozitivní
+> značku = ručně kreslený kroužek" **revertoval** (datová omezení zůstávají box, což je 1:1 s legacy).
+>
+> **Zbývá (deferred):** kroužkové `1`-`7`/`+`/`X` (týdenní platnost) přes font — AD je dnes neemituje
+> jako jednoznakové anotace (dny řeší sloupci skupin dnů), takže je to samostatný feature, ne bug.
 
 ## Render-módy (jak se symbol kreslí)
 

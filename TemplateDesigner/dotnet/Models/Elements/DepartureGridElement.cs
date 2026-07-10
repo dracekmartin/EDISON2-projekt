@@ -930,10 +930,8 @@ public class DepartureGridElement : StopScheduleElementBase
                     foreach (var a in o.Anotace)
                     {
                         SKFont af = JeGlyfSymbol(a) ? anotGlyphFont! : (a.Typ == TypAnotace.Text ? anotTextFont! : anotSymFont!);
-                        float markPad = a.Typ == TypAnotace.NegativniZnacka ? af.Size * 0.12f * 2f
-                                      : a.Typ == TypAnotace.PozitivniZnacka ? af.Size * 0.18f * 2f
-                                      : 0f;
-                        extraPx += af.MeasureText(a.Znak) + markPad + anotInterGapPx;
+                        bool nzBox = a.Typ == TypAnotace.NegativniZnacka;
+                        extraPx += af.MeasureText(a.Znak) + (nzBox ? af.Size * 0.12f * 2f : 0f) + anotInterGapPx;
                     }
                 }
                 return scaledMinuteW + extraPx / ctx.MmToPx;
@@ -954,7 +952,6 @@ public class DepartureGridElement : StopScheduleElementBase
             SKPaint? customAnotPaint = null;
             SKPaint? nzBgPaint = null;
             SKPaint? nzFgPaint = null;
-            SKPaint? pozOvalPaint = null;
             try
             {
                 for (int oi = 0; oi < odjezdy.Count; oi++)
@@ -1001,19 +998,6 @@ public class DepartureGridElement : StopScheduleElementBase
                                 continue;
                             }
 
-                            // Pozitivní značka „jede…" — ovál (obrys) + číslo v normální barvě (konvence JŘ).
-                            if (anot.Typ == TypAnotace.PozitivniZnacka)
-                            {
-                                pozOvalPaint ??= new SKPaint { Color = anotSymPaint!.Color, IsStroke = true, StrokeWidth = Math.Max(0.6f, aFont.Size * 0.06f), IsAntialias = true };
-                                float hpad  = aFont.Size * 0.18f;
-                                float znakW = aFont.MeasureText(anot.Znak);
-                                var m = aFont.Metrics;
-                                ctx.Canvas.DrawOval(new SKRect(anotX, minPt.Y + m.Ascent, anotX + znakW + hpad * 2, minPt.Y + m.Descent), pozOvalPaint);
-                                ctx.Canvas.DrawText(anot.Znak, anotX + hpad, minPt.Y, aFont, anotSymPaint!);
-                                anotX += znakW + hpad * 2 + anotInterGapPx;
-                                continue;
-                            }
-
                             SKPaint aPaint = anot.Typ == TypAnotace.Text ? anotTextPaint! : anotSymPaint!;
 
                             // Per-anotace barva z DB (konzistence s legendou poznámek).
@@ -1038,7 +1022,6 @@ public class DepartureGridElement : StopScheduleElementBase
                 customAnotPaint?.Dispose();
                 nzBgPaint?.Dispose();
                 nzFgPaint?.Dispose();
-                pozOvalPaint?.Dispose();
             }
         }
 
