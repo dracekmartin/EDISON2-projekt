@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — AD-interní (legacy-analýza parita) uzavřeno
+
+Přehodnocení AD-N bodů (původ = legacy analýza dialogu „Nastavení pro tisk linky", ne helpdesk) proti kódu.
+Většina byla už hotová, jen visela stará zmínka. Podklad kde data jsou: `ad-jr-nastaveni-linky-analyza.md`.
+
+- **AD-N3** (řazení poznámek dle délky) ✅ — `NotesLegend.Razeni` = `DleDelkyVzestupne/Sestupne` (descriptor „Řazení").
+- **AD-N4** (omezení „nejede" na nový řádek) ✅ — legenda renderuje každou poznámku na vlastní řádek (per-row).
+- **AD-N13** (víc variant jízdních časů) ✅ — = L1 multi-varianta TrasaMin (2026-07-02, dynamické variantní sloupce, `ShowAllRouteVariants`).
+- **AD-N15** (prázdninové dělení sloupců) ✅ kód (`ROZDELENI_SLOUPCU`, FTL 1/3) — pilot-verify na datech s prázdninovými NZ.
+- **Legenda na víc sloupců** ✅ — `NotesLegend.Columns` (1–4) + `WrapSmer`.
+- **Vědomě neděláno:** AD-N5 (`MHD_NEZNZ123` — dormant, pole prázdné ve všech firmách), AD-N11 (cizojazyčné poznámky — bez poptávky).
+- (AD-N14 = přípoje → linkové JŘ, jiný bucket.)
+
 ## Session 2026-07-10 ✅ — TR4: fixed-then-shrink výška řádku StopListu + sdílený helper
 
 TRANSDEV 3. režim výšky řádku. Detail → changelog 2026-07-10. .NET 316/316, rendering-only.

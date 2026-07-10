@@ -92,18 +92,6 @@ při scope té fáze, ne teď.
 | A5+ | Odsazení zastávky per-směr / per-Tč pásmo (#7937) | M | `^JRL` dta7 je single-per-point → změna zdroje + editor (base AD hotový) |
 | B4 | Per-sloupek zastávky → samostatná vývěska (#8828) | ~0.5–1d | datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; 100 % Caché |
 
-### AD-interní — dormant / na poptávku (přehodnoceno 2026-07-10)
-
-> Legenda na víc sloupců = **HOTOVO** (`NotesLegend.Columns` 1–4 + `WrapSmer`). AD-N15 (prázdninové dělení
-> sloupců) = **kód hotový** (`ROZDELENI_SLOUPCU`, FTL 1/3), zbývá jen ověření na pilotních datech s prázdninovými NZ.
-
-- **AD-N5** (`MHD_NEZNZ123` — potlačit NZ značku v některých sloupcích) — **dormant**, pole prázdné ve všech
-  firmách → bez dat neimplementovatelné/neověřitelné. Nedělat, dokud nebude reálný případ.
-- **AD-N3** (řazení poznámek dle délky) · **AD-N4** (omezení „nejede" na nový řádek) — malé element properties
-  `NotesLegend`, čistě TD, ale **bez zákaznického driveru** → nice-to-have na poptávku.
-- **AD-N11** (cizojazyčné poznámky) · **AD-N13** (víc variant jízdních časů = velký, §4) — na poptávku.
-- Podklad: [`ad-jr-nastaveni-linky-analyza.md`](ad-jr-nastaveni-linky-analyza.md), [`cache-database-linky.md §10`](cache-database-linky.md).
-
 ### MHD-port zbytky (AD hotové, MHD ne — jen na reálnou potřebu DPCB/DPKV)
 
 - D1 „jede až do", D5 skrýt na-znamení legendu (+ D2/D3 kdyby MHD modul dostal vlastní úložiště poznámek).

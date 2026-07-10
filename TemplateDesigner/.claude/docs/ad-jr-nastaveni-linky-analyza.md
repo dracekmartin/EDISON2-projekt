@@ -148,8 +148,8 @@ legacy PATCH flagů. Tj. místo čtení `Trid_delK`/`NegZnNR` z Caché je vystav
 
 | Feature | Legacy | Cíl v novém | Stav |
 |---|---|---|---|
-| Uspořádat poznámky dle délky | `PATCH,"Trid_delK"` | vlastnost `NotesLegendElement` | ⬜ AD-N3 |
-| NZ na nový řádek | `PATCH,"NegZnNR"` | vlastnost elementu | ⬜ AD-N4 |
+| Uspořádat poznámky dle délky | `PATCH,"Trid_delK"` | `NotesLegend.Razeni` (DleDelky*) | ✅ AD-N3 |
+| NZ na nový řádek | `PATCH,"NegZnNR"` | legenda = poznámka per řádek | ✅ AD-N4 |
 | Layout legendy (1 vs 2 sloupce) | (vizuál) | vlastnost elementu | ⬜ |
 | Skrýt agreg. „bezbariér" poznámku | — | parametr `SCHOVAT_AGREGAT_BEZBARIER` (filtr-model) | ✅ #7161 D6 (latentní) |
 | Skrýt „x na znamení" když sloupec hidden | — | TD (viditelnost StopList) | ⬜ #7161 D5 |
@@ -216,8 +216,8 @@ V novém světě to mají být **vlastnosti elementu legendy** (uživatel si nas
 nastavení linky jako v legacy.
 
 - **Legenda na 1 nebo 2 sloupce** — ✅ **HOTOVO** (`NotesLegend.Columns` 1–4 + `WrapSmer` po sloupcích/řádcích; ověřeno 2026-07-10).
-- **Řazení poznámek podle délky** (AD-N3, legacy `Trid_delK`) — krátké poznámky k sobě, dlouhé k sobě → úhlednější.
-- **Omezení („nejede…") na nový řádek** (AD-N4, legacy `NegZnNR`) — každé datové omezení začne na novém řádku.
+- **Řazení poznámek podle délky** (AD-N3, legacy `Trid_delK`) — ✅ **HOTOVO** (`NotesLegend.Razeni` = `DleDelkyVzestupne/Sestupne`).
+- **Omezení („nejede…") na nový řádek** (AD-N4, legacy `NegZnNR`) — ✅ **HOTOVO** (legenda renderuje každou poznámku na vlastní řádek).
 
 ### 🟡 Vlastní názvy sloupců skupin dnů
 - **Co to dělá:** přepsat výchozí nadpisy sloupců odjezdů („Pracovní dny" / „Soboty" / „Neděle a svátky")
@@ -228,14 +228,12 @@ nastavení linky jako v legacy.
 - **Co to dělá:** tisknout poznámky i v cizím jazyce (AD-N11, legacy `prtCzjPzn`) — pro pohraniční /
   mezinárodní linky. **Kde:** legenda pod JŘ.
 
-### 🔴 Více variant jízdních časů (jediná velká věc)
-- **Co to dělá:** když část spojů jede **jinou trasou / jinak rychle**, dnes ukazujeme v seznamu
-  zastávek **jeden** sloupec časů (hlavní trasa). Legacy uměl víc sloupců — každá varianta své časy
-  (a „×" u zastávek, které varianta projíždí). U variantních linek tak naše časy nesedí přesně pro
-  vedlejší spoje (±pár minut); rozdíl v trase ale popisuje textová anotace (AD-N13, §4).
-- **Kde to uvidí:** seznam zastávek vlevo (`StopListElement`).
-- **Stav:** velký zásah (data + renderer). Navrhnout moderně (dynamický počet sloupců + strop přehlednosti,
-  ne 15 napevno). Čeká na reálnou potřebu; testovací linka připravená (CB_CSADAD 0345061 = 8 variant).
+### ✅ Více variant jízdních časů (AD-N13) — HOTOVO (L1, 2026-07-02)
+- **Co to dělá:** když část spojů jede **jinou trasou / jinak rychle**, ukazujeme víc sloupců časů —
+  každá varianta své časy (a „<" u zastávek, které varianta projíždí).
+- **Kde:** seznam zastávek vlevo (`StopListElement` — `ShowAllRouteVariants`, dynamické sloupce z `VARIANTY_TRAS`/`TrasaMin`).
+- **Stav:** ✅ **HOTOVO** — multi-varianta TrasaMin (L1): dynamický počet sloupců (N dle dat, ne 15 napevno),
+  1:1 ověřeno gold 0365005. *(Zbývá jen „jemnější výběr variant per-písmeno" = TRANSDEV TR7, jiný bod.)*
 
 ### 🟢 Dormant (umíme, ale nemáme testovací data)
 - **Potlačit negativní značku v některých sloupcích** (AD-N5, legacy `MHD_NEZNZ123`) — vázané na NZ, dnes
@@ -262,15 +260,15 @@ Relevantní pro zastávkový JŘ (zbytek = ➖ Win tisk/kniha/HTML/odbavení):
 |---|---|---|---|
 | 18 | Tisk ručních názvů zastávek | `nazMHD` | ✅ |
 | 20 | Tisk zóny IDS / km (0-3) | `linIDS` | 🟡 zóny ✅, km ➖ (linkové) |
-| 26 | Uspořádat poznámky dle délky | `Trid_delK` | ⬜ AD-N3 |
-| 27 | NZ na nový řádek | `NegZnNR` | ⬜ AD-N4 |
+| 26 | Uspořádat poznámky dle délky | `Trid_delK` | ✅ AD-N3 (`NotesLegend.Razeni`) |
+| 27 | NZ na nový řádek | `NegZnNR` | ✅ AD-N4 (poznámka per řádek) |
 | 28 | Cizojazyčné poznámky | `prtCzjPzn` | ⬜ AD-N11 |
 | 30 | Gate auto-poznámek odchylek | `mhd,"not"` | ✅ |
 | 32 | Sada písmen markerů | `mhd,"notchar"` | ✅ |
 | 35 | Tisk bezbariér (0/1/2) | `TZPA,"BBP"` | ✅ |
 | 36 | Rok v omezeních (0-4) | `TiskDtm` | ✅ |
-| 73 | Auto generovat časové průběhy | `mhd,"par",1` | 🟡 1 sloupec |
-| 74 | Volné značky pro minutové trasy | `mhd,"par",2` | ⬜ AD-N13 |
+| 73 | Auto generovat časové průběhy | `mhd,"par",1` | ✅ (multi-varianta L1) |
+| 74 | Volné značky pro minutové trasy | `mhd,"par",2` | ✅ AD-N13 (multi-varianta L1) |
 | 78 | Způsob výpisu návazností | `NavaznostiZpusobVypisu` | ➖ linkové JŘ |
 
 **Reference souborů:** `JRapiLin.mac` (`gPrpLin` ř.282), `JRapiLin1.mac` (`gPrpLinMhd` ř.82,
