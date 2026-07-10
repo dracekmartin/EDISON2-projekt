@@ -92,10 +92,6 @@ při scope té fáze, ne teď.
 | A5+ | Odsazení zastávky per-směr / per-Tč pásmo (#7937) | M | `^JRL` dta7 je single-per-point → změna zdroje + editor (base AD hotový) |
 | B4 | Per-sloupek zastávky → samostatná vývěska (#8828) | ~0.5–1d | datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; 100 % Caché |
 
-### MHD-port zbytky (AD hotové, MHD ne — jen na reálnou potřebu DPCB/DPKV)
-
-- D1 „jede až do", D5 skrýt na-znamení legendu (+ D2/D3 kdyby MHD modul dostal vlastní úložiště poznámek).
-
 ---
 
 ## 🟠 Fáze B: Element flexibility — jen odložené body

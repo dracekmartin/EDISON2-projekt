@@ -2,6 +2,17 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 — MHD-port zbytky uzavřeno (na poptávku / N/A)
+
+Helpdesk featury hotové pro AD agendu, ne pro self-contained MHD modul (`ZastavkoveJrMhd`, `^ALVA.MHD.*`,
+používají jen DPCB/DPKV). Odstraněno z aktivní roadmapy — žádný driver.
+
+- **D1** (#7947, „jede až do zast. X") — AD ✅; MHD ⬜ **na poptávku** (jen kdyby DPCB/DPKV měli spoje za základní trasu).
+- **D5** (#7161, skrýt legendu „× na znamení" když značka vypnutá) — AD ✅; MHD ⬜ **na poptávku** DPCB/DPKV.
+- **D2/D3** (#7955, ruční komentář přebít auto / NZ bug) — **N/A pro MHD**: ruční poznámky jsou AD-only
+  (`^JRL`), MHD modul (`^ALVA.MHD.*`) to úložiště nemá. Portovat až kdyby MHD dostal vlastní poznámky.
+- Detail: `customer-requirements-zastavkovy-jr.md §D1/D2/D3/D5`.
+
 ## Session 2026-07-10 ✅ — AD-interní (legacy-analýza parita) uzavřeno
 
 Přehodnocení AD-N bodů (původ = legacy analýza dialogu „Nastavení pro tisk linky", ne helpdesk) proti kódu.
