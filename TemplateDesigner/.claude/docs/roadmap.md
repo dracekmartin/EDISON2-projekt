@@ -67,7 +67,6 @@ při scope té fáze, ne teď.
 | # | Co | Vel. | Pozn. |
 |---|---|---|---|
 | TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | S | AD render/data |
-| P1 | Poznámky ručně do patičky | S | možná už jde přes `TextElement` v Footer; příp. dedikované pole |
 | TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | data `Oznacnik` existují; ≠ dnešní skalár `NASTUPISTE` (jen tištěná zast.) |
 | TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | pattern = bezbariér `allBBP` agregát (#7161) |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | auto-scale částečně; relates B2 |
@@ -83,7 +82,6 @@ při scope té fáze, ne teď.
 | TR5 | Definice cíle — střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
 | A5+ | Odsazení zastávky per-směr / per-Tč pásmo (#7937) | M | `^JRL` dta7 je single-per-point → změna zdroje + editor (base AD hotový) |
 | B4 | Per-sloupek zastávky → samostatná vývěska (#8828) | ~0.5–1d | datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; 100 % Caché |
-| P2 | Sloučit více linek stejného trojčíslí (i více dopravců) | L | agenda + instance picker + agregace dopravců |
 
 ### AD-interní, gated na reálný pilot (data/konfigurace zákazníka)
 

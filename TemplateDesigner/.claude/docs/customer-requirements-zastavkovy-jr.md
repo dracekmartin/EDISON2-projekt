@@ -85,11 +85,12 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 
 | # | Co | Vel. | Stav |
 |---|---|---|---|
-| P1 | Poznámky ručně do patičky | S | 🟢 nejspíš už jde přes `TextElement` v Footer; příp. dedikované pole |
-| P2 | Sloučit více linek stejného trojčíslí (i více dopravců) | L | 🟠 agenda + instance picker + agregace dopravců |
 | P3 | Imposice 2×A5 → A4 | M–L | 🟠 = aktivní krok #1 roadmapy (imposiční vrstva) |
 
-**Dispatch kandidáti (malé, TD/AD, bez velkého průzkumu):** TR8 · TR2 · TR3 · TR4 · P1.
+> **P1 a P2 vyřazeny (2026-07-10, dohoda):** P1 (poznámky do patičky) — nejasné přesné zadání, neodbavovat;
+> P2 (sloučit více linek) — řeší se jinde (mimo tuto agendu). Detail v §P ponechán jako evidence.
+
+**Dispatch kandidáti (malé, TD/AD, bez velkého průzkumu):** TR8 · TR2 · TR3 · TR4.
 Před dispatchem u každého rychle ověřit aktuální stav v kódu (nedělat už hotové).
 
 ---
@@ -282,22 +283,14 @@ Před dispatchem u každého rychle ověřit aktuální stav v kódu (nedělat u
 
 > Zaznamenáno z živých prezentací/seminářů (ne z helpdesk tiketů). Neanalyzováno — evidence, že se na to zákazníci ptali. Před implementací založit/dohledat ticket a ověřit přesné zadání.
 
-### P1. Poznámky umět zadat ručně do patičky ⬜ Nové (2026-06-24)
+### ~~P1. Poznámky ručně do patičky~~ ❌ Vyřazeno (2026-07-10)
 
-- **Zdroj:** prezentace zákazníkům 2026-06-24.
-- **Požadavek:** možnost ručně vepsat volné poznámky do patičky JŘ (ne jen auto-generovaná legenda).
-- **Stav infrastruktury (k ověření):** TD už umí přidat `TextElement` s libovolným textem do libovolné sekce vč. patičky (`SectionRole=Footer`). Otázka, jestli zákazníkovi stačí volný TextElement, nebo chce **dedikované pole „Poznámky"** (např. vstup v tiskovém dialogu / parametr sestavy, který se promítne do patičky).
-- **Odhad:** malé, pokud stačí volný text (už funguje); střední, pokud chce parametr-driven poznámku do patičky (nové pole v EDInputForm + propsání do DataContextu).
+**Neodbavovat** — dohoda: nejasné přesné zadání (volný `TextElement` v Footer už funguje; jestli chce klient
+dedikované pole „Poznámky", není potvrzeno). Až přijde konkrétní požadavek/ticket, znovu založit.
 
-### P2. Sloučení více linek se stejným posledním trojčíslím (i různá Tč / více dopravců) ⬜ Nové (2026-06-24)
+### ~~P2. Sloučení více linek se stejným posledním trojčíslím~~ ❌ Vyřazeno (2026-07-10)
 
-- **Zdroj:** prezentace zákazníkům 2026-06-24.
-- **Požadavek:** *„Dokáže šablona sloučit více linek se stejným posledním trojčíslím — a to i v případě rozdílných tarifních čísel (více dopravců)?"* → jeden výstup zastávkového JŘ složený z více linek.
-- **Stav:** **nové, datově náročné.** Dnes platí 1 linka = 1 sada stránek (zastávka × směr). Sloučení více linek do jednoho výstupu se dotýká **úrovně agendy / výběru instancí** (`GetData`, InstancePicker), ne jen vizuálu:
-  - identifikace „stejné poslední trojčíslí" napříč linkami,
-  - sloučení spojů z více linek do jedné mřížky odjezdů (různá Tč → mapování zastávek),
-  - **více dopravců** v jednom výstupu (pole `POPIS_DOPRAVCE` dnes jedna hodnota — nutná agregace).
-- **Odhad:** větší feature (agenda + instance picker + handling dopravců). Vyžaduje analýzu legacy chování (jak to řeší starý nástroj) + UX rozhodnutí o výběru linek.
+**Neodbavovat zde** — dohoda: řeší se jinde (mimo tuto agendu / úroveň, ne v rámci zastávkového JŘ dispatch).
 
 ### P3. Logická imposice — 2× A5 oboustranně na jednu A4 ⬜ Nové (2026-06-24)
 
