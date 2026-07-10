@@ -1097,7 +1097,9 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     f denIdx = 1:1:$l(tydPlatnost) {
                         s denZnak = $e(tydPlatnost, denIdx)
                         i denZnak = "" continue
-                        d ..AddAnotace(odj, "specialni", ..ConvertSpecialniZnak(denZnak))
+                        // Značka dne = číslice 1-7 / + / X (kroužkový glyf symbolového fontu, 1:1 legacy
+                        // GSId id 8-16), NE textová zkratka „Po" — konzistentní s legendou (specialni + číslice).
+                        d ..AddAnotace(odj, "specialni", denZnak)
                         // Poznámka pro den
                         s denText = ..GetDenVTydnuText(denZnak)
                         i denText '= "" s strankovePoznamky(denZnak) = $lb(denText, 2)

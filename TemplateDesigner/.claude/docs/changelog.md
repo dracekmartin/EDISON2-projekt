@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-10 — Zastávkový JŘ: kroužkové denní značky týdenní platnosti (1-7) — dotažení 1:1 legacy
+
+Dokončení font-bloku značek. Legacy (`mkPLinWin`/`GSId`) emituje týdenní platnost spoje jako kroužkové
+číslice `1`-`7` (GSId id 8-16); náš kód je buď neemitoval (AD), nebo jako text „Po"/„Ne" (MHD).
+
+- **AD** — z `plk` (`$p(hlava,":",7)`) se vytáhnou konkrétní dny (číslice 1-7) → anotace u minuty
+  (`specialni` číslice → symbolový font ji kroužkuje) + legenda „① jede v pondělí" (`TextDneVTydnu`,
+  plumbing přes `dnyLegenda` jako `bezbarLegenda`). Prázdné/`.`/`X`/`+` = skupinový vzor → bez značky
+  (1:1 legacy: značka jen u konkrétních dnů). Ověřeno živě (spoj „jede v sobotu" → kroužková ⑥).
+- **MHD** — emituje den jako **číslici** (`denZnak`) místo `ConvertSpecialniZnak` → „Po" (konzistentní
+  s legendou, která už číslici používala). Gold-safe (CB_DP gold linky denní spoje nemají → no-op).
+- Gold re-baseline AD (0365001 pozn 96→110, 0365005 168→183 = přidaná denní legenda; odj/zast beze změny).
+  Caché 48/48, .NET 316/316.
+
+Tím je **font-blok značek kompletní**: bezbariér piktogram, na-znamení „x" text, NZ box, datová omezení
+box, týdenní platnost kroužkové 1-7. Vše locale-aware (CZ/SK).
+
 ## 2026-07-10 — Audit infra batch (B3, B4, B6, B7)
 
 Robustnost/extenzibilita mimo kolizní zónu paralelní schedule-rendering práce. Ověřeno:
