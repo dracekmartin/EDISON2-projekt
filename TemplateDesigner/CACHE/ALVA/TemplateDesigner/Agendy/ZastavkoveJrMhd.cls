@@ -54,7 +54,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s def.fieldCollections = collections
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí seznam Fixed šablon tabulek pro MHD.
@@ -73,7 +73,7 @@ ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
     d arr.%Push(t2)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí definici Fixed šablony.
@@ -98,7 +98,7 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
         ])
     }
 
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí parametry sestavy pro MHD.
@@ -111,7 +111,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d ..AddStandardJRParameters(arr)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí seznam linek pro Instance Picker.
@@ -217,7 +217,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 
         s ^||ML("OUT","1") = arr.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
-    q $$$OK
+    ret $$$OK
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -359,9 +359,9 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // FÁZE 6: Sestavení JSON výstupu — pole stránek
         // ═══════════════════════════════════════════════════════════════════
         d ..SestavitStranky(.sys)
-        k ^||TiskMHD
     }
     catch (ex) { $$$CatchErrRest }
+    k ^||TiskMHD                       // úklid working global i po chybě (self-healing kill je na začátku)
     ret $$$OK
 }
 
@@ -1747,7 +1747,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
 
     d out.%Set("rows", rows)
     s ^||ML("OUT", $i(^||ML("OUT"))) = out.%ToJSON()
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí ID první nezblokované skupiny linek pro danou IdFa.

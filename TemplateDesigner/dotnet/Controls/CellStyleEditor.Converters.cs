@@ -52,7 +52,7 @@ public sealed class FirstNonEmptyHexToBrushConverter : IMultiValueConverter
                     var sk = SKColor.Parse(s);
                     return new SolidColorBrush(Color.FromArgb(sk.Alpha, sk.Red, sk.Green, sk.Blue));
                 }
-                catch { }
+                catch { /* neparsovatelný hex → zkus další hodnotu v kaskádě, jinak Transparent */ }
             }
         }
         return System.Windows.Media.Brushes.Transparent;

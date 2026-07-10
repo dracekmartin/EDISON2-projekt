@@ -53,7 +53,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     s def.fieldCollections = collections
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = def.%ToJSON()
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí seznam Fixed šablon tabulek.
@@ -72,7 +72,7 @@ ClassMethod GetTableTemplates(ByRef sys As %String) As %Status
     d arr.%Push(t2)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí definici Fixed šablony.
@@ -97,14 +97,13 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
         ])
     }
 
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí parametry sestavy. Instance AD je určená skupinou linek + linkou (^JRL(sku,lin)).
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    $$$FillParams
-
+    // FillParams zde netřeba — AddStandardJRParameters IdFa/dataDB nečte (viz konvence GetParameters).
     s arr = ##class(%DynamicArray).%New()
 
     // Linka se vybírá v Instance Pickeru (ne jako parametr sestavy) — viz GetAvailableInstances.
@@ -113,7 +112,7 @@ ClassMethod GetParameters(ByRef sys As %String) As %Status
     d ..AddStandardJRParameters(arr)
 
     s ^||ML("OUT", $i(^||ML("OUT"))) = arr.%ToJSON()
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí seznam linek pro Instance Picker (umožní proklikávání stránek v preview).
@@ -195,7 +194,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 
         s ^||ML("OUT","1") = arr.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
-    q $$$OK
+    ret $$$OK
 }
 
 /// Vrátí data pro tisk: 1 stránka per zastávka × směr (reimpl. legacy `WinTiskMhd^JRapiExp10`).
@@ -240,6 +239,7 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         }
     }
     catch (ex) { $$$CatchErrRest }
+    k ^||TiskAd                        // úklid working global i po chybě (self-healing kill je na začátku)
     ret $$$OK
 }
 
@@ -542,12 +542,15 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         // „2$<cnz>", legenda „2#<cnz>#<text>"; ověřeno KV_DP i CB_CSADAD). Text bere per-spoj omzId
         // (SestavTextOmezeni) — InPlatDef se nečte (drží zastaralý seed datumů). cnz prázdné → fallback
         // na sekvenční číslo + typ „text" (zachová staré chování pro spoj bez NZ).
+        // Znaménko značky: má-li spoj JAKÉKOLI pozitivní omezení (omzId 11-15, „jede…") → „pozitivni"
+        // (kroužek v renderu), jinak (jen „nejede" 22) → „nz" (negativní box). Konvence JŘ (Bžoch 2026-07-09).
         s znak = "", typOmez = "text"
         s txt = ..SestavTextOmezeni(dataDB, sku, lin, smer, sp)
         i txt '= "" {
             i cnz '= "" {
-                s znak = cnz, typOmez = "nz"
-                s poznMap("byMarker", cnz) = txt, poznMap("typ", cnz) = "nz"
+                s znak = cnz
+                s typOmez = $s(..OmezeniJePozitivni(dataDB, sku, lin, smer, sp):"pozitivni", 1:"nz")
+                s poznMap("byMarker", cnz) = txt, poznMap("typ", cnz) = typOmez
             } else {
                 s znak = ..ZiskejMarker(.poznMap, txt)
             }
@@ -1107,6 +1110,19 @@ ClassMethod SestavTextOmezeni(dataDB As %String, sku As %String, lin As %String,
         s txt = txt_..PrefixOmezeni(omzId)_datumy
     }
     q txt
+}
+
+/// True pokud spoj má aspoň jedno reálné POZITIVNÍ datové omezení (omzId 11-15 = „jede…" s neprázdnými
+/// daty; 22 = „nejede" je negativní). Řídí znaménko značky: pozitivní → kroužek, jinak → negativní box.
+/// Podmínka shodná se `SestavTextOmezeni` (jen omezení, která reálně přispějí do textu).
+ClassMethod OmezeniJePozitivni(dataDB As %String, sku As %String, lin As %String, smer As %String, sp As %String) As %Boolean
+{
+    f omzId = 11,12,13,14,15 {
+        s omz = $g(^[dataDB]JRL(sku,lin,smer,sp,omzId))
+        i omz = "" continue
+        i ..FormatDatumyOmezeni(omz) '= "" return 1
+    }
+    return 0
 }
 
 /// Prefix textu pro daný typ omezení (1:1 s `txtNZ^JRapiNZUtl`).

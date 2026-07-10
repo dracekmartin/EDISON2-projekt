@@ -147,8 +147,7 @@ ClassMethod GetTableTemplate(ByRef sys As %String) As %Status
 /// Parametry sestavy. Linka se vybírá v Instance Pickeru (GetAvailableInstances).
 ClassMethod GetParameters(ByRef sys As %String) As %Status
 {
-    $$$FillParams
-
+    // FillParams zde netřeba — parametry IdFa/dataDB nečtou (viz konvence GetParameters).
     s arr = ##class(%DynamicArray).%New()
 
     // Dělení sloupců spojů podle platnosti (legacy in("A",2,"arr",3) = 0/1/2)

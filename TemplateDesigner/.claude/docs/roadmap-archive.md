@@ -2,6 +2,22 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — Audit před produkcí: bezpečný sweep (bloky B/C/D)
+
+Nízkorizikové nálezy auditu 2026-07-09 (behavior-preserving / aditivní / docs). Ověřeno: build 0 chyb,
+Caché 33/33, .NET 898/898. Detail → changelog 2026-07-10. Otevřený zbytek (blok A kontrakt, B2/B3/B4/B6/B7,
+C-b/C-e, C-f export filtr, D2, D3 rename) zůstává v roadmapě.
+
+- **C-a** — symetrický `k ^||TiskMHD`/`^||TiskAd` za catch (úklid working global i po chybě).
+- **C-c** — `AgendaParams.FetchParamsJson` zachovává `ERR` (save/restore okolo resetu counteru; nested chyba se už neztratí).
+- **C-d** — `GetParameters` bez zbytečného `$$$FillParams` (ZastavkoveJrAd + LinkovyJrAd).
+- **C-f (část)** — `q $$$OK` → `ret $$$OK` (ZastavkoveJrMhd + ZastavkoveJrAd).
+- **B1** — DepartureGrid layout fingerprint doplněn o 7 layout properties (mrtvé vlastnosti v náhledu opraveny).
+- **B5** — F5 refresh inkrementuje `_previewDataGeneration` (guard proti stale in-flight fetch).
+- **D3 (drobné)** — PrintDialog `EDStrings.Close`; AI API klíč `PasswordBox`; AI debug JSON do temp; komentář k prázdnému catch.
+- **D1** — tabulka zkratek: sekce = `Ctrl+Shift+↑/↓`, doplněn Shift/Ctrl krok elementu.
+- **D4** — roadmap font 42b/C2 přeformulován (zastávkový hotový, zbývá linková část).
+
 ## Session 2026-07-09 ✅ — Bug: změna velikosti/orientace stránky = reset s potvrzením
 
 Změna velikosti/orientace stránky se dřív snažila obsah „zachovat", ale jen napůl — přeškálovala

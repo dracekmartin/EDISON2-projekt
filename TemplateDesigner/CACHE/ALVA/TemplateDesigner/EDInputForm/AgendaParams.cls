@@ -101,7 +101,10 @@ ClassMethod FetchParamsJson(ByRef sys As %String, agendaClass As %String) As %St
     d $classmethod(agendaClass, "GetParameters", .sys)
     s json = $g(^||ML("OUT","1"))
 
+    // Zachovat ERR z nested GetParameters (jinak by se chyba tiše ztratila), pak reset OUT vč. counteru.
+    s savedErr = $g(^||ML("OUT","ERR"))
     k ^||ML("OUT")
+    s:savedErr'="" ^||ML("OUT","ERR") = savedErr
 
     q $s(json="":"[]", 1:json)
 }

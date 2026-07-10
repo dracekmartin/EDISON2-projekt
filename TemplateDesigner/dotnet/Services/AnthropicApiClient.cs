@@ -617,7 +617,8 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
 
     private static string SaveDebugFile(string jsonText)
     {
-        var debugPath = Path.Combine(AppContext.BaseDirectory, DebugFileName);
+        // Temp, ne instalační adresář — v C:\Edison\ by zápis tiše selhal / zaneřáďoval složku.
+        var debugPath = Path.Combine(Path.GetTempPath(), DebugFileName);
         try
         {
             File.WriteAllText(debugPath, jsonText, Encoding.UTF8);

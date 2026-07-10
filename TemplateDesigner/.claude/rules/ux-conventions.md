@@ -61,9 +61,9 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 | Alt+klik | Vybrat jen jeden element ze skupiny |
 | Ctrl+Shift+H / Ctrl+Shift+J | Split element horizontálně / vertikálně |
 | Ctrl+Shift+N | Normalizovat pozice (snap na grid) |
-| Šipky | Posun vybraného elementu o krok |
+| Šipky | Posun vybraného elementu o krok (Shift = velký krok, Ctrl = jemný krok) |
 | Ctrl+PageUp / Ctrl+PageDown | Z-order dopředu / dozadu (+Shift = do krajní pozice) |
-| Šipka ↑/↓ (aktivní sekce, bez výběru elementu) | Přesun sekce nahoru / dolů |
+| Ctrl+Shift+↑/↓ (aktivní sekce) | Přesun sekce nahoru / dolů |
 
 ### Soubory a view
 

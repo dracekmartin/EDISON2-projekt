@@ -111,10 +111,12 @@
 
                 <!-- API Key (volitelné) -->
                 <TextBlock Text="Anthropic API Key (volitelné)" Style="{StaticResource SectionHeader}"/>
-                <TextBox Text="{Binding ApiKey, UpdateSourceTrigger=PropertyChanged}"
-                         x:Name="ApiKeyTextBox"
-                         FontFamily="Consolas"
-                         Padding="8"/>
+                <!-- PasswordBox místo TextBox — API klíč se nemá zobrazovat plaintextem.
+                     Password není bindovatelný → sync přes code-behind (PasswordChanged). -->
+                <PasswordBox x:Name="ApiKeyBox"
+                             PasswordChanged="ApiKeyBox_PasswordChanged"
+                             FontFamily="Consolas"
+                             Padding="8"/>
                 <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Caption}"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"

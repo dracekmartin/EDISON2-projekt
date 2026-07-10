@@ -165,6 +165,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// poznámky) se projeví bez restartu.</summary>
     private void RefreshData()
     {
+        _previewDataGeneration++;               // invaliduje případný běžící fetch → guard proti dosednutí stale dat
         CacheProvider?.InvalidateCaches();
         RefreshFieldsList();                    // schéma polí + parametry (teď fresh)
         _ = RefreshDataForCurrentInstanceAsync(); // re-fetch GetData pro aktuální linku

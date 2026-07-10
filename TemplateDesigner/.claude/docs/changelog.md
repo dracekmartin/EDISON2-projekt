@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-07-10 — Audit před produkcí: bezpečný sweep (bloky B/C/D)
+
+Odbaveny nízkorizikové nálezy auditu 2026-07-09 (behavior-preserving / aditivní / docs). Blok A
+(kontrakt skalárů) a položky vyžadující UX rozhodnutí / gold data zůstávají otevřené v roadmapě.
+Ověřeno: build 0 chyb, Caché 33/33 (gold+smoke+helpery), .NET 898/898 (TD 305 + EDControls 331 + EDISONMAIN2 262).
+
+**Caché (behavior-preserving):**
+- **C-a — symetrický úklid working global.** `k ^||TiskMHD` (MHD) přesunut z konce try za catch;
+  `k ^||TiskAd` (AD) doplněn za catch. Working global se uklidí i po chybě (u poolovaných procesů
+  nedrží data mezi requesty). Self-healing kill na začátku zůstává.
+- **C-c — `AgendaParams.FetchParamsJson` zachovává `ERR`.** Wholesale `k ^||ML("OUT")` po nested
+  `GetParameters` mazal i chybový uzel → selhání parametrů se tiše ztratilo (prázdný seznam místo
+  hlášky). Nyní save/restore `ERR` okolo resetu counteru (counter se resetovat musí — `GetParameters`
+  píše přes `$i(^||ML("OUT"))`, ne fixní `OUT("1")` jako `Instance.cls`).
+- **C-d — `GetParameters` bez zbytečného `$$$FillParams`** (ZastavkoveJrAd + LinkovyJrAd). Parametry
+  IdFa/dataDB nečtou → FillParams mimo try/catch byl jen riziko pádu mimo chybovou konvenci.
+- **C-f (část) — `q $$$OK` → `ret $$$OK`** v ZastavkoveJrMhd + ZastavkoveJrAd (konvence TD).
+  Export-split filtr dle `ElementKind` odložen (není mechanický — chce plumbing ElementKind do AgendaParams).
+
+**.NET:**
+- **B1 — DepartureGrid layout fingerprint doplněn** o `DataRowHeight`, `AnotaceGap`, `OdjezdGap`,
+  `GroupSeparatorWidth`, `HourColumnPerGroup`, `ShowSkupinaDnuHeader`, `SkupinaDnuId`. Změna těchto
+  vlastností v panelu se dřív v náhledu neprojevila (cache se neinvalidovala) — vypadalo to jako „mrtvé" pole.
+- **B5 — F5 refresh inkrementuje `_previewDataGeneration`.** Guard proti dosednutí staršího in-flight
+  fetche (souběh F5 × přepnutí instance).
+- **D3 — drobné úklidy:** PrintDialog „Zavřít" → `{StaticResource EDStrings.Close}`; AI API klíč
+  `TextBox` → `PasswordBox` (sync přes code-behind, Password není bindovatelný); AI debug JSON do
+  `Path.GetTempPath()` místo instalačního adresáře; komentář k prázdnému `catch` v CellStyleEditor converteru.
+
+**Docs (D1, D4):**
+- **D1 — tabulka zkratek** (`ux-conventions.md`): sekce = `Ctrl+Shift+↑/↓` (ne holé ↑/↓); doplněn
+  Shift=velký / Ctrl=jemný krok posunu elementu.
+- **D4 — font 42b/C2** v roadmapě přeformulován (zastávkový JŘ hotový 9.7., zbývá linková část LineTable `ZNAK`).
+
+**Odloženo (zůstává v roadmapě):** B2 (DepartureGrid overflow vs auto-scale — **nese UX rozhodnutí**,
+ne mechanický fix: Render záměrně počítá scale z font-driven výšky, aby velká `DataRowHeight`
+nezmenšovala fonty, kdežto overflow detekce bere `layout.RowH` — sjednocení musí rozhodnout, co má
+u velké `DataRowHeight` vyhrát), celý blok A (kontrakt skalárů), B3/B4/B6/B7, C-b/C-e, D2, agenda-rename sjednocení.
+
 ## 2026-07-09 — Komplexní audit před produkcí (architektura + agendy + UI/UX)
 
 Tři paralelní průzkumy kódu (.NET architektura/extenzibilita, Caché agendy MHD↔AD, UI/UX +

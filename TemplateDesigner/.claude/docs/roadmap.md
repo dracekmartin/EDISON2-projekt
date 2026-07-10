@@ -44,11 +44,9 @@ polí různé věci. Bolí zpětně: šablony si na špatné klíče zvyknou.
 
 | # | Co | Lidsky | Vel. | Rozhodnutí |
 |---|---|---|---|---|
-| B1 | DepartureGrid layout-fingerprint nezahrnuje 7 layout properties (`DataRowHeight`, gapy, separator…) | změna vlastnosti v panelu se v náhledu neprojeví — vypadá rozbité | S–M | |
-| B2 | DepartureGrid: overflow varování vs auto-scale počítají jinou přirozenou výšku | varování a zmenšování si můžou protiřečit | S | |
+| B2 | DepartureGrid: overflow varování vs auto-scale počítají jinou přirozenou výšku. **⚠️ NE mechanický fix — nese UX rozhodnutí:** Render záměrně bere scale z font-driven výšky (komentář `DepartureGridElement.cs:514`), aby velká `DataRowHeight` nezmenšovala fonty; overflow detekce bere `layout.RowH`. Sjednocení musí rozhodnout, co u velké `DataRowHeight` vyhraje (shrink fontů vs. varování). | varování a zmenšování si můžou protiřečit | S→M | |
 | B3 | `CapabilityCatalog` (AI průvodce) — string heuristika, nezná LineTable → napojit na registr/`AgendaCapabilities` | AI radí jiné elementy, než nabízí paleta | S | |
 | B4 | Nový element = ~8 ručně synchronizovaných míst bez strážce → drift test „každý JsonDerivedType má záznam všude" | zapomenuté místo nic nehlásí (B3 je přesně tento drift) | S–M | |
-| B5 | F5 fetch bez generation guardu → souběh s přepnutím instance = možná stale data | vzácný okamžik starých dat v náhledu | S | |
 | B6 | Reset stránky: string klíč `"PageSize.Width"` bez pojistky + `async void` | přejmenování pole formuláře reset tiše vypne | S | |
 | B7 | R1: první `GetSchema` sync na UI threadu (`RefreshFieldsList`); + `GetAvailableSkupiny` bez cache | otevření šablony cizí agendy na pomalé síti zamrzne UI | M | |
 
@@ -56,27 +54,25 @@ polí různé věci. Bolí zpětně: šablony si na špatné klíče zvyknou.
 
 | # | Co | Lidsky | Vel. | Rozhodnutí |
 |---|---|---|---|---|
-| C-a | Working global kill nesymetrický (MHD v try, AD na konci vůbec) → kill po try/catch v obou | pracovní paměť tisku se po chybě neuklízí | S | |
 | C-b | MHD bez memoizace (`GetNazevHrl` ~O(n²), `PopisDopravce` per stránka, ENUMS barvy per anotace) — AD vzor existuje | export velkých MHD firem zbytečně pomalý | M | |
-| C-c | `AgendaParams.FetchParamsJson` maže i `ERR` → nested chyba se ztratí (vzor správně v `Instance.cls`) | selhání parametrů = tichý prázdný seznam místo chyby | S | |
-| C-d | `GetParameters`: `$$$FillParams` mimo try/catch (AD/Linkovy), MHD nevolá — sjednotit | pád mimo chybovou konvenci | S | |
 | C-e | AD `GetMockData` čte živá firemní data (vlastní TODO) → statický vzorek | preview u zákazníka závislé na jeho datech; pomalé | S–M | |
-| C-f | Nízké: `q` vs `ret $$$OK` · export `PER_STOP` nefiltrován dle ElementKind · `AgendyRegistr` jen přímé subclassy | kosmetika / vědět o tom | S | |
+| C-f (zbytek) | export `PER_STOP`/`PER_LINE` nefiltrován dle ElementKind (chce plumbing ElementKind do AgendaParams) · `AgendyRegistr` jen přímé subclassy (vědět při C8) | kosmetika / vědět o tom | S | |
 
 **Blok D — UI/UX + dokumentace (🟡 rychlé).**
 
 | # | Co | Lidsky | Vel. | Rozhodnutí |
 |---|---|---|---|---|
-| D1 | Zkratky drift: doc „↑/↓ přesun sekce" vs kód `Ctrl+Shift+↑/↓`; + nedokumentované Shift/Ctrl krokování | tabulka zkratek lže | S | |
 | D2 | 6 dialogů OK/Save přes code-behind `Click` místo VM Command — sjednotit postupně | proti závaznému vzoru oken | S/dialog | |
-| D3 | Drobné: „Zavřít" literál v PrintDialog · API klíč v plaintext TextBox · AI debug JSON do instalační složky · prázdný `catch {}` · dvojí mechanismus renamu agendy | úklid | S | |
-| D4 | Docs drift: roadmap 42b (symbolový font zastávkový = hotový 9.7., zbývá linková část) · T1 „nula testů" už neplatí | dokumentace neodráží realitu | S | |
+| D3 (zbytek) | Dvojí mechanismus renamu agendy (`"MHD"→"ZASTAVKOVY_JR_MHD"` post-deserializační remap vs `KNIZNI→LINKOVY` verzová migrace) — příští rename sjednotit do migračního pipeline | úklid, spustí až další rename | S | |
 
-**Doporučené pořadí:** A1–A4 (kontrakt — jediné, co po nasazení bolí zpětně) → B1+B2 (viditelné
-UX bugy) → B7+B5 (zamrzání/stale) → C-a/c/d (mechanická hygiena) → C-e (před nasazením
-k zákazníkům) → B3+B4 (než poroste plocha agend) → D průběžně. Mimo checklist (dlouhodobé,
-bez akce): god objects (T4), sjednocení cache patternů elementů (při R1 extrakci jádra),
-MHD legacy MAC volání (patří do C8) — detail v auditním dokumentu.
+> **Bezpečný sweep odbaven 2026-07-10** (C-a/C-c/C-d, C-f q→ret, B1, B5, D1, D3-drobné, D4) →
+> [`roadmap-archive.md`](roadmap-archive.md). Zbývá viz níže.
+
+**Doporučené pořadí (zbytek):** A1–A4 (kontrakt — jediné, co po nasazení bolí zpětně) → B2 (rozhodnout
+UX tenzi) + B7 (zamrzání) → C-e (před nasazením k zákazníkům) → B3+B4 (než poroste plocha agend) →
+C-b (výkon MHD) → B6 + D2 + C-f/D3 zbytky průběžně. Mimo checklist (dlouhodobé, bez akce): god
+objects (T4), sjednocení cache patternů elementů (při R1 extrakci jádra), MHD legacy MAC volání
+(patří do C8) — detail v auditním dokumentu.
 
 ---
 
@@ -156,8 +152,9 @@ sloupcová tabulka celé linky (svislý seznam zastávek × sloupce spojů s ča
 symboly/NZ; Vyčká/Navazuje; skupinová záhlaví PD/So/Ne; 10 druhů poznámek). **Gold oracle `mkPLinWin`
 (ALVA.JRMAIN.MLAPI)**, metodika = čistá reimplementace à la `ZastavkoveJrAd` (~1 měsíc).
 
-**Prerekvizity (pořadí):** (1) symbolový font Timetable_nove(+SK) do Skia + převodní tabulka (66+ symbolů,
-TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/výlepového JŘ; (2) agenda
+**Prerekvizity (pořadí):** (1) symbolový font Timetable_nove(+SK) do Skia — **základ hotový 9.7.** (embed
+TTF + locale-aware `FontResolver.SymbolFontFamily`, single-char symboly zastávkového JŘ); pro linkovou část
+zbývá převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) na multichar/kompozity; (2) agenda
 `KnizniJrAd`; (3) `LineTableElement` + layout rozšíření (flow paketů, „dotisk poznámek z minulé stránky",
 **auto-fit fontu na šířku** — dnes je ComputeFontScale jen výškový); (4) per-linka šablony (viz B4).
 
@@ -166,7 +163,7 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 
 | Krok | Co | Stav |
 |---|---|---|
-| 42b | Symbolový font Timetable do Skia + převodní tabulka (= C2 níže) | ⬜ (ZNAK ve wire = legacy klíče, fallback text) |
+| 42b | Symbolový font Timetable do Skia (= C2 níže) — **zastávkový JŘ hotový 9.7.**; zbývá linková část (LineTable `ZNAK` sloupce, multichar/kompozity) | 🟡 zastávkový ✅, linkový ⬜ |
 | 43 | `LineTableElement` layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy = C3 níže) | 🟡 element hotový (standalone); layout rozšíření ⬜ |
 | 44b | Výchozí **linková** šablona do distribuce — mechanismus embed→MLINE hotový (governance v1); zbývá kurátorovat + přesunout `linkovy-jr-ad-vychozi.json` do `SystemTemplates/` | 🟡 mechanismus ✅, linkový JSON ⬜ |
 
@@ -176,7 +173,7 @@ TTF v `C:\DEV\EDISON\TiskJR\_ruzne`) — prerekvizita jakéhokoli knižního/vý
 
 | # | Co | Proč odloženo / dopad | Odhad |
 |---|---|---|---|
-| C2 | **Symbolový font Timetable_nove(+SK)** do Skia (krok 42b, gate R5) — embed TTF + převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Dnes se `ZNAK` kreslí jako textový klíč (bezbariér, projíždí, dny…) | vizuální parita; bez něj JŘ „tiše lže" u dopravních symbolů (viz R5) | M |
+| C2 | **Symbolový font Timetable_nove(+SK)** do Skia (krok 42b, gate R5). **Zastávkový JŘ hotový 9.7.** — embed `TimeTable2.ttf`/`TimeTable2SK.ttf`, locale-aware `FontResolver.SymbolFontFamily`, single-char `SpecialniZnak` → piktogram (NotesLegend + DepartureGrid); na-znamení `x/y/z` = text. **Zbývá linková část**: `ZNAK` sloupce LineTable (multichar/kompozitní symboly, převodní tabulka `GSId` 66+ symbolů) | vizuální parita; bez linkové části knižní/výlepový JŘ „tiše lže" u dopravních symbolů (R5) | M→S |
 | C3 | **2D bin-packing / `Strih`** (krok 43 + gate R1/R2, *přesunuto z layout tracku 2026-07-07*) — široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků. Součást: **auto-fit fontu na šířku** (dnes jen výškový `ComputeFontScale`), flow paketů, „dotisk zbytku legendy na další stránce". **Zde proběhne R1 extrakce sdíleného řádkového jádra** = zavedení **row-plan vrstvy** (`List<RowSpec>`: druh řádku data/header/groupHeader/groupFooter/subrow + buňky → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow`), ať „řádkový layout" (grouping, page-spanning, per-typ-řádku, merged) přestane být per-element `Render` smyčka (dnes N míst → pak 1 datové tvarování). **LineTable = prototyp** — už heterogenní řádky skládá inline. Pozn.: sdílené low-level (buňka/sloupec/kaskáda/šířky) i řádkové podmínky (viditelnost/zvýraznění) jsou **hotové** (pětice levných švů 2026-07-08); row-plan je poslední zbývající řádková vrstva. Zastávkový JŘ to nepotřebuje (DepartureGrid = málo sloupců). | nutné pro reálný tisk MHD linek; největší kus, dělá se jednou pořádně | L |
 | C4 | **Rozšíření výchozích šablon na další agendy** — mechanismus embed→MLINE hotový (governance v1, zastávková AD); přidat MHD + linkový JSON do `SystemTemplates/` | provozní; malý | S |
 | C5 | **Konfigurovatelné pořadí poznámek** (`PoznamkyPoradiDruh`) — legacy AD parametr; TD má pevné pořadí druhů | per-zákaznická variace, řešit až s poptávkou | S |
