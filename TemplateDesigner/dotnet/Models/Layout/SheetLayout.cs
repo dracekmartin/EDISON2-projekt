@@ -1,0 +1,188 @@
+using System.Linq;
+
+namespace TemplateDesigner.Models.Layout;
+
+/// <summary>
+/// Konfigurace imposice — skládání logických stránek šablony na fyzické listy (N-up).
+/// Vlastnost VÝSTUPU, ne šablony: šablona zůstává např. A5, teprve tisk/export skládá
+/// 2×A5 na A4 naležato. Stránky se umisťují 1:1 (bez zmenšování), blok se na listu centruje.
+/// </summary>
+public sealed record SheetLayoutOptions
+{
+    /// <summary>Šířka fyzického listu v mm.</summary>
+    public required float SheetWidth { get; init; }
+
+    /// <summary>Výška fyzického listu v mm.</summary>
+    public required float SheetHeight { get; init; }
+
+    /// <summary>Počet řádků mřížky.</summary>
+    public required int Rows { get; init; }
+
+    /// <summary>Počet sloupců mřížky.</summary>
+    public required int Cols { get; init; }
+
+    /// <summary>Rozměr logické stránky v mm (šířka).</summary>
+    public required float PageWidth { get; init; }
+
+    /// <summary>Rozměr logické stránky v mm (výška).</summary>
+    public required float PageHeight { get; init; }
+
+    /// <summary>True = každá logická stránka vyplní celý list (táž vývěska N× pro řezání).
+    /// False = sekvenční skládání (stránky po sobě).</summary>
+    public bool RepeatEachPage { get; init; }
+
+    /// <summary>True = kreslit tenké ořezové čáry na hranicích stránek.</summary>
+    public bool DrawCutMarks { get; init; }
+
+    /// <summary>Počet pozic na jednom listu.</summary>
+    public int SlotsPerSheet => Rows * Cols;
+
+    /// <summary>X počátek bloku stránek (centrovaný) v mm.</summary>
+    public float BlockOriginX => (SheetWidth - Cols * PageWidth) / 2f;
+
+    /// <summary>Y počátek bloku stránek (centrovaný) v mm.</summary>
+    public float BlockOriginY => (SheetHeight - Rows * PageHeight) / 2f;
+
+    /// <summary>X souřadnice svislých ořezových čar (všechny hranice sloupců vč. krajních) v mm.</summary>
+    public IEnumerable<float> CutLinesX => Enumerable.Range(0, Cols + 1).Select(i => BlockOriginX + i * PageWidth);
+
+    /// <summary>Y souřadnice vodorovných ořezových čar (všechny hranice řádků vč. krajních) v mm.</summary>
+    public IEnumerable<float> CutLinesY => Enumerable.Range(0, Rows + 1).Select(j => BlockOriginY + j * PageHeight);
+}
+
+/// <summary>Jedna logická stránka umístěná na listu (offset levého horního rohu v mm).</summary>
+public sealed record PlacedPage(Page Page, float OffsetX, float OffsetY);
+
+/// <summary>Jeden fyzický list se složenými stránkami.</summary>
+public sealed record Sheet(IReadOnlyList<PlacedPage> Pages);
+
+/// <summary>
+/// Klíče a hodnoty exportních polí imposice — wire kontrakt s Caché
+/// <c>ALVA.TemplateDesigner.EDInputForm.AgendaParams.AddExportFields</c>. Stabilní stringy (parsuje C#).
+/// </summary>
+public static class SheetLayoutKeys
+{
+    public const string Sheet = "__EXPORT_SHEET";
+    public const string Grid = "__EXPORT_SHEET_GRID";
+    public const string Repeat = "__EXPORT_SHEET_REPEAT";
+    public const string Marks = "__EXPORT_SHEET_MARKS";
+
+    public const string SheetNone = "NONE";
+    public const string GridAuto = "AUTO";
+
+    /// <summary>Všechny klíče — pro persistence restore (nejsou mezi agenda parametry).</summary>
+    public static readonly string[] All = [Sheet, Grid, Repeat, Marks];
+}
+
+/// <summary>
+/// Čistá logika imposice: parsování konfigurace z exportních polí + skládání stránek na listy.
+/// Bez SkiaSharp/WPF — testovatelné, sdílené PrintDialogem i exportem z hlavního okna.
+/// </summary>
+public static class SheetComposer
+{
+    /// <summary>
+    /// Sestaví <see cref="SheetLayoutOptions"/> z hodnot exportních polí (sdílený dict parametrů).
+    /// Vrací null = imposice vypnutá. Vyhazuje <see cref="ArgumentException"/> s českou hláškou,
+    /// když se zvolená mřížka na list 1:1 nevejde (uživatelská chyba konfigurace).
+    /// </summary>
+    public static SheetLayoutOptions? FromParamValues(IReadOnlyDictionary<string, object?> values, PageSize page)
+    {
+        var sheetKey = (values.GetValueOrDefault(SheetLayoutKeys.Sheet) as string) ?? SheetLayoutKeys.SheetNone;
+        if (sheetKey is "" or SheetLayoutKeys.SheetNone) return null;
+
+        var (sheetW, sheetH) = ParseSheetFormat(sheetKey)
+            ?? throw new ArgumentException($"Neznámý formát listu: {sheetKey}");
+
+        var gridKey = (values.GetValueOrDefault(SheetLayoutKeys.Grid) as string) ?? SheetLayoutKeys.GridAuto;
+        var (rows, cols) = ResolveGrid(gridKey, page.Width, page.Height, sheetW, sheetH);
+
+        return new SheetLayoutOptions
+        {
+            SheetWidth = sheetW,
+            SheetHeight = sheetH,
+            Rows = rows,
+            Cols = cols,
+            PageWidth = page.Width,
+            PageHeight = page.Height,
+            RepeatEachPage = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Repeat)),
+            DrawCutMarks = ParseBool(values.GetValueOrDefault(SheetLayoutKeys.Marks)),
+        };
+    }
+
+    /// <summary>Formát listu z wire klíče → (šířka, výška) v mm. Null = neznámý klíč.</summary>
+    public static (float W, float H)? ParseSheetFormat(string key) => key switch
+    {
+        "A4_PORTRAIT"  => (210f, 297f),
+        "A4_LANDSCAPE" => (297f, 210f),
+        "A3_PORTRAIT"  => (297f, 420f),
+        "A3_LANDSCAPE" => (420f, 297f),
+        _ => null,
+    };
+
+    /// <summary>
+    /// Mřížka z wire klíče ("AUTO" nebo "ŘÁDKYxSLOUPCE", např. "1x2"). AUTO = největší 1:1 fit.
+    /// Vyhazuje <see cref="ArgumentException"/>, když se stránka na list nevejde ani 1×1,
+    /// nebo když explicitní mřížka přesahuje list.
+    /// </summary>
+    public static (int Rows, int Cols) ResolveGrid(string gridKey, float pageW, float pageH, float sheetW, float sheetH)
+    {
+        int maxRows = (int)(sheetH / pageH);
+        int maxCols = (int)(sheetW / pageW);
+
+        if (maxRows < 1 || maxCols < 1)
+            throw new ArgumentException(
+                $"Stránka {pageW:0.#}×{pageH:0.#} mm se na list {sheetW:0.#}×{sheetH:0.#} mm nevejde (bez zmenšování).");
+
+        if (gridKey is "" or SheetLayoutKeys.GridAuto)
+            return (maxRows, maxCols);
+
+        var parts = gridKey.Split('x', 'X', '×');
+        if (parts.Length != 2 || !int.TryParse(parts[0], out int rows) || !int.TryParse(parts[1], out int cols)
+            || rows < 1 || cols < 1)
+            throw new ArgumentException($"Neplatná mřížka listu: {gridKey}");
+
+        if (rows > maxRows || cols > maxCols)
+            throw new ArgumentException(
+                $"Mřížka {rows}×{cols} se stránkou {pageW:0.#}×{pageH:0.#} mm se na list {sheetW:0.#}×{sheetH:0.#} mm nevejde 1:1 (max {maxRows}×{maxCols}).");
+
+        return (rows, cols);
+    }
+
+    /// <summary>
+    /// Složí logické stránky na listy. Sekvenčně po řádcích (zleva doprava, shora dolů);
+    /// <see cref="SheetLayoutOptions.RepeatEachPage"/> = každá stránka vyplní celý list.
+    /// Poslední list může mít prázdné pozice (lichý počet stránek).
+    /// </summary>
+    public static List<Sheet> Compose(IReadOnlyList<Page> pages, SheetLayoutOptions o)
+    {
+        var sheets = new List<Sheet>();
+        if (pages.Count == 0) return sheets;
+
+        if (o.RepeatEachPage)
+        {
+            foreach (var page in pages)
+                sheets.Add(new Sheet([.. AllSlots(o).Select(s => new PlacedPage(page, s.X, s.Y))]));
+            return sheets;
+        }
+
+        var slots = AllSlots(o).ToList();
+        for (int i = 0; i < pages.Count; i += slots.Count)
+        {
+            var placed = new List<PlacedPage>();
+            for (int s = 0; s < slots.Count && i + s < pages.Count; s++)
+                placed.Add(new PlacedPage(pages[i + s], slots[s].X, slots[s].Y));
+            sheets.Add(new Sheet(placed));
+        }
+        return sheets;
+    }
+
+    private static IEnumerable<(float X, float Y)> AllSlots(SheetLayoutOptions o)
+    {
+        for (int r = 0; r < o.Rows; r++)
+            for (int c = 0; c < o.Cols; c++)
+                yield return (o.BlockOriginX + c * o.PageWidth, o.BlockOriginY + r * o.PageHeight);
+    }
+
+    private static bool ParseBool(object? v) => v is true
+        || (v is string s && (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase)));
+}

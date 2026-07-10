@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-07-10 — Imposice: skládání stránek na fyzické listy (N-up, 2×A5 → A4)
+
+Roadmap bod č. 1. Vlastnost VÝSTUPU, ne šablony: šablona vývěsky zůstává A5 (designer i náhled
+beze změny), teprve PDF export skládá stránky 1:1 na listy (blok centrovaný, bez zmenšování).
+Ověřeno: build 0 chyb, .NET 336/336 (+20: SheetComposer unit + PdfPig end-to-end smoke).
+
+- **`Models/Layout/SheetLayout.cs`** — čistá vrstva bez SkiaSharp/WPF: `SheetLayoutOptions`
+  (list, mřížka, opakování, značky + geometrie bloku), `SheetComposer` (`FromParamValues` parsování
+  wire hodnot + validace, `ResolveGrid` AUTO = největší 1:1 fit, `Compose` stránky → listy),
+  `SheetLayoutKeys` (wire kontrakt `__EXPORT_SHEET*`).
+- **UI = exportní pole v PrintDialogu** (vzor `__EXPORT_SPLIT`): „Uspořádání na list"
+  (Vypnuto/A4/A3 × výška/šířka), „Mřížka" (Auto/1×2/2×1/2×2/2×3/3×2/3×3), „Každá stránka na celý
+  list (pro řezání)" — táž vývěska N× — a „Ořezové značky" (tenké šedé čáry na hranicích řezu).
+  Detailní pole vidět jen při zapnutém listu (`ApplyVisibility`). Caché
+  `AgendaParams.AddExportFields` + persistence per-agenda přes PrintParams (`ExportKeys` rozšířeno
+  → restore při reopenu zdarma). Nevalidní mřížka (nevejde se 1:1) → česká hláška ve status baru.
+- **Render:** `RenderMultiDataToPdf`/`RenderToPdf` volitelný `SheetLayoutOptions` — imposiční
+  větev nalayoutuje logické stránky, `SheetComposer.Compose`, každý list = 1 PDF stránka,
+  `RenderPage` s offsetem (už uměl). Aplikuje se v PrintDialogu (mock i ostrá data, split módy —
+  imposice uvnitř každého souboru) i v exportu z hlavního okna (options zachyceny na UI threadu
+  se snapshotem). PNG export záměrně bez imposice (rastr per stránka). Lichý počet → poslední
+  pozice prázdné.
+- Brožura/duplex řazení vědomě v2 (potřebuje až knižní JŘ) — model je na rozšíření připravený
+  (options record + composer).
+
 ## 2026-07-10 — TR4: fixed-then-shrink výška řádku StopListu + sdílený helper
 
 TRANSDEV požadavek (3. režim výšky řádku „zastávka"). Ověřeno: .NET 316/316, build 0 chyb. Rendering-only.

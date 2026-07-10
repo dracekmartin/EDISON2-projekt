@@ -2,6 +2,17 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — Imposice N-up (2×A5 → A4) — roadmap bod č. 1
+
+Skládání logických stránek na fyzické listy při PDF exportu — vlastnost výstupu, ne šablony
+(designer/náhled beze změny, šablona zůstává A5). `Models/Layout/SheetLayout.cs` (`SheetComposer`,
+čistá vrstva bez SkiaSharp) + exportní pole `__EXPORT_SHEET*` v PrintDialogu (vzor `__EXPORT_SPLIT`,
+persistence per-agenda) + imposiční větev `RenderMultiDataToPdf` (list = 1 PDF stránka, `RenderPage`
+s offsetem). Módy: formát listu A4/A3 × orientace, mřížka AUTO (největší 1:1 fit) / explicitní,
+opakování stránky (táž vývěska N× pro řezání), ořezové značky. Aplikováno v PrintDialogu (mock +
+ostrá data + split módy) i exportu z hlavního okna. 336/336 vč. PdfPig end-to-end smoke testů.
+**Odloženo na v2 (knižní JŘ):** brožura/duplex řazení stránek. Detail → changelog 2026-07-10.
+
 ## Session 2026-07-10 — MHD-port zbytky uzavřeno (na poptávku / N/A)
 
 Helpdesk featury hotové pro AD agendu, ne pro self-contained MHD modul (`ZastavkoveJrMhd`, `^ALVA.MHD.*`,

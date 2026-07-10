@@ -7,6 +7,7 @@ using ALWA.SYS;
 using EDControls.EDViewModel;
 using Microsoft.Win32;
 using TemplateDesigner.Models;
+using TemplateDesigner.Models.Layout;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner;
@@ -36,7 +37,8 @@ public class PrintDialogViewModel : EDViewModel
 
     /// <summary>Klíče export polí — pro restore v <c>LoadPrintParamsAndApplyAsync</c> (nejsou
     /// v <c>_agendaParameters</c>, takže by se jinak nenačetly).</summary>
-    public static readonly string[] ExportKeys = [ExportSplitKey, ExportFileNameKey];
+    public static readonly string[] ExportKeys =
+        [ExportSplitKey, ExportFileNameKey, .. SheetLayoutKeys.All];
 
     /// <summary>FQN Caché agenda třídy pro EDInputForm AgendaParams (null = bez agendy / GENERAL).</summary>
     public string? AgendaClass => _agendaClass;
@@ -51,11 +53,11 @@ public class PrintDialogViewModel : EDViewModel
     public RelayCommand ExportPdfCommand { get; }
     public RelayCommand ExportRealDataPdfCommand { get; }
 
-    /// <summary>Code-behind napojí na PreviewCanvas.RenderToPdf.</summary>
-    public Action<string, DataContext?>? RequestRenderPdf { get; set; }
+    /// <summary>Code-behind napojí na PreviewCanvas.RenderToPdf. Třetí parametr = imposice (null = vypnutá).</summary>
+    public Action<string, DataContext?, SheetLayoutOptions?>? RequestRenderPdf { get; set; }
 
-    /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf.</summary>
-    public Action<string, IReadOnlyList<DataContext>>? RequestRenderMultiPdf { get; set; }
+    /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf. Třetí parametr = imposice (null = vypnutá).</summary>
+    public Action<string, IReadOnlyList<DataContext>, SheetLayoutOptions?>? RequestRenderMultiPdf { get; set; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.CountOverflowingPages — layout-only kontrola přetečení
     /// napříč všemi instancemi (data už fetchnutá → levné). Vrací (počet přetékajících, celkem stránek).</summary>
@@ -116,6 +118,10 @@ public class PrintDialogViewModel : EDViewModel
         // Export pole (universální, ne agenda parametry) — prefill posledně použitými / defaulty.
         vals[ExportSplitKey] = CurrentSplitKey();
         vals[ExportFileNameKey] = CurrentFileNamePattern();
+        vals[SheetLayoutKeys.Sheet] = (_paramValues.GetValueOrDefault(SheetLayoutKeys.Sheet) as string) is { Length: > 0 } sh ? sh : SheetLayoutKeys.SheetNone;
+        vals[SheetLayoutKeys.Grid] = (_paramValues.GetValueOrDefault(SheetLayoutKeys.Grid) as string) is { Length: > 0 } gr ? gr : SheetLayoutKeys.GridAuto;
+        vals[SheetLayoutKeys.Repeat] = StoredBool(SheetLayoutKeys.Repeat) ? "true" : "false";
+        vals[SheetLayoutKeys.Marks] = StoredBool(SheetLayoutKeys.Marks) ? "true" : "false";
 
         init["values"] = new CVar(JsonSerializer.Serialize(vals));
         return init;
@@ -133,8 +139,8 @@ public class PrintDialogViewModel : EDViewModel
             _        => (object)fieldValue
         };
 
-        // Export pole neovlivňují obsah sestavy → zbytečně neobnovovat náhled.
-        if (name != ExportSplitKey && name != ExportFileNameKey)
+        // Export pole (split/název/imposice) neovlivňují obsah sestavy → zbytečně neobnovovat náhled.
+        if (!name.StartsWith("__EXPORT", StringComparison.Ordinal))
             _onParamsChanged?.Invoke();
     }
 
@@ -164,6 +170,10 @@ public class PrintDialogViewModel : EDViewModel
 
     private void ExportPdf()
     {
+        SheetLayoutOptions? sheets;
+        try { sheets = BuildSheetOptions(); }
+        catch (ArgumentException ex) { StatusText = $"⚠ {ex.Message}"; return; }
+
         var filePath = ShowSaveDialog("Export náhledu do PDF");
         if (filePath is null) return;
 
@@ -171,7 +181,7 @@ public class PrintDialogViewModel : EDViewModel
         {
             PersistParams();
             var data = _buildMockData(_paramValues);
-            RequestRenderPdf?.Invoke(filePath, data);
+            RequestRenderPdf?.Invoke(filePath, data, sheets);
             OpenPdf(filePath);
             StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}";
         }
@@ -184,6 +194,11 @@ public class PrintDialogViewModel : EDViewModel
     private void ExportRealDataPdf()
     {
         if (_buildRealData is null) return;
+
+        // Validace imposice před výběrem cíle — chybná mřížka je uživatelská chyba konfigurace.
+        SheetLayoutOptions? sheets;
+        try { sheets = BuildSheetOptions(); }
+        catch (ArgumentException ex) { StatusText = $"⚠ {ex.Message}"; return; }
 
         var splitMode = CurrentSplitMode();
         var pattern   = CurrentFileNamePattern();
@@ -211,7 +226,7 @@ public class PrintDialogViewModel : EDViewModel
 
             if (splitMode == ExportSplitMode.Single)
             {
-                RequestRenderMultiPdf?.Invoke(target, dataPages);
+                RequestRenderMultiPdf?.Invoke(target, dataPages, sheets);
                 OpenPdf(target);
                 StatusText = overflow > 0
                     ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}"
@@ -226,7 +241,7 @@ public class PrintDialogViewModel : EDViewModel
             foreach (var group in GroupForExport(dataPages, splitMode))
             {
                 var name = BuildFileName(group[0], pattern, usedNames);
-                RequestRenderMultiPdf?.Invoke(Path.Combine(target, name + ".pdf"), group);
+                RequestRenderMultiPdf?.Invoke(Path.Combine(target, name + ".pdf"), group, sheets);
                 fileCount++;
             }
 
@@ -260,6 +275,14 @@ public class PrintDialogViewModel : EDViewModel
         var p = _paramValues.GetValueOrDefault(ExportFileNameKey) as string;
         return string.IsNullOrWhiteSpace(p) ? DefaultFileNamePattern : p;
     }
+
+    /// <summary>Imposice z exportních polí (sdílený dict) + rozměru stránky šablony.
+    /// Null = vypnutá. ArgumentException = mřížka se na list nevejde (hláška pro uživatele).</summary>
+    private SheetLayoutOptions? BuildSheetOptions() =>
+        SheetComposer.FromParamValues(_paramValues, _template.PageSize);
+
+    private bool StoredBool(string key) => _paramValues.GetValueOrDefault(key) is string s
+        && (s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase));
 
     /// <summary>Seskupí stránky dat dle režimu členění. Pořadí skupin i stránek v nich
     /// odpovídá pořadí z Caché (LINQ GroupBy zachovává first-seen pořadí).</summary>

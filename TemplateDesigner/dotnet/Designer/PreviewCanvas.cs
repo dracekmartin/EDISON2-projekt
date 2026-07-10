@@ -100,8 +100,8 @@ public class PreviewCanvas
     /// Exportuje šablonu s dodanými daty do PDF souboru.
     /// Multi-page: každá stránka LayoutResult = jedna stránka PDF.
     /// </summary>
-    public void RenderToPdf(string filePath, DataContext? data) =>
-        RenderMultiDataToPdf(filePath, [data!]);
+    public void RenderToPdf(string filePath, DataContext? data, SheetLayoutOptions? sheetLayout = null) =>
+        RenderMultiDataToPdf(filePath, [data!], sheetLayout: sheetLayout);
 
     /// <summary>
     /// Exportuje šablonu s více sadami dat do PDF — každý DataContext = kompletní průchod šablonou.
@@ -110,8 +110,11 @@ public class PreviewCanvas
     /// <param name="template">Šablona k renderování — snapshot pro export na pozadí
     /// (uživatel může mezitím editovat živou šablonu). Null = aktuální šablona ze State.</param>
     /// <param name="progress">Per datová stránka: (hotovo, celkem).</param>
+    /// <param name="sheetLayout">Imposice: skládání logických stránek na fyzické listy (N-up).
+    /// Null = 1 stránka = 1 PDF stránka (dnešní chování).</param>
     public void RenderMultiDataToPdf(string filePath, IReadOnlyList<DataContext> dataPages,
-        Template? template = null, IProgress<(int done, int total)>? progress = null)
+        Template? template = null, IProgress<(int done, int total)>? progress = null,
+        SheetLayoutOptions? sheetLayout = null)
     {
         var tpl = template ?? _state.CurrentTemplate;
         const float pointsPerMm = 72f / 25.4f;
@@ -121,6 +124,13 @@ public class PreviewCanvas
 
         using var stream = new FileStream(filePath, FileMode.Create);
         using var doc    = SKDocument.CreatePdf(stream);
+
+        if (sheetLayout is not null)
+        {
+            RenderSheetsToPdf(doc, dataPages, tpl, sheetLayout, pointsPerMm, progress);
+            doc.Close();
+            return;
+        }
 
         for (int i = 0; i < dataPages.Count; i++)
         {
@@ -142,6 +152,59 @@ public class PreviewCanvas
         }
 
         doc.Close();
+    }
+
+    /// <summary>
+    /// Imposiční větev PDF exportu: nalayoutuje všechny logické stránky, složí je přes
+    /// <see cref="SheetComposer"/> na listy a každý list vyrenderuje jako jednu PDF stránku
+    /// (stránky 1:1 s offsetem, blok centrovaný). Progress se hlásí per datová sada ve fázi
+    /// layoutu (render listů je pak už rychlý).
+    /// </summary>
+    private void RenderSheetsToPdf(SKDocument doc, IReadOnlyList<DataContext> dataPages, Template tpl,
+        SheetLayoutOptions o, float pointsPerMm, IProgress<(int done, int total)>? progress)
+    {
+        var ps = tpl.PageSize;
+        var logicalPages = new List<Page>();
+        for (int i = 0; i < dataPages.Count; i++)
+        {
+            logicalPages.AddRange(Layout(dataPages[i], tpl).Pages);
+            progress?.Report((i + 1, dataPages.Count));
+        }
+
+        foreach (var sheet in SheetComposer.Compose(logicalPages, o))
+        {
+            var canvas = doc.BeginPage(o.SheetWidth * pointsPerMm, o.SheetHeight * pointsPerMm);
+
+            using (var bg = new SKPaint { Color = SKColors.White })
+                canvas.DrawRect(0, 0, o.SheetWidth * pointsPerMm, o.SheetHeight * pointsPerMm, bg);
+
+            foreach (var placed in sheet.Pages)
+                RenderPage(canvas, ps, pointsPerMm, placed.OffsetX * pointsPerMm, placed.OffsetY * pointsPerMm, placed.Page);
+
+            if (o.DrawCutMarks)
+                DrawCutMarks(canvas, o, pointsPerMm);
+
+            doc.EndPage();
+        }
+    }
+
+    /// <summary>Tenké šedé ořezové čáry na všech hranicích stránek bloku (leží přesně na řezu).</summary>
+    private static void DrawCutMarks(SKCanvas canvas, SheetLayoutOptions o, float pointsPerMm)
+    {
+        using var p = new SKPaint
+        {
+            Color = new SKColor(0x99, 0x99, 0x99),
+            IsStroke = true,
+            StrokeWidth = 0.15f * pointsPerMm,
+            IsAntialias = false
+        };
+        float top = o.BlockOriginY * pointsPerMm, bottom = (o.BlockOriginY + o.Rows * o.PageHeight) * pointsPerMm;
+        float left = o.BlockOriginX * pointsPerMm, right = (o.BlockOriginX + o.Cols * o.PageWidth) * pointsPerMm;
+
+        foreach (var x in o.CutLinesX)
+            canvas.DrawLine(x * pointsPerMm, top, x * pointsPerMm, bottom, p);
+        foreach (var y in o.CutLinesY)
+            canvas.DrawLine(left, y * pointsPerMm, right, y * pointsPerMm, p);
     }
 
     /// <summary>

@@ -9,11 +9,13 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
-2. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
-3. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-4. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
-5. **🧭 K rozmyšlení — „typ šablony" místo / vedle „agendy"** (návrh z analýzy s kolegou) — dnes se šablona
+1. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
+
+   > Imposice N-up (2×A5 → A4) **HOTOVO 2026-07-10** → changelog + archiv. Brožura/duplex řazení
+   > vědomě odloženo na knižní JŘ (model připraven na rozšíření).
+2. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+4. **🧭 K rozmyšlení — „typ šablony" místo / vedle „agendy"** (návrh z analýzy s kolegou) — dnes se šablona
    váže na `AgendaCode` (datový zdroj). Zvážit koncept **typu šablony** (klasifikace, k čemu sestava je) jako
    možná vhodnější/ortogonální osu k `AgendaCode` + `ElementKind` + `AgendaCapabilities`. Nejdřív **projít
    a rozhodnout** (jaký problém to řeší, dopad na kontrakt/kapabilit model, migrace), teprve pak případně dělat.

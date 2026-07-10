@@ -71,6 +71,39 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
     s fname = ""
     i $isobject(vals) && vals.%IsDefined("__EXPORT_FILENAME") { s fname = vals.%Get("__EXPORT_FILENAME") }
     d form.AddText("__EXPORT_FILENAME", "Název souboru (tokeny {POLE})", fname)
+
+    // Imposice (N-up): skládání stránek šablony na fyzické listy — stránky 1:1, blok centrovaný.
+    // Geometrii/validaci mřížky řeší C# (SheetComposer — zná rozměr stránky šablony); tady jen volby.
+    // Viditelnost detailních polí (jen při zvoleném formátu listu) řeší C# host (PrintDialog.ApplyVisibility).
+    s sheet = "NONE"
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET") { s sheet = vals.%Get("__EXPORT_SHEET") }
+    s f = form.AddFieldToLastGroup("__EXPORT_SHEET", "Uspořádání na list", $$$FieldTypeList, 1, 1)
+    d f.AddListItem("NONE",         "Vypnuto (1 stránka = 1 list)")
+    d f.AddListItem("A4_PORTRAIT",  "A4 na výšku")
+    d f.AddListItem("A4_LANDSCAPE", "A4 na šířku")
+    d f.AddListItem("A3_PORTRAIT",  "A3 na výšku")
+    d f.AddListItem("A3_LANDSCAPE", "A3 na šířku")
+    s:sheet'="" f.value = sheet
+
+    s grid = "AUTO"
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_GRID") { s grid = vals.%Get("__EXPORT_SHEET_GRID") }
+    s f = form.AddFieldToLastGroup("__EXPORT_SHEET_GRID", "Mřížka listu (řádky × sloupce)", $$$FieldTypeList, 1, 1)
+    d f.AddListItem("AUTO", "Auto (největší možná)")
+    d f.AddListItem("1x2",  "1 × 2 (vedle sebe)")
+    d f.AddListItem("2x1",  "2 × 1 (pod sebou)")
+    d f.AddListItem("2x2",  "2 × 2")
+    d f.AddListItem("2x3",  "2 × 3")
+    d f.AddListItem("3x2",  "3 × 2")
+    d f.AddListItem("3x3",  "3 × 3")
+    s:grid'="" f.value = grid
+
+    s repeat = 0
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_REPEAT") { s v = vals.%Get("__EXPORT_SHEET_REPEAT")  s repeat = $s((v="true")||(v=1):1, 1:0) }
+    d form.AddBool("__EXPORT_SHEET_REPEAT", "Každá stránka na celý list (pro řezání)", repeat)
+
+    s marks = 0
+    i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_MARKS") { s v = vals.%Get("__EXPORT_SHEET_MARKS")  s marks = $s((v="true")||(v=1):1, 1:0) }
+    d form.AddBool("__EXPORT_SHEET_MARKS", "Ořezové značky", marks)
 }
 
 ClassMethod Validate(ByRef sys As %String) As %Status

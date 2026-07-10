@@ -13,6 +13,7 @@ using TemplateDesigner.Designer;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Elements;
 using TemplateDesigner.Models.Expressions;
+using TemplateDesigner.Models.Layout;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
@@ -1284,6 +1285,12 @@ public class TemplateDesignerViewModel : EDViewModel
         if (path is null) return;
         if (RenderPdfToFile is null) return;
 
+        // Imposice ze sdílených exportních polí (persistované per-agenda, editují se v PrintDialogu) —
+        // zachytit na UI threadu spolu se snapshotem. Chybná mřížka = uživatelská konfigurace → status bar.
+        SheetLayoutOptions? sheets;
+        try { sheets = SheetComposer.FromParamValues(PreviewParamValues, State.CurrentTemplate.PageSize); }
+        catch (ArgumentException ex) { StatusText = $"⚠ {ex.Message}"; return; }
+
         // Fetch (N× GetData přes MLRest) i render běží mimo UI thread (R1). UI zůstává
         // plně interaktivní — render jede nad SNAPSHOTEM šablony (stav v okamžiku kliknutí),
         // takže editace během exportu výstup neovlivní. Progress jde do status baru.
@@ -1296,7 +1303,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
             var renderProgress = new Progress<(int done, int total)>(p =>
                 StatusText = $"Generuji PDF: {p.done}/{p.total} datových stránek…");
-            await Task.Run(() => RenderPdfToFile(path, pages, snapshot, renderProgress));
+            await Task.Run(() => RenderPdfToFile(path, pages, snapshot, renderProgress, sheets));
 
             StatusText = $"PDF uloženo: {Path.GetFileName(path)} ({pages.Count} datových stránek)";
             OpenExportedFile(path);
@@ -1309,8 +1316,8 @@ public class TemplateDesignerViewModel : EDViewModel
     public IDesignerDialogService? Dialogs { get; set; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.RenderMultiDataToPdf. Voláno z background threadu
-    /// se snapshot šablonou (živá se může mezitím editovat).</summary>
-    public Action<string, IReadOnlyList<DataContext>, Template, IProgress<(int done, int total)>>? RenderPdfToFile { get; set; }
+    /// se snapshot šablonou (živá se může mezitím editovat). Poslední parametr = imposice (null = vypnutá).</summary>
+    public Action<string, IReadOnlyList<DataContext>, Template, IProgress<(int done, int total)>, SheetLayoutOptions?>? RenderPdfToFile { get; set; }
 
     private async Task ExportPreviewPngAsync()
     {
