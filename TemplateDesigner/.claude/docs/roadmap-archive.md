@@ -2,6 +2,16 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — Audit infra batch (B3, B4, B6, B7)
+
+Robustnost/extenzibilita mimo kolizní zónu paralelní práce. Detail → changelog 2026-07-10.
+Build 0 chyb, TemplateDesigner.Tests 316/316 (+11 z B4).
+
+- **B7** — první `GetSchema` (R1) na cold cestě přes `Task.Run` (warm sync), `IsSchemaCached`; `GetAvailableSkupiny` cache. Nulový caller ripple.
+- **B4** — `ElementRegistrationDriftTests`: `[JsonDerivedType]` → factory type-match, allowlist uspaných `{Table}`.
+- **B3** — `CapabilityCatalog` data-driven přes `AgendaCapabilities`/`ElementKind` (zná LineTable); `GenericTypes` Table→DynamicTable; FriendlyName +LineTable.
+- **B6** — reset stránky: sdílené konstanty property-path + log chybějícího klíče; `async void`→`async Task`+try/catch (R2).
+
 ## Session 2026-07-10 ✅ — Audit blok A: kontrakt skalárů (MHD strana)
 
 Sjednocení skalárního kontraktu zastávkového JŘ dle vzoru linkové agendy. Detail → changelog 2026-07-10.

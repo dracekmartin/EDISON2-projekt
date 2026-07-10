@@ -993,7 +993,7 @@ public partial class MainWindow : Window
 
     private void MenuPageProps_Click(object sender, RoutedEventArgs e)
     {
-        if (_vm is not null) OpenPropertiesForPage(_vm.State.CurrentTemplate);
+        if (_vm is not null) _ = OpenPropertiesForPage(_vm.State.CurrentTemplate);
     }
 
     private void MenuUndo_Click(object sender, RoutedEventArgs e)  => _vm!.UndoCommand.Execute(null);
@@ -1544,35 +1544,54 @@ public partial class MainWindow : Window
         InvalidatePreview();
     }
 
-    private async void OpenPropertiesForPage(Template template)
+    // Property-path klíče ve FinalValues (= ElementFormBinder.Snapshot cesta) — MUSÍ odpovídat
+    // property cestě na Template.PageSize. Sdílená konstanta, ať detekce změny rozměru neselže tiše
+    // při přejmenování pole formuláře.
+    private const string PagePathWidth  = "PageSize.Width";
+    private const string PagePathHeight = "PageSize.Height";
+
+    private async Task OpenPropertiesForPage(Template template)
     {
-        float oldW = template.PageSize.Width, oldH = template.PageSize.Height;
-
-        var dlg = new ElementEditDialog(
-            template,
-            "ALVA.TemplateDesigner.EDInputForm.PageEdit",
-            "Vlastnosti stránky") { Owner = this };
-        if (dlg.ShowDialog() != true) return;
-
-        // Změna velikosti / orientace stránky = reset (potvrzení → čisté plátno s novou velikostí).
-        // Zachovávat elementy přes změnu rozměrů se chovalo nepředvídatelně (elementy visely mimo
-        // stránku); reset je konzistentní se změnou agendy. Ostatní změny (okraje, kultura, font)
-        // se aplikují jako běžná undoable změna.
-        var fv = dlg.FinalValues;
-        bool dimsChanged = fv is not null
-            && (DiffMm(oldW, ParseMm(fv, "PageSize.Width", oldW))
-                || DiffMm(oldH, ParseMm(fv, "PageSize.Height", oldH)));
-
-        if (dimsChanged)
+        try
         {
-            await _vm!.ResetForPageChangeAsync(fv!);   // reset si sám vyžádá refresh plátna/velikosti
-            return;
-        }
+            float oldW = template.PageSize.Width, oldH = template.PageSize.Height;
 
-        if (dlg.ResultCommand is not null) _vm!.Execute(dlg.ResultCommand);
-        UpdateCanvasSize();
-        InvalidateCanvas();
-        InvalidatePreview();
+            var dlg = new ElementEditDialog(
+                template,
+                "ALVA.TemplateDesigner.EDInputForm.PageEdit",
+                "Vlastnosti stránky") { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            // Změna velikosti / orientace stránky = reset (potvrzení → čisté plátno s novou velikostí).
+            // Zachovávat elementy přes změnu rozměrů se chovalo nepředvídatelně (elementy visely mimo
+            // stránku); reset je konzistentní se změnou agendy. Ostatní změny (okraje, kultura, font)
+            // se aplikují jako běžná undoable změna.
+            var fv = dlg.FinalValues;
+
+            // Pojistka: dialog vrátil hodnoty, ale klíče rozměrů chybí → detekce resetu by tiše selhala.
+            if (fv is not null && (!fv.ContainsKey(PagePathWidth) || !fv.ContainsKey(PagePathHeight)))
+                System.Diagnostics.Debug.WriteLine(
+                    $"[OpenPropertiesForPage] FinalValues bez klíče rozměrů ({PagePathWidth}/{PagePathHeight}) — reset detekce vypnutá?");
+
+            bool dimsChanged = fv is not null
+                && (DiffMm(oldW, ParseMm(fv, PagePathWidth, oldW))
+                    || DiffMm(oldH, ParseMm(fv, PagePathHeight, oldH)));
+
+            if (dimsChanged)
+            {
+                await _vm!.ResetForPageChangeAsync(fv!);   // reset si sám vyžádá refresh plátna/velikosti
+                return;
+            }
+
+            if (dlg.ResultCommand is not null) _vm!.Execute(dlg.ResultCommand);
+            UpdateCanvasSize();
+            InvalidateCanvas();
+            InvalidatePreview();
+        }
+        catch (Exception ex)
+        {
+            _vm?.PopupDisplayer.Error(ex);   // R2: chyby přes IPopupDisplayer, ne pád async void
+        }
     }
 
     private static float ParseMm(IReadOnlyDictionary<string, string> fields, string key, float fallback) =>
@@ -1751,7 +1770,7 @@ public partial class MainWindow : Window
         }
         else if (e.Key == Key.P && ctrl && Keyboard.Modifiers.HasFlag(ModifierKeys.Shift))
         {
-            OpenPropertiesForPage(_vm.State.CurrentTemplate);
+            _ = OpenPropertiesForPage(_vm.State.CurrentTemplate);
             e.Handled = true;
         }
         else if (e.Key == Key.P && ctrl)

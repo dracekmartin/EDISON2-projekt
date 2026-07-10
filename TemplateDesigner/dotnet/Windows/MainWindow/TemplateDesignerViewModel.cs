@@ -512,7 +512,7 @@ public class TemplateDesignerViewModel : EDViewModel
             var selType = State.SelectedElements.Count == 1
                 ? State.SelectedElements[0].GetType().Name : null;
             return new Windows.AiGuideDialog.AiGuideContext(
-                code, name, selType, State.CurrentTemplate.Sections.Count);
+                code, name, selType, State.CurrentTemplate.Sections.Count, CurrentAgendaElementKind);
         });
 
         // Aplikuj loaded MainState na State + VM properties. Volá se po inicializaci State,
@@ -1978,7 +1978,25 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        var schema = SchemaProvider.GetSchema(agendaCode);
+        // R1: první (uncached) GetSchema je pomalý HTTP dotaz — na cold cestě odbav na pozadí
+        // a strom polí doplň po návratu; jinak zamrzne UI při otevření šablony cizí agendy na
+        // pomalé síti. Opakované (cachované) volání jde rovnou synchronně (rychlé).
+        if (CacheProvider is not null && !CacheProvider.IsSchemaCached(agendaCode))
+        {
+            var code = agendaCode;
+            AgendaNameText = $"Agenda: {code} (načítám schéma…)";
+            _ = Task.Run(() => SchemaProvider.GetSchema(code))
+                .ContinueWith(_ => RefreshFieldsListCore(code),
+                              TaskScheduler.FromCurrentSynchronizationContext());
+            return;
+        }
+
+        RefreshFieldsListCore(agendaCode);
+    }
+
+    private void RefreshFieldsListCore(string agendaCode)
+    {
+        var schema = SchemaProvider.GetSchema(agendaCode);   // po prewarmu už cached → rychlé
 
         if (schema is null)
         {

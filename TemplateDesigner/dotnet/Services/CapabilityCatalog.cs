@@ -89,8 +89,8 @@ Pravidla obsahu:
     /// <summary>
     /// Sestaví kompletní system prompt pro daný kontext.
     /// </summary>
-    public static string BuildSystemPrompt(string? agendaCode, string? agendaName,
-        string? selectedElementType, int sectionCount)
+    public static string BuildSystemPrompt(string? agendaName,
+        string? selectedElementType, int sectionCount, string? elementKind)
     {
         var sb = new StringBuilder();
         sb.AppendLine(SystemRole);
@@ -99,7 +99,7 @@ Pravidla obsahu:
         sb.AppendLine();
         sb.AppendLine(BuildCurrentContext(agendaName, selectedElementType, sectionCount));
         sb.AppendLine();
-        sb.AppendLine(BuildElementCatalog(agendaCode));
+        sb.AppendLine(BuildElementCatalog(elementKind));
         return sb.ToString();
     }
 
@@ -119,14 +119,14 @@ Pravidla obsahu:
     /// Auto-generovaný katalog: pro každý relevantní typ elementu vypíše jeho
     /// nastavitelné vlastnosti seskupené podle skupin (přímo z PropertyDescriptors).
     /// </summary>
-    public static string BuildElementCatalog(string? agendaCode)
+    public static string BuildElementCatalog(string? elementKind)
     {
         var sb = new StringBuilder();
         sb.AppendLine("# Katalog elementů a jejich nastavení");
         sb.AppendLine("(Vlastnosti jsou seskupené tak, jak je uživatel vidí v panelu/dialogu.)");
         sb.AppendLine();
 
-        foreach (var type in RelevantElementTypes(agendaCode))
+        foreach (var type in RelevantElementTypes(elementKind))
         {
             sb.AppendLine($"## {FriendlyName(type)}");
             var note = ElementNote(type);
@@ -179,33 +179,18 @@ Pravidla obsahu:
     private static readonly string[] GenericTypes =
     [
         ElementTypes.Text, ElementTypes.Image, ElementTypes.Rectangle,
-        ElementTypes.Line, ElementTypes.Barcode, ElementTypes.Table
-    ];
-
-    private static readonly string[] ScheduleTypes =
-    [
-        ElementTypes.StopList, ElementTypes.DepartureGrid, ElementTypes.NotesLegend
+        ElementTypes.Line, ElementTypes.Barcode, ElementTypes.DynamicTable
     ];
 
     /// <summary>
-    /// Které typy elementů poslat modelu. Obecné vždy; JŘ elementy jen u jízdněřádové agendy.
+    /// Které typy elementů poslat modelu. Obecné vždy; JŘ elementy podle druhu agendy
+    /// (ElementKind z registru) přes <see cref="AgendaCapabilities"/> — jediný zdroj pravdy,
+    /// shodný s paletou/menu (žádná duplicitní heuristika z kódu agendy).
     /// </summary>
-    private static IEnumerable<string> RelevantElementTypes(string? agendaCode)
+    private static IEnumerable<string> RelevantElementTypes(string? elementKind)
     {
         foreach (var t in GenericTypes) yield return t;
-        if (IsScheduleAgenda(agendaCode))
-            foreach (var t in ScheduleTypes) yield return t;
-    }
-
-    /// <summary>
-    /// Jízdněřádová agenda? Heuristika z kódu agendy (konvence: ZASTAVKOVY_JR_*, MHD, …).
-    /// Až přibudou další JŘ typy (meziměstský, vozový…) s vlastními elementy, rozšíří se zde mapování.
-    /// </summary>
-    private static bool IsScheduleAgenda(string? agendaCode)
-    {
-        if (string.IsNullOrEmpty(agendaCode)) return false;
-        var c = agendaCode.ToUpperInvariant();
-        return c.Contains("JR") || c.Contains("MHD") || c.Contains("JIZDNI");
+        foreach (var t in AgendaCapabilities.ScheduleElementTypes(elementKind)) yield return t;
     }
 
     private static string FriendlyName(string type) => type switch
@@ -215,10 +200,11 @@ Pravidla obsahu:
         ElementTypes.Rectangle     => "Obdélník",
         ElementTypes.Line          => "Čára",
         ElementTypes.Barcode       => "Kód (QR / čárový)",
-        ElementTypes.Table         => "Tabulka",
+        ElementTypes.DynamicTable  => "Tabulka (dynamická)",
         ElementTypes.StopList      => "Seznam zastávek (zastávkový JŘ)",
         ElementTypes.DepartureGrid => "Mřížka odjezdů (zastávkový JŘ)",
         ElementTypes.NotesLegend   => "Legenda poznámek (zastávkový JŘ)",
+        ElementTypes.LineTable     => "Tabulka linky (linkový JŘ)",
         _ => type
     };
 

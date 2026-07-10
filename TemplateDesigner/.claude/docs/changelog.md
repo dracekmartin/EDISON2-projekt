@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-10 — Audit infra batch (B3, B4, B6, B7)
+
+Robustnost/extenzibilita mimo kolizní zónu paralelní schedule-rendering práce. Ověřeno:
+build 0 chyb, TemplateDesigner.Tests 316/316 (+11 z B4).
+
+- **B7 — první `GetSchema` (R1) mimo UI thread.** `RefreshFieldsList` na cold cestě (uncached schéma)
+  odbaví `GetSchema` přes `Task.Run` + doplní strom polí po návratu (`RefreshFieldsListCore`, marshalováno
+  `TaskScheduler.FromCurrentSynchronizationContext`); warm (cachovaná) cesta zůstává synchronní. Nový
+  `CacheAgendaProvider.IsSchemaCached`. Signatura `RefreshFieldsList()` beze změny → nulový caller ripple.
+  Odstraňuje zamrznutí UI při otevření šablony cizí agendy na pomalé síti. + **`GetAvailableSkupiny` cache**
+  (`_skupinyCache`, invalidace v `InvalidateCaches`) — sourozenci ji měli, tahle ne.
+- **B4 — drift test registrace elementů.** `ElementRegistrationDriftTests`: reflexe `[JsonDerivedType]`
+  na `TemplateElement` → pro každý (mimo allowlist uspaných `{Table}`) ověří, že `CreateElementByType`
+  vrátí přesně ten typ (odhalí `_ => TextElement` fallback maskující zapomenutý case). Factory-only scope
+  (paleta/Skia mimo). Allowlist se hlídá proti zplesnivění.
+- **B3 — `CapabilityCatalog` data-driven.** AI průvodce už nebere JŘ elementy z string heuristiky
+  (`Contains("JR")…`) + hardcoded seznamu, ale z `AgendaCapabilities.ScheduleElementTypes(ElementKind)` —
+  jediný zdroj pravdy shodný s paletou/menu (zná LineTable). `ElementKind` protažen do `AiGuideContext`.
+  `GenericTypes` opraveno `Table`→`DynamicTable` (AI katalog popisoval uspanou tabulku), `FriendlyName` +LineTable.
+- **B6 — hardening resetu stránky.** String klíče property-path → sdílené konstanty `PagePathWidth/Height`;
+  log když `FinalValues` klíč rozměru chybí (tichý výpadek detekce resetu se zviditelní); `OpenPropertiesForPage`
+  `async void` → `async Task` s try/catch (chyby přes `IPopupDisplayer`, R2), callery `_ = …`.
+
 ## 2026-07-10 — Audit blok A: kontrakt skalárů zastávkového JŘ (MHD strana)
 
 Sjednocení skalárního kontraktu podle vzoru linkové agendy (SMER = T/Z, POPIS_SMER = konečná).

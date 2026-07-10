@@ -8,7 +8,7 @@ namespace TemplateDesigner.Windows.AiGuideDialog;
 
 /// <summary>Živý kontext pro průvodce — čte se z hlavního VM při každém dotazu.</summary>
 public readonly record struct AiGuideContext(
-    string? AgendaCode, string? AgendaName, string? SelectedElementType, int SectionCount);
+    string? AgendaCode, string? AgendaName, string? SelectedElementType, int SectionCount, string? ElementKind);
 
 /// <summary>Jedna zpráva v chatu s průvodcem.</summary>
 public class AiGuideMessage
@@ -84,7 +84,7 @@ public class AiGuidePanelViewModel : EDViewModel
         {
             var ctx = _contextProvider();
             var systemPrompt = CapabilityCatalog.BuildSystemPrompt(
-                ctx.AgendaCode, ctx.AgendaName, ctx.SelectedElementType, ctx.SectionCount);
+                ctx.AgendaName, ctx.SelectedElementType, ctx.SectionCount, ctx.ElementKind);
 
             var answer = await AnthropicApiClient.CallApiAsync(
                 apiKey, systemPrompt, BuildConversationPrompt(), Model, maxTokens: 1024, temperature: 0.2);

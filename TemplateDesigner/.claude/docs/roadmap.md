@@ -42,15 +42,11 @@
 > v repu ten digest neprodukuje (server = `YrAna4…` = HEAD; `PozitivniZnacka` je čistě .NET, bez Caché
 > emise). AD-strana A + tento nesoulad se vyřeší, až `PozitivniZnacka` doveze svou Caché emisi / opraví digest.
 
-**Blok B — .NET: viditelné bugy editace + rizika (🟠).**
+**Blok B — .NET: viditelné bugy editace + rizika (🟠).** B3/B4/B6/B7 hotové 2026-07-10 → archiv.
 
 | # | Co | Lidsky | Vel. | Rozhodnutí |
 |---|---|---|---|---|
-| B2 | DepartureGrid: overflow varování vs auto-scale počítají jinou přirozenou výšku. **⚠️ NE mechanický fix — nese UX rozhodnutí:** Render záměrně bere scale z font-driven výšky (komentář `DepartureGridElement.cs:514`), aby velká `DataRowHeight` nezmenšovala fonty; overflow detekce bere `layout.RowH`. Sjednocení musí rozhodnout, co u velké `DataRowHeight` vyhraje (shrink fontů vs. varování). | varování a zmenšování si můžou protiřečit | S→M | |
-| B3 | `CapabilityCatalog` (AI průvodce) — string heuristika, nezná LineTable → napojit na registr/`AgendaCapabilities` | AI radí jiné elementy, než nabízí paleta | S | |
-| B4 | Nový element = ~8 ručně synchronizovaných míst bez strážce → drift test „každý JsonDerivedType má záznam všude" | zapomenuté místo nic nehlásí (B3 je přesně tento drift) | S–M | |
-| B6 | Reset stránky: string klíč `"PageSize.Width"` bez pojistky + `async void` | přejmenování pole formuláře reset tiše vypne | S | |
-| B7 | R1: první `GetSchema` sync na UI threadu (`RefreshFieldsList`); + `GetAvailableSkupiny` bez cache | otevření šablony cizí agendy na pomalé síti zamrzne UI | M | |
+| B2 | DepartureGrid: overflow varování vs auto-scale počítají jinou přirozenou výšku. **⚠️ NE mechanický fix — nese UX rozhodnutí:** Render záměrně bere scale z font-driven výšky (komentář `DepartureGridElement.cs:514`), aby velká `DataRowHeight` nezmenšovala fonty; overflow detekce bere `layout.RowH`. Sjednocení musí rozhodnout, co u velké `DataRowHeight` vyhraje (shrink fontů vs. varování). **Kolegova zóna (DepartureGrid) — počkat.** | varování a zmenšování si můžou protiřečit | S→M | |
 
 **Blok C — Caché hygiena + výkon (🟠/🟡).**
 
@@ -67,12 +63,11 @@
 | D2 | 6 dialogů OK/Save přes code-behind `Click` místo VM Command — sjednotit postupně | proti závaznému vzoru oken | S/dialog | |
 | D3 (zbytek) | Dvojí mechanismus renamu agendy (`"MHD"→"ZASTAVKOVY_JR_MHD"` post-deserializační remap vs `KNIZNI→LINKOVY` verzová migrace) — příští rename sjednotit do migračního pipeline | úklid, spustí až další rename | S | |
 
-> **Bezpečný sweep odbaven 2026-07-10** (C-a/C-c/C-d, C-f q→ret, B1, B5, D1, D3-drobné, D4) →
-> [`roadmap-archive.md`](roadmap-archive.md). Zbývá viz níže.
+> **Odbaveno 2026-07-10** → [`roadmap-archive.md`](roadmap-archive.md): bezpečný sweep (C-a/C-c/C-d,
+> C-f q→ret, B1, B5, D1, D3-drobné, D4), blok A MHD strana, infra batch (B3, B4, B6, B7). Zbývá viz níže.
 
-**Doporučené pořadí (zbytek):** A-AD (po commitu `PozitivniZnacka`) → B2 (rozhodnout UX tenzi) + B7
-(zamrzání) → C-e (před nasazením k zákazníkům) → B3+B4 (než poroste plocha agend) → C-b (výkon MHD) →
-B6 + D2 + C-f/D3 zbytky průběžně. Mimo checklist (dlouhodobé, bez akce): god
+**Doporučené pořadí (zbytek):** C-e (před nasazením k zákazníkům) → C-b (výkon MHD) → A-AD + B2
+(kolegova zóna — po `PozitivniZnacka`) → D2 + C-f/D3 zbytky průběžně. Mimo checklist (dlouhodobé, bez akce): god
 objects (T4), sjednocení cache patternů elementů (při R1 extrakci jádra), MHD legacy MAC volání
 (patří do C8) — detail v auditním dokumentu.
 

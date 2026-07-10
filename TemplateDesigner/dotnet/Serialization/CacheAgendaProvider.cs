@@ -36,6 +36,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     private readonly Dictionary<string, List<TableTemplateInfo>>     _templatesCache  = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, DataContext?>                _mockDataCache   = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, List<TemplateParameter>>     _parametersCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, IReadOnlyList<AgendaSkupina>> _skupinyCache   = new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -78,6 +79,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         _templatesCache.Clear();
         _mockDataCache.Clear();
         _parametersCache.Clear();
+        _skupinyCache.Clear();
     }
 
     // ─── IDataSchemaProvider ──────────────────────────────────────────────────
@@ -88,6 +90,11 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     /// Null pokud agenda nemá Caché vazbu (GENERAL) nebo není známá.</summary>
     public string? GetCacheClass(string agendaCode) =>
         _classMap.TryGetValue(agendaCode, out var c) && !string.IsNullOrWhiteSpace(c) ? c : null;
+
+    /// <summary>Je schéma agendy už v cache? (R1 — volající odbaví první uncached GetSchema
+    /// na pozadí; opakované volání je pak levné a smí běžet synchronně.)</summary>
+    public bool IsSchemaCached(string agendaCode) =>
+        !string.IsNullOrEmpty(agendaCode) && _schemaCache.ContainsKey(agendaCode);
 
     public DataSchema? GetSchema(string agendaCode)
     {
@@ -362,6 +369,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     public IReadOnlyList<AgendaSkupina> GetAvailableSkupiny(string agendaCode)
     {
         if (string.IsNullOrEmpty(agendaCode)) return [];
+        if (_skupinyCache.TryGetValue(agendaCode, out var cached)) return cached;
         if (!_classMap.TryGetValue(agendaCode, out var cacheClass)) return [];
         if (string.IsNullOrWhiteSpace(cacheClass)) return [];
 
@@ -389,6 +397,7 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                 if (string.IsNullOrWhiteSpace(value)) continue;
                 list.Add(new AgendaSkupina(value, string.IsNullOrWhiteSpace(label) ? value : label));
             }
+            _skupinyCache[agendaCode] = list;
             return list;
         }
         catch (Exception ex)
