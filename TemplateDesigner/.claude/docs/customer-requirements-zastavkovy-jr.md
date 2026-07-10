@@ -1,6 +1,12 @@
 # Zastávkový JŘ — požadavky zákazníků z helpdesku
 
-Snapshot z Podpory M-line k **2026-05-11**. Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Caché `ZastavkoveJrMhdAPI`. Aktualizuj při dalším procházení tiketů.
+Snapshot z Podpory M-line k **2026-05-11**, **konsolidováno 2026-07-10** (sekce 0 = stav pro uzavírání
+tiketů + dispatch). Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Caché agend
+(`ZastavkoveJrMhd` / `ZastavkoveJrAd`). Aktualizuj při dalším procházení tiketů.
+
+> **Pozn. 2026-07-10:** od snapshotu přibyla **AD agenda** (`ZastavkoveJrAd`, TRANSDEV jede primárně AD)
+> a většina helpdesk featur je vyřešená právě pro AD. Dnešní kontraktní práce (A-AD: skaláry `SMER` +
+> `POPIS_SMER`=konečná + `NASTUPISTE`) a B2 (overflow konzistence) posouvají některé TR body — viz sekce 0.
 
 > **Postup pro AI agenta:**
 > 1. Otevři odpovídající tiket přes `mcp__claude_ai_Podpora_M-line__get_ticket` s UUID z tabulky.
@@ -29,6 +35,62 @@ Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — �
 
 Mimo scope zastávkového JŘ:
 - **#7487** (KORID — NZ + týdenní platnost 4 na řádek) — týká se **knižních/linkových JŘ**, ne zastávkových. Vyřadit z této roadmap.
+
+---
+
+## 0. Konsolidovaný stav — pro uzavírání tiketů a dispatch (2026-07-10)
+
+> Jedno místo: co je hotové (→ otestovat → zavřít na helpdesku), co malé/velké zbývá. Detaily v sekcích níže.
+> **Legenda:** ✅ hotovo (AD) · 🧪 hotovo, ověřit u klienta · 🟢 malé zbývá · 🟠 velké zbývá (analýza/data) ·
+> ⬜ MHD-port (AD hotové, MHD ne) · ➖ mimo TD / mimo scope.
+> ⚠️ Featury jsou vyřešené primárně pro **AD** agendu (TRANSDEV = AD); MHD-port jen na reálnou potřebu (DPCB/DPKV).
+
+### 0.1 Tikety (helpdesk)
+
+| Ticket | Zákazník | Feature | Stav | Otestovat před zavřením | Detail |
+|---|---|---|---|---|---|
+| #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
+| #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ | `VisibilityExpression` na sekci/elementu (např. `{PAGE}>1`) | §E1 |
+| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ AD · ⬜ MHD | Linka se spojem za základní trasu → legenda „jede až do zast. X" | §D1 |
+| #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD | Školní linka: neobsluhovaná zast. se v seznamu netiskne | §A6 |
+| #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
+| #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) — předat dál, nezavírat na TD | §D4 |
+| #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ AD · ⬜ MHD | D5: odškrtnout „Na znamení" → značky i řádek legendy zmizí (0320144); D6: `SCHOVAT_AGREGAT_BEZBARIER` (0365004) | §D5/D6 |
+| #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 ověřit u klienta | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
+| #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
+| #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | 🟠 | Datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; ~0.5–1 den Caché | §B4 |
+| #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
+
+**Poznámka k uzavírání:** #10660/#11300/#7xxx jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
+polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci.
+
+### 0.2 Nové požadavky bez samostatného tiketu (před uzavřením dohledat/založit ticket)
+
+**TRANSDEV konsolidovaná sada (2026-07-03) — §TR:**
+
+| # | Co | Vel. | Stav (2026-07-10) |
+|---|---|---|---|
+| TR1 | Časová osa přes půlnoc | — | 🧪 = #9036 (jen ověřit u klienta) |
+| TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | 🟢 pattern = bezbariér `allBBP` agregát; relates #7161 |
+| TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | 🟢 data `Oznacnik` existují · ⚠️ **≠** dnešní skalár `NASTUPISTE` (ten = jen tištěná zast.) |
+| TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | 🟢 auto-scale částečně; relates B2 (2026-07-10, DepartureGrid) |
+| TR5 | Definice cíle referencovatelná v šabloně | M–L | 🟠 · ⚠️ **(min) „cíl per směr" HOTOVO** dnešním `POPIS_SMER`=konečná (A-AD); zbývá střední (per zast.×směr) + ideál (DB cílů) |
+| TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | 🟠 nový datový model |
+| TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | M | 🟠 relates L1 multi-varianta (`VARIANTY_TRAS`) |
+| TR8 | „<1" místo „0" u nulové jízdní doby (konfigurovatelné) | S | 🟢 |
+| TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | 🟠 Caché-input (Studio JŘ) |
+| TR10 | Skrýt spoje o So/Ne/svátcích | S–M | 🟠 Caché filtr |
+
+**Z prezentací zákazníkům — §P:**
+
+| # | Co | Vel. | Stav |
+|---|---|---|---|
+| P1 | Poznámky ručně do patičky | S | 🟢 nejspíš už jde přes `TextElement` v Footer; příp. dedikované pole |
+| P2 | Sloučit více linek stejného trojčíslí (i více dopravců) | L | 🟠 agenda + instance picker + agregace dopravců |
+| P3 | Imposice 2×A5 → A4 | M–L | 🟠 = aktivní krok #1 roadmapy (imposiční vrstva) |
+
+**Dispatch kandidáti (malé, TD/AD, bez velkého průzkumu):** TR8 · TR2 · TR3 · TR4 · P1.
+Před dispatchem u každého rychle ověřit aktuální stav v kódu (nedělat už hotové).
 
 ---
 
