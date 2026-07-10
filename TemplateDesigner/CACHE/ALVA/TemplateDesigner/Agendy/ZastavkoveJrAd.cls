@@ -296,7 +296,8 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // NEJEDOU_SPOJE je legacy misnomer — nese NÁSTUPIŠTĚ vývěskové zastávky (J-věta #3 = nastTam:nastZpet,
     // dta23 v JRapiExp10). Per směr (T=tam, Z=zpět). 1:1 gold.
     s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
-    d vals.%Set("NEJEDOU_SPOJE",          nastupiste)
+    d vals.%Set("NASTUPISTE",             nastupiste)         // A2: NEJEDOU_SPOJE je misnomer → NASTUPISTE
+    d vals.%Set("NEJEDOU_SPOJE",          nastupiste)         // zastaralé (kompatibilita) → NASTUPISTE
 
     // ── trasa → zastávky (CELÁ trasa ve směru jízdy, vč. projetých; zóny + na znamení) ──
     // Tam: vzestupně 1→N. Zpět: sestupně N→1. Aktuální = JE_AKTUALNI; projeté mají casJizdy=0 a bez
@@ -407,6 +408,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     d vals.%Set("POPIS_ZASTAVKA",      aktualniNazev)
     d vals.%Set("CISLO_ZASTAVKA",      aktualniCzst)
     d vals.%Set("POPIS_ZASTAVKA_CIS",  ..NazevZastavkyCis(dataDB, aktualniCzst))
+    d vals.%Set("SMER",                smer)                  // A1: T/Z (POPIS_SMER = konečná)
     d vals.%Set("POPIS_SMER",          posledniNazev)
     d vals.%Set("POPIS_SMER_CIS",      ..NazevZastavkyCis(dataDB, posledniCzst))
 
@@ -1348,6 +1350,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_PLATNOSTI",        "Popis platnosti",        "text")
     d ..AddField(fields, "DATUM_PLATNOSTI_OD",     "Datum platnosti od",     "date")
     d ..AddField(fields, "DATUM_PLATNOSTI_DO",     "Datum platnosti do",     "date")
+    d ..AddField(fields, "SMER",                   "Směr (T/Z)",             "text")
     d ..AddField(fields, "POPIS_SMER",             "Konečná směru",          "text")
     d ..AddField(fields, "POPIS_SMER_CIS",         "Konečná směru (CIS)",    "text")
     d ..AddField(fields, "TYP_JR",                 "Typ jízdního řádu",      "text")
@@ -1358,7 +1361,8 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
-    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nástupiště",             "text")
+    d ..AddField(fields, "NASTUPISTE",             "Nástupiště",             "text")
+    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nástupiště (zastaralé → NASTUPISTE)", "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické — MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values —
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.

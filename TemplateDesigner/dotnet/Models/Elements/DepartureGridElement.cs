@@ -513,10 +513,11 @@ public class DepartureGridElement : StopScheduleElementBase
         float combinedHeaderH = ShowSkupinaDnuHeader
             ? Math.Max(layout.GroupHeaderH, layout.HeaderH)
             : layout.HeaderH;
-        // Pro scale použít font-driven výšku řádku, ne uživatelskou DataRowHeight —
-        // jinak zvětšení řádku paradoxně zmenšuje fonty
-        float fontRowH = ComputeRowH(DataStyle.FontSize ?? 8f);
-        float scaleNaturalH = combinedHeaderH + layout.Hours.Count * fontRowH;
+        // B2: přirozená výška ze skutečné výšky řádku (vč. explicitní DataRowHeight) — shodně
+        // s CalculateHeightFromData/ContentOverflows, aby varování a auto-scale nepočítaly jinak.
+        // Auto-shrink do fit je konzistentní pattern všech JŘ elementů → velká DataRowHeight se
+        // zmenší jako vše ostatní (dřív se tu z ní naopak nezmenšovaly fonty → obsah tiše přetekl).
+        float scaleNaturalH = combinedHeaderH + layout.Hours.Count * layout.RowH;
         float scale = ComputeFontScale(scaleNaturalH);
 
         // Roztáhnout na výšku — pokud obsah je kratší než Height a feature je zapnutá,
@@ -537,9 +538,9 @@ public class DepartureGridElement : StopScheduleElementBase
         }
         float dataScale = scale * dataGrow;
 
-        // Pokud je DataRowHeight explicitně nastavená, nescalovat ji při shrink — uživatel ji řídí přímo.
-        // Roztažení (dataGrow > 1) aplikujeme i na explicitní DataRowHeight (jinak by feature nic nedělala).
-        float scaledRowH = DataRowHeight.HasValue ? layout.RowH * dataGrow : layout.RowH * dataScale;
+        // B2: výška řádku škáluje konzistentně (shrink i grow) přes dataScale — i explicitní
+        // DataRowHeight se zmenší, když se obsah nevejde (auto-shrink do fit jako ostatní JŘ elementy).
+        float scaledRowH = layout.RowH * dataScale;
         float scaledGroupHeaderH = layout.GroupHeaderH * scale;
         float scaledCombinedHeaderH = combinedHeaderH * scale;
 

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-10 — Audit A-AD + B2 (uzavření kontraktu skalárů + overflow konzistence)
+
+Dokončení bloku A (AD strana, odblokováno po dojezdu paralelní font/značky práce) + B2.
+Ověřeno: Caché TD 33/33, TemplateDesigner.Tests 316/316, build 0 chyb.
+
+- **A-AD** — `SMER` (T/Z) + `NASTUPISTE` do `ZastavkoveJrAd` GetData + schéma (AD analog A1/A2; AD už měl
+  `POPIS_SMER`=konečná). `NEJEDOU_SPOJE` ponecháno duplicitně (deprecated ve schématu). AD `GetMockData`
+  jede přes `BuildStrankaZastavky` → nová pole dostane automaticky (žádný hardcoded mock). AD gold
+  re-baseline 2 linky (0365001, 0365005 — counts identické, jen md5 = přidané skaláry, struktura zachovaná).
+  Tím je **kontrakt skalárů sjednocen napříč MHD/AD/Linkový** (SMER=T/Z, POPIS_SMER=konečná všude).
+- **B2** — DepartureGrid: `scale` i overflow/`CalculateHeightFromData` počítají ze **stejné skutečné výšky
+  řádku** (vč. explicitní `DataRowHeight`). Odstraněna výjimka, co u nastavené `DataRowHeight` nezmenšovala
+  fonty (obsah pak tiše přetékal). Nově se řádek škáluje konzistentně (shrink i grow) → **auto-shrink do fit
+  jako ostatní JŘ elementy** (rozhodnutí: držet konzistentní shrink pattern). Bez gold dopadu (jen rendering).
+
 ## 2026-07-10 — Zastávkový JŘ: kroužkové denní značky týdenní platnosti (1-7) — dotažení 1:1 legacy
 
 Dokončení font-bloku značek. Legacy (`mkPLinWin`/`GSId`) emituje týdenní platnost spoje jako kroužkové

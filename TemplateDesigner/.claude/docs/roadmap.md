@@ -26,14 +26,9 @@
 > Komplexní audit architektury + agend + UI/UX. Detail nálezů (file:line, fix) →
 > [`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md). **Odbaveno →
 > [`roadmap-archive.md`](roadmap-archive.md):** bezpečný sweep (C-a/C-c/C-d, C-f q→ret, B1, B5, D1,
-> D3-drobné, D4), blok A MHD strana (A1–A4), infra batch (B3, B4, B6, B7). Níže jen zbytek s rozhodnutím.
+> D3-drobné, D4), blok A **celý** (A1–A4 MHD + A-AD), infra batch (B3, B4, B6, B7), **B2**. Níže jen zbytek.
 
 **⏸️ Parkováno — konkrétní spouštěč (ne zapomenuto):**
-- **A-AD** (`SMER` + `NASTUPISTE` do `ZastavkoveJrAd` GetData+schéma, aditivně; MHD stranu už má) — **po commitu
-  paralelní `PozitivniZnacka`** (dotýká se AD gold testu). ⚠️ AD gold 0365005 je ve working-tree přebaselinovaný
-  na `gi4sI…`, ale server = `YrAna4…` (HEAD; PozitivniZnacka je čistě .NET) — vyřeší se s Caché emisí kolegy.
-- **B2** (DepartureGrid overflow vs auto-scale) — **nese UX rozhodnutí** (co u velké `DataRowHeight` vyhraje:
-  shrink fontů vs. varování; komentář `DepartureGridElement.cs:514`) **+ kolegova zóna** → počkat na `PozitivniZnacka`.
 - **C-e** (AD `GetMockData` → statický vzorek místo živých dat) — **těsně před nasazením k zákazníkům** (T5).
 - **C-b** (MHD memoizace — `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru) — **až výkon reálně bolí**
   (velcí dopravci). Behavior-preserving, gold-safe → kdykoli.

@@ -2,6 +2,16 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-10 ✅ — Audit A-AD + B2 (uzavření kontraktu skalárů + overflow)
+
+Dokončení bloku A (AD strana) + B2. Detail → changelog 2026-07-10. Caché 33/33, .NET 316/316.
+
+- **A-AD** — `SMER` + `NASTUPISTE` do `ZastavkoveJrAd` GetData+schéma (AD analog A1/A2); `NEJEDOU_SPOJE`
+  deprecated. AD mock jede přes `BuildStrankaZastavky` → automaticky. AD gold re-baseline 2 linky (counts
+  identické, jen md5). **Kontrakt skalárů sjednocen napříč MHD/AD/Linkový.**
+- **B2** — DepartureGrid scale i overflow ze stejné skutečné výšky řádku (vč. DataRowHeight); odstraněna
+  výjimka co nezmenšovala fonty → konzistentní auto-shrink do fit (rozhodnutí uživatele). Bez gold dopadu.
+
 ## Session 2026-07-10 ✅ — Audit infra batch (B3, B4, B6, B7)
 
 Robustnost/extenzibilita mimo kolizní zónu paralelní práce. Detail → changelog 2026-07-10.
