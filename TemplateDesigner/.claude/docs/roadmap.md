@@ -9,30 +9,10 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-> **Tabulkové jádro — levné švy (pětice #1–#5) HOTOVO 2026-07-08** → detail v
-> [`roadmap-archive.md`](roadmap-archive.md). Zbývající navazující (aditivní, bez migrace) → backlog níže.
-
-> **Audit před produkcí (2026-07-09) uzavřen 2026-07-10** — sekce níže; zbyly 2 vědomě odložené (C-e, C-b).
-
 1. **Logická imposice 2×A5 → A4** (N-up + duplex/brožura) — „Sheet layout" vrstva nad PageLayoutEngine (`RenderPage` už bere offset). Odhad M–L.
 2. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
 3. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
 4. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
-
----
-
-## 🔍 Audit před produkcí (2026-07-09) — uzavřen 2026-07-10
-
-> Kompletně odbaveno → [`roadmap-archive.md`](roadmap-archive.md); detail nálezů (file:line, fix) →
-> [`audit-pred-produkci-2026-07-09.md`](audit-pred-produkci-2026-07-09.md). Vědomě nedělané
-> (kosmetika/dlouhodobé — C-f export filtr, D3 rename, D2 dialogy oportunisticky, T4 god objects, C8,
-> NotesLegend DPI, CISLO_LINKY) = viz auditní dokument, bez akce.
-
-**Zbývají 2 vědomě odložené (mají spouštěč, ne zapomenuto):**
-- **C-e** — AD `GetMockData` čte živá firemní data → zmrazit statický vzorek. **Gate před nasazením
-  k zákazníkům** (T5): jinak se preview u zákazníka bez vhodné 1. linky rozbije / je pomalé.
-- **C-b** — MHD memoizace (`GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru). **Až výkon reálně
-  bolí** (velcí dopravci); behavior-preserving, gold-safe → kdykoli.
 
 ---
 
@@ -52,6 +32,7 @@
   vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
+- **Výkon MHD tisku** (audit C-b) — memoizace `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru; behavior-preserving, gold-safe. Až výkon reálně bolí (velcí dopravci).
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
@@ -65,6 +46,7 @@ při scope té fáze, ne teď.
 1. **Headless tisk (A3)** — „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe — v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
 3. **Další výchozí šablony** (MHD + linkový) — mechanismus embed→MLINE hotový, jen kurátorovat + přidat JSON do `SystemTemplates/`. (Táž práce evidovaná i v Fázi C+D: krok 44b / C4.)
+4. **AD `GetMockData` → statický vzorek** (audit C-e / T5) — dnes čte živá firemní data → preview u zákazníka bez vhodné 1. linky se rozbije / je pomalé. Zmrazit reprezentativní JSON. **Gate před nasazením k zákazníkům.**
 
 ---
 
