@@ -12,8 +12,13 @@ MHD/AD (agenda provozních tisků × varianta JŘ) je legacy-věrná. Kombinovan
 (`ZASTAVKOVY_JR_AD`), JSON `agendaCode`, DB index, preference i EDISON launch **beze změny**.
 Caché `BaseAgenda`: `AgendaVariantCode` + osy `Agenda`/`Variant`(+labely), registr wire aditivní;
 .NET `AgendaRegistryEntry.DisplayName` („Zastávkový JŘ · AD") → chip, titulek, seskupený
-ChangeAgendaDialog, filtr pickeru. 340/340. **Follow-up v aktivní roadmapě:** strom v přehledu šablon.
-Detail → changelog 2026-07-11.
+ChangeAgendaDialog, filtr pickeru. 340/340. Detail → changelog 2026-07-11.
+
+**Uzavřeno po uživatelském testu (2026-07-11):** chip explicitně „Agenda: X · Varianta: Y";
+Ctrl+O sloupce **Agenda + Varianta** jako dvojice hned za názvem (server-side resolve labelů,
+`EDList.Sablony.ResolveAgendaVariant`). **Strom v přehledu šablon = vědomě NEdělat teď** —
+dva sloupce + dvouosý filtr při současném počtu šablon stačí; strom (EDList grouping / TreeView)
+otevřít až s růstem počtu šablon (Fáze F / governance), jako novou položku.
 
 ## Session 2026-07-10 ✅ — Imposice N-up (2×A5 → A4) — roadmap bod č. 1 (v1 uzavřena 2026-07-11)
 

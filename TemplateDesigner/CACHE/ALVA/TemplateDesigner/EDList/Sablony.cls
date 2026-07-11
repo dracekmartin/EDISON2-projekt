@@ -19,11 +19,12 @@ ClassMethod InitializeList(ByRef sys As %String) As %Status
     try {
         $$$FillParams
 
+        // Agenda + Varianta jako dvojice hned za názvem — pár drží pohromadě ve výchozím layoutu.
         s list = ##class(ALVA.EDControls.EDList.List).%New()
         d list.AddColumn("name",       "Název",        "TEXT",     190, "", 1)
-        d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
         d list.AddColumn("agenda",     "Agenda",       "TEXT",     110, "", 1)
         d list.AddColumn("varianta",   "Varianta",     "TEXT",      60, "", 1)
+        d list.AddColumn("zdroj",      "Zdroj",        "TEXT",      70, "", 1)
         d list.AddColumn("modifiedAt", "Změněno",      "DATETIME", 130, "", 1, "dd.MM.yyyy HH:mm")
         d list.AddColumn("modifiedBy", "Kým",          "TEXT",      70, "", 1)
         d list.AddColumn("author",     "Autor",        "TEXT",      70, "", 1)
