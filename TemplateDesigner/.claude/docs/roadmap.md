@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Stav k 2026-07-10.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-11.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet — patří do archivu.
 
 ---
@@ -10,9 +10,6 @@
 **Co reálně čeká (pořadí = priorita):**
 
 1. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
-
-   > Imposice N-up (2×A5 → A4) **HOTOVO 2026-07-10** → changelog + archiv. Brožura/duplex řazení
-   > vědomě odloženo na knižní JŘ (model připraven na rozšíření).
 2. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
 3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
 4. **🧭 K rozmyšlení — „typ šablony" místo / vedle „agendy"** (návrh z analýzy s kolegou) — dnes se šablona

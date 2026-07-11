@@ -2,7 +2,12 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
-## Session 2026-07-10 ✅ — Imposice N-up (2×A5 → A4) — roadmap bod č. 1
+## Session 2026-07-10 ✅ — Imposice N-up (2×A5 → A4) — roadmap bod č. 1 (v1 uzavřena 2026-07-11)
+
+> **v1 uzavřena po uživatelském ověření 2026-07-11** (A5 naležato → 2×1 na A4 na výšku, N/2 listů,
+> sekvenční plnění dle očekávání). Rollout opt-in: default „Vypnuto" = dnešní chování, uživatelé
+> zkouší dobrovolně, dodělky dle zpětné vazby. Případná v2 (brožura/duplex, mezery/spadávka,
+> jiný styl značek) se otevře až s knižním JŘ nebo na poptávku — nová položka, ne reopen této.
 
 Skládání logických stránek na fyzické listy při PDF exportu — vlastnost výstupu, ne šablony
 (designer/náhled beze změny, šablona zůstává A5). `Models/Layout/SheetLayout.cs` (`SheetComposer`,
