@@ -24,6 +24,10 @@ tisků × varianta JŘ) odpovídá legacy. Ověřeno: build 0 chyb, .NET 340/340
   `Template.AgendaCode` v C# (kombinovaný klíč — název sedí s wire; ambiguita byla jen v Caché
   třídě vedle parametru `Agenda`, tam vyřešeno). Slovo „agenda" v UI textech zůstává — nově znamená
   první osu, což je v souladu s firemním/legacy významem.
+- **Doladění po uživatelském testu (týž den):** chip explicitně „Agenda: Zastávkový JŘ ·
+  Varianta: AD" (učí názvosloví; bez varianty jen „Agenda: Faktury"); Ctrl+O sloupec „Agenda"
+  (syrový kód) rozdělen na dva — „Agenda" + „Varianta" s labely resolvovanými server-side
+  (`EDList.Sablony.ResolveAgendaVariant`, per-request cache, GENERAL → „Obecná").
 - **Follow-up (roadmap):** strom v přehledu šablon (Ctrl+O) — EDList → seskupení per agenda.
 
 ## 2026-07-10 — Imposice: skládání stránek na fyzické listy (N-up, 2×A5 → A4)

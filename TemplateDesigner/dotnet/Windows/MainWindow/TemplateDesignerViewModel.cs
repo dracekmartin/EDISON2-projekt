@@ -2018,8 +2018,12 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        // Dvouosý zobrazovací text: „Zastávkový JŘ · AD" (z registru); fallback = jméno ze schématu.
-        AgendaNameText = $"Agenda: {AgendaEntry(agendaCode)?.DisplayName ?? schema.AgendaName}";
+        // Explicitní dvouosý formát: „Agenda: Zastávkový JŘ · Varianta: AD" (učí nové názvosloví);
+        // bez varianty jen „Agenda: Faktury". Fallback = jméno ze schématu (registr nezná kód).
+        var entry = AgendaEntry(agendaCode);
+        AgendaNameText = entry is { Variant.Length: > 0 }
+            ? $"Agenda: {entry.EffectiveAgendaLabel} · Varianta: {entry.Variant}"
+            : $"Agenda: {entry?.EffectiveAgendaLabel ?? schema.AgendaName}";
         var cacheSchema = CacheProvider?.GetSchema(agendaCode);
         UpdateCacheStatus(agendaCode, cacheSchema);
         LoadAgendaParameters(agendaCode);
