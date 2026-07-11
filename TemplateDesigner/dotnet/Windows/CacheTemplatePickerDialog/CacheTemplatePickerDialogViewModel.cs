@@ -1,6 +1,6 @@
 using EDControls.EDList;
 using EDControls.EDViewModel;
-using TemplateDesigner.Models.Schema;
+using TemplateDesigner.Serialization;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner;
@@ -50,13 +50,14 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
     /// <summary>Code-behind napojí — VM žádá o nový název (rename dialog). Vrátí název nebo null (zrušeno). VM nezná WPF.</summary>
     public Func<string, string?>? RequestRenameInput { get; set; }
 
-    public CacheTemplatePickerDialogViewModel(CacheTemplateService service, IReadOnlyList<AgendaInfo> agendas)
+    public CacheTemplatePickerDialogViewModel(CacheTemplateService service, IReadOnlyList<AgendaRegistryEntry> agendas)
     {
         _service = service;
 
+        // Dvouosé popisky seřazené po agendách (Zastávkový JŘ · AD / · MHD vedle sebe).
         AgendaFilters = new List<AgendaFilterVM> { new(null, "Všechny agendy") };
-        foreach (var a in agendas)
-            AgendaFilters.Add(new AgendaFilterVM(a.Code, $"{a.Code} — {a.Name}"));
+        foreach (var a in agendas.OrderBy(x => x.EffectiveAgendaLabel).ThenBy(x => x.Variant))
+            AgendaFilters.Add(new AgendaFilterVM(a.Code, a.DisplayName));
 
         // Systémové (M-line) jsou read-only — otevřít lze, mazat/přejmenovat ne.
         OpenCommand    = Command(Open,                () => Selected is not null);

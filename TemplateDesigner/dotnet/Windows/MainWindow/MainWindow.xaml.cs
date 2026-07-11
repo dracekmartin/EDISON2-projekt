@@ -1671,7 +1671,7 @@ public partial class MainWindow : Window
     {
         if (_vm is null) return;
         string agenda = !string.IsNullOrEmpty(_vm.State.CurrentTemplate.AgendaCode)
-            ? $"[{_vm.State.CurrentTemplate.AgendaCode}] " : "";
+            ? $"[{_vm.CurrentAgendaDisplayName}] " : "";
         // Indikátor původu: kam míří Uložit. [DB] = uložená v databázi (Ctrl+S aktualizuje),
         // [neuloženo] = nová/importovaná, ještě není v DB (Ctrl+S ji založí).
         string origin = _vm.IsCacheBacked ? "[DB] " : "[neuloženo] ";

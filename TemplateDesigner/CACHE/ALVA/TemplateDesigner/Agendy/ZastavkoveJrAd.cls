@@ -27,9 +27,15 @@ Include GENERAL
 Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
-Parameter AgendaCode = "ZASTAVKOVY_JR_AD";
+Parameter AgendaVariantCode = "ZASTAVKOVY_JR_AD";
 
-Parameter AgendaLabel = "Zastávkový JŘ (AD)";
+Parameter Agenda = "ZASTAVKOVY_JR";
+
+Parameter AgendaLabel = "Zastávkový JŘ";
+
+Parameter Variant = "AD";
+
+Parameter VariantLabel = "AD (linková doprava)";
 
 Parameter InstanceParamName = "LINKA_ID";
 

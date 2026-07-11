@@ -8,6 +8,11 @@
         ShowInTaskbar="False">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <CollectionViewSource x:Key="GroupedAgendas" Source="{Binding Agendas}">
+            <CollectionViewSource.GroupDescriptions>
+                <PropertyGroupDescription PropertyName="Group"/>
+            </CollectionViewSource.GroupDescriptions>
+        </CollectionViewSource>
     </Window.Resources>
     <Grid Margin="14">
         <Grid.RowDefinitions>
@@ -21,11 +26,21 @@
                    TextWrapping="Wrap" Margin="0,0,0,10" Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
 
         <ListBox Grid.Row="1"
-                 ItemsSource="{Binding Agendas}"
+                 ItemsSource="{Binding Source={StaticResource GroupedAgendas}}"
                  SelectedItem="{Binding Selected, Mode=TwoWay}">
+            <ListBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="2,8,0,2"
+                                       Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ListBox.GroupStyle>
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <Grid Margin="2,4">
+                    <Grid Margin="14,3">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>

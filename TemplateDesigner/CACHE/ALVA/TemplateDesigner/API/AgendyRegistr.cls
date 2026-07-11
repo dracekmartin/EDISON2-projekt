@@ -1,29 +1,33 @@
 Include GENERAL
 
-/// Registr dostupných agend TemplateDesigneru (Wave 2, 2026-05-20).
+/// Registr dostupných agend TemplateDesigneru (Wave 2, 2026-05-20; dvouosý model 2026-07-11).
 ///
 /// Auto-discovery z %Dictionary — najde všechny subclassy
-/// ALVA.TemplateDesigner.Agendy.BaseAgenda a vrátí jejich AgendaCode + AgendaLabel
-/// jako JSON pole. Vytvoření třídy = registrace agendy; není nutný separátní
-/// config list (eliminuje drift mezi registrem a impl).
+/// ALVA.TemplateDesigner.Agendy.BaseAgenda a vrátí jejich metadata (kombinovaný klíč
+/// AgendaVariantCode + osy Agenda/Variant + labely) jako JSON pole. Vytvoření třídy =
+/// registrace; není nutný separátní config list (eliminuje drift mezi registrem a impl).
 ///
 /// GENERAL agenda (šablona bez DB vazby) nemá Caché class — .NET strana ji
 /// inject syntheticky v IAgendaRegistry implementaci.
 Class ALVA.TemplateDesigner.API.AgendyRegistr Extends %RegisteredObject
 {
 
-/// Vrátí seznam dostupných agend (auto-discovery z BaseAgenda subclasses).
-/// OUT["1"] = JSON pole:
+/// Vrátí seznam dostupných konfigurací (agenda × varianta) — auto-discovery z BaseAgenda subclasses.
+/// OUT["1"] = JSON pole, např.:
 ///   [
-///     { "code": "FAKTURY",           "label": "Faktury",             "cacheClass": "ALVA.TemplateDesigner.Agendy.Faktury" },
-///     { "code": "ZASTAVKOVY_JR_MHD", "label": "Zastávkový JŘ (MHD)", "cacheClass": "ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd" }
+///     { "code": "ZASTAVKOVY_JR_AD", "label": "Zastávkový JŘ (AD)", "cacheClass": "...",
+///       "agenda": "ZASTAVKOVY_JR", "agendaLabel": "Zastávkový JŘ",
+///       "variant": "AD", "variantLabel": "AD (linková doprava)", ... }
 ///   ]
+///
+/// Wire kompatibilita: klíče `code` (kombinovaný) a `label` (kombinovaný label,
+/// AgendaLabel + " (Variant)") zůstávají pro starší klienty; nové osy jsou aditivní.
 ///
 /// Řazení: alfabeticky podle code (přirozený order). Pokud bude potřeba explicit
 /// order, doplnit AgendaOrder parameter do BaseAgenda + ORDER BY (TODO).
 ///
-/// Třídy bez AgendaCode (= prázdný string parameter) se přeskakují — nejsou
-/// validně registrovány (abstraktní BaseAgenda samotná má AgendaCode = "").
+/// Třídy bez AgendaVariantCode (= prázdný string parameter) se přeskakují — nejsou
+/// validně registrovány (abstraktní BaseAgenda samotná ho má prázdný).
 ClassMethod ListAgendy(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -44,15 +48,23 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
 
         while rs.%Next() {
             s className = rs.%Get("ID")
-            s code = $parameter(className, "AgendaCode")
-            s label = $parameter(className, "AgendaLabel")
+            s code = $parameter(className, "AgendaVariantCode")
+            s agenda = $parameter(className, "Agenda")
+            s agendaLabel = $parameter(className, "AgendaLabel")
+            s variant = $parameter(className, "Variant")
+            s variantLabel = $parameter(className, "VariantLabel")
 
-            // Třída bez AgendaCode není validně registrovaná → skip.
+            // Třída bez kombinovaného klíče není validně registrovaná → skip.
             if code = "" continue
 
             s entry = ##class(%DynamicObject).%New()
             s entry.code = code
-            s entry.label = label
+            // Kombinovaný label pro starší klienty — historický formát "Zastávkový JŘ (AD)".
+            s entry.label = agendaLabel_$s(variant'="":" ("_variant_")", 1:"")
+            s entry.agenda = agenda
+            s entry.agendaLabel = agendaLabel
+            s entry.variant = variant
+            s entry.variantLabel = variantLabel
             s entry.cacheClass = className
             s entry.instanceParamName = $parameter(className, "InstanceParamName")
             s entry.elementKind = $parameter(className, "ElementKind")
@@ -63,10 +75,10 @@ ClassMethod ListAgendy(ByRef sys As %String) As %Status
 
         s ^||ML("OUT","1") = arr.%ToJSON()
     } catch (ex) { $$$CatchErrRest }
-    q $$$OK
+    ret $$$OK
 }
 
-/// Vrátí FQN třídy BaseAgenda subclass s daným AgendaCode (auto-discovery z %Dictionary),
+/// Vrátí FQN třídy BaseAgenda subclass s daným AgendaVariantCode (auto-discovery z %Dictionary),
 /// nebo "" když nenalezeno. Sdílený lookup — jediný zdroj mapování kód→třída (konzumuje
 /// EDList.Instance; žádný hardcoded mirror). Stejná discovery cesta jako ListAgendy.
 ClassMethod GetClassForCode(agendaCode As %String) As %String
@@ -79,7 +91,7 @@ ClassMethod GetClassForCode(agendaCode As %String) As %String
     q:rs.%SQLCODE<0 ""
     while rs.%Next() {
         s className = rs.%Get("ID")
-        if $parameter(className, "AgendaCode") = agendaCode {
+        if $parameter(className, "AgendaVariantCode") = agendaCode {
             s result = className
             q
         }

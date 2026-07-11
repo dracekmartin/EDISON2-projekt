@@ -1,12 +1,15 @@
 using EDControls.EDViewModel;
-using TemplateDesigner.Models.Schema;
+using TemplateDesigner.Serialization;
 
 namespace TemplateDesigner;
 
 /// <summary>
-/// Dialog pro přepnutí kontextu agendy. Přepnutí vytváří novou šablonu se
-/// zvolenou agendou — agenda určuje DB schéma + typy elementů + reálná data,
+/// Dialog pro přepnutí konfigurace agenda × varianta. Přepnutí vytváří novou šablonu se
+/// zvolenou konfigurací — ta určuje DB schéma + typy elementů + reálná data,
 /// proto nelze zachovat rozdělaný obsah napříč agendami.
+///
+/// Dvouosý model: řádky se seskupují podle agendy (Zastávkový JŘ, Linkový JŘ, Faktury…),
+/// uvnitř skupiny jsou datové varianty (AD / MHD); agenda bez variant má jeden řádek.
 /// </summary>
 public class ChangeAgendaDialogViewModel : EDViewModel
 {
@@ -19,15 +22,17 @@ public class ChangeAgendaDialogViewModel : EDViewModel
         set => Set(ref _selected, value);
     }
 
-    /// <summary>Po OK obsahuje kód vybrané agendy. Null = dialog zrušen nebo nic nevybráno.</summary>
+    /// <summary>Po OK obsahuje kombinovaný kód vybrané konfigurace. Null = dialog zrušen nebo nic nevybráno.</summary>
     public string? ChosenCode { get; private set; }
 
-    public ChangeAgendaDialogViewModel(IReadOnlyList<AgendaInfo> available, string? currentCode)
+    public ChangeAgendaDialogViewModel(IReadOnlyList<AgendaRegistryEntry> available, string? currentCode)
     {
         Agendas = available
             .Select(a => new AgendaRowVM(
                 a.Code,
-                a.Name,
+                a.Variant is { Length: > 0 } ? (a.VariantLabel is { Length: > 0 } ? a.VariantLabel : a.Variant)
+                                             : a.EffectiveAgendaLabel,
+                a.EffectiveAgendaLabel,
                 IsCurrent: a.Code.Equals(currentCode, StringComparison.OrdinalIgnoreCase)))
             .ToList();
         _selected = Agendas.FirstOrDefault(a => a.IsCurrent) ?? Agendas.FirstOrDefault();
@@ -45,4 +50,5 @@ public class ChangeAgendaDialogViewModel : EDViewModel
     }
 }
 
-public record AgendaRowVM(string Code, string Name, bool IsCurrent);
+/// <summary>Jeden řádek výběru: Name = varianta (nebo agenda, když varianty nemá), Group = agenda.</summary>
+public record AgendaRowVM(string Code, string Name, string Group, bool IsCurrent);

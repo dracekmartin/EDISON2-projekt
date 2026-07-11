@@ -22,7 +22,8 @@ public class CacheAgendaRegistry : IAgendaRegistry
     /// Injektována syntheticky, ne vyhledávána z auto-discovery.
     /// </summary>
     private static readonly AgendaRegistryEntry GeneralAgenda =
-        new("GENERAL", "Obecná (bez databáze)", "");
+        new("GENERAL", "Obecná (bez databáze)", "",
+            Agenda: "GENERAL", AgendaLabel: "Obecná (bez databáze)");
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

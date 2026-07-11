@@ -18,25 +18,41 @@
 ///
 /// Caché kompilátor vynucuje implementaci Abstract metod; bez nich třída neprojde compile.
 ///
-/// Registrace agendy (Wave 2, 2026-05-20):
-///   Místo seznamu v appsettings.json se agenda nyní registruje **deklarativně** přes
-///   class parametry AgendaCode + AgendaLabel. ALVA.TemplateDesigner.API.AgendyRegistr
+/// Registrace agendy (Wave 2, 2026-05-20; dvouosý model 2026-07-11):
+///   Agenda se registruje **deklarativně** přes class parametry — kombinovaný klíč
+///   AgendaVariantCode + osy Agenda/Variant (+ labely). ALVA.TemplateDesigner.API.AgendyRegistr
 ///   prochází %Dictionary, najde všechny subclassy BaseAgenda a vrátí jejich metadata
-///   jako JSON list. Vytvoření třídy = registrace agendy.
+///   jako JSON list. Vytvoření třídy = registrace konfigurace (agenda × varianta).
 ///
 ///   GENERAL agenda (šablona bez DB vazby) nemá Caché class — .NET strana ji inject
 ///   syntheticky v IAgendaRegistry impl.
 Class ALVA.TemplateDesigner.Agendy.BaseAgenda Extends %RegisteredObject [ Abstract ]
 {
 
-/// Kód agendy (např. "ZASTAVKOVY_JR_MHD", "FAKTURY"). Override v každé subclass.
-/// Slouží jako klíč v Template.AgendaCode a IN parametrech CacheAgendaProvider.
-/// Konvence: <TYP_SESTAVY>_<DATOVY_ZDROJ>, velkými písmeny, podtržítka.
-/// Příklady: ZASTAVKOVY_JR_MHD, MEZIMESTSKY_JR_MHD (future), FAKTURY.
-Parameter AgendaCode As %String = "";
+/// Kombinovaný kód konfigurace agenda+varianta (např. "ZASTAVKOVY_JR_AD", "FAKTURY").
+/// Override v každé subclass. **Stabilní persistovaný klíč** — žije v uložených šablonách
+/// (Template JSON `agendaCode`), DB indexu ByAgenda, per-uživatel preferencích a EDISON
+/// launch kontraktu (`Agenda=<kód>`); hodnoty se NIKDY nemění (jen aditivně přibývají).
+/// Konvence: <AGENDA>[_<VARIANTA>], velkými písmeny, podtržítka.
+Parameter AgendaVariantCode As %String = "";
 
-/// User-facing label zobrazený v ChangeAgendaDialog. Override v každé subclass.
+/// Kód agendy = nejvyšší úroveň členění ("ZASTAVKOVY_JR", "LINKOVY_JR", "FAKTURY", "GENERAL").
+/// Dvouosý model (2026-07-11): agenda (co za sestavu dělám) × varianta (datový zdroj).
+/// Zrcadlí legacy: TiskMHD/TiskJR = typ jako aplikace + skrytý přepínač VolanoZ (JRMAIN×MHD);
+/// budoucí RG agendy (Fakturace, MHD provozní, Mzdy…) přibudou jako další agendy bez variant.
+Parameter Agenda As %String = "";
+
+/// User-facing label AGENDY (např. "Zastávkový JŘ", "Faktury") — bez varianty.
+/// Override v každé subclass. (Do 2026-07-11 nesl kombinovaný label vč. "(AD)" —
+/// kombinovaný label pro starší klienty počítá AgendyRegistr do wire klíče `label`.)
 Parameter AgendaLabel As %String = "";
+
+/// Kód varianty agendy = datový zdroj ("AD", "MHD"); "" = agenda bez variant (FAKTURY).
+/// Legacy ekvivalent: přepínač VolanoZ (JRMAIN×MHD) v TiskMHD/TiskJR.
+Parameter Variant As %String = "";
+
+/// User-facing label varianty (např. "AD (linková doprava)", "MHD"); "" = bez varianty.
+Parameter VariantLabel As %String = "";
 
 /// Jméno IN parametru GetData, kterým se předává vybraná instance (linka/faktura).
 /// Zastávkové a knižní JŘ = "LINKA_ID", ostatní default "INSTANCE_ID". Okno ho čte

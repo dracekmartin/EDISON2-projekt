@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-11 — Dvouosý model agend: Agenda × Varianta (názvosloví dle legacy analýzy)
+
+Roadmap „typ šablony vs agenda" (podnět kolegy). Analýza legacy (RG strom `agenda→oblasti→sestavy`
+z číselníku `ALVA.EDISON.Oblast`; TiskMHD/TiskJR = typ jako aplikace + skrytý `VolanoZ` JRMAIN×MHD,
+šablony sdílené oběma zdroji) → rozhodnutí: **Agenda** = nejvyšší úroveň („Zastávkový JŘ", „Linkový JŘ",
+„Faktury"; JŘ povýšené jako důležité, budoucí RG agendy přibudou vedle), **Varianta** = datový zdroj
+(AD/MHD, ekvivalent legacy `VolanoZ`; předvolená launch kontextem). Duální role MHD (agenda provozních
+tisků × varianta JŘ) odpovídá legacy. Ověřeno: build 0 chyb, .NET 340/340 (+4), Caché wire živě.
+
+- **Caché:** `BaseAgenda` parametry — kombinovaný klíč `AgendaVariantCode` (dřív `AgendaCode`,
+  hodnoty beze změny) + nové osy `Agenda`/`Variant` + `VariantLabel`; `AgendaLabel` nově jen label
+  agendy („Zastávkový JŘ"). 5 agend + `AgendyRegistr` (wire aditivně: nové klíče `agenda`/`agendaLabel`/
+  `variant`/`variantLabel`; staré `code`+`label` (kombinovaný formát „Zastávkový JŘ (AD)") zůstávají
+  pro nasazené klienty).
+- **.NET:** `AgendaRegistryEntry` + `Agenda`/`AgendaLabel`/`Variant`/`VariantLabel` (defaulty =
+  fallback pro starší server), computed `DisplayName` („Zastávkový JŘ · AD") + `EffectiveAgendaLabel`.
+- **UI:** ChangeAgendaDialog seskupený podle agendy (GroupStyle; řádky = varianty), staví z registru
+  místo AgendaInfo; chip ve status baru + titulek okna `[Zastávkový JŘ · AD]` místo syrového kódu;
+  filtr v přehledu šablon dvouosé popisky řazené po agendách.
+- **Beze změny (vědomě):** hodnoty kódů `ZASTAVKOVY_JR_AD`… (uložené šablony, DB index ByAgenda,
+  per-agenda preference, EDISON launch `Agenda=<kód>`), JSON pole `agendaCode`,
+  `Template.AgendaCode` v C# (kombinovaný klíč — název sedí s wire; ambiguita byla jen v Caché
+  třídě vedle parametru `Agenda`, tam vyřešeno). Slovo „agenda" v UI textech zůstává — nově znamená
+  první osu, což je v souladu s firemním/legacy významem.
+- **Follow-up (roadmap):** strom v přehledu šablon (Ctrl+O) — EDList → seskupení per agenda.
+
 ## 2026-07-10 — Imposice: skládání stránek na fyzické listy (N-up, 2×A5 → A4)
 
 Roadmap bod č. 1. Vlastnost VÝSTUPU, ne šablony: šablona vývěsky zůstává A5 (designer i náhled

@@ -14,7 +14,9 @@
 Class ALVA.TemplateDesigner.Agendy.Faktury Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
-Parameter AgendaCode = "FAKTURY";
+Parameter AgendaVariantCode = "FAKTURY";
+
+Parameter Agenda = "FAKTURY";
 
 Parameter AgendaLabel = "Faktury";
 

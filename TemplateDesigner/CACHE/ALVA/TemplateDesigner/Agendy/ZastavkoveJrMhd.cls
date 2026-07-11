@@ -26,9 +26,15 @@ Include (ALVAMHD, GENERAL)
 Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
-Parameter AgendaCode = "ZASTAVKOVY_JR_MHD";
+Parameter AgendaVariantCode = "ZASTAVKOVY_JR_MHD";
 
-Parameter AgendaLabel = "Zastávkový JŘ (MHD)";
+Parameter Agenda = "ZASTAVKOVY_JR";
+
+Parameter AgendaLabel = "Zastávkový JŘ";
+
+Parameter Variant = "MHD";
+
+Parameter VariantLabel = "MHD";
 
 Parameter InstanceParamName = "LINKA_ID";
 

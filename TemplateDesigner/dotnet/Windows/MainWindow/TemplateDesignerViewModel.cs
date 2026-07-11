@@ -240,6 +240,11 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Druh JŘ elementů aktuální agendy (STOP/LINE/"") — řídí kontextové menu + paletu okna.</summary>
     public string CurrentAgendaElementKind => AgendaEntry(State.CurrentTemplate.AgendaCode)?.ElementKind ?? "";
 
+    /// <summary>Zobrazovací název aktuální konfigurace „Agenda · Varianta" (např. „Zastávkový JŘ · AD");
+    /// fallback = syrový kód (registr nedostupný / neznámý kód). Čte titulek okna.</summary>
+    public string CurrentAgendaDisplayName =>
+        AgendaEntry(State.CurrentTemplate.AgendaCode)?.DisplayName ?? State.CurrentTemplate.AgendaCode ?? "";
+
     /// <summary>User-facing název „instance" aktuální agendy (JŘ = „linka", faktury = „faktura",
     /// jinak „instance") — z registru agend. Okno ho zobrazí místo obecného „instance".</summary>
     public string CurrentInstanceLabel       => AgendaEntry(State.CurrentTemplate.AgendaCode)?.InstanceLabel ?? "instance";
@@ -968,14 +973,14 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task ChangeAgendaAsync()
     {
-        var agendas = SchemaProvider.GetAvailableAgendas();
-        if (agendas.Count == 0)
+        // Registr agend (dvouosý: agenda × varianta) — dialog z něj staví seskupený výběr.
+        if (_agendaEntries.Count == 0)
         {
             PopupDisplayer.Info("Žádné agendy nejsou nakonfigurované.");
             return;
         }
 
-        var vm = new ChangeAgendaDialogViewModel(agendas, State.CurrentTemplate.AgendaCode);
+        var vm = new ChangeAgendaDialogViewModel(_agendaEntries, State.CurrentTemplate.AgendaCode);
         if (Dialogs?.ShowChangeAgenda(vm) != true || vm.ChosenCode is null) return;
 
         // Stejná agenda — nic neměním (vyhne se zbytečnému potvrzování neuložených změn).
@@ -1177,8 +1182,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         // Confirmace neuložených změn AŽ po explicitním Otevřít — dialog funguje i jako
         // správce (smazat / přejmenovat) bez intent načíst do editoru.
-        var agendas = CacheProvider?.GetAvailableAgendas() ?? [];
-        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, agendas);
+        var vm = new CacheTemplatePickerDialogViewModel(TemplateStorage, _agendaEntries);
         if (Dialogs?.ShowCacheTemplatePicker(vm) != true || vm.SelectedTemplateId is null) return;
 
         if (!await ConfirmUnsavedChangesAsync()) return;
@@ -2014,7 +2018,8 @@ public class TemplateDesignerViewModel : EDViewModel
             return;
         }
 
-        AgendaNameText = $"Agenda: {schema.AgendaName}";
+        // Dvouosý zobrazovací text: „Zastávkový JŘ · AD" (z registru); fallback = jméno ze schématu.
+        AgendaNameText = $"Agenda: {AgendaEntry(agendaCode)?.DisplayName ?? schema.AgendaName}";
         var cacheSchema = CacheProvider?.GetSchema(agendaCode);
         UpdateCacheStatus(agendaCode, cacheSchema);
         LoadAgendaParameters(agendaCode);

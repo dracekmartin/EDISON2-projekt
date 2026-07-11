@@ -4,6 +4,13 @@ namespace TemplateDesigner.Serialization;
 /// Jedna položka v registru agend — vrácená z Caché auto-discovery (`ListAgendy`) nebo
 /// synteticky doplněná v .NET vrstvě (GENERAL).
 ///
+/// <para><b>Dvouosý model (2026-07-11):</b> položka = konfigurace <b>agenda × varianta</b>.
+/// <see cref="Agenda"/>/<see cref="AgendaLabel"/> = nejvyšší úroveň členění („Zastávkový JŘ",
+/// „Faktury"), <see cref="Variant"/>/<see cref="VariantLabel"/> = datový zdroj („AD"/„MHD",
+/// prázdné = bez variant). <see cref="Code"/> zůstává stabilní kombinovaný persistovaný klíč
+/// (hodnoty jako "ZASTAVKOVY_JR_AD" se nemění — žijí v šablonách, DB indexu, preferencích
+/// a EDISON launch kontraktu). <see cref="Label"/> = kombinovaný label pro zpětnou kompatibilitu.</para>
+///
 /// <para><see cref="InstanceParamName"/> + <see cref="ElementKind"/> jsou capability metadata
 /// (deklarovaná v Caché agenda class jako parametry) — okno je čte data-driven místo větvení
 /// podle názvu agendy. Aditivní: starší Caché bez těchto klíčů → defaulty.</para>
@@ -15,7 +22,20 @@ public record AgendaRegistryEntry(
     string InstanceParamName = "INSTANCE_ID",
     string ElementKind = "",
     string InstanceLabel = "instance",
-    string InstanceLabelPlural = "instance");
+    string InstanceLabelPlural = "instance",
+    string Agenda = "",
+    string AgendaLabel = "",
+    string Variant = "",
+    string VariantLabel = "")
+{
+    /// <summary>Label agendy s fallbackem pro starší Caché bez dvouosých klíčů (→ kombinovaný Label).</summary>
+    public string EffectiveAgendaLabel => AgendaLabel is { Length: > 0 } ? AgendaLabel : Label;
+
+    /// <summary>Zobrazovací text konfigurace: „Zastávkový JŘ · AD", bez varianty jen label agendy.</summary>
+    public string DisplayName => Variant is { Length: > 0 }
+        ? $"{EffectiveAgendaLabel} · {Variant}"
+        : EffectiveAgendaLabel;
+}
 
 /// <summary>
 /// Per-firma registr dostupných agend v TemplateDesigneru. Wave 2 nahradil

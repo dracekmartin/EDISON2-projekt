@@ -27,9 +27,11 @@ public class Template
     public List<Section> Sections { get; set; } = [];
 
     /// <summary>
-    /// Kód agendy pro tuto šablonu, např. "JR", "FAKTURY".
-    /// Null = obecná šablona bez vazby na konkrétní agendu.
-    /// Používá se pro načtení schématu databázových polí v designeru.
+    /// Kombinovaný kód konfigurace agenda × varianta, např. "ZASTAVKOVY_JR_AD", "FAKTURY".
+    /// Null = obecná šablona bez vazby na data. Stabilní persistovaný klíč (JSON `agendaCode`,
+    /// DB index ByAgenda, per-agenda preference, EDISON launch `Agenda=&lt;kód&gt;`) — hodnoty se
+    /// nemění. Odpovídá Caché parametru <c>AgendaVariantCode</c>; osy Agenda/Variant a labely
+    /// („Zastávkový JŘ · AD") se dohledávají z registru agend (<c>AgendaRegistryEntry</c>).
     /// </summary>
     public string? AgendaCode { get; set; }
 

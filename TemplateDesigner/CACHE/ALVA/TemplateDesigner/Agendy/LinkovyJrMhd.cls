@@ -24,9 +24,15 @@ Include GENERAL
 Class ALVA.TemplateDesigner.Agendy.LinkovyJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
-Parameter AgendaCode As %String = "LINKOVY_JR_MHD";
+Parameter AgendaVariantCode As %String = "LINKOVY_JR_MHD";
 
-Parameter AgendaLabel As %String = "Linkový JŘ (MHD)";
+Parameter Agenda As %String = "LINKOVY_JR";
+
+Parameter AgendaLabel As %String = "Linkový JŘ";
+
+Parameter Variant As %String = "MHD";
+
+Parameter VariantLabel As %String = "MHD";
 
 Parameter InstanceParamName As %String = "LINKA_ID";
 

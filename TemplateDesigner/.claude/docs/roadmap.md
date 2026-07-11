@@ -12,10 +12,9 @@
 1. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
 2. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
 3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
-4. **🧭 K rozmyšlení — „typ šablony" místo / vedle „agendy"** (návrh z analýzy s kolegou) — dnes se šablona
-   váže na `AgendaCode` (datový zdroj). Zvážit koncept **typu šablony** (klasifikace, k čemu sestava je) jako
-   možná vhodnější/ortogonální osu k `AgendaCode` + `ElementKind` + `AgendaCapabilities`. Nejdřív **projít
-   a rozhodnout** (jaký problém to řeší, dopad na kontrakt/kapabilit model, migrace), teprve pak případně dělat.
+4. **Strom v přehledu šablon (Ctrl+O)** — navazuje na dvouosý model agend (HOTOVO 2026-07-11 →
+   changelog + archiv): EDList picker seskupit per agenda (Zastávkový JŘ → šablony s badge varianty).
+   Dnes dvouosé popisky ve filtru; plný strom = úprava EDList/TreeView + příp. server-side grouping.
 
 ---
 

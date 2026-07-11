@@ -2,6 +2,19 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-11 ✅ — Dvouosý model agend: Agenda × Varianta („typ šablony vs agenda")
+
+Rozhodnutí + implementace bodu „🧭 K rozmyšlení" (podnět kolegy). Legacy analýza (RG strom
+agenda→oblasti→sestavy; TiskMHD/TiskJR = typ jako aplikace + `VolanoZ` přepínač zdroje) →
+**Agenda** = nejvyšší úroveň (Zastávkový JŘ / Linkový JŘ / Faktury / Obecná; JŘ povýšené, budoucí
+RG agendy přibudou vedle), **Varianta** = datový zdroj (AD/MHD = legacy `VolanoZ`). Duální role
+MHD/AD (agenda provozních tisků × varianta JŘ) je legacy-věrná. Kombinované kódy
+(`ZASTAVKOVY_JR_AD`), JSON `agendaCode`, DB index, preference i EDISON launch **beze změny**.
+Caché `BaseAgenda`: `AgendaVariantCode` + osy `Agenda`/`Variant`(+labely), registr wire aditivní;
+.NET `AgendaRegistryEntry.DisplayName` („Zastávkový JŘ · AD") → chip, titulek, seskupený
+ChangeAgendaDialog, filtr pickeru. 340/340. **Follow-up v aktivní roadmapě:** strom v přehledu šablon.
+Detail → changelog 2026-07-11.
+
 ## Session 2026-07-10 ✅ — Imposice N-up (2×A5 → A4) — roadmap bod č. 1 (v1 uzavřena 2026-07-11)
 
 > **v1 uzavřena po uživatelském ověření 2026-07-11** (A5 naležato → 2×1 na A4 na výšku, N/2 listů,
