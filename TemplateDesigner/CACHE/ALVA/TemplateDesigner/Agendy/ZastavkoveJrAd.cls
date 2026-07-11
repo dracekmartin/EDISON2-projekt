@@ -1323,10 +1323,10 @@ ClassMethod NazevZastavkyCis(dataDB As %String, czst As %String) As %String
 
 /// Vrátí ukázková data pro live preview v designeru.
 ///
-/// **DEV (Fáze 2):** zrcadlí živý `GetData` nad jednou hardcoded linkou (CB_GWBUS / 0320113),
-/// aby designer preview ukazoval reálný stav rebuildu — jak přibývají increments (odjezdy,
-/// sloupce…), preview se plní živými daty z `^JRL`.
-/// TODO: před produkčním nasazením vrátit lehký statický vzorek nezávislý na firmě/datech.
+/// **Vědomé rozhodnutí (2026-07-11, audit C-e — won't-do):** mock = živý `GetData` nad první
+/// linkou aktuální firmy, NE zmrazený statický vzorek. Zákazníci AD data mají vždy, výkon není
+/// problém a živý mock nemůže driftovat od kontraktu (nová pole dostane automaticky).
+/// Nedeterminismus náhledu per firma je akceptovaný. Fallback pro firmu bez linek níže.
 ClassMethod GetMockData(ByRef sys As %String) As %Status
 {
     s err = ""
@@ -1334,7 +1334,7 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
         $$$FillParams
         k ^||TiskAd                       // cache per-linka/per-směr invariantů — fresh per request
 
-        // DEV: živý náhled z první linky aktuální firmy (session dataDB) — zrcadlí reálný GetData.
+        // Živý náhled z první linky aktuální firmy (session dataDB) — zrcadlí reálný GetData.
         d ..PrvniLinka(dataDB, .sku, .lin)
         s page = $s(lin'="":..BuildStrankaZastavky(dataDB, sku, lin), 1:"")
 

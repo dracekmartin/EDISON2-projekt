@@ -49,7 +49,6 @@ při scope té fáze, ne teď.
 1. **Headless tisk (A3)** — „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe — v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
 3. **Další výchozí šablony** (MHD + linkový) — mechanismus embed→MLINE hotový, jen kurátorovat + přidat JSON do `SystemTemplates/`. (Táž práce evidovaná i v Fázi C+D: krok 44b / C4.)
-4. **AD `GetMockData` → statický vzorek** (audit C-e / T5) — dnes čte živá firemní data → preview u zákazníka bez vhodné 1. linky se rozbije / je pomalé. Zmrazit reprezentativní JSON. **Gate před nasazením k zákazníkům.**
 
 ---
 

@@ -189,13 +189,19 @@ kompletní vůči ElementTypes, dirty-flag všech 6 cest (nová/agenda/import/op
 
 ### C-e. AD `GetMockData` čte živá firemní data (vlastní TODO)
 
+> **❌ WON'T-DO — rozhodnuto 2026-07-11 (uživatel):** živý mock zůstává záměrně. Důvody:
+> všichni AD zákazníci data mají (prázdná firma = jen teoretický případ, fallback existuje),
+> výkon není problém, nedeterminismus náhledu per firma je akceptovaný — a živý mock nemůže
+> driftovat od kontraktu (nová pole dostane automaticky, na rozdíl od zmrazeného vzorku).
+> TODO komentář v kódu nahrazen záznamem rozhodnutí (`ZastavkoveJrAd.GetMockData` doc-comment).
+
 - **Lidsky:** náhled v návrháři u AD agendy závisí na tom, jaká data má přihlášená firma —
   u zákazníka bez vhodné první linky se preview rozbije nebo bude divné; a náhled honí ostrý
   tiskový engine (pomalé).
 - **Technicky:** `ZastavkoveJrAd.cls:1281-1311` — `GetMockData` volá živě
   `BuildStrankaZastavky` nad první linkou; TODO v kódu: „před produkčním nasazením vrátit
   statický vzorek". (= známé T5 riziko z auditu 2026-07-02.)
-- **Doporučený fix:** zmrazit reprezentativní JSON výstup jako statický mock (gold linka).
+- **Doporučený fix:** ~~zmrazit reprezentativní JSON výstup jako statický mock (gold linka)~~ — viz won't-do výše.
 
 ### C-f. Nízké (Caché)
 
