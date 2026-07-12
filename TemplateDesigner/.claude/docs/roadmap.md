@@ -32,6 +32,13 @@
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
 - **Výkon MHD tisku** (audit C-b) — memoizace `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru; behavior-preserving, gold-safe. Až výkon reálně bolí (velcí dopravci).
+- **Externí datové zdroje** (analýza 2026-07-12, na poptávku) — architektura připravená (engine zná jen
+  `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
+  (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless
+  A3 („POST šablona+JSON → PDF" = externí zdroj bez adaptéru; **A3 je nejpravděpodobnější nosič**).
+  První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** — tržní minimum
+  (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
+  credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
@@ -79,12 +86,25 @@ při scope té fáze, ne teď.
 Z gap analýzy vůči komerčním generátorům. Nezávislé na JŘ (faktury i obecné šablony). Hotová část
 (conditional formatting, počítaná pole, min/max, versioning framework) → archiv.
 
-**Odloženo (backlog, ne blocker):**
-- **Fixní (statická) tabulka — oživení v UI** — `TableElement` Fixed mód existuje v modelu, ale je uspaný
-  (`JsonDerivedType` jen pro legacy načtení, není v paletě/UI). Vzkřísit: paleta + Fixed editor (sloupce + řádky
-  s `{PLACEHOLDER}` ze skalárů). Užitečné pro strukturované sestavy (faktury, bloky záhlaví/platnost).
-- **Merged cells** (`ColSpan`/`RowSpan` + merge editor) — **gated na fixní tabulku**: slučování patří
-  strukturovaným tabulkám (DynamicTable má uniformní datové řádky). Vrátit se spolu s fixní tabulkou.
+**Fixní (statická) tabulka — analýza + plán HOTOVY (2026-07-12), implementace odložena na poptávku faktur/F3:**
+
+> Rozhodnutí z analýzy: **koncept implementovat** (FastReport/Stimulsoft svět našich uživatelů Table
+> objekt čeká; tabulka dává logiku, kterou skupina elementů principiálně neumí — **reflow podmíněných
+> řádků** (skrytý řádek zkolabuje, díra nezůstane), **auto výška řádku** (obsah odtlačí řádky pod sebou),
+> strukturální editace (insert řádku, sloupcový resize), sémantika pro Caché distribuci + AI).
+> Pro JŘ není potřeba (bloky záhlaví = 2×3 bez podmínek) → **nedělat hned, ale s poptávkou faktur / F3**.
+> Průzkum stavu: model+render Fixed módu KOMPLETNÍ a na sdíleném jádru (kaskáda, CellRenderer,
+> ResolveWidths), 5-tab `TableEditorDialog` funkční vč. „Ze šablony…" na hotový `GetTableTemplate`
+> kontrakt (agendy už nabízejí ZAHLAVI_LINKY/PLATNOST_DOPRAVCE/FAKTURA_*).
+
+- **Krok 1 — střízlivé oživení (S–M):** paleta „Tabulka (pevná)" + factory (`Mode=Fixed`, Mode v UI
+  zamčený — dynamickou dělá `DynamicTableElement`); opravy nálezů: `Clone()` zapomíná `SummaryRows`,
+  `RowVM.ToModel()` zahazuje per-cell `Format`+`Style`; render dorovnat na `ColumnRenderer.DrawRow`
+  (sjednotí mřížku, auto-scale, **předpoklad pro merge**); drift-test allowlist zúžit.
+- **Krok 2 — UX modernizace + merge (M, s poptávkou):** inline editace buněk na plátně (dvojklik,
+  à la F2 na TextElementu — standardní pocit z FastReportu, řeší „5 tabů je moc"), redukce dialogu
+  na 2-tab vzor, **ColSpan** merged cells (aditivní JSON, span-aware DrawRow). **RowSpan vědomě
+  odložen** (vzácný, těžký — spanování výšek × zebra × VisibilityExpression) — až na poptávku / F3.
 
 ---
 
