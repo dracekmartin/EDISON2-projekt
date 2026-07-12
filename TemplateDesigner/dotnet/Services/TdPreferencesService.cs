@@ -224,7 +224,8 @@ public record MainStatePref(
     double? LeftPanelWidthPx    = null,
     double? PreviewPanelWidthPx = null,
     int ActiveLeftTabIndex   = 0,
-    string? LastAgendaCode   = null)
+    string? LastAgendaCode   = null,
+    bool ParamsBarExpanded   = false)
 {
     public static readonly MainStatePref Default = new();
 }

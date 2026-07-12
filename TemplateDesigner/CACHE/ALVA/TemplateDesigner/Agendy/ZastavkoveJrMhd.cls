@@ -1570,14 +1570,17 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 /// Přidá standardní JŘ parametry do pole parametrů.
 ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
+    // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč — starší klient ignoruje).
+    // Konvence: skupina = UI název elementu, který parametr ovlivňuje; celo-šablonové → „Obecné".
+    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
+    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
 
     // Časová osa odjezdů — popisné labely (Plný den vědomě vynechán, lze docílit přes Vlastní rozsah 0..23)
     s param = ##class(%DynamicObject).%New()
     s param.name         = "CASOVA_OSA"
     s param.label        = "Časová osa odjezdů"
     s param.type         = "enum"
+    s param.group        = "Mřížka odjezdů"
     s param.defaultValue = "Jen hodiny s odjezdy"
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Jen hodiny s odjezdy")
@@ -1591,6 +1594,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pOd.name         = "HODINY_OD"
     s pOd.label        = "Hodiny od"
     s pOd.type         = "number"
+    s pOd.group        = "Mřížka odjezdů"
     s pOd.defaultValue = "4"
     s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pOd)
@@ -1599,13 +1603,14 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pDo.name         = "HODINY_DO"
     s pDo.label        = "Hodiny do"
     s pDo.type         = "number"
+    s pDo.group        = "Mřížka odjezdů"
     s pDo.defaultValue = "23"
     s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pDo)
 
     // Roztáhnout data odjezdů (řádky + fonty) na výšku elementu, pokud je kratší rozsah hodin než kapacita.
     // Hlavička skupin dnů + sloupec hodin zůstávají původní velikost.
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false")
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Mřížka odjezdů")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

@@ -150,10 +150,7 @@ public class TemplateDesignerViewModel : EDViewModel
             // Invalidate cached real data, fetch nového v pozadí
             _realPreviewData = null;
             _realPreviewIndex = 0;
-            OnPropertyChanged(nameof(RealPreviewPageCount));
-            OnPropertyChanged(nameof(RealPreviewIndex));
-            OnPropertyChanged(nameof(PageNavigationText));
-            OnPropertyChanged(nameof(HasMultiplePages));
+            NotifyPreviewPagesChanged();
             RequestPreviewRefresh?.Invoke();
             _ = RefreshDataForCurrentInstanceAsync();
         }
@@ -210,10 +207,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 _realPreviewIndex = 0;
                 StatusText = $"{instance.Display}: {pages.Count} stránek";
             }
-            OnPropertyChanged(nameof(RealPreviewPageCount));
-            OnPropertyChanged(nameof(RealPreviewIndex));
-            OnPropertyChanged(nameof(PageNavigationText));
-            OnPropertyChanged(nameof(HasMultiplePages));
+            NotifyPreviewPagesChanged();
             RequestPreviewRefresh?.Invoke();
         }
         catch (Exception ex)
@@ -289,6 +283,12 @@ public class TemplateDesignerViewModel : EDViewModel
                 OnPropertyChanged(nameof(PageNavigationText));
                 System.Windows.Input.CommandManager.InvalidateRequerySuggested();
             }
+            else if (value != clamped)
+            {
+                // Binding poslal hodnotu mimo rozsah (ComboBox při výměně ItemsSource pushne -1)
+                // a clamp nezměnil stav → notify vrátí ComboBox zpět na platný index.
+                OnPropertyChanged(nameof(RealPreviewIndex));
+            }
         }
     }
 
@@ -298,6 +298,43 @@ public class TemplateDesignerViewModel : EDViewModel
         : "—";
 
     public bool HasMultiplePages => RealPreviewPageCount > 1;
+
+    /// <summary>Viditelnost lišty stránkování dat — i pro jedinou stránku (combobox říká, CO preview
+    /// zobrazuje — zastávka × směr); skrytá jen v mock módu (žádná reálná data).</summary>
+    public bool HasPageNavigation => RealPreviewPageCount > 0;
+
+    /// <summary>
+    /// Notifikace po výměně reálných preview dat. Pořadí je záměrné: <see cref="PreviewPageItems"/>
+    /// PŘED <see cref="RealPreviewIndex"/> — výměna ItemsSource comboboxu synchronně pushne
+    /// SelectedIndex=-1 do VM a zpětná korekce ze setteru se během reentrantního binding update
+    /// zahodí (combobox by zůstal prázdný). Následná notifikace indexu ho srovná na platnou hodnotu.
+    /// </summary>
+    private void NotifyPreviewPagesChanged()
+    {
+        OnPropertyChanged(nameof(RealPreviewPageCount));
+        OnPropertyChanged(nameof(PreviewPageItems));
+        OnPropertyChanged(nameof(RealPreviewIndex));
+        OnPropertyChanged(nameof(PageNavigationText));
+        OnPropertyChanged(nameof(HasMultiplePages));
+        OnPropertyChanged(nameof(HasPageNavigation));
+    }
+
+    /// <summary>Položky comboboxu stránkování dat — přímý skok na stránku bez proklikávání ◀▶.</summary>
+    public IReadOnlyList<string> PreviewPageItems =>
+        _realPreviewData is null ? []
+        : _realPreviewData.Select(BuildPreviewPageLabel).ToList();
+
+    /// <summary>Popisek stránky dat pro combobox: „N — zastávka → směr" z polí stránky
+    /// (POPIS_ZASTAVKA / POPIS_SMER — zastávkový JŘ), fallback „Stránka N" pro agendy bez nich.</summary>
+    public static string BuildPreviewPageLabel(DataContext page, int index)
+    {
+        var zastavka = page.GetString("POPIS_ZASTAVKA").Trim();
+        if (zastavka.Length == 0) return $"Stránka {index + 1}";
+        var smer = page.GetString("POPIS_SMER").Trim();
+        return smer.Length == 0
+            ? $"{index + 1} — {zastavka}"
+            : $"{index + 1} — {zastavka} → {smer}";
+    }
 
     private RelayCommand? _prevPage, _nextPage;
     public RelayCommand PreviousPageCommand => _prevPage ??= Command(
@@ -309,6 +346,58 @@ public class TemplateDesignerViewModel : EDViewModel
 
     /// <summary>Parametry agendy pro PrintDialog.</summary>
     public IReadOnlyList<TemplateParameter> AgendaParameters => _agendaParameters;
+
+    // ── Sbalitelná lišta parametrů nad preview ────────────────────────────────
+    private bool _paramsBarExpanded;
+
+    /// <summary>Rozbalení lišty parametrů nad preview. Default sbaleno (preview má celou výšku);
+    /// stav se persistuje v MainStatePref.</summary>
+    public bool ParamsBarExpanded
+    {
+        get => _paramsBarExpanded;
+        set
+        {
+            if (Set(ref _paramsBarExpanded, value))
+            {
+                OnPropertyChanged(nameof(ParamsBarToggleText));
+                OnPropertyChanged(nameof(ParamsBarCollapsed));
+            }
+        }
+    }
+
+    public bool   ParamsBarCollapsed  => !_paramsBarExpanded;
+    public string ParamsBarToggleText => _paramsBarExpanded ? "⚙ Parametry ▴" : "⚙ Parametry ▾";
+
+    /// <summary>Souhrn hodnot odchylných od defaultu pro sbalenou lištu — uživatel vidí na první
+    /// pohled, že má něco přepnuté, aniž by lištu rozbaloval. Prázdný výběr = „výchozí nastavení".</summary>
+    public string ParamsSummaryText
+    {
+        get
+        {
+            var parts = new List<string>();
+            foreach (var p in _agendaParameters)
+            {
+                if (!_previewParams.TryGetValue(p.Name, out var val) || val is null) continue;
+                var cur = val.ToString() ?? "";
+                var def = p.DefaultValue ?? "";
+                if (p.Type == "bool")
+                {
+                    bool curB = IsTruthy(cur), defB = IsTruthy(def);
+                    if (curB != defB) parts.Add(curB ? p.Label : $"{p.Label}: vyp");
+                }
+                else if (!string.Equals(cur, def, StringComparison.Ordinal))
+                {
+                    parts.Add($"{p.Label}: {cur}");
+                }
+            }
+            return parts.Count == 0 ? "výchozí nastavení" : string.Join(" · ", parts);
+        }
+    }
+
+    private static bool IsTruthy(string s) =>
+        s.Equals("true", StringComparison.OrdinalIgnoreCase) || s == "1";
+
+    private void NotifyParamsSummaryChanged() => OnPropertyChanged(nameof(ParamsSummaryText));
 
     /// <summary>
     /// Sdílený dictionary parametrů (preview lišta + PrintDialog operují nad stejnou instancí).
@@ -429,7 +518,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public event Action? SectionsRebuilt;
 
     // ── Commands ──────────────────────────────────────────────────────────────
-    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _openInstancePicker, _prevInstance, _nextInstance, _refreshData;
+    private RelayCommand? _undo, _redo, _delete, _copy, _paste, _cut, _copyStyle, _pasteStyle, _openInstancePicker, _prevInstance, _nextInstance, _refreshData, _toggleParamsBar;
     private AsyncRelayCommand? _save, _saveAs, _open, _openFromCache, _saveToCache, _saveToCacheAs, _importJson, _exportJson, _exportPdf, _exportPng, _new, _changeAgenda;
 
     public RelayCommand UndoCommand          => _undo      ??= Command(Undo,          () => CanUndo);
@@ -449,6 +538,7 @@ public class TemplateDesignerViewModel : EDViewModel
     public RelayCommand PreviousInstanceCommand    => _prevInstance   ??= Command(() => ActiveInstanceIndex--, () => HasMultipleActiveInstances && _activeInstanceIndex > 0);
     public RelayCommand NextInstanceCommand        => _nextInstance   ??= Command(() => ActiveInstanceIndex++, () => HasMultipleActiveInstances && _activeInstanceIndex < _activeInstances.Count - 1);
     public RelayCommand RefreshDataCommand         => _refreshData    ??= Command(RefreshData);
+    public RelayCommand ToggleParamsBarCommand     => _toggleParamsBar ??= Command(() => ParamsBarExpanded = !ParamsBarExpanded);
     public AsyncRelayCommand ExportPdfCommand => _exportPdf ??= CommandAsync(ExportPreviewPdfAsync, () => !_exportRunning);
     public AsyncRelayCommand ExportPngCommand => _exportPng ??= CommandAsync(ExportPreviewPngAsync, () => !_exportRunning);
     public new RelayCommand DeleteCommand => _delete    ??= Command(DeleteSelected);
@@ -545,6 +635,7 @@ public class TemplateDesignerViewModel : EDViewModel
         State.ShowRuler          = pref.ShowRuler;
         State.GridSize           = pref.GridSize;
         State.SnapGapMm          = pref.SnapGapMm;
+        ParamsBarExpanded        = pref.ParamsBarExpanded;
 
         // Property notifications pro bindings (toolbar toggle buttony)
         OnPropertyChanged(nameof(ShowGrid));
@@ -578,7 +669,8 @@ public class TemplateDesignerViewModel : EDViewModel
             LeftPanelWidthPx:   leftPanelPx,
             PreviewPanelWidthPx: previewPanelPx,
             ActiveLeftTabIndex: activeTabIndex,
-            LastAgendaCode:     State.CurrentTemplate.AgendaCode);
+            LastAgendaCode:     State.CurrentTemplate.AgendaCode,
+            ParamsBarExpanded:  ParamsBarExpanded);
 
         return Preferences.SaveMainStateAsync(snapshot);
     }
@@ -2148,6 +2240,7 @@ public class TemplateDesignerViewModel : EDViewModel
     {
         _cachedParamValues = null;
         foreach (var vm in PreviewParameters) vm.NotifyValueChanged();
+        NotifyParamsSummaryChanged();
         RequestPreviewRefresh?.Invoke();
     }
 
@@ -2169,6 +2262,7 @@ public class TemplateDesignerViewModel : EDViewModel
             onChanged:  () =>
             {
                 _cachedParamValues = null;
+                NotifyParamsSummaryChanged();
                 // Server-side param „rozdělení sloupců" (grouping počítá Caché) → změna vyžaduje re-fetch dat.
                 // Ostatní (client-side) parametry jen překreslí. (Zatím jediný server param — hardcoded.)
                 var rozd = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv) ? rv?.ToString() : null;
@@ -2187,6 +2281,7 @@ public class TemplateDesignerViewModel : EDViewModel
         // Výchozí hodnota server-paramu, ať první změna client-paramu nespustí falešný re-fetch.
         _lastServerParamRozdeleni = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv0) ? rv0?.ToString() : null;
         HasParameters = PreviewParameters.Count > 0;
+        NotifyParamsSummaryChanged();
     }
 
     private void UpdateCacheStatus(string? agendaCode, DataSchema? cacheSchema)
@@ -2797,6 +2892,8 @@ public class ParameterControlVM : INotifyPropertyChanged
     public string                    Label         => _param.Label;
     public string                    ParameterType => _param.Type;
     public IReadOnlyList<string>     Options       => _param.Options ?? [];
+    /// <summary>Skupina pro CollectionViewSource grouping v liště parametrů (prázdné = bez skupiny).</summary>
+    public string                    Group         => _param.Group ?? "";
 
     /// <summary>Hodnota parametru — setter volá onChanged (live refresh) při každé změně.</summary>
     public object? Value

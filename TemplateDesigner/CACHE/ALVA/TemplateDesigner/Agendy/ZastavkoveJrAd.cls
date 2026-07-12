@@ -1462,9 +1462,11 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
 
 ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 {
-    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true")
-    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false")
-    d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI",   "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false")
+    // `group` = vizuální seskupení v liště parametrů / dialogu (aditivní klíč — starší klient ignoruje).
+    // Konvence: skupina = UI název elementu, který parametr ovlivňuje („Seznam zastávek" /
+    // „Mřížka odjezdů" / „Poznámky a legenda"); parametry pro celou šablonu → „Obecné".
+    d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
+    d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
 
     // Rozdělení sloupců typů provozu — override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace
     // {prázdninový split prac. dnů} × {sloučení víkendu}; reuse existujícího NacistSkupinyDnu/ZarazeniSpoje.
@@ -1472,6 +1474,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRozd.name         = "ROZDELENI_SLOUPCU"
     s pRozd.label        = "Rozdělení sloupců (typy provozu)"
     s pRozd.type         = "enum"
+    s pRozd.group        = "Mřížka odjezdů"
     s pRozd.defaultValue = "Automaticky (dle linky)"
     s optsR = ##class(%DynamicArray).%New()
     d optsR.%Push("Automaticky (dle linky)")
@@ -1486,6 +1489,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s param.name         = "CASOVA_OSA"
     s param.label        = "Časová osa odjezdů"
     s param.type         = "enum"
+    s param.group        = "Mřížka odjezdů"
     s param.defaultValue = "Jen hodiny s odjezdy"
     s opts = ##class(%DynamicArray).%New()
     d opts.%Push("Jen hodiny s odjezdy")
@@ -1498,6 +1502,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pOd.name         = "HODINY_OD"
     s pOd.label        = "Hodiny od"
     s pOd.type         = "number"
+    s pOd.group        = "Mřížka odjezdů"
     s pOd.defaultValue = "4"
     s pOd.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pOd)
@@ -1506,11 +1511,14 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pDo.name         = "HODINY_DO"
     s pDo.label        = "Hodiny do"
     s pDo.type         = "number"
+    s pDo.group        = "Mřížka odjezdů"
     s pDo.defaultValue = "23"
     s pDo.visibleWhen  = "CASOVA_OSA=Vlastní rozsah"
     d arr.%Push(pDo)
 
-    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false")
+    d ..AddBoolParam(arr, "ROZTAHNOUT_NA_VYSKU", "Roztáhnout na výšku", "false", "Mřížka odjezdů")
+
+    d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false", "Poznámky a legenda")
 
     // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
     // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.
@@ -1518,6 +1526,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pNepoz.name         = "SCHOVAT_V_ROZSAHU"
     s pNepoz.label        = "V rozsahu nepoznámkovat schovat"
     s pNepoz.type         = "enum"
+    s pNepoz.group        = "Poznámky a legenda"
     s pNepoz.defaultValue = "Ruční komentáře"
     s optsNepoz = ##class(%DynamicArray).%New()
     d optsNepoz.%Push("Ruční komentáře")
@@ -1528,7 +1537,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 
     // Skrýt agregátní poznámku „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
     // TD-aplikované (filtr skryje legendu kategorie bezbarier-agregat). Default = zobrazit (legacy).
-    d ..AddBoolParam(arr, "SCHOVAT_AGREGAT_BEZBARIER", "Skrýt souhrn ""všechny spoje bezbariérové""", "false")
+    d ..AddBoolParam(arr, "SCHOVAT_AGREGAT_BEZBARIER", "Skrýt souhrn ""všechny spoje bezbariérové""", "false", "Poznámky a legenda")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

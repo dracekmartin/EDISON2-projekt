@@ -290,7 +290,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
                     Label        = item["label"]?.GetValue<string>() ?? name,
                     Type         = item["type"]?.GetValue<string>() ?? "string",
                     DefaultValue = item["defaultValue"]?.GetValue<string>(),
-                    VisibleWhen  = item["visibleWhen"]?.GetValue<string>()
+                    VisibleWhen  = item["visibleWhen"]?.GetValue<string>(),
+                    Group        = item["group"]?.GetValue<string>()
                 };
 
                 if (item["options"] is JsonArray opts)

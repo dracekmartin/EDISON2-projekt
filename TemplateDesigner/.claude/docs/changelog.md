@@ -171,6 +171,48 @@ Nálezy z ručního testování před úterní verzí. Build 0 chyb, .NET 340/34
   (`released` bool, starší server → default true). Aktuální agenda šablony vidět vždy;
   existující šablony + EDISON launch nezveřejněných fungují dál.
 
+## 2026-07-12 — UI doladění preview: sbalitelná lišta parametrů + skok na stránku dat + export volby dle agendy
+
+Před-produkční UX úklid (analýza + implementace na žádost uživatele). Ověřeno: build 0 chyb,
+.NET 344/344 (+4), Caché wire živě (GetParameters `group`, AgendaParams skupiny + split volby).
+
+- **Sbalitelná lišta parametrů nad preview** — dřív WrapPanel (pole se zalamovala „náhodně" dle šířky
+  panelu a tlačila preview dolů). Nově default sbaleno na 1 řádek „⚙ Parametry ▾" + **souhrn hodnot
+  odchylných od defaultu** (uživatel vidí, že má něco přepnuté); klik kamkoli do hlavičky rozbalí
+  svislý formulář. Stav persistován v `MainStatePref.ParamsBarExpanded`.
+- **Seskupení parametrů `group`** (aditivní klíč kontraktu, R3) — `GetParameters` posílá skupinu;
+  **konvence: skupina = UI název elementu, který parametr ovlivňuje** („Seznam zastávek" /
+  „Mřížka odjezdů" / „Poznámky a legenda"), celo-šablonové parametry → „Obecné" (feedback
+  uživatele — dřív tematické „Obsah"/„Vzhled"). `AddBoolParam`/`AddNumberParam` volitelný 5. arg,
+  enumy `p.group`. Lišta groupuje přes CollectionViewSource (hlavičky skupin, prázdná skupina bez
+  hlavičky), **PrintDialog** přes EDInputForm skupiny (`AgendaParams.AddParamGroups`, pořadí skupin =
+  první výskyt v GetParameters — proto SOUHRN_NA_ZNAMENI přesunut k poznámkovým parametrům).
+- **Skok na stránku dat v preview** — text „3 / 40" nahrazen ComboBoxem s popisky stránek
+  „N — zastávka → směr" (`BuildPreviewPageLabel` z POPIS_ZASTAVKA/POPIS_SMER, fallback „Stránka N")
+  + „/ celkem"; ◀▶ zůstávají. Konec proklikávání 37 stránek na konkrétní zastávku; combobox zároveň
+  ukazuje, CO aktuální stránka zobrazuje.
+- **Export volby dle capability agendy** (audit C-f) — `AgendaParams.AddExportFields` čte class
+  parametry agendy: `PER_STOP` („Jeden PDF na zastávku/směr") jen pro `ElementKind=STOP`, `PER_LINE`
+  label z `InstanceLabel` v akuzativu („Jeden PDF na linku" / „…na fakturu"; helper `Akuzativ`).
+  Uložená hodnota, kterou agenda nenabízí → fallback SINGLE.
+- **Oprava latentního bugu `TISK_SIPKY` default** — call-sites předávají string `"true"`, který COS
+  v `$s(defaultVal:...)` vyhodnotí numericky jako 0 → wire `defaultValue:"false"` a šipky směru
+  defaultně VYPNUTÉ proti záměru (element default `ShowDirectionArrow=true`, docs „true").
+  `AddBoolParam` nyní bere `1` i `"true"`. ⚠️ Behavior change pro uživatele bez uložených PrintParams:
+  šipky nově defaultně zapnuté (= původní záměr).
+- **Instance chip** — šipky ◀▶ skryté při 0–1 aktivní instanci (dřív jen disabled, matoucí).
+- **Stabilní pozice ◀▶ při proklikávání** (feedback z testu) — různě dlouhé názvy stránek/linek
+  posouvaly tlačítka pod myší (navigace je centrovaná → šířka obsahu hýbe layoutem). Combobox
+  stránek pevná šířka 230px (dropdown se obsahu přizpůsobí), text instance chipu pevná šířka
+  260px + ellipsis + tooltip **jen při více instancích** (DataTrigger — u 0–1 instance chip
+  zůstává kompaktní).
+- **Fix prázdného comboboxu stránek po výměně dat** (feedback z testu „stránkování zmizelo") —
+  výměna ItemsSource synchronně pushne SelectedIndex=-1 do VM a zpětná korekce se během
+  reentrantního binding update zahodí → combobox zůstal prázdný. `NotifyPreviewPagesChanged`
+  notifikuje v pořadí PreviewPageItems → RealPreviewIndex (index srovná po rebindingu).
+  + Lišta stránkování nově viditelná i pro **jedinou** stránku dat (`HasPageNavigation` —
+  combobox říká, CO preview zobrazuje; skrytá jen v mock módu).
+
 ## 2026-07-11 — Dvouosý model agend: Agenda × Varianta (názvosloví dle legacy analýzy)
 
 Roadmap „typ šablony vs agenda" (podnět kolegy). Analýza legacy (RG strom `agenda→oblasti→sestavy`

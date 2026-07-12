@@ -200,24 +200,29 @@ ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, ty
 /// name       = název parametru (např. "TISK_POZNAMKY")
 /// label      = popisek (např. "Tisknout poznámku")
 /// defaultVal = výchozí hodnota (0/1 nebo true/false)
-ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean)
+/// group      = volitelná skupina pro vizuální seskupení v UI (aditivní klíč kontraktu)
+ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "")
 {
     s param = ##class(%DynamicObject).%New()
     s param.name  = name
     s param.label = label
     s param.type  = "bool"
-    s param.defaultValue = $s(defaultVal:"true", 1:"false")
+    // Call-sites předávají i string "true" — numericky je 0, holé $s(defaultVal:...) by ho vyhodnotilo
+    // jako false (historicky tichý bug: TISK_SIPKY default na wire "false" proti záměru).
+    s param.defaultValue = $s((defaultVal=1)||(defaultVal="true"):"true", 1:"false")
+    s:group'="" param.group = group
     d arr.%Push(param)
 }
 
 /// Přidá number parametr do pole parametrů.
-ClassMethod AddNumberParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %String)
+ClassMethod AddNumberParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %String, group As %String = "")
 {
     s param = ##class(%DynamicObject).%New()
     s param.name  = name
     s param.label = label
     s param.type  = "number"
     s param.defaultValue = defaultVal
+    s:group'="" param.group = group
     d arr.%Push(param)
 }
 

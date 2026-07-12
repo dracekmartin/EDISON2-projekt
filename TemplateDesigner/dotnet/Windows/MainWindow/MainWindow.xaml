@@ -704,35 +704,103 @@
             <Border Grid.Column="4" Grid.Row="0"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,0,0">
                 <DockPanel>
-                    <!-- Parametry sestavy -->
+                    <!-- Parametry sestavy — sbalitelná lišta (default sbaleno = preview má celou výšku).
+                         Sbaleno: 1 řádek se souhrnem hodnot odchylných od defaultu.
+                         Rozbaleno: svislý formulář seskupený dle `group` metadat z GetParameters. -->
                     <Border x:Name="PreviewParamsBorder" DockPanel.Dock="Top"
                             Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}"
                             Background="{DynamicResource EDTheme.Bg.Footer}"
                             BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
-                            Padding="8,6">
-                        <ItemsControl ItemsSource="{Binding PreviewParameters}"
-                                      ItemTemplateSelector="{StaticResource ParamTemplateSelector}">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <WrapPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                        </ItemsControl>
+                            Padding="8,4">
+                        <Border.Resources>
+                            <CollectionViewSource x:Key="PreviewParamsView" Source="{Binding PreviewParameters}">
+                                <CollectionViewSource.GroupDescriptions>
+                                    <PropertyGroupDescription PropertyName="Group"/>
+                                </CollectionViewSource.GroupDescriptions>
+                            </CollectionViewSource>
+                        </Border.Resources>
+                        <StackPanel>
+                            <!-- Hlavička — klik kdekoli přepne rozbalení -->
+                            <Border Background="Transparent" Cursor="Hand"
+                                    ToolTip="Parametry sestavy — kliknutím rozbalit/sbalit">
+                                <Border.InputBindings>
+                                    <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleParamsBarCommand}"/>
+                                </Border.InputBindings>
+                                <DockPanel>
+                                    <TextBlock DockPanel.Dock="Left"
+                                               Text="{Binding ParamsBarToggleText}"
+                                               FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                               Foreground="{DynamicResource EDTheme.Text.Header}"
+                                               FontWeight="SemiBold"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding ParamsSummaryText}"
+                                               Visibility="{Binding ParamsBarCollapsed, Converter={StaticResource BoolToVis}}"
+                                               FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                                               Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                               VerticalAlignment="Center" Margin="10,0,0,0"
+                                               TextTrimming="CharacterEllipsis"/>
+                                </DockPanel>
+                            </Border>
+
+                            <!-- Rozbalený svislý formulář -->
+                            <ItemsControl Margin="2,4,0,0"
+                                          Visibility="{Binding ParamsBarExpanded, Converter={StaticResource BoolToVis}}"
+                                          ItemsSource="{Binding Source={StaticResource PreviewParamsView}}"
+                                          ItemTemplateSelector="{StaticResource ParamTemplateSelector}">
+                                <ItemsControl.ItemContainerStyle>
+                                    <Style TargetType="ContentPresenter">
+                                        <Setter Property="Margin" Value="8,1,0,1"/>
+                                    </Style>
+                                </ItemsControl.ItemContainerStyle>
+                                <ItemsControl.GroupStyle>
+                                    <GroupStyle>
+                                        <GroupStyle.HeaderTemplate>
+                                            <DataTemplate>
+                                                <!-- Prázdný název skupiny (agenda bez group metadat) → záhlaví skrýt -->
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
+                                                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                                                           Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                                           Margin="0,4,0,2">
+                                                    <TextBlock.Style>
+                                                        <Style TargetType="TextBlock">
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Name}" Value="">
+                                                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </TextBlock.Style>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </GroupStyle.HeaderTemplate>
+                                    </GroupStyle>
+                                </ItemsControl.GroupStyle>
+                            </ItemsControl>
+                        </StackPanel>
                     </Border>
 
-                    <!-- Stránkování dat -->
+                    <!-- Stránkování dat — viditelné kdykoli jsou reálná data (i 1 stránka):
+                         combobox zároveň říká, KTEROU zastávku × směr preview zobrazuje -->
                     <Border DockPanel.Dock="Top"
-                            Visibility="{Binding HasMultiplePages, Converter={StaticResource BoolToVis}}"
+                            Visibility="{Binding HasPageNavigation, Converter={StaticResource BoolToVis}}"
                             Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                             BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                             Padding="8,3">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                             <Button Content="◀" Command="{Binding PreviousPageCommand}"
                                     FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
-                            <TextBlock Text="{Binding PageNavigationText}"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Header}"
-                                       VerticalAlignment="Center" Margin="8,0"
-                                       MinWidth="40" TextAlignment="Center"/>
+                            <!-- Přímý skok na stránku dat (zastávka × směr) — bez proklikávání ◀▶.
+                                 Pevná šířka: různě dlouhé názvy nesmí posouvat tlačítka ◀▶ pod myší
+                                 (dropdown se obsahu přizpůsobí, zavřený box ořízne). -->
+                            <ComboBox ItemsSource="{Binding PreviewPageItems}"
+                                      SelectedIndex="{Binding RealPreviewIndex, Mode=TwoWay}"
+                                      FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                      VerticalAlignment="Center" Margin="8,0"
+                                      Width="230"
+                                      ToolTip="Skok na stránku dat"/>
+                            <TextBlock Text="{Binding RealPreviewPageCount, StringFormat='/ {0}'}"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="28"/>
                             <Button Content="▶" Command="{Binding NextPageCommand}"
                                     FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                         </StackPanel>
@@ -791,17 +859,33 @@
                         </Border.InputBindings>
                         <StackPanel Orientation="Horizontal">
                             <Button Content="◀" Command="{Binding PreviousInstanceCommand}"
+                                    Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
                                     Background="Transparent" BorderThickness="0" Padding="4,0"
                                     FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                     Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                     Cursor="Hand" Margin="0,0,4,0"
                                     ToolTip="{Binding PreviousInstanceTooltip}"/>
+                            <!-- Pevná šířka jen při více instancích — různě dlouhé názvy linek jinak
+                                 posouvají tlačítko ▶ pod myší při proklikávání. -->
                             <TextBlock Text="{Binding ActiveInstanceText}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                        Foreground="{DynamicResource EDTheme.Accent.BlueDark}"
                                        FontWeight="SemiBold"
-                                       VerticalAlignment="Center"/>
+                                       VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis"
+                                       ToolTip="{Binding ActiveInstanceText}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasMultipleActiveInstances}" Value="True">
+                                                <Setter Property="Width" Value="260"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                             <Button Content="▶" Command="{Binding NextInstanceCommand}"
+                                    Visibility="{Binding HasMultipleActiveInstances, Converter={StaticResource BoolToVis}}"
                                     Background="Transparent" BorderThickness="0" Padding="4,0"
                                     FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                     Foreground="{DynamicResource EDTheme.Accent.BlueDark}"

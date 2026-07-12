@@ -21,6 +21,10 @@ public class TemplateParameter
     /// <summary>Možné hodnoty pro typ "enum".</summary>
     public List<string>? Options { get; set; }
 
+    /// <summary>Skupina pro vizuální seskupení v UI (např. „Obsah", „Sloupce a časová osa").
+    /// Null/prázdné = bez skupiny. Aditivní klíč kontraktu (R3) — starší server ho neposílá.</summary>
+    public string? Group { get; set; }
+
     /// <summary>
     /// Podmínka viditelnosti parametru. Formát „NázevParametru=Hodnota".
     /// Null nebo prázdný = vždy viditelný. Vyhodnocuje se proti aktuálním hodnotám ostatních parametrů.
