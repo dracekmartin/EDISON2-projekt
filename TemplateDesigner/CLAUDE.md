@@ -259,12 +259,31 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 | `implementation-patterns.md` | Barvy, RenderContext, ComboBox gotcha, SkiaSharp quirks | `dotnet/**/*.cs` |
 | `ux-conventions.md` | Dialogová tlačítka (IsDefault/IsCancel), tooltipy, autoritativní tabulka keyboardových zkratek, context menu, confirmation patterns | `dotnet/Windows/**` |
 
-Ruční reference — **kompletní index s kategoriemi a hygienou složky: [`.claude/docs/README.md`](.claude/docs/README.md)**
-(živé pracovní / závazné reference / vytěžené analýzy / wiki seedy / archivy). Nejdůležitější:
-- `.claude/docs/changelog.md` — kompletní changelog
-- `.claude/docs/roadmap.md` — aktuální roadmapa (jen otevřené body); hotová práce → `.claude/docs/roadmap-archive.md`
-- `.claude/docs/elementy-architektura.md` — architektura specializovaných JŘ elementů (Caché wire formát, hierarchie elementů, matice zodpovědností)
-- **`.claude/docs/feature-design-principles.md`** — **závazná reference před každým novým requestem**: kódová + UX rozhodovací mřížka, klasifikace typu variace (1/2/3), per-customer divergence, anti-patterns
-- `.claude/docs/customer-requirements-zastavkovy-jr.md` — konkrétní požadavky zákazníků z helpdesku Podpory M-line (zastávkový JŘ — DPKV, TRANSDEV, KORID)
-- `.claude/docs/legacy-nahrada.md` — legacy vs TD v jednom: etapy náhrady + technický audit, gap matice TiskMHD, mapa legacy generátorů, evidence prezentací 2026
-- **`.claude/docs/architektonicka-rozhodnuti-agendy.md`** — **závazná rozhodnutí R1–R7 pro škálování agend** (sdílené tabulkové jádro, layout zodpovědnosti, prezentační nápovědy v kontraktu, headless tisk, fonty, distribuce šablon, pilot-first) — číst před startem každé nové fáze (C+D, F, blok A/B)
+## Dokumentace v `.claude/docs/` — kam co evidovat
+
+> ⚠️ **NEZAKLÁDAT nový soubor na každou novou věc.** Složka je konsolidovaná do logických celků
+> (2026-07-13, 26 → 18 souborů) — nový záznam patří téměř vždy do jednoho z nich. Index
+> s kategoriemi: [`.claude/docs/README.md`](.claude/docs/README.md).
+
+**Směrovací tabulka — nová informace → kam patří:**
+
+| Co zapisuji | Kam |
+|---|---|
+| Dokončená práce | `changelog.md` (+ hotový bod z roadmapy KOMPLETNĚ do `roadmap-archive.md`) |
+| Otevřená/plánovaná práce, backlog | `roadmap.md` (sekce dle fáze/tracku) |
+| Zákaznický požadavek, stav tiketu | `customer-requirements-zastavkovy-jr.md` §0 |
+| Architektonické rozhodnutí pro agendy (R1–R7 a jejich detaily) | `architektonicka-rozhodnuti-agendy.md` — **závazné, číst před novou fází** |
+| Jak fungují elementy / tabulkové jádro / symboly JŘ | `elementy-architektura.md` |
+| Kde jsou AD data (globály, nastavení linky, poznámky) | `ad-data-mapa.md` |
+| Zjištění o legacy systémech (TiskMHD/TiskJR/RG), gap vs TD | `legacy-nahrada.md` |
+| Breaking změna JSON šablony / migrace | `template-schema-versions.md` |
+| Text pro zákazníky (novinky, návody) | wiki seedy: `plan-a-zmeny.md`, `uzivatelska-prirucka-*.md` |
+| Pravidlo pro psaní kódu (per-glob) | `.claude/rules/*.md` |
+
+**Nový soubor je oprávněný jen pro:** (a) jednorázovou analýzu, která se po vytěžení do celků výše
+**smaže** (git historie stačí), (b) nový velký trvalý celek (≈ nová fáze/doména) — pak přidat řádek
+do README indexu. Před založením se vždy zeptat: „nepatří to do existujícího celku?"
+
+Nejčastěji potřebné reference: **`feature-design-principles.md`** (závazná mřížka před každým novým
+requestem) · **`architektonicka-rozhodnuti-agendy.md`** (R1–R7) · `linkovy-knizni-jr-implementace-analyza.md`
+(aktivní track C+D, §11–12 odložené body).
