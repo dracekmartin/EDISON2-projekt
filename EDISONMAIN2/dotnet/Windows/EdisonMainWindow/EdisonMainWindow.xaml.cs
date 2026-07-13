@@ -48,6 +48,15 @@ namespace EDISONMAIN2
             }
         }
 
+        // Pravý klik defaultně selekci nemění → kontextové menu by se vizuálně nevztahovalo
+        // ke kliknuté položce. Bublání: vnitřní item se označí první, Handled zastaví rodiče.
+        // ContextMenu se otevírá až na MouseUp, takže Handled ho neblokuje.
+        private void TreeItem_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            ((TreeViewItem)sender).IsSelected = true;
+            e.Handled = true;
+        }
+
         private void UsedModuleItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             e.Handled = true;
