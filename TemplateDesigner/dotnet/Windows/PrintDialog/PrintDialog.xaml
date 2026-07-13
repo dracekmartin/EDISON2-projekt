@@ -8,7 +8,7 @@
         MinWidth="420" MinHeight="360"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        ResizeMode="CanResize">
+        ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Window.Resources>

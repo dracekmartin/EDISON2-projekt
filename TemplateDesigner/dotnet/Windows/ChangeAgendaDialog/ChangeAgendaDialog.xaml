@@ -4,6 +4,7 @@
         Title="Změnit agendu"
         Width="420" Height="360"
         MinWidth="360" MinHeight="280"
+        ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
     <Window.Resources>

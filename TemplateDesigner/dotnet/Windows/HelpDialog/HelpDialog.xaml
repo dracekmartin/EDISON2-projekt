@@ -12,7 +12,7 @@
         Height="640" Width="720"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        ResizeMode="CanResize">
+        ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
         <Style x:Key="CategoryHeader" TargetType="TextBlock">

@@ -5,7 +5,7 @@
         Title="Uložit do databáze"
         Width="700" Height="320"
         MinWidth="620" MinHeight="240"
-        ResizeMode="CanResize"
+        ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
     <DockPanel Margin="10">

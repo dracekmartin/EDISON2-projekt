@@ -47,8 +47,8 @@ public class DesignerCanvas
     private static readonly SKColor ClrSectionContent     = SKColors.White;
     private static readonly SKColor ClrSectionContentDyn  = new(0xFFF0F6FF);
     private static readonly SKColor ClrSectionBorder      = new(0xFFCCCCCC);
-    private static readonly SKColor ClrSectionActive      = new(0xFF2196F3);
-    private static readonly SKColor ClrSelection          = new(0xFF2196F3);
+    private static readonly SKColor ClrSectionActive      = new(0xFF2563EB);
+    private static readonly SKColor ClrSelection          = new(0xFF2563EB);
     private static readonly SKColor ClrLocked             = new(0xFFFF8C00); // jantarová pro zamčené elementy
     private static readonly SKColor ClrCondition         = new(0xFF7B1FA2); // fialová pro podmíněné elementy
     private static readonly SKColor ClrConditionInvalid  = new(0xFFD32F2F); // červená pro nevalidní výraz
@@ -56,7 +56,7 @@ public class DesignerCanvas
     private static readonly SKColor ClrRulerBorder       = new(0xFF999999);
     private static readonly SKColor ClrRulerTick         = new(0xFF555555);
     private static readonly SKColor ClrRulerText         = new(0xFF333333);
-    private static readonly SKColor ClrRulerHighlight    = new(0x602196F3); // poloprůhledná modrá
+    private static readonly SKColor ClrRulerHighlight    = new(0x602563EB); // poloprůhledná modrá
     private static readonly SKColor ClrPageBreak         = new(0xFF2D7DD2); // modrá dělící čára stránek (návrhář)
 
 

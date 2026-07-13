@@ -389,8 +389,8 @@ public partial class MainWindow : Window
         if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
         {
             var r = _rubberBandRect.Value;
-            using var fill   = new SKPaint { Color = new SKColor(0x220066CC) };
-            using var border = new SKPaint { Color = new SKColor(0xFF0066CC), IsStroke = true, StrokeWidth = 1f };
+            using var fill   = new SKPaint { Color = new SKColor(0x222563EB) };
+            using var border = new SKPaint { Color = new SKColor(0xFF2563EB), IsStroke = true, StrokeWidth = 1f };
             surface.Canvas.DrawRect(r, fill);
             surface.Canvas.DrawRect(r, border);
         }
@@ -408,10 +408,10 @@ public partial class MainWindow : Window
                 var elRect = _canvas.GetElementCanvasRect(_addingTargetElement, cw);
                 if (elRect is not null)
                 {
-                    using var highlight = new SKPaint { Color = new SKColor(0x302196F3) };
+                    using var highlight = new SKPaint { Color = new SKColor(0x302563EB) };
                     using var border = new SKPaint
                     {
-                        Color = new SKColor(0xFF2196F3), IsStroke = true,
+                        Color = new SKColor(0xFF2563EB), IsStroke = true,
                         StrokeWidth = 2f
                     };
                     surface.Canvas.DrawRect(elRect.Value, highlight);
@@ -428,7 +428,7 @@ public partial class MainWindow : Window
                     float sW = _vm.State.CurrentTemplate.PageSize.PrintableWidth * _canvas.MmToPx;
                     float sH = _addingTargetSection.EffectiveDesignerHeight * _canvas.MmToPx;
                     var sRect = new SKRect(origin.OriginX, origin.OriginY, origin.OriginX + sW, origin.OriginY + sH);
-                    using var sectionHighlight = new SKPaint { Color = new SKColor(0x182196F3) };
+                    using var sectionHighlight = new SKPaint { Color = new SKColor(0x182563EB) };
                     surface.Canvas.DrawRect(sRect, sectionHighlight);
 
                     // Ghost element — čárkovaný obdélník
@@ -436,10 +436,10 @@ public partial class MainWindow : Window
                     float gx = _addingGhostPos.X - (defW * _canvas.MmToPx / 2f);
                     float gy = _addingGhostPos.Y - (defH * _canvas.MmToPx / 2f);
                     var ghostRect = new SKRect(gx, gy, gx + defW * _canvas.MmToPx, gy + defH * _canvas.MmToPx);
-                    using var ghostFill = new SKPaint { Color = new SKColor(0x152196F3) };
+                    using var ghostFill = new SKPaint { Color = new SKColor(0x152563EB) };
                     using var ghostBorder = new SKPaint
                     {
-                        Color = new SKColor(0xFF2196F3),
+                        Color = new SKColor(0xFF2563EB),
                         IsStroke = true,
                         StrokeWidth = 1.5f,
                         PathEffect = SKPathEffect.CreateDash([6f, 4f], 0)
@@ -1178,7 +1178,7 @@ public partial class MainWindow : Window
                     var t = _vm.LoadCustomSectionTemplate(name);
                     if (t is null)
                     {
-                        _vm.PopupDisplayer.Info($"Šablonu '{name}' se nepodařilo načíst.");
+                        _vm.PopupDisplayer.Info($"Šablonu „{name}“ se nepodařilo načíst.");
                         return new Section { Name = "Chyba" };
                     }
                     return t;

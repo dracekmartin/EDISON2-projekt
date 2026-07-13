@@ -219,7 +219,7 @@ public class TemplateDesignerViewModel : EDViewModel
         catch (Exception ex)
         {
             if (gen != _previewDataGeneration) return;
-            StatusText = $"Chyba načítání: {ex.Message}";
+            StatusText = $"⚠ Chyba načítání: {ex.Message}";
         }
     }
 
@@ -806,7 +806,7 @@ public class TemplateDesignerViewModel : EDViewModel
         int elementCount = section.Elements.Count;
         if (elementCount > 0)
         {
-            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci \"{section.Name}\" s {elementCount} elementy?"))
+            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci „{section.Name}“ s {elementCount} elementy?"))
                 return;
         }
 
@@ -851,7 +851,7 @@ public class TemplateDesignerViewModel : EDViewModel
         try
         {
             _sectionTemplates.Save(section, name);
-            PopupDisplayer.Info($"Šablona '{name}' byla uložena.");
+            PopupDisplayer.Info($"Šablona „{name}“ byla uložena.");
         }
         catch (Exception ex)
         {
@@ -948,7 +948,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode))
         {
-            PopupDisplayer.Info("Nejprve vyber agendu (Ctrl+Shift+A).");
+            PopupDisplayer.Info("Nejprve vyberte agendu (Ctrl+Shift+A).");
             return;
         }
 
@@ -1393,7 +1393,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (!IsDirty) return true;
 
         var result = PopupDisplayer.ConfirmYesNoCancel(
-            "Šablona obsahuje neuložené změny. Chcete je uložit?",
+            "Šablona obsahuje neuložené změny. Uložit je?",
             title: "Neuložené změny");
 
         return result switch

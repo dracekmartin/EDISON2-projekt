@@ -5,7 +5,7 @@
         Height="500" Width="600"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        ResizeMode="CanResize">
+        ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
         <Style x:Key="SectionHeader" TargetType="TextBlock">
@@ -19,11 +19,11 @@
         <!-- Header -->
         <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="12" Margin="-16,-16,-16,0" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
             <StackPanel>
-                <TextBlock Text="🤖 AI Asistent pro generování šablon"
+                <TextBlock Text="AI Asistent pro generování šablon"
                            FontSize="{DynamicResource EDTheme.FontSize.Large}"
                            FontWeight="Bold"
                            Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
-                <TextBlock Text="Popište šablonu, kterou chcete vytvořit, a AI vygeneruje kompletní JSON strukturu."
+                <TextBlock Text="Popište šablonu, kterou chcete vytvořit, a AI ji vygeneruje."
                            FontSize="{DynamicResource EDTheme.FontSize.Body}"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"

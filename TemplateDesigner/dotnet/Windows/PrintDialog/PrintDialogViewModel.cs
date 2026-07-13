@@ -187,7 +187,7 @@ public class PrintDialogViewModel : EDViewModel
         }
         catch (Exception ex)
         {
-            StatusText = $"Chyba: {ex.Message}";
+            StatusText = $"⚠ Chyba: {ex.Message}";
         }
     }
 
@@ -212,7 +212,7 @@ public class PrintDialogViewModel : EDViewModel
         try
         {
             PersistParams();
-            StatusText = "Načítání dat z databáze...";
+            StatusText = "Načítání dat z databáze…";
 
             // Fetch na threadpoolu — batch přes všechny instance jsou HTTP volání per linka;
             // sync by zamrazil dialog na desítky sekund (R1). Snapshot parametrů: uživatel je
@@ -230,7 +230,7 @@ public class PrintDialogViewModel : EDViewModel
             // s preview renderem, na pozadí by závodila.
             var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
 
-            StatusText = $"Generuji PDF ({totalPages} stránek)...";
+            StatusText = $"Generuji PDF ({totalPages} stránek)…";
             string sheetInfo = sheets is null ? "" : $" · {sheets.ShortLabel}";
 
             if (splitMode == ExportSplitMode.Single)
@@ -267,7 +267,7 @@ public class PrintDialogViewModel : EDViewModel
         }
         catch (Exception ex)
         {
-            StatusText = $"Chyba: {ex.Message}";
+            StatusText = $"⚠ Chyba: {ex.Message}";
         }
     }
 

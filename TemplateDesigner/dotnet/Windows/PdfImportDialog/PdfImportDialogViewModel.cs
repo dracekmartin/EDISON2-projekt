@@ -160,7 +160,7 @@ public class PdfImportDialogViewModel : EDViewModel
         }
         catch (Exception ex)
         {
-            StatusText = $"Chyba: {ex.Message}";
+            StatusText = $"⚠ Chyba: {ex.Message}";
             PopupDisplayer.Error(ex);
         }
     }
@@ -170,7 +170,7 @@ public class PdfImportDialogViewModel : EDViewModel
         if (string.IsNullOrEmpty(PdfFilePath)) return;
 
         IsBusy = true;
-        StatusText = "Extrahuji obsah PDF...";
+        StatusText = "Extrahuji obsah PDF…";
 
         try
         {
@@ -264,7 +264,7 @@ public class PdfImportDialogViewModel : EDViewModel
         }
         catch (Exception ex)
         {
-            StatusText = $"Chyba při importu: {ex.Message}";
+            StatusText = $"⚠ Chyba při importu: {ex.Message}";
             PopupDisplayer.Error(ex);
         }
         finally
