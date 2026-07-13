@@ -27,16 +27,20 @@ namespace EDISONMAIN2.Windows.LoginWindow
                 RememberBox.Visibility = Visibility.Collapsed;
 
             if (!string.IsNullOrEmpty(initialUsername))
-            {
                 UsernameBox.Text = initialUsername;
-                PasswordBox.Focus();   // jméno už je vyplněné → rovnou na heslo
-            }
 
-            // Předvyplněné heslo → checkbox zaškrtnutý (uložení se má obnovit při dalším loginu).
             if (!string.IsNullOrEmpty(initialPassword))
             {
+                // Předvyplněné heslo → checkbox zaškrtnutý (uložení se má obnovit při dalším loginu).
                 PasswordBox.Password = initialPassword;
                 RememberBox.IsChecked = true;
+                // Focus (a select) na jméno, ať přihlášení může snadno převzít jiný uživatel.
+                UsernameBox.Focus();
+                UsernameBox.SelectAll();
+            }
+            else if (!string.IsNullOrEmpty(initialUsername))
+            {
+                PasswordBox.Focus();   // jen jméno je vyplněné → rovnou na heslo
             }
         }
 
