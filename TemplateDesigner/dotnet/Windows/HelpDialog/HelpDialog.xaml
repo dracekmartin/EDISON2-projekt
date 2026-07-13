@@ -1,20 +1,15 @@
 <!--
-    HelpDialog.xaml - Nápověda klávesových zkratek a ovládání
+    HelpDialog.xaml — Nápověda: zkratky, workflow, tipy + fulltext hledání (Ctrl+F).
 
-    DŮLEŽITÉ: Při přidání nových klávesových zkratek, features nebo elementů aktualizovat tento dialog!
-
-    Co přidávat:
-    - Nové klávesové zkratky → sekce podle kategorie (Základní ovládání, Editace, atd.)
-    - Nové typy elementů → sekce "🔲 Elementy"
-    - Nové tipy a triky → sekce "💡 Tipy a triky"
-
-    Dialog se otevírá přes F1 nebo menu Nápověda → Klávesové zkratky a ovládání.
+    OBSAH NEPATŘÍ SEM — je datově řízený v HelpDialogViewModel.BuildContent().
+    Při přidání zkratky/featury aktualizovat tam (a ux-conventions.md tabulku).
 -->
 <Window x:Class="TemplateDesigner.HelpDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:TemplateDesigner"
         Title="Nápověda - Ovládání a klávesové zkratky"
-        Height="600" Width="700"
+        Height="640" Width="720"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
         ResizeMode="CanResize">
@@ -27,21 +22,11 @@
             <Setter Property="Margin" Value="0,16,0,8"/>
         </Style>
 
-        <Style x:Key="SectionHeader" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="{DynamicResource EDTheme.FontSize.Header}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.BlueDark}"/>
-            <Setter Property="Margin" Value="0,12,0,6"/>
-        </Style>
-
-        <Style x:Key="HelpGrid" TargetType="Grid">
-            <Setter Property="Margin" Value="0,0,0,8"/>
-        </Style>
-
         <Style x:Key="ActionText" TargetType="TextBlock">
             <Setter Property="VerticalAlignment" Value="Center"/>
             <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
             <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
         </Style>
 
         <Style x:Key="ShortcutText" TargetType="TextBlock">
@@ -49,35 +34,96 @@
             <Setter Property="FontFamily" Value="Consolas"/>
             <Setter Property="FontWeight" Value="SemiBold"/>
             <Setter Property="Foreground" Value="{DynamicResource EDTheme.Accent.Blue}"/>
-            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Margin" Value="16,2,0,2"/>
             <Setter Property="TextAlignment" Value="Right"/>
         </Style>
 
-        <Style x:Key="DescriptionText" TargetType="TextBlock">
+        <Style x:Key="TipText" TargetType="TextBlock">
             <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>
-            <Setter Property="Margin" Value="16,4,0,8"/>
+            <Setter Property="Margin" Value="16,4,0,4"/>
             <Setter Property="TextWrapping" Value="Wrap"/>
             <Setter Property="FontStyle" Value="Italic"/>
         </Style>
+
+        <!-- Jedna kategorie: nadpis + řádky + tip -->
+        <DataTemplate DataType="{x:Type local:HelpSection}">
+            <StackPanel Grid.IsSharedSizeScope="True">
+                <TextBlock Text="{Binding Title}" Style="{StaticResource CategoryHeader}"/>
+                <ItemsControl ItemsSource="{Binding Entries}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type local:HelpEntry}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto" MinWidth="150" SharedSizeGroup="Shortcut"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Action}" Style="{StaticResource ActionText}"/>
+                                <TextBlock Grid.Column="1" Text="{Binding Shortcut}" Style="{StaticResource ShortcutText}"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Text="{Binding Tip}" Style="{StaticResource TipText}">
+                    <TextBlock.Visibility>
+                        <Binding Path="HasTip">
+                            <Binding.Converter>
+                                <BooleanToVisibilityConverter/>
+                            </Binding.Converter>
+                        </Binding>
+                    </TextBlock.Visibility>
+                </TextBlock>
+            </StackPanel>
+        </DataTemplate>
     </Window.Resources>
 
     <DockPanel>
-        <!-- Header -->
-        <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="16,12">
-            <StackPanel>
-                <TextBlock Text="Nápověda - Ovládání Template Designeru"
-                           FontSize="{DynamicResource EDTheme.FontSize.Large}"
-                           FontWeight="Bold"
-                           Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
-                <TextBlock Text="Přehled klávesových zkratek a funkcí aplikace"
-                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                           Foreground="{DynamicResource EDTheme.Text.Muted}"
-                           Margin="0,4,0,0"/>
-            </StackPanel>
+        <!-- Header + hledání -->
+        <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="16,12"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0">
+                    <TextBlock Text="Nápověda — ovládání Návrháře sestav"
+                               FontSize="{DynamicResource EDTheme.FontSize.Large}"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
+                    <TextBlock Text="Klávesové zkratky, základní postupy a tipy"
+                               FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                               Foreground="{DynamicResource EDTheme.Text.Muted}"
+                               Margin="0,4,0,0"/>
+                </StackPanel>
+
+                <Grid Grid.Column="1" VerticalAlignment="Center" Width="220">
+                    <TextBox x:Name="SearchBox"
+                             Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                             Padding="6,4" VerticalContentAlignment="Center"
+                             KeyDown="SearchBox_KeyDown"/>
+                    <TextBlock Text="Hledat…  (Ctrl+F)"
+                               Margin="9,0,0,0" VerticalAlignment="Center"
+                               Foreground="{DynamicResource EDTheme.Text.Muted}"
+                               IsHitTestVisible="False">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding Text, ElementName=SearchBox}" Value="">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+                </Grid>
+            </Grid>
         </Border>
 
-        <!-- Footer s tlačítkem Zavřít -->
-        <Border DockPanel.Dock="Bottom" Background="{DynamicResource EDTheme.Bg.Footer}" Padding="12" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
+        <!-- Footer -->
+        <Border DockPanel.Dock="Bottom" Background="{DynamicResource EDTheme.Bg.Footer}" Padding="12"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0">
             <Button Content="{StaticResource EDStrings.Close}"
                     IsDefault="True"
                     IsCancel="True"
@@ -85,438 +131,25 @@
                     HorizontalAlignment="Right"/>
         </Border>
 
-        <!-- Scrollable content -->
-        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,12">
+        <!-- Obsah -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="20,0,20,12">
             <StackPanel>
+                <ItemsControl ItemsSource="{Binding FilteredSections}"/>
 
-                <!-- ═══ RYCHLÝ START ═══ -->
-                <TextBlock Text="🚀 Rychlý start" Style="{StaticResource CategoryHeader}"/>
-
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="1. Otevřít / vytvořit šablonu:" FontWeight="SemiBold"/>
-                    <Run Text=" Ctrl+O nebo Ctrl+N. Vlevo je panel se záložkami Sekce / Pole agendy / Vlastnosti / Strom." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
+                <TextBlock Text="Nic nenalezeno — zkuste jiný výraz."
+                           Margin="0,24,0,0" FontStyle="Italic"
+                           Foreground="{DynamicResource EDTheme.Text.Muted}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding NothingFound}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
                 </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="2. Vybrat agendu:" FontWeight="SemiBold"/>
-                    <Run Text=" Záložka 'Pole agendy' → dropdown nahoře (např. Zastávkový JŘ MHD). Tím se naplní seznam datových polí." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="3. Přidat sekce a elementy:" FontWeight="SemiBold"/>
-                    <Run Text=" Tlačítko '+ Sekce' v levém panelu, elementy přetáhnout z palety nahoře nebo přes menu '+ Element'." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="4. Napojit data:" FontWeight="SemiBold"/>
-                    <Run Text=" Pole z agendy lze přetáhnout přímo na canvas (vytvoří TextElement) nebo na existující text (přidá placeholder {POLE}). Dvojklik = vloží do schránky." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="5. Editovat vlastnosti:" FontWeight="SemiBold"/>
-                    <Run Text=" Záložka 'Vlastnosti' v levém panelu se aktualizuje podle výběru. Pro modální dialog: Enter / dvojklik. F2 na TextElementu = inline úprava textu." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="6. Náhled a tisk:" FontWeight="SemiBold"/>
-                    <Run Text=" Live náhled vpravo se aktualizuje. Pro tisk reálných dat: menu Soubor → Tisk (parametry + multi-page PDF). Export: PDF nebo PNG." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="💡 Strom šablony:" FontWeight="SemiBold"/>
-                    <Run Text=" Záložka 'Strom' v levém panelu zobrazí celou hierarchii (sekce → skupiny → elementy) — užitečné u větších šablon." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-
-                <!-- ═══ ZÁKLADNÍ OVLÁDÁNÍ ═══ -->
-                <TextBlock Text="⌨ Základní ovládání" Style="{StaticResource CategoryHeader}"/>
-
-                <Grid Style="{StaticResource HelpGrid}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto" MinWidth="140"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Výběr elementu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Klik myší" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Vícenásobný výběr" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Ctrl + klik" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Vybrat jen jeden element ze skupiny" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Alt + klik" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Výběr oblasti (rubber band)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Táhnout myší" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Přesun elementu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="Táhnout element" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Změna velikosti" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Táhnout úchyt" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Vlastnosti elementu/sekce" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="6" Grid.Column="1" Text="Dvojklik / Enter" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Inline úprava textu (TextElement)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="7" Grid.Column="1" Text="F2" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Změna zoomu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="8" Grid.Column="1" Text="Ctrl + scroll" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Změna zoomu (ComboBox)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="9" Grid.Column="1" Text="Dropdown" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Nápověda (tento dialog)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1" Text="F1" Style="{StaticResource ShortcutText}"/>
-                </Grid>
-
-                <TextBlock Text="💡 Rubber band: Táhněte myší přes prázdné místo canvasu pro výběr více elementů najednou. Při výběru více elementů otevře Enter dialog společných vlastností (multi-edit)."
-                           Style="{StaticResource DescriptionText}"/>
-
-                <!-- ═══ SOUBORY A ŠABLONY ═══ -->
-                <TextBlock Text="📄 Soubory a šablony" Style="{StaticResource CategoryHeader}"/>
-
-                <Grid Style="{StaticResource HelpGrid}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto" MinWidth="140"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Nová šablona" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Ctrl+N" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Otevřít šablonu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Ctrl+O" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Uložit šablonu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Ctrl+S" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Vlastnosti stránky" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Ctrl+Shift+P" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Import existujícího PDF jako šablona" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="Menu Soubor" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Export náhledu jako PDF" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Menu Soubor" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Export náhledu jako PNG" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="6" Grid.Column="1" Text="Menu Soubor" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Tisk reálných dat z databáze (multi-page)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="7" Grid.Column="1" Text="Menu Soubor" Style="{StaticResource ShortcutText}"/>
-                </Grid>
-
-                <TextBlock Text="💡 PDF import: heuristická extrakce textu/čar/obrázků z existujícího PDF (PdfPig). Volitelně AI Vision pro JŘ — rozpozná strukturu a navrhne specializované elementy."
-                           Style="{StaticResource DescriptionText}"/>
-
-                <!-- ═══ EDITACE ═══ -->
-                <TextBlock Text="✏ Editace" Style="{StaticResource CategoryHeader}"/>
-
-                <Grid Style="{StaticResource HelpGrid}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto" MinWidth="140"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Zpět (undo)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Ctrl+Z" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Vpřed (redo)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Ctrl+Y" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Vybrat všechny elementy sekce" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Ctrl+A" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Vyjmout" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Ctrl+X" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Kopírovat" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="Ctrl+C" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="5" Grid.Column="0" Text="Vložit" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" Text="Ctrl+V" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="6" Grid.Column="0" Text="Duplikovat" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="6" Grid.Column="1" Text="Ctrl+D" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="7" Grid.Column="0" Text="Duplikovat směrem" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="7" Grid.Column="1" Text="Ctrl+D, pak šipka" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="8" Grid.Column="0" Text="Rozdělit horizontálně (nad/pod)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="8" Grid.Column="1" Text="Ctrl+Shift+H" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="9" Grid.Column="0" Text="Rozdělit vertikálně (vedle sebe)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="9" Grid.Column="1" Text="Ctrl+Shift+J" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Seskupit vybrané" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1" Text="Ctrl+G" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Zrušit skupinu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="11" Grid.Column="1" Text="Ctrl+Shift+G" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="12" Grid.Column="0" Text="Smazat element" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="12" Grid.Column="1" Text="Del" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="13" Grid.Column="0" Text="Posunout element o 1 mm" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="13" Grid.Column="1" Text="↑↓←→ šipky" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="14" Grid.Column="0" Text="Posunout element o velikost mřížky" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="14" Grid.Column="1" Text="Shift + šipky" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="15" Grid.Column="0" Text="Zrušit výběr" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="15" Grid.Column="1" Text="Esc" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="16" Grid.Column="0" Text="Přenést dopředu (Z-order)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="16" Grid.Column="1" Text="Ctrl+PgUp" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="17" Grid.Column="0" Text="Odeslat dozadu (Z-order)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="17" Grid.Column="1" Text="Ctrl+PgDn" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="18" Grid.Column="0" Text="Přenést zcela dopředu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="18" Grid.Column="1" Text="Ctrl+Shift+PgUp" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="19" Grid.Column="0" Text="Odeslat zcela dozadu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="19" Grid.Column="1" Text="Ctrl+Shift+PgDn" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="20" Grid.Column="0" Text="Zarovnání elementů" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="20" Grid.Column="1" Text="Menu Upravit" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="21" Grid.Column="0" Text="Rozložení elementů" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="21" Grid.Column="1" Text="Menu Upravit" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="22" Grid.Column="0" Text="Přizpůsobit zobrazení stránce (Fit to Page)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="22" Grid.Column="1" Text="Ctrl+0" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="23" Grid.Column="0" Text="Normalizovat pozice (zaokrouhlit na krok)" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="23" Grid.Column="1" Text="Ctrl+Shift+N" Style="{StaticResource ShortcutText}"/>
-                </Grid>
-
-                <TextBlock Text="💡 Ctrl+D+šipka: umístí kopii vedle originálu s mezerou 4 mm. Ctrl+Shift+H/J: rozdělí element na dvě poloviny (undoable). Ctrl+Shift+N: zaokrouhlí pozice elementů na zvolený krok (oprava IEEE-754 artefaktů)."
-                           Style="{StaticResource DescriptionText}"/>
-
-                <!-- ═══ SEKCE ═══ -->
-                <TextBlock Text="📑 Sekce" Style="{StaticResource CategoryHeader}"/>
-
-                <Grid Style="{StaticResource HelpGrid}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto" MinWidth="140"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Přidat novou sekci" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Tlačítko + Sekce" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Přesunout sekci nahoru" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Ctrl+Shift+↑" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Přesunout sekci dolů" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Ctrl+Shift+↓" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Smazat sekci" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Context menu" Style="{StaticResource ShortcutText}"/>
-                </Grid>
-
-                <TextBlock Text="💡 Sekce můžete přesouvat také drag &amp; drop v levém panelu. Každá sekce má vlastní kolekci elementů."
-                           Style="{StaticResource DescriptionText}"/>
-
-                <!-- ═══ ZOBRAZENÍ ═══ -->
-                <TextBlock Text="👁 Zobrazení" Style="{StaticResource CategoryHeader}"/>
-
-                <Grid Style="{StaticResource HelpGrid}">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto" MinWidth="140"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Zapnout/vypnout mřížku" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" Text="Menu Zobrazit" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Přichytit na mřížku" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" Text="Menu Zobrazit" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Zobrazit/skrýt panel sekcí" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" Text="Menu Zobrazit" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Zobrazit/skrýt live náhled" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" Text="Menu Zobrazit" Style="{StaticResource ShortcutText}"/>
-
-                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Změna zoomu" Style="{StaticResource ActionText}"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" Text="Dropdown / Ctrl+scroll" Style="{StaticResource ShortcutText}"/>
-                </Grid>
-
-                <!-- ═══ ELEMENTY ═══ -->
-                <TextBlock Text="🔲 Elementy" Style="{StaticResource CategoryHeader}"/>
-
-                <TextBlock Text="Dostupné typy elementů:" Style="{StaticResource SectionHeader}"/>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Text" FontWeight="SemiBold"/>
-                    <Run Text="— statický text nebo text s datovými poli (např. {NAZEV})" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Obrázek" FontWeight="SemiBold"/>
-                    <Run Text="— statický obrázek nebo z datasource" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Obdélník" FontWeight="SemiBold"/>
-                    <Run Text="— pozadí, rámeček, barevný blok" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Čára" FontWeight="SemiBold"/>
-                    <Run Text="— horizontální nebo vertikální oddělovač" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Čárový kód" FontWeight="SemiBold"/>
-                    <Run Text="— QR, Code128, EAN-13, EAN-8, PDF417, DataMatrix; podporuje placeholdery" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Tabulka" FontWeight="SemiBold"/>
-                    <Run Text="— Fixed (pevný layout) nebo Dynamic (data z datasource)" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Zastávky JŘ" FontWeight="SemiBold"/>
-                    <Run Text="— tabulka zastávek s TČ, názvem, časem jízdy, zónami, atributy" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Mřížka odjezdů JŘ" FontWeight="SemiBold"/>
-                    <Run Text="— minutová mřížka odjezdů per skupina dnů" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="16,4,0,4">
-                    <Run Text="• Legenda poznámek JŘ" FontWeight="SemiBold"/>
-                    <Run Text="— vysvětlivky: negativní značky, speciální znaky, textové poznámky" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-
-                <TextBlock Text="💡 Datová pole: Pole z agendy lze přetáhnout přímo na canvas (vytvoří TextElement) nebo na existující text (přidá placeholder). Dvojklik vloží {NAZEV_POLE} do schránky. JŘ elementy mají vlastní DataSource — vybírá se ve vlastnostech elementu."
-                           Style="{StaticResource DescriptionText}"/>
-
-                <!-- ═══ TIPY A TRIKY ═══ -->
-                <TextBlock Text="💡 Tipy a triky" Style="{StaticResource CategoryHeader}"/>
-
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Záložka 'Vlastnosti':" FontWeight="SemiBold"/>
-                    <Run Text=" Inline editor v levém panelu — automaticky se aktualizuje podle výběru. Pro modální dialog Enter / dvojklik. F2 na TextElementu spustí inline úpravu textu přímo na canvasu (Enter = potvrdit, Shift+Enter = nový řádek, Esc = zrušit)." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Záložka 'Strom':" FontWeight="SemiBold"/>
-                    <Run Text=" Hierarchický přehled celé šablony (sekce → skupiny → elementy). Klik na uzel = výběr v canvasu." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Hromadná editace:" FontWeight="SemiBold"/>
-                    <Run Text=" Vyberte víc elementů (Ctrl+klik nebo rubber band) a stiskněte Enter — dialog společných vlastností (rámeček, ZIndex, zámek)." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Proporcionální škálování:" FontWeight="SemiBold"/>
-                    <Run Text=" Dropdown 50–200 % v toolbaru — přepočítá rozměry stránky, sekcí i všech elementů (undoable)." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Podmíněná viditelnost:" FontWeight="SemiBold"/>
-                    <Run Text=" Zadejte výraz do vlastnosti 'Viditelnost' (např. {POCET} > 0 nebo {TISK_SIPKY})" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Parametry sestavy:" FontWeight="SemiBold"/>
-                    <Run Text=" V live náhledu se zobrazí panel s parametry (checkbox, combobox), které můžete měnit" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Custom šablony sekcí:" FontWeight="SemiBold"/>
-                    <Run Text=" Pravý klik na sekci → 'Uložit jako šablonu...' pro opakované použití" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Tabulky ze šablony:" FontWeight="SemiBold"/>
-                    <Run Text=" V editoru tabulky (Fixed mód) použijte tlačítko 'Ze šablony...' pro načtení předdefinovaných layoutů z databáze" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• PDF export:" FontWeight="SemiBold"/>
-                    <Run Text=" Tlačítko PDF v náhledu nebo menu Soubor → Exportovat náhled jako PDF" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Kopírování vs. duplikování:" FontWeight="SemiBold"/>
-                    <Run Text=" Ctrl+C/V vytvoří kopii o 5 mm dál (vložit lze opakovaně). Ctrl+D duplikuje na stejné místo bez offsetu." Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Přesné umístění elementů:" FontWeight="SemiBold"/>
-                    <Run Text=" Používejte šipky (↑↓←→) pro posun o 1 mm nebo Shift+šipky pro posun o velikost mřížky" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Uzamčení elementů:" FontWeight="SemiBold"/>
-                    <Run Text=" Vlastnost 'Zamčeno' chrání element před náhodným posunem nebo změnou velikosti" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Podmíněné řádky tabulky:" FontWeight="SemiBold"/>
-                    <Run Text=" V editoru Fixed tabulky (záložka Řádky) lze zadat VisibilityExpression pro každý řádek" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Smart snap při resize:" FontWeight="SemiBold"/>
-                    <Run Text=" Při změně velikosti elementu se hrany přichytí k hranám sousedních elementů (edge, gap 4 mm) — stejně jako při přesouvání" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Sdílená hranice:" FontWeight="SemiBold"/>
-                    <Run Text=" Dva elementy těsně u sebe — při tahu za hranici jednoho se druhý automaticky zmenšuje/zvětšuje (undoable)" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,4">
-                    <Run Text="• Resize neopustí sekci:" FontWeight="SemiBold"/>
-                    <Run Text=" Změna velikosti je omezena hranicemi sekce — element nemůže přesáhnout okraj stránky ani sekce" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-                <TextBlock Margin="0,4,0,16">
-                    <Run Text="• Formát stránky:" FontWeight="SemiBold"/>
-                    <Run Text=" Ve vlastnostech stránky (Ctrl+Shift+P) lze vybrat předdefinovaný formát (A2–A5) a orientaci; obsahové sekce se automaticky přeškálují" Foreground="{DynamicResource EDTheme.Text.Muted}"/>
-                </TextBlock>
-
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-13 — Nápověda F1: datově řízená + fulltext hledání (Ctrl+F)
+
+- Obsah přesunut ze 500 řádků statického XAML do `HelpDialogViewModel.BuildContent()`
+  (přidání zkratky = 1 řádek); XAML jen šablony (kategorie → řádky akce/zkratka → tip).
+- **Hledání**: pole v hlavičce (Ctrl+F fokus, Esc smaže filtr), filtruje kategorie, akce,
+  zkratky i tipy, **bez diakritiky** („razeni" najde „řazení"); „Nic nenalezeno" stav.
+- Obsah srovnán s autoritativní tabulkou zkratek (ux-conventions) + doplněny nové sekce:
+  Tisk a export (členění, imposice, ořezové značky, varování přetečení), Data/agenda/instance
+  (Agenda×Varianta, štítky, F5), Výrazy a datová pole (formáty, aritmetika, podmínky, agregace,
+  {PAGE}); opraveny šipky (1 mm / Shift = mřížka / Ctrl = 0,5 mm), doplněny Ctrl+1/Ctrl+B/
+  copy-paste stylu; pryč uspaná Fixed tabulka. Texty bez anglicismů (chip→štítek,
+  canvas→plocha, toolbar→lišta nástrojů) — zákaznický jazyk.
+
 ## 2026-07-13 — PDF import: Sonnet 5, robustnost proti halucinacím, standardní dialog
 
 Průchod PDF importu před produkcí (živě testováno na KV_DP A5 vývěsce — vizuálně
