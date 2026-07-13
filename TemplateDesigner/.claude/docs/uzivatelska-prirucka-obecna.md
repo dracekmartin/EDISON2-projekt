@@ -19,7 +19,7 @@
 7. [Vlastnosti a styly](#7-vlastnosti-a-styly)
 8. [Datová pole a výrazový jazyk](#8-datová-pole-a-výrazový-jazyk)
 9. [Náhled, export a tisk](#9-náhled-export-a-tisk)
-10. [Import z PDF (experimentální pomůcka)](#10-import-z-pdf-experimentální-pomůcka)
+10. [Import z PDF](#10-import-z-pdf)
 11. [Uložená nastavení](#11-uložená-nastavení)
 12. [Klávesové zkratky](#12-klávesové-zkratky)
 13. [Časté otázky](#13-časté-otázky)
@@ -45,7 +45,7 @@ v Návrháři i pro reálný tisk — proto náhled odpovídá výslednému výs
 - Není to Word ani Excel — pracuje se strukturou stránky (sekce), ne s volným plátnem.
 - Stránka je vždy rozdělená na **sekce** — to je povinná struktura, ne volitelná.
 - Staré šablony se v této verzi neimportují 1:1 — nové šablony se navrhnou znovu (díky
-  vizuálnímu editoru rychle), případně s pomocí experimentálního importu z PDF (kap. 10).
+  vizuálnímu editoru rychle), případně s pomocí importu z PDF s AI rozpoznáním (kap. 10).
 
 ---
 
@@ -76,12 +76,12 @@ Tlačítka jsou seskupená a oddělená svislými čarami:
 | **Pole agendy** | databázová pole dostupná pro aktuální agendu (dvojklik nebo tažení vloží `{POLE}` na plátno); hlavička zobrazuje název aktuální agendy a je klikatelná — otevře přepnutí agendy |
 | **Vlastnosti** | nastavení právě vybraného prvku nebo sekce — okamžitá editace bez nutnosti otevírat dialog |
 | **Strom** | hierarchický přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci |
-| **Pomocník** | panel AI asistenta |
+| **Pomocník** | AI pomocník — zeptáte se vlastními slovy, kde v aplikaci co najdete nebo jak něco udělat (vyžaduje aktivovanou AI službu u M-line) |
 
 ### Status bar (dole)
 
 Zleva doprava:
-- zelený štítek s aktuální **agendou** — klik otevře dialog přepnutí agendy,
+- zelený štítek s aktuální **agendou a variantou** — klik otevře dialog přepnutí agendy,
 - modrý štítek **aktivní instance** (např. vybrané linky) s tlačítky ◀ / ▶ pro přepínání mezi
   vybranými instancemi a formátem „Instance: X — Y (N/M)",
 - informace o aktuálním výběru,
@@ -99,8 +99,8 @@ Zleva doprava:
   Vložit styl
 - **Zobrazit** — Mřížka, Přichytit na mřížku, Přichytit k elementům, Záhlaví sekcí, Pravítka,
   Panel sekcí, Live náhled (zaškrtávací položky)
-- **Nástroje** — Změnit agendu… · Šablony v databázi… · AI Asistent šablon… · Import PDF…
-- **Nápověda** — Klávesové zkratky a ovládání
+- **Nástroje** — Změnit agendu… · Šablony v databázi… · Import PDF…
+- **Nápověda** — Klávesové zkratky a ovládání (F1) — s fulltextovým hledáním (Ctrl+F)
 
 Titulek okna má formát `[KÓD_AGENDY] [DB nebo neuloženo] Název šablony [*]` — hvězdička značí
 neuložené změny.
@@ -113,22 +113,26 @@ neuložené změny.
 `Soubor → Nová` (Ctrl+N). Nová šablona obsahuje jednu výchozí sekci přes celou tiskovou plochu;
 sekce a prvky pak přidáváte podle potřeby.
 
-### Agenda — nad jakými daty šablona běží
-Každá šablona je vázaná na **agendu** — zdroj dat (např. zastávkový JŘ z MHD modulu, zastávkový
-JŘ z hlavního JŘ modulu, faktury). Agenda určuje, jaká **databázová pole** a jaké **specializované
-prvky** máte k dispozici.
+### Agenda a varianta — nad jakými daty šablona běží
+Každá šablona je vázaná na **agendu** (jakou sestavu tvoříte — např. Zastávkový jízdní řád,
+Faktury, Obecná) a u jízdních řádů navíc na **variantu dat** (odkud data jsou — **AD** = linková
+doprava z hlavního JŘ modulu, **MHD** = městský modul). Kombinace určuje, jaká **databázová pole**
+a jaké **specializované prvky** máte k dispozici.
 
-- Aktuální agenda je vidět jako **zelený štítek** ve status baru, v titulku okna a v hlavičce
-  panelu „Pole agendy".
-- Změna agendy: `Nástroje → Změnit agendu…`, klávesa **Ctrl+Shift+A**, nebo klik na zelený štítek.
+- Aktuální agenda a varianta je vidět jako **zelený štítek** ve status baru (např. „Zastávkový
+  JŘ · AD"), v titulku okna a v hlavičce panelu „Pole agendy".
+- Změna: `Nástroje → Změnit agendu…`, klávesa **Ctrl+Shift+A**, nebo klik na zelený štítek —
+  dialog nabízí agendy seskupené s variantami pod sebou.
 - **Přepnutí agendy vždy založí novou prázdnou šablonu** pro zvolenou agendu — nejde o konverzi
   obsahu stávající šablony. Rozdělanou práci vás systém před přepnutím vyzve uložit nebo zahodit.
 
 ### Otevření a uložení
 Šablony se ukládají **do databáze** (centrálně, podle firmy), ne do lokálních souborů na stanici:
 
-- `Soubor → Otevřít z databáze…` — dialog „Šablony v databázi": filtr podle agendy, seznam
-  šablon, tlačítka Přejmenovat…, Smazat, Otevřít.
+- `Soubor → Otevřít z databáze…` — dialog „Šablony v databázi": filtr podle agendy, sloupce
+  **Agenda | Varianta** hned za názvem, sekce **Systémové M-line** (dodané předlohy, jen ke
+  čtení — upravenou verzi uložíte jako vlastní šablonu) a **Moje šablony**; tlačítka
+  Přejmenovat…, Smazat, Otevřít.
 - `Soubor → Uložit do databáze` — u šablony již uložené v databázi provede tichý update.
 - `Soubor → Uložit do databáze jako…` — dialog s polem pro název a popis; nová/importovaná
   šablona se takto poprvé zařadí do databáze.
@@ -238,7 +242,8 @@ zobrazí jako samostatná úroveň. Import z PDF prvky automaticky seskupuje.
 
 ### Přichytávání (snap)
 Tři nezávislé vrstvy, ovládané z toolbaru:
-- **Mřížka** — zapínatelná tlačítkem „M", velikost 0,2–10 mm (výchozí 5 mm).
+- **Mřížka** — zapínatelná tlačítkem „M", velikost 0,2–10 mm (výchozí **1 mm**, přichytávání
+  na mřížku je nově výchozí **zapnuté** — jemný krok drží pozice čisté, aniž by omezoval).
 - **Přichytávání k objektům** — tlačítko „O" (výchozí zapnuto); prvek se přichytává k hranám a
   středům jiných prvků i k okrajům sekce, s vizuálními vodítky.
 - **Mezera pro přichytávání (gap snap)** — 0–10 mm (výchozí 2 mm); prvek se umí přichytit
@@ -391,20 +396,31 @@ Nastavení výstupu je univerzální napříč agendami:
 - **Název souboru (tokeny {POLE})** — vlastní kombinace datových polí pro pojmenování
   výsledných souborů; při rozdělení výstupu na víc souborů se vybírá cílová složka, kolize jmen
   se řeší automaticky příponou `_2`, `_3`…
+- **Uspořádání na list (imposice)** — více vývěsek na jeden fyzický list: cílový list
+  (Vypnuto / A4 / A3, na výšku i na šířku), **mřížka** (AUTO = největší počet, který se vejde
+  bez zmenšování, nebo pevně 2×1, 2×2…), **„Každá stránka na celý list"** (táž vývěska
+  vícekrát — pro rozřezání) a **ořezové značky**. Typicky: dvě A5 vývěsky na jeden list A4.
+  Volba se pamatuje pro každou agendu zvlášť; návrat k běžnému tisku = „Vypnuto".
+  (Export PNG imposici nepoužívá; brožurové řazení a oboustranný tisk zůstávají na tiskárně.)
 
 ---
 
-## 10. Import z PDF (experimentální pomůcka)
+## 10. Import z PDF
 
-`Nástroje → Import PDF…` otevře dialog „Import PDF do šablony": volba typu importu (obecný
-layout, nebo — u podporovaných agend — specializovaný import), volba sloučení grafiky
-(„Žádné" / „Pouze čáry" / „Vše"), volitelné funkce **AI Vision import** a **AI obohacení textem**,
-a přepínač debug logu.
+`Nástroje → Import PDF…` — z existujícího PDF vytvoří editovatelnou šablonu. Dialog je záměrně
+jednoduchý: vyberete **PDF soubor** (a u vícestránkového stránku) — všechno ostatní se odvodí
+z právě otevřené agendy:
 
-Systém z existujícího PDF vytáhne texty, čáry a obrázky jako prvky a předpřipraví základ šablony
-(volitelně s pomocí umělé inteligence pro lepší rozpoznání struktury). **Berte to zatím jako
-pomůcku pro rychlý start, ne jako záruku přesné shody s originálem** — jde o rozpracovanou,
-experimentální funkci, ne finální hotovou featuru.
+- **Agenda jízdního řádu** → import s **umělou inteligencí**: AI rozpozná strukturu vývěsky
+  (seznam zastávek, mřížku odjezdů, legendu poznámek, texty, loga) a rovnou namapuje datová
+  pole agendy — výsledkem je živá šablona napojená na data, ne statická kopie. Importuje se
+  vždy **jedna stránka** (jedna vývěska jako předloha). Vyžaduje aktivovanou AI službu u M-line;
+  bez ní je import u JŘ agend nedostupný.
+- **Jiná agenda (Obecná, Faktury…)** → obecný import: texty, čáry a obrázky se převezmou 1:1
+  jako prvky šablony (bez AI).
+
+**Berte to jako rychlý start, ne záruku přesné shody s originálem** — výsledek zkontrolujte
+a dolaďte; AI rozpoznání se může u netypických layoutů splést (import lze spustit znovu).
 
 ---
 
@@ -446,16 +462,17 @@ operaci).
 | Alt+klik | Vybrat jeden prvek ze skupiny |
 | Ctrl+Shift+H / Ctrl+Shift+J | Rozdělit prvek vodorovně / svisle |
 | Ctrl+Shift+N | Normalizovat pozice |
-| Šipky | Posun vybraného prvku o krok |
+| Šipky | Posun prvku o 1 mm (Shift = o krok mřížky, Ctrl = jemně 0,5 mm) |
 | Ctrl+PageUp / Ctrl+PageDown | Vrstva dopředu / dozadu (+Shift = zcela na kraj) |
 | Šipka ↑/↓ (bez výběru prvku) | Přesun aktivní sekce nahoru / dolů |
 | Ctrl+0 | Přizpůsobit zobrazení stránce („Fit") |
 | Ctrl+1 | Skutečná velikost 100 % („1:1") |
-| Ctrl + kolečko myši | Plynulý zoom |
+| Ctrl + kolečko myši | Plynulý zoom (k pozici kurzoru) |
 | Ctrl+B | Sbalit/rozbalit levý panel |
 | Ctrl+P | Tisk |
 | Ctrl+Shift+P | Vlastnosti stránky |
 | Ctrl+Shift+A | Změnit agendu |
+| F5 | Obnovit data z databáze |
 | F1 | Nápověda |
 | Escape | Zrušit probíhající operaci (např. přidávání prvku) |
 
@@ -472,7 +489,7 @@ v náhledu.
 
 **Co se starými šablonami?**
 Tato verze je neimportuje 1:1. Nové šablony se navrhnou znovu — díky vizuálnímu editoru rychle;
-pomůckou může být experimentální import z existujícího PDF (kap. 10).
+pomůckou je import z existujícího PDF s AI rozpoznáním (kap. 10).
 
 **Liší se formát čísel/datumů podle počítače?**
 Ne. Řídí se jazykem nastaveným v šabloně, ne nastavením Windows dané stanice.

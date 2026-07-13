@@ -83,6 +83,7 @@ Levý sloupec sestavy — seznam zastávek s časy a atributy.
 | Všechny varianty tras | zap. = víc časových sloupců podle skutečných variant tras (jen AD); vyp. = jeden sloupec základní trasy |
 | Oddělovací čáry | vodorovné čáry mezi řádky zastávek |
 | Odsazení | odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie) |
+| Sloupec Nástupiště | volitelný sloupec s číslem nástupiště/stanoviště (zapíná se v editoru sloupců; tiskne se jen tam, kde jsou data vyplněná) |
 | Na znamení + Symbol na znamení | zobrazí značku „na znamení" u zastávky a definuje, jaký znak se použije (výchozí „×") |
 | Atributy | zobrazí atributy zastávky vedle názvu |
 | Poznámky zastávky | zobrazí poznámkové značky u zastávky |
@@ -183,7 +184,10 @@ Toto **nemusíte nastavovat ručně** — spočítá se z dat:
 - **Atributy zastávek** (např. „na znamení") — zobrazí se jen relevantní atributy; ostatní jsou
   dostupné, ale ve výchozím stavu se netisknou.
 - **Bezbariérovost spoje** — pokud spoj obsluhuje bezbariérové vozidlo (plně nebo částečně),
-  automaticky se zobrazí symbol u odjezdu a vysvětlivka do legendy.
+  automaticky se zobrazí **piktogram** u odjezdu a vysvětlivka do legendy.
+- **Dopravní symboly** — značky (bezbariérovost, denní číslice ①–⑦ v kroužku ap.) se tisknou
+  standardními piktogramy shodnými s dosavadními jízdními řády (vestavěný symbolový font),
+  česká i slovenská sada.
 - **Dopravce a jeho adresa** — sestaví se ze všech dopravců obsluhujících linku (deduplikovaně).
 - **CIS názvy** — dotáhnou se z centrálního číselníku jako alternativa k lokálnímu názvu.
 - **Negativní značky** — spoj, který nestaví na všech zastávkách, automaticky dostane přiřazenou
@@ -193,6 +197,8 @@ Toto **nemusíte nastavovat ručně** — spočítá se z dat:
   rozdíly tras → omezení) a odstraňuje duplicity.
 - **Konečná zastávka** — pro zastávku, za kterou už v daném směru nikam nejede, se stránka vůbec
   nevygeneruje (přeskočí se, ne že by se vytiskla prázdná).
+- **Popis směru** — pole `{POPIS_SMER}` obsahuje **název konečné zastávky** daného směru
+  (např. „Ostrov, Terminál"); technické označení směru tam/zpět je v poli `{SMER}` (T/Z).
 
 ---
 
@@ -207,7 +213,9 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 - **Roztáhnout na výšku**
 
 Navíc jen u AD: **Rozdělení sloupců (typy provozu)**, **V rozsahu nepoznámkovat schovat**,
-**Skrýt souhrn „všechny spoje bezbariérové"** (viz kap. 2).
+**Skrýt souhrn „všechny spoje bezbariérové"** (viz kap. 2) a **Souhrn „všechny zastávky na
+znamení"** — místo značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na
+linkách, kde jsou na znamení všechny zastávky).
 
 ### Export — členění a pojmenování
 Tato pole se nastavují v tiskovém dialogu (nejsou to parametry sestavy, takže se neukazují v liště
@@ -216,6 +224,9 @@ Tato pole se nastavují v tiskovém dialogu (nejsou to parametry sestavy, takže
 - **Členění výstupu** — Vše do jednoho PDF / Jeden PDF na linku / Jeden PDF na zastávku a směr.
 - **Název souboru (tokeny {POLE})** — výchozí `{CISLO_LINKY}_{POPIS_ZASTAVKA}_{POPIS_SMER}`,
   lze upravit na libovolnou kombinaci datových polí.
+
+K dispozici je i **Uspořádání na list (imposice)** — např. dvě A5 vývěsky na jeden list A4,
+včetně opakování téže vývěsky pro řezání a ořezových značek; detail viz obecná příručka kap. 9.
 
 „Vše do jednoho" vybere jeden cílový soubor; ostatní dvě volby vybírají cílovou složku a vytvoří
 tolik souborů, kolik odpovídá volbě (kolize jmen se řeší automaticky `_2`, `_3`…). Export běží
@@ -243,7 +254,9 @@ zmenšení pomůže, k varování nedojde.
 ## 9. Postup krok za krokem
 
 1. **Založte šablonu se správnou agendou** — nová šablona přes `Nástroje → Změnit agendu`
-   (Ctrl+Shift+A) a výběr Zastávkový JŘ MHD nebo Zastávkový JŘ AD.
+   (Ctrl+Shift+A) a výběr Zastávkový JŘ AD nebo MHD. Alternativa: otevřete výchozí šablonu
+   ze sekce **Systémové M-line** (Ctrl+O), nebo naimportujte existující PDF vývěsku
+   s AI rozpoznáním (`Nástroje → Import PDF…`) a jen ji dolaďte.
 2. **Přidejte prvky** — z palety nebo toolbaru vložte Tabulku zastávek (typicky vlevo), jednu
    nebo víc Mřížek odjezdů (typicky vedle sebe, rozdělené podle skupiny dnů) a volitelně Legendu
    poznámek (pod mřížku).
@@ -256,8 +269,8 @@ zmenšení pomůže, k varování nedojde.
 6. **Exportujte nebo vytiskněte** — export náhledu (ukázková data), nebo dávkový export reálných
    dat pro všechny vybrané linky s automatickým otevřením výsledku.
 
-Pro rychlý start existují ve složce `templates/` (soubor pro import, ne primární databázové
-úložiště) i vzorové/výchozí šablony vázané na agendu AD.
+Pro rychlý start je v přehledu šablon (Ctrl+O) sekce **Systémové M-line** s výchozí
+zastávkovou šablonou (AD) dodávanou a aktualizovanou M-line.
 
 ---
 
