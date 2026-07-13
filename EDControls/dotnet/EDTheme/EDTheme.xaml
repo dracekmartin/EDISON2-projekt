@@ -21,15 +21,15 @@
          COLORS — Borders
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Světlé okraje panelů, sekcí, oddělovače mezi prvky -->
-    <Color x:Key="EDTheme.Border.Light.Color">#FFDDDDDD</Color>
+    <Color x:Key="EDTheme.Border.Light.Color">#FFE5E7EB</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Light" Color="{StaticResource EDTheme.Border.Light.Color}"/>
 
     <!-- Středně silné okraje — stránka v designeru, dividery -->
-    <Color x:Key="EDTheme.Border.Medium.Color">#FFCCCCCC</Color>
+    <Color x:Key="EDTheme.Border.Medium.Color">#FFD1D5DB</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Medium" Color="{StaticResource EDTheme.Border.Medium.Color}"/>
 
     <!-- Silné okraje — toolbar separátory, větší kontrast -->
-    <Color x:Key="EDTheme.Border.Strong.Color">#FF999999</Color>
+    <Color x:Key="EDTheme.Border.Strong.Color">#FF9CA3AF</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Strong" Color="{StaticResource EDTheme.Border.Strong.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
@@ -44,23 +44,23 @@
     <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
 
     <!-- Panel header background (left panel headers, status bar) -->
-    <Color x:Key="EDTheme.Bg.Panel.Color">#FFF0F0F0</Color>
+    <Color x:Key="EDTheme.Bg.Panel.Color">#FFF3F4F6</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Panel" Color="{StaticResource EDTheme.Bg.Panel.Color}"/>
 
     <!-- Alternativní panel pozadí (sekce v listu, méně výrazné) -->
-    <Color x:Key="EDTheme.Bg.PanelAlt.Color">#FFF5F5F5</Color>
+    <Color x:Key="EDTheme.Bg.PanelAlt.Color">#FFF9FAFB</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.PanelAlt" Color="{StaticResource EDTheme.Bg.PanelAlt.Color}"/>
 
     <!-- Footer / tip area (jemnější než BgPanel) -->
-    <Color x:Key="EDTheme.Bg.Footer.Color">#FFFAFAFA</Color>
+    <Color x:Key="EDTheme.Bg.Footer.Color">#FFFAFBFC</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Footer" Color="{StaticResource EDTheme.Bg.Footer.Color}"/>
 
     <!-- Hover stav (toolbar button hover, list item hover) -->
-    <Color x:Key="EDTheme.Bg.Hover.Color">#FFE8E8E8</Color>
+    <Color x:Key="EDTheme.Bg.Hover.Color">#FFEEF0F3</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Hover" Color="{StaticResource EDTheme.Bg.Hover.Color}"/>
 
     <!-- Pressed stav (toolbar button pressed) -->
-    <Color x:Key="EDTheme.Bg.Pressed.Color">#FFD0D0D0</Color>
+    <Color x:Key="EDTheme.Bg.Pressed.Color">#FFDDE1E6</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Pressed" Color="{StaticResource EDTheme.Bg.Pressed.Color}"/>
 
     <!-- Toggle button checked (snap/grid toggle is on) -->
@@ -79,19 +79,19 @@
          COLORS — Text
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Hlavní text (#333) — body, hlavní popisky -->
-    <Color x:Key="EDTheme.Text.Primary.Color">#FF333333</Color>
+    <Color x:Key="EDTheme.Text.Primary.Color">#FF1F2937</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Primary" Color="{StaticResource EDTheme.Text.Primary.Color}"/>
 
     <!-- Sekundární text (#555) — popisky polí, méně důležitý obsah -->
-    <Color x:Key="EDTheme.Text.Secondary.Color">#FF555555</Color>
+    <Color x:Key="EDTheme.Text.Secondary.Color">#FF4B5563</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Secondary" Color="{StaticResource EDTheme.Text.Secondary.Color}"/>
 
     <!-- Tlumený text (#888) — tipy, hints, sekundární info -->
-    <Color x:Key="EDTheme.Text.Muted.Color">#FF888888</Color>
+    <Color x:Key="EDTheme.Text.Muted.Color">#FF6B7280</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Muted" Color="{StaticResource EDTheme.Text.Muted.Color}"/>
 
     <!-- Header text (#444) — nadpisy panelů, sekcí -->
-    <Color x:Key="EDTheme.Text.Header.Color">#FF444444</Color>
+    <Color x:Key="EDTheme.Text.Header.Color">#FF374151</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Header" Color="{StaticResource EDTheme.Text.Header.Color}"/>
 
     <!-- Disabled text -->
@@ -102,7 +102,7 @@
          COLORS — Accent: Blue (primary action color v TD i EDList selekci)
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Primary accent — focus, active section border, selection -->
-    <Color x:Key="EDTheme.Accent.Blue.Color">#FF2196F3</Color>
+    <Color x:Key="EDTheme.Accent.Blue.Color">#FF2563EB</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.Blue" Color="{StaticResource EDTheme.Accent.Blue.Color}"/>
 
     <!-- Tmavá modrá — text na světle modrém pozadí (chip texty) -->
@@ -110,15 +110,15 @@
     <SolidColorBrush x:Key="EDTheme.Accent.BlueDark" Color="{StaticResource EDTheme.Accent.BlueDark.Color}"/>
 
     <!-- Světlé pozadí — instance chip, info badges -->
-    <Color x:Key="EDTheme.Accent.BlueBg.Color">#FFE3F2FD</Color>
+    <Color x:Key="EDTheme.Accent.BlueBg.Color">#FFEFF6FF</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBg" Color="{StaticResource EDTheme.Accent.BlueBg.Color}"/>
 
     <!-- Selected section background — vybraná sekce v listu -->
-    <Color x:Key="EDTheme.Accent.BlueSelected.Color">#FFD2E6FF</Color>
+    <Color x:Key="EDTheme.Accent.BlueSelected.Color">#FFDBEAFE</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueSelected" Color="{StaticResource EDTheme.Accent.BlueSelected.Color}"/>
 
     <!-- Soft accent border — pro non-active stavy s náznakem accent barvy (např. dynamic section item) -->
-    <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FFB4D2F5</Color>
+    <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FF93C5FD</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
 
     <!-- Header bar pozadí (EDComponentToolbar) — brandová tmavě modrá s bílým textem.
