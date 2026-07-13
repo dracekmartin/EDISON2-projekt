@@ -291,6 +291,12 @@ public class AppBootstrapper
             var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, prefs.LastLoginName, initialPassword);
             if (loginWindow.ShowDialog() != true)
             {
+                // Zrušeno po odmítnutí zapamatovaného hesla → zapomeň ho (jinak příště zase auto-selže).
+                if (loginWindow.RememberedPasswordRejected)
+                {
+                    prefs.RememberedPassword = null;
+                    prefs.Save();
+                }
                 login = null!;
                 return false;
             }

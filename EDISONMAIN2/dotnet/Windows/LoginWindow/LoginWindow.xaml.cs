@@ -8,6 +8,7 @@ namespace EDISONMAIN2.Windows.LoginWindow
     public partial class LoginWindow : Window
     {
         private readonly MLRest _mlRest;
+        private readonly string _initialPassword;
 
         public LoginResult? Result { get; private set; }
 
@@ -17,9 +18,14 @@ namespace EDISONMAIN2.Windows.LoginWindow
         /// <summary>Zadané heslo — caller ho po úspěchu zašifruje k uložení.</summary>
         public string EnteredPassword => PasswordBox.Password;
 
+        /// <summary>Předvyplněné (zapamatované) heslo bylo serverem odmítnuto — caller ho má zapomenout,
+        /// ať se příště automaticky nevyplní znovu a login zbytečně nepadá.</summary>
+        public bool RememberedPasswordRejected { get; private set; }
+
         public LoginWindow(MLRest mlRest, string? initialUsername = null, string? initialPassword = null, bool showRemember = true)
         {
             _mlRest = mlRest;
+            _initialPassword = initialPassword ?? "";
             InitializeComponent();
 
             // Reauth (přihlásit jiného uživatele) session nepersistuje → checkbox skrytý (byl by mrtvý).
@@ -56,6 +62,15 @@ namespace EDISONMAIN2.Windows.LoginWindow
             {
                 ErrorText.Text = ex.Message;
                 ErrorText.Visibility = Visibility.Visible;
+
+                // Selhalo předvyplněné zapamatované heslo (změněné jinde) → vyčisti pole,
+                // ať uživatel vidí, že neplatí, a rovnou napíše nové. Caller ho zapomene.
+                if (_initialPassword.Length > 0 && PasswordBox.Password == _initialPassword)
+                {
+                    RememberedPasswordRejected = true;
+                    PasswordBox.Clear();
+                    PasswordBox.Focus();
+                }
             }
         }
     }
