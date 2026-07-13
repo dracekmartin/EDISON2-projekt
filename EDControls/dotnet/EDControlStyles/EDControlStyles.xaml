@@ -76,9 +76,14 @@
                     Padding="{TemplateBinding Padding}"
                     CornerRadius="3"
                     SnapsToDevicePixels="True">
-                <ContentPresenter ContentSource="Header"
-                                  RecognizesAccessKey="True"
-                                  VerticalAlignment="Center"/>
+                <StackPanel Orientation="Horizontal">
+                    <ContentPresenter x:Name="Icon" ContentSource="Icon"
+                                      Margin="0,0,6,0" VerticalAlignment="Center"
+                                      RenderOptions.BitmapScalingMode="HighQuality"/>
+                    <ContentPresenter ContentSource="Header"
+                                      RecognizesAccessKey="True"
+                                      VerticalAlignment="Center"/>
+                </StackPanel>
             </Border>
             <Popup x:Name="PART_Popup"
                    Placement="Bottom"
@@ -104,6 +109,9 @@
             </Popup>
         </Grid>
         <ControlTemplate.Triggers>
+            <Trigger Property="Icon" Value="{x:Null}">
+                <Setter TargetName="Icon" Property="Visibility" Value="Collapsed"/>
+            </Trigger>
             <Trigger Property="IsHighlighted" Value="True">
                 <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
             </Trigger>

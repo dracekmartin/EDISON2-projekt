@@ -4,6 +4,22 @@
     <BitmapImage x:Key="EDIcons.Molecule"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/cube_molecule.png"/>
 
+    <!-- Strom modulů: složka (ModuleFamily) + spustitelný modul (ExecutableModule). Ze staré sady. -->
+    <BitmapImage x:Key="EDIcons.Folder"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/folder.png"/>
+    <BitmapImage x:Key="EDIcons.Module"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/module.png"/>
+
+    <!-- Top-level menu ikony (ze staré sady, jako starý shell): Uživatel, Nástroje, Nastavení, Miniaplikace. -->
+    <BitmapImage x:Key="EDIcons.User"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/user.png"/>
+    <BitmapImage x:Key="EDIcons.Tools"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/tools.png"/>
+    <BitmapImage x:Key="EDIcons.Settings"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/settings.png"/>
+    <BitmapImage x:Key="EDIcons.Panels"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/panels.png"/>
+
     <BitmapImage x:Key="EDIcons.Add"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/add2.png"/>
     <BitmapImage x:Key="EDIcons.Edit"

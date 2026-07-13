@@ -60,17 +60,20 @@
                                    MinWidth="220" VerticalAlignment="Center" Margin="4,0,8,0"/>
             <Menu x:Name="TopMenu" BorderThickness="0">
             <MenuItem Header="EDISON">
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Molecule}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem Header="Připojit k databázi"   Command="{Binding ConnectToDatabaseCommand}"/>
                 <MenuItem Header="Spustit další EDISON"  Command="{Binding RunEdisonCopyCommand}"/>
                 <Separator/>
                 <MenuItem Header="Konec"                 Command="{Binding ExitCommand}"/>
             </MenuItem>
             <MenuItem Header="Uživatel">
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.User}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem Header="Přihlásit jiného uživatele" Command="{Binding LoginAsAnotherUserCommand}"/>
                 <MenuItem Header="Aktuální uživatel"          Command="{Binding ShowUserEditCommand}"/>
                 <MenuItem Header="Změnit heslo"               Command="{Binding ChangePasswordCommand}"/>
             </MenuItem>
             <MenuItem Header="Spuštěné moduly" ItemsSource="{Binding RunningModules}">
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Module}" Width="16" Height="16"/></MenuItem.Icon>
                 <!-- MouseEnter, ne SubmenuOpened — prázdný submenu by se neotevřel a chicken-and-egg by zablokoval refresh. -->
                 <b:Interaction.Triggers>
                     <b:EventTrigger EventName="MouseEnter">
@@ -88,6 +91,7 @@
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
             <MenuItem Header="Miniaplikace" ItemsSource="{Binding MiniApps}">
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
                     <!-- ElementName=TopMenu — položky jsou v Popup mimo Menu's visual tree (jako Spuštěné moduly). -->
                     <Style TargetType="MenuItem">
@@ -98,6 +102,7 @@
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
             <MenuItem Header="Nástroje">
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Tools}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
                 <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenseCommand}"/>
                 <Separator/>
@@ -106,6 +111,7 @@
                 <MenuItem Header="Aktivita uživatelů"   Command="{Binding ShowUsersActivityCommand}"/>
             </MenuItem>
             <MenuItem Header="Nastavení">
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Settings}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem Header="Vybrat font…" Command="{Binding SelectFontCommand}"/>
                 <MenuItem Header="Výchozí font" Command="{Binding ResetFontCommand}"/>
                 <MenuItem Header="Tmavý režim"  IsCheckable="True" IsChecked="{Binding IsDarkMode}"/>
@@ -116,6 +122,7 @@
                 <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
             <MenuItem Header="Nápověda">
+                <MenuItem.Icon><Image Source="{StaticResource EDIcons.Help}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem Header="Informace o verzi" Command="{Binding ShowInfoCommand}"/>
                 <MenuItem Header="Helpdesk, Wiki"    Command="{Binding OpenHelpdeskWebCommand}"/>
                 <Separator/>
@@ -142,22 +149,26 @@
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <BooleanToVisibilityConverter x:Key="BoolToVis"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
-                    <!-- Color "" → UnsetValue → default Foreground; v DEBUG nastaveno agregací (stub/broken).
-                         Tag = VM (z TabControl) — most pro ContextMenu mimo visual tree. -->
-                    <TextBlock Text="{Binding DisplayedName}"
-                               Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                                <Setter Property="Foreground" Value="{Binding Color, Converter={StaticResource HexToBrush}}"/>
-                                <Style.Triggers>
-                                    <!-- Prázdná barva → themed text (jinak by binding dal černou, v dark neviditelnou). -->
-                                    <DataTrigger Binding="{Binding Color}" Value="">
-                                        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                        <TextBlock.ContextMenu>
+                    <!-- Tag = VM (z TabControl) — most pro ContextMenu mimo visual tree. -->
+                    <StackPanel Orientation="Horizontal"
+                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
+                        <Image Source="{StaticResource EDIcons.Folder}" Width="16" Height="16"
+                               Margin="0,0,6,0" VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <!-- Color "" → prázdná → themed text; v DEBUG nastaveno agregací (stub/broken). -->
+                        <TextBlock Text="{Binding DisplayedName}" VerticalAlignment="Center">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="Foreground" Value="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding Color}" Value="">
+                                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <StackPanel.ContextMenu>
                             <ContextMenu>
                                 <!-- Hromadné přepnutí celé rodiny (např. MHD). Header dle IsFavorite
                                      (= všechny moduly v ní oblíbené). Sem mohou přibýt další akce. -->
@@ -175,17 +186,19 @@
                                     </MenuItem.Style>
                                 </MenuItem>
                             </ContextMenu>
-                        </TextBlock.ContextMenu>
-                    </TextBlock>
+                        </StackPanel.ContextMenu>
+                    </StackPanel>
                 </HierarchicalDataTemplate>
                 <DataTemplate DataType="{x:Type modules:ExecutableModule}">
                     <!-- Tag = VM (z TabControl DataContext) — most pro ContextMenu, který není ve visual tree. -->
                     <StackPanel Orientation="Horizontal"
                                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
-                        <!-- Color "" → UnsetValue → fallback na default TextBlock Foreground z EDTheme. -->
-                        <!-- Barva z modelu (launchability); prázdná → Unset → spadne na themed
-                             Text.Primary z BasedOn implicit stylu (jinak by byla černá = neviditelná v dark). -->
-                        <TextBlock Text="{Binding DisplayedName}">
+                        <Image Source="{StaticResource EDIcons.Module}" Width="16" Height="16"
+                               Margin="0,0,6,0" VerticalAlignment="Center"
+                               RenderOptions.BitmapScalingMode="HighQuality"/>
+                        <!-- Barva z modelu (launchability); prázdná → themed Text.Primary z BasedOn
+                             implicit stylu (jinak by byla černá = neviditelná v dark). -->
+                        <TextBlock Text="{Binding DisplayedName}" VerticalAlignment="Center">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                     <Setter Property="Foreground" Value="{Binding Color, Converter={StaticResource HexToBrush}}"/>
@@ -232,6 +245,8 @@
                     <Setter Property="Cursor" Value="Hand"/>
                     <!-- Single-click: složka toggle expand, modul spustí (handler v code-behind). -->
                     <EventSetter Event="MouseLeftButtonUp" Handler="TreeItem_MouseLeftButtonUp"/>
+                    <!-- Pravý klik označí položku, aby kontextové menu vizuálně sedělo na cíli. -->
+                    <EventSetter Event="MouseRightButtonDown" Handler="TreeItem_MouseRightButtonDown"/>
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>

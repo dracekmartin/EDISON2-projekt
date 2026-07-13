@@ -23,6 +23,12 @@
 
   <ItemGroup>
     <Resource Include="EDIcons\png\cube_molecule.png"/>
+    <Resource Include="EDIcons\png\folder.png"/>
+    <Resource Include="EDIcons\png\module.png"/>
+    <Resource Include="EDIcons\png\user.png"/>
+    <Resource Include="EDIcons\png\tools.png"/>
+    <Resource Include="EDIcons\png\settings.png"/>
+    <Resource Include="EDIcons\png\panels.png"/>
     <Resource Include="EDIcons\png\add2.png"/>
     <Resource Include="EDIcons\png\edit.png"/>
     <Resource Include="EDIcons\png\delete2.png"/>
