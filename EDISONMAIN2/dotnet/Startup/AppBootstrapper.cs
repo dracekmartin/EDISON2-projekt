@@ -77,6 +77,12 @@ public class AppBootstrapper
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
 
+        // Téma aplikuj hned po načtení prefs — před login dialogem, ať je i on v dark režimu.
+        // Initialize registruje class handler, který obarví pozadí každého okna (i podtříd).
+        EDControls.EDTheme.ThemeService.Initialize();
+        EDControls.EDTheme.ThemeService.Apply(prefs.DarkMode
+            ? EDControls.EDTheme.AppTheme.Dark : EDControls.EDTheme.AppTheme.Light);
+
         // First-launch setup (feature #5): chybí appsettings.json → wizard. Zrušení = konec.
         if (!EnsureConfigured())
         {

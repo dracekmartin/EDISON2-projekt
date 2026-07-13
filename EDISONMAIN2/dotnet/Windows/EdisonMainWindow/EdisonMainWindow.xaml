@@ -108,6 +108,7 @@
             <MenuItem Header="Nastavení">
                 <MenuItem Header="Vybrat font…" Command="{Binding SelectFontCommand}"/>
                 <MenuItem Header="Výchozí font" Command="{Binding ResetFontCommand}"/>
+                <MenuItem Header="Tmavý režim"  IsCheckable="True" IsChecked="{Binding IsDarkMode}"/>
                 <Separator/>
                 <MenuItem Header="Nastavení jazyka" Command="{Binding ShowLanguageSettingsCommand}"/>
                 <Separator/>
@@ -144,8 +145,18 @@
                     <!-- Color "" → UnsetValue → default Foreground; v DEBUG nastaveno agregací (stub/broken).
                          Tag = VM (z TabControl) — most pro ContextMenu mimo visual tree. -->
                     <TextBlock Text="{Binding DisplayedName}"
-                               Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"
                                Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                <Setter Property="Foreground" Value="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                                <Style.Triggers>
+                                    <!-- Prázdná barva → themed text (jinak by binding dal černou, v dark neviditelnou). -->
+                                    <DataTrigger Binding="{Binding Color}" Value="">
+                                        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
                         <TextBlock.ContextMenu>
                             <ContextMenu>
                                 <!-- Hromadné přepnutí celé rodiny (např. MHD). Header dle IsFavorite
@@ -172,8 +183,21 @@
                     <StackPanel Orientation="Horizontal"
                                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
                         <!-- Color "" → UnsetValue → fallback na default TextBlock Foreground z EDTheme. -->
-                        <TextBlock Text="{Binding DisplayedName}"
-                                   Foreground="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                        <!-- Barva z modelu (launchability); prázdná → Unset → spadne na themed
+                             Text.Primary z BasedOn implicit stylu (jinak by byla černá = neviditelná v dark). -->
+                        <TextBlock Text="{Binding DisplayedName}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                    <Setter Property="Foreground" Value="{Binding Color, Converter={StaticResource HexToBrush}}"/>
+                                    <Style.Triggers>
+                                        <!-- Prázdná barva → themed text (jinak by binding dal černou, v dark neviditelnou). -->
+                                        <DataTrigger Binding="{Binding Color}" Value="">
+                                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <!-- Zlatá ★ na konci názvu, jen u oblíbených (prázdná se nezobrazuje). -->
                         <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="#FFC107" VerticalAlignment="Center"
                                    Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVis}}"/>
@@ -301,7 +325,8 @@
                 </TabItem>
             </TabControl>
         </Grid>
-        <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+        <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      Background="{DynamicResource EDTheme.Border.Light}"/>
         <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
              AvalonDockHost nad tímto DockingManagerem). -->
         <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1"

@@ -843,6 +843,21 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
+        // Tmavý režim — přepne živě přes ThemeService (swap barevných tokenů) a persistuje.
+        public bool IsDarkMode
+        {
+            get => _prefs.DarkMode;
+            set
+            {
+                if (_prefs.DarkMode == value) return;
+                _prefs.DarkMode = value;
+                _prefs.Save();
+                EDControls.EDTheme.ThemeService.Apply(value
+                    ? EDControls.EDTheme.AppTheme.Dark : EDControls.EDTheme.AppTheme.Light);
+                OnPropertyChanged();
+            }
+        }
+
 
         // Styl → Vybrat font — WinForms FontDialog (jediný standardní picker dostupný v .NET).
         // Výběr font rovnou aplikuje na celou aplikaci. Storage je shared font.json
