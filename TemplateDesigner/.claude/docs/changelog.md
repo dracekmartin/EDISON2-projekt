@@ -385,7 +385,7 @@ chyběl symbolový JŘ font (dlouho odložený bod „C2"). Odblokováno dodán�
 - **Na znamení `x`/`y`/`z` = prostý text**, ne piktogram (helper `SymbolJeText`, dle konvence) — jinak
   font na pozici `x` kreslí vláček. Bezbariér zůstává piktogram.
 - **NZ** (negativní) beze změny — ruční inverzní box (už bylo správně).
-- **Katalog symbolů** (`.claude/docs/symboly-jr-katalog.md`) — převzatá mapa z legacy `GSId` (66 symbolů:
+- **Katalog symbolů** (`.claude/docs/elementy-architektura.md`) — převzatá mapa z legacy `GSId` (66 symbolů:
   id·znak·význam·render-mód) + zdroje, jako reference pro další dotažení (text-multichar, kompozity).
 - Čistě render vrstva → gold netknuté, 305/305 .NET. Živě ověřen render (vozíček, na-znamení x, SK přepnutí).
 
@@ -889,7 +889,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
   (návrhový `{POLE}` placeholder / datový / prázdný padding); prázdné padding řádky drží mřížku,
   rámeček i zebru, bez zvýraznění. Výška↔render parita (`EffectiveRowCount` = Max ořez + Min padding),
   kombinuje se s filtrem viditelnosti. DynamicTable-only (kategorie 2, viz níže).
-- 📐 **Klasifikační pravidlo featur** zapsáno do `tabulkove-elementy-jadro.md §0b` — rozhodnutí z
+- 📐 **Klasifikační pravidlo featur** zapsáno do `elementy-architektura.md §0b` — rozhodnutí z
   diskuze 2026-07-05: (1) featury nad daty řádku → sdílený helper do všech tabulek; (2) struktura
   sloupce / počet řádků → jen generická DynamicTable (počítaná pole, min/max); (3) doménové
   renderování → element-specifické. Generické featury jsou pro daná data dostupné přes DynamicTable
@@ -1322,7 +1322,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 
 ## 2026-07-02 — Roadmap: merge akčních položek z analýzy legacy náhrady
 
-- ✅ **Akční položky z `analyza-stav-a-legacy-nahrada-2026-07.md` zamergovány do `roadmap.md`**
+- ✅ **Akční položky z `legacy-nahrada.md` zamergovány do `roadmap.md`**
   (jedno místo pravdy, analýza zůstává jako evergreen referenční detail se status poznámkou):
   - Nová sekce **„Architektonický track T1–T6"** (T1a testy ✅, T3 ✅, T2 async export ⬅️ další,
     T1b Caché testy, T4 strangler, T5 duplikace, T6 drobnosti) + 3. aktivní track nahoře.
@@ -1392,7 +1392,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 - **Nálezy z psaní testů:** (a) early-out v `TemplateMigrator.Migrate` porovnává verze string
   equality, ne VersionComparerem → „1.0" se hlásí jako migrovaná (neškodné, zvážit při T3);
   (b) `dotnet sln add` vygeneroval kolizní solution folder „TemplateDesigner" → ručně odstraněn ze sln.
-- Kontext + celý plán: [`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md)
+- Kontext + celý plán: [`legacy-nahrada.md`](legacy-nahrada.md)
   (technický audit T1–T6 + legacy REPORTGENERATOR/TiskMHD/TiskJR + roadmapa náhrady).
 - **Druhá vlna (tentýž den): TextStyle kaskáda + helpery → celkem 150 testů (149 ✅ / 1 skip):**
   - `Models/TextStyleTests` — CSS-like cascade (dědění, override, 3vrstvá kaskáda, trim fontu,
@@ -1701,7 +1701,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 - ✅ **Řazení poznámek** — `Razeni` (výchozí / podle délky). Dorovnává legacy „Trid_delK".
 - Vystaveno v EDInputformu (`NotesLegendElementEdit.cls`, skupina „Rozložení") i inline panelu.
   Default (1 sloupec, inline, výchozí řazení) = beze změny existujících šablon. Reference:
-  legacy návrhář `formTISKMHDSekcePoznamkyEdit` (viz `ad-jr-typy-poznamek-layout-analyza.md §1b`).
+  legacy návrhář `formTISKMHDSekcePoznamkyEdit` (viz `ad-data-mapa.md §1b`).
 
 ## 2026-06-21 — AD #7161 D5 (skrýt legendu „× na znamení") + D6 ověřeno
 
@@ -1720,7 +1720,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
   jako #7955. Neověřeno na datech (žádná linka 100% bezbariér v KV_DP/CB_CSADAD — latentní).
 - 🔧 **MCP `edison-cache` opraven** — deployovaný exe byl neúplný (chyběl runtime); rebuild +
   `.mcp.json` cesta na podsložku `C:\Edison\EdisonCacheMcp\`. Ověřeno proti gold oraclu (CB_CSADAD).
-- 📄 **AD analýzy sloučeny** do `ad-jr-nastaveni-linky-analyza.md`; přípoje/km přesunuty do linkových JŘ.
+- 📄 **AD analýzy sloučeny** do `ad-data-mapa.md`; přípoje/km přesunuty do linkových JŘ.
 
 ## 2026-06-20 — AD #7955: co schovat v rozsahu „nepoznámkovat" (Fáze 2)
 
@@ -1750,7 +1750,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 
 ## 2026-06-20 — AD nastavení linky 1:1 (track PRIORITA 2b)
 
-- 📄 **Business analýza nastavení tisku na úrovni linky** — `ad-jr-nastaveni-linky-analyza.md`:
+- 📄 **Business analýza nastavení tisku na úrovni linky** — `ad-data-mapa.md`:
   podchyceno, jak legacy čte nastavení linky (taby MHD / MHD-další / dialog Nastavení tisku) přes 3
   readery (`gPrpLin`/`gPrpLinMhd`/`gSetLinPrt^JRapiLin*`), per-feature business význam + storage v
   `^JRL` + zda to máme/nemáme. Klíč: `ALVA.TISKMHD.Data` je jen formátovač, logika je v MAC `JRapi*`.

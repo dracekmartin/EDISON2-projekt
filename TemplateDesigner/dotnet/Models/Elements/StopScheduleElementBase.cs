@@ -18,7 +18,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
     /// Symboly, které se dle konvence JŘ tisknou jako <b>prostý text</b>, ne jako piktogram
     /// ze symbolového Timetable fontu — „na znamení" (`x` a časové varianty `y`/`z`). Ostatní
     /// jednoznakové symboly (bezbariér `H`/`F`…) jdou přes symbolový font.
-    /// Viz <c>.claude/docs/symboly-jr-katalog.md</c> (render-mód „text" vs „font-glyf").
+    /// Viz <c>.claude/docs/elementy-architektura.md</c> (render-mód „text" vs „font-glyf").
     /// </summary>
     protected static bool SymbolJeText(string znak) => znak is "x" or "y" or "z";
 

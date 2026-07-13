@@ -213,7 +213,7 @@ kódování na-znamení, TR8 ⏸️ park do potvrzení TRANSDEV). Zbývají jen 
   „Spoje, nepoznámkovat" volba „Automatické" schová auto-rozdíl trasy a nechá ruční komentář = přesně
   klientův požadavek. Řešeno **modelem nadmnožina + render-time TD filtr** (`NoteVisibilityFilter`),
   ne auto-suppress v Caché — legacy sémantika „nepoznámkovat" zachovaná (default), flip je opt-in volba.
-  Viz `ad-jr-nastaveni-linky-analyza.md §5` + `feature-design-principles.md §5.2`.
+  Viz `ad-data-mapa.md §5` + `feature-design-principles.md §5.2`.
 - **Pozn. k MHD agendě:** tyto ruční poznámky jsou **AD-only** — `^JRL` konstrukty (`SeT_SpeC`/
   `MHDSPNPZN`/`SeT_MhD`). MHD agenda (`ZastavkoveJrMhd`) čte jiný zdroj (`^ALVA.MHD.*`) a tyto pole
   **nemá** (ověřeno 2026-06-20). Není co portovat, dokud se nepotvrdí, že MHD modul má vlastní
@@ -492,7 +492,7 @@ implementací dohledat/založit tikety + upřesnit. U každého poznámka o stav
 7. **Jízdní doby — výběr sloupců variant**: víc variant trasy → víc sloupců jízdních dob; číslování dnes odráží
    pořadí výskytu variantu v seznamu spojů (nestabilní — Sloupec 3 na začátku = Sloupec 2 uprostřed). Chce
    explicitní kontrolu (které spoje / úsek řídí generování). → **Relates L1 multi-varianta TrasaMin** (`VARIANTY_TRAS`
-   + `ShowAllRouteVariants`); je to ta „jemnější výběr variant (per-písmeno)" z `cache-database-linky §10`. M.
+   + `ShowAllRouteVariants`); je to ta „jemnější výběr variant (per-písmeno)" z `ad-data-mapa.md §10`. M.
 8. **Jízdní doby — „<1" místo „0"**: nulová jízdní doba mezi zastávkami → zobrazit „<1" (méně než minuta) místo „0".
    Konfigurovatelné. ⏸️ **PARK — premisa nejasná (analýza 2026-07-10):**
    - TD (i legacy „Časy"/„Trasa min.") zobrazuje **kumulativní** čas od nástupní zastávky. 0-minutový úsek

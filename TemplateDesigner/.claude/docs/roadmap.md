@@ -50,7 +50,7 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
-v [`analyza-stav-a-legacy-nahrada-2026-07.md §7`](analyza-stav-a-legacy-nahrada-2026-07.md); vyřeší se
+v [`legacy-nahrada.md §7`](legacy-nahrada.md); vyřeší se
 při scope té fáze, ne teď.
 
 ---
@@ -169,7 +169,7 @@ Detail datových odchylek a mezer viz [`linkovy-knizni-jr-implementace-analyza.m
 
 Layout TBD — hlavička oběhu, tabulka spojů, poznámky (pravděpodobně víc elementů). Legacy:
 `ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky), viz
-[`legacy-schedule-generators.md`](legacy-schedule-generators.md). **Relace (TiskJRRELACE)** — vývěsky
+[`legacy-nahrada.md`](legacy-nahrada.md). **Relace (TiskJRRELACE)** — vývěsky
 nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý use case (Q3)**.
 
 | Krok | Co | Stav |
@@ -188,7 +188,7 @@ nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý us
 Největší kus náhrady — ne kvůli featurám (TD je napřed), ale kvůli **ekosystému ~28 agend** s RG
 kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení: 33k textových elementů,
 774 tabulek. **Ne big-bang** — etapizovat. Detail:
-[`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md) §3.1 + §5 etapa 4.
+[`legacy-nahrada.md`](legacy-nahrada.md) §3.1 + §5 etapa 4.
 
 | Krok | Co | Stav |
 |---|---|---|
