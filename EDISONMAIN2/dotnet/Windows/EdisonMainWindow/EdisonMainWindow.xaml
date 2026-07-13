@@ -10,6 +10,7 @@
         xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules"
         xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls"
         xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox;assembly=EDControls"
+        xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" Height="800" Width="1200" MinHeight="600" MinWidth="900" Icon="{StaticResource EDIcons.Molecule}" WindowStartupLocation="CenterScreen" WindowState="Maximized">
@@ -320,6 +321,10 @@
             <!-- Chord hint pro Ctrl+W+W. Prázdný text = neaktivní stav. -->
             <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"/>
         </StatusBar>
+
+        <!-- Overlay „akce probíhá" (náběh spouštěného modulu). Poslední child + span celé mřížky
+             → kreslí se navrchu a pokryje celé okno. Auto-binduje se na VM.IsActionInProgress. -->
+        <edaip:EDActionInProgress Grid.Row="0" Grid.RowSpan="100" Grid.Column="0" Grid.ColumnSpan="100"/>
 
     </Grid>
 

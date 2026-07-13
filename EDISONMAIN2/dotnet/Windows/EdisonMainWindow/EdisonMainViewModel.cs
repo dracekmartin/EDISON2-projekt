@@ -145,7 +145,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _getActiveModules = getActiveModules;
             _miniAppCatalog = miniAppCatalog;
 
-            OpenModuleCommand        = Command<IModule>(OpenModule);
+            OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
             ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
@@ -585,13 +585,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public IEnumerable<ListItem> CompanySuggestions =>
             VisibleIdfas.Select(c => new ListItem(c.Id, c.Name));
 
-        private void OpenModule(IModule module)
+        private async Task OpenModule(IModule module)
         {
-            if (module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em)
-            {
-                WindowNavigator.ShowLegacy(path, em.FormName, inputParam: em.InputParam);
-                RecordUsage(em);
-            }
+            if (module is not ExecutableModule { ExecutablePath: { Length: > 0 } path } em) return;
+
+            RecordUsage(em);
+            // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces — čekáme na jeho okno).
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
         }
 
         // Přepnutí oblíbeného. EXE = toggle jednoho ElementId; FAMILY = hromadně všechny moduly v ní
