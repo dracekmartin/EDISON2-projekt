@@ -60,10 +60,9 @@ při scope té fáze, ne teď.
 1. **Headless tisk (A3)** — „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe — v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
 3. **Další výchozí šablony** (MHD + linkový) — mechanismus embed→MLINE hotový, jen kurátorovat + přidat JSON do `SystemTemplates/`. (Táž práce evidovaná i v Fázi C+D: krok 44b / C4.)
-4. **Zákaznická dokumentace na wiki (post-release)** — 2 dokumenty: (a) uživatelská příručka
-   (výtah z F1 nápovědy + obrázky, úkolově Co→Jak), (b) „Novinky a plány" — zákaznická obdoba
-   changelogu + roadmapy (co je ve verzi, co chystáme). Zdroje: changelog, `HelpDialogViewModel
-   .BuildContent()`, draft e-mailu v pre-version-checklist §4.
+4. **Zákaznická dokumentace na wiki (post-release)** — 2 dokumenty, seedy HOTOVÉ a aktuální
+   (2026-07-13): `uzivatelska-prirucka.md` (část I obecné ovládání + část II zastávkový JŘ;
+   nové agendy = nové části) + `plan-a-zmeny.md` („Novinky a plány"). Zbývá: obrázky + publikace.
 
 ---
 

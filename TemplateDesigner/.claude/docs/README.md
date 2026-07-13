@@ -47,8 +47,9 @@
 
 **Historie úklidu 2026-07-13** (vše v git historii):
 - Smazáno po vytěžení: `audit-pred-produkci-2026-07-09`, `produkce-pripravenost-2026-07-07`,
-  `r1-sdilene-tabulkove-jadro-navrh`, `test-plan-specializovane-elementy`, `uzivatelska-prirucka`
-  (nahrazena splitem obecná + zastávkový JŘ).
+  `r1-sdilene-tabulkove-jadro-navrh`, `test-plan-specializovane-elementy`, `uzivatelska-prirucka` v0
+  (mezikrok split obecná + zastávková; 2026-07-13 znovu sjednoceno jako části I+II v novém
+  `uzivatelska-prirucka.md`).
 - Sloučeno: `r2-partial-fit-kontrakt` + `governance-sablon-koncept` → architektonicka-rozhodnuti ·
   `schedule-elements-architecture` + `tabulkove-elementy-jadro` + `symboly-jr-katalog` →
   elementy-architektura · `cache-database-linky` + `ad-jr-nastaveni-linky-analyza` +
