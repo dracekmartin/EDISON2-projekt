@@ -47,6 +47,11 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   (à la Figma — threshold + vizuální hint, S–M) · **per-šablona hodnoty tiskových parametrů**
   (PrintDialog volba „načíst z aktuální šablony"; dnes per-agenda — chce design kam uložit
   a co má přednost; navazuje na existující TODO „extrakce na Template/agenda-config", M)
+- **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
+  „nedostupná" od „není nakonfigurována" + varování při startu (M) · empty-state panelu Pole
+  agendy bez DB (S) · splash při startu (~3 s .Wait bez okna, M) · validace Save dialogů
+  disabled tlačítkem místo popupu (M) · theme tokeny místo hardcoded barev v editorech +
+  jednotný resize grip (S–M) · dvojklik v Instance pickeru = toggle checku (S)
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované

@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-13 — UX audit kritických flow + opravy (pre-produkce)
+
+Dva fan-out audity (kritická flow prvouživatele + konzistence dialogů). Základ zdravý
+(potvrzení destruktivních akcí, async vzory, jednotné Storno/Esc, 0× MessageBox). Opraveno:
+
+- **Recent files** — jediná cesta otevírající šablonu bez potvrzení neuložených změn (tichá
+  ztráta práce) → `ConfirmUnsavedChangesAsync` jako Ctrl+O/import.
+- **Startovní agenda kontextově** — priorita: EDISON kontrakt (`Agenda=<kód>`) → **poslední
+  použitá agenda uživatele** (`MainStatePref.LastAgendaCode`, capture při save stavu) → AD
+  fallback. Odstraněn zafixovaný dev „NECOMMITOVAT" default.
+- **PrintDialog „Tisk všech" už nemrazí** — fetch (HTTP per linka) + render na threadpoolu
+  (`AsyncRelayCommand` s vestavěným guardem), snapshot parametrů (sdílený dict se dá měnit
+  během fetche), render nad `DeepClone` šablony (nezávodí s preview renderem UI threadu),
+  overflow check na UI (levný, sdílí element cache); dvoufázový progress ve StatusText.
+- **AI klíč z menu s indikátorem** — wait-cursor + „Ověřuji dostupnost AI služby…" + guard
+  proti opakovanému kliku (cold start mlweb resolve = sekundy, timeout až 60 s ticha).
+- **„Uložit jako" kontroluje kolizi názvu** — stejné jméno v DB → potvrzení (dřív tichá
+  nerozlišitelná duplicita); best-effort, výpadek listu neblokuje uložení.
+- **PrintDialog**: `IsDefault` na Zavřít (Enter dřív nedělal nic), `ShowInTaskbar=False`.
+- **Pomocník**: Enter ve vstupním poli odešle dotaz (`IsDefault` v UserControlu mimo dialog
+  scope nefunguje → explicitní KeyDown).
+- Dříve týž den (UI kosmetika): titulek „Návrhář sestav", vykání v Pomocníkovi, „z databáze"
+  místo „z Caché", menu „soubor" místo „JSON soubor".
+- **Vědomě odloženo** (→ roadmapa): VPN-down hláška „není nakonfigurována", empty-state Pole
+  agendy, splash při startu, validace Save dialogů disabled tlačítkem, theme tokeny v editorech.
+
 ## 2026-07-13 — Nápověda F1: datově řízená + fulltext hledání (Ctrl+F)
 
 - Obsah přesunut ze 500 řádků statického XAML do `HelpDialogViewModel.BuildContent()`
