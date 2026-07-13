@@ -14,7 +14,7 @@ integrovaný s `EDFooter`.
 | `EDAction.cs` | Model jedné akce pro toolbar/menu/klávesovou zkratku (label, ikona, klávesa, příkaz). |
 | `EDServices.cs` | DI kontejner: `IMLRest`, `IWindowNavigator`, `IPopupDisplayer`, `ActiveLicence`, `IsAdmin`. Singleton `EDServices.Current`. |
 | `IWindowNavigator.cs` | Interface pro otevírání oken (WPF Show/ShowDialog + legacy WinForms ShowLegacy/ShowLegacyAndWait + CloseAllLegacy). |
-| `WindowNavigator.cs` | Implementace — WPF: `Show(Window)` / `ShowDialog(Window)` přijímá instanci (caller volá `new MyWindow()`), wire-up dělá Owner + `[Idfa]` title + `vm.AttachToWindow(window)`. Legacy přes `EDISONMAIN2API.FormToRunGetter` 10-arg kontrakt; trackuje child procesy, `KillOnExit.Bind` proti hard-kill, kill na `CloseAll`. |
+| `WindowNavigator.cs` | Implementace — WPF: `Show(Window)` / `ShowDialog(Window)` přijímá instanci (caller volá `new MyWindow()`), wire-up dělá Owner + `[Idfa]` title + `vm.AttachToWindow(window)`; `ShowDialog` po dobu dialogu ztmaví owner přes `WindowDimmer` (`EDControls/WindowDimmer.cs`). Legacy přes `EDISONMAIN2API.FormToRunGetter` 10-arg kontrakt; trackuje child procesy, `KillOnExit.Bind` proti hard-kill, kill na `CloseAll`; legacy dialog ztmaví shell taky `WindowDimmer`em (ne `IsEnabled=false` — to by srazilo controly na 0.5 opacity). |
 | `IPopupDisplayer.cs` | Interface pro dialogy (`Confirm`, `Info`, `ConfirmClose`, `Error`). |
 | `PopupDisplayer.cs` | Implementace — zobrazí `EDPopup` / `EDErrorPopup` s aktivním oknem jako owner. |
 

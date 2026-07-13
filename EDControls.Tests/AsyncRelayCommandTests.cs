@@ -137,3 +137,56 @@ public class AsyncRelayCommandTests
         Assert.Equal(2, invocations);
     }
 }
+
+public class AsyncRelayCommandGenericTests
+{
+    [Fact]
+    public async Task Execute_PassesParameter()
+    {
+        string? received = null;
+        var cmd = new AsyncRelayCommand<string>(async s => { await Task.Delay(10); received = s; });
+
+        cmd.Execute("hello");
+        await Task.Delay(50);
+
+        Assert.Equal("hello", received);
+    }
+
+    [Fact]
+    public void CanExecute_RespectsPredicateWithParameter()
+    {
+        var cmd = new AsyncRelayCommand<string>(_ => Task.CompletedTask, s => s == "ok");
+
+        Assert.False(cmd.CanExecute("no"));
+        Assert.True(cmd.CanExecute("ok"));
+    }
+
+    [Fact]
+    public async Task SecondExecute_WhileFirstRunning_IsIgnored()
+    {
+        var gate = new TaskCompletionSource();
+        int invocations = 0;
+        var cmd = new AsyncRelayCommand<string>(async _ => { invocations++; await gate.Task; });
+
+        cmd.Execute("a");
+        cmd.Execute("b");   // ignorováno — první ještě běží
+
+        gate.SetResult();
+        await Task.Delay(50);
+
+        Assert.Equal(1, invocations);
+    }
+
+    [Fact]
+    public async Task Execute_Exception_RoutedToInjectedPopup()
+    {
+        var popup = Substitute.For<IPopupDisplayer>();
+        var boom = new InvalidOperationException("boom");
+        var cmd = new AsyncRelayCommand<string>(_ => throw boom, canExecute: null, popupDisplayer: popup);
+
+        cmd.Execute("x");
+        await Task.Delay(50);
+
+        popup.Received(1).Error(boom);
+    }
+}

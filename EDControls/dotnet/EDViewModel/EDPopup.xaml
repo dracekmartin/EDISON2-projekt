@@ -6,7 +6,7 @@
         ShowInTaskbar="False">
 
     <Border Padding="20,16,20,14"
-            Background="White">
+            Background="{DynamicResource EDTheme.Bg.Surface}">
         <StackPanel>
             <TextBlock x:Name="MessageText"
                        Margin="0,0,0,16"

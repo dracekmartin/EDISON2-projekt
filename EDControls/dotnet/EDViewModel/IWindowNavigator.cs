@@ -24,6 +24,13 @@ public interface IWindowNavigator
     void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
 
     /// <summary>
+    /// Jako <see cref="ShowLegacy"/>, ale vrací Task, který doběhne až se objeví okno modulu
+    /// (<c>Process.MainWindowHandle</c> != 0) nebo po timeoutu / předčasném ukončení procesu.
+    /// Caller (shell) tím může držet „akce probíhá" overlay po dobu náběhu modulu.
+    /// </summary>
+    Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
+
+    /// <summary>
     /// Stejné jako <see cref="ShowLegacy"/>, ale blokuje až do zavření okna.
     /// Pre-login admin override (LicenceVerifier) volá s shareShellSession=false — shell ještě
     /// nemá VerifyLic zámek a CacheLocks=1 by každý request modulu padal na LockExist.
@@ -36,4 +43,11 @@ public interface IWindowNavigator
     /// Calling thread se nezablokuje (jiné než <see cref="ShowLegacyAndWait"/>).
     /// </summary>
     void ShowLegacyAsDialog(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
+
+    /// <summary>
+    /// Jako <see cref="ShowLegacyAsDialog"/>, ale vrací Task, který doběhne až se objeví okno
+    /// child procesu (nebo po timeoutu). Shell zůstane zašedlý až do zavření childu; Task jen
+    /// umožní callerovi držet „akce probíhá" overlay po dobu náběhu.
+    /// </summary>
+    Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
 }

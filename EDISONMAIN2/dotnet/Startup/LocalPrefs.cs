@@ -15,7 +15,14 @@ public interface ILocalPrefs
     /// <summary>Poslední přihlašovací jméno — předvyplní se v login dialogu. Null = žádné.</summary>
     string? LastLoginName { get; set; }
 
+    /// <summary>Zapamatované heslo posledního uživatele — DPAPI blob (viz <see cref="PasswordProtector"/>).
+    /// Null = nezapamatováno. Předvyplní se jen když jméno uložené v blobu == <see cref="LastLoginName"/>.</summary>
+    string? RememberedPassword { get; set; }
+
     bool ShowWindowsAsDialogs { get; set; }
+
+    /// <summary>Tmavý režim UI (per-stanice). Default false = světlý.</summary>
+    bool DarkMode { get; set; }
 
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
     Dictionary<string, string>? MiniAppLayouts { get; set; }
@@ -39,10 +46,12 @@ public class LocalPrefs : ILocalPrefs
 {
     public string? LastIdfa { get; set; }
     public string? LastLoginName { get; set; }
+    public string? RememberedPassword { get; set; }
 
     // Uživatel → Možnosti — ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
     public bool ShowWindowsAsDialogs { get; set; }
     public bool TryWindowsAutoLogin { get; set; }
+    public bool DarkMode { get; set; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
 

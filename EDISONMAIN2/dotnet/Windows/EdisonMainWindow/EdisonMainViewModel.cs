@@ -57,19 +57,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand LoginAsAnotherUserCommand { get; }
         public ICommand ShowUserEditCommand { get; }
         public ICommand ChangePasswordCommand { get; }
-        public ICommand ShowBgTasksCommand { get; }
-        public ICommand ResetFormsCommand { get; }
         // Nástroje menu
+        public ICommand ShowBgTasksCommand { get; }
         public ICommand RefreshLicenseCommand { get; }
         public ICommand ShowUsersLocksCommand { get; }
         public ICommand ShowUsersActivityCommand { get; }
+        // Nastavení menu (+ toggle ShowWindowsAsDialogs níže jako bool property)
+        public ICommand SelectFontCommand { get; }
+        public ICommand ResetFontCommand { get; }
         public ICommand ShowLanguageSettingsCommand { get; }
-        public ICommand SendSystemLogCommand { get; }
+        public ICommand ResetFormsCommand { get; }
         // Nápověda menu
         public ICommand ShowInfoCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
-        // Styl menu — SelectFont je akce, FontApplied je toggle (níže jako bool property).
-        public ICommand SelectFontCommand { get; }
+        public ICommand SendSystemLogCommand { get; }
         // Spuštěné moduly menu
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
@@ -145,7 +146,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _getActiveModules = getActiveModules;
             _miniAppCatalog = miniAppCatalog;
 
-            OpenModuleCommand        = Command<IModule>(OpenModule);
+            OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
             ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
             OpenInputFormTestCommand = Command(() => WindowNavigator.Show(new EDInputFormTestWindow()));
             OpenEDListTestCommand    = Command(() => WindowNavigator.Show(new EDListTestWindow()));
@@ -165,25 +166,36 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
-            ShowUserEditCommand           = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
-            ChangePasswordCommand         = Command(() => WindowNavigator.ShowDialog(new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(MLRest!, UserName)));
-            ShowBgTasksCommand            = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
-            ResetFormsCommand             = Command(ResetForms);
+            ShowUserEditCommand           = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
+            ChangePasswordCommand         = Command(() =>
+            {
+                bool? changed = WindowNavigator.ShowDialog(
+                    new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(MLRest!, UserName));
+                // Změna hesla za běhu zneplatní zapamatované (uložené při loginu se starým heslem).
+                if (changed == true && _prefs.RememberedPassword != null)
+                {
+                    _prefs.RememberedPassword = null;
+                    _prefs.Save();
+                }
+            });
 
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
+            ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             RefreshLicenseCommand         = Command(RefreshLicense);
             // Admin-only — legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
-            ShowUsersLocksCommand         = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
-            ShowUsersActivityCommand      = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
-            ShowLanguageSettingsCommand   = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
-            SendSystemLogCommand          = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
+            ShowUsersLocksCommand         = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
+            ShowUsersActivityCommand      = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
+
+            // Nastavení menu
+            SelectFontCommand             = Command(SelectFont);
+            ResetFontCommand              = Command(ResetFont);
+            ShowLanguageSettingsCommand   = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
+            ResetFormsCommand             = Command(ResetForms);
 
             // Nápověda menu
             ShowInfoCommand               = Command(ShowAppInfo);
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
-
-            // Styl menu
-            SelectFontCommand             = Command(SelectFont);
+            SendSystemLogCommand          = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
             // Spuštěné moduly menu — dynamický seznam, refresh při SubmenuOpened.
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);
@@ -575,13 +587,27 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public IEnumerable<ListItem> CompanySuggestions =>
             VisibleIdfas.Select(c => new ListItem(c.Id, c.Name));
 
-        private void OpenModule(IModule module)
+        private async Task OpenModule(IModule module)
         {
-            if (module is ExecutableModule { ExecutablePath: { Length: > 0 } path } em)
-            {
-                WindowNavigator.ShowLegacy(path, em.FormName, inputParam: em.InputParam);
-                RecordUsage(em);
-            }
+            if (module is not ExecutableModule { ExecutablePath: { Length: > 0 } path } em) return;
+
+            RecordUsage(em);
+            // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces — čekáme na jeho okno).
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
+        }
+
+        // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
+        private async Task LaunchModeless(string exe, string formFqn)
+        {
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyAsync(exe, formFqn);
+        }
+
+        private async Task LaunchDialog(string exe, string formFqn)
+        {
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
         // Přepnutí oblíbeného. EXE = toggle jednoho ElementId; FAMILY = hromadně všechny moduly v ní
@@ -817,25 +843,27 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-
-        // Styl → Použít — aplikuje uložený font (FontFamily + FontSize) na celou aplikaci.
-        // Storage je shared font.json (EDControls.UserFonts.UserFontPreference), takže ostatní
-        // m-line tooly (TemplateDesigner) přes FileSystemWatcher okamžitě reagují na změnu.
-        public bool FontApplied
+        // Tmavý režim — přepne živě přes ThemeService (swap barevných tokenů) a persistuje.
+        public bool IsDarkMode
         {
-            get => UserFontPreference.Current.FontApplied;
+            get => _prefs.DarkMode;
             set
             {
-                if (UserFontPreference.Current.FontApplied == value) return;
-                UserFontPreference.Current.FontApplied = value;
-                UserFontPreference.Current.Save();
+                if (_prefs.DarkMode == value) return;
+                _prefs.DarkMode = value;
+                _prefs.Save();
+                EDControls.EDTheme.ThemeService.Apply(value
+                    ? EDControls.EDTheme.AppTheme.Dark : EDControls.EDTheme.AppTheme.Light);
                 OnPropertyChanged();
-                FontService.Apply(UserFontPreference.Current);
             }
         }
 
-        // Styl → Zvolený font — WinForms FontDialog (jediný standardní picker dostupný v .NET).
-        private void SelectFont()
+
+        // Styl → Vybrat font — WinForms FontDialog (jediný standardní picker dostupný v .NET).
+        // Výběr font rovnou aplikuje na celou aplikaci. Storage je shared font.json
+        // (EDControls.UserFonts.UserFontPreference), takže ostatní m-line tooly
+        // (TemplateDesigner) přes FileSystemWatcher okamžitě reagují na změnu.
+        private static void SelectFont()
         {
             using var dialog = new System.Windows.Forms.FontDialog();
             if (!string.IsNullOrEmpty(UserFontPreference.Current.FontFamily))
@@ -851,8 +879,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
             UserFontPreference.Current.FontFamily = dialog.Font.FontFamily.Name;
             UserFontPreference.Current.FontSize = dialog.Font.Size;
+            UserFontPreference.Current.FontApplied = true;
             UserFontPreference.Current.Save();
-            if (FontApplied) FontService.Apply(UserFontPreference.Current);
+            FontService.Apply(UserFontPreference.Current);
+        }
+
+        // Styl → Výchozí font — vrátí default tokeny z EDTheme.xaml. FontFamily/FontSize
+        // v prefs zůstávají (pre-fill dialogu při příštím výběru), vypíná se jen FontApplied.
+        private static void ResetFont()
+        {
+            if (!UserFontPreference.Current.FontApplied) return;
+            UserFontPreference.Current.FontApplied = false;
+            UserFontPreference.Current.Save();
+            FontService.Apply(UserFontPreference.Current);
         }
 
         private void OpenWebUrl(string url)

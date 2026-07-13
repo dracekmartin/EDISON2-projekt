@@ -41,13 +41,40 @@ public class WindowNavigator : IWindowNavigator
     public bool? ShowDialog(Window window)
     {
         WireUp(window);
-        return window.ShowDialog();
+        // Vstup blokuje Win32 modalita sama; dim přidává jen vizuální závoj na owner.
+        using (WindowDimmer.Dim(window.Owner))
+            return window.ShowDialog();
     }
 
     public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc != null) _legacyProcesses.Add(new(prc, exeName, formFqn));
+    }
+
+    public async Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
+    {
+        // Launch synchronně (případný fail Process.Start faultne task → caller ho chytne v popup).
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
+        if (prc == null) return;
+        _legacyProcesses.Add(new(prc, exeName, formFqn));
+        await WaitForModuleWindowAsync(prc);
+    }
+
+    /// <summary>
+    /// Čeká (poll á 100 ms) až child proces vytvoří hlavní okno, nebo do timeoutu / ukončení
+    /// procesu. Await Task.Delay drží UI thread volný, takže overlay se stihne vykreslit.
+    /// Timeout kryje moduly, které skončí bez okna (chyba, background task).
+    /// </summary>
+    private static async Task WaitForModuleWindowAsync(Process prc, int timeoutMs = 20000)
+    {
+        for (int elapsed = 0; elapsed < timeoutMs; elapsed += 100)
+        {
+            if (prc.HasExited) return;
+            prc.Refresh();
+            if (prc.MainWindowHandle != IntPtr.Zero) return;
+            await Task.Delay(100);
+        }
     }
 
     public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
@@ -61,12 +88,29 @@ public class WindowNavigator : IWindowNavigator
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
         _legacyProcesses.Add(new(prc, exeName, formFqn));
+        WireDialogBehavior(prc);
+    }
 
+    public async Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
+    {
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
+        if (prc == null) return;
+        _legacyProcesses.Add(new(prc, exeName, formFqn));
+        WireDialogBehavior(prc);
+        // Overlay (caller drží ActionInProgress) se schová jakmile okno modulu naběhne;
+        // shell zůstane ztmavený přes WireDialogBehavior až do zavření child okna.
+        await WaitForModuleWindowAsync(prc);
+    }
+
+    /// <summary>Modal-like chování pro child proces: ztmaví owner shell (WindowDimmer) po dobu
+    /// běhu childu a bounce jeho okna do popředí při kliku na ztmavený shell.</summary>
+    private void WireDialogBehavior(Process prc)
+    {
         var owner = Application.Current.MainWindow;
-        if (owner != null) owner.IsEnabled = false;
+        var undim = WindowDimmer.Dim(owner);
 
-        // Klik na zašedlý shell → cross-process "bounce" child okna do popředí (modal-like UX).
-        // Activated fire-uje při WPF window activation i když je IsEnabled=false.
+        // Klik na ztmavený shell → cross-process "bounce" child okna do popředí (modal-like UX).
+        // Dim adorner klik spolkne, ale window activation proběhne → Activated fire-uje.
         EventHandler? bounce = null;
         if (owner != null)
         {
@@ -89,7 +133,8 @@ public class WindowNavigator : IWindowNavigator
             app.Dispatcher.BeginInvoke(() =>
             {
                 if (owner != null && bounce != null) owner.Activated -= bounce;
-                if (owner is { IsLoaded: true }) { owner.IsEnabled = true; owner.Activate(); }
+                undim.Dispose();
+                if (owner is { IsLoaded: true }) owner.Activate();
             });
         };
     }

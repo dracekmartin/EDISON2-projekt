@@ -1,7 +1,9 @@
 ﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
+using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
 
@@ -28,6 +30,47 @@ namespace EDISONMAIN2
                 vm.AttachMiniAppHost(new AvalonDockHost(DockManager));
         }
 
+        // Single-click ve stromu: složka toggle expand, modul spustí. Event bubluje přes
+        // vnořené TreeViewItemy — Handled=true zastaví rodiče, aby klik na modul
+        // zároveň nesbalil jeho složku. Chevron neprojde (ToggleButton si MouseUp zpracuje sám).
+        private void TreeItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            var item = (TreeViewItem)sender;
+            e.Handled = true;
+            switch (item.DataContext)
+            {
+                case ModuleFamily:
+                    item.IsExpanded = !item.IsExpanded;
+                    break;
+                case ExecutableModule module:
+                    OpenModule(module);
+                    break;
+            }
+        }
+
+        // Pravý klik defaultně selekci nemění → kontextové menu by se vizuálně nevztahovalo
+        // ke kliknuté položce. Bublání: vnitřní item se označí první, Handled zastaví rodiče.
+        // ContextMenu se otevírá až na MouseUp, takže Handled ho neblokuje.
+        private void TreeItem_MouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            ((TreeViewItem)sender).IsSelected = true;
+            e.Handled = true;
+        }
+
+        private void UsedModuleItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
+        {
+            e.Handled = true;
+            if (((ListBoxItem)sender).DataContext is ExecutableModule module)
+                OpenModule(module);
+        }
+
+        // CanExecute guard — AsyncRelayCommand během běhu vrací false, brání dvojímu spuštění.
+        private void OpenModule(ExecutableModule module)
+        {
+            if (DataContext is EdisonMainViewModel vm && vm.OpenModuleCommand.CanExecute(module))
+                vm.OpenModuleCommand.Execute(module);
+        }
+
         // Ctrl+W+W chord detection. PreviewKeyDown (ne KeyDown) — chytá klávesy předtím,
         // než je child controls (menu, TextBox) zpracují. Bez Preview by Ctrl+W v Menu
         // zavřel popup místo aby spustil chord.
@@ -46,6 +89,13 @@ namespace EDISONMAIN2
                 // Ne-Ctrl+W klávesa → reset chord (uživatel pokračuje jinde).
                 // Pouze pokud chord právě čeká, jinak žádná akce.
                 vm.ResetChord();
+
+                if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    TreeSearchBox.Focus();
+                    TreeSearchBox.SelectAll();
+                    e.Handled = true;
+                }
             }
         }
     }

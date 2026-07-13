@@ -171,6 +171,10 @@ public class EDViewModel : INotifyPropertyChanged
     protected AsyncRelayCommand CommandAsync(Func<Task> execute, Func<bool>? canExecute = null) =>
         new(execute, canExecute, PopupDisplayer);
 
+    /// <inheritdoc cref="CommandAsync(Func{Task}, Func{bool}?)"/>
+    protected AsyncRelayCommand<T> CommandAsync<T>(Func<T, Task> execute, Func<T, bool>? canExecute = null) =>
+        new(execute, canExecute, PopupDisplayer);
+
     private void RegisterKeyBindings(Window window)
     {
         window.InputBindings.Add(new KeyBinding(OkCommand, Key.Return, ModifierKeys.Control));

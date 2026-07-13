@@ -21,8 +21,10 @@
         row7: .  D  .  D  .  D  .  D  .  .
     -->
 
-    <Grid Background="#80000000">
-        <Border Background="White"
+    <!-- Transparent = hit-testable (blokuje myš). Závoj kreslí WindowDimmer (code-behind) —
+         refcount zaručí jeden tint i při překryvu s dialog dimem (náběh legacy dialogu). -->
+    <Grid Background="Transparent">
+        <Border Background="{DynamicResource EDTheme.Bg.Surface}"
                 CornerRadius="4"
                 Padding="0,18"
                 HorizontalAlignment="Center"
