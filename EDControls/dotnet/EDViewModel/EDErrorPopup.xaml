@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
 
-    <Border Padding="20,16,20,14" Background="White">
+    <Border Padding="20,16,20,14" Background="{DynamicResource EDTheme.Bg.Surface}">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="*"/>

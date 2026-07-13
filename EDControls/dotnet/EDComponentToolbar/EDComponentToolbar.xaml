@@ -46,7 +46,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Border Background="{DynamicResource EDTheme.Accent.BlueDark}" Padding="6,4">
+    <Border Background="{DynamicResource EDTheme.Accent.Header}" Padding="6,4">
         <DockPanel LastChildFill="False">
 
             <!-- Right side: standard action ikony (opt-in přes ShowX props) -->

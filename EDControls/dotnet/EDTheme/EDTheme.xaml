@@ -121,6 +121,11 @@
     <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FFB4D2F5</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
 
+    <!-- Header bar pozadí (EDComponentToolbar) — brandová tmavě modrá s bílým textem.
+         Záměrně se v dark režimu NEpřepisuje (stabilní barevný pruh v obou režimech). -->
+    <Color x:Key="EDTheme.Accent.Header.Color">#FF0D47A1</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.Header" Color="{StaticResource EDTheme.Accent.Header.Color}"/>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Accent: Green (agenda status, success)
          ═══════════════════════════════════════════════════════════════════ -->

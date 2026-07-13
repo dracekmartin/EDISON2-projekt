@@ -14,7 +14,7 @@
         <local:HexToBrushConverter x:Key="HexToBrush"/>
         <local:Base64ToImageSourceConverter x:Key="Base64ToImage"/>
     </UserControl.Resources>
-    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="White">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Background="{DynamicResource EDTheme.Bg.Surface}">
         <!-- IsSharedSizeScope na outer Grid → column header bar a všechny field rows
              sdílí stejný ItemLabel column width.
              3 rows: Toolbar (volitelný) | Column header bar | Items -->
@@ -302,8 +302,8 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <!-- Náhled (prázdný rámeček když není obrázek) -->
-                        <Border Grid.Column="0" Width="44" Height="44" BorderBrush="Gray"
-                                BorderThickness="1" CornerRadius="2" Background="#FFF8F8F8">
+                        <Border Grid.Column="0" Width="44" Height="44" BorderBrush="{DynamicResource EDTheme.Border.Medium}"
+                                BorderThickness="1" CornerRadius="2" Background="{DynamicResource EDTheme.Bg.PanelAlt}">
                             <Image Source="{Binding Value, Converter={StaticResource Base64ToImage}}"
                                    Stretch="Uniform" Margin="2"/>
                         </Border>
