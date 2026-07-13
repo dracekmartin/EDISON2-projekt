@@ -72,10 +72,10 @@ public class AppBootstrapperTests
             new(LoginRest: null!, Companies: new List<CompanyStruct>(), StartCompany: default,
                 Server: "test-host", Port: 9999);
 
-        protected override bool TryLogin(MLRest loginRest, string? lastLoginName, out LoginResult login)
+        protected override bool TryLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
         {
             TryLoginCalled = true;
-            LoginDialogPrefill = lastLoginName;
+            LoginDialogPrefill = prefs.LastLoginName;
             login = new LoginResult(42, "test", "Test User", true, "",
                 ChangePasswordNeeded: LoginRequiresPasswordChange, MayUpdate: true, Email: "");
             return LoginSucceeds;

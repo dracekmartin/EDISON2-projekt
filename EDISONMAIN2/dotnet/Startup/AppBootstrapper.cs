@@ -87,7 +87,7 @@ public class AppBootstrapper
         var prep = PrepareLogin(prefs);
 
         // Auto-login (Windows SSO) má přednost; když není zapnutý / neprojde, fallback na dialog.
-        if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, prefs.LastLoginName, out login))
+        if (!TryAutoLogin(prep.LoginRest, prefs, out var login) && !TryLogin(prep.LoginRest, prefs, out login))
         {
             Shutdown();
             return null;
@@ -276,7 +276,7 @@ public class AppBootstrapper
     /// dialogu přepne <c>ShutdownMode</c> na <c>OnExplicitShutdown</c> aby zavření dialogu
     /// nevypnulo aplikaci (žádné jiné okno ještě není otevřené).
     /// </summary>
-    protected virtual bool TryLogin(MLRest loginRest, string? lastLoginName, out LoginResult login)
+    protected virtual bool TryLogin(MLRest loginRest, ILocalPrefs prefs, out LoginResult login)
     {
 #if DEBUG
         login = new LoginResult(201, "martin.hubata", "martin.hubata", true, "", false, true, "");
@@ -285,13 +285,22 @@ public class AppBootstrapper
         _application.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         try
         {
-            var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, lastLoginName);
+            // Zapamatované heslo předvyplní jen když patří k naposledy přihlášenému jménu (DPAPI).
+            string initialPassword = PasswordProtector.Unprotect(prefs.RememberedPassword, prefs.LastLoginName ?? "") ?? "";
+
+            var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, prefs.LastLoginName, initialPassword);
             if (loginWindow.ShowDialog() != true)
             {
                 login = null!;
                 return false;
             }
             login = loginWindow.Result!;
+
+            // Ulož / zapomeň. Při vynucené změně hesla (feature #17) heslo neukládej — za chvíli
+            // se změní a zapamatované by bylo neplatné. Persist proběhne v SavePostLoginState.
+            prefs.RememberedPassword = loginWindow.RememberPassword && !login.ChangePasswordNeeded
+                ? PasswordProtector.Protect(login.UserName, loginWindow.EnteredPassword)
+                : null;
             return true;
         }
         finally
@@ -415,7 +424,7 @@ public class AppBootstrapper
     /// <summary>Login dialog pro S2 user switch — owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
     protected virtual LoginResult? PromptLoginForReauth(MLRest loginRest)
     {
-        var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest)
+        var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, showRemember: false)
         {
             Owner = _application.MainWindow,
         };

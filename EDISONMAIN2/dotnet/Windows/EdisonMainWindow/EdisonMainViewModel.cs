@@ -166,7 +166,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Uživatel menu
             LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
             ShowUserEditCommand           = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
-            ChangePasswordCommand         = Command(() => WindowNavigator.ShowDialog(new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(MLRest!, UserName)));
+            ChangePasswordCommand         = Command(() =>
+            {
+                bool? changed = WindowNavigator.ShowDialog(
+                    new EDISONMAIN2.Windows.LoginWindow.ChangePasswordWindow(MLRest!, UserName));
+                // Změna hesla za běhu zneplatní zapamatované (uložené při loginu se starým heslem).
+                if (changed == true && _prefs.RememberedPassword != null)
+                {
+                    _prefs.RememberedPassword = null;
+                    _prefs.Save();
+                }
+            });
             ShowBgTasksCommand            = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             ResetFormsCommand             = Command(ResetForms);
 

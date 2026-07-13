@@ -13,6 +13,8 @@
         <TextBlock Text="Heslo:" Margin="0,0,0,4"/>
         <PasswordBox x:Name="PasswordBox" Margin="0,0,0,12"/>
 
+        <CheckBox x:Name="RememberBox" Content="Zapamatovat heslo" Margin="0,0,0,12"/>
+
         <TextBlock x:Name="ErrorText" Foreground="Red" TextWrapping="Wrap"
                    Visibility="Collapsed" Margin="0,0,0,12"/>
 
