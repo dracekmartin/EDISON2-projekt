@@ -285,46 +285,7 @@ VÝSTUP: Vrať POUZE validní JSON objekt (bez markdown) se strukturou:
             sb.AppendLine();
         }
 
-        // DataSchema
-        if (schema is not null)
-        {
-            sb.AppendLine($"DATASCHEMA (agenda: {schema.AgendaCode} — {schema.AgendaName}):");
-
-            if (schema.Fields.Count > 0)
-            {
-                sb.AppendLine("Skalární pole:");
-                foreach (var f in schema.Fields)
-                {
-                    sb.Append($"  - {f.FieldName}");
-                    if (f.DataType != FieldDataType.Text) sb.Append($" ({f.DataType.ToString().ToLower()})");
-                    if (!string.IsNullOrEmpty(f.Label)) sb.Append($" — {f.Label}");
-                    if (!string.IsNullOrEmpty(f.Example)) sb.Append($", např. \"{f.Example}\"");
-                    sb.AppendLine();
-                }
-            }
-
-            if (schema.FieldCollections?.Count > 0)
-            {
-                sb.AppendLine("Kolekce (tabulková data):");
-                foreach (var c in schema.FieldCollections)
-                {
-                    sb.AppendLine($"  - {c.CollectionKey} — {c.Name}:");
-                    foreach (var f in c.Fields)
-                    {
-                        sb.Append($"    - {f.FieldName}");
-                        if (!string.IsNullOrEmpty(f.Label)) sb.Append($" — {f.Label}");
-                        sb.AppendLine();
-                    }
-                }
-            }
-
-            sb.AppendLine();
-            sb.AppendLine("DŮLEŽITÉ: Použij POUZE pole z tohoto seznamu. Nevymýšlej vlastní.");
-        }
-        else
-        {
-            sb.AppendLine("DATASCHEMA: není k dispozici — nezařazené texty ponech bez mapování (dbField=null).");
-        }
+        AiPromptHelpers.AppendDataSchemaSection(sb, schema);
 
         return sb.ToString();
     }

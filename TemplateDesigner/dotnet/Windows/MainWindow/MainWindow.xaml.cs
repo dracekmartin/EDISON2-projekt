@@ -109,6 +109,12 @@ public partial class MainWindow : Window
         DataContext = _vm;
         InitializeComponent();
 
+        // AI generátor šablon zatím jen pro vývojáře (lokální dev klíč) — před produkcí skrytý;
+        // Import PDF zůstává pro všechny.
+        MenuAiAssistant.Visibility =
+            string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey)
+                ? Visibility.Collapsed : Visibility.Visible;
+
         // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
         ApplyUiPreferences();
 
@@ -1020,8 +1026,8 @@ public partial class MainWindow : Window
     private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var apiKey = await TryGetAiApiKeyAsync();
-        var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider);
+        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+        var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider, aiReason);
         var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
 
         if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
@@ -1032,21 +1038,21 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Vyzvedne AI klíč (lokální / mlweb přes EdisonAiService). Null = AI nedostupné —
-    /// dialogy s AI jako volitelným krokem (generátor, PDF import) fungují dál bez něj;
-    /// hlášku o důvodu zobrazí až samotný AI krok (viz AiGuide pro fail-closed variantu).
+    /// Vyzvedne AI klíč (lokální / mlweb přes EdisonAiService). Klíč null = AI nedostupné,
+    /// Reason nese uživatelský důvod (limit, chybí konfigurace…) — dialogy ho zobrazí,
+    /// ale samy fungují dál (generátor, PDF import mají AI jako podmíněný krok).
     /// </summary>
-    private static async Task<string?> TryGetAiApiKeyAsync()
+    private static async Task<(string? Key, string? Reason)> TryGetAiApiKeyAsync()
     {
-        try { return await Services.EdisonAiService.GetApiKeyAsync(); }
-        catch (Services.EdisonAiException) { return null; }
+        try { return (await Services.EdisonAiService.GetApiKeyAsync(), null); }
+        catch (Services.EdisonAiException ex) { return (null, ex.Message); }
     }
 
     private async void MenuImportPdf_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var apiKey = await TryGetAiApiKeyAsync();
-        var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey);
+        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+        var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason);
         var dialog = new PdfImportDialog(vm) { Owner = this };
 
         if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)

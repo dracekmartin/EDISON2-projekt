@@ -505,13 +505,19 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         return null;
     }
 
+    /// <summary>Modely odmítající nedefaultní temperature (400): Sonnet 5, Fable/Mythos 5.
+    /// Guard pro konfigurovatelné modely (VisionModel) — starší modely temperature přijímají.</summary>
+    public static bool ModelSupportsTemperature(string model) =>
+        !(model.Contains("sonnet-5") || model.Contains("fable") || model.Contains("mythos"));
+
     /// <summary>
     /// Volání Anthropic Messages API s obrázkem (vision).
     /// Obrázek se posílá jako base64 PNG v content bloku.
     /// </summary>
+    /// <param name="temperature">Null = neposílat (nutné pro Sonnet 5+, viz ModelSupportsTemperature).</param>
     public static async Task<string?> CallApiWithImageAsync(
         string apiKey, string systemPrompt, string base64Png, string textPrompt,
-        string model = "claude-sonnet-4-6", int maxTokens = 8192, double temperature = 0.2)
+        string model = "claude-sonnet-4-6", int maxTokens = 8192, double? temperature = 0.2)
     {
         // Sestavit content array s image + text bloky
         var contentArray = new JsonArray
@@ -537,7 +543,6 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         {
             ["model"] = model,
             ["max_tokens"] = maxTokens,
-            ["temperature"] = temperature,
             ["system"] = systemPrompt,
             ["messages"] = new JsonArray
             {
@@ -548,6 +553,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
                 }
             }
         };
+        if (temperature is { } t) requestBody["temperature"] = t;
 
         var json = requestBody.ToJsonString();
 

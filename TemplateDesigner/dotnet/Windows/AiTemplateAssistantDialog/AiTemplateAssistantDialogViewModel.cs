@@ -31,11 +31,19 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
 
     public AsyncRelayCommand GenerateCommand { get; }
 
-    public AiTemplateAssistantDialogViewModel(string? defaultApiKey, IDataSchemaProvider schemaProvider)
+    /// <summary>Důvod nedostupnosti AI (z EdisonAiService) — null = AI dostupné.</summary>
+    private readonly string? _aiUnavailableReason;
+
+    /// <summary>Ruční zadání klíče je jen vývojářská cesta — zákazník klíč nemá (mlweb).</summary>
+    public bool IsDevMode => !string.IsNullOrEmpty(Config.AppSettings.Current?.AiAssistant.AnthropicApiKey);
+
+    public AiTemplateAssistantDialogViewModel(
+        string? defaultApiKey, IDataSchemaProvider schemaProvider, string? aiUnavailableReason = null)
     {
-        _apiClient      = new AnthropicApiClient();
-        _schemaProvider = schemaProvider;
-        ApiKey          = defaultApiKey ?? "";
+        _apiClient           = new AnthropicApiClient();
+        _schemaProvider      = schemaProvider;
+        ApiKey               = defaultApiKey ?? "";
+        _aiUnavailableReason = aiUnavailableReason;
 
         GenerateCommand = CommandAsync(GenerateAsync);
     }
@@ -49,7 +57,8 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
         }
         if (string.IsNullOrWhiteSpace(ApiKey))
         {
-            PopupDisplayer.Info("Zadejte Anthropic API klíč nebo jej nastavte v templatedesigner.appsettings.json.");
+            PopupDisplayer.Info(_aiUnavailableReason
+                ?? "AI není dostupné — kontaktujte podporu M-line.");
             return;
         }
 

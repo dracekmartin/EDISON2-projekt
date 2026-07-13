@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-07-13 — PDF import: Sonnet 5, robustnost proti halucinacím, standardní dialog
+
+Průchod PDF importu před produkcí (živě testováno na KV_DP A5 vývěsce — vizuálně
+i sémanticky nadprůměrný výsledek). Build 0 chyb, .NET 341/341.
+
+**Model + prompty:**
+- Vision import na `claude-sonnet-5` (adaptivní myšlení — percepční úloha; `max_tokens`
+  16000, myšlení se počítá do limitu). `ModelSupportsTemperature` guard — Sonnet 5+
+  temperature nedostane (jinak 400), starší modely dál 0.2.
+- Sdílený `Services/AiPromptHelpers.AppendDataSchemaSection` — enricher i vision měly
+  zkopírovaný identický blok formátování DataSchema (drift risk).
+- Vision umí sloupec „Platform" (nástupiště, TR3) → `StopFields.Nastupiste`.
+
+**Robustnost proti stochastice modelu (každý symptom z živého testu měl v kódu díru):**
+- *Přetečení*: model vrátil rel. bottom 1.015 → element vyšší než stránka. Clamp AI
+  souřadnic do 0.0–1.0 + pojistka v pipeline (pevné rozměry se clampnou do tiskové
+  plochy; JŘ elementy obsah vejdou auto-scalem). NotesLegend nově s pevným boxem
+  z AI bboxu (dynamická výška přetékala sekci s reálnými daty).
+- *Falešný QR*: BarcodeElement vznikne jen s důkazem v PdfPig geometrii
+  (`LooksLikeQrRegion` — shluk ≥15 malých čtverečků) + prompt „qrCode nevymýšlej".
+- *Překryv obrázků*: dedup PdfPig obrázků (krok 5 vs 6 přidával týž obrázek 2×),
+  placeholder se nepokládá přes existující element, krok 7 počítá obrázky do pokrytí.
+- *Chybějící StopList*: retry — když v odpovědi chybí seznam zastávek/mřížka odjezdů,
+  jeden opakovaný pokus; pokud ani pak, viditelné varování „doplňte ručně z palety"
+  (dřív tichá díra ve výsledku).
+
+**Standardní dialog (odstraněny volby, které uživateli nepatří):**
+- Zůstává: PDF soubor + stránky. Vše ostatní odvozeno: **typ importu z otevřené agendy**
+  (zastávková → AI JŘ import, jiná → obecný layout), AI vždy zapnuté, agenda = aktuální,
+  sloučení grafiky pevně „pouze čáry". Bez dostupné AI je JŘ import zablokovaný
+  (červená hláška s důvodem z mlweb — limit / chybí konfigurace).
+- **JŘ import z vícestránkového PDF = právě jedna stránka** (výběr „Stránka: N z M");
+  extrahuje/rasterizuje se jen ta jedna (dřív mlčky první + extrakce všech).
+- Debug checkbox + debug soubory vedle PDF jen pro vývojáře (lokální dev klíč),
+  bez popupu po importu. Mrtvá větev „AI obohacení textem" (haiku enricher) odstraněna
+  z VM (vision ji nahradil; služba zůstává pro případný fallback).
+- Generátor šablon: pole pro ruční API klíč jen pro vývojáře; hlášky nedostupnosti AI
+  jednotně nesou důvod z mlweb (pomocník / generátor / import). Menu „AI Asistent
+  šablon" před produkcí skryté (vidí jen vývojář); Import PDF zůstává pro všechny.
+
 ## 2026-07-13 — EDISONAI/mlweb napojení: spravovaný API klíč + hlášení spotřeby
 
 Zákazníci nebudou mít vlastní Anthropic klíč — M-line jim ho spravuje přes mlweb

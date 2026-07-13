@@ -91,6 +91,25 @@ public class AiVisionImportPipeline
             AiDebugLog = visionService.DebugLog;
         }
 
+        // Klíčové JŘ elementy (StopList/DepartureGrid) model občas stochasticky vynechá —
+        // jeden opakovaný pokus to typicky spraví. Jinak se pokračuje s viditelným varováním.
+        if (visionResult is not null && scheduleType != ScheduleImportType.None
+            && MissingCoreElements(visionResult) is { Length: > 0 } missingFirst)
+        {
+            setStatus($"AI nevrátilo: {missingFirst} — zkouším znovu...");
+            try
+            {
+                var retryResult = await visionService.AnalyzeAsync(
+                    base64Png, firstPage, schema, scheduleType, _apiKey);
+                AiDebugLog += "\n\n══ RETRY (chyběly klíčové elementy) ══\n" + visionService.DebugLog;
+                if (retryResult is not null
+                    && (MissingCoreElements(retryResult).Length == 0
+                        || retryResult.Elements.Count > visionResult.Elements.Count))
+                    visionResult = retryResult;
+            }
+            catch { /* retry je best-effort — ponechat první výsledek */ }
+        }
+
         // 4. Sestavit šablonu
         setStatus("Vytvářím elementy...");
 
@@ -103,7 +122,10 @@ public class AiVisionImportPipeline
 
             int elCount = template.Sections.Sum(s => s.Elements.Count);
             int mappedFields = visionResult.TextMappings.Count(m => m.DbField is not null && m.Confidence >= 0.7f);
-            setStatus($"AI Vision: {visionResult.Elements.Count} JŘ elementů, {mappedFields} polí namapováno, celkem {elCount} elementů");
+            string missingWarn = MissingCoreElements(visionResult) is { Length: > 0 } m
+                ? $" · ⚠ AI nerozpoznalo: {m} — doplňte ručně z palety"
+                : "";
+            setStatus($"AI Vision: {visionResult.Elements.Count} JŘ elementů, {mappedFields} polí namapováno, celkem {elCount} elementů{missingWarn}");
         }
         else
         {
@@ -156,6 +178,18 @@ public class AiVisionImportPipeline
 
         float contentHeight = pageHeightMm - mTop - mBottom;
         section.DesignerHeight = Math.Max(contentHeight, 10f);
+
+        // Pojistka proti přetečení hned po importu: AI souřadnice můžou mírně přetéct stránku
+        // (rel. bottom > 1) — element s pevnými rozměry clampnout do tiskové plochy, jinak
+        // šablona rovnou svítí varováním. JŘ elementy obsah do menšího boxu vejdou auto-scalem.
+        float printableWidth = pageWidthMm - mLeft - mRight;
+        foreach (var el in section.Elements)
+        {
+            if (el.Height is float h && el.Y + h > contentHeight)
+                el.Height = Math.Max(contentHeight - el.Y, 3f);
+            if (el.X + el.Width > printableWidth)
+                el.Width = Math.Max(printableWidth - el.X, 3f);
+        }
 
         var templateParams = BuildTemplateParameters(visionResult);
 
@@ -239,6 +273,20 @@ public class AiVisionImportPipeline
                 System.Globalization.CultureInfo.InvariantCulture, out _) => "number",
             _ => "string"
         };
+    }
+
+    /// <summary>
+    /// Vrátí čárkami oddělený seznam klíčových JŘ elementů, které ve vision výsledku chybí
+    /// (prázdný string = vše na místě). Řídí retry a varování uživateli.
+    /// </summary>
+    private static string MissingCoreElements(AiVisionResult vision)
+    {
+        var missing = new List<string>();
+        if (!vision.Elements.Any(e => e.Type.Equals("StopList", StringComparison.OrdinalIgnoreCase)))
+            missing.Add("seznam zastávek");
+        if (!vision.Elements.Any(e => e.Type.Equals("DepartureGrid", StringComparison.OrdinalIgnoreCase)))
+            missing.Add("mřížku odjezdů");
+        return string.Join(" a ", missing);
     }
 
     /// <summary>Detekce okrajů z pozic elementů.</summary>

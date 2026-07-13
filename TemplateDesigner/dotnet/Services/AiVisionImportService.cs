@@ -18,7 +18,7 @@ public class AiVisionImportService
     {
         _visionModel = visionModel
             ?? Config.AppSettings.Current?.AiAssistant.VisionModel
-            ?? "claude-sonnet-4-6";
+            ?? "claude-sonnet-5";
     }
 
     /// <summary>Debug log z posledního volání.</summary>
@@ -65,9 +65,13 @@ public class AiVisionImportService
         string? responseText;
         try
         {
+            // Sonnet 5: adaptivní myšlení necháváme ZAPNUTÉ (jednorázová percepční úloha —
+            // rozmyšlení layoutu zlepší detekci) → max_tokens s rezervou (myšlení se do něj počítá).
+            // Temperature 0.2 = deterministická detekce; Sonnet 5+ nedefaultní hodnoty odmítá → null.
             responseText = await AnthropicApiClient.CallApiWithImageAsync(
                 apiKey, systemPrompt, base64Png, userPrompt,
-                model: _visionModel, maxTokens: 8192, temperature: 0.2);
+                model: _visionModel, maxTokens: 16000,
+                temperature: AnthropicApiClient.ModelSupportsTemperature(_visionModel) ? 0.2 : null);
         }
         catch (Exception ex)
         {
@@ -207,7 +211,7 @@ public class AiVisionImportService
         foreach (string rule in ctx.AdditionalRules)
             sb.AppendLine(rule);
         sb.AppendLine($"{ctx.AdditionalRules.Count + 2}. Texty mimo hlavní oblast: role (title/header/validity/company/route/direction/footnote/unknown), mapování na DB pole z DataSchema. Pokud si nejsi jistý → dbField: null.");
-        sb.AppendLine($"{ctx.AdditionalRules.Count + 3}. Obrázky: pro každé logo, QR kód nebo grafický prvek MIMO hlavní oblast vrať imageMappings s pozicí a rolí (\"logo\", \"qrCode\", \"decoration\"). Pokud odpovídá DB poli → nastav dbField.");
+        sb.AppendLine($"{ctx.AdditionalRules.Count + 3}. Obrázky: pro každé logo, QR kód nebo grafický prvek MIMO hlavní oblast vrať imageMappings s pozicí a rolí (\"logo\", \"qrCode\", \"decoration\"). Pokud odpovídá DB poli → nastav dbField. Roli \"qrCode\" hlas JEN pokud QR kód skutečně vidíš na obrázku nebo je v seznamu detekovaných grafických oblastí — NIKDY ho nevymýšlej. Každý fyzický objekt hlas právě jednou.");
         sb.AppendLine($"{ctx.AdditionalRules.Count + 4}. Použij POUZE pole z dodaného DataSchema. Nevymýšlej vlastní.");
         return sb.ToString();
     }
@@ -259,7 +263,8 @@ public class AiVisionImportService
         AdditionalRules:
         [
             "2. DepartureGrid: identifikuj skupiny dnů. Rozepiš zkratky (\"Prac.\" → \"Pracovní den\").",
-            "3. StopList: identifikuj sloupce (\"TravelTime\", \"TariffNumber\", \"StopName\", \"Zone\")."
+            "3. StopList: identifikuj sloupce (\"TravelTime\", \"TariffNumber\", \"StopName\", \"Zone\", \"Platform\" = nástupiště/stanoviště).",
+            "4. POVINNÉ: vrať VŠECHNY hlavní oblasti, které na obrázku jsou — StopList (tabulka zastávek) ani DepartureGrid (minutová mřížka) NESMÍ v odpovědi chybět, pokud jsou vidět."
         ],
         ElementProperties:
         [
@@ -356,46 +361,7 @@ public class AiVisionImportService
             sb.AppendLine();
         }
 
-        // DataSchema
-        if (schema is not null)
-        {
-            sb.AppendLine($"DATASCHEMA (agenda: {schema.AgendaCode} — {schema.AgendaName}):");
-
-            if (schema.Fields.Count > 0)
-            {
-                sb.AppendLine("Skalární pole:");
-                foreach (var f in schema.Fields)
-                {
-                    sb.Append($"  - {f.FieldName}");
-                    if (f.DataType != FieldDataType.Text) sb.Append($" ({f.DataType.ToString().ToLower()})");
-                    if (!string.IsNullOrEmpty(f.Label)) sb.Append($" — {f.Label}");
-                    if (!string.IsNullOrEmpty(f.Example)) sb.Append($", např. \"{f.Example}\"");
-                    sb.AppendLine();
-                }
-            }
-
-            if (schema.FieldCollections?.Count > 0)
-            {
-                sb.AppendLine("Kolekce (tabulková data):");
-                foreach (var c in schema.FieldCollections)
-                {
-                    sb.AppendLine($"  - {c.CollectionKey} — {c.Name}:");
-                    foreach (var f in c.Fields)
-                    {
-                        sb.Append($"    - {f.FieldName}");
-                        if (!string.IsNullOrEmpty(f.Label)) sb.Append($" — {f.Label}");
-                        sb.AppendLine();
-                    }
-                }
-            }
-
-            sb.AppendLine();
-            sb.AppendLine("DŮLEŽITÉ: Použij POUZE pole z tohoto seznamu. Nevymýšlej vlastní.");
-        }
-        else
-        {
-            sb.AppendLine("DATASCHEMA: není k dispozici — texty ponech bez mapování (dbField=null).");
-        }
+        AiPromptHelpers.AppendDataSchemaSection(sb, schema);
 
         sb.AppendLine();
         sb.AppendLine("Analyzuj přiložený screenshot PDF a vrať JSON se strukturou.");
@@ -568,13 +534,15 @@ public class AiVisionImportService
 
         foreach (var item in arr.EnumerateArray())
         {
+            // Souřadnice mají být relativní 0.0–1.0, ale model občas mírně přeteče (bottom 1.015)
+            // → bez clampu vznikne element vyšší než stránka a import rovnou svítí přetečením.
             var el = new AiVisionElement
             {
                 Type = item.GetStringOrDefault("type"),
-                Left = GetFloat(item, "left"),
-                Top = GetFloat(item, "top"),
-                Right = GetFloat(item, "right"),
-                Bottom = GetFloat(item, "bottom"),
+                Left = ClampRel(GetFloat(item, "left")),
+                Top = ClampRel(GetFloat(item, "top")),
+                Right = ClampRel(GetFloat(item, "right")),
+                Bottom = ClampRel(GetFloat(item, "bottom")),
                 HasHeader = item.TryGetProperty("hasHeader", out var hh) && hh.GetBoolean(),
             };
 
@@ -667,6 +635,9 @@ public class AiVisionImportService
 
     private static float GetFloat(JsonElement el, string prop) =>
         el.TryGetProperty(prop, out var v) && v.TryGetSingle(out float f) ? f : 0f;
+
+    /// <summary>Clamp relativní souřadnice do 0.0–1.0 (model občas vrátí mírný přesah).</summary>
+    private static float ClampRel(float v) => Math.Clamp(v, 0f, 1f);
 }
 
 // ── Výsledkové třídy (relativní souřadnice 0.0–1.0) ──────────────────
