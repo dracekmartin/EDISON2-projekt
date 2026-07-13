@@ -469,8 +469,18 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
             throw new Exception($"Anthropic API vrátilo chybu {(int)response.StatusCode} ({response.StatusCode}):\n{responseJson}");
 
         using var responseDoc = JsonDocument.Parse(responseJson);
+        ReportUsageFrom(responseDoc);
         var text = ExtractText(responseDoc);
         return text is null ? null : RemoveMarkdownCodeBlocks(text);
+    }
+
+    /// <summary>Nahlásí spotřebu tokenů z API odpovědi do mlweb (statistiky + limity, best-effort).</summary>
+    private static void ReportUsageFrom(JsonDocument responseDoc)
+    {
+        if (!responseDoc.RootElement.TryGetProperty("usage", out var usage)) return;
+        int inTok  = usage.TryGetProperty("input_tokens", out var i) ? i.GetInt32() : 0;
+        int outTok = usage.TryGetProperty("output_tokens", out var o) ? o.GetInt32() : 0;
+        EdisonAiService.ReportUsage(inTok, outTok);
     }
 
     /// <summary>
@@ -553,6 +563,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
             throw new Exception($"Anthropic API vrátilo chybu {(int)response.StatusCode} ({response.StatusCode}):\n{responseJson}");
 
         using var responseDoc = JsonDocument.Parse(responseJson);
+        ReportUsageFrom(responseDoc);
         var text = ExtractText(responseDoc);
         return text is null ? null : RemoveMarkdownCodeBlocks(text);
     }

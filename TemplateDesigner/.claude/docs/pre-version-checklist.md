@@ -114,6 +114,9 @@
 - [ ] Nové názvosloví: **Agenda** (Zastávkový JŘ / Linkový JŘ / Faktury) × **Varianta** (AD / MHD)
   — viz kolegův podnět; kombinované kódy se nemění.
 - [ ] TR2 (souhrn na znamení) čeká na potvrzení SK kódování na-znamení — kolega.
+- [ ] **EDISONAI/mlweb — domluva s autorem mlweb:** TD hlásí spotřebu na `/api/mline/usage`
+  se `source: "templatedesigner"` — ověřit, že endpoint neznámý source přijme a započítá
+  (jinak TD spotřeba nejde do limitu); limit sdílený s EDISONAI chatem per IdFa = záměr, potvrdit.
 
 ### Draft e-mailu zákazníkům (doplnit adresáty + tón dle zvyklostí)
 

@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text;
 using EDControls.EDViewModel;
-using TemplateDesigner.Config;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner.Windows.AiGuideDialog;
@@ -67,10 +66,15 @@ public class AiGuidePanelViewModel : EDViewModel
         var question = Input.Trim();
         if (question.Length == 0) return;
 
-        var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Lokální klíč (dev) → napřímo; jinak vyzvednutí z mlweb přes EdisonAiService (fail-closed).
+        string apiKey;
+        try
         {
-            PopupDisplayer.Info("Chybí Anthropic API klíč. Nastav ho v templatedesigner.appsettings.local.json.");
+            apiKey = await EdisonAiService.GetApiKeyAsync();
+        }
+        catch (EdisonAiException ex)
+        {
+            PopupDisplayer.Info(ex.Message);
             return;
         }
 

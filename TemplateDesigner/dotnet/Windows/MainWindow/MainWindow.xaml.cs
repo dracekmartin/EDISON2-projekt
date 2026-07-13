@@ -1020,7 +1020,7 @@ public partial class MainWindow : Window
     private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
+        var apiKey = await TryGetAiApiKeyAsync();
         var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider);
         var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
 
@@ -1031,10 +1031,21 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Vyzvedne AI klíč (lokální / mlweb přes EdisonAiService). Null = AI nedostupné —
+    /// dialogy s AI jako volitelným krokem (generátor, PDF import) fungují dál bez něj;
+    /// hlášku o důvodu zobrazí až samotný AI krok (viz AiGuide pro fail-closed variantu).
+    /// </summary>
+    private static async Task<string?> TryGetAiApiKeyAsync()
+    {
+        try { return await Services.EdisonAiService.GetApiKeyAsync(); }
+        catch (Services.EdisonAiException) { return null; }
+    }
+
     private async void MenuImportPdf_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var apiKey = Config.AppSettings.Current?.AiAssistant.AnthropicApiKey;
+        var apiKey = await TryGetAiApiKeyAsync();
         var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey);
         var dialog = new PdfImportDialog(vm) { Owner = this };
 

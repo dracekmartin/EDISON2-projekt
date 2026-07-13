@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-13 — EDISONAI/mlweb napojení: spravovaný API klíč + hlášení spotřeby
+
+Zákazníci nebudou mít vlastní Anthropic klíč — M-line jim ho spravuje přes mlweb
+(podpora.m-line.cz), stejně jako u EDISONAI chatu. Build 0 chyb, .NET 341/341.
+
+- **`Services/EdisonAiService.cs`** — replikace HTTP kontraktu EDISONAI (ne DLL reference —
+  WinForms/.NET 4.8 vs WPF/.NET 10): (1) mlweb config z Caché `ALVA.EDISONAI.API.Config
+  .GetMLWebConfig` (X-API-Key, baseUrl, isDev, devApiKey; jednou per session), (2) resolve
+  `POST /api/mline/agent/resolve {idfa, loginName}` → allowed + apiKey, **fail-closed**
+  (bez spojení/povolení/limitu AI nefunguje, hláška s reason), cache 60 s; jen provider
+  `claude`, (3) spotřeba `POST /api/mline/usage {..., source: "templatedesigner"}` —
+  best-effort na pozadí, odpověď `allowed` = gate pro další volání.
+- **Pořadí klíče:** lokální `AiAssistant.AnthropicApiKey` = vývojářský bypass (mlweb se nevolá,
+  spotřeba se nehlásí — dosavadní chování beze změny) → DEV server devApiKey → mlweb resolve.
+- **Model zůstává v režii TD** (AssistantModel/VisionModel) — resolvovaný `model` z mlweb je
+  konfigurace EDISONAI chatu; limity jsou tokenové, volba modelu je neobchází.
+- **`AnthropicApiClient`** čte `usage` z každé odpovědi (text i vision) → `ReportUsage`.
+- Call sites: pomocník fail-closed s hláškou; generátor + PDF import přes `TryGetAiApiKeyAsync`
+  (AI tam je volitelný krok — bez klíče dál fungují bez AI).
+- ⚠️ **Koordinace s autorem mlweb:** usage se hlásí se `source: "templatedesigner"` — ověřit,
+  že endpoint neznámý source přijme (jinak se TD spotřeba nezapočítá do limitu); limit je
+  sdílený s EDISONAI chatem per IdFa (záměr).
+
 ## 2026-07-13 — AI vrstva: Sonnet 5 + audit promptů (pomocník i generátor)
 
 Před nasazením k zákazníkům (checklist „projít pomocníka"). Build 0 chyb, .NET 341/341.
