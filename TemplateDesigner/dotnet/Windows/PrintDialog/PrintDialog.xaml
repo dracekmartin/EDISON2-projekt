@@ -28,7 +28,7 @@
                 <Button Content="Tisk všech vybraných" Padding="16,6"
                         Command="{Binding ExportRealDataPdfCommand}"
                         Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
-                        ToolTip="Stáhne reálná data všech vybraných linek z Caché a vyexportuje dle nastavení Exportu (členění + název souboru)"
+                        ToolTip="Stáhne reálná data všech vybraných linek z databáze a vyexportuje dle nastavení Exportu (členění + název souboru)"
                         Margin="0,0,8,0"/>
                 <Button Content="Export náhledu" Padding="16,6"
                         Command="{Binding ExportPdfCommand}"

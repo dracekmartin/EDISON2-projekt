@@ -1710,7 +1710,7 @@ public partial class MainWindow : Window
         string origin = _vm.IsCacheBacked ? "[DB] " : "[neuloženo] ";
         string name = _vm.State.CurrentTemplate.Name;
         string dirty = _vm.IsDirty ? " *" : "";
-        Title = $"{agenda}{origin}{name}{dirty} — Template Designer";
+        Title = $"{agenda}{origin}{name}{dirty} — Návrhář sestav";
     }
 
     /// <summary>
