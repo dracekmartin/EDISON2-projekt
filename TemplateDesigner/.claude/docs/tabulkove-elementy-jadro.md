@@ -2,7 +2,8 @@
 
 > **Kdy číst:** před přidáním nového tabulkového elementu, před úpravou render/layout logiky
 > některé tabulky, nebo když se rozhoduje „mám tohle vytáhnout do jádra?". Evergreen referenční
-> dokument (stav R1 hotový 2026-07-04). Návrh/rozhodovací proces: `r1-sdilene-tabulkove-jadro-navrh.md`.
+> dokument (stav R1 hotový 2026-07-04). Návrh/rozhodovací proces smazán — viz git historie
+> (`r1-sdilene-tabulkove-jadro-navrh.md`).
 
 ## 0. Základní princip: dvě patra, konzistence žije na obou různě
 

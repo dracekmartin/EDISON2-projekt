@@ -259,7 +259,8 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 | `implementation-patterns.md` | Barvy, RenderContext, ComboBox gotcha, SkiaSharp quirks | `dotnet/**/*.cs` |
 | `ux-conventions.md` | Dialogová tlačítka (IsDefault/IsCancel), tooltipy, autoritativní tabulka keyboardových zkratek, context menu, confirmation patterns | `dotnet/Windows/**` |
 
-Ruční reference:
+Ruční reference — **kompletní index s kategoriemi a hygienou složky: [`.claude/docs/README.md`](.claude/docs/README.md)**
+(živé pracovní / závazné reference / vytěžené analýzy / wiki seedy / archivy). Nejdůležitější:
 - `.claude/docs/changelog.md` — kompletní changelog
 - `.claude/docs/roadmap.md` — aktuální roadmapa (jen otevřené body); hotová práce → `.claude/docs/roadmap-archive.md`
 - `.claude/docs/schedule-elements-architecture.md` — architektura specializovaných JŘ elementů (Caché wire formát, hierarchie elementů, matice zodpovědností)

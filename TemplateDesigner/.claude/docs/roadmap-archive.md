@@ -965,7 +965,7 @@ Celá rozhodovací tabulka R1–R7 uzavřena (přesunuto z aktivní roadmapy). P
 
 | # | Rozhodnutí | Výsledek |
 |---|---|---|
-| R1 | Sdílené řádkové jádro | ✅ **implementováno** `Rendering/TableLayout.cs` (ResolveWidths + ResolveCascade), napojeno DynamicTable/LineTable/StopList. StopColumn/TableColumn NEsjednoceny (nulové riziko šablon), DepartureGrid mimo (pivot). 180/180 testů + render. Referenční doc `tabulkove-elementy-jadro.md`, návrh `r1-sdilene-tabulkove-jadro-navrh.md`. |
+| R1 | Sdílené řádkové jádro | ✅ **implementováno** `Rendering/TableLayout.cs` (ResolveWidths + ResolveCascade), napojeno DynamicTable/LineTable/StopList. StopColumn/TableColumn NEsjednoceny (nulové riziko šablon), DepartureGrid mimo (pivot). 180/180 testů + render. Referenční doc `tabulkove-elementy-jadro.md` (návrhový doc smazán, git historie). |
 | R1a | Render-loop sjednocení | ✅ **implementováno** — DynamicTable tři ruční smyčky → `ColumnRenderer.DrawRow`. Vyšší orchestrátor záměrně NE (LineTable pásy/přípoje se nevejdou, nízká hodnota). |
 | R2 | Partial-fit kontrakt (svislá osa) | ✅ **kontrakt rozhodnut** `r2-partial-fit-kontrakt.md` (`IRowPaginatedElement`); implementace až s paginačním/bin-packing trackem (svislá+vodorovná C3 spolu). |
 | R3 | Datový kontrakt / prezentační nápovědy | ✅ **rozhodnuto** `cache-api.md` — v1 = `FORE_COLOR`/`BACK_COLOR` + princip + evoluce jen-aditivně; širší seznam (ZVYRAZNENI…) na F1 dle RG usage. |
@@ -1037,7 +1037,7 @@ Návrhové plátno už není omezené na jednu A4. Commity: `a88763a` (Slice 1),
 ## Session 2026-07-07 ✅ — Pre-produkční zámek struktury šablony (blok PA) + úklid roadmapy
 
 Cíl: připravit v1 do produkce tak, aby se **nemusela měnit struktura šablony** (breaking JSON) v příští
-verzi. Grounded analýza (4 průzkumy kódu) → [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
+verzi. Grounded analýza (4 průzkumy kódu) — doc `produkce-pripravenost-2026-07-07.md` smazán po vytěžení (git historie).
 Blok PA vyřešen, vše behavior-preserving (uživatel nepozná, jen zamčená struktura). Commity `23e6a90`
 (analýza+checklist), `6dadb66`, `484881c`, `f1e01e9`, `cf43a56`. Testy 218 → 229.
 

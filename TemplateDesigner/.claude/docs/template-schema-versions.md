@@ -118,7 +118,8 @@ spolehlivě poznat, které schéma šablona má, a migrace by druhé poškodila.
 **Přijaté riziko + mitigace:** DB je primární úložiště až od 2026-06-30 (dlouho po refaktoru), takže
 **všechny šablony v produkční DB jsou composable**. Riziko se týká jen starých souborových `.json`
 z doby před refaktorem — ty se do produkce nedostávají. Stará plochá šablona by se načetla „tiše
-ochuzená o styling" (`System.Text.Json` neznámá pole ignoruje) — viz [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md) A4.
+ochuzená o styling" (`System.Text.Json` neznámá pole ignoruje — stejný mechanismus, kvůli kterému
+musí AI generátor produkovat přesné názvy properties).
 
 **Důsledek pro budoucí migrace:** jakákoli migrace `1.0.0 → x` MUSÍ předpokládat **composable**
 schéma (produkční realita). Ploché pre-refactor soubory nejsou podporovaný vstup.
