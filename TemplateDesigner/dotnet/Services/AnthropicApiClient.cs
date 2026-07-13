@@ -4,6 +4,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using TemplateDesigner.Config;
 using TemplateDesigner.Models;
 using TemplateDesigner.Models.Schema;
 using TemplateDesigner.Serialization;
@@ -17,14 +18,20 @@ public class AnthropicApiClient
 {
     private const string ApiEndpoint = "https://api.anthropic.com/v1/messages";
     private const string ApiVersion = "2023-06-01";
-    private const string ModelId = "claude-haiku-4-5";
+
+    /// <summary>Model pro pomocníka + generátor šablon — konfigurovatelný (AiAssistant.AssistantModel).
+    /// Default claude-sonnet-5: nepřijímá temperature (400) a vynechání `thinking` = adaptivní
+    /// myšlení ZAPNUTÉ → odpověď může začínat thinking blokem (viz ExtractText) a myšlení se
+    /// počítá do max_tokens.</summary>
+    public static string AssistantModel =>
+        AppSettings.Current?.AiAssistant.AssistantModel is { Length: > 0 } m ? m : "claude-sonnet-5";
 
     private static readonly HttpClient _httpClient = new()
     {
         Timeout = TimeSpan.FromMinutes(3)
     };
-    private const int MaxTokens = 8192;
-    private const double Temperature = 0.7;
+    // Generátor: adaptivní myšlení (Sonnet 5 default) se počítá do max_tokens → rezerva nad JSON výstup.
+    private const int MaxTokens = 16000;
     private const int ErrorPreviewLength = 500;
     private const string DebugFileName = "ai_generated_template_debug.json";
 
@@ -83,6 +90,9 @@ Každá sekce má:
 ## Elements (typy)
 
 ### TextElement
+
+Formátování textu je VŽDY ve vnořeném objektu `style` (žádné ploché fontSize/textColor na elementu!):
+
 ```json
 {
   ""type"": ""TextElement"",
@@ -91,18 +101,29 @@ Každá sekce má:
   ""width"": 50,
   ""height"": 8,
   ""text"": ""Faktura č. {CISLO}"",
-  ""fontSize"": 14,
-  ""fontWeight"": ""Bold"",
-  ""textColor"": ""#FF000000"",
-  ""backgroundColor"": ""#00FFFFFF"",
-  ""horizontalAlignment"": ""Left"",
-  ""verticalAlignment"": ""Top""
+  ""style"": {
+    ""fontFamily"": ""Arial"",
+    ""fontSize"": 14,
+    ""bold"": true,
+    ""italic"": false,
+    ""underline"": false,
+    ""textColor"": ""#FF000000"",
+    ""backgroundColor"": ""#00FFFFFF"",
+    ""hAlign"": ""Left"",
+    ""vAlign"": ""Top""
+  }
 }
 ```
 
-**FontWeight:** `Normal`, `Bold`
-**HorizontalAlignment:** `Left`, `Center`, `Right`, `Justify`
-**VerticalAlignment:** `Top`, `Middle`, `Bottom`
+**style.hAlign:** `Left`, `Center`, `Right`, `Justify`
+**style.vAlign:** `Top`, `Middle`, `Bottom`
+**style.bold / italic / underline:** true/false
+Vlastnosti ve `style`, které nechceš měnit, prostě vynech (dědí se defaulty).
+
+**ŠPATNĚ (ploché properties se tiše zahodí — text vyjde bez formátování):**
+```json
+{ ""type"": ""TextElement"", ""text"": ""..."", ""fontSize"": 14, ""fontWeight"": ""Bold"", ""textColor"": ""#FF000000"" }
+```
 
 ### RectangleElement
 ```json
@@ -112,12 +133,14 @@ Každá sekce má:
   ""y"": 10,
   ""width"": 100,
   ""height"": 30,
-  ""fillColor"": ""#FFE0E0E0"",
+  ""backgroundColor"": ""#FFE0E0E0"",
   ""strokeColor"": ""#FF000000"",
   ""strokeWidth"": 0.5,
   ""cornerRadius"": 0
 }
 ```
+
+**backgroundColor** = výplň obdélníku (NE `fillColor` — ta property neexistuje).
 
 **cornerRadius:** Zaoblení rohů v mm (0 = ostré rohy, typicky 2-5 mm pro zaoblené)
 
@@ -139,63 +162,18 @@ Každá sekce má:
 **Orientation:** `Horizontal`, `Vertical`
 **Style:** `Solid` (plná), `Dashed` (čárkovaná), `Dotted` (tečkovaná)
 
-### TableElement
+### DynamicTableElement
 
-Tabulka podporuje dva režimy:
+Jediný živý typ tabulky — řádky se generují z datové kolekce za běhu. Typ `TableElement`
+NEPOUŽÍVEJ (je zastaralý a v aplikaci nejde editovat). Pevné bloky „popisek + hodnota“
+skládej z jednotlivých TextElementů s rámečky, ne z tabulky.
 
-**Fixed mód** — řádky definované přímo v šabloně (pro pevná data):
 ```json
 {
-  ""type"": ""TableElement"",
+  ""type"": ""DynamicTableElement"",
   ""x"": 10,
   ""y"": 30,
   ""width"": 190,
-  ""mode"": ""Fixed"",
-  ""columns"": [
-    {
-      ""header"": ""Položka"",
-      ""field"": ""NAZEV"",
-      ""width"": 80,
-      ""widthMode"": ""Mm"",
-      ""alignment"": ""Left""
-    },
-    {
-      ""header"": ""Cena"",
-      ""field"": ""CENA"",
-      ""width"": 30,
-      ""widthMode"": ""Mm"",
-      ""alignment"": ""Right""
-    }
-  ],
-  ""rows"": [
-    {
-      ""cells"": [
-        { ""content"": ""Položka 1"" },
-        { ""content"": ""{CENA}"", ""format"": ""N2"" }
-      ]
-    },
-    {
-      ""cells"": [
-        { ""content"": ""Položka 2"" },
-        { ""content"": ""{CELKEM}"", ""format"": ""N2"" }
-      ]
-    }
-  ],
-  ""headerBackgroundColor"": ""#FFE0E0E0"",
-  ""alternatingRowColor"": ""#FFF5F5F5"",
-  ""borderStyle"": ""All"",
-  ""showHeader"": true
-}
-```
-
-**Dynamic mód** — řádky generované z dat za běhu (pro seznamy):
-```json
-{
-  ""type"": ""TableElement"",
-  ""x"": 10,
-  ""y"": 30,
-  ""width"": 190,
-  ""mode"": ""Dynamic"",
   ""dataSource"": ""POLOZKY"",
   ""columns"": [
     {
@@ -214,7 +192,7 @@ Tabulka podporuje dva režimy:
       ""format"": ""N2""
     }
   ],
-  ""headerBackgroundColor"": ""#FFE0E0E0"",
+  ""headerStyle"": { ""bold"": true, ""backgroundColor"": ""#FFE0E0E0"" },
   ""alternatingRowColor"": ""#FFF5F5F5"",
   ""borderStyle"": ""All"",
   ""showHeader"": true,
@@ -222,29 +200,14 @@ Tabulka podporuje dva režimy:
 }
 ```
 
-**KRITICKY DŮLEŽITÉ — běžná chyba:**
-- **Fixed mód:** Musí mít `""rows""` array s definovanými řádky. Nepoužívá `""dataSource""`.
-- **Dynamic mód:** NESMÍ mít `""rows""` property! Musí mít `""dataSource""` (klíč kolekce dat).
+- **`dataSource`** = klíč datové kolekce (POVINNÉ). Tabulka NEMÁ `rows` — řádky přijdou z dat.
+- **Pozadí/font záhlaví** = vnořený `headerStyle` (stejný tvar jako `style` u TextElementu);
+  datové buňky obdobně `dataStyle`. Property `headerBackgroundColor` NEEXISTUJE.
+- Volitelné: `minRows` (doplní prázdné řádky do minima — pevná výška boxu, např. faktura),
+  `maxRows` (ořízne), `rowVisibilityExpression` (výraz nad daty řádku, např. `{POCET} > 0` —
+  nesplněné řádky se netisknou), počítaný sloupec přes `""expression"": ""{CENA}*{POCET}""`
+  místo `field`.
 
-ŠPATNĚ (nekombinuj mode: Dynamic s rows):
-```json
-{
-  ""mode"": ""Dynamic"",
-  ""dataSource"": ""POLOZKY"",
-  ""rows"": [ ... ]  ← CHYBA! Dynamic nemá rows!
-}
-```
-
-SPRÁVNĚ:
-```json
-{
-  ""mode"": ""Dynamic"",
-  ""dataSource"": ""POLOZKY""
-  // žádné rows!
-}
-```
-
-**Mode:** `Fixed`, `Dynamic`
 **WidthMode:** `Mm`, `Percent`
 **Alignment:** `Left`, `Center`, `Right`
 **BorderStyle:** `None`, `Outer` (pouze vnější rámeček), `All` (všechny čáry), `RowsOnly` (jen vodorovné), `ColumnsOnly` (jen svislé)
@@ -277,7 +240,7 @@ SPRÁVNĚ:
 }
 ```
 
-**BarcodeType:** `QR`, `Code128`
+**BarcodeType:** `QR`, `Code128`, `Ean13`, `Ean8`, `Pdf417`, `DataMatrix`
 
 # Pravidla a best practices
 
@@ -292,15 +255,15 @@ SPRÁVNĚ:
    - Formát `#AARRGGBB` (AA = alpha, 00 = průhledná, FF = neprůhledná)
    - Černá: `#FF000000`, Bílá: `#FFFFFFFF`, Průhledná: `#00FFFFFF`
 
-2a. **Kdy použít Fixed vs Dynamic tabulku:**
-   - **Fixed** — pevný počet řádků známý dopředu (např. faktura má vždy 3 řádky s popisem, částkou, daní)
-   - **Dynamic** — proměnný počet řádků z databáze (např. položky faktury, seznam zastávek)
-   - Pro obecné šablony bez specifikované agendy použij raději **Fixed** s 2-5 řádky
+2a. **Tabulka vs pevný blok:**
+   - **DynamicTableElement** — proměnný počet řádků z dat (položky faktury, seznamy). Vždy s `dataSource`.
+   - **Pevný blok** (popisek | hodnota, 2–6 řádků) — poskládej z TextElementů s rámečky
+     (`borderColor`/`borderWidth` na elementu), NE z tabulky.
 
 2b. **AgendaCode:**
-   - Pokud uživatel specifikuje agendu (""faktura"", ""jízdní řád""), nastav `agendaCode` podle toho
-   - Příklady: `""JR""` pro jízdní řády, `""FAKTURY""` pro faktury
+   - Pokud uživatel specifikuje agendu (např. ""faktura""), nastav `agendaCode` (např. `""FAKTURY""`)
    - Pokud není specifikováno nebo je šablona obecná, VYNECHEJ agendaCode property úplně (ne null, ne prázdný string)
+   - Jízdněřádové šablony negeneruj od nuly — pro ně existují distribuční šablony; odkaž se na ně v name/description a vytvoř jen obecnou kostru
 
 3. **Běžné sekce:**
    - Záhlaví: `PrintBehavior=OnEveryPage`, výška 20-30 mm
@@ -359,11 +322,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         {
           ""type"": ""TextElement"",
           ""text"": ""Doklad č. {CISLO}"",
-          ""fontSize"": 16,
-          ""fontWeight"": ""Bold"",
-          ""horizontalAlignment"": ""Center"",
-          ""textColor"": ""#FF000000"",
-          ""backgroundColor"": ""#00FFFFFF"",
+          ""style"": { ""fontSize"": 16, ""bold"": true, ""hAlign"": ""Center"" },
           ""x"": 10,
           ""y"": 5,
           ""width"": 190,
@@ -391,41 +350,33 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         {
           ""type"": ""TextElement"",
           ""text"": ""Datum: {DATUM}"",
-          ""fontSize"": 12,
-          ""fontWeight"": ""Normal"",
-          ""horizontalAlignment"": ""Left"",
-          ""textColor"": ""#FF000000"",
-          ""backgroundColor"": ""#00FFFFFF"",
+          ""style"": { ""fontSize"": 12 },
           ""x"": 10,
           ""y"": 10,
           ""width"": 190,
           ""height"": 8
         },
         {
-          ""type"": ""TableElement"",
-          ""mode"": ""Fixed"",
+          ""type"": ""DynamicTableElement"",
+          ""dataSource"": ""POLOZKY"",
           ""columns"": [
             {
               ""header"": ""Popis"",
+              ""field"": ""NAZEV"",
               ""width"": 130,
               ""widthMode"": ""Mm"",
               ""alignment"": ""Left""
             },
             {
-              ""header"": ""Hodnota"",
+              ""header"": ""Cena"",
+              ""field"": ""CENA"",
               ""width"": 60,
               ""widthMode"": ""Mm"",
-              ""alignment"": ""Right""
+              ""alignment"": ""Right"",
+              ""format"": ""N2""
             }
           ],
-          ""rows"": [
-            {
-              ""cells"": [
-                { ""content"": ""Celkem"" },
-                { ""content"": ""{CELKEM}"", ""format"": ""N2"" }
-              ]
-            }
-          ],
+          ""headerStyle"": { ""bold"": true, ""backgroundColor"": ""#FFE0E0E0"" },
           ""borderStyle"": ""All"",
           ""showHeader"": true,
           ""x"": 10,
@@ -443,11 +394,7 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         {
           ""type"": ""TextElement"",
           ""text"": ""Stránka {PAGE}"",
-          ""fontSize"": 10,
-          ""fontWeight"": ""Normal"",
-          ""horizontalAlignment"": ""Center"",
-          ""textColor"": ""#FF666666"",
-          ""backgroundColor"": ""#00FFFFFF"",
+          ""style"": { ""fontSize"": 10, ""hAlign"": ""Center"", ""textColor"": ""#FF666666"" },
           ""x"": 10,
           ""y"": 5,
           ""width"": 190,
@@ -461,8 +408,10 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
 
     public async Task<Template?> GenerateTemplateAsync(string description, string? agendaCode, DataSchema? schema, string apiKey)
     {
+        // Adaptivní myšlení necháváme zapnuté (Sonnet 5 default) — jednorázová delší úloha,
+        // rozmyšlení struktury JSON reálně zlepší; temperature na Sonnetu 5 poslat nelze.
         var userPrompt = BuildUserPrompt(description, agendaCode, schema);
-        var responseText = await CallApiAsync(apiKey, SystemPrompt, userPrompt, ModelId, MaxTokens, Temperature);
+        var responseText = await CallApiAsync(apiKey, SystemPrompt, userPrompt, AssistantModel, MaxTokens);
 
         if (string.IsNullOrWhiteSpace(responseText))
             return null;
@@ -483,23 +432,30 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
     /// Sdílená metoda pro volání Anthropic Messages API.
     /// Vrací textovou odpověď (bez markdown code bloků).
     /// </summary>
+    /// <param name="temperature">Null = neposílat. Sonnet 5 nedefaultní temperature ODMÍTÁ (400) —
+    /// posílat jen u starších modelů (Haiku enricher).</param>
+    /// <param name="disableThinking">True = explicitně vypnout myšlení (`thinking: disabled`).
+    /// Na Sonnetu 5 je vynechání parametru = adaptivní myšlení ZAPNUTÉ — pro rychlé Q&A
+    /// (pomocník) chceme vypnout, pro generování nechat adaptivní.</param>
     public static async Task<string?> CallApiAsync(
         string apiKey, string systemPrompt, string userPrompt,
-        string model = "claude-haiku-4-5", int maxTokens = 4096, double temperature = 0.3)
+        string model = "claude-haiku-4-5", int maxTokens = 4096, double? temperature = null,
+        bool disableThinking = false)
     {
-        var requestBody = new
+        var requestBody = new JsonObject
         {
-            model,
-            max_tokens = maxTokens,
-            temperature,
-            system = systemPrompt,
-            messages = new[]
+            ["model"] = model,
+            ["max_tokens"] = maxTokens,
+            ["system"] = systemPrompt,
+            ["messages"] = new JsonArray
             {
-                new { role = "user", content = userPrompt }
+                new JsonObject { ["role"] = "user", ["content"] = userPrompt }
             }
         };
+        if (temperature is { } t) requestBody["temperature"] = t;
+        if (disableThinking) requestBody["thinking"] = new JsonObject { ["type"] = "disabled" };
 
-        var json = JsonSerializer.Serialize(requestBody);
+        var json = requestBody.ToJsonString();
 
         using var request = new HttpRequestMessage(HttpMethod.Post, ApiEndpoint);
         request.Headers.Add("x-api-key", apiKey);
@@ -512,18 +468,30 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         if (!response.IsSuccessStatusCode)
             throw new Exception($"Anthropic API vrátilo chybu {(int)response.StatusCode} ({response.StatusCode}):\n{responseJson}");
 
-        var responseDoc = JsonDocument.Parse(responseJson);
+        using var responseDoc = JsonDocument.Parse(responseJson);
+        var text = ExtractText(responseDoc);
+        return text is null ? null : RemoveMarkdownCodeBlocks(text);
+    }
 
-        if (responseDoc.RootElement.TryGetProperty("content", out var contentArray) &&
-            contentArray.GetArrayLength() > 0)
+    /// <summary>
+    /// Vytáhne textovou odpověď z content pole. S adaptivním myšlením (Sonnet 5 default)
+    /// může content začínat thinking blokem — bere se první NEPRÁZDNÝ blok typu "text",
+    /// ne content[0].
+    /// </summary>
+    private static string? ExtractText(JsonDocument responseDoc)
+    {
+        if (!responseDoc.RootElement.TryGetProperty("content", out var contentArray))
+            return null;
+
+        foreach (var block in contentArray.EnumerateArray())
         {
-            var text = contentArray[0].GetProperty("text").GetString();
-            if (string.IsNullOrWhiteSpace(text))
-                return null;
-
-            return RemoveMarkdownCodeBlocks(text);
+            if (block.TryGetProperty("type", out var type) && type.GetString() == "text" &&
+                block.TryGetProperty("text", out var textProp))
+            {
+                var text = textProp.GetString();
+                if (!string.IsNullOrWhiteSpace(text)) return text;
+            }
         }
-
         return null;
     }
 
@@ -584,19 +552,9 @@ Vrať **pouze** validní JSON šablonu bez jakéhokoliv dalšího textu, vysvět
         if (!response.IsSuccessStatusCode)
             throw new Exception($"Anthropic API vrátilo chybu {(int)response.StatusCode} ({response.StatusCode}):\n{responseJson}");
 
-        var responseDoc = JsonDocument.Parse(responseJson);
-
-        if (responseDoc.RootElement.TryGetProperty("content", out var contentArr) &&
-            contentArr.GetArrayLength() > 0)
-        {
-            var text = contentArr[0].GetProperty("text").GetString();
-            if (string.IsNullOrWhiteSpace(text))
-                return null;
-
-            return RemoveMarkdownCodeBlocks(text);
-        }
-
-        return null;
+        using var responseDoc = JsonDocument.Parse(responseJson);
+        var text = ExtractText(responseDoc);
+        return text is null ? null : RemoveMarkdownCodeBlocks(text);
     }
 
     private static string RemoveMarkdownCodeBlocks(string text)

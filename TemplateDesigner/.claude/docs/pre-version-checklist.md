@@ -155,6 +155,35 @@
 - Snapovani na mrizku obcas neni presne - obcas to je trochu dole nebo nad mrizkou - proc to je? - asi kdyz mam vychozi vysku elementu, tak ta se po pridani na canvas nejak nesnapne, takze to musim upravit rucni - co s tim z hledsska UX?
 - Pri uzych uzych zastavkach se sipka smeru vytiskne vpravo spatne?
 - Projit napovedu a jestli jim pujde pomocnik
+
+### Eval sada — AI pomocník (otestovat po přepnutí na Sonnet 5, hodnotit: správná cesta v UI / žádné vymyšlené featury / rychlost)
+
+Základní lookup (očekává přesnou cestu v UI):
+- [ ] „Jak vytisknu dvě vývěsky na jeden list A4?" → Ctrl+P → Uspořádání na list
+- [ ] „Jak udělám, aby se každá linka uložila do vlastního PDF?" → Ctrl+P → Členění výstupu + Název souboru
+- [ ] „Kde změním velikost stránky na A5?" → Ctrl+Shift+P + varování o nové šabloně
+- [ ] „Jak zkopíruju styl z jednoho textu na druhý?" → Ctrl+Shift+C/V
+- [ ] „Jak přidám do tabulky sloupec cena × počet?" → dialog tabulky → sloupec s výrazem {CENA}*{POCET}
+- [ ] „Jak zvýrazním řádky, kde je cena větší než 1000?" → zvýraznění řádků, výraz + barva
+- [ ] „Jak vyberu víc linek najednou pro tisk?" → modrý chip Instance → multi-select
+- [ ] „Jak změním agendu z AD na MHD?" → Ctrl+Shift+A / zelený chip + upozornění na novou šablonu
+- [ ] „Co znamená červený rámeček kolem stránky v náhledu?" → přetečení obsahu
+- [ ] „Jak dostanu součet sloupce pod tabulku?" → souhrnný řádek SUM(...)
+- [ ] „Jak schovám sekci na první stránce?" → PrintBehavior / VisibilityExpression {PAGE} > 1
+- [ ] „Jak vrátím zpátky smazaný element?" → Ctrl+Z
+- [ ] „Kde nastavím písmo pro celou tabulku najednou?" → dialog sloupců / panel Header+Data barvy
+- [ ] „Jak uložím šablonu, aby ji viděl kolega?" → Ctrl+S do databáze (per firma)
+
+Chytáky — featury co NEEXISTUJÍ (očekává „zatím neumíme", NE vymyšlený návod):
+- [ ] „Jak sloučím dvě buňky tabulky do jedné?" (merge/colspan neexistuje)
+- [ ] „Jak exportuju jízdní řád do Excelu?" (jen PDF/PNG)
+- [ ] „Jak pošlu PDF rovnou e-mailem zákazníkovi?" (neexistuje)
+- [ ] „Jak nastavím tisk brožury / duplex?" (imposice to neumí)
+- [ ] „Jak si nahraju vlastní font?" (jen vestavěné rodiny)
+- [ ] „Jak importuju starou šablonu z EDISONu?" (V1 nepodporuje)
+
+Nejistota (očekává odkaz na F1 / podporu M-line, ne halucinaci):
+- [ ] „Proč se mi u linky 12 tiskne špatný čas u třetí zastávky?" (datový problém, ne UI — má odkázat na kontrolu dat/podporu)
 - Ve formulari tisku pridat moznost (pouze pokud je otevreno primo z TD), aby se hodnoty paraemtru nacetly podle aktualne otevrene sablony
 - Mam A5 sablonu na sirku, jak to nyni vytisknu, aby jedna zastavka byla jedna stranka v pdf? Imposize to ted dava 2 na jednu a4 na vysku
 -

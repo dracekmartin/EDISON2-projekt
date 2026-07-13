@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-13 — AI vrstva: Sonnet 5 + audit promptů (pomocník i generátor)
+
+Před nasazením k zákazníkům (checklist „projít pomocníka"). Build 0 chyb, .NET 341/341.
+
+- **Model:** pomocník (průvodce) i generátor šablon na `claude-sonnet-5`, konfigurovatelné přes
+  `AiAssistant.AssistantModel` v appsettings. Vision import zůstává na `VisionModel`.
+- **Sonnet 5 API specifika ošetřená v `AnthropicApiClient`:** temperature se neposílá (nedefaultní
+  hodnoty S5 odmítá 400); pomocník volá s **explicitně vypnutým myšlením** (`thinking: disabled` —
+  jinak je na S5 adaptivně zapnuté → latence), generátor s adaptivním (kvalita JSON); parsování
+  odpovědi přes `ExtractText` = první `text` blok (thinking bloky můžou předcházet); generátor
+  `max_tokens` 16000 (myšlení se počítá do limitu).
+- **Generátor — opravy SystemPromptu proti reálnému modelu** (serializer tiše zahazuje neznámé
+  properties → ploché fontSize/bold se dřív ZTRATILY): TextElement vnořený `style` objekt;
+  Rectangle `backgroundColor` (ne `fillColor`); `TableElement` nahrazen `DynamicTableElement`
+  (dataSource povinné, `headerStyle`/`dataStyle`, minRows/maxRows/expression/rowVisibility);
+  plný výčet BarcodeType (+Ean13/Ean8/Pdf417/DataMatrix); přepsaný finální příklad.
+- **Pomocník — znalostní vrstva v `CapabilityCatalog`:** trojstavové pravidlo nejistoty (v podkladech
+  → přesná cesta / vím že chybí → „zatím neumíme" / nejistý → odkázat na F1/podporu) + grounding
+  (každý krok cituje cestu v UI); `GeneralIntro` přepsán — **UI mapa Co→Kde** (tisk/imposice/členění,
+  data/instance, vzhled, šablony v DB, navigace), Agenda×Varianta, výrazový jazyk, kompletní
+  zkratky dle autoritativní tabulky (odstraněn neexistující Ctrl+Shift+S), sekce „co ZATÍM neumí";
+  `ElementNote` pro DynamicTable (výrazy, zvýraznění, min/max, agregace) + LineTable, mrtvá Table
+  větev pryč.
+- **Eval sada** ~21 otázek (14 lookup + 6 chytáků na neexistující featury + 1 nejistota) v
+  `pre-version-checklist.md` pro ruční otestování.
+
 ## 2026-07-13 — UX fixy z pre-version průchodu (blok A checklistu)
 
 Nálezy z ručního testování před úterní verzí. Build 0 chyb, .NET 340/340.

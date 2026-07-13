@@ -161,4 +161,8 @@ public class AiAssistantSettings
 
     /// <summary>Model pro AI Vision import (default: claude-sonnet-4-6).</summary>
     public string VisionModel { get; set; } = "claude-sonnet-4-6";
+
+    /// <summary>Model pro AI pomocníka (průvodce) a generátor šablon (default: claude-sonnet-5).
+    /// Pomocník volá s vypnutým myšlením (rychlé odpovědi), generátor s adaptivním (kvalita JSON).</summary>
+    public string AssistantModel { get; set; } = "claude-sonnet-5";
 }
