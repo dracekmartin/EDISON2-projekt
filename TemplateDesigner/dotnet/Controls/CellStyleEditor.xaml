@@ -26,7 +26,7 @@
 
         <!-- Šedivý italic placeholder zobrazující zděděnou hodnotu když pole není explicitně nastavené. -->
         <Style x:Key="InheritedPlaceholder" TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#888"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Muted}"/>
             <Setter Property="FontStyle" Value="Italic"/>
             <Setter Property="IsHitTestVisible" Value="False"/>
             <Setter Property="VerticalAlignment" Value="Center"/>
@@ -161,7 +161,7 @@
                 <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
                         Command="{Binding PickTextColorCommand, ElementName=Root}"
                         ToolTip="Vybrat barvu textu">
-                    <Border BorderBrush="#888" BorderThickness="1" Width="20" Height="14">
+                    <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" Width="20" Height="14">
                         <Border.Background>
                             <MultiBinding Converter="{StaticResource FirstColorToBrush}">
                                 <Binding Path="TextColor"/>
@@ -181,7 +181,7 @@
                 <Button Width="28" Height="22" Padding="0" Margin="0,0,2,0"
                         Command="{Binding PickBgColorCommand, ElementName=Root}"
                         ToolTip="Vybrat barvu pozadí">
-                    <Border BorderBrush="#888" BorderThickness="1" Width="20" Height="14">
+                    <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" Width="20" Height="14">
                         <Border.Background>
                             <MultiBinding Converter="{StaticResource FirstColorToBrush}">
                                 <Binding Path="BgColor"/>

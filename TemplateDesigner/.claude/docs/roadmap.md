@@ -50,8 +50,13 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 - **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
   „nedostupná" od „není nakonfigurována" + varování při startu (M) · empty-state panelu Pole
   agendy bez DB (S) · splash při startu (~3 s .Wait bez okna, M) · validace Save dialogů
-  disabled tlačítkem místo popupu (M) · theme tokeny místo hardcoded barev v editorech +
-  jednotný resize grip (S–M) · dvojklik v Instance pickeru = toggle checku (S)
+  disabled tlačítkem místo popupu (M) · jednotný resize grip (S) · dvojklik v Instance
+  pickeru = toggle checku (S)
+- **Vizuální audit — odložené (2026-07-13):** toolbar textová tlačítka („M"/„O"/„Fit"/„1:1"/
+  „PDF"/„PNG"/„↻"/„☰") → EDIcons ikony (M) · sjednotit ▲▼ vs ↑↓ tlačítka pořadí do sdíleného
+  stylu (M) · footer pattern (dělicí linka + Bg.Footer) + EDTheme.Spacing tokeny do dialogů (M) ·
+  **dark mode** — EDThemeDark existuje, tokenizace hotová (2026-07-13), zbývá runtime swap +
+  ověření (M–L) · dialog header pattern à la HelpDialog/PdfImport (L, s EDInputForm zásahem)
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované

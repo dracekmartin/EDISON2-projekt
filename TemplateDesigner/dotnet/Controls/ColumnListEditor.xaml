@@ -16,7 +16,7 @@
         <ListBox Grid.Row="0"
                  ItemsSource="{Binding ItemsSource, RelativeSource={RelativeSource AncestorType=UserControl}}"
                  SelectedItem="{Binding SelectedItem, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=TwoWay}"
-                 BorderThickness="1" BorderBrush="#CCCCCC">
+                 BorderThickness="1" BorderBrush="{DynamicResource EDTheme.Border.Medium}">
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <Grid Margin="2">
@@ -30,11 +30,11 @@
                                   VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <TextBlock Grid.Column="1" Text="{Binding DisplayName}" FontWeight="SemiBold"
                                    VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
-                        <Ellipse Grid.Column="2" Width="7" Height="7" Fill="#2196F3" Margin="6,0,0,0"
+                        <Ellipse Grid.Column="2" Width="7" Height="7" Fill="{DynamicResource EDTheme.Accent.Blue}" Margin="6,0,0,0"
                                  VerticalAlignment="Center"
                                  ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
                                  Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
-                        <TextBlock Grid.Column="3" VerticalAlignment="Center" Foreground="#888888"
+                        <TextBlock Grid.Column="3" VerticalAlignment="Center" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                    FontSize="{DynamicResource EDTheme.FontSize.Caption}" Margin="4,0,0,0"
                                    Text="{Binding ColumnWidth, Converter={StaticResource MmToText}}"/>
                     </Grid>

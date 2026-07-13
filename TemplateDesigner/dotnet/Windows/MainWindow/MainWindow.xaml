@@ -75,7 +75,7 @@
                                       Command="{Binding SaveTemplateCommand}"/>
                             <Separator/>
                             <MenuItem Header="Smazat sekci"
-                                      Foreground="DarkRed"
+                                      Foreground="{DynamicResource EDTheme.Semantic.Danger}"
                                       Command="{Binding DeleteCommand}"/>
                         </ContextMenu>
                     </Border.ContextMenu>
@@ -542,7 +542,7 @@
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,1,0">
                 <TabControl x:Name="LeftTabControl" SelectionChanged="LeftTabControl_SelectionChanged">
                     <!-- ── Záložka Sekce ── -->
-                    <TabItem Header="▣ Sekce">
+                    <TabItem><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Panels}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Sekce" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <DockPanel>
                             <Border DockPanel.Dock="Bottom"
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
@@ -581,7 +581,7 @@
                     </TabItem>
 
                     <!-- ── Záložka Pole agendy ── -->
-                    <TabItem Header="⊞ Pole agendy" x:Name="TabFields">
+                    <TabItem x:Name="TabFields"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Grid}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Pole agendy" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <DockPanel>
                             <!-- Záhlaví: název agendy -->
                             <Border DockPanel.Dock="Top"
@@ -602,7 +602,7 @@
                             <Border DockPanel.Dock="Bottom"
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
                                     Background="{DynamicResource EDTheme.Bg.Footer}" Padding="6,4">
-                                <TextBlock Text="💡 Dvojklik = vložit {POLE}"
+                                <TextBlock Text="Tip: dvojklik = vložit {POLE}"
                                            FontSize="{DynamicResource EDTheme.FontSize.Caption}" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                            TextWrapping="Wrap"/>
                             </Border>
@@ -647,7 +647,7 @@
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Vlastnosti (inline properties panel) ── -->
-                    <TabItem Header="✎ Vlastnosti" x:Name="TabProperties">
+                    <TabItem x:Name="TabProperties"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Edit}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Vlastnosti" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <DockPanel>
                             <controls:FormatToolbar x:Name="FormatToolbar" DockPanel.Dock="Top"/>
                             <!-- Jeden element = EDInputForm (W4-10); 0/více = starý PropertyDescriptor panel (message/multi). -->
@@ -658,11 +658,11 @@
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Strom šablony ── -->
-                    <TabItem Header="≣ Strom" x:Name="TabTree">
+                    <TabItem x:Name="TabTree"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Module}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Strom" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <controls:TemplateTreePanel x:Name="TreePanel"/>
                     </TabItem>
                     <!-- ── Záložka AI průvodce ── -->
-                    <TabItem Header="✦ Pomocník" x:Name="TabAiGuide">
+                    <TabItem x:Name="TabAiGuide"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Help}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Pomocník" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <aiguide:AiGuidePanel DataContext="{Binding AiGuide}"/>
                     </TabItem>
                 </TabControl>
@@ -766,7 +766,7 @@
 
                     <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
                     <Border Grid.Column="0"
-                            Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3"
+                            Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
                             ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
                         <Border.InputBindings>
@@ -783,7 +783,7 @@
 
                     <!-- 2) Instance chip (klikatelný — OpenInstancePicker) -->
                     <Border Grid.Column="2"
-                            Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3"
+                            Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
                             ToolTip="{Binding InstancePickerHint}">
                         <Border.InputBindings>
@@ -836,11 +836,11 @@
 
                     <!-- 4) Varování o přetečení preview (červený blok, jen když obsah přetéká) -->
                     <Border Grid.Column="6"
-                            Background="#D32F2F" Padding="10,3" Margin="6,0,0,0"
+                            Background="{DynamicResource EDTheme.Semantic.Danger}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"
                             ToolTip="Obsah některé stránky se nevejde — zvětši stránku (PageSize) nebo zmenši obsah">
-                        <TextBlock Text="⚠ Obsah se nevejde na stránku"
+                        <TextBlock Text="Obsah se nevejde na stránku"
                                    Foreground="White" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>

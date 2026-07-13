@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-13 — Vizuální audit UI + rychlé výhry (pre-produkce)
+
+Audit modernosti vzhledu: základ zdravý (EDControlStyles flat theme, moderní paleta EDTheme —
+Fluent/VS Code styl). Opraveny nálezy, kde se theme nedodržoval:
+
+- **Barvy sjednoceny na EDTheme tokeny** — 44 hardcoded barev ve 14 souborech (v UI koexistovaly
+  3 šedé, 2 modré, 2 červené): `#888`→`Text.Muted`, `#CCCCCC`→`Border.Medium`,
+  `#C62828`/`OrangeRed`/`Firebrick`/`DarkRed`/`#D32F2F`→`Semantic.Danger`, `#2196F3`→`Accent.Blue`,
+  `#F8F8F8`/`#DDDDDD`→`Bg.Footer`/`Border.Light`. Zároveň prerekvizita dark mode (EDThemeDark existuje).
+- **TableEditorDialog: opraven skrytý bug** — lokální implicitní Button styl bez `BasedOn` přebíjel
+  flat theme → tlačítka v dialogu měla výchozí šedý WPF 3D vzhled. Jednořádkový `BasedOn`.
+- **Záložky levého panelu s ikonami** — 5 nesourodých Unicode dingbatů (▣⊞✎≣✦) nahrazeno
+  EDIcons ikonami (Panels/Grid/Edit/Module/Help) + text.
+- **Emoji pryč** — 💡 → „Tip:", ⚠ v červeném overflow bloku → jen text (blok sám je signál).
+- **Status bar chipy zaobleny** — agenda/instance/overflow `CornerRadius="3"` + svislý margin
+  (dřív ostré hrany na výšku celého baru).
+- **Vědomě po verzi** (→ roadmapa): toolbar textová tlačítka („M"/„O"/„Fit"/„PDF") → ikony ·
+  sjednocení ▲▼/↑↓ tlačítek · footer pattern + spacing tokeny v dialozích · dark mode zapojení ·
+  dialog header pattern.
+
 ## 2026-07-13 — UX audit kritických flow + opravy (pre-produkce)
 
 Dva fan-out audity (kritická flow prvouživatele + konzistence dialogů). Základ zdravý

@@ -146,7 +146,7 @@
 
             <!-- JŘ import bez dostupné AI je zablokovaný -->
             <TextBlock Text="{Binding ImportBlockedText}"
-                       Foreground="Firebrick" FontWeight="SemiBold" Margin="0,8,0,0" TextWrapping="Wrap">
+                       Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontWeight="SemiBold" Margin="0,8,0,0" TextWrapping="Wrap">
                 <TextBlock.Style>
                     <Style TargetType="TextBlock">
                         <Setter Property="Visibility" Value="Collapsed"/>
