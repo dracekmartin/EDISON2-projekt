@@ -39,3 +39,32 @@ public class AsyncRelayCommand(Func<Task> execute, Func<bool>? canExecute = null
         }
     }
 }
+
+/// <summary>Generická varianta <see cref="AsyncRelayCommand"/> — <c>async Task</c> handler s parametrem.</summary>
+public class AsyncRelayCommand<T>(Func<T, Task> execute, Func<T, bool>? canExecute = null, IPopupDisplayer? popupDisplayer = null) : ICommand
+{
+    private bool _isRunning;
+
+    public event EventHandler? CanExecuteChanged
+    {
+        add => CommandManager.RequerySuggested += value;
+        remove => CommandManager.RequerySuggested -= value;
+    }
+
+    public bool CanExecute(object? parameter) =>
+        !_isRunning && (canExecute == null || (parameter is T t && canExecute(t)));
+
+    public async void Execute(object? parameter)
+    {
+        if (_isRunning || parameter is not T t) return;
+        _isRunning = true;
+        CommandManager.InvalidateRequerySuggested();
+        try { await execute(t); }
+        catch (Exception ex) { (popupDisplayer ?? EDServices.Current.PopupDisplayer).Error(ex); }
+        finally
+        {
+            _isRunning = false;
+            CommandManager.InvalidateRequerySuggested();
+        }
+    }
+}

@@ -50,6 +50,31 @@ public class WindowNavigator : IWindowNavigator
         if (prc != null) _legacyProcesses.Add(new(prc, exeName, formFqn));
     }
 
+    public async Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
+    {
+        // Launch synchronně (případný fail Process.Start faultne task → caller ho chytne v popup).
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
+        if (prc == null) return;
+        _legacyProcesses.Add(new(prc, exeName, formFqn));
+        await WaitForModuleWindowAsync(prc);
+    }
+
+    /// <summary>
+    /// Čeká (poll á 100 ms) až child proces vytvoří hlavní okno, nebo do timeoutu / ukončení
+    /// procesu. Await Task.Delay drží UI thread volný, takže overlay se stihne vykreslit.
+    /// Timeout kryje moduly, které skončí bez okna (chyba, background task).
+    /// </summary>
+    private static async Task WaitForModuleWindowAsync(Process prc, int timeoutMs = 20000)
+    {
+        for (int elapsed = 0; elapsed < timeoutMs; elapsed += 100)
+        {
+            if (prc.HasExited) return;
+            prc.Refresh();
+            if (prc.MainWindowHandle != IntPtr.Zero) return;
+            await Task.Delay(100);
+        }
+    }
+
     public void ShowLegacyAndWait(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
         using var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
