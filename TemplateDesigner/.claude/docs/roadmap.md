@@ -60,6 +60,10 @@ při scope té fáze, ne teď.
 1. **Headless tisk (A3)** — „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe — v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
 3. **Další výchozí šablony** (MHD + linkový) — mechanismus embed→MLINE hotový, jen kurátorovat + přidat JSON do `SystemTemplates/`. (Táž práce evidovaná i v Fázi C+D: krok 44b / C4.)
+4. **Zákaznická dokumentace na wiki (post-release)** — 2 dokumenty: (a) uživatelská příručka
+   (výtah z F1 nápovědy + obrázky, úkolově Co→Jak), (b) „Novinky a plány" — zákaznická obdoba
+   changelogu + roadmapy (co je ve verzi, co chystáme). Zdroje: changelog, `HelpDialogViewModel
+   .BuildContent()`, draft e-mailu v pre-version-checklist §4.
 
 ---
 
@@ -69,11 +73,11 @@ při scope té fáze, ne teď.
 > [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md). Zde jen **otevřená
 > akční práce**, seřazená pro postupné odbavování. Vel.: S = do hodiny, M = půl dne, L = víc dní.
 
-### Malé — dispatch kandidáti (TD/AD, bez velkého průzkumu)
-
-> **TR8 („<1" místo „0") vyřazeno z dispatchu → park** (analýza 2026-07-10): naše časy jsou kumulativní,
-> 0-segment se tiskne jako opakované číslo (1,1), ne „0" (ověřeno `CB_CSADAD` 0380520 var. T3). Per-segment
-> sloupec TD nemá. Blokuje potvrzení od TRANSDEV (který sloupec — legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
+> Malé dispatch kandidáty (TR2/TR3/TR4) hotové 2026-07-10 → archiv/customer-requirements.
+> **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
+> jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
+> (který sloupec — legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
+> **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení — kolega.
 
 ### Větší — chce analýzu / datový model / business rozhodnutí
 
