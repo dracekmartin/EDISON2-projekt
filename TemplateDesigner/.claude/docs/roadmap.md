@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Stav k 2026-07-11.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-13.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet — patří do archivu.
 
 ---
@@ -9,9 +9,13 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
+1. **Vydání verze** — zbytek [`pre-version-checklist.md`](pre-version-checklist.md): push (pre-push testy),
+   publish blok E + smoke, release kroky, interní poznámka + zákaznický e-mail.
 2. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
 3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+
+*(Import PDF „projít před produkcí" — HOTOVO 2026-07-13: Sonnet 5, anti-halucinace, retry,
+standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce „Import PDF" níže.)*
 
 ---
 
@@ -198,7 +202,7 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 | Krok | Co | Stav |
 |---|---|---|
 | 32 | Detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | ⬜ |
-| 33 | JŘ-aware mód (3d) — AI Vision pipeline + `AiGuidedScheduleBuilder` fungují, **ladění na širší sadě JŘ** | 🟡 |
+| 33 | JŘ-aware mód (3d) — pipeline zpevněná 2026-07-13 (Sonnet 5, clampy, anti-halucinace, retry, jednostránkový import); zbývá **ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor) | 🟡 |
 
 3b křivky/Bézier — low-prio.
 
@@ -206,9 +210,14 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 
 ## 🤖 AI integrace — v pozadí
 
-> **Sekundární, ne core.** Aktuální funkce (generování šablony, PDF import enrichment, vision pipeline)
-> zůstávají funkční; další rozšíření až budou reální uživatelé s potřebou. JSON šablona + DataSchema jsou
-> stabilní kontrakt pro AI — rozšíření kdykoli bez breaking changes. **Princip: copilot, ne autopilot.**
+> **Sekundární, ne core.** Aktuální funkce (pomocník, generátor šablon, AI Vision import PDF — vše Sonnet 5
+> přes EDISONAI/mlweb spravovaný klíč) zůstávají funkční; další rozšíření až budou reální uživatelé
+> s potřebou. JSON šablona + DataSchema jsou stabilní kontrakt pro AI — rozšíření kdykoli bez breaking
+> changes. **Princip: copilot, ne autopilot.**
+
+**Otevřené (post-release):** ostrá zkouška EDISONAI cesty bez lokálního klíče u první firmy ·
+potvrzení `source: "templatedesigner"` u autora mlwebu (checklist §4) · zveřejnění generátoru šablon
+(menu dnes jen pro vývojáře) až po otestování na reálných zadáních.
 
 **Budoucí:** MCP server (`get_template`/`apply_template`/`add_element`/… tenká vrstva nad ViewModelem, každý
 tool → `_vm.Execute(command)`) · onboarding průvodce · smart suggestions (TableElement → sloupce z DataSchema) ·
