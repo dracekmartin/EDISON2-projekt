@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-13 — UX fixy z pre-version průchodu (blok A checklistu)
+
+Nálezy z ručního testování před úterní verzí. Build 0 chyb, .NET 340/340.
+
+- **Zoom ke kurzoru** — Ctrl+kolečko drží bod pod myší na místě (přepočet scroll offsetů po
+  layout passu); dřív zoom „utíkal" doleva a uživatel se musel doscrollovat.
+- **Snap rozměrů při vzniku elementu** — se zapnutým snapem se na krok mřížky zaokrouhlí
+  i šířka/výška (výchozí velikosti 80×8, 190×25… nebyly násobky kroku → spodní hrana nikdy
+  neseděla na mřížce). Element menší než krok (čára) se nezvětšuje.
+- **Nové defaulty designeru:** SnapToGrid ZAP + krok mřížky **1 mm** (dřív VYP + 5 mm — hrubý krok
+  byl hlavní zdroj pocitu „nepřesného" snapu). Per-user MainState / per-template EditorPreferences
+  mají přednost — stávající uživatelé svůj stav neztratí.
+- **Imposice viditelná ve statusu** — každý export s aktivní imposicí vypíše „… · imposice 2×1
+  na list 210×297 mm" (per-agenda persistovaná volba jinak překvapila „proč mám půlku stránek").
+- **Paleta/menu:** Kód (QR…) před Tabulkou. **Šipka směru:** labely voleb vysvětlují kreslení
+  u okraje elementu (u širokého elementu je vpravo „daleko" — vypadalo jako nefunkční).
+- Do backlogu (roadmap): snap/indikace čtverce při resize · per-šablona hodnoty tiskových parametrů.
+
 ## 2026-07-11 — Dvouosý model agend: Agenda × Varianta (názvosloví dle legacy analýzy)
 
 Roadmap „typ šablony vs agenda" (podnět kolegy). Analýza legacy (RG strom `agenda→oblasti→sestavy`

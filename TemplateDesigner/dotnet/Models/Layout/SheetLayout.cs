@@ -43,6 +43,10 @@ public sealed record SheetLayoutOptions
     /// <summary>Y počátek bloku stránek (centrovaný) v mm.</summary>
     public float BlockOriginY => (SheetHeight - Rows * PageHeight) / 2f;
 
+    /// <summary>Krátký popis pro status hlášky exportu — ať je vidět, že se skládalo na listy
+    /// (per-agenda persistovaná imposice jinak uživatele překvapí „proč mám půlku stránek").</summary>
+    public string ShortLabel => $"imposice {Rows}×{Cols} na list {SheetWidth:0}×{SheetHeight:0} mm";
+
     /// <summary>X souřadnice svislých ořezových čar (všechny hranice sloupců vč. krajních) v mm.</summary>
     public IEnumerable<float> CutLinesX => Enumerable.Range(0, Cols + 1).Select(i => BlockOriginX + i * PageWidth);
 

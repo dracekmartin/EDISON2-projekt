@@ -468,8 +468,24 @@ public partial class MainWindow : Window
         if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
         e.Handled = true;
         int newIdx = Math.Clamp(CmbZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
-        if (newIdx != CmbZoom.SelectedIndex)
-            CmbZoom.SelectedIndex = newIdx;
+        if (newIdx == CmbZoom.SelectedIndex) return;
+
+        // Zoom ke kurzoru: bod obsahu pod myší má po zoomu zůstat pod myší (standard editorů).
+        // Offsety se nastaví až po layout passu (BeginInvoke Loaded) — ScrollViewer jinak clampne
+        // na starou velikost plátna.
+        var mouse = e.GetPosition(CanvasScrollViewer);
+        double contentX = CanvasScrollViewer.HorizontalOffset + mouse.X;
+        double contentY = CanvasScrollViewer.VerticalOffset + mouse.Y;
+        float oldZoom = ZoomLevels[Math.Clamp(CmbZoom.SelectedIndex, 0, ZoomLevels.Length - 1)];
+        float scale = ZoomLevels[newIdx] / oldZoom;
+
+        CmbZoom.SelectedIndex = newIdx;   // SelectionChanged přenastaví State.Zoom + UpdateCanvasSize
+
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            CanvasScrollViewer.ScrollToHorizontalOffset(contentX * scale - mouse.X);
+            CanvasScrollViewer.ScrollToVerticalOffset(contentY * scale - mouse.Y);
+        });
     }
 
     private void FitToPage()
@@ -1168,8 +1184,8 @@ public partial class MainWindow : Window
         Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Rectangle, 5, 5));
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
-        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
+        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
 
         // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
         var kind = _vm.CurrentAgendaElementKind;

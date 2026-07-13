@@ -699,10 +699,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             Label = "Pozice šipky", Group = "Směr jízdy",
             Get = () => DirectionArrowPosition,
             Set = v => DirectionArrowPosition = (DirectionArrowSide)v,
+            // „u okraje elementu" v labelu záměrně — šipka se kreslí na hraně elementu, ne u sloupců;
+            // u širokého elementu je tedy daleko vpravo a uživateli se zdálo, že se „nic nezměnilo".
             Options =
             [
-                ("Vpravo", (object)DirectionArrowSide.Right),
-                ("Vlevo",  (object)DirectionArrowSide.Left),
+                ("Vpravo (u pravého okraje elementu)", (object)DirectionArrowSide.Right),
+                ("Vlevo (u levého okraje elementu)",   (object)DirectionArrowSide.Left),
             ]
         },
         new ColorPropertyDescriptor { Label = "Barva šipky",     Group = "Směr jízdy", Get = () => DirectionArrowColor,  Set = v => DirectionArrowColor = v },

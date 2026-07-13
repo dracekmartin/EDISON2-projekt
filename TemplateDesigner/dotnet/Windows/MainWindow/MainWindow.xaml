@@ -303,13 +303,13 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.ImageElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická — řádky z dat)" Tag="DynamicTableElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, EAN, ...)" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická — řádky z dat)" Tag="DynamicTableElement"
+                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
+                            <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
                         <!-- JŘ elementy — viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
@@ -396,7 +396,7 @@
                             <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </ToggleButton>
                         <ComboBox x:Name="CmbGridSize" Width="Auto" MinWidth="64" VerticalAlignment="Center" Margin="2,0"
-                                  ToolTip="Velikost mřížky" SelectedIndex="4"
+                                  ToolTip="Velikost mřížky" SelectedIndex="2"
                                   SelectionChanged="CmbGridSize_SelectionChanged">
                             <ComboBoxItem Content="0,2 mm" Tag="0.2"/>
                             <ComboBoxItem Content="0,5 mm" Tag="0.5"/>

@@ -39,6 +39,10 @@
   První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** — tržní minimum
   (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
+- **UX drobnosti z pre-version průchodu (2026-07-13):** snap/indikace čtverce při resize obdélníku
+  (à la Figma — threshold + vizuální hint, S–M) · **per-šablona hodnoty tiskových parametrů**
+  (PrintDialog volba „načíst z aktuální šablony"; dnes per-agenda — chce design kam uložit
+  a co má přednost; navazuje na existující TODO „extrakce na Template/agenda-config", M)
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované

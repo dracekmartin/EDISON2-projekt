@@ -148,3 +148,13 @@
 | 1 | | | | |
 | 2 | | | | |
 | 3 | | | | |
+- Rozumne vychozi nastaveni pro snapovani a mrizku s hlediska UX
+- Prehodit QR kdo a dynamickou tabulku v nabidce elementu
+- Kdyz zoomuji sipka + kolecko na prave strane stranky, chtel bych se zoomovat tam, ted zustane scrollbar vzdycky vlevo a musim se rucne presnunou
+- Vizualni upozorneni / snap pokud budu tahat obdelnik prave kdyz se z nej stane na mrizce ctverec, at nemusi pocitat rucne
+- Snapovani na mrizku obcas neni presne - obcas to je trochu dole nebo nad mrizkou - proc to je? - asi kdyz mam vychozi vysku elementu, tak ta se po pridani na canvas nejak nesnapne, takze to musim upravit rucni - co s tim z hledsska UX?
+- Pri uzych uzych zastavkach se sipka smeru vytiskne vpravo spatne?
+- Projit napovedu a jestli jim pujde pomocnik
+- Ve formulari tisku pridat moznost (pouze pokud je otevreno primo z TD), aby se hodnoty paraemtru nacetly podle aktualne otevrene sablony
+- Mam A5 sablonu na sirku, jak to nyni vytisknu, aby jedna zastavka byla jedna stranka v pdf? Imposize to ted dava 2 na jednu a4 na vysku
+-

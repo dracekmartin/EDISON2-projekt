@@ -183,7 +183,7 @@ public class PrintDialogViewModel : EDViewModel
             var data = _buildMockData(_paramValues);
             RequestRenderPdf?.Invoke(filePath, data, sheets);
             OpenPdf(filePath);
-            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}";
+            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}{(sheets is null ? "" : $" · {sheets.ShortLabel}")}";
         }
         catch (Exception ex)
         {
@@ -224,13 +224,14 @@ public class PrintDialogViewModel : EDViewModel
             // Agregovaná kontrola přetečení přes všechny instance — layout-only, levné (data už máme).
             var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
 
+            string sheetInfo = sheets is null ? "" : $" · {sheets.ShortLabel}";
             if (splitMode == ExportSplitMode.Single)
             {
                 RequestRenderMultiPdf?.Invoke(target, dataPages, sheets);
                 OpenPdf(target);
                 StatusText = overflow > 0
-                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}";
+                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}";
                 return;
             }
 
@@ -247,8 +248,8 @@ public class PrintDialogViewModel : EDViewModel
 
             OpenFolder(target);
             StatusText = overflow > 0
-                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem)";
+                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}";
         }
         catch (Exception ex)
         {

@@ -1309,7 +1309,8 @@ public class TemplateDesignerViewModel : EDViewModel
                 StatusText = $"Generuji PDF: {p.done}/{p.total} datových stránek…");
             await Task.Run(() => RenderPdfToFile(path, pages, snapshot, renderProgress, sheets));
 
-            StatusText = $"PDF uloženo: {Path.GetFileName(path)} ({pages.Count} datových stránek)";
+            StatusText = $"PDF uloženo: {Path.GetFileName(path)} ({pages.Count} datových stránek)"
+                       + (sheets is null ? "" : $" · {sheets.ShortLabel}");
             OpenExportedFile(path);
         }
         finally { _exportRunning = false; }
@@ -2525,6 +2526,21 @@ public class TemplateDesignerViewModel : EDViewModel
         else
         {
             element = CreateElementByType(elementType!, mmX, mmY);
+        }
+
+        // Snap i rozměrů — výchozí velikosti (80×8, 190×25…) nejsou násobky kroku mřížky,
+        // takže bez tohoto spodní/pravá hrana nikdy neseděla na mřížce a element působil
+        // „mimo grid" hned po přidání. Zaokrouhlení na 0 (element menší než krok) → původní rozměr.
+        if (State.SnapToGrid)
+        {
+            float g = State.GridSize;
+            static float SnapSize(float v, float step)
+            {
+                float snapped = MathF.Round(v / step) * step;
+                return snapped > 0 ? snapped : v;
+            }
+            element.Width = SnapSize(element.Width, g);
+            if (element.Height is { } h) element.Height = SnapSize(h, g);
         }
 
         Execute(new AddElementCommand(targetSection, element));
