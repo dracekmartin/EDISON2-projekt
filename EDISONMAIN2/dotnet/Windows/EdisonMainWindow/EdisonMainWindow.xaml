@@ -114,8 +114,8 @@
                 <MenuItem Header="Helpdesk, Wiki"    Command="{Binding OpenHelpdeskWebCommand}"/>
             </MenuItem>
             <MenuItem Header="Styl">
-                <MenuItem Header="Použít"       IsCheckable="True" IsChecked="{Binding FontApplied}"/>
-                <MenuItem Header="Zvolený font" Command="{Binding SelectFontCommand}"/>
+                <MenuItem Header="Vybrat font…" Command="{Binding SelectFontCommand}"/>
+                <MenuItem Header="Výchozí font" Command="{Binding ResetFontCommand}"/>
             </MenuItem>
             <MenuItem Header="Test funkcí">
                 <MenuItem Header="Test InputForm"    Command="{Binding OpenInputFormTestCommand}"/>
@@ -194,7 +194,9 @@
                         </StackPanel.ContextMenu>
                     </StackPanel>
                 </DataTemplate>
-                <Style TargetType="{x:Type TreeViewItem}">
+                <!-- BasedOn → zdědí moderní template (chevron, hover, accent) z EDControlStyles;
+                     bez něj by lokální styl spadl na default WPF TreeViewItem šablonu. -->
+                <Style TargetType="{x:Type TreeViewItem}" BasedOn="{StaticResource {x:Type TreeViewItem}}">
                     <!-- TwoWay → rozbalení/sbalení uživatelem se propíše do modelu (VM ho persistuje). -->
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                     <!-- Skryje uzly nevyhovující vyhledávání (VM nastaví IsVisibleBySearch). -->
