@@ -36,8 +36,7 @@
 
 | Dokument | Cíl |
 |---|---|
-| [`uzivatelska-prirucka-obecna.md`](uzivatelska-prirucka-obecna.md) | Wiki 1a: obecné ovládání (draft 2026-07-08 — před publikací zaktualizovat: imposice, agenda×varianta, AI) |
-| [`uzivatelska-prirucka-zastavkovy-jr.md`](uzivatelska-prirucka-zastavkovy-jr.md) | Wiki 1b: agenda zastávkový JŘ (draft 2026-07-08) |
+| [`uzivatelska-prirucka.md`](uzivatelska-prirucka.md) | Wiki 1: uživatelská příručka — část I obecné ovládání + část II zastávkový JŘ; další agendy = nové části (aktualizováno 2026-07-13) |
 | [`plan-a-zmeny.md`](plan-a-zmeny.md) | Wiki 2: „Novinky a plány" — zákaznický changelog+roadmapa (aktualizováno 2026-07-13) |
 
 ## Archivy (append-only)
