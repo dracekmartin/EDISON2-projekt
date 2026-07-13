@@ -359,6 +359,8 @@ public partial class MainWindow : Window
             {
                 if (_vm is not null && item.Tag is string p)
                 {
+                    // Stejně jako Ctrl+O / import: neztratit rozdělanou práci bez potvrzení.
+                    if (!await _vm.ConfirmUnsavedChangesAsync()) return;
                     await _vm.OpenTemplateFromFileAsync(p);
                     RebuildRecentFilesMenu();
                 }
@@ -980,8 +982,12 @@ public partial class MainWindow : Window
         vm.RequestRenderPdf = (filePath, data, sheets) =>
             _previewCanvas!.RenderToPdf(filePath, data, sheets);
 
+        // Render nad snapshotem šablony — VM volá callback z threadpoolu (async tisk),
+        // živá šablona by závodila s preview renderem UI threadu (element cache).
         vm.RequestRenderMultiPdf = (filePath, dataPages, sheets) =>
-            _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages, sheetLayout: sheets);
+            _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages,
+                template: Serialization.TemplateSerializer.DeepClone(_vm!.State.CurrentTemplate),
+                sheetLayout: sheets);
 
         vm.RequestOverflowCheck = dataPages =>
             _previewCanvas!.CountOverflowingPages(dataPages);
@@ -1037,15 +1043,35 @@ public partial class MainWindow : Window
         }
     }
 
+    private bool _aiKeyFetchRunning;
+
     /// <summary>
     /// Vyzvedne AI klíč (lokální / mlweb přes EdisonAiService). Klíč null = AI nedostupné,
     /// Reason nese uživatelský důvod (limit, chybí konfigurace…) — dialogy ho zobrazí,
     /// ale samy fungují dál (generátor, PDF import mají AI jako podmíněný krok).
+    /// Cold-start = Caché config + HTTP resolve (sekundy, timeout 60 s) → wait-cursor + status,
+    /// guard proti opakovanému kliku do menu během volání.
     /// </summary>
-    private static async Task<(string? Key, string? Reason)> TryGetAiApiKeyAsync()
+    private async Task<(string? Key, string? Reason)> TryGetAiApiKeyAsync()
     {
-        try { return (await Services.EdisonAiService.GetApiKeyAsync(), null); }
-        catch (Services.EdisonAiException ex) { return (null, ex.Message); }
+        if (_aiKeyFetchRunning) return (null, "Probíhá předchozí požadavek — chvíli strpení.");
+        _aiKeyFetchRunning = true;
+        Mouse.OverrideCursor = Cursors.Wait;
+        if (_vm is not null) _vm.StatusText = "Ověřuji dostupnost AI služby…";
+        try
+        {
+            return (await Services.EdisonAiService.GetApiKeyAsync(), null);
+        }
+        catch (Services.EdisonAiException ex)
+        {
+            return (null, ex.Message);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+            if (_vm is not null) _vm.StatusText = "";
+            _aiKeyFetchRunning = false;
+        }
     }
 
     private async void MenuImportPdf_Click(object sender, RoutedEventArgs e)

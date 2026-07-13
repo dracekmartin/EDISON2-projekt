@@ -498,14 +498,15 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
 
-        // Startovní agenda z EDISONMAIN2 kontraktu (inputParam "Agenda=<kód>" — podle uzlu
-        // stromu legacy shellu / MHD2 tlačítka). Neznámý kód → default ze CreateSampleTemplate.
-        if (startupAgendaCode is not null)
-        {
-            var match = resolvedAgendas.FirstOrDefault(a =>
-                string.Equals(a.Code, startupAgendaCode, StringComparison.OrdinalIgnoreCase));
-            if (match is not null) State.CurrentTemplate.AgendaCode = match.Code;
-        }
+        // Startovní agenda — priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
+        // uzlu stromu shellu / MHD2 tlačítka), (2) poslední použitá agenda uživatele (per-user
+        // prefs), (3) fallback ze CreateSampleTemplate. Neznámý kód se přeskočí.
+        string? ResolveKnown(string? code) => code is null ? null
+            : resolvedAgendas.FirstOrDefault(a =>
+                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase))?.Code;
+        var startAgenda = ResolveKnown(startupAgendaCode)
+                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode);
+        if (startAgenda is not null) State.CurrentTemplate.AgendaCode = startAgenda;
 
         RebuildSections();
 
@@ -576,7 +577,8 @@ public class TemplateDesignerViewModel : EDViewModel
             ShowPreviewPane:    showPreviewPane,
             LeftPanelWidthPx:   leftPanelPx,
             PreviewPanelWidthPx: previewPanelPx,
-            ActiveLeftTabIndex: activeTabIndex);
+            ActiveLeftTabIndex: activeTabIndex,
+            LastAgendaCode:     State.CurrentTemplate.AgendaCode);
 
         return Preferences.SaveMainStateAsync(snapshot);
     }
@@ -1256,6 +1258,21 @@ public class TemplateDesignerViewModel : EDViewModel
             State.CurrentTemplate.Name,
             State.CurrentTemplate.AgendaCode);
         if (Dialogs?.ShowSaveToCache(vm) != true) return false;
+
+        // Kolize názvu: bez kontroly by vznikla tichá duplicita (dvě šablony stejného jména,
+        // v přehledu nerozlišitelné). Best-effort — když list selže, uložení neblokujeme.
+        try
+        {
+            var existing = await TemplateStorage.ListAsync(vm.AgendaCode);
+            var clash = existing.FirstOrDefault(t =>
+                string.Equals(t.Name, vm.Name, StringComparison.OrdinalIgnoreCase)
+                && t.TemplateId != State.CurrentTemplate.Id);
+            if (clash is not null && !PopupDisplayer.Confirm(
+                    $"Šablona „{vm.Name}\" už v databázi existuje (upravena {clash.ModifiedAt}).\n" +
+                    "Uložit i tak jako další šablonu se stejným názvem?"))
+                return false;
+        }
+        catch (CacheTemplateException) { /* kontrola je best-effort */ }
 
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
@@ -2611,8 +2628,8 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Sample template ───────────────────────────────────────────────────────
-    // DEV (test AD): výchozí agenda = Zastávkový JŘ (AD) + jedna sekce přes celou A4. NECOMMITOVAT —
-    // produkční starter je MHD + Záhlaví/Obsah/Patička (viz git). Lokální testovací tweak.
+    /// <summary>Fallback startovní šablona — agendu typicky přepíše EDISON kontrakt nebo
+    /// poslední použitá agenda uživatele (viz ctor); AD je default pro první spuštění.</summary>
     public static Template CreateSampleTemplate()
     {
         var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };
