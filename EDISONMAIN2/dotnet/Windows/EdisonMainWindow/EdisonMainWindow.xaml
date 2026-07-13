@@ -39,7 +39,9 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Top-level menu — replikuje pořadí a obsah legacy frmNoMDI.mnuMain.
+        <!-- Top-level menu — obsah vychází z legacy frmNoMDI.mnuMain, seskupení je vlastní:
+             Uživatel = jen identita/session, Nastavení konsoliduje preference (font, jazyk,
+             okna), support diagnostika pod Nápovědou, Nápověda předposlední (Windows konvence).
              Combobox firem nahrazuje legacy "Firma" label (původně jen statický).
              "Test funkcí" je dev-only nadstavba, v legacy je tam "Test funkcí (M-line)" s debug položkami.
              Border drží spodní 1px linku přes celou šířku; Menu lokálně potlačí svoji vlastní linku, ta by končila u TextBlocku. -->
@@ -64,14 +66,9 @@
                 <MenuItem Header="Konec"                 Command="{Binding ExitCommand}"/>
             </MenuItem>
             <MenuItem Header="Uživatel">
-                <MenuItem Header="Přihlásit jiného uživatele"     Command="{Binding LoginAsAnotherUserCommand}"/>
-                <MenuItem Header="Aktuální uživatel"              Command="{Binding ShowUserEditCommand}"/>
-                <MenuItem Header="Změnit heslo"                   Command="{Binding ChangePasswordCommand}"/>
-                <MenuItem Header="Úlohy na pozadí"                Command="{Binding ShowBgTasksCommand}"/>
-                <MenuItem Header="Možnosti">
-                    <MenuItem Header="Spouštět okna jako dialogy" IsCheckable="True" IsChecked="{Binding ShowWindowsAsDialogs}"/>
-                </MenuItem>
-                <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
+                <MenuItem Header="Přihlásit jiného uživatele" Command="{Binding LoginAsAnotherUserCommand}"/>
+                <MenuItem Header="Aktuální uživatel"          Command="{Binding ShowUserEditCommand}"/>
+                <MenuItem Header="Změnit heslo"               Command="{Binding ChangePasswordCommand}"/>
             </MenuItem>
             <MenuItem Header="Spuštěné moduly" ItemsSource="{Binding RunningModules}">
                 <!-- MouseEnter, ne SubmenuOpened — prázdný submenu by se neotevřel a chicken-and-egg by zablokoval refresh. -->
@@ -101,21 +98,28 @@
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
             <MenuItem Header="Nástroje">
-                <MenuItem Header="Aktualizovat licenci"        Command="{Binding RefreshLicenseCommand}"/>
-                <MenuItem Header="Správa zámků"                Command="{Binding ShowUsersLocksCommand}"/>
-                <MenuItem Header="Aktivita uživatelů"          Command="{Binding ShowUsersActivityCommand}"/>
+                <MenuItem Header="Úlohy na pozadí"      Command="{Binding ShowBgTasksCommand}"/>
+                <MenuItem Header="Aktualizovat licenci" Command="{Binding RefreshLicenseCommand}"/>
                 <Separator/>
-                <MenuItem Header="Nastavení jazyka"            Command="{Binding ShowLanguageSettingsCommand}"/>
+                <!-- Admin-only (command gate přes IsAdmin) — separator je odděluje od běžných nástrojů. -->
+                <MenuItem Header="Správa zámků"         Command="{Binding ShowUsersLocksCommand}"/>
+                <MenuItem Header="Aktivita uživatelů"   Command="{Binding ShowUsersActivityCommand}"/>
+            </MenuItem>
+            <MenuItem Header="Nastavení">
+                <MenuItem Header="Vybrat font…" Command="{Binding SelectFontCommand}"/>
+                <MenuItem Header="Výchozí font" Command="{Binding ResetFontCommand}"/>
                 <Separator/>
-                <MenuItem Header="Odeslat systémové soubory"   Command="{Binding SendSystemLogCommand}"/>
+                <MenuItem Header="Nastavení jazyka" Command="{Binding ShowLanguageSettingsCommand}"/>
+                <Separator/>
+                <MenuItem Header="Spouštět okna jako dialogy"     IsCheckable="True" IsChecked="{Binding ShowWindowsAsDialogs}"/>
+                <MenuItem Header="Obnovit výchozí nastavení oken" Command="{Binding ResetFormsCommand}"/>
             </MenuItem>
             <MenuItem Header="Nápověda">
                 <MenuItem Header="Informace o verzi" Command="{Binding ShowInfoCommand}"/>
                 <MenuItem Header="Helpdesk, Wiki"    Command="{Binding OpenHelpdeskWebCommand}"/>
-            </MenuItem>
-            <MenuItem Header="Styl">
-                <MenuItem Header="Vybrat font…" Command="{Binding SelectFontCommand}"/>
-                <MenuItem Header="Výchozí font" Command="{Binding ResetFontCommand}"/>
+                <Separator/>
+                <!-- Support diagnostika — dělá se na vyžádání helpdesku, proto u Nápovědy. -->
+                <MenuItem Header="Odeslat systémové soubory" Command="{Binding SendSystemLogCommand}"/>
             </MenuItem>
             <MenuItem Header="Test funkcí">
                 <MenuItem Header="Test InputForm"    Command="{Binding OpenInputFormTestCommand}"/>

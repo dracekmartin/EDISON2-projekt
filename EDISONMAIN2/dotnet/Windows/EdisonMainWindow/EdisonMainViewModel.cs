@@ -57,20 +57,20 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand LoginAsAnotherUserCommand { get; }
         public ICommand ShowUserEditCommand { get; }
         public ICommand ChangePasswordCommand { get; }
-        public ICommand ShowBgTasksCommand { get; }
-        public ICommand ResetFormsCommand { get; }
         // Nástroje menu
+        public ICommand ShowBgTasksCommand { get; }
         public ICommand RefreshLicenseCommand { get; }
         public ICommand ShowUsersLocksCommand { get; }
         public ICommand ShowUsersActivityCommand { get; }
+        // Nastavení menu (+ toggle ShowWindowsAsDialogs níže jako bool property)
+        public ICommand SelectFontCommand { get; }
+        public ICommand ResetFontCommand { get; }
         public ICommand ShowLanguageSettingsCommand { get; }
-        public ICommand SendSystemLogCommand { get; }
+        public ICommand ResetFormsCommand { get; }
         // Nápověda menu
         public ICommand ShowInfoCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
-        // Styl menu
-        public ICommand SelectFontCommand { get; }
-        public ICommand ResetFontCommand { get; }
+        public ICommand SendSystemLogCommand { get; }
         // Spuštěné moduly menu
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
@@ -178,24 +178,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _prefs.Save();
                 }
             });
-            ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
-            ResetFormsCommand             = Command(ResetForms);
 
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
+            ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             RefreshLicenseCommand         = Command(RefreshLicense);
             // Admin-only — legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
             ShowUsersLocksCommand         = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
             ShowUsersActivityCommand      = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
+
+            // Nastavení menu
+            SelectFontCommand             = Command(SelectFont);
+            ResetFontCommand              = Command(ResetFont);
             ShowLanguageSettingsCommand   = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
-            SendSystemLogCommand          = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
+            ResetFormsCommand             = Command(ResetForms);
 
             // Nápověda menu
             ShowInfoCommand               = Command(ShowAppInfo);
             OpenHelpdeskWebCommand        = Command(() => OpenWebUrl("http://podpora.m-line.cz"));
-
-            // Styl menu
-            SelectFontCommand             = Command(SelectFont);
-            ResetFontCommand              = Command(ResetFont);
+            SendSystemLogCommand          = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
             // Spuštěné moduly menu — dynamický seznam, refresh při SubmenuOpened.
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);
