@@ -47,9 +47,9 @@ těžko vyznali. Cíl = **srozumitelnost** → přidávat jen to, co zákazník 
 **Nové požadavky** zaznamenané z živých prezentací (neanalyzováno, před implementací založit ticket) —
 detail viz [`customer-requirements-zastavkovy-jr.md §P`](customer-requirements-zastavkovy-jr.md),
 backlog v [`roadmap.md`](roadmap.md):
-- **P1** — ruční poznámky do patičky JŘ
-- **P2** — sloučení více linek se stejným posledním trojčíslím (i různá Tč / více dopravců) do 1 výstupu
-- **P3** — logická imposice 2×A5 oboustranně na A4
+- **P1** — ruční poznámky do patičky JŘ *(vyřazeno 2026-07-10 — nejasné zadání)*
+- **P2** — sloučení více linek se stejným posledním trojčíslím (i různá Tč / více dopravců) do 1 výstupu *(řeší se mimo tuto agendu)*
+- **P3** — logická imposice 2×A5 na A4 *(✅ hotovo 2026-07-12, v1 bez brožury/duplexu)*
 
 **Poctivé výhrady prezentované zákazníkům** (NEpodávat jako 100% hotové):
 - Helpdesk tickety vyřešené převážně v **AD agendě** (TRANSDEV jezdí linkově); MHD modul může mít

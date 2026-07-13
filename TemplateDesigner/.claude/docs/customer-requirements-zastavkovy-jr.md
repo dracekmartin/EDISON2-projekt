@@ -1,7 +1,8 @@
 # Zastávkový JŘ — požadavky zákazníků z helpdesku
 
-Snapshot z Podpory M-line k **2026-05-11**, **konsolidováno 2026-07-10** (sekce 0 = stav pro uzavírání
-tiketů + dispatch). Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Caché agend
+Snapshot z Podpory M-line k **2026-05-11**, **konsolidováno 2026-07-10, revize 2026-07-13**
+(sekce 0 = stav pro uzavírání tiketů + dispatch; P3 imposice hotová, malí TR kandidáti odbaveni).
+Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Caché agend
 (`ZastavkoveJrMhd` / `ZastavkoveJrAd`). Aktualizuj při dalším procházení tiketů.
 
 > **Pozn. 2026-07-10:** od snapshotu přibyla **AD agenda** (`ZastavkoveJrAd`, TRANSDEV jede primárně AD)
@@ -85,13 +86,13 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 
 | # | Co | Vel. | Stav |
 |---|---|---|---|
-| P3 | Imposice 2×A5 → A4 | M–L | 🟠 = aktivní krok #1 roadmapy (imposiční vrstva) |
+| P3 | Imposice 2×A5 → A4 | — | ✅ **HOTOVO 2026-07-12** (v1: N-up „Uspořádání na list" v tiskovém dialogu, mřížka AUTO, opakování pro řezání, ořezové značky; per-agenda persistence). Brožura/duplex řazení = vědomě v2 (knižní JŘ). Detail §P3. |
 
 > **P1 a P2 vyřazeny (2026-07-10, dohoda):** P1 (poznámky do patičky) — nejasné přesné zadání, neodbavovat;
 > P2 (sloučit více linek) — řeší se jinde (mimo tuto agendu). Detail v §P ponechán jako evidence.
 
-**Dispatch kandidáti (malé, TD/AD, bez velkého průzkumu):** TR8 · TR2 · TR3 · TR4.
-Před dispatchem u každého rychle ověřit aktuální stav v kódu (nedělat už hotové).
+**Dispatch:** malí kandidáti odbaveni (TR3 ✅, TR4 ✅, TR2 implementováno — ⚠️ čeká SK ověření
+kódování na-znamení, TR8 ⏸️ park do potvrzení TRANSDEV). Zbývají jen 🟠 velké body (analýza/data).
 
 ---
 
@@ -292,14 +293,16 @@ dedikované pole „Poznámky", není potvrzeno). Až přijde konkrétní požad
 
 **Neodbavovat zde** — dohoda: řeší se jinde (mimo tuto agendu / úroveň, ne v rámci zastávkového JŘ dispatch).
 
-### P3. Logická imposice — 2× A5 oboustranně na jednu A4 ⬜ Nové (2026-06-24)
+### P3. Logická imposice — 2× A5 na jednu A4 ✅ HOTOVO v1 (2026-07-12)
 
-- **Zdroj:** prezentace zákazníkům 2026-06-24.
-- **Požadavek:** logicky vytisknout dvě A5 (oboustranně) na jednu A4 — tj. N-up imposice + duplex/brožura.
-- **Stav dnes:** `RenderMultiDataToPdf` generuje PDF = sekvence stránek v rozměru `PageSize` šablony (1 logická stránka = 1 PDF stránka, kreslená od `(0,0)`). **Žádná imposice ani duplex** — dnes to řeší výhradně ovladač tiskárny / Windows dialog („2 stránky na list" + „oboustranně" + „brožura"). PDF duplex nekóduje (přední/zadní = nastavení tiskárny).
-- **Háček pro implementaci:** `RenderPage(canvas, ps, ppm, xOffset, yOffset, page)` už bere offset → 2 logické A5 lze umístit na 1 fyzický A4 canvas.
-- **Možnosti:** (A) nechat na ovladači (0 práce, nekonzistentní); (B) imposice v našem PDF; (C) „sheet layout" vrstva nad PageLayoutEngine (logické stránky → fyzické archy) — nejčistší, sedí na vrstvenou architekturu.
-- **Odhad:** netriviální, hlavně pořadí stran pro brožuru (skládání). Samostatná imposiční vrstva, mimo per-element práci.
+- **Zdroj:** prezentace zákazníkům 2026-06-24; požadavek: N-up (2×A5 → A4), ideálně i duplex/brožura.
+- **Řešení (zvolena varianta C — sheet layout vrstva):** `Models/Layout/SheetLayout.cs`
+  (`SheetComposer` čistá logika), exportní pole v tiskovém dialogu „Uspořádání na list"
+  (Vypnuto / A4 / A3 × orientace) + mřížka AUTO (největší 1:1 fit, bez zmenšování) + „Každá
+  stránka na celý list" (táž vývěska N× pro řezání) + ořezové značky; persistence per agenda;
+  platí pro tiskový dialog i export z hlavního okna (PNG bez imposice). Detail → changelog 2026-07-12.
+- **Vědomě v2 (s knižním JŘ):** brožurové řazení stran + duplex — PDF duplex nekóduje,
+  přední/zadní zůstává na tiskárně.
 
 ---
 

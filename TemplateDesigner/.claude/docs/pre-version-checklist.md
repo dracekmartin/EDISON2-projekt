@@ -81,15 +81,15 @@
 
 ## 2. Dokumentace před verzí
 
-- [ ] **Changelog** — projít záznamy od minulé verze; doplnit chybějící, sjednotit formulace
-  (uživatelský jazyk u featur, technický u fixů).
-- [ ] **Roadmapa čistá** — jen otevřená práce; nic hotového nevisí (poslední kontrola sekce
-  Aktivní/Produkční/Zastávkový JŘ).
-- [ ] **CLAUDE.md „Co máme"** — nové featury zapsané (imposice ✅, dvouosý model ✅, TR3/TR4,
-  řazení legendy, symbolový font); „Známé problémy" aktuální (dnes prázdné — sedí?).
-- [ ] **customer-requirements-zastavkovy-jr.md** — stavy tiketů odpovídají realitě
-  (TR2 čeká SK ověření, TR3/TR4 hotové → připravit podklad pro odpovědi na helpdesku).
-- [ ] **ux-conventions tabulka zkratek** — žádný nový drift.
+- [x] **Changelog** — záznamy od minulé verze kompletní (AI vrstva, EDISONAI, PDF import, nápověda —
+  2026-07-13).
+- [x] **Roadmapa čistá** — plná revize 2026-07-13: import průchod odškrtnut, dispatch sekce sloučená,
+  wiki dokumentace přidána, import krok 32 gated na fixní tabulku, priorita 1 = vydání.
+- [x] **CLAUDE.md „Co máme"** — nové featury zapsané vč. AI/import/nápověda (2026-07-13); „Známé
+  problémy" prázdné — sedí.
+- [x] **customer-requirements-zastavkovy-jr.md** — revize 2026-07-13: P3 imposice ✅ hotová (v1),
+  dispatch kandidáti odbaveni (TR3/TR4 ✅, TR2 čeká SK, TR8 park); podklad pro helpdesk připraven.
+- [x] **ux-conventions tabulka zkratek** — bez driftu; nápověda F1 přepsána podle ní (2026-07-13).
 
 ---
 
@@ -136,6 +136,10 @@
 > - **Nástupiště u zastávek** — nový volitelný sloupec seznamu zastávek (přání TRANSDEV).
 > - **Přehlednější výběr typu sestavy** — sestavy jsou nově členěny podle agendy
 >   (Zastávkový JŘ, Linkový JŘ, Faktury) a varianty dat (AD / MHD).
+> - **Import PDF s umělou inteligencí** — z existující PDF vývěsky vytvoří editovatelnou
+>   šablonu (rozpozná zastávky, odjezdy i poznámky). Vyžaduje aktivaci AI služby — ozvěte se nám.
+> - **AI pomocník** — záložka Pomocník odpoví, kde v aplikaci co najdete (též po aktivaci AI služby).
+> - **Vylepšená nápověda (F1)** — s vyhledáváním (Ctrl+F).
 > - **Konzistentní řazení legendy poznámek** + řada drobných oprav a zrychlení.
 >
 > Podrobnosti rádi ukážeme; připomínky posílejte přes helpdesk.
@@ -157,10 +161,13 @@
 - Vizualni upozorneni / snap pokud budu tahat obdelnik prave kdyz se z nej stane na mrizce ctverec, at nemusi pocitat rucne
 - Snapovani na mrizku obcas neni presne - obcas to je trochu dole nebo nad mrizkou - proc to je? - asi kdyz mam vychozi vysku elementu, tak ta se po pridani na canvas nejak nesnapne, takze to musim upravit rucni - co s tim z hledsska UX?
 - Pri uzych uzych zastavkach se sipka smeru vytiskne vpravo spatne?
-- Projit napovedu a jestli jim pujde pomocnik
-- Ve formulari tisku pridat moznost (pouze pokud je otevreno primo z TD), aby se hodnoty paraemtru nacetly podle aktualne otevrene sablony
-- Mam A5 sablonu na sirku, jak to nyni vytisknu, aby jedna zastavka byla jedna stranka v pdf? Imposize to ted dava 2 na jednu a4 na vysku
--
+- ~~Projit napovedu a jestli jim pujde pomocnik~~ → **HOTOVO 2026-07-13**: nápověda F1 přepsána
+  (datově řízená + hledání Ctrl+F, zákaznický jazyk); pomocník na Sonnet 5 s vypnutým myšlením,
+  testován uživatelem — funguje dobře (eval sada §6 k doškrtání).
+- Ve formulari tisku pridat moznost (pouze pokud je otevreno primo z TD), aby se hodnoty paraemtru
+  nacetly podle aktualne otevrene sablony → **v roadmapě** (UX drobnosti, per-šablona hodnoty parametrů).
+- ~~Mam A5 sablonu na sirku, jak to vytisknu, aby jedna zastavka byla jedna stranka v pdf?~~
+  → **zodpovězeno**: Ctrl+P → Uspořádání na list → Vypnuto (volba se pamatuje per agenda).
 
 ---
 
