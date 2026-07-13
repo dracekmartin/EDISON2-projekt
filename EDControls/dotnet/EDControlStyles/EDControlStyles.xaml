@@ -1053,4 +1053,69 @@
         </Setter>
     </Style>
 
+    <!-- ═══════════════════════════════════════════════════════════════════
+         DataGrid — flat, tenké horizontální linky, bez row-header gutteru,
+         moderní hlavička. Selekce se řeší na buňce (funguje i pro FullRow).
+         Konzervativní: NEretemplatuje celý DataGrid (default drží scrollviewer/
+         řazení/resize), jen setters + hlavička + buňka.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style TargetType="DataGrid">
+        <Setter Property="Background"             Value="White"/>
+        <Setter Property="BorderBrush"            Value="{DynamicResource EDTheme.Border.Light}"/>
+        <Setter Property="BorderThickness"        Value="1"/>
+        <Setter Property="Foreground"             Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontFamily"             Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"               Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="RowBackground"          Value="White"/>
+        <Setter Property="GridLinesVisibility"    Value="Horizontal"/>
+        <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource EDTheme.Border.Light}"/>
+        <Setter Property="HeadersVisibility"      Value="Column"/>
+        <Setter Property="RowHeaderWidth"         Value="0"/>
+        <Setter Property="ColumnHeaderHeight"     Value="30"/>
+        <Setter Property="CanUserResizeRows"      Value="False"/>
+        <Setter Property="SnapsToDevicePixels"    Value="True"/>
+    </Style>
+
+    <Style TargetType="DataGridColumnHeader">
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Panel}"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Header}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="FontWeight"      Value="SemiBold"/>
+        <Setter Property="Padding"         Value="8,4"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="VerticalContentAlignment"   Value="Center"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
+        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+    </Style>
+
+    <Style TargetType="DataGridCell">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding"         Value="8,4"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DataGridCell">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Accent.BlueSelected}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
