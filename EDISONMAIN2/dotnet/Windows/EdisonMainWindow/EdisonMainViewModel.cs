@@ -68,8 +68,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Nápověda menu
         public ICommand ShowInfoCommand { get; }
         public ICommand OpenHelpdeskWebCommand { get; }
-        // Styl menu — SelectFont je akce, FontApplied je toggle (níže jako bool property).
+        // Styl menu
         public ICommand SelectFontCommand { get; }
+        public ICommand ResetFontCommand { get; }
         // Spuštěné moduly menu
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
@@ -194,6 +195,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Styl menu
             SelectFontCommand             = Command(SelectFont);
+            ResetFontCommand              = Command(ResetFont);
 
             // Spuštěné moduly menu — dynamický seznam, refresh při SubmenuOpened.
             RefreshRunningModulesCommand  = Command(RefreshRunningModules);
@@ -842,24 +844,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         }
 
 
-        // Styl → Použít — aplikuje uložený font (FontFamily + FontSize) na celou aplikaci.
-        // Storage je shared font.json (EDControls.UserFonts.UserFontPreference), takže ostatní
-        // m-line tooly (TemplateDesigner) přes FileSystemWatcher okamžitě reagují na změnu.
-        public bool FontApplied
-        {
-            get => UserFontPreference.Current.FontApplied;
-            set
-            {
-                if (UserFontPreference.Current.FontApplied == value) return;
-                UserFontPreference.Current.FontApplied = value;
-                UserFontPreference.Current.Save();
-                OnPropertyChanged();
-                FontService.Apply(UserFontPreference.Current);
-            }
-        }
-
-        // Styl → Zvolený font — WinForms FontDialog (jediný standardní picker dostupný v .NET).
-        private void SelectFont()
+        // Styl → Vybrat font — WinForms FontDialog (jediný standardní picker dostupný v .NET).
+        // Výběr font rovnou aplikuje na celou aplikaci. Storage je shared font.json
+        // (EDControls.UserFonts.UserFontPreference), takže ostatní m-line tooly
+        // (TemplateDesigner) přes FileSystemWatcher okamžitě reagují na změnu.
+        private static void SelectFont()
         {
             using var dialog = new System.Windows.Forms.FontDialog();
             if (!string.IsNullOrEmpty(UserFontPreference.Current.FontFamily))
@@ -875,8 +864,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
             UserFontPreference.Current.FontFamily = dialog.Font.FontFamily.Name;
             UserFontPreference.Current.FontSize = dialog.Font.Size;
+            UserFontPreference.Current.FontApplied = true;
             UserFontPreference.Current.Save();
-            if (FontApplied) FontService.Apply(UserFontPreference.Current);
+            FontService.Apply(UserFontPreference.Current);
+        }
+
+        // Styl → Výchozí font — vrátí default tokeny z EDTheme.xaml. FontFamily/FontSize
+        // v prefs zůstávají (pre-fill dialogu při příštím výběru), vypíná se jen FontApplied.
+        private static void ResetFont()
+        {
+            if (!UserFontPreference.Current.FontApplied) return;
+            UserFontPreference.Current.FontApplied = false;
+            UserFontPreference.Current.Save();
+            FontService.Apply(UserFontPreference.Current);
         }
 
         private void OpenWebUrl(string url)
