@@ -203,12 +203,15 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 
 ## 🟡 Import PDF — doladění
 
+> Pre-produkční průchod HOTOVÝ 2026-07-13 (Sonnet 5, anti-halucinace, retry, standardní dialog,
+> jednostránkový JŘ import) → changelog. Zde jen dlouhodobé ladění:
+
 | Krok | Co | Stav |
 |---|---|---|
-| 32 | Detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | ⬜ |
-| 33 | JŘ-aware mód (3d) — pipeline zpevněná 2026-07-13 (Sonnet 5, clampy, anti-halucinace, retry, jednostránkový import); zbývá **ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor) | 🟡 |
+| 32 | **Obecný import: detekce tabulek z mřížky čar** — místo 50 čar + 20 textů jeden tabulkový element. ⚠️ **Gated na oživení fixní tabulky (Fáze B)** — cíl importu statické tabulky je Fixed mód, který je dnes uspaný; do té doby nedělat | ⬜ |
+| 33 | JŘ import: **ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor — jiná města, SK, netypické legendy) | 🟡 |
 
-3b křivky/Bézier — low-prio.
+Křivky/Bézier v obecném importu — low-prio, bez poptávky.
 
 ---
 
