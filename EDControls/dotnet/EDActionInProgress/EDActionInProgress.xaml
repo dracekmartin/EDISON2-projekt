@@ -21,7 +21,7 @@
         row7: .  D  .  D  .  D  .  D  .  .
     -->
 
-    <Grid Background="#80000000">
+    <Grid Background="#1A000000">
         <Border Background="White"
                 CornerRadius="4"
                 Padding="0,18"
