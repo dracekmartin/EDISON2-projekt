@@ -86,7 +86,24 @@ public class WindowNavigator : IWindowNavigator
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
         _legacyProcesses.Add(new(prc, exeName, formFqn));
+        WireDialogBehavior(prc);
+    }
 
+    public async Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
+    {
+        var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
+        if (prc == null) return;
+        _legacyProcesses.Add(new(prc, exeName, formFqn));
+        WireDialogBehavior(prc);
+        // Overlay (caller drží ActionInProgress) se schová jakmile okno modulu naběhne;
+        // shell zůstane zašedlý přes WireDialogBehavior až do zavření child okna.
+        await WaitForModuleWindowAsync(prc);
+    }
+
+    /// <summary>Modal-like chování pro child proces: zašedne owner shell po dobu běhu childu
+    /// a bounce jeho okna do popředí při kliku na zašedlý shell.</summary>
+    private void WireDialogBehavior(Process prc)
+    {
         var owner = Application.Current.MainWindow;
         if (owner != null) owner.IsEnabled = false;
 

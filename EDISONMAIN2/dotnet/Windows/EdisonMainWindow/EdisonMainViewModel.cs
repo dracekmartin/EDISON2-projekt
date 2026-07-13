@@ -165,7 +165,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
-            ShowUserEditCommand           = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
+            ShowUserEditCommand           = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
             ChangePasswordCommand         = Command(() =>
             {
                 bool? changed = WindowNavigator.ShowDialog(
@@ -177,16 +177,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _prefs.Save();
                 }
             });
-            ShowBgTasksCommand            = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
+            ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
             ResetFormsCommand             = Command(ResetForms);
 
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
             RefreshLicenseCommand         = Command(RefreshLicense);
             // Admin-only — legacy frmNoMDI.vb:1101-1102 gatuje obě menu items přes UserIsAdmin.
-            ShowUsersLocksCommand         = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
-            ShowUsersActivityCommand      = Command(() => WindowNavigator.ShowLegacy("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
-            ShowLanguageSettingsCommand   = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
-            SendSystemLogCommand          = Command(() => WindowNavigator.ShowLegacyAsDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
+            ShowUsersLocksCommand         = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSLocks"), () => _services.IsAdmin);
+            ShowUsersActivityCommand      = CommandAsync(() => LaunchModeless("USERS.exe", "ALVA.USERS.formUSERSActivity"), () => _services.IsAdmin);
+            ShowLanguageSettingsCommand   = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLanguageList"));
+            SendSystemLogCommand          = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINLogList"));
 
             // Nápověda menu
             ShowInfoCommand               = Command(ShowAppInfo);
@@ -593,6 +593,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Overlay „akce probíhá" po dobu náběhu modulu (samostatný proces — čekáme na jeho okno).
             using (ActionInProgress())
                 await WindowNavigator.ShowLegacyAsync(path, em.FormName, inputParam: em.InputParam);
+        }
+
+        // Legacy launche z menu se stejným overlayem jako spouštění ze stromu.
+        private async Task LaunchModeless(string exe, string formFqn)
+        {
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyAsync(exe, formFqn);
+        }
+
+        private async Task LaunchDialog(string exe, string formFqn)
+        {
+            using (ActionInProgress())
+                await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
         // Přepnutí oblíbeného. EXE = toggle jednoho ElementId; FAMILY = hromadně všechny moduly v ní

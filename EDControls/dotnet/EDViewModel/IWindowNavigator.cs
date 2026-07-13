@@ -43,4 +43,11 @@ public interface IWindowNavigator
     /// Calling thread se nezablokuje (jiné než <see cref="ShowLegacyAndWait"/>).
     /// </summary>
     void ShowLegacyAsDialog(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
+
+    /// <summary>
+    /// Jako <see cref="ShowLegacyAsDialog"/>, ale vrací Task, který doběhne až se objeví okno
+    /// child procesu (nebo po timeoutu). Shell zůstane zašedlý až do zavření childu; Task jen
+    /// umožní callerovi držet „akce probíhá" overlay po dobu náběhu.
+    /// </summary>
+    Task ShowLegacyAsDialogAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "");
 }
