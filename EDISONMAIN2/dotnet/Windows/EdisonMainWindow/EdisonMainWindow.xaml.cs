@@ -46,6 +46,13 @@ namespace EDISONMAIN2
                 // Ne-Ctrl+W klávesa → reset chord (uživatel pokračuje jinde).
                 // Pouze pokud chord právě čeká, jinak žádná akce.
                 vm.ResetChord();
+
+                if (e.Key == Key.F && Keyboard.Modifiers == ModifierKeys.Control)
+                {
+                    TreeSearchBox.Focus();
+                    TreeSearchBox.SelectAll();
+                    e.Handled = true;
+                }
             }
         }
     }
