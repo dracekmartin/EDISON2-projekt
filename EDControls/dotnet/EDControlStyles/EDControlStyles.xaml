@@ -32,6 +32,10 @@
         PaletteButton apod.). Inline atributy (Background, BorderThickness) také vítězí.
     -->
 
+    <!-- Sdílený jemný stín pod plovoucími plochami (menu, dropdown, contextmenu) — hloubka.
+         Směr dolů-doprava → pravý/spodní margin borderu dá stínu prostor bez posunu zarovnání. -->
+    <DropShadowEffect x:Key="EDTheme.Shadow.Popup" Color="#000000" Direction="315" ShadowDepth="2" BlurRadius="8" Opacity="0.22"/>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          MenuItem — flat menu s 4 role templates + Separator
          ═══════════════════════════════════════════════════════════════════ -->
@@ -88,7 +92,8 @@
                         CornerRadius="3"
                         Padding="2"
                         SnapsToDevicePixels="True"
-                        Margin="0,2,0,0">
+                        Effect="{StaticResource EDTheme.Shadow.Popup}"
+                        Margin="0,2,10,10">
                     <ScrollViewer CanContentScroll="True"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
@@ -239,7 +244,8 @@
                         CornerRadius="3"
                         Padding="2"
                         SnapsToDevicePixels="True"
-                        Margin="2,0,0,0">
+                        Effect="{StaticResource EDTheme.Shadow.Popup}"
+                        Margin="2,0,10,10">
                     <ScrollViewer CanContentScroll="True"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
@@ -322,7 +328,9 @@
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}"
                             CornerRadius="3"
-                            SnapsToDevicePixels="True">
+                            SnapsToDevicePixels="True"
+                            Effect="{StaticResource EDTheme.Shadow.Popup}"
+                            Margin="0,0,10,10">
                         <ScrollViewer CanContentScroll="True"
                                       VerticalScrollBarVisibility="Auto"
                                       HorizontalScrollBarVisibility="Disabled">
@@ -627,7 +635,8 @@
                                     BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                                     BorderThickness="1"
                                     CornerRadius="3"
-                                    Margin="0,2,0,0"
+                                    Effect="{StaticResource EDTheme.Shadow.Popup}"
+                                    Margin="0,2,10,10"
                                     SnapsToDevicePixels="True">
                                 <ScrollViewer SnapsToDevicePixels="True">
                                     <StackPanel IsItemsHost="True"
