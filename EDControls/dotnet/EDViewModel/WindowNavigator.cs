@@ -41,7 +41,9 @@ public class WindowNavigator : IWindowNavigator
     public bool? ShowDialog(Window window)
     {
         WireUp(window);
-        return window.ShowDialog();
+        // Vstup blokuje Win32 modalita sama; dim přidává jen vizuální závoj na owner.
+        using (WindowDimmer.Dim(window.Owner))
+            return window.ShowDialog();
     }
 
     public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
@@ -96,19 +98,19 @@ public class WindowNavigator : IWindowNavigator
         _legacyProcesses.Add(new(prc, exeName, formFqn));
         WireDialogBehavior(prc);
         // Overlay (caller drží ActionInProgress) se schová jakmile okno modulu naběhne;
-        // shell zůstane zašedlý přes WireDialogBehavior až do zavření child okna.
+        // shell zůstane ztmavený přes WireDialogBehavior až do zavření child okna.
         await WaitForModuleWindowAsync(prc);
     }
 
-    /// <summary>Modal-like chování pro child proces: zašedne owner shell po dobu běhu childu
-    /// a bounce jeho okna do popředí při kliku na zašedlý shell.</summary>
+    /// <summary>Modal-like chování pro child proces: ztmaví owner shell (WindowDimmer) po dobu
+    /// běhu childu a bounce jeho okna do popředí při kliku na ztmavený shell.</summary>
     private void WireDialogBehavior(Process prc)
     {
         var owner = Application.Current.MainWindow;
-        if (owner != null) owner.IsEnabled = false;
+        var undim = WindowDimmer.Dim(owner);
 
-        // Klik na zašedlý shell → cross-process "bounce" child okna do popředí (modal-like UX).
-        // Activated fire-uje při WPF window activation i když je IsEnabled=false.
+        // Klik na ztmavený shell → cross-process "bounce" child okna do popředí (modal-like UX).
+        // Dim adorner klik spolkne, ale window activation proběhne → Activated fire-uje.
         EventHandler? bounce = null;
         if (owner != null)
         {
@@ -131,7 +133,8 @@ public class WindowNavigator : IWindowNavigator
             app.Dispatcher.BeginInvoke(() =>
             {
                 if (owner != null && bounce != null) owner.Activated -= bounce;
-                if (owner is { IsLoaded: true }) { owner.IsEnabled = true; owner.Activate(); }
+                undim.Dispose();
+                if (owner is { IsLoaded: true }) owner.Activate();
             });
         };
     }

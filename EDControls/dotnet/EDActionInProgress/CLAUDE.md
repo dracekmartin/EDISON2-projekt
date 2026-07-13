@@ -7,8 +7,8 @@ s pomerančem na zádech, která se pohybuje tam a zpět, plus nápis „Akce pr
 
 | Soubor | Role |
 | --- | --- |
-| `EDActionInProgress.xaml` | Tmavý poloprůhledný overlay, bílá karta, posuvná pixel-art kapybara, text „Akce probíhá". |
-| `EDActionInProgress.xaml.cs` | `IsActive` DependencyProperty; automaticky se naváže na `EDViewModel.IsActionInProgress` při `Loaded`. |
+| `EDActionInProgress.xaml` | Transparentní hit-test overlay (blokuje myš), bílá karta, posuvná pixel-art kapybara, text „Akce probíhá". Závoj nekreslí sám — viz code-behind. |
+| `EDActionInProgress.xaml.cs` | `IsActive` DependencyProperty; automaticky se naváže na `EDViewModel.IsActionInProgress` při `Loaded`. Při aktivaci drží `WindowDimmer.Dim(window)` — refcount zaručí stejnou míru ztmavení jako dialogy ze shellu i při jejich překryvu. |
 
 ## Dependency properties
 

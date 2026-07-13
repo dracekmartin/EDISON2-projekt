@@ -17,10 +17,28 @@ public partial class EDActionInProgress : UserControl
         set => SetValue(IsActiveProperty, value);
     }
 
+    private IDisposable? _dimScope;
+
     private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var control = (EDActionInProgress)d;
         control.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
+        control.UpdateDim((bool)e.NewValue);
+    }
+
+    // Závoj přes WindowDimmer místo vlastního pozadí — refcount nesčítá tint
+    // s dialog dimem (WireDialogBehavior) během náběhu legacy dialogu.
+    private void UpdateDim(bool active)
+    {
+        if (active)
+        {
+            _dimScope ??= WindowDimmer.Dim(Window.GetWindow(this));
+        }
+        else
+        {
+            _dimScope?.Dispose();
+            _dimScope = null;
+        }
     }
 
     public EDActionInProgress()
