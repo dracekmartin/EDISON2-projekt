@@ -37,7 +37,7 @@
 
     <!-- Submenu Popup container — sdílený border pro submenu popups -->
     <ControlTemplate x:Key="EDTheme.MenuItem.SubmenuPopup" TargetType="ContentControl">
-        <Border Background="White"
+        <Border Background="{DynamicResource EDTheme.Bg.Surface}"
                 BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                 BorderThickness="1"
                 CornerRadius="3"
@@ -81,7 +81,7 @@
                    AllowsTransparency="True"
                    Focusable="False"
                    PopupAnimation="None">
-                <Border Background="White"
+                <Border Background="{DynamicResource EDTheme.Bg.Surface}"
                         BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                         BorderThickness="1"
                         CornerRadius="3"
@@ -232,7 +232,7 @@
                    AllowsTransparency="True"
                    Focusable="False"
                    PopupAnimation="None">
-                <Border Background="White"
+                <Border Background="{DynamicResource EDTheme.Bg.Surface}"
                         BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                         BorderThickness="1"
                         CornerRadius="3"
@@ -305,7 +305,7 @@
 
     <!-- ContextMenu — popup pro right-click menus -->
     <Style TargetType="ContextMenu">
-        <Setter Property="Background" Value="White"/>
+        <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Medium}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Padding" Value="2"/>
@@ -341,7 +341,7 @@
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
-        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="SnapsToDevicePixels" Value="True"/>
@@ -551,7 +551,7 @@
     <!-- ComboBox -->
     <Style TargetType="ComboBox">
         <Setter Property="Padding"         Value="6,4"/>
-        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -622,7 +622,7 @@
                                PopupAnimation="Slide">
                             <Border MinWidth="{TemplateBinding ActualWidth}"
                                     MaxHeight="{TemplateBinding MaxDropDownHeight}"
-                                    Background="White"
+                                    Background="{DynamicResource EDTheme.Bg.Surface}"
                                     BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                                     BorderThickness="1"
                                     CornerRadius="3"
@@ -665,7 +665,7 @@
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="TextBox">
         <Setter Property="Padding"         Value="6,4"/>
-        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -709,7 +709,7 @@
     <!-- PasswordBox — minimální styl. WPF default šablona stačí, jen sjednotit typografii. -->
     <Style TargetType="PasswordBox">
         <Setter Property="Padding"         Value="6,4"/>
-        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -723,7 +723,7 @@
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="Button">
         <Setter Property="Padding"         Value="12,4"/>
-        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -870,7 +870,7 @@
          ToolTip — flat bílá karta místo default bledě žlutého rámečku
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="ToolTip">
-        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Medium}"/>
         <Setter Property="BorderThickness" Value="1"/>
@@ -1009,7 +1009,7 @@
          ListBox / ListBoxItem — flat, hover + selekce v accent barvě
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="ListBox">
-        <Setter Property="Background"      Value="White"/>
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
@@ -1060,13 +1060,13 @@
          řazení/resize), jen setters + hlavička + buňka.
          ═══════════════════════════════════════════════════════════════════ -->
     <Style TargetType="DataGrid">
-        <Setter Property="Background"             Value="White"/>
+        <Setter Property="Background"             Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="BorderBrush"            Value="{DynamicResource EDTheme.Border.Light}"/>
         <Setter Property="BorderThickness"        Value="1"/>
         <Setter Property="Foreground"             Value="{DynamicResource EDTheme.Text.Primary}"/>
         <Setter Property="FontFamily"             Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize"               Value="{DynamicResource EDTheme.FontSize.Body}"/>
-        <Setter Property="RowBackground"          Value="White"/>
+        <Setter Property="RowBackground"          Value="{DynamicResource EDTheme.Bg.Surface}"/>
         <Setter Property="GridLinesVisibility"    Value="Horizontal"/>
         <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource EDTheme.Border.Light}"/>
         <Setter Property="HeadersVisibility"      Value="Column"/>

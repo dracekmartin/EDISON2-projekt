@@ -1,0 +1,87 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        EDThemeDark — tmavá varianta barevných tokenů z EDTheme.xaml.
+        NEmerguje se natrvalo; ThemeService ji za běhu přidá/odebere z Application.Resources
+        (přidaná poslední → přebije brush klíče z EDTheme.xaml pro DynamicResource lookup).
+
+        Přepisují se JEN barvy (brush klíče + jejich .Color). Typografie, spacing a icon size
+        zůstávají z EDTheme.xaml. Klíče MUSÍ přesně odpovídat EDTheme.xaml.
+    -->
+
+    <!-- Borders -->
+    <Color x:Key="EDTheme.Border.Light.Color">#FF3A3A3D</Color>
+    <SolidColorBrush x:Key="EDTheme.Border.Light" Color="{StaticResource EDTheme.Border.Light.Color}"/>
+    <Color x:Key="EDTheme.Border.Medium.Color">#FF4A4A4F</Color>
+    <SolidColorBrush x:Key="EDTheme.Border.Medium" Color="{StaticResource EDTheme.Border.Medium.Color}"/>
+    <Color x:Key="EDTheme.Border.Strong.Color">#FF6A6A70</Color>
+    <SolidColorBrush x:Key="EDTheme.Border.Strong" Color="{StaticResource EDTheme.Border.Strong.Color}"/>
+
+    <!-- Backgrounds -->
+    <Color x:Key="EDTheme.Bg.Surface.Color">#FF2D2D30</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Surface" Color="{StaticResource EDTheme.Bg.Surface.Color}"/>
+    <Color x:Key="EDTheme.Bg.Base.Color">#FF1E1E1E</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
+    <Color x:Key="EDTheme.Bg.Panel.Color">#FF252526</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Panel" Color="{StaticResource EDTheme.Bg.Panel.Color}"/>
+    <Color x:Key="EDTheme.Bg.PanelAlt.Color">#FF2A2A2C</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.PanelAlt" Color="{StaticResource EDTheme.Bg.PanelAlt.Color}"/>
+    <Color x:Key="EDTheme.Bg.Footer.Color">#FF252526</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Footer" Color="{StaticResource EDTheme.Bg.Footer.Color}"/>
+    <Color x:Key="EDTheme.Bg.Hover.Color">#FF3A3A3D</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Hover" Color="{StaticResource EDTheme.Bg.Hover.Color}"/>
+    <Color x:Key="EDTheme.Bg.Pressed.Color">#FF4A4A4F</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Pressed" Color="{StaticResource EDTheme.Bg.Pressed.Color}"/>
+    <Color x:Key="EDTheme.Bg.Checked.Color">#FF264F78</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Checked" Color="{StaticResource EDTheme.Bg.Checked.Color}"/>
+    <Color x:Key="EDTheme.Bg.Canvas.Color">#FF1B1B1B</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Canvas" Color="{StaticResource EDTheme.Bg.Canvas.Color}"/>
+    <Color x:Key="EDTheme.Bg.InfoBanner.Color">#FF2A3742</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.InfoBanner" Color="{StaticResource EDTheme.Bg.InfoBanner.Color}"/>
+
+    <!-- Text -->
+    <Color x:Key="EDTheme.Text.Primary.Color">#FFECECEC</Color>
+    <SolidColorBrush x:Key="EDTheme.Text.Primary" Color="{StaticResource EDTheme.Text.Primary.Color}"/>
+    <Color x:Key="EDTheme.Text.Secondary.Color">#FFBFBFBF</Color>
+    <SolidColorBrush x:Key="EDTheme.Text.Secondary" Color="{StaticResource EDTheme.Text.Secondary.Color}"/>
+    <Color x:Key="EDTheme.Text.Muted.Color">#FF8C8C8C</Color>
+    <SolidColorBrush x:Key="EDTheme.Text.Muted" Color="{StaticResource EDTheme.Text.Muted.Color}"/>
+    <Color x:Key="EDTheme.Text.Header.Color">#FFDCDCDC</Color>
+    <SolidColorBrush x:Key="EDTheme.Text.Header" Color="{StaticResource EDTheme.Text.Header.Color}"/>
+    <Color x:Key="EDTheme.Text.Disabled.Color">#FF6A6A6A</Color>
+    <SolidColorBrush x:Key="EDTheme.Text.Disabled" Color="{StaticResource EDTheme.Text.Disabled.Color}"/>
+
+    <!-- Accent: Blue -->
+    <Color x:Key="EDTheme.Accent.Blue.Color">#FF3B9EFF</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.Blue" Color="{StaticResource EDTheme.Accent.Blue.Color}"/>
+    <Color x:Key="EDTheme.Accent.BlueDark.Color">#FF8FC4F5</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.BlueDark" Color="{StaticResource EDTheme.Accent.BlueDark.Color}"/>
+    <Color x:Key="EDTheme.Accent.BlueBg.Color">#FF1B3A57</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.BlueBg" Color="{StaticResource EDTheme.Accent.BlueBg.Color}"/>
+    <Color x:Key="EDTheme.Accent.BlueSelected.Color">#FF2A4D6E</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.BlueSelected" Color="{StaticResource EDTheme.Accent.BlueSelected.Color}"/>
+    <Color x:Key="EDTheme.Accent.BlueBorder.Color">#FF3A5F86</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.BlueBorder" Color="{StaticResource EDTheme.Accent.BlueBorder.Color}"/>
+
+    <!-- Accent: Green -->
+    <Color x:Key="EDTheme.Accent.GreenDark.Color">#FF9BD6A3</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.GreenDark" Color="{StaticResource EDTheme.Accent.GreenDark.Color}"/>
+    <Color x:Key="EDTheme.Accent.GreenBg.Color">#FF1F3A25</Color>
+    <SolidColorBrush x:Key="EDTheme.Accent.GreenBg" Color="{StaticResource EDTheme.Accent.GreenBg.Color}"/>
+
+    <!-- Brand (o něco světlejší pro kontrast na tmavém) -->
+    <Color x:Key="EDTheme.Brand.Color">#FFC79A5A</Color>
+    <SolidColorBrush x:Key="EDTheme.Brand" Color="{StaticResource EDTheme.Brand.Color}"/>
+
+    <!-- Semantic (rozjasněné pro čitelnost na tmavém) -->
+    <Color x:Key="EDTheme.Semantic.Danger.Color">#FFEF5350</Color>
+    <SolidColorBrush x:Key="EDTheme.Semantic.Danger" Color="{StaticResource EDTheme.Semantic.Danger.Color}"/>
+    <Color x:Key="EDTheme.Semantic.Warning.Color">#FFFFA726</Color>
+    <SolidColorBrush x:Key="EDTheme.Semantic.Warning" Color="{StaticResource EDTheme.Semantic.Warning.Color}"/>
+    <Color x:Key="EDTheme.Semantic.Success.Color">#FF66BB6A</Color>
+    <SolidColorBrush x:Key="EDTheme.Semantic.Success" Color="{StaticResource EDTheme.Semantic.Success.Color}"/>
+    <Color x:Key="EDTheme.Semantic.Condition.Color">#FFBA68C8</Color>
+    <SolidColorBrush x:Key="EDTheme.Semantic.Condition" Color="{StaticResource EDTheme.Semantic.Condition.Color}"/>
+
+</ResourceDictionary>

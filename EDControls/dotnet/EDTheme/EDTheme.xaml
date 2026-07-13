@@ -35,6 +35,14 @@
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Backgrounds
          ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Povrch — bílé plochy: inputy, karty, dropdowny, popup pozadí (v dark režimu tmavší vrstva) -->
+    <Color x:Key="EDTheme.Bg.Surface.Color">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Surface" Color="{StaticResource EDTheme.Bg.Surface.Color}"/>
+
+    <!-- Základní pozadí okna / root plochy (v dark režimu nejtmavší vrstva) -->
+    <Color x:Key="EDTheme.Bg.Base.Color">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
+
     <!-- Panel header background (left panel headers, status bar) -->
     <Color x:Key="EDTheme.Bg.Panel.Color">#FFF0F0F0</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Panel" Color="{StaticResource EDTheme.Bg.Panel.Color}"/>
