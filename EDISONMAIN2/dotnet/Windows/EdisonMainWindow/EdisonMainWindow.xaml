@@ -229,6 +229,9 @@
                     <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                     <!-- Skryje uzly nevyhovující vyhledávání (VM nastaví IsVisibleBySearch). -->
                     <Setter Property="Visibility" Value="{Binding IsVisibleBySearch, Converter={StaticResource BoolToVis}}"/>
+                    <Setter Property="Cursor" Value="Hand"/>
+                    <!-- Single-click: složka toggle expand, modul spustí (handler v code-behind). -->
+                    <EventSetter Event="MouseLeftButtonUp" Handler="TreeItem_MouseLeftButtonUp"/>
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>
@@ -260,34 +263,13 @@
             <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených. -->
             <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}">
                 <TabItem Header="Hlavní nabídka">
-                    <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0">
-                        <b:Interaction.Triggers>
-                            <b:EventTrigger EventName="MouseDoubleClick">
-                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
-                                                       CommandParameter="{Binding SelectedItem, ElementName=MainMenuTreeView}"/>
-                            </b:EventTrigger>
-                        </b:Interaction.Triggers>
-                    </TreeView>
+                    <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0"/>
                 </TabItem>
                 <TabItem Header="Správa systému">
-                    <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0">
-                        <b:Interaction.Triggers>
-                            <b:EventTrigger EventName="MouseDoubleClick">
-                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
-                                                       CommandParameter="{Binding SelectedItem, ElementName=SystemAdminTreeView}"/>
-                            </b:EventTrigger>
-                        </b:Interaction.Triggers>
-                    </TreeView>
+                    <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0"/>
                 </TabItem>
                 <TabItem Header="Partnerská řešení">
-                    <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0">
-                        <b:Interaction.Triggers>
-                            <b:EventTrigger EventName="MouseDoubleClick">
-                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
-                                                       CommandParameter="{Binding SelectedItem, ElementName=PartnerSolutionsTreeView}"/>
-                            </b:EventTrigger>
-                        </b:Interaction.Triggers>
-                    </TreeView>
+                    <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0"/>
                 </TabItem>
                 <TabItem>
                     <TabItem.Header>
@@ -297,14 +279,7 @@
                         </StackPanel>
                     </TabItem.Header>
                     <Grid>
-                        <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0">
-                            <b:Interaction.Triggers>
-                                <b:EventTrigger EventName="MouseDoubleClick">
-                                    <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
-                                                           CommandParameter="{Binding SelectedItem, ElementName=FavoritesTreeView}"/>
-                                </b:EventTrigger>
-                            </b:Interaction.Triggers>
-                        </TreeView>
+                        <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0"/>
                         <!-- Empty-state coaching — nenucená pobídka k používání oblíbených. -->
                         <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
                                    Margin="16" TextWrapping="Wrap" VerticalAlignment="Top"
@@ -315,12 +290,13 @@
                 <TabItem Header="Používané">
                     <ListBox x:Name="UsedModulesList" ItemsSource="{Binding UsedModules}" BorderThickness="0"
                              HorizontalContentAlignment="Stretch">
-                        <b:Interaction.Triggers>
-                            <b:EventTrigger EventName="MouseDoubleClick">
-                                <b:InvokeCommandAction Command="{Binding OpenModuleCommand}"
-                                                       CommandParameter="{Binding SelectedItem, ElementName=UsedModulesList}"/>
-                            </b:EventTrigger>
-                        </b:Interaction.Triggers>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                <Setter Property="Cursor" Value="Hand"/>
+                                <!-- Single-click spustí modul — konzistentní se stromy výše. -->
+                                <EventSetter Event="MouseLeftButtonUp" Handler="UsedModuleItem_MouseLeftButtonUp"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
                     </ListBox>
                 </TabItem>
             </TabControl>
