@@ -37,6 +37,8 @@ Parameter Variant = "AD";
 
 Parameter VariantLabel = "AD (linková doprava)";
 
+Parameter Released = 1;
+
 Parameter InstanceParamName = "LINKA_ID";
 
 Parameter ElementKind = "STOP";

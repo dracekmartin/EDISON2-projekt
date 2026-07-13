@@ -973,14 +973,20 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task ChangeAgendaAsync()
     {
-        // Registr agend (dvouosý: agenda × varianta) — dialog z něj staví seskupený výběr.
-        if (_agendaEntries.Count == 0)
+        // Registr agend (dvouosý: agenda × varianta) — dialog staví seskupený výběr jen ze
+        // ZVEŘEJNĚNÝCH agend (Released; pilotní jako Linkový JŘ / Faktury se uživatelům nenabízí).
+        // Aktuální agenda šablony se ukáže vždy — i nezveřejněná (interní/vývojová šablona).
+        var current = State.CurrentTemplate.AgendaCode;
+        var visible = _agendaEntries
+            .Where(a => a.Released || a.Code.Equals(current, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (visible.Count == 0)
         {
             PopupDisplayer.Info("Žádné agendy nejsou nakonfigurované.");
             return;
         }
 
-        var vm = new ChangeAgendaDialogViewModel(_agendaEntries, State.CurrentTemplate.AgendaCode);
+        var vm = new ChangeAgendaDialogViewModel(visible, current);
         if (Dialogs?.ShowChangeAgenda(vm) != true || vm.ChosenCode is null) return;
 
         // Stejná agenda — nic neměním (vyhne se zbytečnému potvrzování neuložených změn).

@@ -36,6 +36,8 @@ Parameter Variant = "MHD";
 
 Parameter VariantLabel = "MHD";
 
+Parameter Released = 1;
+
 Parameter InstanceParamName = "LINKA_ID";
 
 Parameter ElementKind = "STOP";

@@ -17,6 +17,11 @@ Nálezy z ručního testování před úterní verzí. Build 0 chyb, .NET 340/34
 - **Paleta/menu:** Kód (QR…) před Tabulkou. **Šipka směru:** labely voleb vysvětlují kreslení
   u okraje elementu (u širokého elementu je vpravo „daleko" — vypadalo jako nefunkční).
 - Do backlogu (roadmap): snap/indikace čtverce při resize · per-šablona hodnoty tiskových parametrů.
+- **`Released` flag agend (blok B průchodu):** výběr agendy nabízí jen zveřejněné — Obecná +
+  Zastávkový JŘ (AD/MHD); Linkový JŘ (pilot v1) a Faktury (vzorová) skryté. Data-driven:
+  `BaseAgenda.Released` parametr (default 0 — nová agenda „neuteče" omylem), registr wire aditivně
+  (`released` bool, starší server → default true). Aktuální agenda šablony vidět vždy;
+  existující šablony + EDISON launch nezveřejněných fungují dál.
 
 ## 2026-07-11 — Dvouosý model agend: Agenda × Varianta (názvosloví dle legacy analýzy)
 
