@@ -149,8 +149,9 @@
                 <edvm:HexToBrushConverter x:Key="HexToBrush"/>
                 <BooleanToVisibilityConverter x:Key="BoolToVis"/>
                 <HierarchicalDataTemplate ItemsSource="{Binding NestedModules}" DataType="{x:Type modules:ModuleFamily}">
-                    <!-- Tag = VM (z TabControl) — most pro ContextMenu mimo visual tree. -->
-                    <StackPanel Orientation="Horizontal"
+                    <!-- Tag = VM (z TabControl) — most pro ContextMenu mimo visual tree.
+                         Transparent → hit-test i napravo od textu (ContextMenu na celém řádku). -->
+                    <StackPanel Orientation="Horizontal" Background="Transparent"
                                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
                         <Image Source="{StaticResource EDIcons.Folder}" Width="16" Height="16"
                                Margin="0,0,6,0" VerticalAlignment="Center"
@@ -190,8 +191,9 @@
                     </StackPanel>
                 </HierarchicalDataTemplate>
                 <DataTemplate DataType="{x:Type modules:ExecutableModule}">
-                    <!-- Tag = VM (z TabControl DataContext) — most pro ContextMenu, který není ve visual tree. -->
-                    <StackPanel Orientation="Horizontal"
+                    <!-- Tag = VM (z TabControl DataContext) — most pro ContextMenu, který není ve visual tree.
+                         Transparent → hit-test i napravo od textu (ContextMenu na celém řádku). -->
+                    <StackPanel Orientation="Horizontal" Background="Transparent"
                                 Tag="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabControl}}">
                         <Image Source="{StaticResource EDIcons.Module}" Width="16" Height="16"
                                Margin="0,0,6,0" VerticalAlignment="Center"

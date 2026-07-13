@@ -984,9 +984,11 @@
                                 Padding="{TemplateBinding Padding}"
                                 CornerRadius="2"
                                 SnapsToDevicePixels="True">
+                            <!-- Stretch → header DataTemplate pokryje celý řádek; klik/ContextMenu
+                                 tak funguje i napravo od textu, ne jen na něm. -->
                             <ContentPresenter x:Name="PART_Header"
                                               ContentSource="Header"
-                                              HorizontalAlignment="Left"
+                                              HorizontalAlignment="Stretch"
                                               VerticalAlignment="Center"/>
                         </Border>
 
