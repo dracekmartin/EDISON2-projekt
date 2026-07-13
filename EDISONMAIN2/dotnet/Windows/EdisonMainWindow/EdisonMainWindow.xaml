@@ -213,7 +213,8 @@
                            IsHitTestVisible="False"
                            Foreground="{DynamicResource EDTheme.Text.Secondary}">
                     <TextBlock.Style>
-                        <Style TargetType="TextBlock">
+                        <!-- BasedOn zachová EDTheme font tokeny — lokální styl by jinak zahodil implicitní TextBlock styl. -->
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                             <Setter Property="Visibility" Value="Collapsed"/>
                             <Style.Triggers>
                                 <DataTrigger Binding="{Binding TreeSearchText}" Value="">
