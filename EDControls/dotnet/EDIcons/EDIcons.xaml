@@ -20,6 +20,18 @@
     <BitmapImage x:Key="EDIcons.Panels"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/panels.png"/>
 
+    <!-- Taby stromu modulů: Hlavní nabídka / Správa systému / Partnerská řešení / Oblíbené / Používané. -->
+    <BitmapImage x:Key="EDIcons.Home"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/house.png"/>
+    <BitmapImage x:Key="EDIcons.Gears"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/gears.png"/>
+    <BitmapImage x:Key="EDIcons.Component"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/component.png"/>
+    <BitmapImage x:Key="EDIcons.History"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/history.png"/>
+    <BitmapImage x:Key="EDIcons.Star"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/star.png"/>
+
     <BitmapImage x:Key="EDIcons.Add"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/add2.png"/>
     <BitmapImage x:Key="EDIcons.Edit"
