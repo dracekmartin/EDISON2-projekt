@@ -236,6 +236,18 @@ Přidání: vlož `<sys:String x:Key="EDStrings.X">Text</sys:String>`. Žádná 
 
 ---
 
+## EDControlStyles — sdílený vzhled standardních WPF controls
+
+Implicitní styly a templaty standardních controls (`Menu`, `TabControl`, `TreeView`,
+`ScrollBar`, ...) žijí v `EDControls/dotnet/EDControlStyles/EDControlStyles.xaml`.
+
+**Úpravy vzhledu či chování standardního controlu dělej tam, ne lokálním overridem
+v konkrétním okně** — platí pak konzistentně pro všechny aplikace (EDISONMAIN2,
+TemplateDesigner). Lokální override navíc často ani nefunguje: themed templaty hostují
+items přes panel s `IsItemsHost="True"`, takže property jako `ItemsPanel` WPF ignoruje.
+
+---
+
 ## Obsluha výjimek
 
 `Command(...)` na `EDViewModel` automaticky zachytává výjimky přes `PopupDisplayer`.
