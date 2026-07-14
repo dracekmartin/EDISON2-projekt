@@ -1,6 +1,7 @@
 using System;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace EDControls.EDTheme;
 
@@ -11,6 +12,11 @@ public enum AppTheme { Light, Dark }
 /// konec <c>Application.Resources.MergedDictionaries</c> (přebije barevné brush klíče z
 /// EDTheme.xaml pro DynamicResource lookup). Návrat na světlý = odebrání této dictionary.
 /// Funguje jen pro barvy konzumované přes <c>DynamicResource</c> (EDControlStyles i EDTheme to dělají).
+///
+/// <see cref="Initialize"/> je jednorázová registrace pro hostitelskou aplikaci (analogie
+/// <c>FontService.Initialize</c>): načte sdílenou preferenci (<see cref="UserThemePreference"/>,
+/// <c>%APPDATA%\m-line\common\theme.json</c>), aplikuje ji a spustí cross-process propagaci —
+/// když jeden proces (shell) přepne dark, ostatní (TemplateDesigner) se přepnou přes FileSystemWatcher.
 /// </summary>
 public static class ThemeService
 {
@@ -20,20 +26,40 @@ public static class ThemeService
 
     public static AppTheme Current { get; private set; } = AppTheme.Light;
 
+    /// <summary>Aktuální stav sdílené preference (pro binding přepínače v menu).</summary>
+    public static bool IsDark => UserThemePreference.Current.DarkMode;
+
     /// <summary>
-    /// Zaregistruje class handler na <see cref="FrameworkElement.LoadedEvent"/> pro
-    /// <see cref="Window"/> — chytá i všechny podtřídy (implicitní styl by cílil jen přesný
-    /// typ <c>Window</c>). Každému oknu bez vlastního pozadí nastaví <c>Bg.Base</c> přes
-    /// <c>SetResourceReference</c> (drží DynamicResource → přeblikne při swapu tématu).
-    /// Volat jednou při startu aplikace, před zobrazením prvního okna.
+    /// Jednorázový bootstrap: class handler na <see cref="FrameworkElement.LoadedEvent"/> pro
+    /// <see cref="Window"/> (obarví pozadí i podtříd — implicitní styl cílí jen přesný typ),
+    /// načte + aplikuje sdílenou preferenci a spustí watcher pro cross-process propagaci
+    /// (jiný proces přepne → tento re-Apply přes Dispatcher). Volat v startupu před prvním oknem.
     /// </summary>
-    public static void Initialize()
+    public static void Initialize(Application app)
     {
-        if (_initialized) return;
+        if (_initialized || app is null) return;
         _initialized = true;
+
         EventManager.RegisterClassHandler(typeof(Window), FrameworkElement.LoadedEvent,
             new RoutedEventHandler(OnWindowLoaded));
+
+        UserThemePreference.Load();
+        ApplyFromPreference();
+        UserThemePreference.BeginListening();
+        UserThemePreference.Changed += () =>
+            app.Dispatcher.BeginInvoke(DispatcherPriority.Normal, (Action)ApplyFromPreference);
     }
+
+    /// <summary>Přepne tmavý režim, uloží do sdílené preference (propaguje do ostatních procesů) a aplikuje.</summary>
+    public static void SetDarkMode(bool dark)
+    {
+        UserThemePreference.Current.DarkMode = dark;
+        UserThemePreference.Current.Save();
+        Apply(dark ? AppTheme.Dark : AppTheme.Light);
+    }
+
+    private static void ApplyFromPreference() =>
+        Apply(UserThemePreference.Current.DarkMode ? AppTheme.Dark : AppTheme.Light);
 
     private static void OnWindowLoaded(object sender, RoutedEventArgs e)
     {
