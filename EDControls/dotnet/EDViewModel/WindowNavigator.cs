@@ -242,11 +242,17 @@ public class WindowNavigator : IWindowNavigator
         // per-forma default EDParamIn (ApplyDefaultInput), který generický host neumí dodat.
         // Ostatní agendy jdou přes host, takže nepotřebují retrofit.
         bool direct = LaunchesDirectly(exeName);
+        // Licencované elementy z aktivní licence shellu → host z nich postaví Lic a načte
+        // formuláři přístupová práva (MLProps.AccessTable). Bez toho moduly, které gate-ují
+        // obsah přes RightGranted (např. DSINPUT Plánování), nezobrazí data. Viz FormToRunGetter.
+        var licence = EDServices.Current.ActiveLicence;
+        string licensedElements = licence?.Elements is { } els ? string.Join(",", els) : "";
+
         var prc = Process.Start(new ProcessStartInfo
         {
             UseShellExecute = true,
             FileName = direct ? agendaPath : ResolveExecutablePath(LauncherExe),
-            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath),
+            Arguments = BuildLauncherArguments(mlRest, formFqn, shellGuid, inputParam, direct ? "" : agendaPath, licensedElements),
         });
         if (prc != null) KillOnExit.Bind(prc);
         return prc;
@@ -258,14 +264,15 @@ public class WindowNavigator : IWindowNavigator
         string.Equals(Path.GetFileName(exeName), "EDISONMAIN.exe", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Složí 12-arg payload pro generický host: sentinel + sys kontext + formFqn + shellGuid +
-    /// inputParam + cesta k agendě (poslední — host ji čte pro <c>Assembly.LoadFrom</c>).
-    /// Pozice 1–11 jsou shodné s legacy kontraktem, takže `FormToRunGetter.TryGetFormFromArgs`
-    /// (retrofitnuté agendy spuštěné napřímo) zůstává kompatibilní.
+    /// Složí payload pro generický host: sentinel + sys kontext + formFqn + shellGuid +
+    /// inputParam + cesta k agendě + licencované elementy. Pozice 1–11 jsou shodné s legacy
+    /// kontraktem (takže `FormToRunGetter.TryGetFormFromArgs` retrofitnutých agend zůstává
+    /// kompatibilní); agendaPath (host ho čte pro <c>Assembly.LoadFrom</c>) je [11],
+    /// licencované elementy [12] (comma-separated, pro MLProps.AccessTable — starší host je ignoruje).
     /// </summary>
     internal static string BuildLauncherArguments(IMLRest mlRest, string formFqn, string shellGuid,
-        string inputParam, string agendaPath) =>
-        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\"";
+        string inputParam, string agendaPath, string licensedElements) =>
+        $"EDISONMAIN2 \"{mlRest.Server}\" \"{mlRest.Port}\" \"{mlRest.DataNamespace}\" \"{mlRest.Idfa}\" \"{mlRest.LoginName}\" \"{mlRest.FullName}\" \"{mlRest.Mlp}\" \"{formFqn}\" \"{shellGuid}\" \"{inputParam}\" \"{agendaPath}\" \"{licensedElements}\"";
 
     public static string ResolveExecutablePath(string relativePath)
     {
