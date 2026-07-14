@@ -1011,7 +1011,15 @@ public partial class MainWindow : Window
     /// Volá se po změně agendy/šablony (VM callback) i po zavření tiskového dialogu (sync hodnot).</summary>
     private void ReloadParamsTabForm()
     {
-        if (_vm is null || !_vm.HasParameters || _vm.CurrentAgendaCacheClass is null) return;
+        if (_vm is null) return;
+
+        // Agenda bez parametrů (GENERAL / bez GetParameters) → vyčistit CacheClass, ať se při
+        // příštím Loaded neprovede Init se stale InitParams předchozí agendy.
+        if (!_vm.HasParameters || _vm.CurrentAgendaCacheClass is null)
+        {
+            ParamsTabForm.CacheClass = "";
+            return;
+        }
 
         ParamsTabForm.InitParams = _vm.BuildAgendaParamsInitParams();
         if (!_paramsTabInitHooked)
@@ -1020,7 +1028,14 @@ public partial class MainWindow : Window
             _paramsTabInitHooked = true;
         }
         ParamsTabForm.CacheClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
-        ParamsTabForm.Init();
+
+        // Init() = synchronní Caché round-trip. Voláme ho jen když je control už Loaded (přepnutí
+        // agendy za běhu). Při prvním zobrazení tabu (a v konstruktoru okna) ho spustí EDInputForm
+        // Loaded auto-init s aktuálními InitParams — jinak by transientní chyba Caché propadla ven
+        // z konstruktoru okna a aplikace by se neotevřela (R1/R2). Chyba jde do status baru, ne do pádu.
+        if (!ParamsTabForm.IsLoaded) return;
+        try { ParamsTabForm.Init(); }
+        catch (System.Exception ex) { _vm.StatusText = $"⚠ Parametry sestavy se nepodařilo načíst: {ex.Message}"; }
     }
 
     private void OnParamsTabInitialized()
@@ -1058,10 +1073,18 @@ public partial class MainWindow : Window
         // programově. Close() PŘES Dispatcher — až po doběhnutí Closing eventu; jinak WPF hodí
         // „nelze volat Close při zavírání" i když confirm skončí synchronně (volba „Ne").
         e.Cancel = true;
-        if (await _vm.ConfirmUnsavedChangesAsync())
+        try
         {
-            _closeConfirmed = true;
-            Dispatcher.BeginInvoke(new Action(Close));
+            if (await _vm.ConfirmUnsavedChangesAsync())
+            {
+                _closeConfirmed = true;
+                Dispatcher.BeginInvoke(new Action(Close));
+            }
+        }
+        catch (System.Exception ex)
+        {
+            // R2: uložení do DB mohlo selhat (výpadek sítě) → hláška, okno zůstane otevřené.
+            _vm.PopupDisplayer.Error(ex);
         }
     }
 
@@ -1083,14 +1106,21 @@ public partial class MainWindow : Window
     private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
-        var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider, aiReason);
-        var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
-
-        if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
+        try
         {
-            if (!await _vm.ConfirmUnsavedChangesAsync()) return;
-            _vm.LoadGeneratedTemplate(aiVm.GeneratedTemplate);
+            var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+            var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider, aiReason);
+            var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
+
+            if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
+            {
+                if (!await _vm.ConfirmUnsavedChangesAsync()) return;
+                _vm.LoadGeneratedTemplate(aiVm.GeneratedTemplate);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            _vm.PopupDisplayer.Error(ex);   // R2: async void → chyba přes popup, ne pád
         }
     }
 
@@ -1128,14 +1158,21 @@ public partial class MainWindow : Window
     private async void MenuImportPdf_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
-        var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason);
-        var dialog = new PdfImportDialog(vm) { Owner = this };
-
-        if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)
+        try
         {
-            if (!await _vm.ConfirmUnsavedChangesAsync()) return;
-            _vm.LoadGeneratedTemplate(vm.ImportedTemplate);
+            var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+            var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason);
+            var dialog = new PdfImportDialog(vm) { Owner = this };
+
+            if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)
+            {
+                if (!await _vm.ConfirmUnsavedChangesAsync()) return;
+                _vm.LoadGeneratedTemplate(vm.ImportedTemplate);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            _vm.PopupDisplayer.Error(ex);   // R2: async void → chyba přes popup, ne pád
         }
     }
 

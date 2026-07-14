@@ -208,7 +208,7 @@
                 <Separator/>
                 <MenuItem x:Name="MenuSectionsPanel" Header="Panel sekcí" IsCheckable="True" IsChecked="True"
                           Checked="MenuPanelSection_Changed" Unchecked="MenuPanelSection_Changed"/>
-                <MenuItem x:Name="MenuPreview" Header="Live náhled" IsCheckable="True" IsChecked="True"
+                <MenuItem x:Name="MenuPreview" Header="Živý náhled" IsCheckable="True" IsChecked="True"
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
@@ -417,7 +417,7 @@
                                       IsChecked="{Binding SnapToElements, Mode=TwoWay}"
                                       Content="O" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <ComboBox x:Name="CmbSnapGap" Width="Auto" MinWidth="64" VerticalAlignment="Center" Margin="2,0"
-                                  ToolTip="Mezera mezi objekty při snapu a duplikaci"
+                                  ToolTip="Mezera mezi objekty při přichytávání a duplikaci"
                                   SelectedIndex="2"
                                   SelectionChanged="CmbSnapGap_SelectionChanged">
                             <ComboBoxItem Content="bez mezery" Tag="0"/>
@@ -428,7 +428,7 @@
                             <ComboBoxItem Content="10 mm" Tag="10"/>
                         </ComboBox>
                     </StackPanel>
-                    <TextBlock Text="Mřížka &amp; snap" Style="{StaticResource ToolbarGroupLabel}"/>
+                    <TextBlock Text="Mřížka a přichytávání" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
@@ -477,7 +477,7 @@
                                       ToolTip="Skrýt/zobrazit panel sekcí — Ctrl+B"
                                       IsChecked="True" Checked="BtnToggleLeftPanel_Changed" Unchecked="BtnToggleLeftPanel_Changed"
                                       Content="☰" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
-                        <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
+                        <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt živý náhled"
                                       IsChecked="True" Checked="BtnPreview_Changed" Unchecked="BtnPreview_Changed">
                             <Image Source="{StaticResource EDIcons.Eye}" Style="{StaticResource ToolbarIconStyle}"/>
                         </ToggleButton>
@@ -507,11 +507,11 @@
                         </Button>
                         <Button x:Name="BtnExportPdf" Style="{StaticResource ToolbarButton}"
                                 Click="MenuExportPdf_Click"
-                                ToolTip="Exportovat náhled jako PDF..."
+                                ToolTip="Exportovat náhled jako PDF…"
                                 Content="PDF" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                         <Button x:Name="BtnExportPng" Style="{StaticResource ToolbarButton}"
                                 Click="MenuExportPng_Click"
-                                ToolTip="Exportovat náhled jako PNG..."
+                                ToolTip="Exportovat náhled jako PNG…"
                                 Content="PNG" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
                     </StackPanel>
                     <TextBlock Text="Export" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -743,7 +743,7 @@
                                 Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                <Button Content="◀" Command="{Binding PreviousPageCommand}"
+                                <Button Content="◀" Command="{Binding PreviousPageCommand}" ToolTip="Předchozí stránka"
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                                 <!-- Přímý skok na stránku dat (zastávka × směr) — bez proklikávání ◀▶.
                                      Pevná šířka: různě dlouhé názvy nesmí posouvat tlačítka ◀▶ pod myší
@@ -757,7 +757,7 @@
                                 <TextBlock Text="{Binding RealPreviewPageCount, StringFormat='/ {0}'}"
                                            FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Secondary}"
                                            VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="28"/>
-                                <Button Content="▶" Command="{Binding NextPageCommand}"
+                                <Button Content="▶" Command="{Binding NextPageCommand}" ToolTip="Další stránka"
                                         FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
                             </StackPanel>
                         </Border>
