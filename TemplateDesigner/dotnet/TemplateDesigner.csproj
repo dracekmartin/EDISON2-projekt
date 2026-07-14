@@ -18,12 +18,13 @@
 <PackageReference Include="ZXing.Net" Version="0.16.9" />
     <!-- MLRest.dll očekává Newtonsoft.Json 7.0.0.0 — bez této reference CLR knihovnu neresolvne. -->
     <PackageReference Include="Newtonsoft.Json" Version="7.0.1" />
+    <!-- OpenTK přitahuje SkiaSharp.Views.WPF kvůli SKGLElement (GL rendering) — TD používá
+         jen CPU SKElement, takže ~5,5 MB runtime assets vyřazujeme z výstupu. -->
+    <PackageReference Include="OpenTK" Version="3.3.1" ExcludeAssets="runtime" />
+    <PackageReference Include="OpenTK.GLWpfControl" Version="3.3.0" ExcludeAssets="runtime" />
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="EDISONAPI">
-        <HintPath>C:\Edison\EDISONAPI.dll</HintPath>
-    </Reference>
     <Reference Include="MLRest">
         <HintPath>C:\Edison\MLRest.dll</HintPath>
     </Reference>
@@ -62,5 +63,14 @@
          SystemTemplateSeeder je při startu nalije do MLINE větve DB (governance v1 distribuce). -->
     <EmbeddedResource Include="SystemTemplates\**\*.json" />
   </ItemGroup>
+
+  <!-- Publish má být jen single-file .exe — sidecar symboly a doc XML referencí
+       (mj. 80MB libSkiaSharp.pdb z NuGetu) do C:\Edison\ nepatří. -->
+  <Target Name="StripSymbolsAndDocsFromPublish" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb' Or '%(ResolvedFileToPublish.Extension)' == '.xml'" />
+    </ItemGroup>
+  </Target>
 
 </Project>
