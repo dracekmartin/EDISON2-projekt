@@ -159,7 +159,7 @@ public class AiVisionImportPipeline
         var section = new Section
         {
             Id = Guid.NewGuid(),
-            Name = "JŘ — AI Vision",
+            Name = "JŘ Zastávkový",
             PrintBehavior = SectionPrintBehavior.Once,
             OverflowBehavior = SectionOverflowBehavior.KeepTogether,
             Elements = scheduleElements

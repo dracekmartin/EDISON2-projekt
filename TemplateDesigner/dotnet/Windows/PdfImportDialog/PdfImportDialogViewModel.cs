@@ -228,6 +228,8 @@ public class PdfImportDialogViewModel : EDViewModel
             if (scheduleType != ScheduleImportType.None && !string.IsNullOrEmpty(SelectedAgendaCode))
                 template.AgendaCode = SelectedAgendaCode;
 
+            NormalizeImportedPage(template);
+            ApplyDefaultImportBorders(template);
             ImportedTemplate = template;
 
             int elementCount = template.Sections.Sum(s => s.Elements.Count);
@@ -271,6 +273,62 @@ public class PdfImportDialogViewModel : EDViewModel
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>Normalizuje stránku importované šablony, ať sekce po importu rozumně vyplní stránku
+    /// a nevypadá „posunutě": (1) rozměr stránky přichytí na nejbližší standardní formát
+    /// (A5/A4/A3 × orientace) v toleranci, jinak zaokrouhlí; (2) nastaví malé jednotné výchozí okraje
+    /// (1 mm, clampnuté ať neořežou obsah); (3) Body sekci dopočítá na tiskovou plochu.
+    /// Page-level — prvky se nehýbou vůči sobě (posun se sekcí je uniformní).</summary>
+    private static void NormalizeImportedPage(Template template)
+    {
+        var ps = template.PageSize;
+
+        // (1) snap na standardní formát — portrait rozměry, zkoušíme obě orientace
+        const float tol = 5f;
+        (float W, float H)[] formats = [(148f, 210f), (210f, 297f), (297f, 420f)];   // A5, A4, A3
+        bool snapped = false;
+        foreach (var (fw, fh) in formats)
+        {
+            foreach (var (cw, ch) in new[] { (fw, fh), (fh, fw) })
+                if (MathF.Abs(ps.Width - cw) <= tol && MathF.Abs(ps.Height - ch) <= tol)
+                { ps.Width = cw; ps.Height = ch; snapped = true; break; }
+            if (snapped) break;
+        }
+        if (!snapped) { ps.Width = MmMath.Round(ps.Width); ps.Height = MmMath.Round(ps.Height); }
+
+        // (2) výchozí okraje — malé jednotné (1 mm), ale nikdy tak velké, aby ořízly obsah
+        float maxRight = 0f, maxBottom = 0f;
+        foreach (var section in template.Sections)
+            foreach (var el in section.Elements)
+            {
+                maxRight  = MathF.Max(maxRight,  el.X + el.Width);
+                maxBottom = MathF.Max(maxBottom, el.Y + (el.Height ?? el.EffectiveDesignerHeight));
+            }
+        const float defMargin = 1f;
+        float mh = MathF.Min(defMargin, MathF.Max(0f, (ps.Width  - maxRight)  / 2f));
+        float mv = MathF.Min(defMargin, MathF.Max(0f, (ps.Height - maxBottom) / 2f));
+        ps.MarginLeft = ps.MarginRight = MmMath.Round(mh);
+        ps.MarginTop  = ps.MarginBottom = MmMath.Round(mv);
+
+        // (3) Body sekce vyplní tiskovou plochu
+        foreach (var section in template.Sections)
+            if (section.Role == SectionRole.Body)
+                section.DesignerHeight = ps.PrintableHeight;
+    }
+
+    /// <summary>Dorovná importovaným elementům konzistentní výchozí rámeček (černý 0,1mm) tam, kde
+    /// žádný nemají — shodně s novými elementy z palety (<c>CreateElementByType</c>). Import ho někdy
+    /// nenastaví; rámeček detekovaný z PDF (šířka > 0) se nepřepisuje.</summary>
+    private static void ApplyDefaultImportBorders(Template template)
+    {
+        foreach (var section in template.Sections)
+            foreach (var el in section.Elements)
+            {
+                if (el.BorderWidth > 0f) continue;   // detekovaný / už nastavený rámeček nechat
+                el.BorderColor = "#FF000000";
+                el.BorderWidth = 0.1f;
+            }
     }
 
     /// <summary>

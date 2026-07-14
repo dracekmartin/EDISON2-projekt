@@ -76,7 +76,7 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 - **Bound resize + clamp** — element při resize/přesunu nepřesáhne hranice sekce (clamp na PrintableWidth × EffectiveDesignerHeight)
 - **StopColumnsEditorDialog** — dvou-tabový dialog: Tab 1 "Obecné" (PropertiesPanel), Tab 2 "Sloupce" (pořadí, šířky, záhlaví, viditelnost, per-column styling přes CellStyleVM)
 - **PageSize editor** — editace rozměrů stránky, orientace, předdefinované formáty
-- **Smart snap resize** — snap hran při resize (edge + gap 4mm); sdílená hranice (tah za hranu mění i sousedního); split element Ctrl+Shift+H/J
+- **Smart snap resize** — snap hran při resize (edge + gap 4mm); split element Ctrl+Shift+H/J. (Sdílená hranice „tah za hranu mění i sousedního" odstraněna — mátla, resize teď mění jen vybraný prvek.)
 - **Designer font cap** — omezení fontu na 10pt v designeru pro čitelnost placeholderů
 - **Rámeček elementů (border)** — `BorderColor` + `BorderWidth` na base `TemplateElement`; dvouprůchodové renderování (obsah → rámečky mimo clip sekce); pixel-snap na sdílených hranách → jeden rámeček; viditelné i na hranici sekce
 - **Auto-scale font u JŘ elementů** — `ScheduleElementBase.ComputeFontScale(naturalH)`: pokud obsah přesahuje pevnou Height, fonty + výšky řádků se proporcionálně zmenší; schedule elementy nyní podporují pevnou Height (ne jen null/dynamickou)
