@@ -235,6 +235,7 @@ public partial class MainWindow : Window
         // už nastavil State.GridSize, ale RequestGridSizeUiSync callback v tu chvíli
         // ještě nebyl napojený — explicit sync teď, kdy už je vše drátované.
         SyncGridSizeComboBox(_vm.State.GridSize);
+        SyncSnapGapComboBox(_vm.State.SnapGapMm);
 
         // Pokud LoadAsync nestihl dokončit před Show() (cold-start Caché HTTP trvá 2-3s),
         // subscribe na Loaded event — handler dispatchne re-apply na UI thread.
@@ -254,6 +255,7 @@ public partial class MainWindow : Window
                 _vm.ApplyLoadedPreferences();
                 ApplyUiPreferences();
                 SyncGridSizeComboBox(_vm.State.GridSize);
+                SyncSnapGapComboBox(_vm.State.SnapGapMm);
                 RebuildRecentFilesMenu();
                 // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány —
                 // dohnat to teď.
@@ -838,6 +840,21 @@ public partial class MainWindow : Window
                 && Math.Abs(v - gridSizeMm) < 0.001f)
             {
                 CmbGridSize.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
+    /// <summary>Sync CmbSnapGap na uloženou hodnotu mezery — nebindovaný combobox (jako CmbGridSize).
+    /// Bez toho combo po startu/loadu ukazoval default, i když State.SnapGapMm držel uloženou hodnotu.</summary>
+    private void SyncSnapGapComboBox(float gapMm)
+    {
+        foreach (var item in CmbSnapGap.Items.OfType<ComboBoxItem>())
+        {
+            if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v)
+                && Math.Abs(v - gapMm) < 0.001f)
+            {
+                CmbSnapGap.SelectedItem = item;
                 return;
             }
         }
