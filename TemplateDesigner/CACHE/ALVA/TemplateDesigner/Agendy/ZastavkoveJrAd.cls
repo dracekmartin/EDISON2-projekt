@@ -1391,7 +1391,6 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
     d ..AddField(fields, "NASTUPISTE",             "Nástupiště",             "text")
-    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nástupiště (zastaralé → NASTUPISTE)", "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické — MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values —
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.
@@ -1520,6 +1519,11 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
 
     d ..AddBoolParam(arr, "SOUHRN_NA_ZNAMENI", "Souhrn ""všechny zastávky na znamení"" místo × u každé", "false", "Poznámky a legenda")
 
+    // Skrýt agregátní poznámku „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
+    // TD-aplikované (filtr skryje legendu kategorie bezbarier-agregat). Default = zobrazit (legacy).
+    // (Oba checkboxy „Poznámky a legenda" u sebe, enum až za nimi — konzistentní layout skupiny.)
+    d ..AddBoolParam(arr, "SCHOVAT_AGREGAT_BEZBARIER", "Skrýt souhrn ""všechny spoje bezbariérové""", "false", "Poznámky a legenda")
+
     // Rozsah „Spoje, nepoznámkovat" definuje legacy data (per spoj + TČ); tato volba určuje, CO se
     // v tom rozsahu v tisku schová. TD-aplikované (filtr nad nadmnožinou). Default = legacy.
     s pNepoz = ##class(%DynamicObject).%New()
@@ -1534,10 +1538,6 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d optsNepoz.%Push("Obojí")
     s pNepoz.options = optsNepoz
     d arr.%Push(pNepoz)
-
-    // Skrýt agregátní poznámku „všechny spoje mají bezbariérově přístupné vozidlo" (#7161 D6).
-    // TD-aplikované (filtr skryje legendu kategorie bezbarier-agregat). Default = zobrazit (legacy).
-    d ..AddBoolParam(arr, "SCHOVAT_AGREGAT_BEZBARIER", "Skrýt souhrn ""všechny spoje bezbariérové""", "false", "Poznámky a legenda")
 }
 
 /// ═══════════════════════════════════════════════════════════════════════════════

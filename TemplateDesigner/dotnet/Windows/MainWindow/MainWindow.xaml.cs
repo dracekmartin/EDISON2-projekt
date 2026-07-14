@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
 using SkiaSharp;
+using EDControls.EDInputForm;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Designer;
@@ -149,6 +150,7 @@ public partial class MainWindow : Window
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
         _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
+        _vm.RequestParamsFormReload      = ReloadParamsTabForm;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
@@ -994,6 +996,55 @@ public partial class MainWindow : Window
 
         var dlg = new PrintDialog(vm) { Owner = this };
         dlg.ShowDialog();
+
+        // Tisk sdílí _previewParams s tabem parametrů — po zavření přenačti tab formulář,
+        // aby odrážel hodnoty případně změněné v dialogu.
+        ReloadParamsTabForm();
+    }
+
+    // ── EDInputForm parametrů v levém tabu (AgendaParams, includeExport=0) ───────
+    // Vzor stejný jako PrintDialog: CacheClass + InitParams → Init → Initialized → napojení polí.
+
+    private bool _paramsTabInitHooked;
+
+    /// <summary>Přenačte formulář parametrů v levém tabu z aktuální agendy + hodnot (sdílený dict).
+    /// Volá se po změně agendy/šablony (VM callback) i po zavření tiskového dialogu (sync hodnot).</summary>
+    private void ReloadParamsTabForm()
+    {
+        if (_vm is null || !_vm.HasParameters || _vm.CurrentAgendaCacheClass is null) return;
+
+        ParamsTabForm.InitParams = _vm.BuildAgendaParamsInitParams();
+        if (!_paramsTabInitHooked)
+        {
+            ParamsTabForm.Initialized += OnParamsTabInitialized;
+            _paramsTabInitHooked = true;
+        }
+        ParamsTabForm.CacheClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
+        ParamsTabForm.Init();
+    }
+
+    private void OnParamsTabInitialized()
+    {
+        foreach (var field in (ParamsTabForm.Items ?? []).OfType<Field>())
+            field.PropertyChanged += OnParamsTabFieldChanged;
+        ApplyParamsTabVisibility();
+    }
+
+    private void OnParamsTabFieldChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_vm is null || sender is not Field field || e.PropertyName != nameof(Field.Value)) return;
+        _vm.SetAgendaParamValue(field.Key, field.Value ?? "");
+        ApplyParamsTabVisibility();   // visibleWhen (např. Hodiny od/do jen ve „Vlastní rozsah")
+    }
+
+    private void ApplyParamsTabVisibility()
+    {
+        if (_vm is null) return;
+        foreach (var field in (ParamsTabForm.Items ?? []).OfType<Field>())
+        {
+            var target = _vm.IsAgendaParamVisible(field.Key) ? EItemVisibility.Visible : EItemVisibility.Collapsed;
+            if (field.Visibility != target) field.Visibility = target;
+        }
     }
 
     private bool _closeConfirmed;

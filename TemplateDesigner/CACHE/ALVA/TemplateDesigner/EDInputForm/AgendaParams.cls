@@ -26,6 +26,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s agendaClass = $g(^||ML("IN","agendaClass"))
         s valuesJson  = $g(^||ML("IN","values"))
+        // includeExport=0 → jen parametry sestavy (levý tab v hlavním okně); default 1 = i export
+        // skupina (tiskový dialog). Export pole jsou tiskově specifická, do tabu nepatří.
+        s includeExport = $g(^||ML("IN","includeExport"), 1)
 
         s paramsJson = ..FetchParamsJson(.sys, agendaClass)
 
@@ -42,8 +45,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         }
 
         // Universální export pole (členění výstupu + název souboru) — platí pro všechny agendy.
-        // NEjsou součástí GetParameters → neukáží se v preview liště, jen v tiskovém dialogu.
-        d ..AddExportFields(form, vals, agendaClass)
+        // NEjsou součástí GetParameters → jen v tiskovém dialogu, ne v tabu parametrů.
+        i includeExport '= 0 { d ..AddExportFields(form, vals, agendaClass) }
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }

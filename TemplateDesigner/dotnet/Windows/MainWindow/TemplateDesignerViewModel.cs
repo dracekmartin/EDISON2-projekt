@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Windows.Input;
 using EDControls;
 using EDControls.EDViewModel;
@@ -2253,36 +2254,96 @@ public class TemplateDesignerViewModel : EDViewModel
         return Preferences.SavePrintParamsAsync(agendaCode, _previewParams);
     }
 
+    /// <summary>Callback do code-behindu: přenačti EDInputForm parametrů v levém tabu
+    /// (nové agenda schéma / hodnoty). Nastaví se v MainWindow konstruktoru.</summary>
+    public Action? RequestParamsFormReload { get; set; }
+
+    /// <summary>FQN Caché agenda třídy aktuální šablony (pro AgendaParams EDInputForm), null = bez agendy.</summary>
+    public string? CurrentAgendaCacheClass =>
+        CacheProvider?.GetCacheClass(State.CurrentTemplate.AgendaCode ?? "");
+
     public void RebuildParametersPanel()
     {
+        // ParameterControlVM.Init seeduje _previewParams defaulty + drží HasParameters/summary;
+        // samotný render parametrů dělá EDInputForm v tabu (AgendaParams), ne PreviewParameters.
         ParameterControlVM.Init(
             target:     PreviewParameters,
             parameters: _agendaParameters,
             values:     _previewParams,
-            onChanged:  () =>
-            {
-                _cachedParamValues = null;
-                NotifyParamsSummaryChanged();
-                // Server-side param „rozdělení sloupců" (grouping počítá Caché) → změna vyžaduje re-fetch dat.
-                // Ostatní (client-side) parametry jen překreslí. (Zatím jediný server param — hardcoded.)
-                var rozd = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv) ? rv?.ToString() : null;
-                if (CurrentActiveInstance is not null && rozd != _lastServerParamRozdeleni)
-                {
-                    _lastServerParamRozdeleni = rozd;
-                    _ = RefreshDataForCurrentInstanceAsync();
-                }
-                else
-                {
-                    RequestPreviewRefresh?.Invoke();
-                }
-            },
+            onChanged:  OnAgendaParamChanged,
             commitFactory: _ => null);
 
         // Výchozí hodnota server-paramu, ať první změna client-paramu nespustí falešný re-fetch.
         _lastServerParamRozdeleni = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv0) ? rv0?.ToString() : null;
-        HasParameters = PreviewParameters.Count > 0;
+        HasParameters = _agendaParameters.Count > 0;
         NotifyParamsSummaryChanged();
+        RequestParamsFormReload?.Invoke();
     }
+
+    /// <summary>Reakce na změnu parametru (z EDInputform tabu i staré cesty): invaliduje cache,
+    /// server-param „rozdělení sloupců" → re-fetch dat, ostatní → jen překreslení náhledu.</summary>
+    private void OnAgendaParamChanged()
+    {
+        _cachedParamValues = null;
+        NotifyParamsSummaryChanged();
+        // Server-side param „rozdělení sloupců" (grouping počítá Caché) → změna vyžaduje re-fetch dat.
+        // Ostatní (client-side) parametry jen překreslí. (Zatím jediný server param — hardcoded.)
+        var rozd = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv) ? rv?.ToString() : null;
+        if (CurrentActiveInstance is not null && rozd != _lastServerParamRozdeleni)
+        {
+            _lastServerParamRozdeleni = rozd;
+            _ = RefreshDataForCurrentInstanceAsync();
+        }
+        else
+        {
+            RequestPreviewRefresh?.Invoke();
+        }
+    }
+
+    // ── EDInputForm parametrů v levém tabu (AgendaParams, includeExport=0) ──────
+
+    /// <summary>IN params pro AgendaParams.Init — jen parametry sestavy (bez export skupiny).
+    /// Zrcadlí PrintDialog.BuildInitParams, ale includeExport=0 a bez export klíčů.</summary>
+    public CVar BuildAgendaParamsInitParams()
+    {
+        var init = new CVar();
+        init["agendaClass"]   = new CVar(CurrentAgendaCacheClass ?? "");
+        init["includeExport"] = new CVar("0");
+
+        var vals = new Dictionary<string, string>();
+        foreach (var p in _agendaParameters)
+        {
+            var v = _previewParams.TryGetValue(p.Name, out var o) ? o : p.GetDefaultTyped();
+            vals[p.Name] = ParamToFieldString(v, p.Type);
+        }
+        init["values"] = new CVar(JsonSerializer.Serialize(vals));
+        return init;
+    }
+
+    /// <summary>Zapíše hodnotu pole z EDInputformu do sdíleného dict (typová konverze) + živý náhled.
+    /// Sdílený dict = tentýž jako PrintDialog → hodnoty tab ↔ tisk konzistentní.</summary>
+    public void SetAgendaParamValue(string name, string fieldValue)
+    {
+        var type = _agendaParameters.FirstOrDefault(p => p.Name == name)?.Type ?? "string";
+        _previewParams[name] = type switch
+        {
+            "bool"   => fieldValue == "1" || string.Equals(fieldValue, "true", StringComparison.OrdinalIgnoreCase),
+            "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+            _        => (object)fieldValue
+        };
+        OnAgendaParamChanged();
+    }
+
+    /// <summary>visibleWhen parametru proti aktuálním hodnotám (jeden zdroj — TemplateParameter.IsVisible).</summary>
+    public bool IsAgendaParamVisible(string name) =>
+        _agendaParameters.FirstOrDefault(x => x.Name == name)?.IsVisible(_previewParams) ?? true;
+
+    private static string ParamToFieldString(object? v, string type) => type switch
+    {
+        "bool"   => v is true ? "true" : "false",
+        "number" => v is float f ? f.ToString(CultureInfo.InvariantCulture) : (v?.ToString() ?? ""),
+        _        => v?.ToString() ?? ""
+    };
 
     private void UpdateCacheStatus(string? agendaCode, DataSchema? cacheSchema)
     {

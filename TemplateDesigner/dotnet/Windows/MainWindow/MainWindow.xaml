@@ -5,6 +5,7 @@
         xmlns:local="clr-namespace:TemplateDesigner"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:aiguide="clr-namespace:TemplateDesigner.Windows.AiGuideDialog"
+        xmlns:eif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
         Title="Návrhář sestav" Height="768" Width="1280"
         Icon="{StaticResource EDIcons.Molecule}"
         WindowState="Maximized"
@@ -240,9 +241,6 @@
                         <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="Uložit — Ctrl+S" Click="MenuSave_Click">
                             <Image Source="{StaticResource EDIcons.Save}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk — Ctrl+P" Click="MenuPrint_Click">
-                            <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
                     </StackPanel>
                     <TextBlock Text="Soubor" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
@@ -472,34 +470,6 @@
                 </StackPanel>
                 <Border Style="{StaticResource ToolbarGroupSep}"/>
 
-                <!-- ── 8b. Data (obnovit data náhledu) ── -->
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button x:Name="BtnRefreshData" Style="{StaticResource ToolbarButton}"
-                                Command="{Binding RefreshDataCommand}"
-                                ToolTip="Obnovit data náhledu — F5"
-                                Content="↻" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
-                    </StackPanel>
-                    <TextBlock Text="Data" Style="{StaticResource ToolbarGroupLabel}"/>
-                </StackPanel>
-                <Border Style="{StaticResource ToolbarGroupSep}"/>
-
-                <!-- ── 8c. Export ── -->
-                <StackPanel>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button x:Name="BtnExportPdf" Style="{StaticResource ToolbarButton}"
-                                Click="MenuExportPdf_Click"
-                                ToolTip="Exportovat náhled jako PDF..."
-                                Content="PDF" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
-                        <Button x:Name="BtnExportPng" Style="{StaticResource ToolbarButton}"
-                                Click="MenuExportPng_Click"
-                                ToolTip="Exportovat náhled jako PNG..."
-                                Content="PNG" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
-                    </StackPanel>
-                    <TextBlock Text="Export" Style="{StaticResource ToolbarGroupLabel}"/>
-                </StackPanel>
-                <Border Style="{StaticResource ToolbarGroupSep}"/>
-
                 <!-- ── 9. Panely ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
@@ -513,6 +483,38 @@
                         </ToggleButton>
                     </StackPanel>
                     <TextBlock Text="Panely" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── Data + Export (u pravého okraje, logicky nad náhledem) ── -->
+                <!-- ── Data (obnovit data náhledu) ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnRefreshData" Style="{StaticResource ToolbarButton}"
+                                Command="{Binding RefreshDataCommand}"
+                                ToolTip="Obnovit data náhledu — F5"
+                                Content="↻" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
+                    </StackPanel>
+                    <TextBlock Text="Data" Style="{StaticResource ToolbarGroupLabel}"/>
+                </StackPanel>
+                <Border Style="{StaticResource ToolbarGroupSep}"/>
+
+                <!-- ── Export ── -->
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk — Ctrl+P" Click="MenuPrint_Click">
+                            <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
+                        <Button x:Name="BtnExportPdf" Style="{StaticResource ToolbarButton}"
+                                Click="MenuExportPdf_Click"
+                                ToolTip="Exportovat náhled jako PDF..."
+                                Content="PDF" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
+                        <Button x:Name="BtnExportPng" Style="{StaticResource ToolbarButton}"
+                                Click="MenuExportPng_Click"
+                                ToolTip="Exportovat náhled jako PNG..."
+                                Content="PNG" FontSize="{DynamicResource EDTheme.FontSize.Body}" FontWeight="SemiBold"/>
+                    </StackPanel>
+                    <TextBlock Text="Export" Style="{StaticResource ToolbarGroupLabel}"/>
                 </StackPanel>
 
             </StackPanel>
@@ -665,6 +667,34 @@
                     <TabItem x:Name="TabAiGuide"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Assistant}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Pomocník" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <aiguide:AiGuidePanel DataContext="{Binding AiGuide}"/>
                     </TabItem>
+                    <!-- ── Záložka Parametry sestavy ── -->
+                    <TabItem x:Name="TabParams"><TabItem.Header><StackPanel Orientation="Horizontal"><Viewbox Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center"><Canvas Width="16" Height="16"><Line X1="1" Y1="4" X2="15" Y2="4" Stroke="{DynamicResource EDTheme.Text.Header}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/><Line X1="1" Y1="8" X2="15" Y2="8" Stroke="{DynamicResource EDTheme.Text.Header}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/><Line X1="1" Y1="12" X2="15" Y2="12" Stroke="{DynamicResource EDTheme.Text.Header}" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/><Ellipse Canvas.Left="9" Canvas.Top="2" Width="4" Height="4" Fill="{DynamicResource EDTheme.Text.Header}"/><Ellipse Canvas.Left="3" Canvas.Top="6" Width="4" Height="4" Fill="{DynamicResource EDTheme.Text.Header}"/><Ellipse Canvas.Left="8" Canvas.Top="10" Width="4" Height="4" Fill="{DynamicResource EDTheme.Text.Header}"/></Canvas></Viewbox><TextBlock Text="Parametry" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
+                        <Grid>
+                            <!-- Parametry sestavy renderuje EDInputForm z Caché (AgendaParams, includeExport=0)
+                                 — stejný stack jako tiskový dialog, jen bez export skupiny. Skupiny (Seznam
+                                 zastávek / Mřížka odjezdů / Poznámky a legenda) řídí `group` z GetParameters.
+                                 CacheClass + InitParams + FieldChanged/visibleWhen wiring je v code-behindu. -->
+                            <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                          Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}">
+                                <eif:EDInputForm x:Name="ParamsTabForm" Margin="4"/>
+                            </ScrollViewer>
+                            <!-- Empty-state: šablona bez parametrů (obecná / faktura) -->
+                            <TextBlock Text="Tato šablona nemá parametry." TextWrapping="Wrap"
+                                       Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" Margin="12">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasParameters}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </Grid>
+                    </TabItem>
                 </TabControl>
             </Border>
 
@@ -704,113 +734,42 @@
             <Border Grid.Column="4" Grid.Row="0"
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="1,0,0,0">
                 <DockPanel>
-                    <!-- Parametry sestavy — sbalitelná lišta (default sbaleno = preview má celou výšku).
-                         Sbaleno: 1 řádek se souhrnem hodnot odchylných od defaultu.
-                         Rozbaleno: svislý formulář seskupený dle `group` metadat z GetParameters. -->
-                    <Border x:Name="PreviewParamsBorder" DockPanel.Dock="Top"
-                            Visibility="{Binding HasParameters, Converter={StaticResource BoolToVis}}"
-                            Background="{DynamicResource EDTheme.Bg.Footer}"
-                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
-                            Padding="8,4">
-                        <Border.Resources>
-                            <CollectionViewSource x:Key="PreviewParamsView" Source="{Binding PreviewParameters}">
-                                <CollectionViewSource.GroupDescriptions>
-                                    <PropertyGroupDescription PropertyName="Group"/>
-                                </CollectionViewSource.GroupDescriptions>
-                            </CollectionViewSource>
-                        </Border.Resources>
-                        <StackPanel>
-                            <!-- Hlavička — klik kdekoli přepne rozbalení -->
-                            <Border Background="Transparent" Cursor="Hand"
-                                    ToolTip="Parametry sestavy — kliknutím rozbalit/sbalit">
-                                <Border.InputBindings>
-                                    <MouseBinding MouseAction="LeftClick" Command="{Binding ToggleParamsBarCommand}"/>
-                                </Border.InputBindings>
-                                <DockPanel>
-                                    <TextBlock DockPanel.Dock="Left"
-                                               Text="{Binding ParamsBarToggleText}"
-                                               FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                               Foreground="{DynamicResource EDTheme.Text.Header}"
-                                               FontWeight="SemiBold"
-                                               VerticalAlignment="Center"/>
-                                    <TextBlock Text="{Binding ParamsSummaryText}"
-                                               Visibility="{Binding ParamsBarCollapsed, Converter={StaticResource BoolToVis}}"
-                                               FontSize="{DynamicResource EDTheme.FontSize.Caption}"
-                                               Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                               VerticalAlignment="Center" Margin="10,0,0,0"
-                                               TextTrimming="CharacterEllipsis"/>
-                                </DockPanel>
-                            </Border>
+                    <!-- Stránkování dat (pager) — pevný 34px pruh NAHOŘE, rezervovaný vždy (i bez dat),
+                         aby náhled začínal ve stejné výšce jako plátno vlevo (34 + 66 padding = 100 =
+                         horní okraj stránky návrháře). Pozadí pruhu = plátno (#E4E4E4) → v mock režimu
+                         (bez pageru) je to jen souvislý horní okraj. Obsah (◀ combo ▶) jen s daty. -->
+                    <Grid DockPanel.Dock="Top" Height="34" Background="#FFE4E4E4">
+                        <Border Visibility="{Binding HasPageNavigation, Converter={StaticResource BoolToVis}}"
+                                Background="{DynamicResource EDTheme.Bg.PanelAlt}"
+                                BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <Button Content="◀" Command="{Binding PreviousPageCommand}"
+                                        FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                                <!-- Přímý skok na stránku dat (zastávka × směr) — bez proklikávání ◀▶.
+                                     Pevná šířka: různě dlouhé názvy nesmí posouvat tlačítka ◀▶ pod myší
+                                     (dropdown se obsahu přizpůsobí, zavřený box ořízne). -->
+                                <ComboBox ItemsSource="{Binding PreviewPageItems}"
+                                          SelectedIndex="{Binding RealPreviewIndex, Mode=TwoWay}"
+                                          FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                          VerticalAlignment="Center" Margin="8,0"
+                                          Width="230"
+                                          ToolTip="Skok na stránku dat"/>
+                                <TextBlock Text="{Binding RealPreviewPageCount, StringFormat='/ {0}'}"
+                                           FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                           VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="28"/>
+                                <Button Content="▶" Command="{Binding NextPageCommand}"
+                                        FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
 
-                            <!-- Rozbalený svislý formulář -->
-                            <ItemsControl Margin="2,4,0,0"
-                                          Visibility="{Binding ParamsBarExpanded, Converter={StaticResource BoolToVis}}"
-                                          ItemsSource="{Binding Source={StaticResource PreviewParamsView}}"
-                                          ItemTemplateSelector="{StaticResource ParamTemplateSelector}">
-                                <ItemsControl.ItemContainerStyle>
-                                    <Style TargetType="ContentPresenter">
-                                        <Setter Property="Margin" Value="8,1,0,1"/>
-                                    </Style>
-                                </ItemsControl.ItemContainerStyle>
-                                <ItemsControl.GroupStyle>
-                                    <GroupStyle>
-                                        <GroupStyle.HeaderTemplate>
-                                            <DataTemplate>
-                                                <!-- Prázdný název skupiny (agenda bez group metadat) → záhlaví skrýt -->
-                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"
-                                                           FontSize="{DynamicResource EDTheme.FontSize.Caption}"
-                                                           Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                                           Margin="0,4,0,2">
-                                                    <TextBlock.Style>
-                                                        <Style TargetType="TextBlock">
-                                                            <Style.Triggers>
-                                                                <DataTrigger Binding="{Binding Name}" Value="">
-                                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                                </DataTrigger>
-                                                            </Style.Triggers>
-                                                        </Style>
-                                                    </TextBlock.Style>
-                                                </TextBlock>
-                                            </DataTemplate>
-                                        </GroupStyle.HeaderTemplate>
-                                    </GroupStyle>
-                                </ItemsControl.GroupStyle>
-                            </ItemsControl>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Stránkování dat — viditelné kdykoli jsou reálná data (i 1 stránka):
-                         combobox zároveň říká, KTEROU zastávku × směr preview zobrazuje -->
-                    <Border DockPanel.Dock="Top"
-                            Visibility="{Binding HasPageNavigation, Converter={StaticResource BoolToVis}}"
-                            Background="{DynamicResource EDTheme.Bg.PanelAlt}"
-                            BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
-                            Padding="8,3">
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                            <Button Content="◀" Command="{Binding PreviousPageCommand}"
-                                    FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
-                            <!-- Přímý skok na stránku dat (zastávka × směr) — bez proklikávání ◀▶.
-                                 Pevná šířka: různě dlouhé názvy nesmí posouvat tlačítka ◀▶ pod myší
-                                 (dropdown se obsahu přizpůsobí, zavřený box ořízne). -->
-                            <ComboBox ItemsSource="{Binding PreviewPageItems}"
-                                      SelectedIndex="{Binding RealPreviewIndex, Mode=TwoWay}"
-                                      FontSize="{DynamicResource EDTheme.FontSize.Body}"
-                                      VerticalAlignment="Center" Margin="8,0"
-                                      Width="230"
-                                      ToolTip="Skok na stránku dat"/>
-                            <TextBlock Text="{Binding RealPreviewPageCount, StringFormat='/ {0}'}"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                       VerticalAlignment="Center" Margin="0,0,8,0" MinWidth="28"/>
-                            <Button Content="▶" Command="{Binding NextPageCommand}"
-                                    FontSize="{DynamicResource EDTheme.FontSize.Body}" Padding="8,1" MinWidth="28"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Scrollovatelný canvas náhledu -->
+                    <!-- Scrollovatelný canvas náhledu — vyplní zbytek, začíná nahoře (zarovnané s návrhářem).
+                         Pozadí = shodné s plátnem náhledu (#E4E4E4), aby pod kratším obsahem neprosvítala
+                         jiná (světlejší) barva. -->
                     <ScrollViewer x:Name="PreviewScrollViewer"
                                   HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
-                                  Background="{DynamicResource EDTheme.Bg.Hover}">
+                                  Background="#FFE4E4E4">
                         <skia:SKElement x:Name="skPreview" HorizontalAlignment="Left" Height="800"/>
                     </ScrollViewer>
                 </DockPanel>

@@ -38,7 +38,8 @@ s daty z agendy → PDF.
   varianta říká zdroj dat (AD = linková doprava, MHD). Šablona je vázaná na konkrétní
   kombinaci; zobrazuje ji zelený chip ve status baru a titulek okna.
 - Instance — konkrétní záznam, nad kterým se tiskne (u JŘ = linka). Vybírá se
-  modrým chipem 'Instance' ve status baru (klik = výběr více linek, ◀▶ = listování).
+  modrým chipem ve status baru — chip je popsaný podle agendy (u jízdních řádů 'Linka');
+  klik = výběr více linek, ◀▶ = listování.
 
 ## Výrazový jazyk (v placeholderech a podmínkách)
 - Formátování: {CENA:N2} (2 desetinná místa), {TEXT:UPPER}, {POLE:LEFT(4)}.
@@ -67,14 +68,17 @@ s daty z agendy → PDF.
 ### Chci pracovat s daty
 - Změnit agendu/variantu: Ctrl+Shift+A, nebo klik na zelený chip ve status baru.
   Vytvoří NOVOU prázdnou šablonu (obsah se mezi agendami nepřenáší).
-- Vybrat linky/instance: klik na modrý chip 'Instance' ve status baru → výběr se
-  search boxem; ◀▶ listuje, ↻ (nebo F5) znovu načte data.
+- Vybrat linky/instance: klik na modrý chip ve status baru (u JŘ popsaný 'Linka')
+  → výběr se search boxem; ◀▶ listuje, ↻ (nebo F5) znovu načte data.
 - Pole agendy: záložka 'Pole agendy' v levém panelu; pole lze táhnout na canvas
   (vytvoří text) nebo na existující text (přidá placeholder); dvojklik = do schránky.
 - Parametry sestavy: lišta parametrů nad náhledem (živě mění náhled) — tytéž
   hodnoty jsou v dialogu tisku.
 
 ### Chci upravit vzhled
+- Výchozí (globální) font celé šablony: Ctrl+Shift+P (Vlastnosti stránky) → pole
+  'Výchozí font'. Je to kořen kaskády — zdědí ho všechny elementy, které nemají
+  vlastní font nastavený. Prázdné = vestavěný default (Arial).
 - Rychlé vlastnosti: záložka 'Vlastnosti' v levém panelu (aktualizuje se dle výběru).
 - Kompletní nastavení: Enter nebo dvojklik na element → dialog; u tabulkových
   elementů má dialog záložku/tlačítko 'Sloupce' (pořadí, šířky, viditelnost,

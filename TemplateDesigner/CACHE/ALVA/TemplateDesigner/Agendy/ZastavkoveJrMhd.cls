@@ -1511,7 +1511,6 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
     d ..AddField(fields, "PRVNI_POSLEDNI_SPOJ",    "První/poslední spoj",    "text")
-    d ..AddField(fields, "NEJEDOU_SPOJE",          "Nejedou spoje (zastaralé → PRVNI_POSLEDNI_SPOJ)", "text")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.

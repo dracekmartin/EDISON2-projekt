@@ -17,10 +17,14 @@ namespace TemplateDesigner.Designer;
 public class PreviewCanvas
 {
     private const float PagePaddingPx = 20f;
+    // Horní odsazení první stránky uvnitř plátna. Nad plátnem je v UI pevný 34px pruh
+    // se stránkováním → 34 + 66 = 100 = horní okraj stránky v návrháři (DesignerCanvas
+    // PagePaddingPx 40 + TopBufferPx 60). Náhled tak začíná na ose Y zarovnaný s plátnem vlevo.
+    private const float PageTopPaddingPx = 66f;
     private const float PageGapPx     = 16f;
     private const float BaseMmToPx   = 96f / 25.4f;   // px na mm při 96 DPI, zoom 1:1
 
-    private static readonly SKColor ClrBackground  = new(0xFFE8E8E8);
+    private static readonly SKColor ClrBackground  = new(0xFFE4E4E4);   // shodné s DesignerCanvas
     private static readonly SKColor ClrPage        = SKColors.White;
     private static readonly SKColor ClrPageBorder  = new(0xFFAAAAAA);
     private static readonly SKColor ClrOverflowBdr = new(0xFFD32F2F);   // rámeček přetékající stránky
@@ -78,7 +82,7 @@ public class PreviewCanvas
         var layout = Layout(data);
         int pageCount = Math.Max(1, layout.TotalPages);
         float pageH = _state.CurrentTemplate.PageSize.Height * BaseMmToPx * zoom;
-        return PagePaddingPx + pageCount * pageH + (pageCount - 1) * PageGapPx + PagePaddingPx;
+        return PageTopPaddingPx + pageCount * pageH + (pageCount - 1) * PageGapPx + PagePaddingPx;
     }
 
     /// <summary>Výška stránek — zpětná kompatibilita (bez dat = jedna stránka).</summary>
@@ -304,7 +308,7 @@ public class PreviewCanvas
         canvas.Clear(ClrBackground);
         if (layout.TotalPages == 0) return;
 
-        float currentPageY = PagePaddingPx;
+        float currentPageY = PageTopPaddingPx;
         for (int i = 0; i < layout.Pages.Count; i++)
         {
             DrawShadow(canvas, pageX, currentPageY, pageW, pageH);
