@@ -41,4 +41,20 @@
     <None Update="appsettings.local.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('appsettings.local.json')" />
   </ItemGroup>
 
+  <!-- Transitivní závislosti EDLibrary (WinForms grid, přímý DB klient, mail), které shell
+       nenačítá — z single-file bundle ven jako loose soubory. V C:\Edison\ už leží z legacy
+       buildů, takže případná obskurní code path je vedle exe pořád najde. Sidecar .pdb/.xml
+       do publish výstupu nepatří vůbec. -->
+  <!-- Hook musí být po ComputeResolvedFilesToPublishList (ne ComputeFilesToPublish — ten má
+       bundling už v dependencies, takže by změny přišly pozdě). -->
+  <Target Name="SlimSingleFilePublish" AfterTargets="ComputeResolvedFilesToPublishList">
+    <ItemGroup>
+      <ResolvedFileToPublish Condition="'%(Filename)' == 'C1.Win.4.5.2' Or '%(Filename)' == 'C1.Win.C1FlexGrid.4.5.2' Or '%(Filename)' == 'C1.Win.C1Sizer.4' Or '%(Filename)' == 'InterSystems.Data.CacheClient' Or '%(Filename)' == 'AegisImplicitMail'">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+      </ResolvedFileToPublish>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)"
+                             Condition="'%(Extension)' == '.pdb' Or '%(Extension)' == '.xml'" />
+    </ItemGroup>
+  </Target>
+
 </Project>
