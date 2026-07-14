@@ -16,9 +16,9 @@
         <!-- Tlačítka dole -->
         <Border DockPanel.Dock="Bottom"
                 Padding="8,6,8,6"
-                BorderBrush="#DDDDDD"
+                BorderBrush="{DynamicResource EDTheme.Border.Light}"
                 BorderThickness="0,1,0,0"
-                Background="#F8F8F8">
+                Background="{DynamicResource EDTheme.Bg.Footer}">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="{StaticResource EDStrings.Ok}"     Width="72" IsDefault="True" Command="{Binding OkCommand}"
                         Margin="0,0,6,0" Padding="0,4"/>

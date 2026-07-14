@@ -109,6 +109,12 @@ public partial class MainWindow : Window
         DataContext = _vm;
         InitializeComponent();
 
+        // AI generátor šablon zatím jen pro vývojáře (lokální dev klíč) — před produkcí skrytý;
+        // Import PDF zůstává pro všechny.
+        MenuAiAssistant.Visibility =
+            string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey)
+                ? Visibility.Collapsed : Visibility.Visible;
+
         // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
         ApplyUiPreferences();
 
@@ -353,6 +359,8 @@ public partial class MainWindow : Window
             {
                 if (_vm is not null && item.Tag is string p)
                 {
+                    // Stejně jako Ctrl+O / import: neztratit rozdělanou práci bez potvrzení.
+                    if (!await _vm.ConfirmUnsavedChangesAsync()) return;
                     await _vm.OpenTemplateFromFileAsync(p);
                     RebuildRecentFilesMenu();
                 }
@@ -381,8 +389,8 @@ public partial class MainWindow : Window
         if (_mouseMode == MouseMode.RubberBand && _rubberBandRect.HasValue)
         {
             var r = _rubberBandRect.Value;
-            using var fill   = new SKPaint { Color = new SKColor(0x220066CC) };
-            using var border = new SKPaint { Color = new SKColor(0xFF0066CC), IsStroke = true, StrokeWidth = 1f };
+            using var fill   = new SKPaint { Color = new SKColor(0x222563EB) };
+            using var border = new SKPaint { Color = new SKColor(0xFF2563EB), IsStroke = true, StrokeWidth = 1f };
             surface.Canvas.DrawRect(r, fill);
             surface.Canvas.DrawRect(r, border);
         }
@@ -400,10 +408,10 @@ public partial class MainWindow : Window
                 var elRect = _canvas.GetElementCanvasRect(_addingTargetElement, cw);
                 if (elRect is not null)
                 {
-                    using var highlight = new SKPaint { Color = new SKColor(0x302196F3) };
+                    using var highlight = new SKPaint { Color = new SKColor(0x302563EB) };
                     using var border = new SKPaint
                     {
-                        Color = new SKColor(0xFF2196F3), IsStroke = true,
+                        Color = new SKColor(0xFF2563EB), IsStroke = true,
                         StrokeWidth = 2f
                     };
                     surface.Canvas.DrawRect(elRect.Value, highlight);
@@ -420,7 +428,7 @@ public partial class MainWindow : Window
                     float sW = _vm.State.CurrentTemplate.PageSize.PrintableWidth * _canvas.MmToPx;
                     float sH = _addingTargetSection.EffectiveDesignerHeight * _canvas.MmToPx;
                     var sRect = new SKRect(origin.OriginX, origin.OriginY, origin.OriginX + sW, origin.OriginY + sH);
-                    using var sectionHighlight = new SKPaint { Color = new SKColor(0x182196F3) };
+                    using var sectionHighlight = new SKPaint { Color = new SKColor(0x182563EB) };
                     surface.Canvas.DrawRect(sRect, sectionHighlight);
 
                     // Ghost element — čárkovaný obdélník
@@ -428,10 +436,10 @@ public partial class MainWindow : Window
                     float gx = _addingGhostPos.X - (defW * _canvas.MmToPx / 2f);
                     float gy = _addingGhostPos.Y - (defH * _canvas.MmToPx / 2f);
                     var ghostRect = new SKRect(gx, gy, gx + defW * _canvas.MmToPx, gy + defH * _canvas.MmToPx);
-                    using var ghostFill = new SKPaint { Color = new SKColor(0x152196F3) };
+                    using var ghostFill = new SKPaint { Color = new SKColor(0x152563EB) };
                     using var ghostBorder = new SKPaint
                     {
-                        Color = new SKColor(0xFF2196F3),
+                        Color = new SKColor(0xFF2563EB),
                         IsStroke = true,
                         StrokeWidth = 1.5f,
                         PathEffect = SKPathEffect.CreateDash([6f, 4f], 0)
@@ -468,8 +476,24 @@ public partial class MainWindow : Window
         if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
         e.Handled = true;
         int newIdx = Math.Clamp(CmbZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
-        if (newIdx != CmbZoom.SelectedIndex)
-            CmbZoom.SelectedIndex = newIdx;
+        if (newIdx == CmbZoom.SelectedIndex) return;
+
+        // Zoom ke kurzoru: bod obsahu pod myší má po zoomu zůstat pod myší (standard editorů).
+        // Offsety se nastaví až po layout passu (BeginInvoke Loaded) — ScrollViewer jinak clampne
+        // na starou velikost plátna.
+        var mouse = e.GetPosition(CanvasScrollViewer);
+        double contentX = CanvasScrollViewer.HorizontalOffset + mouse.X;
+        double contentY = CanvasScrollViewer.VerticalOffset + mouse.Y;
+        float oldZoom = ZoomLevels[Math.Clamp(CmbZoom.SelectedIndex, 0, ZoomLevels.Length - 1)];
+        float scale = ZoomLevels[newIdx] / oldZoom;
+
+        CmbZoom.SelectedIndex = newIdx;   // SelectionChanged přenastaví State.Zoom + UpdateCanvasSize
+
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            CanvasScrollViewer.ScrollToHorizontalOffset(contentX * scale - mouse.X);
+            CanvasScrollViewer.ScrollToVerticalOffset(contentY * scale - mouse.Y);
+        });
     }
 
     private void FitToPage()
@@ -958,8 +982,12 @@ public partial class MainWindow : Window
         vm.RequestRenderPdf = (filePath, data, sheets) =>
             _previewCanvas!.RenderToPdf(filePath, data, sheets);
 
+        // Render nad snapshotem šablony — VM volá callback z threadpoolu (async tisk),
+        // živá šablona by závodila s preview renderem UI threadu (element cache).
         vm.RequestRenderMultiPdf = (filePath, dataPages, sheets) =>
-            _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages, sheetLayout: sheets);
+            _previewCanvas!.RenderMultiDataToPdf(filePath, dataPages,
+                template: Serialization.TemplateSerializer.DeepClone(_vm!.State.CurrentTemplate),
+                sheetLayout: sheets);
 
         vm.RequestOverflowCheck = dataPages =>
             _previewCanvas!.CountOverflowingPages(dataPages);
@@ -1004,8 +1032,8 @@ public partial class MainWindow : Window
     private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
-        var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider);
+        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+        var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider, aiReason);
         var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
 
         if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
@@ -1015,11 +1043,42 @@ public partial class MainWindow : Window
         }
     }
 
+    private bool _aiKeyFetchRunning;
+
+    /// <summary>
+    /// Vyzvedne AI klíč (lokální / mlweb přes EdisonAiService). Klíč null = AI nedostupné,
+    /// Reason nese uživatelský důvod (limit, chybí konfigurace…) — dialogy ho zobrazí,
+    /// ale samy fungují dál (generátor, PDF import mají AI jako podmíněný krok).
+    /// Cold-start = Caché config + HTTP resolve (sekundy, timeout 60 s) → wait-cursor + status,
+    /// guard proti opakovanému kliku do menu během volání.
+    /// </summary>
+    private async Task<(string? Key, string? Reason)> TryGetAiApiKeyAsync()
+    {
+        if (_aiKeyFetchRunning) return (null, "Probíhá předchozí požadavek — chvíli strpení.");
+        _aiKeyFetchRunning = true;
+        Mouse.OverrideCursor = Cursors.Wait;
+        if (_vm is not null) _vm.StatusText = "Ověřuji dostupnost AI služby…";
+        try
+        {
+            return (await Services.EdisonAiService.GetApiKeyAsync(), null);
+        }
+        catch (Services.EdisonAiException ex)
+        {
+            return (null, ex.Message);
+        }
+        finally
+        {
+            Mouse.OverrideCursor = null;
+            if (_vm is not null) _vm.StatusText = "";
+            _aiKeyFetchRunning = false;
+        }
+    }
+
     private async void MenuImportPdf_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var apiKey = Config.AppSettings.Current?.AiAssistant.AnthropicApiKey;
-        var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey);
+        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+        var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason);
         var dialog = new PdfImportDialog(vm) { Owner = this };
 
         if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)
@@ -1119,7 +1178,7 @@ public partial class MainWindow : Window
                     var t = _vm.LoadCustomSectionTemplate(name);
                     if (t is null)
                     {
-                        _vm.PopupDisplayer.Info($"Šablonu '{name}' se nepodařilo načíst.");
+                        _vm.PopupDisplayer.Info($"Šablonu „{name}“ se nepodařilo načíst.");
                         return new Section { Name = "Chyba" };
                     }
                     return t;
@@ -1168,8 +1227,8 @@ public partial class MainWindow : Window
         Add("Obdélník",   () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Rectangle, 5, 5));
         Add("Čára",       () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Line, 0, 10));
         Add("Obrázek",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Image, 5, 5));
-        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
         Add("Kód",        () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.Barcode, 5, 5));
+        Add("Tabulka",    () => TemplateDesignerViewModel.CreateElementByType(ElementTypes.DynamicTable, 0, 0));
 
         // JŘ elementy dle capability agendy (druh z registru → typy; stejný kontext jako paleta).
         var kind = _vm.CurrentAgendaElementKind;
@@ -1677,7 +1736,7 @@ public partial class MainWindow : Window
         string origin = _vm.IsCacheBacked ? "[DB] " : "[neuloženo] ";
         string name = _vm.State.CurrentTemplate.Name;
         string dirty = _vm.IsDirty ? " *" : "";
-        Title = $"{agenda}{origin}{name}{dirty} — Template Designer";
+        Title = $"{agenda}{origin}{name}{dirty} — Návrhář sestav";
     }
 
     /// <summary>

@@ -7,7 +7,8 @@
         Width="480" Height="540"
         MinWidth="420" MinHeight="360"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="CanResize">
+        ShowInTaskbar="False"
+        ResizeMode="CanResizeWithGrip">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
     </Window.Resources>
@@ -28,13 +29,13 @@
                 <Button Content="Tisk všech vybraných" Padding="16,6"
                         Command="{Binding ExportRealDataPdfCommand}"
                         Visibility="{Binding CanExportRealData, Converter={StaticResource BoolToVis}}"
-                        ToolTip="Stáhne reálná data všech vybraných linek z Caché a vyexportuje dle nastavení Exportu (členění + název souboru)"
+                        ToolTip="Stáhne reálná data všech vybraných linek z databáze a vyexportuje dle nastavení Exportu (členění + název souboru)"
                         Margin="0,0,8,0"/>
                 <Button Content="Export náhledu" Padding="16,6"
                         Command="{Binding ExportPdfCommand}"
                         ToolTip="Vyexportuje aktuální náhled (jedna zastávka/směr, nebo vzorek u nové šablony) do jednoho PDF"
                         Margin="0,0,8,0"/>
-                <Button Content="{StaticResource EDStrings.Close}" Padding="16,6" IsCancel="True"/>
+                <Button Content="{StaticResource EDStrings.Close}" Padding="16,6" IsDefault="True" IsCancel="True"/>
             </StackPanel>
         </Grid>
 

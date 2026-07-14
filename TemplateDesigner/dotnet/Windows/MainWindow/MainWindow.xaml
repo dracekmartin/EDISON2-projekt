@@ -5,7 +5,7 @@
         xmlns:local="clr-namespace:TemplateDesigner"
         xmlns:controls="clr-namespace:TemplateDesigner.Controls"
         xmlns:aiguide="clr-namespace:TemplateDesigner.Windows.AiGuideDialog"
-        Title="Template Designer" Height="768" Width="1280"
+        Title="Návrhář sestav" Height="768" Width="1280"
         Icon="{StaticResource EDIcons.Molecule}"
         WindowState="Maximized"
         Closing="Window_Closing">
@@ -75,23 +75,23 @@
                                       Command="{Binding SaveTemplateCommand}"/>
                             <Separator/>
                             <MenuItem Header="Smazat sekci"
-                                      Foreground="DarkRed"
+                                      Foreground="{DynamicResource EDTheme.Semantic.Danger}"
                                       Command="{Binding DeleteCommand}"/>
                         </ContextMenu>
                     </Border.ContextMenu>
                     <DockPanel LastChildFill="True">
                         <Button DockPanel.Dock="Right"
-                                Content="▼" Width="18" Height="16" FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                                Padding="0" Margin="2,0,0,0"
+                                Content="▼" MinWidth="18" Padding="2,0" FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                                Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveDownCommand}"
-                                ToolTip="Přesunout dolů (Ctrl+Shift+↓)"/>
+                                ToolTip="Přesunout dolů — Ctrl+Shift+↓"/>
                         <Button DockPanel.Dock="Right"
-                                Content="▲" Width="18" Height="16" FontSize="{DynamicResource EDTheme.FontSize.Small}"
-                                Padding="0" Margin="2,0,0,0"
+                                Content="▲" MinWidth="18" Padding="2,0" FontSize="{DynamicResource EDTheme.FontSize.Small}"
+                                Margin="2,0,0,0"
                                 VerticalAlignment="Center"
                                 Command="{Binding MoveUpCommand}"
-                                ToolTip="Přesunout nahoru (Ctrl+Shift+↑)"/>
+                                ToolTip="Přesunout nahoru — Ctrl+Shift+↑"/>
                         <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="{Binding Name}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Header}"
@@ -137,18 +137,18 @@
         <Menu DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.Footer}">
             <MenuItem Header="Soubor">
                 <MenuItem x:Name="MenuNew"    Header="Nová šablona"  InputGestureText="Ctrl+N" Click="MenuNew_Click"/>
-                <MenuItem x:Name="MenuOpen"   Header="Otevřít z databáze..."  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
+                <MenuItem x:Name="MenuOpen"   Header="Otevřít z databáze…"  InputGestureText="Ctrl+O" Click="MenuOpen_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuSave"   Header="Uložit do databáze"        InputGestureText="Ctrl+S" Click="MenuSave_Click"/>
-                <MenuItem x:Name="MenuSaveAs" Header="Uložit do databáze jako..."                  Click="MenuSaveAs_Click"/>
+                <MenuItem x:Name="MenuSaveAs" Header="Uložit do databáze jako…"                  Click="MenuSaveAs_Click"/>
                 <Separator/>
-                <MenuItem x:Name="MenuImportJson" Header="Importovat z JSON souboru..." Command="{Binding ImportJsonCommand}"/>
-                <MenuItem x:Name="MenuExportJson" Header="Exportovat do JSON souboru..." Command="{Binding ExportJsonCommand}"/>
-                <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední JSON"/>
+                <MenuItem x:Name="MenuImportJson" Header="Importovat ze souboru…" Command="{Binding ImportJsonCommand}"/>
+                <MenuItem x:Name="MenuExportJson" Header="Exportovat do souboru…" Command="{Binding ExportJsonCommand}"/>
+                <MenuItem x:Name="MenuRecentFiles" Header="Otevřít poslední soubor"/>
                 <Separator/>
-                <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF..." Click="MenuExportPdf_Click"/>
-                <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG..." Click="MenuExportPng_Click"/>
-                <MenuItem x:Name="MenuPrint" Header="Tisk..." InputGestureText="Ctrl+P" Click="MenuPrint_Click"/>
+                <MenuItem x:Name="MenuExportPdf" Header="Exportovat náhled jako PDF…" Click="MenuExportPdf_Click"/>
+                <MenuItem x:Name="MenuExportPng" Header="Exportovat náhled jako PNG…" Click="MenuExportPng_Click"/>
+                <MenuItem x:Name="MenuPrint" Header="Tisk…" InputGestureText="Ctrl+P" Click="MenuPrint_Click"/>
                 <Separator/>
                 <MenuItem x:Name="MenuPageProps" Header="Vlastnosti stránky…" InputGestureText="Ctrl+Shift+P" Click="MenuPageProps_Click"/>
                 <Separator/>
@@ -211,13 +211,13 @@
                           Checked="MenuPreview_Changed" Unchecked="MenuPreview_Changed"/>
             </MenuItem>
             <MenuItem Header="Nástroje">
-                <MenuItem x:Name="MenuChangeAgenda" Header="Změnit agendu..." InputGestureText="Ctrl+Shift+A"
+                <MenuItem x:Name="MenuChangeAgenda" Header="Změnit agendu…" InputGestureText="Ctrl+Shift+A"
                           Command="{Binding ChangeAgendaCommand}"/>
-                <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v databázi..."
+                <MenuItem x:Name="MenuManageCacheTemplates" Header="Šablony v databázi…"
                           Command="{Binding OpenFromCacheCommand}"/>
                 <Separator/>
-                <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon..." Click="MenuAiAssistant_Click"/>
-                <MenuItem x:Name="MenuImportPdf" Header="Import PDF..." Click="MenuImportPdf_Click"/>
+                <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon…" Click="MenuAiAssistant_Click"/>
+                <MenuItem x:Name="MenuImportPdf" Header="Import PDF…" Click="MenuImportPdf_Click"/>
             </MenuItem>
             <MenuItem Header="Nápověda">
                 <MenuItem x:Name="MenuHelp" Header="Klávesové zkratky a ovládání" InputGestureText="F1" Click="MenuHelp_Click"/>
@@ -231,16 +231,16 @@
                 <!-- ── 1. Soubor ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnNew" Style="{StaticResource ToolbarButton}" ToolTip="Nová šablona (Ctrl+N)" Click="MenuNew_Click">
+                        <Button x:Name="BtnNew" Style="{StaticResource ToolbarButton}" ToolTip="Nová šablona — Ctrl+N" Click="MenuNew_Click">
                             <Image Source="{StaticResource EDIcons.New}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnOpen" Style="{StaticResource ToolbarButton}" ToolTip="Otevřít (Ctrl+O)" Click="MenuOpen_Click">
+                        <Button x:Name="BtnOpen" Style="{StaticResource ToolbarButton}" ToolTip="Otevřít — Ctrl+O" Click="MenuOpen_Click">
                             <Image Source="{StaticResource EDIcons.Open}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="Uložit (Ctrl+S)" Click="MenuSave_Click">
+                        <Button x:Name="BtnSave" Style="{StaticResource ToolbarButton}" ToolTip="Uložit — Ctrl+S" Click="MenuSave_Click">
                             <Image Source="{StaticResource EDIcons.Save}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk (Ctrl+P)" Click="MenuPrint_Click">
+                        <Button x:Name="BtnPrint" Style="{StaticResource ToolbarButton}" ToolTip="Tisk — Ctrl+P" Click="MenuPrint_Click">
                             <Image Source="{StaticResource EDIcons.Print}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -251,10 +251,10 @@
                 <!-- ── 2. Upravit ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnUndo" Style="{StaticResource ToolbarButton}" ToolTip="Zpět (Ctrl+Z)" Command="{Binding UndoCommand}">
+                        <Button x:Name="BtnUndo" Style="{StaticResource ToolbarButton}" ToolTip="Zpět — Ctrl+Z" Command="{Binding UndoCommand}">
                             <Image Source="{StaticResource EDIcons.Undo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnRedo" Style="{StaticResource ToolbarButton}" ToolTip="Vpřed (Ctrl+Y)" Command="{Binding RedoCommand}">
+                        <Button x:Name="BtnRedo" Style="{StaticResource ToolbarButton}" ToolTip="Vpřed — Ctrl+Y" Command="{Binding RedoCommand}">
                             <Image Source="{StaticResource EDIcons.Redo}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -265,7 +265,7 @@
                 <!-- ── Stránka (nastavení dokumentu) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                        <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="Vlastnosti stránky (Ctrl+Shift+P)" Click="MenuPageProps_Click">
+                        <Button x:Name="BtnPageProps" Style="{StaticResource ToolbarButton}" ToolTip="Vlastnosti stránky — Ctrl+Shift+P" Click="MenuPageProps_Click">
                             <Image Source="{StaticResource EDIcons.Document}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -303,13 +303,13 @@
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.ImageElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická — řádky z dat)" Tag="DynamicTableElement"
-                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
-                            <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
-                        </Button>
                         <Button Style="{StaticResource PaletteButton}" ToolTip="Kód (QR, čárový, EAN, ...)" Tag="BarcodeElement"
                                 PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
                             <Image Source="{StaticResource EDIcons.QrCode}" Style="{StaticResource ToolbarIconStyle}"/>
+                        </Button>
+                        <Button Style="{StaticResource PaletteButton}" ToolTip="Tabulka (dynamická — řádky z dat)" Tag="DynamicTableElement"
+                                PreviewMouseLeftButtonDown="ElementPalette_MouseDown">
+                            <Image Source="{StaticResource EDIcons.TableElement}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                         <Border Width="1" Background="{DynamicResource EDTheme.Border.Light}" Margin="3,2" VerticalAlignment="Stretch"/>
                         <!-- JŘ elementy — viditelnost přepíná UpdatePaletteForAgenda() dle agendy šablony -->
@@ -337,16 +337,16 @@
                 <!-- ── 5. Vrstva (Z-order) ── -->
                 <StackPanel>
                     <StackPanel Orientation="Horizontal">
-                        <Button x:Name="BtnZForward" Style="{StaticResource ToolbarButton}" ToolTip="Přenést dopředu (Ctrl+PgUp)" Click="BtnZForward_Click">
+                        <Button x:Name="BtnZForward" Style="{StaticResource ToolbarButton}" ToolTip="Přenést dopředu — Ctrl+PgUp" Click="BtnZForward_Click">
                             <Image Source="{StaticResource EDIcons.ZForward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZBackward" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat dozadu (Ctrl+PgDn)" Click="BtnZBackward_Click">
+                        <Button x:Name="BtnZBackward" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat dozadu — Ctrl+PgDn" Click="BtnZBackward_Click">
                             <Image Source="{StaticResource EDIcons.ZBackward}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZFront" Style="{StaticResource ToolbarButton}" ToolTip="Přenést zcela dopředu (Ctrl+Shift+PgUp)" Click="BtnZFront_Click">
+                        <Button x:Name="BtnZFront" Style="{StaticResource ToolbarButton}" ToolTip="Přenést zcela dopředu — Ctrl+Shift+PgUp" Click="BtnZFront_Click">
                             <Image Source="{StaticResource EDIcons.ZFront}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
-                        <Button x:Name="BtnZBack" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat zcela dozadu (Ctrl+Shift+PgDn)" Click="BtnZBack_Click">
+                        <Button x:Name="BtnZBack" Style="{StaticResource ToolbarButton}" ToolTip="Odeslat zcela dozadu — Ctrl+Shift+PgDn" Click="BtnZBack_Click">
                             <Image Source="{StaticResource EDIcons.ZBack}" Style="{StaticResource ToolbarIconStyle}"/>
                         </Button>
                     </StackPanel>
@@ -396,7 +396,7 @@
                             <Image Source="{StaticResource EDIcons.Grid}" Style="{StaticResource ToolbarIconStyle}"/>
                         </ToggleButton>
                         <ComboBox x:Name="CmbGridSize" Width="Auto" MinWidth="64" VerticalAlignment="Center" Margin="2,0"
-                                  ToolTip="Velikost mřížky" SelectedIndex="4"
+                                  ToolTip="Velikost mřížky" SelectedIndex="2"
                                   SelectionChanged="CmbGridSize_SelectionChanged">
                             <ComboBoxItem Content="0,2 mm" Tag="0.2"/>
                             <ComboBoxItem Content="0,5 mm" Tag="0.5"/>
@@ -477,7 +477,7 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <Button x:Name="BtnRefreshData" Style="{StaticResource ToolbarButton}"
                                 Command="{Binding RefreshDataCommand}"
-                                ToolTip="Obnovit data náhledu (F5)"
+                                ToolTip="Obnovit data náhledu — F5"
                                 Content="↻" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
                     </StackPanel>
                     <TextBlock Text="Data" Style="{StaticResource ToolbarGroupLabel}"/>
@@ -504,7 +504,7 @@
                 <StackPanel>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                         <ToggleButton x:Name="BtnToggleLeftPanel" Style="{StaticResource ToolbarToggle}"
-                                      ToolTip="Skrýt/zobrazit panel sekcí (Ctrl+B)"
+                                      ToolTip="Skrýt/zobrazit panel sekcí — Ctrl+B"
                                       IsChecked="True" Checked="BtnToggleLeftPanel_Changed" Unchecked="BtnToggleLeftPanel_Changed"
                                       Content="☰" FontSize="{DynamicResource EDTheme.FontSize.Header}"/>
                         <ToggleButton x:Name="BtnPreview" Style="{StaticResource ToolbarToggle}" ToolTip="Zobrazit/skrýt live náhled"
@@ -534,7 +534,7 @@
                 <!-- Hlavní plocha -->
                 <RowDefinition Height="*" MinHeight="100"/>
                 <!-- Status bar -->
-                <RowDefinition Height="26"/>
+                <RowDefinition Height="Auto" MinHeight="26"/>
             </Grid.RowDefinitions>
 
             <!-- ── Panel sekcí + pole agendy ── -->
@@ -542,7 +542,7 @@
                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,1,0">
                 <TabControl x:Name="LeftTabControl" SelectionChanged="LeftTabControl_SelectionChanged">
                     <!-- ── Záložka Sekce ── -->
-                    <TabItem Header="▣ Sekce">
+                    <TabItem><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Sections}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Sekce" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <DockPanel>
                             <Border DockPanel.Dock="Bottom"
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
@@ -581,14 +581,14 @@
                     </TabItem>
 
                     <!-- ── Záložka Pole agendy ── -->
-                    <TabItem Header="⊞ Pole agendy" x:Name="TabFields">
+                    <TabItem x:Name="TabFields"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Fields}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Pole agendy" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <DockPanel>
                             <!-- Záhlaví: název agendy -->
                             <Border DockPanel.Dock="Top"
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1"
                                     Background="{DynamicResource EDTheme.Bg.Panel}" Padding="8,5"
                                     Cursor="Hand"
-                                    ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
+                                    ToolTip="Změnit agendu — Ctrl+Shift+A">
                                 <Border.InputBindings>
                                     <MouseBinding MouseAction="LeftClick"
                                                   Command="{Binding ChangeAgendaCommand}"/>
@@ -602,7 +602,7 @@
                             <Border DockPanel.Dock="Bottom"
                                     BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,1,0,0"
                                     Background="{DynamicResource EDTheme.Bg.Footer}" Padding="6,4">
-                                <TextBlock Text="💡 Dvojklik = vložit {POLE}"
+                                <TextBlock Text="Tip: dvojklik = vložit {POLE}"
                                            FontSize="{DynamicResource EDTheme.FontSize.Caption}" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                            TextWrapping="Wrap"/>
                             </Border>
@@ -647,7 +647,7 @@
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Vlastnosti (inline properties panel) ── -->
-                    <TabItem Header="✎ Vlastnosti" x:Name="TabProperties">
+                    <TabItem x:Name="TabProperties"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Properties}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Vlastnosti" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <DockPanel>
                             <controls:FormatToolbar x:Name="FormatToolbar" DockPanel.Dock="Top"/>
                             <!-- Jeden element = EDInputForm (W4-10); 0/více = starý PropertyDescriptor panel (message/multi). -->
@@ -658,11 +658,11 @@
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Strom šablony ── -->
-                    <TabItem Header="≣ Strom" x:Name="TabTree">
+                    <TabItem x:Name="TabTree"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Tree}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Strom" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <controls:TemplateTreePanel x:Name="TreePanel"/>
                     </TabItem>
                     <!-- ── Záložka AI průvodce ── -->
-                    <TabItem Header="✦ Pomocník" x:Name="TabAiGuide">
+                    <TabItem x:Name="TabAiGuide"><TabItem.Header><StackPanel Orientation="Horizontal"><Image Source="{StaticResource EDIcons.Assistant}" Width="13" Height="13" Margin="0,0,4,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/><TextBlock Text="Pomocník" VerticalAlignment="Center"/></StackPanel></TabItem.Header>
                         <aiguide:AiGuidePanel DataContext="{Binding AiGuide}"/>
                     </TabItem>
                 </TabControl>
@@ -766,9 +766,9 @@
 
                     <!-- 1) Agenda chip (klikatelný — ChangeAgendaCommand) -->
                     <Border Grid.Column="0"
-                            Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3"
+                            Background="{DynamicResource EDTheme.Accent.GreenBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
-                            ToolTip="Klikni pro změnu agendy (Ctrl+Shift+A)">
+                            ToolTip="Změnit agendu — Ctrl+Shift+A">
                         <Border.InputBindings>
                             <MouseBinding MouseAction="LeftClick" Command="{Binding ChangeAgendaCommand}"/>
                         </Border.InputBindings>
@@ -783,7 +783,7 @@
 
                     <!-- 2) Instance chip (klikatelný — OpenInstancePicker) -->
                     <Border Grid.Column="2"
-                            Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3"
+                            Background="{DynamicResource EDTheme.Accent.BlueBg}" Padding="10,3" CornerRadius="3" Margin="0,2"
                             Cursor="Hand"
                             ToolTip="{Binding InstancePickerHint}">
                         <Border.InputBindings>
@@ -836,11 +836,11 @@
 
                     <!-- 4) Varování o přetečení preview (červený blok, jen když obsah přetéká) -->
                     <Border Grid.Column="6"
-                            Background="#D32F2F" Padding="10,3" Margin="6,0,0,0"
+                            Background="{DynamicResource EDTheme.Semantic.Danger}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"
                             ToolTip="Obsah některé stránky se nevejde — zvětši stránku (PageSize) nebo zmenši obsah">
-                        <TextBlock Text="⚠ Obsah se nevejde na stránku"
+                        <TextBlock Text="Obsah se nevejde na stránku"
                                    Foreground="White" FontWeight="SemiBold"
                                    VerticalAlignment="Center"
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}"/>

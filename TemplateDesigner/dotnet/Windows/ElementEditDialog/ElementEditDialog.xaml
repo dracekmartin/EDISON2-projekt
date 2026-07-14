@@ -5,7 +5,7 @@
         Title="Vlastnosti elementu"
         Width="720" Height="460"
         MinWidth="640" MinHeight="320"
-        ResizeMode="CanResize"
+        ResizeMode="CanResizeWithGrip"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
     <DockPanel Margin="10">

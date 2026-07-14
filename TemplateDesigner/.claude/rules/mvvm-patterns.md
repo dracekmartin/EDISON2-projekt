@@ -163,7 +163,7 @@ DataContext._rows["ZASTAVKY"] = [DataContext, ...]   → Dynamic TableElement (D
 
 > **Přehled celé architektury tabulkových elementů** (co je sdílené jádro `Rendering/TableLayout`
 > + `CellRenderer`/`ColumnRenderer`, co drží každý element sám a proč, co vědomě NEsjednocovat,
-> triggery pro budoucí extrakci): **`.claude/docs/tabulkove-elementy-jadro.md`** — číst před přidáním
+> triggery pro budoucí extrakci): **`.claude/docs/elementy-architektura.md`** — číst před přidáním
 > nebo úpravou tabulkového elementu. Kaskáda níže + výpočet šířek jsou sdílené v `TableLayout`
 > (`ResolveCascade` / `ResolveWidths`).
 

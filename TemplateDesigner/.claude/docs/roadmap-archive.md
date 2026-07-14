@@ -50,7 +50,7 @@ používají jen DPCB/DPKV). Odstraněno z aktivní roadmapy — žádný driver
 ## Session 2026-07-10 ✅ — AD-interní (legacy-analýza parita) uzavřeno
 
 Přehodnocení AD-N bodů (původ = legacy analýza dialogu „Nastavení pro tisk linky", ne helpdesk) proti kódu.
-Většina byla už hotová, jen visela stará zmínka. Podklad kde data jsou: `ad-jr-nastaveni-linky-analyza.md`.
+Většina byla už hotová, jen visela stará zmínka. Podklad kde data jsou: `ad-data-mapa.md`.
 
 - **AD-N3** (řazení poznámek dle délky) ✅ — `NotesLegend.Razeni` = `DleDelkyVzestupne/Sestupne` (descriptor „Řazení").
 - **AD-N4** (omezení „nejede" na nový řádek) ✅ — legenda renderuje každou poznámku na vlastní řádek (per-row).
@@ -388,7 +388,7 @@ zbytkem návrháře (statické prvky i zastávky mají výšku = strop) a čist�
 jde jen s rostoucí tabulkou. Rozhodnutí: raději čistě do produkce, R2 přidat zpět jen na **konkrétní
 poptávku**. Kód odstraněn kompletně (žádný mrtvý kód): `IRowPaginatedElement`, `LayoutRowPaginated`,
 `PlacedSection.StartRowUnit/EndRowUnit/RepeatHeader`, `RenderRowWindow`, R2 větev v `PreviewCanvas`, testy.
-**Spec pro budoucí re-implementaci zůstává** v `r2-partial-fit-kontrakt.md`. Detail: [`changelog.md`](changelog.md).
+**Spec pro budoucí re-implementaci zůstává** v `architektonicka-rozhodnuti-agendy.md`. Detail: [`changelog.md`](changelog.md).
 
 ## Session 2026-07-03 ✅ — Wave 4 W4-10: inline panel na EDInputForm
 
@@ -555,11 +555,11 @@ layout legendy (sloupce 1-4 + směr wrapu + zarovnaný marker + řazení). Helpd
 (commit „revert DEV startup tweak"). Dev firma později přepnuta na **CB_CSADAD** (demo / gold linka
 0365001, commit 9ac5577) — aktivní stav viz živá roadmap „Před produkcí".
 
-**Doc-cleanup body z handoffu** (1 = ořez `cache-database-linky.md §6/§10`, 2 = hlavičkové poznámky,
+**Doc-cleanup body z handoffu** (1 = ořez `ad-data-mapa.md §6/§10`, 2 = hlavičkové poznámky,
 3 = cross-refs, 4 = changelog archivace) — řešeno průběžně v živé roadmapě. Prezentační prep docs
 (osnova, režie demo) konsolidovány 2026-06-30 do
-[`prezentace-a-gap-2026.md`](prezentace-a-gap-2026.md), zdrojové artefakty smazány. **Gap analýza
-legacy vs nový ponechána** jako samostatná evergreen reference (`gap-analyza-legacy-vs-novy-jr.md`).
+[`legacy-nahrada.md`](legacy-nahrada.md), zdrojové artefakty smazány. **Gap analýza
+legacy vs nový ponechána** jako samostatná evergreen reference (`legacy-nahrada.md`).
 
 ## Wave 3 — Template storage ✅ (2026-05-25)
 
@@ -778,7 +778,7 @@ Kontinuální polish nad rámec původního B0.5 scope, motivovaný přípravou 
 
 Cíl: hotová první kompletní verze šablony zastávkového JŘ a její review s kolegy.
 
-> **Detailní architektonický dokument:** [`schedule-elements-architecture.md`](schedule-elements-architecture.md)
+> **Detailní architektonický dokument:** [`elementy-architektura.md`](elementy-architektura.md)
 
 | Krok | Co | Stav |
 |---|---|---|
@@ -965,9 +965,9 @@ Celá rozhodovací tabulka R1–R7 uzavřena (přesunuto z aktivní roadmapy). P
 
 | # | Rozhodnutí | Výsledek |
 |---|---|---|
-| R1 | Sdílené řádkové jádro | ✅ **implementováno** `Rendering/TableLayout.cs` (ResolveWidths + ResolveCascade), napojeno DynamicTable/LineTable/StopList. StopColumn/TableColumn NEsjednoceny (nulové riziko šablon), DepartureGrid mimo (pivot). 180/180 testů + render. Referenční doc `tabulkove-elementy-jadro.md`, návrh `r1-sdilene-tabulkove-jadro-navrh.md`. |
+| R1 | Sdílené řádkové jádro | ✅ **implementováno** `Rendering/TableLayout.cs` (ResolveWidths + ResolveCascade), napojeno DynamicTable/LineTable/StopList. StopColumn/TableColumn NEsjednoceny (nulové riziko šablon), DepartureGrid mimo (pivot). 180/180 testů + render. Referenční doc `elementy-architektura.md` (návrhový doc smazán, git historie). |
 | R1a | Render-loop sjednocení | ✅ **implementováno** — DynamicTable tři ruční smyčky → `ColumnRenderer.DrawRow`. Vyšší orchestrátor záměrně NE (LineTable pásy/přípoje se nevejdou, nízká hodnota). |
-| R2 | Partial-fit kontrakt (svislá osa) | ✅ **kontrakt rozhodnut** `r2-partial-fit-kontrakt.md` (`IRowPaginatedElement`); implementace až s paginačním/bin-packing trackem (svislá+vodorovná C3 spolu). |
+| R2 | Partial-fit kontrakt (svislá osa) | ✅ **kontrakt rozhodnut** `architektonicka-rozhodnuti-agendy.md` (`IRowPaginatedElement`); implementace až s paginačním/bin-packing trackem (svislá+vodorovná C3 spolu). |
 | R3 | Datový kontrakt / prezentační nápovědy | ✅ **rozhodnuto** `cache-api.md` — v1 = `FORE_COLOR`/`BACK_COLOR` + princip + evoluce jen-aditivně; širší seznam (ZVYRAZNENI…) na F1 dle RG usage. |
 | R4 | Headless tisk | ✅ **rozhodnuto** → akční krok „tisk = shortcut z agendy bez návrháře přes PrintEngine fasádu"; impl s pilotem (blok A). |
 | R5 | Fonty embedded v .exe | ✅ **rozhodnuto** (jde: `SKTypeface.FromStream`) → akční krok/TODO (základní Helvetica/PostScript s licenční poznámkou + JŘ Timetable symboly = C2); impl s pilotem/C2. |
@@ -986,7 +986,7 @@ schema. Commity: `ce2fffc`, `3d279c5`, `c1b878d`, `0402c39`, `9313105`, `be873c6
 | A1 | Podmíněné řádkové featury | ✅ **viditelnost řádku** (`RowVisibilityExpression`) + **zvýraznění řádku** (`RowHighlightExpression`+`RowHighlightColor`, jen pozadí) přes sdílený `Models/Expressions/RowConditions` (výraz nad daty řádku, fail-open). Zvýraznění na **DynamicTable + StopList + LineTable**, viditelnost DynamicTable+StopList+LineTable. DepartureGrid mimo (pivot). Aditivní/default-off = behavior-preserving pro gold StopList i pilot LineTable. Řádkový POCO nese `SourceRow`. |
 | A2 | Počítaná pole | ✅ **aritmetika ve výrazovém jádru** (`+ - * /`, unární minus, priorita, závorky; `ExpressionEvaluator.EvaluateToString` — číslo invariantně, `FormatNumber` odstraní IEEE-754 artefakty + NaN/Inf→prázdno). **`TableColumn.Expression`** = počítaný sloupec DynamicTable (`{CENA}*{MNOZSTVI}`, přebíjí Field, formátovatelný). Bonus fix: editor sloupců dřív `Format` neukládal. |
 | A3 | Min/max řádků | ✅ **`MinRows`** doplní prázdné řádky do minima (pevná výška boxu — faktura), **`MaxRows`** ořízne. DynamicTable-only. Render 3 typy řádků (placeholder/data/padding), výška↔render parita, kombinuje s filtrem viditelnosti. |
-| — | Klasifikační pravidlo | 📐 `tabulkove-elementy-jadro.md §0b` — 3 kategorie featur (nad daty řádku → sdílet / struktura sloupce+počet řádků → DynamicTable / doménové render → element-specifické). Generické featury pro data dostupné přes DynamicTable na tutéž kolekci. NEslučovat StopColumn/TableColumn. |
+| — | Klasifikační pravidlo | 📐 `elementy-architektura.md §0b` — 3 kategorie featur (nad daty řádku → sdílet / struktura sloupce+počet řádků → DynamicTable / doménové render → element-specifické). Generické featury pro data dostupné přes DynamicTable na tutéž kolekci. NEslučovat StopColumn/TableColumn. |
 
 **Vědomě odloženo (ne dluh):**
 - **Rozšíření podmíněného formátování** (seznam pravidel místo 1, barva textu, per-sloupec/buňka) →
@@ -1037,7 +1037,7 @@ Návrhové plátno už není omezené na jednu A4. Commity: `a88763a` (Slice 1),
 ## Session 2026-07-07 ✅ — Pre-produkční zámek struktury šablony (blok PA) + úklid roadmapy
 
 Cíl: připravit v1 do produkce tak, aby se **nemusela měnit struktura šablony** (breaking JSON) v příští
-verzi. Grounded analýza (4 průzkumy kódu) → [`produkce-pripravenost-2026-07-07.md`](produkce-pripravenost-2026-07-07.md).
+verzi. Grounded analýza (4 průzkumy kódu) — doc `produkce-pripravenost-2026-07-07.md` smazán po vytěžení (git historie).
 Blok PA vyřešen, vše behavior-preserving (uživatel nepozná, jen zamčená struktura). Commity `23e6a90`
 (analýza+checklist), `6dadb66`, `484881c`, `f1e01e9`, `cf43a56`. Testy 218 → 229.
 

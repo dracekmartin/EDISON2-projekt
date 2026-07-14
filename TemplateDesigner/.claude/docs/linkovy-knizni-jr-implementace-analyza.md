@@ -32,7 +32,7 @@ Legacy generuje oba výstupy (vývěsní i knižní) ze stejného enginu.
   jiný a rozsáhlejší číselník než `ConvertSpecialniZnak` u MHD.
 - Řádky **Vyčká/Navazuje** (návaznosti) jsou nový koncept, který zastávkový JŘ nepotřeboval.
 
-Odhad v existující analýze (`analyza-stav-a-legacy-nahrada-2026-07.md`): srovnatelná velikost
+Odhad v existující analýze (`legacy-nahrada.md`): srovnatelná velikost
 práce jako celý zastávkový JŘ (~1 měsíc čistého času), ale metodika (čistá reimplementace proti
 legacy gold oracle) je už vyzkoušená a funguje.
 
@@ -46,11 +46,11 @@ Existuje jen dokumentace a roadmapa:
 | Zdroj | Co říká |
 |---|---|
 | `CLAUDE.md` §Aktuální focus | Zastávkový JŘ je hotový 1:1; linkový/knižní je next big track, zatím nezahájený |
-| `.claude/docs/legacy-schedule-generators.md` §2 | Business popis `ALVA.TISKJR` — zóny, km, Tč, obousměrnost, PostScript fixed-width trik, návaznosti |
-| `.claude/docs/analyza-stav-a-legacy-nahrada-2026-07.md` §3.3 | Nejpodrobnější — rozsah (33 400 LOC VB + 3 290 Caché), navržené kroky, gold oracle `mkPLinWin` |
+| `.claude/docs/legacy-nahrada.md` §2 | Business popis `ALVA.TISKJR` — zóny, km, Tč, obousměrnost, PostScript fixed-width trik, návaznosti |
+| `.claude/docs/legacy-nahrada.md` §3.3 | Nejpodrobnější — rozsah (33 400 LOC VB + 3 290 Caché), navržené kroky, gold oracle `mkPLinWin` |
 | `.claude/docs/roadmap.md` „Fáze C+D" (řádky 132–163) | Kroky 42–44 (analýza referenčních výstupů, symbolový font, `LineTableElement`, agenda `KnizniJrAd`) — **vše ⬜ nezahájeno** |
 | `.claude/docs/architektonicka-rozhodnuti-agendy.md` | ⚠️ **Gate před krokem 43** — R1 (sdílené tabulkové jádro StopList+DynamicTable+LineTable), R2 (layout zodpovědnosti), R5 (embedded fonty) — **přečíst před návrhem elementu** |
-| `.claude/docs/cache-database-linky.md` §„Dva formáty linkového JŘ" | Rozlišuje „klasický sloupcový" (zastávky×spoje, doložený reálnou linkou) vs „MHD minutová mřížka" — **toto je popis dat pro ZastavkoveJrAd, ne pro LineTableElement**; nepřeskakovat, ale nezaměňovat účel |
+| `.claude/docs/ad-data-mapa.md` §„Dva formáty linkového JŘ" | Rozlišuje „klasický sloupcový" (zastávky×spoje, doložený reálnou linkou) vs „MHD minutová mřížka" — **toto je popis dat pro ZastavkoveJrAd, ne pro LineTableElement**; nepřeskakovat, ale nezaměňovat účel |
 
 **Roadmapa čeká přesně na tuto práci** — kroky 42–44 ve Fázi C+D jsou navržené, ale nikdo je
 nezačal. Tento dokument je fakticky rozpracování kroku 42 („Analýza referenčních výstupů + wire
@@ -87,7 +87,7 @@ legacy struktura mapuje na VB.NET klienta (užitečné pro pojmenování polí, 
 
 Datový zdroj (globály `^JRL`/`^JRZ`/`^JRSET`) je **stejný** jako u `ZastavkoveJrAd` — žádná nová
 databázová vrstva navíc, jen jiná byznys logika nad stejnými daty. Mentální model globálů je
-zdokumentovaný v `.claude/docs/cache-database-linky.md` §1–8 (netřeba znovu objevovat).
+zdokumentovaný v `.claude/docs/ad-data-mapa.md` §1–8 (netřeba znovu objevovat).
 
 ---
 
@@ -133,7 +133,7 @@ sekci u zastávkového JŘ (`GetSchema`/skalární pole v `ZastavkoveJrAd`).
 
 ## 5. Výstupní struktura `glbout` — objektový model
 
-Na rozdíl od `ZastavkoveJrAd` (čistě JSON-per-page, viz `cache-database-linky.md`), legacy tady
+Na rozdíl od `ZastavkoveJrAd` (čistě JSON-per-page, viz `ad-data-mapa.md`), legacy tady
 používá **objektově orientovanou strukturu**: `idobj` = číslo objektu (datový paket), každý
 objekt je buď **datový blok** (typ 2 = blok odjezdů) nebo **poznámkový blok** (typ 3), navzájem
 provázané (`arr,5,idobj2`). Tohle je přímý zdroj pro „flow skládání datových paketů" zmíněné
@@ -201,7 +201,7 @@ Dvoufázový algoritmus:
 ručního zlomu na konkrétním TČ (`pset("SET",3,"arr",1,8)`). **Toto je nová layoutová schopnost,
 kterou `PageLayoutEngine` dnes nemá** — dnešní engine dělá vertikální flow sekcí, ne 2D chunking
 sloupců tabulky napříč stránkami. Prázdné padding sloupce (`in("A",2,"arr",13)`) sjednocují počet
-sloupců napříč stránkami — legacy PostScript trik zmíněný v `legacy-schedule-generators.md`.
+sloupců napříč stránkami — legacy PostScript trik zmíněný v `legacy-nahrada.md`.
 
 ### 6.4 Deset druhů poznámek — pořadí je KONFIGUROVATELNÉ (rozdíl oproti AD!)
 
@@ -244,7 +244,7 @@ mezi existující" bez renumbering.
 ## 7. TiskJRRELACE — vědomě mimo scope tohoto kroku
 
 Slovenský fork (~49 700 LOC), třetí odlišný výstup (řádky = odjezdy, sloupce = linka/čas/směr/
-nástupiště) — blíž zastávkovému JŘ, ale ne identický. **Open question v `legacy-schedule-generators.md`:
+nástupiště) — blíž zastávkovému JŘ, ale ne identický. **Open question v `legacy-nahrada.md`:
 je to živý use case?** Roadmapa (`roadmap.md` Fáze E) říká „nejdřív ověřit živý use case (Q3)".
 **Doporučení: nezahrnovat do prvního implementačního pokusu.** Zaměřit se čistě na `mkPLinWin`
 (klasický linkový/knižní), Relace je samostatné rozhodnutí až po ověření u zákazníka.
@@ -291,8 +291,8 @@ existující roadmapové kroky 42–44:
    nejdřív ověřit datovou/vizuální správnost na jedné lince/stránce (bez multi-page bin-packing),
    plnou stránkovací logiku řešit až v navazujícím kroku.
 6. **Gold oracle test** — `mkPLinWin` lze volat přímo přes `cache_query` (stejný vzor jako
-   u `ZastavkoveJrAd`, viz `cache-database-linky.md` §9 pro analogický příklad s `LoadData`).
-   Ověřit na reálné lince s `^JRL` daty (kandidát z `cache-database-linky.md`: `CB_GWBUS` /
+   u `ZastavkoveJrAd`, viz `ad-data-mapa.md` §9 pro analogický příklad s `LoadData`).
+   Ověřit na reálné lince s `^JRL` daty (kandidát z `ad-data-mapa.md`: `CB_GWBUS` /
    `0320113`, pokud má vhodný formát — jinak najít jinou realnou linku).
 
 **Rozsah pro první lokální implementaci (dle zadání „pouze lokálně... abychom to portli"):**
@@ -308,7 +308,7 @@ bin-packing a fontové infrastruktury.
 
 ---
 
-## 10. Otevřené otázky (přenést do `legacy-schedule-generators.md`, pokud se zodpoví)
+## 10. Otevřené otázky (přenést do `legacy-nahrada.md`, pokud se zodpoví)
 
 - `ALVA.TISKJR` — umí i MHD, nebo je čistě linkový? (stále nezodpovězeno, viz legacy doc)
 - Je vhodné `LineTableElement` stavět jako samostatnou hierarchii, nebo rozšířit `TableElement`
@@ -411,10 +411,10 @@ C:\DEV\EDISON\TiskJR\CACHE\ALVA\TISKJR\Main.cls               — CRUD sestav (p
 C:\DEV\EDISON\TiskJR\CACHE\ALVA\TISKJR\Sestavy.cls            — správa sestav (precedens, ne data)
 C:\DEV\EDISON\TiskJR\_ruzne\                                  — TTF fonty (Timetable_nove aj.)
 
-TemplateDesigner\.claude\docs\legacy-schedule-generators.md
-TemplateDesigner\.claude\docs\analyza-stav-a-legacy-nahrada-2026-07.md
+TemplateDesigner\.claude\docs\legacy-nahrada.md
+TemplateDesigner\.claude\docs\legacy-nahrada.md
 TemplateDesigner\.claude\docs\roadmap.md  (Fáze C+D)
-TemplateDesigner\.claude\docs\cache-database-linky.md
+TemplateDesigner\.claude\docs\ad-data-mapa.md
 TemplateDesigner\.claude\docs\architektonicka-rozhodnuti-agendy.md
 TemplateDesigner\.claude\rules\new-element-checklist.md
 TemplateDesigner\.claude\rules\cache-api.md

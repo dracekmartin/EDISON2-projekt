@@ -6,6 +6,7 @@
         Title="Šablony v databázi"
         Width="720" Height="480"
         MinWidth="500" MinHeight="320"
+        ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
     <DockPanel Margin="12">

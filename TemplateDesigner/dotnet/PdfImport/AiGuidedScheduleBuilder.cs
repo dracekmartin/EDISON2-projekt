@@ -282,6 +282,7 @@ public static class AiGuidedScheduleBuilder
         float x = ai.Left * pageW - marginLeft;
         float y = ai.Top * pageH - marginTop;
         float w = (ai.Right - ai.Left) * pageW;
+        float h = (ai.Bottom - ai.Top) * pageH;
 
         // Měření fontů z regionu NotesLegend
         var notesMeasure = MeasureRegionFont(ai, page);
@@ -299,7 +300,9 @@ public static class AiGuidedScheduleBuilder
             X = Math.Max(0, x),
             Y = Math.Max(0, y),
             Width = w,
-            Height = null, // dynamická výška
+            // Pevný box z AI bboxu (ne null): import replikuje plakát s pevným layoutem — delší
+            // legenda jiné linky se do boxu vejde auto-scalem, dynamická výška by přetekla sekci.
+            Height = Math.Max(h, 10f),
             ZIndex = zIndex++,
             NoteFontSize = Math.Max(noteFont, 6f),
             NoteLineHeight = noteLineH,
@@ -499,6 +502,7 @@ public static class AiGuidedScheduleBuilder
         foreach (var r in scheduleRegionsMm)
             debug.Add($"  [{r.Left:0.#},{r.Top:0.#} → {r.Right:0.#},{r.Bottom:0.#}]");
 
+        var usedPdfImages = new HashSet<ExtractedImage>();
         foreach (var img in page.Images)
         {
             float imgCx = img.X + img.Width / 2;
@@ -513,6 +517,7 @@ public static class AiGuidedScheduleBuilder
             if (insideScheduleElement)
                 continue;
 
+            usedPdfImages.Add(img);
             result.Add(new ImageElement
             {
                 Id = Guid.NewGuid(),
@@ -544,6 +549,12 @@ public static class AiGuidedScheduleBuilder
 
             if (matchedPdfImage is not null)
             {
+                // Dedup: obrázek z kroku 5 už v šabloně je — druhý přes něj nedávat.
+                if (!usedPdfImages.Add(matchedPdfImage))
+                {
+                    debug.Add($"    → PdfPig image already added in step 5, skip (dedup)");
+                    continue;
+                }
                 result.Add(new ImageElement
                 {
                     Id = Guid.NewGuid(),
@@ -558,6 +569,13 @@ public static class AiGuidedScheduleBuilder
             }
             else if (imgMap.Role == "qrCode" && imgMap.DbField is not null)
             {
+                // Anti-halucinace: QR vytvořit jen když ho potvrzuje PdfPig geometrie
+                // (shluk malých čtverečků v místě) — samotné tvrzení modelu nestačí.
+                if (!LooksLikeQrRegion(page, imgMapXMm + imgMap.W * pageW / 2, imgMapYMm + imgMap.H * pageH / 2))
+                {
+                    debug.Add($"    → qrCode NEPOTVRZEN geometrií (žádný shluk čtverečků) — skip");
+                    continue;
+                }
                 result.Add(new BarcodeElement
                 {
                     Id = Guid.NewGuid(),
@@ -573,6 +591,16 @@ public static class AiGuidedScheduleBuilder
             }
             else
             {
+                // Placeholder jen když se nepřekrývá s už přidaným obrázkem (jinak „falešný
+                // element" přes logo — model občas ohlásí týž objekt dvakrát s posunem).
+                bool overlapsExisting = result.Any(r =>
+                    imgX < r.X + r.Width + 2 && imgX + imgW > r.X - 2
+                    && imgY < r.Y + (r.Height ?? 0) + 2 && imgY + imgH > r.Y - 2);
+                if (overlapsExisting)
+                {
+                    debug.Add($"    → placeholder se překrývá s existujícím obrázkem — skip");
+                    continue;
+                }
                 result.Add(new RectangleElement
                 {
                     Id = Guid.NewGuid(),
@@ -601,6 +629,11 @@ public static class AiGuidedScheduleBuilder
             // Textové elementy pokrývají oblast (z existingElements, ne z result)
             foreach (var te in existingElements.OfType<TextElement>())
                 coveredAreas.Add((te.X, te.Y, te.X + te.Width, te.Y + (te.Height ?? 6)));
+
+            // Obrázky/QR/placeholdery z kroků 5+6 pokrývají oblast — bez toho krok 7 položí
+            // prázdný placeholder přes už přidané logo (překrývající se „falešný element").
+            foreach (var el in result)
+                coveredAreas.Add((el.X, el.Y, el.X + el.Width, el.Y + (el.Height ?? 6)));
 
             // Najít prázdné oblasti v záhlaví stránky (nad schedule elementy)
             float scheduleTop = vision.Elements.Count > 0
@@ -648,6 +681,21 @@ public static class AiGuidedScheduleBuilder
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Ověří v PdfPig geometrii, že v okolí bodu je QR-like shluk malých čtverečků.
+    /// Anti-halucinační guard: BarcodeElement se vytváří jen s tímto důkazem.
+    /// </summary>
+    private static bool LooksLikeQrRegion(ExtractedPage page, float centerXMm, float centerYMm)
+    {
+        const float radius = 12f;
+        int smallSquares = page.Rectangles.Count(r =>
+            r.Width is > 0.1f and < 3f && r.Height is > 0.1f and < 3f
+            && Math.Abs(r.Width - r.Height) < 0.3f
+            && Math.Abs(r.X + r.Width / 2 - centerXMm) < radius
+            && Math.Abs(r.Y + r.Height / 2 - centerYMm) < radius);
+        return smallSquares >= 15;
     }
 
     /// <summary>
@@ -1005,6 +1053,18 @@ public static class AiGuidedScheduleBuilder
                 Key = "TariffNumber",
                 Header = "č.",
                 Width = Math.Min(totalWidthMm * 0.15f, 8f),
+                Visible = true,
+                Alignment = TextHorizontalAlignment.Center
+            });
+        }
+
+        if (stopListAi.Columns.Contains("Platform"))
+        {
+            columns.Add(new StopColumn
+            {
+                Key = StopFields.Nastupiste,
+                Header = "Nást.",
+                Width = Math.Min(totalWidthMm * 0.15f, 10f),
                 Visible = true,
                 Alignment = TextHorizontalAlignment.Center
             });

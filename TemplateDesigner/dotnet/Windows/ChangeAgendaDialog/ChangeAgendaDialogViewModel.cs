@@ -42,7 +42,7 @@ public class ChangeAgendaDialogViewModel : EDViewModel
     {
         if (_selected is null)
         {
-            PopupDisplayer.Info("Vyber agendu.");
+            PopupDisplayer.Info("Vyberte agendu.");
             return;
         }
         ChosenCode = _selected.Code;

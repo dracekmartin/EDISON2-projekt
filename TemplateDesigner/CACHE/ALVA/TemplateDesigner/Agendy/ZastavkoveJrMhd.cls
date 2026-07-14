@@ -22,7 +22,7 @@ Include (ALVAMHD, GENERAL)
 /// Implementace = 6-fázový tiskový engine v procesně-privátním globálu ^||TiskMHD
 /// (detail struktury v komentáři u GetData).
 ///
-/// Wire formát výstupu viz `.claude/docs/schedule-elements-architecture.md`.
+/// Wire formát výstupu viz `.claude/docs/elementy-architektura.md`.
 Class ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd Extends ALVA.TemplateDesigner.Agendy.BaseAgenda
 {
 
@@ -35,6 +35,8 @@ Parameter AgendaLabel = "Zastávkový JŘ";
 Parameter Variant = "MHD";
 
 Parameter VariantLabel = "MHD";
+
+Parameter Released = 1;
 
 Parameter InstanceParamName = "LINKA_ID";
 

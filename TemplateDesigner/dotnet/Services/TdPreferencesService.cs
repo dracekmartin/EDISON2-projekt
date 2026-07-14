@@ -223,7 +223,8 @@ public record MainStatePref(
     bool ShowPreviewPane     = true,
     double? LeftPanelWidthPx    = null,
     double? PreviewPanelWidthPx = null,
-    int ActiveLeftTabIndex   = 0)
+    int ActiveLeftTabIndex   = 0,
+    string? LastAgendaCode   = null)
 {
     public static readonly MainStatePref Default = new();
 }

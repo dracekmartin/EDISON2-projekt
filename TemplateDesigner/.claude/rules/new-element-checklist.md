@@ -183,7 +183,7 @@ Bez tohoto se v záložce „Strom" zobrazí generický fallback `(X, Y) WxH`.
 
 - `.claude/docs/changelog.md` — přidat řádek do aktuálního datumu ("NovyElement — popis").
 - `CLAUDE.md` sekce `### ✅ Co máme` — doplnit element do výčtu.
-- Pokud jde o ScheduleElementBase-derived element, aktualizovat i `.claude/docs/schedule-elements-architecture.md`.
+- Pokud jde o ScheduleElementBase-derived element, aktualizovat i `.claude/docs/elementy-architektura.md`.
 
 ---
 

@@ -18,7 +18,7 @@
                          IsEnabled="{Binding IsNotBusy}"
                          Padding="6" Margin="0,0,0,6"
                          VerticalContentAlignment="Center"
-                         ToolTip="Napiš dotaz a stiskni Enter"/>
+                         ToolTip="Napište dotaz a stiskněte Enter"/>
 
                 <Grid Grid.Row="1">
                     <Grid.ColumnDefinitions>
@@ -63,7 +63,7 @@
                     <ControlTemplate TargetType="ItemsControl">
                         <Grid>
                             <!-- Nápověda když je prázdno -->
-                            <TextBlock Text="Zeptej se na ovládání aplikace — např. „jak změním font textu“ nebo „kde nastavím sloupce tabulky“."
+                            <TextBlock Text="Zeptejte se na ovládání aplikace — např. „jak změním písmo textu“ nebo „kde nastavím sloupce tabulky“."
                                        Foreground="{DynamicResource EDTheme.Text.Muted}"
                                        FontSize="{DynamicResource EDTheme.FontSize.Body}" TextWrapping="Wrap" Margin="4">
                                 <TextBlock.Style>

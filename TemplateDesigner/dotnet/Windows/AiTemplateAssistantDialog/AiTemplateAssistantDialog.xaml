@@ -5,7 +5,7 @@
         Height="500" Width="600"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        ResizeMode="CanResize">
+        ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
         <Style x:Key="SectionHeader" TargetType="TextBlock">
@@ -19,11 +19,11 @@
         <!-- Header -->
         <Border DockPanel.Dock="Top" Background="{DynamicResource EDTheme.Bg.InfoBanner}" Padding="12" Margin="-16,-16,-16,0" BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
             <StackPanel>
-                <TextBlock Text="🤖 AI Asistent pro generování šablon"
+                <TextBlock Text="AI Asistent pro generování šablon"
                            FontSize="{DynamicResource EDTheme.FontSize.Large}"
                            FontWeight="Bold"
                            Foreground="{DynamicResource EDTheme.Accent.BlueDark}"/>
-                <TextBlock Text="Popište šablonu, kterou chcete vytvořit, a AI vygeneruje kompletní JSON strukturu."
+                <TextBlock Text="Popište šablonu, kterou chcete vytvořit, a AI ji vygeneruje."
                            FontSize="{DynamicResource EDTheme.FontSize.Body}"
                            Foreground="{DynamicResource EDTheme.Text.Muted}"
                            Margin="0,4,0,0"
@@ -109,23 +109,32 @@
                     <Run Text="&quot;Vytvoř fakturační šablonu s hlavičkou obsahující logo a název firmy, tabulku položek s 5 sloupci (název, množství, cena, DPH, celkem) a patičku s platebními údaji.&quot;"/>
                 </TextBlock>
 
-                <!-- API Key (volitelné) -->
-                <TextBlock Text="Anthropic API Key (volitelné)" Style="{StaticResource SectionHeader}"/>
-                <!-- PasswordBox místo TextBox — API klíč se nemá zobrazovat plaintextem.
-                     Password není bindovatelný → sync přes code-behind (PasswordChanged). -->
-                <PasswordBox x:Name="ApiKeyBox"
-                             PasswordChanged="ApiKeyBox_PasswordChanged"
-                             FontFamily="Consolas"
-                             Padding="8"/>
-                <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Caption}"
-                           Foreground="{DynamicResource EDTheme.Text.Muted}"
-                           Margin="0,4,0,0"
-                           TextWrapping="Wrap">
-                    <Run Text="Pokud není zadán API klíč zde, použije se klíč z templatedesigner.appsettings.json. Získat API klíč můžete na "/>
-                    <Hyperlink NavigateUri="https://console.anthropic.com/" RequestNavigate="Hyperlink_RequestNavigate">
-                        <Run Text="console.anthropic.com"/>
-                    </Hyperlink>
-                </TextBlock>
+                <!-- API Key — jen vývojářský override (zákazník klíč nemá, vyzvedává se z mlweb) -->
+                <StackPanel>
+                    <StackPanel.Style>
+                        <Style TargetType="StackPanel">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsDevMode}" Value="True">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </StackPanel.Style>
+                    <TextBlock Text="Anthropic API Key (vývojářský override)" Style="{StaticResource SectionHeader}"/>
+                    <!-- PasswordBox místo TextBox — API klíč se nemá zobrazovat plaintextem.
+                         Password není bindovatelný → sync přes code-behind (PasswordChanged). -->
+                    <PasswordBox x:Name="ApiKeyBox"
+                                 PasswordChanged="ApiKeyBox_PasswordChanged"
+                                 FontFamily="Consolas"
+                                 Padding="8"/>
+                    <TextBlock FontSize="{DynamicResource EDTheme.FontSize.Caption}"
+                               Foreground="{DynamicResource EDTheme.Text.Muted}"
+                               Margin="0,4,0,0"
+                               TextWrapping="Wrap">
+                        <Run Text="Předvyplněn lokální klíč z templatedesigner.appsettings.local.json; bez něj se klíč vyzvedává automaticky (mlweb)."/>
+                    </TextBlock>
+                </StackPanel>
 
             </StackPanel>
         </ScrollViewer>

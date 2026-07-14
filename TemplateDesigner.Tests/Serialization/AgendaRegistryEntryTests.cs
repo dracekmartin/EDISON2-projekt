@@ -50,7 +50,8 @@ public class AgendaRegistryEntryTests
               "variant":"AD","variantLabel":"AD (linková doprava)",
               "cacheClass":"ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd",
               "instanceParamName":"LINKA_ID","elementKind":"STOP",
-              "instanceLabel":"linka","instanceLabelPlural":"linky"}]
+              "instanceLabel":"linka","instanceLabelPlural":"linky",
+              "released":true}]
             """;
 
         var list = JsonSerializer.Deserialize<List<AgendaRegistryEntry>>(json, Options)!;
@@ -60,5 +61,19 @@ public class AgendaRegistryEntryTests
         Assert.Equal(("ZASTAVKOVY_JR", "AD"), (e.Agenda, e.Variant));
         Assert.Equal("Zastávkový JŘ · AD", e.DisplayName);
         Assert.Equal("STOP", e.ElementKind);
+        Assert.True(e.Released);
+    }
+
+    [Fact]
+    public void Released_DefaultTrue_ProStarsiCacheBezKlice()
+    {
+        // Starší server klíč neposílá → default true = vše viditelné (dnešní chování);
+        // nezveřejněná agenda z nového serveru → false (filtruje se z UI výběru).
+        var stary = new AgendaRegistryEntry("X", "X", "cls");
+        Assert.True(stary.Released);
+
+        const string json = """[{"code":"LINKOVY_JR_AD","label":"Linkový JŘ (AD)","cacheClass":"c","released":false}]""";
+        var e = Assert.Single(JsonSerializer.Deserialize<List<AgendaRegistryEntry>>(json, Options)!);
+        Assert.False(e.Released);
     }
 }

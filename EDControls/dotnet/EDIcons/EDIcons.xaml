@@ -106,6 +106,16 @@
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/distribute_v.png"/>
     <BitmapImage x:Key="EDIcons.Grid"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/grid.png"/>
+    <BitmapImage x:Key="EDIcons.Sections"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/fluent_sections.png"/>
+    <BitmapImage x:Key="EDIcons.Fields"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/fluent_fields.png"/>
+    <BitmapImage x:Key="EDIcons.Properties"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/fluent_properties.png"/>
+    <BitmapImage x:Key="EDIcons.Tree"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/fluent_tree.png"/>
+    <BitmapImage x:Key="EDIcons.Assistant"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/fluent_assistant.png"/>
     <BitmapImage x:Key="EDIcons.Snap"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/snap.png"/>
     <BitmapImage x:Key="EDIcons.Eye"

@@ -1,0 +1,289 @@
+using System.Globalization;
+using System.Text;
+using EDControls.EDViewModel;
+
+namespace TemplateDesigner;
+
+/// <summary>Jeden řádek nápovědy: akce + zkratka/umístění.</summary>
+public record HelpEntry(string Action, string Shortcut);
+
+/// <summary>Kategorie nápovědy — nadpis, řádky a volitelný tip pod tabulkou.</summary>
+public class HelpSection
+{
+    public required string Title { get; init; }
+    public required List<HelpEntry> Entries { get; init; }
+    public string? Tip { get; init; }
+    public bool HasTip => !string.IsNullOrEmpty(Tip);
+}
+
+/// <summary>
+/// Nápověda F1 — datově řízený obsah (zkratky, workflow, tipy) s fulltext filtrem (Ctrl+F).
+/// Obsah drž v souladu s autoritativní tabulkou zkratek v ux-conventions.md — při přidání
+/// zkratky/featury aktualizovat BuildContent().
+/// </summary>
+public class HelpDialogViewModel : EDViewModel
+{
+    private readonly List<HelpSection> _all = BuildContent();
+
+    private List<HelpSection> _filteredSections;
+    public List<HelpSection> FilteredSections
+    {
+        get => _filteredSections;
+        private set => Set(ref _filteredSections, value);
+    }
+
+    private string _searchText = "";
+    public string SearchText
+    {
+        get => _searchText;
+        set { Set(ref _searchText, value); ApplyFilter(); }
+    }
+
+    public bool NothingFound => FilteredSections.Count == 0;
+
+    public HelpDialogViewModel()
+    {
+        _filteredSections = _all;
+    }
+
+    private void ApplyFilter()
+    {
+        var query = Fold(SearchText.Trim());
+        if (query.Length == 0)
+        {
+            FilteredSections = _all;
+            OnPropertyChanged(nameof(NothingFound));
+            return;
+        }
+
+        var result = new List<HelpSection>();
+        foreach (var section in _all)
+        {
+            bool titleMatch = Fold(section.Title).Contains(query);
+            bool tipMatch = section.Tip is not null && Fold(section.Tip).Contains(query);
+            var entries = titleMatch
+                ? section.Entries
+                : section.Entries.Where(e => Fold(e.Action).Contains(query) || Fold(e.Shortcut).Contains(query)).ToList();
+
+            if (entries.Count > 0 || tipMatch)
+            {
+                result.Add(new HelpSection
+                {
+                    Title = section.Title,
+                    Entries = entries,
+                    Tip = (titleMatch || tipMatch) ? section.Tip : null,
+                });
+            }
+        }
+        FilteredSections = result;
+        OnPropertyChanged(nameof(NothingFound));
+    }
+
+    /// <summary>Lowercase bez diakritiky — hledání „razeni" najde „řazení".</summary>
+    private static string Fold(string s)
+    {
+        var norm = s.ToLowerInvariant().Normalize(NormalizationForm.FormD);
+        var sb = new StringBuilder(norm.Length);
+        foreach (char c in norm)
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                sb.Append(c);
+        return sb.ToString();
+    }
+
+    // ─────────────────────────────────────────────────────────────────────
+    // Obsah — zkratky dle autoritativní tabulky (ux-conventions.md)
+    // ─────────────────────────────────────────────────────────────────────
+
+    private static List<HelpSection> BuildContent() =>
+    [
+        new HelpSection
+        {
+            Title = "🚀 Rychlý start",
+            Entries =
+            [
+                new("1. Otevřít šablonu z databáze / založit novou", "Ctrl+O / Ctrl+N"),
+                new("2. Zkontrolovat agendu a variantu (zelený štítek ve stavovém řádku); změna", "Ctrl+Shift+A"),
+                new("3. Vybrat linky pro náhled (modrý štítek „Instance“ ve stavovém řádku)", "klik na štítek"),
+                new("4. Přidat sekce (tlačítko + Sekce) a elementy (táhnout z palety)", "myš"),
+                new("5. Napojit data — pole ze záložky „Pole agendy“ táhnout na plochu", "táhnout myší"),
+                new("6. Upravit vzhled — záložka Vlastnosti (rychlé) / Enter (kompletní dialog)", "Enter"),
+                new("7. Uložit do databáze a vytisknout s reálnými daty", "Ctrl+S, Ctrl+P"),
+            ],
+            Tip = "Živý náhled vpravo ukazuje výsledek s daty vybrané instance průběžně. " +
+                  "Databáze je primární úložiště šablon — soubor JSON slouží jen pro přenos (menu Soubor → Import/Export).",
+        },
+
+        new HelpSection
+        {
+            Title = "📄 Soubor a šablony",
+            Entries =
+            [
+                new("Nová šablona", "Ctrl+N"),
+                new("Otevřít z databáze (přehled šablon s filtrem)", "Ctrl+O"),
+                new("Uložit do databáze (nová se zeptá na jméno)", "Ctrl+S"),
+                new("Uložit jako (nová kopie v databázi)", "menu Soubor"),
+                new("Import / export JSON souboru (přenos šablony)", "menu Soubor"),
+                new("Import existujícího PDF jako šablona", "menu Nástroje"),
+                new("Vlastnosti stránky (formát, orientace, okraje, jazyk)", "Ctrl+Shift+P"),
+                new("Export náhledu do PDF / PNG", "lišta nástrojů / menu Soubor"),
+            ],
+            Tip = "Změna formátu nebo orientace stránky založí novou prázdnou šablonu (s potvrzením) — " +
+                  "úprava okrajů je běžná vratná změna.",
+        },
+
+        new HelpSection
+        {
+            Title = "🖨 Tisk a export (Ctrl+P)",
+            Entries =
+            [
+                new("Tisk s reálnými daty z databáze", "Ctrl+P"),
+                new("Členění výstupu — vše do jednoho / po linkách / po zastávkách a směrech", "dialog tisku"),
+                new("Název souboru z dat — tokeny {CISLO_LINKY} apod.", "dialog tisku"),
+                new("Více vývěsek na list (imposice) — např. 2×A5 na A4", "dialog tisku → Uspořádání na list"),
+                new("Táž vývěska vícekrát na list (pro řezání)", "dialog tisku → Každá stránka na celý list"),
+                new("Ořezové značky", "dialog tisku"),
+                new("Varování přetečení — obsah se nevejde na stránku", "červený rámeček v náhledu"),
+            ],
+            Tip = "Volby imposice a členění si aplikace pamatuje pro každou agendu zvlášť. Návrat na 1 stránku = 1 list: " +
+                  "Uspořádání na list → Vypnuto.",
+        },
+
+        new HelpSection
+        {
+            Title = "🗂 Data, agenda a instance",
+            Entries =
+            [
+                new("Změnit agendu / variantu (založí novou prázdnou šablonu)", "Ctrl+Shift+A"),
+                new("Výběr instancí (linek) pro náhled a tisk", "modrý štítek Instance"),
+                new("Listování mezi vybranými instancemi", "◀ ▶ u štítku"),
+                new("Obnovit data z databáze (znovu načte ze serveru)", "F5"),
+                new("Pole agendy → nový text s {POLE} na ploše", "táhnout pole na plochu"),
+                new("Pole agendy → přidat {POLE} do existujícího textu", "táhnout pole na text"),
+                new("Zkopírovat {NAZEV_POLE} do schránky", "dvojklik na pole"),
+                new("Parametry sestavy (živě mění náhled)", "lišta nad náhledem"),
+            ],
+            Tip = "Agenda říká JAKOU sestavu děláte (Zastávkový JŘ, …), varianta odkud jsou data (AD / MHD). " +
+                  "Šablona je vázaná na konkrétní kombinaci — vidíte ji na zeleném štítku a v titulku okna.",
+        },
+
+        new HelpSection
+        {
+            Title = "⌨ Výběr a myš",
+            Entries =
+            [
+                new("Výběr elementu", "klik"),
+                new("Přidat do výběru", "Ctrl+klik"),
+                new("Vybrat jen jeden element ze skupiny", "Alt+klik"),
+                new("Výběr více elementů oblastí", "táhnout přes prázdno"),
+                new("Vybrat vše v aktivní sekci", "Ctrl+A"),
+                new("Vlastnosti výběru (1 element / společné vlastnosti více)", "Enter / dvojklik"),
+                new("Úprava textu přímo na ploše (textový element)", "F2"),
+                new("Zrušit výběr / probíhající akci", "Esc"),
+            ],
+            Tip = "F2: Enter = potvrdit, Shift+Enter = nový řádek, Esc = zrušit.",
+        },
+
+        new HelpSection
+        {
+            Title = "✏ Editace",
+            Entries =
+            [
+                new("Zpět / Vpřed", "Ctrl+Z / Ctrl+Y"),
+                new("Vyjmout / Kopírovat / Vložit", "Ctrl+X / Ctrl+C / Ctrl+V"),
+                new("Duplikovat (kopie posunutá o 5 mm)", "Ctrl+D"),
+                new("Duplikovat vedle originálu s mezerou 4 mm", "Ctrl+D, pak šipka"),
+                new("Kopírovat / vložit STYL (písmo, barvy, rámeček)", "Ctrl+Shift+C / Ctrl+Shift+V"),
+                new("Seskupit / rozeskupit elementy", "Ctrl+G / Ctrl+Shift+G"),
+                new("Rozdělit element vodorovně / svisle na poloviny", "Ctrl+Shift+H / Ctrl+Shift+J"),
+                new("Smazat výběr", "Delete"),
+                new("Posun o 1 mm / o krok mřížky / jemně 0,5 mm", "šipky / Shift+šipky / Ctrl+šipky"),
+                new("Vrstva: dopředu / dozadu (úplně: +Shift)", "Ctrl+PgUp / Ctrl+PgDn"),
+                new("Zarovnání a rozložení vybraných elementů", "lišta nástrojů / menu Upravit"),
+                new("Normalizovat pozice (zaokrouhlit na krok)", "Ctrl+Shift+N"),
+            ],
+            Tip = "Hromadná úprava: vyberte víc elementů a stiskněte Enter — dialog společných vlastností.",
+        },
+
+        new HelpSection
+        {
+            Title = "📑 Sekce",
+            Entries =
+            [
+                new("Přidat sekci", "tlačítko + Sekce"),
+                new("Přesunout aktivní sekci nahoru / dolů", "Ctrl+Shift+↑ / Ctrl+Shift+↓"),
+                new("Přesunout sekci tažením", "táhnout myší v panelu"),
+                new("Vlastnosti / smazání sekce", "pravý klik"),
+                new("Uložit sekci jako šablonu pro opakované použití", "pravý klik → Uložit jako šablonu"),
+            ],
+            Tip = "Sekce určuje KDY se tiskne (jednou / na každé stránce / jen první / jen poslední) " +
+                  "a JAK se chová při přetečení (držet pohromadě / rozdělit přes stránky). Role záhlaví/patička " +
+                  "kotví sekci k okraji stránky.",
+        },
+
+        new HelpSection
+        {
+            Title = "👁 Zobrazení",
+            Entries =
+            [
+                new("Přizpůsobit stránku oknu", "Ctrl+0"),
+                new("Skutečná velikost 100 %", "Ctrl+1"),
+                new("Zoom k kurzoru", "Ctrl+kolečko"),
+                new("Sbalit / rozbalit levý panel", "Ctrl+B"),
+                new("Mřížka, přichytávání, velikost kroku (0,2–10 mm)", "lišta nástrojů"),
+                new("Strom šablony (sekce → skupiny → elementy)", "záložka Strom"),
+                new("Nápověda (tento dialog)", "F1"),
+            ],
+        },
+
+        new HelpSection
+        {
+            Title = "🔲 Elementy",
+            Entries =
+            [
+                new("Text — statický nebo s poli {NAZEV}", "paleta"),
+                new("Obrázek — ze souboru (auto zmenšení velkých)", "paleta"),
+                new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
+                new("Kód — QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
+                new("Dynamická tabulka — řádky z kolekce dat agendy", "paleta"),
+                new("Zastávky JŘ — sloupce vč. zóny, pořadí a nástupiště", "paleta (JŘ agenda)"),
+                new("Mřížka odjezdů JŘ — minuty po skupinách dnů", "paleta (JŘ agenda)"),
+                new("Legenda poznámek JŘ — značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
+            ],
+            Tip = "Dynamická tabulka umí: počítané sloupce ({CENA}*{POCET}), podmíněnou viditelnost řádku, " +
+                  "zvýraznění řádku podle výrazu, min/max počet řádků a souhrnné řádky (SUM, COUNT, AVG…). " +
+                  "Vše v dialogu tabulky (dvojklik).",
+        },
+
+        new HelpSection
+        {
+            Title = "ƒ Výrazy a datová pole",
+            Entries =
+            [
+                new("Hodnota pole", "{CISLO_LINKY}"),
+                new("Formát čísla / textu", "{CENA:N2}, {TEXT:UPPER}, {POLE:LEFT(4)}"),
+                new("Aritmetika (počítané sloupce)", "{CENA}*{POCET}"),
+                new("Podmínky (viditelnost elementu/sekce/řádku)", "{POCET} > 0 && {TYP} == 'A'"),
+                new("Agregace v souhrnných řádcích tabulky", "SUM({CENA}*{POCET}), COUNT, AVG, MIN, MAX"),
+                new("Číslo stránky / celkem stran", "{PAGE} / {TOTAL_PAGES}"),
+            ],
+            Tip = "Výraz viditelnosti se zadává ve vlastnosti „Viditelnost“ — prázdný = vždy viditelné. " +
+                  "Formátování čísel a datumů řídí jazyk šablony (Ctrl+Shift+P), ne nastavení Windows.",
+        },
+
+        new HelpSection
+        {
+            Title = "💡 Tipy a triky",
+            Entries =
+            [
+                new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
+                new("Zamknout element proti posunu/změně velikosti", "vlastnost Zamčeno"),
+                new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
+                new("Sdílená hranice — tah za hranu mění i souseda", "táhnout společnou hranu"),
+                new("Výška „auto“ — element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
+                new("JŘ element s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
+                new("Import PDF — AI rozpozná strukturu JŘ a namapuje pole", "menu Nástroje → Import PDF"),
+                new("AI průvodce — zeptejte se, kde co v aplikaci najdete", "záložka Pomocník"),
+            ],
+        },
+    ];
+}

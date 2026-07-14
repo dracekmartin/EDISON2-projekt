@@ -5,6 +5,7 @@
         Title="{Binding WindowTitle}"
         Width="700" Height="560"
         MinWidth="500" MinHeight="380"
+        ResizeMode="CanResizeWithGrip"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False">
     <Grid Margin="14">

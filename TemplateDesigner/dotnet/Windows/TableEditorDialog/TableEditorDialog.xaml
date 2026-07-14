@@ -10,7 +10,8 @@
         ResizeMode="CanResizeWithGrip">
 
     <Window.Resources>
-        <Style TargetType="Button">
+        <!-- BasedOn: bez něj implicitní styl přebije EDControls flat theme (default WPF 3D vzhled) -->
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Padding" Value="10,3"/>
             <Setter Property="Margin" Value="0,0,6,0"/>
         </Style>
@@ -30,7 +31,7 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="6">
                         <TextBlock Text="Výchozí styl pro všechny sloupce. V tabu Styl sloupců můžete nastavení jednotlivých sloupců přepsat."
-                                   FontStyle="Italic" Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,10"
+                                   FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,10"
                                    TextWrapping="Wrap"/>
 
                         <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
@@ -57,7 +58,7 @@
                                 HorizontalAlignment="Left" Padding="10,3" Margin="0,12,0,12"/>
 
                         <TextBlock Text="Ostatní nastavení elementu (režim, rámeček, zebra, ...) najdete v panelu Vlastnosti po zavření dialogu."
-                                   FontStyle="Italic" Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
+                                   FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
                                    TextWrapping="Wrap"/>
                     </StackPanel>
                 </ScrollViewer>
@@ -80,7 +81,7 @@
                               GridLinesVisibility="Horizontal"
                               RowHeaderWidth="0"
                               BorderThickness="1"
-                              BorderBrush="#CCCCCC"
+                              BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                               ItemsSource="{Binding ColumnVMs}"
                               SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
                               PreviewKeyDown="Grid_PreviewKeyDown">
@@ -165,12 +166,12 @@
                                     Margin="16,0,0,0"
                                     Visibility="{Binding ShowLoadTemplate, Converter={StaticResource BoolToVis}}"/>
                         </StackPanel>
-                        <TextBlock Margin="0,4,0,0" FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="#888888"
+                        <TextBlock Margin="0,4,0,0" FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                    Text="Pole: název ze schématu bez závorek (nebo s závorkami — {ZASTAVKA} i ZASTAVKA je přijato)."/>
 
                         <!-- Warning při přesahu šířky -->
                         <TextBlock Text="{Binding ColumnOverflowText}"
-                                   Foreground="#C62828" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
+                                   Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,8,0,0"
                                    TextWrapping="Wrap"
                                    Visibility="{Binding HasColumnOverflow, Converter={StaticResource BoolToVis}}"/>
                         <Button Content="Přizpůsobit sloupce k šířce elementu"
@@ -201,7 +202,7 @@
                         <ListBox x:Name="RowsList"
                                  ItemsSource="{Binding RowVMs}"
                                  SelectedItem="{Binding SelectedRowVM, Mode=TwoWay}"
-                                 BorderThickness="1" BorderBrush="#CCCCCC">
+                                 BorderThickness="1" BorderBrush="{DynamicResource EDTheme.Border.Medium}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding RowSummary}" Margin="4,2"/>
@@ -233,7 +234,7 @@
                                      Text="{Binding SelectedRowVM.VisibilityExpression, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                      ToolTip="Výraz podmíněné viditelnosti. Prázdné = vždy viditelný."/>
                             <TextBlock Text="Výraz — prázdné = vždy viditelný  |  dostupné: {POLE}, &gt;, &lt;, ==, !=, &amp;&amp;, ||, !"
-                                       FontSize="{DynamicResource EDTheme.FontSize.Caption}" Foreground="#888888" Margin="0,2,0,0"/>
+                                       FontSize="{DynamicResource EDTheme.FontSize.Caption}" Foreground="{DynamicResource EDTheme.Text.Muted}" Margin="0,2,0,0"/>
                         </StackPanel>
 
                         <TextBlock Grid.Row="1" Text="Buňky vybraného řádku:" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -247,7 +248,7 @@
                                   GridLinesVisibility="Horizontal"
                                   RowHeaderWidth="0"
                                   BorderThickness="1"
-                                  BorderBrush="#CCCCCC"
+                                  BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                                   ItemsSource="{Binding SelectedRowVM.Cells}"
                                   PreviewKeyDown="Grid_PreviewKeyDown">
                             <DataGrid.Columns>
@@ -279,12 +280,12 @@
                         <ListBox Grid.Row="1"
                                  ItemsSource="{Binding ColumnVMs}"
                                  SelectedItem="{Binding SelectedColumnVM, Mode=TwoWay}"
-                                 BorderThickness="1" BorderBrush="#CCCCCC">
+                                 BorderThickness="1" BorderBrush="{DynamicResource EDTheme.Border.Medium}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal" Margin="4,2">
                                         <TextBlock Text="{Binding Header}"/>
-                                        <Ellipse Width="7" Height="7" Fill="#2196F3" Margin="6,0,0,0"
+                                        <Ellipse Width="7" Height="7" Fill="{DynamicResource EDTheme.Accent.Blue}" Margin="6,0,0,0"
                                                  VerticalAlignment="Center"
                                                  ToolTip="Má vlastní nastavení stylu (přepisuje výchozí z Obecné)"
                                                  Visibility="{Binding HasAnyOverride, Converter={StaticResource BoolToVis}}"/>
@@ -299,7 +300,7 @@
                                   VerticalScrollBarVisibility="Auto">
                         <StackPanel>
                             <TextBlock Text="Prázdné pole = dědí výchozí styl elementu."
-                                       FontStyle="Italic" Foreground="#888" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
+                                       FontStyle="Italic" Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="{DynamicResource EDTheme.FontSize.Body}" Margin="0,0,0,8"/>
 
                             <TextBlock Text="Styl záhlaví" FontWeight="SemiBold" Margin="0,0,0,6"/>
                             <controls:CellStyleEditor
@@ -353,7 +354,7 @@
                         <ListBox x:Name="SummaryList"
                                  ItemsSource="{Binding SummaryVMs}"
                                  SelectedItem="{Binding SelectedSummaryVM, Mode=TwoWay}"
-                                 BorderThickness="1" BorderBrush="#CCCCCC">
+                                 BorderThickness="1" BorderBrush="{DynamicResource EDTheme.Border.Medium}">
                             <ListBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding RowSummary}" Margin="4,2"/>
@@ -386,7 +387,7 @@
                                   GridLinesVisibility="Horizontal"
                                   RowHeaderWidth="0"
                                   BorderThickness="1"
-                                  BorderBrush="#CCCCCC"
+                                  BorderBrush="{DynamicResource EDTheme.Border.Medium}"
                                   ItemsSource="{Binding SelectedSummaryVM.Cells}"
                                   PreviewKeyDown="Grid_PreviewKeyDown">
                             <DataGrid.Columns>
@@ -396,7 +397,7 @@
                         </DataGrid>
 
                         <TextBlock Grid.Row="2" Margin="0,4,0,0"
-                                   FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="#888888"
+                                   FontSize="{DynamicResource EDTheme.FontSize.Body}" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                    Text="Agregace: SUM({POLE}), COUNT(), AVG({POLE}), MIN({POLE}), MAX({POLE})"/>
                     </Grid>
                 </Grid>

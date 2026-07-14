@@ -27,43 +27,106 @@ s daty z agendy → PDF.
 
 ## Základní pojmy
 - Šablona — kořenový dokument: velikost stránky, okraje, kultura (cs-CZ…), sekce.
+  Ukládá se do DATABÁZE (Ctrl+S / Ctrl+O); soubor JSON je jen import/export.
 - Sekce — vodorovný pruh stránky. Má chování tisku (jednou / na každé stránce /
   jen první / jen poslední) a chování při přetečení (nezalamovat / rozdělit přes stránky).
   Role: záhlaví / tělo / patička.
 - Element — konkrétní obsah v sekci. Pozice jsou v milimetrech, relativně
   k levému hornímu rohu sekce. Výška = auto znamená, že se dopočítá z obsahu.
 - Placeholder — {NAZEV_POLE} se při tisku nahradí hodnotou z dat agendy.
-  Lze i formátovat: {CENA:N2}, {TEXT:UPPER}, {POLE:LEFT(4)}.
-- Agenda — zdroj dat (např. zastávkový jízdní řád). Určuje, jaká pole jsou k dispozici
-  a jaké specializované elementy dávají smysl.
+- Agenda a Varianta — agenda říká, JAKOU sestavu dělám (Zastávkový JŘ, Faktury…),
+  varianta říká zdroj dat (AD = linková doprava, MHD). Šablona je vázaná na konkrétní
+  kombinaci; zobrazuje ji zelený chip ve status baru a titulek okna.
+- Instance — konkrétní záznam, nad kterým se tiskne (u JŘ = linka). Vybírá se
+  modrým chipem 'Instance' ve status baru (klik = výběr více linek, ◀▶ = listování).
 
-## Jak se to ovládá (hlavní cesty)
-- Přidání elementu — paleta vlevo (táhni na canvas) nebo tlačítko 'Přidat element'.
-- Výběr — klik na element; Alt+klik vybere jen jeden prvek ze skupiny.
-- Vlastnosti — záložka 'Vlastnosti' v levém panelu (rychlý přístup), nebo Enter /
-  dvojklik otevře dialog. U tabulkových elementů je detailní nastavení sloupců v dialogu.
-- Sekce — panel sekcí vlevo: přidat, přejmenovat, přetáhnout pořadí, smazat.
-- Náhled — pravá část okna ukazuje reálný výsledek s daty (live preview).
-- Tisk / export — dialog tisku (parametry + export do PDF), nebo export náhledu do PDF/PNG.
+## Výrazový jazyk (v placeholderech a podmínkách)
+- Formátování: {CENA:N2} (2 desetinná místa), {TEXT:UPPER}, {POLE:LEFT(4)}.
+- Aritmetika: {CENA}*{POCET}, závorky a priorita fungují — použitelné v počítaných
+  sloupcích tabulky (Expression) a v agregacích.
+- Podmínky: {POCET} > 0, {TYP} == 'A', kombinace přes && a || — použitelné ve
+  viditelnosti elementu/sekce (VisibilityExpression), viditelnosti řádku tabulky
+  a v pravidlech zvýraznění řádku.
+- Agregace v souhrnných řádcích tabulky: SUM({CENA}*{POCET}), COUNT, AVG, MIN, MAX.
 
-## Klávesové zkratky (nejdůležitější)
+## UI mapa — kde co najdu (Co → Kde)
+### Chci tisknout / exportovat
+- Tisk s reálnými daty: Ctrl+P → dialog tisku (parametry sestavy + tlačítka exportu).
+  Aliasy: 'vytisknout linku', 'PDF se skutečnými daty'.
+- Více vývěsek na jeden list / tisk 2×A5 na A4 / řezání (imposice): Ctrl+P → skupina
+  'Export' → pole 'Uspořádání na list' (Vypnuto / A4 / A3 × výška/šířka) + 'Mřížka listu'
+  + 'Každá stránka na celý list (pro řezání)' + 'Ořezové značky'. Volba se pamatuje
+  per agenda — 1 stránka = 1 list vrátíš volbou 'Vypnuto'.
+- Rozdělení výstupu do více souborů: Ctrl+P → 'Členění výstupu' (vše do jednoho /
+  per linka / per zastávka×směr) + 'Název souboru' s {POLE} tokeny.
+- Rychlý export náhledu bez dialogu: toolbar PDF/PNG (exportuje aktuální instance).
+- Náhled se nevejde na stránku: červený rámeček stránky v náhledu + varování ve
+  status baru; řeší se zmenšením obsahu, pevnou výškou elementu (auto-scale) nebo
+  rozdělitelnou sekcí.
+
+### Chci pracovat s daty
+- Změnit agendu/variantu: Ctrl+Shift+A, nebo klik na zelený chip ve status baru.
+  Vytvoří NOVOU prázdnou šablonu (obsah se mezi agendami nepřenáší).
+- Vybrat linky/instance: klik na modrý chip 'Instance' ve status baru → výběr se
+  search boxem; ◀▶ listuje, ↻ (nebo F5) znovu načte data.
+- Pole agendy: záložka 'Pole agendy' v levém panelu; pole lze táhnout na canvas
+  (vytvoří text) nebo na existující text (přidá placeholder); dvojklik = do schránky.
+- Parametry sestavy: lišta parametrů nad náhledem (živě mění náhled) — tytéž
+  hodnoty jsou v dialogu tisku.
+
+### Chci upravit vzhled
+- Rychlé vlastnosti: záložka 'Vlastnosti' v levém panelu (aktualizuje se dle výběru).
+- Kompletní nastavení: Enter nebo dvojklik na element → dialog; u tabulkových
+  elementů má dialog záložku/tlačítko 'Sloupce' (pořadí, šířky, viditelnost,
+  per-sloupec styl písma a barev).
+- Kopírování stylu mezi elementy: Ctrl+Shift+C / Ctrl+Shift+V.
+- Hromadná úprava: vybrat víc elementů (rubber band / Ctrl+klik) → Enter → dialog
+  společných vlastností.
+- Podmíněné zvýraznění řádků tabulky: dialog tabulky → 'Zvýraznění řádků' → pravidla
+  s výrazem nad daty řádku (např. {CENA} > 1000 → barva pozadí).
+
+### Chci spravovat šablony
+- Otevřít z databáze: Ctrl+O → přehled šablon (sloupce Agenda + Varianta, filtr,
+  sekce Systémové M-line = read-only předlohy / Moje).
+- Uložit: Ctrl+S (nová šablona se zeptá na jméno; existující tiše aktualizuje).
+  'Uložit jako' je v menu Soubor (bez zkratky).
+- Import/export JSON souboru: menu Soubor → Importovat/Exportovat JSON.
+- Vlastnosti stránky (rozměr, orientace, okraje, kultura): Ctrl+Shift+P.
+  POZOR: změna rozměru/orientace = nová prázdná šablona (s potvrzením).
+
+### Navigace a zobrazení
+- Zoom: Ctrl+kolečko (k kurzoru), Ctrl+0 = přizpůsobit stránce, Ctrl+1 = 100 %.
+- Mřížka a přichytávání: toolbar — zobrazit mřížku, snap na mřížku (velikost 0,2–10 mm),
+  snap na elementy; Ctrl+Shift+N normalizuje pozice existujících elementů.
+- Levý panel: záložky Sekce / Pole agendy / Vlastnosti / Strom / Pomocník; Ctrl+B sbalí.
+- Strom šablony: záložka 'Strom' — hierarchie sekce → skupiny → elementy.
+
+## Klávesové zkratky (kompletní)
 - Ctrl+Z / Ctrl+Y — zpět / vpřed
-- Ctrl+X / Ctrl+C / Ctrl+V — vyjmout / kopírovat / vložit
-- Ctrl+D — duplikovat (Ctrl+D + šipka = kopie vedle s mezerou)
+- Ctrl+X / Ctrl+C / Ctrl+V — vyjmout / kopírovat / vložit; Ctrl+A — vybrat vše v sekci
+- Ctrl+D — duplikovat (+šipka = kopie vedle s mezerou)
 - Ctrl+Shift+C / Ctrl+Shift+V — kopírovat / vložit styl
-- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit
-- Ctrl+S / Ctrl+Shift+S — uložit / uložit jako
-- Ctrl+O / Ctrl+N — otevřít / nová šablona
-- Ctrl+0 — přizpůsobit stránku oknu (zoom)
-- Ctrl+Shift+A — změnit agendu
-- Ctrl+Shift+N — normalizovat pozice (přichytit na mřížku)
-- Delete — smazat výběr; Enter — vlastnosti výběru
+- Ctrl+G / Ctrl+Shift+G — seskupit / rozeskupit; Alt+klik — jeden prvek ze skupiny
+- Ctrl+Shift+H / Ctrl+Shift+J — rozdělit element vodorovně / svisle
+- Ctrl+Shift+N — normalizovat pozice na mřížku
+- Šipky — posun elementu (Shift = velký krok, Ctrl = jemný)
+- Ctrl+Shift+↑/↓ — přesun aktivní sekce nahoru / dolů
+- Ctrl+PageUp / Ctrl+PageDown — pořadí ve vrstvě (Z-order); +Shift = úplně dopředu/dozadu
+- Ctrl+N / Ctrl+O / Ctrl+S — nová / otevřít z databáze / uložit ('Uložit jako' zkratku NEMÁ)
+- Ctrl+P — tisk; Ctrl+Shift+P — vlastnosti stránky; Ctrl+Shift+A — změnit agendu
+- Ctrl+0 — přizpůsobit stránce; Ctrl+1 — 100 %; Ctrl+B — sbalit levý panel
+- F2 — inline editace textu; Enter — vlastnosti výběru; Delete — smazat
+- F5 — obnovit data z databáze; F1 — nápověda; Esc — zrušit probíhající akci
 
-## Menu (horní lišta)
-- Soubor — Nová / Otevřít / Uložit / Uložit jako / Otevřít z Caché / Uložit do Caché / Export PDF.
-- Upravit — Zpět/Vpřed, schránka, zarovnání, mřížka a snap, zoom.
-- Zobrazení — panely (sekce, vlastnosti, strom), live náhled.
-- Nástroje — Změnit agendu, Šablony v Caché, AI Asistent šablon, Import PDF, AI průvodce.";
+## Menu Nástroje
+Změnit agendu, Šablony v databázi (správce), AI Asistent šablon (vygeneruje šablonu
+z popisu), Import PDF (existující PDF → šablona, volitelně s AI), AI průvodce (tento chat).
+
+## Co aplikace ZATÍM neumí (odpovídej 'zatím neumíme')
+Sloučené buňky tabulky (merge / colspan / rowspan), Excel export, odeslání PDF e-mailem
+přímo z aplikace, brožura/duplex řazení stránek při imposici, zaoblené rohy rámečků
+elementů (samostatný obdélník zaoblení má), fonty nahrané uživatelem (k dispozici jsou
+vestavěné rodiny).";
 
     // ─── Pokyny pro model (jak má odpovídat) ──────────────────────────────────
 
@@ -77,11 +140,17 @@ Styl odpovědí (DŮLEŽITÉ):
   dej krátké číslované kroky a nic víc.
 - Žádné opakování otázky, žádné omluvy.
 
-Pravidla obsahu:
-- Opírej se VÝHRADNĚ o znalosti níže (popis aplikace + katalog elementů a jejich vlastností).
-  Když něco v katalogu není, řekni jednou větou, že to aplikace (zatím) neumí.
-  NIKDY si nevymýšlej vlastnosti, tlačítka ani zkratky, které nejsou uvedené.
-- Při hledání nastavení uveď přesně: který element, která záložka/dialog, v jaké skupině vlastností.
+Pravidla obsahu (ZÁVAZNÁ):
+- Opírej se VÝHRADNĚ o znalosti níže (popis aplikace + UI mapa + katalog elementů).
+- KAŽDÝ krok návodu musí citovat přesnou cestu z těchto znalostí: název menu/tlačítka,
+  klávesovou zkratku, dialog nebo skupinu vlastností. Nikdy nepiš krok, jehož umístění
+  neumíš doložit z podkladů — vlastnosti, tlačítka ani zkratky si NEVYMÝŠLEJ.
+- Tři stavy jistoty:
+  1. Funkce JE v podkladech → poraď s přesnou cestou.
+  2. VÍŠ, že funkce chybí (v podkladech je uvedená jako neexistující, nebo jde o zjevně
+     jinou aplikaci) → řekni jednou větou, že to aplikace zatím neumí.
+  3. NEJSI SI JISTÝ (v podkladech to není, ale mohlo by existovat) → řekni 'Tím si nejsem
+     jistý — mrkněte do nápovědy (F1) nebo na podporu M-line.' NEtvrď, že to neexistuje.
 - Nejednoznačný dotaz → krátká doplňující otázka.";
 
     // ─── Auto-generovaný katalog elementů ─────────────────────────────────────
@@ -210,14 +279,22 @@ Pravidla obsahu:
 
     private static string? ElementNote(string type) => type switch
     {
-        ElementTypes.Table =>
-            "Dva režimy: Fixed (pevné řádky v šabloně) a Dynamic (řádky z dat agendy). Sloupce a styl se nastavují v dialogu tabulky.",
+        ElementTypes.DynamicTable =>
+            "Řádky se generují z datové kolekce agendy (DataSource). Dialog tabulky (dvojklik) umí navíc: " +
+            "sloupce s mapováním na pole NEBO počítaným výrazem ({CENA}*{POCET}) a formátem; " +
+            "podmíněnou viditelnost řádku (výraz nad daty řádku); pravidla zvýraznění řádku (výraz → barva pozadí); " +
+            "min/max počet řádků (min doplní prázdné = pevná výška, max ořízne); " +
+            "souhrnné řádky s agregacemi SUM/COUNT/AVG/MIN/MAX (i nad výrazem, např. SUM({CENA}*{POCET})).",
         ElementTypes.StopList =>
-            "Tabulka zastávek linky. Sloupce a jejich styl se nastavují ve vlastním dialogu sloupců.",
+            "Tabulka zastávek linky. Sloupce a jejich styl se nastavují ve vlastním dialogu sloupců " +
+            "(vč. volitelného sloupce Nástupiště). Podporuje podmíněnou viditelnost a zvýraznění řádků.",
         ElementTypes.DepartureGrid =>
-            "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog.",
+            "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog " +
+            "(vč. přepisu nadpisu skupiny a sloupce hodin per skupina).",
         ElementTypes.NotesLegend =>
-            "Legenda vysvětlivek/poznámek pod jízdním řádem.",
+            "Legenda vysvětlivek/poznámek pod jízdním řádem (1–4 sloupce, řazení, filtr typů).",
+        ElementTypes.LineTable =>
+            "Sloupcová tabulka celé linky (zastávky × spoje) pro linkový/knižní JŘ. Sloupce ve vlastním dialogu.",
         _ => null
     };
 }

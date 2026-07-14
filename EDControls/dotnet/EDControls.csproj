@@ -27,6 +27,11 @@
     <Resource Include="EDIcons\png\module.png"/>
     <Resource Include="EDIcons\png\user.png"/>
     <Resource Include="EDIcons\png\tools.png"/>
+    <Resource Include="EDIcons\png\fluent_sections.png"/>
+    <Resource Include="EDIcons\png\fluent_fields.png"/>
+    <Resource Include="EDIcons\png\fluent_properties.png"/>
+    <Resource Include="EDIcons\png\fluent_tree.png"/>
+    <Resource Include="EDIcons\png\fluent_assistant.png"/>
     <Resource Include="EDIcons\png\settings.png"/>
     <Resource Include="EDIcons\png\panels.png"/>
     <Resource Include="EDIcons\png\house.png"/>

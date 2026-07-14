@@ -37,12 +37,15 @@ public class DesignerState
         set => _zoom = Math.Clamp(value, 0.1f, 10.0f);
     }
 
+    // Defaulty (pre-version průchod 2026-07-13): SnapToGrid ZAP + jemný 1mm krok — drží čisté
+    // souřadnice, aniž by omezoval (5mm krok byl hlavní zdroj pocitu „nepřesného" snapu).
+    // ShowGrid vypnuto (čistý canvas). Per-template EditorPreferences tohle přepíšou.
     public bool ShowGrid { get; set; } = false;
-    public bool SnapToGrid { get; set; } = false;
+    public bool SnapToGrid { get; set; } = true;
     public bool SnapToElements { get; set; } = true;
     public bool ShowSectionHeaders { get; set; } = true;
     public bool ShowRuler { get; set; } = false;
-    public float GridSize { get; set; } = 5f; // mm
+    public float GridSize { get; set; } = 1f; // mm
 
     /// <summary>
     /// Výchozí mezera mezi objekty při smart snapu (element↔element, element↔okraj sekce po P1)

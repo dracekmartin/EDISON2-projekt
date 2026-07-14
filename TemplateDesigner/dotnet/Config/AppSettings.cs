@@ -159,6 +159,11 @@ public class AiAssistantSettings
     /// </summary>
     public string AnthropicApiKey { get; set; } = "";
 
-    /// <summary>Model pro AI Vision import (default: claude-sonnet-4-6).</summary>
-    public string VisionModel { get; set; } = "claude-sonnet-4-6";
+    /// <summary>Model pro AI Vision import PDF (default: claude-sonnet-5, adaptivní myšlení).
+    /// Temperature se u Sonnet 5+ neposílá (guard v AnthropicApiClient.ModelSupportsTemperature).</summary>
+    public string VisionModel { get; set; } = "claude-sonnet-5";
+
+    /// <summary>Model pro AI pomocníka (průvodce) a generátor šablon (default: claude-sonnet-5).
+    /// Pomocník volá s vypnutým myšlením (rychlé odpovědi), generátor s adaptivním (kvalita JSON).</summary>
+    public string AssistantModel { get; set; } = "claude-sonnet-5";
 }

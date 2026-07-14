@@ -1,5 +1,176 @@
 # Changelog
 
+## 2026-07-13 — Vizuální audit UI + rychlé výhry (pre-produkce)
+
+Audit modernosti vzhledu: základ zdravý (EDControlStyles flat theme, moderní paleta EDTheme —
+Fluent/VS Code styl). Opraveny nálezy, kde se theme nedodržoval:
+
+- **Barvy sjednoceny na EDTheme tokeny** — 44 hardcoded barev ve 14 souborech (v UI koexistovaly
+  3 šedé, 2 modré, 2 červené): `#888`→`Text.Muted`, `#CCCCCC`→`Border.Medium`,
+  `#C62828`/`OrangeRed`/`Firebrick`/`DarkRed`/`#D32F2F`→`Semantic.Danger`, `#2196F3`→`Accent.Blue`,
+  `#F8F8F8`/`#DDDDDD`→`Bg.Footer`/`Border.Light`. Zároveň prerekvizita dark mode (EDThemeDark existuje).
+- **TableEditorDialog: opraven skrytý bug** — lokální implicitní Button styl bez `BasedOn` přebíjel
+  flat theme → tlačítka v dialogu měla výchozí šedý WPF 3D vzhled. Jednořádkový `BasedOn`.
+- **Záložky levého panelu s ikonami** — 5 nesourodých Unicode dingbatů (▣⊞✎≣✦) nahrazeno
+  EDIcons ikonami (Panels/Grid/Edit/Module/Help) + text.
+- **Emoji pryč** — 💡 → „Tip:", ⚠ v červeném overflow bloku → jen text (blok sám je signál).
+- **Status bar chipy zaobleny** — agenda/instance/overflow `CornerRadius="3"` + svislý margin
+  (dřív ostré hrany na výšku celého baru).
+- **Vědomě po verzi** (→ roadmapa): toolbar textová tlačítka („M"/„O"/„Fit"/„PDF") → ikony ·
+  sjednocení ▲▼/↑↓ tlačítek · footer pattern + spacing tokeny v dialozích · dark mode zapojení ·
+  dialog header pattern.
+
+## 2026-07-13 — UX audit kritických flow + opravy (pre-produkce)
+
+Dva fan-out audity (kritická flow prvouživatele + konzistence dialogů). Základ zdravý
+(potvrzení destruktivních akcí, async vzory, jednotné Storno/Esc, 0× MessageBox). Opraveno:
+
+- **Recent files** — jediná cesta otevírající šablonu bez potvrzení neuložených změn (tichá
+  ztráta práce) → `ConfirmUnsavedChangesAsync` jako Ctrl+O/import.
+- **Startovní agenda kontextově** — priorita: EDISON kontrakt (`Agenda=<kód>`) → **poslední
+  použitá agenda uživatele** (`MainStatePref.LastAgendaCode`, capture při save stavu) → AD
+  fallback. Odstraněn zafixovaný dev „NECOMMITOVAT" default.
+- **PrintDialog „Tisk všech" už nemrazí** — fetch (HTTP per linka) + render na threadpoolu
+  (`AsyncRelayCommand` s vestavěným guardem), snapshot parametrů (sdílený dict se dá měnit
+  během fetche), render nad `DeepClone` šablony (nezávodí s preview renderem UI threadu),
+  overflow check na UI (levný, sdílí element cache); dvoufázový progress ve StatusText.
+- **AI klíč z menu s indikátorem** — wait-cursor + „Ověřuji dostupnost AI služby…" + guard
+  proti opakovanému kliku (cold start mlweb resolve = sekundy, timeout až 60 s ticha).
+- **„Uložit jako" kontroluje kolizi názvu** — stejné jméno v DB → potvrzení (dřív tichá
+  nerozlišitelná duplicita); best-effort, výpadek listu neblokuje uložení.
+- **PrintDialog**: `IsDefault` na Zavřít (Enter dřív nedělal nic), `ShowInTaskbar=False`.
+- **Pomocník**: Enter ve vstupním poli odešle dotaz (`IsDefault` v UserControlu mimo dialog
+  scope nefunguje → explicitní KeyDown).
+- Dříve týž den (UI kosmetika): titulek „Návrhář sestav", vykání v Pomocníkovi, „z databáze"
+  místo „z Caché", menu „soubor" místo „JSON soubor".
+- **Vědomě odloženo** (→ roadmapa): VPN-down hláška „není nakonfigurována", empty-state Pole
+  agendy, splash při startu, validace Save dialogů disabled tlačítkem, theme tokeny v editorech.
+
+## 2026-07-13 — Nápověda F1: datově řízená + fulltext hledání (Ctrl+F)
+
+- Obsah přesunut ze 500 řádků statického XAML do `HelpDialogViewModel.BuildContent()`
+  (přidání zkratky = 1 řádek); XAML jen šablony (kategorie → řádky akce/zkratka → tip).
+- **Hledání**: pole v hlavičce (Ctrl+F fokus, Esc smaže filtr), filtruje kategorie, akce,
+  zkratky i tipy, **bez diakritiky** („razeni" najde „řazení"); „Nic nenalezeno" stav.
+- Obsah srovnán s autoritativní tabulkou zkratek (ux-conventions) + doplněny nové sekce:
+  Tisk a export (členění, imposice, ořezové značky, varování přetečení), Data/agenda/instance
+  (Agenda×Varianta, štítky, F5), Výrazy a datová pole (formáty, aritmetika, podmínky, agregace,
+  {PAGE}); opraveny šipky (1 mm / Shift = mřížka / Ctrl = 0,5 mm), doplněny Ctrl+1/Ctrl+B/
+  copy-paste stylu; pryč uspaná Fixed tabulka. Texty bez anglicismů (chip→štítek,
+  canvas→plocha, toolbar→lišta nástrojů) — zákaznický jazyk.
+
+## 2026-07-13 — PDF import: Sonnet 5, robustnost proti halucinacím, standardní dialog
+
+Průchod PDF importu před produkcí (živě testováno na KV_DP A5 vývěsce — vizuálně
+i sémanticky nadprůměrný výsledek). Build 0 chyb, .NET 341/341.
+
+**Model + prompty:**
+- Vision import na `claude-sonnet-5` (adaptivní myšlení — percepční úloha; `max_tokens`
+  16000, myšlení se počítá do limitu). `ModelSupportsTemperature` guard — Sonnet 5+
+  temperature nedostane (jinak 400), starší modely dál 0.2.
+- Sdílený `Services/AiPromptHelpers.AppendDataSchemaSection` — enricher i vision měly
+  zkopírovaný identický blok formátování DataSchema (drift risk).
+- Vision umí sloupec „Platform" (nástupiště, TR3) → `StopFields.Nastupiste`.
+
+**Robustnost proti stochastice modelu (každý symptom z živého testu měl v kódu díru):**
+- *Přetečení*: model vrátil rel. bottom 1.015 → element vyšší než stránka. Clamp AI
+  souřadnic do 0.0–1.0 + pojistka v pipeline (pevné rozměry se clampnou do tiskové
+  plochy; JŘ elementy obsah vejdou auto-scalem). NotesLegend nově s pevným boxem
+  z AI bboxu (dynamická výška přetékala sekci s reálnými daty).
+- *Falešný QR*: BarcodeElement vznikne jen s důkazem v PdfPig geometrii
+  (`LooksLikeQrRegion` — shluk ≥15 malých čtverečků) + prompt „qrCode nevymýšlej".
+- *Překryv obrázků*: dedup PdfPig obrázků (krok 5 vs 6 přidával týž obrázek 2×),
+  placeholder se nepokládá přes existující element, krok 7 počítá obrázky do pokrytí.
+- *Chybějící StopList*: retry — když v odpovědi chybí seznam zastávek/mřížka odjezdů,
+  jeden opakovaný pokus; pokud ani pak, viditelné varování „doplňte ručně z palety"
+  (dřív tichá díra ve výsledku).
+
+**Standardní dialog (odstraněny volby, které uživateli nepatří):**
+- Zůstává: PDF soubor + stránky. Vše ostatní odvozeno: **typ importu z otevřené agendy**
+  (zastávková → AI JŘ import, jiná → obecný layout), AI vždy zapnuté, agenda = aktuální,
+  sloučení grafiky pevně „pouze čáry". Bez dostupné AI je JŘ import zablokovaný
+  (červená hláška s důvodem z mlweb — limit / chybí konfigurace).
+- **JŘ import z vícestránkového PDF = právě jedna stránka** (výběr „Stránka: N z M");
+  extrahuje/rasterizuje se jen ta jedna (dřív mlčky první + extrakce všech).
+- Debug checkbox + debug soubory vedle PDF jen pro vývojáře (lokální dev klíč),
+  bez popupu po importu. Mrtvá větev „AI obohacení textem" (haiku enricher) odstraněna
+  z VM (vision ji nahradil; služba zůstává pro případný fallback).
+- Generátor šablon: pole pro ruční API klíč jen pro vývojáře; hlášky nedostupnosti AI
+  jednotně nesou důvod z mlweb (pomocník / generátor / import). Menu „AI Asistent
+  šablon" před produkcí skryté (vidí jen vývojář); Import PDF zůstává pro všechny.
+
+## 2026-07-13 — EDISONAI/mlweb napojení: spravovaný API klíč + hlášení spotřeby
+
+Zákazníci nebudou mít vlastní Anthropic klíč — M-line jim ho spravuje přes mlweb
+(podpora.m-line.cz), stejně jako u EDISONAI chatu. Build 0 chyb, .NET 341/341.
+
+- **`Services/EdisonAiService.cs`** — replikace HTTP kontraktu EDISONAI (ne DLL reference —
+  WinForms/.NET 4.8 vs WPF/.NET 10): (1) mlweb config z Caché `ALVA.EDISONAI.API.Config
+  .GetMLWebConfig` (X-API-Key, baseUrl, isDev, devApiKey; jednou per session), (2) resolve
+  `POST /api/mline/agent/resolve {idfa, loginName}` → allowed + apiKey, **fail-closed**
+  (bez spojení/povolení/limitu AI nefunguje, hláška s reason), cache 60 s; jen provider
+  `claude`, (3) spotřeba `POST /api/mline/usage {..., source: "templatedesigner"}` —
+  best-effort na pozadí, odpověď `allowed` = gate pro další volání.
+- **Pořadí klíče:** lokální `AiAssistant.AnthropicApiKey` = vývojářský bypass (mlweb se nevolá,
+  spotřeba se nehlásí — dosavadní chování beze změny) → DEV server devApiKey → mlweb resolve.
+- **Model zůstává v režii TD** (AssistantModel/VisionModel) — resolvovaný `model` z mlweb je
+  konfigurace EDISONAI chatu; limity jsou tokenové, volba modelu je neobchází.
+- **`AnthropicApiClient`** čte `usage` z každé odpovědi (text i vision) → `ReportUsage`.
+- Call sites: pomocník fail-closed s hláškou; generátor + PDF import přes `TryGetAiApiKeyAsync`
+  (AI tam je volitelný krok — bez klíče dál fungují bez AI).
+- ⚠️ **Koordinace s autorem mlweb:** usage se hlásí se `source: "templatedesigner"` — ověřit,
+  že endpoint neznámý source přijme (jinak se TD spotřeba nezapočítá do limitu); limit je
+  sdílený s EDISONAI chatem per IdFa (záměr).
+
+## 2026-07-13 — AI vrstva: Sonnet 5 + audit promptů (pomocník i generátor)
+
+Před nasazením k zákazníkům (checklist „projít pomocníka"). Build 0 chyb, .NET 341/341.
+
+- **Model:** pomocník (průvodce) i generátor šablon na `claude-sonnet-5`, konfigurovatelné přes
+  `AiAssistant.AssistantModel` v appsettings. Vision import zůstává na `VisionModel`.
+- **Sonnet 5 API specifika ošetřená v `AnthropicApiClient`:** temperature se neposílá (nedefaultní
+  hodnoty S5 odmítá 400); pomocník volá s **explicitně vypnutým myšlením** (`thinking: disabled` —
+  jinak je na S5 adaptivně zapnuté → latence), generátor s adaptivním (kvalita JSON); parsování
+  odpovědi přes `ExtractText` = první `text` blok (thinking bloky můžou předcházet); generátor
+  `max_tokens` 16000 (myšlení se počítá do limitu).
+- **Generátor — opravy SystemPromptu proti reálnému modelu** (serializer tiše zahazuje neznámé
+  properties → ploché fontSize/bold se dřív ZTRATILY): TextElement vnořený `style` objekt;
+  Rectangle `backgroundColor` (ne `fillColor`); `TableElement` nahrazen `DynamicTableElement`
+  (dataSource povinné, `headerStyle`/`dataStyle`, minRows/maxRows/expression/rowVisibility);
+  plný výčet BarcodeType (+Ean13/Ean8/Pdf417/DataMatrix); přepsaný finální příklad.
+- **Pomocník — znalostní vrstva v `CapabilityCatalog`:** trojstavové pravidlo nejistoty (v podkladech
+  → přesná cesta / vím že chybí → „zatím neumíme" / nejistý → odkázat na F1/podporu) + grounding
+  (každý krok cituje cestu v UI); `GeneralIntro` přepsán — **UI mapa Co→Kde** (tisk/imposice/členění,
+  data/instance, vzhled, šablony v DB, navigace), Agenda×Varianta, výrazový jazyk, kompletní
+  zkratky dle autoritativní tabulky (odstraněn neexistující Ctrl+Shift+S), sekce „co ZATÍM neumí";
+  `ElementNote` pro DynamicTable (výrazy, zvýraznění, min/max, agregace) + LineTable, mrtvá Table
+  větev pryč.
+- **Eval sada** ~21 otázek (14 lookup + 6 chytáků na neexistující featury + 1 nejistota) v
+  `pre-version-checklist.md` pro ruční otestování.
+
+## 2026-07-13 — UX fixy z pre-version průchodu (blok A checklistu)
+
+Nálezy z ručního testování před úterní verzí. Build 0 chyb, .NET 340/340.
+
+- **Zoom ke kurzoru** — Ctrl+kolečko drží bod pod myší na místě (přepočet scroll offsetů po
+  layout passu); dřív zoom „utíkal" doleva a uživatel se musel doscrollovat.
+- **Snap rozměrů při vzniku elementu** — se zapnutým snapem se na krok mřížky zaokrouhlí
+  i šířka/výška (výchozí velikosti 80×8, 190×25… nebyly násobky kroku → spodní hrana nikdy
+  neseděla na mřížce). Element menší než krok (čára) se nezvětšuje.
+- **Nové defaulty designeru:** SnapToGrid ZAP + krok mřížky **1 mm** (dřív VYP + 5 mm — hrubý krok
+  byl hlavní zdroj pocitu „nepřesného" snapu). Per-user MainState / per-template EditorPreferences
+  mají přednost — stávající uživatelé svůj stav neztratí.
+- **Imposice viditelná ve statusu** — každý export s aktivní imposicí vypíše „… · imposice 2×1
+  na list 210×297 mm" (per-agenda persistovaná volba jinak překvapila „proč mám půlku stránek").
+- **Paleta/menu:** Kód (QR…) před Tabulkou. **Šipka směru:** labely voleb vysvětlují kreslení
+  u okraje elementu (u širokého elementu je vpravo „daleko" — vypadalo jako nefunkční).
+- Do backlogu (roadmap): snap/indikace čtverce při resize · per-šablona hodnoty tiskových parametrů.
+- **`Released` flag agend (blok B průchodu):** výběr agendy nabízí jen zveřejněné — Obecná +
+  Zastávkový JŘ (AD/MHD); Linkový JŘ (pilot v1) a Faktury (vzorová) skryté. Data-driven:
+  `BaseAgenda.Released` parametr (default 0 — nová agenda „neuteče" omylem), registr wire aditivně
+  (`released` bool, starší server → default true). Aktuální agenda šablony vidět vždy;
+  existující šablony + EDISON launch nezveřejněných fungují dál.
+
 ## 2026-07-11 — Dvouosý model agend: Agenda × Varianta (názvosloví dle legacy analýzy)
 
 Roadmap „typ šablony vs agenda" (podnět kolegy). Analýza legacy (RG strom `agenda→oblasti→sestavy`
@@ -260,7 +431,7 @@ chyběl symbolový JŘ font (dlouho odložený bod „C2"). Odblokováno dodán�
 - **Na znamení `x`/`y`/`z` = prostý text**, ne piktogram (helper `SymbolJeText`, dle konvence) — jinak
   font na pozici `x` kreslí vláček. Bezbariér zůstává piktogram.
 - **NZ** (negativní) beze změny — ruční inverzní box (už bylo správně).
-- **Katalog symbolů** (`.claude/docs/symboly-jr-katalog.md`) — převzatá mapa z legacy `GSId` (66 symbolů:
+- **Katalog symbolů** (`.claude/docs/elementy-architektura.md`) — převzatá mapa z legacy `GSId` (66 symbolů:
   id·znak·význam·render-mód) + zdroje, jako reference pro další dotažení (text-multichar, kompozity).
 - Čistě render vrstva → gold netknuté, 305/305 .NET. Živě ověřen render (vozíček, na-znamení x, SK přepnutí).
 
@@ -764,7 +935,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
   (návrhový `{POLE}` placeholder / datový / prázdný padding); prázdné padding řádky drží mřížku,
   rámeček i zebru, bez zvýraznění. Výška↔render parita (`EffectiveRowCount` = Max ořez + Min padding),
   kombinuje se s filtrem viditelnosti. DynamicTable-only (kategorie 2, viz níže).
-- 📐 **Klasifikační pravidlo featur** zapsáno do `tabulkove-elementy-jadro.md §0b` — rozhodnutí z
+- 📐 **Klasifikační pravidlo featur** zapsáno do `elementy-architektura.md §0b` — rozhodnutí z
   diskuze 2026-07-05: (1) featury nad daty řádku → sdílený helper do všech tabulek; (2) struktura
   sloupce / počet řádků → jen generická DynamicTable (počítaná pole, min/max); (3) doménové
   renderování → element-specifické. Generické featury jsou pro daná data dostupné přes DynamicTable
@@ -1197,7 +1368,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 
 ## 2026-07-02 — Roadmap: merge akčních položek z analýzy legacy náhrady
 
-- ✅ **Akční položky z `analyza-stav-a-legacy-nahrada-2026-07.md` zamergovány do `roadmap.md`**
+- ✅ **Akční položky z `legacy-nahrada.md` zamergovány do `roadmap.md`**
   (jedno místo pravdy, analýza zůstává jako evergreen referenční detail se status poznámkou):
   - Nová sekce **„Architektonický track T1–T6"** (T1a testy ✅, T3 ✅, T2 async export ⬅️ další,
     T1b Caché testy, T4 strangler, T5 duplikace, T6 drobnosti) + 3. aktivní track nahoře.
@@ -1267,7 +1438,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 - **Nálezy z psaní testů:** (a) early-out v `TemplateMigrator.Migrate` porovnává verze string
   equality, ne VersionComparerem → „1.0" se hlásí jako migrovaná (neškodné, zvážit při T3);
   (b) `dotnet sln add` vygeneroval kolizní solution folder „TemplateDesigner" → ručně odstraněn ze sln.
-- Kontext + celý plán: [`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md)
+- Kontext + celý plán: [`legacy-nahrada.md`](legacy-nahrada.md)
   (technický audit T1–T6 + legacy REPORTGENERATOR/TiskMHD/TiskJR + roadmapa náhrady).
 - **Druhá vlna (tentýž den): TextStyle kaskáda + helpery → celkem 150 testů (149 ✅ / 1 skip):**
   - `Models/TextStyleTests` — CSS-like cascade (dědění, override, 3vrstvá kaskáda, trim fontu,
@@ -1576,7 +1747,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 - ✅ **Řazení poznámek** — `Razeni` (výchozí / podle délky). Dorovnává legacy „Trid_delK".
 - Vystaveno v EDInputformu (`NotesLegendElementEdit.cls`, skupina „Rozložení") i inline panelu.
   Default (1 sloupec, inline, výchozí řazení) = beze změny existujících šablon. Reference:
-  legacy návrhář `formTISKMHDSekcePoznamkyEdit` (viz `ad-jr-typy-poznamek-layout-analyza.md §1b`).
+  legacy návrhář `formTISKMHDSekcePoznamkyEdit` (viz `ad-data-mapa.md §1b`).
 
 ## 2026-06-21 — AD #7161 D5 (skrýt legendu „× na znamení") + D6 ověřeno
 
@@ -1595,7 +1766,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
   jako #7955. Neověřeno na datech (žádná linka 100% bezbariér v KV_DP/CB_CSADAD — latentní).
 - 🔧 **MCP `edison-cache` opraven** — deployovaný exe byl neúplný (chyběl runtime); rebuild +
   `.mcp.json` cesta na podsložku `C:\Edison\EdisonCacheMcp\`. Ověřeno proti gold oraclu (CB_CSADAD).
-- 📄 **AD analýzy sloučeny** do `ad-jr-nastaveni-linky-analyza.md`; přípoje/km přesunuty do linkových JŘ.
+- 📄 **AD analýzy sloučeny** do `ad-data-mapa.md`; přípoje/km přesunuty do linkových JŘ.
 
 ## 2026-06-20 — AD #7955: co schovat v rozsahu „nepoznámkovat" (Fáze 2)
 
@@ -1625,7 +1796,7 @@ přidá se zpět jen na konkrétní poptávku, čistě, ne jako poloviční ře�
 
 ## 2026-06-20 — AD nastavení linky 1:1 (track PRIORITA 2b)
 
-- 📄 **Business analýza nastavení tisku na úrovni linky** — `ad-jr-nastaveni-linky-analyza.md`:
+- 📄 **Business analýza nastavení tisku na úrovni linky** — `ad-data-mapa.md`:
   podchyceno, jak legacy čte nastavení linky (taby MHD / MHD-další / dialog Nastavení tisku) přes 3
   readery (`gPrpLin`/`gPrpLinMhd`/`gSetLinPrt^JRapiLin*`), per-feature business význam + storage v
   `^JRL` + zda to máme/nemáme. Klíč: `ALVA.TISKMHD.Data` je jen formátovač, logika je v MAC `JRapi*`.

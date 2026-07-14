@@ -21,7 +21,7 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="#555">
+        <TextBlock Grid.Row="0" TextWrapping="Wrap" Margin="0,0,0,8" Foreground="{DynamicResource EDTheme.Text.Secondary}">
             Pravidla se vyhodnocují shora dolů — <Bold>první splněné vyhrává</Bold>. Podmínka je výraz nad poli
             řádku, např. <Run FontFamily="Consolas">{STAV}=="STORNO"</Run> nebo <Run FontFamily="Consolas">{CENA} &gt; 1000</Run>.
         </TextBlock>
@@ -49,7 +49,7 @@
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border Height="18" Margin="4,2" CornerRadius="2"
-                                        BorderBrush="#888" BorderThickness="1"
+                                        BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1"
                                         Background="{Binding BackgroundColor, Converter={StaticResource HexToBrush}}"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -68,7 +68,7 @@
         <!-- Barva vybraného pravidla -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
             <TextBlock Text="Barva pozadí:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-            <Border Width="40" Height="18" CornerRadius="2" BorderBrush="#888" BorderThickness="1"
+            <Border Width="40" Height="18" CornerRadius="2" BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1"
                     VerticalAlignment="Center" Margin="0,0,8,0"
                     Background="{Binding SelectedRule.BackgroundColor, Converter={StaticResource HexToBrush}}"/>
             <Button Content="Vybrat…"  Command="{Binding PickColorCommand}"  Padding="10,3" Margin="0,0,6,0"/>

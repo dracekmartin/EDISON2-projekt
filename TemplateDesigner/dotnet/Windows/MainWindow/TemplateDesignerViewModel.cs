@@ -219,7 +219,7 @@ public class TemplateDesignerViewModel : EDViewModel
         catch (Exception ex)
         {
             if (gen != _previewDataGeneration) return;
-            StatusText = $"Chyba načítání: {ex.Message}";
+            StatusText = $"⚠ Chyba načítání: {ex.Message}";
         }
     }
 
@@ -498,14 +498,15 @@ public class TemplateDesignerViewModel : EDViewModel
 
         State.CurrentTemplate = CreateSampleTemplate();
 
-        // Startovní agenda z EDISONMAIN2 kontraktu (inputParam "Agenda=<kód>" — podle uzlu
-        // stromu legacy shellu / MHD2 tlačítka). Neznámý kód → default ze CreateSampleTemplate.
-        if (startupAgendaCode is not null)
-        {
-            var match = resolvedAgendas.FirstOrDefault(a =>
-                string.Equals(a.Code, startupAgendaCode, StringComparison.OrdinalIgnoreCase));
-            if (match is not null) State.CurrentTemplate.AgendaCode = match.Code;
-        }
+        // Startovní agenda — priorita: (1) EDISONMAIN2 kontrakt (inputParam "Agenda=<kód>" dle
+        // uzlu stromu shellu / MHD2 tlačítka), (2) poslední použitá agenda uživatele (per-user
+        // prefs), (3) fallback ze CreateSampleTemplate. Neznámý kód se přeskočí.
+        string? ResolveKnown(string? code) => code is null ? null
+            : resolvedAgendas.FirstOrDefault(a =>
+                string.Equals(a.Code, code, StringComparison.OrdinalIgnoreCase))?.Code;
+        var startAgenda = ResolveKnown(startupAgendaCode)
+                          ?? ResolveKnown(preferences?.MainState?.LastAgendaCode);
+        if (startAgenda is not null) State.CurrentTemplate.AgendaCode = startAgenda;
 
         RebuildSections();
 
@@ -576,7 +577,8 @@ public class TemplateDesignerViewModel : EDViewModel
             ShowPreviewPane:    showPreviewPane,
             LeftPanelWidthPx:   leftPanelPx,
             PreviewPanelWidthPx: previewPanelPx,
-            ActiveLeftTabIndex: activeTabIndex);
+            ActiveLeftTabIndex: activeTabIndex,
+            LastAgendaCode:     State.CurrentTemplate.AgendaCode);
 
         return Preferences.SaveMainStateAsync(snapshot);
     }
@@ -804,7 +806,7 @@ public class TemplateDesignerViewModel : EDViewModel
         int elementCount = section.Elements.Count;
         if (elementCount > 0)
         {
-            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci \"{section.Name}\" s {elementCount} elementy?"))
+            if (!PopupDisplayer.Confirm($"Opravdu smazat sekci „{section.Name}“ s {elementCount} elementy?"))
                 return;
         }
 
@@ -849,7 +851,7 @@ public class TemplateDesignerViewModel : EDViewModel
         try
         {
             _sectionTemplates.Save(section, name);
-            PopupDisplayer.Info($"Šablona '{name}' byla uložena.");
+            PopupDisplayer.Info($"Šablona „{name}“ byla uložena.");
         }
         catch (Exception ex)
         {
@@ -946,7 +948,7 @@ public class TemplateDesignerViewModel : EDViewModel
         var agendaCode = State.CurrentTemplate.AgendaCode;
         if (string.IsNullOrEmpty(agendaCode))
         {
-            PopupDisplayer.Info("Nejprve vyber agendu (Ctrl+Shift+A).");
+            PopupDisplayer.Info("Nejprve vyberte agendu (Ctrl+Shift+A).");
             return;
         }
 
@@ -973,14 +975,20 @@ public class TemplateDesignerViewModel : EDViewModel
 
     private async Task ChangeAgendaAsync()
     {
-        // Registr agend (dvouosý: agenda × varianta) — dialog z něj staví seskupený výběr.
-        if (_agendaEntries.Count == 0)
+        // Registr agend (dvouosý: agenda × varianta) — dialog staví seskupený výběr jen ze
+        // ZVEŘEJNĚNÝCH agend (Released; pilotní jako Linkový JŘ / Faktury se uživatelům nenabízí).
+        // Aktuální agenda šablony se ukáže vždy — i nezveřejněná (interní/vývojová šablona).
+        var current = State.CurrentTemplate.AgendaCode;
+        var visible = _agendaEntries
+            .Where(a => a.Released || a.Code.Equals(current, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (visible.Count == 0)
         {
             PopupDisplayer.Info("Žádné agendy nejsou nakonfigurované.");
             return;
         }
 
-        var vm = new ChangeAgendaDialogViewModel(_agendaEntries, State.CurrentTemplate.AgendaCode);
+        var vm = new ChangeAgendaDialogViewModel(visible, current);
         if (Dialogs?.ShowChangeAgenda(vm) != true || vm.ChosenCode is null) return;
 
         // Stejná agenda — nic neměním (vyhne se zbytečnému potvrzování neuložených změn).
@@ -1251,6 +1259,21 @@ public class TemplateDesignerViewModel : EDViewModel
             State.CurrentTemplate.AgendaCode);
         if (Dialogs?.ShowSaveToCache(vm) != true) return false;
 
+        // Kolize názvu: bez kontroly by vznikla tichá duplicita (dvě šablony stejného jména,
+        // v přehledu nerozlišitelné). Best-effort — když list selže, uložení neblokujeme.
+        try
+        {
+            var existing = await TemplateStorage.ListAsync(vm.AgendaCode);
+            var clash = existing.FirstOrDefault(t =>
+                string.Equals(t.Name, vm.Name, StringComparison.OrdinalIgnoreCase)
+                && t.TemplateId != State.CurrentTemplate.Id);
+            if (clash is not null && !PopupDisplayer.Confirm(
+                    $"Šablona „{vm.Name}\" už v databázi existuje (upravena {clash.ModifiedAt}).\n" +
+                    "Uložit i tak jako další šablonu se stejným názvem?"))
+                return false;
+        }
+        catch (CacheTemplateException) { /* kontrola je best-effort */ }
+
         // Pro "Save As" → nový TemplateID, aby nepřepsal originál v Caché
         State.CurrentTemplate.Id = Guid.NewGuid();
         State.CurrentTemplate.Name = vm.Name;
@@ -1309,7 +1332,8 @@ public class TemplateDesignerViewModel : EDViewModel
                 StatusText = $"Generuji PDF: {p.done}/{p.total} datových stránek…");
             await Task.Run(() => RenderPdfToFile(path, pages, snapshot, renderProgress, sheets));
 
-            StatusText = $"PDF uloženo: {Path.GetFileName(path)} ({pages.Count} datových stránek)";
+            StatusText = $"PDF uloženo: {Path.GetFileName(path)} ({pages.Count} datových stránek)"
+                       + (sheets is null ? "" : $" · {sheets.ShortLabel}");
             OpenExportedFile(path);
         }
         finally { _exportRunning = false; }
@@ -1369,7 +1393,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (!IsDirty) return true;
 
         var result = PopupDisplayer.ConfirmYesNoCancel(
-            "Šablona obsahuje neuložené změny. Chcete je uložit?",
+            "Šablona obsahuje neuložené změny. Uložit je?",
             title: "Neuložené změny");
 
         return result switch
@@ -2527,6 +2551,21 @@ public class TemplateDesignerViewModel : EDViewModel
             element = CreateElementByType(elementType!, mmX, mmY);
         }
 
+        // Snap i rozměrů — výchozí velikosti (80×8, 190×25…) nejsou násobky kroku mřížky,
+        // takže bez tohoto spodní/pravá hrana nikdy neseděla na mřížce a element působil
+        // „mimo grid" hned po přidání. Zaokrouhlení na 0 (element menší než krok) → původní rozměr.
+        if (State.SnapToGrid)
+        {
+            float g = State.GridSize;
+            static float SnapSize(float v, float step)
+            {
+                float snapped = MathF.Round(v / step) * step;
+                return snapped > 0 ? snapped : v;
+            }
+            element.Width = SnapSize(element.Width, g);
+            if (element.Height is { } h) element.Height = SnapSize(h, g);
+        }
+
         Execute(new AddElementCommand(targetSection, element));
         ActivateSection(targetSection);
         State.SelectedElements.Clear();
@@ -2589,8 +2628,8 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Sample template ───────────────────────────────────────────────────────
-    // DEV (test AD): výchozí agenda = Zastávkový JŘ (AD) + jedna sekce přes celou A4. NECOMMITOVAT —
-    // produkční starter je MHD + Záhlaví/Obsah/Patička (viz git). Lokální testovací tweak.
+    /// <summary>Fallback startovní šablona — agendu typicky přepíše EDISON kontrakt nebo
+    /// poslední použitá agenda uživatele (viz ctor); AD je default pro první spuštění.</summary>
     public static Template CreateSampleTemplate()
     {
         var t = new Template { Name = "Nová šablona", AgendaCode = "ZASTAVKOVY_JR_AD" };

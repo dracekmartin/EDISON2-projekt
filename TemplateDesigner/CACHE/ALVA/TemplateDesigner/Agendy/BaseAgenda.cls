@@ -54,6 +54,12 @@ Parameter Variant As %String = "";
 /// User-facing label varianty (např. "AD (linková doprava)", "MHD"); "" = bez varianty.
 Parameter VariantLabel As %String = "";
 
+/// Zveřejněná pro uživatele (1) vs interní/pilotní (0, default). Nezveřejněná agenda se
+/// nenabízí v UI výběru (Změnit agendu, filtr šablon), ale zůstává plně funkční — existující
+/// šablony s jejím kódem se otevřou, EDISON launch funguje. Zveřejnění = vědomý krok (přepnout
+/// na 1), nová agenda „neuteče" k uživatelům omylem.
+Parameter Released As %Boolean = 0;
+
 /// Jméno IN parametru GetData, kterým se předává vybraná instance (linka/faktura).
 /// Zastávkové a knižní JŘ = "LINKA_ID", ostatní default "INSTANCE_ID". Okno ho čte
 /// z registru (AgendaRegistryEntry) → žádné hardcoded větvení dle kódu agendy.

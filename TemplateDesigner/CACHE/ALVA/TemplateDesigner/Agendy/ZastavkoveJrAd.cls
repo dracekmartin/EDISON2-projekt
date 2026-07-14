@@ -4,14 +4,14 @@ Include GENERAL
 /// + příměstská doprava (legacy JRMAIN). Sourozenec `ZastavkoveJrMhd` — stejný výstup
 /// (zastávková vývěska: StopList + DepartureGrid + NotesLegend), jiný datový zdroj.
 ///
-/// Datový zdroj (legacy globály, viz TD `cache-database-linky.md`):
+/// Datový zdroj (legacy globály, viz TD `ad-data-mapa.md`):
 /// - `^[dataDB]JRL(sku,lin,...)` — linka, trasa ("J"), spoje ("T"/"Z"), trasy spojů ("W"), PATCH
 /// - `^[dataDB]JRZ(czst,...)`    — zastávky (názvy, zóny, GPS, časové varianty)
 /// - `^[dataDB]JRSET(...)`       — číselníky (zóny, NZ, nadpisy sloupců)
 ///
 /// Reimplementace legacy větve `ALVA.TISKMHD.Data.LoadData` s `VolanoZ=JRMAIN`
 /// (→ `WinTiskMhd^JRapiExp10`). Legacy výstup lze vygenerovat jako zlatou referenci přes
-/// `cache_query ALVA.TISKMHD.Data/LoadData` (viz `cache-database-linky.md` §9).
+/// `cache_query ALVA.TISKMHD.Data/LoadData` (viz `ad-data-mapa.md` §9).
 ///
 /// **Stav:** GetData fázový engine hotový — trasa, spoje, FTL sloupce (skupiny dnů), odjezdy,
 /// atributy zastávek, datumová omezení (jede/nejede), dopravce, titulek/informace, **rozdíly tras**
@@ -19,7 +19,7 @@ Include GENERAL
 /// Ověřeno 1:1 proti zlaté referenci (0365001: marker "B" = "neobsluhuje zast. Lesní hřbitov").
 /// **Zbývá pro úplné 1:1:** atributy spoje (např. bezbariér "72") na minutách + legendě, adresa
 /// provozovny v POPIS_DOPRAVCE, časy jízdy ve StopListu (TrasaMin), ověřit filtr atributů zastávek
-/// A/L. Detail `cache-database-linky.md` §10.
+/// A/L. Detail `ad-data-mapa.md` §10.
 ///
 /// Sdílené Build*/AddStandard* helpery jsou zatím **duplikované** z `ZastavkoveJrMhd`
 /// (stejný výstupní formát). Extrakce do společného helperu/baseclass až podle výsledků
@@ -36,6 +36,8 @@ Parameter AgendaLabel = "Zastávkový JŘ";
 Parameter Variant = "AD";
 
 Parameter VariantLabel = "AD (linková doprava)";
+
+Parameter Released = 1;
 
 Parameter InstanceParamName = "LINKA_ID";
 
@@ -212,7 +214,7 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 ///   4. Promítne odjezdy per zastávka × sloupec, anotace + datumová omezení
 ///   5. Sestaví poznámky (legenda: atributy + omezení)
 ///   6. Iteruje zastávky × směry → OUT[$i] = JSON stránka (values + rows ZASTAVKY/ODJEZDY/POZNAMKY)
-/// Zlatá reference výstupu: `cache-database-linky.md` §9.
+/// Zlatá reference výstupu: `ad-data-mapa.md` §9.
 ClassMethod GetData(ByRef sys As %String) As %Status
 {
     s err = ""

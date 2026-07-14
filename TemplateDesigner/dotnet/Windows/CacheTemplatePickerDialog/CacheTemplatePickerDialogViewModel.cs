@@ -55,8 +55,10 @@ public class CacheTemplatePickerDialogViewModel : EDViewModel
         _service = service;
 
         // Dvouosé popisky seřazené po agendách (Zastávkový JŘ · AD / · MHD vedle sebe).
+        // Jen zveřejněné agendy (Released) — pilotní se ve filtru nenabízí; jejich šablony
+        // zůstávají dosažitelné přes „Všechny agendy".
         AgendaFilters = new List<AgendaFilterVM> { new(null, "Všechny agendy") };
-        foreach (var a in agendas.OrderBy(x => x.EffectiveAgendaLabel).ThenBy(x => x.Variant))
+        foreach (var a in agendas.Where(x => x.Released).OrderBy(x => x.EffectiveAgendaLabel).ThenBy(x => x.Variant))
             AgendaFilters.Add(new AgendaFilterVM(a.Code, a.DisplayName));
 
         // Systémové (M-line) jsou read-only — otevřít lze, mazat/přejmenovat ne.

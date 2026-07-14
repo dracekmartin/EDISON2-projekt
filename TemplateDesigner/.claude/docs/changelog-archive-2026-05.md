@@ -706,7 +706,7 @@ Koherentní refactor přes 4 commity: sjednocení stylování buněk napříč v
 - ✅ **`DepartureGridElement`** — smazána ghost property `ShowZkraceneOznaceniLinky` (declaration, PropertyDescriptor, Clone); nikde se nečetla, klamala uživatele v panelu vlastností
 - ✅ **Datová property `ZkraceneOznaceniLinky`** na `OdjezdData` zůstává (reálně se plní z Caché `ZKRACENE_OZNACENI_LINKY`)
 - ✅ **Existující šablony** (`kv.json`, `kv_zaklad.json`, `test_cb_na_sirku.json`) — ghost klíč `showZkraceneOznaceniLinky` v JSON se deserializerem tiše ignoruje, migrace nepotřeba
-- ✅ **Docs** — odstraněno ze seznamu properties v `schedule-elements-architecture.md`
+- ✅ **Docs** — odstraněno ze seznamu properties v `elementy-architektura.md`
 
 ---
 

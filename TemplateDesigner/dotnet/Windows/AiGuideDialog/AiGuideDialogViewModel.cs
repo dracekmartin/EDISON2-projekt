@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text;
 using EDControls.EDViewModel;
-using TemplateDesigner.Config;
 using TemplateDesigner.Services;
 
 namespace TemplateDesigner.Windows.AiGuideDialog;
@@ -23,12 +22,11 @@ public class AiGuideMessage
 /// Neměňuje šablonu, jen radí kde co je a jak na to. Znalosti ze <see cref="CapabilityCatalog"/>.
 /// Kontext (agenda, vybraný element, počet sekcí) se čte živě při každém dotazu přes
 /// <paramref name="contextProvider"/>. Konverzace je session-scoped (po restartu se vyčistí).
-/// Model: Haiku.
+/// Model: konfigurovatelný (AiAssistant.AssistantModel, default Sonnet 5) s VYPNUTÝM myšlením —
+/// lookup nad kompletním katalogem nepotřebuje reasoning a uživatel čeká okamžitou odpověď.
 /// </summary>
 public class AiGuidePanelViewModel : EDViewModel
 {
-    private const string Model = "claude-haiku-4-5";
-
     private readonly Func<AiGuideContext> _contextProvider;
 
     public ObservableCollection<AiGuideMessage> Messages { get; } = [];
@@ -68,10 +66,15 @@ public class AiGuidePanelViewModel : EDViewModel
         var question = Input.Trim();
         if (question.Length == 0) return;
 
-        var apiKey = AppSettings.Current?.AiAssistant.AnthropicApiKey;
-        if (string.IsNullOrWhiteSpace(apiKey))
+        // Lokální klíč (dev) → napřímo; jinak vyzvednutí z mlweb přes EdisonAiService (fail-closed).
+        string apiKey;
+        try
         {
-            PopupDisplayer.Info("Chybí Anthropic API klíč. Nastav ho v templatedesigner.appsettings.local.json.");
+            apiKey = await EdisonAiService.GetApiKeyAsync();
+        }
+        catch (EdisonAiException ex)
+        {
+            PopupDisplayer.Info(ex.Message);
             return;
         }
 
@@ -86,8 +89,11 @@ public class AiGuidePanelViewModel : EDViewModel
             var systemPrompt = CapabilityCatalog.BuildSystemPrompt(
                 ctx.AgendaName, ctx.SelectedElementType, ctx.SectionCount, ctx.ElementKind);
 
+            // Sonnet 5: temperature se neposílá (nedefaultní hodnoty odmítá), myšlení explicitně
+            // vypnuté (jinak je na S5 adaptivně ZAPNUTÉ i bez parametru → latence + tokeny).
             var answer = await AnthropicApiClient.CallApiAsync(
-                apiKey, systemPrompt, BuildConversationPrompt(), Model, maxTokens: 1024, temperature: 0.2);
+                apiKey, systemPrompt, BuildConversationPrompt(),
+                AnthropicApiClient.AssistantModel, maxTokens: 2048, disableThinking: true);
 
             Messages.Add(new AiGuideMessage
             {

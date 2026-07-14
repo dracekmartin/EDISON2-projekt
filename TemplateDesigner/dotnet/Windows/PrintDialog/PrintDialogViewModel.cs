@@ -51,7 +51,7 @@ public class PrintDialogViewModel : EDViewModel
     public string StatusText { get => _statusText; set => Set(ref _statusText, value); }
 
     public RelayCommand ExportPdfCommand { get; }
-    public RelayCommand ExportRealDataPdfCommand { get; }
+    public AsyncRelayCommand ExportRealDataPdfCommand { get; }
 
     /// <summary>Code-behind napojí na PreviewCanvas.RenderToPdf. Třetí parametr = imposice (null = vypnutá).</summary>
     public Action<string, DataContext?, SheetLayoutOptions?>? RequestRenderPdf { get; set; }
@@ -89,7 +89,7 @@ public class PrintDialogViewModel : EDViewModel
         _preferences = preferences;
 
         ExportPdfCommand = Command(ExportPdf);
-        ExportRealDataPdfCommand = Command(ExportRealDataPdf, () => _buildRealData is not null);
+        ExportRealDataPdfCommand = CommandAsync(ExportRealDataPdfAsync, () => _buildRealData is not null);
 
         // _paramValues přichází už naplněný (preview lišta defaults + případně saved PrintParams
         // aplikované při openu šablony). Pro chybějící klíče (nový parametr přidaný po předchozím
@@ -183,15 +183,15 @@ public class PrintDialogViewModel : EDViewModel
             var data = _buildMockData(_paramValues);
             RequestRenderPdf?.Invoke(filePath, data, sheets);
             OpenPdf(filePath);
-            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}";
+            StatusText = $"PDF uloženo: {Path.GetFileName(filePath)}{(sheets is null ? "" : $" · {sheets.ShortLabel}")}";
         }
         catch (Exception ex)
         {
-            StatusText = $"Chyba: {ex.Message}";
+            StatusText = $"⚠ Chyba: {ex.Message}";
         }
     }
 
-    private void ExportRealDataPdf()
+    private async Task ExportRealDataPdfAsync()
     {
         if (_buildRealData is null) return;
 
@@ -212,8 +212,13 @@ public class PrintDialogViewModel : EDViewModel
         try
         {
             PersistParams();
-            StatusText = "Načítání dat z databáze...";
-            var dataPages = _buildRealData(_paramValues);
+            StatusText = "Načítání dat z databáze…";
+
+            // Fetch na threadpoolu — batch přes všechny instance jsou HTTP volání per linka;
+            // sync by zamrazil dialog na desítky sekund (R1). Snapshot parametrů: uživatel je
+            // může během fetche v dialogu měnit (sdílený dict s preview lištou).
+            var paramsSnapshot = new Dictionary<string, object?>(_paramValues);
+            var dataPages = await Task.Run(() => _buildRealData(paramsSnapshot));
 
             if (dataPages is null or { Count: 0 })
             {
@@ -221,38 +226,48 @@ public class PrintDialogViewModel : EDViewModel
                 return;
             }
 
-            // Agregovaná kontrola přetečení přes všechny instance — layout-only, levné (data už máme).
+            // Kontrola přetečení na UI threadu (layout-only, levná) — sdílí element cache
+            // s preview renderem, na pozadí by závodila.
             var (overflow, totalPages) = RequestOverflowCheck?.Invoke(dataPages) ?? (0, dataPages.Count);
+
+            StatusText = $"Generuji PDF ({totalPages} stránek)…";
+            string sheetInfo = sheets is null ? "" : $" · {sheets.ShortLabel}";
 
             if (splitMode == ExportSplitMode.Single)
             {
-                RequestRenderMultiPdf?.Invoke(target, dataPages, sheets);
+                // Render na threadpoolu — callback rendruje nad snapshotem šablony (DeepClone
+                // ve wiring), takže nekoliduje s preview renderem UI threadu.
+                await Task.Run(() => RequestRenderMultiPdf?.Invoke(target, dataPages, sheets));
                 OpenPdf(target);
                 StatusText = overflow > 0
-                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}"
-                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}";
+                    ? $"⚠ PDF uloženo, ale {overflow} z {totalPages} stránek přetéká: {Path.GetFileName(target)}{sheetInfo}"
+                    : $"PDF uloženo ({totalPages} stránek): {Path.GetFileName(target)}{sheetInfo}";
                 return;
             }
 
             // Split — seskup instance a vyrenderuj jedno PDF per skupina (existující multi-render
             // per cesta). Název každého souboru = pattern {POLE} vyhodnocený nad první instancí skupiny.
-            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            int fileCount = 0;
-            foreach (var group in GroupForExport(dataPages, splitMode))
+            int fileCount = await Task.Run(() =>
             {
-                var name = BuildFileName(group[0], pattern, usedNames);
-                RequestRenderMultiPdf?.Invoke(Path.Combine(target, name + ".pdf"), group, sheets);
-                fileCount++;
-            }
+                var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                int files = 0;
+                foreach (var group in GroupForExport(dataPages, splitMode))
+                {
+                    var name = BuildFileName(group[0], pattern, usedNames);
+                    RequestRenderMultiPdf?.Invoke(Path.Combine(target, name + ".pdf"), group, sheets);
+                    files++;
+                }
+                return files;
+            });
 
             OpenFolder(target);
             StatusText = overflow > 0
-                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká"
-                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem)";
+                ? $"⚠ {fileCount} PDF do složky, ale {overflow} z {totalPages} stránek přetéká{sheetInfo}"
+                : $"{fileCount} PDF uloženo do složky ({totalPages} stránek celkem){sheetInfo}";
         }
         catch (Exception ex)
         {
-            StatusText = $"Chyba: {ex.Message}";
+            StatusText = $"⚠ Chyba: {ex.Message}";
         }
     }
 

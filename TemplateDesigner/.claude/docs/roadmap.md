@@ -1,6 +1,6 @@
 # Roadmap
 
-> **Stav k 2026-07-11.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-13.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet — patří do archivu.
 
 ---
@@ -9,9 +9,13 @@
 
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Import PDF — doladění** (nice-to-have, projít před produkcí) — AI Vision pipeline funguje; chce ladění na širší sadě JŘ + detekce tabulek z mřížky čar. Detail: sekce „Import PDF" níže.
+1. **Vydání verze** — zbytek [`pre-version-checklist.md`](pre-version-checklist.md): push (pre-push testy),
+   publish blok E + smoke, release kroky, interní poznámka + zákaznický e-mail.
 2. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
 3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+
+*(Import PDF „projít před produkcí" — HOTOVO 2026-07-13: Sonnet 5, anti-halucinace, retry,
+standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce „Import PDF" níže.)*
 
 ---
 
@@ -39,10 +43,24 @@
   První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** — tržní minimum
   (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
+- **UX drobnosti z pre-version průchodu (2026-07-13):** snap/indikace čtverce při resize obdélníku
+  (à la Figma — threshold + vizuální hint, S–M) · **per-šablona hodnoty tiskových parametrů**
+  (PrintDialog volba „načíst z aktuální šablony"; dnes per-agenda — chce design kam uložit
+  a co má přednost; navazuje na existující TODO „extrakce na Template/agenda-config", M)
+- **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
+  „nedostupná" od „není nakonfigurována" + varování při startu (M) · empty-state panelu Pole
+  agendy bez DB (S) · splash při startu (~3 s .Wait bez okna, M) · validace Save dialogů
+  disabled tlačítkem místo popupu (M) · jednotný resize grip (S) · dvojklik v Instance
+  pickeru = toggle checku (S)
+- **Vizuální audit — odložené (2026-07-13):** toolbar textová tlačítka („M"/„O"/„Fit"/„1:1"/
+  „PDF"/„PNG"/„↻"/„☰") → EDIcons ikony (M) · sjednotit ▲▼ vs ↑↓ tlačítka pořadí do sdíleného
+  stylu (M) · footer pattern (dělicí linka + Bg.Footer) + EDTheme.Spacing tokeny do dialogů (M) ·
+  **dark mode** — EDThemeDark existuje, tokenizace hotová (2026-07-13), zbývá runtime swap +
+  ověření (M–L) · dialog header pattern à la HelpDialog/PdfImport (L, s EDInputForm zásahem)
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
-v [`analyza-stav-a-legacy-nahrada-2026-07.md §7`](analyza-stav-a-legacy-nahrada-2026-07.md); vyřeší se
+v [`legacy-nahrada.md §7`](legacy-nahrada.md); vyřeší se
 při scope té fáze, ne teď.
 
 ---
@@ -52,6 +70,9 @@ při scope té fáze, ne teď.
 1. **Headless tisk (A3)** — „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe — v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
 3. **Další výchozí šablony** (MHD + linkový) — mechanismus embed→MLINE hotový, jen kurátorovat + přidat JSON do `SystemTemplates/`. (Táž práce evidovaná i v Fázi C+D: krok 44b / C4.)
+4. **Zákaznická dokumentace na wiki (post-release)** — 2 dokumenty, seedy HOTOVÉ a aktuální
+   (2026-07-13): `uzivatelska-prirucka.md` (část I obecné ovládání + část II zastávkový JŘ;
+   nové agendy = nové části) + `plan-a-zmeny.md` („Novinky a plány"). Zbývá: obrázky + publikace.
 
 ---
 
@@ -61,11 +82,11 @@ při scope té fáze, ne teď.
 > [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md). Zde jen **otevřená
 > akční práce**, seřazená pro postupné odbavování. Vel.: S = do hodiny, M = půl dne, L = víc dní.
 
-### Malé — dispatch kandidáti (TD/AD, bez velkého průzkumu)
-
-> **TR8 („<1" místo „0") vyřazeno z dispatchu → park** (analýza 2026-07-10): naše časy jsou kumulativní,
-> 0-segment se tiskne jako opakované číslo (1,1), ne „0" (ověřeno `CB_CSADAD` 0380520 var. T3). Per-segment
-> sloupec TD nemá. Blokuje potvrzení od TRANSDEV (který sloupec — legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
+> Malé dispatch kandidáty (TR2/TR3/TR4) hotové 2026-07-10 → archiv/customer-requirements.
+> **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
+> jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
+> (který sloupec — legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
+> **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení — kolega.
 
 ### Větší — chce analýzu / datový model / business rozhodnutí
 
@@ -157,7 +178,7 @@ Detail datových odchylek a mezer viz [`linkovy-knizni-jr-implementace-analyza.m
 
 Layout TBD — hlavička oběhu, tabulka spojů, poznámky (pravděpodobně víc elementů). Legacy:
 `ALVA.MHD.ReportGenerator` (MHD) + `AD.ADREPORTGEN` (linky), viz
-[`legacy-schedule-generators.md`](legacy-schedule-generators.md). **Relace (TiskJRRELACE)** — vývěsky
+[`legacy-nahrada.md`](legacy-nahrada.md). **Relace (TiskJRRELACE)** — vývěsky
 nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý use case (Q3)**.
 
 | Krok | Co | Stav |
@@ -176,7 +197,7 @@ nádraží (SK zákazník, fork TiskJR ~50k LOC); **nejdřív ověřit živý us
 Největší kus náhrady — ne kvůli featurám (TD je napřed), ale kvůli **ekosystému ~28 agend** s RG
 kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení: 33k textových elementů,
 774 tabulek. **Ne big-bang** — etapizovat. Detail:
-[`analyza-stav-a-legacy-nahrada-2026-07.md`](analyza-stav-a-legacy-nahrada-2026-07.md) §3.1 + §5 etapa 4.
+[`legacy-nahrada.md`](legacy-nahrada.md) §3.1 + §5 etapa 4.
 
 | Krok | Co | Stav |
 |---|---|---|
@@ -191,20 +212,28 @@ kontraktem (`GetSeznamSad`/`GetSadu`/`GetData`, `~`-tokenový stream). Nasazení
 
 ## 🟡 Import PDF — doladění
 
+> Pre-produkční průchod HOTOVÝ 2026-07-13 (Sonnet 5, anti-halucinace, retry, standardní dialog,
+> jednostránkový JŘ import) → changelog. Zde jen dlouhodobé ladění:
+
 | Krok | Co | Stav |
 |---|---|---|
-| 32 | Detekce tabulek z mřížky čar (3a) — místo 50 čar + 20 textů → jeden `TableElement` | ⬜ |
-| 33 | JŘ-aware mód (3d) — AI Vision pipeline + `AiGuidedScheduleBuilder` fungují, **ladění na širší sadě JŘ** | 🟡 |
+| 32 | **Obecný import: detekce tabulek z mřížky čar** — místo 50 čar + 20 textů jeden tabulkový element. ⚠️ **Gated na oživení fixní tabulky (Fáze B)** — cíl importu statické tabulky je Fixed mód, který je dnes uspaný; do té doby nedělat | ⬜ |
+| 33 | JŘ import: **ladění na širší sadě JŘ** (jiné layouty než KV_DP vzor — jiná města, SK, netypické legendy) | 🟡 |
 
-3b křivky/Bézier — low-prio.
+Křivky/Bézier v obecném importu — low-prio, bez poptávky.
 
 ---
 
 ## 🤖 AI integrace — v pozadí
 
-> **Sekundární, ne core.** Aktuální funkce (generování šablony, PDF import enrichment, vision pipeline)
-> zůstávají funkční; další rozšíření až budou reální uživatelé s potřebou. JSON šablona + DataSchema jsou
-> stabilní kontrakt pro AI — rozšíření kdykoli bez breaking changes. **Princip: copilot, ne autopilot.**
+> **Sekundární, ne core.** Aktuální funkce (pomocník, generátor šablon, AI Vision import PDF — vše Sonnet 5
+> přes EDISONAI/mlweb spravovaný klíč) zůstávají funkční; další rozšíření až budou reální uživatelé
+> s potřebou. JSON šablona + DataSchema jsou stabilní kontrakt pro AI — rozšíření kdykoli bez breaking
+> changes. **Princip: copilot, ne autopilot.**
+
+**Otevřené (post-release):** ostrá zkouška EDISONAI cesty bez lokálního klíče u první firmy ·
+potvrzení `source: "templatedesigner"` u autora mlwebu (checklist §4) · zveřejnění generátoru šablon
+(menu dnes jen pro vývojáře) až po otestování na reálných zadáních.
 
 **Budoucí:** MCP server (`get_template`/`apply_template`/`add_element`/… tenká vrstva nad ViewModelem, každý
 tool → `_vm.Execute(command)`) · onboarding průvodce · smart suggestions (TableElement → sloupce z DataSchema) ·
