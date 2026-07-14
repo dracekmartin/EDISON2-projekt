@@ -21,9 +21,6 @@ public interface ILocalPrefs
 
     bool ShowWindowsAsDialogs { get; set; }
 
-    /// <summary>Tmavý režim UI (per-stanice). Default false = světlý.</summary>
-    bool DarkMode { get; set; }
-
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
     Dictionary<string, string>? MiniAppLayouts { get; set; }
 
@@ -51,7 +48,6 @@ public class LocalPrefs : ILocalPrefs
     // Uživatel → Možnosti — ShowWindowsAsDialogs zatím bez behaviorálního efektu (uloženo pro budoucnost).
     public bool ShowWindowsAsDialogs { get; set; }
     public bool TryWindowsAutoLogin { get; set; }
-    public bool DarkMode { get; set; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
 

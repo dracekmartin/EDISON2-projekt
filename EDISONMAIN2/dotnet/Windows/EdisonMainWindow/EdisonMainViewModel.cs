@@ -843,17 +843,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             }
         }
 
-        // Tmavý režim — přepne živě přes ThemeService (swap barevných tokenů) a persistuje.
+        // Tmavý režim — sdílená preference (%APPDATA%\m-line\common\theme.json) přes ThemeService;
+        // přepne živě + propaguje do ostatních m-line procesů (TemplateDesigner) přes watcher.
         public bool IsDarkMode
         {
-            get => _prefs.DarkMode;
+            get => EDControls.EDTheme.ThemeService.IsDark;
             set
             {
-                if (_prefs.DarkMode == value) return;
-                _prefs.DarkMode = value;
-                _prefs.Save();
-                EDControls.EDTheme.ThemeService.Apply(value
-                    ? EDControls.EDTheme.AppTheme.Dark : EDControls.EDTheme.AppTheme.Light);
+                if (EDControls.EDTheme.ThemeService.IsDark == value) return;
+                EDControls.EDTheme.ThemeService.SetDarkMode(value);
                 OnPropertyChanged();
             }
         }
