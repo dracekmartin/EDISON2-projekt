@@ -279,20 +279,38 @@
 
             <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených. -->
             <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}">
-                <TabItem Header="Hlavní nabídka">
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{StaticResource EDIcons.Home}" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock Text="Hlavní nabídka" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </TabItem.Header>
                     <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0"/>
                 </TabItem>
-                <TabItem Header="Správa systému">
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{StaticResource EDIcons.Gears}" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock Text="Správa systému" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </TabItem.Header>
                     <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0"/>
                 </TabItem>
-                <TabItem Header="Partnerská řešení">
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{StaticResource EDIcons.Component}" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock Text="Partnerská řešení" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </TabItem.Header>
                     <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0"/>
                 </TabItem>
                 <TabItem>
                     <TabItem.Header>
                         <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Oblíbené"/>
-                            <TextBlock Text="&#x2605;" Foreground="#FFC107" Margin="5,0,0,0"/>
+                            <Image Source="{StaticResource EDIcons.Star}" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock Text="Oblíbené" VerticalAlignment="Center"/>
                         </StackPanel>
                     </TabItem.Header>
                     <Grid>
@@ -304,7 +322,13 @@
                                    Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“ (nebo ho připněte v záložce Používané) — zobrazí se jen ty, které opravdu potřebujete."/>
                     </Grid>
                 </TabItem>
-                <TabItem Header="Používané">
+                <TabItem>
+                    <TabItem.Header>
+                        <StackPanel Orientation="Horizontal">
+                            <Image Source="{StaticResource EDIcons.History}" Width="16" Height="16" Margin="0,0,6,0" VerticalAlignment="Center" RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <TextBlock Text="Používané" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </TabItem.Header>
                     <ListBox x:Name="UsedModulesList" ItemsSource="{Binding UsedModules}" BorderThickness="0"
                              HorizontalContentAlignment="Stretch">
                         <ListBox.ItemContainerStyle>

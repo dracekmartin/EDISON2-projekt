@@ -77,11 +77,9 @@ public class AppBootstrapper
         var (nav, popup, services) = InitializeServices();
         var prefs = LoadLocalPrefs();
 
-        // Téma aplikuj hned po načtení prefs — před login dialogem, ať je i on v dark režimu.
-        // Initialize registruje class handler, který obarví pozadí každého okna (i podtříd).
-        EDControls.EDTheme.ThemeService.Initialize();
-        EDControls.EDTheme.ThemeService.Apply(prefs.DarkMode
-            ? EDControls.EDTheme.AppTheme.Dark : EDControls.EDTheme.AppTheme.Light);
+        // Sdílený vzhled (font + světlý/tmavý režim) — jedna registrace, čte %APPDATA%\m-line\common
+        // a propaguje mezi procesy (TemplateDesigner). Před login dialogem, ať ho téma taky pokryje.
+        EDControls.EDAppearance.Initialize(_application);
 
         // First-launch setup (feature #5): chybí appsettings.json → wizard. Zrušení = konec.
         if (!EnsureConfigured())
@@ -489,9 +487,6 @@ public class AppBootstrapper
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;
         viewModel.AttachToWindow(wnd);
-        // User font preference: load shared shell+TD storage, apply na EDTheme tokeny PŘED Show
-        // (eliminuje flicker), spustit FileSystemWatcher pro cross-process propagaci změny.
-        FontService.Initialize(_application);
 
         // Cooperative logout — poll běží přes services.MLRest (následuje swap při switch user).
         var logoutWatcher = new LogoutWatcher(() => services.MLRest, ShowLogoutCountdown);

@@ -26,9 +26,10 @@ public partial class App : Application
 
         EDServices.Initialize(new EDServices(null, new WindowNavigator(), new PopupDisplayer()));
 
-        // User font preference — sdílené storage s EDISONMAIN2 (%APPDATA%\m-line\common\font.json).
-        // Apply před MainWindow.Show eliminuje flicker; FileSystemWatcher reaguje na change ze shellu.
-        FontService.Initialize(this);
+        // Sdílený vzhled (font + světlý/tmavý režim) — jedna registrace, sdílené storage s EDISONMAIN2
+        // (%APPDATA%\m-line\common\). Apply před MainWindow.Show eliminuje flicker; FileSystemWatcher
+        // reaguje na změnu ze shellu (přepnutí dark v EDISONMAIN2 se projeví i tady za běhu).
+        EDControls.EDAppearance.Initialize(this);
 
         var settings = AppSettings.Load();
 

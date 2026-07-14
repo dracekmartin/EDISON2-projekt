@@ -34,6 +34,11 @@
     <Resource Include="EDIcons\png\fluent_assistant.png"/>
     <Resource Include="EDIcons\png\settings.png"/>
     <Resource Include="EDIcons\png\panels.png"/>
+    <Resource Include="EDIcons\png\house.png"/>
+    <Resource Include="EDIcons\png\gears.png"/>
+    <Resource Include="EDIcons\png\component.png"/>
+    <Resource Include="EDIcons\png\history.png"/>
+    <Resource Include="EDIcons\png\star.png"/>
     <Resource Include="EDIcons\png\add2.png"/>
     <Resource Include="EDIcons\png\edit.png"/>
     <Resource Include="EDIcons\png\delete2.png"/>
