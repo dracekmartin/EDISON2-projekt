@@ -60,10 +60,9 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   (PrintDialog volba „načíst z aktuální šablony"; dnes per-agenda — chce design kam uložit
   a co má přednost; navazuje na existující TODO „extrakce na Template/agenda-config", M)
 - **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
-  „nedostupná" od „není nakonfigurována" + varování při startu (M) · empty-state panelu Pole
-  agendy bez DB (S) · splash při startu (~3 s .Wait bez okna, M) · validace Save dialogů
-  disabled tlačítkem místo popupu (M) · dvojklik v Instance
-  pickeru = toggle checku (S)
+  „nedostupná" od „není nakonfigurována" + varování při startu (M; hláška o chybějících polích
+  už zpřesněna 2026-07-15, zbývá reálná detekce + varování při startu) · splash při startu
+  (~3 s .Wait bez okna, M)
 - **Vizuální audit — odložené (2026-07-13):** sjednotit ▲▼ vs ↑↓ tlačítka pořadí do sdíleného
   stylu (M) · footer pattern (dělicí linka + Bg.Footer) + EDTheme.Spacing tokeny do dialogů (M) ·
   **dark mode** — EDThemeDark existuje, tokenizace hotová (2026-07-13), zbývá runtime swap +
