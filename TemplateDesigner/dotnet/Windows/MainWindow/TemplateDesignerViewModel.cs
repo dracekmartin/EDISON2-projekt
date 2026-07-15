@@ -50,6 +50,10 @@ public class TemplateDesignerViewModel : EDViewModel
     public  IDataSchemaProvider    SchemaProvider        { get; }
     public  CacheAgendaProvider?   CacheProvider         { get; }
     public  ITableTemplateProvider? TableTemplateProvider => CacheProvider;
+
+    /// <summary>Datové MLRest připojení, které používá <see cref="CacheProvider"/> (a úložiště šablon).
+    /// Drženo kvůli dev přepínání firem za běhu (<see cref="DevSwitchFirm"/>).</summary>
+    private readonly MLRest? _cacheMlRest;
     public  Services.CacheTemplateService? TemplateStorage { get; }
 
     /// <summary>Pasivní AI průvodce (záložka v levém panelu). Čte živý kontext při každém dotazu.</summary>
@@ -168,6 +172,46 @@ public class TemplateDesignerViewModel : EDViewModel
         CacheProvider?.InvalidateCaches();
         RefreshFieldsList();                    // schéma polí + parametry (teď fresh)
         _ = RefreshDataForCurrentInstanceAsync(); // re-fetch GetData pro aktuální linku
+    }
+
+    // ── DEV: přepínání datové firmy za běhu ──────────────────────────────────
+    // Jen pro vývojáře (gate v UI = lokální dev klíč, stejně jako AI asistent). Umožní
+    // testovat agendy proti více firmám bez editace appsettings a restartu. Pro tyto firmy
+    // platí Idfa == datový namespace (ověřeno). Bez licenčního verify (na rozdíl od EDISON
+    // shellu) — dev nástroj, ne produkční přepnutí firmy.
+
+    /// <summary>Pevný dev seznam firem, se kterými se běžně pracuje. Idfa i datový namespace = kód.</summary>
+    public static readonly IReadOnlyList<(string Code, string Label)> DevFirms =
+    [
+        ("CB_CSADAD", "CB_CSADAD — ČSAD Autobusy (AD)"),
+        ("CB_GWBUS",  "CB_GWBUS — GW BUS (AD)"),
+        ("KV_DP",     "KV_DP — DP Karlovy Vary (MHD)"),
+    ];
+
+    /// <summary>Aktuální datová firma (Idfa). Null bez připojení k databázi.</summary>
+    public string? CurrentFirmIdfa => _cacheMlRest?.Idfa;
+
+    /// <summary>DEV: přepne datovou firmu (Idfa + namespace) a znovu načte schéma i data.</summary>
+    public void DevSwitchFirm(string code)
+    {
+        if (_cacheMlRest is null)
+        {
+            StatusText = "Přepnutí firmy není dostupné bez připojení k databázi.";
+            return;
+        }
+        if (string.Equals(_cacheMlRest.Idfa, code, StringComparison.Ordinal))
+        {
+            StatusText = $"Firma {code} je už aktivní.";
+            return;
+        }
+        _cacheMlRest.Idfa = code;
+        _cacheMlRest.DataNamespace = code;
+        _previewDataGeneration++;                 // guard proti dosednutí stale dat běžícího fetche
+        CacheProvider?.InvalidateCaches();
+        ClearActiveInstances();                   // instance jsou per-firma; spustí i reload dat
+        RefreshFieldsList();                      // schéma + parametry pro novou firmu
+        OnPropertyChanged(nameof(CurrentFirmIdfa));
+        StatusText = $"[DEV] Přepnuto na firmu {code}.";
     }
 
     private async Task RefreshDataForCurrentInstanceAsync()
@@ -575,6 +619,7 @@ public class TemplateDesignerViewModel : EDViewModel
         _sectionTemplates = new SectionTemplateManager();
 
         var resolvedMlRest = mlRest ?? CacheSchemaWiring.TryCreateMlRest(settings);
+        _cacheMlRest = resolvedMlRest;
         var resolvedAgendas = agendas ?? [];
         _agendaEntries = resolvedAgendas;
         CacheProvider = resolvedMlRest is not null && resolvedAgendas.Count > 0

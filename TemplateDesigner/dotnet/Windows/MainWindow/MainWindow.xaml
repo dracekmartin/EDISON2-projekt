@@ -219,6 +219,8 @@
                 <Separator/>
                 <MenuItem x:Name="MenuAiAssistant" Header="AI Asistent šablon…" Click="MenuAiAssistant_Click"/>
                 <MenuItem x:Name="MenuImportPdf" Header="Import PDF…" Click="MenuImportPdf_Click"/>
+                <Separator x:Name="MenuDevSep" Visibility="Collapsed"/>
+                <MenuItem x:Name="MenuDevSwitchFirm" Header="Přepnout firmu (DEV)" Visibility="Collapsed"/>
             </MenuItem>
             <MenuItem Header="Nápověda">
                 <MenuItem x:Name="MenuHelp" Header="Klávesové zkratky a ovládání" InputGestureText="F1" Click="MenuHelp_Click"/>

@@ -112,6 +112,10 @@ public partial class MainWindow : Window
             string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey)
                 ? Visibility.Collapsed : Visibility.Visible;
 
+        // DEV přepínač firem — stejný gate jako AI generátor (lokální dev klíč). Naplní se
+        // z pevného seznamu ve VM; v produkci zůstává skrytý.
+        BuildDevFirmMenu();
+
         // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
         ApplyUiPreferences();
 
@@ -1132,6 +1136,40 @@ public partial class MainWindow : Window
     private void MenuRedo_Click(object sender, RoutedEventArgs e)  => _vm!.RedoCommand.Execute(null);
     private void MenuDelete_Click(object sender, RoutedEventArgs e) => _vm!.DeleteCommand.Execute(null);
     private void MenuHelp_Click(object sender, RoutedEventArgs e)  => ShowHelp();
+
+    /// <summary>Naplní DEV submenu firem z pevného seznamu ve VM. Viditelné jen pro vývojáře
+    /// (lokální dev klíč) a jen když je připojení k databázi.</summary>
+    private void BuildDevFirmMenu()
+    {
+        bool devMode = !string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey);
+        bool show = devMode && _vm?.CurrentFirmIdfa is not null;
+        MenuDevSep.Visibility = MenuDevSwitchFirm.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show) return;
+
+        MenuDevSwitchFirm.Items.Clear();
+        foreach (var (code, label) in TemplateDesignerViewModel.DevFirms)
+        {
+            var item = new MenuItem { Header = label, Tag = code, IsCheckable = true };
+            item.Click += MenuDevSwitchFirm_Click;
+            MenuDevSwitchFirm.Items.Add(item);
+        }
+        RefreshDevFirmMenuChecks();
+    }
+
+    private void MenuDevSwitchFirm_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is null || sender is not MenuItem item || item.Tag is not string code) return;
+        _vm.DevSwitchFirm(code);
+        RefreshDevFirmMenuChecks();
+    }
+
+    /// <summary>Označí zaškrtnutím aktuální firmu; ostatní odškrtne.</summary>
+    private void RefreshDevFirmMenuChecks()
+    {
+        var current = _vm?.CurrentFirmIdfa;
+        foreach (var mi in MenuDevSwitchFirm.Items.OfType<MenuItem>())
+            mi.IsChecked = mi.Tag is string c && string.Equals(c, current, StringComparison.Ordinal);
+    }
 
     private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
