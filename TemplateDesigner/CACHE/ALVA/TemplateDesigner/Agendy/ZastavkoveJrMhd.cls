@@ -1235,7 +1235,11 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
             i SpecZnak = "" continue
             i $d(poznamkyAtribut(SpecZnak)) continue
             s poznamkyAtribut(SpecZnak) = ""
-            d poznamky.%Push(..BuildPoznamka("specialni", SpecZnak, $lg(atrVal,1)))
+            // „na znamení" řádek otagovat (rozpoznání dle popisu, konzistentně s TD IsNaZnameniAttr;
+            // symbol se liší dle firmy) → přepínač „Na znamení" schová značku i tento řádek legendy (#7161).
+            s popisAtr = $lg(atrVal,1)
+            s katAtr = $s($zcvt($e(popisAtr,1,9),"L")="na znamen":"atribut-zastavky", 1:"")
+            d poznamky.%Push(..BuildPoznamka("specialni", SpecZnak, popisAtr, "", "", katAtr))
         }
     }
 
@@ -1446,7 +1450,7 @@ ClassMethod AddAnotace(odjezd As %DynamicObject, typ As %String, znak As %String
     d odjezd.%Get("ANOTACE").%Push(anotace)
 }
 
-ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "") As %DynamicObject
+ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, foreColor As %String = "", backColor As %String = "", kategorie As %String = "") As %DynamicObject
 {
     s poznamka = ##class(%DynamicObject).%New()
     d poznamka.%Set("TYP", typ)
@@ -1454,6 +1458,9 @@ ClassMethod BuildPoznamka(typ As %String, znak As %String, text As %String, fore
     d poznamka.%Set("TEXT", text)
     d poznamka.%Set("FORE_COLOR", foreColor)
     d poznamka.%Set("BACK_COLOR", backColor)
+    // kategorie = interní tag pro TD filtr viditelnosti legendy (#7161): „atribut-zastavky"
+    // = řádek „na znamení" (skryje se s přepínačem „Na znamení"). Prázdné = needitelné filtrem.
+    d poznamka.%Set("KATEGORIE", kategorie)
     q poznamka
 }
 

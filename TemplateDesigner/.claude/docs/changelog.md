@@ -8,8 +8,11 @@
   posílají „na znamení" jako **atribut** (ne přes pole `NaZnameni`), takže značku dřív řídil
   generický přepínač „Atributy". Nově se atribut „na znamení" rozpozná podle popisu
   (CZ „na znamení" / SK „na znamenie" — symbol se mezi agendami liší: AD „x", MHD „D") a řídí ho
-  „Na znamení"; „Atributy" řídí jen ostatní atributy. Konzistentní AD i MHD, default beze změny
-  (žádná regrese), čistě TD render → gold testů se netýká.
+  „Na znamení"; „Atributy" řídí jen ostatní atributy. **Značka** (TD render) funguje v AD i MHD.
+  **Skrytí řádku legendy** vyžadovalo v MHD tag kategorie — `ZastavkoveJrMhd.BuildPoznamka` nově
+  emituje `KATEGORIE` a řádek „na znamení" (dle popisu) je `atribut-zastavky`, takže sdílený
+  `NoteVisibilityFilter` ho schová stejně jako v AD. Default beze změny (žádná regrese); MHD gold
+  digesty re-baselinovány (jen md5, počty pages/zast/odj/pozn shodné → additivní tag, LegacyParity zelená).
 - **Dev přepínač firem (jen pro vývojáře).** Nástroje → „Přepnout firmu (DEV)" — pevný seznam
   (CB_CSADAD, CB_GWBUS, KV_DP), přepne `Idfa` + datový namespace za běhu a znovu načte schéma/data
   (bez editace appsettings a restartu). Gate = lokální dev klíč (jako AI asistent), v produkci skryté;
