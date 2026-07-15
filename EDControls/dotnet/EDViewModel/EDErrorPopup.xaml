@@ -29,10 +29,6 @@
                      Margin="0,0,0,12"/>
 
             <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button x:Name="ReportBtn"
-                        Content="Poslat hlášení"
-                        Padding="14,4" Margin="0,0,6,0"
-                        Visibility="Collapsed"/>
                 <Button x:Name="SaveBtn"
                         Content="Uložit do souboru"
                         Padding="14,4" Margin="0,0,6,0"
