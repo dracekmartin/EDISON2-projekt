@@ -7,8 +7,8 @@ s pomerančem na zádech, která se pohybuje tam a zpět, plus nápis „Akce pr
 
 | Soubor | Role |
 | --- | --- |
-| `EDActionInProgress.xaml` | Transparentní hit-test overlay (blokuje myš), bílá karta, posuvná pixel-art kapybara, text „Akce probíhá". Závoj nekreslí sám — viz code-behind. |
-| `EDActionInProgress.xaml.cs` | `IsActive` DependencyProperty; automaticky se naváže na `EDViewModel.IsActionInProgress` při `Loaded`. Při aktivaci drží `WindowDimmer.Dim(window)` — refcount zaručí stejnou míru ztmavení jako dialogy ze shellu i při jejich překryvu. |
+| `EDActionInProgress.xaml` | Transparentní hit-test overlay (blokuje myš), karta se stínem a kontrastním rámečkem (`EDTheme.Border.Contrast`), posuvná pixel-art kapybara, text „Akce probíhá". Závoj nekreslí sám — viz code-behind. |
+| `EDActionInProgress.xaml.cs` | `IsActive` DependencyProperty; automaticky se naváže na `EDViewModel.IsActionInProgress` při `Loaded`. Při aktivaci drží `WindowDimmer.Dim(window)` — refcount zaručí stejnou míru ztmavení jako dialogy ze shellu i při jejich překryvu. Spouští/zastavuje storyboard `WalkAnimation` podle `IsActive` — animace neběží pro schovaný overlay. |
 
 ## Dependency properties
 
@@ -68,6 +68,8 @@ Viz `EDViewModel/CLAUDE.md` pro kompletní popis `ActionInProgress()`.
 - 10 sloupců × 8 řádků, každý pixel = 6×6 WPF jednotek → 60×48 canvas
 - Posouvá se uvnitř 160×48 clipping `Border` (`ClipToBounds="True"`)
 - `TransformGroup`: `ScaleTransform` (otočení) + `TranslateTransform` (posun)
+- Storyboard `WalkAnimation` je resource; startuje/zastavuje ho code-behind podle `IsActive`
+  (Loaded trigger by tikal navždy i pro Collapsed overlay)
 - `DoubleAnimation`: `From="-60" To="160"`, 2.5 s, `AutoReverse=True`, `RepeatBehavior=Forever`
 - `DoubleAnimationUsingKeyFrames`: `ScaleX` přepne 1→−1 v t=2.5 s (čelem doleva při návratu)
 - `RenderOptions.EdgeMode="Aliased"` + `SnapsToDevicePixels="True"` zabraňují sub-pixelovým mezerám
