@@ -1174,9 +1174,11 @@ public class TemplateDesignerViewModel : EDViewModel
             ApplyEditorPreferencesFromTemplate();
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
             RebuildSections();
-            RefreshFieldsList();
+            await RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
             await LoadPrintParamsAndApplyAsync();
+            ApplyTemplatePrintParamsToPreview();
+            RefreshParamsUiAfterLoad();
             if (Preferences is not null) await Preferences.AddRecentFileAsync(filePath);
             NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
@@ -1360,9 +1362,11 @@ public class TemplateDesignerViewModel : EDViewModel
             ApplyEditorPreferencesFromTemplate();
             State.ActiveSection = State.CurrentTemplate.Sections.FirstOrDefault();
             RebuildSections();
-            RefreshFieldsList();
+            await RefreshFieldsList();
             await TryLoadInstanceDefaultsAsync();
             await LoadPrintParamsAndApplyAsync();
+            ApplyTemplatePrintParamsToPreview();
+            RefreshParamsUiAfterLoad();
             NotifyMigrationIfNeeded();
             RequestTitleUpdate?.Invoke();
             RequestCanvasSizeUpdate?.Invoke();
@@ -1439,6 +1443,19 @@ public class TemplateDesignerViewModel : EDViewModel
     private void SyncParametersToTemplate()
     {
         State.CurrentTemplate.Parameters = _agendaParameters.Count > 0 ? [.. _agendaParameters] : null;
+
+        // Hodnoty obsahových tiskových parametrů patří šabloně (sdílené mezi uživateli, mají přednost
+        // před per-agenda). Iterujeme jen _agendaParameters → export klíče (název/členění/imposice)
+        // se sem záměrně nedostanou (nejsou mezi agenda parametry).
+        if (_agendaParameters.Count > 0)
+        {
+            var vals = new Dictionary<string, string>();
+            foreach (var p in _agendaParameters)
+                if (_previewParams.TryGetValue(p.Name, out var v))
+                    vals[p.Name] = ParamToFieldString(v, p.Type);
+            State.CurrentTemplate.PrintParameters = vals.Count > 0 ? vals : null;
+        }
+        else State.CurrentTemplate.PrintParameters = null;
     }
 
     /// <summary>True během běžícího exportu — blokuje druhý souběžný export (PDF i PNG),
@@ -2141,7 +2158,11 @@ public class TemplateDesignerViewModel : EDViewModel
     }
 
     // ── Schema / parameters ───────────────────────────────────────────────────
-    public void RefreshFieldsList()
+    /// <summary>Vrací Task, který doběhne až po naplnění <c>_agendaParameters</c> (i na cold cestě,
+    /// kde se schéma načítá async). Otevírací flow ho awaituje, aby se hodnoty parametrů ze šablony
+    /// / per-agenda aplikovaly až když jsou parametry agendy k dispozici (jinak by je následné
+    /// doběhnutí schématu přepsalo defaulty). Ostatní volající mohou volat fire-and-forget.</summary>
+    public Task RefreshFieldsList()
     {
         var agendaCode = State.CurrentTemplate.AgendaCode;
         NotifyInstanceLabelsChanged();   // agenda se mohla změnit → přepočítat „linka/faktura" v chipu + tooltipech
@@ -2152,7 +2173,7 @@ public class TemplateDesignerViewModel : EDViewModel
             UpdateCacheStatus(null, null);
             LoadAgendaParameters(agendaCode);
             RebuildSchemaTree(null);
-            return;
+            return Task.CompletedTask;
         }
 
         // R1: první (uncached) GetSchema je pomalý HTTP dotaz — na cold cestě odbav na pozadí
@@ -2162,13 +2183,13 @@ public class TemplateDesignerViewModel : EDViewModel
         {
             var code = agendaCode;
             AgendaNameText = $"Agenda: {code} (načítám schéma…)";
-            _ = Task.Run(() => SchemaProvider.GetSchema(code))
+            return Task.Run(() => SchemaProvider.GetSchema(code))
                 .ContinueWith(_ => RefreshFieldsListCore(code),
                               TaskScheduler.FromCurrentSynchronizationContext());
-            return;
         }
 
         RefreshFieldsListCore(agendaCode);
+        return Task.CompletedTask;
     }
 
     private void RefreshFieldsListCore(string agendaCode)
@@ -2282,6 +2303,38 @@ public class TemplateDesignerViewModel : EDViewModel
         if (changed) OnExternalParamsChanged();
     }
 
+    /// <summary>Aplikuje hodnoty obsahových parametrů uložené v šabloně (nejvyšší priorita — nad
+    /// per-agenda i defaulty). Volá se po <see cref="LoadPrintParamsAndApplyAsync"/> při otevření
+    /// šablony. Nenastavuje dirty (načtení, ne uživatelská změna).</summary>
+    private void ApplyTemplatePrintParamsToPreview()
+    {
+        var tp = State.CurrentTemplate.PrintParameters;
+        if (tp is null || tp.Count == 0) return;
+        foreach (var p in _agendaParameters)
+        {
+            if (!tp.TryGetValue(p.Name, out var s) || s is null) continue;
+            _previewParams[p.Name] = p.Type switch
+            {
+                "bool"   => s == "1" || string.Equals(s, "true", StringComparison.OrdinalIgnoreCase),
+                "number" => float.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
+                _        => (object)s
+            };
+        }
+        // Přenačtení panelu/tabu z finálních hodnot dělá otevírací flow (RefreshParamsUiAfterLoad),
+        // bezpodmínečně — per-agenda i šablona; sem to nedávat (nespustilo by se, když šablona
+        // nic nezměnila, protože per-agenda už tytéž hodnoty nastavila → tab by zůstal na defaultech).
+    }
+
+    /// <summary>Po načtení všech persistovaných hodnot parametrů (per-agenda + šablona) přenačte
+    /// lištu i EDInputForm tab z finálního <see cref="_previewParams"/>. Bezpodmínečně — hodnoty
+    /// do dictu naskočí i bez „změny" v ApplyTemplate (per-agenda), ale tab se jinak drží defaultů,
+    /// se kterými se inicializoval na začátku otevření.</summary>
+    private void RefreshParamsUiAfterLoad()
+    {
+        RebuildParametersPanel();          // lišta + RequestParamsFormReload (tab)
+        RequestPreviewRefresh?.Invoke();   // živý náhled
+    }
+
     /// <summary>
     /// Externí konzument (typicky PrintDialog) změnil hodnotu v sdíleném <see cref="_previewParams"/>.
     /// Cross-notify preview lišta VMs + invalidate cache + refresh preview canvas. Bez tohoto
@@ -2335,6 +2388,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// server-param „rozdělení sloupců" → re-fetch dat, ostatní → jen překreslení náhledu.</summary>
     private void OnAgendaParamChanged()
     {
+        // Uživatelská změna parametru = změna šablony (parametry patří šabloně) → dirty, ať Ctrl+S uloží.
+        // Volá se JEN z user cest (SetAgendaParamValue / preview lišta setter); načtení jde přes
+        // OnExternalParamsChanged, takže tady dirty falešně nenaskočí.
+        IsDirty = true;
         _cachedParamValues = null;
         NotifyParamsSummaryChanged();
         // Server-side param „rozdělení sloupců" (grouping počítá Caché) → změna vyžaduje re-fetch dat.
@@ -2376,12 +2433,16 @@ public class TemplateDesignerViewModel : EDViewModel
     public void SetAgendaParamValue(string name, string fieldValue)
     {
         var type = _agendaParameters.FirstOrDefault(p => p.Name == name)?.Type ?? "string";
-        _previewParams[name] = type switch
+        object? newValue = type switch
         {
             "bool"   => fieldValue == "1" || string.Equals(fieldValue, "true", StringComparison.OrdinalIgnoreCase),
             "number" => float.TryParse(fieldValue, NumberStyles.Float, CultureInfo.InvariantCulture, out var f) ? f : 0f,
             _        => (object)fieldValue
         };
+        // Beze změny → nic (chrání proti falešnému dirty i re-fetchi při reloadu EDInputformu tabu,
+        // který přepošle stávající hodnoty přes FieldChanged).
+        if (Equals(_previewParams.GetValueOrDefault(name), newValue)) return;
+        _previewParams[name] = newValue;
         OnAgendaParamChanged();
     }
 

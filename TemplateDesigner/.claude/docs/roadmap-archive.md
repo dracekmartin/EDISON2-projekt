@@ -19,6 +19,13 @@ source of truth. **Release track uzavřen** (verze v produkci, e-mail se neděl�
 (sdílené, pro všechny seznamy) · Save dialog nedostupné tlačítko místo popupu · sjednocení
 pořadových šipek na ▲▼ (TableEditorDialog ↑↓ → ▲▼, zbytek appky už měl ▲▼).
 
+**Tiskové parametry per šablona (obsahové):** hodnoty obsahových parametrů (časová osa, rozdělení
+sloupců, šipky…) teď patří šabloně — sdílené mezi uživateli, priorita nad per-agenda, ukládají se
+automaticky s šablonou (Ctrl+S, dirty na user změnu). Aditivní `Template.PrintParameters`, fallback
+na agendu u starých šablon; export pole zůstávají per agenda (odloženo). Cesta k funkčnosti si vyžádala
+opravu cold-start časování (`RefreshFieldsList` → `Task`, otevírací flow awaituje schéma) + bezpodmínečné
+přenačtení parametrového tabu po načtení hodnot (`RefreshParamsUiAfterLoad` — tab se jinak držel defaultů).
+
 **Vědomě NEdělat (rozhodnuto):** „jednotný resize grip" (legacy, nejasné) · toolbar text→ikony
 (písmenka záměrně ponechána — u PDF/PNG jasnější než ikona) · footer pattern dialogů (žádné
 konkrétní případy) · samostatný splash (start je běžně rychlý; 3 s jen při nedostupném připojení

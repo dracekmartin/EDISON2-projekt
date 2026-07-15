@@ -50,6 +50,15 @@ public class Template
     public List<TemplateParameter>? Parameters { get; set; }
 
     /// <summary>
+    /// Hodnoty obsahových tiskových parametrů uložené pro tuto šablonu (klíč = název parametru,
+    /// hodnota = string reprezentace). Sdílené mezi uživateli (jsou součástí šablony) a mají přednost
+    /// před per-agenda „naposledy použité". Null = šablona vlastní hodnoty nemá → fallback na agendu.
+    /// Exportní pole (název souboru, členění, imposice) sem NEpatří — ta zůstávají per agenda.
+    /// Aditivní pole — staré šablony ho nemají (žádná migrace, fallback na agendu).
+    /// </summary>
+    public Dictionary<string, string>? PrintParameters { get; set; }
+
+    /// <summary>
     /// Kód kultury pro formátování čísel a datumů, např. "cs-CZ", "en-US".
     /// Null = výchozí "cs-CZ".
     /// </summary>

@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-15 — Tiskové parametry per šablona (obsahové)
+
+Hodnoty **obsahových** tiskových parametrů (časová osa odjezdů, rozdělení sloupců, tisk šipek /
+projetých zastávek, souhrny…) teď **patří šabloně** — sdílené mezi uživateli, priorita nad
+per-agenda „naposledy použité", ukládají se **automaticky** se šablonou (změna → dirty → Ctrl+S).
+
+- **Model:** aditivní `Template.PrintParameters` (`Dictionary<string,string>`, JSON `printParameters`).
+  Staré šablony ho nemají → fallback na agendu (bez migrace).
+- **Uložení:** `SyncParametersToTemplate` zapíše hodnoty obsahových parametrů (iteruje
+  `_agendaParameters` → **export pole** název souboru/členění/imposice se záměrně nezachytí,
+  zůstávají per agenda; převod exportu na per-šablonu odložen).
+- **Načtení (priorita):** `Template.PrintParameters` > per-agenda > tvrdé defaulty.
+- **Dirty:** `OnAgendaParamChanged` nastaví dirty jen při user změně (načtení jde přes
+  `OnExternalParamsChanged`); `SetAgendaParamValue` je change-aware (žádný falešný dirty/re-fetch
+  při reloadu EDInputform tabu).
+- **Opravy z ladění:** cold-start časování — `RefreshFieldsList` nově vrací `Task`, otevírací flow
+  ho awaituje (dřív async schéma přepsalo hodnoty defaulty); parametrový tab se po načtení hodnot
+  **bezpodmínečně** přenačte z finálního stavu (`RefreshParamsUiAfterLoad`) — dřív se držel defaultů.
+
 ## 2026-07-15 — „Na znamení" řídí značku i legendu (#7161) + dev přepínač firem
 
 - **StopList: „Na znamení" schová značku i legendu (#7161 D5).** Přepínač „Na znamení"
