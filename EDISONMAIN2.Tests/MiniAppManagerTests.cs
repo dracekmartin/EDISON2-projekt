@@ -154,6 +154,32 @@ public class MiniAppManagerTests
     }
 
     [Fact]
+    public void OpenColumns_OpensFirstInPlace_RestInNewColumns()
+    {
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+
+        mgr.OpenColumns([fx.Descriptor, fx.Descriptor, fx.Descriptor]);
+
+        Assert.Equal(3, mgr.OpenInstances.Count);
+        Assert.Equal([false, true, true], host.Panes.Select(p => p.NewColumn));
+    }
+
+    [Fact]
+    public void InstancesChanged_FiresOnOpenAndClose()
+    {
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+        int fired = 0;
+        mgr.InstancesChanged += () => fired++;
+
+        mgr.Open(fx.Descriptor);
+        host.Panes[0].Close();
+
+        Assert.Equal(2, fired);
+    }
+
+    [Fact]
     public void RefreshAll_RefreshesOnlyRefreshableInstances()
     {
         var services = MockServices();
@@ -198,9 +224,9 @@ public class MiniAppManagerTests
     {
         public List<FakePane> Panes { get; } = [];
 
-        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed)
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed, bool newColumn = false)
         {
-            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed };
+            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, NewColumn = newColumn };
             Panes.Add(pane);
             return pane;
         }
@@ -227,6 +253,7 @@ public class MiniAppManagerTests
         public string? Title { get; set; }
         public object? Content { get; set; }
         public Action? OnClosed { get; set; }
+        public bool NewColumn { get; set; }
         public bool IsClosed { get; private set; }
 
         public void Close()

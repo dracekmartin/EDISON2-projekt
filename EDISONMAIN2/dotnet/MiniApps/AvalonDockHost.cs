@@ -14,7 +14,7 @@ namespace EDISONMAIN2.MiniApps;
 /// </summary>
 public sealed class AvalonDockHost(DockingManager dock) : IMiniAppHost
 {
-    public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed)
+    public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed, bool newColumn = false)
     {
         var document = new LayoutDocument
         {
@@ -25,12 +25,20 @@ public sealed class AvalonDockHost(DockingManager dock) : IMiniAppHost
             CanClose = true,
         };
         document.Closed += (_, _) => onClosed();
-        DocumentPane.Children.Add(document);
+        if (newColumn)
+        {
+            var column = new LayoutDocumentPane(document);
+            dock.Layout.RootPanel.Children.Add(column);
+        }
+        else
+        {
+            DocumentPane.Children.Add(document);
+        }
         document.IsActive = true;
         return new Pane(document);
     }
 
-    // Centrální document pane z XAML LayoutRoot (mini-apps se hostují jako dokumenty).
+    // První (levý) document pane z XAML LayoutRoot; další sloupce se přidávají do RootPanelu.
     private LayoutDocumentPane DocumentPane =>
         dock.Layout.Descendents().OfType<LayoutDocumentPane>().First();
 

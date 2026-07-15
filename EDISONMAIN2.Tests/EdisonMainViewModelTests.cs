@@ -314,7 +314,7 @@ public class EdisonMainViewModelTests
 
     private sealed class ThrowingHost : IMiniAppHost
     {
-        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed)
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed, bool newColumn = false)
             => throw new NotSupportedException();
         public string SaveLayout() => "";
         public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve)

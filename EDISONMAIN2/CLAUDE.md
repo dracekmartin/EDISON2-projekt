@@ -33,7 +33,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
-  Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`.
+  Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`; chybí-li uložený →
+  `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
+  placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
 
 ## Legacy moduly — EDISONMAIN2API
 

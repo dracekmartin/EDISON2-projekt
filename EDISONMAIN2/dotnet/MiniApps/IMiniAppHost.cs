@@ -11,8 +11,9 @@ public interface IMiniAppHost
     /// <summary>
     /// Přidá panel do docku a vrátí jeho handle. <paramref name="onClosed"/> se zavolá, když se
     /// panel zavře — uživatelem (křížek) i programově (<see cref="IMiniAppPane.Close"/>).
+    /// <paramref name="newColumn"/> true → panel jde do nového sloupce vedle stávajících.
     /// </summary>
-    IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed);
+    IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed, bool newColumn = false);
 
     /// <summary>Serializuje aktuální rozložení docku (geometrie + ContentId panelů).</summary>
     string SaveLayout();
