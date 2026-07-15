@@ -76,8 +76,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand RefreshRunningModulesCommand { get; }
         public ICommand ActivateModuleCommand { get; }
 
-        /// <summary>Dostupné mini-apps pro launcher (menu „Miniaplikace").</summary>
-        public IReadOnlyCollection<MiniAppDescriptor> MiniApps => _miniAppCatalog.All;
+        /// <summary>Mini-apps seskupené podle providerů pro launcher (menu „Miniaplikace").</summary>
+        public IReadOnlyList<MiniAppGroup> MiniAppGroups => _miniAppCatalog.Groups;
 
         // Výchozí sada (3 sloupce jako starý shell) — pořadí = novinky, wiki/vyhledávání, školení.
         private static readonly string[] DefaultMiniAppIds = ["Core.Novinky", "Core.Wiki", "Core.Skoleni"];
@@ -155,7 +155,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             ILocalPrefs prefs,
             Func<IReadOnlyList<RunningModuleInfo>> getActiveModules,
             Action closeAllWindows,
-            MiniAppCatalog miniAppCatalog)
+            MiniAppCatalog miniAppCatalog,
+            ModuleShortcutsService? shortcuts = null)
         {
             _treeGetter = treeService;
             _switcher = switcher;
@@ -163,6 +164,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _prefs = prefs;
             _getActiveModules = getActiveModules;
             _miniAppCatalog = miniAppCatalog;
+            // Sdílená služba oblíbených (strom ⇄ miniaplikace). Bez ní (testy) VM drží vlastní instanci.
+            _shortcuts = shortcuts ?? new ModuleShortcutsService();
 
             OpenModuleCommand        = CommandAsync<IModule>(OpenModule);
             ToggleFavoriteCommand    = Command<IModule>(ToggleFavorite);
@@ -234,6 +237,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             _services.MLRest = mlRest;
 
+            // Změny oblíbených z miniaplikace (DnD add, remove, reorder) → přestav strom + persist.
+            // Seed při loadu je pod _suppressFavoritesSync (nemá znovu ukládat načtené).
+            _shortcuts.Favorites.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
+            // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
+            _shortcuts.LaunchRequested += module => OpenModuleCommand.Execute(module);
+
             RebuildSessionState(initialLicence);
         }
 
@@ -256,12 +265,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void LoadPersonalization()
         {
             _modulePrefs = new ModulePreferencesService(UserPrefs);
-            _favoriteIds = [.. _modulePrefs.LoadFavorites()];
             _usage = _modulePrefs.LoadUsage();
             _expansion = _modulePrefs.LoadExpansion();
 
-            foreach (var exe in AllExecutables())
-                exe.IsFavorite = _favoriteIds.Contains(exe.ElementId);
+            // Seed sdílené služby z uložených ID (nastaví IsFavorite na sdílených instancích).
+            // Pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
+            _suppressFavoritesSync = true;
+            _shortcuts.Seed(AllExecutables(), _modulePrefs.LoadFavorites());
+            _suppressFavoritesSync = false;
 
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
@@ -282,7 +293,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RebuildFavoritesTree()
         {
             FavoritesTree.Clear();
-            foreach (var root in BuildFavoritesTree(_sourceTrees.Select(t => t.Tree), _favoriteIds))
+            foreach (var root in BuildFavoritesTree(_sourceTrees.Select(t => t.Tree), FavoriteIdSet()))
                 FavoritesTree.Add(root);
 
             // Po přestavbě (i mimo load — po toggle) znovu aplikuj/napoj rozbalení Oblíbených.
@@ -522,7 +533,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Per-user × IDFa stav (oblíbené + používanost). _modulePrefs se re-vytváří v RebuildSessionState
         // (UserPrefs se může po switch-user vyměnit). Stromové leaf instance se sdílí napříč kolekcemi.
         private ModulePreferencesService _modulePrefs = null!;
-        private HashSet<string> _favoriteIds = [];
+        private readonly ModuleShortcutsService _shortcuts;
+        // Guard: potlačí auto-sync handler kolekce oblíbených během Seed / hromadné změny (family toggle).
+        private bool _suppressFavoritesSync;
         private Dictionary<string, UsageEntry> _usage = [];
         // Klíče rozbalených uzlů (index-cesta). null = nikdy neuloženo → ponech serverové výchozí rozbalení.
         private List<string>? _expansion;
@@ -629,39 +642,54 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 await WindowNavigator.ShowLegacyAsDialogAsync(exe, formFqn);
         }
 
-        // Přepnutí oblíbeného. EXE = toggle jednoho ElementId; FAMILY = hromadně všechny moduly v ní
-        // (přidá vše, pokud nejsou všechny oblíbené; jinak vše odebere). Hlavní stromy se nepřestavují
-        // (jen flip IsFavorite) → rozbalení/výběr zůstávají; přestaví se jen záložka Oblíbené.
+        // Přepnutí oblíbeného přes sdílenou službu (stejný zdroj jako miniaplikace Oblíbené). EXE =
+        // toggle jednoho; FAMILY = hromadně (přidá vše, pokud nejsou všechny oblíbené; jinak vše odebere).
+        // Změna se přes _shortcuts propíše i do miniaplikace; SyncFavorites přestaví strom + uloží.
         private void ToggleFavorite(IModule module)
         {
             switch (module)
             {
-                case ExecutableModule { ElementId: { Length: > 0 } id }:
-                    SetFavorites([id], add: !_favoriteIds.Contains(id));
+                case ExecutableModule { ElementId: { Length: > 0 } id } exe:
+                    ApplyFavoritesChange(() =>
+                    {
+                        if (_shortcuts.Contains(id)) _shortcuts.Remove(exe);
+                        else _shortcuts.Add(exe);
+                    });
                     break;
 
                 case ModuleFamily family:
-                    var ids = Flatten(family).Select(e => e.ElementId).Where(x => x.Length > 0).Distinct().ToList();
-                    if (ids.Count == 0) return;
-                    SetFavorites(ids, add: !ids.All(_favoriteIds.Contains));
+                    var exes = Flatten(family).Where(e => e.ElementId.Length > 0).ToList();
+                    if (exes.Count == 0) return;
+                    bool allFav = exes.All(e => _shortcuts.Contains(e.ElementId));
+                    ApplyFavoritesChange(() =>
+                    {
+                        foreach (var e in exes)
+                            if (allFav) _shortcuts.Remove(e);
+                            else _shortcuts.Add(e);
+                    });
                     break;
             }
         }
 
-        private void SetFavorites(IReadOnlyCollection<string> ids, bool add)
+        // Hromadná změna oblíbených: potlač per-item auto-sync a přestav/ulož jednou na konci.
+        private void ApplyFavoritesChange(Action mutate)
         {
-            foreach (var id in ids)
-                if (add) _favoriteIds.Add(id);
-                else _favoriteIds.Remove(id);
+            _suppressFavoritesSync = true;
+            mutate();
+            _suppressFavoritesSync = false;
+            SyncFavorites();
+        }
 
-            var changed = ids.ToHashSet();
-            foreach (var exe in AllExecutables().Where(e => changed.Contains(e.ElementId)))
-                exe.IsFavorite = add;
-
+        // Přestaví záložku Oblíbené + agregační flagy rodin a uloží pořadí. Volá se po každé změně
+        // členství oblíbených (tree toggle i změny z miniaplikace přes CollectionChanged).
+        private void SyncFavorites()
+        {
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
-            _ = _modulePrefs.SaveFavoritesAsync(_favoriteIds);
+            _ = _modulePrefs.SaveFavoritesAsync(_shortcuts.Favorites.Select(f => f.ElementId));
         }
+
+        private HashSet<string> FavoriteIdSet() => [.. _shortcuts.Favorites.Select(f => f.ElementId)];
 
         // Nastaví ModuleFamily.IsFavorite = "všichni potomci oblíbení" napříč hlavními stromy (řídí text
         // kontextového menu rodiny). Vrací, zda je uzel plně oblíbený (rekurzivní agregace).

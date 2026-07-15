@@ -283,15 +283,18 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void MiniApps_ExposesCatalogDescriptors()
+    public void MiniAppGroups_ExposeCatalogGroups()
     {
         var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new TestMiniAppProvider()]));
 
-        Assert.Equal("Title A", Assert.Single(vm.MiniApps).Title);
+        var group = Assert.Single(vm.MiniAppGroups);
+        Assert.Equal("Skupina G", group.Title);
+        Assert.Equal("Title A", Assert.Single(group.Apps).Title);
     }
 
     private sealed class TestMiniAppProvider : IMiniAppProvider
     {
+        public string GroupTitle => "Skupina G";
         public IEnumerable<MiniAppDescriptor> GetMiniApps() => [new("A", "Title A", () => null!)];
     }
 

@@ -90,14 +90,24 @@
                     </Style>
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
-            <MenuItem Header="Miniaplikace" ItemsSource="{Binding MiniApps}">
+            <MenuItem Header="Miniaplikace" ItemsSource="{Binding MiniAppGroups}">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
-                    <!-- ElementName=TopMenu — položky jsou v Popup mimo Menu's visual tree (jako Spuštěné moduly). -->
+                    <!-- Skupiny (per provider) — jen rozbalují, žádný Command. -->
                     <Style TargetType="MenuItem">
                         <Setter Property="Header" Value="{Binding Title}"/>
-                        <Setter Property="Command" Value="{Binding DataContext.OpenMiniAppCommand, ElementName=TopMenu}"/>
-                        <Setter Property="CommandParameter" Value="{Binding}"/>
+                        <Setter Property="ItemsSource" Value="{Binding Apps}"/>
+                        <!-- Explicitní vnitřní styl přebije děděný — Command jen na listech.
+                             ElementName=TopMenu — položky jsou v Popup mimo Menu's visual tree (jako Spuštěné moduly). -->
+                        <Setter Property="ItemContainerStyle">
+                            <Setter.Value>
+                                <Style TargetType="MenuItem">
+                                    <Setter Property="Header" Value="{Binding Title}"/>
+                                    <Setter Property="Command" Value="{Binding DataContext.OpenMiniAppCommand, ElementName=TopMenu}"/>
+                                    <Setter Property="CommandParameter" Value="{Binding}"/>
+                                </Style>
+                            </Setter.Value>
+                        </Setter>
                     </Style>
                 </MenuItem.ItemContainerStyle>
             </MenuItem>

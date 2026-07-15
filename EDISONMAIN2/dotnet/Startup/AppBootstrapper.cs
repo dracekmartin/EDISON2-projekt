@@ -476,10 +476,17 @@ public class AppBootstrapper
     {
         var treeGetter = new ModuleTreeGetter();
         var switcher = new CompanySwitcher(services, prefs, nav.CloseAll);
-        var miniAppCatalog = MiniAppCatalog.Build([new CoreMiniApps(), new LegacyMiniAppProvider(), new LegacyDashboardMiniAppProvider(), new DevSampleMiniApps()]);
+        // Sdílená služba oblíbených — strom (VM) i miniaplikace „Oblíbené" (provider) drží tutéž instanci.
+        var shortcuts = new ModuleShortcutsService();
+        var miniAppCatalog = MiniAppCatalog.Build([
+            new CoreMiniApps(), new LegacyMiniAppProvider(), new LegacyDashboardMiniAppProvider(),
+#if DEBUG
+            new DevSampleMiniApps(),
+#endif
+        ]);
         var viewModel = new EdisonMainViewModel(prep.Companies, session.MLRest, treeGetter,
                                                 licence, switcher, () => SwitchUser(services, nav.CloseAll),
-                                                prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog);
+                                                prefs, nav.GetActiveModules, nav.CloseAll, miniAppCatalog, shortcuts);
 
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;

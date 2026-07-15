@@ -307,7 +307,8 @@ Commity 1–2 jdou případně spojit. Commit 3 musí předcházet 4–9 (zaklá
 
 - **Launcher z katalogu** — hotovo. `AppBootstrapper` staví `MiniAppCatalog` z provider listu,
   `EdisonMainViewModel` vlastní `MiniAppManager` (host injektuje code-behind na `Loaded`) a vystavuje
-  `MiniApps` + `OpenMiniAppCommand`; menu „Miniaplikace" je vždy zobrazené (žádný toggle). Manager
+  `MiniAppGroups` (submenu per provider, `IMiniAppProvider.GroupTitle`) + `OpenMiniAppCommand`;
+  menu „Miniaplikace" je vždy zobrazené (žádný toggle). Manager
   se zavírá přes `CloseAllCommand` (shell close) a `OnSessionReplaced` (switch firmy/uživatele).
 - **Per-firma refresh katalogu** `[odloženo]` — katalog je zatím statický (jediný `DevSampleMiniApps`
   placeholder). Re-filtrace podle dostupných modulů má smysl až s reálnými providery; doplní se s

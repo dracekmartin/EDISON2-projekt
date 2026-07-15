@@ -39,6 +39,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`; chybí-li uložený →
   `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
+  Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
+  pořadí skupin = pořadí registrace v `AppBootstrapper`); `DevSampleMiniApps`
+  se registruje jen v DEBUG buildu.
 
 ## Legacy moduly — EDISONMAIN2API
 

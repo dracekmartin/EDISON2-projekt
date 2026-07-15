@@ -12,6 +12,8 @@ namespace EDISONMAIN2.MiniApps;
 /// </summary>
 public sealed class CoreMiniApps : IMiniAppProvider
 {
+    public string GroupTitle => "Podpora M-line";
+
     private const string WidgetBase = "https://podpora.m-line.cz/api/widgets/";
     private const string WidgetKey = "80716cc86270f1daff6a18ad0b2ba07e9e30011eea22072c7a840604b18423c6";
 

@@ -12,6 +12,7 @@ public class MiniAppCatalogTests
 
     private sealed class FakeProvider(params MiniAppDescriptor[] apps) : IMiniAppProvider
     {
+        public string GroupTitle { get; init; } = "Skupina";
         public IEnumerable<MiniAppDescriptor> GetMiniApps() => apps;
     }
 
@@ -49,6 +50,39 @@ public class MiniAppCatalogTests
         var catalog = MiniAppCatalog.Build([new FakeProvider(Descriptor("A"))]);
 
         Assert.Null(catalog.Find("X"));
+    }
+
+    [Fact]
+    public void Build_GroupsFollowProviderRegistrationOrder()
+    {
+        var catalog = MiniAppCatalog.Build([
+            new FakeProvider(Descriptor("A")) { GroupTitle = "První" },
+            new FakeProvider(Descriptor("B")) { GroupTitle = "Druhá" },
+        ]);
+
+        Assert.Equal(["První", "Druhá"], catalog.Groups.Select(g => g.Title));
+    }
+
+    [Fact]
+    public void Build_GroupContainsProviderDescriptorsInOrder()
+    {
+        var a = Descriptor("A");
+        var b = Descriptor("B");
+        var catalog = MiniAppCatalog.Build([new FakeProvider(a, b)]);
+
+        var group = Assert.Single(catalog.Groups);
+        Assert.Equal([a, b], group.Apps);
+    }
+
+    [Fact]
+    public void Build_EmptyProvider_YieldsNoGroup()
+    {
+        var catalog = MiniAppCatalog.Build([
+            new FakeProvider() { GroupTitle = "Prázdná" },
+            new FakeProvider(Descriptor("A")) { GroupTitle = "Plná" },
+        ]);
+
+        Assert.Equal("Plná", Assert.Single(catalog.Groups).Title);
     }
 
     [Fact]

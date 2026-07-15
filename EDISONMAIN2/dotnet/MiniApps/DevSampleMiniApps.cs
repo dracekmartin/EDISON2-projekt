@@ -10,6 +10,8 @@ namespace EDISONMAIN2.MiniApps;
 /// </summary>
 public sealed class DevSampleMiniApps : IMiniAppProvider
 {
+    public string GroupTitle => "Dev";
+
     public IEnumerable<MiniAppDescriptor> GetMiniApps() =>
     [
         new("Dev.Sample", "Test miniapp", () => new SimpleMiniAppViewModel(

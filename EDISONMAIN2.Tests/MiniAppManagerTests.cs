@@ -217,6 +217,7 @@ public class MiniAppManagerTests
 
     private sealed class SingleProvider(MiniAppDescriptor descriptor) : IMiniAppProvider
     {
+        public string GroupTitle => "Test";
         public IEnumerable<MiniAppDescriptor> GetMiniApps() => [descriptor];
     }
 

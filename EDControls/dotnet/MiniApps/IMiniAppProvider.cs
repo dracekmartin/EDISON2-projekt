@@ -6,5 +6,8 @@ namespace EDControls.MiniApps;
 /// </summary>
 public interface IMiniAppProvider
 {
+    /// <summary>Název skupiny (submenu) v menu „Miniaplikace". Pořadí skupin = pořadí registrace providerů.</summary>
+    string GroupTitle { get; }
+
     IEnumerable<MiniAppDescriptor> GetMiniApps();
 }

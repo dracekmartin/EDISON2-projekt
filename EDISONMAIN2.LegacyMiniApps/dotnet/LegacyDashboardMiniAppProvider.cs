@@ -10,6 +10,8 @@ namespace EDISONMAIN2.LegacyMiniApps;
 /// </summary>
 public sealed class LegacyDashboardMiniAppProvider : IMiniAppProvider
 {
+    public string GroupTitle => "Přehledy";
+
     // (appType, titulek) — pořadí dle ALVAMINIAPLIKACE.inc (52001..52015).
     private static readonly (string AppType, string Title)[] Apps =
     [

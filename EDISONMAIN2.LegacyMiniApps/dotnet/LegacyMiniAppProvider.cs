@@ -8,6 +8,8 @@ namespace EDISONMAIN2.LegacyMiniApps;
 /// </summary>
 public sealed class LegacyMiniAppProvider : IMiniAppProvider
 {
+    public string GroupTitle => "MHD";
+
     public IEnumerable<MiniAppDescriptor> GetMiniApps() =>
     [
         new("Mhd.Dispecink", "MHD dispečink", () => new DispecinkMiniAppViewModel()),
