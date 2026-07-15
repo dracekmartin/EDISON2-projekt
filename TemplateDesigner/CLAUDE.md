@@ -170,21 +170,45 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ---
 
-## Pracovní postup (krok po kroku)
+## Vývojová pipeline (agent ji jede sám z jednoho zadání)
 
-Každá položka (z roadmapy / requestu) projde tímto cyklem — nevynechat ani jeden krok:
+Tohle je **pasivní pravidlo, ne skill k ručnímu vyvolání** — platí pro každou úlohu automaticky.
+Uživatel dodá **featuru + volitelný kontext** a dělá **prioritizační a architektonická rozhodnutí**;
+mechaniku (kód → testy → docs → wiki → commit) veze agent sám, bez čekání na dílčí pokyny.
 
-1. **Projít** — připomenout co přesně má krok dělat, kontext a závislosti
-2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
-3. **Implementovat** — kód, Caché, XAML — dle pravidel (`.claude/rules/`)
-4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
-5. **Aktualizovat docs** — changelog + roadmap + CLAUDE.md pokud se mění architektura
-6. **Další krok** — posunout `⬅️` marker na následující položku v roadmapě
+0. **Zadání & kontext** — ujasnit konkrétní featuru, vstřebat extra kontext od uživatele, zařadit do scope/roadmapy.
+1. **Projít kód** — přečíst relevantní existující kód a pochopit současný stav (ne psát naslepo).
+2. **Navrhnout testy** — čím se featura ověří (xUnit / Caché `%UnitTest` / ruční golden path), ideálně před implementací.
+3. **Implementovat** — dle pravidel (`.claude/rules/`, R1–R5, kód EN / komentáře CZ, CVar, MVVM). Auto-build hook hlásí chyby.
+4. **Otestovat & iterovat** — spustit testy, u UX ověřit v běžícím buildu; body 3–4 opakovat, než to vypadá dobře.
+5. **Lokální docs** — changelog vždy; roadmap (hotové → archiv, posun šipky); CLAUDE.md „Co máme" jen při arch změně.
+6. **Wiki** — jen pokud featura mění user-facing chování **a projekt má linknutý článek**: aktualizovat seed + sync (TipTap-safe, mapa seed↔UUID). Jinak přeskočit.
+7. **Commit** — Janův scope, granular, `TD -` prefix. Gating viz níže.
+8. **Další krok** — po commitu navrhnout **další logický krok v roadmapě** nebo jiný smysluplný postup.
+
+**Gating commitu (chytré):**
+- **Jednoduchá / mechanická změna, kterou nedává smysl ručně proklikat** (a testy projdou) → **commit ihned**, nečekat.
+- **Vizuální / nová / větší featura, kterou má uživatel proklikat a vyzkoušet** → **necommitovat**, ukázat
+  výsledek a **počkat na potvrzení**; teprve po potvrzení commit + krok 8.
+
+**Co zůstává na uživateli:** co se dělá (priority), architektonická rozhodnutí, high-level kontext aplikace.
+Ne mechanika kroků 1–8.
 
 > ⚠️ **`roadmap.md` drž ČISTOU — jen aktivní úkoly.** Když je něco hotové (i rozhodnutí), **přesuň
 > to KOMPLETNĚ do [`roadmap-archive.md`](.claude/docs/roadmap-archive.md)** — nenechávej to v roadmapě
 > jako odškrtnuté „✅ hotovo" řádky. V aktivní roadmapě nesmí viset starý nepořádek; zůstává jen to,
 > co se má dělat (+ krátký pointer do archivu, kde detaily jsou). Platí i pro rozhodovací tabulky.
+
+### Wiki — mapování a sync (krok 6 pipeline)
+
+Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravidla:
+
+- **Synchni JEN články z mapy.** Co v mapě není, se nikdy netkne (folder-level: platí nejbližší `wiki-map.json` nad měněným souborem; dnes jedna na úrovni TD).
+- Krok 6: pokud featura mění **user-facing chování** pokryté některým `seed`em z mapy → aktualizuj ten seed a synchni jeho článek (MCP `update_wiki_article`, `id` z mapy). Jinak wiki přeskoč.
+- **TipTap-safe markdown:** konvertor **NEUMÍ tabulky** (slije je do jednoho odstavce) → piš odrážky / definiční seznamy. OK: nadpisy, seznamy, odkazy, tučné/kurzíva, blockquote, `---`.
+- **Seed = source of truth, wiki = zrcadlo** — na wiki needitovat ručně.
+- Ověření po syncu drž **lehké** (nečti celý obsah zpět — velký článek přesáhne limit odpovědi; ověř `number`/`updatedAt`).
+- Budoucí tvrdá pojistka (až se v praxi ukáže, že se na sync zapomíná): pre-push guard čtoucí `wiki-map.json`, případně CI přes REST.
 
 ---
 
