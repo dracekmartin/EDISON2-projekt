@@ -28,7 +28,6 @@ public class AppBootstrapperTests
         public bool WireActivityCalled { get; private set; }
         public bool AcquireSessionCalled { get; private set; }
 
-        // Configurable
         public bool Configured { get; set; } = true;
         public bool EnsureConfiguredCalled { get; private set; }
         public bool LoginSucceeds { get; set; } = true;
@@ -136,7 +135,7 @@ public class AppBootstrapperTests
         protected override void Shutdown() => ShutdownCalled = true;
     }
 
-    // ---------- First-launch setup (feature #5) ----------
+    // ---------- First-launch setup ----------
 
     [Fact]
     public void Run_NotConfigured_CallsShutdown_ReturnsNull()
@@ -162,7 +161,7 @@ public class AppBootstrapperTests
         Assert.True(b.BuildShellCalled);
     }
 
-    // ---------- Auto-login (feature #7) ----------
+    // ---------- Auto-login ----------
 
     [Fact]
     public void Run_AutoLoginSucceeds_SkipsDialog_BuildsShell()

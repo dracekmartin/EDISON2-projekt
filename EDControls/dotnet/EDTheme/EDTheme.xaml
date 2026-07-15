@@ -47,7 +47,7 @@
     <Color x:Key="EDTheme.Bg.Base.Color">#FFFFFFFF</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Base" Color="{StaticResource EDTheme.Bg.Base.Color}"/>
 
-    <!-- Panel header background (left panel headers, status bar) -->
+    <!-- Pozadí panelu (hlavičky levých panelů, status bar) -->
     <Color x:Key="EDTheme.Bg.Panel.Color">#FFF3F4F6</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Panel" Color="{StaticResource EDTheme.Bg.Panel.Color}"/>
 
@@ -67,7 +67,7 @@
     <Color x:Key="EDTheme.Bg.Pressed.Color">#FFDDE1E6</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Pressed" Color="{StaticResource EDTheme.Bg.Pressed.Color}"/>
 
-    <!-- Toggle button checked (snap/grid toggle is on) -->
+    <!-- Zaškrtnutý toggle button (zapnutý snap/grid přepínač) -->
     <Color x:Key="EDTheme.Bg.Checked.Color">#FFD0E0F0</Color>
     <SolidColorBrush x:Key="EDTheme.Bg.Checked" Color="{StaticResource EDTheme.Bg.Checked.Color}"/>
 
@@ -187,7 +187,7 @@
     <!-- Header — nadpisy panelů, dialog titulky -->
     <sys:Double x:Key="EDTheme.FontSize.Header">13</sys:Double>
 
-    <!-- Large — emphasis (rare) -->
+    <!-- Large — zvýraznění (výjimečně) -->
     <sys:Double x:Key="EDTheme.FontSize.Large">15</sys:Double>
 
     <!-- ═══════════════════════════════════════════════════════════════════

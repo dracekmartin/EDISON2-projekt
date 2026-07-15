@@ -2,9 +2,9 @@ namespace EDControls.EDFooter;
 
 public enum EFooterMode
 {
-    /// <summary>Footer shows a single "Zavřít" button.</summary>
+    /// <summary>Footer zobrazuje jediné tlačítko „Zavřít".</summary>
     Close,
 
-    /// <summary>Footer shows "Ok" (confirmed via Ctrl+Enter, not IsDefault) and "Storno" buttons.</summary>
+    /// <summary>Footer zobrazuje „Ok" (potvrzení přes Ctrl+Enter, ne IsDefault) a „Storno".</summary>
     OkCancel
 }

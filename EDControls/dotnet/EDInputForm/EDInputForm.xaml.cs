@@ -110,13 +110,11 @@ namespace EDControls.EDInputForm
 
         private void WireToolbarSearch()
         {
-            // Listen to SearchText changes
             var dpd = DependencyPropertyDescriptor.FromProperty(
                 EDComponentToolbar.EDComponentToolbar.SearchTextProperty,
                 typeof(EDComponentToolbar.EDComponentToolbar));
             dpd.AddValueChanged(Toolbar, (_, _) => ApplySearchFilter(Toolbar.SearchText));
 
-            // Wire find next/previous commands
             Toolbar.FindNextCommand = new RelayCommand(FindNext);
             Toolbar.FindPreviousCommand = new RelayCommand(FindPrevious);
         }
@@ -189,8 +187,8 @@ namespace EDControls.EDInputForm
             return matches;
         }
 
-        /// <summary>Normalize string for diacritics-insensitive matching:
-        /// "Pošta" → "posta". Lowercase + strip combining marks (NFD form).</summary>
+        /// <summary>Normalizace pro hledání bez diakritiky: „Pošta" → „posta".
+        /// Lowercase + odstranění combining marks (NFD forma).</summary>
         private static string NormalizeForSearch(string s)
         {
             var normalized = s.ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
@@ -368,7 +366,7 @@ namespace EDControls.EDInputForm
                         field.ListItems = ParseListItems(row.GetString(13));
                     if (field.FieldType == EFieldType.File && row.Length >= 14)
                         field.FileFilter = row.GetString(14);
-                    // Positions 15-18: Decimal/Number extras (min, max, format, unit)
+                    // Pozice 15–18: rozšíření pro Number/Decimal (min, max, format, unit)
                     if (row.Length >= 15 && decimal.TryParse(row.GetString(15),
                             System.Globalization.NumberStyles.Number,
                             System.Globalization.CultureInfo.InvariantCulture, out var minVal))
@@ -448,7 +446,7 @@ namespace EDControls.EDInputForm
                 return;
             }
 
-            // Ctrl+digit buffering
+            // Bufferování Ctrl+číslic (200 ms okno pro víceciferné Number)
             if ((Keyboard.Modifiers & ModifierKeys.Control) == 0) return;
 
             var key = e.Key == Key.System ? e.SystemKey : e.Key;

@@ -8,11 +8,11 @@ using Brushes = System.Windows.Media.Brushes;
 namespace EDISONMAIN2.Windows.SetupWindow
 {
     /// <summary>
-    /// First-launch setup (feature #5, connection-only): zadání serveru + REST portu, test
+    /// First-launch setup (jen připojení): zadání serveru + REST portu, test
     /// připojení a zápis <c>appsettings.json</c>. Běží před loginem, žádná session ještě
     /// neexistuje — proto code-behind a vlastní pre-login <see cref="MLRest"/> z napsaných polí
     /// (mirror <see cref="LoginWindow.LoginWindow"/>). Greenfield server-init (firma/licence/admin)
-    /// je mimo scope — viz PLAN.md #5.
+    /// je mimo scope — zůstává na legacy frmSetup.
     /// </summary>
     public partial class SetupWindow : Window
     {

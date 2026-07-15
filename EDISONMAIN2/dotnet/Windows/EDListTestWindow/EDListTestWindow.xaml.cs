@@ -11,8 +11,8 @@ namespace EDISONMAIN2
             DataContext = new EDControls.EDViewModel.EDViewModel();
             InitializeComponent();
             TheList.CacheClass = "ALVA.EDControls.EDList.MockList";
-            TheList.HostId = "EDISONMAIN2.EDListTestWindow";  // persist column layout (L2)
-            TheList.Title  = "Test EDList — mock data";       // header + search (L3)
+            TheList.HostId = "EDISONMAIN2.EDListTestWindow";  // persist layoutu sloupců
+            TheList.Title  = "Test EDList — mock data";       // header + vyhledávání
 
             TheList.SelectionChanged    += (_, id) => StatusText.Text  = $"Výběr: {id ?? "(žádný)"}";
             TheList.RowDoubleClicked    += (_, id) => StatusText.Text  = $"Dvojklik: {id}";

@@ -7,7 +7,7 @@ namespace EDControls.EDComponentToolbar;
 
 /// <summary>
 /// Sdílený toolbar bar pro EDInputForm / EDList / budoucí tabulkové komponenty.
-/// Tmavě modré pozadí (EDTheme.Accent.BlueDark), search box vlevo + standardní ikony vpravo.
+/// Tmavě modré pozadí (EDTheme.Accent.Header), search box vlevo + standardní ikony vpravo.
 ///
 /// <para><b>API přehled:</b></para>
 /// <list type="bullet">
@@ -18,7 +18,7 @@ namespace EDControls.EDComponentToolbar;
 /// <item><c>ShowExport</c> / <c>ShowPrint</c> / <c>ShowHelp</c> / <c>ShowSettings</c> — opt-in pravé ikony s ICommand.</item>
 /// </list>
 ///
-/// <para><b>Ctrl+F</b> uvnitř komponenty focusne search box (universal browser/editor convention).</para>
+/// <para><b>Ctrl+F</b> uvnitř komponenty focusne search box (konvence prohlížečů/editorů).</para>
 /// </summary>
 public partial class EDComponentToolbar : UserControl
 {

@@ -6,8 +6,7 @@
 > `EDISONMAIN` + aspirativní features bez ověřeného user story. **Spousta tam uvedených
 > věcí je irelevantní pro EDISONMAIN2 nebo nemá smysl.** Při čerpání z tohoto souboru
 > vždy ověř, jestli má daná věc reálnou hodnotu — neber ji jako automaticky validní.
->
-> **Single source of truth** pro to, co reálně děláme, je [`PLAN.md`](PLAN.md).
+> Co reálně děláme, urči z kódu a git historie.
 
 Tento dokument popisuje, za co je shell aplikace `EDISONMAIN2` (a její předchůdce
 `EDISONMAIN`) zodpovědná. Neměl by popisovat **business agendy hostovaných modulů**

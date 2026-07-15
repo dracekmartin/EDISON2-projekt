@@ -11,7 +11,6 @@
         <local:IntZeroToCollapsedConverter x:Key="IntNonZeroToVis"/>
         <local:NonEmptyStringToVisibleConverter x:Key="NonEmptyToVis"/>
 
-        <!-- Toolbar button style — transparent BG, white FG, hover effect -->
         <Style x:Key="ToolbarButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="White"/>
@@ -49,7 +48,7 @@
     <Border Background="{DynamicResource EDTheme.Accent.Header}" Padding="6,4">
         <DockPanel LastChildFill="False">
 
-            <!-- Right side: standard action ikony (opt-in přes ShowX props) -->
+            <!-- Vpravo: standardní akční ikony (opt-in přes ShowX props) -->
             <Button DockPanel.Dock="Right" Content="⚙" FontSize="14"
                     Style="{StaticResource ToolbarButtonStyle}"
                     ToolTip="Nastavení"

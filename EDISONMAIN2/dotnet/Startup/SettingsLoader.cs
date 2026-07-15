@@ -26,7 +26,7 @@ public class SettingsLoader
     private static string MainPath => Path.Combine(AppContext.BaseDirectory, "appsettings.json");
 
     /// <summary>
-    /// First-launch indikátor (feature #5): chybí <c>appsettings.json</c> → stanice není
+    /// First-launch indikátor: chybí <c>appsettings.json</c> → stanice není
     /// nakonfigurovaná → ukázat setup wizard. Klíčuje na existenci souboru, ne na hodnotě
     /// (<see cref="ServerSettings.Host"/> má dev default, takže „prázdný host" nikdy nenastane).
     /// </summary>

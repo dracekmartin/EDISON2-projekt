@@ -29,7 +29,7 @@ Nové features pokrývej xUnit testy a Caché `%UnitTest` testy — viz sekce **
 - **Patří sem**: neodvoditelné invarianty, wire kontrakty, pasti, workaroundy, netriviální
   WHY, pořadí volání, na kterém záleží.
 - **Nepatří sem**: opisy API a signatur (jsou ve zdrojáku), kopie kódu, tutoriály jazyků,
-  changelogy / roadmapy / ✅ stavy (patří do PLAN.md nebo commitů), dlouhé usage příklady
+  changelogy / roadmapy / ✅ stavy (patří do commitů), dlouhé usage příklady
   (odkaž na referenční implementaci).
 - Když měníš chování popsané v CLAUDE.md, **aktualizuj doc v témže commitu**; stale
   tvrzení maž bez milosti.
@@ -143,5 +143,7 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
 Komentáře v `EDISONMAIN2/` a `EDControls/` jsou **česky** (výjimka: stock VS šablony).
 Defaultně nekomentovat; přidávej jen netriviální WHY (skrytá invarianta, workaround
 bugu) a sémantiku legacy systému (Caché global, ACTIVITY zámek, licenční flag).
-Nekomentovat WHAT ani reference na task/commit. Délka 1 řádek, max 2–3;
-multi-paragraph `<remarks>` je špatně.
+Nekomentovat WHAT ani reference na task/commit/roadmapu — `PLAN.md` a „feature #N"
+odkazy na plánovací položky jsou zakázané (`PLAN.md` je stale; číslované Caché user
+flagy jako feature #17/#23 jsou naopak doménová sémantika a zůstávají). Délka 1 řádek,
+max 2–3; multi-paragraph `<remarks>` je špatně.

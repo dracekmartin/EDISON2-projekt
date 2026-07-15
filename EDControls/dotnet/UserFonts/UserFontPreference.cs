@@ -11,8 +11,8 @@ namespace EDControls.UserFonts;
 /// procesů (TemplateDesigner atd.) — viz <see cref="Changed"/> event.
 ///
 /// Storage je úmyslně v "common" složce (ne EDISONMAIN2-specific), aby preference
-/// nezůstala vázaná na konkrétní aplikaci. Pro novou m-line apku stačí zavolat
-/// <see cref="Load"/> + <see cref="FontService.Apply"/> + <see cref="FontService.BeginListening"/>.
+/// nezůstala vázaná na konkrétní aplikaci. Nová m-line apka nic z toho nevolá přímo —
+/// stačí <c>EDAppearance.Initialize(app)</c>.
 /// </summary>
 public class UserFontPreference
 {

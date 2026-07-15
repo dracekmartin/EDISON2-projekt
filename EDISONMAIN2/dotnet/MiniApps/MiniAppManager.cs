@@ -122,7 +122,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 
 /// <summary>
 /// Řídicí mini-app, která ovládá hromadný refresh ostatních. <see cref="MiniAppManager"/> jí při
-/// mountu předá svůj <c>RefreshAll</c> (vrací počet obnovených) — žádná závislost na EDServices.
+/// mountu předá svůj <c>RefreshAll</c> (vrací názvy obnovených) — žádná závislost na EDServices.
 /// </summary>
 public interface IMiniAppRefreshController
 {

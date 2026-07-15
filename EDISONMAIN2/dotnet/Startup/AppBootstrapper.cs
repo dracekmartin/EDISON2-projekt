@@ -39,11 +39,10 @@ public enum SwitchUserResult
 }
 
 /// <summary>
-/// Pojmenované kroky startup workflow vytažené z procedurálního <c>Application_Startup</c>.
-/// Cíl: čitelnost a jasné error/cancel exit pointy (login zrušený, licence Refused/Cancelled,
-/// connection error) místo skrytých <c>return;</c> uprostřed 100-řádkové metody. App.xaml.cs
-/// po refactoru jen vytvoří bootstrapper, zavolá <see cref="Run"/> a ukáže okno (nebo nic
-/// pokud Run vrátil null — Shutdown už proběhl uvnitř).
+/// Pojmenované kroky startup workflow s jasnými error/cancel exit pointy (login zrušený,
+/// licence Refused/Cancelled, connection error). App.xaml.cs jen vytvoří bootstrapper,
+/// zavolá <see cref="Run"/> a ukáže okno (nebo nic pokud Run vrátil null — Shutdown už
+/// proběhl uvnitř).
 ///
 /// Testovatelnost: každý krok je <c>protected virtual</c>, testovatelný subclass přepíše
 /// jen ty které potřebuje (typicky <see cref="InitializeServices"/>, <see cref="PrepareLogin"/>,
@@ -81,7 +80,7 @@ public class AppBootstrapper
         // a propaguje mezi procesy (TemplateDesigner). Před login dialogem, ať ho téma taky pokryje.
         EDControls.EDAppearance.Initialize(_application);
 
-        // First-launch setup (feature #5): chybí appsettings.json → wizard. Zrušení = konec.
+        // First-launch setup: chybí appsettings.json → wizard. Zrušení = konec.
         if (!EnsureConfigured())
         {
             Shutdown();
@@ -172,7 +171,7 @@ public class AppBootstrapper
         string Server,
         int Port);
 
-    /// <summary>Connection info — vstup do <see cref="EstablishSession"/>. Sdílí initial bootstrap a S2 user switch.</summary>
+    /// <summary>Connection info — vstup do <see cref="EstablishSession"/>. Sdílí initial bootstrap a user switch.</summary>
     protected record ConnectionInfo(string Server, int Port, string Database, string Idfa);
 
     /// <summary>Sdílený postlogin kontext (real MLRest + licence loader factory).</summary>
@@ -187,22 +186,20 @@ public class AppBootstrapper
         var services = new EDServices(null, nav, popup);
         EDServices.Initialize(services);
 
-        // EDInputForm Color field — register simple WinForms ColorDialog as picker.
-        // Pro EDInputFormTestWindow + budoucí EDInputForm use cases v EDISONMAIN2 modulech.
+        // EDInputForm pole Color — jako picker registrujeme prostý WinForms ColorDialog.
         EDControls.EDInputForm.EDInputForm.PickColorImpl = PickColorWithWinFormsDialog;
 
         return (nav, popup, services);
     }
 
     /// <summary>
-    /// Simple WinForms ColorDialog wrapper pro EDInputForm Color field.
+    /// Prostý wrapper nad WinForms ColorDialog pro EDInputForm pole Color.
     /// EDISONMAIN2 nemá recent colors infrastrukturu (na rozdíl od TD) — baseline dialog.
     /// </summary>
     private static string? PickColorWithWinFormsDialog(System.Windows.Window owner, string currentHex)
     {
         var dlg = new System.Windows.Forms.ColorDialog { FullOpen = true, AnyColor = true };
 
-        // Parse #AARRGGBB / #RRGGBB → R/G/B
         string h = (currentHex ?? "").TrimStart('#');
         try
         {
@@ -233,10 +230,10 @@ public class AppBootstrapper
     protected virtual ILocalPrefs LoadLocalPrefs() => LocalPrefs.Load();
 
     /// <summary>
-    /// First-launch setup (feature #5): když chybí <c>appsettings.json</c>, zobrazí
+    /// First-launch setup: když chybí <c>appsettings.json</c>, zobrazí
     /// <see cref="Windows.SetupWindow.SetupWindow"/> (jen připojení — server + REST port).
     /// Vrací false = uživatel zrušil → shutdown. DEBUG má config v repu → wizard se přeskočí.
-    /// Greenfield server-init (firma/licence/admin) je mimo scope, viz PLAN.md #5.
+    /// Greenfield server-init (firma/licence/admin) je mimo scope — zůstává na legacy frmSetup.
     /// </summary>
     protected virtual bool EnsureConfigured()
     {
@@ -340,7 +337,7 @@ public class AppBootstrapper
     }
 
     /// <summary>
-    /// Windows SSO auto-login (feature #7, legacy-style): jen když je na stanici zapnutý
+    /// Windows SSO auto-login (legacy-style): jen když je na stanici zapnutý
     /// <see cref="ILocalPrefs.TryWindowsAutoLogin"/>, zkusí login na <c>Environment.UserName</c>
     /// s prázdným heslem — server přihlásí jen LDAP-AUTO uživatele. Neúspěch (jiný mód / nepovoleno)
     /// → false → fallback na <see cref="TryLogin"/> dialog. Vrací true = přihlášeno bez dialogu.
@@ -410,7 +407,7 @@ public class AppBootstrapper
 
     /// <summary>
     /// Factory pro delegát který napojí EdisonActivityFailed handler na daný MLRest. Použito
-    /// pro initial bootstrap (<see cref="WireActivityFailedHandler"/>) i pro S2 user switch
+    /// pro initial bootstrap (<see cref="WireActivityFailedHandler"/>) i pro user switch
     /// (<see cref="SwitchUser"/> swapuje MLRest a musí napojit handler znovu).
     /// </summary>
     private Action<IMLRest> BuildActivityFailedWire(EDServices services) => mlRest =>
@@ -431,7 +428,7 @@ public class AppBootstrapper
             });
     };
 
-    /// <summary>Login dialog pro S2 user switch — owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
+    /// <summary>Login dialog pro user switch — owner je shell okno, prázdné pole (uživatel zadá od začátku).</summary>
     protected virtual LoginResult? PromptLoginForReauth(MLRest loginRest)
     {
         var loginWindow = new Windows.LoginWindow.LoginWindow(loginRest, showRemember: false)

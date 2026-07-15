@@ -184,7 +184,7 @@ Legacy handler: „Rozdílná verze Caché a verze Edison, software bude ukonče
 
 - **`maSeUkoncit` polling** (60 s timer) — vzdálené ukončení klientů s countdown
   (`frmNoMDI.vb:4846-4866`; server `EDSystem\CACHE\ALVA\SYSTEM\Main.cls:91-150`).
-  V EDISONMAIN2 plánováno jako feature #2 (cooperative logout) — viz [PLAN.md](../PLAN.md).
+  V EDISONMAIN2 implementováno jako cooperative logout (`LogoutWatcher`).
 - **`pending` lock** `^EDISON("System","Update",1)` — během server instalace loader odmítne
   Edisona spustit; + zákaz loginu `^EDISON("System","Login","Deny")`.
 - **Nucený update klientů** — admin horolog `NucenyUpdateLocalClientu` × lokální `CliUp.ini`
@@ -245,7 +245,7 @@ EDISONINS, noční automatika) zůstávají legacy mechanismu beze změny. Žád
 ### Vědomě mimo scope (zatím)
 
 - `NucenyUpdate` / `CliUp.ini` (admin-forced re-sync bez změny verze)
-- `maSeUkoncit` countdown — feature #2 v [PLAN.md](../PLAN.md)
+- `maSeUkoncit` countdown — řeší `LogoutWatcher` (cooperative logout)
 - EDTRAY notifikace, server-side cokoliv
 - `ignoreNotify`, version changelog dialog (`ALVA.SETUP.VersionInfo`)
 

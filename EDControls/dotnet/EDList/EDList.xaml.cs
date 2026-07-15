@@ -184,7 +184,7 @@ namespace EDControls.EDList
                 _saveDebouncer.Stop();
                 await SaveLayoutAsync();
             }
-            UnhookColumnEvents();  // cleanup DPD subscriptions
+            UnhookColumnEvents();
         }
 
         // ─── Multi-select API ─────────────────────────────────────────────────────

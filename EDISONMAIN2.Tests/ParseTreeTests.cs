@@ -52,7 +52,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_LegacyFormat_DefaultsElementIdAndIsLicensed()
     {
-        // Old 4-field EXE row (without elementId/isLicensed) — backwards compat
+        // Starý 4-polový EXE řádek (bez elementId/isLicensed) — zpětná kompatibilita
         var data = new CVar();
         data["1"] = new CList("EXE", "Legacy", "legacy.exe", "LegacyForm");
 
@@ -94,7 +94,7 @@ public class ParseTreeTests
     [Fact]
     public void ParseTree_FiveFields_OnlyElementIdReadIsLicensedDefault()
     {
-        // Intermediate format with elementId but no isLicensed (e.g. partial migration)
+        // Přechodný formát s elementId, ale bez isLicensed (např. částečná migrace)
         var data = new CVar();
         data["1"] = new CList("EXE", "Mid", "mid.exe", "MidForm", "999");
 

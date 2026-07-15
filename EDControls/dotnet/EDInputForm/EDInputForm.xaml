@@ -69,7 +69,7 @@
                 </ItemsPanelTemplate>
             </ItemsControl.ItemsPanel>
             <ItemsControl.Resources>
-                <!-- Shared error style for TextBox-based fields. BasedOn dědí implicitní
+                <!-- Sdílený error styl polí s TextBoxem. BasedOn dědí implicitní
                      EDControlStyles.xaml TextBox (modern flat look + focus accent). -->
                 <Style x:Key="FieldTextBoxStyle" TargetType="TextBox"
                        BasedOn="{StaticResource {x:Type TextBox}}">
@@ -85,7 +85,7 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Shared error style for ComboBox-based fields. BasedOn dědí implicitní EDControlStyles ComboBox. -->
+                <!-- Sdílený error styl polí s ComboBoxem. BasedOn dědí implicitní EDControlStyles ComboBox. -->
                 <Style x:Key="FieldComboBoxStyle" TargetType="ComboBox"
                        BasedOn="{StaticResource {x:Type ComboBox}}">
                     <Style.Triggers>
@@ -96,7 +96,7 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Shared style for help icon (tooltip mode) -->
+                <!-- Sdílený styl ikony nápovědy (tooltip mode) -->
                 <Style x:Key="HelpIconStyle" TargetType="Image">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
@@ -110,8 +110,8 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Help text in Status column (column mode, only when no error — error has priority).
-                     Used for both Field (with HasError condition) and Group (no error possible). -->
+                <!-- Help text ve sloupci Status (column mode, jen když není chyba — chyba má prioritu).
+                     Používá se pro Field (s podmínkou HasError) i Group (chybu mít nemůže). -->
                 <Style x:Key="HelpTextColumnStyle" TargetType="TextBlock">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
@@ -125,7 +125,7 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Help text for Field in Status column — hides when HasError=True (error takes priority). -->
+                <!-- Help text pole ve sloupci Status — skryje se při HasError=True (chyba má prioritu). -->
                 <Style x:Key="FieldHelpTextColumnStyle" TargetType="TextBlock">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
@@ -140,14 +140,12 @@
                     </Style.Triggers>
                 </Style>
 
-                <!-- Text: plain TextBox -->
                 <DataTemplate x:Key="TextFieldTemplate">
                     <TextBox Text="{Binding Value, UpdateSourceTrigger=LostFocus}"
                              ToolTip="{Binding ValidationError}"
                              Style="{StaticResource FieldTextBoxStyle}"/>
                 </DataTemplate>
 
-                <!-- Number: right-aligned, integer-only input + optional unit suffix -->
                 <DataTemplate x:Key="NumberFieldTemplate">
                     <DockPanel LastChildFill="True">
                         <TextBlock DockPanel.Dock="Right"
@@ -164,7 +162,6 @@
                     </DockPanel>
                 </DataTemplate>
 
-                <!-- Decimal: right-aligned, decimal input + optional unit suffix -->
                 <DataTemplate x:Key="DecimalFieldTemplate">
                     <DockPanel LastChildFill="True">
                         <TextBlock DockPanel.Dock="Right"
@@ -181,7 +178,6 @@
                     </DockPanel>
                 </DataTemplate>
 
-                <!-- Date: DatePicker with calendar -->
                 <DataTemplate x:Key="DateFieldTemplate">
                     <DatePicker SelectedDate="{Binding DateValue}"
                                 IsEnabled="{Binding Editable}"
@@ -199,7 +195,6 @@
                     </DatePicker>
                 </DataTemplate>
 
-                <!-- Bool: CheckBox -->
                 <DataTemplate x:Key="BoolFieldTemplate">
                     <CheckBox IsChecked="{Binding BoolValue}"
                               IsEnabled="{Binding Editable}"
@@ -207,7 +202,6 @@
                               ToolTip="{Binding ValidationError}"/>
                 </DataTemplate>
 
-                <!-- Button: clickable action button -->
                 <DataTemplate x:Key="ButtonFieldTemplate">
                     <Button Content="{Binding Value}"
                             IsEnabled="{Binding Editable}"
@@ -217,7 +211,6 @@
                             Padding="12,2"/>
                 </DataTemplate>
 
-                <!-- List: ComboBox dropdown -->
                 <DataTemplate x:Key="ListFieldTemplate">
                     <ComboBox ItemsSource="{Binding ListItemsForDisplay}"
                               DisplayMemberPath="Label"
@@ -228,7 +221,6 @@
                               Style="{StaticResource FieldComboBoxStyle}"/>
                 </DataTemplate>
 
-                <!-- File: TextBox + Browse button -->
                 <DataTemplate x:Key="FileFieldTemplate">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -248,7 +240,7 @@
                     </Grid>
                 </DataTemplate>
 
-                <!-- ComboBox: editable s autocomplete; user can type custom value not in list -->
+                <!-- ComboBox: editovatelný s autocomplete — uživatel může napsat i hodnotu mimo list -->
                 <DataTemplate x:Key="ComboBoxFieldTemplate">
                     <edfc:EDFilterComboBox
                         Suggestions="{Binding ListItems}"
@@ -258,7 +250,6 @@
                         Style="{StaticResource FieldComboBoxStyle}"/>
                 </DataTemplate>
 
-                <!-- Color: swatch (clickable) + hex TextBox + picker button -->
                 <DataTemplate x:Key="ColorFieldTemplate">
                     <Grid>
                         <Grid.ColumnDefinitions>
@@ -266,7 +257,7 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <!-- Swatch: Button with custom template = jen color Border (žádné default Button chrome). -->
+                        <!-- Swatch: Button s custom templatem = jen barevný Border (žádné default Button chrome). -->
                         <Button Grid.Column="0" Width="22" Height="22"
                                 Click="ColorField_PickClick"
                                 IsEnabled="{Binding Editable}"
@@ -439,7 +430,6 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="HelpText"/>
                             </Grid.ColumnDefinitions>
-                            <!-- Collapse/expand toggle (chevron) -->
                             <ToggleButton Grid.Column="0"
                                           IsChecked="{Binding IsExpanded}"
                                           Background="Transparent" BorderThickness="0"
@@ -467,18 +457,16 @@
                                     </Style>
                                 </ToggleButton.Style>
                             </ToggleButton>
-                            <!-- Group name -->
                             <TextBlock Grid.Column="1"
                                        Text="{Binding GroupName}"
                                        FontWeight="SemiBold" FontSize="12"
                                        VerticalAlignment="Center"/>
-                            <!-- Help icon (tooltip mode) -->
                             <Image Grid.Column="2" Source="{StaticResource EDIcons.Help}"
                                    Width="14" Height="14" Margin="0,0,4,0"
                                    ToolTip="{Binding HelpText}" Cursor="Help"
                                    VerticalAlignment="Center"
                                    Style="{StaticResource HelpIconStyle}"/>
-                            <!-- Help text (column mode): aligned with field help texts -->
+                            <!-- Help text (column mode) — zarovnán s help texty polí přes SharedSizeGroup -->
                             <TextBlock Grid.Column="3"
                                        Text="{Binding HelpText}" TextWrapping="Wrap"
                                        Foreground="Gray" FontSize="11"

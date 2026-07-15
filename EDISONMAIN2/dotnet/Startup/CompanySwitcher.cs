@@ -20,7 +20,7 @@ public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
 /// (<see cref="AppBootstrapper"/>), <see cref="Switch"/> runtime přepnutí ve VM. Drift mezi oběma cestami
 /// (priorita firmy, ACTIVITY zámek, licenční retry, rollback) byl historicky zdrojem
 /// bugů — proto společný service. Čte MLRest/LicenceLoader/IsAdmin/Popup/Nav lazily z
-/// <see cref="EDServices"/>, takže po S2 user switch automaticky vidí novou session.
+/// <see cref="EDServices"/>, takže po user switch automaticky vidí novou session.
 /// </summary>
 public class CompanySwitcher(
     EDServices services,

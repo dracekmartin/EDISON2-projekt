@@ -24,7 +24,7 @@ public class EdisonMainViewModelSearchTests
     }
 
     [Theory]
-    [InlineData("Objednávky", "obj", true)]    // case-insensitive substring
+    [InlineData("Objednávky", "obj", true)]    // substring bez ohledu na velikost písmen
     [InlineData("Objednávky", "OBJEDN", true)]
     [InlineData("Objednávky", "xyz", false)]
     public void Leaf_MatchesByName(string name, string text, bool expected)

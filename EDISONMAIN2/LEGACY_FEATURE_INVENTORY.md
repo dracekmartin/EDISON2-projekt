@@ -11,10 +11,9 @@
 
 > **Vztah k ostatním dokumentům:**
 > - [`RESPONSIBILITIES.md`](RESPONSIBILITIES.md) — hloubkový rozbor odpovědností + „studnice nápadů" (1:1 port úvah z legacy, hodně aspirativního). Organizovaný po odpovědnostech.
-> - [`PLAN.md`](PLAN.md) — **kanonický** stav toho, co reálně děláme (single source of truth).
 > - **Tento dokument** — exhaustivní **per-form inventář** + jednotná **status matice**. Komplementární: kde RESPONSIBILITIES jde do hloubky principů, tady je „máme pokryté úplně všechno?".
 
-> **⚠️ Snímek k datu (2026-06-30).** Stav vychází z `PLAN.md` / `CLAUDE.md` (autoritativní) +
+> **⚠️ Snímek k datu (2026-06-30).** Stav vychází z tehdejšího plánu / `CLAUDE.md` +
 > čtení kódu. Než na něco navážeš, ověř proti aktuálnímu kódu — některé `file:line` reference
 > zestárnou.
 

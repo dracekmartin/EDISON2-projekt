@@ -21,7 +21,7 @@
             </Grid.ColumnDefinitions>
 
             <StackPanel Grid.Column="0" Orientation="Horizontal">
-                <!-- Actions dropdown menu (visible when Actions property is set) -->
+                <!-- Menu „Akce" — zobrazí se automaticky, když má VM neprázdné Actions -->
                 <Menu VerticalAlignment="Center" Margin="0,0,4,0"
                       Visibility="{Binding HasItems, ElementName=ActionsMenuItem, Converter={StaticResource BoolToVisibility}}">
                     <MenuItem x:Name="ActionsMenuItem" Header="Akce" ItemsSource="{Binding Actions}">
@@ -35,12 +35,10 @@
                         </MenuItem.ItemContainerStyle>
                     </MenuItem>
                 </Menu>
-                <!-- Optional left-side content (set via LeftContent property) -->
                 <ContentPresenter x:Name="LeftContentPresenter"/>
             </StackPanel>
 
             <StackPanel Grid.Column="2" Orientation="Horizontal">
-                <!-- OkCancel mode -->
                 <Button x:Name="OkBtn"
                         Content="{StaticResource EDStrings.Ok}" Width="80"
                         Margin="0,0,6,0" Padding="0,4"
@@ -51,7 +49,6 @@
                         Padding="0,4"
                         Click="CancelBtn_Click"
                         Visibility="Collapsed"/>
-                <!-- Close mode (default) -->
                 <Button x:Name="CloseBtn"
                         Content="{StaticResource EDStrings.Close}" Width="80"
                         Padding="0,4"

@@ -45,7 +45,7 @@ public static class AccessLoader
             }
         }
 
-        // Admin fallback — viz frmMain.AddAdminRights:765-775. Aplikuje se i pokud
+        // Admin fallback — viz frmMain.AddAdminRights. Aplikuje se i pokud
         // user není apId=3, ale je IsAdmin (např. lokálně označený admin jinou cestou).
         // Pravidlo: doplňuje pouze accessTable, NIKDY licence (admin nevidí moduly
         // mimo licenci firmy — jen se neuzamkne sám sobě přístup k user mgmt).
