@@ -47,6 +47,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenTemplateDesignerCommand { get; }
         public ICommand CloseAllCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
+        public ICommand OpenDefaultMiniAppsCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
         // EDISON menu
@@ -78,6 +79,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Dostupné mini-apps pro launcher (menu „Miniaplikace").</summary>
         public IReadOnlyCollection<MiniAppDescriptor> MiniApps => _miniAppCatalog.All;
 
+        // Výchozí sada (3 sloupce jako starý shell) — pořadí = novinky, wiki/vyhledávání, školení.
+        private static readonly string[] DefaultMiniAppIds = ["Core.Novinky", "Core.Wiki", "Core.Skoleni"];
+
+        private IEnumerable<MiniAppDescriptor> DefaultMiniApps =>
+            DefaultMiniAppIds.Select(_miniAppCatalog.Find).OfType<MiniAppDescriptor>();
+
+        private bool _hasOpenMiniApps;
+        /// <summary>Je v docku alespoň jedna mini-app? False → shell ukáže prázdný placeholder.</summary>
+        public bool HasOpenMiniApps { get => _hasOpenMiniApps; private set => Set(ref _hasOpenMiniApps, value); }
+
         /// <summary>
         /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/> a obnoví
         /// uložený layout aktuální firmy. Volá code-behind shellu po načtení okna.
@@ -85,8 +96,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public void AttachMiniAppHost(IMiniAppHost host)
         {
             _miniAppManager = new MiniAppManager(host, _miniAppCatalog);
+            _miniAppManager.InstancesChanged += () => HasOpenMiniApps = _miniAppManager.OpenInstances.Count > 0;
             RestoreMiniAppLayout(Idfa);
         }
+
+        private void OpenDefaultMiniApps() => _miniAppManager?.OpenColumns(DefaultMiniApps);
 
         private void PersistMiniAppLayout(string idfa)
         {
@@ -104,7 +118,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             if (_miniAppManager is null) return;
             if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) != true || string.IsNullOrWhiteSpace(xml))
+            {
+                // Žádný uložený layout (první spuštění / nová firma) → výchozí 3 sloupce jako starý shell.
+                OpenDefaultMiniApps();
                 return;
+            }
             try
             {
                 _miniAppManager.RestoreLayout(xml);
@@ -158,6 +176,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             OpenTemplateDesignerCommand = Command(OpenTemplateDesigner);
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
+            OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);

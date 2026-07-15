@@ -486,10 +486,12 @@
                                 Background="Transparent"
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}">
-                            <TabPanel IsItemsHost="True"
-                                      Margin="0"
-                                      Background="Transparent"
-                                      KeyboardNavigation.TabIndex="1"/>
+                            <!-- WrapPanel místo TabPanelu — ten při zalomení tabů do více řádků
+                                 přesouvá řádek s vybraným tabem dolů k obsahu (taby „skáčou"). -->
+                            <WrapPanel IsItemsHost="True"
+                                       Margin="0"
+                                       Background="Transparent"
+                                       KeyboardNavigation.TabIndex="1"/>
                         </Border>
                         <!-- Content -->
                         <Border Grid.Row="1"

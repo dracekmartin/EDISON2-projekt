@@ -93,21 +93,22 @@ public class WindowNavigatorTests
     public void BuildLauncherArguments_HasSentinelAndAgendaPathLast()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
 
-        // Sentinel první, agenda path poslední (host ji čte pro Assembly.LoadFrom).
+        // Sentinel první; agenda path [11] (host ji čte pro Assembly.LoadFrom), licencované elementy [12] poslední.
         Assert.StartsWith("EDISONMAIN2 ", args);
-        Assert.EndsWith("\"C:\\Edison\\X.exe\"", args);
+        Assert.Contains("\"C:\\Edison\\X.exe\"", args);
+        Assert.EndsWith("\"26001,6001\"", args);
     }
 
     [Fact]
     public void BuildLauncherArguments_OrderingMatchesContract()
     {
         var args = WindowNavigator.BuildLauncherArguments(
-            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe");
+            MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "AdminMode=1", @"C:\Edison\X.exe", "26001,6001");
 
         Assert.Equal(
-            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\"",
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"AdminMode=1\" \"C:\\Edison\\X.exe\" \"26001,6001\"",
             args);
     }
 

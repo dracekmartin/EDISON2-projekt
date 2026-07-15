@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media.Animation;
 using EDVm = EDControls.EDViewModel.EDViewModel;
 
 namespace EDControls.EDActionInProgress;
@@ -24,6 +25,18 @@ public partial class EDActionInProgress : UserControl
         var control = (EDActionInProgress)d;
         control.Visibility = (bool)e.NewValue ? Visibility.Visible : Visibility.Collapsed;
         control.UpdateDim((bool)e.NewValue);
+        control.ToggleWalk((bool)e.NewValue);
+    }
+
+    // Storyboard běží jen když je overlay vidět — Forever animace na Collapsed elementu
+    // by jinak držela dispatcher trvale vzhůru. Begin() zároveň resetuje kapybaru na start.
+    private void ToggleWalk(bool active)
+    {
+        var walk = (Storyboard)Resources["WalkAnimation"];
+        if (active)
+            walk.Begin(this, true);
+        else
+            walk.Stop(this);
     }
 
     // Závoj přes WindowDimmer místo vlastního pozadí — refcount nesčítá tint

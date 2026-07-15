@@ -14,6 +14,9 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 
     public IReadOnlyList<MiniAppInstance> OpenInstances => _open;
 
+    /// <summary>Vyvolá se po každém otevření i zavření mini-app (shell sleduje prázdnotu docku).</summary>
+    public event Action? InstancesChanged;
+
     /// <summary>Obnoví všechny otevřené obnovitelné mini-apps. Vrací názvy (titulky) obnovených.</summary>
     public IReadOnlyList<string> RefreshAll()
     {
@@ -28,12 +31,25 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     }
 
     /// <summary>Vyrobí VM z deskriptoru, vloží panel do docku a začne ho trackovat.</summary>
-    public MiniAppInstance Open(MiniAppDescriptor descriptor)
+    /// <param name="newColumn">true → panel jde do nového sloupce vedle stávajících (jinak jako tab).</param>
+    public MiniAppInstance Open(MiniAppDescriptor descriptor, bool newColumn = false)
     {
         var vm = descriptor.CreateViewModel();
         var contentId = $"{descriptor.Id}#{_nextInstance++}";
         return Mount(descriptor.Id, contentId, vm,
-            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed));
+            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, newColumn));
+    }
+
+    /// <summary>
+    /// Otevře sadu mini-apps vedle sebe do sloupců — první do stávajícího pane, další každá do
+    /// nového sloupce. Slouží pro výchozí layout (3 sloupce jako starý shell).
+    /// </summary>
+    public IReadOnlyList<MiniAppInstance> OpenColumns(IEnumerable<MiniAppDescriptor> descriptors)
+    {
+        var opened = new List<MiniAppInstance>();
+        foreach (var descriptor in descriptors)
+            opened.Add(Open(descriptor, newColumn: opened.Count > 0));
+        return opened;
     }
 
     /// <summary>Zavře všechny otevřené mini-apps (zavření shellu, přepnutí session).</summary>
@@ -76,6 +92,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
             vm.RequestClose -= OnRequestClose;
             if (instance is not null) _open.Remove(instance);
             vm.OnClosed();
+            InstancesChanged?.Invoke();
         }
 
         var pane = addPane(OnClosed);
@@ -84,6 +101,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         _open.Add(instance);
         if (vm is IMiniAppRefreshController controller) controller.AttachRefresher(RefreshAll);
         vm.OnOpened();
+        InstancesChanged?.Invoke();
         return instance;
     }
 
