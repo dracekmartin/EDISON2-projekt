@@ -56,6 +56,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f = form.AddFieldToLastGroup("color", "Barva", $$$FieldTypeColor, 0, 0)
 		s f.value = "#FF003366"
 
+		; Image: value = Base64 — drží se jen na klientovi, na server se neposílá (limit MLRest)
+		s f = form.AddFieldToLastGroup("image", "Obrázek", $$$FieldTypeImage, 0, 0)
+		s f.helpText = "Náhled + Nahrát/Vymazat; picker dodává host přes PickImageImpl"
+
 		; ComboBox: editable s autocomplete — user může napsat libovolný text, list je nápověda
 		s f = form.AddFieldToLastGroup("combo", "Pole agendy (combo)", $$$FieldTypeComboBox, 0, 0)
 		d f.AddListItem("CISLO_LINKY",  "Číslo linky")
