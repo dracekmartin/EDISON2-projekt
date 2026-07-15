@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-15 — „Na znamení" řídí značku i legendu (#7161) + dev přepínač firem
+
+- **StopList: „Na znamení" schová značku i legendu (#7161 D5).** Přepínač „Na znamení"
+  (`ShowSignalStopIndicator`) teď řídí značku „na znamení" u zastávky **i** řádek legendy —
+  vypnutím zmizí obojí (dřív mizela jen legenda, značka zůstávala). Příčina: ostrá AD i MHD data
+  posílají „na znamení" jako **atribut** (ne přes pole `NaZnameni`), takže značku dřív řídil
+  generický přepínač „Atributy". Nově se atribut „na znamení" rozpozná podle popisu
+  (CZ „na znamení" / SK „na znamenie" — symbol se mezi agendami liší: AD „x", MHD „D") a řídí ho
+  „Na znamení"; „Atributy" řídí jen ostatní atributy. Konzistentní AD i MHD, default beze změny
+  (žádná regrese), čistě TD render → gold testů se netýká.
+- **Dev přepínač firem (jen pro vývojáře).** Nástroje → „Přepnout firmu (DEV)" — pevný seznam
+  (CB_CSADAD, CB_GWBUS, KV_DP), přepne `Idfa` + datový namespace za běhu a znovu načte schéma/data
+  (bez editace appsettings a restartu). Gate = lokální dev klíč (jako AI asistent), v produkci skryté;
+  bez licenčního verify. Slouží k testování agend proti více firmám.
+
 ## 2026-07-15 — UX úklid (empty-state, hlášky DB, EDList výběr, Save dialog)
 
 - **Empty-state panelu „Pole agendy"** — u agendy bez databázových polí (Obecná / bez připojení)
