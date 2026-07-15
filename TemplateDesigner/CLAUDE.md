@@ -176,6 +176,17 @@ Tohle je **pasivní pravidlo, ne skill k ručnímu vyvolání** — platí pro k
 Uživatel dodá **featuru + volitelný kontext** a dělá **prioritizační a architektonická rozhodnutí**;
 mechaniku (kód → testy → docs → wiki → commit) veze agent sám, bez čekání na dílčí pokyny.
 
+### Výchozí zdroj úloh — roadmapa
+
+Když uživatel neurčí konkrétní úlohu, **ber práci z [`roadmap.md`](.claude/docs/roadmap.md)** (vršek = priorita) — to je výchozí vstup pro pipelinu níže:
+
+- Vyber **nejbližší rozumnou položku** (respektuj pořadí, závislosti, gates R1–R7, velikost). **Oznam, co beru**, a pokračuj — neptej se na svolení u každé, ale nech prostor to přesměrovat.
+- **Explicitní zadání od uživatele vždy přebíjí** roadmapu.
+- U **velkých / architektonických** položek se zastav a nech rozhodnutí (co / jak / priorita) na uživateli — ne jen tak spustit velký track.
+- Po dokončení položky (krok 8) rovnou navrhni **další dle roadmapy** → plynulý tok bez opakování zadání.
+
+Pipeline pro každou vybranou úlohu:
+
 0. **Zadání & kontext** — ujasnit konkrétní featuru, vstřebat extra kontext od uživatele, zařadit do scope/roadmapy.
 1. **Projít kód** — přečíst relevantní existující kód a pochopit současný stav (ne psát naslepo).
 2. **Navrhnout testy** — čím se featura ověří (xUnit / Caché `%UnitTest` / ruční golden path), ideálně před implementací.
