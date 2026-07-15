@@ -122,29 +122,38 @@
 
 - [ ] Zkontrolovat/doladit draft níže a odeslat po vydání.
 
-> **Předmět:** Návrhář tiskových sestav — nová verze (červenec 2026)
+> **Předmět:** Nový Návrhář sestav v EDISONu
 >
 > Dobrý den,
 >
-> vydali jsme novou verzi návrháře tiskových sestav. Hlavní novinky:
+> rádi bychom vám dali vědět, že jsme dnes v EDISONu spustili nový **Návrhář sestav** —
+> nástroj, ve kterém si sami navrhnete podobu tiskových jízdních řádů. Vytvoříte v něm
+> vzhled vývěsky a systém už do ní sám doplní aktuální data a připraví PDF k tisku.
 >
-> - **Tisk více vývěsek na jeden list (imposice)** — např. dvě A5 vývěsky na jeden list A4,
->   volitelně tatáž vývěska vícekrát pro řezání, včetně ořezových značek. Nastavíte přímo
->   v tiskovém dialogu, na šablonách se nic nemění.
-> - **Dopravní symboly** — bezbariérové spoje, denní značky (①–⑦) a další značky se nyní
->   tisknou standardními piktogramy shodnými s dosavadními jízdními řády.
-> - **Nástupiště u zastávek** — nový volitelný sloupec seznamu zastávek (přání TRANSDEV).
-> - **Přehlednější výběr typu sestavy** — sestavy jsou nově členěny podle agendy
->   (Zastávkový JŘ, Linkový JŘ, Faktury) a varianty dat (AD / MHD).
-> - **Import PDF s umělou inteligencí** — z existující PDF vývěsky vytvoří editovatelnou
->   šablonu (rozpozná zastávky, odjezdy i poznámky). Vyžaduje aktivaci AI služby — ozvěte se nám.
-> - **AI pomocník** — záložka Pomocník odpoví, kde v aplikaci co najdete (též po aktivaci AI služby).
-> - **Vylepšená nápověda (F1)** — s vyhledáváním (Ctrl+F).
-> - **Konzistentní řazení legendy poznámek** + řada drobných oprav a zrychlení.
+> Najdete ho v modulu **Jízdní řády a MHD**, v části **Nastavení a číselníky → Návrhář sestav**.
 >
-> Podrobnosti rádi ukážeme; připomínky posílejte přes helpdesk.
+> Abyste nezačínali od prázdné stránky, připravili jsme pro vás **úvodní šablonu**, na
+> které můžete rovnou stavět — najdete ji v dialogu Otevřít pod „Systémové M‑line" a
+> zároveň ji dáváme k dispozici jako soubor JSON (na wiki), který si můžete kdykoli
+> naimportovat. Stačí si ji upravit podle sebe. Během návrhu přitom průběžně vidíte živý
+> náhled s reálnými daty — stačí vybrat linku a Návrhář dopočítá zbytek. Hotovou šablonu
+> uložíte do databáze, odkud ji máte k dispozici celá firma, a kdykoli z ní vytisknete
+> PDF s aktuálním jízdním řádem. Zatím je Návrhář připravený pro zastávkové jízdní řády,
+> další typy budeme postupně přidávat.
 >
-> S pozdravem, M-line
+> Podrobnější návod a přehled novinek dáváme na naši wiki — **[odkaz doplníme]** —,
+> kterou budeme dál průběžně rozšiřovat.
+>
+> Návrhář navíc umí dvě věci s pomocí umělé inteligence: **Pomocníka**, který poradí, kde
+> v aplikaci co hledat, a **Import z PDF**, který z existující vývěsky rovnou vytvoří
+> editovatelnou šablonu. Obojí je volitelné — pokud byste to chtěli používat, ozvěte se
+> nám; zřídíme vám přístup, nastavíme rozumné limity a rozpočet a hned to budete mít
+> v Návrháři k dispozici.
+>
+> Kdyby cokoli, jsme vám k dispozici na helpdesku a budeme rádi za jakoukoli zpětnou vazbu.
+>
+> S pozdravem,
+> M‑line
 
 ---
 

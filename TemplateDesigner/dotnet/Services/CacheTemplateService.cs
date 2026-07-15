@@ -39,8 +39,7 @@ public class CacheTemplateService
         var inVar = new CVar();
         inVar["agendaCode"] = new CVar(agendaCode ?? "");
 
-        CVar result = _mlRest.Query(CacheClass, "ListTemplates", inVar);
-        ThrowOnError("ListTemplates");
+        CVar result = Query("ListTemplates", inVar);
 
         string? json = result["1"]?.Value?.ToString();
         if (string.IsNullOrEmpty(json)) return [];
@@ -78,8 +77,7 @@ public class CacheTemplateService
         // Prázdné = session firma; "MLINE" pro otevření systémové šablony.
         inVar["sourceIdFa"] = new CVar(sourceIdFa ?? "");
 
-        CVar result = _mlRest.Query(CacheClass, "LoadTemplate", inVar);
-        ThrowOnError("LoadTemplate");
+        CVar result = Query("LoadTemplate", inVar);
 
         string? metaJson = result["metadata"]?.Value?.ToString();
         string? dataJson = result["data"]?.Value?.ToString();
@@ -135,8 +133,7 @@ public class CacheTemplateService
         // Distribuční zápis (seed) — jen tak server povolí zápis do read-only MLINE větve.
         inVar["distribution"] = new CVar(distribution ? "1" : "");
 
-        _mlRest.Query(CacheClass, "SaveTemplate", inVar);
-        ThrowOnError("SaveTemplate");
+        Query("SaveTemplate", inVar);
     }
 
     // ─── DeleteTemplate ───────────────────────────────────────────────────────
@@ -150,8 +147,7 @@ public class CacheTemplateService
         var inVar = new CVar();
         inVar["templateId"] = new CVar(templateId.ToString());
 
-        CVar result = _mlRest.Query(CacheClass, "DeleteTemplate", inVar);
-        ThrowOnError("DeleteTemplate");
+        CVar result = Query("DeleteTemplate", inVar);
 
         return result["deleted"]?.Value?.ToString() == "1";
     }
@@ -168,11 +164,31 @@ public class CacheTemplateService
         inVar["templateId"] = new CVar(templateId.ToString());
         inVar["newName"]    = new CVar(newName);
 
-        _mlRest.Query(CacheClass, "RenameTemplate", inVar);
-        ThrowOnError("RenameTemplate");
+        Query("RenameTemplate", inVar);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>MLRest.Query + ThrowOnError v jednom. Syrovou síťovou výjimku (výpadek VPN/serveru,
+    /// socket timeout) zabalí do <see cref="CacheTemplateException"/>, aby volající dostali jednotnou
+    /// doménovou hlášku „Operace v databázi selhala" místo generického „neočekávaná chyba" z globálního
+    /// handleru. RestStatus.Error řeší <see cref="ThrowOnError"/> (stejný typ výjimky).</summary>
+    private CVar Query(string operation, CVar inVar)
+    {
+        CVar result;
+        try
+        {
+            result = _mlRest.Query(CacheClass, operation, inVar);
+        }
+        catch (CacheTemplateException) { throw; }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[CacheTemplateService] {operation} výjimka: {ex.Message}");
+            throw new CacheTemplateException($"Operace „{operation}\" v databázi selhala: {ex.Message}", ex);
+        }
+        ThrowOnError(operation);
+        return result;
+    }
 
     private void ThrowOnError(string operation)
     {

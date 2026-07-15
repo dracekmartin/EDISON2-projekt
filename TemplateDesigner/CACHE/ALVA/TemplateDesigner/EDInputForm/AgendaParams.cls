@@ -26,6 +26,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         s agendaClass = $g(^||ML("IN","agendaClass"))
         s valuesJson  = $g(^||ML("IN","values"))
+        // includeExport=0 → jen parametry sestavy (levý tab v hlavním okně); default 1 = i export
+        // skupina (tiskový dialog). Export pole jsou tiskově specifická, do tabu nepatří.
+        s includeExport = $g(^||ML("IN","includeExport"), 1)
 
         s paramsJson = ..FetchParamsJson(.sys, agendaClass)
 
@@ -33,20 +36,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         i valuesJson '= "" { s vals = ##class(%DynamicObject).%FromJSON(valuesJson) }
 
         s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
-        d form.AddGroup("params", "Parametry sestavy")
 
         i paramsJson '= "" {
             s arr = ##class(%DynamicArray).%FromJSON(paramsJson)
-            s sz = arr.%Size()
-            for i=0:1:(sz-1) {
-                s p = arr.%Get(i)
-                i $isobject(p) { d ..AddParamField(form, p, vals) }
-            }
+            d ..AddParamGroups(form, arr, .vals)
+        } else {
+            d form.AddGroup("params", "Parametry sestavy")
         }
 
         // Universální export pole (členění výstupu + název souboru) — platí pro všechny agendy.
-        // NEjsou součástí GetParameters → neukáží se v preview liště, jen v tiskovém dialogu.
-        d ..AddExportFields(form, vals)
+        // NEjsou součástí GetParameters → jen v tiskovém dialogu, ne v tabu parametrů.
+        i includeExport '= 0 { d ..AddExportFields(form, vals, agendaClass) }
 
         d form.WriteToOut()
     } catch (ex) { $$$CatchErrRest }
@@ -56,16 +56,34 @@ ClassMethod Init(ByRef sys As %String) As %Status
 /// Universální export pole pro tiskový dialog (společné všem agendám): členění výstupu při tisku
 /// s daty (více instancí) + pattern názvu souboru s {POLE} tokeny. Klíče stabilní (parsuje C#),
 /// popisky české. Viditelnost pole názvu (jen pro split) řeší C# host (PrintDialog.ApplyVisibility).
-ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %DynamicObject)
+/// Volby členění dle capability agendy: PER_LINE (per instance) jen když agenda instance má,
+/// PER_STOP (per stránka dat zastávka×směr) jen pro ElementKind=STOP — u Faktur/GENERAL by
+/// nabízené volby byly nesmyslné.
+ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %DynamicObject, agendaClass As %String = "")
 {
     d form.AddGroup("export", "Export (tisk s daty)")
+
+    // Capability metadata agendy (class parametry) — defenzivně, neznámá/prázdná třída → defaults.
+    s elementKind = ""
+    s instanceLabel = ""
+    i agendaClass '= "" {
+        try {
+            s elementKind   = $parameter(agendaClass, "ElementKind")
+            s instanceLabel = $parameter(agendaClass, "InstanceLabel")
+        } catch ex { s elementKind = "", instanceLabel = "" }
+    }
 
     s split = "SINGLE"
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SPLIT") { s split = vals.%Get("__EXPORT_SPLIT") }
     s f = form.AddFieldToLastGroup("__EXPORT_SPLIT", "Členění výstupu", $$$FieldTypeList, 1, 1)
-    d f.AddListItem("SINGLE",   "Vše do jednoho PDF")
-    d f.AddListItem("PER_LINE", "Jeden PDF na linku")
-    d f.AddListItem("PER_STOP", "Jeden PDF na zastávku/směr")
+    d f.AddListItem("SINGLE", "Vše do jednoho PDF")
+    s hasPerLine = (instanceLabel '= "")
+    s hasPerStop = (elementKind = "STOP")
+    i hasPerLine { d f.AddListItem("PER_LINE", "Jeden PDF na " _ ..Akuzativ(instanceLabel)) }
+    i hasPerStop { d f.AddListItem("PER_STOP", "Jeden PDF na zastávku/směr") }
+    // Uložená hodnota, kterou tato agenda nenabízí (přepnutí agendy) → fallback SINGLE.
+    i (split="PER_LINE") && 'hasPerLine { s split = "SINGLE" }
+    i (split="PER_STOP") && 'hasPerStop { s split = "SINGLE" }
     s:split'="" f.value = split
 
     s fname = ""
@@ -104,6 +122,52 @@ ClassMethod AddExportFields(form As ALVA.EDControls.EDInputForm.Form, vals As %D
     s marks = 0
     i $isobject(vals) && vals.%IsDefined("__EXPORT_SHEET_MARKS") { s v = vals.%Get("__EXPORT_SHEET_MARKS")  s marks = $s((v="true")||(v=1):1, 1:0) }
     d form.AddBool("__EXPORT_SHEET_MARKS", "Ořezové značky", marks)
+}
+
+/// Rozloží parametry do EDInputForm skupin dle `group` klíče (pořadí = první výskyt skupiny,
+/// stejná sémantika jako grouping lišty parametrů v hlavním okně). Parametry bez `group`
+/// padají do defaultní skupiny „Parametry sestavy".
+ClassMethod AddParamGroups(form As ALVA.EDControls.EDInputForm.Form, arr As %DynamicArray, ByRef vals)
+{
+    s sz = arr.%Size()
+
+    // 1. průchod: skupiny v pořadí prvního výskytu + index parametrů per skupina
+    s pocetSkupin = 0
+    for i=0:1:(sz-1) {
+        s p = arr.%Get(i)
+        continue:'$isobject(p)
+        s g = p.group
+        s:g="" g = "Parametry sestavy"
+        i '$d(skupinaIndex(g)) {
+            s pocetSkupin = pocetSkupin + 1
+            s skupinaIndex(g) = pocetSkupin
+            s skupinaNazev(pocetSkupin) = g
+        }
+        s skupinaParam(skupinaIndex(g), i) = ""
+    }
+
+    i pocetSkupin = 0 { d form.AddGroup("params", "Parametry sestavy")  ret }
+
+    // 2. průchod: per skupina AddGroup + pole v původním pořadí
+    for gi=1:1:pocetSkupin {
+        d form.AddGroup("params" _ gi, skupinaNazev(gi))
+        s idx = ""
+        f {
+            s idx = $o(skupinaParam(gi, idx))
+            q:idx=""
+            d ..AddParamField(form, arr.%Get(idx), vals)
+        }
+    }
+}
+
+/// Akuzativ českého labelu instance pro větu „Jeden PDF na …" (linka→linku, faktura→fakturu,
+/// instance→instanci). Jednoduchá heuristika koncovky; neznámá koncovka → beze změny.
+ClassMethod Akuzativ(slovo As %String) As %String
+{
+    q:slovo="" slovo
+    q:$e(slovo,*)="a" $e(slovo, 1, *-1) _ "u"
+    q:$e(slovo,*)="e" $e(slovo, 1, *-1) _ "i"
+    q slovo
 }
 
 ClassMethod Validate(ByRef sys As %String) As %Status

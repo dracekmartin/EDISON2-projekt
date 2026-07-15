@@ -6,6 +6,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using Microsoft.Win32;
 using SkiaSharp;
+using EDControls.EDInputForm;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Designer;
@@ -59,10 +60,6 @@ public partial class MainWindow : Window
     private float  _resizeMouseStartX, _resizeMouseStartY;
     private float  _resizeOriginX, _resizeOriginY;
     private float  _resizeSectionW, _resizeSectionH; // hranice sekce pro clamp
-    // Sdílená hranice — sousední element, který se mění opačně
-    private TemplateElement? _resizeNeighbor;
-    private float  _neighborInitX, _neighborInitY, _neighborInitW;
-    private float? _neighborInitH;
 
     // ── Adding element (drag from palette / field drag) ────────────────────────
     private string? _addingElementType;
@@ -149,6 +146,7 @@ public partial class MainWindow : Window
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
         _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
+        _vm.RequestParamsFormReload      = ReloadParamsTabForm;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);
         // Orchestraci exportu (async fetch + snapshot + progress) řídí VM; view jen renderuje.
@@ -237,6 +235,7 @@ public partial class MainWindow : Window
         // už nastavil State.GridSize, ale RequestGridSizeUiSync callback v tu chvíli
         // ještě nebyl napojený — explicit sync teď, kdy už je vše drátované.
         SyncGridSizeComboBox(_vm.State.GridSize);
+        SyncSnapGapComboBox(_vm.State.SnapGapMm);
 
         // Pokud LoadAsync nestihl dokončit před Show() (cold-start Caché HTTP trvá 2-3s),
         // subscribe na Loaded event — handler dispatchne re-apply na UI thread.
@@ -256,6 +255,7 @@ public partial class MainWindow : Window
                 _vm.ApplyLoadedPreferences();
                 ApplyUiPreferences();
                 SyncGridSizeComboBox(_vm.State.GridSize);
+                SyncSnapGapComboBox(_vm.State.SnapGapMm);
                 RebuildRecentFilesMenu();
                 // Pokud byla šablona otevřena před dokončením LoadAsync, PrintParams nebyly aplikovány —
                 // dohnat to teď.
@@ -556,8 +556,25 @@ public partial class MainWindow : Window
         if (!Keyboard.Modifiers.HasFlag(ModifierKeys.Control)) return;
         e.Handled = true;
         int newIdx = Math.Clamp(CmbPreviewZoom.SelectedIndex + (e.Delta > 0 ? 1 : -1), 0, ZoomLevels.Length - 1);
-        if (newIdx != CmbPreviewZoom.SelectedIndex)
-            CmbPreviewZoom.SelectedIndex = newIdx;
+        if (newIdx == CmbPreviewZoom.SelectedIndex) return;
+
+        // Zoom ke kurzoru (stejně jako plátno): bod obsahu pod myší má po zoomu zůstat pod myší.
+        // Offsety se nastaví až po layout passu (BeginInvoke Loaded) — skPreview se přepočítá
+        // synchronně v CmbPreviewZoom_SelectionChanged → UpdatePreviewSize, ScrollViewer jinak
+        // clampne na starou velikost.
+        var mouse = e.GetPosition(PreviewScrollViewer);
+        double contentX = PreviewScrollViewer.HorizontalOffset + mouse.X;
+        double contentY = PreviewScrollViewer.VerticalOffset + mouse.Y;
+        float oldZoom = ZoomLevels[Math.Clamp(CmbPreviewZoom.SelectedIndex, 0, ZoomLevels.Length - 1)];
+        float scale = ZoomLevels[newIdx] / oldZoom;
+
+        CmbPreviewZoom.SelectedIndex = newIdx;   // SelectionChanged → InvalidatePreview → UpdatePreviewSize
+
+        Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, () =>
+        {
+            PreviewScrollViewer.ScrollToHorizontalOffset(contentX * scale - mouse.X);
+            PreviewScrollViewer.ScrollToVerticalOffset(contentY * scale - mouse.Y);
+        });
     }
 
     private void CmbPreviewZoom_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -828,6 +845,21 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>Sync CmbSnapGap na uloženou hodnotu mezery — nebindovaný combobox (jako CmbGridSize).
+    /// Bez toho combo po startu/loadu ukazoval default, i když State.SnapGapMm držel uloženou hodnotu.</summary>
+    private void SyncSnapGapComboBox(float gapMm)
+    {
+        foreach (var item in CmbSnapGap.Items.OfType<ComboBoxItem>())
+        {
+            if (float.TryParse(item.Tag?.ToString(), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out float v)
+                && Math.Abs(v - gapMm) < 0.001f)
+            {
+                CmbSnapGap.SelectedItem = item;
+                return;
+            }
+        }
+    }
+
     private void CmbSnapGap_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_vm is null || CmbSnapGap.SelectedItem is not ComboBoxItem item) return;
@@ -994,6 +1026,70 @@ public partial class MainWindow : Window
 
         var dlg = new PrintDialog(vm) { Owner = this };
         dlg.ShowDialog();
+
+        // Tisk sdílí _previewParams s tabem parametrů — po zavření přenačti tab formulář,
+        // aby odrážel hodnoty případně změněné v dialogu.
+        ReloadParamsTabForm();
+    }
+
+    // ── EDInputForm parametrů v levém tabu (AgendaParams, includeExport=0) ───────
+    // Vzor stejný jako PrintDialog: CacheClass + InitParams → Init → Initialized → napojení polí.
+
+    private bool _paramsTabInitHooked;
+
+    /// <summary>Přenačte formulář parametrů v levém tabu z aktuální agendy + hodnot (sdílený dict).
+    /// Volá se po změně agendy/šablony (VM callback) i po zavření tiskového dialogu (sync hodnot).</summary>
+    private void ReloadParamsTabForm()
+    {
+        if (_vm is null) return;
+
+        // Agenda bez parametrů (GENERAL / bez GetParameters) → vyčistit CacheClass, ať se při
+        // příštím Loaded neprovede Init se stale InitParams předchozí agendy.
+        if (!_vm.HasParameters || _vm.CurrentAgendaCacheClass is null)
+        {
+            ParamsTabForm.CacheClass = "";
+            return;
+        }
+
+        ParamsTabForm.InitParams = _vm.BuildAgendaParamsInitParams();
+        if (!_paramsTabInitHooked)
+        {
+            ParamsTabForm.Initialized += OnParamsTabInitialized;
+            _paramsTabInitHooked = true;
+        }
+        ParamsTabForm.CacheClass = "ALVA.TemplateDesigner.EDInputForm.AgendaParams";
+
+        // Init() = synchronní Caché round-trip. Voláme ho jen když je control už Loaded (přepnutí
+        // agendy za běhu). Při prvním zobrazení tabu (a v konstruktoru okna) ho spustí EDInputForm
+        // Loaded auto-init s aktuálními InitParams — jinak by transientní chyba Caché propadla ven
+        // z konstruktoru okna a aplikace by se neotevřela (R1/R2). Chyba jde do status baru, ne do pádu.
+        if (!ParamsTabForm.IsLoaded) return;
+        try { ParamsTabForm.Init(); }
+        catch (System.Exception ex) { _vm.StatusText = $"⚠ Parametry sestavy se nepodařilo načíst: {ex.Message}"; }
+    }
+
+    private void OnParamsTabInitialized()
+    {
+        foreach (var field in (ParamsTabForm.Items ?? []).OfType<Field>())
+            field.PropertyChanged += OnParamsTabFieldChanged;
+        ApplyParamsTabVisibility();
+    }
+
+    private void OnParamsTabFieldChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_vm is null || sender is not Field field || e.PropertyName != nameof(Field.Value)) return;
+        _vm.SetAgendaParamValue(field.Key, field.Value ?? "");
+        ApplyParamsTabVisibility();   // visibleWhen (např. Hodiny od/do jen ve „Vlastní rozsah")
+    }
+
+    private void ApplyParamsTabVisibility()
+    {
+        if (_vm is null) return;
+        foreach (var field in (ParamsTabForm.Items ?? []).OfType<Field>())
+        {
+            var target = _vm.IsAgendaParamVisible(field.Key) ? EItemVisibility.Visible : EItemVisibility.Collapsed;
+            if (field.Visibility != target) field.Visibility = target;
+        }
     }
 
     private bool _closeConfirmed;
@@ -1007,10 +1103,18 @@ public partial class MainWindow : Window
         // programově. Close() PŘES Dispatcher — až po doběhnutí Closing eventu; jinak WPF hodí
         // „nelze volat Close při zavírání" i když confirm skončí synchronně (volba „Ne").
         e.Cancel = true;
-        if (await _vm.ConfirmUnsavedChangesAsync())
+        try
         {
-            _closeConfirmed = true;
-            Dispatcher.BeginInvoke(new Action(Close));
+            if (await _vm.ConfirmUnsavedChangesAsync())
+            {
+                _closeConfirmed = true;
+                Dispatcher.BeginInvoke(new Action(Close));
+            }
+        }
+        catch (System.Exception ex)
+        {
+            // R2: uložení do DB mohlo selhat (výpadek sítě) → hláška, okno zůstane otevřené.
+            _vm.PopupDisplayer.Error(ex);
         }
     }
 
@@ -1032,14 +1136,21 @@ public partial class MainWindow : Window
     private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
-        var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider, aiReason);
-        var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
-
-        if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
+        try
         {
-            if (!await _vm.ConfirmUnsavedChangesAsync()) return;
-            _vm.LoadGeneratedTemplate(aiVm.GeneratedTemplate);
+            var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+            var aiVm   = new AiTemplateAssistantDialogViewModel(apiKey, _vm.SchemaProvider, aiReason);
+            var dialog = new AiTemplateAssistantDialog(aiVm) { Owner = this };
+
+            if (dialog.ShowDialog() == true && aiVm.GeneratedTemplate is not null)
+            {
+                if (!await _vm.ConfirmUnsavedChangesAsync()) return;
+                _vm.LoadGeneratedTemplate(aiVm.GeneratedTemplate);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            _vm.PopupDisplayer.Error(ex);   // R2: async void → chyba přes popup, ne pád
         }
     }
 
@@ -1077,14 +1188,21 @@ public partial class MainWindow : Window
     private async void MenuImportPdf_Click(object sender, RoutedEventArgs e)
     {
         if (_vm is null) return;
-        var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
-        var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason);
-        var dialog = new PdfImportDialog(vm) { Owner = this };
-
-        if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)
+        try
         {
-            if (!await _vm.ConfirmUnsavedChangesAsync()) return;
-            _vm.LoadGeneratedTemplate(vm.ImportedTemplate);
+            var (apiKey, aiReason) = await TryGetAiApiKeyAsync();
+            var vm = new PdfImportDialogViewModel(_vm.SchemaProvider, apiKey, _vm.State.CurrentTemplate?.AgendaCode, aiReason);
+            var dialog = new PdfImportDialog(vm) { Owner = this };
+
+            if (dialog.ShowDialog() == true && vm.ImportedTemplate is not null)
+            {
+                if (!await _vm.ConfirmUnsavedChangesAsync()) return;
+                _vm.LoadGeneratedTemplate(vm.ImportedTemplate);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            _vm.PopupDisplayer.Error(ex);   // R2: async void → chyba přes popup, ne pád
         }
     }
 
@@ -2097,16 +2215,6 @@ public partial class MainWindow : Window
             _resizeMouseStartX = (cx - _resizeOriginX) / _canvas.MmToPx;
             _resizeMouseStartY = (cy - _resizeOriginY) / _canvas.MmToPx;
 
-            // Detekce sousedního elementu na sdílené hranici
-            _resizeNeighbor = FindResizeNeighbor(el, handle, origin.Section);
-            if (_resizeNeighbor is not null)
-            {
-                _neighborInitX = _resizeNeighbor.X;
-                _neighborInitY = _resizeNeighbor.Y;
-                _neighborInitW = _resizeNeighbor.Width;
-                _neighborInitH = _resizeNeighbor.Height;
-            }
-
             _mouseMode         = MouseMode.Resizing;
             skCanvas.CaptureMouse();
             skCanvas.Cursor = GetResizeCursor(handle);
@@ -2321,10 +2429,6 @@ public partial class MainWindow : Window
 
             _resizeElement.X = newX; _resizeElement.Y = newY;
             _resizeElement.Width = newW; _resizeElement.Height = newH;
-
-            // Synchronizovat sousední element na sdílené hranici
-            if (_resizeNeighbor is not null)
-                SyncNeighborResize(newX, newY, newW, newH);
 
             // Měřící badge — aktuální rozměr a pozice (stejný formát jako u dragu)
             _vm.State.DragBadgeText = $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
@@ -2633,53 +2737,21 @@ public partial class MainWindow : Window
                 _resizeElement.Y      = MmMath.Round(_resizeElement.Y);
                 _resizeElement.Width  = MmMath.Round(_resizeElement.Width);
                 _resizeElement.Height = MmMath.Round(_resizeElement.Height);
-                if (_resizeNeighbor is not null)
-                {
-                    _resizeNeighbor.X      = MmMath.Round(_resizeNeighbor.X);
-                    _resizeNeighbor.Y      = MmMath.Round(_resizeNeighbor.Y);
-                    _resizeNeighbor.Width  = MmMath.Round(_resizeNeighbor.Width);
-                    _resizeNeighbor.Height = MmMath.Round(_resizeNeighbor.Height);
-                }
 
-                var commands = new List<IDesignerCommand>();
-
-                // Hlavní element
                 float? finalH = _resizeElement.Height;
                 if (_resizeElement.X != _resizeInitX || _resizeElement.Y != _resizeInitY ||
                     _resizeElement.Width != _resizeInitW || finalH != _resizeInitH)
                 {
-                    commands.Add(new ResizeElementCommand(
+                    _vm.Execute(new ResizeElementCommand(
                         _resizeElement,
                         _resizeInitX, _resizeInitY, _resizeInitW, _resizeInitH,
                         _resizeElement.X, _resizeElement.Y, _resizeElement.Width, finalH));
                 }
-
-                // Sousední element
-                if (_resizeNeighbor is not null)
-                {
-                    float? nFinalH = _resizeNeighbor.Height;
-                    if (_resizeNeighbor.X != _neighborInitX || _resizeNeighbor.Y != _neighborInitY ||
-                        _resizeNeighbor.Width != _neighborInitW || nFinalH != _neighborInitH)
-                    {
-                        commands.Add(new ResizeElementCommand(
-                            _resizeNeighbor,
-                            _neighborInitX, _neighborInitY, _neighborInitW, _neighborInitH,
-                            _resizeNeighbor.X, _resizeNeighbor.Y, _resizeNeighbor.Width, nFinalH));
-                    }
-                }
-
-                if (commands.Count == 1) _vm.Execute(commands[0]);
-                else if (commands.Count > 1) _vm.Execute(new CompositeCommand("Změna velikosti elementů", commands));
             }
             else
             {
                 _resizeElement.X = _resizeInitX; _resizeElement.Y = _resizeInitY;
                 _resizeElement.Width = _resizeInitW; _resizeElement.Height = _resizeInitH;
-                if (_resizeNeighbor is not null)
-                {
-                    _resizeNeighbor.X = _neighborInitX; _resizeNeighbor.Y = _neighborInitY;
-                    _resizeNeighbor.Width = _neighborInitW; _resizeNeighbor.Height = _neighborInitH;
-                }
             }
         }
         _vm?.State.ActiveGapIndicators.Clear();
@@ -2687,7 +2759,6 @@ public partial class MainWindow : Window
         if (_vm is not null) _vm.State.DragBadgeText = null;
         _mouseMode      = MouseMode.Idle;
         _resizeElement  = null;
-        _resizeNeighbor = null;
         skCanvas.ReleaseMouseCapture();
         skCanvas.Cursor = Cursors.Arrow;
         InvalidateCanvas();
@@ -2760,102 +2831,6 @@ public partial class MainWindow : Window
         ResizeHandle.MiddleLeft  or ResizeHandle.MiddleRight  => Cursors.SizeWE,
         _ => Cursors.Arrow
     };
-
-    /// <summary>
-    /// Synchronizuje sousední element — opačná změna na sdílené hranici.
-    /// Např. táhnu pravou hranu doprava → sousedova levá hrana se posune doprava (zmenší se).
-    /// </summary>
-    private void SyncNeighborResize(float newX, float newY, float newW, float? newH)
-    {
-        if (_resizeNeighbor is null) return;
-        const float minW = 3f, minH = 2f;
-
-        switch (_resizeHandle)
-        {
-            // Táhnu pravou hranu → sousedova levá se posune
-            case ResizeHandle.MiddleRight or ResizeHandle.TopRight or ResizeHandle.BottomRight:
-            {
-                float newRight = newX + newW;
-                float neighborRight = _neighborInitX + _neighborInitW;
-                float nw = Math.Max(minW, neighborRight - newRight);
-                _resizeNeighbor.X = neighborRight - nw;
-                _resizeNeighbor.Width = nw;
-                break;
-            }
-            // Táhnu levou hranu → sousedova pravá se mění
-            case ResizeHandle.MiddleLeft or ResizeHandle.TopLeft or ResizeHandle.BottomLeft:
-            {
-                float nw = Math.Max(minW, newX - _neighborInitX);
-                _resizeNeighbor.Width = nw;
-                break;
-            }
-            // Táhnu spodní hranu → sousedova horní se posune
-            case ResizeHandle.BottomCenter:
-            {
-                float newBottom = newY + (newH ?? 0f);
-                float neighborBottom = _neighborInitY + (_neighborInitH ?? _resizeNeighbor.EffectiveDesignerHeight);
-                float nh = Math.Max(minH, neighborBottom - newBottom);
-                _resizeNeighbor.Y = neighborBottom - nh;
-                _resizeNeighbor.Height = nh;
-                break;
-            }
-            // Táhnu horní hranu → sousedova spodní se mění
-            case ResizeHandle.TopCenter:
-            {
-                float nh = Math.Max(minH, newY - _neighborInitY);
-                _resizeNeighbor.Height = nh;
-                break;
-            }
-        }
-    }
-
-    /// <summary>
-    /// Najde sousední element, jehož hrana přiléhá k tažené hraně resize elementu.
-    /// Tolerance 0.5mm. Vrací null pokud žádný soused neexistuje.
-    /// Podporuje jen jednoosé handles (MiddleLeft/Right, TopCenter/BottomCenter).
-    /// </summary>
-    private static TemplateElement? FindResizeNeighbor(
-        TemplateElement el, ResizeHandle handle, Section section)
-    {
-        const float tolerance = 0.5f;
-        float elH = el.Height ?? el.EffectiveDesignerHeight;
-
-        foreach (var other in section.Elements)
-        {
-            if (other == el || other.IsLocked) continue;
-            float oH = other.Height ?? other.EffectiveDesignerHeight;
-
-            switch (handle)
-            {
-                // Táhnu levou hranu → sousedova pravá hrana musí být na mé levé
-                case ResizeHandle.MiddleLeft or ResizeHandle.TopLeft or ResizeHandle.BottomLeft:
-                    if (MathF.Abs((other.X + other.Width) - el.X) < tolerance && HasVerticalOverlap(el.Y, elH, other.Y, oH))
-                        return other;
-                    break;
-                // Táhnu pravou hranu → sousedova levá hrana musí být na mé pravé
-                case ResizeHandle.MiddleRight or ResizeHandle.TopRight or ResizeHandle.BottomRight:
-                    if (MathF.Abs(other.X - (el.X + el.Width)) < tolerance && HasVerticalOverlap(el.Y, elH, other.Y, oH))
-                        return other;
-                    break;
-                // Táhnu horní hranu → sousedova spodní hrana musí být na mé horní
-                case ResizeHandle.TopCenter:
-                    if (MathF.Abs((other.Y + oH) - el.Y) < tolerance && HasHorizontalOverlap(el.X, el.Width, other.X, other.Width))
-                        return other;
-                    break;
-                // Táhnu spodní hranu → sousedova horní hrana musí být na mé spodní
-                case ResizeHandle.BottomCenter:
-                    if (MathF.Abs(other.Y - (el.Y + elH)) < tolerance && HasHorizontalOverlap(el.X, el.Width, other.X, other.Width))
-                        return other;
-                    break;
-            }
-        }
-        return null;
-
-        static bool HasVerticalOverlap(float y1, float h1, float y2, float h2) =>
-            y1 < y2 + h2 && y2 < y1 + h1;
-        static bool HasHorizontalOverlap(float x1, float w1, float x2, float w2) =>
-            x1 < x2 + w2 && x2 < x1 + w1;
-    }
 
     private (float deltaX, float deltaY) ClampDragDelta(float rawDeltaX, float rawDeltaY)
     {
