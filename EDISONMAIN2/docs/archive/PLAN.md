@@ -11,7 +11,7 @@ Tento plán je živý dokument — budeme ho průběžně upravovat podle nově 
 ### Vztah k existujícím dokumentům
 
 - **[`RESPONSIBILITIES.md`](RESPONSIBILITIES.md) NENÍ kanonická specifikace, je to studnice nápadů.** Obsahuje 1:1 port úvah z legacy systému + aspirativní features bez ověřeného user story. Spousta tam uvedených věcí je irelevantní pro EDISONMAIN2 nebo nemá smysl. Při čerpání z RESPONSIBILITIES vždy ověř, jestli má daná věc reálnou hodnotu — neber to jako automaticky validní.
-- **[`docs/archive/MVP_PLAN_v1.md`](docs/archive/MVP_PLAN_v1.md)** je historický záznam pilot rozhodnutí. Archivováno při materializaci tohoto plánu — `PLAN.md` je single source od první minuty, MVP_PLAN_v1.md zůstává jako referenční historie pilot fáze.
+- **[`MVP_PLAN_v1.md`](MVP_PLAN_v1.md)** je historický záznam pilot rozhodnutí. Archivováno při materializaci tohoto plánu — `PLAN.md` je single source od první minuty, MVP_PLAN_v1.md zůstává jako referenční historie pilot fáze.
 - **Tento PLAN** je single source of truth pro to, co reálně děláme.
 
 ---
