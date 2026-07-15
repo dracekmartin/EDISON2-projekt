@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-15 — Zákaznická wiki: 3 články (post-verze)
+
+Dokumentace Návrháře na podpora.m-line.cz rozdělena na 3 prolinkované články (hub = příručka):
+
+- **569** Uživatelská příručka (hub) — `90511fc5-10e5-476d-b7c1-3cd70672f26d`, zdroj `uzivatelska-prirucka.md`
+- **570** Technické požadavky (IT) — `3a07cae1-1198-4ffa-8875-856e3fc36094`, zdroj `prirucka-it.md` (nový)
+- **571** Novinky a plán — `6d48ca01-ce81-45d8-a396-76fcf0f982db`, zdroj `plan-a-zmeny.md`
+
+Vše `internal` (zveřejnění + link do Edison widgetu „Novinka týdne" řeší uživatel). Zdroj pravdy =
+`.md` v repu, wiki = zrcadlo (na wiki needitovat ručně). Název sjednocen **„Návrhář sestav"**
+(dřív seed „Návrhář šablon" — kolidovalo s menu/e-mailem/názvy článků). Starý článek #6
+(„uživatelský manuál", legacy nástroj) zatím ponechán.
+
+> ⚠️ **Learning — wiki markdown konvertor (TipTap) NEUMÍ tabulky**: GFM tabulka se slije do
+> jednoho run-on odstavce. Do wiki článků psát tabulky jako **odrážky / definiční seznamy**,
+> ne `| … |`. Nadpisy, seznamy (ordered/bullet), odkazy, tučné/kurzíva, blockquote, `---` fungují.
+
+## 2026-07-15 — Snap na čtverec při resize (post-verze úklid)
+
+- **Snap na čtverec při resize obdélníku** (poslední otevřený UX bod z pre-version §5) — u rohového
+  úchytu tvarového elementu (Rectangle/Image/Barcode) se W≈H dorovná na přesný čtverec, když se
+  strany přiblíží (práh 6 px přepočtený na mm dle zoomu). Protilehlý roh (kotva) zůstává, dorovnaná
+  strana snapuje na grid, clamp na hranice sekce. Ctrl snap dočasně vypíná. Měřící badge při snapu
+  vypíše „◻ čtverec". Uživatel nemusí rovné strany dopočítávat ručně. `MainWindow.xaml.cs` resize
+  větev. Tím jsou nálezy pre-version checklistu §5 uzavřené (zbytek ověřen jako už hotový).
+
 ## 2026-07-13 — Vizuální audit UI + rychlé výhry (pre-produkce)
 
 Audit modernosti vzhledu: základ zdravý (EDControlStyles flat theme, moderní paleta EDTheme —

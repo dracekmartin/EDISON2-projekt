@@ -150,6 +150,12 @@
 > nám; zřídíme vám přístup, nastavíme rozumné limity a rozpočet a hned to budete mít
 > v Návrháři k dispozici.
 >
+> **Poznámka pro vaše IT (jednorázově):** Návrhář ke svému běhu potřebuje **.NET Desktop
+> Runtime 10.0 (64bit)** od Microsoftu. Na počítačích, kde ho ještě nemáte, ho stačí jednou
+> nainstalovat — je zdarma ke stažení na stránkách Microsoftu
+> (dotnet.microsoft.com, sekce „.NET Desktop Runtime 10.0", varianta x64). Bez něj se Návrhář
+> nespustí; jde o běžnou systémovou součást, žádné další nastavení není potřeba.
+>
 > Kdyby cokoli, jsme vám k dispozici na helpdesku a budeme rádi za jakoukoli zpětnou vazbu.
 >
 > S pozdravem,
@@ -159,24 +165,21 @@
 
 ## 5. Nálezy z průchodu
 
-| # | Kde (bod checklistu) | Popis | Závažnost | Rozhodnutí (fix před verzí / po verzi / won't-fix) |
-|---|---|---|---|---|
-| 1 | | | | |
-| 2 | | | | |
-| 3 | | | | |
-- Rozumne vychozi nastaveni pro snapovani a mrizku s hlediska UX
-- Prehodit QR kdo a dynamickou tabulku v nabidce elementu
-- Kdyz zoomuji sipka + kolecko na prave strane stranky, chtel bych se zoomovat tam, ted zustane scrollbar vzdycky vlevo a musim se rucne presnunou
-- Vizualni upozorneni / snap pokud budu tahat obdelnik prave kdyz se z nej stane na mrizce ctverec, at nemusi pocitat rucne
-- Snapovani na mrizku obcas neni presne - obcas to je trochu dole nebo nad mrizkou - proc to je? - asi kdyz mam vychozi vysku elementu, tak ta se po pridani na canvas nejak nesnapne, takze to musim upravit rucni - co s tim z hledsska UX?
-- Pri uzych uzych zastavkach se sipka smeru vytiskne vpravo spatne?
-- ~~Projit napovedu a jestli jim pujde pomocnik~~ → **HOTOVO 2026-07-13**: nápověda F1 přepsána
-  (datově řízená + hledání Ctrl+F, zákaznický jazyk); pomocník na Sonnet 5 s vypnutým myšlením,
-  testován uživatelem — funguje dobře (eval sada §6 k doškrtání).
-- Ve formulari tisku pridat moznost (pouze pokud je otevreno primo z TD), aby se hodnoty paraemtru
-  nacetly podle aktualne otevrene sablony → **v roadmapě** (UX drobnosti, per-šablona hodnoty parametrů).
-- ~~Mam A5 sablonu na sirku, jak to vytisknu, aby jedna zastavka byla jedna stranka v pdf?~~
-  → **zodpovězeno**: Ctrl+P → Uspořádání na list → Vypnuto (volba se pamatuje per agenda).
+> **Všechny nálezy §5 odbaveny (2026-07-15).** TemplateDesigner je ve verzi (produkce 2026-07-14),
+> zbývá jen wiki dokumentace + zákaznický e-mail (mimo tuto sekci). Historie nálezů níže — vše
+> vyřešené nebo evidované v roadmapě.
+
+| # | Nález | Stav |
+|---|---|---|
+| 1 | Rozumné výchozí nastavení snapu a mřížky | ✅ hotovo — `DesignerState`: SnapToGrid ZAP, 1mm krok, ShowGrid vyp (5mm krok byl hlavní zdroj „nepřesného" pocitu) |
+| 2 | Přehodit QR kód a dynamickou tabulku v nabídce elementů | ✅ vyřešeno — QR kód vypadá jak má, pořadí ponecháno záměrně |
+| 3 | Zoom kolečkem ke kurzoru (ne scrollbar vlevo) | ✅ hotovo — commit „zoom náhledu ke kurzoru" |
+| 4 | Vizuální snap při resize obdélníku na čtverec | ✅ hotovo 2026-07-15 — viz changelog |
+| 5 | Snap na mřížku občas nepřesný (výchozí výška elementu) | ✅ vyřešeno týmž fixem jako #1 (1mm default) |
+| 6 | Šipka směru u úzkých zastávek vpravo špatně | ✅ vyřešeno — přepracované pozicování šipky uvnitř sloupce + clip na hranice elementu |
+| 7 | Projít nápovědu + pomocníka | ✅ hotovo 2026-07-13 — F1 datově řízená + hledání, pomocník na Sonnet 5 (testován) |
+| 8 | Hodnoty parametrů tisku dle aktuální šablony (jen z TD) | ➡️ roadmapa (UX drobnosti — per-šablona hodnoty parametrů) |
+| 9 | A5 na šířku, jedna zastávka = jedna stránka PDF | ✅ zodpovězeno — Ctrl+P → Uspořádání na list → Vypnuto (per agenda) |
 
 ---
 
