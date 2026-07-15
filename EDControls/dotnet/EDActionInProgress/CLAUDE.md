@@ -1,75 +1,21 @@
 # EDActionInProgress — poznámky pro vývojáře
 
-Celoobrazovkový overlay zobrazovaný během dlouhé operace. Obsahuje pixel-art kapybaru
-s pomerančem na zádech, která se pohybuje tam a zpět, plus nápis „Akce probíhá".
+Overlay „Akce probíhá" s pixel-art kapybarou. Vlož jako **posledního sourozence**
+obsahu v kořenovém `Gridu` okna (musí pokrýt celé okno). Na `Loaded` se sám naváže na
+`EDViewModel.IsActionInProgress` — v XAML se `IsActive` binding **nepíše**. Aktivace
+z VM: `using var _ = ActionInProgress();` (viz EDViewModel doc).
 
-## Mapa souborů
+## Neodvoditelné
 
-| Soubor | Role |
-| --- | --- |
-| `EDActionInProgress.xaml` | Transparentní hit-test overlay (blokuje myš), karta se stínem a kontrastním rámečkem (`EDTheme.Border.Contrast`), posuvná pixel-art kapybara, text „Akce probíhá". Závoj nekreslí sám — viz code-behind. |
-| `EDActionInProgress.xaml.cs` | `IsActive` DependencyProperty; automaticky se naváže na `EDViewModel.IsActionInProgress` při `Loaded`. Při aktivaci drží `WindowDimmer.Dim(window)` — refcount zaručí stejnou míru ztmavení jako dialogy ze shellu i při jejich překryvu. Spouští/zastavuje storyboard `WalkAnimation` podle `IsActive` — animace neběží pro schovaný overlay. |
-
-## Dependency properties
-
-| Vlastnost | Typ | Výchozí | Popis |
-| --- | --- | --- | --- |
-| `IsActive` | `bool` | `false` | Zobrazí (`Visible`) nebo schová (`Collapsed`) overlay. |
-
-## Automatické navázání (žádný explicitní XAML binding není potřeba)
-
-Při `Loaded` se `EDActionInProgress` vyšplhá k rodičovskému `Window` a:
-
-1. Přihlásí se k `Window.DataContextChanged`.
-2. Pokud je DataContext `EDViewModel`, naváže `IsActive` → `EDViewModel.IsActionInProgress`.
-3. Pokud DataContext není `EDViewModel`, odstraní binding.
-
-To znamená, že **nepíšeš** `IsActive="{Binding IsActionInProgress}"` v XAML.
-Stačí vložit control a sám se napojí.
-
-## Použití v XAML
-
-Overlay musí být sourozenec obsahu okna (ne uvnitř `DockPanel`), aby mohl pokrýt celé okno.
-Jako kořen okna použij `Grid`:
-
-```xaml
-<Window xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls">
-    <Grid>
-        <!-- normální obsah okna -->
-        <DockPanel>
-            ...
-        </DockPanel>
-
-        <!-- overlay — umístěn poslední, aby se vykreslil navrchu -->
-        <edaip:EDActionInProgress/>
-    </Grid>
-</Window>
-```
-
-## Spuštění overlaye z ViewModelu
-
-Použij `ActionInProgress()` z `EDViewModel` — vrací `IDisposable`, který automaticky
-resetuje flag při disposal:
-
-```csharp
-// Synchronní
-using var _ = ActionInProgress();
-DoHeavyWork();
-
-// Asynchronní
-using var _ = ActionInProgress();
-await LoadDataAsync();
-```
-
-Viz `EDViewModel/CLAUDE.md` pro kompletní popis `ActionInProgress()`.
-
-## Pixel art — interní detaily
-
-- 10 sloupců × 8 řádků, každý pixel = 6×6 WPF jednotek → 60×48 canvas
-- Posouvá se uvnitř 160×48 clipping `Border` (`ClipToBounds="True"`)
-- `TransformGroup`: `ScaleTransform` (otočení) + `TranslateTransform` (posun)
-- Storyboard `WalkAnimation` je resource; startuje/zastavuje ho code-behind podle `IsActive`
-  (Loaded trigger by tikal navždy i pro Collapsed overlay)
-- `DoubleAnimation`: `From="-60" To="160"`, 2.5 s, `AutoReverse=True`, `RepeatBehavior=Forever`
-- `DoubleAnimationUsingKeyFrames`: `ScaleX` přepne 1→−1 v t=2.5 s (čelem doleva při návratu)
-- `RenderOptions.EdgeMode="Aliased"` + `SnapsToDevicePixels="True"` zabraňují sub-pixelovým mezerám
+- **Storyboard startuje/zastavuje code-behind podle `IsActive`**, ne `Loaded` trigger —
+  `RepeatBehavior=Forever` animace by jinak tikala i pro `Collapsed` overlay a držela
+  dispatcher vzhůru. `Begin(..., isControllable: true)` při aktivaci zároveň resetuje
+  kapybaru na start.
+- **Závoj nekreslí sám** — drží `WindowDimmer.Dim(window)`; refcount zaručí jediný tint
+  i při překryvu s dialogovým dimem ze shellu. Tint je jeden zmrazený brush
+  (`WindowDimmer.TintBrush`) — míra ztmavení se mění na jednom místě.
+  U nezobrazeného okna dimmer přeskočí vizuál a nechá jen blokaci vstupu.
+- Stín karty je na samostatné vrstvě pod kartou — `DropShadowEffect` se tak
+  nepřerendrovává každý frame animace.
+- `RenderOptions.EdgeMode="Aliased"` + `SnapsToDevicePixels` na pixel-artu brání
+  sub-pixelovým mezerám. Geometrii animace čti přímo z XAML.
