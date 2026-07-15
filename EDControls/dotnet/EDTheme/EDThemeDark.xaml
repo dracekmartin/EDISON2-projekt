@@ -17,6 +17,8 @@
     <SolidColorBrush x:Key="EDTheme.Border.Medium" Color="{StaticResource EDTheme.Border.Medium.Color}"/>
     <Color x:Key="EDTheme.Border.Strong.Color">#FF6A6A70</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Strong" Color="{StaticResource EDTheme.Border.Strong.Color}"/>
+    <Color x:Key="EDTheme.Border.Contrast.Color">#FF8C8C8C</Color>
+    <SolidColorBrush x:Key="EDTheme.Border.Contrast" Color="{StaticResource EDTheme.Border.Contrast.Color}"/>
 
     <!-- Backgrounds -->
     <Color x:Key="EDTheme.Bg.Surface.Color">#FF2D2D30</Color>

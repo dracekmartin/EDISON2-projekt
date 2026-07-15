@@ -25,6 +25,8 @@
          refcount zaručí jeden tint i při překryvu s dialog dimem (náběh legacy dialogu). -->
     <Grid Background="Transparent">
         <Border Background="{DynamicResource EDTheme.Bg.Surface}"
+                BorderBrush="{DynamicResource EDTheme.Border.Contrast}"
+                BorderThickness="1"
                 CornerRadius="4"
                 Padding="0,18"
                 HorizontalAlignment="Center"

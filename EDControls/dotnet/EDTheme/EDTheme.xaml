@@ -32,6 +32,10 @@
     <Color x:Key="EDTheme.Border.Strong.Color">#FF9CA3AF</Color>
     <SolidColorBrush x:Key="EDTheme.Border.Strong" Color="{StaticResource EDTheme.Border.Strong.Color}"/>
 
+    <!-- Maximální kontrast — rámeček plovoucích karet (EDActionInProgress) -->
+    <Color x:Key="EDTheme.Border.Contrast.Color">#FF000000</Color>
+    <SolidColorBrush x:Key="EDTheme.Border.Contrast" Color="{StaticResource EDTheme.Border.Contrast.Color}"/>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Backgrounds
          ═══════════════════════════════════════════════════════════════════ -->
