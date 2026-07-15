@@ -2402,17 +2402,17 @@ public partial class MainWindow : Window
 
             var (newX, newY, newW, newH) = ComputeResize(mouseMmX, mouseMmY);
 
+            bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
+            bool movR = _resizeHandle is ResizeHandle.TopRight or ResizeHandle.MiddleRight or ResizeHandle.BottomRight;
+            bool movT = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.TopCenter or ResizeHandle.TopRight;
+            bool movB = _resizeHandle is ResizeHandle.BottomLeft or ResizeHandle.BottomCenter or ResizeHandle.BottomRight;
+
             // Smart snap při resize
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
             _vm.State.ActiveSectionCenterX = null;
             if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection && !resizeCtrlHeld)
             {
-                bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
-                bool movR = _resizeHandle is ResizeHandle.TopRight or ResizeHandle.MiddleRight or ResizeHandle.BottomRight;
-                bool movT = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.TopCenter or ResizeHandle.TopRight;
-                bool movB = _resizeHandle is ResizeHandle.BottomLeft or ResizeHandle.BottomCenter or ResizeHandle.BottomRight;
-
                 var others = resizeSection.Elements.Where(e2 => e2 != _resizeElement);
                 float threshold = 8f / _canvas.MmToPx;
                 _snapEngine.GapMm = _vm.State.SnapGapMm;
@@ -2427,11 +2427,39 @@ public partial class MainWindow : Window
                 _vm.State.SnapTargetElements.AddRange(snap.Targets);
             }
 
+            // Snap na čtverec — u rohového úchytu tvarového elementu dorovná W≈H na přesný
+            // čtverec (uživatel nemusí ručně dopočítávat rovné strany). Práh v px → v mm dle zoomu;
+            // Ctrl snap vypíná. Protilehlý roh (kotva) zůstává, dorovnaná strana snapuje na grid.
+            bool squareSnapped = false;
+            if (!resizeCtrlHeld && (movL || movR) && (movT || movB)
+                && _resizeElement is RectangleElement or ImageElement or BarcodeElement
+                && newH is { } hVal && newW > 0.1f && hVal > 0.1f
+                && MathF.Abs(newW - hVal) <= 6f / _canvas.MmToPx)
+            {
+                float s = (newW + hVal) / 2f;
+                if (_vm.State.SnapToGrid)
+                {
+                    float g = _vm.State.GridSize;
+                    s = MathF.Round(s / g) * g;
+                }
+                s = MathF.Max(s, 0.1f);
+                float candX = movL ? newX + newW - s : newX;
+                float candY = movT ? newY + hVal - s : newY;
+                if (candX >= 0 && candY >= 0
+                    && candX + s <= _resizeSectionW && candY + s <= _resizeSectionH)
+                {
+                    newX = candX; newY = candY; newW = s; newH = s;
+                    squareSnapped = true;
+                }
+            }
+
             _resizeElement.X = newX; _resizeElement.Y = newY;
             _resizeElement.Width = newW; _resizeElement.Height = newH;
 
             // Měřící badge — aktuální rozměr a pozice (stejný formát jako u dragu)
-            _vm.State.DragBadgeText = $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
+            _vm.State.DragBadgeText = squareSnapped
+                ? $"{newW:0.#} × {newH:0.#} mm  ◻ čtverec   X: {newX:0.#}   Y: {newY:0.#} mm"
+                : $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
             _vm.State.DragBadgeX = cx;
             _vm.State.DragBadgeY = cy;
 
