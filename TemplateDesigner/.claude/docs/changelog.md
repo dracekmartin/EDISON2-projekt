@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-07-15 — UX úklid (empty-state, hlášky DB, EDList výběr)
+## 2026-07-15 — UX úklid (empty-state, hlášky DB, EDList výběr, Save dialog)
 
 - **Empty-state panelu „Pole agendy"** — u agendy bez databázových polí (Obecná / bez připojení)
   se místo prázdna zobrazí hláška „Tato agenda nemá databázová pole…" (`ShowFieldsEmptyState`).
@@ -8,7 +8,12 @@
   výpadek Caché) nově „○ Databáze: pro tuto agendu nejsou databázová pole" (týká se hlavně Obecné agendy).
 - **EDList výběr (sdílené, EDControls)** — dvojklik na řádek = přepnout zaškrtnutí; Shift+klik =
   výběr rozsahu od kotvy. Platí pro všechny EDList seznamy (dřív bylo jen ad-hoc v jednom dialogu).
-- Roadmap: „jednotný resize grip" smazán (legacy, nejasné zadání).
+- **Uložení do databáze — nedostupné tlačítko místo popupu** — dialog „Uložit do databáze" má
+  tlačítko „Uložit" nedostupné, dokud není vyplněné jméno (přes `EDInputForm.FieldChanged`); popup
+  ze `Save()` zůstává jako záloha pro ostatní validace.
+- Roadmap: „jednotný resize grip" smazán (legacy, nejasné). **Rozhodnutí: toolbar písmenka
+  („M"/„O"/„Fit"/„PDF"/„PNG"…) záměrně ponechána** — text je u PDF/PNG jasnější než ikona a drží
+  styl; bod „toolbar text→ikony" z roadmapy odebrán.
 
 ## 2026-07-15 — Zákaznická wiki: 3 články (post-verze)
 

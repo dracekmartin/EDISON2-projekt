@@ -16,8 +16,8 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="1" Content="{StaticResource EDStrings.Save}" IsDefault="True"
-                    Click="SaveButton_Click"
+            <Button Grid.Column="1" x:Name="BtnSave" Content="{StaticResource EDStrings.Save}" IsDefault="True"
+                    Click="SaveButton_Click" IsEnabled="False"
                     Width="80" Margin="0,0,10,0"/>
             <Button Grid.Column="2" Content="{StaticResource EDStrings.Cancel}" IsCancel="True" Width="80"/>
         </Grid>

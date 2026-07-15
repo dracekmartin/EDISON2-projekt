@@ -22,6 +22,17 @@ public partial class SaveToCacheDialog : Window
         init["name"]       = new CVar(vm.InitialName ?? "");
         init["agendaCode"] = new CVar(vm.InitialAgendaCode ?? "");
         TheForm.InitParams = init;
+
+        // Tlačítko „Uložit" je nedostupné, dokud není vyplněné jméno — místo popupu při kliku
+        // na prázdné jméno (přívětivější). Popup ze Save() zůstává jako záloha pro ostatní validace.
+        TheForm.Initialized += UpdateSaveEnabled;
+        TheForm.FieldChanged += _ => UpdateSaveEnabled();
+    }
+
+    private void UpdateSaveEnabled()
+    {
+        var name = (TheForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == "name")?.Value;
+        BtnSave.IsEnabled = !string.IsNullOrWhiteSpace(name);
     }
 
     private void SaveButton_Click(object sender, RoutedEventArgs e)
