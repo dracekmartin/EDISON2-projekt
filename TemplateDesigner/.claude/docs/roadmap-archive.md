@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-15 ✅ — Proces vývoje + zákaznická wiki + UX úklid
+
+Detail → changelog 2026-07-15.
+
+**Proces (pasivní pravidla v CLAUDE.md):** vývojová pipeline (agent jede celý cyklus z jednoho
+zadání, chytré gatování commitu) · výchozí zdroj úloh = roadmapa · konvence komunikace (srozumitelné
+termíny, popis z uživatelského hlediska) · wiki mapování (`.claude/wiki-map.json` allow-list) +
+TipTap-safe konvence.
+
+**Zákaznická wiki:** 3 prolinkované články (příručka 569 / IT 570 / novinky 571), seedy v repu =
+source of truth. **Release track uzavřen** (verze v produkci, e-mail se nedělá, pre-version-checklist retirován).
+
+**UX úklid:** snap na čtverec při resize · empty-state panelu „Pole agendy" · přesnější hláška DB
+(„nejsou databázová pole" místo „nedostupná") · EDList dvojklik = toggle + Shift výběr rozsahu
+(sdílené, pro všechny seznamy) · Save dialog nedostupné tlačítko místo popupu.
+
+**Vědomě NEdělat (rozhodnuto):** „jednotný resize grip" (legacy, nejasné) · toolbar text→ikony
+(písmenka záměrně ponechána — u PDF/PNG jasnější než ikona).
+
 ## Session 2026-07-11 ✅ — Dvouosý model agend: Agenda × Varianta („typ šablony vs agenda")
 
 Rozhodnutí + implementace bodu „🧭 K rozmyšlení" (podnět kolegy). Legacy analýza (RG strom
