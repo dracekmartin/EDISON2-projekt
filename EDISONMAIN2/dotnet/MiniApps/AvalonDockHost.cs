@@ -9,26 +9,30 @@ namespace EDISONMAIN2.MiniApps;
 
 /// <summary>
 /// Reálná implementace <see cref="IMiniAppHost"/> nad AvalonDock <see cref="DockingManager"/>.
-/// Mini-app = <see cref="LayoutAnchorable"/> (dockovatelný/plovoucí panel). <c>CanHide=false</c> →
-/// křížek panel zavře (vyvolá <c>onClosed</c>), ne jen schová do auto-hide.
+/// Mini-app = <see cref="LayoutDocument"/> v centrálním document pane → vyplní celou plochu docku;
+/// další otevřené jdou jako taby a lze je přetažením roztáhnout vedle sebe.
 /// </summary>
 public sealed class AvalonDockHost(DockingManager dock) : IMiniAppHost
 {
     public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed)
     {
-        var anchorable = new LayoutAnchorable
+        var document = new LayoutDocument
         {
             ContentId = contentId,
             Title = title,
             IconSource = icon,
             Content = content,
             CanClose = true,
-            CanHide = false,
         };
-        anchorable.Closed += (_, _) => onClosed();
-        anchorable.AddToLayout(dock, AnchorableShowStrategy.Right | AnchorableShowStrategy.Most);
-        return new Pane(anchorable);
+        document.Closed += (_, _) => onClosed();
+        DocumentPane.Children.Add(document);
+        document.IsActive = true;
+        return new Pane(document);
     }
+
+    // Centrální document pane z XAML LayoutRoot (mini-apps se hostují jako dokumenty).
+    private LayoutDocumentPane DocumentPane =>
+        dock.Layout.Descendents().OfType<LayoutDocumentPane>().First();
 
     public string SaveLayout()
     {
@@ -43,24 +47,23 @@ public sealed class AvalonDockHost(DockingManager dock) : IMiniAppHost
         var serializer = new XmlLayoutSerializer(dock);
         serializer.LayoutSerializationCallback += (_, e) =>
         {
-            // Hostujeme jen anchorable mini-apps; cokoli jiného (kdyby v XML bylo) zahodit.
-            if (e.Model is not LayoutAnchorable anchorable ||
-                resolve(e.Model.ContentId, new Pane(anchorable)) is not { } resolved)
+            // Hostujeme jen document mini-apps; cokoli jiného (kdyby v XML bylo) zahodit.
+            if (e.Model is not LayoutDocument document ||
+                resolve(e.Model.ContentId, new Pane(document)) is not { } resolved)
             {
                 e.Cancel = true;
                 return;
             }
-            anchorable.CanClose = true;
-            anchorable.CanHide = false;
+            document.CanClose = true;
             e.Content = resolved.Content;
-            anchorable.Closed += (_, _) => resolved.OnClosed();
+            document.Closed += (_, _) => resolved.OnClosed();
         };
         using var reader = new StringReader(layoutXml);
         serializer.Deserialize(reader);
     }
 
-    private sealed class Pane(LayoutAnchorable anchorable) : IMiniAppPane
+    private sealed class Pane(LayoutDocument document) : IMiniAppPane
     {
-        public void Close() => anchorable.Close();
+        public void Close() => document.Close();
     }
 }

@@ -353,7 +353,10 @@
                                    FontFamily="{DynamicResource EDTheme.FontFamily}"
                                    FontSize="{DynamicResource EDTheme.FontSize.Body}">
             <avalonDock:LayoutRoot>
-                <avalonDock:LayoutPanel Orientation="Horizontal"/>
+                <avalonDock:LayoutPanel Orientation="Horizontal">
+                    <!-- Miniaplikace = dokumenty v tomto pane → vyplní plochu, další jdou jako taby. -->
+                    <avalonDock:LayoutDocumentPane/>
+                </avalonDock:LayoutPanel>
             </avalonDock:LayoutRoot>
         </avalonDock:DockingManager>
 
