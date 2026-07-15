@@ -221,11 +221,37 @@ namespace EDControls.EDList
 
         private CheckBox? _headerCheckBox;
 
-        /// <summary>User klikl na CheckBox v řádku — toggleval CheckBox.IsChecked. Propaguj do EDListRow.</summary>
+        // Kotva pro Shift+klik výběr rozsahu (poslední řádek, na jehož checkbox se kliklo / dvojklik).
+        private EDListRow? _checkAnchor;
+
+        /// <summary>User klikl na CheckBox v řádku. Bez modifikátoru přepne jen daný řádek; se
+        /// Shiftem zaškrtne/odškrtne celý rozsah od kotvy po tento řádek (v zobrazeném pořadí).</summary>
         private void OnRowCheckClick(object sender, RoutedEventArgs e)
         {
-            if (sender is CheckBox cb && cb.DataContext is EDListRow row)
-                row.IsChecked = cb.IsChecked == true;
+            if (sender is not CheckBox cb || cb.DataContext is not EDListRow row) return;
+            bool target = cb.IsChecked == true;
+
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) == ModifierKeys.Shift && _checkAnchor is not null)
+            {
+                // Rozsah v zobrazeném pořadí (respektuje řazení i filtr).
+                var items = dataGrid.Items.OfType<EDListRow>().ToList();
+                int a = items.IndexOf(_checkAnchor);
+                int b = items.IndexOf(row);
+                if (a >= 0 && b >= 0)
+                {
+                    if (a > b) (a, b) = (b, a);
+                    _suppressCheckedEvents = true;
+                    try { for (int i = a; i <= b; i++) items[i].IsChecked = target; }
+                    finally { _suppressCheckedEvents = false; }
+                    FireCheckedRowsChanged();
+                }
+                else row.IsChecked = target;   // kotva mimo aktuální pohled → fallback na jeden řádek
+            }
+            else
+            {
+                row.IsChecked = target;
+            }
+            _checkAnchor = row;
         }
 
         /// <summary>Aktualizuje header CheckBox podle aggregate stavu (true / false / null = mixed).</summary>
@@ -279,6 +305,7 @@ namespace EDControls.EDList
             // Unsubscribe stará data — žádné spying na zaniklé řádky
             foreach (var oldRow in _rows) oldRow.PropertyChanged -= OnRowPropertyChanged;
             _rows.Clear();
+            _checkAnchor = null;
             foreach (var row in ParseRows(output))
             {
                 row.PropertyChanged += OnRowPropertyChanged;
@@ -538,6 +565,12 @@ namespace EDControls.EDList
 
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
+            // V Check mode dvojklik na řádek přepne zaškrtnutí (rychlejší než trefit úzký checkbox).
+            if (SelectionMode == EListSelectionMode.Check && SelectedRow is EDListRow row)
+            {
+                row.IsChecked = !row.IsChecked;
+                _checkAnchor = row;
+            }
             if (SelectedRowId is string id)
                 RowDoubleClicked?.Invoke(this, id);
         }

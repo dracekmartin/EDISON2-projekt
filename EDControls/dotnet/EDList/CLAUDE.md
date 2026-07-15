@@ -24,6 +24,7 @@
 **Co bylo dodáno (2026-05-15):**
 
 - ✅ **L1** — Multi-select Check mode (`SelectionMode = Check`), tri-state header, `CheckAll`/`UncheckAll`, `EDListRow` s INotifyPropertyChanged
+  - Rychlý výběr (2026-07-15): **dvojklik na řádek** přepne zaškrtnutí; **Shift+klik** na checkbox zaškrtne/odškrtne celý rozsah od kotvy (posledního kliku) v zobrazeném pořadí
 - ✅ **L2** — Column layout persist (šířky + pořadí + sort) přes `IUserPrefsService`
   - `HostId` property na EDList (povinné pro persist; null = persist off)
   - Storage: `^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)` = JSON blob
