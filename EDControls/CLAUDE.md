@@ -38,8 +38,8 @@ RelayCommand), `EDInputForm`, `EDList`, `EDFooter`, `EDToolbar`, `EDActionInProg
 ## Root-level infrastruktura (`dotnet/*.cs`)
 
 - `IMLRest` / `MLRestAdapter` — abstrakce nad MLRest. `With(...)` vrací klon pro
-  jednorázové requesty; **ručně kopíruje pole identity** — při přidání pole do MLRest
-  nutno doplnit i tam, jinak se v klonech ztratí.
+  jednorázové requesty; **ručně kopíruje pole identity** — nové pole v MLRest doplň
+  i tam (hlídá reflection test `MLRestAdapterWithTests`).
 - `MLRestJson` — JSON-envelope volání přes sdílený klíč `"payload"` (kontrakt na obou
   stranách); `CallAsync` = `Task.Run` nad blokujícím MLRest.
 - `EdisonLaunchArgs` — parser launch kontraktu shellu; **zrcadlí

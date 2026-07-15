@@ -62,6 +62,8 @@ public class MLRestAdapter(MLRest inner) : IMLRest
             EdisonVersion = Inner.EdisonVersion,
             GUID = Inner.GUID,
             CacheLocks = cacheLocks ?? Inner.CacheLocks,
+            // Secured-mode web credentials — legacy je při klonech kopíruje taky (EETMonitor, frmNoMDI)
+            CacheWebLoginAndPassword = Inner.CacheWebLoginAndPassword,
         };
         return new MLRestAdapter(clone);
     }
