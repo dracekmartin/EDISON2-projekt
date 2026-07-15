@@ -62,7 +62,7 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 - **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
   „nedostupná" od „není nakonfigurována" + varování při startu (M) · empty-state panelu Pole
   agendy bez DB (S) · splash při startu (~3 s .Wait bez okna, M) · validace Save dialogů
-  disabled tlačítkem místo popupu (M) · jednotný resize grip (S) · dvojklik v Instance
+  disabled tlačítkem místo popupu (M) · dvojklik v Instance
   pickeru = toggle checku (S)
 - **Vizuální audit — odložené (2026-07-13):** toolbar textová tlačítka („M"/„O"/„Fit"/„1:1"/
   „PDF"/„PNG"/„↻"/„☰") → EDIcons ikony (M) · sjednotit ▲▼ vs ↑↓ tlačítka pořadí do sdíleného

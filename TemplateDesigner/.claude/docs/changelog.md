@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-15 — UX úklid (empty-state, hlášky DB, EDList výběr)
+
+- **Empty-state panelu „Pole agendy"** — u agendy bez databázových polí (Obecná / bez připojení)
+  se místo prázdna zobrazí hláška „Tato agenda nemá databázová pole…" (`ShowFieldsEmptyState`).
+- **Přesnější hláška DB v dolní liště** — místo zavádějícího „○ Databáze: nedostupná" (evokovalo
+  výpadek Caché) nově „○ Databáze: pro tuto agendu nejsou databázová pole" (týká se hlavně Obecné agendy).
+- **EDList výběr (sdílené, EDControls)** — dvojklik na řádek = přepnout zaškrtnutí; Shift+klik =
+  výběr rozsahu od kotvy. Platí pro všechny EDList seznamy (dřív bylo jen ad-hoc v jednom dialogu).
+- Roadmap: „jednotný resize grip" smazán (legacy, nejasné zadání).
+
 ## 2026-07-15 — Zákaznická wiki: 3 články (post-verze)
 
 Dokumentace Návrháře na podpora.m-line.cz rozdělena na 3 prolinkované články (hub = příručka):

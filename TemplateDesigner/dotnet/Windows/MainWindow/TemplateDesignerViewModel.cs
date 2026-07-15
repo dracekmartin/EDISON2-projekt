@@ -415,6 +415,10 @@ public class TemplateDesignerViewModel : EDViewModel
     public ObservableCollection<ParameterControlVM> PreviewParameters { get; } = [];
 
     // ── Bindable properties ───────────────────────────────────────────────────
+
+    private bool _showFieldsEmptyState;
+    /// <summary>Panel „Pole agendy" nemá co zobrazit (bez agendy/DB nebo obecná šablona) → ukázat empty-state místo prázdna.</summary>
+    public bool ShowFieldsEmptyState { get => _showFieldsEmptyState; private set => Set(ref _showFieldsEmptyState, value); }
     public bool CanUndo => State.CanUndo;
     public bool CanRedo => State.CanRedo;
 
@@ -2160,6 +2164,8 @@ public class TemplateDesignerViewModel : EDViewModel
             SchemaGroups.Add(new SchemaGroupVM(
                 $"📋 Pole agendy ({fields.Count})",
                 fields.Select(f => new SchemaFieldVM(f.FieldName, f.Label))));
+
+        ShowFieldsEmptyState = SchemaGroups.Count == 0;
     }
 
     public void LoadAgendaParameters(string? agendaCode)
@@ -2355,7 +2361,7 @@ public class TemplateDesignerViewModel : EDViewModel
 
         StatusText = cacheSchema is not null
             ? $"● Databáze: připojeno — {agendaCode} ({cacheSchema.Fields.Count} polí, {cacheSchema.FieldCollections?.Count ?? 0} kolekcí)"
-            : $"○ Databáze: nedostupná — záloha JSON ({agendaCode})";
+            : $"○ Databáze: pro tuto agendu nejsou databázová pole ({agendaCode})";
     }
 
     public CultureInfo GetTemplateCulture()

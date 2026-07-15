@@ -608,7 +608,8 @@
                                            FontSize="{DynamicResource EDTheme.FontSize.Caption}" Foreground="{DynamicResource EDTheme.Text.Muted}"
                                            TextWrapping="Wrap"/>
                             </Border>
-                            <!-- Data-bound schema tree -->
+                            <!-- Data-bound schema tree + empty-state -->
+                            <Grid>
                             <TreeView x:Name="SchemaTree"
                                       ItemsSource="{Binding SchemaGroups}"
                                       BorderThickness="0"
@@ -646,6 +647,14 @@
                                     </Style>
                                 </TreeView.ItemContainerStyle>
                             </TreeView>
+                            <!-- Empty-state: bez agendy/DB nebo obecná šablona → žádná pole -->
+                            <TextBlock Visibility="{Binding ShowFieldsEmptyState, Converter={StaticResource BoolToVis}}"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Margin="16" MaxWidth="220" TextAlignment="Center" TextWrapping="Wrap"
+                                       FontSize="{DynamicResource EDTheme.FontSize.Body}"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                       Text="Tato agenda nemá databázová pole. Pro práci s daty přepni agendu (Ctrl+Shift+A)."/>
+                            </Grid>
                         </DockPanel>
                     </TabItem>
                     <!-- ── Záložka Vlastnosti (inline properties panel) ── -->
