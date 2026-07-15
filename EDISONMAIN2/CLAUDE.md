@@ -1,8 +1,8 @@
 # EDISONMAIN2 — poznámky pro vývojáře
 
 Hlavní WPF shell — login, výběr firmy, strom modulů, spouštění legacy `.exe` agend.
-Nahrazuje VB.NET `EDISONMAIN`. Stav a roadmap: [PLAN.md](PLAN.md); doménový kontext:
-[RESPONSIBILITIES.md](RESPONSIBILITIES.md); update flow: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md).
+Nahrazuje VB.NET `EDISONMAIN`. Doménový kontext: [RESPONSIBILITIES.md](RESPONSIBILITIES.md);
+update flow: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md). `PLAN.md` je stale — nereferencovat.
 
 Bootstrap orchestruje `Startup/AppBootstrapper` (template method: setup wizard → prefs →
 login → MLRest → firma → VerifyLic → module tree → update check → font → shell okno).
@@ -33,6 +33,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
+  User velikost fontu respektují přes `FontZoomWebView` (ZoomFactor =
+  `FontService.BodySize` / 14 — základní text widgetů je 14 CSS px);
+  rodina fontu se do HTML nepropaguje.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`; chybí-li uložený →
   `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).

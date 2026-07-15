@@ -57,6 +57,19 @@ public static class FontService
     }
 
     /// <summary>
+    /// Vyvolá se po každém <see cref="Apply"/> — pokrývá in-process změnu (menu Styl)
+    /// i cross-process (FileSystemWatcher → Dispatcher → Apply), vždy na UI threadu.
+    /// Pro obsah mimo dosah WPF tokenů (WebView2 zoom apod.).
+    /// </summary>
+    public static event Action? Applied;
+
+    /// <summary>Aktuální efektivní Body velikost — user override, jinak default z EDTheme.xaml.</summary>
+    public static double BodySize => ComputeBodySize(UserFontPreference.Current);
+
+    internal static double ComputeBodySize(UserFontPreference prefs) =>
+        ComputeFromPrefs(prefs).FontSize ?? (double)ThemeDefaults["EDTheme.FontSize.Body"];
+
+    /// <summary>
     /// Aplikuje settings z prefs overridem tokenů v <see cref="Application.Resources"/>.
     /// Volá se po startupu a po user change (toggle Apply font / Select font). Idempotentní —
     /// opakované volání se stejnou hodnotou je no-op.
@@ -84,6 +97,8 @@ public static class FontService
             foreach (var key in ScaledSizeKeys)
                 resources.Remove(key);
         }
+
+        Applied?.Invoke();
     }
 
     /// <summary>

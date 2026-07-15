@@ -4,6 +4,10 @@ namespace EDControls.Tests;
 
 public class FontServiceTests
 {
+    // Testovací host nevytváří WPF Application → pack:// loading (ThemeDefaults ve
+    // FontService) vyžaduje ručně triggernout Application type initializer.
+    static FontServiceTests() => _ = System.Windows.Application.ResourceAssembly;
+
     [Fact]
     public void ComputeFromPrefs_Applied_WithFamily_ReturnsSettings()
     {
@@ -49,5 +53,30 @@ public class FontServiceTests
 
         Assert.Equal("Calibri", settings.FontFamily);
         Assert.Null(settings.FontSize);
+    }
+
+    [Fact]
+    public void ComputeBodySize_Applied_ReturnsUserSize()
+    {
+        var prefs = new UserFontPreference { FontApplied = true, FontFamily = "Arial", FontSize = 18 };
+
+        Assert.Equal(18, FontService.ComputeBodySize(prefs));
+    }
+
+    [Fact]
+    public void ComputeBodySize_NotApplied_ReturnsThemeDefault()
+    {
+        // Bez overridu vrací default Body z EDTheme.xaml (12).
+        var prefs = new UserFontPreference { FontApplied = false, FontFamily = "Arial", FontSize = 18 };
+
+        Assert.Equal(12, FontService.ComputeBodySize(prefs));
+    }
+
+    [Fact]
+    public void ComputeBodySize_Applied_NoSize_ReturnsThemeDefault()
+    {
+        var prefs = new UserFontPreference { FontApplied = true, FontFamily = "Calibri", FontSize = null };
+
+        Assert.Equal(12, FontService.ComputeBodySize(prefs));
     }
 }

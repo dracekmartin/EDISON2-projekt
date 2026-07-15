@@ -26,7 +26,7 @@ public sealed class CoreMiniApps : IMiniAppProvider
         new("Core.AutoRefresh", "Automatický refresh", () => new PeriodicRefreshMiniAppViewModel()),
     ];
 
-    private static WebView2 Widget(string url) => new() { Source = new Uri(url) };
+    private static WebView2 Widget(string url) => new FontZoomWebView { Source = new Uri(url) };
 
     /// <summary>Školení widget dostává IdFa + přihlášeného uživatele (kvůli zpětné vazbě) — mirror frmMain.vb.</summary>
     private static WebView2 TrainingsWidget()
