@@ -7,12 +7,15 @@
 
 ## 📋 Aktivní / nejbližší kroky
 
+> **Release track uzavřen (2026-07-15).** Verze nasazena do produkce (2026-07-14), dokumentace na
+> zákaznické wiki (3 prolinkované články — příručka 569 / IT 570 / novinky 571, viz changelog).
+> Zákaznický e-mail se **dělat nebude** (rozhodnutí). `pre-version-checklist.md` retirován
+> (eval sada AI přesunuta do sekce „AI integrace" níže).
+
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Vydání verze** — zbytek [`pre-version-checklist.md`](pre-version-checklist.md): push (pre-push testy),
-   publish blok E + smoke, release kroky, interní poznámka + zákaznický e-mail.
-2. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
 
 *(Import PDF „projít před produkcí" — HOTOVO 2026-07-13: Sonnet 5, anti-halucinace, retry,
 standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce „Import PDF" níže.)*
@@ -36,6 +39,16 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
 - **Výkon MHD tisku** (audit C-b) — memoizace `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru; behavior-preserving, gold-safe. Až výkon reálně bolí (velcí dopravci).
+- **Konverze legacy PostScript JŘ → TD šablona (`.json`)** (na poptávku, nejdřív průzkum) — cíl: zákazníci
+  s jízdními řády v legacy PostScriptu je nemusí přepisovat od nuly. ⚠️ **Klíčové rozlišení, od kterého se
+  musí začít:** PostScript je **vyrenderovaný výstup** (layout + zapečená konkrétní data), kdežto naše
+  `.json` je **šablona** (jen vzhled; data zvlášť z DB). Takže to **není převod dat**, ale **rekonstrukce
+  layoutu** — přesně tentýž problém jako Import PDF. Nejpravděpodobnější cesta **bez psaní vlastního PS
+  parseru**: `PS → PDF` (Ghostscript) → **stávající AI Vision import PDF** (rozpozná StopList / mřížku
+  odjezdů / legendu a namapuje pole agendy → živá editovatelná šablona, ne obrázek). Dořešit: kolik
+  zákazníků to reálně má a co přesně (samostatné `.ps` soubory? embedded v tisku?), věrnost převodu,
+  a že výstupem musí být editovatelná šablona napojená na data. Relates: sekce „Import PDF" níže + „Externí
+  datové zdroje".
 - **Externí datové zdroje** (analýza 2026-07-12, na poptávku) — architektura připravená (engine zná jen
   `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
   (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless
@@ -231,8 +244,19 @@ Křivky/Bézier v obecném importu — low-prio, bez poptávky.
 > changes. **Princip: copilot, ne autopilot.**
 
 **Otevřené (post-release):** ostrá zkouška EDISONAI cesty bez lokálního klíče u první firmy ·
-potvrzení `source: "templatedesigner"` u autora mlwebu (checklist §4) · zveřejnění generátoru šablon
+potvrzení `source: "templatedesigner"` u autora mlwebu · zveřejnění generátoru šablon
 (menu dnes jen pro vývojáře) až po otestování na reálných zadáních.
+
+**Eval sada AI pomocníka** (průběžné doškrtání; pomocník je už uživatelsky ověřen, tohle je regresní
+sada) — u každé otázky hodnotit: správná cesta v UI / žádné vymyšlené featury / rychlost odpovědi.
+- *Lookup:* „dvě vývěsky na A4" → Ctrl+P Uspořádání na list · „linka do vlastního PDF" → Ctrl+P Členění + Název souboru ·
+  „stránka na A5" → Ctrl+Shift+P · „kopírovat styl" → Ctrl+Shift+C/V · „sloupec cena×počet" → výraz `{CENA}*{POCET}` ·
+  „zvýraznit řádky >1000" → zvýraznění řádků · „víc linek k tisku" → chip Instance · „změnit agendu" → Ctrl+Shift+A ·
+  „červený rámeček náhledu" → přetečení obsahu · „součet pod tabulku" → `SUM(...)` · „schovat sekci na 1. str." → VisibilityExpression ·
+  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → dialog sloupců · „šablona pro kolegu" → Ctrl+S do DB.
+- *Chytáky* (očekává „zatím neumíme", ne vymyšlený návod): sloučení buněk · export do Excelu · PDF e-mailem ·
+  brožura/duplex · vlastní font · import staré šablony z EDISONu.
+- *Nejistota* (odkázat na F1/podporu, ne halucinovat): „špatný čas u 3. zastávky linky 12" (datový problém, ne UI).
 
 **Budoucí:** MCP server (`get_template`/`apply_template`/`add_element`/… tenká vrstva nad ViewModelem, každý
 tool → `_vm.Execute(command)`) · onboarding průvodce · smart suggestions (TableElement → sloupce z DataSchema) ·

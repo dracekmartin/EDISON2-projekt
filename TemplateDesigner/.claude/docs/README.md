@@ -12,7 +12,6 @@
 | [`roadmap.md`](roadmap.md) | Jen otevřená práce; hotové → archiv |
 | [`changelog.md`](changelog.md) | Průběžný changelog (technický) |
 | [`customer-requirements-zastavkovy-jr.md`](customer-requirements-zastavkovy-jr.md) | Stav helpdesk tiketů + TR sada; §0 = dispatch |
-| [`pre-version-checklist.md`](pre-version-checklist.md) | ⏳ TEMP — po vydání verze smazat (výsledek → changelog) |
 
 ## Závazné reference a rozhodnutí (evergreen)
 

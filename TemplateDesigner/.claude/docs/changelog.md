@@ -13,6 +13,11 @@ Vše `internal` (zveřejnění + link do Edison widgetu „Novinka týdne" řeš
 (dřív seed „Návrhář šablon" — kolidovalo s menu/e-mailem/názvy článků). Starý článek #6
 („uživatelský manuál", legacy nástroj) zatím ponechán.
 
+**Release track uzavřen (2026-07-15):** verze v produkci (2026-07-14), dokumentace na wiki hotová.
+Zákaznický e-mail se **dělat nebude** (rozhodnutí). `pre-version-checklist.md` **retirován/smazán**
+(účel splněn — jeho instrukce v hlavičce to předpokládala); eval sada AI pomocníka z něj přesunuta
+do `roadmap.md` (sekce AI). Nálezy byly průběžně přesouvány do roadmapy.
+
 > ⚠️ **Learning — wiki markdown konvertor (TipTap) NEUMÍ tabulky**: GFM tabulka se slije do
 > jednoho run-on odstavce. Do wiki článků psát tabulky jako **odrážky / definiční seznamy**,
 > ne `| … |`. Nadpisy, seznamy (ordered/bullet), odkazy, tučné/kurzíva, blockquote, `---` fungují.
