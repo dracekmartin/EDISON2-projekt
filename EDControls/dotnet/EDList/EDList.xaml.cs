@@ -173,6 +173,7 @@ namespace EDControls.EDList
         {
             InitializeComponent();
             dataGrid.ItemsSource = _rows;
+            dataGrid.Sorting += OnDataGridSorting;
             Unloaded += OnUnloaded;
         }
 
@@ -345,15 +346,22 @@ namespace EDControls.EDList
 
                 using var doc = JsonDocument.Parse(json);
                 var dict = new Dictionary<string, string?>();
+                var sortKeys = new Dictionary<string, object?>();
                 string? id = null;
                 foreach (var prop in doc.RootElement.EnumerateObject())
                 {
-                    var formatted = FormatValue(prop.Value.GetString(), prop.Name);
+                    var raw = prop.Value.GetString();
+                    var formatted = FormatValue(raw, prop.Name);
                     if (prop.Name == "id") id = formatted;
-                    else dict[prop.Name] = formatted;
+                    else
+                    {
+                        dict[prop.Name] = formatted;
+                        var type = _columns?.FirstOrDefault(c => c.Key == prop.Name)?.Type ?? EListColumnType.Text;
+                        sortKeys[prop.Name] = EDListSort.BuildSortKey(raw, type, formatted);
+                    }
                 }
                 if (!string.IsNullOrEmpty(id))
-                    yield return new EDListRow(id, dict);
+                    yield return new EDListRow(id, dict, sortKeys);
             }
         }
 
@@ -534,6 +542,42 @@ namespace EDControls.EDList
             _                            => EListColumnAlign.Left,
         };
 
+        // ─── Řazení ───────────────────────────────────────────────────────────────
+
+        private readonly List<(string Key, ListSortDirection Dir)> _sortSpecs = [];
+
+        /// <summary>
+        /// Vlastní řazení místo DataGrid defaultu — SortDescriptions by řadily formátované
+        /// stringy (NUMBER/DATE lexikograficky). CustomSort porovnává typované sort klíče
+        /// z raw hodnot. Shift+klik přidává další sloupec (multi-sort jako WPF default).
+        /// </summary>
+        private void OnDataGridSorting(object sender, DataGridSortingEventArgs e)
+        {
+            if (e.Column.GetValue(FrameworkElement.TagProperty) is not string key) return;
+            e.Handled = true;
+            var newDir = e.Column.SortDirection == ListSortDirection.Ascending
+                ? ListSortDirection.Descending
+                : ListSortDirection.Ascending;
+            if ((Keyboard.Modifiers & ModifierKeys.Shift) == 0)
+            {
+                _sortSpecs.Clear();
+                foreach (var col in dataGrid.Columns)
+                    if (!ReferenceEquals(col, e.Column)) col.SortDirection = null;
+            }
+            _sortSpecs.RemoveAll(s => s.Key == key);
+            _sortSpecs.Add((key, newDir));
+            e.Column.SortDirection = newDir;   // vizuální šipka + trigger persist layoutu
+            ApplySort();
+        }
+
+        private void ApplySort()
+        {
+            if (CollectionViewSource.GetDefaultView(dataGrid.ItemsSource) is not ListCollectionView view) return;
+            view.CustomSort = _sortSpecs.Count == 0
+                ? null
+                : new EDListRowComparer([.. _sortSpecs.Select(s => (s.Key, s.Dir == ListSortDirection.Descending))]);
+        }
+
         // ─── Obsluha eventů DataGridu ─────────────────────────────────────────────
 
         private void DataGrid_MouseDoubleClick(object sender, MouseButtonEventArgs e)
@@ -683,19 +727,19 @@ namespace EDControls.EDList
                     if (pref.DisplayIndex >= 0 && pref.DisplayIndex < dataGrid.Columns.Count)
                         col.DisplayIndex = pref.DisplayIndex;
                 }
-                // 3) Sort — visual indicator + ICollectionView sort descriptions
+                // 3) Sort — vizuální šipka + typovaný CustomSort (viz OnDataGridSorting)
                 if (layout.Sort is { Count: > 0 })
                 {
-                    var view = CollectionViewSource.GetDefaultView(dataGrid.ItemsSource);
-                    view?.SortDescriptions.Clear();
+                    _sortSpecs.Clear();
                     foreach (var sort in layout.Sort)
                     {
                         var col = FindColumnByKey(sort.Key);
                         if (col is null) continue;
                         var dir = sort.Direction == "desc" ? ListSortDirection.Descending : ListSortDirection.Ascending;
                         col.SortDirection = dir;
-                        view?.SortDescriptions.Add(new SortDescription($"[{sort.Key}]", dir));
+                        _sortSpecs.Add((sort.Key, dir));
                     }
+                    ApplySort();
                 }
             }
             finally { _suppressLayoutSave = false; }

@@ -22,8 +22,9 @@ Detaily ve sdíleném `EDControls/DOCS/01-wire-formats.md` — tam patří změn
 
 ## Pasti
 
-- **Řazení je lexikografické** — `SortDescriptions` míří na formátované stringy,
-  NUMBER/DATE se neřadí numericky/chronologicky.
+- Řazení je **typové** — custom comparer (`EDListSort`) nad raw hodnotami přes
+  `ListCollectionView.CustomSort`, ne `SortDescriptions` (ty by řadily formátované
+  stringy lexikograficky). Shift+klik = multi-sort.
 - **NUMBER bez `format` se nijak neformátuje** — v UI zůstane „142.5" s tečkou.
 - **IMAGE typ není implementován v renderingu** — propadne na text a zobrazí raw název
   resource. CODEBOOK taky chybí.

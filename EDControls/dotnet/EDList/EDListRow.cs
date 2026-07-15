@@ -37,10 +37,24 @@ public sealed class EDListRow : INotifyPropertyChanged
     }
 
     public EDListRow(string id, Dictionary<string, string?> values)
+        : this(id, values, sortKeys: null)
+    {
+    }
+
+    public EDListRow(string id, Dictionary<string, string?> values,
+        IReadOnlyDictionary<string, object?>? sortKeys)
     {
         Id = id;
         _values = values;
+        _sortKeys = sortKeys;
     }
+
+    private readonly IReadOnlyDictionary<string, object?>? _sortKeys;
+
+    /// <summary>Typovaný sort klíč z raw hodnoty (viz <see cref="EDListSort.BuildSortKey"/>);
+    /// bez sort klíčů (řádek z testů / ručně) spadne na formátovanou hodnotu.</summary>
+    internal object? GetSortKey(string key) =>
+        _sortKeys is not null && _sortKeys.TryGetValue(key, out var v) ? v : this[key];
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
