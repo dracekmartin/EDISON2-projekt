@@ -16,10 +16,13 @@ source of truth. **Release track uzavřen** (verze v produkci, e-mail se neděl�
 
 **UX úklid:** snap na čtverec při resize · empty-state panelu „Pole agendy" · přesnější hláška DB
 („nejsou databázová pole" místo „nedostupná") · EDList dvojklik = toggle + Shift výběr rozsahu
-(sdílené, pro všechny seznamy) · Save dialog nedostupné tlačítko místo popupu.
+(sdílené, pro všechny seznamy) · Save dialog nedostupné tlačítko místo popupu · sjednocení
+pořadových šipek na ▲▼ (TableEditorDialog ↑↓ → ▲▼, zbytek appky už měl ▲▼).
 
 **Vědomě NEdělat (rozhodnuto):** „jednotný resize grip" (legacy, nejasné) · toolbar text→ikony
-(písmenka záměrně ponechána — u PDF/PNG jasnější než ikona).
+(písmenka záměrně ponechána — u PDF/PNG jasnější než ikona) · footer pattern dialogů (žádné
+konkrétní případy) · samostatný splash (start je běžně rychlý; 3 s jen při nedostupném připojení
+→ sloučeno s odloženým bodem o připojení).
 
 ## Session 2026-07-11 ✅ — Dvouosý model agend: Agenda × Varianta („typ šablony vs agenda")
 

@@ -159,8 +159,8 @@
                     <StackPanel Grid.Row="1" Margin="0,6,0,0">
                         <StackPanel Orientation="Horizontal">
                             <Button Content="+ Přidat"  Command="{Binding AddColumnCommand}"/>
-                            <Button Content="↑" Width="28" Command="{Binding MoveColumnUpCommand}"/>
-                            <Button Content="↓" Width="28" Command="{Binding MoveColumnDownCommand}"/>
+                            <Button Content="▲" Width="28" Command="{Binding MoveColumnUpCommand}"/>
+                            <Button Content="▼" Width="28" Command="{Binding MoveColumnDownCommand}"/>
                             <Button Content="Odebrat"   Command="{Binding RemoveColumnCommand}"/>
                             <Button Content="Ze šablony..." Command="{Binding LoadTemplateCommand}"
                                     Margin="16,0,0,0"
@@ -212,8 +212,8 @@
 
                         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,6,6,0">
                             <Button Content="+" Width="28" Command="{Binding AddRowCommand}"/>
-                            <Button Content="↑" Width="28" Command="{Binding MoveRowUpCommand}"/>
-                            <Button Content="↓" Width="28" Command="{Binding MoveRowDownCommand}"/>
+                            <Button Content="▲" Width="28" Command="{Binding MoveRowUpCommand}"/>
+                            <Button Content="▼" Width="28" Command="{Binding MoveRowDownCommand}"/>
                             <Button Content="✕" Width="28" Command="{Binding RemoveRowCommand}"/>
                         </StackPanel>
                     </Grid>

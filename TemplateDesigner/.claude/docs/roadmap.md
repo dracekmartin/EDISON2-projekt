@@ -61,12 +61,11 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   a co má přednost; navazuje na existující TODO „extrakce na Template/agenda-config", M)
 - **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
   „nedostupná" od „není nakonfigurována" + varování při startu (M; hláška o chybějících polích
-  už zpřesněna 2026-07-15, zbývá reálná detekce + varování při startu) · splash při startu
-  (~3 s .Wait bez okna, M)
-- **Vizuální audit — odložené (2026-07-13):** sjednotit ▲▼ vs ↑↓ tlačítka pořadí do sdíleného
-  stylu (M) · footer pattern (dělicí linka + Bg.Footer) + EDTheme.Spacing tokeny do dialogů (M) ·
-  **dark mode** — EDThemeDark existuje, tokenizace hotová (2026-07-13), zbývá runtime swap +
-  ověření (M–L) · dialog header pattern à la HelpDialog/PdfImport (L, s EDInputForm zásahem)
+  už zpřesněna 2026-07-15, zbývá reálná detekce + varování při startu — sem patří i „okno naskočí
+  až po ~3 s při nedostupném připojení", dřív vedeno samostatně jako splash)
+- **Vizuální audit — odložené (2026-07-13):** **dark mode** — EDThemeDark existuje, tokenizace
+  hotová (2026-07-13), zbývá runtime swap + ověření (M–L) · dialog header pattern à la
+  HelpDialog/PdfImport (L, s EDInputForm zásahem)
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované

@@ -11,6 +11,9 @@
 - **Uložení do databáze — nedostupné tlačítko místo popupu** — dialog „Uložit do databáze" má
   tlačítko „Uložit" nedostupné, dokud není vyplněné jméno (přes `EDInputForm.FieldChanged`); popup
   ze `Save()` zůstává jako záloha pro ostatní validace.
+- **Sjednocení pořadových šipek** — `TableEditorDialog` (pořadí sloupců/řádků) měl tenké ↑↓,
+  zbytek appky trojúhelníky ▲▼ → sjednoceno na ▲▼. (Šipky odsazení textu v CellStyleEditoru =
+  směr, ne pořadí — ponechány ↑↓.)
 - Roadmap: „jednotný resize grip" smazán (legacy, nejasné). **Rozhodnutí: toolbar písmenka
   („M"/„O"/„Fit"/„PDF"/„PNG"…) záměrně ponechána** — text je u PDF/PNG jasnější než ikona a drží
   styl; bod „toolbar text→ikony" z roadmapy odebrán.
