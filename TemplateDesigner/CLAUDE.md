@@ -170,6 +170,16 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ---
 
+## Komunikace s uživatelem (závazné)
+
+1. **Standardní, srozumitelná terminologie.** Nevymýšlej „czechglish" žargon ani interní zkratky.
+   Zavedený český termín použij česky, obecné programátorské pojmy anglicky — konzistentně a
+   pochopitelně (drží se to code-style konvence pojmenování).
+2. **Popisuj položky z uživatelského hlediska, high-level.** Když spolu procházíme roadmapu / body /
+   úkoly, řekni **o co jde a proč to uživatele zajímá** — i u technické věci vysvětli **podstatu**
+   (deduplikace, výkonový problém, konzistence UI…), **ne interní identifikátory / názvy tříd /
+   kódové termíny**, do kterých uživatel v kódu nevidí. Konkrétní kódový detail jen když si o něj řekne.
+
 ## Vývojová pipeline (agent ji jede sám z jednoho zadání)
 
 Tohle je **pasivní pravidlo, ne skill k ručnímu vyvolání** — platí pro každou úlohu automaticky.
