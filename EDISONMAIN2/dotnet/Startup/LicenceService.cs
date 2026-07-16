@@ -9,7 +9,9 @@ namespace EDISONMAIN2;
 /// </summary>
 public class LicenceService(MLRest mlRest)
 {
-    /// <summary>Vrátí aktivní licenci, nebo <c>null</c> pokud server žádnou neeviduje.</summary>
+    /// <summary>
+    /// Vrátí aktivní licenci; bez licence na serveru vrátí fallback (<see cref="CreateFallbackLicence"/>).
+    /// </summary>
     public Lic? GetActiveLicence()
     {
         // Activation.New a GetActiveLic jsou v VB ByRef → potřebujeme lokální proměnné.
@@ -20,6 +22,20 @@ public class LicenceService(MLRest mlRest)
         var lic = activation.GetActiveLic(ref err, ref info);
         if (!string.IsNullOrEmpty(err))
             throw new InvalidOperationException(err);
-        return lic;
+        return lic ?? CreateFallbackLicence();
     }
+
+    /// <summary>
+    /// Default licence "Nezadána" — legacy frmNoMDI.GetActiveLicense. Bez ní by VerifyLic
+    /// s CountsLOGIN=0 vždy vrátil -1 (nikdo se nepřihlásí) a instalace bez licence by se
+    /// zamkla; takhle se jeden uživatel dostane do shellu a admin přes Správa systému >
+    /// Společná evidence > EDISON licenci naimportuje.
+    /// </summary>
+    internal static Lic CreateFallbackLicence() => new()
+    {
+        Version = "1.003",
+        Type = "Nezadána",
+        CountsLOGIN = 1,
+        Elements = [AccessLoader.SpolecnaEvidence, AccessLoader.FormEdisonmainSettingsShow],
+    };
 }

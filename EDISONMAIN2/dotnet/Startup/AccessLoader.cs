@@ -20,9 +20,10 @@ public static class AccessLoader
     /// </summary>
     private const int ApIdAdmin = 3;
 
-    // EDFormInterfaceLic.vb konstanty potřebné pro admin fallback:
-    private const string SpolecnaEvidence = "0";          // EDMainPackageEnum.SpolecnaEvidence
-    private const string FormEdisonmainSettingsShow = "2002"; // EDPackageEnum.EDISONMAIN(2000)+2
+    // EDFormInterfaceLic.vb konstanty potřebné pro admin fallback (internal — sdílí je
+    // fallback licence v LicenceService):
+    internal const string SpolecnaEvidence = "0";          // EDMainPackageEnum.SpolecnaEvidence
+    internal const string FormEdisonmainSettingsShow = "2002"; // EDPackageEnum.EDISONMAIN(2000)+2
     private const string FormUsersMain = "5001";          // EDPackageEnum.USERS(5000)+1
     private const string FormTmList = "40001";            // EDPackageEnum.TM(40000)+1
 

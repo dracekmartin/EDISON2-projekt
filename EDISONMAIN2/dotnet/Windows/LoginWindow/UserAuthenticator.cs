@@ -43,12 +43,18 @@ namespace EDISONMAIN2.Windows.LoginWindow
                 Mlp: mlp,
                 UserName: parts.Length > 10 ? parts[10] : username,
                 FullName: parts.Length > 1 ? parts[1] : "",
-                IsAdmin: parts.Length > 2 && parts[2] == "1",
+                IsAdmin: parts.Length > 2 && IsTrue(parts[2]),
                 Directory: parts.Length > 3 ? parts[3] : "",
-                ChangePasswordNeeded: parts.Length > 4 && parts[4] == "1",
-                MayUpdate: parts.Length > 5 && parts[5] == "1",
+                ChangePasswordNeeded: parts.Length > 4 && IsTrue(parts[4]),
+                MayUpdate: parts.Length > 5 && IsTrue(parts[5]),
                 Email: parts.Length > 7 ? parts[7] : "");
         }
+
+        /// <summary>
+        /// Boolean flagy v login response jsou VB-style: legacy USERS ukládá True jako -1
+        /// (VB CInt(True)), takže server posílá "-1" i "1". Nenulové číslo = true.
+        /// </summary>
+        private static bool IsTrue(string value) => int.TryParse(value, out var v) && v != 0;
 
         /// <summary>
         /// Volá <c>ALVA.SYS.Login.ChangePassword</c> (IN: jméno, staré heslo, nové heslo).

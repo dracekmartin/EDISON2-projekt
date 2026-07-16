@@ -39,6 +39,25 @@ public class UserAuthenticatorTests
         Assert.Equal("jan@x.cz", r.Email);             // parts[7]
     }
 
+    // Legacy USERS ukládá boolean flagy jako VB True = -1; server je posílá surově ("-1" i "1").
+    [Theory]
+    [InlineData("-1", true)]
+    [InlineData("1", true)]
+    [InlineData("0", false)]
+    [InlineData("", false)]
+    [InlineData("x", false)]
+    public void Login_VbStyleBooleanFlags_NonZeroIsTrue(string flag, bool expected)
+    {
+        var ml = MockWithResponse(string.Join(D,
+            "201", "Jan Novák", flag, "", flag, flag, "", "", "", "", "jan"));
+
+        var r = UserAuthenticator.Login(ml, "jan", "pwd");
+
+        Assert.Equal(expected, r.IsAdmin);               // parts[2]
+        Assert.Equal(expected, r.ChangePasswordNeeded);  // parts[4]
+        Assert.Equal(expected, r.MayUpdate);             // parts[5]
+    }
+
     [Fact]
     public void Login_ShortResponse_FallsBackToTypedUsername_AndDefaults()
     {
