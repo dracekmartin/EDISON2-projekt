@@ -1,6 +1,7 @@
-# Návrhář sestav — plán rozvoje
+# Návrhář sestav — novinky a plán rozvoje
 
-> Přehled toho, co v Návrháři sestav chystáme a o čem uvažujeme.
+> Přehled toho, co je v Návrháři sestav nového a co chystáme.
+> Hledáte návod k použití? → [Návrhář sestav — uživatelská příručka](https://podpora.m-line.cz/support/wiki/90511fc5-10e5-476d-b7c1-3cd70672f26d)
 
 ---
 

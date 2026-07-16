@@ -1,5 +1,91 @@
 # Changelog
 
+## 2026-07-15 — Tiskové parametry per šablona (obsahové)
+
+Hodnoty **obsahových** tiskových parametrů (časová osa odjezdů, rozdělení sloupců, tisk šipek /
+projetých zastávek, souhrny…) teď **patří šabloně** — sdílené mezi uživateli, priorita nad
+per-agenda „naposledy použité", ukládají se **automaticky** se šablonou (změna → dirty → Ctrl+S).
+
+- **Model:** aditivní `Template.PrintParameters` (`Dictionary<string,string>`, JSON `printParameters`).
+  Staré šablony ho nemají → fallback na agendu (bez migrace).
+- **Uložení:** `SyncParametersToTemplate` zapíše hodnoty obsahových parametrů (iteruje
+  `_agendaParameters` → **export pole** název souboru/členění/imposice se záměrně nezachytí,
+  zůstávají per agenda; převod exportu na per-šablonu odložen).
+- **Načtení (priorita):** `Template.PrintParameters` > per-agenda > tvrdé defaulty.
+- **Dirty:** `OnAgendaParamChanged` nastaví dirty jen při user změně (načtení jde přes
+  `OnExternalParamsChanged`); `SetAgendaParamValue` je change-aware (žádný falešný dirty/re-fetch
+  při reloadu EDInputform tabu).
+- **Opravy z ladění:** cold-start časování — `RefreshFieldsList` nově vrací `Task`, otevírací flow
+  ho awaituje (dřív async schéma přepsalo hodnoty defaulty); parametrový tab se po načtení hodnot
+  **bezpodmínečně** přenačte z finálního stavu (`RefreshParamsUiAfterLoad`) — dřív se držel defaultů.
+
+## 2026-07-15 — „Na znamení" řídí značku i legendu (#7161) + dev přepínač firem
+
+- **StopList: „Na znamení" schová značku i legendu (#7161 D5).** Přepínač „Na znamení"
+  (`ShowSignalStopIndicator`) teď řídí značku „na znamení" u zastávky **i** řádek legendy —
+  vypnutím zmizí obojí (dřív mizela jen legenda, značka zůstávala). Příčina: ostrá AD i MHD data
+  posílají „na znamení" jako **atribut** (ne přes pole `NaZnameni`), takže značku dřív řídil
+  generický přepínač „Atributy". Nově se atribut „na znamení" rozpozná podle popisu
+  (CZ „na znamení" / SK „na znamenie" — symbol se mezi agendami liší: AD „x", MHD „D") a řídí ho
+  „Na znamení"; „Atributy" řídí jen ostatní atributy. **Značka** (TD render) funguje v AD i MHD.
+  **Skrytí řádku legendy** vyžadovalo v MHD tag kategorie — `ZastavkoveJrMhd.BuildPoznamka` nově
+  emituje `KATEGORIE` a řádek „na znamení" (dle popisu) je `atribut-zastavky`, takže sdílený
+  `NoteVisibilityFilter` ho schová stejně jako v AD. Default beze změny (žádná regrese); MHD gold
+  digesty re-baselinovány (jen md5, počty pages/zast/odj/pozn shodné → additivní tag, LegacyParity zelená).
+- **Dev přepínač firem (jen pro vývojáře).** Nástroje → „Přepnout firmu (DEV)" — pevný seznam
+  (CB_CSADAD, CB_GWBUS, KV_DP), přepne `Idfa` + datový namespace za běhu a znovu načte schéma/data
+  (bez editace appsettings a restartu). Gate = lokální dev klíč (jako AI asistent), v produkci skryté;
+  bez licenčního verify. Slouží k testování agend proti více firmám.
+
+## 2026-07-15 — UX úklid (empty-state, hlášky DB, EDList výběr, Save dialog)
+
+- **Empty-state panelu „Pole agendy"** — u agendy bez databázových polí (Obecná / bez připojení)
+  se místo prázdna zobrazí hláška „Tato agenda nemá databázová pole…" (`ShowFieldsEmptyState`).
+- **Přesnější hláška DB v dolní liště** — místo zavádějícího „○ Databáze: nedostupná" (evokovalo
+  výpadek Caché) nově „○ Databáze: pro tuto agendu nejsou databázová pole" (týká se hlavně Obecné agendy).
+- **EDList výběr (sdílené, EDControls)** — dvojklik na řádek = přepnout zaškrtnutí; Shift+klik =
+  výběr rozsahu od kotvy. Platí pro všechny EDList seznamy (dřív bylo jen ad-hoc v jednom dialogu).
+- **Uložení do databáze — nedostupné tlačítko místo popupu** — dialog „Uložit do databáze" má
+  tlačítko „Uložit" nedostupné, dokud není vyplněné jméno (přes `EDInputForm.FieldChanged`); popup
+  ze `Save()` zůstává jako záloha pro ostatní validace.
+- **Sjednocení pořadových šipek** — `TableEditorDialog` (pořadí sloupců/řádků) měl tenké ↑↓,
+  zbytek appky trojúhelníky ▲▼ → sjednoceno na ▲▼. (Šipky odsazení textu v CellStyleEditoru =
+  směr, ne pořadí — ponechány ↑↓.)
+- Roadmap: „jednotný resize grip" smazán (legacy, nejasné). **Rozhodnutí: toolbar písmenka
+  („M"/„O"/„Fit"/„PDF"/„PNG"…) záměrně ponechána** — text je u PDF/PNG jasnější než ikona a drží
+  styl; bod „toolbar text→ikony" z roadmapy odebrán.
+
+## 2026-07-15 — Zákaznická wiki: 3 články (post-verze)
+
+Dokumentace Návrháře na podpora.m-line.cz rozdělena na 3 prolinkované články (hub = příručka):
+
+- **569** Uživatelská příručka (hub) — `90511fc5-10e5-476d-b7c1-3cd70672f26d`, zdroj `uzivatelska-prirucka.md`
+- **570** Technické požadavky (IT) — `3a07cae1-1198-4ffa-8875-856e3fc36094`, zdroj `prirucka-it.md` (nový)
+- **571** Novinky a plán — `6d48ca01-ce81-45d8-a396-76fcf0f982db`, zdroj `plan-a-zmeny.md`
+
+Vše `internal` (zveřejnění + link do Edison widgetu „Novinka týdne" řeší uživatel). Zdroj pravdy =
+`.md` v repu, wiki = zrcadlo (na wiki needitovat ručně). Název sjednocen **„Návrhář sestav"**
+(dřív seed „Návrhář šablon" — kolidovalo s menu/e-mailem/názvy článků). Starý článek #6
+(„uživatelský manuál", legacy nástroj) zatím ponechán.
+
+**Release track uzavřen (2026-07-15):** verze v produkci (2026-07-14), dokumentace na wiki hotová.
+Zákaznický e-mail se **dělat nebude** (rozhodnutí). `pre-version-checklist.md` **retirován/smazán**
+(účel splněn — jeho instrukce v hlavičce to předpokládala); eval sada AI pomocníka z něj přesunuta
+do `roadmap.md` (sekce AI). Nálezy byly průběžně přesouvány do roadmapy.
+
+> ⚠️ **Learning — wiki markdown konvertor (TipTap) NEUMÍ tabulky**: GFM tabulka se slije do
+> jednoho run-on odstavce. Do wiki článků psát tabulky jako **odrážky / definiční seznamy**,
+> ne `| … |`. Nadpisy, seznamy (ordered/bullet), odkazy, tučné/kurzíva, blockquote, `---` fungují.
+
+## 2026-07-15 — Snap na čtverec při resize (post-verze úklid)
+
+- **Snap na čtverec při resize obdélníku** (poslední otevřený UX bod z pre-version §5) — u rohového
+  úchytu tvarového elementu (Rectangle/Image/Barcode) se W≈H dorovná na přesný čtverec, když se
+  strany přiblíží (práh 6 px přepočtený na mm dle zoomu). Protilehlý roh (kotva) zůstává, dorovnaná
+  strana snapuje na grid, clamp na hranice sekce. Ctrl snap dočasně vypíná. Měřící badge při snapu
+  vypíše „◻ čtverec". Uživatel nemusí rovné strany dopočítávat ručně. `MainWindow.xaml.cs` resize
+  větev. Tím jsou nálezy pre-version checklistu §5 uzavřené (zbytek ověřen jako už hotový).
+
 ## 2026-07-13 — Vizuální audit UI + rychlé výhry (pre-produkce)
 
 Audit modernosti vzhledu: základ zdravý (EDControlStyles flat theme, moderní paleta EDTheme —

@@ -56,7 +56,7 @@ Mimo scope zastávkového JŘ:
 | #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD | Školní linka: neobsluhovaná zast. se v seznamu netiskne | §A6 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) — předat dál, nezavírat na TD | §D4 |
-| #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ AD · ⬜ MHD | D5: odškrtnout „Na znamení" → značky i řádek legendy zmizí (0320144); D6: `SCHOVAT_AGREGAT_BEZBARIER` (0365004) | §D5/D6 |
+| #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ AD · ✅ MHD (D5) | D5: odškrtnout „Na znamení" → značky i řádek legendy zmizí (AD 0320144; MHD gold re-baseline); D6: `SCHOVAT_AGREGAT_BEZBARIER` (0365004) — v MHD agregát nevzniká, není co skrývat | §D5/D6 |
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 ověřit u klienta | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
 | #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | 🟠 | Datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; ~0.5–1 den Caché | §B4 |
@@ -245,7 +245,11 @@ kódování na-znamení, TR8 ⏸️ park do potvrzení TRANSDEV). Zbývají jen 
   následuje viditelnost značky — žádné nové ovládání (uživatel jen odškrtne „Na znamení" na StopListu).
   Žádná Caché změna (legenda už je tagovaná). **Test:** CB_GWBUS **0320144** (má „x — zastávka pouze
   na znamení") — odškrtnout „Na znamení" na StopListu → značky „×" i řádek legendy zmizí.
-- **⬜ MHD agenda** neportováno (až bude potřeba).
+- **✅ MHD agenda** (2026-07-15) — značka fungovala přes sdílený element už dřív; skrytí legendy
+  doplněno tagem kategorie v `ZastavkoveJrMhd.BuildPoznamka` (řádek „na znamení" = `atribut-zastavky`,
+  rozpoznán dle popisu). Sdílený `NoteVisibilityFilter` ho schová stejně jako v AD. MHD gold
+  re-baselinováno (jen md5, additivní tag). Rozpoznání „na znamení" je popisové → symbol se mezi
+  agendami/firmami liší (AD „x", MHD „D"), popis „na znamení"/„na znamenie" je konzistentní.
 
 ### D6. Vypnutí auto-poznámky „všechny spoje s bezbariérovým vstupem"
 - **Zákazník:** TRANSDEV (Vladimír Šimko), #7161

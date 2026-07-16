@@ -1,10 +1,13 @@
-# Návrhář šablon — uživatelská příručka
+# Návrhář sestav — uživatelská příručka
 
 > Vizuální editor tiskových sestav v EDISONu. Navrhnete vzhled šablony, systém k ní doplní
 > data a vytiskne PDF. **Část I** pokrývá obecné ovládání aplikace — práci se šablonou,
 > sekcemi, prvky, styly, daty a exportem — bez ohledu na typ sestavy. **Část II** popisuje
 > specifika jednotlivých agend (nyní zastávkový jízdní řád; další agendy přibudou jako
 > nové kapitoly).
+
+**📦 Než začnete (pro IT):** [Technické požadavky a instalace](https://podpora.m-line.cz/support/wiki/3a07cae1-1198-4ffa-8875-856e3fc36094) — instalace .NET Desktop Runtime, kde nástroj v EDISONu najdete.
+**🆕 Co je nového:** [Novinky a plán rozvoje](https://podpora.m-line.cz/support/wiki/6d48ca01-ce81-45d8-a396-76fcf0f982db) — přehled novinek a co chystáme.
 
 ---
 
@@ -14,7 +17,7 @@
 
 ## Obsah
 
-1. [Co je Návrhář šablon](#1-co-je-návrhář-šablon)
+1. [Co je Návrhář sestav](#1-co-je-návrhář-sestav)
 2. [Orientace v aplikaci](#2-orientace-v-aplikaci)
 3. [Práce se šablonou](#3-práce-se-šablonou)
 4. [Sekce a struktura stránky](#4-sekce-a-struktura-stránky)
@@ -29,9 +32,9 @@
 
 ---
 
-## 1. Co je Návrhář šablon
+## 1. Co je Návrhář sestav
 
-Návrhář šablon je **vizuální editor tiskových sestav** typu WYSIWYG („co vidíte, to dostanete").
+Návrhář sestav je **vizuální editor tiskových sestav** typu WYSIWYG („co vidíte, to dostanete").
 Nahrazuje starší nástroj, kde se sestavy nastavovaly přes formuláře a číselné parametry bez
 náhledu — výsledek byl vidět až po vytištění.
 
@@ -55,28 +58,24 @@ uprostřed a **náhled** vpravo.
 
 Tlačítka jsou seskupená a oddělená svislými čarami:
 
-| Skupina | Obsah |
-|---|---|
-| **Soubor** | Nová šablona, Otevřít, Uložit |
-| **Upravit** | Zpět, Vpřed |
-| **Sekce** | Přidat sekci (rozbalovací nabídka presetů) |
-| **Přidat / Elementy** | paleta prvků — Text, Obdélník, Čára, Obrázek, Tabulka, Kód (u agend jízdních řádů se navíc objeví specializované JŘ prvky) |
-| **Vrstva** | Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu |
-| **Zarovnat** | Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky) |
-| **Data** | obnovení dat náhledu (↻) |
-| **Export** | Tisk, Export do PDF, Export do PNG |
-| **Zobrazení** | přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání, zoom, tlačítka „Fit" a „1:1", skrytí panelu sekcí, přepínač živého náhledu |
+- **Soubor** — Nová šablona, Otevřít, Uložit
+- **Upravit** — Zpět, Vpřed
+- **Sekce** — Přidat sekci (rozbalovací nabídka presetů)
+- **Přidat / Elementy** — paleta prvků: Text, Obdélník, Čára, Obrázek, Tabulka, Kód (u agend jízdních řádů se navíc objeví specializované JŘ prvky)
+- **Vrstva** — Přenést dopředu / Odeslat dozadu / Přenést zcela dopředu / Odeslat zcela dozadu
+- **Zarovnat** — Zarovnat vlevo / na střed vodorovně / vpravo, nahoru / na střed svisle / dolů, rozložit rovnoměrně vodorovně/svisle (min. 3 vybrané prvky)
+- **Data** — obnovení dat náhledu (↻)
+- **Export** — Tisk, Export do PDF, Export do PNG
+- **Zobrazení** — přepínač mřížky, přepínač přichytávání k objektům, velikost mřížky, velikost mezery pro přichytávání, zoom, tlačítka „Fit" a „1:1", skrytí panelu sekcí, přepínač živého náhledu
 
 ### Levý panel — 6 záložek
 
-| Záložka | K čemu |
-|---|---|
-| **Sekce** | seznam sekcí šablony, přidávání, řazení, mazání |
-| **Pole agendy** | databázová pole dostupná pro aktuální agendu (dvojklik nebo tažení vloží `{POLE}` na plátno); hlavička zobrazuje název aktuální agendy a je klikatelná — otevře přepnutí agendy |
-| **Vlastnosti** | nastavení právě vybraného prvku nebo sekce — okamžitá editace bez nutnosti otevírat dialog |
-| **Strom** | hierarchický přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci |
-| **Pomocník** | AI pomocník — zeptáte se vlastními slovy, kde v aplikaci co najdete nebo jak něco udělat (vyžaduje aktivovanou AI službu u M-line) |
-| **Parametry** | parametry sestavy pro aktuální agendu — nastavení ovlivňující obsah (např. časová osa odjezdů, tisk šipek směru). Jsou seskupené po blocích podle prvku, kterého se týkají (Seznam zastávek / Mřížka odjezdů / Poznámky a legenda) a jejich změna se hned promítne do náhledu. Tytéž hodnoty jsou i v dialogu tisku. U šablon bez parametrů: „Tato šablona nemá parametry." |
+- **Sekce** — seznam sekcí šablony, přidávání, řazení, mazání
+- **Pole agendy** — databázová pole dostupná pro aktuální agendu (dvojklik nebo tažení vloží `{POLE}` na plátno); hlavička zobrazuje název aktuální agendy a je klikatelná — otevře přepnutí agendy
+- **Vlastnosti** — nastavení právě vybraného prvku nebo sekce — okamžitá editace bez nutnosti otevírat dialog
+- **Strom** — hierarchický přehled celé šablony (sekce → skupiny prvků → prvky) pro rychlou navigaci
+- **Pomocník** — AI pomocník: zeptáte se vlastními slovy, kde v aplikaci co najdete nebo jak něco udělat (vyžaduje aktivovanou AI službu u M-line)
+- **Parametry** — parametry sestavy pro aktuální agendu — nastavení ovlivňující obsah (např. časová osa odjezdů, tisk šipek směru). Jsou seskupené po blocích podle prvku, kterého se týkají (Seznam zastávek / Mřížka odjezdů / Poznámky a legenda) a jejich změna se hned promítne do náhledu. Tytéž hodnoty jsou i v dialogu tisku. U šablon bez parametrů: „Tato šablona nemá parametry."
 
 ### Status bar (dole)
 
@@ -160,16 +159,14 @@ přetečení** obsahu.
 ### Přidání sekce
 Tlačítko `+ Přidat sekci` nabízí presety:
 
-| Preset | Chování | Výchozí výška |
-|---|---|---|
-| Hlavička stránky | každá stránka | 25 mm |
-| Patička stránky | každá stránka | 15 mm |
-| Oddělovač | jednou | 5 mm |
-| Hlavička sestavy — jen 1. str. | jen první stránka | 30 mm |
-| Patička sestavy — jen posl. str. | jen poslední stránka | 20 mm |
-| Hlavička kromě 1. str. | všechny kromě první | 25 mm |
-| Prázdná sekce | jednou | 30 mm |
-| *(vlastní uložené šablony sekcí, značené 💾)* | podle uložené šablony | podle uložené šablony |
+- **Hlavička stránky** — každá stránka, 25 mm
+- **Patička stránky** — každá stránka, 15 mm
+- **Oddělovač** — jednou, 5 mm
+- **Hlavička sestavy — jen 1. str.** — jen první stránka, 30 mm
+- **Patička sestavy — jen posl. str.** — jen poslední stránka, 20 mm
+- **Hlavička kromě 1. str.** — všechny kromě první, 25 mm
+- **Prázdná sekce** — jednou, 30 mm
+- *(vlastní uložené šablony sekcí, značené 💾)* — podle uložené šablony
 
 ### Vlastnosti sekce (dialog)
 Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Tisk**, **Umístění**, **Přetečení**,
@@ -197,15 +194,13 @@ Pokud sekce opakuje řádek dat (např. pro dynamický seznam), přibudou pole *
 
 Prvek je samostatný objekt na plátně. Dostupné typy a jejich hlavní vlastnosti:
 
-| Prvek | Hlavní vlastnosti |
-|---|---|
-| **Text** | text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování, řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí |
-| **Obrázek** | nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy |
-| **Obdélník** | výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm) |
-| **Čára** | orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery |
-| **Kód** | obsah, typ kódu — **QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix** — barva kódu a pozadí |
-| **Tabulka (dynamická)** | řádky se generují automaticky z datové kolekce (viz níže); nabízí se jako jediná varianta tabulky v paletě |
-| **Prvky jízdního řádu** | specializované prvky pro tisk JŘ — objeví se v paletě jen u agend jízdních řádů; viz část II |
+- **Text** — text (víceřádkový), rodina a velikost písma (4–200 pt), tučné/kurzíva/podtržení/přeškrtnutí, zalamování, řádkování, zarovnání vodorovně (vlevo/na střed/vpravo/do bloku) i svisle, barva textu a pozadí
+- **Obrázek** — nahrání souboru (limit 5 MB, automatické zmenšení větších), volitelné načtení z datového pole, škálování: vejít celý / vyplnit (oříznout) / roztáhnout / bez úpravy
+- **Obdélník** — výplň, barva a tloušťka okraje (0–10 mm), zaoblení rohů (0–50 mm)
+- **Čára** — orientace (vodorovná/svislá), barva, tloušťka, styl (plná/čárkovaná/tečkovaná), délka čárky a mezery
+- **Kód** — obsah, typ kódu (**QR kód, Code 128, EAN-13, EAN-8, PDF417, DataMatrix**), barva kódu a pozadí
+- **Tabulka (dynamická)** — řádky se generují automaticky z datové kolekce (viz níže); nabízí se jako jediná varianta tabulky v paletě
+- **Prvky jízdního řádu** — specializované prvky pro tisk JŘ — objeví se v paletě jen u agend jízdních řádů; viz část II
 
 ### Dynamická tabulka
 Sloupce definujete jednou, řádky doplní systém z vybrané datové kolekce (počet řádků se odvíjí
@@ -318,17 +313,15 @@ Kdekoli v textu napíšete pole ve složených závorkách, např. `Linka {CISLO
 ### Formátování hodnot
 V zástupném symbolu lze hodnotu naformátovat zápisem `{POLE:FORMÁT}`:
 
-| Formát | Význam |
-|---|---|
-| `UPPER` | velká písmena |
-| `LOWER` | malá písmena |
-| `TRIM` | oříznutí mezer |
-| `LEFT(n)` | prvních n znaků |
-| `RIGHT(n)` | posledních n znaků |
-| `PADLEFT(n)` / `PADLEFT(n,'znak')` | doplnění zleva na délku n (výchozí mezerou) |
-| `PADRIGHT(n)` / `PADRIGHT(n,'znak')` | doplnění zprava na délku n |
-| `N2`, `C2`, `P1` | standardní číselné formáty (2 des. místa, měna, procenta…) |
-| `dd.MM.yyyy`, `HH:mm` | formát data / času |
+- `UPPER` — velká písmena
+- `LOWER` — malá písmena
+- `TRIM` — oříznutí mezer
+- `LEFT(n)` — prvních n znaků
+- `RIGHT(n)` — posledních n znaků
+- `PADLEFT(n)` / `PADLEFT(n,'znak')` — doplnění zleva na délku n (výchozí mezerou)
+- `PADRIGHT(n)` / `PADRIGHT(n,'znak')` — doplnění zprava na délku n
+- `N2`, `C2`, `P1` — standardní číselné formáty (2 des. místa, měna, procenta…)
+- `dd.MM.yyyy`, `HH:mm` — formát data / času
 
 Formátování čísel a datumů respektuje **jazyk nastavený v šabloně** (viz níže), ne systémové
 nastavení Windows dané stanice. Chybný formát se tiše ignoruje — vypíše se nezformátovaná
@@ -454,37 +447,35 @@ operaci).
 
 ## 12. Klávesové zkratky
 
-| Zkratka | Akce |
-|---|---|
-| Ctrl+N | Nová šablona |
-| Ctrl+O | Otevřít z databáze |
-| Ctrl+S | Uložit (do databáze) |
-| Ctrl+Z / Ctrl+Y | Zpět / Vpřed |
-| Ctrl+X / Ctrl+C / Ctrl+V | Vyjmout / Kopírovat / Vložit |
-| Ctrl+D | Duplikovat (kopie s malým posunem) |
-| Ctrl+D + šipka | Duplikovat vedle (s mezerou) |
-| Ctrl+Shift+C / Ctrl+Shift+V | Kopírovat / Vložit styl |
-| Delete | Smazat výběr |
-| Ctrl+A | Vybrat vše v aktivní sekci |
-| Enter / dvojklik | Vlastnosti výběru (1 prvek = dialog; víc prvků = dialog společných vlastností) |
-| F2 | Rychlá editace textu (jen textový prvek, jeden vybraný) |
-| Ctrl+G / Ctrl+Shift+G | Seskupit / Rozeskupit |
-| Alt+klik | Vybrat jeden prvek ze skupiny |
-| Ctrl+Shift+H / Ctrl+Shift+J | Rozdělit prvek vodorovně / svisle |
-| Ctrl+Shift+N | Normalizovat pozice |
-| Šipky | Posun prvku o 1 mm (Shift = o krok mřížky, Ctrl = jemně 0,5 mm) |
-| Ctrl+PageUp / Ctrl+PageDown | Vrstva dopředu / dozadu (+Shift = zcela na kraj) |
-| Šipka ↑/↓ (bez výběru prvku) | Přesun aktivní sekce nahoru / dolů |
-| Ctrl+0 | Přizpůsobit zobrazení stránce („Fit") |
-| Ctrl+1 | Skutečná velikost 100 % („1:1") |
-| Ctrl + kolečko myši | Plynulý zoom (k pozici kurzoru) |
-| Ctrl+B | Sbalit/rozbalit levý panel |
-| Ctrl+P | Tisk |
-| Ctrl+Shift+P | Vlastnosti stránky |
-| Ctrl+Shift+A | Změnit agendu |
-| F5 | Obnovit data z databáze |
-| F1 | Nápověda |
-| Escape | Zrušit probíhající operaci (např. přidávání prvku) |
+- **Ctrl+N** — Nová šablona
+- **Ctrl+O** — Otevřít z databáze
+- **Ctrl+S** — Uložit (do databáze)
+- **Ctrl+Z / Ctrl+Y** — Zpět / Vpřed
+- **Ctrl+X / Ctrl+C / Ctrl+V** — Vyjmout / Kopírovat / Vložit
+- **Ctrl+D** — Duplikovat (kopie s malým posunem)
+- **Ctrl+D + šipka** — Duplikovat vedle (s mezerou)
+- **Ctrl+Shift+C / Ctrl+Shift+V** — Kopírovat / Vložit styl
+- **Delete** — Smazat výběr
+- **Ctrl+A** — Vybrat vše v aktivní sekci
+- **Enter / dvojklik** — Vlastnosti výběru (1 prvek = dialog; víc prvků = dialog společných vlastností)
+- **F2** — Rychlá editace textu (jen textový prvek, jeden vybraný)
+- **Ctrl+G / Ctrl+Shift+G** — Seskupit / Rozeskupit
+- **Alt+klik** — Vybrat jeden prvek ze skupiny
+- **Ctrl+Shift+H / Ctrl+Shift+J** — Rozdělit prvek vodorovně / svisle
+- **Ctrl+Shift+N** — Normalizovat pozice
+- **Šipky** — Posun prvku o 1 mm (Shift = o krok mřížky, Ctrl = jemně 0,5 mm)
+- **Ctrl+PageUp / Ctrl+PageDown** — Vrstva dopředu / dozadu (+Shift = zcela na kraj)
+- **Šipka ↑/↓ (bez výběru prvku)** — Přesun aktivní sekce nahoru / dolů
+- **Ctrl+0** — Přizpůsobit zobrazení stránce („Fit")
+- **Ctrl+1** — Skutečná velikost 100 % („1:1")
+- **Ctrl + kolečko myši** — Plynulý zoom (k pozici kurzoru)
+- **Ctrl+B** — Sbalit/rozbalit levý panel
+- **Ctrl+P** — Tisk
+- **Ctrl+Shift+P** — Vlastnosti stránky
+- **Ctrl+Shift+A** — Změnit agendu
+- **F5** — Obnovit data z databáze
+- **F1** — Nápověda
+- **Escape** — Zrušit probíhající operaci (např. přidávání prvku)
 
 Poznámka: „Uložit jako" (do databáze) je dostupné jen z menu `Soubor → Uložit do databáze jako…`,
 bez vlastní klávesové zkratky.
@@ -526,10 +517,8 @@ specializovaných prvků, které samy umí velkou část logiky JŘ — vy nasta
 (zastávky, skupiny dnů, odjezdy, poznámky), takže tytéž tři prvky fungují nad oběma — liší se jen
 zdroj a pár doplňkových nastavení.
 
-| Agenda | Zdroj dat |
-|---|---|
-| **Zastávkový JŘ MHD** | modul MHD |
-| **Zastávkový JŘ AD** | hlavní modul Jízdní řády |
+- **Zastávkový JŘ MHD** — modul MHD
+- **Zastávkový JŘ AD** — hlavní modul Jízdní řády
 
 Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými — `Nástroje → Změnit agendu…`
 (Ctrl+Shift+A) nebo klik na zelený štítek. Přepnutí založí novou prázdnou šablonu (viz část I, kap. 3).
@@ -564,51 +553,45 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými — `Nástroje
 
 Levý sloupec sestavy — seznam zastávek s časy a atributy.
 
-| Vlastnost | Co dělá |
-|---|---|
-| Upravit sloupce… | otevře editor sloupců (kap. 3) |
-| Všechny varianty tras | zap. = víc časových sloupců podle skutečných variant tras (jen AD); vyp. = jeden sloupec základní trasy |
-| Oddělovací čáry | vodorovné čáry mezi řádky zastávek |
-| Odsazení | odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie) |
-| Sloupec Nástupiště | volitelný sloupec s číslem nástupiště/stanoviště (zapíná se v editoru sloupců; tiskne se jen tam, kde jsou data vyplněná) |
-| Na znamení + Symbol na znamení | zobrazí značku „na znamení" u zastávky a definuje, jaký znak se použije (výchozí „×") |
-| Atributy | zobrazí atributy zastávky vedle názvu |
-| Poznámky zastávky | zobrazí poznámkové značky u zastávky |
-| Pozice značek | Za zastávkou (výchozí) / Před zastávkou |
-| Šipka směru + Pozice šipky + Barva šipky + Tučná šipka | grafická šipka ukazující směr jízdy od aktuální zastávky dál po trase |
-| Záhlaví sloupců | zap/vyp řádek záhlaví |
-| Podtržení aktuální / Tučně aktuální / Font aktuální (pt) / Pozadí aktuální | zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku) |
-| Projeté zastávky + Barva projetých | zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně) |
+- **Upravit sloupce…** — otevře editor sloupců (kap. 3)
+- **Všechny varianty tras** — zap. = víc časových sloupců podle skutečných variant tras (jen AD); vyp. = jeden sloupec základní trasy
+- **Oddělovací čáry** — vodorovné čáry mezi řádky zastávek
+- **Odsazení** — odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
+- **Sloupec Nástupiště** — volitelný sloupec s číslem nástupiště/stanoviště (zapíná se v editoru sloupců; tiskne se jen tam, kde jsou data vyplněná)
+- **Na znamení + Symbol na znamení** — zobrazí značku „na znamení" u zastávky a definuje, jaký znak se použije (výchozí „×")
+- **Atributy** — zobrazí atributy zastávky vedle názvu
+- **Poznámky zastávky** — zobrazí poznámkové značky u zastávky
+- **Pozice značek** — Za zastávkou (výchozí) / Před zastávkou
+- **Šipka směru + Pozice šipky + Barva šipky + Tučná šipka** — grafická šipka ukazující směr jízdy od aktuální zastávky dál po trase
+- **Záhlaví sloupců** — zap/vyp řádek záhlaví
+- **Podtržení aktuální / Tučně aktuální / Font aktuální (pt) / Pozadí aktuální** — zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku)
+- **Projeté zastávky + Barva projetých** — zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně)
 
 #### Mřížka odjezdů
 
 Mřížka minut po skupinách dnů (sloupce = pracovní den / sobota / neděle…).
 
-| Skupina nastavení | Co obsahuje |
-|---|---|
-| **Odjezdy** | Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin |
-| **Časová osa** | Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah (+ pole Hodiny od/do); Roztáhnout na výšku — když je mřížka nižší, než by odpovídalo datům, řádky (a font) se proporcionálně zvětší (strop 1,5× přirozené výšky) |
-| **Řádky dat** | Výška řádku, Střídavé podbarvení (sudé řádky) |
-| **Záhlaví — 2. řádek** | Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek nadpisu skupiny (např. „den" v „Pracovní / den") — pokud nevyplněno, dědí z prvního řádku |
-| **Styl minuty** | Font, Velikost, Tučné, Kurzíva, Barva textu |
-| **Anotace — symboly** a **Anotace — text** | samostatný styl (font/velikost/řez/barva) pro horní index u minut — symboly/negativní značky vs. textová písmena/dny; u symbolů navíc NZ pozadí a NZ znak (barvy invertovaného boxu negativní značky) |
-| **Anotace** | zap/vyp zobrazování anotací u minut |
-| **Mezery** | Mezera minuta↔anotace, Mezera anotace↔anotace, Mezera mezi odjezdy |
+- **Odjezdy** — Upravit sloupce…, Záhlaví skupin, Velikost záhlaví, Min. výška řádku záhlaví, Zarovnání záhlaví, Šířka sloupce hodin, Hodiny u každé skupiny (sloupec hodin se opakuje u každé skupiny dnů), Max. skupin (0 = bez limitu), Šířka minuty, Oddělovač skupin
+- **Časová osa** — Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah (+ pole Hodiny od/do); Roztáhnout na výšku — když je mřížka nižší, než by odpovídalo datům, řádky (a font) se proporcionálně zvětší (strop 1,5× přirozené výšky)
+- **Řádky dat** — Výška řádku, Střídavé podbarvení (sudé řádky)
+- **Záhlaví — 2. řádek** — Velikost, Tučné, Kurzíva, Barva textu pro druhý řádek nadpisu skupiny (např. „den" v „Pracovní / den") — pokud nevyplněno, dědí z prvního řádku
+- **Styl minuty** — Font, Velikost, Tučné, Kurzíva, Barva textu
+- **Anotace — symboly** a **Anotace — text** — samostatný styl (font/velikost/řez/barva) pro horní index u minut — symboly/negativní značky vs. textová písmena/dny; u symbolů navíc NZ pozadí a NZ znak (barvy invertovaného boxu negativní značky)
+- **Anotace** — zap/vyp zobrazování anotací u minut
+- **Mezery** — Mezera minuta↔anotace, Mezera anotace↔anotace, Mezera mezi odjezdy
 
 #### Legenda poznámek
 
 Vysvětlivky pod mřížkou.
 
-| Vlastnost | Co dělá |
-|---|---|
-| Nadpis | text záhlaví legendy (výchozí „Poznámky") |
-| Oddělovač | text mezi značkou a popisem (výchozí „ — ") |
-| Velikost písma pozn. / Výška řádku | typografie legendy |
-| Počet sloupců (1–4) + Směr plnění | „Po sloupcích" (jako noviny) nebo „Po řádcích" |
-| Řazení | Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně |
-| Šířka buňky značky | pevná šířka sloupce se značkou, aby byly texty svisle zarovnané (0 = značka inline před textem) |
-| Negativní značky / Speciální znaky / Textové poznámky | přepínače, které typy poznámek se v legendě vůbec zobrazí |
-| NZ pozadí / NZ barva | barvy invertovaného boxu u negativních značek |
+- **Nadpis** — text záhlaví legendy (výchozí „Poznámky")
+- **Oddělovač** — text mezi značkou a popisem (výchozí „ — ")
+- **Velikost písma pozn. / Výška řádku** — typografie legendy
+- **Počet sloupců (1–4) + Směr plnění** — „Po sloupcích" (jako noviny) nebo „Po řádcích"
+- **Řazení** — Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně
+- **Šířka buňky značky** — pevná šířka sloupce se značkou, aby byly texty svisle zarovnané (0 = značka inline před textem)
+- **Negativní značky / Speciální znaky / Textové poznámky** — přepínače, které typy poznámek se v legendě vůbec zobrazí
+- **NZ pozadí / NZ barva** — barvy invertovaného boxu u negativních značek
 
 Všechny tři prvky mohou mít pevnou nebo dynamickou (automatickou) výšku a při pevné výšce
 uplatňují **auto-zmenšení písma** (kap. 6).

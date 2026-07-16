@@ -7,12 +7,15 @@
 
 ## 📋 Aktivní / nejbližší kroky
 
+> **Release track uzavřen (2026-07-15).** Verze nasazena do produkce (2026-07-14), dokumentace na
+> zákaznické wiki (3 prolinkované články — příručka 569 / IT 570 / novinky 571, viz changelog).
+> Zákaznický e-mail se **dělat nebude** (rozhodnutí). `pre-version-checklist.md` retirován
+> (eval sada AI přesunuta do sekce „AI integrace" níže).
+
 **Co reálně čeká (pořadí = priorita):**
 
-1. **Vydání verze** — zbytek [`pre-version-checklist.md`](pre-version-checklist.md): push (pre-push testy),
-   publish blok E + smoke, release kroky, interní poznámka + zákaznický e-mail.
-2. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-3. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
+2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
 
 *(Import PDF „projít před produkcí" — HOTOVO 2026-07-13: Sonnet 5, anti-halucinace, retry,
 standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce „Import PDF" níže.)*
@@ -36,6 +39,16 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
 - **Výkon MHD tisku** (audit C-b) — memoizace `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru; behavior-preserving, gold-safe. Až výkon reálně bolí (velcí dopravci).
+- **Konverze legacy PostScript JŘ → TD šablona (`.json`)** (na poptávku, nejdřív průzkum) — cíl: zákazníci
+  s jízdními řády v legacy PostScriptu je nemusí přepisovat od nuly. ⚠️ **Klíčové rozlišení, od kterého se
+  musí začít:** PostScript je **vyrenderovaný výstup** (layout + zapečená konkrétní data), kdežto naše
+  `.json` je **šablona** (jen vzhled; data zvlášť z DB). Takže to **není převod dat**, ale **rekonstrukce
+  layoutu** — přesně tentýž problém jako Import PDF. Nejpravděpodobnější cesta **bez psaní vlastního PS
+  parseru**: `PS → PDF` (Ghostscript) → **stávající AI Vision import PDF** (rozpozná StopList / mřížku
+  odjezdů / legendu a namapuje pole agendy → živá editovatelná šablona, ne obrázek). Dořešit: kolik
+  zákazníků to reálně má a co přesně (samostatné `.ps` soubory? embedded v tisku?), věrnost převodu,
+  a že výstupem musí být editovatelná šablona napojená na data. Relates: sekce „Import PDF" níže + „Externí
+  datové zdroje".
 - **Externí datové zdroje** (analýza 2026-07-12, na poptávku) — architektura připravená (engine zná jen
   `Template + DataContext`; DataContext je zdrojově agnostický JSON). Tři švy: Caché gateway agenda
   (0 změn .NET) · .NET provider vedle Caché (vzor `JsonFileDataSchemaProvider` + Composite) · headless
@@ -43,20 +56,19 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** — tržní minimum
   (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
-- **UX drobnosti z pre-version průchodu (2026-07-13):** snap/indikace čtverce při resize obdélníku
-  (à la Figma — threshold + vizuální hint, S–M) · **per-šablona hodnoty tiskových parametrů**
-  (PrintDialog volba „načíst z aktuální šablony"; dnes per-agenda — chce design kam uložit
-  a co má přednost; navazuje na existující TODO „extrakce na Template/agenda-config", M)
+- **Exportní parametry per šablona (odloženo, na poptávku)** — obsahové tiskové parametry už patří
+  šabloně (2026-07-15, hotovo → archiv); exportní pole (název souboru, členění, imposice) zůstávají
+  per agenda. Převod exportních na per-šablonu zatím vědomě odložen. (S–M)
 - **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
-  „nedostupná" od „není nakonfigurována" + varování při startu (M) · empty-state panelu Pole
-  agendy bez DB (S) · splash při startu (~3 s .Wait bez okna, M) · validace Save dialogů
-  disabled tlačítkem místo popupu (M) · jednotný resize grip (S) · dvojklik v Instance
-  pickeru = toggle checku (S)
-- **Vizuální audit — odložené (2026-07-13):** toolbar textová tlačítka („M"/„O"/„Fit"/„1:1"/
-  „PDF"/„PNG"/„↻"/„☰") → EDIcons ikony (M) · sjednotit ▲▼ vs ↑↓ tlačítka pořadí do sdíleného
-  stylu (M) · footer pattern (dělicí linka + Bg.Footer) + EDTheme.Spacing tokeny do dialogů (M) ·
-  **dark mode** — EDThemeDark existuje, tokenizace hotová (2026-07-13), zbývá runtime swap +
-  ověření (M–L) · dialog header pattern à la HelpDialog/PdfImport (L, s EDInputForm zásahem)
+  „nedostupná" od „není nakonfigurována" + varování při startu (M; hláška o chybějících polích
+  už zpřesněna 2026-07-15, zbývá reálná detekce + varování při startu — sem patří i „okno naskočí
+  až po ~3 s při nedostupném připojení", dřív vedeno samostatně jako splash)
+- **Vizuální audit — odložené (2026-07-13):** **dark mode** — EDThemeDark existuje, tokenizace
+  hotová (2026-07-13), zbývá runtime swap + ověření (M–L)
+- **Postupná unifikace dialogů (směr, průběžně)** — cíl: převádět dialogy na **EDInputForm /
+  sdílený standard**, kde to dává smysl (např. Import PDF klidně EDInputForm), + zavést **sdílený
+  „DialogChrome"** (jednotná hlavička + footer s dělicí linkou). Speciální formuláře (menšina)
+  dořešit zvlášť. Dělat průběžně při dotyku daného dialogu, ne jako jeden velký refaktor. (L celkem)
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
@@ -232,8 +244,19 @@ Křivky/Bézier v obecném importu — low-prio, bez poptávky.
 > changes. **Princip: copilot, ne autopilot.**
 
 **Otevřené (post-release):** ostrá zkouška EDISONAI cesty bez lokálního klíče u první firmy ·
-potvrzení `source: "templatedesigner"` u autora mlwebu (checklist §4) · zveřejnění generátoru šablon
+potvrzení `source: "templatedesigner"` u autora mlwebu · zveřejnění generátoru šablon
 (menu dnes jen pro vývojáře) až po otestování na reálných zadáních.
+
+**Eval sada AI pomocníka** (průběžné doškrtání; pomocník je už uživatelsky ověřen, tohle je regresní
+sada) — u každé otázky hodnotit: správná cesta v UI / žádné vymyšlené featury / rychlost odpovědi.
+- *Lookup:* „dvě vývěsky na A4" → Ctrl+P Uspořádání na list · „linka do vlastního PDF" → Ctrl+P Členění + Název souboru ·
+  „stránka na A5" → Ctrl+Shift+P · „kopírovat styl" → Ctrl+Shift+C/V · „sloupec cena×počet" → výraz `{CENA}*{POCET}` ·
+  „zvýraznit řádky >1000" → zvýraznění řádků · „víc linek k tisku" → chip Instance · „změnit agendu" → Ctrl+Shift+A ·
+  „červený rámeček náhledu" → přetečení obsahu · „součet pod tabulku" → `SUM(...)` · „schovat sekci na 1. str." → VisibilityExpression ·
+  „vrátit smazaný prvek" → Ctrl+Z · „písmo celé tabulky" → dialog sloupců · „šablona pro kolegu" → Ctrl+S do DB.
+- *Chytáky* (očekává „zatím neumíme", ne vymyšlený návod): sloučení buněk · export do Excelu · PDF e-mailem ·
+  brožura/duplex · vlastní font · import staré šablony z EDISONu.
+- *Nejistota* (odkázat na F1/podporu, ne halucinovat): „špatný čas u 3. zastávky linky 12" (datový problém, ne UI).
 
 **Budoucí:** MCP server (`get_template`/`apply_template`/`add_element`/… tenká vrstva nad ViewModelem, každý
 tool → `_vm.Execute(command)`) · onboarding průvodce · smart suggestions (TableElement → sloupce z DataSchema) ·

@@ -42,6 +42,8 @@ Detaily ve sdíleném `EDControls/DOCS/01-wire-formats.md` — tam patří změn
   explicitní `Click` handler (TwoWay v CellTemplate je buggy; header `Click` brání
   rekurzi CheckAll→Sync). Datové sloupce se identifikují přes `Tag = column.Key`;
   checkbox sloupec Tag nemá (přeskakuje ho search i persist).
+  - Rychlý výběr: **dvojklik na řádek** přepne zaškrtnutí; **Shift+klik** na checkbox
+    zaškrtne/odškrtne celý rozsah od kotvy (posledního kliku) v zobrazeném pořadí.
 - Persist layoutu (šířky, pořadí, sort): nastav `HostId` (konvence
   `"<Projekt>.<Consumer>"`); prázdný = off. Storage
   `^ALVA.EDControls.UserData(IdFa, userID, "EDControls.EDList", HostId)`, save debounce

@@ -43,6 +43,7 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 - Text, Image, Rectangle, Line, BarcodeElement (QR, Code128, EAN-13, EAN-8, PDF417, DataMatrix)
 - **DynamicTableElement** — samostatná dynamická tabulka (řádky z `DataSource` kolekce agendy); 2-tab editor `DynamicTableEditorDialog` (Obecné = EDInputForm `DynamicTableElementEdit.cls` + Sloupce přes `ColumnListEditor`/`CellStyleEditor` s Add/Remove a mapováním `Field`); auto-scale do pevné Height + auto-distribuce šířky (`Width≤0`), seed sloupců z polí kolekce centralizovaný v dialogu (undoable), dvojklik otevře dialog rovnou; **podmíněné řádkové featury** přes sdílený `Models/Expressions/RowConditions` (výraz nad daty řádku): **viditelnost řádku** (`RowVisibilityExpression` — nesplněné řádky se nevykreslí ani nezapočítají do výšky; DynamicTable + StopList + LineTable) + **zvýraznění řádku** (`RowHighlightExpression`+`RowHighlightColor` → pozadí; DynamicTable + StopList + LineTable). DepartureGrid mimo = pivot. Default-off = behavior-preserving pro gold; helpText podmínkových polí vypisuje dostupné názvy polí řádku. ; **počítaná pole** (`TableColumn.Expression` — aritmetický výraz nad poli řádku `{CENA}*{POCET}`, přebíjí `Field`, výsledek formátovatelný přes `Format` — editace ve Sloupce tabu vč. dřív chybějícího `Format`); **min/max řádků** (`MinRows` doplní prázdné řádky do minima = pevná výška boxu např. faktura, `MaxRows` ořízne — DynamicTable-only). Statická `TableElement` uspána (`JsonDerivedType` jen pro legacy načtení, ne v UI)
 - Parametry sestavy (Part 1 + serializace do JSON), VisibilityExpression evaluator
+- **Tiskové parametry per šablona** — hodnoty **obsahových** parametrů (časová osa, rozdělení sloupců, šipky…) patří šabloně (`Template.PrintParameters`, aditivní JSON), sdílené mezi uživateli, priorita nad per-agenda; ukládají se automaticky se šablonou (dirty na user změnu, `SetAgendaParamValue` change-aware). Export pole (název/členění/imposice) zůstávají per agenda (převod odložen). Otevírací flow awaituje `RefreshFieldsList` (Task) kvůli cold-start časování + `RefreshParamsUiAfterLoad` bezpodmínečně přenačte parametrový tab z finálních hodnot
 - Výrazový jazyk kompletní: podmínky (`&&`, `||`, `!`), porovnání, **aritmetika (`+ - * /`, unární minus, závorky, priorita)** pro počítaná pole, formátování (`{POLE:N2}`, `{POLE:UPPER}`, `{POLE:LEFT(4)}`), agregace (`SUM`, `COUNT`, `AVG`, `MIN`, `MAX`) v souhrnných řádcích tabulky **nad výrazem, ne jen holým polem** — `SUM({CENA}*{POCET})` sečte počítanou řádkovou hodnotu (argument vyhodnocuje `ExpressionEvaluator` per řádek; omezení: bez vnořených závorek v argumentu). `ExpressionEvaluator.EvaluateToString` = hodnotové vyhodnocení (fail-soft); dělení nulou / nečíselný operand → prázdno
 - Live preview, PDF export, DataSchema tree, section management, undo/redo (12 cmd typů)
 - `TemplateDesignerViewModel : EDViewModel` — MVVM, duální startup (standalone + EDISON)
@@ -98,7 +99,7 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 - **CellStyleVM font defaults** — dialog sloupců zobrazuje skutečné font hodnoty z elementu (ne prázdná pole); `headerDefaults`/`dataDefaults` parametry
 - **AnthropicApiClient: shared HttpClient** — statický `HttpClient` s per-request headers místo per-call instancí
 - **EDISONAI/mlweb napojení (`Services/EdisonAiService.cs`)** — spravovaný API klíč pro zákazníky: mlweb config z Caché `ALVA.EDISONAI.API.Config.GetMLWebConfig`, resolve `POST /api/mline/agent/resolve` (fail-closed, 60s cache, jen provider claude), spotřeba `POST /api/mline/usage` se `source: "templatedesigner"` (best-effort, `AnthropicApiClient` čte `usage` z každé odpovědi). Lokální `AiAssistant.AnthropicApiKey` = dev bypass (mlweb se nevolá, spotřeba se nehlásí). Model v režii TD (`AssistantModel`/`VisionModel`), ne z mlweb. Hlášky nedostupnosti jednotně nesou důvod z mlweb (pomocník popup / generátor / import červený text); tlačítko „Požádat o přístup" TD nemá (jen EDISON chat) — zákazník jde přes helpdesk
-- **AI pomocník + generátor šablon na Sonnet 5** — `AiAssistant.AssistantModel` (default claude-sonnet-5): pomocník volá s **vypnutým myšlením** (`thinking: disabled`, rychlé lookup odpovědi), generátor s adaptivním; temperature se na S5+ neposílá (`ModelSupportsTemperature`, jinak 400); parsování přes `ExtractText` = první text blok (thinking-safe). Pomocník: znalosti z `CapabilityCatalog` (SystemRole s trojstavovou nejistotou + groundingem, GeneralIntro s UI mapou Co→Kde, auto-gen katalog elementů dle ElementKind); eval sada ~21 otázek v pre-version-checklist §6. Generátor: SystemPrompt srovnaný s reálným modelem (vnořený `style`, DynamicTableElement, plný BarcodeType); menu „AI Asistent šablon" před produkcí skryté (vidí jen vývojář s lokálním klíčem), ruční zadání klíče v dialogu jen dev
+- **AI pomocník + generátor šablon na Sonnet 5** — `AiAssistant.AssistantModel` (default claude-sonnet-5): pomocník volá s **vypnutým myšlením** (`thinking: disabled`, rychlé lookup odpovědi), generátor s adaptivním; temperature se na S5+ neposílá (`ModelSupportsTemperature`, jinak 400); parsování přes `ExtractText` = první text blok (thinking-safe). Pomocník: znalosti z `CapabilityCatalog` (SystemRole s trojstavovou nejistotou + groundingem, GeneralIntro s UI mapou Co→Kde, auto-gen katalog elementů dle ElementKind); eval sada ~21 otázek v `roadmap.md` (sekce AI integrace). Generátor: SystemPrompt srovnaný s reálným modelem (vnořený `style`, DynamicTableElement, plný BarcodeType); menu „AI Asistent šablon" před produkcí skryté (vidí jen vývojář s lokálním klíčem), ruční zadání klíče v dialogu jen dev
 - **Nápověda F1 datově řízená + hledání** — obsah v `HelpDialogViewModel.BuildContent()` (kategorie → řádky akce/zkratka → tip; při nové zkratce aktualizovat TAM + ux-conventions tabulku); fulltext filtr bez diakritiky (Ctrl+F fokus, Esc čistí), zákaznický jazyk bez anglicismů
 - **MmMath helpers** — `MmMath.Round(mm)` zaokrouhlí na 0.1mm (eliminuje IEEE-754 artefakty); `MmMath.Snap(mm, step)` přichytí na libovolný krok; nullable overload pro `Height`; aplikováno v EndResize, ScaleTemplate, DistributeH/V, PropertiesPanel
 - **Normalizovat pozice** (`Ctrl+Shift+N`) — dialog s volbou kroku (0.1–5mm), live preview počtu změn, `CompositeCommand` undo; opraví float artefakty v existujících šablonách
@@ -170,21 +171,66 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 
 ---
 
-## Pracovní postup (krok po kroku)
+## Komunikace s uživatelem (závazné)
 
-Každá položka (z roadmapy / requestu) projde tímto cyklem — nevynechat ani jeden krok:
+1. **Standardní, srozumitelná terminologie.** Nevymýšlej „czechglish" žargon ani interní zkratky.
+   Zavedený český termín použij česky, obecné programátorské pojmy anglicky — konzistentně a
+   pochopitelně (drží se to code-style konvence pojmenování).
+2. **Popisuj položky z uživatelského hlediska, high-level.** Když spolu procházíme roadmapu / body /
+   úkoly, řekni **o co jde a proč to uživatele zajímá** — i u technické věci vysvětli **podstatu**
+   (deduplikace, výkonový problém, konzistence UI…), **ne interní identifikátory / názvy tříd /
+   kódové termíny**, do kterých uživatel v kódu nevidí. Konkrétní kódový detail jen když si o něj řekne.
 
-1. **Projít** — připomenout co přesně má krok dělat, kontext a závislosti
-2. **Validovat** — ověřit, že to dává smysl dělat teď (priority, závislosti, scope)
-3. **Implementovat** — kód, Caché, XAML — dle pravidel (`.claude/rules/`)
-4. **Otestovat** — ručně projít golden path + edge cases; u UX ověřit v běžícím buildu
-5. **Aktualizovat docs** — changelog + roadmap + CLAUDE.md pokud se mění architektura
-6. **Další krok** — posunout `⬅️` marker na následující položku v roadmapě
+## Vývojová pipeline (agent ji jede sám z jednoho zadání)
+
+Tohle je **pasivní pravidlo, ne skill k ručnímu vyvolání** — platí pro každou úlohu automaticky.
+Uživatel dodá **featuru + volitelný kontext** a dělá **prioritizační a architektonická rozhodnutí**;
+mechaniku (kód → testy → docs → wiki → commit) veze agent sám, bez čekání na dílčí pokyny.
+
+### Výchozí zdroj úloh — roadmapa
+
+Když uživatel neurčí konkrétní úlohu, **ber práci z [`roadmap.md`](.claude/docs/roadmap.md)** (vršek = priorita) — to je výchozí vstup pro pipelinu níže:
+
+- Vyber **nejbližší rozumnou položku** (respektuj pořadí, závislosti, gates R1–R7, velikost). **Oznam, co beru**, a pokračuj — neptej se na svolení u každé, ale nech prostor to přesměrovat.
+- **Explicitní zadání od uživatele vždy přebíjí** roadmapu.
+- U **velkých / architektonických** položek se zastav a nech rozhodnutí (co / jak / priorita) na uživateli — ne jen tak spustit velký track.
+- Po dokončení položky (krok 8) rovnou navrhni **další dle roadmapy** → plynulý tok bez opakování zadání.
+
+Pipeline pro každou vybranou úlohu:
+
+0. **Zadání & kontext** — ujasnit konkrétní featuru, vstřebat extra kontext od uživatele, zařadit do scope/roadmapy.
+1. **Projít kód** — přečíst relevantní existující kód a pochopit současný stav (ne psát naslepo).
+2. **Navrhnout testy** — čím se featura ověří (xUnit / Caché `%UnitTest` / ruční golden path), ideálně před implementací.
+3. **Implementovat** — dle pravidel (`.claude/rules/`, R1–R5, kód EN / komentáře CZ, CVar, MVVM). Auto-build hook hlásí chyby.
+4. **Otestovat & iterovat** — spustit testy, u UX ověřit v běžícím buildu; body 3–4 opakovat, než to vypadá dobře.
+5. **Lokální docs** — changelog vždy; roadmap (hotové → archiv, posun šipky); CLAUDE.md „Co máme" jen při arch změně.
+6. **Wiki** — jen pokud featura mění user-facing chování **a projekt má linknutý článek**: aktualizovat seed + sync (TipTap-safe, mapa seed↔UUID). Jinak přeskočit.
+7. **Commit** — Janův scope, granular, `TD -` prefix. Gating viz níže.
+8. **Další krok** — po commitu navrhnout **další logický krok v roadmapě** nebo jiný smysluplný postup.
+
+**Gating commitu (chytré):**
+- **Jednoduchá / mechanická změna, kterou nedává smysl ručně proklikat** (a testy projdou) → **commit ihned**, nečekat.
+- **Vizuální / nová / větší featura, kterou má uživatel proklikat a vyzkoušet** → **necommitovat**, ukázat
+  výsledek a **počkat na potvrzení**; teprve po potvrzení commit + krok 8.
+
+**Co zůstává na uživateli:** co se dělá (priority), architektonická rozhodnutí, high-level kontext aplikace.
+Ne mechanika kroků 1–8.
 
 > ⚠️ **`roadmap.md` drž ČISTOU — jen aktivní úkoly.** Když je něco hotové (i rozhodnutí), **přesuň
 > to KOMPLETNĚ do [`roadmap-archive.md`](.claude/docs/roadmap-archive.md)** — nenechávej to v roadmapě
 > jako odškrtnuté „✅ hotovo" řádky. V aktivní roadmapě nesmí viset starý nepořádek; zůstává jen to,
 > co se má dělat (+ krátký pointer do archivu, kde detaily jsou). Platí i pro rozhodovací tabulky.
+
+### Wiki — mapování a sync (krok 6 pipeline)
+
+Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravidla:
+
+- **Synchni JEN články z mapy.** Co v mapě není, se nikdy netkne (folder-level: platí nejbližší `wiki-map.json` nad měněným souborem; dnes jedna na úrovni TD).
+- Krok 6: pokud featura mění **user-facing chování** pokryté některým `seed`em z mapy → aktualizuj ten seed a synchni jeho článek (MCP `update_wiki_article`, `id` z mapy). Jinak wiki přeskoč.
+- **TipTap-safe markdown:** konvertor **NEUMÍ tabulky** (slije je do jednoho odstavce) → piš odrážky / definiční seznamy. OK: nadpisy, seznamy, odkazy, tučné/kurzíva, blockquote, `---`.
+- **Seed = source of truth, wiki = zrcadlo** — na wiki needitovat ručně.
+- Ověření po syncu drž **lehké** (nečti celý obsah zpět — velký článek přesáhne limit odpovědi; ověř `number`/`updatedAt`).
+- Budoucí tvrdá pojistka (až se v praxi ukáže, že se na sync zapomíná): pre-push guard čtoucí `wiki-map.json`, případně CI přes REST.
 
 ---
 

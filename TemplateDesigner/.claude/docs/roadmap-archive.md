@@ -2,6 +2,35 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## Session 2026-07-15 ✅ — Proces vývoje + zákaznická wiki + UX úklid
+
+Detail → changelog 2026-07-15.
+
+**Proces (pasivní pravidla v CLAUDE.md):** vývojová pipeline (agent jede celý cyklus z jednoho
+zadání, chytré gatování commitu) · výchozí zdroj úloh = roadmapa · konvence komunikace (srozumitelné
+termíny, popis z uživatelského hlediska) · wiki mapování (`.claude/wiki-map.json` allow-list) +
+TipTap-safe konvence.
+
+**Zákaznická wiki:** 3 prolinkované články (příručka 569 / IT 570 / novinky 571), seedy v repu =
+source of truth. **Release track uzavřen** (verze v produkci, e-mail se nedělá, pre-version-checklist retirován).
+
+**UX úklid:** snap na čtverec při resize · empty-state panelu „Pole agendy" · přesnější hláška DB
+(„nejsou databázová pole" místo „nedostupná") · EDList dvojklik = toggle + Shift výběr rozsahu
+(sdílené, pro všechny seznamy) · Save dialog nedostupné tlačítko místo popupu · sjednocení
+pořadových šipek na ▲▼ (TableEditorDialog ↑↓ → ▲▼, zbytek appky už měl ▲▼).
+
+**Tiskové parametry per šablona (obsahové):** hodnoty obsahových parametrů (časová osa, rozdělení
+sloupců, šipky…) teď patří šabloně — sdílené mezi uživateli, priorita nad per-agenda, ukládají se
+automaticky s šablonou (Ctrl+S, dirty na user změnu). Aditivní `Template.PrintParameters`, fallback
+na agendu u starých šablon; export pole zůstávají per agenda (odloženo). Cesta k funkčnosti si vyžádala
+opravu cold-start časování (`RefreshFieldsList` → `Task`, otevírací flow awaituje schéma) + bezpodmínečné
+přenačtení parametrového tabu po načtení hodnot (`RefreshParamsUiAfterLoad` — tab se jinak držel defaultů).
+
+**Vědomě NEdělat (rozhodnuto):** „jednotný resize grip" (legacy, nejasné) · toolbar text→ikony
+(písmenka záměrně ponechána — u PDF/PNG jasnější než ikona) · footer pattern dialogů (žádné
+konkrétní případy) · samostatný splash (start je běžně rychlý; 3 s jen při nedostupném připojení
+→ sloučeno s odloženým bodem o připojení).
+
 ## Session 2026-07-11 ✅ — Dvouosý model agend: Agenda × Varianta („typ šablony vs agenda")
 
 Rozhodnutí + implementace bodu „🧭 K rozmyšlení" (podnět kolegy). Legacy analýza (RG strom

@@ -112,6 +112,10 @@ public partial class MainWindow : Window
             string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey)
                 ? Visibility.Collapsed : Visibility.Visible;
 
+        // DEV přepínač firem — stejný gate jako AI generátor (lokální dev klíč). Naplní se
+        // z pevného seznamu ve VM; v produkci zůstává skrytý.
+        BuildDevFirmMenu();
+
         // Aplikuj UI-side prefs (splittery, tab, preview pane viditelnost) až po InitializeComponent.
         ApplyUiPreferences();
 
@@ -171,7 +175,7 @@ public partial class MainWindow : Window
             () => { skCanvas.InvalidateVisual(); InvalidatePreview(); },
             _vm.RebuildSections,
             UpdateCanvasSize,
-            _vm.RefreshFieldsList,
+            () => _vm.RefreshFieldsList(),
             getAvailableFields:    _vm.GetAvailableFields,
             getAvailableGroups:    _vm.GetAvailableGroups);
 
@@ -1132,6 +1136,40 @@ public partial class MainWindow : Window
     private void MenuRedo_Click(object sender, RoutedEventArgs e)  => _vm!.RedoCommand.Execute(null);
     private void MenuDelete_Click(object sender, RoutedEventArgs e) => _vm!.DeleteCommand.Execute(null);
     private void MenuHelp_Click(object sender, RoutedEventArgs e)  => ShowHelp();
+
+    /// <summary>Naplní DEV submenu firem z pevného seznamu ve VM. Viditelné jen pro vývojáře
+    /// (lokální dev klíč) a jen když je připojení k databázi.</summary>
+    private void BuildDevFirmMenu()
+    {
+        bool devMode = !string.IsNullOrEmpty(AppSettings.Current?.AiAssistant.AnthropicApiKey);
+        bool show = devMode && _vm?.CurrentFirmIdfa is not null;
+        MenuDevSep.Visibility = MenuDevSwitchFirm.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show) return;
+
+        MenuDevSwitchFirm.Items.Clear();
+        foreach (var (code, label) in TemplateDesignerViewModel.DevFirms)
+        {
+            var item = new MenuItem { Header = label, Tag = code, IsCheckable = true };
+            item.Click += MenuDevSwitchFirm_Click;
+            MenuDevSwitchFirm.Items.Add(item);
+        }
+        RefreshDevFirmMenuChecks();
+    }
+
+    private void MenuDevSwitchFirm_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm is null || sender is not MenuItem item || item.Tag is not string code) return;
+        _vm.DevSwitchFirm(code);
+        RefreshDevFirmMenuChecks();
+    }
+
+    /// <summary>Označí zaškrtnutím aktuální firmu; ostatní odškrtne.</summary>
+    private void RefreshDevFirmMenuChecks()
+    {
+        var current = _vm?.CurrentFirmIdfa;
+        foreach (var mi in MenuDevSwitchFirm.Items.OfType<MenuItem>())
+            mi.IsChecked = mi.Tag is string c && string.Equals(c, current, StringComparison.Ordinal);
+    }
 
     private async void MenuAiAssistant_Click(object sender, RoutedEventArgs e)
     {
@@ -2402,17 +2440,17 @@ public partial class MainWindow : Window
 
             var (newX, newY, newW, newH) = ComputeResize(mouseMmX, mouseMmY);
 
+            bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
+            bool movR = _resizeHandle is ResizeHandle.TopRight or ResizeHandle.MiddleRight or ResizeHandle.BottomRight;
+            bool movT = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.TopCenter or ResizeHandle.TopRight;
+            bool movB = _resizeHandle is ResizeHandle.BottomLeft or ResizeHandle.BottomCenter or ResizeHandle.BottomRight;
+
             // Smart snap při resize
             _vm.State.ActiveGapIndicators.Clear();
             _vm.State.SnapTargetElements.Clear();
             _vm.State.ActiveSectionCenterX = null;
             if (_vm.State.SnapToElements && _vm.State.ActiveSection is { } resizeSection && !resizeCtrlHeld)
             {
-                bool movL = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.MiddleLeft or ResizeHandle.BottomLeft;
-                bool movR = _resizeHandle is ResizeHandle.TopRight or ResizeHandle.MiddleRight or ResizeHandle.BottomRight;
-                bool movT = _resizeHandle is ResizeHandle.TopLeft or ResizeHandle.TopCenter or ResizeHandle.TopRight;
-                bool movB = _resizeHandle is ResizeHandle.BottomLeft or ResizeHandle.BottomCenter or ResizeHandle.BottomRight;
-
                 var others = resizeSection.Elements.Where(e2 => e2 != _resizeElement);
                 float threshold = 8f / _canvas.MmToPx;
                 _snapEngine.GapMm = _vm.State.SnapGapMm;
@@ -2427,11 +2465,39 @@ public partial class MainWindow : Window
                 _vm.State.SnapTargetElements.AddRange(snap.Targets);
             }
 
+            // Snap na čtverec — u rohového úchytu tvarového elementu dorovná W≈H na přesný
+            // čtverec (uživatel nemusí ručně dopočítávat rovné strany). Práh v px → v mm dle zoomu;
+            // Ctrl snap vypíná. Protilehlý roh (kotva) zůstává, dorovnaná strana snapuje na grid.
+            bool squareSnapped = false;
+            if (!resizeCtrlHeld && (movL || movR) && (movT || movB)
+                && _resizeElement is RectangleElement or ImageElement or BarcodeElement
+                && newH is { } hVal && newW > 0.1f && hVal > 0.1f
+                && MathF.Abs(newW - hVal) <= 6f / _canvas.MmToPx)
+            {
+                float s = (newW + hVal) / 2f;
+                if (_vm.State.SnapToGrid)
+                {
+                    float g = _vm.State.GridSize;
+                    s = MathF.Round(s / g) * g;
+                }
+                s = MathF.Max(s, 0.1f);
+                float candX = movL ? newX + newW - s : newX;
+                float candY = movT ? newY + hVal - s : newY;
+                if (candX >= 0 && candY >= 0
+                    && candX + s <= _resizeSectionW && candY + s <= _resizeSectionH)
+                {
+                    newX = candX; newY = candY; newW = s; newH = s;
+                    squareSnapped = true;
+                }
+            }
+
             _resizeElement.X = newX; _resizeElement.Y = newY;
             _resizeElement.Width = newW; _resizeElement.Height = newH;
 
             // Měřící badge — aktuální rozměr a pozice (stejný formát jako u dragu)
-            _vm.State.DragBadgeText = $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
+            _vm.State.DragBadgeText = squareSnapped
+                ? $"{newW:0.#} × {newH:0.#} mm  ◻ čtverec   X: {newX:0.#}   Y: {newY:0.#} mm"
+                : $"{newW:0.#} × {newH:0.#} mm   X: {newX:0.#}   Y: {newY:0.#} mm";
             _vm.State.DragBadgeX = cx;
             _vm.State.DragBadgeY = cy;
 

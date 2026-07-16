@@ -630,13 +630,19 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private string GetStopMarkersText(ZastavkaData z)
     {
         var parts = new List<string>();
+        // „Na znamení" má dvě podoby: dedikované pole zastávky (mock data) NEBO atribut s popisem
+        // „na znamení" (ostrá AD i MHD data ho posílají jako atribut, ne přes pole). Obojí řídí
+        // přepínač „Na znamení" (ShowSignalStopIndicator) — vypnutí schová značku i řádek legendy.
         if (ShowSignalStopIndicator && z.NaZnameni)
             parts.Add(SignalStopSymbol);
 
-        if (ShowStopAttributes && z.Atributy.Count > 0)
+        if (z.Atributy.Count > 0)
         {
             var excluded = GetExcludedSet();
-            var symbolStr = string.Join("", z.Atributy.Where(a => !excluded.Contains(a.Znak)).Select(a => a.Znak));
+            var symbolStr = string.Join("", z.Atributy
+                .Where(a => !excluded.Contains(a.Znak))
+                .Where(a => IsNaZnameniAttr(a) ? ShowSignalStopIndicator : ShowStopAttributes)
+                .Select(a => a.Znak));
             if (symbolStr.Length > 0) parts.Add(symbolStr);
         }
 
@@ -648,6 +654,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         return parts.Count == 0 ? "" : string.Join(" ", parts);
     }
+
+    /// <summary>Je atribut zastávky „na znamení"? AD i MHD ho posílají jako atribut (ne přes pole
+    /// NaZnameni), symbol se liší podle číselníku firmy (AD „x", MHD např. „D") — rozpoznáváme ho
+    /// proto podle popisu (CZ „na znamení" / SK „na znamenie"), aby ho řídil přepínač „Na znamení".</summary>
+    private static bool IsNaZnameniAttr(AtributData a) =>
+        a.Popis.StartsWith("na znamen", StringComparison.OrdinalIgnoreCase);
 
     private string BuildStopDisplayText(ZastavkaData z)
     {

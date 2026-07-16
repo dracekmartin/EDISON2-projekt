@@ -1,0 +1,27 @@
+{
+  "_comment": "Allow-list linkovaných wiki článků pro tento projekt. Synchni JEN články odtud, nic jiného. Cesty seedů jsou relativní ke kořeni TemplateDesigner. Viz CLAUDE.md sekce 'Wiki — mapování a sync'.",
+  "wikiBaseUrl": "https://podpora.m-line.cz/support/wiki/",
+  "articles": [
+    {
+      "seed": ".claude/docs/uzivatelska-prirucka.md",
+      "id": "90511fc5-10e5-476d-b7c1-3cd70672f26d",
+      "number": 569,
+      "status": "internal",
+      "covers": "User-facing ovládání Návrháře sestav (příručka, hub)"
+    },
+    {
+      "seed": ".claude/docs/prirucka-it.md",
+      "id": "3a07cae1-1198-4ffa-8875-856e3fc36094",
+      "number": 570,
+      "status": "internal",
+      "covers": "Technické požadavky / instalace .NET (pro IT)"
+    },
+    {
+      "seed": ".claude/docs/plan-a-zmeny.md",
+      "id": "6d48ca01-ce81-45d8-a396-76fcf0f982db",
+      "number": 571,
+      "status": "internal",
+      "covers": "Novinky a plán rozvoje"
+    }
+  ]
+}
