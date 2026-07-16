@@ -259,6 +259,9 @@
                     <EventSetter Event="MouseLeftButtonUp" Handler="TreeItem_MouseLeftButtonUp"/>
                     <!-- Pravý klik označí položku, aby kontextové menu vizuálně sedělo na cíli. -->
                     <EventSetter Event="MouseRightButtonDown" Handler="TreeItem_MouseRightButtonDown"/>
+                    <!-- Drag modulu do miniaplikace Oblíbené (práh odliší od kliku = spuštění). -->
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="TreeItem_PreviewMouseLeftButtonDown"/>
+                    <EventSetter Event="MouseMove" Handler="TreeItem_MouseMove"/>
                 </Style>
             </Grid.Resources>
             <Grid.RowDefinitions>

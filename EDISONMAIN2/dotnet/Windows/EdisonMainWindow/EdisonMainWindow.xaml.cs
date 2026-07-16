@@ -6,6 +6,11 @@ using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
 using KeyEventArgs = System.Windows.Input.KeyEventArgs;
+using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using DataObject = System.Windows.DataObject;
+using Point = System.Windows.Point;
+using DragDrop = System.Windows.DragDrop;
+using DragDropEffects = System.Windows.DragDropEffects;
 
 namespace EDISONMAIN2
 {
@@ -37,6 +42,8 @@ namespace EDISONMAIN2
         {
             var item = (TreeViewItem)sender;
             e.Handled = true;
+            // Právě proběhl drag modulu → nespouštět ho jako klik.
+            if (_treeDragActive) { _treeDragActive = false; return; }
             switch (item.DataContext)
             {
                 case ModuleFamily:
@@ -46,6 +53,31 @@ namespace EDISONMAIN2
                     OpenModule(module);
                     break;
             }
+        }
+
+        private Point _treeDragStart;
+        private ExecutableModule? _treeDragModule;
+        private bool _treeDragActive;
+
+        // Zapamatuje modul + bod stisku (tunneling: rodič-family nastaví null, list-modul přepíše).
+        private void TreeItem_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            _treeDragStart = e.GetPosition(null);
+            _treeDragModule = ((TreeViewItem)sender).DataContext as ExecutableModule;
+        }
+
+        // Po překročení prahu spustí drag modulu (do miniaplikace Oblíbené). Práh odliší od kliku.
+        private void TreeItem_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (e.LeftButton != MouseButtonState.Pressed || _treeDragModule is null) return;
+            var p = e.GetPosition(null);
+            if (Math.Abs(p.X - _treeDragStart.X) < SystemParameters.MinimumHorizontalDragDistance &&
+                Math.Abs(p.Y - _treeDragStart.Y) < SystemParameters.MinimumVerticalDragDistance) return;
+
+            var module = _treeDragModule;
+            _treeDragModule = null;
+            _treeDragActive = true;
+            DragDrop.DoDragDrop((DependencyObject)sender, new DataObject(ModuleDrag.FromTree, module), DragDropEffects.Copy);
         }
 
         // Pravý klik defaultně selekci nemění → kontextové menu by se vizuálně nevztahovalo
