@@ -448,7 +448,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// 2) hidden — <see cref="ExecutableModule.Hidden"/> uzly se vždy odfiltrují (legacy `hidden="1"`);
         /// 3) aplikační přístup — <c>AccessTable.Contains(ElementId)</c> pro každý EXE uzel;
         /// 4) admin fallback — řešen v <see cref="AccessLoader"/> už při loadu (přidá konkrétní IDs).
-        /// FAMILY se auto-skryje, pokud všechny děti odfiltrované.
+        /// Vrstvy 1+3 platí i pro FAMILY (package ID — legacy BuildTreeXML gate-oval skupiny
+        /// stejně jako formy, složka mimo licenci/AP skryje celou větev); FAMILY se navíc
+        /// auto-skryje, pokud jsou všechny děti odfiltrované.
         /// </summary>
         internal static IModule? TryFilter(IModule module, Lic? licence, AccessTable? access = null) => module switch
         {
@@ -470,6 +472,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         internal static ModuleFamily? FilterFamily(ModuleFamily family, Lic? licence, AccessTable? access = null)
         {
+            // Gate složky PŘED rekurzí — mimo licenci/AP je skrytá celá větev včetně
+            // jinak povolených dětí (např. admin fallback přidá formTMList, ale bez AP
+            // na package Kmenová evidence se nezobrazí — parita s legacy BuildTreeXML).
+            if (family.IsLicensed && !(licence?.Elements?.Contains(family.ElementId) ?? false))
+                return null;
+            // ElementId "" = syntetická složka bez gate; access null = pass-through (testy).
+            if (access != null && family.ElementId.Length > 0 && !access.Contains(family.ElementId))
+                return null;
+
             var visibleChildren = family.NestedModules
                 .Select(child => TryFilter(child, licence, access))
                 .Where(child => child != null)
@@ -481,6 +492,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             {
                 DisplayedName = family.DisplayedName,
                 IsExpanded    = family.IsExpanded,
+                ElementId     = family.ElementId,
+                IsLicensed    = family.IsLicensed,
             };
             foreach (var child in visibleChildren) filtered.NestedModules.Add(child!);
             return filtered;

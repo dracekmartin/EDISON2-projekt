@@ -42,5 +42,19 @@ public class LicenceServiceTests
         Assert.False(EdisonMainViewModel.IsAllowed(orgStruktura, lic, access));
         // Uživatelé se bez licence nepřidávají (legacy AddAdminRights: jen při Type ≠ "Nezadána").
         Assert.False(EdisonMainViewModel.IsAllowed(users, lic, access));
+
+        // Na úrovni složek (Správa systému): Společná evidence (package 0, ve fallback
+        // Elements i v admin access) zůstane s EDISONem; Kmenová evidence (package 1)
+        // je mimo licenci i AP → celá skrytá včetně Správce úloh z admin fallbacku.
+        var spolecna = new ModuleFamily { DisplayedName = "Společná evidence", ElementId = "0", IsLicensed = true };
+        spolecna.NestedModules.Add(edison);
+        spolecna.NestedModules.Add(orgStruktura);
+        var kmenova = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1", IsLicensed = true };
+        kmenova.NestedModules.Add(new ExecutableModule { DisplayedName = "Správce úloh", ElementId = "40001", IsLicensed = false });
+
+        var filtered = EdisonMainViewModel.FilterFamily(spolecna, lic, access);
+        Assert.NotNull(filtered);
+        Assert.Equal("EDISON", Assert.Single(filtered.NestedModules).DisplayedName);
+        Assert.Null(EdisonMainViewModel.FilterFamily(kmenova, lic, access));
     }
 }

@@ -17,7 +17,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         /// <summary>
         /// Wire format (z ALVA.EDISONMAIN2.API.Tree.GetTree):
-        ///   $lb("FAMILY", displayName, isExpanded)
+        ///   $lb("FAMILY", displayName, isExpanded, elementId, isLicensed)
         ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed, inputParam, hidden, color)
         ///   $lb("FAMILY_END")
         /// </summary>
@@ -36,7 +36,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                     case "FAMILY":
                         var family = new ModuleFamily {
                             DisplayedName = row.GetString(2),
-                            IsExpanded    = row.GetString(3) == "1"
+                            IsExpanded    = row.GetString(3) == "1",
+                            ElementId     = row.Count >= 4 ? row.GetString(4) : "",
+                            IsLicensed    = row.Count >= 5 && row.GetString(5) == "1"
                         };
                         currentList.Add(family);
                         familyStack.Push(currentList);

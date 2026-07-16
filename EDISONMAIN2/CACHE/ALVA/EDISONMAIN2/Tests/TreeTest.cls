@@ -87,6 +87,27 @@ Method TestFamilyOpenCloseBalance()
 	do $$$AssertEquals(openCount, closeCount, "FAMILY open ("_openCount_") must match FAMILY_END close ("_closeCount_")")
 }
 
+/// FAMILY záznamy musí mít 5 polí dle wire-format kontraktu (type, name, expanded,
+/// elementId, licensed) — elementId neprázdné (gate složek proti licenci/AP).
+Method TestFamilyRecordsHaveFiveFieldsWithElementId()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "system"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set i = ""
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		if ($listget(record, 1) '= "FAMILY") { continue }
+		set fieldCount = $listlength(record)
+		do $$$AssertEquals(fieldCount, 5, "FAMILY record #"_i_" has "_fieldCount_" fields, expected 5")
+		do $$$AssertNotTrue(($listget(record, 4) = ""), "FAMILY record #"_i_" must have non-empty elementId")
+	}
+}
+
 /// EXE záznamy musí mít 9 polí dle wire-format kontraktu.
 Method TestExeRecordsHaveNineFields()
 {

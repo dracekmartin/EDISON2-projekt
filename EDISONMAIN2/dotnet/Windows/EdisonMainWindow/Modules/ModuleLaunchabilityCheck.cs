@@ -39,7 +39,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// </summary>
         private static (IModule, Category) MarkFamily(ModuleFamily family)
         {
-            var marked = new ModuleFamily { DisplayedName = family.DisplayedName, IsExpanded = family.IsExpanded };
+            var marked = new ModuleFamily
+            {
+                DisplayedName = family.DisplayedName,
+                IsExpanded    = family.IsExpanded,
+                ElementId     = family.ElementId,
+                IsLicensed    = family.IsLicensed,
+            };
             bool anyBroken = false, anyLaunchable = false;
             foreach (var child in family.NestedModules)
             {

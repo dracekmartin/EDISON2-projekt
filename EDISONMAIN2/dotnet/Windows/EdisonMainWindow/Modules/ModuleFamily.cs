@@ -7,6 +7,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     {
         public string DisplayedName { get; set; } = "";
 
+        /// <summary>
+        /// Package ID (EDPackageEnum / EDMainPackageEnum) z legacy `id` atributu skupiny;
+        /// "" = bez gate (syntetické složky, např. strom Oblíbených). Proti AccessTable se
+        /// kontroluje vždy, proti Lic.Elements jen při <see cref="IsLicensed"/>.
+        /// </summary>
+        public string ElementId { get; init; } = "";
+
+        /// <summary>True → složka podléhá licenční kontrole (legacy `licensed="1"` na skupině).</summary>
+        public bool IsLicensed { get; init; }
+
         private bool _isExpanded;
 
         /// <summary>

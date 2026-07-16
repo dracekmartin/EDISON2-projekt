@@ -125,6 +125,49 @@ public class ParseTreeTests
     }
 
     [Fact]
+    public void ParseTree_FamilyFullFormat_ReadsElementIdAndIsLicensed()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FAMILY", "Kmenová evidence", "0", "1", "1");
+        data["2"] = new CList("FAMILY_END");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
+        Assert.Equal("1", fam.ElementId);
+        Assert.True(fam.IsLicensed);
+    }
+
+    [Fact]
+    public void ParseTree_FamilyLegacyFormat_DefaultsElementIdAndIsLicensed()
+    {
+        // Starý 3-polový FAMILY řádek (bez elementId/isLicensed) — zpětná kompatibilita.
+        var data = new CVar();
+        data["1"] = new CList("FAMILY", "Doprava", "1");
+        data["2"] = new CList("FAMILY_END");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
+        Assert.Equal("", fam.ElementId);
+        Assert.False(fam.IsLicensed);
+    }
+
+    [Fact]
+    public void ParseTree_FamilyLicensedZero_IsLicensedFalse()
+    {
+        var data = new CVar();
+        data["1"] = new CList("FAMILY", "Převody", "0", "11", "0");
+        data["2"] = new CList("FAMILY_END");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
+        Assert.Equal("11", fam.ElementId);
+        Assert.False(fam.IsLicensed);
+    }
+
+    [Fact]
     public void ParseTree_CollapsedFamily()
     {
         var data = new CVar();

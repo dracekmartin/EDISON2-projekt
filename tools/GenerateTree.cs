@@ -163,8 +163,10 @@ void EmitNode(XElement node, int depth)
 
     if (type == "0")
     {
-        // skupina → FAMILY
-        sb.AppendLine($"{indent}d ..AddFamily({Q(name)}, 0)");
+        // skupina → FAMILY. elementId (package ID) + licensed z legacy XML — legacy
+        // BuildTreeXML gate-oval i skupiny proti licenci/accessTable, klient to replikuje.
+        bool famLicensed = (string?)effective.Attribute("licensed") == "1";
+        sb.AppendLine($"{indent}d ..AddFamily({Q(name)}, 0, {Q(id2)}, {(famLicensed ? 1 : 0)})");
         foreach (var child in effective.Elements("node"))
             EmitNode(child, depth + 1);
         sb.AppendLine($"{indent}d ..AddFamilyEnd()");
@@ -192,7 +194,10 @@ void EmitNode(XElement node, int depth)
 
         // exePath: ručně ověřený override má přednost; jinak best-effort sonda (jen pokud soubor existuje).
         string exe = !string.IsNullOrEmpty(ov.exe) ? ov.exe : ResolveExe(fqn);
-        string input = ov.input is { Length: > 0 } ? ov.input : xmlInput;
+        // input je per-UMÍSTĚNÍ (stejné id může být ve stromu vícekrát s jiným inputem —
+        // Události agd=..., Převody AD/AO/MHD/ND), override mapa je ale per-id (poslední
+        // výskyt vyhrává) → XML input má přednost, override jen doplní chybějící.
+        string input = xmlInput.Length > 0 ? xmlInput : ov.input ?? "";
         // Barvu (stub/broken) NEautorujeme — odvozuje ji runtime ModuleLaunchabilityCheck
         // z exe/launchovatelnosti. Tree.cls = čistá data.
         string color = "";

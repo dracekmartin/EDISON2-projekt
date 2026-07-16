@@ -214,6 +214,76 @@ public class EdisonMainViewModelFilterTests
         Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null, Access("999")));
     }
 
+    // ---------- FilterFamily — gate složky (licence + access na package ID) --
+    // Legacy BuildTreeXML kontroloval licenci i accessTable na každém uzlu včetně
+    // skupin — složka mimo licenci/AP skryje celou větev i s povolenými dětmi.
+
+    [Fact]
+    public void FilterFamily_LicensedFamilyNotInWhitelist_DroppedWithAllowedChildren()
+    {
+        var family = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1", IsLicensed = true };
+        family.NestedModules.Add(Exe("40001", licensed: false));
+
+        Assert.Null(EdisonMainViewModel.FilterFamily(family, Licence("999")));
+        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null));
+    }
+
+    [Fact]
+    public void FilterFamily_LicensedFamilyInWhitelist_Kept()
+    {
+        var family = new ModuleFamily { DisplayedName = "F", ElementId = "1", IsLicensed = true };
+        family.NestedModules.Add(Exe("40001", licensed: false));
+
+        var filtered = EdisonMainViewModel.FilterFamily(family, Licence("1"));
+
+        Assert.NotNull(filtered);
+        Assert.Equal("1", filtered.ElementId);
+        Assert.True(filtered.IsLicensed);
+    }
+
+    [Fact]
+    public void FilterFamily_FamilyNotInAccess_DroppedWithAllowedChildren()
+    {
+        // Případ „Správce úloh": 40001 v accessTable (admin fallback), ale package 1 ne
+        // → celá složka skrytá, dítě se nesmí zobrazit.
+        var family = new ModuleFamily { DisplayedName = "Kmenová evidence", ElementId = "1" };
+        family.NestedModules.Add(Exe("40001", licensed: false));
+
+        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null, Access("40001")));
+    }
+
+    [Fact]
+    public void FilterFamily_FamilyInAccess_KeptWithAllowedChildren()
+    {
+        var family = new ModuleFamily { DisplayedName = "F", ElementId = "1" };
+        family.NestedModules.Add(Exe("40001", licensed: false));
+
+        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, Access("1", "40001"));
+
+        Assert.NotNull(filtered);
+        Assert.Single(filtered.NestedModules);
+    }
+
+    [Fact]
+    public void FilterFamily_EmptyElementId_SkipsAccessGate()
+    {
+        // Syntetické složky (bez package ID) access gate nemají — filtrují se jen přes děti.
+        var family = new ModuleFamily { DisplayedName = "F", ElementId = "" };
+        family.NestedModules.Add(Exe("100", licensed: false));
+
+        Assert.NotNull(EdisonMainViewModel.FilterFamily(family, licence: null, Access("100")));
+    }
+
+    [Fact]
+    public void FilterFamily_AllAccess_BypassesFamilyAccessGate()
+    {
+        var allAccess = new AccessTable([], isAllAccess: true);
+        var family = new ModuleFamily { DisplayedName = "F", ElementId = "1" };
+        family.NestedModules.Add(Exe("100", licensed: false));
+
+        Assert.NotNull(EdisonMainViewModel.FilterFamily(family, licence: null, allAccess));
+    }
+
     // ---------- TryFilter (router) -----------------------------------------
 
     [Fact]
