@@ -235,6 +235,9 @@ public class WindowNavigator : IWindowNavigator
     {
         var mlRest = EDServices.Current.MLRest
             ?? throw new InvalidOperationException("Legacy launch requires EDServices.Current.MLRest.");
+        // Launch modulu jako usage telemetrie shellu. Záměrně ne (formFqn, "OPEN") —
+        // hostovaná legacy forma si OPEN trackne sama přes EDForm, jinak by byl dvakrát.
+        EDUsageTelemetry.Track("EDISON2.LegacyLaunch", string.IsNullOrEmpty(formFqn) ? exeName : formFqn);
         var shellGuid = shareShellSession ? mlRest.Guid : "";
         var agendaPath = ResolveExecutablePath(exeName);
 

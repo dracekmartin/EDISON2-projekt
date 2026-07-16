@@ -454,6 +454,8 @@ public class AppBootstrapper
 
         // Odhlásit starého uživatele — jinak jeho ACTIVITY zámek (starý GUID) drží licenční slot
         // do server-side timeoutu. Až po confirmu (login != null), před swapem session.
+        // Flush telemetrie ještě pod starou session — server bere userID z ní.
+        EDUsageTelemetry.Flush(services.MLRest);
         SessionLogout.Logout(services.MLRest);
 
         var session = EstablishSession(
@@ -500,7 +502,13 @@ public class AppBootstrapper
 
         // Graceful close → uvolnit ACTIVITY zámek (jinak visí do server-side idle timeoutu, jelikož
         // je v temp globálu, ne nativním Caché locku). services.MLRest = aktuální (po switch user).
-        _application.Exit += (_, _) => SessionLogout.Logout(services.MLRest);
+        // Před logoutem flush usage telemetrie — pojistka na záznamy po posledním zavření okna
+        // (typicky legacy launche); potřebuje živou session kvůli userID.
+        _application.Exit += (_, _) =>
+        {
+            EDUsageTelemetry.Flush(services.MLRest);
+            SessionLogout.Logout(services.MLRest);
+        };
         return wnd;
     }
 

@@ -141,7 +141,31 @@ public class EDViewModel : INotifyPropertyChanged
         _scopedPopupDisplayer = new WindowScopedPopupDisplayer(_services.PopupDisplayer, window);
         RegisterKeyBindings(window);
         if (PersistedFormId is { } formId)
+        {
             WindowStatePersistence.Attach(window, formId);
+            HookUsageTelemetry(window, formId);
+        }
+    }
+
+    /// <summary>
+    /// Usage telemetrie okna (<see cref="EDUsageTelemetry"/>): OPEN + kliky na pojmenované
+    /// controly (obdoba WinForms <c>Name</c> v legacy EDForm; nepojmenované se přeskočí),
+    /// flush dávky při zavření okna. ContextMenu/Popup stromy nemusí routovat až na okno —
+    /// telemetrie je best-effort, přesnost tam neřešíme.
+    /// </summary>
+    private void HookUsageTelemetry(Window window, string formId)
+    {
+        EDUsageTelemetry.Track(formId, "OPEN");
+
+        RoutedEventHandler onClick = (_, e) =>
+        {
+            var name = ((e.OriginalSource ?? e.Source) as FrameworkElement)?.Name;
+            if (!string.IsNullOrEmpty(name)) EDUsageTelemetry.Track(formId, name);
+        };
+        window.AddHandler(System.Windows.Controls.Primitives.ButtonBase.ClickEvent, onClick, handledEventsToo: true);
+        window.AddHandler(System.Windows.Controls.MenuItem.ClickEvent, onClick, handledEventsToo: true);
+
+        window.Closed += (_, _) => EDUsageTelemetry.Flush(_services.MLRest);
     }
 
     /// <summary>

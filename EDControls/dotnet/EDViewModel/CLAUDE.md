@@ -7,7 +7,7 @@ Základní třída ViewModelů + okolní infrastruktura: `EDServices` (DI kontej
 ## AttachToWindow — volat PŘED Show()/ShowDialog()
 
 `WindowNavigator` ho volá automaticky; **shell okno ho v AppBootstrapperu volá ručně**.
-Dělá tři věci:
+Dělá čtyři věci:
 
 1. **Klávesy** z `Actions` + vždy **Ctrl+Enter → OkCommand**. OK tlačítko záměrně nemá
    `IsDefault` — samotný Enter slouží EDInputFormu k navigaci mezi poli.
@@ -17,6 +17,13 @@ Dělá tři věci:
    Obojí best-effort — výjimka se spolkne, okno se otevře vždy.
 3. **`PopupDisplayer` se stane window-scoped** — resolve owner: per-call → okno VM →
    globální default. Agendová okna tak nedostávají popupy nad shellem.
+4. **Usage telemetrie** (`EDUsageTelemetry`) — OPEN + kliky na **pojmenované** controly
+   (ButtonBase/MenuItem routed eventy; ContextMenu/Popup nemusí dorazit), flush dávky do
+   Caché při `Closed`. Server = legacy `ALVA.ISY.ISYCloud.APIdotNet.Telemetry.LogUsageBatch`
+   (repo EDISON); push na portál m-line řeší Caché při instalaci aktualizace. Vše
+   best-effort, nikdy nehazí. Opt-out `PersistedFormId = null` vypíná i telemetrii.
+   Legacy launche trackuje `WindowNavigator.LaunchLegacy` jako `("EDISON2.LegacyLaunch",
+   formFqn)` — OPEN si hostovaná forma trackne sama přes EDForm.
 
 `PersistedFormId` default: `MyWindowViewModel` → `"EDISON2.MyWindow"`. Prefix odděluje od
 legacy numerických ID z `EDISFormEnum`. Override na `null` = opt-out.
