@@ -61,26 +61,30 @@ public partial class FavoritesMiniAppView : UserControl
     {
         if (Vm?.Shortcuts is not { } svc) return;
 
+        // Cílový slot z pozice dropu (mřížka; -1 když panel není realizovaný = prázdné oblíbené).
+        var panel = FindPanel();
+        int slot = panel is not null ? panel.SlotAt(e.GetPosition(panel)) : -1;
+
         if (e.Data.GetData(ModuleDrag.Reorder) is ExecutableModule dragged)
         {
-            int from = svc.Favorites.IndexOf(dragged);
-            if (from < 0) return;
-            var target = FindTileModule(e.OriginalSource as DependencyObject);
-            int to = target is not null ? svc.Favorites.IndexOf(target) : svc.Favorites.Count - 1;
-            if (to >= 0) svc.Move(from, to);
+            if (slot >= 0 && svc.Contains(dragged.ElementId)) svc.PlaceAt(dragged, slot);
         }
         else if (e.Data.GetData(ModuleDrag.FromTree) is ExecutableModule fromTree)
         {
-            svc.Add(fromTree);
+            svc.Add(fromTree);                       // přidá (assign next free slot) — idempotentní
+            if (slot >= 0) svc.PlaceAt(fromTree, slot);   // …a přesune na místo dropu
         }
         e.Handled = true;
     }
 
-    // Najde modul dlaždice pod bodem dropu (procházení vizuálního stromu od zdroje události nahoru).
-    private static ExecutableModule? FindTileModule(DependencyObject? origin)
+    private SlotGridPanel? FindPanel() => FindVisualChild<SlotGridPanel>(TilesHost);
+
+    private static T? FindVisualChild<T>(DependencyObject? root) where T : DependencyObject
     {
-        for (var o = origin; o is not null; o = VisualTreeHelper.GetParent(o))
-            if (o is FrameworkElement fe && fe.DataContext is ExecutableModule m) return m;
+        if (root is null) return null;
+        if (root is T hit) return hit;
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+            if (FindVisualChild<T>(VisualTreeHelper.GetChild(root, i)) is { } found) return found;
         return null;
     }
 }

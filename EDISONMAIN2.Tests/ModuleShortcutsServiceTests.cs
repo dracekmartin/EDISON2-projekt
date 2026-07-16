@@ -89,27 +89,82 @@ public class ModuleShortcutsServiceTests
     }
 
     [Fact]
-    public void Move_ReordersFavorites()
+    public void Seed_AssignsOrderSlots_ByDefault()
     {
-        var a = Exe("100"); var b = Exe("200"); var c = Exe("300");
+        var a = Exe("100"); var b = Exe("200");
         var svc = new ModuleShortcutsService();
-        svc.Seed([a, b, c], ["100", "200", "300"]);
 
-        svc.Move(0, 2);
+        svc.Seed([a, b], ["200", "100"]);
 
-        Assert.Equal(["200", "300", "100"], svc.Favorites.Select(f => f.ElementId));
+        Assert.Equal(0, b.FavoriteSlot);   // první v pořadí
+        Assert.Equal(1, a.FavoriteSlot);
     }
 
     [Fact]
-    public void Move_OutOfRange_NoOp()
+    public void Seed_UsesPersistedSlots_WhenProvided()
+    {
+        var a = Exe("100"); var b = Exe("200");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([a, b], ["100", "200"], new Dictionary<string, int> { ["100"] = 5, ["200"] = 2 });
+
+        Assert.Equal(5, a.FavoriteSlot);
+        Assert.Equal(2, b.FavoriteSlot);
+    }
+
+    [Fact]
+    public void Add_AssignsLowestFreeSlot()
+    {
+        var a = Exe("100"); var b = Exe("200"); var c = Exe("300");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a, b, c], []);
+
+        svc.Add(a);   // slot 0
+        svc.Add(b);   // slot 1
+        svc.Remove(a);
+        svc.Add(c);   // znovu nejnižší volný = 0
+
+        Assert.Equal(0, c.FavoriteSlot);
+        Assert.Equal(1, b.FavoriteSlot);
+    }
+
+    [Fact]
+    public void PlaceAt_MovesToEmptySlot_LeavingGap()
+    {
+        var a = Exe("100");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a], ["100"]);   // slot 0
+
+        svc.PlaceAt(a, 4);
+
+        Assert.Equal(4, a.FavoriteSlot);   // mezera 0–3
+    }
+
+    [Fact]
+    public void PlaceAt_OccupiedSlot_Swaps()
+    {
+        var a = Exe("100"); var b = Exe("200");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a, b], ["100", "200"]);   // a=0, b=1
+
+        svc.PlaceAt(a, 1);   // obsazeno b → swap
+
+        Assert.Equal(1, a.FavoriteSlot);
+        Assert.Equal(0, b.FavoriteSlot);
+    }
+
+    [Fact]
+    public void PlaceAt_RaisesSlotsChanged()
     {
         var a = Exe("100");
         var svc = new ModuleShortcutsService();
         svc.Seed([a], ["100"]);
+        var raised = false;
+        svc.SlotsChanged += () => raised = true;
 
-        svc.Move(0, 5);
+        svc.PlaceAt(a, 3);
 
-        Assert.Equal(["100"], svc.Favorites.Select(f => f.ElementId));
+        Assert.True(raised);
     }
 
     [Fact]

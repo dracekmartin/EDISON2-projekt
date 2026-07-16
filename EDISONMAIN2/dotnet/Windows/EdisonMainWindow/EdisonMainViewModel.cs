@@ -242,6 +242,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Změny oblíbených z miniaplikace (DnD add, remove, reorder) → přestav strom + persist.
             // Seed při loadu je pod _suppressFavoritesSync (nemá znovu ukládat načtené).
             _shortcuts.Favorites.CollectionChanged += (_, _) => { if (!_suppressFavoritesSync) SyncFavorites(); };
+            // Přesun dlaždice (reorder v miniaplikaci) → persistuj pozice (bez změny členství).
+            _shortcuts.SlotsChanged += PersistFavoriteSlots;
             // Spuštění z dlaždice jde přes OpenModule (usage + overlay), ne duplikovaně v miniaplikaci.
             _shortcuts.LaunchRequested += module => OpenModuleCommand.Execute(module);
 
@@ -273,7 +275,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             // Seed sdílené služby z uložených ID (nastaví IsFavorite na sdílených instancích).
             // Pod suppressem → CollectionChanged handler nespustí zbytečný re-save načteného.
             _suppressFavoritesSync = true;
-            _shortcuts.Seed(AllExecutables(), _modulePrefs.LoadFavorites());
+            _shortcuts.Seed(AllExecutables(), _modulePrefs.LoadFavorites(), _modulePrefs.LoadFavoriteSlots());
             _suppressFavoritesSync = false;
 
             RefreshFamilyFavoriteFlags();
@@ -689,7 +691,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RefreshFamilyFavoriteFlags();
             RebuildFavoritesTree();
             _ = _modulePrefs.SaveFavoritesAsync(_shortcuts.Favorites.Select(f => f.ElementId));
+            PersistFavoriteSlots();
         }
+
+        // Uloží pozice dlaždic (ElementId → slot). Volá se při změně členství i při přesunu dlaždice.
+        private void PersistFavoriteSlots() =>
+            _ = _modulePrefs?.SaveFavoriteSlotsAsync(_shortcuts.Favorites.ToDictionary(f => f.ElementId, f => f.FavoriteSlot));
 
         private HashSet<string> FavoriteIdSet() => [.. _shortcuts.Favorites.Select(f => f.ElementId)];
 

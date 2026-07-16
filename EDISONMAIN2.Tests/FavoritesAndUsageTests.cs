@@ -210,6 +210,30 @@ public class FavoritesAndUsageTests
             Arg.Is<JsonNode>(n => n.ToJsonString() == """["100","200"]"""));
     }
 
+    [Fact]
+    public void Prefs_LoadFavoriteSlots_ParsesMap()
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        prefs.LoadAsync("EDISONMAIN2", "FavoriteSlots")
+            .Returns(Task.FromResult<JsonNode?>(JsonNode.Parse("""{"100":0,"200":4}""")));
+        var svc = new ModulePreferencesService(prefs);
+
+        var slots = svc.LoadFavoriteSlots();
+        Assert.Equal(0, slots["100"]);
+        Assert.Equal(4, slots["200"]);
+    }
+
+    [Fact]
+    public async Task Prefs_SaveFavoriteSlots_WritesScopedBlob()
+    {
+        var prefs = Substitute.For<IUserPrefsService>();
+        var svc = new ModulePreferencesService(prefs);
+
+        await svc.SaveFavoriteSlotsAsync(new Dictionary<string, int> { ["100"] = 2 });
+
+        await prefs.Received().SaveAsync("EDISONMAIN2", "FavoriteSlots", Arg.Any<JsonNode>());
+    }
+
     // ---------- VM integrace: toggle + usage ------------------------------
 
     [Fact]

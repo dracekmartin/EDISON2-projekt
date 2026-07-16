@@ -4,16 +4,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 {
     /// <summary>
     /// Sdílený zdroj pravdy pro oblíbené moduly — používá ho strom (hvězdička ★) i dockovatelná
-    /// miniaplikace „Oblíbené" (dlaždice). Čistě in-memory: členství + pořadí + <b>sdílené</b>
+    /// miniaplikace „Oblíbené" (dlaždice). Čistě in-memory: členství + <b>sdílené</b>
     /// <see cref="ExecutableModule"/> instance (tytéž jako ve stromu → flip <c>IsFavorite</c> se
-    /// projeví všude). Persistenci a spouštění NEřeší — to obsluhuje <c>EdisonMainViewModel</c>
-    /// přes <see cref="LaunchRequested"/> a <c>Favorites.CollectionChanged</c>.
+    /// projeví všude) + pozice dlaždic (<see cref="ExecutableModule.FavoriteSlot"/>, mřížka s mezerami).
+    /// Persistenci a spouštění NEřeší — to obsluhuje <c>EdisonMainViewModel</c> přes
+    /// <see cref="LaunchRequested"/>, <c>Favorites.CollectionChanged</c> a <see cref="SlotsChanged"/>.
     /// </summary>
     public sealed class ModuleShortcutsService
     {
         private IReadOnlyList<ExecutableModule> _all = [];
 
-        /// <summary>Oblíbené v pořadí připnutí (uspořádané). Instance sdílené se stromem.</summary>
+        /// <summary>Oblíbené (členství). Pozice dlaždice drží <see cref="ExecutableModule.FavoriteSlot"/>.</summary>
         public ObservableCollection<ExecutableModule> Favorites { get; } = [];
 
         /// <summary>
@@ -22,22 +23,29 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// </summary>
         public event Action<ExecutableModule>? LaunchRequested;
 
+        /// <summary>Změna pozice dlaždice (<see cref="PlaceAt"/>) — shell persistuje sloty.</summary>
+        public event Action? SlotsChanged;
+
         public void RequestLaunch(ExecutableModule module) => LaunchRequested?.Invoke(module);
 
         /// <summary>
-        /// Re-inicializace po (pře)stavbě stromů (login, přepnutí firmy) — zachová pořadí z uložených
-        /// ID. Bere instance z aktuálních stromů, ať jsou sdílené (ne kopie).
+        /// Re-inicializace po (pře)stavbě stromů (login, přepnutí firmy). Bere instance z aktuálních
+        /// stromů (sdílené, ne kopie). Sloty z <paramref name="slotsByElementId"/>; chybějící → pořadí.
         /// </summary>
-        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<string> favoriteIdsInOrder)
+        public void Seed(IEnumerable<ExecutableModule> allExecutables, IEnumerable<string> favoriteIdsInOrder,
+                         IReadOnlyDictionary<string, int>? slotsByElementId = null)
         {
             _all = allExecutables.ToList();
             foreach (var m in Favorites) m.IsFavorite = false;
             Favorites.Clear();
+            int order = 0;
             foreach (var id in favoriteIdsInOrder)
                 if (!Contains(id) && Resolve(id) is { } module)
                 {
                     module.IsFavorite = true;
+                    module.FavoriteSlot = slotsByElementId?.GetValueOrDefault(id) ?? order;
                     Favorites.Add(module);
+                    order++;
                 }
         }
 
@@ -51,6 +59,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         {
             if (module.ElementId.Length == 0 || Contains(module.ElementId)) return;
             module.IsFavorite = true;
+            module.FavoriteSlot = NextFreeSlot();
             Favorites.Add(module);
         }
 
@@ -61,10 +70,26 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             Favorites.Remove(existing);
         }
 
-        public void Move(int oldIndex, int newIndex)
+        /// <summary>
+        /// Umístí dlaždici na daný slot (mřížka s mezerami). Když je slot obsazený, prohodí ho
+        /// s dosavadní pozicí přesouvané dlaždice (swap).
+        /// </summary>
+        public void PlaceAt(ExecutableModule module, int slot)
         {
-            if (oldIndex < 0 || newIndex < 0 || oldIndex >= Favorites.Count || newIndex >= Favorites.Count) return;
-            Favorites.Move(oldIndex, newIndex);
+            if (slot < 0 || !Contains(module.ElementId) || module.FavoriteSlot == slot) return;
+            if (Favorites.FirstOrDefault(f => f.FavoriteSlot == slot && f != module) is { } occupant)
+                occupant.FavoriteSlot = module.FavoriteSlot;
+            module.FavoriteSlot = slot;
+            SlotsChanged?.Invoke();
+        }
+
+        /// <summary>Nejnižší volný slot (kompaktní zaplnění mezer při přidání).</summary>
+        private int NextFreeSlot()
+        {
+            var used = Favorites.Select(f => f.FavoriteSlot).ToHashSet();
+            int i = 0;
+            while (used.Contains(i)) i++;
+            return i;
         }
     }
 }

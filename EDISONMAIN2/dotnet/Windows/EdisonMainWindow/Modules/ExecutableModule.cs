@@ -50,6 +50,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             }
         }
 
+        private int _favoriteSlot;
+
+        /// <summary>
+        /// Pozice dlaždice v mřížce miniaplikace Oblíbené (0-based slot; sloupce dle šířky panelu,
+        /// prázdné sloty = mezery). Řídí <see cref="Modules.ModuleShortcutsService"/>. Relevantní jen
+        /// když <see cref="IsFavorite"/>. Observable — změna přeskládá mřížku (attached Slot binding).
+        /// </summary>
+        public int FavoriteSlot
+        {
+            get => _favoriteSlot;
+            set
+            {
+                if (_favoriteSlot == value) return;
+                _favoriteSlot = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(FavoriteSlot)));
+            }
+        }
+
         private bool _isVisibleBySearch = true;
 
         /// <summary>Viditelnost při vyhledávání ve stromu — nastavuje VM podle shody názvu.</summary>
