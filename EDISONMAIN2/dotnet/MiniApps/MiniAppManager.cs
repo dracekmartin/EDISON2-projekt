@@ -32,17 +32,18 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
 
     /// <summary>Vyrobí VM z deskriptoru, vloží panel do docku a začne ho trackovat.</summary>
     /// <param name="newColumn">true → panel jde do nového sloupce vedle stávajících (jinak jako tab).</param>
-    public MiniAppInstance Open(MiniAppDescriptor descriptor, bool newColumn = false)
+    /// <param name="newRow">true → panel jde do nové řady přes celou šířku pod sloupci.</param>
+    public MiniAppInstance Open(MiniAppDescriptor descriptor, bool newColumn = false, bool newRow = false)
     {
         var vm = descriptor.CreateViewModel();
         var contentId = $"{descriptor.Id}#{_nextInstance++}";
         return Mount(descriptor.Id, contentId, vm,
-            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, newColumn));
+            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, newColumn, newRow));
     }
 
     /// <summary>
     /// Otevře sadu mini-apps vedle sebe do sloupců — první do stávajícího pane, další každá do
-    /// nového sloupce. Slouží pro výchozí layout (3 sloupce jako starý shell).
+    /// nového sloupce.
     /// </summary>
     public IReadOnlyList<MiniAppInstance> OpenColumns(IEnumerable<MiniAppDescriptor> descriptors)
     {
@@ -50,6 +51,17 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         foreach (var descriptor in descriptors)
             opened.Add(Open(descriptor, newColumn: opened.Count > 0));
         return opened;
+    }
+
+    /// <summary>
+    /// Výchozí layout: čistý skeleton → sloupce nahoře + volitelná řada přes celou šířku dole
+    /// (např. 3 web widgety nahoře, Oblíbené dole — mirror starého shellu).
+    /// </summary>
+    public void OpenDefaultLayout(IEnumerable<MiniAppDescriptor> columns, MiniAppDescriptor? bottomRow)
+    {
+        host.ResetToDefaultSkeleton();
+        OpenColumns(columns);
+        if (bottomRow is not null) Open(bottomRow, newRow: true);
     }
 
     /// <summary>Zavře všechny otevřené mini-apps (zavření shellu, přepnutí session).</summary>

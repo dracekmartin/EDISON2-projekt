@@ -100,7 +100,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RestoreMiniAppLayout(Idfa);
         }
 
-        private void OpenDefaultMiniApps() => _miniAppManager?.OpenColumns(DefaultMiniApps);
+        // Výchozí rozložení: 3 web widgety ve sloupcích nahoře + Oblíbené přes celou šířku dole.
+        private void OpenDefaultMiniApps() =>
+            _miniAppManager?.OpenDefaultLayout(DefaultMiniApps, _miniAppCatalog.Find(FavoritesMiniAppProvider.FavoritesId));
 
         private void PersistMiniAppLayout(string idfa)
         {

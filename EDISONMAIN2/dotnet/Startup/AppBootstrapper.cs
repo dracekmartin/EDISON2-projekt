@@ -479,6 +479,7 @@ public class AppBootstrapper
         // Sdílená služba oblíbených — strom (VM) i miniaplikace „Oblíbené" (provider) drží tutéž instanci.
         var shortcuts = new ModuleShortcutsService();
         var miniAppCatalog = MiniAppCatalog.Build([
+            new FavoritesMiniAppProvider(shortcuts),
             new CoreMiniApps(), new LegacyMiniAppProvider(), new LegacyDashboardMiniAppProvider(),
 #if DEBUG
             new DevSampleMiniApps(),

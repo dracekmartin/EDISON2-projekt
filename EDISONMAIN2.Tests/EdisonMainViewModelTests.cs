@@ -317,8 +317,10 @@ public class EdisonMainViewModelTests
 
     private sealed class ThrowingHost : IMiniAppHost
     {
-        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed, bool newColumn = false)
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
+                                    bool newColumn = false, bool newRow = false)
             => throw new NotSupportedException();
+        public void ResetToDefaultSkeleton() { }
         public string SaveLayout() => "";
         public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve)
             => throw new InvalidOperationException("simulovaný rozbitý layout");

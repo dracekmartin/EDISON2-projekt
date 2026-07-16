@@ -166,6 +166,33 @@ public class MiniAppManagerTests
     }
 
     [Fact]
+    public void OpenDefaultLayout_ResetsSkeleton_ColumnsThenBottomRow()
+    {
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+
+        mgr.OpenDefaultLayout([fx.Descriptor, fx.Descriptor, fx.Descriptor], fx.Descriptor);
+
+        Assert.Equal(1, host.SkeletonResets);
+        Assert.Equal(4, mgr.OpenInstances.Count);
+        // 3 sloupce (první in-place, další 2 nové sloupce) + 1 řada dole.
+        Assert.Equal([false, true, true, false], host.Panes.Select(p => p.NewColumn));
+        Assert.Equal([false, false, false, true], host.Panes.Select(p => p.NewRow));
+    }
+
+    [Fact]
+    public void OpenDefaultLayout_NullBottomRow_OpensOnlyColumns()
+    {
+        var fx = new Fixture();
+        var (mgr, host) = fx.NewManager();
+
+        mgr.OpenDefaultLayout([fx.Descriptor], null);
+
+        Assert.Single(mgr.OpenInstances);
+        Assert.DoesNotContain(host.Panes, p => p.NewRow);
+    }
+
+    [Fact]
     public void InstancesChanged_FiresOnOpenAndClose()
     {
         var fx = new Fixture();
@@ -224,13 +251,17 @@ public class MiniAppManagerTests
     private sealed class FakeHost : IMiniAppHost
     {
         public List<FakePane> Panes { get; } = [];
+        public int SkeletonResets { get; private set; }
 
-        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed, bool newColumn = false)
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
+                                    bool newColumn = false, bool newRow = false)
         {
-            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, NewColumn = newColumn };
+            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, NewColumn = newColumn, NewRow = newRow };
             Panes.Add(pane);
             return pane;
         }
+
+        public void ResetToDefaultSkeleton() => SkeletonResets++;
 
         public string SaveLayout() =>
             string.Join(",", Panes.Where(p => !p.IsClosed).Select(p => p.ContentId));
@@ -255,6 +286,7 @@ public class MiniAppManagerTests
         public object? Content { get; set; }
         public Action? OnClosed { get; set; }
         public bool NewColumn { get; set; }
+        public bool NewRow { get; set; }
         public bool IsClosed { get; private set; }
 
         public void Close()
