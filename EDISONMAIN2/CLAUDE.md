@@ -33,6 +33,8 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
+  Hostují se přes `FontZoomWebView : WebView2CompositionControl` — HWND `WebView2`
+  by kvůli airspace překrýval overlay „Akce probíhá".
   User velikost fontu respektují přes `FontZoomWebView` (ZoomFactor =
   `FontService.BodySize` / 14 — základní text widgetů je 14 CSS px);
   rodina fontu se do HTML nepropaguje.

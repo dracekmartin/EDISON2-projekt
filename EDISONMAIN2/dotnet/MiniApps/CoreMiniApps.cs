@@ -1,6 +1,5 @@
 using EDControls.EDViewModel;
 using EDControls.MiniApps;
-using Microsoft.Web.WebView2.Wpf;
 
 namespace EDISONMAIN2.MiniApps;
 
@@ -28,10 +27,10 @@ public sealed class CoreMiniApps : IMiniAppProvider
         new("Core.AutoRefresh", "Automatický refresh", () => new PeriodicRefreshMiniAppViewModel()),
     ];
 
-    private static WebView2 Widget(string url) => new FontZoomWebView { Source = new Uri(url) };
+    private static FontZoomWebView Widget(string url) => new() { Source = new Uri(url) };
 
     /// <summary>Školení widget dostává IdFa + přihlášeného uživatele (kvůli zpětné vazbě) — mirror frmMain.vb.</summary>
-    private static WebView2 TrainingsWidget()
+    private static FontZoomWebView TrainingsWidget()
     {
         var mlRest = EDServices.Current.MLRest;
         var url = $"{WidgetBase}trainings?key={WidgetKey}"

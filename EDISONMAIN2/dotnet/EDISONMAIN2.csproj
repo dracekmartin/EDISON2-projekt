@@ -2,7 +2,10 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net10.0-windows7.0</TargetFramework>
+    <!-- windows10.0.17763 (ne windows7.0): WebView2CompositionControl potřebuje WinRT projekce
+         (Microsoft.Windows.SDK.NET) — s nižší platform version build projde, ale runtime spadne
+         na FileNotFoundException při prvním zobrazení widgetu. -->
+    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
