@@ -17,6 +17,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         /// <summary>True → složka podléhá licenční kontrole (legacy `licensed="1"` na skupině).</summary>
         public bool IsLicensed { get; init; }
 
+        /// <summary>
+        /// Legacy `mlineOnly="1"` na skupině: mimo doménu M-line je skrytá celá větev,
+        /// v doméně dostane název suffix " [### M-line ###]".
+        /// </summary>
+        public bool MlineOnly { get; init; }
+
         private bool _isExpanded;
 
         /// <summary>

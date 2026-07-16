@@ -26,6 +26,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public bool Hidden { get; init; } = false;
 
         /// <summary>
+        /// Legacy `mlineOnly="1"`: mimo doménu M-line se modul nezobrazí, v doméně dostane
+        /// suffix " [### M-line ###]" (interní M-line nástroje na zákaznických stanicích).
+        /// </summary>
+        public bool MlineOnly { get; init; } = false;
+
+        /// <summary>
         /// Hex barva (<c>"#RRGGBB"</c>) pro Foreground položky ve stromu. Prázdný / null = výchozí
         /// barva tématu. Konvence: <c>"#FFA500"</c> (oranžová) = autorský stub bez vyplněné
         /// <c>.exe</c>; <c>"#FF0000"</c> (červená) = exe vyplněné, ale soubor chybí.

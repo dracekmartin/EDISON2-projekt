@@ -45,6 +45,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 IsExpanded    = family.IsExpanded,
                 ElementId     = family.ElementId,
                 IsLicensed    = family.IsLicensed,
+                MlineOnly     = family.MlineOnly,
             };
             bool anyBroken = false, anyLaunchable = false;
             foreach (var child in family.NestedModules)

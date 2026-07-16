@@ -284,6 +284,77 @@ public class EdisonMainViewModelFilterTests
         Assert.NotNull(EdisonMainViewModel.FilterFamily(family, licence: null, allAccess));
     }
 
+    // ---------- mlineOnly (legacy frmMain.vb:1204/1227) ----------------------
+    // Mimo doménu M-line se mlineOnly uzel vůbec nezobrazí; v doméně dostane
+    // suffix " [### M-line ###]". Platí pro listy i složky.
+
+    [Fact]
+    public void TryFilter_MlineOnlyExe_OutsideDomain_Hidden()
+    {
+        var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true };
+
+        Assert.Null(EdisonMainViewModel.TryFilter(exe, licence: null, access: null, isMlineDomain: false));
+    }
+
+    [Fact]
+    public void TryFilter_MlineOnlyExe_InDomain_VisibleWithSuffix()
+    {
+        var exe = new ExecutableModule { DisplayedName = "Doklady OLD", ElementId = "92101", MlineOnly = true };
+
+        var filtered = EdisonMainViewModel.TryFilter(exe, licence: null, access: null, isMlineDomain: true);
+
+        Assert.NotNull(filtered);
+        Assert.Equal("Doklady OLD [### M-line ###]", filtered.DisplayedName);
+    }
+
+    [Fact]
+    public void TryFilter_NormalExe_InDomain_NoSuffix()
+    {
+        var exe = Exe("100", licensed: false, name: "Běžný");
+
+        var filtered = EdisonMainViewModel.TryFilter(exe, licence: null, access: null, isMlineDomain: true);
+
+        Assert.NotNull(filtered);
+        Assert.Equal("Běžný", filtered.DisplayedName);
+    }
+
+    [Fact]
+    public void FilterFamily_MlineOnly_OutsideDomain_DroppedWithChildren()
+    {
+        var family = new ModuleFamily { DisplayedName = "Interní", MlineOnly = true };
+        family.NestedModules.Add(Exe("100", licensed: false));
+
+        Assert.Null(EdisonMainViewModel.FilterFamily(family, licence: null, access: null, isMlineDomain: false));
+    }
+
+    [Fact]
+    public void FilterFamily_MlineOnly_InDomain_KeptWithSuffix()
+    {
+        var family = new ModuleFamily { DisplayedName = "Interní", MlineOnly = true };
+        family.NestedModules.Add(Exe("100", licensed: false));
+
+        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, access: null, isMlineDomain: true);
+
+        Assert.NotNull(filtered);
+        Assert.Equal("Interní [### M-line ###]", filtered.DisplayedName);
+        Assert.True(filtered.MlineOnly);
+        Assert.Single(filtered.NestedModules);
+    }
+
+    [Fact]
+    public void FilterFamily_MlineOnlyChild_OutsideDomain_OnlyChildDropped()
+    {
+        // mlineOnly dítě zmizí, sourozenec i rodina zůstávají.
+        var family = new ModuleFamily { DisplayedName = "F" };
+        family.NestedModules.Add(new ExecutableModule { DisplayedName = "Interní", ElementId = "1", MlineOnly = true });
+        family.NestedModules.Add(Exe("2", licensed: false, name: "Veřejný"));
+
+        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, access: null, isMlineDomain: false);
+
+        Assert.NotNull(filtered);
+        Assert.Equal("Veřejný", Assert.Single(filtered.NestedModules).DisplayedName);
+    }
+
     // ---------- TryFilter (router) -----------------------------------------
 
     [Fact]

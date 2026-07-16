@@ -161,12 +161,15 @@ void EmitNode(XElement node, int depth)
     string name = NodeName(effective);
     string id2 = (string?)effective.Attribute("id") ?? "";
 
+    // mlineOnly je per-UMÍSTĚNÍ atribut (jako input) — vždy z XML uzlu, nikdy z override.
+    bool mlineOnly = (string?)effective.Attribute("mlineOnly") == "1";
+
     if (type == "0")
     {
         // skupina → FAMILY. elementId (package ID) + licensed z legacy XML — legacy
         // BuildTreeXML gate-oval i skupiny proti licenci/accessTable, klient to replikuje.
         bool famLicensed = (string?)effective.Attribute("licensed") == "1";
-        sb.AppendLine($"{indent}d ..AddFamily({Q(name)}, 0, {Q(id2)}, {(famLicensed ? 1 : 0)})");
+        sb.AppendLine($"{indent}d ..AddFamily({Q(name)}, 0, {Q(id2)}, {(famLicensed ? 1 : 0)}, {(mlineOnly ? 1 : 0)})");
         foreach (var child in effective.Elements("node"))
             EmitNode(child, depth + 1);
         sb.AppendLine($"{indent}d ..AddFamilyEnd()");
@@ -206,7 +209,7 @@ void EmitNode(XElement node, int depth)
         if (fqn.Length > 0) withFqn++;
         if (exe.Length > 0) withExe++;
 
-        sb.AppendLine($"{indent}d ..AddExe({Q(name)}, {Q(exe)}, {Q(fqn)}, {Q(id2)}, {(licensed ? 1 : 0)}, {Q(input)}, {(hidden ? 1 : 0)}, {Q(color)})");
+        sb.AppendLine($"{indent}d ..AddExe({Q(name)}, {Q(exe)}, {Q(fqn)}, {Q(id2)}, {(licensed ? 1 : 0)}, {Q(input)}, {(hidden ? 1 : 0)}, {Q(color)}, {(mlineOnly ? 1 : 0)})");
     }
 }
 

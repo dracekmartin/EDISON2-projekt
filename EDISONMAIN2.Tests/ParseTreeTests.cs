@@ -165,6 +165,49 @@ public class ParseTreeTests
         var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
         Assert.Equal("11", fam.ElementId);
         Assert.False(fam.IsLicensed);
+        Assert.False(fam.MlineOnly);   // 5polový záznam (bez mlineOnly) → default false
+    }
+
+    [Theory]
+    [InlineData("1", true)]
+    [InlineData("0", false)]
+    public void ParseTree_FamilyMlineOnly_Parsed(string flag, bool expected)
+    {
+        var data = new CVar();
+        data["1"] = new CList("FAMILY", "Interní", "0", "52", "1", flag);
+        data["2"] = new CList("FAMILY_END");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var fam = Assert.IsType<ModuleFamily>(Assert.Single(tree));
+        Assert.Equal(expected, fam.MlineOnly);
+    }
+
+    [Theory]
+    [InlineData("1", true)]
+    [InlineData("0", false)]
+    public void ParseTree_ExeMlineOnly_Parsed(string flag, bool expected)
+    {
+        var data = new CVar();
+        data["1"] = new CList("EXE", "Doklady OLD", "SKLADYMAIN.exe", "F", "92101", "0", "", "0", "", flag);
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.Equal(expected, mod.MlineOnly);
+    }
+
+    [Fact]
+    public void ParseTree_ExeNineFields_MlineOnlyDefaultsFalse()
+    {
+        // 9polový záznam (před mlineOnly) — zpětná kompatibilita.
+        var data = new CVar();
+        data["1"] = new CList("EXE", "X", "x.exe", "F", "1", "0", "", "0", "");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.False(mod.MlineOnly);
     }
 
     [Fact]

@@ -17,8 +17,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
 
         /// <summary>
         /// Wire format (z ALVA.EDISONMAIN2.API.Tree.GetTree):
-        ///   $lb("FAMILY", displayName, isExpanded, elementId, isLicensed)
-        ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed, inputParam, hidden, color)
+        ///   $lb("FAMILY", displayName, isExpanded, elementId, isLicensed, mlineOnly)
+        ///   $lb("EXE", displayName, executablePath, formName, elementId, isLicensed, inputParam, hidden, color, mlineOnly)
         ///   $lb("FAMILY_END")
         /// </summary>
         internal static ObservableCollection<IModule> ParseTree(CVar treeData)
@@ -38,7 +38,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                             DisplayedName = row.GetString(2),
                             IsExpanded    = row.GetString(3) == "1",
                             ElementId     = row.Count >= 4 ? row.GetString(4) : "",
-                            IsLicensed    = row.Count >= 5 && row.GetString(5) == "1"
+                            IsLicensed    = row.Count >= 5 && row.GetString(5) == "1",
+                            MlineOnly     = row.Count >= 6 && row.GetString(6) == "1"
                         };
                         currentList.Add(family);
                         familyStack.Push(currentList);
@@ -53,7 +54,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                             IsLicensed     = row.Count >= 6 && row.GetString(6) == "1",
                             InputParam     = row.Count >= 7 ? row.GetString(7) : "",
                             Hidden         = row.Count >= 8 && row.GetString(8) == "1",
-                            Color          = row.Count >= 9 ? row.GetString(9) : ""
+                            Color          = row.Count >= 9 ? row.GetString(9) : "",
+                            MlineOnly      = row.Count >= 10 && row.GetString(10) == "1"
                         });
                         break;
                     case "FAMILY_END":

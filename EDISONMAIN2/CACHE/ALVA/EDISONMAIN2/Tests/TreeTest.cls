@@ -87,9 +87,9 @@ Method TestFamilyOpenCloseBalance()
 	do $$$AssertEquals(openCount, closeCount, "FAMILY open ("_openCount_") must match FAMILY_END close ("_closeCount_")")
 }
 
-/// FAMILY záznamy musí mít 5 polí dle wire-format kontraktu (type, name, expanded,
-/// elementId, licensed) — elementId neprázdné (gate složek proti licenci/AP).
-Method TestFamilyRecordsHaveFiveFieldsWithElementId()
+/// FAMILY záznamy musí mít 6 polí dle wire-format kontraktu (type, name, expanded,
+/// elementId, licensed, mlineOnly) — elementId neprázdné (gate složek proti licenci/AP).
+Method TestFamilyRecordsHaveSixFieldsWithElementId()
 {
 	do ..SetupSys(.sys)
 	set ^||ML("IN","tree") = "system"
@@ -103,13 +103,13 @@ Method TestFamilyRecordsHaveFiveFieldsWithElementId()
 		set record = ^||ML("OUT", i)
 		if ($listget(record, 1) '= "FAMILY") { continue }
 		set fieldCount = $listlength(record)
-		do $$$AssertEquals(fieldCount, 5, "FAMILY record #"_i_" has "_fieldCount_" fields, expected 5")
+		do $$$AssertEquals(fieldCount, 6, "FAMILY record #"_i_" has "_fieldCount_" fields, expected 6")
 		do $$$AssertNotTrue(($listget(record, 4) = ""), "FAMILY record #"_i_" must have non-empty elementId")
 	}
 }
 
-/// EXE záznamy musí mít 9 polí dle wire-format kontraktu.
-Method TestExeRecordsHaveNineFields()
+/// EXE záznamy musí mít 10 polí dle wire-format kontraktu.
+Method TestExeRecordsHaveTenFields()
 {
 	do ..SetupSys(.sys)
 	set ^||ML("IN","tree") = "main"
@@ -123,7 +123,7 @@ Method TestExeRecordsHaveNineFields()
 		set record = ^||ML("OUT", i)
 		if ($listget(record, 1) '= "EXE") { continue }
 		set fieldCount = $listlength(record)
-		do $$$AssertEquals(fieldCount, 9, "EXE record #"_i_" has "_fieldCount_" fields, expected 9")
+		do $$$AssertEquals(fieldCount, 10, "EXE record #"_i_" has "_fieldCount_" fields, expected 10")
 	}
 }
 
