@@ -299,6 +299,91 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
+    public void CloseMiniAppsCommand_ClosesAllOpenMiniApps()
+    {
+        var services = MockServices();
+        var descriptor = new MiniAppDescriptor("A", "Title A", () => new StubMiniApp(services));
+        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(descriptor)]));
+        var host = new RecordingHost();
+        vm.AttachMiniAppHost(host);
+        vm.OpenMiniAppCommand.Execute(descriptor);
+        vm.OpenMiniAppCommand.Execute(descriptor);
+        Assert.True(vm.HasOpenMiniApps);
+
+        vm.CloseMiniAppsCommand.Execute(null);
+
+        Assert.False(vm.HasOpenMiniApps);
+        Assert.All(host.Panes, p => Assert.True(p.IsClosed));
+    }
+
+    [Fact]
+    public void ResetMiniAppsCommand_ClosesEverything_AndOpensDefaultSet()
+    {
+        var services = MockServices();
+        var defaults = new[] { "Core.Novinky", "Core.Wiki", "Core.Skoleni" }
+            .Select(id => new MiniAppDescriptor(id, id, () => new StubMiniApp(services))).ToArray();
+        var extra = new MiniAppDescriptor("Extra", "Extra", () => new StubMiniApp(services));
+        var catalog = MiniAppCatalog.Build([new SingleProvider([.. defaults, extra])]);
+        var vm = CreateVM(miniAppCatalog: catalog);
+        var host = new RecordingHost();
+        vm.AttachMiniAppHost(host);   // bez uloženého layoutu otevře výchozí sadu (3 panely)
+        vm.OpenMiniAppCommand.Execute(extra);
+        var beforeReset = host.Panes.ToList();
+        Assert.Equal(4, beforeReset.Count);
+
+        vm.ResetMiniAppsCommand.Execute(null);
+
+        Assert.All(beforeReset, p => Assert.True(p.IsClosed));
+        Assert.Equal(2, host.SkeletonResets);   // attach + reset
+        var reopened = host.Panes.Where(p => !p.IsClosed).Select(p => p.ContentId).ToList();
+        Assert.Equal(3, reopened.Count);
+        Assert.All(reopened, id => Assert.StartsWith("Core.", id));
+        Assert.True(vm.HasOpenMiniApps);
+    }
+
+    private sealed class StubMiniApp(EDServices services) : EDMiniAppViewModel(services)
+    {
+        public override string Title => "stub";
+    }
+
+    private sealed class SingleProvider(params MiniAppDescriptor[] descriptors) : IMiniAppProvider
+    {
+        public string GroupTitle => "Test";
+        public IEnumerable<MiniAppDescriptor> GetMiniApps() => descriptors;
+    }
+
+    private sealed class RecordingHost : IMiniAppHost
+    {
+        public List<RecordingPane> Panes { get; } = [];
+        public int SkeletonResets { get; private set; }
+
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
+                                    bool newColumn = false, bool newRow = false)
+        {
+            var pane = new RecordingPane(contentId, onClosed);
+            Panes.Add(pane);
+            return pane;
+        }
+
+        public void ResetToDefaultSkeleton() => SkeletonResets++;
+        public string SaveLayout() => "";
+        public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve) { }
+    }
+
+    private sealed class RecordingPane(string contentId, Action onClosed) : IMiniAppPane
+    {
+        public string ContentId => contentId;
+        public bool IsClosed { get; private set; }
+
+        public void Close()
+        {
+            if (IsClosed) return;
+            IsClosed = true;
+            onClosed();
+        }
+    }
+
+    [Fact]
     public void RestoreMiniAppLayout_CorruptLayout_DoesNotThrow_AndDiscardsEntry()
     {
         // Poškozený uložený layout (kolegův pád: AvalonDock Deserialize hodí výjimku) nesmí

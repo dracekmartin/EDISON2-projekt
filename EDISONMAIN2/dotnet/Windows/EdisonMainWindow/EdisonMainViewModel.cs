@@ -48,6 +48,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand CloseAllCommand { get; }
         public ICommand OpenMiniAppCommand { get; }
         public ICommand OpenDefaultMiniAppsCommand { get; }
+        public ICommand CloseMiniAppsCommand { get; }
+        public ICommand ResetMiniAppsCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
         // EDISON menu
@@ -182,6 +184,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
             OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
+            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseAll());
+            // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
+            ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);

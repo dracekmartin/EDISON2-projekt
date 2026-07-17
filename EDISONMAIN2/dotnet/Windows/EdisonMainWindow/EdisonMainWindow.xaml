@@ -24,6 +24,11 @@
     <Window.InputBindings>
         <KeyBinding Key="B" Modifiers="Control+Shift" Command="{Binding ShowBgTasksCommand}"/>
     </Window.InputBindings>
+    <Window.Resources>
+        <!-- Most na VM pro bindingy mimo vizuální strom (CompositeCollection v menu Miniaplikace).
+             x:Reference na TopMenu nejde — při BAML loadu skončí cyklickou závislostí. -->
+        <edvm:BindingProxy x:Key="VmProxy" Data="{Binding}"/>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
             <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager). -->
@@ -90,10 +95,11 @@
                     </Style>
                 </MenuItem.ItemContainerStyle>
             </MenuItem>
-            <MenuItem Header="Miniaplikace" ItemsSource="{Binding MiniAppGroups}">
+            <MenuItem Header="Miniaplikace">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
-                    <!-- Skupiny (per provider) — jen rozbalují, žádný Command. -->
+                    <!-- Skupiny (per provider) — jen rozbalují, žádný Command. Statické položky dole
+                         mají lokální Style, takže se na ně tenhle ItemContainerStyle nepoužije. -->
                     <Style TargetType="MenuItem">
                         <Setter Property="Header" Value="{Binding Title}"/>
                         <Setter Property="ItemsSource" Value="{Binding Apps}"/>
@@ -110,6 +116,19 @@
                         </Setter>
                     </Style>
                 </MenuItem.ItemContainerStyle>
+                <MenuItem.ItemsSource>
+                    <CompositeCollection>
+                        <!-- Statické položky nejsou ve stromu/namescope (CompositeCollection) —
+                             DataContext ani ElementName nefungují, vše jde přes VmProxy.
+                             Lokální Style na nich zamezí aplikaci ItemContainerStyle skupin. -->
+                        <CollectionContainer Collection="{Binding Data.MiniAppGroups, Source={StaticResource VmProxy}}"/>
+                        <Separator Style="{StaticResource {x:Static MenuItem.SeparatorStyleKey}}"/>
+                        <MenuItem Header="Zavřít miniaplikace" Style="{StaticResource {x:Type MenuItem}}"
+                                  Command="{Binding Data.CloseMiniAppsCommand, Source={StaticResource VmProxy}}"/>
+                        <MenuItem Header="Resetovat miniaplikace" Style="{StaticResource {x:Type MenuItem}}"
+                                  Command="{Binding Data.ResetMiniAppsCommand, Source={StaticResource VmProxy}}"/>
+                    </CompositeCollection>
+                </MenuItem.ItemsSource>
             </MenuItem>
             <MenuItem Header="Nástroje">
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Tools}" Width="16" Height="16"/></MenuItem.Icon>
