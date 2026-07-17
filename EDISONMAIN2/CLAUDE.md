@@ -40,6 +40,8 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   rodina fontu se do HTML nepropaguje. Dark mode widgety samy neumí (natvrdo
   `bg-white`) — `FontZoomWebView` v dark injektuje inverzní CSS filtr
   (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému záblesku.
+  Chrome docku (taby, bordery, pozadí dokumentů) EDTheme tokeny nečte — dark řeší
+  swap `DockManager.Theme` na VS2013 Light/Dark v code-behind okna.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`; chybí-li uložený →
   `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
