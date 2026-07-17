@@ -45,7 +45,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
   pořadí skupin = pořadí registrace v `AppBootstrapper`); `DevSampleMiniApps`
-  se registruje jen v DEBUG buildu.
+  se registruje jen v DEBUG buildu. Statické akce dole (Zavřít/Resetovat) jsou
+  v `CompositeCollection` — bindingy tam jdou jen přes `BindingProxy` (`VmProxy`):
+  `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou
+  mimo namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.
 
 ## Legacy moduly — EDISONMAIN2API
 

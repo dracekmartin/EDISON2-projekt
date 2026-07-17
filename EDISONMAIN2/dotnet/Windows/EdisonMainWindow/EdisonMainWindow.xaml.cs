@@ -1,6 +1,8 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using AvalonDock.Themes;
+using EDControls.EDTheme;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
@@ -24,6 +26,19 @@ namespace EDISONMAIN2
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
             Loaded += WireMiniAppHost;
+            ApplyDockTheme();
+            ThemeService.Applied += ApplyDockTheme;
+            Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
+        }
+
+        // Vestavěný generic theme AvalonDocku má chrome (taby, bordery, pozadí dokumentů) natvrdo
+        // světlý a EDTheme tokeny nečte — dark mode řeší výměna celého Theme; VS2013 dark paleta
+        // odpovídá EDTheme dark (#1E1E1E/#252526). Guard: Applied chodí i bez změny theme.
+        private void ApplyDockTheme()
+        {
+            bool dark = ThemeService.Current == AppTheme.Dark;
+            if (dark ? DockManager.Theme is Vs2013DarkTheme : DockManager.Theme is Vs2013LightTheme) return;
+            DockManager.Theme = dark ? new Vs2013DarkTheme() : new Vs2013LightTheme();
         }
 
         // MiniAppManager (ve VM) potřebuje DockingManager z view → host injektneme po načtení okna,
