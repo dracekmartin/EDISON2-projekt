@@ -37,7 +37,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   by kvůli airspace překrýval overlay „Akce probíhá".
   User velikost fontu respektují přes `FontZoomWebView` (ZoomFactor =
   `FontService.BodySize` / 14 — základní text widgetů je 14 CSS px);
-  rodina fontu se do HTML nepropaguje.
+  rodina fontu se do HTML nepropaguje. Dark mode widgety samy neumí (natvrdo
+  `bg-white`) — `FontZoomWebView` v dark injektuje inverzní CSS filtr
+  (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému záblesku.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`; chybí-li uložený →
   `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).

@@ -29,6 +29,10 @@ public static class ThemeService
     /// <summary>Aktuální stav sdílené preference (pro binding přepínače v menu).</summary>
     public static bool IsDark => UserThemePreference.Current.DarkMode;
 
+    /// <summary>Vyvolá se po každém <see cref="Apply"/> (i cross-process propagaci) — pro imperativní
+    /// konzumenty mimo DynamicResource pipeline (např. WebView2 obsah). Handlery musí být idempotentní.</summary>
+    public static event Action? Applied;
+
     /// <summary>
     /// Jednorázový bootstrap: class handler na <see cref="FrameworkElement.LoadedEvent"/> pro
     /// <see cref="Window"/> (obarví pozadí i podtříd — implicitní styl cílí jen přesný typ),
@@ -88,5 +92,6 @@ public static class ThemeService
             dicts.Remove(_darkOverride);
         }
         Current = theme;
+        Applied?.Invoke();
     }
 }

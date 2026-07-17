@@ -1,3 +1,4 @@
+using EDControls.EDTheme;
 using EDISONMAIN2.MiniApps;
 using Microsoft.Web.WebView2.Wpf;
 
@@ -23,5 +24,13 @@ public class FontZoomWebViewTests
         var map = typeof(FontZoomWebView).GetInterfaceMap(typeof(IDisposable));
         var target = Assert.Single(map.TargetMethods);
         Assert.Equal(typeof(FontZoomWebView), target.DeclaringType);
+    }
+
+    [Fact]
+    public void BackgroundFor_DarkIsThemeBase_LightIsWhite()
+    {
+        // Bílé DefaultBackgroundColor by v dark modu probleskovalo při načítání widgetu.
+        Assert.Equal(unchecked((int)0xFF1E1E1E), FontZoomWebView.BackgroundFor(AppTheme.Dark).ToArgb());
+        Assert.Equal(unchecked((int)0xFFFFFFFF), FontZoomWebView.BackgroundFor(AppTheme.Light).ToArgb());
     }
 }
