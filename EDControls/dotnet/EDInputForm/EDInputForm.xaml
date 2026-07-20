@@ -34,9 +34,13 @@
                                      ShowHelp="False"
                                      ShowSettings="False"/>
 
-            <!-- Column header bar: Položka | Hodnota | (spacer).
-                 Modern PropertyGrid layout: jen 2 logické sloupce — label + input. Errors/help
-                 inline pod inputem (Material Design pattern). Spacer absorbuje extra šířku.
+            <!-- Column header bar: Položka | Hodnota.
+                 Modern PropertyGrid layout: 2 logické sloupce — label + input. Errors/help
+                 inline pod inputem (Material Design pattern).
+                 Responzivní šířka: label Auto (fit obsahu, floor MinWidth), hodnota "*" s
+                 MaxWidth → při dostatku místa se zastaví na 320 a přebytek zůstane prázdný
+                 vpravo (jako fixní sloupec + spacer dřív); při nedostatku se hodnota zmenší
+                 první až na MinWidth, teprve pak tlačí na label. Musí sedět s field row níž.
                  Padding.Left=16 align s indented field rows pod skupinou. -->
             <Border Grid.Row="1"
                     Background="{DynamicResource EDTheme.Accent.BlueBg}"
@@ -45,9 +49,8 @@
                     Padding="16,5,2,5">
                 <Grid>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" MinWidth="240" SharedSizeGroup="ItemLabel"/>
-                        <ColumnDefinition Width="320"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto" MinWidth="120" SharedSizeGroup="ItemLabel"/>
+                        <ColumnDefinition Width="*" MinWidth="120" MaxWidth="320"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0" Text="Položka"
                                Foreground="{DynamicResource EDTheme.Text.Header}"
@@ -312,17 +315,18 @@
                     </Grid>
                 </DataTemplate>
 
-                <!-- Field row: 3-column modern PropertyGrid layout (Položka | Hodnota | spacer).
-                     Položka Auto SharedSize MinWidth=240 → konzistentní label width napříč rows.
-                     Hodnota fixed 320 → konzistentní input width. Spacer * absorbuje extra šířku.
+                <!-- Field row: 2-column modern PropertyGrid layout (Položka | Hodnota).
+                     Položka Auto SharedSize MinWidth=120 → konzistentní label width napříč rows
+                     (fit obsahu, jen floor). Hodnota "*" MinWidth=120 MaxWidth=320 → responzivní:
+                     do 320 fixní vzhled + prázdno vpravo, při zúžení se zmenší první až na 120,
+                     teprve pak tlačí na label. Definice sloupců musí sedět s column header barem.
                      Row 1 pod inputem zobrazí error/help inline (Material Design pattern).
                      Margin.Left=16 → fields indented pod group header pro vizuální hierarchii. -->
                 <DataTemplate DataType="{x:Type local:Field}">
                     <Grid Margin="16,3,2,3" Visibility="{Binding EffectiveVisibility}">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" MinWidth="240" SharedSizeGroup="ItemLabel"/>
-                            <ColumnDefinition Width="320"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto" MinWidth="120" SharedSizeGroup="ItemLabel"/>
+                            <ColumnDefinition Width="*" MinWidth="120" MaxWidth="320"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
