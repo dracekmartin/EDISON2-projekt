@@ -11,13 +11,17 @@ Class ALVA.EDISONMAIN2.Tests.TreeTest Extends ALVA.EDTesting.MLTestCase
 ///   do ##class(%UnitTest.Manager).RunTest(":ALVA.EDISONMAIN2.Tests.TreeTest", "/noload")
 /// Nebo programově:
 ///   do ##class(ALVA.EDTesting.TestRunner).RunPackage(.sys)   ; package="ALVA.EDISONMAIN2.Tests"
+///
+/// Pozn.: chyba je nesena návratovou hodnotou GetTree (ret="1~zpráva"), NE v ^||ML("ERR")
+/// — ten plní až MLRest HTTP vrstva, ne in-process. Testy proto vždy zachytávají ret.
 
 /// Default input (tree="") -> main tree. První záznam je validní wire-format uzel
 /// (FAMILY nebo EXE — main začíná rozbalenou agendou-rodinou po materializaci z legacy XML).
 Method TestDefaultInputReturnsMainTree()
 {
 	do ..SetupSys(.sys)
-	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	set ret = ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	do $$$AssertEquals(+ret, 0, "GetTree nesmí vrátit chybu, got: "_ret)
 
 	do $$$AssertNotTrue(($data(^||ML("OUT",1))=0), "OUT global must not be empty")
 
@@ -31,21 +35,31 @@ Method TestSystemTreeReturnsNonEmpty()
 {
 	do ..SetupSys(.sys)
 	set ^||ML("IN","tree") = "system"
-	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	set ret = ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	do $$$AssertEquals(+ret, 0, "GetTree(system) nesmí vrátit chybu, got: "_ret)
 
 	do $$$AssertNotTrue(($data(^||ML("OUT",1))=0), "System tree must not be empty")
 }
 
 /// Partners tree může být prázdný (žádné 3rd-party řešení yet), ale GetTree nesmí nahlásit error.
-/// Error location dle GENERAL.inc $$$CatchErrRest: ^||ML("ERR"), ne ^||ML("OUT","ERR").
+/// Chyba je v návratové hodnotě, ne v ^||ML("ERR") (ten je in-process vždy prázdný).
 Method TestPartnersTreeDoesNotError()
 {
 	do ..SetupSys(.sys)
 	set ^||ML("IN","tree") = "partners"
-	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	set ret = ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	do $$$AssertEquals(+ret, 0, "Partners tree nesmí vrátit chybu, got: "_ret)
+}
 
-	set errMarker = $get(^||ML("ERR"))
-	do $$$AssertEquals(errMarker, "", "Partners tree must not set ERR marker")
+/// Neznámý název stromu propadne všemi třemi větvemi -> prázdný OUT, bez chyby.
+/// Pin: "tiše prázdný" je zamýšlené chování (žádná výjimka na neznámý vstup).
+Method TestUnknownTreeReturnsEmptyWithoutError()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "bogus"
+	set ret = ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	do $$$AssertEquals(+ret, 0, "Neznámý strom není chyba, got: "_ret)
+	do $$$AssertTrue(($data(^||ML("OUT",1))=0), "Neznámý strom musí dát prázdný OUT")
 }
 
 /// Wire-format invariant: každý záznam má jako první element jeden ze tří validních typů.
@@ -53,7 +67,8 @@ Method TestAllRecordsHaveValidType()
 {
 	do ..SetupSys(.sys)
 	set ^||ML("IN","tree") = "main"
-	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	set ret = ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	do $$$AssertEquals(+ret, 0, "GetTree(main) nesmí vrátit chybu, got: "_ret)
 
 	set i = "", validTypes = ",FAMILY,EXE,FAMILY_END,"
 	for {
@@ -66,45 +81,50 @@ Method TestAllRecordsHaveValidType()
 	}
 }
 
-/// Strom musí být strukturálně balancovaný -- počet FAMILY = počet FAMILY_END.
+/// Strom musí být strukturálně balancovaný -- running depth nikdy záporná, končí na 0.
+/// (Silnější než pouhé počítání FAMILY=FAMILY_END: chytí i FAMILY_END před FAMILY.)
 Method TestFamilyOpenCloseBalance()
 {
 	do ..SetupSys(.sys)
 	set ^||ML("IN","tree") = "main"
 	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
 
-	set i = "", openCount = 0, closeCount = 0
+	set i = "", depth = 0
 	for {
 		set i = $order(^||ML("OUT", i))
 		quit:i=""
 		continue:i'?1.N
-		set record = ^||ML("OUT", i)
-		set type = $listget(record, 1)
-		if (type = "FAMILY") { set openCount = openCount + 1 }
-		if (type = "FAMILY_END") { set closeCount = closeCount + 1 }
+		set type = $listget(^||ML("OUT", i), 1)
+		if (type = "FAMILY") { set depth = depth + 1 }
+		if (type = "FAMILY_END") {
+			set depth = depth - 1
+			do $$$AssertNotTrue((depth < 0), "FAMILY_END #"_i_" bez odpovídajícího FAMILY (depth < 0)")
+		}
 	}
-
-	do $$$AssertEquals(openCount, closeCount, "FAMILY open ("_openCount_") must match FAMILY_END close ("_closeCount_")")
+	do $$$AssertEquals(depth, 0, "Nevyvážený strom -- otevřených FAMILY zbylo: "_depth)
 }
 
-/// FAMILY záznamy musí mít 6 polí dle wire-format kontraktu (type, name, expanded,
-/// elementId, licensed, mlineOnly) — elementId neprázdné (gate složek proti licenci/AP).
-Method TestFamilyRecordsHaveSixFieldsWithElementId()
+/// FAMILY záznamy (napříč VŠEMI stromy) musí mít 6 polí dle wire-format kontraktu
+/// (type, name, expanded, elementId, licensed, mlineOnly) — elementId neprázdné u
+/// gate-ovaných složek. Gating z package IDs bije hlavně v main/partners, ne jen v system.
+Method TestFamilyRecordsHaveSixFieldsAllTrees()
 {
-	do ..SetupSys(.sys)
-	set ^||ML("IN","tree") = "system"
-	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+	for tree = "main", "system", "partners" {
+		kill ^||ML
+		do ..SetupSys(.sys)
+		set ^||ML("IN","tree") = tree
+		do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
 
-	set i = ""
-	for {
-		set i = $order(^||ML("OUT", i))
-		quit:i=""
-		continue:i'?1.N
-		set record = ^||ML("OUT", i)
-		if ($listget(record, 1) '= "FAMILY") { continue }
-		set fieldCount = $listlength(record)
-		do $$$AssertEquals(fieldCount, 6, "FAMILY record #"_i_" has "_fieldCount_" fields, expected 6")
-		do $$$AssertNotTrue(($listget(record, 4) = ""), "FAMILY record #"_i_" must have non-empty elementId")
+		set i = ""
+		for {
+			set i = $order(^||ML("OUT", i))
+			quit:i=""
+			continue:i'?1.N
+			set record = ^||ML("OUT", i)
+			if ($listget(record, 1) '= "FAMILY") { continue }
+			set fieldCount = $listlength(record)
+			do $$$AssertEquals(fieldCount, 6, "FAMILY #"_i_" ("_tree_") má "_fieldCount_" polí, čekáno 6")
+		}
 	}
 }
 
@@ -125,6 +145,50 @@ Method TestExeRecordsHaveTenFields()
 		set fieldCount = $listlength(record)
 		do $$$AssertEquals(fieldCount, 10, "EXE record #"_i_" has "_fieldCount_" fields, expected 10")
 	}
+}
+
+/// Wire hodnoty (ne jen počet polí): AddExe/AddFamily mapuje %Boolean → "1"/"0" string,
+/// na kterém závisí .NET parser (row.GetString(n)=="1"). Kontroluje mlineOnly EXE
+/// "Doklady OLD" (92101, mlineOnly=1) v main stromu — field 10="1", hidden field 8="0".
+Method TestMlineOnlyExeHasWireFlagsSet()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "main"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set i = "", found = 0
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		if ($listget(record, 1) '= "EXE") { continue }
+		if ($listget(record, 5) '= "92101") { continue }
+		set found = 1
+		do $$$AssertEquals($listget(record, 10), "1", "mlineOnly EXE 92101 musí mít field 10 = ""1""")
+		do $$$AssertEquals($listget(record, 8), "0", "EXE 92101 není hidden -> field 8 = ""0""")
+	}
+	do $$$AssertTrue(found, "mlineOnly EXE 92101 (Doklady OLD) musí být v main stromu")
+}
+
+/// Licencovaná složka: alespoň jedna FAMILY v main má licensed field 5 = "1"
+/// (package ID gate — legacy BuildTreeXML kontroloval složky proti licenci stejně jako formy).
+Method TestMainTreeHasLicensedFamily()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","tree") = "main"
+	do ##class(ALVA.EDISONMAIN2.API.Tree).GetTree(.sys)
+
+	set i = "", licensedCount = 0
+	for {
+		set i = $order(^||ML("OUT", i))
+		quit:i=""
+		continue:i'?1.N
+		set record = ^||ML("OUT", i)
+		if ($listget(record, 1) '= "FAMILY") { continue }
+		if ($listget(record, 5) = "1") { set licensedCount = licensedCount + 1 }
+	}
+	do $$$AssertNotTrue((licensedCount = 0), "Main strom musí mít aspoň jednu licencovanou FAMILY (field 5 = ""1"")")
 }
 
 }
