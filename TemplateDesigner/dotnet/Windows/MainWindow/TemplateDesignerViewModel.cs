@@ -91,7 +91,8 @@ public class TemplateDesignerViewModel : EDViewModel
             if (_activeInstanceIndex != clamped)
             {
                 _activeInstanceIndex = clamped;
-                OnActiveInstancesChanged(reloadData: true);
+                // Přepnutí instance (◀▶) v téže šabloně → nechat stará data do dosednutí nových (bez mock bliku).
+                OnActiveInstancesChanged(reloadData: true, clearRealData: false);
             }
         }
     }
@@ -144,7 +145,11 @@ public class TemplateDesignerViewModel : EDViewModel
     /// (přepnu agendu/instanci, zatímco běží předchozí fetch staré). Bump při každé změně.</summary>
     private int _previewDataGeneration;
 
-    private void OnActiveInstancesChanged(bool reloadData)
+    /// <param name="clearRealData">true (změna agendy/šablony) = stará data vyčistit hned — patří jiné
+    /// šabloně, jinak by se kreslila přes novou (náhled do dosednutí ukáže mock). false (přepnutí instance
+    /// v téže šabloně) = nechat předchozí data zobrazená, dokud nedosedne nová z GetData — jinak by náhled
+    /// u pomalejšího MHD (2-3 s) „blikal" na hardcoded mock. Swap na nová data dělá RefreshDataForCurrentInstanceAsync.</param>
+    private void OnActiveInstancesChanged(bool reloadData, bool clearRealData = true)
     {
         _previewDataGeneration++;
         OnPropertyChanged(nameof(ActiveInstanceText));
@@ -152,11 +157,13 @@ public class TemplateDesignerViewModel : EDViewModel
         OnPropertyChanged(nameof(HasMultipleActiveInstances));
         if (reloadData)
         {
-            // Invalidate cached real data, fetch nového v pozadí
-            _realPreviewData = null;
-            _realPreviewIndex = 0;
-            NotifyPreviewPagesChanged();
-            RequestPreviewRefresh?.Invoke();
+            if (clearRealData)
+            {
+                _realPreviewData = null;
+                _realPreviewIndex = 0;
+                NotifyPreviewPagesChanged();
+                RequestPreviewRefresh?.Invoke();
+            }
             _ = RefreshDataForCurrentInstanceAsync();
         }
         CommandManager.InvalidateRequerySuggested();
@@ -1103,7 +1110,8 @@ public class TemplateDesignerViewModel : EDViewModel
         _activeSkupinaLabel = vm.SelectedSkupinaLabel;
         _activeInstances = vm.SelectedInstances.ToList();
         _activeInstanceIndex = 0;
-        OnActiveInstancesChanged(reloadData: true);
+        // Výběr z pickeru = táž šablona, jiné linky → nechat stará data do dosednutí (bez mock bliku).
+        OnActiveInstancesChanged(reloadData: true, clearRealData: false);
         OnPropertyChanged(nameof(ActiveSkupinaText));
         OnPropertyChanged(nameof(HasActiveSkupina));
 
