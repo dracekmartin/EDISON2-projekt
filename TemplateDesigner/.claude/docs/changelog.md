@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-20 — MHD parita: sloupce odjezdů podle SMO (sekce minut odjezdu) — krok 1
+
+MHD zastávkový JŘ na složitých linkách (mnoho typů provozu) datově nesedí legacy — gold pinuje jen
+jednoduché CB_DP linky, takže to prošlo. Root cause #1: **dělení sloupců odjezdové mřížky.** Legacy
+mapuje typ provozu → tiskový sloupec přes číselníkové pole `SMOID` (SMO1–4) a slučuje mnoho jemných
+typů do ≤4 sloupců; TD dělal sloupec **per typ provozu** → na KV_DP desítky sloupců, rozsypané záhlaví.
+
+- **Fix:** `SmoSloupec()` helper (typ → sloupec 1–4 dle `SMOID`, mimo SMO1–4 = netiskne se, jako legacy);
+  `PromitnutSpoje` klíčuje odjezdy `smoCol` místo `TypProvozuID` + registruje `smoSloupce`/`smoNadpis`;
+  `SestavitJednuStranku` staví `SKUPINY_DNU` i iteruje odjezdy po `smoCol`. Per-spoj logika (platnosti/NZ/
+  rozdíly tras) beze změny (na `SpojID`). Uživateli se nic „SMO" neukazuje — jen čitelné nadpisy sloupců.
+- **Ověřeno:** **CB_DP 1001 stále 1:1** (gold oracle: odjezdy 6597, zastávky 58, poznámky 1543 — vše match)
+  → beze změny pinované gold, pre-push zelený. KV_DP sloupce vizuálně sedí s legacy.
+- **Zbývá (viz roadmap „🔴 PRIORITA"):** #2 počty na složitých linkách (odjezdy 1,5×/zastávky 2× — které
+  zastávky se v seznamu zobrazí, handling variantních tras) + #3 rozdílové poznámky A–K. Pravděpodobně
+  společný kořen (variantní trasy). Krok 1 (sloupce) je hotový a bezpečný; #2/#3 jsou samostatné.
+
 ## 2026-07-20 — MHD tisk: odstraněno drahé nepoužívané pole „první/poslední spoj" (perf)
 
 Přepínání instancí MHD trvalo ~5–7 s (velké linky), zatímco AD skoro okamžitě. Profilingem

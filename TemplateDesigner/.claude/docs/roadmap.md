@@ -5,6 +5,48 @@
 
 ---
 
+## 🔴 PRIORITA — MHD datová parita na složitých linkách (2026-07-20)
+
+**Problém:** MHD zastávkový JŘ (`ZastavkoveJrMhd`) **datově neodpovídá legacy na složitých linkách
+s mnoha variantami tras**. Gold testy v pre-push pinují jen jednoduché **CB_DP** linky (málo variant) →
+divergence nikdy neprošla testem. DPKV má linky s hodně variantami (např. **KV_DP linka 1073**), kde je
+rozdíl velký. **Musí se vyřešit dřív než jakékoli grafické doladění (#10660 barvy/podtržení).**
+
+**Důkaz (gold oracle `MhdLegacyOracle`, KV_DP 1073, projete=1):**
+- Odjezdy: legacy **4295** vs TD **6352** (TD +48 %)
+- Zastávky: legacy **693** vs TD **1317** (TD ~2×)
+- Poznámky: legacy **213** vs TD **221** — rozdílové poznámky A–K nesedí (jiná písmena/klíče)
+- ⚠️ **TD má VÍC, ne míň** — takže neztrácíme obsah, ale **strukturujeme jinak** (nejspíš jinak dělené
+  skupiny dnů / stránky — v diffu date-skupina „31.12."). To je hlavní stopa k prošetření.
+
+**ROOT CAUSE #1 (nalezeno 2026-07-20, `LinkyPrintFormatMHD.cls:838-850`): dělení sloupců skupin dnů.**
+Legacy mapuje `TypProvozuID → sloupec přes SMOID` (SMO1/2/3/4 → mycol 1-4), tj. **slučuje mnoho typů
+provozu do max 4 sloupců** a typy **mimo SMO1-4 zahazuje** (`i mycol="" continue`). **TD dělá sloupec
+per `TypProvozuID`** (žádné SMO slučování, žádný filtr) → na složitých linkách mnohem víc sloupců →
+tentýž odjezd se opakuje ve víc sloupcích → +48 % odjezdů + navíc date-skupiny. Fix = zavést SMO model
+do TD: seskupit odjezdy + `SKUPINY_DNU` podle `SMOID`, vynechat typy bez SMO1-4, nadpis z reprezentanta.
+Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), downstream (route-diff/NZ/anotace).
+
+**Plán / stav:**
+1. ✅ **HOTOVO (2026-07-20): SMO grouping** — TD čte `SMOID` z číselníku a slučuje odjezdy + `SKUPINY_DNU`
+   do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
+   Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
+   Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
+2. ⬜ **Počty na složitých linkách (KV_DP 1073): odjezdy 1,5× / zastávky 2×** — REÁLNÁ divergence (CB_DP
+   sedí přesně, takže ne artefakt). Stránky sedí → jde o **per-stránka obsah**: které zastávky se v levém
+   seznamu zobrazí (handling variantních tras / obsluha bitmapy). Pravděpodobně **společný kořen s #3**.
+3. ⬜ **Rozdílové poznámky tras (alg 1001) A–K** — TD je negeneruje 1:1 (písmena/přiřazení vs legacy).
+   Souvisí s variantními trasami (#2). `DoplnitPoznamkuRozdilTrasy1001` volá stejnou legacy rutinu, ale
+   výsledek nesedí — prošetřit obsluha/spojTrasa bitmapy + přiřazení písmen.
+4. ⬜ **Rozšířit gold pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
+5. Diagnostika: read-only přemostěč `MhdLegacyOracle.CompareProbe` (numeric→named IN) — na dev serveru
+   (necommitnutý; smazat po dořešení celého tracku).
+
+**Pozn.:** perf oprava (odstraněno drahé pole první/poslední spoj) je hotová a nezávislá — tohle je
+o věcné správnosti výstupu.
+
+---
+
 ## 📋 Aktivní / nejbližší kroky
 
 > **Release track uzavřen (2026-07-15).** Verze nasazena do produkce (2026-07-14), dokumentace na
