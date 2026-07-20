@@ -259,3 +259,6 @@ ModelManifest.xml
 # Nodes - Package.json
 **/scripts/package.json
 **/scripts/package-lock.json
+
+# Husky pre-push test logs
+.husky/*.log

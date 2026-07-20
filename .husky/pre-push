@@ -1,30 +1,118 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-# Pre-push: run both .NET (xUnit) and Cache (%UnitTest) test suites.
-# Fail-fast: if .NET fails, skip Cache (saves time). Either failure aborts push.
+# Pre-push: run .NET (xUnit) and Cache (%UnitTest) suites.
+#
+# Change-aware: only runs the suite whose sources changed in the pushed range
+#   (.cs/.csproj/.sln -> .NET, .cls -> Cache). If the range can't be resolved,
+#   both run (safe default).
+# Visibility: full per-suite output goes to .husky/{dotnet,cache}-tests.log and a
+#   short failure summary to .husky/last-test-run.log. On failure the paths are
+#   printed in a banner so they're clickable from the VSCode Git output panel.
 # Emergency bypass: git push --no-verify (don't make a habit).
 
 set -e
 
-# A running EDISONMAIN2.exe locks its bin\Debug DLLs -> dotnet build fails (MSB3027).
-# Auto-close it before building so a forgotten instance doesn't block the push.
-echo ""
-echo "==> Checking for a running EDISONMAIN2 (locks build DLLs)"
-powershell -NoProfile -Command "\$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 was running - closed it.' } else { Write-Host '    not running - OK.' }" || true
+DOTNET_LOG=".husky/dotnet-tests.log"
+CACHE_LOG=".husky/cache-tests.log"
+SUMMARY=".husky/last-test-run.log"
 
-echo ""
-echo "==> [1/2] Running .NET tests (dotnet test EDISON2.sln)"
-dotnet test EDISON2.sln --nologo --verbosity minimal
+# --- Resolve the range being pushed, then decide which suites to run ----------
+RANGE=""
+if git rev-parse --verify '@{push}' >/dev/null 2>&1; then
+    RANGE="@{push}..HEAD"
+elif git rev-parse --verify origin/main >/dev/null 2>&1; then
+    RANGE="origin/main..HEAD"
+fi
 
-echo ""
-echo "==> [2/2] Running Cache tests (tools/run-cache-tests.ps1)"
-# Prefer pwsh (PS 7+); fall back to Windows PowerShell 5.1.
-if command -v pwsh >/dev/null 2>&1; then
-    pwsh -NoProfile -File tools/run-cache-tests.ps1
+run_dotnet=1
+run_cache=1
+if [ -n "$RANGE" ]; then
+    CHANGED=$(git diff --name-only "$RANGE" 2>/dev/null || true)
+    if [ -n "$CHANGED" ]; then
+        echo "$CHANGED" | grep -qiE '\.(cs|csproj|sln)$' && run_dotnet=1 || run_dotnet=0
+        echo "$CHANGED" | grep -qiE '\.cls$'            && run_cache=1  || run_cache=0
+    fi
+fi
+
+# Narrow the Cache run to the packages whose top-level project changed.
+# Dependency-aware: EDControls/EDTesting are shared, so a change there can break any
+# downstream suite -> run all. EDISONMAIN2/TemplateDesigner are leaves -> only their own.
+# CACHE_ARGS empty => run-cache-tests.ps1 default (all packages) = safe fallback.
+CACHE_ARGS=""
+if [ "$run_cache" = "1" ] && [ -n "$CHANGED" ]; then
+    run_all_cache=0
+    pkgs=""
+    for d in $(echo "$CHANGED" | grep -iE '\.cls$' | cut -d/ -f1 | sort -u); do
+        case "$d" in
+            EDISONMAIN2)      pkgs="$pkgs,ALVA.EDISONMAIN2.Tests" ;;
+            TemplateDesigner) pkgs="$pkgs,ALVA.TemplateDesigner.Tests" ;;
+            *)                run_all_cache=1 ;;
+        esac
+    done
+    [ "$run_all_cache" = "0" ] && [ -n "$pkgs" ] && CACHE_ARGS="-Package ${pkgs#,}"
+fi
+
+report_failure() {
+    # $1 = suite label, $2 = log file, $3 = extractor command (prints failures)
+    {
+        echo "===== PRE-PUSH FAILED: $1 ====="
+        echo ""
+        eval "$3" || echo "(no failure lines parsed - see full log)"
+        echo ""
+        echo "Full log: $2"
+    } > "$SUMMARY"
+
+    echo ""
+    echo "############################################################"
+    echo "  PRE-PUSH FAILED: $1"
+    echo "  Summary : $SUMMARY"
+    echo "  Full log: $2"
+    echo "############################################################"
+    echo ""
+    cat "$SUMMARY"
+    exit 1
+}
+
+# --- .NET ---------------------------------------------------------------------
+if [ "$run_dotnet" = "1" ]; then
+    # A running EDISONMAIN2.exe locks its bin\Debug DLLs -> build fails (MSB3027).
+    echo "==> Checking for a running EDISONMAIN2 (locks build DLLs)"
+    powershell -NoProfile -Command "\$p = Get-Process EDISONMAIN2 -ErrorAction SilentlyContinue; if (\$p) { \$p | Stop-Process -Force; Start-Sleep -Milliseconds 800; Write-Host '    EDISONMAIN2 was running - closed it.' } else { Write-Host '    not running - OK.' }" || true
+
+    echo ""
+    echo "==> [.NET] dotnet test EDISON2.sln (log: $DOTNET_LOG)"
+    set +e
+    dotnet test EDISON2.sln --nologo --verbosity minimal > "$DOTNET_LOG" 2>&1
+    dotnet_status=$?
+    set -e
+    if [ $dotnet_status -ne 0 ]; then
+        report_failure ".NET tests" "$DOTNET_LOG" "grep -E '^[[:space:]]*(Failed |Failed!|error )' '$DOTNET_LOG'"
+    fi
+    echo "    .NET tests passed."
 else
-    powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-cache-tests.ps1
+    echo "==> [.NET] skipped (no .cs/.csproj/.sln in pushed range)"
+fi
+
+# --- Cache --------------------------------------------------------------------
+if [ "$run_cache" = "1" ]; then
+    echo ""
+    echo "==> [Cache] tools/run-cache-tests.ps1 ${CACHE_ARGS:-(all packages)} (log: $CACHE_LOG)"
+    set +e
+    if command -v pwsh >/dev/null 2>&1; then
+        pwsh -NoProfile -File tools/run-cache-tests.ps1 $CACHE_ARGS > "$CACHE_LOG" 2>&1
+    else
+        powershell -NoProfile -ExecutionPolicy Bypass -File tools/run-cache-tests.ps1 $CACHE_ARGS > "$CACHE_LOG" 2>&1
+    fi
+    cache_status=$?
+    set -e
+    if [ $cache_status -ne 0 ]; then
+        report_failure "Cache tests" "$CACHE_LOG" "sed -n '/^Failures:/,\$p' '$CACHE_LOG'"
+    fi
+    echo "    Cache tests passed."
+else
+    echo "==> [Cache] skipped (no .cls in pushed range)"
 fi
 
 echo ""
-echo "==> All tests passed. Pushing."
+echo "==> All required tests passed. Pushing."

@@ -132,9 +132,11 @@ Spouštění legacy modulů (EDISONMAIN2API, ACTIVITY zámek): `EDISONMAIN2/CLAU
   `cache_compile` (MCP), běh `pwsh -File tools/run-cache-tests.ps1 [-Package ...]`.
   Nový package mimo default list skriptu (EDISONMAIN2/EDControls/TemplateDesigner
   Tests) tam přidej, jinak ho pre-push hook nepokryje.
-- **Pre-push hook** (`.husky/pre-push`): oba sety před každým push; selhání blokuje.
-  Bypass `git push --no-verify` jen nouzově. Onboarding: `dotnet restore` v rootu
-  aktivuje hooks automaticky.
+- **Pre-push hook** (`.husky/pre-push`): change-aware podle pushovaného rozsahu — sadu
+  pustí jen když se změnily její zdroje (`.cs`→.NET, `.cls`→Caché); Caché zúží na dotčené
+  package, ale změna v sdíleném `EDControls`/`EDTesting` spustí všechny. Souhrn selhání
+  `.husky/last-test-run.log`. Bypass `git push --no-verify` jen nouzově. Onboarding:
+  `dotnet restore` v rootu aktivuje hooks automaticky.
 - Caché testy potřebují dev server `192.168.16.1:57770` (VPN); user z `$env:USERNAME`
   (override `$env:CACHE_USER`).
 
