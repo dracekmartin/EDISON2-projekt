@@ -19,6 +19,18 @@ rozdíl velký. **Musí se vyřešit dřív než jakékoli grafické doladění 
 - ⚠️ **TD má VÍC, ne míň** — takže neztrácíme obsah, ale **strukturujeme jinak** (nejspíš jinak dělené
   skupiny dnů / stránky — v diffu date-skupina „31.12."). To je hlavní stopa k prošetření.
 
+**ROOT CAUSE #2+#3 (nalezeno + datově ověřeno 2026-07-20): příznak `TisknoutZastavkovyTam`/`Zpet`.**
+Per-bod trasy příznak v `ALVA.MHD.LSO(idfa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",bod,"Val",
+"TisknoutZastavkovyTam"|"TisknoutZastavkovyZpet")` (default 1). Legacy (`LinkyPrintFormatMHD.cls:713-720`)
+bod s příznakem **0 vynechá ze seznamu zastávek A z `TisknutaTrasaBitmap`** (`s $e(bitmap,mycnt)=" "`).
+**TD příznak nečte vůbec** → body zobrazuje (víc zastávek = #2) + rozdíly tras počítá proti jiné bitmapě
+(jiné poznámky = #3). **Ověřeno v datech:** KV_DP 1073 má body s příznakem 0; CB_DP 1001 ne (proto gold sedí).
+**FIX (spec, turnkey):** v TD číst `TisknoutZastavkovyTam`/`Zpet` per bod a vyřadit body s 0:
+(a) ze seznamu zastávek (`SestavitJednuStranku` zastavky loop — skip jako legacy 713-720),
+(b) z bitmapy obsluhy / `TisknutaTrasaBitmap` (`VypocitatBitmapyObsluhy` — blanknout pozici),
+přičemž bod **zůstává v trase** pro timing/spoje (legacy ho jen skryje, neodstraní). Ověřit gold: CB_DP 1001
+musí zůstat 1:1, KV_DP 1073 dep/zast/pozn se přiblíží legacy. (SMO grouping #1 níže hotové.)
+
 **ROOT CAUSE #1 (nalezeno 2026-07-20, `LinkyPrintFormatMHD.cls:838-850`): dělení sloupců skupin dnů.**
 Legacy mapuje `TypProvozuID → sloupec přes SMOID` (SMO1/2/3/4 → mycol 1-4), tj. **slučuje mnoho typů
 provozu do max 4 sloupců** a typy **mimo SMO1-4 zahazuje** (`i mycol="" continue`). **TD dělá sloupec
