@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-20 — MHD tisk: odstraněno drahé nepoužívané pole „první/poslední spoj" (perf)
+
+Přepínání instancí MHD trvalo ~5–7 s (velké linky), zatímco AD skoro okamžitě. Profilingem
+(dočasné per-fáze `$zh` časovače) lokalizováno: **~91 % času `GetData` spolklo pole
+`PRVNI_POSLEDNI_SPOJ`/`NEJEDOU_SPOJE`** — počítalo se **per stránka** (linka 1073 KV_DP: 6,8 s ze 7 s,
+42 stránek) přes legacy MHD2 `CalculatePrvniAndPosledniSpojeText` (full sken spojů + `MakeTableSpoj`
+za každý spoj + smyčka den-po-dni přes celé období platnosti).
+
+- **Fix:** pole **odstraněno** (výpočet, oba scalary, pole ve schématu, mock, osiřelý helper `NejedouSpoje`).
+  Nepoužívané (žádná šablona v repu ho nereferuje; per-linka flag `GenerovatNEJEDOU_SPOJE` ho jen zbytečně
+  zapínal). MHD-only — AD `NEJEDOU_SPOJE` (= nástupiště, jiný levný význam) netknuto.
+- **Výsledek:** `GetData` velké MHD linky z ~7 s na ~0,6 s (zbytek fází: trasa/spoje/bitmapy/stránky ~0,5 s).
+- **Kdyby to někdo chtěl zpět:** reimplementovat „první/poslední spoj" v TD nad daty fáze 4 v `^||TiskMHD`
+  (levné, bez legacy MHD2 volání per stránka) — poznámka v kódu na místě.
+- ⚠️ **Gold:** odebrání scalaru mění MHD gold digesty (md5; počty pages/zast/odj/pozn beze změny) → re-baseline.
+
 ## 2026-07-20 — StopList: značky přes symbolový font (MHD „na znamení" konzistentní s legendou)
 
 Značky u zastávek (na znamení, atributy, poznámky) se ve StopListu kreslily **normálním fontem**, takže
