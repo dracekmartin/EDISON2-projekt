@@ -1,7 +1,9 @@
 # Zastávkový JŘ — požadavky zákazníků z helpdesku
 
-Snapshot z Podpory M-line k **2026-05-11**, **konsolidováno 2026-07-10, revize 2026-07-13**
-(sekce 0 = stav pro uzavírání tiketů + dispatch; P3 imposice hotová, malí TR kandidáti odbaveni).
+Snapshot z Podpory M-line k **2026-05-11**, **konsolidováno 2026-07-10, revize 2026-07-20**
+(sekce 0 = stav pro uzavírání tiketů + dispatch; P3 imposice hotová, malí TR kandidáti odbaveni;
+2026-07-20 ověřeno proti živému HD — #8772/#7161 resolved, skupina „ready-to-close" vytipována,
+neevidované tiskové tikety protříděny = všechny linkové/mimo, viz „Mimo scope" níže).
 Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Caché agend
 (`ZastavkoveJrMhd` / `ZastavkoveJrAd`). Aktualizuj při dalším procházení tiketů.
 
@@ -24,18 +26,32 @@ Slouží jako vstup pro plánování dalšího rozvoje TemplateDesigneru a Cach�
 | 10660 | f3d3a7d8-0c3d-4076-93d1-c12bb25e851d | suspended | **DPKV** (Jan Slavík) | 4 oblasti grafických připomínek po importu z legacy |
 | 11300 | 653b5c65-b84f-49e8-803f-329febe5629e | suspended | **KORID** (Jaroslav Smištík) | Skrýt prázdné přípojové řádky (PD vs. víkend) |
 | 8828  | 02063e8a-e2c1-476d-a527-77e77e0f263e | suspended | **TRANSDEV** (Michal Podloučka, Jakub Holík) | Per-sloupek zastávky — samostatná vývěska |
-| 8772  | b62718c6-e0aa-478a-be31-bdfb8c7b9917 | suspended | **TRANSDEV** (Jakub Holík) | Návrhář sestav — podmíněný tisk sekcí |
+| 8772  | b62718c6-e0aa-478a-be31-bdfb8c7b9917 | **resolved 15.7.** | **TRANSDEV** (Jakub Holík) | Návrhář sestav — podmíněný tisk sekcí |
 | 7947  | 585158b0-d063-40d9-87de-eb076a236a87 | suspended | **TRANSDEV** (Michal Podloučka) | Logika auto-poznámky u poslední/předposlední zastávky |
-| 7959  | 45fdc840-ce70-4436-a331-c5a61732d9d6 | suspended | **TRANSDEV** (Michal Podloučka) | Skrýt zastávku v seznamu, pokud z tištěné zastávky není obsluhována |
+| 7959  | 45fdc840-ce70-4436-a331-c5a61732d9d6 | **resolved 20.7.** | **TRANSDEV** (Michal Podloučka) | Skrýt zastávku v seznamu, pokud z tištěné zastávky není obsluhována |
 | 7955  | dd0f7bd3-0efa-4e2d-947d-ed16559952ce | suspended | **TRANSDEV** (Michal Podloučka) | Vlastní komentář spoje má přebít auto-poznámku + 2 buga |
 | 7937  | 64fd847c-7090-47d1-bc91-bc581b0aea42 | suspended | **TRANSDEV** (Michal Podloučka) | Odsazení/odrazení zastávky per směr, jen pro zastávkové JŘ |
-| 7161  | 44e0a446-b05b-4c44-9497-3c96fbb945a2 | suspended | **TRANSDEV** (Vladimír Šimko) | Vypínatelné automatické poznámky (na znamení, bezbariér.) |
-| 9036  | ?                                    | suspended | **TRANSDEV** (Vladimír Šimko) | Nočné spoje — časová osa cez polnoc (22-5h) → **pokryto B3** |
+| 7161  | 44e0a446-b05b-4c44-9497-3c96fbb945a2 | **resolved 15.7.** | **TRANSDEV** (Vladimír Šimko) | Vypínatelné automatické poznámky (na znamení, bezbariér.) |
+| 9036  | 02f8fcda-25c5-4a2e-8784-79bc84860811 | suspended | **TRANSDEV** (Vladimír Šimko) | Nočné spoje — časová osa cez polnoc (22-5h) → **pokryto B3** |
 
 Otevřené tikety #12434 (BBSK — „Export Tisk JŘ") a #12260 (BUSLINE — „úprava šablony") jsou obecné tracker / dotazy, ne konkrétní featury — neuvedeny.
 
-Mimo scope zastávkového JŘ:
-- **#7487** (KORID — NZ + týdenní platnost 4 na řádek) — týká se **knižních/linkových JŘ**, ne zastávkových. Vyřadit z této roadmap.
+Mimo scope zastávkového JŘ (protříděno proti živému HD 2026-07-20 — všechny tiskové „suspended" tikety
+mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD; **žádný zastávkový nechybí**):
+
+**Linkové / knižní JŘ (→ Fáze C/D, ne sem):**
+- **#7487** (KORID) — NZ + týdenní platnost 4 na řádek.
+- **#8360** (KU HK) — přípojové řádky: kurzíva / barva / velikost písma, aby čas přípoje nesplýval s časem spoje.
+- **#8372** (KORID) — „vkládat prázdné sloupce" do nastavení tisku (roztažení řídkých linek na A4).
+- **#8576** (KU HK) — tarifní zóny do sloupců + více zón u hraniční zastávky (layout linkového JŘ).
+- **#9417** (KORID) — dopravci v záhlaví souhrnného JŘ jen pro spoje na dané stránce (velké A4 linky).
+- **#11373** (KAD) — negativní značky a poznámky **vedle** tabulky s časy (layout linkového JŘ).
+- **#9088** (TRANSDEV) — linkový cestovný poriadok · **#9283** (KOVED) — sdružený JŘ IDZK · **#11300** (KORID) — prázdné přípojové řádky.
+
+**Úplně mimo TD (Studio JŘ / editace dat, ne tisk):** #12803 (KOVED — výběr změněných km úseků),
+#7929/#8067/#8175/#8457/#9481/#9483/#10442/#12854 (editace spojů, MHD linek, stažky) — součinnost kolegů z JŘ.
+
+**Obecné tracker / dotazy (ne konkrétní featura):** #12434 (BBSK), #12260 (BUSLINE).
 
 ---
 
@@ -48,22 +64,28 @@ Mimo scope zastávkového JŘ:
 
 ### 0.1 Tikety (helpdesk)
 
+> **Pořadí projití (2026-07-20):** ▶ **1. ready-to-close** = ověřit v buildu + resolve odpovědí zavřít
+(#7947, #7955, #9036 — hotové v Návrháři, na HD ještě `suspended`). ▶ **2. testování u zákazníka**
+> (#10660 DPKV — hotové, ale nejdřív zpřístupnit + proklikat jejich obrázky). ▶ **3. feature tracky, nezavírat**
+> (#7937, #8828 — čeká práce v TD). Hotové zavřené: #8772, #7161 (15.7.), #7959 (20.7., čeká ověření klienta).
+
 | Ticket | Zákazník | Feature | Stav | Otestovat před zavřením | Detail |
 |---|---|---|---|---|---|
-| #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
-| #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ | `VisibilityExpression` na sekci/elementu (např. `{PAGE}>1`) | §E1 |
-| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ AD · ⬜ MHD | Linka se spojem za základní trasu → legenda „jede až do zast. X" | §D1 |
-| #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD | Školní linka: neobsluhovaná zast. se v seznamu netiskne | §A6 |
-| #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
-| #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) — předat dál, nezavírat na TD | §D4 |
-| #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ AD · ✅ MHD (D5) | D5: odškrtnout „Na znamení" → značky i řádek legendy zmizí (AD 0320144; MHD gold re-baseline); D6: `SCHOVAT_AGREGAT_BEZBARIER` (0365004) — v MHD agregát nevzniká, není co skrývat | §D5/D6 |
-| #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 ověřit u klienta | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
+| #8772 | TRANSDEV | Podmíněný tisk sekcí | ✅ **resolved 15.7.** | — (zavřeno) | §E1 |
+| #7161 | TRANSDEV | Skrýt na-znamení legendu (D5) + vypnout agregát bezbariér (D6) | ✅ **resolved 15.7.** | — (zavřeno) | §D5/D6 |
+| #7959 | TRANSDEV | Skrýt neobsluhovanou zastávku | ✅ AD · **resolved 20.7.** (čeká ověření klienta) | Filtr `servedPoradi` = defaultně, bez přepínače (jiné než „projeté zastávky"); klient ověří na 876401/876402 | §A6 |
+| #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ AD · ⬜ MHD · ▶ **ready-to-close** | Linka se spojem za základní trasu → legenda „jede až do zast. X" | §D1 |
+| #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
+| #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) — do resolve poznámka, řešit jinde | §D4 |
+| #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 · ▶ **ready-to-close** (ověřit u klienta) | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
+| #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
 | #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | 🟠 | Datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; ~0.5–1 den Caché | §B4 |
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
 
-**Poznámka k uzavírání:** #10660/#11300/#7xxx jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
-polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci.
+**Poznámka k uzavírání:** ready-to-close jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
+polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci
+(vzor odpovědi = #8772/#7161: „vyřešeno v novém Návrháři sestav, viz wiki").
 
 ### 0.2 Nové požadavky bez samostatného tiketu (před uzavřením dohledat/založit ticket)
 
