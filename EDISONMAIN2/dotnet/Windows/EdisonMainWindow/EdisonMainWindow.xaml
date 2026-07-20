@@ -86,8 +86,9 @@
                     </b:EventTrigger>
                 </b:Interaction.Triggers>
                 <MenuItem.ItemContainerStyle>
-                    <!-- ElementName ne AncestorType=Menu — submenu items jsou v Popup mimo Menu's visual tree. -->
-                    <Style TargetType="MenuItem">
+                    <!-- ElementName ne AncestorType=Menu — submenu items jsou v Popup mimo Menu's visual tree.
+                         BasedOn povinné — bez něj explicitní styl přebije implicitní themed styl (Role→template) → dark mode bílé submenu. -->
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                         <Setter Property="Header" Value="{Binding DisplayName}"/>
                         <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
                         <Setter Property="Command" Value="{Binding DataContext.ActivateModuleCommand, ElementName=TopMenu}"/>
@@ -99,15 +100,16 @@
                 <MenuItem.Icon><Image Source="{StaticResource EDIcons.Panels}" Width="16" Height="16"/></MenuItem.Icon>
                 <MenuItem.ItemContainerStyle>
                     <!-- Skupiny (per provider) — jen rozbalují, žádný Command. Statické položky dole
-                         mají lokální Style, takže se na ně tenhle ItemContainerStyle nepoužije. -->
-                    <Style TargetType="MenuItem">
+                         mají lokální Style, takže se na ně tenhle ItemContainerStyle nepoužije.
+                         BasedOn povinné — bez něj se ztratí implicitní themed styl (Role→template) → dark mode bílé submenu. -->
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                         <Setter Property="Header" Value="{Binding Title}"/>
                         <Setter Property="ItemsSource" Value="{Binding Apps}"/>
                         <!-- Explicitní vnitřní styl přebije děděný — Command jen na listech.
                              ElementName=TopMenu — položky jsou v Popup mimo Menu's visual tree (jako Spuštěné moduly). -->
                         <Setter Property="ItemContainerStyle">
                             <Setter.Value>
-                                <Style TargetType="MenuItem">
+                                <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                                     <Setter Property="Header" Value="{Binding Title}"/>
                                     <Setter Property="Command" Value="{Binding DataContext.OpenMiniAppCommand, ElementName=TopMenu}"/>
                                     <Setter Property="CommandParameter" Value="{Binding}"/>

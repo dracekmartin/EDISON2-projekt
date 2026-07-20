@@ -27,6 +27,11 @@ RelayCommand), `EDInputForm`, `EDList`, `EDFooter`, `EDToolbar`, `EDActionInProg
   hostují items přes panel s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF
   ignoruje) a rozbil by globální propagaci fontu (styly čtou font tokeny
   přes `DynamicResource`).
+- **Lokální `Style`/`ItemContainerStyle` na themovaném controlu musí mít
+  `BasedOn="{StaticResource {x:Type Xxx}}"`** — theming (font, dark mode, template dle
+  `Role`) žije v implicitním stylu a explicitní styl ho *nedědí, nahrazuje celý*.
+  Bez `BasedOn` = systémový default template → v dark modu bílé pozadí/text. Past nejvíc
+  bije u submenu/`ContextMenu`/`ToolTip` popupů (vlastní visual tree).
 
 ## EDIcons / EDStrings
 
