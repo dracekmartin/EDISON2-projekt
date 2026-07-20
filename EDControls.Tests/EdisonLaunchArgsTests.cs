@@ -85,6 +85,20 @@ public class EdisonLaunchArgsTests
     }
 
     [Fact]
+    public void TryParse_MlpWithLeadingZeros_Normalized()
+    {
+        // Mlp jde přes int round-trip (parse → ToString), takže "0167" se normalizuje na "167"
+        // — a v této podobě se posílá dál do launcher argů.
+        var args = ValidArgs();
+        args[7] = "0167";
+
+        var launch = EdisonLaunchArgs.TryParse(args);
+
+        Assert.NotNull(launch);
+        Assert.Equal("167", launch.Mlp);
+    }
+
+    [Fact]
     public void TryParse_EmptyServer_ReturnsNull()
     {
         var args = ValidArgs();

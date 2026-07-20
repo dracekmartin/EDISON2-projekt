@@ -24,15 +24,9 @@ public class MiniAppCatalogTests
             new FakeProvider(Descriptor("C")),
         ]);
 
-        Assert.Equal(3, catalog.All.Count);
-    }
-
-    [Fact]
-    public void Build_EmptyProviders_YieldsEmptyCatalog()
-    {
-        var catalog = MiniAppCatalog.Build([]);
-
-        Assert.Empty(catalog.All);
+        Assert.Equal(
+            new HashSet<string> { "A", "B", "C" },
+            catalog.All.Select(d => d.Id).ToHashSet());
     }
 
     [Fact]

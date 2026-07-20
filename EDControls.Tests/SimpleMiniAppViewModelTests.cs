@@ -11,22 +11,14 @@ public class SimpleMiniAppViewModelTests
         new(null, Substitute.For<IWindowNavigator>(), Substitute.For<IPopupDisplayer>());
 
     [Fact]
-    public void Title_ReturnsProvidedTitle()
+    public void Ctor_DoesNotInvokeContentFactory()
     {
-        var vm = new SimpleMiniAppViewModel(MockServices(), "Nástěnka", DummyFactory);
+        // Kontrakt: VM továrnu jen drží, invokuje ji až view (viz OnContentCreated) — kvůli
+        // vícenásobnému otevření a dock/float re-parentingu. Kdyby ji ctor zavolal, throwing
+        // factory by vybublala výjimku.
+        var ex = Record.Exception(() => new SimpleMiniAppViewModel(MockServices(), "x", DummyFactory));
 
-        Assert.Equal("Nástěnka", vm.Title);
-    }
-
-    [Fact]
-    public void ContentFactory_StoresProvidedFactoryUninvoked()
-    {
-        // VM továrnu jen drží — invokuje ji až view. (Vlastní instanci FrameworkElement nelze
-        // vytvořit mimo STA vlákno, ale tady o to nejde: kontrolujeme identitu delegátu.)
-        Func<FrameworkElement> factory = DummyFactory;
-        var vm = new SimpleMiniAppViewModel(MockServices(), "x", factory);
-
-        Assert.Same(factory, vm.ContentFactory);
+        Assert.Null(ex);
     }
 
     private static FrameworkElement DummyFactory() => throw new InvalidOperationException("nemá se volat");

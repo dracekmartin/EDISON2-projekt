@@ -5,13 +5,19 @@ using NSubstitute;
 namespace EDControls.Tests;
 
 /// <summary>
-/// <see cref="EDUsageTelemetry"/> sdílí statický buffer — testy běží v jedné kolekci
-/// bez paralelismu, aby si stav nepřepisovaly, a každý začíná resetem.
+/// Sdílená serializovaná kolekce pro třídy sahající na proces-wide static state: singleton
+/// <c>EDServices.Current</c> (fallback RelayCommand/AsyncRelayCommand na PopupDisplayer přes
+/// Initialize/Reset) a statický buffer <see cref="EDUsageTelemetry"/> (Track/Flush). xUnit dává
+/// každé třídě vlastní kolekci a ty běží paralelně — tyhle instance ale nejsou izolované per-test,
+/// takže bez společné non-parallel kolekce by si stav navzájem přepisovaly.
 /// </summary>
-[CollectionDefinition(nameof(EDUsageTelemetryTests), DisableParallelization = true)]
-public class EDUsageTelemetryCollection : ICollectionFixture<object>;
+[CollectionDefinition(SharedStaticStateCollection.Name, DisableParallelization = true)]
+public class SharedStaticStateCollection
+{
+    public const string Name = "SharedStaticState";
+}
 
-[Collection(nameof(EDUsageTelemetryTests))]
+[Collection(SharedStaticStateCollection.Name)]
 public class EDUsageTelemetryTests
 {
     private readonly IMLRest _mlRest;
@@ -116,5 +122,38 @@ public class EDUsageTelemetryTests
             EDUsageTelemetry.Track("EDISON2.TestWindow", $"Btn{i}");
 
         Assert.Equal(10_000, EDUsageTelemetry.BufferCountForTests);
+    }
+
+    [Fact]
+    public void Flush_UsesSessionDelimiter_NotHardcodedTilde()
+    {
+        // Wire řádek skládá separátor ze session (IMLRest.Delimiter), ne natvrdo '~'.
+        var caret = Substitute.For<IMLRest>();
+        caret.Delimiter.Returns('^');
+        object[]? captured = null;
+        caret.QueryOrThrow("ALVA.ISY.ISYCloud.APIdotNet.Telemetry", "LogUsageBatch",
+                Arg.Do<object[]>(x => captured = x))
+            .Returns([]);
+        EDUsageTelemetry.Track("EDISON2.TestWindow", "OPEN");
+
+        EDUsageTelemetry.Flush(caret);
+
+        Assert.NotNull(captured);
+        Assert.Matches(new Regex(@"^usage\^EDISON2\.TestWindow\^OPEN\^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$"),
+            (string)captured![0]);
+    }
+
+    [Fact]
+    public void Cap_IsNotLatch_TrackAfterFlushResumes()
+    {
+        // Cap kontroluje živý počet (_buffer.Count), ne kumulativní latch — po Flush se zase nabírá.
+        for (int i = 0; i < 10_000; i++)
+            EDUsageTelemetry.Track("EDISON2.TestWindow", $"Btn{i}");
+        Assert.Equal(10_000, EDUsageTelemetry.BufferCountForTests);
+
+        EDUsageTelemetry.Flush(_mlRest);
+        EDUsageTelemetry.Track("EDISON2.TestWindow", "AfterFlush");
+
+        Assert.Equal(1, EDUsageTelemetry.BufferCountForTests);
     }
 }

@@ -90,15 +90,29 @@ public class WindowNavigatorTests
     }
 
     [Fact]
-    public void BuildLauncherArguments_HasSentinelAndAgendaPathLast()
+    public void BuildLauncherArguments_EmptyInputParam_StillOccupiesPositionalSlot()
     {
         var args = WindowNavigator.BuildLauncherArguments(
             MakeMlRest(), "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
 
-        // Sentinel první; agenda path [11] (host ji čte pro Assembly.LoadFrom), licencované elementy [12] poslední.
-        Assert.StartsWith("EDISONMAIN2 ", args);
-        Assert.Contains("\"C:\\Edison\\X.exe\"", args);
-        Assert.EndsWith("\"26001,6001\"", args);
+        // Prázdný inputParam zůstává jako "" na pozici [10] — pořadí polí se neposune.
+        Assert.Equal(
+            "EDISONMAIN2 \"192.168.16.1\" \"57770\" \"MLINE\" \"CB_DP\" \"jan.novak\" \"Jan Novák\" \"157\" \"ALVA.X.formY\" \"SHELLGUID\" \"\" \"C:\\Edison\\X.exe\" \"26001,6001\"",
+            args);
+    }
+
+    [Fact]
+    public void BuildLauncherArguments_EmbeddedQuote_NotEscaped()
+    {
+        // Známý limit wire formátu: uvozovka uvnitř hodnoty se needukuje ani neescapuje.
+        // Legacy parser kontrakt je zmrazený — produkci NEměnit.
+        var m = MakeMlRest();
+        m.FullName.Returns("Jan \"Boss\" Novák");
+
+        var args = WindowNavigator.BuildLauncherArguments(
+            m, "ALVA.X.formY", "SHELLGUID", "", @"C:\Edison\X.exe", "26001,6001");
+
+        Assert.Contains("\"Jan \"Boss\" Novák\"", args);
     }
 
     [Fact]
@@ -137,6 +151,13 @@ public class WindowNavigatorTests
     public void IsInternalNamespace_UserApp_False()
     {
         Assert.False(WindowNavigator.IsInternalNamespace("EDISONMAIN2.Windows.EdisonMainWindow"));
+    }
+
+    [Fact]
+    public void IsInternalNamespace_Null_False()
+    {
+        // Typ v globálním namespace (Namespace == null) → uživatelské okno, ne interní.
+        Assert.False(WindowNavigator.IsInternalNamespace(null));
     }
 
     // ---------- ResolveExecutablePath ----------

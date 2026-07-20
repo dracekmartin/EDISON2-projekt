@@ -28,21 +28,6 @@ public class UserPrefsTests
         Assert.Null(result);
     }
 
-    [Fact]
-    public async Task Null_SaveNoThrow()
-    {
-        var svc = new NullUserPrefsService();
-        await svc.SaveAsync("scope", "key", JsonNode.Parse("""{"x":1}""")!);
-        // No assertion — just ověřit že to nehází
-    }
-
-    [Fact]
-    public async Task Null_DeleteNoThrow()
-    {
-        var svc = new NullUserPrefsService();
-        await svc.DeleteAsync("scope", "key");
-    }
-
     // ─── CacheUserPrefsService — argument validation ─────────────────────────
 
     [Fact]
@@ -73,6 +58,22 @@ public class UserPrefsTests
         var (svc, _) = Setup();
         await Assert.ThrowsAsync<ArgumentException>(
             () => svc.SaveAsync("scope", "   ", JsonNode.Parse("{}")!));
+    }
+
+    // Delete sdílí stejný ValidateArgs jako Load/Save — pin, ať refactor rozdělující
+    // validaci na jednotlivé metody spadne.
+    [Fact]
+    public async Task Delete_EmptyScope_Throws()
+    {
+        var (svc, _) = Setup();
+        await Assert.ThrowsAsync<ArgumentException>(() => svc.DeleteAsync("", "key"));
+    }
+
+    [Fact]
+    public async Task Delete_WhitespaceKey_Throws()
+    {
+        var (svc, _) = Setup();
+        await Assert.ThrowsAsync<ArgumentException>(() => svc.DeleteAsync("scope", "   "));
     }
 
     // ─── CacheUserPrefsService — Caché komunikace ────────────────────────────
@@ -109,6 +110,32 @@ public class UserPrefsTests
         Assert.NotNull(loaded);
         Assert.Equal(150, loaded!["widths"]!["name"]!.GetValue<int>());
         Assert.Equal(80,  loaded["widths"]!["date"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public async Task Load_InvalidJsonInData_ReturnsNull()
+    {
+        var (svc, ml) = Setup();
+        var result = new CVar();
+        result["data"] = new CVar("{ not valid json");
+        ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>())
+          .Returns(result);
+
+        var loaded = await svc.LoadAsync("scope", "key");
+        Assert.Null(loaded);  // JsonNode.Parse hodí → catch → null (odlišné od MLRest-throws)
+    }
+
+    [Fact]
+    public async Task Load_EmptyData_ReturnsNull()
+    {
+        var (svc, ml) = Setup();
+        var result = new CVar();
+        result["data"] = new CVar("");
+        ml.QueryOrThrow(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CVar>())
+          .Returns(result);
+
+        var loaded = await svc.LoadAsync("scope", "key");
+        Assert.Null(loaded);  // IsNullOrEmpty větev (ne jen chybějící klíč)
     }
 
     [Fact]

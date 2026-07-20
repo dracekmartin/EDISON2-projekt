@@ -1,56 +1,64 @@
+using System;
 using System.IO;
-using System.Text.Json;
 using EDControls.UserFonts;
 
 namespace EDControls.Tests;
 
 /// <summary>
 /// UserFontPreference je shared-file-by-design (cross-process sync mezi shell a TD).
-/// Většina chování (FileSystemWatcher debounce, Load/Save přes real disk) je integration
-/// territory; pokrývá ji FontService smoke test v produkci. Tady jen POCO contract.
+/// FileSystemWatcher debounce je integration territory (FontService smoke test v produkci);
+/// tady se ověřuje wire kontrakt font.json — přesný camelCase tvar na disku — přes přesměrovanou
+/// <see cref="UserFontPreference.FilePath"/> (internal seam), ne přes reálné %APPDATA%.
 /// </summary>
 public class UserFontPreferenceTests
 {
-    [Fact]
-    public void Default_AllPropertiesNullOrFalse()
+    /// <summary>Spustí <paramref name="body"/> s <see cref="UserFontPreference.FilePath"/>
+    /// přesměrovanou na dočasný soubor; po dokončení cestu obnoví a načte reálný stav.</summary>
+    private static void WithTempFontFile(string? initialContent, Action<string> body)
     {
-        var p = new UserFontPreference();
-
-        Assert.False(p.FontApplied);
-        Assert.Null(p.FontFamily);
-        Assert.Null(p.FontSize);
+        var tmp = Path.Combine(Path.GetTempPath(), $"edfont_{Guid.NewGuid():N}.json");
+        var saved = UserFontPreference.FilePath;
+        try
+        {
+            if (initialContent != null) File.WriteAllText(tmp, initialContent);
+            UserFontPreference.FilePath = tmp;
+            body(tmp);
+        }
+        finally
+        {
+            UserFontPreference.FilePath = saved;
+            if (File.Exists(tmp)) File.Delete(tmp);
+            UserFontPreference.Load();   // obnovit Current z reálného souboru
+        }
     }
 
     [Fact]
-    public void JsonRoundtrip_PreservesAllProperties()
+    public void Load_DeserializesOnDiskCamelCaseShape()
     {
-        // Slouží jako regression test pro change format — pokud někdo přejmenuje property
-        // bez rebuildu (JsonPropertyName attr), tento test selže.
-        var original = new UserFontPreference
+        // Pinned tvar sdílený s TemplateDesigner — přejmenování property (bez JsonPropertyName)
+        // nebo změna naming policy tenhle kontrakt rozbije.
+        WithTempFontFile("""{"fontApplied":true,"fontFamily":"Calibri","fontSize":14.5}""", _ =>
         {
-            FontApplied = true,
-            FontFamily = "Calibri",
-            FontSize = 14.5,
-        };
-        var options = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        };
+            UserFontPreference.Load();
 
-        var json = JsonSerializer.Serialize(original, options);
-        var deserialized = JsonSerializer.Deserialize<UserFontPreference>(json, options);
-
-        Assert.NotNull(deserialized);
-        Assert.True(deserialized.FontApplied);
-        Assert.Equal("Calibri", deserialized.FontFamily);
-        Assert.Equal(14.5, deserialized.FontSize);
+            Assert.True(UserFontPreference.Current.FontApplied);
+            Assert.Equal("Calibri", UserFontPreference.Current.FontFamily);
+            Assert.Equal(14.5, UserFontPreference.Current.FontSize);
+        });
     }
 
     [Fact]
-    public void Current_IsNonNullByDefault()
+    public void Save_WritesCamelCaseKeys()
     {
-        // Static singleton se inicializuje na new() — ne null, ne nevyplněný stav.
-        Assert.NotNull(UserFontPreference.Current);
+        WithTempFontFile(null, tmp =>
+        {
+            new UserFontPreference { FontApplied = true, FontFamily = "Calibri", FontSize = 14.5 }.Save();
+
+            var json = File.ReadAllText(tmp);
+            Assert.Contains("\"fontApplied\"", json);
+            Assert.Contains("\"fontFamily\"", json);
+            Assert.Contains("\"fontSize\"", json);
+        });
     }
 
     [Fact]
@@ -58,25 +66,11 @@ public class UserFontPreferenceTests
     {
         // Filesystem corruption / partial write — Load catch blok drží Current jako default
         // / poslední úspěšný stav, aby aplikace nepadla na startu kvůli rozbitému font.json.
-        var dir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-            "m-line", "common");
-        var path = Path.Combine(dir, "font.json");
-        var backup = File.Exists(path) ? File.ReadAllText(path) : null;
-        Directory.CreateDirectory(dir);
-        try
+        WithTempFontFile("{ not valid json", _ =>
         {
-            File.WriteAllText(path, "{ not valid json");
-
             var ex = Record.Exception(UserFontPreference.Load);
             Assert.Null(ex);
             Assert.NotNull(UserFontPreference.Current);
-        }
-        finally
-        {
-            if (backup != null) File.WriteAllText(path, backup);
-            else File.Delete(path);
-            UserFontPreference.Load();
-        }
+        });
     }
 }

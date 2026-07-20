@@ -3,6 +3,9 @@ using NSubstitute;
 
 namespace EDControls.Tests;
 
+// Sdílí serializovanou kolekci s ostatními třídami sahajícími na EDServices.Current
+// (Initialize/Reset v *_FallsBackToEDServicesCurrent + fallback v Execute catch) — viz SharedStaticStateCollection.
+[Collection(SharedStaticStateCollection.Name)]
 public class AsyncRelayCommandTests
 {
     private static EDServices ServicesWith(IPopupDisplayer popup) =>
@@ -14,14 +17,16 @@ public class AsyncRelayCommandTests
     public async Task Execute_AwaitsTask()
     {
         var invoked = false;
+        var done = new TaskCompletionSource();
         var cmd = new AsyncRelayCommand(async () =>
         {
-            await Task.Delay(10);
+            await Task.Yield();
             invoked = true;
+            done.SetResult();
         });
 
         cmd.Execute(null);
-        await Task.Delay(50);
+        await done.Task;   // deterministické: počkáme přímo na dokončení handleru
 
         Assert.True(invoked);
     }
@@ -76,27 +81,27 @@ public class AsyncRelayCommandTests
         cmd.Execute(null);
         cmd.Execute(null);  // by mělo být ignorováno
 
-        gate.SetResult();
-        await Task.Delay(50);
+        Assert.Equal(1, invocations);  // invocations se inkrementuje synchronně na startu handleru
 
-        Assert.Equal(1, invocations);
+        gate.SetResult();
+        await gate.Task;               // úklid: necháme první task dokončit
     }
 
     [Fact]
-    public async Task Execute_Exception_RoutedToInjectedPopup()
+    public void Execute_Exception_RoutedToInjectedPopup()
     {
+        // Handler hodí synchronně → catch/finally proběhne synchronně, žádný await nepotřeba.
         var popup = Substitute.For<IPopupDisplayer>();
         var boom = new InvalidOperationException("boom");
         var cmd = new AsyncRelayCommand(() => throw boom, canExecute: null, popupDisplayer: popup);
 
         cmd.Execute(null);
-        await Task.Delay(50);
 
         popup.Received(1).Error(boom);
     }
 
     [Fact]
-    public async Task Execute_Exception_NullPopup_FallsBackToEDServicesCurrent()
+    public void Execute_Exception_NullPopup_FallsBackToEDServicesCurrent()
     {
         var popup = Substitute.For<IPopupDisplayer>();
         EDServices.Initialize(ServicesWith(popup));
@@ -106,7 +111,6 @@ public class AsyncRelayCommandTests
             var cmd = new AsyncRelayCommand(() => throw boom);
 
             cmd.Execute(null);
-            await Task.Delay(50);
 
             popup.Received(1).Error(boom);
         }
@@ -117,10 +121,11 @@ public class AsyncRelayCommandTests
     }
 
     [Fact]
-    public async Task Execute_ExceptionDoesNotLeave_IsRunningTrue()
+    public void Execute_ExceptionDoesNotLeave_IsRunningTrue()
     {
         // Při výjimce musí finally blok obnovit _isRunning=false, jinak by command zůstal
         // permanentně zablokovaný a uživatel by ho po prvním fail nemohl spustit znovu.
+        // Handler hazí synchronně → oba běhy proběhnou synchronně, bez await.
         var popup = Substitute.For<IPopupDisplayer>();
         int invocations = 0;
         var cmd = new AsyncRelayCommand(() =>
@@ -130,24 +135,31 @@ public class AsyncRelayCommandTests
         }, canExecute: null, popupDisplayer: popup);
 
         cmd.Execute(null);
-        await Task.Delay(50);
         cmd.Execute(null);
-        await Task.Delay(50);
 
         Assert.Equal(2, invocations);
     }
 }
 
+// Generický AsyncRelayCommand<T> je samostatná (duplikovaná) implementace — vlastní pokrytí.
+// Ve stejné serializované kolekci, protože jeho Execute catch také fallbackuje na EDServices.Current.
+[Collection(SharedStaticStateCollection.Name)]
 public class AsyncRelayCommandGenericTests
 {
     [Fact]
     public async Task Execute_PassesParameter()
     {
         string? received = null;
-        var cmd = new AsyncRelayCommand<string>(async s => { await Task.Delay(10); received = s; });
+        var done = new TaskCompletionSource();
+        var cmd = new AsyncRelayCommand<string>(async s =>
+        {
+            await Task.Yield();
+            received = s;
+            done.SetResult();
+        });
 
         cmd.Execute("hello");
-        await Task.Delay(50);
+        await done.Task;   // deterministické místo Task.Delay
 
         Assert.Equal("hello", received);
     }
@@ -162,6 +174,47 @@ public class AsyncRelayCommandGenericTests
     }
 
     [Fact]
+    public void CanExecute_WrongParameterType_False()
+    {
+        // parameter is T t je false pro 42 (T=string) → predikát se nevolá, CanExecute=false.
+        var cmd = new AsyncRelayCommand<string>(_ => Task.CompletedTask, _ => true);
+
+        Assert.False(cmd.CanExecute(42));
+    }
+
+    [Fact]
+    public async Task CanExecute_FalseWhileRunning()
+    {
+        // _isRunning blokuje CanExecute po dobu běhu tasku; gate držíme pod kontrolou testu.
+        var gate = new TaskCompletionSource();
+        var cmd = new AsyncRelayCommand<string>(_ => gate.Task);
+
+        cmd.Execute("x");
+        Assert.False(cmd.CanExecute("x"));   // běží → false
+
+        gate.SetResult();
+        await Task.Delay(50);                // počkat na finally blok (obnova _isRunning)
+
+        Assert.True(cmd.CanExecute("x"));
+    }
+
+    [Fact]
+    public void Execute_WrongParameterType_HandlerNotInvoked()
+    {
+        // parameter is not T t → return před spuštěním handleru (synchronně, bez await).
+        var invoked = false;
+        var popup = Substitute.For<IPopupDisplayer>();
+        var cmd = new AsyncRelayCommand<string>(_ => { invoked = true; return Task.CompletedTask; },
+            canExecute: null, popupDisplayer: popup);
+
+        cmd.Execute(42);
+        cmd.Execute(null);
+
+        Assert.False(invoked);
+        popup.DidNotReceive().Error(Arg.Any<Exception>());
+    }
+
+    [Fact]
     public async Task SecondExecute_WhileFirstRunning_IsIgnored()
     {
         var gate = new TaskCompletionSource();
@@ -171,22 +224,44 @@ public class AsyncRelayCommandGenericTests
         cmd.Execute("a");
         cmd.Execute("b");   // ignorováno — první ještě běží
 
-        gate.SetResult();
-        await Task.Delay(50);
+        Assert.Equal(1, invocations);  // invocations se inkrementuje synchronně na startu handleru
 
-        Assert.Equal(1, invocations);
+        gate.SetResult();
+        await gate.Task;
     }
 
     [Fact]
-    public async Task Execute_Exception_RoutedToInjectedPopup()
+    public void Execute_Exception_RoutedToInjectedPopup()
     {
+        // Handler hazí synchronně → catch proběhne synchronně, bez await.
         var popup = Substitute.For<IPopupDisplayer>();
         var boom = new InvalidOperationException("boom");
         var cmd = new AsyncRelayCommand<string>(_ => throw boom, canExecute: null, popupDisplayer: popup);
 
         cmd.Execute("x");
-        await Task.Delay(50);
 
         popup.Received(1).Error(boom);
+    }
+
+    [Fact]
+    public void Execute_ExceptionResetsIsRunning_AndRoutesToPopup()
+    {
+        // Zrcadlí non-generický test: po výjimce finally obnoví _isRunning=false (CanExecute zas true)
+        // a výjimka jde do IPopupDisplayer. Handler hazí synchronně → oba běhy synchronně.
+        var popup = Substitute.For<IPopupDisplayer>();
+        var boom = new InvalidOperationException("boom");
+        int invocations = 0;
+        var cmd = new AsyncRelayCommand<string>(_ =>
+        {
+            invocations++;
+            throw boom;
+        }, canExecute: null, popupDisplayer: popup);
+
+        cmd.Execute("x");
+        Assert.True(cmd.CanExecute("x"));   // _isRunning zpět na false
+        cmd.Execute("x");
+
+        Assert.Equal(2, invocations);
+        popup.Received(2).Error(boom);
     }
 }

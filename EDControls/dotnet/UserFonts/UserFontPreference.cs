@@ -32,11 +32,13 @@ public class UserFontPreference
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private static readonly string Dir = Path.Combine(
+    /// <summary>Cesta k <c>font.json</c>. Přepisovatelná (internal seam pro testy) — produkce
+    /// používá default v <c>%APPDATA%\m-line\common</c>.</summary>
+    internal static string FilePath { get; set; } = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-        "m-line", "common");
+        "m-line", "common", "font.json");
 
-    private static readonly string FilePath = Path.Combine(Dir, "font.json");
+    private static string Dir => Path.GetDirectoryName(FilePath)!;
 
     public static UserFontPreference Current { get; private set; } = new();
 
@@ -77,7 +79,7 @@ public class UserFontPreference
     {
         if (_watcher != null) return;
         Directory.CreateDirectory(Dir);
-        _watcher = new FileSystemWatcher(Dir, "font.json")
+        _watcher = new FileSystemWatcher(Dir, Path.GetFileName(FilePath))
         {
             NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.CreationTime,
             EnableRaisingEvents = true,

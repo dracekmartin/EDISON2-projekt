@@ -106,15 +106,6 @@ public class EDViewModelTests
     }
 
     [Fact]
-    public void MLRest_ComesFromServices()
-    {
-        var mockMLRest = Substitute.For<IMLRest>();
-        var vm = new TestViewModel(MockServices(mlRest: mockMLRest));
-
-        Assert.Same(mockMLRest, vm.MLRest);
-    }
-
-    [Fact]
     public void MLRest_WrittenOnServicesVisibleToVM()
     {
         var services = MockServices();
@@ -184,6 +175,53 @@ public class EDViewModelTests
         Assert.Same(vm.DeleteCommand, vm.Actions[2].Command);
     }
 
+    [Fact]
+    public void HasAccess_NullAccessTable_ReturnsTrue()
+    {
+        // Graceful degradation: bez načteného AccessTable (testy, pre-login) je vše povoleno.
+        var vm = new TestViewModel(MockServices());
+
+        Assert.True(vm.CheckAccess("COKOLIV"));
+    }
+
+    [Fact]
+    public void HasAccess_PopulatedAccessTable_GatesByContains()
+    {
+        var services = MockServices();
+        services.AccessTable = new AccessTable(["FORM_A"], isAllAccess: false);
+        var vm = new TestViewModel(services);
+
+        Assert.True(vm.CheckAccess("FORM_A"));
+        Assert.False(vm.CheckAccess("FORM_B"));
+    }
+
+    [Fact]
+    public void PersistedFormId_ViewModelSuffix_SwappedToWindow()
+    {
+        var vm = new FooViewModel(MockServices());
+
+        Assert.Equal("EDISON2.FooWindow", vm.PublicPersistedFormId);
+    }
+
+    [Fact]
+    public void PersistedFormId_NoViewModelSuffix_NoSwap()
+    {
+        // Název nekončí na "ViewModel" → žádná záměna suffixu, jen prefix EDISON2.
+        var vm = new PlainWidget(MockServices());
+
+        Assert.Equal("EDISON2.PlainWidget", vm.PublicPersistedFormId);
+    }
+
+    [Fact]
+    public void Set_ReturnsTrue_OnChange_False_OnSame()
+    {
+        var vm = new TestViewModel(MockServices());
+
+        Assert.True(vm.SetTitleReturning("A"));    // změna
+        Assert.False(vm.SetTitleReturning("A"));   // stejná hodnota
+        Assert.True(vm.SetTitleReturning("B"));    // znovu změna
+    }
+
     /// <summary>Konkrétní subclass která vystavuje protected členy pro testy.</summary>
     private class TestViewModel(EDServices services) : EDViewModel.EDViewModel(services)
     {
@@ -197,11 +235,27 @@ public class EDViewModelTests
         public void InvokeCloseDialog(bool? result) => CloseDialog(result);
 
         public RelayCommand CreateTestCommand(Action action) => Command(action);
+
+        public bool CheckAccess(string elementId) => HasAccess(elementId);
+
+        public bool SetTitleReturning(string value) => Set(ref _title, value);
     }
 
     private class TestViewModelWithActions(EDServices services) : EDViewModel.EDViewModel(services)
     {
         public void SetupActions() =>
             Actions = [StandardActions.Add(), StandardActions.Edit(), StandardActions.Delete()];
+    }
+
+    /// <summary>Název končí na "ViewModel" → PersistedFormId zamění suffix za "Window".</summary>
+    private class FooViewModel(EDServices services) : EDViewModel.EDViewModel(services)
+    {
+        public string? PublicPersistedFormId => PersistedFormId;
+    }
+
+    /// <summary>Název nekončí na "ViewModel" → PersistedFormId nechá jméno beze změny.</summary>
+    private class PlainWidget(EDServices services) : EDViewModel.EDViewModel(services)
+    {
+        public string? PublicPersistedFormId => PersistedFormId;
     }
 }

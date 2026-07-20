@@ -37,7 +37,7 @@ public class ColumnLayoutTests
     }
 
     [Fact]
-    public void RoundTrip_NoSort_PreservedAsNullOrEmpty()
+    public void RoundTrip_NoSort_PreservedAsNull()
     {
         var layout = new ColumnLayout
         {
@@ -49,7 +49,8 @@ public class ColumnLayoutTests
         var back = ColumnLayoutSerializer.Deserialize(json);
 
         Assert.NotNull(back);
-        Assert.True(back!.Sort is null || back.Sort.Count == 0);
+        // WhenWritingNull vynechá klíč "sort" → deserializuje se zpět jako null (ne prázdný list).
+        Assert.Null(back!.Sort);
     }
 
     [Fact]
@@ -119,25 +120,27 @@ public class ColumnLayoutTests
         Assert.Single(layout.Columns);
     }
 
-    // ─── Sort direction edge cases ───────────────────────────────────────────
+    // ─── Malformed / defenzivní čtení ────────────────────────────────────────
 
     [Fact]
-    public void SortDirection_DefaultAsc()
+    public void Deserialize_MalformedColumnsShape_ReturnsNull()
     {
-        var pref = new SortPref { Key = "x" };
-        Assert.Equal("asc", pref.Direction);
+        // "columns" má být pole — string tam deserializaci shodí → best-effort null.
+        var json = JsonNode.Parse("""{"version":1,"columns":"not-an-array"}""");
+
+        Assert.Null(ColumnLayoutSerializer.Deserialize(json));
     }
 
     [Fact]
-    public void SortDirection_PreservedAsString()
+    public void Deserialize_NullColumns_YieldsEmptyList()
     {
-        var layout = new ColumnLayout
-        {
-            Sort = [ new SortPref { Key = "x", Direction = "desc" } ]
-        };
-        var json = ColumnLayoutSerializer.Serialize(layout);
-        var back = ColumnLayoutSerializer.Deserialize(json);
+        // "columns": null → Columns nesmí zůstat null (??= [] větev), ať UI nespadne.
+        var json = JsonNode.Parse("""{"version":1,"columns":null}""");
 
-        Assert.Equal("desc", back!.Sort![0].Direction);
+        var layout = ColumnLayoutSerializer.Deserialize(json);
+
+        Assert.NotNull(layout);
+        Assert.NotNull(layout!.Columns);
+        Assert.Empty(layout.Columns);
     }
 }

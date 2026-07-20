@@ -928,4 +928,82 @@ public class EDInputFormParsingTests
         Assert.All(fields, f => Assert.True(f.IsFilteredBySearch));
         Assert.All(groups, g => Assert.True(g.IsFilteredBySearch));
     }
+
+    // ─── Min / Max / Format / Unit (pozice 15–18) ─────────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesMinMaxFormatUnit()
+    {
+        var data = new CVar();
+        // positions: ...12-helpText, 13-listItems, 14-fileFilter, 15-min, 16-max, 17-format, 18-unit
+        // Min/Max jsou InvariantCulture decimaly (tečka).
+        data["1"] = new CList("FIELD", "1", "cena", "Cena", "DECIMAL", "5.5", "0", "0",
+            "", "1", "0", "", "", "", "0.5", "9.5", "N2", "mm");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(0.5m, f.Min);
+        Assert.Equal(9.5m, f.Max);
+        Assert.Equal("N2", f.Format);
+        Assert.Equal("mm", f.Unit);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsMinMaxFormatUnit()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "cena", Label = "Cena", FieldType = EFieldType.Decimal,
+            Value = "5.5", Min = 0.5m, Max = 9.5m, Format = "N2", Unit = "mm"
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(0.5m, f.Min);
+        Assert.Equal(9.5m, f.Max);
+        Assert.Equal("N2", f.Format);
+        Assert.Equal("mm", f.Unit);
+    }
+
+    // ─── ComboBox listItems (sdílená pozice 13 s List) ────────────────────────
+
+    [Fact]
+    public void ParseItems_ParsesComboBoxListItems()
+    {
+        var data = new CVar();
+        // Position 13 = listItems — ComboBox sdílí storage s List.
+        data["1"] = new CList("FIELD", "1", "mesto", "Město", "COMBOBOX", "Praha", "0", "0",
+            "", "1", "0", "", "Praha|Brno|Ostrava");
+
+        var items = EDInputForm.EDInputForm.ParseItems(data);
+
+        var f = Assert.IsType<Field>(Assert.Single(items));
+        Assert.Equal(EFieldType.ComboBox, f.FieldType);
+        Assert.Equal(3, f.ListItems.Count);
+        Assert.Equal("Praha", f.ListItems[0].Key);
+        Assert.Equal("Brno", f.ListItems[1].Key);
+        Assert.Equal("Ostrava", f.ListItems[2].Key);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_RoundTripsComboBoxListItems()
+    {
+        var field = new Field
+        {
+            Number = 1, Key = "mesto", Label = "Město", FieldType = EFieldType.ComboBox,
+            Value = "Praha", ListItems = [new ListItem("Praha", "Praha"), new ListItem("Brno", "Brno")]
+        };
+
+        CVar serialized = EDInputForm.EDInputForm.SerializeItemsCVar([field]);
+        var parsed = EDInputForm.EDInputForm.ParseItems(serialized);
+
+        var f = Assert.IsType<Field>(Assert.Single(parsed));
+        Assert.Equal(EFieldType.ComboBox, f.FieldType);
+        Assert.Equal(2, f.ListItems.Count);
+        Assert.Equal("Praha", f.ListItems[0].Key);
+        Assert.Equal("Brno", f.ListItems[1].Key);
+    }
 }

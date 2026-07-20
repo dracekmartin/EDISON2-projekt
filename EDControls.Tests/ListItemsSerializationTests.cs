@@ -56,4 +56,37 @@ public class ListItemsSerializationTests
     {
         Assert.Empty(EDInputForm.EDInputForm.ParseListItems(""));
     }
+
+    [Fact]
+    public void Parse_EmptyEntriesSkipped()
+    {
+        // "A||B" → prázdná položka mezi oddělovači se zahodí (Where entry.Length > 0).
+        Assert.Equal(2, EDInputForm.EDInputForm.ParseListItems("A||B").Count);
+        // Trailing oddělovač nevytvoří prázdnou položku.
+        Assert.Single(EDInputForm.EDInputForm.ParseListItems("A|"));
+    }
+
+    [Fact]
+    public void Parse_LeadingSeparator_EmptyKey()
+    {
+        // "~Label" → IndexOf('~') == 0 → prázdný klíč, popisek "Label".
+        var item = Assert.Single(EDInputForm.EDInputForm.ParseListItems("~Label"));
+        Assert.Equal("", item.Key);
+        Assert.Equal("Label", item.Label);
+    }
+
+    [Fact]
+    public void Parse_LabelWithPipe_CorruptsRoundTrip()
+    {
+        // Známý limit wire formátu: oddělovač položek '|' v popisku se neescapuje, takže
+        // round-trip se rozpadne na víc položek ("A~a|b" → "A"/"a" + "b"/"b"). Dokumentační
+        // pin — produkci NEměnit (escaping by změnil kontrakt na obou stranách).
+        var original = new List<ListItem> { new("A", "a|b") };
+
+        var wire = EDInputForm.EDInputForm.SerializeListItems(original);
+        var roundTripped = EDInputForm.EDInputForm.ParseListItems(wire);
+
+        Assert.NotEqual(original, roundTripped);
+        Assert.Equal(2, roundTripped.Count);
+    }
 }

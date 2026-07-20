@@ -3,6 +3,9 @@ using NSubstitute;
 
 namespace EDControls.Tests;
 
+// Sdílí serializovanou kolekci s ostatními třídami sahajícími na EDServices.Current
+// (Initialize/Reset ve *_FallsBackToEDServicesCurrent testech) — viz SharedStaticStateCollection.
+[Collection(SharedStaticStateCollection.Name)]
 public class RelayCommandTests
 {
     private static EDServices ServicesWith(IPopupDisplayer popup) =>
@@ -109,6 +112,28 @@ public class RelayCommandTests
         var cmd = new RelayCommand<string>(_ => { }, _ => true);
 
         Assert.False(cmd.CanExecute(42));
+    }
+
+    [Fact]
+    public void Generic_NullPredicate_CanExecuteTrueForWrongType_ButExecuteNoOps()
+    {
+        // Kvórk: bez canExecute se typová kontrola dělá až uvnitř Execute, ne v CanExecute.
+        // CanExecute proto vrátí true i pro špatný typ → tlačítko je povolené, ale klik nic neudělá.
+        var invoked = false;
+        var cmd = new RelayCommand<string>(_ => invoked = true);
+
+        Assert.True(cmd.CanExecute(42));
+        cmd.Execute(42);
+        Assert.False(invoked);
+    }
+
+    [Fact]
+    public void Generic_Predicate_CanExecuteNull_False()
+    {
+        // null není T (string) → parameter is T t je false, predikát se ani nevolá.
+        var cmd = new RelayCommand<string>(_ => { }, _ => true);
+
+        Assert.False(cmd.CanExecute(null));
     }
 
     [Fact]

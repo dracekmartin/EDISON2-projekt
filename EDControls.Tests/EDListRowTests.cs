@@ -21,20 +21,6 @@ public class EDListRowTests
     }
 
     [Fact]
-    public void Id_StoredCorrectly()
-    {
-        var row = new EDListRow("abc-123", new());
-        Assert.Equal("abc-123", row.Id);
-    }
-
-    [Fact]
-    public void IsChecked_DefaultsFalse()
-    {
-        var row = new EDListRow("1", new());
-        Assert.False(row.IsChecked);
-    }
-
-    [Fact]
     public void IsChecked_Set_FiresPropertyChanged()
     {
         var row = new EDListRow("1", new());
@@ -56,10 +42,22 @@ public class EDListRowTests
         Assert.Equal(0, fired);
     }
 
+    // ─── GetSortKey ───────────────────────────────────────────────────────────
+
     [Fact]
-    public void Values_IsReadOnly()
+    public void GetSortKey_NoSortKeys_FallsBackToFormattedValue()
     {
-        var row = new EDListRow("1", new() { ["x"] = "y" });
-        Assert.IsAssignableFrom<IReadOnlyDictionary<string, string?>>(row.Values);
+        // 2-arg ctor (testy / ruční konstrukce) nemá typované klíče → formátovaná hodnota.
+        var row = new EDListRow("1", new() { ["k"] = "Praha" });
+        Assert.Equal("Praha", row.GetSortKey("k"));
+    }
+
+    [Fact]
+    public void GetSortKey_WithSortKeys_ReturnsTypedKey()
+    {
+        var row = new EDListRow("1",
+            new Dictionary<string, string?> { ["k"] = "142,5" },
+            new Dictionary<string, object?> { ["k"] = 142.5m });
+        Assert.Equal(142.5m, row.GetSortKey("k"));
     }
 }

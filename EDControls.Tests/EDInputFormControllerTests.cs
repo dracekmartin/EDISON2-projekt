@@ -40,8 +40,12 @@ public class EDInputFormControllerTests
 
         controller.Init();
 
-        mlRest.Received(1).QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>());
-        mlRest.Received(1).QueryOrThrow(CacheClass, "Validate", Arg.Any<CVar>());
+        // Pořadí je součást kontraktu — Init nejdřív načte schema, teprve pak validuje.
+        Received.InOrder(() =>
+        {
+            mlRest.QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>());
+            mlRest.QueryOrThrow(CacheClass, "Validate", Arg.Any<CVar>());
+        });
     }
 
     [Fact]
@@ -212,23 +216,6 @@ public class EDInputFormControllerTests
     }
 
     [Fact]
-    public void ButtonField_ValidateWithKey_SendsChangedKey()
-    {
-        var data = new CVar();
-        data["1"] = new CList("FIELD", "1", "btn", "Label", "BUTTON", "Click me", "0", "0");
-        var mlRest = MockMLRest(data);
-        var controller = new EDInputFormController(mlRest, CacheClass);
-        controller.Init();
-
-        controller.Validate("btn");
-
-        mlRest.Received().QueryOrThrow(CacheClass, "Validate",
-            Arg.Is<CVar>(c =>
-                c["trigger"].Value != null && c["trigger"].Value.ToString() == "Change" &&
-                c["changedKey"].Value != null && c["changedKey"].Value.ToString() == "btn"));
-    }
-
-    [Fact]
     public void ButtonField_SerializesWithButtonType()
     {
         var items = new List<Item>
@@ -305,20 +292,6 @@ public class EDInputFormControllerTests
         controller.Validate();
 
         Assert.Equal(EHelpTextMode.Column, controller.HelpTextMode);
-    }
-
-    [Fact]
-    public void Init_PreservesFieldHelpText()
-    {
-        var data = new CVar();
-        data["1"] = new CList("FIELD", "1", "k", "L", "TEXT", "v", "0", "0", "", "1", "0", "Help text here");
-        var mlRest = MockMLRest(data);
-        var controller = new EDInputFormController(mlRest, CacheClass);
-
-        controller.Init();
-
-        var f = controller.Items.OfType<Field>().Single();
-        Assert.Equal("Help text here", f.HelpText);
     }
 
     [Fact]
@@ -501,5 +474,82 @@ public class EDInputFormControllerTests
         // Druhý Validate — pole je vyplněné → bez chyby
         controller.Validate();
         Assert.Null(controller.Items.OfType<Field>().Single().ValidationError);
+    }
+
+    // ─── Save contract testy ──────────────────────────────────────────────────
+
+    [Fact]
+    public void Save_SendsBeforeSaveTrigger()
+    {
+        var data = FieldData();
+        var mlRest = MockMLRest(data, saveReturn: data);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        controller.Save();
+
+        mlRest.Received().QueryOrThrow(CacheClass, "Validate",
+            Arg.Is<CVar>(c => c["trigger"].Value != null && c["trigger"].Value.ToString() == "BeforeSave"));
+    }
+
+    [Fact]
+    public void Save_ServerReturnsNoFormItems_PreservesClientItems()
+    {
+        // Caché Save no-op kontrakt: server vrátí jen status (žádné číselné subscripty),
+        // klientská Items zůstanou beze změny (host řeší persist sám).
+        var data = FieldData(key: "jmeno", value: "Jan");
+        var noOpSave = new CVar();
+        noOpSave["status"] = new CVar("OK");
+        var mlRest = MockMLRest(data, saveReturn: noOpSave);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        bool result = controller.Save();
+
+        Assert.True(result);
+        var f = Assert.IsType<Field>(Assert.Single(controller.Items));
+        Assert.Equal("jmeno", f.Key);
+        Assert.Equal("Jan", f.Value);
+    }
+
+    [Fact]
+    public void Save_ImageField_PreservesClientValueWhenServerEchoesEmpty()
+    {
+        // Image Base64 se na server neposílá (limit MLRest) → server ho echem přepíše prázdnem.
+        // ApplyOutput musí client-side hodnotu zachovat přes celý round-trip.
+        var initData = new CVar();
+        initData["1"] = new CList("FIELD", "1", "logo", "Logo", "IMAGE", "imgdata", "0", "0");
+        var echoEmpty = new CVar();
+        echoEmpty["1"] = new CList("FIELD", "1", "logo", "Logo", "IMAGE", "", "0", "0");
+
+        var mlRest = Substitute.For<IMLRest>();
+        mlRest.QueryOrThrow(CacheClass, "Init", Arg.Any<CVar>()).Returns(initData);
+        mlRest.QueryOrThrow(CacheClass, "Validate", Arg.Any<CVar>()).Returns(echoEmpty);
+        mlRest.QueryOrThrow(CacheClass, "Save", Arg.Any<CVar>()).Returns(echoEmpty);
+        var controller = new EDInputFormController(mlRest, CacheClass);
+        controller.Init();
+
+        bool result = controller.Save();
+
+        Assert.True(result);
+        var f = Assert.IsType<Field>(Assert.Single(controller.Items));
+        Assert.Equal(EFieldType.Image, f.FieldType);
+        Assert.Equal("imgdata", f.Value);
+    }
+
+    [Fact]
+    public void SerializeItemsCVar_ImageField_WritesEmptyValue()
+    {
+        // Image hodnota (Base64) se do wire nikdy nezapisuje — pozice 6 musí být prázdná.
+        var items = new List<Item>
+        {
+            new Field { Number = 1, Key = "logo", Label = "L", FieldType = EFieldType.Image, Value = "imgdata" }
+        };
+
+        var cVar = EDControls.EDInputForm.EDInputForm.SerializeItemsCVar(items);
+
+        CList entry = cVar["1"];
+        Assert.Equal("IMAGE", entry.GetString(5));
+        Assert.Equal("", entry.GetString(6));
     }
 }

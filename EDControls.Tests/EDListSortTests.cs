@@ -11,12 +11,13 @@ public class EDListSortTests
     // ─── BuildSortKey ─────────────────────────────────────────────────────────
 
     [Theory]
-    [InlineData("142.5", "142,5")]
-    [InlineData("98", "98")]
-    public void BuildSortKey_Number_ParsesInvariantDecimal(string raw, string formatted)
+    [InlineData("142.5", "142,5", 142.5)]
+    [InlineData("98", "98", 98)]
+    public void BuildSortKey_Number_ParsesInvariantDecimal(string raw, string formatted, double expected)
     {
         var key = EDListSort.BuildSortKey(raw, EListColumnType.Number, formatted);
-        Assert.IsType<decimal>(key);
+        // Přesná hodnota, ne jen typ — culture bug parsující "142.5" jako 1425 musí spadnout.
+        Assert.Equal((decimal)expected, Assert.IsType<decimal>(key));
     }
 
     [Fact]
@@ -38,6 +39,22 @@ public class EDListSortTests
     {
         var key = EDListSort.BuildSortKey("2024-03-15", EListColumnType.Date, "15.03.2024");
         Assert.Equal(new DateTime(2024, 3, 15), key);
+    }
+
+    [Fact]
+    public void BuildSortKey_DateTime_ParsesIsoTimestamp()
+    {
+        // Wire formát DATETIME: yyyy-MM-ddTHH:mm:ss (viz EDList CLAUDE.md).
+        var key = EDListSort.BuildSortKey("2024-03-15T08:30:00", EListColumnType.DateTime, "15.03.2024 08:30");
+        Assert.Equal(new DateTime(2024, 3, 15, 8, 30, 0), key);
+    }
+
+    [Fact]
+    public void BuildSortKey_Date_UnparseableFallsBackToFormatted()
+    {
+        // Jen Number fallback byl pokrytý — Date musí padnout na formátovaný string taky.
+        var key = EDListSort.BuildSortKey("not-a-date", EListColumnType.Date, "??");
+        Assert.Equal("??", key);
     }
 
     [Theory]
@@ -83,6 +100,28 @@ public class EDListSortTests
         var newer = Row("b", "d", "2025-01-02", EListColumnType.Date, "02.01.2025");
         var cmp = new EDListRowComparer([("d", false)]);
         Assert.True(cmp.Compare(older, newer) < 0);
+    }
+
+    [Fact]
+    public void DateTime_SortsChronologically()
+    {
+        var earlier = Row("a", "ts", "2024-03-15T08:30:00", EListColumnType.DateTime, "15.03.2024 08:30");
+        var later   = Row("b", "ts", "2024-03-15T14:00:00", EListColumnType.DateTime, "15.03.2024 14:00");
+        var cmp = new EDListRowComparer([("ts", false)]);
+        Assert.True(cmp.Compare(earlier, later) < 0);
+    }
+
+    [Fact]
+    public void CompareCell_MixedTypes_ComparesWithoutThrowing()
+    {
+        // Stejný sloupec: jeden řádek parsovaný decimal, druhý fallback string ("n/a").
+        // CompareCell mezi nestejnými typy padá na stringové porovnání, nesmí házet.
+        var num = Row("a", "n", "142.5", EListColumnType.Number, "142,5");
+        var na  = Row("b", "n", "n/a",   EListColumnType.Number, "n/a");
+        var cmp = new EDListRowComparer([("n", false)]);
+
+        Assert.Null(Record.Exception(() => cmp.Compare(num, na)));
+        Assert.Null(Record.Exception(() => cmp.Compare(na, num)));   // symetricky
     }
 
     [Fact]
