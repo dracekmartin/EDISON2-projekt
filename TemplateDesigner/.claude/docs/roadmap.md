@@ -38,9 +38,16 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    **Render je defaultně skrývá** (přepínač „Projeté zastávky" vyp) → vizuálně OK, projeví se jen při jejich
    zapnutí. Fix = rozšířit `ObsluhaBitmap` filtr i na body PŘED aktuální (dnes filtruje jen za). Nízká priorita.
    (Odjezdy 1,5× = menší samostatná drobnost, projeté odjezdy nemají — taky neviditelné.)
-3. ⬜ **Rozdílové poznámky tras (alg 1001) A–K** — TD je negeneruje 1:1 (písmena/přiřazení vs legacy).
-   Souvisí s variantními trasami (#2). `DoplnitPoznamkuRozdilTrasy1001` volá stejnou legacy rutinu, ale
-   výsledek nesedí — prošetřit obsluha/spojTrasa bitmapy + přiřazení písmen.
+3. ⬜ **Rozdílové poznámky tras — SPOLEČNÝ KOŘEN S #2** (analýza 2026-07-20, PoznProbe na 1073/Chebská).
+   TD poznámky **generuje** (texty ve stylu legacy, „A: končí v Tržnice" sedí přesně), ale popisuje **jiné
+   rozdíly**: TD „W: nejede do zastávky Globus" vs legacy jinde „A: zajistí z Hory… do Jenišov". → oba
+   počítají rozdíl proti **jinému základu** (obsluha bitmapa / množina zastávek). To je **týž kořen jako #2**:
+   TD zahrnuje zastávky, které legacy vynechává → rozdíly tras počítá proti jiné množině → jiné poznámky.
+   **Barvy:** rozdílové poznámky nemají barvu ani v legacy (`fc=` prázdné na obou) → správně bez barvy;
+   barvu nesou jen číselníkové poznámky spoje (ty ji už berou).
+   **Fix #2+#3 dohromady:** srovnat TD `VypocitatBitmapyObsluhy` (obsluha/spojTrasa/rozdilTrasy) + filtr
+   zastávek v `SestavitJednuStranku` s legacy `LinkyPrintFormatMHD` — sjednotit množinu obsluhovaných
+   zastávek. Ověřit gold oraclem (1073 dep/zast/pozn → k legacy). Entry point: `VypocitatBitmapyObsluhy`.
 4. ⬜ **Rozšířit gold pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
 5. Diagnostika: read-only přemostěč `MhdLegacyOracle.CompareProbe` (numeric→named IN) — na dev serveru
    (necommitnutý; smazat po dořešení celého tracku).
