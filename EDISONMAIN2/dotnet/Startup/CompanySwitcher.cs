@@ -11,7 +11,9 @@ namespace EDISONMAIN2;
 /// <summary>
 /// Výsledek pokusu o přepnutí firmy. <see cref="LicenceAcquireOutcome.Accepted"/> značí, že
 /// MLRest má novou Idfa+Namespace a <see cref="Licence"/> je platná pro cílovou firmu.
-/// Jinak rollback proběhl a <see cref="Licence"/> je původní hodnota.
+/// Při neúspěchu je MLRest vrácen na původní firmu, ale <see cref="Licence"/> nese čerstvě
+/// načtenou licenci CÍLOVÉ firmy (z LicenceLoaderu), ne původní — caller ji na non-Accepted
+/// ignoruje.
 /// </summary>
 public record SwitchOutcome(LicenceAcquireOutcome Outcome, Lic? Licence);
 

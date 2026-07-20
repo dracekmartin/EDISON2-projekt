@@ -85,6 +85,18 @@ public class UserAuthenticatorTests
         Assert.Contains(fragment, ex.Message);
     }
 
+    [Theory]
+    [InlineData("garbage")]
+    [InlineData("")]
+    public void Login_NonNumericStatus_ThrowsLoginException(string response)
+    {
+        // Poškozená / prázdná odpověď serveru → LoginException, ne syrová FormatException.
+        var ml = MockWithResponse(response);
+
+        var ex = Assert.Throws<LoginException>(() => UserAuthenticator.Login(ml, "u", "p"));
+        Assert.Contains("Neplatná odpověď serveru", ex.Message);
+    }
+
     [Fact]
     public void Login_EmptyUsername_ThrowsBeforeServerCall()
     {
@@ -142,6 +154,27 @@ public class UserAuthenticatorTests
 
         Assert.False(r.Success);
         Assert.Equal("Heslo vyprselo pred 3 dny", r.Message);
+    }
+
+    [Fact]
+    public void ChangePassword_Status4_IgnoresServerText_FixedMessageWins()
+    {
+        // Asymetrie vůči kódům 2/3: u 4 se serverText ignoruje, hláška je pevná.
+        var r = UserAuthenticator.ChangePassword(
+            MockChangePassword($"4{D}vlastní text serveru"), "jan", "old", "new");
+
+        Assert.False(r.Success);
+        Assert.Equal("Změna hesla není možná (uživatel neexistuje).", r.Message);
+    }
+
+    [Fact]
+    public void ChangePassword_NonNumericStatus_FallsBackTo99()
+    {
+        // Nečíselný status → 99 (generická chyba), stejná větev jako explicitní 99.
+        var r = UserAuthenticator.ChangePassword(MockChangePassword("xyz"), "jan", "old", "new");
+
+        Assert.False(r.Success);
+        Assert.Contains("selhala", r.Message);
     }
 
     [Fact]

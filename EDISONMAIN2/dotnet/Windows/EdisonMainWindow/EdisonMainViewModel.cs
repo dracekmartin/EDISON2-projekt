@@ -478,7 +478,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             if (exe.IsLicensed && !(licence?.Elements?.Contains(exe.ElementId) ?? false))
                 return false;
             // AccessTable null = load nebyl proveden (typicky testy) → pass-through (graceful degradation).
-            if (access != null && !access.Contains(exe.ElementId))
+            // ElementId "" = legacy 4-field řádek bez ID → bez AP gate (parita s FAMILY větví).
+            if (access != null && exe.ElementId.Length > 0 && !access.Contains(exe.ElementId))
                 return false;
             return true;
         }

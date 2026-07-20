@@ -35,7 +35,10 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
             var data = output[1]?.ToString() ?? "";
             var parts = data.Split(mlRest.Delimiter);
-            int mlp = int.Parse(parts[0]);
+            // Nečíselný status (prázdná / poškozená odpověď serveru) → vlastní výjimka místo
+            // syrové FormatException, ať caller zobrazí smysluplnou hlášku.
+            if (!int.TryParse(parts[0], out int mlp))
+                throw new LoginException("Neplatná odpověď serveru.");
 
             if (mlp <= 0) throw new LoginException(GetErrorMessage(mlp));
 

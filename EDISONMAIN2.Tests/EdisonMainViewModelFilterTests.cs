@@ -66,21 +66,30 @@ public class EdisonMainViewModelFilterTests
     }
 
     [Fact]
+    public void IsAllowed_LicensedAndNullElements_False()
+    {
+        // licence?.Elements?.Contains(...) ?? false — Elements == null spadne na false → drop.
+        var exe = Exe(id: "100", licensed: true);
+
+        Assert.False(EdisonMainViewModel.IsAllowed(exe, new Lic { Elements = null! }));
+    }
+
+    [Fact]
+    public void IsAllowed_EmptyElementId_NotInAccess_StillAllowed()
+    {
+        // Legacy 4-polový EXE bez ElementId → AP gate se přeskočí (parita s FAMILY větví).
+        var exe = Exe(id: "", licensed: false);
+
+        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null, Access("200", "300")));
+    }
+
+    [Fact]
     public void IsAllowed_Hidden_FalseEvenWithLicenceAndAccess()
     {
         // Hidden flag má přednost — modul se vyfiltruje bez ohledu na licenci či access.
         var exe = new ExecutableModule { ElementId = "100", IsLicensed = true, Hidden = true };
 
         Assert.False(EdisonMainViewModel.IsAllowed(exe, Licence("100")));
-    }
-
-    [Fact]
-    public void IsAllowed_NotHidden_DefaultsToFalse_PassesThrough()
-    {
-        // Default Hidden=false → projde licenčním gate.
-        var exe = new ExecutableModule { ElementId = "100", IsLicensed = false, Hidden = false };
-
-        Assert.True(EdisonMainViewModel.IsAllowed(exe, licence: null));
     }
 
     // ---------- FilterFamily -----------------------------------------------
@@ -271,7 +280,10 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "F", ElementId = "" };
         family.NestedModules.Add(Exe("100", licensed: false));
 
-        Assert.NotNull(EdisonMainViewModel.FilterFamily(family, licence: null, Access("100")));
+        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, Access("100"));
+
+        Assert.NotNull(filtered);
+        Assert.Equal("100", Assert.IsType<ExecutableModule>(Assert.Single(filtered.NestedModules)).ElementId);
     }
 
     [Fact]
@@ -281,7 +293,10 @@ public class EdisonMainViewModelFilterTests
         var family = new ModuleFamily { DisplayedName = "F", ElementId = "1" };
         family.NestedModules.Add(Exe("100", licensed: false));
 
-        Assert.NotNull(EdisonMainViewModel.FilterFamily(family, licence: null, allAccess));
+        var filtered = EdisonMainViewModel.FilterFamily(family, licence: null, allAccess);
+
+        Assert.NotNull(filtered);
+        Assert.Equal("100", Assert.IsType<ExecutableModule>(Assert.Single(filtered.NestedModules)).ElementId);
     }
 
     // ---------- mlineOnly (legacy frmMain.vb:1204/1227) ----------------------

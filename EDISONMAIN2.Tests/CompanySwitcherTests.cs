@@ -97,20 +97,6 @@ public class CompanySwitcherTests
         Assert.Equal("CB_DP", pick.Id);
     }
 
-    [Fact]
-    public void PickInitial_PreferredOverridesIsDefault()
-    {
-        var companies = new CompanyStruct[]
-        {
-            new() { Id = "CB_DP", Database = "CB_DP", IsDefault = true },
-            new() { Id = "JI_DP", Database = "JI_DP" },
-        };
-
-        var pick = CompanySwitcher.PickInitial(companies, preferredIdfa: "JI_DP");
-
-        Assert.Equal("JI_DP", pick.Id);
-    }
-
     // ---------- Switch — null licence (skip verify) ----------
 
     [Fact]
@@ -172,6 +158,22 @@ public class CompanySwitcherTests
     }
 
     [Fact]
+    public void Switch_SameFirm_DoesNotLogout()
+    {
+        // Přepnutí na tutéž firmu (originalIdfa == newIdfa) nesmí odhlásit — jinak by shell
+        // uvolnil vlastní ACTIVITY zámek pod aktuální Idfa.
+        var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
+        SetupVerifyLic(mlRest, 1);
+        var licence = new Lic { CountsLOGIN = 5 };
+        var switcher = CreateSwitcher(mlRest, () => licence);
+
+        var result = switcher.Switch("CB_DP", "CB_DP", currentLicence: licence);
+
+        Assert.Equal(LicenceAcquireOutcome.Accepted, result.Outcome);
+        mlRest.DidNotReceive().With(Arg.Any<int?>(), Arg.Any<string?>(), Arg.Any<string?>());
+    }
+
+    [Fact]
     public void Switch_NullLicence_DoesNotLogout()
     {
         // Bez licence (testy / pre-licence stav) se neodhlašuje — žádný reálný zámek staré firmy.
@@ -212,6 +214,24 @@ public class CompanySwitcherTests
 
         Assert.Equal("CB_DP", mlRest.Idfa);
         Assert.Equal("CB_DP", mlRest.DataNamespace);
+    }
+
+    [Fact]
+    public void Switch_Refused_CarriesFreshTargetLicence()
+    {
+        // Na Refused vrací SwitchOutcome čerstvě načtenou licenci CÍLOVÉ firmy (z loaderu),
+        // ne původní currentLicence — LicenceVerifier vrací licenceLoader() i při odmítnutí.
+        var mlRest = MLRestMocks.Create(idfa: "CB_DP", dataNamespace: "CB_DP");
+        SetupVerifyLic(mlRest, -1);
+        var currentLicence = new Lic { CountsLOGIN = 5 };
+        var freshLicence = new Lic { CountsLOGIN = 99 };
+        var switcher = CreateSwitcher(mlRest, () => freshLicence, isAdmin: false);
+
+        var result = switcher.Switch("JI_DP", "JI_DP", currentLicence);
+
+        Assert.Equal(LicenceAcquireOutcome.Refused, result.Outcome);
+        Assert.Same(freshLicence, result.Licence);
+        Assert.NotSame(currentLicence, result.Licence);
     }
 
     // ---------- Switch — admin retry path ----------

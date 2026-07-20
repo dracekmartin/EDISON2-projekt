@@ -43,7 +43,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
                 if (!Contains(id) && Resolve(id) is { } module)
                 {
                     module.IsFavorite = true;
-                    module.FavoriteSlot = slotsByElementId?.GetValueOrDefault(id) ?? order;
+                    // TryGetValue, ne GetValueOrDefault — default 0 by kolidoval se slotem 0.
+                    module.FavoriteSlot = slotsByElementId != null && slotsByElementId.TryGetValue(id, out var slot)
+                        ? slot : order;
                     Favorites.Add(module);
                     order++;
                 }

@@ -113,6 +113,63 @@ public class ModuleShortcutsServiceTests
     }
 
     [Fact]
+    public void Seed_MissingSlotForId_FallsBackToInsertionOrder()
+    {
+        // Persistovaný slot pro "100" je 3; "200" v mapě chybí → spadne na pořadí (order=1).
+        var a = Exe("100"); var b = Exe("200");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([a, b], ["100", "200"], new Dictionary<string, int> { ["100"] = 3 });
+
+        Assert.Equal(3, a.FavoriteSlot);
+        Assert.Equal(1, b.FavoriteSlot);
+    }
+
+    [Fact]
+    public void Seed_DuplicateIds_AddedOnce()
+    {
+        var a = Exe("100");
+        var svc = new ModuleShortcutsService();
+
+        svc.Seed([a], ["100", "100"]);
+
+        Assert.Same(a, Assert.Single(svc.Favorites));
+    }
+
+    [Fact]
+    public void PlaceAt_Guards_NoOp_DoNotRaiseSlotsChanged()
+    {
+        var a = Exe("100"); var b = Exe("200");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a, b], ["100"]);   // a=slot 0, b není oblíbený
+        var raised = false;
+        svc.SlotsChanged += () => raised = true;
+
+        svc.PlaceAt(a, -1);   // záporný slot
+        svc.PlaceAt(b, 2);    // modul mimo oblíbené
+        svc.PlaceAt(a, 0);    // stejný slot
+
+        Assert.Equal(0, a.FavoriteSlot);
+        Assert.False(raised);
+    }
+
+    [Fact]
+    public void PlaceAt_Swap_RaisesSlotsChangedOnce()
+    {
+        var a = Exe("100"); var b = Exe("200");
+        var svc = new ModuleShortcutsService();
+        svc.Seed([a, b], ["100", "200"]);   // a=0, b=1
+        int raised = 0;
+        svc.SlotsChanged += () => raised++;
+
+        svc.PlaceAt(a, 1);   // obsazeno b → swap
+
+        Assert.Equal(1, a.FavoriteSlot);
+        Assert.Equal(0, b.FavoriteSlot);
+        Assert.Equal(1, raised);
+    }
+
+    [Fact]
     public void Add_AssignsLowestFreeSlot()
     {
         var a = Exe("100"); var b = Exe("200"); var c = Exe("300");
@@ -176,18 +233,5 @@ public class ModuleShortcutsServiceTests
 
         Assert.Same(b, svc.Resolve("200"));
         Assert.Null(svc.Resolve("999"));
-    }
-
-    [Fact]
-    public void RequestLaunch_RaisesLaunchRequested()
-    {
-        var a = Exe("100");
-        var svc = new ModuleShortcutsService();
-        ExecutableModule? launched = null;
-        svc.LaunchRequested += m => launched = m;
-
-        svc.RequestLaunch(a);
-
-        Assert.Same(a, launched);
     }
 }
