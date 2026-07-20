@@ -342,6 +342,36 @@ public class ParseTreeTests
     }
 
     [Fact]
+    public void ParseTree_RowOrderPreserved_TenPlusRows()
+    {
+        // CVar zachovává pořadí subscriptů z wire (Caché posílá numerické subscripty v numerickém
+        // pořadí) — ParseTree je nesmí přeskládat na řetězcové řazení: "10" patří za "9", ne za "1".
+        var data = new CVar();
+        for (int i = 1; i <= 12; i++)
+            data[i.ToString()] = new CList("EXE", "M" + i, "m" + i + ".exe", "F");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        Assert.Equal(
+            Enumerable.Range(1, 12).Select(i => "M" + i),
+            tree.Select(m => m.DisplayedName));
+    }
+
+    [Fact]
+    public void ParseTree_IsLicensedMinusOne_ParsesAsFalse()
+    {
+        // isLicensed je striktní == "1" — narozdíl od VB-style login booleanů (commit 02765e9),
+        // kde -1 = true. Tady "-1" (ani jiné nenulové) NEznačí licencováno.
+        var data = new CVar();
+        data["1"] = new CList("EXE", "X", "x.exe", "F", "100", "-1");
+
+        var tree = ModuleTreeGetter.ParseTree(data);
+
+        var mod = Assert.IsType<ExecutableModule>(Assert.Single(tree));
+        Assert.False(mod.IsLicensed);
+    }
+
+    [Fact]
     public void GetModuleTree_EndToEnd_CallsMockAndParsesResult()
     {
         var data = new CVar();

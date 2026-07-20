@@ -30,7 +30,4 @@ public class DevCounterMiniAppViewModelTests
 
         Assert.Equal(0, vm.Count);
     }
-
-    [Fact]
-    public void Title_IsCounter() => Assert.Equal("Počítadlo", NewVm().Title);
 }

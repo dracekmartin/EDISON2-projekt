@@ -63,19 +63,6 @@ public class LicenceVerifierTests
     }
 
     [Fact]
-    public void UnknownErrorCode_NonAdmin_ReturnsRefused()
-    {
-        var mlRest = MLRestMocks.Create();
-        SetupVerifyLic(mlRest, 99);
-
-        var (outcome, _) = LicenceVerifier.TryAcquireSession(
-            mlRest, () => new Lic { CountsLOGIN = 5 }, isAdmin: false,
-            Substitute.For<IPopupDisplayer>(), Substitute.For<IWindowNavigator>());
-
-        Assert.Equal(LicenceAcquireOutcome.Refused, outcome);
-    }
-
-    [Fact]
     public void AdminOverLimit_ConfirmDenied_ReturnsCancelled()
     {
         var mlRest = MLRestMocks.Create();

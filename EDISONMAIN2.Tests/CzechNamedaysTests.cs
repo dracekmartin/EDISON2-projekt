@@ -36,6 +36,30 @@ public class CzechNamedaysTests
     }
 
     [Fact]
+    public void GetByDate_EveryDayOf2024_OnlyStateHolidaysReturnNull()
+    {
+        // Integrita měsíčních polí (přestupný rok = i 29.2): každý platný kalendářní den se musí
+        // trefit do záznamu. Null smí vrátit jen státní svátek bez jmenného nositele (prázdný
+        // string) — špatná délka pole by přes guard Day > month.Length vrátila null i pro validní den.
+        var expectedNull = new HashSet<DateOnly>
+        {
+            new(2024, 1, 1),  new(2024, 1, 6),
+            new(2024, 5, 1),  new(2024, 5, 8),
+            new(2024, 7, 6),
+            new(2024, 10, 28),
+            new(2024, 11, 2),
+            new(2024, 12, 25),
+        };
+
+        var actualNull = new List<DateOnly>();
+        for (var d = new DateOnly(2024, 1, 1); d.Year == 2024; d = d.AddDays(1))
+            if (CzechNamedays.GetByDate(d) is null)
+                actualNull.Add(d);
+
+        Assert.Equal(expectedNull.OrderBy(x => x), actualNull.OrderBy(x => x));
+    }
+
+    [Fact]
     public void BuildInformationText_WithNameday_IncludesSvatekMaSuffix()
     {
         var text = EDISONMAIN2.Windows.EdisonMainWindow.EdisonMainViewModel.BuildInformationText(

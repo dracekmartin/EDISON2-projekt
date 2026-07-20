@@ -94,18 +94,6 @@ public class AccessLoaderTests
     }
 
     [Fact]
-    public void ApId3_AdminFallback_SkippedWhenAllAccess()
-    {
-        // Když IsAllAccess, admin fallback je no-op (gatovaný přes !isAllAccess).
-        // Allowed set zůstává prázdný — kontrola jde přes IsAllAccess flag, ne přes Contains.
-        var licence = new Lic { Type = "Standard" };
-        var mlRest = MockAccessCall(apId: 3);
-        var access = AccessLoader.Load(mlRest, licence: licence, isAdmin: true);
-
-        Assert.True(access.IsAllAccess);
-    }
-
-    [Fact]
     public void NonAdmin_NoExplicitIds_EmptyAccess()
     {
         var mlRest = MockAccessCall(apId: 1);

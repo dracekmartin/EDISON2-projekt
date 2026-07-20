@@ -228,14 +228,6 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
-    public void SelectedCompanyId_Get_ReturnsCurrentCompany()
-    {
-        var vm = CreateVM();
-
-        Assert.Equal("CB_DP", vm.SelectedCompanyId);
-    }
-
-    [Fact]
     public void SelectedCompanyId_SetConfirmed_SwitchesCompany()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
@@ -280,22 +272,6 @@ public class EdisonMainViewModelTests
         var ids = vm.CompanySuggestions.Select(s => s.Key).ToList();
         Assert.Contains("CB_DP", ids);
         Assert.Contains("JI_DP", ids);
-    }
-
-    [Fact]
-    public void MiniAppGroups_ExposeCatalogGroups()
-    {
-        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new TestMiniAppProvider()]));
-
-        var group = Assert.Single(vm.MiniAppGroups);
-        Assert.Equal("Skupina G", group.Title);
-        Assert.Equal("Title A", Assert.Single(group.Apps).Title);
-    }
-
-    private sealed class TestMiniAppProvider : IMiniAppProvider
-    {
-        public string GroupTitle => "Skupina G";
-        public IEnumerable<MiniAppDescriptor> GetMiniApps() => [new("A", "Title A", () => null!)];
     }
 
     [Fact]

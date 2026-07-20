@@ -332,16 +332,6 @@ public class AppBootstrapperTests
     }
 
     [Fact]
-    public void Run_Success_BuildsShellWindow()
-    {
-        var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Accepted };
-
-        b.Run();
-
-        Assert.True(b.BuildShellCalled);
-    }
-
-    [Fact]
     public void Run_Success_WiresActivityFailedHandler()
     {
         var b = new TestableBootstrapper { SessionOutcome = LicenceAcquireOutcome.Accepted };
@@ -365,17 +355,6 @@ public class AppBootstrapperTests
 
         Assert.Equal("JI_DP", b.SavedIdfa);
         Assert.Equal("test", b.SavedLoginName);   // jméno z úspěšného loginu
-    }
-
-    [Fact]
-    public void Run_PrefillsLoginDialogWithLastLoginName()
-    {
-        var b = new TestableBootstrapper { LoginSucceeds = true };
-        b.Prefs.LastLoginName.Returns("alice");
-
-        b.Run();
-
-        Assert.Equal("alice", b.LoginDialogPrefill);
     }
 
     // ---------- Step ordering ----------

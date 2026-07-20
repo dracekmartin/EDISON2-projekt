@@ -45,4 +45,83 @@ public class ModuleLaunchabilityCheckTests
         Assert.Equal("#FF0000", marked.Color);
         Assert.EndsWith(" — chybí exe", marked.DisplayedName);
     }
+
+    // ---------- Agregace rodiny (MarkFamily) --------------------------------
+
+    private static ExecutableModule Launchable(string name = "Live") =>
+        new() { DisplayedName = name, ExecutablePath = ExistingExeName, FormName = "X" };
+
+    private static ExecutableModule Stub(string name = "Stub") =>
+        new() { DisplayedName = name, ExecutablePath = "", FormName = "" };
+
+    private static ExecutableModule Broken(string name = "Broken") =>
+        new() { DisplayedName = name, ExecutablePath = "neexistuje_xyz.exe", FormName = "X" };
+
+    [Fact]
+    public void MarkFamily_BrokenGrandchild_PropagatesRedToFamilyAndGrandparent()
+    {
+        // Rozbité vnouče → červená „rozbité" propaguje na rodinu i prarodiče (sbalená větev signalizuje).
+        var parent = new ModuleFamily { DisplayedName = "P" };
+        parent.NestedModules.Add(Broken());
+        var grandparent = new ModuleFamily { DisplayedName = "GP" };
+        grandparent.NestedModules.Add(parent);
+
+        var markedGp = (ModuleFamily)ModuleLaunchabilityCheck.Mark(grandparent);
+
+        Assert.Equal("#FF0000", markedGp.Color);
+        Assert.Equal("GP — rozbité", markedGp.DisplayedName);
+        var markedParent = Assert.IsType<ModuleFamily>(Assert.Single(markedGp.NestedModules));
+        Assert.Equal("#FF0000", markedParent.Color);
+        Assert.Equal("P — rozbité", markedParent.DisplayedName);
+    }
+
+    [Fact]
+    public void MarkFamily_LaunchableWinsOverStub_NoColorNoSuffix()
+    {
+        var family = new ModuleFamily { DisplayedName = "F" };
+        family.NestedModules.Add(Launchable());
+        family.NestedModules.Add(Stub());
+
+        var marked = (ModuleFamily)ModuleLaunchabilityCheck.Mark(family);
+
+        Assert.Equal("", marked.Color);
+        Assert.Equal("F", marked.DisplayedName);
+    }
+
+    [Fact]
+    public void MarkFamily_OnlyStubs_MarkedOrangeStuby()
+    {
+        var family = new ModuleFamily { DisplayedName = "F" };
+        family.NestedModules.Add(Stub("A"));
+        family.NestedModules.Add(Stub("B"));
+
+        var marked = (ModuleFamily)ModuleLaunchabilityCheck.Mark(family);
+
+        Assert.Equal("#FFA500", marked.Color);
+        Assert.Equal("F — stuby", marked.DisplayedName);
+    }
+
+    [Fact]
+    public void MarkFamily_CopiesNodeMetadata()
+    {
+        // Ruční kopie v MarkFamily musí zachovat všechna pole uzlu — jinak by se při obarvení
+        // stromu ztratil ElementId / licenční / mlineOnly flag. Launchovatelné dítě → beze suffixu.
+        var family = new ModuleFamily
+        {
+            DisplayedName = "Kmenová evidence",
+            IsExpanded    = true,
+            ElementId     = "42",
+            IsLicensed    = true,
+            MlineOnly     = true,
+        };
+        family.NestedModules.Add(Launchable());
+
+        var marked = (ModuleFamily)ModuleLaunchabilityCheck.Mark(family);
+
+        Assert.Equal("Kmenová evidence", marked.DisplayedName);
+        Assert.True(marked.IsExpanded);
+        Assert.Equal("42", marked.ElementId);
+        Assert.True(marked.IsLicensed);
+        Assert.True(marked.MlineOnly);
+    }
 }
