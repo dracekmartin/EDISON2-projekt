@@ -32,9 +32,12 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
    Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
    Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
-2. ⬜ **Počty na složitých linkách (KV_DP 1073): odjezdy 1,5× / zastávky 2×** — REÁLNÁ divergence (CB_DP
-   sedí přesně, takže ne artefakt). Stránky sedí → jde o **per-stránka obsah**: které zastávky se v levém
-   seznamu zobrazí (handling variantních tras / obsluha bitmapy). Pravděpodobně **společný kořen s #3**.
+2. 🟢 **Zastávky 2× = PROJETÉ zastávky (nízká priorita, neviditelné).** Změřeno (KV_DP 1073): TD celkem
+   1317 zastávek, z toho **833 projetých** (před aktuální), 484 neprojetých; legacy 693. TD zahrnuje před
+   aktuální zastávkou **VŠECHNY body i neobsluhované**, legacy jen obsluhované → 4× víc projetých v datech.
+   **Render je defaultně skrývá** (přepínač „Projeté zastávky" vyp) → vizuálně OK, projeví se jen při jejich
+   zapnutí. Fix = rozšířit `ObsluhaBitmap` filtr i na body PŘED aktuální (dnes filtruje jen za). Nízká priorita.
+   (Odjezdy 1,5× = menší samostatná drobnost, projeté odjezdy nemají — taky neviditelné.)
 3. ⬜ **Rozdílové poznámky tras (alg 1001) A–K** — TD je negeneruje 1:1 (písmena/přiřazení vs legacy).
    Souvisí s variantními trasami (#2). `DoplnitPoznamkuRozdilTrasy1001` volá stejnou legacy rutinu, ale
    výsledek nesedí — prošetřit obsluha/spojTrasa bitmapy + přiřazení písmen.
