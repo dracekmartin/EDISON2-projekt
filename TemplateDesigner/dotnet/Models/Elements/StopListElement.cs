@@ -160,9 +160,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         for (int i = 0; i < stopNameIdx && i < columns.Count; i++) stopNameLeftMm += colW[columns[i]];
         float stopNameRightMm = stopNameLeftMm + (stopNameIdx >= 0 && stopNameIdx < columns.Count ? colW[columns[stopNameIdx]] : 0f);
 
+        // Symbolový font pro piktogramové značky (MHD „na znamení" = drátový kód „D" → piktogram).
+        var symbolFace = GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture));
+
         // Šířka sub-cell pro značky (BeforeName) — auto-fit podle nejširšího marker textu v datech.
         float markersSubCellWidth = MarkersPosition == StopMarkersSide.BeforeName
-            ? ComputeMarkersSubCellWidth(zastavky, effectiveFontSize, ctx.MmToPx)
+            ? ComputeMarkersSubCellWidth(zastavky, effectiveFontSize, ctx.MmToPx, symbolFace)
             : 0f;
 
         // Asymetrická pozice šipky:
@@ -225,6 +228,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
                     var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW);
                     ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
+
+                    // Značky (na znamení / atributy / poznámky) se kreslí zvlášť po úsecích: piktogramové
+                    // symboly symbolovým Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky
+                    // normálním fontem. V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
+                    DrawStopMarkers(ctx, z, currentY, rowH, columns[stopNameIdx], stopNameLeftMm,
+                        colW[columns[stopNameIdx]], markersSubCellWidth, isCurrent, isPassed, symbolFace, scale);
 
                     if (ShowRowSeparators)
                     {
@@ -361,7 +370,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             {
                 var nameStyle = ResolveRowStyle(col, isCurrent, isPassed);
                 var markerStyle = nameStyle with { HAlign = TextHorizontalAlignment.Right };
-                result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, GetStopMarkersText(z), markerStyle);
+                // Text značek prázdný — kreslí je DrawStopMarkers zvlášť (per-run font). Sub-cell drží jen šířku a pozadí.
+                result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", markerStyle);
                 result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle);
             }
             else
@@ -605,54 +615,134 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     /// <summary>
     /// Spočítá optimální šířku sub-cell pro značky (mm) podle nejširšího marker textu v datech.
-    /// 0 = žádné značky → není potřeba split. Padding zajistí vizuální vzdušnost.
+    /// 0 = žádné značky → není potřeba split. Měří per-úsek jeho fontem (piktogramy symbolovým),
+    /// aby šířka seděla i pro pictogramové znaky. Padding zajistí vizuální vzdušnost.
     /// </summary>
-    private float ComputeMarkersSubCellWidth(List<ZastavkaData> zastavky, float fontSizePt, float mmToPx)
+    private float ComputeMarkersSubCellWidth(List<ZastavkaData> zastavky, float fontSizePt, float mmToPx, SKTypeface symbolFace)
     {
         if (zastavky.Count == 0) return 0f;
         float fontPx = fontSizePt * PtToMm * mmToPx;
         using var font = new SKFont(GetTypeface(ResolveColumnDataParent().FontFamily), fontPx);
+        using var symbolFont = new SKFont(symbolFace, fontPx);
         float maxPx = 0f;
         foreach (var z in zastavky)
         {
-            var t = GetStopMarkersText(z);
-            if (t.Length > 0)
-            {
-                float w = font.MeasureText(t);
-                if (w > maxPx) maxPx = w;
-            }
+            float w = 0f;
+            foreach (var r in BuildStopMarkerRuns(z))
+                w += (r.Symbol ? symbolFont : font).MeasureText(r.Text);
+            if (w > maxPx) maxPx = w;
         }
         return maxPx > 0 ? maxPx / mmToPx + MarkersSubCellPaddingMm : 0f;
     }
 
-    /// <summary>Zformátovaný text značek pro zastávku (na znamení, atributy, poznámky).</summary>
-    /// <remarks>Při BeforeName se používá pro samostatnou sub-cell před názvem (aby názvy zůstaly zarovnané). Při AfterName se přidává jako suffix do názvu.</remarks>
-    private string GetStopMarkersText(ZastavkaData z)
-    {
-        var parts = new List<string>();
-        // „Na znamení" má dvě podoby: dedikované pole zastávky (mock data) NEBO atribut s popisem
-        // „na znamení" (ostrá AD i MHD data ho posílají jako atribut, ne přes pole). Obojí řídí
-        // přepínač „Na znamení" (ShowSignalStopIndicator) — vypnutí schová značku i řádek legendy.
-        if (ShowSignalStopIndicator && z.NaZnameni)
-            parts.Add(SignalStopSymbol);
+    /// <summary>Jeden úsek značek se svým fontem: <c>Symbol</c>=true → piktogramový Timetable font,
+    /// jinak normální font.</summary>
+    private readonly record struct MarkerRun(string Text, bool Symbol);
 
+    /// <summary>
+    /// Značky zastávky (na znamení, atributy, poznámky) rozdělené na úseky podle fontu.
+    /// Piktogramové symboly (jednoznakový SpecZnak, který není textové „x/y/z") jdou symbolovým
+    /// Timetable fontem — bez toho MHD „na znamení" (kód „D") vykreslí surové písmeno „D".
+    /// Textové značky a poznámky jdou normálním fontem (AD „x" zůstává „x"). Úseky navzájem
+    /// oddělené mezerou (shodně s dřívějším spojeným textem).
+    /// </summary>
+    private List<MarkerRun> BuildStopMarkerRuns(ZastavkaData z)
+    {
+        var runs = new List<MarkerRun>();
+        void Separator() { if (runs.Count > 0) runs.Add(new MarkerRun(" ", false)); }
+
+        // „Na znamení" přes dedikované pole (mock data) — zobrazovací symbol, normální font.
+        if (ShowSignalStopIndicator && z.NaZnameni)
+            runs.Add(new MarkerRun(SignalStopSymbol, false));
+
+        // Atributy — každý vlastní úsek (piktogram, pokud jednoznakový a ne textové „x/y/z").
         if (z.Atributy.Count > 0)
         {
             var excluded = GetExcludedSet();
-            var symbolStr = string.Join("", z.Atributy
+            var attrs = z.Atributy
                 .Where(a => !excluded.Contains(a.Znak))
                 .Where(a => IsNaZnameniAttr(a) ? ShowSignalStopIndicator : ShowStopAttributes)
-                .Select(a => a.Znak));
-            if (symbolStr.Length > 0) parts.Add(symbolStr);
+                .ToList();
+            if (attrs.Count > 0)
+            {
+                Separator();
+                foreach (var a in attrs)
+                    runs.Add(new MarkerRun(a.Znak, a.Znak.Length == 1 && !SymbolJeText(a.Znak)));
+            }
         }
 
+        // Poznámky zastávky — textové značky (legenda je má jako „text"), normální font.
         if (ShowStopNotes && z.PoznamkyZastavky.Count > 0)
         {
             var noteSymbols = string.Join("", z.PoznamkyZastavky.Select(p => p.Znak));
-            if (noteSymbols.Length > 0) parts.Add(noteSymbols);
+            if (noteSymbols.Length > 0)
+            {
+                Separator();
+                runs.Add(new MarkerRun(noteSymbols, false));
+            }
         }
 
-        return parts.Count == 0 ? "" : string.Join(" ", parts);
+        return runs;
+    }
+
+    /// <summary>Vykreslí značky zastávky po úsecích (per-run font). BeforeName → do rezervované
+    /// sub-cell před názvem (zarovnané vpravo); AfterName → za text názvu. Volá se po DrawRow.</summary>
+    private void DrawStopMarkers(RenderContext ctx, ZastavkaData z, float rowTopMm, float rowH,
+        StopColumn nameCol, float stopNameLeftMm, float nameColWidthMm, float markersSubCellWidth,
+        bool isCurrent, bool isPassed, SKTypeface symbolFace, float scale)
+    {
+        var runs = BuildStopMarkerRuns(z);
+        if (runs.Count == 0) return;
+        var style = ResolveRowStyle(nameCol, isCurrent, isPassed);
+
+        if (MarkersPosition == StopMarkersSide.BeforeName)
+        {
+            if (markersSubCellWidth <= 0) return;
+            var cellMm = new SKRect(stopNameLeftMm, rowTopMm, stopNameLeftMm + markersSubCellWidth, rowTopMm + rowH);
+            var contentMm = CellLayout.ApplyPadding(cellMm, style);
+            DrawMarkerRuns(ctx, contentMm, runs, style, symbolFace, scale, TextHorizontalAlignment.Right, startAfterNamePx: null);
+        }
+        else
+        {
+            // AfterName: za názvem — odměř šířku názvu ve stejném fontu a začni značky za ní.
+            var cellMm = new SKRect(stopNameLeftMm, rowTopMm, stopNameLeftMm + nameColWidthMm, rowTopMm + rowH);
+            var contentMm = CellLayout.ApplyPadding(cellMm, style);
+            using var nameFont = style.CreateFont(scale, ctx.MmToPx);
+            float nameWidthPx = nameFont.MeasureText(BuildStopDisplayText(z));
+            float spacePx = nameFont.MeasureText(" ");
+            var m = nameFont.Metrics;
+            var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
+            var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
+            var (nameX, _) = CellLayout.TextAnchorPx(tl, br, nameWidthPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
+            DrawMarkerRuns(ctx, contentMm, runs, style, symbolFace, scale, TextHorizontalAlignment.Left, startAfterNamePx: nameX + nameWidthPx + spacePx);
+        }
+    }
+
+    /// <summary>Nakreslí úseky značek do obsahové oblasti. <paramref name="startAfterNamePx"/> = pevný
+    /// začátek X (za názvem, AfterName); null = zarovná celý blok dle <paramref name="hAlign"/> (BeforeName).</summary>
+    private void DrawMarkerRuns(RenderContext ctx, SKRect contentMm, List<MarkerRun> runs,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale, TextHorizontalAlignment hAlign, float? startAfterNamePx)
+    {
+        using var normalFont = style.CreateFont(scale, ctx.MmToPx);
+        using var symbolFont = new SKFont(symbolFace, normalFont.Size);
+        using var paint = style.CreateTextPaint();
+
+        var m = normalFont.Metrics;
+        var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
+        var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
+
+        float totalPx = 0f;
+        foreach (var r in runs) totalPx += (r.Symbol ? symbolFont : normalFont).MeasureText(r.Text);
+
+        var (anchorX, baselineY) = CellLayout.TextAnchorPx(tl, br, totalPx, -m.Ascent, m.Descent, hAlign, style.VAlign);
+        float xPx = startAfterNamePx ?? anchorX;
+
+        foreach (var r in runs)
+        {
+            var f = r.Symbol ? symbolFont : normalFont;
+            ctx.Canvas.DrawText(r.Text, xPx, baselineY, f, paint);
+            xPx += f.MeasureText(r.Text);
+        }
     }
 
     /// <summary>Je atribut zastávky „na znamení"? AD i MHD ho posílají jako atribut (ne přes pole
@@ -667,12 +757,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         if (ShowStopIndentation && z.Odsazeni > 0)
             name = new string(' ', z.Odsazeni) + name;
 
-        // BeforeName → značky jdou do samostatné sub-cell před názvem (handled v render loop).
-        if (MarkersPosition == StopMarkersSide.BeforeName)
-            return name;
-
-        var markers = GetStopMarkersText(z);
-        return markers.Length == 0 ? name : name + " " + markers;
+        // Značky (na znamení / atributy / poznámky) kreslí DrawStopMarkers zvlášť po úsecích
+        // (per-run font) — v obou režimech (Before/AfterName). Buňka názvu nese jen název.
+        return name;
     }
 
     // ─── PropertyDescriptors ────────────────────────────────────────────────

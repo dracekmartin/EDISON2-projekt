@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-20 — StopList: značky přes symbolový font (MHD „na znamení" konzistentní s legendou)
+
+Značky u zastávek (na znamení, atributy, poznámky) se ve StopListu kreslily **normálním fontem**, takže
+MHD „na znamení" (drátový kód SpecZnak 68) se ukázalo jako **surové písmeno „D"** místo piktogramu —
+zatímco legenda a mřížka odjezdů (které symbolový Timetable font už používaly) ukázaly správný piktogram.
+Nekonzistence hlášená z DPKV/MHD (U Jara „D", Panorama „D"; legenda „× na znamení").
+
+- **Fix:** značky se kreslí **po úsecích s vlastním fontem** (`BuildStopMarkerRuns` + `DrawStopMarkers`):
+  jednoznakový SpecZnak, který není textové „x/y/z", jde symbolovým Timetable fontem (piktogram);
+  textové značky (AD „x") a poznámky normálním fontem. V jedné buňce nejde míchat font → značky
+  oddělené od názvu a kreslené zvlášť, přes sdílené `CellLayout` helpery (zarovnání beze změny).
+  Platí pro obě pozice značek (před/za názvem) i auto-šířku sub-buňky.
+- **Agenda-agnostické:** žádná AD/MHD větev — rozdíl je jen v datech (SpecZnak číselníku firmy).
+  AD „x" zůstává „x", MHD „D" → piktogram; StopList teď jede stejnou symbolovou cestou jako
+  NotesLegend/DepartureGrid (uzavírá mezeru symbolového fontu C2 pro StopList). Relates #10660 (DPKV).
+
 ## 2026-07-15 — Tiskové parametry per šablona (obsahové)
 
 Hodnoty **obsahových** tiskových parametrů (časová osa odjezdů, rozdělení sloupců, tisk šipek /
