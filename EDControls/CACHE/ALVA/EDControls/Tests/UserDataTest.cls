@@ -70,4 +70,105 @@ Method TestSaveWithoutKeyReturnsError()
 	do $$$AssertTrue((sc [ "key is required"), "Chyba musí zmínit chybějící key, dostal: "_sc)
 }
 
+/// Load má stejný scope/key guard jako Save — samostatná cesta, samostatný test.
+Method TestLoadWithoutScopeReturnsError()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","key") = "x"
+	set sc = ##class(ALVA.EDControls.UserData).Load(.sys)
+	do $$$AssertNotTrue((sc = 0), "Load bez scope musí vrátit chybu, ne 0")
+	do $$$AssertTrue((sc [ "scope is required"), "Chyba musí zmínit chybějící scope, dostal: "_sc)
+}
+
+/// Delete má stejný scope/key guard jako Save — samostatná cesta, samostatný test.
+Method TestDeleteWithoutKeyReturnsError()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set sc = ##class(ALVA.EDControls.UserData).Delete(.sys)
+	do $$$AssertNotTrue((sc = 0), "Delete bez key musí vrátit chybu, ne 0")
+	do $$$AssertTrue((sc [ "key is required"), "Chyba musí zmínit chybějící key, dostal: "_sc)
+}
+
+/// Save podruhé přepíše hodnotu (dokumentované "Přepíše existující").
+Method TestSaveOverwritesExistingValue()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "overwrite"
+	set ^||ML("IN","data") = "first"
+	do ##class(ALVA.EDControls.UserData).Save(.sys)
+
+	kill ^||ML
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "overwrite"
+	set ^||ML("IN","data") = "second"
+	do ##class(ALVA.EDControls.UserData).Save(.sys)
+
+	kill ^||ML
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "overwrite"
+	do ##class(ALVA.EDControls.UserData).Load(.sys)
+	do $$$AssertEquals($get(^||ML("OUT","data")), "second", "Druhý Save musí přepsat první hodnotu")
+
+	kill ^||ML
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "overwrite"
+	do ##class(ALVA.EDControls.UserData).Delete(.sys)
+}
+
+/// Storage je klíčovaný (IdFa, userID, scope, key) — uložení pod jednou firmou
+/// nesmí být viditelné pod jinou (ModulePreferencesService spoléhá na automatickou IdFa izolaci).
+Method TestDataIsolatedByIdFa()
+{
+	do ..SetupSys(.sys, "CB_DP")
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "isolation"
+	set ^||ML("IN","data") = "cb-data"
+	do ##class(ALVA.EDControls.UserData).Save(.sys)
+
+	kill ^||ML
+	do ..SetupSys(.sys, "JI_DP")
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "isolation"
+	do ##class(ALVA.EDControls.UserData).Load(.sys)
+	do $$$AssertTrue(($data(^||ML("OUT","data")) = 0), "Data z CB_DP nesmí být vidět pod JI_DP")
+
+	// cleanup
+	kill ^||ML
+	do ..SetupSys(.sys, "CB_DP")
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "isolation"
+	do ##class(ALVA.EDControls.UserData).Delete(.sys)
+}
+
+/// Hranice missing vs empty: Save prázdného blobu vytvoří definovaný uzel s "",
+/// Load pak zapíše OUT("data")="" ($d=1) — .NET to mapuje na empty-not-null.
+/// (Na tomto rozdílu stojí null-vs-empty kontrakt ModulePreferencesService.)
+Method TestEmptyBlobIsStoredAsDefinedEmpty()
+{
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "emptyblob"
+	set ^||ML("IN","data") = ""
+	do ##class(ALVA.EDControls.UserData).Save(.sys)
+
+	kill ^||ML
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "emptyblob"
+	do ##class(ALVA.EDControls.UserData).Load(.sys)
+	do $$$AssertTrue(($data(^||ML("OUT","data")) = 1), "Prázdný blob musí být definovaný (missing != empty)")
+	do $$$AssertEquals($get(^||ML("OUT","data")), "", "Prázdný blob se načte jako """"")
+
+	kill ^||ML
+	do ..SetupSys(.sys)
+	set ^||ML("IN","scope") = "EDControls.Tests"
+	set ^||ML("IN","key") = "emptyblob"
+	do ##class(ALVA.EDControls.UserData).Delete(.sys)
+}
+
 }

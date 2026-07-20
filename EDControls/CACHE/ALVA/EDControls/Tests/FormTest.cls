@@ -1,4 +1,4 @@
-Include %occInclude
+Include (%occInclude, EDInputForm)
 
 Class ALVA.EDControls.Tests.FormTest Extends ALVA.EDTesting.MLTestCase
 {
@@ -74,6 +74,62 @@ Method TestAddFieldToSpecificGroupInsertsAfterGroupFields()
 	// Přečíslováno: a=1, b=2, c=3
 	do $$$AssertEquals(form.GetField("b").number, 2)
 	do $$$AssertEquals(form.GetField("c").number, 3)
+}
+
+/// List field: listItems (pozice 13) se serializují přes $$$ListItemSep/$$$ListKeyValSep
+/// a round-trip je zparsuje zpět. Položka bez ~label dostane label = key (Form.cls:286).
+/// Toto je |/~ wire kontrakt sdílený s C# ParseItems + EDInputForm.inc.
+Method TestListItemsRoundTrip()
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g", "Skupina")
+	s lf = form.AddFieldToLastGroup("sel", "Výběr", $$$FieldTypeList)
+	d lf.AddListItem("A", "Alfa")
+	d lf.AddListItem("B", "")
+
+	d form.WriteToOut()
+	s idx = ""
+	f { s idx = $o(^||ML("OUT", idx)) q:idx=""  s ^||ML("IN", idx) = ^||ML("OUT", idx) }
+
+	s form2 = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn()
+	s lf2 = form2.GetField("sel")
+	do $$$AssertEquals(lf2.listItems.Count(), 2, "2 list items round-trip")
+	do $$$AssertEquals($li(lf2.listItems.GetAt(1), 1), "A", "1. položka key")
+	do $$$AssertEquals($li(lf2.listItems.GetAt(1), 2), "Alfa", "1. položka label")
+	do $$$AssertEquals($li(lf2.listItems.GetAt(2), 1), "B", "2. položka key")
+	do $$$AssertEquals($li(lf2.listItems.GetAt(2), 2), "B", "prázdný label -> label = key")
+}
+
+/// Decimal format (pozice 17) round-trip — dosud se testovalo jen min/max/unit.
+Method TestDecimalFormatRoundTrip()
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g", "Skupina")
+	d form.AddDecimal("d", "Dec", "1.5", "0", "9.9", "mm", "N2")
+
+	d form.WriteToOut()
+	s idx = ""
+	f { s idx = $o(^||ML("OUT", idx)) q:idx=""  s ^||ML("IN", idx) = ^||ML("OUT", idx) }
+
+	s df = ##class(ALVA.EDControls.EDInputForm.Form).ReadFromIn().GetField("d")
+	do $$$AssertEquals(df.format, "N2", "format round-trip (pozice 17)")
+	do $$$AssertEquals(df.unit, "mm", "unit round-trip")
+	do $$$AssertEquals(df.min, 0, "min round-trip")
+	do $$$AssertEquals(df.max, 9.9, "max round-trip")
+}
+
+/// AddFieldToSpecificGroup s neexistujícím group key -> fallback append na konec (Form.cls:135).
+Method TestAddFieldToSpecificGroupUnknownGroupAppends()
+{
+	s form = ##class(ALVA.EDControls.EDInputForm.Form).%New()
+	d form.AddGroup("g1", "G1")
+	d form.AddText("a", "A")
+
+	d form.AddFieldToSpecificGroup("neexistuje", "z", "Z")
+
+	// Pořadí: g1, a, z (append na konec)
+	do $$$AssertEquals(form.items.GetAt(3).key, "z", "Neznámá skupina -> field na konci")
+	do $$$AssertEquals(form.GetField("z").number, 2, "z přečíslováno na 2")
 }
 
 }
