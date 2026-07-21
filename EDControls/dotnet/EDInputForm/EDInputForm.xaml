@@ -123,7 +123,7 @@
 
                 <!-- Help text ve sloupci Status (column mode, jen když není chyba — chyba má prioritu).
                      Používá se pro Field (s podmínkou HasError) i Group (chybu mít nemůže). -->
-                <Style x:Key="HelpTextColumnStyle" TargetType="TextBlock">
+                <Style x:Key="HelpTextColumnStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
                         <MultiDataTrigger>
@@ -137,7 +137,7 @@
                 </Style>
 
                 <!-- Help text pole ve sloupci Status — skryje se při HasError=True (chyba má prioritu). -->
-                <Style x:Key="FieldHelpTextColumnStyle" TargetType="TextBlock">
+                <Style x:Key="FieldHelpTextColumnStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                     <Setter Property="Visibility" Value="Collapsed"/>
                     <Style.Triggers>
                         <MultiDataTrigger>
@@ -367,7 +367,8 @@
                                 <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
                                            MaxWidth="280" VerticalAlignment="Center">
                                     <TextBlock.Style>
-                                        <Style TargetType="TextBlock">
+                                        <!-- BasedOn povinné — bez něj se v editable stavu ztratí themed Foreground → v dark černý (neviditelný) label. -->
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding Editable}" Value="False">
                                                     <Setter Property="Foreground" Value="{DynamicResource EDTheme.Field.ReadOnly.Fg}"/>
