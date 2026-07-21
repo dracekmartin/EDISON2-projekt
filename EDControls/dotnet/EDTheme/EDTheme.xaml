@@ -222,6 +222,10 @@
     <!-- Header — nadpisy panelů, dialog titulky -->
     <sys:Double x:Key="EDTheme.FontSize.Header">13</sys:Double>
 
+    <!-- Title — prominentní titulek: header pruh komponent (EDComponentToolbar title
+         + akční glyphy), karta „Akce probíhá" -->
+    <sys:Double x:Key="EDTheme.FontSize.Title">14</sys:Double>
+
     <!-- Large — zvýraznění (výjimečně) -->
     <sys:Double x:Key="EDTheme.FontSize.Large">15</sys:Double>
 

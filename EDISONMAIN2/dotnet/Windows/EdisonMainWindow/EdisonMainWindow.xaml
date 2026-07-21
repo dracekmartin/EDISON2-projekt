@@ -249,7 +249,7 @@
                         <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="{DynamicResource EDTheme.Semantic.Favorite}" VerticalAlignment="Center"
                                    Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVis}}"/>
                         <!-- Značka výchozího okna (shell ho auto-otevře po loginu). -->
-                        <TextBlock Text="(výchozí)" Margin="6,0,0,0" FontSize="11" VerticalAlignment="Center"
+                        <TextBlock Text="(výchozí)" Margin="6,0,0,0" FontSize="{DynamicResource EDTheme.FontSize.Caption}" VerticalAlignment="Center"
                                    Foreground="{DynamicResource EDTheme.Text.Muted}"
                                    Visibility="{Binding IsStartupWindow, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel.ContextMenu>
