@@ -21,6 +21,12 @@ public class EDFilterComboBoxLogicTests
         Assert.Equal(expected, EDFilterComboBoxLogic.Display(new ListItem(key, label)));
     }
 
+    [Fact]
+    public void Display_CustomSeparator_JoinsWithIt()
+    {
+        Assert.Equal("1 | M-line", EDFilterComboBoxLogic.Display(new ListItem("1", "M-line"), " | "));
+    }
+
     [Theory]
     [InlineData("", true)]            // prázdný text → vše projde
     [InlineData(null, true)]

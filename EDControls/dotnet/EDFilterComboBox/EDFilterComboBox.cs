@@ -64,6 +64,17 @@ public class EDFilterComboBox : ComboBox
         set => SetValue(SelectedKeyProperty, value);
     }
 
+    public static readonly DependencyProperty KeyLabelSeparatorProperty = DependencyProperty.Register(
+        nameof(KeyLabelSeparator), typeof(string), typeof(EDFilterComboBox),
+        new PropertyMetadata(EDFilterComboBoxLogic.DisplaySeparator, OnKeyLabelSeparatorChanged));
+
+    /// <summary>Oddělovač „Key ↔ Label" v zobrazení. Default <see cref="EDFilterComboBoxLogic.DisplaySeparator"/>; lze přenastavit per instanci.</summary>
+    public string KeyLabelSeparator
+    {
+        get => (string)GetValue(KeyLabelSeparatorProperty);
+        set => SetValue(KeyLabelSeparatorProperty, value);
+    }
+
     // ---- chování (event wiring) ------------------------------------------
 
     // True jen mezi PreviewKeyDown/Up uživatele → rozliší jeho psaní od interních změn Textu (viz remarks).
@@ -219,7 +230,7 @@ public class EDFilterComboBox : ComboBox
     {
         if (string.IsNullOrEmpty(key)) return "";
         var item = Suggestions?.FirstOrDefault(i => i.Key == key);
-        return item is null ? key : EDFilterComboBoxLogic.Display(item);
+        return item is null ? key : EDFilterComboBoxLogic.Display(item, KeyLabelSeparator);
     }
 
     // Přestaví obsah dropdownu na položky odpovídající psanému textu (prázdný text = vše).
@@ -231,13 +242,21 @@ public class EDFilterComboBox : ComboBox
         if (Suggestions is null) return;
         foreach (var item in Suggestions)
             if (EDFilterComboBoxLogic.Matches(item, text))
-                Items.Add(new ComboBoxItem { Content = EDFilterComboBoxLogic.Display(item), Tag = item.Key });
+                Items.Add(new ComboBoxItem { Content = EDFilterComboBoxLogic.Display(item, KeyLabelSeparator), Tag = item.Key });
     }
 
     // Změna SelectedKey zvenčí (binding) → obnov klidové zobrazení na novou hodnotu.
     private static void OnSelectedKeyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is EDFilterComboBox { StrictSelection: true } c) c.ShowSelectedKeyText();
+    }
+
+    // Změna separátoru: přestav zobrazení (Items i klidový display) novým oddělovačem.
+    private static void OnKeyLabelSeparatorChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+    {
+        if (d is not EDFilterComboBox c) return;
+        c.Refilter(c.StrictSelection ? null : c.Text);
+        if (c.StrictSelection) c.ShowSelectedKeyText();
     }
 
     // Změna Suggestions: naplní Items (striktní = celý seznam pro šipku, volný = dle textu);
