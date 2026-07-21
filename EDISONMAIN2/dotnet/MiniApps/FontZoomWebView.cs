@@ -1,3 +1,5 @@
+using System.Windows;
+using EDControls;
 using EDControls.EDTheme;
 using EDControls.UserFonts;
 using Microsoft.Web.WebView2.Core;
@@ -6,17 +8,21 @@ using Microsoft.Web.WebView2.Wpf;
 namespace EDISONMAIN2.MiniApps;
 
 /// <summary>
-/// WebView2 respektující user velikost fontu přes <see cref="WebView2CompositionControl.ZoomFactor"/> —
+/// WebView2 respektující user velikost fontu přes <see cref="WebView2.ZoomFactor"/> —
 /// HTML obsah je mimo dosah WPF font tokenů. Rodina fontu se nepropaguje
 /// (CSS injektáž do cizí stránky je křehká).
 /// V dark modu injektuje inverzní CSS filtr — widgety podpora.m-line.cz jsou natvrdo světlé
 /// (bg-white, žádný prefers-color-scheme), takže tmavou variantu musí vyrobit klient.
 /// </summary>
 /// <remarks>
-/// Dědí z <see cref="WebView2CompositionControl"/>, ne <see cref="WebView2"/> — HWND varianta
-/// kreslí nad veškerým WPF obsahem (airspace) a překrývala overlay „Akce probíhá".
+/// HWND <see cref="WebView2"/>, ne <see cref="WebView2CompositionControl"/> — composition
+/// nepřežije reparent do plovoucího okna AvalonDocku (drag/reorder tabu → crash na
+/// Direct3D11CaptureFramePool) a tahá 23 MB WinRT projekci (Microsoft.Windows.SDK.NET).
+/// Cena HWND: kreslí přes WPF (airspace), takže po dobu dimu (overlay „Akce probíhá",
+/// modální/legacy dialog) se sám schová (<see cref="WindowDimmer.DimStateChanged"/>) —
+/// jinak přes ztmavený shell zůstane vidět i klikatelný. Rám docku zůstává.
 /// </remarks>
-internal sealed class FontZoomWebView : WebView2CompositionControl, IDisposable
+internal sealed class FontZoomWebView : WebView2, IDisposable
 {
     // Základní text widgetů podpora.m-line.cz je 14 CSS px (Tailwind `text-sm` na <body>) —
     // zoom ho přepočítá na aktuální WPF Body velikost, aby text seděl se zbytkem aplikace.
@@ -48,7 +54,16 @@ internal sealed class FontZoomWebView : WebView2CompositionControl, IDisposable
         DefaultBackgroundColor = BackgroundFor(ThemeService.Current);
         FontService.Applied += OnFontApplied;
         ThemeService.Applied += OnThemeApplied;
+        WindowDimmer.DimStateChanged += OnDimStateChanged;
         CoreWebView2InitializationCompleted += OnCoreWebView2Ready;
+    }
+
+    // Airspace: HWND WebView2 nelze překrýt WPF veilem. Po dobu dimu vlastního okna se schovej
+    // (Hidden = drží layout, rám tabů zůstává), jinak přes ztmavený shell svítíš a jsi klikatelný.
+    private void OnDimStateChanged(Window window, bool dimmed)
+    {
+        if (ReferenceEquals(window, Window.GetWindow(this)))
+            Visibility = dimmed ? Visibility.Hidden : Visibility.Visible;
     }
 
     /// <summary>Pozadí pod HTML obsahem — v dark tmavé (EDTheme.Bg.Base #1E1E1E),
@@ -120,6 +135,7 @@ internal sealed class FontZoomWebView : WebView2CompositionControl, IDisposable
         // Statické eventy by jinak držely zavřené widgety naživu.
         FontService.Applied -= OnFontApplied;
         ThemeService.Applied -= OnThemeApplied;
+        WindowDimmer.DimStateChanged -= OnDimStateChanged;
         base.Dispose();
     }
 }

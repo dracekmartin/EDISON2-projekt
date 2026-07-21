@@ -33,8 +33,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
-  Hostují se přes `FontZoomWebView : WebView2CompositionControl` — HWND `WebView2`
-  by kvůli airspace překrýval overlay „Akce probíhá".
+  Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu tabu
+  do plovoucího okna AvalonDocku a tahá 23 MB WinRT projekci, viz TFM v csproj). Cena HWND je
+  airspace: WPF veil ho nepřekryje, tak se po dobu dimu sám schová (`WindowDimmer.DimStateChanged`).
   User velikost fontu respektují přes `FontZoomWebView` (ZoomFactor =
   `FontService.BodySize` / 14 — základní text widgetů je 14 CSS px);
   rodina fontu se do HTML nepropaguje. Dark mode widgety samy neumí (natvrdo
@@ -42,7 +43,8 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému záblesku.
   Chrome docku (taby, bordery, pozadí dokumentů) EDTheme tokeny nečte — dark řeší
   swap `DockManager.Theme` na VS2013 Light/Dark v code-behind okna.
-  Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`; chybí-li uložený →
+  Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts` (spolu se šířkou stromu
+  v `LocalPrefs.TreeWidths`, stejný lifecycle přes `AttachTreeLayout`); chybí-li uložený →
   `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,

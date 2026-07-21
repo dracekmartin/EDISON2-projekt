@@ -17,6 +17,11 @@ public static class WindowDimmer
     /// <summary>Single source of truth pro závoj — sdílí ho EDActionInProgress přes x:Static.</summary>
     public static readonly SolidColorBrush TintBrush = CreateTint();
 
+    /// <summary>Přepnutí dim stavu okna (true = první dim, false = poslední undim). HWND obsah,
+    /// který WPF veil kvůli airspace nepřekryje (WebView2), se na to napojí a po dobu dimu se
+    /// schová — jinak by přes ztmavený shell zůstal viditelný i klikatelný.</summary>
+    public static event Action<Window, bool>? DimStateChanged;
+
     private static SolidColorBrush CreateTint()
     {
         var brush = new SolidColorBrush(Color.FromArgb(0x1A, 0x00, 0x00, 0x00));
@@ -56,6 +61,7 @@ public static class WindowDimmer
         owner.PreviewTextInput += text;
         owner.Closed += OnOwnerClosed;
         _states[owner] = new State(layer, adorner, keys, text);
+        DimStateChanged?.Invoke(owner, true);
     }
 
     private static void Detach(Window owner)
@@ -65,6 +71,7 @@ public static class WindowDimmer
         owner.PreviewKeyDown -= st.Keys;
         owner.PreviewTextInput -= st.Text;
         owner.Closed -= OnOwnerClosed;
+        DimStateChanged?.Invoke(owner, false);
     }
 
     private static void OnOwnerClosed(object? sender, EventArgs e) =>
