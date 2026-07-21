@@ -38,6 +38,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private readonly MiniAppCatalog _miniAppCatalog;
         // Manager žije až po AttachMiniAppHost (potřebuje DockingManager z view) — do té doby null.
         private MiniAppManager? _miniAppManager;
+        // Přístup k šířce stromu (ColumnDefinition ve view) — registruje code-behind přes AttachTreeLayout.
+        private Func<double>? _getTreeWidth;
+        private Action<double>? _applyTreeWidth;
 
         public ICommand OpenModuleCommand { get; }
         public ICommand ToggleFavoriteCommand { get; }
@@ -107,6 +110,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             RestoreMiniAppLayout(Idfa);
         }
 
+        /// <summary>
+        /// Napojí přístup k šířce stromu z view (ColumnDefinition). Šířka se persistuje per IDFa
+        /// společně s layoutem miniaplikací. Volat **před** <see cref="AttachMiniAppHost"/> — ten
+        /// spouští první restore, který už šířku aplikuje.
+        /// </summary>
+        public void AttachTreeLayout(Func<double> getWidth, Action<double> applyWidth)
+        {
+            _getTreeWidth = getWidth;
+            _applyTreeWidth = applyWidth;
+        }
+
         // Výchozí rozložení: 3 web widgety ve sloupcích nahoře + Oblíbené přes celou šířku dole.
         private void OpenDefaultMiniApps() =>
             _miniAppManager?.OpenDefaultLayout(DefaultMiniApps, _miniAppCatalog.Find(FavoritesMiniAppProvider.FavoritesId));
@@ -118,6 +132,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 (_prefs.MiniAppLayouts ??= new())[idfa] = _miniAppManager.SaveLayout();
+                if (_getTreeWidth is not null)
+                    (_prefs.TreeWidths ??= new())[idfa] = _getTreeWidth();
                 _prefs.Save();
             }
             catch { }
@@ -126,6 +142,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private void RestoreMiniAppLayout(string idfa)
         {
             if (_miniAppManager is null) return;
+            // Šířka stromu (nezávislá na tom, zda je uložený layout miniaplikací) — bez uložené
+            // hodnoty zůstane XAML default (*).
+            if (_applyTreeWidth is not null && _prefs.TreeWidths?.TryGetValue(idfa, out var width) == true && width > 0)
+                _applyTreeWidth(width);
             if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) != true || string.IsNullOrWhiteSpace(xml))
             {
                 // Žádný uložený layout (první spuštění / nová firma) → výchozí 3 sloupce jako starý shell.

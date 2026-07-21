@@ -452,4 +452,58 @@ public class EdisonMainViewModelTests
         public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve)
             => throw new InvalidOperationException("simulovaný rozbitý layout");
     }
+
+    // Neškodný host — prázdný katalog v testech znamená, že AddPane se nikdy nezavolá.
+    private sealed class NullHost : IMiniAppHost
+    {
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
+                                    bool newColumn = false, bool newRow = false)
+            => Substitute.For<IMiniAppPane>();
+        public void ResetToDefaultSkeleton() { }
+        public string SaveLayout() => "";
+        public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve) { }
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_AppliesSavedTreeWidth()
+    {
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.TreeWidths.Returns(new Dictionary<string, double> { ["CB_DP"] = 320 });
+        var vm = CreateVM(prefs: prefs);
+
+        double? applied = null;
+        vm.AttachTreeLayout(() => 0, w => applied = w);
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.Equal(320, applied);
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_NoSavedTreeWidth_LeavesDefault()
+    {
+        var vm = CreateVM(); // ILocalPrefs substitute → TreeWidths null
+
+        bool applied = false;
+        vm.AttachTreeLayout(() => 0, _ => applied = true);
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.False(applied);
+    }
+
+    [Fact]
+    public void CloseAll_PersistsTreeWidthPerIdfa()
+    {
+        var widths = new Dictionary<string, double>();
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.TreeWidths.Returns(widths);
+        var vm = CreateVM(prefs: prefs);
+
+        vm.AttachTreeLayout(() => 275, _ => { });
+        vm.AttachMiniAppHost(new NullHost());
+
+        vm.CloseAllCommand.Execute(null);
+
+        Assert.Equal(275, widths["CB_DP"]);
+        prefs.Received().Save();
+    }
 }

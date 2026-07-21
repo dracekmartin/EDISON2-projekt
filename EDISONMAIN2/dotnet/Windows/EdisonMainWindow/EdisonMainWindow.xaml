@@ -31,8 +31,9 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager). -->
-            <ColumnDefinition Width="*" MinWidth="150"/>
+            <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager).
+                 Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) — restore ji přepíše na px. -->
+            <ColumnDefinition x:Name="TreeColumn" Width="*" MinWidth="150"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
