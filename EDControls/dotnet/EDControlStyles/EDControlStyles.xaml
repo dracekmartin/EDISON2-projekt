@@ -1230,15 +1230,11 @@
                             BorderBrush="{TemplateBinding BorderBrush}"
                             BorderThickness="{TemplateBinding BorderThickness}"
                             Padding="{TemplateBinding Padding}">
-                        <Grid>
-                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
-                                          HorizontalScrollBarVisibility="Hidden"
-                                          VerticalScrollBarVisibility="Hidden"/>
-                            <ContentControl x:Name="PART_Watermark"
-                                            Foreground="{DynamicResource EDTheme.Text.Muted}"
-                                            Focusable="False" IsHitTestVisible="False"
-                                            VerticalAlignment="Center" Padding="2,0,0,0"/>
-                        </Grid>
+                        <!-- Bez PART_Watermark: default watermark ("<Enter text here>") by se bez
+                             Watermarked/Unwatermarked visual states nikdy neschoval a překrýval hodnotu. -->
+                        <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                      HorizontalScrollBarVisibility="Hidden"
+                                      VerticalScrollBarVisibility="Hidden"/>
                     </Border>
                 </ControlTemplate>
             </Setter.Value>
@@ -1253,6 +1249,9 @@
         <Setter Property="FontFamily"               Value="{DynamicResource EDTheme.FontFamily}"/>
         <Setter Property="FontSize"                 Value="{DynamicResource EDTheme.FontSize.Body}"/>
         <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <!-- DatePicker binduje Style svého interního Calendaru na CalendarStyle → nastavit
+             tady, jinak implicitní Calendar styl (dark mode) na popup kalendář nedosáhne. -->
+        <Setter Property="CalendarStyle"            Value="{DynamicResource EDCalendarStyle}"/>
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="DatePicker">
@@ -1290,24 +1289,218 @@
         </Setter>
     </Style>
 
-    <Style TargetType="Calendar">
-        <Setter Property="Background"  Value="{DynamicResource EDTheme.Bg.Surface}"/>
-        <Setter Property="Foreground"  Value="{DynamicResource EDTheme.Text.Primary}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Medium}"/>
-        <Setter Property="FontFamily"  Value="{DynamicResource EDTheme.FontFamily}"/>
-        <Setter Property="FontSize"    Value="{DynamicResource EDTheme.FontSize.Body}"/>
+    <!-- Kalendář: default Calendar template dává CalendarItem/Day/Button styl přes
+         Style="{TemplateBinding Calendar…Style}"; když je property null, Style se nastaví
+         explicitně na null → implicitní styl se NEuplatní. Proto musí být tyto styly
+         keyed a přiřazené přes settery na Calendar (ne implicitně dle typu). -->
+
+    <!-- Šipky prev/next v hlavičce kalendáře — vektorové glyphy token brushem. -->
+    <Style x:Key="CalendarPrevNextButtonStyle" TargetType="Button">
+        <Setter Property="Focusable" Value="False"/>
+        <Setter Property="Width"     Value="26"/>
+        <Setter Property="Height"    Value="24"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="3">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
-    <Style TargetType="prim:CalendarDayButton">
+    <!-- Hlavička (měsíc/rok) — text button přepínající zobrazení. -->
+    <Style x:Key="CalendarHeaderButtonStyle" TargetType="Button">
+        <Setter Property="Focusable"  Value="False"/>
         <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource EDTheme.FontFamily}"/>
-        <Setter Property="FontSize"   Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="3" Padding="8,2">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
-    <Style TargetType="prim:CalendarButton">
-        <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
-        <Setter Property="FontFamily" Value="{DynamicResource EDTheme.FontFamily}"/>
-        <Setter Property="FontSize"   Value="{DynamicResource EDTheme.FontSize.Body}"/>
+    <!-- CalendarItem = vnitřek kalendáře; default template má bílé pozadí napevno →
+         plný token-driven template. PART_MonthView (7×7) / PART_YearView (4×3) musí mít
+         přesně tolik Row/Column definic, kolik Calendar kód plní. -->
+    <Style x:Key="EDCalendarItemStyle" TargetType="prim:CalendarItem">
+        <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Surface}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="prim:CalendarItem">
+                    <ControlTemplate.Resources>
+                        <DataTemplate x:Key="{x:Static prim:CalendarItem.DayTitleTemplateResourceKey}">
+                            <TextBlock Text="{Binding}"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       Margin="0,2,0,4"/>
+                        </DataTemplate>
+                    </ControlTemplate.Resources>
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{DynamicResource EDTheme.Border.Strong}"
+                            BorderThickness="1" CornerRadius="4" Padding="6"
+                            Margin="4" Effect="{DynamicResource EDTheme.Shadow.Popup}">
+                        <Grid x:Name="PART_Root">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid Grid.Row="0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <Button x:Name="PART_PreviousButton" Grid.Column="0"
+                                        Style="{StaticResource CalendarPrevNextButtonStyle}">
+                                    <Path Stroke="{DynamicResource EDTheme.Text.Secondary}" StrokeThickness="1.4"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Data="M6,1 L2,5 L6,9"/>
+                                </Button>
+                                <Button x:Name="PART_HeaderButton" Grid.Column="1"
+                                        Style="{StaticResource CalendarHeaderButtonStyle}"/>
+                                <Button x:Name="PART_NextButton" Grid.Column="2"
+                                        Style="{StaticResource CalendarPrevNextButtonStyle}">
+                                    <Path Stroke="{DynamicResource EDTheme.Text.Secondary}" StrokeThickness="1.4"
+                                          StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                          Data="M2,1 L6,5 L2,9"/>
+                                </Button>
+                            </Grid>
+                            <Grid x:Name="PART_MonthView" Grid.Row="1" Margin="0,4,0,0" Visibility="Visible">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/>
+                                    <ColumnDefinition/><ColumnDefinition/><ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/><RowDefinition/><RowDefinition/><RowDefinition/>
+                                    <RowDefinition/><RowDefinition/><RowDefinition/>
+                                </Grid.RowDefinitions>
+                            </Grid>
+                            <Grid x:Name="PART_YearView" Grid.Row="1" Margin="0,4,0,0" Visibility="Hidden">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition/><ColumnDefinition/><ColumnDefinition/><ColumnDefinition/>
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition/><RowDefinition/><RowDefinition/>
+                                </Grid.RowDefinitions>
+                            </Grid>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
+
+    <!-- Den v měsíci — stavy přes read-only DP (IsToday/IsSelected/IsInactive/…). -->
+    <Style x:Key="EDCalendarDayButtonStyle" TargetType="prim:CalendarDayButton">
+        <Setter Property="MinWidth"                   Value="30"/>
+        <Setter Property="MinHeight"                  Value="28"/>
+        <Setter Property="Foreground"                 Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontFamily"                 Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"                   Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment"   Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="prim:CalendarDayButton">
+                    <Border x:Name="bg" Background="Transparent" BorderThickness="1"
+                            BorderBrush="Transparent" CornerRadius="3" Margin="1">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsInactive" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Disabled}"/>
+                            <Setter Property="Opacity"    Value="0.55"/>
+                        </Trigger>
+                        <Trigger Property="IsToday" Value="True">
+                            <Setter TargetName="bg" Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Strong}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Checked}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Primary}"/>
+                        </Trigger>
+                        <Trigger Property="IsBlackedOut" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Disabled}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Disabled}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Měsíc/rok v year/decade view. -->
+    <Style x:Key="EDCalendarButtonStyle" TargetType="prim:CalendarButton">
+        <Setter Property="MinWidth"                   Value="42"/>
+        <Setter Property="MinHeight"                  Value="42"/>
+        <Setter Property="Foreground"                 Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="FontFamily"                 Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"                   Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment"   Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="prim:CalendarButton">
+                    <Border x:Name="bg" Background="Transparent" CornerRadius="3" Margin="2">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsInactive" Value="True">
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Text.Disabled}"/>
+                        </Trigger>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                        </Trigger>
+                        <Trigger Property="HasSelectedDays" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Checked}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Keyed (ne jen implicitní), protože DatePicker si Style svého interního Calendaru
+         BINDuje na DatePicker.CalendarStyle — ta lokální hodnota potlačí implicitní styl
+         dle typu. Proto se přiřazuje i přes DatePicker.CalendarStyle (viz DatePicker styl). -->
+    <Style x:Key="EDCalendarStyle" TargetType="Calendar">
+        <Setter Property="Background"             Value="{DynamicResource EDTheme.Bg.Surface}"/>
+        <Setter Property="Foreground"             Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="BorderBrush"            Value="{DynamicResource EDTheme.Border.Medium}"/>
+        <Setter Property="FontFamily"             Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"               Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="CalendarItemStyle"      Value="{StaticResource EDCalendarItemStyle}"/>
+        <Setter Property="CalendarDayButtonStyle" Value="{StaticResource EDCalendarDayButtonStyle}"/>
+        <Setter Property="CalendarButtonStyle"    Value="{StaticResource EDCalendarButtonStyle}"/>
+    </Style>
+
+    <Style TargetType="Calendar" BasedOn="{StaticResource EDCalendarStyle}"/>
 
 </ResourceDictionary>
