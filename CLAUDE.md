@@ -110,9 +110,16 @@ implementace `EDComponentAndViewModelTestWindow`; EDInputForm příklad
 
 Referenční implementace: `EDISONMAIN2/dotnet/Startup/App.xaml(.cs)`.
 
-**Barvy vždy přes `EDTheme` tokeny (`{DynamicResource}`), nikdy hardcoded literál** —
-jinak nereagují na dark mode. Chybí token → doplň do `EDTheme.xaml` + `EDThemeDark.xaml`.
-Výjimka jen ryze datové/dekorativní/externí barvy (WebView2 CSS, WinForms dialog).
+**Vzhled vždy přes sdílené tokeny/resource, nikdy hardcoded literál:**
+
+- **Barvy** → `EDTheme.*` přes `{DynamicResource}` (jinak nereagují na dark mode); chybí
+  token → doplň do `EDTheme.xaml` + `EDThemeDark.xaml`. Výjimka jen datové/dekorativní/
+  externí barvy (WebView2 CSS, WinForms dialog).
+- **FontSize** → `EDTheme.FontSize.*` přes `{DynamicResource}` (jinak nerespektují user
+  škálování fontu přes `FontService`); nová velikost = nový token.
+- **Běžné UI stringy** (OK/Storno/Ano/…) → `{StaticResource EDStrings.*}`.
+- **Ikony** → `{StaticResource EDIcons.*}`, definice jen v `EDIcons.xaml`.
+- Lokální `Style` na themovaném controlu **musí mít `BasedOn`** (viz `EDControls/CLAUDE.md`).
 
 ## Persistence stavu
 
