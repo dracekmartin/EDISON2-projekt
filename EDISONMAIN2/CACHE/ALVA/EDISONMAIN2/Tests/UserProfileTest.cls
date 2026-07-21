@@ -37,7 +37,7 @@ Method TestInitBuildsExpectedFields()
 	set ret = ##class(ALVA.EDISONMAIN2.EDInputForm.UserProfile).Init(.sys)
 	do $$$AssertEquals(+ret, 0, "Init nesmí vrátit chybu, got: "_ret)
 
-	for key = "fullName", "loginName", "mlp", "changePassword", "certificates", "defaultForm", "usePersonDir", "personDir", "centralDir" {
+	for key = "fullName", "loginName", "mlp", "changePassword", "certificates", "defaultWindow", "usePersonDir", "personDir", "centralDir" {
 		do $$$AssertNotTrue((..OutField(key)=""), "Init musí obsahovat pole: "_key)
 	}
 

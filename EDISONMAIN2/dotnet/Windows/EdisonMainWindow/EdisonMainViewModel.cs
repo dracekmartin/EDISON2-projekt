@@ -62,6 +62,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand LoginAsAnotherUserCommand { get; }
         public ICommand ShowUserEditCommand { get; }
         public ICommand ChangePasswordCommand { get; }
+        // Kontextové menu stromu — výchozí okno (auto-open po loginu)
+        public ICommand SetStartupWindowCommand { get; }
+        public ICommand ClearStartupWindowCommand { get; }
         // Nástroje menu
         public ICommand ShowBgTasksCommand { get; }
         public ICommand RefreshLicenseCommand { get; }
@@ -197,7 +200,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
-            ShowUserEditCommand           = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd("")));
+            ShowUserEditCommand           = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd(StartupWindowDisplayText())));
             ChangePasswordCommand         = Command(() =>
             {
                 bool? changed = WindowNavigator.ShowDialog(
@@ -209,6 +212,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                     _prefs.Save();
                 }
             });
+            SetStartupWindowCommand         = Command<IModule>(SetStartupWindow);
+            ClearStartupWindowCommand       = Command(ClearStartupWindow);
 
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
             ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
@@ -269,6 +274,60 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _services.AccessTable = AccessLoader.Load(MLRest!, licence, _services.IsAdmin);
             LoadAndFilterTrees();
             LoadPersonalization();
+            LoadStartupWindow();
+        }
+
+        private int _defaultWindowId;
+        /// <summary>Id uživatelova výchozího okna (EDISFormEnum) pro aktuální IDFa; 0 = žádný.</summary>
+        public int DefaultWindowId { get => _defaultWindowId; private set => Set(ref _defaultWindowId, value); }
+
+        // Načte výchozí okno (per IDFa) a označí odpovídající uzel stromu. Volá se z
+        // RebuildSessionState → po loginu i po přepnutí firmy (jiná firma může mít jiný default).
+        private void LoadStartupWindow()
+        {
+            DefaultWindowId = UserProfileService.LoadDefaultWindow(MLRest!);
+            ApplyStartupWindowMark();
+        }
+
+        // Přeznačí uzly stromu — právě jeden (nebo žádný) modul má IsStartupWindow=true.
+        private void ApplyStartupWindowMark()
+        {
+            var id = DefaultWindowId.ToString();
+            foreach (var exe in AllExecutables())
+                exe.IsStartupWindow = DefaultWindowId != 0 && exe.ElementId == id;
+        }
+
+        private void SetStartupWindow(IModule module)
+        {
+            if (module is not ExecutableModule { ElementId: { Length: > 0 } elementId }) return;
+            if (!int.TryParse(elementId, out var formId) || formId == 0) return;
+            UserProfileService.SetDefaultWindow(MLRest!, formId);
+            DefaultWindowId = formId;
+            ApplyStartupWindowMark();
+        }
+
+        private void ClearStartupWindow()
+        {
+            if (DefaultWindowId == 0) return;
+            UserProfileService.SetDefaultWindow(MLRest!, 0);
+            DefaultWindowId = 0;
+            ApplyStartupWindowMark();
+        }
+
+        private bool _startupWindowOpened;
+        /// <summary>
+        /// Po prvním vykreslení shellu otevře uživatelův výchozí okno — jednou za běh (ne po
+        /// přepnutí firmy). Nepovolený/chybějící modul (není ve stromu) se tiše přeskočí.
+        /// Volá code-behind shellu z <c>ContentRendered</c>.
+        /// </summary>
+        public void OpenStartupWindowIfAny()
+        {
+            if (_startupWindowOpened) return;
+            _startupWindowOpened = true;
+            if (DefaultWindowId == 0) return;
+            var module = AllExecutables().FirstOrDefault(e => e.ElementId == DefaultWindowId.ToString());
+            if (module != null && OpenModuleCommand.CanExecute(module))
+                OpenModuleCommand.Execute(module);
         }
 
         // Oblíbené + používanost jsou per-user × IDFa → načítají se po (pře)stavbě stromů.
@@ -775,6 +834,16 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // takže stačí projít hlavní tři stromy (flip IsFavorite se projeví všude).
         private IEnumerable<ExecutableModule> AllExecutables() =>
             _sourceTrees.SelectMany(t => t.Tree).SelectMany(Flatten);
+
+        // Startup window id (EDISFormEnum) → název modulu ve stromu. ElementId je totéž numerické
+        // id jako uložené výchozí okno; pro značení stromu i dialog „Vlastnosti uživatele".
+        private string? ResolveModuleName(int formId) =>
+            AllExecutables().FirstOrDefault(e => e.ElementId == formId.ToString())?.DisplayedName;
+
+        // Text výchozího okna pro dialog (server ho nezná — dodáváme z modulového stromu).
+        // Prázdné = nenastaveno (pole zůstane prázdné, kontext dá helpText pole).
+        private string StartupWindowDisplayText() =>
+            DefaultWindowId == 0 ? "" : ResolveModuleName(DefaultWindowId) ?? $"#{DefaultWindowId}";
 
         private static IEnumerable<ExecutableModule> Flatten(IModule module) => module switch
         {

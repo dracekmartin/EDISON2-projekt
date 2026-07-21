@@ -46,9 +46,10 @@ public class EdisonMainViewModelTests
         IPopupDisplayer? popup = null,
         ILocalPrefs? prefs = null,
         Action? closeAllWindows = null,
-        MiniAppCatalog? miniAppCatalog = null)
+        MiniAppCatalog? miniAppCatalog = null,
+        IMLRest? mlRest = null)
     {
-        var mockMLRest = MockMLRest();
+        var mockMLRest = mlRest ?? MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var svc = services ?? MockServices(popup: popup);
         // CompanySwitcher i VM čtou MLRest z services lazily — musí být v services před konstrukcí.
@@ -105,6 +106,71 @@ public class EdisonMainViewModelTests
         Assert.StartsWith("MainApp", Assert.Single(vm.MainMenuTree).DisplayedName);
         Assert.StartsWith("SysTool", Assert.Single(vm.SystemAdminTree).DisplayedName);
         Assert.StartsWith("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
+    }
+
+    // ── Výchozí okno (startup window) ──────────────────────────────────────────────
+
+    private static IModuleTreeGetter MainTreeWith(params ExecutableModule[] modules)
+    {
+        var mock = Substitute.For<IModuleTreeGetter>();
+        mock.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
+        mock.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(modules);
+        return mock;
+    }
+
+    [Fact]
+    public void StartupWindow_LoadedFromServer_MarksMatchingModuleOnly()
+    {
+        var ml = MockMLRest();
+        ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
+            .Returns(MLRestMocks.Output("17"));
+        var tree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "17" },
+            new ExecutableModule { DisplayedName = "B", ExecutablePath = "b.exe", FormName = "", ElementId = "9" });
+
+        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+
+        Assert.Equal(17, vm.DefaultWindowId);
+        var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
+        Assert.True(modules.Single(m => m.ElementId == "17").IsStartupWindow);
+        Assert.False(modules.Single(m => m.ElementId == "9").IsStartupWindow);
+    }
+
+    [Fact]
+    public void SetStartupWindowCommand_SetsServerValueAndMarksNode()
+    {
+        var ml = MockMLRest();   // GetUserDefaultForm nenastaven → start 0
+        var tree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
+        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+        var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
+
+        vm.SetStartupWindowCommand.Execute(module);
+
+        ml.Received().QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 23));
+        Assert.Equal(23, vm.DefaultWindowId);
+        Assert.True(module.IsStartupWindow);
+    }
+
+    [Fact]
+    public void ClearStartupWindowCommand_ClearsServerValueAndUnmarks()
+    {
+        var ml = MockMLRest();
+        ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
+            .Returns(MLRestMocks.Output("23"));
+        var tree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
+        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+        var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
+        Assert.True(module.IsStartupWindow);   // předpoklad
+
+        vm.ClearStartupWindowCommand.Execute(null);
+
+        ml.Received().QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 0));
+        Assert.Equal(0, vm.DefaultWindowId);
+        Assert.False(module.IsStartupWindow);
     }
 
     [Fact]

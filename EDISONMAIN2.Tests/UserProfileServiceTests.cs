@@ -14,7 +14,7 @@ public class UserProfileServiceTests
     private const char D = '~';
 
     private static IMLRest Mock(object[]? loadUser = null, object[]? loadSettings = null,
-        object[]? getDefaultForm = null)
+        object[]? getDefaultWindow = null)
     {
         var ml = Substitute.For<IMLRest>();
         ml.Delimiter.Returns(D);
@@ -23,7 +23,7 @@ public class UserProfileServiceTests
         ml.QueryOrThrow("ALVA.EDISON.Main", "LoadSettings", Arg.Any<object[]>())
             .Returns(loadSettings ?? new object[] { "" });
         ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
-            .Returns(getDefaultForm ?? new object[] { "", "0" });
+            .Returns(getDefaultWindow ?? new object[] { "", "0" });
         return ml;
     }
 
@@ -41,7 +41,7 @@ public class UserProfileServiceTests
 
         Assert.True(p.UsePersonDir);
         Assert.Equal("C:\\Users\\jan\\Export", p.PersonDir);
-        Assert.Equal(17, p.DefaultFormId);
+        Assert.Equal(17, p.DefaultWindowId);
         Assert.Equal("\\\\srv\\central", p.CentralExportDir);
     }
 
@@ -59,12 +59,12 @@ public class UserProfileServiceTests
     }
 
     [Fact]
-    public void Load_NoFormRow_DefaultFormIdZero()
+    public void Load_NoFormRow_DefaultWindowIdZero()
     {
-        // Server řádek „form" pošle jen když ≠ 0; jeho absence = žádný výchozí formulář.
+        // Server řádek „form" pošle jen když ≠ 0; jeho absence = žádný výchozí okno.
         var ml = Mock(loadUser: Rows($"personDir{D}0{D}"));
 
-        Assert.Equal(0, UserProfileService.Load(ml).DefaultFormId);
+        Assert.Equal(0, UserProfileService.Load(ml).DefaultWindowId);
     }
 
     [Fact]
@@ -101,27 +101,27 @@ public class UserProfileServiceTests
     [InlineData("17", 17)]
     [InlineData("0", 0)]
     [InlineData("", 0)]
-    public void LoadDefaultForm_ParsesOutput(string value, int expected)
+    public void LoadDefaultWindow_ParsesOutput(string value, int expected)
     {
-        var ml = Mock(getDefaultForm: new object[] { "", value });
+        var ml = Mock(getDefaultWindow: new object[] { "", value });
 
-        Assert.Equal(expected, UserProfileService.LoadDefaultForm(ml));
+        Assert.Equal(expected, UserProfileService.LoadDefaultWindow(ml));
     }
 
     [Fact]
-    public void LoadDefaultForm_EmptyOutput_Zero()
+    public void LoadDefaultWindow_EmptyOutput_Zero()
     {
-        var ml = Mock(getDefaultForm: new object[] { "" });
+        var ml = Mock(getDefaultWindow: new object[] { "" });
 
-        Assert.Equal(0, UserProfileService.LoadDefaultForm(ml));
+        Assert.Equal(0, UserProfileService.LoadDefaultWindow(ml));
     }
 
     [Fact]
-    public void SetDefaultForm_SendsFormId()
+    public void SetDefaultWindow_SendsFormId()
     {
         var ml = Mock();
 
-        UserProfileService.SetDefaultForm(ml, 23);
+        UserProfileService.SetDefaultWindow(ml, 23);
 
         ml.Received().QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm",
             Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 23));

@@ -5,10 +5,10 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
 {
     /// <summary>
     /// Profil uživatele ze serveru: osobní export adresář (+ příznak použití), centrální
-    /// export adresář a id výchozího formuláře. Výchozí formulář je per-uživatel × IDFa
+    /// export adresář a id výchozího okna. Výchozí okno je per-uživatel × IDFa
     /// (Caché feature #25) — přepnutí firmy může vrátit jiný.
     /// </summary>
-    public record UserProfileData(bool UsePersonDir, string PersonDir, string CentralExportDir, int DefaultFormId);
+    public record UserProfileData(bool UsePersonDir, string PersonDir, string CentralExportDir, int DefaultWindowId);
 
     /// <summary>
     /// Wire vrstva okna „Vlastnosti uživatele". Legacy Caché metody čtou/píšou přes numerické
@@ -27,7 +27,7 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
 
             bool usePersonDir = false;
             string personDir = "";
-            int defaultFormId = 0;
+            int defaultWindowId = 0;
 
             foreach (var row in ParseRows(user, mlRest.Delimiter))
             {
@@ -39,12 +39,12 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
                         personDir = row[2];
                         break;
                     case "form" when row.Length >= 2:
-                        int.TryParse(row[1], out defaultFormId);
+                        int.TryParse(row[1], out defaultWindowId);
                         break;
                 }
             }
 
-            return new UserProfileData(usePersonDir, personDir, LoadCentralExportDir(mlRest), defaultFormId);
+            return new UserProfileData(usePersonDir, personDir, LoadCentralExportDir(mlRest), defaultWindowId);
         }
 
         /// <summary>
@@ -71,20 +71,20 @@ namespace EDISONMAIN2.Windows.UserProfileWindow
         }
 
         /// <summary>
-        /// <c>ALVA.USERS.ApiEdison.GetUserDefaultForm</c> — id výchozího formuláře (0 = žádný),
+        /// <c>ALVA.USERS.ApiEdison.GetUserDefaultForm</c> — id výchozího okna (0 = žádný),
         /// per-uživatel × aktuální IDFa. Dedikovaná metoda pro startup-form logiku shellu.
         /// </summary>
-        public static int LoadDefaultForm(IMLRest mlRest)
+        public static int LoadDefaultWindow(IMLRest mlRest)
         {
             var output = mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", new object[] { });
             return output is { Length: > 1 } && int.TryParse(output[1]?.ToString(), out var id) ? id : 0;
         }
 
         /// <summary>
-        /// <c>ALVA.USERS.ApiEdison.SetUserDefaultForm</c> — nastaví (0 = zruší) výchozí formulář
+        /// <c>ALVA.USERS.ApiEdison.SetUserDefaultForm</c> — nastaví (0 = zruší) výchozí okno
         /// pro aktuální IDFa.
         /// </summary>
-        public static void SetDefaultForm(IMLRest mlRest, int formId) =>
+        public static void SetDefaultWindow(IMLRest mlRest, int formId) =>
             mlRest.QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm", new object[] { formId });
 
         // OUT: index 0 = errorState (přeskoč), 1.. = datové řádky "klíč~v1~v2".

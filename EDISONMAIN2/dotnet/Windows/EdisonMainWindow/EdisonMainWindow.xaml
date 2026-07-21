@@ -247,10 +247,14 @@
                         <!-- Zlatá ★ na konci názvu, jen u oblíbených (prázdná se nezobrazuje). -->
                         <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="#FFC107" VerticalAlignment="Center"
                                    Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVis}}"/>
+                        <!-- Značka výchozího okna (shell ho auto-otevře po loginu). -->
+                        <TextBlock Text="(výchozí)" Margin="6,0,0,0" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                   Visibility="{Binding IsStartupWindow, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel.ContextMenu>
                             <ContextMenu>
                                 <!-- Toggle oblíbeného. Header dle IsFavorite (ContextMenu dědí DataContext = modul).
-                                     Command jde na VM přes PlacementTarget.Tag. Sem přibydou další akce nad modulem. -->
+                                     Command jde na VM přes PlacementTarget.Tag. -->
                                 <MenuItem Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                     <MenuItem.Style>
@@ -264,6 +268,13 @@
                                         </Style>
                                     </MenuItem.Style>
                                 </MenuItem>
+                                <Separator/>
+                                <!-- Výchozí okno: nastaví tento modul / zruší jakýkoli. Command na VM přes Tag. -->
+                                <MenuItem Header="Nastavit jako výchozí okno"
+                                          Command="{Binding PlacementTarget.Tag.SetStartupWindowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="Zrušit výchozí okno"
+                                          Command="{Binding PlacementTarget.Tag.ClearStartupWindowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                             </ContextMenu>
                         </StackPanel.ContextMenu>
                     </StackPanel>

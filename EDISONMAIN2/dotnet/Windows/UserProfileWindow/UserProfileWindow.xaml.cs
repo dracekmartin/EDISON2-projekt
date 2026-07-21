@@ -10,13 +10,13 @@ public partial class UserProfileWindow : Window
 {
     private readonly UserProfileViewModel _vm;
 
-    // Zobrazený název výchozího formuláře (server ho nezná — dodá shell z modulového stromu).
-    private readonly string _defaultFormDisplay;
+    // Zobrazený název výchozího okna (server ho nezná — dodá shell z modulového stromu).
+    private readonly string _defaultWindowDisplay;
 
-    /// <param name="defaultFormDisplay">Název výchozího formuláře k zobrazení (prázdné = nenastaveno).</param>
-    public UserProfileWindow(string defaultFormDisplay)
+    /// <param name="defaultWindowDisplay">Název výchozího okna k zobrazení (prázdné = nenastaveno).</param>
+    public UserProfileWindow(string defaultWindowDisplay)
     {
-        _defaultFormDisplay = defaultFormDisplay;
+        _defaultWindowDisplay = defaultWindowDisplay;
         DataContext = _vm = new UserProfileViewModel();
         InitializeComponent();
 
@@ -41,7 +41,7 @@ public partial class UserProfileWindow : Window
         SetField("usePersonDir", p.UsePersonDir ? "1" : "0");
         SetField("personDir", p.PersonDir);
         SetField("centralDir", p.CentralExportDir);
-        SetField("defaultForm", _defaultFormDisplay);
+        SetField("defaultWindow", _defaultWindowDisplay);
         TheForm.Validate();
     }
 

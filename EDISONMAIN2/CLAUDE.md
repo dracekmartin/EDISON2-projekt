@@ -52,6 +52,16 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou
   mimo namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.
 
+## Výchozí okno (startup window)
+
+Modul auto-otevřený po loginu (per-uživatel × IDFa, Caché feature #25).
+`ExecutableModule.ElementId` = uložené `EDISFormEnum` id → picker/značení jede přes vlastní
+strom, ne legacy AccessTree.
+
+Okno `Windows/UserProfileWindow` je EDInputForm (`…EDInputForm.UserProfile`), ale **data
+drží klient, ne schema třída** — `Main.LoadUser/SaveUser` jsou samy MLRest metody, volat je
+ze schematu by kolidovalo na `^||ML`.
+
 ## Legacy moduly — EDISONMAIN2API
 
 Most do legacy světa: `EDISONMAIN2API.dll` (`c:\MLineRepos\EDISON\EDISONMAIN2API\`,

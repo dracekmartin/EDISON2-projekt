@@ -26,6 +26,7 @@ namespace EDISONMAIN2
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
             Loaded += WireMiniAppHost;
+            ContentRendered += OnContentRendered;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
@@ -39,6 +40,15 @@ namespace EDISONMAIN2
             bool dark = ThemeService.Current == AppTheme.Dark;
             if (dark ? DockManager.Theme is Vs2013DarkTheme : DockManager.Theme is Vs2013LightTheme) return;
             DockManager.Theme = dark ? new Vs2013DarkTheme() : new Vs2013LightTheme();
+        }
+
+        // Po prvním vykreslení (WPF analog legacy frmMain_Shown) otevři uživatelův výchozí okno.
+        // ContentRendered fíruje jednou po prvním paintu — strom už je postavený a licenčně filtrovaný.
+        private void OnContentRendered(object? sender, System.EventArgs e)
+        {
+            ContentRendered -= OnContentRendered;
+            if (DataContext is EdisonMainViewModel vm)
+                vm.OpenStartupWindowIfAny();
         }
 
         // MiniAppManager (ve VM) potřebuje DockingManager z view → host injektneme po načtení okna,

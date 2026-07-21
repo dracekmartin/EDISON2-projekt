@@ -5,7 +5,7 @@ Include (GENERAL, EDInputForm)
 /// z ALVA.EDISON.Main.LoadUser/LoadSettings) a persist osobního adresáře po OK
 /// (Main.SaveUser). Tato třída definuje jen strukturu formuláře a validaci
 /// (editovatelnost cesty dle přepínače, neprázdnost při ukládání) — nevolá legacy
-/// MLRest metody (kolidovaly by na ^||ML). Výchozí formulář je read-only pole, jeho
+/// MLRest metody (kolidovaly by na ^||ML). Výchozí okno je read-only pole, jeho
 /// název dodá host z modulového stromu shellu.
 Class ALVA.EDISONMAIN2.EDInputForm.UserProfile Extends %RegisteredObject
 {
@@ -24,7 +24,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 		s f.value = "Změnit heslo…"
 		s f = form.AddFieldToLastGroup("certificates", "Certifikáty", $$$FieldTypeButton)
 		s f.value = "Seznam certifikátů…"
-		s f = form.AddText("defaultForm", "Výchozí formulář")  s f.editable = 0
+		s f = form.AddText("defaultWindow", "Výchozí okno")  s f.editable = 0
 		s f.helpText = "Nastavíte pravým klikem na modul ve stromu."
 
 		d form.AddGroup("export", "Export dokumentů")

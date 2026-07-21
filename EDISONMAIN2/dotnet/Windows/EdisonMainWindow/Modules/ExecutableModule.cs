@@ -74,6 +74,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             }
         }
 
+        private bool _isStartupWindow;
+
+        /// <summary>
+        /// Uživatelův výchozí okno (per IDFa) — shell ho po loginu automaticky otevře a ve
+        /// stromu ho značí „(výchozí)". Přepíná se in-place (jako <see cref="IsFavorite"/>);
+        /// instance se sdílí mezi stromy → značka se projeví všude.
+        /// </summary>
+        public bool IsStartupWindow
+        {
+            get => _isStartupWindow;
+            set
+            {
+                if (_isStartupWindow == value) return;
+                _isStartupWindow = value;
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsStartupWindow)));
+            }
+        }
+
         private bool _isVisibleBySearch = true;
 
         /// <summary>Viditelnost při vyhledávání ve stromu — nastavuje VM podle shody názvu.</summary>
