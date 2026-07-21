@@ -32,9 +32,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
         public bool MlineOnly { get; init; } = false;
 
         /// <summary>
-        /// Hex barva (<c>"#RRGGBB"</c>) pro Foreground položky ve stromu. Prázdný / null = výchozí
-        /// barva tématu. Konvence: <c>"#FFA500"</c> (oranžová) = autorský stub bez vyplněné
-        /// <c>.exe</c>; <c>"#FF0000"</c> (červená) = exe vyplněné, ale soubor chybí.
+        /// Hex barva pro Foreground položky ve stromu. Prázdný / null = výchozí barva tématu.
+        /// Diagnostické barvy launchovatelnosti nastavuje <see cref="ModuleLaunchabilityCheck"/>
+        /// z theme tokenů <c>EDTheme.Module.Stub</c> (stub bez .exe) / <c>EDTheme.Module.Broken</c>
+        /// (exe vyplněné, ale soubor chybí).
         /// </summary>
         public string Color { get; init; } = "";
 

@@ -379,7 +379,7 @@
                                 VerticalAlignment="Center">
                             <Path x:Name="CheckMark"
                                   Visibility="Collapsed"
-                                  Stroke="White"
+                                  Stroke="{DynamicResource EDTheme.OnAccent.Text}"
                                   StrokeThickness="1.5"
                                   Data="M 2 6 L 5 9 L 11 3"
                                   SnapsToDevicePixels="True"

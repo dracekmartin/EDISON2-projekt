@@ -92,5 +92,8 @@
     <SolidColorBrush x:Key="EDTheme.Semantic.Success" Color="{StaticResource EDTheme.Semantic.Success.Color}"/>
     <Color x:Key="EDTheme.Semantic.Condition.Color">#FFBA68C8</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Condition" Color="{StaticResource EDTheme.Semantic.Condition.Color}"/>
+    <!-- Favorite — jasnější zlatá pro kontrast na tmavém -->
+    <Color x:Key="EDTheme.Semantic.Favorite.Color">#FFFFD54F</Color>
+    <SolidColorBrush x:Key="EDTheme.Semantic.Favorite" Color="{StaticResource EDTheme.Semantic.Favorite.Color}"/>
 
 </ResourceDictionary>

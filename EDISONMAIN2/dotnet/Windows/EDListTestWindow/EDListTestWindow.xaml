@@ -27,7 +27,7 @@
             <Separator/>
             <TextBlock x:Name="LinkText" Foreground="DarkBlue"/>
             <Separator/>
-            <TextBlock x:Name="CheckedText" Foreground="DarkGreen"/>
+            <TextBlock x:Name="CheckedText" Foreground="{DynamicResource EDTheme.Semantic.Success}"/>
         </StatusBar>
         <el:EDList x:Name="TheList" Margin="4"/>
     </DockPanel>

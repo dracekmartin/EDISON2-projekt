@@ -66,10 +66,18 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
             Visibility = dimmed ? Visibility.Hidden : Visibility.Visible;
     }
 
-    /// <summary>Pozadí pod HTML obsahem — v dark tmavé (EDTheme.Bg.Base #1E1E1E),
-    /// jinak by při načítání widgetu probleskovala bílá.</summary>
-    internal static System.Drawing.Color BackgroundFor(AppTheme theme) =>
-        theme == AppTheme.Dark ? System.Drawing.Color.FromArgb(0x1E, 0x1E, 0x1E) : System.Drawing.Color.White;
+    /// <summary>Pozadí pod HTML obsahem — v dark tmavé (EDTheme.Bg.Base), jinak by při
+    /// načítání widgetu probleskovala bílá. Čte živý token pro aktuálně aplikované téma;
+    /// fallback literály drží per-téma význam i bez WPF Application (testy).</summary>
+    internal static System.Drawing.Color BackgroundFor(AppTheme theme)
+    {
+        if (theme == ThemeService.Current
+            && System.Windows.Application.Current?.TryFindResource("EDTheme.Bg.Base.Color") is System.Windows.Media.Color c)
+            return System.Drawing.Color.FromArgb(c.A, c.R, c.G, c.B);
+        return theme == AppTheme.Dark
+            ? System.Drawing.Color.FromArgb(0x1E, 0x1E, 0x1E)
+            : System.Drawing.Color.White;
+    }
 
     private void OnFontApplied() => ZoomFactor = FontService.BodySize / WidgetBaseFontPx;
 

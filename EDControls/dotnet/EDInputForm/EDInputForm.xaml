@@ -79,7 +79,7 @@
                        BasedOn="{StaticResource {x:Type TextBox}}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding HasError}" Value="True">
-                            <Setter Property="BorderBrush" Value="Red"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Semantic.Danger}"/>
                             <Setter Property="BorderThickness" Value="1.5"/>
                         </DataTrigger>
                         <!-- Needitovatelné: readonly (text zůstává čitelný/kopírovatelný), ale
@@ -101,7 +101,7 @@
                        BasedOn="{StaticResource {x:Type ComboBox}}">
                     <Style.Triggers>
                         <DataTrigger Binding="{Binding HasError}" Value="True">
-                            <Setter Property="BorderBrush" Value="Red"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Semantic.Danger}"/>
                             <Setter Property="BorderThickness" Value="1.5"/>
                         </DataTrigger>
                     </Style.Triggers>
@@ -197,7 +197,7 @@
                             <Style TargetType="DatePicker" BasedOn="{StaticResource {x:Type DatePicker}}">
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding HasError}" Value="True">
-                                        <Setter Property="BorderBrush" Value="Red"/>
+                                        <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Semantic.Danger}"/>
                                         <Setter Property="BorderThickness" Value="1.5"/>
                                     </DataTrigger>
                                 </Style.Triggers>
@@ -276,7 +276,7 @@
                                 Cursor="Hand">
                             <Button.Template>
                                 <ControlTemplate TargetType="Button">
-                                    <Border BorderBrush="Gray" BorderThickness="1" CornerRadius="2"
+                                    <Border BorderBrush="{DynamicResource EDTheme.Border.Strong}" BorderThickness="1" CornerRadius="2"
                                             Background="{Binding Value, Converter={StaticResource HexToBrush}}"/>
                                 </ControlTemplate>
                             </Button.Template>
@@ -376,7 +376,7 @@
                                         </Style>
                                     </TextBlock.Style>
                                 </TextBlock>
-                                <TextBlock Text="*" Foreground="Red"
+                                <TextBlock Text="*" Foreground="{DynamicResource EDTheme.Semantic.Danger}"
                                            Visibility="{Binding RequiredIndicatorVisibility}"
                                            ToolTip="Povinné pole" Margin="4,0,0,0"
                                            VerticalAlignment="Center"/>
@@ -444,7 +444,7 @@
                                  Žádný layout shift — Row 1 je Auto height, prázdná = 0px. -->
                             <TextBlock Grid.Row="1" Grid.Column="1"
                                        Text="{Binding ValidationError}"
-                                       Foreground="Red" FontSize="11"
+                                       Foreground="{DynamicResource EDTheme.Semantic.Danger}" FontSize="11"
                                        TextWrapping="Wrap" MaxWidth="320"
                                        Margin="2,2,2,2"
                                        Visibility="{Binding HasError, Converter={StaticResource BoolToVis}}"/>
@@ -537,7 +537,7 @@
                             <!-- Help text (column mode) — zarovnán s help texty polí přes SharedSizeGroup -->
                             <TextBlock Grid.Column="3"
                                        Text="{Binding HelpText}" TextWrapping="Wrap"
-                                       Foreground="Gray" FontSize="11"
+                                       Foreground="{DynamicResource EDTheme.Text.Muted}" FontSize="11"
                                        VerticalAlignment="Center" Margin="8,0,4,0"
                                        MaxWidth="200"
                                        Style="{StaticResource HelpTextColumnStyle}"/>

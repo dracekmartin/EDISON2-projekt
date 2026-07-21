@@ -246,7 +246,7 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <!-- Zlatá ★ na konci názvu, jen u oblíbených (prázdná se nezobrazuje). -->
-                        <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="#FFC107" VerticalAlignment="Center"
+                        <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="{DynamicResource EDTheme.Semantic.Favorite}" VerticalAlignment="Center"
                                    Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVis}}"/>
                         <!-- Značka výchozího okna (shell ho auto-otevře po loginu). -->
                         <TextBlock Text="(výchozí)" Margin="6,0,0,0" FontSize="11" VerticalAlignment="Center"
