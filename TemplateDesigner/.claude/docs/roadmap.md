@@ -5,6 +5,70 @@
 
 ---
 
+## 🔴 PRIORITA — MHD datová parita na složitých linkách (2026-07-20)
+
+**Problém:** MHD zastávkový JŘ (`ZastavkoveJrMhd`) **datově neodpovídá legacy na složitých linkách
+s mnoha variantami tras**. Gold testy v pre-push pinují jen jednoduché **CB_DP** linky (málo variant) →
+divergence nikdy neprošla testem. DPKV má linky s hodně variantami (např. **KV_DP linka 1073**), kde je
+rozdíl velký. **Musí se vyřešit dřív než jakékoli grafické doladění (#10660 barvy/podtržení).**
+
+**Důkaz (gold oracle `MhdLegacyOracle`, KV_DP 1073, projete=1):**
+- Odjezdy: legacy **4295** vs TD **6352** (TD +48 %)
+- Zastávky: legacy **693** vs TD **1317** (TD ~2×)
+- Poznámky: legacy **213** vs TD **221** — rozdílové poznámky A–K nesedí (jiná písmena/klíče)
+- ⚠️ **TD má VÍC, ne míň** — takže neztrácíme obsah, ale **strukturujeme jinak** (nejspíš jinak dělené
+  skupiny dnů / stránky — v diffu date-skupina „31.12."). To je hlavní stopa k prošetření.
+
+**ROOT CAUSE #2+#3 (nalezeno + datově ověřeno 2026-07-20): příznak `TisknoutZastavkovyTam`/`Zpet`.**
+Per-bod trasy příznak v `ALVA.MHD.LSO(idfa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",bod,"Val",
+"TisknoutZastavkovyTam"|"TisknoutZastavkovyZpet")` (default 1). Legacy (`LinkyPrintFormatMHD.cls:713-720`)
+bod s příznakem **0 vynechá ze seznamu zastávek A z `TisknutaTrasaBitmap`** (`s $e(bitmap,mycnt)=" "`).
+**TD příznak nečte vůbec** → body zobrazuje (víc zastávek = #2) + rozdíly tras počítá proti jiné bitmapě
+(jiné poznámky = #3). **Ověřeno v datech:** KV_DP 1073 má body s příznakem 0; CB_DP 1001 ne (proto gold sedí).
+**FIX (spec, turnkey):** v TD číst `TisknoutZastavkovyTam`/`Zpet` per bod a vyřadit body s 0:
+(a) ze seznamu zastávek (`SestavitJednuStranku` zastavky loop — skip jako legacy 713-720),
+(b) z bitmapy obsluhy / `TisknutaTrasaBitmap` (`VypocitatBitmapyObsluhy` — blanknout pozici),
+přičemž bod **zůstává v trase** pro timing/spoje (legacy ho jen skryje, neodstraní). Ověřit gold: CB_DP 1001
+musí zůstat 1:1, KV_DP 1073 dep/zast/pozn se přiblíží legacy. (SMO grouping #1 níže hotové.)
+
+**ROOT CAUSE #1 (nalezeno 2026-07-20, `LinkyPrintFormatMHD.cls:838-850`): dělení sloupců skupin dnů.**
+Legacy mapuje `TypProvozuID → sloupec přes SMOID` (SMO1/2/3/4 → mycol 1-4), tj. **slučuje mnoho typů
+provozu do max 4 sloupců** a typy **mimo SMO1-4 zahazuje** (`i mycol="" continue`). **TD dělá sloupec
+per `TypProvozuID`** (žádné SMO slučování, žádný filtr) → na složitých linkách mnohem víc sloupců →
+tentýž odjezd se opakuje ve víc sloupcích → +48 % odjezdů + navíc date-skupiny. Fix = zavést SMO model
+do TD: seskupit odjezdy + `SKUPINY_DNU` podle `SMOID`, vynechat typy bez SMO1-4, nadpis z reprezentanta.
+Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), downstream (route-diff/NZ/anotace).
+
+**Plán / stav:**
+1. ✅ **HOTOVO (2026-07-20): SMO grouping** — TD čte `SMOID` z číselníku a slučuje odjezdy + `SKUPINY_DNU`
+   do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
+   Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
+   Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
+2. 🟢 **Zastávky 2× = PROJETÉ zastávky (nízká priorita, neviditelné).** Změřeno (KV_DP 1073): TD celkem
+   1317 zastávek, z toho **833 projetých** (před aktuální), 484 neprojetých; legacy 693. TD zahrnuje před
+   aktuální zastávkou **VŠECHNY body i neobsluhované**, legacy jen obsluhované → 4× víc projetých v datech.
+   **Render je defaultně skrývá** (přepínač „Projeté zastávky" vyp) → vizuálně OK, projeví se jen při jejich
+   zapnutí. Fix = rozšířit `ObsluhaBitmap` filtr i na body PŘED aktuální (dnes filtruje jen za). Nízká priorita.
+   (Odjezdy 1,5× = menší samostatná drobnost, projeté odjezdy nemají — taky neviditelné.)
+3. ⬜ **Rozdílové poznámky tras — SPOLEČNÝ KOŘEN S #2** (analýza 2026-07-20, PoznProbe na 1073/Chebská).
+   TD poznámky **generuje** (texty ve stylu legacy, „A: končí v Tržnice" sedí přesně), ale popisuje **jiné
+   rozdíly**: TD „W: nejede do zastávky Globus" vs legacy jinde „A: zajistí z Hory… do Jenišov". → oba
+   počítají rozdíl proti **jinému základu** (obsluha bitmapa / množina zastávek). To je **týž kořen jako #2**:
+   TD zahrnuje zastávky, které legacy vynechává → rozdíly tras počítá proti jiné množině → jiné poznámky.
+   **Barvy:** rozdílové poznámky nemají barvu ani v legacy (`fc=` prázdné na obou) → správně bez barvy;
+   barvu nesou jen číselníkové poznámky spoje (ty ji už berou).
+   **Fix #2+#3 dohromady:** srovnat TD `VypocitatBitmapyObsluhy` (obsluha/spojTrasa/rozdilTrasy) + filtr
+   zastávek v `SestavitJednuStranku` s legacy `LinkyPrintFormatMHD` — sjednotit množinu obsluhovaných
+   zastávek. Ověřit gold oraclem (1073 dep/zast/pozn → k legacy). Entry point: `VypocitatBitmapyObsluhy`.
+4. ⬜ **Rozšířit gold pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
+5. Diagnostika: read-only přemostěč `MhdLegacyOracle.CompareProbe` (numeric→named IN) — na dev serveru
+   (necommitnutý; smazat po dořešení celého tracku).
+
+**Pozn.:** perf oprava (odstraněno drahé pole první/poslední spoj) je hotová a nezávislá — tohle je
+o věcné správnosti výstupu.
+
+---
+
 ## 📋 Aktivní / nejbližší kroky
 
 > **Release track uzavřen (2026-07-15).** Verze nasazena do produkce (2026-07-14), dokumentace na
@@ -38,7 +102,10 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
   tracky, každý gated rozhodnutími R1–R7 (viz [`architektonicka-rozhodnuti-agendy.md`](architektonicka-rozhodnuti-agendy.md))
-- **Výkon MHD tisku** (audit C-b) — memoizace `GetNazevHrl`/`PopisDopravce`/ENUMS barvy dle AD vzoru; behavior-preserving, gold-safe. Až výkon reálně bolí (velcí dopravci).
+- **Výkon MHD tisku** — hlavní bottleneck **vyřešen 2026-07-20** (odstraněno drahé nepoužívané pole
+  „první/poslední spoj" počítané per stránka přes legacy MHD2 → ~7 s na ~0,6 s, viz changelog).
+  Původní hypotéza (memoizace `GetNazevHrl`/`PopisDopravce`) se **neukázala** — názvy byly zanedbatelné
+  (profiling: build zastávek 0,02 s). Zbytek fází ~0,5 s = zatím OK; další memoizace až kdyby reálně bolelo.
 - **Konverze legacy PostScript JŘ → TD šablona (`.json`)** (na poptávku, nejdřív průzkum) — cíl: zákazníci
   s jízdními řády v legacy PostScriptu je nemusí přepisovat od nuly. ⚠️ **Klíčové rozlišení, od kterého se
   musí začít:** PostScript je **vyrenderovaný výstup** (layout + zapečená konkrétní data), kdežto naše

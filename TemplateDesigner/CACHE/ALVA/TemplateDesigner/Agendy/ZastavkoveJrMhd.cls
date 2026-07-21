@@ -260,8 +260,9 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 ///   ("trasa",SmerID,"slouceniInv",BodID2)                      = BodID hlavní bod po sloučení
 ///   ("poznamkyZast",SmerID,BodID,Znak)                         = $lb(TextPoznamky, TypPoznamky)
 ///   ("atributyZast",SmerID,BodID,AtributID)                    = $lb(Popis, Typ, SpecialniZnak)
-///   ("odjezdy",SmerID,BodID,TypProvozuID,Hodina,Minuta,SpojID) = ""
-///   ("typyProvozu",TypProvozuID)                               = ""
+///   ("odjezdy",SmerID,BodID,SmoSloupec,Hodina,Minuta,SpojID)   = ""  (SmoSloupec 1-4 = sekce minut odjezdu dle SMOID)
+///   ("smoSloupce",SmoSloupec)                                  = ""  (registr tiskových sloupců)
+///   ("smoNadpis",SmoSloupec)                                   = $lb(nadpis1, nadpis2)
 ///   ("spojTrasa",SmerID,SpojID)                                = TrasaBitmap
 ///   ("spojTrasa",SmerID,SpojID,BodID)                          = TrasaBitmapZBodu
 ///   ("spojNZ",SpojID)                                          = NegativniZnacka
@@ -590,6 +591,14 @@ ClassMethod AutoPoznamkovatPlatnosti(ByRef sys As %String)
     }
 }
 
+/// Mapuje typ provozu → sekce minut odjezdu = tiskový sloupec (1-4) přes číselníkové pole SMOID
+/// ("SMO1".."SMO4"). Legacy (LinkyPrintFormatMHD) takto slučuje mnoho jemných typů provozu do ≤4
+/// sloupců mřížky; typ bez SMO1-4 se do vývěsky netiskne → "". Vývěska tak má pár sloupců, ne desítky.
+ClassMethod SmoSloupec(dataDB As %String, IdFa As %String, TypProvozuID As %String) As %String
+{
+    q $case($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"SMOID")), "SMO1":1, "SMO2":2, "SMO3":3, "SMO4":4, :"")
+}
+
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Fáze 4: Promítnutí spojů
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -609,7 +618,13 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         // Spoj bez skupiny dnů / směru nelze zařadit do mřížky — přeskoč. Prázdný subscript
         // v ^|| working globálu = <SUBSCRIPT> a shodil by tisk celé linky.
         i (TypProvozuID="")||(SmerID="") continue
-        s ^||TiskMHD("typyProvozu",TypProvozuID) = ""
+        // Sekce minut odjezdu = tiskový sloupec (1-4) dle SMOID číselníku typů provozu. Legacy takto
+        // slučuje mnoho jemných typů do ≤4 sloupců (LinkyPrintFormatMHD); typ bez SMO1-4 se netiskne.
+        s smoCol = ..SmoSloupec(dataDB, IdFa, TypProvozuID)
+        i smoCol '= "" {
+            s ^||TiskMHD("smoSloupce",smoCol) = ""
+            s ^||TiskMHD("smoNadpis",smoCol) = $lb($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMOPrvni")),$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMODruhy")))
+        }
 
         s smerKrok = 1 i SmerID s smerKrok = -1
 
@@ -649,7 +664,7 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
                 s $e(TrasaBitmap,BodID) = 1
                 i 'jeKonecny {
                     s hh = casOdjezdu \ 60, mm = casOdjezdu # 60
-                    s ^||TiskMHD("odjezdy",SmerID,BodID,TypProvozuID,hh,mm,SpojID) = ""
+                    i smoCol '= "" s ^||TiskMHD("odjezdy",SmerID,BodID,smoCol,hh,mm,SpojID) = ""
                     s ^||TiskMHD("obsluhaKonec",SmerID,BodID,SpojID) = ""
                 }
             }
@@ -982,11 +997,9 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d vals.%Set("POPIS_ZASTAVKA",         NazevZastavky)
     d vals.%Set("CISLO_ZASTAVKA",         CisloZastavky_"-"_Oznacnik)
     // TITULEK / POZNAMKA_POD_DOPRAVCE / INFORMACE: MHD pro ně nemá zdroj → nejsou ve schématu (viz AD, které je má z JRMAIN)
-    // A2: NEJEDOU_SPOJE je legacy misnomer (u MHD = text prvního/posledního spoje) → nový klíč
-    // PRVNI_POSLEDNI_SPOJ; NEJEDOU_SPOJE ponecháno duplicitně pro kompatibilitu existujících šablon.
-    s prvniPosledniSpoj = ..NejedouSpoje(.sys, dataDB, IdFa, LinkaID, aktualniZastBodID, SmerID)
-    d vals.%Set("PRVNI_POSLEDNI_SPOJ",    prvniPosledniSpoj)
-    d vals.%Set("NEJEDOU_SPOJE",          prvniPosledniSpoj)
+    // PRVNI_POSLEDNI_SPOJ (text prvního/posledního spoje) odstraněno 2026-07-20 — nepoužívané a drahé:
+    // legacy MHD2 CalculatePrvniAndPosledniSpojeText se počítalo per stránka (~6,8 s z 7 s na velké lince,
+    // full sken spojů + den-po-dni platnost). Kdyby ho někdo chtěl, reimplementovat nad daty fáze 4 v ^||TiskMHD.
     d page.%Set("values", vals)
 
     // ── Kolekce ──────────────────────────────────────────────────────────
@@ -1068,15 +1081,14 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
 
     // SKUPINY_DNU — z typů provozu
     s skupiny = ##class(%DynamicArray).%New()
-    s TypProvozuID = ""
+    s smoCol = ""
     f {
-        s TypProvozuID = $o(^||TiskMHD("typyProvozu",TypProvozuID)) q:TypProvozuID=""
-        // Má tato zastávka odjezdy tohoto typu?
-        i '$d(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,TypProvozuID)) continue
-        s nadpis1 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMOPrvni"))
-        s nadpis2 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMODruhy"))
-        s poradi = +$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"Poradi"))
-        d skupiny.%Push(..BuildSkupinaDnu(TypProvozuID, nadpis1, nadpis2, poradi))
+        s smoCol = $o(^||TiskMHD("smoSloupce",smoCol)) q:smoCol=""
+        // Má tato zastávka odjezdy v tomto sloupci (sekci minut odjezdu)?
+        i '$d(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol)) continue
+        s nadpisLb = $g(^||TiskMHD("smoNadpis",smoCol))
+        // Pořadí = číslo sloupce (SMO1..SMO4), aby sloupce šly zleva SMO1→SMO4 jako v legacy.
+        d skupiny.%Push(..BuildSkupinaDnu(smoCol, $lg(nadpisLb,1), $lg(nadpisLb,2), smoCol))
     }
     d rows.%Set("SKUPINY_DNU", skupiny)
 
@@ -1085,20 +1097,20 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // Lokální sběr poznámek pro tuto stránku
     k strankovePoznamky
 
-    s TypProvozuID = ""
+    s smoCol = ""
     f {
-        s TypProvozuID = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,TypProvozuID)) q:TypProvozuID=""
+        s smoCol = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol)) q:smoCol=""
         s hh = ""
         f {
-            s hh = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,TypProvozuID,hh)) q:hh=""
+            s hh = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh)) q:hh=""
             s mm = ""
             f {
-                s mm = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,TypProvozuID,hh,mm)) q:mm=""
+                s mm = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh,mm)) q:mm=""
                 s SpojID = ""
                 f {
-                    s SpojID = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,TypProvozuID,hh,mm,SpojID)) q:SpojID=""
+                    s SpojID = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh,mm,SpojID)) q:SpojID=""
 
-                    s odj = ..BuildOdjezd(aktualniZastBodID, TypProvozuID, hh, mm)
+                    s odj = ..BuildOdjezd(aktualniZastBodID, smoCol, hh, mm)
 
                     // ── Anotace odjezdu ──
 
@@ -1517,7 +1529,6 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "QR_KOD",                 "QR kód URL",             "text")
     d ..AddField(fields, "POPIS_ZASTAVKA",         "Aktuální zastávka",      "text")
     d ..AddField(fields, "CISLO_ZASTAVKA",         "Číslo zastávky",         "text")
-    d ..AddField(fields, "PRVNI_POSLEDNI_SPOJ",    "První/poslední spoj",    "text")
 }
 
 /// Přidá standardní tabulkové kolekce JŘ agendy do pole collections.
@@ -1648,19 +1659,6 @@ ClassMethod PopisDopravce(ByRef sys As %String, dataDB As %String, IdFa As %Stri
     ret $s(nazev'="":"Dopravce: " _ nazev, 1:"")
 }
 
-/// Text „nejedou spoje" z generátoru MHD2 (`TiskyFce`), jen když je na lince zapnutý flag
-/// `GenerovatNEJEDOU_SPOJE`. Defensivní — chybějící třída / chyba → prázdno.
-ClassMethod NejedouSpoje(ByRef sys As %String, dataDB As %String, IdFa As %String, LinkaID As %String, aktualniZastBodID As %String, SmerID As %Integer) As %String
-{
-    s txt = ""
-    try {
-        i $g(^[dataDB]ALVA.MHD.LSO(IdFa,1,"DTA",LinkaID,"DTA",1,"GenerovatNEJEDOU_SPOJE")) {
-            s txt = ##class(ALVA.MHD2.Linky.API.TiskyFce).CalculatePrvniAndPosledniSpojeText(.sys, LinkaID, aktualniZastBodID, SmerID)
-        }
-    } catch ex { s txt = "" }
-    ret txt
-}
-
 /// Vrátí ukázková data pro live preview v designeru.
 /// Kompletní struktura se všemi kolekcemi a vnořenými poli.
 ClassMethod GetMockData(ByRef sys As %String) As %Status
@@ -1682,8 +1680,6 @@ ClassMethod GetMockData(ByRef sys As %String) As %Status
     d vals.%Set("QR_KOD",                 "https://jr.example.com/42")
     d vals.%Set("POPIS_ZASTAVKA",         "Líšeň, Novolíšeňská")
     d vals.%Set("CISLO_ZASTAVKA",         "101-A")
-    d vals.%Set("PRVNI_POSLEDNI_SPOJ",    "První spoj v 5:15, poslední v 23:30")
-    d vals.%Set("NEJEDOU_SPOJE",          "První spoj v 5:15, poslední v 23:30")
     d out.%Set("values", vals)
 
     // ── Kolekce ─────────────────────────────────────────────────────────

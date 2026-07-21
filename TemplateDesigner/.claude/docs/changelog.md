@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-07-20 — MHD parita: sloupce odjezdů podle SMO (sekce minut odjezdu) — krok 1
+
+MHD zastávkový JŘ na složitých linkách (mnoho typů provozu) datově nesedí legacy — gold pinuje jen
+jednoduché CB_DP linky, takže to prošlo. Root cause #1: **dělení sloupců odjezdové mřížky.** Legacy
+mapuje typ provozu → tiskový sloupec přes číselníkové pole `SMOID` (SMO1–4) a slučuje mnoho jemných
+typů do ≤4 sloupců; TD dělal sloupec **per typ provozu** → na KV_DP desítky sloupců, rozsypané záhlaví.
+
+- **Fix:** `SmoSloupec()` helper (typ → sloupec 1–4 dle `SMOID`, mimo SMO1–4 = netiskne se, jako legacy);
+  `PromitnutSpoje` klíčuje odjezdy `smoCol` místo `TypProvozuID` + registruje `smoSloupce`/`smoNadpis`;
+  `SestavitJednuStranku` staví `SKUPINY_DNU` i iteruje odjezdy po `smoCol`. Per-spoj logika (platnosti/NZ/
+  rozdíly tras) beze změny (na `SpojID`). Uživateli se nic „SMO" neukazuje — jen čitelné nadpisy sloupců.
+- **Ověřeno:** **CB_DP 1001 stále 1:1** (gold oracle: odjezdy 6597, zastávky 58, poznámky 1543 — vše match)
+  → beze změny pinované gold, pre-push zelený. KV_DP sloupce vizuálně sedí s legacy.
+- **Zbývá (viz roadmap „🔴 PRIORITA"):** #2 počty na složitých linkách (odjezdy 1,5×/zastávky 2× — které
+  zastávky se v seznamu zobrazí, handling variantních tras) + #3 rozdílové poznámky A–K. Pravděpodobně
+  společný kořen (variantní trasy). Krok 1 (sloupce) je hotový a bezpečný; #2/#3 jsou samostatné.
+
+## 2026-07-20 — MHD tisk: odstraněno drahé nepoužívané pole „první/poslední spoj" (perf)
+
+Přepínání instancí MHD trvalo ~5–7 s (velké linky), zatímco AD skoro okamžitě. Profilingem
+(dočasné per-fáze `$zh` časovače) lokalizováno: **~91 % času `GetData` spolklo pole
+`PRVNI_POSLEDNI_SPOJ`/`NEJEDOU_SPOJE`** — počítalo se **per stránka** (linka 1073 KV_DP: 6,8 s ze 7 s,
+42 stránek) přes legacy MHD2 `CalculatePrvniAndPosledniSpojeText` (full sken spojů + `MakeTableSpoj`
+za každý spoj + smyčka den-po-dni přes celé období platnosti).
+
+- **Fix:** pole **odstraněno** (výpočet, oba scalary, pole ve schématu, mock, osiřelý helper `NejedouSpoje`).
+  Nepoužívané (žádná šablona v repu ho nereferuje; per-linka flag `GenerovatNEJEDOU_SPOJE` ho jen zbytečně
+  zapínal). MHD-only — AD `NEJEDOU_SPOJE` (= nástupiště, jiný levný význam) netknuto.
+- **Výsledek:** `GetData` velké MHD linky z ~7 s na ~0,6 s (zbytek fází: trasa/spoje/bitmapy/stránky ~0,5 s).
+- **Kdyby to někdo chtěl zpět:** reimplementovat „první/poslední spoj" v TD nad daty fáze 4 v `^||TiskMHD`
+  (levné, bez legacy MHD2 volání per stránka) — poznámka v kódu na místě.
+- ⚠️ **Gold:** odebrání scalaru mění MHD gold digesty (md5; počty pages/zast/odj/pozn beze změny) → re-baseline.
+
+## 2026-07-20 — StopList: značky přes symbolový font (MHD „na znamení" konzistentní s legendou)
+
+Značky u zastávek (na znamení, atributy, poznámky) se ve StopListu kreslily **normálním fontem**, takže
+MHD „na znamení" (drátový kód SpecZnak 68) se ukázalo jako **surové písmeno „D"** místo piktogramu —
+zatímco legenda a mřížka odjezdů (které symbolový Timetable font už používaly) ukázaly správný piktogram.
+Nekonzistence hlášená z DPKV/MHD (U Jara „D", Panorama „D"; legenda „× na znamení").
+
+- **Fix:** značky se kreslí **po úsecích s vlastním fontem** (`BuildStopMarkerRuns` + `DrawStopMarkers`):
+  jednoznakový SpecZnak, který není textové „x/y/z", jde symbolovým Timetable fontem (piktogram);
+  textové značky (AD „x") a poznámky normálním fontem. V jedné buňce nejde míchat font → značky
+  oddělené od názvu a kreslené zvlášť, přes sdílené `CellLayout` helpery (zarovnání beze změny).
+  Platí pro obě pozice značek (před/za názvem) i auto-šířku sub-buňky.
+- **Agenda-agnostické:** žádná AD/MHD větev — rozdíl je jen v datech (SpecZnak číselníku firmy).
+  AD „x" zůstává „x", MHD „D" → piktogram; StopList teď jede stejnou symbolovou cestou jako
+  NotesLegend/DepartureGrid (uzavírá mezeru symbolového fontu C2 pro StopList). Relates #10660 (DPKV).
+
 ## 2026-07-15 — Tiskové parametry per šablona (obsahové)
 
 Hodnoty **obsahových** tiskových parametrů (časová osa odjezdů, rozdělení sloupců, tisk šipek /
