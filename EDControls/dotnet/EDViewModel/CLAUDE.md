@@ -54,6 +54,10 @@ legacy numerických ID z `EDISFormEnum`. Override na `null` = opt-out.
   — to by srazilo controly na 0.5 opacity.
 - Legacy launch: sentinel `"EDISONMAIN2"` + 12 polí (server…mlp, formFqn, shellGuid,
   inputParam, agendaPath, licensedElements) — viz `BuildLauncherArguments`.
+- Modeless `ShowLegacy`/`ShowLegacyAsync` dedupují: běží-li už proces se stejným
+  `exe+forma+inputParam`, jen přenesou focus (`SetForegroundWindow`), nový nespustí
+  (`TryFocusExistingLegacy`). Dialogové/blokující varianty ne — ztmavují shell, druhý
+  klik tam nejde.
 - `shareShellSession=true` → modul sdílí shellův ACTIVITY lock (`CacheLocks=1`).
   Pre-login admin override (`LicenceVerifier`) musí předat `false`, jinak requesty
   padají na `LockExist`.
