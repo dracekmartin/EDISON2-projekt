@@ -117,7 +117,31 @@ namespace EDControls.EDInputForm
 
             Toolbar.FindNextCommand = new RelayCommand(FindNext);
             Toolbar.FindPreviousCommand = new RelayCommand(FindPrevious);
+            Toolbar.HelpCommand = new RelayCommand(ShowShortcutsHelp);
         }
+
+        // ─── Nápověda klávesových zkratek ────────────────────────────────────────
+
+        /// <summary>Jediný zdroj pravdy pro popup nápovědy (? v toolbaru). Vypisují se jen
+        /// reálně nadrátované zkratky. Při přidání/změně zkratky aktualizuj tento seznam
+        /// — viz CLAUDE.md.</summary>
+        internal static readonly (string Keys, string Description)[] KeyboardShortcuts =
+        [
+            ("Ctrl+F", "Skok do vyhledávacího pole"),
+            ("Enter", "Přechod na další pole (na tlačítku ho stiskne)"),
+            ("Ctrl+Enter", "Potvrzení / uložení dialogu"),
+            ("Ctrl+<číslo>", "Skok na položku podle jejího čísla (víceciferné do 200 ms)"),
+        ];
+
+        internal static string FormatShortcutsHelp()
+        {
+            var sb = new System.Text.StringBuilder("Klávesové zkratky:\n");
+            foreach (var (keys, description) in KeyboardShortcuts)
+                sb.Append('\n').Append(keys).Append("  —  ").Append(description);
+            return sb.ToString();
+        }
+
+        private void ShowShortcutsHelp() => PopupDisplayer?.Info(FormatShortcutsHelp());
 
         private void ApplySearchFilter(string searchText)
         {

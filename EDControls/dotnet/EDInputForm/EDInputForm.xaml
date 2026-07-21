@@ -27,11 +27,12 @@
 
             <!-- Toolbar bar (Row 0): EDComponentToolbar — sdílená komponenta napříč
                  EDInputForm / EDList / budoucí tabulkové komponenty.
-                 Help/Settings ikony vypnuté dokud nemáme reálné Commands (avoid placeholder noise). -->
+                 Help "?" (vpravo od hledání) otevírá popup zkratek přes HelpCommand
+                 (WireToolbarSearch). Settings vypnutý dokud nemá reálný Command. -->
             <edct:EDComponentToolbar Grid.Row="0"
                                      x:Name="Toolbar"
                                      ShowSearch="True"
-                                     ShowHelp="False"
+                                     ShowHelp="True"
                                      ShowSettings="False"/>
 
             <!-- Column header bar: Položka | Hodnota.

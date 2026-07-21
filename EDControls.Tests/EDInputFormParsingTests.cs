@@ -929,6 +929,32 @@ public class EDInputFormParsingTests
         Assert.All(groups, g => Assert.True(g.IsFilteredBySearch));
     }
 
+    // ─── Nápověda klávesových zkratek ─────────────────────────────────────────
+
+    [Fact]
+    public void FormatShortcutsHelp_ListsEveryShortcut()
+    {
+        var text = EDInputForm.EDInputForm.FormatShortcutsHelp();
+
+        Assert.False(string.IsNullOrWhiteSpace(text));
+        foreach (var (keys, description) in EDInputForm.EDInputForm.KeyboardShortcuts)
+        {
+            Assert.Contains(keys, text);
+            Assert.Contains(description, text);
+        }
+    }
+
+    [Fact]
+    public void FormatShortcutsHelp_OmitsUnwiredSearchKeys()
+    {
+        // Search Enter/Shift+Enter/Esc jsou zatím jen v tooltipech, nefungují →
+        // nesmí se vypsat, ať nápověda nelže.
+        var text = EDInputForm.EDInputForm.FormatShortcutsHelp();
+
+        Assert.DoesNotContain("Shift+Enter", text);
+        Assert.DoesNotContain("Esc", text);
+    }
+
     // ─── Min / Max / Format / Unit (pozice 15–18) ─────────────────────────────
 
     [Fact]
