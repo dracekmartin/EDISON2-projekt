@@ -65,7 +65,8 @@ namespace EDISONMAIN2.Windows.LoginWindow
 
         private void AddWidget(Border host, string url)
         {
-            var wv = new FontZoomWebView { Source = new Uri(url) };
+            var wv = new FontZoomWebView();
+            wv.Navigate(url);
             host.Child = wv;
             _widgets.Add(wv);
         }

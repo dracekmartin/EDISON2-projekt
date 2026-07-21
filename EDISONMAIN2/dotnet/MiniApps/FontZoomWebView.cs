@@ -46,11 +46,18 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     // Id pre-create skriptu (AddScriptToExecuteOnDocumentCreated) — null = neregistrován.
     private string? _darkScriptId;
 
+    // URL k navigaci až po inicializaci Core + registraci dark skriptu (viz Navigate).
+    private string? _pendingUrl;
+
     public FontZoomWebView()
     {
         // Hodnota nastavená před inicializací CoreWebView2 se aplikuje po ní (WPF wrapper).
         ZoomFactor = FontService.BodySize / WidgetBaseFontPx;
         DefaultBackgroundColor = BackgroundFor(ThemeService.Current);
+        // V dark modu skryj plochu, dokud nedoběhne první navigace: bílý HWND WebView2 probleskne
+        // dřív, než se aplikuje DefaultBackgroundColor / invert filtr. Skrytý → prosvítá tmavý host.
+        if (ThemeService.Current == AppTheme.Dark)
+            Visibility = System.Windows.Visibility.Hidden;
         FontService.Applied += OnFontApplied;
         ThemeService.Applied += OnThemeApplied;
         CoreWebView2InitializationCompleted += OnCoreWebView2Ready;
@@ -69,6 +76,20 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
             : System.Drawing.Color.White;
     }
 
+    /// <summary>Naviguje na URL až po inicializaci Core a registraci pre-create dark skriptu. Přímé
+    /// <c>Source =</c> spustí navigaci dřív, než se dark skript stihne zaregistrovat → první dokument
+    /// probleskne světlý, teprve pak ho NavigationCompleted ztmaví (bílo-černé bliknutí v dark modu).</summary>
+    public void Navigate(string url)
+    {
+        if (CoreWebView2 is not null)
+        {
+            CoreWebView2.Navigate(url);
+            return;
+        }
+        _pendingUrl = url;
+        _ = EnsureCoreWebView2Async(); // navigaci provede OnCoreWebView2Ready až po SyncDarkScriptAsync
+    }
+
     private void OnFontApplied() => ZoomFactor = FontService.BodySize / WidgetBaseFontPx;
 
     private async void OnCoreWebView2Ready(object? sender, CoreWebView2InitializationCompletedEventArgs e)
@@ -79,12 +100,19 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         CoreWebView2.NavigationCompleted += OnNavigationCompleted;
         ApplyPreferredColorScheme();
         await SyncDarkScriptAsync();
+        if (_pendingUrl is not null)
+        {
+            CoreWebView2.Navigate(_pendingUrl);
+            _pendingUrl = null;
+        }
     }
 
     private async void OnNavigationCompleted(object? sender, CoreWebView2NavigationCompletedEventArgs e)
     {
         if (ThemeService.Current == AppTheme.Dark)
             await TryExecuteAsync(ApplyDarkJs);
+        // Odkryj až teď — obsah je vykreslený a (v dark) invertovaný, takže žádné bílé bliknutí.
+        Visibility = System.Windows.Visibility.Visible;
     }
 
     private async void OnThemeApplied()
