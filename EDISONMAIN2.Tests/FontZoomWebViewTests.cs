@@ -10,8 +10,8 @@ public class FontZoomWebViewTests
     public void DerivesFromHwndWebView2_NotComposition()
     {
         // HWND varianta — composition nepřežije reparent do plovoucího okna AvalonDocku
-        // (drag tabu) a tahá 23 MB WinRT projekci. Airspace overlaye řeší schování docku
-        // po dobu dimu (WindowDimmer.DimStateChanged), viz FontZoomWebView remarks.
+        // (drag tabu) a tahá 23 MB WinRT projekci. Airspace řeší owned okno EDActionInProgress
+        // (karta nad widgety) — widgety se při dimu neschovávají, viz FontZoomWebView remarks.
         Assert.True(typeof(WebView2).IsAssignableFrom(typeof(FontZoomWebView)));
         Assert.False(typeof(WebView2CompositionControl).IsAssignableFrom(typeof(FontZoomWebView)));
     }

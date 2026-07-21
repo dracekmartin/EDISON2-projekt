@@ -1,5 +1,3 @@
-using System.Windows;
-using EDControls;
 using EDControls.EDTheme;
 using EDControls.UserFonts;
 using Microsoft.Web.WebView2.Core;
@@ -18,9 +16,10 @@ namespace EDISONMAIN2.MiniApps;
 /// HWND <see cref="WebView2"/>, ne <see cref="WebView2CompositionControl"/> — composition
 /// nepřežije reparent do plovoucího okna AvalonDocku (drag/reorder tabu → crash na
 /// Direct3D11CaptureFramePool) a tahá 23 MB WinRT projekci (Microsoft.Windows.SDK.NET).
-/// Cena HWND: kreslí přes WPF (airspace), takže po dobu dimu (overlay „Akce probíhá",
-/// modální/legacy dialog) se sám schová (<see cref="WindowDimmer.DimStateChanged"/>) —
-/// jinak přes ztmavený shell zůstane vidět i klikatelný. Rám docku zůstává.
+/// Cena HWND: kreslí přes WPF (airspace) — WPF závoj dimu ho nepokryje, takže widgety
+/// zůstávají při čekání viditelné (nezatmavené) i interaktivní. Záměr: read-only obsah
+/// podpora.m-line.cz, uživatel si je při dimu může číst; kartu „Akce probíhá" nad nimi
+/// kreslí owned okno (viz EDActionInProgress).
 /// </remarks>
 internal sealed class FontZoomWebView : WebView2, IDisposable
 {
@@ -54,16 +53,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         DefaultBackgroundColor = BackgroundFor(ThemeService.Current);
         FontService.Applied += OnFontApplied;
         ThemeService.Applied += OnThemeApplied;
-        WindowDimmer.DimStateChanged += OnDimStateChanged;
         CoreWebView2InitializationCompleted += OnCoreWebView2Ready;
-    }
-
-    // Airspace: HWND WebView2 nelze překrýt WPF veilem. Po dobu dimu vlastního okna se schovej
-    // (Hidden = drží layout, rám tabů zůstává), jinak přes ztmavený shell svítíš a jsi klikatelný.
-    private void OnDimStateChanged(Window window, bool dimmed)
-    {
-        if (ReferenceEquals(window, Window.GetWindow(this)))
-            Visibility = dimmed ? Visibility.Hidden : Visibility.Visible;
     }
 
     /// <summary>Pozadí pod HTML obsahem — v dark tmavé (EDTheme.Bg.Base), jinak by při
@@ -143,7 +133,6 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         // Statické eventy by jinak držely zavřené widgety naživu.
         FontService.Applied -= OnFontApplied;
         ThemeService.Applied -= OnThemeApplied;
-        WindowDimmer.DimStateChanged -= OnDimStateChanged;
         base.Dispose();
     }
 }

@@ -441,9 +441,10 @@
             <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"/>
         </StatusBar>
 
-        <!-- Overlay „akce probíhá" (náběh spouštěného modulu). Poslední child + span celé mřížky
-             → kreslí se navrchu a pokryje celé okno. Auto-binduje se na VM.IsActionInProgress. -->
-        <edaip:EDActionInProgress Grid.Row="0" Grid.RowSpan="100" Grid.Column="0" Grid.ColumnSpan="100"/>
+        <!-- Overlay „akce probíhá" (náběh spouštěného modulu) — neviditelný controller,
+             karta se kreslí ve vlastním owned okně (nad WebView2 widgety).
+             Auto-binduje se na VM.IsActionInProgress. -->
+        <edaip:EDActionInProgress/>
 
     </Grid>
 

@@ -34,8 +34,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
   Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu tabu
-  do plovoucího okna AvalonDocku a tahá 23 MB WinRT projekci, viz TFM v csproj). Cena HWND je
-  airspace: WPF veil ho nepřekryje, tak se po dobu dimu sám schová (`WindowDimmer.DimStateChanged`).
+  do plovoucího okna AvalonDocku a tahá 23 MB WinRT projekci, viz TFM v csproj). Airspace: WPF
+  veil dimu widgety nepokryje — záměrně zůstávají čitelné; kartu „Akce probíhá" nad nimi kreslí
+  owned okno (viz `EDControls/dotnet/EDActionInProgress/CLAUDE.md`).
   User velikost fontu respektují přes `FontZoomWebView` (ZoomFactor =
   `FontService.BodySize` / 14 — základní text widgetů je 14 CSS px);
   rodina fontu se do HTML nepropaguje. Dark mode widgety samy neumí (natvrdo

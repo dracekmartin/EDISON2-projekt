@@ -11,16 +11,13 @@ namespace EDControls;
 /// Jednotné ztmavení okna (#1A000000) — stejný závoj jako EDActionInProgress. Adorner spolkne
 /// myš (klik ale pořád aktivuje okno → bounce handlery fungují), Preview handlery blokují
 /// klávesnici včetně window-level KeyBindings. Refcount per okno: vnořené dimy nesčítají tint.
+/// HWND obsah (WebView2 widgety) závoj kvůli airspace nepokryje — záměr: zůstávají při čekání
+/// čitelné (kartu „Akce probíhá" nad nimi řeší owned okno, viz EDActionInProgress).
 /// </summary>
 public static class WindowDimmer
 {
-    /// <summary>Single source of truth pro závoj — sdílí ho EDActionInProgress přes x:Static.</summary>
+    /// <summary>Single source of truth pro závoj — míra ztmavení se mění na jednom místě.</summary>
     public static readonly SolidColorBrush TintBrush = CreateTint();
-
-    /// <summary>Přepnutí dim stavu okna (true = první dim, false = poslední undim). HWND obsah,
-    /// který WPF veil kvůli airspace nepřekryje (WebView2), se na to napojí a po dobu dimu se
-    /// schová — jinak by přes ztmavený shell zůstal viditelný i klikatelný.</summary>
-    public static event Action<Window, bool>? DimStateChanged;
 
     private static SolidColorBrush CreateTint()
     {
@@ -61,7 +58,6 @@ public static class WindowDimmer
         owner.PreviewTextInput += text;
         owner.Closed += OnOwnerClosed;
         _states[owner] = new State(layer, adorner, keys, text);
-        DimStateChanged?.Invoke(owner, true);
     }
 
     private static void Detach(Window owner)
@@ -71,7 +67,6 @@ public static class WindowDimmer
         owner.PreviewKeyDown -= st.Keys;
         owner.PreviewTextInput -= st.Text;
         owner.Closed -= OnOwnerClosed;
-        DimStateChanged?.Invoke(owner, false);
     }
 
     private static void OnOwnerClosed(object? sender, EventArgs e) =>
