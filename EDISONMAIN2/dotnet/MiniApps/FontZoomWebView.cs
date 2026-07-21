@@ -77,6 +77,7 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
         // NavigationCompleted je pojistka — první dokument může vzniknout dřív, než se
         // pre-create skript stihne zaregistrovat (JS je idempotentní, dvojí běh nevadí).
         CoreWebView2.NavigationCompleted += OnNavigationCompleted;
+        ApplyPreferredColorScheme();
         await SyncDarkScriptAsync();
     }
 
@@ -89,9 +90,22 @@ internal sealed class FontZoomWebView : WebView2, IDisposable
     private async void OnThemeApplied()
     {
         DefaultBackgroundColor = BackgroundFor(ThemeService.Current);
+        ApplyPreferredColorScheme();
         await SyncDarkScriptAsync();
         // Přepnutí za běhu — už načtený dokument se přestyluje hned, bez reloadu.
         await TryExecuteAsync(ThemeService.Current == AppTheme.Dark ? ApplyDarkJs : RemoveDarkJs);
+    }
+
+    /// <summary>Naváže nativní prvky Chromia (scrollbar, form controls, prefers-color-scheme) na
+    /// naše téma, ne na téma Windows OS. Default profilu je Auto = řídí se OS → scrollbar by u
+    /// uživatelů s různým systémovým tématem vycházel různě (a nezávisle na našem dark modu).</summary>
+    private void ApplyPreferredColorScheme()
+    {
+        var core = CoreWebView2;
+        if (core is null) return;
+        core.Profile.PreferredColorScheme = ThemeService.Current == AppTheme.Dark
+            ? CoreWebView2PreferredColorScheme.Dark
+            : CoreWebView2PreferredColorScheme.Light;
     }
 
     /// <summary>Drží pre-create skript v souladu s theme — nové navigace se vykreslí rovnou tmavě.</summary>
