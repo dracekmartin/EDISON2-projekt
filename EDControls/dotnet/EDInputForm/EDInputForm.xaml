@@ -87,9 +87,11 @@
                              Doplňuje zámek u labelu. Funguje v light i dark (tokeny). -->
                         <DataTrigger Binding="{Binding Editable}" Value="False">
                             <Setter Property="IsReadOnly" Value="True"/>
-                            <Setter Property="Background" Value="{DynamicResource EDTheme.Field.ReadOnly.Bg}"/>
+                            <!-- Pozadí dodá recessed wrapper kolem hodnoty (viz Field DataTemplate);
+                                 TextBox sám transparentní, ať nevznikne dvojité pozadí/rámeček. -->
+                            <Setter Property="Background" Value="Transparent"/>
                             <Setter Property="Foreground" Value="{DynamicResource EDTheme.Field.ReadOnly.Fg}"/>
-                            <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Light}"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -380,8 +382,22 @@
                                            VerticalAlignment="Center"/>
                             </StackPanel>
 
-                            <!-- Col 1 / Row 0: Hodnota — input (template per FieldType) -->
-                            <ContentControl Grid.Row="0" Grid.Column="1" VerticalAlignment="Center"
+                            <!-- Col 1 / Row 0: Hodnota — input (template per FieldType).
+                                 Needitovatelné: recessed pozadí (Field.ReadOnly.Bg) obalí hodnotu
+                                 nezávisle na typu pole (text i disabled controly) → sjednocený
+                                 „vypnutý" vzhled v light i dark. Editovatelné = Transparent (beze změny). -->
+                            <Border Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" CornerRadius="3">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="Background" Value="Transparent"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding Editable}" Value="False">
+                                                <Setter Property="Background" Value="{DynamicResource EDTheme.Field.ReadOnly.Bg}"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
+                            <ContentControl VerticalAlignment="Center"
                                             Content="{Binding}" Focusable="False">
                                 <ContentControl.Style>
                                     <Style TargetType="ContentControl">
@@ -421,6 +437,7 @@
                                     </Style>
                                 </ContentControl.Style>
                             </ContentControl>
+                            </Border>
 
                             <!-- Row 1 / Col 1: inline error/help pod inputem (Material Design pattern).
                                  Error má prioritu (červený text), jinak help text (italic muted).
