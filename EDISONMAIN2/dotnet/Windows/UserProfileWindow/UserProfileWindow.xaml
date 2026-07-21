@@ -1,0 +1,24 @@
+<Window x:Class="EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:ef="clr-namespace:EDControls.EDFooter;assembly=EDControls"
+        xmlns:edif="clr-namespace:EDControls.EDInputForm;assembly=EDControls"
+        xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
+        mc:Ignorable="d"
+        Title="Vlastnosti uživatele"
+        Width="560" Height="520" MinWidth="440" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource EDTheme.Bg.Base}"
+        Icon="{StaticResource EDIcons.Molecule}">
+
+    <Grid>
+        <DockPanel>
+            <ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>
+            <edif:EDInputForm x:Name="TheForm" Margin="4"/>
+        </DockPanel>
+
+        <edaip:EDActionInProgress/>
+    </Grid>
+</Window>

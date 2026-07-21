@@ -14,8 +14,10 @@ using EDControls.MiniApps;
 using EDControls.UserFonts;
 using EDISONMAIN2.MiniApps;
 using EDISONMAIN2.Windows.EdisonMainWindow.Modules;
+using EDISONMAIN2.Windows.UserProfileWindow;
 // Alias — class i namespace se jmenují stejně, plné qualifikování by bylo ukecané.
 using EDCompTestWnd = EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow.EDComponentAndViewModelTestWindow;
+using UserProfileWnd = EDISONMAIN2.Windows.UserProfileWindow.UserProfileWindow;
 using LogoutCountdownWnd = EDISONMAIN2.Windows.LogoutCountdownWindow.LogoutCountdownWindow;
 using static ALVA.EDISONAPI.Database;
 
@@ -195,7 +197,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
             // Uživatel menu
             LoginAsAnotherUserCommand     = Command(LoginAsAnotherUser);
-            ShowUserEditCommand           = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINUserEdit"));
+            ShowUserEditCommand           = Command(() => WindowNavigator.ShowDialog(new UserProfileWnd("")));
             ChangePasswordCommand         = Command(() =>
             {
                 bool? changed = WindowNavigator.ShowDialog(
