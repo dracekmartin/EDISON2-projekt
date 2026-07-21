@@ -57,7 +57,13 @@ namespace EDISONMAIN2
         {
             Loaded -= WireMiniAppHost;
             if (DataContext is EdisonMainViewModel vm)
+            {
+                // Před AttachMiniAppHost — ten spouští první restore, který už šířku stromu aplikuje.
+                vm.AttachTreeLayout(
+                    () => TreeColumn.ActualWidth,
+                    w => TreeColumn.Width = new GridLength(w));
                 vm.AttachMiniAppHost(new AvalonDockHost(DockManager));
+            }
         }
 
         // Single-click ve stromu: složka toggle expand, modul spustí. Event bubluje přes
