@@ -77,7 +77,7 @@ public class EDFilterComboBox : ComboBox
         IsTextSearchEnabled = false;   // vlastní filtrování místo prefixového autocomplete
         StaysOpenOnEdit     = true;
 
-        PreviewKeyDown += (_, _) => _userIsTyping = true;
+        PreviewKeyDown += (_, e) => _userIsTyping = !IsNavigationKey(e.Key);
         PreviewKeyUp   += (_, _) => _userIsTyping = false;
 
         // Psaní uživatele → přefiltruj dropdown a otevři ho (jen pokud něco zbylo).
@@ -126,6 +126,12 @@ public class EDFilterComboBox : ComboBox
             if (StrictSelection) ShowSelectedKeyText();
         };
     }
+
+    // Navigační/commit klávesy nemají spustit filtrování: WPF při nich přepíše Text na zvýrazněnou
+    // položku (→ TextChanged), a Refilter by přestavěl Items a zahodil kotvu zvýraznění uprostřed
+    // navigace. Znakové klávesy filtrují dál (viz _userIsTyping guard v TextChanged handleru).
+    private static bool IsNavigationKey(Key k) =>
+        k is Key.Up or Key.Down or Key.PageUp or Key.PageDown or Key.Enter or Key.Escape or Key.Tab;
 
     // Zafixuje výběr po zavření dropdownu. Striktní: vybraný Key → SelectedKey + čitelný klidový display.
     // Volný: Text = holý Key (čte ho konzument přes Text binding, např. EDInputForm Field.Value).
