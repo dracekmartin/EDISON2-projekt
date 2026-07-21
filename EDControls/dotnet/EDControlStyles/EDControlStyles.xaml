@@ -1175,24 +1175,119 @@
     <Style TargetType="{x:Type edtb:EDToolbar}" BasedOn="{StaticResource {x:Type ToolBar}}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
-         DatePicker / Calendar — DatePickerTextBox je podtřída TextBox, takže ho implicitní
-         TextBox styl (přesný typ) nechytá → odtud bílé pozadí. Vlastní styly + tokeny.
+         DatePicker / Calendar — defaultní WPF templaty mají zadrátované bílé pozadí
+         (VisualState storyboardy) a stock kalendářový glyph, takže pouhé Background/
+         Foreground settery je nepřebijou. Proto plné ControlTemplaty s tokeny.
          ═══════════════════════════════════════════════════════════════════ -->
-    <Style TargetType="DatePicker">
-        <Setter Property="Background"  Value="{DynamicResource EDTheme.Bg.Surface}"/>
-        <Setter Property="Foreground"  Value="{DynamicResource EDTheme.Text.Primary}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Medium}"/>
-        <Setter Property="FontFamily"  Value="{DynamicResource EDTheme.FontFamily}"/>
-        <Setter Property="FontSize"    Value="{DynamicResource EDTheme.FontSize.Body}"/>
+
+    <!-- Tlačítko rozbalení kalendáře — vektorová ikona kreslená token brushem (reaguje
+         na dark mode); nahrazuje ošklivý stock glyph z defaultního DatePicker templatu. -->
+    <Style x:Key="DatePickerCalendarButtonStyle" TargetType="Button">
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Cursor"          Value="Hand"/>
+        <Setter Property="Width"           Value="26"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="bg" Background="{TemplateBinding Background}" CornerRadius="2" Margin="1">
+                        <Viewbox Width="16" Height="16" Margin="4">
+                            <Path Stroke="{DynamicResource EDTheme.Text.Secondary}"
+                                  StrokeThickness="1.3"
+                                  StrokeLineJoin="Round"
+                                  StrokeStartLineCap="Round"
+                                  StrokeEndLineCap="Round"
+                                  Data="M5,3 L5,1.5 M11,3 L11,1.5 M3,3 H13 A1,1 0 0 1 14,4 V13 A1,1 0 0 1 13,14 H3 A1,1 0 0 1 2,13 V4 A1,1 0 0 1 3,3 Z M2,6 H14"/>
+                        </Viewbox>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="bg" Property="Background" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
+    <!-- Textové pole DatePickeru: průhledné pozadí (dark pozadí prosvítá z PART_Root),
+         žádné bílé focus/watermark storyboardy z defaultu. PART_ContentHost je povinný. -->
     <Style TargetType="prim:DatePickerTextBox">
-        <Setter Property="Background"  Value="{DynamicResource EDTheme.Bg.Surface}"/>
-        <Setter Property="Foreground"  Value="{DynamicResource EDTheme.Text.Primary}"/>
-        <Setter Property="CaretBrush"  Value="{DynamicResource EDTheme.Text.Primary}"/>
-        <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Medium}"/>
-        <Setter Property="FontFamily"  Value="{DynamicResource EDTheme.FontFamily}"/>
-        <Setter Property="FontSize"    Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="CaretBrush"      Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="Background"      Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Padding"         Value="6,3"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="prim:DatePickerTextBox">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="False"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Hidden"/>
+                            <ContentControl x:Name="PART_Watermark"
+                                            Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                            Focusable="False" IsHitTestVisible="False"
+                                            VerticalAlignment="Center" Padding="2,0,0,0"/>
+                        </Grid>
+                    </Border>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="DatePicker">
+        <Setter Property="Background"               Value="{DynamicResource EDTheme.Bg.Surface}"/>
+        <Setter Property="Foreground"               Value="{DynamicResource EDTheme.Text.Primary}"/>
+        <Setter Property="BorderBrush"              Value="{DynamicResource EDTheme.Border.Medium}"/>
+        <Setter Property="BorderThickness"          Value="1"/>
+        <Setter Property="FontFamily"               Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"                 Value="{DynamicResource EDTheme.FontSize.Body}"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="DatePicker">
+                    <Border x:Name="PART_Root"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="3">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <DatePickerTextBox x:Name="PART_TextBox" Grid.Column="0"
+                                               Focusable="{TemplateBinding Focusable}"
+                                               Foreground="{TemplateBinding Foreground}"
+                                               VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                            <Button x:Name="PART_Button" Grid.Column="1" Focusable="False"
+                                    Style="{StaticResource DatePickerCalendarButtonStyle}"/>
+                            <Popup x:Name="PART_Popup" AllowsTransparency="True"
+                                   Placement="Bottom" PlacementTarget="{Binding ElementName=PART_Root}"
+                                   PopupAnimation="Slide" StaysOpen="False"/>
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="PART_Root"    Property="Background"  Value="{DynamicResource EDTheme.Bg.Panel}"/>
+                            <Setter TargetName="PART_Root"    Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Light}"/>
+                            <Setter TargetName="PART_TextBox" Property="Foreground"  Value="{DynamicResource EDTheme.Text.Muted}"/>
+                            <Setter TargetName="PART_Button"  Property="Visibility"  Value="Collapsed"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <Style TargetType="Calendar">
