@@ -82,9 +82,14 @@
                             <Setter Property="BorderBrush" Value="Red"/>
                             <Setter Property="BorderThickness" Value="1.5"/>
                         </DataTrigger>
+                        <!-- Needitovatelné: readonly (text zůstává čitelný/kopírovatelný), ale
+                             panelové pozadí + ztlumený text/rámeček → vypadá staticky, ne jako input.
+                             Doplňuje zámek u labelu. Funguje v light i dark (tokeny). -->
                         <DataTrigger Binding="{Binding Editable}" Value="False">
                             <Setter Property="IsReadOnly" Value="True"/>
-                            <Setter Property="Background" Value="{DynamicResource EDTheme.Bg.Panel}"/>
+                            <Setter Property="Background" Value="{DynamicResource EDTheme.Field.ReadOnly.Bg}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource EDTheme.Field.ReadOnly.Fg}"/>
+                            <Setter Property="BorderBrush" Value="{DynamicResource EDTheme.Border.Light}"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>
@@ -350,8 +355,25 @@
                                        ToolTip="{Binding HelpText}" Cursor="Help"
                                        VerticalAlignment="Center"
                                        Style="{StaticResource HelpIconStyle}"/>
+                                <!-- Zámek u needitovatelných polí — monochromatický glyph (Segoe MDL2),
+                                     barví se z tokenu → čitelný v light i dark. -->
+                                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                           FontSize="11" Margin="0,0,4,0" VerticalAlignment="Center"
+                                           Foreground="{DynamicResource EDTheme.Field.ReadOnly.Fg}"
+                                           Visibility="{Binding NonEditableIndicatorVisibility}"
+                                           ToolTip="Needitovatelné (jen pro čtení)"/>
                                 <TextBlock Text="{Binding Label}" TextWrapping="Wrap"
-                                           MaxWidth="280" VerticalAlignment="Center"/>
+                                           MaxWidth="280" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Editable}" Value="False">
+                                                    <Setter Property="Foreground" Value="{DynamicResource EDTheme.Field.ReadOnly.Fg}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
                                 <TextBlock Text="*" Foreground="Red"
                                            Visibility="{Binding RequiredIndicatorVisibility}"
                                            ToolTip="Povinné pole" Margin="4,0,0,0"

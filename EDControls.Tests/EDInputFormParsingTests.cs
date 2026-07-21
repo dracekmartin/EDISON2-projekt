@@ -344,6 +344,15 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
+    public void NonEditableIndicatorVisibility_ReflectsEditable()
+    {
+        Assert.Equal(System.Windows.Visibility.Collapsed,
+            new Field { Editable = true }.NonEditableIndicatorVisibility);
+        Assert.Equal(System.Windows.Visibility.Visible,
+            new Field { Editable = false }.NonEditableIndicatorVisibility);
+    }
+
+    [Fact]
     public void ParseItems_FieldWithoutEditableDefaultsToTrue()
     {
         var data = new CVar();
