@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Interop;
@@ -13,10 +14,17 @@ namespace EDControls.EDActionInProgress;
 /// WPF Popup by topmost byl). Okno je jen velikosti karty — celoplošné AllowsTransparency
 /// okno by na 4K znamenalo ~33MB layered surface překreslovanou animací 60 fps.
 /// Klik propadá skrz (WS_EX_TRANSPARENT) na DimAdorner / widgety, aktivaci nekrade.
+/// Vytváří se per akci (ne recyklace přes Hide/Show) — skryté okno by na příštím Show()
+/// na jeden frame přehrálo poslední složený obraz (sprite v půli cesty z minula).
 /// </summary>
 internal sealed partial class ActionInProgressWindow : Window
 {
+    // Prefix klíče spritů v Window.Resources — nový sprite stačí přidat do XAML s tímto prefixem.
+    private const string SpriteKeyPrefix = "Sprite.";
+
     private readonly Window _owner;
+    private readonly Random _rng = new();
+    private string[]? _spriteKeys;
     private bool _active;
 
     public ActionInProgressWindow(Window owner)
@@ -29,6 +37,7 @@ internal sealed partial class ActionInProgressWindow : Window
         owner.StateChanged += OnOwnerStateChanged;
         // SizeToContent — velikost karty se změní i za běhu (font/theme swap).
         SizeChanged += OnOwnSizeChanged;
+        PickRandomSprite();   // jednou per okno (= per akci)
     }
 
     protected override void OnSourceInitialized(EventArgs e)
@@ -49,15 +58,21 @@ internal sealed partial class ActionInProgressWindow : Window
         ToggleWalk(true);
     }
 
-    public void HideOverlay()
+    // Náhodně vybere jeden ze spritů z Window.Resources (klíče s prefixem "Sprite."). Klíče
+    // se počítají jednou; přidání dalšího spritu do XAML je tak jediná potřebná změna.
+    // x:Shared="False" → FindResource vrací pokaždé novou instanci (žádný konflikt rodiče).
+    private void PickRandomSprite()
     {
-        _active = false;
-        ToggleWalk(false);
-        Hide();
+        _spriteKeys ??= Resources.Keys.OfType<string>()
+            .Where(k => k.StartsWith(SpriteKeyPrefix, StringComparison.Ordinal))
+            .OrderBy(k => k, StringComparer.Ordinal)
+            .ToArray();
+        if (_spriteKeys.Length == 0) return;
+        SpriteHost.Content = (UIElement)FindResource(_spriteKeys[_rng.Next(_spriteKeys.Length)]);
     }
 
-    // Explicitní Hide, ne OS auto-hide owned oken — ten probíhá na HWND úrovni, WPF IsVisible
-    // ho nevidí a Forever storyboard by tikal dál a držel dispatcher vzhůru.
+    // Minimalizace ownera → Hide (OS auto-hide owned oken WPF IsVisible nevidí a Forever
+    // storyboard by tikal dál, držel dispatcher vzhůru). Restore → zpět nahoru.
     private void OnOwnerStateChanged(object? sender, EventArgs e)
     {
         if (_owner.WindowState == WindowState.Minimized)
@@ -106,6 +121,7 @@ internal sealed partial class ActionInProgressWindow : Window
 
     protected override void OnClosed(EventArgs e)
     {
+        ToggleWalk(false);   // zastav Forever clock při teardownu
         _owner.LocationChanged -= OnOwnerBoundsChanged;
         _owner.SizeChanged -= OnOwnerSizeChanged;
         _owner.StateChanged -= OnOwnerStateChanged;

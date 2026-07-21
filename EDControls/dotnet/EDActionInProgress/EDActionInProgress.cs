@@ -50,18 +50,19 @@ public sealed class EDActionInProgress : FrameworkElement
                 DeferUntilVisible(owner);
                 return;
             }
+            // Nové okno per akci (ne recyklace) — jinak by Show() přehrálo starý frame spritu.
             if (_overlay is null)
             {
                 _overlay = new ActionInProgressWindow(owner);
-                // Owned okno zavře WPF spolu s ownerem — příští aktivace si vytvoří nové.
                 _overlay.Closed += (_, _) => _overlay = null;
+                _overlay.ShowOverlay();
             }
-            _overlay.ShowOverlay();
         }
         else
         {
             CancelDeferred();
-            _overlay?.HideOverlay();
+            _overlay?.Close();
+            _overlay = null;
             _dimScope?.Dispose();
             _dimScope = null;
         }

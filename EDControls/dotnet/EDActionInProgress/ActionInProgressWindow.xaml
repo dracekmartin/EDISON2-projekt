@@ -8,9 +8,10 @@
         SizeToContent="WidthAndHeight"
         UseLayoutRounding="True">
 
-    <!-- Storyboard řízen z code-behind podle Show/Hide — Loaded trigger s RepeatBehavior=Forever
-         by tikal i pro skryté okno (animační clock běží bez ohledu na viditelnost). -->
     <Window.Resources>
+        <!-- Storyboard řízen z code-behind podle Show/Hide — Loaded trigger s RepeatBehavior=Forever
+             by tikal i pro skryté okno (animační clock běží bez ohledu na viditelnost).
+             Cílí transform HOSTA (SpriteHost), ne konkrétní sprite → je společný všem. -->
         <Storyboard x:Key="WalkAnimation">
 
             <!-- Posun: zleva doprava (2,5 s), pak zpět (2,5 s), opakovaně -->
@@ -35,21 +36,181 @@
             </DoubleAnimationUsingKeyFrames>
 
         </Storyboard>
+
+        <!-- ==== Sprity ====
+             Každý = pixel-art Canvas 60×48, čelem doprava (flip ho na zpáteční cestě otočí).
+             Nová věc = přidej sem další <Canvas x:Key="Sprite.Xxx" .../>; code-behind si klíče
+             s prefixem "Sprite." najde sám a náhodně jeden vybere — nic dalšího registrovat netřeba.
+             Rozměr 60×48 je povinný (flip CenterX=30 = půlka, slide From=-60 = plná šířka mimo záběr). -->
+
+        <!--
+            Pixel-art kapybara: 10 sloupců × 8 řádků, pixel = 6×6 WPF jednotek, čelem doprava.
+
+            col:  0  1  2  3  4  5  6  7  8  9
+            row0: .  .  .  .  .  .  .  D  .  .    D = ucho #7A5C2E
+            row1: .  .  .  .  .  .  B  B  B  .    B = tělo #A07840
+            row2: .  B  B  B  B  B  B  B  *  .    * = oko  #1A0A00
+            row3: B  B  B  B  B  B  B  B  B  N    N = nos  #6B3A1F
+            row4: B  B  B  B  B  B  B  B  B  N
+            row5: .  B  B  B  B  B  B  B  .  .
+            row6: .  D  .  D  .  D  .  D  .  .    4 nohy (sloupce 1,3,5,7)
+            row7: .  D  .  D  .  D  .  D  .  .
+        -->
+        <Canvas x:Key="Sprite.Capybara" x:Shared="False" Width="60" Height="48"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <!-- Ucho -->
+            <Rectangle Canvas.Left="42" Canvas.Top="0"  Width="6" Height="6" Fill="#7A5C2E"/>
+
+            <!-- Hlava (řádek 1: sloupce 6–8) -->
+            <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="6"  Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="6"  Width="6" Height="6" Fill="#A07840"/>
+
+            <!-- Tělo řádek 2 (sloupce 1–7) + oko (sloupec 8) -->
+            <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="12" Width="6" Height="6" Fill="#1A0A00"/>
+
+            <!-- Tělo řádek 3 (sloupce 0–8) + nos (sloupec 9) -->
+            <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="18" Width="6" Height="6" Fill="#6B3A1F"/>
+
+            <!-- Tělo řádek 4 (sloupce 0–8) + nos (sloupec 9) -->
+            <Rectangle Canvas.Left="0"  Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="24" Width="6" Height="6" Fill="#6B3A1F"/>
+
+            <!-- Tělo řádek 5 (sloupce 1–7) -->
+            <Rectangle Canvas.Left="6"  Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
+
+            <!-- Pomeranč na zádech: stopka (sloupec 4, řádek 0), tělo (sloupce 3–5, řádky 1–2) -->
+            <Rectangle Canvas.Left="24" Canvas.Top="0"  Width="6" Height="6" Fill="#3D7A00"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#FF8C00"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#FFA500"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#FF8C00"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#FF8C00"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#FF8C00"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#FF8C00"/>
+
+            <!-- Nohy řádky 6–7 (sloupce 1, 3, 5, 7) -->
+            <Rectangle Canvas.Left="6"  Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
+
+        </Canvas>
+
+        <!--
+            Pixel-art autobus (MHD): 10 sloupců × 8 řádků, pixel 6×6, čelem (světlo) doprava.
+
+            col:  0  1  2  3  4  5  6  7  8  9
+            row1: .  B  B  B  B  B  B  B  B  .    B = karoserie #2F6FB0
+            row2: B  W  W  B  W  W  B  W  W  B    W = okno #CDE8F5
+            row3: B  W  W  B  W  W  B  W  W  B    H = přední světlo #FFD23F
+            row4: B  B  B  B  B  B  B  B  B  H    T = kolo #1A1A1A
+            row5: B  B  B  B  B  B  B  B  B  B
+            row6: .  T  T  .  .  .  T  T  .  .    2 páry kol (1–2 zadní, 6–7 přední)
+        -->
+        <Canvas x:Key="Sprite.Bus" x:Shared="False" Width="60" Height="48"
+                SnapsToDevicePixels="True" RenderOptions.EdgeMode="Aliased">
+
+            <!-- Střecha (řádek 1: sloupce 1–8) -->
+            <Rectangle Canvas.Left="6"  Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="6"  Width="6" Height="6" Fill="#2F6FB0"/>
+
+            <!-- Okna řádek 2 (sloupce 0–9): karoserie + 3 okenní skupiny mezi sloupky -->
+            <Rectangle Canvas.Left="0"  Canvas.Top="12" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="12" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="12" Width="6" Height="6" Fill="#2F6FB0"/>
+
+            <!-- Okna řádek 3 (stejné jako řádek 2) -->
+            <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="18" Width="6" Height="6" Fill="#CDE8F5"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="18" Width="6" Height="6" Fill="#2F6FB0"/>
+
+            <!-- Karoserie řádek 4 (sloupce 0–8) + přední světlo (sloupec 9) -->
+            <Rectangle Canvas.Left="0"  Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="24" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="24" Width="6" Height="6" Fill="#FFD23F"/>
+
+            <!-- Karoserie řádek 5 (spodek, sloupce 0–9) -->
+            <Rectangle Canvas.Left="0"  Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="6"  Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="18" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="24" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="30" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="48" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+            <Rectangle Canvas.Left="54" Canvas.Top="30" Width="6" Height="6" Fill="#2F6FB0"/>
+
+            <!-- Kola řádek 6 (zadní pár 1–2, přední pár 6–7) -->
+            <Rectangle Canvas.Left="6"  Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="12" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="36" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+            <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#1A1A1A"/>
+
+        </Canvas>
     </Window.Resources>
-
-    <!--
-        Pixel-art kapybara: 10 sloupců × 8 řádků, pixel = 6×6 WPF jednotek, čelem doprava.
-
-        col:  0  1  2  3  4  5  6  7  8  9
-        row0: .  .  .  .  .  .  .  D  .  .    D = ucho #7A5C2E
-        row1: .  .  .  .  .  .  B  B  B  .    B = tělo #A07840
-        row2: .  B  B  B  B  B  B  B  *  .    * = oko  #1A0A00
-        row3: B  B  B  B  B  B  B  B  B  N    N = nos  #6B3A1F
-        row4: B  B  B  B  B  B  B  B  B  N
-        row5: .  B  B  B  B  B  B  B  .  .
-        row6: .  D  .  D  .  D  .  D  .  .    4 nohy (sloupce 1,3,5,7)
-        row7: .  D  .  D  .  D  .  D  .  .
-    -->
 
     <!-- Margin = prostor pro rozptyl stínu (BlurRadius 18) — SizeToContent by ho jinak ořízl. -->
     <Grid Margin="24">
@@ -66,94 +227,24 @@
                 Padding="0,18">
             <StackPanel>
 
-                <!-- Průhledové okno — kapybara jím projíždí (clip) -->
+                <!-- Průhledové okno — sprite jím projíždí (clip). Konkrétní sprite vkládá code-behind
+                     do SpriteHost; transform (flip + posun) je na hostovi, ne na spritu → animace
+                     je společná všem spritům. -->
                 <Border Width="160" Height="48" ClipToBounds="True">
-                    <Canvas Width="60" Height="48"
-                            HorizontalAlignment="Left"
-                            SnapsToDevicePixels="True"
-                            RenderOptions.EdgeMode="Aliased">
-                        <Canvas.RenderTransform>
+                    <ContentControl x:Name="SpriteHost" HorizontalAlignment="Left" VerticalAlignment="Top">
+                        <ContentControl.RenderTransform>
                             <TransformGroup>
-                                <!-- Otáčí kolem horizontálního středu při obratu -->
+                                <!-- Otáčí kolem horizontálního středu spritu (60 šír. → 30) při obratu -->
                                 <ScaleTransform x:Name="FlipTransform" ScaleX="1" CenterX="30"/>
-                                <TranslateTransform x:Name="SlideTranslate"/>
+                                <!-- X=-60 (mimo záběr vlevo) = klidová hodnota: první frame před náběhem
+                                     storyboardu (a stav po Stop) sprite neukáže uprostřed karty. -->
+                                <TranslateTransform x:Name="SlideTranslate" X="-60"/>
                             </TransformGroup>
-                        </Canvas.RenderTransform>
-
-                        <!-- Ucho -->
-                        <Rectangle Canvas.Left="42" Canvas.Top="0"  Width="6" Height="6" Fill="#7A5C2E"/>
-
-                        <!-- Hlava (řádek 1: sloupce 6–8) -->
-                        <Rectangle Canvas.Left="36" Canvas.Top="6"  Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="42" Canvas.Top="6"  Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="48" Canvas.Top="6"  Width="6" Height="6" Fill="#A07840"/>
-
-                        <!-- Tělo řádek 2 (sloupce 1–7) + oko (sloupec 8) -->
-                        <Rectangle Canvas.Left="6"  Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="12" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="36" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="42" Canvas.Top="12" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="48" Canvas.Top="12" Width="6" Height="6" Fill="#1A0A00"/>
-
-                        <!-- Tělo řádek 3 (sloupce 0–8) + nos (sloupec 9) -->
-                        <Rectangle Canvas.Left="0"  Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="6"  Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="12" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="24" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="36" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="42" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="48" Canvas.Top="18" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="54" Canvas.Top="18" Width="6" Height="6" Fill="#6B3A1F"/>
-
-                        <!-- Tělo řádek 4 (sloupce 0–8) + nos (sloupec 9) -->
-                        <Rectangle Canvas.Left="0"  Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="6"  Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="12" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="24" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="36" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="42" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="48" Canvas.Top="24" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="54" Canvas.Top="24" Width="6" Height="6" Fill="#6B3A1F"/>
-
-                        <!-- Tělo řádek 5 (sloupce 1–7) -->
-                        <Rectangle Canvas.Left="6"  Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="12" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="24" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="36" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
-                        <Rectangle Canvas.Left="42" Canvas.Top="30" Width="6" Height="6" Fill="#A07840"/>
-
-                        <!-- Pomeranč na zádech: stopka (sloupec 4, řádek 0), tělo (sloupce 3–5, řádky 1–2) -->
-                        <Rectangle Canvas.Left="24" Canvas.Top="0"  Width="6" Height="6" Fill="#3D7A00"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="6"  Width="6" Height="6" Fill="#FF8C00"/>
-                        <Rectangle Canvas.Left="24" Canvas.Top="6"  Width="6" Height="6" Fill="#FFA500"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="6"  Width="6" Height="6" Fill="#FF8C00"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="12" Width="6" Height="6" Fill="#FF8C00"/>
-                        <Rectangle Canvas.Left="24" Canvas.Top="12" Width="6" Height="6" Fill="#FF8C00"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="12" Width="6" Height="6" Fill="#FF8C00"/>
-
-                        <!-- Nohy řádky 6–7 (sloupce 1, 3, 5, 7) -->
-                        <Rectangle Canvas.Left="6"  Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
-                        <Rectangle Canvas.Left="42" Canvas.Top="36" Width="6" Height="6" Fill="#7A5C2E"/>
-                        <Rectangle Canvas.Left="6"  Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
-                        <Rectangle Canvas.Left="18" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
-                        <Rectangle Canvas.Left="30" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
-                        <Rectangle Canvas.Left="42" Canvas.Top="42" Width="6" Height="6" Fill="#7A5C2E"/>
-
-                    </Canvas>
+                        </ContentControl.RenderTransform>
+                    </ContentControl>
                 </Border>
 
-                <TextBlock Text="Akce probíhá" FontSize="{DynamicResource EDTheme.FontSize.Title}" FontWeight="SemiBold"
+                <TextBlock Text="Akce probíhá" FontSize="14" FontWeight="SemiBold"
                            HorizontalAlignment="Center" Margin="24,8,24,0"/>
             </StackPanel>
         </Border>
