@@ -5,6 +5,26 @@
 
 ---
 
+## 🟢 ROZPRACOVÁNO — Ukládání velkých šablon (blob po kusech) — čeká na e2e ověření (2026-07-21)
+
+**Problém (zákaznický):** uložení šablony s velkým inline obrázkem shodilo save s `500 <SYNTAX>
+zStreamToGlobal`. Base64 obrázek v JSON blobu jel na server jako jeden řetězec > ~3,64 MB (limit délky
+Caché řetězce) → server to shodil už při příjmu requestu.
+
+**Stav = kód HOTOVÝ + unit testy zelené, chybí jen ostrý e2e test.** (commit `0199be5` na `main`)
+- ✅ Blob se posílá **po kusech** (`data1..N` + `dataChunkCount`), server ukládá jako uzly `Data(n)`,
+  nikdy neslepuje. Bez změny JSON schématu, zpětně kompatibilní (legacy jednoklíčový `Data` se při loadu
+  pozná, při dalším uložení kanonizuje). Dotčené: `CacheBlobChunking.Split/Join`, `CacheTemplateService`,
+  `Sablony.cls` (`SaveTemplate`/`LoadTemplate`).
+- ✅ `CacheBlobChunkingTests` — 15× round-trip vč. ~6 MB blobu, všechny prošly.
+- ⬜ **ZBÝVÁ NAOSTRO:** end-to-end round-trip s reálným velkým obrázkem proti dev serveru — **nasadit
+  `Sablony.cls` na Caché** (`cache_compile`) a v běžícím TD uložit + znovu otevřít šablonu s ~5 MB obrázkem.
+  Blokoval sandbox/MCP (TD Caché projekt není v deploy mapě MCP) → nasazení třídy + test padl na uživatele.
+- 🧹 Úklid: `CACHE/.../Tests/MhdProbe.cls` = dočasný MHD diagnostický probe (untracked, nekomitnutý),
+  po dořešení MHD parity smazat.
+
+---
+
 ## 🔴 PRIORITA — MHD datová parita na složitých linkách (2026-07-20)
 
 **Problém:** MHD zastávkový JŘ (`ZastavkoveJrMhd`) **datově neodpovídá legacy na složitých linkách
