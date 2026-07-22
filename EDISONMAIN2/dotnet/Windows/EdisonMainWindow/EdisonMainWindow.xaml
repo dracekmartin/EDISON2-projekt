@@ -430,11 +430,11 @@
 
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
             <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>
-            <TextBlock Text="{Binding RestPort, StringFormat='RestPort: {0}'}"/>
+            <TextBlock Text="{Binding RestPort, StringFormat='REST port: {0}'}"/>
             <TextBlock Text="{Binding Namespace, StringFormat='Namespace: {0}'}"/>
-            <TextBlock Text="{Binding Idfa, StringFormat='Idfa: {0}'}"/>
-            <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
-            <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
+            <TextBlock Text="{Binding Idfa, StringFormat='Firma: {0}'}"/>
+            <TextBlock Text="{Binding UserName, StringFormat='Přihlašovací jméno: {0}'}"/>
+            <TextBlock Text="{Binding FullName, StringFormat='Uživatel: {0}'}"/>
             <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
             <TextBlock Text="{Binding Version, StringFormat='Verze: {0}'}"/>
             <!-- Notice z release serveru M-line (nová verze / potvrzení aktuálnosti).
