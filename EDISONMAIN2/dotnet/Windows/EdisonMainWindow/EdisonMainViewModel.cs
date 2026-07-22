@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows.Input;
+using System.Windows.Threading;
 // Alias proti ambient System.Windows.Forms (UseWindowsForms je zapnuté pro FontDialog).
 using Application = System.Windows.Application;
 using ALVA.LICENCE.EDLicence;
@@ -474,6 +475,24 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         private static string ExpansionPathKey(string treeName, IReadOnlyList<int> path) =>
             treeName + ":" + string.Join(".", path);
 
+        private DispatcherTimer? _searchDebouncer;
+
+        // Filtrace se pouští ~150 ms po posledním stisku — synchronní průchod všemi stromy
+        // na každý znak jinak sekal UI. Programový re-apply (po přepnutí firmy) volá ApplySearch přímo.
+        private void ScheduleSearch()
+        {
+            _searchDebouncer ??= CreateSearchDebouncer();
+            _searchDebouncer.Stop();
+            _searchDebouncer.Start();
+        }
+
+        private DispatcherTimer CreateSearchDebouncer()
+        {
+            var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(150) };
+            timer.Tick += (_, _) => { timer.Stop(); ApplySearch(); };
+            return timer;
+        }
+
         // Filtruje VŠECHNY stromy (vč. Oblíbených) dle TreeSearchText. Rozbalení vynucené hledáním
         // se NEpersistuje (suppress flag); po vymazání textu se obnoví persistované rozbalení.
         private void ApplySearch()
@@ -652,7 +671,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string TreeSearchText
         {
             get => _treeSearchText;
-            set { if (Set(ref _treeSearchText, value)) ApplySearch(); }
+            set { if (Set(ref _treeSearchText, value)) ScheduleSearch(); }
         }
 
         // Pořadí záložek: 0 Hlavní nabídka, 1 Správa systému, 2 Partnerská řešení, 3 Oblíbené, 4 Používané.
