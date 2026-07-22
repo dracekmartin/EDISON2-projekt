@@ -29,6 +29,13 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   editovatelnému poli uvnitř; proto je v `DockPanel` vedle Menu.
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
+- **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
+  Rozbalit/Sbalit vše cílí na **aktivní** záložku (`ActiveExpandableTree` dle
+  `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna obalena
+  `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
+  akce) plní code-behind — `TreeView.SelectedItem` nelze bindovat, jede přes
+  `SelectedItemChanged` + `TabControl.SelectionChanged`. Ikonové tlačítko = sdílený styl
+  `EDTheme.ToolbarButton` z EDControls.
 - **Mini-apps** (`dotnet/MiniApps/`): framework je v `EDControls/MiniApps`, shell je
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror

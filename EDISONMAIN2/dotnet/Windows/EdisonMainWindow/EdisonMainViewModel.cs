@@ -69,6 +69,11 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         // Kontextové menu stromu — výchozí okno (auto-open po loginu)
         public ICommand SetStartupWindowCommand { get; }
         public ICommand ClearStartupWindowCommand { get; }
+        // Toolbar stromu — rozbalit/sbalit celý aktivní strom + rozbalit/sbalit podstrom rodiny.
+        public ICommand ExpandAllCommand { get; }
+        public ICommand CollapseAllCommand { get; }
+        public ICommand ExpandSubtreeCommand { get; }
+        public ICommand CollapseSubtreeCommand { get; }
         // Nástroje menu
         public ICommand ShowBgTasksCommand { get; }
         public ICommand RefreshLicenseCommand { get; }
@@ -235,6 +240,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             });
             SetStartupWindowCommand         = Command<IModule>(SetStartupWindow);
             ClearStartupWindowCommand       = Command(ClearStartupWindow);
+            ExpandAllCommand                = Command(() => SetActiveTreeExpanded(true), () => ActiveExpandableTree() is not null);
+            CollapseAllCommand              = Command(() => SetActiveTreeExpanded(false), () => ActiveExpandableTree() is not null);
+            ExpandSubtreeCommand            = Command<IModule>(m => SetSubtreeExpanded(m, true));
+            CollapseSubtreeCommand          = Command<IModule>(m => SetSubtreeExpanded(m, false));
 
             // Nástroje menu — Správa zámků a Aktivita uživatelů jsou v USERS.exe (retrofitted).
             ShowBgTasksCommand            = CommandAsync(() => LaunchDialog("EDISONMAIN.exe", "ALVA.EDISONMAIN.formEDISONMAINTaskList"));
@@ -421,6 +430,52 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         {
             foreach (var (name, tree) in ExpandableTrees)
                 ApplyExpansion(tree, name);
+        }
+
+        // ---- rozbalit / sbalit vše (toolbar + kontextové menu) ---------------
+
+        // Strom aktivní záložky (index 0-2 zdrojové, 3 Oblíbené); Používané (ListBox) i cokoli mimo → null.
+        private ObservableCollection<IModule>? ActiveExpandableTree() => SelectedTreeTabIndex switch
+        {
+            0 => MainMenuTree,
+            1 => SystemAdminTree,
+            2 => PartnerSolutionsTree,
+            3 => FavoritesTree,
+            _ => null,
+        };
+
+        // Hromadné rozbalení/sbalení celého aktivního stromu. Suppress + jeden save na konci
+        // (jinak by každá rodina zvlášť triggerovala SaveExpansionAsync — vzor jako ApplySearch).
+        private void SetActiveTreeExpanded(bool expanded)
+        {
+            if (ActiveExpandableTree() is not { } tree) return;
+            _suppressExpansionSave = true;
+            try
+            {
+                foreach (var module in tree)
+                    SetExpandedRecursive(module, expanded);
+            }
+            finally { _suppressExpansionSave = false; }
+            _ = _modulePrefs.SaveExpansionAsync(CollectExpandedKeys());
+        }
+
+        // Rozbalit/sbalit rodinu i její potomky (kontextové menu „úroveň").
+        private void SetSubtreeExpanded(IModule module, bool expanded)
+        {
+            if (module is not ModuleFamily) return;
+            _suppressExpansionSave = true;
+            try { SetExpandedRecursive(module, expanded); }
+            finally { _suppressExpansionSave = false; }
+            _ = _modulePrefs.SaveExpansionAsync(CollectExpandedKeys());
+        }
+
+        // internal kvůli unit testům (InternalsVisibleTo EDISONMAIN2.Tests).
+        internal static void SetExpandedRecursive(IModule module, bool expanded)
+        {
+            if (module is not ModuleFamily family) return;
+            family.IsExpanded = expanded;
+            foreach (var child in family.NestedModules)
+                SetExpandedRecursive(child, expanded);
         }
 
         private void ApplyExpansion(IList<IModule> tree, string treeName)
@@ -664,6 +719,30 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>Pro empty-state coaching v záložce Oblíbené.</summary>
         public bool HasNoFavorites => FavoritesTree.Count == 0;
+
+        private IModule? _selectedModule;
+
+        /// <summary>
+        /// Aktuálně vybraný uzel viditelného stromu (nastavuje code-behind ze <c>SelectedItemChanged</c> /
+        /// přepnutí záložky). Řídí toolbar akce (oblíbené, výchozí okno) — na kolekcích/ListBoxu <c>null</c>.
+        /// </summary>
+        public IModule? SelectedModule
+        {
+            get => _selectedModule;
+            set
+            {
+                if (!Set(ref _selectedModule, value)) return;
+                OnPropertyChanged(nameof(HasSelection));
+                OnPropertyChanged(nameof(CanSetStartup));
+                CommandManager.InvalidateRequerySuggested();
+            }
+        }
+
+        /// <summary>Je ve stromu vybraný uzel? Řídí IsEnabled toolbar tlačítka oblíbených.</summary>
+        public bool HasSelection => _selectedModule != null;
+
+        /// <summary>Lze vybraný uzel nastavit jako výchozí okno? (jen spustitelný modul s ElementId).</summary>
+        public bool CanSetStartup => _selectedModule is ExecutableModule { ElementId.Length: > 0 };
 
         private string _treeSearchText = "";
 

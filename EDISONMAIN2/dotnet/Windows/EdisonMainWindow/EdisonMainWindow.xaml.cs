@@ -13,6 +13,8 @@ using DataObject = System.Windows.DataObject;
 using Point = System.Windows.Point;
 using DragDrop = System.Windows.DragDrop;
 using DragDropEffects = System.Windows.DragDropEffects;
+using TabControl = System.Windows.Controls.TabControl;
+using TreeView = System.Windows.Controls.TreeView;
 
 namespace EDISONMAIN2
 {
@@ -25,6 +27,12 @@ namespace EDISONMAIN2
         {
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
+            // Výběr uzlu napříč stromy → VM.SelectedModule (řídí toolbar akce). SelectedItem
+            // TreeView nelze bindovat, proto přes event; Používané (ListBox) výběr neřeší.
+            MainMenuTreeView.SelectedItemChanged += TreeSelectedItemChanged;
+            SystemAdminTreeView.SelectedItemChanged += TreeSelectedItemChanged;
+            PartnerSolutionsTreeView.SelectedItemChanged += TreeSelectedItemChanged;
+            FavoritesTreeView.SelectedItemChanged += TreeSelectedItemChanged;
             Loaded += WireMiniAppHost;
             ContentRendered += OnContentRendered;
             ApplyDockTheme();
@@ -118,6 +126,31 @@ namespace EDISONMAIN2
         {
             ((TreeViewItem)sender).IsSelected = true;
             e.Handled = true;
+        }
+
+        // Výběr uzlu v kterémkoli stromě → VM.SelectedModule.
+        private void TreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (DataContext is EdisonMainViewModel vm)
+                vm.SelectedModule = e.NewValue as IModule;
+        }
+
+        // Přepnutí záložky → SelectedModule z výběru nově aktivního stromu (Používané → null),
+        // aby toolbar akce odpovídaly viditelné záložce. Guard filtruje bublající SelectionChanged
+        // z vnitřního ListBoxu (Používané).
+        private void TreeTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.Source is not TabControl) return;
+            if (DataContext is not EdisonMainViewModel vm) return;
+            TreeView? tv = TreeTabControl.SelectedIndex switch
+            {
+                0 => MainMenuTreeView,
+                1 => SystemAdminTreeView,
+                2 => PartnerSolutionsTreeView,
+                3 => FavoritesTreeView,
+                _ => null,
+            };
+            vm.SelectedModule = tv?.SelectedItem as IModule;
         }
 
         private void UsedModuleItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)

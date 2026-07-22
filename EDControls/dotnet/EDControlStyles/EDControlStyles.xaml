@@ -1585,4 +1585,44 @@
 
     <Style TargetType="Calendar" BasedOn="{StaticResource EDCalendarStyle}"/>
 
+    <!-- Sdílené ikonové tlačítko toolbaru (nad seznamy/stromy): ploché, transparentní,
+         jemný hover/pressed z theme tokenů (dark mode přes DynamicResource). Keyed —
+         opt-in, nepřebíjí implicitní Button. Obsah = <Image> s ikonou. -->
+    <Style x:Key="EDTheme.ToolbarButton" TargetType="Button">
+        <Setter Property="Padding" Value="4"/>
+        <Setter Property="MinWidth" Value="28"/>
+        <Setter Property="MinHeight" Value="28"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Border x:Name="Bd"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            CornerRadius="3"
+                            SnapsToDevicePixels="True">
+                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Hover}"/>
+                            <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
+                        </Trigger>
+                        <Trigger Property="IsPressed" Value="True">
+                            <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.Bg.Pressed}"/>
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Opacity" Value="0.4"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
 </ResourceDictionary>
