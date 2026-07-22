@@ -37,6 +37,10 @@ namespace EDControls.EDInputForm
         /// <summary>Pokud false, pole je read-only (server-controlled).</summary>
         public bool Editable { get; set; } = true;
 
+        /// <summary>Vedle labelu se zobrazí ikona zámku (needitovatelné pole).</summary>
+        public WpfVisibility NonEditableIndicatorVisibility =>
+            Editable ? WpfVisibility.Collapsed : WpfVisibility.Visible;
+
         /// <summary>Volby pro pole typu List. U ostatních typů prázdné.</summary>
         public List<ListItem> ListItems { get; set; } = [];
 

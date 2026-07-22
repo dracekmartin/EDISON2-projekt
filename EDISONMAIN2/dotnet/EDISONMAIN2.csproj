@@ -2,10 +2,10 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <!-- windows10.0.17763 (ne windows7.0): WebView2CompositionControl potřebuje WinRT projekce
-         (Microsoft.Windows.SDK.NET) — s nižší platform version build projde, ale runtime spadne
-         na FileNotFoundException při prvním zobrazení widgetu. -->
-    <TargetFramework>net10.0-windows10.0.17763.0</TargetFramework>
+    <!-- Bez platform version: HWND WebView2 (FontZoomWebView) nepotřebuje WinRT projekce.
+         Composition varianta vyžadovala windows10.0.17763 + 23 MB Microsoft.Windows.SDK.NET.dll
+         v single-file bundlu — HWND ji z buildu úplně vyřazuje. -->
+    <TargetFramework>net10.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>

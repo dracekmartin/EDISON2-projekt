@@ -7,12 +7,13 @@ namespace EDISONMAIN2.Tests;
 public class FontZoomWebViewTests
 {
     [Fact]
-    public void DerivesFromCompositionControl_NoAirspaceOverlap()
+    public void DerivesFromHwndWebView2_NotComposition()
     {
-        // HWND WebView2 kreslí nad veškerým WPF obsahem (airspace) a překrýval by
-        // overlay „Akce probíhá" — widgety musí zůstat na kompoziční variantě.
-        Assert.True(typeof(WebView2CompositionControl).IsAssignableFrom(typeof(FontZoomWebView)));
-        Assert.False(typeof(WebView2).IsAssignableFrom(typeof(FontZoomWebView)));
+        // HWND varianta — composition nepřežije reparent do plovoucího okna AvalonDocku
+        // (drag tabu) a tahá 23 MB WinRT projekci. Airspace řeší owned okno EDActionInProgress
+        // (karta nad widgety) — widgety se při dimu neschovávají, viz FontZoomWebView remarks.
+        Assert.True(typeof(WebView2).IsAssignableFrom(typeof(FontZoomWebView)));
+        Assert.False(typeof(WebView2CompositionControl).IsAssignableFrom(typeof(FontZoomWebView)));
     }
 
     [Fact]

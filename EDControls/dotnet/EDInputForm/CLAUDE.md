@@ -50,4 +50,7 @@ Save rozlišuje „server vrátil form" vs. no-op podle číselných subscriptů
   se před hledáním ukládá a po zrušení obnovuje.
 - Enter = Tab (na Buttonu klikne); dialog potvrzuje jen Ctrl+Enter (window-level
   binding hosta). Ctrl+číslice skáče na položku dle `Number` (200 ms buffer).
+- Popup nápovědy (? v toolbaru, `HelpCommand`) se generuje z `KeyboardShortcuts`
+  v `EDInputForm.xaml.cs` — **při přidání/změně zkratky aktualizuj tento seznam**.
+  Vypisuj jen reálně nadrátované zkratky (search Enter/Shift+Enter/Esc zatím nefungují).
 - Save při validačních chybách zobrazí popup přes `PopupDisplayer` a vrátí false.

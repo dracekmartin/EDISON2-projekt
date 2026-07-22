@@ -10,6 +10,7 @@
         xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules"
         xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls"
         xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox;assembly=EDControls"
+        xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox;assembly=EDControls"
         xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
@@ -31,8 +32,9 @@
     </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager). -->
-            <ColumnDefinition Width="*" MinWidth="150"/>
+            <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager).
+                 Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) — restore ji přepíše na px. -->
+            <ColumnDefinition x:Name="TreeColumn" Width="*" MinWidth="150"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="3*"/>
         </Grid.ColumnDefinitions>
@@ -207,7 +209,7 @@
                                 <MenuItem Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                     <MenuItem.Style>
-                                        <Style TargetType="MenuItem">
+                                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                                             <Setter Property="Header" Value="Přidat vše do oblíbených"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsFavorite}" Value="True">
@@ -217,6 +219,18 @@
                                         </Style>
                                     </MenuItem.Style>
                                 </MenuItem>
+                                <Separator/>
+                                <!-- Rozbalit/sbalit: „vše" = celý aktivní strom (bez param), „úroveň" = tato větev (param = rodina). -->
+                                <MenuItem Header="Rozbalit vše"
+                                          Command="{Binding PlacementTarget.Tag.ExpandAllCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="Rozbalit úroveň"
+                                          Command="{Binding PlacementTarget.Tag.ExpandSubtreeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="Sbalit vše"
+                                          Command="{Binding PlacementTarget.Tag.CollapseAllCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="Sbalit úroveň"
+                                          Command="{Binding PlacementTarget.Tag.CollapseSubtreeCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                             </ContextMenu>
                         </StackPanel.ContextMenu>
                     </StackPanel>
@@ -245,16 +259,20 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <!-- Zlatá ★ na konci názvu, jen u oblíbených (prázdná se nezobrazuje). -->
-                        <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="#FFC107" VerticalAlignment="Center"
+                        <TextBlock Text="&#x2605;" Margin="6,0,0,0" Foreground="{DynamicResource EDTheme.Semantic.Favorite}" VerticalAlignment="Center"
                                    Visibility="{Binding IsFavorite, Converter={StaticResource BoolToVis}}"/>
+                        <!-- Značka výchozího okna (shell ho auto-otevře po loginu). -->
+                        <TextBlock Text="(výchozí)" Margin="6,0,0,0" FontSize="{DynamicResource EDTheme.FontSize.Caption}" VerticalAlignment="Center"
+                                   Foreground="{DynamicResource EDTheme.Text.Muted}"
+                                   Visibility="{Binding IsStartupWindow, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel.ContextMenu>
                             <ContextMenu>
                                 <!-- Toggle oblíbeného. Header dle IsFavorite (ContextMenu dědí DataContext = modul).
-                                     Command jde na VM přes PlacementTarget.Tag. Sem přibydou další akce nad modulem. -->
+                                     Command jde na VM přes PlacementTarget.Tag. -->
                                 <MenuItem Command="{Binding PlacementTarget.Tag.ToggleFavoriteCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
                                           CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}">
                                     <MenuItem.Style>
-                                        <Style TargetType="MenuItem">
+                                        <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                                             <Setter Property="Header" Value="Přidat do oblíbených"/>
                                             <Style.Triggers>
                                                 <DataTrigger Binding="{Binding IsFavorite}" Value="True">
@@ -264,6 +282,13 @@
                                         </Style>
                                     </MenuItem.Style>
                                 </MenuItem>
+                                <Separator/>
+                                <!-- Výchozí okno: nastaví tento modul / zruší jakýkoli. Command na VM přes Tag. -->
+                                <MenuItem Header="Nastavit jako výchozí okno"
+                                          Command="{Binding PlacementTarget.Tag.SetStartupWindowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"
+                                          CommandParameter="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                <MenuItem Header="Zrušit výchozí okno"
+                                          Command="{Binding PlacementTarget.Tag.ClearStartupWindowCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
                             </ContextMenu>
                         </StackPanel.ContextMenu>
                     </StackPanel>
@@ -284,6 +309,31 @@
                     <EventSetter Event="PreviewMouseLeftButtonDown" Handler="TreeItem_PreviewMouseLeftButtonDown"/>
                     <EventSetter Event="MouseMove" Handler="TreeItem_MouseMove"/>
                 </Style>
+
+                <!-- Toolbar nad stromem (jeden na záložku, hned nad TreeView): rozbalit/sbalit celý
+                     aktivní strom + akce nad vybraným uzlem (oblíbené, výchozí okno). x:Shared="False"
+                     → každá záložka dostane vlastní instanci (jeden UIElement nesmí mít víc rodičů). -->
+                <StackPanel x:Key="TreeToolbar" x:Shared="False" Orientation="Horizontal" Margin="4,2,4,4">
+                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Rozbalit vše"
+                            Command="{Binding ExpandAllCommand}">
+                        <Image Source="{StaticResource EDIcons.ExpandAll}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Button>
+                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Sbalit vše"
+                            Command="{Binding CollapseAllCommand}">
+                        <Image Source="{StaticResource EDIcons.CollapseAll}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Button>
+                    <Border Width="1" Margin="4,4" Background="{DynamicResource EDTheme.Bg.Pressed}"/>
+                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Přidat/odebrat z oblíbených"
+                            Command="{Binding ToggleFavoriteCommand}" CommandParameter="{Binding SelectedModule}"
+                            IsEnabled="{Binding HasSelection}">
+                        <Image Source="{StaticResource EDIcons.Star}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Button>
+                    <Button Style="{StaticResource EDTheme.ToolbarButton}" ToolTip="Nastavit jako výchozí okno"
+                            Command="{Binding SetStartupWindowCommand}" CommandParameter="{Binding SelectedModule}"
+                            IsEnabled="{Binding CanSetStartup}">
+                        <Image Source="{StaticResource EDIcons.StartupWindow}" Width="16" Height="16" RenderOptions.BitmapScalingMode="HighQuality"/>
+                    </Button>
+                </StackPanel>
             </Grid.Resources>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
@@ -291,28 +341,13 @@
             </Grid.RowDefinitions>
 
             <!-- Vyhledávání napříč všemi stromy — filtruje uzly dle názvu (VM.TreeSearchText). -->
-            <Grid Grid.Row="0" Margin="4,4,4,2">
-                <TextBox x:Name="TreeSearchBox"
-                         Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
-                <TextBlock Text="Hledat modul…" Margin="6,0,0,0" VerticalAlignment="Center"
-                           IsHitTestVisible="False"
-                           Foreground="{DynamicResource EDTheme.Text.Secondary}">
-                    <TextBlock.Style>
-                        <!-- BasedOn zachová EDTheme font tokeny — lokální styl by jinak zahodil implicitní TextBlock styl. -->
-                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding TreeSearchText}" Value="">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
+            <edstx:EDSearchTextBox x:Name="TreeSearchBox" Grid.Row="0" Margin="4,4,4,2"
+                                   Placeholder="Hledat modul…"
+                                   Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
 
             <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených. -->
-            <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}">
+            <TabControl x:Name="TreeTabControl" Grid.Row="1" SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}"
+                        SelectionChanged="TreeTab_SelectionChanged">
                 <TabItem>
                     <TabItem.Header>
                         <StackPanel Orientation="Horizontal">
@@ -320,7 +355,10 @@
                             <TextBlock Text="Hlavní nabídka" VerticalAlignment="Center"/>
                         </StackPanel>
                     </TabItem.Header>
-                    <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0"/>
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Focusable="False" Content="{StaticResource TreeToolbar}"/>
+                        <TreeView x:Name="MainMenuTreeView" ItemsSource="{Binding MainMenuTree}" BorderThickness="0"/>
+                    </DockPanel>
                 </TabItem>
                 <TabItem>
                     <TabItem.Header>
@@ -329,7 +367,10 @@
                             <TextBlock Text="Správa systému" VerticalAlignment="Center"/>
                         </StackPanel>
                     </TabItem.Header>
-                    <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0"/>
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Focusable="False" Content="{StaticResource TreeToolbar}"/>
+                        <TreeView x:Name="SystemAdminTreeView" ItemsSource="{Binding SystemAdminTree}" BorderThickness="0"/>
+                    </DockPanel>
                 </TabItem>
                 <TabItem>
                     <TabItem.Header>
@@ -338,7 +379,10 @@
                             <TextBlock Text="Partnerská řešení" VerticalAlignment="Center"/>
                         </StackPanel>
                     </TabItem.Header>
-                    <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0"/>
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Focusable="False" Content="{StaticResource TreeToolbar}"/>
+                        <TreeView x:Name="PartnerSolutionsTreeView" ItemsSource="{Binding PartnerSolutionsTree}" BorderThickness="0"/>
+                    </DockPanel>
                 </TabItem>
                 <TabItem>
                     <TabItem.Header>
@@ -347,14 +391,17 @@
                             <TextBlock Text="Oblíbené" VerticalAlignment="Center"/>
                         </StackPanel>
                     </TabItem.Header>
-                    <Grid>
-                        <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0"/>
-                        <!-- Empty-state coaching — nenucená pobídka k používání oblíbených. -->
-                        <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
-                                   Margin="16" TextWrapping="Wrap" VerticalAlignment="Top"
-                                   Foreground="{DynamicResource EDTheme.Text.Secondary}"
-                                   Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“ (nebo ho připněte v záložce Používané) — zobrazí se jen ty, které opravdu potřebujete."/>
-                    </Grid>
+                    <DockPanel>
+                        <ContentControl DockPanel.Dock="Top" Focusable="False" Content="{StaticResource TreeToolbar}"/>
+                        <Grid>
+                            <TreeView x:Name="FavoritesTreeView" ItemsSource="{Binding FavoritesTree}" BorderThickness="0"/>
+                            <!-- Empty-state coaching — nenucená pobídka k používání oblíbených. -->
+                            <TextBlock Visibility="{Binding HasNoFavorites, Converter={StaticResource BoolToVis}}"
+                                       Margin="16" TextWrapping="Wrap" VerticalAlignment="Top"
+                                       Foreground="{DynamicResource EDTheme.Text.Secondary}"
+                                       Text="Zatím nemáte oblíbené moduly. Klikněte pravým tlačítkem na modul a zvolte „Přidat do oblíbených“ (nebo ho připněte v záložce Používané) — zobrazí se jen ty, které opravdu potřebujete."/>
+                        </Grid>
+                    </DockPanel>
                 </TabItem>
                 <TabItem>
                     <TabItem.Header>
@@ -418,20 +465,27 @@
 
         <StatusBar Grid.Row="2" Grid.ColumnSpan="100">
             <TextBlock Text="{Binding Server, StringFormat='Server: {0}'}"/>
-            <TextBlock Text="{Binding RestPort, StringFormat='RestPort: {0}'}"/>
+            <TextBlock Text="{Binding RestPort, StringFormat='REST port: {0}'}"/>
             <TextBlock Text="{Binding Namespace, StringFormat='Namespace: {0}'}"/>
-            <TextBlock Text="{Binding Idfa, StringFormat='Idfa: {0}'}"/>
-            <TextBlock Text="{Binding UserName, StringFormat='UserName: {0}'}"/>
-            <TextBlock Text="{Binding FullName, StringFormat='FullName: {0}'}"/>
+            <TextBlock Text="{Binding Idfa, StringFormat='Firma: {0}'}"/>
+            <TextBlock Text="{Binding UserName, StringFormat='Přihlašovací jméno: {0}'}"/>
+            <TextBlock Text="{Binding FullName, StringFormat='Uživatel: {0}'}"/>
             <TextBlock Text="{Binding Mlp, StringFormat='Mlp: {0}'}"/>
             <TextBlock Text="{Binding Version, StringFormat='Verze: {0}'}"/>
+            <!-- Notice z release serveru M-line (nová verze / potvrzení aktuálnosti).
+                 Prázdný text = nezjištěno (offline, dev build, ...). -->
+            <TextBlock Text="{Binding NewVersionText}" FontWeight="SemiBold"
+                       Foreground="{DynamicResource EDTheme.Accent.Blue}"/>
+            <TextBlock Text="{Binding UpToDateText}"
+                       Foreground="{DynamicResource EDTheme.Text.Secondary}"/>
             <!-- Chord hint pro Ctrl+W+W. Prázdný text = neaktivní stav. -->
             <TextBlock Text="{Binding ChordHintText}" FontStyle="Italic"/>
         </StatusBar>
 
-        <!-- Overlay „akce probíhá" (náběh spouštěného modulu). Poslední child + span celé mřížky
-             → kreslí se navrchu a pokryje celé okno. Auto-binduje se na VM.IsActionInProgress. -->
-        <edaip:EDActionInProgress Grid.Row="0" Grid.RowSpan="100" Grid.Column="0" Grid.ColumnSpan="100"/>
+        <!-- Overlay „akce probíhá" (náběh spouštěného modulu) — neviditelný controller,
+             karta se kreslí ve vlastním owned okně (nad WebView2 widgety).
+             Auto-binduje se na VM.IsActionInProgress. -->
+        <edaip:EDActionInProgress/>
 
     </Grid>
 

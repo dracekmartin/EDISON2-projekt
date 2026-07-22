@@ -23,6 +23,7 @@
 //
 // Snapshot — re-run při změně legacy XML nebo enumů.
 
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -97,6 +98,11 @@ int leaves = 0, withFqn = 0, withExe = 0, mismatchCount = 0;
 
 // ---- navbar sekce -> Fill* metody ----
 var navbar = XDocument.Load(navbarPath);
+
+// EDISONMAIN2 chce Telmax v hlavní nabídce, ne v partnerských řešeních. Legacy XML
+// zůstává beze změny (sdílí ho starý EDISON) — přesun dělá generátor in-memory.
+MoveNode("21", fromSection: "-4", toSection: "-2");
+
 var sb = new StringBuilder();
 EmitSection("-2", "FillMain", "Hlavní nabídka (modulární agenda)");
 EmitSection("-3", "FillSystem", "Správa systému (admin nástroje)");
@@ -212,6 +218,26 @@ void EmitNode(XElement node, int depth)
         sb.AppendLine($"{indent}d ..AddExe({Q(name)}, {Q(exe)}, {Q(fqn)}, {Q(id2)}, {(licensed ? 1 : 0)}, {Q(input)}, {(hidden ? 1 : 0)}, {Q(color)}, {(mlineOnly ? 1 : 0)})");
     }
 }
+
+// Přesune uzel mezi navbar sekcemi; do cílové vloží abecedně (cs-CZ) dle resolved názvu.
+void MoveNode(string nodeId, string fromSection, string toSection)
+{
+    var from = navbar.Descendants("node").First(n => (string?)n.Attribute("id") == fromSection);
+    var to = navbar.Descendants("node").First(n => (string?)n.Attribute("id") == toSection);
+    var node = from.Elements("node").First(n => (string?)n.Attribute("id") == nodeId);
+    node.Remove();
+
+    var cs = CultureInfo.GetCultureInfo("cs-CZ").CompareInfo;
+    string name = ResolvedName(node);
+    var next = to.Elements("node").FirstOrDefault(n => cs.Compare(ResolvedName(n), name) > 0);
+    if (next is not null) next.AddBeforeSelf(node); else to.Add(node);
+}
+
+// Název uzlu; type=4 referenci resolvuje do edisontree.xml.
+string ResolvedName(XElement node) =>
+    (string?)node.Attribute("type") == "4"
+        && byId.TryGetValue((string?)node.Attribute("id") ?? "", out var resolved)
+        ? NodeName(resolved) : NodeName(node);
 
 // <name> dítě (první), trim. Fallback na id.
 string NodeName(XElement node)

@@ -46,9 +46,10 @@ public class EdisonMainViewModelTests
         IPopupDisplayer? popup = null,
         ILocalPrefs? prefs = null,
         Action? closeAllWindows = null,
-        MiniAppCatalog? miniAppCatalog = null)
+        MiniAppCatalog? miniAppCatalog = null,
+        IMLRest? mlRest = null)
     {
-        var mockMLRest = MockMLRest();
+        var mockMLRest = mlRest ?? MockMLRest();
         var mockTree = treeGetter ?? EmptyTreeGetter();
         var svc = services ?? MockServices(popup: popup);
         // CompanySwitcher i VM čtou MLRest z services lazily — musí být v services před konstrukcí.
@@ -107,6 +108,71 @@ public class EdisonMainViewModelTests
         Assert.StartsWith("Partner", Assert.Single(vm.PartnerSolutionsTree).DisplayedName);
     }
 
+    // ── Výchozí okno (startup window) ──────────────────────────────────────────────
+
+    private static IModuleTreeGetter MainTreeWith(params ExecutableModule[] modules)
+    {
+        var mock = Substitute.For<IModuleTreeGetter>();
+        mock.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
+        mock.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(modules);
+        return mock;
+    }
+
+    [Fact]
+    public void StartupWindow_LoadedFromServer_MarksMatchingModuleOnly()
+    {
+        var ml = MockMLRest();
+        ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
+            .Returns(MLRestMocks.Output("17"));
+        var tree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "17" },
+            new ExecutableModule { DisplayedName = "B", ExecutablePath = "b.exe", FormName = "", ElementId = "9" });
+
+        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+
+        Assert.Equal(17, vm.DefaultWindowId);
+        var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
+        Assert.True(modules.Single(m => m.ElementId == "17").IsStartupWindow);
+        Assert.False(modules.Single(m => m.ElementId == "9").IsStartupWindow);
+    }
+
+    [Fact]
+    public void SetStartupWindowCommand_SetsServerValueAndMarksNode()
+    {
+        var ml = MockMLRest();   // GetUserDefaultForm nenastaven → start 0
+        var tree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
+        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+        var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
+
+        vm.SetStartupWindowCommand.Execute(module);
+
+        ml.Received().QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 23));
+        Assert.Equal(23, vm.DefaultWindowId);
+        Assert.True(module.IsStartupWindow);
+    }
+
+    [Fact]
+    public void ClearStartupWindowCommand_ClearsServerValueAndUnmarks()
+    {
+        var ml = MockMLRest();
+        ml.QueryOrThrow("ALVA.USERS.ApiEdison", "GetUserDefaultForm", Arg.Any<object[]>())
+            .Returns(MLRestMocks.Output("23"));
+        var tree = MainTreeWith(
+            new ExecutableModule { DisplayedName = "A", ExecutablePath = "a.exe", FormName = "", ElementId = "23" });
+        var vm = CreateVM(treeGetter: tree, mlRest: ml);
+        var module = vm.MainMenuTree.Cast<ExecutableModule>().Single();
+        Assert.True(module.IsStartupWindow);   // předpoklad
+
+        vm.ClearStartupWindowCommand.Execute(null);
+
+        ml.Received().QueryOrThrow("ALVA.USERS.ApiEdison", "SetUserDefaultForm",
+            Arg.Is<object[]>(a => a.Length == 1 && (int)a[0] == 0));
+        Assert.Equal(0, vm.DefaultWindowId);
+        Assert.False(module.IsStartupWindow);
+    }
+
     [Fact]
     public void SelectedCompanyIndex_ConfirmDenied_DoesNotSwitch()
     {
@@ -133,6 +199,30 @@ public class EdisonMainViewModelTests
         Assert.Equal(target, vm.SelectedCompanyIndex);
         Assert.Equal(Companies[target].Database, vm.Namespace);
         Assert.Equal(Companies[target].Id, vm.Idfa);
+    }
+
+    [Fact]
+    public void SelectedCompanyIndex_Switch_ReappliesTreeSearch()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var mockTree = Substitute.For<IModuleTreeGetter>();
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
+        // Čerstvé instance při každém volání — simuluje přestavbu stromu při přepnutí firmy.
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ => new IModule[]
+        {
+            new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
+            new ExecutableModule { DisplayedName = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
+        });
+        var vm = CreateVM(popup: mockPopup, treeGetter: mockTree);
+        vm.TreeSearchText = "turnus";
+
+        vm.SelectedCompanyIndex = vm.SelectedCompanyIndex == 0 ? 1 : 0;
+
+        // StartsWith — ModuleLaunchabilityCheck může připojit suffix k názvu.
+        var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
+        Assert.True(modules.Single(m => m.DisplayedName.StartsWith("Turnusy")).IsVisibleBySearch);
+        Assert.False(modules.Single(m => m.DisplayedName.StartsWith("Objednávky")).IsVisibleBySearch);
     }
 
     [Fact]
@@ -385,5 +475,59 @@ public class EdisonMainViewModelTests
         public string SaveLayout() => "";
         public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve)
             => throw new InvalidOperationException("simulovaný rozbitý layout");
+    }
+
+    // Neškodný host — prázdný katalog v testech znamená, že AddPane se nikdy nezavolá.
+    private sealed class NullHost : IMiniAppHost
+    {
+        public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
+                                    bool newColumn = false, bool newRow = false)
+            => Substitute.For<IMiniAppPane>();
+        public void ResetToDefaultSkeleton() { }
+        public string SaveLayout() => "";
+        public void RestoreLayout(string layoutXml, Func<string, IMiniAppPane, RestoredContent?> resolve) { }
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_AppliesSavedTreeWidth()
+    {
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.TreeWidths.Returns(new Dictionary<string, double> { ["CB_DP"] = 320 });
+        var vm = CreateVM(prefs: prefs);
+
+        double? applied = null;
+        vm.AttachTreeLayout(() => 0, w => applied = w);
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.Equal(320, applied);
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_NoSavedTreeWidth_LeavesDefault()
+    {
+        var vm = CreateVM(); // ILocalPrefs substitute → TreeWidths null
+
+        bool applied = false;
+        vm.AttachTreeLayout(() => 0, _ => applied = true);
+        vm.AttachMiniAppHost(new NullHost());
+
+        Assert.False(applied);
+    }
+
+    [Fact]
+    public void CloseAll_PersistsTreeWidthPerIdfa()
+    {
+        var widths = new Dictionary<string, double>();
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.TreeWidths.Returns(widths);
+        var vm = CreateVM(prefs: prefs);
+
+        vm.AttachTreeLayout(() => 275, _ => { });
+        vm.AttachMiniAppHost(new NullHost());
+
+        vm.CloseAllCommand.Execute(null);
+
+        Assert.Equal(275, widths["CB_DP"]);
+        prefs.Received().Save();
     }
 }

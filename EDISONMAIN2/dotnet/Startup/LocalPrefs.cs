@@ -24,6 +24,9 @@ public interface ILocalPrefs
     /// <summary>Uložený layout miniaplikací (AvalonDock XML) per IDFa. Null = žádný uložený.</summary>
     Dictionary<string, string>? MiniAppLayouts { get; set; }
 
+    /// <summary>Uložená šířka stromu modulů (px) per IDFa. Null = žádná uložená.</summary>
+    Dictionary<string, double>? TreeWidths { get; set; }
+
     /// <summary>
     /// Per-stanice: zkusit při startu Windows SSO auto-login (jméno = <c>Environment.UserName</c>,
     /// prázdné heslo) před zobrazením login dialogu. Zapnout na stanicích s LDAP-AUTO uživateli;
@@ -50,6 +53,7 @@ public class LocalPrefs : ILocalPrefs
     public bool TryWindowsAutoLogin { get; set; }
 
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
+    public Dictionary<string, double>? TreeWidths { get; set; }
 
     // FontApplied/FontFamily/FontSize byly přesunuty do EDControls.UserFonts.UserFontPreference
     // (shared %APPDATA%\m-line\common\font.json) aby je TemplateDesigner mohl sdílet a reagovat

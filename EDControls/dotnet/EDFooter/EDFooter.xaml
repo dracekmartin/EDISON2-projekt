@@ -26,7 +26,8 @@
                       Visibility="{Binding HasItems, ElementName=ActionsMenuItem, Converter={StaticResource BoolToVisibility}}">
                     <MenuItem x:Name="ActionsMenuItem" Header="Akce" ItemsSource="{Binding Actions}">
                         <MenuItem.ItemContainerStyle>
-                            <Style TargetType="MenuItem">
+                            <!-- BasedOn povinné — bez něj explicitní styl přebije implicitní themed styl → dark mode bílé submenu. -->
+                            <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
                                 <Setter Property="Header"           Value="{Binding Label}"/>
                                 <Setter Property="Command"          Value="{Binding Command}"/>
                                 <Setter Property="InputGestureText" Value="{Binding ShortcutText}"/>

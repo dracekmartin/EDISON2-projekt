@@ -54,6 +54,13 @@
     <Color x:Key="EDTheme.Text.Disabled.Color">#FF6A6A6A</Color>
     <SolidColorBrush x:Key="EDTheme.Text.Disabled" Color="{StaticResource EDTheme.Text.Disabled.Color}"/>
 
+    <!-- Field states — agresivnější než v light: pozadí výrazně tmavší než surface (#2D2D30)
+         → readonly pole zřetelně recessed; text silně ztlumený. -->
+    <Color x:Key="EDTheme.Field.ReadOnly.Bg.Color">#FF1A1A1B</Color>
+    <SolidColorBrush x:Key="EDTheme.Field.ReadOnly.Bg" Color="{StaticResource EDTheme.Field.ReadOnly.Bg.Color}"/>
+    <Color x:Key="EDTheme.Field.ReadOnly.Fg.Color">#FF6A6A6A</Color>
+    <SolidColorBrush x:Key="EDTheme.Field.ReadOnly.Fg" Color="{StaticResource EDTheme.Field.ReadOnly.Fg.Color}"/>
+
     <!-- Accent: Blue -->
     <Color x:Key="EDTheme.Accent.Blue.Color">#FF3B9EFF</Color>
     <SolidColorBrush x:Key="EDTheme.Accent.Blue" Color="{StaticResource EDTheme.Accent.Blue.Color}"/>
@@ -85,5 +92,8 @@
     <SolidColorBrush x:Key="EDTheme.Semantic.Success" Color="{StaticResource EDTheme.Semantic.Success.Color}"/>
     <Color x:Key="EDTheme.Semantic.Condition.Color">#FFBA68C8</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Condition" Color="{StaticResource EDTheme.Semantic.Condition.Color}"/>
+    <!-- Favorite — jasnější zlatá pro kontrast na tmavém -->
+    <Color x:Key="EDTheme.Semantic.Favorite.Color">#FFFFD54F</Color>
+    <SolidColorBrush x:Key="EDTheme.Semantic.Favorite" Color="{StaticResource EDTheme.Semantic.Favorite.Color}"/>
 
 </ResourceDictionary>

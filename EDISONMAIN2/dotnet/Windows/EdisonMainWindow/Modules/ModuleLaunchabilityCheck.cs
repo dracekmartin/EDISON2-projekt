@@ -14,8 +14,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
     /// </summary>
     internal static class ModuleLaunchabilityCheck
     {
-        private const string StubColor = "#FFA500";    // oranžová — záměrný stub bez exe
-        private const string BrokenColor = "#FF0000";  // červená — tvrdí launchovatelný, ale exe chybí
+        // Diagnostické barvy z theme (EDTheme.Module.*); fallback na literál, když slovník
+        // není mergnutý (unit testy bez WPF Application) — proto asserty na #FFA500/#FF0000 platí.
+        private static string StubColor => ResolveThemeColor("EDTheme.Module.Stub.Color", "#FFA500");    // oranžová — záměrný stub bez exe
+        private static string BrokenColor => ResolveThemeColor("EDTheme.Module.Broken.Color", "#FF0000"); // červená — tvrdí launchovatelný, ale exe chybí
+
+        private static string ResolveThemeColor(string key, string fallback)
+            => System.Windows.Application.Current?.TryFindResource(key) is System.Windows.Media.Color c
+                ? $"#{c.A:X2}{c.R:X2}{c.G:X2}{c.B:X2}"
+                : fallback;
 
         private enum State { Launchable, Stub, MissingExe }
 

@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:local="clr-namespace:EDControls.EDComponentToolbar"
+             xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox"
              mc:Ignorable="d"
              d:DesignHeight="32" d:DesignWidth="800">
     <UserControl.Resources>
@@ -13,7 +14,7 @@
 
         <Style x:Key="ToolbarButtonStyle" TargetType="Button">
             <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Foreground" Value="{DynamicResource EDTheme.OnAccent.Text}"/>
             <Setter Property="BorderThickness" Value="0"/>
             <Setter Property="Padding" Value="6,2"/>
             <Setter Property="Cursor" Value="Hand"/>
@@ -30,10 +31,10 @@
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#22FFFFFF"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.OnAccent.HoverOverlay}"/>
                             </Trigger>
                             <Trigger Property="IsPressed" Value="True">
-                                <Setter TargetName="Bd" Property="Background" Value="#44FFFFFF"/>
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource EDTheme.OnAccent.PressedOverlay}"/>
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4"/>
@@ -49,22 +50,22 @@
         <DockPanel LastChildFill="False">
 
             <!-- Vpravo: standardní akční ikony (opt-in přes ShowX props) -->
-            <Button DockPanel.Dock="Right" Content="⚙" FontSize="14"
+            <Button DockPanel.Dock="Right" Content="⚙" FontSize="{DynamicResource EDTheme.FontSize.Title}"
                     Style="{StaticResource ToolbarButtonStyle}"
                     ToolTip="Nastavení"
                     Command="{Binding SettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     Visibility="{Binding ShowSettings, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
-            <Button DockPanel.Dock="Right" Content="?" FontSize="14" FontWeight="Bold"
+            <Button DockPanel.Dock="Right" Content="?" FontSize="{DynamicResource EDTheme.FontSize.Title}" FontWeight="Bold"
                     Style="{StaticResource ToolbarButtonStyle}"
                     ToolTip="Nápověda"
                     Command="{Binding HelpCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     Visibility="{Binding ShowHelp, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
-            <Button DockPanel.Dock="Right" Content="🖨" FontSize="13"
+            <Button DockPanel.Dock="Right" Content="🖨" FontSize="{DynamicResource EDTheme.FontSize.Header}"
                     Style="{StaticResource ToolbarButtonStyle}"
                     ToolTip="Tisk"
                     Command="{Binding PrintCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                     Visibility="{Binding ShowPrint, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}"/>
-            <Button DockPanel.Dock="Right" Content="📊" FontSize="13"
+            <Button DockPanel.Dock="Right" Content="📊" FontSize="{DynamicResource EDTheme.FontSize.Header}"
                     Style="{StaticResource ToolbarButtonStyle}"
                     ToolTip="Export"
                     Command="{Binding ExportCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -73,7 +74,7 @@
             <!-- Title — left edge, prominent. Anchor co je v komponentě. -->
             <TextBlock DockPanel.Dock="Left"
                        Text="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                       Foreground="White" FontWeight="SemiBold" FontSize="14"
+                       Foreground="{DynamicResource EDTheme.OnAccent.Text}" FontWeight="SemiBold" FontSize="{DynamicResource EDTheme.FontSize.Title}"
                        VerticalAlignment="Center" Margin="2,0,12,0"
                        Visibility="{Binding Title, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
 
@@ -83,36 +84,26 @@
                         VerticalAlignment="Center" Margin="0,0,8,0"
                         Visibility="{Binding ShowSearch, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVis}}">
 
-                <TextBlock Text="{Binding SearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                           Foreground="White"
-                           VerticalAlignment="Center" Margin="0,0,6,0"/>
-
-                <TextBox x:Name="SearchTextBox" Width="220" VerticalAlignment="Center"
-                         Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"/>
-
-                <!-- Clear (✕) — visible jen pokud SearchText není prázdné -->
-                <Button Content="✕" FontSize="12"
-                        Margin="2,0,0,0" Padding="6,2"
-                        Style="{StaticResource ToolbarButtonStyle}"
-                        ToolTip="Vyčistit (Esc)"
-                        Click="ClearSearch_Click"
-                        Visibility="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NonEmptyToVis}}"/>
+                <!-- Placeholder, křížek i Esc řeší EDSearchTextBox interně. -->
+                <edstx:EDSearchTextBox x:Name="SearchTextBox" Width="220" VerticalAlignment="Center"
+                                       Placeholder="{Binding SearchPlaceholder, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                       Text="{Binding SearchText, RelativeSource={RelativeSource AncestorType=UserControl}, UpdateSourceTrigger=PropertyChanged}"/>
 
                 <!-- Match nav (▲ ▼ counter) — visible jen pokud TotalMatches > 0 -->
                 <StackPanel Orientation="Horizontal"
                             Visibility="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource IntNonZeroToVis}}">
-                    <Button Content="▲" FontSize="10"
+                    <Button Content="▲" FontSize="{DynamicResource EDTheme.FontSize.Small}"
                             Margin="6,0,0,0" Padding="6,2"
                             Style="{StaticResource ToolbarButtonStyle}"
                             ToolTip="Předchozí výsledek (Shift+Enter)"
                             Command="{Binding FindPreviousCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                    <Button Content="▼" FontSize="10"
+                    <Button Content="▼" FontSize="{DynamicResource EDTheme.FontSize.Small}"
                             Margin="2,0,0,0" Padding="6,2"
                             Style="{StaticResource ToolbarButtonStyle}"
                             ToolTip="Další výsledek (Enter)"
                             Command="{Binding FindNextCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
-                    <TextBlock Foreground="White" VerticalAlignment="Center"
-                               Margin="6,0,0,0" FontSize="11">
+                    <TextBlock Foreground="{DynamicResource EDTheme.OnAccent.Text}" VerticalAlignment="Center"
+                               Margin="6,0,0,0" FontSize="{DynamicResource EDTheme.FontSize.Caption}">
                         <Run Text="{Binding CurrentMatchIndex, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>
                         <Run Text="/"/>
                         <Run Text="{Binding TotalMatches, RelativeSource={RelativeSource AncestorType=UserControl}, Mode=OneWay}"/>

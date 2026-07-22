@@ -13,29 +13,28 @@ public sealed class CoreMiniApps : IMiniAppProvider
 {
     public string GroupTitle => "Podpora M-line";
 
-    private const string WidgetBase = "https://podpora.m-line.cz/api/widgets/";
-    private const string WidgetKey = "80716cc86270f1daff6a18ad0b2ba07e9e30011eea22072c7a840604b18423c6";
-
     public IEnumerable<MiniAppDescriptor> GetMiniApps() =>
     [
         new("Core.Novinky", "Novinky", () => new SimpleMiniAppViewModel(
-            "Novinky", () => Widget($"{WidgetBase}info?key={WidgetKey}"))),
+            "Novinky", () => Widget(WidgetUrls.Novinky))),
         new("Core.Wiki", "Wiki", () => new SimpleMiniAppViewModel(
-            "Wiki", () => Widget($"{WidgetBase}wiki?key={WidgetKey}"))),
+            "Wiki", () => Widget(WidgetUrls.Wiki))),
         new("Core.Skoleni", "Školení", () => new SimpleMiniAppViewModel(
             "Školení", TrainingsWidget)),
         new("Core.AutoRefresh", "Automatický refresh", () => new PeriodicRefreshMiniAppViewModel()),
     ];
 
-    private static FontZoomWebView Widget(string url) => new() { Source = new Uri(url) };
+    private static FontZoomWebView Widget(string url)
+    {
+        var wv = new FontZoomWebView();
+        wv.Navigate(url);
+        return wv;
+    }
 
     /// <summary>Školení widget dostává IdFa + přihlášeného uživatele (kvůli zpětné vazbě) — mirror frmMain.vb.</summary>
     private static FontZoomWebView TrainingsWidget()
     {
         var mlRest = EDServices.Current.MLRest;
-        var url = $"{WidgetBase}trainings?key={WidgetKey}"
-            + $"&idfa={Uri.EscapeDataString(mlRest?.Idfa ?? "")}"
-            + $"&user={Uri.EscapeDataString(mlRest?.LoginName ?? "")}";
-        return Widget(url);
+        return Widget(WidgetUrls.Trainings(mlRest?.Idfa ?? "", mlRest?.LoginName ?? ""));
     }
 }

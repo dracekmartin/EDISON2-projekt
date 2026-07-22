@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Net.Http;
 using EDControls;
 
 namespace EDISONMAIN2;
@@ -9,7 +10,8 @@ namespace EDISONMAIN2;
 /// Subset legacy <c>ALVA.SETUP.Main.LoadSettings</c> — jen pole potřebná pro klientský
 /// update flow. <see cref="SourceDir"/> = legacy LocalClientSourcePath sémantika.
 /// </summary>
-public record UpdateSettings(bool Enabled, string CacheVersion, string EdisonPath, string LocalSourcePath)
+public record UpdateSettings(bool Enabled, string CacheVersion, string EdisonPath, string LocalSourcePath,
+                             string SourceServer = "", int SourcePort = 0)
 {
     public string SourceDir => string.IsNullOrEmpty(LocalSourcePath) ? EdisonPath : LocalSourcePath;
 }
@@ -25,6 +27,18 @@ public enum UpdateOutcome
 }
 
 public record UpdateCheckResult(UpdateOutcome Outcome, string Message = "", string Version = "");
+
+public enum ReleaseNoticeOutcome
+{
+    /// <summary>Nelze zjistit — žádný sourceServer, dev build, síťová chyba.</summary>
+    Unknown,
+    /// <summary>Release server nemá nic novějšího (blokovaná distribuce se počítá jako nic) — běží nejnovější verze.</summary>
+    UpToDate,
+    /// <summary>Na release serveru je novější verze (ReleaseNoticeResult.Version).</summary>
+    NewVersionAvailable,
+}
+
+public record ReleaseNoticeResult(ReleaseNoticeOutcome Outcome, string Version = "");
 
 /// <summary>
 /// Klientský (stanicový) update — detekce (porovnání lokální VERZE.INF proti serverové
@@ -44,7 +58,8 @@ public class Updater
         char del = mlRest.Delimiter;
 
         bool enabled = false;
-        string version = "", edisonPath = "", localSourcePath = "";
+        string version = "", edisonPath = "", localSourcePath = "", sourceServer = "";
+        int sourcePort = 0;
         for (int i = 1; i <= output.GetUpperBound(0); i++)
         {
             var parts = (output[i]?.ToString() ?? "").Split(del);
@@ -55,9 +70,11 @@ public class Updater
                 case "version": version = parts[1]; break;
                 case "edisonPath": edisonPath = parts[1]; break;
                 case "localSourcePath": localSourcePath = parts[1]; break;
+                case "sourceServer": sourceServer = parts[1]; break;
+                case "sourcePort": int.TryParse(parts[1], out sourcePort); break;
             }
         }
-        return new UpdateSettings(enabled, version, edisonPath, localSourcePath);
+        return new UpdateSettings(enabled, version, edisonPath, localSourcePath, sourceServer, sourcePort);
     }
 
     public UpdateCheckResult Check(UpdateSettings settings)
@@ -127,5 +144,44 @@ public class Updater
             UseShellExecute = true,
             WorkingDirectory = AppContext.BaseDirectory,
         });
+    }
+
+    /// <summary>
+    /// Notice-only porovnání s release serverem M-line (legacy frmMain info panel). Nikdy
+    /// nespouští update — instalace release je serverová role (EDTRANSFER2/EDISONINS).
+    /// </summary>
+    public ReleaseNoticeResult GetReleaseNotice(UpdateSettings settings, string localVersion)
+    {
+        if (settings.SourceServer == "" || settings.SourcePort <= 0
+            || localVersion is "" or VerzeInf.DevVersion)
+            return new(ReleaseNoticeOutcome.Unknown);
+        try
+        {
+            // Legacy clsUpdate.SourcePath — VERZE.INF v kořeni release složky na IIS.
+            var url = $"http://{settings.SourceServer}:{settings.SourcePort}/EDISON/RELEASE/{VerzeInf.FileName}";
+            return EvaluateReleaseNotice(DownloadReleaseVersionFile(url), localVersion);
+        }
+        catch
+        {
+            return new(ReleaseNoticeOutcome.Unknown); // notice-only — nedostupný release server nesmí nic rozbít
+        }
+    }
+
+    public static ReleaseNoticeResult EvaluateReleaseNotice(string content, string localVersion)
+    {
+        var remote = VerzeInf.ParseLast(content);
+        if (remote == "") return new(ReleaseNoticeOutcome.Unknown);
+        if (!VerzeInf.IsNewVersion(remote, localVersion)) return new(ReleaseNoticeOutcome.UpToDate);
+        // M-line pozastavil distribuci → navenek jako by novější verze neexistovala.
+        long.TryParse(VerzeInf.ParseValue(content, VerzeInf.BlockKey), out long blocked);
+        return blocked != 0
+            ? new(ReleaseNoticeOutcome.UpToDate)
+            : new(ReleaseNoticeOutcome.NewVersionAvailable, remote);
+    }
+
+    protected virtual string DownloadReleaseVersionFile(string url)
+    {
+        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+        return client.GetStringAsync(url).GetAwaiter().GetResult();
     }
 }

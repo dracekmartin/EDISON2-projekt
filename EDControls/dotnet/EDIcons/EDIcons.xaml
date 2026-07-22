@@ -32,6 +32,14 @@
     <BitmapImage x:Key="EDIcons.Star"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/star.png"/>
 
+    <!-- Toolbar stromu modulů: rozbalit/sbalit celý strom + značka výchozího okna. -->
+    <BitmapImage x:Key="EDIcons.ExpandAll"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/expand_all.png"/>
+    <BitmapImage x:Key="EDIcons.CollapseAll"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/collapse_all.png"/>
+    <BitmapImage x:Key="EDIcons.StartupWindow"
+                 UriSource="pack://application:,,,/EDControls;component/EDIcons/png/startup_window.png"/>
+
     <BitmapImage x:Key="EDIcons.Add"
                  UriSource="pack://application:,,,/EDControls;component/EDIcons/png/add2.png"/>
     <BitmapImage x:Key="EDIcons.Edit"

@@ -13,6 +13,8 @@ using DataObject = System.Windows.DataObject;
 using Point = System.Windows.Point;
 using DragDrop = System.Windows.DragDrop;
 using DragDropEffects = System.Windows.DragDropEffects;
+using TabControl = System.Windows.Controls.TabControl;
+using TreeView = System.Windows.Controls.TreeView;
 
 namespace EDISONMAIN2
 {
@@ -25,7 +27,14 @@ namespace EDISONMAIN2
         {
             InitializeComponent();
             PreviewKeyDown += OnPreviewKeyDown;
+            // Výběr uzlu napříč stromy → VM.SelectedModule (řídí toolbar akce). SelectedItem
+            // TreeView nelze bindovat, proto přes event; Používané (ListBox) výběr neřeší.
+            MainMenuTreeView.SelectedItemChanged += TreeSelectedItemChanged;
+            SystemAdminTreeView.SelectedItemChanged += TreeSelectedItemChanged;
+            PartnerSolutionsTreeView.SelectedItemChanged += TreeSelectedItemChanged;
+            FavoritesTreeView.SelectedItemChanged += TreeSelectedItemChanged;
             Loaded += WireMiniAppHost;
+            ContentRendered += OnContentRendered;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
@@ -41,13 +50,28 @@ namespace EDISONMAIN2
             DockManager.Theme = dark ? new Vs2013DarkTheme() : new Vs2013LightTheme();
         }
 
+        // Po prvním vykreslení (WPF analog legacy frmMain_Shown) otevři uživatelův výchozí okno.
+        // ContentRendered fíruje jednou po prvním paintu — strom už je postavený a licenčně filtrovaný.
+        private void OnContentRendered(object? sender, System.EventArgs e)
+        {
+            ContentRendered -= OnContentRendered;
+            if (DataContext is EdisonMainViewModel vm)
+                vm.OpenStartupWindowIfAny();
+        }
+
         // MiniAppManager (ve VM) potřebuje DockingManager z view → host injektneme po načtení okna,
         // kdy už je DataContext nastaven (BuildShellWindow ho nastaví po konstruktoru). Jen jednou.
         private void WireMiniAppHost(object sender, RoutedEventArgs e)
         {
             Loaded -= WireMiniAppHost;
             if (DataContext is EdisonMainViewModel vm)
+            {
+                // Před AttachMiniAppHost — ten spouští první restore, který už šířku stromu aplikuje.
+                vm.AttachTreeLayout(
+                    () => TreeColumn.ActualWidth,
+                    w => TreeColumn.Width = new GridLength(w));
                 vm.AttachMiniAppHost(new AvalonDockHost(DockManager));
+            }
         }
 
         // Single-click ve stromu: složka toggle expand, modul spustí. Event bubluje přes
@@ -102,6 +126,31 @@ namespace EDISONMAIN2
         {
             ((TreeViewItem)sender).IsSelected = true;
             e.Handled = true;
+        }
+
+        // Výběr uzlu v kterémkoli stromě → VM.SelectedModule.
+        private void TreeSelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            if (DataContext is EdisonMainViewModel vm)
+                vm.SelectedModule = e.NewValue as IModule;
+        }
+
+        // Přepnutí záložky → SelectedModule z výběru nově aktivního stromu (Používané → null),
+        // aby toolbar akce odpovídaly viditelné záložce. Guard filtruje bublající SelectionChanged
+        // z vnitřního ListBoxu (Používané).
+        private void TreeTab_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (e.Source is not TabControl) return;
+            if (DataContext is not EdisonMainViewModel vm) return;
+            TreeView? tv = TreeTabControl.SelectedIndex switch
+            {
+                0 => MainMenuTreeView,
+                1 => SystemAdminTreeView,
+                2 => PartnerSolutionsTreeView,
+                3 => FavoritesTreeView,
+                _ => null,
+            };
+            vm.SelectedModule = tv?.SelectedItem as IModule;
         }
 
         private void UsedModuleItem_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)

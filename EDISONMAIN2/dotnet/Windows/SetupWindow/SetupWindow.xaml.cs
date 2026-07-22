@@ -61,7 +61,8 @@ namespace EDISONMAIN2.Windows.SetupWindow
             SaveBtn.IsEnabled = ok;
             StatusText.Visibility = Visibility.Visible;
             StatusText.Text = ok ? "Připojení v pořádku." : "Nelze se připojit, zkontrolujte parametry.";
-            StatusText.Foreground = ok ? Brushes.Green : Brushes.Red;
+            StatusText.Foreground = ok ? ThemeBrush("EDTheme.Semantic.Success", Brushes.Green)
+                                       : ThemeBrush("EDTheme.Semantic.Danger", Brushes.Red);
         }
 
         private void SaveBtn_Click(object sender, RoutedEventArgs e)
@@ -76,7 +77,7 @@ namespace EDISONMAIN2.Windows.SetupWindow
             catch (Exception ex)
             {
                 StatusText.Visibility = Visibility.Visible;
-                StatusText.Foreground = Brushes.Red;
+                StatusText.Foreground = ThemeBrush("EDTheme.Semantic.Danger", Brushes.Red);
                 StatusText.Text = $"Nastavení nelze uložit ({ex.Message}).";
                 return;
             }
@@ -105,8 +106,13 @@ namespace EDISONMAIN2.Windows.SetupWindow
             // Změna vstupu po úspěšném testu → zákaz uložení, dokud se znovu neotestuje.
             SaveBtn.IsEnabled = false;
             StatusText.Visibility = Visibility.Visible;
-            StatusText.Foreground = Brushes.Red;
+            StatusText.Foreground = ThemeBrush("EDTheme.Semantic.Danger", Brushes.Red);
             StatusText.Text = message;
         }
+
+        // Theme brush z EDTheme (DynamicResource ekvivalent v code-behind); fallback když
+        // slovník ještě není mergnutý (setup běží před loginem).
+        private System.Windows.Media.Brush ThemeBrush(string key, System.Windows.Media.Brush fallback)
+            => TryFindResource(key) as System.Windows.Media.Brush ?? fallback;
     }
 }

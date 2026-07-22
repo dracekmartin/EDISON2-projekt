@@ -10,4 +10,10 @@
     <sys:String x:Key="EDStrings.Cancel">Storno</sys:String>
     <sys:String x:Key="EDStrings.Save">Uložit</sys:String>
 
+    <!-- Dialogový slovník (EDPopup) -->
+    <sys:String x:Key="EDStrings.Yes">Ano</sys:String>
+    <sys:String x:Key="EDStrings.No">Ne</sys:String>
+    <sys:String x:Key="EDStrings.Information">Informace</sys:String>
+    <sys:String x:Key="EDStrings.Confirmation">Potvrzení</sys:String>
+
 </ResourceDictionary>

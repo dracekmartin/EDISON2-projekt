@@ -39,6 +39,9 @@
     <Resource Include="EDIcons\png\component.png"/>
     <Resource Include="EDIcons\png\history.png"/>
     <Resource Include="EDIcons\png\star.png"/>
+    <Resource Include="EDIcons\png\expand_all.png"/>
+    <Resource Include="EDIcons\png\collapse_all.png"/>
+    <Resource Include="EDIcons\png\startup_window.png"/>
     <Resource Include="EDIcons\png\add2.png"/>
     <Resource Include="EDIcons\png\edit.png"/>
     <Resource Include="EDIcons\png\delete2.png"/>

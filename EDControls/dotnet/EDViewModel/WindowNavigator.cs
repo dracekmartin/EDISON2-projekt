@@ -28,7 +28,7 @@ public class WindowNavigator : IWindowNavigator
     /// <summary>Sledování legacy child procesů — Process + původní spawn args (exe, formFqn).
     /// FormFqn slouží jako fallback display label, když <c>Process.MainWindowTitle</c> je prázdný
     /// (typicky brzy po startu child procesu, než se vytvoří window).</summary>
-    internal record LegacyProcessEntry(Process Process, string ExeName, string FormFqn);
+    internal record LegacyProcessEntry(Process Process, string ExeName, string FormFqn, string InputParam);
 
     private readonly List<LegacyProcessEntry> _legacyProcesses = [];
 
@@ -48,18 +48,45 @@ public class WindowNavigator : IWindowNavigator
 
     public void ShowLegacy(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
+        if (TryFocusExistingLegacy(exeName, formFqn, inputParam)) return;
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
-        if (prc != null) _legacyProcesses.Add(new(prc, exeName, formFqn));
+        if (prc != null) _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
     }
 
     public async Task ShowLegacyAsync(string exeName, string formFqn, bool shareShellSession = true, string inputParam = "")
     {
+        // Už běžící modul (stejné exe+forma+param) neotvírej znovu — jen na něj přenes focus.
+        if (TryFocusExistingLegacy(exeName, formFqn, inputParam)) return;
         // Launch synchronně (případný fail Process.Start faultne task → caller ho chytne v popup).
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
-        _legacyProcesses.Add(new(prc, exeName, formFqn));
+        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
         await WaitForModuleWindowAsync(prc);
     }
+
+    /// <summary>
+    /// Dedup pro modeless legacy launch: když už běží proces se stejným
+    /// <paramref name="exeName"/>+<paramref name="formFqn"/>+<paramref name="inputParam"/>,
+    /// přenese na jeho okno focus a vrátí <c>true</c> (duplikát se nespustí). Mrtvé procesy
+    /// z registru cestou vyčistí. Vrací <c>true</c> i když okno ještě nenaběhlo
+    /// (<c>MainWindowHandle == 0</c>) — duplikát se ani tak spustit nesmí, focus je best-effort.
+    /// </summary>
+    private bool TryFocusExistingLegacy(string exeName, string formFqn, string inputParam)
+    {
+        _legacyProcesses.RemoveAll(e => e.Process.HasExited);
+        var match = _legacyProcesses.FirstOrDefault(e => MatchesTarget(e, exeName, formFqn, inputParam));
+        if (match is null) return false;
+        var hwnd = match.Process.MainWindowHandle;
+        if (hwnd != IntPtr.Zero) SetForegroundWindow(hwnd);
+        return true;
+    }
+
+    /// <summary>Shoda tracked legacy procesu s cílovým launchem — „stejné okno" = stejné exe
+    /// (case-insensitive path), forma i EDParamIn.</summary>
+    internal static bool MatchesTarget(LegacyProcessEntry e, string exe, string form, string param) =>
+        string.Equals(e.ExeName, exe, StringComparison.OrdinalIgnoreCase)
+        && string.Equals(e.FormFqn, form, StringComparison.Ordinal)
+        && string.Equals(e.InputParam, param, StringComparison.Ordinal);
 
     /// <summary>
     /// Čeká (poll á 100 ms) až child proces vytvoří hlavní okno, nebo do timeoutu / ukončení
@@ -87,7 +114,7 @@ public class WindowNavigator : IWindowNavigator
     {
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
-        _legacyProcesses.Add(new(prc, exeName, formFqn));
+        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
         WireDialogBehavior(prc);
     }
 
@@ -95,7 +122,7 @@ public class WindowNavigator : IWindowNavigator
     {
         var prc = LaunchLegacy(exeName, formFqn, shareShellSession, inputParam);
         if (prc == null) return;
-        _legacyProcesses.Add(new(prc, exeName, formFqn));
+        _legacyProcesses.Add(new(prc, exeName, formFqn, inputParam));
         WireDialogBehavior(prc);
         // Overlay (caller drží ActionInProgress) se schová jakmile okno modulu naběhne;
         // shell zůstane ztmavený přes WireDialogBehavior až do zavření child okna.

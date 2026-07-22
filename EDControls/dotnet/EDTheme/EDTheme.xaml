@@ -103,6 +103,16 @@
     <SolidColorBrush x:Key="EDTheme.Text.Disabled" Color="{StaticResource EDTheme.Text.Disabled.Color}"/>
 
     <!-- ═══════════════════════════════════════════════════════════════════
+         COLORS — Field states (needitovatelná / readonly pole)
+         Laděno per-motiv: v light jemně recessed, v dark agresivnější „vypnuto"
+         (tmavší pozadí + výrazně ztlumený text) — jinak by v dark splynulo se surface.
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="EDTheme.Field.ReadOnly.Bg.Color">#FFEBEDF0</Color>
+    <SolidColorBrush x:Key="EDTheme.Field.ReadOnly.Bg" Color="{StaticResource EDTheme.Field.ReadOnly.Bg.Color}"/>
+    <Color x:Key="EDTheme.Field.ReadOnly.Fg.Color">#FF6B7280</Color>
+    <SolidColorBrush x:Key="EDTheme.Field.ReadOnly.Fg" Color="{StaticResource EDTheme.Field.ReadOnly.Fg.Color}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
          COLORS — Accent: Blue (primary action color v TD i EDList selekci)
          ═══════════════════════════════════════════════════════════════════ -->
     <!-- Primary accent — focus, active section border, selection -->
@@ -167,6 +177,31 @@
     <Color x:Key="EDTheme.Semantic.Condition.Color">#FF7B1FA2</Color>
     <SolidColorBrush x:Key="EDTheme.Semantic.Condition" Color="{StaticResource EDTheme.Semantic.Condition.Color}"/>
 
+    <!-- Favorite — zlatá hvězda oblíbených modulů -->
+    <Color x:Key="EDTheme.Semantic.Favorite.Color">#FFFFC107</Color>
+    <SolidColorBrush x:Key="EDTheme.Semantic.Favorite" Color="{StaticResource EDTheme.Semantic.Favorite.Color}"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         COLORS — On-accent (obsah na brandovém header pruhu)
+         Header (EDTheme.Accent.Header) je stabilní v obou režimech, proto se tyto
+         tokeny v EDThemeDark.xaml NEpřepisují (bílá zůstává bílá).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <!-- Text / ikony na headeru -->
+    <Color x:Key="EDTheme.OnAccent.Text.Color">#FFFFFFFF</Color>
+    <SolidColorBrush x:Key="EDTheme.OnAccent.Text" Color="{StaticResource EDTheme.OnAccent.Text.Color}"/>
+
+    <!-- Hover / pressed overlay tlačítek na headeru (poloprůhledná bílá) -->
+    <SolidColorBrush x:Key="EDTheme.OnAccent.HoverOverlay" Color="#22FFFFFF"/>
+    <SolidColorBrush x:Key="EDTheme.OnAccent.PressedOverlay" Color="#44FFFFFF"/>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         COLORS — Module diagnostika (launchovatelnost modulu)
+         Proudí jako hex string do HexToBrush (datový Color kanál stromu).
+         Hodnoty shodné v light i dark (dokumentovaná konvence, kryto testy).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Color x:Key="EDTheme.Module.Stub.Color">#FFFFA500</Color>
+    <Color x:Key="EDTheme.Module.Broken.Color">#FFFF0000</Color>
+
     <!-- ═══════════════════════════════════════════════════════════════════
          TYPOGRAPHY — Font family + sizes
          FontFamily je single token (uživatel může runtime override; viz FontService
@@ -186,6 +221,10 @@
 
     <!-- Header — nadpisy panelů, dialog titulky -->
     <sys:Double x:Key="EDTheme.FontSize.Header">13</sys:Double>
+
+    <!-- Title — prominentní titulek: header pruh komponent (EDComponentToolbar title
+         + akční glyphy), karta „Akce probíhá" -->
+    <sys:Double x:Key="EDTheme.FontSize.Title">14</sys:Double>
 
     <!-- Large — zvýraznění (výjimečně) -->
     <sys:Double x:Key="EDTheme.FontSize.Large">15</sys:Double>

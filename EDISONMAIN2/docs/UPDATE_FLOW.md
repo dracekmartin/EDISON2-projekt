@@ -228,14 +228,21 @@ EDISONINS, noční automatika) zůstávají legacy mechanismu beze změny. Žád
 3. **Úprava EDUPDATE** (legacy repo, zpětně kompatibilní): nové argumenty `WaitProcess=`
    (další jméno procesu, na jehož zánik čekat) a `RunExe=` (exe spuštěné po dokončení místo
    `EDISON.exe`). EDISONMAIN2 spawnuje s `WaitProcess="EDISONMAIN2" RunExe="EDISONMAIN2.exe"`.
+4. **Notice-only release check** (parita legacy `frmMain` info panelu) — na pozadí HTTP
+   čtení `VERZE.INF` z `http://sourceServer:sourcePort/EDISON/RELEASE/`; výsledek do
+   status baru vedle verze (`ReleaseNotice`): novější → „K dispozici je nová verze X.",
+   potvrzená shoda → „Jde o nejnovější verzi." (`BlokovatAktualizace` se navenek tváří,
+   jako by novější verze neexistovala), jinak (offline, dev build 999999.9) nic.
+   Nikdy nespouští update (instalace release = serverová role).
 
 ### Vědomé divergence od legacy
 
 - **`Enabled` se honoruje vždy** (legacy klient ho přes ForceYes ignoruje). Důvod: dev
   prostředí má `update~0` a nedosažitelný `edisonPath` (`D:\Edison\Dev` na serveru) —
   legacy sémantika by na dev stanici shodila startup. `update~0` → celá kontrola skip.
-- **Žádná optional větev** (HTTP check release.m-line.cz + confirm) — v legacy je to
-  serverová/admin role, ne klientská. První pilot ji omylem implementoval.
+- **Žádná optional update větev** (HTTP check release.m-line.cz + confirm + instalace) —
+  v legacy je to serverová/admin role, ne klientská. První pilot ji omylem implementoval.
+  Scope bod 4 z ní přebírá jen pasivní notice (status bar), žádný update.
 - **Dev verze `999999.9`** — DEBUG build hlásí `VerzeInf.DevVersion` místo čtení
   `VERZE.INF`. Numericky vyšší než jakékoli reálné `yyMMdd` datum → `IsNewVersion` nikdy
   netriggne; explicitní dev guard v `Updater.Check` navíc přeskočí i Caché mismatch

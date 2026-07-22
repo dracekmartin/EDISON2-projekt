@@ -1,7 +1,9 @@
 using System.Windows;
+using System.Windows.Controls;
 using ALWA.SYS;
 using EDControls;
 using EDISONMAIN2;
+using EDISONMAIN2.MiniApps;
 
 namespace EDISONMAIN2.Windows.LoginWindow
 {
@@ -9,6 +11,9 @@ namespace EDISONMAIN2.Windows.LoginWindow
     {
         private readonly MLRest _mlRest;
         private readonly string _initialPassword;
+
+        // WebView2 widgety novinek/wiki/školení — pre-login (bez session).
+        private readonly List<FontZoomWebView> _widgets = new();
 
         public LoginResult? Result { get; private set; }
 
@@ -48,6 +53,22 @@ namespace EDISONMAIN2.Windows.LoginWindow
             {
                 PasswordBox.Focus();   // jen jméno je vyplněné → rovnou na heslo
             }
+
+            // Novinky/Wiki jsou auth-free; Školení pre-login bez personalizace (prázdná identita).
+            // Widgety jsou čistě dekorativní — jejich (ne)načtení nesmí blokovat login.
+            AddWidget(NovinkyHost, WidgetUrls.Novinky);
+            AddWidget(WikiHost, WidgetUrls.Wiki);
+            AddWidget(SkoleniHost, WidgetUrls.Trainings("", ""));
+            // FontZoomWebView drží statické eventy (Font/Theme) → bez dispose leak; Closed jde na OK i Cancel.
+            Closed += (_, _) => { foreach (var w in _widgets) w.Dispose(); };
+        }
+
+        private void AddWidget(Border host, string url)
+        {
+            var wv = new FontZoomWebView();
+            wv.Navigate(url);
+            host.Child = wv;
+            _widgets.Add(wv);
         }
 
         private void OkBtn_Click(object sender, RoutedEventArgs e)

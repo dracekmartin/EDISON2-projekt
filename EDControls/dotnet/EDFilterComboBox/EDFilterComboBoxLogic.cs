@@ -8,14 +8,17 @@ namespace EDControls.EDFilterComboBox;
 /// </summary>
 internal static class EDFilterComboBoxLogic
 {
-    // Oddělovač "Key — Label" (em dash s mezerami) — sdílený dropdownem i klidovým zobrazením.
-    internal const string DisplaySeparator = "  —  ";
+    // Oddělovač "Key - Label" — sdílený dropdownem i klidovým zobrazením; lze přebít per instanci.
+    internal const string DisplaySeparator = " - ";
 
-    /// <summary>Zobrazovaný řetězec položky: „Key — Label", nebo jen Key když Label chybí / je shodný.</summary>
-    internal static string Display(ListItem item) =>
+    /// <summary>Zobrazovaný řetězec položky: „Key - Label", nebo jen Key když Label chybí / je shodný.</summary>
+    internal static string Display(ListItem item) => Display(item, DisplaySeparator);
+
+    /// <summary>Jako <see cref="Display(ListItem)"/>, ale s vlastním separátorem (viz <c>EDFilterComboBox.KeyLabelSeparator</c>).</summary>
+    internal static string Display(ListItem item, string separator) =>
         string.IsNullOrEmpty(item.Label) || item.Label == item.Key
             ? item.Key
-            : item.Key + DisplaySeparator + item.Label;
+            : item.Key + separator + item.Label;
 
     /// <summary>Filtrovací shoda: prázdný text = vše, jinak substring na Key NEBO Label (case-insensitive).</summary>
     internal static bool Matches(ListItem item, string? text) =>

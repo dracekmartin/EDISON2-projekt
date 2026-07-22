@@ -344,6 +344,15 @@ public class EDInputFormParsingTests
     }
 
     [Fact]
+    public void NonEditableIndicatorVisibility_ReflectsEditable()
+    {
+        Assert.Equal(System.Windows.Visibility.Collapsed,
+            new Field { Editable = true }.NonEditableIndicatorVisibility);
+        Assert.Equal(System.Windows.Visibility.Visible,
+            new Field { Editable = false }.NonEditableIndicatorVisibility);
+    }
+
+    [Fact]
     public void ParseItems_FieldWithoutEditableDefaultsToTrue()
     {
         var data = new CVar();
@@ -927,6 +936,32 @@ public class EDInputFormParsingTests
         Assert.Empty(matches);
         Assert.All(fields, f => Assert.True(f.IsFilteredBySearch));
         Assert.All(groups, g => Assert.True(g.IsFilteredBySearch));
+    }
+
+    // ─── Nápověda klávesových zkratek ─────────────────────────────────────────
+
+    [Fact]
+    public void FormatShortcutsHelp_ListsEveryShortcut()
+    {
+        var text = EDInputForm.EDInputForm.FormatShortcutsHelp();
+
+        Assert.False(string.IsNullOrWhiteSpace(text));
+        foreach (var (keys, description) in EDInputForm.EDInputForm.KeyboardShortcuts)
+        {
+            Assert.Contains(keys, text);
+            Assert.Contains(description, text);
+        }
+    }
+
+    [Fact]
+    public void FormatShortcutsHelp_OmitsUnwiredSearchKeys()
+    {
+        // Search Enter/Shift+Enter/Esc jsou zatím jen v tooltipech, nefungují →
+        // nesmí se vypsat, ať nápověda nelže.
+        var text = EDInputForm.EDInputForm.FormatShortcutsHelp();
+
+        Assert.DoesNotContain("Shift+Enter", text);
+        Assert.DoesNotContain("Esc", text);
     }
 
     // ─── Min / Max / Format / Unit (pozice 15–18) ─────────────────────────────

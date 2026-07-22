@@ -73,6 +73,8 @@ public static class ThemeService
             w.SetResourceReference(Control.BackgroundProperty, "EDTheme.Bg.Base");
         if (w.ReadLocalValue(Control.ForegroundProperty) == DependencyProperty.UnsetValue)
             w.SetResourceReference(Control.ForegroundProperty, "EDTheme.Text.Primary");
+
+        WindowTitleBar.Apply(w, Current == AppTheme.Dark);
     }
 
     public static void Apply(AppTheme theme)
@@ -92,6 +94,12 @@ public static class ThemeService
             dicts.Remove(_darkOverride);
         }
         Current = theme;
+
+        // OS titulková lišta (caption) nečte EDTheme tokeny — přebarvit každé otevřené okno ručně.
+        bool dark = theme == AppTheme.Dark;
+        foreach (Window win in app.Windows)
+            WindowTitleBar.Apply(win, dark);
+
         Applied?.Invoke();
     }
 }

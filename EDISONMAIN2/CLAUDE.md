@@ -29,12 +29,21 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   editovatelnému poli uvnitř; proto je v `DockPanel` vedle Menu.
 - `Windows/EdisonMainWindow/Modules/ModuleLaunchabilityCheck` — barva + suffix názvu
   modulu dle spustitelnosti (stub / chybí exe / neretrofitnuto).
+- **Toolbar nad stromy** (Rozbalit/Sbalit vše + oblíbené/výchozí okno nad vybraným uzlem):
+  Rozbalit/Sbalit vše cílí na **aktivní** záložku (`ActiveExpandableTree` dle
+  `SelectedTreeTabIndex`; Používané = ListBox → vyp), bulk změna obalena
+  `_suppressExpansionSave` + jeden `SaveExpansionAsync`. `SelectedModule` (řídí toolbar
+  akce) plní code-behind — `TreeView.SelectedItem` nelze bindovat, jede přes
+  `SelectedItemChanged` + `TabControl.SelectionChanged`. Ikonové tlačítko = sdílený styl
+  `EDTheme.ToolbarButton` z EDControls.
 - **Mini-apps** (`dotnet/MiniApps/`): framework je v `EDControls/MiniApps`, shell je
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
-  Hostují se přes `FontZoomWebView : WebView2CompositionControl` — HWND `WebView2`
-  by kvůli airspace překrýval overlay „Akce probíhá".
+  Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu tabu
+  do plovoucího okna AvalonDocku a tahá 23 MB WinRT projekci, viz TFM v csproj). Airspace: WPF
+  veil dimu widgety nepokryje — záměrně zůstávají čitelné; kartu „Akce probíhá" nad nimi kreslí
+  owned okno (viz `EDControls/dotnet/EDActionInProgress/CLAUDE.md`).
   User velikost fontu respektují přes `FontZoomWebView` (ZoomFactor =
   `FontService.BodySize` / 14 — základní text widgetů je 14 CSS px);
   rodina fontu se do HTML nepropaguje. Dark mode widgety samy neumí (natvrdo
@@ -42,7 +51,8 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   (`ThemeService.Applied`) + tmavé `DefaultBackgroundColor` proti bílému záblesku.
   Chrome docku (taby, bordery, pozadí dokumentů) EDTheme tokeny nečte — dark řeší
   swap `DockManager.Theme` na VS2013 Light/Dark v code-behind okna.
-  Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts`; chybí-li uložený →
+  Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts` (spolu se šířkou stromu
+  v `LocalPrefs.TreeWidths`, stejný lifecycle přes `AttachTreeLayout`); chybí-li uložený →
   `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
@@ -51,6 +61,16 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   v `CompositeCollection` — bindingy tam jdou jen přes `BindingProxy` (`VmProxy`):
   `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou
   mimo namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.
+
+## Výchozí okno (startup window)
+
+Modul auto-otevřený po loginu (per-uživatel × IDFa, Caché feature #25).
+`ExecutableModule.ElementId` = uložené `EDISFormEnum` id → picker/značení jede přes vlastní
+strom, ne legacy AccessTree.
+
+Okno `Windows/UserProfileWindow` je EDInputForm (`…EDInputForm.UserProfile`), ale **data
+drží klient, ne schema třída** — `Main.LoadUser/SaveUser` jsou samy MLRest metody, volat je
+ze schematu by kolidovalo na `^||ML`.
 
 ## Legacy moduly — EDISONMAIN2API
 

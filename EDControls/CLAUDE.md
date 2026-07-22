@@ -22,7 +22,8 @@ RelayCommand), `EDInputForm`, `EDList`, `EDFooter`, `EDToolbar`, `EDActionInProg
   (`%APPDATA%\m-line\common\theme.json` + FileSystemWatcher) — shell i TemplateDesigner
   se přepnou spolu. Stejný mechanismus má font (`UserFonts/`, `font.json`).
 - `EDControlStyles/` — implicitní styly standardních controls (Button, Menu, TabControl,
-  TreeView, ScrollBar, ...). **Úpravy vzhledu standardního controlu patří sem, ne do
+  TreeView, ScrollBar, ...) + keyed `EDTheme.ToolbarButton` (ploché ikonové tlačítko
+  toolbaru, opt-in, hover/pressed z theme tokenů). **Úpravy vzhledu standardního controlu patří sem, ne do
   lokálního overridu v okně** — lokální override často ani nefunguje (themed templaty
   hostují items přes panel s `IsItemsHost="True"`, takže `ItemsPanel` apod. WPF
   ignoruje) a rozbil by globální propagaci fontu (styly čtou font tokeny
@@ -61,6 +62,8 @@ RelayCommand), `EDInputForm`, `EDList`, `EDFooter`, `EDToolbar`, `EDActionInProg
   v `OnUnloaded` — jinak se při re-loadu akumulují kopie.
 - `EDFilterComboBox/` — combo s našeptáváním; logika oddělená v
   `EDFilterComboBoxLogic` (testovatelná bez WPF). `EDFilter/` — skládání filtrů.
+- `EDSearchTextBox/` — `TextBox` potomek pro hledání: `Placeholder` uvnitř pole, křížek
+  (✕) a Esc pro vyčištění. Implicitní styl/template v `EDControlStyles.xaml`.
 - `UserPrefs/` — `IUserPrefsService`; **default je no-op `NullUserPrefsService`** —
   dokud composition root nenastaví `CacheUserPrefsService` (po vzniku MLRest),
   preference se tiše neukládají.

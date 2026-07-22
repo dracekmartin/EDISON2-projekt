@@ -14,8 +14,8 @@ namespace EDControls.Tests;
 /// </summary>
 public class WindowNavigatorTests
 {
-    private static WindowNavigator.LegacyProcessEntry MakeEntry(string formFqn, string exeName = "USERS.exe") =>
-        new(Process.GetCurrentProcess(), exeName, formFqn);
+    private static WindowNavigator.LegacyProcessEntry MakeEntry(string formFqn, string exeName = "USERS.exe", string inputParam = "") =>
+        new(Process.GetCurrentProcess(), exeName, formFqn, inputParam);
 
     [Fact]
     public void FormatLegacyLabel_NoTitle_ReturnsLastFqnSegment()
@@ -58,6 +58,50 @@ public class WindowNavigatorTests
         var label = WindowNavigator.FormatLegacyLabel(entry);
 
         Assert.Equal("ALVA.", label);
+    }
+
+    // ---------- MatchesTarget (dedup „už běžícího" modulu) ----------
+
+    [Fact]
+    public void MatchesTarget_SameExeFormParam_True()
+    {
+        var entry = MakeEntry("ALVA.USERS.formUSERSLocks", "USERS.exe", "AdminMode=1");
+
+        Assert.True(WindowNavigator.MatchesTarget(entry, "USERS.exe", "ALVA.USERS.formUSERSLocks", "AdminMode=1"));
+    }
+
+    [Fact]
+    public void MatchesTarget_ExeCaseInsensitive_True()
+    {
+        var entry = MakeEntry("ALVA.USERS.formUSERSLocks", "USERS.exe");
+
+        Assert.True(WindowNavigator.MatchesTarget(entry, "users.exe", "ALVA.USERS.formUSERSLocks", ""));
+    }
+
+    [Fact]
+    public void MatchesTarget_DifferentInputParam_False()
+    {
+        // Stejná forma v jiném módu = jiné okno.
+        var entry = MakeEntry("ALVA.USERS.formUSERSLocks", "USERS.exe", "AdminMode=1");
+
+        Assert.False(WindowNavigator.MatchesTarget(entry, "USERS.exe", "ALVA.USERS.formUSERSLocks", ""));
+    }
+
+    [Fact]
+    public void MatchesTarget_DifferentForm_False()
+    {
+        var entry = MakeEntry("ALVA.USERS.formUSERSLocks", "USERS.exe");
+
+        Assert.False(WindowNavigator.MatchesTarget(entry, "USERS.exe", "ALVA.USERS.formUSERSActivity", ""));
+    }
+
+    [Fact]
+    public void MatchesTarget_FormCaseSensitive_False()
+    {
+        // Forma je FQN Caché třídy — case-sensitive.
+        var entry = MakeEntry("ALVA.USERS.formUSERSLocks", "USERS.exe");
+
+        Assert.False(WindowNavigator.MatchesTarget(entry, "USERS.exe", "alva.users.formuserslocks", ""));
     }
 
     // ---------- LaunchesDirectly ----------
