@@ -1,4 +1,5 @@
-﻿using EDControls;
+﻿using System.Net.Http;
+using EDControls;
 using EDTesting;
 using NSubstitute;
 
@@ -39,7 +40,9 @@ public class UpdaterTests
             "update~1~0",
             "version~20260526.1.0",
             "edisonPath~\\\\server\\edison",
-            "localSourcePath~\\\\share\\local");
+            "localSourcePath~\\\\share\\local",
+            "sourceServer~release.m-line.cz",
+            "sourcePort~59993");
 
         var settings = new Updater().LoadSettings(mlRest);
 
@@ -47,6 +50,8 @@ public class UpdaterTests
         Assert.Equal("20260526.1.0", settings.CacheVersion);
         Assert.Equal("\\\\server\\edison", settings.EdisonPath);
         Assert.Equal("\\\\share\\local", settings.LocalSourcePath);
+        Assert.Equal("release.m-line.cz", settings.SourceServer);
+        Assert.Equal(59993, settings.SourcePort);
     }
 
     [Fact]
@@ -178,5 +183,85 @@ public class UpdaterTests
         var result = updater.Check(new UpdateSettings(true, "", @"\\edison", ""));
 
         Assert.Equal(UpdateOutcome.None, result.Outcome);
+    }
+
+    // ---------- Release notice (notice-only) ----------
+
+    private class NoticeUpdater : Updater
+    {
+        public string? Content { get; set; }
+        public string? UrlSeen { get; private set; }
+
+        protected override string DownloadReleaseVersionFile(string url)
+        {
+            UrlSeen = url;
+            return Content ?? throw new HttpRequestException("offline");
+        }
+    }
+
+    private static readonly UpdateSettings NoticeSettings =
+        new(true, "", @"\\edison", "", "release.m-line.cz", 59993);
+
+    [Fact]
+    public void ReleaseNotice_NewerRemote_NewVersionAvailable()
+    {
+        var updater = new NoticeUpdater { Content = "LAST=20260701.1\nTYPE=1\nBlokovatAktualizace=0" };
+
+        var result = updater.GetReleaseNotice(NoticeSettings, "20260526.1");
+
+        Assert.Equal(ReleaseNoticeOutcome.NewVersionAvailable, result.Outcome);
+        Assert.Equal("20260701.1", result.Version);
+        Assert.Equal("http://release.m-line.cz:59993/EDISON/RELEASE/VERZE.INF", updater.UrlSeen);
+    }
+
+    [Fact]
+    public void ReleaseNotice_SameOrOlderRemote_UpToDate()
+    {
+        Assert.Equal(ReleaseNoticeOutcome.UpToDate,
+            Updater.EvaluateReleaseNotice("LAST=20260526.1", "20260526.1").Outcome);
+        Assert.Equal(ReleaseNoticeOutcome.UpToDate,
+            Updater.EvaluateReleaseNotice("LAST=20260101.1", "20260526.1").Outcome);
+    }
+
+    [Fact]
+    public void ReleaseNotice_DistributionBlocked_ActsAsIfNoNewVersionExists()
+    {
+        // Pozastavená distribuce se navenek tváří, jako by novější verze nebyla publikovaná.
+        Assert.Equal(ReleaseNoticeOutcome.UpToDate,
+            Updater.EvaluateReleaseNotice("LAST=20260701.1\nBlokovatAktualizace=1", "20260526.1").Outcome);
+        Assert.Equal(ReleaseNoticeOutcome.UpToDate,
+            Updater.EvaluateReleaseNotice("LAST=20260526.1\nBlokovatAktualizace=1", "20260526.1").Outcome);
+    }
+
+    [Fact]
+    public void ReleaseNotice_MissingLastKey_Unknown()
+    {
+        Assert.Equal(ReleaseNoticeOutcome.Unknown,
+            Updater.EvaluateReleaseNotice("TYPE=1", "20260526.1").Outcome);
+    }
+
+    [Fact]
+    public void ReleaseNotice_DownloadFails_Unknown()
+    {
+        // Notice-only — nedostupný release server (stanice bez internetu) nesmí nic rozbít.
+        var updater = new NoticeUpdater { Content = null };
+
+        Assert.Equal(ReleaseNoticeOutcome.Unknown, updater.GetReleaseNotice(NoticeSettings, "20260526.1").Outcome);
+    }
+
+    [Fact]
+    public void ReleaseNotice_MissingSourceServerOrDevVersion_SkipsDownload()
+    {
+        var updater = new NoticeUpdater { Content = "LAST=20260701.1" };
+
+        Assert.Equal(ReleaseNoticeOutcome.Unknown,
+            updater.GetReleaseNotice(NoticeSettings with { SourceServer = "" }, "20260526.1").Outcome);
+        Assert.Equal(ReleaseNoticeOutcome.Unknown,
+            updater.GetReleaseNotice(NoticeSettings with { SourcePort = 0 }, "20260526.1").Outcome);
+        Assert.Equal(ReleaseNoticeOutcome.Unknown,
+            updater.GetReleaseNotice(NoticeSettings, VerzeInf.DevVersion).Outcome);
+        Assert.Equal(ReleaseNoticeOutcome.Unknown,
+            updater.GetReleaseNotice(NoticeSettings, "").Outcome);
+        Assert.Null(updater.UrlSeen);
     }
 }

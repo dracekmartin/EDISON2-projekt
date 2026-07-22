@@ -36,6 +36,16 @@ public class VerzeInfTests
         Assert.Equal("", VerzeInf.ParseLast(""));
     }
 
+    // ---------- ParseValue ----------
+
+    [Fact]
+    public void ParseValue_ArbitraryKey_ReturnsValueOrEmpty()
+    {
+        var content = "LAST=1.2.3\r\nBlokovatAktualizace=1";
+        Assert.Equal("1", VerzeInf.ParseValue(content, VerzeInf.BlockKey));
+        Assert.Equal("", VerzeInf.ParseValue(content, "TYPE"));
+    }
+
     // ---------- ReadVersion ----------
 
     [Fact]

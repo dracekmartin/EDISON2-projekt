@@ -611,7 +611,27 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public string UserName  => MLRest!.LoginName;
         public string FullName  => MLRest!.FullName;
         public string Mlp       => MLRest!.Mlp;
-        public string Version   => VerzeInf.Current;
+        // Prázdná = chybí VERZE.INF vedle exe (typicky Release build spuštěný z VS, ne z instalace).
+        public string Version   => VerzeInf.Current == "" ? "nezjištěna" : VerzeInf.Current;
+
+        private ReleaseNoticeResult? _releaseNotice;
+        /// <summary>Výsledek notice-only porovnání s release serverem M-line (plní AppBootstrapper po startu).</summary>
+        public ReleaseNoticeResult? ReleaseNotice
+        {
+            get => _releaseNotice;
+            set
+            {
+                if (Set(ref _releaseNotice, value))
+                {
+                    OnPropertyChanged(nameof(NewVersionText));
+                    OnPropertyChanged(nameof(UpToDateText));
+                }
+            }
+        }
+        public string NewVersionText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.NewVersionAvailable
+            ? $"K dispozici je nová verze {_releaseNotice.Version}." : "";
+        public string UpToDateText => _releaseNotice?.Outcome == ReleaseNoticeOutcome.UpToDate
+            ? "Jde o nejnovější verzi." : "";
 
         public ObservableCollection<IModule> MainMenuTree { get; }
         public ObservableCollection<IModule> SystemAdminTree { get; }

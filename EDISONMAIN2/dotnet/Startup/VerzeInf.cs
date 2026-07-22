@@ -11,6 +11,8 @@ public static class VerzeInf
 {
     public const string FileName = "VERZE.INF";
     private const string LastKey = "LAST";
+    /// <summary>Klíč „M-line pozastavil distribuci verze" (legacy EDISON_UPDATERBlokace_KEY).</summary>
+    public const string BlockKey = "BlokovatAktualizace";
 
     /// <summary>
     /// Vývojová verze — numericky vyšší než jakékoli reálné yyMMdd datum (do r. 2100),
@@ -39,14 +41,17 @@ public static class VerzeInf
         catch (UnauthorizedAccessException) { return ""; }
     }
 
-    public static string ParseLast(string content)
+    public static string ParseLast(string content) => ParseValue(content, LastKey);
+
+    /// <summary>Hodnota daného klíče z obsahu VERZE.INF; chybějící klíč → "".</summary>
+    public static string ParseValue(string content, string key)
     {
         foreach (var line in content.Split('\n'))
         {
             var trimmed = line.Trim();
             int eq = trimmed.IndexOf('=');
             if (eq < 0) continue;
-            if (trimmed[..eq] == LastKey) return trimmed[(eq + 1)..].Trim();
+            if (trimmed[..eq] == key) return trimmed[(eq + 1)..].Trim();
         }
         return "";
     }

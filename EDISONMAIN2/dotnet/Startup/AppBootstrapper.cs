@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using System.Windows;
 using ALVA.EDISONAPI;
 using ALVA.LICENCE.EDLicence;
@@ -159,9 +160,15 @@ public class AppBootstrapper
                 services.PopupDisplayer.Info(result.Message);
                 return true;
             default:
+                // Notice-only kontrola release serveru M-line běží paralelně se stavbou shellu;
+                // výsledek napojí BuildShellWindow do status baru. Viz docs/UPDATE_FLOW.md §7.
+                _releaseNoticeTask = Task.Run(
+                    () => updater.GetReleaseNotice(settings, VerzeInf.Current));
                 return false;
         }
     }
+
+    private Task<ReleaseNoticeResult>? _releaseNoticeTask;
 
     /// <summary>Sdílený předlogin kontext (config + companies + pre-login MLRest).</summary>
     protected record PreLoginContext(
@@ -494,6 +501,14 @@ public class AppBootstrapper
         var wnd = new EdisonMainWindow { DataContext = viewModel };
         popup.DefaultOwner = wnd;
         viewModel.AttachToWindow(wnd);
+
+        // Notice z release serveru (nová verze / potvrzení aktuálnosti) — doběhne typicky
+        // až po zobrazení okna.
+        _releaseNoticeTask?.ContinueWith(t =>
+        {
+            if (t.Result.Outcome != ReleaseNoticeOutcome.Unknown)
+                wnd.Dispatcher.BeginInvoke(() => viewModel.ReleaseNotice = t.Result);
+        }, TaskContinuationOptions.OnlyOnRanToCompletion);
 
         // Cooperative logout — poll běží přes services.MLRest (následuje swap při switch user).
         var logoutWatcher = new LogoutWatcher(() => services.MLRest, ShowLogoutCountdown);
