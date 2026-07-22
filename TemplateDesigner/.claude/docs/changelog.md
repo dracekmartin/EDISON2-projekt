@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-21 — Ukládání šablon: blob po kusech (velký inline obrázek už neshodí save)
+
+Zákazník při uložení šablony s velkým obrázkem dostal `500 <SYNTAX> zStreamToGlobal` z MLRest.
+Root cause: obrázek se ukládá jako Base64 **inline v JSON blobu** a celý blob jel na server jako
+**jeden řetězec**. Caché neunese řetězec delší než ~3,64 MB (max string length) — 5MB obrázek dá po
+Base64 ~6,7 MB → server to shodil už při skládání vstupu do globálu, dřív než se spustila ukládací
+logika (proto cizí stack `ALWA.SYS.Utility`, ne naše hláška).
+
+- **Fix (bez změny JSON schématu → nulové riziko pro legacy šablony):** blob se posílá **po kusech**
+  pod limitem délky a server je ukládá jako samostatné uzly `Data(n)` — **nikdy** se neslepuje do
+  jednoho řetězce. `CacheBlobChunking.Split/Join` (.NET), `SaveTemplate`/`LoadTemplate` chunkují
+  (`dataChunkCount` + `data1..N`). Řeší problém **obecně** (i velká tabulka bez obrázku), ne jen obrázky.
+- **Zpětná kompatibilita:** legacy jednoklíčový uzel `Data` = celý JSON se při loadu pozná (chybí `Data(1)`)
+  a vrátí jako dřív; při dalším uložení se kanonizuje na chunkovaný formát. Starý .NET klient (jednoklíčové
+  `data`) server pořád přijme. Uložené šablony se nijak nemigrují ani nesáhnou.
+- **Testy:** `CacheBlobChunkingTests` (15×) — Split→Join round-trip vč. ~6 MB blobu, hranice kusů, počty.
+- **Zbývá naostro:** end-to-end round-trip s reálným obrázkem proti dev serveru (blokoval sandbox/MCP —
+  TD Caché projekt není v deploy mapě MCP; nasazení třídy + test na uživateli).
+
 ## 2026-07-20 — MHD parita: sloupce odjezdů podle SMO (sekce minut odjezdu) — krok 1
 
 MHD zastávkový JŘ na složitých linkách (mnoho typů provozu) datově nesedí legacy — gold pinuje jen

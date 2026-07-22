@@ -80,7 +80,7 @@ public class CacheTemplateService
         CVar result = Query("LoadTemplate", inVar);
 
         string? metaJson = result["metadata"]?.Value?.ToString();
-        string? dataJson = result["data"]?.Value?.ToString();
+        string? dataJson = ReadDataBlob(result);
         if (string.IsNullOrEmpty(metaJson) || string.IsNullOrEmpty(dataJson))
             throw new CacheTemplateException("Šablona nebyla nalezena nebo je porušená.");
 
@@ -127,11 +127,17 @@ public class CacheTemplateService
         inVar["name"]       = new CVar(template.Name);
         inVar["agendaCode"] = new CVar(agendaCode);
         inVar["version"]    = new CVar(template.Version);
-        inVar["data"]       = new CVar(dataJson);
         // Prázdné = session firma; "MLINE" pro seed systémové šablony.
         inVar["targetIdFa"] = new CVar(targetIdFa ?? "");
         // Distribuční zápis (seed) — jen tak server povolí zápis do read-only MLINE větve.
         inVar["distribution"] = new CVar(distribution ? "1" : "");
+
+        // Blob posíláme po kusech pod limitem délky Caché řetězce (velký inline obrázek by jinak
+        // shodil příjem requestu na serveru). Klíče "data1".."dataN" + počet v "dataChunkCount".
+        var chunks = CacheBlobChunking.Split(dataJson);
+        inVar["dataChunkCount"] = new CVar(chunks.Count.ToString());
+        for (int i = 0; i < chunks.Count; i++)
+            inVar["data" + (i + 1)] = new CVar(chunks[i]);
 
         Query("SaveTemplate", inVar);
     }
@@ -165,6 +171,21 @@ public class CacheTemplateService
         inVar["newName"]    = new CVar(newName);
 
         Query("RenameTemplate", inVar);
+    }
+
+    /// <summary>Složí data blob z odpovědi LoadTemplate: nový chunkovaný formát
+    /// (<c>dataChunkCount</c> + <c>data1</c>..<c>dataN</c>) nebo legacy jednoklíčový <c>data</c>.</summary>
+    private static string? ReadDataBlob(CVar result)
+    {
+        var countStr = result["dataChunkCount"]?.Value?.ToString();
+        if (int.TryParse(countStr, out int count) && count > 0)
+        {
+            var chunks = new List<string>(count);
+            for (int i = 1; i <= count; i++)
+                chunks.Add(result["data" + i]?.Value?.ToString() ?? "");
+            return CacheBlobChunking.Join(chunks);
+        }
+        return result["data"]?.Value?.ToString();
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
