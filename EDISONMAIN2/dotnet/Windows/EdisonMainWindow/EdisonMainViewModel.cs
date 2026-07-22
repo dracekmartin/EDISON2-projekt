@@ -295,6 +295,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             LoadAndFilterTrees();
             LoadPersonalization();
             LoadStartupWindow();
+
+            // Nové instance uzlů mají IsVisibleBySearch=true — trvající hledaný text je nutné znovu aplikovat.
+            if (_treeSearchText.Trim().Length > 0) ApplySearch();
         }
 
         private int _defaultWindowId;
@@ -390,6 +393,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             bool prev = _suppressExpansionSave;
             _suppressExpansionSave = true;
             ApplyExpansion(FavoritesTree, "favorites");
+
+            // PruneFamily staví nové rodinné wrappery (IsVisibleBySearch=true) — při aktivním hledání přefiltrovat.
+            var searchText = _treeSearchText.Trim();
+            if (searchText.Length > 0)
+                foreach (var root in FavoritesTree)
+                    ApplySearchToModule(root, searchText);
             _suppressExpansionSave = prev;
 
             OnPropertyChanged(nameof(HasNoFavorites));

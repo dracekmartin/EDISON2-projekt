@@ -202,6 +202,30 @@ public class EdisonMainViewModelTests
     }
 
     [Fact]
+    public void SelectedCompanyIndex_Switch_ReappliesTreeSearch()
+    {
+        var mockPopup = Substitute.For<IPopupDisplayer>();
+        mockPopup.Confirm(Arg.Any<string>()).Returns(true);
+        var mockTree = Substitute.For<IModuleTreeGetter>();
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), Arg.Any<string>()).Returns([]);
+        // Čerstvé instance při každém volání — simuluje přestavbu stromu při přepnutí firmy.
+        mockTree.GetModuleTree(Arg.Any<IMLRest>(), "main").Returns(_ => new IModule[]
+        {
+            new ExecutableModule { DisplayedName = "Turnusy", ExecutablePath = "t.exe", FormName = "" },
+            new ExecutableModule { DisplayedName = "Objednávky", ExecutablePath = "o.exe", FormName = "" },
+        });
+        var vm = CreateVM(popup: mockPopup, treeGetter: mockTree);
+        vm.TreeSearchText = "turnus";
+
+        vm.SelectedCompanyIndex = vm.SelectedCompanyIndex == 0 ? 1 : 0;
+
+        // StartsWith — ModuleLaunchabilityCheck může připojit suffix k názvu.
+        var modules = vm.MainMenuTree.Cast<ExecutableModule>().ToList();
+        Assert.True(modules.Single(m => m.DisplayedName.StartsWith("Turnusy")).IsVisibleBySearch);
+        Assert.False(modules.Single(m => m.DisplayedName.StartsWith("Objednávky")).IsVisibleBySearch);
+    }
+
+    [Fact]
     public void SelectedCompanyIndex_Switch_UpdatesMLRestProperties()
     {
         var mockPopup = Substitute.For<IPopupDisplayer>();
