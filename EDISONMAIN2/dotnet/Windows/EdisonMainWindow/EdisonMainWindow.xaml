@@ -10,6 +10,7 @@
         xmlns:modules="clr-namespace:EDISONMAIN2.Windows.EdisonMainWindow.Modules"
         xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls"
         xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox;assembly=EDControls"
+        xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox;assembly=EDControls"
         xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
@@ -303,25 +304,9 @@
             </Grid.RowDefinitions>
 
             <!-- Vyhledávání napříč všemi stromy — filtruje uzly dle názvu (VM.TreeSearchText). -->
-            <Grid Grid.Row="0" Margin="4,4,4,2">
-                <TextBox x:Name="TreeSearchBox"
-                         Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
-                <TextBlock Text="Hledat modul…" Margin="6,0,0,0" VerticalAlignment="Center"
-                           IsHitTestVisible="False"
-                           Foreground="{DynamicResource EDTheme.Text.Secondary}">
-                    <TextBlock.Style>
-                        <!-- BasedOn zachová EDTheme font tokeny — lokální styl by jinak zahodil implicitní TextBlock styl. -->
-                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
-                            <Setter Property="Visibility" Value="Collapsed"/>
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding TreeSearchText}" Value="">
-                                    <Setter Property="Visibility" Value="Visible"/>
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </TextBlock.Style>
-                </TextBlock>
-            </Grid>
+            <edstx:EDSearchTextBox x:Name="TreeSearchBox" Grid.Row="0" Margin="4,4,4,2"
+                                   Placeholder="Hledat modul…"
+                                   Text="{Binding TreeSearchText, UpdateSourceTrigger=PropertyChanged}"/>
 
             <!-- Pamatuje poslední otevřenou záložku (per-user × IDFa); při prvním spuštění výchozí dle oblíbených. -->
             <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTreeTabIndex, Mode=TwoWay}">

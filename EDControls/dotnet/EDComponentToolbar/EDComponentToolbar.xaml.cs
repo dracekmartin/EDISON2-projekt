@@ -14,7 +14,7 @@ namespace EDControls.EDComponentToolbar;
 /// <item><c>Title</c> — volitelný název vlevo (např. pro EDList).</item>
 /// <item><c>SearchText</c> — two-way bound text. Host váže na svoji filter logic.</item>
 /// <item><c>CurrentMatchIndex</c> / <c>TotalMatches</c> — host updates jak iteruje matche.</item>
-/// <item><c>FindNextCommand</c> / <c>FindPreviousCommand</c> / <c>ClearSearchCommand</c> — host implementace skoku na další/předchozí match.</item>
+/// <item><c>FindNextCommand</c> / <c>FindPreviousCommand</c> — host implementace skoku na další/předchozí match.</item>
 /// <item><c>ShowExport</c> / <c>ShowPrint</c> / <c>ShowHelp</c> / <c>ShowSettings</c> — opt-in pravé ikony s ICommand.</item>
 /// </list>
 ///
@@ -101,7 +101,7 @@ public partial class EDComponentToolbar : UserControl
 
     public static readonly DependencyProperty SearchPlaceholderProperty =
         DependencyProperty.Register(nameof(SearchPlaceholder), typeof(string), typeof(EDComponentToolbar),
-            new PropertyMetadata("Hledat:"));
+            new PropertyMetadata("Hledat…"));
 
     public string SearchPlaceholder
     {
@@ -149,25 +149,6 @@ public partial class EDComponentToolbar : UserControl
     {
         get => (ICommand?)GetValue(FindPreviousCommandProperty);
         set => SetValue(FindPreviousCommandProperty, value);
-    }
-
-    public static readonly DependencyProperty ClearSearchCommandProperty =
-        DependencyProperty.Register(nameof(ClearSearchCommand), typeof(ICommand), typeof(EDComponentToolbar),
-            new PropertyMetadata(null));
-
-    /// <summary>Volitelný custom clear command. Pokud null, default = clear SearchText.</summary>
-    public ICommand? ClearSearchCommand
-    {
-        get => (ICommand?)GetValue(ClearSearchCommandProperty);
-        set => SetValue(ClearSearchCommandProperty, value);
-    }
-
-    private void ClearSearch_Click(object sender, RoutedEventArgs e)
-    {
-        if (ClearSearchCommand?.CanExecute(null) == true)
-            ClearSearchCommand.Execute(null);
-        else
-            SearchText = "";
     }
 
     // ─── Right-side actions (opt-in) ────────────────────────────────────────
