@@ -43,8 +43,13 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
    Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
    Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
-2. ✅ **VYŘEŠENO — Zastávky 1:1** (přeměřeno 2026-07-23 oraclem: KV_DP 1073 zast 693=693 `match=ANO`).
-   Dřívější „2×/1317" už neplatí; seznam zastávek v default režimu odpovídá legacy. Není co dělat.
+2. ⚠️ **Zastávky 1:1 — fix EXISTUJE, ale NENÍ v repu (zjištěno 2026-07-23 odpoledne).** Ranní měření
+   693=693 běželo proti serverové verzi `ZastavkoveJrMhd` s **necommitnutými opravami kolegy**
+   (kompiloval ze svého repa; zastávky 2× fix + zřejmě i rozdílové poznámky A–E). Hook-compile
+   z našeho HEAD je na serveru přepsal → oracle znovu hlásí 1317 a poznámky A–K chybí (HEAD kód
+   je nemá). **Akce: kolega musí své MHD opravy commitnout/pushnout**; pak merge + re-deploy
+   (vč. fáze 4b níže) + přeměřit. Bod 4 (poznámky F–K) re-hodnotit až nad jeho kódem — část
+   možná už řeší.
 3. ✅ **DIAGNOSTIKOVÁNO (2026-07-23): Odjezdy +48 % = SMO kolize v datech KV_DP, ne bug TD.**
    `MhdLegacyOracle.SmoProbe`: stránky **42=42** (variantní stránky vyloučeny); linka 1073 má 7 typů
    provozu a **4 z nich mapované do SMO4** (1003 prázdniny 77 spojů, 1007 „24.12." 37, 1008 „25.12. a 1.1."
@@ -65,6 +70,12 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    (gold-safe, CB_DP kolize nemá); (3) M — parametr „Rozdělení sloupců" pro MHD (dle číselníku / každá
    skupina zvlášť / vlastní — sjednocení s AD parametrem); (4) S — dedup. Detail + srovnání AD/MHD:
    artifact „Skupiny dnů na vývěsce" (23.7.).
+   **Fáze 2 IMPLEMENTOVÁNA 2026-07-23 (v working tree, NEcommitnuto — čeká na merge kolegových oprav
+   z bodu 2):** `PriraditZnackySmoSkupin` (fáze 4b v GetData) — dominantní typ (nejvíc spojů) dává
+   nadpis sloupce, ostatní typy dostanou NZ značku z volné řady (ruční `NegativniZnacka` typu má
+   přednost) + legendu „jede jen <nadpis>"; anotace v `SestavitJednuStranku` přes `spojTyp`/`smoZnacka`.
+   Ověřeno: **CB_DP 1001 dep/zast/pozn 1:1 match** (žádná kolize → beze změny), KV_DP 1073 legenda
+   +115 řádků „jede jen…" + nadpis sloupce 4 = dominantní typ. Čisté přeměření KV až po merge.
 4. ⬜ **Rozdílové poznámky tras (225 vs 213) — HLAVNÍ ZBÝVAJÍCÍ KÓDOVÝ BOD.** TD nevygeneruje legacy
    poznámky F–K („zajíždí z Říční do Krajský úřad", „nezajíždí do Tašovice", „končí v Dvory"…) + duplikuje
    „na znamení". Kořen **potvrzeně jiný než SMO**: legacy od úpravy „MH pro KV_DP" předává do alg 1001
