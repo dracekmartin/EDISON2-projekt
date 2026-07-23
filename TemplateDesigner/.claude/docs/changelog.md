@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-23 — Legenda poznámek: nastavení se propisují (#13011 KOVED) + sjednocení termínu „Font"
+
+Zákazník hlásil, že v legendě poznámek nejde nastavit barva textu, oddělovač ani font.
+
+- **Barva textu buněk** — legenda kreslí text přímo přes `SchedulePaints.Text` (ne přes `CellRenderer`),
+  který má barvu zapečenou natvrdo → `DataStyle.TextColor` se ignorovala. Nově se barva textu poznámek
+  bere z „Barva textu buněk" (přebití paintu po `CreateStandardPaints`). Symboly bez vlastní barvy z dat
+  ji přebírají taky; NZ boxy a barevné symboly z dat mají svoje barvy (nedotčené).
+- **Font (nadpis i poznámky)** — přidán **editovatelný ComboBox** plněný z Caché standardní cestou
+  (`$$$FieldTypeComboBox`, klíč `…FontFamily` → `ElementFormBinder.PopulateFontFields` = nainstalované
+  fonty z `FontResolver`). Samostatně pro záhlaví (`HeaderStyle.FontFamily`) i data (`DataStyle.FontFamily`);
+  render záhlaví nově bere font ze záhlaví (fallback na font poznámek → Arial). Doteď font pole úplně chybělo.
+- **Oddělovač** — funguje dle návrhu jen pro **vlastní poznámky linky** (`Text` typ se značkou → „značka
+  oddělovač popis"); u ikonových atributů (na znamení, bezbariér) se záměrně nepoužívá. Doplněn `helpText`
+  a výchozí oddělovač změněn z em dash „—" na normální pomlčku „-" (default pro nové elementy).
+- **Terminologie sjednocena na „Font"** napříč kódem (dřív „Rodina písma"/„Písmo") — TextElement,
+  NotesLegend, jejich EDInputForm `.cls`. Konvence zapsána do `ux-conventions.md` §8 (glosář UI popisků +
+  pravidlo „label je zdvojený .cs↔.cls, měň obě místa").
+
 ## 2026-07-23 — Šedé úsečky v PDF (#13004 KOVED): oddělovač sekcí jen v editačním plátně
 
 Zákazník hlásil tenké šedé úsečky „v místě konce sekce" v návrhu, které se přenášely i do PDF/tisku,

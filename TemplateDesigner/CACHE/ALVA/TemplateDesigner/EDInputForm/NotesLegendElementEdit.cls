@@ -34,6 +34,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FFF0F0F0"
         s f = form.AddFieldToLastGroup("HeaderStyle.TextColor", "Barva textu záhlaví", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
+        // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
+        d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
         d form.AddGroup("data", "Datové buňky")
@@ -41,7 +43,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#00FFFFFF"
         s f = form.AddFieldToLastGroup("DataStyle.TextColor", "Barva textu buněk", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
-        d form.AddText("NoteSeparator", "Oddělovač", " — ")
+        // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
+        d form.AddFieldToLastGroup("DataStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
+        s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
+        s f.helpText = "Vloží se mezi značku a popis u vlastních poznámek linky. U ikonových atributů (na znamení, bezbariér) se nepoužívá."
         d form.AddDecimal("NoteFontSize", "Velikost písma pozn.", 7, 4, 20, "pt", "0.#")
         d form.AddDecimal("NoteLineHeight", "Výška řádku", 4, 2, 15, "mm")
 

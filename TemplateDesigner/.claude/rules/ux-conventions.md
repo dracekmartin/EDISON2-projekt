@@ -128,7 +128,29 @@ Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachov
 
 ---
 
-## 8. Co `ux-conventions.md` **neřeší**
+## 8. Terminologie UI popisků (jednotná napříč kódem)
+
+Stejná vlastnost = **stejný label** ve všech elementech, dialozích i EDInputForm `.cls`. Label
+je zdvojený (PropertyDescriptor v `.cs` **i** EDInputForm `.cls`) → při změně/přidání uprav **obě**
+místa. **Před vymýšlením nového popisku grepni, jak se to jmenuje jinde**, a použij zavedený termín.
+
+Kanonické termíny (font/styl textu):
+
+| Vlastnost | Kanonický label | NE |
+|---|---|---|
+| Rodina písma (FontFamily) | **Font** | ~~Rodina písma~~, ~~Písmo~~ |
+| Velikost písma (FontSize) | **Velikost** (`Unit = "pt"`) | ~~Velikost písma~~ |
+| Tučné / Kurzíva / Podtržení / Přeškrtnutí | **Tučné** / **Kurzíva** / **Podtržení** / **Přeškrtnutí** | anglicismy |
+| Řádkování (LineSpacing) | **Řádkování** | — |
+| Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | — |
+| Barva textu / pozadí záhlaví | **Barva textu záhlaví** / **Pozadí záhlaví** | — |
+
+Výjimka: složené popisky s jasnou sémantikou (`Výchozí font` = font dokumentu) jsou OK, dokud
+obsahují kanonický kořen. Nový termín, který v tabulce není, přidej sem, až ho poprvé zavedeš.
+
+---
+
+## 9. Co `ux-conventions.md` **neřeší**
 
 - Konkrétní rozměry oken (default sizes) — záměrně, je to per-dialog.
 - Konkrétní wording („Opravdu chcete..." vs „Smazat?") — záměrně, vyžaduje review s týmem.

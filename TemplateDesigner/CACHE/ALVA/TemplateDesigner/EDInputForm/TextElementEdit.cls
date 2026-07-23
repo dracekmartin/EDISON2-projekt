@@ -35,7 +35,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ComboBox (editovatelný + autocomplete) s prázdným seznamem — klient ho naplní nainstalovanými
         // fonty (ElementFormBinder.PopulateFontFields z SKFontManager). Prázdné = dědí výchozí font šablony.
-        d form.AddFieldToLastGroup("Style.FontFamily", "Písmo", $$$FieldTypeComboBox, 0, 0)
+        d form.AddFieldToLastGroup("Style.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
 
         d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
         d form.AddBool("Style.Bold", "Tučně", 0)
