@@ -38,6 +38,11 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   `EDTheme.ToolbarButton` z EDControls.
 - **Mini-apps** (`dotnet/MiniApps/`): framework je v `EDControls/MiniApps`, shell je
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
+  `MiniAppDescriptor.Pinned` = nezavíratelná uživatelem (CanClose=false blokuje křížek,
+  kontextové menu i × plovoucího okna; programové `Close()` AvalonDock pouští dál —
+  session switch funguje), single-instance (další Open aktivuje), „Zavřít miniaplikace"
+  jde přes `CloseUnpinned`; `EnsurePinnedOpen` ji dootevře po restore layoutu bez ní
+  i po výchozím layoutu / resetu.
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
   Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu tabu

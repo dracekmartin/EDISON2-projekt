@@ -407,6 +407,57 @@ public class EdisonMainViewModelTests
         Assert.True(vm.HasOpenMiniApps);
     }
 
+    [Fact]
+    public void CloseMiniAppsCommand_KeepsPinnedOpen()
+    {
+        var services = MockServices();
+        var plain = new MiniAppDescriptor("A", "Title A", () => new StubMiniApp(services));
+        var pinned = new MiniAppDescriptor("P", "Pinned", () => new StubMiniApp(services), Pinned: true);
+        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(plain, pinned)]));
+        var host = new RecordingHost();
+        vm.AttachMiniAppHost(host);   // bez uloženého layoutu: výchozí sada prázdná, EnsurePinnedOpen otevře P
+        vm.OpenMiniAppCommand.Execute(plain);
+
+        vm.CloseMiniAppsCommand.Execute(null);
+
+        Assert.True(vm.HasOpenMiniApps);
+        Assert.Equal("P#1", Assert.Single(host.Panes.Where(p => !p.IsClosed)).ContentId);
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_SavedLayoutWithoutPinned_ReopensPinned()
+    {
+        // Layout uložený před zavedením pinned sady pinned mini-app neobsahuje — musí se dootevřít.
+        var services = MockServices();
+        var pinned = new MiniAppDescriptor("P", "Pinned", () => new StubMiniApp(services), Pinned: true);
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.MiniAppLayouts.Returns(new Dictionary<string, string> { ["CB_DP"] = "<layout bez P>" });
+        var vm = CreateVM(prefs: prefs, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(pinned)]));
+        var host = new RecordingHost();   // RestoreLayout nic neobnoví → simuluje layout bez pinned
+
+        vm.AttachMiniAppHost(host);
+
+        Assert.Equal("P#1", Assert.Single(host.Panes).ContentId);
+    }
+
+    [Fact]
+    public void RestoreMiniAppLayout_CorruptLayout_WithPinned_StillDoesNotThrow()
+    {
+        // Po zahození rozbitého layoutu se zkusí dootevřít pinned; když i to spadne
+        // (ThrowingHost.AddPane), start shellu to shodit nesmí.
+        var services = MockServices();
+        var pinned = new MiniAppDescriptor("P", "Pinned", () => new StubMiniApp(services), Pinned: true);
+        var layouts = new Dictionary<string, string> { ["CB_DP"] = "bad-xml" };
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.MiniAppLayouts.Returns(layouts);
+        var vm = CreateVM(prefs: prefs, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(pinned)]));
+
+        var ex = Record.Exception(() => vm.AttachMiniAppHost(new ThrowingHost()));
+
+        Assert.Null(ex);
+        Assert.False(layouts.ContainsKey("CB_DP"));
+    }
+
     private sealed class StubMiniApp(EDServices services) : EDMiniAppViewModel(services)
     {
         public override string Title => "stub";
@@ -424,7 +475,7 @@ public class EdisonMainViewModelTests
         public int SkeletonResets { get; private set; }
 
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    bool newColumn = false, bool newRow = false, bool canClose = true)
         {
             var pane = new RecordingPane(contentId, onClosed);
             Panes.Add(pane);
@@ -447,6 +498,8 @@ public class EdisonMainViewModelTests
             IsClosed = true;
             onClosed();
         }
+
+        public void Activate() { }
     }
 
     [Fact]
@@ -469,7 +522,7 @@ public class EdisonMainViewModelTests
     private sealed class ThrowingHost : IMiniAppHost
     {
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    bool newColumn = false, bool newRow = false, bool canClose = true)
             => throw new NotSupportedException();
         public void ResetToDefaultSkeleton() { }
         public string SaveLayout() => "";
@@ -481,7 +534,7 @@ public class EdisonMainViewModelTests
     private sealed class NullHost : IMiniAppHost
     {
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    bool newColumn = false, bool newRow = false, bool canClose = true)
             => Substitute.For<IMiniAppPane>();
         public void ResetToDefaultSkeleton() { }
         public string SaveLayout() => "";

@@ -192,6 +192,100 @@ public class MiniAppManagerTests
         Assert.DoesNotContain(host.Panes, p => p.NewRow);
     }
 
+    /// <summary>Katalog s běžným „X" + pinned „P" (sdílené services).</summary>
+    private static (MiniAppDescriptor plain, MiniAppDescriptor pinned, MiniAppManager mgr, FakeHost host) PinnedFixture()
+    {
+        var services = MockServices();
+        var plain = new MiniAppDescriptor("X", "test", () => new TestMiniApp(services));
+        var pinned = new MiniAppDescriptor("P", "pinned", () => new TestMiniApp(services), Pinned: true);
+        var catalog = MiniAppCatalog.Build([new SingleProvider(plain), new SingleProvider(pinned)]);
+        var host = new FakeHost();
+        return (plain, pinned, new MiniAppManager(host, catalog), host);
+    }
+
+    [Fact]
+    public void Open_PinnedDescriptor_PaneIsNotUserClosable()
+    {
+        var (_, pinned, mgr, host) = PinnedFixture();
+
+        mgr.Open(pinned);
+
+        Assert.False(host.Panes[0].CanClose);
+    }
+
+    [Fact]
+    public void Open_PinnedSecondTime_ActivatesExistingInsteadOfDuplicating()
+    {
+        var (_, pinned, mgr, host) = PinnedFixture();
+        var first = mgr.Open(pinned);
+
+        var second = mgr.Open(pinned);
+
+        Assert.Same(first, second);
+        Assert.Single(mgr.OpenInstances);
+        Assert.Equal(1, host.Panes[0].Activations);
+    }
+
+    [Fact]
+    public void CloseUnpinned_ClosesPlain_KeepsPinned()
+    {
+        var (plain, pinned, mgr, host) = PinnedFixture();
+        mgr.Open(plain);
+        mgr.Open(pinned);
+
+        mgr.CloseUnpinned();
+
+        var open = Assert.Single(mgr.OpenInstances);
+        Assert.Equal("P", open.DescriptorId);
+        Assert.Equal([true, false], host.Panes.Select(p => p.IsClosed));
+    }
+
+    [Fact]
+    public void CloseAll_ClosesAlsoPinned()
+    {
+        var (_, pinned, mgr, host) = PinnedFixture();
+        mgr.Open(pinned);
+
+        mgr.CloseAll();
+
+        Assert.Empty(mgr.OpenInstances);
+        Assert.True(host.Panes[0].IsClosed);
+    }
+
+    [Fact]
+    public void EnsurePinnedOpen_OpensMissingPinned_IntoNewColumn()
+    {
+        var (plain, _, mgr, host) = PinnedFixture();
+        mgr.Open(plain);
+
+        mgr.EnsurePinnedOpen();
+
+        Assert.Contains(mgr.OpenInstances, i => i.DescriptorId == "P");
+        Assert.True(host.Panes.Single(p => p.ContentId.StartsWith("P#")).NewColumn);
+    }
+
+    [Fact]
+    public void EnsurePinnedOpen_NoOp_WhenPinnedAlreadyOpen()
+    {
+        var (_, pinned, mgr, _) = PinnedFixture();
+        mgr.Open(pinned);
+
+        mgr.EnsurePinnedOpen();
+
+        Assert.Single(mgr.OpenInstances);
+    }
+
+    [Fact]
+    public void RestoreLayout_PinnedPane_IsNotUserClosable()
+    {
+        var (_, _, mgr, host) = PinnedFixture();
+
+        mgr.RestoreLayout("X#1,P#2");
+
+        Assert.True(host.Panes.Single(p => p.ContentId == "X#1").CanClose);
+        Assert.False(host.Panes.Single(p => p.ContentId == "P#2").CanClose);
+    }
+
     [Fact]
     public void InstancesChanged_FiresOnOpenAndClose()
     {
@@ -254,9 +348,9 @@ public class MiniAppManagerTests
         public int SkeletonResets { get; private set; }
 
         public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                                    bool newColumn = false, bool newRow = false)
+                                    bool newColumn = false, bool newRow = false, bool canClose = true)
         {
-            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, NewColumn = newColumn, NewRow = newRow };
+            var pane = new FakePane(contentId) { Title = title, Content = content, OnClosed = onClosed, NewColumn = newColumn, NewRow = newRow, CanClose = canClose };
             Panes.Add(pane);
             return pane;
         }
@@ -274,6 +368,7 @@ public class MiniAppManagerTests
                 if (resolve(contentId, pane) is not { } rc) continue;
                 pane.Content = rc.Content;
                 pane.OnClosed = rc.OnClosed;
+                pane.CanClose = rc.CanClose;
                 Panes.Add(pane);
             }
         }
@@ -287,7 +382,9 @@ public class MiniAppManagerTests
         public Action? OnClosed { get; set; }
         public bool NewColumn { get; set; }
         public bool NewRow { get; set; }
+        public bool CanClose { get; set; } = true;
         public bool IsClosed { get; private set; }
+        public int Activations { get; private set; }
 
         public void Close()
         {
@@ -295,5 +392,7 @@ public class MiniAppManagerTests
             IsClosed = true;
             OnClosed?.Invoke();
         }
+
+        public void Activate() => Activations++;
     }
 }

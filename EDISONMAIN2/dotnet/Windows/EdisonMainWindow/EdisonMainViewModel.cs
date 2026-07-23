@@ -127,9 +127,13 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             _applyTreeWidth = applyWidth;
         }
 
-        // Výchozí rozložení: 3 web widgety ve sloupcích nahoře + Oblíbené přes celou šířku dole.
-        private void OpenDefaultMiniApps() =>
+        // Výchozí rozložení: web widgety ve sloupcích nahoře + Oblíbené přes celou šířku dole.
+        private void OpenDefaultMiniApps()
+        {
             _miniAppManager?.OpenDefaultLayout(DefaultMiniApps, _miniAppCatalog.Find(FavoritesMiniAppProvider.FavoritesId));
+            // Pinned mimo výchozí sadu nesmí zmizet ani po resetu / prvním spuštění.
+            _miniAppManager?.EnsurePinnedOpen();
+        }
 
         private void PersistMiniAppLayout(string idfa)
         {
@@ -161,13 +165,19 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             try
             {
                 _miniAppManager.RestoreLayout(xml);
+                // Layout z doby před pinned sadou (nebo s dříve zavřeným pinned widgetem) ho neobsahuje.
+                _miniAppManager.EnsurePinnedOpen();
             }
             catch
             {
                 // Poškozený / nekompatibilní uložený layout nesmí shodit start shellu (letí z Loaded).
-                // Zahodíme ho; dock zůstane prázdný, další uložení (close/switch) zapíše čistý.
+                // Zahodíme ho; další uložení (close/switch) zapíše čistý.
                 _prefs.MiniAppLayouts?.Remove(idfa);
                 _prefs.Save();
+                // Ani po zahozeném layoutu nesmí chybět pinned komunikační kanál. Vlastní guard —
+                // stav docku po nezdařeném Deserialize je nedefinovaný a druhý pád by shodil start.
+                try { _miniAppManager.EnsurePinnedOpen(); }
+                catch { }
             }
         }
 
@@ -215,7 +225,8 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             CloseAllCommand          = Command(() => { PersistMiniAppLayout(Idfa); closeAllWindows(); _miniAppManager?.CloseAll(); });
             OpenMiniAppCommand       = Command<MiniAppDescriptor>(d => _miniAppManager?.Open(d));
             OpenDefaultMiniAppsCommand = Command(OpenDefaultMiniApps);
-            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseAll());
+            // Uživatelské „Zavřít miniaplikace" nechá pinned otevřené (CloseAll zůstává pro session/shutdown).
+            CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseUnpinned());
             // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
 

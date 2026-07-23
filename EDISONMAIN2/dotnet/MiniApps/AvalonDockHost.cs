@@ -17,15 +17,17 @@ namespace EDISONMAIN2.MiniApps;
 public sealed class AvalonDockHost(DockingManager dock) : IMiniAppHost
 {
     public IMiniAppPane AddPane(string contentId, string title, ImageSource? icon, object content, Action onClosed,
-                               bool newColumn = false, bool newRow = false)
+                               bool newColumn = false, bool newRow = false, bool canClose = true)
     {
+        // CanClose=false skryje křížek a blokuje uživatelské zavření (i v plovoucím okně);
+        // programové document.Close() (přepnutí session, CloseAll) AvalonDock pouští dál.
         var document = new LayoutDocument
         {
             ContentId = contentId,
             Title = title,
             IconSource = icon,
             Content = content,
-            CanClose = true,
+            CanClose = canClose,
         };
         document.Closed += (_, _) => onClosed();
         if (newRow)
@@ -78,7 +80,8 @@ public sealed class AvalonDockHost(DockingManager dock) : IMiniAppHost
                 e.Cancel = true;
                 return;
             }
-            document.CanClose = true;
+            // Z deskriptoru, ne z uloženého XML — změna pinned sady se retro-aplikuje na staré layouty.
+            document.CanClose = resolved.CanClose;
             e.Content = resolved.Content;
             document.Closed += (_, _) => resolved.OnClosed();
         };
@@ -89,5 +92,7 @@ public sealed class AvalonDockHost(DockingManager dock) : IMiniAppHost
     private sealed class Pane(LayoutDocument document) : IMiniAppPane
     {
         public void Close() => document.Close();
+
+        public void Activate() => document.IsActive = true;
     }
 }

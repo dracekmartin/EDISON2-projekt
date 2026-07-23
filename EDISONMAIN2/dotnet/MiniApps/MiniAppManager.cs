@@ -35,10 +35,17 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
     /// <param name="newRow">true → panel jde do nové řady přes celou šířku pod sloupci.</param>
     public MiniAppInstance Open(MiniAppDescriptor descriptor, bool newColumn = false, bool newRow = false)
     {
+        // Pinned je single-instance — duplikát by nešel zavřít a zůstal by v layoutu napořád.
+        if (descriptor.Pinned && _open.FirstOrDefault(i => i.DescriptorId == descriptor.Id) is { } existing)
+        {
+            existing.Pane.Activate();
+            return existing;
+        }
         var vm = descriptor.CreateViewModel();
         var contentId = $"{descriptor.Id}#{_nextInstance++}";
         return Mount(descriptor.Id, contentId, vm,
-            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, newColumn, newRow));
+            addPane: onClosed => host.AddPane(contentId, vm.Title, vm.Icon, vm, onClosed, newColumn, newRow,
+                                              canClose: !descriptor.Pinned));
     }
 
     /// <summary>
@@ -71,6 +78,28 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
             instance.Pane.Close();
     }
 
+    /// <summary>
+    /// Zavře všechny kromě pinned — uživatelská akce „Zavřít miniaplikace" nesmí být zadní
+    /// vrátka, jak se zbavit garantovaného komunikačního kanálu.
+    /// </summary>
+    public void CloseUnpinned()
+    {
+        foreach (var instance in _open.ToList())
+            if (catalog.Find(instance.DescriptorId)?.Pinned != true)
+                instance.Pane.Close();
+    }
+
+    /// <summary>
+    /// Dootevře pinned mini-apps, které nemají instanci (uložený layout z doby před pinned
+    /// sadou / uživatelem dříve zavřené). Volat po obnově layoutu.
+    /// </summary>
+    public void EnsurePinnedOpen()
+    {
+        foreach (var descriptor in catalog.All.Where(d => d.Pinned))
+            if (_open.All(i => i.DescriptorId != descriptor.Id))
+                Open(descriptor, newColumn: true);
+    }
+
     /// <summary>Serializuje aktuální layout docku (k uložení do LocalPrefs per IDFa).</summary>
     public string SaveLayout() => host.SaveLayout();
 
@@ -89,7 +118,7 @@ public sealed class MiniAppManager(IMiniAppHost host, MiniAppCatalog catalog)
         Action? onClosed = null;
         Mount(descriptor.Id, contentId, vm, addPane: oc => { onClosed = oc; return pane; });
         BumpInstanceCounter(contentId);
-        return new RestoredContent(vm, onClosed!);
+        return new RestoredContent(vm, onClosed!, CanClose: !descriptor.Pinned);
     }
 
     // Sdílené jádro pro Open i restore: vytvoří instanci, napojí RequestClose + tracking + OnOpened.
