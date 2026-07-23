@@ -21,7 +21,7 @@ Parameter GOLDIDFA = "CB_DP";
 
 Method TestGold1001()
 {
-	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=6jzPKz0JrwOIplx6nGFC2g==")
+	do ..AssertLine("1001", "pages=54 zast=1543 odj=6597 pozn=58 md5=uxw0Fs/vn06q84ogLKEeBw==")
 }
 
 Method TestGold1003()

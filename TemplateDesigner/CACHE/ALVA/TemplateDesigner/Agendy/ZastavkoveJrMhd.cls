@@ -1174,13 +1174,13 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d rows.%Set("ZASTAVKY", zastavky)
     d vals.%Set("POPIS_SMER", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
 
-    // SKUPINY_DNU — z typů provozu
+    // SKUPINY_DNU — z typů provozu. Struktura sloupců je per LINKA (všechny SMO sloupce linky),
+    // ne per zastávka — sloupec bez odjezdů na této stránce se tiskne prázdný se záhlavím, aby
+    // layout seděl napříč stránkami i se SMO nastavením (jako legacy, „doplním TypProvozuID").
     s skupiny = ##class(%DynamicArray).%New()
     s smoCol = ""
     f {
         s smoCol = $o(^||TiskMHD("smoSloupce",smoCol)) q:smoCol=""
-        // Má tato zastávka odjezdy v tomto sloupci (sekci minut odjezdu)?
-        i '$d(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol)) continue
         s nadpisLb = $g(^||TiskMHD("smoNadpis",smoCol))
         // Pořadí = číslo sloupce (SMO1..SMO4), aby sloupce šly zleva SMO1→SMO4 jako v legacy.
         d skupiny.%Push(..BuildSkupinaDnu(smoCol, $lg(nadpisLb,1), $lg(nadpisLb,2), smoCol))
