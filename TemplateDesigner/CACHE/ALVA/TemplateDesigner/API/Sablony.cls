@@ -87,7 +87,17 @@ ClassMethod LoadTemplate(ByRef sys As %String) As %Status
 
         s meta = ..BuildMetadataObject(sourceIdFa, templateId)
         s ^||ML("OUT","metadata") = meta.%ToJSON()
-        s ^||ML("OUT","data") = $g(^ALVA.TemplateDesigner.Templates(sourceIdFa,"DTA",templateId,"Data"))
+
+        // Blob: nový chunkovaný formát (Data = počet, Data(n) = kus) rozpozná existence Data(1);
+        // legacy jednoklíčový uzel (Data = celý JSON) vrať jako dřív.
+        s dataBase = $name(^ALVA.TemplateDesigner.Templates(sourceIdFa,"DTA",templateId,"Data"))
+        i $d(@dataBase@(1)) {
+            s chunkCount = +$g(@dataBase)
+            f n=1:1:chunkCount s ^||ML("OUT","data"_n) = $g(@dataBase@(n))
+            s ^||ML("OUT","dataChunkCount") = chunkCount
+        } else {
+            s ^||ML("OUT","data") = $g(@dataBase)
+        }
     } catch (ex) { $$$CatchErrRest }
     q $$$OK
 }
@@ -109,13 +119,21 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         s name       = $g(^||ML("IN","name"))
         s agendaCode = $g(^||ML("IN","agendaCode"))
         s version    = $g(^||ML("IN","version"))
-        s data       = $g(^||ML("IN","data"))
+        // Blob chodí po kusech (data1..dataN + počet v dataChunkCount), aby jeden Caché řetězec
+        // nepřekročil limit délky. Legacy klient posílá jednoklíčové "data" (fallback níže).
+        s chunkCount = $g(^||ML("IN","dataChunkCount"))
 
         if templateId = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "templateId is required"))
         if name       = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "name is required"))
         if agendaCode = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "agendaCode is required"))
-        if data       = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "data is required"))
         if version    = "" s version = "1.0"
+
+        // Přítomnost dat: buď chunkovaný vstup (počet > 0), nebo legacy neprázdné "data"
+        i chunkCount = "" {
+            if $g(^||ML("IN","data")) = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "data is required"))
+        } elseif (+chunkCount <= 0) {
+            $$$ThrowStatus($$$ERROR($$$GeneralError, "data is required"))
+        }
 
         // Cílová větev: default session firma; "MLINE" pro seed systémových šablon (distribuce).
         s targetIdFa = $g(^||ML("IN","targetIdFa"))
@@ -147,7 +165,21 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","Version")    = version
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedAt") = nowIso
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedBy") = userID
-        s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data")                  = data
+
+        // Blob ulož chunkovaně: Data = počet kusů, Data(n) = n-tý kus. Nikdy neslepovat do
+        // jednoho řetězce (překročil by limit délky). Nejdřív smaž starý obsah (legacy
+        // jednoklíčový uzel i případné staré kusy z předchozího uložení).
+        k ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data")
+        i chunkCount '= "" {
+            f n=1:1:+chunkCount {
+                s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data",n) = $g(^||ML("IN","data"_n))
+            }
+            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data") = +chunkCount
+        } else {
+            // Legacy jednoklíčový vstup — kanonizuj na chunkovaný formát (1 kus)
+            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data",1) = $g(^||ML("IN","data"))
+            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data") = 1
+        }
 
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"IDX","ByAgenda",agendaCode,templateId) = ""
 
