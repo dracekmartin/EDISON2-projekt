@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-23 — Časová osa odjezdů jen v parametrech sestavy (#13009 KOVED)
+
+Zákazník hlásil, že časová osa jde nastavit vždy jen na hodiny s odjezdy — změna nastavení nedělala nic.
+
+- **Root cause:** časová osa šla nastavit na **dvou místech** — property elementu (dialog „Odjezdy")
+  *i* parametr sestavy „Časová osa odjezdů" (`CASOVA_OSA`/`HODINY_OD`/`DO`). Preview ale do dat vždy
+  vlévá **defaulty všech parametrů** (`LoadAgendaParameters`), takže `CASOVA_OSA="Jen hodiny s odjezdy"`
+  je přítomen vždy a v renderu **přebíjí** property elementu → nastavení na elementu bylo mrtvé. Stejné
+  v AD i MHD (ne AD-specific).
+- **Fix:** časová osa je per-šablona parametr (sdílený, autoritativní) — odebrána z element dialogu
+  (`DepartureGridElementEdit.cls`) i z descriptorů (Časová osa / Hodiny od / Hodiny do). Nastavuje se
+  jen v parametrech sestavy (jako v MHD). Property `TimeAxisMode/RangeFrom/RangeTo` zůstávají jako render
+  fallback (když param chybí), ale needitovatelné. Bez regrese — parametr element vždy přebíjel.
+
 ## 2026-07-23 — Legenda poznámek: nastavení se propisují (#13011 KOVED) + sjednocení termínu „Font"
 
 Zákazník hlásil, že v legendě poznámek nejde nastavit barva textu, oddělovač ani font.

@@ -1356,38 +1356,15 @@ public class DepartureGridElement : StopScheduleElementBase
             Options = EnumPropertyDescriptor.VAlignOptions },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
 
-        // ── Časová osa odjezdů (mapuje na parametry CASOVA_OSA / HODINY_OD / HODINY_DO) ──
-        // Labely jsou popisné, ne legacy žargon. Plný den (0–23) v UI vědomě vynechán — lze docílit přes Vlastní rozsah 0..23.
-        new EnumPropertyDescriptor
-        {
-            Label = "Časová osa", Group = "Časová osa",
-            Get = () => TimeAxisMode, Set = v => TimeAxisMode = (TimeAxisMode)v,
-            Options =
-            [
-                ("Jen hodiny s odjezdy",          (object)TimeAxisMode.Compact),
-                ("Souvislá od první do poslední", (object)TimeAxisMode.DataBounded),
-                ("Vlastní rozsah",                (object)TimeAxisMode.Range),
-            ]
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Hodiny od", Group = "Časová osa",
-            Get = () => TimeAxisRangeFrom, Set = v => TimeAxisRangeFrom = Math.Clamp((int)v, 0, 23),
-            Min = 0, Max = 23, Format = "0", Unit = "h",
-            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Hodiny do", Group = "Časová osa",
-            Get = () => TimeAxisRangeTo, Set = v => TimeAxisRangeTo = Math.Clamp((int)v, 0, 23),
-            Min = 0, Max = 23, Format = "0", Unit = "h",
-            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
-        },
+        // Časová osa (rozsah hodin) je parametr šablony „Časová osa odjezdů" (CASOVA_OSA/HODINY_OD/DO),
+        // sdílený a autoritativní — NEvystavovat jako property elementu (parametr ho přebíjí → matoucí).
+        // Property TimeAxisMode/RangeFrom/RangeTo zůstávají jen jako render fallback, když param chybí.
+
         // Když je kratší rozsah hodin než kapacita Height, vyplnit zbylé místo (jen data řádky).
         // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
         new BoolPropertyDescriptor
         {
-            Label = "Roztáhnout na výšku", Group = "Časová osa",
+            Label = "Roztáhnout na výšku", Group = "Odjezdy",
             Get = () => AutoExpandToFillHeight, Set = v => AutoExpandToFillHeight = v
         },
 
