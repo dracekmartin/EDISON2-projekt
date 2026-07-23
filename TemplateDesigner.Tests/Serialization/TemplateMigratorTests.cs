@@ -50,8 +50,10 @@ public class TemplateMigratorTests
     [Fact]
     public void VerzeBezPatchSegmentu_JeEkvivalentniAktualni()
     {
-        // Sémantické porovnání (VersionComparer): "1.3" == "1.3.0" (CurrentVersion) → žádná migrace ani warning
-        var (_, wasMigrated, _) = new TemplateMigrator().Migrate(Json("1.3"));
+        // Sémantické porovnání (VersionComparer): "X.Y" == "X.Y.0" (CurrentVersion) → žádná migrace ani
+        // warning. Odvozeno z CurrentVersion, aby test nepadal při každém bumpu verze.
+        string bezPatche = string.Join('.', TemplateMigrator.CurrentVersion.Split('.')[..2]);
+        var (_, wasMigrated, _) = new TemplateMigrator().Migrate(Json(bezPatche));
 
         Assert.False(wasMigrated);
     }

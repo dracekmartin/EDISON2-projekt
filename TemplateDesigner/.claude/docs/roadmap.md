@@ -75,8 +75,15 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    (ruční `NegativniZnacka` typu má přednost) + legendu „jede jen <nadpis>"; anotace
    v `SestavitJednuStranku` přes `spojTyp`/`smoZnacka`. Ověřeno: **CB_DP 1001 dep/zast/pozn 1:1
    match** (žádná kolize → beze změny), KV_DP 1073 legenda +115 řádků „jede jen…" + nadpis sloupce 4
-   = dominantní typ. Zbývá fáze 1 (varování), 3 (parametr), 4 (dedup — vyhodnotit po fixu bodu 2,
-   po oznámkování se identické buňky téměř nevyskytují).
+   = dominantní typ. Zbývá fáze 1 (varování), 3 (parametr). **Fáze 4 (dedup) UZAVŘENA jako
+   bezpředmětná (2026-07-23):** po oznámkování se buňky různých skupin vždy liší značkou (sloučit
+   = ztratit informaci „kdy jede" — potvrzeno na 1073, 5:00 „00" + „00¹²" je správně dvojí odjezd);
+   duplicitu v rámci téže skupiny tiskne i legacy → dedup by rozbil CB paritu. Čtení: minuta bez
+   značky platí dle nadpisu sloupce, se značkou dle legendy.
+   **Doplněk (2026-07-23, po vizuálním testu): „Max skupin" past odstraněna** — default
+   `MaxGroupCount` 3 → 0 (bez limitu; strop tiše ořezával 4. SMO sloupec v rozporu s checkboxy
+   dialogu) + migrace šablon 1.4.0 (`maxGroupCount: 3` → 0) + SKUPINY_DNU posílá všechny SMO
+   sloupce linky i prázdné (layout konzistentní napříč stránkami, jako legacy).
 4. ✅ **VYŘEŠENO (2026-07-23 večer, commitnuto) — Rozdílové poznámky A–K 1:1** (texty i písmena;
    `NotesProbe` Chebská Z: 11/11 identických). Dvě části: (a) alg. 1001 dostává `TisknutaTrasaBitmap`
    (bod 2) → správné texty; (b) **pořadí iterace odjezdů = legacy** (typ provozu vzestupně, pak čas —

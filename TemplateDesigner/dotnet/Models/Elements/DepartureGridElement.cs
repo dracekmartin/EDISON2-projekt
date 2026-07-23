@@ -67,8 +67,10 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Sloupec hodin před každou skupinou dnů (místo jednoho sdíleného vlevo).</summary>
     public bool HourColumnPerGroup { get; set; }
 
-    /// <summary>Maximální počet zobrazených skupin dnů (0 = bez limitu).</summary>
-    public int MaxGroupCount { get; set; } = 3;
+    /// <summary>Maximální počet zobrazených skupin dnů (0 = bez limitu, default). Viditelnost
+    /// jednotlivých skupin řídí checkboxy v dialogu sloupců (GroupColumns.IsVisible) — strop je
+    /// jen nouzová pojistka; starý default 3 tiše ořezával 4. SMO sloupec (migrace 1.4.0).</summary>
+    public int MaxGroupCount { get; set; }
 
     // ═══════════════════════════════════════════
     // Časová osa

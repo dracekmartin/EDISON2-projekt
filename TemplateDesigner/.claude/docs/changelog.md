@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-23 — MHD sloupce dle SMO konzistentně: prázdné sloupce + zrušen skrytý strop „Max skupin"
+
+Nálezy z vizuálního smoke testu KV_DP 1073 (starý vs nový tisk):
+
+- **SKUPINY_DNU = všechny SMO sloupce linky, i prázdné na dané stránce** (se záhlavím) — dřív se
+  sloupec bez odjezdů na zastávce vynechal a zbytek se posunul (nekonzistentní layout napříč
+  stránkami, neodpovídal SMO). Jako legacy. Gold 1001 re-baseline (jen md5, počty beze změny).
+- **„Max skupin" default 3 → 0 (bez limitu)** — skrytý strop z éry před SMO seskupováním tiše
+  ořezával 4. skupinu dnů v rozporu s checkboxy dialogu sloupců. Viditelnost řídí checkboxy;
+  strop zůstává jen jako volitelná pojistka. **Migrace šablon 1.3.0 → 1.4.0**
+  (`MigrationDepartureGridMaxGroups`: uložené `maxGroupCount: 3` = starý default → 0; vědomé
+  hodnoty zůstávají) + testy, `template-schema-versions.md` doplněn o přehled verzí 1.1–1.4.
+- **Dedup „stejné minuty" (fáze 4 SMO plánu) uzavřen jako bezpředmětný:** „00" + „00¹²" v 5:00
+  jsou dva různé odjezdy (prázdninový vs. jen 31.12.) — sloučení by ztratilo informaci jako legacy;
+  duplicity v rámci jedné skupiny tiskne i legacy. Čtení: bez značky = dle nadpisu sloupce,
+  se značkou = dle legendy.
+- Testy: .NET 367/367, Caché 34/34.
+
 ## 2026-07-23 — MHD parita KV_DP dotažena: zastávky 1:1 + rozdílové poznámky A–K 1:1
 
 Dokončení priority „MHD datová parita na složitých linkách". KV_DP 1073: **zast 693=693 ✓,
