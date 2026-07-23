@@ -13,8 +13,13 @@ Include GENERAL
 ///
 /// Globální struktura:
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata", <pole>) = <hodnota>
-///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")             = <JSON blob>
+///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")             = počet kusů blobu
+///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data", n)          = n-tý kus JSON blobu
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
+///
+/// Blob se ukládá po kusech, nikdy jako jeden řetězec — velký (obrázkový) blob by jinak
+/// překročil limit délky řádku při příjmu requestu. Legacy jednoklíčový uzel "Data" = celý
+/// JSON se při načtení pozná (chybí "Data",1) a při dalším uložení kanonizuje na kusy.
 ///
 /// Metadata pole: Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version
 ///
@@ -68,7 +73,8 @@ ClassMethod ListTemplates(ByRef sys As %String) As %Status
 /// Načte jednu šablonu (metadata + data blob).
 /// IN["templateId"] = GUID šablony
 /// OUT["metadata"]  = JSON metadat
-/// OUT["data"]      = JSON blob šablony (původní obsah, předaný do SaveTemplate)
+/// OUT["dataChunkCount"] = počet kusů blobu; OUT["data1"]..["dataN"] = kusy JSON blobu (klient složí)
+/// OUT["data"]      = celý JSON blob (jen u legacy šablony uložené bez kusů)
 /// Neexistující šablona → $$$ERROR
 ClassMethod LoadTemplate(ByRef sys As %String) As %Status
 {
@@ -107,7 +113,8 @@ ClassMethod LoadTemplate(ByRef sys As %String) As %Status
 /// IN["name"]        = jméno šablony (povinné)
 /// IN["agendaCode"]  = kód agendy ("MHD", "GENERAL", ...; povinný)
 /// IN["version"]     = verze formátu (např. "1.0"; volitelné, default "1.0")
-/// IN["data"]        = JSON blob šablony (povinný)
+/// IN["dataChunkCount"] + IN["data1"]..["dataN"] = JSON blob šablony po kusech (povinný)
+///                     Legacy IN["data"] = celý JSON blob v jednom klíči (fallback, stále přijímáno)
 /// OUT["templateId"] = uložený TemplateID (echo)
 ClassMethod SaveTemplate(ByRef sys As %String) As %Status
 {

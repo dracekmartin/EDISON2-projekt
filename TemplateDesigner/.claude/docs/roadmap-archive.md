@@ -2,6 +2,16 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-23 ✅ — Ukládání velkých šablon (blob po kusech) — dokončeno + ověřeno
+
+Detail → changelog 2026-07-23 (+ 2026-07-21 mechanika). Zákazník neuložil šablonu s velkým inline
+obrázkem (`500 <SYNTAX> zStreamToGlobal`). **Skutečný limit = délka řádku při příjmu (~32 656 znaků),
+ne max string 3,64 MB** (původní diagnóza mylná → první chunking na kusy po 1 M znacích nepomohl). Fix = velikost
+kusu `1 000 000 → 20 000`. Blob jde po kusech (`dataChunkCount` + `data1..N`), server ukládá jako uzly
+`Data(n)`, nikdy neslepuje; zpětně kompatibilní, bez migrace. Ověřeno naostro (reálný obrázek round-trip
++ živý probe save→load→delete). 16 unit testů vč. regresního strážce velikosti kusu. Úložná strategie
+zůstává inline Base64 (self-contained); binární úložiště přes `BinarySave`/GUID vědomě odloženo.
+
 ## Session 2026-07-15 ✅ — Proces vývoje + zákaznická wiki + UX úklid
 
 Detail → changelog 2026-07-15.

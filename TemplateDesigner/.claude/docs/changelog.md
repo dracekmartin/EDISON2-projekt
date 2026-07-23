@@ -1,23 +1,30 @@
 # Changelog
 
-## 2026-07-21 — Ukládání šablon: blob po kusech (velký inline obrázek už neshodí save)
+## 2026-07-23 — Ukládání šablon: oprava velikosti kusu (velký inline obrázek už neshodí save) — OVĚŘENO
 
-Zákazník při uložení šablony s velkým obrázkem dostal `500 <SYNTAX> zStreamToGlobal` z MLRest.
-Root cause: obrázek se ukládá jako Base64 **inline v JSON blobu** a celý blob jel na server jako
-**jeden řetězec**. Caché neunese řetězec delší než ~3,64 MB (max string length) — 5MB obrázek dá po
-Base64 ~6,7 MB → server to shodil už při skládání vstupu do globálu, dřív než se spustila ukládací
-logika (proto cizí stack `ALWA.SYS.Utility`, ne naše hláška).
+Dokončení fixu z 2026-07-21 (chunking) — první pokus **neopravil pád**, protože měl špatně
+identifikovaný limit. Ověřeno naostro na reálném obrázku (uložení + znovuotevření) + živý probe
+proti dev serveru (chunkovaný save→load→delete round-trip).
 
-- **Fix (bez změny JSON schématu → nulové riziko pro legacy šablony):** blob se posílá **po kusech**
-  pod limitem délky a server je ukládá jako samostatné uzly `Data(n)` — **nikdy** se neslepuje do
-  jednoho řetězce. `CacheBlobChunking.Split/Join` (.NET), `SaveTemplate`/`LoadTemplate` chunkují
-  (`dataChunkCount` + `data1..N`). Řeší problém **obecně** (i velká tabulka bez obrázku), ne jen obrázky.
-- **Zpětná kompatibilita:** legacy jednoklíčový uzel `Data` = celý JSON se při loadu pozná (chybí `Data(1)`)
-  a vrátí jako dřív; při dalším uložení se kanonizuje na chunkovaný formát. Starý .NET klient (jednoklíčové
-  `data`) server pořád přijme. Uložené šablony se nijak nemigrují ani nesáhnou.
-- **Testy:** `CacheBlobChunkingTests` (15×) — Split→Join round-trip vč. ~6 MB blobu, hranice kusů, počty.
-- **Zbývá naostro:** end-to-end round-trip s reálným obrázkem proti dev serveru (blokoval sandbox/MCP —
-  TD Caché projekt není v deploy mapě MCP; nasazení třídy + test na uživateli).
+- **Skutečný root cause (přepis mylné diagnózy „max string 3,64 MB"):** limit NENÍ délka Caché řetězce,
+  ale délka **jednoho řádku při příjmu requestu**. MLRest server (`ALWA.SYS.Utility.StreamToGlobal`) čte
+  vstup po záznamech přes `stream.ReadLine()` **bez délkového argumentu** → `%Stream` vrací nejvýš
+  ~32 656 znaků na volání a řádek přes oddělovač **neslepuje** (ignoruje `eol`). Záznam delší než limit
+  se rozpůlí, pokračování se rozparsuje jako „klíč" plný JSON/base64 znaků → neplatná indirekce
+  `s @ref=val` → `<SYNTAX>` (proto ne `<MAXSTRING>`). Malé šablony (< ~32 KB) projdou v jednom čtení.
+- **Vlastní fix:** velikost kusu `DefaultMaxChunkChars` **1 000 000 → 20 000 znaků** (bezpečně pod limitem
+  řádku s rezervou). Kus o 1 MB byl 30× nad limitem → původní chunking nepomohl. Server `Sablony.cls`
+  beze změny logiky (čte libovolný počet kusů) — jen zmenšení na klientovi.
+- **Mechanika (z 07-21, platí dál):** blob jde **po kusech** (`dataChunkCount` + `data1..N`), server ukládá
+  jako samostatné uzly `Data(n)`, **nikdy** neslepuje. Bez změny JSON schématu; legacy jednoklíčový `Data`
+  se při loadu pozná (chybí `Data(1)`) a při dalším uložení kanonizuje. Zpětně kompatibilní obousměrně.
+- **Testy:** `CacheBlobChunkingTests` (16×) — Split→Join round-trip vč. ~6 MB blobu, hranice/počty kusů,
+  + regresní strážce velikosti kusu (`DefaultMaxChunkChars <= 30 000`, aby se limit znovu nevyšponoval).
+- **Kapacita:** libovolný rozumný počet obrázků (reálně 2–5 na naše šablony); šablona roste lineárně, žádný
+  zbylý single-string chokepoint na serveru → pro realistické velikosti nepadá (extrémní desítky MB by se
+  jen zpomalily). Úložná strategie zůstává inline Base64 (self-contained JSON, ladí s Export/Import do souboru);
+  přechod na binární úložiště přes `BinarySave`/GUID je vědomě odložený (dává smysl, až kdyby velké obrázky
+  byly pravidlo).
 
 ## 2026-07-20 — MHD parita: sloupce odjezdů podle SMO (sekce minut odjezdu) — krok 1
 
