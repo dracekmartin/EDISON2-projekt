@@ -9,6 +9,8 @@ internal partial class EDErrorPopup : Window
     private EDErrorPopup(Exception ex)
     {
         InitializeComponent();
+        // CenterOwner mine maximalizovaný shell (restore bounds) — centrujeme ručně po layoutu.
+        Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
         ErrorText.Text = ex.ToString();
     }
 

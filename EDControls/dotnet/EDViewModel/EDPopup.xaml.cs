@@ -10,6 +10,8 @@ public partial class EDPopup : Window
     private EDPopup(string message, EDPopupButtons buttons, string? title)
     {
         InitializeComponent();
+        // CenterOwner mine maximalizovaný shell (restore bounds) — centrujeme ručně po layoutu.
+        Loaded += (_, _) => OwnerWindowCentering.CenterOnOwner(this);
         MessageText.Text = message;
 
         switch (buttons)
