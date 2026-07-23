@@ -33,7 +33,17 @@ Method TestSaveLoadRoundTrip()
 	kill ^||ML
 	set ^||ML("IN","templateId") = "TEST-RT-1"
 	do ##class(ALVA.TemplateDesigner.API.Sablony).LoadTemplate(.sys)
-	do $$$AssertEquals($get(^||ML("OUT","data")), json, "Load vrací byte-identický JSON blob")
+	// Load vrací blob po kusech (data1..N + dataChunkCount; Save kanonizuje i legacy
+	// jednoklíčový vstup na 1 kus) — klientská strana kusy slepuje, test dtto
+	set chunkCount = +$get(^||ML("OUT","dataChunkCount"))
+	set loaded = ""
+	if chunkCount {
+		for n = 1:1:chunkCount { set loaded = loaded_$get(^||ML("OUT","data"_n)) }
+	}
+	else {
+		set loaded = $get(^||ML("OUT","data"))
+	}
+	do $$$AssertEquals(loaded, json, "Load vrací byte-identický JSON blob")
 
 	set meta = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT","metadata")))
 	do $$$AssertEquals(meta.name, "Testovací šablona", "Metadata: name")
