@@ -43,14 +43,13 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
    Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
    Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
-2. ⬜ **ZNOVU OTEVŘENO — Zastávky 2× (1317 vs 693).** Kontrolní experiment 2026-07-23 odpoledne
-   (kompilace čistého HEAD na server → oracle): **HEAD prokazatelně dává 1317** a rozdílové poznámky
-   A–K vůbec negeneruje. Ranní „✅ 693=693 vyřešeno" bylo měření proti **serverové verzi, která v gitu
-   neexistuje** (Jan na druhém PC nic nepushnutého nemá → původ neznámý: kolegova pracovní kopie,
-   nebo zahozený experiment ranní session; hook kompiluje každý Edit, checkout zpět server nevrací).
-   Ta verze měla zastávky 693 i poznámky A–E → **než se fix začne psát znovu, zeptat se kolegy,
-   jestli tu práci nemá u sebe.** Diff vzor: legacy tiskne pro směr jen zastávky od aktuální dál
-   (post-`cnt` filtr), my zřejmě celou trasu → ~2× (viz `LinkyPrintFormatMHD.cls:722-727`).
+2. ✅ **VYŘEŠENO (2026-07-23 večer, commitnuto) — Zastávky 693=693 `match=ANO`.** Kořen: TD nečetl
+   per-bod příznak **`TisknoutZastavkovyTam/Zpet`** („netisknout na zastávkovém JŘ", KV_DP jím skrývá
+   variantní větve vč. tam-a-zpět úseků — proto i duplicitní „Slovanská" na stránce). Fix:
+   `PripravitTrasu` plní `("trasa",SmerID,"netisknout",BodID)`; StopList + sběr atributů bod skryjí
+   (kromě aktuální zastávky, jako legacy); `TisknutaTrasaBitmap` (obsluha bez skrytých bodů) jde do
+   alg. 1001. Ověřeno `StopProbe`: stránka Chebská T 16=16 řádek po řádku. (Pozn.: ranní „693 vyřešeno"
+   byla měřicí epizoda proti cizí serverové kompilaci — skutečný fix je tenhle, v repu.)
 3. ✅ **DIAGNOSTIKOVÁNO (2026-07-23): Odjezdy +48 % = SMO kolize v datech KV_DP, ne bug TD.**
    `MhdLegacyOracle.SmoProbe`: stránky **42=42** (variantní stránky vyloučeny); linka 1073 má 7 typů
    provozu a **4 z nich mapované do SMO4** (1003 prázdniny 77 spojů, 1007 „24.12." 37, 1008 „25.12. a 1.1."
@@ -78,14 +77,21 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    match** (žádná kolize → beze změny), KV_DP 1073 legenda +115 řádků „jede jen…" + nadpis sloupce 4
    = dominantní typ. Zbývá fáze 1 (varování), 3 (parametr), 4 (dedup — vyhodnotit po fixu bodu 2,
    po oznámkování se identické buňky téměř nevyskytují).
-4. ⬜ **Rozdílové poznámky tras (225 vs 213) — HLAVNÍ ZBÝVAJÍCÍ KÓDOVÝ BOD.** TD nevygeneruje legacy
-   poznámky F–K („zajíždí z Říční do Krajský úřad", „nezajíždí do Tašovice", „končí v Dvory"…) + duplikuje
-   „na znamení". Kořen **potvrzeně jiný než SMO**: legacy od úpravy „MH pro KV_DP" předává do alg 1001
-   `TisknutaTrasaBitmap` respektující `TisknoutZastavkovyTam/Zpet` (`LinkyPrintFormatMHD.cls:713-720`,
-   `:874-875`); TD příznak nečte. Entry point: `VypocitatBitmapyObsluhy` + vstup `MakeOmezTrasaTxMH29052025`.
+4. ✅ **VYŘEŠENO (2026-07-23 večer, commitnuto) — Rozdílové poznámky A–K 1:1** (texty i písmena;
+   `NotesProbe` Chebská Z: 11/11 identických). Dvě části: (a) alg. 1001 dostává `TisknutaTrasaBitmap`
+   (bod 2) → správné texty; (b) **pořadí iterace odjezdů = legacy** (typ provozu vzestupně, pak čas —
+   ne po sloupcích), na něm závisí přidělování písmen per stránka. Vedlejší efekt: jiné pořadí řádků
+   `ODJEZDY` v JSON (element si řadí sám) → **re-baseline gold digestů** 1001/1003/1006 (počty beze změny,
+   jen md5). Zmizela i duplicitní „na znamení" (atributy skrytých bodů se už nesbírají).
 5. ⬜ **Rozšířit gold/oracle pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
-   Pozor: dokud trvá SMO kolize v datech, dep-kategorie na 1073 nebude match — pinovat zast/stránky,
-   dep až po rozhodnutí A/B.
+   Pinovat zast+stránky+pozn (pozn = legacy + auto-značky); dep zůstává vědomá odchylka (SMO kolize).
+6. ⬜ **Drobnost: poznámka „W — nejede do zastávky Globus" (L0/O1 per stránka).** Ruční textová poznámka
+   spoje, kterou legacy netiskne, my ano. Podezření: legacy respektuje rozsah `TiskJRMHDZastavkoveBodOd/Do`
+   (legacy `:960-969` u spec. znaků) i u textových poznámek; TD rozsah nečte. Malé, ověřit a dorovnat.
+
+**Stav parity KV_DP 1073 (po 2026-07-23): zast 693=693 ✓ · stránky 42=42 ✓ · pozn = legacy 1:1 (A–K
+texty+písmena) + auto-značky „jede jen…" (záměr) + 1× „W" (bod 6) · dep +48 % = vědomá odchylka
+(SMO kolize, legacy ztrácí data — viz bod 3 + artifact).** CB_DP 1001: vše 1:1, testy 34/34.
 
 **Nástroje:** `MhdLegacyOracle.Compare` + `SmoProbe` (MLRest/MCP wrapper, IN LINKA_ID/DB/IDFA/PROJETE).
 Shrnutí pro kolegy/zákazníka: artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073" (23.7.).

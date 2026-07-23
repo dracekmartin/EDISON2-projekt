@@ -212,6 +212,127 @@ ClassMethod Compare(ByRef sys As %String) As %Status
 	quit $$$OK
 }
 
+/// Diagnostika zastávek: seznam zastávek JEDNÉ stránky (zastávka×směr) legacy vs TD vedle sebe.
+/// IN: LINKA_ID, DB, IDFA, PROJETE, STOP (přesný název aktuální zastávky stránky), SMER (T/Z).
+/// OUT: LEG(n) / OUR(n) = řádky stop-listu v pořadí tisku. Pro nalezení kořene zastávky 2×.
+ClassMethod StopProbe(ByRef sys As %String) As %Status
+{
+	set idfa = $get(^||ML("IN","IDFA"))
+	set db   = $get(^||ML("IN","DB"))
+	set lin  = $get(^||ML("IN","LINKA_ID"))
+	set projete = +$get(^||ML("IN","PROJETE"))
+	set hledanyStop = ..Norm($get(^||ML("IN","STOP")))
+	set hledanySmer = $get(^||ML("IN","SMER"),"T")
+
+	// Legacy stránka
+	kill ^||TdOracleGlb, arri, leg
+	set arri("par",1) = projete
+	set ok = ##class(ALVA.MHD.LinkyPrintFormatMHD).MakeData(.idfa, .db, lin, "^||TdOracleGlb", .arri, .out)
+	set legN = 0, pgn = ""
+	for {
+		set pgn = $order(^||TdOracleGlb(pgn))
+		quit:pgn=""
+		continue:..Norm($get(^||TdOracleGlb(pgn,"key",1,"dta",8)))'=hledanyStop
+		continue:$get(^||TdOracleGlb(pgn,"key",1,"dta",12))'=hledanySmer
+		set zc = ""
+		for {
+			set zc = $order(^||TdOracleGlb(pgn,"key",2,zc))
+			quit:zc=""
+			set legN = legN + 1
+			set leg(legN) = "tc="_$get(^||TdOracleGlb(pgn,"key",2,zc,"dta",2))_" podtrz="_(+$get(^||TdOracleGlb(pgn,"key",2,zc,"dta",1)))_" "_..Norm($get(^||TdOracleGlb(pgn,"key",2,zc,"dta",4)))
+		}
+		quit
+	}
+	kill ^||TdOracleGlb
+
+	// Naše stránka
+	do ..SetupOur(.sys, idfa, db)
+	kill ^||ML("OUT"), our
+	set ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+	set ourN = 0, n = +$get(^||ML("OUT"))
+	for p = 1:1:n {
+		set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",p)))
+		continue:..Norm(page.values.%Get("POPIS_ZASTAVKA"))'=hledanyStop
+		continue:page.values.%Get("SMER")'=hledanySmer
+		set zas = page.rows.%Get("ZASTAVKY")
+		if $isobject(zas) {
+			set iz = zas.%GetIterator()
+			while iz.%GetNext(.zk, .z) {
+				set ourN = ourN + 1
+				set our(ourN) = "poradi="_z.%Get("PORADI")_" akt="_z.%Get("AKTUALNI_ZASTAVKA")_" "_..Norm(z.%Get("NAZEV_ZASTAVKY"))
+			}
+		}
+		quit
+	}
+
+	kill ^||ML("OUT")
+	set ^||ML("OUT","LEGN") = legN
+	set ^||ML("OUT","OURN") = ourN
+	for i = 1:1:legN { set ^||ML("OUT","LEG",$tr($j(i,3)," ","0")) = leg(i) }
+	for i = 1:1:ourN { set ^||ML("OUT","OUR",$tr($j(i,3)," ","0")) = our(i) }
+	quit $$$OK
+}
+
+/// Diagnostika legendy: poznámky JEDNÉ stránky (zastávka×směr) legacy vs TD vedle sebe.
+/// IN: LINKA_ID, DB, IDFA, PROJETE, STOP, SMER (T/Z). OUT: LEG(n)/OUR(n) = typ|znak|text.
+ClassMethod NotesProbe(ByRef sys As %String) As %Status
+{
+	set idfa = $get(^||ML("IN","IDFA"))
+	set db   = $get(^||ML("IN","DB"))
+	set lin  = $get(^||ML("IN","LINKA_ID"))
+	set projete = +$get(^||ML("IN","PROJETE"))
+	set hledanyStop = ..Norm($get(^||ML("IN","STOP")))
+	set hledanySmer = $get(^||ML("IN","SMER"),"T")
+
+	kill ^||TdOracleGlb, arri, leg
+	set arri("par",1) = projete
+	set ok = ##class(ALVA.MHD.LinkyPrintFormatMHD).MakeData(.idfa, .db, lin, "^||TdOracleGlb", .arri, .out)
+	set legN = 0, pgn = ""
+	for {
+		set pgn = $order(^||TdOracleGlb(pgn))
+		quit:pgn=""
+		continue:..Norm($get(^||TdOracleGlb(pgn,"key",1,"dta",8)))'=hledanyStop
+		continue:$get(^||TdOracleGlb(pgn,"key",1,"dta",12))'=hledanySmer
+		set pc = ""
+		for {
+			set pc = $order(^||TdOracleGlb(pgn,"key",4,"arr",pc))
+			quit:pc=""
+			set legN = legN + 1
+			set leg(legN) = $get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"typ",1))_"|"_$get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",1))_"|"_..Norm($get(^||TdOracleGlb(pgn,"key",4,"arr",pc,"dta",2)))
+		}
+		quit
+	}
+	kill ^||TdOracleGlb
+
+	do ..SetupOur(.sys, idfa, db)
+	kill ^||ML("OUT"), our
+	set ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+	set ourN = 0, n = +$get(^||ML("OUT"))
+	for p = 1:1:n {
+		set page = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT",p)))
+		continue:..Norm(page.values.%Get("POPIS_ZASTAVKA"))'=hledanyStop
+		continue:page.values.%Get("SMER")'=hledanySmer
+		set poz = page.rows.%Get("POZNAMKY")
+		if $isobject(poz) {
+			set ip = poz.%GetIterator()
+			while ip.%GetNext(.pk, .pz) {
+				set ourN = ourN + 1
+				set our(ourN) = pz.%Get("TYP")_"|"_pz.%Get("ZNAK")_"|"_..Norm(pz.%Get("TEXT"))
+			}
+		}
+		quit
+	}
+
+	kill ^||ML("OUT")
+	set ^||ML("OUT","LEGN") = legN
+	set ^||ML("OUT","OURN") = ourN
+	for i = 1:1:legN { set ^||ML("OUT","LEG",$tr($j(i,3)," ","0")) = leg(i) }
+	for i = 1:1:ourN { set ^||ML("OUT","OUR",$tr($j(i,3)," ","0")) = our(i) }
+	quit $$$OK
+}
+
 /// Diagnostika SMO: počet stránek TD vs legacy + rozpad typů provozu linky na SMO sloupce.
 /// Rozliší, zda je duplikace odjezdů z variantních stránek (pages leg≠our) nebo ze SMO dělení.
 /// IN: LINKA_ID, DB, IDFA, PROJETE. OUT: PAGES + TP(tpid) = smoid/col/počet spojů/nadpis.

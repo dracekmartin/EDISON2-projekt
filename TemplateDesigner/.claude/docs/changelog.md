@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-23 — MHD parita KV_DP dotažena: zastávky 1:1 + rozdílové poznámky A–K 1:1
+
+Dokončení priority „MHD datová parita na složitých linkách". KV_DP 1073: **zast 693=693 ✓,
+stránky 42=42 ✓, poznámky = legacy 1:1 (texty i písmena) + auto-značky (záměr)**; CB_DP 1001 vše 1:1.
+Testy 34/34.
+
+- **Příznak „netisknout na zastávkovém JŘ"** (`TisknoutZastavkovyTam/Zpet`, per bod trasy — KV_DP jím
+  skrývá variantní větve): `PripravitTrasu` → `("trasa",SmerID,"netisknout",BodID)`; StopList i sběr
+  atributů zastávek bod skryjí (kromě aktuální zastávky, 1:1 legacy `LinkyPrintFormatMHD:713-720`).
+  Řeší zastávky 2× (1317→693) i duplicitní „na znamení" v legendě.
+- **Alg. 1001 (texty rozdílů tras)** dostává `TisknutaTrasaBitmap` = obsluha bez skrytých bodů
+  (1:1 legacy `:874`) → texty „zajíždí/nezajíždí/končí v…" 1:1.
+- **Pořadí iterace odjezdů = legacy** (typ provozu vzestupně → hodina → minuta → spoj; dřív po
+  sloupcích): na pořadí závisí přidělování písmen poznámek per stránka — teď A–K sedí s legacy
+  vývěskou. Vedlejší efekt: jiné pořadí řádků `ODJEZDY` v JSON (element řadí sám) → re-baseline
+  gold digestů 1001/1003/1006 (počty beze změny, jen md5).
+- **Diagnostika:** `MhdLegacyOracle.StopProbe`/`NotesProbe` — výpis stop-listu/legendy jedné stránky
+  legacy vs TD vedle sebe (trvalé nástroje pro budoucí parity práci).
+- **SablonyTest opraven na chunk kontrakt** — od blob fixu (df22fe6) Save kanonizuje i jednoklíčová
+  data na kusy a Load vrací `data1..N`; test četl staré `OUT("data")` → padal. Teď kusy skládá.
+- Zbývá: gold pokrytí 1073 (roadmap bod 5) + drobná poznámka „W" (bod 6, rozsah BodOd/Do).
+
 ## 2026-07-23 — MHD: auto-značky sloučených skupin dnů (fáze 2 rozhodnutí „AD vzor")
 
 Když v jednom SMO sloupci skončí víc typů provozu (KV_DP kolize), TD nově zajistí korektnost
