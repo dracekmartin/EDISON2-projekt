@@ -1,6 +1,19 @@
 # Changelog
 
-## 2026-07-23 — MHD parita uzavřena: rozsah poznámek od–do + gold pokrytí KV_DP 1073
+## 2026-07-23 — Šedé úsečky v PDF (#13004 KOVED): oddělovač sekcí jen v editačním plátně
+
+Zákazník hlásil tenké šedé úsečky „v místě konce sekce" v návrhu, které se přenášely i do PDF/tisku,
+i když neměl zapnutý žádný rámeček.
+
+- **Příčina:** `PreviewCanvas.RenderPage` kreslila jemnou čáru (`#DDDDDD`) mezi sekcemi jako orientační
+  pomůcku — jenže tuto metodu sdílí živý náhled **i** exporty (PDF, imposiční PDF, PNG). Pomůcka tak
+  prosakovala do výstupu. Projevilo se to hlavně na hranici před **patičkou** (kotví se ke spodnímu
+  okraji → čára „visela" uprostřed stránky nad bílou mezerou). U jediné sekce se nekreslila (jen mezi
+  sekcemi), proto to nešlo reprodukovat na triviální šabloně.
+- **Fix:** oddělovač z `PreviewCanvas` odstraněn úplně — **náhled teď zrcadlí výstup 1:1** (WYSIWYG).
+  Hranice sekcí zůstávají jako vizuální pomůcka jen v **editačním plátně** (`DesignerCanvas` kreslí
+  rámeček každé sekce sám), kde se edituje a dává smysl. PDF/PNG/tisk beze změny čisté.
+
 
 Poslední dva body priority; celý track přesunut do roadmap-archive.
 

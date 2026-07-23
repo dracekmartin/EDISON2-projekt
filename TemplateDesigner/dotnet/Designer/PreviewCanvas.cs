@@ -28,7 +28,6 @@ public class PreviewCanvas
     private static readonly SKColor ClrPage        = SKColors.White;
     private static readonly SKColor ClrPageBorder  = new(0xFFAAAAAA);
     private static readonly SKColor ClrOverflowBdr = new(0xFFD32F2F);   // rámeček přetékající stránky
-    private static readonly SKColor ClrSectionSep  = new(0xFFDDDDDD);
 
     /// <summary>Volá se na konci každého renderu preview: true = obsah některé stránky přetéká. Wire-uje MainWindow na status bar.</summary>
     public Action<bool>? OverflowChanged { get; set; }
@@ -377,7 +376,8 @@ public class PreviewCanvas
         canvas.DrawRect(new SKRect(x, y, x + w, y + h), p);
     }
 
-    /// <summary>Renderuje jednu stránku LayoutResult.</summary>
+    /// <summary>Renderuje jednu stránku LayoutResult. Preview zrcadlí výstup (PDF/PNG/tisk) 1:1 —
+    /// žádné orientační pomůcky navíc; hranice sekcí ukazuje jen editační plátno (DesignerCanvas).</summary>
     private static void RenderPage(SKCanvas canvas, PageSize ps, float mmToPx,
         float pageX, float pageY, Page page)
     {
@@ -455,14 +455,6 @@ public class PreviewCanvas
             foreach (var el in visibleElements)
                 el.RenderBorderPass(ctx);
             canvas.Restore();
-
-            // Jemná čára mezi sekcemi (orientační pomůcka)
-            if (i < sortedSections.Count - 1)
-            {
-                using var sep = new SKPaint { Color = ClrSectionSep, StrokeWidth = 0.5f };
-                float sepY = sectionTopPx + sectionHeightPx;
-                canvas.DrawLine(ox, sepY, ox + contentW, sepY, sep);
-            }
         }
     }
 }
