@@ -16,4 +16,8 @@
         <ma:FavoritesMiniAppView/>
     </DataTemplate>
 
+    <DataTemplate DataType="{x:Type ma:SupportCarouselMiniAppViewModel}">
+        <ma:SupportCarouselMiniAppView/>
+    </DataTemplate>
+
 </ResourceDictionary>

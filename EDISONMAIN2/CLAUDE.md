@@ -38,11 +38,12 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   `EDTheme.ToolbarButton` z EDControls.
 - **Mini-apps** (`dotnet/MiniApps/`): framework je v `EDControls/MiniApps`, shell je
   hostuje jako AvalonDock `LayoutDocument` v centrálním pane (`AvalonDockHost`).
-  `MiniAppDescriptor.Pinned` = nezavíratelná uživatelem (CanClose=false blokuje křížek,
-  kontextové menu i × plovoucího okna; programové `Close()` AvalonDock pouští dál —
-  session switch funguje), single-instance (další Open aktivuje), „Zavřít miniaplikace"
-  jde přes `CloseUnpinned`; `EnsurePinnedOpen` ji dootevře po restore layoutu bez ní
-  i po výchozím layoutu / resetu.
+  `MiniAppDescriptor.Pinned` = uživatel ji nezavře ani neodtrhne (programové `Close()`
+  funguje dál — session switch OK), single-instance a **solo pane**: `AvalonDockHost`
+  po `Layout.Updated` odsune cizí taby jinam a razítkuje pane `DockMinWidth/Height`
+  (hook nutno obnovovat přes `LayoutChanged` — Deserialize mění celý LayoutRoot).
+  „Zavřít miniaplikace" jde přes `CloseUnpinned`; `EnsurePinnedOpen` ji dootevře
+  po restore / defaultu / resetu.
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
   Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu tabu
@@ -58,7 +59,9 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   swap `DockManager.Theme` na VS2013 Light/Dark v code-behind okna.
   Layout se persistuje per IDFa v `LocalPrefs.MiniAppLayouts` (spolu se šířkou stromu
   v `LocalPrefs.TreeWidths`, stejný lifecycle přes `AttachTreeLayout`); chybí-li uložený →
-  `OpenColumns` otevře výchozí 3 sloupce (Novinky/Wiki/Školení), prázdný dock ukáže
+  výchozí layout = pinned karusel `Core.Podpora` (1–3 sloupce dle šířky; při plném
+  zobrazení cyklení stojí, jinak 60 s lišta; obsah lazy, drží se živý) + Oblíbené dole;
+  prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
   pořadí skupin = pořadí registrace v `AppBootstrapper`); `DevSampleMiniApps`

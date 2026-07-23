@@ -95,8 +95,9 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Mini-apps seskupené podle providerů pro launcher (menu „Miniaplikace").</summary>
         public IReadOnlyList<MiniAppGroup> MiniAppGroups => _miniAppCatalog.Groups;
 
-        // Výchozí sada (3 sloupce jako starý shell) — pořadí = novinky, wiki/vyhledávání, školení.
-        private static readonly string[] DefaultMiniAppIds = ["Core.Novinky", "Core.Wiki", "Core.Skoleni"];
+        // Výchozí sada: pinned karusel Podpora M-line (cyklí Novinky/Wiki/Školení) — samostatné
+        // widgety by vedle něj duplikovaly obsah, uživatel si je může otevřít z menu.
+        private static readonly string[] DefaultMiniAppIds = ["Core.Podpora"];
 
         private IEnumerable<MiniAppDescriptor> DefaultMiniApps =>
             DefaultMiniAppIds.Select(_miniAppCatalog.Find).OfType<MiniAppDescriptor>();
@@ -158,7 +159,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
                 _applyTreeWidth(width);
             if (_prefs.MiniAppLayouts?.TryGetValue(idfa, out var xml) != true || string.IsNullOrWhiteSpace(xml))
             {
-                // Žádný uložený layout (první spuštění / nová firma) → výchozí 3 sloupce jako starý shell.
+                // Žádný uložený layout (první spuštění / nová firma) → výchozí rozložení.
                 OpenDefaultMiniApps();
                 return;
             }

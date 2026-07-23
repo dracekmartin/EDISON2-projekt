@@ -15,6 +15,11 @@ public sealed class CoreMiniApps : IMiniAppProvider
 
     public IEnumerable<MiniAppDescriptor> GetMiniApps() =>
     [
+        // Pinned karusel = garance, že IT novinky uživatel nikdy trvale nezavře (dřív IT
+        // nemělo kanál, jak novinky sdělovat). Samostatné widgety níže zůstávají pro
+        // uživatele, kteří chtějí stránky vedle sebe.
+        new("Core.Podpora", "Podpora M-line", () => new SupportCarouselMiniAppViewModel(CarouselPages()),
+            Pinned: true),
         new("Core.Novinky", "Novinky", () => new SimpleMiniAppViewModel(
             "Novinky", () => Widget(WidgetUrls.Novinky))),
         new("Core.Wiki", "Wiki", () => new SimpleMiniAppViewModel(
@@ -22,6 +27,13 @@ public sealed class CoreMiniApps : IMiniAppProvider
         new("Core.Skoleni", "Školení", () => new SimpleMiniAppViewModel(
             "Školení", TrainingsWidget)),
         new("Core.AutoRefresh", "Automatický refresh", () => new PeriodicRefreshMiniAppViewModel()),
+    ];
+
+    private static IReadOnlyList<CarouselPage> CarouselPages() =>
+    [
+        new("Novinky", () => Widget(WidgetUrls.Novinky)),
+        new("Wiki", () => Widget(WidgetUrls.Wiki)),
+        new("Školení", TrainingsWidget),
     ];
 
     private static FontZoomWebView Widget(string url)

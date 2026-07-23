@@ -427,7 +427,11 @@
                       Background="{DynamicResource EDTheme.Border.Light}"/>
         <!-- Hostitel miniaplikací. Panely vkládá programově MiniAppManager (code-behind drží
              AvalonDockHost nad tímto DockingManagerem). -->
+        <!-- AllowMixedOrientation: bez něj AvalonDock skryje boční drop targety, jakmile by
+             vyžadovaly vnořený panel s jinou orientací (např. dokovat vedle karuselu, který
+             po collect-garbage sedí přímo ve svislém rootu; nebo nad/pod pane ve vodorovném pásu). -->
         <avalonDock:DockingManager x:Name="DockManager" Grid.Column="2" Grid.Row="1"
+                                   AllowMixedOrientation="True"
                                    Background="{DynamicResource EDTheme.Bg.Panel}"
                                    Foreground="{DynamicResource EDTheme.Text.Primary}"
                                    BorderBrush="{DynamicResource EDTheme.Border.Light}"
@@ -441,7 +445,7 @@
             </avalonDock:LayoutRoot>
         </avalonDock:DockingManager>
 
-        <!-- Prázdný dock: výzva + tlačítko na výchozí 3 sloupce. Skryje se, jakmile je otevřená mini-app. -->
+        <!-- Prázdný dock: výzva + tlačítko na výchozí rozložení. Skryje se, jakmile je otevřená mini-app. -->
         <StackPanel Grid.Column="2" Grid.Row="1"
                     HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="360">
             <StackPanel.Style>

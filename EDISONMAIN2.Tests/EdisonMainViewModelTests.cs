@@ -386,24 +386,23 @@ public class EdisonMainViewModelTests
     public void ResetMiniAppsCommand_ClosesEverything_AndOpensDefaultSet()
     {
         var services = MockServices();
-        var defaults = new[] { "Core.Novinky", "Core.Wiki", "Core.Skoleni" }
-            .Select(id => new MiniAppDescriptor(id, id, () => new StubMiniApp(services))).ToArray();
+        var carousel = new MiniAppDescriptor("Core.Podpora", "Podpora M-line",
+            () => new StubMiniApp(services), Pinned: true);
         var extra = new MiniAppDescriptor("Extra", "Extra", () => new StubMiniApp(services));
-        var catalog = MiniAppCatalog.Build([new SingleProvider([.. defaults, extra])]);
+        var catalog = MiniAppCatalog.Build([new SingleProvider(carousel, extra)]);
         var vm = CreateVM(miniAppCatalog: catalog);
         var host = new RecordingHost();
-        vm.AttachMiniAppHost(host);   // bez uloženého layoutu otevře výchozí sadu (3 panely)
+        vm.AttachMiniAppHost(host);   // bez uloženého layoutu otevře výchozí sadu (karusel)
         vm.OpenMiniAppCommand.Execute(extra);
         var beforeReset = host.Panes.ToList();
-        Assert.Equal(4, beforeReset.Count);
+        Assert.Equal(2, beforeReset.Count);
 
         vm.ResetMiniAppsCommand.Execute(null);
 
         Assert.All(beforeReset, p => Assert.True(p.IsClosed));
         Assert.Equal(2, host.SkeletonResets);   // attach + reset
         var reopened = host.Panes.Where(p => !p.IsClosed).Select(p => p.ContentId).ToList();
-        Assert.Equal(3, reopened.Count);
-        Assert.All(reopened, id => Assert.StartsWith("Core.", id));
+        Assert.StartsWith("Core.Podpora#", Assert.Single(reopened));
         Assert.True(vm.HasOpenMiniApps);
     }
 
