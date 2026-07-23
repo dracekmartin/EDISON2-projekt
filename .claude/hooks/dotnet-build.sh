@@ -15,7 +15,10 @@ case "$FILE_PATH" in
   *) exit 0 ;;
 esac
 
-cd "$CLAUDE_PROJECT_DIR" || exit 0
+# Build v repu editovaného souboru — worktree chaty buildí svůj strom, ne hlavní
+FP=$(echo "$FILE_PATH" | sed 's|\\\\|/|g; s|\\|/|g')
+ROOT=$(git -C "$(dirname "$FP")" rev-parse --show-toplevel 2>/dev/null)
+cd "${ROOT:-$CLAUDE_PROJECT_DIR}" || exit 0
 
 # Build the solution quietly — only show errors/warnings
 OUTPUT=$(dotnet build --nologo -v q 2>&1)
