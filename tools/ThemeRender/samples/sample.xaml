@@ -1,0 +1,15 @@
+<StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            Width="360">
+    <!-- Ukázka: běžné controly s implicitními themed styly z EDControlStyles.
+         Renderuje se přes ThemeRender.exe do sample.light.png a sample.dark.png. -->
+    <TextBlock Text="Nadpis" FontWeight="Bold" Margin="0,0,0,8"/>
+    <TextBlock Text="Běžný text, který má respektovat theme i font scaling." TextWrapping="Wrap" Margin="0,0,0,8"/>
+    <TextBox Text="Editovatelný text" Margin="0,0,0,8"/>
+    <ComboBox Margin="0,0,0,8">
+        <ComboBoxItem Content="Položka 1" IsSelected="True"/>
+        <ComboBoxItem Content="Položka 2"/>
+    </ComboBox>
+    <CheckBox Content="Zaškrtávátko" Margin="0,0,0,8"/>
+    <Button Content="Tlačítko" Padding="12,4" HorizontalAlignment="Left"/>
+</StackPanel>
