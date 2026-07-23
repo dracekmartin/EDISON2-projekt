@@ -263,6 +263,9 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 ///   ("odjezdy",SmerID,BodID,SmoSloupec,Hodina,Minuta,SpojID)   = ""  (SmoSloupec 1-4 = sekce minut odjezdu dle SMOID)
 ///   ("smoSloupce",SmoSloupec)                                  = ""  (registr tiskových sloupců)
 ///   ("smoNadpis",SmoSloupec)                                   = $lb(nadpis1, nadpis2)
+///   ("smoTypy",SmoSloupec,TypProvozuID)                        = počet spojů typu ve sloupci (detekce sloučení)
+///   ("smoZnacka",TypProvozuID)                                 = $lb(znak, text)  značka typu mimo dominantní režim sloupce
+///   ("spojTyp",SpojID)                                         = TypProvozuID spoje
 ///   ("spojTrasa",SmerID,SpojID)                                = TrasaBitmap
 ///   ("spojTrasa",SmerID,SpojID,BodID)                          = TrasaBitmapZBodu
 ///   ("spojNZ",SpojID)                                          = NegativniZnacka
@@ -358,6 +361,11 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         // FÁZE 4: Promítnutí spojů do zastávek
         // ═══════════════════════════════════════════════════════════════════
         d ..PromitnutSpoje(.sys)
+
+        // ═══════════════════════════════════════════════════════════════════
+        // FÁZE 4b: Značky sloučených skupin dnů (víc typů provozu v 1 sloupci)
+        // ═══════════════════════════════════════════════════════════════════
+        d ..PriraditZnackySmoSkupin(.sys)
 
         // ═══════════════════════════════════════════════════════════════════
         // FÁZE 5: Bitmapy obsluhovaných zastávek + rozdíly tras
@@ -599,6 +607,71 @@ ClassMethod SmoSloupec(dataDB As %String, IdFa As %String, TypProvozuID As %Stri
     q $case($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"SMOID")), "SMO1":1, "SMO2":2, "SMO3":3, "SMO4":4, :"")
 }
 
+/// Značky sloučených skupin dnů: víc typů provozu v jednom SMO sloupci (kolize v číselníku —
+/// legacy ji tiskla ztrátovým přepisem) → nadpis sloupce dostane dominantní typ (nejvíc spojů)
+/// a každý ostatní typ automatickou značku + legendu („jede jen 31.12."). Značka jde stejným NZ
+/// kanálem jako ruční negativní značky; ruční NegativniZnacka typu z číselníku má přednost.
+/// Sloupec s jediným typem = beze změny chování (gold parita CB_DP).
+ClassMethod PriraditZnackySmoSkupin(ByRef sys As %String)
+{
+    $$$FillParams
+    s rozsahNZOd = $g(^||TiskMHD("config","rozsahNZOd"))
+    // Fallback mimo denní značky 1-7, kdyby firma neměla rozsah NZ nastavený
+    i rozsahNZOd = "" s rozsahNZOd = 10
+
+    s smoCol = ""
+    f {
+        s smoCol = $o(^||TiskMHD("smoTypy",smoCol)) q:smoCol=""
+
+        s dominant = "", maxSpoju = -1, pocetTypu = 0
+        s TypProvozuID = ""
+        f {
+            s TypProvozuID = $o(^||TiskMHD("smoTypy",smoCol,TypProvozuID)) q:TypProvozuID=""
+            s pocetTypu = pocetTypu + 1
+            i ^||TiskMHD("smoTypy",smoCol,TypProvozuID) > maxSpoju {
+                s maxSpoju = ^||TiskMHD("smoTypy",smoCol,TypProvozuID)
+                s dominant = TypProvozuID
+            }
+        }
+        i pocetTypu < 2 continue
+
+        // Nadpis sloučeného sloupce = dominantní typ (místo „poslední zapsaný vyhrává")
+        s ^||TiskMHD("smoNadpis",smoCol) = $lb($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMOPrvni")),$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMODruhy")))
+
+        s TypProvozuID = ""
+        f {
+            s TypProvozuID = $o(^||TiskMHD("smoTypy",smoCol,TypProvozuID)) q:TypProvozuID=""
+            i TypProvozuID = dominant continue
+            i $d(^||TiskMHD("smoZnacka",TypProvozuID)) continue
+
+            s nadpis1 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMOPrvni"))
+            s nadpis2 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMODruhy"))
+            s popis = nadpis1
+            i nadpis2 '= "" s popis = $s(popis="":nadpis2, 1:popis_" "_nadpis2)
+            i popis = "" s popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"Nazev"))
+            s text = "jede jen "_popis
+
+            // Ruční značka typu z číselníku má přednost; jinak první volný znak z NZ řady
+            s znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NegativniZnacka"))
+            i znak = "" {
+                f znak = rozsahNZOd:1 {
+                    i $d(^||TiskMHD("nzTexty",znak)) continue
+                    i $d(^||TiskMHD("nzPrirazen",znak)) continue
+                    s obsazena = 0
+                    s typIter = ""
+                    f {
+                        s typIter = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",typIter)) q:typIter=""
+                        i $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",typIter,"NegativniZnacka")) = znak s obsazena = 1
+                    }
+                    i 'obsazena q
+                }
+            }
+            s ^||TiskMHD("nzPrirazen",znak) = text
+            s ^||TiskMHD("smoZnacka",TypProvozuID) = $lb(znak, text)
+        }
+    }
+}
+
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Fáze 4: Promítnutí spojů
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -624,6 +697,8 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         i smoCol '= "" {
             s ^||TiskMHD("smoSloupce",smoCol) = ""
             s ^||TiskMHD("smoNadpis",smoCol) = $lb($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMOPrvni")),$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMODruhy")))
+            s ^||TiskMHD("smoTypy",smoCol,TypProvozuID) = $g(^||TiskMHD("smoTypy",smoCol,TypProvozuID)) + 1
+            s ^||TiskMHD("spojTyp",SpojID) = TypProvozuID
         }
 
         s smerKrok = 1 i SmerID s smerKrok = -1
@@ -1153,6 +1228,18 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s nzTxt = $g(^||TiskMHD("nzPrirazen",spojNZ))
                         i nzTxt = "" s nzTxt = $g(^||TiskMHD("nzTexty",spojNZ))
                         i nzTxt '= "" s strankovePoznamky("nz_"_spojNZ) = $lb(nzTxt, 1, spojNZ)
+                    }
+
+                    // Značka sloučené skupiny dnů: typ mimo dominantní režim SMO sloupce
+                    // → NZ značka + legenda „jede jen …" (viz PriraditZnackySmoSkupin)
+                    s spojTypProvozu = $g(^||TiskMHD("spojTyp",SpojID))
+                    i spojTypProvozu '= "" {
+                        s smoZnackaVal = $g(^||TiskMHD("smoZnacka",spojTypProvozu))
+                        i smoZnackaVal '= "" {
+                            s smoZnak = $lg(smoZnackaVal,1)
+                            d ..AddAnotace(odj, "nz", smoZnak)
+                            s strankovePoznamky("nz_"_smoZnak) = $lb($lg(smoZnackaVal,2), 1, smoZnak)
+                        }
                     }
 
                     // Atributy spoje

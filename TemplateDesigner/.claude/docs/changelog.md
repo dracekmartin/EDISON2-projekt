@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-23 — MHD: auto-značky sloučených skupin dnů (fáze 2 rozhodnutí „AD vzor")
+
+Když v jednom SMO sloupci skončí víc typů provozu (KV_DP kolize), TD nově zajistí korektnost
+sloupce sám — po vzoru AD varianty (auto-generovaná omezení), místo spoléhání na ruční datovou kázeň.
+
+- **`PriraditZnackySmoSkupin`** (nová fáze 4b v `GetData`): dominantní typ (nejvíc spojů) dává nadpis
+  sloupce (místo „poslední zapsaný vyhrává" → na 1073 už ne lživé „31.12."); každý ostatní typ dostane
+  značku + legendu „jede jen <nadpis typu>". Značka: ruční `NegativniZnacka` typu z číselníku má
+  přednost, jinak první volný znak z NZ řady (`RozsahNegativnichZnacekOd`, fallback 10 mimo denní 1–7).
+  Značky jdou existujícím NZ kanálem (anotace „nz" + `nzPrirazen`) — žádný nový rendering.
+- Podklad: `PromitnutSpoje` nově plní `spojTyp`/`smoTypy`; anotace se přidává v `SestavitJednuStranku`.
+- **Ověřeno:** CB_DP 1001 dep/zast/pozn **1:1 match** (bez kolize = beze změny chování, gold zelený);
+  KV_DP 1073: +115 řádků legendy „jede jen…" napříč 42 stránkami, nadpis sloupce 4 = dominantní typ.
+- **⚠️ Vedlejší zjištění (experiment s čistým HEAD):** ranní „zastávky 693=693 vyřešeno" bylo měření
+  proti serverové verzi třídy, která v gitu neexistuje — HEAD prokazatelně dává 1317 (2×) a poznámky
+  A–K negeneruje. Bod znovu otevřen v roadmapě (ověřit u kolegy původ té verze, jinak fix napsat).
+  Poučení zapsáno do paměti: před kompilací needitované `.cls` změřit baseline (server může být napřed).
+
 ## 2026-07-23 — MHD parita KV_DP 1073: diagnostika uzavřena — odjezdy +48 % = SMO kolize v datech
 
 Analýza priority „MHD datová parita na složitých linkách" (bod 3 roadmapy). Nový oracle probe
