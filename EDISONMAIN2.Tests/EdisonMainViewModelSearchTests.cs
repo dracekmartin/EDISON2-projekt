@@ -27,6 +27,10 @@ public class EdisonMainViewModelSearchTests
     [InlineData("Objednávky", "obj", true)]    // substring bez ohledu na velikost písmen
     [InlineData("Objednávky", "OBJEDN", true)]
     [InlineData("Objednávky", "xyz", false)]
+    [InlineData("Řazení", "razeni", true)]     // hledání bez diakritiky najde uzel s diakritikou
+    [InlineData("Objednávky", "OBJEDNAVKY", true)]
+    [InlineData("Pošta", "posta", true)]
+    [InlineData("Turnusy", "tůrnůsy", true)]   // i needle s diakritikou najde uzel bez ní
     public void Leaf_MatchesByName(string name, string text, bool expected)
     {
         var exe = Exe(name);

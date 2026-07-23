@@ -1,5 +1,4 @@
-using System.Globalization;
-using System.Text;
+using EDControls;
 using EDControls.EDViewModel;
 
 namespace TemplateDesigner;
@@ -79,16 +78,7 @@ public class HelpDialogViewModel : EDViewModel
         OnPropertyChanged(nameof(NothingFound));
     }
 
-    /// <summary>Lowercase bez diakritiky — hledání „razeni" najde „řazení".</summary>
-    private static string Fold(string s)
-    {
-        var norm = s.ToLowerInvariant().Normalize(NormalizationForm.FormD);
-        var sb = new StringBuilder(norm.Length);
-        foreach (char c in norm)
-            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-                sb.Append(c);
-        return sb.ToString();
-    }
+    private static string Fold(string s) => SearchNormalization.NormalizeForSearch(s);
 
     // ─────────────────────────────────────────────────────────────────────
     // Obsah — zkratky dle autoritativní tabulky (ux-conventions.md)

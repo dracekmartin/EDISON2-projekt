@@ -567,14 +567,15 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
 
         /// <summary>
         /// Nastaví <see cref="IModule.IsVisibleBySearch"/> rekurzivně. Uzel je viditelný, když jeho
-        /// název obsahuje <paramref name="text"/> (case-insensitive) NEBO má viditelného potomka
-        /// (prázdný text = vše viditelné). Rodina s nalezeným potomkem se při aktivním hledání rozbalí.
-        /// Vrací, zda je modul viditelný.
+        /// název obsahuje <paramref name="text"/> (case + diakritika insensitive) NEBO má viditelného
+        /// potomka (prázdný text = vše viditelné). Rodina s nalezeným potomkem se při aktivním hledání
+        /// rozbalí. Vrací, zda je modul viditelný.
         /// </summary>
         internal static bool ApplySearchToModule(IModule module, string text)
         {
-            bool match = text.Length == 0
-                || module.DisplayedName.Contains(text, StringComparison.OrdinalIgnoreCase);
+            var needle = SearchNormalization.NormalizeForSearch(text);
+            bool match = needle.Length == 0
+                || SearchNormalization.NormalizeForSearch(module.DisplayedName).Contains(needle);
 
             if (module is ModuleFamily family)
             {

@@ -211,19 +211,7 @@ namespace EDControls.EDInputForm
             return matches;
         }
 
-        /// <summary>Normalizace pro hledání bez diakritiky: „Pošta" → „posta".
-        /// Lowercase + odstranění combining marks (NFD forma).</summary>
-        private static string NormalizeForSearch(string s)
-        {
-            var normalized = s.ToLowerInvariant().Normalize(System.Text.NormalizationForm.FormD);
-            var sb = new System.Text.StringBuilder(normalized.Length);
-            foreach (var c in normalized)
-            {
-                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.NonSpacingMark)
-                    sb.Append(c);
-            }
-            return sb.ToString();
-        }
+        private static string NormalizeForSearch(string s) => SearchNormalization.NormalizeForSearch(s);
 
         private void FindNext()
         {
