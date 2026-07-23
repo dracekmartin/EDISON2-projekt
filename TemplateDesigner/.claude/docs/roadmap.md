@@ -52,9 +52,19 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    typ („31.12.", `LinkyPrintFormatMHD.cls:849`) a minuty se per typ×hodina **přepisují** (`inxmm` se nuluje
    `:853` → zápis `:924` přepíše předchozí typ) → legacy **ztrácí odjezdy** (4295), TD sloučí bez ztráty
    (6352). Všech 12 vzorků diffu má hlavičku „31.12.|" = kolizní sloupec. **Bit-parity s legacy na 1073
-   není smysluplný cíl** (= reprodukce ztrátového přepisu). Řešení k rozhodnutí (viz artifact „SMO analýza
-   KV_DP"): (A) oprava dat u DPKV — date-výjimky bez SMO / poznámkou (doporučeno, ptát se zákazníka),
-   (B) TD warning v designeru při N typů → 1 sloupec (aditivní, nezávislé), (C/D) zamítnuto.
+   není smysluplný cíl** (= reprodukce ztrátového přepisu). Doplňkové zjištění: kolizní typy 1003/1007/
+   1008/1009 mají v číselníku `NegativniZnacka` **prázdné** — legacy mechanismus rozlišení sloučených
+   typů (značka + legenda) není u KV_DP nakonfigurovaný.
+   **✅ ROZHODNUTO (2026-07-23, Jan + kolega): jít AD vzorem — automatika, ne datová kázeň.** SMO
+   z číselníku zůstává jako default seskupení (legacy „aby se to vešlo"); korektnost sloučeného sloupce
+   zajistí engine sám jako v `ZastavkoveJrAd`: **(i) auto-značky** — skupiny mimo dominantní režim sloupce
+   dostanou odvozenou značku + legendu z kalendáře („jede jen 31.12."), ruční značky z dat mají přednost;
+   **(ii) dedup buněk** identických včetně značek (buňka sdílená více skupinami nese značky všech);
+   **(iii) poctivý nadpis** sloučeného sloupce (složený/dominantní, `HeaderOverride` zůstává).
+   Fázování: (1) S — varování v designeru při kolizi bez značek; (2) M — auto-značky v `ZastavkoveJrMhd`
+   (gold-safe, CB_DP kolize nemá); (3) M — parametr „Rozdělení sloupců" pro MHD (dle číselníku / každá
+   skupina zvlášť / vlastní — sjednocení s AD parametrem); (4) S — dedup. Detail + srovnání AD/MHD:
+   artifact „Skupiny dnů na vývěsce" (23.7.).
 4. ⬜ **Rozdílové poznámky tras (225 vs 213) — HLAVNÍ ZBÝVAJÍCÍ KÓDOVÝ BOD.** TD nevygeneruje legacy
    poznámky F–K („zajíždí z Říční do Krajský úřad", „nezajíždí do Tašovice", „končí v Dvory"…) + duplikuje
    „na znamení". Kořen **potvrzeně jiný než SMO**: legacy od úpravy „MH pro KV_DP" předává do alg 1001
