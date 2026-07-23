@@ -643,20 +643,19 @@ ClassMethod PriraditZnackySmoSkupin(ByRef sys As %String)
         }
         i pocetTypu < 2 continue
 
-        // Nadpis sloučeného sloupce = dominantní typ (místo „poslední zapsaný vyhrává")
-        s ^||TiskMHD("smoNadpis",smoCol) = $lb($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMOPrvni")),$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMODruhy")))
-
-        s TypProvozuID = ""
+        s TypProvozuID = "", seznamOstatnich = ""
         f {
             s TypProvozuID = $o(^||TiskMHD("smoTypy",smoCol,TypProvozuID)) q:TypProvozuID=""
             i TypProvozuID = dominant continue
-            i $d(^||TiskMHD("smoZnacka",TypProvozuID)) continue
 
             s nadpis1 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMOPrvni"))
             s nadpis2 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMODruhy"))
             s popis = nadpis1
             i nadpis2 '= "" s popis = $s(popis="":nadpis2, 1:popis_" "_nadpis2)
             i popis = "" s popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"Nazev"))
+            s seznamOstatnich = $s(seznamOstatnich="":popis, 1:seznamOstatnich_", "_popis)
+
+            i $d(^||TiskMHD("smoZnacka",TypProvozuID)) continue
             s text = "jede jen "_popis
 
             // Ruční značka typu z číselníku má přednost; jinak první volný znak z NZ řady
@@ -677,6 +676,15 @@ ClassMethod PriraditZnackySmoSkupin(ByRef sys As %String)
             s ^||TiskMHD("nzPrirazen",znak) = text
             s ^||TiskMHD("smoZnacka",TypProvozuID) = $lb(znak, text)
         }
+
+        // Nadpis sloučeného sloupce: 1. řádek = dominantní typ, 2. řádek = výčet ostatních
+        // („24.12., 25.12. a 1.1., 31.12.") — čtenář vidí, co sloupec pokrývá; per šablona
+        // přepsatelné přes override nadpisu v dialogu sloupců
+        s domNadpis1 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMOPrvni"))
+        s domNadpis2 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMODruhy"))
+        s domPopis = domNadpis1
+        i domNadpis2 '= "" s domPopis = $s(domPopis="":domNadpis2, 1:domPopis_" "_domNadpis2)
+        s ^||TiskMHD("smoNadpis",smoCol) = $lb(domPopis, seznamOstatnich)
     }
 }
 

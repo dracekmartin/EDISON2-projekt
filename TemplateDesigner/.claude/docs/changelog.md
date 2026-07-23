@@ -17,6 +17,10 @@ Nálezy z vizuálního smoke testu KV_DP 1073 (starý vs nový tisk):
   duplicity v rámci jedné skupiny tiskne i legacy. Čtení: bez značky = dle nadpisu sloupce,
   se značkou = dle legendy.
 - Testy: .NET 367/367, Caché 34/34.
+- **Nadpis sloučeného sloupce = dominantní typ + výčet ostatních na 2. řádku** („pracovní dny
+  o prázdninách" / „24.12., 25.12. a 1.1., 31.12.") — čtenář vidí, co sloupec pokrývá, bez čtení
+  legendy (návrh Jan); přepsatelné per šablona přes override nadpisu v dialogu sloupců. CB beze
+  změny (sloupce bez sloučení nadpis nemění), gold 34/34 bez re-baseline.
 
 ## 2026-07-23 — MHD parita KV_DP dotažena: zastávky 1:1 + rozdílové poznámky A–K 1:1
 
