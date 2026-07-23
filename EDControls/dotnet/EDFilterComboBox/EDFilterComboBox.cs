@@ -26,7 +26,9 @@ namespace EDControls.EDFilterComboBox;
 /// ne na každý <c>TextChanged</c>. WPF totiž při výběru z dropdownu pošle
 /// <c>SelectionChanged → Text=display → TextChanged → DropDownClosed</c>; filtrování na onen interní
 /// <c>TextChanged</c> by přestavělo <c>Items</c> a smazalo <see cref="Selector.SelectedItem"/> dřív,
-/// než ho <c>DropDownClosed</c> stihne přečíst.
+/// než ho <c>DropDownClosed</c> stihne přečíst. Aby výběr přežil i případný takový Refilter (např. když
+/// se příznak psaní zasekne), commit nečte <c>SelectedItem</c>, ale Key zachycený už v
+/// <c>SelectionChanged</c> (<c>_committedKey</c>) — ten dorazí před osudným <c>TextChanged</c>.
 /// </remarks>
 public class EDFilterComboBox : ComboBox
 {
@@ -81,6 +83,8 @@ public class EDFilterComboBox : ComboBox
     private bool _userIsTyping;
     // Po dobu programové změny Textu potlačí filtrování (jinak by SetText spustil Refilter).
     private bool _suppressChanges;
+    // Key vybraný v aktuální relaci dropdownu, zachycený v SelectionChanged (viz CommitSelection).
+    private string? _committedKey;
 
     public EDFilterComboBox()
     {
@@ -88,8 +92,21 @@ public class EDFilterComboBox : ComboBox
         IsTextSearchEnabled = false;   // vlastní filtrování místo prefixového autocomplete
         StaysOpenOnEdit     = true;
 
-        PreviewKeyDown += (_, e) => _userIsTyping = !IsNavigationKey(e.Key);
+        PreviewKeyDown += (_, e) =>
+        {
+            _userIsTyping = !IsNavigationKey(e.Key);
+            if (e.Key == Key.Escape) _committedKey = null;   // Esc = zrušení výběru → commit revertne
+        };
         PreviewKeyUp   += (_, _) => _userIsTyping = false;
+
+        // Výběr položky zachyť hned (přijde PŘED Text=display → TextChanged → DropDownClosed), aby
+        // pick přežil i případný Refilter, který mezitím vyprázdní Items a zahodí SelectedItem.
+        // Odstranění položek (Items.Clear → jen RemovedItems) ignorujeme → drží poslední skutečný výběr.
+        SelectionChanged += (_, e) =>
+        {
+            if (e.AddedItems.Count > 0 && e.AddedItems[0] is ComboBoxItem item)
+                _committedKey = (string)(item.Tag ?? "");
+        };
 
         // Psaní uživatele → přefiltruj dropdown a otevři ho (jen pokud něco zbylo).
         AddHandler(TextBoxBase.TextChangedEvent, new TextChangedEventHandler((_, _) =>
@@ -106,14 +123,16 @@ public class EDFilterComboBox : ComboBox
             }
         }));
 
-        // Zavření dropdownu = okamžik, kdy se výběr fixuje (viz CommitSelection).
-        DropDownClosed += (_, _) => CommitSelection();
+        // Zavření dropdownu = okamžik, kdy se výběr fixuje (viz CommitSelection). Reset _userIsTyping,
+        // aby se ztracený PreviewKeyUp (zaseknutý příznak) nepřenášel do další interakce.
+        DropDownClosed += (_, _) => { _userIsTyping = false; CommitSelection(); };
 
-        // Otevření BEZ napsaného filtru (text = klidový display) → ukaž celý seznam. Uživatel mohl
-        // dřív psát a nevybrat → Items zůstaly filtrované; šipka má ukázat vše. Při otevření psaním
-        // je text ≠ display, Items filtruje už TextChanged → neresetujeme.
+        // Otevření = nová relace výběru (zapomeň předchozí pick). BEZ napsaného filtru (text = klidový
+        // display) → ukaž celý seznam. Uživatel mohl dřív psát a nevybrat → Items zůstaly filtrované;
+        // šipka má ukázat vše. Při otevření psaním je text ≠ display, Items filtruje už TextChanged → neresetujeme.
         DropDownOpened += (_, _) =>
         {
+            _committedKey = null;
             if (StrictSelection && Text == DisplayFor(SelectedKey)) Refilter(null);
         };
 
@@ -144,14 +163,15 @@ public class EDFilterComboBox : ComboBox
     private static bool IsNavigationKey(Key k) =>
         k is Key.Up or Key.Down or Key.PageUp or Key.PageDown or Key.Enter or Key.Escape or Key.Tab;
 
-    // Zafixuje výběr po zavření dropdownu. Striktní: vybraný Key → SelectedKey + čitelný klidový display.
-    // Volný: Text = holý Key (čte ho konzument přes Text binding, např. EDInputForm Field.Value).
-    // Bez vybrané položky ve striktním režimu = napsaný neplatný text → revert na aktuální SelectedKey.
+    // Zafixuje výběr po zavření dropdownu. Commituje _committedKey zachycený v SelectionChanged (NE
+    // aktuální SelectedItem — ten může být mezitím zahozen Refilterem, viz remarks třídy). Striktní:
+    // vybraný Key → SelectedKey + čitelný klidový display. Volný: Text = holý Key (čte ho konzument
+    // přes Text binding, např. EDInputForm Field.Value). Bez výběru ve striktním režimu = napsaný
+    // neplatný text (nebo jen otevřít+zavřít) → revert na aktuální SelectedKey.
     private void CommitSelection()
     {
-        if (SelectedItem is ComboBoxItem item)
+        if (_committedKey is { } key)
         {
-            var key = (string)(item.Tag ?? "");
             if (StrictSelection)
             {
                 SetCurrentValue(SelectedKeyProperty, key);   // → OnSelectedKeyChanged → ShowSelectedKeyText
