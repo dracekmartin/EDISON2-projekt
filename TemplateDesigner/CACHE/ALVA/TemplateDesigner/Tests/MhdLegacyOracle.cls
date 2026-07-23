@@ -155,11 +155,17 @@ ClassMethod CompareLine(idfa As %String, db As %String, lin As %String, projete 
 }
 
 /// Porovná dva multisety (legacy la vs náš oa) → res(cat, ...). Match = shodný počet i md5.
+/// res(cat,"covered") = 1 když KAŽDÝ legacy klíč máme aspoň v legacy počtu (naše strana smí
+/// mít navíc) — assert pro vědomé nadmnožiny (auto-značky sloučených skupin apod.).
 ClassMethod Summarize(ByRef la As %String, ByRef oa As %String, ByRef res As %String, cat As %String)
 {
-	set canL = "", canO = "", legN = 0, ourN = 0, diff = "", diffN = 0
+	set canL = "", canO = "", legN = 0, ourN = 0, diff = "", diffN = 0, covered = 1
 	set t = ""
-	for { set t = $order(la(t)) quit:t=""  set canL = canL_t_"="_la(t)_";", legN = legN + la(t) }
+	for {
+		set t = $order(la(t)) quit:t=""
+		set canL = canL_t_"="_la(t)_";", legN = legN + la(t)
+		if +$get(oa(t)) < la(t) set covered = 0
+	}
 	set t = ""
 	for { set t = $order(oa(t)) quit:t=""  set canO = canO_t_"="_oa(t)_";", ourN = ourN + oa(t) }
 	set t = ""
@@ -177,6 +183,7 @@ ClassMethod Summarize(ByRef la As %String, ByRef oa As %String, ByRef res As %St
 	set res(cat,"legN") = legN
 	set res(cat,"ourN") = ourN
 	set res(cat,"match") = ((md5L = md5O) && (legN = ourN))
+	set res(cat,"covered") = covered
 	set res(cat,"diff") = diff
 }
 

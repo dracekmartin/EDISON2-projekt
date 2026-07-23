@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-07-23 — MHD parita uzavřena: rozsah poznámek od–do + gold pokrytí KV_DP 1073
+
+Poslední dva body priority; celý track přesunut do roadmap-archive.
+
+- **Rozsah platnosti ruční poznámky spoje** (`TiskJRMHDZastavkoveBodOd/Do`, helper
+  `PoznamkaSpojeVRozsahu`): spec. znaky i textové poznámky se tisknou jen na stránkách zastávek
+  v rozsahu — 1:1 legacy vč. jejich zvláštní „zpět" větve (brána přes BodDo, obrácené porovnání,
+  `LinkyPrintFormatMHD:1047-1051`). Řeší „W — nejede do zastávky Globus" tištěné u nás všude;
+  legenda 1073 = legacy 1:1 + jen auto-značky „jede jen…".
+- **Parity test `TestParita1073KvDpSmoKolize`** (pre-push): zastávky 1:1 + poznámky pokrývají
+  legacy (nový příznak `covered` v `MhdLegacyOracle.Summarize` = každý legacy klíč přítomen aspoň
+  v legacy počtu) + odjezdy nadmnožina. Plná 1:1 na 1073 vědomě není cíl (SMO kolize, legacy
+  ztrácí data). Ověřeno: test běží v package runu (výsledek 972) a prochází; „34/34" počítadlo
+  runneru je multi-suite kuriozita, ne vynechaný test.
+- Roadmap: priorita „MHD datová parita" KOMPLETNĚ → `roadmap-archive.md`; zbytky (varování
+  v designeru, parametr „Rozdělení sloupců" pro MHD) → backlog.
+
 ## 2026-07-23 — MHD sloupce dle SMO konzistentně: prázdné sloupce + zrušen skrytý strop „Max skupin"
 
 Nálezy z vizuálního smoke testu KV_DP 1073 (starý vs nový tisk):

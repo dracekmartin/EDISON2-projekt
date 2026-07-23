@@ -1,110 +1,7 @@
 # Roadmap
 
-> **Stav k 2026-07-13.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-23.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet — patří do archivu.
-
----
-
-## 🔴 PRIORITA — MHD datová parita na složitých linkách (2026-07-20, přeměřeno 2026-07-23)
-
-**Problém:** MHD zastávkový JŘ (`ZastavkoveJrMhd`) **datově neodpovídá legacy na složitých linkách
-s mnoha variantami tras**. Gold testy v pre-push pinují jen jednoduché **CB_DP** linky (málo variant) →
-divergence nikdy neprošla testem. DPKV má linky s hodně variantami (např. **KV_DP linka 1073**), kde je
-rozdíl velký. **Musí se vyřešit dřív než jakékoli grafické doladění (#10660 barvy/podtržení).**
-
-**Důkaz (gold oracle `MhdLegacyOracle`, KV_DP 1073, projete=1; přeměřeno naostro 2026-07-23):**
-- Zastávky: legacy **693** vs TD **693** — ✅ **1:1** (dřívější „2×"/1317 už NEPLATÍ, vyřešeno)
-- Odjezdy: legacy **4295** vs TD **6352** (TD +48 %) — **hlavní zbývající problém**
-- Poznámky: legacy **213** vs TD **225** — TD nevygeneruje rozdílové poznámky tras F–K
-  („zajíždí/nezajíždí/končí v…") + duplikuje „na znamení"
-- ⚠️ Zastávky sedí, ale odjezdy se duplikují → problém je v **množině obsluhovaných zastávek /
-  dělení skupin dnů (SMO)**, ne v seznamu zastávek. Diff pinuje date-skupinu „31.12.".
-
-**ROOT CAUSE #2+#3 — ČÁSTEČNĚ PŘEKONÁNO (přeměřeno 2026-07-23).** ⚠️ Zastávky už sedí 1:1, takže
-teorie „příznak `TisknoutZastavkovy` → víc zastávek" pro #2 **padá** (seznam zastávek není problém).
-Zbývá **duplikace odjezdů (+48 %)** a **rozdílové poznámky tras**. Mechanismus duplikace se re-analyzuje —
-podezření míří na **dělení skupin dnů přes SMO / typ provozu** (viz #1 níže + diff pinuje date-skupinu
-„31.12."), ne na seznam zastávek. Příznak `TisknoutZastavkovyTam`/`Zpet` (per-bod v `ModelTrasaBodDetail`,
-default 1; legacy `LinkyPrintFormatMHD.cls:713-720` bod s 0 vynechá z `TisknutaTrasaBitmap`) TD **stále
-nečte** — zůstává kandidátem pro obsluha-bitmapu (→ odjezdy/rozdíly tras), ale už NE pro seznam zastávek.
-**Diagnostika dořešena 2026-07-23** (viz bod 3 níže): duplikace odjezdů = SMO kolize v datech
-(4 typy → SMO4, legacy ztrátově přepisuje); příznak zůstává kandidátem jen pro rozdílové poznámky (bod 4).
-
-**ROOT CAUSE #1 (nalezeno 2026-07-20, `LinkyPrintFormatMHD.cls:838-850`): dělení sloupců skupin dnů.**
-Legacy mapuje `TypProvozuID → sloupec přes SMOID` (SMO1/2/3/4 → mycol 1-4), tj. **slučuje mnoho typů
-provozu do max 4 sloupců** a typy **mimo SMO1-4 zahazuje** (`i mycol="" continue`). **TD dělá sloupec
-per `TypProvozuID`** (žádné SMO slučování, žádný filtr) → na složitých linkách mnohem víc sloupců →
-tentýž odjezd se opakuje ve víc sloupcích → +48 % odjezdů + navíc date-skupiny. Fix = zavést SMO model
-do TD: seskupit odjezdy + `SKUPINY_DNU` podle `SMOID`, vynechat typy bez SMO1-4, nadpis z reprezentanta.
-Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), downstream (route-diff/NZ/anotace).
-
-**Plán / stav:**
-1. ✅ **HOTOVO (2026-07-20): SMO grouping** — TD čte `SMOID` z číselníku a slučuje odjezdy + `SKUPINY_DNU`
-   do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
-   Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
-   Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
-2. ✅ **VYŘEŠENO (2026-07-23 večer, commitnuto) — Zastávky 693=693 `match=ANO`.** Kořen: TD nečetl
-   per-bod příznak **`TisknoutZastavkovyTam/Zpet`** („netisknout na zastávkovém JŘ", KV_DP jím skrývá
-   variantní větve vč. tam-a-zpět úseků — proto i duplicitní „Slovanská" na stránce). Fix:
-   `PripravitTrasu` plní `("trasa",SmerID,"netisknout",BodID)`; StopList + sběr atributů bod skryjí
-   (kromě aktuální zastávky, jako legacy); `TisknutaTrasaBitmap` (obsluha bez skrytých bodů) jde do
-   alg. 1001. Ověřeno `StopProbe`: stránka Chebská T 16=16 řádek po řádku. (Pozn.: ranní „693 vyřešeno"
-   byla měřicí epizoda proti cizí serverové kompilaci — skutečný fix je tenhle, v repu.)
-3. ✅ **DIAGNOSTIKOVÁNO (2026-07-23): Odjezdy +48 % = SMO kolize v datech KV_DP, ne bug TD.**
-   `MhdLegacyOracle.SmoProbe`: stránky **42=42** (variantní stránky vyloučeny); linka 1073 má 7 typů
-   provozu a **4 z nich mapované do SMO4** (1003 prázdniny 77 spojů, 1007 „24.12." 37, 1008 „25.12. a 1.1."
-   32, 1009 „31.12." 64 = 210 spojů v jednom sloupci). Legacy kolizi neumí: nadpis sloupce přepíše poslední
-   typ („31.12.", `LinkyPrintFormatMHD.cls:849`) a minuty se per typ×hodina **přepisují** (`inxmm` se nuluje
-   `:853` → zápis `:924` přepíše předchozí typ) → legacy **ztrácí odjezdy** (4295), TD sloučí bez ztráty
-   (6352). Všech 12 vzorků diffu má hlavičku „31.12.|" = kolizní sloupec. **Bit-parity s legacy na 1073
-   není smysluplný cíl** (= reprodukce ztrátového přepisu). Doplňkové zjištění: kolizní typy 1003/1007/
-   1008/1009 mají v číselníku `NegativniZnacka` **prázdné** — legacy mechanismus rozlišení sloučených
-   typů (značka + legenda) není u KV_DP nakonfigurovaný.
-   **✅ ROZHODNUTO (2026-07-23, Jan + kolega): jít AD vzorem — automatika, ne datová kázeň.** SMO
-   z číselníku zůstává jako default seskupení (legacy „aby se to vešlo"); korektnost sloučeného sloupce
-   zajistí engine sám jako v `ZastavkoveJrAd`: **(i) auto-značky** — skupiny mimo dominantní režim sloupce
-   dostanou odvozenou značku + legendu z kalendáře („jede jen 31.12."), ruční značky z dat mají přednost;
-   **(ii) dedup buněk** identických včetně značek (buňka sdílená více skupinami nese značky všech);
-   **(iii) poctivý nadpis** sloučeného sloupce (složený/dominantní, `HeaderOverride` zůstává).
-   Fázování: (1) S — varování v designeru při kolizi bez značek; (2) M — auto-značky v `ZastavkoveJrMhd`
-   (gold-safe, CB_DP kolize nemá); (3) M — parametr „Rozdělení sloupců" pro MHD (dle číselníku / každá
-   skupina zvlášť / vlastní — sjednocení s AD parametrem); (4) S — dedup. Detail + srovnání AD/MHD:
-   artifact „Skupiny dnů na vývěsce" (23.7.).
-   **✅ Fáze 2 HOTOVÁ 2026-07-23 (commitnuto):** `PriraditZnackySmoSkupin` (fáze 4b v GetData) —
-   dominantní typ (nejvíc spojů) dává nadpis sloupce, ostatní typy dostanou NZ značku z volné řady
-   (ruční `NegativniZnacka` typu má přednost) + legendu „jede jen <nadpis>"; anotace
-   v `SestavitJednuStranku` přes `spojTyp`/`smoZnacka`. Ověřeno: **CB_DP 1001 dep/zast/pozn 1:1
-   match** (žádná kolize → beze změny), KV_DP 1073 legenda +115 řádků „jede jen…" + nadpis sloupce 4
-   = dominantní typ. Zbývá fáze 1 (varování), 3 (parametr). **Fáze 4 (dedup) UZAVŘENA jako
-   bezpředmětná (2026-07-23):** po oznámkování se buňky různých skupin vždy liší značkou (sloučit
-   = ztratit informaci „kdy jede" — potvrzeno na 1073, 5:00 „00" + „00¹²" je správně dvojí odjezd);
-   duplicitu v rámci téže skupiny tiskne i legacy → dedup by rozbil CB paritu. Čtení: minuta bez
-   značky platí dle nadpisu sloupce, se značkou dle legendy.
-   **Doplněk (2026-07-23, po vizuálním testu): „Max skupin" past odstraněna** — default
-   `MaxGroupCount` 3 → 0 (bez limitu; strop tiše ořezával 4. SMO sloupec v rozporu s checkboxy
-   dialogu) + migrace šablon 1.4.0 (`maxGroupCount: 3` → 0) + SKUPINY_DNU posílá všechny SMO
-   sloupce linky i prázdné (layout konzistentní napříč stránkami, jako legacy).
-4. ✅ **VYŘEŠENO (2026-07-23 večer, commitnuto) — Rozdílové poznámky A–K 1:1** (texty i písmena;
-   `NotesProbe` Chebská Z: 11/11 identických). Dvě části: (a) alg. 1001 dostává `TisknutaTrasaBitmap`
-   (bod 2) → správné texty; (b) **pořadí iterace odjezdů = legacy** (typ provozu vzestupně, pak čas —
-   ne po sloupcích), na něm závisí přidělování písmen per stránka. Vedlejší efekt: jiné pořadí řádků
-   `ODJEZDY` v JSON (element si řadí sám) → **re-baseline gold digestů** 1001/1003/1006 (počty beze změny,
-   jen md5). Zmizela i duplicitní „na znamení" (atributy skrytých bodů se už nesbírají).
-5. ⬜ **Rozšířit gold/oracle pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
-   Pinovat zast+stránky+pozn (pozn = legacy + auto-značky); dep zůstává vědomá odchylka (SMO kolize).
-6. ⬜ **Drobnost: poznámka „W — nejede do zastávky Globus" (L0/O1 per stránka).** Ruční textová poznámka
-   spoje, kterou legacy netiskne, my ano. Podezření: legacy respektuje rozsah `TiskJRMHDZastavkoveBodOd/Do`
-   (legacy `:960-969` u spec. znaků) i u textových poznámek; TD rozsah nečte. Malé, ověřit a dorovnat.
-
-**Stav parity KV_DP 1073 (po 2026-07-23): zast 693=693 ✓ · stránky 42=42 ✓ · pozn = legacy 1:1 (A–K
-texty+písmena) + auto-značky „jede jen…" (záměr) + 1× „W" (bod 6) · dep +48 % = vědomá odchylka
-(SMO kolize, legacy ztrácí data — viz bod 3 + artifact).** CB_DP 1001: vše 1:1, testy 34/34.
-
-**Nástroje:** `MhdLegacyOracle.Compare` + `SmoProbe` (MLRest/MCP wrapper, IN LINKA_ID/DB/IDFA/PROJETE).
-Shrnutí pro kolegy/zákazníka: artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073" (23.7.).
-
-**Pozn.:** perf oprava (odstraněno drahé pole první/poslední spoj) je hotová a nezávislá — tohle je
-o věcné správnosti výstupu.
 
 ---
 
@@ -132,6 +29,10 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 > hotová, plocha může růst.
 
 - **Zastávkový JŘ business** (parkované helpdesk A2-A5/A6/B4 + TRANSDEV sada) → viz sekce „Zastávkový JŘ — business logika" níže
+- **MHD SMO doladění** (zbytky uzavřené parity 2026-07-23 → archiv + artifact „Skupiny dnů na vývěsce"):
+  fáze 1 — varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S) ·
+  fáze 3 — tiskový parametr „Rozdělení sloupců" pro MHD (dle číselníku / každá skupina zvlášť /
+  vlastní; sjednocení s AD parametrem) (M, na poptávku)
 - **Fáze B — odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
   (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
 - **Zvýraznění řádků — navazující (aditivní, bez migrace):** **per-sloupec render** `HighlightRule.TargetColumn`

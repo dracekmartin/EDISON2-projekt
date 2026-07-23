@@ -2,6 +2,43 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-23 ✅ — MHD datová parita na složitých linkách (KV_DP 1073) — UZAVŘENO
+
+Detail → changelog 2026-07-23 (4 záznamy) + artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073".
+Celý track od diagnostiky po ověřený stav v jednom dni; vizuálně odsouhlaseno Janem, s kolegou
+rozhodnut design „AD vzor".
+
+**Výchozí problém:** `ZastavkoveJrMhd` na složitých linkách neodpovídal legacy (KV_DP 1073:
+zastávky 2× = 1317 vs 693, odjezdy +48 %, chyběly rozdílové poznámky). Gold pinoval jen CB_DP.
+
+**Kořeny + fixy (vše commitnuto):**
+1. **SMO sloupce** (2026-07-20): typ provozu → tiskový sloupec dle `SMOID` (SMO1-4), typ bez SMO
+   se netiskne; sloupec per typ zrušen. `SmoSloupec` + klíč odjezdů `smoCol`.
+2. **Příznak „netisknout na zastávkovém JŘ"** (`TisknoutZastavkovyTam/Zpet` per bod trasy): skrývá
+   variantní větve v StopListu i sběru atributů (kromě aktuální zastávky); `TisknutaTrasaBitmap`
+   (obsluha bez skrytých bodů) jde do alg. 1001 → zastávky 693=693 1:1, texty poznámek správně.
+3. **SMO kolize v datech KV** (4 typy → SMO4: prázdniny/24.12./25.12.+1.1./31.12., 210 spojů):
+   legacy ztrátově přepisoval (nadpis „poslední vyhrává", minuty kolidují na pozicích) → bit-parity
+   vědomě NENÍ cíl. **Rozhodnutí (Jan + kolega): AD vzor** — auto-značky „jede jen …" z volné NZ
+   řady (ruční `NegativniZnacka` typu má přednost) + legenda; nadpis = dominantní typ + výčet
+   ostatních na 2. řádku; TD nic neztrácí (dep 6352 vs legacy 4295 = vědomá nadmnožina).
+4. **Pořadí iterace odjezdů = legacy** (typ provozu → čas): písmena rozdílových poznámek A–K 1:1
+   (texty i písmena, `NotesProbe` 11/11). Gold digesty re-baseline (jen pořadí řádků v JSON).
+5. **SKUPINY_DNU = všechny SMO sloupce linky i prázdné** (layout konzistentní napříč stránkami);
+   **„Max skupin" default 3 → 0** + migrace šablon **1.4.0** (skrytý strop ořezával 4. sloupec).
+6. **Rozsah poznámky spoje „od–do bodu"** (`TiskJRMHDZastavkoveBodOd/Do`, 1:1 legacy vč. zpět
+   kvirku): „W" se tiskne jen na stránkách v rozsahu.
+7. **Dedup buněk uzavřen jako bezpředmětný**: po oznámkování se buňky různých skupin vždy liší
+   značkou; duplicity v rámci skupiny tiskne i legacy (CB parita).
+
+**Trvalé pojistky:** parity test `TestParita1073KvDpSmoKolize` (zastávky 1:1 + poznámky pokrývají
+legacy [`covered`] + odjezdy nadmnožina) v pre-push; diagnostické sondy `MhdLegacyOracle.SmoProbe`/
+`StopProbe`/`NotesProbe`. Vedlejší poučení (paměť): server může mít novější kompilaci než repo —
+před kompilací needitované `.cls` změřit baseline.
+
+**Otevřené zbytky přesunuty do backlogu:** SMO fáze 1 (varování v designeru při kolizi bez značek),
+fáze 3 (parametr „Rozdělení sloupců" pro MHD — sjednocení s AD).
+
 ## 2026-07-23 ✅ — Ukládání velkých šablon (blob po kusech) — dokončeno + ověřeno
 
 Detail → changelog 2026-07-23 (+ 2026-07-21 mechanika). Zákazník neuložil šablonu s velkým inline

@@ -792,6 +792,21 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
     }
 }
 
+/// Rozsah platnosti ruční poznámky spoje „od bodu – do bodu" (TiskJRMHDZastavkoveBodOd/Do):
+/// poznámka (spec. znak i text) se tiskne jen na stránkách zastávek v rozsahu; 0/prázdné = bez
+/// omezení. Zpětný směr replikuje legacy podmínky 1:1 (LinkyPrintFormatMHD:1047-1051) včetně
+/// jejich brány přes BodDo a obráceného porovnání.
+ClassMethod PoznamkaSpojeVRozsahu(SmerID As %Integer, BodID As %String, SpojID As %String, poznamkaID As %String) As %Boolean
+{
+    s bodOd = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",2,poznamkaID,"TiskJRMHDZastavkoveBodOd"))
+    s bodDo = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",2,poznamkaID,"TiskJRMHDZastavkoveBodDo"))
+    i ('SmerID) && (+bodOd) && (BodID < bodOd) q 0
+    i ('SmerID) && (+bodDo) && (BodID > bodDo) q 0
+    i (+SmerID) && (+bodDo) && (BodID > bodOd) q 0
+    i (+SmerID) && (+bodDo) && (BodID < bodDo) q 0
+    q 1
+}
+
 /// Přiřadí negativní značku spoji (automaticky nebo z ručního zadání).
 ClassMethod PriraditNZSpoji(ByRef sys As %String, SpojID As %String, TypProvozuID As %String)
 {
@@ -1261,6 +1276,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s poznamkaID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID)) q:poznamkaID=""
                         i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TypPoznamkyID")) '= 1 continue
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
+                        i '..PoznamkaSpojeVRozsahu(SmerID, aktualniZastBodID, SpojID, poznamkaID) continue
                         s specZnak = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"SpecZnak"))
                         i specZnak = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
@@ -1325,6 +1341,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s poznamkaID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID)) q:poznamkaID=""
                         i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TypPoznamkyID")) '= 0 continue
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
+                        i '..PoznamkaSpojeVRozsahu(SmerID, aktualniZastBodID, SpojID, poznamkaID) continue
                         s znakPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"Text"))
                         i znakPozn = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
