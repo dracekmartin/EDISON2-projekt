@@ -1,6 +1,23 @@
 # Changelog
 
-## 2026-07-23 — Ukládání šablon: oprava velikosti kusu (velký inline obrázek už neshodí save) — OVĚŘENO
+## 2026-07-23 — MHD parita KV_DP 1073: diagnostika uzavřena — odjezdy +48 % = SMO kolize v datech
+
+Analýza priority „MHD datová parita na složitých linkách" (bod 3 roadmapy). Nový oracle probe
+`MhdLegacyOracle.SmoProbe` (stránky legacy vs TD + rozpad typů provozu linky na SMO sloupce).
+
+- **Zjištění:** linka 1073 (KV_DP) má 7 typů provozu, z toho **4 mapované do SMO4** („pracovní dny
+  o prázdninách" 77 spojů + „24.12." 37 + „25.12. a 1.1." 32 + „31.12." 64 = 210 spojů v jednom
+  tiskovém sloupci). Stránky 42=42 → variantní stránky vyloučeny. Všech 12 vzorků dep-diffu má
+  hlavičku „31.12.|" = kolizní sloupec.
+- **Legacy kolizi neumí:** nadpis sloupce přepíše poslední typ (`LinkyPrintFormatMHD.cls:849`),
+  minuty se per typ×hodina přepisují (`inxmm` nulován `:853`, zápis `:924`) → legacy **ztrácí
+  odjezdy** (4295) a tiskne směs pod nadpisem „31.12.". TD sloučí bez ztráty (6352) → +48 %.
+  **Bit-parity na 1073 není smysluplný cíl** (reprodukce ztrátového přepisu).
+- **Rozdílové poznámky F–K (225 vs 213) mají jiný kořen:** legacy předává do alg 1001
+  `TisknutaTrasaBitmap` respektující per-bod příznak `TisknoutZastavkovyTam/Zpet` („MH pro KV_DP",
+  `:713-720`, `:874-875`); TD příznak nečte — zbývající kódový bod.
+- **Výstup pro diskusi** (kolegové/DPKV): artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073"
+  s variantami řešení A (oprava dat u zákazníka, doporučeno) / B (warning v designeru) / C, D (zamítnuto).
 
 Dokončení fixu z 2026-07-21 (chunking) — první pokus **neopravil pád**, protože měl špatně
 identifikovaný limit. Ověřeno naostro na reálném obrázku (uložení + znovuotevření) + živý probe

@@ -212,4 +212,53 @@ ClassMethod Compare(ByRef sys As %String) As %Status
 	quit $$$OK
 }
 
+/// Diagnostika SMO: počet stránek TD vs legacy + rozpad typů provozu linky na SMO sloupce.
+/// Rozliší, zda je duplikace odjezdů z variantních stránek (pages leg≠our) nebo ze SMO dělení.
+/// IN: LINKA_ID, DB, IDFA, PROJETE. OUT: PAGES + TP(tpid) = smoid/col/počet spojů/nadpis.
+ClassMethod SmoProbe(ByRef sys As %String) As %Status
+{
+	set idfa = $get(^||ML("IN","IDFA"))
+	set db   = $get(^||ML("IN","DB"))
+	set lin  = $get(^||ML("IN","LINKA_ID"))
+	set projete = +$get(^||ML("IN","PROJETE"))
+
+	// Legacy počet stránek
+	kill ^||TdOracleGlb, arri
+	set arri("par",1) = projete
+	set ok = ##class(ALVA.MHD.LinkyPrintFormatMHD).MakeData(.idfa, .db, lin, "^||TdOracleGlb", .arri, .out)
+	set pagesLeg = 0, pgn = ""
+	for { set pgn = $order(^||TdOracleGlb(pgn)) quit:pgn=""  set pagesLeg = pagesLeg + 1 }
+	kill ^||TdOracleGlb
+
+	// Náš počet stránek
+	do ..SetupOur(.sys, idfa, db)
+	kill ^||ML("OUT")
+	set ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrMhd).GetData(.sys)
+	set pagesOur = +$get(^||ML("OUT"))
+
+	// Typy provozu použité na lince (počet spojů každého)
+	kill tp
+	set SpojID = ""
+	for {
+		set SpojID = $order(^[db]ALVA.MHD.LSO(idfa,2,"IDX",1,1,1,lin,SpojID)) quit:SpojID=""
+		set tpid = $get(^[db]ALVA.MHD.LSO(idfa,2,"DTA",SpojID,"DTA",1,"TypProvozuID"))
+		continue:tpid=""
+		set tp(tpid) = $get(tp(tpid)) + 1
+	}
+
+	kill ^||ML("OUT")
+	set ^||ML("OUT","PAGES") = "leg="_pagesLeg_" our="_pagesOur
+	set tpid = ""
+	for {
+		set tpid = $order(tp(tpid)) quit:tpid=""
+		set smoid = $get(^[db]ALVA.MHD.ENUMS(idfa,"TypyProvozu","DTA",tpid,"SMOID"))
+		set col = $case(smoid, "SMO1":1, "SMO2":2, "SMO3":3, "SMO4":4, :"")
+		set n1 = $get(^[db]ALVA.MHD.ENUMS(idfa,"TypyProvozu","DTA",tpid,"NadpisSMOPrvni"))
+		set n2 = $get(^[db]ALVA.MHD.ENUMS(idfa,"TypyProvozu","DTA",tpid,"NadpisSMODruhy"))
+		set ^||ML("OUT","TP",tpid) = "smoid="_smoid_" col="_col_" spoju="_tp(tpid)_" nadpis="_n1_"|"_n2
+	}
+	quit $$$OK
+}
+
 }

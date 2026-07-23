@@ -5,36 +5,30 @@
 
 ---
 
-> 🧹 Úklid (patří k MHD paritě níže): `CACHE/.../Tests/MhdProbe.cls` = dočasný MHD diagnostický probe
-> (untracked, nekomitnutý), po dořešení MHD parity smazat.
-
----
-
-## 🔴 PRIORITA — MHD datová parita na složitých linkách (2026-07-20)
+## 🔴 PRIORITA — MHD datová parita na složitých linkách (2026-07-20, přeměřeno 2026-07-23)
 
 **Problém:** MHD zastávkový JŘ (`ZastavkoveJrMhd`) **datově neodpovídá legacy na složitých linkách
 s mnoha variantami tras**. Gold testy v pre-push pinují jen jednoduché **CB_DP** linky (málo variant) →
 divergence nikdy neprošla testem. DPKV má linky s hodně variantami (např. **KV_DP linka 1073**), kde je
 rozdíl velký. **Musí se vyřešit dřív než jakékoli grafické doladění (#10660 barvy/podtržení).**
 
-**Důkaz (gold oracle `MhdLegacyOracle`, KV_DP 1073, projete=1):**
-- Odjezdy: legacy **4295** vs TD **6352** (TD +48 %)
-- Zastávky: legacy **693** vs TD **1317** (TD ~2×)
-- Poznámky: legacy **213** vs TD **221** — rozdílové poznámky A–K nesedí (jiná písmena/klíče)
-- ⚠️ **TD má VÍC, ne míň** — takže neztrácíme obsah, ale **strukturujeme jinak** (nejspíš jinak dělené
-  skupiny dnů / stránky — v diffu date-skupina „31.12."). To je hlavní stopa k prošetření.
+**Důkaz (gold oracle `MhdLegacyOracle`, KV_DP 1073, projete=1; přeměřeno naostro 2026-07-23):**
+- Zastávky: legacy **693** vs TD **693** — ✅ **1:1** (dřívější „2×"/1317 už NEPLATÍ, vyřešeno)
+- Odjezdy: legacy **4295** vs TD **6352** (TD +48 %) — **hlavní zbývající problém**
+- Poznámky: legacy **213** vs TD **225** — TD nevygeneruje rozdílové poznámky tras F–K
+  („zajíždí/nezajíždí/končí v…") + duplikuje „na znamení"
+- ⚠️ Zastávky sedí, ale odjezdy se duplikují → problém je v **množině obsluhovaných zastávek /
+  dělení skupin dnů (SMO)**, ne v seznamu zastávek. Diff pinuje date-skupinu „31.12.".
 
-**ROOT CAUSE #2+#3 (nalezeno + datově ověřeno 2026-07-20): příznak `TisknoutZastavkovyTam`/`Zpet`.**
-Per-bod trasy příznak v `ALVA.MHD.LSO(idfa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",bod,"Val",
-"TisknoutZastavkovyTam"|"TisknoutZastavkovyZpet")` (default 1). Legacy (`LinkyPrintFormatMHD.cls:713-720`)
-bod s příznakem **0 vynechá ze seznamu zastávek A z `TisknutaTrasaBitmap`** (`s $e(bitmap,mycnt)=" "`).
-**TD příznak nečte vůbec** → body zobrazuje (víc zastávek = #2) + rozdíly tras počítá proti jiné bitmapě
-(jiné poznámky = #3). **Ověřeno v datech:** KV_DP 1073 má body s příznakem 0; CB_DP 1001 ne (proto gold sedí).
-**FIX (spec, turnkey):** v TD číst `TisknoutZastavkovyTam`/`Zpet` per bod a vyřadit body s 0:
-(a) ze seznamu zastávek (`SestavitJednuStranku` zastavky loop — skip jako legacy 713-720),
-(b) z bitmapy obsluhy / `TisknutaTrasaBitmap` (`VypocitatBitmapyObsluhy` — blanknout pozici),
-přičemž bod **zůstává v trase** pro timing/spoje (legacy ho jen skryje, neodstraní). Ověřit gold: CB_DP 1001
-musí zůstat 1:1, KV_DP 1073 dep/zast/pozn se přiblíží legacy. (SMO grouping #1 níže hotové.)
+**ROOT CAUSE #2+#3 — ČÁSTEČNĚ PŘEKONÁNO (přeměřeno 2026-07-23).** ⚠️ Zastávky už sedí 1:1, takže
+teorie „příznak `TisknoutZastavkovy` → víc zastávek" pro #2 **padá** (seznam zastávek není problém).
+Zbývá **duplikace odjezdů (+48 %)** a **rozdílové poznámky tras**. Mechanismus duplikace se re-analyzuje —
+podezření míří na **dělení skupin dnů přes SMO / typ provozu** (viz #1 níže + diff pinuje date-skupinu
+„31.12."), ne na seznam zastávek. Příznak `TisknoutZastavkovyTam`/`Zpet` (per-bod v `ModelTrasaBodDetail`,
+default 1; legacy `LinkyPrintFormatMHD.cls:713-720` bod s 0 vynechá z `TisknutaTrasaBitmap`) TD **stále
+nečte** — zůstává kandidátem pro obsluha-bitmapu (→ odjezdy/rozdíly tras), ale už NE pro seznam zastávek.
+**Diagnostika dořešena 2026-07-23** (viz bod 3 níže): duplikace odjezdů = SMO kolize v datech
+(4 typy → SMO4, legacy ztrátově přepisuje); příznak zůstává kandidátem jen pro rozdílové poznámky (bod 4).
 
 **ROOT CAUSE #1 (nalezeno 2026-07-20, `LinkyPrintFormatMHD.cls:838-850`): dělení sloupců skupin dnů.**
 Legacy mapuje `TypProvozuID → sloupec přes SMOID` (SMO1/2/3/4 → mycol 1-4), tj. **slučuje mnoho typů
@@ -49,25 +43,29 @@ Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), 
    do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
    Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
    Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
-2. 🟢 **Zastávky 2× = PROJETÉ zastávky (nízká priorita, neviditelné).** Změřeno (KV_DP 1073): TD celkem
-   1317 zastávek, z toho **833 projetých** (před aktuální), 484 neprojetých; legacy 693. TD zahrnuje před
-   aktuální zastávkou **VŠECHNY body i neobsluhované**, legacy jen obsluhované → 4× víc projetých v datech.
-   **Render je defaultně skrývá** (přepínač „Projeté zastávky" vyp) → vizuálně OK, projeví se jen při jejich
-   zapnutí. Fix = rozšířit `ObsluhaBitmap` filtr i na body PŘED aktuální (dnes filtruje jen za). Nízká priorita.
-   (Odjezdy 1,5× = menší samostatná drobnost, projeté odjezdy nemají — taky neviditelné.)
-3. ⬜ **Rozdílové poznámky tras — SPOLEČNÝ KOŘEN S #2** (analýza 2026-07-20, PoznProbe na 1073/Chebská).
-   TD poznámky **generuje** (texty ve stylu legacy, „A: končí v Tržnice" sedí přesně), ale popisuje **jiné
-   rozdíly**: TD „W: nejede do zastávky Globus" vs legacy jinde „A: zajistí z Hory… do Jenišov". → oba
-   počítají rozdíl proti **jinému základu** (obsluha bitmapa / množina zastávek). To je **týž kořen jako #2**:
-   TD zahrnuje zastávky, které legacy vynechává → rozdíly tras počítá proti jiné množině → jiné poznámky.
-   **Barvy:** rozdílové poznámky nemají barvu ani v legacy (`fc=` prázdné na obou) → správně bez barvy;
-   barvu nesou jen číselníkové poznámky spoje (ty ji už berou).
-   **Fix #2+#3 dohromady:** srovnat TD `VypocitatBitmapyObsluhy` (obsluha/spojTrasa/rozdilTrasy) + filtr
-   zastávek v `SestavitJednuStranku` s legacy `LinkyPrintFormatMHD` — sjednotit množinu obsluhovaných
-   zastávek. Ověřit gold oraclem (1073 dep/zast/pozn → k legacy). Entry point: `VypocitatBitmapyObsluhy`.
-4. ⬜ **Rozšířit gold pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
-5. Diagnostika: read-only přemostěč `MhdLegacyOracle.CompareProbe` (numeric→named IN) — na dev serveru
-   (necommitnutý; smazat po dořešení celého tracku).
+2. ✅ **VYŘEŠENO — Zastávky 1:1** (přeměřeno 2026-07-23 oraclem: KV_DP 1073 zast 693=693 `match=ANO`).
+   Dřívější „2×/1317" už neplatí; seznam zastávek v default režimu odpovídá legacy. Není co dělat.
+3. ✅ **DIAGNOSTIKOVÁNO (2026-07-23): Odjezdy +48 % = SMO kolize v datech KV_DP, ne bug TD.**
+   `MhdLegacyOracle.SmoProbe`: stránky **42=42** (variantní stránky vyloučeny); linka 1073 má 7 typů
+   provozu a **4 z nich mapované do SMO4** (1003 prázdniny 77 spojů, 1007 „24.12." 37, 1008 „25.12. a 1.1."
+   32, 1009 „31.12." 64 = 210 spojů v jednom sloupci). Legacy kolizi neumí: nadpis sloupce přepíše poslední
+   typ („31.12.", `LinkyPrintFormatMHD.cls:849`) a minuty se per typ×hodina **přepisují** (`inxmm` se nuluje
+   `:853` → zápis `:924` přepíše předchozí typ) → legacy **ztrácí odjezdy** (4295), TD sloučí bez ztráty
+   (6352). Všech 12 vzorků diffu má hlavičku „31.12.|" = kolizní sloupec. **Bit-parity s legacy na 1073
+   není smysluplný cíl** (= reprodukce ztrátového přepisu). Řešení k rozhodnutí (viz artifact „SMO analýza
+   KV_DP"): (A) oprava dat u DPKV — date-výjimky bez SMO / poznámkou (doporučeno, ptát se zákazníka),
+   (B) TD warning v designeru při N typů → 1 sloupec (aditivní, nezávislé), (C/D) zamítnuto.
+4. ⬜ **Rozdílové poznámky tras (225 vs 213) — HLAVNÍ ZBÝVAJÍCÍ KÓDOVÝ BOD.** TD nevygeneruje legacy
+   poznámky F–K („zajíždí z Říční do Krajský úřad", „nezajíždí do Tašovice", „končí v Dvory"…) + duplikuje
+   „na znamení". Kořen **potvrzeně jiný než SMO**: legacy od úpravy „MH pro KV_DP" předává do alg 1001
+   `TisknutaTrasaBitmap` respektující `TisknoutZastavkovyTam/Zpet` (`LinkyPrintFormatMHD.cls:713-720`,
+   `:874-875`); TD příznak nečte. Entry point: `VypocitatBitmapyObsluhy` + vstup `MakeOmezTrasaTxMH29052025`.
+5. ⬜ **Rozšířit gold/oracle pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
+   Pozor: dokud trvá SMO kolize v datech, dep-kategorie na 1073 nebude match — pinovat zast/stránky,
+   dep až po rozhodnutí A/B.
+
+**Nástroje:** `MhdLegacyOracle.Compare` + `SmoProbe` (MLRest/MCP wrapper, IN LINKA_ID/DB/IDFA/PROJETE).
+Shrnutí pro kolegy/zákazníka: artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073" (23.7.).
 
 **Pozn.:** perf oprava (odstraněno drahé pole první/poslední spoj) je hotová a nezávislá — tohle je
 o věcné správnosti výstupu.
