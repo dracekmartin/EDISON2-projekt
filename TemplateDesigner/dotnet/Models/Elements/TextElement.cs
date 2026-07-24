@@ -35,7 +35,7 @@ public class TextElement : TemplateElement
         float heightMm = Height ?? (WordWrap ? CalculateTextHeight(resolvedText) : EffectiveDesignerHeight);
         var rect = ctx.ToCanvasRect(X, Y, Width, heightMm);
 
-        // Pozadí (pokud není průhledné)
+        // Pozadí (pokud není průhledné). Ořez na tvar rohů řeší render loop obecně (ApplyCornerClip).
         using (var bgPaint = rs.CreateBgPaint())
         {
             if (bgPaint is not null)
@@ -105,6 +105,14 @@ public class TextElement : TemplateElement
         }
 
         ctx.Canvas.Restore();
+    }
+
+    /// <summary>Skutečná výška textu (dynamická) pro ořez na tvar rohů — shodně s výpočtem v Render.</summary>
+    public override SKRect GetContentClipRect(RenderContext ctx)
+    {
+        var resolved = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
+        float h = Height ?? (WordWrap ? CalculateTextHeight(resolved) : EffectiveDesignerHeight);
+        return ctx.ToCanvasRect(X, Y, Width, h);
     }
 
     public override void ApplyScale(float scale)

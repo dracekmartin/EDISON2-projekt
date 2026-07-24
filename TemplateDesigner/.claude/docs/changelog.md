@@ -37,6 +37,10 @@ každého elementu, jako rámeček** (architektura i UX).
   výplň/okraj (fill přes bg pass, okraj přes `DrawElementShape`).
 - Testy: 370/370 (vč. 3× migrace). **Známý drobný nedostatek:** „Velikost rohu" je vidět i při Ostré
   (bez efektu) — EDInputForm nemá deklarativní `visibleWhen`; čisté skrytí je součástí tracku níže.
+- **Fix (2026-07-24):** obsah elementu (výplně buněk DepartureGridu, pozadí Textu, obrázky…) přetékal
+  přes zaoblený/zkosený roh. Řešeno **obecně na jednom místě**: render loop (náhled i plátno) volá
+  `ApplyCornerClip` kolem obsahu každého elementu (no-op bez rohů) → ořez na tvar rohů plošně, obdoba
+  rámečku. Base `GetContentClipRect` (element dodá skutečnou výšku; TextElement přepisuje).
 
 ## 2026-07-23 — Časová osa odjezdů jen v parametrech sestavy (#13009 KOVED)
 

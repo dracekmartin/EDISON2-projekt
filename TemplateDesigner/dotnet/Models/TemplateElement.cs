@@ -136,6 +136,43 @@ public abstract class TemplateElement
         }
     }
 
+    /// <summary>Ořízne canvas na tvar elementu dle <see cref="CornerStyle"/> — obsah (výplň, text)
+    /// pak nepřeteče mimo zaoblené/zkosené rohy. Volající obklopí Save()/Restore().</summary>
+    protected void ClipToElementShape(RenderContext ctx, SKRect rect)
+    {
+        float sizePx = CornerSize * ctx.MmToPx;
+        float maxCorner = MathF.Min(rect.Width, rect.Height) / 2f;
+        sizePx = Math.Clamp(sizePx, 0f, maxCorner);
+
+        if (CornerStyle == ElementCornerStyle.Rounded && sizePx > 0)
+        {
+            ctx.Canvas.ClipRoundRect(new SKRoundRect(rect, sizePx, sizePx), antialias: true);
+        }
+        else if (CornerStyle == ElementCornerStyle.Beveled && sizePx > 0)
+        {
+            using var path = BuildBevelPath(rect, sizePx);
+            ctx.Canvas.ClipPath(path, antialias: true);
+        }
+        else
+        {
+            ctx.Canvas.ClipRect(rect);
+        }
+    }
+
+    /// <summary>Rect elementu v canvas px pro ořez obsahu na tvar rohů. Dynamické elementy
+    /// (např. TextElement) přepíšou skutečnou výškou obsahu.</summary>
+    public virtual SKRect GetContentClipRect(RenderContext ctx) =>
+        ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+
+    /// <summary>Ořez obsahu elementu na tvar rohů (zaoblené/zkosené) — no-op bez rohů. Volá render loop
+    /// kolem obsahu (uvnitř Save/Restore), aby výplně ani obsah nepřetekly mimo zaoblení/zkosení.
+    /// Jedno místo pro VŠECHNY elementy — obdoba rámečku (<see cref="RenderBorderPass"/>).</summary>
+    public void ApplyCornerClip(RenderContext ctx)
+    {
+        if (CornerStyle == ElementCornerStyle.None || CornerSize <= 0) return;
+        ClipToElementShape(ctx, GetContentClipRect(ctx));
+    }
+
     /// <summary>Osmiúhelníková cesta se seříznutými rohy (délka řezu = <paramref name="c"/> px).</summary>
     private static SKPath BuildBevelPath(SKRect r, float c)
     {

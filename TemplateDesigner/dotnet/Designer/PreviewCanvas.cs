@@ -418,18 +418,15 @@ public class PreviewCanvas
             foreach (var el in visibleElements)
             {
                 el.RenderBackgroundPass(ctx);   // pozadí (respektuje rohy) hned před obsahem téhož elementu
+                canvas.Save();
                 if (el.IsRotated)
                 {
                     var (cx, cy) = el.GetCenterPx(ctx);
-                    canvas.Save();
                     canvas.RotateDegrees(el.Rotation, cx, cy);
-                    el.Render(ctx);
-                    canvas.Restore();
                 }
-                else
-                {
-                    el.Render(ctx);
-                }
+                el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) — jedno místo pro všechny
+                el.Render(ctx);
+                canvas.Restore();
             }
 
             // Rámeček sekce (volitelný — ShowBorder property)
