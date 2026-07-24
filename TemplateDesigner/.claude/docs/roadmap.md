@@ -22,6 +22,32 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 
 ---
 
+## 🏗️ Architektura — EDInputForm: sdílená base-pole + deklarativní `visibleWhen` (2026-07-24)
+
+> Vzešlo z tiketů KOVED (rohy elementu #12998). **Dva provázané problémy** + dohodnutý směr; rozjet
+> jako samostatný track, až doběhnou helpdesk tikety.
+
+**Problém 1 — imperativní validace na vše.** EDInputForm má jen `Validate` (Caché, server round-trip)
+pro dynamické chování. Chybí deklarativní podmíněná viditelnost → „Velikost rohu" je vidět i při Ostré.
+**Problém 2 — duplikace schématu.** Každý element staví pole ručně v `.cls` (+ zrcadlící C#
+PropertyDescriptors, které **stále žijí** — čte je `PropertiesPanel`); base pole (rámeček/pozice/rohy)
+opsaná v každém `.cls` → společná vlastnost = editace N souborů (rohy = 8).
+
+**Dohodnutý směr (standardní vzor „deklarativní 80 % / imperativní escape hatch 20 %", jako ServiceNow
+UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
+1. **`visibleWhen` do jádra EDInputFormu** (EDControls) — `Field.visibleWhen`, klient přepočítá lokálně
+   (bez round-tripu, řeší init-state past). Začít **jen `visibleWhen`** (YAGNI). Sdílet gramatiku podmínek
+   s TD print-params — nezavádět druhý dialekt. `Validate` zůstává pro cross-field/počítané.
+2. **Sdílený Caché helper `BaseElementFields`** (vzor = `StyleFields.cls`) — base skupiny polí
+   (Rámeček+Rohy, Pozice, Pokročilé) volané z každého `.cls`. **První výhra:** rohy deklarují `visibleWhen`
+   jednou → „Velikost rohu" se skryje při Ostré čistě.
+3. **Prošetřit + rozhodnout** o C# descriptor mirroru (rozsah `PropertiesPanel` vs `.cls`-driven
+   `InlinePropertiesForm`) → retire nebo ponechat. Ne slepě mazat (dnes živý).
+
+(M–L, dotkne se všech elementů + EDControls. Detail úvahy v changelog/commit historii session 2026-07-24.)
+
+---
+
 ### 📥 Backlog / budoucí velké tracky
 
 > Audit stavu v1 (scan 2026-07-07) — P-A/P-B/P-C hotové, P-D rehomed do produkční sekce →
@@ -39,14 +65,6 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   DynamicResource), chrome kolem má theme token. Oba dílčí fixy zkoušené, ale zůstává ještě něco dalšího
   (nejspíš stín stránky / rozdíl odstínů) → **projít později celé najednou**, ideálně napojit pozadí
   plátna na theme (i kvůli dark mode). (S, kosmetika)
-- **EDInputForm — sdílená base-element pole + deklarativní `visibleWhen`** (architektura, 2026-07-24):
-  dnes si každý element staví EDInputForm schéma ručně v `.cls` (+ zrcadlící PropertyDescriptors v C#)
-  = schema duplikace. Precedens sdílení = `StyleFields.cls`. **Cíl:** (a) sdílený helper base-element
-  polí (Rámeček+Rohy, Pozice, Pokročilé) volaný z každého `.cls` — společná vlastnost = 1 změna;
-  (b) povýšit `visibleWhen` (a případně `enabledWhen`/`requiredWhen`) do jádra EDInputFormu (EDControls) —
-  deklarativní, klient přepočítá lokálně bez server round-tripu; validace zůstává pro komplexní logiku.
-  **První konkrétní výhra:** „Velikost rohu" skrýt při Ostré (dnes vidět, bez efektu — Validate approach
-  má init-state wart, viz níže). (M–L, dotkne se všech elementů + EDControls)
 - **Fáze B — odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
   (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
 - **Zvýraznění řádků — navazující (aditivní, bez migrace):** **per-sloupec render** `HighlightRule.TargetColumn`
