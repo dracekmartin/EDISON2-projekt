@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-24 — Gold pojistka zón vůči legacy (AD zastávkový JŘ, #13048 KOVED)
+
+Zákazník hlásil prázdný sloupec zón. Ověřeno, že náš `ZastavkoveJrAd.GetData` vrací zóny **1:1 shodně
+se starým modulem** — a shoda zamčena testem, aby ji budoucí změny nerozbily.
+
+- **Nová test třída `ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest`** — porovná řetězec zón per
+  zastávka z našeho `GetData` proti **legacy producentovi** `ALVA.TISKMHD.Data.LoadData` (VolanoZ=JRMAIN,
+  tentýž generátor, který krmil starý modul). 1:1 assert na CB_GWBUS 320113 (`101/104/109`) a KV_DP
+  410101 (vč. vícezónové `11,12`). Namespace / legacy třída / prázdné zóny → skip (jiný server).
+- Diagnostika mimo runner: `ZonyProbe` (IN DB/SKU/LIN/PAGE → OUT LEG/OUR/MATCH).
+- **Pasti legacy volání zdokumentovány** (`ad-data-mapa.md §9`): `LoadData` čte IN jako řetězce
+  „KLÍČ~HODNOTA" (ne pojmenované subscripty), OUT bez count node (iterovat `$order`), `$$$MakroGlobal`
+  přepíná IN/OUT globál dle `sys("C","App")` (nutno `ALWA.SYS.MLRest`, jinak čte `^CacheTempMLSrv`).
+- **Výsledek: zóny nejsou rozbité** — prázdný sloupec u KOVED = jejich data/šablona, ne regrese.
+  Řezy 36/36 Caché testů zeleně.
+
 ## 2026-07-24 — Řezy písma (váhy) — výběr reálných řezů fontu (#13006 KOVED)
 
 Zákazník chtěl používat víc řezů písma (TT Hoves Light/Medium/SemiBold/Heavy…), ne jen Tučně/Kurzíva.
