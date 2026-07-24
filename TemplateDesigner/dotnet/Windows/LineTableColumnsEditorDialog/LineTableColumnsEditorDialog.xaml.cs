@@ -58,6 +58,7 @@ public partial class LineTableColumnsEditorDialog : Window
     {
         ElementFormBinder.PopulateFontFields(GeneralForm);
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
+        ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
         GeneralForm.Validate();
     }
 

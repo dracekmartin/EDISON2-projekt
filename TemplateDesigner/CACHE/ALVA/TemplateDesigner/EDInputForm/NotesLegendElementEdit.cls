@@ -36,6 +36,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FF000000"
         // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("HeaderStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
+        d form.AddFieldToLastGroup("HeaderStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
         // ── Skupina "Datové buňky" ────────────────────────────────────────
         d form.AddGroup("data", "Datové buňky")
@@ -45,6 +46,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FF000000"
         // ComboBox (editovatelný) — klient naplní nainstalovanými fonty (PopulateFontFields, klíč končí "FontFamily")
         d form.AddFieldToLastGroup("DataStyle.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
+        d form.AddFieldToLastGroup("DataStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
         s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
         s f.helpText = "Vloží se mezi značku a popis u vlastních poznámek linky. U ikonových atributů (na znamení, bezbariér) se nepoužívá."
         d form.AddDecimal("NoteFontSize", "Velikost písma pozn.", 7, 4, 20, "pt", "0.#")

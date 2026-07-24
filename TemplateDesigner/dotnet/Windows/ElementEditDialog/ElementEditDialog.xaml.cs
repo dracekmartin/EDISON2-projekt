@@ -54,6 +54,9 @@ public partial class ElementEditDialog : Window
     {
         ElementFormBinder.PopulateFontFields(TheForm);
         _preFilled = ElementFormBinder.Prefill(TheForm, _target);
+        // Řez (váhy) z reálných řezů rodiny — nastavit PŘED Validate, aby items přežily round-trip
+        // (Validate serializuje aktuální items a Caché je echuje zpět).
+        ElementFormBinder.PopulateFontWeightFields(TheForm);
         TheForm.Validate();
     }
 

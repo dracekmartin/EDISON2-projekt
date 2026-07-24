@@ -58,6 +58,7 @@ public partial class DepartureGroupEditorDialog : Window
         // Prefill přes reflexi. HeaderLine2Style (nullable) zůstává null → jeho pole se předvyplní
         // prázdná (= dědí z HeaderStyle); při OK ElementPropertyAccessor.Set lazy alokuje.
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
+        ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
         GeneralForm.Validate();
     }
 

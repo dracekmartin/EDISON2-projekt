@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-24 — Řezy písma (váhy) — výběr reálných řezů fontu (#13006 KOVED)
+
+Zákazník chtěl používat víc řezů písma (TT Hoves Light/Medium/SemiBold/Heavy…), ne jen Tučně/Kurzíva.
+
+- **Model:** `TextStyle.FontWeight` (100–900, nullable; null = auto dle Tučně, aditivní bez migrace);
+  `ResolvedTextStyle.ToSKFontStyle` staví váhu (explicitní přebíjí Bold) → teče do renderu.
+- **Sdílený `FontWeightCatalog`** — jediné místo „jaké řezy rodina reálně má" (z `SKFontManager.GetFontStyles`,
+  jen vzpřímené) + názvosloví. **Nabízí jen skutečně nainstalované řezy** (ne fixní seznam) — chybějící font
+  nemá, tak se nenabídne (dřívější fixní seznam mátl: nabízel váhy, co font nemá).
+- **UI „Řez" dropdown** všude, kde se nastavuje font:
+  - **EDInputForm** (Text, StyleFields zóny DepartureGrid/StopList/DynamicTable, NotesLegend) —
+    klient plní z katalogu (`ElementFormBinder.PopulateFontWeightFields`) **při otevření**.
+  - **Per-sloupec `CellStyleEditor`** (WPF) — tri-state `CellStyleVM.FontWeight` + **živě reaktivní**
+    nabídka (změna rodiny → přepočet řezů). Layout řádku fontu změněn na WrapPanel (zalamování → nepřetéká).
+- **Render:** řez respektují buňky tabulek (`CellRenderer`→`ToSKFontStyle`) + TextElement.
+- **Odloženo do architektonického tracku** (viz roadmap): reaktivita EDInputForm dialogů (živý přepočet
+  bez znovuotevření) + ruční render cesty schedule elementů (minuty DepartureGridu, text legendy) + čistý
+  layout editoru sloupců.
+
 ## 2026-07-24 — Rohy elementu (zaoblení / zkosení) obecně na base (#12998 KOVED)
 
 Zákazník chtěl seříznuté/zaoblené rohy barevných tvarů (odznaky linky). Uděláno **obecně na úrovni

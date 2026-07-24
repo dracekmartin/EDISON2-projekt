@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Input;
 using EDControls.EDViewModel;
 using TemplateDesigner.Models;
@@ -21,6 +23,7 @@ public class CellStyleVM : INotifyPropertyChanged
 
     private string?                    _fontFamily;
     private float?                     _fontSize;
+    private int?                       _fontWeight;
     private bool?                      _bold;
     private bool?                      _italic;
     private bool?                      _underline;
@@ -34,8 +37,9 @@ public class CellStyleVM : INotifyPropertyChanged
     private float?                     _paddingBottom;
     private float?                     _paddingLeft;
 
-    public string?                    FontFamily    { get => _fontFamily;    set { _fontFamily    = NullIfEmpty(value); OnChanged(); OnChanged(nameof(HasExplicitFontFamily)); } }
+    public string?                    FontFamily    { get => _fontFamily;    set { _fontFamily    = NullIfEmpty(value); OnChanged(); OnChanged(nameof(HasExplicitFontFamily)); RefreshWeightOptions(); } }
     public float?                     FontSize      { get => _fontSize;      set { _fontSize      = value;              OnChanged(); OnChanged(nameof(HasExplicitFontSize)); } }
+    public int?                       FontWeight    { get => _fontWeight;    set { _fontWeight    = value;              OnChanged(); OnChanged(nameof(HasExplicitFontWeight)); } }
     public bool?                      Bold          { get => _bold;          set { _bold          = value;              OnChanged(); OnChanged(nameof(EffectiveBold));          OnChanged(nameof(HasExplicitBold)); } }
     public bool?                      Italic        { get => _italic;        set { _italic        = value;              OnChanged(); OnChanged(nameof(EffectiveItalic));        OnChanged(nameof(HasExplicitItalic)); } }
     public bool?                      Underline     { get => _underline;     set { _underline     = value;              OnChanged(); OnChanged(nameof(EffectiveUnderline));     OnChanged(nameof(HasExplicitUnderline)); } }
@@ -62,6 +66,7 @@ public class CellStyleVM : INotifyPropertyChanged
 
     public bool HasExplicitFontFamily    => _fontFamily    is not null;
     public bool HasExplicitFontSize      => _fontSize      is not null;
+    public bool HasExplicitFontWeight    => _fontWeight    is not null;
     public bool HasExplicitBold          => _bold          is not null;
     public bool HasExplicitItalic        => _italic        is not null;
     public bool HasExplicitUnderline     => _underline     is not null;
@@ -71,7 +76,7 @@ public class CellStyleVM : INotifyPropertyChanged
 
     /// <summary>True pokud VM má aspoň jednu explicitně nastavenou vlastnost (= override).</summary>
     public bool HasAnyExplicit =>
-        _fontFamily is not null || _fontSize is not null ||
+        _fontFamily is not null || _fontSize is not null || _fontWeight is not null ||
         _bold is not null || _italic is not null ||
         _underline is not null || _strikethrough is not null ||
         _textColor is not null || _bgColor is not null ||
@@ -87,6 +92,24 @@ public class CellStyleVM : INotifyPropertyChanged
     /// </summary>
     public ResolvedTextStyle Inherited { get; }
 
+    // ── Řez (váha) — dynamická nabídka reálných řezů fontu ────────────────
+
+    /// <summary>Jedna položka nabídky řezu. Value=null → „dědit" (auto dle Tučné).</summary>
+    public sealed record WeightOption(int? Value, string Label);
+
+    /// <summary>Nabídka řezů pro combobox — přepočítává se dle efektivní rodiny (explicit ?? zděděná).
+    /// První položka = „Automaticky (dědit)".</summary>
+    public IReadOnlyList<WeightOption> WeightOptions { get; private set; } = [];
+
+    private void RefreshWeightOptions()
+    {
+        var family = _fontFamily ?? Inherited.FontFamily;
+        var opts = new List<WeightOption> { new(null, "Automaticky") };
+        opts.AddRange(FontWeightCatalog.Items(family).Select(x => new WeightOption(x.Weight, x.Label)));
+        WeightOptions = opts;
+        OnChanged(nameof(WeightOptions));
+    }
+
     // ── Konstrukce ────────────────────────────────────────────────────────
 
     private CellStyleVM(ResolvedTextStyle inherited)
@@ -101,6 +124,7 @@ public class CellStyleVM : INotifyPropertyChanged
             {
                 case nameof(FontFamily):    FontFamily    = null; break;
                 case nameof(FontSize):      FontSize      = null; break;
+                case nameof(FontWeight):    FontWeight    = null; break;
                 case nameof(Bold):          Bold          = null; break;
                 case nameof(Italic):        Italic        = null; break;
                 case nameof(Underline):     Underline     = null; break;
@@ -126,23 +150,29 @@ public class CellStyleVM : INotifyPropertyChanged
     /// Vytvoří VM z volitelného explicit stylu + povinného rodičovského (vyřešeného) stylu.
     /// null explicit → všechna pole VM jsou null (čistě dědí).
     /// </summary>
-    public static CellStyleVM FromModel(TextStyle? style, ResolvedTextStyle inherited) => new(inherited)
+    public static CellStyleVM FromModel(TextStyle? style, ResolvedTextStyle inherited)
     {
-        _fontFamily    = style?.FontFamily,
-        _fontSize      = style?.FontSize,
-        _bold          = style?.Bold,
-        _italic        = style?.Italic,
-        _underline     = style?.Underline,
-        _strikethrough = style?.Strikethrough,
-        _textColor     = style?.TextColor,
-        _bgColor       = style?.BackgroundColor,
-        _hAlign        = style?.HAlign,
-        _vAlign        = style?.VAlign,
-        _paddingTop    = style?.PaddingTop,
-        _paddingRight  = style?.PaddingRight,
-        _paddingBottom = style?.PaddingBottom,
-        _paddingLeft   = style?.PaddingLeft,
-    };
+        var vm = new CellStyleVM(inherited)
+        {
+            _fontFamily    = style?.FontFamily,
+            _fontSize      = style?.FontSize,
+            _fontWeight    = style?.FontWeight,
+            _bold          = style?.Bold,
+            _italic        = style?.Italic,
+            _underline     = style?.Underline,
+            _strikethrough = style?.Strikethrough,
+            _textColor     = style?.TextColor,
+            _bgColor       = style?.BackgroundColor,
+            _hAlign        = style?.HAlign,
+            _vAlign        = style?.VAlign,
+            _paddingTop    = style?.PaddingTop,
+            _paddingRight  = style?.PaddingRight,
+            _paddingBottom = style?.PaddingBottom,
+            _paddingLeft   = style?.PaddingLeft,
+        };
+        vm.RefreshWeightOptions();   // nabídka řezů dle (explicit ?? zděděné) rodiny
+        return vm;
+    }
 
     /// <summary>
     /// Vytvoří TextStyle s pouze těmi vlastnostmi, které uživatel explicitně nastavil.
@@ -154,6 +184,7 @@ public class CellStyleVM : INotifyPropertyChanged
         {
             FontFamily      = _fontFamily,
             FontSize        = _fontSize,
+            FontWeight      = _fontWeight,
             Bold            = _bold,
             Italic          = _italic,
             Underline       = _underline,
@@ -175,6 +206,7 @@ public class CellStyleVM : INotifyPropertyChanged
     {
         FontFamily    = null;
         FontSize      = null;
+        FontWeight    = null;
         Bold          = null;
         Italic        = null;
         Underline     = null;

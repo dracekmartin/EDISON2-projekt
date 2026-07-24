@@ -44,6 +44,15 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 3. **Prošetřit + rozhodnout** o C# descriptor mirroru (rozsah `PropertiesPanel` vs `.cls`-driven
    `InlinePropertiesForm`) → retire nebo ponechat. Ne slepě mazat (dnes živý).
 
+**Navázané body z řezů písma (#13006, 2026-07-24 — implementováno až na tyto):**
+- **Reaktivita EDInputForm** — „Řez" v element dialozích se plní jen **při otevření**; živý přepočet při
+  změně rodiny (bez znovuotevření) = ten `visibleWhen`/reaktivní mechanismus výše. (CellStyleEditor to už
+  má — WPF je reaktivní.)
+- **Ruční render cesty schedule elementů** — minuty DepartureGridu, text legendy poznámek staví `SKFontStyle`
+  přes `GetTypeface` ručně a `FontWeight` zatím ignorují; sjednotit na `ResolvedTextStyle.ToSKFontStyle`.
+- **Layout editoru sloupců (`CellStyleEditor`)** — dnes horizontální řádek zalomený WrapPanelem (dočasné,
+  po přidání řezu se to natáhlo). Přepracovat na přehlednější grid, ideálně sjednotit s EDInputForm stylem.
+
 (M–L, dotkne se všech elementů + EDControls. Detail úvahy v changelog/commit historii session 2026-07-24.)
 
 ---
