@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-24 — Rohy elementu (zaoblení / zkosení) obecně na base (#12998 KOVED)
+
+Zákazník chtěl seříznuté/zaoblené rohy barevných tvarů (odznaky linky). Uděláno **obecně na úrovni
+každého elementu, jako rámeček** (architektura i UX).
+
+- **Base `TemplateElement`:** `CornerStyle` {Ostré/Zaoblené/Zkosené} + `CornerSize` (mm). Serializace,
+  `CopyBaseTo`, `ApplyScale`, descriptory („Rohy" + „Velikost rohu") jednotně.
+- **Render centralizovaný:** rámeček (`RenderBorder`) i nově **pozadí** (`RenderBackgroundPass`,
+  symetrické k border pass, volané canvasem před obsahem) kreslí tvar přes jediný helper
+  `DrawElementShape` (Ostré=DrawRect, Zaoblené=DrawRoundRect, Zkosené=SKPath se seříznutými rohy).
+  Z Barcode/Image/Rectangle odstraněna vlastní výplň pozadí → jedno místo.
+- **UI:** „Rohy" + „Velikost rohu" ve skupině „Rámeček elementu" u všech boxových elementů
+  (Rectangle, Text, Image, Barcode, StopList, DepartureGrid, NotesLegend, LineTable). Čára vynechána.
+- **`RectangleElement`:** vlastní `CornerRadius` sjednoceno do base + **migrace 1.4.0 → 1.5.0**
+  (`cornerRadius` → `cornerStyle=Rounded`/`cornerSize`); staré šablony 1:1. Rectangle si drží vlastní
+  výplň/okraj (fill přes bg pass, okraj přes `DrawElementShape`).
+- Testy: 370/370 (vč. 3× migrace). **Známý drobný nedostatek:** „Velikost rohu" je vidět i při Ostré
+  (bez efektu) — EDInputForm nemá deklarativní `visibleWhen`; čisté skrytí je součástí tracku níže.
+
 ## 2026-07-23 — Časová osa odjezdů jen v parametrech sestavy (#13009 KOVED)
 
 Zákazník hlásil, že časová osa jde nastavit vždy jen na hodiny s odjezdy — změna nastavení nedělala nic.

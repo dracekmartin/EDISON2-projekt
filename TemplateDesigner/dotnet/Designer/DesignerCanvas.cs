@@ -512,6 +512,7 @@ public class DesignerCanvas
             var ctx = new RenderContext(canvas, MmToPx) { SectionOriginX = ox, SectionOriginY = oy };
             foreach (var el in _state.GetElementsByZIndexAsc(section))
             {
+                el.RenderBackgroundPass(ctx);   // pozadí (respektuje rohy) hned před obsahem téhož elementu
                 if (el.IsRotated)
                 {
                     var (cx, cy) = el.GetCenterPx(ctx);

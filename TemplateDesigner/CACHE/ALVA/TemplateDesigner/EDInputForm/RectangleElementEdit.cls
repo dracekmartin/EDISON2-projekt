@@ -28,14 +28,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FF000000"
 
         d form.AddDecimal("StrokeWidth", "Tloušťka okraje", 0.5, 0, 10, "mm")
-        d form.AddDecimal("CornerRadius", "Zaoblení", 0, 0, 50, "mm")
 
         // ── Skupina "Rámeček elementu" ────────────────────────────────────
-        // Base element border (nezávislý na vlastní výplni/okraji obdélníku výše).
+        // Base element border + rohy (nezávislé na vlastní výplni/okraji obdélníku výše).
         d form.AddGroup("border", "Rámeček elementu")
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
         d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
+        s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
+        s f.value = "None"
+        d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
 
         // ── Skupina "Pozice a velikost" ───────────────────────────────────
         d form.AddGroup("position", "Pozice a velikost")

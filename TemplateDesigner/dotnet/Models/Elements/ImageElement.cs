@@ -25,12 +25,7 @@ public class ImageElement : TemplateElement
         if (Width <= 0) return;
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
 
-        // Pozadí elementu — projeví se v mezerách u Fit mode (letterbox).
-        if (SkBackgroundColor.Alpha > 0)
-        {
-            using var bgPaint = new SKPaint { Color = SkBackgroundColor };
-            ctx.Canvas.DrawRect(rect, bgPaint);
-        }
+        // Pozadí elementu (letterbox mezery u Fit mode) kreslí base RenderBackgroundPass před obsahem.
 
         // Pokus o dekódování obrázku
         SKBitmap? bitmap = null;

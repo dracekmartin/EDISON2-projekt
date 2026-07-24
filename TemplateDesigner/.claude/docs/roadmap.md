@@ -39,6 +39,14 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   DynamicResource), chrome kolem má theme token. Oba dílčí fixy zkoušené, ale zůstává ještě něco dalšího
   (nejspíš stín stránky / rozdíl odstínů) → **projít později celé najednou**, ideálně napojit pozadí
   plátna na theme (i kvůli dark mode). (S, kosmetika)
+- **EDInputForm — sdílená base-element pole + deklarativní `visibleWhen`** (architektura, 2026-07-24):
+  dnes si každý element staví EDInputForm schéma ručně v `.cls` (+ zrcadlící PropertyDescriptors v C#)
+  = schema duplikace. Precedens sdílení = `StyleFields.cls`. **Cíl:** (a) sdílený helper base-element
+  polí (Rámeček+Rohy, Pozice, Pokročilé) volaný z každého `.cls` — společná vlastnost = 1 změna;
+  (b) povýšit `visibleWhen` (a případně `enabledWhen`/`requiredWhen`) do jádra EDInputFormu (EDControls) —
+  deklarativní, klient přepočítá lokálně bez server round-tripu; validace zůstává pro komplexní logiku.
+  **První konkrétní výhra:** „Velikost rohu" skrýt při Ostré (dnes vidět, bez efektu — Validate approach
+  má init-state wart, viz níže). (M–L, dotkne se všech elementů + EDControls)
 - **Fáze B — odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
   (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
 - **Zvýraznění řádků — navazující (aditivní, bez migrace):** **per-sloupec render** `HighlightRule.TargetColumn`
