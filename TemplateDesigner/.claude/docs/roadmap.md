@@ -33,6 +33,12 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   fáze 1 — varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S) ·
   fáze 3 — tiskový parametr „Rozdělení sloupců" pro MHD (dle číselníku / každá skupina zvlášť /
   vlastní; sjednocení s AD parametrem) (M, na poptávku)
+- **UI drobnost — „zdvojený" pruh mezi plátnem a náhledem** (KOVED si všiml): tenký svislý artefakt
+  mezi návrhářem a preview. Dílčí příčiny nalezené 2026-07-24: (a) tečkovaný focus rámeček GridSplitteru
+  (`FocusVisualStyle="{x:Null}"`), (b) šev dvou šedých — plátno kreslí `#E4E4E4` natvrdo (SkiaSharp neumí
+  DynamicResource), chrome kolem má theme token. Oba dílčí fixy zkoušené, ale zůstává ještě něco dalšího
+  (nejspíš stín stránky / rozdíl odstínů) → **projít později celé najednou**, ideálně napojit pozadí
+  plátna na theme (i kvůli dark mode). (S, kosmetika)
 - **Fáze B — odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
   (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
 - **Zvýraznění řádků — navazující (aditivní, bez migrace):** **per-sloupec render** `HighlightRule.TargetColumn`
