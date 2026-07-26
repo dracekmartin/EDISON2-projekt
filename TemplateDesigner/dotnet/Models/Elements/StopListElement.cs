@@ -40,6 +40,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public bool ShowSignalStopIndicator { get; set; } = true;
     public string SignalStopSymbol { get; set; } = "×";
     public bool ShowStopAttributes { get; set; } = true;
+    /// <summary>Přestupy na jiný druh dopravy (vlak „L" / autobus „A") u zastávky. Default vyp =
+    /// jako legacy (legacy StopList je netiskne). Data je posílají vždy, přepínač řídí zobrazení.</summary>
+    public bool ShowTransferAttributes { get; set; }
     public bool ShowStopNotes { get; set; } = true;
 
     /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
@@ -661,7 +664,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             var excluded = GetExcludedSet();
             var attrs = z.Atributy
                 .Where(a => !excluded.Contains(a.Znak))
-                .Where(a => IsNaZnameniAttr(a) ? ShowSignalStopIndicator : ShowStopAttributes)
+                .Where(a => IsNaZnameniAttr(a) ? ShowSignalStopIndicator
+                          : IsTransferAttr(a) ? ShowTransferAttributes
+                          : ShowStopAttributes)
                 .ToList();
             if (attrs.Count > 0)
             {
@@ -751,6 +756,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private static bool IsNaZnameniAttr(AtributData a) =>
         a.Popis.StartsWith("na znamen", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Je atribut zastávky přestup na jiný druh dopravy? V1: vlak „L" / autobus „A"
+    /// (číselník 16). Řídí ho přepínač „Přestupy" — nad rámec legacy StopListu.</summary>
+    private static bool IsTransferAttr(AtributData a) =>
+        a.Znak is "A" or "L";
+
     private string BuildStopDisplayText(ZastavkaData z)
     {
         var name = z.Popis;
@@ -779,6 +789,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
         new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
         new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
+        new BoolPropertyDescriptor  { Label = "Přestupy (vlak/bus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
         new EnumPropertyDescriptor
         {
@@ -850,6 +861,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ShowSignalStopIndicator = ShowSignalStopIndicator,
             SignalStopSymbol        = SignalStopSymbol,
             ShowStopAttributes      = ShowStopAttributes,
+            ShowTransferAttributes  = ShowTransferAttributes,
             ShowStopNotes           = ShowStopNotes,
             MarkersPosition         = MarkersPosition,
             CurrentStopUnderline    = CurrentStopUnderline,

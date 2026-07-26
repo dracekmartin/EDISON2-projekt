@@ -44,6 +44,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
         d form.AddBool("ShowStopAttributes", "Atributy", 1)
+        s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/bus)", 0)
+        s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Legacy JŘ je netiskl."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)

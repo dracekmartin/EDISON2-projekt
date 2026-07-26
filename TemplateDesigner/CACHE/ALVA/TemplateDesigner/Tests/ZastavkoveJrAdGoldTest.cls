@@ -18,12 +18,12 @@ Parameter GOLDDB = "CB_CSADAD";
 
 Method TestGold0365001()
 {
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=3mrYrDu7m1fCFTr4LFJapg==")
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=bcAgFi7T88T80VCyWmmeAg==")
 }
 
 Method TestGold0365005()
 {
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=QAeBxu93SWd9hkKB/rp3pQ==")
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=xGzBQvzvTCOSYOoqPHgDbA==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

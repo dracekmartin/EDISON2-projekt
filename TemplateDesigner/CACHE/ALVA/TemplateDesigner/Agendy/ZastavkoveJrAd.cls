@@ -407,15 +407,18 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         // ať StopList nepřidá ještě syntetický SignalStopSymbol „×" (jinak duplicita „× x").
         s z = ..BuildZastavka(poradi, rawNazev, poradi, casJizdy, cnt, jeAkt, 0, odsazeni)
         i zona '= "" d ..AddZona(z, zona)
-        // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD)
+        // atributy zastávky → symbol u názvu + řádek legendy (jen neprojeté + významové znaky; analogicky MHD).
+        // Přestupy (vlak „L" / autobus „A") jdou nad rámec legacy — posílají se vždy jako data zastávky,
+        // ale legendu NEplní; jejich symbol řídí přepínač „Přestupy" na prvku StopList (default vyp).
         i 'jeProjeta {
             f ai=1:1:$l(atributy) {
                 s znak = $e(atributy, ai)
-                i '..JeViditelnyAtribut(znak) continue
+                s jePrestup = ..JePrestupovyAtribut(znak)
+                i '..JeViditelnyAtribut(znak) && 'jePrestup continue
                 i souhrnNaZn && (znak = "x") continue    // TR2: souhrn místo per-zastávka ×
                 s txtAtr = ..TextAtributu(znak)
                 d ..AddAtribut(z, znak, txtAtr)
-                s atrSeen(znak) = txtAtr
+                i 'jePrestup s atrSeen(znak) = txtAtr    // přestupy do legendy nejdou (jen symbol u zastávky)
             }
         }
         // varianty časů (dynamické TrasaMin) — hodnota per varianta pro tuto zastávku
@@ -1108,6 +1111,13 @@ ClassMethod NepoznamkovatSpoj(dataDB As %String, sku As %String, lin As %String,
 ClassMethod JeViditelnyAtribut(znak As %String) As %Boolean
 {
     q znak = "x"
+}
+
+/// Přestupové atributy zastávky (přestup na jiný druh dopravy) — nad rámec legacy StopListu.
+/// V1: vlak „L" + autobus „A". Symbol u zastávky řídí přepínač „Přestupy" na prvku StopList (default vyp, opt-in).
+ClassMethod JePrestupovyAtribut(znak As %String) As %Boolean
+{
+    q (znak = "A") || (znak = "L")
 }
 
 /// Text atributu zastávky dle znaku — 1:1 s číselníkem `arrCis(16)^JRapiCis`.

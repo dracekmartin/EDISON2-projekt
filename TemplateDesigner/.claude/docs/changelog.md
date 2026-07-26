@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-24 — Přestupy u zastávek (vlak/autobus) — nad rámec legacy (#13048 KOVED, bod 1)
+
+Zákazník chtěl u zastávek zobrazit přestupy na vlak/autobus. Data je mají (znak „L"=vlak, „A"=autobus
+v atributech zastávky, číselník 16), ale legacy StopList je záměrně netiskl (jen „x"=na znamení).
+
+- **Server (`ZastavkoveJrAd`)** — `JePrestupovyAtribut` (V1: „A"/„L"); přestupy se **vždy posílají jako
+  data zastávky** (ATRIBUTY), ale **do legendy nejdou** (jen symbol u zastávky). Ostatní znaky číselníku
+  (formátovací P/T/N/V…) se dál netisknou.
+- **Klient (`StopListElement`)** — nový přepínač **„Přestupy (vlak/bus)"** (`ShowTransferAttributes`,
+  **default vyp = jako legacy**); render filtr rozlišuje na-znamení / přestup / ostatní atribut. Přepínač
+  v panelu i EDInputform (`StopListElementEdit.cls`). Symbol se kreslí u názvu zastávky (piktogram).
+- **Gold re-baseline** (0365001/0365005) — počty beze změny (`zast/odj/pozn` stejné, pozn potvrzuje že
+  přestupy nejdou do legendy), změnil se jen md5 (přestupy přibyly do ATRIBUTY). Vědomé, ověřené.
+- **Nový test `TestPrestupyEmit`** (0330510 ČB AN — autobus na terminálech) zamyká emisi. 37/37 zeleně.
+- Přestupy sedí hlavně na **terminálech** (nádraží na koncích trasy) — tam je přestup logický.
+
 ## 2026-07-24 — Gold pojistka zón vůči legacy (AD zastávkový JŘ, #13048 KOVED)
 
 Zákazník hlásil prázdný sloupec zón. Ověřeno, že náš `ZastavkoveJrAd.GetData` vrací zóny **1:1 shodně
