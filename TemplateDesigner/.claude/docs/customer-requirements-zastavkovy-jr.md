@@ -82,6 +82,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
 | #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | 🟠 | Datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; ~0.5–1 den Caché | §B4 |
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
+| #13048 | KOVED (IDZK/Lábsky) | Poznámky/sloupce zastávek (5 bodů) | 🟢 1a+1b hotové · 🟠 2–5 | Viz rozpad níže | §0.3 |
 
 **Poznámka k uzavírání:** ready-to-close jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
 polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci
@@ -112,6 +113,21 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 
 > **P1 a P2 vyřazeny (2026-07-10, dohoda):** P1 (poznámky do patičky) — nejasné přesné zadání, neodbavovat;
 > P2 (sloučit více linek) — řeší se jinde (mimo tuto agendu). Detail v §P ponechán jako evidence.
+
+### 0.3 #13048 KOVED — poznámky a sloupce zastávek (5 bodů, procházeno 2026-07-24→26)
+
+Excel od IDZK (Lábsky) k zastávkovému JŘ z našeho návrháře. Body:
+
+| # | Co | Vel. | Stav |
+|---|---|---|---|
+| 1a | Sloupec zón prázdný — ověřit, že něco vracíme | S | ✅ **HOTOVO 2026-07-24** — zóny 1:1 vs legacy (gold oracle `ZastavkoveJrAdLegacyTest`); prázdno u KOVED = jejich data/šablona, ne regrese |
+| 1b | Přestupy (na znamení / vlak / bus) nejsou vidět | S–M | ✅ **HOTOVO 2026-07-26** — přepínač „Přestupy (vlak/bus)" na StopListu (vlak L / autobus A), default vyp = jako legacy; symbol u zastávky, ne v legendě. Na-znamení funguje beze změny |
+| 2 | Per-buňka zmenšení fontu na šířku (shrink-to-fit) | S–M | 🟠 zbývá |
+| 3 | Sloupec nástupiště | S | 🟢 z velké části = TR3 (sloupec „Nástupiště" opt-in); ověřit, že pokrývá KOVED požadavek |
+| 4 | Zastávka s více nástupišti (více řádků/hodnot) | M | 🟠 zbývá |
+| 5 | Varianty tras (řazení dle četnosti, max čas, písmena, MHD parita) | M–L | 🟠 zbývá — relates TR7 / L1 `VARIANTY_TRAS` |
+
+Detaily hotových: changelog 2026-07-24 (zóny) + 2026-07-26 (přestupy). Zbývá 2, 4, 5 (+ ověřit 3).
 
 **Dispatch:** malí kandidáti odbaveni (TR3 ✅, TR4 ✅, TR2 implementováno — ⚠️ čeká SK ověření
 kódování na-znamení, TR8 ⏸️ park do potvrzení TRANSDEV). Zbývají jen 🟠 velké body (analýza/data).
