@@ -11,10 +11,21 @@ KOVED #13048: **všech 5 bodů hotových v1** (bod 4 duplikace řádku uzavřen 
 + archiv). Ze „stanovišťového balíku" zbývá **jediné: #8828 vývěska per sloupek (= blok B9)**.
 
 **#8828 vývěska per sloupek (B9)** (M, zóna 1): stránka per zastávka×sloupek s filtrem odjezdů dle
-sloupku spoje na vývěskové zastávce (referenční podoba = KOVED XLSX `timetables_route_802366...`);
-návaznost na členění výstupu / název souboru (`{POLE}` tokeny). Datová vrstva hotová (nástupiště per
-spoj = W pozice 7, `NastupisteSpoju`/`NASTUPISTE_VARIANT`, cache `^||TiskAd`). MHD zdroj sloupku až
-u MHD zákazníka. Zóna 1 — jedna session naráz.
+sloupku spoje na vývěskové zastávce (referenční podoba = KOVED XLSX `timetables_route_802366...`).
+Datová vrstva hotová (nástupiště per spoj = W pozice 7, `NastupisteSpoju`/`NASTUPISTE_VARIANT`, cache
+`^||TiskAd`). MHD zdroj sloupku až u MHD zákazníka. Zóna 1 — jedna session naráz.
+
+**Potvrzená specifikace (Jan 2026-07-27):**
+- **Spouštěč = tiskový parametr** „Rozdělit vývěsku per označník" ve skupině „Zastávky" (default vyp =
+  dnešní chování). NE položka na elementu — je to věc generování výstupu (server dělá stránky + filtruje
+  odjezdy), funguje i bez elementu zastávek, a element nemůže řídit server generování dopředu.
+- **Chování při zapnutí:** vývěsková zastávka obsluhovaná z N označníků (dle spojů) → **N stránek**, každá
+  jen s odjezdy spojů z toho označníku (mřížka minut filtrovaná). Aktuální zastávka zůstává **jeden řádek**
+  (není to duplikace řádku — to je bod 4, samostatný element-přepínač, nezávislý; můžou běžet spolu).
+- **Jen označníky, ze kterých reálně jede ≥1 spoj** (žádné prázdné stránky).
+- **Označení stránky:** zatím jen přes sloupec „Nástupiště" u aktuální zastávky (= označník té stránky,
+  server nastaví per stránka). Titulek/výše = levný follow-up na vyžádání.
+- **Návaznost:** členění výstupu / název souboru (`{POLE}` tokeny) — přidat označník do identity stránky.
 
 **Po dokončení:** souhrnná HD odpověď KOVED #13048 (všech 5 bodů + duplikace + #8828). Symbol „↓"
 u výchozí zastávky ve variantních sloupcích = drobný vizuál, odloženo (teď není důležité).
@@ -23,7 +34,7 @@ u výchozí zastávky ve variantních sloupcích = drobný vizuál, odloženo (t
 
 ## 🧭 Jak podle roadmapy pracovat
 
-Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B1`, `B2`, …) seřazené do **vln**. Každý blok
+Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B2`, `B4`, …) seřazené do **vln**. Každý blok
 má **zónu** = oblast, kde si dvě sezení šlapou po prstech (viz „Paralelizace" níže).
 Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 
@@ -37,12 +48,11 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 ---
 
-## 🌊 Vlna 1 — zastavit škodu, vyčistit frontu
+## 🌊 Vlna 1 — vyčistit frontu
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B1** | **Pojistka proti downgrade systémové šablony + publish aktuálního `.exe`** — starší klient (build 20. 7.) při startu seeduje bezpodmínečně a vrací kurátorovanou šablonu v MLINE zpět; gate „neseeduj, když uložená má novější `version`" (semver, `VersionComparer` existuje). Publish protože staré `.exe` reálně kolují a neumí bloby po kusech (#13013). | S | 2 + publish | — |
-| **B2** | **Zavírací kolo helpdesku** — ověřit v buildu a zavřít #7947, #7955, #9036 + finální vizuál #13048 bodu 2; postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | build z B1 |
+| **B2** | **Zavírací kolo helpdesku** — ověřit v buildu a zavřít #7947, #7955, #9036 + finální vizuál #13048 bodu 2; postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
 
 Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešních dvanácti evidovaných.
 
@@ -55,7 +65,7 @@ Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešní
 | **B4** | **Sdílená base pole formulářů + deklarativní `visibleWhen`** — detail a dohodnutý směr v §B4 níže. První výhra: „Velikost rohu" se skryje při ostrém rohu čistě, bez server round-tripu. | M | 2 + 3 | — |
 | **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | — |
 | **B6** | **Vzhledová dávka** — (a) šev / „zdvojený pruh" mezi plátnem a náhledem: dílčí příčiny = focus rámeček splitteru + plátno kreslí `#E4E4E4` natvrdo vs. theme token kolem → **napojit pozadí plátna na téma** (i kvůli dark mode), projít celé najednou; (b) rozvržení `CellStyleEditor` (dnes WrapPanel, po přidání řezu se to natáhlo) na přehledný grid ve stylu EDInputFormu | S–M | 4 | — |
-| **B7** | **Výchozí šablony MHD + linková do distribuce** — mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/` (= krok 44b / C4) | S | 2 | B1, B5 |
+| **B7** | **Výchozí šablony MHD + linková do distribuce** — mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/` (= krok 44b / C4) | S | 2 | B5 |
 
 **Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
 (rohy = 8 souborů) → každá další drobnost na elementech je osmkrát dražší. Čím dřív, tím víc se vrátí.
@@ -107,13 +117,12 @@ L‑4 nezačínat před B11 — dnes by to znamenalo napsat totéž pětkrát (p
    Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
 
 **Bezpečné kombinace:**
-- ✅ **B1 + B2** (Caché infra / ověřování) — složení vlny 1
 - ✅ **B8 nebo B9 + B6 + zavírání tiketů** — vlna 3
 - ✅ **B10 + B9** — fontová cesta je izolovaná
 - ❌ **B8 + B9** — obě sahají do téže agendy
 - ❌ **cokoli na elementech během B11/B13**
 - ❌ **B4 + jakýkoli element dialog** — B4 přepisuje pole ve všech `.cls`
-- ⚠️ **publish je výhradní vždy**; a nikdy, když někde běží starší `.exe`, které by seed vrátilo zpět (= #13013)
+- ⚠️ **publish je výhradní vždy**
 
 **Dokumentace:** každé sezení dopisuje záznam na začátek changelogu → při paralelním běhu tam vznikne drobná
 kolize. Je triviální; případně ať docs uzavírá poslední dobíhající sezení.
@@ -159,10 +168,8 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 > Malé věci **na jednom místě** (dřív rozseté po šesti sekcích), aby se daly brát **tematickými dávkami**
 > — jedno sezení = jedno téma, ne posbírané drobnosti napříč. Co už je naplánované, nese číslo bloku.
 
-**Provozní** — `B1` pojistka proti downgrade seedu + publish · `B7` výchozí šablony MHD/linková ·
+**Provozní** — `B7` výchozí šablony MHD/linková ·
 varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S, MHD SMO fáze 1)
-
-**Korektnostní nálezy** — *(prázdné; B3 uzavřen 2026-07-27 → archiv)*
 
 **Vzhled / téma** — `B6` šev mezi plátnem a náhledem + pozadí plátna na téma · `B6` rozvržení
 `CellStyleEditor` · **dark mode** runtime swap + ověření (M–L; EDThemeDark + tokenizace hotové 2026-07-13,
