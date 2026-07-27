@@ -64,6 +64,12 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 > hotová, plocha může růst.
 
 - **Zastávkový JŘ business** (parkované helpdesk A2-A5/A6/B4 + TRANSDEV sada) → viz sekce „Zastávkový JŘ — business logika" níže
+- **Seed systémových šablon: verzní pojistka proti downgrade (S, nález 2026-07-27 při #13013):**
+  starší klient (.exe 20.7. s embedded šablonou 1.3.0) při startu přepsal v MLINE větvi novější
+  kurátorovanou 1.5.0 — seed ukládá bezpodmínečně. Přidat gate: neseedovat, když uložená šablona
+  má novější `version` (semver compare, `VersionComparer` už existuje) — jinak každé spuštění
+  staré .exe vrací distribuci zpět. + **publish aktuální .exe** (staré .exe z 20.7. kolují,
+  neumí bloby po kusech → #13013).
 - **MHD SMO doladění** (zbytky uzavřené parity 2026-07-23 → archiv + artifact „Skupiny dnů na vývěsce"):
   fáze 1 — varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S) ·
   fáze 3 — tiskový parametr „Rozdělení sloupců" pro MHD (dle číselníku / každá skupina zvlášť /

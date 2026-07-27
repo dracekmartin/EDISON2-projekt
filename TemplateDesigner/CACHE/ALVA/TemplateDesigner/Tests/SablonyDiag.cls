@@ -8,6 +8,39 @@ Include (%occInclude, GENERAL)
 Class ALVA.TemplateDesigner.Tests.SablonyDiag
 {
 
+/// Bezeztrátový přepínač formátu blobu jedné šablony (dev nástroj pro test kompatibility
+/// klientů, #13013): jednoklíčový ↔ po kusech (1 kus). Obsah se nemění, jen tvar uložení.
+/// Vícekusý blob nepřepíná (odmítne) — slepení by mohlo překročit limit délky řetězce.
+/// IN: IDFA, TEMPLATE_ID. OUT: STAV = výsledný formát.
+ClassMethod PrepnoutFormatBlobu(ByRef sys As %String) As %Status
+{
+	set err = ""
+	try {
+		$$$FillParams
+		set idfaVetev = $get(^||ML("IN","IDFA"))
+		set tid = $get(^||ML("IN","TEMPLATE_ID"))
+		kill ^||ML("OUT")
+		if (idfaVetev = "") || (tid = "") $$$ThrowStatus($$$ERROR($$$GeneralError, "IDFA a TEMPLATE_ID jsou povinné"))
+		set dataBase = $name(^ALVA.TemplateDesigner.Templates(idfaVetev,"DTA",tid,"Data"))
+		if '$data(@dataBase) $$$ThrowStatus($$$ERROR($$$GeneralError, "Šablona nenalezena: "_tid))
+
+		if $data(@dataBase@(1)) {
+			if +$get(@dataBase) > 1 $$$ThrowStatus($$$ERROR($$$GeneralError, "Vícekusý blob nepřepínám (kusů: "_+$get(@dataBase)_")"))
+			set blob = $get(@dataBase@(1))
+			kill @dataBase
+			set @dataBase = blob
+			set ^||ML("OUT","STAV") = "jednoklicovy (delka "_$length(blob)_")"
+		}
+		else {
+			set blob = $get(@dataBase)
+			set @dataBase = 1
+			set @dataBase@(1) = blob
+			set ^||ML("OUT","STAV") = "chunked (1 kus, delka "_$length(blob)_")"
+		}
+	} catch (ex) { $$$CatchErrRest }
+	quit $$$OK
+}
+
 /// OUT(n) = "idfa | templateId | název | agenda | modifiedAt | stav blobu"
 ClassMethod IntegrityProbe(ByRef sys As %String) As %Status
 {
