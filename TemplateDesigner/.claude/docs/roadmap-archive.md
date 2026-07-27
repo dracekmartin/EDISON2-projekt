@@ -2,6 +2,17 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-27 ⛔ — B1 pojistka proti přepsání systémové šablony — ZRUŠENO (není problém)
+
+Blok vznikl jako **domněnka** při řešení #13013, ne z nahlášeného případu: systémová šablona se
+z `.exe` nalévá do MLINE při každém startu, takže by starší `.exe` mohlo vrátit novější kurátorovanou
+šablonu zpět. Prověřeno s Janem: šablonu otevíral kolega **starou verzí na devu**, ne provozní instalací;
+zákaznické (firemní) šablony seed nikdy nesahá a nová verze jde do vydání běžným publishem, takže riziko
+nemá kde vzniknout. Publish zůstává součástí normálního vydávacího postupu, ne roadmapovou položkou.
+Kdyby se přepsání někdy reálně objevilo, správné řešení je **serverová** kontrola v `Sablony.SaveTemplate`
+(distribuční zápis) s **vlastním číslem revize obsahu** — verze formátu JSON na to nestačí, ta se při
+překurátorování šablony nemění. Nezavádět klientský gate: starší `.exe` ho neobsahuje, tedy nezastaví.
+
 ## 2026-07-27 ✅ — B3 drobné korektnostní nálezy — UZAVŘENO
 
 Detail → changelog 2026-07-27 („Drobné korektnostní nálezy").
