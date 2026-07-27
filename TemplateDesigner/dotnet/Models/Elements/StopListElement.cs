@@ -124,7 +124,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         if (Width <= 0) return;
 
-        var zastavky = BuildZastavky(ctx.Data);
+        var zastavky = ExpandPlatformRows(BuildZastavky(ctx.Data));
         bool hasData = zastavky.Count > 0;
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
@@ -498,7 +498,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     public override float CalculateHeightFromData(DataContext? data)
     {
-        var zastavky = BuildZastavky(data);
+        var zastavky = ExpandPlatformRows(BuildZastavky(data));
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;
 
         bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
@@ -813,6 +813,83 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private static bool IsTransferAttr(AtributData a) =>
         a.Znak is "A" or "L";
 
+    /// <summary>Režim „Duplikace řádku per stanoviště" (KOVED #13048 bod 4): zastávku obsluhovanou
+    /// z více stanovišť rozvine na N řádků na jejím místě v trase (pořadí = první výskyt stanoviště
+    /// napříč variantami, netřídí se). Každý řádek nese své stanoviště a časy jen variant, které z něj
+    /// jedou. Vývěsková (aktuální) zastávka i zastávka s ≤1 stanovištěm zůstávají jedním řádkem.
+    /// Ostatní režimy = beze změny (vrací původní seznam).</summary>
+    public List<ZastavkaData> ExpandPlatformRows(List<ZastavkaData> stops)
+    {
+        if (MultiPlatformMode != MultiPlatformDisplay.RowPerPlatform) return stops;
+
+        var result = new List<ZastavkaData>(stops.Count);
+        foreach (var z in stops)
+        {
+            // Odlišná stanoviště variant, které zde staví — v pořadí prvního výskytu (bez třídění).
+            // Jen indexy v rozsahu TrasaMin (obojí server drží stejně dlouhé; guard proti fantom řádku).
+            var platforms = new List<string>();
+            int pocetSloupcu = Math.Min(z.NastupisteVariant.Count, z.TrasaMin.Count);
+            for (int i = 0; i < pocetSloupcu; i++)
+            {
+                var p = z.NastupisteVariant[i];
+                if (!string.IsNullOrEmpty(p) && !platforms.Contains(p)) platforms.Add(p);
+            }
+
+            if (z.JeAktualni || platforms.Count < 2)
+            {
+                result.Add(z);
+                continue;
+            }
+
+            bool first = true;
+            foreach (var plat in platforms)
+            {
+                result.Add(CloneStopForPlatform(z, plat, keepMarkers: first));
+                first = false;
+            }
+        }
+        return result;
+    }
+
+    /// <summary>Kopie zastávky pro jedno stanoviště: v <see cref="ZastavkaData.TrasaMin"/> ponechá časy
+    /// jen sloupců variant jedoucích z tohoto stanoviště (ostatní prázdné). Značka „projíždí bez stání"
+    /// („&lt;") není vázaná na stanoviště → zůstane jen na prvním řádku (aby se info neztratilo, ale
+    /// neopakovalo). Značky (atributy / na znamení / poznámky) jen na prvním řádku; název a zóna se
+    /// opakují (je to táž zastávka). Neaktivní (aktuální řeší jediný řádek výše).</summary>
+    private static ZastavkaData CloneStopForPlatform(ZastavkaData z, string platform, bool keepMarkers)
+    {
+        var trasa = new List<string>(z.TrasaMin.Count);
+        for (int i = 0; i < z.TrasaMin.Count; i++)
+        {
+            string nv = i < z.NastupisteVariant.Count ? z.NastupisteVariant[i] : "";
+            string val = z.TrasaMin[i];
+            if (nv == platform)
+                trasa.Add(val);                           // čas varianty jedoucí z tohoto stanoviště
+            else if (keepMarkers && val == "<")
+                trasa.Add(val);                           // „projíždí" (mimo stanoviště) — 1× na prvním řádku
+            else
+                trasa.Add("");
+        }
+        return new ZastavkaData
+        {
+            Id               = z.Id,
+            Popis            = z.Popis,
+            CasJizdy         = z.CasJizdy,
+            Poradi           = z.Poradi,
+            JeAktualni       = false,
+            Odsazeni         = z.Odsazeni,
+            NaZnameni        = keepMarkers && z.NaZnameni,
+            Nastupiste       = platform,
+            NastupisteSpoju  = z.NastupisteSpoju,
+            Zony             = z.Zony,
+            Atributy         = keepMarkers ? z.Atributy : [],
+            PoznamkyZastavky = keepMarkers ? z.PoznamkyZastavky : [],
+            TrasaMin         = trasa,
+            NastupisteVariant = z.NastupisteVariant,
+            SourceRow        = z.SourceRow,
+        };
+    }
+
     private string BuildStopDisplayText(ZastavkaData z)
     {
         var name = z.Popis;
@@ -850,7 +927,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             Options = [
                 ("Z trasy linky", (object)MultiPlatformDisplay.FromRoute),
                 ("Nejčetnější dle spojů", (object)MultiPlatformDisplay.MostFrequent),
-                ("Výčet všech", (object)MultiPlatformDisplay.All)
+                ("Výčet všech", (object)MultiPlatformDisplay.All),
+                ("Duplikace řádku per stanoviště", (object)MultiPlatformDisplay.RowPerPlatform)
             ]
         },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
@@ -962,6 +1040,9 @@ public enum MultiPlatformDisplay
     MostFrequent,
     /// <summary>Výčet všech nástupišť dle spojů („2, 3"), seřazený dle četnosti.</summary>
     All,
+    /// <summary>Duplikace řádku: zastávka obsluhovaná z více stanovišť se vypíše jako N řádků (jeden
+    /// per stanoviště) na svém místě v trase; časy jen variant daného stanoviště (KOVED #13048 bod 4).</summary>
+    RowPerPlatform,
 }
 
 /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>

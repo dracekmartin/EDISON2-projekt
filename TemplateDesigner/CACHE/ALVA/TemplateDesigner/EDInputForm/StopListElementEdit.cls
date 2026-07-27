@@ -48,7 +48,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Legacy JŘ je netiskl."
         s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více nástupišť", $$$FieldTypeList, 0, 1)
         d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
-        s f.helpText = "Sloupec Nástupiště, když spoje jedou z různých sloupků zastávky: hodnota z trasy / sloupek s nejvíce spoji / výčet všech dle četnosti (např. 3, 2, 4)."
+        d f.AddListItem("RowPerPlatform", "Duplikace řádku per stanoviště")
+        s f.helpText = "Sloupec Nástupiště, když spoje jedou z různých sloupků zastávky: hodnota z trasy / sloupek s nejvíce spoji / výčet všech dle četnosti / nebo duplikace řádku (každé stanoviště zvlášť, časy jen jeho variant)."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)

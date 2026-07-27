@@ -7,25 +7,16 @@
 
 ## 🎯 PRIORITA K DOTAŽENÍ (handoff, rozhodnuto s Janem 2026-07-27) — „stanovišťový balík"
 
-KOVED #13048: body 1–5 hotové v1 (bod 5 = commit `c6d661d`, vizuálně ověřeno na 0330510).
-Zbývá poslední kus: **rozlišení stanovišť (sloupků)** — KOVED ho explicitně chce a v jejich XLSX
-ho dělají **duplikací řádku zastávky per označník/nástupiště**. Zóna 1 (`ZastavkoveJrAd`) — jen
-jedna session naráz. Datová vrstva hotová: nástupiště per spoj = **W pozice 7** (`WNastupisteMapa`
-helper, fallback J-věta `#3` dle směru; agregace `NastupisteSpoju`, cache `^||TiskAd`).
+KOVED #13048: body 1–5 hotové v1 + **krok 1 (duplikace řádku) HOTOVO 2026-07-27** (viz changelog).
+Zbývá **krok 2 (#8828 vývěska per sloupek)**. Zóna 1 (`ZastavkoveJrAd`) — jen jedna session naráz.
+Datová vrstva hotová: nástupiště per spoj = **W pozice 7** (`WNastupisteMapa` helper, fallback J-věta
+`#3` dle směru; agregace `NastupisteSpoju`; nástupiště per varianta = `NASTUPISTE_VARIANT`; cache `^||TiskAd`).
 
-**Krok 1 — duplikace řádku per sloupek (bod 4 fáze 2)** (M):
-- Nový režim přepínače „Více nástupišť" (`MultiPlatformMode`): **„Řádek per nástupiště"** —
-  server vyemituje zastávku s N sloupky jako N řádků ZASTAVKY (číslo sloupku k názvu/sloupci
-  Nástupiště); default režimy beze změny (gold safe).
-- **Stanoviště zpět do identity variant JEN v tomto režimu** — v commitu `c6d661d` vyhozeno,
-  protože bez řádků per sloupek dávalo vizuálně identické duplicitní časové sloupce (smoke test
-  Jan); s řádky per sloupek je to čitelné: varianta má čas na řádku „svého" sloupku, `<`/prázdno
-  na ostatních.
-- Otevřené designové body (rozhodnout na místě): časy na duplikovaných řádcích (jen varianty
-  daného sloupku), duplikovat i vývěskovou zastávku? (šipka směru, zvýraznění aktuální —
-  nejspíš zvýraznit jen řádek sloupku vývěsky), řazení duplikátů (dle čísla sloupku), atributy/
-  poznámky zastávky nekopírovat do legendy vícekrát, interakce s TISK_PROJETYCH_ZAST.
-- Testy: gold beze změny (režim opt-in), rozšířit `AdVariantyProbe` + unit testy helperů.
+**~~Krok 1 — duplikace řádku per stanoviště (bod 4)~~ ✅ HOTOVO 2026-07-27** — 4. volba comboboxu
+„Více nástupišť" (`RowPerPlatform`). Klientská expanze (`ExpandPlatformRows`) nad aditivním serverovým
+polem `NASTUPISTE_VARIANT` — identita variant se neměnila (čistší než plán, gold jen re-baseline).
+Časy per stanoviště, vývěska/jednostanovištní = 1 řádek, značky jen 1. řádek, pořadí = výskyt na trase.
+Detail changelog + `StopListPlatformDuplicationTests`.
 
 **Krok 2 — #8828 vývěska per sloupek (= blok B9)** (M): stránka per zastávka×sloupek s filtrem
 odjezdů dle sloupku spoje na vývěskové zastávce (referenční podoba = KOVED XLSX

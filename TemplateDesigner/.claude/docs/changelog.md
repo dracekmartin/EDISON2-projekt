@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-27 — Duplikace řádku per stanoviště (#13048 KOVED, bod 4)
+
+Zastávka obsluhovaná z více stanovišť (sloupků) se v seznamu vypíše jako **N řádků, jeden per
+stanoviště** (KOVED „duplikace řádku ... příklad Medlovice"). 4. volba comboboxu „Více nástupišť"
+vedle „nejčetnější" / „výčet".
+
+- **Server (aditivně, `ZastavkoveJrAd`)** — nové wire-pole `NASTUPISTE_VARIANT` per zastávka
+  (nástupiště per varianta, zarovnané s `TRASA_MIN`; z reprezentativní trasy varianty, W pole 7,
+  fallback J-věta). Identita variant se **nemění** → gold jen re-baseline (počty stejné, přibylo pole).
+- **Klient (`StopListElement.ExpandPlatformRows`)** — režim `RowPerPlatform`: zastávku se ≥2 stanovišti
+  rozvine na N řádků **na jejím místě v trase** (pořadí = první výskyt stanoviště napříč variantami,
+  netřídí se). Každý řádek nese své stanoviště + **časy jen variant, které z něj jedou** (ostatní
+  prázdné — řeší bod 5 „jiné stanoviště = jiná varianta" na úrovni zobrazení). Vývěska a jednostanovištní
+  zastávka = 1 řádek; značky (atributy / na znamení / poznámky) jen na prvním řádku.
+- **Testy:** 6 xUnit (`StopListPlatformDuplicationTests`, vč. zachování značky „<" projíždějící varianty) +
+  Caché `TestNastupisteVariantEmit` (data lock na 0330510). Gold 0365001/0365005 re-baseline. 42/42 Caché + 6/6 xUnit.
+- **Známé omezení:** nástupiště per varianta = z **reprezentativního spoje** varianty (jako TRASA_MIN).
+  Dva spoje se **shodným sledem zastávek**, ale různým stanovištěm, se slijí do jedné varianty → zobrazí se
+  jen stanoviště reprezentanta. Rozlišení i tohoto případu = stanoviště do **identity varianty** (vědomě NE —
+  dávalo vizuálně identické sloupce, viz bod 5 / `c6d661d`); reálná data (0320680) mají různá stanoviště
+  napříč různými variantami, kde to funguje. Plné rozlišení až na reálnou potřebu KOVED.
+
 ## 2026-07-27 — Varianty tras dle trasy + písmena u odjezdů (#13048 KOVED, bod 5)
 
 Návrat k legacy sémantice variantních časových sloupců + KOVED rozšíření. Jen server

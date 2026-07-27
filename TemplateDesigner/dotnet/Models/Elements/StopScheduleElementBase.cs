@@ -116,6 +116,10 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             if (row.GetValue("TRASA_MIN") is JsonArray tmArr)
                 z.TrasaMin = tmArr.Select(n => n?.ToString() ?? "").ToList();
 
+            // nástupiště per varianta (zarovnané s TrasaMin) — pro režim „Duplikace řádku per stanoviště"
+            if (row.GetValue("NASTUPISTE_VARIANT") is JsonArray nvArr)
+                z.NastupisteVariant = nvArr.Select(n => n?.ToString() ?? "").ToList();
+
             result.Add(z);
         }
 

@@ -33,6 +33,19 @@ Method TestPrestupyEmit()
 	do $$$AssertTrue(pocetA > 0, "autobus ""A"" se emituje na 0330510 (nalezeno "_pocetA_"×)")
 }
 
+/// KOVED #13048 bod 4 (duplikace): server emituje NASTUPISTE_VARIANT a na 0330510 existuje downstream
+/// zastávka se ≥2 stanovišti napříč variantami (podklad pro klientskou duplikaci řádku). Zamyká data.
+Method TestNastupisteVariantEmit()
+{
+	set db = "CB_CSADAD"
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		quit
+	}
+	set pocet = ..PocetDownstreamMultiStanovist(db, 1, "0330510")
+	do $$$AssertTrue(pocet > 0, "≥2 stanoviště variant u downstream zastávky na 0330510 (nalezeno "_pocet_")")
+}
+
 /// 1:1 porovnání řetězce zón per zastávka (#-delim napříč zastávkami) legacy vs náš.
 Method AssertZony(db As %String, sku As %String, lin As %String, page As %Integer)
 {
@@ -129,6 +142,33 @@ ClassMethod PrestupovyPocet(db As %String, sku As %String, lin As %String, hleda
 	quit pocet
 }
 
+/// Počet downstream (ne aktuálních) zastávek napříč stránkami se ≥2 odlišnými stanovišti variant.
+ClassMethod PocetDownstreamMultiStanovist(db As %String, sku As %String, lin As %String) As %Integer
+{
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set pocet = 0, p = ""
+	for {
+		set p = $order(^||ML("OUT",p)) quit:p=""
+		continue:'$isvalidnum(p)
+		set json = $get(^||ML("OUT",p)) continue:json=""
+		set zas = ##class(%DynamicObject).%FromJSON(json).rows.%Get("ZASTAVKY")
+		continue:'$isobject(zas)
+		set it = zas.%GetIterator()
+		while it.%GetNext(.zk, .z) {
+			continue:z.%Get("AKTUALNI_ZASTAVKA")
+			kill dist  set arr = z.%Get("NASTUPISTE_VARIANT")
+			if $isobject(arr) { set ai = arr.%GetIterator()  while ai.%GetNext(.ak,.av) { i av'="" s dist(av)="" } }
+			set cnt = 0, d1 = ""  for { set d1 = $order(dist(d1)) quit:d1=""  set cnt = cnt + 1 }
+			i cnt > 1 set pocet = pocet + 1
+		}
+	}
+	quit pocet
+}
+
 /// Naplní sys pro $$$FillParams (IdFa = data namespace; AD data nejsou idfa-scoped, stačí non-empty).
 ClassMethod SetupSysFor(ByRef sys, db As %String)
 {
@@ -191,6 +231,54 @@ ClassMethod AttrProbe(ByRef sys As %String) As %Status
 	quit $$$OK
 }
 
+/// Sken (cache_query): IN DB [LIMIT] → najde linky, kde je multi-stanovištní zastávka DOWNSTREAM
+/// a ZOBRAZENÁ (kladný čas, ne aktuální, ne projetá) = duplikace se projeví v běžném pohledu.
+ClassMethod ScanVisibleMulti(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for { set k = $order(^||ML("IN",k)) quit:k=""  set v = $get(^||ML("IN",k))  set inp($piece(v,"~",1)) = $piece(v,"~",2,999) }
+	set db = $get(inp("DB"))
+	if db = "" set db = $get(sys("U","DATA"))
+	set limit = +$get(inp("LIMIT"),40)
+	do ..SetupSysFor(.sys, db)
+	set nalezeno = "", cnt = 0, sku = ""
+	for {
+		set sku = $order(^[db]JRL(sku)) quit:sku=""
+		set lin = ""
+		for {
+			set lin = $order(^[db]JRL(sku,lin)) quit:lin=""
+			quit:cnt'<limit
+			set cnt = cnt + 1
+			kill ^||ML("IN"), ^||ML("OUT")
+			set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+			set st = $$$OK
+			try { do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys) } catch { continue }
+			set p = ""
+			for {
+				set p = $order(^||ML("OUT",p)) quit:p=""
+				continue:'$isvalidnum(p)
+				set json = $get(^||ML("OUT",p)) continue:json=""
+				set zas = ##class(%DynamicObject).%FromJSON(json).rows.%Get("ZASTAVKY")
+				continue:'$isobject(zas)
+				set it = zas.%GetIterator(), hit = ""
+				while it.%GetNext(.zk, .z) {
+					continue:'(z.%Get("CAS_JIZDY") > 0)      // jen downstream zobrazené (kladný kumul. čas)
+					kill dist  set arr = z.%Get("NASTUPISTE_VARIANT")
+					if $isobject(arr) { set ai = arr.%GetIterator()  while ai.%GetNext(.ak,.av) { i av'="" s dist(av)="" } }
+					set dc = 0, d1 = ""  for { set d1 = $order(dist(d1)) quit:d1=""  set dc = dc + 1 }
+					i dc > 1 { set hit = z.%Get("NAZEV_ZASTAVKY")_"("_..JoinKeys(.dist)_")"  quit }
+				}
+				i hit '= "" { set nalezeno = nalezeno_"lin="_lin_" str="_p_" "_hit_" ; "  quit }
+			}
+			i nalezeno [ ("lin="_lin_" ") quit
+		}
+		quit:nalezeno'=""
+	}
+	kill ^||ML("OUT")
+	set ^||ML("OUT","NALEZENO") = $s(nalezeno="":"(nic v prvních "_limit_" linkách)",1:nalezeno)
+	quit $$$OK
+}
+
 /// Sken (cache_query): IN DB → OUT LINKY = linky firmy, jejichž libovolná zastávka má
 /// v dta2 přestupový atribut (A/L). Najde testovací linku pro ověření přestupů.
 ClassMethod ScanTransfers(ByRef sys As %String) As %Status
@@ -218,6 +306,76 @@ ClassMethod ScanTransfers(ByRef sys As %String) As %Status
 	}
 	set ^||ML("OUT","LINKY") = found
 	quit $$$OK
+}
+
+/// Diagnostika NASTUPISTE_VARIANT (cache_query): IN DB/SKU/LIN/PAGE → OUT řádky zastávek 1. stránky
+/// „název | TRASA_MIN | NASTUPISTE_VARIANT" + MULTI = zastávky se ≥2 stanovišti napříč variantami.
+ClassMethod NastVarProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for { set k = $order(^||ML("IN",k)) quit:k=""  set v = $get(^||ML("IN",k))  set inp($piece(v,"~",1)) = $piece(v,"~",2,999) }
+	set db = $get(inp("DB"))
+	if db = "" set db = $get(sys("U","DATA"))
+	set sku = $get(inp("SKU"),1), lin = $get(inp("LIN")), page = +$get(inp("PAGE"),1)
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku
+	set ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	// Projdi všechny stránky, najdi DOWNSTREAM (ne aktuální) zastávky se ≥2 stanovišti = ty se duplikují.
+	// Plný dump jedné stránky (IN DUMPPAGE): každá zastávka name|akt|tm|nv → hledání proč se neduplikuje.
+	set dumpPage = $get(inp("DUMPPAGE"))
+	if dumpPage '= "" {
+		set dj = $get(^||ML("OUT",dumpPage))
+		kill ^||ML("OUT")
+		if dj = "" { set ^||ML("OUT","ERR") = "stránka prázdná"  quit $$$OK }
+		set dz = ##class(%DynamicObject).%FromJSON(dj).rows.%Get("ZASTAVKY"), di = dz.%GetIterator(), rn = 0, dump = ""
+		while di.%GetNext(.dk, .d) {
+			set rn = rn + 1
+			set dump = dump_rn_":"_d.%Get("NAZEV_ZASTAVKY")_"[cas="_d.%Get("CAS_JIZDY")_" tm="_..JoinArr(d.%Get("TRASA_MIN"))_" nv="_..JoinArr(d.%Get("NASTUPISTE_VARIANT"))_"] "
+		}
+		set ^||ML("OUT","DUMP") = dump
+		quit $$$OK
+	}
+	set nPages = 0, stranky = "", p = ""
+	for {
+		set p = $order(^||ML("OUT",p)) quit:p=""
+		continue:'$isvalidnum(p)
+		set json = $get(^||ML("OUT",p)) continue:json=""
+		set nPages = nPages + 1
+		set obj = ##class(%DynamicObject).%FromJSON(json)
+		set vyveska = obj.values.%Get("POPIS_ZASTAVKA"), smer = obj.values.%Get("POPIS_SMER")
+		set zas = obj.rows.%Get("ZASTAVKY")
+		continue:'$isobject(zas)
+		set multiZde = "", it = zas.%GetIterator()
+		while it.%GetNext(.zk, .z) {
+			continue:z.%Get("AKTUALNI_ZASTAVKA")     // vývěska = jeden řádek, neduplikuje
+			kill dist  set arr = z.%Get("NASTUPISTE_VARIANT")
+			if $isobject(arr) { set ai = arr.%GetIterator()  while ai.%GetNext(.ak,.av) { i av'="" s dist(av)="" } }
+			set cnt = 0, d1 = ""  for { set d1 = $order(dist(d1)) quit:d1=""  set cnt = cnt + 1 }
+			i cnt > 1 set multiZde = multiZde_z.%Get("NAZEV_ZASTAVKY")_"("_..JoinKeys(.dist)_") "
+		}
+		i multiZde '= "" set stranky = stranky_"[str "_p_" vyveska="_vyveska_" ("_smer_") → duplikuje: "_multiZde_"] "
+	}
+	kill ^||ML("OUT")
+	set ^||ML("OUT","PAGES") = nPages
+	set ^||ML("OUT","STRANKY_S_DUPLIKACI") = stranky
+	quit $$$OK
+}
+
+ClassMethod JoinArr(arr) As %String
+{
+	quit:'$isobject(arr) ""
+	set s = "", it = arr.%GetIterator()
+	while it.%GetNext(.k,.v) { set s = s_$s(s="":"",1:",")_v }
+	quit s
+}
+
+ClassMethod JoinKeys(ByRef a) As %String
+{
+	set s = "", k = ""
+	for { set k = $order(a(k)) quit:k=""  set s = s_$s(s="":"",1:",")_k }
+	quit s
 }
 
 /// Diagnostika (cache_query, mimo runner): IN DB/SKU/LIN/PAGE → OUT LEG/OUR/MATCH.

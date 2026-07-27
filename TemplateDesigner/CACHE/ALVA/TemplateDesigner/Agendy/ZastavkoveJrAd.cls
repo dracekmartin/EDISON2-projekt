@@ -362,7 +362,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s pismenaVar = ($zcvt($g(^||ML("IN","PISMENA_VARIANT")),"L") = "true")
     s prvniBez   = ($zcvt($g(^||ML("IN","PRVNI_BEZ_PISMENE")),"L") '= "false")
     s razeniVar  = $g(^||ML("IN","RAZENI_VARIANT"))
-    k variantSig, variantPocet, variantRepSpoj, variantMax, variantPat, spojVarianta
+    k variantSig, variantPocet, variantRepSpoj, variantMax, variantPat, spojVarianta, variantCt
     s poradiVar = 0, spV = ""
     f {
         s spV = $o(^[dataDB]JRL(sku,lin,smer,spV))
@@ -383,6 +383,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             s poradiVar = poradiVar + 1
             s variantSig(sigV) = poradiVar
             s variantRepSpoj(poradiVar) = spV
+            s variantCt(poradiVar) = ctV                 // číslo trasy varianty → nástupiště per varianta (W pole 7)
             s ppV = ""
             f {
                 s ppV = $o(servedPoradi(ppV))  q:ppV=""
@@ -470,6 +471,23 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             else { d trasaMin.%Push(patX) }
         }
         d z.%Set("TRASA_MIN", trasaMin)
+        // KOVED #13048 bod 4 (duplikace): nástupiště per varianta (zarovnané s TRASA_MIN) — z reprezentativní
+        // trasy varianty (W pole 7, fallback J-věta #3). Prázdno = varianta zde nestaví. Element z toho
+        // v režimu „Duplikace řádku per stanoviště" udělá N řádků (časy jen variant daného stanoviště).
+        s nastVar = ##class(%DynamicArray).%New()
+        s nastJv = $p($p(veta,"#",3),":",$s(jeTam:1,1:2))    // fallback z trasy linky (J-věta dle směru)
+        f colX=1:1:pocetSloupcu {
+            s viX = displayVar(colX)
+            i $g(variantPat(viX,poradi)) = "S" {
+                d ..WNastupisteMapa(dataDB, sku, lin, $g(variantCt(viX)), .nMapV)
+                s nastX = $g(nMapV(poradi))
+                i nastX = "" s nastX = nastJv
+                d nastVar.%Push(nastX)
+            } else {
+                d nastVar.%Push("")                          // varianta zde nestaví → bez nástupiště
+            }
+        }
+        d z.%Set("NASTUPISTE_VARIANT", nastVar)
         d z.%Set("NASTUPISTE", $p($p(veta,"#",3),":",$s(jeTam:1,1:2)))   // TR3: nástupiště per zastávka (J-věta #3, dle směru)
         // KOVED #13048 bod 4: nástupiště dle SPOJŮ (W pole 8, fallback J-věta) — CSV dle četnosti,
         // první = nejčetnější. Element z toho staví režimy „nejčetnější" / „výčet".
