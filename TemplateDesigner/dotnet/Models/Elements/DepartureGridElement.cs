@@ -245,8 +245,8 @@ public class DepartureGridElement : StopScheduleElementBase
             // Element font pro měření minimální šířky
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var measureFont = new SKFont(
-                // resolved font (vč. dokumentového defaultu) — měření musí trefit stejný font jako render (ř. ~1066)
-                GetTypeface(ResolveElementHeaderParent().FontFamily, SKFontStyle.Bold), fontPx);
+                // resolved rodina + řez (vč. dokumentového defaultu) — měření musí trefit stejný font jako render
+                GetTypeface(ResolveGroupHeaderParent()), fontPx);
 
             // Minimální šířka = nejdelší slovo záhlaví + 2mm padding
             float maxWordW = 0;
@@ -333,8 +333,8 @@ public class DepartureGridElement : StopScheduleElementBase
             // Single-nadpis: word-wrap přes celý text, všechny řádky Line 1 (element font)
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
-                // resolved font (vč. dokumentového defaultu) — měření musí trefit stejný font jako render (ř. ~1066)
-                GetTypeface(ResolveElementHeaderParent().FontFamily, SKFontStyle.Bold), fontPx);
+                // resolved rodina + řez (vč. dokumentového defaultu) — wrap musí trefit stejný font jako render
+                GetTypeface(ResolveGroupHeaderParent()), fontPx);
             var wrapped = WrapHeaderText(g.Skupina.Nadpis, g.GroupWidth, wrapFont, effectiveMmToPx);
             return g with { HeaderLines = wrapped.Select(w => new HeaderLine(w, IsSecondary: false)).ToArray() };
         }).ToList();
@@ -1085,9 +1085,8 @@ public class DepartureGridElement : StopScheduleElementBase
         float fontPx = effFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(GetTypeface(dataResolved.FontFamily), fontPx);
-        using var headerFont = new SKFont(
-            GetTypeface(headerResolved.FontFamily, SKFontStyle.Bold), headerFontPx);
+        using var font = new SKFont(GetTypeface(dataResolved), fontPx);
+        using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
 
         float currentY = Y;
 

@@ -505,12 +505,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
         float rowH = DataRowHeight ?? ComputeRowH(dataResolved.FontSize);
 
         float headerFontPx = headerResolved.FontSize * PtToMm * ctx.MmToPx;
-        using var headerFont = new SKFont(GetTypeface(headerResolved.FontFamily, SKFontStyle.Bold), headerFontPx);
+        using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
         float currentY = RenderSectionHeader(ctx, "Linkový JŘ — zastávky × spoje", X, Y, Width, headerH,
             headerFont, paints.HeaderBg, paints.HeaderText, paints.Grid);
 
         float dataFontPx = dataResolved.FontSize * PtToMm * ctx.MmToPx;
-        using var dataFont = new SKFont(GetTypeface(dataResolved.FontFamily), dataFontPx);
+        using var dataFont = new SKFont(GetTypeface(dataResolved), dataFontPx);
         RenderPlaceholderRows(ctx, 5, "Zastávka", X, currentY, Width, rowH, dataFont, paints.Text, paints.Grid);
     }
 

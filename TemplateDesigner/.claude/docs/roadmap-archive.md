@@ -2,6 +2,22 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-27 ✅ — B3 drobné korektnostní nálezy — UZAVŘENO
+
+Detail → changelog 2026-07-27 („Drobné korektnostní nálezy").
+
+- **(a) Dialog pevné tabulky mazal per-buňkový `Format`/`Style` + barvu pozadí řádku** (mezi-model
+  `RowVM`/`CellVM` je nepřenášel). Bolelo u tabulek ze šablony agendy — Caché posílá `format` a barvy
+  per buňku. `TableElement.Clone()` byl v pořádku už dřív (hlídá `CloneCompletenessTests`), problém byl
+  jen v cestě přes dialog.
+- **(b) Ruční kreslicí/měřicí cesty JŘ elementů ignorovaly řez písma** (typeface natvrdo Normal/Bold).
+  Sjednoceno na kaskádu novým helperem `ScheduleElementBase.GetTypeface(ResolvedTextStyle)` — legenda
+  poznámek (vč. výpočtu výšky, kde se měření rozcházelo s renderem), měření + wrap záhlaví skupin dnů
+  u odjezdů, designerové placeholdery, měření šířky značek zastávky. Legenda navíc začala respektovat
+  výchozí font dokumentu.
+- 8 nových xUnit (round-trip řádku tabulky, řez z kaskády, výška legendy reagující na tučný řez).
+  Blok B11 tím ztratil závislost na B3.
+
 ## 2026-07-27 ✅ — KOVED #13048 stanovišťový balík krok 1: duplikace řádku per stanoviště — UZAVŘENO
 
 Detail → changelog 2026-07-27. 4. volba comboboxu „Více nástupišť" (`RowPerPlatform`): zastávku

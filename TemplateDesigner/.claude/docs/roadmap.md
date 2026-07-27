@@ -43,7 +43,6 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 |---|---|---|---|---|
 | **B1** | **Pojistka proti downgrade systémové šablony + publish aktuálního `.exe`** — starší klient (build 20. 7.) při startu seeduje bezpodmínečně a vrací kurátorovanou šablonu v MLINE zpět; gate „neseeduj, když uložená má novější `version`" (semver, `VersionComparer` existuje). Publish protože staré `.exe` reálně kolují a neumí bloby po kusech (#13013). | S | 2 + publish | — |
 | **B2** | **Zavírací kolo helpdesku** — ověřit v buildu a zavřít #7947, #7955, #9036 + finální vizuál #13048 bodu 2; postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | build z B1 |
-| **B3** | **Drobné korektnostní nálezy** — (a) pevná tabulka ztrácí při kopii souhrnné řádky a per-buňkový `Format`+`Style` (`Clone()`, `RowVM.ToModel()`); (b) minuty DepartureGridu a text legendy poznámek staví `SKFontStyle` ručně a **ignorují řez písma** → sjednotit na `ResolvedTextStyle.ToSKFontStyle` | S–M | 3 | — |
 
 Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešních dvanácti evidovaných.
 
@@ -70,7 +69,7 @@ Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešní
 | **B8** | **Varianty tras — dokončení.** Serverová část HOTOVÁ 2026-07-27 (#13048 bod 5 + TR7: varianta = sled zastávek dle legacy dedup — nástupiště vědomě NE, řeší #8828; čas = maximum, řazení dle četnosti / stabilní, písmena variant u odjezdů; oprava `|`=„čas 0"; detail changelog). Zbývá: **vizuální ověření v buildu + MHD parita**; per-písmeno výběr sloupců až na potvrzení TRANSDEV nad novým chováním. | S–M | 1 + 3 | ne spolu s B9 |
 | **B9** | **#8828 — vývěska per sloupek zastávky:** = **krok 2 „stanovišťového balíku"** (viz 🎯 vršek roadmapy — tam je aktuální handoff). Datový průzkum HOTOV 2026-07-27 (per-spoj sloupek = W-trasa pozice 7, fallback J-věta; `NastupisteSpoju` už čte). MHD zdroj sloupku dořešit až u MHD zákazníka. | M | 1 | ne spolu s B8 |
 | **B10** | **L‑2: symbolový font — linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | — |
-| **B11** | **L‑3: row-plan vrstva** — `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | B3, B5 |
+| **B11** | **L‑3: row-plan vrstva** — `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | B5 |
 | **B12** | **#7937 rozšíření** — odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | — |
 
 ---
@@ -108,7 +107,7 @@ L‑4 nezačínat před B11 — dnes by to znamenalo napsat totéž pětkrát (p
    Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
 
 **Bezpečné kombinace:**
-- ✅ **B1 + B3 + B2** (Caché infra / kreslení / ověřování) — ideální složení vlny 1
+- ✅ **B1 + B2** (Caché infra / ověřování) — složení vlny 1
 - ✅ **B8 nebo B9 + B6 + zavírání tiketů** — vlna 3
 - ✅ **B10 + B9** — fontová cesta je izolovaná
 - ❌ **B8 + B9** — obě sahají do téže agendy
@@ -148,8 +147,6 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 - **→ B4** **Reaktivita EDInputForm** — „Řez" v element dialozích se plní jen **při otevření**; živý přepočet
   při změně rodiny (bez znovuotevření) = ten `visibleWhen`/reaktivní mechanismus výše. (CellStyleEditor to už
   má — WPF je reaktivní.)
-- **→ B3** **Ruční render cesty schedule elementů** — minuty DepartureGridu, text legendy poznámek staví
-  `SKFontStyle` přes `GetTypeface` ručně a `FontWeight` zatím ignorují; sjednotit na `ResolvedTextStyle.ToSKFontStyle`.
 - **→ B6** **Layout editoru sloupců (`CellStyleEditor`)** — dnes horizontální řádek zalomený WrapPanelem
   (dočasné, po přidání řezu se to natáhlo). Přepracovat na přehlednější grid, ideálně sjednotit s EDInputForm stylem.
 
@@ -165,8 +162,7 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 **Provozní** — `B1` pojistka proti downgrade seedu + publish · `B7` výchozí šablony MHD/linková ·
 varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S, MHD SMO fáze 1)
 
-**Korektnostní nálezy** — `B3` pevná tabulka ztrácí souhrnné řádky a per-buňkový formát při kopii ·
-`B3` řez písma ignorovaný v ručních render cestách (minuty, legenda)
+**Korektnostní nálezy** — *(prázdné; B3 uzavřen 2026-07-27 → archiv)*
 
 **Vzhled / téma** — `B6` šev mezi plátnem a náhledem + pozadí plátna na téma · `B6` rozvržení
 `CellStyleEditor` · **dark mode** runtime swap + ověření (M–L; EDThemeDark + tokenizace hotové 2026-07-13,

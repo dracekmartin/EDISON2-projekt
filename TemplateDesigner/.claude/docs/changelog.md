@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-27 — Drobné korektnostní nálezy (blok B3)
+
+Dva nezávislé tiché nálezy z předchozí revize kódu, oba „nic nespadne, jen se ztratí nastavení".
+
+- **Dialog pevné tabulky mazal per-buňkový formát a styl.** Řádkový mezi-model dialogu
+  (`RowVM`/`CellVM`) nesl jen text buňky → otevřít + OK zahodilo `Format`, per-buňkový `Style`
+  a barvu pozadí řádku. Nejvíc to bolelo u tabulek načtených ze šablony agendy — Caché posílá
+  `format` (např. `dd.MM.yyyy`) a barvy per buňku, dialog je nikdy needitoval, ale smazal.
+  Nově se přenášejí (styl se klonuje, ne sdílí). `TableElement.Clone()` byl v pořádku už dřív
+  (drží ho reflexní `CloneCompletenessTests`) — problém byl jen v cestě přes dialog.
+- **Ruční kreslicí / měřicí cesty JŘ elementů ignorovaly řez písma.** Legenda poznámek a měření
+  záhlaví odjezdů si stavěly typeface natvrdo jako Normal/Bold, takže uživatelova váha písma
+  (a kurzíva) se do nich nepropsala — a u legendy se navíc rozešlo měření s renderem (počet
+  zalomených řádků → špatná výška boxu). Sjednoceno na kaskádu: nový helper
+  `ScheduleElementBase.GetTypeface(ResolvedTextStyle)` (rodina + řez z `ToSKFontStyle`), použitý
+  v legendě (text, záhlaví, zvýrazněný symbol, výpočet výšky), v měření a wrapu záhlaví skupin dnů
+  u odjezdů a v designerových placeholderech odjezdů / linkové tabulky / seznamu zastávek + v měření
+  šířky značek zastávky. Legenda tím zároveň začala respektovat **výchozí font dokumentu** (dřív
+  padala na Arial).
+- **Testy:** 8 nových xUnit (`TableEditorRowRoundTripTests` 4× round-trip řádku, `ScheduleFontCutTests`
+  3× řez z kaskády + výška legendy reagující na tučný řez — ověřeno, že bez fixu padá). 384/384 xUnit.
+
 ## 2026-07-27 — Duplikace řádku per stanoviště (#13048 KOVED, bod 4)
 
 Zastávka obsluhovaná z více stanovišť (sloupků) se v seznamu vypíše jako **N řádků, jeden per

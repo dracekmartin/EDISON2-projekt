@@ -277,7 +277,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 // Placeholder se ukazuje jen v designeru. Print s prázdnými daty nesmí
                 // vykreslovat fake zastávky.
                 float placeholderFontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
-                using var placeholderFont = new SKFont(GetTypeface(ResolveColumnDataParent().FontFamily), placeholderFontPx);
+                using var placeholderFont = new SKFont(GetTypeface(ResolveColumnDataParent()), placeholderFontPx);
                 currentY = RenderPlaceholderRows(ctx, 4, "Zastávka",
                     X, currentY, Width, rowH, placeholderFont, paints.Text, paints.Grid);
             }
@@ -657,7 +657,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         if (zastavky.Count == 0) return 0f;
         float fontPx = fontSizePt * PtToMm * mmToPx;
-        using var font = new SKFont(GetTypeface(ResolveColumnDataParent().FontFamily), fontPx);
+        using var font = new SKFont(GetTypeface(ResolveColumnDataParent()), fontPx);
         using var symbolFont = new SKFont(symbolFace, fontPx);
         float maxPx = 0f;
         foreach (var z in zastavky)
