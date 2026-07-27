@@ -80,7 +80,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 · ▶ **ready-to-close** (ověřit u klienta) | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
 | #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
-| #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | 🟠 | Datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; ~0.5–1 den Caché | §B4 |
+| #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | ✅ **HOTOVO 2026-07-27** (AD) — tiskový parametr „Rozdělit vývěsku per označník"; vývěska z N označníků → N stránek s filtrovanými odjezdy per označník (`TestSplitPerOznacnik`, ověřeno 0320680). MHD zdroj sloupku až u MHD zákazníka. **Zavřít po ověření v buildu.** | changelog 2026-07-27 |
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
 | #13048 | KOVED (IDZK/Lábsky) | Poznámky/sloupce zastávek (5 bodů) | 🟡 body 1–5 v1 hotové (čeká vizuál. ověření + #8828 vývěska per sloupek) | Viz rozpad níže | §0.3 |
 

@@ -24,7 +24,6 @@ public class PreviewCanvas
     private const float PageGapPx     = 16f;
     private const float BaseMmToPx   = 96f / 25.4f;   // px na mm při 96 DPI, zoom 1:1
 
-    private static readonly SKColor ClrBackground  = new(0xFFE4E4E4);   // shodné s DesignerCanvas
     private static readonly SKColor ClrPage        = SKColors.White;
     private static readonly SKColor ClrPageBorder  = new(0xFFAAAAAA);
     private static readonly SKColor ClrOverflowBdr = new(0xFFD32F2F);   // rámeček přetékající stránky
@@ -304,7 +303,8 @@ public class PreviewCanvas
         var overflowPages = layout.Pages.Select(p => PageOverflows(p, ps)).ToList();
         OverflowChanged?.Invoke(overflowPages.Any(x => x));
 
-        canvas.Clear(ClrBackground);
+        // Jen obrazovkový náhled — export si plochu čistí bílou (viz RenderMultiDataToPng/Pdf).
+        canvas.Clear(CanvasTheme.Background);
         if (layout.TotalPages == 0) return;
 
         float currentPageY = PageTopPaddingPx;

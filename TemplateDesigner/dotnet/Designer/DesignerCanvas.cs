@@ -36,7 +36,6 @@ public class DesignerCanvas
     public float ExtraLeftPx => _state.ShowSectionHeaders ? SectionTabWidthPx : 0f;
 
     // Barvy designeru
-    private static readonly SKColor ClrBackground         = new(0xFFE4E4E4);
     private static readonly SKColor ClrPage               = SKColors.White;
     private static readonly SKColor ClrPageBorder         = new(0xFFAAAAAA);
     private static readonly SKColor ClrMarginGuide        = new(0x35FF6600);
@@ -88,7 +87,8 @@ public class DesignerCanvas
         if (VisibleViewport.Width > 0 && VisibleViewport.Height > 0)
             canvas.ClipRect(VisibleViewport);
 
-        canvas.Clear(ClrBackground);
+        // Plocha kolem stránky = tentýž zdroj jako pozadí WPF kolem canvasu (jinak vzniká šev).
+        canvas.Clear(CanvasTheme.Background);
 
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;

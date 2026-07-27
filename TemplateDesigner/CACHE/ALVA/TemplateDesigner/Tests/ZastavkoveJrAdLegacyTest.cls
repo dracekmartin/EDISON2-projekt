@@ -33,6 +33,21 @@ Method TestPrestupyEmit()
 	do $$$AssertTrue(pocetA > 0, "autobus ""A"" se emituje na 0330510 (nalezeno "_pocetA_"×)")
 }
 
+/// #8828: parametr „Rozdělit vývěsku per označník" → multi-označníková vývěska dá víc stránek než bez něj
+/// (a filtruje odjezdy). Zamyká, že split reálně přidá stránky na 0320680 (ČB aut.nádr. = označníky 11/22).
+Method TestSplitPerOznacnik()
+{
+	set db = "CB_CSADAD"
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		quit
+	}
+	do ..SetupSysFor(.sys, db)
+	set off = ..PocetStranek(.sys, 1, "0320680", 0)
+	set on  = ..PocetStranek(.sys, 1, "0320680", 1)
+	do $$$AssertTrue(on > off, "rozdělení per označník přidá stránky na 0320680 (off="_off_" on="_on_")")
+}
+
 /// KOVED #13048 bod 4 (duplikace): server emituje NASTUPISTE_VARIANT a na 0330510 existuje downstream
 /// zastávka se ≥2 stanovišti napříč variantami (podklad pro klientskou duplikaci řádku). Zamyká data.
 Method TestNastupisteVariantEmit()
@@ -305,6 +320,82 @@ ClassMethod ScanTransfers(ByRef sys As %String) As %Status
 		}
 	}
 	set ^||ML("OUT","LINKY") = found
+	quit $$$OK
+}
+
+/// #8828 validace (cache_query): IN DB/SKU/LIN/STOP → OUT počet stránek OFF vs ON + rozpad stránek
+/// dané vývěskové zastávky při zapnutém rozdělení (NASTUPISTE + počet odjezdů per stránka).
+ClassMethod SplitProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for { set k = $order(^||ML("IN",k)) quit:k=""  set v = $get(^||ML("IN",k))  set inp($piece(v,"~",1)) = $piece(v,"~",2,999) }
+	set db = $get(inp("DB"))
+	if db = "" set db = $get(sys("U","DATA"))
+	set sku = $get(inp("SKU"),1), lin = $get(inp("LIN")), stop = $get(inp("STOP"))
+	do ..SetupSysFor(.sys, db)
+	set pagesOff = ..PocetStranek(.sys, sku, lin, 0)
+	set pagesOn  = ..PocetStranek(.sys, sku, lin, 1)
+	// rozpad stránek zvolené vývěsky při ON
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin, ^||ML("IN","ROZDELIT_PER_OZNACNIK") = "true"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set rozpad = "", p = ""
+	for {
+		set p = $order(^||ML("OUT",p)) quit:p=""
+		continue:'$isvalidnum(p)
+		set json = $get(^||ML("OUT",p)) continue:json=""
+		set obj = ##class(%DynamicObject).%FromJSON(json)
+		continue:obj.values.%Get("POPIS_ZASTAVKA")'=stop
+		set odj = obj.rows.%Get("ODJEZDY"), n = 0
+		if $isobject(odj) { set it = odj.%GetIterator()  while it.%GetNext(.dk,.dv) { set n = n + 1 } }
+		set rozpad = rozpad_"[nast="_obj.values.%Get("NASTUPISTE")_" smer="_obj.values.%Get("SMER")_" odjezdů="_n_"] "
+	}
+	kill ^||ML("OUT")
+	set ^||ML("OUT","STRANEK_OFF") = pagesOff
+	set ^||ML("OUT","STRANEK_ON") = pagesOn
+	set ^||ML("OUT","ROZPAD_"_stop) = rozpad
+	quit $$$OK
+}
+
+ClassMethod PocetStranek(ByRef sys As %String, sku, lin, split) As %Integer
+{
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+	set:split ^||ML("IN","ROZDELIT_PER_OZNACNIK") = "true"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set n = 0, p = ""
+	for { set p = $order(^||ML("OUT",p)) quit:p=""  i $isvalidnum(p) s n = n + 1 }
+	quit n
+}
+
+/// Validace chování stránkování (cache_query): IN DB/SKU/LIN → OUT kolik stránek dnes vzniká
+/// a zda se nějaká (vývěska × směr) opakuje = zda se už dnes dělí per označník (nemělo by).
+ClassMethod PageCountProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for { set k = $order(^||ML("IN",k)) quit:k=""  set v = $get(^||ML("IN",k))  set inp($piece(v,"~",1)) = $piece(v,"~",2,999) }
+	set db = $get(inp("DB"))
+	if db = "" set db = $get(sys("U","DATA"))
+	set sku = $get(inp("SKU"),1), lin = $get(inp("LIN"))
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	kill klic
+	set nPages = 0, maxOpak = 0, p = "", priklad = ""
+	for {
+		set p = $order(^||ML("OUT",p)) quit:p=""
+		continue:'$isvalidnum(p)
+		set json = $get(^||ML("OUT",p)) continue:json=""
+		set nPages = nPages + 1
+		set obj = ##class(%DynamicObject).%FromJSON(json)
+		set kl = obj.values.%Get("POPIS_ZASTAVKA")_"|"_obj.values.%Get("SMER")
+		set klic(kl) = $g(klic(kl)) + 1
+		i klic(kl) > maxOpak set maxOpak = klic(kl), priklad = kl
+	}
+	kill ^||ML("OUT")
+	set ^||ML("OUT","STRANEK") = nPages
+	set ^||ML("OUT","MAX_OPAKOVANI_VYVESKA_SMER") = maxOpak_" (nejvíc: "_priklad_")"
 	quit $$$OK
 }
 

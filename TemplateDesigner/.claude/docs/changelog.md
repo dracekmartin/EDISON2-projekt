@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-07-27 — Vývěska per označník (#8828 TRANSDEV) — stanovišťový balík dokončen
+
+Zastávka obsluhovaná z více označníků (stanovišť), kde různé spoje jedou z různých sloupků, se dá
+vytisknout jako **samostatná vývěska per označník** — každá jen s odjezdy z toho označníku (TRANSDEV
+linky 876420/863383; referenční podoba = KOVED XLSX 802366).
+
+- **Tiskový parametr** „Rozdělit vývěsku per označník" (skupina „Seznam zastávek", default vyp = dnešní
+  jedna vývěska s odjezdy smíchanými). Server-side (věc generování výstupu, ne element).
+- **Server (`ZastavkoveJrAd`)** — při zapnutí vývěska obsluhovaná z N označníků (dle `NastupisteSpoju`)
+  → **N stránek**; `NacistOdjezdy` filtruje spoje na daný označník (per-spoj sloupek = W pozice 7,
+  fallback J-věta); `NASTUPISTE` stránky = její označník. Jen označníky, ze kterých ≥1 spoj. Nezávislé
+  na duplikaci řádku (bod 4).
+- **Gold beze změny** (parametr default vyp → byte-identický výstup, žádný re-baseline). Nový
+  `TestSplitPerOznacnik` (0320680: ČB aut.nádr. → označníky 11/22, odjezdy 5+1). 43/43 Caché.
+- **Ověřeno:** 0320680 OFF=53 stránek, ON=55; ČB aut.nádr. (T) → 2 stránky (označník 11 = 5 odjezdů,
+  22 = 1 odjezd).
+- **Follow-up (odloženo):** členění exportu na samostatné soubory per označník (dnes lze rozlišit
+  tokenem `{NASTUPISTE}` v názvu). Titulek/label výše než sloupec Nástupiště = levné doplnění.
+
+## 2026-07-27 — Šev mezi plátnem a náhledem (blok B6, část a)
+
+Na hranici návrháře a náhledu byl vidět „zdvojený pruh". Příčina nebyla jedna: **čtyři místa, která
+mají mít shodnou barvu plochy, ji měla různou** — plocha kolem plátna brala špatný token
+(`Border.Light`, skoro bílá), plocha kolem náhledu a pruh se stránkováním měly `#E4E4E4` natvrdo
+v XAML, plátno stejnou barvu natvrdo v kódu. Správný token (`EDTheme.Bg.Canvas`, vč. tmavé varianty)
+přitom existoval a nikdo ho nepoužíval. Druhá složka švu = tečkovaný zaostřovací rámeček děličů,
+který zůstával po tažení.
+
+- **Jeden token pro celou plochu** — oba `ScrollViewer`y, pruh stránkování i oba `GridSplitter`y na
+  `EDTheme.Bg.Canvas`; děliče `FocusVisualStyle = null`, takže mezi plátnem a náhledem není žádná
+  linka (oddělení dělá rámeček panelu náhledu).
+- **Skia strana má jediný zdroj** — `Designer/CanvasTheme.Background` nahradilo dvě nezávislé
+  konstanty v `DesignerCanvas`/`PreviewCanvas`; plní ho `MainWindow` z téhož tokenu, takže se WPF
+  a Skia barva nemůže rozejít. Napojeno na `ThemeService.Applied` → plocha reaguje na přepnutí tématu
+  (odregistrace v `OnWindowClosing` — statická událost by zavřené okno držela naživu).
+- **Vědomě mimo:** ostatní chrome návrháře (papír, pravítka, záhlaví sekcí, výběr) zůstává pevný —
+  patří do samostatné položky „dark mode", která potřebuje rozhodnutí, jak má v tmavém režimu vypadat
+  *papír* (tiskne se na bílý). Export se nezměnil — PDF/PNG si plochu čistí bílou zvlášť.
+- Vizuálně ověřeno Janem (šev i tečkovaný rámeček po tažení děliče zmizely). Zbývá část (b) —
+  rozvržení editoru stylu buněk.
+
 ## 2026-07-27 — Drobné korektnostní nálezy (blok B3)
 
 Dva nezávislé tiché nálezy z předchozí revize kódu, oba „nic nespadne, jen se ztratí nastavení".

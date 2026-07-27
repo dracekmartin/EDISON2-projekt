@@ -232,6 +232,10 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         i lin = "" $$$ThrowStatus($$$ERROR($$$GeneralError, "LINKA_ID is required"))
         i '$d(^[dataDB]JRL(sku,lin,"I")) $$$ThrowStatus($$$ERROR($$$GeneralError, "Linka "_sku_"/"_lin_" neexistuje v ^JRL"))
 
+        // #8828: rozdělit vývěsku per označník — vývěska obsluhovaná z N označníků → N stránek,
+        // každá s odjezdy jen z toho označníku. Default vyp = jedna vývěska (odjezdy smíchané).
+        s rozdelitOzn = ($zcvt($g(^||ML("IN","ROZDELIT_PER_OZNACNIK")),"L") = "true")
+
         // Multi-page: jedna stránka per zastávka × směr (Tam + Zpět). Aktuální zastávka =
         // ze které se počítají odjezdy; StopList ukazuje úsek od ní ve směru jízdy.
         f smer = "T", "Z" {
@@ -241,6 +245,17 @@ ClassMethod GetData(ByRef sys As %String) As %Status
                 q:poradi=""
                 i '$isvalidnum(poradi) continue
                 i $p($g(^[dataDB]JRL(sku,lin,"J",poradi)),":",1) = "" continue   // bod bez zastávky
+                // Rozdělení per označník: jen když je zapnuté a vývěska má >1 označník obsluhovaný spoji.
+                if rozdelitOzn {
+                    s csvOzn = ..NastupisteSpoju(dataDB, sku, lin, smer, poradi)
+                    if (csvOzn '= "") && ($l(csvOzn,",") > 1) {
+                        f oi=1:1:$l(csvOzn,",") {
+                            s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer, $p(csvOzn,",",oi))
+                            i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
+                        }
+                        continue        // rozděleno → jedinou (smíchanou) stránku nevytvářet
+                    }
+                }
                 s page = ..BuildStrankaZastavky(dataDB, sku, lin, poradi, smer)
                 i page '= "" s ^||ML("OUT", $i(^||ML("OUT"))) = page.%ToJSON()
             }
@@ -257,7 +272,9 @@ ClassMethod GetData(ByRef sys As %String) As %Status
 /// když linka neexistuje.
 /// smer = "T" (Tam, pořadí nahoru k poslední zastávce) nebo "Z" (Zpět, pořadí dolů k první).
 /// currentPoradi = pořadí aktuální zastávky (prázdné = první). Vrací %DynamicObject nebo "".
-ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %String, currentPoradi As %String = "", smer As %String = "T") As %DynamicObject
+/// filtrOznacnik (#8828, volitelné): když neprázdné, stránka nese jen odjezdy spojů z tohoto označníku
+/// vývěskové zastávky a NASTUPISTE = tento označník. Prázdné = všechny odjezdy (dnešní chování).
+ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %String, currentPoradi As %String = "", smer As %String = "T", filtrOznacnik As %String = "") As %DynamicObject
 {
     i '$d(^[dataDB]JRL(sku,lin,"I")) q ""
 
@@ -304,6 +321,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // NEJEDOU_SPOJE je legacy misnomer — nese NÁSTUPIŠTĚ vývěskové zastávky (J-věta #3 = nastTam:nastZpet,
     // dta23 v JRapiExp10). Per směr (T=tam, Z=zpět). 1:1 gold.
     s nastupiste = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
+    i filtrOznacnik '= "" s nastupiste = filtrOznacnik          // #8828: stránka nese svůj označník
     d vals.%Set("NASTUPISTE",             nastupiste)         // A2: NEJEDOU_SPOJE je misnomer → NASTUPISTE
     d vals.%Set("NEJEDOU_SPOJE",          nastupiste)         // zastaralé (kompatibilita) → NASTUPISTE
 
@@ -558,7 +576,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         }
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar, filtrOznacnik)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
     i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
@@ -621,7 +639,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar) As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar, filtrOznacnik As %String = "") As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
@@ -646,6 +664,14 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         d ..WMapa(dataDB, sku, lin, cisloTrasy, .wMap)
         s offset = ..CasHodnota($g(wMap(currentPoradi)))
         i offset = "" continue            // spoj zde nestaví (`<`) / zastávka mimo trasu spoje
+
+        // #8828: filtr per označník — na stránce jen spoje odjíždějící z daného označníku vývěsky.
+        if filtrOznacnik '= "" {
+            d ..WNastupisteMapa(dataDB, sku, lin, cisloTrasy, .nMapF)
+            s spojOzn = $g(nMapF(currentPoradi))
+            i spojOzn = "" s spojOzn = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
+            i spojOzn '= filtrOznacnik continue
+        }
 
         s celkem = odjezd + offset
         s hod = (celkem\60)#24, min = celkem#60
@@ -1660,6 +1686,9 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // „Mřížka odjezdů" / „Poznámky a legenda"); parametry pro celou šablonu → „Obecné".
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
+    // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
+    // (odjezdy filtrované na spoje z toho označníku). Default vyp = jedna vývěska, odjezdy smíchané.
+    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Rozdělit vývěsku per označník (stránka na stanoviště)", "false", "Seznam zastávek")
 
     // Varianty tras (KOVED #13048 bod 5) — týkají se variantních sloupců seznamu zastávek.
     // Varianta = sled zastávek (legacy dedup), časy sloupce = max přes spoje varianty.

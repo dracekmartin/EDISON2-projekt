@@ -2,6 +2,25 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-27 ✅ — #8828 (TRANSDEV) vývěska per označník — UZAVŘENO (= krok 2 / B9 stanovišťového balíku)
+
+Detail → changelog 2026-07-27. Tiskový parametr „Rozdělit vývěsku per označník" (skupina „Seznam
+zastávek", default vyp). Server (`ZastavkoveJrAd`): vývěska obsluhovaná z N označníků → N stránek,
+`NacistOdjezdy` filtruje spoje per označník (per-spoj sloupek = W pozice 7, fallback J-věta),
+`NASTUPISTE` stránky = její označník. Jen označníky se ≥1 spojem. Nezávislé na duplikaci řádku (#13048
+bod 4). **Gold beze změny** (default vyp = byte-identický) + `TestSplitPerOznacnik`. Ověřeno 0320680
+(ČB aut.nádr. → označníky 11/22, odjezdy 5+1; 53→55 stránek). **Tím je stanovišťový balík dokončen v1.**
+Follow-up (na vyžádání): členění exportu na soubory per označník; titulek stránky s označníkem.
+
+## 2026-07-27 ✅ — B6 část (a): šev mezi plátnem a náhledem — UZAVŘENO
+
+Detail → changelog 2026-07-27 („Šev mezi plátnem a náhledem"). Čtyři místa se stejnou rolí (plocha
+kolem plátna / kolem náhledu / pruh stránkování / plátno kreslené Skiou) měla barvu z různých zdrojů,
+z toho tři natvrdo — sjednoceno na existující token `EDTheme.Bg.Canvas` + `Designer/CanvasTheme` jako
+jediný zdroj pro Skia stranu (napojený na `ThemeService.Applied`). Děliče ztratily tečkovaný focus
+rámeček. Vizuálně ověřeno Janem. Chrome návrháře (papír, pravítka, záhlaví sekcí) vědomě ponechán
+pevný → patří do položky „dark mode". **V B6 zbývá část (b)** — rozvržení `CellStyleEditor`.
+
 ## 2026-07-27 ⛔ — B1 pojistka proti přepsání systémové šablony — ZRUŠENO (není problém)
 
 Blok vznikl jako **domněnka** při řešení #13013, ne z nahlášeného případu: systémová šablona se
