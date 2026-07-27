@@ -5,28 +5,19 @@
 
 ---
 
-## 🎯 PRIORITA K DOTAŽENÍ (handoff, rozhodnuto s Janem 2026-07-27) — „stanovišťový balík"
+## 🎯 PRIORITA K DOTAŽENÍ (handoff) — „stanovišťový balík" (zbývá poslední kus)
 
-KOVED #13048: body 1–5 hotové v1 + **krok 1 (duplikace řádku) HOTOVO 2026-07-27** (viz changelog).
-Zbývá **krok 2 (#8828 vývěska per sloupek)**. Zóna 1 (`ZastavkoveJrAd`) — jen jedna session naráz.
-Datová vrstva hotová: nástupiště per spoj = **W pozice 7** (`WNastupisteMapa` helper, fallback J-věta
-`#3` dle směru; agregace `NastupisteSpoju`; nástupiště per varianta = `NASTUPISTE_VARIANT`; cache `^||TiskAd`).
+KOVED #13048: **všech 5 bodů hotových v1** (bod 4 duplikace řádku uzavřen 2026-07-27 — viz changelog
++ archiv). Ze „stanovišťového balíku" zbývá **jediné: #8828 vývěska per sloupek (= blok B9)**.
 
-**~~Krok 1 — duplikace řádku per stanoviště (bod 4)~~ ✅ HOTOVO 2026-07-27** — 4. volba comboboxu
-„Více nástupišť" (`RowPerPlatform`). Klientská expanze (`ExpandPlatformRows`) nad aditivním serverovým
-polem `NASTUPISTE_VARIANT` — identita variant se neměnila (čistší než plán, gold jen re-baseline).
-Časy per stanoviště, vývěska/jednostanovištní = 1 řádek, značky jen 1. řádek, pořadí = výskyt na trase.
-Detail changelog + `StopListPlatformDuplicationTests`.
+**#8828 vývěska per sloupek (B9)** (M, zóna 1): stránka per zastávka×sloupek s filtrem odjezdů dle
+sloupku spoje na vývěskové zastávce (referenční podoba = KOVED XLSX `timetables_route_802366...`);
+návaznost na členění výstupu / název souboru (`{POLE}` tokeny). Datová vrstva hotová (nástupiště per
+spoj = W pozice 7, `NastupisteSpoju`/`NASTUPISTE_VARIANT`, cache `^||TiskAd`). MHD zdroj sloupku až
+u MHD zákazníka. Zóna 1 — jedna session naráz.
 
-**Krok 2 — #8828 vývěska per sloupek (= blok B9)** (M): stránka per zastávka×sloupek s filtrem
-odjezdů dle sloupku spoje na vývěskové zastávce (referenční podoba = KOVED XLSX
-`timetables_route_802366...`); návaznost na členění výstupu / název souboru (`{POLE}` tokeny).
-Nezávislé na kroku 1, ale sdílí data — dělat v závěsu.
-
-**Po dokončení:** souhrnná HD odpověď KOVED #13048 (body 1–5 + duplikace řádků + #8828;
-koncept odpovědi má session z 2026-07-27 — bod 5 popsat vč. „stanoviště řeší per-sloupek
-vývěska"). Symbol „↓" u výchozí zastávky ve variantních sloupcích = drobný vizuál, odloženo
-(Jan: teď není důležité).
+**Po dokončení:** souhrnná HD odpověď KOVED #13048 (všech 5 bodů + duplikace + #8828). Symbol „↓"
+u výchozí zastávky ve variantních sloupcích = drobný vizuál, odloženo (teď není důležité).
 
 ---
 

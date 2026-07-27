@@ -2,6 +2,17 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-27 ✅ — KOVED #13048 stanovišťový balík krok 1: duplikace řádku per stanoviště — UZAVŘENO
+
+Detail → changelog 2026-07-27. 4. volba comboboxu „Více nástupišť" (`RowPerPlatform`): zastávku
+obsluhovanou z více stanovišť rozvine na N řádků (jeden per stanoviště) na místě v trase, časy jen
+variant daného stanoviště. Klientská expanze (`ExpandPlatformRows`) nad aditivním serverovým polem
+`NASTUPISTE_VARIANT` (nástupiště per varianta, W pozice 7) — identita variant se neměnila (čistší než
+původní plán, gold jen re-baseline). Vývěska/jednostanovištní = 1 řádek. Ověřeno vizuálně na 0320680
+(Autobusové nádraží → stanoviště 1 + 8). 6 xUnit + Caché `TestNastupisteVariantEmit`. Známé omezení:
+nástupiště z reprezentativního spoje varianty (plné rozlišení = stanoviště do identity variant, vědomě NE).
+**Tím jsou všechny body #13048 hotové v1; ze stanovišťového balíku zbývá #8828 (B9).**
+
 ## 2026-07-23 ✅ — MHD datová parita na složitých linkách (KV_DP 1073) — UZAVŘENO
 
 Detail → changelog 2026-07-23 (4 záznamy) + artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073".
