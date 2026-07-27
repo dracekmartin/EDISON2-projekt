@@ -5,6 +5,40 @@
 
 ---
 
+## 🎯 PRIORITA K DOTAŽENÍ (handoff, rozhodnuto s Janem 2026-07-27) — „stanovišťový balík"
+
+KOVED #13048: body 1–5 hotové v1 (bod 5 = commit `c6d661d`, vizuálně ověřeno na 0330510).
+Zbývá poslední kus: **rozlišení stanovišť (sloupků)** — KOVED ho explicitně chce a v jejich XLSX
+ho dělají **duplikací řádku zastávky per označník/nástupiště**. Zóna 1 (`ZastavkoveJrAd`) — jen
+jedna session naráz. Datová vrstva hotová: nástupiště per spoj = **W pozice 7** (`WNastupisteMapa`
+helper, fallback J-věta `#3` dle směru; agregace `NastupisteSpoju`, cache `^||TiskAd`).
+
+**Krok 1 — duplikace řádku per sloupek (bod 4 fáze 2)** (M):
+- Nový režim přepínače „Více nástupišť" (`MultiPlatformMode`): **„Řádek per nástupiště"** —
+  server vyemituje zastávku s N sloupky jako N řádků ZASTAVKY (číslo sloupku k názvu/sloupci
+  Nástupiště); default režimy beze změny (gold safe).
+- **Stanoviště zpět do identity variant JEN v tomto režimu** — v commitu `c6d661d` vyhozeno,
+  protože bez řádků per sloupek dávalo vizuálně identické duplicitní časové sloupce (smoke test
+  Jan); s řádky per sloupek je to čitelné: varianta má čas na řádku „svého" sloupku, `<`/prázdno
+  na ostatních.
+- Otevřené designové body (rozhodnout na místě): časy na duplikovaných řádcích (jen varianty
+  daného sloupku), duplikovat i vývěskovou zastávku? (šipka směru, zvýraznění aktuální —
+  nejspíš zvýraznit jen řádek sloupku vývěsky), řazení duplikátů (dle čísla sloupku), atributy/
+  poznámky zastávky nekopírovat do legendy vícekrát, interakce s TISK_PROJETYCH_ZAST.
+- Testy: gold beze změny (režim opt-in), rozšířit `AdVariantyProbe` + unit testy helperů.
+
+**Krok 2 — #8828 vývěska per sloupek (= blok B9)** (M): stránka per zastávka×sloupek s filtrem
+odjezdů dle sloupku spoje na vývěskové zastávce (referenční podoba = KOVED XLSX
+`timetables_route_802366...`); návaznost na členění výstupu / název souboru (`{POLE}` tokeny).
+Nezávislé na kroku 1, ale sdílí data — dělat v závěsu.
+
+**Po dokončení:** souhrnná HD odpověď KOVED #13048 (body 1–5 + duplikace řádků + #8828;
+koncept odpovědi má session z 2026-07-27 — bod 5 popsat vč. „stanoviště řeší per-sloupek
+vývěska"). Symbol „↓" u výchozí zastávky ve variantních sloupcích = drobný vizuál, odloženo
+(Jan: teď není důležité).
+
+---
+
 ## 🧭 Jak podle roadmapy pracovat
 
 Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B1`, `B2`, …) seřazené do **vln**. Každý blok
@@ -52,7 +86,7 @@ Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešní
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
 | **B8** | **Varianty tras — dokončení.** Serverová část HOTOVÁ 2026-07-27 (#13048 bod 5 + TR7: varianta = sled zastávek dle legacy dedup — nástupiště vědomě NE, řeší #8828; čas = maximum, řazení dle četnosti / stabilní, písmena variant u odjezdů; oprava `|`=„čas 0"; detail changelog). Zbývá: **vizuální ověření v buildu + MHD parita**; per-písmeno výběr sloupců až na potvrzení TRANSDEV nad novým chováním. | S–M | 1 + 3 | ne spolu s B9 |
-| **B9** | **#8828 — vývěska per sloupek zastávky:** stránkovací nadstavba (stránka per zastávka×sloupek s filtrem odjezdů; referenční podoba = KOVED XLSX). Datový průzkum HOTOV 2026-07-27 (per-spoj sloupek = W-trasa pozice 7, fallback J-věta; `NastupisteSpoju` už čte). MHD zdroj sloupku dořešit až u MHD zákazníka. | M | 1 | ne spolu s B8 |
+| **B9** | **#8828 — vývěska per sloupek zastávky:** = **krok 2 „stanovišťového balíku"** (viz 🎯 vršek roadmapy — tam je aktuální handoff). Datový průzkum HOTOV 2026-07-27 (per-spoj sloupek = W-trasa pozice 7, fallback J-věta; `NastupisteSpoju` už čte). MHD zdroj sloupku dořešit až u MHD zákazníka. | M | 1 | ne spolu s B8 |
 | **B10** | **L‑2: symbolový font — linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | — |
 | **B11** | **L‑3: row-plan vrstva** — `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | B3, B5 |
 | **B12** | **#7937 rozšíření** — odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | — |
