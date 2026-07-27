@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-27 — Šablony v DB: kompatibilita se staršími klienty (#13013 — „Šablona nebyla nalezena nebo je porušená")
+
+Kolega s produkční verzí klienta (release 2026-07-14, bez podpory blobů po kusech) nemohl otevřít
+systémovou šablonu z DB — nový build ji při seedu uložil po kusech a starý klient čte jen jednoklíčové
+`data` → prázdno → chyba. Diagnóza vyloučila poškozená data (`SablonyDiag.IntegrityProbe`: žádná
+utržená šablona, blob existoval — jen ve formátu, který starý klient neumí).
+
+- **Fix (`Sablony.SaveTemplate`):** malý blob (vejde se do 1 kusu, tj. do ~20 000 znaků — drtivá
+  většina šablon) se ukládá **jednoklíčově** = formát čitelný i staršími klienty. Po kusech jen
+  vícekusé bloby (velké obrázkové šablony) — ty starší klient stejně nikdy neuložil (padaly ještě
+  před chunking fixem). Kanonizace legacy→chunked z 2026-07-23 tím zrušena (bránila mixu verzí).
+- **Testy:** `TestMalyBlobJednoklicovyProStarehoKlienta` + `TestVelkyBlobPoKusech` zamykají oba
+  formáty; 39/39 zeleně.
+- **Nový diag nástroj `Tests/SablonyDiag.IntegrityProbe`** (read-only): projde celé úložiště šablon
+  a per šablona hlásí stav blobu (jednoklíčový / po kusech / CHYBÍ = utržená). Pro budoucí „nejde
+  otevřít šablonu" případy.
+- Systémová šablona v MLINE už je po re-seedu v kompatibilním formátu (ověřeno probe).
+- **Pozn. k druhé výtce z tiketu** („okno chybového hlášení vypadá jinak"): jde o standardní
+  EDControls `EDErrorPopup` (scrollovatelný dialog s plnou výjimkou, R2) — liší se od starého
+  EDISON okna záměrně (nový stack). Případné sjednocení vzhledu / čistá hláška bez stacku pro
+  doménové chyby = týmové rozhodnutí, ne bug.
+
 ## 2026-07-24 — Přestupy u zastávek (vlak/autobus) — nad rámec legacy (#13048 KOVED, bod 1)
 
 Zákazník chtěl u zastávek zobrazit přestupy na vlak/autobus. Data je mají (znak „L"=vlak, „A"=autobus

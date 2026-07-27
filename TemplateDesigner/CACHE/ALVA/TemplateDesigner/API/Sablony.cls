@@ -13,13 +13,13 @@ Include GENERAL
 ///
 /// Globální struktura:
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Metadata", <pole>) = <hodnota>
-///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")             = počet kusů blobu
-///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data", n)          = n-tý kus JSON blobu
+///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data")             = malý blob: celý JSON / velký: počet kusů
+///   ^ALVA.TemplateDesigner.Templates(IdFa, "DTA", TemplateID, "Data", n)          = n-tý kus JSON blobu (jen velký blob)
 ///   ^ALVA.TemplateDesigner.Templates(IdFa, "IDX", "ByAgenda", AgendaCode, TemplateID) = ""
 ///
-/// Blob se ukládá po kusech, nikdy jako jeden řetězec — velký (obrázkový) blob by jinak
-/// překročil limit délky řádku při příjmu requestu. Legacy jednoklíčový uzel "Data" = celý
-/// JSON se při načtení pozná (chybí "Data",1) a při dalším uložení kanonizuje na kusy.
+/// Blob: MALÝ (vejde se do 1 kusu) se ukládá jednoklíčově — formát čitelný i staršími klienty
+/// bez podpory kusů (#13013). VELKÝ po kusech, nikdy jako jeden řetězec — překročil by limit
+/// délky řádku na wire (příjem i odpověď). Formáty se při načtení rozliší existencí "Data",1.
 ///
 /// Metadata pole: Name, AgendaCode, Author, CreatedAt, ModifiedAt, ModifiedBy, Version
 ///
@@ -173,19 +173,21 @@ ClassMethod SaveTemplate(ByRef sys As %String) As %Status
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedAt") = nowIso
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Metadata","ModifiedBy") = userID
 
-        // Blob ulož chunkovaně: Data = počet kusů, Data(n) = n-tý kus. Nikdy neslepovat do
-        // jednoho řetězce (překročil by limit délky). Nejdřív smaž starý obsah (legacy
-        // jednoklíčový uzel i případné staré kusy z předchozího uložení).
+        // Blob: malý (1 kus / legacy vstup) ulož JEDNOKLÍČOVĚ — přečte ho i starší klient bez
+        // podpory kusů (#13013: mix nové úložiště × produkční .exe → „šablona porušená").
+        // Po kusech (Data = počet, Data(n) = kus) jen víc-kusý blob — jeden řetězec by na wire
+        // překročil limit délky řádku; takový starší klient stejně nikdy neuložil.
+        // Nejdřív smaž starý obsah (oba formáty z předchozího uložení).
         k ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data")
-        i chunkCount '= "" {
+        i (chunkCount '= "") && (+chunkCount > 1) {
             f n=1:1:+chunkCount {
                 s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data",n) = $g(^||ML("IN","data"_n))
             }
             s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data") = +chunkCount
+        } elseif chunkCount '= "" {
+            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data") = $g(^||ML("IN","data1"))
         } else {
-            // Legacy jednoklíčový vstup — kanonizuj na chunkovaný formát (1 kus)
-            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data",1) = $g(^||ML("IN","data"))
-            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data") = 1
+            s ^ALVA.TemplateDesigner.Templates(targetIdFa,"DTA",templateId,"Data") = $g(^||ML("IN","data"))
         }
 
         s ^ALVA.TemplateDesigner.Templates(targetIdFa,"IDX","ByAgenda",agendaCode,templateId) = ""
