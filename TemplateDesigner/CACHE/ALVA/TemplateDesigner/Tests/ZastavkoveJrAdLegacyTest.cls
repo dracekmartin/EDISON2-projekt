@@ -357,6 +357,36 @@ ClassMethod SplitProbe(ByRef sys As %String) As %Status
 	quit $$$OK
 }
 
+/// Dump celé sekvence stránek (cache_query): IN DB/SKU/LIN/SPLIT → OUT pořadí stránek
+/// „idx:vyveska(smer) nast=X odj=n". Pro diagnostiku listování (jak se střídají označníky).
+ClassMethod PageSeqProbe(ByRef sys As %String) As %Status
+{
+	set k = ""
+	for { set k = $order(^||ML("IN",k)) quit:k=""  set v = $get(^||ML("IN",k))  set inp($piece(v,"~",1)) = $piece(v,"~",2,999) }
+	set db = $get(inp("DB"))
+	if db = "" set db = $get(sys("U","DATA"))
+	set sku = $get(inp("SKU"),1), lin = $get(inp("LIN")), split = +$get(inp("SPLIT"),1)
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||ML("OUT")
+	set ^||ML("IN","SKUPINA_LINEK_ID") = sku, ^||ML("IN","LINKA_ID") = lin
+	set:split ^||ML("IN","ROZDELIT_PER_OZNACNIK") = "true"
+	do ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).GetData(.sys)
+	set seq = "", idx = 0, p = ""
+	for {
+		set p = $order(^||ML("OUT",p)) quit:p=""
+		continue:'$isvalidnum(p)
+		set json = $get(^||ML("OUT",p)) continue:json=""
+		set idx = idx + 1
+		set obj = ##class(%DynamicObject).%FromJSON(json)
+		set odj = obj.rows.%Get("ODJEZDY"), n = 0
+		if $isobject(odj) { set it = odj.%GetIterator()  while it.%GetNext(.dk,.dv) { set n = n + 1 } }
+		set seq = seq_idx_":"_obj.values.%Get("POPIS_ZASTAVKA")_"("_obj.values.%Get("SMER")_") nast="_obj.values.%Get("NASTUPISTE")_" odj="_n_" | "
+	}
+	kill ^||ML("OUT")
+	set ^||ML("OUT","SEQ") = seq
+	quit $$$OK
+}
+
 ClassMethod PocetStranek(ByRef sys As %String, sku, lin, split) As %Integer
 {
 	kill ^||ML("IN"), ^||ML("OUT")

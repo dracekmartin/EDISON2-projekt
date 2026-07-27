@@ -2392,7 +2392,7 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) —
     /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
     private static readonly string[] ServerSideParams =
-        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE"];
+        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE", "ROZDELIT_PER_OZNACNIK"];
 
     private string? _lastServerParamsSnapshot;
 
