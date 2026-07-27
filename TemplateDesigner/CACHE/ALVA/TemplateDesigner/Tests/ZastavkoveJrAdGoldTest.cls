@@ -23,7 +23,9 @@ Method TestGold0365001()
 
 Method TestGold0365005()
 {
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=VPxCRzgN2meBTLMBkZURVg==")
+	// Re-baseline 2026-07-27 (KOVED #13048 bod 5): řazení variantních sloupců dle četnosti ze
+	// zastávky (6 variant beze změny počtu — jen pořadí; ověřeno sondou AdVariantyProbe).
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=VlsbNi388W6Usde8TsEp6Q==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

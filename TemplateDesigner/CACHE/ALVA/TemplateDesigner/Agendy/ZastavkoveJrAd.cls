@@ -320,7 +320,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // TR2 (opt-in SOUHRN_NA_ZNAMENI): když jsou VŠECHNY obsluhované neprojeté zastávky „na znamení" („x"),
     // vytiskne se jeden agregátní řádek legendy místo × u každé. Default off = per-zastávka (gold/CZ beze změny).
     s souhrnNaZn = 0
-    i $g(^||ML("IN","SOUHRN_NA_ZNAMENI")) = "true" {
+    i $zcvt($g(^||ML("IN","SOUHRN_NA_ZNAMENI")),"L") = "true" {   // tolerantně — starší klient posílal "True"
         s souhrnNaZn = 1, naZnCnt = 0, ppNZ = ""
         f {
             s ppNZ = $o(servedPoradi(ppNZ))
@@ -351,13 +351,18 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s zaklCt = ..ZakladniCisloTrasy(dataDB, sku, lin, smer, currentPoradi)
     d ..WMapa(dataDB, sku, lin, zaklCt, .zaklWMap)
 
-    // ── varianty časů tras (dynamické „TrasaMin") ─────────────────────────────
-    // Seskup spoje obsluhující vývěskovou zastávku podle časového profilu (shodný profil = jeden
-    // sloupec). N = počet distinct profilů — NE fixních 15 jako legacy.
-    // Signatura = jen ZOBRAZENÉ zastávky (servedPoradi): per-zastávka kumulativní čas / „<" (projíždí) /
-    // prázdno (mimo trasu). Přes celou W-mapu by dvě varianty lišící se MIMO tuto vývěsku daly dva
-    // identicky vypadající sloupce — signatura přes servedPoradi je sloučí (na vývěsce nerozlišitelné).
-    k variantSig, variantCt, variantRepSpoj
+    // ── varianty tras (dynamické „TrasaMin") — KOVED #13048 bod 5 ────────────────
+    // Varianta = SLED OBSLUHOVANÝCH ZASTÁVEK (1:1 legacy dedup dle `prutmbmp`, JRapiLinPrtMhd1
+    // ř.266-300), NE časový profil — spoje stejné trasy s jinými časy se slévají.
+    // Čas sloupce = MAXIMUM přes spoje varianty (legacy „ponechá se delší čas") = „nejpozději za X min".
+    // Signatura jen přes ZOBRAZENÉ zastávky (servedPoradi): staví = „S", nestaví = „<" (`<` i `|`),
+    // mimo trasu = prázdno. Nástupiště do identity NEJDE — dalo by vizuálně identické časové sloupce
+    // (KOVED „jiné stanoviště = jiná varianta" řeší vývěska per sloupek, #8828).
+    // bool parametry číst tolerantně malými písmeny — starší klient posílal C# ToString() "True"
+    s pismenaVar = ($zcvt($g(^||ML("IN","PISMENA_VARIANT")),"L") = "true")
+    s prvniBez   = ($zcvt($g(^||ML("IN","PRVNI_BEZ_PISMENE")),"L") '= "false")
+    s razeniVar  = $g(^||ML("IN","RAZENI_VARIANT"))
+    k variantSig, variantPocet, variantRepSpoj, variantMax, variantPat, spojVarianta
     s poradiVar = 0, spV = ""
     f {
         s spV = $o(^[dataDB]JRL(sku,lin,smer,spV))
@@ -366,20 +371,55 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         s ctV = $p($p($g(^[dataDB]JRL(sku,lin,smer,spV)),"#",1),":",3)
         i ctV = "" continue
         d ..WMapa(dataDB, sku, lin, ctV, .wMapV)
-        s cAktV = $g(wMapV(currentPoradi))
-        i (cAktV = "") || (cAktV = "<") continue     // spoj zde nestaví → nedává časový sloupec
+        i ..CasHodnota($g(wMapV(currentPoradi))) = "" continue   // spoj zde nestaví → nedává časový sloupec
         s sigV = "", ppV = ""
         f {
             s ppV = $o(servedPoradi(ppV))  q:ppV=""
             i '$isvalidnum(ppV) continue
             s vv = $g(wMapV(ppV))
-            s $p(sigV,"~",ppV) = $s((vv="")||(vv="<"):vv, 1:..CasJizdyZMapy(.wMapV, currentPoradi, ppV))
+            s $p(sigV,"~",ppV) = $s(vv="":"", (vv="<")||(vv="|"):"<", 1:"S")
         }
         i '$d(variantSig(sigV)) {
             s poradiVar = poradiVar + 1
             s variantSig(sigV) = poradiVar
-            s variantCt(poradiVar) = ctV
             s variantRepSpoj(poradiVar) = spV
+            s ppV = ""
+            f {
+                s ppV = $o(servedPoradi(ppV))  q:ppV=""
+                s variantPat(poradiVar,ppV) = $p(sigV,"~",ppV)
+            }
+        }
+        s viV = variantSig(sigV)
+        s spojVarianta(spV) = viV
+        s variantPocet(viV) = $g(variantPocet(viV)) + 1
+        // max kumulativní čas per zastávka přes spoje varianty
+        s ppV = ""
+        f {
+            s ppV = $o(servedPoradi(ppV))  q:ppV=""
+            i ..CasHodnota($g(wMapV(ppV))) = "" continue
+            s tV = ..CasJizdyZMapy(.wMapV, currentPoradi, ppV)
+            i ('$d(variantMax(viV,ppV))) || (tV > $g(variantMax(viV,ppV))) s variantMax(viV,ppV) = tV
+        }
+    }
+
+    // pořadí sloupců variant: dle četnosti ze zastávky (KOVED default — nejvíc spojů první,
+    // shoda četností → pořadí výskytu) / „Stabilní" = pořadí výskytu spojů
+    k displayVar
+    s pocetSloupcu = 0
+    i razeniVar = "Stabilní (pořadí spojů)" {
+        f viY=1:1:poradiVar { s pocetSloupcu = pocetSloupcu + 1  s displayVar(pocetSloupcu) = viY }
+    } else {
+        k radArr
+        f viY=1:1:poradiVar s radArr(-$g(variantPocet(viY)),viY) = ""
+        s cKey = ""
+        f {
+            s cKey = $o(radArr(cKey))  q:cKey=""
+            s viK = ""
+            f {
+                s viK = $o(radArr(cKey,viK))  q:viK=""
+                s pocetSloupcu = pocetSloupcu + 1
+                s displayVar(pocetSloupcu) = viK
+            }
         }
     }
 
@@ -421,13 +461,13 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
                 i 'jePrestup s atrSeen(znak) = txtAtr    // přestupy do legendy nejdou (jen symbol u zastávky)
             }
         }
-        // varianty časů (dynamické TrasaMin) — hodnota per varianta pro tuto zastávku
+        // varianty časů (dynamické TrasaMin) — sloupce v pořadí displayVar, hodnota = max čas varianty
         s trasaMin = ##class(%DynamicArray).%New()
-        f viX=1:1:poradiVar {
-            d ..WMapa(dataDB, sku, lin, $g(variantCt(viX)), .wMapX)
-            s vvX = $g(wMapX(poradi))
-            i (vvX = "") || (vvX = "<") { d trasaMin.%Push(vvX) }
-            else { d trasaMin.%Push(..CasJizdyZMapy(.wMapX, currentPoradi, poradi)) }
+        f colX=1:1:pocetSloupcu {
+            s viX = displayVar(colX)
+            s patX = $g(variantPat(viX,poradi))
+            i patX = "S" { d trasaMin.%Push(+$g(variantMax(viX,poradi))) }
+            else { d trasaMin.%Push(patX) }
         }
         d z.%Set("TRASA_MIN", trasaMin)
         d z.%Set("NASTUPISTE", $p($p(veta,"#",3),":",$s(jeTam:1,1:2)))   // TR3: nástupiště per zastávka (J-věta #3, dle směru)
@@ -455,34 +495,52 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     s nzCfg = $g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NZ1_NZ2"))_"|"_$g(^[dataDB]JRL(sku,lin,"PATCH","MHD_NENZ1_NENZ2"))
 
     // ── odjezdy + poznámky (omezení + rozdíly tras + atributy spoje → anotace + legenda) ────
-    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda
-    d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
-    // hlavičky variantních časových sloupců:
-    //   písmeno rozdílu trasy (RozdilyTras, reprezentativní spoj); stejné písmeno u víc variant
-    //   (liší se jen časem, ne zastávkami) → rozlišit „B1"/„B2"; varianta bez písmene → „T1"/„T2"…
-    // 1. průchod: spočítej výskyty každého písmene (kolize → číslovat)
-    k pismCount, pismSeq
-    f viY=1:1:poradiVar {
-        s pismV = $g(pismenoSpoj($g(variantRepSpoj(viY))))
-        i pismV '= "" s pismCount(pismV) = $g(pismCount(pismV)) + 1
-    }
+    k poznMap, pismenoSpoj, rozdilLegenda, bezbarLegenda, komentareLegenda, dnyLegenda, varPismeno, spojPismenoVar
+    // Režim písmen variant (KOVED bod 5): písmeno varianty u minuty NAHRAZUJE automatické rozdílové
+    // poznámky — kudy varianta jede, říká přímo sloupec („<"/prázdno). Jinak by vývěska nesla dvě
+    // abecedy vedle sebe (přesně to, co jsme u legacy kritizovali). RozdilyTras se pak nepočítá vůbec.
+    i 'pismenaVar d ..RozdilyTras(dataDB, sku, lin, smer, currentPoradi, .pismenoSpoj, .rozdilLegenda)
     s variantyTras = ##class(%DynamicArray).%New()
-    s fallbackVar = 0
-    f viY=1:1:poradiVar {
-        s pismV = $g(pismenoSpoj($g(variantRepSpoj(viY))))
-        i pismV = "" {
-            s fallbackVar = fallbackVar + 1
-            s hdr = "T" _ fallbackVar
-        } elseif $g(pismCount(pismV)) > 1 {
-            s pismSeq(pismV) = $g(pismSeq(pismV)) + 1
-            s hdr = pismV _ pismSeq(pismV)
-        } else {
-            s hdr = pismV
+    i pismenaVar {
+        // hlavičky = písmena variant v pořadí sloupců; volitelně první (nejčetnější) bez písmene
+        f colY=1:1:pocetSloupcu {
+            s pism = ..PismenoVarianty(colY, prvniBez)
+            i pism '= "" s varPismeno(displayVar(colY)) = pism
+            d variantyTras.%Push(pism)
         }
-        d variantyTras.%Push(hdr)
+        // spoj → písmeno jeho varianty (anotace u minuty odjezdu)
+        s spX = ""
+        f {
+            s spX = $o(spojVarianta(spX))  q:spX=""
+            i $g(varPismeno(spojVarianta(spX))) '= "" s spojPismenoVar(spX) = varPismeno(spojVarianta(spX))
+        }
+    } else {
+        // hlavičky variantních časových sloupců:
+        //   písmeno rozdílu trasy (RozdilyTras, reprezentativní spoj); stejné písmeno u víc variant
+        //   → rozlišit „B1"/„B2"; varianta bez písmene → „T1"/„T2"…
+        // 1. průchod: spočítej výskyty každého písmene (kolize → číslovat)
+        k pismCount, pismSeq
+        f colY=1:1:pocetSloupcu {
+            s pismV = $g(pismenoSpoj($g(variantRepSpoj(displayVar(colY)))))
+            i pismV '= "" s pismCount(pismV) = $g(pismCount(pismV)) + 1
+        }
+        s fallbackVar = 0
+        f colY=1:1:pocetSloupcu {
+            s pismV = $g(pismenoSpoj($g(variantRepSpoj(displayVar(colY)))))
+            i pismV = "" {
+                s fallbackVar = fallbackVar + 1
+                s hdr = "T" _ fallbackVar
+            } elseif $g(pismCount(pismV)) > 1 {
+                s pismSeq(pismV) = $g(pismSeq(pismV)) + 1
+                s hdr = pismV _ pismSeq(pismV)
+            } else {
+                s hdr = pismV
+            }
+            d variantyTras.%Push(hdr)
+        }
     }
     d vals.%Set("VARIANTY_TRAS", variantyTras)
-    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda)
+    s odjezdy = ..NacistOdjezdy(dataDB, sku, lin, smer, currentPoradi, ftl, nzCfg, .poznMap, .pismenoSpoj, .bezbarLegenda, .komentareLegenda, .dnyLegenda, .spojPismenoVar)
     i odjezdy.%Size() = 0 q ""        // zastávka bez odjezdů v daném směru (konečná) — stránku negenerovat
     i souhrnNaZn s atrSeen("x") = "všechny zastávky linky jsou na znamení"   // TR2: agregátní řádek místo per-zastávka „na znamení"
     d ..BezbarierKonfig(dataDB, sku, lin, .isinv, .iscbe, .allBBP)   // allBBP → agregátní legenda bezbariér (cache)
@@ -545,7 +603,7 @@ ClassMethod NacistSkupinyDnu(ftl As %String) As %DynamicArray
 /// Spočítá odjezdy z aktuální zastávky pro daný směr.
 /// Pro každý spoj: odjezd = Odjezd spoje + offset času na aktuální zastávce (z trasy spoje "W").
 /// `<` na zastávce = spoj zde nestaví → přeskočit. Zařazení do sloupců dnů dle FTL+Plk+CNZ (`ZarazeniSpoje`).
-ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda) As %DynamicArray
+ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, smer As %String, currentPoradi As %String, ftl As %String, nzCfg As %String, ByRef poznMap, ByRef pismenoSpoj, ByRef bezbarLegenda, ByRef komentareLegenda, ByRef dnyLegenda, ByRef spojPismenoVar) As %DynamicArray
 {
     s odjezdy = ##class(%DynamicArray).%New()
     i currentPoradi = "" q odjezdy
@@ -591,7 +649,10 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         }
 
         // marker rozdílu trasy (z RozdilyTras) — u minuty jako první, dle legacy ZnkOm=ZnkTc_…
+        // V režimu písmen variant (KOVED bod 5) je pismenoSpoj prázdné a místo něj se tiskne
+        // písmeno varianty trasy (kategorie „varianta-trasy" — mimo filtry rozdílů/ručních komentářů).
         s pismRT = $g(pismenoSpoj(sp))
+        s pismVarTx = $g(spojPismenoVar(sp))
 
         // atributy spoje — bezbariér (inv = hlava:15) / částečně (cbe = hlava:22); SpecZnak 72=H / 70=F
         s inv = (isinv && +$p(hlava,":",15))
@@ -630,6 +691,7 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
             // KATEGORIE + spoj = pro TD filtr viditelnosti (#7955) — Caché generuje nadmnožinu.
             f di=1:1:$l(dnyZnaky) d ..AddAnotace(o, "specialni", $e(dnyZnaky,di), "", "", "tydenni-platnost", sp, vRozsahu)
             i pismRT '= "" d ..AddAnotace(o, "text", pismRT, "", "", "rozdil-trasy", sp, vRozsahu)
+            i pismVarTx '= "" d ..AddAnotace(o, "text", pismVarTx, "", "", "varianta-trasy", sp, vRozsahu)
             i znak  '= "" d ..AddAnotace(o, typOmez, znak, "", "", "omezeni", sp, vRozsahu)
             i inv && 'allBBP d ..AddAnotace(o, "specialni", "H", "", "", "bezbarier", sp, vRozsahu)   // u allBBP se marker netiskne, jen legenda
             i cbe d ..AddAnotace(o, "specialni", "F", "", "", "bezbarier", sp, vRozsahu)
@@ -701,7 +763,7 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
         f i=1:1:$l(wTrasa,"#") {
             s seg = $p(wTrasa,"#",i)
             s pp = $p(seg,":",1), cas = $p(seg,":",2)
-            i (pp '= "") && (cas '= "<") && (cas '= "") s served(pp) = ""
+            i (pp '= "") && (cas '= "<") && (cas '= "") && (cas '= "|") s served(pp) = ""   // `|` = spoj nestaví (jako `<`)
         }
     }
     i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
@@ -795,6 +857,33 @@ ClassMethod WMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy 
     i $d(wMap) m ^||TiskAd("wmap",cisloTrasy) = wMap     // prázdnou trasu necachovat (merge z undef = <UNDEFINED>)
 }
 
+/// W-mapa `poradi → nástupiště` pro danou trasu, cachovaná per `cisloTrasy` (`^||TiskAd("wnast",…)`).
+/// Nástupiště = W pole 7 (⚠️ legacy `arrsp("trs",tc,8)` — indexy posunuté o +1, JRapiSp ř.234-241).
+/// Bez J-fallbacku — ten je per zastávka×směr a řeší ho volající (fallback nerozlišuje varianty).
+ClassMethod WNastupisteMapa(dataDB As %String, sku As %String, lin As %String, cisloTrasy As %String, ByRef nMap)
+{
+    k nMap
+    i cisloTrasy = "" q                                  // spoj bez trasy → prázdná mapa (^|| nebere prázdný subscript)
+    i $d(^||TiskAd("wnast",cisloTrasy)) { m nMap = ^||TiskAd("wnast",cisloTrasy)  q }
+    s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
+    f i=1:1:$l(wTrasa,"#") {
+        s seg = $p(wTrasa,"#",i)
+        s p = $p(seg,":",1)
+        i p '= "" s nMap(p) = $p(seg,":",7)
+    }
+    i $d(nMap) m ^||TiskAd("wnast",cisloTrasy) = nMap
+}
+
+/// Písmeno variantního sloupce (1-based pořadí sloupce): A–Z; `prvniBez` → první sloupec (hlavní
+/// varianta) bez písmene a abeceda běží od druhého. Přes 26 → „V27"… (nouzový fallback).
+ClassMethod PismenoVarianty(poradiSloupce As %Integer, prvniBez As %Boolean = 1) As %String
+{
+    s idx = poradiSloupce - $s(prvniBez:1, 1:0)
+    i idx <= 0 q ""
+    i idx <= 26 q $e("ABCDEFGHIJKLMNOPQRSTUVWXYZ", idx)
+    q "V"_idx
+}
+
 /// Vrátí `cisloTrasy` **hlavní (nejčastější)** trasy mezi spoji stavícími na vývěskové zastávce
 /// (`currentPoradi`). Základ pro časy jízdy ve StopListu (jeden sloupec, jako MHD `TrasaMin1`).
 /// Hlavní = nejvíc spojů (1:1 legacy „označím trasu s největším počtem spojů" `JRapiLinPrtMhd` ř.108-127)
@@ -825,10 +914,12 @@ ClassMethod ZakladniCisloTrasy(dataDB As %String, sku As %String, lin As %String
 
 /// Numerická hodnota času z W-segmentu. Pobytová zastávka má formát `příjezd/čekání` (např. `33/4`)
 /// → vrací **odjezd = příjezd + čekání** (1:1 legacy `Cas+Ceka` / `Cas+$P(Cas,"/",2)`). Běžná `27` → 27.
-/// "" když mimo trasu / projíždí (`<`).
+/// "" když spoj zastávku neobsluhuje: mimo trasu (prázdné), projíždí (`<`), nebo `|` (zastávka na
+/// trase, ale spoj v ní nestaví — legacy `JRapiExp10` ř.272-275 přeskakuje `<`/`|`/prázdné shodně;
+/// dřívější `+"|"` = 0 tisklo falešný čas 0).
 ClassMethod CasHodnota(cas As %String) As %String
 {
-    i (cas = "") || (cas = "<") q ""
+    i (cas = "") || (cas = "<") || (cas = "|") q ""
     q +$p(cas,"/",1) + +$p(cas,"/",2)        // "33/4"→37, "27"→27 (piece2 prázdné = +0)
 }
 
@@ -1551,6 +1642,32 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // „Mřížka odjezdů" / „Poznámky a legenda"); parametry pro celou šablonu → „Obecné".
     d ..AddBoolParam(arr, "TISK_SIPKY",          "Tisknout šipky směru",      "true",  "Seznam zastávek")
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
+
+    // Varianty tras (KOVED #13048 bod 5) — týkají se variantních sloupců seznamu zastávek.
+    // Varianta = sled zastávek (legacy dedup), časy sloupce = max přes spoje varianty.
+    // Písmena u odjezdů nahrazují automatické rozdílové poznámky (jedna abeceda na vývěsce).
+    s pRazV = ##class(%DynamicObject).%New()
+    s pRazV.name         = "RAZENI_VARIANT"
+    s pRazV.label        = "Řazení variant tras"
+    s pRazV.type         = "enum"
+    s pRazV.group        = "Seznam zastávek"
+    s pRazV.defaultValue = "Dle četnosti ze zastávky"
+    s optsRV = ##class(%DynamicArray).%New()
+    d optsRV.%Push("Dle četnosti ze zastávky")
+    d optsRV.%Push("Stabilní (pořadí spojů)")
+    s pRazV.options = optsRV
+    d arr.%Push(pRazV)
+
+    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant u odjezdů", "false", "Seznam zastávek")
+
+    s pPrvB = ##class(%DynamicObject).%New()
+    s pPrvB.name         = "PRVNI_BEZ_PISMENE"
+    s pPrvB.label        = "První varianta bez písmene"
+    s pPrvB.type         = "bool"
+    s pPrvB.defaultValue = "true"
+    s pPrvB.group        = "Seznam zastávek"
+    s pPrvB.visibleWhen  = "PISMENA_VARIANT=true"
+    d arr.%Push(pPrvB)
 
     // Rozdělení sloupců typů provozu — override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace
     // {prázdninový split prac. dnů} × {sloučení víkendu}; reuse existujícího NacistSkupinyDnu/ZarazeniSpoje.

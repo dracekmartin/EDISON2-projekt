@@ -94,6 +94,7 @@ Method TestCasHodnota()
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota("33/4"), 37, "čas/čekání se sčítá")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota(""), "", "prázdné → prázdné")
 	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota("<"), "", "projíždí → prázdné")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).CasHodnota("|"), "", "| (nestaví) → prázdné, ne čas 0")
 }
 
 Method TestCasJizdyZMapy()
@@ -156,6 +157,22 @@ Method TestZiskejMarkerDedupuje()
 	do $$$AssertEquals(m2, 2, "druhý text → marker 2")
 	do $$$AssertEquals(m3, m1, "stejný text → stejný marker (dedup)")
 	do $$$AssertEquals($get(poznMap("byMarker",1)), "nejede 24.12.", "reverzní mapa marker→text")
+}
+
+// ── Písmena variant tras (KOVED #13048 bod 5) ───────────────────────────────
+
+Method TestPismenoVarianty()
+{
+	// První varianta bez písmene (default) — hlavní trasa čistá, odchylky A, B…
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(1, 1), "", "první sloupec bez písmene")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(2, 1), "A", "druhý sloupec → A")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(27, 1), "Z", "27. sloupec → Z")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(28, 1), "V27", "za Z → nouzový fallback V27")
+
+	// Písmena od prvního sloupce
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(1, 0), "A", "první sloupec → A")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(26, 0), "Z", "26. sloupec → Z")
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).PismenoVarianty(27, 0), "V27", "27. sloupec → V27")
 }
 
 Method TestNormalizLinku()

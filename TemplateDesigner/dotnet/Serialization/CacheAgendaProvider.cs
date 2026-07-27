@@ -427,7 +427,8 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         {
             var inVar = new CVar();
             foreach (var (key, value) in parameters)
-                inVar[key] = new CVar(value?.ToString() ?? "");
+                // bool → "true"/"false" (wire kontrakt; C# ToString() dává "True" a Caché porovnává stringově)
+                inVar[key] = new CVar(value is bool b ? (b ? "true" : "false") : value?.ToString() ?? "");
 
             CVar result = _mlRest.Query(cacheClass, "GetData", inVar);
 

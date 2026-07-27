@@ -64,9 +64,6 @@ public class TemplateDesignerViewModel : EDViewModel
     private List<TemplateParameter>             _agendaParameters    = [];
     private readonly Dictionary<string,object?> _previewParams       = new();
     private Dictionary<string,object?>?         _cachedParamValues;
-    // Poslední hodnota server-side parametru rozdělení sloupců — změna vyžaduje re-fetch dat z Caché
-    // (grouping počítá server), na rozdíl od client-side parametrů, které jen překreslí.
-    private string?                             _lastServerParamRozdeleni;
     private string?                             _lastParamsAgendaCode;
 
     // ── Active instances (linky pro MHD, faktury pro FAKTURY, ...) ────────────
@@ -2385,15 +2382,26 @@ public class TemplateDesignerViewModel : EDViewModel
             onChanged:  OnAgendaParamChanged,
             commitFactory: _ => null);
 
-        // Výchozí hodnota server-paramu, ať první změna client-paramu nespustí falešný re-fetch.
-        _lastServerParamRozdeleni = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv0) ? rv0?.ToString() : null;
+        // Výchozí snapshot server-paramů, ať první změna client-paramu nespustí falešný re-fetch.
+        _lastServerParamsSnapshot = ServerParamsSnapshot();
         HasParameters = _agendaParameters.Count > 0;
         NotifyParamsSummaryChanged();
         RequestParamsFormReload?.Invoke();
     }
 
+    /// <summary>Parametry zpracovávané v Caché GetData (rozdělení sloupců, varianty tras) —
+    /// jejich změna vyžaduje re-fetch dat; ostatní (client-side) parametry jen překreslí náhled.</summary>
+    private static readonly string[] ServerSideParams =
+        ["ROZDELENI_SLOUPCU", "RAZENI_VARIANT", "PISMENA_VARIANT", "PRVNI_BEZ_PISMENE"];
+
+    private string? _lastServerParamsSnapshot;
+
+    private string ServerParamsSnapshot() => string.Join(
+        "",
+        ServerSideParams.Select(p => _previewParams.TryGetValue(p, out var v) ? v?.ToString() : null));
+
     /// <summary>Reakce na změnu parametru (z EDInputform tabu i staré cesty): invaliduje cache,
-    /// server-param „rozdělení sloupců" → re-fetch dat, ostatní → jen překreslení náhledu.</summary>
+    /// server-side parametry → re-fetch dat, ostatní → jen překreslení náhledu.</summary>
     private void OnAgendaParamChanged()
     {
         // Uživatelská změna parametru = změna šablony (parametry patří šabloně) → dirty, ať Ctrl+S uloží.
@@ -2402,12 +2410,10 @@ public class TemplateDesignerViewModel : EDViewModel
         IsDirty = true;
         _cachedParamValues = null;
         NotifyParamsSummaryChanged();
-        // Server-side param „rozdělení sloupců" (grouping počítá Caché) → změna vyžaduje re-fetch dat.
-        // Ostatní (client-side) parametry jen překreslí. (Zatím jediný server param — hardcoded.)
-        var rozd = _previewParams.TryGetValue("ROZDELENI_SLOUPCU", out var rv) ? rv?.ToString() : null;
-        if (CurrentActiveInstance is not null && rozd != _lastServerParamRozdeleni)
+        var snapshot = ServerParamsSnapshot();
+        if (CurrentActiveInstance is not null && snapshot != _lastServerParamsSnapshot)
         {
-            _lastServerParamRozdeleni = rozd;
+            _lastServerParamsSnapshot = snapshot;
             _ = RefreshDataForCurrentInstanceAsync();
         }
         else

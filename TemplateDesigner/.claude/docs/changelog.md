@@ -1,6 +1,46 @@
 # Changelog
 
-## 2026-07-27 — Více nástupišť u zastávky (#13048 KOVED, bod 4) — per-spoj sloupky + režimy zobrazení
+## 2026-07-27 — Varianty tras dle trasy + písmena u odjezdů (#13048 KOVED, bod 5)
+
+Návrat k legacy sémantice variantních časových sloupců + KOVED rozšíření. Jen server
+(`ZastavkoveJrAd`), .NET beze změny (anotace/hlavičky/pořadí jedou z dat).
+
+- **Seskupování variant PŘEDĚLÁNO (bezpodmínečně):** varianta = **sled obsluhovaných zastávek**
+  (1:1 legacy dedup dle `prutmbmp`, `JRapiLinPrtMhd1` ř.266-300 — „ponechá se delší čas"),
+  NE časový profil jako dřív. Spoje stejné trasy s jinými časy se slévají; čas sloupce =
+  **maximum přes spoje** („nejpozději za X min"). Efekt 0330510/T: 37 spojů, 33 sloupců →
+  **11 variant tras** (hlavní 21 spojů; sonda `AdVariantyProbe.Scan`). **Nástupiště do identity
+  NEJDE** (první verze ho měla — dalo vizuálně identické duplicitní časové sloupce, vidět na
+  smoke testu; KOVED „jiné stanoviště = jiná varianta" pokryje vývěska per sloupek #8828,
+  helper `WNastupisteMapa` připraven).
+- **Oprava `|` ve W-trase = spoj nestaví** (nález ze smoke testu — „časy 0"): `|` znamená
+  „zastávka na trase, ale spoj v ní nestaví" (legacy `JRapiExp10` ř.272-275 přeskakuje
+  `<`/`|`/prázdné shodně); `CasHodnota` ho dřív četl přes `+"|"` jako čas 0 → falešné nuly
+  v časových sloupcích, falešné „obsloužené" zastávky a slité varianty. Nyní: `CasHodnota("|")=""`
+  (spoj s `|` na vývěskové zastávce nedostane odjezd), `ObsluhovanePoradi` `|`-only zastávky
+  nezařadí, ve variantních sloupcích se `|` ukáže jako `<`. Gold beze změny (0365001/0365005
+  `|` neobsahují), unit test rozšířen.
+- **Řazení sloupců** — parametr „Řazení variant tras": *Dle četnosti ze zastávky* (default, KOVED —
+  nejčastější první) / *Stabilní (pořadí spojů)* (TR7/TRANSDEV kontinuita). Parametry ve skupině
+  „Seznam zastávek" (týkají se variantních sloupců StopListu). **.NET:** re-fetch trigger
+  zobecněn z hardcoded `ROZDELENI_SLOUPCU` na seznam `ServerSideParams` (snapshot porovnání) —
+  změna kteréhokoli variantního parametru přenačte data.
+- **Oprava bool parametrů na wire (latentní, nález ze smoke testu):** klient posílal C# bool
+  přes `ToString()` = **„True"**, server porovnává `= "true"` → bool parametry GetData nikdy
+  nezabraly (týkalo se i TR2 `SOUHRN_NA_ZNAMENI` — proto „čekal ověření"). Fix obou stran:
+  `CacheAgendaProvider.GetData` normalizuje bool → `"true"/"false"` (wire kontrakt),
+  server čte tolerantně přes `$zcvt(...,"L")` (funguje i se starším klientem).
+- **Písmena variant u odjezdů** — parametr „Písmena variant u odjezdů" (default **vyp** = beze změny
+  pro stávající zákazníky): hlavičky sloupců = písmena A–Z (`PismenoVarianty` + unit test), u minuty
+  odjezdu anotace s písmenem varianty (kategorie `varianta-trasy` — mimo filtry #7955), volba
+  „První varianta bez písmene" (default zap — hlavní trasa čistá). Písmena **nahrazují automatické
+  rozdílové poznámky** (`RozdilyTras` se nepočítá — jinak dvě abecedy na vývěsce); ruční poznámky
+  zákazníka nedotčeny. Vyp = původní hlavičky (písmena rozdílů / „T1"…).
+- **Ověřeno:** sonda `AdVariantyProbe.Stranka` (ostrá `BuildStrankaZastavky`) na 0330510: hlavičky
+  `["", "A" … "J"]`, 16 anotací písmen = přesně počet spojů mimo hlavní variantu (37−21),
+  `rozdil-trasy` v anotacích nahrazeno; default režim = kategorie beze změny. Gold: 0365001 **beze
+  změny**, 0365005 re-baseline (jen pořadí 6 sloupců dle četnosti; počty 1:1). Caché 41/41,
+  .NET 370/370.
 
 Zákazník: spoje jedou z různých sloupků jedné zastávky → volba chování sloupce „Nástupiště".
 
