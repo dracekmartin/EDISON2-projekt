@@ -19,6 +19,7 @@ public static class StopFields
     public const string JeAktualni = "AKTUALNI_ZASTAVKA"; // příznak aktuální (nástupní) zastávky
     public const string Zone       = "ZONY";              // tarifní zóny (ploché „1/2")
     public const string Nastupiste = "NASTUPISTE";        // nástupiště/označník zastávky (AD: J-věta #3; MHD: Oznacnik)
+    public const string NastupisteSpoju = "NASTUPISTE_SPOJU"; // nástupiště dle spojů (AD: W pole 8, fallback J-věta) — CSV dle četnosti, první = nejčetnější
 
     /// <summary>Interní join-klíč zastávky (<c>ODJEZDY.ZASTAVKA_ID</c>) — je v datech, ale NE ve schématu
     /// ani jako sloupec (uživatel s ním nepracuje).</summary>

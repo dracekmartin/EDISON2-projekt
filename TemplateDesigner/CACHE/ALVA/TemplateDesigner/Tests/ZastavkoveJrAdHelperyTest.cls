@@ -6,6 +6,28 @@ Include %occInclude
 Class ALVA.TemplateDesigner.Tests.ZastavkoveJrAdHelperyTest Extends ALVA.EDTesting.MLTestCase
 {
 
+// ── NastupisteCsv — nástupiště dle spojů, řazení dle četnosti (KOVED #13048 bod 4) ──
+
+Method TestNastupisteCsvRazeniDleCetnosti()
+{
+	// Nejčetnější první: 18× sloupek 2, 3× sloupek 3 → „2,3" (první položka = režim Nejčetnější)
+	kill c
+	set c("2") = 18, c("3") = 3
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NastupisteCsv(.c), "2,3", "nejčetnější první")
+
+	// Shoda četností → menší hodnota dřív (numericky: 5 před 10)
+	kill c
+	set c("10") = 2, c("5") = 2
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NastupisteCsv(.c), "5,10", "shoda četností → numericky vzestupně")
+
+	// Jedna hodnota / prázdný vstup
+	kill c
+	set c("102") = 4
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NastupisteCsv(.c), "102", "jediná hodnota")
+	kill c
+	do $$$AssertEquals(##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).NastupisteCsv(.c), "", "prázdný vstup → prázdný výstup")
+}
+
 // ── ZarazeniSpoje — sloupce dnů dle FTL × plk × NZ (1:1 KamPrt^JRapiLinPrtMhd1) ──
 
 Method TestZarazeniSpojeFtl0()

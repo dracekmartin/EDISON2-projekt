@@ -164,7 +164,7 @@ při scope té fáze, ne teď.
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
 | TR5 | Definice cíle — střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
 | A5+ | Odsazení zastávky per-směr / per-Tč pásmo (#7937) | M | `^JRL` dta7 je single-per-point → změna zdroje + editor (base AD hotový) |
-| B4 | Per-sloupek zastávky → samostatná vývěska (#8828) | ~0.5–1d | datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; 100 % Caché |
+| B4 | Per-sloupek zastávky → samostatná vývěska (#8828) | ~0.5–1d | **datový průzkum HOTOV 2026-07-27** (#13048 bod 4): AD per-spoj sloupek = W-trasa pozice 7 (`trs(8)`, posun indexů — `ZastavkoveJrAd.NastupisteSpoju` už čte), fallback J-věta; referenční podoba = KOVED XLSX (vývěska per zastávka×sloupek s filtrem odjezdů). Zbývá stránkovací nadstavba + business rozhodnutí (MHD zdroj sloupku dořešit až u MHD zákazníka) |
 
 ---
 

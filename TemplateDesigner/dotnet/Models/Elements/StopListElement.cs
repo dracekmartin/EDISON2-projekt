@@ -49,6 +49,11 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// <remarks>Default AfterName = za názvem zastávky (CBDP layout). BeforeName = před názvem (DPKV layout, např. „× Globus").</remarks>
     public StopMarkersSide MarkersPosition { get; set; } = StopMarkersSide.AfterName;
 
+    /// <summary>Zdroj sloupce „Nástupiště" při více sloupcích u zastávky (KOVED #13048 bod 4).
+    /// FromRoute (default) = z trasy linky (dnešní chování); MostFrequent = nástupiště, odkud jede
+    /// nejvíc spojů; All = výčet všech („2,3"). Obojí dle spojů (přednost před hodnotou z trasy).</summary>
+    public MultiPlatformDisplay MultiPlatformMode { get; set; } = MultiPlatformDisplay.FromRoute;
+
     // ═══════════════════════════════════════════
     // Šipka směru jízdy (┌─▼ od aktuální zastávky dolů)
     // ═══════════════════════════════════════════
@@ -582,7 +587,15 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             StopFields.StopName     => BuildStopDisplayText(z),
             StopFields.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
             StopFields.Zone         => string.Join("/", z.Zony),
-            StopFields.Nastupiste   => z.Nastupiste,
+            StopFields.Nastupiste   => MultiPlatformMode switch
+            {
+                // Dle spojů: první položka CSV = nejčetnější / celý výčet; bez per-spoj dat fallback na trasu
+                MultiPlatformDisplay.MostFrequent => z.NastupisteSpoju.Length > 0
+                    ? z.NastupisteSpoju.Split(',')[0] : z.Nastupiste,
+                MultiPlatformDisplay.All => z.NastupisteSpoju.Length > 0
+                    ? z.NastupisteSpoju.Replace(",", ", ") : z.Nastupiste,
+                _ => z.Nastupiste,
+            },
             StopFields.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
             StopFields.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""
@@ -829,6 +842,17 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
         new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
         new BoolPropertyDescriptor  { Label = "Přestupy (vlak/bus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Více nástupišť", Group = "Zastávky",
+            Get = () => MultiPlatformMode,
+            Set = v => MultiPlatformMode = (MultiPlatformDisplay)v,
+            Options = [
+                ("Z trasy linky", (object)MultiPlatformDisplay.FromRoute),
+                ("Nejčetnější dle spojů", (object)MultiPlatformDisplay.MostFrequent),
+                ("Výčet všech", (object)MultiPlatformDisplay.All)
+            ]
+        },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
         new EnumPropertyDescriptor
         {
@@ -903,6 +927,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ShowTransferAttributes  = ShowTransferAttributes,
             ShowStopNotes           = ShowStopNotes,
             MarkersPosition         = MarkersPosition,
+            MultiPlatformMode       = MultiPlatformMode,
             CurrentStopUnderline    = CurrentStopUnderline,
             ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
@@ -926,6 +951,17 @@ public enum DirectionArrowSide
 {
     Right,
     Left
+}
+
+/// <summary>Zdroj sloupce „Nástupiště" při více sloupcích u zastávky (KOVED #13048 bod 4).</summary>
+public enum MultiPlatformDisplay
+{
+    /// <summary>Z trasy linky (J-věta) — dnešní chování, default.</summary>
+    FromRoute,
+    /// <summary>Nástupiště, odkud jede nejvíc spojů (per-spoj hodnota má přednost před trasou).</summary>
+    MostFrequent,
+    /// <summary>Výčet všech nástupišť dle spojů („2, 3"), seřazený dle četnosti.</summary>
+    All,
 }
 
 /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>

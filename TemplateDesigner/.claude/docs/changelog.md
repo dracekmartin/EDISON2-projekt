@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-27 — Více nástupišť u zastávky (#13048 KOVED, bod 4) — per-spoj sloupky + režimy zobrazení
+
+Zákazník: spoje jedou z různých sloupků jedné zastávky → volba chování sloupce „Nástupiště".
+
+- **Server (`ZastavkoveJrAd`):** nové pole řádku zastávky **`NASTUPISTE_SPOJU`** — nástupiště
+  posbíraná ze spojů směru dle legacy pravidla „**nástupiště ze spoje, není-li, tak z linky**"
+  (`JRapiExp10:1222-1226`): per-spoj hodnota z W-trasy, fallback J-věta `#3`. CSV seřazené dle
+  četnosti (první = nejčetnější; shoda → menší hodnota, čistý helper `NastupisteCsv` + unit test).
+  Agregace cachovaná per linka×směr (`^||TiskAd("nastCsv")`). ⚠️ **Past ověřená v legacy zdrojích:
+  pole `trs(8)` = W-segment pozice 7** — legacy čas/čekání rozpadá W pozici 2 na dvě pole
+  (`JRapiSp:234-241`), indexy jsou posunuté (první pokus s pozicí 8 četl zóny).
+- **Element (StopList):** přepínač **„Více nástupišť"** (`MultiPlatformMode`): *Z trasy linky*
+  (default = dnešní chování) / *Nejčetnější dle spojů* / *Výčet všech („2, 3")*. Panel + dialog
+  (EDInputForm). Sloupec „Nástupiště" zůstává opt-in.
+- **Data ověřena:** sonda `AdWTrasaProbe.ScanNastupiste` — per-spoj sloupky plní stovky linek
+  (CB_GWBUS 541, CB_CSADAD 339) a multi-sloupkových zastávek jsou desítky (197/153; vč. gold
+  0320993, 0320680, 0330510). End-to-end na 0330510: ČB aut.nádr. → „1,2,28,3" (fallback z trasy
+  správně mezi četnostmi). Uzavírá i datový průzkum pro #8828 (vývěska per sloupek — zbývá stránkování).
+- Gold: re-baseline 0365001/0365005 (jen md5 — nové pole v JSON; počty beze změny). Caché 40/40,
+  .NET 370/370.
+
 ## 2026-07-27 — Přetékající text buněk se zmenšuje na šířku — vestavěné chování (#13048 KOVED, bod 2)
 
 Zákazník chtěl u přetékajících názvů zastávek / seznamu zón zmenšení fontu jako v Excelu

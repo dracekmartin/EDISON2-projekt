@@ -46,6 +46,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowStopAttributes", "Atributy", 1)
         s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/bus)", 0)
         s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Legacy JŘ je netiskl."
+        s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více nástupišť", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
+        s f.helpText = "Sloupec Nástupiště, když spoje jedou z různých sloupků zastávky: hodnota z trasy / sloupek s nejvíce spoji / výčet všech dle četnosti (např. 3, 2, 4)."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)

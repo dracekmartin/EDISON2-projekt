@@ -85,6 +85,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                 Odsazeni      = ParseInt(row.GetString("ODSAZENI")),
                 NaZnameni     = ParseBool(row.GetString("NA_ZNAMENI")),
                 Nastupiste    = row.GetString(StopFields.Nastupiste),
+                NastupisteSpoju = row.GetString(StopFields.NastupisteSpoju),
                 SourceRow     = row,
             };
 

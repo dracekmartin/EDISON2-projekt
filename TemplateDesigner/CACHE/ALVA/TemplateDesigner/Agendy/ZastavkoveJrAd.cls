@@ -431,6 +431,9 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         }
         d z.%Set("TRASA_MIN", trasaMin)
         d z.%Set("NASTUPISTE", $p($p(veta,"#",3),":",$s(jeTam:1,1:2)))   // TR3: nástupiště per zastávka (J-věta #3, dle směru)
+        // KOVED #13048 bod 4: nástupiště dle SPOJŮ (W pole 8, fallback J-věta) — CSV dle četnosti,
+        // první = nejčetnější. Element z toho staví režimy „nejčetnější" / „výčet".
+        d z.%Set("NASTUPISTE_SPOJU", ..NastupisteSpoju(dataDB, sku, lin, smer, poradi))
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
         s posledniNazev = rawNazev, posledniCzst = czst
@@ -702,6 +705,77 @@ ClassMethod ObsluhovanePoradi(dataDB As %String, sku As %String, lin As %String,
         }
     }
     i $d(served) m ^||TiskAd("served",dataDB,sku,lin,smer) = served     // prázdné necachovat (merge z undef = <UNDEFINED>)
+}
+
+/// Nástupiště zastávky posbíraná ze SPOJŮ směru — legacy pravidlo „nástupiště ze spoje,
+/// není-li, tak z linky" (`JRapiExp10` ř.1222-1226: `trs(8)`, fallback J-věta `#3` dle směru).
+/// ⚠️ `trs(8)` = W-segment pozice **7** — čas/čekání z W pozice 2 se v legacy rozpadá na dvě
+/// pole (`JRapiSp` ř.234-241), takže trs indexy jsou od W pozic posunuté o 1.
+/// Vrací CSV distinct hodnot seřazených dle četnosti sestupně (shoda → menší hodnota),
+/// první položka = nejčetnější. "" když žádný spoj nástupiště nemá. KOVED #13048 bod 4.
+ClassMethod NastupisteSpoju(dataDB As %String, sku As %String, lin As %String, smer As %String, poradi As %String) As %String
+{
+    i poradi = "" q ""
+    i '$d(^||TiskAd("nastCsv",dataDB,sku,lin,smer)) d ..NastupisteAgregace(dataDB, sku, lin, smer)
+    q $g(^||TiskAd("nastCsv",dataDB,sku,lin,smer,poradi))
+}
+
+/// Agregace nástupišť per zastávka přes všechny spoje směru → cache `^||TiskAd("nastCsv",…)`
+/// (invariant per linka×směr; v GetData se volá per stránka). Spoj v zastávce nestaví
+/// (`<` / `|` / prázdné) → nepočítá se (stejná sémantika jako legacy `JRapiExp10` ř.272-275).
+ClassMethod NastupisteAgregace(dataDB As %String, sku As %String, lin As %String, smer As %String)
+{
+    k agg
+    s jeTamSmer = (smer = "T")
+    s sp = ""
+    f {
+        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+        q:sp=""
+        i '$isvalidnum(sp) continue
+        s cisloTrasy = $p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",3)
+        i cisloTrasy = "" continue
+        s wTrasa = $g(^[dataDB]JRL(sku,lin,"W",cisloTrasy))
+        f i=1:1:$l(wTrasa,"#") {
+            s seg = $p(wTrasa,"#",i)
+            s pp = $p(seg,":",1), cas = $p(seg,":",2)
+            i (pp = "") || (cas = "") || (cas = "<") || (cas = "|") continue
+            s nast = $p(seg,":",7)
+            i nast = "" s nast = $p($p($g(^[dataDB]JRL(sku,lin,"J",pp)),"#",3),":",$s(jeTamSmer:1,1:2))
+            i nast = "" continue
+            s agg(pp,nast) = $g(agg(pp,nast)) + 1
+        }
+    }
+
+    s ^||TiskAd("nastCsv",dataDB,sku,lin,smer) = 1     // marker „spočítáno" (i když nic nevyšlo)
+    s pp = ""
+    f {
+        s pp = $o(agg(pp)) q:pp=""
+        k cetnosti m cetnosti = agg(pp)
+        s ^||TiskAd("nastCsv",dataDB,sku,lin,smer,pp) = ..NastupisteCsv(.cetnosti)
+    }
+}
+
+/// Čisté řazení: `cetnosti(nastupiste) = počet spojů` → CSV sestupně dle četnosti,
+/// shoda četností → menší hodnota dřív (numerická kolace subscriptů). "" pro prázdný vstup.
+ClassMethod NastupisteCsv(ByRef cetnosti) As %String
+{
+    k dleCetnosti
+    s nast = ""
+    f {
+        s nast = $o(cetnosti(nast)) q:nast=""
+        s dleCetnosti(-cetnosti(nast),nast) = ""
+    }
+    s csv = ""
+    s c = ""
+    f {
+        s c = $o(dleCetnosti(c)) q:c=""
+        s nast = ""
+        f {
+            s nast = $o(dleCetnosti(c,nast)) q:nast=""
+            s csv = csv_$s(csv="":"",1:",")_nast
+        }
+    }
+    q csv
 }
 
 /// W-mapa `poradi → cas` pro danou trasu, cachovaná per `cisloTrasy` (`^||TiskAd("wmap",…)`).
@@ -1424,6 +1498,7 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
     d ..AddField(colZastavkyFields, "NASTUPISTE",        "Nástupiště",        "text")
+    d ..AddField(colZastavkyFields, "NASTUPISTE_SPOJU",  "Nástupiště (dle spojů)", "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno — nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
     // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only — pole (ne skalár),
