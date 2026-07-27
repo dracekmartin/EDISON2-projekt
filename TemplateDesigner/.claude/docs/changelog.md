@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-27 — Přetékající text buněk se zmenšuje na šířku — vestavěné chování (#13048 KOVED, bod 2)
+
+Zákazník chtěl u přetékajících názvů zastávek / seznamu zón zmenšení fontu jako v Excelu
+(„přizpůsobit buňce"). Po UX diskusi **bez konfigurace — vestavěné chování všech buněk tabulek**:
+dosavadní „chování" při přetečení bylo, že text podlezl pozadí vedlejší buňky (useknutá půlka
+slova) — to není nikdy záměr. Žádný checkbox; opt-out doplníme až na reálnou poptávku.
+
+- **`CellRenderer`**: text širší než buňka → proporcionální zmenšení fontu; **trigger až skutečné
+  přetečení** (sloupce s auto šířkou na míru textu se nemění), cíl = šířka minus rezerva 0,6 mm
+  (nekončit na hraně). Víceřádkový text dle nejširšího řádku (jednotná velikost). Hot path bez
+  alokace navíc (`ComputeShrinkScale` overload s existujícím fontem).
+- **StopList + značky za názvem**: zmenšení názvu počítá i s šířkou značek (`TrailingWidthMm`
+  v `CellSpec` — obsah škálující se s textem); značky se posouvají i zmenšují se jménem (sdílený
+  výpočet škály = pozice se nerozjedou). **Rezerva dle šipky směru**: u sloupce názvů se šipkou
+  vpravo = odsazení svislice (0,6) + vodorovná část šipky (1,5) + buffer (0,5) = 2,6 mm, aby
+  zmenšený text nepodlézal vodorovnou část šipky; ostatní buňky jen obecných 0,6 mm.
+- **Rozsah:** buňky kreslené přes `CellRenderer` (StopList, DynamicTable/TableElement, LineTable,
+  záhlaví DepartureGrid). Legenda poznámek (zalamuje) a minuty odjezdů (vlastní layout) beze změny.
+- Bod 3 (#13048) ověřen: „čísla sloupků z trasy" = hotový sloupec „Nástupiště" (TR3); „z detailu
+  spoje" (per-spoj W-trasa) splývá s bodem 4.
+
 ## 2026-07-27 — Šablony v DB: kompatibilita se staršími klienty (#13013 — „Šablona nebyla nalezena nebo je porušená")
 
 Kolega s produkční verzí klienta (release 2026-07-14, bez podpory blobů po kusech) nemohl otevřít

@@ -200,6 +200,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 float arrowStartY = -1f;
                 float arrowEndY = -1f;
 
+                // Rezerva „Přizpůsobit buňce" pro sloupec názvů: při šipce vpravo nesmí zmenšený text
+                // podlézt její vodorovnou část (svislice + bracket míří do sloupce) — cíl končí před ní.
+                float nameShrinkReserveMm = (showArrow && !arrowLeft)
+                    ? ArrowInsetFromEdgeMm + ArrowBracketLengthMm + 0.5f
+                    : CellRenderer.DefaultShrinkReserveMm;
+
                 foreach (var z in zastavky)
                 {
                     if (!showPassed && !foundCurrent && !z.JeAktualni)
@@ -229,14 +235,24 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                         ctx.Canvas.DrawRect(bgRect, bgPaint);
                     }
 
-                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW);
+                    // „Přizpůsobit buňce" + značky za názvem: zmenšení názvu počítá i s šířkou
+                    // značek (škálují se spolu), aby se za zmenšený název vešly a nepodlézaly šipku.
+                    float nameTrailingMm = 0f;
+                    if (stopNameIdx >= 0 && MarkersPosition == StopMarkersSide.AfterName)
+                    {
+                        var nameStyleRow = ResolveRowStyle(columns[stopNameIdx], isCurrent, isPassed);
+                        nameTrailingMm = MeasureMarkersTrailingMm(ctx, BuildStopMarkerRuns(z), nameStyleRow, symbolFace, scale);
+                    }
+
+                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW, nameShrinkReserveMm, nameTrailingMm);
                     ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
 
                     // Značky (na znamení / atributy / poznámky) se kreslí zvlášť po úsecích: piktogramové
                     // symboly symbolovým Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky
                     // normálním fontem. V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
                     DrawStopMarkers(ctx, z, currentY, rowH, columns[stopNameIdx], stopNameLeftMm,
-                        colW[columns[stopNameIdx]], markersSubCellWidth, isCurrent, isPassed, symbolFace, scale);
+                        colW[columns[stopNameIdx]], markersSubCellWidth, isCurrent, isPassed, symbolFace, scale,
+                        nameShrinkReserveMm);
 
                     if (ShowRowSeparators)
                     {
@@ -344,7 +360,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// </summary>
     private ColumnRenderer.CellSpec[] BuildDataRowSpecs(
         List<StopColumn> columns, ZastavkaData z, bool isCurrent, bool isPassed,
-        int stopNameIdx, float markersSubCellWidth, Dictionary<StopColumn, float> widths)
+        int stopNameIdx, float markersSubCellWidth, Dictionary<StopColumn, float> widths,
+        float nameShrinkReserveMm = CellRenderer.DefaultShrinkReserveMm, float nameTrailingMm = 0f)
     {
         bool split = markersSubCellWidth > 0
                      && stopNameIdx >= 0 && stopNameIdx < columns.Count
@@ -359,7 +376,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 specs[i] = new ColumnRenderer.CellSpec(
                     widths[col],
                     GetCellText(z, col.Key),
-                    ResolveRowStyle(col, isCurrent, isPassed));
+                    ResolveRowStyle(col, isCurrent, isPassed),
+                    i == stopNameIdx ? nameShrinkReserveMm : CellRenderer.DefaultShrinkReserveMm,
+                    i == stopNameIdx ? nameTrailingMm : 0f);
             }
             return specs;
         }
@@ -375,7 +394,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 var markerStyle = nameStyle with { HAlign = TextHorizontalAlignment.Right };
                 // Text značek prázdný — kreslí je DrawStopMarkers zvlášť (per-run font). Sub-cell drží jen šířku a pozadí.
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", markerStyle);
-                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle, nameShrinkReserveMm, nameTrailingMm);
             }
             else
             {
@@ -694,7 +713,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// sub-cell před názvem (zarovnané vpravo); AfterName → za text názvu. Volá se po DrawRow.</summary>
     private void DrawStopMarkers(RenderContext ctx, ZastavkaData z, float rowTopMm, float rowH,
         StopColumn nameCol, float stopNameLeftMm, float nameColWidthMm, float markersSubCellWidth,
-        bool isCurrent, bool isPassed, SKTypeface symbolFace, float scale)
+        bool isCurrent, bool isPassed, SKTypeface symbolFace, float scale,
+        float nameShrinkReserveMm = CellRenderer.DefaultShrinkReserveMm)
     {
         var runs = BuildStopMarkerRuns(z);
         if (runs.Count == 0) return;
@@ -710,17 +730,36 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         else
         {
             // AfterName: za názvem — odměř šířku názvu ve stejném fontu a začni značky za ní.
+            // Při „Přizpůsobit buňce" musí měření i značky použít TUTÉŽ efektivní škálu jako
+            // CellRenderer (stejné vstupy vč. rezervy a šířky značek), jinak se pozice rozjedou.
             var cellMm = new SKRect(stopNameLeftMm, rowTopMm, stopNameLeftMm + nameColWidthMm, rowTopMm + rowH);
             var contentMm = CellLayout.ApplyPadding(cellMm, style);
-            using var nameFont = style.CreateFont(scale, ctx.MmToPx);
-            float nameWidthPx = nameFont.MeasureText(BuildStopDisplayText(z));
+            string displayText = BuildStopDisplayText(z);
+            float trailingMm = MeasureMarkersTrailingMm(ctx, runs, style, symbolFace, scale);
+            float effScale = CellRenderer.ComputeShrinkScale(
+                style, [displayText], contentMm.Width, ctx.MmToPx, scale, nameShrinkReserveMm, trailingMm);
+            using var nameFont = style.CreateFont(effScale, ctx.MmToPx);
+            float nameWidthPx = nameFont.MeasureText(displayText);
             float spacePx = nameFont.MeasureText(" ");
             var m = nameFont.Metrics;
             var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
             var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
             var (nameX, _) = CellLayout.TextAnchorPx(tl, br, nameWidthPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
-            DrawMarkerRuns(ctx, contentMm, runs, style, symbolFace, scale, TextHorizontalAlignment.Left, startAfterNamePx: nameX + nameWidthPx + spacePx);
+            DrawMarkerRuns(ctx, contentMm, runs, style, symbolFace, effScale, TextHorizontalAlignment.Left, startAfterNamePx: nameX + nameWidthPx + spacePx);
         }
+    }
+
+    /// <summary>Šířka bloku značek za názvem (oddělovací mezera + úseky) v mm při dané škále —
+    /// vstup pro „Přizpůsobit buňce": o ni se název zmenšuje navíc, aby se za něj značky vešly.</summary>
+    private float MeasureMarkersTrailingMm(RenderContext ctx, List<MarkerRun> runs,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
+    {
+        if (runs.Count == 0) return 0f;
+        using var normalFont = style.CreateFont(scale, ctx.MmToPx);
+        using var symbolFont = new SKFont(symbolFace, normalFont.Size);
+        float totalPx = normalFont.MeasureText(" ");
+        foreach (var r in runs) totalPx += (r.Symbol ? symbolFont : normalFont).MeasureText(r.Text);
+        return totalPx / ctx.MmToPx;
     }
 
     /// <summary>Nakreslí úseky značek do obsahové oblasti. <paramref name="startAfterNamePx"/> = pevný
