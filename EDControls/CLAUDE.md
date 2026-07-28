@@ -5,9 +5,6 @@ prvky, base třída ViewModelů a infrastruktura. `.NET` strana v `dotnet/`, ser
 Caché strana v `CACHE/` (ALVA projekt `ALVA_EDControls`), hlubší dokumentace
 v `DOCS/` (wire formáty → `DOCS/01-wire-formats.md`).
 
-Komponenty s vlastním CLAUDE.md: `EDViewModel` (+ EDServices, WindowNavigator,
-RelayCommand), `EDInputForm`, `EDList`, `EDFooter`, `EDToolbar`, `EDActionInProgress`.
-
 ## Nová m-line aplikace
 
 `EDAppearance.Initialize(app)` jednou před prvním oknem — napojí `FontService`
@@ -51,22 +48,20 @@ RelayCommand), `EDInputForm`, `EDList`, `EDFooter`, `EDToolbar`, `EDActionInProg
 - `EdisonLaunchArgs` — parser launch kontraktu shellu; **zrcadlí
   `FormToRunGetter` v repu EDISON** (`c:\MLineRepos\EDISON\EDISONMAIN2API\`) — pořadí
   a počet polí musí zůstat synchronní.
-- `WindowDimmer` — jednotné ztmavení okna, refcount per okno; UI-thread only.
-- `WindowStatePersistence` — persistence stavu oken (detaily v EDViewModel doc).
-- `ListItem` — sdílený `record (Key, Label)` pro všechny controly s volbami.
+- `WindowDimmer` — ztmavení okna, refcount per okno; UI-thread only.
 
 ## Ostatní podsložky
 
 - `EDComponentToolbar/` — sdílený toolbar EDInputForm/EDList (search, export, ...).
   Past: registruje window-level **Ctrl+F** binding v `OnLoaded` a musí ho odregistrovat
   v `OnUnloaded` — jinak se při re-loadu akumulují kopie.
-- `EDFilterComboBox/` — combo s našeptáváním; logika oddělená v
-  `EDFilterComboBoxLogic` (testovatelná bez WPF). `EDFilter/` — skládání filtrů.
-- `EDSearchTextBox/` — `TextBox` potomek pro hledání: `Placeholder` uvnitř pole, křížek
-  (✕) a Esc pro vyčištění. Implicitní styl/template v `EDControlStyles.xaml`.
-- `EDInfoBar/` — nenápadný info proužek (`Text` + volitelná `Icon` + akční odkaz
-  `ActionText`/`ActionCommand`); prázdné → skryté. Styl/template v `EDControlStyles.xaml`,
-  viditelnost řídí konzument.
+- `EDFilterComboBox/` — logika oddělená v `EDFilterComboBoxLogic` (testovatelná bez
+  WPF). `EDFilter/` — skládání filtrů.
+- `EDSearchTextBox/` — `TextBox` pro hledání (placeholder, ✕, Esc); styl v `EDControlStyles.xaml`.
+- `EDInfoBar/` — info proužek (text + volitelná ikona + akční odkaz); prázdné → skryté,
+  styl v `EDControlStyles.xaml`, viditelnost řídí konzument.
+- `EDToolbar/` — ikonová tlačítka z `EDViewModel.Actions`; velikost ikon z tokenu
+  `EDTheme.IconSize.Default`; v design-time záměrně prázdný (Actions až za běhu), ne bug.
 - `UserPrefs/` — `IUserPrefsService`; **default je no-op `NullUserPrefsService`** —
   dokud composition root nenastaví `CacheUserPrefsService` (po vzniku MLRest),
   preference se tiše neukládají.

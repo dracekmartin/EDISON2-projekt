@@ -19,15 +19,9 @@ DataContext, žádné atributy.
 - OK tlačítko: s VM volá `OkCommand` a spoléhá, že VM vyvolá `RequestClose`
   (validace v `OnOk` může zavření odmítnout); bez VM zavře rovnou.
 
-## Potvrzení klávesou
+## Umístění
 
-OK **záměrně nemá** `IsDefault="True"` — dialog potvrzuje **Ctrl+Enter** (window-level
-binding registruje `EDViewModel.AttachToWindow`). Samotný Enter zůstává EDInputFormu
-pro navigaci mezi poli.
-
-## Nové okno s footerem
-
-Postup přidání okna je v root [CLAUDE.md](../../../CLAUDE.md) („Přidání nového okna").
-Footer specificky: `<ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>` na
-spodek kořenového `DockPanel`. `WindowNavigator.Show/ShowDialog` berou **instanci**
-okna — žádná registrace podle názvu třídy neexistuje.
+Přidání okna viz root [CLAUDE.md](../../../CLAUDE.md) („Přidání nového okna"); footer na
+spodek kořenového `DockPanel`: `<ef:EDFooter DockPanel.Dock="Bottom" FooterMode="OkCancel"/>`.
+Potvrzení klávesou (Ctrl+Enter, OK bez `IsDefault`) řeší `EDViewModel.AttachToWindow` —
+viz [EDViewModel/CLAUDE.md](../EDViewModel/CLAUDE.md).

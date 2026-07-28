@@ -36,5 +36,22 @@
     ],
     "escalated_render": false,
     "session": "18073e05-5824-4242-9bc2-e1664bdb7d91"
+  },
+  "audit-claudemd": {
+    "last": "2026-07-28T14:05:00+02:00",
+    "scope": ["EDISONMAIN2", "EDControls", "root"],
+    "issues": [
+      "root CLAUDE.md 162→145 (under 150): deleted 15-line copied C# MLRest example → 1-line reference pointer + prose wire traps; compressed $$$ macro restatement to the ret=\"1~msg\" wire invariant",
+      "EDISONMAIN2/CLAUDE.md 109→108: dropped 'PLAN.md je stale' clause (PLAN ref, dup of root); trimmed derivable mini-app asides (23MB WinRT, DevSampleMiniApps DEBUG)",
+      "EDControls/CLAUDE.md 80→75: cut component index + ListItem/WindowStatePersistence restatements, compressed Ostatní podsložky; folded deleted EDToolbar doc in as 1 bullet. Floor ~75 (rest = genuine theming/MLRest invariants, not cut lossily)",
+      "EDViewModel/CLAUDE.md 73→69: compressed telemetry block, PersistedFormId example, With() clone (back-ref to parent); cut RelayCommand<T> no-op restatement",
+      "EDInputForm/CLAUDE.md: STALE '(Image tam zatím chybí)' deleted — EDIFExample.cls now defines an Image field; compressed builder method-name list",
+      "EDList/CLAUDE.md: compressed builder method-name list",
+      "EDFooter/CLAUDE.md 33→27: stripped Ctrl+Enter dup + window-add tutorial → back-references",
+      "EDToolbar/CLAUDE.md DELETED — no own non-derivable contract (all derivable/dup); 2 surviving one-liners folded into EDControls/CLAUDE.md",
+      "Verified accurate (not stale): all ACTIVITY-lock/session-GUID/CacheLocks/version/launch-arg claims, FIELD/GROUP wire order, sprite 60x48 contract, EDList IMAGE/CODEBOOK/COLOR rendering — checked against source"
+    ],
+    "ownership": "all authored by user (Martin Hubata); EDInputForm/EDList have minor Jan Miesbauer contributions but user dominates",
+    "session": "18073e05-5824-4242-9bc2-e1664bdb7d91"
   }
 }
