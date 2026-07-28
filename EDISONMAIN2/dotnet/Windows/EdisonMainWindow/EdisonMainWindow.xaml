@@ -11,6 +11,7 @@
         xmlns:edvm="clr-namespace:EDControls.EDViewModel;assembly=EDControls"
         xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox;assembly=EDControls"
         xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox;assembly=EDControls"
+        xmlns:edib="clr-namespace:EDControls.EDInfoBar;assembly=EDControls"
         xmlns:edaip="clr-namespace:EDControls.EDActionInProgress;assembly=EDControls"
         d:DataContext="{d:DesignInstance Type=designTime:EdisonMainWindowDesignTimeData, IsDesignTimeCreatable=True}"
         mc:Ignorable="d"
@@ -338,6 +339,7 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
             <!-- Vyhledávání napříč všemi stromy — filtruje uzly dle názvu (VM.TreeSearchText). -->
@@ -422,6 +424,25 @@
                     </ListBox>
                 </TabItem>
             </TabControl>
+
+            <!-- Upozornění, že miniaplikace Oblíbené není zobrazená (přišel by o rychlý přístup
+                 k připnutým modulům). Skryje se, jakmile je otevřená (HasOpenFavorites). -->
+            <edib:EDInfoBar Grid.Row="2"
+                            Text="Miniaplikace Oblíbené není zobrazena."
+                            Icon="{StaticResource EDIcons.Star}"
+                            ActionText="Zobrazit"
+                            ActionCommand="{Binding ShowFavoritesMiniAppCommand}">
+                <edib:EDInfoBar.Style>
+                    <Style TargetType="{x:Type edib:EDInfoBar}" BasedOn="{StaticResource {x:Type edib:EDInfoBar}}">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding HasOpenFavorites}" Value="False">
+                                <Setter Property="Visibility" Value="Visible"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </edib:EDInfoBar.Style>
+            </edib:EDInfoBar>
         </Grid>
         <GridSplitter Grid.Column="1" Grid.Row="1"  Width="5" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                       Background="{DynamicResource EDTheme.Border.Light}"/>

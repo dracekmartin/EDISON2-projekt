@@ -56,6 +56,7 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public ICommand OpenDefaultMiniAppsCommand { get; }
         public ICommand CloseMiniAppsCommand { get; }
         public ICommand ResetMiniAppsCommand { get; }
+        public ICommand ShowFavoritesMiniAppCommand { get; }
 
         // Hlavní menu (replikuje legacy frmNoMDI.mnuMain).
         // EDISON menu
@@ -106,6 +107,10 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         /// <summary>Je v docku alespoň jedna mini-app? False → shell ukáže prázdný placeholder.</summary>
         public bool HasOpenMiniApps { get => _hasOpenMiniApps; private set => Set(ref _hasOpenMiniApps, value); }
 
+        private bool _hasOpenFavorites;
+        /// <summary>Je otevřená miniaplikace Oblíbené? False → proužek pod stromem s výzvou k zobrazení.</summary>
+        public bool HasOpenFavorites { get => _hasOpenFavorites; private set => Set(ref _hasOpenFavorites, value); }
+
         /// <summary>
         /// Napojí docking host (z view vrstvy) → vytvoří <see cref="MiniAppManager"/> a obnoví
         /// uložený layout aktuální firmy. Volá code-behind shellu po načtení okna.
@@ -113,8 +118,14 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
         public void AttachMiniAppHost(IMiniAppHost host)
         {
             _miniAppManager = new MiniAppManager(host, _miniAppCatalog);
-            _miniAppManager.InstancesChanged += () => HasOpenMiniApps = _miniAppManager.OpenInstances.Count > 0;
+            _miniAppManager.InstancesChanged += UpdateMiniAppFlags;
             RestoreMiniAppLayout(Idfa);
+        }
+
+        private void UpdateMiniAppFlags()
+        {
+            HasOpenMiniApps = _miniAppManager!.OpenInstances.Count > 0;
+            HasOpenFavorites = _miniAppManager.OpenInstances.Any(i => i.DescriptorId == FavoritesMiniAppProvider.FavoritesId);
         }
 
         /// <summary>
@@ -230,6 +241,12 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow
             CloseMiniAppsCommand     = Command(() => _miniAppManager?.CloseUnpinned());
             // Reset = zavřít vše (proběhne OnClosed úklid VM) a znovu otevřít výchozí sadu.
             ResetMiniAppsCommand     = Command(() => { _miniAppManager?.CloseAll(); OpenDefaultMiniApps(); });
+            // Proužek pod stromem: otevře Oblíbené jako řadu dole (mirror výchozího umístění).
+            ShowFavoritesMiniAppCommand = Command(() =>
+            {
+                if (_miniAppCatalog.Find(FavoritesMiniAppProvider.FavoritesId) is { } d)
+                    _miniAppManager?.Open(d, newRow: true);
+            });
 
             // EDISON menu
             ConnectToDatabaseCommand      = Command(NotYetImplemented);

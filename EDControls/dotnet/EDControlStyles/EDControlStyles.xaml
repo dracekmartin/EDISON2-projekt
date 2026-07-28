@@ -3,6 +3,7 @@
                     xmlns:prim="clr-namespace:System.Windows.Controls.Primitives;assembly=PresentationFramework"
                     xmlns:edfc="clr-namespace:EDControls.EDFilterComboBox"
                     xmlns:edstx="clr-namespace:EDControls.EDSearchTextBox"
+                    xmlns:edib="clr-namespace:EDControls.EDInfoBar"
                     xmlns:edtb="clr-namespace:EDControls.EDToolbar">
 
     <!--
@@ -802,6 +803,68 @@
                         <Trigger Property="Text" Value="">
                             <Setter TargetName="Placeholder"      Property="Visibility" Value="Visible"/>
                             <Setter TargetName="PART_ClearButton" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         EDInfoBar — nenápadný info proužek: ikona + text + akční odkaz.
+         Prázdný ActionText / null Icon příslušnou část schová (triggery).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <Style TargetType="{x:Type edib:EDInfoBar}">
+        <Setter Property="Background"      Value="{DynamicResource EDTheme.Bg.InfoBanner}"/>
+        <Setter Property="BorderBrush"     Value="{DynamicResource EDTheme.Border.Light}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+        <Setter Property="Foreground"      Value="{DynamicResource EDTheme.Text.Secondary}"/>
+        <Setter Property="FontFamily"      Value="{DynamicResource EDTheme.FontFamily}"/>
+        <Setter Property="FontSize"        Value="{DynamicResource EDTheme.FontSize.Caption}"/>
+        <Setter Property="Padding"         Value="8,5"/>
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="{x:Type edib:EDInfoBar}">
+                    <Border Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            Padding="{TemplateBinding Padding}"
+                            SnapsToDevicePixels="True">
+                        <DockPanel LastChildFill="True">
+                            <Image x:Name="IconImage" DockPanel.Dock="Left"
+                                   Source="{TemplateBinding Icon}"
+                                   Width="16" Height="16" Margin="0,0,6,0"
+                                   VerticalAlignment="Center"
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+                            <!-- Akční odkaz (link-style tlačítko) vpravo; schová se bez ActionText. -->
+                            <Button x:Name="ActionButton" DockPanel.Dock="Right"
+                                    Margin="8,0,0,0" Focusable="False" Cursor="Hand"
+                                    VerticalAlignment="Center"
+                                    Content="{TemplateBinding ActionText}"
+                                    Command="{TemplateBinding ActionCommand}">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <TextBlock x:Name="ActionGlyph" Text="{TemplateBinding Content}"
+                                                   Foreground="{DynamicResource EDTheme.Accent.Blue}"/>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="ActionGlyph" Property="TextDecorations" Value="Underline"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <TextBlock x:Name="MessageText" Text="{TemplateBinding Text}"
+                                       TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Foreground="{TemplateBinding Foreground}"/>
+                        </DockPanel>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Icon" Value="{x:Null}">
+                            <Setter TargetName="IconImage" Property="Visibility" Value="Collapsed"/>
+                        </Trigger>
+                        <Trigger Property="ActionText" Value="">
+                            <Setter TargetName="ActionButton" Property="Visibility" Value="Collapsed"/>
                         </Trigger>
                     </ControlTemplate.Triggers>
                 </ControlTemplate>

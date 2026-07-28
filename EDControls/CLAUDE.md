@@ -64,6 +64,9 @@ RelayCommand), `EDInputForm`, `EDList`, `EDFooter`, `EDToolbar`, `EDActionInProg
   `EDFilterComboBoxLogic` (testovatelná bez WPF). `EDFilter/` — skládání filtrů.
 - `EDSearchTextBox/` — `TextBox` potomek pro hledání: `Placeholder` uvnitř pole, křížek
   (✕) a Esc pro vyčištění. Implicitní styl/template v `EDControlStyles.xaml`.
+- `EDInfoBar/` — nenápadný info proužek (`Text` + volitelná `Icon` + akční odkaz
+  `ActionText`/`ActionCommand`); prázdné → skryté. Styl/template v `EDControlStyles.xaml`,
+  viditelnost řídí konzument.
 - `UserPrefs/` — `IUserPrefsService`; **default je no-op `NullUserPrefsService`** —
   dokud composition root nenastaví `CacheUserPrefsService` (po vzniku MLRest),
   preference se tiše neukládají.

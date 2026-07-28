@@ -43,7 +43,8 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   po `Layout.Updated` odsune cizí taby jinam a razítkuje pane `DockMinWidth/Height`
   (hook nutno obnovovat přes `LayoutChanged` — Deserialize mění celý LayoutRoot).
   „Zavřít miniaplikace" jde přes `CloseUnpinned`; `EnsurePinnedOpen` ji dootevře
-  po restore / defaultu / resetu.
+  po restore / defaultu / resetu. Když není otevřená mini-app Oblíbené (`HasOpenFavorites`),
+  ukáže se pod stromem `EDInfoBar` s akcí na její zobrazení.
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
   Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu tabu

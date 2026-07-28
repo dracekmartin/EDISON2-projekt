@@ -457,6 +457,40 @@ public class EdisonMainViewModelTests
         Assert.False(layouts.ContainsKey("CB_DP"));
     }
 
+    [Fact]
+    public void HasOpenFavorites_TrueAfterDefaultLayout_FalseWhenClosed()
+    {
+        var services = MockServices();
+        var favorites = new MiniAppDescriptor(FavoritesMiniAppProvider.FavoritesId, "Oblíbené",
+            () => new StubMiniApp(services));
+        var vm = CreateVM(miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(favorites)]));
+        var host = new RecordingHost();
+
+        vm.AttachMiniAppHost(host);   // bez uloženého layoutu → výchozí sada (Oblíbené jako řada dole)
+        Assert.True(vm.HasOpenFavorites);
+
+        host.Panes.Single(p => p.ContentId.StartsWith("Core.Oblibene#")).Close();
+        Assert.False(vm.HasOpenFavorites);
+    }
+
+    [Fact]
+    public void ShowFavoritesMiniAppCommand_OpensFavorites_SetsHasOpenFavorites()
+    {
+        var services = MockServices();
+        var favorites = new MiniAppDescriptor(FavoritesMiniAppProvider.FavoritesId, "Oblíbené",
+            () => new StubMiniApp(services));
+        // Uložený layout → RecordingHost.RestoreLayout je no-op, Oblíbené se samo neotevře.
+        var prefs = Substitute.For<ILocalPrefs>();
+        prefs.MiniAppLayouts.Returns(new Dictionary<string, string> { ["CB_DP"] = "x" });
+        var vm = CreateVM(prefs: prefs, miniAppCatalog: MiniAppCatalog.Build([new SingleProvider(favorites)]));
+        vm.AttachMiniAppHost(new RecordingHost());
+        Assert.False(vm.HasOpenFavorites);
+
+        vm.ShowFavoritesMiniAppCommand.Execute(null);
+
+        Assert.True(vm.HasOpenFavorites);
+    }
+
     private sealed class StubMiniApp(EDServices services) : EDMiniAppViewModel(services)
     {
         public override string Title => "stub";
