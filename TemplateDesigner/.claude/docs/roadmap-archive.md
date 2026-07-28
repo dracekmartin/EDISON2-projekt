@@ -2,6 +2,18 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-28 ✅ — Stanovišťový balík UZAVŘEN: #13048 i #8828 resolved, doladění a slovník
+
+Detail → changelog 2026-07-28. Odpovědi odeslány a oba tikety **resolved 28. 7.** (KOVED #13048
+všech 5 bodů; TRANSDEV #8828 vč. titulku „…, označník X" a označníku ve vývěskovém řádku rozdělené
+stránky). Doladění z Janova testování + nezávislé revize: jednotný slovník **„označník"** (kanon
+`ux-conventions §8` + `CLAUDE.md`), parametr přejmenován na „Samostatná stránka pro každý označník",
+držení logické stránky náhledu při re-fetchi + resync comboboxu, oprava bool parametrů na wire
+(„True" vs „true" — kvůli ní nikdy nezabral žádný bool parametr GetData vč. TR2), spoj bez označníku
+při rozdělení na stránku nejčetnějšího (ztráta odjezdu), gate duplikace řádků bez variantních
+sloupců. Testy: Caché 45/45 (+TestPismenaVariant, +TestSplitTitulekARadek), xUnit +10 (CellShrink,
+PreviewPageMatch, gate). Follow-upy jen na vyžádání — viz vršek roadmapy.
+
 ## 2026-07-27 ✅ — #8828 (TRANSDEV) vývěska per označník — UZAVŘENO (= krok 2 / B9 stanovišťového balíku)
 
 Detail → changelog 2026-07-27. Tiskový parametr „Rozdělit vývěsku per označník" (skupina „Seznam
