@@ -80,9 +80,9 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 · ▶ **ready-to-close** (ověřit u klienta) | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
 | #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
-| #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | ✅ **HOTOVO 2026-07-27** (AD) — tiskový parametr „Rozdělit vývěsku per označník"; vývěska z N označníků → N stránek s filtrovanými odjezdy per označník (`TestSplitPerOznacnik`, ověřeno 0320680). MHD zdroj sloupku až u MHD zákazníka. **Zavřít po ověření v buildu.** | changelog 2026-07-27 |
+| #8828 | TRANSDEV | Označníky → samostatná vývěska | ✅ **RESOLVED 2026-07-28** — parametr „Samostatná stránka pro každý označník" (+ titulek „…, označník X", spoj bez označníku na stránku nejčetnějšího); odpověď odeslána, klient ověří na 876420/863383 (znovuotevření = záchytka). MHD zdroj označníku až u MHD zákazníka. | changelog 27.–28. 7. |
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
-| #13048 | KOVED (IDZK/Lábsky) | Poznámky/sloupce zastávek (5 bodů) | ✅ **všech 5 bodů v1 hotových 2026-07-27** (vč. duplikace řádku a #8828 split) · zavřít po: vizuál bodu 2 + duplikace v buildu, titulek stanoviště, souhrnná HD odpověď | Viz rozpad níže | §0.3 |
+| #13048 | KOVED (IDZK/Lábsky) | Poznámky/sloupce zastávek (5 bodů) | ✅ **RESOLVED 2026-07-28** — všech 5 bodů v1, souhrnná odpověď odeslána (vč. info o stránce pro označník); klient ověří po dnešní verzi, znovuotevření = záchytka | Viz rozpad níže | §0.3 |
 
 **Poznámka k uzavírání:** ready-to-close jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
 polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci

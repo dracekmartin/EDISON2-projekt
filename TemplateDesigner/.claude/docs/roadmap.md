@@ -5,30 +5,19 @@
 
 ---
 
-## 🎯 „Stanovišťový balík" DOKONČEN (2026-07-27) — zbývá HD odpověď + zavřít tikety
+## 🎯 Stanovišťový balík — UZAVŘEN 2026-07-28 (KOVED #13048 + TRANSDEV #8828 resolved)
 
-Celý balík hotový v1 (viz changelog + archiv):
-- **KOVED #13048** — všech 5 bodů (zóny, přestupy, shrink-to-fit, nástupiště vč. **duplikace řádku**, varianty tras).
-- **TRANSDEV #8828** — **vývěska per označník** (tiskový parametr „Rozdělit vývěsku per označník", server
-  dělá N stránek + filtruje odjezdy per označník; gold beze změny, default vyp).
+Odpovědi odeslány, oba tikety resolved; titulek stránky s označníkem, jednotný slovník „označník"
+a nálezy revize dořešeny 28. 7. (detail changelog 27.–28. 7., evidence customer-requirements §0.1/§0.3).
+**Zbývá: publish dnešní verze (Jan).**
 
-**▶ ZÍTRA PRVNÍ VĚC — titulek stránky s číslem stanoviště (#8828 dotažení)** (S, zóna 1 + trocha .NET):
-Rozdělené vývěsky (#8828) se dnes liší jen číslem ve sloupci Nástupiště + počtem odjezdů → při listování
-to splývá a působí „náhodně" (ověřeno se sondou `PageSeqProbe`: sekvence je deterministická, jen bez
-titulku nečitelná). **Doplnit číslo stanoviště do titulku/záhlaví stránky** — server už hodnotu má
-(`NASTUPISTE` per stránka), jde hlavně o to ji vystavit tak, aby ji šablona vytiskla v titulku (např.
-pole `POPIS_ZASTAVKA` rozšířit o „, stanoviště X", nebo samostatné pole + placeholder). Cíl = jako KOVED
-XLSX „…, sloupek 1". Ověřit na 0320680 (ČB,aut.nádr. → „…, stanoviště 11" vs „…, stanoviště 22").
+**Follow-upy jen na vyžádání zákazníka (nezakládat dřív):** členění exportu na samostatné soubory
+per označník (dnes rozliší titulek/`{POPIS_ZASTAVKA}` v názvu souboru) · symbol „↓" u výchozí zastávky
+ve variantních sloupcích · agregace označníku varianty přes všechny spoje (dnes reprezentativní spoj)
+· spodní mez zmenšení textu (evidováno v B2).
 
-**Zbývá dál (papírové, zóna 5):**
-- **Souhrnná HD odpověď** KOVED #13048 (5 bodů) + TRANSDEV #8828 — po ověření v buildu (vč. titulku výše).
-- **Zavřít tikety** #13048, #8828 (resolved).
-- **Follow-up na vyžádání:** členění exportu na samostatné soubory per označník (dnes token `{NASTUPISTE}`);
-  symbol „↓" u výchozí zastávky ve variantních sloupcích (drobný vizuál).
-
-> **Pozn. k #8828 (implementace 2026-07-27):** aby se serverový parametr projevil v náhledu, musel se
-> `ROZDELIT_PER_OZNACNIK` přidat do `ServerSideParams` v `TemplateDesignerViewModel.cs` (allowlist
-> parametrů posílaných do GetData). Nové server-side parametry vždy doplnit i tam, jinak je klik no-op.
+> **Pozn. pro nové server-side parametry:** hodnota se do GetData posílá jen přes allowlist
+> `ServerSideParams` (`TemplateDesignerViewModel.cs`) — bez doplnění je klik na parametr no-op.
 
 ---
 
