@@ -42,16 +42,12 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 |---|---|---|---|---|
 | **B4** | **Sdílená base pole formulářů + deklarativní `visibleWhen`** - detail a dohodnutý směr v §B4 níže. První výhra: „Velikost rohu" se skryje při ostrém rohu čistě, bez server round-tripu. | M | 2 + 3 | - |
 | **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | - |
-| ~~B6~~ | **HOTOVO 28. 7.** - `CellStyleEditor` přestavěn na dvousloupcovou mřížku ve stylu EDInputFormu (jedno místo → všech 6 dialogů); tri-state/placeholdery beze změny, vizuálně ověřeno. → archiv. **Zbývá jako budoucí krok:** migrace editoru na Caché EDInputForm (součást obecné unifikace dialogů - viz Úklid „Vzhled/téma"). | - | - | - |
-| **B7** | **Výchozí šablony MHD + linková do distribuce** - mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/` (= krok 44b / C4) | S | 2 | B5 |
-| ~~B16~~ | **HOTOVO 28. 7.** - mock data náhledu se prefetchují na pozadí, render čte jen cache (konec 2-3 s freeze při první kresbě), selhání fail-soft do F5. → archiv | - | - | - |
-| ~~B17~~ | **HOTOVO 28. 7.** - `ApplyScale` škáluje font i paddingy vč. per-sloupcových/skupinových stylů a `WidthOverride`, `DataRowHeight` jednou; UI/UX výjimky zapsány do `architecture.md`. → archiv | - | - | - |
-
-> **B15 (viditelnost přeskočených testů) zrušen 28. 7.** - jen interní testy nad dev daty, situace
-> „namespace chybí" v praxi nenastává; nemá smysl kvůli tomu sahat do sdíleného `EDTesting`.
 
 **Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
 (rohy = 8 souborů) → každá další drobnost na elementech je osmkrát dražší. Čím dřív, tím víc se vrátí.
+
+> Výchozí šablony MHD/linková do distribuce = **krok 44b / C4** (evidováno v „Produkční/provozní" #3
+> a Fáze C+D); nemá vlastní blok, přilepí se ke kterémukoli slotu. B6/B16/B17 hotové 28. 7., B15 zrušen → archiv.
 
 ---
 
@@ -98,7 +94,7 @@ L‑4 nezačínat před B11 - dnes by to znamenalo napsat totéž pětkrát (per
    Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
 
 **Bezpečné kombinace:**
-- ✅ **B12 + B6 + zavírání tiketů (B2)** - agenda / dialogy / papír
+- ✅ **B12 + B4 + zavírání tiketů (B2)** - agenda / dialogy / papír
 - ✅ **B10 + B12** - fontová cesta je izolovaná od agendy
 - ❌ **cokoli na elementech během B11/B13**
 - ❌ **B4 + jakýkoli element dialog** - B4 přepisuje pole ve všech `.cls`
@@ -136,8 +132,8 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 - **→ B4** **Reaktivita EDInputForm** - „Řez" v element dialozích se plní jen **při otevření**; živý přepočet
   při změně rodiny (bez znovuotevření) = ten `visibleWhen`/reaktivní mechanismus výše. (CellStyleEditor to už
   má - WPF je reaktivní.)
-- **→ B6** **Layout editoru sloupců (`CellStyleEditor`)** - dnes horizontální řádek zalomený WrapPanelem
-  (dočasné, po přidání řezu se to natáhlo). Přepracovat na přehlednější grid, ideálně sjednotit s EDInputForm stylem.
+- **Layout editoru sloupců (`CellStyleEditor`)** - HOTOVO v B6 (28. 7., dvousloupcová mřížka ve stylu
+  EDInputFormu). Zbývá jen případná migrace na Caché-driven EDInputForm → Úklid „Vzhled/téma".
 
 (B4 samo M, dotkne se všech elementů + EDControls. Detail úvahy v changelog/commit historii session 2026-07-24.)
 
@@ -148,8 +144,8 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 > Malé věci **na jednom místě** (dřív rozseté po šesti sekcích), aby se daly brát **tematickými dávkami**
 > - jedno sezení = jedno téma, ne posbírané drobnosti napříč. Co už je naplánované, nese číslo bloku.
 
-**Provozní** - `B7` výchozí šablony MHD/linková ·
-varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S, MHD SMO fáze 1)
+**Provozní** - výchozí šablony MHD/linková do distribuce = krok 44b / C4 (detail v „Produkční" #3
+a Fázi C+D) · varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S, MHD SMO fáze 1)
 
 **Vzhled / téma** - **migrace `CellStyleEditor` na Caché EDInputForm** (S–M, na poptávku; layout
 už sjednocen s EDInputFormem v B6, zbývá překlopit na Caché-driven formulář - háček tri-state /
@@ -219,7 +215,8 @@ při scope té fáze, ne teď.
 
 1. **Headless tisk (A3)** - „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe - v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
-3. **Další výchozí šablony** (MHD + linkový) → **blok `B7`** (vlna 2); táž práce = krok 44b / C4.
+3. **Další výchozí šablony** (MHD + linkový) = **krok 44b / C4** (linková varianta v L‑tracku Fáze C+D);
+   mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/`.
 4. **Zákaznická dokumentace na wiki (post-release)** - 2 dokumenty, seedy HOTOVÉ a aktuální
    (2026-07-13): `uzivatelska-prirucka.md` (část I obecné ovládání + část II zastávkový JŘ;
    nové agendy = nové části) + `plan-a-zmeny.md` („Novinky a plány"). Zbývá: obrázky + publikace.
@@ -327,10 +324,10 @@ dokončeným; velký `L‑4` se otevírá až nad hotovým `L‑3`.
 | **L‑2** | `B10` | Symbolový font - linková část (`ZNAK` sloupce, multichar/kompozity, `GSId` 66+) | M→S | ⬜ |
 | **L‑3** | `B11` | Row-plan vrstva = jedna sdílená kreslicí smyčka (**R1 extrakce řádkového jádra**) | M | ⬜ |
 | **L‑4** | `B13` | 2D bin-packing / `Strih` - rozřezání široké tabulky do stránkových bloků | L | ⬜ gate L‑3 |
-| - | `B7` | Linková výchozí šablona do distribuce (dá se přilepit ke kterémukoli slotu) | S | ⬜ |
+| - | `C4` | Linková výchozí šablona do distribuce (dá se přilepit ke kterémukoli slotu) | S | ⬜ |
 
-**Mapování na staré číslování kroků:** 42b = L‑2 · 43 = L‑1 + L‑3 + L‑4 · 44b = `B7`.
-Odložené body C2–C9 níže zůstávají jako detailní evidence (C2 = L‑2, C3 = L‑3 + L‑4, C4 = `B7`,
+**Mapování na staré číslování kroků:** 42b = L‑2 · 43 = L‑1 + L‑3 + L‑4 · 44b = C4.
+Odložené body C2–C9 níže zůstávají jako detailní evidence (C2 = L‑2, C3 = L‑3 + L‑4,
 C8 + C9 = `B14`).
 
 ### Odložené body knižního/linkového JŘ (z pilotu, seřazené dle hodnoty pro ostré nasazení)
