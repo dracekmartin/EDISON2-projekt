@@ -61,6 +61,62 @@ Method TestNastupisteVariantEmit()
 	do $$$AssertTrue(pocet > 0, "≥2 stanoviště variant u downstream zastávky na 0330510 (nalezeno "_pocet_")")
 }
 
+/// KOVED #13048 bod 5: režim písmen variant — hlavičky = písmena (první bez písmene), u minut
+/// anotace „varianta-trasy" a rozdílové poznámky potlačené. Data-lock 0330510 (11 variant tras).
+Method TestPismenaVariant()
+{
+	set db = "CB_CSADAD"
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		quit
+	}
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||TiskAd
+	set ^||ML("IN","PISMENA_VARIANT") = "true", ^||ML("IN","PRVNI_BEZ_PISMENE") = "true"
+	set page = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildStrankaZastavky(db, 1, "0330510", 1, "T")
+	kill ^||ML("IN"), ^||TiskAd
+	do $$$AssertTrue($isobject(page), "stránka 0330510/T/1 se sestavila")
+	quit:'$isobject(page)
+	set hlavicky = page.values.%Get("VARIANTY_TRAS")
+	do $$$AssertTrue(hlavicky.%Size() > 1, "více variantních sloupců ("_hlavicky.%Size()_")")
+	do $$$AssertEquals(hlavicky.%Get(0), "", "první varianta bez písmene")
+	do $$$AssertEquals(hlavicky.%Get(1), "A", "druhá varianta = A")
+	set odjezdy = page.rows.%Get("ODJEZDY"), pocetPismen = 0, pocetRozdilu = 0
+	for i=0:1:odjezdy.%Size()-1 {
+		set anotace = odjezdy.%Get(i).%Get("ANOTACE")
+		for j=0:1:anotace.%Size()-1 {
+			if anotace.%Get(j).%Get("KATEGORIE") = "varianta-trasy" set pocetPismen = pocetPismen + 1
+			if anotace.%Get(j).%Get("KATEGORIE") = "rozdil-trasy" set pocetRozdilu = pocetRozdilu + 1
+		}
+	}
+	do $$$AssertTrue(pocetPismen > 0, "písmena variant u minut se emitují ("_pocetPismen_"×)")
+	do $$$AssertEquals(pocetRozdilu, 0, "rozdílové poznámky v režimu písmen potlačeny")
+}
+
+/// #8828 dotažení: rozdělená stránka nese označník v titulku (POPIS_ZASTAVKA) i v řádku vývěskové
+/// zastávky (NASTUPISTE) — bez toho stránky označníků 11/22 na 0320680 vypadají identicky.
+Method TestSplitTitulekARadek()
+{
+	set db = "CB_CSADAD"
+	if '##class(%SYS.Namespace).Exists(db) {
+		do $$$AssertTrue(1, "namespace "_db_" není na serveru — přeskočeno")
+		quit
+	}
+	do ..SetupSysFor(.sys, db)
+	kill ^||ML("IN"), ^||TiskAd
+	set page = ##class(ALVA.TemplateDesigner.Agendy.ZastavkoveJrAd).BuildStrankaZastavky(db, 1, "0320680", 1, "T", "22")
+	kill ^||TiskAd
+	do $$$AssertTrue($isobject(page), "rozdělená stránka (označník 22) se sestavila")
+	quit:'$isobject(page)
+	do $$$AssertTrue(page.values.%Get("POPIS_ZASTAVKA") [ ", označník 22", "titulek nese označník stránky")
+	do $$$AssertEquals(page.values.%Get("NASTUPISTE"), "22", "NASTUPISTE stránky = označník")
+	set zastavky = page.rows.%Get("ZASTAVKY"), radkovyOznacnik = ""
+	for i=0:1:zastavky.%Size()-1 {
+		if zastavky.%Get(i).%Get("AKTUALNI_ZASTAVKA") = "true" set radkovyOznacnik = zastavky.%Get(i).%Get("NASTUPISTE")
+	}
+	do $$$AssertEquals(radkovyOznacnik, "22", "řádek vývěskové zastávky nese označník stránky")
+}
+
 /// 1:1 porovnání řetězce zón per zastávka (#-delim napříč zastávkami) legacy vs náš.
 Method AssertZony(db As %String, sku As %String, lin As %String, page As %Integer)
 {

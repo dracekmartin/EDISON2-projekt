@@ -52,7 +52,7 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B2** | **Zavírací kolo helpdesku** — ověřit v buildu a zavřít #7947, #7955, #9036 + finální vizuál #13048 bodu 2; postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
+| **B2** | **Zavírací kolo helpdesku** — ověřit v buildu a zavřít #7947, #7955, #9036 + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování — extrémní název se dnes zmenší bez limitu, nález revize 28.7.); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
 
 Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešních dvanácti evidovaných.
 

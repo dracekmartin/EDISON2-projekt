@@ -159,6 +159,9 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 ## Pravidla pro psaní kódu
 
 - **Jazyk kódu: anglicky** (třídy, metody, proměnné); komentáře a UI texty: **česky**
+- **UI texty bez cizích výrazů** („per", „split"…) a s jednotným slovníkem — fyzické stanoviště
+  zastávky = vždy **„označník"** (ne nástupiště/stanoviště/sloupek); kanonické termíny viz
+  `ux-conventions.md §8`, wire názvy polí (`NASTUPISTE`) se nemění
 - Každá akce uživatele = `IDesignerCommand` (undo/redo podporováno)
 - Pozice elementů jsou **relativní k sekci**, jednotky = **milimetry**
 - `Height = null` = dynamická výška (print engine počítá); `IsLocked = true` = nelze editovat

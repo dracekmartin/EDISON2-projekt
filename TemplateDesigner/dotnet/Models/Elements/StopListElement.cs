@@ -25,7 +25,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new() { Key = StopFields.Zone,         Header = "Zóna",      Width = 12f, Visible = false },
         new() { Key = StopFields.Poradi,       Header = "Poř.",      Width = 6f,  Visible = false },
         new() { Key = StopFields.JeAktualni,   Header = "Akt.",      Width = 6f,  Visible = false },
-        new() { Key = StopFields.Nastupiste,   Header = "Nástupiště", Width = 12f, Visible = false },
+        new() { Key = StopFields.Nastupiste,   Header = "Označník", Width = 12f, Visible = false },
     ];
 
     // ═══════════════════════════════════════════
@@ -49,8 +49,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// <remarks>Default AfterName = za názvem zastávky (CBDP layout). BeforeName = před názvem (DPKV layout, např. „× Globus").</remarks>
     public StopMarkersSide MarkersPosition { get; set; } = StopMarkersSide.AfterName;
 
-    /// <summary>Zdroj sloupce „Nástupiště" při více sloupcích u zastávky (KOVED #13048 bod 4).
-    /// FromRoute (default) = z trasy linky (dnešní chování); MostFrequent = nástupiště, odkud jede
+    /// <summary>Zdroj sloupce „Označník" při více označnících u zastávky (KOVED #13048 bod 4).
+    /// FromRoute (default) = z trasy linky (dnešní chování); MostFrequent = označník, odkud jede
     /// nejvíc spojů; All = výčet všech („2,3"). Obojí dle spojů (přednost před hodnotou z trasy).</summary>
     public MultiPlatformDisplay MultiPlatformMode { get; set; } = MultiPlatformDisplay.FromRoute;
 
@@ -821,6 +821,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public List<ZastavkaData> ExpandPlatformRows(List<ZastavkaData> stops)
     {
         if (MultiPlatformMode != MultiPlatformDisplay.RowPerPlatform) return stops;
+        // Rozpad řádků má smysl jen s variantními časovými sloupci — bez nich by duplikáty nesly
+        // identický jediný čas (CasJizdy základní trasy) a vypadaly jako chyba.
+        if (!ShowAllRouteVariants) return stops;
 
         var result = new List<ZastavkaData>(stops.Count);
         foreach (var z in stops)
@@ -921,14 +924,14 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor  { Label = "Přestupy (vlak/bus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
         new EnumPropertyDescriptor
         {
-            Label = "Více nástupišť", Group = "Zastávky",
+            Label = "Více označníků", Group = "Zastávky",
             Get = () => MultiPlatformMode,
             Set = v => MultiPlatformMode = (MultiPlatformDisplay)v,
             Options = [
                 ("Z trasy linky", (object)MultiPlatformDisplay.FromRoute),
                 ("Nejčetnější dle spojů", (object)MultiPlatformDisplay.MostFrequent),
                 ("Výčet všech", (object)MultiPlatformDisplay.All),
-                ("Duplikace řádku per stanoviště", (object)MultiPlatformDisplay.RowPerPlatform)
+                ("Řádek pro každý označník", (object)MultiPlatformDisplay.RowPerPlatform)
             ]
         },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
@@ -1031,17 +1034,17 @@ public enum DirectionArrowSide
     Left
 }
 
-/// <summary>Zdroj sloupce „Nástupiště" při více sloupcích u zastávky (KOVED #13048 bod 4).</summary>
+/// <summary>Zdroj sloupce „Označník" při více označnících u zastávky (KOVED #13048 bod 4).</summary>
 public enum MultiPlatformDisplay
 {
     /// <summary>Z trasy linky (J-věta) — dnešní chování, default.</summary>
     FromRoute,
-    /// <summary>Nástupiště, odkud jede nejvíc spojů (per-spoj hodnota má přednost před trasou).</summary>
+    /// <summary>Označník, odkud jede nejvíc spojů (per-spoj hodnota má přednost před trasou).</summary>
     MostFrequent,
-    /// <summary>Výčet všech nástupišť dle spojů („2, 3"), seřazený dle četnosti.</summary>
+    /// <summary>Výčet všech označníků dle spojů („2, 3"), seřazený dle četnosti.</summary>
     All,
-    /// <summary>Duplikace řádku: zastávka obsluhovaná z více stanovišť se vypíše jako N řádků (jeden
-    /// per stanoviště) na svém místě v trase; časy jen variant daného stanoviště (KOVED #13048 bod 4).</summary>
+    /// <summary>Řádek pro každý označník: zastávka obsluhovaná z více označníků se vypíše jako N řádků
+    /// na svém místě v trase; časy jen variant daného označníku (KOVED #13048 bod 4).</summary>
     RowPerPlatform,
 }
 

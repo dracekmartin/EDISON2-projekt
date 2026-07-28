@@ -99,7 +99,7 @@ ClassMethod GetSchema(ByRef sys As %String) As %Status
     d ..AddField(gf, "TC",         "Tarifní číslo",      "number")
     d ..AddField(gf, "ZONA",       "Zóna",               "text")
     d ..AddField(gf, "MHD",        "MHD/IDS",            "text")
-    d ..AddField(gf, "NASTUPISTE", "Nástupiště",         "text")
+    d ..AddField(gf, "NASTUPISTE", "Označník",           "text")
     s g.fields = gf
     d collections.%Push(g)
 

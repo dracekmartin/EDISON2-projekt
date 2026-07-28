@@ -157,6 +157,15 @@ public partial class MainWindow : Window
         _vm.RequestCanvasSizeUpdate      = () => { UpdateCanvasSize(); UpdateTitle(); UpdatePaletteForAgenda(); };
         _vm.RequestPropertiesPanelUpdate = UpdatePropertiesPanel;
         _vm.RequestGridSizeUiSync        = SyncGridSizeComboBox;
+        // Pager dat: po výměně ItemsSource WPF umí spolknout SelectedIndex z bindingu, případně
+        // nechat zobrazovací box prázdný i při formálně správném indexu → deferovaně a BEZ podmínky
+        // znovu vybrat položku přes SelectedItem (samotné porovnání indexů prázdný box neodhalí).
+        _vm.RequestPreviewPagerSync      = () => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            int idx = _vm.RealPreviewIndex;
+            if (idx >= 0 && idx < CmbPreviewPage.Items.Count)
+                CmbPreviewPage.SelectedItem = CmbPreviewPage.Items[idx];
+        }), System.Windows.Threading.DispatcherPriority.Background);
         _vm.RequestParamsFormReload      = ReloadParamsTabForm;
         // Chyba čtení z Caché může přijít z background threadu (Task.Run) → marshal na UI thread.
         _vm.RequestReadErrorStatus       = msg => Dispatcher.Invoke(() => _vm.StatusText = msg);

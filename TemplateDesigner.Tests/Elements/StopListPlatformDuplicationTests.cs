@@ -32,6 +32,18 @@ public class StopListPlatformDuplicationTests
     }
 
     [Fact]
+    public void BezVariantnichSloupcu_SeNerozpada()
+    {
+        // Vypnuté „Všechny varianty tras" = jediný sloupec času (stejný na všech duplikátech)
+        // → rozpad by vypadal jako chyba; režim se pak neaplikuje.
+        var stops = new List<ZastavkaData> { Stop("A", false, ["5", "6"], ["1", "2"]) };
+        var vysledek = new StopListElement
+            { MultiPlatformMode = MultiPlatformDisplay.RowPerPlatform, ShowAllRouteVariants = false }
+            .ExpandPlatformRows(stops);
+        Assert.Same(stops, vysledek);
+    }
+
+    [Fact]
     public void DownstreamSViceStanovisti_SeRozviNaRadkyVPoradiPrvnihoVyskytu()
     {
         // Varianty na stanovištích 3, 2, 4 (pořadí prvního výskytu = 3, 2, 4), časy 5/6/7/8.

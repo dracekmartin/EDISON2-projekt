@@ -147,6 +147,23 @@ ClassMethod Stranka(ByRef sys As %String) As %Status
             s ^||ML("OUT","PISMENA_UKAZKA") = pismenaUkazka
             s ^||ML("OUT","POCET_ODJEZDU") = odj.%Size()
             s ^||ML("OUT","POCET_POZNAMEK") = page.rows.%Get("POZNAMKY").%Size()
+            // Kandidáti duplikace řádku: zastávky s ≥2 různými označníky mezi variantami stránky
+            // (přesně podmínka klientského ExpandPlatformRows). Prázdné = na stránce se nic nerozpadne.
+            s dupl = ""
+            f iz=0:1:zast.%Size()-1 {
+                s zz = zast.%Get(iz)
+                s nvArr = zz.%Get("NASTUPISTE_VARIANT")
+                i '$isobject(nvArr) continue
+                k distinctOzn
+                f in=0:1:nvArr.%Size()-1 {
+                    s ov = nvArr.%Get(in)
+                    i ov '= "" s distinctOzn(ov) = ""
+                }
+                s pocetOzn = 0, oo = ""
+                f { s oo = $o(distinctOzn(oo))  q:oo=""  s pocetOzn = pocetOzn + 1 }
+                i pocetOzn >= 2 s dupl = dupl_$s(dupl="":"",1:"; ")_zz.%Get("NAZEV_ZASTAVKY")_" ("_pocetOzn_" ozn.)"
+            }
+            s ^||ML("OUT","DUPLIKACE_KANDIDATI") = $s(dupl'="":dupl, 1:"(žádná zastávka na stránce)")
         }
     } catch (ex) { $$$CatchErrRest }
     k ^||TiskAd

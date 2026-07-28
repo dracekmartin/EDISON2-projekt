@@ -175,7 +175,7 @@ public class TemplateDesignerViewModel : EDViewModel
         _previewDataGeneration++;               // invaliduje případný běžící fetch → guard proti dosednutí stale dat
         CacheProvider?.InvalidateCaches();
         RefreshFieldsList();                    // schéma polí + parametry (teď fresh)
-        _ = RefreshDataForCurrentInstanceAsync(); // re-fetch GetData pro aktuální linku
+        _ = RefreshDataForCurrentInstanceAsync(keepPage: true); // re-fetch GetData pro aktuální linku
     }
 
     // ── DEV: přepínání datové firmy za běhu ──────────────────────────────────
@@ -218,7 +218,34 @@ public class TemplateDesignerViewModel : EDViewModel
         StatusText = $"[DEV] Přepnuto na firmu {code}.";
     }
 
-    private async Task RefreshDataForCurrentInstanceAsync()
+    /// <summary>Najde v nových stránkách tu odpovídající aktuálně zobrazené — dle zastávky×směru
+    /// (přesná shoda vč. označníku má přednost; bez ní první stránka téže zastávky). Agendy bez
+    /// identifikačních polí (faktury…) padají na původní pořadové číslo (clamp). Public kvůli testům.</summary>
+    public static int FindMatchingPageIndex(List<DataContext> newPages, DataContext? current, int oldIndex)
+    {
+        if (current is not null)
+        {
+            string stop = current.GetString("CISLO_ZASTAVKA");
+            string smer = current.GetString("SMER");
+            if (stop.Length > 0)
+            {
+                string nast = current.GetString("NASTUPISTE");
+                int bezOznacniku = -1;
+                for (int i = 0; i < newPages.Count; i++)
+                {
+                    if (newPages[i].GetString("CISLO_ZASTAVKA") != stop || newPages[i].GetString("SMER") != smer) continue;
+                    if (newPages[i].GetString("NASTUPISTE") == nast) return i;
+                    if (bezOznacniku < 0) bezOznacniku = i;
+                }
+                if (bezOznacniku >= 0) return bezOznacniku;
+            }
+        }
+        return Math.Clamp(oldIndex, 0, Math.Max(0, newPages.Count - 1));
+    }
+
+    /// <param name="keepPage">true = zachovat aktuálně zobrazenou stránku dat (re-fetch téže instance —
+    /// změna server parametru, F5); false = skočit na první (přepnutí instance/agendy).</param>
+    private async Task RefreshDataForCurrentInstanceAsync(bool keepPage = false)
     {
         var instance = CurrentActiveInstance;
         if (CacheProvider is null || instance is null) return;
@@ -252,8 +279,14 @@ public class TemplateDesignerViewModel : EDViewModel
             else
             {
                 var culture = GetTemplateCulture();
-                _realPreviewData = pages.Select(d => d.WithCulture(culture)).ToList();
-                _realPreviewIndex = 0;
+                var newData = pages.Select(d => d.WithCulture(culture)).ToList();
+                // Re-fetch téže instance drží LOGICKOU stránku (zastávka×směr), ne pořadové číslo —
+                // např. „Rozdělit vývěsku dle označníků" posouvá čísla stránek o přidané označníky.
+                var currentPage = (keepPage && _realPreviewData is not null
+                                   && _realPreviewIndex >= 0 && _realPreviewIndex < _realPreviewData.Count)
+                    ? _realPreviewData[_realPreviewIndex] : null;
+                _realPreviewData = newData;
+                _realPreviewIndex = keepPage ? FindMatchingPageIndex(newData, currentPage, _realPreviewIndex) : 0;
                 StatusText = $"{instance.Display}: {pages.Count} stránek";
             }
             NotifyPreviewPagesChanged();
@@ -318,6 +351,10 @@ public class TemplateDesignerViewModel : EDViewModel
     /// <summary>Počet dostupných stránek reálných dat (0 = mock mód).</summary>
     public int RealPreviewPageCount => _realPreviewData?.Count ?? 0;
 
+    /// <summary>Probíhá výměna položek pageru (NotifyPreviewPagesChanged) — ComboBox při výměně
+    /// ItemsSource synchronně pushne SelectedIndex=-1; guard ho nenechá přepsat drženou stránku.</summary>
+    private bool _previewPagesSyncing;
+
     /// <summary>Index aktuálně zobrazené stránky reálných dat (0-based).</summary>
     public int RealPreviewIndex
     {
@@ -325,6 +362,7 @@ public class TemplateDesignerViewModel : EDViewModel
         set
         {
             if (_realPreviewData is null || _realPreviewData.Count == 0) return;
+            if (_previewPagesSyncing && value < 0) return;   // -1 z výměny ItemsSource — ignorovat, resync přijde po ní
             var clamped = Math.Clamp(value, 0, _realPreviewData.Count - 1);
             if (Set(ref _realPreviewIndex, clamped))
             {
@@ -360,13 +398,25 @@ public class TemplateDesignerViewModel : EDViewModel
     /// </summary>
     private void NotifyPreviewPagesChanged()
     {
-        OnPropertyChanged(nameof(RealPreviewPageCount));
-        OnPropertyChanged(nameof(PreviewPageItems));
-        OnPropertyChanged(nameof(RealPreviewIndex));
-        OnPropertyChanged(nameof(PageNavigationText));
-        OnPropertyChanged(nameof(HasMultiplePages));
-        OnPropertyChanged(nameof(HasPageNavigation));
+        _previewPagesSyncing = true;
+        try
+        {
+            OnPropertyChanged(nameof(RealPreviewPageCount));
+            OnPropertyChanged(nameof(PreviewPageItems));
+            OnPropertyChanged(nameof(RealPreviewIndex));
+            OnPropertyChanged(nameof(PageNavigationText));
+            OnPropertyChanged(nameof(HasMultiplePages));
+            OnPropertyChanged(nameof(HasPageNavigation));
+        }
+        finally { _previewPagesSyncing = false; }
+        // WPF umí nastavení SelectedIndex během výměny ItemsSource spolknout (combobox zůstane
+        // prázdný do ručního ◀/▶) → code-behind ho po usazení bindingu srovná deferovaně.
+        RequestPreviewPagerSync?.Invoke();
     }
+
+    /// <summary>Callback do code-behindu: po výměně stránek dat srovnej SelectedIndex pageru
+    /// (deferovaně přes Dispatcher) — viz komentář v NotifyPreviewPagesChanged.</summary>
+    public Action? RequestPreviewPagerSync { get; set; }
 
     /// <summary>Položky comboboxu stránkování dat — přímý skok na stránku bez proklikávání ◀▶.</summary>
     public IReadOnlyList<string> PreviewPageItems =>
@@ -2414,7 +2464,7 @@ public class TemplateDesignerViewModel : EDViewModel
         if (CurrentActiveInstance is not null && snapshot != _lastServerParamsSnapshot)
         {
             _lastServerParamsSnapshot = snapshot;
-            _ = RefreshDataForCurrentInstanceAsync();
+            _ = RefreshDataForCurrentInstanceAsync(keepPage: true);
         }
         else
         {

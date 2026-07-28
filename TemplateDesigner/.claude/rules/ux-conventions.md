@@ -145,6 +145,24 @@ Kanonické termíny (font/styl textu):
 | Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | — |
 | Barva textu / pozadí záhlaví | **Barva textu záhlaví** / **Pozadí záhlaví** | — |
 
+Kanonické termíny (doména JŘ):
+
+| Pojem | Kanonický label | NE |
+|---|---|---|
+| Fyzické stanoviště zastávky (sloupek, ze kterého spoj odjíždí) | **Označník** (pole `NASTUPISTE` na wire zůstává) | ~~Nástupiště~~, ~~stanoviště~~, ~~sloupek~~ |
+
+Výjimka: text „tisk stanoviště" v legendě CIS atributů (`ZastavkoveJrAd.TextAtributu`, znak „S") je
+doslovná parita textů starého modulu — nechává se.
+
+**UI texty jen česky** — žádné cizí výrazy typu „per", „split" v labelech, tooltipech a helpTextech
+(„Samostatná stránka pro každý označník", ne „per označník"; „Řádek pro každý označník",
+ne „per stanoviště").
+
+**⚠️ Labely enum parametrů sestavy jsou ZAMČENÉ** — hodnota volby se persistuje i porovnává na
+serveru jako zobrazovaný text (`RAZENI_VARIANT`, `ROZDELENI_SLOUPCU`, `SCHOVAT_V_ROZSAHU`…);
+přejmenování labelu by tiše zahodilo uloženou volbu uživatelů na default. Budoucí přejmenování jen
+se stabilním kódem vedle labelu (aditivní wire změna).
+
 Výjimka: složené popisky s jasnou sémantikou (`Výchozí font` = font dokumentu) jsou OK, dokud
 obsahují kanonický kořen. Nový termín, který v tabulce není, přidej sem, až ho poprvé zavedeš.
 

@@ -374,8 +374,11 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
     // ř.266-300), NE časový profil — spoje stejné trasy s jinými časy se slévají.
     // Čas sloupce = MAXIMUM přes spoje varianty (legacy „ponechá se delší čas") = „nejpozději za X min".
     // Signatura jen přes ZOBRAZENÉ zastávky (servedPoradi): staví = „S", nestaví = „<" (`<` i `|`),
-    // mimo trasu = prázdno. Nástupiště do identity NEJDE — dalo by vizuálně identické časové sloupce
-    // (KOVED „jiné stanoviště = jiná varianta" řeší vývěska per sloupek, #8828).
+    // mimo trasu = prázdno. Označník do identity NEJDE — dal by vizuálně identické časové sloupce
+    // (KOVED „jiný označník = jiná varianta" řeší řádek pro každý označník + vývěska dle označníků, #8828).
+    // ZÁMĚR: na rozdělené stránce (#8828, filtrOznacnik) se varianty NEFILTRUJÍ na spoje označníku —
+    // sloupce/písmena tak zůstávají shodné napříč stránkami téže zastávky (dvě vývěsky vedle sebe na
+    // témže sloupku si neprotiřečí); filtruje se jen mřížka odjezdů.
     // bool parametry číst tolerantně malými písmeny — starší klient posílal C# ToString() "True"
     s pismenaVar = ($zcvt($g(^||ML("IN","PISMENA_VARIANT")),"L") = "true")
     s prvniBez   = ($zcvt($g(^||ML("IN","PRVNI_BEZ_PISMENE")),"L") '= "false")
@@ -491,7 +494,7 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
         d z.%Set("TRASA_MIN", trasaMin)
         // KOVED #13048 bod 4 (duplikace): nástupiště per varianta (zarovnané s TRASA_MIN) — z reprezentativní
         // trasy varianty (W pole 7, fallback J-věta #3). Prázdno = varianta zde nestaví. Element z toho
-        // v režimu „Duplikace řádku per stanoviště" udělá N řádků (časy jen variant daného stanoviště).
+        // v režimu „Řádek pro každý označník" udělá N řádků (časy jen variant daného označníku).
         s nastVar = ##class(%DynamicArray).%New()
         s nastJv = $p($p(veta,"#",3),":",$s(jeTam:1,1:2))    // fallback z trasy linky (J-věta dle směru)
         f colX=1:1:pocetSloupcu {
@@ -506,15 +509,24 @@ ClassMethod BuildStrankaZastavky(dataDB As %String, sku As %String, lin As %Stri
             }
         }
         d z.%Set("NASTUPISTE_VARIANT", nastVar)
-        d z.%Set("NASTUPISTE", $p($p(veta,"#",3),":",$s(jeTam:1,1:2)))   // TR3: nástupiště per zastávka (J-věta #3, dle směru)
+        // TR3: označník per zastávka (J-věta #3, dle směru). Na rozdělené stránce (#8828) nese
+        // ŘÁDEK vývěskové zastávky označník své stránky — jinak by stránky 11/22 vypadaly identicky
+        // (J-věta má jednu hodnotu pro obě).
+        s nastRadek = nastJv
+        i (filtrOznacnik '= "") && jeAkt s nastRadek = filtrOznacnik
+        d z.%Set("NASTUPISTE", nastRadek)
         // KOVED #13048 bod 4: nástupiště dle SPOJŮ (W pole 8, fallback J-věta) — CSV dle četnosti,
-        // první = nejčetnější. Element z toho staví režimy „nejčetnější" / „výčet".
-        d z.%Set("NASTUPISTE_SPOJU", ..NastupisteSpoju(dataDB, sku, lin, smer, poradi))
+        // první = nejčetnější. Element z toho staví režimy „nejčetnější" / „výčet". Na rozdělené
+        // stránce u vývěskové zastávky rovněž jen označník stránky (stránka JE o něm).
+        d z.%Set("NASTUPISTE_SPOJU", $s((filtrOznacnik'="")&&jeAkt:filtrOznacnik, 1:..NastupisteSpoju(dataDB, sku, lin, smer, poradi)))
         d zastavky.%Push(z)
         i jeAkt s aktualniNazev = rawNazev, aktualniCzst = czst
         s posledniNazev = rawNazev, posledniCzst = czst
     }
 
+    // #8828: rozdělená vývěska nese označník v názvu zastávky (jako KOVED XLSX „…, sloupek 1") —
+    // titulek stránky se jinak mezi rozdělenými stránkami nijak viditelně neliší. Bez rozdělení beze změny.
+    i filtrOznacnik '= "" s aktualniNazev = aktualniNazev_", označník "_filtrOznacnik
     d vals.%Set("POPIS_ZASTAVKA",      aktualniNazev)
     d vals.%Set("CISLO_ZASTAVKA",      aktualniCzst)
     d vals.%Set("POPIS_ZASTAVKA_CIS",  ..NazevZastavkyCis(dataDB, aktualniCzst))
@@ -666,10 +678,13 @@ ClassMethod NacistOdjezdy(dataDB As %String, sku As %String, lin As %String, sme
         i offset = "" continue            // spoj zde nestaví (`<`) / zastávka mimo trasu spoje
 
         // #8828: filtr per označník — na stránce jen spoje odjíždějící z daného označníku vývěsky.
+        // Spoj úplně bez označníku (prázdná W-trasa i J-věta) patří na stránku NEJČETNĚJŠÍHO
+        // označníku (první v CSV) — jinak by při rozdělení zmizel ze všech stránek (ztráta odjezdu).
         if filtrOznacnik '= "" {
             d ..WNastupisteMapa(dataDB, sku, lin, cisloTrasy, .nMapF)
             s spojOzn = $g(nMapF(currentPoradi))
             i spojOzn = "" s spojOzn = $p($p($g(^[dataDB]JRL(sku,lin,"J",currentPoradi)),"#",3),":",$s(smer="Z":2,1:1))
+            i spojOzn = "" s spojOzn = $p(..NastupisteSpoju(dataDB, sku, lin, smer, currentPoradi), ",", 1)
             i spojOzn '= filtrOznacnik continue
         }
 
@@ -1609,7 +1624,7 @@ ClassMethod AddStandardJRFields(fields As %DynamicArray)
     d ..AddField(fields, "POZNAMKA_POD_DOPRAVCE",  "Poznámka pod dopravce",  "text")
     d ..AddField(fields, "POZNAMKA_NAD_LINKU",     "Poznámka nad linku",     "text")
     d ..AddField(fields, "INFORMACE",              "Informace",              "text")
-    d ..AddField(fields, "NASTUPISTE",             "Nástupiště",             "text")
+    d ..AddField(fields, "NASTUPISTE",             "Označník",               "text")
     // _CIS varianty (celostátní názvy) jsou AD-specifické — MHD je zatím neprodukuje.
     // VARIANTY_TRAS (pole hlaviček variantních časových sloupců) je wire-only pole ve values —
     // pole (ne skalár), konzumuje ho LineTable/StopList, ne plochý binding → ve schématu nefiguruje.
@@ -1632,8 +1647,8 @@ ClassMethod AddStandardJRCollections(collections As %DynamicArray)
     d ..AddField(colZastavkyFields, "PORADI",            "Pořadí",            "number")
     d ..AddField(colZastavkyFields, "AKTUALNI_ZASTAVKA", "Aktuální zastávka", "boolean")
     d ..AddField(colZastavkyFields, "ZONY",              "Zóny",              "text")
-    d ..AddField(colZastavkyFields, "NASTUPISTE",        "Nástupiště",        "text")
-    d ..AddField(colZastavkyFields, "NASTUPISTE_SPOJU",  "Nástupiště (dle spojů)", "text")
+    d ..AddField(colZastavkyFields, "NASTUPISTE",        "Označník",          "text")
+    d ..AddField(colZastavkyFields, "NASTUPISTE_SPOJU",  "Označník (dle spojů)", "text")
     // Pozn.: TC (tarifní číslo) v AD záměrně nevystaveno — nese jen J-klíč (= interní ID),
     // ne reálné tarifní číslo; MHD TC (skutečné číslo zastávky) vystaveno zůstává.
     // TRASA_MIN (pole variantních časů jízdy v každém řádku) je wire-only — pole (ne skalár),
@@ -1688,7 +1703,8 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     d ..AddBoolParam(arr, "TISK_PROJETYCH_ZAST", "Tisknout projeté zastávky", "false", "Seznam zastávek")
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
     // (odjezdy filtrované na spoje z toho označníku). Default vyp = jedna vývěska, odjezdy smíchané.
-    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Rozdělit vývěsku per označník (stránka na stanoviště)", "false", "Seznam zastávek")
+    // Label zrcadlí volbu elementu „Řádek pro každý označník" — stránka × řádek = dvě roviny téže věci
+    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každý označník", "false", "Seznam zastávek")
 
     // Varianty tras (KOVED #13048 bod 5) — týkají se variantních sloupců seznamu zastávek.
     // Varianta = sled zastávek (legacy dedup), časy sloupce = max přes spoje varianty.

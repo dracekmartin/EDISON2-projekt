@@ -291,7 +291,7 @@ Pravidla obsahu (ZÁVAZNÁ):
             "souhrnné řádky s agregacemi SUM/COUNT/AVG/MIN/MAX (i nad výrazem, např. SUM({CENA}*{POCET})).",
         ElementTypes.StopList =>
             "Tabulka zastávek linky. Sloupce a jejich styl se nastavují ve vlastním dialogu sloupců " +
-            "(vč. volitelného sloupce Nástupiště). Podporuje podmíněnou viditelnost a zvýraznění řádků.",
+            "(vč. volitelného sloupce Označník). Podporuje podmíněnou viditelnost a zvýraznění řádků.",
         ElementTypes.DepartureGrid =>
             "Mřížka minut odjezdů po skupinách dnů. Skupiny a sloupce mají vlastní dialog " +
             "(vč. přepisu nadpisu skupiny a sloupce hodin per skupina).",

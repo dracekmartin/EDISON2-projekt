@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-07-28 — Doladění stanovišťového balíku: slovník „označník", titulek stránky, držení stránky, nálezy revize
+
+Kolo zpětné vazby Jana nad 320680/330510 + nezávislá revize. Vše doladění #13048/#8828, gold beze změny.
+
+- **Jednotný slovník „označník"** (rozhodnutí Jan): všechny UI texty (parametr, combobox elementu,
+  sloupec, pole agend AD/MHD/linková, F1 nápověda) sjednoceny na „označník" — konec míchání
+  nástupiště/stanoviště/sloupek; UI texty bez cizích výrazů („per"). Kanon v `ux-conventions §8`
+  + `CLAUDE.md`; wire názvy (`NASTUPISTE`…) beze změny. Výjimka: legacy legenda „tisk stanoviště".
+- **Titulek rozdělené stránky (#8828):** `POPIS_ZASTAVKA` += „, označník X" (jen při rozdělení) —
+  propíše se do titulku i názvů exportních souborů; parametr přejmenován na **„Samostatná stránka
+  pro každý označník"** (zrcadlí volbu elementu „Řádek pro každý označník"); **řádek vývěskové
+  zastávky** na rozdělené stránce nese označník stránky (jinak stránky 11/22 vizuálně identické).
+- **Stránkování náhledu:** re-fetch dat (změna server parametru, F5) **drží logickou stránku**
+  (zastávka×směr, přednost shodě označníku — `FindMatchingPageIndex` + testy), ne pořadové číslo;
+  deferovaný resync comboboxu stránek (WPF po výměně ItemsSource nechává prázdný zobrazovací box).
+  Seznam server-side parametrů zobecněn (`ServerSideParams`).
+- **Oprava bool parametrů na wire:** klient posílal `ToString()` „True", server srovnával „true" →
+  bool parametry GetData nikdy nezabraly (i TR2). Fix obou stran (normalizace + tolerantní čtení).
+- **Nálezy nezávislé revize (28. 7.):** (1) spoj úplně bez označníku při rozdělení spadne na stránku
+  nejčetnějšího označníku — dřív zmizel ze všech (ztráta odjezdu); (2) „Řádek pro každý označník"
+  se neaplikuje bez zapnutých variantních sloupců (duplikáty by nesly identický čas) + helpText
+  navádí na sloupec Označník; (3) záměr „varianty se na rozdělené stránce nefiltrují" zdokumentován
+  (stejná písmena napříč stránkami téže zastávky); (4) labely enum parametrů = zamčené (persistuje
+  se text — `ux-conventions §8`); spodní mez zmenšení textu evidována k B2.
+- **Testové pokrytí doplněno:** Caché `TestPismenaVariant` (end-to-end písmena variant, 0330510)
+  + `TestSplitTitulekARadek` (titulek + vývěskový řádek, 0320680); xUnit `CellShrinkTests` (4),
+  `PreviewPageMatchTests` (5), gate testu duplikace. Caché 45/45, dotčené .NET sady zelené.
+
 ## 2026-07-27 — Vývěska per označník (#8828 TRANSDEV) — stanovišťový balík dokončen
 
 Zastávka obsluhovaná z více označníků (stanovišť), kde různé spoje jedou z různých sloupků, se dá

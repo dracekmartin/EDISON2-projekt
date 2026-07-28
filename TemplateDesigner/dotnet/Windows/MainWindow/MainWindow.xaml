@@ -761,7 +761,8 @@
                                 <!-- Přímý skok na stránku dat (zastávka × směr) — bez proklikávání ◀▶.
                                      Pevná šířka: různě dlouhé názvy nesmí posouvat tlačítka ◀▶ pod myší
                                      (dropdown se obsahu přizpůsobí, zavřený box ořízne). -->
-                                <ComboBox ItemsSource="{Binding PreviewPageItems}"
+                                <ComboBox x:Name="CmbPreviewPage"
+                                          ItemsSource="{Binding PreviewPageItems}"
                                           SelectedIndex="{Binding RealPreviewIndex, Mode=TwoWay}"
                                           FontSize="{DynamicResource EDTheme.FontSize.Body}"
                                           VerticalAlignment="Center" Margin="8,0"

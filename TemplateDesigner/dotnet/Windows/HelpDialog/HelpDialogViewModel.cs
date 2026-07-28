@@ -235,7 +235,7 @@ public class HelpDialogViewModel : EDViewModel
                 new("Obdélník, čára (vč. čárkované/tečkované)", "paleta"),
                 new("Kód — QR, Code128, EAN-13/8, PDF417, DataMatrix; obsahem může být pole {POLE}", "paleta"),
                 new("Dynamická tabulka — řádky z kolekce dat agendy", "paleta"),
-                new("Zastávky JŘ — sloupce vč. zóny, pořadí a nástupiště", "paleta (JŘ agenda)"),
+                new("Zastávky JŘ — sloupce vč. zóny, pořadí a označníku", "paleta (JŘ agenda)"),
                 new("Mřížka odjezdů JŘ — minuty po skupinách dnů", "paleta (JŘ agenda)"),
                 new("Legenda poznámek JŘ — značky, omezení, vysvětlivky", "paleta (JŘ agenda)"),
             ],
