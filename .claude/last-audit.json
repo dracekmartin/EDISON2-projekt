@@ -24,5 +24,17 @@
       "Not flagged (checked): stock VS boilerplate, living design-doc pointers (CLAUDE.md/UPDATE_FLOW.md), inert-flag state comments, dense but load-bearing WHY remarks (FontZoomWebView, EDInputFormController), Caché feature #17/#23/#25 domain flags"
     ],
     "session": "18073e05-5824-4242-9bc2-e1664bdb7d91"
+  },
+  "audit-theme": {
+    "last": "2026-07-28T13:48:00+02:00",
+    "scope": ["EDISONMAIN2", "EDControls"],
+    "issues": [
+      "EDControls/EDActionInProgress/ActionInProgressWindow.xaml:247 — FontSize=\"14\" literal → {DynamicResource EDTheme.FontSize.Large}",
+      "EDISONMAIN2/MiniApps/DevCounterMiniAppView.xaml:5 — FontSize=\"16\" literal (DEBUG-only sample) → {DynamicResource EDTheme.FontSize.Large}",
+      "EDControls/EDComponentToolbar/EDComponentToolbar.xaml:15 — ToolbarButtonStyle without BasedOn → added BasedOn={x:Type Button} (font-family propagation)",
+      "Left by design: LoginWindow.xaml:29 FontSize=26 EDISON wordmark (branding, no token), Consolas FontFamily in EDInputForm/EDErrorPopup (deliberate mono, no token), EDTheme.Accent.Header/OnAccent.* light-only (documented mode-stable), Transparent hit-test/drop surfaces"
+    ],
+    "escalated_render": false,
+    "session": "18073e05-5824-4242-9bc2-e1664bdb7d91"
   }
 }
