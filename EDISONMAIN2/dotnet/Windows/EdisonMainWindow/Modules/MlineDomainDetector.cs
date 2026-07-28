@@ -32,13 +32,17 @@ namespace EDISONMAIN2.Windows.EdisonMainWindow.Modules
             try
             {
                 using var key = Registry.CurrentUser.OpenSubKey(@"Software\Edison");
-                var value = key?.GetValue("MlineDomain")?.ToString();
-                // Legacy zapisuje "0"/"1" a čte přes VB CBool — nenulové číslo i "True" je true.
-                if (value == null) return false;
-                if (bool.TryParse(value, out var b)) return b;
-                return int.TryParse(value, out var i) && i != 0;
+                return ParseVirtualDomainValue(key?.GetValue("MlineDomain")?.ToString());
             }
             catch { return false; }
+        }
+
+        // Legacy zapisuje "0"/"1" a čte přes VB CBool — nenulové číslo i "True" je true.
+        internal static bool ParseVirtualDomainValue(string? value)
+        {
+            if (value == null) return false;
+            if (bool.TryParse(value, out var b)) return b;
+            return int.TryParse(value, out var i) && i != 0;
         }
     }
 }

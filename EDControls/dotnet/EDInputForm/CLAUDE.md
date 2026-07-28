@@ -4,10 +4,8 @@ Dynamický formulář definovaný a validovaný v Caché. Host nastaví `CacheCl
 (+ volitelně `InitParams`), `Init()` proběhne automaticky na `Loaded`. Služby se čtou
 z `EDServices.Current` — **ne** z DataContext okna. API čti z `EDInputForm.xaml.cs` /
 `EDInputFormController.cs` (testovatelná orchestrace bez WPF); Caché builder je
-`ALVA.EDControls.EDInputForm.Form` (helpery `AddText/AddBool/AddNumber/AddDecimal`,
-obecně `AddFieldToLastGroup`/`AddFieldToSpecificGroup` + property settery).
-Referenční ukázka featur: `EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls`
-— **při přidání nové featury přidej příklad i tam** (Image tam zatím chybí).
+`ALVA.EDControls.EDInputForm.Form`. Referenční ukázka featur:
+`EDControls/CACHE/ALVA/EDControls/EDInputForm/EDIFExample.cls` — **při přidání nové featury přidej příklad i tam**.
 
 ## Wire formát (pořadí pozic = protokol, neměnit!)
 

@@ -12,7 +12,7 @@
         <local:IntZeroToCollapsedConverter x:Key="IntNonZeroToVis"/>
         <local:NonEmptyStringToVisibleConverter x:Key="NonEmptyToVis"/>
 
-        <Style x:Key="ToolbarButtonStyle" TargetType="Button">
+        <Style x:Key="ToolbarButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
             <Setter Property="Background" Value="Transparent"/>
             <Setter Property="Foreground" Value="{DynamicResource EDTheme.OnAccent.Text}"/>
             <Setter Property="BorderThickness" Value="0"/>

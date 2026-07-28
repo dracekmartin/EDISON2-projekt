@@ -49,24 +49,11 @@ property z `EDViewModel`; ovládací prvky (`EDInputForm`, `EDList`) čtou
 **Vždy používej `CVar`** (idiomatický strukturovaný typ). `object[]` jen v legacy kódu
 s existujícími numerickými subscripty — důvod zdokumentuj; v novém kódu nikdy.
 
-```csharp
-using EDControls;                                    // QueryOrThrow
-var input = new CVar();
-input["key"] = new CVar("value");
-input["item"] = new CList("TYPE", "field1", "f2");   // $lb() v Caché
-CVar output = mlRest.QueryOrThrow("ALVA.MY.Class", "MyMethod", input);
+Referenční volání (CVar IN/OUT, foreach indexovaných řádků): `EDControls/dotnet/EDInputForm/EDInputFormController.cs`.
 
-string val = output["key"].Value?.ToString() ?? "";
-foreach (KeyValuePair<string, CVar> kvp in output)   // indexované řádky "1", "2", ...
-{
-    if (kvp.Key == "ERR") continue;                  // MLRest metadata, ne data!
-    CList row = kvp.Value;                           // implicit CVar→CList
-    string type = row.GetString(1);                  // 1-based indexing
-}
-```
-
-Pasti wire formátu: subscripty jsou **stringy** (`cVar["1"]` → `^||ML("IN","1")`,
-ne numerické 1); `CList` ↔ `$lb()`; Caché čte `$li(^||ML("IN","i"), n)`.
+Pasti wire formátu: subscripty jsou **stringy** (`cVar["1"]` → `^||ML("IN","1")`, ne
+numerické 1); `CList` ↔ `$lb()`, čte se `$li(^||ML("IN","i"), n)` (1-based); v named
+foreach přeskoč klíč `"ERR"` (MLRest metadata, ne data).
 
 `QueryOrThrow` = `Query` + `ThrowIfError()` atomicky. Existuje dvakrát: na `IMLRest`
 (ViewModely) a jako extension na konkrétním `MLRest` (legacy). Odděleně volej jen pro
@@ -77,13 +64,9 @@ graceful degradation. Binární data: `BinarySave(bytes)` → GUID, `BinaryLoad(
 
 Kompletní reference `MLRest.md §2.2`. Minimum: `ClassMethod MyMethod(ByRef sys As
 %String) As %Status`, tělo `$$$Init` → try `{ $$$FillParams ... }` catch
-`{ $$$CatchErrRest }` → `ret ret`.
-
-- `$$$Init` — nastaví `ret=0`, `err=""`
-- `$$$FillParams` — naplní `IdFa`, `del`, `dataDB`, `userID`, `GUID`, ...
-- `$$$CatchErrRest` — `ret="1~message"` → `ThrowIfError()` vyhodí výjimku v .NET
-- Výstup: `s ^||ML("OUT","klíč") = ...` (named) nebo `s ^||ML("OUT",$i(i)) = $lb(...)`
-  (indexované řádky pro foreach)
+`{ $$$CatchErrRest }` → `ret ret`. Wire invariant: `$$$CatchErrRest` nastaví
+`ret="1~message"` → `ThrowIfError()` vyhodí výjimku v .NET. Výstup buď named
+(`s ^||ML("OUT","klíč")=...`) nebo indexovaný (`s ^||ML("OUT",$i(i))=$lb(...)` pro foreach).
 
 ## Přidání nového okna
 

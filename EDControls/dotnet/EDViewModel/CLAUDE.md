@@ -18,15 +18,12 @@ Dělá čtyři věci:
 3. **`PopupDisplayer` se stane window-scoped** — resolve owner: per-call → okno VM →
    globální default. Agendová okna tak nedostávají popupy nad shellem.
 4. **Usage telemetrie** (`EDUsageTelemetry`) — OPEN + kliky na **pojmenované** controly
-   (ButtonBase/MenuItem routed eventy; ContextMenu/Popup nemusí dorazit), flush dávky do
-   Caché při `Closed`. Server = legacy `ALVA.ISY.ISYCloud.APIdotNet.Telemetry.LogUsageBatch`
-   (repo EDISON); push na portál m-line řeší Caché při instalaci aktualizace. Vše
-   best-effort, nikdy nehazí. Opt-out `PersistedFormId = null` vypíná i telemetrii.
-   Legacy launche trackuje `WindowNavigator.LaunchLegacy` jako `("EDISON2.LegacyLaunch",
-   formFqn)` — OPEN si hostovaná forma trackne sama přes EDForm.
+   (ContextMenu/Popup routed event nemusí dorazit), flush dávky do Caché při `Closed`
+   (server legacy `...Telemetry.LogUsageBatch`). Vše best-effort, nikdy nehazí. Legacy
+   launch trackuje `WindowNavigator.LaunchLegacy` (OPEN si hostovaná forma trackne sama).
 
-`PersistedFormId` default: `MyWindowViewModel` → `"EDISON2.MyWindow"`. Prefix odděluje od
-legacy numerických ID z `EDISFormEnum`. Override na `null` = opt-out.
+`PersistedFormId` default `"EDISON2.<Window>"` — prefix odděluje od legacy numerických ID
+z `EDISFormEnum`; override na `null` = opt-out (vypne i telemetrii).
 
 ## Commands
 
@@ -35,7 +32,6 @@ legacy numerických ID z `EDISFormEnum`. Override na `null` = opt-out.
   je záměrně `async void` s vlastním guardem.
 - **`canExecute` NESMÍ házet** — WPF ho volá při každé UI interakci a výjimka propadne
   mimo náš catch až do `DispatcherUnhandledException`.
-- `RelayCommand<T>` tiše no-opuje, když parameter není `T`.
 - `RelayCommand` bez explicitního displayeru fallbackuje na
   `EDServices.Current.PopupDisplayer` — test, který čeká zachycení výjimky mockem,
   musí mock registrovat přes `EDServices` nebo předat 3. argumentem.
@@ -45,8 +41,8 @@ legacy numerických ID z `EDISFormEnum`. Override na `null` = opt-out.
 - `EDServices.MLRest` je mutable a sdílená — přepnutí firmy vidí všechny VM automaticky.
   `EDServices.Current` hází před `Initialize` (testy si vytvářejí vlastní instanci s mocky).
 - `EDViewModel.HasAccess()` vrací `true`, když `AccessTable == null` (testy, pre-login).
-- `IMLRest.With(...)` klonuje identitu pro jednorázové requesty (poll s `CacheLocks=2`,
-  logout jiné firmy) — nikdy nemutuj sdílenou instanci kvůli jednomu volání.
+- `IMLRest.With(...)` klon pro jednorázové requesty (poll `CacheLocks=2`, logout jiné
+  firmy) — nikdy nemutuj sdílenou instanci (identity copy viz EDControls CLAUDE.md).
 
 ## WindowNavigator
 

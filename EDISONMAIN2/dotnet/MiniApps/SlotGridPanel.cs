@@ -25,7 +25,11 @@ public sealed class SlotGridPanel : Panel
     public static void SetSlot(DependencyObject o, int value) => o.SetValue(SlotProperty, value);
     public static int GetSlot(DependencyObject o) => (int)o.GetValue(SlotProperty);
 
-    private int Columns(double width) => Math.Max(1, (int)(width / CellWidth));
+    private int Columns(double width) => ColumnsFor(width, CellWidth);
+
+    // Čistá matematika mřížky vytažená ze statických helperů — testovatelná bez WPF instance
+    // (Panel vyžaduje STA vlákno).
+    internal static int ColumnsFor(double width, double cellWidth) => Math.Max(1, (int)(width / cellWidth));
 
     protected override Size MeasureOverride(Size availableSize)
     {
@@ -54,11 +58,13 @@ public sealed class SlotGridPanel : Panel
     }
 
     /// <summary>Slot pod bodem (pro drop): row-major index podle aktuálního počtu sloupců.</summary>
-    public int SlotAt(Point p)
+    public int SlotAt(Point p) => SlotAtFor(p.X, p.Y, ActualWidth, CellWidth, CellHeight);
+
+    internal static int SlotAtFor(double x, double y, double width, double cellWidth, double cellHeight)
     {
-        int cols = Columns(ActualWidth);
-        int c = Math.Max(0, Math.Min(cols - 1, (int)(p.X / CellWidth)));
-        int r = Math.Max(0, (int)(p.Y / CellHeight));
+        int cols = ColumnsFor(width, cellWidth);
+        int c = Math.Max(0, Math.Min(cols - 1, (int)(x / cellWidth)));
+        int r = Math.Max(0, (int)(y / cellHeight));
         return r * cols + c;
     }
 }

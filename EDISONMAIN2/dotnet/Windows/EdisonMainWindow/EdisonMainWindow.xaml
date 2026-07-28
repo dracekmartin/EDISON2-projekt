@@ -34,7 +34,9 @@
     <Grid>
         <Grid.ColumnDefinitions>
             <!-- Strom modulů (launcher) | splitter | plocha miniaplikací (DockingManager).
-                 Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) — restore ji přepíše na px. -->
+                 Šířku stromu persistuje VM per IDFa (viz AttachTreeLayout) — restore ji přepíše na px.
+                 Min. šířku plochy miniaplikací drží code-behind (MiniAppArea_SizeChanged) — GridSplitter
+                 MinWidth star sloupce u fixní px šířky stromu obchází, layout MinWidth by přetékal. -->
             <ColumnDefinition x:Name="TreeColumn" Width="*" MinWidth="150"/>
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition Width="3*"/>

@@ -35,6 +35,8 @@ namespace EDISONMAIN2
             FavoritesTreeView.SelectedItemChanged += TreeSelectedItemChanged;
             Loaded += WireMiniAppHost;
             ContentRendered += OnContentRendered;
+            // Drží plochu miniaplikací nad minimem při zúžení (splitter i okno) — viz handler.
+            DockManager.SizeChanged += MiniAppArea_SizeChanged;
             ApplyDockTheme();
             ThemeService.Applied += ApplyDockTheme;
             Closed += (_, _) => ThemeService.Applied -= ApplyDockTheme;
@@ -55,6 +57,9 @@ namespace EDISONMAIN2
         private void OnContentRendered(object? sender, System.EventArgs e)
         {
             ContentRendered -= OnContentRendered;
+            // Až teď je okno v cílové (maximalizované) velikosti a restore šířky stromu proběhl —
+            // od teď smí SizeChanged clamp zasahovat (dřív by přepsal restorovanou šířku).
+            _layoutReady = true;
             if (DataContext is EdisonMainViewModel vm)
                 vm.OpenStartupWindowIfAny();
         }
@@ -72,6 +77,25 @@ namespace EDISONMAIN2
                     w => TreeColumn.Width = new GridLength(w));
                 vm.AttachMiniAppHost(new AvalonDockHost(DockManager));
             }
+        }
+
+        // Minimální šířka plochy miniaplikací (aby ji strom nezakryl).
+        private const double MinMiniAppAreaWidth = 540;
+        private const double MinTreeWidth = 150;
+        private bool _layoutReady;
+
+        // Post-layout korekce: když cokoli (drag splitteru, zúžení okna) zmenší plochu docku pod
+        // minimum, o schodek zúžíme strom (až po jeho vlastní min). Nezávisí na chování GridSplitteru
+        // (ten aplikuje posun až PO DragDelta, takže přímý clamp v handleru přepíše). Guard _layoutReady
+        // brání zásahu během úvodního layoutu, kdy ještě neproběhl restore šířky stromu.
+        private void MiniAppArea_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (!_layoutReady) return;
+            double deficit = MinMiniAppAreaWidth - DockManager.ActualWidth;
+            if (deficit <= 0) return;
+            double treeTarget = Math.Max(MinTreeWidth, TreeColumn.ActualWidth - deficit);
+            if (treeTarget < TreeColumn.ActualWidth)
+                TreeColumn.Width = new GridLength(treeTarget);
         }
 
         // Single-click ve stromu: složka toggle expand, modul spustí. Event bubluje přes

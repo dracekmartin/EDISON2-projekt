@@ -244,7 +244,7 @@
                     </ContentControl>
                 </Border>
 
-                <TextBlock Text="Akce probíhá" FontSize="14" FontWeight="SemiBold"
+                <TextBlock Text="Akce probíhá" FontSize="{DynamicResource EDTheme.FontSize.Large}" FontWeight="SemiBold"
                            HorizontalAlignment="Center" Margin="24,8,24,0"/>
             </StackPanel>
         </Border>

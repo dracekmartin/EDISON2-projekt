@@ -2,7 +2,7 @@
 
 Hlavní WPF shell — login, výběr firmy, strom modulů, spouštění legacy `.exe` agend.
 Nahrazuje VB.NET `EDISONMAIN`. Doménový kontext: [RESPONSIBILITIES.md](RESPONSIBILITIES.md);
-update flow: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md). `PLAN.md` je stale — nereferencovat.
+update flow: [docs/UPDATE_FLOW.md](docs/UPDATE_FLOW.md).
 
 Bootstrap orchestruje `Startup/AppBootstrapper` (template method: setup wizard → prefs →
 login → MLRest → firma → VerifyLic → module tree → update check → font → shell okno).
@@ -47,10 +47,10 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   ukáže se pod stromem `EDInfoBar` s akcí na její zobrazení.
   Core widgety (Novinky/Wiki/Školení) = WebView2 na `podpora.m-line.cz` — mirror
   legacy CefSharp plochy z `frmMain.vb`; Školení dostává IdFa + login v URL.
-  Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu tabu
-  do plovoucího okna AvalonDocku a tahá 23 MB WinRT projekci, viz TFM v csproj). Airspace: WPF
-  veil dimu widgety nepokryje — záměrně zůstávají čitelné; kartu „Akce probíhá" nad nimi kreslí
-  owned okno (viz `EDControls/dotnet/EDActionInProgress/CLAUDE.md`).
+  Hostují se přes `FontZoomWebView : WebView2` (HWND, ne composition — ta crashuje na dragu
+  tabu do plovoucího okna AvalonDocku). Airspace: WPF veil dimu widgety nepokryje — záměrně
+  zůstávají čitelné; kartu „Akce probíhá" nad nimi kreslí owned okno
+  (viz `EDControls/dotnet/EDActionInProgress/CLAUDE.md`).
   User velikost fontu respektují přes `FontZoomWebView` (ZoomFactor =
   `FontService.BodySize` / 14 — základní text widgetů je 14 CSS px);
   rodina fontu se do HTML nepropaguje. Dark mode widgety samy neumí (natvrdo
@@ -65,8 +65,7 @@ se svým consumerem, cross-cutting věci jdou do `EDControls`.
   prázdný dock ukáže
   placeholder s tlačítkem na výchozí sadu (`HasOpenMiniApps` / `InstancesChanged`).
   Menu „Miniaplikace" je seskupené podle providerů (`IMiniAppProvider.GroupTitle`,
-  pořadí skupin = pořadí registrace v `AppBootstrapper`); `DevSampleMiniApps`
-  se registruje jen v DEBUG buildu. Statické akce dole (Zavřít/Resetovat) jsou
+  pořadí skupin = pořadí registrace v `AppBootstrapper`). Statické akce dole (Zavřít/Resetovat) jsou
   v `CompositeCollection` — bindingy tam jdou jen přes `BindingProxy` (`VmProxy`):
   `x:Reference` na TopMenu při BAML loadu cyklí, `ElementName`/DataContext jsou
   mimo namescope/strom; lokální `Style` na nich blokuje `ItemContainerStyle` skupin.

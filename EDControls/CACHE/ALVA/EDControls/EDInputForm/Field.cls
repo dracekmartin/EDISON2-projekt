@@ -5,7 +5,7 @@ Property key As %String;
 
 Property label As %String;
 
-/// $$$FieldTypeText or $$$FieldTypeNumber (Include EDInputForm).
+/// $$$FieldTypeText / $$$FieldTypeNumber ... (Include EDInputForm).
 Property type As %String [ InitialExpression = "TEXT" ];
 
 Property value As %String;
@@ -14,32 +14,27 @@ Property validateOnChange As %Boolean [ InitialExpression = 0 ];
 
 Property required As %Boolean [ InitialExpression = 0 ];
 
-/// Empty string means no error.
+/// Prázdný řetězec = bez chyby.
 Property validationError As %String;
 
 Property editable As %Boolean [ InitialExpression = 1 ];
 
-/// Options for List field type. Each element is $lb(key, label).
+/// Položky pro typ List. Každý prvek je $lb(key, label).
 Property listItems As list Of %List;
 
-/// Dialog filter for File field type. "$FOLDER" for folder selection,
-/// otherwise interpreted as OpenFileDialog filter string.
+/// Filtr dialogu pro typ File. "$FOLDER" = výběr složky, jinak filtr OpenFileDialogu.
 Property fileFilter As %String;
 
-/// Minimum allowed value for Number / Decimal field types.
-/// Empty string = no lower bound. Validated client-side and server-side.
+/// Dolní mez pro typ Number / Decimal. Prázdný řetězec = bez meze (validuje klient i server).
 Property min As %String;
 
-/// Maximum allowed value for Number / Decimal field types.
-/// Empty string = no upper bound.
+/// Horní mez pro typ Number / Decimal. Prázdný řetězec = bez meze.
 Property max As %String;
 
-/// Display format for Decimal field values (e.g. "N2", "0.##").
-/// Applied in UI on focus loss. Empty = no formatting.
+/// Formát zobrazení hodnoty Decimal (např. "N2", "0.##"); aplikuje se při ztrátě fokusu. Prázdné = bez formátu.
 Property format As %String;
 
-/// Unit shown as suffix next to the input (e.g. "mm", "pt"). Visual only.
-/// Empty = no unit suffix.
+/// Jednotka jako suffix za polem (např. "mm", "pt"), jen vizuální. Prázdné = bez jednotky.
 Property unit As %String;
 
 Method AddListItem(key As %String, label As %String)

@@ -3,7 +3,7 @@ Include EDInputForm
 Class ALVA.EDControls.EDInputForm.Form Extends %RegisteredObject
 {
 
-// ─── Validation trigger constants (mirrors C# EValidationTrigger) ─────────────
+// ─── Konstanty validačního triggeru (zrcadlí C# EValidationTrigger) ───────────
 
 Parameter TriggerInit = "Init";
 
@@ -11,26 +11,24 @@ Parameter TriggerChange = "Change";
 
 Parameter TriggerBeforeSave = "BeforeSave";
 
-/// Trigger received with this form; set automatically by ReadFromIn.
+/// Trigger přijatý s formulářem; nastavuje automaticky ReadFromIn.
 Property trigger As %String;
 
-/// Key of the field that triggered validation. Set by ReadFromIn.
-/// Non-empty only when trigger is "Change" and the validation was auto-triggered.
+/// Klíč pole, které spustilo validaci (nastavuje ReadFromIn); neprázdné jen u
+/// triggeru "Change" auto-spuštěného konkrétním polem.
 Property changedKey As %String;
 
-/// Ordered list of Group and Field items that make up the form.
+/// Uspořádaný seznam položek Group/Field tvořících formulář.
 Property items As list Of ALVA.EDControls.EDInputForm.Item;
 
-/// Controls how help text is displayed on the .NET side.
-/// $$$HelpTextModeTooltip (default) or $$$HelpTextModeColumn.
+/// Řídí zobrazení nápovědy na .NET straně: $$$HelpTextModeTooltip (default) nebo $$$HelpTextModeColumn.
 Property helpTextMode As %String [ InitialExpression = {$$$HelpTextModeTooltip} ];
 
 // ─── Builder ─────────────────────────────────────────────────────────────────
 
-/// Appends a group separator. Pass visibility to control display on the .NET side
-/// ($$$ItemVisibilityVisible, $$$ItemVisibilityCollapsed, etc.).
-/// Groups don't get a visible number — number is 0. Fields are numbered sequentially
-/// across all groups (1, 2, 3, ...) — Renumber sets this after insert.
+/// Přidá oddělovač skupiny; visibility řídí zobrazení na .NET straně
+/// ($$$ItemVisibilityVisible, $$$ItemVisibilityCollapsed, ...). Skupina nemá viditelné
+/// číslo (0); pole se číslují průběžně napříč skupinami — po insertu nastaví Renumber.
 Method AddGroup(key As %String, groupName As %String, visibility As %String = {$$$ItemVisibilityVisible})
 {
 	s g = ##class(ALVA.EDControls.EDInputForm.Group).%New()
@@ -41,9 +39,9 @@ Method AddGroup(key As %String, groupName As %String, visibility As %String = {$
 	d ..Renumber()
 }
 
-/// Appends a field and returns it so the caller can set value / validationError.
-/// Field number is assigned sequentially across all groups (1-based) — Renumber sets
-/// this after insert. Groups don't increment the field counter.
+/// Přidá pole do poslední skupiny a vrátí ho (caller doplní value / validationError).
+/// Číslo pole je průběžné napříč skupinami (1-based) — po insertu nastaví Renumber;
+/// skupiny čítač polí neinkrementují.
 Method AddFieldToLastGroup(key As %String, label As %String, type As %String = {$$$FieldTypeText}, validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
 	s f = ##class(ALVA.EDControls.EDInputForm.Field).%New()
@@ -105,9 +103,8 @@ Method AddDecimal(key As %String, label As %String, value As %String = "", min A
 	q f
 }
 
-/// Inserts a field into the group identified by groupKey (after its last field).
-/// If the group is not found, appends to the end.
-/// Returns the new field so the caller can set value / validationError.
+/// Vloží pole do skupiny dle groupKey (za její poslední pole); nenalezená skupina =
+/// přidá na konec. Vrací nové pole (caller doplní value / validationError).
 Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %String, type As %String = {$$$FieldTypeText}, validateOnChange As %Boolean = 0, required As %Boolean = 0) As ALVA.EDControls.EDInputForm.Field
 {
 	s f = ##class(ALVA.EDControls.EDInputForm.Field).%New()
@@ -117,7 +114,7 @@ Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %St
 	s f.validateOnChange = validateOnChange
 	s f.required = required
 
-	// Find group, then scan to end of its fields
+	// Najdi skupinu, pak doskenuj na konec jejích polí
 	s insertAt = 0, cnt = ..items.Count()
 	f idx=1:1:cnt {
 		s item = ..items.GetAt(idx)
@@ -141,8 +138,8 @@ Method AddFieldToSpecificGroup(groupKey As %String, key As %String, label As %St
 	q f
 }
 
-/// Renumbers items: groups don't get a visible number (set to 0); fields are
-/// numbered sequentially across all groups (1, 2, 3, ...).
+/// Přečísluje položky: skupiny nemají viditelné číslo (0), pole se číslují průběžně
+/// napříč skupinami (1, 2, 3, ...).
 Method Renumber() [ Private ]
 {
 	s cnt = ..items.Count()
@@ -158,9 +155,9 @@ Method Renumber() [ Private ]
 	}
 }
 
-// ─── Access ───────────────────────────────────────────────────────────────────
+// ─── Přístup ────────────────────────────────────────────────────────────────
 
-/// Returns the first Field whose key matches, or "" if not found.
+/// Vrátí první Field se shodným key, nebo "" když není nalezen.
 Method GetField(key As %String) As ALVA.EDControls.EDInputForm.Field
 {
 	s result = "", cnt = ..items.Count()
@@ -172,7 +169,7 @@ Method GetField(key As %String) As ALVA.EDControls.EDInputForm.Field
 	q result
 }
 
-/// Returns the first Group whose key matches, or "" if not found.
+/// Vrátí první Group se shodným key, nebo "" když není nalezena.
 Method GetGroup(key As %String) As ALVA.EDControls.EDInputForm.Group
 {
 	s result = "", cnt = ..items.Count()
@@ -184,7 +181,7 @@ Method GetGroup(key As %String) As ALVA.EDControls.EDInputForm.Group
 	q result
 }
 
-// ─── Trigger helpers ──────────────────────────────────────────────────────────
+// ─── Trigger helpery ──────────────────────────────────────────────────────────
 
 Method IsInitValidation() As %Boolean
 {
@@ -201,38 +198,37 @@ Method IsBeforeSaveValidation() As %Boolean
 	q ..trigger=..#TriggerBeforeSave
 }
 
-/// True for Init and BeforeSave — full-form round-trips, not a single-field change.
+/// True pro Init a BeforeSave — round-trip celého formuláře, ne změna jednoho pole.
 Method IsWholeFormValidation() As %Boolean
 {
 	q (..trigger=..#TriggerInit)||(..trigger=..#TriggerBeforeSave)
 }
 
-// ─── Changed field helpers ────────────────────────────────────────────────
+// ─── Helpery změněného pole ────────────────────────────────────────────────
 
-/// True when a specific field triggered this Change validation.
+/// True, když tuto Change validaci spustilo konkrétní pole.
 Method HasChangedField() As %Boolean
 {
 	q ..changedKey'=""
 }
 
-/// Returns the Field that triggered validation, or "" if not applicable
-/// (Init, BeforeSave, or manual Change with no specific field).
+/// Vrátí Field, které spustilo validaci, nebo "" když neaplikovatelné
+/// (Init, BeforeSave, nebo ruční Change bez konkrétního pole).
 Method GetChangedField() As ALVA.EDControls.EDInputForm.Field
 {
 	i ..changedKey="" q ""
 	q ..GetField(..changedKey)
 }
 
-// ─── Serialization ────────────────────────────────────────────────────────────
+// ─── Serializace ──────────────────────────────────────────────────────────────
 
-/// Writes all items to ^||ML("OUT",...) as CList ($lb) values.
-/// Each item is written at subscript 1, 2, ... (CVar["1"], CVar["2"] on .NET).
-/// Format per item (number is always position 2):
+/// Zapíše všechny položky do ^||ML("OUT",...) jako CList ($lb) hodnoty na subscriptech
+/// 1, 2, ... (na .NET CVar["1"], CVar["2"]). Formát položky (number je vždy pozice 2):
 ///   GROUP → $lb("GROUP", number, key, groupName, visibility, helpText)
 ///   FIELD → $lb("FIELD", number, key, label, type, value, validateOnChange, required,
 ///                validationError, editable, visibility, helpText, listItems, fileFilter,
 ///                min, max, format, unit)
-/// Also writes helpTextMode at string subscript "helpTextMode".
+/// helpTextMode se zapíše na string subscript "helpTextMode".
 Method WriteToOut()
 {
 	s i = 0
@@ -243,10 +239,9 @@ Method WriteToOut()
 	s ^||ML("OUT","helpTextMode") = ..helpTextMode
 }
 
-/// Reads ^||ML("IN",...) and returns a populated Form.
-/// Trigger is at string subscript "trigger".
-/// Items are at subscripts 1, 2, ... as CList ($lb) values:
-///   $lb("GROUP", number, key, groupName, visibility, helpText)   ; number round-tripped, re-assigned on insert
+/// Přečte ^||ML("IN",...) a vrátí naplněný Form. Trigger je na string subscriptu
+/// "trigger"; položky na subscriptech 1, 2, ... jako CList ($lb):
+///   $lb("GROUP", number, key, groupName, visibility, helpText)   ; number round-tripovaný, po insertu přečíslován
 ///   $lb("FIELD", number, key, label, type, value, validateOnChange, required, validationError, editable, visibility, helpText, listItems, fileFilter)
 ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 {
@@ -266,7 +261,7 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 		i type="GROUP" {
 			s visibility = $s($ll(listVal)>=5:$li(listVal,5),1:$$$ItemVisibilityVisible)
 			d form.AddGroup($li(listVal,3),$li(listVal,4),visibility)
-			// Read helpText for the group just added
+			// helpText pro právě přidanou skupinu
 			i $ll(listVal)>=6 s form.items.GetAt(form.items.Count()).helpText = $li(listVal,6)
 		}
 		i type="FIELD" {
@@ -275,7 +270,7 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 			i $ll(listVal)>=10 s f.editable = $li(listVal,10)
 			i $ll(listVal)>=11 s f.visibility = $li(listVal,11)
 			i $ll(listVal)>=12 s f.helpText = $li(listVal,12)
-			// Position 13: list items for List field type
+			// Pozice 13: položky listu pro typ List
 			i $ll(listVal)>=13 {
 				s optStr = $li(listVal,13)
 				i optStr'="" {
@@ -288,9 +283,9 @@ ClassMethod ReadFromIn() As ALVA.EDControls.EDInputForm.Form
 					}
 				}
 			}
-			// Position 14: file filter for File field type
+			// Pozice 14: filtr souboru pro typ File
 			i $ll(listVal)>=14 s f.fileFilter = $li(listVal,14)
-			// Positions 15-18: Decimal/Number extras (min, max, format, unit)
+			// Pozice 15-18: extra pro Decimal/Number (min, max, format, unit)
 			i $ll(listVal)>=15 s f.min    = $li(listVal,15)
 			i $ll(listVal)>=16 s f.max    = $li(listVal,16)
 			i $ll(listVal)>=17 s f.format = $li(listVal,17)

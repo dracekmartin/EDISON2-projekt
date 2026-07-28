@@ -6,19 +6,8 @@ using EDControls.EDViewModel;
 namespace EDControls.EDComponentToolbar;
 
 /// <summary>
-/// Sdílený toolbar bar pro EDInputForm / EDList / budoucí tabulkové komponenty.
-/// Tmavě modré pozadí (EDTheme.Accent.Header), search box vlevo + standardní ikony vpravo.
-///
-/// <para><b>API přehled:</b></para>
-/// <list type="bullet">
-/// <item><c>Title</c> — volitelný název vlevo (např. pro EDList).</item>
-/// <item><c>SearchText</c> — two-way bound text. Host váže na svoji filter logic.</item>
-/// <item><c>CurrentMatchIndex</c> / <c>TotalMatches</c> — host updates jak iteruje matche.</item>
-/// <item><c>FindNextCommand</c> / <c>FindPreviousCommand</c> — host implementace skoku na další/předchozí match.</item>
-/// <item><c>ShowExport</c> / <c>ShowPrint</c> / <c>ShowHelp</c> / <c>ShowSettings</c> — opt-in pravé ikony s ICommand.</item>
-/// </list>
-///
-/// <para><b>Ctrl+F</b> uvnitř komponenty focusne search box (konvence prohlížečů/editorů).</para>
+/// Sdílený toolbar pro EDInputForm / EDList / tabulkové komponenty (search box vlevo, opt-in
+/// ikony vpravo). Ctrl+F uvnitř komponenty focusne search box. API viz jednotlivé DP níže.
 /// </summary>
 public partial class EDComponentToolbar : UserControl
 {

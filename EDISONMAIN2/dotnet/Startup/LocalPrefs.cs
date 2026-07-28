@@ -55,10 +55,6 @@ public class LocalPrefs : ILocalPrefs
     public Dictionary<string, string>? MiniAppLayouts { get; set; }
     public Dictionary<string, double>? TreeWidths { get; set; }
 
-    // FontApplied/FontFamily/FontSize byly přesunuty do EDControls.UserFonts.UserFontPreference
-    // (shared %APPDATA%\m-line\common\font.json) aby je TemplateDesigner mohl sdílet a reagovat
-    // na změnu fontu v shellu přes FileSystemWatcher.
-
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,

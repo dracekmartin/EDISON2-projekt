@@ -4,8 +4,7 @@ Read-only tabulka řízená z Caché. Host nastaví `CacheClass`, zavolá `Initi
 (definice sloupců) a `LoadList()` / `LoadList(filter)` (data). Služby čte z
 `EDServices.Current` — host **nemusí** mít VM dědící `EDViewModel`. Více instancí
 v okně (master–detail) je standardní scénář. API čti z `EDList.xaml.cs`; Caché builder
-je `ALVA.EDControls.EDList.List` (`AddColumn`/`AddRow` + `WriteColumnsToOut`/`WriteRowsToOut`),
-referenční implementace `MockList.cls`.
+je `ALVA.EDControls.EDList.List`, referenční implementace `MockList.cls`.
 
 ## Wire kontrakt (JSON přes `^||ML`)
 
