@@ -132,6 +132,24 @@ Detaily hotových: changelog 2026-07-24 (zóny) + 2026-07-26 (přestupy) + 2026-
 **Dispatch:** malí kandidáti odbaveni (TR3 ✅, TR4 ✅, TR2 implementováno - ⚠️ čeká SK ověření
 kódování na-znamení, TR8 ⏸️ park do potvrzení TRANSDEV). Zbývají jen 🟠 velké body (analýza/data).
 
+### 0.4 Follow-upy uzavřených tiketů - JEN na vyžádání zákazníka (nezakládat dřív)
+
+Vzniklé při stanovišťovém balíku a #9036 (27.-28. 7.); tikety jsou resolved, tohle jsou připravené
+odpovědi na případné znovuotevření/dotaz:
+
+- **Členění exportu na samostatné soubory per označník** - dnes rozdělené vývěsky rozliší titulek
+  i `{POPIS_ZASTAVKA}` v názvu souboru (#8828)
+- **Symbol „↓" u výchozí zastávky** ve variantních sloupcích (KOVED XLSX vizuál, bod 5)
+- **Agregace označníku varianty přes všechny spoje** - dnes reprezentativní spoj; projeví se jen
+  u dvou spojů se zcela shodnou trasou a různým označníkem (bod 4/5, přiznáno v odpovědi KOVED)
+- **Duplikace řádku - fáze 2 dle zpětné vazby KOVED** (bod 4)
+- **Per-písmeno výběr variantních sloupců** (TR7 zbytek - až TRANSDEV potvrdí nad novým chováním)
+- **Vizuální oddělení přelomu půlnoci v mřížce** (#9036 v1 = jen přetočení osy; kandidát silnější
+  čára mezi 23 a 0, automaticky jen když osa přetéká)
+- **Zvýraznění ne-výchozích hodnot v liště parametrů** (per-agenda dědění hodnot mate - rozhodnutí
+  Jan 28. 7.: zatím nechat)
+- **Spodní mez zmenšení textu buňky** (extrém se zmenší bez limitu - zvážit při vizuálu bodu 2 v B2)
+
 ---
 
 ## A. StopListElement - seznam zastávek vlevo

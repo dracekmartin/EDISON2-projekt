@@ -209,6 +209,12 @@ Každý OUT node je vlastní `%DynamicObject.%ToJSON()` → na .NET straně `Cac
 
 **Proč:** JSON je autoreferenční (struktura popsaná schématem), verzovatelný, debugovatelný v síťovém monitoru, a mapuje se 1:1 na `%DynamicObject` v Caché a `JsonNode` v .NET. Nové API metody musí tento vzor následovat.
 
+**⚠️ Past: nový server-side parametr sestavy** (hodnotu zpracovává `GetData`, ne klientský filtr)
+musí do allowlistu `ServerSideParams` v `TemplateDesignerViewModel.cs` - jinak jeho změna v UI
+nespustí re-fetch dat a klik je no-op. Bool parametry se na wire posílají jako `"true"/"false"`
+a server je čte tolerantně přes `$zcvt(...,"L")` (starší klienti posílali `"True"`).
+Labely enum parametrů jsou ZAMČENÉ - persistuje se zobrazovaný text (viz `ux-conventions §8`).
+
 ---
 
 ### Prezentační nápovědy (R3) - kolik vzhledu smějí nést data

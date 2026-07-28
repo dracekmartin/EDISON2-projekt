@@ -1,26 +1,12 @@
 # Roadmap
 
-> **Stav k 2026-07-27.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-28** (stanovišťový balík KOVED/TRANSDEV uzavřen, verze připravena k publish).
+> **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet - patří do archivu.
 
----
-
-## 🎯 Stanovišťový balík - UZAVŘEN 2026-07-28 (KOVED #13048 + TRANSDEV #8828 resolved)
-
-Odpovědi odeslány, oba tikety resolved; titulek stránky s označníkem, jednotný slovník „označník"
-a nálezy revize dořešeny 28. 7. (detail changelog 27.–28. 7., evidence customer-requirements §0.1/§0.3).
-**Zbývá: publish dnešní verze (Jan).**
-
-**Follow-upy jen na vyžádání zákazníka (nezakládat dřív):** členění exportu na samostatné soubory
-per označník (dnes rozliší titulek/`{POPIS_ZASTAVKA}` v názvu souboru) · symbol „↓" u výchozí zastávky
-ve variantních sloupcích · agregace označníku varianty přes všechny spoje (dnes reprezentativní spoj)
-· spodní mez zmenšení textu (evidováno v B2) · vizuální oddělení přelomu půlnoci v mřížce odjezdů
-(#9036 v1 = jen přetočení osy, ověřeno na 345070 JH; kandidát: silnější čára mezi 23 a 0, automaticky
-jen když osa přetéká) · zvýraznění ne-defaultních hodnot v liště parametrů (per-agenda dědění hodnot
-uživatele mate - rozhodnutí Jan 28. 7.: zatím nechat).
-
-> **Pozn. pro nové server-side parametry:** hodnota se do GetData posílá jen přes allowlist
-> `ServerSideParams` (`TemplateDesignerViewModel.cs`) - bez doplnění je klik na parametr no-op.
+> **▶ Další session:** po publishi vzít **B2** (zavírací kolo helpdesku - poslední 2 tikety + vizuál
+> zmenšování), pak vlna 2 od **B4**. Follow-upy „na vyžádání zákazníka" žijí
+> v [`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).
 
 ---
 
@@ -44,9 +30,9 @@ zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do ar
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B2** | **Zavírací kolo helpdesku** - ověřit v buildu a zavřít **#7947, #7955** (#9036 resolved 28. 7. - ověřeno na 345070, oba recepty osy v odpovědi) + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu, nález revize 28.7.); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
+| **B2** | **Zavírací kolo helpdesku** - ověřit v buildu a zavřít **#7947, #7955** + finální vizuál #13048 bodu 2 (u něj zvážit spodní mez zmenšení textu / vazbu na overflow varování - extrémní název se dnes zmenší bez limitu); postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
 
-Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešních dvanácti evidovaných.
+Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + položky čekající na zákazníky.
 
 ---
 
@@ -60,7 +46,7 @@ Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešní
 | **B7** | **Výchozí šablony MHD + linková do distribuce** - mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/` (= krok 44b / C4) | S | 2 | B5 |
 | **B15** | **Viditelnost přeskočených gold/parity testů** - na serveru bez `CB_CSADAD`/`CB_DP` namespace vše tiše projde zeleně; potřebuje skip-počítadlo v sdíleném `ALVA.EDTesting.TestRunner` + výpis v `run-cache-tests.ps1` (nález revize 28. 7.) | S | 2 | - |
 | **B16** | **Mock data náhledu bez HTTP z kreslicí cesty (R1 zbytek)** - cache existuje, ale PRVNÍ načtení po startu/změně agendy a KAŽDÉ selhání (null se necachuje) volá synchronní Caché HTTP přímo z překreslení náhledu (cold-start = 2–3 s freeze; při výpadku pokus per repaint). Řešení: async prefetch při změně agendy, render čte jen cache; neúspěch cachovat do „Obnovit data" (F5 už `InvalidateCaches` dělá). Rozhodnutí Jan 28. 7.: až po verzi, teď nepůsobí problémy. | S–M | 3 | - |
-| **B17** | **Zbytky revize 28. 7. (po verzi):** (a) ~~drift voleb panel × dialog~~ HOTOVO 28. 7. (Dle typu doplněno, Do bloku byl stale nález); (b) `ApplyScale` mezery - LineTable neškáluje `DataRowHeight`, Table/DynamicTable FontSize stylů, per-column font overridy / `WidthOverride` skupin / paddingy se neškálují nikde; (c) kodifikace UI/UX výjimek do `architecture.md` - OK přes `Click=` v 6 EDInputForm dialozích (důvod `GeneralForm.Save()`), TableEditorDialog 5 tabů = vědomé „neřešit" (uspaný element); ~59 `Click=` v MainWindow migrovat postupně při dotyku | S–M | 3 + 4 | - |
+| **B17** | **Zbytky revize 28. 7.:** (a) `ApplyScale` mezery - LineTable neškáluje `DataRowHeight`, Table/DynamicTable FontSize stylů, per-column font overridy / `WidthOverride` skupin / paddingy se neškálují nikde; (b) kodifikace UI/UX výjimek do `architecture.md` - OK přes `Click=` v 6 EDInputForm dialozích (důvod `GeneralForm.Save()`), TableEditorDialog 5 tabů = vědomé „neřešit" (uspaný element); ~59 `Click=` v MainWindow migrovat postupně při dotyku | S–M | 3 + 4 | - |
 
 **Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
 (rohy = 8 souborů) → každá další drobnost na elementech je osmkrát dražší. Čím dřív, tím víc se vrátí.
@@ -71,8 +57,6 @@ Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešní
 
 | # | Blok | Vel. | Zóna | Závisí na |
 |---|---|---|---|---|
-| **B8** | **Varianty tras - dokončení.** Serverová část HOTOVÁ + **vizuálně ověřená Janem 2026-07-27** na 0330510 (#13048 bod 5 + TR7: varianta = sled zastávek dle legacy dedup, čas = maximum, řazení dle četnosti / stabilní, písmena variant u odjezdů; oprava `|`=„čas 0"; detail changelog). Zbývá: **MHD parita variant**; per-písmeno výběr sloupců až na potvrzení TRANSDEV nad novým chováním. | S–M | 1 + 3 | ne spolu s B9 |
-| ~~B9~~ | **HOTOVO a resolved 2026-07-28** (#8828 vývěska pro označník vč. titulku) → archiv. Zbytek pro budoucnost: MHD zdroj označníku až u MHD zákazníka. | - | - | - |
 | **B10** | **L‑2: symbolový font - linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | - |
 | **B11** | **L‑3: row-plan vrstva** - `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | B5 |
 | **B12** | **#7937 rozšíření** - odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | - |
@@ -112,9 +96,8 @@ L‑4 nezačínat před B11 - dnes by to znamenalo napsat totéž pětkrát (per
    Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
 
 **Bezpečné kombinace:**
-- ✅ **B8 nebo B9 + B6 + zavírání tiketů** - vlna 3
-- ✅ **B10 + B9** - fontová cesta je izolovaná
-- ❌ **B8 + B9** - obě sahají do téže agendy
+- ✅ **B12 + B6 + zavírání tiketů (B2)** - agenda / dialogy / papír
+- ✅ **B10 + B12** - fontová cesta je izolovaná od agendy
 - ❌ **cokoli na elementech během B11/B13**
 - ❌ **B4 + jakýkoli element dialog** - B4 přepisuje pole ve všech `.cls`
 - ⚠️ **publish je výhradní vždy**
@@ -173,6 +156,8 @@ unifikace dialogů** (EDInputForm + sdílený „DialogChrome"; průběžně př
 refaktor - L celkem)
 
 **Na poptávku** - tiskový parametr „Rozdělení sloupců" pro MHD (M, sjednocení s AD; MHD SMO fáze 3) ·
+parita variant tras + písmen u odjezdů pro MHD agendu (S–M; AD hotové 27. 7., až u MHD zákazníka) ·
+MHD zdroj označníku pro stránky per označník (dtto) ·
 exportní parametry per šablona (název souboru / členění / imposice dnes per agenda - S–M) ·
 per-sloupcové zvýraznění řádků (`HighlightRule.TargetColumn` - model pole nese, render barví celý řádek)
 + barva textu / kurzíva pravidla
@@ -247,11 +232,9 @@ při scope té fáze, ne teď.
 
 | Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
 |---|---|
-| #7947 | linka se spojem za základní trasu → legenda „jede až do zast. X" |
+| #7947 | linka se spojem za základní trasu (0365005) → legenda „jede až do zast. X" |
 | #7955 | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí |
-| #9036 | `TimeAxisMode=Range`, HODINY_OD=22 / DO=5 → wrap přes půlnoc |
 | #13048 bod 2 | finální vizuál zmenšování textu (názvy zastávek, zóny, rezerva u šipky směru) |
-| #13048 bod 5 | vizuál variant tras + písmen u odjezdů (server hotový, viz B8) |
 
 ### Čeká na někoho jiného - postrčit, není to práce
 
@@ -265,7 +248,7 @@ při scope té fáze, ne teď.
 
 ### Reálná zbývající práce
 
-`B8` dokončení variant tras · `B9` #8828 vývěska per sloupek · `B12` #7937 per-směr / per-Tč odsazení
+`B12` #7937 per-směr / per-Tč odsazení (jen když TRANSDEV tlačí)
 
 ### Bez poptávky nebrat - chce analýzu / datový model / business rozhodnutí
 
@@ -277,7 +260,8 @@ při scope té fáze, ne teď.
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
 | TR5 | Definice cíle - střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
 
-*(#7937 = blok `B12`, #8828 = blok `B9` - detail v tabulkách vln výše.)*
+*(#7937 = blok `B12`. Follow-upy uzavřených tiketů „na vyžádání zákazníka" →
+[`customer-requirements §0.4`](customer-requirements-zastavkovy-jr.md).)*
 
 ---
 

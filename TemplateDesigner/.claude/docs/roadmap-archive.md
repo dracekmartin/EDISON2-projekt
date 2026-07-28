@@ -2,6 +2,13 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-28 ✅ - Roadmap bloky B8 + B9 uzavřeny (varianty tras + vývěska per označník)
+
+B8 (dokončení variant tras): server hotový a vizuálně ověřený 27. 7., #9036 časová osa přes půlnoc
+ověřena na 345070 (JH) a resolved 28. 7. B9 (#8828) resolved vč. titulku stránky. Zbytky přesunuty:
+MHD parita variant/označníků → roadmap „Na poptávku"; per-písmeno výběr a další follow-upy →
+customer-requirements §0.4. Pozn. o `ServerSideParams` allowlistu → `rules/cache-api.md`.
+
 ## 2026-07-28 ✅ - Stanovišťový balík UZAVŘEN: #13048 i #8828 resolved, doladění a slovník
 
 Detail → changelog 2026-07-28. Odpovědi odeslány a oba tikety **resolved 28. 7.** (KOVED #13048
