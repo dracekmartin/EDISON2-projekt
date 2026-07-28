@@ -81,48 +81,25 @@ Tři věci, které se z kódu nepoznají a jejichž porušení něco rozbije už
    (deduplikace, výkonový problém, konzistence UI…), **ne interní identifikátory / názvy tříd /
    kódové termíny**, do kterých uživatel v kódu nevidí. Konkrétní kódový detail jen když si o něj řekne.
 
-## Vývojová pipeline (agent ji jede sám z jednoho zadání)
+## Implementační úloha - pipeline
 
-Tohle je **pasivní pravidlo, ne skill k ručnímu vyvolání** - platí pro každou úlohu automaticky.
-Uživatel dodá **featuru + volitelný kontext** a dělá **prioritizační a architektonická rozhodnutí**;
-mechaniku (kód → testy → docs → wiki → commit) veze agent sám, bez čekání na dílčí pokyny.
+Konkrétní ohraničená úloha (položka roadmapy, tiket) se veze skillem **`implementuj`**: průzkum →
+testy → kód → brány → docs → commit → report. Pochopit požadavek před rozhodnutím = skill
+**`analyza`** (read-only). Nový typ elementu = skill **`novy-element`**.
 
-### Výchozí zdroj úloh - roadmapa
+Co zůstává na uživateli: **co se dělá** (priority), **architektonická rozhodnutí**, high-level
+kontext aplikace. Ne mechanika kroků.
 
-Když uživatel neurčí konkrétní úlohu, **ber práci z [`roadmap.md`](.claude/docs/roadmap.md)** (vršek = priorita) - to je výchozí vstup pro pipelinu níže:
+**Výchozí zdroj úloh** je [`roadmap.md`](.claude/docs/roadmap.md) (vršek = priorita). Když uživatel
+neurčí úlohu, vezmi nejnižší nezablokovaný blok z nejnižší nedokončené vlny, zkontroluj zónu
+a **oznam, co bereš**. Explicitní zadání od uživatele roadmapu vždy přebíjí. U velkých /
+architektonických položek se zastav a nech rozhodnutí na uživateli.
 
-- Vyber **nejbližší rozumnou položku** (respektuj pořadí, závislosti, gates R1–R7, velikost). **Oznam, co beru**, a pokračuj - neptej se na svolení u každé, ale nech prostor to přesměrovat.
-- **Explicitní zadání od uživatele vždy přebíjí** roadmapu.
-- U **velkých / architektonických** položek se zastav a nech rozhodnutí (co / jak / priorita) na uživateli - ne jen tak spustit velký track.
-- Po dokončení položky (krok 8) rovnou navrhni **další dle roadmapy** → plynulý tok bez opakování zadání.
+> ⚠️ **`roadmap.md` drž ČISTOU - jen aktivní úkoly.** Hotové (i rozhodnutí) přesuň **KOMPLETNĚ**
+> do [`roadmap-archive.md`](.claude/docs/roadmap-archive.md), nenechávej odškrtnuté „✅ hotovo"
+> řádky. Platí i pro rozhodovací tabulky.
 
-Pipeline pro každou vybranou úlohu:
-
-0. **Zadání & kontext** - ujasnit konkrétní featuru, vstřebat extra kontext od uživatele, zařadit do scope/roadmapy.
-1. **Projít kód** - přečíst relevantní existující kód a pochopit současný stav (ne psát naslepo).
-2. **Navrhnout testy** - čím se featura ověří (xUnit / Caché `%UnitTest` / ruční golden path), ideálně před implementací.
-3. **Implementovat** - dle pravidel (`.claude/rules/`, R1–R5, kód EN / komentáře CZ, CVar, MVVM). Auto-build hook hlásí chyby.
-4. **Otestovat & iterovat** - spustit testy, u UX ověřit v běžícím buildu; body 3–4 opakovat, než to vypadá dobře.
-5. **Lokální docs** - changelog vždy; roadmap (hotové → archiv, posun šipky); `CLAUDE.md` **jen když
-   se změnil invariant nebo pravidlo** - výčet featur se tam nevede.
-6. **Wiki** - jen pokud featura mění user-facing chování **a projekt má linknutý článek**: aktualizovat seed + sync (TipTap-safe, mapa seed↔UUID). Jinak přeskočit.
-7. **Commit** - Janův scope, granular, `TD -` prefix. Gating viz níže.
-8. **Další krok** - po commitu navrhnout **další logický krok v roadmapě** nebo jiný smysluplný postup.
-
-**Gating commitu (chytré):**
-- **Jednoduchá / mechanická změna, kterou nedává smysl ručně proklikat** (a testy projdou) → **commit ihned**, nečekat.
-- **Vizuální / nová / větší featura, kterou má uživatel proklikat a vyzkoušet** → **necommitovat**, ukázat
-  výsledek a **počkat na potvrzení**; teprve po potvrzení commit + krok 8.
-
-**Co zůstává na uživateli:** co se dělá (priority), architektonická rozhodnutí, high-level kontext aplikace.
-Ne mechanika kroků 1–8.
-
-> ⚠️ **`roadmap.md` drž ČISTOU - jen aktivní úkoly.** Když je něco hotové (i rozhodnutí), **přesuň
-> to KOMPLETNĚ do [`roadmap-archive.md`](.claude/docs/roadmap-archive.md)** - nenechávej to v roadmapě
-> jako odškrtnuté „✅ hotovo" řádky. V aktivní roadmapě nesmí viset starý nepořádek; zůstává jen to,
-> co se má dělat (+ krátký pointer do archivu, kde detaily jsou). Platí i pro rozhodovací tabulky.
-
-### Wiki - mapování a sync (krok 6 pipeline)
+### Wiki - mapování a sync (krok 6 skillu `implementuj`)
 
 Linkované wiki články drží **`.claude/wiki-map.json`** (allow-list). Pravidla:
 
