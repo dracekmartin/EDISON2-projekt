@@ -42,11 +42,13 @@ Po vlně 1 zůstává v zákaznické frontě jediná reálná práce (`B12`) + p
 |---|---|---|---|---|
 | **B4** | **Sdílená base pole formulářů + deklarativní `visibleWhen`** - detail a dohodnutý směr v §B4 níže. První výhra: „Velikost rohu" se skryje při ostrém rohu čistě, bez server round-tripu. | M | 2 + 3 | - |
 | **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | - |
-| **B6** | **Rozvržení `CellStyleEditor`** - dnes WrapPanel, po přidání „Řezu" se řádek zalomí uprostřed skupiny (potřebuje ~700 px, v 680px dialogu má ~450) → dvousloupcová mřížka ve stylu EDInputFormu (popisky ve sdíleném sloupci, prvky pod sebou); tri-state logika i skrývání voleb beze změny. Projít **všech 6 hostujících dialogů**. | S–M | 4 | - |
+| ~~B6~~ | **HOTOVO 28. 7.** - `CellStyleEditor` přestavěn na dvousloupcovou mřížku ve stylu EDInputFormu (jedno místo → všech 6 dialogů); tri-state/placeholdery beze změny, vizuálně ověřeno. → archiv. **Zbývá jako budoucí krok:** migrace editoru na Caché EDInputForm (součást obecné unifikace dialogů - viz Úklid „Vzhled/téma"). | - | - | - |
 | **B7** | **Výchozí šablony MHD + linková do distribuce** - mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/` (= krok 44b / C4) | S | 2 | B5 |
-| **B15** | **Viditelnost přeskočených gold/parity testů** - na serveru bez `CB_CSADAD`/`CB_DP` namespace vše tiše projde zeleně; potřebuje skip-počítadlo v sdíleném `ALVA.EDTesting.TestRunner` + výpis v `run-cache-tests.ps1` (nález revize 28. 7.) | S | 2 | - |
 | ~~B16~~ | **HOTOVO 28. 7.** - mock data náhledu se prefetchují na pozadí, render čte jen cache (konec 2-3 s freeze při první kresbě), selhání fail-soft do F5. → archiv | - | - | - |
 | ~~B17~~ | **HOTOVO 28. 7.** - `ApplyScale` škáluje font i paddingy vč. per-sloupcových/skupinových stylů a `WidthOverride`, `DataRowHeight` jednou; UI/UX výjimky zapsány do `architecture.md`. → archiv | - | - | - |
+
+> **B15 (viditelnost přeskočených testů) zrušen 28. 7.** - jen interní testy nad dev daty, situace
+> „namespace chybí" v praxi nenastává; nemá smysl kvůli tomu sahat do sdíleného `EDTesting`.
 
 **Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
 (rohy = 8 souborů) → každá další drobnost na elementech je osmkrát dražší. Čím dřív, tím víc se vrátí.
@@ -149,7 +151,9 @@ UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
 **Provozní** - `B7` výchozí šablony MHD/linková ·
 varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S, MHD SMO fáze 1)
 
-**Vzhled / téma** - `B6` rozvržení `CellStyleEditor` · **dark mode** runtime swap + ověření (M–L;
+**Vzhled / téma** - **migrace `CellStyleEditor` na Caché EDInputForm** (S–M, na poptávku; layout
+už sjednocen s EDInputFormem v B6, zbývá překlopit na Caché-driven formulář - háček tri-state /
+reaktivní logika) · **dark mode** runtime swap + ověření (M–L;
 EDThemeDark + tokenizace hotové 2026-07-13, plocha plátna už na tokenu - zbývá chrome návrháře
 (papír / pravítka / záhlaví sekcí) + rozhodnutí, jak v tmavém režimu vypadá papír) · **postupná
 unifikace dialogů** (EDInputForm + sdílený „DialogChrome"; průběžně při dotyku dialogu, ne velký

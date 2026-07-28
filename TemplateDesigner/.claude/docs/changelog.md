@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-28 - Rozvržení editoru stylu buňky (blok B6)
+
+Sdílený `CellStyleEditor` (tab Sloupce/Styl ve všech 6 tabulkových dialozích) měl řádek Font/Řez/
+Velikost/styly ve `WrapPanel`, který se v úzkém dialogu (680 px) zalomil doprostřed skupiny.
+Přestavěno na **dvousloupcovou mřížku ve stylu EDInputFormu**: popisky ve sdíleném pravém sloupci
+(`SharedSizeGroup`), prvky pod sebou; každý řádek samostatný `Grid` s vlastní viditelností (skrytá
+volba nezabere výšku, nic se vodorovně nezalomí). Tri-state logika, placeholdery zděděných hodnot
+i reset „×" beze změny. Jedno místo → spraveno všech 6 dialogů. Vizuálně ověřeno Janem.
+**Budoucí krok** (obecná unifikace dialogů): eventuální migrace samotného editoru na Caché-driven
+EDInputForm - háček je bohatá tri-state / reaktivní logika, kterou by EDInputForm musel podpořit.
+
 ## 2026-07-28 - Interní nálezy A1: mock data náhledu bez freeze + úplné škálování šablony
 
 Úklidová dávka po vydání verze (Fáze A, blok B16 + B17).

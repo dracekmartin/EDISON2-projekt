@@ -2,6 +2,14 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-28 ✅ - Rozvržení editoru stylu buňky (B6) - UZAVŘENO
+
+Detail → changelog 2026-07-28. `CellStyleEditor` (sdílený UserControl, tab Sloupce/Styl v 6
+dialozích) z rozbíjejícího se `WrapPanel` na dvousloupcovou mřížku ve stylu EDInputFormu (popisky
+ve sdíleném sloupci přes `SharedSizeGroup`, prvky pod sebou, per-řádek Visibility). Tri-state /
+placeholdery / reset beze změny, x:Name zachovány. Vizuálně ověřeno Janem. Budoucí krok (na poptávku):
+migrace na Caché EDInputForm - přesunut do Úklid „Vzhled/téma".
+
 ## 2026-07-28 ✅ - Interní nálezy A1 (B16 + B17) - UZAVŘENO
 
 Detail → changelog 2026-07-28. **B16:** mock data náhledu prefetch na pozadí + render jen z cache
