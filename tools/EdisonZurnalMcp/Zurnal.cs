@@ -23,21 +23,29 @@ internal sealed class Zurnal
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
     };
 
+    private const int VychoziTimeoutSekund = 300;
+
     private readonly string _slozkaOdpovedi;
     private readonly object _zamek = new();
+    private readonly Dictionary<string, DateTime> _cekajiciOd = new(StringComparer.Ordinal);
     private int _poradiRozhodnuti;
 
     public string BehId { get; }
     public string Soubor { get; }
+
+    /// Jak dlouho se ceka na odpoved, nez se rozhodnuti uzavre jako nezodpovezene.
+    /// Zadne volani nastroje se timhle neblokuje - timeout se vyhodnocuje mezi dotazy.
+    public int TimeoutSekund { get; }
 
     /// "auto" = rozhodnuti se jen zapisuji a bezi se dal (dnesni stav, zadne UI neposlouchá).
     /// "potvrzovat" = agent po kazdem rozhodnuti ceka na odpoved.
     /// Rezim je knoflik serveru - skilly ho neznaji a nemeni se pri prepnuti.
     public string Rezim { get; }
 
-    public Zurnal(string? slozka, string? rezim, string? behId = null)
+    public Zurnal(string? slozka, string? rezim, string? behId = null, string? timeoutSekund = null)
     {
         Rezim = rezim is "potvrzovat" ? "potvrzovat" : "auto";
+        TimeoutSekund = int.TryParse(timeoutSekund, out var t) && t > 0 ? t : VychoziTimeoutSekund;
 
         var korenSlozky = string.IsNullOrWhiteSpace(slozka)
             ? Path.Combine(Directory.GetCurrentDirectory(), ".claude", "zurnal")
@@ -79,6 +87,7 @@ internal sealed class Zurnal
         lock (_zamek)
         {
             id = $"r{++_poradiRozhodnuti}";
+            if (maCekat) _cekajiciOd[id] = DateTime.UtcNow;
         }
 
         var zaznam = ZakladniZaznam("rozhodnuti");
@@ -102,7 +111,21 @@ internal sealed class Zurnal
     public Odpoved VyzvedniOdpoved(string id)
     {
         var cesta = Path.Combine(_slozkaOdpovedi, $"{BehId}-{id}.json");
-        if (!File.Exists(cesta)) return new Odpoved("ceka", null);
+
+        if (!File.Exists(cesta))
+        {
+            // Nezname id = preklep, nebo dotaz na rozhodnuti z jineho behu. Nehlasit "nikdo
+            // neodpovedel" - to by tvrdilo, ze cekani vyprselo, i kdyz o nem nic nevime.
+            if (!JeCekajici(id)) return new Odpoved("neznameId", null, 0);
+
+            var zbyva = ZbyvaSekund(id);
+            if (zbyva > 0) return new Odpoved("ceka", null, zbyva);
+
+            // Timeout: rozhodnuti se uzavira jako nezodpovezene. Zapisuje se do zurnalu,
+            // aby otevrena volba dorazila do reportu a neztratila se tim, ze se slo dal.
+            ZapisOdpoved(id, "bezOdpovedi", null);
+            return new Odpoved("bezOdpovedi", null, 0);
+        }
 
         JsonNode? uzel;
         try
@@ -111,19 +134,40 @@ internal sealed class Zurnal
         }
         catch (JsonException)
         {
-            return new Odpoved("ceka", null);   // rozepsany soubor - priste to bude cele
+            return new Odpoved("ceka", null, ZbyvaSekund(id));   // rozepsany soubor - priste to bude cele
         }
 
         var volba = uzel?["volba"]?.GetValue<string>() ?? "pokracuj";
         var text = uzel?["text"]?.GetValue<string>();
+        ZapisOdpoved(id, volba, text);
+        return new Odpoved(volba, text, 0);
+    }
 
+    private void ZapisOdpoved(string id, string volba, string? text)
+    {
         var zaznam = ZakladniZaznam("odpoved");
         zaznam["id"] = id;
         zaznam["volba"] = volba;
         if (!string.IsNullOrWhiteSpace(text)) zaznam["text"] = text;
         Priloz(zaznam);
 
-        return new Odpoved(volba, text);
+        lock (_zamek) _cekajiciOd.Remove(id);
+    }
+
+    private bool JeCekajici(string id)
+    {
+        lock (_zamek) return _cekajiciOd.ContainsKey(id);
+    }
+
+    private int ZbyvaSekund(string id)
+    {
+        DateTime od;
+        lock (_zamek)
+        {
+            if (!_cekajiciOd.TryGetValue(id, out od)) return 0;
+        }
+        var zbyva = TimeoutSekund - (int)(DateTime.UtcNow - od).TotalSeconds;
+        return zbyva > 0 ? zbyva : 0;
     }
 
     private JsonObject ZakladniZaznam(string typ) => new()
@@ -149,5 +193,5 @@ internal sealed class Zurnal
         return ocisteny.Length == 0 ? "beh" : ocisteny;
     }
 
-    internal readonly record struct Odpoved(string Volba, string? Text);
+    internal readonly record struct Odpoved(string Volba, string? Text, int ZbyvaSekund);
 }

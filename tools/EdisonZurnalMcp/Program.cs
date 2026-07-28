@@ -24,9 +24,11 @@ internal static class Program
         _zurnal = new Zurnal(
             slozka: Environment.GetEnvironmentVariable("ZURNAL_DIR"),
             rezim: Environment.GetEnvironmentVariable("ZURNAL_REZIM"),
-            behId: Environment.GetEnvironmentVariable("ZURNAL_BEH"));
+            behId: Environment.GetEnvironmentVariable("ZURNAL_BEH"),
+            timeoutSekund: Environment.GetEnvironmentVariable("ZURNAL_TIMEOUT_S"));
 
-        Console.Error.WriteLine($"[zurnal] beh={_zurnal.BehId} rezim={_zurnal.Rezim} soubor={_zurnal.Soubor}");
+        Console.Error.WriteLine(
+            $"[zurnal] beh={_zurnal.BehId} rezim={_zurnal.Rezim} timeout={_zurnal.TimeoutSekund}s soubor={_zurnal.Soubor}");
 
         // MCP stdio transport = zpravy oddelene radky, zadne Content-Length hlavicky.
         while (await Console.In.ReadLineAsync() is { } radek)
@@ -174,9 +176,10 @@ internal static class Program
             {
                 ["name"] = "zurnal_odpoved",
                 ["description"] =
-                    "Zjisti, jestli uzivatel odpovedel na cekajici rozhodnuti. Vrati 'ceka' (zavolej znovu), "
-                    + "'pokracuj', 'poznamka: <text>' (zapracuj a pokracuj), nebo 'zrus' (zastav a nahlas stav). "
-                    + "Mezi dotazy nespam - staci obcas.",
+                    "Zjisti, jestli uzivatel odpovedel na cekajici rozhodnuti. Vrati 'ceka' se zbyvajicim casem "
+                    + "(zavolej pozdeji znovu, nespamuj), 'pokracuj', 'poznamka: <text>' (zapracuj a pokracuj), "
+                    + "'zrus' (zastav a nahlas stav), nebo 'nikdo neodpovedel' po vyprseni casu - pak pokracuj "
+                    + "svou volbou a v reportu uved, ze rozhodnuti zustalo otevrene. Cekani nikdy nevisi navek.",
                 ["inputSchema"] = new JsonObject
                 {
                     ["type"] = "object",
@@ -247,7 +250,9 @@ internal static class Program
         var odpoved = _zurnal.VyzvedniOdpoved(id);
         return odpoved.Volba switch
         {
-            "ceka" => "ceka",
+            "ceka" => $"ceka - zbyva ~{odpoved.ZbyvaSekund} s, pockej a zavolej znovu",
+            "bezOdpovedi" => "nikdo neodpovedel - pokracuj svou volbou a v reportu uved, ze rozhodnuti zustalo otevrene",
+            "neznameId" => $"nezname id '{id}' - zadne cekajici rozhodnuti s timhle id v tomto behu neni",
             "poznamka" => $"poznamka: {odpoved.Text}",
             "zrus" => "zrus",
             _ => "pokracuj",
