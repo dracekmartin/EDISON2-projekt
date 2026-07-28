@@ -1418,7 +1418,7 @@ public class DepartureGridElement : StopScheduleElementBase
 
     public override void ApplyScale(float scale)
     {
-        base.ApplyScale(scale);
+        base.ApplyScale(scale);   // DataRowHeight + Header/Data styl škáluje base
         SkupinaDnuHeaderLineHeight *= scale;
         HourColumnWidth *= scale;
         MinuteWidth *= scale;
@@ -1428,7 +1428,16 @@ public class DepartureGridElement : StopScheduleElementBase
         AnotaceInterGap *= scale;
         OdjezdGap *= scale;
         GroupSeparatorWidth *= scale;
-        if (DataRowHeight is not null) DataRowHeight *= scale;
+        // Zóny stylů mimo Header/Data (font + padding) + per-skupinové overridy + pevné šířky skupin
+        HeaderLine2Style?.ApplyScale(scale);
+        MinuteStyle.ApplyScale(scale);
+        AnotaceSymbolStyle.ApplyScale(scale);
+        AnotaceTextStyle.ApplyScale(scale);
+        foreach (var gc in GroupColumns)
+        {
+            gc.Style.ApplyScale(scale);
+            if (gc.WidthOverride is float gw) gc.WidthOverride = gw * scale;
+        }
     }
 
     // ─── Clone ──────────────────────────────────────────────────────────────

@@ -2270,6 +2270,18 @@ public class TemplateDesignerViewModel : EDViewModel
         UpdateCacheStatus(agendaCode, cacheSchema);
         LoadAgendaParameters(agendaCode);
         RebuildSchemaTree(schema);
+        _ = PrefetchMockDataAsync(agendaCode);
+    }
+
+    /// <summary>Načte mock data agendy na pozadí do cache a po dokončení překreslí náhled (aby
+    /// první vykreslení nešlo přes synchronní HTTP). Když jsou už v cache, hned se vrátí.</summary>
+    private async Task PrefetchMockDataAsync(string agendaCode)
+    {
+        if (CacheProvider is null || string.IsNullOrEmpty(agendaCode)) return;
+        if (CacheProvider.TryGetCachedMockData(agendaCode, out _)) return;   // už načteno (i negativně)
+        await Task.Run(() => CacheProvider.GetMockData(agendaCode));
+        // Náhled se mezitím nakreslil ze syntetických dat - překresli s reálnými mock daty.
+        if (State.CurrentTemplate.AgendaCode == agendaCode) RequestPreviewRefresh?.Invoke();
     }
 
     public void RebuildSchemaTree(DataSchema? schema)
@@ -2622,9 +2634,12 @@ public class TemplateDesignerViewModel : EDViewModel
             mockData = _realPreviewData[idx]?.WithCulture(culture);
         }
 
-        // Priorita 2: mock data z Caché
-        if (mockData is null && agendaCode is not null && CacheProvider is not null)
-            mockData = CacheProvider.GetMockData(agendaCode)?.WithCulture(culture);
+        // Priorita 2: mock data z Caché - JEN z cache (nikdy HTTP z kreslicí cesty). Když ještě
+        // nejsou načtená, spadne to na syntetická data ze schématu (priorita 3) a prefetch
+        // spuštěný při změně agendy je po dokončení doplní + překreslí náhled.
+        if (mockData is null && agendaCode is not null && CacheProvider is not null
+            && CacheProvider.TryGetCachedMockData(agendaCode, out var cachedMock))
+            mockData = cachedMock?.WithCulture(culture);
 
         // Priorita 3: syntetická mock data ze schématu
         if (mockData is null)

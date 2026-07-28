@@ -274,6 +274,15 @@ if (dlg.ShowDialog() == true)
 - `IsCancel="True"` na tlačítku Storno zavírá dialog automaticky (DialogResult=false) - nepotřebuje handler
 - `ColumnVM`/`RowVM` a podobné pomocné ViewModely patří do souboru `*ViewModel.cs`, **ne** do code-behind
 
+**Vědomé výjimky z pravidla „žádné `Click=`" (evidence, revize 2026-07-28):**
+- **6 EDInputForm dialogů** (element edit) má OK přes `Click=` - potřebují nejdřív zavolat
+  `GeneralForm.Save()` (commit polí formuláře) a teprve pak zavřít; `Command` binding by pořadí
+  neuhlídal. Vědomé, nechává se.
+- **`TableEditorDialog` má 5 tabů** (limit `ux-conventions §1` je 3). TableElement je **uspaný**
+  element (paleta ho nenabízí) → řeší se až u jeho oživení (Fáze B), teď „neřešit".
+- **~59 `Click=` v `MainWindow` menu/toolbaru** - migrovat na `Command` **postupně při dotyku**
+  daného handleru, ne velký refaktor. Nová okna/dialogy standard dodržují.
+
 ---
 
 ### Callback pattern: ViewModel → View

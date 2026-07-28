@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-28 - Interní nálezy A1: mock data náhledu bez freeze + úplné škálování šablony
+
+Úklidová dávka po vydání verze (Fáze A, blok B16 + B17).
+
+- **B16 - mock data náhledu nezamrzají UI.** Kreslicí cesta náhledu volala `GetMockData`
+  **synchronně** (cold-start Caché 2-3 s = freeze při prvním vykreslení) a neúspěch se necachoval
+  (→ nový HTTP pokus při každém překreslení). Nově: render čte **jen z cache**
+  (`TryGetCachedMockData`), data se **prefetchují na pozadí** při změně agendy
+  (`RefreshFieldsListCore` → `PrefetchMockDataAsync`) a po dosednutí překreslí náhled; do doby
+  načtení se ukáží syntetická data ze schématu. Selhání/prázdno se **cachuje** (fail-soft),
+  čistí ho „Obnovit data" (F5).
+- **B17 - úplné škálování šablony (`ApplyScale`).** Nový `TextStyle.ApplyScale` (font v pt +
+  paddingy v mm; `LineSpacing` bezrozměrný → NE) použit všude. Opraveno: schedule elementy
+  škálovaly jen `FontSize`, ne paddingy; `DataRowHeight` se u LineTable/StopList/DepartureGrid
+  neškáloval (nebo dvakrát - přesunuto do `ScheduleElementBase`, jednou); **per-sloupcové**
+  (`ColumnVisualStyle`/`TableColumn`) a **per-skupinové** styly + `WidthOverride` skupin dnů +
+  Fixed buňky `TableElement` + element-level styly Table/DynamicTable se dřív neškálovaly vůbec.
+  Procentní šířky sloupců se (správně) neškálují.
+- **Kodifikace UI/UX výjimek** do `architecture.md` (OK přes `Click=` v 6 EDInputForm dialozích
+  kvůli `GeneralForm.Save()`, 5 tabů TableEditoru = uspaný element, ~59 `Click=` v MainWindow
+  = postupná migrace při dotyku).
+- Testy: `ApplyScaleTests` (4 - font+padding, per-sloupec/skupina, DataRowHeight jednou, % beze
+  změny, LineSpacing beze změny). .NET 409/409.
+
 ## 2026-07-28 - Parita voleb legendy + nápovědy parametrů variant (do verze)
 
 Dvě malé věci na přání Jana před publishem:

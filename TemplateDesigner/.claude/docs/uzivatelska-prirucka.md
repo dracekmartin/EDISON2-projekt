@@ -170,8 +170,8 @@ Tlačítko `+ Přidat sekci` nabízí presety:
 
 ### Vlastnosti sekce (dialog)
 Pole v dialogu vlastností sekce: **Název**, **Výška** (mm), **Tisk**, **Umístění**, **Přetečení**,
-**Rámeček**, **Barva rámečku**, **Tloušťka rámečku**, **Viditelnost**. Volby v rozbalovacích
-seznamech:
+**Rámeček**, **Barva rámečku**, **Tloušťka rámečku**, **Podmínka viditelnosti**. Volby
+v rozbalovacích seznamech:
 
 - **Tisk**: Jednou · Každá stránka · Jen první · Jen poslední · Kromě první
 - **Umístění**: Obsah · Hlavička · Patička (patičky se umisťují od spodního okraje stránky)
@@ -255,8 +255,8 @@ Tři nezávislé vrstvy, ovládané z lišty nástrojů:
 ho aplikuje na vybrané prvky.
 
 ### Hromadné úpravy
-Výběr více prvků + **Enter** otevře dialog společných vlastností: Barva rámečku, Šířka rámečku,
-Pořadí vrstvy (ZIndex), Zamčeno - změna se aplikuje na všechny vybrané najednou.
+Výběr více prvků + **Enter** otevře dialog společných vlastností: Barva rámečku, Tloušťka rámečku,
+Pořadí vrstvy (ZIndex), Uzamčeno - změna se aplikuje na všechny vybrané najednou.
 
 ### Normalizace pozic
 **Ctrl+Shift+N** - dialog s volbou kroku zaokrouhlení (0,1 / 0,5 / 1 / 2 / 5 mm) a živým náhledem
@@ -287,6 +287,11 @@ výchozí písmo.
 ### Rámeček a pozadí
 Každý prvek může mít rámeček (barva + tloušťka) a barvu pozadí. Když dva prvky sdílejí hranu,
 vykreslí se jako **jeden** společný rámeček, ne zdvojeně.
+
+### Automatické zmenšení textu do buňky
+Když se text nevejde do šířky buňky tabulky (dlouhý název zastávky, výčet zón…), písmo se v té
+buňce automaticky zmenší tak, aby se vešlo - obdoba funkce „přizpůsobit buňce" v Excelu. Je to
+vestavěné chování napříč tabulkovými prvky, nemusíte nic zapínat.
 
 ### Kaskáda stylů u tabulkových prvků
 U tabulek a specializovaných prvků jízdního řádu funguje **kaskáda stylů**: nejčastěji měněné
@@ -339,7 +344,7 @@ automaticky přizpůsobí** počtu řádků, takže se text vždy vejde. Funguje
 i v záhlaví a buňkách tabulek a specializovaných prvků jízdního řádu.
 
 ### Podmíněná viditelnost
-Prvek nebo sekci lze zobrazit jen za podmínky - pole **Podmíněná viditelnost**, např.:
+Prvek nebo sekci lze zobrazit jen za podmínky - pole **Podmínka viditelnosti**, např.:
 - `{POCET} > 0` - zobrazit jen když je počet kladný,
 - `{PAGE} > 1` - jen od druhé stránky.
 
@@ -534,14 +539,29 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
   automatické volby: Automaticky (dle linky) / Pracovní-Sobota-Neděle+svátky /
   Pracovní-víkend / Prázdniny (mimo+o prázdninách)-víkend / Prázdniny (mimo+o prázdninách)
   -Sobota-Neděle+svátky.
-- **Multi-varianta časů jízdy** (přepínač „Všechny varianty tras" na prvku Tabulka zastávek) -
-  když různé spoje jedou z dané zastávky s odlišnou dobou jízdy do cíle, zapnutím se zobrazí
-  dynamicky tolik sloupců, kolik je skutečně variant v datech (ne fixní počet). Vypnuto = jeden
-  sloupec se základní trasou.
+- **Varianty tras** (přepínač „Všechny varianty tras" na prvku Tabulka zastávek) - když spoje
+  jedou z dané zastávky různými trasami, zobrazí se pro každou trasu vlastní časový sloupec.
+  Varianta = jedna trasa (sled obsluhovaných zastávek); v jejím sloupci je **nejdelší jízdní doba
+  přes spoje té varianty** (bezpečný údaj „dojede nejpozději za…"). Počet sloupců je dynamický -
+  tolik, kolik je skutečně tras v datech. Vypnuto = jeden sloupec základní trasy. Řazení a písmenné
+  označení variant se nastavuje parametry sestavy (viz níže).
 - **CIS názvy** - alternativní, zkrácený název zastávky/směru z centrálního číselníku (CIS) vedle
   plného lokálního názvu.
 - **Dopravce vč. adresy** - pokud pro dopravce není nastavený zkrácený název, vypíše se plný tvar
   „obchodní název, sídlo provozovny, tel: číslo".
+- **Varianty tras - parametry sestavy** (skupina „Seznam zastávek"):
+  - **Řazení variant tras** - *Dle četnosti ze zastávky* (výchozí; nejčastější trasa z dané
+    zastávky je vždy první) nebo *Stabilní (pořadí spojů)* (stejné pořadí sloupců napříč stránkami).
+  - **Písmena variant u odjezdů** - varianty se označí písmeny A-Z v záhlaví sloupců a totéž
+    písmeno se vytiskne u minut odjezdů; podle písmena tak dohledáte, kterou trasou spoj jede.
+    Zapnutím se **nahradí automatické poznámkování rozdílů tras** (aby na vývěsce nebyly dvě sady
+    písmen). Výchozí vypnuto.
+  - **První varianta bez písmene** (jen když jsou písmena zapnutá) - nejčastější trasa zůstane
+    bez písmene, odchylky se značí od A. Vypnuto = písmenkuje se už od první varianty.
+- **Samostatná stránka pro každý označník** (parametr „Seznam zastávek") - zastávka obsluhovaná
+  z více označníků se vytiskne jako **samostatná vývěska pro každý označník**, vždy jen s odjezdy
+  spojů, které z daného sloupku jedou; číslo označníku je i v titulku stránky. Hodí se, když
+  vývěsku fyzicky věšíte na konkrétní sloupek. Výchozí vypnuto (jedna vývěska se všemi odjezdy).
 - Doplňkové tiskové parametry: **„V rozsahu nepoznámkovat schovat"** (Ruční komentáře /
   Automatické rozdíly tras / Obojí) a **„Skrýt souhrn 'všechny spoje bezbariérové'"**.
 
@@ -554,17 +574,19 @@ Mezi agendami se přepíná stejně jako mezi jakýmikoli jinými - `Nástroje �
 Levý sloupec sestavy - seznam zastávek s časy a atributy.
 
 - **Upravit sloupce…** - otevře editor sloupců (kap. 3)
-- **Všechny varianty tras** - zap. = víc časových sloupců podle skutečných variant tras (jen AD); vyp. = jeden sloupec základní trasy
+- **Všechny varianty tras** - zap. = víc časových sloupců podle skutečných variant tras (jen AD; viz „Varianty tras" níže); vyp. = jeden sloupec základní trasy
 - **Oddělovací čáry** - vodorovné čáry mezi řádky zastávek
 - **Odsazení** - odsadí název zastávky mezerami podle jejího odsazení v trase (vizuální hierarchie)
-- **Sloupec Nástupiště** - volitelný sloupec s číslem nástupiště/stanoviště (zapíná se v editoru sloupců; tiskne se jen tam, kde jsou data vyplněná)
+- **Sloupec Označník** - volitelný sloupec s číslem označníku (sloupku, ze kterého spoj odjíždí); zapíná se v editoru sloupců, tiskne se jen tam, kde jsou data vyplněná
+- **Více označníků** - jak sloupec Označník naloží se zastávkou, ze které různé spoje odjíždějí z různých sloupků: **Z trasy linky** (výchozí, číslo z trasy) / **Nejčetnější dle spojů** / **Výčet všech** (např. „2, 3") / **Řádek pro každý označník** (zastávku vypíše jako víc řádků, jeden na každý sloupek, s časy jen variant, které z něj jedou)
 - **Na znamení + Symbol na znamení** - zobrazí značku „na znamení" u zastávky a definuje, jaký znak se použije (výchozí „×")
 - **Atributy** - zobrazí atributy zastávky vedle názvu
+- **Přestupy (vlak/autobus)** - zobrazí u zastávky symbol přestupu na vlak („L") / autobus („A"); výchozí vypnuto
 - **Poznámky zastávky** - zobrazí poznámkové značky u zastávky
 - **Pozice značek** - Za zastávkou (výchozí) / Před zastávkou
 - **Šipka směru + Pozice šipky + Barva šipky + Tučná šipka** - grafická šipka ukazující směr jízdy od aktuální zastávky dál po trase
 - **Záhlaví sloupců** - zap/vyp řádek záhlaví
-- **Podtržení aktuální / Tučně aktuální / Font aktuální (pt) / Pozadí aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku)
+- **Podtržení aktuální / Tučně aktuální / Velikost aktuální / Pozadí aktuální** - zvýraznění řádku aktuální zastávky (vlastní velikost písma, podbarvení přes celou šířku)
 - **Projeté zastávky + Barva projetých** - zda tisknout i zastávky, které vozidlo od aktuální zastávky již projelo (ztlumeně)
 
 #### Mřížka odjezdů
@@ -588,7 +610,7 @@ Vysvětlivky pod mřížkou.
 - **Oddělovač** - text mezi značkou a popisem (výchozí „ - ")
 - **Velikost písma pozn. / Výška řádku** - typografie legendy
 - **Počet sloupců (1–4) + Směr plnění** - „Po sloupcích" (jako noviny) nebo „Po řádcích"
-- **Řazení** - Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně
+- **Řazení** - Dle typu (značky → atributy → text; výchozí) / Výchozí (pořadí z dat) / Délka vzestupně / Délka sestupně
 - **Šířka buňky značky** - pevná šířka sloupce se značkou, aby byly texty svisle zarovnané (0 = značka inline před textem)
 - **Negativní značky / Speciální znaky / Textové poznámky** - přepínače, které typy poznámek se v legendě vůbec zobrazí
 - **NZ pozadí / NZ barva** - barvy invertovaného boxu u negativních značek
@@ -649,13 +671,19 @@ Generují se dynamicky podle zvolené agendy. Společné pro obě agendy:
 
 - **Tisknout šipky směru**, **Tisknout projeté zastávky**
 - **Časová osa odjezdů** (Jen hodiny s odjezdy / Souvislá od první do poslední / Vlastní rozsah +
-  Hodiny od/do)
+  Hodiny od/do). Vlastní rozsah **umí přejít přes půlnoc**: nastavíte-li např. od 22 do 5, osa
+  jde 22, 23, 0, 1…5. Pro celodenní linku s nočními spoji zvolte např. od 4 do 0 - osa končí
+  řádkem 0 za třiadvacátou hodinou, takže půlnoční odjezdy jsou na konci provozního dne a nic
+  z denního provozu se neztratí.
 - **Roztáhnout na výšku**
 
-Navíc jen u AD: **Rozdělení sloupců (typy provozu)**, **V rozsahu nepoznámkovat schovat**,
-**Skrýt souhrn „všechny spoje bezbariérové"** (viz kap. 1) a **Souhrn „všechny zastávky na
-znamení"** - místo značky × u každé zastávky jeden souhrnný řádek v legendě (má smysl na
-linkách, kde jsou na znamení všechny zastávky).
+Navíc jen u AD: **Rozdělení sloupců (typy provozu)**, **Řazení variant tras**, **Písmena variant
+u odjezdů** (+ **První varianta bez písmene**), **Samostatná stránka pro každý označník** (vše
+viz kap. 1), **V rozsahu nepoznámkovat schovat**, **Skrýt souhrn „všechny spoje bezbariérové"**
+a **Souhrn „všechny zastávky na znamení"** - místo značky × u každé zastávky jeden souhrnný řádek
+v legendě (má smysl na linkách, kde jsou na znamení všechny zastávky).
+
+Většina parametrů má u sebe **nápovědu** (bublinu s vysvětlením), co přesně dělá.
 
 #### Export - členění a pojmenování
 Tato pole se nastavují jen v tiskovém dialogu (nejsou to parametry sestavy, takže nejsou

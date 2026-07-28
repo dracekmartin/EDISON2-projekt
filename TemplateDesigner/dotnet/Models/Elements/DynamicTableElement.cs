@@ -526,8 +526,9 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         base.ApplyScale(scale);
         RowHeight *= scale;
         HeaderHeight *= scale;
-        foreach (var col in Columns)
-            if (col.WidthMode == ColumnWidthMode.Mm) col.Width *= scale;
+        HeaderStyle?.ApplyScale(scale);   // element-level font/padding (dřív se neškálovalo)
+        DataStyle?.ApplyScale(scale);
+        foreach (var col in Columns) col.ApplyScale(scale);   // šířka mm + per-sloupcové styly
     }
 
     // ─── Clone ───────────────────────────────────────────────────────

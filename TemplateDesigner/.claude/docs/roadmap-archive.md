@@ -2,6 +2,16 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-28 ✅ - Interní nálezy A1 (B16 + B17) - UZAVŘENO
+
+Detail → changelog 2026-07-28. **B16:** mock data náhledu prefetch na pozadí + render jen z cache
+(`TryGetCachedMockData`/`PrefetchMockDataAsync`), konec 2-3 s freeze při první kresbě, selhání
+fail-soft do F5. **B17:** `TextStyle.ApplyScale` (font+padding, ne LineSpacing) použit všude -
+schedule/table/dynamic elementy nově škálují paddingy, per-sloupcové/skupinové styly, `WidthOverride`,
+Fixed buňky; `DataRowHeight` přesunut do `ScheduleElementBase` (jednou, ne dvakrát); procenta se
+neškálují. UI/UX výjimky (`Click=`, 5 tabů TableEditoru) zapsány do `architecture.md`. Testy
+`ApplyScaleTests` (4), .NET 409/409.
+
 ## 2026-07-28 ✅ - Roadmap bloky B8 + B9 uzavřeny (varianty tras + vývěska per označník)
 
 B8 (dokončení variant tras): server hotový a vizuálně ověřený 27. 7., #9036 časová osa přes půlnoc

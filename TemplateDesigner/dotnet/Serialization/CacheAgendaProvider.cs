@@ -520,8 +520,25 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
     // ─── Mock data pro preview ────────────────────────────────────────────────
 
     /// <summary>
-    /// Volá GetMockData na Caché třídě a vrátí DataContext pro live preview.
-    /// Null = metoda není dostupná nebo selžala.
+    /// Cache-only lookup mock dat - NEvolá HTTP. Kreslicí cesta náhledu musí číst jen odtud,
+    /// aby první vykreslení nezablokovalo UI (GetMockData je synchronní, cold-start 2-3 s).
+    /// Vrací true = agenda už byla načtena (hodnota může být null = prázdno/selhání), false =
+    /// ještě nenačteno (volající pak sáhne po syntetických mock datech ze schématu a spustí prefetch).
+    /// GENERAL / agenda bez Caché třídy = trvale bez mock dat → true + null.
+    /// </summary>
+    public bool TryGetCachedMockData(string agendaCode, out DataContext? data)
+    {
+        data = null;
+        if (string.IsNullOrEmpty(agendaCode)) return true;
+        if (!_classMap.TryGetValue(agendaCode, out var cacheClass) || string.IsNullOrWhiteSpace(cacheClass))
+            return true;
+        return _mockDataCache.TryGetValue(agendaCode, out data);
+    }
+
+    /// <summary>
+    /// Volá GetMockData na Caché třídě a naplní cache (i negativně). SYNCHRONNÍ HTTP - volat jen
+    /// z pozadí (prefetch při změně agendy), NE z kreslicí cesty. Null = bez mock dat.
+    /// Selhání/prázdno se cachuje také (fail-soft) - čistí ho až „Obnovit data" (InvalidateCaches).
     /// </summary>
     public DataContext? GetMockData(string agendaCode)
     {
@@ -535,19 +552,18 @@ public class CacheAgendaProvider : IDataSchemaProvider, ITableTemplateProvider
         try
         {
             CVar result = _mlRest.Query(cacheClass, "GetMockData", new CVar());
-            if (_mlRest.RestStatus.State == MLRStatus.EState.Error) { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); return null; }
+            if (_mlRest.RestStatus.State == MLRStatus.EState.Error)
+            { NotifyReadError("načtení mock dat", _mlRest.RestStatus.Message); _mockDataCache[agendaCode] = null; return null; }
 
             string? json = result["1"]?.Value?.ToString();
-            if (string.IsNullOrEmpty(json)) return null;
-
-            var data = ParseMockData(json);
-            if (data is not null)
-                _mockDataCache[agendaCode] = data;  // necachovat null - příští pokus zkusí znovu
+            var data = string.IsNullOrEmpty(json) ? null : ParseMockData(json);
+            _mockDataCache[agendaCode] = data;   // cachovat i null - jinak render/prefetch tluče HTTP per pokus
             return data;
         }
         catch (Exception ex)
         {
             NotifyReadError("načtení mock dat", ex.Message);
+            _mockDataCache[agendaCode] = null;
             return null;
         }
     }

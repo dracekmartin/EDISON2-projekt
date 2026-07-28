@@ -154,6 +154,13 @@ public class ColumnVisualStyle
         Data = Data?.Clone()
     };
 
+    /// <summary>Naškáluje rozměry per-sloupcových stylů (font/padding) při škálování šablony.</summary>
+    public void ApplyScale(float scale)
+    {
+        Header?.ApplyScale(scale);
+        Data?.ApplyScale(scale);
+    }
+
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty => (Header is null || Header.IsEmpty) && (Data is null || Data.IsEmpty);
 }

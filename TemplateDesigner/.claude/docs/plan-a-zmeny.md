@@ -38,4 +38,14 @@ Dílčí vylepšení a náměty.
 
 ## Novinky
 
-První vydání. Novinky z dalších verzí budeme přidávat sem.
+### 28. 7. 2026 - Zastávkové jízdní řády
+
+- **Označníky** - nový sloupec **Označník** v seznamu zastávek a volba **Více označníků** pro
+  zastávky obsluhované z více sloupků (číslo z trasy / nejčetnější / výčet / řádek pro každý
+  označník). Nově lze vytisknout i **samostatnou vývěsku pro každý označník**.
+- **Přehlednější varianty tras** - časové sloupce se sdružují podle trasy (méně sloupců), u každé
+  varianty se uvádí nejdelší jízdní doba. Varianty lze **označit písmeny A-Z** u odjezdů.
+- **Přestupy na vlak a autobus** - volitelný symbol přestupu u zastávky.
+- **Časová osa přes půlnoc** - vlastní rozsah hodin umí přejít přes půlnoc (noční linky).
+- **Automatické zmenšení textu do buňky** - dlouhý text se sám zmenší, aby se vešel.
+- Sjednocení názvosloví a doplnění nápověd k parametrům tisku.

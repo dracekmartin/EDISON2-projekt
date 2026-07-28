@@ -65,6 +65,14 @@ public class TableColumn
         HeaderStyle = HeaderStyle?.Clone(),
         DataStyle   = DataStyle?.Clone(),
     };
+
+    /// <summary>Naškáluje šířku (jen v mm, ne %) a per-sloupcové styly (font/padding).</summary>
+    public void ApplyScale(float scale)
+    {
+        if (WidthMode == ColumnWidthMode.Mm) Width *= scale;
+        HeaderStyle?.ApplyScale(scale);
+        DataStyle?.ApplyScale(scale);
+    }
 }
 
 // ─── TableRow / TableCell (Fixed mód) ────────────────────────────────────────
@@ -689,8 +697,12 @@ public class TableElement : TemplateElement
         base.ApplyScale(scale);
         RowHeight *= scale;
         HeaderHeight *= scale;
-        foreach (var col in Columns)
-            if (col.WidthMode == ColumnWidthMode.Mm) col.Width *= scale;
+        HeaderStyle?.ApplyScale(scale);   // element-level font/padding (dřív se neškálovalo)
+        DataStyle?.ApplyScale(scale);
+        foreach (var col in Columns) col.ApplyScale(scale);   // šířka mm + per-sloupcové styly
+        // Fixed mód: per-buňkové styly v řádcích i souhrnech
+        foreach (var cell in (Rows ?? []).Concat(SummaryRows ?? []).SelectMany(r => r.Cells))
+            cell.Style?.ApplyScale(scale);
     }
 
     // ─── Clone ───────────────────────────────────────────────────────

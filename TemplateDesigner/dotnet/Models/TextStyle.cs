@@ -91,6 +91,18 @@ public class TextStyle
 
     public TextStyle Clone() => (TextStyle)MemberwiseClone();
 
+    /// <summary>Proporcionálně naškáluje rozměrové hodnoty (velikost písma v pt, paddingy v mm)
+    /// při škálování celé šablony. LineSpacing je bezrozměrný násobek → NEŠKÁLUJE se (stejně jako
+    /// na base elementu). Volat na každém stylu prvku i per-sloupcových overridech.</summary>
+    public void ApplyScale(float scale)
+    {
+        if (FontSize is not null)      FontSize      *= scale;
+        if (PaddingTop is not null)    PaddingTop    *= scale;
+        if (PaddingRight is not null)  PaddingRight  *= scale;
+        if (PaddingBottom is not null) PaddingBottom *= scale;
+        if (PaddingLeft is not null)   PaddingLeft   *= scale;
+    }
+
     /// <summary>Vytvoří TextStyle s výchozími hodnotami pro hlavní text elementu.
     /// FontFamily záměrně null → nový text dědí výchozí font šablony (DocumentDefaults), fallback Arial.</summary>
     public static TextStyle CreateDefault() => new()

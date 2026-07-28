@@ -540,9 +540,12 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
 
     public override void ApplyScale(float scale)
     {
-        base.ApplyScale(scale);
+        base.ApplyScale(scale);   // DataRowHeight + Header/Data styl škáluje base
         foreach (var c in Columns)
+        {
             if (c.Width is float w) c.Width = w * scale;
+            c.Style?.ApplyScale(scale);   // per-sloupcové font/padding overridy
+        }
     }
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>

@@ -240,8 +240,9 @@ public abstract class ScheduleElementBase : TemplateElement
     public override void ApplyScale(float scale)
     {
         base.ApplyScale(scale);
-        if (DataStyle.FontSize is not null) DataStyle.FontSize *= scale;
-        if (HeaderStyle.FontSize is not null) HeaderStyle.FontSize *= scale;
+        DataStyle.ApplyScale(scale);     // FontSize + paddingy (dřív jen FontSize)
+        HeaderStyle.ApplyScale(scale);
+        if (DataRowHeight is not null) DataRowHeight *= scale;   // dřív se neškálovalo (LineTable/StopList/DepartureGrid)
     }
 
     // ─── Společné property descriptory ──────────────────────────────────────

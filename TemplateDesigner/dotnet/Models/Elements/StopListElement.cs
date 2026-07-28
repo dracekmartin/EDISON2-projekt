@@ -982,11 +982,13 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     public override void ApplyScale(float scale)
     {
-        base.ApplyScale(scale);
-        if (DataRowHeight is not null) DataRowHeight *= scale;
+        base.ApplyScale(scale);   // DataRowHeight + Header/Data styl (font+padding) škáluje base
         if (CurrentStopFontSize is not null) CurrentStopFontSize *= scale;
         foreach (var col in Columns)
+        {
             if (col.Width is float w) col.Width = w * scale;   // auto (null) se neškáluje
+            col.Style?.ApplyScale(scale);                       // per-sloupcové font/padding overridy
+        }
     }
 
     // ─── Clone ──────────────────────────────────────────────────────────────
