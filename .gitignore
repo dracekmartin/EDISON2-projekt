@@ -260,6 +260,7 @@ ModelManifest.xml
 **/.claude/last-audit.json
 **/.claude/worktrees/
 **/.claude/agent.log
+**/.claude/zurnal/
 
 # Nodes - Package.json
 **/scripts/package.json
