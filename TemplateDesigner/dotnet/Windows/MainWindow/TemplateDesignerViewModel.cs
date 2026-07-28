@@ -1704,7 +1704,7 @@ public class TemplateDesignerViewModel : EDViewModel
                 commands.Add(new SetPropertyCommand("Barva rámečku", el.BorderColor, clip.BorderColor,
                     v => { el.BorderColor = (string)v!; }));
             if (MathF.Abs(el.BorderWidth - clip.BorderWidth) > 0.001f)
-                commands.Add(new SetPropertyCommand("Šířka rámečku", el.BorderWidth, clip.BorderWidth,
+                commands.Add(new SetPropertyCommand("Tloušťka rámečku", el.BorderWidth, clip.BorderWidth,
                     v => { el.BorderWidth = (float)v!; }));
             if (el.BackgroundColor != clip.BackgroundColor)
                 commands.Add(new SetPropertyCommand("Barva pozadí", el.BackgroundColor, clip.BackgroundColor,

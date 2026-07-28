@@ -95,6 +95,65 @@ ClassMethod Scan(ByRef sys As %String) As %Status
     ret $$$OK
 }
 
+/// Read-only sken NOČNÍCH linek (#9036 — časová osa přes půlnoc): projde všechny linky namespace
+/// a spočítá spoje s výchozím odjezdem 22:00–04:59. OUT = top řádky „sku~lin~nocnich=N~ukazky=HH:MM,…"
+/// seřazené dle počtu nočních spojů. Pro výběr testovací linky, nic nemění.
+ClassMethod ScanNocni(ByRef sys As %String) As %Status
+{
+    s err = ""
+    try {
+        $$$FillParams
+        s limit = +$g(^||ML("IN","LIMIT"))
+        i 'limit s limit = 10
+
+        k vysledky
+        s sku = ""
+        f {
+            s sku = $o(^[dataDB]JRL(sku))
+            q:sku=""
+            i 'sku continue
+            s lin = ""
+            f {
+                s lin = $o(^[dataDB]JRL(sku,lin))
+                q:lin=""
+                i '$d(^[dataDB]JRL(sku,lin,"I")) continue
+                s nocnich = 0, ukazky = ""
+                f smer = "T", "Z" {
+                    s sp = ""
+                    f {
+                        s sp = $o(^[dataDB]JRL(sku,lin,smer,sp))
+                        q:sp=""
+                        i '$isvalidnum(sp) continue
+                        s odjezd = +$p($p($g(^[dataDB]JRL(sku,lin,smer,sp)),"#",1),":",4)
+                        s hodina = (odjezd\60)#24
+                        i (hodina >= 22) || (hodina < 5) {
+                            s nocnich = nocnich + 1
+                            i $l(ukazky,",") <= 4 s ukazky = ukazky_$s(ukazky="":"",1:",")_hodina_":"_$e("0"_(odjezd#60),*-1,*)
+                        }
+                    }
+                }
+                i nocnich s vysledky(-nocnich, sku_"~"_lin) = ukazky
+            }
+        }
+        s radku = 0, nKey = ""
+        f {
+            s nKey = $o(vysledky(nKey))
+            q:nKey=""
+            s linKey = ""
+            f {
+                s linKey = $o(vysledky(nKey,linKey))
+                q:linKey=""
+                s ^||ML("OUT",$i(^||ML("OUT"))) = linKey_"~nocnich="_(-nKey)_"~ukazky="_vysledky(nKey,linKey)
+                s radku = radku + 1
+                q:radku>=limit
+            }
+            q:radku>=limit
+        }
+        i 'radku s ^||ML("OUT","1") = "zadna nocni linka v namespace"
+    } catch (ex) { $$$CatchErrRest }
+    ret $$$OK
+}
+
 /// Zavolá OSTROU BuildStrankaZastavky pro jednu zastávku a shrne variantní výstup: hlavičky
 /// sloupců (VARIANTY_TRAS), TRASA_MIN vývěskové zastávky a rozpad anotací u minut dle kategorie.
 /// Parametry tisku (PISMENA_VARIANT / PRVNI_BEZ_PISMENE / RAZENI_VARIANT) čte engine přímo
@@ -146,6 +205,35 @@ ClassMethod Stranka(ByRef sys As %String) As %Status
             s ^||ML("OUT","ANOTACE_KATEGORIE") = katCsv
             s ^||ML("OUT","PISMENA_UKAZKA") = pismenaUkazka
             s ^||ML("OUT","POCET_ODJEZDU") = odj.%Size()
+            // časy odjezdů stránky (h:mm, v pořadí emise) — diagnostika časové osy (#9036 noční spoje)
+            s casyCsv = ""
+            f io=0:1:odj.%Size()-1 {
+                s oOdj = odj.%Get(io)
+                i $l(casyCsv) < 400 s casyCsv = casyCsv_$s(casyCsv="":"",1:",")_oOdj.%Get("HODINA")_":"_$e("0"_oOdj.%Get("MINUTA"),*-1,*)
+            }
+            s ^||ML("OUT","ODJEZDY_CASY") = casyCsv
+            // rozpad per sloupec dnů (seřazeno dle času) — skutečný provozní obraz stránky
+            s skup = page.rows.%Get("SKUPINY_DNU")
+            f isk=0:1:skup.%Size()-1 {
+                s skId = skup.%Get(isk).%Get("ID")
+                k dleCasu
+                f io=0:1:odj.%Size()-1 {
+                    s oOdj = odj.%Get(io)
+                    i oOdj.%Get("SKUPINA_DNU_ID") '= skId continue
+                    s klicMin = (oOdj.%Get("HODINA")*60) + oOdj.%Get("MINUTA")
+                    s dleCasu(klicMin, io) = oOdj.%Get("HODINA")_":"_$e("0"_oOdj.%Get("MINUTA"),*-1,*)
+                }
+                s radek = "", km = ""
+                f {
+                    s km = $o(dleCasu(km))  q:km=""
+                    s io2 = ""
+                    f {
+                        s io2 = $o(dleCasu(km,io2))  q:io2=""
+                        i $l(radek) < 400 s radek = radek_$s(radek="":"",1:",")_dleCasu(km,io2)
+                    }
+                }
+                s ^||ML("OUT","SLOUPEC_"_skId) = skup.%Get(isk).%Get("NADPIS")_": "_radek
+            }
             s ^||ML("OUT","POCET_POZNAMEK") = page.rows.%Get("POZNAMKY").%Size()
             // Kandidáti duplikace řádku: zastávky s ≥2 různými označníky mezi variantami stránky
             // (přesně podmínka klientského ExpandPlatformRows). Prázdné = na stránce se nic nerozpadne.

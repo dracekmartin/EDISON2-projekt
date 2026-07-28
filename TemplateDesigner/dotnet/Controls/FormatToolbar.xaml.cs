@@ -45,7 +45,7 @@ public partial class FormatToolbar : UserControl
                             case "Tučné":       _bold          = b; break;
                             case "Kurzíva":     _italic        = b; break;
                             case "Podtržení":   _underline     = b; break;
-                            case "Přeškrtnuté": _strikethrough = b; break;
+                            case "Přeškrtnutí": _strikethrough = b; break;
                         }
                     else if (d is EnumPropertyDescriptor e && e.Group == "Zarovnání")
                         switch (e.Label)

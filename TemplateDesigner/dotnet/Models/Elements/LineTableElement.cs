@@ -548,7 +548,7 @@ public class LineTableElement : ScheduleElementBase, IRowHighlightable
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
     [
         new BoolPropertyDescriptor { Label = "Řádek platnosti", Group = "Řádky", Get = () => ShowPlatnostRow, Set = v => ShowPlatnostRow = v },
-        new BoolPropertyDescriptor { Label = "Řádek NZ", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
+        new BoolPropertyDescriptor { Label = "Řádek negativních značek", Group = "Řádky", Get = () => ShowNzRow, Set = v => ShowNzRow = v },
         new BoolPropertyDescriptor { Label = "Přípojné řádky", Group = "Řádky", Get = () => ShowPripojeRows, Set = v => ShowPripojeRows = v },
         new BoolPropertyDescriptor { Label = "Nadpisy skupin dnů", Group = "Řádky", Get = () => ShowGroupHeaders, Set = v => ShowGroupHeaders = v },
         new BoolPropertyDescriptor { Label = "Podbarvit lichá Tč", Group = "Vzhled", Get = () => HighlightOddTc, Set = v => HighlightOddTc = v },

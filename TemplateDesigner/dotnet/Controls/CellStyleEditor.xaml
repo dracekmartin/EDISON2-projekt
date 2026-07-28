@@ -108,7 +108,7 @@
 
             <StackPanel Orientation="Horizontal" Margin="0,0,6,0" VerticalAlignment="Center"
                         Visibility="{Binding EditOptions.AllowUnderline, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                <CheckBox Content="Podtržené" VerticalAlignment="Center"
+                <CheckBox Content="Podtržení" VerticalAlignment="Center"
                           IsChecked="{Binding EffectiveUnderline, UpdateSourceTrigger=PropertyChanged}"/>
                 <Button Style="{StaticResource ResetButton}"
                         CommandParameter="Underline"
@@ -117,7 +117,7 @@
 
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center"
                         Visibility="{Binding EditOptions.AllowStrikethrough, ElementName=Root, Converter={StaticResource BoolToVis}}">
-                <CheckBox Content="Přeškrtnuté" VerticalAlignment="Center"
+                <CheckBox Content="Přeškrtnutí" VerticalAlignment="Center"
                           IsChecked="{Binding EffectiveStrikethrough, UpdateSourceTrigger=PropertyChanged}"/>
                 <Button Style="{StaticResource ResetButton}"
                         CommandParameter="Strikethrough"

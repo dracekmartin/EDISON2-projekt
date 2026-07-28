@@ -6,7 +6,7 @@
             Padding="4,3">
         <StackPanel Orientation="Horizontal">
 
-            <!-- ── Tučné / Kurzíva / Podtržení / Přeškrtnuté ── -->
+            <!-- ── Tučné / Kurzíva / Podtržení / Přeškrtnutí ── -->
             <ToggleButton x:Name="BtnBold" Style="{StaticResource ToolbarToggle}"
                           ToolTip="Tučné" MinWidth="24" MinHeight="24"
                           Click="BtnBold_Click">
@@ -23,7 +23,7 @@
                 <TextBlock Text="U" FontSize="{DynamicResource EDTheme.FontSize.Body}" TextDecorations="Underline"/>
             </ToggleButton>
             <ToggleButton x:Name="BtnStrikethrough" Style="{StaticResource ToolbarToggle}"
-                          ToolTip="Přeškrtnuté" MinWidth="24" MinHeight="24"
+                          ToolTip="Přeškrtnutí" MinWidth="24" MinHeight="24"
                           Click="BtnStrikethrough_Click">
                 <TextBlock Text="S" FontSize="{DynamicResource EDTheme.FontSize.Body}">
                     <TextBlock.TextDecorations>

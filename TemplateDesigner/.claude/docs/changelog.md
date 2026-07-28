@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-28 — Názvoslovný kanon zamčený drift testy + hromadné sjednocení labelů
+
+Z nezávislé revize (druhá session). Nejdřív pojistka, pak hromadné přejmenování — v tomto pořadí.
+
+- **Drift testy rozšířeny** (`EDInputFormSchemaDriftTests`): (a) „stejný field key = stejný label
+  napříč všemi EDInputForm .cls" (výjimky `Height`/`StrokeWidth` s komentářem), (b) ban list
+  zakázaných tvarů v .cls labelech i volbách, (c) tentýž ban list nad panelovými PropertyDescriptors
+  všech elementů. + oprava hledání kořene repa (fallback z cesty zdrojáku) — drift testy už neběží
+  falešně červené z izolovaného výstupního adresáře.
+- **Rozhodnutí Jan (kanon):** „Uzamčeno" (ne Zamčeno) · „Podmínka viditelnosti" (ne Viditelnost) ·
+  „Tloušťka rámečku/okraje" (ne Šířka rámečku, Tl. okraje). Zapsáno do `ux-conventions §8`.
+- **Hromadné sjednocení** (panel + dialogy + .cls): Tučné/Podtržení/Přeškrtnutí (ne Tučně/Podtržené/
+  Přeškrtnuté — i CellStyleEditor a FormatToolbar), Vodorovně/Svisle + Nahoře/Dole, „Střídání řádků"
+  (ne Zebra), „Velikost aktuální" (ne Font aktuální), „Řádek negativních značek" (ne Řádek NZ),
+  „Přestupy (vlak/autobus)", „Barva pozadí" jednotně (ne Pozadí/Výplň), kontextové menu „Vrstva"
+  (ne Z-pořadí), LineTable „Výška řádku (prázdné = auto)", + stale komentáře. Wire klíče beze změny.
+- Testy: .NET 397/397 (drift 17/17), Caché 45/45.
+
 ## 2026-07-28 — Mechanické opravy z celkové revize (UI/UX, názvosloví, docs)
 
 Quick wins z celkového auditu stavu (4 paralelní revize: UI/UX, názvosloví, testy, architektura).

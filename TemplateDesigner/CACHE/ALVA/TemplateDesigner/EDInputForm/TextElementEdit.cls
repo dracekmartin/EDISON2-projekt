@@ -41,10 +41,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddFieldToLastGroup("Style.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
         d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
-        d form.AddBool("Style.Bold", "Tučně", 0)
+        d form.AddBool("Style.Bold", "Tučné", 0)
         d form.AddBool("Style.Italic", "Kurzíva", 0)
-        d form.AddBool("Style.Underline", "Podtržené", 0)
-        d form.AddBool("Style.Strikethrough", "Přeškrtnuté", 0)
+        d form.AddBool("Style.Underline", "Podtržení", 0)
+        d form.AddBool("Style.Strikethrough", "Přeškrtnutí", 0)
         d form.AddDecimal("Style.LineSpacing", "Řádkování", 1.2, 0.8, 3, "", "0.0#")
 
         // ── Skupina "Barvy a rámeček" ─────────────────────────────────────
@@ -68,17 +68,17 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Zarovnání" ───────────────────────────────────────────
         d form.AddGroup("align", "Zarovnání")
 
-        s f = form.AddFieldToLastGroup("Style.HAlign", "Horizontálně", $$$FieldTypeList, 0, 1)
+        s f = form.AddFieldToLastGroup("Style.HAlign", "Vodorovně", $$$FieldTypeList, 0, 1)
         d f.AddListItem("Left", "Vlevo")
         d f.AddListItem("Center", "Na střed")
         d f.AddListItem("Right", "Vpravo")
         d f.AddListItem("Justify", "Do bloku")
         s f.value = "Left"
 
-        s f = form.AddFieldToLastGroup("Style.VAlign", "Vertikálně", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Top", "Nahoru")
+        s f = form.AddFieldToLastGroup("Style.VAlign", "Svisle", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("Top", "Nahoře")
         d f.AddListItem("Middle", "Na střed")
-        d f.AddListItem("Bottom", "Dolů")
+        d f.AddListItem("Bottom", "Dole")
         s f.value = "Middle"
 
         // ── Skupina "Pozice a velikost" ───────────────────────────────────

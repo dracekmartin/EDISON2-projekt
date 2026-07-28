@@ -28,7 +28,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FFD0D0D0"
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
-        d form.AddDecimal("BorderWidth", "Šířka rámečku", 0, 0, 5, "mm")
+        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
         s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
         d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
         s f.value = "None"
@@ -43,7 +43,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddDecimal("AnotaceInterGap", "Mezera anotace ↔ anotace", "", 0, 5, "mm")
         d form.AddDecimal("OdjezdGap", "Mezera mezi odjezdy", "", 0, 10, "mm")
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
-        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Zebra barva (prázdné = žádná)", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("AlternatingRowColor", "Střídání řádků (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         d form.AddBool("AutoExpandToFillHeight", "Roztáhnout na výšku", 0)
         // Časová osa (rozsah hodin) je parametr šablony „Časová osa odjezdů" (CASOVA_OSA/HODINY_OD/DO),
         // sdílený a autoritativní — NEduplikovat jako property elementu (přebil by ho parametr → matoucí).

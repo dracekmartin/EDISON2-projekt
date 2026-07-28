@@ -1373,7 +1373,7 @@ public class DepartureGridElement : StopScheduleElementBase
         new FloatPropertyDescriptor { Label = "Oddělovač skupin",   Group = "Odjezdy", Get = () => GroupSeparatorWidth,        Set = v => GroupSeparatorWidth = v, Min = 0, Max = 5, Unit = "mm" },
 
         GetDataRowHeightDescriptor("Řádky dat"),
-        new ColorPropertyDescriptor { Label = "Zebra barva", Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },
+        new ColorPropertyDescriptor { Label = "Střídání řádků", Group = "Řádky dat", Get = () => AlternatingRowColor ?? "", Set = v => AlternatingRowColor = string.IsNullOrEmpty(v) ? null : v },
 
         // ── Styl 2. řádku záhlaví skupin dnů (např. "den" v "Pracovní / den") ──
         // Aplikuje se POUZE pokud SkupinaDnu.Nadpis2 je vyplněn. Null = stejné jako Line 1 (HeaderStyle).

@@ -25,7 +25,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FFD0D0D0"
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
-        d form.AddDecimal("BorderWidth", "Šířka rámečku", 0, 0, 5, "mm")
+        d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 5, "mm")
         s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
         d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
         s f.value = "None"
@@ -44,7 +44,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
         d form.AddBool("ShowStopAttributes", "Atributy", 1)
-        s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/bus)", 0)
+        s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/autobus)", 0)
         s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Původní JŘ je netiskl."
         s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více označníků", $$$FieldTypeList, 0, 1)
         d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
@@ -62,7 +62,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("DirectionArrowBold", "Tučná šipka", 0)
         d form.AddBool("CurrentStopUnderline", "Podtržení aktuální zast.", 1)
         d form.AddBool("CurrentStopBold", "Tučně aktuální zast.", 1)
-        s f = form.AddDecimal("CurrentStopFontSize", "Font aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
+        s f = form.AddDecimal("CurrentStopFontSize", "Velikost aktuální (prázdné = dle buňky)", "", 4, 200, "pt")
         s f = form.AddFieldToLastGroup("CurrentStopBackgroundColor", "Pozadí aktuální (prázdné = žádné)", $$$FieldTypeColor, 0, 0)
         d form.AddBool("ShowPassedStops", "Projeté zastávky", 0)
         s f = form.AddFieldToLastGroup("PassedStopsForeColor", "Barva projetých", $$$FieldTypeColor, 0, 0)

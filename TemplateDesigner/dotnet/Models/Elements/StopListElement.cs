@@ -813,7 +813,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private static bool IsTransferAttr(AtributData a) =>
         a.Znak is "A" or "L";
 
-    /// <summary>Režim „Duplikace řádku per stanoviště" (KOVED #13048 bod 4): zastávku obsluhovanou
+    /// <summary>Režim „Řádek pro každý označník" (KOVED #13048 bod 4): zastávku obsluhovanou
     /// z více stanovišť rozvine na N řádků na jejím místě v trase (pořadí = první výskyt stanoviště
     /// napříč variantami, netřídí se). Každý řádek nese své stanoviště a časy jen variant, které z něj
     /// jedou. Vývěsková (aktuální) zastávka i zastávka s ≤1 stanovištěm zůstávají jedním řádkem.
@@ -921,7 +921,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
         new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
         new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
-        new BoolPropertyDescriptor  { Label = "Přestupy (vlak/bus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
+        new BoolPropertyDescriptor  { Label = "Přestupy (vlak/autobus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
         new EnumPropertyDescriptor
         {
             Label = "Více označníků", Group = "Zastávky",
@@ -968,7 +968,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
         new BoolPropertyDescriptor  { Label = "Podtržení aktuální",  Group = "Zvýraznění", Get = () => CurrentStopUnderline, Set = v => CurrentStopUnderline = v },
         new BoolPropertyDescriptor  { Label = "Tučně aktuální",      Group = "Zvýraznění", Get = () => CurrentStopBold,      Set = v => CurrentStopBold = v },
-        new FloatPropertyDescriptor { Label = "Font aktuální (pt)",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
+        new FloatPropertyDescriptor { Label = "Velikost aktuální",  Group = "Zvýraznění", Get = () => CurrentStopFontSize ?? (DataStyle.FontSize ?? 8f), Set = v => CurrentStopFontSize = Math.Abs(v - (DataStyle.FontSize ?? 8f)) < 0.01f ? null : v, Min = 4, Max = 200, Unit = "pt" },
         new ColorPropertyDescriptor { Label = "Pozadí aktuální",     Group = "Zvýraznění", Get = () => CurrentStopBackgroundColor ?? "", Set = v => CurrentStopBackgroundColor = string.IsNullOrEmpty(v) ? null : v },
         new BoolPropertyDescriptor  { Label = "Projeté zastávky",    Group = "Zvýraznění", Get = () => ShowPassedStops,      Set = v => ShowPassedStops = v },
         new ColorPropertyDescriptor { Label = "Barva projetých",     Group = "Zvýraznění", Get = () => PassedStopsForeColor, Set = v => PassedStopsForeColor = v },

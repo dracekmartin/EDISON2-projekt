@@ -275,10 +275,10 @@ public abstract class TemplateElement
                 Min = 1, Max = 9999, Unit = "mm", Format = "0.0#" } }),
         new FloatPropertyDescriptor { Label = "Rotace",  Group = "Pozice", Get = () => Rotation, Set = v => Rotation = v, Min = -360, Max = 360, Unit = "°", Format = "0.#" },
         new FloatPropertyDescriptor { Label = "ZIndex",  Group = "Pozice", Get = () => ZIndex,  Set = v => ZIndex = (int)Math.Round(v), Min = 0, Max = 100, Format = "0" },
-        new BoolPropertyDescriptor  { Label = "Zamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
+        new BoolPropertyDescriptor  { Label = "Uzamčeno", Group = "Pozice", Get = () => IsLocked, Set = v => IsLocked = v },
 
         new ColorPropertyDescriptor { Label = "Barva rámečku", Group = "Obecné", Get = () => BorderColor, Set = v => BorderColor = v },
-        new FloatPropertyDescriptor { Label = "Šířka rámečku", Group = "Obecné", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
+        new FloatPropertyDescriptor { Label = "Tloušťka rámečku", Group = "Obecné", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
         new EnumPropertyDescriptor
         {
             Label = "Rohy", Group = "Obecné",
@@ -299,7 +299,7 @@ public abstract class TemplateElement
 
         new StringPropertyDescriptor
         {
-            Label = "Viditelnost", Group = "Podmínky",
+            Label = "Podmínka viditelnosti", Group = "Podmínky",
             // null / prázdný = vždy viditelný
             // Výrazy: "{TISK_SIPKY}", "{POCET} > 0", "{TYP} == \"JR\" && !{TISK_TARIFU}"
             Get = () => VisibilityExpression ?? "",

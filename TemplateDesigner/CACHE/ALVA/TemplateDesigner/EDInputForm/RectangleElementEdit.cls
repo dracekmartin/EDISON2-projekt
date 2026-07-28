@@ -21,7 +21,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Vzhled" ──────────────────────────────────────────────
         d form.AddGroup("appearance", "Vzhled")
 
-        s f = form.AddFieldToLastGroup("BackgroundColor", "Výplň", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
 
         s f = form.AddFieldToLastGroup("StrokeColor", "Barva okraje", $$$FieldTypeColor, 0, 0)

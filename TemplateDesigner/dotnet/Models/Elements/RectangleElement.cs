@@ -38,7 +38,7 @@ public class RectangleElement : TemplateElement
     [
         new ColorPropertyDescriptor { Label = "Výplň",       Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva okraje", Group = "Vzhled", Get = () => StrokeColor,  Set = v => StrokeColor = v },
-        new FloatPropertyDescriptor { Label = "Tl. okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
+        new FloatPropertyDescriptor { Label = "Tloušťka okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
         // Rohy (Ostré/Zaoblené/Zkosené + velikost) jsou společné pro všechny elementy → GetPositionDescriptors.
 
         .. GetPositionDescriptors()

@@ -64,7 +64,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         // ── Skupina "Podmínky" ────────────────────────────────────────────
         d form.AddGroup("conditions", "Podmínky")
 
-        s f = form.AddText("VisibilityExpression", "Viditelnost")
+        s f = form.AddText("VisibilityExpression", "Podmínka viditelnosti")
         s f.helpText = "Např. {PAGE} > 1 — sekce se vytiskne jen když podmínka platí"
 
         d form.WriteToOut()

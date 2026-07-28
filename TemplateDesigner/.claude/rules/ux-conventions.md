@@ -145,6 +145,21 @@ Kanonické termíny (font/styl textu):
 | Barva textu / pozadí buňky | **Barva textu buněk** / **Pozadí buněk** | — |
 | Barva textu / pozadí záhlaví | **Barva textu záhlaví** / **Pozadí záhlaví** | — |
 
+Kanonické termíny (obecné vlastnosti — rozhodnutí Jan 2026-07-28):
+
+| Vlastnost | Kanonický label | NE |
+|---|---|---|
+| Uzamčení elementu (IsLocked) | **Uzamčeno** | ~~Zamčeno~~ |
+| Výraz podmíněné viditelnosti (VisibilityExpression) | **Podmínka viditelnosti** | ~~Viditelnost~~ (samostatné; „Viditelnost řádku" je jiný pojem a je OK) |
+| Síla čáry (BorderWidth aj.) | **Tloušťka …** („Tloušťka rámečku", „Tloušťka okraje") | ~~Šířka rámečku~~, ~~Tl. …~~ |
+| Střídavé podbarvení řádků | **Střídání řádků** | ~~Zebra barva~~ |
+| Směry zarovnání | **Vodorovně / Svisle**, stavy **Nahoře / Dole** | ~~Horizontálně/Vertikálně~~, ~~Nahoru/Dolů~~ |
+| Přestupy u zastávky | **Přestupy (vlak/autobus)** | ~~(vlak/bus)~~ |
+
+**Strojová pojistka:** `EDInputFormSchemaDriftTests` (ban list zakázaných tvarů + „stejný field key
+= stejný label napříč .cls") — nový termín přidej do kanonu ZDE a případně do ban listu testu;
+vědomé kontextové rozdíly labelu téhož klíče patří do `exempt` v testu s komentářem.
+
 Kanonické termíny (doména JŘ):
 
 | Pojem | Kanonický label | NE |

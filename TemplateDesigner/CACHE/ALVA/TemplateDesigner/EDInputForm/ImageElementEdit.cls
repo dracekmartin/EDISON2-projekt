@@ -45,7 +45,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
         s f.value = "None"
         d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
-        s f = form.AddFieldToLastGroup("BackgroundColor", "Pozadí", $$$FieldTypeColor, 0, 0)
+        s f = form.AddFieldToLastGroup("BackgroundColor", "Barva pozadí", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
 
         // ── Skupina "Pozice a velikost" ───────────────────────────────────

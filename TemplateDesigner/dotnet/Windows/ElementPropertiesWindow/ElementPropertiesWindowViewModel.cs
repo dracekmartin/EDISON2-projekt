@@ -747,7 +747,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
 
         list.Add(new StringPropertyDescriptor
         {
-            Label = "Viditelnost", Group = "Podmínky",
+            Label = "Podmínka viditelnosti", Group = "Podmínky",
             Get   = () => section.VisibilityExpression ?? "",
             Set   = v  => section.VisibilityExpression = string.IsNullOrWhiteSpace(v) ? null : v.Trim(),
             Validate = Models.Expressions.ExpressionEvaluator.Validate
@@ -791,7 +791,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             },
             new FloatPropertyDescriptor
             {
-                Label = "Šířka rámečku", Group = "Rámeček",
+                Label = "Tloušťka rámečku", Group = "Rámeček",
                 Get = () => first.BorderWidth,
                 Set = v => { foreach (var el in elements) el.BorderWidth = v; },
                 Min = 0, Max = 5, Unit = "mm", Format = "0.0#"
@@ -805,7 +805,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             },
             new BoolPropertyDescriptor
             {
-                Label = "Zamčeno", Group = "Pozice",
+                Label = "Uzamčeno", Group = "Pozice",
                 Get = () => first.IsLocked,
                 Set = v => { foreach (var el in elements) el.IsLocked = v; }
             },
