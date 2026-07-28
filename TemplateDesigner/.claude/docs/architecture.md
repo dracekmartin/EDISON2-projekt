@@ -1,6 +1,4 @@
-# Glob: dotnet/**
-
-## Architektura projektu
+# Architektura projektu
 
 **Struktura složek repozitáře:**
 ```

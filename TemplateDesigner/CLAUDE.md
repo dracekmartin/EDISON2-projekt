@@ -300,20 +300,36 @@ Skript volá `dotnet publish` s profilem `SingleFileCEdison` → výstup do `C:\
 
 ---
 
-## Detailní dokumentace (`.claude/rules/`)
+## Pravidla (`.claude/rules/`) - načítají se vždy
 
-Soubory se načítají automaticky při práci na relevantních souborech.
+⚠️ **Načte se celá složka, ne jen soubor odpovídající globu** (ověřeno 2026-07-29; dřívější
+tvrzení „načítá se pro `dotnet/**`" nebylo pravdivé). Proto sem patří **jen to, co má být
+v každé session** - referenční mapy a procedury ne, ty jdou do `docs/` nebo na skill.
 
-| Soubor | Obsah | Načítá se pro |
-|---|---|---|
-| `architecture.md` | Struktura projektu, zodpovědnosti, MVVM hranice, souřadnice, DesignerState | `dotnet/**` |
-| `architecture-rules.md` | **Závazná pravidla R1-R5** (async Caché, IPopupDisplayer, CVar wire, MVVM bez WPF, versioning) + „must-not-happen" scénáře | `dotnet/**` |
-| `data-model.md` | C# datové třídy, JSON formáty, renderovací pipeline, interakční model | `dotnet/Models/**` |
-| `mvvm-patterns.md` | PropertyDescriptor, TableElement architektura, jak přidat element/okno | `dotnet/Windows/**` |
-| `cache-api.md` | AgendaAPI architektura, wire formáty, Caché skeleton, nová agenda checklist | `CACHE/**` |
-| `cache-database.md` | Mentální model DB: globály (LSO, ZST, CHR, ENUMS, SETTINGS), subscripty, business koncepty | `CACHE/**` |
-| `implementation-patterns.md` | Barvy, RenderContext, ComboBox gotcha, SkiaSharp quirks | `dotnet/**/*.cs` |
-| `ux-conventions.md` | Dialogová tlačítka (IsDefault/IsCancel), tooltipy, autoritativní tabulka keyboardových zkratek, context menu, confirmation patterns | `dotnet/Windows/**` |
+| Soubor | Obsah |
+|---|---|
+| `architecture-rules.md` | **Závazná pravidla R1-R5** (async Caché, IPopupDisplayer, CVar wire, MVVM bez WPF, versioning) + „must-not-happen" scénáře |
+| `cache-api.md` | Wire pravidlo R3, prezentační nápovědy, aditivní evoluce kontraktu, ObjectScript konvence |
+| `implementation-patterns.md` | Pasti: barvy, RenderContext, ComboBox event ordering, SkiaSharp quirks, debugging stylů |
+| `mvvm-patterns.md` | Styling patterny, kaskáda stylů buněk + anti-patterny, CellStyleEditor |
+| `ux-conventions.md` | Dialogová tlačítka, tooltipy, zkratky, kanonické termíny UI popisků |
+
+## Reference (`.claude/docs/`) - čti, když ji potřebuješ
+
+Nenačítá se sama. Sáhni po ní podle toho, co děláš:
+
+| Soubor | Kdy |
+|---|---|
+| `architecture.md` | struktura projektu, mapa zodpovědností, vzor okna/dialogu, souřadnice, DesignerState |
+| `data-model.md` | C# datové třídy, JSON formát šablony a schématu |
+| `cache-database.md` | mapa globálů MHD (LSO, ZST, CHR, ENUMS, SETTINGS) |
+| `cache-business-logic.md` | fáze MHD tiskového enginu, working global `^||TiskMHD`, SpecZnak |
+| `ad-data-mapa.md` | kde leží AD data (`^JRL`/`^JRZ`/`^JRSET`) |
+| `elementy-architektura.md` | tabulkové jádro, sdílené vs. per-element |
+| `architektonicka-rozhodnuti-agendy.md` | R1-R7 - **před novou fází agend** |
+| `feature-design-principles.md` | rozhodovací mřížka - **u nového requestu na featuru** |
+
+Nový typ elementu = skill **`novy-element`** (10 kroků + drift brána), ne dokument.
 
 ## Dokumentace v `.claude/docs/` - kam co evidovat
 
@@ -334,12 +350,11 @@ Soubory se načítají automaticky při práci na relevantních souborech.
 | Zjištění o legacy systémech (TiskMHD/TiskJR/RG), gap vs TD | `legacy-nahrada.md` |
 | Breaking změna JSON šablony / migrace | `template-schema-versions.md` |
 | Text pro zákazníky (novinky, návody) | wiki seedy: `plan-a-zmeny.md`, `uzivatelska-prirucka-*.md` |
-| Pravidlo pro psaní kódu (per-glob) | `.claude/rules/*.md` |
+| Pravidlo, které má platit v každé session | `.claude/rules/*.md` (pozor: načítá se celá složka) |
 
 **Nový soubor je oprávněný jen pro:** (a) jednorázovou analýzu, která se po vytěžení do celků výše
 **smaže** (git historie stačí), (b) nový velký trvalý celek (≈ nová fáze/doména) - pak přidat řádek
 do README indexu. Před založením se vždy zeptat: „nepatří to do existujícího celku?"
 
-Nejčastěji potřebné reference: **`feature-design-principles.md`** (závazná mřížka před každým novým
-requestem) · **`architektonicka-rozhodnuti-agendy.md`** (R1–R7) · `linkovy-knizni-jr-implementace-analyza.md`
-(aktivní track C+D, §11–12 odložené body).
+Kdy po které referenci sáhnout viz tabulka **Reference (`.claude/docs/`)** výše. Aktivní track
+C+D drží `linkovy-knizni-jr-implementace-analyza.md` (§11-12 odložené body).

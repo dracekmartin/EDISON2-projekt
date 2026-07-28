@@ -10,7 +10,7 @@ Zachovej business logiku, kompletně přepiš strukturu a syntaxi.
 ## Kontext - přečti před zahájením
 
 Konvence a pravidla: !`cat .claude/rules/cache-api.md`
-Business logika (JŘ kontext): !`cat .claude/rules/cache-business-logic.md`
+Business logika (JŘ kontext): !`cat .claude/docs/cache-business-logic.md`
 Referenční implementace (vzor): !`cat CACHE/ALVA/TemplateDesigner/API/ZastavkoveJrMhdAPI.cls`
 Abstraktní základ: !`cat CACHE/ALVA/TemplateDesigner/API/AgendaAPI.cls`
 Existující třídy: !`ls CACHE/ALVA/TemplateDesigner/API/`

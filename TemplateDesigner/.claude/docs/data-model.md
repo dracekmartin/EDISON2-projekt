@@ -1,6 +1,4 @@
-# Glob: dotnet/Models/**
-
-## Datový model
+# Datový model
 
 ### Template
 ```csharp

@@ -4,13 +4,13 @@
 
 Tento soubor formalizuje patterny, které se v TD už používají. Cíl: zachovat **konzistenci napříč okny** při přidávání nových dialogů a featur.
 
-> **Související:** vzor okna a MVVM hranice viz `architecture.md` §Vzor pro každé okno.
+> **Související:** vzor okna a MVVM hranice viz `../docs/architecture.md` §Vzor pro každé okno.
 
 ---
 
 ## 1. Dialogová tlačítka a struktura okna
 
-**Vzor okna / dialogu (struktura souborů, ViewModel, code-behind, XAML binding, IsDefault/IsCancel, Owner, RequestClose):** viz `architecture.md §Vzor pro každé okno`. Je závazný standard, nepřepisuj sem.
+**Vzor okna / dialogu (struktura souborů, ViewModel, code-behind, XAML binding, IsDefault/IsCancel, Owner, RequestClose):** viz `../docs/architecture.md` §Vzor pro každé okno. Je závazný standard, nepřepisuj sem.
 
 **Co doplňuje tento doc** (UX-specifické konvence, ne kódový template):
 

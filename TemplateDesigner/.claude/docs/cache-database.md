@@ -1,6 +1,4 @@
-# Glob: CACHE/**
-
-## Caché databáze - mentální model pro AI
+# Caché databáze - mentální model pro AI
 
 Caché ukládá data do hierarchických globálů (stromových struktur). Každý globál je multi-tenant - první subscript je vždy `IdFa` (identifikátor firmy/dopravce, např. `"CB_DP"`).
 

@@ -41,8 +41,10 @@ Pravidla:
 ### 3. `.claude/docs/roadmap.md` - pokud commit implementoval roadmap položku
 
 - Najdi odpovídající položku v roadmapě
-- Přidej k ní `✅ hotovo (YYYY-MM-DD)` nebo ji přesuň do sekce "Implementováno"
-- Pokud commit částečně implementuje položku (Part 1 z 2), to označ jako `✅ Part 1 hotovo`
+- **Hotovou položku přesuň KOMPLETNĚ do `roadmap-archive.md`** - nikdy v roadmapě
+  nenechávej odškrtnutý „✅ hotovo" řádek. V aktivní roadmapě zůstává jen to, co se má
+  dělat (+ krátký ukazatel do archivu, kde jsou detaily). Platí i pro rozhodovací tabulky.
+- Částečně hotová položka (Part 1 z 2) v roadmapě **zůstává** - zúží se na to, co zbývá
 - Neměň položky které commit neovlivnil
 
 ### 4. ./README.md

@@ -21,7 +21,16 @@
 | [`feature-design-principles.md`](feature-design-principles.md) | Rozhodovací mřížka před každým requestem |
 | [`elementy-architektura.md`](elementy-architektura.md) | Architektura elementů: JŘ elementy (wire formát, hierarchie) + sdílené tabulkové jádro (co ne/sjednocovat) + katalog symbolů (font Timetable) |
 | [`template-schema-versions.md`](template-schema-versions.md) | Verzování Template JSON + migrace |
-| [`architecture-diagrams.md`](architecture-diagrams.md) | Konceptuální diagramy pro onboarding (autorita = rules + kód) |
+| [`architecture-diagrams.md`](architecture-diagrams.md) | Konceptuální diagramy pro onboarding (autorita = `architecture.md` + kód) |
+
+## Technická reference (přesunuto z `rules/` 2026-07-29 - `rules/` se načítá celé, tohle tam nemá být)
+
+| Dokument | Obsah |
+|---|---|
+| [`architecture.md`](architecture.md) | Struktura projektu, mapa zodpovědností, vzor okna/dialogu, MVVM hranice, souřadnice, DesignerState |
+| [`data-model.md`](data-model.md) | C# datové třídy (Template, Section, TemplateElement, DataSchema) + JSON formáty |
+| [`cache-database.md`](cache-database.md) | Mentální model MHD globálů: LSO, ZST, CHR, ENUMS, SETTINGS, helper třídy |
+| [`cache-business-logic.md`](cache-business-logic.md) | MHD tiskový engine: 6 fází, `^||TiskMHD`, systém poznámek, SpecZnak, alg. 1002 |
 
 ## Datové mapy a vytěžené analýzy (referencované z roadmapy - nemazat, needitovat stavy)
 
