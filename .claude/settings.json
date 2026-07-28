@@ -17,11 +17,5 @@
         ]
       }
     ]
-  },
-  "env": {
-    "CACHE_SERVER": "http://192.168.16.1:57770",
-    "CACHE_NAMESPACE": "MLINE",
-    "CACHE_USER": "_mline",
-    "CACHE_PASSWORD": "mli"
   }
 }

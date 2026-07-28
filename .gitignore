@@ -256,6 +256,11 @@ ModelManifest.xml
 # Claude Code - osobní nastavení (rules/docs/commands jsou verzované)
 **/.claude/settings.local.json
 
+# Claude Code - stav agentních běhů a pracovní stromy (per-stroj, nesdílí se)
+**/.claude/last-audit.json
+**/.claude/worktrees/
+**/.claude/agent.log
+
 # Nodes - Package.json
 **/scripts/package.json
 **/scripts/package-lock.json
