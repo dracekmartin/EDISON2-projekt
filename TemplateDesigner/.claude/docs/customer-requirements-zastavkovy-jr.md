@@ -64,8 +64,8 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 
 ### 0.1 Tikety (helpdesk)
 
-> **Pořadí projití (2026-07-20):** ▶ **1. ready-to-close** = ověřit v buildu + resolve odpovědí zavřít
-(#7947, #7955, #9036 — hotové v Návrháři, na HD ještě `suspended`). ▶ **2. testování u zákazníka**
+> **Pořadí projití (2026-07-28):** ▶ **1. ready-to-close** = ověřit v buildu + resolve odpovědí zavřít
+(zbývají #7947, #7955; #9036 resolved 28. 7.). ▶ **2. testování u zákazníka**
 > (#10660 DPKV — hotové, ale nejdřív zpřístupnit + proklikat jejich obrázky). ▶ **3. feature tracky, nezavírat**
 > (#7937, #8828 — čeká práce v TD). Hotové zavřené: #8772, #7161 (15.7.), #7959 (20.7., čeká ověření klienta).
 
@@ -77,7 +77,7 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #7947 | TRANSDEV | „jede až do XY" u poslední zastávky | ✅ AD · ⬜ MHD · ▶ **ready-to-close** | Linka se spojem za základní trasu → legenda „jede až do zast. X" | §D1 |
 | #7955 | TRANSDEV | Vlastní komentář přebije auto (D2) + NZ bug (D3) | ✅ AD · ▶ **ready-to-close** | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí | §D2/D3 |
 | #7955 | TRANSDEV | Výběr spoje celým číslem (D4) | ➖ mimo TD | UI bug ve Studiu JŘ (EDISON) — do resolve poznámka, řešit jinde | §D4 |
-| #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 · ▶ **ready-to-close** (ověřit u klienta) | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
+| #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | ✅ **RESOLVED 2026-07-28** — ověřeno Janem na nočním provozu MHD JH (345070/CB_CSADAD): celodenní osa „od 4 do 0" (půlnoc na konci) i noční výřez „22–5"; odpověď s oběma recepty odeslána | — | §B3 |
 | #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
 | #8828 | TRANSDEV | Označníky → samostatná vývěska | ✅ **RESOLVED 2026-07-28** — parametr „Samostatná stránka pro každý označník" (+ titulek „…, označník X", spoj bez označníku na stránku nejčetnějšího); odpověď odeslána, klient ověří na 876420/863383 (znovuotevření = záchytka). MHD zdroj označníku až u MHD zákazníka. | changelog 27.–28. 7. |
@@ -94,7 +94,7 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 
 | # | Co | Vel. | Stav (2026-07-10) |
 |---|---|---|---|
-| TR1 | Časová osa přes půlnoc | — | 🧪 = #9036 (jen ověřit u klienta) |
+| TR1 | Časová osa přes půlnoc | — | ✅ = #9036 **resolved 2026-07-28** |
 | TR2 | Na-znamení „všechny" souhrn (místo značek u každé) | S–M | 🟡 **IMPLEMENTOVÁNO 2026-07-10** (AD, opt-in `SOUHRN_NA_ZNAMENI`, gold-safe) · ⚠️ **čeká SK ověření**: SKNI nepoužívá „x" pro na-znamení → kolega prověřuje kódování |
 | TR3 | Nástupiště jako sloupec vedle názvu zastávky | S | ✅ **HOTOVO 2026-07-10** (AD J-věta #3 + MHD Oznacnik; StopList sloupec „Nástupiště" opt-in). Ověřeno 0320680. |
 | TR4 | Explicitní „fixed-then-shrink" výška řádku StopList | S–M | ✅ **HOTOVO 2026-07-10** — pevná `DataRowHeight` se zmenší při přetečení (default auto beze změny); sdílený helper `ScaledDataRowHeight` (StopList + DepartureGrid). |
