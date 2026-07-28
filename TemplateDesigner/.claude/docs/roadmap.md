@@ -19,10 +19,15 @@ Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 **Nová session:** vezmi nejnižší nezablokovaný blok z nejnižší nedokončené vlny; když běží jiná session,
 zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde).
 
-**Tři pravidla, aby roadmapa znovu nenarostla:**
+**Čtyři pravidla, aby roadmapa znovu nenarostla:**
 1. **Nic nevstoupí bez velikosti a čísla bloku** - volný text bez velikosti je přesně to, co se nahromadilo.
-2. **Zákaznická položka má uzavírací podmínku** („co ověřit, aby se dala zavřít") - jinak zůstane „hotová, ale otevřená".
+2. **Každý blok má `hotovo když:`** - čím se pozná, že je dodělaný. Ne jen zákaznické položky; bez toho
+   je „hotovo" tvrzení, ne výsledek. Přednostně **test nebo grep** (`gold 0365005 zelený`,
+   `EDInputFormSchemaDriftTests projde`); když to strojově nejde, napiš klikací cestu.
+   **Nedoplňuje se zpětně** - dostane ho blok, který se právě bere.
 3. **Linkový JŘ má ukazatel `L‑1…L‑4`** (Fáze C+D) - velký kus rozřezaný na slotové kroky, aby v každé vlně postoupil.
+4. **Velikost L nebo `hotovo když`, které není strojové → nejede autonomně.** Odtud se pozná, co smí
+   agent dodělat sám a co ti musí ukázat; není k tomu potřeba další značka.
 
 ---
 
