@@ -268,7 +268,6 @@ public class HelpDialogViewModel : EDViewModel
                 new("Proporcionální škálování celé šablony", "lišta nástrojů 50–200 %"),
                 new("Zamknout element proti posunu/změně velikosti", "vlastnost Zamčeno"),
                 new("Chytré přichytávání k hranám sousedů (i mezera 4 mm)", "při tažení / změně velikosti"),
-                new("Sdílená hranice — tah za hranu mění i souseda", "táhnout společnou hranu"),
                 new("Výška „auto“ — element roste podle obsahu (text se zalamuje)", "Výška prázdná"),
                 new("JŘ element s pevnou výškou zmenší písmo, aby se obsah vešel", "automatické zmenšení"),
                 new("Import PDF — AI rozpozná strukturu JŘ a namapuje pole", "menu Nástroje → Import PDF"),

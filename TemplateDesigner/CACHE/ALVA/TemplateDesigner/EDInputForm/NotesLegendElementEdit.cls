@@ -49,7 +49,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddFieldToLastGroup("DataStyle.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
         s f = form.AddText("NoteSeparator", "Oddělovač", " - ")
         s f.helpText = "Vloží se mezi značku a popis u vlastních poznámek linky. U ikonových atributů (na znamení, bezbariér) se nepoužívá."
-        d form.AddDecimal("NoteFontSize", "Velikost písma pozn.", 7, 4, 20, "pt", "0.#")
+        d form.AddDecimal("NoteFontSize", "Velikost poznámek", 7, 4, 20, "pt", "0.#")
         d form.AddDecimal("NoteLineHeight", "Výška řádku", 4, 2, 15, "mm")
 
         // ── Skupina "Rozložení" (sloupce / řazení / zarovnání markeru) ────

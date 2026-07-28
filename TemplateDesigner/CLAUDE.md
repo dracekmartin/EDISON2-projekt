@@ -14,7 +14,7 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 > **📝 PRO AI AGENTA:** Průběžně aktualizuj. Dokončené → přesuň do "✅ Co máme". Nové problémy → "🐛 Známé problémy".
 
-**Datum poslední aktualizace:** 2026-07-13
+**Datum poslední aktualizace:** 2026-07-28
 
 > **Prezentace proběhly** (statická ~19.6., živá 26.6.). Od 2026-06-30 je **databáze primární úložiště
 > šablon** (Otevřít/Uložit/Uložit jako → DB; soubor = Import/Export JSON, obdoba PDF/PNG). Aktivní
@@ -22,7 +22,12 @@ Systém: **1. Designer** (tento projekt) — vizuální návrh šablon → **2. 
 
 ### 🎯 Aktuální focus
 
-**Knižní/linkový JŘ (Fáze C+D) — pilot uzavřen 2026-07-04 jako testovací v1.** Agenda
+**Stanovišťový balík KOVED #13048 + #8828 — v1 hotová (2026-07-27).** Přestupy u zastávek,
+zmenšení přetékajícího textu na šířku buňky, označník dle spojů (Z trasy/Nejčetnější/Výčet/Řádek
+pro každý označník), varianty tras s max časy + písmena u odjezdů, samostatná stránka pro každý
+označník (#8828, filtr odjezdů). Jednotný termín **„označník"** (ux-conventions §8).
+
+Předtím: **Knižní/linkový JŘ (Fáze C+D) — pilot uzavřen 2026-07-04 jako testovací v1.** Agenda
 `KnizniJrAd` (`KNIZNI_JR_AD`, reimplementace jádra `mkPLinWin`) + `KnizniJrMhd` (`KNIZNI_JR_MHD`,
 MHD analogie `LinkyPrintFormatJR.MakeData`) + standalone `LineTableElement` (kolekce sloupců
 `StopColumn`, 2-tab dialog Obecné+Sloupce přes sdílený `ColumnListEditor`/`CellStyleEditor`,
@@ -91,7 +96,7 @@ Předtím: **Caché Migration Wave 1 + 1.5 + 2 + 3 ✅** (per-user state + agend
 - **Redistribuce výšek sekcí** — při smazání sekce se uvolněná výška proporcionálně rozdělí mezi zbývající; při přidání sekce se stávající proporcionálně zmenší; `AddSectionCommand` pro undo/redo
 - **Výchozí nastavení nových elementů** — TextElement bez placeholder textu, zarovnání Center/Middle; všechny elementy: černý rámeček 0.1mm (jen nové — model defaults zůstávají pro zpětnou kompatibilitu JSON)
 - **DepartureGrid: HourColumnPerGroup** — `HourColumnPerGroup=true` zobrazí sloupec hodin u každé skupiny dnů (nejen vlevo)
-- **DepartureGrid: NZ invertovaně u minut** — negativní značka (`TypAnotace.NegativniZnacka`) se kreslí jako černý box + bílý znak (legacy shoda); `InvertovatNegativniZnacky` (default zap) + `NegativniZnackaBackColor`/`NegativniZnackaForeColor`. MHD má, AD záměrně ne (CNZ tam jen klasifikuje sloupce dnů)
+- **DepartureGrid: NZ invertovaně u minut** — negativní značka (`TypAnotace.NegativniZnacka`) se kreslí jako černý box + bílý znak (legacy shoda), vždy zapnuto; barvy `NegativniZnackaBackColor`/`NegativniZnackaForeColor`. MHD má, AD záměrně ne (CNZ tam jen klasifikuje sloupce dnů)
 - **AI Vision import PDF (JŘ)** — `AiVisionImportService` (composable `AgendaPromptContext` prompt per agenda) + `AiGuidedScheduleBuilder` (rasterizace → Claude Vision → rozpoznání struktury → přesné elementy z PdfPig geometrie) + `AiVisionImportPipeline` (orchestrace, fallback na heuristiku); model `AiAssistant.VisionModel` (default claude-sonnet-5, adaptivní myšlení, max_tokens 16000). **Robustnost proti stochastice modelu**: clamp rel. souřadnic 0–1 + pipeline clamp do tiskové plochy (NotesLegend s pevným boxem z bboxu), QR jen s důkazem v geometrii (`LooksLikeQrRegion`), dedup obrázků + placeholder ne přes existující element, **retry při chybějícím StopList/DepartureGrid** + viditelné varování. Sloupec Platform (nástupiště). Sdílený `AiPromptHelpers.AppendDataSchemaSection` (DataSchema sekce promptu, společná s enricherem). Heuristický enricher (`AiImportEnricher`, haiku) bez UI vstupu — vision ho nahradil, služba zůstává jako fallback kandidát
 - **PdfImportDialog standardizován** — uživatel volí jen PDF (+ stránku u vícestránkových); typ importu odvozen z otevřené agendy (zastávková → AI JŘ import, jiná → obecný layout LinesOnly), AI vždy zapnuté, agenda = aktuální; **JŘ import = právě jedna stránka** (extrahuje se jen ta); bez dostupné AI je JŘ import zablokován s důvodem z mlweb; debug checkbox + soubory jen pro vývojáře (lokální dev klíč), bez popupu
 - **DepartureGrid: per-column font wrapping** — `ComputeLayout` respektuje per-column header font pro wrapping i min width měření; dynamická výška záhlaví z max per-column line height; `GroupColumnIndexResolver` — generický `BuildLookup<T>` s `IndexKeyPrefix` konstantou pro resolve `__INDEX_` klíčů

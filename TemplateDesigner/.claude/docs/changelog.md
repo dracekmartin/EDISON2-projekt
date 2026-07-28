@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-28 — Mechanické opravy z celkové revize (UI/UX, názvosloví, docs)
+
+Quick wins z celkového auditu stavu (4 paralelní revize: UI/UX, názvosloví, testy, architektura).
+
+- **Dark mode:** hlavička „Strom šablony" měla natvrdo `#555555` (nečitelné na tmavém panelu) →
+  `EDTheme.Text.Secondary`. Jediný hardcoded hex brush v celém XAML.
+- **Názvosloví:** „Povolit split" → **„Povolit rozdělení"** (přetečení sekce, panel i EDInputForm);
+  „Velikost písma pozn." → **„Velikost poznámek"** (NotesLegend, panel i dialog — kanon §8);
+  helpText „Legacy JŘ" → „Původní JŘ" (přestupy StopListu).
+- **F1 nápověda:** smazán stale řádek „Sdílená hranice — tah za hranu mění i souseda" (funkce
+  odstraněna už dřív, nápověda ji dál slibovala).
+- **CLAUDE.md:** smazáno stale tvrzení o přepínači `InvertovatNegativniZnacky` (v kódu neexistuje,
+  inverze je vždy zap); aktuální focus doplněn o stanovišťový balík #13048/#8828; datum aktualizace.
+
 ## 2026-07-28 — Doladění stanovišťového balíku: slovník „označník", titulek stránky, držení stránky, nálezy revize
 
 Kolo zpětné vazby Jana nad 320680/330510 + nezávislá revize. Vše doladění #13048/#8828, gold beze změny.

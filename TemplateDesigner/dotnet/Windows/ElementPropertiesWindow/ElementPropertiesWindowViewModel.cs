@@ -719,7 +719,7 @@ public class ElementPropertiesWindowViewModel : EDViewModel
             [
                 ("Nepřerušovat",  (object)SectionOverflowBehavior.KeepTogether),
                 ("Přes stránky",  (object)SectionOverflowBehavior.SplitAcrossPages),
-                ("Povolit split", (object)SectionOverflowBehavior.AllowSplit),
+                ("Povolit rozdělení", (object)SectionOverflowBehavior.AllowSplit),
             ]
         });
 

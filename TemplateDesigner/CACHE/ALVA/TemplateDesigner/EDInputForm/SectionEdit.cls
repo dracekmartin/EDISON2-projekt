@@ -48,7 +48,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("OverflowBehavior", "Přetečení", $$$FieldTypeList, 0, 1)
         d f.AddListItem("KeepTogether", "Nepřerušovat")
         d f.AddListItem("SplitAcrossPages", "Přes stránky")
-        d f.AddListItem("AllowSplit", "Povolit split")
+        d f.AddListItem("AllowSplit", "Povolit rozdělení")
         s f.value = "KeepTogether"
 
         // ── Skupina "Vzhled" ──────────────────────────────────────────────
