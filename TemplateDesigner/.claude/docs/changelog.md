@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-28 - Parita voleb legendy + nápovědy parametrů variant (do verze)
+
+Dvě malé věci na přání Jana před publishem:
+
+- **NotesLegend „Dle typu" doplněno do dialogu** - výchozí režim řazení poznámek v EDInputForm
+  dialogu úplně chyběl (šel nastavit jen v panelu); volby sjednoceny 1:1 s panelem. Druhá půlka
+  nálezu (TextElement „Do bloku" jen v dialogu) byla zastaralá - v panelu už je.
+- **Nápovědy parametrů sestavy** - aditivní klíč `description` v GetParameters → helpText bublina
+  ve formuláři (mapuje `AgendaParams.AddParamField`, `AddBoolParam` má nový volitelný parametr).
+  Vyplněno u čtveřice variant/označník parametrů - hlavně vysvětlení, že písmena variant nahrazují
+  automatické poznámky rozdílů tras. Starší agendy bez description beze změny.
+- Testy .NET 405/405, Caché 45/45.
+
 ## 2026-07-28 - Konec dlouhých pomlček (em dash) v celém projektu
 
 Rozhodnutí Jan: žádné em dashe - působí jako generovaný text. Hromadná náhrada za běžnou

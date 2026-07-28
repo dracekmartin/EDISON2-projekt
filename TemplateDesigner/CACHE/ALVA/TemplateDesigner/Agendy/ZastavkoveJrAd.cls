@@ -1704,7 +1704,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     // #8828: vývěsková zastávka obsluhovaná z více označníků → samostatná stránka per označník
     // (odjezdy filtrované na spoje z toho označníku). Default vyp = jedna vývěska, odjezdy smíchané.
     // Label zrcadlí volbu elementu „Řádek pro každý označník" - stránka × řádek = dvě roviny téže věci
-    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každý označník", "false", "Seznam zastávek")
+    d ..AddBoolParam(arr, "ROZDELIT_PER_OZNACNIK", "Samostatná stránka pro každý označník", "false", "Seznam zastávek", "Zastávka obsluhovaná z více označníků se vytiskne jako samostatná vývěska pro každý označník, jen s odjezdy spojů, které z něj jedou. V titulku stránky pak je i číslo označníku.")
 
     // Varianty tras (KOVED #13048 bod 5) - týkají se variantních sloupců seznamu zastávek.
     // Varianta = sled zastávek (legacy dedup), časy sloupce = max přes spoje varianty.
@@ -1715,13 +1715,14 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pRazV.type         = "enum"
     s pRazV.group        = "Seznam zastávek"
     s pRazV.defaultValue = "Dle četnosti ze zastávky"
+    s pRazV.description  = "Pořadí variantních časových sloupců v seznamu zastávek: nejčastější varianta z dané zastávky první, nebo stabilní pořadí dle spojů (stejné napříč stránkami)."
     s optsRV = ##class(%DynamicArray).%New()
     d optsRV.%Push("Dle četnosti ze zastávky")
     d optsRV.%Push("Stabilní (pořadí spojů)")
     s pRazV.options = optsRV
     d arr.%Push(pRazV)
 
-    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant u odjezdů", "false", "Seznam zastávek")
+    d ..AddBoolParam(arr, "PISMENA_VARIANT", "Písmena variant u odjezdů", "false", "Seznam zastávek", "Varianty tras dostanou písmena A-Z v záhlaví sloupců a u minut odjezdů. Nahrazuje automatické poznámky rozdílů tras - kudy spoj jede, je vidět přímo ve sloupci varianty.")
 
     s pPrvB = ##class(%DynamicObject).%New()
     s pPrvB.name         = "PRVNI_BEZ_PISMENE"
@@ -1730,6 +1731,7 @@ ClassMethod AddStandardJRParameters(arr As %DynamicArray)
     s pPrvB.defaultValue = "true"
     s pPrvB.group        = "Seznam zastávek"
     s pPrvB.visibleWhen  = "PISMENA_VARIANT=true"
+    s pPrvB.description  = "Nejčastější varianta zůstane bez písmene (hlavní trasa), odchylky se značí od A. Vypnuto = písmena už od první varianty."
     d arr.%Push(pPrvB)
 
     // Rozdělení sloupců typů provozu - override FTL (auto = dle linky MHD_TYP_R). 4 módy = kombinace

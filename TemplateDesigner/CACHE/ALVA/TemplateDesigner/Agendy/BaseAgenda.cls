@@ -201,7 +201,8 @@ ClassMethod AddField(arr As %DynamicArray, name As %String, label As %String, ty
 /// label      = popisek (např. "Tisknout poznámku")
 /// defaultVal = výchozí hodnota (0/1 nebo true/false)
 /// group      = volitelná skupina pro vizuální seskupení v UI (aditivní klíč kontraktu)
-ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "")
+/// desc       = volitelná nápověda (aditivní klíč `description` → helpText bublina ve formuláři)
+ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String, defaultVal As %Boolean, group As %String = "", desc As %String = "")
 {
     s param = ##class(%DynamicObject).%New()
     s param.name  = name
@@ -211,6 +212,7 @@ ClassMethod AddBoolParam(arr As %DynamicArray, name As %String, label As %String
     // jako false (historicky tichý bug: TISK_SIPKY default na wire "false" proti záměru).
     s param.defaultValue = $s((defaultVal=1)||(defaultVal="true"):"true", 1:"false")
     s:group'="" param.group = group
+    s:desc'="" param.description = desc
     d arr.%Push(param)
 }
 

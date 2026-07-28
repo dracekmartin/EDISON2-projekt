@@ -59,7 +59,9 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("PoSloupcich", "Po sloupcích"), f.AddListItem("PoRadcich", "Po řádcích")
         s f.value = "PoSloupcich"
         s f = form.AddFieldToLastGroup("Razeni", "Řazení poznámek", $$$FieldTypeList, 0, 0)
-        d f.AddListItem("Vychozi", "Výchozí"), f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
+        // Volby 1:1 s panelem (DleTypu je default elementu - dřív v dialogu úplně chyběla)
+        d f.AddListItem("DleTypu", "Dle typu (značky → atributy → text)"), f.AddListItem("Vychozi", "Výchozí (dle dat)")
+        d f.AddListItem("DleDelkyVzestupne", "Délka vzestupně"), f.AddListItem("DleDelkySestupne", "Délka sestupně")
         s f.value = "Vychozi"
         d form.AddDecimal("MarkerSirka", "Šířka buňky značky (0=vedle)", 0, 0, 30, "mm")
 

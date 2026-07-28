@@ -220,9 +220,9 @@ ClassMethod AddParamField(form As ALVA.EDControls.EDInputForm.Form, p As %Dynami
     i $isobject(vals) && vals.%IsDefined(name) { s val = vals.%Get(name) }
 
     i type = "bool" {
-        d form.AddBool(name, label, $s((val="true")||(val=1):1, 1:0))
+        s f = form.AddBool(name, label, $s((val="true")||(val=1):1, 1:0))
     } elseif type = "number" {
-        d form.AddNumber(name, label, val)
+        s f = form.AddNumber(name, label, val)
     } elseif type = "enum" {
         // required=1 → enum musí mít vybranou hodnotu (List dropdown bez úvodního prázdného řádku)
         s f = form.AddFieldToLastGroup(name, label, $$$FieldTypeList, 0, 1)
@@ -236,8 +236,11 @@ ClassMethod AddParamField(form As ALVA.EDControls.EDInputForm.Form, p As %Dynami
         s f = form.AddFieldToLastGroup(name, label, $$$FieldTypeDate, 0, 0)
         s:val'="" f.value = val
     } else {
-        d form.AddText(name, label, $s(val="":"", 1:val))
+        s f = form.AddText(name, label, $s(val="":"", 1:val))
     }
+    // Aditivní `description` z GetParameters → nápovědná bublina pole (starší agendy ho nemají)
+    s desc = p.description
+    s:desc'="" f.helpText = desc
 }
 
 }
