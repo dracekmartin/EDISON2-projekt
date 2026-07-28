@@ -67,8 +67,10 @@ public class DepartureGridElement : StopScheduleElementBase
     /// <summary>Sloupec hodin před každou skupinou dnů (místo jednoho sdíleného vlevo).</summary>
     public bool HourColumnPerGroup { get; set; }
 
-    /// <summary>Maximální počet zobrazených skupin dnů (0 = bez limitu).</summary>
-    public int MaxGroupCount { get; set; } = 3;
+    /// <summary>Maximální počet zobrazených skupin dnů (0 = bez limitu, default). Viditelnost
+    /// jednotlivých skupin řídí checkboxy v dialogu sloupců (GroupColumns.IsVisible) — strop je
+    /// jen nouzová pojistka; starý default 3 tiše ořezával 4. SMO sloupec (migrace 1.4.0).</summary>
+    public int MaxGroupCount { get; set; }
 
     // ═══════════════════════════════════════════
     // Časová osa
@@ -243,8 +245,8 @@ public class DepartureGridElement : StopScheduleElementBase
             // Element font pro měření minimální šířky
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var measureFont = new SKFont(
-                // resolved font (vč. dokumentového defaultu) — měření musí trefit stejný font jako render (ř. ~1066)
-                GetTypeface(ResolveElementHeaderParent().FontFamily, SKFontStyle.Bold), fontPx);
+                // resolved rodina + řez (vč. dokumentového defaultu) — měření musí trefit stejný font jako render
+                GetTypeface(ResolveGroupHeaderParent()), fontPx);
 
             // Minimální šířka = nejdelší slovo záhlaví + 2mm padding
             float maxWordW = 0;
@@ -331,8 +333,8 @@ public class DepartureGridElement : StopScheduleElementBase
             // Single-nadpis: word-wrap přes celý text, všechny řádky Line 1 (element font)
             float fontPx = defaultHeaderFontPt * PtToMm * effectiveMmToPx;
             using var wrapFont = new SKFont(
-                // resolved font (vč. dokumentového defaultu) — měření musí trefit stejný font jako render (ř. ~1066)
-                GetTypeface(ResolveElementHeaderParent().FontFamily, SKFontStyle.Bold), fontPx);
+                // resolved rodina + řez (vč. dokumentového defaultu) — wrap musí trefit stejný font jako render
+                GetTypeface(ResolveGroupHeaderParent()), fontPx);
             var wrapped = WrapHeaderText(g.Skupina.Nadpis, g.GroupWidth, wrapFont, effectiveMmToPx);
             return g with { HeaderLines = wrapped.Select(w => new HeaderLine(w, IsSecondary: false)).ToArray() };
         }).ToList();
@@ -1083,9 +1085,8 @@ public class DepartureGridElement : StopScheduleElementBase
         float fontPx = effFontSize * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * PtToMm * ctx.MmToPx;
 
-        using var font = new SKFont(GetTypeface(dataResolved.FontFamily), fontPx);
-        using var headerFont = new SKFont(
-            GetTypeface(headerResolved.FontFamily, SKFontStyle.Bold), headerFontPx);
+        using var font = new SKFont(GetTypeface(dataResolved), fontPx);
+        using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
 
         float currentY = Y;
 
@@ -1354,38 +1355,15 @@ public class DepartureGridElement : StopScheduleElementBase
             Options = EnumPropertyDescriptor.VAlignOptions },
         new FloatPropertyDescriptor { Label = "Šířka sl. hodin",    Group = "Odjezdy", Get = () => HourColumnWidth,            Set = v => HourColumnWidth = v, Min = 4, Max = 20, Unit = "mm" },
 
-        // ── Časová osa odjezdů (mapuje na parametry CASOVA_OSA / HODINY_OD / HODINY_DO) ──
-        // Labely jsou popisné, ne legacy žargon. Plný den (0–23) v UI vědomě vynechán — lze docílit přes Vlastní rozsah 0..23.
-        new EnumPropertyDescriptor
-        {
-            Label = "Časová osa", Group = "Časová osa",
-            Get = () => TimeAxisMode, Set = v => TimeAxisMode = (TimeAxisMode)v,
-            Options =
-            [
-                ("Jen hodiny s odjezdy",          (object)TimeAxisMode.Compact),
-                ("Souvislá od první do poslední", (object)TimeAxisMode.DataBounded),
-                ("Vlastní rozsah",                (object)TimeAxisMode.Range),
-            ]
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Hodiny od", Group = "Časová osa",
-            Get = () => TimeAxisRangeFrom, Set = v => TimeAxisRangeFrom = Math.Clamp((int)v, 0, 23),
-            Min = 0, Max = 23, Format = "0", Unit = "h",
-            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
-        },
-        new FloatPropertyDescriptor
-        {
-            Label = "Hodiny do", Group = "Časová osa",
-            Get = () => TimeAxisRangeTo, Set = v => TimeAxisRangeTo = Math.Clamp((int)v, 0, 23),
-            Min = 0, Max = 23, Format = "0", Unit = "h",
-            VisibleWhen = () => TimeAxisMode == TimeAxisMode.Range
-        },
+        // Časová osa (rozsah hodin) je parametr šablony „Časová osa odjezdů" (CASOVA_OSA/HODINY_OD/DO),
+        // sdílený a autoritativní — NEvystavovat jako property elementu (parametr ho přebíjí → matoucí).
+        // Property TimeAxisMode/RangeFrom/RangeTo zůstávají jen jako render fallback, když param chybí.
+
         // Když je kratší rozsah hodin než kapacita Height, vyplnit zbylé místo (jen data řádky).
         // Caché parametr ROZTAHNOUT_NA_VYSKU může override z PrintDialogu.
         new BoolPropertyDescriptor
         {
-            Label = "Roztáhnout na výšku", Group = "Časová osa",
+            Label = "Roztáhnout na výšku", Group = "Odjezdy",
             Get = () => AutoExpandToFillHeight, Set = v => AutoExpandToFillHeight = v
         },
 

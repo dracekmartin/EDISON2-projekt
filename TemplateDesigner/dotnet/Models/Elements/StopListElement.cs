@@ -40,11 +40,19 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     public bool ShowSignalStopIndicator { get; set; } = true;
     public string SignalStopSymbol { get; set; } = "×";
     public bool ShowStopAttributes { get; set; } = true;
+    /// <summary>Přestupy na jiný druh dopravy (vlak „L" / autobus „A") u zastávky. Default vyp =
+    /// jako legacy (legacy StopList je netiskne). Data je posílají vždy, přepínač řídí zobrazení.</summary>
+    public bool ShowTransferAttributes { get; set; }
     public bool ShowStopNotes { get; set; } = true;
 
     /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>
     /// <remarks>Default AfterName = za názvem zastávky (CBDP layout). BeforeName = před názvem (DPKV layout, např. „× Globus").</remarks>
     public StopMarkersSide MarkersPosition { get; set; } = StopMarkersSide.AfterName;
+
+    /// <summary>Zdroj sloupce „Nástupiště" při více sloupcích u zastávky (KOVED #13048 bod 4).
+    /// FromRoute (default) = z trasy linky (dnešní chování); MostFrequent = nástupiště, odkud jede
+    /// nejvíc spojů; All = výčet všech („2,3"). Obojí dle spojů (přednost před hodnotou z trasy).</summary>
+    public MultiPlatformDisplay MultiPlatformMode { get; set; } = MultiPlatformDisplay.FromRoute;
 
     // ═══════════════════════════════════════════
     // Šipka směru jízdy (┌─▼ od aktuální zastávky dolů)
@@ -116,7 +124,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         if (Width <= 0) return;
 
-        var zastavky = BuildZastavky(ctx.Data);
+        var zastavky = ExpandPlatformRows(BuildZastavky(ctx.Data));
         bool hasData = zastavky.Count > 0;
 
         // Auto-scale: pokud Height je pevné a obsah přetéká, zmenšit font
@@ -197,6 +205,12 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 float arrowStartY = -1f;
                 float arrowEndY = -1f;
 
+                // Rezerva „Přizpůsobit buňce" pro sloupec názvů: při šipce vpravo nesmí zmenšený text
+                // podlézt její vodorovnou část (svislice + bracket míří do sloupce) — cíl končí před ní.
+                float nameShrinkReserveMm = (showArrow && !arrowLeft)
+                    ? ArrowInsetFromEdgeMm + ArrowBracketLengthMm + 0.5f
+                    : CellRenderer.DefaultShrinkReserveMm;
+
                 foreach (var z in zastavky)
                 {
                     if (!showPassed && !foundCurrent && !z.JeAktualni)
@@ -226,14 +240,24 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                         ctx.Canvas.DrawRect(bgRect, bgPaint);
                     }
 
-                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW);
+                    // „Přizpůsobit buňce" + značky za názvem: zmenšení názvu počítá i s šířkou
+                    // značek (škálují se spolu), aby se za zmenšený název vešly a nepodlézaly šipku.
+                    float nameTrailingMm = 0f;
+                    if (stopNameIdx >= 0 && MarkersPosition == StopMarkersSide.AfterName)
+                    {
+                        var nameStyleRow = ResolveRowStyle(columns[stopNameIdx], isCurrent, isPassed);
+                        nameTrailingMm = MeasureMarkersTrailingMm(ctx, BuildStopMarkerRuns(z), nameStyleRow, symbolFace, scale);
+                    }
+
+                    var specs = BuildDataRowSpecs(columns, z, isCurrent, isPassed, stopNameIdx, markersSubCellWidth, colW, nameShrinkReserveMm, nameTrailingMm);
                     ColumnRenderer.DrawRow(ctx, X, currentY, rowH, specs, fontScale: scale);
 
                     // Značky (na znamení / atributy / poznámky) se kreslí zvlášť po úsecích: piktogramové
                     // symboly symbolovým Timetable fontem (MHD „na znamení" = kód „D"), text a poznámky
                     // normálním fontem. V CellRenderu nejde míchat font v jedné buňce (#7161 MHD parita).
                     DrawStopMarkers(ctx, z, currentY, rowH, columns[stopNameIdx], stopNameLeftMm,
-                        colW[columns[stopNameIdx]], markersSubCellWidth, isCurrent, isPassed, symbolFace, scale);
+                        colW[columns[stopNameIdx]], markersSubCellWidth, isCurrent, isPassed, symbolFace, scale,
+                        nameShrinkReserveMm);
 
                     if (ShowRowSeparators)
                     {
@@ -253,7 +277,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 // Placeholder se ukazuje jen v designeru. Print s prázdnými daty nesmí
                 // vykreslovat fake zastávky.
                 float placeholderFontPx = effectiveFontSize * PtToMm * ctx.MmToPx;
-                using var placeholderFont = new SKFont(GetTypeface(ResolveColumnDataParent().FontFamily), placeholderFontPx);
+                using var placeholderFont = new SKFont(GetTypeface(ResolveColumnDataParent()), placeholderFontPx);
                 currentY = RenderPlaceholderRows(ctx, 4, "Zastávka",
                     X, currentY, Width, rowH, placeholderFont, paints.Text, paints.Grid);
             }
@@ -341,7 +365,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// </summary>
     private ColumnRenderer.CellSpec[] BuildDataRowSpecs(
         List<StopColumn> columns, ZastavkaData z, bool isCurrent, bool isPassed,
-        int stopNameIdx, float markersSubCellWidth, Dictionary<StopColumn, float> widths)
+        int stopNameIdx, float markersSubCellWidth, Dictionary<StopColumn, float> widths,
+        float nameShrinkReserveMm = CellRenderer.DefaultShrinkReserveMm, float nameTrailingMm = 0f)
     {
         bool split = markersSubCellWidth > 0
                      && stopNameIdx >= 0 && stopNameIdx < columns.Count
@@ -356,7 +381,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 specs[i] = new ColumnRenderer.CellSpec(
                     widths[col],
                     GetCellText(z, col.Key),
-                    ResolveRowStyle(col, isCurrent, isPassed));
+                    ResolveRowStyle(col, isCurrent, isPassed),
+                    i == stopNameIdx ? nameShrinkReserveMm : CellRenderer.DefaultShrinkReserveMm,
+                    i == stopNameIdx ? nameTrailingMm : 0f);
             }
             return specs;
         }
@@ -372,7 +399,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
                 var markerStyle = nameStyle with { HAlign = TextHorizontalAlignment.Right };
                 // Text značek prázdný — kreslí je DrawStopMarkers zvlášť (per-run font). Sub-cell drží jen šířku a pozadí.
                 result[idx++] = new ColumnRenderer.CellSpec(markersSubCellWidth, "", markerStyle);
-                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle);
+                result[idx++] = new ColumnRenderer.CellSpec(widths[col] - markersSubCellWidth, GetCellText(z, col.Key), nameStyle, nameShrinkReserveMm, nameTrailingMm);
             }
             else
             {
@@ -471,7 +498,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
 
     public override float CalculateHeightFromData(DataContext? data)
     {
-        var zastavky = BuildZastavky(data);
+        var zastavky = ExpandPlatformRows(BuildZastavky(data));
         if (zastavky.Count == 0) return DesignerPlaceholderHeight;
 
         bool showPassed = GetBoolParam(data, "TISK_PROJETYCH_ZAST", ShowPassedStops);
@@ -560,7 +587,15 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             StopFields.StopName     => BuildStopDisplayText(z),
             StopFields.TravelTime   => z.CasJizdy > 0 ? z.CasJizdy.ToString() : "",
             StopFields.Zone         => string.Join("/", z.Zony),
-            StopFields.Nastupiste   => z.Nastupiste,
+            StopFields.Nastupiste   => MultiPlatformMode switch
+            {
+                // Dle spojů: první položka CSV = nejčetnější / celý výčet; bez per-spoj dat fallback na trasu
+                MultiPlatformDisplay.MostFrequent => z.NastupisteSpoju.Length > 0
+                    ? z.NastupisteSpoju.Split(',')[0] : z.Nastupiste,
+                MultiPlatformDisplay.All => z.NastupisteSpoju.Length > 0
+                    ? z.NastupisteSpoju.Replace(",", ", ") : z.Nastupiste,
+                _ => z.Nastupiste,
+            },
             StopFields.Poradi       => z.Poradi > 0 ? z.Poradi.ToString() : "",
             StopFields.JeAktualni   => z.JeAktualni ? "1" : "",
             _                       => ""
@@ -622,7 +657,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     {
         if (zastavky.Count == 0) return 0f;
         float fontPx = fontSizePt * PtToMm * mmToPx;
-        using var font = new SKFont(GetTypeface(ResolveColumnDataParent().FontFamily), fontPx);
+        using var font = new SKFont(GetTypeface(ResolveColumnDataParent()), fontPx);
         using var symbolFont = new SKFont(symbolFace, fontPx);
         float maxPx = 0f;
         foreach (var z in zastavky)
@@ -661,7 +696,9 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             var excluded = GetExcludedSet();
             var attrs = z.Atributy
                 .Where(a => !excluded.Contains(a.Znak))
-                .Where(a => IsNaZnameniAttr(a) ? ShowSignalStopIndicator : ShowStopAttributes)
+                .Where(a => IsNaZnameniAttr(a) ? ShowSignalStopIndicator
+                          : IsTransferAttr(a) ? ShowTransferAttributes
+                          : ShowStopAttributes)
                 .ToList();
             if (attrs.Count > 0)
             {
@@ -689,7 +726,8 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     /// sub-cell před názvem (zarovnané vpravo); AfterName → za text názvu. Volá se po DrawRow.</summary>
     private void DrawStopMarkers(RenderContext ctx, ZastavkaData z, float rowTopMm, float rowH,
         StopColumn nameCol, float stopNameLeftMm, float nameColWidthMm, float markersSubCellWidth,
-        bool isCurrent, bool isPassed, SKTypeface symbolFace, float scale)
+        bool isCurrent, bool isPassed, SKTypeface symbolFace, float scale,
+        float nameShrinkReserveMm = CellRenderer.DefaultShrinkReserveMm)
     {
         var runs = BuildStopMarkerRuns(z);
         if (runs.Count == 0) return;
@@ -705,17 +743,36 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         else
         {
             // AfterName: za názvem — odměř šířku názvu ve stejném fontu a začni značky za ní.
+            // Při „Přizpůsobit buňce" musí měření i značky použít TUTÉŽ efektivní škálu jako
+            // CellRenderer (stejné vstupy vč. rezervy a šířky značek), jinak se pozice rozjedou.
             var cellMm = new SKRect(stopNameLeftMm, rowTopMm, stopNameLeftMm + nameColWidthMm, rowTopMm + rowH);
             var contentMm = CellLayout.ApplyPadding(cellMm, style);
-            using var nameFont = style.CreateFont(scale, ctx.MmToPx);
-            float nameWidthPx = nameFont.MeasureText(BuildStopDisplayText(z));
+            string displayText = BuildStopDisplayText(z);
+            float trailingMm = MeasureMarkersTrailingMm(ctx, runs, style, symbolFace, scale);
+            float effScale = CellRenderer.ComputeShrinkScale(
+                style, [displayText], contentMm.Width, ctx.MmToPx, scale, nameShrinkReserveMm, trailingMm);
+            using var nameFont = style.CreateFont(effScale, ctx.MmToPx);
+            float nameWidthPx = nameFont.MeasureText(displayText);
             float spacePx = nameFont.MeasureText(" ");
             var m = nameFont.Metrics;
             var tl = ctx.ToCanvas(contentMm.Left, contentMm.Top);
             var br = ctx.ToCanvas(contentMm.Right, contentMm.Bottom);
             var (nameX, _) = CellLayout.TextAnchorPx(tl, br, nameWidthPx, -m.Ascent, m.Descent, style.HAlign, style.VAlign);
-            DrawMarkerRuns(ctx, contentMm, runs, style, symbolFace, scale, TextHorizontalAlignment.Left, startAfterNamePx: nameX + nameWidthPx + spacePx);
+            DrawMarkerRuns(ctx, contentMm, runs, style, symbolFace, effScale, TextHorizontalAlignment.Left, startAfterNamePx: nameX + nameWidthPx + spacePx);
         }
+    }
+
+    /// <summary>Šířka bloku značek za názvem (oddělovací mezera + úseky) v mm při dané škále —
+    /// vstup pro „Přizpůsobit buňce": o ni se název zmenšuje navíc, aby se za něj značky vešly.</summary>
+    private float MeasureMarkersTrailingMm(RenderContext ctx, List<MarkerRun> runs,
+        ResolvedTextStyle style, SKTypeface symbolFace, float scale)
+    {
+        if (runs.Count == 0) return 0f;
+        using var normalFont = style.CreateFont(scale, ctx.MmToPx);
+        using var symbolFont = new SKFont(symbolFace, normalFont.Size);
+        float totalPx = normalFont.MeasureText(" ");
+        foreach (var r in runs) totalPx += (r.Symbol ? symbolFont : normalFont).MeasureText(r.Text);
+        return totalPx / ctx.MmToPx;
     }
 
     /// <summary>Nakreslí úseky značek do obsahové oblasti. <paramref name="startAfterNamePx"/> = pevný
@@ -751,6 +808,88 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
     private static bool IsNaZnameniAttr(AtributData a) =>
         a.Popis.StartsWith("na znamen", StringComparison.OrdinalIgnoreCase);
 
+    /// <summary>Je atribut zastávky přestup na jiný druh dopravy? V1: vlak „L" / autobus „A"
+    /// (číselník 16). Řídí ho přepínač „Přestupy" — nad rámec legacy StopListu.</summary>
+    private static bool IsTransferAttr(AtributData a) =>
+        a.Znak is "A" or "L";
+
+    /// <summary>Režim „Duplikace řádku per stanoviště" (KOVED #13048 bod 4): zastávku obsluhovanou
+    /// z více stanovišť rozvine na N řádků na jejím místě v trase (pořadí = první výskyt stanoviště
+    /// napříč variantami, netřídí se). Každý řádek nese své stanoviště a časy jen variant, které z něj
+    /// jedou. Vývěsková (aktuální) zastávka i zastávka s ≤1 stanovištěm zůstávají jedním řádkem.
+    /// Ostatní režimy = beze změny (vrací původní seznam).</summary>
+    public List<ZastavkaData> ExpandPlatformRows(List<ZastavkaData> stops)
+    {
+        if (MultiPlatformMode != MultiPlatformDisplay.RowPerPlatform) return stops;
+
+        var result = new List<ZastavkaData>(stops.Count);
+        foreach (var z in stops)
+        {
+            // Odlišná stanoviště variant, které zde staví — v pořadí prvního výskytu (bez třídění).
+            // Jen indexy v rozsahu TrasaMin (obojí server drží stejně dlouhé; guard proti fantom řádku).
+            var platforms = new List<string>();
+            int pocetSloupcu = Math.Min(z.NastupisteVariant.Count, z.TrasaMin.Count);
+            for (int i = 0; i < pocetSloupcu; i++)
+            {
+                var p = z.NastupisteVariant[i];
+                if (!string.IsNullOrEmpty(p) && !platforms.Contains(p)) platforms.Add(p);
+            }
+
+            if (z.JeAktualni || platforms.Count < 2)
+            {
+                result.Add(z);
+                continue;
+            }
+
+            bool first = true;
+            foreach (var plat in platforms)
+            {
+                result.Add(CloneStopForPlatform(z, plat, keepMarkers: first));
+                first = false;
+            }
+        }
+        return result;
+    }
+
+    /// <summary>Kopie zastávky pro jedno stanoviště: v <see cref="ZastavkaData.TrasaMin"/> ponechá časy
+    /// jen sloupců variant jedoucích z tohoto stanoviště (ostatní prázdné). Značka „projíždí bez stání"
+    /// („&lt;") není vázaná na stanoviště → zůstane jen na prvním řádku (aby se info neztratilo, ale
+    /// neopakovalo). Značky (atributy / na znamení / poznámky) jen na prvním řádku; název a zóna se
+    /// opakují (je to táž zastávka). Neaktivní (aktuální řeší jediný řádek výše).</summary>
+    private static ZastavkaData CloneStopForPlatform(ZastavkaData z, string platform, bool keepMarkers)
+    {
+        var trasa = new List<string>(z.TrasaMin.Count);
+        for (int i = 0; i < z.TrasaMin.Count; i++)
+        {
+            string nv = i < z.NastupisteVariant.Count ? z.NastupisteVariant[i] : "";
+            string val = z.TrasaMin[i];
+            if (nv == platform)
+                trasa.Add(val);                           // čas varianty jedoucí z tohoto stanoviště
+            else if (keepMarkers && val == "<")
+                trasa.Add(val);                           // „projíždí" (mimo stanoviště) — 1× na prvním řádku
+            else
+                trasa.Add("");
+        }
+        return new ZastavkaData
+        {
+            Id               = z.Id,
+            Popis            = z.Popis,
+            CasJizdy         = z.CasJizdy,
+            Poradi           = z.Poradi,
+            JeAktualni       = false,
+            Odsazeni         = z.Odsazeni,
+            NaZnameni        = keepMarkers && z.NaZnameni,
+            Nastupiste       = platform,
+            NastupisteSpoju  = z.NastupisteSpoju,
+            Zony             = z.Zony,
+            Atributy         = keepMarkers ? z.Atributy : [],
+            PoznamkyZastavky = keepMarkers ? z.PoznamkyZastavky : [],
+            TrasaMin         = trasa,
+            NastupisteVariant = z.NastupisteVariant,
+            SourceRow        = z.SourceRow,
+        };
+    }
+
     private string BuildStopDisplayText(ZastavkaData z)
     {
         var name = z.Popis;
@@ -779,6 +918,19 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         new BoolPropertyDescriptor   { Label = "Na znamení",        Group = "Zastávky", Get = () => ShowSignalStopIndicator,Set = v => ShowSignalStopIndicator = v },
         new StringPropertyDescriptor { Label = "Symbol na znamení", Group = "Zastávky", Get = () => SignalStopSymbol,      Set = v => SignalStopSymbol = v },
         new BoolPropertyDescriptor  { Label = "Atributy",          Group = "Zastávky", Get = () => ShowStopAttributes,     Set = v => ShowStopAttributes = v },
+        new BoolPropertyDescriptor  { Label = "Přestupy (vlak/bus)",Group = "Zastávky", Get = () => ShowTransferAttributes, Set = v => ShowTransferAttributes = v },
+        new EnumPropertyDescriptor
+        {
+            Label = "Více nástupišť", Group = "Zastávky",
+            Get = () => MultiPlatformMode,
+            Set = v => MultiPlatformMode = (MultiPlatformDisplay)v,
+            Options = [
+                ("Z trasy linky", (object)MultiPlatformDisplay.FromRoute),
+                ("Nejčetnější dle spojů", (object)MultiPlatformDisplay.MostFrequent),
+                ("Výčet všech", (object)MultiPlatformDisplay.All),
+                ("Duplikace řádku per stanoviště", (object)MultiPlatformDisplay.RowPerPlatform)
+            ]
+        },
         new BoolPropertyDescriptor  { Label = "Poznámky zastávky", Group = "Zastávky", Get = () => ShowStopNotes,          Set = v => ShowStopNotes = v },
         new EnumPropertyDescriptor
         {
@@ -850,8 +1002,10 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
             ShowSignalStopIndicator = ShowSignalStopIndicator,
             SignalStopSymbol        = SignalStopSymbol,
             ShowStopAttributes      = ShowStopAttributes,
+            ShowTransferAttributes  = ShowTransferAttributes,
             ShowStopNotes           = ShowStopNotes,
             MarkersPosition         = MarkersPosition,
+            MultiPlatformMode       = MultiPlatformMode,
             CurrentStopUnderline    = CurrentStopUnderline,
             ShowPassedStops         = ShowPassedStops,
             PassedStopsForeColor    = PassedStopsForeColor,
@@ -875,6 +1029,20 @@ public enum DirectionArrowSide
 {
     Right,
     Left
+}
+
+/// <summary>Zdroj sloupce „Nástupiště" při více sloupcích u zastávky (KOVED #13048 bod 4).</summary>
+public enum MultiPlatformDisplay
+{
+    /// <summary>Z trasy linky (J-věta) — dnešní chování, default.</summary>
+    FromRoute,
+    /// <summary>Nástupiště, odkud jede nejvíc spojů (per-spoj hodnota má přednost před trasou).</summary>
+    MostFrequent,
+    /// <summary>Výčet všech nástupišť dle spojů („2, 3"), seřazený dle četnosti.</summary>
+    All,
+    /// <summary>Duplikace řádku: zastávka obsluhovaná z více stanovišť se vypíše jako N řádků (jeden
+    /// per stanoviště) na svém místě v trase; časy jen variant daného stanoviště (KOVED #13048 bod 4).</summary>
+    RowPerPlatform,
 }
 
 /// <summary>Strana značek (na znamení, atributy, poznámky) vůči názvu zastávky.</summary>

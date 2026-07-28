@@ -134,6 +134,15 @@ bumpne na „1.1.0" **spolu s** `ITemplateMigration`. (Kosmetický rozdíl „1.
 Caché metadat vs „1.0.0" v C# je funkčně irelevantní — `VersionComparer` je srovnává jako rovné a
 metadata verze se k migraci nepoužívá; neřešeno záměrně.)
 
+### V1.1.0–V1.4.0 (přehled; detail = XML doc migračních tříd v `Serialization/`)
+
+- **1.1.0** `MigrationHighlightRules` — řádkové zvýraznění: skalární pár → `highlightRules[]` seznam.
+- **1.2.0** `MigrationKnizniToLinkovy` — přejmenování knižní → linkový (agenda kódy/typy).
+- **1.3.0** `MigrationUnifyStopColumns` — StopList klíče sloupců → sdílená field ID, zrušené sloupce pryč.
+- **1.4.0** `MigrationDepartureGridMaxGroups` (2026-07-23) — DepartureGrid `maxGroupCount`: starý
+  implicitní default **3 → 0** (bez limitu). Strop 3 tiše ořezával 4. SMO sloupec v rozporu
+  s checkboxy dialogu; vědomé hodnoty (1, 2, 4…) zůstávají. Class default změněn na 0.
+
 ---
 
 ## Operational notes

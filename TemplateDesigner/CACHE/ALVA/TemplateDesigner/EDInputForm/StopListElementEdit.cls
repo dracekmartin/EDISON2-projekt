@@ -26,6 +26,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
         d form.AddDecimal("BorderWidth", "Šířka rámečku", 0, 0, 5, "mm")
+        s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
+        s f.value = "None"
+        d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
         d form.AddBool("ShowHeader", "Záhlaví sloupců", 1)
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
         d form.AddBool("ShowRowSeparators", "Oddělovací čáry", 0)
@@ -40,6 +44,12 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d form.AddBool("ShowSignalStopIndicator", "Na znamení", 1)
         d form.AddText("SignalStopSymbol", "Symbol na znamení")
         d form.AddBool("ShowStopAttributes", "Atributy", 1)
+        s f = form.AddBool("ShowTransferAttributes", "Přestupy (vlak/bus)", 0)
+        s f.helpText = "Zobrazí u zastávky symbol přestupu na vlak (L) / autobus (A). Legacy JŘ je netiskl."
+        s f = form.AddFieldToLastGroup("MultiPlatformMode", "Více nástupišť", $$$FieldTypeList, 0, 1)
+        d f.AddListItem("FromRoute", "Z trasy linky"), f.AddListItem("MostFrequent", "Nejčetnější dle spojů"), f.AddListItem("All", "Výčet všech")
+        d f.AddListItem("RowPerPlatform", "Duplikace řádku per stanoviště")
+        s f.helpText = "Sloupec Nástupiště, když spoje jedou z různých sloupků zastávky: hodnota z trasy / sloupek s nejvíce spoji / výčet všech dle četnosti / nebo duplikace řádku (každé stanoviště zvlášť, časy jen jeho variant)."
         d form.AddBool("ShowStopNotes", "Poznámky zastávky", 1)
         d form.AddBool("ShowAllRouteVariants", "Všechny varianty tras", 1)
         s f = form.AddFieldToLastGroup("MarkersPosition", "Pozice značek", $$$FieldTypeList, 0, 1)

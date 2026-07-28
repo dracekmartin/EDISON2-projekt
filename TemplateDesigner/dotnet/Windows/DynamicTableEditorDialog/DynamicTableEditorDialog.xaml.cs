@@ -87,6 +87,7 @@ public partial class DynamicTableEditorDialog : Window
         ElementFormBinder.PopulateFontFields(GeneralForm);
         PopulateDataSourceField();
         _preFilled = ElementFormBinder.Prefill(GeneralForm, _element);
+        ElementFormBinder.PopulateFontWeightFields(GeneralForm);   // řezy dle rodiny (před Validate)
 
         _dataSourceField = (GeneralForm.Items ?? []).OfType<Field>().FirstOrDefault(f => f.Key == "DataSource");
 

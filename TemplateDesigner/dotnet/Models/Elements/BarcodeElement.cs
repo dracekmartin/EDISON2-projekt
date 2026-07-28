@@ -42,12 +42,7 @@ public class BarcodeElement : TemplateElement
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
         var content = ctx.Data?.ResolvePlaceholders(Content) ?? Content;
 
-        // Pozadí
-        if (SkBackgroundColor.Alpha > 0)
-        {
-            using var bgPaint = new SKPaint { Color = SkBackgroundColor, Style = SKPaintStyle.Fill };
-            ctx.Canvas.DrawRect(rect, bgPaint);
-        }
+        // Pozadí elementu kreslí base RenderBackgroundPass (respektuje rohy) před obsahem.
 
         if (string.IsNullOrWhiteSpace(content))
         {

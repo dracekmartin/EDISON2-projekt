@@ -36,8 +36,10 @@
 
     <StackPanel>
 
-        <!-- ── Font + velikost + B/I/U/S ─────────────────────────────── -->
-        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+        <!-- ── Font + řez + velikost + B/I/U/S ───────────────────────── -->
+        <!-- WrapPanel: při úzkém dialogu se položky zalomí na další řádek místo přetečení ven.
+             (Dočasné — layout editoru sloupců k přepracování, viz roadmap.) -->
+        <WrapPanel Margin="0,0,0,4">
 
             <!-- Font family — prázdné pole = dědit, placeholder ukazuje zděděnou hodnotu -->
             <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
@@ -54,6 +56,17 @@
                                IsHitTestVisible="False"
                                Visibility="{Binding Text, ElementName=FontFamilyBox, Converter={StaticResource NullToVis}}"/>
                 </Grid>
+            </StackPanel>
+
+            <!-- Řez (váha) — dynamická nabídka reálných řezů vybrané rodiny; položka „Automaticky (dědit)" = null -->
+            <StackPanel Orientation="Horizontal" Margin="0,0,10,0"
+                        Visibility="{Binding EditOptions.AllowFontFamily, ElementName=Root, Converter={StaticResource BoolToVis}}">
+                <TextBlock Text="Řez:" VerticalAlignment="Center" Margin="0,0,4,0"/>
+                <ComboBox x:Name="FontWeightBox" Width="130"
+                          ItemsSource="{Binding WeightOptions}"
+                          DisplayMemberPath="Label" SelectedValuePath="Value"
+                          SelectedValue="{Binding FontWeight, UpdateSourceTrigger=PropertyChanged}"
+                          ToolTip="Řez (váha) písma — nabídka dle reálných řezů vybraného fontu"/>
             </StackPanel>
 
             <!-- Font size -->
@@ -110,7 +123,7 @@
                         CommandParameter="Strikethrough"
                         Visibility="{Binding HasExplicitStrikethrough, Converter={StaticResource BoolToVis}}"/>
             </StackPanel>
-        </StackPanel>
+        </WrapPanel>
 
         <!-- ── Zarovnání H + V ──────────────────────────────────────── -->
         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">

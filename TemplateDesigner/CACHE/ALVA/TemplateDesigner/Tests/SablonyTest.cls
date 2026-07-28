@@ -19,6 +19,46 @@ Method OnBeforeOneTest(testname As %String) As %Status
 	quit $$$OK
 }
 
+/// Malý blob (1 kus) se ukládá a vrací JEDNOKLÍČOVĚ — kompatibilita se staršími klienty
+/// bez podpory kusů (#13013: starý klient četl jen OUT("data") → chunked šablona „porušená").
+Method TestMalyBlobJednoklicovyProStarehoKlienta()
+{
+	do ..SetupSys(.sys, "EDTESTING")
+	set json = "{""version"":""1.0.0"",""name"":""Kompat"",""sections"":[]}"
+	set ^||ML("IN","templateId") = "TEST-COMPAT-1"
+	set ^||ML("IN","name")       = "Kompat"
+	set ^||ML("IN","agendaCode") = "GENERAL"
+	set ^||ML("IN","dataChunkCount") = 1
+	set ^||ML("IN","data1")      = json
+	do ##class(ALVA.TemplateDesigner.API.Sablony).SaveTemplate(.sys)
+
+	kill ^||ML
+	set ^||ML("IN","templateId") = "TEST-COMPAT-1"
+	do ##class(ALVA.TemplateDesigner.API.Sablony).LoadTemplate(.sys)
+	do $$$AssertEquals($get(^||ML("OUT","data")), json, "malý blob: Load vrací jednoklíčové data (čte i starý klient)")
+	do $$$AssertEquals($data(^||ML("OUT","dataChunkCount")), 0, "malý blob: bez chunk klíčů")
+}
+
+/// Vícekusý blob zůstává po kusech (jeden řetězec by překročil limit délky řádku na wire).
+Method TestVelkyBlobPoKusech()
+{
+	do ..SetupSys(.sys, "EDTESTING")
+	set ^||ML("IN","templateId") = "TEST-CHUNK-2"
+	set ^||ML("IN","name")       = "Velká"
+	set ^||ML("IN","agendaCode") = "GENERAL"
+	set ^||ML("IN","dataChunkCount") = 2
+	set ^||ML("IN","data1")      = "{""version"":""1.0.0"",""name"":""Vel"
+	set ^||ML("IN","data2")      = "ká"",""sections"":[]}"
+	do ##class(ALVA.TemplateDesigner.API.Sablony).SaveTemplate(.sys)
+
+	kill ^||ML
+	set ^||ML("IN","templateId") = "TEST-CHUNK-2"
+	do ##class(ALVA.TemplateDesigner.API.Sablony).LoadTemplate(.sys)
+	do $$$AssertEquals(+$get(^||ML("OUT","dataChunkCount")), 2, "velký blob: 2 kusy")
+	do $$$AssertEquals($get(^||ML("OUT","data1"))_$get(^||ML("OUT","data2")), "{""version"":""1.0.0"",""name"":""Velká"",""sections"":[]}", "velký blob: kusy round-trip")
+	do $$$AssertEquals($data(^||ML("OUT","data"))#2, 0, "velký blob: bez jednoklíčového data")
+}
+
 Method TestSaveLoadRoundTrip()
 {
 	do ..SetupSys(.sys, "EDTESTING")
@@ -33,7 +73,17 @@ Method TestSaveLoadRoundTrip()
 	kill ^||ML
 	set ^||ML("IN","templateId") = "TEST-RT-1"
 	do ##class(ALVA.TemplateDesigner.API.Sablony).LoadTemplate(.sys)
-	do $$$AssertEquals($get(^||ML("OUT","data")), json, "Load vrací byte-identický JSON blob")
+	// Load vrací blob po kusech (data1..N + dataChunkCount; Save kanonizuje i legacy
+	// jednoklíčový vstup na 1 kus) — klientská strana kusy slepuje, test dtto
+	set chunkCount = +$get(^||ML("OUT","dataChunkCount"))
+	set loaded = ""
+	if chunkCount {
+		for n = 1:1:chunkCount { set loaded = loaded_$get(^||ML("OUT","data"_n)) }
+	}
+	else {
+		set loaded = $get(^||ML("OUT","data"))
+	}
+	do $$$AssertEquals(loaded, json, "Load vrací byte-identický JSON blob")
 
 	set meta = ##class(%DynamicObject).%FromJSON($get(^||ML("OUT","metadata")))
 	do $$$AssertEquals(meta.name, "Testovací šablona", "Metadata: name")

@@ -44,11 +44,17 @@ public class ZastavkaData
     public List<string> Zony { get; set; } = [];
     public bool NaZnameni { get; set; }
     public string Nastupiste { get; set; } = "";   // nástupiště/označník zastávky (AD: J-věta #3; MHD: Oznacnik)
+    public string NastupisteSpoju { get; set; } = ""; // nástupiště dle spojů (CSV dle četnosti, první = nejčetnější); "" = bez per-spoj dat
     public List<AtributData> Atributy { get; set; } = [];
     public List<PoznamkaZastavkyData> PoznamkyZastavky { get; set; } = [];
     /// <summary>Časy jízdy per varianta trasy (dynamické „TrasaMin"): číslo, „&lt;" (projíždí) nebo "" (mimo trasu).
     /// Prázdné = jednovariantní linka (použije se skalární <see cref="CasJizdy"/>).</summary>
     public List<string> TrasaMin { get; set; } = [];
+
+    /// <summary>Nástupiště per varianta trasy (zarovnané s <see cref="TrasaMin"/>): číslo stanoviště,
+    /// odkud daná varianta z této zastávky odjíždí, nebo "" (varianta zde nestaví). Zdroj pro režim
+    /// „Duplikace řádku per stanoviště" (KOVED #13048 bod 4).</summary>
+    public List<string> NastupisteVariant { get; set; } = [];
 
     /// <summary>Zdrojový řádek dat této zastávky — pro vyhodnocení řádkových podmínek (zvýraznění)
     /// nad poli řádku. Neserializuje se.</summary>

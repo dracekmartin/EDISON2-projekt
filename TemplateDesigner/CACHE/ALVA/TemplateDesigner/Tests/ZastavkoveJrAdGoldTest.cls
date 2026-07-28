@@ -18,12 +18,16 @@ Parameter GOLDDB = "CB_CSADAD";
 
 Method TestGold0365001()
 {
-	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=3mrYrDu7m1fCFTr4LFJapg==")
+	// Re-baseline 2026-07-27 (KOVED #13048 bod 4 duplikace): přibylo pole NASTUPISTE_VARIANT
+	// (nástupiště per varianta) do každé zastávky — počty beze změny, jen md5.
+	do ..AssertLine(1, "0365001", "pages=39 zast=800 odj=844 pozn=110 md5=9lOYfqMLeUX/0XYq7dkgjg==")
 }
 
 Method TestGold0365005()
 {
-	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=QAeBxu93SWd9hkKB/rp3pQ==")
+	// Re-baseline 2026-07-27 (KOVED #13048 bod 4 duplikace): + pole NASTUPISTE_VARIANT per zastávka
+	// (počty beze změny). Předtím bod 5 = řazení variantních sloupců dle četnosti.
+	do ..AssertLine(1, "0365005", "pages=38 zast=762 odj=498 pozn=183 md5=6kDpF8QCxjLiKZpEvIUIvw==")
 }
 
 /// Ověří digest linky proti očekávané hodnotě. Rozlišuje:

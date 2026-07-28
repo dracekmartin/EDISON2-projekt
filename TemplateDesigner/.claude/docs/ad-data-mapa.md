@@ -344,6 +344,21 @@ sloupce = skupiny dnů: Pracovní dny / Soboty / Neděle a svátky), `stPoznamky
 „Pracovní dny" s anotacemi „nejede" (†32/†39/†70 z `,22` omezení), SMO2/SMO3 prázdné. Tj. zařazení
 do sloupce není čistě „Plk znak → sloupec" — promítají se i datová omezení. Tuto logiku engine replikuje.
 
+### 9.1 Automatizovaný oracle (gold pojistka) — `ZastavkoveJrAdLegacyTest`
+
+Ruční recept výše je zautomatizovaný v `ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest`:
+zavolá legacy `LoadData` (VolanoZ=JRMAIN) i náš `GetData` a **1:1 assertne shodu zón** per zastávka
+(CB_GWBUS 320113 = `101/104/109`, KV_DP 410101 vč. vícezónové `11,12`). Namespace / legacy třída /
+prázdné zóny → skip. Diagnostika `ZonyProbe` (IN DB/SKU/LIN/PAGE → OUT LEG/OUR/MATCH). Rozšiřitelné
+na TrasaMin varianty (bod 5). **Zóny ověřeny nerozbité vůči starému modulu.**
+
+**Pasti volání legacy `LoadData` z ObjectScriptu** (jinak než přímé `cache_query`):
+- IN parametry čte jako **řetězce „KLÍČ~HODNOTA"** iterací všech subscriptů (`$p(val,"~",2)`), ne
+  pojmenované subscripty → nastav `^||ML("IN",1)="VOLANO_Z~JRMAIN"`, `(2)="SESTAVA~1"`, `(3)="VALUE~…"`.
+- OUT **nemá count node** → iteruj `$order(^||ML("OUT",i))`, ne `for i=1:1:$g(^||ML("OUT"))`.
+- `$$$MakroGlobal` přepíná IN/OUT globál dle `sys("C","App")` → nastav `"ALWA.SYS.MLRest"`, jinak čte
+  `^CacheTempMLSrv`. IdFa/dataDB jde ze `sys("U","IdFa")`/`sys("U","DATA")` (AD data nejsou idfa-scoped).
+
 ---
 
 ## 10. Stav implementace agendy `ZastavkoveJrAd` (snapshot 2026-06-02)

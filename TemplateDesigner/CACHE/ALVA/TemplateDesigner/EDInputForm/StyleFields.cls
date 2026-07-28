@@ -19,6 +19,9 @@ ClassMethod Add(form As ALVA.EDControls.EDInputForm.Form, prefix As %String, gro
     // ComboBox (editovatelný) s prázdným seznamem — klient naplní nainstalovanými fonty
     // (ElementFormBinder.PopulateFontFields). Prázdné = dědit z rodiče kaskády.
     d form.AddFieldToLastGroup(prefix_".FontFamily", labelPrefix_"Font", $$$FieldTypeComboBox, 0, 0)
+    // Řez (váha) — items plní klient dynamicky z reálných řezů rodiny (PopulateFontWeightFields).
+    // Prázdná položka (nepovinné pole) = auto dle Tučné.
+    d form.AddFieldToLastGroup(prefix_".FontWeight", labelPrefix_"Řez", $$$FieldTypeList, 0, 0)
     d form.AddDecimal(prefix_".FontSize", labelPrefix_"Velikost", "", 4, 200, "pt")
     d form.AddBool(prefix_".Bold", labelPrefix_"Tučné", 0)
     d form.AddBool(prefix_".Italic", labelPrefix_"Kurzíva", 0)

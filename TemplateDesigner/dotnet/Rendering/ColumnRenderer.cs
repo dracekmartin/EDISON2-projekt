@@ -9,8 +9,13 @@ namespace TemplateDesigner.Rendering;
 /// </summary>
 public static class ColumnRenderer
 {
-    /// <summary>Jedna buňka řádku = šířka + text + styl.</summary>
-    public readonly record struct CellSpec(float WidthMm, string Text, ResolvedTextStyle Style);
+    /// <summary>Jedna buňka řádku = šířka + text + styl. ShrinkReserveMm = rezerva pro
+    /// „Přizpůsobit buňce" (element ji zvětší, když do buňky kreslí vlastní dekoraci — šipka směru).
+    /// TrailingWidthMm = šířka obsahu dokreslovaného elementem ZA text (značky), škáluje se s textem.</summary>
+    public readonly record struct CellSpec(
+        float WidthMm, string Text, ResolvedTextStyle Style,
+        float ShrinkReserveMm = CellRenderer.DefaultShrinkReserveMm,
+        float TrailingWidthMm = 0f);
 
     /// <summary>
     /// Vykreslí vodorovný řádek buněk. Volitelně mezi sloupce svislé mřížkové čáry.
@@ -43,7 +48,7 @@ public static class ColumnRenderer
             first = false;
 
             var rect = new SKRect(x, yMm, x + cell.WidthMm, yMm + heightMm);
-            CellRenderer.DrawCell(ctx, rect, cell.Text, cell.Style, fontScale);
+            CellRenderer.DrawCell(ctx, rect, cell.Text, cell.Style, fontScale, cell.ShrinkReserveMm, cell.TrailingWidthMm);
 
             x += cell.WidthMm;
         }

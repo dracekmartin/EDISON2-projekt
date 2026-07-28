@@ -35,7 +35,7 @@ public class TextElement : TemplateElement
         float heightMm = Height ?? (WordWrap ? CalculateTextHeight(resolvedText) : EffectiveDesignerHeight);
         var rect = ctx.ToCanvasRect(X, Y, Width, heightMm);
 
-        // Pozadí (pokud není průhledné)
+        // Pozadí (pokud není průhledné). Ořez na tvar rohů řeší render loop obecně (ApplyCornerClip).
         using (var bgPaint = rs.CreateBgPaint())
         {
             if (bgPaint is not null)
@@ -107,6 +107,14 @@ public class TextElement : TemplateElement
         ctx.Canvas.Restore();
     }
 
+    /// <summary>Skutečná výška textu (dynamická) pro ořez na tvar rohů — shodně s výpočtem v Render.</summary>
+    public override SKRect GetContentClipRect(RenderContext ctx)
+    {
+        var resolved = ctx.Data?.ResolvePlaceholders(Text) ?? Text;
+        float h = Height ?? (WordWrap ? CalculateTextHeight(resolved) : EffectiveDesignerHeight);
+        return ctx.ToCanvasRect(X, Y, Width, h);
+    }
+
     public override void ApplyScale(float scale)
     {
         base.ApplyScale(scale);
@@ -118,7 +126,7 @@ public class TextElement : TemplateElement
     [
         new StringPropertyDescriptor { Label = "Text",         Group = "Obsah",     Get = () => Text,                Set = v => Text = v,                                   MultiLine = true },
 
-        new StringPropertyDescriptor { Label = "Rodina písma", Group = "Font",      Get = () => Style.FontFamily ?? "Arial",  Set = v => Style.FontFamily = v },
+        new StringPropertyDescriptor { Label = "Font",         Group = "Font",      Get = () => Style.FontFamily ?? "Arial",  Set = v => Style.FontFamily = v },
         new FloatPropertyDescriptor  { Label = "Velikost",      Group = "Font",      Get = () => Style.FontSize ?? 10f,        Set = v => Style.FontSize = v,                 Min = 4, Max = 200, Unit = "pt" },
         new BoolPropertyDescriptor   { Label = "Tučné",        Group = "Font",      Get = () => Style.Bold ?? false,          Set = v => Style.Bold = v },
         new BoolPropertyDescriptor   { Label = "Kurzíva",      Group = "Font",      Get = () => Style.Italic ?? false,        Set = v => Style.Italic = v },

@@ -1,23 +1,435 @@
 # Changelog
 
-## 2026-07-21 — Ukládání šablon: blob po kusech (velký inline obrázek už neshodí save)
+## 2026-07-27 — Vývěska per označník (#8828 TRANSDEV) — stanovišťový balík dokončen
 
-Zákazník při uložení šablony s velkým obrázkem dostal `500 <SYNTAX> zStreamToGlobal` z MLRest.
-Root cause: obrázek se ukládá jako Base64 **inline v JSON blobu** a celý blob jel na server jako
-**jeden řetězec**. Caché neunese řetězec delší než ~3,64 MB (max string length) — 5MB obrázek dá po
-Base64 ~6,7 MB → server to shodil už při skládání vstupu do globálu, dřív než se spustila ukládací
-logika (proto cizí stack `ALWA.SYS.Utility`, ne naše hláška).
+Zastávka obsluhovaná z více označníků (stanovišť), kde různé spoje jedou z různých sloupků, se dá
+vytisknout jako **samostatná vývěska per označník** — každá jen s odjezdy z toho označníku (TRANSDEV
+linky 876420/863383; referenční podoba = KOVED XLSX 802366).
 
-- **Fix (bez změny JSON schématu → nulové riziko pro legacy šablony):** blob se posílá **po kusech**
-  pod limitem délky a server je ukládá jako samostatné uzly `Data(n)` — **nikdy** se neslepuje do
-  jednoho řetězce. `CacheBlobChunking.Split/Join` (.NET), `SaveTemplate`/`LoadTemplate` chunkují
-  (`dataChunkCount` + `data1..N`). Řeší problém **obecně** (i velká tabulka bez obrázku), ne jen obrázky.
-- **Zpětná kompatibilita:** legacy jednoklíčový uzel `Data` = celý JSON se při loadu pozná (chybí `Data(1)`)
-  a vrátí jako dřív; při dalším uložení se kanonizuje na chunkovaný formát. Starý .NET klient (jednoklíčové
-  `data`) server pořád přijme. Uložené šablony se nijak nemigrují ani nesáhnou.
-- **Testy:** `CacheBlobChunkingTests` (15×) — Split→Join round-trip vč. ~6 MB blobu, hranice kusů, počty.
-- **Zbývá naostro:** end-to-end round-trip s reálným obrázkem proti dev serveru (blokoval sandbox/MCP —
-  TD Caché projekt není v deploy mapě MCP; nasazení třídy + test na uživateli).
+- **Tiskový parametr** „Rozdělit vývěsku per označník" (skupina „Seznam zastávek", default vyp = dnešní
+  jedna vývěska s odjezdy smíchanými). Server-side (věc generování výstupu, ne element).
+- **Server (`ZastavkoveJrAd`)** — při zapnutí vývěska obsluhovaná z N označníků (dle `NastupisteSpoju`)
+  → **N stránek**; `NacistOdjezdy` filtruje spoje na daný označník (per-spoj sloupek = W pozice 7,
+  fallback J-věta); `NASTUPISTE` stránky = její označník. Jen označníky, ze kterých ≥1 spoj. Nezávislé
+  na duplikaci řádku (bod 4).
+- **Gold beze změny** (parametr default vyp → byte-identický výstup, žádný re-baseline). Nový
+  `TestSplitPerOznacnik` (0320680: ČB aut.nádr. → označníky 11/22, odjezdy 5+1). 43/43 Caché.
+- **Ověřeno:** 0320680 OFF=53 stránek, ON=55; ČB aut.nádr. (T) → 2 stránky (označník 11 = 5 odjezdů,
+  22 = 1 odjezd).
+- **Follow-up (odloženo):** členění exportu na samostatné soubory per označník (dnes lze rozlišit
+  tokenem `{NASTUPISTE}` v názvu). Titulek/label výše než sloupec Nástupiště = levné doplnění.
+
+## 2026-07-27 — Šev mezi plátnem a náhledem (blok B6, část a)
+
+Na hranici návrháře a náhledu byl vidět „zdvojený pruh". Příčina nebyla jedna: **čtyři místa, která
+mají mít shodnou barvu plochy, ji měla různou** — plocha kolem plátna brala špatný token
+(`Border.Light`, skoro bílá), plocha kolem náhledu a pruh se stránkováním měly `#E4E4E4` natvrdo
+v XAML, plátno stejnou barvu natvrdo v kódu. Správný token (`EDTheme.Bg.Canvas`, vč. tmavé varianty)
+přitom existoval a nikdo ho nepoužíval. Druhá složka švu = tečkovaný zaostřovací rámeček děličů,
+který zůstával po tažení.
+
+- **Jeden token pro celou plochu** — oba `ScrollViewer`y, pruh stránkování i oba `GridSplitter`y na
+  `EDTheme.Bg.Canvas`; děliče `FocusVisualStyle = null`, takže mezi plátnem a náhledem není žádná
+  linka (oddělení dělá rámeček panelu náhledu).
+- **Skia strana má jediný zdroj** — `Designer/CanvasTheme.Background` nahradilo dvě nezávislé
+  konstanty v `DesignerCanvas`/`PreviewCanvas`; plní ho `MainWindow` z téhož tokenu, takže se WPF
+  a Skia barva nemůže rozejít. Napojeno na `ThemeService.Applied` → plocha reaguje na přepnutí tématu
+  (odregistrace v `OnWindowClosing` — statická událost by zavřené okno držela naživu).
+- **Vědomě mimo:** ostatní chrome návrháře (papír, pravítka, záhlaví sekcí, výběr) zůstává pevný —
+  patří do samostatné položky „dark mode", která potřebuje rozhodnutí, jak má v tmavém režimu vypadat
+  *papír* (tiskne se na bílý). Export se nezměnil — PDF/PNG si plochu čistí bílou zvlášť.
+- Vizuálně ověřeno Janem (šev i tečkovaný rámeček po tažení děliče zmizely). Zbývá část (b) —
+  rozvržení editoru stylu buněk.
+
+## 2026-07-27 — Drobné korektnostní nálezy (blok B3)
+
+Dva nezávislé tiché nálezy z předchozí revize kódu, oba „nic nespadne, jen se ztratí nastavení".
+
+- **Dialog pevné tabulky mazal per-buňkový formát a styl.** Řádkový mezi-model dialogu
+  (`RowVM`/`CellVM`) nesl jen text buňky → otevřít + OK zahodilo `Format`, per-buňkový `Style`
+  a barvu pozadí řádku. Nejvíc to bolelo u tabulek načtených ze šablony agendy — Caché posílá
+  `format` (např. `dd.MM.yyyy`) a barvy per buňku, dialog je nikdy needitoval, ale smazal.
+  Nově se přenášejí (styl se klonuje, ne sdílí). `TableElement.Clone()` byl v pořádku už dřív
+  (drží ho reflexní `CloneCompletenessTests`) — problém byl jen v cestě přes dialog.
+- **Ruční kreslicí / měřicí cesty JŘ elementů ignorovaly řez písma.** Legenda poznámek a měření
+  záhlaví odjezdů si stavěly typeface natvrdo jako Normal/Bold, takže uživatelova váha písma
+  (a kurzíva) se do nich nepropsala — a u legendy se navíc rozešlo měření s renderem (počet
+  zalomených řádků → špatná výška boxu). Sjednoceno na kaskádu: nový helper
+  `ScheduleElementBase.GetTypeface(ResolvedTextStyle)` (rodina + řez z `ToSKFontStyle`), použitý
+  v legendě (text, záhlaví, zvýrazněný symbol, výpočet výšky), v měření a wrapu záhlaví skupin dnů
+  u odjezdů a v designerových placeholderech odjezdů / linkové tabulky / seznamu zastávek + v měření
+  šířky značek zastávky. Legenda tím zároveň začala respektovat **výchozí font dokumentu** (dřív
+  padala na Arial).
+- **Testy:** 8 nových xUnit (`TableEditorRowRoundTripTests` 4× round-trip řádku, `ScheduleFontCutTests`
+  3× řez z kaskády + výška legendy reagující na tučný řez — ověřeno, že bez fixu padá). 384/384 xUnit.
+
+## 2026-07-27 — Duplikace řádku per stanoviště (#13048 KOVED, bod 4)
+
+Zastávka obsluhovaná z více stanovišť (sloupků) se v seznamu vypíše jako **N řádků, jeden per
+stanoviště** (KOVED „duplikace řádku ... příklad Medlovice"). 4. volba comboboxu „Více nástupišť"
+vedle „nejčetnější" / „výčet".
+
+- **Server (aditivně, `ZastavkoveJrAd`)** — nové wire-pole `NASTUPISTE_VARIANT` per zastávka
+  (nástupiště per varianta, zarovnané s `TRASA_MIN`; z reprezentativní trasy varianty, W pole 7,
+  fallback J-věta). Identita variant se **nemění** → gold jen re-baseline (počty stejné, přibylo pole).
+- **Klient (`StopListElement.ExpandPlatformRows`)** — režim `RowPerPlatform`: zastávku se ≥2 stanovišti
+  rozvine na N řádků **na jejím místě v trase** (pořadí = první výskyt stanoviště napříč variantami,
+  netřídí se). Každý řádek nese své stanoviště + **časy jen variant, které z něj jedou** (ostatní
+  prázdné — řeší bod 5 „jiné stanoviště = jiná varianta" na úrovni zobrazení). Vývěska a jednostanovištní
+  zastávka = 1 řádek; značky (atributy / na znamení / poznámky) jen na prvním řádku.
+- **Testy:** 6 xUnit (`StopListPlatformDuplicationTests`, vč. zachování značky „<" projíždějící varianty) +
+  Caché `TestNastupisteVariantEmit` (data lock na 0330510). Gold 0365001/0365005 re-baseline. 42/42 Caché + 6/6 xUnit.
+- **Známé omezení:** nástupiště per varianta = z **reprezentativního spoje** varianty (jako TRASA_MIN).
+  Dva spoje se **shodným sledem zastávek**, ale různým stanovištěm, se slijí do jedné varianty → zobrazí se
+  jen stanoviště reprezentanta. Rozlišení i tohoto případu = stanoviště do **identity varianty** (vědomě NE —
+  dávalo vizuálně identické sloupce, viz bod 5 / `c6d661d`); reálná data (0320680) mají různá stanoviště
+  napříč různými variantami, kde to funguje. Plné rozlišení až na reálnou potřebu KOVED.
+
+## 2026-07-27 — Varianty tras dle trasy + písmena u odjezdů (#13048 KOVED, bod 5)
+
+Návrat k legacy sémantice variantních časových sloupců + KOVED rozšíření. Jen server
+(`ZastavkoveJrAd`), .NET beze změny (anotace/hlavičky/pořadí jedou z dat).
+
+- **Seskupování variant PŘEDĚLÁNO (bezpodmínečně):** varianta = **sled obsluhovaných zastávek**
+  (1:1 legacy dedup dle `prutmbmp`, `JRapiLinPrtMhd1` ř.266-300 — „ponechá se delší čas"),
+  NE časový profil jako dřív. Spoje stejné trasy s jinými časy se slévají; čas sloupce =
+  **maximum přes spoje** („nejpozději za X min"). Efekt 0330510/T: 37 spojů, 33 sloupců →
+  **11 variant tras** (hlavní 21 spojů; sonda `AdVariantyProbe.Scan`). **Nástupiště do identity
+  NEJDE** (první verze ho měla — dalo vizuálně identické duplicitní časové sloupce, vidět na
+  smoke testu; KOVED „jiné stanoviště = jiná varianta" pokryje vývěska per sloupek #8828,
+  helper `WNastupisteMapa` připraven).
+- **Oprava `|` ve W-trase = spoj nestaví** (nález ze smoke testu — „časy 0"): `|` znamená
+  „zastávka na trase, ale spoj v ní nestaví" (legacy `JRapiExp10` ř.272-275 přeskakuje
+  `<`/`|`/prázdné shodně); `CasHodnota` ho dřív četl přes `+"|"` jako čas 0 → falešné nuly
+  v časových sloupcích, falešné „obsloužené" zastávky a slité varianty. Nyní: `CasHodnota("|")=""`
+  (spoj s `|` na vývěskové zastávce nedostane odjezd), `ObsluhovanePoradi` `|`-only zastávky
+  nezařadí, ve variantních sloupcích se `|` ukáže jako `<`. Gold beze změny (0365001/0365005
+  `|` neobsahují), unit test rozšířen.
+- **Řazení sloupců** — parametr „Řazení variant tras": *Dle četnosti ze zastávky* (default, KOVED —
+  nejčastější první) / *Stabilní (pořadí spojů)* (TR7/TRANSDEV kontinuita). Parametry ve skupině
+  „Seznam zastávek" (týkají se variantních sloupců StopListu). **.NET:** re-fetch trigger
+  zobecněn z hardcoded `ROZDELENI_SLOUPCU` na seznam `ServerSideParams` (snapshot porovnání) —
+  změna kteréhokoli variantního parametru přenačte data.
+- **Oprava bool parametrů na wire (latentní, nález ze smoke testu):** klient posílal C# bool
+  přes `ToString()` = **„True"**, server porovnává `= "true"` → bool parametry GetData nikdy
+  nezabraly (týkalo se i TR2 `SOUHRN_NA_ZNAMENI` — proto „čekal ověření"). Fix obou stran:
+  `CacheAgendaProvider.GetData` normalizuje bool → `"true"/"false"` (wire kontrakt),
+  server čte tolerantně přes `$zcvt(...,"L")` (funguje i se starším klientem).
+- **Písmena variant u odjezdů** — parametr „Písmena variant u odjezdů" (default **vyp** = beze změny
+  pro stávající zákazníky): hlavičky sloupců = písmena A–Z (`PismenoVarianty` + unit test), u minuty
+  odjezdu anotace s písmenem varianty (kategorie `varianta-trasy` — mimo filtry #7955), volba
+  „První varianta bez písmene" (default zap — hlavní trasa čistá). Písmena **nahrazují automatické
+  rozdílové poznámky** (`RozdilyTras` se nepočítá — jinak dvě abecedy na vývěsce); ruční poznámky
+  zákazníka nedotčeny. Vyp = původní hlavičky (písmena rozdílů / „T1"…).
+- **Ověřeno:** sonda `AdVariantyProbe.Stranka` (ostrá `BuildStrankaZastavky`) na 0330510: hlavičky
+  `["", "A" … "J"]`, 16 anotací písmen = přesně počet spojů mimo hlavní variantu (37−21),
+  `rozdil-trasy` v anotacích nahrazeno; default režim = kategorie beze změny. Gold: 0365001 **beze
+  změny**, 0365005 re-baseline (jen pořadí 6 sloupců dle četnosti; počty 1:1). Caché 41/41,
+  .NET 370/370.
+
+Zákazník: spoje jedou z různých sloupků jedné zastávky → volba chování sloupce „Nástupiště".
+
+- **Server (`ZastavkoveJrAd`):** nové pole řádku zastávky **`NASTUPISTE_SPOJU`** — nástupiště
+  posbíraná ze spojů směru dle legacy pravidla „**nástupiště ze spoje, není-li, tak z linky**"
+  (`JRapiExp10:1222-1226`): per-spoj hodnota z W-trasy, fallback J-věta `#3`. CSV seřazené dle
+  četnosti (první = nejčetnější; shoda → menší hodnota, čistý helper `NastupisteCsv` + unit test).
+  Agregace cachovaná per linka×směr (`^||TiskAd("nastCsv")`). ⚠️ **Past ověřená v legacy zdrojích:
+  pole `trs(8)` = W-segment pozice 7** — legacy čas/čekání rozpadá W pozici 2 na dvě pole
+  (`JRapiSp:234-241`), indexy jsou posunuté (první pokus s pozicí 8 četl zóny).
+- **Element (StopList):** přepínač **„Více nástupišť"** (`MultiPlatformMode`): *Z trasy linky*
+  (default = dnešní chování) / *Nejčetnější dle spojů* / *Výčet všech („2, 3")*. Panel + dialog
+  (EDInputForm). Sloupec „Nástupiště" zůstává opt-in.
+- **Data ověřena:** sonda `AdWTrasaProbe.ScanNastupiste` — per-spoj sloupky plní stovky linek
+  (CB_GWBUS 541, CB_CSADAD 339) a multi-sloupkových zastávek jsou desítky (197/153; vč. gold
+  0320993, 0320680, 0330510). End-to-end na 0330510: ČB aut.nádr. → „1,2,28,3" (fallback z trasy
+  správně mezi četnostmi). Uzavírá i datový průzkum pro #8828 (vývěska per sloupek — zbývá stránkování).
+- Gold: re-baseline 0365001/0365005 (jen md5 — nové pole v JSON; počty beze změny). Caché 40/40,
+  .NET 370/370.
+
+## 2026-07-27 — Přetékající text buněk se zmenšuje na šířku — vestavěné chování (#13048 KOVED, bod 2)
+
+Zákazník chtěl u přetékajících názvů zastávek / seznamu zón zmenšení fontu jako v Excelu
+(„přizpůsobit buňce"). Po UX diskusi **bez konfigurace — vestavěné chování všech buněk tabulek**:
+dosavadní „chování" při přetečení bylo, že text podlezl pozadí vedlejší buňky (useknutá půlka
+slova) — to není nikdy záměr. Žádný checkbox; opt-out doplníme až na reálnou poptávku.
+
+- **`CellRenderer`**: text širší než buňka → proporcionální zmenšení fontu; **trigger až skutečné
+  přetečení** (sloupce s auto šířkou na míru textu se nemění), cíl = šířka minus rezerva 0,6 mm
+  (nekončit na hraně). Víceřádkový text dle nejširšího řádku (jednotná velikost). Hot path bez
+  alokace navíc (`ComputeShrinkScale` overload s existujícím fontem).
+- **StopList + značky za názvem**: zmenšení názvu počítá i s šířkou značek (`TrailingWidthMm`
+  v `CellSpec` — obsah škálující se s textem); značky se posouvají i zmenšují se jménem (sdílený
+  výpočet škály = pozice se nerozjedou). **Rezerva dle šipky směru**: u sloupce názvů se šipkou
+  vpravo = odsazení svislice (0,6) + vodorovná část šipky (1,5) + buffer (0,5) = 2,6 mm, aby
+  zmenšený text nepodlézal vodorovnou část šipky; ostatní buňky jen obecných 0,6 mm.
+- **Rozsah:** buňky kreslené přes `CellRenderer` (StopList, DynamicTable/TableElement, LineTable,
+  záhlaví DepartureGrid). Legenda poznámek (zalamuje) a minuty odjezdů (vlastní layout) beze změny.
+- Bod 3 (#13048) ověřen: „čísla sloupků z trasy" = hotový sloupec „Nástupiště" (TR3); „z detailu
+  spoje" (per-spoj W-trasa) splývá s bodem 4.
+
+## 2026-07-27 — Šablony v DB: kompatibilita se staršími klienty (#13013 — „Šablona nebyla nalezena nebo je porušená")
+
+Kolega s produkční verzí klienta (release 2026-07-14, bez podpory blobů po kusech) nemohl otevřít
+systémovou šablonu z DB — nový build ji při seedu uložil po kusech a starý klient čte jen jednoklíčové
+`data` → prázdno → chyba. Diagnóza vyloučila poškozená data (`SablonyDiag.IntegrityProbe`: žádná
+utržená šablona, blob existoval — jen ve formátu, který starý klient neumí).
+
+- **Fix (`Sablony.SaveTemplate`):** malý blob (vejde se do 1 kusu, tj. do ~20 000 znaků — drtivá
+  většina šablon) se ukládá **jednoklíčově** = formát čitelný i staršími klienty. Po kusech jen
+  vícekusé bloby (velké obrázkové šablony) — ty starší klient stejně nikdy neuložil (padaly ještě
+  před chunking fixem). Kanonizace legacy→chunked z 2026-07-23 tím zrušena (bránila mixu verzí).
+- **Testy:** `TestMalyBlobJednoklicovyProStarehoKlienta` + `TestVelkyBlobPoKusech` zamykají oba
+  formáty; 39/39 zeleně.
+- **Nový diag nástroj `Tests/SablonyDiag.IntegrityProbe`** (read-only): projde celé úložiště šablon
+  a per šablona hlásí stav blobu (jednoklíčový / po kusech / CHYBÍ = utržená). Pro budoucí „nejde
+  otevřít šablonu" případy.
+- Systémová šablona v MLINE už je po re-seedu v kompatibilním formátu (ověřeno probe).
+- **Pozn. k druhé výtce z tiketu** („okno chybového hlášení vypadá jinak"): jde o standardní
+  EDControls `EDErrorPopup` (scrollovatelný dialog s plnou výjimkou, R2) — liší se od starého
+  EDISON okna záměrně (nový stack). Případné sjednocení vzhledu / čistá hláška bez stacku pro
+  doménové chyby = týmové rozhodnutí, ne bug.
+
+## 2026-07-24 — Přestupy u zastávek (vlak/autobus) — nad rámec legacy (#13048 KOVED, bod 1)
+
+Zákazník chtěl u zastávek zobrazit přestupy na vlak/autobus. Data je mají (znak „L"=vlak, „A"=autobus
+v atributech zastávky, číselník 16), ale legacy StopList je záměrně netiskl (jen „x"=na znamení).
+
+- **Server (`ZastavkoveJrAd`)** — `JePrestupovyAtribut` (V1: „A"/„L"); přestupy se **vždy posílají jako
+  data zastávky** (ATRIBUTY), ale **do legendy nejdou** (jen symbol u zastávky). Ostatní znaky číselníku
+  (formátovací P/T/N/V…) se dál netisknou.
+- **Klient (`StopListElement`)** — nový přepínač **„Přestupy (vlak/bus)"** (`ShowTransferAttributes`,
+  **default vyp = jako legacy**); render filtr rozlišuje na-znamení / přestup / ostatní atribut. Přepínač
+  v panelu i EDInputform (`StopListElementEdit.cls`). Symbol se kreslí u názvu zastávky (piktogram).
+- **Gold re-baseline** (0365001/0365005) — počty beze změny (`zast/odj/pozn` stejné, pozn potvrzuje že
+  přestupy nejdou do legendy), změnil se jen md5 (přestupy přibyly do ATRIBUTY). Vědomé, ověřené.
+- **Nový test `TestPrestupyEmit`** (0330510 ČB AN — autobus na terminálech) zamyká emisi. 37/37 zeleně.
+- Přestupy sedí hlavně na **terminálech** (nádraží na koncích trasy) — tam je přestup logický.
+
+## 2026-07-24 — Gold pojistka zón vůči legacy (AD zastávkový JŘ, #13048 KOVED)
+
+Zákazník hlásil prázdný sloupec zón. Ověřeno, že náš `ZastavkoveJrAd.GetData` vrací zóny **1:1 shodně
+se starým modulem** — a shoda zamčena testem, aby ji budoucí změny nerozbily.
+
+- **Nová test třída `ALVA.TemplateDesigner.Tests.ZastavkoveJrAdLegacyTest`** — porovná řetězec zón per
+  zastávka z našeho `GetData` proti **legacy producentovi** `ALVA.TISKMHD.Data.LoadData` (VolanoZ=JRMAIN,
+  tentýž generátor, který krmil starý modul). 1:1 assert na CB_GWBUS 320113 (`101/104/109`) a KV_DP
+  410101 (vč. vícezónové `11,12`). Namespace / legacy třída / prázdné zóny → skip (jiný server).
+- Diagnostika mimo runner: `ZonyProbe` (IN DB/SKU/LIN/PAGE → OUT LEG/OUR/MATCH).
+- **Pasti legacy volání zdokumentovány** (`ad-data-mapa.md §9`): `LoadData` čte IN jako řetězce
+  „KLÍČ~HODNOTA" (ne pojmenované subscripty), OUT bez count node (iterovat `$order`), `$$$MakroGlobal`
+  přepíná IN/OUT globál dle `sys("C","App")` (nutno `ALWA.SYS.MLRest`, jinak čte `^CacheTempMLSrv`).
+- **Výsledek: zóny nejsou rozbité** — prázdný sloupec u KOVED = jejich data/šablona, ne regrese.
+  Řezy 36/36 Caché testů zeleně.
+
+## 2026-07-24 — Řezy písma (váhy) — výběr reálných řezů fontu (#13006 KOVED)
+
+Zákazník chtěl používat víc řezů písma (TT Hoves Light/Medium/SemiBold/Heavy…), ne jen Tučně/Kurzíva.
+
+- **Model:** `TextStyle.FontWeight` (100–900, nullable; null = auto dle Tučně, aditivní bez migrace);
+  `ResolvedTextStyle.ToSKFontStyle` staví váhu (explicitní přebíjí Bold) → teče do renderu.
+- **Sdílený `FontWeightCatalog`** — jediné místo „jaké řezy rodina reálně má" (z `SKFontManager.GetFontStyles`,
+  jen vzpřímené) + názvosloví. **Nabízí jen skutečně nainstalované řezy** (ne fixní seznam) — chybějící font
+  nemá, tak se nenabídne (dřívější fixní seznam mátl: nabízel váhy, co font nemá).
+- **UI „Řez" dropdown** všude, kde se nastavuje font:
+  - **EDInputForm** (Text, StyleFields zóny DepartureGrid/StopList/DynamicTable, NotesLegend) —
+    klient plní z katalogu (`ElementFormBinder.PopulateFontWeightFields`) **při otevření**.
+  - **Per-sloupec `CellStyleEditor`** (WPF) — tri-state `CellStyleVM.FontWeight` + **živě reaktivní**
+    nabídka (změna rodiny → přepočet řezů). Layout řádku fontu změněn na WrapPanel (zalamování → nepřetéká).
+- **Render:** řez respektují buňky tabulek (`CellRenderer`→`ToSKFontStyle`) + TextElement.
+- **Odloženo do architektonického tracku** (viz roadmap): reaktivita EDInputForm dialogů (živý přepočet
+  bez znovuotevření) + ruční render cesty schedule elementů (minuty DepartureGridu, text legendy) + čistý
+  layout editoru sloupců.
+
+## 2026-07-24 — Rohy elementu (zaoblení / zkosení) obecně na base (#12998 KOVED)
+
+Zákazník chtěl seříznuté/zaoblené rohy barevných tvarů (odznaky linky). Uděláno **obecně na úrovni
+každého elementu, jako rámeček** (architektura i UX).
+
+- **Base `TemplateElement`:** `CornerStyle` {Ostré/Zaoblené/Zkosené} + `CornerSize` (mm). Serializace,
+  `CopyBaseTo`, `ApplyScale`, descriptory („Rohy" + „Velikost rohu") jednotně.
+- **Render centralizovaný:** rámeček (`RenderBorder`) i nově **pozadí** (`RenderBackgroundPass`,
+  symetrické k border pass, volané canvasem před obsahem) kreslí tvar přes jediný helper
+  `DrawElementShape` (Ostré=DrawRect, Zaoblené=DrawRoundRect, Zkosené=SKPath se seříznutými rohy).
+  Z Barcode/Image/Rectangle odstraněna vlastní výplň pozadí → jedno místo.
+- **UI:** „Rohy" + „Velikost rohu" ve skupině „Rámeček elementu" u všech boxových elementů
+  (Rectangle, Text, Image, Barcode, StopList, DepartureGrid, NotesLegend, LineTable). Čára vynechána.
+- **`RectangleElement`:** vlastní `CornerRadius` sjednoceno do base + **migrace 1.4.0 → 1.5.0**
+  (`cornerRadius` → `cornerStyle=Rounded`/`cornerSize`); staré šablony 1:1. Rectangle si drží vlastní
+  výplň/okraj (fill přes bg pass, okraj přes `DrawElementShape`).
+- Testy: 370/370 (vč. 3× migrace). **Známý drobný nedostatek:** „Velikost rohu" je vidět i při Ostré
+  (bez efektu) — EDInputForm nemá deklarativní `visibleWhen`; čisté skrytí je součástí tracku níže.
+- **Fix (2026-07-24):** obsah elementu (výplně buněk DepartureGridu, pozadí Textu, obrázky…) přetékal
+  přes zaoblený/zkosený roh. Řešeno **obecně na jednom místě**: render loop (náhled i plátno) volá
+  `ApplyCornerClip` kolem obsahu každého elementu (no-op bez rohů) → ořez na tvar rohů plošně, obdoba
+  rámečku. Base `GetContentClipRect` (element dodá skutečnou výšku; TextElement přepisuje).
+
+## 2026-07-23 — Časová osa odjezdů jen v parametrech sestavy (#13009 KOVED)
+
+Zákazník hlásil, že časová osa jde nastavit vždy jen na hodiny s odjezdy — změna nastavení nedělala nic.
+
+- **Root cause:** časová osa šla nastavit na **dvou místech** — property elementu (dialog „Odjezdy")
+  *i* parametr sestavy „Časová osa odjezdů" (`CASOVA_OSA`/`HODINY_OD`/`DO`). Preview ale do dat vždy
+  vlévá **defaulty všech parametrů** (`LoadAgendaParameters`), takže `CASOVA_OSA="Jen hodiny s odjezdy"`
+  je přítomen vždy a v renderu **přebíjí** property elementu → nastavení na elementu bylo mrtvé. Stejné
+  v AD i MHD (ne AD-specific).
+- **Fix:** časová osa je per-šablona parametr (sdílený, autoritativní) — odebrána z element dialogu
+  (`DepartureGridElementEdit.cls`) i z descriptorů (Časová osa / Hodiny od / Hodiny do). Nastavuje se
+  jen v parametrech sestavy (jako v MHD). Property `TimeAxisMode/RangeFrom/RangeTo` zůstávají jako render
+  fallback (když param chybí), ale needitovatelné. Bez regrese — parametr element vždy přebíjel.
+
+## 2026-07-23 — Legenda poznámek: nastavení se propisují (#13011 KOVED) + sjednocení termínu „Font"
+
+Zákazník hlásil, že v legendě poznámek nejde nastavit barva textu, oddělovač ani font.
+
+- **Barva textu buněk** — legenda kreslí text přímo přes `SchedulePaints.Text` (ne přes `CellRenderer`),
+  který má barvu zapečenou natvrdo → `DataStyle.TextColor` se ignorovala. Nově se barva textu poznámek
+  bere z „Barva textu buněk" (přebití paintu po `CreateStandardPaints`). Symboly bez vlastní barvy z dat
+  ji přebírají taky; NZ boxy a barevné symboly z dat mají svoje barvy (nedotčené).
+- **Font (nadpis i poznámky)** — přidán **editovatelný ComboBox** plněný z Caché standardní cestou
+  (`$$$FieldTypeComboBox`, klíč `…FontFamily` → `ElementFormBinder.PopulateFontFields` = nainstalované
+  fonty z `FontResolver`). Samostatně pro záhlaví (`HeaderStyle.FontFamily`) i data (`DataStyle.FontFamily`);
+  render záhlaví nově bere font ze záhlaví (fallback na font poznámek → Arial). Doteď font pole úplně chybělo.
+- **Oddělovač** — funguje dle návrhu jen pro **vlastní poznámky linky** (`Text` typ se značkou → „značka
+  oddělovač popis"); u ikonových atributů (na znamení, bezbariér) se záměrně nepoužívá. Doplněn `helpText`
+  a výchozí oddělovač změněn z em dash „—" na normální pomlčku „-" (default pro nové elementy).
+- **Terminologie sjednocena na „Font"** napříč kódem (dřív „Rodina písma"/„Písmo") — TextElement,
+  NotesLegend, jejich EDInputForm `.cls`. Konvence zapsána do `ux-conventions.md` §8 (glosář UI popisků +
+  pravidlo „label je zdvojený .cs↔.cls, měň obě místa").
+
+## 2026-07-23 — Šedé úsečky v PDF (#13004 KOVED): oddělovač sekcí jen v editačním plátně
+
+Zákazník hlásil tenké šedé úsečky „v místě konce sekce" v návrhu, které se přenášely i do PDF/tisku,
+i když neměl zapnutý žádný rámeček.
+
+- **Příčina:** `PreviewCanvas.RenderPage` kreslila jemnou čáru (`#DDDDDD`) mezi sekcemi jako orientační
+  pomůcku — jenže tuto metodu sdílí živý náhled **i** exporty (PDF, imposiční PDF, PNG). Pomůcka tak
+  prosakovala do výstupu. Projevilo se to hlavně na hranici před **patičkou** (kotví se ke spodnímu
+  okraji → čára „visela" uprostřed stránky nad bílou mezerou). U jediné sekce se nekreslila (jen mezi
+  sekcemi), proto to nešlo reprodukovat na triviální šabloně.
+- **Fix:** oddělovač z `PreviewCanvas` odstraněn úplně — **náhled teď zrcadlí výstup 1:1** (WYSIWYG).
+  Hranice sekcí zůstávají jako vizuální pomůcka jen v **editačním plátně** (`DesignerCanvas` kreslí
+  rámeček každé sekce sám), kde se edituje a dává smysl. PDF/PNG/tisk beze změny čisté.
+
+
+Poslední dva body priority; celý track přesunut do roadmap-archive.
+
+- **Rozsah platnosti ruční poznámky spoje** (`TiskJRMHDZastavkoveBodOd/Do`, helper
+  `PoznamkaSpojeVRozsahu`): spec. znaky i textové poznámky se tisknou jen na stránkách zastávek
+  v rozsahu — 1:1 legacy vč. jejich zvláštní „zpět" větve (brána přes BodDo, obrácené porovnání,
+  `LinkyPrintFormatMHD:1047-1051`). Řeší „W — nejede do zastávky Globus" tištěné u nás všude;
+  legenda 1073 = legacy 1:1 + jen auto-značky „jede jen…".
+- **Parity test `TestParita1073KvDpSmoKolize`** (pre-push): zastávky 1:1 + poznámky pokrývají
+  legacy (nový příznak `covered` v `MhdLegacyOracle.Summarize` = každý legacy klíč přítomen aspoň
+  v legacy počtu) + odjezdy nadmnožina. Plná 1:1 na 1073 vědomě není cíl (SMO kolize, legacy
+  ztrácí data). Ověřeno: test běží v package runu (výsledek 972) a prochází; „34/34" počítadlo
+  runneru je multi-suite kuriozita, ne vynechaný test.
+- Roadmap: priorita „MHD datová parita" KOMPLETNĚ → `roadmap-archive.md`; zbytky (varování
+  v designeru, parametr „Rozdělení sloupců" pro MHD) → backlog.
+
+## 2026-07-23 — MHD sloupce dle SMO konzistentně: prázdné sloupce + zrušen skrytý strop „Max skupin"
+
+Nálezy z vizuálního smoke testu KV_DP 1073 (starý vs nový tisk):
+
+- **SKUPINY_DNU = všechny SMO sloupce linky, i prázdné na dané stránce** (se záhlavím) — dřív se
+  sloupec bez odjezdů na zastávce vynechal a zbytek se posunul (nekonzistentní layout napříč
+  stránkami, neodpovídal SMO). Jako legacy. Gold 1001 re-baseline (jen md5, počty beze změny).
+- **„Max skupin" default 3 → 0 (bez limitu)** — skrytý strop z éry před SMO seskupováním tiše
+  ořezával 4. skupinu dnů v rozporu s checkboxy dialogu sloupců. Viditelnost řídí checkboxy;
+  strop zůstává jen jako volitelná pojistka. **Migrace šablon 1.3.0 → 1.4.0**
+  (`MigrationDepartureGridMaxGroups`: uložené `maxGroupCount: 3` = starý default → 0; vědomé
+  hodnoty zůstávají) + testy, `template-schema-versions.md` doplněn o přehled verzí 1.1–1.4.
+- **Dedup „stejné minuty" (fáze 4 SMO plánu) uzavřen jako bezpředmětný:** „00" + „00¹²" v 5:00
+  jsou dva různé odjezdy (prázdninový vs. jen 31.12.) — sloučení by ztratilo informaci jako legacy;
+  duplicity v rámci jedné skupiny tiskne i legacy. Čtení: bez značky = dle nadpisu sloupce,
+  se značkou = dle legendy.
+- Testy: .NET 367/367, Caché 34/34.
+- **Nadpis sloučeného sloupce = dominantní typ + výčet ostatních na 2. řádku** („pracovní dny
+  o prázdninách" / „24.12., 25.12. a 1.1., 31.12.") — čtenář vidí, co sloupec pokrývá, bez čtení
+  legendy (návrh Jan); přepsatelné per šablona přes override nadpisu v dialogu sloupců. CB beze
+  změny (sloupce bez sloučení nadpis nemění), gold 34/34 bez re-baseline.
+
+## 2026-07-23 — MHD parita KV_DP dotažena: zastávky 1:1 + rozdílové poznámky A–K 1:1
+
+Dokončení priority „MHD datová parita na složitých linkách". KV_DP 1073: **zast 693=693 ✓,
+stránky 42=42 ✓, poznámky = legacy 1:1 (texty i písmena) + auto-značky (záměr)**; CB_DP 1001 vše 1:1.
+Testy 34/34.
+
+- **Příznak „netisknout na zastávkovém JŘ"** (`TisknoutZastavkovyTam/Zpet`, per bod trasy — KV_DP jím
+  skrývá variantní větve): `PripravitTrasu` → `("trasa",SmerID,"netisknout",BodID)`; StopList i sběr
+  atributů zastávek bod skryjí (kromě aktuální zastávky, 1:1 legacy `LinkyPrintFormatMHD:713-720`).
+  Řeší zastávky 2× (1317→693) i duplicitní „na znamení" v legendě.
+- **Alg. 1001 (texty rozdílů tras)** dostává `TisknutaTrasaBitmap` = obsluha bez skrytých bodů
+  (1:1 legacy `:874`) → texty „zajíždí/nezajíždí/končí v…" 1:1.
+- **Pořadí iterace odjezdů = legacy** (typ provozu vzestupně → hodina → minuta → spoj; dřív po
+  sloupcích): na pořadí závisí přidělování písmen poznámek per stránka — teď A–K sedí s legacy
+  vývěskou. Vedlejší efekt: jiné pořadí řádků `ODJEZDY` v JSON (element řadí sám) → re-baseline
+  gold digestů 1001/1003/1006 (počty beze změny, jen md5).
+- **Diagnostika:** `MhdLegacyOracle.StopProbe`/`NotesProbe` — výpis stop-listu/legendy jedné stránky
+  legacy vs TD vedle sebe (trvalé nástroje pro budoucí parity práci).
+- **SablonyTest opraven na chunk kontrakt** — od blob fixu (df22fe6) Save kanonizuje i jednoklíčová
+  data na kusy a Load vrací `data1..N`; test četl staré `OUT("data")` → padal. Teď kusy skládá.
+- Zbývá: gold pokrytí 1073 (roadmap bod 5) + drobná poznámka „W" (bod 6, rozsah BodOd/Do).
+
+## 2026-07-23 — MHD: auto-značky sloučených skupin dnů (fáze 2 rozhodnutí „AD vzor")
+
+Když v jednom SMO sloupci skončí víc typů provozu (KV_DP kolize), TD nově zajistí korektnost
+sloupce sám — po vzoru AD varianty (auto-generovaná omezení), místo spoléhání na ruční datovou kázeň.
+
+- **`PriraditZnackySmoSkupin`** (nová fáze 4b v `GetData`): dominantní typ (nejvíc spojů) dává nadpis
+  sloupce (místo „poslední zapsaný vyhrává" → na 1073 už ne lživé „31.12."); každý ostatní typ dostane
+  značku + legendu „jede jen <nadpis typu>". Značka: ruční `NegativniZnacka` typu z číselníku má
+  přednost, jinak první volný znak z NZ řady (`RozsahNegativnichZnacekOd`, fallback 10 mimo denní 1–7).
+  Značky jdou existujícím NZ kanálem (anotace „nz" + `nzPrirazen`) — žádný nový rendering.
+- Podklad: `PromitnutSpoje` nově plní `spojTyp`/`smoTypy`; anotace se přidává v `SestavitJednuStranku`.
+- **Ověřeno:** CB_DP 1001 dep/zast/pozn **1:1 match** (bez kolize = beze změny chování, gold zelený);
+  KV_DP 1073: +115 řádků legendy „jede jen…" napříč 42 stránkami, nadpis sloupce 4 = dominantní typ.
+- **⚠️ Vedlejší zjištění (experiment s čistým HEAD):** ranní „zastávky 693=693 vyřešeno" bylo měření
+  proti serverové verzi třídy, která v gitu neexistuje — HEAD prokazatelně dává 1317 (2×) a poznámky
+  A–K negeneruje. Bod znovu otevřen v roadmapě (ověřit u kolegy původ té verze, jinak fix napsat).
+  Poučení zapsáno do paměti: před kompilací needitované `.cls` změřit baseline (server může být napřed).
+
+## 2026-07-23 — MHD parita KV_DP 1073: diagnostika uzavřena — odjezdy +48 % = SMO kolize v datech
+
+Analýza priority „MHD datová parita na složitých linkách" (bod 3 roadmapy). Nový oracle probe
+`MhdLegacyOracle.SmoProbe` (stránky legacy vs TD + rozpad typů provozu linky na SMO sloupce).
+
+- **Zjištění:** linka 1073 (KV_DP) má 7 typů provozu, z toho **4 mapované do SMO4** („pracovní dny
+  o prázdninách" 77 spojů + „24.12." 37 + „25.12. a 1.1." 32 + „31.12." 64 = 210 spojů v jednom
+  tiskovém sloupci). Stránky 42=42 → variantní stránky vyloučeny. Všech 12 vzorků dep-diffu má
+  hlavičku „31.12.|" = kolizní sloupec.
+- **Legacy kolizi neumí:** nadpis sloupce přepíše poslední typ (`LinkyPrintFormatMHD.cls:849`),
+  minuty se per typ×hodina přepisují (`inxmm` nulován `:853`, zápis `:924`) → legacy **ztrácí
+  odjezdy** (4295) a tiskne směs pod nadpisem „31.12.". TD sloučí bez ztráty (6352) → +48 %.
+  **Bit-parity na 1073 není smysluplný cíl** (reprodukce ztrátového přepisu).
+- **Rozdílové poznámky F–K (225 vs 213) mají jiný kořen:** legacy předává do alg 1001
+  `TisknutaTrasaBitmap` respektující per-bod příznak `TisknoutZastavkovyTam/Zpet` („MH pro KV_DP",
+  `:713-720`, `:874-875`); TD příznak nečte — zbývající kódový bod.
+- **Výstup pro diskusi** (kolegové/DPKV): artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073"
+  s variantami řešení A (oprava dat u zákazníka, doporučeno) / B (warning v designeru) / C, D (zamítnuto).
+
+Dokončení fixu z 2026-07-21 (chunking) — první pokus **neopravil pád**, protože měl špatně
+identifikovaný limit. Ověřeno naostro na reálném obrázku (uložení + znovuotevření) + živý probe
+proti dev serveru (chunkovaný save→load→delete round-trip).
+
+- **Skutečný root cause (přepis mylné diagnózy „max string 3,64 MB"):** limit NENÍ délka Caché řetězce,
+  ale délka **jednoho řádku při příjmu requestu**. MLRest server (`ALWA.SYS.Utility.StreamToGlobal`) čte
+  vstup po záznamech přes `stream.ReadLine()` **bez délkového argumentu** → `%Stream` vrací nejvýš
+  ~32 656 znaků na volání a řádek přes oddělovač **neslepuje** (ignoruje `eol`). Záznam delší než limit
+  se rozpůlí, pokračování se rozparsuje jako „klíč" plný JSON/base64 znaků → neplatná indirekce
+  `s @ref=val` → `<SYNTAX>` (proto ne `<MAXSTRING>`). Malé šablony (< ~32 KB) projdou v jednom čtení.
+- **Vlastní fix:** velikost kusu `DefaultMaxChunkChars` **1 000 000 → 20 000 znaků** (bezpečně pod limitem
+  řádku s rezervou). Kus o 1 MB byl 30× nad limitem → původní chunking nepomohl. Server `Sablony.cls`
+  beze změny logiky (čte libovolný počet kusů) — jen zmenšení na klientovi.
+- **Mechanika (z 07-21, platí dál):** blob jde **po kusech** (`dataChunkCount` + `data1..N`), server ukládá
+  jako samostatné uzly `Data(n)`, **nikdy** neslepuje. Bez změny JSON schématu; legacy jednoklíčový `Data`
+  se při loadu pozná (chybí `Data(1)`) a při dalším uložení kanonizuje. Zpětně kompatibilní obousměrně.
+- **Testy:** `CacheBlobChunkingTests` (16×) — Split→Join round-trip vč. ~6 MB blobu, hranice/počty kusů,
+  + regresní strážce velikosti kusu (`DefaultMaxChunkChars <= 30 000`, aby se limit znovu nevyšponoval).
+- **Kapacita:** libovolný rozumný počet obrázků (reálně 2–5 na naše šablony); šablona roste lineárně, žádný
+  zbylý single-string chokepoint na serveru → pro realistické velikosti nepadá (extrémní desítky MB by se
+  jen zpomalily). Úložná strategie zůstává inline Base64 (self-contained JSON, ladí s Export/Import do souboru);
+  přechod na binární úložiště přes `BinarySave`/GUID je vědomě odložený (dává smysl, až kdyby velké obrázky
+  byly pravidlo).
 
 ## 2026-07-20 — MHD parita: sloupce odjezdů podle SMO (sekce minut odjezdu) — krok 1
 

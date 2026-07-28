@@ -7,6 +7,7 @@ using System.Windows.Media;
 using Microsoft.Win32;
 using SkiaSharp;
 using EDControls.EDInputForm;
+using EDControls.EDTheme;
 using TemplateDesigner.Commands;
 using TemplateDesigner.Commands.Implementations;
 using TemplateDesigner.Designer;
@@ -139,6 +140,12 @@ public partial class MainWindow : Window
         PreviewScrollViewer.PreviewMouseWheel += OnPreviewScrollWheel;
         // Repaint canvas po scroll — viewport culling potřebuje aktuální viditelnou oblast
         CanvasScrollViewer.ScrollChanged += (_, _) => skCanvas.InvalidateVisual();
+
+        // Plocha kolem stránky: WPF (pozadí ScrollViewerů) i Skia (canvas.Clear) musí mít
+        // shodnou barvu, jinak je na hranici plátna/náhledu vidět šev. XAML bere token
+        // EDTheme.Bg.Canvas přímo, Skia stranu naplníme odsud (Designer/ nezná WPF).
+        ApplyCanvasThemeColor();
+        ThemeService.Applied += OnThemeApplied;
 
         // Wire VM callbacks
         // UpdateCanvasSize (ne jen InvalidateVisual) — výška plátna roste s obsahem, takže po každé
@@ -324,8 +331,27 @@ public partial class MainWindow : Window
             CmbZoom.SelectedIndex = best;   // SelectionChanged srovná State.Zoom + překreslí
     }
 
+    // ── Plocha kolem stránky z theme tokenu ────────────────────────────────
+
+    /// <summary>Přenese <c>EDTheme.Bg.Canvas</c> do Skia strany (plocha, kterou kreslí canvasy).</summary>
+    private void ApplyCanvasThemeColor()
+    {
+        if (TryFindResource("EDTheme.Bg.Canvas.Color") is not System.Windows.Media.Color c) return;
+        CanvasTheme.Background = new SKColor(c.R, c.G, c.B, c.A);
+    }
+
+    private void OnThemeApplied()
+    {
+        ApplyCanvasThemeColor();
+        skCanvas.InvalidateVisual();
+        InvalidatePreview();
+    }
+
     private void OnWindowClosing(object? sender, CancelEventArgs e)
     {
+        // Statická událost by jinak držela zavřené okno naživu (leak při reopen).
+        ThemeService.Applied -= OnThemeApplied;
+
         if (_vm is null || _preferences is null) return;
 
         // Snapshot UI-side state pro persist. ActualWidth=0 → null (nepřepsat na neplatnou hodnotu).

@@ -22,7 +22,7 @@ namespace TemplateDesigner.Serialization;
 public class TemplateMigrator
 {
     /// <summary>Aktuální nejvyšší podporovaná verze Template JSON.</summary>
-    public const string CurrentVersion = "1.3.0";
+    public const string CurrentVersion = "1.5.0";
 
     /// <summary>
     /// Registrované migrace, sortovány podle FromVersion vzestupně.
@@ -36,9 +36,11 @@ public class TemplateMigrator
     public TemplateMigrator(IEnumerable<ITemplateMigration>? migrations)
     {
         _migrations = migrations?.ToList() ?? [
-            new MigrationHighlightRules(),    // 1.0.0 → 1.1.0
-            new MigrationKnizniToLinkovy(),   // 1.1.0 → 1.2.0
-            new MigrationUnifyStopColumns(),  // 1.2.0 → 1.3.0
+            new MigrationHighlightRules(),           // 1.0.0 → 1.1.0
+            new MigrationKnizniToLinkovy(),          // 1.1.0 → 1.2.0
+            new MigrationUnifyStopColumns(),         // 1.2.0 → 1.3.0
+            new MigrationDepartureGridMaxGroups(),   // 1.3.0 → 1.4.0
+            new MigrationRectangleCorners(),         // 1.4.0 → 1.5.0
         ];
     }
 

@@ -710,14 +710,16 @@
             </Border>
 
             <!-- ── GridSplitter levý ── -->
-            <GridSplitter Grid.Column="1" Grid.Row="0"
-                          HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Border.Light}" Cursor="SizeWE"/>
+            <!-- Pozadí = plocha plátna a FocusVisualStyle vypnutý: dělič nesmí po tažení nechat
+                 tečkovaný rámeček ani světlejší linku (dohromady působily jako „zdvojený pruh"). -->
+            <GridSplitter Grid.Column="1" Grid.Row="0" FocusVisualStyle="{x:Null}"
+                          HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Bg.Canvas}" Cursor="SizeWE"/>
 
             <!-- ── Canvas ── -->
             <ScrollViewer Grid.Column="2" Grid.Row="0"
                           HorizontalScrollBarVisibility="Auto"
                           VerticalScrollBarVisibility="Auto"
-                          Background="{DynamicResource EDTheme.Border.Light}"
+                          Background="{DynamicResource EDTheme.Bg.Canvas}"
                           x:Name="CanvasScrollViewer">
                 <Grid>
                     <skia:SKElement x:Name="skCanvas" Width="900" Height="1200"/>
@@ -738,8 +740,8 @@
             </ScrollViewer>
 
             <!-- ── GridSplitter pravý ── -->
-            <GridSplitter Grid.Column="3" Grid.Row="0"
-                          HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Border.Light}" Cursor="SizeWE"/>
+            <GridSplitter Grid.Column="3" Grid.Row="0" FocusVisualStyle="{x:Null}"
+                          HorizontalAlignment="Stretch" Background="{DynamicResource EDTheme.Bg.Canvas}" Cursor="SizeWE"/>
 
             <!-- ── Live Preview (výchozí: skrytý, panel se zobrazí togglem) ── -->
             <Border Grid.Column="4" Grid.Row="0"
@@ -747,9 +749,9 @@
                 <DockPanel>
                     <!-- Stránkování dat (pager) — pevný 34px pruh NAHOŘE, rezervovaný vždy (i bez dat),
                          aby náhled začínal ve stejné výšce jako plátno vlevo (34 + 66 padding = 100 =
-                         horní okraj stránky návrháře). Pozadí pruhu = plátno (#E4E4E4) → v mock režimu
+                         horní okraj stránky návrháře). Pozadí pruhu = plocha plátna → v mock režimu
                          (bez pageru) je to jen souvislý horní okraj. Obsah (◀ combo ▶) jen s daty. -->
-                    <Grid DockPanel.Dock="Top" Height="34" Background="#FFE4E4E4">
+                    <Grid DockPanel.Dock="Top" Height="34" Background="{DynamicResource EDTheme.Bg.Canvas}">
                         <Border Visibility="{Binding HasPageNavigation, Converter={StaticResource BoolToVis}}"
                                 Background="{DynamicResource EDTheme.Bg.PanelAlt}"
                                 BorderBrush="{DynamicResource EDTheme.Border.Light}" BorderThickness="0,0,0,1">
@@ -775,12 +777,12 @@
                     </Grid>
 
                     <!-- Scrollovatelný canvas náhledu — vyplní zbytek, začíná nahoře (zarovnané s návrhářem).
-                         Pozadí = shodné s plátnem náhledu (#E4E4E4), aby pod kratším obsahem neprosvítala
-                         jiná (světlejší) barva. -->
+                         Pozadí = tentýž token jako plocha, kterou kreslí Skia (CanvasTheme.Background),
+                         aby pod kratším obsahem neprosvítala jiná barva. -->
                     <ScrollViewer x:Name="PreviewScrollViewer"
                                   HorizontalScrollBarVisibility="Auto"
                                   VerticalScrollBarVisibility="Auto"
-                                  Background="#FFE4E4E4">
+                                  Background="{DynamicResource EDTheme.Bg.Canvas}">
                         <skia:SKElement x:Name="skPreview" HorizontalAlignment="Left" Height="800"/>
                     </ScrollViewer>
                 </DockPanel>

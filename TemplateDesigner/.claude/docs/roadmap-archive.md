@@ -2,6 +2,110 @@
 
 > Vše pod touto čarou je už implementováno. Horní část roadmap obsahuje jen to, co je potřeba dělat.
 
+## 2026-07-27 ✅ — #8828 (TRANSDEV) vývěska per označník — UZAVŘENO (= krok 2 / B9 stanovišťového balíku)
+
+Detail → changelog 2026-07-27. Tiskový parametr „Rozdělit vývěsku per označník" (skupina „Seznam
+zastávek", default vyp). Server (`ZastavkoveJrAd`): vývěska obsluhovaná z N označníků → N stránek,
+`NacistOdjezdy` filtruje spoje per označník (per-spoj sloupek = W pozice 7, fallback J-věta),
+`NASTUPISTE` stránky = její označník. Jen označníky se ≥1 spojem. Nezávislé na duplikaci řádku (#13048
+bod 4). **Gold beze změny** (default vyp = byte-identický) + `TestSplitPerOznacnik`. Ověřeno 0320680
+(ČB aut.nádr. → označníky 11/22, odjezdy 5+1; 53→55 stránek). **Tím je stanovišťový balík dokončen v1.**
+Follow-up (na vyžádání): členění exportu na soubory per označník; titulek stránky s označníkem.
+
+## 2026-07-27 ✅ — B6 část (a): šev mezi plátnem a náhledem — UZAVŘENO
+
+Detail → changelog 2026-07-27 („Šev mezi plátnem a náhledem"). Čtyři místa se stejnou rolí (plocha
+kolem plátna / kolem náhledu / pruh stránkování / plátno kreslené Skiou) měla barvu z různých zdrojů,
+z toho tři natvrdo — sjednoceno na existující token `EDTheme.Bg.Canvas` + `Designer/CanvasTheme` jako
+jediný zdroj pro Skia stranu (napojený na `ThemeService.Applied`). Děliče ztratily tečkovaný focus
+rámeček. Vizuálně ověřeno Janem. Chrome návrháře (papír, pravítka, záhlaví sekcí) vědomě ponechán
+pevný → patří do položky „dark mode". **V B6 zbývá část (b)** — rozvržení `CellStyleEditor`.
+
+## 2026-07-27 ⛔ — B1 pojistka proti přepsání systémové šablony — ZRUŠENO (není problém)
+
+Blok vznikl jako **domněnka** při řešení #13013, ne z nahlášeného případu: systémová šablona se
+z `.exe` nalévá do MLINE při každém startu, takže by starší `.exe` mohlo vrátit novější kurátorovanou
+šablonu zpět. Prověřeno s Janem: šablonu otevíral kolega **starou verzí na devu**, ne provozní instalací;
+zákaznické (firemní) šablony seed nikdy nesahá a nová verze jde do vydání běžným publishem, takže riziko
+nemá kde vzniknout. Publish zůstává součástí normálního vydávacího postupu, ne roadmapovou položkou.
+Kdyby se přepsání někdy reálně objevilo, správné řešení je **serverová** kontrola v `Sablony.SaveTemplate`
+(distribuční zápis) s **vlastním číslem revize obsahu** — verze formátu JSON na to nestačí, ta se při
+překurátorování šablony nemění. Nezavádět klientský gate: starší `.exe` ho neobsahuje, tedy nezastaví.
+
+## 2026-07-27 ✅ — B3 drobné korektnostní nálezy — UZAVŘENO
+
+Detail → changelog 2026-07-27 („Drobné korektnostní nálezy").
+
+- **(a) Dialog pevné tabulky mazal per-buňkový `Format`/`Style` + barvu pozadí řádku** (mezi-model
+  `RowVM`/`CellVM` je nepřenášel). Bolelo u tabulek ze šablony agendy — Caché posílá `format` a barvy
+  per buňku. `TableElement.Clone()` byl v pořádku už dřív (hlídá `CloneCompletenessTests`), problém byl
+  jen v cestě přes dialog.
+- **(b) Ruční kreslicí/měřicí cesty JŘ elementů ignorovaly řez písma** (typeface natvrdo Normal/Bold).
+  Sjednoceno na kaskádu novým helperem `ScheduleElementBase.GetTypeface(ResolvedTextStyle)` — legenda
+  poznámek (vč. výpočtu výšky, kde se měření rozcházelo s renderem), měření + wrap záhlaví skupin dnů
+  u odjezdů, designerové placeholdery, měření šířky značek zastávky. Legenda navíc začala respektovat
+  výchozí font dokumentu.
+- 8 nových xUnit (round-trip řádku tabulky, řez z kaskády, výška legendy reagující na tučný řez).
+  Blok B11 tím ztratil závislost na B3.
+
+## 2026-07-27 ✅ — KOVED #13048 stanovišťový balík krok 1: duplikace řádku per stanoviště — UZAVŘENO
+
+Detail → changelog 2026-07-27. 4. volba comboboxu „Více nástupišť" (`RowPerPlatform`): zastávku
+obsluhovanou z více stanovišť rozvine na N řádků (jeden per stanoviště) na místě v trase, časy jen
+variant daného stanoviště. Klientská expanze (`ExpandPlatformRows`) nad aditivním serverovým polem
+`NASTUPISTE_VARIANT` (nástupiště per varianta, W pozice 7) — identita variant se neměnila (čistší než
+původní plán, gold jen re-baseline). Vývěska/jednostanovištní = 1 řádek. Ověřeno vizuálně na 0320680
+(Autobusové nádraží → stanoviště 1 + 8). 6 xUnit + Caché `TestNastupisteVariantEmit`. Známé omezení:
+nástupiště z reprezentativního spoje varianty (plné rozlišení = stanoviště do identity variant, vědomě NE).
+**Tím jsou všechny body #13048 hotové v1; ze stanovišťového balíku zbývá #8828 (B9).**
+
+## 2026-07-23 ✅ — MHD datová parita na složitých linkách (KV_DP 1073) — UZAVŘENO
+
+Detail → changelog 2026-07-23 (4 záznamy) + artifact „Skupiny dnů na vývěsce — analýza KV_DP 1073".
+Celý track od diagnostiky po ověřený stav v jednom dni; vizuálně odsouhlaseno Janem, s kolegou
+rozhodnut design „AD vzor".
+
+**Výchozí problém:** `ZastavkoveJrMhd` na složitých linkách neodpovídal legacy (KV_DP 1073:
+zastávky 2× = 1317 vs 693, odjezdy +48 %, chyběly rozdílové poznámky). Gold pinoval jen CB_DP.
+
+**Kořeny + fixy (vše commitnuto):**
+1. **SMO sloupce** (2026-07-20): typ provozu → tiskový sloupec dle `SMOID` (SMO1-4), typ bez SMO
+   se netiskne; sloupec per typ zrušen. `SmoSloupec` + klíč odjezdů `smoCol`.
+2. **Příznak „netisknout na zastávkovém JŘ"** (`TisknoutZastavkovyTam/Zpet` per bod trasy): skrývá
+   variantní větve v StopListu i sběru atributů (kromě aktuální zastávky); `TisknutaTrasaBitmap`
+   (obsluha bez skrytých bodů) jde do alg. 1001 → zastávky 693=693 1:1, texty poznámek správně.
+3. **SMO kolize v datech KV** (4 typy → SMO4: prázdniny/24.12./25.12.+1.1./31.12., 210 spojů):
+   legacy ztrátově přepisoval (nadpis „poslední vyhrává", minuty kolidují na pozicích) → bit-parity
+   vědomě NENÍ cíl. **Rozhodnutí (Jan + kolega): AD vzor** — auto-značky „jede jen …" z volné NZ
+   řady (ruční `NegativniZnacka` typu má přednost) + legenda; nadpis = dominantní typ + výčet
+   ostatních na 2. řádku; TD nic neztrácí (dep 6352 vs legacy 4295 = vědomá nadmnožina).
+4. **Pořadí iterace odjezdů = legacy** (typ provozu → čas): písmena rozdílových poznámek A–K 1:1
+   (texty i písmena, `NotesProbe` 11/11). Gold digesty re-baseline (jen pořadí řádků v JSON).
+5. **SKUPINY_DNU = všechny SMO sloupce linky i prázdné** (layout konzistentní napříč stránkami);
+   **„Max skupin" default 3 → 0** + migrace šablon **1.4.0** (skrytý strop ořezával 4. sloupec).
+6. **Rozsah poznámky spoje „od–do bodu"** (`TiskJRMHDZastavkoveBodOd/Do`, 1:1 legacy vč. zpět
+   kvirku): „W" se tiskne jen na stránkách v rozsahu.
+7. **Dedup buněk uzavřen jako bezpředmětný**: po oznámkování se buňky různých skupin vždy liší
+   značkou; duplicity v rámci skupiny tiskne i legacy (CB parita).
+
+**Trvalé pojistky:** parity test `TestParita1073KvDpSmoKolize` (zastávky 1:1 + poznámky pokrývají
+legacy [`covered`] + odjezdy nadmnožina) v pre-push; diagnostické sondy `MhdLegacyOracle.SmoProbe`/
+`StopProbe`/`NotesProbe`. Vedlejší poučení (paměť): server může mít novější kompilaci než repo —
+před kompilací needitované `.cls` změřit baseline.
+
+**Otevřené zbytky přesunuty do backlogu:** SMO fáze 1 (varování v designeru při kolizi bez značek),
+fáze 3 (parametr „Rozdělení sloupců" pro MHD — sjednocení s AD).
+
+## 2026-07-23 ✅ — Ukládání velkých šablon (blob po kusech) — dokončeno + ověřeno
+
+Detail → changelog 2026-07-23 (+ 2026-07-21 mechanika). Zákazník neuložil šablonu s velkým inline
+obrázkem (`500 <SYNTAX> zStreamToGlobal`). **Skutečný limit = délka řádku při příjmu (~32 656 znaků),
+ne max string 3,64 MB** (původní diagnóza mylná → první chunking na kusy po 1 M znacích nepomohl). Fix = velikost
+kusu `1 000 000 → 20 000`. Blob jde po kusech (`dataChunkCount` + `data1..N`), server ukládá jako uzly
+`Data(n)`, nikdy neslepuje; zpětně kompatibilní, bez migrace. Ověřeno naostro (reálný obrázek round-trip
++ živý probe save→load→delete). 16 unit testů vč. regresního strážce velikosti kusu. Úložná strategie
+zůstává inline Base64 (self-contained); binární úložiště přes `BinarySave`/GUID vědomě odloženo.
+
 ## Session 2026-07-15 ✅ — Proces vývoje + zákaznická wiki + UX úklid
 
 Detail → changelog 2026-07-15.

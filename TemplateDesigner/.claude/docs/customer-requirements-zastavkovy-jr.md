@@ -80,8 +80,9 @@ mimo tabulku výše jsou linkové/knižní JŘ = Fáze C/D, nebo úplně mimo TD
 | #9036 | TRANSDEV | Časová osa přes půlnoc (22→5) | 🧪 · ▶ **ready-to-close** (ověřit u klienta) | `TimeAxisMode=Range`, HODINY_OD=22/DO=5 → wrap přes půlnoc | §B3 |
 | #10660 | DPKV | A1–A4 StopList (šipka/značky/podbarvení/per-col font) + B1/B2 záhlaví DepartureGrid + C1/C2 legenda | ✅ · 🧪 **testování u zákazníka** | Render DPKV šablony: pozice šipky/značek, podbarvení aktuální, per-column font, 2-řádkové záhlaví (underline), barvy značek | §G |
 | #7937 | TRANSDEV | Odsazení zastávky per směr / per Tč | 🟢 base AD · 🟠 rozšíření | Základ (odsazení z `^JRL` dta7) hotový; per-směr + per-Tč pásmo zbývá (změna zdroje) | §A5 |
-| #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | 🟠 | Datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; ~0.5–1 den Caché | §B4 |
+| #8828 | TRANSDEV | Per-sloupek zastávky → samostatná vývěska | ✅ **HOTOVO 2026-07-27** (AD) — tiskový parametr „Rozdělit vývěsku per označník"; vývěska z N označníků → N stránek s filtrovanými odjezdy per označník (`TestSplitPerOznacnik`, ověřeno 0320680). MHD zdroj sloupku až u MHD zákazníka. **Zavřít po ověření v buildu.** | changelog 2026-07-27 |
 | #11300 | KORID | Skrýt prázdné přípojové řádky | ➖ linkové JŘ | Přípoje nejsou koncept zastávkového JŘ (řešit s linkovými) | §D7 |
+| #13048 | KOVED (IDZK/Lábsky) | Poznámky/sloupce zastávek (5 bodů) | 🟡 body 1–5 v1 hotové (čeká vizuál. ověření + #8828 vývěska per sloupek) | Viz rozpad níže | §0.3 |
 
 **Poznámka k uzavírání:** ready-to-close jsou u klientů `suspended` (M-line slíbil „nový tiskový modul"
 polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + odkazem na konkrétní funkci
@@ -112,6 +113,21 @@ polovina 2026 — viz §H). Zavírat po ověření dané featury v releasu TD + 
 
 > **P1 a P2 vyřazeny (2026-07-10, dohoda):** P1 (poznámky do patičky) — nejasné přesné zadání, neodbavovat;
 > P2 (sloučit více linek) — řeší se jinde (mimo tuto agendu). Detail v §P ponechán jako evidence.
+
+### 0.3 #13048 KOVED — poznámky a sloupce zastávek (5 bodů, procházeno 2026-07-24→26)
+
+Excel od IDZK (Lábsky) k zastávkovému JŘ z našeho návrháře. Body:
+
+| # | Co | Vel. | Stav |
+|---|---|---|---|
+| 1a | Sloupec zón prázdný — ověřit, že něco vracíme | S | ✅ **HOTOVO 2026-07-24** — zóny 1:1 vs legacy (gold oracle `ZastavkoveJrAdLegacyTest`); prázdno u KOVED = jejich data/šablona, ne regrese |
+| 1b | Přestupy (na znamení / vlak / bus) nejsou vidět | S–M | ✅ **HOTOVO 2026-07-26** — přepínač „Přestupy (vlak/bus)" na StopListu (vlak L / autobus A), default vyp = jako legacy; symbol u zastávky, ne v legendě. Na-znamení funguje beze změny |
+| 2 | Per-buňka zmenšení fontu na šířku (shrink-to-fit) | S–M | 🟡 **IMPLEMENTOVÁNO 2026-07-27 jako vestavěné chování** (bez checkboxu, rozhodnutí Jan) — přetékající text buňky se v `CellRenderer` zmenší na šířku (trigger až skutečné přetečení; rezerva 0,6 mm, u názvů zastávek dle geometrie šipky 2,6 mm; značky za názvem se posouvají a škálují s textem). Platí pro buňky přes CellRenderer (StopList/DynamicTable/LineTable/záhlaví); NE legenda a minuty (vlastní render). Čeká finální vizuální ověření |
+| 3 | Sloupec nástupiště | S | ✅ **OVĚŘENO 2026-07-27** — KOVED chce „čísla sloupků z trasy" = přesně TR3 (J-věta `#3` per směr, sloupec „Nástupiště" opt-in). Část „příp. z detailu spoje" = per-spoj nástupiště z **W-trasy** (zatím nečteme) → splývá s bodem 4 |
+| 4 | Zastávka s více nástupišti (více řádků/hodnot) | M | ✅ **HOTOVO 2026-07-27 — všechny 3 režimy.** Přepínač „Více nástupišť" na StopListu: nejčetnější / výčet „2,3" / **duplikace řádku per stanoviště** (`RowPerPlatform`). Duplikace: klientská expanze `ExpandPlatformRows` nad aditivním serverovým polem `NASTUPISTE_VARIANT` (nástupiště per varianta, W pozice 7). Zastávka se ≥2 stanovišti → N řádků na místě v trase, časy jen variant daného stanoviště, vývěska/jednostanovištní = 1 řádek. Ověřeno daty 0330510 (`TestNastupisteVariantEmit` + 5 xUnit). Vývěsky per sloupek (samostatné stránky) = #8828 |
+| 5 | Varianty tras (řazení dle četnosti, max čas, písmena, MHD parita) | M–L | 🟡 **IMPLEMENTOVÁNO 2026-07-27** (čeká vizuální ověření na 0330510) — seskupování variant předěláno na **sled zastávek s max časy** (= legacy `prutmbmp` dedup; 0330510: 33 sloupců → 11; smoke test odhalil i letitou chybu `|`=„čas 0"). Parametry (skupina Seznam zastávek): „Řazení variant tras" (dle četnosti default / stabilní — TR7), „Písmena variant u odjezdů" (default vyp; písmeno u minuty nahrazuje automatické rozdílové poznámky), „První varianta bez písmene" (default zap). **Nástupiště v identitě varianty vědomě NE** (duplicitní vizuálně identické sloupce) — „jiné stanoviště = jiná varianta" pokryje #8828 vývěska per sloupek. MHD parita variant = mimo scope v1 |
+
+Detaily hotových: changelog 2026-07-24 (zóny) + 2026-07-26 (přestupy) + 2026-07-27 (bod 2, 4, 5). Zbývá: vizuálně potvrdit 2 + 5, fáze 2 bodu 4 dle KOVED.
 
 **Dispatch:** malí kandidáti odbaveni (TR3 ✅, TR4 ✅, TR2 implementováno — ⚠️ čeká SK ověření
 kódování na-znamení, TR8 ⏸️ park do potvrzení TRANSDEV). Zbývají jen 🟠 velké body (analýza/data).

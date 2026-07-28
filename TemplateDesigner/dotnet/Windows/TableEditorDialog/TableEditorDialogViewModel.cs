@@ -133,6 +133,9 @@ public class RowVM : INotifyPropertyChanged
 
     public ObservableCollection<CellVM> Cells { get; } = [];
 
+    /// <summary>Barva pozadí řádku — dialog ji needituje, ale musí ji přenést (jinak open+OK smaže).</summary>
+    public string? BackgroundColor { get; set; }
+
     public string? VisibilityExpression
     {
         get => _visibilityExpression;
@@ -159,19 +162,27 @@ public class RowVM : INotifyPropertyChanged
 
     public TableRow ToModel() => new()
     {
-        Cells                = Cells.Select(c => new TableCell { Content = c.Content }).ToList(),
+        Cells                = Cells.Select(c => c.ToModel()).ToList(),
+        BackgroundColor      = BackgroundColor,
         VisibilityExpression = string.IsNullOrWhiteSpace(VisibilityExpression) ? null : VisibilityExpression.Trim()
     };
 
     public static RowVM FromModel(TableRow row, IList<TableColumn> columns)
     {
-        var vm = new RowVM { VisibilityExpression = row.VisibilityExpression };
+        var vm = new RowVM
+        {
+            VisibilityExpression = row.VisibilityExpression,
+            BackgroundColor      = row.BackgroundColor,
+        };
         for (int i = 0; i < columns.Count; i++)
         {
+            var cell = i < row.Cells.Count ? row.Cells[i] : null;
             vm.Cells.Add(new CellVM
             {
                 ColumnHeader = columns[i].Header,
-                Content      = i < row.Cells.Count ? row.Cells[i].Content : ""
+                Content      = cell?.Content ?? "",
+                Format       = cell?.Format,
+                Style        = cell?.Style?.Clone(),
             });
         }
         return vm;
@@ -184,6 +195,19 @@ public class CellVM : INotifyPropertyChanged
 
     public string ColumnHeader { get; set; } = "";
     public string Content      { get => _content; set { _content = value; OnChanged(); } }
+
+    /// <summary>Formát buňky (přebíjí formát sloupce). Dialog needituje — přenáší se, ať se neztratí.</summary>
+    public string? Format { get; set; }
+
+    /// <summary>Per-buňkový styl. Dialog needituje (styl se edituje per sloupec) — přenáší se, ať se neztratí.</summary>
+    public TextStyle? Style { get; set; }
+
+    public TableCell ToModel() => new()
+    {
+        Content = Content,
+        Format  = Format,
+        Style   = Style?.Clone(),
+    };
 
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnChanged([System.Runtime.CompilerServices.CallerMemberName] string? p = null)

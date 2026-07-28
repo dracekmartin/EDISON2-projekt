@@ -1,108 +1,189 @@
 # Roadmap
 
-> **Stav k 2026-07-13.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
+> **Stav k 2026-07-27.** **Jen otevřená / akční práce.** Cokoli hotového → [`roadmap-archive.md`](roadmap-archive.md),
 > průběžný changelog → [`changelog.md`](changelog.md). Hotové věci sem nevracet — patří do archivu.
 
 ---
 
-## 🟢 ROZPRACOVÁNO — Ukládání velkých šablon (blob po kusech) — čeká na e2e ověření (2026-07-21)
+## 🎯 „Stanovišťový balík" DOKONČEN (2026-07-27) — zbývá HD odpověď + zavřít tikety
 
-**Problém (zákaznický):** uložení šablony s velkým inline obrázkem shodilo save s `500 <SYNTAX>
-zStreamToGlobal`. Base64 obrázek v JSON blobu jel na server jako jeden řetězec > ~3,64 MB (limit délky
-Caché řetězce) → server to shodil už při příjmu requestu.
+Celý balík hotový v1 (viz changelog + archiv):
+- **KOVED #13048** — všech 5 bodů (zóny, přestupy, shrink-to-fit, nástupiště vč. **duplikace řádku**, varianty tras).
+- **TRANSDEV #8828** — **vývěska per označník** (tiskový parametr „Rozdělit vývěsku per označník", server
+  dělá N stránek + filtruje odjezdy per označník; gold beze změny, default vyp).
 
-**Stav = kód HOTOVÝ + unit testy zelené, chybí jen ostrý e2e test.** (commit `0199be5` na `main`)
-- ✅ Blob se posílá **po kusech** (`data1..N` + `dataChunkCount`), server ukládá jako uzly `Data(n)`,
-  nikdy neslepuje. Bez změny JSON schématu, zpětně kompatibilní (legacy jednoklíčový `Data` se při loadu
-  pozná, při dalším uložení kanonizuje). Dotčené: `CacheBlobChunking.Split/Join`, `CacheTemplateService`,
-  `Sablony.cls` (`SaveTemplate`/`LoadTemplate`).
-- ✅ `CacheBlobChunkingTests` — 15× round-trip vč. ~6 MB blobu, všechny prošly.
-- ⬜ **ZBÝVÁ NAOSTRO:** end-to-end round-trip s reálným velkým obrázkem proti dev serveru — **nasadit
-  `Sablony.cls` na Caché** (`cache_compile`) a v běžícím TD uložit + znovu otevřít šablonu s ~5 MB obrázkem.
-  Blokoval sandbox/MCP (TD Caché projekt není v deploy mapě MCP) → nasazení třídy + test padl na uživatele.
-- 🧹 Úklid: `CACHE/.../Tests/MhdProbe.cls` = dočasný MHD diagnostický probe (untracked, nekomitnutý),
-  po dořešení MHD parity smazat.
+**▶ ZÍTRA PRVNÍ VĚC — titulek stránky s číslem stanoviště (#8828 dotažení)** (S, zóna 1 + trocha .NET):
+Rozdělené vývěsky (#8828) se dnes liší jen číslem ve sloupci Nástupiště + počtem odjezdů → při listování
+to splývá a působí „náhodně" (ověřeno se sondou `PageSeqProbe`: sekvence je deterministická, jen bez
+titulku nečitelná). **Doplnit číslo stanoviště do titulku/záhlaví stránky** — server už hodnotu má
+(`NASTUPISTE` per stránka), jde hlavně o to ji vystavit tak, aby ji šablona vytiskla v titulku (např.
+pole `POPIS_ZASTAVKA` rozšířit o „, stanoviště X", nebo samostatné pole + placeholder). Cíl = jako KOVED
+XLSX „…, sloupek 1". Ověřit na 0320680 (ČB,aut.nádr. → „…, stanoviště 11" vs „…, stanoviště 22").
 
----
+**Zbývá dál (papírové, zóna 5):**
+- **Souhrnná HD odpověď** KOVED #13048 (5 bodů) + TRANSDEV #8828 — po ověření v buildu (vč. titulku výše).
+- **Zavřít tikety** #13048, #8828 (resolved).
+- **Follow-up na vyžádání:** členění exportu na samostatné soubory per označník (dnes token `{NASTUPISTE}`);
+  symbol „↓" u výchozí zastávky ve variantních sloupcích (drobný vizuál).
 
-## 🔴 PRIORITA — MHD datová parita na složitých linkách (2026-07-20)
-
-**Problém:** MHD zastávkový JŘ (`ZastavkoveJrMhd`) **datově neodpovídá legacy na složitých linkách
-s mnoha variantami tras**. Gold testy v pre-push pinují jen jednoduché **CB_DP** linky (málo variant) →
-divergence nikdy neprošla testem. DPKV má linky s hodně variantami (např. **KV_DP linka 1073**), kde je
-rozdíl velký. **Musí se vyřešit dřív než jakékoli grafické doladění (#10660 barvy/podtržení).**
-
-**Důkaz (gold oracle `MhdLegacyOracle`, KV_DP 1073, projete=1):**
-- Odjezdy: legacy **4295** vs TD **6352** (TD +48 %)
-- Zastávky: legacy **693** vs TD **1317** (TD ~2×)
-- Poznámky: legacy **213** vs TD **221** — rozdílové poznámky A–K nesedí (jiná písmena/klíče)
-- ⚠️ **TD má VÍC, ne míň** — takže neztrácíme obsah, ale **strukturujeme jinak** (nejspíš jinak dělené
-  skupiny dnů / stránky — v diffu date-skupina „31.12."). To je hlavní stopa k prošetření.
-
-**ROOT CAUSE #2+#3 (nalezeno + datově ověřeno 2026-07-20): příznak `TisknoutZastavkovyTam`/`Zpet`.**
-Per-bod trasy příznak v `ALVA.MHD.LSO(idfa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",bod,"Val",
-"TisknoutZastavkovyTam"|"TisknoutZastavkovyZpet")` (default 1). Legacy (`LinkyPrintFormatMHD.cls:713-720`)
-bod s příznakem **0 vynechá ze seznamu zastávek A z `TisknutaTrasaBitmap`** (`s $e(bitmap,mycnt)=" "`).
-**TD příznak nečte vůbec** → body zobrazuje (víc zastávek = #2) + rozdíly tras počítá proti jiné bitmapě
-(jiné poznámky = #3). **Ověřeno v datech:** KV_DP 1073 má body s příznakem 0; CB_DP 1001 ne (proto gold sedí).
-**FIX (spec, turnkey):** v TD číst `TisknoutZastavkovyTam`/`Zpet` per bod a vyřadit body s 0:
-(a) ze seznamu zastávek (`SestavitJednuStranku` zastavky loop — skip jako legacy 713-720),
-(b) z bitmapy obsluhy / `TisknutaTrasaBitmap` (`VypocitatBitmapyObsluhy` — blanknout pozici),
-přičemž bod **zůstává v trase** pro timing/spoje (legacy ho jen skryje, neodstraní). Ověřit gold: CB_DP 1001
-musí zůstat 1:1, KV_DP 1073 dep/zast/pozn se přiblíží legacy. (SMO grouping #1 níže hotové.)
-
-**ROOT CAUSE #1 (nalezeno 2026-07-20, `LinkyPrintFormatMHD.cls:838-850`): dělení sloupců skupin dnů.**
-Legacy mapuje `TypProvozuID → sloupec přes SMOID` (SMO1/2/3/4 → mycol 1-4), tj. **slučuje mnoho typů
-provozu do max 4 sloupců** a typy **mimo SMO1-4 zahazuje** (`i mycol="" continue`). **TD dělá sloupec
-per `TypProvozuID`** (žádné SMO slučování, žádný filtr) → na složitých linkách mnohem víc sloupců →
-tentýž odjezd se opakuje ve víc sloupcích → +48 % odjezdů + navíc date-skupiny. Fix = zavést SMO model
-do TD: seskupit odjezdy + `SKUPINY_DNU` podle `SMOID`, vynechat typy bez SMO1-4, nadpis z reprezentanta.
-Dotčené: `PromitnutSpoje` (klíč odjezdů), `SestavitStranky` (SKUPINY_DNU), downstream (route-diff/NZ/anotace).
-
-**Plán / stav:**
-1. ✅ **HOTOVO (2026-07-20): SMO grouping** — TD čte `SMOID` z číselníku a slučuje odjezdy + `SKUPINY_DNU`
-   do ≤4 sloupců (`SmoSloupec` helper; klíč odjezdů `smoCol` místo `TypProvozuID`; nadpisy z `smoNadpis`).
-   Ověřeno: **CB_DP 1001 pořád 1:1** (dep 6597, zast 58, pozn 1543 — match), KV_DP sloupce vizuálně sedí s legacy.
-   Stránky 42=42. Sloupce = správný model jako legacy. Necommitovat gold-blokující — CB_DP pinovaná linka OK.
-2. 🟢 **Zastávky 2× = PROJETÉ zastávky (nízká priorita, neviditelné).** Změřeno (KV_DP 1073): TD celkem
-   1317 zastávek, z toho **833 projetých** (před aktuální), 484 neprojetých; legacy 693. TD zahrnuje před
-   aktuální zastávkou **VŠECHNY body i neobsluhované**, legacy jen obsluhované → 4× víc projetých v datech.
-   **Render je defaultně skrývá** (přepínač „Projeté zastávky" vyp) → vizuálně OK, projeví se jen při jejich
-   zapnutí. Fix = rozšířit `ObsluhaBitmap` filtr i na body PŘED aktuální (dnes filtruje jen za). Nízká priorita.
-   (Odjezdy 1,5× = menší samostatná drobnost, projeté odjezdy nemají — taky neviditelné.)
-3. ⬜ **Rozdílové poznámky tras — SPOLEČNÝ KOŘEN S #2** (analýza 2026-07-20, PoznProbe na 1073/Chebská).
-   TD poznámky **generuje** (texty ve stylu legacy, „A: končí v Tržnice" sedí přesně), ale popisuje **jiné
-   rozdíly**: TD „W: nejede do zastávky Globus" vs legacy jinde „A: zajistí z Hory… do Jenišov". → oba
-   počítají rozdíl proti **jinému základu** (obsluha bitmapa / množina zastávek). To je **týž kořen jako #2**:
-   TD zahrnuje zastávky, které legacy vynechává → rozdíly tras počítá proti jiné množině → jiné poznámky.
-   **Barvy:** rozdílové poznámky nemají barvu ani v legacy (`fc=` prázdné na obou) → správně bez barvy;
-   barvu nesou jen číselníkové poznámky spoje (ty ji už berou).
-   **Fix #2+#3 dohromady:** srovnat TD `VypocitatBitmapyObsluhy` (obsluha/spojTrasa/rozdilTrasy) + filtr
-   zastávek v `SestavitJednuStranku` s legacy `LinkyPrintFormatMHD` — sjednotit množinu obsluhovaných
-   zastávek. Ověřit gold oraclem (1073 dep/zast/pozn → k legacy). Entry point: `VypocitatBitmapyObsluhy`.
-4. ⬜ **Rozšířit gold pokrytí** o složitou linku (KV_DP 1073) — aby regrese příště padla v pre-push.
-5. Diagnostika: read-only přemostěč `MhdLegacyOracle.CompareProbe` (numeric→named IN) — na dev serveru
-   (necommitnutý; smazat po dořešení celého tracku).
-
-**Pozn.:** perf oprava (odstraněno drahé pole první/poslední spoj) je hotová a nezávislá — tohle je
-o věcné správnosti výstupu.
+> **Pozn. k #8828 (implementace 2026-07-27):** aby se serverový parametr projevil v náhledu, musel se
+> `ROZDELIT_PER_OZNACNIK` přidat do `ServerSideParams` v `TemplateDesignerViewModel.cs` (allowlist
+> parametrů posílaných do GetData). Nové server-side parametry vždy doplnit i tam, jinak je klik no-op.
 
 ---
 
-## 📋 Aktivní / nejbližší kroky
+## 🧭 Jak podle roadmapy pracovat
 
-> **Release track uzavřen (2026-07-15).** Verze nasazena do produkce (2026-07-14), dokumentace na
-> zákaznické wiki (3 prolinkované články — příručka 569 / IT 570 / novinky 571, viz changelog).
-> Zákaznický e-mail se **dělat nebude** (rozhodnutí). `pre-version-checklist.md` retirován
-> (eval sada AI přesunuta do sekce „AI integrace" níže).
+Práce je rozřezaná na **bloky velikosti „jedno sezení"** (`B2`, `B4`, …) seřazené do **vln**. Každý blok
+má **zónu** = oblast, kde si dvě sezení šlapou po prstech (viz „Paralelizace" níže).
+Velikosti: **S** = do hodiny · **M** = půl dne · **L** = víc dní.
 
-**Co reálně čeká (pořadí = priorita):**
+**Nová session:** vezmi nejnižší nezablokovaný blok z nejnižší nedokončené vlny; když běží jiná session,
+zkontroluj zónu. Po dokončení: changelog + přesun bloku **kompletně** do archivu (ne odškrtnutý řádek zde).
 
-1. **Governance šablon** — v1 HOTOVO (embed → MLINE → picker 2 sekce, zámek MLINE, kurátorovaná zastávková AD). Budoucnost: samostatný distribuční kanál + další šablony MHD/linkový (viz produkční sekce).
-2. **Feature tracky dle priorit** — zastávkové business tickety / Fáze C-F (viz backlog).
+**Tři pravidla, aby roadmapa znovu nenarostla:**
+1. **Nic nevstoupí bez velikosti a čísla bloku** — volný text bez velikosti je přesně to, co se nahromadilo.
+2. **Zákaznická položka má uzavírací podmínku** („co ověřit, aby se dala zavřít") — jinak zůstane „hotová, ale otevřená".
+3. **Linkový JŘ má ukazatel `L‑1…L‑4`** (Fáze C+D) — velký kus rozřezaný na slotové kroky, aby v každé vlně postoupil.
 
-*(Import PDF „projít před produkcí" — HOTOVO 2026-07-13: Sonnet 5, anti-halucinace, retry,
-standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce „Import PDF" níže.)*
+---
+
+## 🌊 Vlna 1 — vyčistit frontu
+
+| # | Blok | Vel. | Zóna | Závisí na |
+|---|---|---|---|---|
+| **B2** | **Zavírací kolo helpdesku** — ověřit v buildu a zavřít #7947, #7955, #9036 + finální vizuál #13048 bodu 2; postrčit čekající (viz „Zákaznická fronta" níže) | M | 5 | aktuální publish |
+
+Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešních dvanácti evidovaných.
+
+---
+
+## 🌊 Vlna 2 — zlevnit si další práci, rozjet linkový
+
+| # | Blok | Vel. | Zóna | Závisí na |
+|---|---|---|---|---|
+| **B4** | **Sdílená base pole formulářů + deklarativní `visibleWhen`** — detail a dohodnutý směr v §B4 níže. První výhra: „Velikost rohu" se skryje při ostrém rohu čistě, bez server round-tripu. | M | 2 + 3 | — |
+| **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | — |
+| **B6** | **Rozvržení `CellStyleEditor`** — dnes WrapPanel, po přidání „Řezu" se řádek zalomí uprostřed skupiny (potřebuje ~700 px, v 680px dialogu má ~450) → dvousloupcová mřížka ve stylu EDInputFormu (popisky ve sdíleném sloupci, prvky pod sebou); tri-state logika i skrývání voleb beze změny. Projít **všech 6 hostujících dialogů**. | S–M | 4 | — |
+| **B7** | **Výchozí šablony MHD + linková do distribuce** — mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/` (= krok 44b / C4) | S | 2 | B5 |
+
+**Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
+(rohy = 8 souborů) → každá další drobnost na elementech je osmkrát dražší. Čím dřív, tím víc se vrátí.
+
+---
+
+## 🌊 Vlna 3 — zákaznické velké + odemknout linkový
+
+| # | Blok | Vel. | Zóna | Závisí na |
+|---|---|---|---|---|
+| **B8** | **Varianty tras — dokončení.** Serverová část HOTOVÁ 2026-07-27 (#13048 bod 5 + TR7: varianta = sled zastávek dle legacy dedup — nástupiště vědomě NE, řeší #8828; čas = maximum, řazení dle četnosti / stabilní, písmena variant u odjezdů; oprava `|`=„čas 0"; detail changelog). Zbývá: **vizuální ověření v buildu + MHD parita**; per-písmeno výběr sloupců až na potvrzení TRANSDEV nad novým chováním. | S–M | 1 + 3 | ne spolu s B9 |
+| **B9** | **#8828 — vývěska per sloupek zastávky:** = **krok 2 „stanovišťového balíku"** (viz 🎯 vršek roadmapy — tam je aktuální handoff). Datový průzkum HOTOV 2026-07-27 (per-spoj sloupek = W-trasa pozice 7, fallback J-věta; `NastupisteSpoju` už čte). MHD zdroj sloupku dořešit až u MHD zákazníka. | M | 1 | ne spolu s B8 |
+| **B10** | **L‑2: symbolový font — linková část** (`ZNAK` sloupce LineTable: multichar/kompozity, převodní tabulka `GSId` 66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ruzne`). Zastávkový JŘ hotový 9. 7. | M→S | 3 (izolovaně) | — |
+| **B11** | **L‑3: row-plan vrstva** — `List<RowSpec>` (druh řádku data/header/groupHeader/groupFooter/subrow + buňky) → **jedna sdílená kreslicí smyčka** nad `ColumnRenderer.DrawRow` místo per-element `Render` smyček. Zde proběhne **R1 extrakce řádkového jádra**; LineTable = prototyp. | M | 3 **výhradně** | B5 |
+| **B12** | **#7937 rozšíření** — odsazení zastávky per-směr / per-Tč pásmo (`^JRL` dta7 je single-per-point → změna zdroje + editor; base AD hotový). Jen když TRANSDEV tlačí. | M | 1 | — |
+
+---
+
+## 🌊 Vlna 4 — velký kus linkového (dedikovaně)
+
+| # | Blok | Vel. | Zóna | Závisí na |
+|---|---|---|---|---|
+| **B13** | **L‑4: 2D bin-packing / `Strih`** — široká tabulka (MHD linka = 100+ spojů) se dnes zmáčkne na šířku místo rozřezání do stránkových bloků; + flow paketů, „dotisk zbytku legendy na další stránce" | L | 3 výhradně | B11 |
+| **B14** | **Dedup Caché tiskových enginů (C8) + testy tiskových enginů (C9)** — doprovod ostrého knižního JŘ, detail v tabulce Fáze C+D | L + M | 1 | — |
+
+L‑4 nezačínat před B11 — dnes by to znamenalo napsat totéž pětkrát (per-element smyčky).
+
+---
+
+## 🔀 Paralelizace — zóny a pravidla
+
+**Zóna = oblast, kde si dvě sezení šlapou po prstech. Pravidlo: v jedné zóně jedno sezení.**
+
+| Zóna | Co obsahuje | Kolik sezení naráz |
+|---|---|---|
+| **1** | Caché data agend (`ZastavkoveJrAd`/`Mhd`, `KnizniJr*`) | **1** |
+| **2** | Caché infrastruktura (`API.Sablony`, seed, registr agend, EDInputForm `.cls`) | **1** |
+| **3** | Kreslicí jádro + elementy (`Rendering/*`, `ScheduleElementBase`, elementy) | **1**; během B11/B13 **výhradně** — nikdo jiný na elementy |
+| **4** | Okna, dialogy, XAML, vzhled | 1–2, pokud jsou to jiné dialogy |
+| **5** | Dokumentace, helpdesk, ověřování v buildu (bez kódu) | libovolně |
+
+**Dva mechanické limity, které tohle nastavují:**
+
+1. **Vývojový Caché server je jeden** — kompilace tříd je globální akce; dvě kompilující sezení si přepisují
+   stav a zlaté testy dostanou falešná selhání. **Jen jedno sezení smí kompilovat Caché**, i kdyby pracovala
+   v oddělené kopii repozitáře → zóny 1 a 2 se **nedají paralelizovat, jen střídat**.
+2. **.NET paralelizovat lze, ale pracovní kopie je společná** — pro víc než jedno .NET sezení je potřeba
+   **oddělený worktree pro každé**, jinak si mění soubory pod rukama (platí i pro paralelní session kolegy).
+   Bez worktree: jedno .NET sezení + libovolně „papírových" (zóna 5).
+
+**Bezpečné kombinace:**
+- ✅ **B8 nebo B9 + B6 + zavírání tiketů** — vlna 3
+- ✅ **B10 + B9** — fontová cesta je izolovaná
+- ❌ **B8 + B9** — obě sahají do téže agendy
+- ❌ **cokoli na elementech během B11/B13**
+- ❌ **B4 + jakýkoli element dialog** — B4 přepisuje pole ve všech `.cls`
+- ⚠️ **publish je výhradní vždy**
+
+**Dokumentace:** každé sezení dopisuje záznam na začátek changelogu → při paralelním běhu tam vznikne drobná
+kolize. Je triviální; případně ať docs uzavírá poslední dobíhající sezení.
+
+---
+
+## 🏗️ §B4 detail — EDInputForm: sdílená base-pole + deklarativní `visibleWhen` (2026-07-24)
+
+> Vzešlo z tiketů KOVED (rohy elementu #12998). **Dva provázané problémy** + dohodnutý směr.
+> **Naplánováno jako blok B4 (vlna 2)** — ne samostatný velký track; kroky 1+2 jsou B4, krok 3 (rozhodnutí
+> o C# mirroru) může zůstat otevřený i po něm.
+
+**Problém 1 — imperativní validace na vše.** EDInputForm má jen `Validate` (Caché, server round-trip)
+pro dynamické chování. Chybí deklarativní podmíněná viditelnost → „Velikost rohu" je vidět i při Ostré.
+**Problém 2 — duplikace schématu.** Každý element staví pole ručně v `.cls` (+ zrcadlící C#
+PropertyDescriptors, které **stále žijí** — čte je `PropertiesPanel`); base pole (rámeček/pozice/rohy)
+opsaná v každém `.cls` → společná vlastnost = editace N souborů (rohy = 8).
+
+**Dohodnutý směr (standardní vzor „deklarativní 80 % / imperativní escape hatch 20 %", jako ServiceNow
+UI Policies vs Client Scripts; TD print-params `visibleWhen` už mají):**
+1. **`visibleWhen` do jádra EDInputFormu** (EDControls) — `Field.visibleWhen`, klient přepočítá lokálně
+   (bez round-tripu, řeší init-state past). Začít **jen `visibleWhen`** (YAGNI). Sdílet gramatiku podmínek
+   s TD print-params — nezavádět druhý dialekt. `Validate` zůstává pro cross-field/počítané.
+2. **Sdílený Caché helper `BaseElementFields`** (vzor = `StyleFields.cls`) — base skupiny polí
+   (Rámeček+Rohy, Pozice, Pokročilé) volané z každého `.cls`. **První výhra:** rohy deklarují `visibleWhen`
+   jednou → „Velikost rohu" se skryje při Ostré čistě.
+3. **Prošetřit + rozhodnout** o C# descriptor mirroru (rozsah `PropertiesPanel` vs `.cls`-driven
+   `InlinePropertiesForm`) → retire nebo ponechat. Ne slepě mazat (dnes živý).
+
+**Navázané body z řezů písma (#13006, 2026-07-24 — implementováno až na tyto), rozřazené do bloků:**
+- **→ B4** **Reaktivita EDInputForm** — „Řez" v element dialozích se plní jen **při otevření**; živý přepočet
+  při změně rodiny (bez znovuotevření) = ten `visibleWhen`/reaktivní mechanismus výše. (CellStyleEditor to už
+  má — WPF je reaktivní.)
+- **→ B6** **Layout editoru sloupců (`CellStyleEditor`)** — dnes horizontální řádek zalomený WrapPanelem
+  (dočasné, po přidání řezu se to natáhlo). Přepracovat na přehlednější grid, ideálně sjednotit s EDInputForm stylem.
+
+(B4 samo M, dotkne se všech elementů + EDControls. Detail úvahy v changelog/commit historii session 2026-07-24.)
+
+---
+
+## 🧹 Úklid a drobnosti — zásoba pro další vlny
+
+> Malé věci **na jednom místě** (dřív rozseté po šesti sekcích), aby se daly brát **tematickými dávkami**
+> — jedno sezení = jedno téma, ne posbírané drobnosti napříč. Co už je naplánované, nese číslo bloku.
+
+**Provozní** — `B7` výchozí šablony MHD/linková ·
+varování v designeru „N skupin dnů sdílí sloupec bez rozlišovacích značek" (S, MHD SMO fáze 1)
+
+**Vzhled / téma** — `B6` rozvržení `CellStyleEditor` · **dark mode** runtime swap + ověření (M–L;
+EDThemeDark + tokenizace hotové 2026-07-13, plocha plátna už na tokenu — zbývá chrome návrháře
+(papír / pravítka / záhlaví sekcí) + rozhodnutí, jak v tmavém režimu vypadá papír) · **postupná
+unifikace dialogů** (EDInputForm + sdílený „DialogChrome"; průběžně při dotyku dialogu, ne velký
+refaktor — L celkem)
+
+**Na poptávku** — tiskový parametr „Rozdělení sloupců" pro MHD (M, sjednocení s AD; MHD SMO fáze 3) ·
+exportní parametry per šablona (název souboru / členění / imposice dnes per agenda — S–M) ·
+per-sloupcové zvýraznění řádků (`HighlightRule.TargetColumn` — model pole nese, render barví celý řádek)
++ barva textu / kurzíva pravidla
+
+**Odložené UX nálezy (2026-07-13)** — VPN-down rozlišit „nedostupná" od „není nakonfigurována" + varování
+při startu (M; sem patří i „okno naskočí až po ~3 s při nedostupném připojení")
 
 ---
 
@@ -115,9 +196,6 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
 - **Zastávkový JŘ business** (parkované helpdesk A2-A5/A6/B4 + TRANSDEV sada) → viz sekce „Zastávkový JŘ — business logika" níže
 - **Fáze B — odložené:** **oživení fixní tabulky** (paleta + Fixed editor) + **merged cells** (gated na ni).
   (Conditional formatting seznam pravidel = HOTOVO #1, 2026-07-08.)
-- **Zvýraznění řádků — navazující (aditivní, bez migrace):** **per-sloupec render** `HighlightRule.TargetColumn`
-  (model už pole nese, dnes render barví celý řádek) + editace `TargetColumn` v dialogu · barva textu / kurzíva
-  pravidla. Na poptávku.
 - **Tabulkové featury (bez customer demand):** grouping (`GroupHeader`/`GroupFooter`/`Summary`) ·
   vnořené datasource (`_rows` v `_rows`).
 - **Fáze C+D** linkové/knižní JŘ · **Fáze E** vozový + Relace · **Fáze F** REPORTGENERATOR — velké
@@ -143,20 +221,9 @@ standardní dialog — viz changelog. Zbývá jen dlouhodobé ladění → sekce
   První krok s nejlepším poměrem cena/hodnota: **generický JSON zdroj (soubor/URL)** — tržní minimum
   (CSV/Excel/JSON/REST), náš wire formát už JSON je; využilo by i AI + testování šablon. Dořešit:
   credentials, schéma z dat, změkčení předpokladu „běží nad Caché".
-- **Exportní parametry per šablona (odloženo, na poptávku)** — obsahové tiskové parametry už patří
-  šabloně (2026-07-15, hotovo → archiv); exportní pole (název souboru, členění, imposice) zůstávají
-  per agenda. Převod exportních na per-šablonu zatím vědomě odložen. (S–M)
-- **UX audit — vědomě odložené nálezy (2026-07-13, detail changelog):** VPN-down rozlišit
-  „nedostupná" od „není nakonfigurována" + varování při startu (M; hláška o chybějících polích
-  už zpřesněna 2026-07-15, zbývá reálná detekce + varování při startu — sem patří i „okno naskočí
-  až po ~3 s při nedostupném připojení", dřív vedeno samostatně jako splash)
-- **Vizuální audit — odložené (2026-07-13):** **dark mode** — EDThemeDark existuje, tokenizace
-  hotová (2026-07-13), zbývá runtime swap + ověření (M–L)
-- **Postupná unifikace dialogů (směr, průběžně)** — cíl: převádět dialogy na **EDInputForm /
-  sdílený standard**, kde to dává smysl (např. Import PDF klidně EDInputForm), + zavést **sdílený
-  „DialogChrome"** (jednotná hlavička + footer s dělicí linkou). Speciální formuláře (menšina)
-  dořešit zvlášť. Dělat průběžně při dotyku daného dialogu, ne jako jeden velký refaktor. (L celkem)
 - AI (v pozadí) · font warning + ad-hoc overflow (YAGNI)
+
+*(Drobnosti a odložené UX/vizuální nálezy → sekce „Úklid a drobnosti" výše.)*
 
 **Otevřené otázky k Fázi E/F** (Epson, RG bridge, Relace, grafy/AZTEC, jazykové varianty) → evidované
 v [`legacy-nahrada.md §7`](legacy-nahrada.md); vyřeší se
@@ -168,36 +235,54 @@ při scope té fáze, ne teď.
 
 1. **Headless tisk (A3)** — „vytiskni linku X" z modulu přes PrintEngine fasádu (šablona+data→PDF bez stavu editoru). Dnes tisk jen v designeru. Gate R4/R7.
 2. **Samostatný distribuční kanál** systémových šablon mimo .exe — v1 doručuje embed→MLINE; „jiný kanál" (server push / admin) jen vymění zdroj, picker/UX beze změny.
-3. **Další výchozí šablony** (MHD + linkový) — mechanismus embed→MLINE hotový, jen kurátorovat + přidat JSON do `SystemTemplates/`. (Táž práce evidovaná i v Fázi C+D: krok 44b / C4.)
+3. **Další výchozí šablony** (MHD + linkový) → **blok `B7`** (vlna 2); táž práce = krok 44b / C4.
 4. **Zákaznická dokumentace na wiki (post-release)** — 2 dokumenty, seedy HOTOVÉ a aktuální
    (2026-07-13): `uzivatelska-prirucka.md` (část I obecné ovládání + část II zastávkový JŘ;
    nové agendy = nové části) + `plan-a-zmeny.md` („Novinky a plány"). Zbývá: obrázky + publikace.
 
 ---
 
-## 🅿️ Zastávkový JŘ — business logika (otevřené body)
+## 🅿️ Zastávkový JŘ — zákaznická fronta
 
 > **Plný stav** (hotové featury + co otestovat pro uzavření helpdesk tiketů) →
 > [`customer-requirements-zastavkovy-jr.md §0`](customer-requirements-zastavkovy-jr.md). Zde jen **otevřená
-> akční práce**, seřazená pro postupné odbavování. Vel.: S = do hodiny, M = půl dne, L = víc dní.
+> akční práce**. Vel.: S = do hodiny, M = půl dne, L = víc dní.
 
-> Malé dispatch kandidáty (TR2/TR3/TR4) hotové 2026-07-10 → archiv/customer-requirements.
-> **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
-> jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
-> (který sloupec — legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
-> **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení — kolega.
+### Čeká jen na doběhnutí — blok B2
 
-### Větší — chce analýzu / datový model / business rozhodnutí
+| Tiket | Uzavírací podmínka (co ověřit, aby se dal zavřít) |
+|---|---|
+| #7947 | linka se spojem za základní trasu → legenda „jede až do zast. X" |
+| #7955 | `SCHOVAT_V_ROZSAHU`=Automatické → auto-rozdíl zmizí, ruční zůstane; NZ nemizí |
+| #9036 | `TimeAxisMode=Range`, HODINY_OD=22 / DO=5 → wrap přes půlnoc |
+| #13048 bod 2 | finální vizuál zmenšování textu (názvy zastávek, zóny, rezerva u šipky směru) |
+| #13048 bod 5 | vizuál variant tras + písmen u odjezdů (server hotový, viz B8) |
+
+### Čeká na někoho jiného — postrčit, není to práce
+
+- **#10660 DPKV** — hotové, zpřístupnit build + proklikat jejich obrázky
+- **#7959** — ověření klientem na 876401/876402
+- **TR2** implementováno (opt-in `SOUHRN_NA_ZNAMENI`), ⚠️ čeká SK ověření kódování na-znamení — kolega
+- **#13048 bod 4 fáze 2** (duplikace řádku u víc nástupišť) — čeká potvrzení KOVED
+- **TR8 („<1" místo „0") park** (analýza 2026-07-10): naše časy jsou kumulativní, 0-segment se tiskne
+  jako opakované číslo, ne „0". Per-segment sloupec TD nemá. Blokuje potvrzení od TRANSDEV
+  (který sloupec — legacy „Průběhy"?). Detail → `customer-requirements §TR/8`.
+
+### Reálná zbývající práce
+
+`B8` dokončení variant tras · `B9` #8828 vývěska per sloupek · `B12` #7937 per-směr / per-Tč odsazení
+
+### Bez poptávky nebrat — chce analýzu / datový model / business rozhodnutí
 
 | # | Co | Vel. | Co potřebuje |
 |---|---|---|---|
 | TR10 | Skrýt spoje o So/Ne/svátcích | S–M | Caché filtr |
-| TR7 | Výběr sloupců variant jízdních dob (stabilní číslování, per-písmeno) | M | relates L1 multi-varianta (`VARIANTY_TRAS`) |
+| TR7 | Výběr sloupců variant jízdních dob (per-písmeno výběr) | S–M | **zčásti vyřešeno 2026-07-27** (#13048 bod 5): varianty nově dle trasy+nástupiště s max časy (málo sloupců) + parametr „Řazení variant tras: Stabilní" = stabilní pořadí. Zbývá jen případný per-písmeno výběr, až ho TRANSDEV potvrdí nad novým chováním |
 | TR6 | Barva linky (bg/text ve vlastnostech linky → volba v šabloně) | M | nový datový model |
 | TR9 | Obrácená logika poznámkování (rozsah TČ v 1. tabulce) | M | Caché-input (Studio JŘ) |
 | TR5 | Definice cíle — střední (per zast.×směr) + ideál (DB cílů) | M–L | datový model; *(min „cíl per směr" = hotovo přes `POPIS_SMER`=konečná)* |
-| A5+ | Odsazení zastávky per-směr / per-Tč pásmo (#7937) | M | `^JRL` dta7 je single-per-point → změna zdroje + editor (base AD hotový) |
-| B4 | Per-sloupek zastávky → samostatná vývěska (#8828) | ~0.5–1d | datový průzkum (kde je sloupek v `ALVA.MHD.*`) + business rozhodnutí; 100 % Caché |
+
+*(#7937 = blok `B12`, #8828 = blok `B9` — detail v tabulkách vln výše.)*
 
 ---
 
@@ -246,13 +331,24 @@ zbývá převodní tabulka `GSId` (66+ symbolů, TTF v `C:\DEV\EDISON\TiskJR\_ru
 **auto-fit fontu na šířku** — dnes je ComputeFontScale jen výškový); (4) per-linka šablony (viz B4).
 
 > Pilotní část hotová (`KnizniJrAd`/`KnizniJrMhd` datové jádro, element, editor, paleta) → archiv
-> 2026-07-04 + detail `linkovy-knizni-jr-implementace-analyza.md` §11-12. Otevřené kroky:
+> 2026-07-04 + detail `linkovy-knizni-jr-implementace-analyza.md` §11-12.
 
-| Krok | Co | Stav |
-|---|---|---|
-| 42b | Symbolový font Timetable do Skia (= C2 níže) — **zastávkový JŘ hotový 9.7.**; zbývá linková část (LineTable `ZNAK` sloupce, multichar/kompozity) | 🟡 zastávkový ✅, linkový ⬜ |
-| 43 | `LineTableElement` layout rozšíření (flow paketů, auto-fit šířka, dotisk legendy = C3 níže) | 🟡 element hotový (standalone); layout rozšíření ⬜ |
-| 44b | Výchozí **linková** šablona do distribuce — mechanismus embed→MLINE hotový (governance v1); zbývá kurátorovat + přesunout `linkovy-jr-ad-vychozi.json` do `SystemTemplates/` | 🟡 mechanismus ✅, linkový JSON ⬜ |
+### 🎯 Ukazatel postupu `L‑1…L‑4` — velký kus rozřezaný na slotové kroky
+
+**Smysl:** aby linkový JŘ postoupil v **každé vlně**, i když běží helpdesk. Každý krok končí něčím
+dokončeným; velký `L‑4` se otevírá až nad hotovým `L‑3`.
+
+| Krok | Blok | Co | Vel. | Stav |
+|---|---|---|---|---|
+| **L‑1** | `B5` | Auto-fit fontu na šířku u linkové tabulky (dnes jen výškový `ComputeFontScale`) | S–M | ⬜ |
+| **L‑2** | `B10` | Symbolový font — linková část (`ZNAK` sloupce, multichar/kompozity, `GSId` 66+) | M→S | ⬜ |
+| **L‑3** | `B11` | Row-plan vrstva = jedna sdílená kreslicí smyčka (**R1 extrakce řádkového jádra**) | M | ⬜ |
+| **L‑4** | `B13` | 2D bin-packing / `Strih` — rozřezání široké tabulky do stránkových bloků | L | ⬜ gate L‑3 |
+| — | `B7` | Linková výchozí šablona do distribuce (dá se přilepit ke kterémukoli slotu) | S | ⬜ |
+
+**Mapování na staré číslování kroků:** 42b = L‑2 · 43 = L‑1 + L‑3 + L‑4 · 44b = `B7`.
+Odložené body C2–C9 níže zůstávají jako detailní evidence (C2 = L‑2, C3 = L‑3 + L‑4, C4 = `B7`,
+C8 + C9 = `B14`).
 
 ### Odložené body knižního/linkového JŘ (z pilotu, seřazené dle hodnoty pro ostré nasazení)
 

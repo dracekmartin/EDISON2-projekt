@@ -40,6 +40,23 @@ public static class ElementFormBinder
                 field.ListItems = FontItems;
     }
 
+    /// <summary>Klientsky naplní „Řez" (List pole s klíčem končícím "FontWeight") reálnými váhami
+    /// sourozenecké rodiny ("…FontFamily") ze sdíleného <see cref="Models.FontWeightCatalog"/>. Volat
+    /// PO <see cref="Prefill"/> (kdy je hodnota rodiny známá). Caché řezy nezná (OS věc, jako fonty).</summary>
+    public static void PopulateFontWeightFields(EDInputForm form)
+    {
+        var fields = (form.Items ?? []).OfType<Field>().ToList();
+        foreach (var field in fields)
+        {
+            if (field.FieldType != EFieldType.List
+                || !field.Key.EndsWith("FontWeight", StringComparison.Ordinal)) continue;
+            var familyKey = field.Key[..^"FontWeight".Length] + "FontFamily";
+            var family = fields.FirstOrDefault(f => f.Key == familyKey)?.Value;
+            field.ListItems = Models.FontWeightCatalog.Items(family)
+                .Select(x => new ListItem(x.Weight.ToString(), x.Label)).ToList();
+        }
+    }
+
     /// <summary>Snapshot aktuálních hodnot polí formuláře (bez zápisu do cíle) — pro update
     /// change-detection baseline po živém write-backu v inline panelu.</summary>
     public static Dictionary<string, string> Snapshot(EDInputForm form)

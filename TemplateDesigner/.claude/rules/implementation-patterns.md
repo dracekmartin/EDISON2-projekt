@@ -101,6 +101,10 @@ Historicky nejčastější kořen (2× opraveno v DepartureGrid):
 1. **`ToModel()` → cascade zápis.** Otevři dialog, změň hodnotu, OK. Potvrď že nová hodnota dorazí do `element.HeaderStyle` / `col.Style` (breakpoint v `OnOk` write-back).
 2. **Resolve*Parent() / Resolve*Style().** Hledej `with { SomeProp = scalarValue }` bez `if (someProp is null)` checku → to je anti-pattern (přebíjí cascade). Viz `mvvm-patterns.md §Anti-pattern: scalar property override`.
 3. **Legacy scalar fallback musí respektovat VŠECHNY vrstvy kaskády.** Pokud element má `MinuteStyle` + `DataStyle` + `Element-scalar MinuteFontSize`, fallback na scalar smí padnout jen když **oba** `MinuteStyle.FontSize` i `DataStyle.FontSize` jsou null.
-4. **Render používá resolved cascade, ne raw style properties.** Pokud kód volá např. `HeaderStyle.FontSize ?? 9f` přímo (místo `ResolveXxx().FontSize`), obchází kaskádu. Grep po `Style\.[A-Z]\w*\s*\?\?` — podezřelé.
+4. **Ruční kreslicí / měřicí cesta staví typeface z kaskády, ne natvrdo.** V JŘ elementech volej
+   `GetTypeface(ResolvedTextStyle)` (rodina + řez přes `ToSKFontStyle`); `GetTypeface(family, SKFontStyle.Bold/Normal)`
+   zahodí uživatelovu váhu i kurzívu. Platí i pro **měření** (wrap, min. šířka) — musí trefit stejný font
+   jako render, jinak se počet řádků a výška boxu rozejdou.
+5. **Render používá resolved cascade, ne raw style properties.** Pokud kód volá např. `HeaderStyle.FontSize ?? 9f` přímo (místo `ResolveXxx().FontSize`), obchází kaskádu. Grep po `Style\.[A-Z]\w*\s*\?\?` — podezřelé.
 
 **Trigger:** tato třída bugů se objevuje při přidávání nové vrstvy do kaskády (např. když `ElementHeaderStyle` začalo být editovatelné v tabu Obecné, starý scalar override který dřív „jen doplňoval" začal přebíjet novou vrstvu).

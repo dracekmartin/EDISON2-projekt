@@ -17,6 +17,8 @@ public class TextStyle
     public float? FontSize { get; set; }
     public bool? Bold { get; set; }
     public bool? Italic { get; set; }
+    /// <summary>Váha písma (řez) 100–900. Null = odvodit z <see cref="Bold"/> (400/700). Přebíjí Bold, když je zadaná.</summary>
+    public int? FontWeight { get; set; }
     public bool? Underline { get; set; }
     public bool? Strikethrough { get; set; }
 
@@ -48,7 +50,7 @@ public class TextStyle
     [JsonIgnore]
     public bool IsEmpty =>
         FontFamily is null && FontSize is null && Bold is null
-        && Italic is null && Underline is null && Strikethrough is null
+        && Italic is null && FontWeight is null && Underline is null && Strikethrough is null
         && TextColor is null && BackgroundColor is null
         && HAlign is null && VAlign is null
         && PaddingTop is null && PaddingRight is null
@@ -72,6 +74,7 @@ public class TextStyle
             FontSize = FontSize ?? parent.FontSize,
             Bold = Bold ?? parent.Bold,
             Italic = Italic ?? parent.Italic,
+            FontWeight = FontWeight ?? parent.FontWeight,
             Underline = Underline ?? parent.Underline,
             Strikethrough = Strikethrough ?? parent.Strikethrough,
             TextColor = TextColor ?? parent.TextColor,
@@ -115,6 +118,8 @@ public struct ResolvedTextStyle
     public float FontSize { get; init; }
     public bool Bold { get; init; }
     public bool Italic { get; init; }
+    /// <summary>Váha písma (řez) 100–900. 0 = auto (odvodí se z <see cref="Bold"/>).</summary>
+    public int FontWeight { get; init; }
     public bool Underline { get; init; }
     public bool Strikethrough { get; init; }
     public string TextColor { get; init; }
@@ -149,13 +154,15 @@ public struct ResolvedTextStyle
 
     // ── SkiaSharp helpers ─────────────────────────────────────────────────────
 
-    public readonly SKFontStyle ToSKFontStyle() => (Bold, Italic) switch
+    /// <summary>SKFontStyle z řezu: explicitní <see cref="FontWeight"/> (100–900) přebíjí Bold;
+    /// 0 = odvodit z Bold (400/700). Sklon z Italic. Šířka normální (Condensed řešíme rodinou).</summary>
+    public readonly SKFontStyle ToSKFontStyle()
     {
-        (true, true) => SKFontStyle.BoldItalic,
-        (true, false) => SKFontStyle.Bold,
-        (false, true) => SKFontStyle.Italic,
-        _ => SKFontStyle.Normal,
-    };
+        int weight = FontWeight > 0 ? FontWeight
+            : (Bold ? (int)SKFontStyleWeight.Bold : (int)SKFontStyleWeight.Normal);
+        var slant = Italic ? SKFontStyleSlant.Italic : SKFontStyleSlant.Upright;
+        return new SKFontStyle(weight, (int)SKFontStyleWidth.Normal, slant);
+    }
 
     /// <summary>Vytvoří SKFont. Volající musí uvolnit (dispose).</summary>
     public readonly SKFont CreateFont(float scale = 1f, float mmToPx = 1f)

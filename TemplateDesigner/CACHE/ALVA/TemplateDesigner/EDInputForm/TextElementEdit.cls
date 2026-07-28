@@ -35,7 +35,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
 
         // ComboBox (editovatelný + autocomplete) s prázdným seznamem — klient ho naplní nainstalovanými
         // fonty (ElementFormBinder.PopulateFontFields z SKFontManager). Prázdné = dědí výchozí font šablony.
-        d form.AddFieldToLastGroup("Style.FontFamily", "Písmo", $$$FieldTypeComboBox, 0, 0)
+        d form.AddFieldToLastGroup("Style.FontFamily", "Font", $$$FieldTypeComboBox, 0, 0)
+        // Řez (váha) — items plní klient dynamicky dle vybrané rodiny (ElementFormBinder.PopulateFontWeightFields,
+        // z reálných řezů nainstalovaného fontu). Prázdná položka (nepovinné pole) = auto dle Tučně.
+        d form.AddFieldToLastGroup("Style.FontWeight", "Řez", $$$FieldTypeList, 0, 0)
 
         d form.AddDecimal("Style.FontSize", "Velikost", 10, 4, 200, "pt", "0.#", 1)
         d form.AddBool("Style.Bold", "Tučně", 0)
@@ -57,6 +60,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f.value = "#FF000000"
 
         d form.AddDecimal("BorderWidth", "Tloušťka rámečku", 0, 0, 10, "mm")
+        s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
+        s f.value = "None"
+        d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
 
         // ── Skupina "Zarovnání" ───────────────────────────────────────────
         d form.AddGroup("align", "Zarovnání")

@@ -146,6 +146,14 @@ public abstract class ScheduleElementBase : TemplateElement
     // SKFont nevlastní typeface (reference, ne owned), sdílení je bezpečné.
     private static readonly ConcurrentDictionary<(string Family, int Weight, int Width, SKFontStyleSlant Slant), SKTypeface> _typefaceCache = new();
 
+    /// <summary>
+    /// Vrátí sdílený SKTypeface pro vyřešený styl — rodina i řez (váha/sklon) jdou z kaskády.
+    /// Ruční cesty (měření, placeholdery) musí volat tuhle variantu, aby nepadly zpět na Normal/Bold
+    /// a nezahodily uživatelův řez písma.
+    /// </summary>
+    protected static SKTypeface GetTypeface(ResolvedTextStyle style) =>
+        GetTypeface(style.FontFamily, style.ToSKFontStyle());
+
     /// <summary>Vrátí sdílený SKTypeface pro kombinaci (family, style). Nikdy nevrací null.</summary>
     protected static SKTypeface GetTypeface(string? family, SKFontStyle? style = null)
     {

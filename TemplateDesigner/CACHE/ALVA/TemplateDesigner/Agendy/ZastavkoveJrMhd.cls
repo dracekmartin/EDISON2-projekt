@@ -258,11 +258,15 @@ ClassMethod GetAvailableInstances(ByRef sys As %String) As %Status
 ///   ("trasa",SmerID,BodID)                                     = $lb(ZastavkaID, CasJizdy, ZastavkaCislo)
 ///   ("trasa",SmerID,"slouceni",BodID,BodID2)                   = ""   konverzní tabulka sloučených bodů
 ///   ("trasa",SmerID,"slouceniInv",BodID2)                      = BodID hlavní bod po sloučení
+///   ("trasa",SmerID,"netisknout",BodID)                        = ""   bod s příznakem „netisknout na zastávkovém JŘ"
 ///   ("poznamkyZast",SmerID,BodID,Znak)                         = $lb(TextPoznamky, TypPoznamky)
 ///   ("atributyZast",SmerID,BodID,AtributID)                    = $lb(Popis, Typ, SpecialniZnak)
 ///   ("odjezdy",SmerID,BodID,SmoSloupec,Hodina,Minuta,SpojID)   = ""  (SmoSloupec 1-4 = sekce minut odjezdu dle SMOID)
 ///   ("smoSloupce",SmoSloupec)                                  = ""  (registr tiskových sloupců)
 ///   ("smoNadpis",SmoSloupec)                                   = $lb(nadpis1, nadpis2)
+///   ("smoTypy",SmoSloupec,TypProvozuID)                        = počet spojů typu ve sloupci (detekce sloučení)
+///   ("smoZnacka",TypProvozuID)                                 = $lb(znak, text)  značka typu mimo dominantní režim sloupce
+///   ("spojTyp",SpojID)                                         = TypProvozuID spoje
 ///   ("spojTrasa",SmerID,SpojID)                                = TrasaBitmap
 ///   ("spojTrasa",SmerID,SpojID,BodID)                          = TrasaBitmapZBodu
 ///   ("spojNZ",SpojID)                                          = NegativniZnacka
@@ -360,6 +364,11 @@ ClassMethod GetData(ByRef sys As %String) As %Status
         d ..PromitnutSpoje(.sys)
 
         // ═══════════════════════════════════════════════════════════════════
+        // FÁZE 4b: Značky sloučených skupin dnů (víc typů provozu v 1 sloupci)
+        // ═══════════════════════════════════════════════════════════════════
+        d ..PriraditZnackySmoSkupin(.sys)
+
+        // ═══════════════════════════════════════════════════════════════════
         // FÁZE 5: Bitmapy obsluhovaných zastávek + rozdíly tras
         // ═══════════════════════════════════════════════════════════════════
         d ..VypocitatBitmapyObsluhy()
@@ -417,6 +426,13 @@ ClassMethod PripravitTrasu(ByRef sys As %String)
             // Filtr: jen skutečné zastávky (KategorieZastavekID=1001)
             s KategorieZastavekID = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",ZastavkaID,"DTA",1,"KategorieZastavekID"))
             i KategorieZastavekID '= 1001 continue
+
+            // Per-bod příznak „netisknout na zastávkovém JŘ" (default tisknout) — KV_DP jím skrývá
+            // variantní větve trasy; legacy „MH pro KV_DP" (LinkyPrintFormatMHD:713-720)
+            s klicTisk = $s(SmerID=0:"TisknoutZastavkovyTam", 1:"TisknoutZastavkovyZpet")
+            i '$g(^[dataDB]ALVA.MHD.LSO(IdFa,4,"DTA",TrasaID,"DTA",1,"ModelTrasaBodDetail",BodID,"Val",klicTisk),1) {
+                s ^||TiskMHD("trasa",SmerID,"netisknout",BodID) = ""
+            }
 
             s ZastavkaCislo = $g(^[dataDB]ALVA.MHD.ZST(IdFa,1,"DTA",ZastavkaID,"DTA",1,"Cislo"))
             s ^||TiskMHD("trasa",SmerID,BodID) = $lb(ZastavkaID, kumulativniCas, ZastavkaCislo)
@@ -599,6 +615,79 @@ ClassMethod SmoSloupec(dataDB As %String, IdFa As %String, TypProvozuID As %Stri
     q $case($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"SMOID")), "SMO1":1, "SMO2":2, "SMO3":3, "SMO4":4, :"")
 }
 
+/// Značky sloučených skupin dnů: víc typů provozu v jednom SMO sloupci (kolize v číselníku —
+/// legacy ji tiskla ztrátovým přepisem) → nadpis sloupce dostane dominantní typ (nejvíc spojů)
+/// a každý ostatní typ automatickou značku + legendu („jede jen 31.12."). Značka jde stejným NZ
+/// kanálem jako ruční negativní značky; ruční NegativniZnacka typu z číselníku má přednost.
+/// Sloupec s jediným typem = beze změny chování (gold parita CB_DP).
+ClassMethod PriraditZnackySmoSkupin(ByRef sys As %String)
+{
+    $$$FillParams
+    s rozsahNZOd = $g(^||TiskMHD("config","rozsahNZOd"))
+    // Fallback mimo denní značky 1-7, kdyby firma neměla rozsah NZ nastavený
+    i rozsahNZOd = "" s rozsahNZOd = 10
+
+    s smoCol = ""
+    f {
+        s smoCol = $o(^||TiskMHD("smoTypy",smoCol)) q:smoCol=""
+
+        s dominant = "", maxSpoju = -1, pocetTypu = 0
+        s TypProvozuID = ""
+        f {
+            s TypProvozuID = $o(^||TiskMHD("smoTypy",smoCol,TypProvozuID)) q:TypProvozuID=""
+            s pocetTypu = pocetTypu + 1
+            i ^||TiskMHD("smoTypy",smoCol,TypProvozuID) > maxSpoju {
+                s maxSpoju = ^||TiskMHD("smoTypy",smoCol,TypProvozuID)
+                s dominant = TypProvozuID
+            }
+        }
+        i pocetTypu < 2 continue
+
+        s TypProvozuID = "", seznamOstatnich = ""
+        f {
+            s TypProvozuID = $o(^||TiskMHD("smoTypy",smoCol,TypProvozuID)) q:TypProvozuID=""
+            i TypProvozuID = dominant continue
+
+            s nadpis1 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMOPrvni"))
+            s nadpis2 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMODruhy"))
+            s popis = nadpis1
+            i nadpis2 '= "" s popis = $s(popis="":nadpis2, 1:popis_" "_nadpis2)
+            i popis = "" s popis = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"Nazev"))
+            s seznamOstatnich = $s(seznamOstatnich="":popis, 1:seznamOstatnich_", "_popis)
+
+            i $d(^||TiskMHD("smoZnacka",TypProvozuID)) continue
+            s text = "jede jen "_popis
+
+            // Ruční značka typu z číselníku má přednost; jinak první volný znak z NZ řady
+            s znak = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NegativniZnacka"))
+            i znak = "" {
+                f znak = rozsahNZOd:1 {
+                    i $d(^||TiskMHD("nzTexty",znak)) continue
+                    i $d(^||TiskMHD("nzPrirazen",znak)) continue
+                    s obsazena = 0
+                    s typIter = ""
+                    f {
+                        s typIter = $o(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",typIter)) q:typIter=""
+                        i $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",typIter,"NegativniZnacka")) = znak s obsazena = 1
+                    }
+                    i 'obsazena q
+                }
+            }
+            s ^||TiskMHD("nzPrirazen",znak) = text
+            s ^||TiskMHD("smoZnacka",TypProvozuID) = $lb(znak, text)
+        }
+
+        // Nadpis sloučeného sloupce: 1. řádek = dominantní typ, 2. řádek = výčet ostatních
+        // („24.12., 25.12. a 1.1., 31.12.") — čtenář vidí, co sloupec pokrývá; per šablona
+        // přepsatelné přes override nadpisu v dialogu sloupců
+        s domNadpis1 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMOPrvni"))
+        s domNadpis2 = $g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",dominant,"NadpisSMODruhy"))
+        s domPopis = domNadpis1
+        i domNadpis2 '= "" s domPopis = $s(domPopis="":domNadpis2, 1:domPopis_" "_domNadpis2)
+        s ^||TiskMHD("smoNadpis",smoCol) = $lb(domPopis, seznamOstatnich)
+    }
+}
+
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Fáze 4: Promítnutí spojů
 /// ═══════════════════════════════════════════════════════════════════════════════
@@ -624,6 +713,8 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         i smoCol '= "" {
             s ^||TiskMHD("smoSloupce",smoCol) = ""
             s ^||TiskMHD("smoNadpis",smoCol) = $lb($g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMOPrvni")),$g(^[dataDB]ALVA.MHD.ENUMS(IdFa,"TypyProvozu","DTA",TypProvozuID,"NadpisSMODruhy")))
+            s ^||TiskMHD("smoTypy",smoCol,TypProvozuID) = $g(^||TiskMHD("smoTypy",smoCol,TypProvozuID)) + 1
+            s ^||TiskMHD("spojTyp",SpojID) = TypProvozuID
         }
 
         s smerKrok = 1 i SmerID s smerKrok = -1
@@ -699,6 +790,21 @@ ClassMethod PromitnutSpoje(ByRef sys As %String)
         // NZ přiřazení
         d ..PriraditNZSpoji(.sys, SpojID, TypProvozuID)
     }
+}
+
+/// Rozsah platnosti ruční poznámky spoje „od bodu – do bodu" (TiskJRMHDZastavkoveBodOd/Do):
+/// poznámka (spec. znak i text) se tiskne jen na stránkách zastávek v rozsahu; 0/prázdné = bez
+/// omezení. Zpětný směr replikuje legacy podmínky 1:1 (LinkyPrintFormatMHD:1047-1051) včetně
+/// jejich brány přes BodDo a obráceného porovnání.
+ClassMethod PoznamkaSpojeVRozsahu(SmerID As %Integer, BodID As %String, SpojID As %String, poznamkaID As %String) As %Boolean
+{
+    s bodOd = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",2,poznamkaID,"TiskJRMHDZastavkoveBodOd"))
+    s bodDo = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",2,poznamkaID,"TiskJRMHDZastavkoveBodDo"))
+    i ('SmerID) && (+bodOd) && (BodID < bodOd) q 0
+    i ('SmerID) && (+bodDo) && (BodID > bodDo) q 0
+    i (+SmerID) && (+bodDo) && (BodID > bodOd) q 0
+    i (+SmerID) && (+bodDo) && (BodID < bodDo) q 0
+    q 1
 }
 
 /// Přiřadí negativní značku spoji (automaticky nebo z ručního zadání).
@@ -982,6 +1088,16 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
 
     s ObsluhaBitmap = $g(^||TiskMHD("obsluha",SmerID,aktualniZastBodID))
 
+    // Tisknutá bitmapa = obsluha bez bodů s příznakem „netisknout" (bit aktuální zastávky
+    // zůstává — legacy čistí jen mycnt'=cnt). Vstup pro porovnání tras (alg. 1001).
+    s TisknutaTrasaBitmap = ObsluhaBitmap
+    s skrytyBod = ""
+    f {
+        s skrytyBod = $o(^||TiskMHD("trasa",SmerID,"netisknout",skrytyBod)) q:skrytyBod=""
+        i skrytyBod = aktualniZastBodID continue
+        i $e(TisknutaTrasaBitmap,skrytyBod) '= "" s $e(TisknutaTrasaBitmap,skrytyBod) = " "
+    }
+
     // ── Skalární hodnoty ─────────────────────────────────────────────────
     s vals = ##class(%DynamicObject).%New()
     d vals.%Set("CISLO_LINKY",            CisloLinky)
@@ -1013,6 +1129,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator), smerKrok) q:bodIterator=""
         i 'bodIterator continue ; skip ne-numerické pomocné subscripty ("slouceni"/"slouceniInv")
+        // Bod s příznakem „netisknout" se skryje všude kromě aktuální zastávky (jako legacy)
+        i (bodIterator '= aktualniZastBodID) && $d(^||TiskMHD("trasa",SmerID,"netisknout",bodIterator)) continue
         // Za aktuální: jen obsluhovatelné zastávky
         i (SmerID=0)&&(bodIterator>aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
         i (SmerID=1)&&(bodIterator<aktualniZastBodID)&&('$e(ObsluhaBitmap,bodIterator)) continue
@@ -1079,13 +1197,13 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     d rows.%Set("ZASTAVKY", zastavky)
     d vals.%Set("POPIS_SMER", konecnaNazev)   // A1: konečná směru (dřív T/Z, to je teď v SMER)
 
-    // SKUPINY_DNU — z typů provozu
+    // SKUPINY_DNU — z typů provozu. Struktura sloupců je per LINKA (všechny SMO sloupce linky),
+    // ne per zastávka — sloupec bez odjezdů na této stránce se tiskne prázdný se záhlavím, aby
+    // layout seděl napříč stránkami i se SMO nastavením (jako legacy, „doplním TypProvozuID").
     s skupiny = ##class(%DynamicArray).%New()
     s smoCol = ""
     f {
         s smoCol = $o(^||TiskMHD("smoSloupce",smoCol)) q:smoCol=""
-        // Má tato zastávka odjezdy v tomto sloupci (sekci minut odjezdu)?
-        i '$d(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol)) continue
         s nadpisLb = $g(^||TiskMHD("smoNadpis",smoCol))
         // Pořadí = číslo sloupce (SMO1..SMO4), aby sloupce šly zleva SMO1→SMO4 jako v legacy.
         d skupiny.%Push(..BuildSkupinaDnu(smoCol, $lg(nadpisLb,1), $lg(nadpisLb,2), smoCol))
@@ -1097,9 +1215,32 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     // Lokální sběr poznámek pro tuto stránku
     k strankovePoznamky
 
+    // Pořadí iterace = legacy (typ provozu vzestupně, pak hodina/minuta/spoj) — na pořadí
+    // závisí přidělování písmen rozdílových poznámek (alg. 1001); po sloupcích by písmena
+    // vyšla jinak než na legacy vývěsce. Výstupní pořadí řádků element neřeší (řadí si sám).
+    k typyNaStrance
     s smoCol = ""
     f {
         s smoCol = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol)) q:smoCol=""
+        s hh = "" f {
+            s hh = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh)) q:hh=""
+            s mm = "" f {
+                s mm = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh,mm)) q:mm=""
+                s SpojID = "" f {
+                    s SpojID = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh,mm,SpojID)) q:SpojID=""
+                    s tpid = $g(^||TiskMHD("spojTyp",SpojID))
+                    i tpid '= "" s typyNaStrance(tpid,smoCol) = ""
+                }
+            }
+        }
+    }
+
+    s tpid = ""
+    f {
+        s tpid = $o(typyNaStrance(tpid)) q:tpid=""
+        s smoCol = ""
+        f {
+        s smoCol = $o(typyNaStrance(tpid,smoCol)) q:smoCol=""
         s hh = ""
         f {
             s hh = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh)) q:hh=""
@@ -1109,6 +1250,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                 s SpojID = ""
                 f {
                     s SpojID = $o(^||TiskMHD("odjezdy",SmerID,aktualniZastBodID,smoCol,hh,mm,SpojID)) q:SpojID=""
+                    // Sloupec může sdílet víc typů provozu — v tomto průchodu jen aktuální typ
+                    i $g(^||TiskMHD("spojTyp",SpojID)) '= tpid continue
 
                     s odj = ..BuildOdjezd(aktualniZastBodID, smoCol, hh, mm)
 
@@ -1133,6 +1276,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s poznamkaID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID)) q:poznamkaID=""
                         i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TypPoznamkyID")) '= 1 continue
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
+                        i '..PoznamkaSpojeVRozsahu(SmerID, aktualniZastBodID, SpojID, poznamkaID) continue
                         s specZnak = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"SpecZnak"))
                         i specZnak = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
@@ -1155,6 +1299,18 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         i nzTxt '= "" s strankovePoznamky("nz_"_spojNZ) = $lb(nzTxt, 1, spojNZ)
                     }
 
+                    // Značka sloučené skupiny dnů: typ mimo dominantní režim SMO sloupce
+                    // → NZ značka + legenda „jede jen …" (viz PriraditZnackySmoSkupin)
+                    s spojTypProvozu = $g(^||TiskMHD("spojTyp",SpojID))
+                    i spojTypProvozu '= "" {
+                        s smoZnackaVal = $g(^||TiskMHD("smoZnacka",spojTypProvozu))
+                        i smoZnackaVal '= "" {
+                            s smoZnak = $lg(smoZnackaVal,1)
+                            d ..AddAnotace(odj, "nz", smoZnak)
+                            s strankovePoznamky("nz_"_smoZnak) = $lb($lg(smoZnackaVal,2), 1, smoZnak)
+                        }
+                    }
+
                     // Atributy spoje
                     s atributID = ""
                     f {
@@ -1168,9 +1324,10 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s strankovePoznamky(specZnak) = $lb(Popis, 2)
                     }
 
-                    // Auto-poznámkování tras (alg. 1001)
+                    // Auto-poznámkování tras (alg. 1001) — porovnává se TISKNUTÁ bitmapa (bez
+                    // skrytých bodů), jinak by každý spoj přes skrytou větev generoval falešnou poznámku
                     i AutoPoznamkyRozdilTrasy && (AutoPoznamkyRozdilTrasyAlgoritmus = 1001) {
-                        d ..DoplnitPoznamkuRozdilTrasy1001(.sys, odj, SmerID, aktualniZastBodID, SpojID, .strankovePoznamky)
+                        d ..DoplnitPoznamkuRozdilTrasy1001(.sys, odj, SmerID, aktualniZastBodID, SpojID, .strankovePoznamky, TisknutaTrasaBitmap)
                     }
 
                     // Auto-poznámkování tras (alg. 1002)
@@ -1184,6 +1341,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                         s poznamkaID = $o(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID)) q:poznamkaID=""
                         i $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TypPoznamkyID")) '= 0 continue
                         i '$g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"TiskJRMHDZastavkove")) continue
+                        i '..PoznamkaSpojeVRozsahu(SmerID, aktualniZastBodID, SpojID, poznamkaID) continue
                         s znakPozn = $g(^||TiskMHD("spojPoznamky",SpojID,"arr",1,poznamkaID,"Text"))
                         i znakPozn = "" continue
                         // Barvy z PoznamkaSpoj (sdílené s vozovým JŘ; prázdné → default rendering).
@@ -1200,6 +1358,7 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
                     d odjezdy.%Push(odj)
                 }
             }
+        }
         }
     }
     d rows.%Set("ODJEZDY", odjezdy)
@@ -1235,7 +1394,8 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
     f {
         s bodIterator = $o(^||TiskMHD("trasa",SmerID,bodIterator)) q:bodIterator=""
         i 'bodIterator continue ; skip ne-numerické pomocné subscripty
-        // Stejný filtr jako u zastávek v StopList: jen neprojete + aktuální
+        // Stejný filtr jako u zastávek v StopList: jen neprojete + aktuální, bez skrytých bodů
+        i (bodIterator '= aktualniZastBodID) && $d(^||TiskMHD("trasa",SmerID,"netisknout",bodIterator)) continue
         i (SmerID=0)&&(bodIterator<aktualniZastBodID) continue
         i (SmerID=1)&&(bodIterator>aktualniZastBodID) continue
         s AtributID = ""
@@ -1265,14 +1425,14 @@ ClassMethod SestavitJednuStranku(ByRef sys As %String, SmerID As %Integer, aktua
 /// Pomocné metody pro auto-poznámkování tras
 /// ═══════════════════════════════════════════════════════════════════════════════
 /// Auto-poznámkování alg. 1001: textová poznámka o rozdílech v trase spoje.
-ClassMethod DoplnitPoznamkuRozdilTrasy1001(ByRef sys As %String, odj As %DynamicObject, SmerID As %Integer, aktualniZastBodID As %String, SpojID As %String, ByRef strankovePoznamky)
+ClassMethod DoplnitPoznamkuRozdilTrasy1001(ByRef sys As %String, odj As %DynamicObject, SmerID As %Integer, aktualniZastBodID As %String, SpojID As %String, ByRef strankovePoznamky, TisknutaTrasaBitmap As %String = "")
 {
     $$$FillParams
     s platnostOd = $g(^||TiskMHD("config","platnostOdHrl"))
     s AutoPoznamkyRozdilTrasyPismena = $g(^||TiskMHD("config","AutoPoznamkyRozdilTrasyPismena"))
 
     s TrasaSpojZBodu = $g(^||TiskMHD("spojTrasa",SmerID,SpojID,aktualniZastBodID))
-    s TisknutaTrasaBitmap = $g(^||TiskMHD("obsluha",SmerID,aktualniZastBodID))
+    i TisknutaTrasaBitmap = "" s TisknutaTrasaBitmap = $g(^||TiskMHD("obsluha",SmerID,aktualniZastBodID))
 
     i TisknutaTrasaBitmap = TrasaSpojZBodu q
 

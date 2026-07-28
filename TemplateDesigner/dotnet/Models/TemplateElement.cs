@@ -4,6 +4,9 @@ using TemplateDesigner.Models.Elements;
 
 namespace TemplateDesigner.Models;
 
+/// <summary>Tvar rohů celého elementu (pozadí + rámeček). Ostré = pravý úhel (výchozí).</summary>
+public enum ElementCornerStyle { None, Rounded, Beveled }
+
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "type")]
 [JsonDerivedType(typeof(TextElement),          ElementTypes.Text)]
 [JsonDerivedType(typeof(RectangleElement),     ElementTypes.Rectangle)]
@@ -61,6 +64,12 @@ public abstract class TemplateElement
     /// <summary>Šířka rámečku v mm. 0 = žádný rámeček.</summary>
     public float BorderWidth { get; set; } = 0f;
 
+    /// <summary>Tvar rohů celého elementu (pozadí + rámeček). Výchozí Ostré (pravý úhel).</summary>
+    public ElementCornerStyle CornerStyle { get; set; } = ElementCornerStyle.None;
+
+    /// <summary>Velikost rohu v mm — poloměr zaoblení / délka zkosení. Platí jen když <see cref="CornerStyle"/> ≠ Ostré.</summary>
+    public float CornerSize { get; set; } = 0f;
+
     /// <summary>Rotace elementu ve stupních (po směru hodinových ručiček). 0 = žádná rotace.</summary>
     public float Rotation { get; set; } = 0f;
 
@@ -83,12 +92,14 @@ public abstract class TemplateElement
         if (BorderWidth <= 0 || SkBorderColor.Alpha == 0) return;
 
         float widthPx = BorderWidth * ctx.MmToPx;
+        bool corners = CornerStyle != ElementCornerStyle.None && CornerSize > 0;
 
         // Sub-pixel rámečky (tenčí než 1px): fractional stroke + antialiasing.
         // Nad 1px: pixel-snap pro čisté sdílení hran mezi sousedními elementy.
+        // U zaoblených/zkosených rohů pixel-snap vynecháváme (kazil by křivku) → AA.
         bool thin = widthPx < 1f;
         float strokePx = thin ? widthPx : MathF.Round(widthPx);
-        var drawRect = thin
+        var drawRect = (thin || corners)
             ? rect
             : new SKRect(MathF.Round(rect.Left), MathF.Round(rect.Top),
                          MathF.Round(rect.Right), MathF.Round(rect.Bottom));
@@ -96,9 +107,110 @@ public abstract class TemplateElement
         using var borderPaint = new SKPaint
         {
             Color = SkBorderColor, Style = SKPaintStyle.Stroke,
-            StrokeWidth = strokePx, IsAntialias = thin
+            StrokeWidth = strokePx, IsAntialias = thin || corners
         };
-        ctx.Canvas.DrawRect(drawRect, borderPaint);
+        DrawElementShape(ctx, drawRect, borderPaint);
+    }
+
+    /// <summary>Vykreslí obdélník elementu daným paintem s ohledem na <see cref="CornerStyle"/>
+    /// (ostré = DrawRect, zaoblené = DrawRoundRect, zkosené = seříznuté rohy přes SKPath).
+    /// Jediné místo tvaru rohů — sdílí ho výplň pozadí i rámeček.</summary>
+    protected void DrawElementShape(RenderContext ctx, SKRect rect, SKPaint paint)
+    {
+        float sizePx = CornerSize * ctx.MmToPx;
+        float maxCorner = MathF.Min(rect.Width, rect.Height) / 2f;
+        sizePx = Math.Clamp(sizePx, 0f, maxCorner);
+
+        if (CornerStyle == ElementCornerStyle.Rounded && sizePx > 0)
+        {
+            ctx.Canvas.DrawRoundRect(rect, sizePx, sizePx, paint);
+        }
+        else if (CornerStyle == ElementCornerStyle.Beveled && sizePx > 0)
+        {
+            using var path = BuildBevelPath(rect, sizePx);
+            ctx.Canvas.DrawPath(path, paint);
+        }
+        else
+        {
+            ctx.Canvas.DrawRect(rect, paint);
+        }
+    }
+
+    /// <summary>Ořízne canvas na tvar elementu dle <see cref="CornerStyle"/> — obsah (výplň, text)
+    /// pak nepřeteče mimo zaoblené/zkosené rohy. Volající obklopí Save()/Restore().</summary>
+    protected void ClipToElementShape(RenderContext ctx, SKRect rect)
+    {
+        float sizePx = CornerSize * ctx.MmToPx;
+        float maxCorner = MathF.Min(rect.Width, rect.Height) / 2f;
+        sizePx = Math.Clamp(sizePx, 0f, maxCorner);
+
+        if (CornerStyle == ElementCornerStyle.Rounded && sizePx > 0)
+        {
+            ctx.Canvas.ClipRoundRect(new SKRoundRect(rect, sizePx, sizePx), antialias: true);
+        }
+        else if (CornerStyle == ElementCornerStyle.Beveled && sizePx > 0)
+        {
+            using var path = BuildBevelPath(rect, sizePx);
+            ctx.Canvas.ClipPath(path, antialias: true);
+        }
+        else
+        {
+            ctx.Canvas.ClipRect(rect);
+        }
+    }
+
+    /// <summary>Rect elementu v canvas px pro ořez obsahu na tvar rohů. Dynamické elementy
+    /// (např. TextElement) přepíšou skutečnou výškou obsahu.</summary>
+    public virtual SKRect GetContentClipRect(RenderContext ctx) =>
+        ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
+
+    /// <summary>Ořez obsahu elementu na tvar rohů (zaoblené/zkosené) — no-op bez rohů. Volá render loop
+    /// kolem obsahu (uvnitř Save/Restore), aby výplně ani obsah nepřetekly mimo zaoblení/zkosení.
+    /// Jedno místo pro VŠECHNY elementy — obdoba rámečku (<see cref="RenderBorderPass"/>).</summary>
+    public void ApplyCornerClip(RenderContext ctx)
+    {
+        if (CornerStyle == ElementCornerStyle.None || CornerSize <= 0) return;
+        ClipToElementShape(ctx, GetContentClipRect(ctx));
+    }
+
+    /// <summary>Osmiúhelníková cesta se seříznutými rohy (délka řezu = <paramref name="c"/> px).</summary>
+    private static SKPath BuildBevelPath(SKRect r, float c)
+    {
+        var p = new SKPath();
+        p.MoveTo(r.Left + c, r.Top);
+        p.LineTo(r.Right - c, r.Top);
+        p.LineTo(r.Right, r.Top + c);
+        p.LineTo(r.Right, r.Bottom - c);
+        p.LineTo(r.Right - c, r.Bottom);
+        p.LineTo(r.Left + c, r.Bottom);
+        p.LineTo(r.Left, r.Bottom - c);
+        p.LineTo(r.Left, r.Top + c);
+        p.Close();
+        return p;
+    }
+
+    /// <summary>První průchod renderování — výplň pozadí elementu (<see cref="BackgroundColor"/>)
+    /// tvarem dle <see cref="CornerStyle"/>. Volá canvas PŘED obsahem, symetricky k
+    /// <see cref="RenderBorderPass"/>. Jedno místo pro pozadí celého elementu (jako rámeček).</summary>
+    public virtual void RenderBackgroundPass(RenderContext ctx)
+    {
+        if (SkBackgroundColor.Alpha == 0) return;
+        var rect = ctx.ToCanvasRect(X, Y, Width, EffectiveDesignerHeight);
+        bool corners = CornerStyle != ElementCornerStyle.None && CornerSize > 0;
+        using var fill = new SKPaint { Color = SkBackgroundColor, IsAntialias = corners };
+
+        if (IsRotated)
+        {
+            var (cx, cy) = GetCenterPx(ctx);
+            ctx.Canvas.Save();
+            ctx.Canvas.RotateDegrees(Rotation, cx, cy);
+            DrawElementShape(ctx, rect, fill);
+            ctx.Canvas.Restore();
+        }
+        else
+        {
+            DrawElementShape(ctx, rect, fill);
+        }
     }
 
     /// <summary>
@@ -167,6 +279,23 @@ public abstract class TemplateElement
 
         new ColorPropertyDescriptor { Label = "Barva rámečku", Group = "Obecné", Get = () => BorderColor, Set = v => BorderColor = v },
         new FloatPropertyDescriptor { Label = "Šířka rámečku", Group = "Obecné", Get = () => BorderWidth, Set = v => BorderWidth = v, Min = 0, Max = 5, Unit = "mm", Format = "0.0#" },
+        new EnumPropertyDescriptor
+        {
+            Label = "Rohy", Group = "Obecné",
+            Get = () => CornerStyle, Set = v => CornerStyle = (ElementCornerStyle)v,
+            Options =
+            [
+                ("Ostré",    (object)ElementCornerStyle.None),
+                ("Zaoblené", (object)ElementCornerStyle.Rounded),
+                ("Zkosené",  (object)ElementCornerStyle.Beveled),
+            ]
+        },
+        new FloatPropertyDescriptor
+        {
+            Label = "Velikost rohu", Group = "Obecné",
+            Get = () => CornerSize, Set = v => CornerSize = v, Min = 0, Max = 50, Unit = "mm", Format = "0.0#",
+            VisibleWhen = () => CornerStyle != ElementCornerStyle.None
+        },
 
         new StringPropertyDescriptor
         {
@@ -202,6 +331,7 @@ public abstract class TemplateElement
         Width = MmMath.Round(Width * scale);
         if (Height is not null) Height = MmMath.Round(Height.Value * scale);
         if (BorderWidth > 0) BorderWidth = MmMath.Round(BorderWidth * scale);
+        if (CornerSize > 0) CornerSize = MmMath.Round(CornerSize * scale);
     }
 
     // ── Clone helper ──────────────────────────────────────────────────────────
@@ -220,6 +350,7 @@ public abstract class TemplateElement
         target.GroupId = GroupId;
         target.BackgroundColor = BackgroundColor;
         target.BorderColor = BorderColor; target.BorderWidth = BorderWidth;
+        target.CornerStyle = CornerStyle; target.CornerSize = CornerSize;
         target.Rotation = Rotation;
     }
 

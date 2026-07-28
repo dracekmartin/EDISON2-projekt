@@ -14,7 +14,7 @@ public class NotesLegendElement : StopScheduleElementBase
     // Vizuální vlastnosti
     // ═══════════════════════════════════════════
     public string HeaderText { get; set; } = "Poznámky";
-    public string NoteSeparator { get; set; } = " — ";
+    public string NoteSeparator { get; set; } = " - ";
     public float NoteFontSize { get; set; } = 7f;
     public float NoteLineHeight { get; set; } = 4f;
 
@@ -61,7 +61,14 @@ public class NotesLegendElement : StopScheduleElementBase
         float scale = hasData ? ComputeFontScale(CalculateHeightFromData(ctx.Data)) : 1f;
 
         float effHeaderFontSize = HeaderStyle.FontSize ?? 9f;
-        string effFontFamily = DataStyle.FontFamily ?? "Arial";
+        // Kaskáda místo ruční rodiny: nese i řez písma (váha / kurzíva), který ruční cesta dřív zahazovala.
+        var dataResolved = DataStyle.Resolve(ScheduleDataDefaults);
+        // Font záhlaví je samostatný; fallback na font poznámek (pak dokumentový default).
+        var headerResolved = HeaderStyle.FontFamily is null && DataStyle.FontFamily is not null
+            ? HeaderStyle.Resolve(ScheduleHeaderDefaults) with { FontFamily = dataResolved.FontFamily }
+            : HeaderStyle.Resolve(ScheduleHeaderDefaults);
+        // Zvýrazněný text poznámky (značka / symbol) — tučně, pokud si user nezvolil konkrétní váhu.
+        var boldResolved = dataResolved with { Bold = true };
 
         float noteFontPx = NoteFontSize * scale * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * scale * PtToMm * ctx.MmToPx;
@@ -69,10 +76,13 @@ public class NotesLegendElement : StopScheduleElementBase
         float scaledNoteLineH = NoteLineHeight * scale;
 
         using var paints = CreateStandardPaints(ctx);
+        // Barva textu poznámek = „Barva textu buněk" (DataStyle) — legenda kreslí text přímo tímto
+        // paintem (ne přes CellRenderer), takže sdílenou natvrdo-barvu ze SchedulePaints přebíjíme.
+        paints.Text.Color = SKColor.Parse(DataStyle.TextColor ?? ScheduleDataDefaults.TextColor);
 
-        using var noteFont = new SKFont(GetTypeface(effFontFamily), noteFontPx);
-        using var headerFont = new SKFont(GetTypeface(effFontFamily, SKFontStyle.Bold), headerFontPx);
-        using var boldFont = new SKFont(GetTypeface(effFontFamily, SKFontStyle.Bold), noteFontPx);
+        using var noteFont = new SKFont(GetTypeface(dataResolved), noteFontPx);
+        using var headerFont = new SKFont(GetTypeface(headerResolved), headerFontPx);
+        using var boldFont = new SKFont(GetTypeface(boldResolved), noteFontPx);
         // Symbolový JŘ font pro jednoznakové piktogramy (H=vozíček, F, x, {…) — dle jazyka šablony.
         using var symbolFont = new SKFont(GetTypeface(FontResolver.SymbolFontFamily(ctx.Data?.Culture)), noteFontPx);
 
@@ -246,7 +256,8 @@ public class NotesLegendElement : StopScheduleElementBase
         float colW = Width / cols;
 
         const float refMmToPx = 96f / 25.4f;
-        var typeface = FontResolver.Resolve(DataStyle.FontFamily, SKFontStyle.Normal);
+        // Měření musí trefit stejný font jako render (vč. řezu) — jinak se počet zalomených řádků rozejde.
+        var typeface = GetTypeface(DataStyle.Resolve(ScheduleDataDefaults));
         using var font = new SKFont(typeface, NoteFontSize * ResolvedTextStyle.PtToMm * refMmToPx);
         float availMm = colW - (MarkerSirka > 0 ? MarkerSirka : 2f) - 0.5f;
 
@@ -301,7 +312,9 @@ public class NotesLegendElement : StopScheduleElementBase
         .. GetCellZoneBaseColorDescriptors(),
 
         new StringPropertyDescriptor { Label = "Nadpis",               Group = "Záhlaví",      Get = () => HeaderText,    Set = v => HeaderText = v },
+        new StringPropertyDescriptor { Label = "Font",                 Group = "Záhlaví",      Get = () => HeaderStyle.FontFamily ?? "Arial", Set = v => HeaderStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
 
+        new StringPropertyDescriptor { Label = "Font",                Group = "Datové buňky", Get = () => DataStyle.FontFamily ?? "Arial", Set = v => DataStyle.FontFamily = string.IsNullOrWhiteSpace(v) ? null : v },
         new StringPropertyDescriptor { Label = "Oddělovač",           Group = "Datové buňky", Get = () => NoteSeparator,  Set = v => NoteSeparator = v },
         new FloatPropertyDescriptor  { Label = "Velikost písma pozn.", Group = "Datové buňky", Get = () => NoteFontSize,   Set = v => NoteFontSize = v,   Min = 4, Max = 20, Unit = "pt" },
         new FloatPropertyDescriptor  { Label = "Výška řádku",         Group = "Datové buňky", Get = () => NoteLineHeight, Set = v => NoteLineHeight = v, Min = 2, Max = 15, Unit = "mm" },

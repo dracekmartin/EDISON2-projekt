@@ -72,6 +72,8 @@ public partial class InlinePropertiesForm : UserControl
         {
             ElementFormBinder.PopulateFontFields(TheForm);
             _preFilled = ElementFormBinder.Prefill(TheForm, _target);
+            // Řez (váhy) — plní se z reálných řezů rodiny až po prefillu (kdy je hodnota rodiny známá).
+            ElementFormBinder.PopulateFontWeightFields(TheForm);
         }
         finally { _suppress = false; }
     }

@@ -36,7 +36,6 @@ public class DesignerCanvas
     public float ExtraLeftPx => _state.ShowSectionHeaders ? SectionTabWidthPx : 0f;
 
     // Barvy designeru
-    private static readonly SKColor ClrBackground         = new(0xFFE4E4E4);
     private static readonly SKColor ClrPage               = SKColors.White;
     private static readonly SKColor ClrPageBorder         = new(0xFFAAAAAA);
     private static readonly SKColor ClrMarginGuide        = new(0x35FF6600);
@@ -88,7 +87,8 @@ public class DesignerCanvas
         if (VisibleViewport.Width > 0 && VisibleViewport.Height > 0)
             canvas.ClipRect(VisibleViewport);
 
-        canvas.Clear(ClrBackground);
+        // Plocha kolem stránky = tentýž zdroj jako pozadí WPF kolem canvasu (jinak vzniká šev).
+        canvas.Clear(CanvasTheme.Background);
 
         var template = _state.CurrentTemplate;
         float pageW  = template.PageSize.Width * MmToPx;
@@ -512,18 +512,16 @@ public class DesignerCanvas
             var ctx = new RenderContext(canvas, MmToPx) { SectionOriginX = ox, SectionOriginY = oy };
             foreach (var el in _state.GetElementsByZIndexAsc(section))
             {
+                el.RenderBackgroundPass(ctx);   // pozadí (respektuje rohy) hned před obsahem téhož elementu
+                canvas.Save();
                 if (el.IsRotated)
                 {
                     var (cx, cy) = el.GetCenterPx(ctx);
-                    canvas.Save();
                     canvas.RotateDegrees(el.Rotation, cx, cy);
-                    el.Render(ctx);
-                    canvas.Restore();
                 }
-                else
-                {
-                    el.Render(ctx);
-                }
+                el.ApplyCornerClip(ctx);   // ořez obsahu na tvar rohů (no-op bez rohů) — jedno místo pro všechny
+                el.Render(ctx);
+                canvas.Restore();
             }
 
             // Indikátory podmíněné viditelnosti a skupin — jeden průchod

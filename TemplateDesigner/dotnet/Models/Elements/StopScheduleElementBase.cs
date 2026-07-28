@@ -85,6 +85,7 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
                 Odsazeni      = ParseInt(row.GetString("ODSAZENI")),
                 NaZnameni     = ParseBool(row.GetString("NA_ZNAMENI")),
                 Nastupiste    = row.GetString(StopFields.Nastupiste),
+                NastupisteSpoju = row.GetString(StopFields.NastupisteSpoju),
                 SourceRow     = row,
             };
 
@@ -114,6 +115,10 @@ public abstract class StopScheduleElementBase : ScheduleElementBase
             // časy per varianta trasy (dynamické TrasaMin) — číslo / „<" / "" jako string
             if (row.GetValue("TRASA_MIN") is JsonArray tmArr)
                 z.TrasaMin = tmArr.Select(n => n?.ToString() ?? "").ToList();
+
+            // nástupiště per varianta (zarovnané s TrasaMin) — pro režim „Duplikace řádku per stanoviště"
+            if (row.GetValue("NASTUPISTE_VARIANT") is JsonArray nvArr)
+                z.NastupisteVariant = nvArr.Select(n => n?.ToString() ?? "").ToList();
 
             result.Add(z);
         }

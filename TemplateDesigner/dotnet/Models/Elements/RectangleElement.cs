@@ -11,9 +11,6 @@ public class RectangleElement : TemplateElement
     /// <summary>Tloušťka okraje v mm. 0 = bez okraje.</summary>
     public float StrokeWidth { get; set; } = 0.5f;
 
-    /// <summary>Zaoblení rohů v mm.</summary>
-    public float CornerRadius { get; set; } = 0f;
-
     [JsonIgnore]
     public SKColor SkStrokeColor => SKColor.Parse(StrokeColor);
 
@@ -21,29 +18,20 @@ public class RectangleElement : TemplateElement
     {
         if (Width <= 0) return;
         var rect = ctx.ToCanvasRect(X, Y, Width, Height ?? EffectiveDesignerHeight);
-        float rx = ctx.Px(CornerRadius), ry = rx;
 
-        if (SkBackgroundColor.Alpha > 0)
-        {
-            using var fill = new SKPaint { Color = SkBackgroundColor, IsAntialias = CornerRadius > 0 };
-            if (CornerRadius > 0) ctx.Canvas.DrawRoundRect(rect, rx, ry, fill);
-            else ctx.Canvas.DrawRect(rect, fill);
-        }
-
+        // Výplň (BackgroundColor) kreslí base RenderBackgroundPass před obsahem — respektuje rohy.
+        // Zde jen okraj tvaru; DrawElementShape aplikuje CornerStyle (ostré/zaoblené/zkosené).
         if (StrokeWidth > 0 && SkStrokeColor.Alpha > 0)
         {
             using var stroke = new SKPaint { Color = SkStrokeColor, IsStroke = true, StrokeWidth = Math.Max(0.5f, ctx.Px(StrokeWidth)), IsAntialias = true };
-            if (CornerRadius > 0) ctx.Canvas.DrawRoundRect(rect, rx, ry, stroke);
-            else ctx.Canvas.DrawRect(rect, stroke);
+            DrawElementShape(ctx, rect, stroke);
         }
-
     }
 
     public override void ApplyScale(float scale)
     {
-        base.ApplyScale(scale);
+        base.ApplyScale(scale);   // X/Y/Width/Height/BorderWidth + CornerSize
         StrokeWidth *= scale;
-        CornerRadius *= scale;
     }
 
     public override IReadOnlyList<PropertyDescriptor> GetPropertyDescriptors() =>
@@ -51,7 +39,7 @@ public class RectangleElement : TemplateElement
         new ColorPropertyDescriptor { Label = "Výplň",       Group = "Vzhled", Get = () => BackgroundColor, Set = v => BackgroundColor = v },
         new ColorPropertyDescriptor { Label = "Barva okraje", Group = "Vzhled", Get = () => StrokeColor,  Set = v => StrokeColor = v },
         new FloatPropertyDescriptor { Label = "Tl. okraje",  Group = "Vzhled", Get = () => StrokeWidth,  Set = v => StrokeWidth = v,  Min = 0, Max = 10, Unit = "mm" },
-        new FloatPropertyDescriptor { Label = "Zaoblení",    Group = "Vzhled", Get = () => CornerRadius, Set = v => CornerRadius = v, Min = 0, Max = 50, Unit = "mm" },
+        // Rohy (Ostré/Zaoblené/Zkosené + velikost) jsou společné pro všechny elementy → GetPositionDescriptors.
 
         .. GetPositionDescriptors()
     ];
@@ -61,10 +49,9 @@ public class RectangleElement : TemplateElement
         var clone = new RectangleElement
         {
             StrokeColor = StrokeColor,
-            StrokeWidth = StrokeWidth,
-            CornerRadius = CornerRadius
+            StrokeWidth = StrokeWidth
         };
-        CopyBaseTo(clone);
+        CopyBaseTo(clone);   // vč. CornerStyle/CornerSize
         return clone;
     }
 }

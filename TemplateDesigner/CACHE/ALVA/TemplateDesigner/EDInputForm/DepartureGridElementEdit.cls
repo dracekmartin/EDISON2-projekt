@@ -29,6 +29,10 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddFieldToLastGroup("BorderColor", "Barva rámečku", $$$FieldTypeColor, 0, 0)
         s f.value = "#00FFFFFF"
         d form.AddDecimal("BorderWidth", "Šířka rámečku", 0, 0, 5, "mm")
+        s f = form.AddFieldToLastGroup("CornerStyle", "Rohy", $$$FieldTypeList, 0, 0)
+        d f.AddListItem("None", "Ostré"), f.AddListItem("Rounded", "Zaoblené"), f.AddListItem("Beveled", "Zkosené")
+        s f.value = "None"
+        d form.AddDecimal("CornerSize", "Velikost rohu", 0, 0, 50, "mm")
         d form.AddBool("ShowSkupinaDnuHeader", "Záhlaví skupin dnů", 1)
         // Šířka sloupce hodin se edituje v tabu „Sloupce" (řádek Hodiny) — jediný zdroj, ať nekoliduje.
         d form.AddBool("HourColumnPerGroup", "Hodiny u každé skupiny", 0)
@@ -41,11 +45,8 @@ ClassMethod Init(ByRef sys As %String) As %Status
         s f = form.AddDecimal("DataRowHeight", "Výška řádku (prázdné = auto)", "", 1, 50, "mm")
         s f = form.AddFieldToLastGroup("AlternatingRowColor", "Zebra barva (prázdné = žádná)", $$$FieldTypeColor, 0, 0)
         d form.AddBool("AutoExpandToFillHeight", "Roztáhnout na výšku", 0)
-        s f = form.AddFieldToLastGroup("TimeAxisMode", "Časová osa", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Compact", "Souvislá bez mezer"), f.AddListItem("DataBounded", "Souvislá s mezerami")
-        d f.AddListItem("Range", "Vlastní rozsah"), f.AddListItem("Full", "Celý den (0–23)")
-        s f = form.AddNumber("TimeAxisRangeFrom", "Hodiny od", 0, 0, 23)
-        s f = form.AddNumber("TimeAxisRangeTo", "Hodiny do", 23, 0, 23)
+        // Časová osa (rozsah hodin) je parametr šablony „Časová osa odjezdů" (CASOVA_OSA/HODINY_OD/DO),
+        // sdílený a autoritativní — NEduplikovat jako property elementu (přebil by ho parametr → matoucí).
 
         // ── Styl záhlaví ──────────────────────────────────────────────────
         // PROTOTYP: styl jako tlačítko → pod-formulář (StyleEditDialog). Klíč „style:<prefix>"
