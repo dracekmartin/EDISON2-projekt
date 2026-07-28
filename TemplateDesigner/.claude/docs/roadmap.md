@@ -14,7 +14,10 @@ a nálezy revize dořešeny 28. 7. (detail changelog 27.–28. 7., evidence cust
 **Follow-upy jen na vyžádání zákazníka (nezakládat dřív):** členění exportu na samostatné soubory
 per označník (dnes rozliší titulek/`{POPIS_ZASTAVKA}` v názvu souboru) · symbol „↓" u výchozí zastávky
 ve variantních sloupcích · agregace označníku varianty přes všechny spoje (dnes reprezentativní spoj)
-· spodní mez zmenšení textu (evidováno v B2).
+· spodní mez zmenšení textu (evidováno v B2) · vizuální oddělení přelomu půlnoci v mřížce odjezdů
+(#9036 v1 = jen přetočení osy, ověřeno na 345070 JH; kandidát: silnější čára mezi 23 a 0, automaticky
+jen když osa přetéká) · zvýraznění ne-defaultních hodnot v liště parametrů (per-agenda dědění hodnot
+uživatele mate — rozhodnutí Jan 28. 7.: zatím nechat).
 
 > **Pozn. pro nové server-side parametry:** hodnota se do GetData posílá jen přes allowlist
 > `ServerSideParams` (`TemplateDesignerViewModel.cs`) — bez doplnění je klik na parametr no-op.
