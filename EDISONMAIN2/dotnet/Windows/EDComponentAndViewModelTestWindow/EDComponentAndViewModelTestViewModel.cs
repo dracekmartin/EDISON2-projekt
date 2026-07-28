@@ -7,7 +7,7 @@ using Application = System.Windows.Application;
 
 namespace EDISONMAIN2.Windows.EDComponentAndViewModelTestWindow;
 
-/// <summary>Demo EDViewModel: StandardActions, RelayCommand, ActionInProgress, Set() helper, error throw.</summary>
+/// <summary>Ukázkový EDViewModel — StandardActions, RelayCommand, ActionInProgress, Set(), vyhození chyby.</summary>
 class EDComponentAndViewModelTestViewModel : EDViewModel
 {
     public EDComponentAndViewModelTestViewModel()

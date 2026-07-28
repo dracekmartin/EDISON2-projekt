@@ -12,5 +12,17 @@
     ],
     "failing": [],
     "session": "18073e05-5824-4242-9bc2-e1664bdb7d91"
+  },
+  "audit-comment": {
+    "last": "2026-07-28T13:35:00+02:00",
+    "scope": ["EDISONMAIN2", "EDControls"],
+    "issues": [
+      "EDISONMAIN2/EDComponentAndViewModelTestViewModel.cs:10 — English summary → rewritten to Czech",
+      "EDISONMAIN2/Startup/LocalPrefs.cs:58-60 — dead font-move tombstone narration → deleted (WHY lives in CLAUDE.md + UserFontPreference)",
+      "EDControls/CACHE/.../EDInputForm/{Field,Item,Group,Form}.cls — English doc/inline comments → rewritten to Czech, wire-format $lb order listings preserved; recompiled OK",
+      "EDControls/EDComponentToolbar.xaml.cs:8-22 — verbose 'API přehled' bullet list restating per-DP summaries → compressed to 1-line purpose",
+      "Not flagged (checked): stock VS boilerplate, living design-doc pointers (CLAUDE.md/UPDATE_FLOW.md), inert-flag state comments, dense but load-bearing WHY remarks (FontZoomWebView, EDInputFormController), Caché feature #17/#23/#25 domain flags"
+    ],
+    "session": "18073e05-5824-4242-9bc2-e1664bdb7d91"
   }
 }
