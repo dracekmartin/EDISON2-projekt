@@ -58,6 +58,7 @@ Po vlně 1 je zákaznická fronta reálně **4 položky práce** místo dnešní
 | **B5** | **L‑1: auto-fit fontu na šířku** u linkové tabulky (dnes je `ComputeFontScale` jen výškový) | S–M | 3 | — |
 | **B6** | **Rozvržení `CellStyleEditor`** — dnes WrapPanel, po přidání „Řezu" se řádek zalomí uprostřed skupiny (potřebuje ~700 px, v 680px dialogu má ~450) → dvousloupcová mřížka ve stylu EDInputFormu (popisky ve sdíleném sloupci, prvky pod sebou); tri-state logika i skrývání voleb beze změny. Projít **všech 6 hostujících dialogů**. | S–M | 4 | — |
 | **B7** | **Výchozí šablony MHD + linková do distribuce** — mechanismus embed→MLINE hotový, zbývá kurátorovat + přesunout JSON do `SystemTemplates/` (= krok 44b / C4) | S | 2 | B5 |
+| **B15** | **Viditelnost přeskočených gold/parity testů** — na serveru bez `CB_CSADAD`/`CB_DP` namespace vše tiše projde zeleně; potřebuje skip-počítadlo v sdíleném `ALVA.EDTesting.TestRunner` + výpis v `run-cache-tests.ps1` (nález revize 28. 7.) | S | 2 | — |
 
 **Proč B4 tak brzy:** společná vlastnost elementu (rámeček / pozice / rohy) je dnes opsaná v každém `.cls`
 (rohy = 8 souborů) → každá další drobnost na elementech je osmkrát dražší. Čím dřív, tím víc se vrátí.

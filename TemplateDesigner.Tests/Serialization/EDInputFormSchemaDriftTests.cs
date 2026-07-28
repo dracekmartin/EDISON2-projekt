@@ -156,6 +156,10 @@ public class EDInputFormSchemaDriftTests
         @"AddListItem\(\s*""[^""]*"",\s*""([^""]+)""",
         RegexOptions.Compiled);
 
+    private static readonly Regex GroupLabelRx = new(
+        @"AddGroup\(\s*""[^""]*"",\s*""([^""]+)""",
+        RegexOptions.Compiled);
+
     private static IEnumerable<string> AllEditClsFiles() =>
         Directory.GetFiles(EDInputFormDir(), "*.cls").Select(Path.GetFileName).Cast<string>();
 
@@ -198,7 +202,8 @@ public class EDInputFormSchemaDriftTests
         {
             string text = File.ReadAllText(Path.Combine(EDInputFormDir(), file));
             var labels = LabeledFieldRx.Matches(text).Select(m => m.Groups[2].Value)
-                .Concat(ListItemRx.Matches(text).Select(m => m.Groups[1].Value));
+                .Concat(ListItemRx.Matches(text).Select(m => m.Groups[1].Value))
+                .Concat(GroupLabelRx.Matches(text).Select(m => m.Groups[1].Value));
             foreach (var label in labels)
             {
                 if (BannedExactLabels.Contains(label)) hits.Add($"{file}: \"{label}\"");

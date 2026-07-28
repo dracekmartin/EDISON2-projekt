@@ -1343,7 +1343,7 @@ public class DepartureGridElement : StopScheduleElementBase
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
 
-        new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Odjezdy", ButtonLabel = "Upravit sloupce...", ActionId = ButtonPropertyDescriptor.ActionOpenDepartureGridEditor },
+        new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Odjezdy", ButtonLabel = "Upravit sloupce…", ActionId = ButtonPropertyDescriptor.ActionOpenDepartureGridEditor },
 
         new BoolPropertyDescriptor  { Label = "Záhlaví skupin",     Group = "Odjezdy", Get = () => ShowSkupinaDnuHeader,       Set = v => ShowSkupinaDnuHeader = v },
         // Velikost písma záhlaví — přímý ovladač HeaderStyle.FontSize. Bez něj šlo měnit jen

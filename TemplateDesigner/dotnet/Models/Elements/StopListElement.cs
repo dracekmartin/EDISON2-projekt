@@ -574,7 +574,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         return cols.Count > 0 ? cols.Max(c => ResolveDataStyle(c).FontSize) : (DataStyle.FontSize ?? 8f);
     }
 
-    private string GetCellText(ZastavkaData z, string columnKey)
+    internal string GetCellText(ZastavkaData z, string columnKey)
     {
         // Variantní časový sub-sloupec „CAS_JIZDY#i" → z.TrasaMin[i] (číslo / „<" / "" jak přišlo z Caché)
         if (columnKey.StartsWith(StopFields.TravelTimeVariantPrefix, System.StringComparison.Ordinal))
@@ -911,7 +911,7 @@ public class StopListElement : StopScheduleElementBase, IRowHighlightable
         .. GetScheduleBaseDescriptors(),
         .. GetCellZoneBaseColorDescriptors(),
 
-        new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce...", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
+        new ButtonPropertyDescriptor { Label = "Sloupce", Group = "Zastávky", ButtonLabel = "Upravit sloupce…", ActionId = ButtonPropertyDescriptor.ActionOpenStopColumnsEditor },
         new BoolPropertyDescriptor  { Label = "Všechny varianty tras", Group = "Zastávky", Get = () => ShowAllRouteVariants, Set = v => ShowAllRouteVariants = v },
 
         GetDataRowHeightDescriptor(),

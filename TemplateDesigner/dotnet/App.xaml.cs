@@ -84,7 +84,12 @@ public partial class App : Application
                 var bytes = System.IO.File.ReadAllBytes(dlg.FileName);
                 return TemplateDesigner.Models.Elements.ImageElement.EncodeAndResize(bytes);
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                // R2: dřív tichý null — uživatel nevěděl, proč se vybraný obrázek nenačetl
+                EDServices.Current.PopupDisplayer.Error(ex);
+                return null;
+            }
         };
 
         // Wave 2 (W2-1): registr agend — Caché auto-discovery z BaseAgenda subclasses.

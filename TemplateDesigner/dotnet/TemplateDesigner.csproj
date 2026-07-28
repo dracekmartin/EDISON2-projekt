@@ -64,6 +64,11 @@
     <EmbeddedResource Include="SystemTemplates\**\*.json" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Testy smí na internal členy — netřeba zveřejňovat helpery jen kvůli testům. -->
+    <InternalsVisibleTo Include="TemplateDesigner.Tests" />
+  </ItemGroup>
+
   <!-- Publish má být jen single-file .exe — sidecar symboly a doc XML referencí
        (mj. 80MB libSkiaSharp.pdb z NuGetu) do C:\Edison\ nepatří. -->
   <Target Name="StripSymbolsAndDocsFromPublish" AfterTargets="ComputeFilesToPublish">

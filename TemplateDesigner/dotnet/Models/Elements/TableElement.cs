@@ -577,7 +577,7 @@ public class TableElement : TemplateElement
         {
             Label       = "Sloupce",
             Group       = "Tabulka",
-            ButtonLabel = "Upravit sloupce...",
+            ButtonLabel = "Upravit sloupce…",
             ActionId    = ButtonPropertyDescriptor.ActionOpenTableEditor,
         },
         new EnumPropertyDescriptor

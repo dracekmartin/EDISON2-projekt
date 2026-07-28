@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-28 — Drobné nálezy revize: tichá selhání, guardy, kosmetika + 8 testů
+
+Druhá dávka z nezávislé revize (po názvoslovném kanonu).
+
+- **NotesLegend tučný symbol** — bezpodmínečný override `Bold = true` přebíjel uživatelovu volbu
+  (komentář sliboval opak); teď default tučně JEN když `DataStyle.Bold` nenastaveno (anti-pattern
+  scalar override z `mvvm-patterns.md`).
+- **Tichý catch při načtení obrázku** (EDInputForm image field, App.xaml.cs) — selhání čtení/enkódování
+  souboru nově hlásí přes `IPopupDisplayer.Error` (R2), dřív jen tiše nic.
+- **Sjednocení skupiny „Podmínky"** — 7 formulářů mělo „Pokročilé" (s Uzamčeno uvnitř); nyní všude
+  „Podmínky" a **Uzamčeno přesunuto do „Pozice a velikost"** (vzor novějších dialogů). Ban sken drift
+  testu rozšířen i o labely skupin (`AddGroup`).
+- **Kosmetika:** volby „Pozice šipky" v dialogu = plné znění jako v panelu („Vpravo (u pravého okraje
+  elementu)"…), tooltip přetečení bez kódového „PageSize", „v návrháři" místo „v designeru", elipsy
+  „…" v ButtonLabelech, komentáře vědomých výjimek (2× White v MainWindow, IsDefault+IsCancel na
+  Zavřít v PrintDialogu).
+- **Testy (+8):** `GroupColumnIndexResolverTests` (4 — poziční `__INDEX_` klíče, priorita reálného ID),
+  `StopListCellTextTests` (4 — režimy sloupce Označník vč. fallbacku). `InternalsVisibleTo` pro testy
+  (konec zveřejňování helperů kvůli testům). .NET 405/405.
+- **Pozn.:** nález „GetMockData bez cache" z revize je zastaralý — cache existuje; skutečný zbytek R1
+  (synchronní HTTP z kreslicí cesty při prvním načtení/selhání) řešen samostatně.
+
 ## 2026-07-28 — Názvoslovný kanon zamčený drift testy + hromadné sjednocení labelů
 
 Z nezávislé revize (druhá session). Nejdřív pojistka, pak hromadné přejmenování — v tomto pořadí.

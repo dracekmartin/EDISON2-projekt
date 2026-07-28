@@ -67,8 +67,9 @@ public class NotesLegendElement : StopScheduleElementBase
         var headerResolved = HeaderStyle.FontFamily is null && DataStyle.FontFamily is not null
             ? HeaderStyle.Resolve(ScheduleHeaderDefaults) with { FontFamily = dataResolved.FontFamily }
             : HeaderStyle.Resolve(ScheduleHeaderDefaults);
-        // Zvýrazněný text poznámky (značka / symbol) — tučně, pokud si user nezvolil konkrétní váhu.
-        var boldResolved = dataResolved with { Bold = true };
+        // Zvýrazněný text poznámky (značka / symbol) — tučně jen jako default; explicitní volba
+        // uživatele v DataStyle (vč. vypnutého tučného) má přednost (anti-pattern scalar override).
+        var boldResolved = DataStyle.Bold is null ? dataResolved with { Bold = true } : dataResolved;
 
         float noteFontPx = NoteFontSize * scale * PtToMm * ctx.MmToPx;
         float headerFontPx = effHeaderFontSize * scale * PtToMm * ctx.MmToPx;

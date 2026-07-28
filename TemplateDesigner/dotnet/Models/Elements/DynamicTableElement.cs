@@ -455,7 +455,7 @@ public class DynamicTableElement : TemplateElement, IRowHighlightable
         {
             Label       = "Sloupce",
             Group       = "Tabulka",
-            ButtonLabel = "Upravit sloupce...",
+            ButtonLabel = "Upravit sloupce…",
             ActionId    = ButtonPropertyDescriptor.ActionOpenTableEditor,
         },
         new StringPropertyDescriptor

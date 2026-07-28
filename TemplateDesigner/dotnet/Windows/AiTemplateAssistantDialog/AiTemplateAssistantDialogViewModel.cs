@@ -72,7 +72,7 @@ public class AiTemplateAssistantDialogViewModel : EDViewModel
 
             if (GeneratedTemplate is not null)
             {
-                PopupDisplayer.Info("Šablona byla úspěšně vygenerována a bude otevřena v designeru.");
+                PopupDisplayer.Info("Šablona byla úspěšně vygenerována a bude otevřena v návrháři.");
                 CloseDialog(true);
             }
             else

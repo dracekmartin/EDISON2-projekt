@@ -729,6 +729,8 @@
                     <Canvas x:Name="InlineEditOverlay"
                             Width="{Binding ElementName=skCanvas, Path=Width}"
                             Height="{Binding ElementName=skCanvas, Path=Height}">
+                        <!-- White záměrně mimo theme: editace textu probíhá NAD papírem šablony,
+                             který je vždy bílý (tiskne se) — pozadí boxu musí splynout s papírem. -->
                         <TextBox x:Name="InlineEditBox" Visibility="Collapsed"
                                  BorderThickness="1.5" BorderBrush="{DynamicResource EDTheme.Accent.Blue}"
                                  Background="White" Padding="2"
@@ -896,7 +898,9 @@
                             Background="{DynamicResource EDTheme.Semantic.Danger}" Padding="10,3" CornerRadius="3" Margin="6,2,0,2"
                             VerticalAlignment="Stretch"
                             Visibility="{Binding HasPreviewOverflow, Converter={StaticResource BoolToVis}}"
-                            ToolTip="Obsah některé stránky se nevejde — zvětši stránku (PageSize) nebo zmenši obsah">
+                            ToolTip="Obsah některé stránky se nevejde — zvětšete stránku (Vlastnosti stránky) nebo zmenšete obsah">
+                        <!-- White záměrně mimo theme: text na Semantic.Danger pozadí (červená je
+                             v obou tématech tmavá, bílá na ní má vždy dostatečný kontrast). -->
                         <TextBlock Text="Obsah se nevejde na stránku"
                                    Foreground="White" FontWeight="SemiBold"
                                    VerticalAlignment="Center"

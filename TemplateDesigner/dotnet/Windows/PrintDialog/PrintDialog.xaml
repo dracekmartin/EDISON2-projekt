@@ -35,6 +35,8 @@
                         Command="{Binding ExportPdfCommand}"
                         ToolTip="Vyexportuje aktuální náhled (jedna zastávka/směr, nebo vzorek u nové šablony) do jednoho PDF"
                         Margin="0,0,8,0"/>
+                <!-- IsDefault + IsCancel na jednom tlačítku záměrně: dialog nemá OK/Storno pár —
+                     tisk/export jsou samostatné akce a Zavřít je jediný způsob odchodu (Enter i Esc). -->
                 <Button Content="{StaticResource EDStrings.Close}" Padding="16,6" IsDefault="True" IsCancel="True"/>
             </StackPanel>
         </Grid>

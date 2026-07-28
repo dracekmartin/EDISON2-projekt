@@ -56,7 +56,7 @@ ClassMethod Init(ByRef sys As %String) As %Status
         d f.AddListItem("AfterName", "Za zastávkou"), f.AddListItem("BeforeName", "Před zastávkou")
         d form.AddBool("ShowDirectionArrow", "Šipka směru", 0)
         s f = form.AddFieldToLastGroup("DirectionArrowPosition", "Pozice šipky", $$$FieldTypeList, 0, 1)
-        d f.AddListItem("Right", "Vpravo"), f.AddListItem("Left", "Vlevo")
+        d f.AddListItem("Right", "Vpravo (u pravého okraje elementu)"), f.AddListItem("Left", "Vlevo (u levého okraje elementu)")
         s f = form.AddFieldToLastGroup("DirectionArrowColor", "Barva šipky", $$$FieldTypeColor, 0, 0)
         s f.value = "#FF000000"
         d form.AddBool("DirectionArrowBold", "Tučná šipka", 0)
