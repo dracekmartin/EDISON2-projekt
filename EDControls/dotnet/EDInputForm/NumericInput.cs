@@ -58,7 +58,7 @@ namespace EDControls.EDInputForm
             }
         }
 
-        private static bool IsValid(string text, string mode)
+        internal static bool IsValid(string text, string mode)
         {
             bool hasSep = false;
             for (int i = 0; i < text.Length; i++)

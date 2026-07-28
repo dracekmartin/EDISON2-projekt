@@ -1,0 +1,16 @@
+{
+  "audit-tests": {
+    "last": "2026-07-28T13:19:00+02:00",
+    "scope": ["EDISONMAIN2", "EDControls"],
+    "gaps": [
+      "EDControls/MLRestJson.CallAsync — JSON-envelope wire contract (payload key) untested → added MLRestJsonTests",
+      "EDControls/NumericInput.IsValid — numeric paste validation untested → made internal, added NumericInputTests",
+      "EDControls/AccessTable.Contains — authorization short-circuit untested → added AccessTableTests",
+      "EDISONMAIN2/SlotGridPanel — drop-target slot math untested → extracted static ColumnsFor/SlotAtFor, added SlotGridPanelTests",
+      "EDISONMAIN2/MlineDomainDetector — legacy CBool parse untested → extracted ParseVirtualDomainValue, added MlineDomainDetectorTests",
+      "Deferred (not filled, justified): AvalonDockHost.NormalizeSoloPanes (integration-level, STA/AvalonDock), Base64ToImageSourceConverter (STA), WindowScopedPopupDisplayer (thin delegation), VM release-notice text (trivial ternary), ModulePreferencesService expansion/tab (already covered at VM level)"
+    ],
+    "failing": [],
+    "session": "18073e05-5824-4242-9bc2-e1664bdb7d91"
+  }
+}
